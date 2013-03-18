@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -976,7 +976,7 @@ int handleExportAppliance(HandlerArg *a)
         {
             ComPtr<IMachine> pMachine = *itM;
             ComPtr<IVirtualSystemDescription> pVSD;
-            CHECK_ERROR_BREAK(pMachine, Export(pAppliance, Bstr(pszAbsFilePath).raw(), pVSD.asOutParam()));
+            CHECK_ERROR_BREAK(pMachine, ExportTo(pAppliance, Bstr(pszAbsFilePath).raw(), pVSD.asOutParam()));
             // Add additional info to the virtual system description if the user wants so
             ArgsMap *pmapArgs = NULL;
             ArgsMapsMap::iterator itm = mapArgsMapsPerVsys.find(i);

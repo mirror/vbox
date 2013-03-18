@@ -127,10 +127,10 @@
   <cpp>
 /* currently, nsISupportsImpl.h lacks the below-like macros */
 
-#define NS_IMPL_THREADSAFE_QUERY_INTERFACE1_CI  NS_IMPL_QUERY_INTERFACE1_CI
-#define NS_IMPL_THREADSAFE_QUERY_INTERFACE2_CI  NS_IMPL_QUERY_INTERFACE2_CI
-#define NS_IMPL_THREADSAFE_QUERY_INTERFACE3_CI  NS_IMPL_QUERY_INTERFACE3_CI
-#define NS_IMPL_THREADSAFE_QUERY_INTERFACE4_CI  NS_IMPL_QUERY_INTERFACE4_CI
+#define NS_IMPL_THREADSAFE_QUERY_INTERFACE1_CI NS_IMPL_QUERY_INTERFACE1_CI
+#define NS_IMPL_THREADSAFE_QUERY_INTERFACE2_CI NS_IMPL_QUERY_INTERFACE2_CI
+#define NS_IMPL_THREADSAFE_QUERY_INTERFACE3_CI NS_IMPL_QUERY_INTERFACE3_CI
+#define NS_IMPL_THREADSAFE_QUERY_INTERFACE4_CI NS_IMPL_QUERY_INTERFACE4_CI
 
 
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS1_CI
@@ -401,35 +401,35 @@
       file XML and indicates which VirtualBox version wrote the file.
     </desc>
 
-    <const name="Null"    value="0">
+    <const name="Null" value="0">
       <desc>Null value, indicates invalid version.</desc>
     </const>
-    <const name="v1_0"     value="1">
+    <const name="v1_0" value="1">
       <desc>Legacy settings version, not currently supported.</desc>
     </const>
-    <const name="v1_1"     value="2">
+    <const name="v1_1" value="2">
       <desc>Legacy settings version, not currently supported.</desc>
     </const>
-    <const name="v1_2"     value="3">
+    <const name="v1_2" value="3">
       <desc>Legacy settings version, not currently supported.</desc>
     </const>
-    <const name="v1_3pre"  value="4">
+    <const name="v1_3pre" value="4">
       <desc>Legacy settings version, not currently supported.</desc>
     </const>
-    <const name="v1_3"     value="5">
+    <const name="v1_3" value="5">
       <desc>Settings version "1.3", written by VirtualBox 2.0.12.</desc>
       <!--
           Machine XML: Capitalization of Uart, Lpt elements and many attributes changed.
       -->
     </const>
-    <const name="v1_4"     value="6">
+    <const name="v1_4" value="6">
       <desc>Intermediate settings version, understood by VirtualBox 2.1.x.</desc>
       <!--
           VirtualBox.xml: big DiskRegistry -> MediaRegistry revamp, various HardDisk types merged
           (was VirtualDiskImage, VMDKImage, VHDImage, ISCSIHardDisk, CustomHardDisk, DiffHardDisk)
       -->
     </const>
-    <const name="v1_5"     value="7">
+    <const name="v1_5" value="7">
       <desc>Intermediate settings version, understood by VirtualBox 2.1.x.</desc>
       <!--
           2008-09-04: 2.0.0 released
@@ -442,7 +442,7 @@
             Machine/Hardware/CPU/CPUCount/@count changed to CPU/@count
       -->
     </const>
-    <const name="v1_6"     value="8">
+    <const name="v1_6" value="8">
       <desc>Settings version "1.6", written by VirtualBox 2.1.4 (at least).</desc>
       <!--
           2008-12-17: 2.1.0 released
@@ -451,7 +451,7 @@
           Machine changes: remove all Machine/Hardware/Network/Adapter/HostInterface[@TAPSetup or @TAPTerminate]/ attributes (done)
       -->
     </const>
-    <const name="v1_7"     value="9">
+    <const name="v1_7" value="9">
       <desc>Settings version "1.7", written by VirtualBox 2.2.x and 3.0.x.</desc>
       <!--
           2008-12-17: 2.1.0 released
@@ -461,54 +461,54 @@
           Machine changes: HardDiskAttachments is now StorageControllers (done)
       -->
     </const>
-    <const name="v1_8"     value="10">
+    <const name="v1_8" value="10">
       <desc>Intermediate settings version "1.8", understood by VirtualBox 3.1.x.</desc>
       <!--
           Machine additions: Display/@accelerate2DVideo (done)
       -->
     </const>
-    <const name="v1_9"     value="11">
+    <const name="v1_9" value="11">
       <desc>Settings version "1.9", written by VirtualBox 3.1.x.</desc>
       <!--
           The big storage controller / DVD / Floppy rework (done)
       -->
     </const>
-    <const name="v1_10"     value="12">
+    <const name="v1_10" value="12">
       <desc>Settings version "1.10", written by VirtualBox 3.2.x.</desc>
       <!--
           Machine changes: RTC localOrUTC (done)
           CPU hot-plug support
       -->
     </const>
-    <const name="v1_11"     value="13">
+    <const name="v1_11" value="13">
       <desc>Settings version "1.11", written by VirtualBox 4.0.x.</desc>
       <!--
           Machine changes: HD Audio controller, per-machine disk registries,
           /@format attribute for DVD and floppy images.
       -->
     </const>
-    <const name="v1_12"     value="14">
+    <const name="v1_12" value="14">
       <desc>Settings version "1.12", written by VirtualBox 4.1.x.</desc>
       <!--
           Machine changes: raw PCI device attachment;
           NetworkAdapter changes: bandwidth group.
       -->
     </const>
-    <const name="v1_13"     value="15">
+    <const name="v1_13" value="15">
       <desc>Settings version "1.13", written by VirtualBox 4.2.x.</desc>
       <!--
           Machine changes: tracing config, groups, autostart;
           NetworkAdapter changes: unit for bandwidth group limits.
       -->
     </const>
-    <const name="v1_14"     value="16">
+    <const name="v1_14" value="16">
       <desc>Settings version "1.14", written by VirtualBox 4.3.x.</desc>
       <!--
           Machine changes: default frontend.
       -->
     </const>
 
-    <const name="Future"     value="99999">
+    <const name="Future" value="99999">
       <desc>Settings version greater than "1.13", written by a future VirtualBox version.</desc>
     </const>
   </enum>
@@ -521,8 +521,8 @@
       Access mode for opening files.
     </desc>
 
-    <const name="ReadOnly"   value="1"/>
-    <const name="ReadWrite"  value="2"/>
+    <const name="ReadOnly" value="1"/>
+    <const name="ReadWrite" value="2"/>
   </enum>
 
   <enum
@@ -654,37 +654,37 @@
       </note>
     </desc>
 
-    <const name="Null"                  value="0">
+    <const name="Null"                      value="0">
       <desc>Null value (never used by the API).</desc>
     </const>
-    <const name="PoweredOff"            value="1">
+    <const name="PoweredOff"                value="1">
       <desc>
         The machine is not running and has no saved execution state; it has
         either never been started or been shut down successfully.
       </desc>
     </const>
-    <const name="Saved"                 value="2">
+    <const name="Saved"                     value="2">
       <desc>
         The machine is not currently running, but the execution state of the machine
         has been saved to an external file when it was running, from where
         it can be resumed.
       </desc>
     </const>
-    <const name="Teleported"            value="3">
+    <const name="Teleported"                value="3">
       <desc>
         The machine was teleported to a different host (or process) and then
-        powered off.  Take care when powering it on again may corrupt resources
+        powered off. Take care when powering it on again may corrupt resources
         it shares with the teleportation target (e.g. disk and network).
       </desc>
     </const>
-    <const name="Aborted"               value="4">
+    <const name="Aborted"                   value="4">
       <desc>
         The process running the machine has terminated abnormally. This may
         indicate a crash of the VM process in host execution context, or
         the VM process has been terminated externally.
       </desc>
     </const>
-    <const name="Running"               value="5">
+    <const name="Running"                   value="5">
       <desc>
         The machine is currently being executed.
         <note internal="yes">
@@ -695,7 +695,7 @@
         </note>
       </desc>
     </const>
-    <const name="Paused"                value="6">
+    <const name="Paused"                    value="6">
       <desc>
         Execution of the machine has been paused.
         <note internal="yes">
@@ -706,7 +706,7 @@
         </note>
       </desc>
     </const>
-    <const name="Stuck"                 value="7">
+    <const name="Stuck"                     value="7">
       <desc>
         Execution of the machine has reached the "Guru Meditation"
         condition. This indicates a severe error in the hypervisor itself.
@@ -717,7 +717,7 @@
         </note>
       </desc>
     </const>
-    <const name="Teleporting"           value="8">
+    <const name="Teleporting"               value="8">
       <desc>
         The machine is about to be teleported to a different host or process.
         It is possible to pause a machine in this state, but it will go to the
@@ -725,81 +725,81 @@
         possible to resume it again unless the teleportation fails.
       </desc>
     </const>
-    <const name="LiveSnapshotting"      value="9">
+    <const name="LiveSnapshotting"          value="9">
       <desc>
-        A live snapshot is being taken.  The machine is running normally, but
-        some of the runtime configuration options are inaccessible.  Also, if
+        A live snapshot is being taken. The machine is running normally, but
+        some of the runtime configuration options are inaccessible. Also, if
         paused while in this state it will transition to
         @c Saving and it will not be resume the
         execution until the snapshot operation has completed.
       </desc>
     </const>
-    <const name="Starting"              value="10">
+    <const name="Starting"                  value="10">
       <desc>
         Machine is being started after powering it on from a
         zero execution state.
       </desc>
     </const>
-    <const name="Stopping"              value="11">
+    <const name="Stopping"                  value="11">
       <desc>
         Machine is being normally stopped powering it off, or after the guest OS
         has initiated a shutdown sequence.
       </desc>
     </const>
-    <const name="Saving"                value="12">
+    <const name="Saving"                    value="12">
       <desc>
         Machine is saving its execution state to a file, or an online
         snapshot of the machine is being taken.
       </desc>
     </const>
-    <const name="Restoring"             value="13">
+    <const name="Restoring"                 value="13">
       <desc>
         Execution state of the machine is being restored from a file
         after powering it on from the saved execution state.
       </desc>
     </const>
-    <const name="TeleportingPausedVM"   value="14">
+    <const name="TeleportingPausedVM"       value="14">
       <desc>
         The machine is being teleported to another host or process, but it is
-        not running.  This is the paused variant of the
+        not running. This is the paused variant of the
         @c state.
       </desc>
     </const>
-    <const name="TeleportingIn"         value="15">
+    <const name="TeleportingIn"             value="15">
       <desc>
         Teleporting the machine state in from another host or process.
       </desc>
     </const>
-    <const name="FaultTolerantSyncing"   value="16">
+    <const name="FaultTolerantSyncing"      value="16">
       <desc>
         The machine is being synced with a fault tolerant VM running elsewhere.
       </desc>
     </const>
-    <const name="DeletingSnapshotOnline" value="17">
+    <const name="DeletingSnapshotOnline"    value="17">
       <desc>
         Like @c DeletingSnapshot, but the merging of media is ongoing in
         the background while the machine is running.
       </desc>
     </const>
-    <const name="DeletingSnapshotPaused" value="18">
+    <const name="DeletingSnapshotPaused"    value="18">
       <desc>
         Like @c DeletingSnapshotOnline, but the machine was paused when the
         merging of differencing media was started.
       </desc>
     </const>
-    <const name="RestoringSnapshot"     value="19">
+    <const name="RestoringSnapshot"         value="19">
       <desc>
         A machine snapshot is being restored; this typically does not take long.
       </desc>
     </const>
-    <const name="DeletingSnapshot"      value="20">
+    <const name="DeletingSnapshot"          value="20">
       <desc>
         A machine snapshot is being deleted; this can take a long time since this
         may require merging differencing media. This value indicates that the
         machine is not running while the snapshot is being deleted.
       </desc>
     </const>
-    <const name="SettingUp"             value="21">
+    <const name="SettingUp"                 value="21">
       <desc>
         Lengthy setup operation is in progress.
       </desc>
@@ -810,7 +810,7 @@
         Pseudo-state: first online state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastOnline"  value="18" wsmap="suppress"> <!-- DeletingSnapshotPaused -->
+    <const name="LastOnline" value="18" wsmap="suppress"> <!-- DeletingSnapshotPaused -->
       <desc>
         Pseudo-state: last online state (for use in relational expressions).
       </desc>
@@ -821,7 +821,7 @@
         Pseudo-state: first transient state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastTransient"  value="21" wsmap="suppress"> <!-- SettingUp -->
+    <const name="LastTransient" value="21" wsmap="suppress"> <!-- SettingUp -->
       <desc>
         Pseudo-state: last transient state (for use in relational expressions).
       </desc>
@@ -914,38 +914,38 @@
       for the <link to="IMachine::getHWVirtExProperty"/> and
       <link to="IMachine::setHWVirtExProperty"/> methods.
     </desc>
-    <const name="Null"                value="0">
+    <const name="Null"                  value="0">
       <desc>Null value (never used by the API).</desc>
     </const>
-    <const name="Enabled"             value="1">
+    <const name="Enabled"               value="1">
       <desc>
         Whether hardware virtualization (VT-x/AMD-V) is enabled at all. If
         such extensions are not available, they will not be used.
       </desc>
     </const>
-    <const name="Exclusive"           value="2">
+    <const name="Exclusive"             value="2">
       <desc>
         Whether hardware virtualization is used exclusively by VirtualBox. When enabled,
         VirtualBox assumes it can acquire full and exclusive access to the VT-x or AMD-V
         feature of the host. To share these with other hypervisors, you must disable this property.
       </desc>
     </const>
-    <const name="VPID"                value="3">
+    <const name="VPID"                  value="3">
       <desc>
         Whether VT-x VPID is enabled. If this extension is not available, it will not be used.
       </desc>
     </const>
-    <const name="NestedPaging"        value="4">
+    <const name="NestedPaging"          value="4">
       <desc>
         Whether Nested Paging is enabled. If this extension is not available, it will not be used.
       </desc>
     </const>
-    <const name="LargePages"          value="5">
+    <const name="LargePages"            value="5">
       <desc>
         Whether large page allocation is enabled; requires nested paging and a 64 bits host.
       </desc>
     </const>
-    <const name="Force"               value="6">
+    <const name="Force"                 value="6">
       <desc>
         Whether the VM should fail to start if hardware virtualization (VT-x/AMD-V) cannot be used. If
         not set, there will be an automatic fallback to software virtualization.
@@ -1134,10 +1134,10 @@
       CPU features.
     </desc>
 
-    <const name="HWVirtEx"        value="0"/>
-    <const name="PAE"             value="1"/>
-    <const name="LongMode"        value="2"/>
-    <const name="NestedPaging"    value="3"/>
+    <const name="HWVirtEx"          value="0"/>
+    <const name="PAE"               value="1"/>
+    <const name="LongMode"          value="2"/>
+    <const name="NestedPaging"      value="3"/>
   </enum>
 
   <enum
@@ -1147,19 +1147,19 @@
     <desc>
       Firmware type.
     </desc>
-    <const name="BIOS"           value="1">
+    <const name="BIOS"              value="1">
       <desc>BIOS Firmware.</desc>
     </const>
-    <const name="EFI"            value="2">
+    <const name="EFI"               value="2">
       <desc>EFI Firmware, bitness detected basing on OS type.</desc>
     </const>
-    <const name="EFI32"          value="3">
+    <const name="EFI32"             value="3">
       <desc>Efi firmware, 32-bit.</desc>
     </const>
-    <const name="EFI64"          value="4">
+    <const name="EFI64"             value="4">
       <desc>Efi firmware, 64-bit.</desc>
     </const>
-    <const name="EFIDUAL"        value="5">
+    <const name="EFIDUAL"           value="5">
       <desc>Efi firmware, combined 32 and 64-bit.</desc>
     </const>
   </enum>
@@ -1171,19 +1171,19 @@
     <desc>
       Type of pointing device used in a virtual machine.
     </desc>
-    <const name="None"           value="1">
+    <const name="None"              value="1">
       <desc>No mouse.</desc>
     </const>
-    <const name="PS2Mouse"       value="2">
+    <const name="PS2Mouse"          value="2">
       <desc>PS/2 auxiliary device, a.k.a. mouse.</desc>
     </const>
-    <const name="USBMouse"       value="3">
+    <const name="USBMouse"          value="3">
       <desc>USB mouse (relative pointer).</desc>
     </const>
-    <const name="USBTablet"      value="4">
+    <const name="USBTablet"         value="4">
       <desc>USB tablet (absolute pointer).</desc>
     </const>
-    <const name="ComboMouse"     value="5">
+    <const name="ComboMouse"        value="5">
       <desc>Combined device, working as PS/2 or USB mouse, depending on guest behavior.
       Using of such device can have negative performance implications. </desc>
     </const>
@@ -1454,8 +1454,8 @@
         last number represents the build number and will frequently change.
 
         This may be followed by a _ALPHA[0-9]*, _BETA[0-9]* or _RC[0-9]* tag
-        in prerelease builds.  Non-Oracle builds may (/shall) also have a
-        publisher tag, at the end.  The publisher tag starts with an underscore
+        in prerelease builds. Non-Oracle builds may (/shall) also have a
+        publisher tag, at the end. The publisher tag starts with an underscore
         just like the prerelease build type tag.
       </desc>
     </attribute>
@@ -2116,7 +2116,7 @@
         Returns an array representing the global extra data keys which currently
         have values defined.
       </desc>
-      <param name="value" type="wstring" dir="return" safearray="yes">
+      <param name="keys" type="wstring" dir="return" safearray="yes">
         <desc>Array of extra data keys.</desc>
       </param>
     </method>
@@ -2373,7 +2373,7 @@
       current directory level. Use <link to="#entryList" /> to get the full list
       after a call to this method.</desc>
 
-      <param name="aProgress" type="IProgress" dir="return">
+      <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
@@ -2381,11 +2381,11 @@
     <method name="cd">
       <desc>Change the current directory level.</desc>
 
-      <param name="aDir" type="wstring" dir="in">
+      <param name="dir" type="wstring" dir="in">
         <desc>The name of the directory to go in.</desc>
       </param>
 
-      <param name="aProgress" type="IProgress" dir="return">
+      <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
@@ -2393,7 +2393,7 @@
     <method name="cdUp">
       <desc>Go one directory upwards from the current directory level.</desc>
 
-      <param name="aProgress" type="IProgress" dir="return">
+      <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
@@ -2403,19 +2403,19 @@
       to="#update" />. The user is responsible for keeping this internal
       list up do date.</desc>
 
-      <param name="aNames" type="wstring" safearray="yes" dir="out">
+      <param name="names" type="wstring" safearray="yes" dir="out">
         <desc>The list of names for the entries.</desc>
       </param>
 
-      <param name="aTypes" type="unsigned long" safearray="yes" dir="out">
+      <param name="types" type="unsigned long" safearray="yes" dir="out">
         <desc>The list of types for the entries.</desc>
       </param>
 
-      <param name="aSizes" type="unsigned long" safearray="yes" dir="out">
+      <param name="sizes" type="unsigned long" safearray="yes" dir="out">
         <desc>The list of sizes (in bytes) for the entries.</desc>
       </param>
 
-      <param name="aModes" type="unsigned long" safearray="yes" dir="out">
+      <param name="modes" type="unsigned long" safearray="yes" dir="out">
         <desc>The list of file modes (in octal form) for the entries.</desc>
       </param>
     </method>
@@ -2424,11 +2424,11 @@
       <desc>Checks if the given file list exists in the current directory
       level.</desc>
 
-      <param name="aNames" type="wstring" safearray="yes" dir="in">
+      <param name="names" type="wstring" safearray="yes" dir="in">
         <desc>The names to check.</desc>
       </param>
 
-      <param name="aExists" type="wstring" safearray="yes" dir="return">
+      <param name="exists" type="wstring" safearray="yes" dir="return">
         <desc>The names which exist.</desc>
       </param>
     </method>
@@ -2436,11 +2436,11 @@
     <method name="remove">
       <desc>Deletes the given files in the current directory level.</desc>
 
-      <param name="aNames" type="wstring" safearray="yes" dir="in">
+      <param name="names" type="wstring" safearray="yes" dir="in">
         <desc>The names to remove.</desc>
       </param>
 
-      <param name="aProgress" type="IProgress" dir="return">
+      <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
@@ -2456,10 +2456,10 @@
     Import options, used with <link to="IAppliance::importMachines" />.
     </desc>
 
-    <const name="KeepAllMACs"        value="1">
+    <const name="KeepAllMACs"       value="1">
       <desc>Don't generate new MAC addresses of the attached network adapters.</desc>
     </const>
-    <const name="KeepNATMACs"        value="2">
+    <const name="KeepNATMACs"       value="2">
       <desc>Don't generate new MAC addresses of the attached network adapters when they are using NAT.</desc>
     </const>
 
@@ -2523,7 +2523,7 @@
               virtual system (machine) to override the suggestions made by the <link to="#interpret" /> routine.
           </li>
 
-          <li>Finally, call <link to="#importMachines" /> to  create virtual machines in
+          <li>Finally, call <link to="#importMachines" /> to create virtual machines in
               VirtualBox as instances of <link to="IMachine" /> that match the information in the
               virtual system descriptions. After this call succeeded, the UUIDs of the machines created
               can be found in the <link to="#machines" /> array attribute.
@@ -2537,13 +2537,13 @@
                 an empty IAppliance object.
             </li>
 
-            <li>For each machine you would like to export, call <link to="IMachine::export" />
+            <li>For each machine you would like to export, call <link to="IMachine::exportTo" />
                 with the IAppliance object you just created. Each such call creates one instance of
                 <link to="IVirtualSystemDescription" /> inside the appliance.
             </li>
 
             <li>If desired, call <link to="IVirtualSystemDescription::setFinalValues" /> for each
-                virtual system (machine) to override the suggestions made by the <link to="IMachine::export"/> routine.
+                virtual system (machine) to override the suggestions made by the <link to="IMachine::exportTo"/> routine.
             </li>
 
             <li>Finally, call <link to="#write" /> with a path specification to have the OVF
@@ -2602,7 +2602,7 @@
     <attribute name="virtualSystemDescriptions" type="IVirtualSystemDescription" readonly="yes" safearray="yes">
       <desc> Array of virtual system descriptions. One such description is created
       for each virtual system (machine) found in the OVF.
-      This array is empty until either <link to="#interpret" /> (for import) or <link to="IMachine::export" />
+      This array is empty until either <link to="#interpret" /> (for import) or <link to="IMachine::exportTo" />
       (for export) has been called.
       </desc>
     </attribute>
@@ -2629,7 +2629,7 @@
           on whether the appliance is distributed as a set of files or as a single file, respectively).
         </desc>
       </param>
-      <param name="aProgress" type="IProgress" dir="return">
+      <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
@@ -2673,7 +2673,7 @@
         <desc>Options for the importing operation.</desc>
       </param>
 
-      <param name="aProgress" type="IProgress" dir="return">
+      <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
@@ -2681,11 +2681,11 @@
     <method name="createVFSExplorer">
       <desc>Returns a <link to="IVFSExplorer" /> object for the given URI.</desc>
 
-      <param name="aUri" type="wstring" dir="in">
+      <param name="URI" type="wstring" dir="in">
         <desc>The URI describing the file system to use.</desc>
       </param>
 
-      <param name="aExplorer" type="IVFSExplorer" dir="return">
+      <param name="explorer" type="IVFSExplorer" dir="return">
         <desc></desc>
       </param>
     </method>
@@ -2727,7 +2727,7 @@
     <method name="getWarnings">
       <desc>Returns textual warnings which occurred during execution of <link to="#interpret" />.</desc>
 
-      <param name="aWarnings" type="wstring" dir="return" safearray="yes">
+      <param name="warnings" type="wstring" dir="return" safearray="yes">
         <desc></desc>
       </param>
     </method>
@@ -2807,7 +2807,7 @@
 
       The list below identifies the value sets that are possible depending on the
       <link to="VirtualSystemDescriptionType" /> enum value in the array item in @a aTypes[]. In each case,
-      the array item with the same index in @a aOvfValues[] will contain the original value as contained
+      the array item with the same index in @a OVFValues[] will contain the original value as contained
       in the OVF file (just for informational purposes), and the corresponding item in @a aVBoxValues[]
       will contain a suggested value to be used for VirtualBox. Depending on the description type,
       the @a aExtraConfigValues[] array item may also be used.
@@ -2815,14 +2815,14 @@
       <ul>
       <li>
         "OS": the guest operating system type. There must be exactly one such array item on import. The
-        corresponding item in @a  aVBoxValues[] contains the suggested guest operating system for VirtualBox.
+        corresponding item in @a aVBoxValues[] contains the suggested guest operating system for VirtualBox.
         This will be one of the values listed in <link to="IVirtualBox::guestOSTypes" />. The corresponding
-        item in @a aOvfValues[] will contain a numerical value that described the operating system in the OVF.
+        item in @a OVFValues[] will contain a numerical value that described the operating system in the OVF.
       </li>
       <li>
         "Name": the name to give to the new virtual machine. There can be at most one such array item;
         if none is present on import, then an automatic name will be created from the operating system
-        type. The corresponding item im @a aOvfValues[] will contain the suggested virtual machine name
+        type. The corresponding item im @a OVFValues[] will contain the suggested virtual machine name
         from the OVF file, and @a aVBoxValues[] will contain a suggestion for a unique VirtualBox
         <link to="IMachine" /> name that does not exist yet.
       </li>
@@ -2846,7 +2846,7 @@
       </li>
       <li>
         "HardDiskControllerIDE": an IDE hard disk controller. There can be at most two such items.
-        An optional value in @a aOvfValues[] and @a aVBoxValues[] can be "PIIX3" or "PIIX4" to specify
+        An optional value in @a OVFValues[] and @a aVBoxValues[] can be "PIIX3" or "PIIX4" to specify
         the type of IDE controller; this corresponds to the ResourceSubType element which VirtualBox
         writes into the OVF.
         The matching item in the @a aRefs[] array will contain an integer that items of the "Harddisk"
@@ -2858,12 +2858,12 @@
       </li>
       <li>
         "HardDiskControllerSATA": an SATA hard disk controller. There can be at most one such item. This
-        has no value in @a aOvfValues[] or @a aVBoxValues[].
+        has no value in @a OVFValues[] or @a aVBoxValues[].
         The matching item in the @a aRefs[] array will be used as with IDE controllers (see above).
       </li>
       <li>
         "HardDiskControllerSCSI": a SCSI hard disk controller. There can be at most one such item.
-        The items in @a aOvfValues[] and @a aVBoxValues[] will either be "LsiLogic", "BusLogic" or
+        The items in @a OVFValues[] and @a aVBoxValues[] will either be "LsiLogic", "BusLogic" or
         "LsiLogicSas". (Note that in OVF, the LsiLogicSas controller is treated as a SCSI controller
         whereas VirtualBox considers it a class of storage controllers of its own; see
         <link to="StorageControllerType" />).
@@ -2873,7 +2873,7 @@
         "HardDiskImage": a virtual hard disk, most probably as a reference to an image file. There can be an
         arbitrary number of these items, one for each virtual disk image that accompanies the OVF.
 
-        The array item in @a aOvfValues[] will contain the file specification from the OVF file (without
+        The array item in @a OVFValues[] will contain the file specification from the OVF file (without
         a path since the image file should be in the same location as the OVF file itself), whereas the
         item in @a aVBoxValues[] will contain a qualified path specification to where VirtualBox uses the
         hard disk image. This means that on import the image will be copied and converted from the
@@ -2916,23 +2916,23 @@
 
       </desc>
 
-      <param name="aTypes" type="VirtualSystemDescriptionType" dir="out" safearray="yes">
+      <param name="types" type="VirtualSystemDescriptionType" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aRefs" type="wstring" dir="out" safearray="yes">
+      <param name="refs" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aOvfValues" type="wstring" dir="out" safearray="yes">
+      <param name="OVFValues" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aVBoxValues" type="wstring" dir="out" safearray="yes">
+      <param name="VBoxValues" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aExtraConfigValues" type="wstring" dir="out" safearray="yes">
+      <param name="extraConfigValues" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
@@ -2942,27 +2942,27 @@
       <desc>This is the same as <link to="#getDescription" /> except that you can specify which types
       should be returned.</desc>
 
-      <param name="aType" type="VirtualSystemDescriptionType" dir="in">
+      <param name="type" type="VirtualSystemDescriptionType" dir="in">
         <desc></desc>
       </param>
 
-      <param name="aTypes" type="VirtualSystemDescriptionType" dir="out" safearray="yes">
+      <param name="types" type="VirtualSystemDescriptionType" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aRefs" type="wstring" dir="out" safearray="yes">
+      <param name="refs" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aOvfValues" type="wstring" dir="out" safearray="yes">
+      <param name="OVFValues" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aVBoxValues" type="wstring" dir="out" safearray="yes">
+      <param name="VBoxValues" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aExtraConfigValues" type="wstring" dir="out" safearray="yes">
+      <param name="extraConfigValues" type="wstring" dir="out" safearray="yes">
         <desc></desc>
       </param>
 
@@ -2973,15 +2973,15 @@
       value types should be returned. See <link to="VirtualSystemDescriptionValueType" /> for possible
       values.</desc>
 
-      <param name="aType" type="VirtualSystemDescriptionType" dir="in">
+      <param name="type" type="VirtualSystemDescriptionType" dir="in">
         <desc></desc>
       </param>
 
-      <param name="aWhich" type="VirtualSystemDescriptionValueType" dir="in">
+      <param name="which" type="VirtualSystemDescriptionValueType" dir="in">
         <desc></desc>
       </param>
 
-      <param name="aValues" type="wstring" dir="return" safearray="yes">
+      <param name="values" type="wstring" dir="return" safearray="yes">
         <desc></desc>
       </param>
 
@@ -3006,15 +3006,15 @@
         corresponding item in the aEnabled array is @c false, the configuration value is ignored.
       </desc>
 
-      <param name="aEnabled" type="boolean" dir="in" safearray="yes">
+      <param name="enabled" type="boolean" dir="in" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aVBoxValues" type="wstring" dir="in" safearray="yes">
+      <param name="VBoxValues" type="wstring" dir="in" safearray="yes">
         <desc></desc>
       </param>
 
-      <param name="aExtraConfigValues" type="wstring" dir="in" safearray="yes">
+      <param name="extraConfigValues" type="wstring" dir="in" safearray="yes">
         <desc></desc>
       </param>
     </method>
@@ -3027,15 +3027,15 @@
       be the License type of <link to="VirtualSystemDescriptionType" />.
       </desc>
 
-      <param name="aType" type="VirtualSystemDescriptionType" dir="in">
+      <param name="type" type="VirtualSystemDescriptionType" dir="in">
         <desc></desc>
       </param>
 
-      <param name="aVBoxValue" type="wstring" dir="in">
+      <param name="VBoxValue" type="wstring" dir="in">
         <desc></desc>
       </param>
 
-      <param name="aExtraConfigValue" type="wstring" dir="in">
+      <param name="extraConfigValue" type="wstring" dir="in">
         <desc></desc>
       </param>
     </method>
@@ -3058,7 +3058,7 @@
         Updates the flag whether the saved state file is removed on a
         machine state change from Saved to PoweredOff.
       </desc>
-      <param name="aRemove" type="boolean" dir="in"/>
+      <param name="remove" type="boolean" dir="in"/>
     </method>
 
     <method name="updateState">
@@ -3081,13 +3081,13 @@
       <desc>
         Tells VBoxSVC that <link to="IConsole::powerUp"/> is under ways and
         gives it the progress object that should be part of any pending
-        <link to="IMachine::launchVMProcess"/> operations.  The progress
+        <link to="IMachine::launchVMProcess"/> operations. The progress
         object may be called back to reflect an early cancelation, so some care
         have to be taken with respect to any cancelation callbacks. The console
         object will call <link to="IInternalMachineControl::endPowerUp"/>
         to signal the completion of the progress object.
       </desc>
-      <param name="aProgress" type="IProgress" dir="in" />
+      <param name="progress" type="IProgress" dir="in" />
     </method>
 
     <method name="endPowerUp">
@@ -3418,26 +3418,26 @@
         with their values, time stamps and flags and give responsibility for
         managing properties to the console.
       </desc>
-      <param name="name" type="wstring" dir="out" safearray="yes">
+      <param name="names" type="wstring" dir="out" safearray="yes">
         <desc>
           The names of the properties returned.
         </desc>
       </param>
-      <param name="value" type="wstring" dir="out" safearray="yes">
+      <param name="values" type="wstring" dir="out" safearray="yes">
         <desc>
-          The values of the properties returned.  The array entries match the
+          The values of the properties returned. The array entries match the
           corresponding entries in the @a name array.
         </desc>
       </param>
-      <param name="timestamp" type="long long" dir="out" safearray="yes">
+      <param name="timestamps" type="long long" dir="out" safearray="yes">
         <desc>
-          The time stamps of the properties returned.  The array entries match
+          The time stamps of the properties returned. The array entries match
           the corresponding entries in the @a name array.
         </desc>
       </param>
       <param name="flags" type="wstring" dir="out" safearray="yes">
         <desc>
-          The flags of the properties returned.  The array entries match the
+          The flags of the properties returned. The array entries match the
           corresponding entries in the @a name array.
         </desc>
       </param>
@@ -3735,13 +3735,13 @@
     Clone mode, used with <link to="IMachine::cloneTo" />.
     </desc>
 
-    <const name="MachineState"                 value="1">
+    <const name="MachineState"          value="1">
       <desc>Clone the state of the selected machine.</desc>
     </const>
-    <const name="MachineAndChildStates"        value="2">
+    <const name="MachineAndChildStates" value="2">
       <desc>Clone the state of the selected machine and its child snapshots if present.</desc>
     </const>
-    <const name="AllStates"                    value="3">
+    <const name="AllStates"             value="3">
       <desc>Clone all states (including all snapshots) of the machine, regardless of the machine object used.</desc>
     </const>
 
@@ -3756,16 +3756,16 @@
     Clone options, used with <link to="IMachine::cloneTo" />.
     </desc>
 
-    <const name="Link"               value="1">
+    <const name="Link"              value="1">
       <desc>Create a clone VM where all virtual disks are linked to the original VM.</desc>
     </const>
-    <const name="KeepAllMACs"        value="2">
+    <const name="KeepAllMACs"       value="2">
       <desc>Don't generate new MAC addresses of the attached network adapters.</desc>
     </const>
-    <const name="KeepNATMACs"        value="3">
+    <const name="KeepNATMACs"       value="3">
       <desc>Don't generate new MAC addresses of the attached network adapters when they are using NAT.</desc>
     </const>
-    <const name="KeepDiskNames"      value="4">
+    <const name="KeepDiskNames"     value="4">
       <desc>Don't change the disk names.</desc>
     </const>
 
@@ -3780,16 +3780,16 @@
     Autostop types, used with <link to="IMachine::autostopType" />.
     </desc>
 
-    <const name="Disabled"           value="1">
+    <const name="Disabled"          value="1">
       <desc>Stopping the VM during system shutdown is disabled.</desc>
     </const>
-    <const name="SaveState"          value="2">
+    <const name="SaveState"         value="2">
       <desc>The state of the VM will be saved when the system shuts down.</desc>
     </const>
-    <const name="PowerOff"           value="3">
+    <const name="PowerOff"          value="3">
       <desc>The VM is powered off when the system shuts down.</desc>
     </const>
-    <const name="AcpiShutdown"       value="4">
+    <const name="AcpiShutdown"      value="4">
       <desc>An ACPI shutdown event is generated.</desc>
     </const>
 
@@ -3984,7 +3984,7 @@
     <attribute name="hardwareUUID" type="uuid" mod="string">
       <desc>
         The UUID presented to the guest via memory tables, hardware and guest
-        properties.  For most VMs this is the same as the @a id, but for VMs
+        properties. For most VMs this is the same as the @a id, but for VMs
         which have been cloned or teleported it may be the same as the source
         VM. The latter is because the guest shouldn't notice that it was
         cloned or teleported.
@@ -4205,7 +4205,7 @@
 
     <attribute name="sessionType" type="wstring" readonly="yes">
       <desc>
-        Type of the session.  If <link to="#sessionState"/> is
+        Type of the session. If <link to="#sessionState"/> is
         Spawning or Locked, this attribute contains the
         same value as passed to the
         <link to="IMachine::launchVMProcess"/> method in the
@@ -4336,7 +4336,7 @@
 
     <attribute name="guestPropertyNotificationPatterns" type="wstring">
       <desc>
-        A comma-separated list of simple glob patterns.  Changes to guest
+        A comma-separated list of simple glob patterns. Changes to guest
         properties whose name matches one of the patterns will generate an
         <link to="IGuestPropertyChangedEvent"/> signal.
       </desc>
@@ -4345,7 +4345,7 @@
     <attribute name="teleporterEnabled" type="boolean">
       <desc>
         When set to @a true, the virtual machine becomes a target teleporter
-        the next time it is powered on.  This can only set to @a true when the
+        the next time it is powered on. This can only set to @a true when the
         VM is in the @a PoweredOff or @a Aborted state.
 
         <!-- This property is automatically set to @a false when the VM is powered
@@ -4358,7 +4358,7 @@
         The TCP port the target teleporter will listen for incoming
         teleportations on.
 
-        0 means the port is automatically selected upon power on.  The actual
+        0 means the port is automatically selected upon power on. The actual
         value can be read from this property while the machine is waiting for
         incoming teleportations.
       </desc>
@@ -4366,7 +4366,7 @@
 
     <attribute name="teleporterAddress" type="wstring">
       <desc>
-        The address the target teleporter will listen on.  If set to an empty
+        The address the target teleporter will listen on. If set to an empty
         string, it will listen on all addresses.
       </desc>
     </attribute>
@@ -4378,7 +4378,7 @@
         beaming a virtual machine to the wrong place.
 
         Note that you SET a plain text password while reading back a HASHED
-        password.  Setting a hashed password is currently not supported.
+        password. Setting a hashed password is currently not supported.
       </desc>
     </attribute>
 
@@ -4405,7 +4405,7 @@
 
     <attribute name="faultTolerancePassword" type="wstring">
       <desc>
-        The password to check for on the standby VM.  This is just a
+        The password to check for on the standby VM. This is just a
         very basic measure to prevent simple hacks and operators accidentally
         choosing the wrong standby VM.
       </desc>
@@ -4457,7 +4457,7 @@
     <attribute name="tracingEnabled" type="boolean">
       <desc>
         Enables the tracing facility in the VMM (including PDM devices +
-        drivers).  The VMM will consume about 0.5MB of more memory when
+        drivers). The VMM will consume about 0.5MB of more memory when
         enabled and there may be some extra overhead from tracepoints that are
         always enabled.
       </desc>
@@ -4466,13 +4466,13 @@
     <attribute name="tracingConfig" type="wstring">
       <desc>
         Tracepoint configuration to apply at startup when
-        <link to="IMachine::tracingEnabled" /> is true.  The string specifies
-        a space separated of tracepoint group names to enable.  The special
-        group 'all' enables all tracepoints.  Check DBGFR3TracingConfig for
+        <link to="IMachine::tracingEnabled" /> is true. The string specifies
+        a space separated of tracepoint group names to enable. The special
+        group 'all' enables all tracepoints. Check DBGFR3TracingConfig for
         more details on available tracepoint groups and such.
 
         Note that on hosts supporting DTrace (or similar), a lot of the
-        tracepoints may be implemented exclusivly as DTrace probes.  So, the
+        tracepoints may be implemented exclusivly as DTrace probes. So, the
         effect of the same config may differ between Solaris and Windows for
         example.
       </desc>
@@ -4481,7 +4481,7 @@
     <attribute name="allowTracingToAccessVM" type="boolean">
       <desc>
         Enables tracepoints in PDM devices and drivers to use the VMCPU or VM
-        structures when firing off trace points.  This is especially useful
+        structures when firing off trace points. This is especially useful
         with DTrace tracepoints, as it allows you to use the VMCPU or VM
         pointer to obtain useful information such as guest register state.
 
@@ -5604,7 +5604,7 @@
             Returns an array representing the machine-specific extra data keys
             which currently have values defined.
         </desc>
-        <param name="value" type="wstring" dir="return" safearray="yes">
+        <param name="keys" type="wstring" dir="return" safearray="yes">
             <desc>Array of extra data keys.</desc>
         </param>
     </method>
@@ -5932,7 +5932,7 @@
         This method does not delete any files. It only changes the machine configuration and
         the list of registered machines in the VirtualBox object. To delete the files which
         belonged to the machine, including the XML file of the machine itself, call
-        <link to="#delete"/>, optionally with the array of IMedium objects which was returned
+        <link to="#deleteConfig"/>, optionally with the array of IMedium objects which was returned
         from this method.
 
         How thoroughly this method cleans up the machine configuration before unregistering
@@ -5951,23 +5951,23 @@
             all of the machine's media will remain open.</li>
           <li>With "DetachAllReturnHardDisksOnly", the call will behave like with "DetachAllReturnNone",
             except that all the hard disk medium objects which were detached from the machine will
-            be returned as an array. This allows for quickly passing them to the <link to="#delete" />
+            be returned as an array. This allows for quickly passing them to the <link to="#deleteConfig" />
             API for closing and deletion.</li>
           <li>With "Full", the call will behave like with "DetachAllReturnHardDisksOnly", except
             that all media will be returned in the array, including removable media like DVDs and
             floppies. This might be useful if the user wants to inspect in detail which media were
-            attached to the machine. Be careful when passing the media array to <link to="#delete" />
+            attached to the machine. Be careful when passing the media array to <link to="#deleteConfig" />
             in that case because users will typically want to preserve ISO and RAW image files.</li>
         </ul>
 
         A typical implementation will use "DetachAllReturnHardDisksOnly" and then pass the
-        resulting IMedium array to <link to="#delete"/>. This way, the machine is completely
+        resulting IMedium array to <link to="#deleteConfig"/>. This way, the machine is completely
         deleted with all its saved states and hard disk images, but images for removable
         drives (such as ISO and RAW files) will remain on disk.
 
         This API does not verify whether the media files returned in the array are still
         attached to other machines (i.e. shared between several machines). If such a shared
-        image is passed to <link to="#delete" /> however, closing the image will fail there
+        image is passed to <link to="#deleteConfig" /> however, closing the image will fail there
         and the image will be silently skipped.
 
         This API may, however, move media from this machine's media registry to other media
@@ -6001,12 +6001,12 @@
       <param name="cleanupMode" type="CleanupMode" dir="in">
         <desc>How to clean up after the machine has been unregistered.</desc>
       </param>
-      <param name="aMedia" type="IMedium" safearray="yes" dir="return">
+      <param name="media" type="IMedium" safearray="yes" dir="return">
         <desc>List of media detached from the machine, depending on the @a cleanupMode parameter.</desc>
       </param>
     </method>
 
-    <method name="delete">
+    <method name="deleteConfig">
       <desc>
         Deletes the files associated with this machine from disk. If medium objects are passed
         in with the @a aMedia argument, they are closed and, if closing was successful, their
@@ -6049,26 +6049,26 @@
           Could not delete the settings file.
         </result>
       </desc>
-      <param name="aMedia" type="IMedium" safearray="yes" dir="in">
+      <param name="media" type="IMedium" safearray="yes" dir="in">
         <desc>List of media to be closed and whose storage files will be deleted.</desc>
       </param>
-      <param name="aProgress" type="IProgress" dir="return">
+      <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 
-    <method name="export">
+    <method name="exportTo">
       <desc>Exports the machine to an OVF appliance. See <link to="IAppliance" /> for the
             steps required to export VirtualBox machines to OVF.
       </desc>
 
-      <param name="aAppliance" type="IAppliance" dir="in">
+      <param name="appliance" type="IAppliance" dir="in">
         <desc>Appliance to export this machine to.</desc>
       </param>
       <param name="location" type="wstring" dir="in">
         <desc>The target location.</desc>
       </param>
-      <param name="aDescription" type="IVirtualSystemDescription" dir="return">
+      <param name="description" type="IVirtualSystemDescription" dir="return">
         <desc>VirtualSystemDescription object which is created for this machine.</desc>
       </param>
     </method >
@@ -6216,7 +6216,7 @@
       </param>
       <param name="value" type="wstring" dir="out">
         <desc>
-          The value of the property.  If the property does not exist then this
+          The value of the property. If the property does not exist then this
           will be empty.
         </desc>
       </param>
@@ -6250,7 +6250,7 @@
       </param>
       <param name="value" type="wstring" dir="return">
         <desc>
-          The value of the property.  If the property does not exist then this
+          The value of the property. If the property does not exist then this
           will be empty.
         </desc>
       </param>
@@ -6272,7 +6272,7 @@
       </param>
       <param name="value" type="long long" dir="return">
         <desc>
-          The timestamp.  If the property does not exist then this will be
+          The timestamp. If the property does not exist then this will be
           empty.
         </desc>
       </param>
@@ -6304,9 +6304,9 @@
       </param>
       <param name="value" type="wstring" dir="in">
         <desc>
-          The new value of the property to set, change or delete.  If the
+          The new value of the property to set, change or delete. If the
           property does not yet exist and value is non-empty, it will be
-          created.  If the value is @c null or empty, the property will be
+          created. If the value is @c null or empty, the property will be
           deleted if it exists.
         </desc>
       </param>
@@ -6321,7 +6321,7 @@
     <method name="setGuestPropertyValue">
       <desc>
         Sets or changes a value in the machine's guest property
-        store.  The flags field will be left unchanged or created empty for a
+        store. The flags field will be left unchanged or created empty for a
         new property.
 
         <result name="E_ACCESSDENIED">
@@ -6373,29 +6373,29 @@
       <param name="patterns" type="wstring" dir="in">
         <desc>
           The patterns to match the properties against, separated by '|'
-          characters.  If this is empty or @c null, all properties will match.
+          characters. If this is empty or @c null, all properties will match.
         </desc>
       </param>
-      <param name="name" type="wstring" dir="out" safearray="yes">
+      <param name="names" type="wstring" dir="out" safearray="yes">
         <desc>
           The names of the properties returned.
         </desc>
       </param>
-      <param name="value" type="wstring" dir="out" safearray="yes">
+      <param name="values" type="wstring" dir="out" safearray="yes">
         <desc>
-          The values of the properties returned.  The array entries match the
+          The values of the properties returned. The array entries match the
           corresponding entries in the @a name array.
         </desc>
       </param>
-      <param name="timestamp" type="long long" dir="out" safearray="yes">
+      <param name="timestamps" type="long long" dir="out" safearray="yes">
         <desc>
-          The time stamps of the properties returned.  The array entries match
+          The time stamps of the properties returned. The array entries match
           the corresponding entries in the @a name array.
         </desc>
       </param>
       <param name="flags" type="wstring" dir="out" safearray="yes">
         <desc>
-          The flags of the properties returned.  The array entries match the
+          The flags of the properties returned. The array entries match the
           corresponding entries in the @a name array.
         </desc>
       </param>
@@ -6911,7 +6911,7 @@
 
     <attribute name="sharedFolders" type="ISharedFolder" readonly="yes" safearray="yes">
       <desc>
-        Collection of shared folders for the current session.  These folders
+        Collection of shared folders for the current session. These folders
         are called transient shared folders because they are available to the
         guest OS running inside the associated virtual machine only for the
         duration of the session (as opposed to
@@ -6944,7 +6944,7 @@
     <attribute name="useHostClipboard" type="boolean">
       <desc>
         Whether the guest clipboard should be connected to the host one or
-        whether it should only be allowed access to the VRDE clipboard.  This
+        whether it should only be allowed access to the VRDE clipboard. This
         setting may not affect existing guest clipboard connections which
         are already connected to the host clipboard.
       </desc>
@@ -6960,7 +6960,7 @@
           This method is only useful for front-ends that want to actually
           execute virtual machines in their own process (like the VirtualBox
           or VBoxSDL front-ends). Unless you are intending to write such a
-          front-end, do not call this method.  If you simply want to
+          front-end, do not call this method. If you simply want to
           start virtual machine execution using one of the existing front-ends
           (for example the VirtualBox GUI or headless server), use
           <link to="IMachine::launchVMProcess"/> instead; these
@@ -7607,11 +7607,11 @@
       </param>
       <param name="maxDowntime" type="unsigned long" dir="in">
         <desc>
-          The maximum allowed downtime given as milliseconds.  0 is not a valid
-          value.  Recommended value: 250 ms.
+          The maximum allowed downtime given as milliseconds. 0 is not a valid
+          value. Recommended value: 250 ms.
 
           The higher the value is, the greater the chance for a successful
-          teleportation.  A small value may easily result in the teleportation
+          teleportation. A small value may easily result in the teleportation
           process taking hours and eventually fail.
 
           <note>
@@ -7697,8 +7697,8 @@
     <desc>
       Network interface type.
     </desc>
-    <const name="Bridged"               value="1"/>
-    <const name="HostOnly"              value="2"/>
+    <const name="Bridged"           value="1"/>
+    <const name="HostOnly"          value="2"/>
   </enum>
 
   <interface
@@ -7936,7 +7936,7 @@
       </desc>
       <param name="cpuId" type="unsigned long" dir="in">
         <desc>
-          Identifier of the CPU.  The CPU most be online.
+          Identifier of the CPU. The CPU most be online.
           <note>
             The current implementation might not necessarily return the
             description for this exact CPU.
@@ -7950,8 +7950,8 @@
       </param>
       <param name="subLeaf" type="unsigned long" dir="in">
         <desc>
-          CPUID leaf sub index (ecx).  This currently only applies to cache
-          information on Intel CPUs.  Use 0 if retrieving values for
+          CPUID leaf sub index (ecx). This currently only applies to cache
+          information on Intel CPUs. Use 0 if retrieving values for
           <link to="IMachine::setCPUIDLeaf"/>.
         </desc>
       </param>
@@ -8389,7 +8389,7 @@
         format specified by this argument will be used.
 
         The list of supported medium formats may be obtained by the
-        <link  to="#mediumFormats"/> call. Note that the default medium
+        <link to="#mediumFormats"/> call. Note that the default medium
         format must have a capability to create differencing media;
         otherwise operations that create media implicitly may fail
         unexpectedly.
@@ -8488,8 +8488,8 @@
         The name of the extension pack providing the default VRDE.
 
         This attribute is for choosing between multiple extension packs
-        providing VRDE.  If only one is installed, it will automatically be the
-        default one.  The attribute value can be empty if no VRDE extension
+        providing VRDE. If only one is installed, it will automatically be the
+        default one. The attribute value can be empty if no VRDE extension
         pack is installed.
 
         For details about VirtualBox Remote Desktop Extension and how to
@@ -8570,7 +8570,7 @@
 
       <param name="maxNetworkAdapters" type="unsigned long" dir="return">
         <desc>The maximum number of network adapters allowed for
-          particular chipset and attachment  type.</desc>
+          particular chipset and attachment type.</desc>
       </param>
 
     </method>
@@ -8792,31 +8792,31 @@
       Guest Additions facility IDs.
     </desc>
 
-    <const name="None"                    value="0">
+    <const name="None"                  value="0">
       <desc>No/invalid facility.</desc>
     </const>
-    <const name="VBoxGuestDriver"         value="20">
+    <const name="VBoxGuestDriver"       value="20">
       <desc>VirtualBox base driver (VBoxGuest).</desc>
     </const>
-    <const name="AutoLogon"               value="90">
+    <const name="AutoLogon"             value="90">
       <desc>Auto-logon modules (VBoxGINA, VBoxCredProv, pam_vbox).</desc>
     </const>
-    <const name="VBoxService"             value="100">
+    <const name="VBoxService"           value="100">
       <desc>VirtualBox system service (VBoxService).</desc>
     </const>
-    <const name="VBoxTrayClient"          value="101">
+    <const name="VBoxTrayClient"        value="101">
       <desc>VirtualBox desktop integration (VBoxTray on Windows, VBoxClient on non-Windows).</desc>
     </const>
-    <const name="Seamless"                value="1000">
+    <const name="Seamless"              value="1000">
       <desc>Seamless guest desktop integration.</desc>
     </const>
-    <const name="Graphics"                value="1100">
+    <const name="Graphics"              value="1100">
       <desc>Guest graphics mode. If not enabled, seamless rendering will not work, resize hints
         are not immediately acted on and guest display resizes are probably not initiated by
         the guest additions.
       </desc>
     </const>
-    <const name="All"                     value="2147483646">
+    <const name="All"                   value="2147483646">
       <desc>All facilities selected.</desc>
     </const>
   </enum>
@@ -8829,25 +8829,25 @@
       Guest Additions facility classes.
     </desc>
 
-    <const name="None"                    value="0">
+    <const name="None"                  value="0">
       <desc>No/invalid class.</desc>
     </const>
-    <const name="Driver"                  value="10">
+    <const name="Driver"                value="10">
       <desc>Driver.</desc>
     </const>
-    <const name="Service"                 value="30">
+    <const name="Service"               value="30">
       <desc>System service.</desc>
     </const>
-    <const name="Program"                 value="50">
+    <const name="Program"               value="50">
       <desc>Program.</desc>
     </const>
-    <const name="Feature"                 value="100">
+    <const name="Feature"               value="100">
       <desc>Feature.</desc>
     </const>
-    <const name="ThirdParty"              value="999">
+    <const name="ThirdParty"            value="999">
       <desc>Third party.</desc>
     </const>
-    <const name="All"                     value="2147483646">
+    <const name="All"                   value="2147483646">
       <desc>All facility classes selected.</desc>
     </const>
   </enum>
@@ -8860,31 +8860,31 @@
       Guest Additions facility states.
     </desc>
 
-    <const name="Inactive"                value="0">
+    <const name="Inactive"              value="0">
       <desc>Facility is not active.</desc>
     </const>
-    <const name="Paused"                  value="1">
+    <const name="Paused"                value="1">
       <desc>Facility has been paused.</desc>
     </const>
-    <const name="PreInit"                 value="20">
+    <const name="PreInit"               value="20">
       <desc>Facility is preparing to initialize.</desc>
     </const>
-    <const name="Init"                    value="30">
+    <const name="Init"                  value="30">
       <desc>Facility is initializing.</desc>
     </const>
-    <const name="Active"                  value="50">
+    <const name="Active"                value="50">
       <desc>Facility is up and running.</desc>
     </const>
-    <const name="Terminating"             value="100">
+    <const name="Terminating"           value="100">
       <desc>Facility is shutting down.</desc>
     </const>
-    <const name="Terminated"              value="101">
+    <const name="Terminated"            value="101">
       <desc>Facility successfully shut down.</desc>
     </const>
-    <const name="Failed"                  value="800">
+    <const name="Failed"                value="800">
       <desc>Facility failed to start.</desc>
     </const>
-    <const name="Unknown"                 value="999">
+    <const name="Unknown"               value="999">
       <desc>Facility status is unknown.</desc>
     </const>
   </enum>
@@ -8930,16 +8930,16 @@
       Guest Additions run level type.
     </desc>
 
-    <const name="None"                    value="0">
+    <const name="None"                  value="0">
       <desc>Guest Additions are not loaded.</desc>
     </const>
-    <const name="System"                  value="1">
+    <const name="System"                value="1">
       <desc>Guest drivers are loaded.</desc>
     </const>
-    <const name="Userland"                value="2">
+    <const name="Userland"              value="2">
       <desc>Common components (such as application services) are loaded.</desc>
     </const>
-    <const name="Desktop"                 value="3">
+    <const name="Desktop"               value="3">
       <desc>Per-user desktop components are loaded.</desc>
     </const>
   </enum>
@@ -8952,10 +8952,10 @@
       Guest Additions update flags.
     </desc>
 
-    <const name="None"                    value="0">
+    <const name="None"                      value="0">
       <desc>No flag set.</desc>
     </const>
-    <const name="WaitForUpdateStartOnly"  value="1">
+    <const name="WaitForUpdateStartOnly"    value="1">
       <desc>Starts the regular updating process and waits until the
         actual Guest Additions update inside the guest was started.
         This can be necessary due to needed interaction with the guest
@@ -9077,10 +9077,10 @@
       File seeking types.
     </desc>
 
-    <const name="Set"                     value="0">
+    <const name="Set"                   value="0">
       <desc>Seek from the start of the file.</desc>
     </const>
-    <const name="Current"                 value="1">
+    <const name="Current"               value="1">
       <desc>Seek from the current file position.</desc>
     </const>
   </enum>
@@ -9092,10 +9092,10 @@
     <desc>
       Guest process input flags.
     </desc>
-    <const name="None"                    value="0">
+    <const name="None"                  value="0">
       <desc>No flag set.</desc>
     </const>
-    <const name="EndOfFile"               value="1">
+    <const name="EndOfFile"             value="1">
       <desc>End of file (input) reached.</desc>
     </const>
   </enum>
@@ -9108,10 +9108,10 @@
       Guest process output flags for specifying which
       type of output to retrieve.
     </desc>
-    <const name="None"                     value="0">
+    <const name="None"                  value="0">
       <desc>No flags set. Get output from stdout.</desc>
     </const>
-    <const name="StdErr"                   value="1">
+    <const name="StdErr"                value="1">
       <desc>Get output from stderr.</desc>
     </const>
   </enum>
@@ -9124,22 +9124,22 @@
       Process waiting flags. Multiple flags can be combined.
     </desc>
 
-    <const name="None"                    value="0">
+    <const name="None"                  value="0">
       <desc>No waiting flags specified. Do not use this.</desc>
     </const>
-    <const name="Start"                   value="1">
+    <const name="Start"                 value="1">
       <desc>Wait for the process being started.</desc>
     </const>
-    <const name="Terminate"               value="2">
+    <const name="Terminate"             value="2">
       <desc>Wait for the process being terminated.</desc>
     </const>
-    <const name="StdIn"                   value="4">
+    <const name="StdIn"                 value="4">
       <desc>Wait for stdin becoming available.</desc>
     </const>
-    <const name="StdOut"                  value="8">
+    <const name="StdOut"                value="8">
       <desc>Wait for data becoming available on stdout.</desc>
     </const>
-    <const name="StdErr"                  value="16">
+    <const name="StdErr"                value="16">
       <desc>Wait for data becoming available on stderr.</desc>
     </const>
   </enum>
@@ -9163,43 +9163,43 @@
       ProcessWaitResult_StdErr.
     </desc>
 
-    <const name="None"                    value="0">
+    <const name="None"                  value="0">
       <desc>No result was returned. Not being used.</desc>
     </const>
-    <const name="Start"                   value="1">
+    <const name="Start"                 value="1">
       <desc>The process has been started.</desc>
     </const>
-    <const name="Terminate"               value="2">
+    <const name="Terminate"             value="2">
       <desc>The process has been terminated.</desc>
     </const>
-    <const name="Status"                  value="3">
+    <const name="Status"                value="3">
       <desc>
         The process has changed its status. The status then can
         be retrieved via <link to="IProcess::status"/>.
       </desc>
     </const>
-    <const name="Error"                   value="4">
+    <const name="Error"                 value="4">
       <desc>Error while executing the process.</desc>
     </const>
-    <const name="Timeout"                 value="5">
+    <const name="Timeout"               value="5">
       <desc>
         The waiting operation timed out. This also will happen
         when no event has been occured matching the
         current waiting flags in a <link to="IProcess::waitFor"/> call.
       </desc>
     </const>
-    <const name="StdIn"                   value="6">
+    <const name="StdIn"                 value="6">
       <desc>
         The process signalled that stdin became available for writing
         and that the process awaits input now.</desc>
     </const>
-    <const name="StdOut"                  value="7">
+    <const name="StdOut"                value="7">
       <desc>Data on stdout became available for reading.</desc>
     </const>
-    <const name="StdErr"                  value="8">
+    <const name="StdErr"                value="8">
       <desc>Data on stderr became available for reading.</desc>
     </const>
-    <const name="WaitFlagNotSupported"    value="9">
+    <const name="WaitFlagNotSupported"  value="9">
       <desc>
         A waiting flag specified in the <link to="IProcess::waitFor"/> call
         is not supported by the guest.
@@ -9214,16 +9214,16 @@
     <desc>
       File copying flags.
     </desc>
-    <const name="None"                    value="0">
+    <const name="None"                  value="0">
       <desc>No flag set.</desc>
     </const>
-    <const name="Recursive"               value="1">
+    <const name="Recursive"             value="1">
       <desc>Copy directories recursively.</desc>
     </const>
-    <const name="Update"                  value="2">
+    <const name="Update"                value="2">
       <desc>Only copy when the source file is newer than the destination file or when the destination file is missing.</desc>
     </const>
-    <const name="FollowLinks"             value="4">
+    <const name="FollowLinks"           value="4">
       <desc>Follow symbolic links.</desc>
     </const>
   </enum>
@@ -9235,10 +9235,10 @@
     <desc>
       Directory creation flags.
     </desc>
-    <const name="None"                    value="0">
+    <const name="None"                  value="0">
       <desc>No flag set.</desc>
     </const>
-    <const name="Parents"                 value="1">
+    <const name="Parents"               value="1">
       <desc>No error if existing, make parent directories as needed.</desc>
     </const>
   </enum>
@@ -9251,13 +9251,13 @@
       Directory recursive removement flags.
     </desc>
 
-    <const name="None"                    value="0">
+    <const name="None"                  value="0">
       <desc>No flag set.</desc>
     </const>
-    <const name="ContentAndDir"           value="1">
+    <const name="ContentAndDir"         value="1">
       <desc>Delete the content of the directory and the directory itself.</desc>
     </const>
-    <const name="ContentOnly"             value="2">
+    <const name="ContentOnly"           value="2">
       <desc>Only delete the content of the directory, omit the directory it self.</desc>
     </const>
   </enum>
@@ -9270,16 +9270,16 @@
       Path renaming flags.
     </desc>
 
-    <const name="None"                    value="0">
+    <const name="None"                  value="0">
       <desc>No flag set.</desc>
     </const>
-    <const name="NoReplace"               value="1">
+    <const name="NoReplace"             value="1">
       <desc>Do not replace anything.</desc>
     </const>
-    <const name="Replace"                 value="2">
+    <const name="Replace"               value="2">
       <desc>This will replace attempt any target which isn't a directory.</desc>
     </const>
-    <const name="NoSymlinks"              value="4">
+    <const name="NoSymlinks"            value="4">
       <desc>Don't allow symbolic links as part of the path.</desc>
     </const>
   </enum>
@@ -9292,29 +9292,29 @@
       Guest process execution flags.
     </desc>
 
-    <const name="None"                    value="0">
+    <const name="None"                      value="0">
       <desc>No flag set.</desc>
     </const>
-    <const name="WaitForProcessStartOnly" value="1">
+    <const name="WaitForProcessStartOnly"   value="1">
       <desc>Only use the specified timeout value to wait for starting the guest process - the guest
         process itself then uses an infinite timeout.</desc>
     </const>
-    <const name="IgnoreOrphanedProcesses" value="2">
+    <const name="IgnoreOrphanedProcesses"   value="2">
       <desc>Do not report an error when executed processes are still alive when VBoxService or the guest OS is shutting down.</desc>
     </const>
-    <const name="Hidden"                  value="4">
+    <const name="Hidden"                    value="4">
       <desc>Do not show the started process according to the guest OS guidelines.</desc>
     </const>
-    <const name="NoProfile"               value="8">
+    <const name="NoProfile"                 value="8">
       <desc>Do not use the user's profile data when exeuting a process. Only available for Windows guests.</desc>
     </const>
-    <const name="WaitForStdOut"           value="16">
+    <const name="WaitForStdOut"             value="16">
       <desc>The guest process waits until all data from stdout is read out.</desc>
     </const>
-    <const name="WaitForStdErr"           value="32">
+    <const name="WaitForStdErr"             value="32">
       <desc>The guest process waits until all data from stderr is read out.</desc>
     </const>
-    <const name="ExpandArguments"         value="64">
+    <const name="ExpandArguments"           value="64">
       <desc>Expands environment variables in process arguments.</desc>
     </const>
   </enum>
@@ -9327,10 +9327,10 @@
       Process priorities.
     </desc>
 
-    <const name="Invalid"                 value="0">
+    <const name="Invalid"               value="0">
       <desc>Invalid priority, do not use.</desc>
     </const>
-    <const name="Default"                 value="1">
+    <const name="Default"               value="1">
       <desc>Default process priority determined by the OS.</desc>
     </const>
   </enum>
@@ -9343,13 +9343,13 @@
       Symbolic link types.
     </desc>
 
-    <const name="Unknown"                 value="0">
+    <const name="Unknown"               value="0">
       <desc>It is not known what is being targeted.</desc>
     </const>
-    <const name="Directory"               value="1">
+    <const name="Directory"             value="1">
       <desc>The link targets a directory.</desc>
     </const>
-    <const name="File"                    value="2">
+    <const name="File"                  value="2">
       <desc>The link targets a file (or whatever else).</desc>
     </const>
   </enum>
@@ -9362,10 +9362,10 @@
       Symbolic link reading flags.
     </desc>
 
-    <const name="None"                    value="0">
+    <const name="None"                  value="0">
       <desc>No flags set.</desc>
     </const>
-    <const name="NoSymlinks"              value="1">
+    <const name="NoSymlinks"            value="1">
       <desc>Don't allow symbolic links as part of the path.</desc>
     </const>
   </enum>
@@ -9377,40 +9377,40 @@
     <desc>
       Process execution statuses.
     </desc>
-    <const name="Undefined"               value="0">
+    <const name="Undefined"             value="0">
       <desc>Process is in an undefined state.</desc>
     </const>
-    <const name="Starting"                value="10">
+    <const name="Starting"              value="10">
       <desc>Process is being started.</desc>
     </const>
-    <const name="Started"                 value="100">
+    <const name="Started"               value="100">
       <desc>Process has been started.</desc>
     </const>
-    <const name="Paused"                  value="110">
+    <const name="Paused"                value="110">
       <desc>Process has been paused.</desc>
     </const>
-    <const name="Terminating"             value="480">
+    <const name="Terminating"           value="480">
       <desc>Process is being terminated.</desc>
     </const>
-    <const name="TerminatedNormally"      value="500">
+    <const name="TerminatedNormally"    value="500">
       <desc>Process terminated normally.</desc>
     </const>
-    <const name="TerminatedSignal"        value="510">
+    <const name="TerminatedSignal"      value="510">
       <desc>Process terminated via signal.</desc>
     </const>
-    <const name="TerminatedAbnormally"    value="511">
+    <const name="TerminatedAbnormally"  value="511">
       <desc>Process terminated abnormally.</desc>
     </const>
-     <const name="TimedOutKilled"         value="512">
+     <const name="TimedOutKilled"       value="512">
       <desc>Process timed out and was killed.</desc>
     </const>
-    <const name="TimedOutAbnormally"      value="513">
+    <const name="TimedOutAbnormally"    value="513">
       <desc>Process timed out and was not killed successfully.</desc>
     </const>
-    <const name="Down"                    value="600">
+    <const name="Down"                  value="600">
       <desc>Service/OS is stopping, process was killed.</desc>
     </const>
-    <const name="Error"                   value="800">
+    <const name="Error"                 value="800">
       <desc>Something went wrong.</desc>
     </const>
   </enum>
@@ -9423,31 +9423,31 @@
       File system object type.
     </desc>
 
-    <const name="Undefined"               value="0">
+    <const name="Undefined"             value="0">
       <desc>Type is undefined / unknown.</desc>
     </const>
-    <const name="FIFO"                    value="1">
+    <const name="FIFO"                  value="1">
       <desc>Named pipe.</desc>
     </const>
-    <const name="DevChar"                 value="10">
+    <const name="DevChar"               value="10">
       <desc>Character device.</desc>
     </const>
-    <const name="DevBlock"                value="11">
+    <const name="DevBlock"              value="11">
       <desc>Block device.</desc>
     </const>
-    <const name="Directory"               value="50">
+    <const name="Directory"             value="50">
       <desc>Directory.</desc>
     </const>
-    <const name="File"                    value="80">
+    <const name="File"                  value="80">
       <desc>File.</desc>
     </const>
-    <const name="Symlink"                 value="100">
+    <const name="Symlink"               value="100">
       <desc>Symlink.</desc>
     </const>
-    <const name="Socket"                  value="200">
+    <const name="Socket"                value="200">
       <desc>Socket.</desc>
     </const>
-    <const name="Whiteout"                value="400">
+    <const name="Whiteout"              value="400">
       <desc>Whiteout.</desc>
     </const>
   </enum>
@@ -9460,19 +9460,19 @@
       Possible actions within an Drag and Drop operation.
     </desc>
 
-    <const name="Ignore"               value="0">
+    <const name="Ignore"                value="0">
       <desc>Do nothing.</desc>
     </const>
 
-    <const name="Copy"                 value="1">
+    <const name="Copy"                  value="1">
       <desc>Copy the item to the target.</desc>
     </const>
 
-    <const name="Move"                 value="2">
+    <const name="Move"                  value="2">
       <desc>Move the item to the target.</desc>
     </const>
 
-    <const name="Link"                 value="3">
+    <const name="Link"                  value="3">
       <desc>Link the item from within the target.</desc>
     </const>
   </enum>
@@ -9484,10 +9484,10 @@
     <desc>
       Directory open flags.
     </desc>
-    <const name="None"                    value="0">
+    <const name="None"                  value="0">
       <desc>No flag set.</desc>
     </const>
-    <const name="NoSymlinks"              value="1">
+    <const name="NoSymlinks"            value="1">
       <desc>Don't allow symbolic links as part of the path.</desc>
     </const>
   </enum>
@@ -9539,7 +9539,7 @@
       <desc>Returns the internal session ID.</desc>
     </attribute>
 
-    <attribute name="timeout" type="unsigned long" readonly="no">
+    <attribute name="timeout" type="unsigned long">
       <desc>
         Returns the session timeout (in ms).
         <result name="E_NOTIMPL">
@@ -9656,24 +9656,24 @@
           guest type.
         </result>
         <result name="E_INVALIDARG">
-          Invalid argument.  This includes an incorrectly formatted template,
+          Invalid argument. This includes an incorrectly formatted template,
           or a non-absolute path.
         </result>
         <result name="VBOX_E_IPRT_ERROR">
-          The temporary directory could not be created.  Possible reasons
+          The temporary directory could not be created. Possible reasons
           include a non-existing path or an insecure path when the secure
           option was requested.
         </result>
       </desc>
       <param name="templateName" type="wstring" dir="in">
-        <desc>Template for the name of the directory to create.  This must
-          contain at least one 'X' character.  The first group of consecutive
+        <desc>Template for the name of the directory to create. This must
+          contain at least one 'X' character. The first group of consecutive
           'X' characters in the template will be replaced by a random
           alphanumeric string to produce a unique name.</desc>
       </param>
       <param name="mode" type="unsigned long" dir="in">
-        <desc>The mode of the directory to create.  Use 0700 unless there are
-          reasons not to.  This parameter is ignored if "secure" is specified.
+        <desc>The mode of the directory to create. Use 0700 unless there are
+          reasons not to. This parameter is ignored if "secure" is specified.
           </desc>
       </param>
       <param name="path" type="wstring" dir="in">
@@ -9683,8 +9683,8 @@
         <desc>Whether to fail if the directory can not be securely created.
           Currently this means that another unprivileged user cannot
           manipulate the path specified or remove the temporary directory
-          after it has been created.  Also causes the mode specified to be
-          ignored.  May not be supported on all guest types.</desc>
+          after it has been created. Also causes the mode specified to be
+          ignored. May not be supported on all guest types.</desc>
       </param>
       <param name="directory" type="wstring" dir="return">
         <desc>On success this will contain the name of the directory created
@@ -9898,14 +9898,14 @@
       </desc>
       <param name="templateName" type="wstring" dir="in">
         <desc>Template for the name of the file to create. This must contain
-          at least one 'X' character.  The first group of consecutive 'X'
+          at least one 'X' character. The first group of consecutive 'X'
           characters in the template will be replaced by a random
           alphanumeric string to produce a unique name.
          </desc>
       </param>
       <param name="mode" type="unsigned long" dir="in">
         <desc>The mode of the file to create. Use 0700 unless there are
-          reasons not to.  This parameter is ignored if "secure" is specified.
+          reasons not to. This parameter is ignored if "secure" is specified.
          </desc>
       </param>
       <param name="path" type="wstring" dir="in">
@@ -9915,7 +9915,7 @@
         <desc>Whether to fail if the file can not be securely created.
           Currently this means that another unprivileged user cannot
           manipulate the path specified or remove the temporary file after
-          it has been created.  Also causes the mode specified to be ignored.
+          it has been created. Also causes the mode specified to be ignored.
           May not be supported on all guest types.</desc>
       </param>
       <param name="file" type="IGuestFile" dir="return">
@@ -10573,7 +10573,8 @@
         </result>
       </desc>
       <param name="objInfo" type="IFsObjInfo" dir="return">
-        <desc>Object information of the current directory entry read. Also see  <link to="IFsObjInfo"/>.</desc>
+        <desc>Object information of the current directory entry read. Also see
+          <link to="IFsObjInfo"/>.</desc>
       </param>
     </method>
   </interface>
@@ -10644,7 +10645,8 @@
         </result>
       </desc>
       <param name="objInfo" type="IFsObjInfo" dir="return">
-        <desc>Object information of this file. Also see  <link to="IFsObjInfo"/>.</desc>
+        <desc>Object information of this file. Also see
+          <link to="IFsObjInfo"/>.</desc>
       </param>
     </method>
 
@@ -11248,7 +11250,7 @@
       <param name="screenId" type="unsigned long" dir="in">
         <desc>The screen id where the Drag and Drop event occured.</desc>
       </param>
-      <param name="format" type="wstring" dir="out" safearray="yes">
+      <param name="formats" type="wstring" dir="out" safearray="yes">
         <desc>On return the supported mime types.</desc>
       </param>
       <param name="allowedActions" type="DragAndDropAction" dir="out" safearray="yes">
@@ -11558,7 +11560,7 @@
     <attribute name="timeout" type="unsigned long">
       <desc>
           When non-zero, this specifies the number of milliseconds after which
-          the operation will automatically be canceled.  This can only be set on
+          the operation will automatically be canceled. This can only be set on
           cancelable objects.
       </desc>
     </attribute>
@@ -11579,10 +11581,10 @@
           with a given timeout in milliseconds; specify -1 for an indefinite wait.
 
           Note that the VirtualBox/XPCOM/COM/native event queues of the calling
-          thread are not processed while waiting.  Neglecting event queues may
+          thread are not processed while waiting. Neglecting event queues may
           have dire consequences (degrade performance, resource hogs,
           deadlocks, etc.), this is specially so for the main thread on
-          platforms using XPCOM.  Callers are adviced wait for short periods
+          platforms using XPCOM. Callers are adviced wait for short periods
           and service their event queues between calls, or to create a worker
           thread to do the waiting.
 
@@ -11955,43 +11957,43 @@
       <see><link to="IMedium"/></see>
     </desc>
 
-    <const name="Standard"          value="0">
+    <const name="Standard"              value="0">
       <desc>
         No particular variant requested, results in using the backend default.
       </desc>
     </const>
-    <const name="VmdkSplit2G"       value="0x01">
+    <const name="VmdkSplit2G"           value="0x01">
       <desc>
         VMDK image split in chunks of less than 2GByte.
       </desc>
     </const>
-    <const name="VmdkRawDisk"       value="0x02">
+    <const name="VmdkRawDisk"           value="0x02">
       <desc>
         VMDK image representing a raw disk.
       </desc>
     </const>
-    <const name="VmdkStreamOptimized" value="0x04">
+    <const name="VmdkStreamOptimized"   value="0x04">
       <desc>
         VMDK streamOptimized image. Special import/export format which is
         read-only/append-only.
       </desc>
     </const>
-    <const name="VmdkESX" value="0x08">
+    <const name="VmdkESX"               value="0x08">
       <desc>
         VMDK format variant used on ESX products.
       </desc>
     </const>
-    <const name="Fixed" value="0x10000">
+    <const name="Fixed"                 value="0x10000">
       <desc>
         Fixed image. Only allowed for base images.
       </desc>
     </const>
-    <const name="Diff" value="0x20000">
+    <const name="Diff"                  value="0x20000">
       <desc>
         Differencing image. Only allowed for child images.
       </desc>
     </const>
-    <const name="NoCreateDir" value="0x40000000">
+    <const name="NoCreateDir"           value="0x40000000">
       <desc>
         Special flag which suppresses automatic creation of the subdirectory.
         Only used when passing the medium variant as an input parameter.
@@ -12037,7 +12039,7 @@
       disk is associated with the machine and used for hard disk operations.
       This also means that if <link to="IMachine::attachDevice"/> performs
       a direct attachment then the same hard disk will be returned in response
-      to the subsequent  <link to="IMachine::getMedium"/> call; however if
+      to the subsequent <link to="IMachine::getMedium"/> call; however if
       an indirect attachment is performed then
       <link to="IMachine::getMedium"/> will return the implicitly created
       differencing hard disk, not the original one passed to <link
@@ -12088,7 +12090,7 @@
       <link to="IMachine::saveSettings"/> is called to save all changes to
       machine settings to disk. This deferring is necessary to guarantee that
       the hard disk configuration may be restored at any time by a call to
-      <link to="IMachine::discardSettings"/>  before the settings
+      <link to="IMachine::discardSettings"/> before the settings
       are saved (committed).
 
       Note that if <link to="IMachine::discardSettings"/> is called after
@@ -12323,7 +12325,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       See <link to="IVirtualBox::openMedium" /> for more information.
 
       Media are removed from media registries by the <link to="IMedium::close"/>,
-      <link to="#deleteStorage"/> and  <link to="#mergeTo"/> methods.
+      <link to="#deleteStorage"/> and <link to="#mergeTo"/> methods.
 
       <h3>Accessibility checks</h3>
 
@@ -13681,10 +13683,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         <see><link to="IMediumFormat::capabilities"/></see>
       </desc>
-      <param  name="extensions" type="wstring" safearray="yes" dir="out">
+      <param name="extensions" type="wstring" safearray="yes" dir="out">
         <desc>The array of supported extensions.</desc>
       </param>
-      <param  name="type" type="DeviceType" safearray="yes" dir="out">
+      <param name="types" type="DeviceType" safearray="yes" dir="out">
         <desc>The array which indicates the device type for every given extension.</desc>
       </param>
     </method>
@@ -13708,7 +13710,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="names" type="wstring" safearray="yes" dir="out">
         <desc>Array of property names.</desc>
       </param>
-      <param name="description" type="wstring" safearray="yes" dir="out">
+      <param name="descriptions" type="wstring" safearray="yes" dir="out">
         <desc>Array of property descriptions.</desc>
       </param>
       <param name="types" type="DataType" safearray="yes" dir="out">
@@ -14004,13 +14006,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       See also www.fourcc.org for more information about FOURCC pixel formats.
     </desc>
 
-    <const name="Opaque"                  value="0">
+    <const name="Opaque"                value="0">
       <desc>
         Unknown buffer format (the user may not assume any particular format of
         the buffer).
       </desc>
     </const>
-    <const name="FOURCC_RGB"              value="0x32424752">
+    <const name="FOURCC_RGB"            value="0x32424752">
       <desc>
         Basic RGB format (<link to="IFramebuffer::bitsPerPixel"/> determines the
         bit layout).
@@ -14086,11 +14088,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         An alpha-blended overlay which is superposed over the frame buffer.
         The initial purpose is to allow the display of icons providing
         information about the VM state, including disk activity, in front
-        ends which do not have other means of doing that.  The overlay is
-        designed to controlled exclusively by IDisplay.  It has no locking
+        ends which do not have other means of doing that. The overlay is
+        designed to controlled exclusively by IDisplay. It has no locking
         of its own, and any changes made to it are not guaranteed to be
-        visible until the affected portion of IFramebuffer is updated.  The
-        overlay can be created lazily the first time it is requested.  This
+        visible until the affected portion of IFramebuffer is updated. The
+        overlay can be created lazily the first time it is requested. This
         attribute can also return @c null to signal that the overlay is not
         implemented.
       </desc>
@@ -14301,7 +14303,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="setVisibleRegion">
       <desc>
-        Suggests a new visible region to this frame buffer.  This region
+        Suggests a new visible region to this frame buffer. This region
         represents the area of the VM display which is a union of regions of
         all top-level windows of the guest operating system running inside the
         VM (if the Guest Additions for this system support this
@@ -14354,11 +14356,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     >
     <desc>
       The IFramebufferOverlay interface represents an alpha blended overlay
-      for displaying status icons above an IFramebuffer.  It is always created
-      not visible, so that it must be explicitly shown.  It only covers a
+      for displaying status icons above an IFramebuffer. It is always created
+      not visible, so that it must be explicitly shown. It only covers a
       portion of the IFramebuffer, determined by its width, height and
-      co-ordinates.  It is always in packed pixel little-endian 32bit ARGB (in
-      that order) format, and may be written to directly.  Do re-read the
+      co-ordinates. It is always in packed pixel little-endian 32bit ARGB (in
+      that order) format, and may be written to directly. Do re-read the
       width though, after setting it, as it may be adjusted (increased) to
       make it more suitable for the front end.
     </desc>
@@ -14370,15 +14372,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>Y position of the overlay, relative to the frame buffer.</desc>
     </attribute>
 
-    <attribute name="visible" type="boolean" readonly="no">
+    <attribute name="visible" type="boolean">
       <desc>
         Whether the overlay is currently visible.
       </desc>
     </attribute>
 
-    <attribute name="alpha" type="unsigned long" readonly="no">
+    <attribute name="alpha" type="unsigned long">
       <desc>
-        The global alpha value for the overlay.  This may or may not be
+        The global alpha value for the overlay. This may or may not be
         supported by a given front end.
       </desc>
     </attribute>
@@ -15020,16 +15022,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       the virtual serial port device.
     </desc>
 
-    <const name="Disconnected"        value="0">
+    <const name="Disconnected"      value="0">
       <desc>Virtual device is not attached to any real host device.</desc>
     </const>
-    <const name="HostPipe"            value="1">
+    <const name="HostPipe"          value="1">
       <desc>Virtual device is attached to a host pipe.</desc>
     </const>
-    <const name="HostDevice"          value="2">
+    <const name="HostDevice"        value="2">
       <desc>Virtual device is attached to a host device.</desc>
     </const>
-    <const name="RawFile"             value="3">
+    <const name="RawFile"           value="3">
       <desc>Virtual device is attached to a raw file.</desc>
     </const>
   </enum>
@@ -15195,7 +15197,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="filename" type="wstring" dir="in">
         <desc>
-          The name of the output file.  The file must not exist.
+          The name of the output file. The file must not exist.
         </desc>
       </param>
       <param name="compression" type="wstring" dir="in">
@@ -15214,7 +15216,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="filename" type="wstring" dir="in">
         <desc>
-          The name of the output file.  The file must not exist.
+          The name of the output file. The file must not exist.
         </desc>
       </param>
       <param name="compression" type="wstring" dir="in">
@@ -15397,7 +15399,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="value" type="wstring" dir="return">
         <desc>
-          The register value.  This is usually a hex value (always 0x prefixed)
+          The register value. This is usually a hex value (always 0x prefixed)
           but other format may be used for floating point registers (TBD).
         </desc>
       </param>
@@ -15439,7 +15441,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="value" type="wstring" dir="in">
         <desc>
-          The new register value.  Hexadecimal, decimal and octal formattings
+          The new register value. Hexadecimal, decimal and octal formattings
           are supported in addition to any special formattings returned by
           the getters.
         </desc>
@@ -16260,9 +16262,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Virtual audio controller type.
     </desc>
 
-    <const name="AC97" value="0"/>
-    <const name="SB16" value="1"/>
-    <const name="HDA"  value="2"/>
+    <const name="AC97"  value="0"/>
+    <const name="SB16"  value="1"/>
+    <const name="HDA"   value="2"/>
   </enum>
 
   <interface
@@ -16303,11 +16305,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       VirtualBox authentication type.
     </desc>
 
-    <const name="Null"            value="0">
+    <const name="Null"          value="0">
       <desc>Null value, also means "no authentication".</desc>
     </const>
-    <const name="External"        value="1"/>
-    <const name="Guest"           value="2"/>
+    <const name="External"      value="1"/>
+    <const name="Guest"         value="2"/>
   </enum>
 
   <!--
@@ -16349,7 +16351,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="VRDEExtPack" type="wstring">
       <desc>
-        The name of Extension Pack providing VRDE for this VM.  Overrides
+        The name of Extension Pack providing VRDE for this VM. Overrides
         <link to="ISystemProperties::defaultVRDEExtPack"/>.
       </desc>
     </attribute>
@@ -16586,7 +16588,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
-      <param name="aMachineState" type="MachineState" dir="in"/>
+      <param name="machineState" type="MachineState" dir="in"/>
     </method>
 
     <method name="uninitialize">
@@ -16911,30 +16913,30 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="patterns" type="wstring" dir="in">
         <desc>
           The patterns to match the properties against as a comma-separated
-          string.  If this is empty, all properties currently set will be
+          string. If this is empty, all properties currently set will be
           returned.
         </desc>
       </param>
-      <param name="key" type="wstring" dir="out" safearray="yes">
+      <param name="keys" type="wstring" dir="out" safearray="yes">
         <desc>
           The key names of the properties returned.
         </desc>
       </param>
-      <param name="value" type="wstring" dir="out" safearray="yes">
+      <param name="values" type="wstring" dir="out" safearray="yes">
         <desc>
-          The values of the properties returned.  The array entries match the
+          The values of the properties returned. The array entries match the
           corresponding entries in the @a key array.
         </desc>
       </param>
-      <param name="timestamp" type="long long" dir="out" safearray="yes">
+      <param name="timestamps" type="long long" dir="out" safearray="yes">
         <desc>
-          The time stamps of the properties returned.  The array entries match
+          The time stamps of the properties returned. The array entries match
           the corresponding entries in the @a key array.
         </desc>
       </param>
       <param name="flags" type="wstring" dir="out" safearray="yes">
         <desc>
-          The flags of the properties returned.  The array entries match the
+          The flags of the properties returned. The array entries match the
           corresponding entries in the @a key array.
         </desc>
       </param>
@@ -17056,7 +17058,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <li>When using the COM API directly, an object of the Session class from the
           VirtualBox type library needs to be created. In regular COM C++ client code,
           this can be done by calling <tt>createLocalObject()</tt>, a standard COM API.
-          This object will  then act as a local session object in further calls to open
+          This object will then act as a local session object in further calls to open
           a session.
         </li>
 
@@ -17132,7 +17134,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       The bus type of the storage controller (IDE, SATA, SCSI, SAS or Floppy);
       see <link to="IStorageController::bus" />.
     </desc>
-    <const name="Null"         value="0">
+    <const name="Null"      value="0">
       <desc>@c null value. Never used by the API.</desc>
     </const>
     <const name="IDE"       value="1"/>
@@ -17151,31 +17153,31 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       to the guest; see <link to="IStorageController::controllerType" />.
     </desc>
 
-    <const name="Null"         value="0">
+    <const name="Null"          value="0">
       <desc>@c null value. Never used by the API.</desc>
     </const>
-    <const name="LsiLogic"  value="1">
+    <const name="LsiLogic"      value="1">
       <desc>A SCSI controller of the LsiLogic variant.</desc>
     </const>
-    <const name="BusLogic"  value="2">
+    <const name="BusLogic"      value="2">
       <desc>A SCSI controller of the BusLogic variant.</desc>
     </const>
-    <const name="IntelAhci" value="3">
+    <const name="IntelAhci"     value="3">
       <desc>An Intel AHCI SATA controller; this is the only variant for SATA.</desc>
     </const>
-    <const name="PIIX3"     value="4">
+    <const name="PIIX3"         value="4">
       <desc>An IDE controller of the PIIX3 variant.</desc>
     </const>
-    <const name="PIIX4"     value="5">
+    <const name="PIIX4"         value="5">
       <desc>An IDE controller of the PIIX4 variant.</desc>
     </const>
-    <const name="ICH6"      value="6">
+    <const name="ICH6"          value="6">
       <desc>An IDE controller of the ICH6 variant.</desc>
     </const>
-    <const name="I82078"    value="7">
+    <const name="I82078"        value="7">
       <desc>A floppy disk controller; this is the only variant for floppy drives.</desc>
     </const>
-    <const name="LsiLogicSas"  value="8">
+    <const name="LsiLogicSas"   value="8">
       <desc>A variant of the LsiLogic controller using SAS.</desc>
     </const>
   </enum>
@@ -17188,10 +17190,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Type of emulated chipset (mostly southbridge).
     </desc>
 
-    <const name="Null"         value="0">
+    <const name="Null"  value="0">
       <desc>@c null value. Never used by the API.</desc>
     </const>
-    <const name="PIIX3"  value="1">
+    <const name="PIIX3" value="1">
       <desc>A PIIX3 (PCI IDE ISA Xcelerator) chipset.</desc>
     </const>
     <const name="ICH9"  value="2">
@@ -17228,7 +17230,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Name of the storage controller, as originally specified with
         <link to="IMachine::addStorageController" />. This then uniquely
         identifies this controller with other method calls such as
-        <link to="IMachine::attachDevice" /> and  <link to="IMachine::mountMedium" />.
+        <link to="IMachine::attachDevice" /> and <link to="IMachine::mountMedium" />.
       </desc>
     </attribute>
 
@@ -17330,7 +17332,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Behind each managed object reference, there is a COM object that lives
       in the webservice server's address space. The COM object is not freed
       until the managed object reference is released, either by an explicit
-      call to  <link to="IManagedObjectRef::release" /> or by logging off from
+      call to <link to="IManagedObjectRef::release" /> or by logging off from
       the webservice (<link to="IWebsessionManager::logoff" />), which releases
       all objects created during the webservice session.
 
@@ -17487,7 +17489,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       and stores performance metrics data.
 
       Performance metrics are associated with objects of interfaces like IHost
-      and IMachine. Each object has a distinct set of performance metrics.  The
+      and IMachine. Each object has a distinct set of performance metrics. The
       set can be obtained with <link to="IPerformanceCollector::getMetrics"/>.
 
       Metric data is collected at the specified intervals and is retained
@@ -17509,7 +17511,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       the smallest unit for which a sampling interval and the number of
       retained samples can be set. Only base metrics can be enabled and
       disabled. All sub-metrics are collected when their base metric is
-      collected.  Collected values for any set of sub-metrics can be queried
+      collected. Collected values for any set of sub-metrics can be queried
       with <link to="IPerformanceCollector::queryMetricsData" />.
 
       For example "CPU/Load/User:avg" metric name stands for the "CPU"
@@ -18007,17 +18009,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       accessing COM objects within it.
     </desc>
     <attribute name="name" type="wstring" readonly="yes">
-      <desc>The extension pack name.  This is unique.</desc>
+      <desc>The extension pack name. This is unique.</desc>
     </attribute>
     <attribute name="description" type="wstring" readonly="yes">
       <desc>The extension pack description.</desc>
     </attribute>
     <attribute name="version" type="wstring" readonly="yes">
       <desc>
-        The extension pack version string.  This is restricted to the dotted
-	version number and optionally a build indicator.  No tree revision or
+        The extension pack version string. This is restricted to the dotted
+        version number and optionally a build indicator. No tree revision or
         tag will be included in the string as those things are available as
-        separate properties.  An optional publisher tag may be present like for
+        separate properties. An optional publisher tag may be present like for
         <link to="IVirtualBox::version"/>.
 
         Examples: "1.2.3", "1.2.3_BETA1" and "1.2.3_RC2".
@@ -18028,11 +18030,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="edition" type="wstring" readonly="yes">
       <desc>
-	Edition indicator.  This is usually empty.
+        Edition indicator. This is usually empty.
 
-	Can for instance be used to help distinguishing between two editions
-	of the same extension pack where only the license, service contract or
-	something differs.
+        Can for instance be used to help distinguishing between two editions
+        of the same extension pack where only the license, service contract or
+        something differs.
       </desc>
     </attribute>
     <attribute name="VRDEModule" type="wstring" readonly="yes">
@@ -18052,7 +18054,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="whyUnusable" type="wstring" readonly="yes">
       <desc>
-        String indicating why the extension pack is not usable.  This is an
+        String indicating why the extension pack is not usable. This is an
         empty string if usable and always a non-empty string if not usable.
       </desc>
     </attribute>
@@ -18061,7 +18063,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="license" type="wstring" readonly="yes">
       <desc>
-        The default HTML license text for the extension pack.  Same as
+        The default HTML license text for the extension pack. Same as
         calling <link to="#queryLicense">queryLicense</link> with
         preferredLocale and preferredLanguage as empty strings and format set
         to html.
@@ -18110,11 +18112,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="queryObject">
       <desc>
         Queries the IUnknown interface to an object in the extension pack
-        main module.  This allows plug-ins and others to talk directly to an
+        main module. This allows plug-ins and others to talk directly to an
         extension pack.
         </desc>
       <param name="objUuid" type="wstring" dir="in">
-        <desc>The object ID.  What exactly this is </desc>
+        <desc>The object ID. What exactly this is </desc>
       </param>
       <param name="returnInterface" type="$unknown" dir="return">
         <desc>The queried interface.</desc>
@@ -18129,7 +18131,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     >
     <desc>
       Extension pack file (aka tarball, .vbox-extpack) representation returned
-      by <link to="IExtPackManager::openExtPackFile"/>.  This provides the base
+      by <link to="IExtPackManager::openExtPackFile"/>. This provides the base
       extension pack information with the addition of the file name.
     </desc>
     <attribute name="filePath" type="wstring" readonly="yes">
@@ -18150,7 +18152,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="displayInfo" type="wstring" dir="in">
         <desc>
-          Platform specific display information.  Reserved for future hacks.
+          Platform specific display information. Reserved for future hacks.
         </desc>
       </param>
       <param name="progess" type="IProgress" dir="return">
@@ -18201,7 +18203,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         installation.
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>The path of the extension pack tarball.  This can optionally be
+        <desc>The path of the extension pack tarball. This can optionally be
         followed by a "::SHA-256=hex-digit" of the tarball. </desc>
       </param>
       <param name="file" type="IExtPackFile" dir="return">
@@ -18216,13 +18218,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="forcedRemoval" type="boolean" dir="in">
         <desc>
-          Forced removal of the extension pack.  This means that the uninstall
+          Forced removal of the extension pack. This means that the uninstall
           hook will not be called.
         </desc>
       </param>
       <param name="displayInfo" type="wstring" dir="in">
         <desc>
-          Platform specific display information.  Reserved for future hacks.
+          Platform specific display information. Reserved for future hacks.
         </desc>
       </param>
       <param name="progess" type="IProgress" dir="return">
@@ -18961,7 +18963,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       consumers may register event listeners with this event source. To register a listener,
       an object implementing the <link to="IEventListener" /> interface must be provided.
       For active listeners, such an object is typically created by the consumer, while for
-      passive listeners <link to="IEventSource::createListener" /> should  be used. Please
+      passive listeners <link to="IEventSource::createListener" /> should be used. Please
       note that a listener created with <link to="IEventSource::createListener"/> must not be used as an active listener.
 
       Once created, the listener must be registered to listen for the desired events
@@ -19393,7 +19395,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       Notification when a property of one of the
       virtual <link to="IMachine::getNetworkAdapter">network adapters</link>
-      changes.  Interested callees should use INetworkAdapter methods and
+      changes. Interested callees should use INetworkAdapter methods and
       attributes to find out what has changed.
     </desc>
     <attribute name="networkAdapter" type="INetworkAdapter" readonly="yes">
@@ -19429,7 +19431,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       Notification when a property of one of the
       virtual <link to="IMachine::getParallelPort">parallel ports</link>
-      changes.  Interested callees should use ISerialPort methods and
+      changes. Interested callees should use ISerialPort methods and
       attributes to find out what has changed.
     </desc>
     <attribute name="parallelPort" type="IParallelPort" readonly="yes">
@@ -19541,7 +19543,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       Notification when guest keyboard event happens.
     </desc>
-    <attribute name="scancodes"  type="long" safearray="yes" readonly="yes">
+    <attribute name="scancodes" type="long" safearray="yes" readonly="yes">
       <desc>
         Array of scancodes.
       </desc>
@@ -19963,42 +19965,42 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       Notification when NAT redirect rule added or removed.
     </desc>
-    <attribute name="slot"  type="unsigned long" readonly="yes">
+    <attribute name="slot" type="unsigned long" readonly="yes">
       <desc>
         Adapter which NAT attached to.
       </desc>
     </attribute>
-    <attribute name="remove"  type="boolean" readonly="yes">
+    <attribute name="remove" type="boolean" readonly="yes">
       <desc>
         Whether rule remove or add.
       </desc>
     </attribute>
-    <attribute name="name"  type="wstring" readonly="yes">
+    <attribute name="name" type="wstring" readonly="yes">
       <desc>
         Name of the rule.
       </desc>
     </attribute>
-    <attribute name="proto"  type="NATProtocol" readonly="yes">
+    <attribute name="proto" type="NATProtocol" readonly="yes">
       <desc>
         Protocol (TCP or UDP) of the redirect rule.
       </desc>
     </attribute>
-    <attribute name="hostIP"  type="wstring" readonly="yes">
+    <attribute name="hostIP" type="wstring" readonly="yes">
       <desc>
         Host ip address to bind socket on.
       </desc>
     </attribute>
-    <attribute name="hostPort"  type="long" readonly="yes">
+    <attribute name="hostPort" type="long" readonly="yes">
       <desc>
         Host port to bind socket on.
       </desc>
     </attribute>
-    <attribute name="guestIP"  type="wstring" readonly="yes">
+    <attribute name="guestIP" type="wstring" readonly="yes">
       <desc>
         Guest ip address to redirect to.
       </desc>
     </attribute>
-    <attribute name="guestPort"  type="long" readonly="yes">
+    <attribute name="guestPort" type="long" readonly="yes">
       <desc>
         Guest port to redirect to.
       </desc>

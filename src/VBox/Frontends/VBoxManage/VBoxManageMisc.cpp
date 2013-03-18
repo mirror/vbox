@@ -161,7 +161,7 @@ int handleUnregisterVM(HandlerArg *a)
     if (fDelete)
     {
         ComPtr<IProgress> pProgress;
-        CHECK_ERROR_RET(machine, Delete(ComSafeArrayAsInParam(aMedia), pProgress.asOutParam()),
+        CHECK_ERROR_RET(machine, DeleteConfig(ComSafeArrayAsInParam(aMedia), pProgress.asOutParam()),
                         RTEXITCODE_FAILURE);
 
         rc = showProgress(pProgress);

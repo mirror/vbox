@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1466,7 +1466,7 @@ void UIGChooserModel::unregisterMachines(const QStringList &ids)
                 if (machine.isOk())
                 {
                     /* Delete machine hard-disks: */
-                    CProgress progress = machine.Delete(mediums);
+                    CProgress progress = machine.DeleteConfig(mediums);
                     if (machine.isOk())
                     {
                         msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_delete_90px.png", 0, true);

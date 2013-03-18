@@ -1212,7 +1212,7 @@ HRESULT Appliance::importFS(TaskOVF *pTask)
                 SafeIfaceArray<IMedium> aMedia;
                 rc2 = failedMachine->Unregister(CleanupMode_DetachAllReturnHardDisksOnly, ComSafeArrayAsOutParam(aMedia));
                 ComPtr<IProgress> pProgress2;
-                rc2 = failedMachine->Delete(ComSafeArrayAsInParam(aMedia), pProgress2.asOutParam());
+                rc2 = failedMachine->DeleteConfig(ComSafeArrayAsInParam(aMedia), pProgress2.asOutParam());
                 pProgress2->WaitForCompletion(-1);
             }
         }
