@@ -4245,7 +4245,7 @@ AuthResult AUTHCALL AuthEntry(
           <para>The appliance (OVF) APIs were enhanced as
           follows:<itemizedlist>
               <listitem>
-                <para><computeroutput>"IMachine__export"</computeroutput>
+                <para><computeroutput>IMachine::export</computeroutput>
                 received an extra parameter
                 <computeroutput>location</computeroutput>, which is used to
                 decide for the disk naming.</para>
