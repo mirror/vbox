@@ -1170,24 +1170,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
-     * Validate the config.
-     */
-    if (!CFGMR3AreValuesValid(pCfg,
-                              "PassDomain\0TFTPPrefix\0BootFile\0Network"
-                              "\0NextServer\0DNSProxy\0BindIP\0UseHostResolver\0"
-                              "SlirpMTU\0AliasMode\0"
-                              "SockRcv\0SockSnd\0TcpRcv\0TcpSnd\0"
-                              "ICMPCacheLimit\0"
-                              "SoMaxConnection\0"
-#ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
-                              "HostResolverMappings\0"
-#endif
-                            ))
-        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
-                                N_("Unknown NAT configuration option, only supports PassDomain,"
-                                " TFTPPrefix, BootFile and Network"));
-
-    /*
      * Init the static parts.
      */
     pThis->pDrvIns                      = pDrvIns;
@@ -1214,6 +1196,24 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 
     /* NAT engine configuration */
     pThis->INetworkNATCfg.pfnRedirectRuleCommand = drvNATNetworkNatConfig_RedirectRuleCommand;
+
+    /*
+     * Validate the config.
+     */
+    if (!CFGMR3AreValuesValid(pCfg,
+                              "PassDomain\0TFTPPrefix\0BootFile\0Network"
+                              "\0NextServer\0DNSProxy\0BindIP\0UseHostResolver\0"
+                              "SlirpMTU\0AliasMode\0"
+                              "SockRcv\0SockSnd\0TcpRcv\0TcpSnd\0"
+                              "ICMPCacheLimit\0"
+                              "SoMaxConnection\0"
+#ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
+                              "HostResolverMappings\0"
+#endif
+                            ))
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
+                                N_("Unknown NAT configuration option, only supports PassDomain,"
+                                " TFTPPrefix, BootFile and Network"));
 
     /*
      * Get the configuration settings.

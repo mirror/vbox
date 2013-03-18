@@ -345,6 +345,10 @@ VMMR3_INT_DECL(int) PDMR3NsDetach(PUVM pUVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pF
 {
     VM_ASSERT_EMT(pUVM->pVM);
     AssertPtrReturn(pFilter, VERR_INVALID_POINTER);
+    /* Now, return quietly if the filter isn't attached since driver/device
+       destructors are called on constructor failure. */
+    if (!pFilter->pBwGroupR3)
+        return VINF_SUCCESS;
     AssertPtrReturn(pFilter->pBwGroupR3, VERR_INVALID_POINTER);
 
     PPDMNETSHAPER pShaper = pUVM->pdm.s.pNetShaper;

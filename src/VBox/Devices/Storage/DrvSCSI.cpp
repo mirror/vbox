@@ -846,15 +846,21 @@ static DECLCALLBACK(void) drvscsiDestruct(PPDMDRVINS pDrvIns)
     }
 
     /* Free the VSCSI device and LUN handle. */
-    VSCSILUN hVScsiLun;
-    int rc = VSCSIDeviceLunDetach(pThis->hVScsiDevice, 0, &hVScsiLun);
-    AssertRC(rc);
+    if (pThis->hVScsiDevice)
+    {
+        VSCSILUN hVScsiLun;
+        int rc = VSCSIDeviceLunDetach(pThis->hVScsiDevice, 0, &hVScsiLun);
+        AssertRC(rc);
 
-    Assert(hVScsiLun == pThis->hVScsiLun);
-    rc = VSCSILunDestroy(hVScsiLun);
-    AssertRC(rc);
-    rc = VSCSIDeviceDestroy(pThis->hVScsiDevice);
-    AssertRC(rc);
+        Assert(hVScsiLun == pThis->hVScsiLun);
+        rc = VSCSILunDestroy(hVScsiLun);
+        AssertRC(rc);
+        rc = VSCSIDeviceDestroy(pThis->hVScsiDevice);
+        AssertRC(rc);
+
+        pThis->hVScsiDevice = NULL;
+        pThis->hVScsiLun    = NULL;
+    }
 }
 
 /**
@@ -867,7 +873,6 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     int rc = VINF_SUCCESS;
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
     LogFlowFunc(("pDrvIns=%#p pCfg=%#p\n", pDrvIns, pCfg));
-LogRelFunc(("pDrvIns=%#p pCfg=%#p\n", pDrvIns, pCfg));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*

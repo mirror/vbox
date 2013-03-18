@@ -924,8 +924,11 @@ static DECLCALLBACK(void) drvACPIDestruct(PPDMDRVINS pDrvIns)
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
 #ifdef RT_OS_LINUX
-    RTSemEventDestroy(pThis->hPollerSleepEvent);
-    pThis->hPollerSleepEvent = NIL_RTSEMEVENT;
+    if (pThis->hPollerSleepEvent != NIL_RTSEMEVENT)
+    {
+        RTSemEventDestroy(pThis->hPollerSleepEvent);
+        pThis->hPollerSleepEvent = NIL_RTSEMEVENT;
+    }
     RTCritSectDelete(&pThis->CritSect);
 #endif
 }
@@ -945,6 +948,9 @@ static DECLCALLBACK(int) drvACPIConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      * Init the static parts.
      */
     pThis->pDrvIns                              = pDrvIns;
+#ifdef RT_OS_LINUX
+    pThis->hPollerSleepEvent                    = NIL_RTSEMEVENT;
+#endif
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface            = drvACPIQueryInterface;
     /* IACPIConnector */

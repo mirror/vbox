@@ -426,9 +426,7 @@ static DECLCALLBACK(int) drvR3NetShaperConstruct(PPDMDRVINS pDrvIns, PCFGMNODE p
     pThis->INetworkUpR3.pfnEndXmit                  = drvNetShaperUp_EndXmit;
     pThis->INetworkUpR3.pfnSetPromiscuousMode       = drvNetShaperUp_SetPromiscuousMode;
     pThis->INetworkUpR3.pfnNotifyLinkChanged        = drvR3NetShaperUp_NotifyLinkChanged;
-    /*
-     * Resolve the ring-0 context interface addresses.
-     */
+    /* Resolve the ring-0 context interface addresses. */
     int rc = pDrvIns->pHlpR3->pfnLdrGetR0InterfaceSymbols(pDrvIns, &pThis->INetworkUpR0,
                                                           sizeof(pThis->INetworkUpR0),
                                                           "drvNetShaperUp_", PDMINETWORKUP_SYM_LIST);

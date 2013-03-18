@@ -139,8 +139,11 @@ static DECLCALLBACK(void) drvRawFileDestruct(PPDMDRVINS pDrvIns)
     if (pThis->pszLocation)
         MMR3HeapFree(pThis->pszLocation);
 
-    RTFileClose(pThis->hOutputFile);
-    pThis->hOutputFile = NIL_RTFILE;
+    if (pThis->hOutputFile != NIL_RTFILE)
+    {
+        RTFileClose(pThis->hOutputFile);
+        pThis->hOutputFile = NIL_RTFILE;
+    }
 }
 
 

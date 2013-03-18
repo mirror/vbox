@@ -304,6 +304,7 @@ static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
     if (pThis->SendSem != NIL_RTSEMEVENT)
     {
         RTSemEventSignal(pThis->SendSem);
+        pThis->SendSem = NIL_RTSEMEVENT;
     }
 
     /*
