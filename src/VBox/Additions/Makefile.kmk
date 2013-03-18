@@ -158,7 +158,7 @@ ifndef VBOX_ONLY_TESTSUITE
  # The packing target rule, but only if we're on the local build box.
  # (VBOX_WITHOUT_ADDITIONS_ISO is used by the additions build box, see the root makefile.)
  ifndef VBOX_WITHOUT_ADDITIONS_ISO
-  PACKING += $(PATH_STAGE_BIN)/additions/VBoxGuestAdditions.iso
+  PACKING += $(PATH_STAGE_BIN)/additions/VBoxGuestAdditions.zip
  endif
 endif # !VBOX_ONLY_TESTSUITE
 
@@ -337,10 +337,14 @@ $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso: \
 		$(GUESTADDITIONS_FILESPEC.darwin.x86) \
 		$(GUESTADDITIONS_FILESPEC.darwin.amd64)
 
+$(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.zip: $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso
+	$(call MSG_L1,Zipping image $@)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_ADDITIONS_ISO) -- zip$(HOSTSUFF_EXE) -9 $@ $(notdir $^)
 
 # Alias for creating the iso.
 .PHONY: additions-iso
-additions-iso: $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso
+additions-iso: $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.zip
 
 endif
 
