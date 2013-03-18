@@ -46,6 +46,7 @@ const char* UIDefs::GUI_LastItemSelected = "GUI/LastItemSelected";
 const char* UIDefs::GUI_GroupDefinitions = "GUI/GroupDefinitions";
 const char* UIDefs::GUI_HideFromManager = "GUI/HideFromManager";
 const char* UIDefs::GUI_PreventReconfiguration = "GUI/PreventReconfiguration";
+const char* UIDefs::GUI_HideDetails = "GUI/HideDetails";
 
 /* Machine-window definitions: */
 const char* UIDefs::GUI_Input_MachineShortcuts = "GUI/Input/MachineShortcuts";

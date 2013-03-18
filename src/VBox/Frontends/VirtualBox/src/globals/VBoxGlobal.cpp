@@ -3981,6 +3981,27 @@ bool VBoxGlobal::shouldWeAllowMachineReconfiguration(CMachine &machine,
     return !isApprovedByExtraData(machine, GUI_PreventReconfiguration);
 }
 
+/* static */
+bool VBoxGlobal::shouldWeShowDetails(CMachine &machine,
+                                     bool fIncludingMachineGeneralCheck /*= false*/)
+{
+    /* Should we perform machine general check? */
+    if (fIncludingMachineGeneralCheck)
+    {
+        /* 'false' for null machines: */
+        if (machine.isNull())
+            return false;
+
+        /* 'true' for inaccessible machines,
+         * because we can't verify anything in that case: */
+        if (!machine.GetAccessible())
+            return true;
+    }
+
+    /* 'true' if hiding is not approved by the extra-data: */
+    return !isApprovedByExtraData(machine, GUI_HideDetails);
+}
+
 // Public slots
 ////////////////////////////////////////////////////////////////////////////////
 

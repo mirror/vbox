@@ -52,6 +52,7 @@ public:
     /* API: Machine stuff: */
     const CMachine& machine() const { return m_machine; }
     bool elementNameHoverable() const { return m_fElementNameHoverable; }
+    bool hasDetails() const { return m_fHasDetails; }
 
 private slots:
 
@@ -103,6 +104,7 @@ private:
     CMachine m_machine;
     QMap<int, UIGDetailsItem*> m_elements;
     bool m_fElementNameHoverable;
+    bool m_fHasDetails;
 
     /* Prepare variables: */
     bool m_fFullSet;

@@ -65,6 +65,7 @@ public:
     bool switchTo();
 
     bool reconfigurable() const { return m_fReconfigurable; }
+    bool hasDetails() const { return m_fHasDetails; }
 
     static bool isItemEditable(UIVMItem *pItem);
     static bool isItemSaved(UIVMItem *pItem);
@@ -97,6 +98,7 @@ private:
     ULONG m_pid;
 
     bool m_fReconfigurable;
+    bool m_fHasDetails;
 };
 
 /* Make the pointer of this class public to the QVariant framework */

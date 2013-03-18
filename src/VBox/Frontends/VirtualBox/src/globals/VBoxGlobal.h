@@ -399,6 +399,8 @@ public:
     static bool shouldWeAllowMachineReconfiguration(CMachine &machine,
                                                     bool fIncludingMachineGeneralCheck = false,
                                                     bool fIncludingMachineStateCheck = false);
+    static bool shouldWeShowDetails(CMachine &machine,
+                                    bool fIncludingMachineGeneralCheck = false);
 
 signals:
 
