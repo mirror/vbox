@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -59,16 +59,16 @@
 #  define RT_MAX(Value1, Value2)                  ( (Value1) >= (Value2) ? (Value1) : (Value2) )
 # endif
 
-#endif /* defined (RT_OS_OS2) */
+#endif /* defined(RT_OS_OS2) */
 
 /* Include iprt/types.h (which also includes iprt/types.h) now to make sure iprt
  * gets to stdint.h first, otherwise a system/xpcom header might beat us and
  * we'll be without the macros that are optional in C++. */
 #include <iprt/types.h>
 
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
 
-#if defined (RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
 
 // Windows COM
 /////////////////////////////////////////////////////////////////////////////
@@ -88,7 +88,7 @@
 #define NS_DECL_ISUPPORTS
 
 /** Returns @c true if @a rc represents a warning result code */
-#define SUCCEEDED_WARNING(rc)   (SUCCEEDED (rc) && (rc) != S_OK)
+#define SUCCEEDED_WARNING(rc)   (SUCCEEDED(rc) && (rc) != S_OK)
 
 /** Tests is a COM result code indicates that the process implementing the
  * interface is dead.
@@ -147,7 +147,7 @@ typedef const OLECHAR *CBSTR;
 /**
  * Wraps the given parameter name to generate an expression that is suitable for
  * passing the parameter to functions that take input safearray parameters
- * declared using the ComSafeArrayIn marco.
+ * declared using the ComSafeArrayIn macro.
  *
  * @param aArg  Parameter name to wrap. The given parameter must be declared
  *              within the calling function using the ComSafeArrayIn macro.
@@ -199,13 +199,13 @@ typedef const OLECHAR *CBSTR;
  * Version of ComSafeArrayInIsNull for GUID.
  * @param aArg Parameter name to wrap.
  */
-#define ComSafeGUIDArrayInIsNull(aArg)  ComSafeArrayInIsNull (aArg)
+#define ComSafeGUIDArrayInIsNull(aArg)  ComSafeArrayInIsNull(aArg)
 
 /**
  * Version of ComSafeArrayInArg for GUID.
  * @param aArg Parameter name to wrap.
  */
-#define ComSafeGUIDArrayInArg(aArg)     ComSafeArrayInArg (aArg)
+#define ComSafeGUIDArrayInArg(aArg)     ComSafeArrayInArg(aArg)
 
 /**
  * Version of ComSafeArrayOut for GUID.
@@ -217,13 +217,19 @@ typedef const OLECHAR *CBSTR;
  * Version of ComSafeArrayOutIsNull for GUID.
  * @param aArg Parameter name to wrap.
  */
-#define ComSafeGUIDArrayOutIsNull(aArg) ComSafeArrayOutIsNull (aArg)
+#define ComSafeGUIDArrayOutIsNull(aArg) ComSafeArrayOutIsNull(aArg)
 
 /**
  * Version of ComSafeArrayOutArg for GUID.
  * @param aArg Parameter name to wrap.
  */
-#define ComSafeGUIDArrayOutArg(aArg)    ComSafeArrayOutArg (aArg)
+#define ComSafeGUIDArrayOutArg(aArg)    ComSafeArrayOutArg(aArg)
+
+/**
+ * Gets size of safearray parameter.
+ * @param aArg Parameter name.
+ */
+#define ComSafeArraySize(aArg)  ((aArg) == NULL ? 0 : (aArg)->rgsabound[0].cElements)
 
 /**
  *  Returns the const reference to the IID (i.e., |const GUID &|) of the given
@@ -242,18 +248,18 @@ typedef const OLECHAR *CBSTR;
  */
 #define COM_STRUCT_OR_CLASS(I)  struct I
 
-#else /* defined (RT_OS_WINDOWS) */
+#else /* defined(RT_OS_WINDOWS) */
 
 #error "VBOX_WITH_XPCOM must be defined on a platform other than Windows!"
 
-#endif /* defined (RT_OS_WINDOWS) */
+#endif /* defined(RT_OS_WINDOWS) */
 
-#else /* !defined (VBOX_WITH_XPCOM) */
+#else /* !defined(VBOX_WITH_XPCOM) */
 
 // XPCOM
 /////////////////////////////////////////////////////////////////////////////
 
-#if defined (RT_OS_DARWIN) || (defined (QT_VERSION) && (QT_VERSION >= 0x040000))
+#if defined(RT_OS_DARWIN) || (defined(QT_VERSION) && (QT_VERSION >= 0x040000))
   /* CFBase.h defines these &
    * qglobal.h from Qt4 defines these */
 # undef FALSE
@@ -278,7 +284,7 @@ typedef const OLECHAR *CBSTR;
 #define SUCCEEDED   NS_SUCCEEDED
 #define FAILED      NS_FAILED
 
-#define SUCCEEDED_WARNING(rc)   (NS_SUCCEEDED (rc) && (rc) != NS_OK)
+#define SUCCEEDED_WARNING(rc)   (NS_SUCCEEDED(rc) && (rc) != NS_OK)
 
 #define FAILED_DEAD_INTERFACE(rc)  (   (rc) == NS_ERROR_ABORT \
                                     || (rc) == NS_ERROR_CALL_FAILED \
@@ -338,20 +344,23 @@ typedef BSTR *LPBSTR;
 
 /* safearray input parameter macros for GUID */
 #define ComSafeGUIDArrayIn(aArg)            PRUint32 aArg##Size, const nsID **aArg
-#define ComSafeGUIDArrayInIsNull(aArg)      ComSafeArrayInIsNull (aArg)
-#define ComSafeGUIDArrayInArg(aArg)         ComSafeArrayInArg (aArg)
+#define ComSafeGUIDArrayInIsNull(aArg)      ComSafeArrayInIsNull(aArg)
+#define ComSafeGUIDArrayInArg(aArg)         ComSafeArrayInArg(aArg)
 
 /* safearray output parameter macros for GUID */
 #define ComSafeGUIDArrayOut(aArg)           PRUint32 *aArg##Size, nsID ***aArg
-#define ComSafeGUIDArrayOutIsNull(aArg)     ComSafeArrayOutIsNull (aArg)
-#define ComSafeGUIDArrayOutArg(aArg)        ComSafeArrayOutArg (aArg)
+#define ComSafeGUIDArrayOutIsNull(aArg)     ComSafeArrayOutIsNull(aArg)
+#define ComSafeGUIDArrayOutArg(aArg)        ComSafeArrayOutArg(aArg)
+
+/* safearray size */
+#define ComSafeArraySize(aArg)  ((aArg) == NULL ? 0 : (aArg##Size))
 
 /* CLSID and IID for compatibility with Win32 */
 typedef nsCID   CLSID;
 typedef nsIID   IID;
 
 /* OLE error codes */
-#define S_OK                ((nsresult) NS_OK)
+#define S_OK                ((nsresult)NS_OK)
 #define E_UNEXPECTED        NS_ERROR_UNEXPECTED
 #define E_NOTIMPL           NS_ERROR_NOT_IMPLEMENTED
 #define E_OUTOFMEMORY       NS_ERROR_OUT_OF_MEMORY
@@ -362,7 +371,7 @@ typedef nsIID   IID;
 #define E_FAIL              NS_ERROR_FAILURE
 /* Note: a better analog for E_ACCESSDENIED would probably be
  * NS_ERROR_NOT_AVAILABLE, but we want binary compatibility for now. */
-#define E_ACCESSDENIED      ((nsresult) 0x80070005L)
+#define E_ACCESSDENIED      ((nsresult)0x80070005L)
 
 #define STDMETHOD(a) NS_IMETHOD a
 #define STDMETHODIMP NS_IMETHODIMP
@@ -394,14 +403,14 @@ public:
 /* helper functions */
 extern "C"
 {
-BSTR SysAllocString (const OLECHAR* sz);
-BSTR SysAllocStringByteLen (char *psz, unsigned int len);
-BSTR SysAllocStringLen (const OLECHAR *pch, unsigned int cch);
-void SysFreeString (BSTR bstr);
-int SysReAllocString (BSTR *pbstr, const OLECHAR *psz);
-int SysReAllocStringLen (BSTR *pbstr, const OLECHAR *psz, unsigned int cch);
-unsigned int SysStringByteLen (BSTR bstr);
-unsigned int SysStringLen (BSTR bstr);
+BSTR SysAllocString(const OLECHAR* sz);
+BSTR SysAllocStringByteLen(char *psz, unsigned int len);
+BSTR SysAllocStringLen(const OLECHAR *pch, unsigned int cch);
+void SysFreeString(BSTR bstr);
+int SysReAllocString(BSTR *pbstr, const OLECHAR *psz);
+int SysReAllocStringLen(BSTR *pbstr, const OLECHAR *psz, unsigned int cch);
+unsigned int SysStringByteLen(BSTR bstr);
+unsigned int SysStringLen(BSTR bstr);
 }
 
 /**
@@ -443,7 +452,7 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
 /**
  *  'Constructor' that uses an existing getter function that gets a singleton.
  *  The getter function must have the following prototype:
- *      nsresult _GetterProc (_InstanceClass **inst)
+ *      nsresult _GetterProc(_InstanceClass **inst)
  *  This constructor, as opposed to NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR,
  *  lets the getter function return a result code that is passed back to the
  *  caller that tries to instantiate the object.
@@ -481,16 +490,16 @@ _InstanceClass##Constructor(nsISupports *aOuter, REFNSIID aIID,               \
     return rv;                                                                \
 }
 
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#endif /* !defined(VBOX_WITH_XPCOM) */
 
 /**
  *  Declares a wchar_t string literal from the argument.
  *  Necessary to overcome MSC / GCC differences.
  *  @param s    expression to stringify
  */
-#if defined (_MSC_VER)
+#if defined(_MSC_VER)
 #   define WSTR_LITERAL(s)  L#s
-#elif defined (__GNUC__)
+#elif defined(__GNUC__)
 #   define WSTR_LITERAL(s)  L""#s
 #else
 #   error "Unsupported compiler!"
