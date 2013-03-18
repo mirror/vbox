@@ -938,7 +938,7 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
                     *pcbRead = cbRead;
             }
             else
-                vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+                vrc = VERR_GSTCTL_GUEST_ERROR;
 
             if (pGuestRc)
                 *pGuestRc = guestRc;
@@ -1163,7 +1163,7 @@ int GuestProcess::startProcess(int *pGuestRc)
                     /* Nothing to do here right now. */
                 }
                 else
-                    vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+                    vrc = VERR_GSTCTL_GUEST_ERROR;
 
                 if (pGuestRc)
                     *pGuestRc = guestRc;
@@ -1294,7 +1294,7 @@ int GuestProcess::terminateProcess(int *pGuestRc)
                 /* Nothing to do here right now. */
             }
             else
-                vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+                vrc = VERR_GSTCTL_GUEST_ERROR;
 
             if (pGuestRc)
                 *pGuestRc = guestRc;
@@ -1331,7 +1331,7 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResu
         AssertMsg(RT_FAILURE(mData.mRC), ("No error rc (%Rrc) set when guest process indicated an error\n", mData.mRC));
         if (pGuestRc)
             *pGuestRc = mData.mRC; /* Return last set error. */
-        return VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+        return VERR_GSTCTL_GUEST_ERROR;
     }
 
     waitResult = ProcessWaitResult_None;
@@ -1440,7 +1440,7 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResu
     {
         if (pGuestRc)
             *pGuestRc = mData.mRC; /* Return last set error (if any). */
-        return RT_SUCCESS(mData.mRC) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+        return RT_SUCCESS(mData.mRC) ? VINF_SUCCESS : VERR_GSTCTL_GUEST_ERROR;
     }
 
     if (mData.mWaitCount > 0) /* We only support one waiting caller a time at the moment. */
@@ -1470,14 +1470,14 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResu
         if (RT_SUCCESS(vrc))
         {
             waitResult = pEvent->GetWaitResult();
-            int waitRc = pEvent->GetWaitRc();
+            int guestRc = pEvent->GetWaitRc();
+            if (RT_FAILURE(guestRc))
+                vrc = VERR_GSTCTL_GUEST_ERROR;
 
-            LogFlowThisFunc(("Waiting event returned rc=%Rrc\n", waitRc));
+            LogFlowThisFunc(("Waiting event returned rc=%Rrc\n", guestRc));
 
             if (pGuestRc)
-                *pGuestRc = waitRc;
-
-            vrc = RT_SUCCESS(waitRc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+                *pGuestRc = guestRc;
         }
 
         alock.acquire(); /* Get the lock again. */
@@ -1602,7 +1602,7 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
                     *puWritten = cbWritten;
             }
             else
-                vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+                vrc = VERR_GSTCTL_GUEST_ERROR;
 
             if (pGuestRc)
                 *pGuestRc = guestRc;
@@ -1652,7 +1652,7 @@ STDMETHODIMP GuestProcess::Read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, 
     {
         switch (vrc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -1689,7 +1689,7 @@ STDMETHODIMP GuestProcess::Terminate(void)
     {
         switch (vrc)
         {
-           case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+           case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -1749,7 +1749,7 @@ STDMETHODIMP GuestProcess::WaitFor(ULONG aWaitFlags, ULONG aTimeoutMS, ProcessWa
     {
         switch (vrc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -1817,7 +1817,7 @@ STDMETHODIMP GuestProcess::Write(ULONG aHandle, ULONG aFlags,
     {
         switch (vrc)
         {
-            case VERR_GENERAL_FAILURE: /** @todo Special guest control rc needed! */
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -1898,7 +1898,7 @@ int GuestProcessTool::Init(GuestSession *pGuestSession, const GuestProcessStartu
            )
        )
     {
-        vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+        vrc = VERR_GSTCTL_GUEST_ERROR;
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -2048,7 +2048,7 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBl
                 break;
 
             case ProcessWaitResult_Error:
-                vrc = VERR_GENERAL_FAILURE; /** @todo Special guest control rc needed! */
+                vrc = VERR_GSTCTL_GUEST_ERROR;
                 break;
 
             case ProcessWaitResult_Terminate:
