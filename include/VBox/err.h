@@ -2233,7 +2233,7 @@
  * @{
  */
 /** Guest side reported an error. */
-#define VERR_GSTCTL_GUEST_ERROR                     (-7100)
+#define VERR_GSTCTL_GUEST_ERROR                     (-6200)
 /** @} */
 
 
