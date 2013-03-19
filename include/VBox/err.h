@@ -1119,6 +1119,8 @@
 #define VINF_VMM_CALL_TRACER                (2712)
 /** Internal processing error \#1 in the switcher code. */
 #define VERR_VMM_SWITCHER_IPE_1             (-2713)
+/** Reason for leaving RZ: Unknown call to ring-3. */
+#define VINF_VMM_UNKNOWN_RING3_CALL         (2714)
 /** @} */
 
 

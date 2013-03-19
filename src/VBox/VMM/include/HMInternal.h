@@ -37,7 +37,12 @@
 # define VBOX_ENABLE_64_BITS_GUESTS
 #endif
 
-#define VMX_USE_CACHED_VMCS_ACCESSES
+#ifdef VBOX_WITH_OLD_VTX_CODE
+# define VMX_USE_CACHED_VMCS_ACCESSES
+#elif HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+# define VMX_USE_CACHED_VMCS_ACCESSES
+#endif
+
 #define HM_VMX_EMULATE_REALMODE
 
 /* The MSR auto load/store does not work for KERNEL_GS_BASE MSR, thus we
@@ -68,20 +73,20 @@ RT_C_DECLS_BEGIN
  * have been changed since last they were reset.
  * @{
  */
-#define HM_CHANGED_GUEST_FPU                RT_BIT(0)
-#define HM_CHANGED_GUEST_CR0                RT_BIT(1)
-#define HM_CHANGED_GUEST_CR3                RT_BIT(2)
-#define HM_CHANGED_GUEST_CR4                RT_BIT(3)
-#define HM_CHANGED_GUEST_GDTR               RT_BIT(4)
-#define HM_CHANGED_GUEST_IDTR               RT_BIT(5)
-#define HM_CHANGED_GUEST_LDTR               RT_BIT(6)
-#define HM_CHANGED_GUEST_TR                 RT_BIT(7)
-#define HM_CHANGED_GUEST_MSR                RT_BIT(8)
-#define HM_CHANGED_GUEST_SEGMENT_REGS       RT_BIT(9)
-#define HM_CHANGED_GUEST_DEBUG              RT_BIT(10)
-#define HM_CHANGED_HOST_CONTEXT             RT_BIT(11)
-
-#define HM_CHANGED_ALL_GUEST               (  HM_CHANGED_GUEST_SEGMENT_REGS \
+#ifdef VBOX_WITH_OLD_VTX_CODE
+# define HM_CHANGED_GUEST_FPU                RT_BIT(0)
+# define HM_CHANGED_GUEST_CR0                RT_BIT(1)
+# define HM_CHANGED_GUEST_CR3                RT_BIT(2)
+# define HM_CHANGED_GUEST_CR4                RT_BIT(3)
+# define HM_CHANGED_GUEST_GDTR               RT_BIT(4)
+# define HM_CHANGED_GUEST_IDTR               RT_BIT(5)
+# define HM_CHANGED_GUEST_LDTR               RT_BIT(6)
+# define HM_CHANGED_GUEST_TR                 RT_BIT(7)
+# define HM_CHANGED_GUEST_MSR                RT_BIT(8)
+# define HM_CHANGED_GUEST_SEGMENT_REGS       RT_BIT(9)
+# define HM_CHANGED_GUEST_DEBUG              RT_BIT(10)
+# define HM_CHANGED_HOST_CONTEXT             RT_BIT(11)
+# define HM_CHANGED_ALL_GUEST               (  HM_CHANGED_GUEST_SEGMENT_REGS \
                                             | HM_CHANGED_GUEST_CR0          \
                                             | HM_CHANGED_GUEST_CR3          \
                                             | HM_CHANGED_GUEST_CR4          \
@@ -92,6 +97,61 @@ RT_C_DECLS_BEGIN
                                             | HM_CHANGED_GUEST_MSR          \
                                             | HM_CHANGED_GUEST_DEBUG        \
                                             | HM_CHANGED_GUEST_FPU)
+#else
+# define HM_CHANGED_GUEST_RIP                    RT_BIT(0)
+# define HM_CHANGED_GUEST_RSP                    RT_BIT(1)
+# define HM_CHANGED_GUEST_RFLAGS                 RT_BIT(2)
+# define HM_CHANGED_GUEST_FPU                    RT_BIT(3)
+# define HM_CHANGED_GUEST_CR0                    RT_BIT(4)
+# define HM_CHANGED_GUEST_CR2                    RT_BIT(5)
+# define HM_CHANGED_GUEST_CR3                    RT_BIT(6)
+# define HM_CHANGED_GUEST_CR4                    RT_BIT(7)
+# define HM_CHANGED_GUEST_GDTR                   RT_BIT(8)
+# define HM_CHANGED_GUEST_IDTR                   RT_BIT(9)
+# define HM_CHANGED_GUEST_LDTR                   RT_BIT(10)
+# define HM_CHANGED_GUEST_TR                     RT_BIT(11)
+# define HM_CHANGED_GUEST_SEGMENT_REGS           RT_BIT(12)
+# define HM_CHANGED_GUEST_DEBUG                  RT_BIT(13)
+# define HM_CHANGED_GUEST_FS_BASE_MSR            RT_BIT(14)
+# define HM_CHANGED_GUEST_GS_BASE_MSR            RT_BIT(15)
+# define HM_CHANGED_GUEST_SYSENTER_CS_MSR        RT_BIT(16)
+# define HM_CHANGED_GUEST_SYSENTER_EIP_MSR       RT_BIT(17)
+# define HM_CHANGED_GUEST_SYSENTER_ESP_MSR       RT_BIT(18)
+# define HM_CHANGED_GUEST_INTR_STATE             RT_BIT(19)
+# define HM_CHANGED_VMX_GUEST_AUTO_MSRS          RT_BIT(20)
+# define HM_CHANGED_VMX_GUEST_ACTIVITY_STATE     RT_BIT(21)
+# define HM_CHANGED_VMX_GUEST_APIC_STATE         RT_BIT(22)
+# define HM_CHANGED_VMX_ENTRY_CTLS               RT_BIT(23)
+# define HM_CHANGED_VMX_EXIT_CTLS                RT_BIT(24)
+
+# define HM_CHANGED_HOST_CONTEXT                 RT_BIT(25)
+
+# define HM_CHANGED_ALL_GUEST   (  HM_CHANGED_GUEST_RIP                \
+                                 | HM_CHANGED_GUEST_RSP                \
+                                 | HM_CHANGED_GUEST_RFLAGS             \
+                                 | HM_CHANGED_GUEST_FPU                \
+                                 | HM_CHANGED_GUEST_CR0                \
+                                 | HM_CHANGED_GUEST_CR2                \
+                                 | HM_CHANGED_GUEST_CR3                \
+                                 | HM_CHANGED_GUEST_CR4                \
+                                 | HM_CHANGED_GUEST_GDTR               \
+                                 | HM_CHANGED_GUEST_IDTR               \
+                                 | HM_CHANGED_GUEST_LDTR               \
+                                 | HM_CHANGED_GUEST_TR                 \
+                                 | HM_CHANGED_GUEST_SEGMENT_REGS       \
+                                 | HM_CHANGED_GUEST_DEBUG              \
+                                 | HM_CHANGED_GUEST_FS_BASE_MSR        \
+                                 | HM_CHANGED_GUEST_GS_BASE_MSR        \
+                                 | HM_CHANGED_GUEST_SYSENTER_CS_MSR    \
+                                 | HM_CHANGED_GUEST_SYSENTER_EIP_MSR   \
+                                 | HM_CHANGED_GUEST_SYSENTER_ESP_MSR   \
+                                 | HM_CHANGED_GUEST_INTR_STATE         \
+                                 | HM_CHANGED_VMX_GUEST_AUTO_MSRS      \
+                                 | HM_CHANGED_VMX_GUEST_ACTIVITY_STATE \
+                                 | HM_CHANGED_VMX_GUEST_APIC_STATE     \
+                                 | HM_CHANGED_VMX_ENTRY_CTLS           \
+                                 | HM_CHANGED_VMX_EXIT_CTLS)
+#endif
 
 #define HM_CHANGED_ALL                      (HM_CHANGED_ALL_GUEST | HM_CHANGED_HOST_CONTEXT)
 /** @} */
@@ -536,10 +596,13 @@ typedef struct HMCPU
         /** Ring 0 handlers for VT-x. */
         PFNHMVMXSTARTVM             pfnStartVM;
 
+        uint32_t                    u32Alignment1;
 #if HC_ARCH_BITS == 32
-        uint32_t                    u32Alignment;
+        uint32_t                    u32Alignment2;
 #endif
 
+        /** Current VMX_VMCS32_CTRL_PIN_EXEC_CONTROLS. */
+        uint32_t                    u32PinCtls;
         /** Current VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS. */
         uint32_t                    u32ProcCtls;
         /** Current VMX_VMCS32_CTRL_PROC_EXEC2_CONTROLS. */
@@ -606,6 +669,12 @@ typedef struct HMCPU
         /** Real-mode emulation state. */
         struct
         {
+            X86DESCATTR                 uAttrCS;
+            X86DESCATTR                 uAttrDS;
+            X86DESCATTR                 uAttrES;
+            X86DESCATTR                 uAttrFS;
+            X86DESCATTR                 uAttrGS;
+            X86DESCATTR                 uAttrSS;
             X86EFLAGS                   eflags;
             uint32_t                    fRealOnV86Active;
         } RealMode;
@@ -740,7 +809,7 @@ typedef struct HMCPU
 
     STAMCOUNTER             StatExitShadowNM;
     STAMCOUNTER             StatExitGuestNM;
-    STAMCOUNTER             StatExitShadowPF;
+    STAMCOUNTER             StatExitShadowPF;       /* Misleading, currently used for MMIO #PFs as well. */
     STAMCOUNTER             StatExitShadowPFEM;
     STAMCOUNTER             StatExitGuestPF;
     STAMCOUNTER             StatExitGuestUD;

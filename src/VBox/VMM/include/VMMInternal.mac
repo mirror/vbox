@@ -124,6 +124,7 @@ struc VMMCPU
         .rcCallRing3            resd 1
         .u64CallRing3Arg        resq 1
         ; .CallRing3JmpBufR0    resb no-can-do
-
+        ; .pfnCallRing3CallbackR0
+        ; .pvCallRing3CallbackUserR0
 endstruc
 

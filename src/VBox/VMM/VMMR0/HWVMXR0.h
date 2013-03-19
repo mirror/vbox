@@ -134,6 +134,22 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
 VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 
 /**
+ * Does Ring-0 global VT-x initialization.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ */
+VMMR0DECL(int) VMXR0GlobalInit(void);
+
+/**
+ * Does Ring-0 global VT-x termination.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ */
+VMMR0DECL(void) VMXR0GlobalTerm(void);
+
+/**
  * Does Ring-0 per VM VT-x initialization.
  *
  * @returns VBox status code.
@@ -298,17 +314,21 @@ DECLINLINE(int) VMXReadCachedVmcsEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
 }
 #endif
 
-/**
- * Return value of cached VMCS read for performance reasons (Darwin) and for
- * running 64 bits guests on 32-bit hosts.
- *
- * @param   idxField    VMCS field index.
- * @param   pVal        Value pointer (out).
- */
-#ifdef VMX_USE_CACHED_VMCS_ACCESSES
-# define VMXReadCachedVmcs(idxField, pVal)              VMXReadCachedVmcsEx(pVCpu, idxField##_CACHE_IDX, pVal)
+#ifdef VBOX_WITH_OLD_VTX_CODE
+# ifdef VMX_USE_CACHED_VMCS_ACCESSES
+#  define VMXReadCachedVmcs(idxField, pVal)              VMXReadCachedVmcsEx(pVCpu, idxField##_CACHE_IDX, pVal)
+# else
+#  define VMXReadCachedVmcs                              VMXReadVmcsField
+# endif
+#  define VMXReadVmcs                                    VMXReadVmcsField
 #else
-# define VMXReadCachedVmcs(idxField, pVal)              VMXReadVmcs(idxField, pVal)
+# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+# define VMXReadVmcsHstN                                 VMXReadVmcs64
+# define VMXReadVmcsGstN                                 VMXReadVmcs64
+# else
+# define VMXReadVmcsHstN                                 VMXReadVmcs32
+# define VMXReadVmcsGstN(idxField, pVal)                 VMXReadCachedVmcsEx(pVCpu, idxField##_CACHE_IDX, pVal)
+# endif
 #endif
 
 /**

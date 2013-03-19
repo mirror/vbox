@@ -504,6 +504,11 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
 
             if (g_HvmR0.vmx.fSupported)
             {
+                /* Call the global VT-x initialization routine. */
+                rc = VMXR0GlobalInit();
+                if (RT_FAILURE(rc))
+                    g_HvmR0.lLastError = rc;
+
                 /*
                  * Install the VT-x methods.
                  */
@@ -522,8 +527,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                  * Check for the VMX-Preemption Timer and adjust for the * "VMX-Preemption
                  * Timer Does Not Count Down at the Rate Specified" erratum.
                  */
-                if (  g_HvmR0.vmx.msr.vmx_pin_ctls.n.allowed1
-                    & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER)
+                if (g_HvmR0.vmx.msr.vmx_pin_ctls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER)
                 {
                     g_HvmR0.vmx.fUsePreemptTimer   = true;
                     g_HvmR0.vmx.cPreemptTimerShift = MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(g_HvmR0.vmx.msr.vmx_misc);
@@ -766,6 +770,14 @@ VMMR0_INT_DECL(int) HMR0Term(void)
             }
         }
     }
+
+    /** @todo This needs cleaning up. There's no matching hmR0TermIntel() and all
+     *        the VT-x/AMD-V specific bits should move into their respective
+     *        modules. */
+    /* Finally, call global VT-x/AMD-V termination. */
+    if (g_HvmR0.vmx.fSupported)
+        VMXR0GlobalTerm();
+
     return rc;
 }
 

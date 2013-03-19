@@ -21,9 +21,9 @@
 #include <VBox/cdefs.h>
 #include <VBox/sup.h>
 #include <VBox/vmm/stam.h>
+#include <VBox/vmm/vmm.h>
 #include <VBox/log.h>
 #include <iprt/critsect.h>
-
 
 #if !defined(IN_VMM_R3) && !defined(IN_VMM_R0) && !defined(IN_VMM_RC)
 # error "Not in VMM! This is an internal header!"
@@ -47,7 +47,7 @@
  * so you have to sign up here by adding your defined(DEBUG_<userid>) to the
  * #if, or by adding VBOX_WITH_R0_LOGGING to your LocalConfig.kmk.
  */
-#if defined(DEBUG_sandervl) || defined(DEBUG_frank) || defined(DOXYGEN_RUNNING)
+#if defined(DEBUG_sandervl) || defined(DEBUG_frank) || defined(DEBUG_ramshankar) || defined(DOXYGEN_RUNNING)
 # define VBOX_WITH_R0_LOGGING
 #endif
 
@@ -449,8 +449,11 @@ typedef struct VMMCPU
      * @remarks The size of this type isn't stable in assembly, so don't put
      *          anything that needs to be accessed from assembly after it. */
     VMMR0JMPBUF                 CallRing3JmpBufR0;
+    /** The Ring-0 notification callback. */
+    PFNVMMR0CALLRING3NOTIFICATION   pfnCallRing3CallbackR0;
+    /** The Ring-0 notification callback user argument. */
+    void                       *pvCallRing3CallbackUserR0;
     /** @} */
-
 } VMMCPU;
 AssertCompileMemberAlignment(VMMCPU, TracerCtx, 8);
 /** Pointer to VMMCPU. */

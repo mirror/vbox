@@ -1628,11 +1628,20 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
 #define VMXWriteVmcs64(idxField, u64Val)    VMXWriteVmcs64Ex(pVCpu, idxField, u64Val)
 #endif
 
-#if HC_ARCH_BITS == 64
-#define VMXWriteVmcs VMXWriteVmcs64
-#else
-#define VMXWriteVmcs VMXWriteVmcs32
-#endif /* HC_ARCH_BITS == 64 */
+#ifdef VBOX_WITH_OLD_VTX_CODE
+# if HC_ARCH_BITS == 64
+# define VMXWriteVmcs VMXWriteVmcs64
+# else
+# define VMXWriteVmcs VMXWriteVmcs32
+# endif
+#else /* !VBOX_WITH_OLD_VTX_CODE */
+# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+# define VMXWriteVmcsHstN VMXWriteVmcs64
+# else
+# define VMXWriteVmcsHstN VMXWriteVmcs32
+# endif
+# define VMXWriteVmcsGstN VMXWriteVmcs64
+#endif
 
 
 /**
@@ -1730,9 +1739,9 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData)
 #endif
 
 # if HC_ARCH_BITS == 64
-#  define VMXReadVmcs VMXReadVmcs64
+#  define VMXReadVmcsField VMXReadVmcs64
 # else
-#  define VMXReadVmcs VMXReadVmcs32
+#  define VMXReadVmcsField VMXReadVmcs32
 # endif
 
 /**
