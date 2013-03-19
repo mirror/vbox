@@ -2250,6 +2250,8 @@ DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex)
         renderspuSetWindowId(0);
 
         crHashtableWalk(cr_server.muralTable, crVBoxServerReparentMuralCB, &sIndex);
+
+        crHashtableWalk(cr_server.dummyMuralTable, crVBoxServerReparentMuralCB, &sIndex);
     }
 
     renderspuSetWindowId(SCREEN(0).winID);
@@ -2277,6 +2279,8 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
 
     renderspuSetWindowId(SCREEN(sIndex).winID);
     crHashtableWalk(cr_server.muralTable, crVBoxServerReparentMuralCB, &sIndex);
+
+    crHashtableWalk(cr_server.dummyMuralTable, crVBoxServerReparentMuralCB, &sIndex);
     renderspuSetWindowId(SCREEN(0).winID);
 
     crHashtableWalk(cr_server.muralTable, crVBoxServerCheckMuralCB, NULL);
