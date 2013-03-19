@@ -100,9 +100,6 @@ fd_nonblock(int fd)
     opt |= O_NONBLOCK;
     fcntl(fd, F_SETFL, opt);
 # endif
-#ifndef RT_OS_WINDOWS
-    setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &opt, sizeof(int));
-#endif
 }
 
 # if !defined(VBOX_NAT_MEM_DEBUG)
