@@ -268,6 +268,17 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
 # undef EXIT_REASON_NIL
 #endif /* VBOX_WITH_STATISTICS */
 
+#define VMX_REPORT_FEATURE(allowed1, disallowed0, featflag) \
+    do { \
+        if ((allowed1) & (featflag)) \
+            LogRel(("HM:    " #featflag "\n")); \
+        else \
+            LogRel(("HM:    " #featflag " *must* be cleared\n")); \
+        if ((disallowed0) & (featflag)) \
+            LogRel(("HM:    " #featflag " *must* be set\n")); \
+    } while(0)
+
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -825,6 +836,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
             &&  pVM->hm.s.vmx.msr.feature_ctrl != 0)
         {
             uint64_t val;
+            uint64_t zap;
             RTGCPHYS GCPhys = 0;
 
             LogRel(("HM: Host CR4=%08X\n", pVM->hm.s.vmx.hostCR4));
@@ -838,224 +850,78 @@ static int hmR3InitFinalizeR0(PVM pVM)
 
             LogRel(("HM: MSR_IA32_VMX_PINBASED_CTLS    = %RX64\n", pVM->hm.s.vmx.msr.vmx_pin_ctls.u));
             val = pVM->hm.s.vmx.msr.vmx_pin_ctls.n.allowed1;
-            if (val & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_VIRTUAL_NMI)
-                LogRel(("HM:    VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_VIRTUAL_NMI\n"));
-            if (val & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER)
-                LogRel(("HM:    VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER\n"));
-            val = pVM->hm.s.vmx.msr.vmx_pin_ctls.n.disallowed0;
-            if (val & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_VIRTUAL_NMI)
-                LogRel(("HM:    VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_VIRTUAL_NMI *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER)
-                LogRel(("HM:    VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER *must* be set\n"));
+            zap = pVM->hm.s.vmx.msr.vmx_pin_ctls.n.disallowed0;
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_VIRTUAL_NMI);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER);
 
             LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS   = %RX64\n", pVM->hm.s.vmx.msr.vmx_proc_ctls.u));
             val = pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1;
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_NMI_WINDOW_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_NMI_WINDOW_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_IO_BITMAPS)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_IO_BITMAPS\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL\n"));
-
-            val = pVM->hm.s.vmx.msr.vmx_proc_ctls.n.disallowed0;
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_NMI_WINDOW_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_NMI_WINDOW_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_IO_BITMAPS)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_IO_BITMAPS *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
-                LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL *must* be set\n"));
-
+            zap = pVM->hm.s.vmx.msr.vmx_proc_ctls.n.disallowed0;
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_NMI_WINDOW_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_IO_BITMAPS);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL);
             if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
             {
                 LogRel(("HM: MSR_IA32_VMX_PROCBASED_CTLS2  = %RX64\n", pVM->hm.s.vmx.msr.vmx_proc_ctls2.u));
                 val = pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_EPT\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VPID\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT\n"));
-
-                val = pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC *must* be set\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT *must* be set\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP *must* be set\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC *must* be set\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_EPT *must* be set\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_VPID *must* be set\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT *must* be set\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST *must* be set\n"));
-                if (val & VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT)
-                    LogRel(("HM:    VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT *must* be set\n"));
+                zap = pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;
+                VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC);
+                VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_EPT);
+                VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT);
+                VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP);
+                VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_VIRT_X2APIC);
+                VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_VPID);
+                VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT);
+                VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST);
+                VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_PAUSE_LOOP_EXIT);
+                VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_RDRAND_EXIT);
+                VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_INVPCID);
+                VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC);
             }
 
             LogRel(("HM: MSR_IA32_VMX_ENTRY_CTLS       = %RX64\n", pVM->hm.s.vmx.msr.vmx_entry.u));
             val = pVM->hm.s.vmx.msr.vmx_entry.n.allowed1;
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PERF_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PERF_MSR\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PAT_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PAT_MSR\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR\n"));
-            val = pVM->hm.s.vmx.msr.vmx_entry.n.disallowed0;
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PERF_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PERF_MSR *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PAT_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PAT_MSR *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR *must* be set\n"));
+            zap = pVM->hm.s.vmx.msr.vmx_entry.n.disallowed0;
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PERF_MSR);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PAT_MSR);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR);
 
             LogRel(("HM: MSR_IA32_VMX_EXIT_CTLS        = %RX64\n", pVM->hm.s.vmx.msr.vmx_exit.u));
             val = pVM->hm.s.vmx.msr.vmx_exit.n.allowed1;
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXT_INT)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXT_INT\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_PAT_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_PAT_MSR\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_EFER_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_EFER_MSR\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER\n"));
-            val = pVM->hm.s.vmx.msr.vmx_exit.n.disallowed0;
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXT_INT)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXT_INT *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_PAT_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_PAT_MSR *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_EFER_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_EFER_MSR *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR *must* be set\n"));
-            if (val & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER)
-                LogRel(("HM:    VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER *must* be set\n"));
+            zap = pVM->hm.s.vmx.msr.vmx_exit.n.disallowed0;
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_PERF_MSR);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXT_INT);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_PAT_MSR);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_EFER_MSR);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER);
 
             if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps)
             {
@@ -1262,16 +1128,16 @@ static int hmR3InitFinalizeR0(PVM pVM)
                 LogRel(("HM: VMX enabled!\n"));
                 if (pVM->hm.s.fNestedPaging)
                 {
-                    LogRel(("HM: Enabled nested paging\n"));
+                    LogRel(("HM: Nested paging enabled!\n"));
                     LogRel(("HM: EPT root page                 = %RHp\n", PGMGetHyperCR3(VMMGetCpu(pVM))));
                     if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_SINGLE_CONTEXT)
-                        LogRel(("HM: enmFlushEpt                   = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
+                        LogRel(("HM: EPT flush type                = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
                     else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_ALL_CONTEXTS)
-                        LogRel(("HM: enmFlushEpt                   = VMX_FLUSH_EPT_ALL_CONTEXTS\n"));
+                        LogRel(("HM: EPT flush type                = VMX_FLUSH_EPT_ALL_CONTEXTS\n"));
                     else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_NOT_SUPPORTED)
-                        LogRel(("HM: enmFlushEpt                   = VMX_FLUSH_EPT_NOT_SUPPORTED\n"));
+                        LogRel(("HM: EPT flush type                = VMX_FLUSH_EPT_NOT_SUPPORTED\n"));
                     else
-                        LogRel(("HM: enmFlushEpt                   = %d\n", pVM->hm.s.vmx.enmFlushEpt));
+                        LogRel(("HM: EPT flush type                = %d\n", pVM->hm.s.vmx.enmFlushEpt));
 
                     if (pVM->hm.s.vmx.fUnrestrictedGuest)
                         LogRel(("HM: Unrestricted guest execution enabled!\n"));
@@ -1290,17 +1156,17 @@ static int hmR3InitFinalizeR0(PVM pVM)
 
                 if (pVM->hm.s.vmx.fVpid)
                 {
-                    LogRel(("HM: Enabled VPID\n"));
+                    LogRel(("HM: VPID enabled!\n"));
                     if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_INDIV_ADDR)
-                        LogRel(("HM: enmFlushVpid                  = VMX_FLUSH_VPID_INDIV_ADDR\n"));
+                        LogRel(("HM: VPID flush type               = VMX_FLUSH_VPID_INDIV_ADDR\n"));
                     else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_SINGLE_CONTEXT)
-                        LogRel(("HM: enmFlushVpid                  = VMX_FLUSH_VPID_SINGLE_CONTEXT\n"));
+                        LogRel(("HM: VPID flush type               = VMX_FLUSH_VPID_SINGLE_CONTEXT\n"));
                     else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_ALL_CONTEXTS)
-                        LogRel(("HM: enmFlushVpid                  = VMX_FLUSH_VPID_ALL_CONTEXTS\n"));
+                        LogRel(("HM: VPID flush type               = VMX_FLUSH_VPID_ALL_CONTEXTS\n"));
                     else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
-                        LogRel(("HM: enmFlushVpid                  = VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS\n"));
+                        LogRel(("HM: VPID flush type               = VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS\n"));
                     else
-                        LogRel(("HM: enmFlushVpid                  = %d\n", pVM->hm.s.vmx.enmFlushVpid));
+                        LogRel(("HM: VPID flush type               = %d\n", pVM->hm.s.vmx.enmFlushVpid));
                 }
                 else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_NOT_SUPPORTED)
                     LogRel(("HM: Ignoring VPID capabilities of CPU.\n"));
@@ -1437,7 +1303,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
 
                 if (pVM->hm.s.fNestedPaging)
                 {
-                    LogRel(("HM:    Enabled nested paging\n"));
+                    LogRel(("HM:    Enabled nested paging!\n"));
 #if HC_ARCH_BITS == 64
                     if (pVM->hm.s.fLargePages)
                     {
@@ -1579,6 +1445,7 @@ VMMR3_INT_DECL(void) HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmSha
 
     pVCpu->hm.s.enmShadowMode = enmShadowMode;
 
+#ifdef VBOX_WITH_OLD_VTX_CODE
     if (   pVM->hm.s.vmx.fEnabled
         && pVM->fHMEnabled)
     {
@@ -1594,6 +1461,7 @@ VMMR3_INT_DECL(void) HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmSha
             pCtx->ss.Attr.n.u2Dpl  = 0;
         }
     }
+#endif
 
     if (pVCpu->hm.s.vmx.enmCurrGuestMode != enmGuestMode)
     {
@@ -1610,6 +1478,8 @@ VMMR3_INT_DECL(void) HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmSha
         }
     }
 
+    /** @todo r=ramshankar: Why do we need to do this? Most likely
+     *        VBOX_WITH_OLD_VTX_CODE only. */
     /* Reset the contents of the read cache. */
     PVMCSCACHE pCache = &pVCpu->hm.s.vmx.VMCSCache;
     for (unsigned j = 0; j < pCache->Read.cValidEntries; j++)
@@ -2730,22 +2600,29 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 break;
 
             case VERR_VMX_INVALID_VMCS_PTR:
-                LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current pointer %RGp vs %RGp\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u64VMCSPhys, pVM->aCpus[i].hm.s.vmx.HCPhysVmcs));
-                LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current VMCS version %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32VMCSRevision));
-                LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Entered Cpu %d\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.idEnteredCpu));
-                LogRel(("VERR_VMX_INVALID_VMCS_PTR: CPU%d Current Cpu %d\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.idCurrentCpu));
+                LogRel(("HM: VERR_VMX_INVALID_VMCS_PTR:\n"));
+                LogRel(("HM: CPU%d Current pointer %RGp vs %RGp\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u64VMCSPhys, pVM->aCpus[i].hm.s.vmx.HCPhysVmcs));
+                LogRel(("HM: CPU%d Current VMCS version %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32VMCSRevision));
+                LogRel(("HM: CPU%d Entered Cpu %d\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.idEnteredCpu));
+                LogRel(("HM: CPU%d Current Cpu %d\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.idCurrentCpu));
                 break;
 
             case VERR_VMX_UNABLE_TO_START_VM:
-                LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError));
-                LogRel(("VERR_VMX_UNABLE_TO_START_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32ExitReason));
+                LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM:\n"));
+                LogRel(("HM: CPU%d instruction error %#x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError));
+                LogRel(("HM: CPU%d exit reason       %#x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32ExitReason));
                 if (pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError == VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS)
                 {
-                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d MSRBitmapPhys %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
+                    LogRel(("HM: Cpu%d PinCtls       %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32PinCtls));
+                    LogRel(("HM: Cpu%d ProcCtls      %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ProcCtls));
+                    LogRel(("HM: Cpu%d ProcCtls2     %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ProcCtls2));
+                    LogRel(("HM: Cpu%d EntryCtls     %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32EntryCtls));
+                    LogRel(("HM: Cpu%d ExitCtls      %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ExitCtls));
+                    LogRel(("HM: Cpu%d MSRBitmapPhys %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d GuestMSRPhys  %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysGuestMsr));
-                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d HostMsrPhys   %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysHostMsr));
-                    LogRel(("VERR_VMX_UNABLE_TO_START_VM: Cpu%d cGuestMSRs    %x\n",   i, pVM->aCpus[i].hm.s.vmx.cGuestMsrs));
+                    LogRel(("HM: Cpu%d GuestMSRPhys  %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysGuestMsr));
+                    LogRel(("HM: Cpu%d HostMsrPhys   %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysHostMsr));
+                    LogRel(("HM: Cpu%d cGuestMSRs    %u\n",   i, pVM->aCpus[i].hm.s.vmx.cGuestMsrs));
 #endif
                 }
                 /** @todo Log VM-entry event injection control fields
@@ -2754,8 +2631,9 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 break;
 
             case VERR_VMX_UNABLE_TO_RESUME_VM:
-                LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError));
-                LogRel(("VERR_VMX_UNABLE_TO_RESUME_VM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32ExitReason));
+                LogRel(("HM: VERR_VMX_UNABLE_TO_RESUME_VM:\n"));
+                LogRel(("HM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError));
+                LogRel(("HM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32ExitReason));
                 break;
 
             case VERR_VMX_INVALID_VMXON_PTR:

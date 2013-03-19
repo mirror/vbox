@@ -112,6 +112,17 @@ typedef enum VMMCALLRING3
 } VMMCALLRING3;
 
 /**
+ * VMMRZCallRing3 notification callback.
+ *
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   enmOperation    The operation causing the ring-3 jump.
+ * @param   pvUser          The user argument.
+ */
+typedef DECLCALLBACK(void) FNVMMR0CALLRING3NOTIFICATION(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser);
+/** Pointer to a FNRTMPNOTIFICATION(). */
+typedef FNVMMR0CALLRING3NOTIFICATION *PFNVMMR0CALLRING3NOTIFICATION;
+
+/**
  * Rendezvous callback.
  *
  * @returns VBox strict status code - EM scheduling.  Do not return
@@ -503,6 +514,8 @@ VMMRZDECL(int)      VMMRZCallRing3NoCpu(PVM pVM, VMMCALLRING3 enmOperation, uint
 VMMRZDECL(void)     VMMRZCallRing3Disable(PVMCPU pVCpu);
 VMMRZDECL(void)     VMMRZCallRing3Enable(PVMCPU pVCpu);
 VMMRZDECL(bool)     VMMRZCallRing3IsEnabled(PVMCPU pVCpu);
+VMMRZDECL(int)      VMMRZCallRing3SetNotification(PVMCPU pVCpu, PFNVMMR0CALLRING3NOTIFICATION pfnCallback, void *pvUser);
+VMMRZDECL(void)     VMMRZCallRing3RemoveNotification(PVMCPU pVCpu);
 /** @} */
 #endif
 
