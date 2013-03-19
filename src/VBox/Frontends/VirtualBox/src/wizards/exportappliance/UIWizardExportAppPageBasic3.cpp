@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -269,7 +269,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
 void UIWizardExportAppPageBasic3::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardExportApp::tr("Appliance settings"));
+    setTitle(UIWizardExportApp::tr("Storage settings"));
 
     /* Translate objects: */
     m_strDefaultApplianceName = UIWizardExportApp::tr("Appliance");
@@ -279,7 +279,7 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pHostnameLabel->setText(UIWizardExportApp::tr("&Hostname:"));
     m_pBucketLabel->setText(UIWizardExportApp::tr("&Bucket:"));
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
-    m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a virtual appliance file"));
+    m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export virtual appliance"));
     m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Open Virtualization Format Archive (%1)").arg("*.ova") + ";;" +
                                     UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
     m_pOVF09Checkbox->setToolTip(UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility with other virtualization products."));
