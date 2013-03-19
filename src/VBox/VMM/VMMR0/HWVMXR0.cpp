@@ -60,6 +60,87 @@
 # define VMX_IS_64BIT_HOST_MODE()   (false)
 #endif
 
+# define VMX_WRITE_SELREG(REG, reg) \
+    do \
+    { \
+        rc  = VMXWriteVmcs(VMX_VMCS16_GUEST_FIELD_##REG,        pCtx->reg.Sel);                 \
+        rc |= VMXWriteVmcs(VMX_VMCS32_GUEST_##REG##_LIMIT,      pCtx->reg.u32Limit);            \
+        rc |= VMXWriteVmcs64(VMX_VMCS_GUEST_##REG##_BASE,       pCtx->reg.u64Base);             \
+        if ((pCtx->eflags.u32 & X86_EFL_VM))                                                    \
+        {                                                                                       \
+            /* Must override this or else VT-x will fail with invalid guest state errors. */    \
+            /* DPL=3, present, code/data, r/w/accessed. */                                      \
+            /** @todo we shouldn't have to do this, if it is not 0xf3 it means we screwed up elsewhere (recompiler). */  \
+            /** @todo VT-x docs explicitly mentions 0xF3. Why not just val = 0xf3 ??. */        \
+            val = (pCtx->reg.Attr.u & ~0xFF) | 0xF3;                                            \
+        }                                                                                       \
+        else                                                                                    \
+        if (    CPUMIsGuestInRealModeEx(pCtx)                                                   \
+            &&  !pVM->hm.s.vmx.fUnrestrictedGuest)                                              \
+        {                                                                                       \
+            /** @todo shouldn't the 'if' condition above check for 'pRealModeTSS' ? */          \
+            /* Must override this or else VT-x will fail with invalid guest state errors. */    \
+            /* DPL=3, present, code/data, r/w/accessed. */                                      \
+            val = 0xf3;                                                                         \
+        }                                                                                       \
+        else                                                                                    \
+        if (   (   pCtx->reg.Sel                                                                \
+                || !CPUMIsGuestInPagedProtectedModeEx(pCtx)                                     \
+                || (!pCtx->cs.Attr.n.u1DefBig && !CPUMIsGuestIn64BitCodeEx(pCtx))               \
+                )                                                                               \
+            && pCtx->reg.Attr.n.u1Present == 1)                                                 \
+        {                                                                                       \
+            val = pCtx->reg.Attr.u | X86_SEL_TYPE_ACCESSED;                                     \
+        }                                                                                       \
+        else                                                                                    \
+            val = 0x10000;  /* Invalid guest state error otherwise. (BIT(16) = Unusable) */     \
+                                                                                                \
+        rc |= VMXWriteVmcs(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, val);                        \
+    } while (0)
+
+# define VMX_READ_SELREG(REG, reg) \
+    do \
+    { \
+        VMXReadCachedVmcs(VMX_VMCS16_GUEST_FIELD_##REG,           &val); \
+        pCtx->reg.Sel       = val; \
+        pCtx->reg.ValidSel  = val; \
+        pCtx->reg.fFlags    = CPUMSELREG_FLAGS_VALID; \
+        VMXReadCachedVmcs(VMX_VMCS32_GUEST_##REG##_LIMIT,         &val); \
+        pCtx->reg.u32Limit  = val; \
+        VMXReadCachedVmcs(VMX_VMCS_GUEST_##REG##_BASE,            &val); \
+        pCtx->reg.u64Base   = val; \
+        VMXReadCachedVmcs(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &val); \
+        pCtx->reg.Attr.u    = val; \
+    } while (0)
+
+/* Don't read from the cache in this macro; used only in case of failure where the cache is out of sync. */
+# define VMX_LOG_SELREG(REG, szSelReg, val) \
+    do \
+    { \
+        VMXReadVmcs(VMX_VMCS16_GUEST_FIELD_##REG,           &(val)); \
+        Log(("%s Selector     %x\n", szSelReg, (val))); \
+        VMXReadVmcs(VMX_VMCS32_GUEST_##REG##_LIMIT,         &(val)); \
+        Log(("%s Limit        %x\n", szSelReg, (val))); \
+        VMXReadVmcs(VMX_VMCS_GUEST_##REG##_BASE,            &(val)); \
+        Log(("%s Base         %RX64\n", szSelReg, (uint64_t)(val))); \
+        VMXReadVmcs(VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS, &(val)); \
+        Log(("%s Attributes   %x\n", szSelReg, (val))); \
+    } while (0)
+
+#define VMXSetupCachedReadVmcs(pCache, idxField)                                    \
+{                                                                                   \
+    Assert(pCache->Read.aField[idxField##_CACHE_IDX] == 0);                         \
+    pCache->Read.aField[idxField##_CACHE_IDX] = idxField;                           \
+    pCache->Read.aFieldVal[idxField##_CACHE_IDX] = 0;                               \
+}
+#define VMX_SETUP_SELREG(REG, pCache)                                               \
+{                                                                                   \
+        VMXSetupCachedReadVmcs(pCache, VMX_VMCS16_GUEST_FIELD_##REG);               \
+        VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_GUEST_##REG##_LIMIT);             \
+        VMXSetupCachedReadVmcs(pCache, VMX_VMCS_GUEST_##REG##_BASE);              \
+        VMXSetupCachedReadVmcs(pCache, VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS);     \
+}
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
