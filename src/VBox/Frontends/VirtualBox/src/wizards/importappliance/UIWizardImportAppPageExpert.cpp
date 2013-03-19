@@ -66,7 +66,8 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileN
 void UIWizardImportAppPageExpert::sltFilePathChangeHandler()
 {
     /* Check if set file contains valid appliance: */
-    if (m_pApplianceWidget->setFile(m_pFileSelector->path()))
+    if (QFile::exists(m_pFileSelector->path()) &&
+        m_pApplianceWidget->setFile(m_pFileSelector->path()))
     {
         /* Reset the modified bit if file was correctly set: */
         m_pFileSelector->resetModified();
@@ -94,7 +95,7 @@ bool UIWizardImportAppPageExpert::isComplete() const
 {
     /* Make sure appliance file has allowed extension and exists and appliance widget is valid: */
     return VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts) &&
-           QFileInfo(m_pFileSelector->path()).exists() &&
+           QFile::exists(m_pFileSelector->path()) &&
            m_pApplianceWidget->isValid();
 }
 
