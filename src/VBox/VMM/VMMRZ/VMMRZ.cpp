@@ -186,7 +186,7 @@ VMMRZDECL(bool) VMMRZCallRing3IsEnabled(PVMCPU pVCpu)
  *
  * @return VBox status code.
  */
-VMMRZDECL(int) VMMRZCallRing3SetNotification(PVMCPU pVCpu, PFNVMMR0CALLRING3NOTIFICATION pfnCallback, void *pvUser)
+VMMRZDECL(int) VMMRZCallRing3SetNotification(PVMCPU pVCpu, R0PTRTYPE(PFNVMMR0CALLRING3NOTIFICATION) pfnCallback, RTR0PTR pvUser)
 {
     AssertReturn(pVCpu, VERR_INVALID_POINTER);
     AssertReturn(pfnCallback, VERR_INVALID_POINTER);
