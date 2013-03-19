@@ -447,11 +447,11 @@ void UIMachineLogic::sltShowWindows()
 }
 #endif /* Q_WS_MAC */
 
-void UIMachineLogic::sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong uScreenId, QRect)
+void UIMachineLogic::sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)
 {
-    /* Deliver event to corresponding machine-window: */
-    if (uScreenId < (ulong)machineWindows().size())
-        machineWindows()[uScreenId]->handleScreenCountChange();
+    /* Deliver event to all machine-windows: */
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->handleScreenCountChange();
 }
 
 void UIMachineLogic::sltHostScreenCountChanged(int /*cHostScreenCount*/)
