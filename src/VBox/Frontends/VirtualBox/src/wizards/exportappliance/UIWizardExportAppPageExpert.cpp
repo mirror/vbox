@@ -200,7 +200,7 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pHostnameLabel->setText(UIWizardExportApp::tr("&Hostname:"));
     m_pBucketLabel->setText(UIWizardExportApp::tr("&Bucket:"));
     m_pFileSelectorLabel->setText(UIWizardExportApp::tr("&File:"));
-    m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a virtual appliance file"));
+    m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export virtual appliance"));
     m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Open Virtualization Format Archive (%1)").arg("*.ova") + ";;" +
                                     UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
     m_pOVF09Checkbox->setToolTip(UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility with other virtualization products."));

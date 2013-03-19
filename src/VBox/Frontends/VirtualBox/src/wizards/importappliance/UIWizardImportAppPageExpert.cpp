@@ -39,8 +39,8 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileN
         m_pVMApplianceLabel = new QILabelSeparator(this);
         m_pFileSelector = new VBoxEmptyFileSelector(this);
         {
-            m_pFileSelector->setMode(VBoxFilePathSelectorWidget::Mode_File_Open);
             m_pFileSelector->setHomeDir(vboxGlobal().documentsPath());
+            m_pFileSelector->setMode(VBoxFilePathSelectorWidget::Mode_File_Open);
         }
         m_pApplianceWidget = new UIApplianceImportEditorWidget(this);
         {
@@ -80,7 +80,7 @@ void UIWizardImportAppPageExpert::retranslateUi()
     /* Translate widgets: */
     m_pVMApplianceLabel->setText(UIWizardImportApp::tr("Appliance to import"));
     m_pFileSelector->setChooseButtonText(UIWizardImportApp::tr("Open appliance..."));
-    m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Select an appliance to import"));
+    m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
     m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
 }
 
