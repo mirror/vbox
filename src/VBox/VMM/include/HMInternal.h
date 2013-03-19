@@ -615,6 +615,9 @@ typedef struct HMCPU
         RTR0MEMOBJ                  hMemObjVirtApic;
         /** Virtual address of the virtual APIC page for TPR caching. */
         R0PTRTYPE(uint8_t *)        pbVirtApic;
+#if HC_ARCH_BITS == 32
+        uint32_t                    u32Alignment2;
+#endif
 
         /** Current CR0 mask. */
         uint64_t                    cr0_mask;
