@@ -597,9 +597,6 @@ typedef struct HMCPU
         PFNHMVMXSTARTVM             pfnStartVM;
 
         uint32_t                    u32Alignment1;
-#if HC_ARCH_BITS == 32
-        uint32_t                    u32Alignment2;
-#endif
 
         /** Current VMX_VMCS32_CTRL_PIN_EXEC_CONTROLS. */
         uint32_t                    u32PinCtls;
