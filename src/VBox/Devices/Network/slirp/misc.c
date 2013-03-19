@@ -98,13 +98,11 @@ fd_nonblock(int fd)
 
     opt = fcntl(fd, F_GETFL, 0);
     opt |= O_NONBLOCK;
-
-
     fcntl(fd, F_SETFL, opt);
 # endif
 #ifndef RT_OS_WINDOWS
     setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &opt, sizeof(int));
-#ednif
+#endif
 }
 
 # if !defined(VBOX_NAT_MEM_DEBUG)
