@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,7 +26,7 @@
 #include "UIWizardExportAppPageBasic4.h"
 
 /* Forward declarations: */
-class QILabelSeparator;
+class QGroupBox;
 
 /* Expert page of the Export Appliance wizard: */
 class UIWizardExportAppPageExpert : public UIWizardPage,
@@ -86,8 +86,9 @@ private:
     bool validatePage();
 
     /* Widgets: */
-    QILabelSeparator *m_pVMSelectorLabel;
-    QILabelSeparator *m_pVMApplianceLabel;
+    QGroupBox *m_pSelectorCnt;
+    QGroupBox *m_pApplianceCnt;
+    QGroupBox *m_pSettingsCnt;
 };
 
 #endif /* __UIWizardExportAppPageExpert_h__ */
