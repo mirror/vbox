@@ -431,7 +431,7 @@ typedef struct VMMCPU
     SUPDRVTRACERUSRCTX          TracerCtx;
     /** @} */
 
-    /** Alignment padding, making sure u64CallRing3Arg is nicly aligned. */
+    /** Alignment padding, making sure u64CallRing3Arg is nicely aligned. */
     uint32_t                    au32Padding1[3];
 
     /** @name Call Ring-3
@@ -445,14 +445,14 @@ typedef struct VMMCPU
     int32_t                     rcCallRing3;
     /** The argument to the operation. */
     uint64_t                    u64CallRing3Arg;
+    /** The Ring-0 notification callback. */
+    R0PTRTYPE(PFNVMMR0CALLRING3NOTIFICATION)   pfnCallRing3CallbackR0;
+    /** The Ring-0 notification callback user argument. */
+    R0PTRTYPE(void *)           pvCallRing3CallbackUserR0;
     /** The Ring-0 jmp buffer.
      * @remarks The size of this type isn't stable in assembly, so don't put
      *          anything that needs to be accessed from assembly after it. */
     VMMR0JMPBUF                 CallRing3JmpBufR0;
-    /** The Ring-0 notification callback. */
-    PFNVMMR0CALLRING3NOTIFICATION   pfnCallRing3CallbackR0;
-    /** The Ring-0 notification callback user argument. */
-    void                       *pvCallRing3CallbackUserR0;
     /** @} */
 } VMMCPU;
 AssertCompileMemberAlignment(VMMCPU, TracerCtx, 8);

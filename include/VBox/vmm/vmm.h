@@ -514,7 +514,7 @@ VMMRZDECL(int)      VMMRZCallRing3NoCpu(PVM pVM, VMMCALLRING3 enmOperation, uint
 VMMRZDECL(void)     VMMRZCallRing3Disable(PVMCPU pVCpu);
 VMMRZDECL(void)     VMMRZCallRing3Enable(PVMCPU pVCpu);
 VMMRZDECL(bool)     VMMRZCallRing3IsEnabled(PVMCPU pVCpu);
-VMMRZDECL(int)      VMMRZCallRing3SetNotification(PVMCPU pVCpu, PFNVMMR0CALLRING3NOTIFICATION pfnCallback, void *pvUser);
+VMMRZDECL(int)      VMMRZCallRing3SetNotification(PVMCPU pVCpu, R0PTRTYPE(PFNVMMR0CALLRING3NOTIFICATION) pfnCallback, RTR0PTR pvUser);
 VMMRZDECL(void)     VMMRZCallRing3RemoveNotification(PVMCPU pVCpu);
 /** @} */
 #endif
