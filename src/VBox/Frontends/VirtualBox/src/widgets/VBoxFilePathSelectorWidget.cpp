@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,7 @@
 
 /* Local includes */
 #include "QIFileDialog.h"
+#include "QIToolButton.h"
 #include "QILabel.h"
 #include "QILineEdit.h"
 #include "UIIconPool.h"
@@ -34,7 +35,6 @@
 #include <QFocusEvent>
 #include <QHBoxLayout>
 #include <QLineEdit>
-#include <QPushButton>
 #include <QTimer>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -566,18 +566,17 @@ VBoxEmptyFileSelector::VBoxEmptyFileSelector (QWidget *aParent /* = NULL */)
     , mLabel (NULL)
     , mMode (VBoxFilePathSelectorWidget::Mode_File_Open)
     , mLineEdit (NULL)
-    , m_fButtonTextSet(false)
+    , m_fButtonToolTipSet(false)
     , mHomeDir (QDir::current().absolutePath())
     , mIsModified (false)
 {
     mMainLayout = new QHBoxLayout (this);
     mMainLayout->setMargin (0);
 
-    mSelectButton = new QPushButton (this);
-    connect (mSelectButton, SIGNAL (clicked()),
-             this, SLOT (choose()));
-
-    mMainLayout->addWidget (mSelectButton);
+    mSelectButton = new QIToolButton(this);
+    mSelectButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
+    connect(mSelectButton, SIGNAL(clicked()), this, SLOT(choose()));
+    mMainLayout->addWidget(mSelectButton);
 
     setEditable (false);
 
@@ -679,15 +678,15 @@ QString VBoxEmptyFileSelector::defaultSaveExt() const
     return mDefaultSaveExt;
 }
 
-void VBoxEmptyFileSelector::setChooseButtonText(const QString &strText)
+void VBoxEmptyFileSelector::setChooseButtonToolTip(const QString &strToolTip)
 {
-    mSelectButton->setText(strText);
-    m_fButtonTextSet = !strText.isEmpty();
+    m_fButtonToolTipSet = !strToolTip.isEmpty();
+    mSelectButton->setToolTip(strToolTip);
 }
 
-QString VBoxEmptyFileSelector::chooseButtonText() const
+QString VBoxEmptyFileSelector::chooseButtonToolTip() const
 {
-    return mSelectButton->text();
+    return mSelectButton->toolTip();
 }
 
 void VBoxEmptyFileSelector::setFileDialogTitle (const QString& aTitle)
@@ -722,8 +721,8 @@ QString VBoxEmptyFileSelector::homeDir() const
 
 void VBoxEmptyFileSelector::retranslateUi()
 {
-    if (!m_fButtonTextSet)
-        mSelectButton->setText(tr("&Choose..."));
+    if (!m_fButtonToolTipSet)
+        mSelectButton->setToolTip(tr("Choose..."));
 }
 
 void VBoxEmptyFileSelector::choose()

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,7 +32,7 @@ class QILineEdit;
 /* Qt forward declarations */
 class QHBoxLayout;
 class QAction;
-class QPushButton;
+class QIToolButton;
 
 ////////////////////////////////////////////////////////////////////////////////
 // VBoxFilePathSelectorWidget
@@ -161,8 +161,8 @@ public:
     bool isModified () const { return mIsModified; }
     void resetModified () { mIsModified = false; }
 
-    void setChooseButtonText(const QString &aText);
-    QString chooseButtonText() const;
+    void setChooseButtonToolTip(const QString &strToolTip);
+    QString chooseButtonToolTip() const;
 
     void setFileDialogTitle (const QString& aTitle);
     QString fileDialogTitle() const;
@@ -193,8 +193,8 @@ private:
     QILabel *mLabel;
     VBoxFilePathSelectorWidget::Mode mMode;
     QILineEdit *mLineEdit;
-    QPushButton *mSelectButton;
-    bool m_fButtonTextSet;
+    QIToolButton *mSelectButton;
+    bool m_fButtonToolTipSet;
     QString mFileDialogTitle;
     QString mFileFilters;
     QString mDefaultSaveExt;
