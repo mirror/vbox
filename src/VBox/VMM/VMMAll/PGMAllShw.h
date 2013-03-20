@@ -51,7 +51,6 @@
 #undef SHW_PDPT_SHIFT
 #undef SHW_PDPT_MASK
 #undef SHW_PDPE_PG_MASK
-#undef SHW_POOL_ROOT_IDX
 
 #if PGM_SHW_TYPE == PGM_TYPE_32BIT
 # define SHWPT                          X86PT
@@ -84,7 +83,6 @@
 # define SHW_PTE_SET_RW(Pte)            do { (Pte).n.u1Write = 1; } while (0)
 # define SHW_PT_SHIFT                   X86_PT_SHIFT
 # define SHW_PT_MASK                    X86_PT_MASK
-# define SHW_POOL_ROOT_IDX              PGMPOOL_IDX_PD
 
 #elif PGM_SHW_TYPE == PGM_TYPE_EPT
 # define SHWPT                          EPTPT
@@ -120,7 +118,6 @@
 # define SHW_PDPT_MASK                  EPT_PDPT_MASK
 # define SHW_PDPE_PG_MASK               EPT_PDPE_PG_MASK
 # define SHW_TOTAL_PD_ENTRIES           (EPT_PG_AMD64_ENTRIES*EPT_PG_AMD64_PDPE_ENTRIES)
-# define SHW_POOL_ROOT_IDX              PGMPOOL_IDX_NESTED_ROOT      /* do not use! exception is real mode & protected mode without paging. */
 
 #else
 # define SHWPT                          PGMSHWPTPAE
@@ -158,14 +155,12 @@
 #  define SHW_PDPT_MASK                 X86_PDPT_MASK_AMD64
 #  define SHW_PDPE_PG_MASK              X86_PDPE_PG_MASK
 #  define SHW_TOTAL_PD_ENTRIES          (X86_PG_AMD64_ENTRIES * X86_PG_AMD64_PDPE_ENTRIES)
-#  define SHW_POOL_ROOT_IDX             PGMPOOL_IDX_AMD64_CR3
 
 # else /* 32 bits PAE mode */
 #  define SHW_PDPT_SHIFT                X86_PDPT_SHIFT
 #  define SHW_PDPT_MASK                 X86_PDPT_MASK_PAE
 #  define SHW_PDPE_PG_MASK              X86_PDPE_PG_MASK
 #  define SHW_TOTAL_PD_ENTRIES          (X86_PG_PAE_ENTRIES * X86_PG_PAE_PDPE_ENTRIES)
-#  define SHW_POOL_ROOT_IDX             PGMPOOL_IDX_PDPT
 
 # endif
 #endif

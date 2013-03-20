@@ -36,7 +36,6 @@
 #undef SHW_PDPT_SHIFT
 #undef SHW_PDPT_MASK
 #undef SHW_PDPE_PG_MASK
-#undef SHW_POOL_ROOT_IDX
 
 #if PGM_SHW_TYPE == PGM_TYPE_32BIT
 # define SHWPT                  X86PT
@@ -54,7 +53,6 @@
 # define SHW_PTE_PG_MASK        X86_PTE_PG_MASK
 # define SHW_PT_SHIFT           X86_PT_SHIFT
 # define SHW_PT_MASK            X86_PT_MASK
-# define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_PD
 
 #elif PGM_SHW_TYPE == PGM_TYPE_EPT
 # define SHWPT                  EPTPT
@@ -75,7 +73,6 @@
 # define SHW_PDPT_MASK          EPT_PDPT_MASK
 # define SHW_PDPE_PG_MASK       EPT_PDPE_PG_MASK
 # define SHW_TOTAL_PD_ENTRIES   (EPT_PG_AMD64_ENTRIES*EPT_PG_AMD64_PDPE_ENTRIES)
-# define SHW_POOL_ROOT_IDX      PGMPOOL_IDX_NESTED_ROOT      /* do not use! exception is real mode & protected mode without paging. */
 
 #else
 # define SHWPT                  PGMSHWPTPAE
@@ -98,14 +95,12 @@
 #  define SHW_PDPT_MASK         X86_PDPT_MASK_AMD64
 #  define SHW_PDPE_PG_MASK      X86_PDPE_PG_MASK
 #  define SHW_TOTAL_PD_ENTRIES  (X86_PG_AMD64_ENTRIES*X86_PG_AMD64_PDPE_ENTRIES)
-#  define SHW_POOL_ROOT_IDX     PGMPOOL_IDX_AMD64_CR3
 
 # else /* 32 bits PAE mode */
 #  define SHW_PDPT_SHIFT        X86_PDPT_SHIFT
 #  define SHW_PDPT_MASK         X86_PDPT_MASK_PAE
 #  define SHW_PDPE_PG_MASK      X86_PDPE_PG_MASK
 #  define SHW_TOTAL_PD_ENTRIES  (X86_PG_PAE_ENTRIES*X86_PG_PAE_PDPE_ENTRIES)
-#  define SHW_POOL_ROOT_IDX     PGMPOOL_IDX_PDPT
 # endif
 #endif
 
@@ -194,12 +189,10 @@ PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode)
     pgmLock(pVM);
 
     int rc = pgmPoolAlloc(pVM, GCPhysCR3, PGMPOOLKIND_ROOT_NESTED, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
-                          PGMPOOL_IDX_NESTED_ROOT, GCPhysCR3 >> PAGE_SHIFT, true /*fLockPage*/,
+                          NIL_PGMPOOL_IDX, UINT32_MAX, true /*fLockPage*/,
                           &pNewShwPageCR3);
     AssertFatalRC(rc);
 
-    pVCpu->pgm.s.iShwUser      = PGMPOOL_IDX_NESTED_ROOT;
-    pVCpu->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
     pVCpu->pgm.s.pShwPageCR3R3 = pNewShwPageCR3;
 
     pVCpu->pgm.s.pShwPageCR3RC = MMHyperCCToRC(pVM, pVCpu->pgm.s.pShwPageCR3R3);
@@ -245,8 +238,6 @@ PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
     {
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
-        Assert(pVCpu->pgm.s.iShwUser == PGMPOOL_IDX_NESTED_ROOT);
-
         pgmLock(pVM);
 
         /* Do *not* unlock this page as we have two of them floating around in the 32-bit host & 64-bit guest case.
@@ -256,12 +247,10 @@ PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
          */
         /* pgmPoolUnlockPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)); */
 
-        pgmPoolFreeByPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3), pVCpu->pgm.s.iShwUser, pVCpu->pgm.s.iShwUserTable);
+        pgmPoolFreeByPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3), NIL_PGMPOOL_IDX, UINT32_MAX);
         pVCpu->pgm.s.pShwPageCR3R3 = 0;
         pVCpu->pgm.s.pShwPageCR3R0 = 0;
         pVCpu->pgm.s.pShwPageCR3RC = 0;
-        pVCpu->pgm.s.iShwUser      = 0;
-        pVCpu->pgm.s.iShwUserTable = 0;
 
         pgmUnlock(pVM);
 
