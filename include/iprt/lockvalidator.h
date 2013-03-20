@@ -568,6 +568,7 @@ RTDECL(int) RTLockValidatorRecExclCheckOrderAndBlocking(PRTLOCKVALRECEXCL pRec, 
  */
 RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
                                           void *hLock, bool fSignaller, bool fEnabled, const char *pszNameFmt, ...);
+
 /**
  * Initialize a lock validator record for a shared lock.
  *
@@ -592,6 +593,7 @@ RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS
  */
 RTDECL(void) RTLockValidatorRecSharedInitV(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
                                            void *hLock, bool fSignaller, bool fEnabled, const char *pszNameFmt, va_list va);
+
 /**
  * Uninitialize a lock validator record previously initialized by
  * RTLockValidatorRecSharedInit.
@@ -599,6 +601,68 @@ RTDECL(void) RTLockValidatorRecSharedInitV(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLAS
  * @param   pRec                The shared lock record.  Must be valid.
  */
 RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec);
+
+/**
+ * Create and initialize a lock validator record for a shared lock.
+ *
+ * Use RTLockValidatorRecSharedDestroy to deinitialize and destroy the returned
+ * record.
+ *
+ * @returns IPRT status code.
+ * @param   ppRec               Where to return the record pointer.
+ * @param   hClass              The class (no reference consumed). If NIL, the
+ *                              no lock order validation will be performed on
+ *                              this lock.
+ * @param   uSubClass           The sub-class.  This is used to define lock
+ *                              order inside the same class.  If you don't know,
+ *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
+ * @param   pvLock              The lock handle or address.
+ * @param   fSignaller          Set if event semaphore signaller logic should be
+ *                              applied to this record, clear if read-write
+ *                              semaphore logic should be used.
+ * @param   fEnabled            Pass @c false to explicitly disable lock
+ *                              validation, otherwise @c true.
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL). Max length is 32 bytes.
+ * @param   ...                 Format string arguments.
+ */
+RTDECL(int) RTLockValidatorRecSharedCreate(PRTLOCKVALRECSHRD *ppRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                                           void *pvLock, bool fSignaller, bool fEnabled, const char *pszNameFmt, ...);
+
+/**
+ * Create and initialize a lock validator record for a shared lock.
+ *
+ * Use RTLockValidatorRecSharedDestroy to deinitialize and destroy the returned
+ * record.
+ *
+ * @returns IPRT status code.
+ * @param   ppRec               Where to return the record pointer.
+ * @param   hClass              The class (no reference consumed). If NIL, the
+ *                              no lock order validation will be performed on
+ *                              this lock.
+ * @param   uSubClass           The sub-class.  This is used to define lock
+ *                              order inside the same class.  If you don't know,
+ *                              then pass RTLOCKVAL_SUB_CLASS_NONE.
+ * @param   pvLock              The lock handle or address.
+ * @param   fSignaller          Set if event semaphore signaller logic should be
+ *                              applied to this record, clear if read-write
+ *                              semaphore logic should be used.
+ * @param   fEnabled            Pass @c false to explicitly disable lock
+ *                              validation, otherwise @c true.
+ * @param   pszNameFmt          Name format string for the lock validator,
+ *                              optional (NULL). Max length is 32 bytes.
+ * @param   va                  Format string arguments.
+ */
+RTDECL(int) RTLockValidatorRecSharedCreateV(PRTLOCKVALRECSHRD *ppRec, RTLOCKVALCLASS hClass, uint32_t uSubClass,
+                                            void *pvLock, bool fSignaller, bool fEnabled, const char *pszNameFmt, va_list va);
+
+/**
+ * Deinitialize and destroy a record created by RTLockValidatorRecSharedCreate.
+ *
+ * @param   ppRec               Pointer to the record pointer.  Will be set to
+ *                              NULL.
+ */
+RTDECL(void) RTLockValidatorRecSharedDestroy(PRTLOCKVALRECSHRD *ppRec);
 
 /**
  * Sets the sub-class of the record.
