@@ -1432,6 +1432,8 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 return rc2;
             Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
         }
+        else
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES);
     }
 
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
