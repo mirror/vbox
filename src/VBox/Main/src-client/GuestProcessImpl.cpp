@@ -948,10 +948,11 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
 
     alock.acquire();
 
-    AssertPtr(pCallbackRead);
     int rc2 = callbackRemove(uContextID);
     if (RT_SUCCESS(vrc))
         vrc = rc2;
+
+    callbackDelete(pCallbackRead);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1014,7 +1015,7 @@ int GuestProcess::startProcess(int *pGuestRc)
     int vrc = VINF_SUCCESS;
     uint32_t uContextID = 0;
 
-    GuestCtrlCallback *pCallbackStart;
+    GuestCtrlCallback *pCallbackStart = NULL;
     try
     {
         pCallbackStart = new GuestCtrlCallback();
@@ -1173,11 +1174,12 @@ int GuestProcess::startProcess(int *pGuestRc)
 
         AutoWriteLock awlock(this COMMA_LOCKVAL_SRC_POS);
 
-        AssertPtr(pCallbackStart);
         int rc2 = callbackRemove(uContextID);
         if (RT_SUCCESS(vrc))
             vrc = rc2;
     }
+
+    callbackDelete(pCallbackStart);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1304,10 +1306,11 @@ int GuestProcess::terminateProcess(int *pGuestRc)
 
     alock.acquire();
 
-    AssertPtr(pCallbackTerminate);
     int rc2 = callbackRemove(uContextID);
     if (RT_SUCCESS(vrc))
         vrc = rc2;
+
+    callbackDelete(pCallbackTerminate);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1616,6 +1619,8 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
     if (RT_SUCCESS(vrc))
         vrc = rc2;
 
+    callbackDelete(pCallbackWrite);
+
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
@@ -1806,8 +1811,6 @@ STDMETHODIMP GuestProcess::Write(ULONG aHandle, ULONG aFlags,
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT hr = S_OK;
 

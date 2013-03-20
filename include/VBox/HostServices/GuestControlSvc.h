@@ -329,8 +329,8 @@ enum eGuestFn
      * transmitting the data.
      */
     GUEST_EXEC_IO_NOTIFY = 210,
-    /** Guest notifies the host about a file event, like opening,
-     *  closing, seeking etc.
+    /**
+     * Guest notifies the host about some file event.
      */
     GUEST_FILE_NOTIFY = 240
 };
@@ -362,6 +362,7 @@ enum GUEST_SESSION_NOTIFYTYPE
 
 /**
  * Guest file notification types.
+ * @sa HGCMMsgFileNotify.
  */
 enum GUEST_FILE_NOTIFYTYPE
 {
@@ -376,7 +377,8 @@ enum GUEST_FILE_NOTIFYTYPE
 };
 
 /**
- * Guest file seeking types.
+ * Guest file seeking types. Has to
+ * match FileSeekType in Main.
  */
 enum GUEST_FILE_SEEKTYPE
 {
@@ -692,10 +694,8 @@ typedef struct HGCMMsgFileRead
     HGCMFunctionParameter context;
     /** File handle to read from. */
     HGCMFunctionParameter handle;
-    /** Actual size of data (in bytes). */
+    /** Size (in bytes) to read. */
     HGCMFunctionParameter size;
-    /** Where to put the read data into. */
-    HGCMFunctionParameter data;
 
 } HGCMMsgFileRead;
 
@@ -713,8 +713,6 @@ typedef struct HGCMMsgFileReadAt
     HGCMFunctionParameter offset;
     /** Actual size of data (in bytes). */
     HGCMFunctionParameter size;
-    /** Where to put the read data into. */
-    HGCMFunctionParameter data;
 
 } HGCMMsgFileReadAt;
 
@@ -784,17 +782,49 @@ typedef struct HGCMMsgFileTell
 
 } HGCMMsgFileTell;
 
-typedef struct HGCMMsgFileNotify
+/******************************************************************************
+* HGCM replies from the guest. These are handled in Main's low-level HGCM     *
+* callbacks and dispatched to the appropriate guest object.                   *
+******************************************************************************/
+
+typedef struct HGCMReplyFileNotify
 {
     VBoxGuestHGCMCallInfo hdr;
     /** Context ID. */
     HGCMFunctionParameter context;
     /** Notification type. */
     HGCMFunctionParameter type;
-    /** Notification payload. */
-    HGCMFunctionParameter payload;
+    /** IPRT result of overall operation. */
+    HGCMFunctionParameter rc;
+    union
+    {
+        struct
+        {
+            /** Guest file handle. */
+            HGCMFunctionParameter handle;
+        } open;
+        /** Note: Close does not have any additional data (yet). */
+        struct
+        {
+            /** Actual data read (if any). */
+            HGCMFunctionParameter data;
+        } read;
+        struct
+        {
+            /** How much data (in bytes) have been successfully written. */
+            HGCMFunctionParameter written;
+        } write;
+        struct
+        {
+            HGCMFunctionParameter offset;
+        } seek;
+        struct
+        {
+            HGCMFunctionParameter offset;
+        } tell;
+    } u;
 
-} HGCMMsgFileNotify;
+} HGCMReplyFileNotify;
 
 #pragma pack ()
 
@@ -831,7 +861,7 @@ typedef struct CALLBACKDATA_SESSION_NOTIFY
     CALLBACKDATA_HEADER hdr;
     /** Notification type. */
     uint32_t uType;
-    /** Notification result. */
+    /** Notification result. Note: int vs. uint32! */
     uint32_t uResult;
 } CALLBACKDATA_SESSION_NOTIFY, *PCALLBACKDATA_SESSION_NOTIFY;
 
@@ -881,70 +911,49 @@ typedef struct CALLBACKDATA_PROC_INPUT
     uint32_t uProcessed;
 } CALLBACKDATA_PROC_INPUT, *PCALLBACKDATA_PROC_INPUT;
 
+/**
+ * General guest file notification callback.
+ */
 typedef struct CALLBACKDATA_FILE_NOTIFY
 {
     /** Callback data header. */
     CALLBACKDATA_HEADER hdr;
-    /** The file handle. */
-    uint32_t uHandle;
+    /** Notification type. */
+    uint32_t uType;
+    /** IPRT result of overall operation. */
+    uint32_t rc;
+    union
+    {
+        struct
+        {
+            /** Guest file handle. */
+            uint32_t uHandle;
+        } open;
+        /** Note: Close does not have any additional data (yet). */
+        struct
+        {
+            /** How much data (in bytes) have been read. */
+            uint32_t cbData;
+            /** Actual data read (if any). */
+            void *pvData;
+        } read;
+        struct
+        {
+            /** How much data (in bytes) have been successfully written. */
+            uint32_t cbWritten;
+        } write;
+        struct
+        {
+            /** New file offset after successful seek. */
+            uint64_t uOffActual;
+        } seek;
+        struct
+        {
+            /** New file offset after successful tell. */
+            uint64_t uOffActual;
+        } tell;
+    } u;
 } CALLBACKDATA_FILE_NOTIFY, *PCALLBACKDATA_FILE_NOTIFY;
-
-/******************************************************************************
-* Callback payload structures.                                                *
-******************************************************************************/
-
-/*
- * These structures contain the actual payload, based of the given payload
- * type the HGCM message includes.
- */
-
-typedef struct CALLBACKPAYLOAD_FILE_NOTIFY_OPEN
-{
-    /** IPRT result of overall operation. */
-    int32_t rc;
-    /** File handle on successful opening. */
-    uint32_t uHandle;
-} CALLBACKPAYLOAD_FILE_NOTIFY_OPEN, *PCALLBACKPAYLOAD_FILE_NOTIFY_OPEN;
-
-typedef struct CALLBACKPAYLOAD_FILE_NOTIFY_CLOSE
-{
-    /** IPRT result of overall operation. */
-    int32_t rc;
-} CALLBACKPAYLOAD_FILE_NOTIFY_CLOSE, *PCALLBACKPAYLOAD_FILE_NOTIFY_CLOSE;
-
-typedef struct CALLBACKPAYLOAD_FILE_NOTIFY_READ
-{
-    /** IPRT result of overall operation. */
-    int32_t rc;
-    /** How much data (in bytes) have been read. */
-    uint32_t cbData;
-    /** Actual data read (if any). */
-    void *pvData;
-} CALLBACKPAYLOAD_FILE_NOTIFY_READ, *PCALLBACKPAYLOAD_FILE_NOTIFY_READ;
-
-typedef struct CALLBACKPAYLOAD_FILE_NOTIFY_WRITE
-{
-    /** IPRT result of overall operation. */
-    int32_t rc;
-    /** How much data (in bytes) have been successfully written. */
-    uint32_t cbWritten;
-} CALLBACKPAYLOAD_FILE_NOTIFY_WRITE, *PCALLBACKPAYLOAD_FILE_NOTIFY_WRITE;
-
-typedef struct CALLBACKPAYLOAD_FILE_NOTFIY_SEEK
-{
-    /** IPRT result of overall operation. */
-    int32_t rc;
-    /** New file offset after successful seek. */
-    uint64_t uOffActual;
-} CALLBACKPAYLOAD_FILE_NOTFIY_SEEK, *PCALLBACKPAYLOAD_FILE_NOTIFY_SEEK;
-
-typedef struct CALLBACKPAYLOAD_FILE_NOTFIY_TELL
-{
-    /** IPRT result of overall operation. */
-    int32_t rc;
-    /** Current file offset after successful tell. */
-    uint64_t uOffActual;
-} CALLBACKPAYLOAD_FILE_NOTFIY_TELL, *PCALLBACKPAYLOAD_FILE_NOTIFY_TELL;
 
 } /* namespace guestControl */
 

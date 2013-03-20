@@ -384,7 +384,7 @@ extern PVBOXSERVICECTRLPROCESS  GstCntlSessionAcquireProcess(PVBOXSERVICECTRLSES
 extern int                      GstCntlSessionClose(PVBOXSERVICECTRLSESSION pSession);
 extern int                      GstCntlSessionDestroy(PVBOXSERVICECTRLSESSION pSession);
 extern int                      GstCntlSessionInit(PVBOXSERVICECTRLSESSION pSession, uint32_t uFlags);
-extern int                      GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, PVBGLR3GUESTCTRLHOSTCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf, volatile bool *pfShutdown);
+extern int                      GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, PVBGLR3GUESTCTRLCMDCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf, volatile bool *pfShutdown);
 extern int                      GstCntlSessionListSet(PVBOXSERVICECTRLSESSION pSession, PVBOXSERVICECTRLPROCESS pThread, VBOXSERVICECTRLTHREADLISTTYPE enmList);
 extern int                      GstCntlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession, bool *pbAllowed);
 extern int                      GstCntlSessionReapProcesses(PVBOXSERVICECTRLSESSION pSession);
@@ -400,19 +400,11 @@ extern int                      GstCntlProcessRequestAlloc(PVBOXSERVICECTRLREQUE
 extern int                      GstCntlProcessRequestAllocEx(PVBOXSERVICECTRLREQUEST *ppReq, VBOXSERVICECTRLREQUESTTYPE  enmType, void *pvData, size_t cbData, uint32_t uCID);
 extern void                     GstCntlProcessRequestFree(PVBOXSERVICECTRLREQUEST pReq);
 /* Per-session functions. */
-extern int gstcntlHandleFileOpen(uint32_t idClient, uint32_t cParms);
-extern int gstcntlHandleFileClose(uint32_t idClient, uint32_t cParms);
-extern int gstcntlHandleFileRead(uint32_t idClient, uint32_t cParms, void *pvScratchBuf, size_t cbScratchBuf);
-extern int gstcntlHandleFileReadAt(uint32_t idClient, uint32_t cParms, void *pvScratchBuf, size_t cbScratchBuf);
-extern int gstcntlHandleFileWrite(uint32_t idClient, uint32_t cParms, void *pvScratchBuf, size_t cbScratchBuf);
-extern int gstcntlHandleFileWriteAt(uint32_t idClient, uint32_t cParms, void *pvScratchBuf, size_t cbScratchBuf);
-extern int gstcntlHandleFileSeek(uint32_t idClient, uint32_t cParms);
-extern int gstcntlHandleFileTell(uint32_t idClient, uint32_t cParms);
-extern int                      GstCntlSessionHandleProcExec(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-extern int                      GstCntlSessionHandleProcInput(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLHOSTCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf);
-extern int                      GstCntlSessionHandleProcOutput(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-extern int                      GstCntlSessionHandleProcTerminate(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-extern int                      GstCntlSessionHandleProcWaitFor(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
+extern int                      GstCntlSessionHandleProcExec(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
+extern int                      GstCntlSessionHandleProcInput(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf);
+extern int                      GstCntlSessionHandleProcOutput(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
+extern int                      GstCntlSessionHandleProcTerminate(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
+extern int                      GstCntlSessionHandleProcWaitFor(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
 
 RT_C_DECLS_END
 

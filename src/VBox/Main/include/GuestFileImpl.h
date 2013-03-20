@@ -77,11 +77,20 @@ public:
     /** @name Public internal methods.
      * @{ */
     int             callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
+    int             closeFile(int *pGuestRc);
     static uint32_t getDispositionFromString(const Utf8Str &strDisposition);
     static uint32_t getOpenModeFromString(const Utf8Str &strOpenMode);
-    int             onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int             onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    static Utf8Str  guestErrorToString(int guestRc);
+    int             onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData, GuestCtrlCallback *pCallback);
+    int             onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData, GuestCtrlCallback *pCallback);
     int             openFile(int *pGuestRc);
+    int             readData(uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, size_t *pcbRead, int *pGuestRc);
+    int             readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, size_t *pcbRead, int *pGuestRc);
+    int             seekAt(uint64_t uOffset, GUEST_FILE_SEEKTYPE eSeekType, uint32_t uTimeoutMS, int *pGuestRc);
+    int             sendFileCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms, uint32_t uTimeoutMS, int *pGuestRc, GuestCtrlCallback **ppCallback);
+    static HRESULT  setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
+    int             writeData(uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbWritten, int *pGuestRc);
+    int             writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbWritten, int *pGuestRc);
     /** @}  */
 
 private:
@@ -98,6 +107,8 @@ private:
         GuestFileOpenInfo       mOpenInfo;
         /** The file's initial size on open. */
         uint64_t                mInitialSize;
+        /** The file's internal ID. */
+        uint32_t                mID;
         /** The file's current offset. */
         uint64_t                mOffCurrent;
     } mData;

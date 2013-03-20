@@ -967,13 +967,21 @@ int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo, ComObjPtr<
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Add the created file to our vector. */
-    mData.mFiles[uNewFileID] = pFile;
-    mData.mNumObjects++;
-    Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
+    int guestRc;
+    rc = pFile->openFile(&guestRc);
+    if (RT_SUCCESS(rc))
+    {
+        /* Add the created file to our vector. */
+        mData.mFiles[uNewFileID] = pFile;
+        mData.mNumObjects++;
+        Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
-    LogFlowFunc(("Added new file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
-                 openInfo.mFileName.c_str(), mData.mSession.mID, mData.mFiles.size(), mData.mNumObjects));
+        LogFlowFunc(("Added new file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
+                     openInfo.mFileName.c_str(), mData.mSession.mID, mData.mFiles.size(), mData.mNumObjects));
+    }
+
+    if (pGuestRc)
+        *pGuestRc = guestRc;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1793,7 +1801,7 @@ STDMETHODIMP GuestSession::Close(void)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* Close session on guest session. */
+    /* Close session on guest. */
     int guestRc;
     int rc = closeSession(0 /* Flags */, 30 * 1000 /* Timeout */,
                           &guestRc);
@@ -1815,7 +1823,9 @@ STDMETHODIMP GuestSession::Close(void)
     LogFlowFuncLeaveRC(rc);
     if (RT_FAILURE(rc))
     {
-        /** @todo Handle guestRc! */
+        if (rc == VERR_GSTCTL_GUEST_ERROR)
+            return GuestSession::setErrorExternal(this, guestRc);
+
         return setError(VBOX_E_IPRT_ERROR,
                         tr("Closing guest session failed with %Rrc\n"), rc);
     }
@@ -2482,11 +2492,11 @@ STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aD
         switch (vrc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::setErrorExternal(this, guestRc);
+                hr = GuestFile::setErrorExternal(this, guestRc);
                 break;
 
             default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Opening file \"%s\" failed: %Rrc"),
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Opening guest file \"%s\" failed: %Rrc"),
                               Utf8Str(aPath).c_str(), vrc);
                 break;
         }

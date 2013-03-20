@@ -185,17 +185,19 @@ VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t uClientId)
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(uint32_t uClientId, uint32_t uContext,
+VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                              uint32_t uType, uint32_t uResult)
 {
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
     HGCMMsgSessionNotify Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = uClientId;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_SESSION_NOTIFY;
     Msg.hdr.cParms      = 3;
 
-    VbglHGCMParmUInt32Set(&Msg.context, uContext);
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.type, uType);
     VbglHGCMParmUInt32Set(&Msg.result, uResult);
 
@@ -214,18 +216,18 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(uint32_t uClientId, uint32_t uConte
  * Retrieves the request to create a new guest session.
  *
  * @return  IPRT status code.
- * @param   pHostCtx                    Host context.
+ * @param   pCtx                    Host context.
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
+VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                               uint32_t *puProtocol,
                                               char     *pszUser,     uint32_t  cbUser,
                                               char     *pszPassword, uint32_t  cbPassword,
                                               char     *pszDomain,   uint32_t  cbDomain,
                                               uint32_t *puFlags,     uint32_t *puSessionID)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
-    AssertReturn(pHostCtx->uNumParms == 6, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 6, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(puProtocol, VERR_INVALID_POINTER);
     AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
@@ -236,9 +238,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
     HGCMMsgSessionOpen Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.protocol, 0);
@@ -257,12 +259,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.protocol.GetUInt32(puProtocol);
             Msg.flags.GetUInt32(puFlags);
 
             if (puSessionID)
-                *puSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostCtx->uContextID);
+                *puSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
         }
     }
 
@@ -274,22 +276,22 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
  * Retrieves the request to terminate an existing guest session.
  *
  * @return  IPRT status code.
- * @param   pHostCtx                    Host context.
+ * @param   pCtx                    Host context.
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, uint32_t *puFlags, uint32_t *puSessionID)
+VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puFlags, uint32_t *puSessionID)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
-    AssertReturn(pHostCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
 
     HGCMMsgSessionClose Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
@@ -304,11 +306,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.flags.GetUInt32(puFlags);
 
             if (puSessionID)
-                *puSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostCtx->uContextID);
+                *puSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pCtx->uContextID);
         }
     }
 
@@ -325,7 +327,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
  ** @todo Docs!
  ** @todo Move the parameters in an own struct!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLHOSTCTX   pHostCtx,
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX   pCtx,
                                             char     *pszCmd,         uint32_t  cbCmd,
                                             uint32_t *puFlags,
                                             char     *pszArgs,        uint32_t  cbArgs,     uint32_t *pcArgs,
@@ -336,7 +338,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLHOSTCTX   pHostCtx,
                                             uint32_t *puPriority,
                                             uint64_t *puAffinity,     uint32_t  cbAffinity, uint32_t *pcAffinity)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     AssertPtrReturn(pszCmd, VERR_INVALID_POINTER);
     AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
@@ -350,9 +352,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLHOSTCTX   pHostCtx,
     HGCMMsgProcExec Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmPtrSet(&Msg.cmd, pszCmd, cbCmd);
@@ -362,7 +364,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLHOSTCTX   pHostCtx,
     VbglHGCMParmUInt32Set(&Msg.num_env, 0);
     VbglHGCMParmUInt32Set(&Msg.cb_env, 0);
     VbglHGCMParmPtrSet(&Msg.env, pszEnv, *pcbEnv);
-    if (pHostCtx->uProtocol < 2)
+    if (pCtx->uProtocol < 2)
     {
         AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
         AssertReturn(cbUser, VERR_INVALID_PARAMETER);
@@ -394,12 +396,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLHOSTCTX   pHostCtx,
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.flags.GetUInt32(puFlags);
             Msg.num_args.GetUInt32(pcArgs);
             Msg.num_env.GetUInt32(pcEnvVars);
             Msg.cb_env.GetUInt32(pcbEnv);
-            if (pHostCtx->uProtocol < 2)
+            if (pCtx->uProtocol < 2)
             {
                 Msg.u.v1.timeout.GetUInt32(puTimeoutMS);
             }
@@ -423,11 +425,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLHOSTCTX   pHostCtx,
  * @returns VBox status code.
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                              uint32_t *puPID, uint32_t *puHandle, uint32_t *puFlags)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
-    AssertReturn(pHostCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(puPID, VERR_INVALID_POINTER);
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
@@ -436,9 +438,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
     HGCMMsgProcOutput Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
@@ -455,7 +457,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.pid.GetUInt32(puPID);
             Msg.handle.GetUInt32(puHandle);
             Msg.flags.GetUInt32(puFlags);
@@ -474,13 +476,13 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
  * @returns VBox status code.
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                             uint32_t  *puPID,       uint32_t *puFlags,
                                             void      *pvData,      uint32_t  cbData,
                                             uint32_t  *pcbSize)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
-    AssertReturn(pHostCtx->uNumParms == 5, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 5, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(puPID, VERR_INVALID_POINTER);
     AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
@@ -490,9 +492,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
     HGCMMsgProcInput Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
@@ -510,7 +512,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.pid.GetUInt32(puPID);
             Msg.flags.GetUInt32(puFlags);
             Msg.size.GetUInt32(pcbSize);
@@ -520,15 +522,15 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLHOSTCTX      pHostCtx,
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLCMDCTX      pCtx,
                                            char     *pszFileName,       uint32_t cbFileName,
                                            char     *pszOpenMode,       uint32_t cbOpenMode,
                                            char     *pszDisposition,    uint32_t cbDisposition,
                                            uint32_t *puCreationMode,
                                            uint64_t *puOffset)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
-    AssertReturn(pHostCtx->uNumParms == 6, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 6, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(pszFileName, VERR_INVALID_POINTER);
     AssertReturn(cbFileName, VERR_INVALID_PARAMETER);
@@ -542,9 +544,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLHOSTCTX      pHostCtx
     HGCMMsgFileOpen Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmPtrSet(&Msg.filename, pszFileName, cbFileName);
@@ -563,7 +565,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLHOSTCTX      pHostCtx
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.creationmode.GetUInt32(puCreationMode);
             Msg.offset.GetUInt64(puOffset);
         }
@@ -572,19 +574,19 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLHOSTCTX      pHostCtx
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetClose(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, uint32_t *puHandle)
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    AssertReturn(pHostCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
 
     HGCMMsgFileClose Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
@@ -599,7 +601,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetClose(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, ui
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
         }
     }
@@ -607,21 +609,21 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetClose(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, ui
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetRead(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetRead(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                            uint32_t *puHandle, uint32_t *puToRead)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    AssertReturn(pHostCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 3, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(puToRead, VERR_INVALID_POINTER);
 
     HGCMMsgFileRead Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
@@ -637,7 +639,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetRead(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
             Msg.size.GetUInt32(puToRead);
         }
@@ -646,24 +648,25 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetRead(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetReadAt(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetReadAt(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                              uint32_t *puHandle, uint32_t *puToRead, uint64_t *puOffset)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    AssertReturn(pHostCtx->uNumParms == 5, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(puToRead, VERR_INVALID_POINTER);
 
-    HGCMMsgFileRead Msg;
+    HGCMMsgFileReadAt Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
+    VbglHGCMParmUInt32Set(&Msg.offset, 0);
     VbglHGCMParmUInt32Set(&Msg.size, 0);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -676,8 +679,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetReadAt(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
+            Msg.offset.GetUInt64(puOffset);
             Msg.size.GetUInt32(puToRead);
         }
     }
@@ -685,12 +689,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetReadAt(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetWrite(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, uint32_t *puHandle,
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetWrite(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle,
                                             void *pvData, uint32_t cbData, uint32_t *pcbSize)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    AssertReturn(pHostCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
@@ -699,9 +703,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWrite(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, ui
     HGCMMsgFileWrite Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
@@ -718,7 +722,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWrite(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, ui
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
             Msg.size.GetUInt32(pcbSize);
         }
@@ -727,12 +731,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWrite(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, ui
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, uint32_t *puHandle,
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle,
                                               void *pvData, uint32_t cbData, uint32_t *pcbSize, uint64_t *puOffset)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    AssertReturn(pHostCtx->uNumParms == 5, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 5, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
@@ -741,9 +745,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, 
     HGCMMsgFileWriteAt Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
@@ -761,7 +765,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, 
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
             Msg.size.GetUInt32(pcbSize);
         }
@@ -770,12 +774,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetWriteAt(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, 
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetSeek(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetSeek(PVBGLR3GUESTCTRLCMDCTX pCtx,
                                            uint32_t *puHandle, uint32_t *puSeekMethod, uint64_t *puOffset)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    AssertReturn(pHostCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
     AssertPtrReturn(puSeekMethod, VERR_INVALID_POINTER);
     AssertPtrReturn(puOffset, VERR_INVALID_POINTER);
@@ -783,9 +787,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetSeek(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
     HGCMMsgFileSeek Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
@@ -802,7 +806,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetSeek(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
             Msg.method.GetUInt32(puSeekMethod);
             Msg.offset.GetUInt64(puOffset);
@@ -812,19 +816,19 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetSeek(PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlFileGetTell(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, uint32_t *puHandle)
+VBGLR3DECL(int) VbglR3GuestCtrlFileGetTell(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puHandle)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    AssertReturn(pHostCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puHandle, VERR_INVALID_POINTER);
 
     HGCMMsgFileTell Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
@@ -839,7 +843,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetTell(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, uin
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.handle.GetUInt32(puHandle);
         }
     }
@@ -847,19 +851,19 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetTell(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, uin
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlProcGetTerminate(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, uint32_t *puPID)
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetTerminate(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t *puPID)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    AssertReturn(pHostCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puPID, VERR_INVALID_POINTER);
 
     HGCMMsgProcTerminate Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
@@ -874,7 +878,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetTerminate(PVBGLR3GUESTCTRLHOSTCTX pHostCtx
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.pid.GetUInt32(puPID);
         }
     }
@@ -882,19 +886,20 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetTerminate(PVBGLR3GUESTCTRLHOSTCTX pHostCtx
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlProcGetWaitFor(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, uint32_t *puPID, uint32_t *puWaitFlags, uint32_t *puTimeoutMS)
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetWaitFor(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                              uint32_t *puPID, uint32_t *puWaitFlags, uint32_t *puTimeoutMS)
 {
-    AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    AssertReturn(pHostCtx->uNumParms == 5, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 5, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puPID, VERR_INVALID_POINTER);
 
     HGCMMsgProcWaitFor Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = pHostCtx->uClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_MSG_WAIT;
-    Msg.hdr.cParms      = pHostCtx->uNumParms;
+    Msg.hdr.cParms      = pCtx->uNumParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
@@ -911,7 +916,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetWaitFor(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, 
         }
         else
         {
-            Msg.context.GetUInt32(&pHostCtx->uContextID);
+            Msg.context.GetUInt32(&pCtx->uContextID);
             Msg.pid.GetUInt32(puPID);
             Msg.flags.GetUInt32(puWaitFlags);
             Msg.timeout.GetUInt32(puTimeoutMS);
@@ -921,23 +926,167 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetWaitFor(PVBGLR3GUESTCTRLHOSTCTX pHostCtx, 
 }
 
 
-VBGLR3DECL(int) VbglR3GuestCtrlFileNotify(uint32_t     uClientId,    uint32_t     uContext,
-                                          uint32_t     uType,
-                                          void        *pvPayload,    uint32_t     cbPayload)
+VBGLR3DECL(int) VbglR3GuestCtrlFileCbOpen(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                          uint32_t uRc, uint32_t uFileHandle)
 {
-    AssertPtrReturn(pvPayload, VERR_INVALID_POINTER);
-    AssertReturn(cbPayload, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    HGCMMsgFileNotify Msg;
+    HGCMReplyFileNotify Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = uClientId;
-    //Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
+    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
+    Msg.hdr.cParms      = 4;
+
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_OPEN);
+    VbglHGCMParmUInt32Set(&Msg.rc, uRc);
+
+    VbglHGCMParmUInt32Set(&Msg.u.open.handle, uFileHandle);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+            rc = rc2;
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileCbClose(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                           uint32_t uRc)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    HGCMReplyFileNotify Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
+    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
     Msg.hdr.cParms      = 3;
 
-    VbglHGCMParmUInt32Set(&Msg.context, uContext);
-    VbglHGCMParmUInt32Set(&Msg.type, uType);
-    VbglHGCMParmPtrSet(&Msg.payload, pvPayload, cbPayload);
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_CLOSE);
+    VbglHGCMParmUInt32Set(&Msg.rc, uRc);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+            rc = rc2;
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileCbRead(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                          uint32_t uRc,
+                                          void *pvData, uint32_t cbData)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    HGCMReplyFileNotify Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
+    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
+    Msg.hdr.cParms      = 4;
+
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_READ);
+    VbglHGCMParmUInt32Set(&Msg.rc, uRc);
+
+    VbglHGCMParmPtrSet(&Msg.u.read.data, pvData, cbData);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+            rc = rc2;
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileCbWrite(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                           uint32_t uRc, uint32_t uWritten)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    HGCMReplyFileNotify Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
+    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
+    Msg.hdr.cParms      = 4;
+
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_WRITE);
+    VbglHGCMParmUInt32Set(&Msg.rc, uRc);
+
+    VbglHGCMParmUInt32Set(&Msg.u.write.written, uWritten);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+            rc = rc2;
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileCbSeek(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                          uint32_t uRc, uint64_t uOffActual)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    HGCMReplyFileNotify Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
+    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
+    Msg.hdr.cParms      = 4;
+
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_SEEK);
+    VbglHGCMParmUInt32Set(&Msg.rc, uRc);
+
+    VbglHGCMParmUInt64Set(&Msg.u.seek.offset, uOffActual);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+            rc = rc2;
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileCbTell(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                          uint32_t uRc, uint64_t uOffActual)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    HGCMReplyFileNotify Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
+    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
+    Msg.hdr.cParms      = 4;
+
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_TELL);
+    VbglHGCMParmUInt32Set(&Msg.rc, uRc);
+
+    VbglHGCMParmUInt64Set(&Msg.u.tell.offset, uOffActual);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -956,25 +1105,23 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileNotify(uint32_t     uClientId,    uint32_t   
  * @returns VBox status code.
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatus(uint32_t     u32ClientID,
-                                            uint32_t     u32Context,
-                                            uint32_t     u32PID,
-                                            uint32_t     u32Status,
-                                            uint32_t     u32Flags,
-                                            void        *pvData,
-                                            uint32_t     cbData)
+VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatus(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                            uint32_t uPID, uint32_t uStatus, uint32_t uFlags,
+                                            void  *pvData, uint32_t cbData)
 {
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
     HGCMMsgProcStatus Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = u32ClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_EXEC_STATUS;
     Msg.hdr.cParms = 5;
 
-    VbglHGCMParmUInt32Set(&Msg.context, u32Context);
-    VbglHGCMParmUInt32Set(&Msg.pid, u32PID);
-    VbglHGCMParmUInt32Set(&Msg.status, u32Status);
-    VbglHGCMParmUInt32Set(&Msg.flags, u32Flags);
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.pid, uPID);
+    VbglHGCMParmUInt32Set(&Msg.status, uStatus);
+    VbglHGCMParmUInt32Set(&Msg.flags, uFlags);
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -994,25 +1141,23 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatus(uint32_t     u32ClientID,
  * @returns VBox status code.
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlProcCbOutput(uint32_t     u32ClientID,
-                                            uint32_t     u32Context,
-                                            uint32_t     u32PID,
-                                            uint32_t     u32Handle,
-                                            uint32_t     u32Flags,
-                                            void        *pvData,
-                                            uint32_t     cbData)
+VBGLR3DECL(int) VbglR3GuestCtrlProcCbOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                            uint32_t uPID,uint32_t uHandle, uint32_t uFlags,
+                                            void *pvData, uint32_t cbData)
 {
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
     HGCMMsgProcOutput Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = u32ClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_EXEC_OUTPUT;
     Msg.hdr.cParms = 5;
 
-    VbglHGCMParmUInt32Set(&Msg.context, u32Context);
-    VbglHGCMParmUInt32Set(&Msg.pid, u32PID);
-    VbglHGCMParmUInt32Set(&Msg.handle, u32Handle);
-    VbglHGCMParmUInt32Set(&Msg.flags, u32Flags);
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.pid, uPID);
+    VbglHGCMParmUInt32Set(&Msg.handle, uHandle);
+    VbglHGCMParmUInt32Set(&Msg.flags, uFlags);
     VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -1032,24 +1177,23 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcCbOutput(uint32_t     u32ClientID,
  * @returns VBox status code.
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatusInput(uint32_t     u32ClientID,
-                                                 uint32_t     u32Context,
-                                                 uint32_t     u32PID,
-                                                 uint32_t     u32Status,
-                                                 uint32_t     u32Flags,
-                                                 uint32_t     cbWritten)
+VBGLR3DECL(int) VbglR3GuestCtrlProcCbStatusInput(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                                 uint32_t uPID, uint32_t uStatus,
+                                                 uint32_t uFlags, uint32_t cbWritten)
 {
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
     HGCMMsgProcStatusInput Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
-    Msg.hdr.u32ClientID = u32ClientID;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
     Msg.hdr.u32Function = GUEST_EXEC_INPUT_STATUS;
     Msg.hdr.cParms = 5;
 
-    VbglHGCMParmUInt32Set(&Msg.context, u32Context);
-    VbglHGCMParmUInt32Set(&Msg.pid, u32PID);
-    VbglHGCMParmUInt32Set(&Msg.status, u32Status);
-    VbglHGCMParmUInt32Set(&Msg.flags, u32Flags);
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.pid, uPID);
+    VbglHGCMParmUInt32Set(&Msg.status, uStatus);
+    VbglHGCMParmUInt32Set(&Msg.flags, uFlags);
     VbglHGCMParmUInt32Set(&Msg.written, cbWritten);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));

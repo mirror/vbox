@@ -188,6 +188,14 @@ int GuestCtrlCallback::Init(CALLBACKTYPE enmType)
             break;
         }
 
+        case CALLBACKTYPE_FILE_NOTIFY:
+        {
+            pvData = (PCALLBACKDATA_FILE_NOTIFY)RTMemAllocZ(sizeof(CALLBACKDATA_FILE_NOTIFY));
+            AssertPtrReturn(pvData, VERR_NO_MEMORY);
+            cbData = sizeof(CALLBACKDATA_FILE_NOTIFY);
+            break;
+        }
+
         default:
             AssertMsgFailed(("Unknown callback type specified (%ld)\n", enmType));
             rc = VERR_NOT_IMPLEMENTED;
@@ -219,13 +227,26 @@ void GuestCtrlCallback::Destroy(void)
             break;
         }
 
-        case CALLBACKTYPE_FILE_READ:
+        case CALLBACKTYPE_FILE_NOTIFY:
         {
-            PCALLBACKPAYLOAD_FILE_NOTIFY_READ pThis = (PCALLBACKPAYLOAD_FILE_NOTIFY_READ)pvData;
+            PCALLBACKDATA_FILE_NOTIFY pThis = (PCALLBACKDATA_FILE_NOTIFY)pvData;
             AssertPtr(pThis);
-            if (pThis->pvData)
-                RTMemFree(pThis->pvData);
-            break;
+            switch (pThis->uType)
+            {
+                case GUEST_FILE_NOTIFYTYPE_READ:
+                {
+                    if (pThis->u.read.pvData)
+                    {
+                        RTMemFree(pThis->u.read.pvData);
+                        pThis->u.read.pvData = NULL;
+                    }
+
+                    break;
+                }
+
+                default:
+                    break;
+            }
         }
 
         default:
@@ -263,8 +284,7 @@ int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
             PCALLBACKDATA_SESSION_NOTIFY pCB   = (PCALLBACKDATA_SESSION_NOTIFY)pvCallback;
             Assert(cbCallback == sizeof(CALLBACKDATA_SESSION_NOTIFY));
 
-            pThis->uType   = pCB->uType;
-            pThis->uResult = pCB->uResult;
+            memcpy(pThis, pCB, sizeof(CALLBACKDATA_SESSION_NOTIFY));
             break;
         }
 
@@ -274,9 +294,7 @@ int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
             PCALLBACKDATA_PROC_STATUS pCB   = (PCALLBACKDATA_PROC_STATUS)pvCallback;
             Assert(cbCallback == sizeof(CALLBACKDATA_PROC_STATUS));
 
-            pThis->uFlags  = pCB->uFlags;
-            pThis->uPID    = pCB->uPID;
-            pThis->uStatus = pCB->uStatus;
+            memcpy(pThis, pCB, sizeof(CALLBACKDATA_PROC_STATUS));
             break;
         }
 
@@ -304,13 +322,36 @@ int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
             PCALLBACKDATA_PROC_INPUT pCB   = (PCALLBACKDATA_PROC_INPUT)pvCallback;
             Assert(cbCallback == sizeof(CALLBACKDATA_PROC_INPUT));
 
-            pThis->uProcessed = pCB->uProcessed;
-            pThis->uFlags     = pCB->uFlags;
-            pThis->uPID       = pCB->uPID;
-            pThis->uStatus    = pCB->uStatus;
+            memcpy(pThis, pCB, sizeof(CALLBACKDATA_PROC_INPUT));
             break;
         }
 
+        case CALLBACKTYPE_FILE_NOTIFY:
+        {
+            PCALLBACKDATA_FILE_NOTIFY pThis = (PCALLBACKDATA_FILE_NOTIFY)pvData;
+            PCALLBACKDATA_FILE_NOTIFY pCB = (PCALLBACKDATA_FILE_NOTIFY)pvCallback;
+            Assert(cbCallback == sizeof(CALLBACKDATA_FILE_NOTIFY));
+
+            memcpy(pThis, pCB, sizeof(CALLBACKDATA_FILE_NOTIFY));
+
+            switch (pThis->uType)
+            {
+                case GUEST_FILE_NOTIFYTYPE_READ:
+                {
+                    pThis->u.read.pvData   = RTMemAlloc(pCB->u.read.cbData);
+                    AssertPtrReturn(pThis->u.read.pvData, VERR_NO_MEMORY);
+                    memcpy(pThis->u.read.pvData, pCB->u.read.pvData, pCB->u.read.cbData);
+                    pThis->u.read.cbData   = pCB->u.read.cbData;
+                    break;
+                }
+
+                default:
+                    break;
+            }
+            break;
+        }
+
+#if 0
         case CALLBACKTYPE_FILE_OPEN:
         {
             PCALLBACKPAYLOAD_FILE_NOTIFY_OPEN pThis = (PCALLBACKPAYLOAD_FILE_NOTIFY_OPEN)pvData;
@@ -381,7 +422,7 @@ int GuestCtrlCallback::SetData(const void *pvCallback, size_t cbCallback)
             pThis->uOffActual = pCB->uOffActual;
             break;
         }
-
+#endif
         default:
             AssertMsgFailed(("Callback type not supported (%ld)\n", mType));
             rc = VERR_NOT_SUPPORTED;
@@ -1286,6 +1327,15 @@ int GuestObject::callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puContextID
     return vrc;
 }
 
+void GuestObject::callbackDelete(GuestCtrlCallback *pCallback)
+{
+    if (pCallback)
+    {
+        delete pCallback;
+        pCallback = NULL;
+    }
+}
+
 bool GuestObject::callbackExists(uint32_t uContextID)
 {
     GuestCtrlCallbacks::const_iterator it =
@@ -1305,7 +1355,6 @@ int GuestObject::callbackRemove(uint32_t uContextID)
         mObject.mCallbacks.find(VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID));
     if (it != mObject.mCallbacks.end())
     {
-        delete it->second;
         mObject.mCallbacks.erase(it);
 
         return VINF_SUCCESS;

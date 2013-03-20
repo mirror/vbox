@@ -67,8 +67,8 @@ VBOXSERVICECTRLSESSION      g_Session;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int  gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-static int  gstcntlHandleSessionClose(PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
+static int  gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLCMDCTX pHostCtx);
+static int  gstcntlHandleSessionClose(PVBGLR3GUESTCTRLCMDCTX pHostCtx);
 static void VBoxServiceControlShutdown(void);
 
 
@@ -197,8 +197,10 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
     uint8_t *pvScratchBuf = (uint8_t*)RTMemAlloc(cbScratchBuf);
     AssertPtrReturn(pvScratchBuf, VERR_NO_MEMORY);
 
-    VBGLR3GUESTCTRLHOSTCTX ctxHost = { g_uControlSvcClientID,
-                                       1 /* Default protocol version */ };
+    VBGLR3GUESTCTRLCMDCTX ctxHost = { g_uControlSvcClientID };
+    /* Set default protocol version to 1. */
+    ctxHost.uProtocol = 1;
+
     for (;;)
     {
         VBoxServiceVerbose(3, "Waiting for host msg ...\n");
@@ -300,7 +302,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
 }
 
 
-static int gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
+static int gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
@@ -328,7 +330,7 @@ static int gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
     {
         /* Report back on failure. On success this will be done
          * by the forked session thread. */
-        int rc2 = VbglR3GuestCtrlSessionNotify(pHostCtx->uClientID, pHostCtx->uContextID,
+        int rc2 = VbglR3GuestCtrlSessionNotify(pHostCtx,
                                                GUEST_SESSION_NOTIFYTYPE_ERROR, rc /* uint32_t vs. int */);
         if (RT_FAILURE(rc2))
         {
@@ -342,7 +344,7 @@ static int gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
 }
 
 
-static int gstcntlHandleSessionClose(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
+static int gstcntlHandleSessionClose(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
@@ -367,7 +369,7 @@ static int gstcntlHandleSessionClose(PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
         {
             /* Report back on failure. On success this will be done
              * by the forked session thread. */
-            int rc2 = VbglR3GuestCtrlSessionNotify(pHostCtx->uClientID, pHostCtx->uContextID,
+            int rc2 = VbglR3GuestCtrlSessionNotify(pHostCtx,
                                                    GUEST_SESSION_NOTIFYTYPE_ERROR, rc);
             if (RT_FAILURE(rc2))
             {

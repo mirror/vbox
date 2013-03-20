@@ -54,12 +54,12 @@ extern void                 VBoxServiceLogDestroy(void);
 static int                  gstcntlSessionFileDestroy(PVBOXSERVICECTRLFILE pFile);
 static PVBOXSERVICECTRLFILE gstcntlSessionGetFile(const PVBOXSERVICECTRLSESSION pSession, uint32_t uHandle);
 static int                  gstcntlSessionGetOutput(const PVBOXSERVICECTRLSESSION pSession, uint32_t uPID, uint32_t uCID, uint32_t uHandleId, uint32_t cMsTimeout, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead);
-static int                  gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-static int                  gstcntlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-static int                  gstcntlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-static int                  gstcntlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLHOSTCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf);
-static int                  gstcntlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
-static int                  gstcntlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLHOSTCTX pHostCtx);
+static int                  gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
+static int                  gstcntlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
+static int                  gstcntlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
+static int                  gstcntlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf);
+static int                  gstcntlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
+static int                  gstcntlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
 static int                  gstcntlSessionSetInput(const PVBOXSERVICECTRLSESSION pSession, uint32_t uPID, uint32_t uCID, bool fPendingClose, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten);
 static DECLCALLBACK(int)    gstcntlSessionThread(RTTHREAD ThreadSelf, void *pvUser);
 
@@ -141,7 +141,7 @@ static int gstcntlSessionDumpToFile(const char *pszFileName, void *pvBuf, size_t
 
 
 static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
-                                        PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
+                                        PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
@@ -207,9 +207,7 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
             rc = VERR_NO_MEMORY;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTIFY_OPEN cplOpen = { rc, uHandle };
-        int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
-                                            GUEST_FILE_NOTIFYTYPE_OPEN, &cplOpen, sizeof(cplOpen));
+        int rc2 = VbglR3GuestCtrlFileCbOpen(pHostCtx, rc, uHandle);
         if (RT_FAILURE(rc2))
             VBoxServiceError("[File %s]: Failed to report file open status, rc=%Rrc\n",
                              szFile, rc2);
@@ -222,7 +220,7 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
 
 
 static int gstcntlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSession,
-                                         PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
+                                         PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
@@ -241,9 +239,7 @@ static int gstcntlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSession,
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTIFY_CLOSE cplClose = { rc };
-        int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
-                                            GUEST_FILE_NOTIFYTYPE_CLOSE, &cplClose, sizeof(cplClose));
+        int rc2 = VbglR3GuestCtrlFileCbClose(pHostCtx, rc);
         if (RT_FAILURE(rc2))
             VBoxServiceError("Failed to report file close status, rc=%Rrc\n", rc2);
         if (RT_SUCCESS(rc))
@@ -254,7 +250,7 @@ static int gstcntlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSession,
 
 
 static int gstcntlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSession,
-                                        PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
+                                        PVBGLR3GUESTCTRLCMDCTX pHostCtx,
                                         void *pvScratchBuf, size_t cbScratchBuf)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -291,9 +287,7 @@ static int gstcntlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSession,
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTIFY_READ cplRead = { rc, (uint32_t)cbRead, pvDataRead };
-        int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
-                                            GUEST_FILE_NOTIFYTYPE_READ, &cplRead, sizeof(cplRead));
+        int rc2 = VbglR3GuestCtrlFileCbRead(pHostCtx, rc, pvDataRead, (uint32_t)cbRead);
         if (   cbToRead > cbScratchBuf
             && pvDataRead)
             RTMemFree(pvDataRead);
@@ -308,7 +302,7 @@ static int gstcntlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSession,
 
 
 static int gstcntlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSession,
-                                          PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
+                                          PVBGLR3GUESTCTRLCMDCTX pHostCtx,
                                           void *pvScratchBuf, size_t cbScratchBuf)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -346,9 +340,7 @@ static int gstcntlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSession
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTIFY_READ cplRead = { rc, (uint32_t)cbRead, pvDataRead };
-        int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
-                                            GUEST_FILE_NOTIFYTYPE_READ, &cplRead, sizeof(cplRead));
+        int rc2 = VbglR3GuestCtrlFileCbRead(pHostCtx, rc, pvDataRead, (uint32_t)cbRead);
         if (   cbToRead > cbScratchBuf
             && pvDataRead)
             RTMemFree(pvDataRead);
@@ -363,7 +355,7 @@ static int gstcntlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSession
 
 
 static int gstcntlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSession,
-                                         PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
+                                         PVBGLR3GUESTCTRLCMDCTX pHostCtx,
                                          void *pvScratchBuf, size_t cbScratchBuf)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -389,9 +381,7 @@ static int gstcntlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSession,
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTIFY_WRITE cplWrite = { rc, (uint32_t)cbWritten };
-        int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
-                                            GUEST_FILE_NOTIFYTYPE_WRITE, &cplWrite, sizeof(cplWrite));
+        int rc2 = VbglR3GuestCtrlFileCbWrite(pHostCtx, rc, (uint32_t)cbWritten);
         if (RT_FAILURE(rc2))
             VBoxServiceError("Failed to report file write status, rc=%Rrc\n", rc2);
         if (RT_SUCCESS(rc))
@@ -402,7 +392,7 @@ static int gstcntlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSession,
 
 
 static int gstcntlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pSession,
-                                           PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
+                                           PVBGLR3GUESTCTRLCMDCTX pHostCtx,
                                            void *pvScratchBuf, size_t cbScratchBuf)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -429,9 +419,7 @@ static int gstcntlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pSessio
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTIFY_WRITE cplWrite = { rc, (uint32_t)cbWritten };
-        int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
-                                            GUEST_FILE_NOTIFYTYPE_WRITE, &cplWrite, sizeof(cplWrite));
+        int rc2 = VbglR3GuestCtrlFileCbWrite(pHostCtx, rc, (uint32_t)cbWritten);
         if (RT_FAILURE(rc2))
             VBoxServiceError("Failed to report file write status, rc=%Rrc\n", rc2);
         if (RT_SUCCESS(rc))
@@ -442,7 +430,7 @@ static int gstcntlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pSessio
 
 
 static int gstcntlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSession,
-                                        PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
+                                        PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
@@ -488,9 +476,7 @@ static int gstcntlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSession,
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTFIY_SEEK cplSeek = { rc, uOffsetActual };
-        int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
-                                            GUEST_FILE_NOTIFYTYPE_SEEK, &cplSeek, sizeof(cplSeek));
+        int rc2 = VbglR3GuestCtrlFileCbSeek(pHostCtx, rc, uOffsetActual);
         if (RT_FAILURE(rc2))
             VBoxServiceError("Failed to report file seek status, rc=%Rrc\n", rc2);
         if (RT_SUCCESS(rc))
@@ -501,7 +487,7 @@ static int gstcntlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSession,
 
 
 static int gstcntlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSession,
-                                        PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
+                                        PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
@@ -521,9 +507,7 @@ static int gstcntlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSession,
             rc = VERR_NOT_FOUND;
 
         /* Report back in any case. */
-        CALLBACKPAYLOAD_FILE_NOTFIY_TELL cplTell = { rc, uOffsetActual };
-        int rc2 = VbglR3GuestCtrlFileNotify(pHostCtx->uClientID, pHostCtx->uContextID,
-                                            GUEST_FILE_NOTIFYTYPE_TELL, &cplTell, sizeof(cplTell));
+        int rc2 = VbglR3GuestCtrlFileCbTell(pHostCtx, rc, uOffsetActual);
         if (RT_FAILURE(rc2))
             VBoxServiceError("Failed to report file tell status, rc=%Rrc\n", rc2);
         if (RT_SUCCESS(rc))
@@ -541,7 +525,7 @@ static int gstcntlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSession,
  * @param   pHostCtx        Host context.
  */
 int GstCntlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession,
-                                 PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
+                                 PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
@@ -625,8 +609,7 @@ int GstCntlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession,
          * Note: The context ID can be 0 because we mabye weren't able to fetch the command
          *       from the host. The host in case has to deal with that!
          */
-        int rc2 = VbglR3GuestCtrlProcCbStatus(pHostCtx->uClientID, pHostCtx->uContextID,
-                                              0 /* PID, invalid */,
+        int rc2 = VbglR3GuestCtrlProcCbStatus(pHostCtx, 0 /* PID, invalid */,
                                               PROC_STS_ERROR, rc,
                                               NULL /* pvData */, 0 /* cbData */);
         if (RT_FAILURE(rc2))
@@ -650,7 +633,7 @@ int GstCntlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession,
  * @param   cbScratchBuf                The scratch buffer size for retrieving the input data.
  */
 int GstCntlSessionHandleProcInput(PVBOXSERVICECTRLSESSION pSession,
-                                  PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
+                                  PVBGLR3GUESTCTRLCMDCTX pHostCtx,
                                   void *pvScratchBuf, size_t cbScratchBuf)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -731,7 +714,7 @@ int GstCntlSessionHandleProcInput(PVBOXSERVICECTRLSESSION pSession,
     /* Note: Since the context ID is unique the request *has* to be completed here,
      *       regardless whether we got data or not! Otherwise the progress object
      *       on the host never will get completed! */
-    rc = VbglR3GuestCtrlProcCbStatusInput(pHostCtx->uClientID, pHostCtx->uContextID, uPID,
+    rc = VbglR3GuestCtrlProcCbStatusInput(pHostCtx, uPID,
                                           uStatus, uFlags, (uint32_t)cbWritten);
 
     if (RT_FAILURE(rc))
@@ -747,7 +730,7 @@ int GstCntlSessionHandleProcInput(PVBOXSERVICECTRLSESSION pSession,
  * @return  IPRT status code.
  */
 int GstCntlSessionHandleProcOutput(PVBOXSERVICECTRLSESSION pSession,
-                                   PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
+                                   PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
@@ -799,7 +782,7 @@ int GstCntlSessionHandleProcOutput(PVBOXSERVICECTRLSESSION pSession,
             /* Note: Since the context ID is unique the request *has* to be completed here,
              *       regardless whether we got data or not! Otherwise the progress object
              *       on the host never will get completed! */
-            int rc2 = VbglR3GuestCtrlProcCbOutput(pHostCtx->uClientID, pHostCtx->uContextID, uPID, uHandleID, uFlags,
+            int rc2 = VbglR3GuestCtrlProcCbOutput(pHostCtx, uPID, uHandleID, uFlags,
                                                   pBuf, cbRead);
             if (RT_SUCCESS(rc))
                 rc = rc2;
@@ -820,7 +803,7 @@ int GstCntlSessionHandleProcOutput(PVBOXSERVICECTRLSESSION pSession,
 
 
 int GstCntlSessionHandleProcTerminate(const PVBOXSERVICECTRLSESSION pSession,
-                                      PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
+                                      PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
@@ -852,7 +835,7 @@ int GstCntlSessionHandleProcTerminate(const PVBOXSERVICECTRLSESSION pSession,
 
 
 int GstCntlSessionHandleProcWaitFor(const PVBOXSERVICECTRLSESSION pSession,
-                                    PVBGLR3GUESTCTRLHOSTCTX pHostCtx)
+                                    PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
@@ -887,7 +870,7 @@ int GstCntlSessionHandleProcWaitFor(const PVBOXSERVICECTRLSESSION pSession,
 
 
 int GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession,
-                          uint32_t uMsg, PVBGLR3GUESTCTRLHOSTCTX pHostCtx,
+                          uint32_t uMsg, PVBGLR3GUESTCTRLCMDCTX pHostCtx,
                           void *pvScratchBuf, size_t cbScratchBuf,
                           volatile bool *pfShutdown)
 {
@@ -1135,8 +1118,8 @@ static DECLCALLBACK(int) gstcntlSessionThread(RTTHREAD ThreadSelf, void *pvUser)
 
     /* Report final status. */
     Assert(uSessionStatus != GUEST_SESSION_NOTIFYTYPE_UNDEFINED);
-    rc2 = VbglR3GuestCtrlSessionNotify(uClientID,
-                                       VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(uSessionID),
+    VBGLR3GUESTCTRLCMDCTX ctx = { uClientID, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(uSessionID) };
+    rc2 = VbglR3GuestCtrlSessionNotify(&ctx,
                                        uSessionStatus, uSessionRc);
     if (RT_FAILURE(rc2))
         VBoxServiceError("Reporting session ID=%RU32 final status failed with rc=%Rrc\n",
@@ -1186,8 +1169,8 @@ RTEXITCODE gstcntlSessionForkWorker(PVBOXSERVICECTRLSESSION pSession)
         VBoxServiceError("Error connecting to guest control service, rc=%Rrc\n", rc);
 
     /* Report started status. */
-    int rc2 = VbglR3GuestCtrlSessionNotify(uClientID,
-                                           VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID),
+    VBGLR3GUESTCTRLCMDCTX ctx = { uClientID, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID) };
+    int rc2 = VbglR3GuestCtrlSessionNotify(&ctx,
                                            GUEST_SESSION_NOTIFYTYPE_STARTED, VINF_SUCCESS);
     if (RT_FAILURE(rc2))
         VBoxServiceError("Reporting session ID=%RU32 started status failed with rc=%Rrc\n",
@@ -1210,8 +1193,8 @@ RTEXITCODE gstcntlSessionForkWorker(PVBOXSERVICECTRLSESSION pSession)
     {
         bool fShutdown = false;
 
-        VBGLR3GUESTCTRLHOSTCTX ctxHost = { uClientID,
-                                           pSession->StartupInfo.uProtocol };
+        VBGLR3GUESTCTRLCMDCTX ctxHost = { uClientID, 0 /* Context ID, zeroed */,
+                                          pSession->StartupInfo.uProtocol };
         for (;;)
         {
             VBoxServiceVerbose(3, "Waiting for host msg ...\n");
