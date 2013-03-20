@@ -447,6 +447,7 @@ RuntimeR3_SOURCES       = \
 	common/zip/zip.cpp \
 	generic/createtemp-generic.cpp \
 	generic/critsect-generic.cpp \
+	generic/critsectrw-generic.cpp \
 	generic/env-generic.cpp \
 	generic/RTDirCreateUniqueNumbered-generic.cpp \
 	generic/RTEnvDupEx-generic.cpp \

@@ -3438,6 +3438,31 @@ RTDECL(void) RTLockValidatorRecSharedInit(PRTLOCKVALRECSHRD pRec, RTLOCKVALCLASS
 }
 
 
+RTDECL(int)  RTLockValidatorRecSharedCreateV(PRTLOCKVALRECSHRD *ppRec, RTLOCKVALCLASS hClass,
+                                             uint32_t uSubClass, void *pvLock, bool fSignaller, bool fEnabled,
+                                             const char *pszNameFmt, va_list va)
+{
+    PRTLOCKVALRECSHRD pRec;
+    *ppRec = pRec = (PRTLOCKVALRECSHRD)RTMemAlloc(sizeof(*pRec));
+    if (!pRec)
+        return VERR_NO_MEMORY;
+    RTLockValidatorRecSharedInitV(pRec, hClass, uSubClass, pvLock, fSignaller, fEnabled, pszNameFmt, va);
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int)  RTLockValidatorRecSharedCreate(PRTLOCKVALRECSHRD *ppRec, RTLOCKVALCLASS hClass,
+                                            uint32_t uSubClass, void *pvLock, bool fSignaller, bool fEnabled,
+                                            const char *pszNameFmt, ...)
+{
+    va_list va;
+    va_start(va, pszNameFmt);
+    int rc = RTLockValidatorRecSharedCreateV(ppRec, hClass, uSubClass, pvLock, fSignaller, fEnabled, pszNameFmt, va);
+    va_end(va);
+    return rc;
+}
+
+
 RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec)
 {
     Assert(pRec->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC);
@@ -3475,6 +3500,18 @@ RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec)
 
     if (hClass != NIL_RTLOCKVALCLASS)
         RTLockValidatorClassRelease(hClass);
+}
+
+
+RTDECL(void) RTLockValidatorRecSharedDestroy(PRTLOCKVALRECSHRD *ppRec)
+{
+    PRTLOCKVALRECSHRD pRec = *ppRec;
+    *ppRec = NULL;
+    if (pRec)
+    {
+        RTLockValidatorRecSharedDelete(pRec);
+        RTMemFree(pRec);
+    }
 }
 
 

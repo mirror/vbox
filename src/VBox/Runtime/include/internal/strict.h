@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,6 +35,13 @@
  */
 #if (!defined(RTCRITSECT_STRICT)      && defined(IN_RING3) && defined(RT_LOCK_STRICT)) || defined(DOXYGEN_RUNNING)
 # define RTCRITSECT_STRICT
+#endif
+
+/** @def RTCRITSECTRW_STRICT
+ * Enables strictness checks and lock accounting of the RTCritSectRw API.
+ */
+#if (!defined(RTCRITSECTRW_STRICT)    && defined(IN_RING3) && defined(RT_LOCK_STRICT)) || defined(DOXYGEN_RUNNING)
+# define RTCRITSECTRW_STRICT
 #endif
 
 /** @def RTSEMEVENT_STRICT

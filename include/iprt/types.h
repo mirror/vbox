@@ -1585,6 +1585,11 @@ typedef struct RTCRITSECT                          *PRTCRITSECT;
 /** Pointer to a const critical section. */
 typedef const struct RTCRITSECT                    *PCRTCRITSECT;
 
+/** Pointer to a read/write critical section. */
+typedef struct RTCRITSECTRW                        *PRTCRITSECTRW;
+/** Pointer to a const read/write critical section. */
+typedef const struct RTCRITSECTRW                  *PCRTCRITSECTRW;
+
 
 /** Condition variable handle. */
 typedef R3PTRTYPE(struct RTCONDVARINTERNAL *)       RTCONDVAR;

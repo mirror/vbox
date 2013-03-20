@@ -51,8 +51,10 @@ typedef struct RTSEMRWINTERNAL
 {
     /** Magic value (RTSEMRW_MAGIC).  */
     uint32_t volatile       u32Magic;
-    uint32_t                u32Padding; /**< alignment padding.*/
-    /* The state variable.
+    /** Indicates whether hEvtRead needs resetting. */
+    bool volatile           fNeedReset;
+
+    /** The state variable.
      * All accesses are atomic and it bits are defined like this:
      *      Bits 0..14  - cReads.
      *      Bit 15      - Unused.
@@ -77,8 +79,6 @@ typedef struct RTSEMRWINTERNAL
     /** What the read threads are blocking on when waiting for the writer to
      * finish. */
     RTSEMEVENTMULTI         hEvtRead;
-    /** Indicates whether hEvtRead needs resetting. */
-    bool volatile           fNeedReset;
 
 #ifdef RTSEMRW_STRICT
     /** The validator record for the writer. */
