@@ -122,6 +122,15 @@ static const char main_key_us_rus[MAIN_LEN][2] =
 "\xda\xfa","\xd8\xf8","\xc3\xe3","\xd6\xf6","\xc2\xe2","\xce\xee","\xcd\xed",",<",".>","/?","<>","\x0\x0","\x0\x0"
 };
 
+/* U.S. English, Colemac */
+static const char main_key_us_col[MAIN_LEN][2] =
+{
+"`~","1!","2@","3#","4$","5%","6^","7&","8*","9(","0)","-_","=+",
+"qQ","wW","fF","pP","gG","jJ","lL","uU","yY",";:","[{","]}",
+"aA","rR","sS","tT","dD","hH","nN","eE","iI","oO","'\"","\\|",
+"zZ","xX","cC","vV","bB","kK","mM",",<",".>","/?","-_","\x0\x0","\x0\x0"
+};
+
 /* Afghanistan */
 static const char main_key_af[MAIN_LEN][2] =
 {
