@@ -536,10 +536,14 @@ typedef union
 #define VMX_EXIT_SMI                6
 /** 7 Interrupt window exiting. */
 #define VMX_EXIT_INT_WINDOW         7
+/** 8 NMI window exiting. */
+#define VMX_EXIT_NMI_WINDOW         8
 /** 9 Task switch. */
 #define VMX_EXIT_TASK_SWITCH        9
 /** 10 Guest software attempted to execute CPUID. */
 #define VMX_EXIT_CPUID              10
+/** 10 Guest software attempted to execute GETSEC. */
+#define VMX_EXIT_GETSEC             11
 /** 12 Guest software attempted to execute HLT. */
 #define VMX_EXIT_HLT                12
 /** 13 Guest software attempted to execute INVD. */
