@@ -188,8 +188,8 @@ VMMRZDECL(bool) VMMRZCallRing3IsEnabled(PVMCPU pVCpu)
  */
 VMMRZDECL(int) VMMRZCallRing3SetNotification(PVMCPU pVCpu, R0PTRTYPE(PFNVMMR0CALLRING3NOTIFICATION) pfnCallback, RTR0PTR pvUser)
 {
-    AssertReturn(pVCpu, VERR_INVALID_POINTER);
-    AssertReturn(pfnCallback, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVCpu, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfnCallback, VERR_INVALID_POINTER);
 
     if (pVCpu->vmm.s.pfnCallRing3CallbackR0)
         return VERR_ALREADY_EXISTS;
