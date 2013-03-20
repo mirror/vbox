@@ -2278,6 +2278,9 @@ typedef const RTMAC *PCRTMAC;
 /** Pointer to a lock validator record.
  * The structure definition is found in iprt/lockvalidator.h.  */
 typedef struct RTLOCKVALRECEXCL        *PRTLOCKVALRECEXCL;
+/** Pointer to a record of one ownership share.
+ * The structure definition is found in iprt/lockvalidator.h.  */
+typedef struct RTLOCKVALRECSHRD        *PRTLOCKVALRECSHRD;
 /** Pointer to a lock validator source poisition.
  * The structure definition is found in iprt/lockvalidator.h.  */
 typedef struct RTLOCKVALSRCPOS         *PRTLOCKVALSRCPOS;
