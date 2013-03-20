@@ -106,13 +106,8 @@ enum CALLBACKTYPE
     CALLBACKTYPE_PROC_OUTPUT = 105,
     /** Guest process input notification. */
     CALLBACKTYPE_PROC_INPUT = 106,
-    /** @todo Docs! */
-    CALLBACKTYPE_FILE_OPEN = 210,
-    CALLBACKTYPE_FILE_CLOSE = 215,
-    CALLBACKTYPE_FILE_READ = 230,
-    CALLBACKTYPE_FILE_WRITE = 240,
-    CALLBACKTYPE_FILE_SEEK = 250,
-    CALLBACKTYPE_FILE_TELL = 260
+    /** Guest file notification. */
+    CALLBACKTYPE_FILE_NOTIFY = 210
 };
 
 
@@ -592,6 +587,7 @@ protected:
 
     int bindToSession(Console *pConsole, GuestSession *pSession, uint32_t uObjectID);
     int callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puContextID);
+    void callbackDelete(GuestCtrlCallback *pCallback);
     bool callbackExists(uint32_t uContextID);
     int callbackRemove(uint32_t uContextID);
     int callbackRemoveAll(void);

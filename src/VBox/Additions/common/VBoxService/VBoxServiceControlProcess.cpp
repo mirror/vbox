@@ -649,7 +649,8 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLPROCESS pThread,
      */
     VBoxServiceVerbose(2, "[PID %u]: Process \"%s\" started, CID=%u, User=%s\n",
                        pThread->uPID, pThread->pszCmd, pThread->uContextID, pThread->pszUser);
-    rc = VbglR3GuestCtrlProcCbStatus(pThread->uClientID, pThread->uContextID,
+    VBGLR3GUESTCTRLCMDCTX ctx = { pThread->uClientID, pThread->uContextID };
+    rc = VbglR3GuestCtrlProcCbStatus(&ctx,
                                      pThread->uPID, PROC_STS_STARTED, 0 /* u32Flags */,
                                      NULL /* pvData */, 0 /* cbData */);
 
@@ -924,7 +925,8 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLPROCESS pThread,
 
         if (!(pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_START))
         {
-            rc2 = VbglR3GuestCtrlProcCbStatus(pThread->uClientID, pThread->uContextID,
+            VBGLR3GUESTCTRLCMDCTX ctx = { pThread->uClientID, pThread->uContextID };
+            rc2 = VbglR3GuestCtrlProcCbStatus(&ctx,
                                               pThread->uPID, uStatus, uFlags,
                                               NULL /* pvData */, 0 /* cbData */);
             if (RT_FAILURE(rc2))
@@ -1745,8 +1747,9 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
     {
         if (RT_FAILURE(rc))
         {
-            rc2 = VbglR3GuestCtrlProcCbStatus(pProcess->uClientID, pProcess->uContextID, pProcess->uPID,
-                                              PROC_STS_ERROR, rc,
+            VBGLR3GUESTCTRLCMDCTX ctx = { pProcess->uClientID, pProcess->uContextID };
+            rc2 = VbglR3GuestCtrlProcCbStatus(&ctx,
+                                              pProcess->uPID, PROC_STS_ERROR, rc,
                                               NULL /* pvData */, 0 /* cbData */);
             if (RT_FAILURE(rc2))
                 VBoxServiceError("Could not report process failure error; rc=%Rrc (process error %Rrc)\n",
