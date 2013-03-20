@@ -48,7 +48,7 @@
  {"U.S. English, Right handed Dvorak", &main_key_us_dvorak_r},
  {"U.S. English, Classic Dvorak", &main_key_us_dvorak_classic},
  {"U.S. English, Russian phonetic", &main_key_us_rus},
- {"U.S. English, Colemac", &main_key_us_col},
+ {"U.S. English, Colemak", &main_key_us_col},
  {"Afghanistan", &main_key_af},
  {"Afghanistan, Pashto", &main_key_af_ps},
  {"Afghanistan, Southern Uzbek", &main_key_af_uz},

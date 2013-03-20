@@ -122,7 +122,7 @@ static const char main_key_us_rus[MAIN_LEN][2] =
 "\xda\xfa","\xd8\xf8","\xc3\xe3","\xd6\xf6","\xc2\xe2","\xce\xee","\xcd\xed",",<",".>","/?","<>","\x0\x0","\x0\x0"
 };
 
-/* U.S. English, Colemac */
+/* U.S. English, Colemak */
 static const char main_key_us_col[MAIN_LEN][2] =
 {
 "`~","1!","2@","3#","4$","5%","6^","7&","8*","9(","0)","-_","=+",
