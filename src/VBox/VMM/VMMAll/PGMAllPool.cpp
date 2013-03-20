@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2013,7 +2013,7 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
     for (unsigned iLoop = 0; ; iLoop++)
     {
         uint16_t iToFree = pPool->iAgeTail;
-        if (iToFree == iUser)
+        if (iToFree == iUser && iUser != NIL_PGMPOOL_IDX)
             iToFree = pPool->aPages[iToFree].iAgePrev;
 /* This is the alternative to the SyncCR3 pgmPoolCacheUsed calls.
         if (pPool->aPages[iToFree].iUserHead != NIL_PGMPOOL_USER_INDEX)
@@ -2172,8 +2172,10 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
  * @param   enmKind     The kind of mapping.
  * @param   enmAccess   Access type for the mapping (only relevant for big pages)
  * @param   fA20Enabled Whether the CPU has the A20 gate enabled.
- * @param   iUser       The shadow page pool index of the user table.
- * @param   iUserTable  The index into the user table (shadowed).
+ * @param   iUser       The shadow page pool index of the user table.  This is
+ *                      NIL_PGMPOOL_IDX for root pages.
+ * @param   iUserTable  The index into the user table (shadowed).  Ignored if
+ *                      root page
  * @param   ppPage      Where to store the pointer to the page.
  */
 static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS enmAccess, bool fA20Enabled,
@@ -2201,7 +2203,9 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
                      */
                     pgmPoolCacheUsed(pPool, pPage);
 
-                    int rc = pgmPoolTrackAddUser(pPool, pPage, iUser, iUserTable);
+                    int rc = VINF_SUCCESS;
+                    if (iUser != NIL_PGMPOOL_IDX)
+                        rc = pgmPoolTrackAddUser(pPool, pPage, iUser, iUserTable);
                     if (RT_SUCCESS(rc))
                     {
                         Assert((PGMPOOLKIND)pPage->enmKind == enmKind);
@@ -2804,43 +2808,49 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
 
     LogFlow(("pgmPoolTrackInsert GCPhys=%RGp iUser=%d iUserTable=%x\n", GCPhys, iUser, iUserTable));
 
-#ifdef VBOX_STRICT
-    /*
-     * Check that the entry doesn't already exists.
-     */
-    if (pPage->iUserHead != NIL_PGMPOOL_USER_INDEX)
+    if (iUser != NIL_PGMPOOL_IDX)
     {
-        uint16_t i = pPage->iUserHead;
-        do
+#ifdef VBOX_STRICT
+        /*
+         * Check that the entry doesn't already exists.
+         */
+        if (pPage->iUserHead != NIL_PGMPOOL_USER_INDEX)
         {
-            Assert(i < pPool->cMaxUsers);
-            AssertMsg(paUsers[i].iUser != iUser || paUsers[i].iUserTable != iUserTable, ("%x %x vs new %x %x\n", paUsers[i].iUser, paUsers[i].iUserTable, iUser, iUserTable));
-            i = paUsers[i].iNext;
-        } while (i != NIL_PGMPOOL_USER_INDEX);
-    }
+            uint16_t i = pPage->iUserHead;
+            do
+            {
+                Assert(i < pPool->cMaxUsers);
+                AssertMsg(paUsers[i].iUser != iUser || paUsers[i].iUserTable != iUserTable, ("%x %x vs new %x %x\n", paUsers[i].iUser, paUsers[i].iUserTable, iUser, iUserTable));
+                i = paUsers[i].iNext;
+            } while (i != NIL_PGMPOOL_USER_INDEX);
+        }
 #endif
 
-    /*
-     * Find free a user node.
-     */
-    uint16_t i = pPool->iUserFreeHead;
-    if (i == NIL_PGMPOOL_USER_INDEX)
-    {
-        rc = pgmPoolTrackFreeOneUser(pPool, iUser);
-        if (RT_FAILURE(rc))
-            return rc;
-        i = pPool->iUserFreeHead;
-    }
+        /*
+         * Find free a user node.
+         */
+        uint16_t i = pPool->iUserFreeHead;
+        if (i == NIL_PGMPOOL_USER_INDEX)
+        {
+            rc = pgmPoolTrackFreeOneUser(pPool, iUser);
+            if (RT_FAILURE(rc))
+                return rc;
+            i = pPool->iUserFreeHead;
+        }
 
-    /*
-     * Unlink the user node from the free list,
-     * initialize and insert it into the user list.
-     */
-    pPool->iUserFreeHead = paUsers[i].iNext;
-    paUsers[i].iNext = NIL_PGMPOOL_USER_INDEX;
-    paUsers[i].iUser = iUser;
-    paUsers[i].iUserTable = iUserTable;
-    pPage->iUserHead = i;
+        /*
+         * Unlink the user node from the free list,
+         * initialize and insert it into the user list.
+         */
+        pPool->iUserFreeHead = paUsers[i].iNext;
+        paUsers[i].iNext = NIL_PGMPOOL_USER_INDEX;
+        paUsers[i].iUser = iUser;
+        paUsers[i].iUserTable = iUserTable;
+        pPage->iUserHead = i;
+    }
+    else
+        pPage->iUserHead = NIL_PGMPOOL_USER_INDEX;
+
 
     /*
      * Insert into cache and enable monitoring of the guest page if enabled.
@@ -2880,9 +2890,9 @@ DECLINLINE(int) pgmPoolTrackInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS 
  */
 static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable)
 {
+    Log3(("pgmPoolTrackAddUser: GCPhys=%RGp iUser=%%x iUserTable=%x\n", pPage->GCPhys, iUser, iUserTable));
     PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
-
-    Log3(("pgmPoolTrackAddUser GCPhys = %RGp iUser %x iUserTable %x\n", pPage->GCPhys, iUser, iUserTable));
+    Assert(iUser != NIL_PGMPOOL_IDX);
 
 #  ifdef VBOX_STRICT
     /*
@@ -2895,8 +2905,8 @@ static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUse
         do
         {
             Assert(i < pPool->cMaxUsers);
-            AssertMsg(iUser != PGMPOOL_IDX_PD || iUser != PGMPOOL_IDX_PDPT || iUser != PGMPOOL_IDX_NESTED_ROOT || iUser != PGMPOOL_IDX_AMD64_CR3 ||
-                      paUsers[i].iUser != iUser || paUsers[i].iUserTable != iUserTable, ("%x %x vs new %x %x\n", paUsers[i].iUser, paUsers[i].iUserTable, iUser, iUserTable));
+            /** @todo this assertion looks odd... Shouldn't it be && here? */
+            AssertMsg(paUsers[i].iUser != iUser || paUsers[i].iUserTable != iUserTable, ("%x %x vs new %x %x\n", paUsers[i].iUser, paUsers[i].iUserTable, iUser, iUserTable));
             i = paUsers[i].iNext;
         } while (i != NIL_PGMPOOL_USER_INDEX);
     }
@@ -2946,15 +2956,19 @@ static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUse
  * @param   HCPhys      The HC physical address of the shadow page.
  * @param   iUser       The shadow page pool index of the user table.
  * @param   iUserTable  The index into the user table (shadowed).
+ *
+ * @remarks Don't call this for root pages.
  */
 static void pgmPoolTrackFreeUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable)
 {
+    Log3(("pgmPoolTrackFreeUser %RGp %x %x\n", pPage->GCPhys, iUser, iUserTable));
+    PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
+    Assert(iUser != NIL_PGMPOOL_IDX);
+
     /*
      * Unlink and free the specified user entry.
      */
-    PPGMPOOLUSER paUsers = pPool->CTX_SUFF(paUsers);
 
-    Log3(("pgmPoolTrackFreeUser %RGp %x %x\n", pPage->GCPhys, iUser, iUserTable));
     /* Special: For PAE and 32-bit paging, there is usually no more than one user. */
     uint16_t i = pPage->iUserHead;
     if (    i != NIL_PGMPOOL_USER_INDEX
@@ -4898,7 +4912,9 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
  * @param   pPool       The pool.
  * @param   HCPhys      The HC physical address of the shadow page.
  * @param   iUser       The shadow page pool index of the user table.
- * @param   iUserTable  The index into the user table (shadowed).
+ *                      NIL_PGMPOOL_IDX for root pages.
+ * @param   iUserTable  The index into the user table (shadowed). Ignored if
+ *                      root page.
  */
 void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable)
 {
@@ -4910,7 +4926,8 @@ void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint3
     AssertReturnVoid(pPage->idx >= PGMPOOL_IDX_FIRST); /* paranoia (#6349) */
 
     pgmLock(pVM);
-    pgmPoolTrackFreeUser(pPool, pPage, iUser, iUserTable);
+    if (iUser != NIL_PGMPOOL_IDX)
+        pgmPoolTrackFreeUser(pPool, pPage, iUser, iUserTable);
     if (!pPage->fCached)
         pgmPoolFlushPage(pPool, pPage);
     pgmUnlock(pVM);
@@ -4932,7 +4949,7 @@ void pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint3
 static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_t iUser)
 {
     PVM pVM = pPool->CTX_SUFF(pVM);
-    LogFlow(("pgmPoolMakeMoreFreePages: iUser=%d\n", iUser));
+    LogFlow(("pgmPoolMakeMoreFreePages: enmKind=%d iUser=%d\n", enmKind, iUser));
     NOREF(enmKind);
 
     /*
@@ -4984,8 +5001,10 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
  * @param   enmKind     The kind of mapping.
  * @param   enmAccess   Access type for the mapping (only relevant for big pages)
  * @param   fA20Enabled Whether the A20 gate is enabled or not.
- * @param   iUser       The shadow page pool index of the user table.
- * @param   iUserTable  The index into the user table (shadowed).
+ * @param   iUser       The shadow page pool index of the user table.  Root
+ *                      pages should pass NIL_PGMPOOL_IDX.
+ * @param   iUserTable  The index into the user table (shadowed).  Ignored for
+ *                      root pages (iUser == NIL_PGMPOOL_IDX).
  * @param   fLockPage   Lock the page
  * @param   ppPage      Where to store the pointer to the page. NULL is stored here on failure.
  */
@@ -5118,7 +5137,9 @@ int pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS en
  * @param   pVM         Pointer to the VM.
  * @param   HCPhys      The HC physical address of the shadow page.
  * @param   iUser       The shadow page pool index of the user table.
- * @param   iUserTable  The index into the user table (shadowed).
+ *                      NIL_PGMPOOL_IDX if root page.
+ * @param   iUserTable  The index into the user table (shadowed).  Ignored if
+ *                      root page.
  */
 void pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable)
 {
@@ -5406,41 +5427,6 @@ void pgmR3PoolReset(PVM pVM)
     /*
      * Reinsert active pages into the hash and ensure monitoring chains are correct.
      */
-    for (unsigned i = PGMPOOL_IDX_FIRST_SPECIAL; i < PGMPOOL_IDX_FIRST; i++)
-    {
-        PPGMPOOLPAGE pPage = &pPool->aPages[i];
-
-        /** @todo r=bird: Is this code still needed in any way?  The special root
-         *        pages should not be monitored or anything these days AFAIK. */
-        Assert(pPage->iNext == NIL_PGMPOOL_IDX);
-        Assert(pPage->iModifiedNext == NIL_PGMPOOL_IDX);
-        Assert(pPage->iModifiedPrev == NIL_PGMPOOL_IDX);
-        Assert(pPage->iMonitoredNext == NIL_PGMPOOL_IDX);
-        Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
-        Assert(!pPage->fMonitored);
-
-        pPage->iNext = NIL_PGMPOOL_IDX;
-        pPage->iModifiedNext = NIL_PGMPOOL_IDX;
-        pPage->iModifiedPrev = NIL_PGMPOOL_IDX;
-        pPage->cModifications = 0;
-        /* ASSUMES that we're not sharing with any of the other special pages (safe for now). */
-        pPage->iMonitoredNext = NIL_PGMPOOL_IDX;
-        pPage->iMonitoredPrev = NIL_PGMPOOL_IDX;
-        if (pPage->fMonitored)
-        {
-            int rc = PGMHandlerPhysicalChangeCallbacks(pVM, pPage->GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK,
-                                                       pPool->pfnAccessHandlerR3, MMHyperCCToR3(pVM, pPage),
-                                                       pPool->pfnAccessHandlerR0, MMHyperCCToR0(pVM, pPage),
-                                                       pPool->pfnAccessHandlerRC, MMHyperCCToRC(pVM, pPage),
-                                                       pPool->pszAccessHandler);
-            AssertFatalRCSuccess(rc);
-            pgmPoolHashInsert(pPool, pPage);
-        }
-        Assert(pPage->iUserHead == NIL_PGMPOOL_USER_INDEX); /* for now */
-        Assert(pPage->iAgeNext == NIL_PGMPOOL_IDX);
-        Assert(pPage->iAgePrev == NIL_PGMPOOL_IDX);
-    }
-
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         /*

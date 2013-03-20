@@ -283,53 +283,32 @@ int pgmR3PoolInit(PVM pVM)
     pPool->pszAccessHandler = "Guest Paging Access Handler";
     pPool->HCPhysTree = 0;
 
-    /* The NIL entry. */
+    /*
+     * The NIL entry.
+     */
     Assert(NIL_PGMPOOL_IDX == 0);
     pPool->aPages[NIL_PGMPOOL_IDX].enmKind          = PGMPOOLKIND_INVALID;
     pPool->aPages[NIL_PGMPOOL_IDX].idx              = NIL_PGMPOOL_IDX;
+    pPool->aPages[NIL_PGMPOOL_IDX].Core.Key         = NIL_RTHCPHYS;
+    pPool->aPages[NIL_PGMPOOL_IDX].GCPhys           = NIL_RTGCPHYS;
+    pPool->aPages[NIL_PGMPOOL_IDX].iNext            = NIL_PGMPOOL_IDX;
+    /* pPool->aPages[NIL_PGMPOOL_IDX].cLocked          = INT32_MAX; - test this out... */
+    pPool->aPages[NIL_PGMPOOL_IDX].pvPageR3         = 0;
+    pPool->aPages[NIL_PGMPOOL_IDX].iUserHead        = NIL_PGMPOOL_USER_INDEX;
+    pPool->aPages[NIL_PGMPOOL_IDX].iModifiedNext    = NIL_PGMPOOL_IDX;
+    pPool->aPages[NIL_PGMPOOL_IDX].iModifiedPrev    = NIL_PGMPOOL_IDX;
+    pPool->aPages[NIL_PGMPOOL_IDX].iMonitoredNext   = NIL_PGMPOOL_IDX;
+    pPool->aPages[NIL_PGMPOOL_IDX].iMonitoredNext   = NIL_PGMPOOL_IDX;
+    pPool->aPages[NIL_PGMPOOL_IDX].iAgeNext         = NIL_PGMPOOL_IDX;
+    pPool->aPages[NIL_PGMPOOL_IDX].iAgePrev         = NIL_PGMPOOL_IDX;
 
-    /* The Shadow 32-bit PD. (32 bits guest paging) */
-    pPool->aPages[PGMPOOL_IDX_PD].enmKind           = PGMPOOLKIND_32BIT_PD;
-    pPool->aPages[PGMPOOL_IDX_PD].idx               = PGMPOOL_IDX_PD;
-
-    /* The Shadow PDPT. */
-    pPool->aPages[PGMPOOL_IDX_PDPT].enmKind         = PGMPOOLKIND_PAE_PDPT;
-    pPool->aPages[PGMPOOL_IDX_PDPT].idx             = PGMPOOL_IDX_PDPT;
-
-    /* The Shadow AMD64 CR3. */
-    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].enmKind    = PGMPOOLKIND_64BIT_PML4;
-    pPool->aPages[PGMPOOL_IDX_AMD64_CR3].idx        = PGMPOOL_IDX_AMD64_CR3;
-
-    /* The Nested Paging CR3. */
-    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].enmKind  = PGMPOOLKIND_ROOT_NESTED;
-    pPool->aPages[PGMPOOL_IDX_NESTED_ROOT].idx      = PGMPOOL_IDX_NESTED_ROOT;
-
-    /*
-     * Set common stuff.
-     */
-    for (unsigned iPage = 0; iPage < PGMPOOL_IDX_FIRST; iPage++)
-    {
-        pPool->aPages[iPage].Core.Key       = NIL_RTHCPHYS;
-        pPool->aPages[iPage].GCPhys         = NIL_RTGCPHYS;
-        pPool->aPages[iPage].iNext          = NIL_PGMPOOL_IDX;
-        /* pPool->aPages[iPage].cLocked        = INT32_MAX; - test this out... */
-        pPool->aPages[iPage].pvPageR3       = 0;
-        pPool->aPages[iPage].iUserHead      = NIL_PGMPOOL_USER_INDEX;
-        pPool->aPages[iPage].iModifiedNext  = NIL_PGMPOOL_IDX;
-        pPool->aPages[iPage].iModifiedPrev  = NIL_PGMPOOL_IDX;
-        pPool->aPages[iPage].iMonitoredNext = NIL_PGMPOOL_IDX;
-        pPool->aPages[iPage].iMonitoredNext = NIL_PGMPOOL_IDX;
-        pPool->aPages[iPage].iAgeNext       = NIL_PGMPOOL_IDX;
-        pPool->aPages[iPage].iAgePrev       = NIL_PGMPOOL_IDX;
-
-        Assert(pPool->aPages[iPage].idx == iPage);
-        Assert(pPool->aPages[iPage].GCPhys == NIL_RTGCPHYS);
-        Assert(!pPool->aPages[iPage].fSeenNonGlobal);
-        Assert(!pPool->aPages[iPage].fMonitored);
-        Assert(!pPool->aPages[iPage].fCached);
-        Assert(!pPool->aPages[iPage].fZeroed);
-        Assert(!pPool->aPages[iPage].fReusedFlushPending);
-    }
+    Assert(pPool->aPages[NIL_PGMPOOL_IDX].idx == NIL_PGMPOOL_IDX);
+    Assert(pPool->aPages[NIL_PGMPOOL_IDX].GCPhys == NIL_RTGCPHYS);
+    Assert(!pPool->aPages[NIL_PGMPOOL_IDX].fSeenNonGlobal);
+    Assert(!pPool->aPages[NIL_PGMPOOL_IDX].fMonitored);
+    Assert(!pPool->aPages[NIL_PGMPOOL_IDX].fCached);
+    Assert(!pPool->aPages[NIL_PGMPOOL_IDX].fZeroed);
+    Assert(!pPool->aPages[NIL_PGMPOOL_IDX].fReusedFlushPending);
 
 #ifdef VBOX_WITH_STATISTICS
     /*
@@ -782,21 +761,6 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
             }
             if (!--cLeft)
                 break;
-        }
-    }
-
-    /* swipe the special pages too. */
-    for (iPage = PGMPOOL_IDX_FIRST_SPECIAL; iPage < PGMPOOL_IDX_FIRST; iPage++)
-    {
-        PPGMPOOLPAGE pPage = &pPool->aPages[iPage];
-        if (pPage->GCPhys != NIL_RTGCPHYS)
-        {
-            Assert(!pPage->cModifications || ++cModifiedPages);
-            Assert(pPage->iModifiedNext == NIL_PGMPOOL_IDX || pPage->cModifications);
-            Assert(pPage->iModifiedPrev == NIL_PGMPOOL_IDX || pPage->cModifications);
-            pPage->iModifiedNext = NIL_PGMPOOL_IDX;
-            pPage->iModifiedPrev = NIL_PGMPOOL_IDX;
-            pPage->cModifications = 0;
         }
     }
 

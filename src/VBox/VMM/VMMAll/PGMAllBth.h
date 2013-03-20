@@ -4581,8 +4581,6 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
      */
     PPGMPOOL     pPool             = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPAGE pOldShwPageCR3    = pVCpu->pgm.s.CTX_SUFF(pShwPageCR3);
-    uint32_t     iOldShwUserTable  = pVCpu->pgm.s.iShwUserTable;
-    uint32_t     iOldShwUser       = pVCpu->pgm.s.iShwUser;
     PPGMPOOLPAGE pNewShwPageCR3;
 
     pgmLock(pVM);
@@ -4594,7 +4592,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 
     Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
     rc = pgmPoolAlloc(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, PGMPOOLACCESS_DONTCARE, PGM_A20_IS_ENABLED(pVCpu),
-                      SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, true /*fLockPage*/,
+                      NIL_PGMPOOL_IDX, UINT32_MAX, true /*fLockPage*/,
                       &pNewShwPageCR3);
     AssertFatalRC(rc);
     rc = VINF_SUCCESS;
@@ -4611,8 +4609,6 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     VMMRZCallRing3Disable(pVCpu);
 #  endif
 
-    pVCpu->pgm.s.iShwUser      = SHW_POOL_ROOT_IDX;
-    pVCpu->pgm.s.iShwUserTable = GCPhysCR3 >> PAGE_SHIFT;
     pVCpu->pgm.s.CTX_SUFF(pShwPageCR3) = pNewShwPageCR3;
 #  ifdef IN_RING0
     pVCpu->pgm.s.pShwPageCR3R3 = MMHyperCCToR3(pVM, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
@@ -4659,7 +4655,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
         /* Mark the page as unlocked; allow flushing again. */
         pgmPoolUnlockPage(pPool, pOldShwPageCR3);
 
-        pgmPoolFreeByPage(pPool, pOldShwPageCR3, iOldShwUser, iOldShwUserTable);
+        pgmPoolFreeByPage(pPool, pOldShwPageCR3, NIL_PGMPOOL_IDX, UINT32_MAX);
     }
     pgmUnlock(pVM);
 # else
@@ -4742,8 +4738,6 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu)
     {
         PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
-        Assert(pVCpu->pgm.s.iShwUser != PGMPOOL_IDX_NESTED_ROOT);
-
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
         if (pPool->cDirtyPages)
             pgmPoolResetDirtyPages(pVM);
@@ -4752,12 +4746,10 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu)
         /* Mark the page as unlocked; allow flushing again. */
         pgmPoolUnlockPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
 
-        pgmPoolFreeByPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3), pVCpu->pgm.s.iShwUser, pVCpu->pgm.s.iShwUserTable);
+        pgmPoolFreeByPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3), NIL_PGMPOOL_IDX, UINT32_MAX);
         pVCpu->pgm.s.pShwPageCR3R3 = 0;
         pVCpu->pgm.s.pShwPageCR3R0 = 0;
         pVCpu->pgm.s.pShwPageCR3RC = 0;
-        pVCpu->pgm.s.iShwUser      = 0;
-        pVCpu->pgm.s.iShwUserTable = 0;
     }
     pgmUnlock(pVM);
 # endif

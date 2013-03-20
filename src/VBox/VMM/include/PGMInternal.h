@@ -1944,18 +1944,9 @@ typedef PGMMAPSET *PPGMMAPSET;
  * @{ */
 /** NIL page pool IDX. */
 #define NIL_PGMPOOL_IDX                 0
-/** The first normal index. */
-#define PGMPOOL_IDX_FIRST_SPECIAL       1
-/** Page directory (32-bit root). */
-#define PGMPOOL_IDX_PD                  1
-/** Page Directory Pointer Table (PAE root). */
-#define PGMPOOL_IDX_PDPT                2
-/** AMD64 CR3 level index.*/
-#define PGMPOOL_IDX_AMD64_CR3           3
-/** Nested paging root.*/
-#define PGMPOOL_IDX_NESTED_ROOT         4
-/** The first normal index. */
-#define PGMPOOL_IDX_FIRST               5
+/** The first normal index.  There used to be 5 fictive pages up front, now
+ * there is only the NIL page. */
+#define PGMPOOL_IDX_FIRST               1
 /** The last valid index. (inclusive, 14 bits) */
 #define PGMPOOL_IDX_LAST                0x3fff
 /** @} */
@@ -3749,12 +3740,6 @@ typedef struct PGMCPU
     R0PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R0;
     /** Pointer to the page of the current active CR3 - RC Ptr. */
     RCPTRTYPE(PPGMPOOLPAGE)         pShwPageCR3RC;
-    /** The shadow page pool index of the user table as specified during
-     * allocation; useful for freeing root pages. */
-    uint32_t                        iShwUser;
-    /** The index into the user table (shadowed) as specified during allocation;
-     * useful for freeing root pages. */
-    uint32_t                        iShwUserTable;
 # if HC_ARCH_BITS == 64
     RTRCPTR                         alignment6; /**< structure size alignment. */
 # endif
