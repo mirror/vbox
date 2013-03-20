@@ -2503,7 +2503,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                                                    pMediumLockList));
         }
 
-        {/* see @bugref{4386} */
+        {
             /*check available place on the storage*/
             RTFOFF pcbTotal = 0;
             RTFOFF pcbFree = 0;
@@ -2534,18 +2534,8 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 rc = pTarget_local->COMGETTER(MediumFormat)(pTargetFormat.asOutParam());
                 if (FAILED(rc))
                     throw rc;
-                ULONG uTargetCaps = 0;
-                com::SafeArray <MediumFormatCapabilities_T> mediumFormatCap;
-                rc = pTargetFormat->COMGETTER(Capabilities)(ComSafeArrayAsOutParam(mediumFormatCap));
 
-                if (FAILED(rc)) throw rc;
-                else
-                {
-                    for (ULONG j = 0; j < mediumFormatCap.size(); j++)
-                        uTargetCaps |= mediumFormatCap[j];
-                }
-
-                if (uTargetCaps & MediumFormatCapabilities_File)
+                if(pTarget_local->isMediumFormatFile())
                 {
                     int vrc = RTFsQuerySerial(pTarget_local->getLocationFull().c_str(), &pu32Serial);
                     if (RT_FAILURE(vrc))
