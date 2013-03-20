@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -65,8 +65,8 @@ RTDECL(int) RTSystemQueryAvailableRam(uint64_t *pcb)
     int rc = sysinfo(&info);
     if (rc == 0)
     {
-        /* XXX Actually this is not quite correct. We would also need to add the cached
-         *     RAM but this information is not available in sysinfo. */
+        /** @todo Actually this is not quite correct. We would also need to add the
+         * cached RAM but this information is not available in sysinfo. */
         *pcb = ((uint64_t)info.freeram + info.bufferram) * info.mem_unit;
         return VINF_SUCCESS;
     }
