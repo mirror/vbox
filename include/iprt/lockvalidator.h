@@ -102,9 +102,6 @@ AssertCompileSize(RTLOCKVALSRCPOS, HC_ARCH_BITS == 32 ? 16 : 32);
 #define RTLOCKVALSRCPOS_INIT_POS_NO_ID() \
     RTLOCKVALSRCPOS_INIT(pszFile, iLine, pszFunction, (uintptr_t)ASMReturnAddress())
 
-/** Pointer to a record of one ownership share.  */
-typedef struct RTLOCKVALRECSHRD *PRTLOCKVALRECSHRD;
-
 
 /**
  * Lock validator record core.
