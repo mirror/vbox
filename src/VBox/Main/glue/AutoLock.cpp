@@ -1,10 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * Automatic locks, implementation
+ * Automatic locks, implementation.
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,6 +15,16 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#define GLUE_USE_CRITSECTRW
+
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/cdefs.h>
 #include <iprt/critsect.h>
 #include <iprt/thread.h>
@@ -37,6 +47,7 @@
 #include <vector>
 #include <list>
 #include <map>
+
 
 namespace util
 {
@@ -133,11 +144,15 @@ struct RWLockHandle::Data
     Data()
     { }
 
-    RTSEMRW                     sem;
-    VBoxLockingClass   lockClass;
+#ifdef GLUE_USE_CRITSECTRW
+    mutable RTCRITSECTRW    CritSect;
+#else
+    RTSEMRW                 sem;
+#endif
+    VBoxLockingClass        lockClass;
 
 #ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
-    com::Utf8Str                strDescription;
+    com::Utf8Str            strDescription;
 #endif
 };
 
@@ -146,64 +161,110 @@ RWLockHandle::RWLockHandle(VBoxLockingClass lockClass)
     m = new Data();
 
     m->lockClass = lockClass;
-
 #ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     m->strDescription = com::Utf8StrFmt("r/w %RCv", this);
-    int vrc = RTSemRWCreateEx(&m->sem, 0 /*fFlags*/, g_mapLockValidationClasses[lockClass], RTLOCKVAL_SUB_CLASS_ANY, NULL);
+#endif
+
+#ifdef GLUE_USE_CRITSECTRW
+# ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
+    int vrc = RTCritSectRwInitEx(&m->CritSect, 0 /*fFlags*/, g_mapLockValidationClasses[lockClass], RTLOCKVAL_SUB_CLASS_ANY, NULL);
+# else
+    int vrc = RTCritSectRwInitEx(&m->CritSect, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY, NULL);
+# endif
 #else
+# ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
+    int vrc = RTSemRWCreateEx(&m->sem, 0 /*fFlags*/, g_mapLockValidationClasses[lockClass], RTLOCKVAL_SUB_CLASS_ANY, NULL);
+# else
     int vrc = RTSemRWCreateEx(&m->sem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_ANY, NULL);
+# endif
 #endif
     AssertRC(vrc);
 }
 
 /*virtual*/ RWLockHandle::~RWLockHandle()
 {
+#ifdef GLUE_USE_CRITSECTRW
+    RTCritSectRwDelete(&m->CritSect);
+#else
     RTSemRWDestroy(m->sem);
+#endif
     delete m;
 }
 
 /*virtual*/ bool RWLockHandle::isWriteLockOnCurrentThread() const
 {
+#ifdef GLUE_USE_CRITSECTRW
+    return RTCritSectRwIsWriteOwner(&m->CritSect);
+#else
     return RTSemRWIsWriteOwner(m->sem);
+#endif
 }
 
 /*virtual*/ void RWLockHandle::lockWrite(LOCKVAL_SRC_POS_DECL)
 {
-#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
-    int vrc = RTSemRWRequestWriteDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
+#ifdef GLUE_USE_CRITSECTRW
+# ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
+    int vrc = RTCritSectRwEnterExclDebug(&m->CritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
+# else
+    int vrc = RTCritSectRwEnterExcl(&m->CritSect);
+# endif
 #else
+# ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
+    int vrc = RTSemRWRequestWriteDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
+# else
     int vrc = RTSemRWRequestWrite(m->sem, RT_INDEFINITE_WAIT);
+# endif
 #endif
     AssertRC(vrc);
 }
 
 /*virtual*/ void RWLockHandle::unlockWrite()
 {
+#ifdef GLUE_USE_CRITSECTRW
+    int vrc = RTCritSectRwLeaveExcl(&m->CritSect);
+#else
     int vrc = RTSemRWReleaseWrite(m->sem);
+#endif
     AssertRC(vrc);
 
 }
 
 /*virtual*/ void RWLockHandle::lockRead(LOCKVAL_SRC_POS_DECL)
 {
-#ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
-    int vrc = RTSemRWRequestReadDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
+#ifdef GLUE_USE_CRITSECTRW
+# ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
+    int vrc = RTCritSectRwEnterSharedDebug(&m->CritSect, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
+# else
+    int vrc = RTCritSectRwEnterShared(&m->CritSect);
+# endif
 #else
+# ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
+    int vrc = RTSemRWRequestReadDebug(m->sem, RT_INDEFINITE_WAIT, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
+# else
     int vrc = RTSemRWRequestRead(m->sem, RT_INDEFINITE_WAIT);
+# endif
 #endif
     AssertRC(vrc);
 }
 
 /*virtual*/ void RWLockHandle::unlockRead()
 {
+#ifdef GLUE_USE_CRITSECTRW
+    int vrc = RTCritSectRwLeaveShared(&m->CritSect);
+#else
     int vrc = RTSemRWReleaseRead(m->sem);
+#endif
     AssertRC(vrc);
 }
 
 /*virtual*/ uint32_t RWLockHandle::writeLockLevel() const
 {
     /* Note! This does not include read recursions done by the writer! */
+#ifdef GLUE_USE_CRITSECTRW
+    return RTCritSectRwGetWriteRecursion(&m->CritSect);
+#else
     return RTSemRWGetWriteRecursion(m->sem);
+#endif
 }
 
 #ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
