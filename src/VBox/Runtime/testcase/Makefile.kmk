@@ -50,6 +50,7 @@ PROGRAMS += \
 	tstRTBitOperations \
 	tstRTCidr \
 	tstRTCritSect \
+	tstRTCritSectRw \
 	tstRTCType \
 	tstRTDigest \
 	tstDir \
@@ -215,6 +216,9 @@ tstRTCidr_SOURCES = tstRTCidr.cpp
 
 tstRTCritSect_TEMPLATE = VBOXR3TSTEXE
 tstRTCritSect_SOURCES = tstRTCritSect.cpp
+
+tstRTCritSectRw_TEMPLATE = VBOXR3TSTEXE
+tstRTCritSectRw_SOURCES = tstRTCritSectRw.cpp
 
 tstRTCritSectW32_TEMPLATE = VBOXR3TSTEXE
 tstRTCritSectW32_SOURCES = tstRTCritSect.cpp
