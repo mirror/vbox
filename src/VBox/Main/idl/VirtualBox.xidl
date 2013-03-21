@@ -234,7 +234,7 @@
 
 <library
   name="VirtualBox"
-  uuid="46137EEC-703B-4fe5-AFD4-7C9BBBBA0259"
+  uuid="d7569351-1750-46f0-936e-bd127d5bc264"
   version="1.3"
   desc="VirtualBox Type Library"
   appUuid="819B4D85-9CEE-493C-B6FC-64FFE759B3C9"
@@ -1315,6 +1315,93 @@
   // IVirtualBox
   /////////////////////////////////////////////////////////////////////////
   -->
+  <!-- This is experimental interface to LWIP based NAT server -->
+  <interface name="INATNetwork" extends="$unknown"
+    uuid="03DFD6F7-1B78-48A3-8345-C785281E9523"
+    wsmap="managed">
+    <attribute name="NetworkName" type="wstring">
+      <desc>
+        TBD: the idea, technically we can start any number of the NAT networks,
+        but we should expect that at some point we will get collisions because of
+        port-forwanding rules. so perhaps we should support only single instance of NAT
+        network.
+      </desc>
+    </attribute>
+    <attribute name="enabled" type="boolean"/>
+    <attribute name="network" type="wstring">
+      <desc>
+        This is CIDR IPv4 string. Specifiying it user defines IPv4 addresses
+        of gateway (low address + 1) and dhcp server (= low address + 2).
+        Note: if there're defined IPv4 port-forward rules update of network
+        will be ignored (because new assignment could break existing rules).
+      </desc>
+    </attribute>
+    <attribute name="gateway" type="wstring" readonly="yes">
+      <desc>
+        This attribute is read-only. It's recalculated on changing 
+        network attribute (low address of network + 1).
+      </desc>
+    </attribute>
+    <attribute name="IPv6Enabled" type="boolean">
+      <desc>
+        This attribute define whether gateway will support IPv6 or not.
+      </desc>
+    </attribute>
+    <attribute name="IPv6Prefix" type="wstring">
+      <desc>
+        This a CIDR IPv6 defining prefix for link-local addresses autoconfiguration     within network. Note: ignored if attribute ipv6enabled is false.
+      </desc>
+    </attribute>
+    <attribute name="advertiseDefaultIPv6RouteEnabled" type="boolean"/>
+    <attribute name="needDhcpServer" type="boolean"/>
+    <attribute name="eventSource" type="IEventSource" readonly="yes"/>
+    <attribute name="portForwardRules4" type="wstring" readonly="yes" safearray="yes">
+      <desc>Array of NAT port-forwarding rules in string representation, 
+      in the following format: 
+      "name:protocolid:[host ip]:host port:[guest ip]:guest port".
+      </desc>
+    </attribute>
+    <attribute name="portForwardRules6" type="wstring" readonly="yes" safearray="yes">
+      <desc>Array of NAT port-forwarding rules in string representation, in the 
+      following format: "name:protocolid:[host ip]:host port:[guest ip]:guest port".
+      </desc>
+    </attribute>
+    <method name="addPortForwardRule">
+      <param name="isIpv6" type="boolean" dir="in"/>
+      <param name="ruleName" type="wstring" dir="in"/>
+      <param name="proto" type="NATProtocol" dir="in">
+        <desc>Protocol handled with the rule.</desc>
+      </param>
+      <param name="hostIP" type="wstring" dir="in">
+        <desc>IP of the host interface to which the rule should apply. 
+        An empty ip address is acceptable, in which case the NAT engine 
+        binds the handling socket to any interface.
+        </desc>
+      </param>
+      <param name="hostPort" type="unsigned short" dir="in">
+        <desc>The port number to listen on.</desc>
+      </param>
+      <param name="guestIP" type="wstring" dir="in">
+        <desc>The IP address of the guest which the NAT engine will forward 
+        matching packets to. An empty IP address is not acceptable.</desc>
+        </param>
+        <param name="guestPort" type="unsigned short" dir="in">
+          <desc>The port number to forward.</desc>
+        </param>
+    </method>
+    <method name="removePortForwardRule">
+      <param name="iSipv6" type="boolean" dir="in"/>
+      <param name="ruleName" type="wstring" dir="in"/>
+    </method>
+    <method name="start">
+      <param name="trunkType" type="wstring" dir="in">
+        <desc>
+          Type of internal network trunk.
+        </desc>
+      </param>
+    </method>
+    <method name="stop"/>
+  </interface>
 
   <interface
     name="IDHCPServer" extends="$unknown"
@@ -1429,7 +1516,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="3b2f08eb-b810-4715-bee0-bb06b9880ad2"
+    uuid="fafa4e17-1ee2-4905-a10e-fe7c18bf5554"
     wsmap="managed"
     >
     <desc>
@@ -1597,6 +1684,8 @@
         DHCP servers.
       </desc>
     </attribute>
+    <!-- Array of NAT networks -->
+    <attribute name="NATNetworks" type="INATNetwork" safearray="yes" readonly="yes"/>
 
     <attribute name="eventSource" type="IEventSource" readonly="yes">
       <desc>
@@ -2274,6 +2363,30 @@
       </param>
     </method>
 
+    <!-- bunch of metods to create NAT -->
+    <method name="createNATNetwork">
+      <!-- Here we create a record in NAT network array with name 
+           and gateway/network parameters this information should 
+           be enough for VBoxNet[Lwip]NAT and VBoxNetDHCP for 
+           servicing the guests. 
+      -->
+      <param name="networkName" type="wstring" dir="in"/>
+      <param name="network" type="INATNetwork" dir="out"/>
+    </method>
+ 
+     <!--
+          Returns the NATNetwork by name, e.g. for adding porforward rule or delition.
+      -->
+     <method name="findNATNetworkByName">
+      <param name="networkName" type="wstring" dir="in"/>
+      <param name="network" type="INATNetwork" dir="out"/>
+    </method>
+    <!--
+        Deletes given NAT network.
+     -->
+    <method name="removeNATNetwork">
+       <param name="network" type="INATNetwork" dir="in"/>
+    </method>
 
     <method name="checkFirmwarePresent">
       <desc>
@@ -18723,9 +18836,39 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IDragAndDropModeChangedEvent">IDragAndDropModeChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnNATNetworkChanged" value="74">
+      <desc>
+        See <link to="INATNetworkChangedEvent">INATNetworkChangedEvent</link>.
+      </desc>
+    </const>
+    <const name="OnNATNetworkStartStop" value="75">
+      <desc>
+        See <link to="INATNetworkStartStopEvent">INATNetworkStartStopEvent</link>.
+      </desc>
+    </const>
+    <const name="OnNATNetworkAlter" value="76">
+      <desc>
+        See <link to="INATNetworkAlterEvent">INATNetworkAlterEvent</link>.
+      </desc>
+    </const>
+    <const name="OnNATNetworkCreationDeletion" value="77">
+      <desc>
+        See <link to="INATNetworkCreationDeletionEvent">INATNetworkCreationDeletionEvent</link>.
+      </desc>
+    </const>
+    <const name="OnNATNetworkSetting" value="78">
+      <desc>
+        See <link to="INATNetworkSettingEvent">INATNetworkSettingEvent</link>.
+      </desc>
+    </const>
+    <const name="OnNATNetworkPortForward" value="79">
+      <desc>
+        See <link to="INATNetworkPortForwardEvent">INATNetworkPortForwardEvent</link>.
+      </desc>
+    </const>
 
     <!-- Last event marker -->
-    <const name="Last" value="74">
+    <const name="Last" value="80">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -20181,7 +20324,57 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
   </interface>
-
+  <interface
+    name="INATNetworkChangedEvent" extends="IEvent"
+    uuid="101ae042-1a29-4a19-92cf-02285773f3b5"
+    wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkChanged"
+    >
+    <!-- network name is common setting for all event types -->
+    <attribute name="NetworkName" type="wstring" readonly="yes"/>
+  </interface>
+  <!-- base class for start/stop events -->
+  <interface name="INATNetworkStartStopEvent" extends="INATNetworkChangedEvent"
+             uuid="269d8f6b-fa1e-4cee-91c7-6d8496bea3c1" 
+             wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkStartStop">
+    <attribute name="startEvent" type="boolean" readonly="yes">
+      <desc>
+        IsStartEvent is true when NAT network is started and false on stopping.
+      </desc>
+    </attribute>
+  </interface>
+  
+  <!-- base class for modification events -->
+  <interface name="INATNetworkAlterEvent" extends="INATNetworkChangedEvent"
+             uuid="3f5a0822-163a-43b1-ad16-8d58b0ef6e75" 
+             wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkAlter"/>
+  
+  <interface name="INATNetworkCreationDeletionEvent" extends="INATNetworkAlterEvent"
+             uuid="8d984a7e-b855-40b8-ab0c-44d3515b4528" 
+             wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkCreationDeletion">
+    <attribute name="creationEvent" type="boolean" readonly="yes"/>
+  </interface>
+  <interface name="INATNetworkSettingEvent" extends="INATNetworkAlterEvent"
+             uuid="9db3a9e6-7f29-4aae-a627-5a282c83092c" 
+             wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkSetting">
+    <attribute name="enabled" type="boolean" readonly="yes"/>
+    <attribute name="network" type="wstring" readonly="yes"/>
+    <attribute name="gateway" type="wstring" readonly="yes"/>
+    <attribute name="advertiseDefaultIPv6RouteEnabled" type="boolean" readonly="yes"/>
+    <attribute name="needDhcpServer" type="boolean" readonly="yes"/>
+  </interface>
+  <interface name="INATNetworkPortForwardEvent" extends="INATNetworkAlterEvent"
+             uuid="2514881b-23d0-430a-a7ff-7ed7f05534bc" 
+             wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkPortForward">
+    <attribute name="create" type="boolean" readonly="yes"/>
+    <attribute name="ipv6" type="boolean" readonly="yes"/>
+    <attribute name="name"  type="wstring" readonly="yes"/>
+    <attribute name="proto"  type="NATProtocol" readonly="yes"/>
+    <attribute name="hostIp"  type="wstring" readonly="yes"/>
+    <attribute name="hostPort"  type="long" readonly="yes"/>
+    <attribute name="guestIp"  type="wstring" readonly="yes"/>
+    <attribute name="guestPort"  type="long" readonly="yes"/>
+  </interface>
+  
   <module name="VBoxSVC" context="LocalServer">
     <class name="VirtualBox" uuid="B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F"
            namespace="virtualbox.org">
