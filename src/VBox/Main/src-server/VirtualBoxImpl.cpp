@@ -62,7 +62,6 @@
 #include "GuestOSTypeImpl.h"
 #include "DHCPServerRunner.h"
 #include "DHCPServerImpl.h"
-#include "NATNetworkImpl.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 # include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
@@ -182,7 +181,6 @@ typedef ObjectsList<Medium> MediaOList;
 typedef ObjectsList<GuestOSType> GuestOSTypesOList;
 typedef ObjectsList<SharedFolder> SharedFoldersOList;
 typedef ObjectsList<DHCPServer> DHCPServersOList;
-typedef ObjectsList<NATNetwork> NATNetworksOList;
 
 typedef std::map<Guid, ComPtr<IProgress> > ProgressMap;
 typedef std::map<Guid, ComObjPtr<Medium> > HardDiskMap;
@@ -210,8 +208,6 @@ struct VirtualBox::Data
           allSharedFolders(lockSharedFolders),
           lockDHCPServers(LOCKCLASS_LISTOFOTHEROBJECTS),
           allDHCPServers(lockDHCPServers),
-          lockNATNetworks(LOCKCLASS_LISTOFOTHEROBJECTS),
-	  allNATNetworks(lockNATNetworks),
           mtxProgressOperations(LOCKCLASS_PROGRESSLIST),
           updateReq(UPDATEREQARG),
           threadClientWatcher(NIL_RTTHREAD),
@@ -289,9 +285,6 @@ struct VirtualBox::Data
 
     RWLockHandle                        lockDHCPServers;
     DHCPServersOList                    allDHCPServers;
-    
-    RWLockHandle                         lockNATNetworks;
-    NATNetworksOList                     allNATNetworks;
 
     RWLockHandle                        mtxProgressOperations;
     ProgressMap                         mapProgressOperations;
@@ -492,7 +485,7 @@ HRESULT VirtualBox::init()
         dumpAllBackRefs();
 #endif
 
-        /* net services - dhcp services */
+        /* net services */
         for (settings::DHCPServersList::const_iterator it = m->pMainConfigFile->llDhcpServers.begin();
              it != m->pMainConfigFile->llDhcpServers.end();
              ++it)
@@ -505,22 +498,6 @@ HRESULT VirtualBox::init()
             if (FAILED(rc)) throw rc;
 
             rc = registerDHCPServer(pDhcpServer, false /* aSaveRegistry */);
-            if (FAILED(rc)) throw rc;
-        }
-
-	/* net services - nat networks */
-	for (settings::NATNetworksList::const_iterator it = m->pMainConfigFile->llNATNetworks.begin();
-             it != m->pMainConfigFile->llNATNetworks.end();
-             ++it)
-        {
-            const settings::NATNetwork &net = *it;
-
-            ComObjPtr<NATNetwork> pNATNetwork;
-            if (SUCCEEDED(rc = pNATNetwork.createObject()))
-                rc = pNATNetwork->init(this, net);
-            if (FAILED(rc)) throw rc;
-
-            rc = registerNATNetwork(pNATNetwork, false /* aSaveRegistry */);
             if (FAILED(rc)) throw rc;
         }
 
@@ -1170,29 +1147,6 @@ VirtualBox::COMGETTER(DHCPServers)(ComSafeArrayOut(IDHCPServer *, aDHCPServers))
 
     return S_OK;
 }
-
-
-STDMETHODIMP
-VirtualBox::COMGETTER(NATNetworks)(ComSafeArrayOut(INATNetwork *, aNATNetworks))
-{
-#ifdef VBOX_WITH_NAT_SERVICE
-    CheckComArgOutSafeArrayPointerValid(aNATNetworks);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock al(m->allNATNetworks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-    SafeIfaceArray<INATNetwork> nets(m->allNATNetworks.getList());
-    nets.detachTo(ComSafeArrayOutArg(aNATNetworks));
-
-    return S_OK;
-#else
-    NOREF(aNATNetworks);
-    NOREF(aNATNetworksSize);
-    return E_NOTIMPL;
-#endif
-}
-
 
 STDMETHODIMP
 VirtualBox::COMGETTER(EventSource)(IEventSource ** aEventSource)
@@ -3168,36 +3122,6 @@ void VirtualBox::onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, bool 
                          aHostPort, aGuestIp, aGuestPort);
 }
 
-void VirtualBox::onNATNetworkChange(IN_BSTR aName)
-{
-    fireNATNetworkChangedEvent(m->pEventSource, aName);
-}
-
-void VirtualBox::onNATNetworkStartStop(IN_BSTR aName, BOOL fStart)
-{
-    fireNATNetworkStartStopEvent(m->pEventSource, aName, fStart);
-}
-void VirtualBox::onNATNetworkSetting(IN_BSTR aNetworkName, BOOL aEnabled, 
-				     IN_BSTR aNetwork, IN_BSTR aGateway, 
-				     BOOL aAdvertiseDefaultIpv6RouteEnabled, 
-				     BOOL fNeedDhcpServer)
-{
-    fireNATNetworkSettingEvent(m->pEventSource, aNetworkName, aEnabled, 
-			       aNetwork, aGateway, 
-			       aAdvertiseDefaultIpv6RouteEnabled, fNeedDhcpServer);
-}
-
-void VirtualBox::onNATNetworkPortForward(IN_BSTR aNetworkName, BOOL create, BOOL fIpv6, 
-					 IN_BSTR aRuleName, NATProtocol_T proto, 
-					 IN_BSTR aHostIp, LONG aHostPort, 
-					 IN_BSTR aGuestIp, LONG aGuestPort)
-{
-    fireNATNetworkPortForwardEvent(m->pEventSource, aNetworkName, create, 
-				   fIpv6, aRuleName, proto,
-				   aHostIp, aHostPort,
-				   aGuestIp, aGuestPort);
-}
-
 /**
  *  @note Locks this object for reading.
  */
@@ -4274,23 +4198,6 @@ HRESULT VirtualBox::saveSettings()
                 m->pMainConfigFile->llDhcpServers.push_back(d);
             }
         }
-
-#ifdef VBOX_WITH_NAT_SERVICE
-	/* Saving NAT Network configuration */
-        m->pMainConfigFile->llNATNetworks.clear();
-        {
-            AutoReadLock natNetworkLock(m->allNATNetworks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-            for (NATNetworksOList::const_iterator it = m->allNATNetworks.begin();
-                 it != m->allNATNetworks.end();
-                 ++it)
-            {
-                settings::NATNetwork n;
-                rc = (*it)->saveSettings(n);
-                if (FAILED(rc)) throw rc;
-                m->pMainConfigFile->llNATNetworks.push_back(n);
-            }
-        }
-#endif
 
         // leave extra data alone, it's still in the config file
 
@@ -5585,195 +5492,4 @@ HRESULT VirtualBox::unregisterDHCPServer(DHCPServer *aDHCPServer,
     return rc;
 }
 
-
-/**
- * NAT Network
- */
-
-STDMETHODIMP VirtualBox::CreateNATNetwork(IN_BSTR aName, INATNetwork ** aNatNetwork)
-{
-#ifdef VBOX_WITH_NAT_SERVICE
-    CheckComArgStrNotEmptyOrNull(aName);
-    CheckComArgNotNull(aNatNetwork);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    ComObjPtr<NATNetwork> natNetwork;
-    natNetwork.createObject();
-    HRESULT rc = natNetwork->init(this, aName);
-    if (FAILED(rc)) return rc;
-
-    rc = registerNATNetwork(natNetwork, true);
-    if (FAILED(rc)) return rc;
-
-    natNetwork.queryInterfaceTo(aNatNetwork);
-
-    fireNATNetworkCreationDeletionEvent(m->pEventSource, aName, TRUE);
-    return rc;
-#else
-    NOREF(aName);
-    NOREF(aNatNetwork);
-    return E_NOTIMPL;
-#endif
-}
-
-STDMETHODIMP VirtualBox::FindNATNetworkByName(IN_BSTR aName, INATNetwork ** aNetwork)
-{
-#ifdef VBOX_WITH_NAT_SERVICE
-    CheckComArgStrNotEmptyOrNull(aName);
-    CheckComArgNotNull(aNetwork);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    HRESULT rc;
-    Bstr bstr;
-    ComPtr<NATNetwork> found;
-
-    AutoReadLock alock(m->allNATNetworks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-    for (NATNetworksOList::const_iterator it = m->allNATNetworks.begin();
-         it != m->allNATNetworks.end();
-         ++it)
-    {
-        rc = (*it)->COMGETTER(NetworkName)(bstr.asOutParam());
-        if (FAILED(rc)) return rc;
-
-        if (bstr == aName)
-        {
-            found = *it;
-            break;
-        }
-    }
-
-    if (!found)
-        return E_INVALIDARG;
-
-    return found.queryInterfaceTo(aNetwork);
-#else
-    NOREF(aName);
-    NOREF(aNetwork);
-    return E_NOTIMPL;
-#endif
-}
-
-STDMETHODIMP VirtualBox::RemoveNATNetwork(INATNetwork * aNetwork)
-{
-#ifdef VBOX_WITH_NAT_SERVICE
-    CheckComArgNotNull(aNetwork);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-    Bstr name;
-    HRESULT rc;
-    NATNetwork *network = static_cast<NATNetwork *>(aNetwork);
-    rc = network->COMGETTER(NetworkName)(name.asOutParam());
-    rc = unregisterNATNetwork(network, true);
-    fireNATNetworkCreationDeletionEvent(m->pEventSource, name.raw(), FALSE);
-    return rc;
-#else
-    NOREF(aNetwork);
-    return E_NOTIMPL;
-#endif
-
-}
-/**
- * Remembers the given NAT network in the settings.
- *
- * @param aNATNetwork    NAT Network object to remember.
- * @param aSaveSettings @c true to save settings to disk (default).
- *
- *
- * @note Locks this object for writing and @a aNATNetwork for reading.
- */
-HRESULT VirtualBox::registerNATNetwork(NATNetwork *aNATNetwork,
-                                       bool aSaveSettings /*= true*/)
-{
-#ifdef VBOX_WITH_NAT_SERVICE
-    AssertReturn(aNATNetwork != NULL, E_INVALIDARG);
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
-    AutoCaller natNetworkCaller(aNATNetwork);
-    AssertComRCReturn(natNetworkCaller.rc(), natNetworkCaller.rc());
-
-    Bstr name;
-    HRESULT rc;
-    rc = aNATNetwork->COMGETTER(NetworkName)(name.asOutParam());
-    if (FAILED(rc)) return rc;
-
-    ComPtr<INATNetwork> existing;
-    rc = FindNATNetworkByName(name.raw(), existing.asOutParam());
-    if (SUCCEEDED(rc))
-        return E_INVALIDARG;
-
-    rc = S_OK;
-
-    m->allNATNetworks.addChild(aNATNetwork);
-
-    if (aSaveSettings)
-    {
-        AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
-        rc = saveSettings();
-        vboxLock.release();
-
-        if (FAILED(rc))
-            unregisterNATNetwork(aNATNetwork, false /* aSaveSettings */);
-    }
-
-    return rc;
-#else
-    NOREF(aNATNetwork);
-    NOREF(aSaveSettings);
-    return E_NOTIMPL;
-#endif
-}
-
-/**
- * Removes the given NAT network from the settings.
- *
- * @param aNATNetwork   NAT network object to remove.
- * @param aSaveSettings @c true to save settings to disk (default).
- *
- * When @a aSaveSettings is @c true, this operation may fail because of the
- * failed #saveSettings() method it calls. In this case, the DHCP server
- * will NOT be removed from the settingsi when this method returns.
- *
- * @note Locks this object for writing.
- */
-HRESULT VirtualBox::unregisterNATNetwork(NATNetwork *aNATNetwork,
-                                         bool aSaveSettings /*= true*/)
-{
-#ifdef VBOX_WITH_NAT_SERVICE
-    AssertReturn(aNATNetwork != NULL, E_INVALIDARG);
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
-    AutoCaller natNetworkCaller(aNATNetwork);
-    AssertComRCReturn(natNetworkCaller.rc(), natNetworkCaller.rc());
-
-    m->allNATNetworks.removeChild(aNATNetwork);
-
-    HRESULT rc = S_OK;
-
-    if (aSaveSettings)
-    {
-        AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
-        rc = saveSettings();
-        vboxLock.release();
-
-        if (FAILED(rc))
-            registerNATNetwork(aNATNetwork, false /* aSaveSettings */);
-    }
-
-    return rc;
-#else
-    NOREF(aNATNetwork);
-    NOREF(aSaveSettings);
-    return E_NOTIMPL;
-#endif
-}
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
