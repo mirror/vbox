@@ -340,6 +340,7 @@ RuntimeR3_SOURCES       = \
 	common/misc/term.cpp \
 	common/misc/uri.cpp \
 	common/net/netaddrstr.cpp \
+	common/net/netaddrstr2.cpp \
 	common/path/rtPathRootSpecLen.cpp \
 	common/path/rtPathVolumeSpecLen.cpp \
 	common/path/RTPathAbsDup.cpp \
