@@ -69,12 +69,20 @@ RT_C_DECLS_BEGIN
 /** The value must be a valid IPv4 address.
  * (Not a name, but 4 values in the 0..255 range with dots separating them). */
 #define RTGETOPT_REQ_IPV4ADDR                   10
-#if 0
 /** The value must be a valid IPv4 CIDR.
  * As with RTGETOPT_REQ_IPV4ADDR, no name.
- * @todo Mix CIDR with types.h or/and net.h first and find a way to make the
- *       mask optional like with ifconfig. See RTCidrStrToIPv4. */
+ */
 #define RTGETOPT_REQ_IPV4CIDR                   11
+#if 0
+/* take placers */
+/** The value must be a valid IPv6 addr
+ * @todo: Add types and parsing routines in (iprt/net.h)
+ */
+#define RTGETOPT_REQ_IPV6ADDR                   12
+/** The value must be a valid IPv6 CIDR
+ * @todo: Add types and parsing routines in (iprt/net.h)
+ */
+#define RTGETOPT_REQ_IPV6CIDR                   13
 #endif
 /** The value must be a valid ethernet MAC address. */
 #define RTGETOPT_REQ_MACADDR                    14
@@ -163,6 +171,12 @@ typedef union RTGETOPTUNION
 #ifdef ___iprt_net_h
     /** A RTGETOPT_REQ_IPV4ADDR option argument. */
     RTNETADDRIPV4   IPv4Addr;
+    /** A RTGETOPT_REQ_IPV4CIDR option argument. */
+    struct 
+    { 
+	RTNETADDRIPV4 IPv4Network;
+	RTNETADDRIPV4 IPv4Netmask;
+    } CidrIPv4;
 #endif
     /** A RTGETOPT_REQ_MACADDR option argument. */
     RTMAC           MacAddr;
