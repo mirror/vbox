@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ____H_AUTOLOCK
-#define ____H_AUTOLOCK
+#ifndef ___VBox_com_AutoLock_h
+#define ___VBox_com_AutoLock_h
 
 #include <iprt/types.h>
 
@@ -632,6 +632,6 @@ public:
 
 } /* namespace util */
 
-#endif // !____H_AUTOLOCK
+#endif
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
