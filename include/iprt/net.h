@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -66,6 +66,7 @@ RTDECL(bool) RTNetIsIPv4AddrStr(const char *pszAddress);
  * @param   pAddr           Where to store the result.
  */
 RTDECL(int) RTNetStrToIPv4Addr(const char *pszAddr, PRTNETADDRIPV4 pAddr);
+
 
 /**
  * IPv6 address.

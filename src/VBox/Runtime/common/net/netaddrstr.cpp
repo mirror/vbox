@@ -1284,6 +1284,9 @@ RTDECL(bool) RTNetIsIPv4AddrStr(const char *pszAddress)
 }
 RT_EXPORT_SYMBOL(RTNetIsIPv4AddrStr);
 
+
+/** @todo r=bird: move to separate file, netaddrstr2.cpp without the contrib
+ *        statement in the header. This is our code. */
 RTDECL(int) RTNetStrToIPv4Addr(const char *pszAddr, PRTNETADDRIPV4 pAddr)
 {
     char *pszNext;
@@ -1318,3 +1321,4 @@ RTDECL(int) RTNetStrToIPv4Addr(const char *pszAddr, PRTNETADDRIPV4 pAddr)
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTNetStrToIPv4Addr);
+
