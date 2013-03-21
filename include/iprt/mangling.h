@@ -902,6 +902,7 @@
 # define RTNetTCPChecksum                               RT_MANGLER(RTNetTCPChecksum)
 # define RTNetUDPChecksum                               RT_MANGLER(RTNetUDPChecksum)
 # define RTNetIsIPv4AddrStr                             RT_MANGLER(RTNetIsIPv4AddrStr)
+# define RTNetStrToIPv4Addr                             RT_MANGLER(RTNetStrToIPv4Addr)
 # define RTNetIsIPv6AddrStr                             RT_MANGLER(RTNetIsIPv6AddrStr)
 # define RTOnceSlow                                     RT_MANGLER(RTOnceSlow)
 # define RTOnceReset                                    RT_MANGLER(RTOnceReset)
