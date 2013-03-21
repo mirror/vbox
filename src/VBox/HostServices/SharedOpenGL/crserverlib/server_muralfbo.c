@@ -324,6 +324,7 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
     GLenum status;
     SPUDispatchTable *gl = &cr_server.head_spu->dispatch_table;
     CRContextInfo *pMuralContextInfo;
+    VBOXVR_TEXTURE Tex;
 
     CRASSERT(mural->aidFBOs[0]==0);
     CRASSERT(mural->aidFBOs[1]==0);
@@ -428,7 +429,16 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
     }
 
     CRASSERT(mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
-    CrVrScrCompositorEntryTexNameUpdate(&mural->CEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
+
+    Tex.width = mural->width;
+    Tex.height = mural->height;
+    Tex.target = GL_TEXTURE_2D;
+    Tex.hwid = mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)];
+
+    CrVrScrCompositorEntryTexUpdate(&mural->CEntry, &Tex);
+
+    if (mural->fRootVrOn)
+        CrVrScrCompositorEntryTexUpdate(&mural->RootVrCEntry, &Tex);
 }
 
 void crServerDeleteMuralFBO(CRMuralInfo *mural)
@@ -537,7 +547,10 @@ static void crServerVBoxCompositionPresentPerform(CRMuralInfo *mural)
 
     crStateSwitchPrepare(NULL, curCtx, idDrawFBO, idReadFBO);
 
-    cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, &mural->CEntry);
+    if (!mural->fRootVrOn)
+        cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, &mural->CEntry);
+    else
+        cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->RootVrCompositor, &mural->RootVrCEntry);
 
     crStateSwitchPostprocess(curCtx, NULL, idDrawFBO, idReadFBO);
 }
@@ -676,6 +689,14 @@ void crServerPresentFBO(CRMuralInfo *mural)
 
 GLboolean crServerIsRedirectedToFBO()
 {
+#ifdef DEBUG_misha
+    Assert(cr_server.curClient);
+    if (cr_server.curClient)
+    {
+        Assert(cr_server.curClient->currentMural == cr_server.currentMural);
+        Assert(cr_server.curClient->currentCtxInfo == cr_server.currentCtxInfo);
+    }
+#endif
     return cr_server.curClient
            && cr_server.curClient->currentMural
            && cr_server.curClient->currentMural->fUseFBO;
@@ -710,4 +731,6 @@ void crServerMuralFBOSwapBuffers(CRMuralInfo *mural)
     }
     Assert(mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
     CrVrScrCompositorEntryTexNameUpdate(&mural->CEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
+    if (mural->fRootVrOn)
+        CrVrScrCompositorEntryTexNameUpdate(&mural->RootVrCEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
 }

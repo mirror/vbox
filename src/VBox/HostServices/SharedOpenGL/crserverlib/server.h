@@ -115,6 +115,7 @@ GLint crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint p
 GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID);
 void crServerMuralTerm(CRMuralInfo *mural);
 void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height);
+int crServerMuralSynchRootVr(CRMuralInfo *mural, uint32_t *pcRects, const RTRECT **ppRects);
 
 GLint crServerGenerateID(GLint *pCounter);
 
@@ -149,7 +150,7 @@ DECLINLINE(GLboolean) crServerVBoxCompositionPresentNeeded(CRMuralInfo *mural)
     return mural->bVisible
                 && mural->width
                 && mural->height
-                && CrVrScrCompositorEntryIsInList(&mural->CEntry);
+                && !mural->fRootVrOn ? CrVrScrCompositorEntryIsInList(&mural->CEntry) : CrVrScrCompositorEntryIsInList(&mural->RootVrCEntry);
 }
 
 #define CR_SERVER_FBO_BB_IDX(_mural) ((_mural)->iBbBuffer)

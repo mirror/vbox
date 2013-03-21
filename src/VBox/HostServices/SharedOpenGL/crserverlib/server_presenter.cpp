@@ -106,7 +106,7 @@ void CrDpResize(PCR_DISPLAY pDisplay, uint32_t width, uint32_t height,
 int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions)
 {
     CrVrScrCompositorLock(&pDisplay->Compositor);
-    int rc = CrVrScrCompositorEntryRegionsSet(&pDisplay->Compositor, &pEntry->CEntry, pPos, cRegions, paRegions);
+    int rc = CrVrScrCompositorEntryRegionsSet(&pDisplay->Compositor, &pEntry->CEntry, pPos, cRegions, paRegions, NULL);
     CrVrScrCompositorUnlock(&pDisplay->Compositor);
     return rc;
 }
@@ -114,7 +114,7 @@ int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RT
 int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions)
 {
     CrVrScrCompositorLock(&pDisplay->Compositor);
-    int rc = CrVrScrCompositorEntryRegionsAdd(&pDisplay->Compositor, &pEntry->CEntry, pPos, cRegions, paRegions);
+    int rc = CrVrScrCompositorEntryRegionsAdd(&pDisplay->Compositor, &pEntry->CEntry, pPos, cRegions, paRegions, NULL);
     CrVrScrCompositorUnlock(&pDisplay->Compositor);
     return rc;
 }
@@ -140,7 +140,7 @@ int CrDpPresentEntry(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
     return VINF_SUCCESS;
 }
 
-void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const PVBOXVR_TEXTURE pTextureData)
+void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData)
 {
     CrVrScrCompositorEntryInit(&pEntry->CEntry, pTextureData);
 }
@@ -316,6 +316,7 @@ void CrHlpPutTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLenum enmFo
         crStateGetTextureObjectAndImage(pCurCtx, pTexture->target, 0, &pTObj, &pTImg);
 
         GLuint uid = pTObj->hwid;
+        CRASSERT(uid);
         cr_server.head_spu->dispatch_table.BindTexture(pTexture->target, uid);
     }
     else
@@ -362,6 +363,7 @@ void* CrHlpGetTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLuint idPB
         crStateGetTextureObjectAndImage(pCurCtx, pTexture->target, 0, &pTObj, &pTImg);
 
         GLuint uid = pTObj->hwid;
+        CRASSERT(uid);
         cr_server.head_spu->dispatch_table.BindTexture(pTexture->target, uid);
     }
     else
@@ -384,7 +386,7 @@ void* CrHlpGetTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLuint idPB
 }
 
 void SERVER_DISPATCH_APIENTRY
-crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, GLint *pRects)
+crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, const GLint *pRects)
 {
     uint32_t idScreen = CR_PRESENT_GET_SCREEN(cfg);
     PCR_DISPLAY pDisplay = crServerDisplayGet(idScreen);

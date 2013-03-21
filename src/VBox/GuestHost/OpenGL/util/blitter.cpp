@@ -80,7 +80,7 @@ void CrBltMuralSetCurrent(PCR_BLITTER pBlitter, CR_BLITTER_WINDOW *pMural)
 
 #define CRBLT_FILTER_FROM_FLAGS(_f) (((_f) & CRBLT_F_LINEAR) ? GL_LINEAR : GL_NEAREST)
 
-static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const PRTRECTSIZE pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
+static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const RTRECTSIZE *pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
 {
     GLenum filter = CRBLT_FILTER_FROM_FLAGS(fFlags);
     pBlitter->pDispatch->BindFramebufferEXT(GL_READ_FRAMEBUFFER, pBlitter->idFBO);
@@ -268,7 +268,7 @@ static void* crBltBufGet(PCR_BLITTER_BUFFER pBuffer, GLuint cbBuffer)
     return pBuffer->pvBuffer;
 }
 
-static void crBltCheckSetupViewport(PCR_BLITTER pBlitter, const PRTRECTSIZE pDstSize, bool fFBODraw)
+static void crBltCheckSetupViewport(PCR_BLITTER pBlitter, const RTRECTSIZE *pDstSize, bool fFBODraw)
 {
     if (!pBlitter->Flags.LastWasFBODraw != !fFBODraw
             || pBlitter->Flags.CurrentMuralChanged
@@ -307,7 +307,7 @@ static void crBltCheckSetupViewport(PCR_BLITTER pBlitter, const PRTRECTSIZE pDst
     }
 }
 
-static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const PRTRECTSIZE pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
+static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const RTRECTSIZE *pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
 {
     GLuint normalX, normalY;
     uint32_t height = (fFlags & CRBLT_F_OFFSCREEN) ? 0 : pDstSize->cy;
@@ -514,7 +514,7 @@ int CrBltEnter(PCR_BLITTER pBlitter, CR_BLITTER_CONTEXT *pRestoreCtxInfo, CR_BLI
     return rc;
 }
 
-static void crBltBlitTexBuf(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, GLenum enmDstBuff, const PRTRECTSIZE pDstSize, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
+static void crBltBlitTexBuf(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, GLenum enmDstBuff, const RTRECTSIZE *pDstSize, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
 {
     pBlitter->pDispatch->DrawBuffer(enmDstBuff);
 

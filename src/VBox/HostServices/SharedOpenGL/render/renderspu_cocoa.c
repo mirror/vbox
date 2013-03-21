@@ -176,15 +176,11 @@ void renderspu_SystemSwapBuffers(WindowInfo *pWinInfo, GLint flags)
     cocoaViewDisplay(pWinInfo->window);
 }
 
-void renderspu_SystemWindowVisibleRegion(WindowInfo *pWinInfo, GLint cRects, GLint* paRects)
+void renderspu_SystemWindowVisibleRegion(WindowInfo *pWinInfo, GLint cRects, const GLint* paRects)
 {
     CRASSERT(pWinInfo);
 
     cocoaViewSetVisibleRegion(pWinInfo->window, cRects, paRects);
-}
-
-void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *paRects)
-{
 }
 
 void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *pWinInfo)

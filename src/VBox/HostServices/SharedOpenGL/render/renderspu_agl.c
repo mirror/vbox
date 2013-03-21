@@ -65,6 +65,9 @@
         DEBUG_MSG_RESULT(result, text); \
     }
 
+static void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window);
+static void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *pRects);
+
 /* In some case (like compiz which doesn't provide us with clipping regions) we
  * have to make sure that *all* open OpenGL windows are clipped to the main
  * application window. This is done here when called from the event handler
@@ -700,7 +703,7 @@ renderspu_SystemSwapBuffers(WindowInfo *window, GLint flags)
     }
 }
 
-void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint* pRects)
+void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, const GLint* pRects)
 {
     CRASSERT(window);
     CRASSERT(window->window);
@@ -735,7 +738,7 @@ void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint
     renderspu_SystemWindowApplyVisibleRegion(window);
 }
 
-void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *pRects)
+static void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *pRects)
 {
     /* Remember the visible region of the root window if there is one */
     if (render_spu.hRootVisibleRegion)
@@ -762,7 +765,7 @@ void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *pRects)
 }
 
 /*Assumes that all regions are in the guest coordinates system*/
-void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window)
+static void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window)
 {
     ContextInfo *c = renderspuGetWindowContext(window);
     RgnHandle rgn;

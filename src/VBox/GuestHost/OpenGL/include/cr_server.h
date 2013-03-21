@@ -124,8 +124,14 @@ typedef struct {
     GLuint fboWidth, fboHeight;
     GLuint idPBO;
 
+    GLboolean fRootVrOn;
+
     VBOXVR_SCR_COMPOSITOR_ENTRY CEntry;
     VBOXVR_SCR_COMPOSITOR Compositor;
+
+    /* if root Visible regions are set, these two contain actual regions being passed to render spu */
+    VBOXVR_SCR_COMPOSITOR_ENTRY RootVrCEntry;
+    VBOXVR_SCR_COMPOSITOR RootVrCompositor;
 
     /* bitfield representing contexts the mural has been ever current with
      * we just reuse CR_STATE_SHAREDOBJ_USAGE_XXX API here for simplicity */
@@ -219,7 +225,7 @@ int CrDpInit(PCR_DISPLAY pDisplay);
 void CrDpTerm(PCR_DISPLAY pDisplay);
 void CrDpResize(PCR_DISPLAY pDisplay, uint32_t width, uint32_t height,
         uint32_t stretchedWidth, uint32_t stretchedHeight);
-void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const PVBOXVR_TEXTURE pTextureData);
+void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData);
 void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry);
 int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
 int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
@@ -302,6 +308,13 @@ typedef struct {
 
     /* visBits -> dummy mural association */
     CRHashTable *dummyMuralTable;
+
+    GLboolean fRootVrOn;
+    VBOXVR_LIST RootVr;
+    /* we need to translate Root Vr to each window coords, this one cpecifies the current translation point
+     * note that since window attributes modifications is performed in HGCM thread only and thus is serialized,
+     * we deal with the global RootVr data directly */
+    RTPOINT RootVrCurPoint;
 
     /** configuration options */
     /*@{*/
@@ -399,7 +412,7 @@ extern DECLEXPORT(int32_t) crVBoxServerSetScreenCount(int sCount);
 extern DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex);
 extern DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h, uint64_t winID);
 
-extern DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, GLint *pRects);
+extern DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, const RTRECT *pRects);
 
 extern DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPresentFBO);
 

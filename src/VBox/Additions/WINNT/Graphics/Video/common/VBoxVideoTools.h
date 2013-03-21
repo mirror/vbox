@@ -347,7 +347,7 @@ DECLINLINE(void) vboxWddmDirtyRegionAddRect(PVBOXWDDM_DIRTYREGION pInfo, const R
     }
 }
 
-DECLINLINE(void) vboxWddmDirtyRegionUnite(PVBOXWDDM_DIRTYREGION pInfo, const PVBOXWDDM_DIRTYREGION pInfo2)
+DECLINLINE(void) vboxWddmDirtyRegionUnite(PVBOXWDDM_DIRTYREGION pInfo, const VBOXWDDM_DIRTYREGION *pInfo2)
 {
     if (pInfo2->fFlags & VBOXWDDM_DIRTYREGION_F_VALID)
     {

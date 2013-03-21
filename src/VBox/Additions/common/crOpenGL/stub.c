@@ -142,7 +142,7 @@ void APIENTRY crWindowPosition( GLint window, GLint x, GLint y )
     }
 }
 
-void APIENTRY crWindowVisibleRegion( GLint window, GLint cRects, void *pRects )
+void APIENTRY crWindowVisibleRegion( GLint window, GLint cRects, const void *pRects )
 {
     const WindowInfo *winInfo = (const WindowInfo *)
         crHashtableSearch(stub.windowTable, (unsigned int) window);
@@ -153,7 +153,7 @@ void APIENTRY crWindowVisibleRegion( GLint window, GLint cRects, void *pRects )
     }
 }
 
-void APIENTRY crVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, GLint *pRects)
+void APIENTRY crVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, const GLint *pRects)
 {
     crError("not expected!");
 }

@@ -1551,7 +1551,7 @@ void renderspu_SystemWindowPosition( WindowInfo *window, GLint x, GLint y )
     window->y = y;
 }
 
-void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint* pRects)
+void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, const GLint* pRects)
 {
     GLint i;
     HRGN hRgn, hTmpRgn;

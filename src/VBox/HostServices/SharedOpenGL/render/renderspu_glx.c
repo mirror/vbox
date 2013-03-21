@@ -1892,7 +1892,7 @@ renderspu_SystemWindowPosition( WindowInfo *window, GLint x, GLint y )
 }
 
 void
-renderspu_SystemWindowVisibleRegion( WindowInfo *window, GLint cRects, GLint *pRects )
+renderspu_SystemWindowVisibleRegion( WindowInfo *window, GLint cRects, const GLint *pRects )
 {
 #ifdef USE_OSMESA
     if (render_spu.use_osmesa)
