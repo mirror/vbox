@@ -56,6 +56,16 @@ typedef RTNETADDRIPV4 const *PCRTNETADDRIPV4;
  */
 RTDECL(bool) RTNetIsIPv4AddrStr(const char *pszAddress);
 
+/**
+ * Converts an stringified IPv4 address into the RTNETADDRIPV4 representation.
+ *
+ * @returns VINF_SUCCESS on success, VERR_INVALID_PARAMETER on
+ *          failure.
+ *
+ * @param   pszAddr         The value to convert.
+ * @param   pAddr           Where to store the result.
+ */
+RTDECL(int) RTNetStrToIPv4Addr(const char *pszAddr, PRTNETADDRIPV4 pAddr);
 
 /**
  * IPv6 address.

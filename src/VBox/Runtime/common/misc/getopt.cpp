@@ -92,8 +92,6 @@ RT_EXPORT_SYMBOL(RTGetOptInit);
 /**
  * Converts an stringified IPv4 address into the RTNETADDRIPV4 representation.
  *
- * @todo This should be move to some generic part of the runtime.
- *
  * @returns VINF_SUCCESS on success, VERR_GETOPT_INVALID_ARGUMENT_FORMAT on
  *          failure.
  *
@@ -102,32 +100,8 @@ RT_EXPORT_SYMBOL(RTGetOptInit);
  */
 static int rtgetoptConvertIPv4Addr(const char *pszValue, PRTNETADDRIPV4 pAddr)
 {
-    char *pszNext;
-    int rc = RTStrToUInt8Ex(RTStrStripL(pszValue), &pszNext, 10, &pAddr->au8[0]);
-    if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS)
-        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
-    if (*pszNext++ != '.')
-        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
-
-    rc = RTStrToUInt8Ex(pszNext, &pszNext, 10, &pAddr->au8[1]);
-    if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS)
-        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
-    if (*pszNext++ != '.')
-        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
-
-    rc = RTStrToUInt8Ex(pszNext, &pszNext, 10, &pAddr->au8[2]);
-    if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS)
-        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
-    if (*pszNext++ != '.')
-        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
-
-    rc = RTStrToUInt8Ex(pszNext, &pszNext, 10, &pAddr->au8[3]);
-    if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_SPACES)
-        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
-    pszNext = RTStrStripL(pszNext);
-    if (*pszNext)
-        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
-
+    if (RT_FAILURE(RTNetStrToIPv4Addr(pszValue, pAddr)))
+	return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
     return VINF_SUCCESS;
 }
 
