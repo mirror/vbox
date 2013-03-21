@@ -47,6 +47,7 @@ public:
     INTNETTRUNKTYPE     m_enmTrunkType;
     RTMAC               m_MacAddress;
     RTNETADDRIPV4       m_Ipv4Address;
+    RTNETADDRIPV4       m_Ipv4Netmask;
     /* cs for syncing */
     RTCRITSECT          m_csThis;
     /** @} */

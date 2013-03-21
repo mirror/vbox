@@ -65,6 +65,7 @@ static RTGETOPTDEF g_aGetOptDef[] =
     { "--trunk-type",     'T',   RTGETOPT_REQ_STRING },
     { "--mac-address",    'a',   RTGETOPT_REQ_MACADDR },
     { "--ip-address",     'i',   RTGETOPT_REQ_IPV4ADDR },
+    { "--netmask",        'm',   RTGETOPT_REQ_IPV4ADDR },
     { "--verbose",        'v',   RTGETOPT_REQ_NOTHING },
 };
 VBoxNetBaseService::VBoxNetBaseService()
@@ -173,6 +174,9 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
             case 'i':
                 m_Ipv4Address = Val.IPv4Addr;
                 break;
+        case 'm':
+          m_Ipv4Netmask = Val.IPv4Addr;
+          break;
 
             case 'v':
                 m_cVerbosity++;
@@ -346,8 +350,8 @@ int VBoxNetBaseService::sendBufferOnWire(PCINTNETSEG pcSg, int cSg, size_t cbFra
     /* Now we fill pvFrame with S/G above */
     for (idxSg = 0; idxSg < cSg; ++idxSg)
     {
-	memcpy(&pu8Frame[offFrame], pcSg[idxSg].pv, pcSg[idxSg].cb);
-	offFrame+=pcSg[idxSg].cb;
+        memcpy(&pu8Frame[offFrame], pcSg[idxSg].pv, pcSg[idxSg].cb);
+        offFrame+=pcSg[idxSg].cb;
     }
     /* Commit */
     IntNetRingCommitFrame(&m_pIfBuf->Send, pHdr);
