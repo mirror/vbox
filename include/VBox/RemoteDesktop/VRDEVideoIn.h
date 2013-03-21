@@ -277,6 +277,15 @@ typedef struct VRDEVIDEOINFRAMEDESC
  *
  * If a control request can not be fulfilled, then VRDE_VIDEOIN_CTRLHDR_F_FAIL
  * will be set and u8Status contains the error code. This replaces the VC_REQUEST_ERROR_CODE_CONTROL.
+ *
+ * If the client receives an unsupported control, then the client must ignore it.
+ * That is the control request must not affect the client in any way.
+ * The client may send a VRDEVIDEOINCTRLHDR response for the unsupported control with:
+ *   u16ControlSelector = the received value;
+ *   u16RequestType = the received value;
+ *   u16ParmSize = 0;
+ *   u8Flags = VRDE_VIDEOIN_CTRLHDR_F_FAIL;
+ *   u8Status = VRDE_VIDEOIN_CTRLHDR_STATUS_INVALIDCONTROL;
  */
 
 typedef struct VRDEVIDEOINCTRLHDR
@@ -312,7 +321,7 @@ typedef struct VRDEVIDEOINCTRLHDR
 #define VRDE_VIDEOIN_CTRLHDR_STATUS_OUTOFRANGE     0x04 /* Out of range */
 #define VRDE_VIDEOIN_CTRLHDR_STATUS_INVALIDUNIT    0x05 /* Invalid unit */
 #define VRDE_VIDEOIN_CTRLHDR_STATUS_INVALIDCONTROL 0x06 /* Invalid control */
-#define VRDE_VIDEOIN_CTRLHDR_STATUS_INVALIDREQUEST 0x07 /* Invalid Request */
+#define VRDE_VIDEOIN_CTRLHDR_STATUS_INVALIDREQUEST 0x07 /* Invalid request */
 #define VRDE_VIDEOIN_CTRLHDR_STATUS_UNKNOWN        0xFF /* Unknown */
 
 /* Control selectors. 16 bit. High byte is the category. Low byte is the identifier.*/
@@ -371,8 +380,9 @@ typedef struct VRDEVIDEOINCTRLHDR
 #define VRDE_VIDEOIN_CTRLSEL_PU_ANALOG_LOCK_STATUS        VRDE_VIDEOIN_CTRLSEL_PU(0x12)
 
 #define VRDE_VIDEOIN_CTRLSEL_VS_UNDEFINED                 VRDE_VIDEOIN_CTRLSEL_VS(0x00)
-#define VRDE_VIDEOIN_CTRLSEL_VS_START                     VRDE_VIDEOIN_CTRLSEL_VS(0x01)
-#define VRDE_VIDEOIN_CTRLSEL_VS_STOP                      VRDE_VIDEOIN_CTRLSEL_VS(0x02)
+#define VRDE_VIDEOIN_CTRLSEL_VS_SETUP                     VRDE_VIDEOIN_CTRLSEL_VS(0x01)
+#define VRDE_VIDEOIN_CTRLSEL_VS_OFF                       VRDE_VIDEOIN_CTRLSEL_VS(0x02)
+#define VRDE_VIDEOIN_CTRLSEL_VS_ON                        VRDE_VIDEOIN_CTRLSEL_VS(0x03)
 #define VRDE_VIDEOIN_CTRLSEL_VS_STILL_IMAGE_TRIGGER       VRDE_VIDEOIN_CTRLSEL_VS(0x05)
 #define VRDE_VIDEOIN_CTRLSEL_VS_STREAM_ERROR_CODE         VRDE_VIDEOIN_CTRLSEL_VS(0x06)
 #define VRDE_VIDEOIN_CTRLSEL_VS_GENERATE_KEY_FRAME        VRDE_VIDEOIN_CTRLSEL_VS(0x07)
@@ -610,15 +620,15 @@ typedef struct VRDEVIDEOINCTRL_PU_ANALOG_LOCK_STATUS
     uint8_t u8Status;
 } VRDEVIDEOINCTRL_PU_ANALOG_LOCK_STATUS;
 
-/* Start sending video frames with this format. */
-#define VRDEVIDEOINCTRL_F_VS_START_FID 0x01
-#define VRDEVIDEOINCTRL_F_VS_START_EOF 0x02
+/* Set streaming parameters. The actual streaming will be enabled by VS_ON. */
+#define VRDEVIDEOINCTRL_F_VS_SETUP_FID 0x01
+#define VRDEVIDEOINCTRL_F_VS_SETUP_EOF 0x02
 
-typedef struct VRDEVIDEOINCTRL_VS_START
+typedef struct VRDEVIDEOINCTRL_VS_SETUP
 {
     VRDEVIDEOINCTRLHDR hdr;
     uint8_t u8FormatId;             /* The format id on the client: VRDEVIDEOINFORMATDESC::u8FormatId. */
-    uint8_t u8FramingInfo;          /* VRDEVIDEOINCTRL_F_VS_START_*. Set by the client. */
+    uint8_t u8FramingInfo;          /* VRDEVIDEOINCTRL_F_VS_SETUP_*. Set by the client. */
     uint16_t u16Width;
     uint16_t u16Height;
     uint32_t u32FrameInterval;      /* Frame interval in 100 ns units, 0 means a still image capture.
@@ -633,25 +643,31 @@ typedef struct VRDEVIDEOINCTRL_VS_START
                                      * Set by the client, read by the server.
                                      */
     uint32_t u32ClockFrequency;     /* @todo just all clocks in 100ns units? */
-} VRDEVIDEOINCTRL_VS_START;
+} VRDEVIDEOINCTRL_VS_SETUP;
 
 /* Stop sending video frames. */
-typedef struct VRDEVIDEOINCTRL_VS_STOP
+typedef struct VRDEVIDEOINCTRL_VS_OFF
 {
     VRDEVIDEOINCTRLHDR hdr;
-} VRDEVIDEOINCTRL_VS_STOP;
+} VRDEVIDEOINCTRL_VS_OFF;
 
-typedef struct VRDEVIDEOINCTRL_VS_SYNCH_DELAY
+/* Start sending video frames with parameters set by VS_SETUP. */
+typedef struct VRDEVIDEOINCTRL_VS_ON
 {
     VRDEVIDEOINCTRLHDR hdr;
-    uint16_t u16Delay;
-} VRDEVIDEOINCTRL_VS_SYNCH_DELAY;
+} VRDEVIDEOINCTRL_VS_ON;
 
 typedef struct VRDEVIDEOINCTRL_VS_STILL_IMAGE_TRIGGER
 {
     VRDEVIDEOINCTRLHDR hdr;
     uint8_t u8Trigger;
 } VRDEVIDEOINCTRL_VS_STILL_IMAGE_TRIGGER;
+
+typedef struct VRDEVIDEOINCTRL_VS_STREAM_ERROR_CODE
+{
+    VRDEVIDEOINCTRLHDR hdr;
+    uint8_t u8StreamErrorCode;
+} VRDEVIDEOINCTRL_VS_STREAM_ERROR_CODE;
 
 typedef struct VRDEVIDEOINCTRL_VS_GENERATE_KEY_FRAME
 {
@@ -666,11 +682,11 @@ typedef struct VRDEVIDEOINCTRL_VS_UPDATE_FRAME_SEGMENT
     uint8_t u8EndFrameSegment;
 } VRDEVIDEOINCTRL_VS_UPDATE_FRAME_SEGMENT;
 
-typedef struct VRDEVIDEOINCTRL_VS_STREAM_ERROR_CODE
+typedef struct VRDEVIDEOINCTRL_VS_SYNCH_DELAY
 {
     VRDEVIDEOINCTRLHDR hdr;
-    uint8_t u8StreamErrorCode;
-} VRDEVIDEOINCTRL_VS_STREAM_ERROR_CODE;
+    uint16_t u16Delay;
+} VRDEVIDEOINCTRL_VS_SYNCH_DELAY;
 
 /* A hardware button was pressed/released on the device. */
 typedef struct VRDEVIDEOINCTRL_HW_BUTTON
@@ -715,7 +731,7 @@ typedef struct VRDEVIDEOINCTRL_PROT_FRAMES
 /*
  * Payload transfers. How frames are sent to the server:
  * the client send a PAYLOAD packet, which has the already set format.
- * The server enables the transfers by sending VRDEVIDEOINCTRL_VS_START.
+ * The server enables the transfers by sending VRDEVIDEOINCTRL_VS_ON.
  */
 
 /* Payload header */
