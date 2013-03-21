@@ -1,6 +1,5 @@
 /** @file
- * MS COM / XPCOM Abstraction Layer:
- * Smart COM pointer classes declaration
+ * MS COM / XPCOM Abstraction Layer - Smart COM pointer classes declaration.
  */
 
 /*
@@ -491,3 +490,4 @@ public:
     }
 };
 #endif
+

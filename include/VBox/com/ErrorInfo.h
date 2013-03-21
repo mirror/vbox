@@ -1,6 +1,5 @@
 /** @file
- * MS COM / XPCOM Abstraction Layer:
- * ErrorInfo class declaration
+ * MS COM / XPCOM Abstraction Layer - ErrorInfo class declaration.
  */
 
 /*

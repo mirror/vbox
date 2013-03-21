@@ -1,5 +1,4 @@
 /** @file
- *
  * Automatic locks, implementation
  */
 
@@ -633,6 +632,6 @@ public:
 
 } /* namespace util */
 
-#endif // ____H_AUTOLOCK
+#endif // !____H_AUTOLOCK
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

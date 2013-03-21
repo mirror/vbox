@@ -1,6 +1,5 @@
 /** @file
- * MS COM / XPCOM Abstraction Layer:
- * Common definitions
+ * MS COM / XPCOM Abstraction Layer - Common definitions.
  */
 
 /*
@@ -555,4 +554,5 @@ namespace com
 
 } /* namespace com */
 
-#endif /* ___VBox_com_defs_h */
+#endif /* !___VBox_com_defs_h */
+

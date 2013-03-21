@@ -1,8 +1,6 @@
 /* $Id$ */
-
 /** @file
- * MS COM / XPCOM Abstraction Layer:
- * MultiResult class declarations
+ * MS COM / XPCOM Abstraction Layer - MultiResult class declarations.
  */
 
 /*
@@ -258,5 +256,5 @@ private:
 
 } /* namespace com */
 
-#endif /* ___VBox_com_MultiResult_h */
+#endif /* !___VBox_com_MultiResult_h */
 
