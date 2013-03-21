@@ -606,7 +606,7 @@ RTDECL(int) RTCritSectRwDelete(PRTCRITSECTRW pCritSect);
  * @returns false if not owner.
  * @param   pCritSect       The critical section.
  */
-RTDECL(bool) RTCritSectRwIsWriteOwner(PCRTCRITSECTRW pCritSect);
+RTDECL(bool) RTCritSectRwIsWriteOwner(PRTCRITSECTRW pCritSect);
 
 /**
  * Checks if the caller is one of the read owners of the semaphore.
