@@ -377,11 +377,7 @@ extern void renderspu_SystemWindowSize( WindowInfo *window, GLint w, GLint h );
 extern void renderspu_SystemGetWindowGeometry( WindowInfo *window, GLint *x, GLint *y, GLint *w, GLint *h );
 extern void renderspu_SystemGetMaxWindowSize( WindowInfo *window, GLint *w, GLint *h );
 extern void renderspu_SystemWindowPosition( WindowInfo *window, GLint x, GLint y );
-extern void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, GLint* pRects);
-extern void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window);
-#ifdef RT_OS_DARWIN
-extern void renderspu_SystemSetRootVisibleRegion(GLint cRects, GLint *pRects);
-#endif
+extern void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, const GLint* pRects);
 
 #ifdef GLX
 extern int renderspu_SystemInit();
@@ -427,7 +423,6 @@ extern uint32_t renderspuContextMarkDeletedAndRelease( ContextInfo *context );
 extern "C" {
 #endif
 DECLEXPORT(void) renderspuSetWindowId(uint64_t winId);
-DECLEXPORT(void) renderspuSetRootVisibleRegion(GLint cRects, GLint *pRects);
 DECLEXPORT(void) renderspuReparentWindow(GLint window);
 #ifdef __cplusplus
 }

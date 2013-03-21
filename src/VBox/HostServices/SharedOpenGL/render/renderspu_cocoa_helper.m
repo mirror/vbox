@@ -348,7 +348,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 - (void)presentComposition:(PVBOXVR_SCR_COMPOSITOR_ENTRY)pChangedEntry;
 
 - (void)clearVisibleRegions;
-- (void)setVisibleRegions:(GLint)cRects paRects:(GLint*)paRects;
+- (void)setVisibleRegions:(GLint)cRects paRects:(const GLint*)paRects;
 
 - (NSView*)dockTileScreen;
 - (void)reshapeDockTile;
@@ -1379,7 +1379,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     m_cClipRects = 0;
 }
 
-- (void)setVisibleRegions:(GLint)cRects paRects:(GLint*)paRects
+- (void)setVisibleRegions:(GLint)cRects paRects:(const GLint*)paRects
 {
     GLint cOldRects = m_cClipRects;
 
@@ -1728,7 +1728,7 @@ void cocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef
     [pPool release];
 }
 
-void cocoaViewSetVisibleRegion(NativeNSViewRef pView, GLint cRects, GLint* paRects)
+void cocoaViewSetVisibleRegion(NativeNSViewRef pView, GLint cRects, const GLint* paRects)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 

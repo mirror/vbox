@@ -771,9 +771,9 @@ extern GLint APIENTRY crWindowCreate(const char *dpyName, GLint visBits);
 extern void APIENTRY crWindowDestroy(GLint window);
 extern void APIENTRY crWindowSize(GLint window, GLint w, GLint h);
 extern void APIENTRY crWindowPosition(GLint window, GLint x, GLint y);
-extern void APIENTRY crWindowVisibleRegion( GLint window, GLint cRects, void *pRects );
+extern void APIENTRY crWindowVisibleRegion( GLint window, GLint cRects, const void *pRects );
 extern void APIENTRY crWindowShow( GLint window, GLint flag );
-extern void APIENTRY crVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, GLint *pRects);
+extern void APIENTRY crVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, const GLint *pRects);
 
 typedef int (CR_APIENTRY *CR_PROC)();
 CR_PROC APIENTRY crGetProcAddress( const char *name );

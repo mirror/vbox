@@ -596,7 +596,7 @@ renderspuWindowPosition( GLint win, GLint x, GLint y )
 }
 
 static void RENDER_APIENTRY
-renderspuWindowVisibleRegion(GLint win, GLint cRects, GLint *pRects)
+renderspuWindowVisibleRegion(GLint win, GLint cRects, const GLint *pRects)
 {
     WindowInfo *window;
     CRASSERT(win >= 0);

@@ -8366,7 +8366,7 @@ name        WindowVisibleRegion
 return      void
 param       window      GLint
 param       cRects      GLint
-param       pRects      GLint *
+param       pRects      const GLint *
 category    Chromium
 props       nolist
 chromium    extpack
@@ -8378,7 +8378,7 @@ param       cfg         GLuint
 param       xPos        GLint
 param       yPos        GLint
 param       cRects      GLint
-param       pRects      GLint *
+param       pRects      const GLint *
 category    Chromium
 props       nolist
 chromium    extpack

@@ -53,7 +53,7 @@ typedef union CR_BLITTER_FLAGS
 
 struct CR_BLITTER;
 
-typedef DECLCALLBACK(int) FNCRBLT_BLITTER(struct CR_BLITTER *pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const PRTRECTSIZE pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags);
+typedef DECLCALLBACK(int) FNCRBLT_BLITTER(struct CR_BLITTER *pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const RTRECTSIZE *pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags);
 typedef FNCRBLT_BLITTER *PFNCRBLT_BLITTER;
 
 #define CRBLT_F_LINEAR    0x00000001

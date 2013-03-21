@@ -46,6 +46,23 @@ DECLINLINE(int) VBoxRectCmp(const RTRECT * pRect1, const RTRECT * pRect2)
     return memcmp(pRect1, pRect2, sizeof (*pRect1));
 }
 
+DECLINLINE(void) VBoxRectIntersect(PRTRECT pRect1, const RTRECT * pRect2)
+{
+    Assert(pRect1);
+    Assert(pRect2);
+    pRect1->xLeft = RT_MAX(pRect1->xLeft, pRect2->xLeft);
+    pRect1->yTop = RT_MAX(pRect1->yTop, pRect2->yTop);
+    pRect1->xRight = RT_MIN(pRect1->xRight, pRect2->xRight);
+    pRect1->yBottom = RT_MIN(pRect1->yBottom, pRect2->yBottom);
+}
+
+DECLINLINE(void) VBoxRectIntersected(const RTRECT *pRect1, const RTRECT * pRect2, RTRECT *pResult)
+{
+    *pResult = *pRect1;
+    VBoxRectIntersect(pResult, pRect2);
+}
+
+
 DECLINLINE(void) VBoxRectTranslate(RTRECT * pRect, int32_t x, int32_t y)
 {
     pRect->xLeft   += x;
@@ -92,12 +109,12 @@ DECLINLINE(bool) VBoxRectIsIntersect(const RTRECT * pRect1, const RTRECT * pRect
             || (pRect2->yTop < pRect1->yTop && pRect2->yBottom <= pRect1->yTop));
 }
 
-DECLINLINE(uint32_t) VBoxVrListRectsCount(PVBOXVR_LIST pList)
+DECLINLINE(uint32_t) VBoxVrListRectsCount(const VBOXVR_LIST *pList)
 {
     return pList->cEntries;
 }
 
-DECLINLINE(bool) VBoxVrListIsEmpty(const PVBOXVR_LIST pList)
+DECLINLINE(bool) VBoxVrListIsEmpty(const VBOXVR_LIST *pList)
 {
     return !VBoxVrListRectsCount(pList);
 }
@@ -114,9 +131,15 @@ VBOXVREGDECL(void) VBoxVrListTranslate(PVBOXVR_LIST pList, int32_t x, int32_t y)
 
 VBOXVREGDECL(int) VBoxVrListCmp(PVBOXVR_LIST pList1, PVBOXVR_LIST pList2);
 
+VBOXVREGDECL(int) VBoxVrListRectsSet(PVBOXVR_LIST pList, uint32_t cRects, const RTRECT * aRects, bool *pfChanged);
 VBOXVREGDECL(int) VBoxVrListRectsAdd(PVBOXVR_LIST pList, uint32_t cRects, const RTRECT * aRects, bool *pfChanged);
 VBOXVREGDECL(int) VBoxVrListRectsSubst(PVBOXVR_LIST pList, uint32_t cRects, const RTRECT * aRects, bool *pfChanged);
 VBOXVREGDECL(int) VBoxVrListRectsGet(PVBOXVR_LIST pList, uint32_t cRects, RTRECT * aRects);
+
+/* NOTE: with the current implementation the VBoxVrListIntersect is faster than VBoxVrListRectsIntersect,
+ * i.e. VBoxVrListRectsIntersect is actually a convenience function that create a temporary list and calls VBoxVrListIntersect internally */
+VBOXVREGDECL(int) VBoxVrListRectsIntersect(PVBOXVR_LIST pList, uint32_t cRects, const RTRECT * aRects, bool *pfChanged);
+VBOXVREGDECL(int) VBoxVrListIntersect(PVBOXVR_LIST pList, const VBOXVR_LIST *pList2, bool *pfChanged);
 
 VBOXVREGDECL(int) VBoxVrInit();
 VBOXVREGDECL(void) VBoxVrTerm();
@@ -176,24 +199,33 @@ typedef FNVBOXVRCOMPOSITOR_VISITOR *PFNVBOXVRCOMPOSITOR_VISITOR;
 VBOXVREGDECL(void) VBoxVrCompositorInit(PVBOXVR_COMPOSITOR pCompositor, PFNVBOXVRCOMPOSITOR_ENTRY_REMOVED pfnEntryRemoved);
 VBOXVREGDECL(void) VBoxVrCompositorTerm(PVBOXVR_COMPOSITOR pCompositor);
 VBOXVREGDECL(void) VBoxVrCompositorEntryInit(PVBOXVR_COMPOSITOR_ENTRY pEntry);
-DECLINLINE(bool) VBoxVrCompositorEntryIsInList(const PVBOXVR_COMPOSITOR_ENTRY pEntry)
+DECLINLINE(bool) VBoxVrCompositorEntryIsInList(const VBOXVR_COMPOSITOR_ENTRY *pEntry)
 {
     return !VBoxVrListIsEmpty(&pEntry->Vr);
 }
 
-#define VBOXVR_COMPOSITOR_CF_ENTRIES_REGIONS_CHANGED    0x00000001
-#define VBOXVR_COMPOSITOR_CF_COMPOSITED_REGIONS_CHANGED 0x00000002
-#define VBOXVR_COMPOSITOR_CF_ENTRY_ADDED                0x00000004
+/* compositor regions changed
+ * always comes with VBOXVR_COMPOSITOR_CF_ENTRY_REGIONS_CHANGED */
+#define VBOXVR_COMPOSITOR_CF_REGIONS_CHANGED             0x00000001
+/* only current entry regions changed */
+#define VBOXVR_COMPOSITOR_CF_ENTRY_REGIONS_CHANGED       0x00000002
+/* the given entry has replaced some other entry, while overal regions did NOT change.
+ * always comes with VBOXVR_COMPOSITOR_CF_ENTRY_REGIONS_CHANGED */
+#define VBOXVR_COMPOSITOR_CF_ENTRY_REPLACED              0x00000004
 
 
 VBOXVREGDECL(bool) VBoxVrCompositorEntryRemove(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry);
 VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsAdd(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, uint32_t *pfChangeFlags);
 VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsSubst(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
 VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsSet(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
+VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsIntersect(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
+VBOXVREGDECL(int) VBoxVrCompositorEntryListIntersect(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, const VBOXVR_LIST *pList2, bool *pfChanged);
+VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsIntersectAll(PVBOXVR_COMPOSITOR pCompositor, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
+VBOXVREGDECL(int) VBoxVrCompositorEntryListIntersectAll(PVBOXVR_COMPOSITOR pCompositor, const VBOXVR_LIST *pList2, bool *pfChanged);
 VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsTranslate(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, int32_t x, int32_t y, bool *pfChanged);
 VBOXVREGDECL(void) VBoxVrCompositorVisit(PVBOXVR_COMPOSITOR pCompositor, PFNVBOXVRCOMPOSITOR_VISITOR pfnVisitor, void *pvVisitor);
 
-DECLINLINE(bool) VBoxVrCompositorIsEmpty(const PVBOXVR_COMPOSITOR pCompositor)
+DECLINLINE(bool) VBoxVrCompositorIsEmpty(const VBOXVR_COMPOSITOR *pCompositor)
 {
     return RTListIsEmpty(&pCompositor->List);
 }
@@ -260,14 +292,14 @@ typedef struct VBOXVR_SCR_COMPOSITOR
 typedef DECLCALLBACK(bool) FNVBOXVRSCRCOMPOSITOR_VISITOR(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, void *pvVisitor);
 typedef FNVBOXVRSCRCOMPOSITOR_VISITOR *PFNVBOXVRSCRCOMPOSITOR_VISITOR;
 
-DECLINLINE(void) CrVrScrCompositorEntryInit(PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const PVBOXVR_TEXTURE pTex)
+DECLINLINE(void) CrVrScrCompositorEntryInit(PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const VBOXVR_TEXTURE *pTex)
 {
     VBoxVrCompositorEntryInit(&pEntry->Ce);
     pEntry->Tex = *pTex;
     memset(&pEntry->Pos, 0, sizeof (VBOXVR_SCR_COMPOSITOR_ENTRY) - RT_OFFSETOF(VBOXVR_SCR_COMPOSITOR_ENTRY, Pos));
 }
 
-DECLINLINE(bool) CrVrScrCompositorEntryIsUsed(const PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry)
+DECLINLINE(bool) CrVrScrCompositorEntryIsUsed(const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry)
 {
     return VBoxVrCompositorEntryIsInList(&pEntry->Ce);
 }
@@ -283,24 +315,39 @@ DECLINLINE(void) CrVrScrCompositorEntryTexNameUpdate(PVBOXVR_SCR_COMPOSITOR_ENTR
     CrVrScrCompositorEntrySetChanged(pEntry, true);
 }
 
-DECLINLINE(bool) CrVrScrCompositorEntryIsChanged(const PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry)
+DECLINLINE(void) CrVrScrCompositorEntryTexUpdate(PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const VBOXVR_TEXTURE *pTex)
+{
+    pEntry->Tex = *pTex;
+    CrVrScrCompositorEntrySetChanged(pEntry, true);
+}
+
+DECLINLINE(const VBOXVR_TEXTURE *) CrVrScrCompositorEntryTexGet(const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry)
+{
+    return &pEntry->Tex;
+}
+
+DECLINLINE(bool) CrVrScrCompositorEntryIsChanged(const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry)
 {
     return !!pEntry->fChanged;
 }
 
-DECLINLINE(bool) CrVrScrCompositorIsEmpty(const PVBOXVR_SCR_COMPOSITOR pCompositor)
+DECLINLINE(bool) CrVrScrCompositorIsEmpty(const VBOXVR_SCR_COMPOSITOR *pCompositor)
 {
     return VBoxVrCompositorIsEmpty(&pCompositor->Compositor);
 }
 
 VBOXVREGDECL(void) CrVrScrCompositorVisit(PVBOXVR_SCR_COMPOSITOR pCompositor, PFNVBOXVRSCRCOMPOSITOR_VISITOR pfnVisitor, void *pvVisitor);
 VBOXVREGDECL(void) CrVrScrCompositorEntrySetAllChanged(PVBOXVR_SCR_COMPOSITOR pCompositor, bool fChanged);
-DECLINLINE(bool) CrVrScrCompositorEntryIsInList(const PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry)
+DECLINLINE(bool) CrVrScrCompositorEntryIsInList(const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry)
 {
     return VBoxVrCompositorEntryIsInList(&pEntry->Ce);
 }
-VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
-VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsSet(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
+VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions, uint32_t *pfChangeFlags);
+VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsSet(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
+VBOXVREGDECL(int) CrVrScrCompositorEntryListIntersect(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const VBOXVR_LIST *pList2, bool *pfChanged);
+VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsIntersect(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
+VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsIntersectAll(PVBOXVR_SCR_COMPOSITOR pCompositor, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged);
+VBOXVREGDECL(int) CrVrScrCompositorEntryListIntersectAll(PVBOXVR_SCR_COMPOSITOR pCompositor, const VBOXVR_LIST *pList2, bool *pfChanged);
 VBOXVREGDECL(int) CrVrScrCompositorEntryPosSet(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const RTPOINT *pPos);
 
 /* regions are valid until the next CrVrScrCompositor call */

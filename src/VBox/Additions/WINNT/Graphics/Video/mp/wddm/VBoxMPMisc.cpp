@@ -1688,7 +1688,7 @@ void VBoxWddmVrTerm()
 #endif
 }
 
-typedef DECLCALLBACK(int) FNVBOXWDDMVR_CB_COMPARATOR(const PVBOXWDDMVR_REG pReg1, const PVBOXWDDMVR_REG pReg2);
+typedef DECLCALLBACK(int) FNVBOXWDDMVR_CB_COMPARATOR(const VBOXWDDMVR_REG *pReg1, const VBOXWDDMVR_REG *pReg2);
 typedef FNVBOXWDDMVR_CB_COMPARATOR *PFNVBOXWDDMVR_CB_COMPARATOR;
 
 static DECLCALLBACK(int) vboxWddmVrRegNonintersectedComparator(const RECT* pRect1, const RECT* pRect2)
@@ -2079,7 +2079,7 @@ static DECLCALLBACK(PLIST_ENTRY) vboxWddmVrListSubstNoJoinCb(PVBOXWDDMVR_LIST pL
     return &pList->ListHead;
 }
 
-static NTSTATUS vboxWddmVrListSubstNoJoin(PVBOXWDDMVR_LIST pList, UINT cRects, const PRECT aRects, BOOLEAN *pfChanged)
+static NTSTATUS vboxWddmVrListSubstNoJoin(PVBOXWDDMVR_LIST pList, UINT cRects, const RECT *aRects, BOOLEAN *pfChanged)
 {
     if (VBoxWddmVrListIsEmpty(pList))
         return STATUS_SUCCESS;
@@ -2102,7 +2102,7 @@ static NTSTATUS vboxWddmVrListSubstNoJoin(PVBOXWDDMVR_LIST pList, UINT cRects, c
 }
 
 #if 0
-static const PRECT vboxWddmVrRectsOrder(UINT cRects, const PRECT aRects)
+static const RECT* vboxWddmVrRectsOrder(UINT cRects, const RECT *aRects)
 {
 #ifdef DEBUG
     {
@@ -2173,10 +2173,10 @@ void VBoxWddmVrListTranslate(PVBOXWDDMVR_LIST pList, LONG x, LONG y)
     }
 }
 
-NTSTATUS VBoxWddmVrListRectsSubst(PVBOXWDDMVR_LIST pList, UINT cRects, const PRECT aRects, BOOLEAN *pfChanged)
+NTSTATUS VBoxWddmVrListRectsSubst(PVBOXWDDMVR_LIST pList, UINT cRects, const RECT *aRects, BOOLEAN *pfChanged)
 {
 #if 0
-    const PRECT pRects = vboxWddmVrRectsOrder(cRects, aRects);
+    const RECT *pRects = vboxWddmVrRectsOrder(cRects, aRects);
     if (!pRects)
     {
         WARN(("vboxWddmVrRectsOrder failed!"));
@@ -2204,7 +2204,7 @@ done:
     return Status;
 }
 
-NTSTATUS VBoxWddmVrListRectsAdd(PVBOXWDDMVR_LIST pList, UINT cRects, const PRECT aRects, BOOLEAN *pfChanged)
+NTSTATUS VBoxWddmVrListRectsAdd(PVBOXWDDMVR_LIST pList, UINT cRects, const RECT *aRects, BOOLEAN *pfChanged)
 {
     UINT cCovered = 0;
 

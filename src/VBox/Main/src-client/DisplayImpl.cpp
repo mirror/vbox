@@ -1160,8 +1160,7 @@ int Display::handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
         }
     }
 
-#if defined(RT_OS_DARWIN) && defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
-    // @todo fix for multimonitor
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     BOOL is3denabled = FALSE;
 
     mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
@@ -2231,6 +2230,30 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
         if (pVMMDevPort)
             pVMMDevPort->pfnRequestSeamlessChange(pVMMDevPort, !!enabled);
     }
+
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+    if (!enabled)
+    {
+        BOOL is3denabled = FALSE;
+
+        mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+
+        VMMDev *vmmDev = mParent->getVMMDev();
+        if (is3denabled && vmmDev)
+        {
+            VBOXHGCMSVCPARM parms[2];
+
+            parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+            /* NULL means disable */
+            parms[0].u.pointer.addr = NULL;
+            parms[0].u.pointer.size = 0;  /* We don't actually care. */
+            parms[1].type = VBOX_HGCM_SVC_PARM_32BIT;
+            parms[1].u.uint32 = 0;
+
+            vmmDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_VISIBLE_REGION, 2, &parms[0]);
+        }
+    }
+#endif
     return S_OK;
 }
 

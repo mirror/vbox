@@ -156,9 +156,9 @@ VOID vboxVDbgDoPrintLopLastCmd(const char* pszDesc)
 typedef struct VBOXVDBG_DUMP_INFO
 {
     DWORD fFlags;
-    PVBOXWDDMDISP_ALLOCATION pAlloc;
+    const VBOXWDDMDISP_ALLOCATION *pAlloc;
     IDirect3DResource9 *pD3DRc;
-    RECT *pRect;
+    const RECT *pRect;
 } VBOXVDBG_DUMP_INFO, *PVBOXVDBG_DUMP_INFO;
 
 typedef DECLCALLBACK(void) FNVBOXVDBG_CONTENTS_DUMPER(PVBOXVDBG_DUMP_INFO pInfo, BOOLEAN fBreak, void *pvDumper);
@@ -166,7 +166,7 @@ typedef FNVBOXVDBG_CONTENTS_DUMPER *PFNVBOXVDBG_CONTENTS_DUMPER;
 
 static VOID vboxVDbgDoDumpSummary(const char * pPrefix, PVBOXVDBG_DUMP_INFO pInfo, const char * pSuffix)
 {
-    PVBOXWDDMDISP_ALLOCATION pAlloc = pInfo->pAlloc;
+    const VBOXWDDMDISP_ALLOCATION *pAlloc = pInfo->pAlloc;
     IDirect3DResource9 *pD3DRc = pInfo->pD3DRc;
     char rectBuf[24];
     if (pInfo->pRect)
@@ -219,7 +219,7 @@ VOID vboxVDbgDoDumpPerform(const char * pPrefix, PVBOXVDBG_DUMP_INFO pInfo, cons
 
 static DECLCALLBACK(void) vboxVDbgAllocRectContentsDumperCb(PVBOXVDBG_DUMP_INFO pInfo, BOOLEAN fBreak, void *pvDumper)
 {
-    PVBOXWDDMDISP_ALLOCATION pAlloc = pInfo->pAlloc;
+    const VBOXWDDMDISP_ALLOCATION *pAlloc = pInfo->pAlloc;
     const RECT *pRect = pInfo->pRect;
 
     Assert(pAlloc->hAllocation);
@@ -274,7 +274,7 @@ VOID vboxVDbgDoDumpAllocRect(const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAll
 
 static DECLCALLBACK(void) vboxVDbgRcRectContentsDumperCb(PVBOXVDBG_DUMP_INFO pInfo, BOOLEAN fBreak, void *pvDumper)
 {
-    PVBOXWDDMDISP_ALLOCATION pAlloc = pInfo->pAlloc;
+    const VBOXWDDMDISP_ALLOCATION *pAlloc = pInfo->pAlloc;
     IDirect3DResource9 *pD3DRc = pInfo->pD3DRc;
     const RECT *pRect = pInfo->pRect;
     IDirect3DSurface9 *pSurf;
@@ -417,8 +417,8 @@ VOID vboxVDbgDoDumpSamplers(const char * pPrefix, PVBOXWDDMDISP_DEVICE pDevice, 
 
 static DECLCALLBACK(void) vboxVDbgLockUnlockSurfTexContentsDumperCb(PVBOXVDBG_DUMP_INFO pInfo, BOOLEAN fBreak, void *pvDumper)
 {
-    PVBOXWDDMDISP_ALLOCATION pAlloc = pInfo->pAlloc;
-    PRECT pRect = pInfo->pRect;
+    const VBOXWDDMDISP_ALLOCATION *pAlloc = pInfo->pAlloc;
+    const RECT *pRect = pInfo->pRect;
     UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
     uint32_t width, height, pitch;
     void *pvData;
@@ -451,11 +451,12 @@ static DECLCALLBACK(void) vboxVDbgLockUnlockSurfTexContentsDumperCb(PVBOXVDBG_DU
     }
 }
 
-VOID vboxVDbgDoDumpLockUnlockSurfTex(const char * pPrefix, const PVBOXWDDMDISP_ALLOCATION pAlloc, const char * pSuffix, DWORD fFlags)
+VOID vboxVDbgDoDumpLockUnlockSurfTex(const char * pPrefix, const VBOXWDDMDISP_ALLOCATION *pAlloc, const char * pSuffix, DWORD fFlags)
 {
     Assert(!pAlloc->hSharedHandle);
 
-    RECT Rect, *pRect;
+    RECT Rect;
+    const RECT *pRect;
     Assert(!pAlloc->LockInfo.fFlags.RangeValid);
     Assert(!pAlloc->LockInfo.fFlags.BoxValid);
     if (pAlloc->LockInfo.fFlags.AreaValid)
@@ -481,16 +482,19 @@ VOID vboxVDbgDoDumpLockUnlockSurfTex(const char * pPrefix, const PVBOXWDDMDISP_A
 
 VOID vboxVDbgDoDumpLockSurfTex(const char * pPrefix, const D3DDDIARG_LOCK* pData, const char * pSuffix, DWORD fFlags)
 {
-    const PVBOXWDDMDISP_RESOURCE pRc = (const PVBOXWDDMDISP_RESOURCE)pData->hResource;
-    const PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
-    pAlloc->LockInfo.pvData = pData->pSurfData;
+    const VBOXWDDMDISP_RESOURCE *pRc = (const VBOXWDDMDISP_RESOURCE*)pData->hResource;
+    const VBOXWDDMDISP_ALLOCATION *pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
+#ifdef VBOXWDDMDISP_DEBUG
+    VBOXWDDMDISP_ALLOCATION *pUnconstpAlloc = (VBOXWDDMDISP_ALLOCATION *)pAlloc;
+    pUnconstpAlloc->LockInfo.pvData = pData->pSurfData;
+#endif
     vboxVDbgDoDumpLockUnlockSurfTex(pPrefix, pAlloc, pSuffix, fFlags);
 }
 
 VOID vboxVDbgDoDumpUnlockSurfTex(const char * pPrefix, const D3DDDIARG_UNLOCK* pData, const char * pSuffix, DWORD fFlags)
 {
-    const PVBOXWDDMDISP_RESOURCE pRc = (const PVBOXWDDMDISP_RESOURCE)pData->hResource;
-    const PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
+    const VBOXWDDMDISP_RESOURCE *pRc = (const VBOXWDDMDISP_RESOURCE*)pData->hResource;
+    const VBOXWDDMDISP_ALLOCATION *pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
     vboxVDbgDoDumpLockUnlockSurfTex(pPrefix, pAlloc, pSuffix, fFlags);
 }
 
@@ -528,8 +532,8 @@ BOOL vboxVDbgDoCheckLRects(D3DLOCKED_RECT *pDstLRect, const RECT *pDstRect, D3DL
     return fMatch;
 }
 
-BOOL vboxVDbgDoCheckRectsMatch(const PVBOXWDDMDISP_RESOURCE pDstRc, uint32_t iDstAlloc,
-                            const PVBOXWDDMDISP_RESOURCE pSrcRc, uint32_t iSrcAlloc,
+BOOL vboxVDbgDoCheckRectsMatch(const VBOXWDDMDISP_RESOURCE *pDstRc, uint32_t iDstAlloc,
+                            const VBOXWDDMDISP_RESOURCE *pSrcRc, uint32_t iSrcAlloc,
                             const RECT *pDstRect,
                             const RECT *pSrcRect,
                             BOOL fBreakOnMismatch)
@@ -592,41 +596,41 @@ BOOL vboxVDbgDoCheckRectsMatch(const PVBOXWDDMDISP_RESOURCE pDstRc, uint32_t iDs
     }
 
     D3DLOCKED_RECT SrcLRect, DstLRect;
-    HRESULT hr = VBoxD3DIfLockRect(pDstRc, iDstAlloc, &DstLRect, pDstRect, D3DLOCK_READONLY);
+    HRESULT hr = VBoxD3DIfLockRect((VBOXWDDMDISP_RESOURCE *)pDstRc, iDstAlloc, &DstLRect, pDstRect, D3DLOCK_READONLY);
     if (FAILED(hr))
     {
         WARN(("VBoxD3DIfLockRect failed, hr(0x%x)", hr));
         return FALSE;
     }
 
-    hr = VBoxD3DIfLockRect(pSrcRc, iSrcAlloc, &SrcLRect, pSrcRect, D3DLOCK_READONLY);
+    hr = VBoxD3DIfLockRect((VBOXWDDMDISP_RESOURCE *)pSrcRc, iSrcAlloc, &SrcLRect, pSrcRect, D3DLOCK_READONLY);
     if (FAILED(hr))
     {
         WARN(("VBoxD3DIfLockRect failed, hr(0x%x)", hr));
-        hr = VBoxD3DIfUnlockRect(pDstRc, iDstAlloc);
+        hr = VBoxD3DIfUnlockRect((VBOXWDDMDISP_RESOURCE *)pDstRc, iDstAlloc);
         return FALSE;
     }
 
     fMatch = vboxVDbgDoCheckLRects(&DstLRect, pDstRect, &SrcLRect, pSrcRect, bpp, fBreakOnMismatch);
 
-    hr = VBoxD3DIfUnlockRect(pDstRc, iDstAlloc);
+    hr = VBoxD3DIfUnlockRect((VBOXWDDMDISP_RESOURCE *)pDstRc, iDstAlloc);
     Assert(hr == S_OK);
 
-    hr = VBoxD3DIfUnlockRect(pSrcRc, iSrcAlloc);
+    hr = VBoxD3DIfUnlockRect((VBOXWDDMDISP_RESOURCE *)pSrcRc, iSrcAlloc);
     Assert(hr == S_OK);
 
     return fMatch;
 }
 
-void vboxVDbgDoPrintAlloc(const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const char * pSuffix)
+void vboxVDbgDoPrintAlloc(const char * pPrefix, const VBOXWDDMDISP_RESOURCE *pRc, uint32_t iAlloc, const char * pSuffix)
 {
     Assert(pRc->cAllocations > iAlloc);
-    const PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[iAlloc];
+    const VBOXWDDMDISP_ALLOCATION *pAlloc = &pRc->aAllocations[iAlloc];
     BOOL bPrimary = pRc->RcDesc.fFlags.Primary;
     BOOL bFrontBuf = FALSE;
     if (bPrimary)
     {
-        PVBOXWDDMDISP_SWAPCHAIN pSwapchain = vboxWddmSwapchainForAlloc(pAlloc);
+        PVBOXWDDMDISP_SWAPCHAIN pSwapchain = vboxWddmSwapchainForAlloc((VBOXWDDMDISP_ALLOCATION *)pAlloc);
         Assert(pSwapchain);
         bFrontBuf = (vboxWddmSwapchainGetFb(pSwapchain)->pAlloc == pAlloc);
     }

@@ -537,28 +537,3 @@ DECLEXPORT(void) renderspuSetWindowId(uint64_t winId)
 {
     render_spu_parent_window_id = winId;
 }
-
-#ifdef RT_OS_DARWIN
-static void renderspuWindowVisibleRegionCB(unsigned long key, void *data1, void *data2)
-{
-    WindowInfo *window = (WindowInfo *) data1;
-    CRASSERT(window);
-
-    renderspu_SystemWindowApplyVisibleRegion(window);
-}
-#endif
-
-DECLEXPORT(void) renderspuSetRootVisibleRegion(GLint cRects, GLint *pRects)
-{
-#ifdef RT_OS_DARWIN
-    renderspu_SystemSetRootVisibleRegion(cRects, pRects);
-
-    crHashtableWalk(render_spu.windowTable, renderspuWindowVisibleRegionCB, NULL);
-#endif
-}
-
-#ifndef RT_OS_DARWIN
-void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window)
-{
-}
-#endif
