@@ -44,7 +44,7 @@ endif # !VBOX_ONLY_SDK
 
 # Construct VBOX_MAIN_DEFS
 ## @todo eliminate or expand VBOX_MAIN_DEFS.
-VBOX_MAIN_DEFS   = 
+VBOX_MAIN_DEFS   =
 ifneq ($(KBUILD_TARGET),win)
  ifndef VBOX_WITH_XPCOM
   $(error "VBox: VBOX_WITH_XPCOM isn't defined")
@@ -237,8 +237,7 @@ VBoxSVC_DEFS = \
 	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK,) \
 	$(if $(VBOX_WITH_VUSB),VBOX_WITH_VUSB,) \
 	$(if $(VBOX_WITH_S3),VBOX_WITH_S3,) \
-	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,) \
-	$(if $(VBOX_WITH_NAT_SERVICE),VBOX_WITH_NAT_SERVICE,)
+	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,)
 ifdef VBOX_WITH_USB
  VBoxSVC_DEFS += \
 	VBOX_WITH_USB \
@@ -306,8 +305,6 @@ VBoxSVC_SOURCES = \
 	src-server/BIOSSettingsImpl.cpp \
 	src-server/DHCPServerImpl.cpp \
 	src-server/DHCPServerRunner.cpp \
-	src-server/NATNetworkImpl.cpp \
-	$(if $(VBOX_WITH_NAT_SERVICE),src-server/NATNetworkServiceRunner.cpp,) \
 	src-server/GuestOSTypeImpl.cpp \
 	src-server/HostImpl.cpp \
 	src-server/HostNetworkInterfaceImpl.cpp \
@@ -530,7 +527,6 @@ VBoxC_DEFS = \
 	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK,) \
 	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH,) \
 	$(if $(VBOX_WITH_VPX),VBOX_WITH_VPX,)
-
 
 VBoxC_DEFS.darwin.x86 = VBOX_WITH_2X_4GB_ADDR_SPACE
 VBoxC_DEFS.win.x86 += _WIN32_WINNT=0x0500
