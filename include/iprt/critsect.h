@@ -665,7 +665,7 @@ RTDECL(uint32_t) RTCritSectRwGetReadCount(PRTCRITSECTRW pCritSect);
  * @returns false if not initialized.
  * @param   pCritSect   The critical section.
  */
-DECLINLINE(bool) RTCritSectRwIsInitialized(PCRTCRITSECT pCritSect)
+DECLINLINE(bool) RTCritSectRwIsInitialized(PCRTCRITSECTRW pCritSect)
 {
     return pCritSect->u32Magic == RTCRITSECTRW_MAGIC;
 }
