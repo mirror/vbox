@@ -1,7 +1,9 @@
 /** @file
- * MS COM / XPCOM Abstraction Layer:
+ * MS COM / XPCOM Abstraction Layer - Error Reporting.
+ *
  * Error printing macros using shared functions defined in shared glue code.
- * Use these CHECK_* macros for efficient error checking around calling COM methods.
+ * Use these CHECK_* macros for efficient error checking around calling COM
+ * methods.
  */
 
 /*
@@ -259,3 +261,4 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
     if (1) { ASSERT(expr); if (!(expr)) break; } else do {} while (0)
 
 } /* namespace com */
+

@@ -1,6 +1,5 @@
 /** @file
- * MS COM / XPCOM Abstraction Layer:
- * Safe array helper class declaration
+ * MS COM / XPCOM Abstraction Layer - Safe array helper class declaration.
  */
 
 /*
@@ -1699,4 +1698,5 @@ public:
 
 /** @} */
 
-#endif /* ___VBox_com_array_h */
+#endif /* !___VBox_com_array_h */
+

@@ -1,6 +1,5 @@
 /** @file
- * MS COM / XPCOM Abstraction Layer:
- * Event and EventQueue class declaration
+ * MS COM / XPCOM Abstraction Layer - Event and EventQueue class declaration.
  */
 
 /*
@@ -138,3 +137,4 @@ private:
 } /* namespace com */
 
 #endif
+

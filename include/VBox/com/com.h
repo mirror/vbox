@@ -1,6 +1,5 @@
 /** @file
- * MS COM / XPCOM Abstraction Layer:
- * COM initialization / shutdown
+ * MS COM / XPCOM Abstraction Layer - COM initialization / shutdown.
  */
 
 /*

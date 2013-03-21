@@ -1,6 +1,5 @@
 /** @file
- * MS COM / XPCOM Abstraction Layer:
- * Assertion macros for COM/XPCOM
+ * MS COM / XPCOM Abstraction Layer - Assertion macros for COM/XPCOM.
  */
 
 /*
@@ -106,3 +105,4 @@
     if (!SUCCEEDED (rc)) { AssertComRC (rc); throw rc; } else do {} while (0)
 
 #endif // !___VBox_com_assert_h
+
