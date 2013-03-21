@@ -154,6 +154,36 @@ struct MediaRegistry
 };
 
 /**
+ * 
+ */
+ struct NATRule
+ {
+     NATRule()
+         : proto(NATProtocol_TCP),
+           u16HostPort(0),
+           u16GuestPort(0)
+     {}
+
+     bool operator==(const NATRule &r) const
+     {
+         return strName == r.strName
+             && proto == r.proto
+             && u16HostPort == r.u16HostPort
+             && strHostIP == r.strHostIP
+             && u16GuestPort == r.u16GuestPort
+             && strGuestIP == r.strGuestIP;
+     }
+
+     com::Utf8Str            strName;
+     NATProtocol_T           proto;
+     uint16_t                u16HostPort;
+     com::Utf8Str            strHostIP;
+     uint16_t                u16GuestPort;
+     com::Utf8Str            strGuestIP;
+ };
+ typedef std::list<NATRule> NATRuleList;
+
+/**
  * Common base class for both MainConfigFile and MachineConfigFile
  * which contains some common logic for both.
  */
@@ -186,6 +216,7 @@ protected:
     typedef enum {Error, HardDisk, DVDImage, FloppyImage} MediaType;
     void readMedium(MediaType t, const xml::ElementNode &elmMedium, MediaList &llMedia);
     void readMediaRegistry(const xml::ElementNode &elmMediaRegistry, MediaRegistry &mr);
+    void readNATForwardRuleList(const xml::ElementNode  &elmParent, NATRuleList &llRules);
 
     void setVersionAttribute(xml::ElementNode &elm);
     void createStubDocument();
@@ -200,6 +231,7 @@ protected:
                      uint32_t level);
     void buildMediaRegistry(xml::ElementNode &elmParent,
                             const MediaRegistry &mr);
+    void buildNATForwardRuleList(xml::ElementNode &elmParent, const NATRuleList &natRuleList);
     void clearDocument();
 
     struct Data;
@@ -259,6 +291,34 @@ struct DHCPServer
 };
 typedef std::list<DHCPServer> DHCPServersList;
 
+
+/**
+ * Nat Networking settings (NAT service). 
+ */
+struct NATNetwork
+{
+    com::Utf8Str strNetworkName;
+    bool         fEnabled;
+    com::Utf8Str strNetwork;
+    bool         fIPv6;
+    com::Utf8Str strIPv6Prefix;
+    bool         fAdvertiseDefaultIPv6Route;
+    bool         fNeedDhcpServer;
+    NATRuleList  llPortForwardRules4;
+    NATRuleList  llPortForwardRules6;
+    NATNetwork():fEnabled(false),
+      fAdvertiseDefaultIPv6Route(false),
+      fNeedDhcpServer(false)
+      {}
+    bool operator==(const NATNetwork &n) const
+    {
+        return    strNetworkName == n.strNetworkName
+               && strNetwork == n.strNetwork;
+    }
+     
+};
+typedef std::list<NATNetwork> NATNetworksList;
+
 class MainConfigFile : public ConfigFileBase
 {
 public:
@@ -266,6 +326,7 @@ public:
 
     void readMachineRegistry(const xml::ElementNode &elmMachineRegistry);
     void readDHCPServers(const xml::ElementNode &elmDHCPServers);
+    void readNATNetworks(const xml::ElementNode &elmNATNetworks);
 
     void write(const com::Utf8Str strFilename);
 
@@ -274,6 +335,7 @@ public:
     MediaRegistry           mediaRegistry;
     MachinesRegistry        llMachines;
     DHCPServersList         llDhcpServers;
+    NATNetworksList         llNATNetworks;
     StringsMap              mapExtraDataItems;
 };
 
@@ -360,33 +422,6 @@ struct USBController
     USBDeviceFiltersList    llDeviceFilters;
 };
 
- struct NATRule
- {
-     NATRule()
-         : proto(NATProtocol_TCP),
-           u16HostPort(0),
-           u16GuestPort(0)
-     {}
-
-     bool operator==(const NATRule &r) const
-     {
-         return strName == r.strName
-             && proto == r.proto
-             && u16HostPort == r.u16HostPort
-             && strHostIP == r.strHostIP
-             && u16GuestPort == r.u16GuestPort
-             && strGuestIP == r.strGuestIP;
-     }
-
-     com::Utf8Str            strName;
-     NATProtocol_T           proto;
-     uint16_t                u16HostPort;
-     com::Utf8Str            strHostIP;
-     uint16_t                u16GuestPort;
-     com::Utf8Str            strGuestIP;
- };
- typedef std::list<NATRule> NATRuleList;
-
  struct NAT
  {
      NAT()
@@ -442,6 +477,7 @@ struct USBController
      bool                    fAliasUseSamePorts;
      NATRuleList             llRules;
  };
+
 /**
  * NOTE: If you add any fields in here, you must update a) the constructor and b)
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
