@@ -334,6 +334,7 @@
 # define RTCritSectRwInit                               RT_MANGLER(RTCritSectRwInit)
 # define RTCritSectRwInitEx                             RT_MANGLER(RTCritSectRwInitEx)
 # define RTCritSectRwIsReadOwner                        RT_MANGLER(RTCritSectRwIsReadOwner)
+# define RTCritSectRwIsWriteOwner                       RT_MANGLER(RTCritSectRwIsWriteOwner)
 # define RTCritSectRwLeaveExcl                          RT_MANGLER(RTCritSectRwLeaveExcl)
 # define RTCritSectRwLeaveShared                        RT_MANGLER(RTCritSectRwLeaveShared)
 # define RTCritSectRwSetSubClass                        RT_MANGLER(RTCritSectRwSetSubClass)
