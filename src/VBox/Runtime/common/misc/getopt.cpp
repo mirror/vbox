@@ -27,6 +27,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/cidr.h>
 #include <iprt/net.h>                   /* must come before getopt.h */
 #include <iprt/getopt.h>
 #include "internal/iprt.h"
@@ -409,8 +410,17 @@ static int rtGetOptProcessValue(uint32_t fFlags, const char *pszValue, PRTGETOPT
             pValueUnion->IPv4Addr = Addr;
             break;
         }
-#if 0  /** @todo CIDR */
-#endif
+
+	case RTGETOPT_REQ_IPV4CIDR:
+	{
+	    RTNETADDRIPV4 network;
+	    RTNETADDRIPV4 netmask;
+	    if (RT_FAILURE(RTCidrStrToIPv4(pszValue, &network, &netmask)))
+	      return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+	    pValueUnion->CidrIPv4.IPv4Network.u = network.u;
+	    pValueUnion->CidrIPv4.IPv4Netmask.u = netmask.u;
+	    break;
+	}
 
         case RTGETOPT_REQ_MACADDR:
         {
