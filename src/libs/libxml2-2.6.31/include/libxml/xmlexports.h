@@ -148,11 +148,12 @@
 #endif
 
 /* bird/VirtualBox: Visibility attributes - start  */
+/* frank: changed to "hidden" */
 #if defined(VBOX_HAVE_VISIBILITY_HIDDEN) && !defined(LIBXML_STATIC) && defined(IN_LIBXML)
   #undef XMLPUBFUN
   #undef XMLPUBVAR
-  #define XMLPUBFUN __attribute__((visibility("default")))
-  #define XMLPUBVAR __attribute__((visibility("default"))) extern
+  #define XMLPUBFUN __attribute__((visibility("hidden")))
+  #define XMLPUBVAR __attribute__((visibility("hidden"))) extern
 #endif
 /* bird/VirtualBox: Visibility attributes - end  */
 
