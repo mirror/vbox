@@ -160,21 +160,34 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
         szWindowText[0] = 0;
         GetWindowText(hwnd, szWindowText, sizeof(szWindowText));
 
+        DWORD pid = 0;
+        DWORD tid = GetWindowThreadProcessId(hwnd, &pid);
+
         /* Filter out Windows XP shadow windows */
         /** @todo still shows inside the guest */
         if (   szWindowText[0] == 0
-            && dwStyle == (WS_POPUP|WS_VISIBLE|WS_CLIPSIBLINGS)
-            && dwExStyle == (WS_EX_LAYERED|WS_EX_TOOLWINDOW|WS_EX_TRANSPARENT|WS_EX_TOPMOST))
+            && (
+                    (dwStyle == (WS_POPUP|WS_VISIBLE|WS_CLIPSIBLINGS)
+                            && dwExStyle == (WS_EX_LAYERED|WS_EX_TOOLWINDOW|WS_EX_TRANSPARENT|WS_EX_TOPMOST))
+                 || (dwStyle == (WS_POPUP|WS_VISIBLE|WS_DISABLED|WS_CLIPSIBLINGS|WS_CLIPCHILDREN)
+                            && dwExStyle == (WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_NOACTIVATE))
+                 || (dwStyle == (WS_POPUP|WS_VISIBLE|WS_CLIPSIBLINGS|WS_CLIPCHILDREN)
+                                       && dwExStyle == (WS_EX_TOOLWINDOW))
+                            ))
         {
             Log(("VBoxTray: Filter out shadow window style=%x exstyle=%x\n", dwStyle, dwExStyle));
+            Log(("VBoxTray: Enum hwnd=%x rect (%d,%d) (%d,%d) (filtered)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
+            Log(("VBoxTray: title=%s style=%x exStyle=%x\n", szWindowText, dwStyle, dwExStyle));
+            Log(("VBoxTray: pid=%d tid=%d\n", pid, tid));
             return TRUE;
         }
 
         /** @todo will this suffice? The Program Manager window covers the whole screen */
         if (strcmp(szWindowText, "Program Manager"))
         {
-            Log(("VBoxTray: Enum hwnd=%x rect (%d,%d) (%d,%d)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
+            Log(("VBoxTray: Enum hwnd=%x rect (%d,%d) (%d,%d) (applying)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
             Log(("VBoxTray: title=%s style=%x exStyle=%x\n", szWindowText, dwStyle, dwExStyle));
+            Log(("VBoxTray: pid=%d tid=%d\n", pid, tid));
 
             HRGN hrgn = CreateRectRgn(0,0,0,0);
 
@@ -203,6 +216,7 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
         {
             Log(("VBoxTray: Enum hwnd=%x rect (%d,%d) (%d,%d) (ignored)\n", hwnd, rectWindow.left, rectWindow.top, rectWindow.right, rectWindow.bottom));
             Log(("VBoxTray: title=%s style=%x\n", szWindowText, dwStyle));
+            Log(("VBoxTray: pid=%d tid=%d\n", pid, tid));
         }
     }
     return TRUE; /* continue enumeration */
