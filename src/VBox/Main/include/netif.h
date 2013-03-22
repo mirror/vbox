@@ -152,7 +152,8 @@ DECLINLINE(Bstr) getDefaultIPv4Address(Bstr bstrIfName)
     /* Get the index from the name */
     Utf8Str strTmp = bstrIfName;
     const char *pszIfName = strTmp.c_str();
-    int iInstance = 0, iPos = strcspn(pszIfName, "0123456789");
+    int iInstance = 0;
+    size_t iPos = strcspn(pszIfName, "0123456789");
     if (pszIfName[iPos])
         iInstance = RTStrToUInt32(pszIfName + iPos);
 

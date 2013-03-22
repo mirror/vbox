@@ -1188,7 +1188,9 @@ VirtualBox::COMGETTER(NATNetworks)(ComSafeArrayOut(INATNetwork *, aNATNetworks))
     return S_OK;
 #else
     NOREF(aNATNetworks);
+# ifndef RT_OS_WINDOWS
     NOREF(aNATNetworksSize);
+# endif
     return E_NOTIMPL;
 #endif
 }
