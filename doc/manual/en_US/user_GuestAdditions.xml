@@ -1138,13 +1138,16 @@ $</screen>
 
             <screen>iocharset CHARSET</screen>
 
-            <para>to set the character set used for I/O operations (utf8 by
-            default) and</para>
+            <para>to set the character set used for I/O operations. Note that
+            on Linux guests, if the "iocharset" option is not specified then
+            the Guest Additions driver will attempt to use the character set
+            specified by the CONFIG_NLS_DEFAULT kernel option.  If this option
+            is not set either then UTF-8 will be used. Also,</para>
 
             <screen>convertcp CHARSET</screen>
 
-            <para>to specify the character set used for the shared folder name
-            (utf8 by default).</para>
+            <para>is available in order to specify the character set used for
+            the shared folder name (utf8 by default).</para>
 
             <para>The generic mount options (documented in the mount manual
             page) apply also. Especially useful are the options
