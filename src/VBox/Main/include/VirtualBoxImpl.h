@@ -43,6 +43,8 @@ class VirtualBoxCallbackRegistration; /* see VirtualBoxImpl.cpp */
 class ExtPackManager;
 #endif
 class AutostartDb;
+class NATNetwork;
+
 
 typedef std::list<ComObjPtr<SessionMachine> > SessionMachinesList;
 
@@ -120,6 +122,7 @@ public:
     STDMETHOD(COMGETTER(SharedFolders))(ComSafeArrayOut(ISharedFolder *, aSharedFolders));
     STDMETHOD(COMGETTER(PerformanceCollector))(IPerformanceCollector **aPerformanceCollector);
     STDMETHOD(COMGETTER(DHCPServers))(ComSafeArrayOut(IDHCPServer *, aDHCPServers));
+    STDMETHOD(COMGETTER(NATNetworks))(ComSafeArrayOut(INATNetwork *, aNATNetworks));
     STDMETHOD(COMGETTER(EventSource))(IEventSource ** aEventSource);
     STDMETHOD(COMGETTER(ExtensionPackManager))(IExtPackManager **aExtPackManager);
     STDMETHOD(COMGETTER(InternalNetworks))(ComSafeArrayOut(BSTR, aInternalNetworks));
@@ -160,6 +163,11 @@ public:
     STDMETHOD(CreateDHCPServer)(IN_BSTR aName, IDHCPServer ** aServer);
     STDMETHOD(FindDHCPServerByNetworkName)(IN_BSTR aName, IDHCPServer ** aServer);
     STDMETHOD(RemoveDHCPServer)(IDHCPServer * aServer);
+
+    STDMETHOD(CreateNATNetwork)(IN_BSTR aName, INATNetwork ** aNATNetworks);
+    STDMETHOD(FindNATNetworkByName)(IN_BSTR aName, INATNetwork ** aNATNetworks);
+    STDMETHOD(RemoveNATNetwork)(INATNetwork * aNATNetwork);
+
     STDMETHOD(CheckFirmwarePresent)(FirmwareType_T aFirmwareType, IN_BSTR aVersion,
                                     BSTR * aUrl, BSTR * aFile, BOOL * aResult);
 
@@ -211,6 +219,15 @@ public:
     void onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
                                    NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
                                    IN_BSTR aGuestIp, uint16_t aGuestPort);
+    void onNATNetworkChange(IN_BSTR aNetworkName);
+    void onNATNetworkStartStop(IN_BSTR aNetworkName, BOOL aStart);
+    void onNATNetworkSetting(IN_BSTR aNetworkName, BOOL aEnabled, IN_BSTR aNetwork, 
+                             IN_BSTR aGateway, BOOL aAdvertiseDefaultIpv6RouteEnabled, 
+                             BOOL fNeedDhcpServer);
+    void onNATNetworkPortForward(IN_BSTR aNetworkName, BOOL create, BOOL fIpv6, 
+                                 IN_BSTR aRuleName, NATProtocol_T proto, 
+                                 IN_BSTR aHostIp, LONG aHostPort, 
+                                 IN_BSTR aGuestIp, LONG aGuestPort);
 
     ComObjPtr<GuestOSType> getUnknownOSType();
 
@@ -317,7 +334,10 @@ private:
                                bool aSaveRegistry = true);
     HRESULT unregisterDHCPServer(DHCPServer *aDHCPServer,
                                  bool aSaveRegistry = true);
-
+    HRESULT registerNATNetwork(NATNetwork *aNATNetwork,
+                               bool aSaveRegistry = true);
+    HRESULT unregisterNATNetwork(NATNetwork *aNATNetwork,
+                                 bool aSaveRegistry = true);
     HRESULT checkMediaForConflicts(const Guid &aId,
                                    const Utf8Str &aLocation,
                                    Utf8Str &aConflictType,
