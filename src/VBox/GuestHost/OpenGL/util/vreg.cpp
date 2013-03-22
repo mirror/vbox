@@ -1653,6 +1653,7 @@ static int crVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompositor, 
 static int crVrScrCompositorEntryRegionsSet(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged)
 {
     bool fChanged;
+    CrVrScrCompositorEntryIsInList(pEntry);
     int rc = VBoxVrCompositorEntryRegionsSet(&pCompositor->Compositor, &pEntry->Ce, cRegions, paRegions, &fChanged);
     if (!RT_SUCCESS(rc))
     {
@@ -1662,6 +1663,13 @@ static int crVrScrCompositorEntryRegionsSet(PVBOXVR_SCR_COMPOSITOR pCompositor, 
 
     if (fChanged)
     {
+        CrVrScrCompositorEntrySetChanged(pEntry, true);
+        if (!CrVrScrCompositorEntryIsInList(pEntry))
+        {
+            pEntry->cRects = 0;
+            pEntry->paSrcRects = NULL;
+            pEntry->paDstRects = NULL;
+        }
         crVrScrCompositorRectsInvalidate(pCompositor);
     }
 
@@ -1674,6 +1682,8 @@ static int crVrScrCompositorEntryRegionsSet(PVBOXVR_SCR_COMPOSITOR pCompositor, 
 
 static int crVrScrCompositorEntryPositionSet(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const RTPOINT *pPos, bool *pfChanged)
 {
+    if (pfChanged)
+        *pfChanged = false;
     if (pEntry && (pEntry->Pos.x != pPos->x || pEntry->Pos.y != pPos->y))
     {
         int rc = VBoxVrCompositorEntryRegionsTranslate(&pCompositor->Compositor, &pEntry->Ce, pPos->x - pEntry->Pos.x, pPos->y - pEntry->Pos.y, pfChanged);
@@ -1690,6 +1700,9 @@ static int crVrScrCompositorEntryPositionSet(PVBOXVR_SCR_COMPOSITOR pCompositor,
 
         pEntry->Pos = *pPos;
         CrVrScrCompositorEntrySetChanged(pEntry, true);
+
+        if (pfChanged)
+            *pfChanged = true;
     }
     return VINF_SUCCESS;
 }
@@ -1732,7 +1745,9 @@ VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompo
 
 VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsSet(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions, bool *pfChanged)
 {
+    /* @todo: the fChanged sate calculation is really rough now, this is enough for now though */
     bool fChanged = false, fPosChanged = false;
+    bool fWasInList = CrVrScrCompositorEntryIsInList(pEntry);
     int rc = CrVrScrCompositorEntryRemove(pCompositor, pEntry);
     if (!RT_SUCCESS(rc))
     {
@@ -1758,7 +1773,7 @@ VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsSet(PVBOXVR_SCR_COMPOSITOR pCompo
     }
 
     if (pfChanged)
-        *pfChanged = fPosChanged || fChanged;
+        *pfChanged = fPosChanged || fChanged || fWasInList;
 
     return VINF_SUCCESS;
 }
@@ -1901,6 +1916,11 @@ VBOXVREGDECL(int) CrVrScrCompositorEntryRemove(PVBOXVR_SCR_COMPOSITOR pComposito
 {
     if (!VBoxVrCompositorEntryRemove(&pCompositor->Compositor, &pEntry->Ce))
         return VINF_SUCCESS;
+
+    CrVrScrCompositorEntrySetChanged(pEntry, true);
+    pEntry->cRects = 0;
+    pEntry->paSrcRects = NULL;
+    pEntry->paDstRects = NULL;
 
     crVrScrCompositorRectsInvalidate(pCompositor);
     return VINF_SUCCESS;
