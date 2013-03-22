@@ -69,7 +69,7 @@ UIFrameBufferQuartz2D::UIFrameBufferQuartz2D(UIMachineView *pMachineView)
 UIFrameBufferQuartz2D::~UIFrameBufferQuartz2D()
 {
     Log (("Quartz2D: Deleting\n"));
-    clean();
+    clean(false);
 }
 
 /** @note This method is called on EMT from under this object's lock */
@@ -418,9 +418,9 @@ void UIFrameBufferQuartz2D::resizeEvent(UIResizeEvent *aEvent)
            aEvent->bitsPerPixel(), aEvent->bytesPerLine(),
            aEvent->width(), aEvent->height());
 #endif
-
     /* Clean out old stuff */
-    clean();
+    clean(m_width == aEvent->width()
+            && m_height == aEvent->height());
 
     m_width = aEvent->width();
     m_height = aEvent->height();
@@ -473,7 +473,7 @@ void UIFrameBufferQuartz2D::resizeEvent(UIResizeEvent *aEvent)
 //        msgCenter().remindAboutWrongColorDepth(aEvent->bitsPerPixel(), 32);
 }
 
-void UIFrameBufferQuartz2D::clean()
+void UIFrameBufferQuartz2D::clean(bool fPreserveRegions)
 {
     if (m_image)
     {
@@ -485,12 +485,12 @@ void UIFrameBufferQuartz2D::clean()
         RTMemFree(m_pBitmapData);
         m_pBitmapData = NULL;
     }
-    if (mRegion)
+    if (!fPreserveRegions && mRegion)
     {
         RTMemFree((void *)mRegion);
         mRegion = NULL;
     }
-    if (mRegionUnused)
+    if (!fPreserveRegions && mRegionUnused)
     {
         RTMemFree((void *)mRegionUnused);
         mRegionUnused = NULL;

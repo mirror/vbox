@@ -57,7 +57,7 @@ public:
 
 private:
 
-    void clean();
+    void clean(bool fPreserveRegions);
 
     UIMachineLogic *m_pMachineLogic;
     bool m_fUsesGuestVRAM;
