@@ -184,36 +184,6 @@ struct MediaRegistry
  typedef std::list<NATRule> NATRuleList;
 
 /**
- * 
- */
- struct NATRule
- {
-     NATRule()
-         : proto(NATProtocol_TCP),
-           u16HostPort(0),
-           u16GuestPort(0)
-     {}
-
-     bool operator==(const NATRule &r) const
-     {
-         return strName == r.strName
-             && proto == r.proto
-             && u16HostPort == r.u16HostPort
-             && strHostIP == r.strHostIP
-             && u16GuestPort == r.u16GuestPort
-             && strGuestIP == r.strGuestIP;
-     }
-
-     com::Utf8Str            strName;
-     NATProtocol_T           proto;
-     uint16_t                u16HostPort;
-     com::Utf8Str            strHostIP;
-     uint16_t                u16GuestPort;
-     com::Utf8Str            strGuestIP;
- };
- typedef std::list<NATRule> NATRuleList;
-
-/**
  * Common base class for both MainConfigFile and MachineConfigFile
  * which contains some common logic for both.
  */
@@ -349,33 +319,6 @@ struct NATNetwork
 };
 typedef std::list<NATNetwork> NATNetworksList;
 
-
-/**
- * Nat Networking settings (NAT service). 
- */
-struct NATNetwork
-{
-    com::Utf8Str strNetworkName;
-    bool         fEnabled;
-    com::Utf8Str strNetwork;
-    bool         fIPv6;
-    com::Utf8Str strIPv6Prefix;
-    bool         fAdvertiseDefaultIPv6Route;
-    bool         fNeedDhcpServer;
-    NATRuleList  llPortForwardRules4;
-    NATRuleList  llPortForwardRules6;
-    NATNetwork():fEnabled(false),
-      fAdvertiseDefaultIPv6Route(false),
-      fNeedDhcpServer(false)
-      {}
-    bool operator==(const NATNetwork &n) const
-    {
-        return    strNetworkName == n.strNetworkName
-               && strNetwork == n.strNetwork;
-    }
-     
-};
-typedef std::list<NATNetwork> NATNetworksList;
 
 class MainConfigFile : public ConfigFileBase
 {
