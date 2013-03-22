@@ -1813,7 +1813,7 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
         CRASSERT(!pBuf->pBackImg);
         crVBoxServerFBImageDataTerm(&Data.data);
 
-        if (pMural->fUseFBO && crServerVBoxCompositionPresentNeeded(pMural))
+        if (pMural->fUseFBO && pMural->fDataPresented && crServerVBoxCompositionPresentNeeded(pMural))
         {
             crServerPresentFBO(pMural);
         }
@@ -2206,9 +2206,15 @@ static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *da
     CRMuralInfo *pMI = (CRMuralInfo*) data1;
     int *sIndex = (int*) data2;
 
+    Assert(pMI->cDisabled);
+
     if (pMI->screenId == *sIndex)
     {
+        crServerVBoxCompositionDisableEnter(pMI);
+
         renderspuReparentWindow(pMI->spuWindow);
+
+        crServerVBoxCompositionDisableLeave(pMI, GL_FALSE);
     }
 }
 
@@ -2344,7 +2350,7 @@ static int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
 
     fForcePresent = crServerVBoxCompositionPresentNeeded(pMI);
 
-    crServerVBoxCompositionDisable(pMI);
+    crServerVBoxCompositionDisableEnter(pMI);
 
     if (cr_server.fRootVrOn)
     {
@@ -2402,7 +2408,7 @@ static int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
 
     pMI->fRootVrOn = cr_server.fRootVrOn;
 
-    crServerVBoxCompositionReenable(pMI, fForcePresent);
+    crServerVBoxCompositionDisableLeave(pMI, fForcePresent);
 
     return rc;
 }
