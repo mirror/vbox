@@ -1024,6 +1024,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
                 && CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP))
             {
                 CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP);
+                LogRel(("HM: Disabled RDTSCP\n"));
             }
 
             /* Unrestricted guest execution relies on EPT. */
