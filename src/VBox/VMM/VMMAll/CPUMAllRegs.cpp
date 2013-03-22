@@ -2013,7 +2013,7 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_X2APIC:
             if (pVM->cpum.s.aGuestCpuIdStd[0].eax >= 1)
                 pVM->cpum.s.aGuestCpuIdStd[1].ecx &= ~X86_CPUID_FEATURE_ECX_X2APIC;
-            LogRel(("CPUMClearGuestCpuIdFeature: Disabled x2APIC\n"));
+            Log(("CPUMClearGuestCpuIdFeature: Disabled x2APIC\n"));
             break;
 
         case CPUMCPUIDFEATURE_PAE:
@@ -2023,7 +2023,7 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
                 &&  pVM->cpum.s.enmGuestCpuVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdExt[1].edx &= ~X86_CPUID_AMD_FEATURE_EDX_PAE;
-            LogRel(("CPUMClearGuestCpuIdFeature: Disabled PAE!\n"));
+            Log(("CPUMClearGuestCpuIdFeature: Disabled PAE!\n"));
             break;
         }
 
@@ -2034,7 +2034,7 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             if (    pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
                 &&  pVM->cpum.s.enmGuestCpuVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdExt[1].edx &= ~X86_CPUID_AMD_FEATURE_EDX_PAT;
-            LogRel(("CPUMClearGuestCpuIdFeature: Disabled PAT!\n"));
+            Log(("CPUMClearGuestCpuIdFeature: Disabled PAT!\n"));
             break;
         }
 
@@ -2056,7 +2056,7 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         {
             if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
                 pVM->cpum.s.aGuestCpuIdExt[1].edx &= ~X86_CPUID_EXT_FEATURE_EDX_RDTSCP;
-            LogRel(("CPUMClearGuestCpuIdFeature: Disabled RDTSCP!\n"));
+            Log(("CPUMClearGuestCpuIdFeature: Disabled RDTSCP!\n"));
             break;
         }
 
