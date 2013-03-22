@@ -1085,6 +1085,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 		        m_fNeedViewportUpdate = true;
 #ifdef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
 				renderspuVBoxCompositorRelease(m_pWinInfo);
+				pCompositor = NULL;
 #endif
 		    }
 		}
@@ -1104,6 +1105,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 #endif
 			    {
 			        glFlush();
+			            
 			        /* issue to the gui thread */
 			        [self setNeedsDisplay:YES];
 			    }

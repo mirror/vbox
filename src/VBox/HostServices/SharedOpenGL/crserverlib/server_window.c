@@ -465,7 +465,7 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
          * 3. (so far not needed for resize, but in case it is in the future) re-set the compositor */
 
         /* 1. tell renderspu to stop using the current compositor (see above comment) */
-        crServerVBoxCompositionDisable(mural);
+        crServerVBoxCompositionDisableEnter(mural);
 
         /* 2. do necessary modifications (see above comment) */
         /* NOTE: we can do it even if mural->fUseFBO == CR_SERVER_REDIR_NONE to make sure the compositor data is always up to date */
@@ -493,6 +493,8 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
         /* CrVrScrCompositorUnlock(&mural->Compositor); */
         mural->width = width;
         mural->height = height;
+
+        mural->fDataPresented = GL_FALSE;
 
         if (cr_server.currentMural == mural)
         {
@@ -563,8 +565,9 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
         /* 3. (so far not needed for resize, but in case it is in the future) re-set the compositor (see above comment) */
         /* uncomment when needed */
         /* NOTE: !!! we have mural->fHasPresentationData set to GL_FALSE above, so crServerVBoxCompositionReenable will have no effect in any way
-        crServerVBoxCompositionReenable(mural);
+
         */
+        crServerVBoxCompositionDisableLeave(mural, GL_FALSE);
     }
 }
 
@@ -614,7 +617,7 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
          * 3. re-set the compositor */
 
         /* 1. tell renderspu to stop using the current compositor (see above comment) */
-        crServerVBoxCompositionDisable(mural);
+        crServerVBoxCompositionDisableEnter(mural);
 
         /* 2. do necessary modifications (see above comment) */
         /* NOTE: we can do it even if mural->fUseFBO == CR_SERVER_REDIR_NONE to make sure the compositor data is always up to date */
@@ -662,7 +665,7 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
         crServerCheckMuralGeometry(mural);
 
         /* 3. re-set the compositor (see above comment) */
-        crServerVBoxCompositionReenable(mural, fForcePresent);
+        crServerVBoxCompositionDisableLeave(mural, fForcePresent);
     }
 }
 
@@ -689,7 +692,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
      * 3. re-set the compositor */
 
     /* 1. tell renderspu to stop using the current compositor (see above comment) */
-    crServerVBoxCompositionDisable(mural);
+    crServerVBoxCompositionDisableEnter(mural);
 
     /* 2. do necessary modifications (see above comment) */
     if (mural->pVisibleRects)
@@ -768,7 +771,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
     }
 
     /* 3. re-set the compositor (see above comment) */
-    crServerVBoxCompositionReenable(mural, fForcePresent);
+    crServerVBoxCompositionDisableLeave(mural, fForcePresent);
 }
 
 void SERVER_DISPATCH_APIENTRY

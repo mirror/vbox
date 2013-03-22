@@ -111,6 +111,8 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
         return;
     }
 
+    crServerVBoxCompositionDisableEnter(mural);
+
     if (cr_server.screenCount<2 && !cr_server.bForceOffscreenRendering)
     {
         CRScreenViewportInfo *pVieport = &cr_server.screenVieport[mural->screenId];
@@ -121,6 +123,8 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
         mural->hY = mural->gY-cr_server.screen[0].y;
 
         cr_server.head_spu->dispatch_table.WindowPosition(mural->spuWindow, mural->hX - pVieport->x, mural->hY - pVieport->y);
+
+        crServerVBoxCompositionDisableLeave(mural, GL_FALSE);
 
         return;
     }
@@ -221,6 +225,8 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
                                               mural->hX, mural->hY,
                                               mural->width, mural->height);
     }
+
+    crServerVBoxCompositionDisableLeave(mural, GL_FALSE);
 }
 
 GLboolean crServerSupportRedirMuralFBO(void)
@@ -250,13 +256,14 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir)
         return;
     }
 
-    crServerVBoxCompositionDisable(mural);
+    crServerVBoxCompositionDisableEnter(mural);
 
     if (redir)
     {
         if (!crServerSupportRedirMuralFBO())
         {
             crWarning("FBO not supported, can't redirect window output");
+            crServerVBoxCompositionDisableLeave(mural, GL_FALSE);
             return;
         }
 
@@ -287,13 +294,6 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir)
     }
     else
     {
-        if (redir == CR_SERVER_REDIR_NONE)
-        {
-            /* tell renderspu we do not want compositor presentation anymore
-             * renderspu will ensure its redraw thread is done with using the compositor, etc. */
-            crServerVBoxCompositionDisable(mural);
-        }
-
         if (mural->fUseFBO == CR_SERVER_REDIR_FBO_RAM)
             cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, mural->bVisible);
 
@@ -314,7 +314,7 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir)
     }
 
     mural->fUseFBO = redir;
-    crServerVBoxCompositionReenable(mural, GL_FALSE);
+    crServerVBoxCompositionDisableLeave(mural, GL_FALSE);
 }
 
 static void crServerCreateMuralFBO(CRMuralInfo *mural)
@@ -534,6 +534,8 @@ static void crServerVBoxCompositionPresentPerform(CRMuralInfo *mural)
 
     CRASSERT(curCtx == crStateGetCurrent());
 
+    mural->fDataPresented = GL_TRUE;
+
     if (currentMural)
     {
         idDrawFBO = currentMural->aidFBOs[currentMural->iCurDrawBuffer];
@@ -562,21 +564,62 @@ void crServerVBoxCompositionPresent(CRMuralInfo *mural)
     crServerVBoxCompositionPresentPerform(mural);
 }
 
-void crServerVBoxCompositionReenable(CRMuralInfo *mural, GLboolean fForcePresent)
+static void crServerVBoxCompositionReenable(CRMuralInfo *mural, GLboolean fForcePresent)
 {
-    if (mural->fUseFBO != CR_SERVER_REDIR_FBO_BLT ||
-            (!fForcePresent
+    if (mural->fUseFBO != CR_SERVER_REDIR_FBO_BLT
+            || !mural->fDataPresented
+            || (!fForcePresent
                     && !crServerVBoxCompositionPresentNeeded(mural)))
         return;
 
     crServerVBoxCompositionPresentPerform(mural);
 }
 
-void crServerVBoxCompositionDisable(CRMuralInfo *mural)
+static void crServerVBoxCompositionDisable(CRMuralInfo *mural)
 {
-    if (mural->fUseFBO != CR_SERVER_REDIR_FBO_BLT)
+    if (mural->fUseFBO != CR_SERVER_REDIR_FBO_BLT
+            || !mural->fDataPresented)
         return;
     cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, NULL, NULL);
+}
+
+void crServerVBoxCompositionDisableEnter(CRMuralInfo *mural)
+{
+    ++mural->cDisabled;
+    Assert(mural->cDisabled);
+    if (mural->cDisabled == 1)
+    {
+        crServerVBoxCompositionDisable(mural);
+    }
+}
+
+void crServerVBoxCompositionDisableLeave(CRMuralInfo *mural, GLboolean fForcePresentOnEnabled)
+{
+    mural->fForcePresentState = fForcePresentOnEnabled;
+    --mural->cDisabled;
+    Assert(mural->cDisabled < UINT32_MAX/2);
+    if (!mural->cDisabled)
+    {
+        crServerVBoxCompositionReenable(mural, mural->fForcePresentState);
+        mural->fForcePresentState = GL_FALSE;
+    }
+}
+
+static void crServerVBoxCompositionSetEnableStateGlobalCB(unsigned long key, void *data1, void *data2)
+{
+    CRMuralInfo *mural = (CRMuralInfo *)data1;
+
+    if (data2)
+        crServerVBoxCompositionDisableLeave(mural, GL_FALSE);
+    else
+        crServerVBoxCompositionDisableEnter(mural);
+}
+
+DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fEnable)
+{
+    crHashtableWalk(cr_server.muralTable, crServerVBoxCompositionSetEnableStateGlobalCB, (void*)fEnable);
+
+    crHashtableWalk(cr_server.dummyMuralTable, crServerVBoxCompositionSetEnableStateGlobalCB, (void*)fEnable);
 }
 
 void crServerPresentFBO(CRMuralInfo *mural)
@@ -599,6 +642,8 @@ void crServerPresentFBO(CRMuralInfo *mural)
 
     if (!crServerVBoxCompositionPresentNeeded(mural))
         return;
+
+    mural->fDataPresented = GL_TRUE;
 
     Tex.width = mural->width;
     Tex.height = mural->height;

@@ -655,8 +655,6 @@ renderspuVBoxPresentComposition( GLint win, struct VBOXVR_SCR_COMPOSITOR * pComp
         if (pCompositor)
         {
             renderspu_SystemVBoxPresentComposition(window, pChangedEntry);
-            if (CrVrScrCompositorIsEmpty(pCompositor))
-                renderspuVBoxCompositorSet( window, NULL);
         }
     }
     else {
@@ -977,7 +975,7 @@ void renderspuVBoxCompositorRelease( WindowInfo *window)
 {
     int rc;
     Assert(window->pCompositor);
-    if (CrVrScrCompositorIsEmpty(window->pCompositor))
+    if (CrVrScrCompositorIsEmpty(window->pCompositor) && RTCritSectGetRecursion(&window->CompositorLock) == 1)
         window->pCompositor = NULL;
     rc = RTCritSectLeave(&window->CompositorLock);
     if (!RT_SUCCESS(rc))

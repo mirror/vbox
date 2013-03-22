@@ -100,6 +100,7 @@ typedef struct {
     GLboolean bVisible;      /*guest window is visible*/
     GLubyte   fUseFBO;       /*redirect to FBO instead of real host window*/
     GLboolean bFbDraw;       /*GL_FRONT buffer is drawn to directly*/
+    GLboolean fDataPresented;
 
     GLint       cVisibleRects;    /*count of visible rects*/
     GLint      *pVisibleRects;    /*visible rects left, top, right, bottom*/
@@ -124,7 +125,10 @@ typedef struct {
     GLuint fboWidth, fboHeight;
     GLuint idPBO;
 
+    GLuint cDisabled;
+
     GLboolean fRootVrOn;
+    GLboolean fForcePresentState;
 
     VBOXVR_SCR_COMPOSITOR_ENTRY CEntry;
     VBOXVR_SCR_COMPOSITOR Compositor;
@@ -411,7 +415,7 @@ extern DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t versi
 extern DECLEXPORT(int32_t) crVBoxServerSetScreenCount(int sCount);
 extern DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex);
 extern DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h, uint64_t winID);
-
+extern DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fEnable);
 extern DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, const RTRECT *pRects);
 
 extern DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPresentFBO);

@@ -142,8 +142,8 @@ GLboolean crServerIsRedirectedToFBO();
 GLuint crServerMuralFBOIdxFromBufferName(CRMuralInfo *mural, GLenum buffer);
 void crServerMuralFBOSwapBuffers(CRMuralInfo *mural);
 
-void crServerVBoxCompositionReenable(CRMuralInfo *mural, GLboolean fForcePresent);
-void crServerVBoxCompositionDisable(CRMuralInfo *mural);
+void crServerVBoxCompositionDisableEnter(CRMuralInfo *mural);
+void crServerVBoxCompositionDisableLeave(CRMuralInfo *mural, GLboolean fForcePresentOnEnabled);
 void crServerVBoxCompositionPresent(CRMuralInfo *mural);
 DECLINLINE(GLboolean) crServerVBoxCompositionPresentNeeded(CRMuralInfo *mural)
 {
