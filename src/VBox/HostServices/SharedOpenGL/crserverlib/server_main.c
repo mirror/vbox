@@ -1734,7 +1734,7 @@ static int32_t crVBoxServerLoadMurals(PSSMHANDLE pSSM, uint32_t version)
         if (version >= SHCROGL_SSM_VERSION_WITH_PRESENT_STATE)
             pActualMural->fDataPresented = muralInfo.fDataPresented;
         else
-            pActualMural->fDataPresented = GL_TRUE;
+            pActualMural->fDataPresented = crServerVBoxCompositionPresentNeeded(pActualMural);
     }
 
     CRASSERT(RT_SUCCESS(rc));
