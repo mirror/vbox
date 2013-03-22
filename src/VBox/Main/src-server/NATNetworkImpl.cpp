@@ -456,10 +456,7 @@ STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules4)(ComSafeArrayOut(BSTR, aPor
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    /* aPortForwardRules4Size appears from ComSafeArrayOut */
-    GetPortForwardRulesFromMap(aPortForwardRules4Size, 
-                                  aPortForwardRules4, 
-                                  m->mapName2PortForwardRule4);
+    GetPortForwardRulesFromMap(ComSafeArrayInArg(aPortForwardRules4), m->mapName2PortForwardRule4);
     alock.release();
     return S_OK;
 }
@@ -472,7 +469,7 @@ STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules6)(ComSafeArrayOut(BSTR, aPor
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    GetPortForwardRulesFromMap(aPortForwardRules6Size, aPortForwardRules6, m->mapName2PortForwardRule6);
+    GetPortForwardRulesFromMap(ComSafeArrayInArg(aPortForwardRules6), m->mapName2PortForwardRule6);
     return S_OK;
 }
 
