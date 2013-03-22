@@ -23,8 +23,9 @@
 #include <VBox/log.h>
 #include <iprt/mem.h>
 
-#include <pulse/pulseaudio.h>
+#include "pulse_mangling.h"
 #include "pulse_stubs.h"
+#include <pulse/pulseaudio.h>
 
 #include "vl_vbox.h"
 #include "audio.h"

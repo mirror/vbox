@@ -29,14 +29,16 @@
 #include <VBox/log.h>
 #endif
 
+#ifdef VBOX
+# include "alsa_stubs.h"
+# include "alsa_mangling.h"
+#endif
+
 #include <alsa/asoundlib.h>
 
 #include "VBoxDD.h"
 #include "vl_vbox.h"
 #include "audio.h"
-#ifdef VBOX
-#include "alsa_stubs.h"
-#endif
 #include <iprt/alloc.h>
 
 #define AUDIO_CAP "alsa"
