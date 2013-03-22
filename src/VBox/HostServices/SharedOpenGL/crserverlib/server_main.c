@@ -1683,6 +1683,7 @@ static int32_t crVBoxServerLoadMurals(PSSMHANDLE pSSM, uint32_t version)
     for (ui=0; ui<uiNumElems; ++ui)
     {
         CRMuralInfo muralInfo;
+        CRMuralInfo *pActualMural = NULL;
 
         rc = SSMR3GetMem(pSSM, &key, sizeof(key));
         AssertRCReturn(rc, rc);
@@ -1704,10 +1705,11 @@ static int32_t crVBoxServerLoadMurals(PSSMHANDLE pSSM, uint32_t version)
             AssertRCReturn(rc, rc);
         }
 
+        pActualMural = (CRMuralInfo *)crHashtableSearch(cr_server.muralTable, key);;
+        CRASSERT(pActualMural);
+
         if (version >= SHCROGL_SSM_VERSION_WITH_WINDOW_CTX_USAGE)
         {
-            CRMuralInfo *pActualMural = (CRMuralInfo *)crHashtableSearch(cr_server.muralTable, key);;
-            CRASSERT(pActualMural);
             rc = SSMR3GetMem(pSSM, pActualMural->ctxUsage, sizeof (pActualMural->ctxUsage));
             CRASSERT(rc == VINF_SUCCESS);
         }
@@ -1726,6 +1728,13 @@ static int32_t crVBoxServerLoadMurals(PSSMHANDLE pSSM, uint32_t version)
         {
             crFree(muralInfo.pVisibleRects);
         }
+
+        Assert(!pActualMural->fDataPresented);
+
+        if (version >= SHCROGL_SSM_VERSION_WITH_PRESENT_STATE)
+            pActualMural->fDataPresented = muralInfo.fDataPresented;
+        else
+            pActualMural->fDataPresented = GL_TRUE;
     }
 
     CRASSERT(RT_SUCCESS(rc));
