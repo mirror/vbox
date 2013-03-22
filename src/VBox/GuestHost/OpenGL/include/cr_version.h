@@ -25,7 +25,8 @@
  * from DEPTH_STENCIL renderbuffer we used for offscreen rendering
  * this is why we switched to glReadDrawPixels(GL_DEPTH_STENCIL) in one run */
 #define SHCROGL_SSM_VERSION_WITH_SINGLE_DEPTH_STENCIL               36
-#define SHCROGL_SSM_VERSION                                         36
+#define SHCROGL_SSM_VERSION_WITH_PRESENT_STATE                      37
+#define SHCROGL_SSM_VERSION                                         37
 
 /* These define the Chromium release number.
  * Alpha Release = 0.1.0, Beta Release = 0.2.0
