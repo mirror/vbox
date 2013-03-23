@@ -342,6 +342,7 @@ VMMR3_INT_DECL(int) PDMR3InitUVM(PUVM pUVM)
     AssertRelease(sizeof(pUVM->pdm.s) <= sizeof(pUVM->pdm.padding));
     pUVM->pdm.s.pModules   = NULL;
     pUVM->pdm.s.pCritSects = NULL;
+    pUVM->pdm.s.pRwCritSects = NULL;
     return RTCritSectInit(&pUVM->pdm.s.ListCritSect);
 }
 
@@ -373,7 +374,7 @@ VMMR3_INT_DECL(int) PDMR3Init(PVM pVM)
     /*
      * Initialize critical sections first.
      */
-    int rc = pdmR3CritSectInitStats(pVM);
+    int rc = pdmR3CritSectBothInitStats(pVM);
     if (RT_SUCCESS(rc))
         rc = PDMR3CritSectInit(pVM, &pVM->pdm.s.CritSect, RT_SRC_POS, "PDM");
     if (RT_SUCCESS(rc))
@@ -457,7 +458,7 @@ VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Critical sections.
      */
-    pdmR3CritSectRelocate(pVM);
+    pdmR3CritSectBothRelocate(pVM);
 
     /*
      * The registered PIC.
@@ -659,7 +660,7 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
 
         TMR3TimerDestroyDevice(pVM, pDevIns);
         SSMR3DeregisterDevice(pVM, pDevIns, NULL, 0);
-        pdmR3CritSectDeleteDevice(pVM, pDevIns);
+        pdmR3CritSectBothDeleteDevice(pVM, pDevIns);
         pdmR3ThreadDestroyDevice(pVM, pDevIns);
         PDMR3QueueDestroyDevice(pVM, pDevIns);
         PGMR3PhysMMIO2Deregister(pVM, pDevIns, UINT32_MAX);
@@ -701,7 +702,7 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
      * Destroy the PDM lock.
      */
     PDMR3CritSectDelete(&pVM->pdm.s.CritSect);
-    /* The MiscCritSect is deleted by PDMR3CritSectTerm. */
+    /* The MiscCritSect is deleted by PDMR3CritSectBothTerm later. */
 
     LogFlow(("PDMR3Term: returns %Rrc\n", VINF_SUCCESS));
     return VINF_SUCCESS;
@@ -725,6 +726,7 @@ VMMR3_INT_DECL(void) PDMR3TermUVM(PUVM pUVM)
     pdmR3LdrTermU(pUVM);
 
     Assert(pUVM->pdm.s.pCritSects == NULL);
+    Assert(pUVM->pdm.s.pRwCritSects == NULL);
     RTCritSectDelete(&pUVM->pdm.s.ListCritSect);
 }
 

@@ -348,6 +348,11 @@ typedef union PDMCRITSECT *PPDMCRITSECT;
 /** Pointer to a const PDM critical section. */
 typedef const union PDMCRITSECT *PCPDMCRITSECT;
 
+/** Pointer to a PDM read/write critical section. */
+typedef union PDMCRITSECTRW *PPDMCRITSECTRW;
+/** Pointer to a const PDM read/write critical section. */
+typedef union PDMCRITSECTRW const *PCPDMCRITSECTRW;
+
 /** R3 pointer to a timer. */
 typedef R3PTRTYPE(struct TMTIMER *) PTMTIMERR3;
 /** Pointer to a R3 pointer to a timer. */

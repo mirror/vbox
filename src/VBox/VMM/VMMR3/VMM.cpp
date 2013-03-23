@@ -2097,7 +2097,7 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
      * when entering other critsects here.
      */
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
-        PDMCritSectFF(pVCpu);
+        PDMCritSectBothFF(pVCpu);
 
     switch (pVCpu->vmm.s.enmCallRing3Operation)
     {

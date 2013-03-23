@@ -780,7 +780,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
          * Do automatic cleanups while the VM structure is still alive and all
          * references to it are still working.
          */
-        PDMR3CritSectTerm(pVM);
+        PDMR3CritSectBothTerm(pVM);
 
         /*
          * Drop all references to VM and the VMCPU structures, then
@@ -2439,7 +2439,7 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         rc = CPUMR3Term(pVM);
         AssertRC(rc);
         SSMR3Term(pVM);
-        rc = PDMR3CritSectTerm(pVM);
+        rc = PDMR3CritSectBothTerm(pVM);
         AssertRC(rc);
         rc = MMR3Term(pVM);
         AssertRC(rc);

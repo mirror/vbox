@@ -124,7 +124,7 @@ typedef struct UVM
 #ifdef ___PDMInternal_h
         struct PDMUSERPERVM     s;
 #endif
-        uint8_t                 padding[128];
+        uint8_t                 padding[256];
     } pdm;
 
     /** The STAM data. */
