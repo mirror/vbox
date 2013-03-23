@@ -45,27 +45,6 @@
 #include "internal/strict.h"
 
 
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-/* Note! Using RTCSRW instead of RTCRITSECTRW to save space. */
-#define RTCSRW_CNT_BITS            15
-#define RTCSRW_CNT_MASK            UINT64_C(0x00007fff)
-
-#define RTCSRW_CNT_RD_SHIFT        0
-#define RTCSRW_CNT_RD_MASK         (RTCSRW_CNT_MASK << RTCSRW_CNT_RD_SHIFT)
-#define RTCSRW_CNT_WR_SHIFT        16
-#define RTCSRW_CNT_WR_MASK         (RTCSRW_CNT_MASK << RTCSRW_CNT_WR_SHIFT)
-#define RTCSRW_DIR_SHIFT           31
-#define RTCSRW_DIR_MASK            RT_BIT_64(RTCSRW_DIR_SHIFT)
-#define RTCSRW_DIR_READ            UINT64_C(0)
-#define RTCSRW_DIR_WRITE           UINT64_C(1)
-
-#define RTCSRW_WAIT_CNT_RD_SHIFT   32
-#define RTCSRW_WAIT_CNT_RD_MASK    (RTCSRW_CNT_MASK << RTCSRW_WAIT_CNT_RD_SHIFT)
-//#define RTCSRW_WAIT_CNT_WR_SHIFT   48
-//#define RTCSRW_WAIT_CNT_WR_MASK    (RTCSRW_CNT_MASK << RTCSRW_WAIT_CNT_WR_SHIFT)
-
 
 RTDECL(int) RTCritSectRwInit(PRTCRITSECTRW pThis)
 {
@@ -770,7 +749,7 @@ RTDECL(int) RTCritSectRwLeaveExcl(PRTCRITSECTRW pThis)
 
     return VINF_SUCCESS;
 }
-RT_EXPORT_SYMBOL(RTSemRWReleaseWrite);
+RT_EXPORT_SYMBOL(RTCritSectRwLeaveExcl);
 
 
 RTDECL(bool) RTCritSectRwIsWriteOwner(PRTCRITSECTRW pThis)
@@ -866,10 +845,10 @@ RTDECL(uint32_t) RTCritSectRwGetWriterReadRecursion(PRTCRITSECTRW pThis)
      */
     return pThis->cWriterReads;
 }
-RT_EXPORT_SYMBOL(RTSemRWGetWriterReadRecursion);
+RT_EXPORT_SYMBOL(RTCritSectRwGetWriterReadRecursion);
 
 
-RTDECL(uint32_t) RTSemRWGetReadCount(PRTCRITSECTRW pThis)
+RTDECL(uint32_t) RTCritSectRwGetReadCount(PRTCRITSECTRW pThis)
 {
     /*
      * Validate input.
@@ -885,7 +864,7 @@ RTDECL(uint32_t) RTSemRWGetReadCount(PRTCRITSECTRW pThis)
         return 0;
     return (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
 }
-RT_EXPORT_SYMBOL(RTSemRWGetReadCount);
+RT_EXPORT_SYMBOL(RTCritSectRwGetReadCount);
 
 
 RTDECL(int) RTCritSectRwDelete(PRTCRITSECTRW pThis)
