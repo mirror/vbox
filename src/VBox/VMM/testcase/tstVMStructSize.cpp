@@ -347,6 +347,7 @@ int main()
     CHECK_PADDING(PDMDRVINS, Internal, 1);
 
     CHECK_PADDING2(PDMCRITSECT);
+    CHECK_PADDING2(PDMCRITSECTRW);
 
     /* pgm */
 #if defined(VBOX_WITH_2X_4GB_ADDR_SPACE)  || defined(VBOX_WITH_RAW_MODE)

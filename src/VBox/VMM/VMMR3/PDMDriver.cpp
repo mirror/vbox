@@ -961,7 +961,7 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
         AssertRC(rc);
 
         /* PDM critsects. */
-        rc = pdmR3CritSectDeleteDriver(pVM, pCur);
+        rc = pdmR3CritSectBothDeleteDriver(pVM, pCur);
         AssertRC(rc);
 
         /* Block caches. */

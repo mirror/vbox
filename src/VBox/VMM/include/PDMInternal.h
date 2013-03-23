@@ -32,6 +32,7 @@
 #endif
 #include <VBox/vmm/pdmblkcache.h>
 #include <VBox/vmm/pdmcommon.h>
+#include <VBox/sup.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 #ifdef IN_RING3
@@ -55,8 +56,17 @@ RT_C_DECLS_BEGIN
 
 /** @def PDMCRITSECT_STRICT
  * Enables/disables PDM critsect strictness like deadlock detection. */
-#if (defined(RT_LOCK_STRICT) && defined(IN_RING3) && !defined(IEM_VERIFICATION_MODE)) || defined(DOXYGEN_RUNNING)
+#if (defined(RT_LOCK_STRICT) && defined(IN_RING3) && !defined(IEM_VERIFICATION_MODE) && !defined(PDMCRITSECT_STRICT)) \
+  || defined(DOXYGEN_RUNNING)
 # define PDMCRITSECT_STRICT
+#endif
+
+/** @def PDMCRITSECT_STRICT
+ * Enables/disables PDM read/write critsect strictness like deadlock
+ * detection. */
+#if (defined(RT_LOCK_STRICT) && defined(IN_RING3) && !defined(IEM_VERIFICATION_MODE) && !defined(PDMCRITSECTRW_STRICT)) \
+  || defined(DOXYGEN_RUNNING)
+# define PDMCRITSECTRW_STRICT
 #endif
 
 
@@ -262,7 +272,8 @@ typedef struct PDMDRVINSINT
  */
 typedef struct PDMCRITSECTINT
 {
-    /** The critical section core which is shared with IPRT. */
+    /** The critical section core which is shared with IPRT.
+     * @note The semaphore is a SUPSEMEVENT.  */
     RTCRITSECT                      Core;
     /** Pointer to the next critical section.
      * This chain is used for relocating pVMRC and device cleanup. */
@@ -306,6 +317,64 @@ typedef PDMCRITSECTINT *PPDMCRITSECTINT;
 /** Indicates that the critical section is queued for unlock.
  * PDMCritSectIsOwner and PDMCritSectIsOwned optimizations. */
 #define PDMCRITSECT_FLAGS_PENDING_UNLOCK    RT_BIT_32(17)
+
+
+/**
+ * Private critical section data.
+ */
+typedef struct PDMCRITSECTRWINT
+{
+    /** The read/write critical section core which is shared with IPRT.
+     * @note The semaphores are SUPSEMEVENT and SUPSEMEVENTMULTI.  */
+    RTCRITSECTRW                        Core;
+
+    /** Pointer to the next critical section.
+     * This chain is used for relocating pVMRC and device cleanup. */
+    R3PTRTYPE(struct PDMCRITSECTRWINT *) pNext;
+    /** Owner identifier.
+     * This is pDevIns if the owner is a device. Similarly for a driver or service.
+     * PDMR3CritSectInit() sets this to point to the critsect itself. */
+    RTR3PTR                             pvKey;
+    /** Pointer to the VM - R3Ptr. */
+    PVMR3                               pVMR3;
+    /** Pointer to the VM - R0Ptr. */
+    PVMR0                               pVMR0;
+    /** Pointer to the VM - GCPtr. */
+    PVMRC                               pVMRC;
+#if HC_ARCH_BITS == 64
+    /** Alignment padding. */
+    RTRCPTR                             RCPtrPadding;
+#endif
+    /** The lock name. */
+    R3PTRTYPE(const char *)             pszName;
+    /** R0/RC write lock contention. */
+    STAMCOUNTER                         StatContentionRZEnterExcl;
+    /** R0/RC write unlock contention. */
+    STAMCOUNTER                         StatContentionRZLeaveExcl;
+    /** R0/RC read lock contention. */
+    STAMCOUNTER                         StatContentionRZEnterShared;
+    /** R0/RC read unlock contention. */
+    STAMCOUNTER                         StatContentionRZLeaveShared;
+    /** R0/RC writes. */
+    STAMCOUNTER                         StatRZEnterExcl;
+    /** R0/RC reads. */
+    STAMCOUNTER                         StatRZEnterShared;
+    /** R3 write lock contention. */
+    STAMCOUNTER                         StatContentionR3EnterExcl;
+    /** R3 read lock contention. */
+    STAMCOUNTER                         StatContentionR3EnterShared;
+    /** R3 writes. */
+    STAMCOUNTER                         StatR3EnterExcl;
+    /** R3 reads. */
+    STAMCOUNTER                         StatR3EnterShared;
+    /** Profiling the time the section is write locked. */
+    STAMPROFILEADV                      StatWriteLocked;
+} PDMCRITSECTRWINT;
+AssertCompileMemberAlignment(PDMCRITSECTRWINT, StatContentionRZEnterExcl, 8);
+AssertCompileMemberAlignment(PDMCRITSECTRWINT, Core.u64State, 8);
+/** Pointer to private critical section data. */
+typedef PDMCRITSECTRWINT *PPDMCRITSECTRWINT;
+
 
 
 /**
@@ -354,6 +423,7 @@ typedef struct PDMTHREADINT
 #define PDMUSBINSINT_DECLARED
 #define PDMDRVINSINT_DECLARED
 #define PDMCRITSECTINT_DECLARED
+#define PDMCRITSECTRWINT_DECLARED
 #define PDMTHREADINT_DECLARED
 #ifdef ___VBox_pdm_h
 # error "Invalid header PDM order. Include PDMInternal.h before VBox/vmm/pdm.h!"
@@ -944,16 +1014,36 @@ typedef struct PDMBLKCACHEGLOBAL *PPDMBLKCACHEGLOBAL;
 
 /**
  * PDM VMCPU Instance data.
- * Changes to this must checked against the padding of the cfgm union in VMCPU!
+ * Changes to this must checked against the padding of the pdm union in VMCPU!
  */
 typedef struct PDMCPU
 {
-    /** The number of entries in the apQueuedCritSectsLeaves table that's currently in use. */
+    /** The number of entries in the apQueuedCritSectsLeaves table that's currently
+     * in use. */
     uint32_t                        cQueuedCritSectLeaves;
     uint32_t                        uPadding0; /**< Alignment padding.*/
-    /** Critical sections queued in RC/R0 because of contention preventing leave to complete. (R3 Ptrs)
+    /** Critical sections queued in RC/R0 because of contention preventing leave to
+     * complete. (R3 Ptrs)
      * We will return to Ring-3 ASAP, so this queue doesn't have to be very long. */
-    R3PTRTYPE(PPDMCRITSECT)         apQueuedCritSectsLeaves[8];
+    R3PTRTYPE(PPDMCRITSECT)         apQueuedCritSectLeaves[8];
+
+    /** The number of entries in the apQueuedCritSectRwExclLeaves table that's
+     * currently in use. */
+    uint32_t                        cQueuedCritSectRwExclLeaves;
+    uint32_t                        uPadding1; /**< Alignment padding.*/
+    /** Read/write critical sections queued in RC/R0 because of contention
+     * preventing exclusive leave to complete. (R3 Ptrs)
+     * We will return to Ring-3 ASAP, so this queue doesn't have to be very long. */
+    R3PTRTYPE(PPDMCRITSECTRW)       apQueuedCritSectRwExclLeaves[8];
+
+    /** The number of entries in the apQueuedCritSectsRwShrdLeaves table that's
+     * currently in use. */
+    uint32_t                        cQueuedCritSectRwShrdLeaves;
+    uint32_t                        uPadding2; /**< Alignment padding.*/
+    /** Read/write critical sections queued in RC/R0 because of contention
+     * preventing shared leave to complete. (R3 Ptrs)
+     * We will return to Ring-3 ASAP, so this queue doesn't have to be very long. */
+    R3PTRTYPE(PPDMCRITSECTRW)       apQueuedCritSectRwShrdLeaves[8];
 } PDMCPU;
 
 
@@ -1072,6 +1162,8 @@ typedef struct PDMUSERPERVM
     PPDMMOD                         pModules;
     /** List of initialized critical sections. (LIFO) */
     R3PTRTYPE(PPDMCRITSECTINT)      pCritSects;
+    /** List of initialized read/write critical sections. (LIFO) */
+    R3PTRTYPE(PPDMCRITSECTRWINT)    pRwCritSects;
     /** Head of the PDM Thread list. (singly linked) */
     R3PTRTYPE(PPDMTHREAD)           pThreads;
     /** Tail of the PDM Thread list. (singly linked) */
@@ -1154,14 +1246,22 @@ extern const PDMPCIRAWHLPR3 g_pdmR3DevPciRawHlp;
 #ifdef IN_RING3
 bool        pdmR3IsValidName(const char *pszName);
 
-int         pdmR3CritSectInitStats(PVM pVM);
-void        pdmR3CritSectRelocate(PVM pVM);
-int         pdmR3CritSectInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszNameFmt, va_list va);
-int         pdmR3CritSectInitDeviceAuto(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
-                                        const char *pszNameFmt, ...);
-int         pdmR3CritSectDeleteDevice(PVM pVM, PPDMDEVINS pDevIns);
-int         pdmR3CritSectInitDriver(PVM pVM, PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszNameFmt, ...);
-int         pdmR3CritSectDeleteDriver(PVM pVM, PPDMDRVINS pDrvIns);
+int         pdmR3CritSectBothInitStats(PVM pVM);
+void        pdmR3CritSectBothRelocate(PVM pVM);
+int         pdmR3CritSectBothDeleteDevice(PVM pVM, PPDMDEVINS pDevIns);
+int         pdmR3CritSectBothDeleteDriver(PVM pVM, PPDMDRVINS pDrvIns);
+int         pdmR3CritSectInitDevice(        PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
+                                            const char *pszNameFmt, va_list va);
+int         pdmR3CritSectInitDeviceAuto(    PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
+                                            const char *pszNameFmt, ...);
+int         pdmR3CritSectInitDriver(        PVM pVM, PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
+                                            const char *pszNameFmt, ...);
+int         pdmR3CritSectRwInitDevice(      PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, RT_SRC_POS_DECL,
+                                            const char *pszNameFmt, va_list va);
+int         pdmR3CritSectRwInitDeviceAuto(  PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECTRW pCritSect, RT_SRC_POS_DECL,
+                                            const char *pszNameFmt, ...);
+int         pdmR3CritSectRwInitDriver(      PVM pVM, PPDMDRVINS pDrvIns, PPDMCRITSECTRW pCritSect, RT_SRC_POS_DECL,
+                                            const char *pszNameFmt, ...);
 
 int         pdmR3DevInit(PVM pVM);
 PPDMDEV     pdmR3DevLookup(PVM pVM, const char *pszName);

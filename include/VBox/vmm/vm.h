@@ -198,7 +198,7 @@ typedef struct VMCPU
 #ifdef ___PDMInternal_h
         struct PDMCPU       s;
 #endif
-        uint8_t             padding[128];       /* multiple of 64 */
+        uint8_t             padding[256];       /* multiple of 64 */
     } pdm;
 
     /** IOM part. */
@@ -221,7 +221,7 @@ typedef struct VMCPU
     } dbgf;
 
     /** Align the following members on page boundary. */
-    uint8_t                 abAlignment2[1024 - 320 - 128 - 64];
+    uint8_t                 abAlignment2[448 - 64];
 
     /** PGM part. */
     union
