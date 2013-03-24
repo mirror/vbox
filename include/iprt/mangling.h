@@ -329,6 +329,7 @@
 # define RTCritSectRwEnterExclDebug                     RT_MANGLER(RTCritSectRwEnterExclDebug)
 # define RTCritSectRwEnterShared                        RT_MANGLER(RTCritSectRwEnterShared)
 # define RTCritSectRwEnterSharedDebug                   RT_MANGLER(RTCritSectRwEnterSharedDebug)
+# define RTCritSectRwGetReadCount                       RT_MANGLER(RTCritSectRwGetReadCount)
 # define RTCritSectRwGetWriteRecursion                  RT_MANGLER(RTCritSectRwGetWriteRecursion)
 # define RTCritSectRwGetWriterReadRecursion             RT_MANGLER(RTCritSectRwGetWriterReadRecursion)
 # define RTCritSectRwInit                               RT_MANGLER(RTCritSectRwInit)
