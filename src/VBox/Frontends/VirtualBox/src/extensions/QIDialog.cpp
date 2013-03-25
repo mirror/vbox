@@ -51,8 +51,10 @@ int QIDialog::exec(bool fShow /* = true */)
     /* Reset the result-code: */
     setResult(QDialog::Rejected);
 
+    /* Should we delete ourself on close in theory? */
     bool fWasDeleteOnClose = testAttribute(Qt::WA_DeleteOnClose);
     setAttribute(Qt::WA_DeleteOnClose, false);
+
 #if defined(Q_WS_MAC) && QT_VERSION >= 0x040500
     /* After 4.5 Qt changed the behavior of Sheets for the window/application
      * modal case. See "New Ways of Using Dialogs" in
@@ -72,26 +74,28 @@ int QIDialog::exec(bool fShow /* = true */)
     bool wasShowModal = testAttribute(Qt::WA_ShowModal);
     setAttribute(Qt::WA_ShowModal, true);
 
-    /* Create a local event-loop: */
-    QEventLoop eventLoop;
-    m_pEventLoop = &eventLoop;
-
     /* Show ourself if requested: */
     if (fShow)
         show();
 
-    /* Guard ourself for the case
-     * we destroyed ourself in our event-loop: */
-    QPointer<QIDialog> guard = this;
+    /* Create a local event-loop: */
+    {
+        QEventLoop eventLoop;
+        m_pEventLoop = &eventLoop;
 
-    /* Start the blocking event-loop: */
-    eventLoop.exec();
+        /* Guard ourself for the case
+         * we destroyed ourself in our event-loop: */
+        QPointer<QIDialog> guard = this;
 
-    /* Are we still valid? */
-    if (guard.isNull())
-        return QDialog::Rejected;
+        /* Start the blocking event-loop: */
+        eventLoop.exec();
 
-    m_pEventLoop = 0;
+        /* Are we still valid? */
+        if (guard.isNull())
+            return QDialog::Rejected;
+
+        m_pEventLoop = 0;
+    }
 
     /* Save the result-code early (we can delete ourself on close): */
     QDialog::DialogCode resultCode = (QDialog::DialogCode)result();
@@ -104,9 +108,9 @@ int QIDialog::exec(bool fShow /* = true */)
         setAttribute(Qt::WA_SetWindowModality, wasSetWinModality);
     }
 #endif /* defined(Q_WS_MAC) && QT_VERSION >= 0x040500 */
-
-    /* Set the old show modal attribute */
+    /* Set the old show modal attribute: */
     setAttribute (Qt::WA_ShowModal, wasShowModal);
+
     /* Delete ourself if we should do that on close: */
     if (fWasDeleteOnClose)
         delete this;
