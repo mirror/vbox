@@ -4026,6 +4026,8 @@ static int vdIOIntReadUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffs
         rc = pVDIo->pInterfaceIo->pfnReadSync(pVDIo->pInterfaceIo->Core.pvUser,
                                               pIoStorage->pStorage, uOffset,
                                               Seg.pvSeg, cbRead, NULL);
+        if (RT_SUCCESS(rc))
+            ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbRead);
     }
     else
     {
@@ -4120,6 +4122,8 @@ static int vdIOIntWriteUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOff
         rc = pVDIo->pInterfaceIo->pfnWriteSync(pVDIo->pInterfaceIo->Core.pvUser,
                                               pIoStorage->pStorage, uOffset,
                                               Seg.pvSeg, cbWrite, NULL);
+        if (RT_SUCCESS(rc))
+            ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbWrite);
     }
     else
     {
