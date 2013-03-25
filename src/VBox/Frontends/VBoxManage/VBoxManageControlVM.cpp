@@ -1207,10 +1207,18 @@ int handleControlVM(HandlerArg *a)
                 break;
             }
             /* guest is running; update IGuest */
-            ComPtr <IGuest> guest;
-            rc = console->COMGETTER(Guest)(guest.asOutParam());
+            ComPtr <IGuest> pGuest;
+            rc = console->COMGETTER(Guest)(pGuest.asOutParam());
             if (SUCCEEDED(rc))
-                CHECK_ERROR(guest, COMSETTER(MemoryBalloonSize)(uVal));
+            {
+                if (!pGuest)
+                {
+                    RTMsgError("Guest not running");
+                    rc = E_FAIL;
+                    break;
+                }
+                CHECK_ERROR(pGuest, COMSETTER(MemoryBalloonSize)(uVal));
+            }
         }
         else if (!strcmp(a->argv[1], "teleport"))
         {
