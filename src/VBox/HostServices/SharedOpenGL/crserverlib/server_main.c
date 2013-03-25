@@ -2408,13 +2408,6 @@ static int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
 
     cr_server.head_spu->dispatch_table.WindowVisibleRegion(pMI->spuWindow, cRects, pRects);
 
-    if (pMI->pvOutputRedirectInstance)
-    {
-        /* @todo the code assumes that RTRECT == four GLInts. */
-        cr_server.outputRedirect.CRORVisibleRegion(pMI->pvOutputRedirectInstance,
-                                                   cRects, pRects);
-    }
-
     pMI->fRootVrOn = cr_server.fRootVrOn;
 
     crServerVBoxCompositionDisableLeave(pMI, fForcePresent);

@@ -86,6 +86,16 @@ void crServerSetupOutputRedirect(CRMuralInfo *mural)
         /* If this is not NULL then there was a supported format. */
         if (mural->pvOutputRedirectInstance)
         {
+            uint32_t cRects;
+            const RTRECT *pRects;
+
+            int rc = CrVrScrCompositorEntryRegionsGet(&mural->Compositor, &mural->CEntry, &cRects, NULL, &pRects);
+            if (!RT_SUCCESS(rc))
+            {
+                crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
+                return;
+            }
+
             cr_server.outputRedirect.CRORGeometry(mural->pvOutputRedirectInstance,
                                                   mural->hX, mural->hY,
                                                   mural->width, mural->height);
