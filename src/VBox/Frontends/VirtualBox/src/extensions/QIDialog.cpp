@@ -36,25 +36,17 @@ QIDialog::~QIDialog()
 
 void QIDialog::showEvent(QShowEvent * /* pEvent */)
 {
-    /* Two thinks to do for fixed size dialogs on MacOS X:
-     * 1. Make sure the layout is polished and have the right size
-     * 2. Disable that _unnecessary_ size grip (Bug in Qt?) */
-    QSizePolicy policy = sizePolicy();
-    if ((policy.horizontalPolicy() == QSizePolicy::Fixed &&
-         policy.verticalPolicy() == QSizePolicy::Fixed) ||
-        (windowFlags() & Qt::Sheet) == Qt::Sheet)
-    {
-        adjustSize();
-        setFixedSize(size());
-#ifdef Q_WS_MAC
-        ::darwinSetShowsResizeIndicator (this, false);
-#endif /* Q_WS_MAC */
-    }
-
     /* Polishing: */
     if (m_fPolished)
         return;
     m_fPolished = true;
+
+    /* Make sure layout is polished: */
+    adjustSize();
+#ifdef Q_WS_MAC
+    /* And dialog have fixed size: */
+    setFixedSize(size());
+#endif /* Q_WS_MAC */
 
     /* Explicit centering according to our parent: */
     VBoxGlobal::centerWidget(this, parentWidget(), false);
