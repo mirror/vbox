@@ -247,7 +247,7 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
             {
                 pCritSect->Core.pValidatorRead  = NULL;
                 pCritSect->Core.pValidatorWrite = NULL;
-#ifdef PDMCRITSECT_STRICT
+#ifdef PDMCRITSECTRW_STRICT
 # ifdef RT_LOCK_STRICT_ORDER
                 RTLOCKVALCLASS hClass = RTLockValidatorClassForSrcPos(RT_SRC_POS_ARGS, "%s", pszName);
 # else
@@ -264,14 +264,12 @@ static int pdmR3CritSectRwInitOne(PVM pVM, PPDMCRITSECTRWINT pCritSect, void *pv
                     /*
                      * Initialize the structure (first bit is c&p from RTCritSectRwInitEx).
                      */
-                    pCritSect->Core.u32Magic             = RTCRITSECTRW_MAGIC_DEAD;
+                    pCritSect->Core.u32Magic             = RTCRITSECTRW_MAGIC;
                     pCritSect->Core.fNeedReset           = false;
                     pCritSect->Core.u64State             = 0;
                     pCritSect->Core.hNativeWriter        = NIL_RTNATIVETHREAD;
                     pCritSect->Core.cWriterReads         = 0;
                     pCritSect->Core.cWriteRecursions     = 0;
-                    pCritSect->Core.pValidatorWrite      = NULL;
-                    pCritSect->Core.pValidatorRead       = NULL;
 #if HC_ARCH_BITS == 32
                     pCritSect->Core.HCPtrPadding         = NIL_RTHCPTR;
 #endif
