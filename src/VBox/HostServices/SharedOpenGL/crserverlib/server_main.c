@@ -210,6 +210,8 @@ static void crServerTearDown( void )
 
     crNetTearDown();
 
+    VBoxVrListClear(&cr_server.RootVr);
+
     VBoxVrTerm();
 }
 
