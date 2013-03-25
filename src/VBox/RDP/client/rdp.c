@@ -827,6 +827,7 @@ rdp_out_pointer_caps(STREAM s)
 	out_uint16_le(s, 20);	/* Cache size */
 }
 
+#ifndef VBOX
 /* Output new pointer capability set */
 static void
 rdp_out_newpointer_caps(STREAM s)
@@ -838,6 +839,7 @@ rdp_out_newpointer_caps(STREAM s)
 	out_uint16_le(s, 20);	/* Cache size */
 	out_uint16_le(s, 20);	/* Cache size for new pointers */
 }
+#endif
 
 /* Output share capability set */
 static void
@@ -925,7 +927,11 @@ rdp_send_confirm_active(void)
 	if (g_use_rdp5)
 	{
 		caplen += RDP_CAPLEN_BMPCACHE2;
+#ifdef VBOX
+		caplen += RDP_CAPLEN_POINTER;
+#else
 		caplen += RDP_CAPLEN_NEWPOINTER;
+#endif
 	}
 	else
 	{
@@ -954,7 +960,11 @@ rdp_send_confirm_active(void)
 	if (g_use_rdp5)
 	{
 		rdp_out_bmpcache2_caps(s);
+#ifdef VBOX
+		rdp_out_pointer_caps(s);
+#else
 		rdp_out_newpointer_caps(s);
+#endif
 	}
 	else
 	{
