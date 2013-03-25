@@ -5729,7 +5729,8 @@ HRESULT VirtualBox::registerNATNetwork(NATNetwork *aNATNetwork,
 #else
     NOREF(aNATNetwork);
     NOREF(aSaveSettings);
-    return E_NOTIMPL;
+    /* No panic please (silently ignore) */
+    return S_OK;
 #endif
 }
 
