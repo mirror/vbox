@@ -515,6 +515,9 @@ int main(int argc, char *argv[])
             { "hostonlyif",       USAGE_HOSTONLYIFS,       handleHostonlyIf },
 #endif
             { "dhcpserver",       USAGE_DHCPSERVER,        handleDHCPServer},
+#ifdef VBOX_WITH_NAT_SERVICE
+	    { "natnetwork",       USAGE_NATNETWORK,        handleNATNetwork},
+#endif
             { "extpack",          USAGE_EXTPACK,           handleExtPack},
             { "bandwidthctl",     USAGE_BANDWIDTHCONTROL,  handleBandwidthControl},
             { "debugvm",          USAGE_DEBUGVM,           handleDebugVM},

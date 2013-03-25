@@ -54,7 +54,8 @@ VBoxManage_SOURCES = \
 	VBoxManageModifyVM.cpp \
 	VBoxManageSnapshot.cpp \
 	VBoxManageStorageController.cpp \
-	VBoxManageUSB.cpp
+	VBoxManageUSB.cpp \
+	$(if $(VBOX_WITH_NAT_SERVICE),VBoxManageNATNetwork.cpp,)
 VBoxManage_LIBS      += $(LIB_DDU)
 
 VBoxManage_DEFS      += \
@@ -77,7 +78,8 @@ VBoxManage_DEFS      += \
 	$(if $(VBOX_WITH_USB_VIDEO),VBOX_WITH_USB_VIDEO) \
 	$(if $(VBOX_WITH_USB_CARDREADER),VBOX_WITH_USB_CARDREADER) \
 	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH) \
-	$(if $(VBOX_WITH_VPX),VBOX_WITH_VPX)
+	$(if $(VBOX_WITH_VPX),VBOX_WITH_VPX) \
+	$(if $(VBOX_WITH_NAT_SERVICE),VBOX_WITH_NAT_SERVICE)
 
 ifneq ($(KBUILD_TARGET),win)
  # Workaround for buggy gcc-4.3 compilers, see

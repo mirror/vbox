@@ -717,7 +717,8 @@ enum enmListType
     kListSystemProperties,
     kListDhcpServers,
     kListExtPacks,
-    kListGroups
+    kListGroups,
+    kListNatNetworks
 };
 
 
@@ -991,6 +992,37 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
             rc = listGroups(pVirtualBox);
             break;
 
+        case kListNatNetworks:
+        {
+            com::SafeIfaceArray<INATNetwork> nets;
+            CHECK_ERROR(pVirtualBox, COMGETTER(NATNetworks)(ComSafeArrayAsOutParam(nets)));
+            for (size_t i = 0; i < nets.size(); ++i)
+            {
+                ComPtr<INATNetwork> net = nets[i];
+                Bstr netName;
+                net->COMGETTER(NetworkName)(netName.asOutParam());
+                RTPrintf("NetworkName:    %ls\n", netName.raw());
+                Bstr gateway;
+                net->COMGETTER(Gateway)(gateway.asOutParam());
+                RTPrintf("IP:             %ls\n", gateway.raw());
+                Bstr network;
+                net->COMGETTER(Network)(network.asOutParam());
+                RTPrintf("Network:        %ls\n", network.raw());
+                BOOL fEnabled;
+                net->COMGETTER(IPv6Enabled)(&fEnabled);
+                RTPrintf("IPv6 Enabled:    %s\n", fEnabled ? "Yes" : "No");
+                Bstr ipv6prefix;
+                net->COMGETTER(Network)(network.asOutParam());
+                RTPrintf("IPv6 Prefix:    %ls\n", ipv6prefix.raw());
+                net->COMGETTER(NeedDhcpServer)(&fEnabled);
+                RTPrintf("DHCP Server Enabled: %s\n", fEnabled ? "Yes" : "No");
+                net->COMGETTER(Enabled)(&fEnabled);
+                RTPrintf("Enabled:        %s\n", fEnabled ? "Yes" : "No");
+                RTPrintf("\n");
+            }
+            break;
+        }
+
         /* No default here, want gcc warnings. */
 
     } /* end switch */
@@ -1036,6 +1068,7 @@ int handleList(HandlerArg *a)
         { "dhcpservers",        kListDhcpServers,        RTGETOPT_REQ_NOTHING },
         { "extpacks",           kListExtPacks,           RTGETOPT_REQ_NOTHING },
         { "groups",             kListGroups,             RTGETOPT_REQ_NOTHING },
+        { "natnetworks",        kListNatNetworks,        RTGETOPT_REQ_NOTHING },
     };
 
     int                 ch;
@@ -1079,6 +1112,7 @@ int handleList(HandlerArg *a)
             case kListDhcpServers:
             case kListExtPacks:
             case kListGroups:
+            case kListNatNetworks:
                 enmOptCommand = (enum enmListType)ch;
                 if (fOptMultiple)
                 {
