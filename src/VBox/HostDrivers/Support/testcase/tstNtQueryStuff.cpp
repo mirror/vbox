@@ -371,7 +371,7 @@ static void tstQueryInformationProcess(void)
         RTTestIPrintf(RTTESTLVL_ALWAYS, "ProcessImageFileName:      len=%u\n    %.*ls\n",
                       StrBuf.UniStr.Length, StrBuf.UniStr.Length, StrBuf.UniStr.Buffer);
 
-    /* Process image name (Win32). */
+    /* Process image name (Win32) - Not available on Windows 2003. */
     RT_ZERO(StrBuf);
     StrBuf.UniStr.Length        = UNICODE_STRING_MAX_CHARS * 2;
     StrBuf.UniStr.MaximumLength = UNICODE_STRING_MAX_CHARS * 2;
@@ -380,12 +380,17 @@ static void tstQueryInformationProcess(void)
     rcNt = NtQueryInformationProcess(g_hProcess,
                                      ProcessImageFileNameWin32,
                                      &StrBuf, sizeof(StrBuf), &cbActual);
-    RTTESTI_CHECK_MSG(NT_SUCCESS(rcNt), ("rcNt=%#x\n", rcNt));
-    if (NT_SUCCESS(rcNt))
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "ProcessImageFileNameWin32: len=%u\n    %.*ls\n",
-                      StrBuf.UniStr.Length, StrBuf.UniStr.Length, StrBuf.UniStr.Buffer);
+    if (rcNt != STATUS_INVALID_INFO_CLASS)
+    {
+        RTTESTI_CHECK_MSG(NT_SUCCESS(rcNt), ("rcNt=%#x\n", rcNt));
+        if (NT_SUCCESS(rcNt))
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "ProcessImageFileNameWin32: len=%u\n    %.*ls\n",
+                          StrBuf.UniStr.Length, StrBuf.UniStr.Length, StrBuf.UniStr.Buffer);
+    }
+    else
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "ProcessImageFileNameWin32: Not supported (STATUS_INVALID_INFO_CLASS).\n");
 
-    /* Process image mapping. */
+    /* Process image mapping - Not available on Windows 2003. */
     uPtr = ~(DWORD_PTR)0;
     cbActual = 0;
     rcNt = NtQueryInformationProcess(g_hProcess,
@@ -395,6 +400,8 @@ static void tstQueryInformationProcess(void)
         RTTestIPrintf(RTTESTLVL_ALWAYS, "ProcessImageFileMapping:   %p\n", uPtr);
     else if (rcNt == STATUS_OBJECT_TYPE_MISMATCH)
         RTTestIPrintf(RTTESTLVL_ALWAYS, "ProcessImageFileMapping:   rcNt=%#x (STATUS_OBJECT_TYPE_MISMATCH)\n", rcNt);
+    else if (rcNt == STATUS_INVALID_INFO_CLASS)
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "ProcessImageFileMapping:   Not supported (STATUS_INVALID_INFO_CLASS).\n");
     else
         RTTestIFailed("ProcessImageFileMapping: rcNt=%#x\n", rcNt);
 
