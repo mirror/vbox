@@ -12,6 +12,7 @@
 # Foundation, in version 2 as it comes in the "COPYING" file of the
 # VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
 
 # This script is invoked as part of the installation of VirtualBox on a Linux
 # host system (see next paragraph for details).  When we install using the
