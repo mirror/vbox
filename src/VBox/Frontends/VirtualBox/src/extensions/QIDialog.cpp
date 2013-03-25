@@ -34,22 +34,16 @@ QIDialog::~QIDialog()
 {
 }
 
-void QIDialog::showEvent(QShowEvent * /* pEvent */)
+void QIDialog::setVisible(bool fVisible)
 {
-    /* Polishing: */
-    if (m_fPolished)
-        return;
-    m_fPolished = true;
+    /* Call to base-class: */
+    QDialog::setVisible(fVisible);
 
-    /* Make sure layout is polished: */
-    adjustSize();
-#ifdef Q_WS_MAC
-    /* And dialog have fixed size: */
-    setFixedSize(size());
-#endif /* Q_WS_MAC */
-
-    /* Explicit centering according to our parent: */
-    VBoxGlobal::centerWidget(this, parentWidget(), false);
+    /* Exit from the event-loop if
+     * 1. there is any and
+     * 2. we are changing our state from visible to invisible: */
+    if (m_pEventLoop && !fVisible)
+        m_pEventLoop->exit();
 }
 
 int QIDialog::exec(bool fShow /* = true */)
@@ -121,15 +115,21 @@ int QIDialog::exec(bool fShow /* = true */)
     return resultCode;
 }
 
-void QIDialog::setVisible(bool fVisible)
+void QIDialog::showEvent(QShowEvent * /* pEvent */)
 {
-    /* Call to base-class: */
-    QDialog::setVisible(fVisible);
+    /* Polishing: */
+    if (m_fPolished)
+        return;
+    m_fPolished = true;
 
-    /* Exit from the event-loop if
-     * 1. there is any and
-     * 2. we are changing our state from visible to invisible: */
-    if (m_pEventLoop && !fVisible)
-        m_pEventLoop->exit();
+    /* Make sure layout is polished: */
+    adjustSize();
+#ifdef Q_WS_MAC
+    /* And dialog have fixed size: */
+    setFixedSize(size());
+#endif /* Q_WS_MAC */
+
+    /* Explicit centering according to our parent: */
+    VBoxGlobal::centerWidget(this, parentWidget(), false);
 }
 
