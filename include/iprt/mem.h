@@ -65,7 +65,7 @@ RT_C_DECLS_BEGIN
  * The alternative tag includes the line number for a more-detailed analysis.
  */
 #ifndef RTMEM_TAG
-# if 0
+# if 1
 #  define RTMEM_TAG   (__FILE__ ":" RT_XSTR(__LINE__))
 # else
 #  define RTMEM_TAG   (__FILE__)
