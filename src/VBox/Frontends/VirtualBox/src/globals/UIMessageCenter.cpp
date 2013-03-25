@@ -69,6 +69,208 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 
+/* Object which contains stack(s) of guarded-pointer(s)
+ * to the current top-level modal-window(s)
+ * which could be used as the common-parent(s): */
+class UIModalWindowStackManager : public QObject
+{
+    Q_OBJECT;
+
+public:
+
+    /* Constructor: */
+    UIModalWindowStackManager(QObject *pParent) : QObject(pParent) {}
+
+    /* API: Stack stuff: */
+    QWidget* realParentWindow(QWidget *pPossibleParentWidget);
+    bool contains(QWidget *pParentWindow, bool fAsTheTopOfStack = false);
+
+    /* API: Register stuff: */
+    void registerWidnowAboveTheParentWindow(QWidget *pWidget, QWidget *pParentWindow);
+
+private slots:
+
+    /* Handler: Stack cleanup stuff: */
+    void sltRemoveFromStack(QObject *pObject);
+
+private:
+
+    /* Variables: */
+    QList<QList<QWidget*> > m_windows;
+};
+
+QWidget* UIModalWindowStackManager::realParentWindow(QWidget *pPossibleParentWidget)
+{
+    /* Null if possible-parent-widget pointer is null: */
+    if (!pPossibleParentWidget)
+        return 0;
+
+    /* Get the top-level window for the possible-parent-widget: */
+    QWidget *pPossibleParentWindow = pPossibleParentWidget->window();
+
+    /* Search through all the stack(s) we have: */
+    foreach (const QList<QWidget*> &iteratedWindowStack, m_windows)
+    {
+        /* Search through all the window(s) iterated-stack contains: */
+        foreach (QWidget *pIteratedWindow, iteratedWindowStack)
+        {
+            /* If possible-parent-window found: */
+            if (pIteratedWindow == pPossibleParentWindow)
+            {
+                /* Return the 'top' of the iterated-window-stack as the result: */
+                return iteratedWindowStack.last();
+            }
+        }
+    }
+
+    /* If we unable to found the possible-parent-window among all ours,
+     * we have to add it as the new-window-stack only element: */
+    QList<QWidget*> newWindowStack(QList<QWidget*>() << pPossibleParentWindow);
+    m_windows << newWindowStack;
+    /* And return as the result: */
+    return pPossibleParentWindow;
+}
+
+bool UIModalWindowStackManager::contains(QWidget *pParentWindow, bool fAsTheTopOfStack /*= false*/)
+{
+    /* False if passed-parent-widget pointer is null: */
+    if (!pParentWindow)
+    {
+        AssertMsgFailed(("Passed pointer is NULL!"));
+        return false;
+    }
+
+    /* False if passed-parent-widget is not of 'top-level window' type: */
+    if (!pParentWindow->isWindow())
+    {
+        AssertMsgFailed(("Passed widget is NOT top-level window!"));
+        return false;
+    }
+
+    /* Search through all the stack(s) we have: */
+    foreach (const QList<QWidget*> &iteratedWindowStack, m_windows)
+    {
+        /* Search through all the window(s) iterated-stack contains: */
+        int iIteratedWindowStackSize = iteratedWindowStack.size();
+        for (int iIteratedWidnowIndex = 0; iIteratedWidnowIndex < iIteratedWindowStackSize; ++iIteratedWidnowIndex)
+        {
+            /* Get iterated-window: */
+            QWidget *pIteratedWindow = iteratedWindowStack[iIteratedWidnowIndex];
+            /* If passed-parent-window found: */
+            if (pIteratedWindow == pParentWindow)
+            {
+                /* True if we are not looking for 'top' of the stack or its the 'top': */
+                return !fAsTheTopOfStack || iIteratedWidnowIndex == iIteratedWindowStackSize - 1;
+            }
+        }
+    }
+
+    /* False by default: */
+    return false;
+}
+
+void UIModalWindowStackManager::registerWidnowAboveTheParentWindow(QWidget *pWindow, QWidget *pParentWindow)
+{
+    /* Make sure passed-widget-pointer is not null: */
+    if (!pWindow)
+    {
+        AssertMsgFailed(("Passed pointer is NULL!"));
+        return;
+    }
+
+    /* Make sure passed-widget is of 'top-level window' type: */
+    if (!pWindow->isWindow())
+    {
+        AssertMsgFailed(("Passed widget is NOT top-level window!"));
+        return;
+    }
+
+    /* Make sure passed-parent-widget is of 'top-level window' type: */
+    if (pParentWindow && !pParentWindow->isWindow())
+    {
+        AssertMsgFailed(("Passed parent widget is NOT top-level window!"));
+        return;
+    }
+
+    /* If parent-window really passed: */
+    if (pParentWindow)
+    {
+        /* Make sure we have passed-parent-window registered already.
+         * If so, we have to make sure its the 'top' element in his stack also.
+         * If so, we have to register passed-window as the new 'top' in that stack. */
+        for (int iIteratedStackIndex = 0; iIteratedStackIndex < m_windows.size(); ++iIteratedStackIndex)
+        {
+            /* Get current-stack: */
+            QList<QWidget*> &iteratedWindowStack = m_windows[iIteratedStackIndex];
+            /* Search through all the window(s) iterated-stack contains: */
+            int iIteratedWindwStackSize = iteratedWindowStack.size();
+            for (int iIteratedWindowIndex = 0; iIteratedWindowIndex < iIteratedWindwStackSize; ++iIteratedWindowIndex)
+            {
+                /* Get iterated-window: */
+                QWidget *pIteratedWindow = iteratedWindowStack[iIteratedWindowIndex];
+                /* If passed-parent-window found: */
+                if (pIteratedWindow == pParentWindow)
+                {
+                    /* Make sure it was the last one of the iterated-window(s): */
+                    if (iIteratedWindowIndex != iIteratedWindwStackSize - 1)
+                    {
+                        AssertMsgFailed(("Passed parent window is not on the top of his current-stack!"));
+                        return;
+                    }
+                    /* Register passed-window as the new 'top' in iterated-window-stack: */
+                    iteratedWindowStack << pWindow;
+                    connect(pWindow, SIGNAL(destroyed(QObject*)), this, SLOT(sltRemoveFromStack(QObject*)));
+                    return;
+                }
+            }
+        }
+    }
+    /* If no parent-window passed: */
+    else
+    {
+        /* Register passed-window as the only one item in new-window-stack: */
+        QList<QWidget*> newWindowStack(QList<QWidget*>() << pWindow);
+        m_windows << newWindowStack;
+        connect(pWindow, SIGNAL(destroyed(QObject*)), this, SLOT(sltRemoveFromStack(QObject*)));
+    }
+}
+
+void UIModalWindowStackManager::sltRemoveFromStack(QObject *pObject)
+{
+    /* Make sure passed-object still valid: */
+    if (!pObject)
+        return;
+
+    /* Object is already of QObject type,
+     * because inheritance wrapper(s) destructor(s) already called
+     * so we can't search through the m_windows stack
+     * using the standard algorithm functionality.
+     * Lets do it manually: */
+    for (int iIteratedStackIndex = 0; iIteratedStackIndex < m_windows.size(); ++iIteratedStackIndex)
+    {
+        /* Get iterated-stack: */
+        QList<QWidget*> &iteratedWindowStack = m_windows[iIteratedStackIndex];
+        /* Search through all the window(s) iterated-stack contains: */
+        int iIteratedWindowStackSize = iteratedWindowStack.size();
+        for (int iIteratedWindowIndex = 0; iIteratedWindowIndex < iIteratedWindowStackSize; ++iIteratedWindowIndex)
+        {
+            /* Get iterated-window: */
+            QWidget *pIteratedWindow = iteratedWindowStack[iIteratedWindowIndex];
+            /* If passed-object is almost-destroyed iterated-window: */
+            if (pIteratedWindow == pObject)
+            {
+                /* Make sure it was the last added window: */
+                AssertMsg(iIteratedWindowIndex == iIteratedWindowStackSize - 1, ("Removing element from the middle of the stack!"));
+                /* Cleanup window pointer: */
+                iteratedWindowStack.removeAt(iIteratedWindowIndex);
+                /* And stack itself if necessary: */
+                if (iteratedWindowStack.isEmpty())
+                    m_windows.removeAt(iIteratedStackIndex);
+            }
+        }
+    }
+}
+
 bool UIMessageCenter::isAnyWarningShown()
 {
     /* Check if at least one warning is alive!
@@ -3004,6 +3206,16 @@ void UIMessageCenter::showGenericError(COMBaseWithEI *object, QWidget *pParent /
             formatErrorInfo(*object));
 }
 
+bool UIMessageCenter::isInTheModalWindowStack(QWidget *pWindow)
+{
+    return m_pModalWindowStackManager->contains(pWindow);
+}
+
+bool UIMessageCenter::isOnTheTopOfTheModalWindowStack(QWidget *pWindow)
+{
+    return m_pModalWindowStackManager->contains(pWindow, true);
+}
+
 // Public slots
 /////////////////////////////////////////////////////////////////////////////
 
@@ -3258,6 +3470,7 @@ void UIMessageCenter::sltRemindAboutUnsupportedUSB2(const QString &strExtPackNam
 }
 
 UIMessageCenter::UIMessageCenter()
+    : m_pModalWindowStackManager(0)
 {
     /* Register required objects as meta-types: */
     qRegisterMetaType<CProgress>();
@@ -3308,6 +3521,9 @@ UIMessageCenter::UIMessageCenter()
     tr("VirtualBox is not currently allowed to access USB devices.  You can change this by allowing your user to access the 'usbfs' folder and files.  Please see the user manual for a more detailed explanation");
     tr("The USB Proxy Service has not yet been ported to this host");
     tr("Could not load the Host USB Proxy service");
+
+    /* Create modal-window-stack manager: */
+    m_pModalWindowStackManager = new UIModalWindowStackManager(this);
 }
 
 /* Returns a reference to the global VirtualBox message center instance: */
@@ -3399,4 +3615,6 @@ QString UIMessageCenter::errorInfoToString(const COMErrorInfo &info,
 
     return formatted;
 }
+
+#include "UIMessageCenter.moc"
 
