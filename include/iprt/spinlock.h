@@ -73,7 +73,6 @@ RTDECL(int)  RTSpinlockDestroy(RTSPINLOCK Spinlock);
  * Acquires the spinlock.
  *
  * @param   Spinlock    The spinlock to acquire.
- * @param   pTmp        Where to save the state.
  */
 RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock);
 
@@ -81,7 +80,6 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock);
  * Releases the spinlock.
  *
  * @param   Spinlock    The spinlock to acquire.
- * @param   pTmp        The state to restore. (This better be the same as for the RTSpinlockAcquire() call!)
  */
 RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock);
 
