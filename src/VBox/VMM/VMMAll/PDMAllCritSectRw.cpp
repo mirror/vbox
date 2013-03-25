@@ -310,6 +310,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
     }
 
     /* got it! */
+    STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterShared));
     Assert((ASMAtomicReadU64(&pThis->s.Core.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT));
     return VINF_SUCCESS;
 
@@ -551,6 +552,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
             return rc9;
 #endif
         Assert(pThis->s.Core.cWriteRecursions < UINT32_MAX / 2);
+        STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterExcl));
         ASMAtomicIncU32(&pThis->s.Core.cWriteRecursions);
         return VINF_SUCCESS;
     }
@@ -684,6 +686,8 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
 #ifdef PDMCRITSECTRW_STRICT
     RTLockValidatorRecExclSetOwner(pThis->s.Core.pValidatorWrite, hThreadSelf, pSrcPos, true);
 #endif
+    STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterExcl));
+    STAM_PROFILE_ADV_START(&pThis->s.StatWriteLocked, swl);
 
     return VINF_SUCCESS;
 }
@@ -839,6 +843,7 @@ VMMDECL(int) PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pThis)
          */
         ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 0);
         ASMAtomicWriteHandle(&pThis->s.Core.hNativeWriter, NIL_RTNATIVETHREAD);
+        STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
 
         for (;;)
         {
