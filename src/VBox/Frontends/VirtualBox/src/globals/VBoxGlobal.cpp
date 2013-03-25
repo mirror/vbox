@@ -471,9 +471,11 @@ UIMachine* VBoxGlobal::virtualMachine()
 
 QWidget* VBoxGlobal::vmWindow()
 {
-    if (isVMConsoleProcess() && m_pVirtualMachine)
-        return m_pVirtualMachine->mainWindow();
-    return 0;
+    /* Null if that is NOT console-process or machine not yet created: */
+    if (!isVMConsoleProcess() || !m_pVirtualMachine)
+        return 0;
+    /* Main machine-window otherwise: */
+    return m_pVirtualMachine->mainWindow();
 }
 
 #ifdef VBOX_GUI_WITH_PIDFILE
