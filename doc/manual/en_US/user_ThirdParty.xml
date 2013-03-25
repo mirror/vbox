@@ -259,6 +259,75 @@
           the license in <xref linkend="licNetBsd" />.
         </para>
       </listitem>
+      
+      <listitem>
+        <para>VirtualBox contains portions of liblightdm-gobject which is governed by the
+        license in <xref linkend="licLGPL" xrefstyle="template: %n" /> and</para>
+
+        <para>Copyright (C) 2010-2013 Canonical Ltd.; Copyright (C) 2010-2011 Robert Ancell.</para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contains portions of glib which is governed by the
+          license in <xref linkend="licLGPL" xrefstyle="template: %n" /> and</para>
+
+        <para>Copyright (C) 1995-2011 The Glib team</para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contains portions of PCRE which is governed by the
+          license in <xref linkend="licPcre" xrefstyle="template :%n" /> and</para>
+        <para>Copyright (c) 1997-2012 University of Cambridge;
+          Copyright(c) 2009-2012 Zoltan Herczeg;
+          Copyright (c) 2007-2012, Google Inc.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contains portions of libffi which is governed by the
+          license in <xref linkend="licLibffi" xrefstyle="template :%n" /> and</para>
+        <para>
+          Copyright (c) 1996-2012  Anthony Green, Red Hat, Inc and others.
+          See source files for details.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contains portions of FLTK which is governed by the
+          licenses in <xref linkend="licFltk" xrefstyle="template :%n" /> and
+          <xref linkend="licLGPL" xrefstyle="template :%n"/> and  </para>
+        <para>
+          Copyright (C) 1991-2012  The FLTK team
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contains portions of Expat which is governed by the
+          license in <xref linkend="licExpat" xrefstyle="template :%n" /> and</para>
+        <para>
+          Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
+          and Clark Cooper; Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Expat
+          maintainers.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contains portions of Fontconfig which is governed by the
+          license in <xref linkend="licFontconfig" xrefstyle="template :%n" />
+          and</para>
+        <para>
+          Copyright (C) 2001, 2003 Keith Packard
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contains portions of Freetype which is governed by the
+          license in <xref linkend="licFreetype" xrefstyle="template :%n" />
+          and</para>
+        <para>
+          Copyright 2012 The FreeType Project (www.freetype.org). All rights reserved.
+        </para>
+      </listitem>
 
     </itemizedlist>
   </sect1>
@@ -2705,5 +2774,451 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
       </para>
     </sect2>
 
+    <sect2 id="licPcre">
+      <title>PCRE license</title>
+
+      <para>
+        PCRE is a library of functions to support regular expressions whose syntax
+        and semantics are as close as possible to those of the Perl 5 language.
+      </para><para>
+        Release 8 of PCRE is distributed under the terms of the "BSD" licence, as
+        specified below. The documentation for PCRE, supplied in the "doc"
+        directory, is distributed under the same terms as the software itself.
+      </para><para>
+        The basic library functions are written in C and are freestanding. Also
+        included in the distribution is a set of C++ wrapper functions, and a
+        just-in-time compiler that can be used to optimize pattern matching. These
+        are both optional features that can be omitted when the library is built.
+      </para><para>
+        THE BASIC LIBRARY FUNCTIONS.
+        Written by: Philip Hazel; Email local part: ph10; Email domain: cam.ac.uk
+        University of Cambridge Computing Service, Cambridge, England.
+        Copyright (c) 1997-2012 University of Cambridge
+        All rights reserved.
+      </para><para>
+        PCRE JUST-IN-TIME COMPILATION SUPPORT.
+        Written by: Zoltan Herczeg; Email local part: hzmester; Emain domain: freemail.hu
+        Copyright(c) 2010-2012 Zoltan Herczeg
+        All rights reserved.
+      </para><para>
+        STACK-LESS JUST-IN-TIME COMPILER.
+        Written by: Zoltan Herczeg; Email local part: hzmester; Emain domain: freemail.hu
+        Copyright(c) 2009-2012 Zoltan Herczeg
+        All rights reserved.
+      </para><para>
+        THE C++ WRAPPER FUNCTIONS.
+        Contributed by:   Google Inc.
+        Copyright (c) 2007-2012, Google Inc.
+        All rights reserved.
+      </para><para>
+        THE "BSD" LICENCE.
+        Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions are met:
+      </para>
+      <itemizedlist>
+        <listitem>
+          <para>
+            Redistributions of source code must retain the above copyright notice,
+            this list of conditions and the following disclaimer.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Redistributions in binary form must reproduce the above copyright
+            notice, this list of conditions and the following disclaimer in the
+            documentation and/or other materials provided with the distribution.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Neither the name of the University of Cambridge nor the name of Google
+            Inc. nor the names of their contributors may be used to endorse or
+            promote products derived from this software without specific prior
+            written permission.
+          </para>
+        </listitem>
+      </itemizedlist>
+      <para>
+        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+        AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+        IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+        ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+        LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+        CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+        SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+        INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+        CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+        ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+        POSSIBILITY OF SUCH DAMAGE.
+      </para>
+    </sect2>
+
+    <sect2 id="licLibffi">
+      <title>libffi license</title>
+
+      <para>
+        Copyright (c) 1996-2012  Anthony Green, Red Hat, Inc and others.
+        See source files for details.
+      </para><para>
+        Permission is hereby granted, free of charge, to any person obtaining
+        a copy of this software and associated documentation files (the
+        ``Software''), to deal in the Software without restriction, including
+        without limitation the rights to use, copy, modify, merge, publish,
+        distribute, sublicense, and/or sell copies of the Software, and to
+        permit persons to whom the Software is furnished to do so, subject to
+        the following conditions:
+      </para><para>
+        The above copyright notice and this permission notice shall be
+        included in all copies or substantial portions of the Software.
+      </para><para>
+        THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+        MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+        IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+        CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+        TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+        SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+      </para>
+    </sect2>
+
+    <sect2 id="licFltk">
+      <title>FLTK license</title>
+
+      <para>
+        December 11, 2001
+      </para><para>
+        The FLTK library and included programs are provided under the terms
+        of the GNU Library General Public License (LGPL) with the following
+        exceptions:
+      </para>
+      <orderedlist>
+        <listitem>
+          <para>
+            Modifications to the FLTK configure script, config
+            header file, and makefiles by themselves to support
+            a specific platform do not constitute a modified or
+            derivative work.
+          </para>
+          <para>
+            The authors do request that such modifications be
+            contributed to the FLTK project - send all contributions
+            through the "Software Trouble Report" on the following page:
+           </para><para>
+            http://www.fltk.org/str.php
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Widgets that are subclassed from FLTK widgets do not
+            constitute a derivative work.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Static linking of applications and widgets to the
+            FLTK library does not constitute a derivative work
+            and does not require the author to provide source
+            code for the application or widget, use the shared
+            FLTK libraries, or link their applications or
+            widgets against a user-supplied version of FLTK.
+          </para>
+          <para>
+            If you link the application or widget to a modified
+            version of FLTK, then the changes to FLTK must be
+            provided under the terms of the LGPL in sections
+            1, 2, and 4.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            You do not have to provide a copy of the FLTK license
+            with programs that are linked to the FLTK library, nor
+            do you have to identify the FLTK license in your
+            program or documentation as required by section 6
+            of the LGPL.
+          </para>
+          <para>
+            However, programs must still identify their use of FLTK.
+            The following example statement can be included in user
+            documentation to satisfy this requirement:
+          </para>
+          <para>
+            [program/widget] is based in part on the work of
+            the FLTK project (http://www.fltk.org).
+          </para>
+        </listitem>
+      </orderedlist>
+    </sect2>
+
+    <sect2 id="licExpat">
+      <title>Expat license</title>
+      <para>
+        Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
+        and Clark Cooper
+      </para>
+      <para>
+        Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Expat maintainers.
+      </para>
+      <para>
+        Permission is hereby granted, free of charge, to any person obtaining
+        a copy of this software and associated documentation files (the
+        "Software"), to deal in the Software without restriction, including
+        without limitation the rights to use, copy, modify, merge, publish,
+        distribute, sublicense, and/or sell copies of the Software, and to
+        permit persons to whom the Software is furnished to do so, subject to
+        the following conditions:
+      </para>
+      <para>
+        The above copyright notice and this permission notice shall be included
+        in all copies or substantial portions of the Software.
+      </para>
+      <para>
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+        MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+        IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+        CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+        TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+        SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+      </para>
+    </sect2>
+
+    <sect2 id="licFontconfig">
+      <title>Fontconfig license</title>
+      <para>
+        Copyright (C) 2001, 2003 Keith Packard
+      </para>
+      <para>
+        Permission to use, copy, modify, distribute, and sell this software and its
+        documentation for any purpose is hereby granted without fee, provided that
+        the above copyright notice appear in all copies and that both that
+        copyright notice and this permission notice appear in supporting
+        documentation, and that the name of the author(s) not be used in
+        advertising or publicity pertaining to distribution of the software without
+        specific, written prior permission.  The authors make no
+        representations about the suitability of this software for any purpose.  It
+        is provided "as is" without express or implied warranty.
+      </para>
+      <para>
+        THE AUTHOR(S) DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+        INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
+        EVENT SHALL THE AUTHOR(S) BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+        CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+        DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+        TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+        PERFORMANCE OF THIS SOFTWARE.
+      </para>
+    </sect2>
+
+    <sect2 id="licFreetype">
+      <title>Freetype license</title>
+      <para>
+        2006-Jan-27
+      </para>
+      <para>
+        Copyright 1996-2002, 2006 by David Turner, Robert Wilhelm, and Werner Lemberg
+      </para>
+      <sect4>
+        <title>Introduction</title>
+      </sect4>
+      <sect4>
+        <title></title>
+        <para>
+          The FreeType  Project is distributed in  several archive packages;
+          some of them may contain, in addition to the FreeType font engine,
+          various tools and  contributions which rely on, or  relate to, the
+          FreeType Project.
+        </para>
+        <para>
+          This  license applies  to all  files found  in such  packages, and
+          which do not  fall under their own explicit  license.  The license
+          affects  thus  the  FreeType   font  engine,  the  test  programs,
+          documentation and makefiles, at the very least.
+        </para>
+        <para>
+          This  license   was  inspired  by  the  BSD,   Artistic,  and  IJG
+          (Independent JPEG  Group) licenses, which  all encourage inclusion
+          and  use of  free  software in  commercial  and freeware  products
+          alike.  As a consequence, its main points are that:
+        </para>
+        <itemizedlist>
+          <listitem>
+            <para>
+              We don't promise that this software works. However, we will be
+              interested in any kind of bug reports. (`as is' distribution)
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              You can  use this software for whatever you  want, in parts or
+              full form, without having to pay us. (`royalty-free' usage)
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              You may not pretend that  you wrote this software.  If you use
+              it, or  only parts of it,  in a program,  you must acknowledge
+              somewhere  in  your  documentation  that  you  have  used  the
+              FreeType code. (`credits')
+            </para>
+          </listitem>
+        </itemizedlist>
+        <para>
+          We  specifically  permit  and  encourage  the  inclusion  of  this
+          software, with  or without modifications,  in commercial products.
+          We  disclaim  all warranties  covering  The  FreeType Project  and
+          assume no liability related to The FreeType Project.
+        </para>
+        <para>
+          Finally,  many  people  asked  us  for  a  preferred  form  for  a
+          credit/disclaimer to use in compliance with this license.  We thus
+          encourage you to use the following text:
+        </para>
+        <para>
+          Portions of this software are copyright (C) &lt;year&gt; The FreeType
+          Project (www.freetype.org).  All rights reserved.
+        </para>
+        <para>
+          Please replace &lt;year&gt; with the value from the FreeType version you
+          actually use.
+        </para>
+      </sect4>
+      <sect4>
+        <title>Legal Terms</title>
+        <sect4>
+          <title>0. Definitions</title>
+          <para>
+            Throughout this license,  the terms `package', `FreeType Project',
+            and  `FreeType  archive' refer  to  the  set  of files  originally
+            distributed  by the  authors  (David Turner,  Robert Wilhelm,  and
+            Werner Lemberg) as the `FreeType Project', be they named as alpha,
+            beta or final release.
+          </para>
+          <para>
+            `You' refers to  the licensee, or person using  the project, where
+            `using' is a generic term including compiling the project's source
+            code as  well as linking it  to form a  `program' or `executable'.
+            This  program is  referred to  as  `a program  using the  FreeType
+            engine'.
+          </para>
+          <para>
+            This  license applies  to all  files distributed  in  the original
+            FreeType  Project,   including  all  source   code,  binaries  and
+            documentation,  unless  otherwise  stated   in  the  file  in  its
+            original, unmodified form as  distributed in the original archive.
+            If you are  unsure whether or not a particular  file is covered by
+            this license, you must contact us to verify this.
+          </para>
+          <para>
+            The FreeType  Project is copyright (C) 1996-2000  by David Turner,
+            Robert Wilhelm, and Werner Lemberg.  All rights reserved except as
+            specified below.
+          </para>
+        </sect4>
+        <sect4>
+          <title>1. No Warranty</title>
+          <para>
+            THE FREETYPE PROJECT  IS PROVIDED `AS IS' WITHOUT  WARRANTY OF ANY
+            KIND, EITHER  EXPRESS OR IMPLIED,  INCLUDING, BUT NOT  LIMITED TO,
+            WARRANTIES  OF  MERCHANTABILITY   AND  FITNESS  FOR  A  PARTICULAR
+            PURPOSE.  IN NO EVENT WILL ANY OF THE AUTHORS OR COPYRIGHT HOLDERS
+            BE LIABLE  FOR ANY DAMAGES CAUSED  BY THE USE OR  THE INABILITY TO
+            USE, OF THE FREETYPE PROJECT.
+          </para>
+        </sect4>
+        <sect4>
+          <title>2. Redistribution</title>
+          <para>
+            This  license  grants  a  worldwide, royalty-free,  perpetual  and
+            irrevocable right  and license to use,  execute, perform, compile,
+            display,  copy,   create  derivative  works   of,  distribute  and
+            sublicense the  FreeType Project (in  both source and  object code
+            forms)  and  derivative works  thereof  for  any  purpose; and  to
+            authorize others  to exercise  some or all  of the  rights granted
+            herein, subject to the following conditions:
+          </para>
+          <itemizedlist>
+            <listitem>
+              Redistribution of  source code  must retain this  license file
+              (`FTL.TXT') unaltered; any  additions, deletions or changes to
+              the original  files must be clearly  indicated in accompanying
+              documentation.   The  copyright   notices  of  the  unaltered,
+              original  files must  be  preserved in  all  copies of  source
+              files.
+            </listitem>
+            <listitem>
+              Redistribution in binary form must provide a  disclaimer  that
+              states  that  the software is based in part of the work of the
+              FreeType Team,  in  the  distribution  documentation.  We also
+              encourage you to put an URL to the FreeType web page  in  your
+              documentation, though this isn't mandatory.
+            </listitem>
+          </itemizedlist>
+          <para>
+            These conditions  apply to any  software derived from or  based on
+            the FreeType Project,  not just the unmodified files.   If you use
+            our work, you  must acknowledge us.  However, no  fee need be paid
+            to us.
+          </para>
+        </sect4>
+         <sect4>
+           <title>3. Advertising</title>
+           <para>
+            Neither the  FreeType authors and  contributors nor you  shall use
+            the name of the  other for commercial, advertising, or promotional
+            purposes without specific prior written permission.
+            </para>
+          <para>
+            We suggest,  but do not require, that  you use one or  more of the
+            following phrases to refer  to this software in your documentation
+            or advertising  materials: `FreeType Project',  `FreeType Engine',
+            `FreeType library', or `FreeType Distribution'.
+          </para>
+          <para>
+            As  you have  not signed  this license,  you are  not  required to
+            accept  it.   However,  as  the FreeType  Project  is  copyrighted
+            material, only  this license, or  another one contracted  with the
+            authors, grants you  the right to use, distribute,  and modify it.
+            Therefore,  by  using,  distributing,  or modifying  the  FreeType
+            Project, you indicate that you understand and accept all the terms
+            of this license.
+          </para>
+        </sect4>
+        <sect4>
+          <title>4. Contacts</title>
+          <para>
+            There are two mailing lists related to FreeType:
+          </para>
+          <itemizedlist>
+            <listitem>
+              <para>
+                freetype@nongnu.org
+              </para>
+              <para>
+                Discusses general use and applications of FreeType, as well as
+                future and  wanted additions to the  library and distribution.
+                If  you are looking  for support,  start in  this list  if you
+                haven't found anything to help you in the documentation.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                freetype-devel@nongnu.org
+              </para>
+              <para>
+                Discusses bugs,  as well  as engine internals,  design issues,
+                specific licenses, porting, etc.
+              </para>
+            </listitem>
+          </itemizedlist>
+          <para>
+            Our home page can be found at
+          </para>
+          <para>
+            http://www.freetype.org
+          </para>
+        </sect4>
+      </sect4>
+    </sect2>
   </sect1>
 </appendix>
