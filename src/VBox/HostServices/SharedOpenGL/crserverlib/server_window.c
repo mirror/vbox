@@ -129,13 +129,6 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
             {
                 /* do visible rects only ig they differ from the default */
                 cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, pRects);
-
-                if (mural->pvOutputRedirectInstance)
-                {
-                    /* @todo the code assumes that RTRECT == four GLInts. */
-                    cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance,
-                                                               cRects, pRects);
-                }
             }
         }
     }
@@ -557,9 +550,18 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
 
         if (mural->pvOutputRedirectInstance)
         {
+            if (mural->fRootVrOn)
+            {
+                rc = CrVrScrCompositorEntryRegionsGet(&mural->Compositor, &mural->CEntry, &cRects, NULL, &pRects);
+                if (!RT_SUCCESS(rc))
+                {
+                    crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
+                    return;
+                }
+            }
             /* @todo the code assumes that RTRECT == four GLInts. */
             cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance,
-                                                       cRects, (RTRECT *)pRects);
+                    cRects, pRects);
         }
 
         /* 3. (so far not needed for resize, but in case it is in the future) re-set the compositor (see above comment) */
@@ -647,13 +649,6 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
                 if (RT_SUCCESS(rc))
                 {
                     cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, pRects);
-
-                    if (mural->pvOutputRedirectInstance)
-                    {
-                        /* @todo the code assumes that RTRECT == four GLInts. */
-                        cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance,
-                                                                   cRects, pRects);
-                    }
                 }
                 else
                 {
@@ -726,6 +721,9 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
 
     if (fRegionsChanged)
     {
+        const RTRECT * pRealRects;
+        uint32_t cRealRects;
+
         if (mural->fRootVrOn)
         {
             rc = CrVrScrCompositorEntryRegionsSet(&mural->RootVrCompositor, &mural->RootVrCEntry, NULL, cRects, (const RTRECT *)pRects, NULL);
@@ -743,7 +741,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
                 return;
             }
 
-            rc = CrVrScrCompositorEntryRegionsGet(&mural->RootVrCompositor, &mural->RootVrCEntry, &cRects, NULL, (const RTRECT **)&pRects);
+            rc = CrVrScrCompositorEntryRegionsGet(&mural->RootVrCompositor, &mural->RootVrCEntry, &cRealRects, NULL, &pRealRects);
             if (!RT_SUCCESS(rc))
             {
                 crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
@@ -752,7 +750,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
         }
         else
         {
-            rc = CrVrScrCompositorEntryRegionsGet(&mural->Compositor, &mural->CEntry, &cRects, NULL, (const RTRECT **)&pRects);
+            rc = CrVrScrCompositorEntryRegionsGet(&mural->Compositor, &mural->CEntry, &cRealRects, NULL, &pRealRects);
             if (!RT_SUCCESS(rc))
             {
                 crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
@@ -760,13 +758,21 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
             }
         }
 
-        cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, pRects);
+        cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRealRects, pRealRects);
 
         if (mural->pvOutputRedirectInstance)
         {
+            if (mural->fRootVrOn)
+            {
+                rc = CrVrScrCompositorEntryRegionsGet(&mural->Compositor, &mural->CEntry, &cRealRects, NULL, &pRealRects);
+                if (!RT_SUCCESS(rc))
+                {
+                    crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
+                    return;
+                }
+            }
             /* @todo the code assumes that RTRECT == four GLInts. */
-            cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance,
-                                                       cRects, (RTRECT *)pRects);
+            cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance, cRealRects, pRealRects);
         }
     }
 
