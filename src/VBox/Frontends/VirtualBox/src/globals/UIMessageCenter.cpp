@@ -409,7 +409,6 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
                                               const QString &strTitle,
                                               const QString &strImage /* = "" */,
                                               QWidget *pParent /* = 0 */,
-                                              bool fSheetOnDarwin /* = false */,
                                               int cMinDuration /* = 2000 */)
 {
     /* Prepare pixmap: */
@@ -419,7 +418,7 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
 
     /* Create progress-dialog: */
     QWidget *pDlgParent = mwManager().realParentWindow(pParent);
-    QPointer<UIProgressDialog> pProgressDlg = new UIProgressDialog(progress, strTitle, pPixmap, fSheetOnDarwin, cMinDuration, pDlgParent);
+    QPointer<UIProgressDialog> pProgressDlg = new UIProgressDialog(progress, strTitle, pPixmap, cMinDuration, pDlgParent);
     mwManager().registerNewParent(pProgressDlg, pDlgParent);
 
     /* Run the dialog with the 350 ms refresh interval. */

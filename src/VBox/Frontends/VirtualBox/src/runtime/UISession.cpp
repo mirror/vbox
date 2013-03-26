@@ -220,14 +220,14 @@ void UISession::powerUp()
     /* Show "Starting/Restoring" progress dialog: */
     if (isSaved())
     {
-        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_restore_90px.png", mainMachineWindow(), true, 0);
+        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_restore_90px.png", mainMachineWindow(), 0);
         /* If restoring from saved state, guest MachineView
            should be notified about host MachineWindow geometry change */
         adjustGuestView();
 
     }
     else
-        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_start_90px.png", mainMachineWindow(), true);
+        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_start_90px.png", mainMachineWindow());
 
     /* Check for a progress failure: */
     if (progress.GetResultCode() != 0)
@@ -280,7 +280,7 @@ void UISession::powerUp()
                 if (uimachine()->machineLogic())
                     uimachine()->machineLogic()->setPreventAutoClose(true);
                 /* Show the power down progress dialog */
-                msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png", mainMachineWindow(), true);
+                msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png", mainMachineWindow());
                 if (progress.GetResultCode() != 0)
                     msgCenter().cannotStopMachine(progress);
                 /* Allow further auto-closing: */
@@ -388,7 +388,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     if (fResult)
     {
         msgCenter().showModalProgressDialog(progressInstall, tr("Updating Guest Additions"), ":/progress_install_guest_additions_90px.png",
-                                            mainMachineWindow(), true, 500 /* 500ms delay. */);
+                                            mainMachineWindow(), 500 /* 500ms delay. */);
         if (progressInstall.GetCanceled())
             return;
 

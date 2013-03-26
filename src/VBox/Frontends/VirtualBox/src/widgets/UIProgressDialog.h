@@ -51,8 +51,7 @@ public:
 
     /* Constructor/destructor: */
     UIProgressDialog(CProgress &progress, const QString &strTitle,
-                     QPixmap *pImage = 0, bool fSheetOnDarwin = false,
-                     int cMinDuration = 2000, QWidget *pParent = 0);
+                     QPixmap *pImage = 0, int cMinDuration = 2000, QWidget *pParent = 0);
 
     /* API: Run stuff: */
     int run(int aRefreshInterval);

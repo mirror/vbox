@@ -1469,7 +1469,7 @@ void UIGChooserModel::unregisterMachines(const QStringList &ids)
                     CProgress progress = machine.DeleteConfig(mediums);
                     if (machine.isOk())
                     {
-                        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_delete_90px.png", 0, true);
+                        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_delete_90px.png", msgCenter().mainWindowShown());
                         if (progress.GetResultCode() != 0)
                             msgCenter().cannotDeleteMachine(machine, progress);
                     }

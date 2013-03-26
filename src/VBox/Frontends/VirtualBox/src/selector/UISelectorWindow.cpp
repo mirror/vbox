@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -620,7 +621,7 @@ void UISelectorWindow::sltPerformSaveAction()
         {
             /* Show the "VM saving" progress dialog: */
             CMachine machine = session.GetMachine();
-            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_save_90px.png", 0, true);
+            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_save_90px.png", this);
             if (progress.GetResultCode() != 0)
                 msgCenter().cannotSaveMachineState(progress);
         }

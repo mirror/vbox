@@ -1165,7 +1165,7 @@ void UIMediumManager::doRemoveMedium()
                 CProgress progress = hardDisk.DeleteStorage();
                 if (hardDisk.isOk())
                 {
-                    msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_delete_90px.png", this, true);
+                    msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_delete_90px.png", this);
                     if (!(progress.isOk() && progress.GetResultCode() == S_OK))
                     {
                         msgCenter().cannotDeleteHardDiskStorage(this, hardDisk, progress);

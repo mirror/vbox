@@ -112,7 +112,7 @@ void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
     /* 2nd step: show delete-storage progress: */
     if (fSuccess)
     {
-        msgCenter().showModalProgressDialog(progress, thisImp()->windowTitle(), ":/progress_media_delete_90px.png", thisImp(), true);
+        msgCenter().showModalProgressDialog(progress, thisImp()->windowTitle(), ":/progress_media_delete_90px.png", thisImp());
         fSuccess = progress.isOk() && progress.GetResultCode() == S_OK;
     }
 
