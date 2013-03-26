@@ -338,6 +338,7 @@ NATEngine::RemoveRedirect(IN_BSTR aName)
     mNATRules.erase(it);
     mParent->setModified(Machine::IsModified_NetworkAdapters);
     m_fModified = true;
+    mData.commit();
     alock.release();
     mParent->onNATRedirectRuleChange(ulSlot, TRUE, aName, proto, Bstr(strHostIP).raw(), u16HostPort, Bstr(strGuestIP).raw(), u16GuestPort);
     return S_OK;
