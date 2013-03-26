@@ -27,6 +27,7 @@
 #include "UIMessageCenter.h"
 #include "UISelectorWindow.h"
 #include "VBoxUtils.h"
+#include "UIModalWindowManager.h"
 #ifdef Q_WS_MAC
 # include "UICocoaApplication.h"
 #endif
@@ -377,6 +378,8 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
         QApplication a (argc, argv);
 #endif /* Q_WS_X11 */
 
+        UIModalWindowManager::create();
+
         /* Qt4.3 version has the QProcess bug which freezing the application
          * for 30 seconds. This bug is internally used at initialization of
          * Cleanlooks style. So we have to change this style to another one.
@@ -535,6 +538,8 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             }
         }
         while (0);
+
+        UIModalWindowManager::destroy();
     }
 
     LogFlowFunc (("rc=%d\n", rc));

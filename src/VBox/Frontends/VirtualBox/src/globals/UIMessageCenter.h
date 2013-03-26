@@ -32,7 +32,6 @@
 #include "CProgress.h"
 
 /* Forward declarations: */
-class UIModalWindowStackManager;
 class UIMedium;
 struct StorageSlot;
 #ifdef VBOX_WITH_DRAG_AND_DROP
@@ -441,9 +440,6 @@ public:
     void remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
     void remindAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent = 0);
 
-    bool isInTheModalWindowStack(QWidget *pWindow);
-    bool isOnTheTopOfTheModalWindowStack(QWidget *pWindow);
-
 signals:
 
     void sigToCloseAllWarnings();
@@ -507,7 +503,6 @@ private:
 
     QStringList m_strShownWarnings;
     mutable QList<QPointer<QIMessageBox> > m_warnings;
-    mutable UIModalWindowStackManager *m_pModalWindowStackManager;
 };
 
 /* Shortcut to the static UIMessageCenter::instance() method, for convenience. */
