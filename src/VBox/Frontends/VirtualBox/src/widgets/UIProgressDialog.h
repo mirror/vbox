@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,7 +43,7 @@ class CProgress;
  *       not be destroyed before the created UIProgressDialog instance is
  *       destroyed.
  */
-class UIProgressDialog: protected QIWithRetranslateUI2<QIDialog>
+class UIProgressDialog: public QIWithRetranslateUI2<QIDialog>
 {
     Q_OBJECT;
 
@@ -53,7 +53,6 @@ public:
     UIProgressDialog(CProgress &progress, const QString &strTitle,
                      QPixmap *pImage = 0, bool fSheetOnDarwin = false,
                      int cMinDuration = 2000, QWidget *pParent = 0);
-    ~UIProgressDialog();
 
     /* API: Run stuff: */
     int run(int aRefreshInterval);

@@ -20,14 +20,14 @@
 /* GUI includes: */
 #include "QIDialog.h"
 #include "VBoxGlobal.h"
-#ifdef Q_WS_MAC
-# include "VBoxUtils.h"
-#endif /* Q_WS_MAC */
 
 QIDialog::QIDialog(QWidget *pParent /* = 0 */, Qt::WindowFlags flags /* = 0 */)
     : QDialog(pParent, flags)
     , m_fPolished(false)
 {
+    /* No need to count that window as important for application,
+     * it will NOT be taken into account when other top-level windows will be closed: */
+    setAttribute(Qt::WA_QuitOnClose, false);
 }
 
 QIDialog::~QIDialog()
@@ -52,27 +52,14 @@ int QIDialog::exec(bool fShow /* = true */)
     setResult(QDialog::Rejected);
 
     /* Should we delete ourself on close in theory? */
-    bool fWasDeleteOnClose = testAttribute(Qt::WA_DeleteOnClose);
+    bool fOldDeleteOnClose = testAttribute(Qt::WA_DeleteOnClose);
+    /* For the exec() time, set this attribute to 'false': */
     setAttribute(Qt::WA_DeleteOnClose, false);
 
-#if defined(Q_WS_MAC) && QT_VERSION >= 0x040500
-    /* After 4.5 Qt changed the behavior of Sheets for the window/application
-     * modal case. See "New Ways of Using Dialogs" in
-     * http://doc.trolltech.com/qq/QtQuarterly30.pdf why. We want the old
-     * behavior back, where all modal windows where shown as sheets. So make
-     * the modal mode window, but be application modal in any case. */
-    Qt::WindowModality winModality = windowModality();
-    bool wasSetWinModality = testAttribute(Qt::WA_SetWindowModality);
-    if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
-    {
-        setWindowModality(Qt::WindowModal);
-        setAttribute(Qt::WA_SetWindowModality, false);
-    }
-#endif /* defined(Q_WS_MAC) && QT_VERSION >= 0x040500 */
-    /* The dialog has to modal in any case.
-     * Save the current modality to restore it later. */
-    bool wasShowModal = testAttribute(Qt::WA_ShowModal);
-    setAttribute(Qt::WA_ShowModal, true);
+    /* Which is the current window-modality? */
+    Qt::WindowModality oldModality = windowModality();
+    /* For the exec() time, set this attribute to 'window-modal': */
+    setWindowModality(Qt::WindowModal);
 
     /* Show ourself if requested: */
     if (fShow)
@@ -100,19 +87,13 @@ int QIDialog::exec(bool fShow /* = true */)
     /* Save the result-code early (we can delete ourself on close): */
     QDialog::DialogCode resultCode = (QDialog::DialogCode)result();
 
-#if defined(Q_WS_MAC) && QT_VERSION >= 0x040500
-    /* Restore old modality mode: */
-    if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
-    {
-        setWindowModality(winModality);
-        setAttribute(Qt::WA_SetWindowModality, wasSetWinModality);
-    }
-#endif /* defined(Q_WS_MAC) && QT_VERSION >= 0x040500 */
-    /* Set the old show modal attribute: */
-    setAttribute (Qt::WA_ShowModal, wasShowModal);
+    /* Return old modality: */
+    setWindowModality(oldModality);
 
+    /* Reset attribute to previous value: */
+    setAttribute(Qt::WA_DeleteOnClose, fOldDeleteOnClose);
     /* Delete ourself if we should do that on close: */
-    if (fWasDeleteOnClose)
+    if (fOldDeleteOnClose)
         delete this;
 
     /* Return the result-code: */

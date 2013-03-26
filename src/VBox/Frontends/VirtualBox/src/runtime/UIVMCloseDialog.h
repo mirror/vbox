@@ -31,7 +31,6 @@ class UIVMCloseDialog : public QIWithRetranslateUI<QIDialog>,
 public:
 
     UIVMCloseDialog(QWidget *pParent);
-    ~UIVMCloseDialog();
 
 protected:
 

@@ -37,6 +37,7 @@
 #include "UISession.h"
 #include "UIVMCloseDialog.h"
 #include "UIConverter.h"
+#include "UIModalWindowManager.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -272,7 +273,9 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             }
 
             /* Prepare close-dialog: */
-            UIVMCloseDialog *pDlg = new UIVMCloseDialog(this);
+            QWidget *pDlgParent = mwManager().realParentWindow(this);
+            UIVMCloseDialog *pDlg = new UIVMCloseDialog(pDlgParent);
+            mwManager().registerNewParent(pDlg, pDlgParent);
 
             /* Assign close-dialog pixmap: */
             pDlg->pmIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(m.GetOSTypeId()));

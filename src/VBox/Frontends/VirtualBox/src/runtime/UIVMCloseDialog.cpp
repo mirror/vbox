@@ -35,15 +35,6 @@
 UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent)
     : QIWithRetranslateUI<QIDialog>(pParent)
 {
-#ifdef Q_WS_MAC
-    /* Check if Mac Sheet is allowed: */
-    if (vboxGlobal().isSheetWindowAllowed(pParent))
-    {
-        vboxGlobal().setSheetWindowUsed(pParent, true);
-        setWindowFlags(Qt::Sheet);
-    }
-#endif /* Q_WS_MAC */
-
     /* Apply UI decorations */
     Ui::UIVMCloseDialog::setupUi(this);
 
@@ -59,15 +50,6 @@ UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent)
 
     connect(mButtonBox, SIGNAL(helpRequested()),
             &msgCenter(), SLOT(sltShowHelpHelpDialog()));
-}
-
-UIVMCloseDialog::~UIVMCloseDialog()
-{
-#ifdef Q_WS_MAC
-    /* Check if Mac Sheet was used: */
-    if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
-        vboxGlobal().setSheetWindowUsed(parentWidget(), false);
-#endif /* Q_WS_MAC */
 }
 
 void UIVMCloseDialog::retranslateUi()

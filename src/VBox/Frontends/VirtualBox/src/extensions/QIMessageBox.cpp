@@ -58,15 +58,6 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     , mWasDone (false)
     , mWasPolished (false)
 {
-#ifdef Q_WS_MAC
-    /* Check if Mac Sheet is allowed: */
-    if (vboxGlobal().isSheetWindowAllowed(aParent))
-    {
-        vboxGlobal().setSheetWindowUsed(aParent, true);
-        setWindowFlags(Qt::Sheet);
-    }
-#endif /* Q_WS_MAC */
-
     setWindowTitle (aCaption);
     /* Necessary to later find some of the message boxes */
     setObjectName (aName);
@@ -173,15 +164,6 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
 
     /* this call is a must -- it initializes mFlagCB and mSpacer */
     setDetailsShown (false);
-}
-
-QIMessageBox::~QIMessageBox()
-{
-#ifdef Q_WS_MAC
-    /* Check if Mac Sheet was used: */
-    if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
-        vboxGlobal().setSheetWindowUsed(parentWidget(), false);
-#endif /* Q_WS_MAC */
 }
 
 /**

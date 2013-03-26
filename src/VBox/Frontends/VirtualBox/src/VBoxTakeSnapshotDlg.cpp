@@ -44,15 +44,6 @@
 VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg(QWidget *pParent, const CMachine &machine)
     : QIWithRetranslateUI<QIDialog>(pParent)
 {
-#ifdef Q_WS_MAC
-    /* Check if Mac Sheet is allowed: */
-    if (vboxGlobal().isSheetWindowAllowed(pParent))
-    {
-        vboxGlobal().setSheetWindowUsed(pParent, true);
-        setWindowFlags(Qt::Sheet);
-    }
-#endif /* Q_WS_MAC */
-
     /* Apply UI decorations */
     Ui::VBoxTakeSnapshotDlg::setupUi(this);
 
@@ -96,15 +87,6 @@ VBoxTakeSnapshotDlg::VBoxTakeSnapshotDlg(QWidget *pParent, const CMachine &machi
     }
 
     retranslateUi();
-}
-
-VBoxTakeSnapshotDlg::~VBoxTakeSnapshotDlg()
-{
-#ifdef Q_WS_MAC
-    /* Check if Mac Sheet was used: */
-    if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
-        vboxGlobal().setSheetWindowUsed(parentWidget(), false);
-#endif /* Q_WS_MAC */
 }
 
 void VBoxTakeSnapshotDlg::retranslateUi()

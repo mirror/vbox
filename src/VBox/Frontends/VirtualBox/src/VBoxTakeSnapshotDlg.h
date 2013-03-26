@@ -34,7 +34,6 @@ class VBoxTakeSnapshotDlg : public QIWithRetranslateUI<QIDialog>, public Ui::VBo
 public:
 
     VBoxTakeSnapshotDlg(QWidget *pParent, const CMachine &machine);
-    ~VBoxTakeSnapshotDlg();
 
 protected:
 

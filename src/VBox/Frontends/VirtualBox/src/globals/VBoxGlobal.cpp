@@ -3844,57 +3844,6 @@ bool VBoxGlobal::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
 }
 #endif /* VBOX_WITH_CRHGSMI */
 
-#ifdef Q_WS_MAC
-bool VBoxGlobal::isSheetWindowAllowed(QWidget *pParent) const
-{
-    /* Disallow for null parent: */
-    if (!pParent)
-        return false;
-
-    /* Make sure Mac Sheet is not used for the same parent now. */
-    if (sheetWindowUsed(pParent))
-        return false;
-
-    /* No sheets for fullscreen/seamless now.
-     * Firstly it looks ugly and secondly in some cases it is broken. */
-    if (!(qobject_cast<UIMachineWindowFullscreen*>(pParent) ||
-          qobject_cast<UIMachineWindowSeamless*>(pParent)))
-        return true;
-
-    return false;
-}
-
-void VBoxGlobal::setSheetWindowUsed(QWidget *pParent, bool fUsed)
-{
-    /* Ignore null parent: */
-    if (!pParent)
-        return;
-
-    if (fUsed)
-    {
-        AssertMsg(!m_sheets.contains(pParent), ("Trying to use Mac Sheet for parent which already has one!"));
-        if (m_sheets.contains(pParent))
-            return;
-    }
-    else
-    {
-        AssertMsg(m_sheets.contains(pParent), ("Trying to cancel use Mac Sheet for parent which has no one!"));
-        if (!m_sheets.contains(pParent))
-            return;
-    }
-
-    if (fUsed)
-        m_sheets.insert(pParent);
-    else
-        m_sheets.remove(pParent);
-}
-
-bool VBoxGlobal::sheetWindowUsed(QWidget *pParent) const
-{
-    return m_sheets.contains(pParent);
-}
-#endif /* Q_WS_MAC */
-
 /* static */
 QString VBoxGlobal::fullMediumFormatName(const QString &strBaseMediumFormatName)
 {
