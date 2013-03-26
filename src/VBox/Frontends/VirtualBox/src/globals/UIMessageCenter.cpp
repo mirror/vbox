@@ -218,42 +218,58 @@ int UIMessageCenter::message(QWidget *pParent, Type type, const QString &strMess
             break;
     }
 
-    QPointer<QIMessageBox> box = new QIMessageBox(title, strMessage, icon, button1, button2,
-                                                  button3, pParent, pcszAutoConfirmId);
-    connect(this, SIGNAL(sigToCloseAllWarnings()), box, SLOT(deleteLater()));
+    /* Create message-box: */
+    QPointer<QIMessageBox> pBox = new QIMessageBox(title, strMessage, icon, button1, button2,
+                                                   button3, pParent, pcszAutoConfirmId);
 
-    if (!strText1.isNull())
-        box->setButtonText(0, strText1);
-    if (!strText2.isNull())
-        box->setButtonText(1, strText2);
-    if (!strText3.isNull())
-        box->setButtonText(2, strText3);
+    /* Configure message-box: */
+    connect(this, SIGNAL(sigToCloseAllWarnings()), pBox, SLOT(deleteLater()));
 
-    if (!strDetails.isEmpty())
-        box->setDetailsText(strDetails);
-
+    /* Prepare confirmation: */
     if (pcszAutoConfirmId)
     {
-        box->setFlagText(tr("Do not show this message again", "msg box flag"));
-        box->setFlagChecked(false);
+        pBox->setFlagText(tr("Do not show this message again", "msg box flag"));
+        pBox->setFlagChecked(false);
     }
 
-    m_warnings << box;
-    int rc = box->exec();
-    if (box && m_warnings.contains(box))
-        m_warnings.removeAll(box);
+    /* Configure button-text: */
+    if (!strText1.isNull())
+        pBox->setButtonText(0, strText1);
+    if (!strText2.isNull())
+        pBox->setButtonText(1, strText2);
+    if (!strText3.isNull())
+        pBox->setButtonText(2, strText3);
 
+    /* Configure details: */
+    if (!strDetails.isEmpty())
+        pBox->setDetailsText(strDetails);
+
+    /* Add to warnings: */
+    m_warnings << pBox;
+
+    /* Show box: */
+    int rc = pBox->exec();
+
+    /* Make sure box still valid: */
+    if (!pBox)
+        return rc;
+
+    /* Remove from warnings: */
+    m_warnings.removeAll(pBox);
+
+    /* Cleanup confirmation: */
     if (pcszAutoConfirmId)
     {
-        if (box && box->isFlagChecked())
+        if (pBox->isFlagChecked())
         {
             msgs << pcszAutoConfirmId;
             vbox.SetExtraData(GUI_SuppressMessages, msgs.join(","));
         }
     }
 
-    if (box)
-        delete box;
+    /* Delete message-box: */
+    if (pBox)
+        delete pBox;
 
     return rc;
 }
@@ -327,55 +343,51 @@ int UIMessageCenter::messageWithOption(QWidget *pParent,
     }
 
     /* Create message-box: */
-    if (QPointer<QIMessageBox> pBox = new QIMessageBox(strTitle, strMessage, icon,
-                                                       iButton1, iButton2, iButton3, pParent))
+    QPointer<QIMessageBox> pBox = new QIMessageBox(strTitle, strMessage, icon,
+                                                   iButton1, iButton2, iButton3, pParent);
+
+    /* Configure box: */
+    connect(this, SIGNAL(sigToCloseAllWarnings()), pBox, SLOT(deleteLater()));
+
+    /* Load option: */
+    if (!strOptionText.isNull())
     {
-        /* Append the list of all warnings with current: */
-        m_warnings << pBox;
-
-        /* Setup message-box connections: */
-        connect(this, SIGNAL(sigToCloseAllWarnings()), pBox, SLOT(deleteLater()));
-
-        /* Assign other text values: */
-        if (!strOptionText.isNull())
-        {
-            pBox->setFlagText(strOptionText);
-            pBox->setFlagChecked(fDefaultOptionValue);
-        }
-        if (!strButtonName1.isNull())
-            pBox->setButtonText(0, strButtonName1);
-        if (!strButtonName2.isNull())
-            pBox->setButtonText(1, strButtonName2);
-        if (!strButtonName3.isNull())
-            pBox->setButtonText(2, strButtonName3);
-        if (!strDetails.isEmpty())
-            pBox->setDetailsText(strDetails);
-
-        /* Show the message box: */
-        int iResultCode = pBox->exec();
-
-        /* Its possible what message-box will be deleted during some event-processing procedure,
-         * in that case pBox will be null right after pBox->exec() returns from it's event-pool,
-         * so we have to check this too: */
-        if (pBox)
-        {
-            /* Cleanup the list of all warnings from current: */
-            if (m_warnings.contains(pBox))
-                m_warnings.removeAll(pBox);
-
-            /* Check if option was chosen: */
-            if (pBox->isFlagChecked())
-                iResultCode |= QIMessageBox::OptionChosen;
-
-            /* Destroy message-box: */
-            if (pBox)
-                delete pBox;
-
-            /* Return final result: */
-            return iResultCode;
-        }
+        pBox->setFlagText(strOptionText);
+        pBox->setFlagChecked(fDefaultOptionValue);
     }
-    return 0;
+
+    /* Configure button-text: */
+    if (!strButtonName1.isNull())
+        pBox->setButtonText(0, strButtonName1);
+    if (!strButtonName2.isNull())
+        pBox->setButtonText(1, strButtonName2);
+    if (!strButtonName3.isNull())
+        pBox->setButtonText(2, strButtonName3);
+    if (!strDetails.isEmpty())
+        pBox->setDetailsText(strDetails);
+
+    /* Add to warnings: */
+    m_warnings << pBox;
+
+    /* Show box: */
+    int rc = pBox->exec();
+
+    /* Make sure box still valid: */
+    if (!pBox)
+        return rc;
+
+    /* Remove from warnings: */
+    m_warnings.removeAll(pBox);
+
+    /* Save option: */
+    if (pBox->isFlagChecked())
+        rc |= QIMessageBox::OptionChosen;
+
+    /* Delete message-box: */
+    if (pBox)
+        delete pBox;
+
+    return rc;
 }
 
 /**
