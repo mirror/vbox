@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2008-2011 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -89,12 +89,15 @@ typedef FNRTHANDLETABLEDELETE *PFNRTHANDLETABLEDELETE;
  *
  * Setting this means you will have to use the WithCtx functions to do the
  * handle management. */
-#define RTHANDLETABLE_FLAGS_CONTEXT     RT_BIT_32(0)
-/** Whether the handle table should take care of the serialization.
+#define RTHANDLETABLE_FLAGS_CONTEXT         RT_BIT_32(0)
+/** Whether the handle table should take care of the serialization (IRQ unsafe).
  * If not specified the caller will have to take care of that. */
-#define RTHANDLETABLE_FLAGS_LOCKED      RT_BIT_32(1)
+#define RTHANDLETABLE_FLAGS_LOCKED          RT_BIT_32(1)
+/** Like RTHANDLETABLE_FLAGS_LOCKED, except it's IRQ safe.
+ * A side-effect is that callbacks may be called with IRQs disabled.  */
+#define RTHANDLETABLE_FLAGS_LOCKED_IRQ_SAFE RT_BIT_32(2)
 /** The mask of valid flags. */
-#define RTHANDLETABLE_FLAGS_MASK        UINT32_C(0x00000003)
+#define RTHANDLETABLE_FLAGS_MASK            UINT32_C(0x00000007)
 /** @} */
 
 
