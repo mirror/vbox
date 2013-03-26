@@ -109,7 +109,7 @@ VMMDECL(uint32_t) PDMR3CritSectRwSetSubClass(PPDMCRITSECTRW pThis, uint32_t uSub
 {
     AssertPtrReturn(pThis, RTLOCKVAL_SUB_CLASS_INVALID);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, RTLOCKVAL_SUB_CLASS_INVALID);
-# ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     AssertReturn(!(pThis->s.Core.fFlags & RTCRITSECT_FLAGS_NOP), RTLOCKVAL_SUB_CLASS_INVALID);
 
     RTLockValidatorRecSharedSetSubClass(pThis->s.Core.pValidatorRead, uSubClass);
@@ -130,7 +130,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
 
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
     if (!fTryOnly)
     {
@@ -164,7 +164,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
             u64State |= c << RTCSRW_CNT_RD_SHIFT;
             if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
             {
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
                 RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
 #endif
                 break;
@@ -178,7 +178,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
             if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
             {
                 Assert(!pThis->s.Core.fNeedReset);
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
                 RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
 #endif
                 break;
@@ -192,7 +192,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
             ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hNativeWriter);
             if (hNativeSelf == hNativeWriter)
             {
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
                 int rc9 = RTLockValidatorRecExclRecursionMixed(pThis->s.Core.pValidatorWrite, &pThis->s.Core.pValidatorRead->Core, pSrcPos);
                 if (RT_FAILURE(rc9))
                     return rc9;
@@ -224,7 +224,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
                 for (uint32_t iLoop = 0; ; iLoop++)
                 {
                     int rc;
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
                     rc = RTLockValidatorRecSharedCheckBlocking(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos, true,
                                                                RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_READ, false);
                     if (RT_SUCCESS(rc))
@@ -294,7 +294,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
                     u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
                 }
 
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
                 RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
 #endif
                 break;
@@ -341,7 +341,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
  */
 VMMDECL(int) PDMCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy)
 {
-#ifndef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     return pdmCritSectRwEnterShared(pThis, rcBusy, NULL, false /*fTryOnly*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
@@ -400,7 +400,7 @@ VMMDECL(int) PDMCritSectRwEnterSharedDebug(PPDMCRITSECTRW pThis, int rcBusy, RTH
  */
 VMMDECL(int) PDMCritSectRwTryEnterShared(PPDMCRITSECTRW pThis)
 {
-#ifndef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, NULL, true /*fTryOnly*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
@@ -461,7 +461,7 @@ VMMDECL(int) PDMCritSectRwLeaveShared(PPDMCRITSECTRW pThis)
     uint64_t u64OldState = u64State;
     if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
     {
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
         int rc9 = RTLockValidatorRecSharedCheckAndRelease(pThis->s.Core.pValidatorRead, NIL_RTTHREAD);
         if (RT_FAILURE(rc9))
             return rc9;
@@ -506,7 +506,7 @@ VMMDECL(int) PDMCritSectRwLeaveShared(PPDMCRITSECTRW pThis)
         ASMAtomicUoReadHandle(&pThis->s.Core.hNativeWriter, &hNativeWriter);
         AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
         AssertReturn(pThis->s.Core.cWriterReads > 0, VERR_NOT_OWNER);
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
         int rc = RTLockValidatorRecExclUnwindMixed(pThis->s.Core.pValidatorWrite, &pThis->s.Core.pValidatorRead->Core);
         if (RT_FAILURE(rc))
             return rc;
@@ -526,7 +526,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
     AssertPtr(pThis);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, VERR_SEM_DESTROYED);
 
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     RTTHREAD hThreadSelf = NIL_RTTHREAD;
     if (!fTryOnly)
     {
@@ -546,7 +546,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
     if (hNativeSelf == hNativeWriter)
     {
         Assert((ASMAtomicReadU64(&pThis->s.Core.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
         int rc9 = RTLockValidatorRecExclRecursion(pThis->s.Core.pValidatorWrite, pSrcPos);
         if (RT_FAILURE(rc9))
             return rc9;
@@ -625,7 +625,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
         for (uint32_t iLoop = 0; ; iLoop++)
         {
             int rc;
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
             if (!fTryOnly)
             {
                 if (hThreadSelf == NIL_RTTHREAD)
@@ -683,7 +683,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
     Assert((ASMAtomicReadU64(&pThis->s.Core.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
     ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 1);
     Assert(pThis->s.Core.cWriterReads == 0);
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     RTLockValidatorRecExclSetOwner(pThis->s.Core.pValidatorWrite, hThreadSelf, pSrcPos, true);
 #endif
     STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterExcl));
@@ -714,7 +714,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
  */
 VMMDECL(int) PDMCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy)
 {
-#ifndef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     return pdmCritSectRwEnterExcl(pThis, rcBusy, NULL, false /*fTryAgain*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
@@ -770,7 +770,7 @@ VMMDECL(int) PDMCritSectRwEnterExclDebug(PPDMCRITSECTRW pThis, int rcBusy, RTHCU
  */
 VMMDECL(int) PDMCritSectRwTryEnterExcl(PPDMCRITSECTRW pThis)
 {
-#ifndef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, NULL, true /*fTryAgain*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
@@ -828,12 +828,12 @@ VMMDECL(int) PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pThis)
     AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
 
     /*
-     * Unwind a recursion.
+     * Unwind one recursion. Is it the final one?
      */
     if (pThis->s.Core.cWriteRecursions == 1)
     {
         AssertReturn(pThis->s.Core.cWriterReads == 0, VERR_WRONG_ORDER); /* (must release all read recursions before the final write.) */
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
         int rc9 = RTLockValidatorRecExclReleaseOwner(pThis->s.Core.pValidatorWrite, true);
         if (RT_FAILURE(rc9))
             return rc9;
@@ -857,7 +857,7 @@ VMMDECL(int) PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pThis)
             if (   c > 0
                 || (u64State & RTCSRW_CNT_RD_MASK) == 0)
             {
-                /* Don't change the direction, wait up the next writer if any. */
+                /* Don't change the direction, wake up the next writer if any. */
                 u64State &= ~RTCSRW_CNT_WR_MASK;
                 u64State |= c << RTCSRW_CNT_WR_SHIFT;
                 if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
@@ -892,8 +892,11 @@ VMMDECL(int) PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pThis)
     }
     else
     {
+        /*
+         * Not the final recursion.
+         */
         Assert(pThis->s.Core.cWriteRecursions != 0);
-#ifdef PDMCRITSECTRW_STRICT
+#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
         int rc9 = RTLockValidatorRecExclUnwind(pThis->s.Core.pValidatorWrite);
         if (RT_FAILURE(rc9))
             return rc9;

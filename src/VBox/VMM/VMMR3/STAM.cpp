@@ -47,6 +47,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+/*#define USE_PDMCRITSECTRW - testing, not for production. */
 #define LOG_GROUP LOG_GROUP_STAM
 #include <VBox/vmm/stam.h>
 #include "STAMInternal.h"
@@ -262,6 +263,7 @@ static const STAMR0SAMPLE g_aGMMStats[] =
  */
 VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
 {
+    int rc;
     LogFlow(("STAMR3Init\n"));
 
     /*
@@ -271,10 +273,12 @@ VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
     AssertRelease(sizeof(pUVM->stam.s) <= sizeof(pUVM->stam.padding));
 
     /*
-     * Setup any fixed pointers and offsets.
+     * Initialize the read/write lock.
      */
-    int rc = RTSemRWCreate(&pUVM->stam.s.RWSem);
+#ifndef USE_PDMCRITSECTRW
+    rc = RTSemRWCreate(&pUVM->stam.s.RWSem);
     AssertRCReturn(rc, rc);
+#endif
 
     /*
      * Register the ring-0 statistics (GVMM/GMM).
@@ -317,9 +321,11 @@ VMMR3DECL(void) STAMR3TermUVM(PUVM pUVM)
     }
     pUVM->stam.s.pHead = NULL;
 
+#ifndef USE_PDMCRITSECTRW
     Assert(pUVM->stam.s.RWSem != NIL_RTSEMRW);
     RTSemRWDestroy(pUVM->stam.s.RWSem);
     pUVM->stam.s.RWSem = NIL_RTSEMRW;
+#endif
 }
 
 
@@ -597,6 +603,7 @@ static int stamR3SlashCompare(const char *psz1, const char *psz2)
 static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
                            STAMTYPE enmType, STAMVISIBILITY enmVisibility, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
+    STAM_LAZY_INIT(pUVM);
     STAM_LOCK_WR(pUVM);
 
     /*
