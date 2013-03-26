@@ -10,7 +10,7 @@
         XSLT stylesheet that generates Java glue code for XPCOM, MSCOM and JAX-WS from
         VirtualBox.xidl.
 
-    Copyright (C) 2010-2012 Oracle Corporation
+    Copyright (C) 2010-2013 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -3965,7 +3965,8 @@ public class VirtualBoxManager
     public void disconnect()
     {
         try {
-           if (this.vbox != null)
+           if (   this.vbox != null
+               && port != null)
               port.iWebsessionManagerLogoff(this.vbox.getWrapped());
         } catch (InvalidObjectFaultMsg e) {
             throw new VBoxException(e, e.getMessage());
