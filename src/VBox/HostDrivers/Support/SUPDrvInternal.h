@@ -1,10 +1,10 @@
-/* $Revision$ */
+/* $Id$ */
 /** @file
  * VirtualBox Support Driver - Internal header.
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -388,9 +388,9 @@ typedef struct SUPDRVOBJ
 } SUPDRVOBJ, *PSUPDRVOBJ;
 
 /** Magic number for SUPDRVOBJ::u32Magic. (Dame Agatha Mary Clarissa Christie). */
-#define SUPDRVOBJ_MAGIC             0x18900915
+#define SUPDRVOBJ_MAGIC             UINT32_C(0x18900915)
 /** Dead number magic for SUPDRVOBJ::u32Magic. */
-#define SUPDRVOBJ_MAGIC_DEAD        0x19760112
+#define SUPDRVOBJ_MAGIC_DEAD        UINT32_C(0x19760112)
 
 /**
  * The per-session object usage record.
@@ -422,7 +422,7 @@ typedef struct SUPDRVSESSION
     /** The VM associated with the session. */
     PVM                             pVM;
     /** Handle table for IPRT semaphore wrapper APIs.
-     * Programmable from R0 and R3. */
+     * This takes care of its own locking in an IRQ safe manner. */
     RTHANDLETABLE                   hHandleTable;
     /** Load usage records. (protected by SUPDRVDEVEXT::mtxLdr) */
     PSUPDRVLDRUSAGE volatile        pLdrUsage;
@@ -493,7 +493,10 @@ typedef struct SUPDRVDEVEXT
     /** The actual size of SUPDRVSESSION. (SUPDRV_AGNOSTIC) */
     uint32_t                        cbSession;
 
-    /** Spinlock to serialize the initialization, usage counting and objects. */
+    /** Spinlock to serialize the initialization, usage counting and objects.
+     * This is IRQ safe because we want to be able signal semaphores from the
+     * special HM context (and later maybe interrupt handlers), so we must be able
+     * to reference and dereference handles when IRQs are disabled. */
     RTSPINLOCK                      Spinlock;
 
     /** List of registered objects. Protected by the spinlock. */
@@ -541,7 +544,9 @@ typedef struct SUPDRVDEVEXT
 #else
     RTSEMFASTMUTEX                  mtxGip;
 #endif
-    /** GIP spinlock protecting GIP members during Mp events. */
+    /** GIP spinlock protecting GIP members during Mp events.
+     * This is IRQ safe since be may get MP callbacks in contexts where IRQs are
+     * disabled (on some platforms). */
     RTSPINLOCK                      hGipSpinlock;
     /** Pointer to the Global Info Page (GIP). */
     PSUPGLOBALINFOPAGE              pGip;
