@@ -36,6 +36,7 @@
 #include "UINetworkManager.h"
 #include "UINetworkManagerDialog.h"
 #include "UIConverter.h"
+#include "UIModalWindowManager.h"
 #ifdef VBOX_OSE
 # include "UIDownloaderUserManual.h"
 #endif /* VBOX_OSE */
@@ -219,8 +220,11 @@ int UIMessageCenter::message(QWidget *pParent, Type type, const QString &strMess
     }
 
     /* Create message-box: */
-    QPointer<QIMessageBox> pBox = new QIMessageBox(title, strMessage, icon, button1, button2,
-                                                   button3, pParent, pcszAutoConfirmId);
+    QWidget *pBoxParent = mwManager().realParentWindow(pParent);
+    QPointer<QIMessageBox> pBox = new QIMessageBox(title, strMessage, icon,
+                                                   button1, button2, button3,
+                                                   pBoxParent, pcszAutoConfirmId);
+    mwManager().registerNewParent(pBox, pBoxParent);
 
     /* Configure message-box: */
     connect(this, SIGNAL(sigToCloseAllWarnings()), pBox, SLOT(deleteLater()));
@@ -343,8 +347,10 @@ int UIMessageCenter::messageWithOption(QWidget *pParent,
     }
 
     /* Create message-box: */
+    QWidget *pBoxParent = mwManager().realParentWindow(pParent);
     QPointer<QIMessageBox> pBox = new QIMessageBox(strTitle, strMessage, icon,
-                                                   iButton1, iButton2, iButton3, pParent);
+                                                   iButton1, iButton2, iButton3, pBoxParent);
+    mwManager().registerNewParent(pBox, pBoxParent);
 
     /* Configure box: */
     connect(this, SIGNAL(sigToCloseAllWarnings()), pBox, SLOT(deleteLater()));
@@ -406,14 +412,27 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
                                               bool fSheetOnDarwin /* = false */,
                                               int cMinDuration /* = 2000 */)
 {
+    /* Prepare pixmap: */
     QPixmap *pPixmap = 0;
     if (!strImage.isEmpty())
         pPixmap = new QPixmap(strImage);
 
-    UIProgressDialog progressDlg(progress, strTitle, pPixmap, fSheetOnDarwin, cMinDuration, pParent ? pParent : mainWindowShown());
-    /* Run the dialog with the 350 ms refresh interval. */
-    progressDlg.run(350);
+    /* Create progress-dialog: */
+    QWidget *pDlgParent = mwManager().realParentWindow(pParent);
+    QPointer<UIProgressDialog> pProgressDlg = new UIProgressDialog(progress, strTitle, pPixmap, fSheetOnDarwin, cMinDuration, pDlgParent);
+    mwManager().registerNewParent(pProgressDlg, pDlgParent);
 
+    /* Run the dialog with the 350 ms refresh interval. */
+    pProgressDlg->run(350);
+
+    /* Make sure progress-dialog still valid: */
+    if (!pProgressDlg)
+        return false;
+
+    /* Delete progress-dialog: */
+    delete pProgressDlg;
+
+    /* Cleanup pixmap: */
     if (pPixmap)
         delete pPixmap;
 

@@ -39,6 +39,7 @@
 #include "UIToolBar.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIConverter.h"
+#include "UIModalWindowManager.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -815,7 +816,9 @@ bool VBoxSnapshotsWgt::takeSnapshot()
         if (fIsValid)
         {
             /* Create take-snapshot dialog: */
-            QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(this, mMachine);
+            QWidget *pDlgParent = mwManager().realParentWindow(this);
+            QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(pDlgParent, mMachine);
+            mwManager().registerNewParent(pDlg, pDlgParent);
 
             /* Assign corresponding icon: */
             pDlg->mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(mMachine.GetOSTypeId()));

@@ -384,12 +384,6 @@ public:
     static quint64 required3DWddmOffscreenVideoMemory(const QString &strGuestOSTypeId, int cMonitors = 1);
 #endif /* VBOX_WITH_CRHGSMI */
 
-#ifdef Q_WS_MAC
-    bool isSheetWindowAllowed(QWidget *pParent) const;
-    void setSheetWindowUsed(QWidget *pParent, bool fUsed);
-    bool sheetWindowUsed(QWidget *pParent) const;
-#endif /* Q_WS_MAC */
-
     /* Returns full medium-format name for the given base medium-format name: */
     static QString fullMediumFormatName(const QString &strBaseMediumFormatName);
 
@@ -548,10 +542,6 @@ private:
 
     char mSettingsPw[256];
     bool mSettingsPwSet;
-
-#ifdef Q_WS_MAC
-    QSet<QWidget*> m_sheets;
-#endif /* Q_WS_MAC */
 
     friend VBoxGlobal &vboxGlobal();
 };

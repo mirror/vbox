@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,6 +31,7 @@
 #include "QILabel.h"
 #include "UISpecialControls.h"
 #include "VBoxGlobal.h"
+#include "UIModalWindowManager.h"
 #ifdef Q_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif /* Q_WS_MAC */
@@ -63,21 +64,13 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
     QHBoxLayout *pMainLayout = new QHBoxLayout(this);
 
 #ifdef Q_WS_MAC
-    /* Check if Mac Sheet is allowed: */
-    if (fSheetOnDarwin && vboxGlobal().isSheetWindowAllowed(pParent))
-    {
-        vboxGlobal().setSheetWindowUsed(pParent, true);
-        setWindowFlags(Qt::Sheet);
-    }
     ::darwinSetHidesAllTitleButtons(this);
-    ::darwinSetShowsResizeIndicator(this, false);
     if (pImage)
         pMainLayout->setContentsMargins(30, 15, 30, 15);
     else
         pMainLayout->setContentsMargins(6, 6, 6, 6);
-#else /* Q_WS_MAC */
+#endif /* Q_WS_MAC */
     NOREF(fSheetOnDarwin);
-#endif /* !Q_WS_MAC */
 
     /* Create image: */
     if (pImage)
@@ -136,15 +129,6 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
     QTimer::singleShot(cMinDuration, this, SLOT(sltShowDialog()));
 }
 
-UIProgressDialog::~UIProgressDialog()
-{
-#ifdef Q_WS_MAC
-    /* Check if Mac Sheet was used: */
-    if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
-        vboxGlobal().setSheetWindowUsed(parentWidget(), false);
-#endif /* Q_WS_MAC */
-}
-
 void UIProgressDialog::retranslateUi()
 {
     m_strCancel = tr("Canceling...");
@@ -199,7 +183,7 @@ void UIProgressDialog::timerEvent(QTimerEvent* /* pEvent */)
      * This could happens in case of some other
      * modal dialog prevents our event-loop from
      * being exit overlapping 'this'. */
-    if (m_fEnded && !isHidden())
+    if (m_fEnded && !isHidden() && mwManager().isWindowOnTheTopOfTheModalWindowStack(this))
     {
         hide();
         return;
@@ -209,18 +193,25 @@ void UIProgressDialog::timerEvent(QTimerEvent* /* pEvent */)
 
     if (!m_fEnded && (!m_progress.isOk() || m_progress.GetCompleted()))
     {
-        /* Progress finished: */
-        if (m_progress.isOk())
+        /* Is this progress-dialog a top-level modal-dialog now? */
+        if (mwManager().isWindowOnTheTopOfTheModalWindowStack(this))
         {
-            m_pProgressBar->setValue(100);
-            done(Accepted);
-        }
-        /* Progress is not valid: */
-        else
-            done(Rejected);
+            /* Progress finished: */
+            if (m_progress.isOk())
+            {
+                m_pProgressBar->setValue(100);
+                done(Accepted);
+            }
+            /* Progress is not valid: */
+            else
+                done(Rejected);
 
-        /* Request to exit loop: */
-        m_fEnded = true;
+            /* Request to exit loop: */
+            m_fEnded = true;
+            return;
+        }
+        /* Else we should wait until all the subsequent
+         * top-level modal-dialog(s) will be dismissed: */
         return;
     }
 
