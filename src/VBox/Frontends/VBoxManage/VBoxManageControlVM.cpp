@@ -283,8 +283,14 @@ int handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "keyboardputscancode"))
         {
-            ComPtr<IKeyboard> keyboard;
-            CHECK_ERROR_BREAK(console, COMGETTER(Keyboard)(keyboard.asOutParam()));
+            ComPtr<IKeyboard> pKeyboard;
+            CHECK_ERROR_BREAK(console, COMGETTER(Keyboard)(pKeyboard.asOutParam()));
+            if (!pKeyboard)
+            {
+                RTMsgError("Guest not running");
+                rc = E_FAIL;
+                break;
+            }
 
             if (a->argc <= 1 + 1)
             {
@@ -328,7 +334,7 @@ int handleControlVM(HandlerArg *a)
             /* Send scancodes to the VM. */
             com::SafeArray<LONG> saScancodes(llScancodes);
             ULONG codesStored = 0;
-            CHECK_ERROR_BREAK(keyboard, PutScancodes(ComSafeArrayAsInParam(saScancodes),
+            CHECK_ERROR_BREAK(pKeyboard, PutScancodes(ComSafeArrayAsInParam(saScancodes),
                                                      &codesStored));
             if (codesStored < saScancodes.size())
             {
@@ -1002,7 +1008,7 @@ int handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK(console, COMGETTER(Display)(pDisplay.asOutParam()));
             if (!pDisplay)
             {
-                RTMsgError("Cannot send a video mode hint without a display");
+                RTMsgError("Guest not running");
                 rc = E_FAIL;
                 break;
             }
@@ -1309,7 +1315,7 @@ int handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK(console, COMGETTER(Display)(pDisplay.asOutParam()));
             if (!pDisplay)
             {
-                RTMsgError("Cannot take a screenshot without a display");
+                RTMsgError("Guest not running");
                 rc = E_FAIL;
                 break;
             }

@@ -267,7 +267,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--lptmode<1-N> <devicename>]\n"
 #endif
                      "                            [--guestmemoryballoon <balloonsize in MB>]\n"
-                     "                            [--gueststatisticsinterval <seconds>]\n"
                      "                            [--audio none|null", SEP);
         if (fWin)
         {
@@ -445,7 +444,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                                        <hostport>,[<guestip>],<guestport> |\n"
                      "                            natpf<1-N> delete <rulename> |\n"
                      "                            guestmemoryballoon <balloonsize in MB> |\n"
-                     "                            gueststatisticsinterval <seconds> |\n"
                      "                            usbattach <uuid>|<address> |\n"
                      "                            usbdetach <uuid>|<address> |\n"
                      "                            clipboard disabled|hosttoguest|guesttohost|\n"
