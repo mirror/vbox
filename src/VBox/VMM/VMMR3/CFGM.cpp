@@ -33,9 +33,9 @@
  * where they are protected from accessing information of any parents. This is
  * is implemented via the CFGMR3SetRestrictedRoot() API.
  *
- * Data validation out over the basic primitives is left to the caller. The
- * caller is in a better position to know the proper validation rules of the
- * individual properties.
+ * Data validation beyond the basic primitives is left to the caller. The caller
+ * is in a better position to know the proper validation rules of the individual
+ * properties.
  *
  * @see grp_cfgm
  *

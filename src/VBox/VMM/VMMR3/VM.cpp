@@ -513,13 +513,13 @@ static int vmR3CreateUVM(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods, PUV
                     /*
                      * Init fundamental (sub-)components - STAM, MMR3Heap and PDMLdr.
                      */
-                    rc = STAMR3InitUVM(pUVM);
+                    rc = PDMR3InitUVM(pUVM);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = MMR3InitUVM(pUVM);
+                        rc = STAMR3InitUVM(pUVM);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = PDMR3InitUVM(pUVM);
+                            rc = MMR3InitUVM(pUVM);
                             if (RT_SUCCESS(rc))
                             {
                                 /*
@@ -527,8 +527,8 @@ static int vmR3CreateUVM(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods, PUV
                                  */
                                 for (i = 0; i < cCpus; i++)
                                 {
-                                    rc = RTThreadCreateF(&pUVM->aCpus[i].vm.s.ThreadEMT, vmR3EmulationThread, &pUVM->aCpus[i], _1M,
-                                                         RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE,
+                                    rc = RTThreadCreateF(&pUVM->aCpus[i].vm.s.ThreadEMT, vmR3EmulationThread, &pUVM->aCpus[i],
+                                                         _1M, RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE,
                                                          cCpus > 1 ? "EMT-%u" : "EMT", i);
                                     if (RT_FAILURE(rc))
                                         break;
@@ -547,11 +547,11 @@ static int vmR3CreateUVM(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods, PUV
                                 {
                                     /** @todo rainy day: terminate the EMTs. */
                                 }
-                                PDMR3TermUVM(pUVM);
+                                MMR3TermUVM(pUVM);
                             }
-                            MMR3TermUVM(pUVM);
+                            STAMR3TermUVM(pUVM);
                         }
-                        STAMR3TermUVM(pUVM);
+                        PDMR3TermUVM(pUVM);
                     }
                     RTCritSectDelete(&pUVM->vm.s.AtErrorCritSect);
                 }

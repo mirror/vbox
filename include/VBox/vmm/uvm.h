@@ -133,7 +133,7 @@ typedef struct UVM
 #ifdef ___STAMInternal_h
         struct STAMUSERPERVM    s;
 #endif
-        uint8_t                 padding[6624];
+        uint8_t                 padding[6880];
     } stam;
 
     /** The DBGF data. */
