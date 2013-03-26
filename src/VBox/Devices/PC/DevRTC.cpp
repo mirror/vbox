@@ -349,6 +349,12 @@ PDMBOTHCBDECL(int) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     if ((Port & 1) == 0)
     {
         pThis->cmos_index[bank] = (u32 & 0x7f) + (bank * CMOS_BANK_SIZE);
+
+        /* HACK ALERT! Attempt to trigger VM_FF_TIMER and/or VM_FF_TM_VIRTUAL_SYNC
+           for forcing the pSecondTimer2 timer to run be run and clear UIP in
+           a timely fashion. */
+        if (u32 == RTC_REG_A)
+            TMTimerGet(pThis->CTX_SUFF(pSecondTimer));
     }
     else
     {
