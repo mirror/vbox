@@ -205,7 +205,7 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
             msgCenter().notifyAboutExtPackInstalled(strPackName, pParent);
         else
         {
-            msgCenter().showModalProgressDialog(progress, tr("Extensions"));
+            msgCenter().showModalProgressDialog(progress, tr("Extensions"), "", pParent);
             if (!progress.GetCanceled())
             {
                 if (progress.isOk() && progress.GetResultCode() == 0)
@@ -424,7 +424,7 @@ void UIGlobalSettingsExtension::sltRemovePackage()
                 bool fOk = true;
                 if (!progress.isNull())
                 {
-                    msgCenter().showModalProgressDialog(progress, tr("Extensions"));
+                    msgCenter().showModalProgressDialog(progress, tr("Extensions"), "", window());
                     fOk = progress.isOk() && progress.GetResultCode() == 0;
                 }
                 if (fOk)

@@ -146,7 +146,7 @@ bool UIApplianceImportEditorWidget::import()
         if (fResult)
         {
             /* Show some progress, so the user know whats going on */
-            msgCenter().showModalProgressDialog(progress, tr("Importing Appliance ..."), ":/progress_import_90px.png", this, true);
+            msgCenter().showModalProgressDialog(progress, tr("Importing Appliance ..."), ":/progress_import_90px.png", this);
             if (progress.GetCanceled())
                 return false;
             if (!progress.isOk() || progress.GetResultCode() != 0)

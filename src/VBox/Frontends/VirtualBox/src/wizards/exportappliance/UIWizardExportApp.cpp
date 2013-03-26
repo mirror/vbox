@@ -143,7 +143,7 @@ bool UIWizardExportApp::exportVMs(CAppliance &appliance)
     {
         /* Show some progress, so the user know whats going on: */
         msgCenter().showModalProgressDialog(progress, QApplication::translate("UIWizardExportApp", "Exporting Appliance ..."),
-                                            ":/progress_export_90px.png", this, true);
+                                            ":/progress_export_90px.png", this);
         if (progress.GetCanceled())
             return false;
         if (!progress.isOk() || progress.GetResultCode() != 0)

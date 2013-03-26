@@ -415,7 +415,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                             if (console.isOk())
                             {
                                 /* Show the saving progress dialog: */
-                                msgCenter().showModalProgressDialog(progress, m.GetName(), ":/progress_state_save_90px.png", this, true);
+                                msgCenter().showModalProgressDialog(progress, m.GetName(), ":/progress_state_save_90px.png", this);
                                 if (progress.GetResultCode() == 0)
                                     fSuccess = true;
                                 else
@@ -448,7 +448,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                             if (console.isOk())
                             {
                                 /* Show the power down progress: */
-                                msgCenter().showModalProgressDialog(progress, m.GetName(), ":/progress_poweroff_90px.png", this, true);
+                                msgCenter().showModalProgressDialog(progress, m.GetName(), ":/progress_poweroff_90px.png", this);
                                 if (progress.GetResultCode() == 0)
                                     fSuccess = true;
                                 else
@@ -474,7 +474,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                                     if (console.isOk())
                                     {
                                         /* Show the snapshot discard progress: */
-                                        msgCenter().showModalProgressDialog(progress, m.GetName(), ":/progress_snapshot_discard_90px.png", this, true);
+                                        msgCenter().showModalProgressDialog(progress, m.GetName(), ":/progress_snapshot_discard_90px.png", this);
                                         if (progress.GetResultCode() != 0)
                                             msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
                                     }

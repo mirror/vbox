@@ -159,7 +159,7 @@ public:
 
     bool showModalProgressDialog(CProgress &progress, const QString &strTitle,
                                  const QString &strImage = "", QWidget *pParent = 0,
-                                 bool fSheetOnDarwin = false, int cMinDuration = 2000);
+                                 int cMinDuration = 2000);
 
     QWidget* mainWindowShown() const;
     QWidget* mainMachineWindowShown() const;

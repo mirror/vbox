@@ -96,7 +96,7 @@ Qt::DropAction UIDnDHandler::dragHGDrop(CGuest &guest, ulong screenId, int x, in
             if (    guest.isOk()
                 && !progress.isNull())
             {
-                msgCenter().showModalProgressDialog(progress, tr("Dropping data ..."), ":/progress_dnd_hg_90px.png", pParent,  true);
+                msgCenter().showModalProgressDialog(progress, tr("Dropping data ..."), ":/progress_dnd_hg_90px.png", pParent);
                 if (!progress.GetCanceled() && progress.isOk() && progress.GetResultCode() != 0)
                 {
                     msgCenter().cannotDropData(progress, pParent);
@@ -187,7 +187,7 @@ protected:
         if (    guest.isOk()
             && !progress.isNull())
         {
-            msgCenter().showModalProgressDialog(progress, tr("Dropping data ..."), ":/progress_dnd_gh_90px.png", m_pParent, true);
+            msgCenter().showModalProgressDialog(progress, tr("Dropping data ..."), ":/progress_dnd_gh_90px.png", m_pParent);
             if (!progress.GetCanceled() && progress.isOk() && progress.GetResultCode() != 0)
                 msgCenter().cannotDropData(progress, m_pParent);
             else if (!progress.GetCanceled())
