@@ -88,6 +88,9 @@ public:
 
     /* Common members: */
     void powerUp();
+    bool saveState();
+    bool shutDown();
+    bool powerOff(bool fIncludingDiscard, bool &fServerCrashed);
 
     /* Common getters: */
     CSession& session() { return m_session; }
