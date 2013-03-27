@@ -1674,7 +1674,8 @@ EOF
   echo "compiling the following source file:" >> $LOG
   cat $ODIR.tmp_src.c >> $LOG
   echo "using the following command line:" >> $LOG
-  echo "$CC -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.c -nostdinc -I$LINUX/include" >> $LOG
+  echo "$CC -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.c -nostdinc -I$LINUX/include " \
+      "-I$LINUX/include/generated/uapi" >> $LOG
   $CC -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.c -nostdinc -I$LINUX/include \
       -I$LINUX/include/generated/uapi >> $LOG 2>&1
   if [ $? -ne 0 ]; then
@@ -1890,7 +1891,7 @@ EOF
   fi
   for p in $PYTHONDIR; do
     for d in $SUPPYTHONLIBS; do
-      for b in lib64 lib/64 lib; do
+      for b in lib/x86_64-linux-gnu lib/i386-linux-gnu lib64 lib/64 lib; do
         echo "compiling the following source file:" >> $LOG
         cat $ODIR.tmp_src.cc >> $LOG
         echo "using the following command line:" >> $LOG

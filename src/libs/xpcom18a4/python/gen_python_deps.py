@@ -23,14 +23,18 @@ def checkPair(p, v,dllpre,dllsuff, bitness_magic):
     if not os.path.isfile(file):
         return None
 
-    lib = os.path.join(p, "lib", dllpre+"python"+v+dllsuff)
+    lib = os.path.join(p, "lib/i386-linux-gnu", dllpre+"python"+v+dllsuff)
+    if not os.path.isfile(lib):
+        lib = os.path.join(p, "lib", dllpre+"python"+v+dllsuff)
 
     if bitness_magic == 1:
         lib64 = os.path.join(p, "lib", "64", dllpre+"python"+v+dllsuff)
     elif bitness_magic == 2:
-        lib64 = os.path.join(p, "lib64", dllpre+"python"+v+dllsuff)
-        if not os.path.isfile(lib64):
-            lib64 = lib
+	lib64 = os.path.join(p, "lib/x86_64-linux-gnu", dllpre+"python"+v+dllsuff)
+	if not os.path.isfile(lib64):
+            lib64 = os.path.join(p, "lib64", dllpre+"python"+v+dllsuff)
+            if not os.path.isfile(lib64):
+                lib64 = lib
     else:
         lib64 = None
     return [os.path.join(p, "include", "python"+v),
