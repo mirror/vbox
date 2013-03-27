@@ -261,6 +261,7 @@ void
 crServerInit(int argc, char *argv[])
 {
     int i;
+    const char*env;
     char *mothership = NULL;
     CRMuralInfo *defaultMural;
     int rc = VBoxVrInit();
@@ -359,6 +360,15 @@ crServerInit(int argc, char *argv[])
     VBoxVrListInit(&cr_server.RootVr);
     crMemset(&cr_server.RootVrCurPoint, 0, sizeof (cr_server.RootVrCurPoint));
 
+    env = crGetenv("CR_SERVER_BFB");
+    if (env)
+    {
+        cr_server.fBlitterMode = env[0] - '0';
+    }
+    else
+    {
+        cr_server.fBlitterMode = CR_SERVER_BFB_DISABLED;
+    }
     crMemset(&cr_server.Blitter, 0, sizeof (cr_server.Blitter));
 
     crServerInitDispatch();
@@ -382,7 +392,7 @@ void crVBoxServerTearDown(void)
 GLboolean crVBoxServerInit(void)
 {
     CRMuralInfo *defaultMural;
-
+    const char*env;
     int rc = VBoxVrInit();
     if (!RT_SUCCESS(rc))
     {
@@ -450,6 +460,15 @@ GLboolean crVBoxServerInit(void)
     VBoxVrListInit(&cr_server.RootVr);
     crMemset(&cr_server.RootVrCurPoint, 0, sizeof (cr_server.RootVrCurPoint));
 
+    env = crGetenv("CR_SERVER_BFB");
+    if (env)
+    {
+        cr_server.fBlitterMode = env[0] - '0';
+    }
+    else
+    {
+        cr_server.fBlitterMode = CR_SERVER_BFB_DISABLED;
+    }
     crMemset(&cr_server.Blitter, 0, sizeof (cr_server.Blitter));
 
     crServerSetVBoxConfigurationHGCM();

@@ -1079,10 +1079,6 @@ crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint 
             dstY0 = dstY1;
             dstY1 = tmp;
         }
-        else
-        {
-            fTryBlitter = true;
-        }
     }
 
     if (srcX0 > srcX1)
@@ -1097,21 +1093,19 @@ crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint 
             dstX0 = dstX1;
             dstX1 = tmp;
         }
-        else
-        {
-            fTryBlitter = true;
-        }
     }
 
-    /* @todo: enable for problematic platforms */
-#if 0
+    if (cr_server.fBlitterMode)
+    {
+        fTryBlitter = true;
+    }
+
     if (fTryBlitter)
     {
         int rc = crServerVBoxBlitterBlitCurrentCtx(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
         if (RT_SUCCESS(rc))
             goto my_exit;
     }
-#endif
 
     if (ctx->viewport.scissorTest)
         cr_server.head_spu->dispatch_table.Disable(GL_SCISSOR_TEST);

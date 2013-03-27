@@ -264,6 +264,12 @@ void* CrHlpGetTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLuint idPB
 void CrHlpPutTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLenum enmFormat, void *pvData);
 
 /* */
+/* BFB (BlitFramebuffer Blitter) flags
+ * so far only CR_SERVER_BFB_ON_ALWAIS is supported and is alwais used if any flag is set */
+#define CR_SERVER_BFB_DISABLED 0
+#define CR_SERVER_BFB_ON_INVERTED_BLIT 1
+#define CR_SERVER_BFB_ON_STRAIGHT_BLIT 2
+#define CR_SERVER_BFB_ON_ALWAIS (CR_SERVER_BFB_ON_INVERTED_BLIT | CR_SERVER_BFB_ON_STRAIGHT_BLIT)
 
 typedef struct {
     unsigned short tcpip_port;
@@ -321,6 +327,9 @@ typedef struct {
      * we deal with the global RootVr data directly */
     RTPOINT RootVrCurPoint;
 
+    /* blitter so far used for working around host drivers BlitFramebuffer bugs
+     * by implementing */
+    uint32_t fBlitterMode;
     CR_BLITTER Blitter;
 
     /** configuration options */
