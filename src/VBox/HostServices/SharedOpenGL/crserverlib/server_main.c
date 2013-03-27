@@ -157,6 +157,11 @@ static void crServerTearDown( void )
     cr_server.currentNativeWindow = 0;
     cr_server.currentMural = NULL;
 
+    if (CrBltIsInitialized(&cr_server.Blitter))
+    {
+        CrBltTerm(&cr_server.Blitter);
+    }
+
     /* sync our state with renderspu,
      * do it before mural & context deletion to avoid deleting currently set murals/contexts*/
     cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
