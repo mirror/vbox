@@ -229,6 +229,21 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
     unsigned   cDiffs = 0;
     unsigned   idDiff = 0; /* Diff ID counter for the filename */
 
+    /* Delete all images from a previous run. */
+    RTFileDelete(pTest->pcszBaseImage);
+    for (unsigned i = 0; i < pTest->cIterations; i++)
+    {
+        char *pszDiffFilename = NULL;
+
+        rc = RTStrAPrintf(&pszDiffFilename, "tstVDSnapDiff%u.%s", i, pTest->pcszDiffSuff);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTFileExists(pszDiffFilename))
+                RTFileDelete(pszDiffFilename);
+            RTStrFree(pszDiffFilename);
+        }
+    }
+
     /* Create the virtual disk test data */
     pbTestPattern = (uint8_t *)RTMemAlloc(pTest->cbTestPattern);
 
