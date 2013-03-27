@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,10 +19,12 @@
 #ifndef __UIVMCloseDialog_h__
 #define __UIVMCloseDialog_h__
 
-#include "UIVMCloseDialog.gen.h"
-#include "QIWithRetranslateUI.h"
+/* GUI includes: */
 #include "QIDialog.h"
+#include "QIWithRetranslateUI.h"
+#include "UIVMCloseDialog.gen.h"
 
+/* QIDialog extension to handle Runtime UI close-event: */
 class UIVMCloseDialog : public QIWithRetranslateUI<QIDialog>,
                         public Ui::UIVMCloseDialog
 {
@@ -30,11 +32,16 @@ class UIVMCloseDialog : public QIWithRetranslateUI<QIDialog>,
 
 public:
 
+    /* Constructor: */
     UIVMCloseDialog(QWidget *pParent);
 
-protected:
+private:
 
+    /* Helper: Translate stuff: */
     void retranslateUi();
+
+    /* Handler: Polish-event stuff: */
+    void polishEvent(QShowEvent *pEvent);
 };
 
 #endif // __UIVMCloseDialog_h__
