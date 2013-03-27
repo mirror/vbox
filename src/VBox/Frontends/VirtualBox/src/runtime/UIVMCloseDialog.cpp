@@ -246,7 +246,11 @@ void UIVMCloseDialog::prepare()
                     /* Prepare 'discard' check-box: */
                     m_pDiscardCheckBox = new QCheckBox(this);
                     /* Configure layout: */
+#ifdef Q_WS_MAC
                     pChoiceLayout->setSpacing(15);
+#else /* Q_WS_MAC */
+                    pChoiceLayout->setSpacing(6);
+#endif /* !Q_WS_MAC */
                     pChoiceLayout->setContentsMargins(0, 0, 0, 0);
                     pChoiceLayout->addWidget(m_pSaveIcon, 0, 0);
                     pChoiceLayout->addWidget(m_pSaveRadio, 0, 1);
@@ -257,7 +261,11 @@ void UIVMCloseDialog::prepare()
                     pChoiceLayout->addWidget(m_pDiscardCheckBox, 3, 1);
                 }
                 /* Configure layout: */
+#ifdef Q_WS_MAC
                 pTopRightLayout->setSpacing(15);
+#else /* Q_WS_MAC */
+                pTopRightLayout->setSpacing(6);
+#endif /* !Q_WS_MAC */
                 pTopRightLayout->setContentsMargins(0, 0, 0, 0);
                 pTopRightLayout->addWidget(m_pLabel);
                 pTopRightLayout->addItem(pChoiceLayout);
@@ -268,9 +276,10 @@ void UIVMCloseDialog::prepare()
             pTopLayout->addItem(pTopLeftLayout);
             pTopLayout->addItem(pTopRightLayout);
         }
-        /* Button-box: */
+        /* Prepare button-box: */
         QIDialogButtonBox *pButtonBox = new QIDialogButtonBox(this);
         {
+            /* Configure button-box: */
             pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Help | QDialogButtonBox::NoButton | QDialogButtonBox::Ok);
             connect(pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
             connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
@@ -278,7 +287,9 @@ void UIVMCloseDialog::prepare()
         }
         /* Configure layout: */
         pMainLayout->setSpacing(20);
+#ifdef Q_WS_MAC
         pMainLayout->setContentsMargins(40, 20, 40, 20);
+#endif /* Q_WS_MAC */
         pMainLayout->addItem(pTopLayout);
         pMainLayout->addWidget(pButtonBox);
     }
