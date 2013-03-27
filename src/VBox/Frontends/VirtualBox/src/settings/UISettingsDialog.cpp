@@ -291,12 +291,12 @@ void UISettingsDialog::retranslateUi()
 
 void UISettingsDialog::setDialogType(SettingsDialogType settingsDialogType)
 {
+    /* Remember new dialog-type: */
     m_dialogType = settingsDialogType;
-    for (int iWidgetNumber = 0; iWidgetNumber < m_pStack->count(); ++iWidgetNumber)
-    {
-        UISettingsPage *pPage = static_cast<UISettingsPage*>(m_pStack->widget(iWidgetNumber));
+
+    /* Propagate it to settings-page(s): */
+    foreach (UISettingsPage *pPage, m_pSelector->settingPages())
         pPage->setDialogType(dialogType());
-    }
 }
 
 QString UISettingsDialog::titleExtension() const
@@ -349,28 +349,18 @@ void UISettingsDialog::addItem(const QString &strBigIcon,
                                UISettingsPage *pSettingsPage /* = 0 */,
                                int iParentId /* = -1 */)
 {
-    QWidget *pPage = m_pSelector->addItem(strBigIcon, strBigIconDisabled,
-                                          strSmallIcon, strSmallIconDisabled,
-                                          cId, strLink, pSettingsPage, iParentId);
-    if (pPage)
+    /* Add new selector item: */
+    if (QWidget *pPage = m_pSelector->addItem(strBigIcon, strBigIconDisabled,
+                                              strSmallIcon, strSmallIconDisabled,
+                                              cId, strLink, pSettingsPage, iParentId))
     {
-#ifdef Q_WS_MAC
-        /* On OSX we add a stretch to the vertical end to make sure the page is
-         * always top aligned. */
-        QWidget *pW = new QWidget();
-        pW->setContentsMargins(0, 0, 0, 0);
-        QVBoxLayout *pBox = new QVBoxLayout(pW);
-        VBoxGlobal::setLayoutMargin(pBox, 0);
-        pBox->addWidget(pPage);
-        pBox->addStretch(0);
-        m_pages[cId] = m_pStack->addWidget(pW);
-#else /* Q_WS_MAC */
+        /* Add stack-widget page if created: */
         m_pages[cId] = m_pStack->addWidget(pPage);
-#endif /* !Q_WS_MAC */
-        /* Update process bar: */
+        /* Update process-bar: */
         m_pProcessBar->setMinimum(0);
         m_pProcessBar->setMaximum(m_pStack->count());
     }
+    /* Assign validator if necessary: */
     if (pSettingsPage)
         assignValidator(pSettingsPage);
 }
