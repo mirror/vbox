@@ -278,6 +278,11 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
             LogRel(("HM:    " #featflag " *must* be set\n")); \
     } while(0)
 
+#define VMX_REPORT_CAPABILITY(msrcaps, cap) \
+    do { \
+        if ((msrcaps) & (cap)) \
+            LogRel(("HM:    " #cap "\n")); \
+    } while(0)
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -926,58 +931,33 @@ static int hmR3InitFinalizeR0(PVM pVM)
 
             if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps)
             {
-                LogRel(("HM: MSR_IA32_VMX_EPT_VPID_CAP     = %RX64\n", pVM->hm.s.vmx.msr.vmx_ept_vpid_caps));
-
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_RWX_W_ONLY)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_RWX_W_ONLY\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_RWX_WX_ONLY)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_RWX_WX_ONLY\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_GAW_21_BITS)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_GAW_21_BITS\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_GAW_30_BITS)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_GAW_30_BITS\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_GAW_39_BITS)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_GAW_39_BITS\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_GAW_48_BITS)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_GAW_48_BITS\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_GAW_57_BITS)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_GAW_57_BITS\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_WC)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_EMT_WC\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_WT)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_EMT_WT\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_WP)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_EMT_WP\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_SP_21_BITS)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_SP_21_BITS\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_SP_30_BITS)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_SP_30_BITS\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_SP_39_BITS)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_SP_39_BITS\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_SP_48_BITS)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_SP_48_BITS\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_INVEPT\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_INVVPID\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS\n"));
-                if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
-                    LogRel(("HM:    MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS\n"));
+                val = pVM->hm.s.vmx.msr.vmx_ept_vpid_caps;
+                LogRel(("HM: MSR_IA32_VMX_EPT_VPID_CAP     = %RX64\n", val));
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_RWX_W_ONLY);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_RWX_WX_ONLY);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_GAW_21_BITS);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_GAW_30_BITS);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_GAW_39_BITS);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_GAW_48_BITS);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_GAW_57_BITS);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_EMT_WC);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_EMT_WT);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_EMT_WP);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_SP_21_BITS);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_SP_30_BITS);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_SP_39_BITS);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_SP_48_BITS);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_INVEPT);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_INVVPID);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS);
+                VMX_REPORT_CAPABILITY(val, MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS);
             }
 
             LogRel(("HM: MSR_IA32_VMX_MISC             = %RX64\n", pVM->hm.s.vmx.msr.vmx_misc));
