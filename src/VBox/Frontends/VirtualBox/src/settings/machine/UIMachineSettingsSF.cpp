@@ -186,13 +186,13 @@ UIMachineSettingsSF::UIMachineSettingsSF()
     mDelAction->setIcon(UIIconPool::iconSet(":/remove_shared_folder_16px.png",
                                             ":/remove_shared_folder_disabled_16px.png"));
 
-    /* Prepare toolbar */
-    mTbFolders->setUsesTextLabel (false);
-    mTbFolders->setIconSize (QSize (16, 16));
-    mTbFolders->setOrientation (Qt::Vertical);
-    mTbFolders->addAction (mNewAction);
-    mTbFolders->addAction (mEdtAction);
-    mTbFolders->addAction (mDelAction);
+    /* Prepare tool-bar: */
+    m_pFoldersToolBar->setUsesTextLabel(false);
+    m_pFoldersToolBar->setIconSize(QSize(16, 16));
+    m_pFoldersToolBar->setOrientation(Qt::Vertical);
+    m_pFoldersToolBar->addAction(mNewAction);
+    m_pFoldersToolBar->addAction(mEdtAction);
+    m_pFoldersToolBar->addAction(mDelAction);
 
     /* Setup connections */
     mTwFolders->header()->setMovable (false);
@@ -699,8 +699,8 @@ void UIMachineSettingsSF::polishPage()
 {
     /* Update widgets availability: */
     mNameSeparator->setEnabled(isMachineInValidMode());
-    mTwFolders->setEnabled(isMachineInValidMode());
-    mTbFolders->setEnabled(isMachineInValidMode());
+    m_pFoldersToolBar->setEnabled(isMachineInValidMode());
+    m_pFoldersToolBar->setEnabled(isMachineInValidMode());
 
     /* Update root items visibility: */
     updateRootItemsVisibility();
