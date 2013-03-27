@@ -941,7 +941,7 @@ typedef union
 /** VM Exit as soon as RFLAGS.IF=1 and no blocking is active. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT        RT_BIT(2)
 /** Use timestamp counter offset. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET             RT_BIT(3)
+#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TSC_OFFSETTING     RT_BIT(3)
 /** VM Exit when executing the HLT instruction. */
 #define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT               RT_BIT(7)
 /** VM Exit when executing the INVLPG instruction. */
