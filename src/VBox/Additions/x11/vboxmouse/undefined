@@ -43,6 +43,7 @@ memalign
 memchr
 memcmp
 memcpy
+__memcpy_chk
 memmove
 memset
 miPointerCurrentScreen
@@ -64,6 +65,7 @@ putenv
 read
 realloc
 realpath
+__realpath_chk
 rename
 screenInfo
 setenv
