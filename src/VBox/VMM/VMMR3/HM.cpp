@@ -846,7 +846,8 @@ static int hmR3InitFinalizeR0(PVM pVM)
             LogRel(("HM: VMCS size                     = %x\n", MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(pVM->hm.s.vmx.msr.vmx_basic_info)));
             LogRel(("HM: VMCS physical address limit   = %s\n", MSR_IA32_VMX_BASIC_INFO_VMCS_PHYS_WIDTH(pVM->hm.s.vmx.msr.vmx_basic_info) ? "< 4 GB" : "None"));
             LogRel(("HM: VMCS memory type              = %x\n", MSR_IA32_VMX_BASIC_INFO_VMCS_MEM_TYPE(pVM->hm.s.vmx.msr.vmx_basic_info)));
-            LogRel(("HM: Dual monitor treatment        = %d\n", MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(pVM->hm.s.vmx.msr.vmx_basic_info)));
+            LogRel(("HM: Dual-monitor treatment        = %d\n", MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(pVM->hm.s.vmx.msr.vmx_basic_info)));
+            LogRel(("HM: Max resume loops              = %RX32\n", pVM->hm.s.cMaxResumeLoops));
 
             LogRel(("HM: MSR_IA32_VMX_PINBASED_CTLS    = %RX64\n", pVM->hm.s.vmx.msr.vmx_pin_ctls.u));
             val = pVM->hm.s.vmx.msr.vmx_pin_ctls.n.allowed1;
@@ -981,32 +982,33 @@ static int hmR3InitFinalizeR0(PVM pVM)
 
             LogRel(("HM: MSR_IA32_VMX_MISC             = %RX64\n", pVM->hm.s.vmx.msr.vmx_misc));
             if (MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(pVM->hm.s.vmx.msr.vmx_misc) == pVM->hm.s.vmx.cPreemptTimerShift)
-                LogRel(("HM:    MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT %x\n", MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(pVM->hm.s.vmx.msr.vmx_misc)));
+                LogRel(("HM: MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT = %x\n", MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(pVM->hm.s.vmx.msr.vmx_misc)));
             else
             {
-                LogRel(("HM:    MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT %x - erratum detected, using %x instead\n",
+                LogRel(("HM: MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT = %x - erratum detected, using %x instead\n",
                         MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(pVM->hm.s.vmx.msr.vmx_misc), pVM->hm.s.vmx.cPreemptTimerShift));
             }
-            LogRel(("HM:    MSR_IA32_VMX_MISC_ACTIVITY_STATES %x\n", MSR_IA32_VMX_MISC_ACTIVITY_STATES(pVM->hm.s.vmx.msr.vmx_misc)));
-            LogRel(("HM:    MSR_IA32_VMX_MISC_CR3_TARGET      %x\n", MSR_IA32_VMX_MISC_CR3_TARGET(pVM->hm.s.vmx.msr.vmx_misc)));
-            LogRel(("HM:    MSR_IA32_VMX_MISC_MAX_MSR         %x\n", MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc)));
-            LogRel(("HM:    MSR_IA32_VMX_MISC_MSEG_ID         %x\n", MSR_IA32_VMX_MISC_MSEG_ID(pVM->hm.s.vmx.msr.vmx_misc)));
 
-            LogRel(("HM: MSR_IA32_VMX_CR0_FIXED0       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr0_fixed0));
-            LogRel(("HM: MSR_IA32_VMX_CR0_FIXED1       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr0_fixed1));
-            LogRel(("HM: MSR_IA32_VMX_CR4_FIXED0       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr4_fixed0));
-            LogRel(("HM: MSR_IA32_VMX_CR4_FIXED1       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr4_fixed1));
-            LogRel(("HM: MSR_IA32_VMX_VMCS_ENUM        = %RX64\n", pVM->hm.s.vmx.msr.vmx_vmcs_enum));
+            LogRel(("HM: MSR_IA32_VMX_MISC_ACTIVITY_STATES = %x\n", MSR_IA32_VMX_MISC_ACTIVITY_STATES(pVM->hm.s.vmx.msr.vmx_misc)));
+            LogRel(("HM: MSR_IA32_VMX_MISC_CR3_TARGET      = %x\n", MSR_IA32_VMX_MISC_CR3_TARGET(pVM->hm.s.vmx.msr.vmx_misc)));
+            LogRel(("HM: MSR_IA32_VMX_MISC_MAX_MSR         = %x\n", MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc)));
+            LogRel(("HM: MSR_IA32_VMX_MISC_MSEG_ID         = %x\n", MSR_IA32_VMX_MISC_MSEG_ID(pVM->hm.s.vmx.msr.vmx_misc)));
 
-            LogRel(("HM: APIC-access page physaddr     = %RHp\n", pVM->hm.s.vmx.HCPhysApicAccess));
+            LogRel(("HM: MSR_IA32_VMX_CR0_FIXED0           = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr0_fixed0));
+            LogRel(("HM: MSR_IA32_VMX_CR0_FIXED1           = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr0_fixed1));
+            LogRel(("HM: MSR_IA32_VMX_CR4_FIXED0           = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr4_fixed0));
+            LogRel(("HM: MSR_IA32_VMX_CR4_FIXED1           = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr4_fixed1));
+            LogRel(("HM: MSR_IA32_VMX_VMCS_ENUM            = %RX64\n", pVM->hm.s.vmx.msr.vmx_vmcs_enum));
+
+            LogRel(("HM: APIC-access page physaddr         = %RHp\n", pVM->hm.s.vmx.HCPhysApicAccess));
 
             /* Paranoia */
             AssertRelease(MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc) >= 512);
 
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
             {
-                LogRel(("HM: VCPU%d: MSR bitmap physaddr    = %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
-                LogRel(("HM: VCPU%d: VMCS physaddr          = %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysVmcs));
+                LogRel(("HM: VCPU%3d: MSR bitmap physaddr      = %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
+                LogRel(("HM: VCPU%3d: VMCS physaddr            = %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysVmcs));
             }
 
             if (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
@@ -1071,11 +1073,11 @@ static int hmR3InitFinalizeR0(PVM pVM)
                     /* We convert it here every time as pci regions could be reconfigured. */
                     rc = PDMVmmDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pRealModeTSS, &GCPhys);
                     AssertRC(rc);
-                    LogRel(("HM: Real Mode TSS guest physaddr  = %RGp\n", GCPhys));
+                    LogRel(("HM: Real Mode TSS guest physaddr      = %RGp\n", GCPhys));
 
                     rc = PDMVmmDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
                     AssertRC(rc);
-                    LogRel(("HM: Non-Paging Mode EPT CR3       = %RGp\n", GCPhys));
+                    LogRel(("HM: Non-Paging Mode EPT CR3           = %RGp\n", GCPhys));
                 }
                 else
                 {
