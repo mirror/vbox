@@ -866,7 +866,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
             val = pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1;
             zap = pVM->hm.s.vmx.msr.vmx_proc_ctls.n.disallowed0;
             VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT);
-            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_TSC_OFFSET);
+            VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TSC_OFFSETTING);
             VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT);
             VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT);
             VMX_REPORT_FEATURE(val, zap, VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT);
