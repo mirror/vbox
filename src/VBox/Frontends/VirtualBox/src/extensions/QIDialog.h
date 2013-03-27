@@ -50,6 +50,9 @@ protected:
     /* Handler: Show-event stuff: */
     void showEvent(QShowEvent *pEvent);
 
+    /* Handler: Polish-event stuff: */
+    virtual void polishEvent(QShowEvent *pEvent);
+
 private:
 
     /* Variables: */
