@@ -1068,7 +1068,8 @@ crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint 
 
     if (srcY0 > srcY1)
     {
-        if (dstY0 > dstY1)
+        /* work around Intel driver bug on Linux host  */
+        if (1 || dstY0 > dstY1)
         {
             /* use srcY1 < srcY2 && dstY1 < dstY2 whenever possible to avoid GPU driver bugs */
             int32_t tmp = srcY0;
