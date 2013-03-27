@@ -279,6 +279,16 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
         } \
     } while (0)
 
+#define CHECK_BREAK(str) \
+    do \
+    { \
+        RTPrintf("%s rc=%Rrc\n", str, rc); \
+        if (RT_FAILURE(rc)) \
+        { \
+            break; \
+        } \
+    } while (0)
+
     /* Create error interface. */
     /* Create error interface. */
     VDIfError.pfnError = tstVDError;
@@ -307,7 +317,7 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
     {
         /* Write */
         rc = tstVDSnapWrite(pVD, paDiskSeg, cDiskSegments, cbDisk, fInit);
-        CHECK("tstVDSnapWrite()");
+        CHECK_BREAK("tstVDSnapWrite()");
 
         fInit = false;
 
@@ -328,7 +338,7 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
             rc = VDCreateDiff(pVD, pTest->pcszBackend, pszDiffFilename,
                               VD_IMAGE_FLAGS_NONE, "Test diff image", NULL, NULL,
                               VD_OPEN_FLAGS_NORMAL, NULL, NULL);
-            CHECK("VDCreateDiff()");
+            CHECK_BREAK("VDCreateDiff()");
 
             RTStrFree(pszDiffFilename);
             VDDumpImages(pVD);
@@ -348,7 +358,7 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
                 rc = VDMerge(pVD, uStartMerge, uEndMerge, NULL);
             else
                 rc = VDMerge(pVD, uEndMerge, uStartMerge, NULL);
-            CHECK("VDMerge()");
+            CHECK_BREAK("VDMerge()");
 
             cDiffs -= uEndMerge - uStartMerge;
 
@@ -366,7 +376,7 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
 
             /* Now compare the result with our test pattern */
             rc = tstVDSnapReadVerify(pVD, paDiskSeg, cDiskSegments, cbDisk);
-            CHECK("tstVDSnapReadVerify()");
+            CHECK_BREAK("tstVDSnapReadVerify()");
         }
         cIteration++;
     }
@@ -387,7 +397,7 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
         RTStrFree(pszDiffFilename);
     }
 #undef CHECK
-    return 0;
+    return rc;
 }
 
 int main(int argc, char *argv[])
