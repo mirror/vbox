@@ -13,6 +13,7 @@
 #include "cr_protocol.h"
 #include "cr_glstate.h"
 #include "cr_vreg.h"
+#include "cr_blitter.h"
 #include "spu_dispatch_table.h"
 
 #include "state/cr_currentpointers.h"
@@ -319,6 +320,8 @@ typedef struct {
      * note that since window attributes modifications is performed in HGCM thread only and thus is serialized,
      * we deal with the global RootVr data directly */
     RTPOINT RootVrCurPoint;
+
+    CR_BLITTER Blitter;
 
     /** configuration options */
     /*@{*/

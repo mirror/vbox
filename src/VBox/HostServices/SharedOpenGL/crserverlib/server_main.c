@@ -354,6 +354,8 @@ crServerInit(int argc, char *argv[])
     VBoxVrListInit(&cr_server.RootVr);
     crMemset(&cr_server.RootVrCurPoint, 0, sizeof (cr_server.RootVrCurPoint));
 
+    crMemset(&cr_server.Blitter, 0, sizeof (cr_server.Blitter));
+
     crServerInitDispatch();
     crStateDiffAPI( &(cr_server.head_spu->dispatch_table) );
 
@@ -442,6 +444,8 @@ GLboolean crVBoxServerInit(void)
     cr_server.fRootVrOn = GL_FALSE;
     VBoxVrListInit(&cr_server.RootVr);
     crMemset(&cr_server.RootVrCurPoint, 0, sizeof (cr_server.RootVrCurPoint));
+
+    crMemset(&cr_server.Blitter, 0, sizeof (cr_server.Blitter));
 
     crServerSetVBoxConfigurationHGCM();
 

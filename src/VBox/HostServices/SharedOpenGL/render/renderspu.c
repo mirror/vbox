@@ -682,7 +682,7 @@ void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pComp
                 DstRect.yTop = paDstRegions[i].yTop * scaleY;
                 DstRect.xRight = paDstRegions[i].xRight * scaleX;
                 DstRect.yBottom = paDstRegions[i].yBottom * scaleY;
-                CrBltBlitTexMural(pBlitter, &pEntry->Tex, &paSrcRegions[i], &DstRect, 1, CRBLT_F_LINEAR);
+                CrBltBlitTexMural(pBlitter, &pEntry->Tex, &paSrcRegions[i], &DstRect, 1, CRBLT_F_LINEAR | CRBLT_F_INVERT_YCOORDS);
             }
         }
         else
@@ -704,7 +704,7 @@ void renderspuVBoxCompositorBlit ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, P
         int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions);
         if (RT_SUCCESS(rc))
         {
-            CrBltBlitTexMural(pBlitter, &pEntry->Tex, paSrcRegions, paDstRegions, cRegions, CRBLT_F_LINEAR);
+            CrBltBlitTexMural(pBlitter, &pEntry->Tex, paSrcRegions, paDstRegions, cRegions, CRBLT_F_LINEAR | CRBLT_F_INVERT_YCOORDS);
         }
         else
         {
@@ -720,15 +720,15 @@ void renderspuVBoxPresentBlitterCleanup( WindowInfo *window )
 
     if (render_spu.blitterTable)
     {
-        CR_BLITTER_WINDOW * pBltInfo = CrBltMuralGetCurrent(window->pBlitter);
-        if (pBltInfo == &window->BltInfo)
+        const CR_BLITTER_WINDOW * pBltInfo = CrBltMuralGetCurrentInfo(window->pBlitter);
+        if (pBltInfo->Base.id == window->BltInfo.Base.id)
         {
             CrBltMuralSetCurrent(window->pBlitter, NULL);
         }
     }
     else
     {
-        CRASSERT(CrBltMuralGetCurrent(window->pBlitter) == &window->BltInfo);
+        CRASSERT(CrBltMuralGetCurrentInfo(window->pBlitter)->Base.id == window->BltInfo.Base.id);
         CrBltMuralSetCurrent(window->pBlitter, NULL);
         CrBltTerm(window->pBlitter);
     }

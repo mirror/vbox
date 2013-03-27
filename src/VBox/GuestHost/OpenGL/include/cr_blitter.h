@@ -53,11 +53,16 @@ typedef union CR_BLITTER_FLAGS
 
 struct CR_BLITTER;
 
-typedef DECLCALLBACK(int) FNCRBLT_BLITTER(struct CR_BLITTER *pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const RTRECTSIZE *pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags);
+typedef DECLCALLBACK(int) FNCRBLT_BLITTER(struct CR_BLITTER *pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const RTRECTSIZE *pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags);
 typedef FNCRBLT_BLITTER *PFNCRBLT_BLITTER;
 
-#define CRBLT_F_LINEAR    0x00000001
-#define CRBLT_F_OFFSCREEN 0x00000002
+#define CRBLT_F_LINEAR            0x00000001
+#define CRBLT_F_INVERT_SRC_YCOORDS 0x00000002
+#define CRBLT_F_INVERT_DST_YCOORDS 0x00000004
+#define CRBLT_F_INVERT_YCOORDS     (CRBLT_F_INVERT_SRC_YCOORDS | CRBLT_F_INVERT_DST_YCOORDS)
+
+#define CRBLT_FLAGS_FROM_FILTER(_f) ( ((_f) & GL_LINEAR) ? CRBLT_F_LINEAR : 0)
+#define CRBLT_FILTER_FROM_FLAGS(_f) (((_f) & CRBLT_F_LINEAR) ? GL_LINEAR : GL_NEAREST)
 
 typedef struct CR_BLITTER_SPUITEM
 {
@@ -84,15 +89,20 @@ typedef struct CR_BLITTER
     CR_BLITTER_BUFFER Verticies;
     CR_BLITTER_BUFFER Indicies;
     RTRECTSIZE CurrentSetSize;
-    CR_BLITTER_WINDOW *pCurrentMural;
+    CR_BLITTER_WINDOW CurrentMural;
     CR_BLITTER_CONTEXT CtxInfo;
-    CR_BLITTER_CONTEXT *pRestoreCtxInfo;
-    CR_BLITTER_WINDOW *pRestoreMural;
+    const CR_BLITTER_CONTEXT *pRestoreCtxInfo;
+    const CR_BLITTER_WINDOW *pRestoreMural;
     int32_t i32MakeCurrentUserData;
     SPUDispatchTable *pDispatch;
 } CR_BLITTER, *PCR_BLITTER;
 
-VBOXBLITTERDECL(int) CrBltInit(PCR_BLITTER pBlitter, CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, SPUDispatchTable *pDispatch);
+DECLINLINE(GLboolean) CrBltIsInitialized(PCR_BLITTER pBlitter)
+{
+    return !!pBlitter->pDispatch;
+}
+
+VBOXBLITTERDECL(int) CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, SPUDispatchTable *pDispatch);
 VBOXBLITTERDECL(void) CrBltTerm(PCR_BLITTER pBlitter);
 
 DECLINLINE(GLboolean) CrBltSupportsTexTex(PCR_BLITTER pBlitter)
@@ -115,16 +125,16 @@ DECLINLINE(void) CrBltSetMakeCurrentUserData(PCR_BLITTER pBlitter, int32_t i32Ma
     pBlitter->i32MakeCurrentUserData = i32MakeCurrentUserData;
 }
 
-VBOXBLITTERDECL(void) CrBltMuralSetCurrent(PCR_BLITTER pBlitter, CR_BLITTER_WINDOW *pMural);
-DECLINLINE(CR_BLITTER_WINDOW *) CrBltMuralGetCurrent(PCR_BLITTER pBlitter)
+VBOXBLITTERDECL(void) CrBltMuralSetCurrent(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural);
+DECLINLINE(const CR_BLITTER_WINDOW *) CrBltMuralGetCurrentInfo(PCR_BLITTER pBlitter)
 {
-    return pBlitter->pCurrentMural;
+    return &pBlitter->CurrentMural;
 }
 
 VBOXBLITTERDECL(void) CrBltLeave(PCR_BLITTER pBlitter);
-VBOXBLITTERDECL(int) CrBltEnter(PCR_BLITTER pBlitter, CR_BLITTER_CONTEXT *pRestoreCtxInfo, CR_BLITTER_WINDOW *pRestoreMural);
-VBOXBLITTERDECL(void) CrBltBlitTexMural(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags);
-VBOXBLITTERDECL(void) CrBltBlitTexTex(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *pSrcRect, VBOXVR_TEXTURE *pDst, const RTRECT *pDstRect, uint32_t cRects, uint32_t fFlags);
+VBOXBLITTERDECL(int) CrBltEnter(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, const CR_BLITTER_WINDOW *pRestoreMural);
+VBOXBLITTERDECL(void) CrBltBlitTexMural(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags);
+VBOXBLITTERDECL(void) CrBltBlitTexTex(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *pSrcRect, const VBOXVR_TEXTURE *pDst, const RTRECT *pDstRect, uint32_t cRects, uint32_t fFlags);
 VBOXBLITTERDECL(void) CrBltPresent(PCR_BLITTER pBlitter);
 /* */
 
