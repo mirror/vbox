@@ -100,13 +100,21 @@ int QIDialog::exec(bool fShow /* = true */)
     return resultCode;
 }
 
-void QIDialog::showEvent(QShowEvent * /* pEvent */)
+void QIDialog::showEvent(QShowEvent *pEvent)
 {
-    /* Polishing: */
+    /* Make sure we should polish dialog: */
     if (m_fPolished)
         return;
-    m_fPolished = true;
 
+    /* Call to polish-event: */
+    polishEvent(pEvent);
+
+    /* Mark dialog as polished: */
+    m_fPolished = true;
+}
+
+void QIDialog::polishEvent(QShowEvent*)
+{
     /* Make sure layout is polished: */
     adjustSize();
 #ifdef Q_WS_MAC
