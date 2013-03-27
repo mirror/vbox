@@ -311,94 +311,31 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
         /* Destroy the dialog early: */
         delete pCloseDlg;
 
-        /* Was dialog accepted? */
+        /* Was the dialog accepted? */
         if (dialogResult != UIVMCloseDialog::ResultCode_Cancel)
         {
-            /* Process decision: */
-            CConsole console = session().GetConsole();
             switch (dialogResult)
             {
                 case UIVMCloseDialog::ResultCode_Save:
                 {
-                    /* Prepare the saving progress: */
-                    CProgress progress = console.SaveState();
-                    fSuccess = console.isOk();
-                    if (fSuccess)
-                    {
-                        /* Show the saving progress dialog: */
-                        msgCenter().showModalProgressDialog(progress, machineCopy.GetName(), ":/progress_state_save_90px.png", this);
-                        fSuccess = progress.GetResultCode() == 0;
-                        if (fSuccess)
-                            fShutdownSession = true;
-                        else
-                            msgCenter().cannotSaveMachineState(progress);
-                    }
-                    else
-                        msgCenter().cannotSaveMachineState(console);
+                    fSuccess = uisession()->saveState();
+                    fShutdownSession = fSuccess;
                     break;
                 }
                 case UIVMCloseDialog::ResultCode_Shutdown:
                 {
-                    /* Unpause VM to let it grab the ACPI shutdown event: */
-                    fSuccess = uisession()->unpause();
+                    fSuccess = uisession()->shutDown();
                     if (fSuccess)
-                    {
-                        /* Prevent subsequent unpause request: */
                         fWasPaused = true;
-                        /* Signal ACPI shutdown (if there is no ACPI device, the operation will fail): */
-                        console.PowerButton();
-                        fSuccess = console.isOk();
-                        if (!fSuccess)
-                            msgCenter().cannotACPIShutdownMachine(console);
-                    }
                     break;
                 }
                 case UIVMCloseDialog::ResultCode_PowerOff:
                 case UIVMCloseDialog::ResultCode_PowerOff_With_Discarding:
                 {
-                    /* Prepare the power down progress: */
-                    CProgress progress = console.PowerDown();
-                    fSuccess = console.isOk();
-                    if (fSuccess)
-                    {
-                        /* Show the power down progress: */
-                        msgCenter().showModalProgressDialog(progress, machineCopy.GetName(), ":/progress_poweroff_90px.png", this);
-                        fSuccess = progress.GetResultCode() == 0;
-                        if (fSuccess)
-                        {
-                            /* Discard the current state if requested: */
-                            if (dialogResult == UIVMCloseDialog::ResultCode_PowerOff_With_Discarding)
-                            {
-                                /* Prepare the snapshot discard progress: */
-                                CSnapshot snapshot = machineCopy.GetCurrentSnapshot();
-                                CProgress progress = console.RestoreSnapshot(snapshot);
-                                fSuccess = console.isOk();
-                                if (fSuccess)
-                                {
-                                    /* Show the snapshot discard progress: */
-                                    msgCenter().showModalProgressDialog(progress, machineCopy.GetName(), ":/progress_snapshot_discard_90px.png", this);
-                                    fSuccess = progress.GetResultCode() == 0;
-                                    if (!fSuccess)
-                                        msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
-                                }
-                                else
-                                    msgCenter().cannotRestoreSnapshot(console, snapshot.GetName());
-                            }
-                            if (fSuccess)
-                                fShutdownSession = true;
-                        }
-                        else
-                            msgCenter().cannotStopMachine(progress);
-                    }
-                    else
-                    {
-                        /* This can happen if VBoxSVC is not running: */
-                        COMResult res(console);
-                        if (FAILED_DEAD_INTERFACE(res.rc()))
-                            fShutdownSession = true;
-                        else
-                            msgCenter().cannotStopMachine(console);
-                    }
+                    bool fServerCrashed = false;
+                    fSuccess = uisession()->powerOff(dialogResult == UIVMCloseDialog::ResultCode_PowerOff_With_Discarding,
+                                                     fServerCrashed);
+                    fShutdownSession = fSuccess || fServerCrashed;
                     break;
                 }
                 default:
