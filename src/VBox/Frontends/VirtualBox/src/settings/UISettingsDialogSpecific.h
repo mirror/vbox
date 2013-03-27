@@ -108,6 +108,7 @@ private slots:
 
     void sltMarkLoaded();
     void sltMarkSaved();
+    void sltSessionStateChanged(QString strMachineId, KSessionState sessionState);
     void sltMachineStateChanged(QString strMachineId, KMachineState machineState);
     void sltMachineDataChanged(QString strMachineId);
     void sltCategoryChanged(int cId);
@@ -119,8 +120,10 @@ private:
 
     bool isPageAvailable(int iPageId);
     bool isSettingsChanged();
+    void updateDialogType();
 
     QString m_strMachineId;
+    KSessionState m_sessionState;
     KMachineState m_machineState;
 
     CSession m_session;

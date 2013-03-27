@@ -574,8 +574,10 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
     /* Get corresponding machine (required to determine dialog type and page availability): */
     m_machine = vboxGlobal().virtualBox().FindMachine(m_strMachineId);
     AssertMsg(!m_machine.isNull(), ("Can't find corresponding machine!\n"));
-    /* Assign current dialog type: */
-    setDialogType(determineSettingsDialogType(m_machine.GetSessionState(), m_machine.GetState()));
+    m_sessionState = m_machine.GetSessionState();
+    m_machineState = m_machine.GetState();
+    /* Recalculate current dialog-type: */
+    updateDialogType();
 
     /* Creating settings pages: */
     for (int iPageIndex = VMSettingsPage_General; iPageIndex < VMSettingsPage_MAX; ++iPageIndex)
@@ -990,6 +992,8 @@ void UISettingsDialogMachine::sltMarkLoaded()
     }
 
     /* Make sure settings dialog will be updated on machine state/data changes: */
+    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)),
+            this, SLOT(sltSessionStateChanged(QString, KSessionState)));
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
             this, SLOT(sltMachineStateChanged(QString, KMachineState)));
     connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
@@ -1011,6 +1015,23 @@ void UISettingsDialogMachine::sltMarkSaved()
     }
 }
 
+void UISettingsDialogMachine::sltSessionStateChanged(QString strMachineId, KSessionState sessionState)
+{
+    /* Ignore if thats NOT our VM: */
+    if (strMachineId != m_strMachineId)
+        return;
+
+    /* Ignore if state was NOT actually changed: */
+    if (m_sessionState == sessionState)
+        return;
+
+    /* Update current session state: */
+    m_sessionState = sessionState;
+
+    /* Update dialog-type if necessary: */
+    updateDialogType();
+}
+
 void UISettingsDialogMachine::sltMachineStateChanged(QString strMachineId, KMachineState machineState)
 {
     /* Ignore if thats NOT our VM: */
@@ -1024,22 +1045,8 @@ void UISettingsDialogMachine::sltMachineStateChanged(QString strMachineId, KMach
     /* Update current machine state: */
     m_machineState = machineState;
 
-    /* Get new dialog type: */
-    SettingsDialogType newDialogType = determineSettingsDialogType(m_machine.GetSessionState(), m_machineState);
-
-    /* Ignore if dialog type was NOT actually changed: */
-    if (dialogType() == newDialogType)
-        return;
-
-    /* Should we show a warning about leaving 'offline' state? */
-    bool fShouldWe = dialogType() == SettingsDialogType_Offline;
-
-    /* Update current dialog type: */
-    setDialogType(newDialogType);
-
-    /* Show a warning about leaving 'offline' state if we should: */
-    if (isSettingsChanged() && fShouldWe)
-        msgCenter().warnAboutStateChange(this);
+    /* Update dialog-type if necessary: */
+    updateDialogType();
 }
 
 void UISettingsDialogMachine::sltMachineDataChanged(QString strMachineId)
@@ -1129,14 +1136,33 @@ bool UISettingsDialogMachine::isPageAvailable(int iPageId)
 bool UISettingsDialogMachine::isSettingsChanged()
 {
     bool fIsSettingsChanged = false;
-    for (int iWidgetNumber = 0; iWidgetNumber < m_pStack->count() && !fIsSettingsChanged; ++iWidgetNumber)
+    foreach (UISettingsPage *pPage, m_pSelector->settingPages())
     {
-        UISettingsPage *pPage = static_cast<UISettingsPage*>(m_pStack->widget(iWidgetNumber));
         pPage->putToCache();
-        if (pPage->changed())
+        if (!fIsSettingsChanged && pPage->changed())
             fIsSettingsChanged = true;
     }
     return fIsSettingsChanged;
+}
+
+void UISettingsDialogMachine::updateDialogType()
+{
+    /* Get new dialog type: */
+    SettingsDialogType newDialogType = determineSettingsDialogType(m_sessionState, m_machineState);
+
+    /* Ignore if dialog type was NOT actually changed: */
+    if (dialogType() == newDialogType)
+        return;
+
+    /* Should we show a warning about leaving 'offline' state? */
+    bool fShouldWe = dialogType() == SettingsDialogType_Offline;
+
+    /* Update current dialog type: */
+    setDialogType(newDialogType);
+
+    /* Show a warning about leaving 'offline' state if we should: */
+    if (isSettingsChanged() && fShouldWe)
+        msgCenter().warnAboutStateChange(this);
 }
 
 # include "UISettingsDialogSpecific.moc"
