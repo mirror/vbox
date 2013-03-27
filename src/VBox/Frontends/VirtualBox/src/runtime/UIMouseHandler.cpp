@@ -355,7 +355,12 @@ void UIMouseHandler::sltMouseCapabilityChanged()
 
     /* Notify user about mouse supports or not absolute pointing if that method was called by signal: */
     if (sender())
-        msgCenter().remindAboutMouseIntegration(uisession()->isMouseSupportsAbsolute());
+    {
+        /* don't annoy the user while restoring a VM */
+        KMachineState state = uisession()->machineState();
+        if (state != KMachineState_Restoring)
+            msgCenter().remindAboutMouseIntegration(uisession()->isMouseSupportsAbsolute());
+    }
 
     /* Notify all listeners: */
     emit mouseStateChanged(mouseState());
