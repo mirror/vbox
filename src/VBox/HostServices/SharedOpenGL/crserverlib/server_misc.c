@@ -624,12 +624,239 @@ void crDbgDumpTexImage2D(const char* pszDesc, GLint texTarget, GLint texName, GL
 }
 #endif
 
+PCR_BLITTER crServerVBoxBlitterGet()
+{
+    if (!CrBltIsInitialized(&cr_server.Blitter))
+    {
+        CR_BLITTER_CONTEXT Ctx;
+        int rc;
+        CRASSERT(cr_server.MainContextInfo.SpuContext);
+        Ctx.Base.id = cr_server.MainContextInfo.SpuContext;
+        Ctx.Base.visualBits = cr_server.MainContextInfo.CreateInfo.visualBits;
+        rc = CrBltInit(&cr_server.Blitter, &Ctx, true, &cr_server.head_spu->dispatch_table);
+        if (RT_SUCCESS(rc))
+        {
+            CRASSERT(CrBltIsInitialized(&cr_server.Blitter));
+        }
+        else
+        {
+            crWarning("CrBltInit failed, rc %d", rc);
+            CRASSERT(!CrBltIsInitialized(&cr_server.Blitter));
+            return NULL;
+        }
+    }
+    return &cr_server.Blitter;
+}
+
+int crServerVBoxBlitterTexInit(CRContext *ctx, CRMuralInfo *mural, PVBOXVR_TEXTURE pTex, GLboolean fDraw)
+{
+    CRTextureObj *tobj;
+    CRFramebufferObjectState *pBuf = &ctx->framebufferobject;
+    GLenum enmBuf;
+    CRFBOAttachmentPoint *pAp;
+    GLuint idx;
+    CRTextureLevel *tl;
+    CRFramebufferObject *pFBO = fDraw ? pBuf->drawFB : pBuf->readFB;
+
+    if (!pFBO)
+    {
+        GLuint hwid;
+
+        if (mural->fUseFBO == CR_SERVER_REDIR_NONE)
+            return VERR_NOT_IMPLEMENTED;
+
+        enmBuf = fDraw ? ctx->buffer.drawBuffer : ctx->buffer.readBuffer;
+        switch (enmBuf)
+        {
+            case GL_BACK:
+            case GL_BACK_RIGHT:
+            case GL_BACK_LEFT:
+                hwid = mural->aidColorTexs[CR_SERVER_FBO_BB_IDX(mural)];
+                break;
+            case GL_FRONT:
+            case GL_FRONT_RIGHT:
+            case GL_FRONT_LEFT:
+                hwid = mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)];
+                break;
+            default:
+                crWarning("unsupported enum buf");
+                return VERR_NOT_IMPLEMENTED;
+                break;
+        }
+
+        if (!hwid)
+        {
+            crWarning("offscreen render tex hwid is null");
+            return VERR_INVALID_STATE;
+        }
+
+        pTex->width = mural->width;
+        pTex->height = mural->height;
+        pTex->target = GL_TEXTURE_2D;
+        pTex->hwid = hwid;
+        return VINF_SUCCESS;
+    }
+
+    enmBuf = fDraw ? pFBO->drawbuffer[0] : pFBO->readbuffer;
+    idx = enmBuf - GL_COLOR_ATTACHMENT0_EXT;
+    if (idx >= CR_MAX_COLOR_ATTACHMENTS)
+    {
+        crWarning("idx is invalid %d, using 0", idx);
+    }
+
+    pAp = &pFBO->color[idx];
+
+    if (!pAp->name)
+    {
+        crWarning("no collor draw attachment");
+        return VERR_INVALID_STATE;
+    }
+
+    if (pAp->level)
+    {
+        crWarning("non-zero level not implemented");
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    tobj = (CRTextureObj*)crHashtableSearch(ctx->shared->textureTable, pAp->name);
+    if (!tobj)
+    {
+        crWarning("no texture object found for name %d", pAp->name);
+        return VERR_INVALID_STATE;
+    }
+
+    if (tobj->target != GL_TEXTURE_2D && tobj->target != GL_TEXTURE_RECTANGLE_NV)
+    {
+        crWarning("non-texture[rect|2d] not implemented");
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    CRASSERT(tobj->hwid);
+
+    tl = tobj->level[0];
+    pTex->width = tl->width;
+    pTex->height = tl->height;
+    pTex->target = tobj->target;
+    pTex->hwid = tobj->hwid;
+
+    return VINF_SUCCESS;
+}
+
+void crServerVBoxBlitterWinInit(CRMuralInfo *mural, CR_BLITTER_WINDOW *win)
+{
+    win->Base.id = mural->spuWindow;
+    win->Base.visualBits = mural->CreateInfo.visualBits;
+    win->width = mural->width;
+    win->height = mural->height;
+}
+
+int crServerVBoxBlitterBlitCurrentCtx(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1,
+        GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1,
+        GLbitfield mask, GLenum filter)
+{
+    PCR_BLITTER pBlitter;
+    CR_BLITTER_CONTEXT Ctx;
+    CRMuralInfo *mural;
+    CRContext *ctx = crStateGetCurrent();
+    PVBOXVR_TEXTURE pDrawTex, pReadTex;
+    VBOXVR_TEXTURE DrawTex, ReadTex;
+    int rc;
+    GLuint idDrawFBO, idReadFBO;
+    CR_BLITTER_WINDOW BltInfo;
+
+    if (mask != GL_COLOR_BUFFER_BIT)
+    {
+        crWarning("not supported blit mask %d", mask);
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    if (!cr_server.curClient)
+    {
+        crWarning("no current client");
+        return VERR_INVALID_STATE;
+    }
+    mural = cr_server.curClient->currentMural;
+    if (!mural)
+    {
+        crWarning("no current mural");
+        return VERR_INVALID_STATE;
+    }
+
+    rc = crServerVBoxBlitterTexInit(ctx, mural, &DrawTex, GL_TRUE);
+    if (RT_SUCCESS(rc))
+    {
+        pDrawTex = &DrawTex;
+    }
+    else
+    {
+        crWarning("crServerVBoxBlitterTexInit failed for draw");
+        return rc;
+    }
+
+    rc = crServerVBoxBlitterTexInit(ctx, mural, &ReadTex, GL_FALSE);
+    if (RT_SUCCESS(rc))
+    {
+        pReadTex = &ReadTex;
+    }
+    else
+    {
+//        crWarning("crServerVBoxBlitterTexInit failed for read");
+        return rc;
+    }
+
+    pBlitter = crServerVBoxBlitterGet();
+    if (!pBlitter)
+    {
+        crWarning("crServerVBoxBlitterGet failed");
+        return VERR_GENERAL_FAILURE;
+    }
+
+    crServerVBoxBlitterWinInit(mural, &BltInfo);
+
+    CrBltMuralSetCurrent(pBlitter, &BltInfo);
+
+    Ctx.Base.id = cr_server.curClient->currentCtxInfo->SpuContext;
+    if (Ctx.Base.id < 0)
+        Ctx.Base.id = cr_server.MainContextInfo.SpuContext;
+    Ctx.Base.visualBits = cr_server.curClient->currentCtxInfo->CreateInfo.visualBits;
+
+    idDrawFBO = mural->aidFBOs[mural->iCurDrawBuffer];
+    idReadFBO = mural->aidFBOs[mural->iCurReadBuffer];
+
+    crStateSwitchPrepare(NULL, ctx, idDrawFBO, idReadFBO);
+
+    rc = CrBltEnter(pBlitter, &Ctx, &BltInfo);
+    if (RT_SUCCESS(rc))
+    {
+        RTRECT ReadRect, DrawRect;
+        ReadRect.xLeft = srcX0;
+        ReadRect.yTop = srcY0;
+        ReadRect.xRight = srcX1;
+        ReadRect.yBottom = srcY1;
+        DrawRect.xLeft = dstX0;
+        DrawRect.yTop = dstY0;
+        DrawRect.xRight = dstX1;
+        DrawRect.yBottom = dstY1;
+        CrBltBlitTexTex(pBlitter, pReadTex, &ReadRect, pDrawTex, &DrawRect, 1, CRBLT_FLAGS_FROM_FILTER(filter));
+        CrBltLeave(pBlitter);
+    }
+    else
+    {
+        crWarning("CrBltEnter failed rc %d", rc);
+    }
+
+    crStateSwitchPostprocess(ctx, NULL, idDrawFBO, idReadFBO);
+
+    return rc;
+}
+
 void SERVER_DISPATCH_APIENTRY 
 crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1,
                                    GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, 
                                    GLbitfield mask, GLenum filter)
 {
     CRContext *ctx = crStateGetCurrent();
+    bool fTryBlitter = false;
 #ifdef CR_CHECK_BLITS
 //    {
         SPUDispatchTable *gl = &cr_server.head_spu->dispatch_table;
@@ -839,6 +1066,52 @@ crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint 
     gl->BindTexture(GL_TEXTURE_2D, otex);
 #endif
 
+    if (srcY0 > srcY1)
+    {
+        if (dstY0 > dstY1)
+        {
+            /* use srcY1 < srcY2 && dstY1 < dstY2 whenever possible to avoid GPU driver bugs */
+            int32_t tmp = srcY0;
+            srcY0 = srcY1;
+            srcY1 = tmp;
+            tmp = dstY0;
+            dstY0 = dstY1;
+            dstY1 = tmp;
+        }
+        else
+        {
+            fTryBlitter = true;
+        }
+    }
+
+    if (srcX0 > srcX1)
+    {
+        if (dstX0 > dstX1)
+        {
+            /* use srcX1 < srcX2 && dstX1 < dstX2 whenever possible to avoid GPU driver bugs */
+            int32_t tmp = srcX0;
+            srcX0 = srcX1;
+            srcX1 = tmp;
+            tmp = dstX0;
+            dstX0 = dstX1;
+            dstX1 = tmp;
+        }
+        else
+        {
+            fTryBlitter = true;
+        }
+    }
+
+    /* @todo: enable for problematic platforms */
+#if 0
+    if (fTryBlitter)
+    {
+        int rc = crServerVBoxBlitterBlitCurrentCtx(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+        if (RT_SUCCESS(rc))
+            goto my_exit;
+    }
+#endif
+
     if (ctx->viewport.scissorTest)
         cr_server.head_spu->dispatch_table.Disable(GL_SCISSOR_TEST);
 
@@ -848,6 +1121,10 @@ crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint 
 
     if (ctx->viewport.scissorTest)
         cr_server.head_spu->dispatch_table.Enable(GL_SCISSOR_TEST);
+
+
+my_exit:
+
 //#ifdef CR_CHECK_BLITS
 //    crDbgDumpTexImage2D("<== src tex:", GL_TEXTURE_2D, rtex, true);
 //    crDbgDumpTexImage2D("<== dst tex:", GL_TEXTURE_2D, dtex, true);
@@ -860,6 +1137,7 @@ crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint 
     gl->BindTexture(GL_TEXTURE_2D, otex);
     crFree(img);
 #endif
+    return;
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDrawBuffer( GLenum mode )

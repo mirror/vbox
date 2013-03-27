@@ -28,24 +28,24 @@
 #include <iprt/mem.h>
 
 
-int CrBltInit(PCR_BLITTER pBlitter, CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, SPUDispatchTable *pDispatch)
+int CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, SPUDispatchTable *pDispatch)
 {
-    memset(pBlitter, 0, sizeof (*pBlitter));
-
-    pBlitter->pDispatch = pDispatch;
-
     if (pCtxBase->Base.id == 0 || pCtxBase->Base.id < -1)
     {
         crWarning("Default share context not initialized!");
         return VERR_INVALID_PARAMETER;
     }
 
+    memset(pBlitter, 0, sizeof (*pBlitter));
+
+    pBlitter->pDispatch = pDispatch;
     pBlitter->CtxInfo = *pCtxBase;
     if (fCreateNewCtx)
     {
         pBlitter->CtxInfo.Base.id = pDispatch->CreateContext("", pCtxBase->Base.visualBits, pCtxBase->Base.id);
         if (!pBlitter->CtxInfo.Base.id)
         {
+            memset(pBlitter, 0, sizeof (*pBlitter));
             crWarning("CreateContext failed!");
             return VERR_GENERAL_FAILURE;
         }
@@ -61,12 +61,21 @@ void CrBltTerm(PCR_BLITTER pBlitter)
         pBlitter->pDispatch->DestroyContext(pBlitter->CtxInfo.Base.id);
 }
 
-void CrBltMuralSetCurrent(PCR_BLITTER pBlitter, CR_BLITTER_WINDOW *pMural)
+void CrBltMuralSetCurrent(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural)
 {
-    if (pBlitter->pCurrentMural == pMural)
-        return;
+    if (pMural)
+    {
+        if (!memcmp(&pBlitter->CurrentMural, pMural, sizeof (pBlitter->CurrentMural)))
+            return;
+        memcpy(&pBlitter->CurrentMural, pMural, sizeof (pBlitter->CurrentMural));
+    }
+    else
+    {
+        if (!pBlitter->CurrentMural.Base.id)
+            return;
+        pBlitter->CurrentMural.Base.id = 0;
+    }
 
-    pBlitter->pCurrentMural = pMural;
     pBlitter->Flags.CurrentMuralChanged = 1;
 
     if (!CrBltIsEntered(pBlitter))
@@ -78,9 +87,7 @@ void CrBltMuralSetCurrent(PCR_BLITTER pBlitter, CR_BLITTER_WINDOW *pMural)
         pBlitter->pDispatch->MakeCurrent(0, 0, 0);
 }
 
-#define CRBLT_FILTER_FROM_FLAGS(_f) (((_f) & CRBLT_F_LINEAR) ? GL_LINEAR : GL_NEAREST)
-
-static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const RTRECTSIZE *pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
+static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const RTRECTSIZE *pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
 {
     GLenum filter = CRBLT_FILTER_FROM_FLAGS(fFlags);
     pBlitter->pDispatch->BindFramebufferEXT(GL_READ_FRAMEBUFFER, pBlitter->idFBO);
@@ -91,37 +98,68 @@ static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, VBOXVR_TEX
     {
         const RTRECT * pSrcRect = &paSrcRect[i];
         const RTRECT * pDstRect = &paDstRect[i];
-        if (CRBLT_F_OFFSCREEN & fFlags)
+        int32_t srcY1;
+        int32_t srcY2;
+        int32_t dstY1;
+        int32_t dstY2;
+        int32_t srcX1 = pSrcRect->xLeft;
+        int32_t srcX2 = pSrcRect->xRight;
+        int32_t dstX1 = pDstRect->xLeft;
+        int32_t dstX2 = pDstRect->xRight;
+
+        if (CRBLT_F_INVERT_SRC_YCOORDS & fFlags)
         {
-            pBlitter->pDispatch->BlitFramebufferEXT(
-                    pSrcRect->xLeft, pSrcRect->yTop, pSrcRect->xRight, pSrcRect->yBottom,
-                    pDstRect->xLeft, pDstRect->yTop, pDstRect->xRight, pDstRect->yBottom,
-                    GL_COLOR_BUFFER_BIT, filter);
+            srcY1 = pSrc->height - pSrcRect->yTop;
+            srcY2 = pSrc->height - pSrcRect->yBottom;
         }
         else
         {
-            int32_t srcY1 = pSrc->height - pSrcRect->yTop;
-            int32_t srcY2 = pSrc->height - pSrcRect->yBottom;
-            int32_t dstY1 = pDstSize->cy - pDstRect->yTop;
-            int32_t dstY2 = pDstSize->cy - pDstRect->yBottom;
-            if (srcY1 > srcY2)
-            {
-                if (dstY1 > dstY2)
-                {
-                    /* use srcY1 < srcY2 && dstY1 < dstY2 whenever possible to avoid GPU driver bugs */
-                    int32_t tmp = srcY1;
-                    srcY1 = srcY2;
-                    srcY2 = tmp;
-                    tmp = dstY1;
-                    dstY1 = dstY2;
-                    dstY2 = tmp;
-                }
-            }
-            pBlitter->pDispatch->BlitFramebufferEXT(
-                    pSrcRect->xLeft, srcY1, pSrcRect->xRight, srcY2,
-                    pDstRect->xLeft, dstY1, pDstRect->xRight, dstY2,
-                    GL_COLOR_BUFFER_BIT, filter);
+            srcY1 = pSrcRect->yTop;
+            srcY2 = pSrcRect->yBottom;
         }
+
+        if (CRBLT_F_INVERT_DST_YCOORDS & fFlags)
+        {
+            dstY1 = pDstSize->cy - pDstRect->yTop;
+            dstY2 = pDstSize->cy - pDstRect->yBottom;
+        }
+        else
+        {
+            dstY1 = pDstRect->yTop;
+            dstY2 = pDstRect->yBottom;
+        }
+
+        if (srcY1 > srcY2)
+        {
+            if (dstY1 > dstY2)
+            {
+                /* use srcY1 < srcY2 && dstY1 < dstY2 whenever possible to avoid GPU driver bugs */
+                int32_t tmp = srcY1;
+                srcY1 = srcY2;
+                srcY2 = tmp;
+                tmp = dstY1;
+                dstY1 = dstY2;
+                dstY2 = tmp;
+            }
+        }
+
+        if (srcX1 > srcX2)
+        {
+            if (dstX1 > dstX2)
+            {
+                /* use srcX1 < srcX2 && dstX1 < dstX2 whenever possible to avoid GPU driver bugs */
+                int32_t tmp = srcX1;
+                srcX1 = srcX2;
+                srcX2 = tmp;
+                tmp = dstX1;
+                dstX1 = dstX2;
+                dstX2 = tmp;
+            }
+        }
+
+        pBlitter->pDispatch->BlitFramebufferEXT(srcX1, srcY1, srcX2, srcY2,
+                    dstX1, dstY1, dstX2, dstY2,
+                    GL_COLOR_BUFFER_BIT, filter);
     }
 
     return VINF_SUCCESS;
@@ -270,47 +308,32 @@ static void* crBltBufGet(PCR_BLITTER_BUFFER pBuffer, GLuint cbBuffer)
 
 static void crBltCheckSetupViewport(PCR_BLITTER pBlitter, const RTRECTSIZE *pDstSize, bool fFBODraw)
 {
-    if (!pBlitter->Flags.LastWasFBODraw != !fFBODraw
-            || pBlitter->Flags.CurrentMuralChanged
-            || pBlitter->CurrentSetSize.cx != pDstSize->cx
+    bool fUpdateViewport = pBlitter->Flags.CurrentMuralChanged;
+    if (pBlitter->CurrentSetSize.cx != pDstSize->cx
             || pBlitter->CurrentSetSize.cy != pDstSize->cy)
     {
-#if 0
-        const GLdouble aProjection[] =
-        {
-                2.0 / pDstSize->cx,               0.0,  0.0, 0.0,
-                              0.0, 2.0 / pDstSize->cy,  0.0, 0.0,
-                              0.0,               0.0,  2.0, 0.0,
-                             -1.0,              -1.0, -1.0, 1.0
-        };
-        pBlitter->pDispatch->MatrixMode(GL_PROJECTION);
-        pBlitter->pDispatch->LoadMatrixd(aProjection);
-        pBlitter->pDispatch->Viewport(0, 0, pDstSize->cx, pDstSize->cy);
-#else
+        pBlitter->CurrentSetSize = *pDstSize;
         pBlitter->pDispatch->MatrixMode(GL_PROJECTION);
         pBlitter->pDispatch->LoadIdentity();
-        pBlitter->pDispatch->Viewport(0, 0, pDstSize->cx, pDstSize->cy);
         pBlitter->pDispatch->Ortho(0, pDstSize->cx, 0, pDstSize->cy, -1, 1);
-        pBlitter->pDispatch->MatrixMode(GL_TEXTURE);
-        pBlitter->pDispatch->LoadIdentity();
-        pBlitter->pDispatch->MatrixMode(GL_MODELVIEW);
-        pBlitter->pDispatch->LoadIdentity();
-
-        /* Clear background to transparent */
-        pBlitter->pDispatch->ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-#endif
-        pBlitter->CurrentSetSize.cx = pDstSize->cx;
-        pBlitter->CurrentSetSize.cy = pDstSize->cy;
-        pBlitter->Flags.LastWasFBODraw = fFBODraw;
-        if (!fFBODraw)
-            pBlitter->Flags.CurrentMuralChanged = 0;
+        fUpdateViewport = true;
     }
+
+    if (fUpdateViewport)
+    {
+        pBlitter->pDispatch->Viewport(0, 0, pBlitter->CurrentSetSize.cx, pBlitter->CurrentSetSize.cy);
+        pBlitter->Flags.CurrentMuralChanged = 0;
+    }
+
+    pBlitter->Flags.LastWasFBODraw = fFBODraw;
 }
 
-static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const RTRECTSIZE *pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
+static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const RTRECTSIZE *pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
 {
     GLuint normalX, normalY;
-    uint32_t height = (fFlags & CRBLT_F_OFFSCREEN) ? 0 : pDstSize->cy;
+    uint32_t srcHeight = (fFlags & CRBLT_F_INVERT_SRC_YCOORDS) ? pSrc->height : 0;
+    uint32_t dstHeight = (fFlags & CRBLT_F_INVERT_DST_YCOORDS) ? pDstSize->cy : 0;
+    Assert(srcHeight == dstHeight);
 
     switch (pSrc->target)
     {
@@ -342,21 +365,21 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, VBOXVR_
     if (cRects == 1)
     {
         /* just optimizatino to draw a single rect with GL_TRIANGLE_FAN */
-        bool bUseSameVerticies = paSrcRect == paDstRect && normalX == 1 && normalY == 1;
+        bool bUseSameVerticies = paSrcRect == paDstRect && normalX == 1 && normalY == 1 && srcHeight == dstHeight;
         GLfloat *pVerticies;
         GLfloat *pTexCoords;
         GLuint cElements = crBltVtGetNumVerticiesTF(1);
         if (bUseSameVerticies)
         {
             pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * sizeof (*pVerticies));
-            crBltVtRectTFNormalized(paDstRect, normalX, normalY, pVerticies, height);
+            crBltVtRectTFNormalized(paDstRect, normalX, normalY, pVerticies, dstHeight);
             pTexCoords = pVerticies;
         }
         else
         {
             pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * 2 * sizeof (*pVerticies));
-            pTexCoords = crBltVtRectTFNormalized(paDstRect, 1, 1, pVerticies, height);
-            crBltVtRectTFNormalized(paSrcRect, normalX, normalY, pTexCoords, height);
+            pTexCoords = crBltVtRectTFNormalized(paDstRect, 1, 1, pVerticies, dstHeight);
+            crBltVtRectTFNormalized(paSrcRect, normalX, normalY, pTexCoords, srcHeight);
         }
 
         pBlitter->pDispatch->EnableClientState(GL_VERTEX_ARRAY);
@@ -376,7 +399,7 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, VBOXVR_
     }
     else
     {
-        bool bUseSameVerticies = paSrcRect == paDstRect && normalX == 1 && normalY == 1;
+        bool bUseSameVerticies = paSrcRect == paDstRect && normalX == 1 && normalY == 1 && srcHeight == dstHeight;
         GLfloat *pVerticies;
         GLfloat *pTexCoords;
         GLubyte *pIndicies;
@@ -386,14 +409,14 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, VBOXVR_
         if (bUseSameVerticies)
         {
             pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * sizeof (*pVerticies) + cIndicies * sizeof (*pIndicies));
-            crBltVtRectsITNormalized(paDstRect, cRects, normalX, normalY, pVerticies, &pIndicies, &iIdxBase, height);
+            crBltVtRectsITNormalized(paDstRect, cRects, normalX, normalY, pVerticies, &pIndicies, &iIdxBase, dstHeight);
             pTexCoords = pVerticies;
         }
         else
         {
             pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * 2 * sizeof (*pVerticies) + cIndicies * sizeof (*pIndicies));
-            pTexCoords = crBltVtRectsITNormalized(paDstRect, cRects, 1, 1, pVerticies, &pIndicies, &iIdxBase, height);
-            crBltVtRectsITNormalized(paSrcRect, cRects, normalX, normalY, pTexCoords, NULL, NULL, height);
+            pTexCoords = crBltVtRectsITNormalized(paDstRect, cRects, 1, 1, pVerticies, &pIndicies, &iIdxBase, dstHeight);
+            crBltVtRectsITNormalized(paSrcRect, cRects, normalX, normalY, pTexCoords, NULL, NULL, srcHeight);
         }
 
         pBlitter->pDispatch->EnableClientState(GL_VERTEX_ARRAY);
@@ -440,6 +463,12 @@ static int crBltInitOnMakeCurent(PCR_BLITTER pBlitter)
         pBlitter->pfnBlt = crBltBlitTexBufImplDraw2D;
     }
 
+    /* defaults. but just in case */
+    pBlitter->pDispatch->MatrixMode(GL_TEXTURE);
+    pBlitter->pDispatch->LoadIdentity();
+    pBlitter->pDispatch->MatrixMode(GL_MODELVIEW);
+    pBlitter->pDispatch->LoadIdentity();
+
     return VINF_SUCCESS;
 }
 
@@ -458,10 +487,7 @@ void CrBltLeave(PCR_BLITTER pBlitter)
 
     if (pBlitter->pRestoreCtxInfo != &pBlitter->CtxInfo)
     {
-
-        pBlitter->pDispatch->MakeCurrent(pBlitter->pRestoreMural->Base.id, 0,
-                pBlitter->pRestoreCtxInfo->Base.id >= 0
-                    ? pBlitter->pRestoreCtxInfo->Base.id : pBlitter->pRestoreCtxInfo->Base.id);
+        pBlitter->pDispatch->MakeCurrent(pBlitter->pRestoreMural->Base.id, 0, pBlitter->pRestoreCtxInfo->Base.id);
     }
     else
     {
@@ -471,9 +497,9 @@ void CrBltLeave(PCR_BLITTER pBlitter)
     pBlitter->pRestoreCtxInfo = NULL;
 }
 
-int CrBltEnter(PCR_BLITTER pBlitter, CR_BLITTER_CONTEXT *pRestoreCtxInfo, CR_BLITTER_WINDOW *pRestoreMural)
+int CrBltEnter(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, const CR_BLITTER_WINDOW *pRestoreMural)
 {
-    if (!pBlitter->pCurrentMural)
+    if (!pBlitter->CurrentMural.Base.id)
     {
         crWarning("current mural not initialized!");
         return VERR_INVALID_STATE;
@@ -497,7 +523,7 @@ int CrBltEnter(PCR_BLITTER pBlitter, CR_BLITTER_CONTEXT *pRestoreCtxInfo, CR_BLI
         pBlitter->pRestoreCtxInfo = &pBlitter->CtxInfo;
     }
 
-    pBlitter->pDispatch->MakeCurrent(pBlitter->pCurrentMural->Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
+    pBlitter->pDispatch->MakeCurrent(pBlitter->CurrentMural.Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
 
     if (pBlitter->Flags.Initialized)
         return VINF_SUCCESS;
@@ -514,25 +540,25 @@ int CrBltEnter(PCR_BLITTER pBlitter, CR_BLITTER_CONTEXT *pRestoreCtxInfo, CR_BLI
     return rc;
 }
 
-static void crBltBlitTexBuf(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, GLenum enmDstBuff, const RTRECTSIZE *pDstSize, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
+static void crBltBlitTexBuf(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, GLenum enmDstBuff, const RTRECTSIZE *pDstSize, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
 {
     pBlitter->pDispatch->DrawBuffer(enmDstBuff);
 
     crBltCheckSetupViewport(pBlitter, pDstSize, enmDstBuff == GL_DRAW_FRAMEBUFFER);
 
-    pBlitter->pfnBlt(pBlitter, pSrc, paSrcRects, pDstSize, paDstRects, cRects, fFlags & CRBLT_F_OFFSCREEN);
+    pBlitter->pfnBlt(pBlitter, pSrc, paSrcRects, pDstSize, paDstRects, cRects, fFlags);
 }
 
-void CrBltBlitTexMural(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
+void CrBltBlitTexMural(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
 {
-    RTRECTSIZE DstSize = {pBlitter->pCurrentMural->width, pBlitter->pCurrentMural->height};
+    RTRECTSIZE DstSize = {pBlitter->CurrentMural.width, pBlitter->CurrentMural.height};
 
     pBlitter->pDispatch->BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
 
-    crBltBlitTexBuf(pBlitter, pSrc, paSrcRects, GL_BACK, &DstSize, paDstRects, cRects, fFlags & (~CRBLT_F_OFFSCREEN));
+    crBltBlitTexBuf(pBlitter, pSrc, paSrcRects, GL_BACK, &DstSize, paDstRects, cRects, fFlags);
 }
 
-void CrBltBlitTexTex(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *pSrcRect, VBOXVR_TEXTURE *pDst, const RTRECT *pDstRect, uint32_t cRects, uint32_t fFlags)
+void CrBltBlitTexTex(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *pSrcRect, const VBOXVR_TEXTURE *pDst, const RTRECT *pDstRect, uint32_t cRects, uint32_t fFlags)
 {
     RTRECTSIZE DstSize = {(uint32_t)pDst->width, (uint32_t)pDst->height};
 
@@ -551,7 +577,7 @@ void CrBltBlitTexTex(PCR_BLITTER pBlitter, VBOXVR_TEXTURE *pSrc, const RTRECT *p
 void CrBltPresent(PCR_BLITTER pBlitter)
 {
     if (pBlitter->CtxInfo.Base.visualBits & CR_DOUBLE_BIT)
-        pBlitter->pDispatch->SwapBuffers(pBlitter->pCurrentMural->Base.id, 0);
+        pBlitter->pDispatch->SwapBuffers(pBlitter->CurrentMural.Base.id, 0);
     else
         pBlitter->pDispatch->Flush();
 }

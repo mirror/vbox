@@ -103,8 +103,6 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
 
     CR_STATE_SHAREDOBJ_USAGE_INIT(mural);
 
-    crServerSetupOutputRedirect(mural);
-
     Rect.xLeft = 0;
     Rect.xRight = mural->width;
     Rect.yTop = 0;
@@ -115,6 +113,8 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
         crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
         return -1;
     }
+
+    crServerSetupOutputRedirect(mural);
 
     if (mural->fRootVrOn)
     {
