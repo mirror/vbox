@@ -60,6 +60,7 @@ memalign
 memchr
 memcmp
 memcpy
+__memcpy_chk
 memmove
 memset
 miClearVisualTypes
@@ -86,6 +87,7 @@ putenv
 read
 realloc
 realpath
+__realpath_chk
 rename
 resVgaShared
 screenInfo
@@ -94,7 +96,9 @@ setenv
 sigdelset
 sigfillset
 snprintf
+__snprintf_chk
 sprintf
+__sprintf_chk
 sscanf
 stat
 stderr
@@ -104,6 +108,7 @@ strcpy
 strlen
 strncmp
 strncpy
+__strncpy_chk
 strpbrk
 strstr
 symlink
