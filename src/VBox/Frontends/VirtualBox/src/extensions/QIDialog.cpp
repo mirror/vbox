@@ -85,7 +85,7 @@ int QIDialog::exec(bool fShow /* = true */)
     }
 
     /* Save the result-code early (we can delete ourself on close): */
-    QDialog::DialogCode resultCode = (QDialog::DialogCode)result();
+    int iResultCode = result();
 
     /* Return old modality: */
     setWindowModality(oldModality);
@@ -97,7 +97,7 @@ int QIDialog::exec(bool fShow /* = true */)
         delete this;
 
     /* Return the result-code: */
-    return resultCode;
+    return iResultCode;
 }
 
 void QIDialog::showEvent(QShowEvent *pEvent)
