@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,41 +20,46 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
+/* Qt includes: */
+#include <QPushButton>
+
+/* GUI includes: */
 #include "UIVMCloseDialog.h"
 #include "UIMessageCenter.h"
 #include "UIMachineWindowNormal.h"
-
-#ifdef Q_WS_MAC
-# include "VBoxGlobal.h"
-#endif /* Q_WS_MAC */
-
-/* Qt includes */
-#include <QPushButton>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent)
     : QIWithRetranslateUI<QIDialog>(pParent)
 {
-    /* Apply UI decorations */
+    /* Apply UI decorations: */
     Ui::UIVMCloseDialog::setupUi(this);
 
 #ifdef Q_WS_MAC
-    /* Make some more space around the content */
+    /* Add more space around the content: */
     hboxLayout->setContentsMargins(40, 0, 40, 0);
     vboxLayout2->insertSpacing(1, 20);
-    /* and more space between the radio buttons */
+    /* And more space between the radio buttons: */
     gridLayout->setSpacing(15);
 #endif /* Q_WS_MAC */
-    /* Set fixed size */
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
+    /* Configure default button connections: */
     connect(mButtonBox, SIGNAL(helpRequested()),
             &msgCenter(), SLOT(sltShowHelpHelpDialog()));
 }
 
 void UIVMCloseDialog::retranslateUi()
 {
-    /* Translate uic generated strings */
+    /* Translate uic generated strings: */
     Ui::UIVMCloseDialog::retranslateUi(this);
+}
+
+void UIVMCloseDialog::polishEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    QIDialog::polishEvent(pEvent);
+
+    /* Make the dialog-size fixed: */
+    setFixedSize(size());
 }
 
