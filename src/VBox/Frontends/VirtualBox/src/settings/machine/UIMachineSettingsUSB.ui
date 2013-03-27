@@ -107,6 +107,12 @@
          </property>
          <item>
           <widget class="QTreeWidget" name="mTwFilters" >
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="contextMenuPolicy" >
             <enum>Qt::CustomContextMenu</enum>
            </property>
@@ -123,6 +129,9 @@
            </column>
           </widget>
          </item>
+         <item>
+          <widget class="UIToolBar" native="1" name="m_pFiltersToolBar"/>
+         </item>
         </layout>
        </widget>
       </item>
@@ -136,6 +145,12 @@
    <class>QILabelSeparator</class>
    <extends>QLabel</extends>
    <header>QILabelSeparator.h</header>
+  </customwidget>
+  <customwidget>
+   <class>UIToolBar</class>
+   <extends>QWidget</extends>
+   <header>UIToolBar.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

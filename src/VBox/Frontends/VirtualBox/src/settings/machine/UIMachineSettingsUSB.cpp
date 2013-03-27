@@ -175,27 +175,16 @@ UIMachineSettingsUSB::UIMachineSettingsUSB(UISettingsPageType type)
     mMdnAction->setIcon(UIIconPool::iconSet(":/usb_movedown_16px.png",
                                             ":/usb_movedown_disabled_16px.png"));
 
-    /* Prepare toolbar */
-    m_pToolBar = new UIToolBar (mWtFilterHandler);
-    m_pToolBar->setUsesTextLabel (false);
-    m_pToolBar->setIconSize (QSize (16, 16));
-    m_pToolBar->setOrientation (Qt::Vertical);
-    m_pToolBar->addAction (mNewAction);
-    m_pToolBar->addAction (mAddAction);
-    m_pToolBar->addAction (mEdtAction);
-    m_pToolBar->addAction (mDelAction);
-    m_pToolBar->addAction (mMupAction);
-    m_pToolBar->addAction (mMdnAction);
-    m_pToolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-    m_pToolBar->updateGeometry();
-#ifdef Q_WS_MAC
-    /* On the Mac this has to be slightly higher, than what sizeHint returned.
-     * No idea why. */
-    m_pToolBar->setMinimumHeight(m_pToolBar->sizeHint().height() + 4);
-#else
-    m_pToolBar->setMinimumHeight(m_pToolBar->sizeHint().height());
-#endif /* Q_WS_MAC */
-    mWtFilterHandler->layout()->addWidget (m_pToolBar);
+    /* Prepare tool-bar: */
+    m_pFiltersToolBar->setUsesTextLabel(false);
+    m_pFiltersToolBar->setIconSize(QSize(16, 16));
+    m_pFiltersToolBar->setOrientation(Qt::Vertical);
+    m_pFiltersToolBar->addAction(mNewAction);
+    m_pFiltersToolBar->addAction(mAddAction);
+    m_pFiltersToolBar->addAction(mEdtAction);
+    m_pFiltersToolBar->addAction(mDelAction);
+    m_pFiltersToolBar->addAction(mMupAction);
+    m_pFiltersToolBar->addAction(mMdnAction);
 
     /* Setup connections */
     connect (mGbUSB, SIGNAL (toggled (bool)),
