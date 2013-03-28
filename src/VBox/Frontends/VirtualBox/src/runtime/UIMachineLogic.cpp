@@ -360,12 +360,12 @@ void UIMachineLogic::sltMachineStateChanged()
         case KMachineState_Teleported:
         case KMachineState_Aborted:
         {
-            /* Close VM if it was turned off and closure allowed: */
+            /* Is it allowed to close Runtime UI? */
             if (!isPreventAutoClose())
             {
-                /* VM has been powered off, saved or aborted, no matter
-                 * internally or externally. We must *safely* close VM window(s): */
-                QTimer::singleShot(0, uisession(), SLOT(sltCloseVirtualSession()));
+                /* VM has been powered off, saved, teleported or aborted.
+                 * We must close Runtime UI: */
+                uisession()->closeRuntimeUI();
             }
             break;
         }

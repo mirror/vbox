@@ -21,7 +21,6 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QWidget>
-#include <QTimer>
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
@@ -210,7 +209,7 @@ void UISession::powerUp()
     {
         if (vboxGlobal().showStartVMErrors())
             msgCenter().cannotStartMachine(console);
-        QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
+        closeRuntimeUI();
         return;
     }
 
@@ -235,7 +234,7 @@ void UISession::powerUp()
     {
         if (vboxGlobal().showStartVMErrors())
             msgCenter().cannotStartMachine(progress);
-        QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
+        closeRuntimeUI();
         return;
     }
 
@@ -246,7 +245,7 @@ void UISession::powerUp()
     /* Check if we missed a really quick termination after successful startup, and process it if we did: */
     if (isTurnedOff())
     {
-        QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
+        closeRuntimeUI();
         return;
     }
 
@@ -290,8 +289,7 @@ void UISession::powerUp()
             }
             else
                 msgCenter().cannotStopMachine(console);
-            /* Now signal the destruction of the rest. */
-            QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
+            closeRuntimeUI();
             return;
         }
 
@@ -424,6 +422,12 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
     }
     /* Passed: */
     return true;
+}
+
+void UISession::closeRuntimeUI()
+{
+    /* Start corresponding slot asynchronously: */
+    emit sigCloseRuntimeUI();
 }
 
 UIMachineLogic* UISession::machineLogic() const
@@ -600,34 +604,30 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     }
 }
 
-void UISession::sltCloseVirtualSession()
+void UISession::sltCloseRuntimeUI()
 {
-    /* First, we have to close/hide any opened modal & popup application widgets.
-     * We have to make sure such window is hidden even if close-event was rejected.
-     * We are re-throwing this slot if any widget present to test again.
-     * If all opened widgets are closed/hidden, we can try to close machine-window: */
-    QWidget *pWidget = QApplication::activeModalWidget() ? QApplication::activeModalWidget() :
-                       QApplication::activePopupWidget() ? QApplication::activePopupWidget() : 0;
-    if (pWidget)
+    /* First, we have to hide any opened modal/popup widgets.
+     * They then should unlock their event-loops synchronously.
+     * If all such loops are unlocked, we can close Runtime UI: */
+    if (QWidget *pWidget = QApplication::activeModalWidget() ?
+                           QApplication::activeModalWidget() :
+                           QApplication::activePopupWidget() ?
+                           QApplication::activePopupWidget() : 0)
     {
-        /* Closing/hiding all we found: */
+        /* First we should try to close this widget: */
         pWidget->close();
+        /* If widget rejected the 'close-event' we can
+         * still hide it and hope it will behave correctly
+         * and unlock his event-loop if any: */
         if (!pWidget->isHidden())
             pWidget->hide();
-        QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
+        /* Restart this slot asynchronously: */
+        emit sigCloseRuntimeUI();
         return;
     }
 
-    /* Recursively close all the opened warnings... */
-    if (msgCenter().isAnyWarningShown())
-    {
-        msgCenter().closeAllWarnings();
-        QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
-        return;
-    }
-
-    /* Finally, ask for closing virtual machine: */
-    QTimer::singleShot(0, m_pMachine, SLOT(sltCloseVirtualMachine()));
+    /* Finally close the Runtime UI: */
+    m_pMachine->deleteLater();
 }
 
 void UISession::sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape)
@@ -844,6 +844,8 @@ void UISession::prepareConsoleEventHandlers()
 
 void UISession::prepareConnections()
 {
+    connect(this, SIGNAL(sigCloseRuntimeUI()), this, SLOT(sltCloseRuntimeUI()));
+
     connect(QApplication::desktop(), SIGNAL(screenCountChanged(int)),
             this, SIGNAL(sigHostScreenCountChanged(int)));
 }
@@ -1365,7 +1367,7 @@ bool UISession::preparePowerUp()
             machineLogic()->openNetworkAdaptersDialog();
         else
         {
-            QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
+            closeRuntimeUI();
             return false;
         }
     }
