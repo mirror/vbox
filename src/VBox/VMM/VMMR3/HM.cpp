@@ -115,7 +115,10 @@ static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(VMX_EXIT_INVVPID            , 53, "INVVPID. Guest software attempted to execute INVVPID."),
     EXIT_REASON(VMX_EXIT_WBINVD             , 54, "WBINVD. Guest software attempted to execute WBINVD."),
     EXIT_REASON(VMX_EXIT_XSETBV             , 55, "XSETBV. Guest software attempted to execute XSETBV."),
-    EXIT_REASON_NIL()
+    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_RDRAND             , 57, "RDRAND. Guest software attempted to execute RDRAND."),
+    EXIT_REASON(VMX_EXIT_INVPCID            , 58, "INVPCID. Guest software attempted to execute INVPCID."),
+    EXIT_REASON(VMX_EXIT_VMFUNC             , 59, "VMFUNC. Guest software attempted to execute VMFUNC.")
 };
 /** Exit reason descriptions for AMD-V, used to describe statistics. */
 static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
@@ -575,6 +578,7 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitApicAccess,         "/HM/CPU%d/Exit/ApicAccess");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchGuestIrq,         "/HM/CPU%d/Switch/IrqPending");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchHmToR3FF,         "/HM/CPU%d/Switch/HmToR3FF");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchToR3,             "/HM/CPU%d/Switch/ToR3");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatIntInject,              "/HM/CPU%d/Irq/Inject");
@@ -586,13 +590,12 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatFlushPhysPageManual,    "/HM/CPU%d/Flush/Page/Phys");
         HM_REG_COUNTER(&pVCpu->hm.s.StatFlushTlb,               "/HM/CPU%d/Flush/TLB");
         HM_REG_COUNTER(&pVCpu->hm.s.StatFlushTlbManual,         "/HM/CPU%d/Flush/TLB/Manual");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatFlushTlbCRxChange,      "/HM/CPU%d/Flush/TLB/CRx");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatFlushPageInvlpg,        "/HM/CPU%d/Flush/Page/Invlpg");
         HM_REG_COUNTER(&pVCpu->hm.s.StatFlushTlbWorldSwitch,    "/HM/CPU%d/Flush/TLB/Switch");
         HM_REG_COUNTER(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch,  "/HM/CPU%d/Flush/TLB/Skipped");
         HM_REG_COUNTER(&pVCpu->hm.s.StatFlushAsid,              "/HM/CPU%d/Flush/TLB/ASID");
         HM_REG_COUNTER(&pVCpu->hm.s.StatFlushNestedPaging,      "/HM/CPU%d/Flush/TLB/NestedPaging");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatFlushTlbInvlpga,        "/HM/CPU%d/Flush/TLB/PhysInvl");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatFlushTlbInvlpgVirt,     "/HM/CPU%d/Flush/TLB/InvlpgVirt");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatFlushTlbInvlpgPhys,     "/HM/CPU%d/Flush/TLB/InvlpgPhys");
         HM_REG_COUNTER(&pVCpu->hm.s.StatTlbShootdown,           "/HM/CPU%d/Flush/Shootdown/Page");
         HM_REG_COUNTER(&pVCpu->hm.s.StatTlbShootdownFlush,      "/HM/CPU%d/Flush/Shootdown/TLB");
 
