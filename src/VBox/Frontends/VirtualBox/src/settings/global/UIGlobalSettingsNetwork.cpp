@@ -228,9 +228,6 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     m_pActionsToolbar->addAction(m_pAddAction);
     m_pActionsToolbar->addAction(m_pDelAction);
     m_pActionsToolbar->addAction(m_pEditAction);
-    m_pActionsToolbar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-    m_pActionsToolbar->updateGeometry();
-    m_pActionsToolbar->setMinimumHeight(m_pActionsToolbar->sizeHint().height());
 
     /* Setup connections: */
     connect(m_pAddAction, SIGNAL(triggered(bool)), this, SLOT(sltAddInterface()));
