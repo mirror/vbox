@@ -51,16 +51,20 @@ UIGMachinePreview::UIGMachinePreview(QIGraphicsWidget *pParent)
     , m_machineState(KMachineState_Null)
     , m_pUpdateTimer(new QTimer(this))
     , m_pUpdateTimerMenu(0)
-    , m_vMargin(10)
-    , m_pbgImage(0)
+    , m_iMargin(0)
+    , m_pbgEmptyImage(0)
+    , m_pbgFullImage(0)
     , m_pPreviewImg(0)
-    , m_pGlossyImg(0)
 {
     /* Setup contents: */
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     /* Create session instance: */
     m_session.createInstance(CLSID_Session);
+
+    /* Create bg images: */
+    m_pbgEmptyImage = new QPixmap(":/preview_empty_228x168px.png");
+    m_pbgFullImage = new QPixmap(":/preview_full_228x168px.png");
 
     /* Create the context menu: */
     m_pUpdateTimerMenu = new QMenu;
@@ -98,10 +102,8 @@ UIGMachinePreview::~UIGMachinePreview()
     /* Close any open session: */
     if (m_session.GetState() == KSessionState_Locked)
         m_session.UnlockMachine();
-    if (m_pbgImage)
-        delete m_pbgImage;
-    if (m_pGlossyImg)
-        delete m_pGlossyImg;
+    delete m_pbgEmptyImage;
+    delete m_pbgFullImage;
     if (m_pPreviewImg)
         delete m_pPreviewImg;
     if (m_pUpdateTimerMenu)
@@ -225,7 +227,7 @@ void UIGMachinePreview::sltRecreatePreview()
 
 void UIGMachinePreview::resizeEvent(QGraphicsSceneResizeEvent *pEvent)
 {
-    repaintBGImages();
+    recalculatePreviewRectangle();
     sltRecreatePreview();
     QIGraphicsWidget::resizeEvent(pEvent);
 }
@@ -266,7 +268,8 @@ void UIGMachinePreview::retranslateUi()
 QSizeF UIGMachinePreview::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
 {
     if (which == Qt::MinimumSize)
-        return QSize(220, (int)(220 * 3.0/4.0));
+        return QSize(228 /* pixmap width */ + 2 * m_iMargin,
+                     168 /* pixmap height */ + 2 * m_iMargin);
     return QIGraphicsWidget::sizeHint(which, constraint);
 }
 
@@ -276,20 +279,20 @@ void UIGMachinePreview::paint(QPainter *pPainter, const QStyleOptionGraphicsItem
     QRect cr = contentsRect().toRect();
     if (!cr.isValid())
         return;
-    /* Draw the background with the monitor and the shadow: */
-    if (m_pbgImage)
-        pPainter->drawImage(cr.x(), cr.y(), *m_pbgImage);
 
     /* If there is a preview image available: */
     if (m_pPreviewImg)
     {
+        /* Draw empty background: */
+        pPainter->drawPixmap(cr.x() + m_iMargin, cr.y() + m_iMargin, *m_pbgEmptyImage);
+
         /* Draw that image: */
         pPainter->drawImage(0, 0, *m_pPreviewImg);
     }
     else
     {
-        /* Fill rectangle with black color: */
-        pPainter->fillRect(m_vRect, Qt::black);
+        /* Draw full background: */
+        pPainter->drawPixmap(cr.x() + m_iMargin, cr.y() + m_iMargin, *m_pbgFullImage);
 
         /* Compose name: */
         QString strName = tr("No preview");
@@ -316,10 +319,6 @@ void UIGMachinePreview::paint(QPainter *pPainter, const QStyleOptionGraphicsItem
         pPainter->setPen(Qt::white);
         pPainter->drawText(m_vRect, fFlags, strName);
     }
-
-    /* Draw the glossy overlay last: */
-    if (m_pGlossyImg)
-        pPainter->drawImage(m_vRect.x(), m_vRect.y(), *m_pGlossyImg);
 }
 
 void UIGMachinePreview::setUpdateInterval(UpdateInterval interval, bool fSave)
@@ -369,89 +368,11 @@ void UIGMachinePreview::setUpdateInterval(UpdateInterval interval, bool fSave)
         vboxGlobal().virtualBox().SetExtraData(GUI_PreviewUpdate, m_intervals[interval]);
 }
 
-void UIGMachinePreview::repaintBGImages()
+void UIGMachinePreview::recalculatePreviewRectangle()
 {
-    /* Delete the old images: */
-    if (m_pbgImage)
-    {
-        delete m_pbgImage;
-        m_pbgImage = 0;
-    }
-    if (m_pGlossyImg)
-    {
-        delete m_pGlossyImg;
-        m_pGlossyImg = 0;
-    }
-
-    /* Check that there is enough room for our fancy stuff.
-     * If not we just draw nothing (the border and the blur radius). */
+    /* Contents rectangle: */
     QRect cr = contentsRect().toRect();
-    if (cr.width()  < 41 || cr.height() < 41)
-        return;
-
-    QPalette pal = palette();
-    m_wRect = cr.adjusted(10, 10, -10, -10);
-    m_vRect = m_wRect.adjusted(m_vMargin, m_vMargin, -m_vMargin, -m_vMargin).adjusted(-3, -3, 3, 3);
-
-    /* First draw the shadow. Its a rounded rectangle which get blurred: */
-    QImage imageW(cr.size(), QImage::Format_ARGB32);
-    QColor bg = pal.color(QPalette::Base);
-    bg.setAlpha(0); /* We want blur to transparent _and_ whatever the base color is. */
-    imageW.fill(bg.rgba());
-    QPainter pW(&imageW);
-    pW.setBrush(QColor(30, 30, 30)); /* Dark gray */
-    pW.setPen(Qt::NoPen);
-    pW.drawRoundedRect(QRect(QPoint(0, 0), cr.size()).adjusted(10, 10, -10, -10), m_vMargin, m_vMargin);
-    pW.end();
-    /* Blur the rectangle */
-    QImage imageO(cr.size(), QImage::Format_ARGB32);
-    blurImage(imageW, imageO, 10);
-    QPainter pO(&imageO);
-
-    /* Now paint the border with a gradient to get a look of a monitor: */
-    QRect rr = QRect(QPoint(0, 0), cr.size()).adjusted(10, 10, -10, -10);
-    QLinearGradient lg(0, rr.y(), 0, rr.height());
-    QColor base(200, 200, 200); /* light variant */
-    // QColor base(80, 80, 80); /* Dark variant */
-    lg.setColorAt(0, base);
-    lg.setColorAt(0.4, base.darker(300));
-    lg.setColorAt(0.5, base.darker(400));
-    lg.setColorAt(0.7, base.darker(300));
-    lg.setColorAt(1, base);
-    pO.setBrush(lg);
-    pO.setPen(QPen(base.darker(150), 1));
-    pO.drawRoundedRect(rr, m_vMargin, m_vMargin);
-    pO.end();
-
-    /* Make a copy of the new bg image: */
-    m_pbgImage = new QImage(imageO);
-
-    /* Now the glossy overlay has to be created.
-     * Start with defining a nice looking painter path. */
-    QRect gRect = QRect(QPoint(0, 0), m_vRect.size());
-    QPainterPath glossyPath(QPointF(gRect.x(), gRect.y()));
-    glossyPath.lineTo(gRect.x() + gRect.width(), gRect.y());
-    glossyPath.lineTo(gRect.x() + gRect.width(), gRect.y() + gRect.height() * 1.0/3.0);
-    glossyPath.cubicTo(gRect.x() + gRect.width() / 2.0, gRect.y() + gRect.height() * 1.0/3.0,
-                       gRect.x() + gRect.width() / 2.0, gRect.y() + gRect.height() * 2.0/3.0,
-                       gRect.x(), gRect.y() + gRect.height() * 2.0/3.0);
-    glossyPath.closeSubpath();
-
-    /* Paint the glossy path on a QImage: */
-    QImage image(m_vRect.size(), QImage::Format_ARGB32);
-    QColor bg1(Qt::white); /* We want blur to transparent _and_ white. */
-    bg1.setAlpha(0);
-    image.fill(bg1.rgba());
-    QPainter painter(&image);
-    painter.fillPath(glossyPath, QColor(255, 255, 255, 80));
-    painter.end();
-    /* Blur the image to get a much more smooth feeling */
-    QImage image1(m_vRect.size(), QImage::Format_ARGB32);
-    blurImage(image, image1, 7);
-    m_pGlossyImg = new QImage(image1);
-
-    /* Repaint: */
-    update();
+    m_vRect = cr.adjusted(21 + m_iMargin, 17 + m_iMargin, -21 - m_iMargin, -20 - m_iMargin);
 }
 
 void UIGMachinePreview::restart()
