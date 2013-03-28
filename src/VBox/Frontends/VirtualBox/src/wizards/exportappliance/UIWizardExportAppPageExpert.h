@@ -39,7 +39,7 @@ class UIWizardExportAppPageExpert : public UIWizardPage,
     Q_PROPERTY(QStringList machineNames READ machineNames);
     Q_PROPERTY(QStringList machineIDs READ machineIDs);
     Q_PROPERTY(StorageType storageType READ storageType WRITE setStorageType);
-    Q_PROPERTY(bool OVF09Selected READ isOVF09Selected WRITE setOVF09Selected);
+    Q_PROPERTY(QString format READ format WRITE setFormat);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(QString username READ username WRITE setUserName);
     Q_PROPERTY(QString password READ password WRITE setPassword);
@@ -69,6 +69,9 @@ private slots:
 
     /* Storage-type change handler: */
     void sltStorageTypeChangeHandler();
+
+    /* Format combo change handler: */
+    void sltUpdateFormatComboToolTip() { updateFormatComboToolTip(); }
 
 private:
 

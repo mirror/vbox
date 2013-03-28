@@ -23,6 +23,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QComboBox>
 #include <QCheckBox>
 
 /* Local includes: */
@@ -45,7 +46,8 @@ void UIWizardExportAppPage3::chooseDefaultSettings()
     m_pHostnameEditor->setText(vboxGlobal().virtualBox().GetExtraData(GUI_Export_Hostname));
     m_pBucketEditor->setText(vboxGlobal().virtualBox().GetExtraData(GUI_Export_Bucket));
 #else
-    /* Do nothing for now... */
+    /* Choose defalt format: */
+    setFormat("ovf-1.0");
 #endif
 }
 
@@ -65,7 +67,7 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
             m_pHostnameEditor->setVisible(false);
             m_pBucketLabel->setVisible(false);
             m_pBucketEditor->setVisible(false);
-            m_pOVF09Checkbox->setVisible(true);
+            m_pFormatComboBox->setVisible(true);
             m_pFileSelector->setChooserVisible(true);
             break;
         }
@@ -79,8 +81,7 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
             m_pHostnameEditor->setVisible(false);
             m_pBucketLabel->setVisible(true);
             m_pBucketEditor->setVisible(true);
-            m_pOVF09Checkbox->setVisible(false);
-            m_pOVF09Checkbox->setChecked(false);
+            m_pFormatComboBox->setVisible(false);
             m_pFileSelector->setChooserVisible(false);
             break;
         }
@@ -94,7 +95,7 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
             m_pHostnameEditor->setVisible(true);
             m_pBucketLabel->setVisible(true);
             m_pBucketEditor->setVisible(true);
-            m_pOVF09Checkbox->setVisible(true);
+            m_pFormatComboBox->setVisible(true);
             m_pFileSelector->setChooserVisible(false);
             break;
         }
@@ -111,14 +112,24 @@ void UIWizardExportAppPage3::refreshCurrentSettings()
     m_pFileSelector->setPath(strName);
 }
 
-bool UIWizardExportAppPage3::isOVF09Selected() const
+void UIWizardExportAppPage3::updateFormatComboToolTip()
 {
-    return m_pOVF09Checkbox->isChecked();
+    int iCurrentIndex = m_pFormatComboBox->currentIndex();
+    QString strCurrentIndexToolTip = m_pFormatComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
+    m_pFormatComboBox->setToolTip(strCurrentIndexToolTip);
 }
 
-void UIWizardExportAppPage3::setOVF09Selected(bool fChecked)
+QString UIWizardExportAppPage3::format() const
 {
-    m_pOVF09Checkbox->setChecked(fChecked);
+    int iIndex = m_pFormatComboBox->currentIndex();
+    return m_pFormatComboBox->itemData(iIndex).toString();
+}
+
+void UIWizardExportAppPage3::setFormat(const QString &strFormat)
+{
+    int iIndex = m_pFormatComboBox->findData(strFormat);
+    AssertMsg(iIndex != -1, ("Field not found!"));
+    m_pFormatComboBox->setCurrentIndex(iIndex);
 }
 
 bool UIWizardExportAppPage3::isManifestSelected() const
@@ -228,6 +239,21 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
                 m_pFileSelectorLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                 m_pFileSelectorLabel->setBuddy(m_pFileSelector);
             }
+            m_pFormatComboBox = new QComboBox(this);
+            {
+                const QString strFormat09("ovf-0.9");
+                const QString strFormat10("ovf-1.0");
+                const QString strFormat20("ovf-2.0");
+                m_pFormatComboBox->addItem(strFormat09, strFormat09);
+                m_pFormatComboBox->addItem(strFormat10, strFormat10);
+                m_pFormatComboBox->addItem(strFormat20, strFormat20);
+                connect(m_pFormatComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(sltUpdateFormatComboToolTip()));
+            }
+            m_pFormatComboBoxLabel = new QLabel(this);
+            {
+                m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
+            }
             pSettingsLayout->addWidget(m_pUsernameLabel, 0, 0);
             pSettingsLayout->addWidget(m_pUsernameEditor, 0, 1);
             pSettingsLayout->addWidget(m_pPasswordLabel, 1, 0);
@@ -238,12 +264,12 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
             pSettingsLayout->addWidget(m_pBucketEditor, 3, 1);
             pSettingsLayout->addWidget(m_pFileSelectorLabel, 4, 0);
             pSettingsLayout->addWidget(m_pFileSelector, 4, 1);
+            pSettingsLayout->addWidget(m_pFormatComboBoxLabel, 5, 0);
+            pSettingsLayout->addWidget(m_pFormatComboBox, 5, 1);
         }
-        m_pOVF09Checkbox = new QCheckBox(this);
         m_pManifestCheckbox = new QCheckBox(this);
         pMainLayout->addWidget(m_pLabel);
         pMainLayout->addLayout(pSettingsLayout);
-        pMainLayout->addWidget(m_pOVF09Checkbox);
         pMainLayout->addWidget(m_pManifestCheckbox);
         pMainLayout->addStretch();
         chooseDefaultSettings();
@@ -257,7 +283,7 @@ UIWizardExportAppPageBasic3::UIWizardExportAppPageBasic3()
     connect(m_pFileSelector, SIGNAL(pathChanged(const QString &)), this, SIGNAL(completeChanged()));
 
     /* Register fields: */
-    registerField("OVF09Selected", this, "OVF09Selected");
+    registerField("format", this, "format");
     registerField("manifestSelected", this, "manifestSelected");
     registerField("username", this, "username");
     registerField("password", this, "password");
@@ -283,13 +309,20 @@ void UIWizardExportAppPageBasic3::retranslateUi()
     m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export virtual appliance"));
     m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Open Virtualization Format Archive (%1)").arg("*.ova") + ";;" +
                                     UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
-    m_pOVF09Checkbox->setToolTip(UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility with other virtualization products."));
-    m_pOVF09Checkbox->setText(UIWizardExportApp::tr("&Write legacy OVF 0.9"));
+    m_pFormatComboBoxLabel->setText(UIWizardExportApp::tr("F&ormat:"));
+    m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("OVF 0.9"));
+    m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("OVF 1.0"));
+    m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("OVF 2.0"));
+    m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
+                                                            "with other virtualization products."), Qt::ToolTipRole);
+    m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
+    m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new experimental OVF 2.0 format."), Qt::ToolTipRole);
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
 
     /* Refresh current settings: */
     refreshCurrentSettings();
+    updateFormatComboToolTip();
 }
 
 void UIWizardExportAppPageBasic3::initializePage()

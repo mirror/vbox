@@ -29,6 +29,7 @@
 class QLabel;
 class QLineEdit;
 class VBoxEmptyFileSelector;
+class QComboBox;
 class QCheckBox;
 class QIRichTextLabel;
 
@@ -43,10 +44,11 @@ protected:
     /* Helpers: */
     void chooseDefaultSettings();
     virtual void refreshCurrentSettings();
+    virtual void updateFormatComboToolTip();
 
-    /* Stuff for 'OVF09Selected' field: */
-    bool isOVF09Selected() const;
-    void setOVF09Selected(bool fChecked);
+    /* Stuff for 'format' field: */
+    QString format() const;
+    void setFormat(const QString &strFormat);
     /* Stuff for 'manifestSelected' field: */
     bool isManifestSelected() const;
     void setManifestSelected(bool fChecked);
@@ -80,7 +82,8 @@ protected:
     QLineEdit *m_pBucketEditor;
     QLabel *m_pFileSelectorLabel;
     VBoxEmptyFileSelector *m_pFileSelector;
-    QCheckBox *m_pOVF09Checkbox;
+    QLabel *m_pFormatComboBoxLabel;
+    QComboBox *m_pFormatComboBox;
     QCheckBox *m_pManifestCheckbox;
 };
 
@@ -88,7 +91,7 @@ protected:
 class UIWizardExportAppPageBasic3 : public UIWizardPage, public UIWizardExportAppPage3
 {
     Q_OBJECT;
-    Q_PROPERTY(bool OVF09Selected READ isOVF09Selected WRITE setOVF09Selected);
+    Q_PROPERTY(QString format READ format WRITE setFormat);
     Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
     Q_PROPERTY(QString username READ username WRITE setUserName);
     Q_PROPERTY(QString password READ password WRITE setPassword);
@@ -105,6 +108,11 @@ protected:
 
     /* Wrapper to access 'wizard-field' from base part: */
     QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
+
+private slots:
+
+    /* Format combo change handler: */
+    void sltUpdateFormatComboToolTip() { updateFormatComboToolTip(); }
 
 private:
 

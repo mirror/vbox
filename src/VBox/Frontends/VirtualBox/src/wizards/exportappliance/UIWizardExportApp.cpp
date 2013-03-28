@@ -136,8 +136,7 @@ bool UIWizardExportApp::exportAppliance()
 bool UIWizardExportApp::exportVMs(CAppliance &appliance)
 {
     /* Write the appliance: */
-    const QString strVersion = field("OVF09Selected").toBool() ? "ovf-0.9" : "ovf-1.0";
-    CProgress progress = appliance.Write(strVersion, field("manifestSelected").toBool() /* fManifest */, uri());
+    CProgress progress = appliance.Write(field("format").toString(), field("manifestSelected").toBool() /* fManifest */, uri());
     bool fResult = appliance.isOk();
     if (fResult)
     {
