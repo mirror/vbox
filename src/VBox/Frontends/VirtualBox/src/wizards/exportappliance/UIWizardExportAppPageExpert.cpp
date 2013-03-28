@@ -123,7 +123,21 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                     m_pFileSelectorLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
                     m_pFileSelectorLabel->setBuddy(m_pFileSelector);
                 }
-                m_pOVF09Checkbox = new QCheckBox(m_pSettingsCnt);
+                m_pFormatComboBox = new QComboBox(m_pSettingsCnt);
+                {
+                    const QString strFormat09("ovf-0.9");
+                    const QString strFormat10("ovf-1.0");
+                    const QString strFormat20("ovf-2.0");
+                    m_pFormatComboBox->addItem(strFormat09, strFormat09);
+                    m_pFormatComboBox->addItem(strFormat10, strFormat10);
+                    m_pFormatComboBox->addItem(strFormat20, strFormat20);
+                    connect(m_pFormatComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(sltUpdateFormatComboToolTip()));
+                }
+                m_pFormatComboBoxLabel = new QLabel(m_pSettingsCnt);
+                {
+                    m_pFormatComboBoxLabel->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+                    m_pFormatComboBoxLabel->setBuddy(m_pFormatComboBox);
+                }
                 m_pManifestCheckbox = new QCheckBox(m_pSettingsCnt);
                 pSettingsLayout->addWidget(m_pUsernameLabel, 0, 0);
                 pSettingsLayout->addWidget(m_pUsernameEditor, 0, 1);
@@ -135,7 +149,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
                 pSettingsLayout->addWidget(m_pBucketEditor, 3, 1);
                 pSettingsLayout->addWidget(m_pFileSelectorLabel, 4, 0);
                 pSettingsLayout->addWidget(m_pFileSelector, 4, 1);
-                pSettingsLayout->addWidget(m_pOVF09Checkbox, 5, 0, 1, 2);
+                pSettingsLayout->addWidget(m_pFormatComboBoxLabel, 5, 0);
+                pSettingsLayout->addWidget(m_pFormatComboBox, 5, 1);
                 pSettingsLayout->addWidget(m_pManifestCheckbox, 6, 0, 1, 2);
             }
         }
@@ -166,7 +181,7 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
     registerField("machineNames", this, "machineNames");
     registerField("machineIDs", this, "machineIDs");
     registerField("storageType", this, "storageType");
-    registerField("OVF09Selected", this, "OVF09Selected");
+    registerField("format", this, "format");
     registerField("manifestSelected", this, "manifestSelected");
     registerField("username", this, "username");
     registerField("password", this, "password");
@@ -216,10 +231,19 @@ void UIWizardExportAppPageExpert::retranslateUi()
     m_pFileSelector->setFileDialogTitle(UIWizardExportApp::tr("Please choose a file to export virtual appliance"));
     m_pFileSelector->setFileFilters(UIWizardExportApp::tr("Open Virtualization Format Archive (%1)").arg("*.ova") + ";;" +
                                     UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
-    m_pOVF09Checkbox->setToolTip(UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility with other virtualization products."));
-    m_pOVF09Checkbox->setText(UIWizardExportApp::tr("&Write legacy OVF 0.9"));
+    m_pFormatComboBoxLabel->setText(UIWizardExportApp::tr("F&ormat:"));
+    m_pFormatComboBox->setItemText(0, UIWizardExportApp::tr("OVF 0.9"));
+    m_pFormatComboBox->setItemText(1, UIWizardExportApp::tr("OVF 1.0"));
+    m_pFormatComboBox->setItemText(2, UIWizardExportApp::tr("OVF 2.0"));
+    m_pFormatComboBox->setItemData(0, UIWizardExportApp::tr("Write in legacy OVF 0.9 format for compatibility "
+                                                            "with other virtualization products."), Qt::ToolTipRole);
+    m_pFormatComboBox->setItemData(1, UIWizardExportApp::tr("Write in standard OVF 1.0 format."), Qt::ToolTipRole);
+    m_pFormatComboBox->setItemData(2, UIWizardExportApp::tr("Write in new experimental OVF 2.0 format."), Qt::ToolTipRole);
     m_pManifestCheckbox->setToolTip(UIWizardExportApp::tr("Create a Manifest file for automatic data integrity checks on import."));
     m_pManifestCheckbox->setText(UIWizardExportApp::tr("Write &Manifest file"));
+
+    /* Refresh current settings: */
+    updateFormatComboToolTip();
 }
 
 void UIWizardExportAppPageExpert::initializePage()
