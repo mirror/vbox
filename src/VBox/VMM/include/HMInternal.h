@@ -870,17 +870,17 @@ typedef struct HMCPU
     STAMCOUNTER             StatFlushPhysPageManual;
     STAMCOUNTER             StatFlushTlb;
     STAMCOUNTER             StatFlushTlbManual;
-    STAMCOUNTER             StatFlushPageInvlpg;
     STAMCOUNTER             StatFlushTlbWorldSwitch;
     STAMCOUNTER             StatNoFlushTlbWorldSwitch;
-    STAMCOUNTER             StatFlushTlbCRxChange;
     STAMCOUNTER             StatFlushAsid;
     STAMCOUNTER             StatFlushNestedPaging;
-    STAMCOUNTER             StatFlushTlbInvlpga;
+    STAMCOUNTER             StatFlushTlbInvlpgVirt;
+    STAMCOUNTER             StatFlushTlbInvlpgPhys;
     STAMCOUNTER             StatTlbShootdown;
     STAMCOUNTER             StatTlbShootdownFlush;
 
     STAMCOUNTER             StatSwitchGuestIrq;
+    STAMCOUNTER             StatSwitchHmToR3FF;
     STAMCOUNTER             StatSwitchToR3;
 
     STAMCOUNTER             StatTscOffset;

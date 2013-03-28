@@ -1332,7 +1332,7 @@ ResumeExecution:
             if (    VM_FF_ISPENDING(pVM, VM_FF_HM_TO_R3_MASK)
                 ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
             {
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchToR3);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
                 rc = RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
                 goto end;
             }
@@ -2315,7 +2315,6 @@ ResumeExecution:
         rc = hmR0SvmInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pCtx));
         if (rc == VINF_SUCCESS)
         {
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushPageInvlpg);
             goto ResumeExecution;   /* eip already updated */
         }
         break;
@@ -3073,7 +3072,10 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
         else
 #endif
+        {
             SVMR0InvlpgA(GCVirt, pvVMCB->ctrl.TLBCtrl.n.u32ASID);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpgVirt);
+        }
     }
     return VINF_SUCCESS;
 }
@@ -3093,7 +3095,7 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
     Assert(pVM->hm.s.fNestedPaging);
     /* invlpga only invalidates TLB entries for guest virtual addresses; we have no choice but to force a TLB flush here. */
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpga);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpgPhys);
     return VINF_SUCCESS;
 }
 #endif
