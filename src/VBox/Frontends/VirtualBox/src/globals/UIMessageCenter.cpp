@@ -70,40 +70,17 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 
-bool UIMessageCenter::isAnyWarningShown()
+bool UIMessageCenter::warningShown(const QString &strWarningName) const
 {
-    /* Check if at least one warning is alive!
-     * All warnings are stored in m_warnings list as live pointers,
-     * this is why if some warning was deleted from another place,
-     * its pointer here will equal NULL... */
-    for (int i = 0; i < m_warnings.size(); ++i)
-        if (m_warnings[i])
-            return true;
-    return false;
+    return m_warnings.contains(strWarningName);
 }
 
-bool UIMessageCenter::isAlreadyShown(const QString &strWarningName) const
+void UIMessageCenter::setWarningShown(const QString &strWarningName, bool fWarningShown)
 {
-    return m_strShownWarnings.contains(strWarningName);
-}
-
-void UIMessageCenter::setShownStatus(const QString &strWarningName)
-{
-    if (!m_strShownWarnings.contains(strWarningName))
-        m_strShownWarnings.append(strWarningName);
-}
-
-void UIMessageCenter::clearShownStatus(const QString &strWarningName)
-{
-    if (m_strShownWarnings.contains(strWarningName))
-        m_strShownWarnings.removeAll(strWarningName);
-}
-
-void UIMessageCenter::closeAllWarnings()
-{
-    /* Broadcast signal to perform emergent
-     * closing + deleting all the opened warnings. */
-    emit sigToCloseAllWarnings();
+    if (fWarningShown && !m_warnings.contains(strWarningName))
+        m_warnings.append(strWarningName);
+    else if (!fWarningShown && m_warnings.contains(strWarningName))
+        m_warnings.removeAll(strWarningName);
 }
 
 /**
@@ -248,18 +225,12 @@ int UIMessageCenter::message(QWidget *pParent, Type type, const QString &strMess
     if (!strDetails.isEmpty())
         pBox->setDetailsText(strDetails);
 
-    /* Add to warnings: */
-    m_warnings << pBox;
-
     /* Show box: */
     int rc = pBox->exec();
 
     /* Make sure box still valid: */
     if (!pBox)
         return rc;
-
-    /* Remove from warnings: */
-    m_warnings.removeAll(pBox);
 
     /* Cleanup confirmation: */
     if (pcszAutoConfirmId)
@@ -372,18 +343,12 @@ int UIMessageCenter::messageWithOption(QWidget *pParent,
     if (!strDetails.isEmpty())
         pBox->setDetailsText(strDetails);
 
-    /* Add to warnings: */
-    m_warnings << pBox;
-
     /* Show box: */
     int rc = pBox->exec();
 
     /* Make sure box still valid: */
     if (!pBox)
         return rc;
-
-    /* Remove from warnings: */
-    m_warnings.removeAll(pBox);
 
     /* Save option: */
     if (pBox->isFlagChecked())
@@ -825,16 +790,16 @@ bool UIMessageCenter::confirmedSettingsReloading(QWidget *pParent)
 
 void UIMessageCenter::warnAboutStateChange(QWidget *pParent)
 {
-    if (isAlreadyShown("warnAboutStateChange"))
+    if (warningShown("warnAboutStateChange"))
         return;
-    setShownStatus("warnAboutStateChange");
+    setWarningShown("warnAboutStateChange", true);
 
     message(pParent ? pParent : mainWindowShown(), Warning,
             tr("The virtual machine that you are changing has been started. "
                "Only certain settings can be changed while a machine is running. "
                "All other changes will be lost if you close this window now."));
 
-    clearShownStatus("warnAboutStateChange");
+    setWarningShown("warnAboutStateChange", false);
 }
 
 void UIMessageCenter::cannotStartMachine(const CConsole &console)
@@ -2109,9 +2074,9 @@ void UIMessageCenter::remindAboutAutoCapture()
 
 void UIMessageCenter::remindAboutMouseIntegration(bool fSupportsAbsolute)
 {
-    if (isAlreadyShown("remindAboutMouseIntegration"))
+    if (warningShown("remindAboutMouseIntegration"))
         return;
-    setShownStatus("remindAboutMouseIntegration");
+    setWarningShown("remindAboutMouseIntegration", true);
 
     static const char *kNames [2] =
     {
@@ -2164,7 +2129,7 @@ void UIMessageCenter::remindAboutMouseIntegration(bool fSupportsAbsolute)
             kNames [0] /* pcszAutoConfirmId */);
     }
 
-    clearShownStatus("remindAboutMouseIntegration");
+    setWarningShown("remindAboutMouseIntegration", false);
 }
 
 /**
@@ -3272,9 +3237,9 @@ void UIMessageCenter::sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWante
 
 void UIMessageCenter::sltRemindAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent)
 {
-    if (isAlreadyShown("sltRemindAboutUnsupportedUSB2"))
+    if (warningShown("sltRemindAboutUnsupportedUSB2"))
         return;
-    setShownStatus("sltRemindAboutUnsupportedUSB2");
+    setWarningShown("sltRemindAboutUnsupportedUSB2", true);
 
     message(pParent ? pParent : mainMachineWindowShown(), Warning,
             tr("<p>USB 2.0 is currently enabled for this virtual machine. "
@@ -3284,7 +3249,7 @@ void UIMessageCenter::sltRemindAboutUnsupportedUSB2(const QString &strExtPackNam
                "It will be disabled in the meantime unless you cancel the current settings changes.</p>")
                .arg(strExtPackName));
 
-    clearShownStatus("sltRemindAboutUnsupportedUSB2");
+    setWarningShown("sltRemindAboutUnsupportedUSB2", false);
 }
 
 UIMessageCenter::UIMessageCenter()

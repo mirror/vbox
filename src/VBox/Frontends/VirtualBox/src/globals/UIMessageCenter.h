@@ -73,11 +73,9 @@ public:
         AutoConfirmed = 0x8000
     };
 
-    bool isAnyWarningShown();
-    bool isAlreadyShown(const QString &strGuardBlockName) const;
-    void setShownStatus(const QString &strGuardBlockName);
-    void clearShownStatus(const QString &strGuardBlockName);
-    void closeAllWarnings();
+    /* API: Shown warning registration stuff: */
+    bool warningShown(const QString &strWarningName) const;
+    void setWarningShown(const QString &strWarningName, bool fWarningShown);
 
     int message(QWidget *pParent, Type type, const QString &strMessage,
                 const QString &strDetails = QString::null,
@@ -501,8 +499,8 @@ private:
     static QString errorInfoToString(const COMErrorInfo &info,
                                      HRESULT wrapperRC = S_OK);
 
-    QStringList m_strShownWarnings;
-    mutable QList<QPointer<QIMessageBox> > m_warnings;
+    /* Variables: */
+    QStringList m_warnings;
 };
 
 /* Shortcut to the static UIMessageCenter::instance() method, for convenience. */
