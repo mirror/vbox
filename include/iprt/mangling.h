@@ -763,7 +763,6 @@
 # define RTManifestVerifyDigestType                     RT_MANGLER(RTManifestVerifyDigestType)
 # define RTManifestVerifyFiles                          RT_MANGLER(RTManifestVerifyFiles)
 # define RTManifestVerifyFilesBuf                       RT_MANGLER(RTManifestVerifyFilesBuf)
-# define RTManifestVerifyDigestType                     RT_MANGLER(RTManifestVerifyDigestType)
 # define RTManifestWriteFiles                           RT_MANGLER(RTManifestWriteFiles)
 # define RTManifestWriteFilesBuf                        RT_MANGLER(RTManifestWriteFilesBuf)
 # define RTManifestWriteStandard                        RT_MANGLER(RTManifestWriteStandard)
