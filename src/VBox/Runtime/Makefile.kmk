@@ -1113,6 +1113,7 @@ RuntimeGuestR3_SOURCES                  := $(filter-out \
 	common/time/timesupA.asm \
 	common/time/timesup.cpp \
 	common/checksum/RTSha1Digest.cpp \
+	common/checksum/RTSha256Digest.cpp \
 	common/checksum/sha% \
 	generic/RTLogWriteUser-generic.cpp \
 	, $(RuntimeR3_SOURCES))
