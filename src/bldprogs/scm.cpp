@@ -449,7 +449,7 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
                 return VINF_SUCCESS;
 
             return RTStrAAppendExN(ppsz, 2,
-                                   "|", *ppsz && **ppsz ? 1 : 0,
+                                   "|", *ppsz && **ppsz ? (size_t)1 : (size_t)0,
                                    pszSrc, cchSrc);
         }
 
