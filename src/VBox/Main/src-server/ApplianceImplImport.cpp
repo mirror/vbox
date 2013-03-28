@@ -853,17 +853,17 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
                 RTFileOpen(&pFile, strMfFile.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
                 if(RT_SUCCESS(vrc) && pFile != NULL)
                 {
-                    size_t cbSize = 0;
+                    uint64_t cbFile = 0;
                     size_t cbRead = 0;
                     void  *pBuf;
 
-                    vrc = RTFileGetSize(pFile, &cbSize);
-                    if(RT_SUCCESS(vrc) && cbSize > 0)
-                       pBuf = RTMemAllocZ(cbSize);
+                    vrc = RTFileGetSize(pFile, &cbFile);
+                    if(RT_SUCCESS(vrc) && cbFile > 0)
+                       pBuf = RTMemAllocZ(cbFile);
                     else
                         throw vrc;
 
-                    vrc = RTFileRead(pFile, pBuf, cbSize, &cbRead);
+                    vrc = RTFileRead(pFile, pBuf, cbFile, &cbRead);
 
                     if (RT_FAILURE(vrc))
                     {
