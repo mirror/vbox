@@ -760,6 +760,7 @@
 # define RTManifestSetAttr                              RT_MANGLER(RTManifestSetAttr)
 # define RTManifestUnsetAttr                            RT_MANGLER(RTManifestUnsetAttr)
 # define RTManifestVerify                               RT_MANGLER(RTManifestVerify)
+# define RTManifestVerifyDigestType                     RT_MANGLER(RTManifestVerifyDigestType)
 # define RTManifestVerifyFiles                          RT_MANGLER(RTManifestVerifyFiles)
 # define RTManifestVerifyFilesBuf                       RT_MANGLER(RTManifestVerifyFilesBuf)
 # define RTManifestWriteFiles                           RT_MANGLER(RTManifestWriteFiles)
