@@ -3090,17 +3090,8 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
         if (SUCCEEDED(rc))
             pProgress.queryInterfaceTo(aProgress);
     }
-    else
-    {
-        /* Note: on success, the task will unlock this */
-        {
-            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-            HRESULT rc2 = UnlockWrite(NULL);
-            AssertComRC(rc2);
-        }
-        if (pTask != NULL)
-            delete pTask;
-    }
+    else if (pTask != NULL)
+        delete pTask;
 
     LogFlowThisFunc(("LEAVE, rc=%Rhrc\n", rc));
 
@@ -7866,15 +7857,8 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
     m->logicalSize = logicalSize;
     m->variant = variant;
 
-    if (task.isAsync())
-    {
-        /* unlock ourselves when done */
-        HRESULT rc2 = UnlockWrite(NULL);
-        AssertComRC(rc2);
-    }
-
-    /* Note that in sync mode, it's the caller's responsibility to
-     * unlock the medium. */
+    /* Everything is explicitly unlocked when the task exits,
+     * as the task destruction also destroys the media chain. */
 
     return rc;
 }
