@@ -25,13 +25,14 @@
 
 /* GUI includes: */
 #include "UIGraphicsRotatorButton.h"
+#include "UIIconPool.h"
 
 UIGraphicsRotatorButton::UIGraphicsRotatorButton(QIGraphicsWidget *pParent,
                                                  const QString &strPropertyName,
                                                  bool fToggled,
                                                  bool fReflected /* = false */,
                                                  int iAnimationDuration /* = 300 */)
-    : UIGraphicsButton(pParent, UIGraphicsButtonType_RoundArrow)
+    : UIGraphicsButton(pParent, UIIconPool::iconSet(":/expanding_collapsing_16px.png"))
     , m_fReflected(fReflected)
     , m_state(fToggled ? UIGraphicsRotatorButtonState_Rotated : UIGraphicsRotatorButtonState_Default)
     , m_pAnimationMachine(0)
