@@ -1056,7 +1056,7 @@ void UISettingsDialogMachine::sltMachineDataChanged(QString strMachineId)
         return;
 
     /* Check if user had changed something and warn him about he will loose settings on reloading: */
-    if (isSettingsChanged() && !msgCenter().confirmedSettingsReloading(this))
+    if (isSettingsChanged() && !msgCenter().confirmSettingsReloading(this))
         return;
 
     /* Reload data: */

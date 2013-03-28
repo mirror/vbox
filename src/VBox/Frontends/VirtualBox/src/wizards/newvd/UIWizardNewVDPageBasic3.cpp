@@ -397,7 +397,7 @@ bool UIWizardNewVDPageBasic3::validatePage()
     QString strMediumPath(mediumPath());
     fResult = !QFileInfo(strMediumPath).exists();
     if (!fResult)
-        msgCenter().sayCannotOverwriteHardDiskStorage(this, strMediumPath);
+        msgCenter().cannotOverwriteHardDiskStorage(this, strMediumPath);
 
     if (fResult)
     {
