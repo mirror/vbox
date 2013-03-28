@@ -276,7 +276,7 @@ bool UIWizardNewVDPageExpert::validatePage()
     QString strMediumPath(mediumPath());
     fResult = !QFileInfo(strMediumPath).exists();
     if (!fResult)
-        msgCenter().sayCannotOverwriteHardDiskStorage(this, strMediumPath);
+        msgCenter().cannotOverwriteHardDiskStorage(this, strMediumPath);
 
     /* Try to create virtual-disk: */
     if (fResult)
