@@ -115,7 +115,7 @@ struct Appliance::TaskOVF
         taskType(aType),
         locInfo(aLocInfo),
         pProgress(aProgress),
-        enFormat(unspecified),
+        enFormat(ovf::OVFVersion_unknown),
         rc(S_OK)
     {}
 
@@ -128,7 +128,7 @@ struct Appliance::TaskOVF
     const LocationInfo locInfo;
     ComObjPtr<Progress> pProgress;
 
-    OVFFormat enFormat;
+    ovf::OVFVersion_T enFormat;
 
     HRESULT rc;
 };

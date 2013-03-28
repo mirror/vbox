@@ -267,6 +267,65 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, RTDIGESTTYPE enm
     return rc;
 }
 
+
+RTR3DECL(int) RTManifestVerifyDigestType(void *pvBuf, size_t cbSize, RTDIGESTTYPE &digestType)
+{
+    /* Validate input */
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbSize > 0, VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+
+    char *pcBuf = (char*)pvBuf;
+    size_t cbRead = 0;
+    /* Parse the manifest file line by line */
+    for (;;)
+    {
+        if (cbRead >= cbSize)
+        {
+            digestType = RTDIGESTTYPE_UNKNOWN;
+            rc = VERR_MANIFEST_UNSUPPORTED_DIGEST_TYPE;
+            break;
+        }
+
+        size_t cch = rtManifestIndexOfCharInBuf(pcBuf, cbSize - cbRead, '\n') + 1;
+
+        /* Skip empty lines (UNIX/DOS format) */
+        if (   (   cch == 1
+                && pcBuf[0] == '\n')
+            || (   cch == 2
+                && pcBuf[0] == '\r'
+                && pcBuf[1] == '\n'))
+        {
+            pcBuf += cch;
+            cbRead += cch;
+            continue;
+        }
+
+        /* Check for the digest algorithm */
+        if (pcBuf[0] == 'S'
+                 && pcBuf[1] == 'H'
+                 && pcBuf[2] == 'A'
+                 && pcBuf[3] == '1')
+        {
+            digestType = RTDIGESTTYPE_SHA1;
+            break;
+        }
+        else if (pcBuf[0] == 'S'
+                 && pcBuf[1] == 'H'
+                 && pcBuf[2] == 'A'
+                 && pcBuf[3] == '2'
+                 && pcBuf[4] == '5'
+                 && pcBuf[5] == '6')
+        {
+            digestType = RTDIGESTTYPE_SHA256;
+            break;
+        }
+    }
+
+    return rc;
+}
+
 RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTEST paTests, size_t cTests, size_t *piFailed)
 {
     /* Validate input */
@@ -317,11 +376,19 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
          */
 
         /* Check for the digest algorithm */
-        if (   cch < 4
-            || !(   pcBuf[0] == 'S'
+        if (   cch < 4  ||
+               (!(   pcBuf[0] == 'S'
                  && pcBuf[1] == 'H'
                  && pcBuf[2] == 'A'
-                 && pcBuf[3] == '1'))
+                 && pcBuf[3] == '1')
+                        &&
+               !(   pcBuf[0] == 'S'
+                 && pcBuf[1] == 'H'
+                 && pcBuf[2] == 'A'
+                 && pcBuf[3] == '2'
+                 && pcBuf[4] == '5'
+                 && pcBuf[5] == '6'))
+               )
         {
             /* Digest unsupported */
             rc = VERR_MANIFEST_UNSUPPORTED_DIGEST_TYPE;

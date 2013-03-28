@@ -159,6 +159,16 @@ int main(int argc, char **argv)
                                  break;
                              }
 
+                             case kDigestType_SHA256:
+                             {
+                                 char *pszDigest;
+                                 int rc = RTSha256DigestFromFile(ValueUnion.psz, &pszDigest, NULL, NULL);
+                                 if (RT_FAILURE(rc))
+                                     return Error("RTSha256Digest(%s,) -> %Rrc\n", ValueUnion.psz, rc);
+                                 RTPrintf("%s  %s\n", pszDigest, ValueUnion.psz);
+                                 RTStrFree(pszDigest);
+                                 break;
+                             }
                              default:
                                  return Error("The file method isn't implemented for this digest\n");
                          }

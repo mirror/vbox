@@ -60,6 +60,8 @@ RT_C_DECLS_BEGIN
 /** @name Digest types. */
 typedef enum RTDIGESTTYPE
 {
+    /** unknown digest */
+    RTDIGESTTYPE_UNKNOWN,
     /** CRC32 checksum */
     RTDIGESTTYPE_CRC32 = 1,
     /** CRC64 checksum */
@@ -483,6 +485,19 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * co
 RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, RTDIGESTTYPE enmDigestType,
                                    const char * const *papszFiles, size_t cFiles,
                                    PFNRTPROGRESS pfnProgressCallback, void *pvUser);
+
+/**
+ * Verify the type of digest in the manifest file in memory. 
+ *
+ * @returns iprt status code.
+ *
+ * @param   pvBuf                Pointer to memory buffer of the manifest file.
+ * @param   cbSize               Size of the memory buffer.
+ *                               VERR_MANIFEST_DIGEST_MISMATCH error case
+ *                               (optional).
+ * @param   digestType           digest type
+ */
+RTR3DECL(int) RTManifestVerifyDigestType(void *pvBuf, size_t cbSize, RTDIGESTTYPE &digestType);
 
 /**
  * Verify the given SHA1 digests against the entries in the manifest file in
