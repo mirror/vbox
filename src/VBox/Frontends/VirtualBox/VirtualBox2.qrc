@@ -188,5 +188,8 @@
         <file alias="proxy_disabled_32px.png">images/proxy_disabled_32px.png</file>
         <file alias="nw_error_16px.png">images/nw_error_16px.png</file>
         <file alias="nw_loading_16px.png">images/nw_loading_16px.png</file>
+        <file alias="next_16px.png">images/next_16px.png</file>
+        <file alias="previous_16px.png">images/previous_16px.png</file>
+        <file alias="expanding_collapsing_16px.png">images/expanding_collapsing_16px.png</file>
     </qresource>
 </RCC>
