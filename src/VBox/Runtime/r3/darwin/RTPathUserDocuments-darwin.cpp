@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,10 +28,18 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/path.h>
-#include <iprt/err.h>
-#include <iprt/assert.h>
+#include "internal/iprt.h"
 
-#include <CoreServices/CoreServices.h>
+#include <iprt/assert.h>
+#include <iprt/string.h>
+#include <iprt/err.h>
+
+#include <NSSystemDirectories.h>
+#include <sys/syslimits.h>
+#ifdef IPRT_USE_CORE_SERVICE_FOR_USER_DOCUMENTS
+# include <CoreServices/CoreServices.h>
+#endif
+
 
 RTDECL(int) RTPathUserDocuments(char *pszPath, size_t cchPath)
 {
@@ -41,15 +49,50 @@ RTDECL(int) RTPathUserDocuments(char *pszPath, size_t cchPath)
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(cchPath, VERR_INVALID_PARAMETER);
 
+    /*
+     * Try NSSystemDirectories first since that works for directories that doesn't exist.
+     */
+    int rc = VERR_PATH_NOT_FOUND;
+    NSSearchPathEnumerationState EnmState = NSStartSearchPathEnumeration(NSDocumentDirectory, NSUserDomainMask);
+    if (EnmState != 0)
+    {
+        char szTmp[PATH_MAX];
+        szTmp[0] = szTmp[PATH_MAX - 1] = '\0';
+        EnmState = NSGetNextSearchPathEnumeration(EnmState, szTmp);
+        if (EnmState != 0)
+        {
+            size_t cchTmp = strlen(szTmp);
+            if (cchTmp >= cchPath)
+                return VERR_BUFFER_OVERFLOW;
+
+            if (szTmp[0] == '~' && szTmp[1] == '/')
+            {
+                /* Expand tilde. */
+                rc = RTPathUserHome(pszPath, cchPath - cchTmp + 2);
+                if (RT_FAILURE(rc))
+                    return rc;
+                rc = RTPathAppend(pszPath, cchPath, &szTmp[2]);
+            }
+            else
+                rc = RTStrCopy(pszPath, cchPath, szTmp);
+            return rc;
+        }
+    }
+
+#ifdef IPRT_USE_CORE_SERVICE_FOR_USER_DOCUMENTS
+    /*
+     * Fall back on FSFindFolder in case the above should fail...
+     */
     FSRef ref;
     OSErr err = FSFindFolder(kOnAppropriateDisk, kDocumentsFolderType, false /* createFolder */, &ref);
-    if (err != noErr)
-        return VERR_PATH_NOT_FOUND;
-
-    err = FSRefMakePath(&ref, (UInt8*)pszPath, cchPath);
-    if (err != noErr)
-        return VERR_PATH_NOT_FOUND;
-
-    return VINF_SUCCESS;
+    if (err == noErr)
+    {
+        err = FSRefMakePath(&ref, (UInt8*)pszPath, cchPath);
+        if (err == noErr)
+            return VINF_SUCCESS;
+    }
+#endif
+    Assert(RT_FAILURE_NP(rc));
+    return rc;
 }
 
