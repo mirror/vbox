@@ -64,13 +64,13 @@
 
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
 #  ifdef RHEL_RELEASE_CODE
-#   if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(6,1)
+#   if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(6, 1)
 #    define DRM_RHEL61
 #   endif
-#   if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(6,3)
+#   if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(6, 3)
 #    define DRM_RHEL63
 #   endif
-#   if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(6,4)
+#   if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(6, 4)
 #    define DRM_RHEL64
 #   endif
 #  endif
@@ -78,6 +78,14 @@
 
 #include "drm/drmP.h"
 #include "vboxvideo_drm.h"
+
+# ifndef RHEL_RELEASE_CODE
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 39) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+#   ifdef DRM_SWITCH_POWER_ON
+#    define DRM_DEBIAN_34ON32
+#   endif
+#  endif
+# endif
 
 static struct pci_device_id pciidlist[] = {
         vboxvideo_PCI_IDS
@@ -91,7 +99,7 @@ int vboxvideo_driver_load(struct drm_device * dev, unsigned long flags)
     return 0;
 #endif
 }
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0) || defined(DRM_RHEL63)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0) || defined(DRM_RHEL63) || defined(DRM_DEBIAN_34ON32)
 /* since linux-3.3.0-rc1 drm_driver::fops is pointer */
 static struct file_operations driver_fops =
 {
@@ -117,7 +125,7 @@ static struct drm_driver driver =
     .get_map_ofs = drm_core_get_map_ofs,
     .get_reg_ofs = drm_core_get_reg_ofs,
 #endif
-# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0) && !defined(DRM_RHEL63)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0) && !defined(DRM_RHEL63) && !defined(DRM_DEBIAN_34ON32)
     .fops =
     {
         .owner = THIS_MODULE,
@@ -134,7 +142,7 @@ static struct drm_driver driver =
         .poll = drm_poll,
         .fasync = drm_fasync,
     },
-#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0) || defined(DRM_RHEL63) */
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0) || defined(DRM_RHEL63) || defined(DRM_DEBIAN_34ON32) */
     .fops = &driver_fops,
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39) && !defined(DRM_RHEL61)
