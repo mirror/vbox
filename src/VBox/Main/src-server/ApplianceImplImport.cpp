@@ -853,17 +853,17 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
                 RTFileOpen(&pFile, strMfFile.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
                 if(RT_SUCCESS(vrc) && pFile != NULL)
                 {
-                    uint64_t size = 0;
-                    uint64_t readed = 0;
+                    size_t cbSize = 0;
+                    size_t cbRead = 0;
                     void  *pBuf;
 
-                    vrc = RTFileGetSize(pFile, &size);
-                    if(RT_SUCCESS(vrc) && size > 0)
-                       pBuf = RTMemAllocZ(size);
+                    vrc = RTFileGetSize(pFile, &cbSize);
+                    if(RT_SUCCESS(vrc) && cbSize > 0)
+                       pBuf = RTMemAllocZ(cbSize);
                     else
                         throw vrc;
 
-                    vrc = RTFileRead(pFile, pBuf, size, &readed);
+                    vrc = RTFileRead(pFile, pBuf, cbSize, &cbRead);
 
                     if (RT_FAILURE(vrc))
                     {
@@ -875,7 +875,7 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
                     }
 
                     RTDIGESTTYPE digestType = RTDIGESTTYPE_UNKNOWN;
-                    vrc = RTManifestVerifyDigestType(pBuf, readed, digestType);
+                    vrc = RTManifestVerifyDigestType(pBuf, cbRead, digestType);
 
                     if (RT_FAILURE(vrc))
                     {
