@@ -27,6 +27,8 @@
  * private classes. */
 #include <iprt/tar.h>
 
+#include "ovfreader.h"
+
 /* VBox forward declarations */
 class Progress;
 class VirtualSystemDescription;
@@ -42,6 +44,7 @@ namespace ovf
     struct VirtualSystem;
     class OVFReader;
     struct DiskImage;
+    struct EnvelopeData;
 }
 
 namespace xml
@@ -72,13 +75,7 @@ public:
 
     DECLARE_EMPTY_CTOR_DTOR (Appliance)
 
-    enum OVFFormat
-    {
-        unspecified,
-        OVF_0_9,
-        OVF_1_0,
-        OVF_2_0
-    };
+
 
     // public initializer/uninitializer for internal purposes only
     HRESULT FinalConstruct() { return BaseFinalConstruct(); }
@@ -199,7 +196,7 @@ private:
      * Write stuff
      ******************************************************************************/
 
-    HRESULT writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
+    HRESULT writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     HRESULT writeFS(TaskOVF *pTask);
     HRESULT writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock);
@@ -208,14 +205,18 @@ private:
     HRESULT writeS3(TaskOVF *pTask);
 
     struct XMLStack;
-    void buildXML(AutoWriteLockBase& writeLock, xml::Document &doc, XMLStack &stack, const Utf8Str &strPath, OVFFormat enFormat);
+
+    void buildXML(AutoWriteLockBase& writeLock, 
+                  xml::Document &doc, 
+                  XMLStack &stack, 
+                  const Utf8Str &strPath, 
+                  ovf::OVFVersion_T enFormat);
     void buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                                      xml::ElementNode &elmToAddVirtualSystemsTo,
                                      std::list<xml::ElementNode*> *pllElementsWithUuidAttributes,
                                      ComObjPtr<VirtualSystemDescription> &vsdescThis,
-                                     OVFFormat enFormat,
+                                     ovf::OVFVersion_T enFormat,
                                      XMLStack &stack);
-
 
     friend class Machine;
 };

@@ -1007,6 +1007,8 @@ EXPORTS
     RTSha256Init
     RTSha256ToString
     RTSha256Update
+    RTSha256Digest
+    RTSha256DigestFromFile
     RTSha512
     RTSha512Final
     RTSha512FromString

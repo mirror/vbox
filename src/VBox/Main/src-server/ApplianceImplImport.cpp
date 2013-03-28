@@ -818,35 +818,110 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
     LogFlowFuncEnter();
 
     HRESULT rc = S_OK;
+    int vrc = VINF_SUCCESS;
 
     PVDINTERFACEIO pShaIo = 0;
     PVDINTERFACEIO pFileIo = 0;
     do
     {
-        pShaIo = ShaCreateInterface();
-        if (!pShaIo)
+        try
         {
-            rc = E_OUTOFMEMORY;
-            break;
+            /* Create the necessary file access interfaces. */
+            pFileIo = FileCreateInterface();
+            if (!pFileIo)
+            {
+                rc = E_OUTOFMEMORY;
+                break;
+            }
+
+            Utf8Str strMfFile = Utf8Str(pTask->locInfo.strPath).stripExt().append(".mf");
+
+            if (RTFileExists(strMfFile.c_str()))
+            {
+                SHASTORAGE storage;
+                RT_ZERO(storage);
+
+                pShaIo = ShaCreateInterface();
+                if (!pShaIo)
+                {
+                    rc = E_OUTOFMEMORY;
+                    break;
+                }
+
+                //read the manifest file and find a type of used digest
+                RTFILE pFile = NULL;
+                RTFileOpen(&pFile, strMfFile.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+                if(RT_SUCCESS(vrc) && pFile != NULL)
+                {
+                    uint64_t size = 0;
+                    uint64_t readed = 0;
+                    void  *pBuf;
+
+                    vrc = RTFileGetSize(pFile, &size);
+                    if(RT_SUCCESS(vrc) && size > 0)
+                       pBuf = RTMemAllocZ(size);
+                    else
+                        throw vrc;
+
+                    vrc = RTFileRead(pFile, pBuf, size, &readed);
+
+                    if (RT_FAILURE(vrc))
+                    {
+                        if (pBuf)
+                            RTMemFree(pBuf);
+                        throw setError(VBOX_E_FILE_ERROR,
+                               tr("Could not read manifest file '%s' (%Rrc)"),
+                               RTPathFilename(strMfFile.c_str()), vrc);
+                    }
+
+                    RTDIGESTTYPE digestType = RTDIGESTTYPE_UNKNOWN;
+                    vrc = RTManifestVerifyDigestType(pBuf, readed, digestType);
+
+                    if (RT_FAILURE(vrc))
+                    {
+                        if (pBuf)
+                            RTMemFree(pBuf);
+                        throw setError(VBOX_E_FILE_ERROR,
+                               tr("Could not verify supported digest types in the manifest file '%s' (%Rrc)"),
+                               RTPathFilename(strMfFile.c_str()), vrc);
+                    }
+
+                    storage.fCreateDigest = true;
+
+                    if (digestType == RTDIGESTTYPE_SHA256)
+                    {
+                        storage.fSha256 = true;
+                    }
+                    else
+                    {
+                        storage.fSha256 = false;
+                    }
+                }
+                    
+                ///////////////////////////////////////////
+
+                vrc = VDInterfaceAdd(&pFileIo->Core, "Appliance::IOFile",
+                                         VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
+                                         &storage.pVDImageIfaces);
+                if (RT_FAILURE(vrc))
+                    rc = setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
+
+                storage.fCreateDigest = true;
+
+                rc = readFSImpl(pTask, pTask->locInfo.strPath, pShaIo, &storage);
+            }
+            else
+                rc = readFSImpl(pTask, pTask->locInfo.strPath, pFileIo, NULL);
         }
-        pFileIo = FileCreateInterface();
-        if (!pFileIo)
+        catch (HRESULT rc2)
         {
-            rc = E_OUTOFMEMORY;
-            break;
+            rc = rc2;
         }
-        SHASTORAGE storage;
-        RT_ZERO(storage);
-        int vrc = VDInterfaceAdd(&pFileIo->Core, "Appliance::IOFile",
-                                 VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
-                                 &storage.pVDImageIfaces);
-        if (RT_FAILURE(vrc))
+        catch (int rc2)
         {
-            rc = setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
-            break;
+            rc = rc2;
         }
 
-        rc = readFSImpl(pTask, pTask->locInfo.strPath, pShaIo, &storage);
     }while(0);
 
     /* Cleanup */
@@ -2836,6 +2911,10 @@ void Appliance::importMachines(ImportStack &stack,
     // this is safe to access because this thread only gets started
     // if pReader != NULL
     const ovf::OVFReader &reader = *m->pReader;
+    const ovf::OVFVersion_T ovfVersion = reader.m_envelopeData.getOVFVersion();
+
+    if ( ovfVersion == ovf::OVFVersion_2_0)
+        pStorage->fSha256 = true;
 
     // create a session for the machine + disks we manipulate below
     rc = stack.pSession.createInprocObject(CLSID_Session);

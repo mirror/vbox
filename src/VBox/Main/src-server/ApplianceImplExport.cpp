@@ -552,19 +552,26 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, BOOL fManifest, IN_BSTR path, IPro
 
     m->fManifest = !!fManifest;
     Utf8Str strFormat(format);
-    OVFFormat ovfF;
+
+    ovf::OVFVersion_T ovfF;
     if (strFormat == "ovf-0.9")
-        ovfF = OVF_0_9;
+    {
+        ovfF = ovf::OVFVersion_0_9;
+    }
     else if (strFormat == "ovf-1.0")
-        ovfF = OVF_1_0;
+    {
+        ovfF = ovf::OVFVersion_1_0;
+    }
     else if (strFormat == "ovf-2.0")
-        ovfF = OVF_2_0;
+    {
+        ovfF = ovf::OVFVersion_2_0;
+    }
     else
         return setError(VBOX_E_FILE_ERROR,
                         tr("Invalid format \"%s\" specified"), strFormat.c_str());
 
     /* as of OVF 2.0 we have to use SHA256 */
-    m->fSha256 = ovfF >= OVF_2_0;
+    m->fSha256 = ovfF >= ovf::OVFVersion_2_0;
 
     ComObjPtr<Progress> progress;
     HRESULT rc = S_OK;
@@ -614,7 +621,7 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, BOOL fManifest, IN_BSTR path, IPro
  * @param aProgress
  * @return
  */
-HRESULT Appliance::writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
+HRESULT Appliance::writeImpl(ovf::OVFVersion_T aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
     HRESULT rc = S_OK;
     try
@@ -658,18 +665,30 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
                          xml::Document &doc,
                          XMLStack &stack,
                          const Utf8Str &strPath,
-                         OVFFormat enFormat)
+                         ovf::OVFVersion_T enFormat)
 {
     xml::ElementNode *pelmRoot = doc.createRootElement("Envelope");
 
-    pelmRoot->setAttribute("ovf:version", enFormat == OVF_2_0 ? "2.0"
-                                        : enFormat == OVF_1_0 ? "1.0"
+    pelmRoot->setAttribute("ovf:version", enFormat == ovf::OVFVersion_2_0 ? "2.0"
+                                        : enFormat == ovf::OVFVersion_1_0 ? "1.0"
                                         :                       "0.9");
     pelmRoot->setAttribute("xml:lang", "en-US");
 
-    Utf8Str strNamespace = (enFormat == OVF_0_9)
-        ? "http://www.vmware.com/schema/ovf/1/envelope"     // 0.9
-        : "http://schemas.dmtf.org/ovf/envelope/1";         // 1.0
+    Utf8Str strNamespace;
+
+    if (enFormat == ovf::OVFVersion_0_9)
+    {
+        strNamespace = "http://www.vmware.com/schema/ovf/1/envelope";
+    }
+    else if (enFormat == ovf::OVFVersion_1_0)
+    {
+        strNamespace = "http://schemas.dmtf.org/ovf/envelope/1";
+    }
+    else
+    {
+        strNamespace = "http://schemas.dmtf.org/ovf/envelope/2";
+    }
+
     pelmRoot->setAttribute("xmlns", strNamespace);
     pelmRoot->setAttribute("xmlns:ovf", strNamespace);
 
@@ -689,7 +708,7 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
        <Disk ovf:capacity="4294967296" ovf:diskId="lamp" ovf:format="..." ovf:populatedSize="1924967692"/>
        </DiskSection> */
     xml::ElementNode *pelmDiskSection;
-    if (enFormat == OVF_0_9)
+    if (enFormat == ovf::OVFVersion_0_9)
     {
         // <Section xsi:type="ovf:DiskSection_Type">
         pelmDiskSection = pelmRoot->createChild("Section");
@@ -709,7 +728,7 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
        </Network>
        </NetworkSection> */
     xml::ElementNode *pelmNetworkSection;
-    if (enFormat == OVF_0_9)
+    if (enFormat == ovf::OVFVersion_0_9)
     {
         // <Section xsi:type="ovf:NetworkSection_Type">
         pelmNetworkSection = pelmRoot->createChild("Section");
@@ -729,7 +748,7 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
     xml::ElementNode *pelmToAddVirtualSystemsTo;
     if (m->virtualSystemDescriptions.size() > 1)
     {
-        if (enFormat == OVF_0_9)
+        if (enFormat == ovf::OVFVersion_0_9)
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Cannot export more than one virtual system with OVF 0.9, use OVF 1.0"));
 
@@ -844,7 +863,7 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
         pelmDisk->setAttribute("ovf:diskId", strDiskID);
         pelmDisk->setAttribute("ovf:fileRef", strFileRef);
         pelmDisk->setAttribute("ovf:format",
-                               (enFormat == OVF_0_9)
+                               (enFormat == ovf::OVFVersion_0_9)
                                ?  "http://www.vmware.com/specifications/vmdk.html#sparse"      // must be sparse or ovftool chokes
                                :  "http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized"
                                // correct string as communicated to us by VMware (public bug #6612)
@@ -891,13 +910,13 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                                             xml::ElementNode &elmToAddVirtualSystemsTo,
                                             std::list<xml::ElementNode*> *pllElementsWithUuidAttributes,
                                             ComObjPtr<VirtualSystemDescription> &vsdescThis,
-                                            OVFFormat enFormat,
+                                            ovf::OVFVersion_T enFormat,
                                             XMLStack &stack)
 {
     LogFlowFunc(("ENTER appliance %p\n", this));
 
     xml::ElementNode *pelmVirtualSystem;
-    if (enFormat == OVF_0_9)
+    if (enFormat == ovf::OVFVersion_0_9)
     {
         // <Section xsi:type="ovf:NetworkSection_Type">
         pelmVirtualSystem = elmToAddVirtualSystemsTo.createChild("Content");
@@ -941,7 +960,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
             <VendorUrl>http://www.sun.com</VendorUrl>
         </Section> */
         xml::ElementNode *pelmAnnotationSection;
-        if (enFormat == OVF_0_9)
+        if (enFormat == ovf::OVFVersion_0_9)
         {
             // <Section ovf:required="false" xsi:type="ovf:ProductSection_Type">
             pelmAnnotationSection = pelmVirtualSystem->createChild("Section");
@@ -973,7 +992,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                 <Annotation>Plan 9</Annotation>
             </Section> */
         xml::ElementNode *pelmAnnotationSection;
-        if (enFormat == OVF_0_9)
+        if (enFormat == ovf::OVFVersion_0_9)
         {
             // <Section ovf:required="false" xsi:type="ovf:AnnotationSection_Type">
             pelmAnnotationSection = pelmVirtualSystem->createChild("Section");
@@ -996,7 +1015,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
             <License ovf:msgid="1">License terms can go in here.</License>
             </EulaSection> */
         xml::ElementNode *pelmEulaSection;
-        if (enFormat == OVF_0_9)
+        if (enFormat == ovf::OVFVersion_0_9)
         {
             pelmEulaSection = pelmVirtualSystem->createChild("Section");
             pelmEulaSection->setAttribute("xsi:type", "ovf:EulaSection_Type");
@@ -1019,7 +1038,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
         </OperatingSystemSection> */
     VirtualSystemDescriptionEntry *pvsdeOS = llOS.front();
     xml::ElementNode *pelmOperatingSystemSection;
-    if (enFormat == OVF_0_9)
+    if (enFormat == ovf::OVFVersion_0_9)
     {
         pelmOperatingSystemSection = pelmVirtualSystem->createChild("Section");
         pelmOperatingSystemSection->setAttribute("xsi:type", "ovf:OperatingSystemSection_Type");
@@ -1039,7 +1058,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
 
     // <VirtualHardwareSection ovf:id="hw1" ovf:transport="iso">
     xml::ElementNode *pelmVirtualHardwareSection;
-    if (enFormat == OVF_0_9)
+    if (enFormat == ovf::OVFVersion_0_9)
     {
         // <Section xsi:type="ovf:VirtualHardwareSection_Type">
         pelmVirtualHardwareSection = pelmVirtualSystem->createChild("Section");
@@ -1062,7 +1081,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     pelmSystem->createChild("vssd:ElementName")->addContent("Virtual Hardware Family"); // required OVF 1.0
 
     // <vssd:InstanceId>0</vssd:InstanceId>
-    if (enFormat == OVF_0_9)
+    if (enFormat == ovf::OVFVersion_0_9)
         pelmSystem->createChild("vssd:InstanceId")->addContent("0");
     else // capitalization changed...
         pelmSystem->createChild("vssd:InstanceID")->addContent("0");
@@ -1071,7 +1090,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     pelmSystem->createChild("vssd:VirtualSystemIdentifier")->addContent(strVMName);
     // <vssd:VirtualSystemType>vmx-4</vssd:VirtualSystemType>
     const char *pcszHardware = "virtualbox-2.2";
-    if (enFormat == OVF_0_9)
+    if (enFormat == ovf::OVFVersion_0_9)
         // pretend to be vmware compatible then
         pcszHardware = "vmx-6";
     pelmSystem->createChild("vssd:VirtualSystemType")->addContent(pcszHardware);
@@ -1498,7 +1517,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                     pItem->createChild("rasd:AutomaticAllocation")->addContent( (lAutomaticAllocation) ? "true" : "false" );
 
                 if (lBusNumber != -1)
-                    if (enFormat == OVF_0_9) // BusNumber is invalid OVF 1.0 so only write it in 0.9 mode for OVFTool compatibility
+                    if (enFormat == ovf::OVFVersion_0_9) // BusNumber is invalid OVF 1.0 so only write it in 0.9 mode for OVFTool y
                         pItem->createChild("rasd:BusNumber")->addContent(Utf8StrFmt("%d", lBusNumber));
 
                 if (!strCaption.isEmpty())
@@ -1511,7 +1530,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                     pItem->createChild("rasd:Description")->addContent(strDescription);
 
                 if (!strCaption.isEmpty())
-                    if (enFormat == OVF_1_0)
+                    if (enFormat == ovf::OVFVersion_1_0)
                         pItem->createChild("rasd:ElementName")->addContent(strCaption);
 
                 if (!strHostResource.isEmpty())
@@ -1519,7 +1538,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
 
                 // <rasd:InstanceID>1</rasd:InstanceID>
                 xml::ElementNode *pelmInstanceID;
-                if (enFormat == OVF_0_9)
+                if (enFormat == ovf::OVFVersion_0_9)
                     pelmInstanceID = pItem->createChild("rasd:InstanceId");
                 else
                     pelmInstanceID = pItem->createChild("rasd:InstanceID");      // capitalization changed...

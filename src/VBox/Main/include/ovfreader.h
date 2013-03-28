@@ -149,6 +149,36 @@ enum CIMOSType_T
     // no new types added with CIM 2.26.0
 };
 
+enum OVFVersion_T
+{
+    OVFVersion_unknown,
+    OVFVersion_0_9,
+    OVFVersion_1_0,
+    OVFVersion_2_0
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Envelope data
+//
+////////////////////////////////////////////////////////////////////////////////
+struct EnvelopeData
+{
+    RTCString version;//OVF standard version, it is used internally only by VirtualBox 
+    RTCString lang;//language
+
+    OVFVersion_T getOVFVersion() const
+    {
+        if(version == "0.9")
+            return OVFVersion_0_9;
+        else if(version == "1.0")
+            return OVFVersion_1_0;
+        else if(version == "2.0")
+            return OVFVersion_2_0;
+        else
+            return OVFVersion_unknown;
+    }
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -411,7 +441,8 @@ public:
     OVFReader(const RTCString &path);
 
     // Data fields
-    RTCString            m_strPath;            // file name given to constructor
+    EnvelopeData                m_envelopeData;       //data of root element "Envelope" 
+    RTCString                   m_strPath;            // file name given to constructor
     DiskImagesMap               m_mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
     std::list<VirtualSystem>    m_llVirtualSystems;   // list of virtual systems, created by and valid after read()
 
