@@ -189,13 +189,13 @@ static void tst1(void)
 
     /* RTStrAAppendExN / RTStrAAppendExNV */
     psz = NULL;
-    RTTESTI_CHECK_RC(RTStrAAppendExN(&psz, 5, "a", 1, "bc", 1, "cdefg", RTSTR_MAX, "hijkl", 2, "jklmnopqrstuvwxyz", RTSTR_MAX), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrAAppendExN(&psz, 5, "a", (size_t)1, "bc", (size_t)1, "cdefg", RTSTR_MAX, "hijkl", (size_t)2, "jklmnopqrstuvwxyz", RTSTR_MAX), VINF_SUCCESS);
     RTTESTI_CHECK(!RTStrCmp(psz, "abcdefghijklmnopqrstuvwxyz"));
     RTTESTI_CHECK_RC(RTStrAAppendExN(&psz, 0), VINF_SUCCESS);
     RTTESTI_CHECK(!RTStrCmp(psz, "abcdefghijklmnopqrstuvwxyz"));
-    RTTESTI_CHECK_RC(RTStrAAppendExN(&psz, 2, NULL, 0, "", 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrAAppendExN(&psz, 2, NULL, (size_t)0, "", (size_t)0), VINF_SUCCESS);
     RTTESTI_CHECK(!RTStrCmp(psz, "abcdefghijklmnopqrstuvwxyz"));
-    RTTESTI_CHECK_RC(RTStrAAppendExN(&psz, 1, "-", 1), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTStrAAppendExN(&psz, 1, "-", (size_t)1), VINF_SUCCESS);
     RTTESTI_CHECK(!RTStrCmp(psz, "abcdefghijklmnopqrstuvwxyz-"));
     RTStrFree(psz);
 
