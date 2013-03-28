@@ -250,8 +250,8 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     /* Always ignore close-event: */
     pEvent->ignore();
 
-    /* Should we shutdown UI session? */
-    bool fShutdownSession = false;
+    /* Should we close Runtime UI? */
+    bool fCloseRuntimeUI = false;
 
     /* Make sure machine is in one of the allowed states: */
     KMachineState machineState = uisession()->machineState();
@@ -319,7 +319,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 case UIVMCloseDialog::ResultCode_Save:
                 {
                     fSuccess = uisession()->saveState();
-                    fShutdownSession = fSuccess;
+                    fCloseRuntimeUI = fSuccess;
                     break;
                 }
                 case UIVMCloseDialog::ResultCode_Shutdown:
@@ -335,7 +335,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                     bool fServerCrashed = false;
                     fSuccess = uisession()->powerOff(dialogResult == UIVMCloseDialog::ResultCode_PowerOff_With_Discarding,
                                                      fServerCrashed);
-                    fShutdownSession = fSuccess || fServerCrashed;
+                    fCloseRuntimeUI = fSuccess || fServerCrashed;
                     break;
                 }
                 default:
@@ -344,18 +344,16 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
         }
 
         /* Restore the running state if needed: */
-        if (fSuccess && !fShutdownSession && !fWasPaused && uisession()->machineState() == KMachineState_Paused)
+        if (fSuccess && !fCloseRuntimeUI && !fWasPaused && uisession()->machineState() == KMachineState_Paused)
             uisession()->unpause();
 
         /* Allowing auto-closure: */
         machineLogic()->setPreventAutoClose(false);
     }
 
-    if (fShutdownSession)
-    {
-        /* VM has been powered off or saved. We must *safely* close VM window(s): */
-        QTimer::singleShot(0, uisession(), SLOT(sltCloseVirtualSession()));
-    }
+    /* We've received a request to close Runtime UI: */
+    if (fCloseRuntimeUI)
+        uisession()->closeRuntimeUI();
 }
 
 void UIMachineWindow::prepareSessionConnections()

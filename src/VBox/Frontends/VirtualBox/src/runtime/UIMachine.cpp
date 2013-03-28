@@ -487,11 +487,6 @@ void UIMachine::sltChangeVisualState(UIVisualStateType newVisualStateType)
     }
 }
 
-void UIMachine::sltCloseVirtualMachine()
-{
-    delete this;
-}
-
 void UIMachine::enterInitialVisualState()
 {
     sltChangeVisualState(initialStateType);

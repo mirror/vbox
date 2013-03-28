@@ -86,11 +86,12 @@ public:
     UISession(UIMachine *pMachine, CSession &session);
     virtual ~UISession();
 
-    /* Common members: */
+    /* API: Runtime UI stuff: */
     void powerUp();
     bool saveState();
     bool shutDown();
     bool powerOff(bool fIncludingDiscard, bool &fServerCrashed);
+    void closeRuntimeUI();
 
     /* Common getters: */
     CSession& session() { return m_session; }
@@ -167,6 +168,9 @@ public:
 
 signals:
 
+    /* Notifier: Close Runtime UI stuff: */
+    void sigCloseRuntimeUI();
+
     /* Console callback signals: */
     void sigMousePointerShapeChange();
     void sigMouseCapabilityChange();
@@ -198,8 +202,8 @@ public slots:
 
 private slots:
 
-    /* Close uisession handler: */
-    void sltCloseVirtualSession();
+    /* Handler: Close Runtime UI stuff: */
+    void sltCloseRuntimeUI();
 
     /* Console events slots */
     void sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);
