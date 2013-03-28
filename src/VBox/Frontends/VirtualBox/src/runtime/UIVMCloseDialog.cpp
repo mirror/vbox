@@ -78,7 +78,7 @@ void UIVMCloseDialog::accept()
         setResult(ResultCode_Shutdown);
     else if (m_pPowerOffRadio->isChecked())
     {
-        if (!m_pDiscardCheckBox->isChecked())
+        if (!m_pDiscardCheckBox->isChecked() || !m_pDiscardCheckBox->isVisible())
             setResult(ResultCode_PowerOff);
         else
             setResult(ResultCode_PowerOff_With_Discarding);
