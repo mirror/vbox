@@ -57,6 +57,13 @@ class UIMessageCenter: public QObject
 
 signals:
 
+    /* Notifier: Interthreading stuff: */
+    void sigToShowMessageBox(QWidget *pParent, MessageType type,
+                             const QString &strMessage, const QString &strDetails,
+                             int iButton1, int iButton2, int iButton3,
+                             const QString &strButton1, const QString &strButton2, const QString &strButton3,
+                             const QString &strAutoConfirmId) const;
+
     /* Stuff supporting interthreading: */
     void sigCannotCreateHostInterface(const CHost &host, QWidget *pParent);
     void sigCannotCreateHostInterface(const CProgress &progress, QWidget *pParent);
@@ -421,6 +428,13 @@ public slots:
 
 private slots:
 
+    /* Handler: Interthreading stuff: */
+    void sltShowMessageBox(QWidget *pParent, MessageType type,
+                           const QString &strMessage, const QString &strDetails,
+                           int iButton1, int iButton2, int iButton3,
+                           const QString &strButton1, const QString &strButton2, const QString &strButton3,
+                           const QString &strAutoConfirmId) const;
+
     /* Stuff supporting interthreading: */
     void sltCannotCreateHostInterface(const CHost &host, QWidget *pParent);
     void sltCannotCreateHostInterface(const CProgress &progress, QWidget *pParent);
@@ -450,6 +464,13 @@ private:
 
     /* Helper: */
     static QString errorInfoToString(const COMErrorInfo &info, HRESULT wrapperRC = S_OK);
+
+    /* Helper: Message-box stuff: */
+    int showMessageBox(QWidget *pParent, MessageType type,
+                       const QString &strMessage, const QString &strDetails,
+                       int iButton1, int iButton2, int iButton3,
+                       const QString &strButton1, const QString &strButton2, const QString &strButton3,
+                       const QString &strAutoConfirmId) const;
 
     /* Variables: */
     QStringList m_warnings;
