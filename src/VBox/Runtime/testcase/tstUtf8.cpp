@@ -49,7 +49,7 @@ static RTUTF16 GetRandUtf16(void)
     RTUTF16 wc;
     do
     {
-        wc = (RTUTF16)RTRandU32Ex(1, 0xffff);
+        wc = (RTUTF16)RTRandU32Ex(1, 0xfffd);
     } while (wc >= 0xd800 && wc <= 0xdfff);
     return wc;
 }
