@@ -83,42 +83,44 @@ void UIMessageCenter::setWarningShown(const QString &strWarningName, bool fWarni
         m_warnings.removeAll(strWarningName);
 }
 
-int UIMessageCenter::message(QWidget *pParent, MessageType type, const QString &strMessage,
-                             const QString &strDetails /* = QString::null */,
+int UIMessageCenter::message(QWidget *pParent, MessageType type,
+                             const QString &strMessage,
+                             const QString &strDetails /* = QString() */,
                              const char *pcszAutoConfirmId /* = 0 */,
-                             int button1 /* = 0 */,
-                             int button2 /* = 0 */,
-                             int button3 /* = 0 */,
-                             const QString &strText1 /* = QString::null */,
-                             const QString &strText2 /* = QString::null */,
-                             const QString &strText3 /* = QString::null */) const
+                             int iButton1 /* = 0 */,
+                             int iButton2 /* = 0 */,
+                             int iButton3 /* = 0 */,
+                             const QString &strButton1 /* = QString() */,
+                             const QString &strButton2 /* = QString() */,
+                             const QString &strButton3 /* = QString() */) const
 {
-    if (button1 == 0 && button2 == 0 && button3 == 0)
-        button1 = QIMessageBox::Ok | QIMessageBox::Default;
+    /* Choose the 'default' button: */
+    if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0)
+        iButton1 = QIMessageBox::Ok | QIMessageBox::Default;
 
+    /* Check if message-box was auto-confirmed before: */
     CVirtualBox vbox;
-    QStringList msgs;
-
+    QStringList confirmedMessageList;
     if (pcszAutoConfirmId)
     {
         vbox = vboxGlobal().virtualBox();
-        msgs = vbox.GetExtraData(GUI_SuppressMessages).split(',');
-        if (msgs.contains(pcszAutoConfirmId))
+        confirmedMessageList = vbox.GetExtraData(GUI_SuppressMessages).split(',');
+        if (confirmedMessageList.contains(pcszAutoConfirmId))
         {
-            int rc = AutoConfirmed;
-            if (button1 & QIMessageBox::Default)
-                rc |= (button1 & QIMessageBox::ButtonMask);
-            if (button2 & QIMessageBox::Default)
-                rc |= (button2 & QIMessageBox::ButtonMask);
-            if (button3 & QIMessageBox::Default)
-                rc |= (button3 & QIMessageBox::ButtonMask);
-            return rc;
+            int iResultCode = AutoConfirmed;
+            if (iButton1 & QIMessageBox::Default)
+                iResultCode |= (iButton1 & QIMessageBox::ButtonMask);
+            if (iButton2 & QIMessageBox::Default)
+                iResultCode |= (iButton2 & QIMessageBox::ButtonMask);
+            if (iButton3 & QIMessageBox::Default)
+                iResultCode |= (iButton3 & QIMessageBox::ButtonMask);
+            return iResultCode;
         }
     }
 
+    /* Choose title and icon: */
     QString title;
     QIMessageBox::Icon icon;
-
     switch (type)
     {
         default:
@@ -149,70 +151,66 @@ int UIMessageCenter::message(QWidget *pParent, MessageType type, const QString &
     }
 
     /* Create message-box: */
-    QWidget *pBoxParent = mwManager().realParentWindow(pParent);
-    QPointer<QIMessageBox> pBox = new QIMessageBox(title, strMessage, icon,
-                                                   button1, button2, button3,
-                                                   pBoxParent, pcszAutoConfirmId);
-    mwManager().registerNewParent(pBox, pBoxParent);
+    QWidget *pMessageBoxParent = mwManager().realParentWindow(pParent);
+    QPointer<QIMessageBox> pMessageBox = new QIMessageBox(title, strMessage, icon,
+                                                          iButton1, iButton2, iButton3,
+                                                          pMessageBoxParent, pcszAutoConfirmId);
+    mwManager().registerNewParent(pMessageBox, pMessageBoxParent);
 
-    /* Configure message-box: */
-    connect(this, SIGNAL(sigToCloseAllWarnings()), pBox, SLOT(deleteLater()));
-
-    /* Prepare confirmation: */
+    /* Prepare auto-confirmation check-box: */
     if (pcszAutoConfirmId)
     {
-        pBox->setFlagText(tr("Do not show this message again", "msg box flag"));
-        pBox->setFlagChecked(false);
+        pMessageBox->setFlagText(tr("Do not show this message again", "msg box flag"));
+        pMessageBox->setFlagChecked(false);
     }
-
-    /* Configure button-text: */
-    if (!strText1.isNull())
-        pBox->setButtonText(0, strText1);
-    if (!strText2.isNull())
-        pBox->setButtonText(1, strText2);
-    if (!strText3.isNull())
-        pBox->setButtonText(2, strText3);
 
     /* Configure details: */
     if (!strDetails.isEmpty())
-        pBox->setDetailsText(strDetails);
+        pMessageBox->setDetailsText(strDetails);
 
-    /* Show box: */
-    int rc = pBox->exec();
+    /* Configure button-text: */
+    if (!strButton1.isNull())
+        pMessageBox->setButtonText(0, strButton1);
+    if (!strButton2.isNull())
+        pMessageBox->setButtonText(1, strButton2);
+    if (!strButton3.isNull())
+        pMessageBox->setButtonText(2, strButton3);
 
-    /* Make sure box still valid: */
-    if (!pBox)
-        return rc;
+    /* Show message-box: */
+    int iResultCode = pMessageBox->exec();
 
-    /* Cleanup confirmation: */
+    /* Make sure message-box still valid: */
+    if (!pMessageBox)
+        return iResultCode;
+
+    /* Remember auto-confirmation check-box value: */
     if (pcszAutoConfirmId)
     {
-        if (pBox->isFlagChecked())
+        if (pMessageBox->isFlagChecked())
         {
-            msgs << pcszAutoConfirmId;
-            vbox.SetExtraData(GUI_SuppressMessages, msgs.join(","));
+            confirmedMessageList << pcszAutoConfirmId;
+            vbox.SetExtraData(GUI_SuppressMessages, confirmedMessageList.join(","));
         }
     }
 
     /* Delete message-box: */
-    if (pBox)
-        delete pBox;
+    delete pMessageBox;
 
-    return rc;
+    /* Return result-code: */
+    return iResultCode;
 }
 
-int UIMessageCenter::messageWithOption(QWidget *pParent,
-                                       MessageType type,
+int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType type,
                                        const QString &strMessage,
                                        const QString &strOptionText,
                                        bool fDefaultOptionValue /* = true */,
-                                       const QString &strDetails /* = QString::null */,
+                                       const QString &strDetails /* = QString() */,
                                        int iButton1 /* = 0 */,
                                        int iButton2 /* = 0 */,
                                        int iButton3 /* = 0 */,
-                                       const QString &strButtonName1 /* = QString::null */,
-                                       const QString &strButtonName2 /* = QString::null */,
-                                       const QString &strButtonName3 /* = QString::null */) const
+                                       const QString &strButtonName1 /* = QString() */,
+                                       const QString &strButtonName2 /* = QString() */,
+                                       const QString &strButtonName3 /* = QString() */) const
 {
     /* If no buttons are set, using single 'OK' button: */
     if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0)
@@ -255,9 +253,6 @@ int UIMessageCenter::messageWithOption(QWidget *pParent,
     QPointer<QIMessageBox> pBox = new QIMessageBox(strTitle, strMessage, icon,
                                                    iButton1, iButton2, iButton3, pBoxParent);
     mwManager().registerNewParent(pBox, pBoxParent);
-
-    /* Configure box: */
-    connect(this, SIGNAL(sigToCloseAllWarnings()), pBox, SLOT(deleteLater()));
 
     /* Load option: */
     if (!strOptionText.isNull())
@@ -910,18 +905,18 @@ int UIMessageCenter::askAboutSnapshotRestoring(const QString &strSnapshotName, b
                                 .arg(strSnapshotName),
                              tr("Create a snapshot of the current machine state"),
                              !vboxGlobal().virtualBox().GetExtraDataStringList(GUI_InvertMessageOption).contains("askAboutSnapshotRestoring"),
-                             QString::null /* details */,
+                             QString() /* details */,
                              QIMessageBox::Ok | QIMessageBox::Default,
                              QIMessageBox::Cancel | QIMessageBox::Escape,
                              0 /* 3rd button */,
-                             tr("Restore"), tr("Cancel"), QString::null /* 3rd button text */) :
+                             tr("Restore"), tr("Cancel"), QString() /* 3rd button text */) :
            message(mainWindowShown(), MessageType_Question,
                    tr("<p>Are you sure you want to restore snapshot <nobr><b>%1</b></nobr>?</p>").arg(strSnapshotName),
                    0 /* auto-confirmation token */,
                    QIMessageBox::Ok | QIMessageBox::Default,
                    QIMessageBox::Cancel | QIMessageBox::Escape,
                    0 /* 3rd button */,
-                   tr("Restore"), tr("Cancel"), QString::null /* 3rd button text */);
+                   tr("Restore"), tr("Cancel"), QString() /* 3rd button text */);
 }
 
 bool UIMessageCenter::askAboutSnapshotDeleting(const QString &strSnapshotName)
@@ -2591,7 +2586,7 @@ QString UIMessageCenter::mediumToAccusative(UIMediumType type, bool fIsHostDrive
             tr("floppy", "failed to mount ... host-drive") :
         type == UIMediumType_Floppy && !fIsHostDrive ?
             tr("floppy image", "failed to mount ...") :
-        QString::null;
+        QString();
 
     Assert(!strType.isNull());
     return strType;
@@ -2838,7 +2833,7 @@ void UIMessageCenter::sltShowHelpHelpDialog()
 void UIMessageCenter::sltResetSuppressedMessages()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    vbox.SetExtraData(GUI_SuppressMessages, QString::null);
+    vbox.SetExtraData(GUI_SuppressMessages, QString());
 }
 
 void UIMessageCenter::sltShowUserManual(const QString &strLocation)
