@@ -2423,7 +2423,14 @@ static int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
         }
 
         if (!pMI->fRootVrOn)
-            CrVrScrCompositorEntryTexUpdate(&pMI->RootVrCEntry,  CrVrScrCompositorEntryTexGet(&pMI->CEntry));
+        {
+            rc = CrVrScrCompositorEntryTexUpdate(&pMI->RootVrCompositor, &pMI->RootVrCEntry, CrVrScrCompositorEntryTexGet(&pMI->CEntry));
+            if (!RT_SUCCESS(rc))
+            {
+                crWarning("CrVrScrCompositorEntryTexUpdate failed, rc %d", rc);
+                goto end;
+            }
+        }
     }
     else
     {
@@ -2436,7 +2443,12 @@ static int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
         }
 
         /* CEntry should always be in sync */
-//        CrVrScrCompositorEntryTexUpdate(&pMI->CEntry,  CrVrScrCompositorEntryTexGet(&pMI->RootVrCEntry));
+//        rc = CrVrScrCompositorEntryTexUpdate(&pMI->Compositor, &pMI->CEntry,  CrVrScrCompositorEntryTexGet(&pMI->RootVrCEntry));
+//        if (!RT_SUCCESS(rc))
+//        {
+//            crWarning("CrVrScrCompositorEntryTexUpdate failed, rc %d", rc);
+//            goto end;
+//        }
     }
 
     cr_server.head_spu->dispatch_table.WindowVisibleRegion(pMI->spuWindow, cRects, pRects);
