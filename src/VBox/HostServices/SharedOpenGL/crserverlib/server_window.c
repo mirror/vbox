@@ -466,35 +466,55 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
     /* NOTE: we can do it even if mural->fPresentMode == CR_SERVER_REDIR_F_NONE to make sure the compositor data is always up to date */
     /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
     /* CrVrScrCompositorLock(&mural->Compositor); */
-    rc = CrVrScrCompositorEntryRemove(&mural->Compositor, &mural->CEntry);
-    if (!RT_SUCCESS(rc))
+    if (!mural->bReceivedRects)
     {
-        crWarning("CrVrScrCompositorEntryRemove failed, rc %d", rc);
-        goto end;
+        rc = CrVrScrCompositorEntryRemove(&mural->Compositor, &mural->CEntry);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("CrVrScrCompositorEntryRemove failed, rc %d", rc);
+            goto end;
+        }
+        CrVrScrCompositorEntryInit(&mural->CEntry, &Tex);
+        /* initially set regions to all visible since this is what some guest assume
+         * and will not post any more visible regions command */
+        Rect.xLeft = 0;
+        Rect.xRight = width;
+        Rect.yTop = 0;
+        Rect.yBottom = height;
+        rc = CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->CEntry, NULL, 1, &Rect, NULL);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
+            goto end;
+        }
     }
-    CrVrScrCompositorEntryInit(&mural->CEntry, &Tex);
-    /* initially set regions to all visible since this is what some guest assume
-     * and will not post any more visible regions command */
-    Rect.xLeft = 0;
-    Rect.xRight = width;
-    Rect.yTop = 0;
-    Rect.yBottom = height;
-    rc = CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->CEntry, NULL, 1, &Rect, NULL);
-    if (!RT_SUCCESS(rc))
+    else
     {
-        crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
-        goto end;
+        rc = CrVrScrCompositorEntryTexUpdate(&mural->Compositor, &mural->CEntry, &Tex);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("CrVrScrCompositorEntryTexUpdate failed, rc %d", rc);
+            goto end;
+        }
     }
+
     /* CrVrScrCompositorUnlock(&mural->Compositor); */
     mural->width = width;
     mural->height = height;
 
     mural->fDataPresented = GL_FALSE;
 
-    if (cr_server.currentMural == mural)
+    if (cr_server.curClient && cr_server.curClient->currentMural == mural)
     {
         crStateGetCurrent()->buffer.width = mural->width;
         crStateGetCurrent()->buffer.height = mural->height;
+    }
+
+    rc = CrVrScrCompositorEntryRegionsGet(&mural->Compositor, &mural->CEntry, &cRects, NULL, &pRects);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
+        goto end;
     }
 
     if (mural->fRootVrOn)
@@ -506,13 +526,8 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
             goto end;
         }
         CrVrScrCompositorEntryInit(&mural->RootVrCEntry, &Tex);
-        /* initially set regions to all visible since this is what some guest assume
-         * and will not post any more visible regions command */
-        Rect.xLeft = 0;
-        Rect.xRight = width;
-        Rect.yTop = 0;
-        Rect.yBottom = height;
-        rc = CrVrScrCompositorEntryRegionsSet(&mural->RootVrCompositor, &mural->RootVrCEntry, NULL, 1, &Rect, NULL);
+
+        rc = CrVrScrCompositorEntryRegionsSet(&mural->RootVrCompositor, &mural->RootVrCEntry, NULL, cRects, pRects, NULL);
         if (!RT_SUCCESS(rc))
         {
             crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
@@ -536,12 +551,6 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
     }
     else
     {
-        rc = CrVrScrCompositorEntryRegionsGet(&mural->Compositor, &mural->CEntry, &cRects, NULL, &pRects);
-        if (!RT_SUCCESS(rc))
-        {
-            crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
-            goto end;
-        }
     }
 
     crServerCheckMuralGeometry(mural);
