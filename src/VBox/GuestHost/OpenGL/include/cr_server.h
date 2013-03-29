@@ -99,7 +99,7 @@ typedef struct {
     int screenId;
 
     GLboolean bVisible;      /*guest window is visible*/
-    GLubyte   fUseFBO;       /*redirect to FBO instead of real host window*/
+    GLubyte   u8Unused;       /*redirect to FBO instead of real host window*/
     GLboolean bFbDraw;       /*GL_FRONT buffer is drawn to directly*/
     GLboolean fDataPresented;
 
@@ -127,6 +127,10 @@ typedef struct {
     GLuint idPBO;
 
     GLuint cDisabled;
+
+    GLuint   fPresentMode;       /*redirect to FBO instead of real host window*/
+
+    GLboolean fHasParentWindow;
 
     GLboolean fRootVrOn;
     GLboolean fForcePresentState;
@@ -218,8 +222,8 @@ typedef struct CR_DISPLAY_ENTRY
 
 /* @todo:
  * 1. use compositor stored inside mural to use current MuralFBO and window-related API
- * 2. CR_SERVER_REDIR_NONE and CR_SERVER_REDIR_FBO_BLT should be trated identically for presented window
- *    since we just need to blit the given textures to it if we are NOT in CR_SERVER_REDIR_FBO_RAM mode */
+ * 2. CR_SERVER_REDIR_F_NONE and CR_SERVER_REDIR_F_FBO should be trated identically for presented window
+ *    since we just need to blit the given textures to it if we are NOT in CR_SERVER_REDIR_F_FBO_RAM mode */
 typedef struct CR_DISPLAY
 {
     VBOXVR_SCR_COMPOSITOR Compositor;
@@ -387,9 +391,9 @@ typedef struct {
     GLuint currentSerialNo;
 
     PFNCRSERVERPRESENTFBO pfnPresentFBO;
-    GLubyte               bForceOffscreenRendering; /*Force server to render 3d data offscreen
+    GLuint                fPresentMode; /*Force server to render 3d data offscreen
                                                      *using callback above to update vbox framebuffers*/
-    GLubyte               bOffscreenRenderingDefault; /*can be set with CR_SERVER_DEFAULT_RENDER_TYPE*/
+    GLuint                fPresentModeDefault; /*can be set with CR_SERVER_DEFAULT_RENDER_TYPE*/
     GLboolean             bUsePBOForReadback;       /*Use PBO's for data readback*/
 
     GLboolean             bUseOutputRedirect;       /* Whether the output redirect was set. */

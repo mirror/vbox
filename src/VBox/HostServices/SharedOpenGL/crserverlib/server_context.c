@@ -294,7 +294,7 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
      * crStateSwitchPrepare restores the FBO state to its default values before the context window switch,
      * while crStateSwitchPostprocess restores it back to the original values */
     oldCtx = crStateGetCurrent();
-    if (oldMural && oldMural->fUseFBO && crServerSupportRedirMuralFBO())
+    if (oldMural && (oldMural->fPresentMode & CR_SERVER_REDIR_F_FBO) && crServerSupportRedirMuralFBO())
     {
         idDrawFBO = oldMural->aidFBOs[oldMural->iCurDrawBuffer];
         idReadFBO = oldMural->aidFBOs[oldMural->iCurReadBuffer];
@@ -373,7 +373,7 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
     /* This used to be earlier, after crStateUpdateColorBits() call */
     crStateMakeCurrent( ctx );
 
-    if (mural && mural->fUseFBO && crServerSupportRedirMuralFBO())
+    if (mural && (mural->fPresentMode & CR_SERVER_REDIR_F_FBO) && crServerSupportRedirMuralFBO())
     {
         GLuint id = crServerMuralFBOIdxFromBufferName(mural, ctx->buffer.drawBuffer);
         if (id != mural->iCurDrawBuffer)
@@ -403,7 +403,7 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
             && (ctx->buffer.drawBuffer == GL_FRONT || ctx->buffer.drawBuffer == GL_FRONT_LEFT))
         cr_server.curClient->currentMural->bFbDraw = GL_TRUE;
 
-    if (!mural->fUseFBO)
+    if (!(mural->fPresentMode & CR_SERVER_REDIR_F_FBO))
     {
         ctx->buffer.width = mural->width;
         ctx->buffer.height = mural->height;

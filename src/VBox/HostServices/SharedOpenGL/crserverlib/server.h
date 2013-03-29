@@ -129,13 +129,45 @@ void crServerSetupOutputRedirect(CRMuralInfo *mural);
 void crServerCheckMuralGeometry(CRMuralInfo *mural);
 GLboolean crServerSupportRedirMuralFBO(void);
 
-#define CR_SERVER_REDIR_NONE     0
-#define CR_SERVER_REDIR_FBO_BLT  1
-#define CR_SERVER_REDIR_FBO_RAM  2
-#define CR_SERVER_REDIR_MAXVAL   CR_SERVER_REDIR_FBO_RAM
+#define CR_SERVER_REDIR_F_NONE     0x00
+/* the data should be displayed on host (unset when is on or when CR_SERVER_REDIR_F_FBO_RAM_VMFB is set) */
+#define CR_SERVER_REDIR_F_DISPLAY       0x01
+/* guest window data get redirected to FBO on host */
+#define CR_SERVER_REDIR_F_FBO           0x02
+/* used with CR_SERVER_REDIR_F_FBO only
+ * makes a separate texture to be used for maintaining the window framebuffer presented data */
+#define CR_SERVER_REDIR_F_FBO_VMFB_TEX  0x04
+/* used with CR_SERVER_REDIR_F_FBO only
+ * indicates that FBO data should be copied to RAM for further processing */
+#define CR_SERVER_REDIR_F_FBO_RAM       0x08
+/* used with CR_SERVER_REDIR_F_FBO_RAM only
+ * indicates that FBO data should be passed to VRDP backend */
+#define CR_SERVER_REDIR_F_FBO_RAM_VRDP  0x10
+/* used with CR_SERVER_REDIR_F_FBO_RAM only
+ * indicates that FBO data should be passed to VM Framebuffer */
+#define CR_SERVER_REDIR_F_FBO_RAM_VMFB  0x20
 
-int32_t crServerSetOffscreenRenderingMode(GLubyte value);
-void crServerRedirMuralFBO(CRMuralInfo *mural, GLubyte redir);
+#define CR_SERVER_REDIR_F_ALL           0x3f
+
+#define CR_SERVER_REDIR_FGROUP_REQUIRE_FBO     (CR_SERVER_REDIR_F_ALL & ~CR_SERVER_REDIR_F_DISPLAY)
+#define CR_SERVER_REDIR_FGROUP_REQUIRE_FBO_RAM (CR_SERVER_REDIR_F_FBO_RAM_VRDP | CR_SERVER_REDIR_F_FBO_RAM_VMFB)
+
+DECLINLINE(GLuint) crServerRedirModeAdjust(GLuint value)
+{
+    /* sanitize values */
+    value &= CR_SERVER_REDIR_F_ALL;
+
+    if (value & CR_SERVER_REDIR_FGROUP_REQUIRE_FBO)
+        value |=  CR_SERVER_REDIR_F_FBO;
+    if (value & CR_SERVER_REDIR_FGROUP_REQUIRE_FBO_RAM)
+        value |=  CR_SERVER_REDIR_F_FBO_RAM;
+
+    return value;
+}
+
+int32_t crServerSetOffscreenRenderingMode(GLuint value);
+void crServerRedirMuralFBO(CRMuralInfo *mural, GLuint redir);
+void crServerEnableDisplayMuralFBO(CRMuralInfo *mural, GLboolean fEnable);
 void crServerDeleteMuralFBO(CRMuralInfo *mural);
 void crServerPresentFBO(CRMuralInfo *mural);
 GLboolean crServerIsRedirectedToFBO();
