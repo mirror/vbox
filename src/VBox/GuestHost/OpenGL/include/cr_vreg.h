@@ -315,12 +315,6 @@ DECLINLINE(void) CrVrScrCompositorEntryTexNameUpdate(PVBOXVR_SCR_COMPOSITOR_ENTR
     CrVrScrCompositorEntrySetChanged(pEntry, true);
 }
 
-DECLINLINE(void) CrVrScrCompositorEntryTexUpdate(PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const VBOXVR_TEXTURE *pTex)
-{
-    pEntry->Tex = *pTex;
-    CrVrScrCompositorEntrySetChanged(pEntry, true);
-}
-
 DECLINLINE(const VBOXVR_TEXTURE *) CrVrScrCompositorEntryTexGet(const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry)
 {
     return &pEntry->Tex;
@@ -336,6 +330,7 @@ DECLINLINE(bool) CrVrScrCompositorIsEmpty(const VBOXVR_SCR_COMPOSITOR *pComposit
     return VBoxVrCompositorIsEmpty(&pCompositor->Compositor);
 }
 
+VBOXVREGDECL(int) CrVrScrCompositorEntryTexUpdate(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const VBOXVR_TEXTURE *pTex);
 VBOXVREGDECL(void) CrVrScrCompositorVisit(PVBOXVR_SCR_COMPOSITOR pCompositor, PFNVBOXVRSCRCOMPOSITOR_VISITOR pfnVisitor, void *pvVisitor);
 VBOXVREGDECL(void) CrVrScrCompositorEntrySetAllChanged(PVBOXVR_SCR_COMPOSITOR pCompositor, bool fChanged);
 DECLINLINE(bool) CrVrScrCompositorEntryIsInList(const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry)
