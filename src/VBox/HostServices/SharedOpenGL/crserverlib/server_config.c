@@ -51,10 +51,66 @@ setDefaults(void)
     cr_server.uniqueWindows = 0;
 
     cr_server.screenCount = 0;
-    cr_server.bForceOffscreenRendering = CR_SERVER_REDIR_NONE;
-    cr_server.bOffscreenRenderingDefault = cr_server.bForceOffscreenRendering;
+    cr_server.fPresentMode = CR_SERVER_REDIR_F_NONE;
+    cr_server.fPresentModeDefault = cr_server.fPresentMode;
     cr_server.bUsePBOForReadback = GL_FALSE;
     cr_server.bUseOutputRedirect = GL_FALSE;
+}
+
+static int crServerVBoxParseNumerics(const char *pszStr, const int defaultVal)
+{
+    int result = 0;
+    bool neg = false;
+    unsigned char iDigit = 0;
+    if (!pszStr || pszStr[0] == '\0')
+        return defaultVal;
+
+    for (;;)
+    {
+        if (pszStr[0] == '\0')
+            return defaultVal;
+
+        if (pszStr[0] == ' ' || pszStr[0] == '\t' || pszStr[0] == '\n')
+        {
+            ++pszStr;
+            continue;
+        }
+
+        if (pszStr[0] == '-')
+        {
+            if (neg)
+                return defaultVal;
+
+            neg = true;
+            ++pszStr;
+            continue;
+        }
+
+        break;
+    }
+
+    for (;;)
+    {
+        unsigned char digit;
+        if (pszStr[0] == '\0')
+        {
+            if (!iDigit)
+                return defaultVal;
+            break;
+        }
+
+        digit = pszStr[0] - '0';
+        if (digit > 9)
+            return defaultVal;
+
+        result *= 10;
+        result += digit;
+        ++iDigit;
+
+        ++pszStr;
+    }
+
+    return !neg ? result : -result;
 }
 
 void crServerSetVBoxConfiguration()
@@ -154,10 +210,10 @@ void crServerSetVBoxConfiguration()
         crSPULoadChain(num_spus, spu_ids, spu_names, spu_dir, &cr_server);
 
     env = crGetenv( "CR_SERVER_DEFAULT_RENDER_TYPE" );
-    if (env != NULL)
+    if (env != NULL && env[0] != '\0')
     {
-        GLubyte redir = (env[0] - 0x30);
-        if (redir <= CR_SERVER_REDIR_MAXVAL)
+        unsigned int redir = (unsigned int)crServerVBoxParseNumerics(env, CR_SERVER_REDIR_F_NONE);
+        if (redir <= CR_SERVER_REDIR_F_ALL)
         {
             int rc = crServerSetOffscreenRenderingMode(redir);
             if (!RT_SUCCESS(rc))
@@ -167,15 +223,16 @@ void crServerSetVBoxConfiguration()
             crWarning("invalid redir option %c", redir);
     }
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(GLX)
-    else
+    if (cr_server.fPresentMode == CR_SERVER_REDIR_F_NONE)
     {
-        int rc = crServerSetOffscreenRenderingMode(CR_SERVER_REDIR_FBO_BLT);
+        /* the CR_SERVER_REDIR_F_FBO_BLT is set only if parent window is received, which means we are not in headles */
+        int rc = crServerSetOffscreenRenderingMode(CR_SERVER_REDIR_F_FBO | CR_SERVER_REDIR_F_DISPLAY);
         if (!RT_SUCCESS(rc))
             crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
 
     }
 #endif
-    cr_server.bOffscreenRenderingDefault = cr_server.bForceOffscreenRendering;
+    cr_server.fPresentModeDefault = cr_server.fPresentMode;
 
     /* Need to do this as early as possible */
 
@@ -296,28 +353,29 @@ void crServerSetVBoxConfigurationHGCM()
         return;
 
     env = crGetenv( "CR_SERVER_DEFAULT_RENDER_TYPE" );
-    if (env != NULL)
+    if (env != NULL && env[0] != '\0')
     {
-        GLubyte redir = (env[0] - 0x30);
-        if (redir <= CR_SERVER_REDIR_MAXVAL)
+        unsigned int redir = (unsigned int)crServerVBoxParseNumerics(env, CR_SERVER_REDIR_F_NONE);
+        if (redir <= CR_SERVER_REDIR_F_ALL)
         {
             int rc = crServerSetOffscreenRenderingMode(redir);
             if (!RT_SUCCESS(rc))
-                            crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
+                crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
         }
         else
             crWarning("invalid redir option %c", redir);
     }
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS) || defined(GLX)
-    else
+    if (cr_server.fPresentMode == CR_SERVER_REDIR_F_NONE)
     {
-        int rc = crServerSetOffscreenRenderingMode(CR_SERVER_REDIR_FBO_BLT);
+        /* the CR_SERVER_REDIR_F_FBO_BLT is set only if parent window is received, which means we are not in headles */
+        int rc = crServerSetOffscreenRenderingMode(CR_SERVER_REDIR_F_FBO | CR_SERVER_REDIR_F_DISPLAY);
         if (!RT_SUCCESS(rc))
             crWarning("offscreen rendering unsupported, no offscreen rendering will be used..");
 
     }
 #endif
-    cr_server.bOffscreenRenderingDefault = cr_server.bForceOffscreenRendering;
+    cr_server.fPresentModeDefault = cr_server.fPresentMode;
 
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_POSITION_CR, 0, GL_INT, 2, &dims[0]);
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_SIZE_CR, 0, GL_INT, 2, &dims[2]);

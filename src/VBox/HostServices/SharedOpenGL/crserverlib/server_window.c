@@ -82,8 +82,9 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
 
     mural->spuWindow = spuWindow;
     mural->screenId = 0;
+    mural->fHasParentWindow = !!cr_server.screen[0].winID;
     mural->bVisible = !!dims[0];
-    mural->fUseFBO = CR_SERVER_REDIR_NONE;
+    mural->fPresentMode = CR_SERVER_REDIR_F_NONE;
 
     mural->cVisibleRects = 0;
     mural->pVisibleRects = NULL;
@@ -265,7 +266,7 @@ void crServerMuralTerm(CRMuralInfo *mural)
         mural->pvOutputRedirectInstance = NULL;
     }
 
-    crServerRedirMuralFBO(mural, CR_SERVER_REDIR_NONE);
+    crServerRedirMuralFBO(mural, CR_SERVER_REDIR_F_NONE);
     crServerDeleteMuralFBO(mural);
 
     if (cr_server.currentMural == mural)
@@ -436,141 +437,143 @@ int crServerMuralSynchRootVr(CRMuralInfo *mural, uint32_t *pcRects, const RTRECT
 
 void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
 {
-    if (mural->width != width || mural->height != height)
+    uint32_t cRects;
+    const RTRECT *pRects;
+    RTRECT Rect;
+    VBOXVR_TEXTURE Tex;
+    int rc = VINF_SUCCESS;
+    Tex.width = width;
+    Tex.height = height;
+    Tex.target = GL_TEXTURE_2D;
+    Tex.hwid = 0;
+
+    if (mural->width == width && mural->height == height)
+        return;
+
+
+    /* since we're going to change the current compositor & the window we need to avoid
+     * renderspu fron dealing with inconsistent data, i.e. modified compositor and
+     * still unmodified window.
+     * So what we do is:
+     * 1. tell renderspu to stop using the current compositor -> renderspu would do necessary synchronization with its redraw thread to ensure compositor is no longer used
+     * 2. do necessary modifications
+     * 3. (so far not needed for resize, but in case it is in the future) re-set the compositor */
+
+    /* 1. tell renderspu to stop using the current compositor (see above comment) */
+    crServerVBoxCompositionDisableEnter(mural);
+
+    /* 2. do necessary modifications (see above comment) */
+    /* NOTE: we can do it even if mural->fPresentMode == CR_SERVER_REDIR_F_NONE to make sure the compositor data is always up to date */
+    /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
+    /* CrVrScrCompositorLock(&mural->Compositor); */
+    rc = CrVrScrCompositorEntryRemove(&mural->Compositor, &mural->CEntry);
+    if (!RT_SUCCESS(rc))
     {
-        uint32_t cRects;
-        const RTRECT *pRects;
-        RTRECT Rect;
-        VBOXVR_TEXTURE Tex;
-        int rc = VINF_SUCCESS;
-        Tex.width = width;
-        Tex.height = height;
-        Tex.target = GL_TEXTURE_2D;
-        Tex.hwid = 0;
+        crWarning("CrVrScrCompositorEntryRemove failed, rc %d", rc);
+        goto end;
+    }
+    CrVrScrCompositorEntryInit(&mural->CEntry, &Tex);
+    /* initially set regions to all visible since this is what some guest assume
+     * and will not post any more visible regions command */
+    Rect.xLeft = 0;
+    Rect.xRight = width;
+    Rect.yTop = 0;
+    Rect.yBottom = height;
+    rc = CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->CEntry, NULL, 1, &Rect, NULL);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
+        goto end;
+    }
+    /* CrVrScrCompositorUnlock(&mural->Compositor); */
+    mural->width = width;
+    mural->height = height;
 
+    mural->fDataPresented = GL_FALSE;
 
-        /* since we're going to change the current compositor & the window we need to avoid
-         * renderspu fron dealing with inconsistent data, i.e. modified compositor and
-         * still unmodified window.
-         * So what we do is:
-         * 1. tell renderspu to stop using the current compositor -> renderspu would do necessary synchronization with its redraw thread to ensure compositor is no longer used
-         * 2. do necessary modifications
-         * 3. (so far not needed for resize, but in case it is in the future) re-set the compositor */
+    if (cr_server.currentMural == mural)
+    {
+        crStateGetCurrent()->buffer.width = mural->width;
+        crStateGetCurrent()->buffer.height = mural->height;
+    }
 
-        /* 1. tell renderspu to stop using the current compositor (see above comment) */
-        crServerVBoxCompositionDisableEnter(mural);
-
-        /* 2. do necessary modifications (see above comment) */
-        /* NOTE: we can do it even if mural->fUseFBO == CR_SERVER_REDIR_NONE to make sure the compositor data is always up to date */
-        /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
-        /* CrVrScrCompositorLock(&mural->Compositor); */
-        rc = CrVrScrCompositorEntryRemove(&mural->Compositor, &mural->CEntry);
+    if (mural->fRootVrOn)
+    {
+        rc = CrVrScrCompositorEntryRemove(&mural->RootVrCompositor, &mural->RootVrCEntry);
         if (!RT_SUCCESS(rc))
         {
             crWarning("CrVrScrCompositorEntryRemove failed, rc %d", rc);
-            return;
+            goto end;
         }
-        CrVrScrCompositorEntryInit(&mural->CEntry, &Tex);
+        CrVrScrCompositorEntryInit(&mural->RootVrCEntry, &Tex);
         /* initially set regions to all visible since this is what some guest assume
          * and will not post any more visible regions command */
         Rect.xLeft = 0;
         Rect.xRight = width;
         Rect.yTop = 0;
         Rect.yBottom = height;
-        rc = CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->CEntry, NULL, 1, &Rect, NULL);
+        rc = CrVrScrCompositorEntryRegionsSet(&mural->RootVrCompositor, &mural->RootVrCEntry, NULL, 1, &Rect, NULL);
         if (!RT_SUCCESS(rc))
         {
             crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
-            return;
+            goto end;
         }
-        /* CrVrScrCompositorUnlock(&mural->Compositor); */
-        mural->width = width;
-        mural->height = height;
 
-        mural->fDataPresented = GL_FALSE;
-
-        if (cr_server.currentMural == mural)
+        crServerVBoxRootVrTranslateForMural(mural);
+        rc = CrVrScrCompositorEntryListIntersect(&mural->RootVrCompositor, &mural->RootVrCEntry, &cr_server.RootVr, NULL);
+        if (!RT_SUCCESS(rc))
         {
-            crStateGetCurrent()->buffer.width = mural->width;
-            crStateGetCurrent()->buffer.height = mural->height;
+            crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
+            goto end;
         }
 
+        rc = CrVrScrCompositorEntryRegionsGet(&mural->RootVrCompositor, &mural->RootVrCEntry, &cRects, NULL, &pRects);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
+            goto end;
+        }
+    }
+    else
+    {
+        rc = CrVrScrCompositorEntryRegionsGet(&mural->Compositor, &mural->CEntry, &cRects, NULL, &pRects);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
+            goto end;
+        }
+    }
+
+    crServerCheckMuralGeometry(mural);
+
+    cr_server.head_spu->dispatch_table.WindowSize(mural->spuWindow, width, height);
+
+    cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, pRects);
+
+    if (mural->pvOutputRedirectInstance)
+    {
         if (mural->fRootVrOn)
-        {
-            rc = CrVrScrCompositorEntryRemove(&mural->RootVrCompositor, &mural->RootVrCEntry);
-            if (!RT_SUCCESS(rc))
-            {
-                crWarning("CrVrScrCompositorEntryRemove failed, rc %d", rc);
-                return;
-            }
-            CrVrScrCompositorEntryInit(&mural->RootVrCEntry, &Tex);
-            /* initially set regions to all visible since this is what some guest assume
-             * and will not post any more visible regions command */
-            Rect.xLeft = 0;
-            Rect.xRight = width;
-            Rect.yTop = 0;
-            Rect.yBottom = height;
-            rc = CrVrScrCompositorEntryRegionsSet(&mural->RootVrCompositor, &mural->RootVrCEntry, NULL, 1, &Rect, NULL);
-            if (!RT_SUCCESS(rc))
-            {
-                crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
-                return;
-            }
-
-            crServerVBoxRootVrTranslateForMural(mural);
-            rc = CrVrScrCompositorEntryListIntersect(&mural->RootVrCompositor, &mural->RootVrCEntry, &cr_server.RootVr, NULL);
-            if (!RT_SUCCESS(rc))
-            {
-                crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
-                return;
-            }
-
-            rc = CrVrScrCompositorEntryRegionsGet(&mural->RootVrCompositor, &mural->RootVrCEntry, &cRects, NULL, &pRects);
-            if (!RT_SUCCESS(rc))
-            {
-                crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
-                return;
-            }
-        }
-        else
         {
             rc = CrVrScrCompositorEntryRegionsGet(&mural->Compositor, &mural->CEntry, &cRects, NULL, &pRects);
             if (!RT_SUCCESS(rc))
             {
                 crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
-                return;
+                goto end;
             }
         }
-
-        crServerCheckMuralGeometry(mural);
-
-        cr_server.head_spu->dispatch_table.WindowSize(mural->spuWindow, width, height);
-
-        cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, pRects);
-
-        if (mural->pvOutputRedirectInstance)
-        {
-            if (mural->fRootVrOn)
-            {
-                rc = CrVrScrCompositorEntryRegionsGet(&mural->Compositor, &mural->CEntry, &cRects, NULL, &pRects);
-                if (!RT_SUCCESS(rc))
-                {
-                    crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
-                    return;
-                }
-            }
-            /* @todo the code assumes that RTRECT == four GLInts. */
-            cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance,
-                    cRects, pRects);
-        }
-
-        /* 3. (so far not needed for resize, but in case it is in the future) re-set the compositor (see above comment) */
-        /* uncomment when needed */
-        /* NOTE: !!! we have mural->fHasPresentationData set to GL_FALSE above, so crServerVBoxCompositionReenable will have no effect in any way
-
-        */
-        crServerVBoxCompositionDisableLeave(mural, GL_FALSE);
+        /* @todo the code assumes that RTRECT == four GLInts. */
+        cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance,
+                cRects, pRects);
     }
+
+end:
+    /* 3. (so far not needed for resize, but in case it is in the future) re-set the compositor (see above comment) */
+    /* uncomment when needed */
+    /* NOTE: !!! we have mural->fHasPresentationData set to GL_FALSE above, so crServerVBoxCompositionReenable will have no effect in any way
+
+    */
+    crServerVBoxCompositionDisableLeave(mural, GL_FALSE);
+
 }
 
 void SERVER_DISPATCH_APIENTRY
@@ -622,7 +625,7 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
         crServerVBoxCompositionDisableEnter(mural);
 
         /* 2. do necessary modifications (see above comment) */
-        /* NOTE: we can do it even if mural->fUseFBO == CR_SERVER_REDIR_NONE to make sure the compositor data is always up to date */
+        /* NOTE: we can do it even if !(mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY) to make sure the compositor data is always up to date */
 
         if (mural->gX != x || mural->gY != y)
         {
@@ -708,7 +711,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
         crMemcpy(mural->pVisibleRects, pRects, 4*sizeof(GLint)*cRects);
     }
 
-    /* NOTE: we can do it even if mural->fUseFBO = CR_SERVER_REDIR_NONE to make sure the compositor data is always up to date */
+    /* NOTE: we can do it even if !(mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY) to make sure the compositor data is always up to date */
     /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
     /* CrVrScrCompositorLock(&mural->Compositor); */
     rc = CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->CEntry, NULL, cRects, (const RTRECT *)pRects, &fRegionsChanged);
@@ -716,7 +719,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
     if (!RT_SUCCESS(rc))
     {
         crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
-        return;
+        goto end;
     }
 
     if (fRegionsChanged)
@@ -730,7 +733,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
             if (!RT_SUCCESS(rc))
             {
                 crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
-                return;
+                goto end;
             }
 
             crServerVBoxRootVrTranslateForMural(mural);
@@ -738,14 +741,14 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
             if (!RT_SUCCESS(rc))
             {
                 crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
-                return;
+                goto end;
             }
 
             rc = CrVrScrCompositorEntryRegionsGet(&mural->RootVrCompositor, &mural->RootVrCEntry, &cRealRects, NULL, &pRealRects);
             if (!RT_SUCCESS(rc))
             {
                 crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
-                return;
+                goto end;
             }
         }
         else
@@ -754,7 +757,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
             if (!RT_SUCCESS(rc))
             {
                 crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
-                return;
+                goto end;
             }
         }
 
@@ -768,14 +771,14 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
                 if (!RT_SUCCESS(rc))
                 {
                     crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
-                    return;
+                    goto end;
                 }
             }
             /* @todo the code assumes that RTRECT == four GLInts. */
             cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance, cRealRects, pRealRects);
         }
     }
-
+end:
     /* 3. re-set the compositor (see above comment) */
     crServerVBoxCompositionDisableLeave(mural, fForcePresent);
 }
@@ -791,7 +794,7 @@ crServerDispatchWindowShow( GLint window, GLint state )
          return;
     }
 
-    if (mural->fUseFBO != CR_SERVER_REDIR_FBO_RAM)
+    if (mural->fPresentMode && CR_SERVER_REDIR_F_DISPLAY)
     {
         cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, state);
     }

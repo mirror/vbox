@@ -662,7 +662,7 @@ int crServerVBoxBlitterTexInit(CRContext *ctx, CRMuralInfo *mural, PVBOXVR_TEXTU
     {
         GLuint hwid;
 
-        if (mural->fUseFBO == CR_SERVER_REDIR_NONE)
+        if (!(mural->fPresentMode & CR_SERVER_REDIR_F_FBO))
             return VERR_NOT_IMPLEMENTED;
 
         enmBuf = fDraw ? ctx->buffer.drawBuffer : ctx->buffer.readBuffer;
