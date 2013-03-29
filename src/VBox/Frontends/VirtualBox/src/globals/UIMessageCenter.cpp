@@ -94,110 +94,25 @@ int UIMessageCenter::message(QWidget *pParent, MessageType type,
                              const QString &strButton2 /* = QString() */,
                              const QString &strButton3 /* = QString() */) const
 {
-    /* Choose the 'default' button: */
-    if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0)
-        iButton1 = QIMessageBox::Ok | QIMessageBox::Default;
-
-    /* Check if message-box was auto-confirmed before: */
-    CVirtualBox vbox;
-    QStringList confirmedMessageList;
-    if (pcszAutoConfirmId)
+    /* If this is NOT a GUI thread: */
+    if (thread() != QThread::currentThread())
     {
-        vbox = vboxGlobal().virtualBox();
-        confirmedMessageList = vbox.GetExtraData(GUI_SuppressMessages).split(',');
-        if (confirmedMessageList.contains(pcszAutoConfirmId))
-        {
-            int iResultCode = AutoConfirmed;
-            if (iButton1 & QIMessageBox::Default)
-                iResultCode |= (iButton1 & QIMessageBox::ButtonMask);
-            if (iButton2 & QIMessageBox::Default)
-                iResultCode |= (iButton2 & QIMessageBox::ButtonMask);
-            if (iButton3 & QIMessageBox::Default)
-                iResultCode |= (iButton3 & QIMessageBox::ButtonMask);
-            return iResultCode;
-        }
+        /* We have to throw a blocking signal
+         * to show a message-box in the GUI thread: */
+        emit sigToShowMessageBox(pParent, type,
+                                 strMessage, strDetails,
+                                 iButton1, iButton2, iButton3,
+                                 strButton1, strButton2, strButton3,
+                                 QString(pcszAutoConfirmId));
+        /* Inter-thread communications are not yet implemented: */
+        return 0;
     }
-
-    /* Choose title and icon: */
-    QString title;
-    QIMessageBox::Icon icon;
-    switch (type)
-    {
-        default:
-        case MessageType_Info:
-            title = tr("VirtualBox - Information", "msg box title");
-            icon = QIMessageBox::Information;
-            break;
-        case MessageType_Question:
-            title = tr("VirtualBox - Question", "msg box title");
-            icon = QIMessageBox::Question;
-            break;
-        case MessageType_Warning:
-            title = tr("VirtualBox - Warning", "msg box title");
-            icon = QIMessageBox::Warning;
-            break;
-        case MessageType_Error:
-            title = tr("VirtualBox - Error", "msg box title");
-            icon = QIMessageBox::Critical;
-            break;
-        case MessageType_Critical:
-            title = tr("VirtualBox - Critical Error", "msg box title");
-            icon = QIMessageBox::Critical;
-            break;
-        case MessageType_GuruMeditation:
-            title = "VirtualBox - Guru Meditation"; /* don't translate this */
-            icon = QIMessageBox::GuruMeditation;
-            break;
-    }
-
-    /* Create message-box: */
-    QWidget *pMessageBoxParent = mwManager().realParentWindow(pParent);
-    QPointer<QIMessageBox> pMessageBox = new QIMessageBox(title, strMessage, icon,
-                                                          iButton1, iButton2, iButton3,
-                                                          pMessageBoxParent, pcszAutoConfirmId);
-    mwManager().registerNewParent(pMessageBox, pMessageBoxParent);
-
-    /* Prepare auto-confirmation check-box: */
-    if (pcszAutoConfirmId)
-    {
-        pMessageBox->setFlagText(tr("Do not show this message again", "msg box flag"));
-        pMessageBox->setFlagChecked(false);
-    }
-
-    /* Configure details: */
-    if (!strDetails.isEmpty())
-        pMessageBox->setDetailsText(strDetails);
-
-    /* Configure button-text: */
-    if (!strButton1.isNull())
-        pMessageBox->setButtonText(0, strButton1);
-    if (!strButton2.isNull())
-        pMessageBox->setButtonText(1, strButton2);
-    if (!strButton3.isNull())
-        pMessageBox->setButtonText(2, strButton3);
-
-    /* Show message-box: */
-    int iResultCode = pMessageBox->exec();
-
-    /* Make sure message-box still valid: */
-    if (!pMessageBox)
-        return iResultCode;
-
-    /* Remember auto-confirmation check-box value: */
-    if (pcszAutoConfirmId)
-    {
-        if (pMessageBox->isFlagChecked())
-        {
-            confirmedMessageList << pcszAutoConfirmId;
-            vbox.SetExtraData(GUI_SuppressMessages, confirmedMessageList.join(","));
-        }
-    }
-
-    /* Delete message-box: */
-    delete pMessageBox;
-
-    /* Return result-code: */
-    return iResultCode;
+    /* In usual case we can chow a message-box directly: */
+    return showMessageBox(pParent, type,
+                          strMessage, strDetails,
+                          iButton1, iButton2, iButton3,
+                          strButton1, strButton2, strButton3,
+                          QString(pcszAutoConfirmId));
 }
 
 int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType type,
@@ -2855,6 +2770,20 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 #endif
 }
 
+void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType type,
+                                        const QString &strMessage, const QString &strDetails,
+                                        int iButton1, int iButton2, int iButton3,
+                                        const QString &strButton1, const QString &strButton2, const QString &strButton3,
+                                        const QString &strAutoConfirmId) const
+{
+    /* Now we can show a message-box directly: */
+    showMessageBox(pParent, type,
+                   strMessage, strDetails,
+                   iButton1, iButton2, iButton3,
+                   strButton1, strButton2, strButton3,
+                   strAutoConfirmId);
+}
+
 void UIMessageCenter::sltCannotCreateHostInterface(const CHost &host, QWidget *pParent)
 {
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
@@ -3027,19 +2956,21 @@ UIMessageCenter::UIMessageCenter()
     qRegisterMetaType<UIMediumType>();
     qRegisterMetaType<StorageSlot>();
 
+    /* Prepare interthread connection: */
+    qRegisterMetaType<MessageType>();
+    connect(this, SIGNAL(sigToShowMessageBox(QWidget*, MessageType,
+                                             const QString&, const QString&,
+                                             int, int, int,
+                                             const QString&, const QString&, const QString&,
+                                             const QString&)),
+            this, SLOT(sltShowMessageBox(QWidget*, MessageType,
+                                         const QString&, const QString&,
+                                         int, int, int,
+                                         const QString&, const QString&, const QString&,
+                                         const QString&)),
+            Qt::BlockingQueuedConnection);
+
     /* Prepare required connections: */
-    connect(this, SIGNAL(sigCannotCreateHostInterface(const CHost&, QWidget*)),
-            this, SLOT(sltCannotCreateHostInterface(const CHost&, QWidget*)),
-            Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(sigCannotCreateHostInterface(const CProgress&, QWidget*)),
-            this, SLOT(sltCannotCreateHostInterface(const CProgress&, QWidget*)),
-            Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(sigCannotRemoveHostInterface(const CHost&, const CHostNetworkInterface&, QWidget*)),
-            this, SLOT(sltCannotRemoveHostInterface(const CHost&, const CHostNetworkInterface&, QWidget*)),
-            Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(sigCannotRemoveHostInterface(const CProgress&, const CHostNetworkInterface&, QWidget*)),
-            this, SLOT(sltCannotRemoveHostInterface(const CProgress&, const CHostNetworkInterface&, QWidget*)),
-            Qt::BlockingQueuedConnection);
     connect(this, SIGNAL(sigCannotAttachDevice(const CMachine&, UIMediumType, const QString&, const StorageSlot&, QWidget*)),
             this, SLOT(sltCannotAttachDevice(const CMachine&, UIMediumType, const QString&, const StorageSlot&, QWidget*)),
             Qt::BlockingQueuedConnection);
@@ -3157,5 +3088,117 @@ QString UIMessageCenter::errorInfoToString(const COMErrorInfo &info,
         formatted = formatted + "<!--EOP-->" + errorInfoToString(*info.next());
 
     return formatted;
+}
+
+int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
+                                    const QString &strMessage, const QString &strDetails,
+                                    int iButton1, int iButton2, int iButton3,
+                                    const QString &strButton1, const QString &strButton2, const QString &strButton3,
+                                    const QString &strAutoConfirmId) const
+{
+    /* Choose the 'default' button: */
+    if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0)
+        iButton1 = QIMessageBox::Ok | QIMessageBox::Default;
+
+    /* Check if message-box was auto-confirmed before: */
+    CVirtualBox vbox;
+    QStringList confirmedMessageList;
+    if (!strAutoConfirmId.isEmpty())
+    {
+        vbox = vboxGlobal().virtualBox();
+        confirmedMessageList = vbox.GetExtraData(GUI_SuppressMessages).split(',');
+        if (confirmedMessageList.contains(strAutoConfirmId))
+        {
+            int iResultCode = AutoConfirmed;
+            if (iButton1 & QIMessageBox::Default)
+                iResultCode |= (iButton1 & QIMessageBox::ButtonMask);
+            if (iButton2 & QIMessageBox::Default)
+                iResultCode |= (iButton2 & QIMessageBox::ButtonMask);
+            if (iButton3 & QIMessageBox::Default)
+                iResultCode |= (iButton3 & QIMessageBox::ButtonMask);
+            return iResultCode;
+        }
+    }
+
+    /* Choose title and icon: */
+    QString title;
+    QIMessageBox::Icon icon;
+    switch (type)
+    {
+        default:
+        case MessageType_Info:
+            title = tr("VirtualBox - Information", "msg box title");
+            icon = QIMessageBox::Information;
+            break;
+        case MessageType_Question:
+            title = tr("VirtualBox - MessageType_Question", "msg box title");
+            icon = QIMessageBox::Question;
+            break;
+        case MessageType_Warning:
+            title = tr("VirtualBox - MessageType_Warning", "msg box title");
+            icon = QIMessageBox::Warning;
+            break;
+        case MessageType_Error:
+            title = tr("VirtualBox - MessageType_Error", "msg box title");
+            icon = QIMessageBox::Critical;
+            break;
+        case MessageType_Critical:
+            title = tr("VirtualBox - MessageType_Critical MessageType_Error", "msg box title");
+            icon = QIMessageBox::Critical;
+            break;
+        case MessageType_GuruMeditation:
+            title = "VirtualBox - Guru Meditation"; /* don't translate this */
+            icon = QIMessageBox::GuruMeditation;
+            break;
+    }
+
+    /* Create message-box: */
+    QWidget *pMessageBoxParent = mwManager().realParentWindow(pParent);
+    QPointer<QIMessageBox> pMessageBox = new QIMessageBox(title, strMessage, icon,
+                                                          iButton1, iButton2, iButton3,
+                                                          pMessageBoxParent, strAutoConfirmId.toAscii().constData());
+    mwManager().registerNewParent(pMessageBox, pMessageBoxParent);
+
+    /* Prepare auto-confirmation check-box: */
+    if (!strAutoConfirmId.isEmpty())
+    {
+        pMessageBox->setFlagText(tr("Do not show this message again", "msg box flag"));
+        pMessageBox->setFlagChecked(false);
+    }
+
+    /* Configure details: */
+    if (!strDetails.isEmpty())
+        pMessageBox->setDetailsText(strDetails);
+
+    /* Configure button-text: */
+    if (!strButton1.isNull())
+        pMessageBox->setButtonText(0, strButton1);
+    if (!strButton2.isNull())
+        pMessageBox->setButtonText(1, strButton2);
+    if (!strButton3.isNull())
+        pMessageBox->setButtonText(2, strButton3);
+
+    /* Show message-box: */
+    int iResultCode = pMessageBox->exec();
+
+    /* Make sure message-box still valid: */
+    if (!pMessageBox)
+        return iResultCode;
+
+    /* Remember auto-confirmation check-box value: */
+    if (!strAutoConfirmId.isEmpty())
+    {
+        if (pMessageBox->isFlagChecked())
+        {
+            confirmedMessageList << strAutoConfirmId;
+            vbox.SetExtraData(GUI_SuppressMessages, confirmedMessageList.join(","));
+        }
+    }
+
+    /* Delete message-box: */
+    delete pMessageBox;
+
+    /* Return result-code: */
+    return iResultCode;
 }
 
