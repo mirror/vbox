@@ -38,20 +38,19 @@ struct StorageSlot;
 class CGuest;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
-/**
- * The UIMessageCenter class is a central place to handle all problem/error
- * situations that happen during application runtime and require the user's
- * attention.
- *
- * The role of this class is to describe the problem and/or the cause of the
- * error to the user and give him the opportunity to select an action (when
- * appropriate).
- *
- * Every problem situation has its own (correspondingly named) method in this
- * class that takes a list of arguments necessary to describe the situation and
- * to provide the appropriate actions. The method then returns the choice to the
- * caller.
- */
+/* Possible message types: */
+enum MessageType
+{
+    MessageType_Info = 1,
+    MessageType_Question,
+    MessageType_Warning,
+    MessageType_Error,
+    MessageType_Critical,
+    MessageType_GuruMeditation
+};
+Q_DECLARE_METATYPE(MessageType);
+
+/* Global message-center object: */
 class UIMessageCenter: public QObject
 {
     Q_OBJECT;
@@ -80,16 +79,6 @@ signals:
 
 public:
 
-    enum Type
-    {
-        Info = 1,
-        Question,
-        Warning,
-        Error,
-        Critical,
-        GuruMeditation
-    };
-
     enum
     {
         AutoConfirmed = 0x8000
@@ -100,7 +89,7 @@ public:
     void setWarningShown(const QString &strWarningName, bool fWarningShown);
 
     /* API: Message posting stuff: Main function: */
-    int message(QWidget *pParent, Type type, const QString &strMessage,
+    int message(QWidget *pParent, MessageType type, const QString &strMessage,
                 const QString &strDetails = QString::null,
                 const char *pcszAutoConfirmId = 0,
                 int button1 = 0, int button2 = 0, int button3 = 0,
@@ -109,7 +98,7 @@ public:
                 const QString &strText3 = QString::null) const;
 
     /* API: Message posting stuff: Wrapper to above function: */
-    int message(QWidget *pParent, Type type, const QString &strMessage,
+    int message(QWidget *pParent, MessageType type, const QString &strMessage,
                 const char *pcszAutoConfirmId,
                 int button1 = 0, int button2 = 0, int button3 = 0,
                 const QString &strText1 = QString::null,
@@ -121,7 +110,7 @@ public:
     }
 
     /* API: Message posting stuff: Wrapper to above function: */
-    bool messageYesNo(QWidget *pParent, Type type, const QString &strMessage,
+    bool messageYesNo(QWidget *pParent, MessageType type, const QString &strMessage,
                       const QString &strDetails = QString::null,
                       const char *pcszAutoConfirmId = 0,
                       const QString &strYesText = QString::null,
@@ -136,7 +125,7 @@ public:
     }
 
     /* API: Message posting stuff: Wrapper to above function: */
-    bool messageYesNo(QWidget *pParent, Type type, const QString &strMessage,
+    bool messageYesNo(QWidget *pParent, MessageType type, const QString &strMessage,
                       const char *pcszAutoConfirmId,
                       const QString &strYesText = QString::null,
                       const QString &strNoText = QString::null) const
@@ -146,7 +135,7 @@ public:
     }
 
     /* API: Message posting stuff: Wrapper to above function: */
-    bool messageOkCancel(QWidget *pParent, Type type, const QString &strMessage,
+    bool messageOkCancel(QWidget *pParent, MessageType type, const QString &strMessage,
                          const QString &strDetails = QString::null,
                          const char *pcszAutoConfirmId = 0,
                          const QString &strOkText = QString::null,
@@ -161,7 +150,7 @@ public:
     }
 
     /* API: Message posting stuff: Wrapper to above function: */
-    bool messageOkCancel(QWidget *pParent, Type type, const QString &strMessage,
+    bool messageOkCancel(QWidget *pParent, MessageType type, const QString &strMessage,
                          const char *pcszAutoConfirmId,
                          const QString &strOkText = QString::null,
                          const QString &strCancelText = QString::null) const
@@ -172,7 +161,7 @@ public:
 
     /* API: Message posting stuff: One more main function: */
     int messageWithOption(QWidget *pParent,
-                          Type type,
+                          MessageType type,
                           const QString &strMessage,
                           const QString &strOptionText,
                           bool fDefaultOptionValue = true,
