@@ -2576,82 +2576,117 @@ QString UIMessageCenter::formatErrorInfo(const COMResult &rc)
 
 void UIMessageCenter::cannotCreateHostInterface(const CHost &host, QWidget *pParent /* = 0 */)
 {
-    if (thread() == QThread::currentThread())
-        sltCannotCreateHostInterface(host, pParent);
-    else
-        emit sigCannotCreateHostInterface(host, pParent);
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to create the host-only network interface."),
+            formatErrorInfo(host));
 }
 
 void UIMessageCenter::cannotCreateHostInterface(const CProgress &progress, QWidget *pParent /* = 0 */)
 {
-    if (thread() == QThread::currentThread())
-        sltCannotCreateHostInterface(progress, pParent);
-    else
-        emit sigCannotCreateHostInterface(progress, pParent);
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to create the host-only network interface."),
+            formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::cannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface,
-                                                QWidget *pParent /* = 0 */)
+void UIMessageCenter::cannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent /* = 0 */)
 {
-    if (thread() == QThread::currentThread())
-        sltCannotRemoveHostInterface(host, iface ,pParent);
-    else
-        emit sigCannotRemoveHostInterface(host, iface, pParent);
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to remove the host network interface <b>%1</b>.")
+               .arg(iface.GetName()),
+            formatErrorInfo(host));
 }
 
-void UIMessageCenter::cannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface,
-                                                QWidget *pParent /* = 0 */)
+void UIMessageCenter::cannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent /* = 0 */)
 {
-    if (thread() == QThread::currentThread())
-        sltCannotRemoveHostInterface(progress, iface, pParent);
-    else
-        emit sigCannotRemoveHostInterface(progress, iface, pParent);
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to remove the host network interface <b>%1</b>.")
+               .arg(iface.GetName()),
+            formatErrorInfo(progress.GetErrorInfo()));
 }
 
 void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,
                                          const QString &strLocation, const StorageSlot &storageSlot,
                                          QWidget *pParent /* = 0 */)
 {
-    if (thread() == QThread::currentThread())
-        sltCannotAttachDevice(machine, type, strLocation, storageSlot, pParent);
-    else
-        emit sigCannotAttachDevice(machine, type, strLocation, storageSlot, pParent);
+    QString strMessage;
+    switch (type)
+    {
+        case UIMediumType_HardDisk:
+        {
+            strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        case UIMediumType_DVD:
+        {
+            strMessage = tr("Failed to attach the CD/DVD device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        case UIMediumType_Floppy:
+        {
+            strMessage = tr("Failed to attach the floppy device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        default:
+            break;
+    }
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error, strMessage, formatErrorInfo(machine));
 }
 
 void UIMessageCenter::cannotCreateSharedFolder(const CMachine &machine, const QString &strName,
                                                const QString &strPath, QWidget *pParent /* = 0 */)
 {
-    if (thread() == QThread::currentThread())
-        sltCannotCreateSharedFolder(machine, strName, strPath, pParent);
-    else
-        emit sigCannotCreateSharedFolder(machine, strName, strPath, pParent);
+    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
+            tr("Failed to create the shared folder <b>%1</b> "
+               "(pointing to <nobr><b>%2</b></nobr>) "
+               "for the virtual machine <b>%3</b>.")
+               .arg(strName)
+               .arg(strPath)
+               .arg(CMachine(machine).GetName()),
+            formatErrorInfo(machine));
 }
 
 void UIMessageCenter::cannotRemoveSharedFolder(const CMachine &machine, const QString &strName,
                                                const QString &strPath, QWidget *pParent /* = 0 */)
 {
-    if (thread() == QThread::currentThread())
-        sltCannotRemoveSharedFolder(machine, strName, strPath, pParent);
-    else
-        emit sigCannotRemoveSharedFolder(machine, strName, strPath, pParent);
+    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
+            tr("Failed to remove the shared folder <b>%1</b> "
+               "(pointing to <nobr><b>%2</b></nobr>) "
+               "from the virtual machine <b>%3</b>.")
+               .arg(strName)
+               .arg(strPath)
+               .arg(CMachine(machine).GetName()),
+            formatErrorInfo(machine));
 }
 
 void UIMessageCenter::cannotCreateSharedFolder(const CConsole &console, const QString &strName,
                                                const QString &strPath, QWidget *pParent /* = 0 */)
 {
-    if (thread() == QThread::currentThread())
-        sltCannotCreateSharedFolder(console, strName, strPath, pParent);
-    else
-        emit sigCannotCreateSharedFolder(console, strName, strPath, pParent);
+    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
+            tr("Failed to create the shared folder <b>%1</b> "
+               "(pointing to <nobr><b>%2</b></nobr>) "
+               "for the virtual machine <b>%3</b>.")
+               .arg(strName)
+               .arg(strPath)
+               .arg(CConsole(console).GetMachine().GetName()),
+            formatErrorInfo(console));
 }
 
 void UIMessageCenter::cannotRemoveSharedFolder(const CConsole &console, const QString &strName,
                                                const QString &strPath, QWidget *pParent /* = 0 */)
 {
-    if (thread() == QThread::currentThread())
-        sltCannotRemoveSharedFolder(console, strName, strPath, pParent);
-    else
-        emit sigCannotRemoveSharedFolder(console, strName, strPath, pParent);
+    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
+            tr("<p>Failed to remove the shared folder <b>%1</b> "
+               "(pointing to <nobr><b>%2</b></nobr>) "
+               "from the virtual machine <b>%3</b>.</p>"
+               "<p>Please close all programs in the guest OS that "
+               "may be using this shared folder and try again.</p>")
+               .arg(strName)
+               .arg(strPath)
+               .arg(CConsole(console).GetMachine().GetName()),
+            formatErrorInfo(console));
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
@@ -2784,121 +2819,6 @@ void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType type,
                    strAutoConfirmId);
 }
 
-void UIMessageCenter::sltCannotCreateHostInterface(const CHost &host, QWidget *pParent)
-{
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-            tr("Failed to create the host-only network interface."),
-            formatErrorInfo(host));
-}
-
-void UIMessageCenter::sltCannotCreateHostInterface(const CProgress &progress, QWidget *pParent)
-{
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-            tr("Failed to create the host-only network interface."),
-            formatErrorInfo(progress.GetErrorInfo()));
-}
-
-void UIMessageCenter::sltCannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent)
-{
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-            tr("Failed to remove the host network interface <b>%1</b>.")
-               .arg(iface.GetName()),
-            formatErrorInfo(host));
-}
-
-void UIMessageCenter::sltCannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent)
-{
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-            tr("Failed to remove the host network interface <b>%1</b>.")
-               .arg(iface.GetName()),
-            formatErrorInfo(progress.GetErrorInfo()));
-}
-
-void UIMessageCenter::sltCannotAttachDevice(const CMachine &machine, UIMediumType type,
-                                            const QString &strLocation, const StorageSlot &storageSlot,
-                                            QWidget *pParent)
-{
-    QString strMessage;
-    switch (type)
-    {
-        case UIMediumType_HardDisk:
-        {
-            strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
-            break;
-        }
-        case UIMediumType_DVD:
-        {
-            strMessage = tr("Failed to attach the CD/DVD device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
-            break;
-        }
-        case UIMediumType_Floppy:
-        {
-            strMessage = tr("Failed to attach the floppy device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
-            break;
-        }
-        default:
-            break;
-    }
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error, strMessage, formatErrorInfo(machine));
-}
-
-void UIMessageCenter::sltCannotCreateSharedFolder(const CMachine &machine, const QString &strName,
-                                                  const QString &strPath, QWidget *pParent)
-{
-    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
-            tr("Failed to create the shared folder <b>%1</b> "
-               "(pointing to <nobr><b>%2</b></nobr>) "
-               "for the virtual machine <b>%3</b>.")
-               .arg(strName)
-               .arg(strPath)
-               .arg(CMachine(machine).GetName()),
-            formatErrorInfo(machine));
-}
-
-void UIMessageCenter::sltCannotRemoveSharedFolder(const CMachine &machine, const QString &strName,
-                                                  const QString &strPath, QWidget *pParent)
-{
-    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
-            tr("Failed to remove the shared folder <b>%1</b> "
-               "(pointing to <nobr><b>%2</b></nobr>) "
-               "from the virtual machine <b>%3</b>.")
-               .arg(strName)
-               .arg(strPath)
-               .arg(CMachine(machine).GetName()),
-            formatErrorInfo(machine));
-}
-
-void UIMessageCenter::sltCannotCreateSharedFolder(const CConsole &console, const QString &strName,
-                                                  const QString &strPath, QWidget *pParent)
-{
-    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
-            tr("Failed to create the shared folder <b>%1</b> "
-               "(pointing to <nobr><b>%2</b></nobr>) "
-               "for the virtual machine <b>%3</b>.")
-               .arg(strName)
-               .arg(strPath)
-               .arg(CConsole(console).GetMachine().GetName()),
-            formatErrorInfo(console));
-}
-
-void UIMessageCenter::sltCannotRemoveSharedFolder(const CConsole &console, const QString &strName,
-                                                  const QString &strPath, QWidget *pParent)
-{
-    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
-            tr("<p>Failed to remove the shared folder <b>%1</b> "
-               "(pointing to <nobr><b>%2</b></nobr>) "
-               "from the virtual machine <b>%3</b>.</p>"
-               "<p>Please close all programs in the guest OS that "
-               "may be using this shared folder and try again.</p>")
-               .arg(strName)
-               .arg(strPath)
-               .arg(CConsole(console).GetMachine().GetName()),
-            formatErrorInfo(console));
-}
-
 void UIMessageCenter::sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP)
 {
     const char *kName = "remindAboutWrongColorDepth";
@@ -2970,22 +2890,7 @@ UIMessageCenter::UIMessageCenter()
                                          const QString&)),
             Qt::BlockingQueuedConnection);
 
-    /* Prepare required connections: */
-    connect(this, SIGNAL(sigCannotAttachDevice(const CMachine&, UIMediumType, const QString&, const StorageSlot&, QWidget*)),
-            this, SLOT(sltCannotAttachDevice(const CMachine&, UIMediumType, const QString&, const StorageSlot&, QWidget*)),
-            Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(sigCannotCreateSharedFolder(const CMachine&, const QString&, const QString&, QWidget*)),
-            this, SLOT(sltCannotCreateSharedFolder(const CMachine&, const QString&, const QString&, QWidget*)),
-            Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(sigCannotRemoveSharedFolder(const CMachine&, const QString&, const QString&, QWidget*)),
-            this, SLOT(sltCannotRemoveSharedFolder(const CMachine&, const QString&, const QString&, QWidget*)),
-            Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(sigCannotCreateSharedFolder(const CConsole&, const QString&, const QString&, QWidget*)),
-            this, SLOT(sltCannotCreateSharedFolder(const CConsole&, const QString&, const QString&, QWidget*)),
-            Qt::BlockingQueuedConnection);
-    connect(this, SIGNAL(sigCannotRemoveSharedFolder(const CConsole&, const QString&, const QString&, QWidget*)),
-            this, SLOT(sltCannotRemoveSharedFolder(const CConsole&, const QString&, const QString&, QWidget*)),
-            Qt::BlockingQueuedConnection);
+    /* Prepare synchronization connection: */
     connect(this, SIGNAL(sigRemindAboutWrongColorDepth(ulong, ulong)),
             this, SLOT(sltRemindAboutWrongColorDepth(ulong, ulong)), Qt::QueuedConnection);
     connect(this, SIGNAL(sigRemindAboutUnsupportedUSB2(const QString&, QWidget*)),
