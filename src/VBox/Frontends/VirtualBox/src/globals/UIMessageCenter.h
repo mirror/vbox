@@ -64,21 +64,7 @@ signals:
                              const QString &strButton1, const QString &strButton2, const QString &strButton3,
                              const QString &strAutoConfirmId) const;
 
-    /* Stuff supporting interthreading: */
-    void sigCannotCreateHostInterface(const CHost &host, QWidget *pParent);
-    void sigCannotCreateHostInterface(const CProgress &progress, QWidget *pParent);
-    void sigCannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent);
-    void sigCannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent);
-    void sigCannotAttachDevice(const CMachine &machine, UIMediumType type,
-                               const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent);
-    void sigCannotCreateSharedFolder(const CMachine &machine, const QString &strName,
-                                     const QString &strPath, QWidget *pParent);
-    void sigCannotRemoveSharedFolder(const CMachine &machine, const QString &strName,
-                                     const QString &strPath, QWidget *pParent);
-    void sigCannotCreateSharedFolder(const CConsole &console, const QString &strName,
-                                     const QString &strPath, QWidget *pParent);
-    void sigCannotRemoveSharedFolder(const CConsole &console, const QString &strName,
-                                     const QString &strPath, QWidget *pParent);
+    /* Notifiers: Synchronization stuff: */
     void sigRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
     void sigRemindAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent);
 
@@ -435,21 +421,7 @@ private slots:
                            const QString &strButton1, const QString &strButton2, const QString &strButton3,
                            const QString &strAutoConfirmId) const;
 
-    /* Stuff supporting interthreading: */
-    void sltCannotCreateHostInterface(const CHost &host, QWidget *pParent);
-    void sltCannotCreateHostInterface(const CProgress &progress, QWidget *pParent);
-    void sltCannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent);
-    void sltCannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent);
-    void sltCannotAttachDevice(const CMachine &machine, UIMediumType type,
-                               const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent);
-    void sltCannotCreateSharedFolder(const CMachine &machine, const QString &strName,
-                                     const QString &strPath, QWidget *pParent);
-    void sltCannotRemoveSharedFolder(const CMachine &machine, const QString &strName,
-                                     const QString &strPath, QWidget *pParent);
-    void sltCannotCreateSharedFolder(const CConsole &console, const QString &strName,
-                                     const QString &strPath, QWidget *pParent);
-    void sltCannotRemoveSharedFolder(const CConsole &console, const QString &strName,
-                                     const QString &strPath, QWidget *pParent);
+    /* Handlers: Synchronization stuff: */
     void sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
     void sltRemindAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent);
 
