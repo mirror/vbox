@@ -86,7 +86,11 @@ RT_C_DECLS_BEGIN
 /** @def DECLR0VBGL
  * Declare a VBGL ring-0 API with the right calling convention and visibilitiy.
  * @param type      Return type.  */
-# define DECLR0VBGL(type) type VBOXCALL
+# ifdef RT_OS_DARWIN /** @todo probably apply to all, but don't want a forest fire on our hands right now. */
+#  define DECLR0VBGL(type) DECLHIDDEN(type) VBOXCALL
+# else
+#  define DECLR0VBGL(type) type VBOXCALL
+# endif
 # define DECLVBGL(type) DECLR0VBGL(type)
 
 typedef uint32_t VBGLIOPORT; /**< @todo r=bird: We have RTIOPORT (uint16_t) for this. */
