@@ -1,9 +1,11 @@
 #!/bin/sh
 # $Id$
-#
+## @file
 # VirtualBox X Server auto-start service unit test.
 #
-# Copyright (C) 2012 Oracle Corporation
+
+#
+# Copyright (C) 2012-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -92,10 +94,13 @@ TEST_NAME_FULL="${OUR_FOLDER}/$(basename "$0")"
 
 # Create a temporary directory for configuration and logging.
 TEST_FOLDER_BASE="/tmp/${TEST_NAME} 99/"  # Space in the name to test quoting.
+if [ -n "${TESTBOX_PATH_SCRATCH}" ]; then
+    TEST_FOLDER_BASE="${TESTBOX_PATH_SCRATCH}/${TEST_NAME} 99/"
+fi
 {
   rm -rf "${TEST_FOLDER_BASE}" 2>/dev/null &&
     mkdir -m 0700 "${TEST_FOLDER_BASE}" 2>/dev/null
-} || abort "Could not create test folder.\n"
+} || abort "Could not create test folder (${TEST_FOLDER_BASE}).\n"
 
 ###############################################################################
 # Simple start-up test.                                                       #
