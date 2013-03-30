@@ -45,10 +45,14 @@ void test3()
     for (unsigned i = 0; i < 100 && cStartErrors == RTTestErrorCount(g_hTest); i++)
     {
         PRTTCPSERVER pServer;
-        RTTESTI_CHECK_RC_RETV(RTTcpServerCreate("localhost", 9999, RTTHREADTYPE_DEFAULT, "server-2",
-                                                test3Server, NULL, &pServer), VINF_SUCCESS);
+        int rc = RTTcpServerCreate("localhost", 9999, RTTHREADTYPE_DEFAULT, "server-2",
+                                   test3Server, NULL, &pServer);
+        if (rc != VINF_SUCCESS)
+        {
+            RTTestIFailed("RTTcpServerCreate -> %Rrc, i=%d", rc, i);
+            return;
+        }
 
-        int rc;
         RTSOCKET hSocket;
         RTTESTI_CHECK_RC(rc = RTTcpClientConnect("localhost", 9999, &hSocket), VINF_SUCCESS);
         if (RT_SUCCESS(rc))
