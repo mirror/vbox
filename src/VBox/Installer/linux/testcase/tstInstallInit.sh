@@ -1,7 +1,9 @@
 #!/bin/sh
 # $Id$
-#
+## @file
 # VirtualBox init file creator unit test.
+#
+
 #
 # Copyright (C) 2012-2013 Oracle Corporation
 #
@@ -19,6 +21,9 @@
 
 tab="	"
 tmpbase="/tmp/tstInstallInit 99"  # Space in the name for a little stress...
+if [ -n "${TESTBOX_PATH_SCRATCH}" ]; then
+    tmpbase="${TESTBOX_PATH_SCRATCH}/tstInstallInit 99"
+fi
 
 ## The function definition at the start of every non-trivial shell script!
 abort()
@@ -60,7 +65,7 @@ test_service()
 {
     cat > "${1}/${2}" << EOF
 #!/bin/sh
-trap "touch \"${1}/stopped\"; exit" TERM 
+trap "touch \"${1}/stopped\"; exit" TERM
 echo "1: \${1} 2: \${2} 3: \${3}" > "${1}/started"
 while true; do true; done
 EOF
