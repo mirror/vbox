@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,15 +29,16 @@
 *******************************************************************************/
 #include <iprt/string.h>
 
-#include <iprt/uni.h>
-#include <iprt/uuid.h>
-#include <iprt/time.h>
-#include <iprt/stream.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
+#include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/rand.h>
+#include <iprt/stream.h>
 #include <iprt/test.h>
+#include <iprt/time.h>
+#include <iprt/uni.h>
+#include <iprt/uuid.h>
 
 
 
@@ -1398,7 +1399,8 @@ static void testNoTransation(RTTEST hTest)
     if (RT_SUCCESS(rc))
     {
         RTTESTI_CHECK(!strcmp(pszOut, pszTest1));
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "CurrentCP is UTF-8 or similar\n");
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "CurrentCP is UTF-8 or similar (LC_ALL=%s LANG=%s LC_CTYPE=%s)\n",
+                      RTEnvGet("LC_ALL"), RTEnvGet("LANG"), RTEnvGet("LC_CTYPE"));
         RTStrFree(pszOut);
     }
     else
