@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,7 +41,22 @@ RTDECL(int) RTStrNCmp(const char *psz1, const char *psz2, size_t cchMax)
     if (!psz2)
         return 1;
 
+#ifdef RT_OS_SOLARIS
+    /* Solaris: tstUtf8 found to fail for some RTSTR_MAX on testboxsh1:
+       solaris.amd64 v5.10 (Generic_142901-12 (Assembled 30 March 2009)). */
+    while (cchMax-- > 0)
+    {
+        char ch1 = *psz1++;
+        char ch2 = *psz2++;
+        if (ch1 != ch2)
+            return ch1 > ch2 ? 1 : -1;
+        else if (ch1 == 0)
+            break;
+    }
+    return 0;
+#else
     return strncmp(psz1, psz2, cchMax);
+#endif
 }
 RT_EXPORT_SYMBOL(RTStrNCmp);
 
