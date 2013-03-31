@@ -193,11 +193,13 @@ static int rtstrConvertCached(const void *pvInput, size_t cbInput, const char *p
             size_t      cbOutLeft = cbOutput2;
             const void *pvInputLeft = pvInput;
             void       *pvOutputLeft = pvOutput;
+            size_t      cchNonRev;
 #if defined(RT_OS_LINUX) || defined(RT_OS_HAIKU) || defined(RT_OS_SOLARIS) || (defined(RT_OS_DARWIN) && defined(_DARWIN_FEATURE_UNIX_CONFORMANCE)) /* there are different opinions about the constness of the input buffer. */
-            if (iconv(hIconv, (char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft) != (size_t)-1)
+            cchNonRev = iconv(hIconv, (char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft);
 #else
-            if (iconv(hIconv, (const char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft) != (size_t)-1)
+            cchNonRev = iconv(hIconv, (const char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft);
 #endif
+            if (cchNonRev != (size_t)-1)
             {
                 if (!cbInLeft)
                 {
@@ -209,7 +211,9 @@ static int rtstrConvertCached(const void *pvInput, size_t cbInput, const char *p
                     if (fUcs2Term)
                         ((char *)pvOutputLeft)[1] = '\0';
                     *ppvOutput = pvOutput;
-                    return VINF_SUCCESS;
+                    if (cchNonRev == 0)
+                        return VINF_SUCCESS;
+                    return VWRN_NO_TRANSLATION;
                 }
                 errno = E2BIG;
             }
@@ -319,11 +323,13 @@ static int rtStrConvertUncached(const void *pvInput, size_t cbInput, const char 
             size_t      cbOutLeft = cbOutput2;
             const void *pvInputLeft = pvInput;
             void       *pvOutputLeft = pvOutput;
+            size_t      cchNonRev;
 #if defined(RT_OS_LINUX) || defined(RT_OS_HAIKU) || defined(RT_OS_SOLARIS) || (defined(RT_OS_DARWIN) && defined(_DARWIN_FEATURE_UNIX_CONFORMANCE)) /* there are different opinions about the constness of the input buffer. */
-            if (iconv(icHandle, (char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft) != (size_t)-1)
+            cchNonRev = iconv(icHandle, (char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft);
 #else
-            if (iconv(icHandle, (const char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft) != (size_t)-1)
+            cchNonRev = iconv(icHandle, (const char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft);
 #endif
+            if (cchNonRev != (size_t)-1)
             {
                 if (!cbInLeft)
                 {
@@ -336,7 +342,9 @@ static int rtStrConvertUncached(const void *pvInput, size_t cbInput, const char 
                     if (fUcs2Term)
                         ((char *)pvOutputLeft)[1] = '\0';
                     *ppvOutput = pvOutput;
-                    return VINF_SUCCESS;
+                    if (cchNonRev == 0)
+                        return VINF_SUCCESS;
+                    return VWRN_NO_TRANSLATION;
                 }
                 errno = E2BIG;
             }
