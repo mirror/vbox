@@ -1396,7 +1396,7 @@ static void testNoTransation(RTTEST hTest)
     RTTestSub(hTest, "VERR_NO_TRANSLATION/RTStrUtf8ToCurrentCP");
     char *pszOut;
     rc = RTStrUtf8ToCurrentCP(&pszOut, pszTest1);
-    if (RT_SUCCESS(rc))
+    if (rc == VINF_SUCCESS)
     {
         RTTESTI_CHECK(!strcmp(pszOut, pszTest1));
         RTTestIPrintf(RTTESTLVL_ALWAYS, "CurrentCP is UTF-8 or similar (LC_ALL=%s LANG=%s LC_CTYPE=%s)\n",
@@ -1404,7 +1404,7 @@ static void testNoTransation(RTTEST hTest)
         RTStrFree(pszOut);
     }
     else
-        RTTESTI_CHECK_RC(rc, VERR_NO_TRANSLATION);
+        RTTESTI_CHECK_MSG(rc == VWRN_NO_TRANSLATION || rc == VERR_NO_TRANSLATION, ("rc=%Rrc\n", rc));
 
     RTTestSub(hTest, "VERR_NO_TRANSLATION/RTUtf16ToLatin1");
     rc = RTUtf16ToLatin1(s_swzTest1, &pszOut);
