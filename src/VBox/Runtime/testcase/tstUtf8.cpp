@@ -104,6 +104,8 @@ static void test1(RTTEST hTest)
         }
         else if (rc == VERR_NO_TRANSLATION)
             RTTestPassed(hTest, "The second part of random UTF-16 -> UTF-8 -> Current -> UTF-8 returned VERR_NO_TRANSLATION.  This is probably as it should be.\n");
+        else if (rc == VWRN_NO_TRANSLATION)
+            RTTestPassed(hTest, "The second part of random UTF-16 -> UTF-8 -> Current -> UTF-8 returned VWRN_NO_TRANSLATION.  This is probably as it should be.\n");
         else
             RTTestFailed(hTest, "%d: The second part of random UTF-16 -> UTF-8 -> Current -> UTF-8 failed with return value %Rrc.",
                          __LINE__, rc);
