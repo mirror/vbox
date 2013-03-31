@@ -634,7 +634,7 @@ RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath);
 /**
  * Gets the user documents directory.
  *
- * The returned path isn't guarantied to exist.
+ * The returned path isn't guaranteed to exist.
  *
  * @returns iprt status code.
  * @param   pszPath     Buffer where to store the path.
