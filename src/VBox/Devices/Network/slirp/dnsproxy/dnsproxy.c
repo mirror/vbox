@@ -1,4 +1,26 @@
 /* $Id$ */
+
+/*
+ * Copyright (C) 2009-2013 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+ * VirtualBox OSE distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
+ */
+
 /*
  * Copyright (c) 2003,2004,2005 Armin Wolfermann
  *
@@ -104,6 +126,8 @@ timeout(PNATState pData, struct socket *so, void *arg)
 {
     struct request *req = (struct request *)arg;
     struct dns_entry *de;
+    /* be paranoid */
+    AssertPtrReturnVoid(arg);
     de = TAILQ_PREV(req->dns_server, dns_list_head, de_list);
     /* here we should check if we reached the end of the DNS server list */
     if (de == NULL)
@@ -111,42 +135,53 @@ timeout(PNATState pData, struct socket *so, void *arg)
         hash_remove_request(pData, req);
         RTMemFree(req);
         ++removed_queries;
+        /* the rest of clean up at the end of the method. */
     }
     else
     {
+        /* Note: so will be deleted after we create new one (so1)
+         * to make attempt on the next server.
+         */
         struct ip *ip;
         struct udphdr *udp;
         int iphlen;
         struct socket *so1 = socreate();
         struct mbuf *m = NULL;
         char *data;
+
         if (so1 == NULL)
         {
             LogRel(("NAT: can't create DNS socket\n"));
-            return;
+            goto socket_clean_up;
         }
+
         if(udp_attach(pData, so1) == -1)
         {
             LogRel(("NAT: can't attach udp socket\n"));
             sofree(pData, so1);
-            return;
+            goto socket_clean_up;
         }
+
         m = slirpDnsMbufAlloc(pData);
         if (m == NULL)
         {
             LogRel(("NAT: Can't allocate mbuf\n"));
             udp_detach(pData, so1);
-            return;
+            goto socket_clean_up;
         }
+
         /* mbuf initialization */
         m->m_data += if_maxlinkhdr;
+
         ip = mtod(m, struct ip *);
         udp = (struct udphdr *)&ip[1]; /* ip attributes */
         data = (char *)&udp[1];
         iphlen = sizeof(struct ip);
+
         m->m_len += sizeof(struct ip);
         m->m_len += sizeof(struct udphdr);
         m->m_len += req->nbyte;
+
         ip->ip_src.s_addr = so->so_laddr.s_addr;
         ip->ip_dst.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_DNS);
         udp->uh_dport = ntohs(53);
@@ -157,11 +192,22 @@ timeout(PNATState pData, struct socket *so, void *arg)
         so1->so_lport = so->so_lport;
         so1->so_faddr = so->so_faddr;
         so1->so_fport = so->so_fport;
+
         req->dns_server = de;
         so1->so_timeout_arg = req;
         so1->so_timeout = timeout;
+
         dnsproxy_query(pData, so1, m, iphlen);
     }
+ 
+ socket_clean_up:   
+    /* This socket (so) will be detached, so we need to remove timeout(&_arg) references
+     * before leave 
+     */
+    so->so_timeout = NULL;
+    so->so_timeout_arg = NULL;
+    return;
+
 }
 #endif /* VBOX */
 
