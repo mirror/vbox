@@ -29,6 +29,8 @@
 *******************************************************************************/
 #include <iprt/initterm.h>
 
+#include <iprt/asm.h>
+#include <iprt/cpuset.h>
 #include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
@@ -40,6 +42,28 @@
 # include <VBox/sup.h>
 # include "tstR0ThreadPreemption.h"
 #endif
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static bool volatile g_fTerminate = false;
+
+
+/**
+ * Try make sure all online CPUs will be engaged.
+ */
+static DECLCALLBACK(int) MyThreadProc(RTTHREAD hSelf, void *pvCpuIdx)
+{
+    RTCPUSET Affinity;
+    RTCpuSetEmpty(&Affinity);
+    RTCpuSetAddByIndex(&Affinity, (intptr_t)pvCpuIdx);
+    RTThreadSetAffinity(&Affinity); /* ignore return code as it's not supported on all hosts. */
+
+    while (!g_fTerminate)
+        RTThreadSleep(50);
+
+    return VINF_SUCCESS;
+}
 
 
 int main(int argc, char **argv)
@@ -140,7 +164,20 @@ int main(int argc, char **argv)
     /*
      * Stay in ring-0 until preemption is pending.
      */
+    RTTHREAD ahThreads[RTCPUSET_MAX_CPUS];
+    uint32_t cThreads = RTMpGetCount();
+    RTCPUSET OnlineSet;
+    RTMpGetOnlineSet(&OnlineSet);
+    for (uint32_t i = 0; i < RT_ELEMENTS(ahThreads); i++)
+    {
+        ahThreads[i] = NIL_RTTHREAD;
+        if (RTCpuSetIsMemberByIndex(&OnlineSet, i))
+            RTThreadCreateF(&ahThreads[i], MyThreadProc, (void *)(uintptr_t)i, 0, RTTHREADTYPE_DEFAULT,
+                            RTTHREADFLAGS_WAITABLE, "cpu=%u", i);
+    }
+
 RTThreadSleep(250); /** @todo fix GIP initialization? */
+
     RTTestSub(hTest, "Pending Preemption");
     for (int i = 0; ; i++)
     {
@@ -161,6 +198,11 @@ RTThreadSleep(250); /** @todo fix GIP initialization? */
         if ((i % 3) == 0)
             RTThreadYield();
     }
+
+    ASMAtomicWriteBool(&g_fTerminate, true);
+    for (uint32_t i = 0; i < RT_ELEMENTS(ahThreads); i++)
+        if (ahThreads[i] != NIL_RTTHREAD)
+            RTThreadWait(ahThreads[i], 5000, NULL);
 
     /*
      * Test nested RTThreadPreemptDisable calls.
