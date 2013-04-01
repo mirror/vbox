@@ -1745,6 +1745,18 @@ CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = K
 
     /* Lock found machine to session: */
     machine.LockMachine(session, lockType);
+    if (!machine.isOk())
+    {
+        msgCenter().cannotOpenSession(machine);
+        session.detach();
+        return session;
+    }
+    else if (!mVBox.isOk())
+    {
+        msgCenter().cannotOpenSession(mVBox, machine);
+        session.detach();
+        return session;
+    }
 
     /* Pass the language ID as the property to the guest: */
     if (session.GetType() == KSessionType_Shared)
@@ -1755,18 +1767,6 @@ CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = K
          * return "C" which is an valid language code. */
         QLocale lang(VBoxGlobal::languageId());
         startedMachine.SetGuestPropertyValue("/VirtualBox/HostInfo/GUI/LanguageID", lang.name());
-    }
-
-    /* Show locking errors if any: */
-    if (!machine.isOk())
-    {
-        msgCenter().cannotOpenSession(machine);
-        session.detach();
-    }
-    else if (!mVBox.isOk())
-    {
-        msgCenter().cannotOpenSession(mVBox, machine);
-        session.detach();
     }
 
     /* Return resulting session: */
