@@ -345,134 +345,104 @@ void UIMessageCenter::cannotCreateVirtualBox(const CVirtualBox &vbox)
 void UIMessageCenter::cannotFindLanguage(const QString &strLangId, const QString &strNlsPath)
 {
     message(0, MessageType_Error,
-        tr("<p>Could not find a language file for the language "
-            "<b>%1</b> in the directory <b><nobr>%2</nobr></b>.</p>"
-            "<p>The language will be temporarily reset to the system "
-            "default language. Please go to the <b>Preferences</b> "
-            "dialog which you can open from the <b>File</b> menu of the "
-            "main VirtualBox window, and select one of the existing "
-            "languages on the <b>Language</b> page.</p>")
-             .arg(strLangId).arg(strNlsPath));
+            tr("<p>Could not find a language file for the language <b>%1</b> in the directory <b><nobr>%2</nobr></b>.</p>"
+               "<p>The language will be temporarily reset to the system default language. "
+               "Please go to the <b>Preferences</b> dialog which you can open from the <b>File</b> menu "
+               "of the main VirtualBox window, and select one of the existing languages on the <b>Language</b> page.</p>")
+               .arg(strLangId).arg(strNlsPath));
 }
 
 void UIMessageCenter::cannotLoadLanguage(const QString &strLangFile)
 {
     message(0, MessageType_Error,
-        tr("<p>Could not load the language file <b><nobr>%1</nobr></b>. "
-            "<p>The language will be temporarily reset to English (built-in). "
-            "Please go to the <b>Preferences</b> "
-            "dialog which you can open from the <b>File</b> menu of the "
-            "main VirtualBox window, and select one of the existing "
-            "languages on the <b>Language</b> page.</p>")
-             .arg(strLangFile));
+            tr("<p>Could not load the language file <b><nobr>%1</nobr></b>. "
+               "<p>The language will be temporarily reset to English (built-in). "
+               "Please go to the <b>Preferences</b> dialog which you can open from the <b>File</b> menu "
+               "of the main VirtualBox window, and select one of the existing languages on the <b>Language</b> page.</p>")
+               .arg(strLangFile));
 }
 
 void UIMessageCenter::cannotLoadGlobalConfig(const CVirtualBox &vbox, const QString &strError)
 {
-    /* preserve the current error info before calling the object again */
+    /* Preserve error-info: */
     COMResult res(vbox);
-
-    message(mainWindowShown(), MessageType_Critical,
-        tr("<p>Failed to load the global GUI configuration from "
-            "<b><nobr>%1</nobr></b>.</p>"
-            "<p>The application will now terminate.</p>")
-             .arg(vbox.GetSettingsFilePath()),
-        !res.isOk() ? formatErrorInfo(res)
-                    : QString("<!--EOM--><p>%1</p>").arg(vboxGlobal().emphasize(strError)));
+    /* Show the message: */
+    message(0, MessageType_Critical,
+            tr("<p>Failed to load the global GUI configuration from <b><nobr>%1</nobr></b>.</p>"
+               "<p>The application will now terminate.</p>").arg(vbox.GetSettingsFilePath()),
+            !res.isOk() ? formatErrorInfo(res)
+                        : QString("<!--EOM--><p>%1</p>").arg(vboxGlobal().emphasize(strError)));
 }
 
 void UIMessageCenter::cannotSaveGlobalConfig(const CVirtualBox &vbox)
 {
-    /* preserve the current error info before calling the object again */
+    /* Preserve error-info: */
     COMResult res(vbox);
-
-    message(mainWindowShown(), MessageType_Critical,
-        tr("<p>Failed to save the global GUI configuration to "
-            "<b><nobr>%1</nobr></b>.</p>"
-            "<p>The application will now terminate.</p>")
-             .arg(vbox.GetSettingsFilePath()),
-        formatErrorInfo(res));
+    /* Show the message: */
+    message(0, MessageType_Critical,
+            tr("<p>Failed to save the global GUI configuration to <b><nobr>%1</nobr></b>.</p>"
+               "<p>The application will now terminate.</p>").arg(vbox.GetSettingsFilePath()),
+            formatErrorInfo(res));
 }
 
-void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &props)
+void UIMessageCenter::cannotFindMachineByName(const CVirtualBox &vbox, const QString &name)
 {
-    message(mainWindowShown(), MessageType_Critical,
-        tr("Failed to set global VirtualBox properties."),
-        formatErrorInfo(props));
-}
-
-void UIMessageCenter::cannotFindMachineByName(const CVirtualBox &vbox,
-                                              const QString &name)
-{
-    message(
-        QApplication::desktop()->screen(QApplication::desktop()->primaryScreen()),
-        MessageType_Error,
-        tr("There is no virtual machine named <b>%1</b>.")
-            .arg(name),
-        formatErrorInfo(vbox)
-    );
+    message(0, MessageType_Error,
+            tr("There is no virtual machine named <b>%1</b>.").arg(name),
+            formatErrorInfo(vbox));
 }
 
 void UIMessageCenter::cannotOpenSession(const CSession &session)
 {
     Assert(session.isNull());
-
-    message(
-        mainWindowShown(),
-        MessageType_Error,
-        tr("Failed to create a new session."),
-        formatErrorInfo(session)
-    );
+    /* Show the message: */
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to create a new session."),
+            formatErrorInfo(session));
 }
 
-void UIMessageCenter::cannotOpenSession(const CVirtualBox &vbox,
-                                        const CMachine &machine,
-                                        const CProgress &progress)
+void UIMessageCenter::cannotOpenSession(const CVirtualBox &vbox, const CMachine &machine,
+                                        const CProgress &progress /* = CProgress() */)
 {
     Assert(!vbox.isOk() || progress.isOk());
-
-    QString name = machine.GetName();
-    if (name.isEmpty())
-        name = QFileInfo(machine.GetSettingsFilePath()).baseName();
-
-    message(
-        mainWindowShown(),
-        MessageType_Error,
-        tr("Failed to open a session for the virtual machine <b>%1</b>.")
-            .arg(name),
-        !vbox.isOk() ? formatErrorInfo(vbox) :
-                       formatErrorInfo(progress.GetErrorInfo())
-    );
+    /* Compose machine name: */
+    QString strName = machine.GetName();
+    if (strName.isEmpty())
+        strName = QFileInfo(machine.GetSettingsFilePath()).baseName();
+    /* Show the message: */
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to open a session for the virtual machine <b>%1</b>.").arg(strName),
+            !vbox.isOk() ? formatErrorInfo(vbox) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
 void UIMessageCenter::cannotOpenSession(const CMachine &machine)
 {
+    /* Preserve error-info: */
     COMResult res(machine);
-    QString name = machine.GetName();
-    if (name.isEmpty())
-        name = QFileInfo(machine.GetSettingsFilePath()).baseName();
-
+    /* Compose machine name: */
+    QString strName = machine.GetName();
+    if (strName.isEmpty())
+        strName = QFileInfo(machine.GetSettingsFilePath()).baseName();
+    /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
-            tr("Failed to open a session for the virtual machine <b>%1</b>.").arg(name),
+            tr("Failed to open a session for the virtual machine <b>%1</b>.").arg(strName),
             formatErrorInfo(res));
 }
 
-void UIMessageCenter::cannotGetMediaAccessibility(const UIMedium &aMedium)
+void UIMessageCenter::cannotGetMediaAccessibility(const UIMedium &medium)
 {
-    message(qApp->activeWindow(), MessageType_Error,
-        tr("Failed to determine the accessibility state of the medium "
-            "<nobr><b>%1</b></nobr>.")
-            .arg(aMedium.location()),
-        formatErrorInfo(aMedium.result()));
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to determine the accessibility state of the medium <nobr><b>%1</b></nobr>.")
+               .arg(medium.location()),
+            formatErrorInfo(medium.result()));
 }
 
 void UIMessageCenter::cannotOpenURL(const QString &strUrl)
 {
-    message
-        (mainWindowShown(), MessageType_Error,
-         tr("Failed to open <tt>%1</tt>. Make sure your desktop environment "
-             "can properly handle URLs of this type.")
-         .arg(strUrl));
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to open <tt>%1</tt>. "
+               "Make sure your desktop environment can properly handle URLs of this type.")
+               .arg(strUrl));
 }
 
 void UIMessageCenter::cannotOpenMachine(QWidget *pParent, const QString &strMachinePath, const CVirtualBox &vbox)
@@ -835,6 +805,13 @@ void UIMessageCenter::cannotFindSnapshotByName(QWidget *pParent,
              .arg(strName),
              formatErrorInfo(machine)
     );
+}
+
+void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties)
+{
+    message(mainWindowShown(), MessageType_Critical,
+            tr("Failed to set global VirtualBox properties."),
+            formatErrorInfo(properties));
 }
 
 void UIMessageCenter::cannotAccessUSB(const COMBaseWithEI &object)

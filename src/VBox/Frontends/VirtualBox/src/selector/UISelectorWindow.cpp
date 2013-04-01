@@ -474,10 +474,7 @@ void UISelectorWindow::sltPerformDiscardAction()
         /* Open a session to modify VM: */
         CSession session = vboxGlobal().openSession(pItem->id());
         if (session.isNull())
-        {
-            msgCenter().cannotOpenSession(session);
             return;
-        }
 
         /* Get session console: */
         CConsole console = session.GetConsole();
@@ -522,10 +519,7 @@ void UISelectorWindow::sltPerformPauseResumeAction(bool fPause)
         /* Open a session to modify VM state: */
         CSession session = vboxGlobal().openExistingSession(pItem->id());
         if (session.isNull())
-        {
-            msgCenter().cannotOpenSession(session);
             return;
-        }
 
         /* Get session console: */
         CConsole console = session.GetConsole();
@@ -575,10 +569,7 @@ void UISelectorWindow::sltPerformResetAction()
         /* Open a session to modify VM state: */
         CSession session = vboxGlobal().openExistingSession(pItem->id());
         if (session.isNull())
-        {
-            msgCenter().cannotOpenSession(session);
             return;
-        }
 
         /* Get session console: */
         CConsole console = session.GetConsole();
@@ -606,10 +597,7 @@ void UISelectorWindow::sltPerformSaveAction()
         /* Open a session to modify VM state: */
         CSession session = vboxGlobal().openExistingSession(pItem->id());
         if (session.isNull())
-        {
-            msgCenter().cannotOpenSession(session);
             return;
-        }
 
         /* Get session console: */
         CConsole console = session.GetConsole();
@@ -658,10 +646,7 @@ void UISelectorWindow::sltPerformACPIShutdownAction()
         /* Open a session to modify VM state: */
         CSession session = vboxGlobal().openExistingSession(pItem->id());
         if (session.isNull())
-        {
-            msgCenter().cannotOpenSession(session);
             return;
-        }
 
         /* Get session console: */
         CConsole console = session.GetConsole();
@@ -700,10 +685,7 @@ void UISelectorWindow::sltPerformPowerOffAction()
         /* Open a session to modify VM state: */
         CSession session = vboxGlobal().openExistingSession(pItem->id());
         if (session.isNull())
-        {
-            msgCenter().cannotOpenSession(session);
             return;
-        }
 
         /* Get session console: */
         CConsole console = session.GetConsole();
@@ -1794,10 +1776,7 @@ bool UISelectorWindow::isAtLeastOneItemAbleToShutdown(const QList<UIVMItem*> &it
 
         CSession session = vboxGlobal().openExistingSession(pItem->id());
         if (session.isNull())
-        {
-            msgCenter().cannotOpenSession(session);
             return false;
-        }
         CConsole console = session.GetConsole();
         if (console.isNull())
         {

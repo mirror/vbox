@@ -201,12 +201,11 @@ public:
     void cannotLoadLanguage(const QString &strLangFile);
     void cannotLoadGlobalConfig(const CVirtualBox &vbox, const QString &strError);
     void cannotSaveGlobalConfig(const CVirtualBox &vbox);
-    void cannotSetSystemProperties(const CSystemProperties &props);
     void cannotFindMachineByName(const CVirtualBox &vbox, const QString &name);
     void cannotOpenSession(const CSession &session);
     void cannotOpenSession(const CVirtualBox &vbox, const CMachine &machine, const CProgress &progress = CProgress());
     void cannotOpenSession(const CMachine &machine);
-    void cannotGetMediaAccessibility(const UIMedium &aMedium);
+    void cannotGetMediaAccessibility(const UIMedium &medium);
     void cannotOpenURL(const QString &strUrl);
 
     /* API: Selector warnings: */
@@ -240,6 +239,7 @@ public:
     void cannotFindSnapshotByName(QWidget *pParent, const CMachine &machine, const QString &strMachine) const;
 
     /* API: Settings warnings: */
+    void cannotSetSystemProperties(const CSystemProperties &properties);
     void cannotAccessUSB(const COMBaseWithEI &object);
     void cannotLoadMachineSettings(const CMachine &machine, bool fStrict = true, QWidget *pParent = 0);
     void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0);

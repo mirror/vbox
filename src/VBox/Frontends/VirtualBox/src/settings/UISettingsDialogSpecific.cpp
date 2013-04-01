@@ -520,9 +520,6 @@ QString UISettingsDialogGlobal::title() const
 
 bool UISettingsDialogGlobal::isPageAvailable(int iPageId)
 {
-    /* Show the host error message for particular group if present.
-     * We don't use the generic cannotLoadGlobalConfig()
-     * call here because we want this message to be suppressible: */
     switch (iPageId)
     {
         case GLSettingsPage_USB:
@@ -538,9 +535,9 @@ bool UISettingsDialogGlobal::isPageAvailable(int iPageId)
             Q_UNUSED(filters);
             if (host.lastRC() == E_NOTIMPL)
                 return false;
-#else
+#else /* ENABLE_GLOBAL_USB */
             return false;
-#endif
+#endif /* !ENABLE_GLOBAL_USB */
             break;
         }
         case GLSettingsPage_Network:
