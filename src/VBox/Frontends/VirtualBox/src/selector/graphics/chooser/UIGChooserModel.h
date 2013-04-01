@@ -25,8 +25,6 @@
 #include <QTransform>
 #include <QMap>
 #include <QThread>
-#include <QMutex>
-#include <QWaitCondition>
 
 /* GUI includes: */
 #include "UIGChooserItem.h"
@@ -300,15 +298,6 @@ private:
     QString m_strLookupString;
 };
 
-/* Represents group definitions save error types: */
-enum UIGroupsSavingError
-{
-    UIGroupsSavingError_MachineLockFailed,
-    UIGroupsSavingError_MachineGroupSetFailed,
-    UIGroupsSavingError_MachineSettingsSaveFailed
-};
-Q_DECLARE_METATYPE(UIGroupsSavingError);
-
 /* Allows to save group definitions asynchronously: */
 class UIGroupDefinitionSaveThread : public QThread
 {
@@ -316,10 +305,7 @@ class UIGroupDefinitionSaveThread : public QThread
 
 signals:
 
-    /* Notifier: Error stuff: */
-    void sigError(UIGroupsSavingError errorType, const CMachine &machine);
-
-    /* Notifier: */
+    /* Notifier: Reload stuff: */
     void sigReload(QString strId);
 
     /* Notifier: Complete stuff: */
@@ -337,11 +323,6 @@ public:
                    const QMap<QString, QStringList> &oldLists,
                    const QMap<QString, QStringList> &newLists);
 
-private slots:
-
-    /* Handler: Error stuff: */
-    void sltHandleError(UIGroupsSavingError errorType, const CMachine &machine);
-
 private:
 
     /* Constructor/destructor: */
@@ -355,8 +336,6 @@ private:
     static UIGroupDefinitionSaveThread *m_spInstance;
     QMap<QString, QStringList> m_oldLists;
     QMap<QString, QStringList> m_newLists;
-    QMutex m_mutex;
-    QWaitCondition m_condition;
 };
 
 /* Allows to save group order asynchronously: */
