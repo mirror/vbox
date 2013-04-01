@@ -337,12 +337,11 @@ void UIMessageCenter::warnAboutWrongUSBMounted()
 }
 #endif /* RT_OS_LINUX */
 
-void UIMessageCenter::cannotRunInSelectorMode()
+void UIMessageCenter::cannotStartSelector()
 {
     message(mainWindowShown(), MessageType_Critical,
-        tr("<p>Cannot run VirtualBox in <i>VM Selector</i> "
-           "mode due to local restrictions.</p>"
-           "<p>The application will now terminate.</p>"));
+            tr("<p>Cannot start VirtualBox Manager due to local restrictions.</p>"
+               "<p>The application will now terminate.</p>"));
 }
 
 void UIMessageCenter::showBETAWarning()

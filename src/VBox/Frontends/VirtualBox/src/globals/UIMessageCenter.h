@@ -193,7 +193,7 @@ public:
 #ifdef RT_OS_LINUX
     void warnAboutWrongUSBMounted();
 #endif /* RT_OS_LINUX */
-    void cannotRunInSelectorMode();
+    void cannotStartSelector();
     void showBETAWarning();
     void showBEBWarning();
 
