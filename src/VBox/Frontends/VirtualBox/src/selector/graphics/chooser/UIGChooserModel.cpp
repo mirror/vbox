@@ -895,6 +895,10 @@ void UIGChooserModel::sltReloadMachine(const QString &strId)
     updateNavigation();
     updateLayout();
 
+    /* Make sure at least one item selected after that: */
+    if (!currentItem() && !navigationList().isEmpty())
+        setCurrentItem(navigationList().first());
+
     /* Notify listeners about selection change: */
     emit sigSelectionChanged();
 }
@@ -1954,35 +1958,10 @@ void UIGroupDefinitionSaveThread::configure(QObject *pParent,
     connect(this, SIGNAL(sigComplete()), pParent, SLOT(sltGroupDefinitionsSaveComplete()));
 }
 
-void UIGroupDefinitionSaveThread::sltHandleError(UIGroupsSavingError errorType, const CMachine &machine)
-{
-    switch (errorType)
-    {
-        case UIGroupsSavingError_MachineLockFailed:
-            msgCenter().cannotOpenSession(machine);
-            break;
-        case UIGroupsSavingError_MachineGroupSetFailed:
-            msgCenter().cannotSetGroups(machine);
-            break;
-        case UIGroupsSavingError_MachineSettingsSaveFailed:
-            msgCenter().cannotSaveMachineSettings(machine);
-            break;
-        default:
-            break;
-    }
-    emit sigReload(machine.GetId());
-    m_condition.wakeAll();
-}
-
 UIGroupDefinitionSaveThread::UIGroupDefinitionSaveThread()
 {
     /* Assign instance: */
     m_spInstance = this;
-
-    /* Setup connections: */
-    qRegisterMetaType<UIGroupsSavingError>();
-    connect(this, SIGNAL(sigError(UIGroupsSavingError, const CMachine&)),
-            this, SLOT(sltHandleError(UIGroupsSavingError, const CMachine&)));
 }
 
 UIGroupDefinitionSaveThread::~UIGroupDefinitionSaveThread()
@@ -1996,9 +1975,6 @@ UIGroupDefinitionSaveThread::~UIGroupDefinitionSaveThread()
 
 void UIGroupDefinitionSaveThread::run()
 {
-    /* Lock other thread mutex: */
-    m_mutex.lock();
-
     /* COM prepare: */
     COMBase::InitializeCOM(false);
 
@@ -2014,35 +1990,29 @@ void UIGroupDefinitionSaveThread::run()
         /* Is group set changed? */
         if (newGroupSet != oldGroupSet)
         {
-            /* Create new session instance: */
-            CSession session;
-            session.createInstance(CLSID_Session);
-            AssertMsg(!session.isNull(), ("Session instance creation failed!"));
-            /* Search for the corresponding machine: */
-            CMachine machineToLock = vboxGlobal().virtualBox().FindMachine(strId);
-            AssertMsg(!machineToLock.isNull(), ("Machine not found!"));
-
-            /* Lock machine: */
-            machineToLock.LockMachine(session, KLockType_Write);
-            if (!machineToLock.isOk())
+            /* Open session to modify iterated machine: */
+            CSession session = vboxGlobal().openSession(strId);
+            if (session.isNull())
             {
-                emit sigError(UIGroupsSavingError_MachineLockFailed, machineToLock);
-                m_condition.wait(&m_mutex);
-                session.detach();
+                emit sigReload(strId);
                 continue;
             }
 
-            /* Get session's machine: */
+            /* Get session machine: */
             CMachine machine = session.GetMachine();
-            AssertMsg(!machine.isNull(), ("Machine is null!"));
+            AssertMsg(!machine.isNull(), ("Session machine is NULL!"));
+            if (machine.isNull())
+            {
+                emit sigReload(strId);
+                continue;
+            }
 
             /* Set groups: */
             machine.SetGroups(newGroupList.toVector());
             if (!machine.isOk())
             {
-                emit sigError(UIGroupsSavingError_MachineGroupSetFailed, machine);
-                m_condition.wait(&m_mutex);
-                session.UnlockMachine();
+                msgCenter().cannotSetGroups(machine);
+                emit sigReload(strId);
                 continue;
             }
 
@@ -2050,13 +2020,12 @@ void UIGroupDefinitionSaveThread::run()
             machine.SaveSettings();
             if (!machine.isOk())
             {
-                emit sigError(UIGroupsSavingError_MachineSettingsSaveFailed, machine);
-                m_condition.wait(&m_mutex);
-                session.UnlockMachine();
+                msgCenter().cannotSaveMachineSettings(machine);
+                emit sigReload(strId);
                 continue;
             }
 
-            /* Close the session: */
+            /* Close the session finally: */
             session.UnlockMachine();
         }
     }
@@ -2066,9 +2035,6 @@ void UIGroupDefinitionSaveThread::run()
 
     /* COM cleanup: */
     COMBase::CleanupCOM();
-
-    /* Unlock other thread mutex: */
-    m_mutex.unlock();
 }
 
 /* static */
