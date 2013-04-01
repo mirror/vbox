@@ -861,7 +861,7 @@ void UISettingsDialogMachine::saveData()
 
     /* If machine is NOT ok => show the error message: */
     if (!m_machine.isOk())
-        msgCenter().cannotSaveMachineSettings(m_machine);
+        msgCenter().cannotSaveMachineSettings(m_machine, this);
 
     /* Mark page processed: */
     sltMarkSaved();
@@ -1089,9 +1089,6 @@ bool UISettingsDialogMachine::isPageAvailable(int iPageId)
     if (m_machine.isNull())
         return false;
 
-    /* Show the machine error message for particular group if present.
-     * We don't use the generic cannotLoadMachineSettings()
-     * call here because we want this message to be suppressible. */
     switch (iPageId)
     {
         case VMSettingsPage_Serial:

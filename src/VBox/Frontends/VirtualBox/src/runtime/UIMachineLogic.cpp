@@ -1507,7 +1507,7 @@ void UIMachineLogic::sltMountStorageMedium()
     {
         machine.SaveSettings();
         if (!machine.isOk())
-            msgCenter().cannotSaveMachineSettings(machine);
+            msgCenter().cannotSaveMachineSettings(machine, activeMachineWindow());
     }
 }
 
@@ -1566,7 +1566,7 @@ void UIMachineLogic::sltMountRecentStorageMedium()
         {
             machine.SaveSettings();
             if (!machine.isOk())
-                msgCenter().cannotSaveMachineSettings(machine);
+                msgCenter().cannotSaveMachineSettings(machine, activeMachineWindow());
         }
     }
 }
