@@ -201,7 +201,8 @@ public:
     void cannotLoadLanguage(const QString &strLangFile);
     void cannotLoadGlobalConfig(const CVirtualBox &vbox, const QString &strError);
     void cannotSaveGlobalConfig(const CVirtualBox &vbox);
-    void cannotFindMachineByName(const CVirtualBox &vbox, const QString &name);
+    void cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName);
+    void cannotFindMachineById(const CVirtualBox &vbox, const QString &strId);
     void cannotOpenSession(const CSession &session);
     void cannotOpenSession(const CVirtualBox &vbox, const CMachine &machine, const CProgress &progress = CProgress());
     void cannotOpenSession(const CMachine &machine);
