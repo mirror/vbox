@@ -396,6 +396,10 @@ public:
     static bool shouldWeShowDetails(CMachine &machine,
                                     bool fIncludingMachineGeneralCheck = false);
 
+#ifdef RT_OS_LINUX
+    static void checkForWrongUSBMounted();
+#endif /* RT_OS_LINUX */
+
 signals:
 
     /**
