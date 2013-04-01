@@ -496,7 +496,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             }
             else if (noSelector)
             {
-                msgCenter().cannotRunInSelectorMode();
+                msgCenter().cannotStartSelector();
             }
             else
             {
