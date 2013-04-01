@@ -1353,7 +1353,7 @@ bool UIMediumManager::releaseMediumFrom (const UIMedium &aMedium, const QString 
         machine.SaveSettings();
         if (!machine.isOk())
         {
-            msgCenter().cannotSaveMachineSettings (machine);
+            msgCenter().cannotSaveMachineSettings(machine, this);
             success = false;
         }
     }

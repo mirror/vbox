@@ -643,13 +643,15 @@ bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames)
 
 void UIMessageCenter::cannotSetGroups(const CMachine &machine)
 {
+    /* Preserve error-info: */
     COMResult res(machine);
-    QString name = machine.GetName();
-    if (name.isEmpty())
-        name = QFileInfo(machine.GetSettingsFilePath()).baseName();
-
+    /* Compose machine name: */
+    QString strName = machine.GetName();
+    if (strName.isEmpty())
+        strName = QFileInfo(machine.GetSettingsFilePath()).baseName();
+    /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
-            tr("Failed to set groups of the virtual machine <b>%1</b>.").arg(name),
+            tr("Failed to set groups of the virtual machine <b>%1</b>.").arg(strName),
             formatErrorInfo(res));
 }
 
@@ -836,34 +838,37 @@ void UIMessageCenter::cannotAccessUSB(const COMBaseWithEI &object)
              "cannotAccessUSB");
 }
 
-void UIMessageCenter::cannotLoadMachineSettings(const CMachine &machine,
-                                                bool fStrict /* = true */,
-                                                QWidget *pParent /* = 0 */)
+void UIMessageCenter::cannotLoadMachineSettings(const CMachine &machine, bool fStrict /*= true*/, QWidget *pParent /*= 0*/)
 {
-    /* If COM result code is E_NOTIMPL, it means the requested object or
-     * function is intentionally missing (as in the OSE version). Don't show
-     * the error message in this case. */
+    /* This function is NOT use currently.
+     * We are keeping it here just for convinience with Save analog. */
+
+    /* Preserve error-info.
+     * If COM result code is E_NOTIMPL, it means the requested
+     * object or function is intentionally missing (as in the OSE version).
+     * Don't show the error message in this case. */
     COMResult res(machine);
     if (!fStrict && res.rc() == E_NOTIMPL)
         return;
 
+    /* Show the message: */
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-             tr("Failed to load the settings of the virtual machine "
-                 "<b>%1</b> from <b><nobr>%2</nobr></b>.")
-                .arg(machine.GetName(), machine.GetSettingsFilePath()),
-             formatErrorInfo(res));
+            tr("Failed to load the settings of the virtual machine "
+               "<b>%1</b> from <b><nobr>%2</nobr></b>.")
+               .arg(machine.GetName(), machine.GetSettingsFilePath()),
+            formatErrorInfo(res));
 }
 
-void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent /* = 0 */)
+void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent /*= 0*/)
 {
-    /* preserve the current error info before calling the object again */
+    /* Preserve error-info: */
     COMResult res(machine);
-
+    /* Show the message: */
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-             tr("Failed to save the settings of the virtual machine "
-                 "<b>%1</b> to <b><nobr>%2</nobr></b>.")
-                 .arg(machine.GetName(), machine.GetSettingsFilePath()),
-             formatErrorInfo(res));
+            tr("Failed to save the settings of the virtual machine "
+               "<b>%1</b> to <b><nobr>%2</nobr></b>.")
+               .arg(machine.GetName(), machine.GetSettingsFilePath()),
+            formatErrorInfo(res));
 }
 
 void UIMessageCenter::warnAboutStateChange(QWidget *pParent)
