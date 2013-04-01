@@ -472,7 +472,8 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
                 return 0;
 
 #ifdef RT_OS_LINUX
-            msgCenter().checkForMountedWrongUSB();
+            /* Make sure no wrong USB mounted: */
+            VBoxGlobal::checkForWrongUSBMounted();
 #endif /* RT_OS_LINUX */
 
             VBoxGlobalSettings settings = vboxGlobal().settings();

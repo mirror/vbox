@@ -326,6 +326,25 @@ bool UIMessageCenter::askForOverridingFilesIfExists(const QVector<QString>& strP
         return true;
 }
 
+#ifdef RT_OS_LINUX
+void UIMessageCenter::warnAboutWrongUSBMounted()
+{
+    message(mainWindowShown(), MessageType_Warning,
+            tr("You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. "
+               "We strongly recommend that you change this, as it is a severe mis-configuration of "
+               "your system which could cause USB devices to fail in unexpected ways."),
+            "checkForMountedWrongUSB");
+}
+#endif /* RT_OS_LINUX */
+
+void UIMessageCenter::cannotRunInSelectorMode()
+{
+    message(mainWindowShown(), MessageType_Critical,
+        tr("<p>Cannot run VirtualBox in <i>VM Selector</i> "
+           "mode due to local restrictions.</p>"
+           "<p>The application will now terminate.</p>"));
+}
+
 void UIMessageCenter::showBETAWarning()
 {
     message
@@ -341,40 +360,6 @@ void UIMessageCenter::showBEBWarning()
          tr("You are running an EXPERIMENTAL build of VirtualBox. "
              "This version is not suitable for production use."));
 }
-
-void UIMessageCenter::cannotRunInSelectorMode()
-{
-    message(mainWindowShown(), MessageType_Critical,
-        tr("<p>Cannot run VirtualBox in <i>VM Selector</i> "
-           "mode due to local restrictions.</p>"
-           "<p>The application will now terminate.</p>"));
-}
-
-#ifdef RT_OS_LINUX
-void UIMessageCenter::checkForMountedWrongUSB()
-{
-    QFile file("/proc/mounts");
-    if (file.exists() && file.open(QIODevice::ReadOnly | QIODevice::Text))
-    {
-        QStringList contents;
-        for (;;)
-        {
-            QByteArray line = file.readLine();
-            if (line.isEmpty())
-                break;
-            contents << line;
-        }
-        QStringList grep1(contents.filter("/sys/bus/usb/drivers"));
-        QStringList grep2(grep1.filter("usbfs"));
-        if (!grep2.isEmpty())
-            message(mainWindowShown(), MessageType_Warning,
-                     tr("You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. "
-                         "We strongly recommend that you change this, as it is a severe mis-configuration of "
-                         "your system which could cause USB devices to fail in unexpected ways."),
-                     "checkForMountedWrongUSB");
-    }
-}
-#endif /* RT_OS_LINUX */
 
 void UIMessageCenter::cannotInitCOM(HRESULT rc)
 {

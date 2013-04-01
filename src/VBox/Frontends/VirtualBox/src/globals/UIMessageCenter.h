@@ -189,15 +189,13 @@ public:
     bool askForOverridingFileIfExists(const QString& strPath, QWidget *pParent = NULL);
     bool askForOverridingFilesIfExists(const QVector<QString>& strPaths, QWidget *pParent = NULL);
 
-    /* API: Beta warnings: */
+    /* API: Main (startup) warnings: */
+#ifdef RT_OS_LINUX
+    void warnAboutWrongUSBMounted();
+#endif /* RT_OS_LINUX */
+    void cannotRunInSelectorMode();
     void showBETAWarning();
     void showBEBWarning();
-
-    /* API: Common startup warnings: */
-    void cannotRunInSelectorMode();
-#ifdef RT_OS_LINUX
-    void checkForMountedWrongUSB();
-#endif /* RT_OS_LINUX */
 
     /* API: COM startup warnings: */
     void cannotInitCOM(HRESULT rc);
