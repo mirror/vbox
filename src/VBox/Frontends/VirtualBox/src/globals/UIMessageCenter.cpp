@@ -90,9 +90,9 @@ int UIMessageCenter::message(QWidget *pParent, MessageType type,
                              int iButton1 /* = 0 */,
                              int iButton2 /* = 0 */,
                              int iButton3 /* = 0 */,
-                             const QString &strButton1 /* = QString() */,
-                             const QString &strButton2 /* = QString() */,
-                             const QString &strButton3 /* = QString() */) const
+                             const QString &strButtonText1 /* = QString() */,
+                             const QString &strButtonText2 /* = QString() */,
+                             const QString &strButtonText3 /* = QString() */) const
 {
     /* If this is NOT a GUI thread: */
     if (thread() != QThread::currentThread())
@@ -102,7 +102,7 @@ int UIMessageCenter::message(QWidget *pParent, MessageType type,
         emit sigToShowMessageBox(pParent, type,
                                  strMessage, strDetails,
                                  iButton1, iButton2, iButton3,
-                                 strButton1, strButton2, strButton3,
+                                 strButtonText1, strButtonText2, strButtonText3,
                                  QString(pcszAutoConfirmId));
         /* Inter-thread communications are not yet implemented: */
         return 0;
@@ -111,7 +111,7 @@ int UIMessageCenter::message(QWidget *pParent, MessageType type,
     return showMessageBox(pParent, type,
                           strMessage, strDetails,
                           iButton1, iButton2, iButton3,
-                          strButton1, strButton2, strButton3,
+                          strButtonText1, strButtonText2, strButtonText3,
                           QString(pcszAutoConfirmId));
 }
 
@@ -2808,14 +2808,14 @@ void UIMessageCenter::sltShowUserManual(const QString &strLocation)
 void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType type,
                                         const QString &strMessage, const QString &strDetails,
                                         int iButton1, int iButton2, int iButton3,
-                                        const QString &strButton1, const QString &strButton2, const QString &strButton3,
+                                        const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                                         const QString &strAutoConfirmId) const
 {
     /* Now we can show a message-box directly: */
     showMessageBox(pParent, type,
                    strMessage, strDetails,
                    iButton1, iButton2, iButton3,
-                   strButton1, strButton2, strButton3,
+                   strButtonText1, strButtonText2, strButtonText3,
                    strAutoConfirmId);
 }
 
@@ -2998,7 +2998,7 @@ QString UIMessageCenter::errorInfoToString(const COMErrorInfo &info,
 int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
                                     const QString &strMessage, const QString &strDetails,
                                     int iButton1, int iButton2, int iButton3,
-                                    const QString &strButton1, const QString &strButton2, const QString &strButton3,
+                                    const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                                     const QString &strAutoConfirmId) const
 {
     /* Choose the 'default' button: */
@@ -3076,12 +3076,12 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
         pMessageBox->setDetailsText(strDetails);
 
     /* Configure button-text: */
-    if (!strButton1.isNull())
-        pMessageBox->setButtonText(0, strButton1);
-    if (!strButton2.isNull())
-        pMessageBox->setButtonText(1, strButton2);
-    if (!strButton3.isNull())
-        pMessageBox->setButtonText(2, strButton3);
+    if (!strButtonText1.isNull())
+        pMessageBox->setButtonText(0, strButtonText1);
+    if (!strButtonText2.isNull())
+        pMessageBox->setButtonText(1, strButtonText2);
+    if (!strButtonText3.isNull())
+        pMessageBox->setButtonText(2, strButtonText3);
 
     /* Show message-box: */
     int iResultCode = pMessageBox->exec();

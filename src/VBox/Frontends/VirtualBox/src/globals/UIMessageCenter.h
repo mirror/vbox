@@ -61,7 +61,7 @@ signals:
     void sigToShowMessageBox(QWidget *pParent, MessageType type,
                              const QString &strMessage, const QString &strDetails,
                              int iButton1, int iButton2, int iButton3,
-                             const QString &strButton1, const QString &strButton2, const QString &strButton3,
+                             const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                              const QString &strAutoConfirmId) const;
 
     /* Notifiers: Synchronization stuff: */
@@ -79,93 +79,98 @@ public:
     bool warningShown(const QString &strWarningName) const;
     void setWarningShown(const QString &strWarningName, bool fWarningShown);
 
-    /* API: Message posting stuff: Main function: */
+    /* API: Alert providing stuff: Main function: */
     int message(QWidget *pParent, MessageType type,
                 const QString &strMessage,
                 const QString &strDetails = QString(),
                 const char *pcszAutoConfirmId = 0,
-                int button1 = 0, int button2 = 0, int button3 = 0,
-                const QString &strText1 = QString(),
-                const QString &strText2 = QString(),
-                const QString &strText3 = QString()) const;
+                int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
+                const QString &strButtonText1 = QString(),
+                const QString &strButtonText2 = QString(),
+                const QString &strButtonText3 = QString()) const;
 
-    /* API: Message posting stuff: Wrapper to above function: */
+    /* API: Alert providing stuff: Wrapper to the main function,
+     * Omits details: */
     int message(QWidget *pParent, MessageType type,
                 const QString &strMessage,
                 const char *pcszAutoConfirmId,
-                int button1 = 0, int button2 = 0, int button3 = 0,
-                const QString &strText1 = QString(),
-                const QString &strText2 = QString(),
-                const QString &strText3 = QString()) const
+                int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
+                const QString &strButtonText1 = QString(),
+                const QString &strButtonText2 = QString(),
+                const QString &strButtonText3 = QString()) const
     {
         return message(pParent, type, strMessage, QString(), pcszAutoConfirmId,
-                       button1, button2, button3, strText1, strText2, strText3);
+                       iButton1, iButton2, iButton3, strButtonText1, strButtonText2, strButtonText3);
     }
 
-    /* API: Message posting stuff: Wrapper to above function: */
+    /* API: Alert providing stuff: Wrapper to the main function,
+     * Takes button type(s) as "Yes / No": */
     bool messageYesNo(QWidget *pParent, MessageType type,
                       const QString &strMessage,
                       const QString &strDetails = QString(),
                       const char *pcszAutoConfirmId = 0,
-                      const QString &strYesText = QString(),
-                      const QString &strNoText = QString()) const
+                      const QString &strYesButtonText = QString(),
+                      const QString &strNoButtonText = QString()) const
     {
-        return(message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
-                       QIMessageBox::Yes | QIMessageBox::Default,
-                       QIMessageBox::No | QIMessageBox::Escape,
-                       0,
-                       strYesText, strNoText, QString()) &
-               QIMessageBox::ButtonMask) == QIMessageBox::Yes;
+        return (message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
+                        QIMessageBox::Yes | QIMessageBox::Default,
+                        QIMessageBox::No | QIMessageBox::Escape,
+                        0,
+                        strYesButtonText, strNoButtonText, QString()) &
+                QIMessageBox::ButtonMask) == QIMessageBox::Yes;
     }
 
-    /* API: Message posting stuff: Wrapper to above function: */
+    /* API: Alert providing stuff: Wrapper to the function above,
+     * Omits details. Takes button type(s) as "Yes / No": */
     bool messageYesNo(QWidget *pParent, MessageType type,
                       const QString &strMessage,
                       const char *pcszAutoConfirmId,
-                      const QString &strYesText = QString(),
-                      const QString &strNoText = QString()) const
+                      const QString &strYesButtonText = QString(),
+                      const QString &strNoButtonText = QString()) const
     {
         return messageYesNo(pParent, type, strMessage, QString(),
-                            pcszAutoConfirmId, strYesText, strNoText);
+                            pcszAutoConfirmId, strYesButtonText, strNoButtonText);
     }
 
-    /* API: Message posting stuff: Wrapper to above function: */
+    /* API: Alert providing stuff: Wrapper to the main function,
+     * Takes button type(s) as "Ok / Cancel": */
     bool messageOkCancel(QWidget *pParent, MessageType type,
                          const QString &strMessage,
                          const QString &strDetails = QString(),
                          const char *pcszAutoConfirmId = 0,
-                         const QString &strOkText = QString(),
-                         const QString &strCancelText = QString()) const
+                         const QString &strOkButtonText = QString(),
+                         const QString &strCancelButtonText = QString()) const
     {
-        return(message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
-                       QIMessageBox::Ok | QIMessageBox::Default,
-                       QIMessageBox::Cancel | QIMessageBox::Escape,
-                       0,
-                       strOkText, strCancelText, QString()) &
-               QIMessageBox::ButtonMask) == QIMessageBox::Ok;
+        return (message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
+                        QIMessageBox::Ok | QIMessageBox::Default,
+                        QIMessageBox::Cancel | QIMessageBox::Escape,
+                        0,
+                        strOkButtonText, strCancelButtonText, QString()) &
+                QIMessageBox::ButtonMask) == QIMessageBox::Ok;
     }
 
-    /* API: Message posting stuff: Wrapper to above function: */
+    /* API: Alert providing stuff: Wrapper to the function above,
+     * Omits details. Takes button type(s) as "Ok / Cancel": */
     bool messageOkCancel(QWidget *pParent, MessageType type,
                          const QString &strMessage,
                          const char *pcszAutoConfirmId,
-                         const QString &strOkText = QString(),
-                         const QString &strCancelText = QString()) const
+                         const QString &strOkButtonText = QString(),
+                         const QString &strCancelButtonText = QString()) const
     {
         return messageOkCancel(pParent, type, strMessage, QString(),
-                               pcszAutoConfirmId, strOkText, strCancelText);
+                               pcszAutoConfirmId, strOkButtonText, strCancelButtonText);
     }
 
-    /* API: Message posting stuff: One more main function: */
+    /* API: Alert providing stuff: One more main function: */
     int messageWithOption(QWidget *pParent, MessageType type,
                           const QString &strMessage,
                           const QString &strOptionText,
                           bool fDefaultOptionValue = true,
                           const QString &strDetails = QString(),
                           int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
-                          const QString &strButtonName1 = QString(),
-                          const QString &strButtonName2 = QString(),
-                          const QString &strButtonName3 = QString()) const;
+                          const QString &strButtonText1 = QString(),
+                          const QString &strButtonText2 = QString(),
+                          const QString &strButtonText3 = QString()) const;
 
     /* API: Progress-dialog stuff: */
     bool showModalProgressDialog(CProgress &progress, const QString &strTitle,
@@ -418,7 +423,7 @@ private slots:
     void sltShowMessageBox(QWidget *pParent, MessageType type,
                            const QString &strMessage, const QString &strDetails,
                            int iButton1, int iButton2, int iButton3,
-                           const QString &strButton1, const QString &strButton2, const QString &strButton3,
+                           const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                            const QString &strAutoConfirmId) const;
 
     /* Handlers: Synchronization stuff: */
@@ -441,7 +446,7 @@ private:
     int showMessageBox(QWidget *pParent, MessageType type,
                        const QString &strMessage, const QString &strDetails,
                        int iButton1, int iButton2, int iButton3,
-                       const QString &strButton1, const QString &strButton2, const QString &strButton3,
+                       const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                        const QString &strAutoConfirmId) const;
 
     /* Variables: */
