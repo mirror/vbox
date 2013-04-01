@@ -283,49 +283,6 @@ QWidget* UIMessageCenter::networkManagerOrMainMachineWindowShown() const
     return gNetworkManager->window()->isVisible() ? gNetworkManager->window() : mainMachineWindowShown();
 }
 
-bool UIMessageCenter::askForOverridingFile(const QString& strPath, QWidget *pParent /* = NULL */)
-{
-    return messageYesNo(pParent, MessageType_Question, tr("A file named <b>%1</b> already exists. Are you sure you want to replace it?<br /><br />Replacing it will overwrite its contents.").arg(strPath));
-}
-
-bool UIMessageCenter::askForOverridingFiles(const QVector<QString>& strPaths, QWidget *pParent /* = NULL */)
-{
-    if (strPaths.size() == 1)
-        /* If it is only one file use the single question versions above */
-        return askForOverridingFile(strPaths.at(0), pParent);
-    else if (strPaths.size() > 1)
-        return messageYesNo(pParent, MessageType_Question, tr("The following files already exist:<br /><br />%1<br /><br />Are you sure you want to replace them? Replacing them will overwrite their contents.").arg(QStringList(strPaths.toList()).join("<br />")));
-    else
-        return true;
-}
-
-bool UIMessageCenter::askForOverridingFileIfExists(const QString& strPath, QWidget *pParent /* = NULL */)
-{
-    QFileInfo fi(strPath);
-    if (fi.exists())
-        return askForOverridingFile(strPath, pParent);
-    else
-        return true;
-}
-
-bool UIMessageCenter::askForOverridingFilesIfExists(const QVector<QString>& strPaths, QWidget *pParent /* = NULL */)
-{
-    QVector<QString> existingFiles;
-    foreach(const QString &file, strPaths)
-    {
-        QFileInfo fi(file);
-        if (fi.exists())
-            existingFiles << fi.absoluteFilePath();
-    }
-    if (existingFiles.size() == 1)
-        /* If it is only one file use the single question versions above */
-        return askForOverridingFileIfExists(existingFiles.at(0), pParent);
-    else if (existingFiles.size() > 1)
-        return askForOverridingFiles(existingFiles, pParent);
-    else
-        return true;
-}
-
 #ifdef RT_OS_LINUX
 void UIMessageCenter::warnAboutWrongUSBMounted()
 {
@@ -339,74 +296,50 @@ void UIMessageCenter::warnAboutWrongUSBMounted()
 
 void UIMessageCenter::cannotStartSelector()
 {
-    message(mainWindowShown(), MessageType_Critical,
+    message(0, MessageType_Critical,
             tr("<p>Cannot start VirtualBox Manager due to local restrictions.</p>"
                "<p>The application will now terminate.</p>"));
 }
 
 void UIMessageCenter::showBETAWarning()
 {
-    message
-        (0, MessageType_Warning,
-         tr("You are running a prerelease version of VirtualBox. "
-             "This version is not suitable for production use."));
+    message(0, MessageType_Warning,
+            tr("You are running a prerelease version of VirtualBox. "
+               "This version is not suitable for production use."));
 }
 
 void UIMessageCenter::showBEBWarning()
 {
-    message
-        (0, MessageType_Warning,
-         tr("You are running an EXPERIMENTAL build of VirtualBox. "
-             "This version is not suitable for production use."));
-}
-
-void UIMessageCenter::cannotInitCOM(HRESULT rc)
-{
-    message(0, MessageType_Critical,
-        tr("<p>Failed to initialize COM or to find the VirtualBox COM server. "
-            "Most likely, the VirtualBox server is not running "
-            "or failed to start.</p>"
-            "<p>The application will now terminate.</p>"),
-        formatErrorInfo(COMErrorInfo(), rc));
+    message(0, MessageType_Warning,
+            tr("You are running an EXPERIMENTAL build of VirtualBox. "
+               "This version is not suitable for production use."));
 }
 
 void UIMessageCenter::cannotInitUserHome(const QString &strUserHome)
 {
     message(0, MessageType_Critical,
-        tr("<p>Failed to initialize COM because the VirtualBox global "
-           "configuration directory <b><nobr>%1</nobr></b> is not accessible. "
-           "Please check the permissions of this directory and of its parent "
-           "directory.</p>"
-           "<p>The application will now terminate.</p>").arg(strUserHome),
-        formatErrorInfo(COMErrorInfo()));
+            tr("<p>Failed to initialize COM because the VirtualBox global "
+               "configuration directory <b><nobr>%1</nobr></b> is not accessible. "
+               "Please check the permissions of this directory and of its parent directory.</p>"
+               "<p>The application will now terminate.</p>").arg(strUserHome),
+            formatErrorInfo(COMErrorInfo()));
+}
+
+void UIMessageCenter::cannotInitCOM(HRESULT rc)
+{
+    message(0, MessageType_Critical,
+            tr("<p>Failed to initialize COM or to find the VirtualBox COM server. "
+               "Most likely, the VirtualBox server is not running or failed to start.</p>"
+               "<p>The application will now terminate.</p>"),
+            formatErrorInfo(COMErrorInfo(), rc));
 }
 
 void UIMessageCenter::cannotCreateVirtualBox(const CVirtualBox &vbox)
 {
     message(0, MessageType_Critical,
-        tr("<p>Failed to create the VirtualBox COM object.</p>"
-            "<p>The application will now terminate.</p>"),
-        formatErrorInfo(vbox));
-}
-
-#ifdef Q_WS_X11
-void UIMessageCenter::cannotFindLicenseFiles(const QString &strPath)
-{
-    message
-        (0, MessageType_Error,
-         tr("Failed to find license files in "
-             "<nobr><b>%1</b></nobr>.")
-             .arg(strPath));
-}
-#endif /* Q_WS_X11 */
-
-void UIMessageCenter::cannotOpenLicenseFile(QWidget *pParent, const QString &strPath)
-{
-    message
-        (pParent, MessageType_Error,
-         tr("Failed to open the license file <nobr><b>%1</b></nobr>. "
-             "Check file permissions.")
-             .arg(strPath));
+            tr("<p>Failed to create the VirtualBox COM object.</p>"
+               "<p>The application will now terminate.</p>"),
+            formatErrorInfo(vbox));
 }
 
 void UIMessageCenter::cannotFindLanguage(const QString &strLangId, const QString &strNlsPath)
@@ -2469,6 +2402,63 @@ void UIMessageCenter::notifyAboutExtPackInstalled(const QString &strPackName, QW
     message(pParent ? pParent : mainWindowShown(),
              MessageType_Info,
              tr("The extension pack <br><nobr><b>%1</b><nobr><br> was installed successfully.").arg(strPackName));
+}
+
+void UIMessageCenter::cannotOpenLicenseFile(QWidget *pParent, const QString &strPath)
+{
+    message(pParent, MessageType_Error,
+            tr("Failed to open the license file <nobr><b>%1</b></nobr>. "
+               "Check file permissions.").arg(strPath));
+}
+
+bool UIMessageCenter::askForOverridingFile(const QString &strPath, QWidget *pParent /* = 0 */)
+{
+    return messageYesNo(pParent, MessageType_Question,
+                        tr("A file named <b>%1</b> already exists. "
+                           "Are you sure you want to replace it?<br /><br />"
+                           "Replacing it will overwrite its contents.").arg(strPath));
+}
+
+bool UIMessageCenter::askForOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent /* = 0 */)
+{
+    /* If it is only one file use the single question versions above: */
+    if (strPaths.size() == 1)
+        return askForOverridingFile(strPaths.at(0), pParent);
+    else if (strPaths.size() > 1)
+        return messageYesNo(pParent, MessageType_Question,
+                            tr("The following files already exist:<br /><br />%1<br /><br />"
+                               "Are you sure you want to replace them? "
+                               "Replacing them will overwrite their contents.")
+                               .arg(QStringList(strPaths.toList()).join("<br />")));
+    else
+        return true;
+}
+
+bool UIMessageCenter::askForOverridingFileIfExists(const QString &strPath, QWidget *pParent /* = 0 */)
+{
+    QFileInfo fi(strPath);
+    if (fi.exists())
+        return askForOverridingFile(strPath, pParent);
+    else
+        return true;
+}
+
+bool UIMessageCenter::askForOverridingFilesIfExists(const QVector<QString> &strPaths, QWidget *pParent /* = 0 */)
+{
+    QVector<QString> existingFiles;
+    foreach(const QString &file, strPaths)
+    {
+        QFileInfo fi(file);
+        if (fi.exists())
+            existingFiles << fi.absoluteFilePath();
+    }
+    /* If it is only one file use the single question versions above: */
+    if (existingFiles.size() == 1)
+        return askForOverridingFileIfExists(existingFiles.at(0), pParent);
+    else if (existingFiles.size() > 1)
+        return askForOverridingFiles(existingFiles, pParent);
+    else
+        return true;
 }
 
 /* static */

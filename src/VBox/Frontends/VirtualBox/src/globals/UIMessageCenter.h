@@ -183,12 +183,6 @@ public:
     QWidget* networkManagerOrMainWindowShown() const;
     QWidget* networkManagerOrMainMachineWindowShown() const;
 
-    /* API: File read/write overriding stuff: */
-    bool askForOverridingFile(const QString& strPath, QWidget *pParent  = NULL);
-    bool askForOverridingFiles(const QVector<QString>& strPaths, QWidget *pParent = NULL);
-    bool askForOverridingFileIfExists(const QString& strPath, QWidget *pParent = NULL);
-    bool askForOverridingFilesIfExists(const QVector<QString>& strPaths, QWidget *pParent = NULL);
-
     /* API: Main (startup) warnings: */
 #ifdef RT_OS_LINUX
     void warnAboutWrongUSBMounted();
@@ -198,15 +192,9 @@ public:
     void showBEBWarning();
 
     /* API: COM startup warnings: */
-    void cannotInitCOM(HRESULT rc);
     void cannotInitUserHome(const QString &strUserHome);
+    void cannotInitCOM(HRESULT rc);
     void cannotCreateVirtualBox(const CVirtualBox &vbox);
-
-    /* API: Lincensing warnings: */
-#ifdef Q_WS_X11
-    void cannotFindLicenseFiles(const QString &strPath);
-#endif /* Q_WS_X11 */
-    void cannotOpenLicenseFile(QWidget *pParent, const QString &strPath);
 
     /* API: Global warnings: */
     void cannotFindLanguage(const QString &strLangId, const QString &strNlsPath);
@@ -375,6 +363,15 @@ public:
                                const QString &strPackDescription, QWidget *pParent);
     bool confirmRemovingPackage(const QString &strPackName, QWidget *pParent);
     void notifyAboutExtPackInstalled(const QString &strPackName, QWidget *pParent);
+
+    /* API: License-viewer warnings: */
+    void cannotOpenLicenseFile(QWidget *pParent, const QString &strPath);
+
+    /* API: File-dialog warnings: */
+    bool askForOverridingFile(const QString &strPath, QWidget *pParent = 0);
+    bool askForOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent = 0);
+    bool askForOverridingFileIfExists(const QString &strPath, QWidget *pParent = 0);
+    bool askForOverridingFilesIfExists(const QVector<QString> &strPaths, QWidget *pParent = 0);
 
     /* Helpers: */
     static QString mediumToAccusative(UIMediumType type, bool fIsHostDrive = false);
