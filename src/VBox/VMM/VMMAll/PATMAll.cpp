@@ -626,9 +626,9 @@ const char *patmGetInstructionString(uint32_t opcode, uint32_t fPatchFlags)
         break;
     case OP_MOV:
         if (fPatchFlags & PATMFL_IDTHANDLER)
-        {
             pszInstr = "mov (Int/Trap Handler)";
-        }
+        else
+            pszInstr = "mov (cs)";
         break;
     case OP_SYSENTER:
         pszInstr = "sysenter";

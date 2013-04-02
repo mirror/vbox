@@ -106,6 +106,10 @@ VMMR3DECL(void)         SELMR3DumpGuestGDT(PVM pVM);
 VMMR3DECL(void)         SELMR3DumpGuestLDT(PVM pVM);
 VMMR3DECL(bool)         SELMR3CheckTSS(PVM pVM);
 VMMR3DECL(int)          SELMR3DebugCheck(PVM pVM);
+#ifdef VBOX_WITH_SAFE_STR
+VMMR3DECL(bool)         SELMR3CheckShadowTR(PVM pVM);
+#endif
+
 /** @def SELMR3_DEBUG_CHECK
  * Invokes SELMR3DebugCheck in stricts builds. */
 # ifdef VBOX_STRICT

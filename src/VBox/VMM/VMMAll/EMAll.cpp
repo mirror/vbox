@@ -55,6 +55,10 @@
 //# define VBOX_COMPARE_IEM_LAST
 #endif
 
+#ifdef VBOX_WITH_RAW_RING1
+#define EM_EMULATE_SMSW
+#endif
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -1028,7 +1032,7 @@ VMM_INT_DECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCP
 #endif
 }
 
-#if defined(IN_RC) /*&& defined(VBOX_WITH_PATM)*/
+#ifdef IN_RC
 
 DECLINLINE(int) emRCStackRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCPTR GCPtrSrc, uint32_t cb)
 {
@@ -1094,7 +1098,74 @@ VMM_INT_DECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE 
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RC && VBOX_WITH_PATM */
+/**
+ * IRET Emulation.
+ */
+static int emInterpretIret(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+#ifdef VBOX_WITH_RAW_RING1
+    NOREF(pvFault); NOREF(pcbSize);
+    if (EMIsRawRing1Enabled(pVM))
+    {
+        RTGCUINTPTR pIretStack = (RTGCUINTPTR)pRegFrame->esp;
+        RTGCUINTPTR eip, cs, esp, ss, eflags, uMask;
+        int         rc;
+        uint32_t    cpl, rpl;
+
+        /* We only execute 32-bits protected mode code in raw mode, so no need to bother to check for 16-bits code here. */
+        /* @todo: we don't verify all the edge cases that generate #GP faults */
+
+        Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
+        Assert(!CPUMIsGuestIn64BitCode(pVCpu));
+        /** @todo Rainy day: Test what happens when VERR_EM_INTERPRETER is returned by
+         *        this function.  Fear that it may guru on us, thus not converted to
+         *        IEM. */
+
+        rc  = emRCStackRead(pVM, pVCpu, pRegFrame, &eip,      (RTGCPTR)pIretStack      , 4);
+        rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &cs,       (RTGCPTR)(pIretStack + 4), 4);
+        rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &eflags,   (RTGCPTR)(pIretStack + 8), 4);
+        AssertRCReturn(rc, VERR_EM_INTERPRETER);
+        AssertReturn(eflags & X86_EFL_VM, VERR_EM_INTERPRETER);
+
+        /* Deal with V86 above. */
+        if (eflags & X86_EFL_VM)
+            return EMInterpretIretV86ForPatm(pVM, pVCpu, pRegFrame);
+
+        cpl = CPUMRCGetGuestCPL(pVCpu, pRegFrame);
+        rpl = cs & X86_SEL_RPL;
+
+        Log(("emInterpretIret: iret to CS:EIP=%04X:%08X eflags=%x\n", cs, eip, eflags));
+        if (rpl != cpl)
+        {
+            rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &esp,      (RTGCPTR)(pIretStack + 12), 4);
+            rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &ss,       (RTGCPTR)(pIretStack + 16), 4);
+            AssertRCReturn(rc, VERR_EM_INTERPRETER);
+            Log(("emInterpretIret: return to different privilege level (rpl=%d cpl=%d)\n", rpl, cpl));
+            Log(("emInterpretIret: SS:ESP=%04X:08X\n", ss, esp));
+            pRegFrame->ss.Sel = ss;
+            pRegFrame->esp    = esp;
+        }
+        pRegFrame->cs.Sel = cs;
+        pRegFrame->eip    = eip;
+
+        /* Adjust CS & SS as required. */
+        CPUMRCRecheckRawState(pVCpu, pRegFrame);
+
+        /* Mask away all reserved bits */
+        uMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_RF | X86_EFL_VM | X86_EFL_AC | X86_EFL_VIF | X86_EFL_VIP | X86_EFL_ID;
+        eflags &= uMask;
+
+        CPUMRawSetEFlags(pVCpu, eflags);
+        Assert((pRegFrame->eflags.u32 & (X86_EFL_IF|X86_EFL_IOPL)) == X86_EFL_IF);
+        return VINF_SUCCESS;
+    }
+#else
+    NOREF(pVM); NOREF(pVCpu); NOREF(pDis); NOREF(pRegFrame); NOREF(pvFault); NOREF(pcbSize);
+#endif
+    return VERR_EM_INTERPRETER;
+}
+
+#endif /* IN_RC */
 
 
 
@@ -2507,121 +2578,134 @@ static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
     if(RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
-#ifdef IN_RC
-    if (TRPMHasTrap(pVCpu))
+    if (param1.type == DISQPV_TYPE_ADDRESS)
     {
-        if (TRPMGetErrorCode(pVCpu) & X86_TRAP_PF_RW)
+        RTGCPTR pDest;
+        uint64_t val64;
+
+        switch(param1.type)
         {
-#else
-        /** @todo Make this the default and don't rely on TRPM information. */
-        if (param1.type == DISQPV_TYPE_ADDRESS)
-        {
-#endif
-            RTGCPTR pDest;
-            uint64_t val64;
-
-            switch(param1.type)
-            {
-            case DISQPV_TYPE_IMMEDIATE:
-                if(!(param1.flags  & (DISQPV_FLAG_32|DISQPV_FLAG_64)))
-                    return VERR_EM_INTERPRETER;
-                /* fallthru */
-
-            case DISQPV_TYPE_ADDRESS:
-                pDest = (RTGCPTR)param1.val.val64;
-                pDest = emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->Param1, pDest);
-                break;
-
-            default:
-                AssertFailed();
+        case DISQPV_TYPE_IMMEDIATE:
+            if(!(param1.flags  & (DISQPV_FLAG_32|DISQPV_FLAG_64)))
                 return VERR_EM_INTERPRETER;
-            }
+            /* fallthru */
 
-            switch(param2.type)
-            {
-            case DISQPV_TYPE_IMMEDIATE: /* register type is translated to this one too */
-                val64 = param2.val.val64;
-                break;
+        case DISQPV_TYPE_ADDRESS:
+            pDest = (RTGCPTR)param1.val.val64;
+            pDest = emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->Param1, pDest);
+            break;
 
-            default:
-                Log(("emInterpretMov: unexpected type=%d rip=%RGv\n", param2.type, (RTGCPTR)pRegFrame->rip));
-                return VERR_EM_INTERPRETER;
-            }
-#ifdef LOG_ENABLED
-            if (pDis->uCpuMode == DISCPUMODE_64BIT)
-                LogFlow(("EMInterpretInstruction at %RGv: OP_MOV %RGv <- %RX64 (%d) &val64=%RHv\n", (RTGCPTR)pRegFrame->rip, pDest, val64, param2.size, &val64));
-            else
-                LogFlow(("EMInterpretInstruction at %08RX64: OP_MOV %RGv <- %08X  (%d) &val64=%RHv\n", pRegFrame->rip, pDest, (uint32_t)val64, param2.size, &val64));
-#endif
-
-            Assert(param2.size <= 8 && param2.size > 0);
-            EM_ASSERT_FAULT_RETURN(pDest == pvFault, VERR_EM_INTERPRETER);
-            rc = emRamWrite(pVM, pVCpu, pRegFrame, pDest, &val64, param2.size);
-            if (RT_FAILURE(rc))
-                return VERR_EM_INTERPRETER;
-
-            *pcbSize = param2.size;
+        default:
+            AssertFailed();
+            return VERR_EM_INTERPRETER;
         }
+
+        switch(param2.type)
+        {
+        case DISQPV_TYPE_IMMEDIATE: /* register type is translated to this one too */
+            val64 = param2.val.val64;
+            break;
+
+        default:
+            Log(("emInterpretMov: unexpected type=%d rip=%RGv\n", param2.type, (RTGCPTR)pRegFrame->rip));
+            return VERR_EM_INTERPRETER;
+        }
+#ifdef LOG_ENABLED
+        if (pDis->uCpuMode == DISCPUMODE_64BIT)
+            LogFlow(("EMInterpretInstruction at %RGv: OP_MOV %RGv <- %RX64 (%d) &val64=%RHv\n", (RTGCPTR)pRegFrame->rip, pDest, val64, param2.size, &val64));
         else
-        { /* read fault */
-            RTGCPTR pSrc;
-            uint64_t val64;
-
-            /* Source */
-            switch(param2.type)
-            {
-            case DISQPV_TYPE_IMMEDIATE:
-                if(!(param2.flags & (DISQPV_FLAG_32|DISQPV_FLAG_64)))
-                    return VERR_EM_INTERPRETER;
-                /* fallthru */
-
-            case DISQPV_TYPE_ADDRESS:
-                pSrc = (RTGCPTR)param2.val.val64;
-                pSrc = emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->Param2, pSrc);
-                break;
-
-            default:
-                return VERR_EM_INTERPRETER;
-            }
-
-            Assert(param1.size <= 8 && param1.size > 0);
-            EM_ASSERT_FAULT_RETURN(pSrc == pvFault, VERR_EM_INTERPRETER);
-            rc = emRamRead(pVM, pVCpu, pRegFrame, &val64, pSrc, param1.size);
-            if (RT_FAILURE(rc))
-                return VERR_EM_INTERPRETER;
-
-            /* Destination */
-            switch(param1.type)
-            {
-            case DISQPV_TYPE_REGISTER:
-                switch(param1.size)
-                {
-                case 1: rc = DISWriteReg8(pRegFrame, pDis->Param1.Base.idxGenReg,  (uint8_t) val64); break;
-                case 2: rc = DISWriteReg16(pRegFrame, pDis->Param1.Base.idxGenReg, (uint16_t)val64); break;
-                case 4: rc = DISWriteReg32(pRegFrame, pDis->Param1.Base.idxGenReg, (uint32_t)val64); break;
-                case 8: rc = DISWriteReg64(pRegFrame, pDis->Param1.Base.idxGenReg, val64); break;
-                default:
-                    return VERR_EM_INTERPRETER;
-                }
-                if (RT_FAILURE(rc))
-                    return rc;
-                break;
-
-            default:
-                return VERR_EM_INTERPRETER;
-            }
-#ifdef LOG_ENABLED
-            if (pDis->uCpuMode == DISCPUMODE_64BIT)
-                LogFlow(("EMInterpretInstruction: OP_MOV %RGv -> %RX64 (%d)\n", pSrc, val64, param1.size));
-            else
-                LogFlow(("EMInterpretInstruction: OP_MOV %RGv -> %08X (%d)\n", pSrc, (uint32_t)val64, param1.size));
+            LogFlow(("EMInterpretInstruction at %08RX64: OP_MOV %RGv <- %08X  (%d) &val64=%RHv\n", pRegFrame->rip, pDest, (uint32_t)val64, param2.size, &val64));
 #endif
-        }
-        return VINF_SUCCESS;
-#ifdef IN_RC
+
+        Assert(param2.size <= 8 && param2.size > 0);
+        EM_ASSERT_FAULT_RETURN(pDest == pvFault, VERR_EM_INTERPRETER);
+        rc = emRamWrite(pVM, pVCpu, pRegFrame, pDest, &val64, param2.size);
+        if (RT_FAILURE(rc))
+            return VERR_EM_INTERPRETER;
+
+        *pcbSize = param2.size;
     }
-    return VERR_EM_INTERPRETER;
+#if defined(IN_RC) && defined(VBOX_WITH_RAW_RING1)
+    /* mov xx, cs instruction is dangerous in raw mode and replaced by an 'int3' by csam/patm. */
+    else if (   param1.type == DISQPV_TYPE_REGISTER
+             && param2.type == DISQPV_TYPE_REGISTER)
+    {
+        AssertReturn((pDis->Param1.fUse & (DISUSE_REG_GEN8|DISUSE_REG_GEN16|DISUSE_REG_GEN32)), VERR_EM_INTERPRETER);
+        AssertReturn(pDis->Param2.fUse == DISUSE_REG_SEG, VERR_EM_INTERPRETER);
+        AssertReturn(pDis->Param2.Base.idxSegReg == DISSELREG_CS, VERR_EM_INTERPRETER);
+
+        uint32_t u32Cpl = CPUMRCGetGuestCPL(pVCpu, pRegFrame);
+        uint32_t uValCS = (pRegFrame->cs.Sel & ~X86_SEL_RPL) | u32Cpl;
+
+        Log(("EMInterpretInstruction: OP_MOV cs=%x->%x\n", pRegFrame->cs.Sel, uValCS));
+        switch (param1.size)
+        {
+        case 1: rc = DISWriteReg8(pRegFrame, pDis->Param1.Base.idxGenReg,  (uint8_t) uValCS); break;
+        case 2: rc = DISWriteReg16(pRegFrame, pDis->Param1.Base.idxGenReg, (uint16_t)uValCS); break;
+        case 4: rc = DISWriteReg32(pRegFrame, pDis->Param1.Base.idxGenReg, (uint32_t)uValCS); break;
+        default:
+            AssertFailed();
+            return VERR_EM_INTERPRETER;
+        }
+        AssertRCReturn(rc, rc);
+    }    
 #endif
+    else
+    { /* read fault */
+        RTGCPTR pSrc;
+        uint64_t val64;
+
+        /* Source */
+        switch(param2.type)
+        {
+        case DISQPV_TYPE_IMMEDIATE:
+            if(!(param2.flags & (DISQPV_FLAG_32|DISQPV_FLAG_64)))
+                return VERR_EM_INTERPRETER;
+            /* fallthru */
+
+        case DISQPV_TYPE_ADDRESS:
+            pSrc = (RTGCPTR)param2.val.val64;
+            pSrc = emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->Param2, pSrc);
+            break;
+
+        default:
+            return VERR_EM_INTERPRETER;
+        }
+
+        Assert(param1.size <= 8 && param1.size > 0);
+        EM_ASSERT_FAULT_RETURN(pSrc == pvFault, VERR_EM_INTERPRETER);
+        rc = emRamRead(pVM, pVCpu, pRegFrame, &val64, pSrc, param1.size);
+        if (RT_FAILURE(rc))
+            return VERR_EM_INTERPRETER;
+
+        /* Destination */
+        switch(param1.type)
+        {
+        case DISQPV_TYPE_REGISTER:
+            switch(param1.size)
+            {
+            case 1: rc = DISWriteReg8(pRegFrame, pDis->Param1.Base.idxGenReg,  (uint8_t) val64); break;
+            case 2: rc = DISWriteReg16(pRegFrame, pDis->Param1.Base.idxGenReg, (uint16_t)val64); break;
+            case 4: rc = DISWriteReg32(pRegFrame, pDis->Param1.Base.idxGenReg, (uint32_t)val64); break;
+            case 8: rc = DISWriteReg64(pRegFrame, pDis->Param1.Base.idxGenReg, val64); break;
+            default:
+                return VERR_EM_INTERPRETER;
+            }
+            if (RT_FAILURE(rc))
+                return rc;
+            break;
+
+        default:
+            return VERR_EM_INTERPRETER;
+        }
+#ifdef LOG_ENABLED
+        if (pDis->uCpuMode == DISCPUMODE_64BIT)
+            LogFlow(("EMInterpretInstruction: OP_MOV %RGv -> %RX64 (%d)\n", pSrc, val64, param1.size));
+        else
+            LogFlow(("EMInterpretInstruction: OP_MOV %RGv -> %08X (%d)\n", pSrc, (uint32_t)val64, param1.size));
+#endif
+    }
+    return VINF_SUCCESS;
 }
 
 
@@ -3014,16 +3098,6 @@ static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
 }
 #endif /* IN_RC */
 
-
-/**
- * IRET Emulation.
- */
-static int emInterpretIret(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
-{
-    /* only allow direct calls to EMInterpretIret for now */
-    NOREF(pVM); NOREF(pVCpu); NOREF(pDis); NOREF(pRegFrame); NOREF(pvFault); NOREF(pcbSize);
-    return VERR_EM_INTERPRETER;
-}
 
 /**
  * WBINVD Emulation.
@@ -3596,13 +3670,23 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
          */
         /* Get the current privilege level. */
         uint32_t cpl = CPUMGetGuestCPL(pVCpu);
-        if (    cpl != 0
-            &&  pDis->pCurInstr->uOpcode != OP_RDTSC)    /* rdtsc requires emulation in ring 3 as well */
+#ifdef VBOX_WITH_RAW_RING1
+        if (   !EMIsRawRing1Enabled(pVM)
+            || cpl > 1
+            || pRegFrame->eflags.Bits.u2IOPL > cpl
+           )
         {
-            Log(("WARNING: refusing instruction emulation for user-mode code!!\n"));
-            STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedUserMode));
-            return VERR_EM_INTERPRETER;
+#endif
+            if (    cpl != 0
+                &&  pDis->pCurInstr->uOpcode != OP_RDTSC)    /* rdtsc requires emulation in ring 3 as well */
+            {
+                Log(("WARNING: refusing instruction emulation for user-mode code!!\n"));
+                STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedUserMode));
+                return VERR_EM_INTERPRETER;
+            }
+#ifdef VBOX_WITH_RAW_RING1
         }
+#endif
     }
     else
         Log2(("emInterpretInstructionCPU allowed to interpret user-level code!!\n"));
@@ -3834,10 +3918,10 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
 #ifdef IN_RC
         INTERPRET_CASE(OP_STI,Sti);
         INTERPRET_CASE(OP_XADD, XAdd);
+        INTERPRET_CASE(OP_IRET,Iret);
 #endif
         INTERPRET_CASE(OP_CMPXCHG8B, CmpXchg8b);
         INTERPRET_CASE(OP_HLT,Hlt);
-        INTERPRET_CASE(OP_IRET,Iret);
         INTERPRET_CASE(OP_WBINVD,WbInvd);
 #ifdef VBOX_WITH_STATISTICS
 # ifndef IN_RC

@@ -26,6 +26,7 @@
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/stam.h>
+#include <VBox/vmm/dbgf.h>
 #include "TRPMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
@@ -592,7 +593,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                 rc = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)pTrapStackGC - 10*sizeof(uint32_t), 10 * sizeof(uint32_t), X86_PTE_RW);
                 pTrapStack = (uint32_t *)(uintptr_t)pTrapStackGC;
 #else
-                Assert(eflags.Bits.u1VM || (pRegFrame->ss.Sel & X86_SEL_RPL) == 0 || (pRegFrame->ss.Sel & X86_SEL_RPL) == 3);
+                Assert(eflags.Bits.u1VM || (pRegFrame->ss.Sel & X86_SEL_RPL) == 0 || (pRegFrame->ss.Sel & X86_SEL_RPL) == 3 || (EMIsRawRing1Enabled(pVM) && (pRegFrame->ss.Sel & X86_SEL_RPL) == 1));
                 /* Check maximum amount we need (10 when executing in V86 mode) */
                 if ((pTrapStackGC >> PAGE_SHIFT) != ((pTrapStackGC - 10*sizeof(uint32_t)) >> PAGE_SHIFT)) /* fail if we cross a page boundary */
                     goto failure;
@@ -623,9 +624,18 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
 
                     if (!fConforming && dpl < cpl)
                     {
-                        if ((pRegFrame->ss.Sel & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
-                            pTrapStack[--idx] = pRegFrame->ss.Sel & ~1;    /* Mask away traces of raw ring execution (ring 1). */
+#ifdef IN_RC /* Only in GC mode we still see tracing of our ring modifications */
+                        if (    (pRegFrame->ss.Sel & X86_SEL_RPL) == 1 
+                            &&  !eflags.Bits.u1VM)
+                            pTrapStack[--idx] = pRegFrame->ss.Sel & ~1;         /* Mask away traces of raw ring 0 execution (ring 1). */
+# ifdef VBOX_WITH_RAW_RING1
                         else
+                        if (    EMIsRawRing1Enabled(pVM)
+                            &&  (pRegFrame->ss.Sel & X86_SEL_RPL) == 2)
+                            pTrapStack[--idx] = (pRegFrame->ss.Sel & ~2) | 1;   /* Mask away traces of raw ring 1 execution (ring 2). */
+# endif
+                        else
+#endif  /* IN_RC */
                             pTrapStack[--idx] = pRegFrame->ss.Sel;
 
                         pTrapStack[--idx] = pRegFrame->esp;
@@ -634,10 +644,18 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                     /* Note: We use the eflags copy, that includes the virtualized bits! */
                     /* Note: Not really necessary as we grab include those bits in the trap/irq handler trampoline */
                     pTrapStack[--idx] = eflags.u32;
-
-                    if ((pRegFrame->cs.Sel & X86_SEL_RPL) == 1 && !eflags.Bits.u1VM)
-                        pTrapStack[--idx] = pRegFrame->cs.Sel & ~1;    /* Mask away traces of raw ring execution (ring 1). */
+#ifdef IN_RC /* Only in GC mode we still see tracing of our ring modifications */
+                    if (    (pRegFrame->cs.Sel & X86_SEL_RPL) == 1 
+                        &&  !eflags.Bits.u1VM)
+                        pTrapStack[--idx] = pRegFrame->cs.Sel & ~1;         /* Mask away traces of raw ring execution (ring 1). */
+# ifdef VBOX_WITH_RAW_RING1
                     else
+                    if (    EMIsRawRing1Enabled(pVM)
+                        &&  (pRegFrame->cs.Sel & X86_SEL_RPL) == 2)
+                        pTrapStack[--idx] = (pRegFrame->cs.Sel & ~2) | 1;   /* Mask away traces of raw ring 1 execution (ring 2). */
+# endif
+                    else
+#endif  /* IN_RC */
                         pTrapStack[--idx] = pRegFrame->cs.Sel;
 
                     if (enmType == TRPM_SOFTWARE_INT)
@@ -659,6 +677,10 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
 
                     /* Mask away dangerous flags for the trap/interrupt handler. */
                     eflags.u32 &= ~(X86_EFL_TF | X86_EFL_VM | X86_EFL_RF | X86_EFL_NT);
+#ifdef DEBUG
+                    if (DBGFIsStepping(pVCpu))
+                        eflags.u32 |= X86_EFL_TF;
+#endif
 
                     /* Turn off interrupts for interrupt gates. */
                     if (GuestIdte.Gen.u5Type2 == VBOX_IDTE_TYPE2_INT_32)
@@ -668,7 +690,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
 
 #ifdef DEBUG
                     for (int j = idx; j < 0; j++)
-                        Log4(("Stack %RRv pos %02d: %08x\n", &pTrapStack[j], j, pTrapStack[j]));
+                        LogFlow(("Stack %RRv pos %02d: %08x\n", &pTrapStack[j], j, pTrapStack[j]));
 
                     Log4(("eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
                           "eip=%08x esp=%08x ebp=%08x iopl=%d\n"

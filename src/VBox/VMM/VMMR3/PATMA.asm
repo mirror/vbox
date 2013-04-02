@@ -1261,7 +1261,7 @@ PATMIretStart:
     jz near iret_clearIF
 
     ; force ring 1 CS RPL
-    or      dword [esp+8], 1
+    or      dword [esp+8], 1        ;-> @todo we leave traces or raw mode if we jump back to the host context to handle pending interrupts! (below)
 iret_notring0:
 
 ; if interrupts are pending, then we must go back to the host context to handle them!
@@ -1442,6 +1442,304 @@ GLOBALNAME PATMIretRecord
     DD      0
     DD      PATM_FIXUP
     DD      PATMIretTable - PATMIretStart
+    DD      PATM_IRET_FUNCTION
+    DD      0
+    DD      PATM_VMFLAGS
+    DD      0
+    DD      PATM_VMFLAGS
+    DD      0
+    DD      PATM_VMFLAGS
+    DD      0
+    DD      PATM_TEMP_EAX
+    DD      0
+    DD      PATM_TEMP_ECX
+    DD      0
+    DD      PATM_TEMP_RESTORE_FLAGS
+    DD      0
+    DD      PATM_PENDINGACTION
+    DD      0
+    DD      0ffffffffh
+SECTION .text
+
+;;****************************************************
+;; Abstract:
+;;
+;; if eflags.NT==0 && iretstack.eflags.VM==0 && iretstack.eflags.IOPL==0
+;; then
+;;     if return to ring 0 (iretstack.new_cs & 3 == 0)
+;;     then
+;;          if iretstack.new_eflags.IF == 1 && iretstack.new_eflags.IOPL == 0
+;;          then
+;;              iretstack.new_cs |= 1
+;;          else
+;;              int 3
+;;     endif
+;;     uVMFlags &= ~X86_EFL_IF
+;;     iret
+;; else
+;;     int 3
+;;****************************************************
+;;
+; Stack:
+;
+; esp + 32 - GS         (V86 only)
+; esp + 28 - FS         (V86 only)
+; esp + 24 - DS         (V86 only)
+; esp + 20 - ES         (V86 only)
+; esp + 16 - SS         (if transfer to outer ring)
+; esp + 12 - ESP        (if transfer to outer ring)
+; esp + 8  - EFLAGS
+; esp + 4  - CS
+; esp      - EIP
+;;
+BEGINPROC   PATMIretRing1Replacement
+PATMIretRing1Start:
+    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    pushfd
+
+%ifdef PATM_LOG_PATCHIRET
+    push    eax
+    push    ecx
+    push    edx
+    lea     edx, dword [ss:esp+12+4]        ;3 dwords + pushed flags -> iret eip
+    mov     eax, PATM_ACTION_LOG_IRET
+    lock    or dword [ss:PATM_PENDINGACTION], eax
+    mov     ecx, PATM_ACTION_MAGIC
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    pop     edx
+    pop     ecx
+    pop     eax
+%endif
+
+    test    dword [esp], X86_EFL_NT
+    jnz     near iretring1_fault1
+
+    ; we can't do an iret to v86 code, as we run with CPL=1. The iret would attempt a protected mode iret and (most likely) fault.
+    test    dword [esp+12], X86_EFL_VM
+    jnz     near iretring1_return_to_v86
+
+    ;;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ;;@todo: not correct for iret back to ring 2!!!!!
+    ;;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    test    dword [esp+8], 2
+    jnz     iretring1_checkpendingirq
+
+    test    dword [esp+12], X86_EFL_IF
+    jz      near iretring1_clearIF
+
+iretring1_checkpendingirq:
+
+; if interrupts are pending, then we must go back to the host context to handle them!
+; Note: This is very important as pending pic interrupts can be overridden by apic interrupts if we don't check early enough (Fedora 5 boot)
+; @@todo fix this properly, so we can dispatch pending interrupts in GC
+    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+    jz      iretring1_continue
+
+; Go to our hypervisor trap handler to dispatch the pending irq
+    mov     dword [ss:PATM_TEMP_EAX], eax
+    mov     dword [ss:PATM_TEMP_ECX], ecx
+    mov     dword [ss:PATM_TEMP_EDI], edi
+    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
+    mov     eax, PATM_ACTION_PENDING_IRQ_AFTER_IRET
+    lock    or dword [ss:PATM_PENDINGACTION], eax
+    mov     ecx, PATM_ACTION_MAGIC
+    mov     edi, PATM_CURINSTRADDR
+
+    popfd
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    ; does not return
+
+iretring1_continue:
+
+    test    dword [esp+8], 2
+    jnz     iretring1_notring01
+
+    test    dword [esp+8], 1
+    jz      iretring1_ring0
+
+    ; ring 1 return change CS & SS RPL to 2 from 1
+    and     dword [esp+8], ~1       ; CS
+    or      dword [esp+8], 2
+
+    and     dword [esp+20], ~1      ; SS
+    or      dword [esp+20], 2
+
+    jmp     short iretring1_notring01
+iretring1_ring0:
+    ; force ring 1 CS RPL
+    or      dword [esp+8], 1
+
+iretring1_notring01:
+    ; This section must *always* be executed (!!)
+    ; Extract the IOPL from the return flags, save them to our virtual flags and
+    ; put them back to zero
+    ; @note we assume iretd doesn't fault!!!
+    push    eax
+    mov     eax, dword [esp+16]
+    and     eax, X86_EFL_IOPL
+    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IOPL
+    or      dword [ss:PATM_VMFLAGS], eax
+    pop     eax
+    and     dword [esp+12], ~X86_EFL_IOPL
+
+    ; Set IF again; below we make sure this won't cause problems.
+    or      dword [ss:PATM_VMFLAGS], X86_EFL_IF
+
+    ; make sure iret is executed fully (including the iret below; cli ... iret can otherwise be interrupted)
+    mov     dword [ss:PATM_INHIBITIRQADDR], PATM_CURINSTRADDR
+
+    popfd
+    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    iretd
+    PATM_INT3
+
+iretring1_fault:
+    popfd
+    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    PATM_INT3
+
+iretring1_fault1:
+    nop
+    popfd
+    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    PATM_INT3
+
+iretring1_clearIF:
+    push    dword [esp+4]           ; eip to return to
+    pushfd
+    push    eax
+    push    PATM_FIXUP
+    DB      0E8h                    ; call
+    DD      PATM_IRET_FUNCTION
+    add     esp, 4                  ; pushed address of jump table
+
+    cmp     eax, 0
+    je      near iretring1_fault3
+
+    mov     dword [esp+12+4], eax   ; stored eip in iret frame
+    pop     eax
+    popfd
+    add     esp, 4                  ; pushed eip
+
+    ; This section must *always* be executed (!!)
+    ; Extract the IOPL from the return flags, save them to our virtual flags and
+    ; put them back to zero
+    push    eax
+    mov     eax, dword [esp+16]
+    and     eax, X86_EFL_IOPL
+    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IOPL
+    or      dword [ss:PATM_VMFLAGS], eax
+    pop     eax
+    and     dword [esp+12], ~X86_EFL_IOPL
+
+    ; Clear IF
+    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IF
+    popfd
+
+    test    dword [esp+8], 1
+    jz      iretring1_clearIF_ring0
+
+    ; ring 1 return change CS & SS RPL to 2 from 1
+    and     dword [esp+8], ~1       ; CS
+    or      dword [esp+8], 2
+
+    and     dword [esp+20], ~1      ; SS
+    or      dword [esp+20], 2
+                                                ; the patched destination code will set PATM_INTERRUPTFLAG after the return!
+    iretd
+
+iretring1_clearIF_ring0:
+    ; force ring 1 CS RPL
+    or      dword [esp+8], 1
+                                                ; the patched destination code will set PATM_INTERRUPTFLAG after the return!
+    iretd
+
+iretring1_return_to_v86:
+    test    dword [esp+12], X86_EFL_IF
+    jz      iretring1_fault
+
+    ; Go to our hypervisor trap handler to perform the iret to v86 code
+    mov     dword [ss:PATM_TEMP_EAX], eax
+    mov     dword [ss:PATM_TEMP_ECX], ecx
+    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX
+    mov     eax, PATM_ACTION_DO_V86_IRET
+    lock    or dword [ss:PATM_PENDINGACTION], eax
+    mov     ecx, PATM_ACTION_MAGIC
+
+    popfd
+
+    db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
+    ; does not return
+
+
+iretring1_fault3:
+    pop     eax
+    popfd
+    add     esp, 4                  ; pushed eip
+    jmp     iretring1_fault
+
+align   4
+PATMIretRing1Table:
+    DW      PATM_MAX_JUMPTABLE_ENTRIES          ; nrSlots
+    DW      0                                   ; ulInsertPos
+    DD      0                                   ; cAddresses
+    TIMES PATCHJUMPTABLE_SIZE DB 0              ; lookup slots
+
+PATMIretRing1End:
+ENDPROC     PATMIretRing1Replacement
+
+SECTION .data
+; Patch record for 'iretd'
+GLOBALNAME PATMIretRing1Record
+    RTCCPTR_DEF PATMIretRing1Start
+    DD      0
+    DD      0
+    DD      0
+    DD      PATMIretRing1End- PATMIretRing1Start
+%ifdef PATM_LOG_PATCHIRET
+    DD      26
+%else
+    DD      25
+%endif
+    DD      PATM_INTERRUPTFLAG
+    DD      0
+%ifdef PATM_LOG_PATCHIRET
+    DD      PATM_PENDINGACTION
+    DD      0
+%endif
+    DD      PATM_VM_FORCEDACTIONS
+    DD      0
+    DD      PATM_TEMP_EAX
+    DD      0
+    DD      PATM_TEMP_ECX
+    DD      0
+    DD      PATM_TEMP_EDI
+    DD      0
+    DD      PATM_TEMP_RESTORE_FLAGS
+    DD      0
+    DD      PATM_PENDINGACTION
+    DD      0
+    DD      PATM_CURINSTRADDR
+    DD      0
+    DD      PATM_VMFLAGS
+    DD      0
+    DD      PATM_VMFLAGS
+    DD      0
+    DD      PATM_VMFLAGS
+    DD      0
+    DD      PATM_INHIBITIRQADDR
+    DD      0
+    DD      PATM_CURINSTRADDR
+    DD      0
+    DD      PATM_INTERRUPTFLAG
+    DD      0
+    DD      PATM_INTERRUPTFLAG
+    DD      0
+    DD      PATM_INTERRUPTFLAG
+    DD      0
+    DD      PATM_FIXUP
+    DD      PATMIretRing1Table - PATMIretRing1Start
     DD      PATM_IRET_FUNCTION
     DD      0
     DD      PATM_VMFLAGS

@@ -26,6 +26,7 @@
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/em.h>
 #if defined(VBOX_WITH_RAW_MODE) && !defined(IN_RING0)
 # include <VBox/vmm/selm.h>
 #endif
@@ -2655,8 +2656,21 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
             {
                 uCpl = (pVCpu->cpum.s.Guest.ss.Sel & X86_SEL_RPL);
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
+# ifdef VBOX_WITH_RAW_RING1
+                if (pVCpu->cpum.s.fRawEntered)
+                {
+                    if (    EMIsRawRing1Enabled(pVCpu->CTX_SUFF(pVM))
+                        &&  uCpl == 2)
+                        uCpl = 1;
+                    else
+                    if (uCpl == 1)
+                        uCpl = 0;
+                }
+                Assert(uCpl != 2);  /* ring 2 support not allowed anymore. */
+# else
                 if (uCpl == 1)
                     uCpl = 0;
+# endif
 #endif
             }
         }

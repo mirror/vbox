@@ -1534,6 +1534,11 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
     case OP_JMP:
         break;
 
+#ifdef VBOX_WITH_SAFE_STR   /* @todo remove DISOPTYPE_PRIVILEGED_NOTRAP from disasm table */
+    case OP_STR:
+        break;
+#endif
+
     default:
         if (pCpu->pCurInstr->fOpType & (DISOPTYPE_PRIVILEGED_NOTRAP))
         {
@@ -1644,6 +1649,11 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     case OP_SYSEXIT: /* will fault or emulated in GC */
     case OP_RETN:
         return VINF_SUCCESS;
+
+#ifdef VBOX_WITH_SAFE_STR   /* @todo remove DISOPTYPE_PRIVILEGED_NOTRAP from disasm table */
+    case OP_STR:
+        break;
+#endif
 
     case OP_POPF:
     case OP_STI:
@@ -1805,6 +1815,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         goto duplicate_instr;
 
     case OP_POP:
+        /** @todo broken comparison!! should be if ((pCpu->Param1.fUse & DISUSE_REG_SEG) &&  (pCpu->Param1.Base.idxSegReg == DISSELREG_SS)) */
         if (pCpu->pCurInstr->fParam1 == OP_PARM_REG_SS)
         {
             Assert(pCpu->pCurInstr->fOpType & DISOPTYPE_INHIBIT_IRQS);
@@ -1912,6 +1923,7 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         break;
 
     case OP_PUSH:
+        /** @todo broken comparison!! should be if ((pCpu->Param1.fUse & DISUSE_REG_SEG) &&  (pCpu->Param1.Base.idxSegReg == DISSELREG_SS)) */
         if (pCpu->pCurInstr->fParam1 == OP_PARM_REG_CS)
         {
             rc = patmPatchGenPushCS(pVM, pPatch);
@@ -1946,6 +1958,10 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         break;
 
     case OP_STR:
+#ifdef VBOX_WITH_SAFE_STR   /* @todo remove DISOPTYPE_PRIVILEGED_NOTRAP from disasm table and move OP_STR into #ifndef */
+        /* Now safe because our shadow TR entry is identical to the guest's. */
+        goto duplicate_instr;
+#endif
     case OP_SLDT:
         rc = patmPatchGenSldtStr(pVM, pPatch, pCpu, pCurInstrGC);
         if (RT_SUCCESS(rc))
@@ -4441,7 +4457,9 @@ VMMR3_INT_DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags
             rc = patmR3PatchBlock(pVM, pInstrGC, pInstrHC, cpu.pCurInstr->uOpcode, cbInstr, pPatchRec);
             break;
 
+#ifndef VBOX_WITH_SAFE_STR
         case OP_STR:
+#endif
         case OP_SGDT:
         case OP_SLDT:
         case OP_SIDT:
@@ -4452,6 +4470,9 @@ VMMR3_INT_DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags
         case OP_VERW:
         case OP_VERR:
         case OP_IRET:
+#ifdef VBOX_WITH_RAW_RING1
+        case OP_MOV:
+#endif
             rc = patmR3PatchInstrInt3(pVM, pInstrGC, pInstrHC, &cpu, &pPatchRec->patch);
             break;
 

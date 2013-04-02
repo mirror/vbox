@@ -351,6 +351,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
                 return rc;
             }
             /* Unhandled part of a monitored page */
+            Log(("Unhandled part of monitored page %RGv\n", pvFault));
         }
         else
         {

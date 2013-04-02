@@ -846,15 +846,19 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         }
         break;
 
+    /* removing breaks win2k guests? */
+    case OP_IRET:
+#ifdef VBOX_WITH_RAW_RING1
+        if (EMIsRawRing1Enabled(pVM))
+            break;
+#endif
+        /* no break */
+
     case OP_ILLUD2:
         /* This appears to be some kind of kernel panic in Linux 2.4; no point to continue. */
     case OP_RETN:
     case OP_INT3:
     case OP_INVALID:
-#if 1
-    /* removing breaks win2k guests? */
-    case OP_IRET:
-#endif
         return VINF_SUCCESS;
     }
 
@@ -918,12 +922,37 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
         break;
     }
 
+#ifdef VBOX_WITH_RAW_RING1
+    case OP_MOV:
+        /* mov xx, CS is a dangerous instruction as our raw ring usage leaks through. */
+        if (    EMIsRawRing1Enabled(pVM)
+            &&  (pCpu->Param2.fUse & DISUSE_REG_SEG) 
+            &&  (pCpu->Param2.Base.idxSegReg == DISSELREG_CS))
+        {
+            Log(("CSAM: Patching dangerous 'mov xx, cs' instruction at %RGv with an int3\n", pCurInstrGC));
+            if (PATMR3HasBeenPatched(pVM, pCurInstrGC) == false)
+            {
+                rc = PATMR3InstallPatch(pVM, pCurInstrGC, (pPage->fCode32) ? PATMFL_CODE32 : 0);
+                if (RT_FAILURE(rc))
+                {
+                    Log(("PATMR3InstallPatch failed with %d\n", rc));
+                    return VWRN_CONTINUE_ANALYSIS;
+                }
+            }
+            return VWRN_CONTINUE_ANALYSIS;
+        }
+        break;
+#endif
+
     case OP_PUSH:
+        /** @todo broken comparison!! should be if ((pCpu->Param1.fUse & DISUSE_REG_SEG) &&  (pCpu->Param1.Base.idxSegReg == DISSELREG_SS)) */
         if (pCpu->pCurInstr->fParam1 != OP_PARM_REG_CS)
             break;
 
         /* no break */
+#ifndef VBOX_WITH_SAFE_STR
     case OP_STR:
+#endif
     case OP_LSL:
     case OP_LAR:
     case OP_SGDT:
@@ -2641,7 +2670,8 @@ VMMR3_INT_DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             Log(("Installing %s gate handler for 0x%X at %RRv\n", (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32) ? "trap" : "intr", iGate, pHandler));
 
             rc = PATMR3InstallPatch(pVM, pHandler, fPatchFlags);
-            if (RT_SUCCESS(rc) || rc == VERR_PATM_ALREADY_PATCHED)
+            if (    RT_SUCCESS(rc) 
+                ||  rc == VERR_PATM_ALREADY_PATCHED)
             {
                 Log(("Gate handler 0x%X is SAFE!\n", iGate));
 

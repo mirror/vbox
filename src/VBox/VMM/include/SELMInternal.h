@@ -24,6 +24,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/log.h>
 #include <iprt/x86.h>
+#include <VBox/vmm/em.h>
 
 
 
@@ -32,6 +33,25 @@
  * @internal
  * @{
  */
+
+/**
+ * Enable or disable tracking of Shadow GDT/LDT/TSS.
+ * @{
+ */
+#define SELM_TRACK_SHADOW_GDT_CHANGES
+#define SELM_TRACK_SHADOW_LDT_CHANGES
+#define SELM_TRACK_SHADOW_TSS_CHANGES
+/** @} */
+
+/**
+ * Enable or disable tracking of Guest GDT/LDT/TSS.
+ * @{
+ */
+#define SELM_TRACK_GUEST_GDT_CHANGES
+#define SELM_TRACK_GUEST_LDT_CHANGES
+#define SELM_TRACK_GUEST_TSS_CHANGES
+/** @} */
+
 
 /** The number of GDTS allocated for our GDT. (full size) */
 #define SELM_GDT_ELEMENTS                   8192
@@ -202,6 +222,9 @@ VMMRCDECL(int) selmRCShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 VMMRCDECL(int) selmRCShadowTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
 
 void           selmSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp);
+#ifdef VBOX_WITH_RAW_RING1
+void           selmSetRing2Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp);
+#endif
 
 RT_C_DECLS_END
 
@@ -361,9 +384,10 @@ DECLINLINE(bool) selmIsGstDescGoodForSReg(PVMCPU pVCpu, PCCPUMSELREG pSReg, PCX8
 /**
  * Converts a guest GDT or LDT entry to a shadow table entry.
  *
+ * @param   pVM                 The VM handle.
  * @param   pDesc       Guest entry on input, shadow entry on return.
  */
-DECL_FORCE_INLINE(void) selmGuestToShadowDesc(PX86DESC pDesc)
+DECL_FORCE_INLINE(void) selmGuestToShadowDesc(PVM pVM, PX86DESC pDesc)
 {
     /*
      * Code and data selectors are generally 1:1, with the
@@ -390,6 +414,17 @@ DECL_FORCE_INLINE(void) selmGuestToShadowDesc(PX86DESC pDesc)
             pDesc->Gen.u2Dpl       = 1;
             pDesc->Gen.u1Available = 1;
         }
+# ifdef VBOX_WITH_RAW_RING1
+        else
+        if (    pDesc->Gen.u2Dpl == 1
+//            &&  EMIsRawRing1Enabled(pVM)
+            &&      (pDesc->Gen.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
+                !=  (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF) )
+        {
+            pDesc->Gen.u2Dpl       = 2;
+            pDesc->Gen.u1Available = 1;
+        }
+# endif
         else
             pDesc->Gen.u1Available = 0;
     }

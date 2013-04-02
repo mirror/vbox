@@ -58,6 +58,7 @@ struc VM
     .pfnVMMRCToHostAsmNoReturn resd 1
     .fRecompileUser         resb 1
     .fRecompileSupervisor   resb 1
+    .fRawRing1Enabled       resb 1
     .fPATMEnabled           resb 1
     .fCSAMEnabled           resb 1
     .fHMEnabled         resb 1
@@ -65,7 +66,7 @@ struc VM
     .fFaultTolerantMaster   resb 1
     .fUseLargePages         resb 1
 
-    .uPadding1              resd 1
+    .uPadding1              resb 3
 
     .hTraceBufRC            RTRCPTR_RES 1
     .hTraceBufR3            RTR3PTR_RES 1

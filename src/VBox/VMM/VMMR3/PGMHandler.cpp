@@ -493,7 +493,9 @@ VMMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
         if (RT_UNLIKELY(!pCur))
         {
             pgmUnlock(pVM);
+#ifndef DEBUG_sander
             AssertMsgFailed(("Range %#x not found!\n", GCPtr));
+#endif
             return VERR_INVALID_PARAMETER;
         }
 
