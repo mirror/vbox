@@ -1751,12 +1751,6 @@ CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = K
         session.detach();
         return session;
     }
-    else if (!mVBox.isOk())
-    {
-        msgCenter().cannotOpenSession(mVBox, machine);
-        session.detach();
-        return session;
-    }
 
     /* Pass the language ID as the property to the guest: */
     if (session.GetType() == KSessionType_Shared)
@@ -4914,17 +4908,19 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
 
 bool VBoxGlobal::launchMachine(CMachine &machine, bool fHeadless /* = false */)
 {
+    /* Switch to machine window(s) if possible: */
     if (machine.CanShowConsoleWindow())
         return VBoxGlobal::switchToMachine(machine);
 
+    /* Make sure machine-state is one of required: */
     KMachineState state = machine.GetState(); NOREF(state);
     AssertMsg(   state == KMachineState_PoweredOff
               || state == KMachineState_Saved
               || state == KMachineState_Teleported
               || state == KMachineState_Aborted
-              , ("Machine must be PoweredOff/Saved/Aborted (%d)", state));
+              , ("Machine must be PoweredOff/Saved/Teleported/Aborted (%d)", state));
 
-    CVirtualBox vbox = vboxGlobal().virtualBox();
+    /* Create empty session instance: */
     CSession session;
     session.createInstance(CLSID_Session);
     if (session.isNull())
@@ -4933,39 +4929,42 @@ bool VBoxGlobal::launchMachine(CMachine &machine, bool fHeadless /* = false */)
         return false;
     }
 
-#if defined(Q_OS_WIN32)
-    /* allow the started VM process to make itself the foreground window */
+    /* Configure environment: */
+    QString strEnv;
+#ifdef Q_OS_WIN
+    /* Allow started VM process to be foreground window: */
     AllowSetForegroundWindow(ASFW_ANY);
-#endif
-
-    QString env;
-#if defined(Q_WS_X11)
-    /* make sure the VM process will start on the same display as the Selector */
-    const char *display = RTEnvGet("DISPLAY");
-    if (display)
-        env.append(QString("DISPLAY=%1\n").arg(display));
-    const char *xauth = RTEnvGet("XAUTHORITY");
-    if (xauth)
-        env.append(QString("XAUTHORITY=%1\n").arg(xauth));
-#endif
+#endif /* Q_OS_WIN */
+#ifdef Q_WS_X11
+    /* Make sure VM process will start on the same display as the VM selector: */
+    const char *pDisplay = RTEnvGet("DISPLAY");
+    if (pDisplay)
+        strEnv.append(QString("DISPLAY=%1\n").arg(pDisplay));
+    const char *pXauth = RTEnvGet("XAUTHORITY");
+    if (pXauth)
+        strEnv.append(QString("XAUTHORITY=%1\n").arg(pXauth));
+#endif /* Q_WS_X11 */
     const QString strType = fHeadless ? "headless" : "";
 
-    CProgress progress = machine.LaunchVMProcess(session, strType, env);
-    if (   !vbox.isOk()
-        || progress.isNull())
+    /* Prepare "VM spawning" progress: */
+    CProgress progress = machine.LaunchVMProcess(session, strType, strEnv);
+    if (!machine.isOk())
     {
-        msgCenter().cannotOpenSession(vbox, machine);
+        msgCenter().cannotOpenSession(machine);
         return false;
     }
 
-    /* Hide the "VM spawning" progress dialog */
-    /* I hope 1 minute will be enough to spawn any running VM silently, isn't it? */
+    /* Postpone showing "VM spawning" progress.
+     * Hope 1 minute will be enough to spawn any running VM silently,
+     * otherwise we better show the progress... */
     int iSpawningDuration = 60000;
     msgCenter().showModalProgressDialog(progress, machine.GetName(), "", mainWindow(), iSpawningDuration);
     if (progress.GetResultCode() != 0)
-        msgCenter().cannotOpenSession(vbox, machine, progress);
+        msgCenter().cannotOpenSession(machine, progress);
 
+    /* Unlock machine, close session: */
     session.UnlockMachine();
 
+    /* True finally: */
     return true;
 }
