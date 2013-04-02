@@ -2285,7 +2285,7 @@ QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocatio
         return vboxMedium.id();
     }
     else
-        msgCenter().cannotOpenMedium(pParent, vbox, mediumType, strMediumLocation);
+        msgCenter().cannotOpenMedium(vbox, mediumType, strMediumLocation, pParent);
 
     return QString();
 }

@@ -91,7 +91,7 @@ void UIMediumTypeChangeDialog::sltAccept()
     if (!m_medium.isOk())
     {
         /* Show error message: */
-        msgCenter().cannotChangeMediumType(this, m_medium, m_oldMediumType, m_newMediumType);
+        msgCenter().cannotChangeMediumType(m_medium, m_oldMediumType, m_newMediumType, this);
         return;
     }
     /* Accept dialog with parent class method: */

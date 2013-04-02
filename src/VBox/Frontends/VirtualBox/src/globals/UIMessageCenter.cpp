@@ -926,208 +926,276 @@ bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /*= 
                               "<p>If you proceed your changes will be discarded.</p>"));
 }
 
-void UIMessageCenter::cannotChangeMediumType(QWidget *pParent,
-                                             const CMedium &medium,
-                                             KMediumType oldMediumType,
-                                             KMediumType newMediumType)
+void UIMessageCenter::cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType,
+                                             QWidget *pParent /*= 0*/)
 {
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("<p>Error changing medium type from <b>%1</b> to <b>%2</b>.</p>")
-                .arg(gpConverter->toString(oldMediumType)).arg(gpConverter->toString(newMediumType)),
+               .arg(gpConverter->toString(oldMediumType)).arg(gpConverter->toString(newMediumType)),
             formatErrorInfo(medium));
 }
 
-bool UIMessageCenter::confirmReleaseMedium(QWidget *pParent,
-                                           const UIMedium &aMedium,
-                                           const QString &strUsage)
+bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, const QString &strUsage, QWidget *pParent /*= 0*/)
 {
-    /** @todo (translation-related): the gender of "the" in translations
-     * will depend on the gender of aMedium.type(). */
-    return messageOkCancel(pParent, MessageType_Question,
-        tr("<p>Are you sure you want to release the %1 "
-            "<nobr><b>%2</b></nobr>?</p>"
-            "<p>This will detach it from the "
-            "following virtual machine(s): <b>%3</b>.</p>")
-            .arg(mediumToAccusative(aMedium.type()))
-            .arg(aMedium.location())
-            .arg(strUsage),
-        0 /* auto-confirm id */,
-        tr("Release", "detach medium"));
-}
-
-bool UIMessageCenter::confirmRemoveMedium(QWidget *pParent,
-                                          const UIMedium &aMedium)
-{
-    /** @todo (translation-related): the gender of "the" in translations
-     * will depend on the gender of aMedium.type(). */
-    QString msg =
-        tr("<p>Are you sure you want to remove the %1 "
-           "<nobr><b>%2</b></nobr> from the list of known media?</p>")
-            .arg(mediumToAccusative(aMedium.type()))
-            .arg(aMedium.location());
-
-    qulonglong caps = 0;
-    QVector<KMediumFormatCapabilities> capabilities;
-    capabilities = aMedium.medium().GetMediumFormat().GetCapabilities();
-    for (int i = 0; i < capabilities.size(); i++)
-        caps |= capabilities[i];
-
-    if (aMedium.type() == UIMediumType_HardDisk &&
-        caps & MediumFormatCapabilities_File)
+    /* Prepare the message: */
+    QString strMessage;
+    switch (medium.type())
     {
-        if (aMedium.state() == KMediumState_Inaccessible)
-            msg +=
-                tr("Note that as this hard disk is inaccessible its "
-                   "storage unit cannot be deleted right now.");
-        else
-            msg +=
-                tr("The next dialog will let you choose whether you also "
-                   "want to delete the storage unit of this hard disk or "
-                   "keep it for later usage.");
+        case UIMediumType_HardDisk:
+        {
+            strMessage = tr("<p>Are you sure you want to release the virtual hard disk <nobr><b>%1</b></nobr>?</p>"
+                            "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>");
+            break;
+        }
+        case UIMediumType_DVD:
+        {
+            strMessage = tr("<p>Are you sure you want to release the virtual optical disk <nobr><b>%1</b></nobr>?</p>"
+                            "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>");
+            break;
+        }
+        case UIMediumType_Floppy:
+        {
+            strMessage = tr("<p>Are you sure you want to release the virtual floppy disk <nobr><b>%1</b></nobr>?</p>"
+                            "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>");
+            break;
+        }
+        default:
+            break;
     }
-    else
-        msg +=
-            tr("<p>Note that the storage unit of this medium will not be "
-               "deleted and that it will be possible to use it later again.</p>");
-
-    return messageOkCancel(pParent, MessageType_Question, msg,
-        "confirmRemoveMedium" /* auto-confirm id */,
-        tr("Remove", "medium"));
+    /* Show the message: */
+    return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Question,
+                           strMessage.arg(medium.location(), strUsage),
+                           0 /* auto-confirm id */, tr("Release", "detach medium"));
 }
 
-int UIMessageCenter::confirmDeleteHardDiskStorage(QWidget *pParent, const QString &strLocation)
+bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pParent /*= 0*/)
 {
-    return message(pParent, MessageType_Question,
-        tr("<p>Do you want to delete the storage unit of the hard disk "
-           "<nobr><b>%1</b></nobr>?</p>"
-           "<p>If you select <b>Delete</b> then the specified storage unit "
-           "will be permanently deleted. This operation <b>cannot be "
-           "undone</b>.</p>"
-           "<p>If you select <b>Keep</b> then the hard disk will be only "
-           "removed from the list of known hard disks, but the storage unit "
-           "will be left untouched which makes it possible to add this hard "
-           "disk to the list later again.</p>")
-        .arg(strLocation),
-        0 /* auto-confirm id */,
-        QIMessageBox::Yes,
-        QIMessageBox::No | QIMessageBox::Default,
-        QIMessageBox::Cancel | QIMessageBox::Escape,
-        tr("Delete", "hard disk storage"),
-        tr("Keep", "hard disk storage"));
+    /* Prepare the message: */
+    QString strMessage;
+    switch (medium.type())
+    {
+        case UIMediumType_HardDisk:
+        {
+            strMessage = tr("<p>Are you sure you want to remove the virtual hard disk "
+                            "<nobr><b>%1</b></nobr> from the list of known media?</p>");
+            /* Compose capabilities flag: */
+            qulonglong caps = 0;
+            QVector<KMediumFormatCapabilities> capabilities;
+            capabilities = medium.medium().GetMediumFormat().GetCapabilities();
+            for (int i = 0; i < capabilities.size(); ++i)
+                caps |= capabilities[i];
+            /* Check capabilities for additional options: */
+            if (caps & MediumFormatCapabilities_File)
+            {
+                if (medium.state() == KMediumState_Inaccessible)
+                    strMessage += tr("<p>Note that as this hard disk is inaccessible its "
+                                     "storage unit cannot be deleted right now.</p>");
+            }
+            break;
+        }
+        case UIMediumType_DVD:
+        {
+            strMessage = tr("<p>Are you sure you want to remove the virtual optical disk "
+                            "<nobr><b>%1</b></nobr> from the list of known media?</p>");
+            strMessage += tr("<p>Note that the storage unit of this medium will not be "
+                             "deleted and that it will be possible to use it later again.</p>");
+            break;
+        }
+        case UIMediumType_Floppy:
+        {
+            strMessage = tr("<p>Are you sure you want to remove the virtual floppy disk "
+                            "<nobr><b>%1</b></nobr> from the list of known media?</p>");
+            strMessage += tr("<p>Note that the storage unit of this medium will not be "
+                             "deleted and that it will be possible to use it later again.</p>");
+            break;
+        }
+        default:
+            break;
+    }
+    /* Show the message: */
+    return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Question,
+                           strMessage.arg(medium.location()),
+                           "confirmMediumRemoval" /* auto-confirm id */, tr("Remove", "medium"));
 }
 
-void UIMessageCenter::cannotDeleteHardDiskStorage(QWidget *pParent,
-                                                  const CMedium &medium,
-                                                  const CProgress &progress)
+int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent /*= 0*/)
 {
-    /* below, we use CMedium (medium) to preserve current error info
-     * for formatErrorInfo() */
-
-    message(pParent, MessageType_Error,
-        tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
-        .arg(CMedium(medium).GetLocation()),
-        !medium.isOk() ? formatErrorInfo(medium) :
-        !progress.isOk() ? formatErrorInfo(progress) :
-        formatErrorInfo(progress.GetErrorInfo()));
+    return message(pParent ? pParent : mainWindowShown(), MessageType_Question,
+                   tr("<p>Do you want to delete the storage unit of the hard disk "
+                      "<nobr><b>%1</b></nobr>?</p>"
+                      "<p>If you select <b>Delete</b> then the specified storage unit "
+                      "will be permanently deleted. This operation <b>cannot be "
+                      "undone</b>.</p>"
+                      "<p>If you select <b>Keep</b> then the hard disk will be only "
+                      "removed from the list of known hard disks, but the storage unit "
+                      "will be left untouched which makes it possible to add this hard "
+                      "disk to the list later again.</p>")
+                      .arg(strLocation),
+                   0 /* auto-confirm id */,
+                   QIMessageBox::Yes,
+                   QIMessageBox::No | QIMessageBox::Default,
+                   QIMessageBox::Cancel | QIMessageBox::Escape,
+                   tr("Delete", "hard disk storage"),
+                   tr("Keep", "hard disk storage"));
 }
 
-void UIMessageCenter::cannotDetachDevice(QWidget *pParent,
-                                         const CMachine &machine,
-                                         UIMediumType type,
-                                         const QString &strLocation,
-                                         const StorageSlot &storageSlot)
+void UIMessageCenter::cannotDeleteHardDiskStorage(const CMedium &medium, const CProgress &progress, QWidget *pParent /*= 0*/)
 {
+    /* Preserve error-info: */
+    QString strErrorInfo = !medium.isOk() ? formatErrorInfo(medium) :
+                           !progress.isOk() ? formatErrorInfo(progress) :
+                           formatErrorInfo(progress.GetErrorInfo());
+    /* Show the message: */
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
+               .arg(medium.GetLocation()),
+            strErrorInfo);
+}
+
+void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent /*= 0*/)
+{
+    /* Preserve error-info: */
+    QString strErrorInfo = formatErrorInfo(machine);
+    /* Prepare the message: */
     QString strMessage;
     switch (type)
     {
         case UIMediumType_HardDisk:
         {
             strMessage = tr("Failed to detach the hard disk (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
+                            .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(machine.GetName());
             break;
         }
         case UIMediumType_DVD:
         {
             strMessage = tr("Failed to detach the CD/DVD device (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
+                            .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(machine.GetName());
             break;
         }
         case UIMediumType_Floppy:
         {
             strMessage = tr("Failed to detach the floppy device (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
+                            .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(machine.GetName());
             break;
         }
         default:
             break;
     }
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error, strMessage, formatErrorInfo(machine));
+    /* Show the message: */
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error, strMessage, strErrorInfo);
 }
 
-int UIMessageCenter::cannotRemountMedium(QWidget *pParent,
-                                         const CMachine &machine,
-                                         const UIMedium &aMedium,
-                                         bool fMount,
-                                         bool fRetry)
+int UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent /*= 0*/)
 {
-    /** @todo (translation-related): the gender of "the" in translations
-     * will depend on the gender of aMedium.type(). */
-    QString text;
-    if (fMount)
+    /* Preserve error-info: */
+    QString strErrorInfo = formatErrorInfo(machine);
+    /* Compose the message: */
+    QString strMessage;
+    switch (medium.type())
     {
-        text = tr("Unable to mount the %1 <nobr><b>%2</b></nobr> on the machine <b>%3</b>.");
-        if (fRetry) text += tr(" Would you like to force mounting of this medium?");
+        case UIMediumType_DVD:
+        {
+            if (fMount)
+            {
+                strMessage = tr("<p>Unable to mount the virtual optical disk <nobr><b>%1</b></nobr> on the machine <b>%2</b>.</p>");
+                if (fRetry)
+                    strMessage += tr("<p>Would you like to try force mounting of this medium?</p>");
+            }
+            else
+            {
+                strMessage = tr("<p>Unable to unmount the virtual optical disk <nobr><b>%1</b></nobr> from the machine <b>%2</b>.</p>");
+                if (fRetry)
+                    strMessage += tr("<p>Would you like to try force unmounting of this medium?</p>");
+            }
+            break;
+        }
+        case UIMediumType_Floppy:
+        {
+            if (fMount)
+            {
+                strMessage = tr("<p>Unable to mount the virtual floppy disk <nobr><b>%1</b></nobr> on the machine <b>%2</b>.</p>");
+                if (fRetry)
+                    strMessage += tr("<p>Would you like to try force mounting of this medium?</p>");
+            }
+            else
+            {
+                strMessage = tr("<p>Unable to unmount the virtual floppy disk <nobr><b>%1</b></nobr> from the machine <b>%2</b>.</p>");
+                if (fRetry)
+                    strMessage += tr("<p>Would you like to try force unmounting of this medium?</p>");
+            }
+            break;
+        }
+        default:
+            break;
     }
-    else
-    {
-        text = tr("Unable to unmount the %1 <nobr><b>%2</b></nobr> from the machine <b>%3</b>.");
-        if (fRetry) text += tr(" Would you like to force unmounting of this medium?");
-    }
+    /* Show the messsage: */
     if (fRetry)
-    {
-        return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Question, text
-            .arg(mediumToAccusative(aMedium.type(), aMedium.isHostDrive()))
-            .arg(aMedium.isHostDrive() ? aMedium.name() : aMedium.location())
-            .arg(CMachine(machine).GetName()),
-            formatErrorInfo(machine),
-            0 /* Auto Confirm ID */,
-            tr("Force Unmount"));
-    }
-    else
-    {
-        return message(pParent ? pParent : mainWindowShown(), MessageType_Error, text
-            .arg(mediumToAccusative(aMedium.type(), aMedium.isHostDrive()))
-            .arg(aMedium.isHostDrive() ? aMedium.name() : aMedium.location())
-            .arg(CMachine(machine).GetName()),
-            formatErrorInfo(machine));
-    }
+        return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Question,
+                               strMessage.arg(medium.isHostDrive() ? medium.name() : medium.location()).arg(machine.GetName()),
+                               strErrorInfo,
+                               0 /* Auto Confirm ID */,
+                               tr("Force Unmount"));
+    return message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+                   strMessage.arg(medium.isHostDrive() ? medium.name() : medium.location()).arg(machine.GetName()),
+                   strErrorInfo);
 }
 
-void UIMessageCenter::cannotOpenMedium(QWidget *pParent,
-                                       const CVirtualBox &vbox,
-                                       UIMediumType type,
-                                       const QString &strLocation)
+void UIMessageCenter::cannotOpenMedium(const CVirtualBox &vbox, UIMediumType type, const QString &strLocation, QWidget *pParent /*= 0*/)
 {
-    /** @todo (translation-related): the gender of "the" in translations
-     * will depend on the gender of aMedium.type(). */
+    /* Prepare the message: */
+    QString strMessage;
+    switch (type)
+    {
+        case UIMediumType_HardDisk:
+        {
+            strMessage = tr("Failed to open the hard disk file <nobr><b>%1</b></nobr>.");
+            break;
+        }
+        case UIMediumType_DVD:
+        {
+            strMessage = tr("Failed to open the optical disk file <nobr><b>%1</b></nobr>.");
+            break;
+        }
+        case UIMediumType_Floppy:
+        {
+            strMessage = tr("Failed to open the floppy disk file <nobr><b>%1</b></nobr>.");
+            break;
+        }
+        default:
+            break;
+    }
+    /* Show the message: */
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-        tr("Failed to open the %1 <nobr><b>%2</b></nobr>.")
-            .arg(mediumToAccusative(type))
-            .arg(strLocation),
-        formatErrorInfo(vbox));
+            strMessage.arg(strLocation), formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotCloseMedium(QWidget *pParent,
-                                        const UIMedium &aMedium,
-                                        const COMResult &rc)
+void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent /*= 0*/)
 {
-    /** @todo (translation-related): the gender of "the" in translations
-     * will depend on the gender of aMedium.type(). */
-    message(pParent, MessageType_Error,
-        tr("Failed to close the %1 <nobr><b>%2</b></nobr>.")
-            .arg(mediumToAccusative(aMedium.type()))
-            .arg(aMedium.location()),
-        formatErrorInfo(rc));
+    /* Prepare the message: */
+    QString strMessage;
+    switch (medium.type())
+    {
+        case UIMediumType_HardDisk:
+        {
+            strMessage = tr("Failed to close the hard disk file <nobr><b>%2</b></nobr>.");
+            break;
+        }
+        case UIMediumType_DVD:
+        {
+            strMessage = tr("Failed to close the optical disk file <nobr><b>%2</b></nobr>.");
+            break;
+        }
+        case UIMediumType_Floppy:
+        {
+            strMessage = tr("Failed to close the floppy disk file <nobr><b>%2</b></nobr>.");
+            break;
+        }
+        default:
+            break;
+    }
+    /* Show the message: */
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            strMessage.arg(medium.location()), formatErrorInfo(rc));
 }
 
 void UIMessageCenter::cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent /* = 0 */)
@@ -2393,26 +2461,6 @@ bool UIMessageCenter::askForOverridingFilesIfExists(const QVector<QString> &strP
         return askForOverridingFiles(existingFiles, pParent);
     else
         return true;
-}
-
-/* static */
-QString UIMessageCenter::mediumToAccusative(UIMediumType type, bool fIsHostDrive /* = false */)
-{
-    QString strType =
-        type == UIMediumType_HardDisk ?
-            tr("hard disk", "failed to mount ...") :
-        type == UIMediumType_DVD && fIsHostDrive ?
-            tr("CD/DVD", "failed to mount ... host-drive") :
-        type == UIMediumType_DVD && !fIsHostDrive ?
-            tr("CD/DVD image", "failed to mount ...") :
-        type == UIMediumType_Floppy && fIsHostDrive ?
-            tr("floppy", "failed to mount ... host-drive") :
-        type == UIMediumType_Floppy && !fIsHostDrive ?
-            tr("floppy image", "failed to mount ...") :
-        QString();
-
-    Assert(!strType.isNull());
-    return strType;
 }
 
 /* static */
