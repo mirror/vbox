@@ -53,6 +53,8 @@ typedef union PDMCRITSECTRW
 VMMR3DECL(int)      PDMR3CritSectRwInit(PVM pVM, PPDMCRITSECTRW pCritSect, RT_SRC_POS_DECL, const char *pszNameFmt, ...);
 VMMR3DECL(int)      PDMR3CritSectRwDelete(PPDMCRITSECTRW pCritSect);
 VMMR3DECL(const char *) PDMR3CritSectRwName(PCPDMCRITSECTRW pCritSect);
+VMMR3DECL(int)      PDMR3CritSectRwEnterSharedEx(PPDMCRITSECTRW pThis, bool fCallRing3);
+VMMR3DECL(int)      PDMR3CritSectRwEnterExclEx(PPDMCRITSECTRW pThis, bool fCallRing3);
 
 VMMDECL(int)        PDMCritSectRwEnterShared(PPDMCRITSECTRW pCritSect, int rcBusy);
 VMMDECL(int)        PDMCritSectRwEnterSharedDebug(PPDMCRITSECTRW pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);

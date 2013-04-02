@@ -80,6 +80,7 @@
 #include <VBox/vmm/cfgm.h>
 #include <VBox/vmm/pdmqueue.h>
 #include <VBox/vmm/pdmcritsect.h>
+#include <VBox/vmm/pdmcritsectrw.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/mm.h>
@@ -2111,6 +2112,26 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
         {
             pVCpu->vmm.s.rcCallRing3 = PDMR3CritSectEnterEx((PPDMCRITSECT)(uintptr_t)pVCpu->vmm.s.u64CallRing3Arg,
                                                             true /*fCallRing3*/);
+            break;
+        }
+
+        /*
+         * Enter a r/w critical section exclusively.
+         */
+        case VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_EXCL:
+        {
+            pVCpu->vmm.s.rcCallRing3 = PDMR3CritSectRwEnterExclEx((PPDMCRITSECTRW)(uintptr_t)pVCpu->vmm.s.u64CallRing3Arg,
+                                                                    true /*fCallRing3*/);
+            break;
+        }
+
+        /*
+         * Enter a r/w critical section shared.
+         */
+        case VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_SHARED:
+        {
+            pVCpu->vmm.s.rcCallRing3 = PDMR3CritSectRwEnterSharedEx((PPDMCRITSECTRW)(uintptr_t)pVCpu->vmm.s.u64CallRing3Arg,
+                                                                    true /*fCallRing3*/);
             break;
         }
 

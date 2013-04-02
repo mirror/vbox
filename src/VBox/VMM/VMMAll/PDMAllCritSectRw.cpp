@@ -206,7 +206,10 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
             if (fTryOnly)
                 return VERR_SEM_BUSY;
 
-            /* Add ourselves to the queue and wait for the direction to change. */
+#if defined(IN_RING3)
+            /*
+             * Add ourselves to the queue and wait for the direction to change.
+             */
             uint64_t c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
             c++;
             Assert(c < RTCSRW_CNT_MASK / 2);
@@ -224,14 +227,14 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
                 for (uint32_t iLoop = 0; ; iLoop++)
                 {
                     int rc;
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+# if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
                     rc = RTLockValidatorRecSharedCheckBlocking(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos, true,
                                                                RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_READ, false);
                     if (RT_SUCCESS(rc))
-#else
+# else
                     RTTHREAD hThreadSelf = RTThreadSelf();
                     RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ, false);
-#endif
+# endif
                     {
                         do
                             rc = SUPSemEventMultiWaitNoResume(pThis->s.CTX_SUFF(pVM)->pSession,
@@ -294,11 +297,27 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
                     u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
                 }
 
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+# if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
                 RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
-#endif
+# endif
                 break;
             }
+
+#else
+            /*
+             * We cannot call SUPSemEventMultiWaitNoResume in this context. Go
+             * back to ring-3 and do it there or return rcBusy.
+             */
+            if (rcBusy == VINF_SUCCESS)
+            {
+                PVM     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
+                PVMCPU  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+                /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
+                 *        back to ring-3. Goes for both kind of crit sects. */
+                return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_SHARED, MMHyperCCToR3(pVM, pThis));
+            }
+            return rcBusy;
+#endif
         }
 
         if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
@@ -341,7 +360,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
  */
 VMMDECL(int) PDMCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy)
 {
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+#if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     return pdmCritSectRwEnterShared(pThis, rcBusy, NULL, false /*fTryOnly*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
@@ -374,8 +393,12 @@ VMMDECL(int) PDMCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy)
  */
 VMMDECL(int) PDMCritSectRwEnterSharedDebug(PPDMCRITSECTRW pThis, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
+#if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
+    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, NULL, false /*fTryOnly*/);
+#else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return pdmCritSectRwEnterShared(pThis, rcBusy, &SrcPos, false /*fTryOnly*/);
+#endif
 }
 
 
@@ -400,7 +423,7 @@ VMMDECL(int) PDMCritSectRwEnterSharedDebug(PPDMCRITSECTRW pThis, int rcBusy, RTH
  */
 VMMDECL(int) PDMCritSectRwTryEnterShared(PPDMCRITSECTRW pThis)
 {
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+#if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, NULL, true /*fTryOnly*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
@@ -430,9 +453,42 @@ VMMDECL(int) PDMCritSectRwTryEnterShared(PPDMCRITSECTRW pThis)
  */
 VMMDECL(int) PDMCritSectRwTryEnterSharedDebug(PPDMCRITSECTRW pThis, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
+#if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
+    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, NULL, true /*fTryOnly*/);
+#else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, &SrcPos, true /*fTryOnly*/);
+#endif
 }
+
+
+#ifdef IN_RING3
+/**
+ * Enters a PDM read/write critical section with shared (read) access.
+ *
+ * @returns VINF_SUCCESS if entered successfully.
+ * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
+ *          during the operation.
+ *
+ * @param   pThis       Pointer to the read/write critical section.
+ * @param   fCallRing3  Whether this is a VMMRZCallRing3()request.
+ */
+VMMR3DECL(int) PDMR3CritSectRwEnterSharedEx(PPDMCRITSECTRW pThis, bool fCallRing3)
+{
+    int rc = pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, NULL, false /*fTryAgain*/);
+    if (    rc == VINF_SUCCESS
+        &&  fCallRing3
+        &&  pThis->s.Core.pValidatorRead)
+    {
+        Assert(pThis->s.Core.pValidatorWrite);
+        if (pThis->s.Core.hNativeWriter == NIL_RTNATIVETHREAD)
+            RTLockValidatorRecSharedCheckAndRelease(pThis->s.Core.pValidatorRead, NIL_RTTHREAD);
+        else
+            RTLockValidatorRecExclUnwindMixed(pThis->s.Core.pValidatorWrite, &pThis->s.Core.pValidatorRead->Core);
+    }
+    return rc;
+}
+#endif /* IN_RING3 */
 
 
 /**
@@ -483,7 +539,8 @@ VMMDECL(int) PDMCritSectRwLeaveShared(PPDMCRITSECTRW pThis)
             }
             else
             {
-                /* Reverse the direction and signal the reader threads. */
+#if defined(IN_RING3)
+                /* Reverse the direction and signal the writer threads. */
                 u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_DIR_MASK);
                 u64State |= RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT;
                 if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
@@ -492,6 +549,19 @@ VMMDECL(int) PDMCritSectRwLeaveShared(PPDMCRITSECTRW pThis)
                     AssertRC(rc);
                     break;
                 }
+#else
+                /* Queue the exit request (ring-3). */
+                PVM         pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
+                PVMCPU      pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
+                uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwShrdLeaves++;
+                LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3\n", i, pThis));
+                AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves));
+                pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i] = MMHyperCCToR3(pVM, pThis);
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+                STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
+                STAM_REL_COUNTER_INC(&pThis->s.StatContentionRZLeaveShared);
+#endif
             }
 
             ASMNopPause();
@@ -613,19 +683,23 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
      * are threads already waiting.
      */
     bool fDone = (u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT)
+#if defined(IN_RING3)
               && (  ((u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT) == 1
-                  || fTryOnly);
+                  || fTryOnly)
+#endif
+               ;
     if (fDone)
         ASMAtomicCmpXchgHandle(&pThis->s.Core.hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
     if (!fDone)
     {
+#if defined(IN_RING3)
         /*
          * Wait for our turn.
          */
         for (uint32_t iLoop = 0; ; iLoop++)
         {
             int rc;
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+# if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
             if (!fTryOnly)
             {
                 if (hThreadSelf == NIL_RTTHREAD)
@@ -636,10 +710,10 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
             else
                 rc = VINF_SUCCESS;
             if (RT_SUCCESS(rc))
-#else
+# else
             RTTHREAD hThreadSelf = RTThreadSelf();
             RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE, false);
-#endif
+# endif
             {
                 do
                     rc = SUPSemEventWaitNoResume(pThis->s.CTX_SUFF(pVM)->pSession,
@@ -675,6 +749,32 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
             }
             AssertMsg(iLoop < 1000, ("%u\n", iLoop)); /* may loop a few times here... */
         }
+
+#else
+        /* We cannot call SUPSemEventWaitNoResume in this context. Go back to
+           ring-3 and do it there or return rcBusy. */
+        for (;;)
+        {
+            u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
+            uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT; Assert(c > 0);
+            c--;
+            u64State &= ~RTCSRW_CNT_WR_MASK;
+            u64State |= c << RTCSRW_CNT_WR_SHIFT;
+            if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
+                break;
+        }
+
+        if (rcBusy == VINF_SUCCESS)
+        {
+            PVM     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
+            PVMCPU  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+            /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
+             *        back to ring-3. Goes for both kind of crit sects. */
+            return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_EXCL, MMHyperCCToR3(pVM, pThis));
+        }
+        return rcBusy;
+
+#endif
     }
 
     /*
@@ -714,7 +814,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
  */
 VMMDECL(int) PDMCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy)
 {
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+#if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     return pdmCritSectRwEnterExcl(pThis, rcBusy, NULL, false /*fTryAgain*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
@@ -748,8 +848,12 @@ VMMDECL(int) PDMCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy)
  */
 VMMDECL(int) PDMCritSectRwEnterExclDebug(PPDMCRITSECTRW pThis, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
+#if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
+    return pdmCritSectRwEnterExcl(pThis, rcBusy, NULL, false /*fTryAgain*/);
+#else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return pdmCritSectRwEnterExcl(pThis, rcBusy, &SrcPos, false /*fTryAgain*/);
+#endif
 }
 
 
@@ -770,7 +874,7 @@ VMMDECL(int) PDMCritSectRwEnterExclDebug(PPDMCRITSECTRW pThis, int rcBusy, RTHCU
  */
 VMMDECL(int) PDMCritSectRwTryEnterExcl(PPDMCRITSECTRW pThis)
 {
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+#if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
     return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, NULL, true /*fTryAgain*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
@@ -800,9 +904,37 @@ VMMDECL(int) PDMCritSectRwTryEnterExcl(PPDMCRITSECTRW pThis)
  */
 VMMDECL(int) PDMCritSectRwTryEnterExclDebug(PPDMCRITSECTRW pThis, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
+#if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
+    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, NULL, true /*fTryAgain*/);
+#else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, &SrcPos, true /*fTryAgain*/);
+#endif
 }
+
+
+#ifdef IN_RING3
+/**
+ * Enters a PDM read/write critical section with exclusive (write) access.
+ *
+ * @returns VINF_SUCCESS if entered successfully.
+ * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
+ *          during the operation.
+ *
+ * @param   pThis       Pointer to the read/write critical section.
+ * @param   fCallRing3  Whether this is a VMMRZCallRing3()request.
+ */
+VMMR3DECL(int) PDMR3CritSectRwEnterExclEx(PPDMCRITSECTRW pThis, bool fCallRing3)
+{
+    int rc = pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, NULL, false /*fTryAgain*/);
+    if (    rc == VINF_SUCCESS
+        &&  fCallRing3
+        &&  pThis->s.Core.pValidatorWrite
+        &&  pThis->s.Core.pValidatorWrite->hThread != NIL_RTTHREAD)
+        RTLockValidatorRecExclReleaseOwnerUnchecked(pThis->s.Core.pValidatorWrite);
+    return rc;
+}
+#endif /* IN_RING3 */
 
 
 /**
@@ -841,9 +973,10 @@ VMMDECL(int) PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pThis)
         /*
          * Update the state.
          */
+#if defined(IN_RING3)
         ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 0);
-        ASMAtomicWriteHandle(&pThis->s.Core.hNativeWriter, NIL_RTNATIVETHREAD);
         STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
+        ASMAtomicWriteHandle(&pThis->s.Core.hNativeWriter, NIL_RTNATIVETHREAD);
 
         for (;;)
         {
@@ -889,6 +1022,22 @@ VMMDECL(int) PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pThis)
             if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
                 return VERR_SEM_DESTROYED;
         }
+#else
+        /*
+         * We cannot call neither SUPSemEventSignal nor SUPSemEventMultiSignal,
+         * so queue the exit request (ring-3).
+         */
+        PVM         pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
+        PVMCPU      pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
+        uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwExclLeaves++;
+        LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3\n", i, pThis));
+        AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectLeaves));
+        pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] = MMHyperCCToR3(pVM, pThis);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+        STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
+        STAM_REL_COUNTER_INC(&pThis->s.StatContentionRZLeaveExcl);
+#endif
     }
     else
     {
