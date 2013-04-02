@@ -691,6 +691,8 @@ void UISelectorWindow::sltPerformPowerOffAction()
         CConsole console = session.GetConsole();
         /* Power Off: */
         console.PowerDown();
+        if (!console.isOk())
+            msgCenter().cannotStopMachine(console);
 
         /* Unlock machine finally: */
         session.UnlockMachine();

@@ -587,7 +587,8 @@ void UIMessageCenter::cannotRemoveMachine(const CMachine &machine)
     /* Show the message: */
     message(mainWindowShown(),
             MessageType_Error,
-            tr("Failed to remove the virtual machine <b>%1</b>.").arg(machine.GetName()),
+            tr("Failed to remove the virtual machine <b>%1</b>.")
+               .arg(machine.GetName()),
             !machine.isOk() ? formatErrorInfo(machine) : formatErrorInfo(res));
 }
 
@@ -595,8 +596,23 @@ void UIMessageCenter::cannotRemoveMachine(const CMachine &machine, const CProgre
 {
     message(mainWindowShown(),
             MessageType_Error,
-            tr("Failed to remove the virtual machine <b>%1</b>.").arg(machine.GetName()),
+            tr("Failed to remove the virtual machine <b>%1</b>.")
+               .arg(machine.GetName()),
             formatErrorInfo(progress.GetErrorInfo()));
+}
+
+bool UIMessageCenter::remindAboutInaccessibleMedia()
+{
+    return messageOkCancel(mainWindowShown(), MessageType_Warning,
+                           tr("<p>One or more virtual hard disks, CD/DVD or "
+                              "floppy media are not currently accessible. As a result, you will "
+                              "not be able to operate virtual machines that use these media until "
+                              "they become accessible later.</p>"
+                              "<p>Press <b>Check</b> to open the Virtual Media Manager window and "
+                              "see what media are inaccessible, or press <b>Ignore</b> to "
+                              "ignore this message.</p>"),
+                           "remindAboutInaccessibleMedia",
+                           tr("Check", "inaccessible media message box"));
 }
 
 bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames)
@@ -611,65 +627,58 @@ bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames)
                            tr("Discard", "saved state"));
 }
 
+bool UIMessageCenter::confirmVMReset(const QString &strNames)
+{
+    return messageOkCancel(mainWindowShown(), MessageType_Question,
+                           tr("<p>Do you really want to reset the following virtual machines?</p>"
+                              "<p><b>%1</b></p><p>This will cause any unsaved data "
+                              "in applications running inside it to be lost.</p>")
+                              .arg(strNames),
+                           "confirmVMReset" /* pcszAutoConfirmId */,
+                           tr("Reset", "machine"));
+}
+
+bool UIMessageCenter::confirmVMACPIShutdown(const QString &strNames)
+{
+    return messageOkCancel(mainWindowShown(), MessageType_Question,
+                           tr("<p>Do you really want to send an ACPI shutdown signal "
+                              "to the following virtual machines?</p><p><b>%1</b></p>")
+                              .arg(strNames),
+                           "confirmVMACPIShutdown" /* pcszAutoConfirmId */,
+                           tr("ACPI Shutdown", "machine"));
+}
+
+bool UIMessageCenter::confirmVMPowerOff(const QString &strNames)
+{
+    return messageOkCancel(mainWindowShown(), MessageType_Question,
+                           tr("<p>Do you really want to power off the following virtual machines?</p>"
+                              "<p><b>%1</b></p><p>This will cause any unsaved data in applications "
+                              "running inside it to be lost.</p>")
+                              .arg(strNames),
+                           "confirmVMPowerOff" /* pcszAutoConfirmId */,
+                           tr("Power Off", "machine"));
+}
+
 void UIMessageCenter::cannotDiscardSavedState(const CConsole &console)
 {
     /* Preserve error-info: */
     COMResult res(console);
     /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
-            tr("Failed to discard the saved state of the virtual machine <b>%1</b>.").arg(console.GetMachine().GetName()),
+            tr("Failed to discard the saved state of the virtual machine <b>%1</b>.")
+               .arg(console.GetMachine().GetName()),
             formatErrorInfo(res));
 }
 
-bool UIMessageCenter::remindAboutInaccessibleMedia()
+void UIMessageCenter::cannotStopMachine(const CConsole &console)
 {
-    int rc = message(&vboxGlobal().selectorWnd(), MessageType_Warning,
-        tr("<p>One or more virtual hard disks, CD/DVD or "
-           "floppy media are not currently accessible. As a result, you will "
-           "not be able to operate virtual machines that use these media until "
-           "they become accessible later.</p>"
-           "<p>Press <b>Check</b> to open the Virtual Media Manager window and "
-           "see what media are inaccessible, or press <b>Ignore</b> to "
-           "ignore this message.</p>"),
-        "remindAboutInaccessibleMedia",
-        QIMessageBox::Ok | QIMessageBox::Default,
-        QIMessageBox::Ignore | QIMessageBox::Escape,
-        0,
-        tr("Check", "inaccessible media message box"));
-
-    return rc == QIMessageBox::Ok; /* implies !AutoConfirmed */
-}
-
-bool UIMessageCenter::confirmVMReset(const QString &strNames)
-{
-    return messageOkCancel(mainMachineWindowShown(), MessageType_Question,
-        tr("<p>Do you really want to reset the following virtual machines?</p>"
-           "<p><b>%1</b></p><p>This will cause any unsaved data "
-           "in applications running inside it to be lost.</p>")
-           .arg(strNames),
-        "confirmVMReset" /* pcszAutoConfirmId */,
-        tr("Reset", "machine"));
-}
-
-bool UIMessageCenter::confirmVMACPIShutdown(const QString &strNames)
-{
-    return messageOkCancel(mainMachineWindowShown(), MessageType_Question,
-        tr("<p>Do you really want to send an ACPI shutdown signal "
-           "to the following virtual machines?</p><p><b>%1</b></p>")
-           .arg(strNames),
-        "confirmVMACPIShutdown" /* pcszAutoConfirmId */,
-        tr("ACPI Shutdown", "machine"));
-}
-
-bool UIMessageCenter::confirmVMPowerOff(const QString &strNames)
-{
-    return messageOkCancel(mainMachineWindowShown(), MessageType_Question,
-        tr("<p>Do you really want to power off the following virtual machines?</p>"
-           "<p><b>%1</b></p><p>This will cause any unsaved data in applications "
-           "running inside it to be lost.</p>")
-           .arg(strNames),
-        "confirmVMPowerOff" /* pcszAutoConfirmId */,
-        tr("Power Off", "machine"));
+    /* Preserve error-info: */
+    COMResult res(console);
+    /* Show the message: */
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to stop the virtual machine <b>%1</b>.")
+               .arg(console.GetMachine().GetName()),
+            formatErrorInfo(res));
 }
 
 int UIMessageCenter::askAboutSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot)
@@ -1670,17 +1679,6 @@ void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress)
             .arg(console.GetMachine().GetName()),
         formatErrorInfo(progress.GetErrorInfo())
     );
-}
-
-void UIMessageCenter::cannotStopMachine(const CConsole &console)
-{
-    /* preserve the current error info before calling the object again */
-    COMResult res(console);
-
-    message(mainWindowShown(), MessageType_Error,
-        tr("Failed to stop the virtual machine <b>%1</b>.")
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(res));
 }
 
 void UIMessageCenter::cannotStopMachine(const CProgress &progress)
