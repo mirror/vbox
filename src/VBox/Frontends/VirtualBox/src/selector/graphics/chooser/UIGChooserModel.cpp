@@ -1456,37 +1456,48 @@ void UIGChooserModel::unregisterMachines(const QStringList &ids)
             machines << machine;
     }
 
-    /* Show machine remove dialog: */
-    int rc = msgCenter().confirmMachineDeletion(machines);
-    if (rc != QIMessageBox::Cancel)
+    /* Confirm machine removal: */
+    int iResultCode = msgCenter().confirmMachineRemoval(machines);
+    if (iResultCode == QIMessageBox::Cancel)
+        return;
+
+    /* For every selected item: */
+    for (int iMachineIndex = 0; iMachineIndex < machines.size(); ++iMachineIndex)
     {
-        /* For every selected item: */
-        foreach (CMachine machine, machines)
+        /* Get iterated machine: */
+        CMachine &machine = machines[iMachineIndex];
+        if (iResultCode == QIMessageBox::Yes)
         {
-            if (rc == QIMessageBox::Yes)
+            /* Unregister machine first: */
+            CMediumVector mediums = machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
+            if (!machine.isOk())
             {
-                /* Unregister and cleanup machine's data & hard-disks: */
-                CMediumVector mediums = machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
-                if (machine.isOk())
-                {
-                    /* Delete machine hard-disks: */
-                    CProgress progress = machine.DeleteConfig(mediums);
-                    if (machine.isOk())
-                    {
-                        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_delete_90px.png", msgCenter().mainWindowShown());
-                        if (progress.GetResultCode() != 0)
-                            msgCenter().cannotDeleteMachine(machine, progress);
-                    }
-                }
-                if (!machine.isOk())
-                    msgCenter().cannotDeleteMachine(machine);
+                msgCenter().cannotDeleteMachine(machine);
+                continue;
             }
-            else
+            /* Prepare cleanup progress: */
+            CProgress progress = machine.DeleteConfig(mediums);
+            if (!machine.isOk())
             {
-                /* Just unregister machine: */
-                machine.Unregister(KCleanupMode_DetachAllReturnNone);
-                if (!machine.isOk())
-                    msgCenter().cannotDeleteMachine(machine);
+                msgCenter().cannotDeleteMachine(machine);
+                continue;
+            }
+            /* And show cleanup progress finally: */
+            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_delete_90px.png");
+            if (progress.GetResultCode() != 0)
+            {
+                msgCenter().cannotDeleteMachine(machine, progress);
+                continue;
+            }
+        }
+        else
+        {
+            /* Just unregister machine: */
+            machine.Unregister(KCleanupMode_DetachAllReturnNone);
+            if (!machine.isOk())
+            {
+                msgCenter().cannotDeleteMachine(machine);
+                continue;
             }
         }
     }

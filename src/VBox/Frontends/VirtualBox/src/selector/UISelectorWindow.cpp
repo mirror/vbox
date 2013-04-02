@@ -354,7 +354,7 @@ void UISelectorWindow::sltShowAddMachineDialog(const QString &strFileName /* = Q
     CMachine newMachine = vbox.OpenMachine(strTmpFile);
     if (!vbox.isOk() || newMachine.isNull())
     {
-        msgCenter().cannotOpenMachine(this, strTmpFile, vbox);
+        msgCenter().cannotOpenMachine(vbox, strTmpFile);
         return;
     }
 
@@ -362,7 +362,7 @@ void UISelectorWindow::sltShowAddMachineDialog(const QString &strFileName /* = Q
     CMachine oldMachine = vbox.FindMachine(newMachine.GetId());
     if (!oldMachine.isNull())
     {
-        msgCenter().cannotReregisterMachine(this, strTmpFile, oldMachine.GetName());
+        msgCenter().cannotReregisterExistingMachine(strTmpFile, oldMachine.GetName());
         return;
     }
 
