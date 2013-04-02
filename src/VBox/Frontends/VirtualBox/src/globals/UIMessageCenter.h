@@ -139,13 +139,15 @@ public:
                          const QString &strDetails = QString(),
                          const char *pcszAutoConfirmId = 0,
                          const QString &strOkButtonText = QString(),
-                         const QString &strCancelButtonText = QString()) const
+                         const QString &strCancelButtonText = QString(),
+                         bool fOkByDefault = true) const
     {
+        int iOkButton = fOkByDefault ? QIMessageBox::Ok | QIMessageBox::Default :
+                                       QIMessageBox::Ok;
+        int iCancelButton = fOkByDefault ? QIMessageBox::Cancel | QIMessageBox::Escape :
+                                           QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default;
         return (message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
-                        QIMessageBox::Ok | QIMessageBox::Default,
-                        QIMessageBox::Cancel | QIMessageBox::Escape,
-                        0,
-                        strOkButtonText, strCancelButtonText, QString()) &
+                        iOkButton, iCancelButton, 0, strOkButtonText, strCancelButtonText, QString()) &
                 QIMessageBox::ButtonMask) == QIMessageBox::Ok;
     }
 
@@ -155,10 +157,11 @@ public:
                          const QString &strMessage,
                          const char *pcszAutoConfirmId,
                          const QString &strOkButtonText = QString(),
-                         const QString &strCancelButtonText = QString()) const
+                         const QString &strCancelButtonText = QString(),
+                         bool fOkByDefault = true) const
     {
-        return messageOkCancel(pParent, type, strMessage, QString(),
-                               pcszAutoConfirmId, strOkButtonText, strCancelButtonText);
+        return messageOkCancel(pParent, type, strMessage, QString(), pcszAutoConfirmId,
+                               strOkButtonText, strCancelButtonText, fOkByDefault);
     }
 
     /* API: Alert providing stuff: One more main function: */

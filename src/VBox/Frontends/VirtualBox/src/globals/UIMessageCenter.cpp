@@ -616,7 +616,7 @@ bool UIMessageCenter::remindAboutInaccessibleMedia() const
                               "see what media are inaccessible, or press <b>Ignore</b> to "
                               "ignore this message.</p>"),
                            "remindAboutInaccessibleMedia",
-                           tr("Check", "inaccessible media message box"));
+                           tr("Check", "inaccessible media message box"), tr("Cancel"), false);
 }
 
 bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames) const
