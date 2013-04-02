@@ -205,7 +205,7 @@ public:
     HRESULT onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
     HRESULT onUSBDeviceDetach(IN_BSTR aId, IVirtualBoxErrorInfo *aError);
     HRESULT onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
-    HRESULT onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove);
+    HRESULT onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent);
     HRESULT getGuestProperty(IN_BSTR aKey, BSTR *aValue, LONG64 *aTimestamp, BSTR *aFlags);
     HRESULT setGuestProperty(IN_BSTR aKey, IN_BSTR aValue, IN_BSTR aFlags);
     HRESULT enumerateGuestProperties(IN_BSTR aPatterns,
@@ -620,15 +620,17 @@ private:
                                                  unsigned uInstance,
                                                  StorageBus_T enmBus,
                                                  bool fUseHostIOCache,
-                                                 IMediumAttachment *aMediumAtt);
+                                                 IMediumAttachment *aMediumAtt,
+                                                 bool fSilent);
     static DECLCALLBACK(int) detachStorageDevice(Console *pThis,
                                                  PUVM pUVM,
                                                  const char *pcszDevice,
                                                  unsigned uInstance,
                                                  StorageBus_T enmBus,
-                                                 IMediumAttachment *aMediumAtt);
-    HRESULT doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PUVM pUVM);
-    HRESULT doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PUVM pUVM);
+                                                 IMediumAttachment *aMediumAtt,
+                                                 bool fSilent);
+    HRESULT doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PUVM pUVM, bool fSilent);
+    HRESULT doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PUVM pUVM, bool fSilent);
 
     static DECLCALLBACK(int)    fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser);
 

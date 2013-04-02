@@ -3914,10 +3914,11 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
  *
  * @param aMediumAttachment The medium attachment which is added.
  * @param pUVM              Safe VM handle.
+ * @param fSilent           Flag whether to notify the guest about the attached device.
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PUVM pUVM)
+HRESULT Console::doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PUVM pUVM, bool fSilent)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -3987,14 +3988,15 @@ HRESULT Console::doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PUV
                            0 /* no wait! */,
                            VMREQFLAGS_VBOX_STATUS,
                            (PFNRT)Console::attachStorageDevice,
-                           7,
+                           8,
                            this,
                            pUVM,
                            pszDevice,
                            uInstance,
                            enmBus,
                            fUseHostIOCache,
-                           aMediumAttachment);
+                           aMediumAttachment,
+                           fSilent);
 
     /* release the lock before waiting for a result (EMT will call us back!) */
     alock.release();
@@ -4034,6 +4036,7 @@ HRESULT Console::doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PUV
  * @param   pUVM            The VM handle.
  * @param   pcszDevice      The PDM device name.
  * @param   uInstance       The PDM device instance.
+ * @param   fSilent         Flag whether to inform the guest about the attached device.
  *
  * @thread  EMT
  */
@@ -4043,7 +4046,8 @@ DECLCALLBACK(int) Console::attachStorageDevice(Console *pConsole,
                                                unsigned uInstance,
                                                StorageBus_T enmBus,
                                                bool fUseHostIOCache,
-                                               IMediumAttachment *aMediumAtt)
+                                               IMediumAttachment *aMediumAtt,
+                                               bool fSilent)
 {
     LogFlowFunc(("pConsole=%p uInstance=%u pszDevice=%p:{%s} enmBus=%u, aMediumAtt=%p\n",
                  pConsole, uInstance, pcszDevice, pcszDevice, enmBus, aMediumAtt));
@@ -4117,7 +4121,7 @@ DECLCALLBACK(int) Console::attachStorageDevice(Console *pConsole,
                                              NULL /* phrc */,
                                              true /* fAttachDetach */,
                                              false /* fForceUnmount */,
-                                             true   /* fHotplug */,
+                                             !fSilent /* fHotplug */,
                                              pUVM,
                                              NULL /* paLedDevType */);
     /** @todo this dumps everything attached to this device instance, which
@@ -4159,10 +4163,11 @@ DECLCALLBACK(int) Console::attachStorageDevice(Console *pConsole,
  *
  * @param aMediumAttachment The medium attachment which is added.
  * @param pUVM              Safe VM handle.
+ * @param fSilent           Flag whether to notify the guest about the detached device.
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PUVM pUVM)
+HRESULT Console::doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PUVM pUVM, bool fSilent)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -4229,13 +4234,14 @@ HRESULT Console::doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PUV
                            0 /* no wait! */,
                            VMREQFLAGS_VBOX_STATUS,
                            (PFNRT)Console::detachStorageDevice,
-                           6,
+                           7,
                            this,
                            pUVM,
                            pszDevice,
                            uInstance,
                            enmBus,
-                           aMediumAttachment);
+                           aMediumAttachment,
+                           fSilent);
 
     /* release the lock before waiting for a result (EMT will call us back!) */
     alock.release();
@@ -4274,6 +4280,7 @@ HRESULT Console::doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PUV
  * @param   pUVM            The VM handle.
  * @param   pcszDevice      The PDM device name.
  * @param   uInstance       The PDM device instance.
+ * @param   fSilent         Flag whether to notify the guest about the detached device.
  *
  * @thread  EMT
  */
@@ -4282,7 +4289,8 @@ DECLCALLBACK(int) Console::detachStorageDevice(Console *pConsole,
                                                const char *pcszDevice,
                                                unsigned uInstance,
                                                StorageBus_T enmBus,
-                                               IMediumAttachment *pMediumAtt)
+                                               IMediumAttachment *pMediumAtt,
+                                               bool fSilent)
 {
     LogFlowFunc(("pConsole=%p uInstance=%u pszDevice=%p:{%s} enmBus=%u, pMediumAtt=%p\n",
                  pConsole, uInstance, pcszDevice, pcszDevice, enmBus, pMediumAtt));
@@ -4362,7 +4370,12 @@ DECLCALLBACK(int) Console::detachStorageDevice(Console *pConsole,
     pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
     if (pLunL0)
     {
-        rc = PDMR3DeviceDetach(pUVM, pcszDevice, uInstance, uLUN, 0);
+        uint32_t fFlags = 0;
+
+        if (fSilent)
+            fFlags |= PDM_TACH_FLAGS_NOT_HOT_PLUG;
+
+        rc = PDMR3DeviceDetach(pUVM, pcszDevice, uInstance, uLUN, fFlags);
         if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
             rc = VINF_SUCCESS;
         AssertRCReturn(rc, rc);
@@ -5367,7 +5380,7 @@ HRESULT Console::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove)
+HRESULT Console::onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent)
 {
     LogFlowThisFunc(("\n"));
 
@@ -5381,15 +5394,15 @@ HRESULT Console::onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOO
     if (ptrVM.isOk())
     {
         if (aRemove)
-            rc = doStorageDeviceDetach(aMediumAttachment, ptrVM.rawUVM());
+            rc = doStorageDeviceDetach(aMediumAttachment, ptrVM.rawUVM(), aSilent);
         else
-            rc = doStorageDeviceAttach(aMediumAttachment, ptrVM.rawUVM());
+            rc = doStorageDeviceAttach(aMediumAttachment, ptrVM.rawUVM(), aSilent);
         ptrVM.release();
     }
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        fireStorageDeviceChangedEvent(mEventSource, aMediumAttachment, aRemove);
+        fireStorageDeviceChangedEvent(mEventSource, aMediumAttachment, aRemove, aSilent);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;

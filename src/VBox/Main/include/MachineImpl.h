@@ -721,7 +721,7 @@ public:
     virtual HRESULT onClipboardModeChange(ClipboardMode_T /* aClipboardMode */) { return S_OK; }
     virtual HRESULT onDragAndDropModeChange(DragAndDropMode_T /* aDragAndDropMode */) { return S_OK; }
     virtual HRESULT onBandwidthGroupChange(IBandwidthGroup * /* aBandwidthGroup */) { return S_OK; }
-    virtual HRESULT onStorageDeviceChange(IMediumAttachment * /* mediumAttachment */, BOOL /* remove */) { return S_OK; }
+    virtual HRESULT onStorageDeviceChange(IMediumAttachment * /* mediumAttachment */, BOOL /* remove */, BOOL /* silent */) { return S_OK; }
 
     HRESULT saveRegistryEntry(settings::MachineRegistryEntry &data);
 
@@ -1110,7 +1110,7 @@ public:
     HRESULT onClipboardModeChange(ClipboardMode_T aClipboardMode);
     HRESULT onDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode);
     HRESULT onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
-    HRESULT onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove);
+    HRESULT onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent);
 
     bool hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
 

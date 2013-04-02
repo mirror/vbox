@@ -1338,7 +1338,7 @@
     </attribute>
     <attribute name="gateway" type="wstring" readonly="yes">
       <desc>
-        This attribute is read-only. It's recalculated on changing 
+        This attribute is read-only. It's recalculated on changing
         network attribute (low address of network + 1).
       </desc>
     </attribute>
@@ -1356,13 +1356,13 @@
     <attribute name="needDhcpServer" type="boolean"/>
     <attribute name="eventSource" type="IEventSource" readonly="yes"/>
     <attribute name="portForwardRules4" type="wstring" readonly="yes" safearray="yes">
-      <desc>Array of NAT port-forwarding rules in string representation, 
-      in the following format: 
+      <desc>Array of NAT port-forwarding rules in string representation,
+      in the following format:
       "name:protocolid:[host ip]:host port:[guest ip]:guest port".
       </desc>
     </attribute>
     <attribute name="portForwardRules6" type="wstring" readonly="yes" safearray="yes">
-      <desc>Array of NAT port-forwarding rules in string representation, in the 
+      <desc>Array of NAT port-forwarding rules in string representation, in the
       following format: "name:protocolid:[host ip]:host port:[guest ip]:guest port".
       </desc>
     </attribute>
@@ -1373,8 +1373,8 @@
         <desc>Protocol handled with the rule.</desc>
       </param>
       <param name="hostIP" type="wstring" dir="in">
-        <desc>IP of the host interface to which the rule should apply. 
-        An empty ip address is acceptable, in which case the NAT engine 
+        <desc>IP of the host interface to which the rule should apply.
+        An empty ip address is acceptable, in which case the NAT engine
         binds the handling socket to any interface.
         </desc>
       </param>
@@ -1382,7 +1382,7 @@
         <desc>The port number to listen on.</desc>
       </param>
       <param name="guestIP" type="wstring" dir="in">
-        <desc>The IP address of the guest which the NAT engine will forward 
+        <desc>The IP address of the guest which the NAT engine will forward
         matching packets to. An empty IP address is not acceptable.</desc>
         </param>
         <param name="guestPort" type="unsigned short" dir="in">
@@ -2365,15 +2365,15 @@
 
     <!-- bunch of metods to create NAT -->
     <method name="createNATNetwork">
-      <!-- Here we create a record in NAT network array with name 
-           and gateway/network parameters this information should 
-           be enough for VBoxNet[Lwip]NAT and VBoxNetDHCP for 
-           servicing the guests. 
+      <!-- Here we create a record in NAT network array with name
+           and gateway/network parameters this information should
+           be enough for VBoxNet[Lwip]NAT and VBoxNetDHCP for
+           servicing the guests.
       -->
       <param name="networkName" type="wstring" dir="in"/>
       <param name="network" type="INATNetwork" dir="return"/>
     </method>
- 
+
      <!--
           Returns the NATNetwork by name, e.g. for adding porforward rule or delition.
       -->
@@ -9134,7 +9134,7 @@
       <desc>Wait for the next guest session status change.</desc>
     </const>
   </enum>
-  
+
   <enum
     name="GuestSessionWaitResult"
     uuid="c0f6a8a5-fdb6-42bf-a582-56c6f82bcd2d"
@@ -9145,7 +9145,7 @@
       can vary based on the session's current status.
 
       To wait for a guest session to terminate after it has been
-      created by <link to="IGuest::createSession"/> one would specify 
+      created by <link to="IGuest::createSession"/> one would specify
       GuestSessionWaitResult_Terminate.
     </desc>
 
@@ -9181,7 +9181,7 @@
       </desc>
     </const>
   </enum>
-  
+
   <enum
     name="FileSeekType"
     uuid="1b73f4f3-3515-4073-a506-76878d9e2541"
@@ -10409,7 +10409,7 @@
         <desc>Symbolic link to remove.</desc>
       </param>
     </method>
-    
+
     <method name="waitFor">
       <desc>
         Waits for one more events to happen.
@@ -16823,6 +16823,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="remove" type="boolean" dir="in">
         <desc>TRUE if the device is removed, FALSE if it was added.</desc>
       </param>
+      <param name="silent" type="boolean" dir="in">
+        <desc>TRUE if the device is is silently reconfigured without
+          notifying the guest about it.</desc>
+      </param>
     </method>
 
     <method name="onClipboardModeChange">
@@ -20305,7 +20309,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IStorageDeviceChangedEvent" extends="IEvent"
-    uuid="8a5c2dce-e341-49d4-afce-c95979f7d70c"
+    uuid="232e9151-ae84-4b8e-b0f3-5c20c35caac9"
     wsmap="managed" autogen="VBoxEvent" id="OnStorageDeviceChanged"
     >
     <desc>
@@ -20323,6 +20327,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Flag whether the device was removed or added to the VM.
       </desc>
     </attribute>
+    <attribute name="silent" type="boolean" readonly="yes">
+      <desc>
+        Flag whether the guest should be notified about the change.
+      </desc>
+    </attribute>
   </interface>
   <interface
     name="INATNetworkChangedEvent" extends="IEvent"
@@ -20334,7 +20343,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
   <!-- base class for start/stop events -->
   <interface name="INATNetworkStartStopEvent" extends="INATNetworkChangedEvent"
-             uuid="269d8f6b-fa1e-4cee-91c7-6d8496bea3c1" 
+             uuid="269d8f6b-fa1e-4cee-91c7-6d8496bea3c1"
              wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkStartStop">
     <attribute name="startEvent" type="boolean" readonly="yes">
       <desc>
@@ -20342,19 +20351,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
   </interface>
-  
+
   <!-- base class for modification events -->
   <interface name="INATNetworkAlterEvent" extends="INATNetworkChangedEvent"
-             uuid="3f5a0822-163a-43b1-ad16-8d58b0ef6e75" 
+             uuid="3f5a0822-163a-43b1-ad16-8d58b0ef6e75"
              wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkAlter"/>
-  
+
   <interface name="INATNetworkCreationDeletionEvent" extends="INATNetworkAlterEvent"
-             uuid="8d984a7e-b855-40b8-ab0c-44d3515b4528" 
+             uuid="8d984a7e-b855-40b8-ab0c-44d3515b4528"
              wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkCreationDeletion">
     <attribute name="creationEvent" type="boolean" readonly="yes"/>
   </interface>
   <interface name="INATNetworkSettingEvent" extends="INATNetworkAlterEvent"
-             uuid="9db3a9e6-7f29-4aae-a627-5a282c83092c" 
+             uuid="9db3a9e6-7f29-4aae-a627-5a282c83092c"
              wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkSetting">
     <attribute name="enabled" type="boolean" readonly="yes"/>
     <attribute name="network" type="wstring" readonly="yes"/>
@@ -20363,7 +20372,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="needDhcpServer" type="boolean" readonly="yes"/>
   </interface>
   <interface name="INATNetworkPortForwardEvent" extends="INATNetworkAlterEvent"
-             uuid="2514881b-23d0-430a-a7ff-7ed7f05534bc" 
+             uuid="2514881b-23d0-430a-a7ff-7ed7f05534bc"
              wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkPortForward">
     <attribute name="create" type="boolean" readonly="yes"/>
     <attribute name="ipv6" type="boolean" readonly="yes"/>
@@ -20374,7 +20383,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="guestIp"  type="wstring" readonly="yes"/>
     <attribute name="guestPort"  type="long" readonly="yes"/>
   </interface>
-  
+
   <module name="VBoxSVC" context="LocalServer">
     <class name="VirtualBox" uuid="B1A7A4F2-47B9-4A1E-82B2-07CCD5323C3F"
            namespace="virtualbox.org">

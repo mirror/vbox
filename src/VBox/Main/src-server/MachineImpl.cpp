@@ -3774,9 +3774,20 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                         tr("Could not get type of controller '%ls'"),
                         aControllerName);
 
+    bool fSilent = false;
+    Bstr strReconfig;
+
+    /* Check whether the flag to allow silent storage attachment reconfiguration is set. */
+    rc = mParent->GetExtraData(Bstr("StorageMgmt/SilentReconfigureWhilePaused").raw(), strReconfig.asOutParam());
+    if (FAILED(rc))
+        return rc;
+    if (   mData->mMachineState == MachineState_Paused
+        && strReconfig == "1")
+        fSilent = true;
+
     /* Check that the controller can do hotplugging if we detach the device while the VM is running. */
     bool fHotplug = false;
-    if (Global::IsOnlineOrTransient(mData->mMachineState))
+    if (!fSilent && Global::IsOnlineOrTransient(mData->mMachineState))
         fHotplug = true;
 
     if (fHotplug && !isControllerHotplugCapable(ctrlType))
@@ -4175,8 +4186,8 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     treeLock.release();
     alock.release();
 
-    if (fHotplug)
-        rc = onStorageDeviceChange(attachment, FALSE /* aRemove */);
+    if (fHotplug || fSilent)
+        rc = onStorageDeviceChange(attachment, FALSE /* aRemove */, fSilent);
 
     mParent->saveModifiedRegistries();
 
@@ -4213,9 +4224,20 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
                         tr("Could not get type of controller '%ls'"),
                         aControllerName);
 
+    bool fSilent = false;
+    Bstr strReconfig;
+
+    /* Check whether the flag to allow silent storage attachment reconfiguration is set. */
+    rc = mParent->GetExtraData(Bstr("StorageMgmt/SilentReconfigureWhilePaused").raw(), strReconfig.asOutParam());
+    if (FAILED(rc))
+        return rc;
+    if (   mData->mMachineState == MachineState_Paused
+        && strReconfig == "1")
+        fSilent = true;
+
     /* Check that the controller can do hotplugging if we detach the device while the VM is running. */
     bool fHotplug = false;
-    if (Global::IsOnlineOrTransient(mData->mMachineState))
+    if (!fSilent && Global::IsOnlineOrTransient(mData->mMachineState))
         fHotplug = true;
 
     if (fHotplug && !isControllerHotplugCapable(ctrlType))
@@ -4236,10 +4258,10 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
      * The VM has to detach the device before we delete any implicit diffs.
      * If this fails we can roll back without loosing data.
      */
-    if (fHotplug)
+    if (fHotplug || fSilent)
     {
         alock.release();
-        rc = onStorageDeviceChange(pAttach, TRUE /* aRemove */);
+        rc = onStorageDeviceChange(pAttach, TRUE /* aRemove */, fSilent);
         alock.acquire();
     }
     if (FAILED(rc)) return rc;
@@ -13505,7 +13527,7 @@ HRESULT SessionMachine::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
 /**
  *  @note Locks this object for reading.
  */
-HRESULT SessionMachine::onStorageDeviceChange(IMediumAttachment *aAttachment, BOOL aRemove)
+HRESULT SessionMachine::onStorageDeviceChange(IMediumAttachment *aAttachment, BOOL aRemove, BOOL aSilent)
 {
     LogFlowThisFunc(("\n"));
 
@@ -13522,7 +13544,7 @@ HRESULT SessionMachine::onStorageDeviceChange(IMediumAttachment *aAttachment, BO
     if (!directControl)
         return S_OK;
 
-    return directControl->OnStorageDeviceChange(aAttachment, aRemove);
+    return directControl->OnStorageDeviceChange(aAttachment, aRemove, aSilent);
 }
 
 /**
