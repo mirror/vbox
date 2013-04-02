@@ -583,7 +583,7 @@ void VBoxSnapshotsWgt::sltRestoreSnapshot()
     CSnapshot snapshot = mMachine.FindSnapshot(strSnapshotId);
 
     /* Ask the user if he really wants to restore the snapshot: */
-    int iResultCode = msgCenter().askAboutSnapshotRestoring(snapshot.GetName(), mMachine.GetCurrentStateModified());
+    int iResultCode = msgCenter().confirmSnapshotRestoring(snapshot.GetName(), mMachine.GetCurrentStateModified());
     if (iResultCode & QIMessageBox::Cancel)
         return;
 
@@ -612,7 +612,7 @@ void VBoxSnapshotsWgt::sltRestoreSnapshot()
             msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
     }
     else
-        msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
+        msgCenter().cannotRestoreSnapshot(console, snapshot.GetName());
 
     /* Unlock machine finally: */
     session.UnlockMachine();
@@ -628,18 +628,17 @@ void VBoxSnapshotsWgt::sltDeleteSnapshot()
     AssertReturn (!snapId.isNull(), (void) 0);
     CSnapshot snapshot = mMachine.FindSnapshot(snapId);
 
-    if (!msgCenter().askAboutSnapshotDeleting (snapshot.GetName()))
+    if (!msgCenter().confirmSnapshotRemoval(snapshot.GetName()))
         return;
 
     /** @todo check available space on the target filesystem etc etc. */
 #if 0
-    if (!msgCenter().askAboutSnapshotDeletingFreeSpace (snapshot.GetName(),
-                                                          "/home/juser/.VirtualBox/Machines/SampleVM/Snapshots/{01020304-0102-0102-0102-010203040506}.vdi",
-                                                          "59 GiB",
-                                                          "15 GiB"))
+    if (!msgCenter().warnAboutSnapshotRemovalFreeSpace(snapshot.GetName(),
+                                                       "/home/juser/.VirtualBox/Machines/SampleVM/Snapshots/{01020304-0102-0102-0102-010203040506}.vdi",
+                                                       "59 GiB",
+                                                       "15 GiB"))
         return;
 #endif
-
 
     /* Open a direct session (this call will handle all errors) */
     bool busy = mSessionState != KSessionState_Unlocked;
@@ -660,10 +659,10 @@ void VBoxSnapshotsWgt::sltDeleteSnapshot()
                                                msgCenter().mainWindowShown(), true);
 
         if (progress.GetResultCode() != 0)
-            msgCenter().cannotDeleteSnapshot (progress,  snapshot.GetName());
+            msgCenter().cannotRemoveSnapshot (progress,  snapshot.GetName());
     }
     else
-        msgCenter().cannotDeleteSnapshot (console,  snapshot.GetName());
+        msgCenter().cannotRemoveSnapshot (console,  snapshot.GetName());
 
     session.UnlockMachine();
 }

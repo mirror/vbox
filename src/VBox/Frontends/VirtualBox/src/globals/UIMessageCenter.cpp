@@ -623,7 +623,7 @@ bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames)
                               "<p>This operation is equivalent to resetting or powering off "
                               "the machine without doing a proper shutdown of the guest OS.</p>")
                               .arg(strNames),
-                           0 /* pcszAutoConfirmId */,
+                           0 /* auto-confirm id */,
                            tr("Discard", "saved state"));
 }
 
@@ -634,7 +634,7 @@ bool UIMessageCenter::confirmVMReset(const QString &strNames)
                               "<p><b>%1</b></p><p>This will cause any unsaved data "
                               "in applications running inside it to be lost.</p>")
                               .arg(strNames),
-                           "confirmVMReset" /* pcszAutoConfirmId */,
+                           "confirmVMReset" /* auto-confirm id */,
                            tr("Reset", "machine"));
 }
 
@@ -644,7 +644,7 @@ bool UIMessageCenter::confirmVMACPIShutdown(const QString &strNames)
                            tr("<p>Do you really want to send an ACPI shutdown signal "
                               "to the following virtual machines?</p><p><b>%1</b></p>")
                               .arg(strNames),
-                           "confirmVMACPIShutdown" /* pcszAutoConfirmId */,
+                           "confirmVMACPIShutdown" /* auto-confirm id */,
                            tr("ACPI Shutdown", "machine"));
 }
 
@@ -655,7 +655,7 @@ bool UIMessageCenter::confirmVMPowerOff(const QString &strNames)
                               "<p><b>%1</b></p><p>This will cause any unsaved data in applications "
                               "running inside it to be lost.</p>")
                               .arg(strNames),
-                           "confirmVMPowerOff" /* pcszAutoConfirmId */,
+                           "confirmVMPowerOff" /* auto-confirm id */,
                            tr("Power Off", "machine"));
 }
 
@@ -681,7 +681,7 @@ void UIMessageCenter::cannotStopMachine(const CConsole &console)
             formatErrorInfo(res));
 }
 
-int UIMessageCenter::askAboutSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot)
+int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot)
 {
     return fAlsoCreateNewSnapshot ?
            messageWithOption(mainWindowShown(), MessageType_Question,
@@ -690,7 +690,7 @@ int UIMessageCenter::askAboutSnapshotRestoring(const QString &strSnapshotName, b
                                 "if you do not do this the current state will be permanently lost. Do you wish to proceed?</p>")
                                 .arg(strSnapshotName),
                              tr("Create a snapshot of the current machine state"),
-                             !vboxGlobal().virtualBox().GetExtraDataStringList(GUI_InvertMessageOption).contains("askAboutSnapshotRestoring"),
+                             !vboxGlobal().virtualBox().GetExtraDataStringList(GUI_InvertMessageOption).contains("confirmSnapshotRestoring"),
                              QString() /* details */,
                              QIMessageBox::Ok | QIMessageBox::Default,
                              QIMessageBox::Cancel | QIMessageBox::Escape,
@@ -698,97 +698,85 @@ int UIMessageCenter::askAboutSnapshotRestoring(const QString &strSnapshotName, b
                              tr("Restore"), tr("Cancel"), QString() /* 3rd button text */) :
            message(mainWindowShown(), MessageType_Question,
                    tr("<p>Are you sure you want to restore snapshot <nobr><b>%1</b></nobr>?</p>").arg(strSnapshotName),
-                   0 /* auto-confirmation token */,
+                   0 /* auto-confirm id */,
                    QIMessageBox::Ok | QIMessageBox::Default,
                    QIMessageBox::Cancel | QIMessageBox::Escape,
                    0 /* 3rd button */,
                    tr("Restore"), tr("Cancel"), QString() /* 3rd button text */);
 }
 
-bool UIMessageCenter::askAboutSnapshotDeleting(const QString &strSnapshotName)
+bool UIMessageCenter::confirmSnapshotRemoval(const QString &strSnapshotName)
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
-        tr("<p>Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over "
-            "several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information "
-            "in the snapshot cannot be recovered.</p></p>Are you sure you want to delete the selected snapshot <b>%1</b>?</p>")
-            .arg(strSnapshotName),
-        /* Do NOT allow this message to be disabled! */
-        NULL /* pcszAutoConfirmId */,
-        tr("Delete"), tr("Cancel"));
+                           tr("<p>Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over "
+                              "several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information "
+                              "in the snapshot cannot be recovered.</p></p>Are you sure you want to delete the selected snapshot <b>%1</b>?</p>")
+                              .arg(strSnapshotName),
+                           0 /* auto-confirm id */,
+                           tr("Delete"), tr("Cancel"));
 }
 
-bool UIMessageCenter::askAboutSnapshotDeletingFreeSpace(const QString &strSnapshotName,
+bool UIMessageCenter::warnAboutSnapshotRemovalFreeSpace(const QString &strSnapshotName,
                                                         const QString &strTargetImageName,
                                                         const QString &strTargetImageMaxSize,
                                                         const QString &strTargetFileSystemFree)
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
-        tr("<p>Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, "
-            "however on this filesystem there is only %4 free.</p><p>Running out of disk space during the merge operation can result in "
-            "corruption of the image and the VM configuration, i.e. loss of the VM and its data.</p><p>You may continue with deleting "
-            "the snapshot at your own risk.</p>")
-            .arg(strSnapshotName)
-            .arg(strTargetImageName)
-            .arg(strTargetImageMaxSize)
-            .arg(strTargetFileSystemFree),
-        /* Do NOT allow this message to be disabled! */
-        NULL /* pcszAutoConfirmId */,
-        tr("Delete"), tr("Cancel"));
+                           tr("<p>Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, "
+                               "however on this filesystem there is only %4 free.</p><p>Running out of disk space during the merge operation can result in "
+                               "corruption of the image and the VM configuration, i.e. loss of the VM and its data.</p><p>You may continue with deleting "
+                               "the snapshot at your own risk.</p>")
+                               .arg(strSnapshotName)
+                               .arg(strTargetImageName)
+                               .arg(strTargetImageMaxSize)
+                               .arg(strTargetFileSystemFree),
+                           0 /* auto-confirm id */,
+                           tr("Delete"));
 }
 
-void UIMessageCenter::cannotRestoreSnapshot(const CConsole &console,
-                                            const QString &strSnapshotName)
+void UIMessageCenter::cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName)
 {
     message(mainWindowShown(), MessageType_Error,
-        tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-            .arg(strSnapshotName)
-            .arg(CConsole(console).GetMachine().GetName()),
-        formatErrorInfo(console));
+            tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
+               .arg(strSnapshotName).arg(CConsole(console).GetMachine().GetName()),
+            formatErrorInfo(console));
 }
 
-void UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress,
-                                            const QString &strSnapshotName)
+void UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName)
 {
+    /* Get console: */
+    AssertWrapperOk(progress);
     CConsole console(CProgress(progress).GetInitiator());
-
+    AssertWrapperOk(console);
+    /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
-        tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-            .arg(strSnapshotName)
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(progress.GetErrorInfo()));
+            tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
+               .arg(strSnapshotName).arg(console.GetMachine().GetName()),
+            formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::cannotDeleteSnapshot(const CConsole &console,
+void UIMessageCenter::cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName)
+{
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to delete the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
+               .arg(strSnapshotName)
+               .arg(CConsole(console).GetMachine().GetName()),
+            formatErrorInfo(console));
+}
+
+void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress,
                                            const QString &strSnapshotName)
 {
+    /* Get console: */
+    AssertWrapperOk(progress);
+    CConsole console(CProgress(progress).GetInitiator());
+    AssertWrapperOk(console);
+    /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
         tr("Failed to delete the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
             .arg(strSnapshotName)
-            .arg(CConsole(console).GetMachine().GetName()),
-        formatErrorInfo(console));
-}
-
-void UIMessageCenter::cannotDeleteSnapshot(const CProgress &progress,
-                                           const QString &strSnapshotName)
-{
-    CConsole console(CProgress(progress).GetInitiator());
-
-    message(mainWindowShown(), MessageType_Error,
-        tr("Failed to delete the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-            .arg(strSnapshotName)
             .arg(console.GetMachine().GetName()),
         formatErrorInfo(progress.GetErrorInfo()));
-}
-
-void UIMessageCenter::cannotFindSnapshotByName(QWidget *pParent,
-                                               const CMachine &machine,
-                                               const QString &strName) const
-{
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-             tr("Can't find snapshot named <b>%1</b>.")
-             .arg(strName),
-             formatErrorInfo(machine)
-    );
 }
 
 void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties)
@@ -878,7 +866,7 @@ int UIMessageCenter::askAboutHardDiskAttachmentCreation(QWidget *pParent,
                    tr("<p>You are about to add a virtual hard disk to controller <b>%1</b>.</p>"
                       "<p>Would you like to create a new, empty file to hold the disk contents or select an existing one?</p>")
                    .arg(strControllerName),
-                   0, /* pcszAutoConfirmId */
+                   0, /* auto-confirm id */
                    QIMessageBox::Yes,
                    QIMessageBox::No,
                    QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
@@ -894,7 +882,7 @@ int UIMessageCenter::askAboutOpticalAttachmentCreation(QWidget *pParent,
                       "<p>Would you like to choose a virtual CD/DVD disk to put in the drive "
                       "or to leave it empty for now?</p>")
                    .arg(strControllerName),
-                   0, /* pcszAutoConfirmId */
+                   0, /* auto-confirm id */
                    QIMessageBox::Yes,
                    QIMessageBox::No,
                    QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
@@ -910,7 +898,7 @@ int UIMessageCenter::askAboutFloppyAttachmentCreation(QWidget *pParent,
                       "<p>Would you like to choose a virtual floppy disk to put in the drive "
                       "or to leave it empty for now?</p>")
                    .arg(strControllerName),
-                   0, /* pcszAutoConfirmId */
+                   0, /* auto-confirm id */
                    QIMessageBox::Yes,
                    QIMessageBox::No,
                    QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
@@ -924,7 +912,7 @@ int UIMessageCenter::confirmRemovingOfLastDVDDevice() const
                             tr("<p>Are you sure you want to delete the CD/DVD-ROM device?</p>"
                                "<p>You will not be able to mount any CDs or ISO images "
                                "or install the Guest Additions without it!</p>"),
-                            0, /* pcszAutoConfirmId */
+                            0, /* auto-confirm id */
                             tr("&Remove", "medium"));
 }
 
@@ -940,7 +928,7 @@ int UIMessageCenter::confirmDeletingHostInterface(const QString &strName,
            "After it is removed, these adapters will no longer be usable until "
            "you correct their settings by either choosing a different interface "
            "name or a different adapter attachment type.</p>").arg(strName),
-        0, /* pcszAutoConfirmId */
+        0, /* auto-confirm id */
         QIMessageBox::Ok | QIMessageBox::Default,
         QIMessageBox::Cancel | QIMessageBox::Escape);
 }
@@ -984,7 +972,7 @@ bool UIMessageCenter::confirmReleaseMedium(QWidget *pParent,
             .arg(mediumToAccusative(aMedium.type()))
             .arg(aMedium.location())
             .arg(strUsage),
-        0 /* pcszAutoConfirmId */,
+        0 /* auto-confirm id */,
         tr("Release", "detach medium"));
 }
 
@@ -1024,7 +1012,7 @@ bool UIMessageCenter::confirmRemoveMedium(QWidget *pParent,
                "deleted and that it will be possible to use it later again.</p>");
 
     return messageOkCancel(pParent, MessageType_Question, msg,
-        "confirmRemoveMedium", /* pcszAutoConfirmId */
+        "confirmRemoveMedium", /* auto-confirm id */
         tr("Remove", "medium"));
 }
 
@@ -1041,7 +1029,7 @@ int UIMessageCenter::confirmDeleteHardDiskStorage(QWidget *pParent, const QStrin
            "will be left untouched which makes it possible to add this hard "
            "disk to the list later again.</p>")
         .arg(strLocation),
-        0, /* pcszAutoConfirmId */
+        0, /* auto-confirm id */
         QIMessageBox::Yes,
         QIMessageBox::No | QIMessageBox::Default,
         QIMessageBox::Cancel | QIMessageBox::Escape,
@@ -1284,7 +1272,7 @@ bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent)
            "You will not be able to install an operating system on the machine "
            "until you add one. In the mean time you will only be able to start the "
            "machine using a virtual optical disk or from the network."),
-        0, /* pcszAutoConfirmId */
+        0, /* auto-confirm id */
         QIMessageBox::Ok,
         QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
         0,
@@ -1364,7 +1352,7 @@ bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &strMac
            "<p>If you continue the runtime state of the exported machine(s) "
            "will be discarded. The other machine(s) will not be changed.</p>", "This text is never used with n == 0.  Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn't need to be told).",
            strMachineNames.size()).arg(VBoxGlobal::toHumanReadableList(strMachineNames)),
-        0 /* pcszAutoConfirmId */,
+        0 /* auto-confirm id */,
         tr("Continue"), tr("Cancel"));
 }
 
@@ -1419,6 +1407,16 @@ void UIMessageCenter::cannotExportAppliance(const CProgress &progress,
             MessageType_Error,
             tr("Failed to export appliance <b>%1</b>.").arg(pAppliance->GetPath()),
             formatErrorInfo(progress.GetErrorInfo()));
+}
+
+void UIMessageCenter::cannotFindSnapshotByName(QWidget *pParent,
+                                               const CMachine &machine,
+                                               const QString &strName) const
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Can't find snapshot named <b>%1</b>.")
+               .arg(strName),
+            formatErrorInfo(machine));
 }
 
 void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal,
@@ -1522,14 +1520,14 @@ bool UIMessageCenter::warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported
                 "64-bit CPU and will not be able to boot.</p><p>Please ensure "
                 "that you have enabled VT-x/AMD-V properly in the BIOS of your "
                 "host computer.</p>"),
-            0 /* pcszAutoConfirmId */,
+            0 /* auto-confirm id */,
             tr("Close VM"), tr("Continue"));
     else
         return messageOkCancel(mainWindowShown(), MessageType_Error,
             tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
                 "Your 64-bit guest will fail to detect a 64-bit CPU and will "
                 "not be able to boot."),
-            0 /* pcszAutoConfirmId */,
+            0 /* auto-confirm id */,
             tr("Close VM"), tr("Continue"));
 }
 
@@ -1542,14 +1540,14 @@ bool UIMessageCenter::warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupport
                 "this feature.</p><p>Please ensure "
                 "that you have enabled VT-x/AMD-V properly in the BIOS of your "
                 "host computer.</p>"),
-            0 /* pcszAutoConfirmId */,
+            0 /* auto-confirm id */,
             tr("Close VM"), tr("Continue"));
     else
         return messageOkCancel(mainWindowShown(), MessageType_Error,
             tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
                 "Certain guests (e.g. OS/2 and QNX) require this feature and will "
                 "fail to boot without it.</p>"),
-            0 /* pcszAutoConfirmId */,
+            0 /* auto-confirm id */,
             tr("Close VM"), tr("Continue"));
 }
 
@@ -1564,7 +1562,7 @@ bool UIMessageCenter::cannotStartWithoutNetworkIf(const QString &strMachineName,
                 "settings or stop the machine.</p>")
              .arg(strMachineName)
              .arg(strIfNames),
-             0, /* pcszAutoConfirmId */
+             0, /* auto-confirm id */
              tr("Change Network Settings"),
              tr("Close Virtual Machine"));
 }
@@ -1582,10 +1580,11 @@ void UIMessageCenter::cannotStartMachine(const CConsole &console)
 
 void UIMessageCenter::cannotStartMachine(const CProgress &progress)
 {
+    /* Get console: */
     AssertWrapperOk(progress);
     CConsole console(CProgress(progress).GetInitiator());
     AssertWrapperOk(console);
-
+    /* Show the message: */
     message(
         mainWindowShown(),
         MessageType_Error,
@@ -1642,10 +1641,11 @@ void UIMessageCenter::cannotSaveMachineState(const CConsole &console)
 
 void UIMessageCenter::cannotSaveMachineState(const CProgress &progress)
 {
+    /* Get console: */
     AssertWrapperOk(progress);
     CConsole console(CProgress(progress).GetInitiator());
     AssertWrapperOk(console);
-
+    /* Show the message: */
     message(
         mainWindowShown(),
         MessageType_Error,
@@ -1668,10 +1668,11 @@ void UIMessageCenter::cannotTakeSnapshot(const CConsole &console)
 
 void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress)
 {
+    /* Get console: */
     AssertWrapperOk(progress);
     CConsole console(CProgress(progress).GetInitiator());
     AssertWrapperOk(console);
-
+    /* Show the message: */
     message(
         mainWindowShown(),
         MessageType_Error,
@@ -1683,10 +1684,11 @@ void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress)
 
 void UIMessageCenter::cannotStopMachine(const CProgress &progress)
 {
+    /* Get console: */
     AssertWrapperOk(progress);
     CConsole console(CProgress(progress).GetInitiator());
     AssertWrapperOk(console);
-
+    /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
         tr("Failed to stop the virtual machine <b>%1</b>.")
             .arg(console.GetMachine().GetName()),
@@ -1802,7 +1804,7 @@ void UIMessageCenter::remindAboutMouseIntegration(bool fSupportsAbsolute)
                "the current session (and enable it again) by selecting the "
                "corresponding action from the menu bar."
                "</p>"),
-            kNames [1] /* pcszAutoConfirmId */);
+            kNames [1] /* auto-confirm id */);
     }
     else
     {
@@ -1812,7 +1814,7 @@ void UIMessageCenter::remindAboutMouseIntegration(bool fSupportsAbsolute)
                "mode. You need to capture the mouse (by clicking over the VM "
                "display or pressing the host key) in order to use the "
                "mouse inside the guest OS.</p>"),
-            kNames [0] /* pcszAutoConfirmId */);
+            kNames [0] /* auto-confirm id */);
     }
 
     setWarningShown("remindAboutMouseIntegration", false);
@@ -1858,7 +1860,7 @@ int UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */,
                  "<p>Press <b>Ignore</b> to switch to fullscreen mode anyway "
                  "or press <b>Cancel</b> to cancel the operation.</p>")
              .arg(VBoxGlobal::formatSize(uMinVRAM)),
-             0, /* pcszAutoConfirmId */
+             0, /* auto-confirm id */
              QIMessageBox::Ignore | QIMessageBox::Default,
              QIMessageBox::Cancel | QIMessageBox::Escape);
 }
@@ -1883,7 +1885,7 @@ int UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM)
                       "<p>Press <b>Ignore</b> to switch the screen anyway "
                       "or press <b>Cancel</b> to cancel the operation.</p>")
                    .arg(VBoxGlobal::formatSize(uMinVRAM)),
-                   0, /* pcszAutoConfirmId */
+                   0, /* auto-confirm id */
                    QIMessageBox::Ignore | QIMessageBox::Default,
                    QIMessageBox::Cancel | QIMessageBox::Escape);
 }
@@ -2032,7 +2034,7 @@ bool UIMessageCenter::remindAboutGuruMeditation(const CConsole &console, const Q
            "Please note that debugging requires special knowledge and tools, so "
            "it is recommended to press <b>OK</b> now.</p>")
             .arg(strLogFolder),
-        0, /* pcszAutoConfirmId */
+        0, /* auto-confirm id */
         QIMessageBox::Ok | QIMessageBox::Default,
         QIMessageBox::Ignore | QIMessageBox::Escape);
 
@@ -2075,7 +2077,7 @@ bool UIMessageCenter::confirmDownloadAdditions(const QString &strUrl, qulonglong
                               "Guest Additions CD image from "
                               "<nobr><a href=\"%1\">%2</a></nobr> "
                               "(size %3 bytes)?</p>").arg(strUrl).arg(strUrl).arg(loc.toString(uSize)),
-                           0, /* pcszAutoConfirmId */
+                           0, /* auto-confirm id */
                            tr("Download", "additions"));
 }
 
@@ -2089,7 +2091,7 @@ bool UIMessageCenter::confirmMountAdditions(const QString &strUrl, const QString
                               "<p>Do you wish to register this CD image and mount it "
                               "on the virtual CD/DVD drive?</p>")
                                .arg(strUrl).arg(strUrl).arg(strSrc),
-                           0, /* pcszAutoConfirmId */
+                           0, /* auto-confirm id */
                            tr("Mount", "additions"));
 }
 
