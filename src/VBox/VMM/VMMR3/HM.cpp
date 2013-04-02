@@ -2391,15 +2391,23 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 VMMR3_INT_DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
 {
     /*
-     * The VMM device heap is a requirement for emulating real mode or protected mode without paging
+     * The VMM device heap is a requirement for emulating real-mode or protected-mode without paging
      * when the unrestricted guest execution feature is missing (VT-x only).
      */
-    if (    pVM->hm.s.vmx.fEnabled
-        &&  !pVM->hm.s.vmx.fUnrestrictedGuest
-        &&  !CPUMIsGuestInPagedProtectedModeEx(pCtx)
-        &&  !PDMVmmDevHeapIsEnabled(pVM)
-        &&  (pVM->hm.s.fNestedPaging || CPUMIsGuestInRealModeEx(pCtx)))
+#ifdef VBOX_WITH_OLD_VTX_CODE
+    if (   pVM->hm.s.vmx.fEnabled
+        && !pVM->hm.s.vmx.fUnrestrictedGuest
+        && !CPUMIsGuestInPagedProtectedModeEx(pCtx)
+        && !PDMVmmDevHeapIsEnabled(pVM)
+        && (pVM->hm.s.fNestedPaging || CPUMIsGuestInRealModeEx(pCtx)))
         return true;
+#else
+    if (   pVM->hm.s.vmx.fEnabled
+        && !pVM->hm.s.vmx.fUnrestrictedGuest
+        && CPUMIsGuestInRealModeEx(pCtx)
+        && !PDMVmmDevHeapIsEnabled(pVM))
+        return true;
+#endif
 
     return false;
 }

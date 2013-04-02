@@ -2411,9 +2411,15 @@ VMMDECL(bool) CPUMIsGuestInLongMode(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestInPAEMode(PVMCPU pVCpu)
 {
+#ifdef VBOX_WITH_OLD_VTX_CODE
     return (pVCpu->cpum.s.Guest.cr4 & X86_CR4_PAE)
         && (pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG)
         && !(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LMA);
+#else
+    return (pVCpu->cpum.s.Guest.cr4 & X86_CR4_PAE)
+        && (pVCpu->cpum.s.Guest.cr0 & X86_CR0_PG)
+        && !(pVCpu->cpum.s.Guest.msrEFER & MSR_K6_EFER_LME);
+#endif
 }
 
 

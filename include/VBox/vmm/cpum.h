@@ -270,20 +270,6 @@ DECLINLINE(bool)    CPUMIsGuestIn64BitCodeEx(PCPUMCTX pCtx)
 }
 
 /**
- * Tests if the guest is running in PAE mode or not.
- *
- * @returns true if in PAE mode, otherwise false.
- * @param   pCtx    Current CPU context
- */
-DECLINLINE(bool)    CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
-{
-    return (    (pCtx->cr4 & X86_CR4_PAE)
-            &&  CPUMIsGuestInPagedProtectedModeEx(pCtx)
-            &&  !CPUMIsGuestInLongModeEx(pCtx));
-}
-
-
-/**
  * Tests if the guest has paging enabled or not.
  *
  * @returns true if paging is enabled, otherwise false.
@@ -292,6 +278,25 @@ DECLINLINE(bool)    CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
 DECLINLINE(bool)    CPUMIsGuestPagingEnabledEx(PCPUMCTX pCtx)
 {
     return !!(pCtx->cr0 & X86_CR0_PG);
+}
+
+/**
+ * Tests if the guest is running in PAE mode or not.
+ *
+ * @returns true if in PAE mode, otherwise false.
+ * @param   pCtx    Current CPU context
+ */
+DECLINLINE(bool)    CPUMIsGuestInPAEModeEx(PCPUMCTX pCtx)
+{
+#ifdef VBOX_WITH_OLD_VTX_CODE
+    return (    (pCtx->cr4 & X86_CR4_PAE)
+            &&  CPUMIsGuestInPagedProtectedModeEx(pCtx)
+            &&  !CPUMIsGuestInLongModeEx(pCtx));
+#else
+    return (   (pCtx->cr4 & X86_CR4_PAE)
+            && CPUMIsGuestPagingEnabledEx(pCtx)
+            && !(pCtx->msrEFER & MSR_K6_EFER_LME));
+#endif
 }
 
 #endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
