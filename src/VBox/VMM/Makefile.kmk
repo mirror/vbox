@@ -420,6 +420,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/MMAllHyper.cpp \
  	VMMAll/PDMAll.cpp \
  	VMMAll/PDMAllCritSect.cpp \
+ 	VMMAll/PDMAllCritSectRw.cpp \
  	VMMAll/PDMAllCritSectBoth.cpp \
  	VMMAll/PDMAllQueue.cpp \
  	VMMAll/PGMAll.cpp \
@@ -528,6 +529,7 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMAll/MMAllPagePool.cpp \
  	VMMAll/PDMAll.cpp \
  	VMMAll/PDMAllCritSect.cpp \
+ 	VMMAll/PDMAllCritSectRw.cpp \
  	VMMAll/PDMAllCritSectBoth.cpp \
  	VMMAll/PDMAllQueue.cpp \
  	VMMAll/PGMAll.cpp \
