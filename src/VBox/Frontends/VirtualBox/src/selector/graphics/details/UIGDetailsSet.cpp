@@ -81,9 +81,12 @@ void UIGDetailsSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QStrin
             updateGeometry();
     }
 
-    /* Do not build if has no details: */
+    /* Make sure we have details: */
     if (!m_fHasDetails)
     {
+        /* Reset last-step number: */
+        m_iLastStepNumber = -1;
+        /* Notify parent group we are built: */
         emit sigBuildDone();
         return;
     }
@@ -546,6 +549,10 @@ void UIGDetailsSet::updateLayout()
 
 void UIGDetailsSet::rebuildSet()
 {
+    /* Make sure we have details: */
+    if (!m_fHasDetails)
+        return;
+
     /* Cleanup build-step: */
     delete m_pBuildStep;
     m_pBuildStep = 0;
