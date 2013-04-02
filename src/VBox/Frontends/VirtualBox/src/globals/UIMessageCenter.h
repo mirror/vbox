@@ -209,15 +209,15 @@ public:
     void cannotOpenURL(const QString &strUrl);
 
     /* API: Selector warnings: */
-    void cannotOpenMachine(QWidget *pParent, const QString &strMachinePath, const CVirtualBox &vbox);
-    void cannotReregisterMachine(QWidget *pParent, const QString &strMachinePath, const QString &strMachineName);
+    void cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath);
+    void cannotReregisterExistingMachine(const QString &strMachinePath, const QString &strMachineName);
     void cannotDeleteMachine(const CMachine &machine);
     void cannotDeleteMachine(const CMachine &machine, const CProgress &progress);
     void cannotDiscardSavedState(const CConsole &console);
     void notifyAboutCollisionOnGroupRemovingCantBeResolved(const QString &strName, const QString &strGroupName);
     int askAboutCollisionOnGroupRemoving(const QString &strName, const QString &strGroupName);
     int confirmMachineItemRemoval(const QStringList &names);
-    int confirmMachineDeletion(const QList<CMachine> &machines);
+    int confirmMachineRemoval(const QList<CMachine> &machines);
     bool confirmDiscardSavedState(const QString &strNames);
     void cannotSetGroups(const CMachine &machine);
     bool remindAboutInaccessibleMedia();
