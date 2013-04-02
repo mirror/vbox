@@ -289,7 +289,7 @@ void UIGChooserItemMachine::updateFirstRowMaximumWidth()
     int iToolBarWidth = data(MachineItemData_ToolBarSize).toSize().width();
 
     /* Calculate new maximum width for the first row: */
-    int iFirstRowMaximumWidth = geometry().width();
+    int iFirstRowMaximumWidth = (int)geometry().width();
     iFirstRowMaximumWidth -= iMargin; /* left margin */
     iFirstRowMaximumWidth -= m_pixmapSize.width(); /* pixmap width */
     iFirstRowMaximumWidth -= iMajorSpacing; /* spacing between pixmap and name(s) */

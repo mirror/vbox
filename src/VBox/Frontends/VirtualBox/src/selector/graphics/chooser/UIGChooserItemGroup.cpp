@@ -473,7 +473,7 @@ void UIGChooserItemGroup::updateVisibleName()
     int iMachinePixmapWidth = m_pixmapSizeMachines.width();
     int iGroupCountTextWidth = m_infoSizeGroups.width();
     int iMachineCountTextWidth = m_infoSizeMachines.width();
-    int iMaximumWidth = geometry().width();
+    int iMaximumWidth = (int)geometry().width();
 
     /* Left margin: */
     if (isRoot())
@@ -1041,7 +1041,7 @@ void UIGChooserItemGroup::updateLayout()
         if (m_pEnterButton)
         {
             /* Prepare variables: */
-            int iFullWidth = geometry().width();
+            int iFullWidth = (int)geometry().width();
             int iEnterButtonWidth = m_enterButtonSize.width();
             int iEnterButtonHeight = m_enterButtonSize.height();
             /* Layout enter-button: */
@@ -1061,7 +1061,7 @@ void UIGChooserItemGroup::updateLayout()
             int iNameEditorX = iHorizontalMargin + iToggleButtonWidth + iMajorSpacing;
             int iNameEditorY = 1;
             m_pNameEditor->setPos(iNameEditorX, iNameEditorY);
-            m_pNameEditorWidget->resize(geometry().width() - iNameEditorX - iHorizontalMargin, m_pNameEditorWidget->height());
+            m_pNameEditorWidget->resize((int)(geometry().width() - iNameEditorX - iHorizontalMargin), m_pNameEditorWidget->height());
         }
 
         /* Prepare body indent: */
@@ -1787,7 +1787,7 @@ void UIGChooserItemGroup::updateAnimationParameters()
     /* Recalculate animation parameters: */
     QSizeF openedSize = minimumSizeHint(true);
     QSizeF closedSize = minimumSizeHint(false);
-    int iAdditionalHeight = openedSize.height() - closedSize.height();
+    int iAdditionalHeight = (int)(openedSize.height() - closedSize.height());
     m_pToggleButton->setAnimationRange(0, iAdditionalHeight);
 }
 
