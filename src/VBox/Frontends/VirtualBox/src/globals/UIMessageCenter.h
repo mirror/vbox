@@ -218,12 +218,13 @@ public:
     int confirmMachineRemoval(const QList<CMachine> &machines);
     void cannotRemoveMachine(const CMachine &machine);
     void cannotRemoveMachine(const CMachine &machine, const CProgress &progress);
-    bool confirmDiscardSavedState(const QString &strNames);
-    void cannotDiscardSavedState(const CConsole &console);
     bool remindAboutInaccessibleMedia();
+    bool confirmDiscardSavedState(const QString &strNames);
     bool confirmVMReset(const QString &strNames);
     bool confirmVMACPIShutdown(const QString &strNames);
     bool confirmVMPowerOff(const QString &strNames);
+    void cannotDiscardSavedState(const CConsole &console);
+    void cannotStopMachine(const CConsole &console);
 
     /* API: Snapshot warnings: */
     int askAboutSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot);
@@ -308,7 +309,6 @@ public:
     void cannotSaveMachineState(const CProgress &progress);
     void cannotTakeSnapshot(const CConsole &console);
     void cannotTakeSnapshot(const CProgress &progress);
-    void cannotStopMachine(const CConsole &console);
     void cannotStopMachine(const CProgress &progress);
     void cannotSendACPIToMachine();
     bool confirmInputCapture(bool *pfAutoConfirmed = NULL);
