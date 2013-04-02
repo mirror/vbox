@@ -56,6 +56,7 @@ public:
                 const QStringList &aUsedMediaIds = QStringList());
 
     static void showModeless (QWidget *aParent = NULL, bool aRefresh = true);
+    static UIMediumManager* modelessInstance();
 
     QString selectedId() const;
     QString selectedLocation() const;
