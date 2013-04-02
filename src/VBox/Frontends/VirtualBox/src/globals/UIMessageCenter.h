@@ -227,17 +227,14 @@ public:
     void cannotStopMachine(const CConsole &console);
 
     /* API: Snapshot warnings: */
-    int askAboutSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot);
-    bool askAboutSnapshotDeleting(const QString &strSnapshotName);
-    bool askAboutSnapshotDeletingFreeSpace(const QString &strSnapshotName,
-                                           const QString &strTargetImageName,
-                                           const QString &strTargetImageMaxSize,
-                                           const QString &strTargetFileSystemFree);
+    int confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot);
+    bool confirmSnapshotRemoval(const QString &strSnapshotName);
+    bool warnAboutSnapshotRemovalFreeSpace(const QString &strSnapshotName, const QString &strTargetImageName,
+                                           const QString &strTargetImageMaxSize, const QString &strTargetFileSystemFree);
     void cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName);
     void cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName);
-    void cannotDeleteSnapshot(const CConsole &console, const QString &strSnapshotName);
-    void cannotDeleteSnapshot(const CProgress &progress, const QString &strSnapshotName);
-    void cannotFindSnapshotByName(QWidget *pParent, const CMachine &machine, const QString &strMachine) const;
+    void cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName);
+    void cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName);
 
     /* API: Settings warnings: */
     void cannotSetSystemProperties(const CSystemProperties &properties);
@@ -292,6 +289,7 @@ public:
     void cannotExportAppliance(CAppliance *pAppliance, QWidget *pParent = NULL) const;
     void cannotExportAppliance(const CMachine &machine, CAppliance *pAppliance, QWidget *pParent = NULL) const;
     void cannotExportAppliance(const CProgress &progress, CAppliance *pAppliance, QWidget *pParent = NULL) const;
+    void cannotFindSnapshotByName(QWidget *pParent, const CMachine &machine, const QString &strMachine) const;
 
     /* API: Runtime UI warnings: */
     void showRuntimeError(const CConsole &console, bool fFatal,
