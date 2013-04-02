@@ -1421,12 +1421,11 @@ void UIGChooserModel::cleanupGroupTree(UIGChooserItem *pParent)
 
 void UIGChooserModel::removeItems(const QList<UIGChooserItem*> &itemsToRemove)
 {
-    /* Show machine-items remove dialog: */
+    /* Confirm machine-items removal: */
     QStringList names;
     foreach (UIGChooserItem *pItem, itemsToRemove)
         names << pItem->name();
-    int rc = msgCenter().confirmMachineItemRemoval(names);
-    if (rc == QIMessageBox::Cancel)
+    if (!msgCenter().confirmMachineItemRemoval(names))
         return;
 
     /* Remove all the passed items: */
@@ -1472,21 +1471,21 @@ void UIGChooserModel::unregisterMachines(const QStringList &ids)
             CMediumVector mediums = machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
             if (!machine.isOk())
             {
-                msgCenter().cannotDeleteMachine(machine);
+                msgCenter().cannotRemoveMachine(machine);
                 continue;
             }
             /* Prepare cleanup progress: */
             CProgress progress = machine.DeleteConfig(mediums);
             if (!machine.isOk())
             {
-                msgCenter().cannotDeleteMachine(machine);
+                msgCenter().cannotRemoveMachine(machine);
                 continue;
             }
             /* And show cleanup progress finally: */
             msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_delete_90px.png");
             if (progress.GetResultCode() != 0)
             {
-                msgCenter().cannotDeleteMachine(machine, progress);
+                msgCenter().cannotRemoveMachine(machine, progress);
                 continue;
             }
         }
@@ -1496,7 +1495,7 @@ void UIGChooserModel::unregisterMachines(const QStringList &ids)
             machine.Unregister(KCleanupMode_DetachAllReturnNone);
             if (!machine.isOk())
             {
-                msgCenter().cannotDeleteMachine(machine);
+                msgCenter().cannotRemoveMachine(machine);
                 continue;
             }
         }
