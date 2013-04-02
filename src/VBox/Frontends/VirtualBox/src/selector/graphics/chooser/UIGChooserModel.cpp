@@ -758,13 +758,13 @@ void UIGChooserModel::sltUngroupSelectedGroup()
                     toBeRemoved << pItem;
                 else if (pCollisionSibling->type() == UIGChooserItemType_Group)
                 {
-                    msgCenter().notifyAboutCollisionOnGroupRemovingCantBeResolved(strItemName, pParentItem->name());
+                    msgCenter().cannotResolveCollisionAutomatically(strItemName, pParentItem->name());
                     return;
                 }
             }
             else if (pItem->type() == UIGChooserItemType_Group)
             {
-                if (msgCenter().askAboutCollisionOnGroupRemoving(strItemName, pParentItem->name()) == QIMessageBox::Ok)
+                if (msgCenter().confirmAutomaticCollisionResolve(strItemName, pParentItem->name()))
                     toBeRenamed << pItem;
                 else
                     return;
@@ -1998,7 +1998,7 @@ void UIGroupDefinitionSaveThread::run()
         /* Get old group list/set: */
         const QStringList &oldGroupList = m_oldLists.value(strId);
         const UIStringSet &oldGroupSet = UIStringSet::fromList(oldGroupList);
-        /* Make sure group set was changed: */
+        /* Make sure group set changed: */
         if (newGroupSet == oldGroupSet)
             continue;
 
