@@ -1131,7 +1131,8 @@ void UIMediumManager::doRemoveMedium()
     AssertReturnVoid (!id.isNull());
     UIMediumType type = item->type();
 
-    if (!msgCenter().confirmRemoveMedium (this, item->medium()))
+    /* Confirm medium removal: */
+    if (!msgCenter().confirmMediumRemoval(item->medium(), this))
         return;
 
     COMResult result;
@@ -1142,11 +1143,10 @@ void UIMediumManager::doRemoveMedium()
         {
             bool deleteStorage = false;
 
-            /* We don't want to try to delete inaccessible storage as it will
-             * most likely fail. Note that
-             * UIMessageCenter::confirmRemoveMedium() is aware of that and
-             * will give a corresponding hint. Therefore, once the code is
-             * changed below, the hint should be re-checked for validity. */
+            /* We don't want to try to delete inaccessible storage as it will most likely fail.
+             * Note that UIMessageCenter::confirmMediumRemoval() is aware of that and
+             * will give a corresponding hint. Therefore, once the code is changed below,
+             * the hint should be re-checked for validity. */
 
             qulonglong caps = 0;
             QVector<KMediumFormatCapabilities> capabilities;
@@ -1157,8 +1157,7 @@ void UIMediumManager::doRemoveMedium()
             if (item->state() != KMediumState_Inaccessible &&
                 caps & MediumFormatCapabilities_File)
             {
-                int rc = msgCenter().
-                    confirmDeleteHardDiskStorage (this, item->location());
+                int rc = msgCenter().confirmDeleteHardDiskStorage(item->location(), this);
                 if (rc == QIMessageBox::Cancel)
                     return;
                 deleteStorage = rc == QIMessageBox::Yes;
@@ -1174,7 +1173,7 @@ void UIMediumManager::doRemoveMedium()
                     msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_delete_90px.png", this);
                     if (!(progress.isOk() && progress.GetResultCode() == S_OK))
                     {
-                        msgCenter().cannotDeleteHardDiskStorage(this, hardDisk, progress);
+                        msgCenter().cannotDeleteHardDiskStorage(hardDisk, progress, this);
                         return;
                     }
                 }
@@ -1203,9 +1202,9 @@ void UIMediumManager::doRemoveMedium()
     }
 
     if (result.isOk())
-        vboxGlobal().removeMedium (type, id);
+        vboxGlobal().removeMedium(type, id);
     else
-        msgCenter().cannotCloseMedium (this, item->medium(), result);
+        msgCenter().cannotCloseMedium(item->medium(), result, this);
 }
 
 void UIMediumManager::doReleaseMedium()
@@ -1246,7 +1245,7 @@ void UIMediumManager::doReleaseMedium()
 
     AssertReturnVoid (machines.size() > 0);
 
-    if (!msgCenter().confirmReleaseMedium (this, item->medium(), usage))
+    if (!msgCenter().confirmMediumRelease(item->medium(), usage, this))
         return;
 
     for (QList <QString>::const_iterator it = machineIds.begin(); it != machineIds.end(); ++ it)
@@ -1299,8 +1298,8 @@ bool UIMediumManager::releaseMediumFrom (const UIMedium &aMedium, const QString 
                     if (!machine.isOk())
                     {
                         CStorageController controller = machine.GetStorageControllerByName (attachment.GetController());
-                        msgCenter().cannotDetachDevice (this, machine, UIMediumType_HardDisk, aMedium.location(),
-                                                          StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice()));
+                        msgCenter().cannotDetachDevice(machine, UIMediumType_HardDisk, aMedium.location(),
+                                                       StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice()), this);
                         success = false;
                         break;
                     }
@@ -1321,7 +1320,7 @@ bool UIMediumManager::releaseMediumFrom (const UIMedium &aMedium, const QString 
                     machine.MountMedium (attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
                     if (!machine.isOk())
                     {
-                        msgCenter().cannotRemountMedium (this, machine, aMedium, false /* mount? */, false /* retry? */);
+                        msgCenter().cannotRemountMedium(machine, aMedium, false /* mount? */, false /* retry? */, this);
                         success = false;
                         break;
                     }
@@ -1342,7 +1341,7 @@ bool UIMediumManager::releaseMediumFrom (const UIMedium &aMedium, const QString 
                     machine.MountMedium (attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
                     if (!machine.isOk())
                     {
-                        msgCenter().cannotRemountMedium (this, machine, aMedium, false /* mount? */, false /* retry? */);
+                        msgCenter().cannotRemountMedium(machine, aMedium, false /* mount? */, false /* retry? */, this);
                         success = false;
                         break;
                     }
@@ -1644,7 +1643,7 @@ void UIMediumManager::addMediumToList(const QString &aLocation, UIMediumType aTy
         medium = UIMedium(CMedium(med), aType, KMediumState_Created);
 
     if (!mVBox.isOk())
-        msgCenter().cannotOpenMedium(this, mVBox, aType, aLocation);
+        msgCenter().cannotOpenMedium(mVBox, aType, aLocation, this);
     else
         vboxGlobal().addMedium(medium);
 }

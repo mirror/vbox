@@ -81,7 +81,7 @@ bool UIWizardFirstRun::insertMedium()
         return true;
     else
     {
-        msgCenter().cannotRemountMedium(this, m_machine, vmedium, true /* mount? */, false /* retry? */);
+        msgCenter().cannotRemountMedium(m_machine, vmedium, true /* mount? */, false /* retry? */, this);
         return false;
     }
 }

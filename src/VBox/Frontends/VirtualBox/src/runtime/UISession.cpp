@@ -546,7 +546,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 
         if (!vbox.isOk())
         {
-            msgCenter().cannotOpenMedium(0, vbox, UIMediumType_DVD, strSource);
+            msgCenter().cannotOpenMedium(vbox, UIMediumType_DVD, strSource, mainMachineWindow());
             return;
         }
 
@@ -590,12 +590,14 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
             if (!machine.isOk())
             {
                 /* Ask for force mounting: */
-                if (msgCenter().cannotRemountMedium(0, machine, vboxMedium, true /* mount? */, true /* retry? */) == QIMessageBox::Ok)
+                if (msgCenter().cannotRemountMedium(machine, vboxMedium, true /* mount? */,
+                                                    true /* retry? */, mainMachineWindow()) == QIMessageBox::Ok)
                 {
                     /* Force mount medium to the predefined port/device: */
                     machine.MountMedium(strCntName, iCntPort, iCntDevice, vboxMedium.medium(), true /* force */);
                     if (!machine.isOk())
-                        msgCenter().cannotRemountMedium(0, machine, vboxMedium, true /* mount? */, false /* retry? */);
+                        msgCenter().cannotRemountMedium(machine, vboxMedium, true /* mount? */,
+                                                        false /* retry? */, mainMachineWindow());
                 }
             }
         }

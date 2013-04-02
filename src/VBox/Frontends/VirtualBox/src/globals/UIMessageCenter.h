@@ -254,21 +254,15 @@ public:
     bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
 
     /* API: Virtual Medium Manager warnings: */
-    void cannotChangeMediumType(QWidget *pParent, const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType);
-    bool confirmReleaseMedium(QWidget *pParent, const UIMedium &aMedium,
-                              const QString &strUsage);
-    bool confirmRemoveMedium(QWidget *pParent, const UIMedium &aMedium);
-    int confirmDeleteHardDiskStorage(QWidget *pParent,
-                                     const QString &strLocation);
-    void cannotDeleteHardDiskStorage(QWidget *pParent, const CMedium &medium,
-                                     const CProgress &progress);
-    void cannotDetachDevice(QWidget *pParent, const CMachine &machine,
-                            UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot);
-    int cannotRemountMedium(QWidget *pParent, const CMachine &machine, const UIMedium &aMedium, bool fMount, bool fRetry);
-    void cannotOpenMedium(QWidget *pParent, const CVirtualBox &vbox,
-                          UIMediumType type, const QString &strLocation);
-    void cannotCloseMedium(QWidget *pParent, const UIMedium &aMedium,
-                           const COMResult &rc);
+    void cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType, QWidget *pParent = 0);
+    bool confirmMediumRelease(const UIMedium &medium, const QString &strUsage, QWidget *pParent = 0);
+    bool confirmMediumRemoval(const UIMedium &medium, QWidget *pParent = 0);
+    int confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0);
+    void cannotDeleteHardDiskStorage(const CMedium &medium, const CProgress &progress, QWidget *pParent = 0);
+    void cannotDetachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
+    int cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent = 0);
+    void cannotOpenMedium(const CVirtualBox &vbox, UIMediumType type, const QString &strLocation, QWidget *pParent = 0);
+    void cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent = 0);
 
     /* API: Wizards warnings: */
     void cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent = 0);
@@ -372,9 +366,6 @@ public:
     bool askForOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent = 0);
     bool askForOverridingFileIfExists(const QString &strPath, QWidget *pParent = 0);
     bool askForOverridingFilesIfExists(const QVector<QString> &strPaths, QWidget *pParent = 0);
-
-    /* Helpers: */
-    static QString mediumToAccusative(UIMediumType type, bool fIsHostDrive = false);
 
     static QString formatRC(HRESULT rc);
     static QString formatErrorInfo(const COMErrorInfo &info, HRESULT wrapperRC = S_OK);

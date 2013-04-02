@@ -120,7 +120,7 @@ void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
     if (fSuccess)
         vboxGlobal().removeMedium(UIMediumType_HardDisk, strId);
     else
-        msgCenter().cannotDeleteHardDiskStorage(thisImp(), m_virtualDisk, progress);
+        msgCenter().cannotDeleteHardDiskStorage(m_virtualDisk, progress, thisImp());
 
     /* Detach virtual-disk finally: */
     m_virtualDisk.detach();
