@@ -216,7 +216,7 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
         pPixmap = new QPixmap(strImage);
 
     /* Create progress-dialog: */
-    QWidget *pDlgParent = mwManager().realParentWindow(pParent);
+    QWidget *pDlgParent = mwManager().realParentWindow(pParent ? pParent : mainWindowShown());
     QPointer<UIProgressDialog> pProgressDlg = new UIProgressDialog(progress, strTitle, pPixmap, cMinDuration, pDlgParent);
     mwManager().registerNewParent(pProgressDlg, pDlgParent);
 
