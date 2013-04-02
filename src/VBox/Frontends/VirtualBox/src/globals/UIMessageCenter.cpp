@@ -456,49 +456,6 @@ void UIMessageCenter::cannotReregisterExistingMachine(const QString &strMachineP
                .arg(strMachineName).arg(strMachinePath));
 }
 
-void UIMessageCenter::cannotDeleteMachine(const CMachine &machine)
-{
-    /* Preserve error-info: */
-    COMResult res(machine);
-    /* Show the message: */
-    message(mainWindowShown(),
-            MessageType_Error,
-            tr("Failed to remove the virtual machine <b>%1</b>.").arg(machine.GetName()),
-            !machine.isOk() ? formatErrorInfo(machine) : formatErrorInfo(res));
-}
-
-void UIMessageCenter::cannotDeleteMachine(const CMachine &machine, const CProgress &progress)
-{
-    message(mainWindowShown(),
-            MessageType_Error,
-            tr("Failed to remove the virtual machine <b>%1</b>.").arg(machine.GetName()),
-            formatErrorInfo(progress.GetErrorInfo()));
-}
-
-void UIMessageCenter::cannotDiscardSavedState(const CConsole &console)
-{
-    /* Preserve error-info: */
-    COMResult res(console);
-    /* Show the message: */
-    message(mainWindowShown(), MessageType_Error,
-            tr("Failed to discard the saved state of the virtual machine <b>%1</b>.").arg(console.GetMachine().GetName()),
-            formatErrorInfo(res));
-}
-
-void UIMessageCenter::cannotSetGroups(const CMachine &machine)
-{
-    /* Preserve error-info: */
-    COMResult res(machine);
-    /* Compose machine name: */
-    QString strName = machine.GetName();
-    if (strName.isEmpty())
-        strName = QFileInfo(machine.GetSettingsFilePath()).baseName();
-    /* Show the message: */
-    message(mainWindowShown(), MessageType_Error,
-            tr("Failed to set groups of the virtual machine <b>%1</b>.").arg(strName),
-            formatErrorInfo(res));
-}
-
 void UIMessageCenter::cannotResolveCollisionAutomatically(const QString &strName, const QString &strGroupName)
 {
     message(mainWindowShown(), MessageType_Error,
@@ -519,19 +476,29 @@ bool UIMessageCenter::confirmAutomaticCollisionResolve(const QString &strName, c
                            tr("Rename"));
 }
 
-int UIMessageCenter::confirmMachineItemRemoval(const QStringList &names)
+void UIMessageCenter::cannotSetGroups(const CMachine &machine)
 {
-    return message(&vboxGlobal().selectorWnd(),
-                   MessageType_Question,
-                   tr("<p>You are about to remove following virtual "
-                      "machine items from the machine list:</p>"
-                      "<p><b>%1</b></p>"
-                      "<p>Do you wish to proceed?</p>").arg(names.join(", ")),
-                   0, /* auto-confirm id */
-                   QIMessageBox::Ok,
-                   QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
-                   0,
-                   tr("Remove"));
+    /* Preserve error-info: */
+    COMResult res(machine);
+    /* Compose machine name: */
+    QString strName = machine.GetName();
+    if (strName.isEmpty())
+        strName = QFileInfo(machine.GetSettingsFilePath()).baseName();
+    /* Show the message: */
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to set groups of the virtual machine <b>%1</b>.").arg(strName),
+            formatErrorInfo(res));
+}
+
+bool UIMessageCenter::confirmMachineItemRemoval(const QStringList &names)
+{
+    return messageOkCancel(mainWindowShown(), MessageType_Question,
+                           tr("<p>You are about to remove following virtual "
+                              "machine items from the machine list:</p>"
+                              "<p><b>%1</b></p>"
+                              "<p>Do you wish to proceed?</p>").arg(names.join(", ")),
+                           0, /* auto-confirm id */
+                           tr("Remove"));
 }
 
 int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines)
@@ -598,35 +565,60 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines)
 
     /* Prepare message itself: */
     return cInacessibleMachineCount == machines.size() ?
-           message(mainWindowShown(),
-                   MessageType_Question,
-                   strText,
-                   0, /* auto-confirm id */
-                   QIMessageBox::Ok,
-                   QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
+           message(mainWindowShown(), MessageType_Question,
+                   strText, 0, /* auto-confirm id */
+                   QIMessageBox::Ok | QIMessageBox::Default,
+                   QIMessageBox::Cancel | QIMessageBox::Escape,
                    0,
                    tr("Remove")) :
-           message(mainWindowShown(),
-                   MessageType_Question,
-                   strText,
-                   0, /* auto-confirm id */
+           message(mainWindowShown(), MessageType_Question,
+                   strText, 0, /* auto-confirm id */
                    QIMessageBox::Yes,
-                   QIMessageBox::No,
-                   QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
+                   QIMessageBox::No | QIMessageBox::Default,
+                   QIMessageBox::Cancel | QIMessageBox::Escape,
                    tr("Delete all files"),
                    tr("Remove only"));
 }
 
+void UIMessageCenter::cannotRemoveMachine(const CMachine &machine)
+{
+    /* Preserve error-info: */
+    COMResult res(machine);
+    /* Show the message: */
+    message(mainWindowShown(),
+            MessageType_Error,
+            tr("Failed to remove the virtual machine <b>%1</b>.").arg(machine.GetName()),
+            !machine.isOk() ? formatErrorInfo(machine) : formatErrorInfo(res));
+}
+
+void UIMessageCenter::cannotRemoveMachine(const CMachine &machine, const CProgress &progress)
+{
+    message(mainWindowShown(),
+            MessageType_Error,
+            tr("Failed to remove the virtual machine <b>%1</b>.").arg(machine.GetName()),
+            formatErrorInfo(progress.GetErrorInfo()));
+}
+
 bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames)
 {
-    return messageOkCancel(&vboxGlobal().selectorWnd(), MessageType_Question,
-        tr("<p>Are you sure you want to discard the saved state of "
-           "the following virtual machines?</p><p><b>%1</b></p>"
-           "<p>This operation is equivalent to resetting or powering off "
-           "the machine without doing a proper shutdown of the guest OS.</p>")
-           .arg(strNames),
-        0 /* pcszAutoConfirmId */,
-        tr("Discard", "saved state"));
+    return messageOkCancel(mainWindowShown(), MessageType_Question,
+                           tr("<p>Are you sure you want to discard the saved state of "
+                              "the following virtual machines?</p><p><b>%1</b></p>"
+                              "<p>This operation is equivalent to resetting or powering off "
+                              "the machine without doing a proper shutdown of the guest OS.</p>")
+                              .arg(strNames),
+                           0 /* pcszAutoConfirmId */,
+                           tr("Discard", "saved state"));
+}
+
+void UIMessageCenter::cannotDiscardSavedState(const CConsole &console)
+{
+    /* Preserve error-info: */
+    COMResult res(console);
+    /* Show the message: */
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to discard the saved state of the virtual machine <b>%1</b>.").arg(console.GetMachine().GetName()),
+            formatErrorInfo(res));
 }
 
 bool UIMessageCenter::remindAboutInaccessibleMedia()

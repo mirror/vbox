@@ -211,15 +211,15 @@ public:
     /* API: Selector warnings: */
     void cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath);
     void cannotReregisterExistingMachine(const QString &strMachinePath, const QString &strMachineName);
-    void cannotDeleteMachine(const CMachine &machine);
-    void cannotDeleteMachine(const CMachine &machine, const CProgress &progress);
-    void cannotDiscardSavedState(const CConsole &console);
-    void cannotSetGroups(const CMachine &machine);
     void cannotResolveCollisionAutomatically(const QString &strName, const QString &strGroupName);
     bool confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName);
-    int confirmMachineItemRemoval(const QStringList &names);
+    void cannotSetGroups(const CMachine &machine);
+    bool confirmMachineItemRemoval(const QStringList &names);
     int confirmMachineRemoval(const QList<CMachine> &machines);
+    void cannotRemoveMachine(const CMachine &machine);
+    void cannotRemoveMachine(const CMachine &machine, const CProgress &progress);
     bool confirmDiscardSavedState(const QString &strNames);
+    void cannotDiscardSavedState(const CConsole &console);
     bool remindAboutInaccessibleMedia();
     bool confirmVMReset(const QString &strNames);
     bool confirmVMACPIShutdown(const QString &strNames);
