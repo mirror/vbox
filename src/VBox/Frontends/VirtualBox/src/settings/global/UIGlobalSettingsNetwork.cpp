@@ -452,7 +452,7 @@ void UIGlobalSettingsNetwork::sltDelInterface()
     /* Get interface name: */
     QString strInterfaceName(pItem->name());
     /* Asking user about deleting selected network interface: */
-    if (msgCenter().confirmDeletingHostInterface(strInterfaceName, this) == QIMessageBox::Cancel)
+    if (!msgCenter().confirmDeletingHostInterface(strInterfaceName, this))
         return;
 
     /* Prepare useful variables: */

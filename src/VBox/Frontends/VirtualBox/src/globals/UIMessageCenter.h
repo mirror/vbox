@@ -77,7 +77,7 @@ public:
 
     /* API: Warning registration stuff: */
     bool warningShown(const QString &strWarningName) const;
-    void setWarningShown(const QString &strWarningName, bool fWarningShown);
+    void setWarningShown(const QString &strWarningName, bool fWarningShown) const;
 
     /* API: Alert providing stuff: Main function: */
     int message(QWidget *pParent, MessageType type,
@@ -185,71 +185,70 @@ public:
 
     /* API: Main (startup) warnings: */
 #ifdef RT_OS_LINUX
-    void warnAboutWrongUSBMounted();
+    void warnAboutWrongUSBMounted() const;
 #endif /* RT_OS_LINUX */
-    void cannotStartSelector();
-    void showBETAWarning();
-    void showBEBWarning();
+    void cannotStartSelector() const;
+    void showBETAWarning() const;
+    void showBEBWarning() const;
 
     /* API: COM startup warnings: */
-    void cannotInitUserHome(const QString &strUserHome);
-    void cannotInitCOM(HRESULT rc);
-    void cannotCreateVirtualBox(const CVirtualBox &vbox);
+    void cannotInitUserHome(const QString &strUserHome) const;
+    void cannotInitCOM(HRESULT rc) const;
+    void cannotCreateVirtualBox(const CVirtualBox &vbox) const;
 
     /* API: Global warnings: */
-    void cannotFindLanguage(const QString &strLangId, const QString &strNlsPath);
-    void cannotLoadLanguage(const QString &strLangFile);
-    void cannotLoadGlobalConfig(const CVirtualBox &vbox, const QString &strError);
-    void cannotSaveGlobalConfig(const CVirtualBox &vbox);
-    void cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName);
-    void cannotFindMachineById(const CVirtualBox &vbox, const QString &strId);
-    void cannotOpenSession(const CSession &session);
-    void cannotOpenSession(const CMachine &machine, const CProgress &progress = CProgress());
-    void cannotGetMediaAccessibility(const UIMedium &medium);
-    void cannotOpenURL(const QString &strUrl);
+    void cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const;
+    void cannotLoadLanguage(const QString &strLangFile) const;
+    void cannotLoadGlobalConfig(const CVirtualBox &vbox, const QString &strError) const;
+    void cannotSaveGlobalConfig(const CVirtualBox &vbox) const;
+    void cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName) const;
+    void cannotFindMachineById(const CVirtualBox &vbox, const QString &strId) const;
+    void cannotOpenSession(const CSession &session) const;
+    void cannotOpenSession(const CMachine &machine, const CProgress &progress = CProgress()) const;
+    void cannotGetMediaAccessibility(const UIMedium &medium) const;
+    void cannotOpenURL(const QString &strUrl) const;
 
     /* API: Selector warnings: */
-    void cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath);
-    void cannotReregisterExistingMachine(const QString &strMachinePath, const QString &strMachineName);
-    void cannotResolveCollisionAutomatically(const QString &strName, const QString &strGroupName);
-    bool confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName);
-    void cannotSetGroups(const CMachine &machine);
-    bool confirmMachineItemRemoval(const QStringList &names);
-    int confirmMachineRemoval(const QList<CMachine> &machines);
-    void cannotRemoveMachine(const CMachine &machine);
-    void cannotRemoveMachine(const CMachine &machine, const CProgress &progress);
-    bool remindAboutInaccessibleMedia();
-    bool confirmDiscardSavedState(const QString &strNames);
-    bool confirmVMReset(const QString &strNames);
-    bool confirmVMACPIShutdown(const QString &strNames);
-    bool confirmVMPowerOff(const QString &strNames);
-    void cannotDiscardSavedState(const CConsole &console);
-    void cannotStopMachine(const CConsole &console);
+    void cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const;
+    void cannotReregisterExistingMachine(const QString &strMachinePath, const QString &strMachineName) const;
+    void cannotResolveCollisionAutomatically(const QString &strName, const QString &strGroupName) const;
+    bool confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName) const;
+    void cannotSetGroups(const CMachine &machine) const;
+    bool confirmMachineItemRemoval(const QStringList &names) const;
+    int confirmMachineRemoval(const QList<CMachine> &machines) const;
+    void cannotRemoveMachine(const CMachine &machine) const;
+    void cannotRemoveMachine(const CMachine &machine, const CProgress &progress) const;
+    bool remindAboutInaccessibleMedia() const;
+    bool confirmDiscardSavedState(const QString &strNames) const;
+    bool confirmVMReset(const QString &strNames) const;
+    bool confirmVMACPIShutdown(const QString &strNames) const;
+    bool confirmVMPowerOff(const QString &strNames) const;
+    void cannotDiscardSavedState(const CConsole &console) const;
+    void cannotStopMachine(const CConsole &console) const;
 
     /* API: Snapshot warnings: */
-    int confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot);
-    bool confirmSnapshotRemoval(const QString &strSnapshotName);
+    int confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const;
+    bool confirmSnapshotRemoval(const QString &strSnapshotName) const;
     bool warnAboutSnapshotRemovalFreeSpace(const QString &strSnapshotName, const QString &strTargetImageName,
-                                           const QString &strTargetImageMaxSize, const QString &strTargetFileSystemFree);
-    void cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName);
-    void cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName);
-    void cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName);
-    void cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName);
+                                           const QString &strTargetImageMaxSize, const QString &strTargetFileSystemFree) const;
+    void cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName) const;
+    void cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName) const;
+    void cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName) const;
+    void cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName) const;
 
     /* API: Settings warnings: */
-    void cannotSetSystemProperties(const CSystemProperties &properties);
-    void cannotAccessUSB(const COMBaseWithEI &object);
-    void cannotLoadMachineSettings(const CMachine &machine, bool fStrict = true, QWidget *pParent = 0);
-    void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0);
-    void warnAboutStateChange(QWidget *pParent);
-    bool confirmSettingsReloading(QWidget *pParent);
-    int askAboutHardDiskAttachmentCreation(QWidget *pParent, const QString &strControllerName);
-    int askAboutOpticalAttachmentCreation(QWidget *pParent, const QString &strControllerName);
-    int askAboutFloppyAttachmentCreation(QWidget *pParent, const QString &strControllerName);
-    int confirmRemovingOfLastDVDDevice() const;
-    int confirmDeletingHostInterface(const QString &strName, QWidget *pParent = 0);
-    void warnAboutIncorrectPort(QWidget *pParent) const;
-    bool confirmCancelingPortForwardingDialog(QWidget *pParent) const;
+    void cannotAccessUSB(const COMBaseWithEI &object) const;
+    void cannotSetSystemProperties(const CSystemProperties &properties) const;
+    void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
+    void warnAboutStateChange(QWidget *pParent = 0) const;
+    bool confirmSettingsReloading(QWidget *pParent = 0) const;
+    bool confirmDeletingHostInterface(const QString &strName, QWidget *pParent = 0) const;
+    int askAboutHardDiskAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
+    int askAboutOpticalAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
+    int askAboutFloppyAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
+    int confirmRemovingOfLastDVDDevice(QWidget *pParent = 0) const;
+    void warnAboutIncorrectPort(QWidget *pParent = 0) const;
+    bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
 
     /* API: Virtual Medium Manager warnings: */
     void cannotChangeMediumType(QWidget *pParent, const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType);
@@ -443,7 +442,7 @@ private:
                        const QString &strAutoConfirmId) const;
 
     /* Variables: */
-    QStringList m_warnings;
+    mutable QStringList m_warnings;
 };
 
 /* Shortcut to the static UIMessageCenter::instance() method, for convenience. */

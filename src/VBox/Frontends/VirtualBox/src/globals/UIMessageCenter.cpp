@@ -75,7 +75,7 @@ bool UIMessageCenter::warningShown(const QString &strWarningName) const
     return m_warnings.contains(strWarningName);
 }
 
-void UIMessageCenter::setWarningShown(const QString &strWarningName, bool fWarningShown)
+void UIMessageCenter::setWarningShown(const QString &strWarningName, bool fWarningShown) const
 {
     if (fWarningShown && !m_warnings.contains(strWarningName))
         m_warnings.append(strWarningName);
@@ -284,7 +284,7 @@ QWidget* UIMessageCenter::networkManagerOrMainMachineWindowShown() const
 }
 
 #ifdef RT_OS_LINUX
-void UIMessageCenter::warnAboutWrongUSBMounted()
+void UIMessageCenter::warnAboutWrongUSBMounted() const
 {
     message(mainWindowShown(), MessageType_Warning,
             tr("You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. "
@@ -294,38 +294,39 @@ void UIMessageCenter::warnAboutWrongUSBMounted()
 }
 #endif /* RT_OS_LINUX */
 
-void UIMessageCenter::cannotStartSelector()
+void UIMessageCenter::cannotStartSelector() const
 {
     message(0, MessageType_Critical,
             tr("<p>Cannot start VirtualBox Manager due to local restrictions.</p>"
                "<p>The application will now terminate.</p>"));
 }
 
-void UIMessageCenter::showBETAWarning()
+void UIMessageCenter::showBETAWarning() const
 {
     message(0, MessageType_Warning,
             tr("You are running a prerelease version of VirtualBox. "
                "This version is not suitable for production use."));
 }
 
-void UIMessageCenter::showBEBWarning()
+void UIMessageCenter::showBEBWarning() const
 {
     message(0, MessageType_Warning,
             tr("You are running an EXPERIMENTAL build of VirtualBox. "
                "This version is not suitable for production use."));
 }
 
-void UIMessageCenter::cannotInitUserHome(const QString &strUserHome)
+void UIMessageCenter::cannotInitUserHome(const QString &strUserHome) const
 {
     message(0, MessageType_Critical,
             tr("<p>Failed to initialize COM because the VirtualBox global "
                "configuration directory <b><nobr>%1</nobr></b> is not accessible. "
                "Please check the permissions of this directory and of its parent directory.</p>"
-               "<p>The application will now terminate.</p>").arg(strUserHome),
+               "<p>The application will now terminate.</p>")
+               .arg(strUserHome),
             formatErrorInfo(COMErrorInfo()));
 }
 
-void UIMessageCenter::cannotInitCOM(HRESULT rc)
+void UIMessageCenter::cannotInitCOM(HRESULT rc) const
 {
     message(0, MessageType_Critical,
             tr("<p>Failed to initialize COM or to find the VirtualBox COM server. "
@@ -334,7 +335,7 @@ void UIMessageCenter::cannotInitCOM(HRESULT rc)
             formatErrorInfo(COMErrorInfo(), rc));
 }
 
-void UIMessageCenter::cannotCreateVirtualBox(const CVirtualBox &vbox)
+void UIMessageCenter::cannotCreateVirtualBox(const CVirtualBox &vbox) const
 {
     message(0, MessageType_Critical,
             tr("<p>Failed to create the VirtualBox COM object.</p>"
@@ -342,7 +343,7 @@ void UIMessageCenter::cannotCreateVirtualBox(const CVirtualBox &vbox)
             formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotFindLanguage(const QString &strLangId, const QString &strNlsPath)
+void UIMessageCenter::cannotFindLanguage(const QString &strLangId, const QString &strNlsPath) const
 {
     message(0, MessageType_Error,
             tr("<p>Could not find a language file for the language <b>%1</b> in the directory <b><nobr>%2</nobr></b>.</p>"
@@ -352,7 +353,7 @@ void UIMessageCenter::cannotFindLanguage(const QString &strLangId, const QString
                .arg(strLangId).arg(strNlsPath));
 }
 
-void UIMessageCenter::cannotLoadLanguage(const QString &strLangFile)
+void UIMessageCenter::cannotLoadLanguage(const QString &strLangFile) const
 {
     message(0, MessageType_Error,
             tr("<p>Could not load the language file <b><nobr>%1</nobr></b>. "
@@ -362,54 +363,55 @@ void UIMessageCenter::cannotLoadLanguage(const QString &strLangFile)
                .arg(strLangFile));
 }
 
-void UIMessageCenter::cannotLoadGlobalConfig(const CVirtualBox &vbox, const QString &strError)
+void UIMessageCenter::cannotLoadGlobalConfig(const CVirtualBox &vbox, const QString &strError) const
 {
     /* Preserve error-info: */
     COMResult res(vbox);
     /* Show the message: */
     message(0, MessageType_Critical,
             tr("<p>Failed to load the global GUI configuration from <b><nobr>%1</nobr></b>.</p>"
-               "<p>The application will now terminate.</p>").arg(vbox.GetSettingsFilePath()),
-            !res.isOk() ? formatErrorInfo(res)
-                        : QString("<!--EOM--><p>%1</p>").arg(vboxGlobal().emphasize(strError)));
+               "<p>The application will now terminate.</p>")
+               .arg(vbox.GetSettingsFilePath()),
+            !res.isOk() ? formatErrorInfo(res) : QString("<!--EOM--><p>%1</p>").arg(vboxGlobal().emphasize(strError)));
 }
 
-void UIMessageCenter::cannotSaveGlobalConfig(const CVirtualBox &vbox)
+void UIMessageCenter::cannotSaveGlobalConfig(const CVirtualBox &vbox) const
 {
     /* Preserve error-info: */
     COMResult res(vbox);
     /* Show the message: */
     message(0, MessageType_Critical,
             tr("<p>Failed to save the global GUI configuration to <b><nobr>%1</nobr></b>.</p>"
-               "<p>The application will now terminate.</p>").arg(vbox.GetSettingsFilePath()),
+               "<p>The application will now terminate.</p>")
+               .arg(vbox.GetSettingsFilePath()),
             formatErrorInfo(res));
 }
 
-void UIMessageCenter::cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName)
+void UIMessageCenter::cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName) const
 {
     message(0, MessageType_Error,
-            tr("There is no virtual machine named <b>%1</b>.").arg(strName),
+            tr("There is no virtual machine named <b>%1</b>.")
+               .arg(strName),
             formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotFindMachineById(const CVirtualBox &vbox, const QString &strId)
+void UIMessageCenter::cannotFindMachineById(const CVirtualBox &vbox, const QString &strId) const
 {
     message(0, MessageType_Error,
-            tr("There is no virtual machine with id <b>%1</b>.").arg(strId),
+            tr("There is no virtual machine with id <b>%1</b>.")
+               .arg(strId),
             formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotOpenSession(const CSession &session)
+void UIMessageCenter::cannotOpenSession(const CSession &session) const
 {
-    Assert(session.isNull());
     /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
             tr("Failed to create a new session."),
             formatErrorInfo(session));
 }
 
-void UIMessageCenter::cannotOpenSession(const CMachine &machine,
-                                        const CProgress &progress /* = CProgress() */)
+void UIMessageCenter::cannotOpenSession(const CMachine &machine, const CProgress &progress /* = CProgress() */) const
 {
     /* Format error-info: */
     Assert(!machine.isOk() || !progress.isNull());
@@ -422,11 +424,12 @@ void UIMessageCenter::cannotOpenSession(const CMachine &machine,
         strName = QFileInfo(machine.GetSettingsFilePath()).baseName();
     /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
-            tr("Failed to open a session for the virtual machine <b>%1</b>.").arg(strName),
+            tr("Failed to open a session for the virtual machine <b>%1</b>.")
+               .arg(strName),
             strErrorInfo);
 }
 
-void UIMessageCenter::cannotGetMediaAccessibility(const UIMedium &medium)
+void UIMessageCenter::cannotGetMediaAccessibility(const UIMedium &medium) const
 {
     message(mainWindowShown(), MessageType_Error,
             tr("Failed to determine the accessibility state of the medium <nobr><b>%1</b></nobr>.")
@@ -434,7 +437,7 @@ void UIMessageCenter::cannotGetMediaAccessibility(const UIMedium &medium)
             formatErrorInfo(medium.result()));
 }
 
-void UIMessageCenter::cannotOpenURL(const QString &strUrl)
+void UIMessageCenter::cannotOpenURL(const QString &strUrl) const
 {
     message(mainWindowShown(), MessageType_Error,
             tr("Failed to open <tt>%1</tt>. "
@@ -442,21 +445,22 @@ void UIMessageCenter::cannotOpenURL(const QString &strUrl)
                .arg(strUrl));
 }
 
-void UIMessageCenter::cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath)
+void UIMessageCenter::cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const
 {
     message(mainWindowShown(), MessageType_Error,
-            tr("Failed to open virtual machine located in %1.").arg(strMachinePath),
+            tr("Failed to open virtual machine located in %1.")
+               .arg(strMachinePath),
             formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotReregisterExistingMachine(const QString &strMachinePath, const QString &strMachineName)
+void UIMessageCenter::cannotReregisterExistingMachine(const QString &strMachinePath, const QString &strMachineName) const
 {
     message(mainWindowShown(), MessageType_Error,
             tr("Failed to add virtual machine <b>%1</b> located in <i>%2</i> because its already present.")
                .arg(strMachineName).arg(strMachinePath));
 }
 
-void UIMessageCenter::cannotResolveCollisionAutomatically(const QString &strName, const QString &strGroupName)
+void UIMessageCenter::cannotResolveCollisionAutomatically(const QString &strName, const QString &strGroupName) const
 {
     message(mainWindowShown(), MessageType_Error,
             tr("<p>You are trying to move machine <nobr><b>%1</b></nobr> "
@@ -465,18 +469,18 @@ void UIMessageCenter::cannotResolveCollisionAutomatically(const QString &strName
                .arg(strName, strGroupName));
 }
 
-bool UIMessageCenter::confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName)
+bool UIMessageCenter::confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName) const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
                            tr("<p>You are trying to move group <nobr><b>%1</b></nobr> "
                               "to group <nobr><b>%2</b></nobr> which already have another item with the same name.</p>"
                               "<p>Would you like to automatically rename it?</p>")
                               .arg(strName, strGroupName),
-                           0, /* auto-confirm id */
+                           0 /* auto-confirm id */,
                            tr("Rename"));
 }
 
-void UIMessageCenter::cannotSetGroups(const CMachine &machine)
+void UIMessageCenter::cannotSetGroups(const CMachine &machine) const
 {
     /* Preserve error-info: */
     COMResult res(machine);
@@ -486,22 +490,22 @@ void UIMessageCenter::cannotSetGroups(const CMachine &machine)
         strName = QFileInfo(machine.GetSettingsFilePath()).baseName();
     /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
-            tr("Failed to set groups of the virtual machine <b>%1</b>.").arg(strName),
+            tr("Failed to set groups of the virtual machine <b>%1</b>.")
+               .arg(strName),
             formatErrorInfo(res));
 }
 
-bool UIMessageCenter::confirmMachineItemRemoval(const QStringList &names)
+bool UIMessageCenter::confirmMachineItemRemoval(const QStringList &names) const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
-                           tr("<p>You are about to remove following virtual "
-                              "machine items from the machine list:</p>"
-                              "<p><b>%1</b></p>"
-                              "<p>Do you wish to proceed?</p>").arg(names.join(", ")),
-                           0, /* auto-confirm id */
+                           tr("<p>You are about to remove following virtual machine items from the machine list:</p>"
+                              "<p><b>%1</b></p><p>Do you wish to proceed?</p>")
+                              .arg(names.join(", ")),
+                           0 /* auto-confirm id */,
                            tr("Remove"));
 }
 
-int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines)
+int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) const
 {
     /* Enumerate the machines: */
     int cInacessibleMachineCount = 0;
@@ -566,13 +570,13 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines)
     /* Prepare message itself: */
     return cInacessibleMachineCount == machines.size() ?
            message(mainWindowShown(), MessageType_Question,
-                   strText, 0, /* auto-confirm id */
+                   strText, 0 /* auto-confirm id */,
                    QIMessageBox::Ok | QIMessageBox::Default,
                    QIMessageBox::Cancel | QIMessageBox::Escape,
                    0,
                    tr("Remove")) :
            message(mainWindowShown(), MessageType_Question,
-                   strText, 0, /* auto-confirm id */
+                   strText, 0 /* auto-confirm id */,
                    QIMessageBox::Yes,
                    QIMessageBox::No | QIMessageBox::Default,
                    QIMessageBox::Cancel | QIMessageBox::Escape,
@@ -580,7 +584,7 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines)
                    tr("Remove only"));
 }
 
-void UIMessageCenter::cannotRemoveMachine(const CMachine &machine)
+void UIMessageCenter::cannotRemoveMachine(const CMachine &machine) const
 {
     /* Preserve error-info: */
     COMResult res(machine);
@@ -592,7 +596,7 @@ void UIMessageCenter::cannotRemoveMachine(const CMachine &machine)
             !machine.isOk() ? formatErrorInfo(machine) : formatErrorInfo(res));
 }
 
-void UIMessageCenter::cannotRemoveMachine(const CMachine &machine, const CProgress &progress)
+void UIMessageCenter::cannotRemoveMachine(const CMachine &machine, const CProgress &progress) const
 {
     message(mainWindowShown(),
             MessageType_Error,
@@ -601,7 +605,7 @@ void UIMessageCenter::cannotRemoveMachine(const CMachine &machine, const CProgre
             formatErrorInfo(progress.GetErrorInfo()));
 }
 
-bool UIMessageCenter::remindAboutInaccessibleMedia()
+bool UIMessageCenter::remindAboutInaccessibleMedia() const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Warning,
                            tr("<p>One or more virtual hard disks, CD/DVD or "
@@ -615,7 +619,7 @@ bool UIMessageCenter::remindAboutInaccessibleMedia()
                            tr("Check", "inaccessible media message box"));
 }
 
-bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames)
+bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames) const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
                            tr("<p>Are you sure you want to discard the saved state of "
@@ -627,7 +631,7 @@ bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames)
                            tr("Discard", "saved state"));
 }
 
-bool UIMessageCenter::confirmVMReset(const QString &strNames)
+bool UIMessageCenter::confirmVMReset(const QString &strNames) const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
                            tr("<p>Do you really want to reset the following virtual machines?</p>"
@@ -638,7 +642,7 @@ bool UIMessageCenter::confirmVMReset(const QString &strNames)
                            tr("Reset", "machine"));
 }
 
-bool UIMessageCenter::confirmVMACPIShutdown(const QString &strNames)
+bool UIMessageCenter::confirmVMACPIShutdown(const QString &strNames) const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
                            tr("<p>Do you really want to send an ACPI shutdown signal "
@@ -648,7 +652,7 @@ bool UIMessageCenter::confirmVMACPIShutdown(const QString &strNames)
                            tr("ACPI Shutdown", "machine"));
 }
 
-bool UIMessageCenter::confirmVMPowerOff(const QString &strNames)
+bool UIMessageCenter::confirmVMPowerOff(const QString &strNames) const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
                            tr("<p>Do you really want to power off the following virtual machines?</p>"
@@ -659,7 +663,7 @@ bool UIMessageCenter::confirmVMPowerOff(const QString &strNames)
                            tr("Power Off", "machine"));
 }
 
-void UIMessageCenter::cannotDiscardSavedState(const CConsole &console)
+void UIMessageCenter::cannotDiscardSavedState(const CConsole &console) const
 {
     /* Preserve error-info: */
     COMResult res(console);
@@ -670,7 +674,7 @@ void UIMessageCenter::cannotDiscardSavedState(const CConsole &console)
             formatErrorInfo(res));
 }
 
-void UIMessageCenter::cannotStopMachine(const CConsole &console)
+void UIMessageCenter::cannotStopMachine(const CConsole &console) const
 {
     /* Preserve error-info: */
     COMResult res(console);
@@ -681,7 +685,7 @@ void UIMessageCenter::cannotStopMachine(const CConsole &console)
             formatErrorInfo(res));
 }
 
-int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot)
+int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const
 {
     return fAlsoCreateNewSnapshot ?
            messageWithOption(mainWindowShown(), MessageType_Question,
@@ -697,7 +701,8 @@ int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bo
                              0 /* 3rd button */,
                              tr("Restore"), tr("Cancel"), QString() /* 3rd button text */) :
            message(mainWindowShown(), MessageType_Question,
-                   tr("<p>Are you sure you want to restore snapshot <nobr><b>%1</b></nobr>?</p>").arg(strSnapshotName),
+                   tr("<p>Are you sure you want to restore snapshot <nobr><b>%1</b></nobr>?</p>")
+                      .arg(strSnapshotName),
                    0 /* auto-confirm id */,
                    QIMessageBox::Ok | QIMessageBox::Default,
                    QIMessageBox::Cancel | QIMessageBox::Escape,
@@ -705,21 +710,22 @@ int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bo
                    tr("Restore"), tr("Cancel"), QString() /* 3rd button text */);
 }
 
-bool UIMessageCenter::confirmSnapshotRemoval(const QString &strSnapshotName)
+bool UIMessageCenter::confirmSnapshotRemoval(const QString &strSnapshotName) const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
                            tr("<p>Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over "
-                              "several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information "
-                              "in the snapshot cannot be recovered.</p></p>Are you sure you want to delete the selected snapshot <b>%1</b>?</p>")
+                              "several image files that VirtualBox has created together with the snapshot will be merged into one file. "
+                              "This can be a lengthy process, and the information in the snapshot cannot be recovered.</p>"
+                              "</p>Are you sure you want to delete the selected snapshot <b>%1</b>?</p>")
                               .arg(strSnapshotName),
                            0 /* auto-confirm id */,
-                           tr("Delete"), tr("Cancel"));
+                           tr("Delete"));
 }
 
 bool UIMessageCenter::warnAboutSnapshotRemovalFreeSpace(const QString &strSnapshotName,
                                                         const QString &strTargetImageName,
                                                         const QString &strTargetImageMaxSize,
-                                                        const QString &strTargetFileSystemFree)
+                                                        const QString &strTargetFileSystemFree) const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
                            tr("<p>Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, "
@@ -734,7 +740,7 @@ bool UIMessageCenter::warnAboutSnapshotRemovalFreeSpace(const QString &strSnapsh
                            tr("Delete"));
 }
 
-void UIMessageCenter::cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName)
+void UIMessageCenter::cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName) const
 {
     message(mainWindowShown(), MessageType_Error,
             tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
@@ -742,7 +748,7 @@ void UIMessageCenter::cannotRestoreSnapshot(const CConsole &console, const QStri
             formatErrorInfo(console));
 }
 
-void UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName)
+void UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName) const
 {
     /* Get console: */
     AssertWrapperOk(progress);
@@ -755,7 +761,7 @@ void UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QSt
             formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName)
+void UIMessageCenter::cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName) const
 {
     message(mainWindowShown(), MessageType_Error,
             tr("Failed to delete the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
@@ -764,8 +770,7 @@ void UIMessageCenter::cannotRemoveSnapshot(const CConsole &console, const QStrin
             formatErrorInfo(console));
 }
 
-void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress,
-                                           const QString &strSnapshotName)
+void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName) const
 {
     /* Get console: */
     AssertWrapperOk(progress);
@@ -773,20 +778,13 @@ void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress,
     AssertWrapperOk(console);
     /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
-        tr("Failed to delete the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-            .arg(strSnapshotName)
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(progress.GetErrorInfo()));
+            tr("Failed to delete the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
+               .arg(strSnapshotName)
+               .arg(console.GetMachine().GetName()),
+            formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties)
-{
-    message(mainWindowShown(), MessageType_Critical,
-            tr("Failed to set global VirtualBox properties."),
-            formatErrorInfo(properties));
-}
-
-void UIMessageCenter::cannotAccessUSB(const COMBaseWithEI &object)
+void UIMessageCenter::cannotAccessUSB(const COMBaseWithEI &object) const
 {
     /* If IMachine::GetUSBController(), IHost::GetUSBDevices() etc. return
      * E_NOTIMPL, it means the USB support is intentionally missing
@@ -794,79 +792,79 @@ void UIMessageCenter::cannotAccessUSB(const COMBaseWithEI &object)
     COMResult res(object);
     if (res.rc() == E_NOTIMPL)
         return;
-
+    /* Show the message: */
     message(mainWindowShown(), res.isWarning() ? MessageType_Warning : MessageType_Error,
              tr("Failed to access the USB subsystem."),
              formatErrorInfo(res),
              "cannotAccessUSB");
 }
 
-void UIMessageCenter::cannotLoadMachineSettings(const CMachine &machine, bool fStrict /*= true*/, QWidget *pParent /*= 0*/)
+void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties) const
 {
-    /* This function is NOT use currently.
-     * We are keeping it here just for convinience with Save analog. */
-
-    /* Preserve error-info.
-     * If COM result code is E_NOTIMPL, it means the requested
-     * object or function is intentionally missing (as in the OSE version).
-     * Don't show the error message in this case. */
-    COMResult res(machine);
-    if (!fStrict && res.rc() == E_NOTIMPL)
-        return;
-
-    /* Show the message: */
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-            tr("Failed to load the settings of the virtual machine "
-               "<b>%1</b> from <b><nobr>%2</nobr></b>.")
-               .arg(machine.GetName(), machine.GetSettingsFilePath()),
-            formatErrorInfo(res));
+    message(mainWindowShown(), MessageType_Critical,
+            tr("Failed to set global VirtualBox properties."),
+            formatErrorInfo(properties));
 }
 
-void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent /*= 0*/)
+void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent /*= 0*/) const
 {
     /* Preserve error-info: */
     COMResult res(machine);
     /* Show the message: */
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-            tr("Failed to save the settings of the virtual machine "
-               "<b>%1</b> to <b><nobr>%2</nobr></b>.")
+            tr("Failed to save the settings of the virtual machine <b>%1</b> to <b><nobr>%2</nobr></b>.")
                .arg(machine.GetName(), machine.GetSettingsFilePath()),
             formatErrorInfo(res));
 }
 
-void UIMessageCenter::warnAboutStateChange(QWidget *pParent)
+void UIMessageCenter::warnAboutStateChange(QWidget *pParent /*= 0*/) const
 {
+    /* Do not show this async warning more than one at time: */
     if (warningShown("warnAboutStateChange"))
         return;
     setWarningShown("warnAboutStateChange", true);
-
+    /* Show the message: */
     message(pParent ? pParent : mainWindowShown(), MessageType_Warning,
             tr("The virtual machine that you are changing has been started. "
                "Only certain settings can be changed while a machine is running. "
                "All other changes will be lost if you close this window now."));
-
+    /* Allow to show this async warning: */
     setWarningShown("warnAboutStateChange", false);
 }
 
-bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent)
+bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /*= 0*/) const
 {
-    int rc = message(pParent, MessageType_Question,
-                     tr("<p>The machine settings were changed while you were editing them. "
-                        "You currently have unsaved setting changes.</p>"
-                        "<p>Would you like to reload the changed settings or to keep your own changes?</p>"), 0,
-                     QIMessageBox::Yes, QIMessageBox::No | QIMessageBox::Default | QIMessageBox::Escape, 0,
-                     tr("Reload settings"), tr("Keep changes"), 0);
-    return rc == QIMessageBox::Yes;
+    return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Question,
+                           tr("<p>The machine settings were changed while you were editing them. "
+                              "You currently have unsaved setting changes.</p>"
+                              "<p>Would you like to reload the changed settings or to keep your own changes?</p>"),
+                           0 /* auto-confirm id */,
+                           tr("Reload settings"), tr("Keep changes"));
 }
 
-int UIMessageCenter::askAboutHardDiskAttachmentCreation(QWidget *pParent,
-                                                        const QString &strControllerName)
+bool UIMessageCenter::confirmDeletingHostInterface(const QString &strName, QWidget *pParent /*= 0*/) const
 {
-    return message(pParent, MessageType_Question,
+    return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Question,
+                           tr("<p>Deleting this host-only network will remove "
+                              "the host-only interface this network is based on. Do you want to "
+                              "remove the (host-only network) interface <nobr><b>%1</b>?</nobr></p>"
+                              "<p><b>Note:</b> this interface may be in use by one or more "
+                              "virtual network adapters belonging to one of your VMs. "
+                              "After it is removed, these adapters will no longer be usable until "
+                              "you correct their settings by either choosing a different interface "
+                              "name or a different adapter attachment type.</p>")
+                              .arg(strName),
+                           0 /* auto-confirm id */,
+                           tr("Remove"));
+}
+
+int UIMessageCenter::askAboutHardDiskAttachmentCreation(const QString &strControllerName, QWidget *pParent /*= 0*/) const
+{
+    return message(pParent ? pParent : mainWindowShown(), MessageType_Question,
                    tr("<p>You are about to add a virtual hard disk to controller <b>%1</b>.</p>"
                       "<p>Would you like to create a new, empty file to hold the disk contents or select an existing one?</p>")
-                   .arg(strControllerName),
-                   0, /* auto-confirm id */
+                      .arg(strControllerName),
+                   0 /* auto-confirm id */,
                    QIMessageBox::Yes,
                    QIMessageBox::No,
                    QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
@@ -874,15 +872,14 @@ int UIMessageCenter::askAboutHardDiskAttachmentCreation(QWidget *pParent,
                    tr("&Choose existing disk", "add attachment routine"));
 }
 
-int UIMessageCenter::askAboutOpticalAttachmentCreation(QWidget *pParent,
-                                                       const QString &strControllerName)
+int UIMessageCenter::askAboutOpticalAttachmentCreation(const QString &strControllerName, QWidget *pParent /*= 0*/) const
 {
-    return message(pParent, MessageType_Question,
+    return message(pParent ? pParent : mainWindowShown(), MessageType_Question,
                    tr("<p>You are about to add a new CD/DVD drive to controller <b>%1</b>.</p>"
                       "<p>Would you like to choose a virtual CD/DVD disk to put in the drive "
                       "or to leave it empty for now?</p>")
-                   .arg(strControllerName),
-                   0, /* auto-confirm id */
+                      .arg(strControllerName),
+                   0 /* auto-confirm id */,
                    QIMessageBox::Yes,
                    QIMessageBox::No,
                    QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
@@ -890,15 +887,14 @@ int UIMessageCenter::askAboutOpticalAttachmentCreation(QWidget *pParent,
                    tr("Leave &empty", "add attachment routine"));
 }
 
-int UIMessageCenter::askAboutFloppyAttachmentCreation(QWidget *pParent,
-                                                      const QString &strControllerName)
+int UIMessageCenter::askAboutFloppyAttachmentCreation(const QString &strControllerName, QWidget *pParent /*= 0*/) const
 {
-    return message(pParent, MessageType_Question,
+    return message(pParent ? pParent : mainWindowShown(), MessageType_Question,
                    tr("<p>You are about to add a new floppy drive to controller <b>%1</b>.</p>"
                       "<p>Would you like to choose a virtual floppy disk to put in the drive "
                       "or to leave it empty for now?</p>")
-                   .arg(strControllerName),
-                   0, /* auto-confirm id */
+                      .arg(strControllerName),
+                   0 /* auto-confirm id */,
                    QIMessageBox::Yes,
                    QIMessageBox::No,
                    QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
@@ -906,45 +902,28 @@ int UIMessageCenter::askAboutFloppyAttachmentCreation(QWidget *pParent,
                    tr("Leave &empty", "add attachment routine"));
 }
 
-int UIMessageCenter::confirmRemovingOfLastDVDDevice() const
+int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /*= 0*/) const
 {
-    return messageOkCancel(QApplication::activeWindow(), MessageType_Info,
-                            tr("<p>Are you sure you want to delete the CD/DVD-ROM device?</p>"
-                               "<p>You will not be able to mount any CDs or ISO images "
-                               "or install the Guest Additions without it!</p>"),
-                            0, /* auto-confirm id */
-                            tr("&Remove", "medium"));
+    return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Info,
+                           tr("<p>Are you sure you want to delete the CD/DVD-ROM device?</p>"
+                              "<p>You will not be able to mount any CDs or ISO images "
+                              "or install the Guest Additions without it!</p>"),
+                           0 /* auto-confirm id */,
+                           tr("&Remove", "medium"));
 }
 
-int UIMessageCenter::confirmDeletingHostInterface(const QString &strName,
-                                                  QWidget *pParent)
+void UIMessageCenter::warnAboutIncorrectPort(QWidget *pParent /*= 0*/) const
 {
-    return msgCenter().message(pParent, MessageType_Question,
-        tr("<p>Deleting this host-only network will remove "
-           "the host-only interface this network is based on. Do you want to "
-           "remove the (host-only network) interface <nobr><b>%1</b>?</nobr></p>"
-           "<p><b>Note:</b> this interface may be in use by one or more "
-           "virtual network adapters belonging to one of your VMs. "
-           "After it is removed, these adapters will no longer be usable until "
-           "you correct their settings by either choosing a different interface "
-           "name or a different adapter attachment type.</p>").arg(strName),
-        0, /* auto-confirm id */
-        QIMessageBox::Ok | QIMessageBox::Default,
-        QIMessageBox::Cancel | QIMessageBox::Escape);
-}
-
-void UIMessageCenter::warnAboutIncorrectPort(QWidget *pParent) const
-{
-    message(pParent, MessageType_Error,
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("The current port forwarding rules are not valid. "
                "None of the host or guest port values may be set to zero."));
 }
 
-bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent) const
+bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /*= 0*/) const
 {
-    return messageOkCancel(pParent, MessageType_Question,
-        tr("<p>There are unsaved changes in the port forwarding configuration.</p>"
-           "<p>If you proceed your changes will be discarded.</p>"));
+    return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Question,
+                           tr("<p>There are unsaved changes in the port forwarding configuration.</p>"
+                              "<p>If you proceed your changes will be discarded.</p>"));
 }
 
 void UIMessageCenter::cannotChangeMediumType(QWidget *pParent,
@@ -1012,7 +991,7 @@ bool UIMessageCenter::confirmRemoveMedium(QWidget *pParent,
                "deleted and that it will be possible to use it later again.</p>");
 
     return messageOkCancel(pParent, MessageType_Question, msg,
-        "confirmRemoveMedium", /* auto-confirm id */
+        "confirmRemoveMedium" /* auto-confirm id */,
         tr("Remove", "medium"));
 }
 
@@ -1029,7 +1008,7 @@ int UIMessageCenter::confirmDeleteHardDiskStorage(QWidget *pParent, const QStrin
            "will be left untouched which makes it possible to add this hard "
            "disk to the list later again.</p>")
         .arg(strLocation),
-        0, /* auto-confirm id */
+        0 /* auto-confirm id */,
         QIMessageBox::Yes,
         QIMessageBox::No | QIMessageBox::Default,
         QIMessageBox::Cancel | QIMessageBox::Escape,
@@ -1272,7 +1251,7 @@ bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent)
            "You will not be able to install an operating system on the machine "
            "until you add one. In the mean time you will only be able to start the "
            "machine using a virtual optical disk or from the network."),
-        0, /* auto-confirm id */
+        0 /* auto-confirm id */,
         QIMessageBox::Ok,
         QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
         0,
@@ -1353,7 +1332,7 @@ bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &strMac
            "will be discarded. The other machine(s) will not be changed.</p>", "This text is never used with n == 0.  Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn't need to be told).",
            strMachineNames.size()).arg(VBoxGlobal::toHumanReadableList(strMachineNames)),
         0 /* auto-confirm id */,
-        tr("Continue"), tr("Cancel"));
+        tr("Continue"));
 }
 
 void UIMessageCenter::cannotExportAppliance(CAppliance *pAppliance,
@@ -1562,7 +1541,7 @@ bool UIMessageCenter::cannotStartWithoutNetworkIf(const QString &strMachineName,
                 "settings or stop the machine.</p>")
              .arg(strMachineName)
              .arg(strIfNames),
-             0, /* auto-confirm id */
+             0 /* auto-confirm id */,
              tr("Change Network Settings"),
              tr("Close Virtual Machine"));
 }
@@ -1860,7 +1839,7 @@ int UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */,
                  "<p>Press <b>Ignore</b> to switch to fullscreen mode anyway "
                  "or press <b>Cancel</b> to cancel the operation.</p>")
              .arg(VBoxGlobal::formatSize(uMinVRAM)),
-             0, /* auto-confirm id */
+             0 /* auto-confirm id */,
              QIMessageBox::Ignore | QIMessageBox::Default,
              QIMessageBox::Cancel | QIMessageBox::Escape);
 }
@@ -1885,7 +1864,7 @@ int UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM)
                       "<p>Press <b>Ignore</b> to switch the screen anyway "
                       "or press <b>Cancel</b> to cancel the operation.</p>")
                    .arg(VBoxGlobal::formatSize(uMinVRAM)),
-                   0, /* auto-confirm id */
+                   0 /* auto-confirm id */,
                    QIMessageBox::Ignore | QIMessageBox::Default,
                    QIMessageBox::Cancel | QIMessageBox::Escape);
 }
@@ -2034,7 +2013,7 @@ bool UIMessageCenter::remindAboutGuruMeditation(const CConsole &console, const Q
            "Please note that debugging requires special knowledge and tools, so "
            "it is recommended to press <b>OK</b> now.</p>")
             .arg(strLogFolder),
-        0, /* auto-confirm id */
+        0 /* auto-confirm id */,
         QIMessageBox::Ok | QIMessageBox::Default,
         QIMessageBox::Ignore | QIMessageBox::Escape);
 
@@ -2077,7 +2056,7 @@ bool UIMessageCenter::confirmDownloadAdditions(const QString &strUrl, qulonglong
                               "Guest Additions CD image from "
                               "<nobr><a href=\"%1\">%2</a></nobr> "
                               "(size %3 bytes)?</p>").arg(strUrl).arg(strUrl).arg(loc.toString(uSize)),
-                           0, /* auto-confirm id */
+                           0 /* auto-confirm id */,
                            tr("Download", "additions"));
 }
 
@@ -2091,7 +2070,7 @@ bool UIMessageCenter::confirmMountAdditions(const QString &strUrl, const QString
                               "<p>Do you wish to register this CD image and mount it "
                               "on the virtual CD/DVD drive?</p>")
                                .arg(strUrl).arg(strUrl).arg(strSrc),
-                           0, /* auto-confirm id */
+                           0 /* auto-confirm id */,
                            tr("Mount", "additions"));
 }
 
@@ -2109,7 +2088,7 @@ bool UIMessageCenter::askAboutUserManualDownload(const QString &strMissedLocatio
                               "<nobr><b>%1</b>.</nobr></p><p>Do you wish to "
                               "download this file from the Internet?</p>")
                               .arg(strMissedLocation),
-                           0, /* Auto-confirm Id */
+                           0 /* auto-confirm id */,
                            tr("Download", "additions"));
 }
 
@@ -2121,7 +2100,7 @@ bool UIMessageCenter::confirmUserManualDownload(const QString &strURL, qulonglon
                               "User Manual from "
                               "<nobr><a href=\"%1\">%2</a></nobr> "
                               "(size %3 bytes)?</p>").arg(strURL).arg(strURL).arg(loc.toString(uSize)),
-                           0, /* Auto-confirm Id */
+                           0 /* auto-confirm id */,
                            tr("Download", "additions"));
 }
 
@@ -2153,7 +2132,7 @@ bool UIMessageCenter::proposeDownloadExtensionPack(const QString &strExtPackName
                            tr("<p>You have an old version (%1) of the <b><nobr>%2</nobr></b> installed.</p>"
                               "<p>Do you wish to download latest one from the Internet?</p>")
                               .arg(strExtPackVersion).arg(strExtPackName),
-                           0, /* Auto-confirm Id */
+                           0 /* auto-confirm id */,
                            tr("Download", "extension pack"));
 }
 
@@ -2163,7 +2142,7 @@ bool UIMessageCenter::requestUserDownloadExtensionPack(const QString &strExtPack
                    tr("<p>You have version %1 of the <b><nobr>%2</nobr></b> installed.</p>"
                       "<p>You should download and install version %3 of this extension pack from Oracle!</p>")
                       .arg(strExtPackVersion).arg(strExtPackName).arg(strVBoxVersion),
-                      0, /* Auto-confirm Id */
+                      0 /* auto-confirm id */,
                       QIMessageBox::Ok | QIMessageBox::Default,
                       0,
                       0,
@@ -2177,7 +2156,7 @@ bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName
                            tr("<p>Are you sure you want to download the <b><nobr>%1</nobr></b> "
                               "from <nobr><a href=\"%2\">%2</a></nobr> (size %3 bytes)?</p>")
                               .arg(strExtPackName, strURL, loc.toString(uSize)),
-                           0, /* Auto-confirm Id */
+                           0 /* auto-confirm id */,
                            tr("Download", "extension pack"));
 }
 
@@ -2189,7 +2168,7 @@ bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName,
                               "and saved locally as <nobr><b>%3</b>.</nobr></p>"
                               "<p>Do you wish to install this extension pack?</p>")
                               .arg(strExtPackName, strFrom, strTo),
-                           0, /* Auto-confirm Id */
+                           0 /* auto-confirm id */,
                            tr ("Install", "extension pack"));
 }
 

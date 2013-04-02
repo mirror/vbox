@@ -2402,7 +2402,7 @@ void UIMachineSettingsStorage::delAttachment()
     if (   device == KDeviceType_DVD
         && deviceCount (KDeviceType_DVD) == 1)
     {
-        if (msgCenter().confirmRemovingOfLastDVDDevice() != QIMessageBox::Ok)
+        if (!msgCenter().confirmRemovingOfLastDVDDevice(this))
             return;
     }
 
@@ -3044,7 +3044,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
     {
         case KDeviceType_HardDisk:
         {
-            int iAnswer = msgCenter().askAboutHardDiskAttachmentCreation(this, strControllerName);
+            int iAnswer = msgCenter().askAboutHardDiskAttachmentCreation(strControllerName, this);
             if (iAnswer == QIMessageBox::Yes)
                 strMediumId = getWithNewHDWizard();
             else if (iAnswer == QIMessageBox::No)
@@ -3053,7 +3053,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
         }
         case KDeviceType_DVD:
         {
-            int iAnswer = msgCenter().askAboutOpticalAttachmentCreation(this, strControllerName);
+            int iAnswer = msgCenter().askAboutOpticalAttachmentCreation(strControllerName, this);
             if (iAnswer == QIMessageBox::Yes)
                 strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_DVD, this, strMachineFolder);
             else if (iAnswer == QIMessageBox::No)
@@ -3062,7 +3062,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
         }
         case KDeviceType_Floppy:
         {
-            int iAnswer = msgCenter().askAboutFloppyAttachmentCreation(this, strControllerName);
+            int iAnswer = msgCenter().askAboutFloppyAttachmentCreation(strControllerName, this);
             if (iAnswer == QIMessageBox::Yes)
                 strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_Floppy, this, strMachineFolder);
             else if (iAnswer == QIMessageBox::No)
