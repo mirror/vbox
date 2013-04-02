@@ -1998,47 +1998,52 @@ void UIGroupDefinitionSaveThread::run()
         /* Get old group list/set: */
         const QStringList &oldGroupList = m_oldLists.value(strId);
         const UIStringSet &oldGroupSet = UIStringSet::fromList(oldGroupList);
-        /* Is group set changed? */
-        if (newGroupSet != oldGroupSet)
+        /* Make sure group set was changed: */
+        if (newGroupSet == oldGroupSet)
+            continue;
+
+        /* The next steps are subsequent.
+         * Every of them is mandatory in order to continue
+         * with common cleanup in case of failure.
+         * We have to simulate a try-catch block. */
+        bool fSuccess = false;
+        CSession session;
+        CMachine machine;
+        do
         {
-            /* Open session to modify iterated machine: */
-            CSession session = vboxGlobal().openSession(strId);
+            /* 1. Open session: */
+            session = vboxGlobal().openSession(strId);
             if (session.isNull())
-            {
-                emit sigReload(strId);
-                continue;
-            }
+                break;
 
-            /* Get session machine: */
-            CMachine machine = session.GetMachine();
-            AssertMsg(!machine.isNull(), ("Session machine is NULL!"));
+            /* 2. Get session machine: */
+            machine = session.GetMachine();
             if (machine.isNull())
-            {
-                emit sigReload(strId);
-                continue;
-            }
+                break;
 
-            /* Set groups: */
+            /* 3. Set new groups: */
             machine.SetGroups(newGroupList.toVector());
             if (!machine.isOk())
-            {
-                msgCenter().cannotSetGroups(machine);
-                emit sigReload(strId);
-                continue;
-            }
+                break;
 
-            /* Save settings: */
+            /* 4. Save settings: */
             machine.SaveSettings();
             if (!machine.isOk())
-            {
-                msgCenter().cannotSaveMachineSettings(machine);
-                emit sigReload(strId);
-                continue;
-            }
+                break;
 
-            /* Close the session finally: */
-            session.UnlockMachine();
+            /* Transaction complete: */
+            fSuccess = true;
+        } while (0);
+
+        /* Cleanup if necessary: */
+        if (!fSuccess)
+        {
+            if (!machine.isNull())
+                msgCenter().cannotSaveMachineSettings(machine);
+            emit sigReload(strId);
         }
+        if (!session.isNull())
+            session.UnlockMachine();
     }
 
     /* Notify listeners about completeness: */
