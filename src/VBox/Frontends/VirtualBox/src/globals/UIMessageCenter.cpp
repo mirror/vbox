@@ -408,10 +408,14 @@ void UIMessageCenter::cannotOpenSession(const CSession &session)
             formatErrorInfo(session));
 }
 
-void UIMessageCenter::cannotOpenSession(const CVirtualBox &vbox, const CMachine &machine,
+void UIMessageCenter::cannotOpenSession(const CMachine &machine,
                                         const CProgress &progress /* = CProgress() */)
 {
-    Assert(!vbox.isOk() || progress.isOk());
+    /* Format error-info: */
+    Assert(!machine.isOk() || !progress.isNull());
+    QString strErrorInfo = !machine.isOk() ? formatErrorInfo(machine) :
+                           !progress.isOk() ? formatErrorInfo(progress) :
+                           formatErrorInfo(progress.GetErrorInfo());
     /* Compose machine name: */
     QString strName = machine.GetName();
     if (strName.isEmpty())
@@ -419,21 +423,7 @@ void UIMessageCenter::cannotOpenSession(const CVirtualBox &vbox, const CMachine 
     /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
             tr("Failed to open a session for the virtual machine <b>%1</b>.").arg(strName),
-            !vbox.isOk() ? formatErrorInfo(vbox) : formatErrorInfo(progress.GetErrorInfo()));
-}
-
-void UIMessageCenter::cannotOpenSession(const CMachine &machine)
-{
-    /* Preserve error-info: */
-    COMResult res(machine);
-    /* Compose machine name: */
-    QString strName = machine.GetName();
-    if (strName.isEmpty())
-        strName = QFileInfo(machine.GetSettingsFilePath()).baseName();
-    /* Show the message: */
-    message(mainWindowShown(), MessageType_Error,
-            tr("Failed to open a session for the virtual machine <b>%1</b>.").arg(strName),
-            formatErrorInfo(res));
+            strErrorInfo);
 }
 
 void UIMessageCenter::cannotGetMediaAccessibility(const UIMedium &medium)

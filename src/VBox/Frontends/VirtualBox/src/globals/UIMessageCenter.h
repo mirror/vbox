@@ -204,8 +204,7 @@ public:
     void cannotFindMachineByName(const CVirtualBox &vbox, const QString &strName);
     void cannotFindMachineById(const CVirtualBox &vbox, const QString &strId);
     void cannotOpenSession(const CSession &session);
-    void cannotOpenSession(const CVirtualBox &vbox, const CMachine &machine, const CProgress &progress = CProgress());
-    void cannotOpenSession(const CMachine &machine);
+    void cannotOpenSession(const CMachine &machine, const CProgress &progress = CProgress());
     void cannotGetMediaAccessibility(const UIMedium &medium);
     void cannotOpenURL(const QString &strUrl);
 
