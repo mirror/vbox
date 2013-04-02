@@ -582,6 +582,12 @@ void UIMediumManager::showModeless (QWidget *aCenterWidget /* = 0 */, bool aRefr
     mModelessDialog->activateWindow();
 }
 
+/* static */
+UIMediumManager* UIMediumManager::modelessInstance()
+{
+    return mModelessDialog;
+}
+
 QString UIMediumManager::selectedId() const
 {
     QTreeWidget *tree = currentTreeWidget();

@@ -69,7 +69,7 @@ private slots:
     void sltDetailsViewIndexChanged(int iWidgetIndex);
 
     /* Handler: Medium enumeration stuff: */
-    void sltMediumEnumFinished(const VBoxMediaList &mediumList);
+    void sltMediumEnumFinished();
 
     /* Handler: Menubar/status stuff: */
     void sltShowSelectorContextMenu(const QPoint &pos);
@@ -114,6 +114,8 @@ private:
 
     /* Event handlers: */
     bool event(QEvent *pEvent);
+    void showEvent(QShowEvent *pEvent);
+    void polishEvent(QShowEvent *pEvent);
     void closeEvent(QCloseEvent *pEvent);
 #ifdef Q_WS_MAC
     bool eventFilter(QObject *pObject, QEvent *pEvent);
@@ -156,6 +158,10 @@ private:
     static bool isAtLeastOneItemDiscardable(const QList<UIVMItem*> &items);
     static bool isAtLeastOneItemStarted(const QList<UIVMItem*> &items);
     static bool isAtLeastOneItemRunning(const QList<UIVMItem*> &items);
+
+    /* Variables: */
+    bool m_fPolished : 1;
+    bool m_fWarningAboutInaccessibleMediumShown : 1;
 
     /* Central splitter window: */
     QISplitter *m_pSplitter;
@@ -239,7 +245,6 @@ private:
 
     /* Other variables: */
     QRect m_normalGeo;
-    bool m_fDoneInaccessibleWarningOnce : 1;
 };
 
 #endif // __UISelectorWindow_h__

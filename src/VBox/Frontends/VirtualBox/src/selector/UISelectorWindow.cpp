@@ -27,6 +27,7 @@
 #include <QMenuBar>
 #include <QResizeEvent>
 #include <QStackedWidget>
+#include <QTimer>
 
 /* Local includes: */
 #include "QISplitter.h"
@@ -75,6 +76,8 @@
 UISelectorWindow::UISelectorWindow(UISelectorWindow **ppSelf, QWidget *pParent,
                                    Qt::WindowFlags flags /* = Qt::Window */)
     : QIWithRetranslateUI2<QMainWindow>(pParent, flags)
+    , m_fPolished(false)
+    , m_fWarningAboutInaccessibleMediumShown(false)
     , m_pSplitter(0)
 #ifndef Q_WS_MAC
     , m_pBar(0)
@@ -84,7 +87,6 @@ UISelectorWindow::UISelectorWindow(UISelectorWindow **ppSelf, QWidget *pParent,
     , m_pChooser(0)
     , m_pDetails(0)
     , m_pVMDesktop(0)
-    , m_fDoneInaccessibleWarningOnce(false)
 {
     /* Remember self: */
     if (ppSelf)
@@ -168,36 +170,30 @@ void UISelectorWindow::sltDetailsViewIndexChanged(int iWidgetIndex)
         m_pContainer->setCurrentWidget(m_pDetails);
 }
 
-void UISelectorWindow::sltMediumEnumFinished(const VBoxMediaList &list)
+void UISelectorWindow::sltMediumEnumFinished()
 {
-    /* We warn about inaccessible media only once
+    /* We try to warn about inaccessible mediums only once
      * (after media emumeration started from main() at startup),
      * to avoid annoying the user: */
-    if (m_fDoneInaccessibleWarningOnce)
+    if (m_fWarningAboutInaccessibleMediumShown)
         return;
-    m_fDoneInaccessibleWarningOnce = true;
+    m_fWarningAboutInaccessibleMediumShown = true;
 
-    /* Ignore the signal if a modal widget is currently active
-     * (we won't be able to properly show the modeless VDI manager window in this case): */
-    // TODO: Not sure that is required at all...
-    if (QApplication::activeModalWidget())
+    /* Make sure MM window is not opened: */
+    if (UIMediumManager::modelessInstance())
         return;
 
-    /* Ignore the signal if a UIMediumManager window is active: */
-    // TODO: Thats a very dirty way, rework required!
-    if (qApp->activeWindow() &&
-        !strcmp(qApp->activeWindow()->metaObject()->className(), "UIMediumManager"))
-        return;
-
-    /* Look for at least one inaccessible media: */
+    /* Look for at least one inaccessible medium: */
+    const VBoxMediaList &list = vboxGlobal().currentMediaList();
     VBoxMediaList::const_iterator it;
     for (it = list.begin(); it != list.end(); ++it)
         if ((*it).state() == KMediumState_Inaccessible)
             break;
-    /* Ask the user about: */
+
+    /* Warn the user about inaccessible medium: */
     if (it != list.end() && msgCenter().remindAboutInaccessibleMedia())
     {
-        /* Show the VMM dialog without refresh: */
+        /* Open the MM window (without refresh): */
         UIMediumManager::showModeless(this, false /* refresh? */);
     }
 }
@@ -311,6 +307,10 @@ void UISelectorWindow::sltShowPreferencesDialog()
     /* Remember that we handling that already: */
     m_pPreferencesDialogAction->setData(true);
 
+    /* Don't show the inaccessible warning
+     * if the user tries to open global settings: */
+    m_fWarningAboutInaccessibleMediumShown = true;
+
     /* Create and execute global settings dialog: */
     UISettingsDialogGlobal dialog(this);
     dialog.execute();
@@ -401,8 +401,9 @@ void UISelectorWindow::sltShowMachineSettingsDialog(const QString &strCategoryRe
         }
     }
 
-    /* Don't show the inaccessible warning if the user tries to open VM settings: */
-    m_fDoneInaccessibleWarningOnce = true;
+    /* Don't show the inaccessible warning
+     * if the user tries to open VM settings: */
+    m_fWarningAboutInaccessibleMediumShown = true;
 
     /* Create and execute corresponding VM settings dialog: */
     UISettingsDialogMachine dialog(this,
@@ -1000,6 +1001,28 @@ bool UISelectorWindow::event(QEvent *pEvent)
     return QMainWindow::event(pEvent);
 }
 
+void UISelectorWindow::showEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    QMainWindow::showEvent(pEvent);
+
+    /* Is polishing required? */
+    if (!m_fPolished)
+    {
+        /* Pass the show-event to polish-event: */
+        polishEvent(pEvent);
+        /* Mark as polished: */
+        m_fPolished = true;
+    }
+}
+
+void UISelectorWindow::polishEvent(QShowEvent*)
+{
+    /* Make sure user warned about inaccessible medium(s)
+     * even if enumeration had finished before selector window shown: */
+    QTimer::singleShot(0, this, SLOT(sltMediumEnumFinished()));
+}
+
 void UISelectorWindow::closeEvent(QCloseEvent *pEvent)
 {
     // TODO: Such things are obsolete, rework required!
@@ -1378,7 +1401,7 @@ void UISelectorWindow::prepareWidgets()
 void UISelectorWindow::prepareConnections()
 {
     /* Medium enumeration connections: */
-    connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)), this, SLOT(sltMediumEnumFinished(const VBoxMediaList &)));
+    connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)), this, SLOT(sltMediumEnumFinished()));
 
     /* Menu-bar connections: */
     connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltShowSelectorContextMenu(const QPoint&)));
