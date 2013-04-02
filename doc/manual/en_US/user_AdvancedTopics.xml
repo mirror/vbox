@@ -1932,7 +1932,38 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           </glossentry>
         </glosslist></para>
 
-        <para>To disable any GUI customization do <screen>VBoxManage setextradata global GUI/Customizations</screen></para>
+      <para>To disable any GUI customization do
+        <screen>VBoxManage setextradata global GUI/Customizations</screen></para>
+
+      <title>VM selector customization</title>
+      <para>The following per-machine VM extradata settings can be used to change the
+        behavior of the VM selector window in respect of certain VMs:</para>
+      <screen>VBoxManage setextradata VM_NAME SETTING true</screen>
+      <para>where <computeroutput>SETTING</computeroutput> can be:</para>
+      <glosslist>
+        <glossentry>
+          <glossterm><computeroutput>GUI/HideDetails</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the VM configuration of a certain VM. The details
+              window will remain just empty if this VM is selected.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+         <glossterm><computeroutput>GUI/PreventReconfiguration</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't allow the user to open the settings dialog for a certain VM.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>GUI/HideFromManager</computeroutput></glossterm>
+          <glossdef>
+            <para>Hide a certain VM in the VM selector window.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+      <para>Please note that these settings wouldn't prevent the user from
+        reconfiguring the VM by <computeroutput>VBoxManage modifyvm</computeroutput>.</para>
+          
       </sect2>
 
       <sect2>
