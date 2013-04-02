@@ -43,7 +43,7 @@
 static char const g_aszSRegNms[X86_SREG_COUNT][4] = { "ES", "CS", "SS", "DS", "FS", "GS" };
 #endif
 
-
+#ifdef SELM_TRACK_GUEST_GDT_CHANGES
 /**
  * Synchronizes one GDT entry (guest -> shadow).
  *
@@ -122,7 +122,7 @@ static VBOXSTRICTRC selmRCSyncGDTEntry(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
     /*
      * Convert the guest selector to a shadow selector and update the shadow GDT.
      */
-    selmGuestToShadowDesc(&Desc);
+    selmGuestToShadowDesc(pVM, &Desc);
     PX86DESC pShwDescr = &pVM->selm.s.paGdtRC[iGDTEntry];
     //Log(("O: base=%08X limit=%08X attr=%04X\n", X86DESC_BASE(*pShwDescr)), X86DESC_LIMIT(*pShwDescr), (pShwDescr->au32[1] >> 8) & 0xFFFF ));
     //Log(("N: base=%08X limit=%08X attr=%04X\n", X86DESC_BASE(Desc)), X86DESC_LIMIT(Desc), (Desc.au32[1] >> 8) & 0xFFFF ));
@@ -305,8 +305,9 @@ VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTUnhandled);
     return rc;
 }
+#endif /* SELM_TRACK_GUEST_GDT_CHANGES */
 
-
+#ifdef SELM_TRACK_GUEST_LDT_CHANGES
 /**
  * \#PF Virtual Handler callback for Guest write access to the Guest's own LDT.
  *
@@ -329,8 +330,9 @@ VMMRCDECL(int) selmRCGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestLDT);
     return VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT;
 }
+#endif
 
-
+#ifdef SELM_TRACK_GUEST_TSS_CHANGES
 /**
  * Read wrapper used by selmRCGuestTSSWriteHandler.
  * @returns VBox status code (appropriate for trap handling and GC return).
@@ -381,7 +383,8 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
      */
     uint32_t cb;
     int rc = EMInterpretInstructionEx(pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
-    if (RT_SUCCESS(rc) && cb)
+    if (    RT_SUCCESS(rc) 
+        &&  cb)
     {
         rc = VINF_SUCCESS;
 
@@ -402,6 +405,22 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
             pVM->selm.s.Tss.ss1  = pGuestTss->ss0 | 1;
             STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandledChanged);
         }
+#ifdef VBOX_WITH_RAW_RING1
+        else
+        if (    EMIsRawRing1Enabled(pVM)
+            &&  PAGE_ADDRESS(&pGuestTss->esp1) == PAGE_ADDRESS(&pGuestTss->padding_ss1)
+            &&  PAGE_ADDRESS(&pGuestTss->esp1) == PAGE_ADDRESS((uint8_t *)pGuestTss + offRange)
+            &&  (    pGuestTss->esp1 !=  pVM->selm.s.Tss.esp2
+                 ||  pGuestTss->ss1  != ((pVM->selm.s.Tss.ss2 & ~2) | 1)) /* undo raw-r1 */
+           )
+        {
+            Log(("selmRCGuestTSSWriteHandler: R1 stack: %RTsel:%RGv -> %RTsel:%RGv\n",
+                 (RTSEL)((pVM->selm.s.Tss.ss2 & ~2) | 1), (RTGCPTR)pVM->selm.s.Tss.esp2, (RTSEL)pGuestTss->ss1, (RTGCPTR)pGuestTss->esp1));
+            pVM->selm.s.Tss.esp2 = pGuestTss->esp1;
+            pVM->selm.s.Tss.ss2  = (pGuestTss->ss1 & ~1) | 2;
+            STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandledChanged);
+        }
+#endif
         /* Handle misaligned TSS in a safe manner (just in case). */
         else if (   offRange >= RT_UOFFSETOF(VBOXTSS, esp0)
                  && offRange < RT_UOFFSETOF(VBOXTSS, padding_ss0))
@@ -491,8 +510,9 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     }
     return rc;
 }
+#endif /* SELM_TRACK_GUEST_TSS_CHANGES */
 
-
+#ifdef SELM_TRACK_SHADOW_GDT_CHANGES
 /**
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow GDT.
  *
@@ -511,8 +531,9 @@ VMMRCDECL(int) selmRCShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange);
     return VERR_SELM_SHADOW_GDT_WRITE;
 }
+#endif
 
-
+#ifdef SELM_TRACK_SHADOW_LDT_CHANGES
 /**
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow LDT.
  *
@@ -532,8 +553,9 @@ VMMRCDECL(int) selmRCShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange);
     return VERR_SELM_SHADOW_LDT_WRITE;
 }
+#endif
 
-
+#ifdef SELM_TRACK_SHADOW_TSS_CHANGES
 /**
  * \#PF Virtual Handler callback for Guest write access to the VBox shadow TSS.
  *
@@ -552,4 +574,5 @@ VMMRCDECL(int) selmRCShadowTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
     NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange);
     return VERR_SELM_SHADOW_TSS_WRITE;
 }
+#endif
 

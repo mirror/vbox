@@ -26,6 +26,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/em.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/param.h>
 #include <iprt/avl.h>
@@ -435,10 +436,16 @@ int patmPatchGenIret(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, bool fSize
     PATCHGEN_PROLOG(pVM, pPatch);
 
     AssertMsg(fSizeOverride == false, ("operand size override!!\n"));
-
     callInfo.pCurInstrGC = pCurInstrGC;
 
-    size = patmPatchGenCode(pVM, pPatch, pPB, &PATMIretRecord, 0, false, &callInfo);
+#ifdef VBOX_WITH_RAW_RING1
+    if (EMIsRawRing1Enabled(pVM))
+    {
+        size = patmPatchGenCode(pVM, pPatch, pPB, &PATMIretRing1Record, 0, false, &callInfo);
+    }
+    else
+#endif
+        size = patmPatchGenCode(pVM, pPatch, pPB, &PATMIretRecord, 0, false, &callInfo);
 
     PATCHGEN_EPILOG(pPatch, size);
     return VINF_SUCCESS;
@@ -1073,20 +1080,27 @@ int patmPatchGenClearInhibitIRQ(PVM pVM, PPATCHINFO pPatch, RTRCPTR pNextInstrGC
  */
 int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pIntHandlerGC)
 {
-    uint32_t size;
     int rc = VINF_SUCCESS;
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+#ifdef VBOX_WITH_RAW_RING1
+    if (!EMIsRawRing1Enabled(pVM))    /* direct passthru of interrupts is not allowed in the ring-1 support case as we can't deal with the ring-1/2 ambiguity in the patm asm code and we don't need it either as TRPMForwardTrap takes care of the details. */
+    {
+#endif
+        uint32_t size;
+        PATCHGEN_PROLOG(pVM, pPatch);
 
-    /* Add lookup record for patch to guest address translation */
-    patmR3AddP2GLookupRecord(pVM, pPatch, pPB, pIntHandlerGC, PATM_LOOKUP_PATCH2GUEST);
+        /* Add lookup record for patch to guest address translation */
+        patmR3AddP2GLookupRecord(pVM, pPatch, pPB, pIntHandlerGC, PATM_LOOKUP_PATCH2GUEST);
 
-    /* Generate entrypoint for the interrupt handler (correcting CS in the interrupt stack frame) */
-    size = patmPatchGenCode(pVM, pPatch, pPB,
-                            (pPatch->flags & PATMFL_INTHANDLER_WITH_ERRORCODE) ? &PATMIntEntryRecordErrorCode : &PATMIntEntryRecord,
-                            0, false);
+        /* Generate entrypoint for the interrupt handler (correcting CS in the interrupt stack frame) */
+        size = patmPatchGenCode(pVM, pPatch, pPB,
+                                (pPatch->flags & PATMFL_INTHANDLER_WITH_ERRORCODE) ? &PATMIntEntryRecordErrorCode : &PATMIntEntryRecord,
+                                0, false);
 
-    PATCHGEN_EPILOG(pPatch, size);
+        PATCHGEN_EPILOG(pPatch, size);
+#ifdef VBOX_WITH_RAW_RING1
+    }
+#endif
 
     // Interrupt gates set IF to 0
     rc = patmPatchGenCli(pVM, pPatch);
@@ -1106,6 +1120,8 @@ int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pIntHandlerGC)
 int patmPatchGenTrapEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pTrapHandlerGC)
 {
     uint32_t size;
+
+    Assert(!EMIsRawRing1Enabled(pVM));
 
     PATCHGEN_PROLOG(pVM, pPatch);
 

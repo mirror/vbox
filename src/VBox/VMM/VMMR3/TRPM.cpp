@@ -1329,7 +1329,11 @@ VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandl
         return rc;
     }
 
-    if (EMIsRawRing0Enabled(pVM))
+    if (    EMIsRawRing0Enabled(pVM)
+#ifdef VBOX_WITH_RAW_RING1
+        && !EMIsRawRing1Enabled(pVM)    /* can't deal with the ambiguity of ring 1 & 2 in the patch code. */
+#endif
+       )
     {
         /*
          * Only replace handlers for which we are 100% certain there won't be

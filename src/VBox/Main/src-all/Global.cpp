@@ -312,7 +312,11 @@ const Global::OSType Global::sOSTypes[] =
         64,   4,  2 * _1G64, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
         StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, AudioControllerType_AC97  },
     { "Other",   "Other",             "QNX",                "QNX",
+#ifdef VBOX_WITH_RAW_RING1
+      VBOXOSTYPE_QNX,             VBOXOSHINT_NONE,
+#else
       VBOXOSTYPE_QNX,             VBOXOSHINT_HWVIRTEX,
+#endif
        512,   4,  4 * _1G64, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4, StorageBus_IDE,
       StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, AudioControllerType_AC97  },
     { "Other",   "Other",             "JRockitVE",          "JRockitVE",

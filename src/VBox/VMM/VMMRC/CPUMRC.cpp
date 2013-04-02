@@ -24,6 +24,7 @@
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/trpm.h>
+#include <VBox/vmm/em.h>
 #include "CPUMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
@@ -105,3 +106,109 @@ DECLASM(void) CPUMRCAssertPreExecutionSanity(PVM pVM)
     AssertMsg(CPUMIsGuestInRawMode(pVCpu),           ("cs:eip=%04x:%08x ss:esp=%04x:%08x cpl=%u raw/efl=%#x/%#x%s\n", pCtx->cs.Sel, pCtx->eip, pCtx->ss.Sel, pCtx->esp, uRawCpl, u32EFlags, pCtx->eflags.u, fPatch ? " patch" : ""));
     //Log2(("cs:eip=%04x:%08x ss:esp=%04x:%08x cpl=%u raw/efl=%#x/%#x%s\n", pCtx->cs.Sel, pCtx->eip, pCtx->ss.Sel, pCtx->esp, uRawCpl, u32EFlags, pCtx->eflags.u, fPatch ? " patch" : ""));
 }
+
+
+/**
+ * Get the current privilege level of the guest.
+ *
+ * @returns CPL
+ * @param   pVCpu       The current virtual CPU.
+ * @param   pRegFrame   Pointer to the register frame.
+ */
+VMMDECL(uint32_t) CPUMRCGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+{
+    /*
+     * CPL can reliably be found in SS.DPL (hidden regs valid) or SS if not.
+     *
+     * Note! We used to check CS.DPL here, assuming it was always equal to
+     * CPL even if a conforming segment was loaded.  But this truned out to
+     * only apply to older AMD-V.  With VT-x we had an ACP2 regression
+     * during install after a far call to ring 2 with VT-x.  Then on newer
+     * AMD-V CPUs we have to move the VMCB.guest.u8CPL into cs.Attr.n.u2Dpl
+     * as well as ss.Attr.n.u2Dpl to make this (and other) code work right.
+     *
+     * So, forget CS.DPL, always use SS.DPL.
+     *
+     * Note! The SS RPL is always equal to the CPL, while the CS RPL
+     * isn't necessarily equal if the segment is conforming.
+     * See section 4.11.1 in the AMD manual.
+     */
+    uint32_t uCpl;
+    if (!pRegFrame->eflags.Bits.u1VM)
+    {
+        uCpl = (pRegFrame->ss.Sel & X86_SEL_RPL);
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+# ifdef VBOX_WITH_RAW_RING1
+        if (pVCpu->cpum.s.fRawEntered)
+        {
+            if (    EMIsRawRing1Enabled(pVCpu->CTX_SUFF(pVM))
+                &&  uCpl == 2)
+                uCpl = 1;
+            else
+            if (uCpl == 1)
+                uCpl = 0;
+        }
+        Assert(uCpl != 2);  /* ring 2 support not allowed anymore. */
+# else
+        if (uCpl == 1)
+            uCpl = 0;
+# endif
+#endif
+    }
+    else
+        uCpl = 3; /* V86 has CPL=3; REM doesn't set DPL=3 in V8086 mode. See @bugref{5130}. */
+
+    return uCpl;
+}
+
+#ifdef VBOX_WITH_RAW_RING1
+/**
+ * Transforms the guest CPU state to raw-ring mode.
+ *
+ * This function will change the any of the cs and ss register with DPL=0 to DPL=1.
+ *
+ * @returns VBox status. (recompiler failure)
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtxCore    The context core (for trap usage).
+ * @see     @ref pg_raw
+ */
+VMMDECL(void) CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
+{
+    /*
+     * Are we in Ring-0?
+     */
+    if (    pCtxCore->ss.Sel 
+        &&  (pCtxCore->ss.Sel & X86_SEL_RPL) == 0
+        &&  !pCtxCore->eflags.Bits.u1VM)
+    {
+        /*
+         * Set CPL to Ring-1.
+         */
+        pCtxCore->ss.Sel |= 1;
+        if (    pCtxCore->cs.Sel 
+            &&  (pCtxCore->cs.Sel & X86_SEL_RPL) == 0)
+            pCtxCore->cs.Sel |= 1;
+    }
+    else
+    {
+        if (    EMIsRawRing1Enabled(pVCpu->CTX_SUFF(pVM))
+            &&  !pCtxCore->eflags.Bits.u1VM
+            &&  (pCtxCore->ss.Sel & X86_SEL_RPL) == 1)
+        {
+            /* Set CPL to Ring-2. */
+            pCtxCore->ss.Sel = (pCtxCore->ss.Sel & ~X86_SEL_RPL) | 2;
+            if (pCtxCore->cs.Sel && (pCtxCore->cs.Sel & X86_SEL_RPL) == 1)
+                pCtxCore->cs.Sel = (pCtxCore->cs.Sel & ~X86_SEL_RPL) | 2;
+        }
+    }
+
+    /*
+     * Assert sanity.
+     */
+    AssertMsg((pCtxCore->eflags.u32 & X86_EFL_IF), ("X86_EFL_IF is clear\n"));
+    AssertReleaseMsg(pCtxCore->eflags.Bits.u2IOPL == 0, 
+                     ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss.Sel & X86_SEL_RPL));
+
+    pCtxCore->eflags.u32        |= X86_EFL_IF; /* paranoia */
+}
+#endif /* VBOX_WITH_RAW_RING1 */

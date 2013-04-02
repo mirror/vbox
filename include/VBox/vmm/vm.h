@@ -842,6 +842,8 @@ typedef struct VM
     bool                        fRecompileUser;
     /** Whether to recompile supervisor mode code or run it raw/hm. */
     bool                        fRecompileSupervisor;
+    /** Whether raw mode supports ring-1 code or not. */
+    bool                        fRawRing1Enabled;
     /** PATM enabled flag.
      * This is placed here for performance reasons. */
     bool                        fPATMEnabled;
@@ -861,7 +863,7 @@ typedef struct VM
     /** @} */
 
     /** Alignment padding.. */
-    uint32_t                    uPadding1;
+    uint8_t                     uPadding1[3];
 
     /** @name Debugging
      * @{ */

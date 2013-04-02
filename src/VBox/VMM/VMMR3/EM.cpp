@@ -124,6 +124,14 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
     pVM->fRecompileSupervisor = RT_SUCCESS(rc) ? !fEnabled : false;
     Log(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool\n", pVM->fRecompileUser, pVM->fRecompileSupervisor));
 
+#ifdef VBOX_WITH_RAW_RING1
+    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RawR1Enabled", &fEnabled);
+    pVM->fRawRing1Enabled = RT_SUCCESS(rc) ? fEnabled : false;
+    Log(("EMR3Init: fRawRing1Enabled=%RTbool\n", pVM->fRawRing1Enabled));
+#else
+    pVM->fRawRing1Enabled = false;      /* disabled by default. */
+#endif
+
 #ifdef VBOX_WITH_REM
     /*
      * Initialize the REM critical section.
@@ -267,6 +275,8 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         EM_REG_COUNTER_USED(&pStats->StatR3WbInvd,               "/EM/CPU%d/R3/Interpret/Success/WbInvd",     "The number of times WBINVD was successfully interpreted.");
         EM_REG_COUNTER_USED(&pStats->StatRZLmsw,                 "/EM/CPU%d/RZ/Interpret/Success/Lmsw",       "The number of times LMSW was successfully interpreted.");
         EM_REG_COUNTER_USED(&pStats->StatR3Lmsw,                 "/EM/CPU%d/R3/Interpret/Success/Lmsw",       "The number of times LMSW was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZSmsw,                 "/EM/CPU%d/RZ/Interpret/Success/Smsw",       "The number of times SMSW was successfully interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3Smsw,                 "/EM/CPU%d/R3/Interpret/Success/Smsw",       "The number of times SMSW was successfully interpreted.");
 
         EM_REG_COUNTER(&pStats->StatRZInterpretFailed,           "/EM/CPU%d/RZ/Interpret/Failed",            "The number of times an instruction was not interpreted.");
         EM_REG_COUNTER(&pStats->StatR3InterpretFailed,           "/EM/CPU%d/R3/Interpret/Failed",            "The number of times an instruction was not interpreted.");
@@ -321,6 +331,8 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         EM_REG_COUNTER_USED(&pStats->StatR3FailedWrmsr,          "/EM/CPU%d/R3/Interpret/Failed/Wrmsr",      "The number of times WRMSR was not interpreted.");
         EM_REG_COUNTER_USED(&pStats->StatRZFailedLmsw,           "/EM/CPU%d/RZ/Interpret/Failed/Lmsw",       "The number of times LMSW was not interpreted.");
         EM_REG_COUNTER_USED(&pStats->StatR3FailedLmsw,           "/EM/CPU%d/R3/Interpret/Failed/Lmsw",       "The number of times LMSW was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedSmsw,           "/EM/CPU%d/RZ/Interpret/Failed/Smsw",       "The number of times SMSW was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedSmsw,           "/EM/CPU%d/R3/Interpret/Failed/Smsw",       "The number of times SMSW was not interpreted.");
 
         EM_REG_COUNTER_USED(&pStats->StatRZFailedMisc,           "/EM/CPU%d/RZ/Interpret/Failed/Misc",       "The number of times some misc instruction was encountered.");
         EM_REG_COUNTER_USED(&pStats->StatR3FailedMisc,           "/EM/CPU%d/R3/Interpret/Failed/Misc",       "The number of times some misc instruction was encountered.");
@@ -937,7 +949,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
  */
 static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
 {
-    LogFlow(("emR3RemStep: cs:eip=%04x:%08x\n", CPUMGetGuestCS(pVCpu),  CPUMGetGuestEIP(pVCpu)));
+    Log3(("emR3RemStep: cs:eip=%04x:%08x\n", CPUMGetGuestCS(pVCpu),  CPUMGetGuestEIP(pVCpu)));
 
 #ifdef VBOX_WITH_REM
     EMRemLock(pVM);
@@ -957,7 +969,7 @@ static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
     int rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu)); NOREF(pVM);
 #endif
 
-    LogFlow(("emR3RemStep: returns %Rrc cs:eip=%04x:%08x\n", rc, CPUMGetGuestCS(pVCpu),  CPUMGetGuestEIP(pVCpu)));
+    Log3(("emR3RemStep: returns %Rrc cs:eip=%04x:%08x\n", rc, CPUMGetGuestCS(pVCpu),  CPUMGetGuestEIP(pVCpu)));
     return rc;
 }
 
@@ -1181,7 +1193,7 @@ int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
     for (uint32_t i = 0; i < cIterations; i++)
     {
         DBGFR3PrgStep(pVCpu);
-        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "RSS: ");
+        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "RSS");
         emR3RemStep(pVM, pVCpu);
         if (emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx) != EMSTATE_REM)
             break;
@@ -1307,6 +1319,18 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (!EMIsRawRing0Enabled(pVM))
             return EMSTATE_REM;
 
+# ifdef VBOX_WITH_RAW_RING1
+        /* Only ring 0 and 1 supervisor code. */
+        if (EMIsRawRing1Enabled(pVM))
+        {
+            if ((uSS & X86_SEL_RPL) == 2)   /* ring 1 code is moved into ring 2, so we can't support ring-2 in that case. */
+            {
+                Log2(("raw r0 mode refused: CPL %d\n", uSS & X86_SEL_RPL));
+                return EMSTATE_REM;
+            }
+        }
+        else
+# endif
         /* Only ring 0 supervisor code. */
         if ((uSS & X86_SEL_RPL) != 0)
         {
@@ -1333,6 +1357,9 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (PATMShouldUseRawMode(pVM, (RTGCPTR)pCtx->eip))
         {
             Log2(("raw r0 mode forced: patch code\n"));
+# ifdef VBOX_WITH_SAFE_STR
+            Assert(pCtx->tr.Sel);
+# endif
             return EMSTATE_RAW;
         }
 
@@ -1345,12 +1372,14 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
 # endif
 
+# ifndef VBOX_WITH_RAW_RING1
         /** @todo still necessary??? */
         if (EFlags.Bits.u2IOPL != 0)
         {
             Log2(("raw r0 mode refused: IOPL %d\n", EFlags.Bits.u2IOPL));
             return EMSTATE_REM;
         }
+# endif
     }
 
     /*
@@ -1386,6 +1415,14 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Log2(("raw mode refused: stale GS\n"));
         return EMSTATE_REM;
     }
+
+# ifdef VBOX_WITH_SAFE_STR
+    if (pCtx->tr.Sel == 0)
+    {
+        Log(("Raw mode refused -> TR=0\n"));
+        return EMSTATE_REM;
+    }
+# endif
 
     /*Assert(PGMPhysIsA20Enabled(pVCpu));*/
     return EMSTATE_RAW;

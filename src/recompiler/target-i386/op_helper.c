@@ -231,13 +231,15 @@ static inline int load_segment(uint32_t *e1_ptr, uint32_t *e2_ptr,
 
 #ifdef VBOX
     /* Trying to load a selector with CPL=1? */
-    if ((env->hflags & HF_CPL_MASK) == 0 && (selector & 3) == 1 && (env->state & CPU_RAW_RING0))
+    /* @todo this is a hack to correct the incorrect checking order for pending interrupts in the patm iret replacement code (corrected in the ring-1 version) */
+    /* @todo in theory the iret could fault and we'd still need this. */
+    if ((env->hflags & HF_CPL_MASK) == 0 && (selector & 3) == 1 && (env->state & CPU_RAW_RING0) && !EMIsRawRing1Enabled(env->pVM))
     {
         Log(("RPL 1 -> sel %04X -> %04X\n", selector, selector & 0xfffc));
         selector = selector & 0xfffc;
     }
 #endif /* VBOX */
-
+        
     if (selector & 0x4)
         dt = &env->ldt;
     else
@@ -344,7 +346,7 @@ static void tss_load_seg(int seg_reg, int selector)
     /* Trying to load a selector with CPL=1? */
     if (cpl == 0 && (selector & 3) == 1 && (env->state & CPU_RAW_RING0))
     {
-        Log(("RPL 1 -> sel %04X -> %04X\n", selector, selector & 0xfffc));
+        Log(("RPL 1 -> sel %04X -> %04X (tss_load_seg)\n", selector, selector & 0xfffc));
         selector = selector & 0xfffc;
     }
 #endif /* VBOX */
@@ -2555,9 +2557,11 @@ void helper_ltr(int selector)
     target_ulong ptr;
 
 #ifdef VBOX
-    Log(("helper_ltr: old tr=%RTsel {.base=%RGv, .limit=%RGv, .flags=%RX32} new=%RTsel\n",
-         (RTSEL)env->tr.selector, (RTGCPTR)env->tr.base, (RTGCPTR)env->tr.limit,
+    Log(("helper_ltr: pc=%RGv old tr=%RTsel {.base=%RGv, .limit=%RGv, .flags=%RX32} new=%RTsel\n",
+         (RTGCPTR)env->eip, (RTSEL)env->tr.selector, (RTGCPTR)env->tr.base, (RTGCPTR)env->tr.limit,
          env->tr.flags, (RTSEL)(selector & 0xffff)));
+    ASMAtomicOrS32((int32_t volatile *)&env->interrupt_request,
+                    CPU_INTERRUPT_EXTERNAL_EXIT);
 #endif
     selector &= 0xffff;
     if ((selector & 0xfffc) == 0) {
@@ -2636,7 +2640,7 @@ void helper_load_seg(int seg_reg, int selector)
     /* Trying to load a selector with CPL=1? */
     if (cpl == 0 && (selector & 3) == 1 && (env->state & CPU_RAW_RING0))
     {
-        Log(("RPL 1 -> sel %04X -> %04X\n", selector, selector & 0xfffc));
+        Log(("RPL 1 -> sel %04X -> %04X (helper_load_seg)\n", selector, selector & 0xfffc));
         selector = selector & 0xfffc;
     }
 #endif /* VBOX */
@@ -3168,11 +3172,12 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
         new_cs &= 0xffff;
         if (is_iret) {
             POPL(ssp, sp, sp_mask, new_eflags);
+#define LOG_GROUP LOG_GROUP_REM
 #if defined(VBOX) && defined(DEBUG)
-            printf("iret: new CS     %04X\n", new_cs);
-            printf("iret: new EIP    %08X\n", (uint32_t)new_eip);
-            printf("iret: new EFLAGS %08X\n", new_eflags);
-            printf("iret: EAX=%08x\n", (uint32_t)EAX);
+            Log(("iret: new CS     %04X (old=%x)\n", new_cs, env->segs[R_CS].selector));
+            Log(("iret: new EIP    %08X\n", (uint32_t)new_eip));
+            Log(("iret: new EFLAGS %08X\n", new_eflags));
+            Log(("iret: EAX=%08x\n", (uint32_t)EAX));
 #endif
             if (new_eflags & VM_MASK)
                 goto return_to_vm86;
@@ -3180,11 +3185,31 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
 #ifdef VBOX
         if ((new_cs & 0x3) == 1 && (env->state & CPU_RAW_RING0))
         {
-# ifdef DEBUG
-            printf("RPL 1 -> new_cs %04X -> %04X\n", new_cs, new_cs & 0xfffc);
-# endif
+# ifdef VBOX_WITH_RAW_RING1
+            if (   !EMIsRawRing1Enabled(env->pVM)
+                ||  env->segs[R_CS].selector == (new_cs & 0xfffc))
+            {
+                Log(("RPL 1 -> new_cs %04X -> %04X\n", new_cs, new_cs & 0xfffc));
+                new_cs = new_cs & 0xfffc;
+            }
+            else 
+            {
+                /* Ugly assumption: assume a genuine switch to ring-1. */
+                Log(("Genuine switch to ring-1 (iret)\n"));
+            }
+# else
+            Log(("RPL 1 -> new_cs %04X -> %04X\n", new_cs, new_cs & 0xfffc));
             new_cs = new_cs & 0xfffc;
+# endif
         }
+# ifdef VBOX_WITH_RAW_RING1
+        else
+        if ((new_cs & 0x3) == 2 && (env->state & CPU_RAW_RING0) && EMIsRawRing1Enabled(env->pVM))
+        {
+            Log(("RPL 2 -> new_cs %04X -> %04X\n", new_cs, (new_cs & 0xfffc) | 1));
+            new_cs = (new_cs & 0xfffc) | 1;
+        }
+# endif
 #endif
     } else {
         /* 16 bits */
@@ -3199,14 +3224,14 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
     if ((new_cs & 0xfffc) == 0)
     {
 #if defined(VBOX) && defined(DEBUG)
-        printf("new_cs & 0xfffc) == 0\n");
+        Log(("new_cs & 0xfffc) == 0\n"));
 #endif
         raise_exception_err(EXCP0D_GPF, new_cs & 0xfffc);
     }
     if (load_segment(&e1, &e2, new_cs) != 0)
     {
 #if defined(VBOX) && defined(DEBUG)
-        printf("load_segment failed\n");
+        Log(("load_segment failed\n"));
 #endif
         raise_exception_err(EXCP0D_GPF, new_cs & 0xfffc);
     }
@@ -3214,7 +3239,7 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
         !(e2 & DESC_CS_MASK))
     {
 #if defined(VBOX) && defined(DEBUG)
-        printf("e2 mask %08x\n", e2);
+        Log(("e2 mask %08x\n", e2));
 #endif
         raise_exception_err(EXCP0D_GPF, new_cs & 0xfffc);
     }
@@ -3223,16 +3248,17 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
     if (rpl < cpl)
     {
 #if defined(VBOX) && defined(DEBUG)
-        printf("rpl < cpl (%d vs %d)\n", rpl, cpl);
+        Log(("rpl < cpl (%d vs %d)\n", rpl, cpl));
 #endif
         raise_exception_err(EXCP0D_GPF, new_cs & 0xfffc);
     }
     dpl = (e2 >> DESC_DPL_SHIFT) & 3;
+
     if (e2 & DESC_C_MASK) {
         if (dpl > rpl)
         {
 #if defined(VBOX) && defined(DEBUG)
-            printf("dpl > rpl (%d vs %d)\n", dpl, rpl);
+            Log(("dpl > rpl (%d vs %d)\n", dpl, rpl));
 #endif
             raise_exception_err(EXCP0D_GPF, new_cs & 0xfffc);
         }
@@ -3240,7 +3266,7 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
         if (dpl != rpl)
         {
 #if defined(VBOX) && defined(DEBUG)
-            printf("dpl != rpl (%d vs %d) e1=%x e2=%x\n", dpl, rpl, e1, e2);
+            Log(("dpl != rpl (%d vs %d) e1=%x e2=%x\n", dpl, rpl, e1, e2));
 #endif
             raise_exception_err(EXCP0D_GPF, new_cs & 0xfffc);
         }
@@ -3248,7 +3274,7 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
     if (!(e2 & DESC_P_MASK))
     {
 #if defined(VBOX) && defined(DEBUG)
-        printf("DESC_P_MASK e2=%08x\n", e2);
+        Log(("DESC_P_MASK e2=%08x\n", e2));
 #endif
         raise_exception_err(EXCP0B_NOSEG, new_cs & 0xfffc);
     }

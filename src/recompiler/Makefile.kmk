@@ -70,6 +70,9 @@ VBoxRemPrimary_DEFS           += IN_REM_R3 REM_INCLUDE_CPU_H NEED_CPU_H
 ifdef IEM_VERIFICATION_MODE
  VBoxRemPrimary_DEFS          += IEM_VERIFICATION_MODE
 endif
+ifdef VBOX_WITH_RAW_RING1
+ VBoxRemPrimary_DEFS          += VBOX_WITH_RAW_RING1
+endif
 VBoxRemPrimary_DEFS.linux      = _GNU_SOURCE
 ifdef VBOX_SOLARIS_10
  VBoxRemPrimary_DEFS.solaris   = CONFIG_SOLARIS_VERSION=10
