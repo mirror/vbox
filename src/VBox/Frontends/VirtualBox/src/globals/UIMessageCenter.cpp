@@ -477,40 +477,46 @@ void UIMessageCenter::cannotDeleteMachine(const CMachine &machine, const CProgre
 
 void UIMessageCenter::cannotDiscardSavedState(const CConsole &console)
 {
-    /* preserve the current error info before calling the object again */
+    /* Preserve error-info: */
     COMResult res(console);
-
+    /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
-        tr("Failed to discard the saved state of the virtual machine <b>%1</b>.")
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(res));
+            tr("Failed to discard the saved state of the virtual machine <b>%1</b>.").arg(console.GetMachine().GetName()),
+            formatErrorInfo(res));
 }
 
-void UIMessageCenter::notifyAboutCollisionOnGroupRemovingCantBeResolved(const QString &strName, const QString &strGroupName)
+void UIMessageCenter::cannotSetGroups(const CMachine &machine)
 {
-    message(&vboxGlobal().selectorWnd(),
-            MessageType_Error,
+    /* Preserve error-info: */
+    COMResult res(machine);
+    /* Compose machine name: */
+    QString strName = machine.GetName();
+    if (strName.isEmpty())
+        strName = QFileInfo(machine.GetSettingsFilePath()).baseName();
+    /* Show the message: */
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to set groups of the virtual machine <b>%1</b>.").arg(strName),
+            formatErrorInfo(res));
+}
+
+void UIMessageCenter::cannotResolveCollisionAutomatically(const QString &strName, const QString &strGroupName)
+{
+    message(mainWindowShown(), MessageType_Error,
             tr("<p>You are trying to move machine <nobr><b>%1</b></nobr> "
                "to group <nobr><b>%2</b></nobr> which already have sub-group <nobr><b>%1</b></nobr>.</p>"
                "<p>Please resolve this name-conflict and try again.</p>")
-               .arg(strName, strGroupName),
-            0, /* auto-confirm id */
-            QIMessageBox::Ok | QIMessageBox::Default);
+               .arg(strName, strGroupName));
 }
 
-int UIMessageCenter::askAboutCollisionOnGroupRemoving(const QString &strName, const QString &strGroupName)
+bool UIMessageCenter::confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName)
 {
-    return message(&vboxGlobal().selectorWnd(),
-                   MessageType_Question,
-                   tr("<p>You are trying to move group <nobr><b>%1</b></nobr> "
-                      "to group <nobr><b>%2</b></nobr> which already have another item with the same name.</p>"
-                      "<p>Would you like to automatically rename it?</p>")
-                      .arg(strName, strGroupName),
-                   0, /* auto-confirm id */
-                   QIMessageBox::Ok,
-                   QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
-                   0,
-                   tr("Rename"));
+    return messageOkCancel(mainWindowShown(), MessageType_Question,
+                           tr("<p>You are trying to move group <nobr><b>%1</b></nobr> "
+                              "to group <nobr><b>%2</b></nobr> which already have another item with the same name.</p>"
+                              "<p>Would you like to automatically rename it?</p>")
+                              .arg(strName, strGroupName),
+                           0, /* auto-confirm id */
+                           tr("Rename"));
 }
 
 int UIMessageCenter::confirmMachineItemRemoval(const QStringList &names)
@@ -621,20 +627,6 @@ bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames)
            .arg(strNames),
         0 /* pcszAutoConfirmId */,
         tr("Discard", "saved state"));
-}
-
-void UIMessageCenter::cannotSetGroups(const CMachine &machine)
-{
-    /* Preserve error-info: */
-    COMResult res(machine);
-    /* Compose machine name: */
-    QString strName = machine.GetName();
-    if (strName.isEmpty())
-        strName = QFileInfo(machine.GetSettingsFilePath()).baseName();
-    /* Show the message: */
-    message(mainWindowShown(), MessageType_Error,
-            tr("Failed to set groups of the virtual machine <b>%1</b>.").arg(strName),
-            formatErrorInfo(res));
 }
 
 bool UIMessageCenter::remindAboutInaccessibleMedia()

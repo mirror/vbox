@@ -352,7 +352,7 @@ void UISelectorWindow::sltShowAddMachineDialog(const QString &strFileName /* = Q
 
     /* Make sure this machine can be opened: */
     CMachine newMachine = vbox.OpenMachine(strTmpFile);
-    if (!vbox.isOk() || newMachine.isNull())
+    if (!vbox.isOk())
     {
         msgCenter().cannotOpenMachine(vbox, strTmpFile);
         return;
