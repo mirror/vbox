@@ -133,33 +133,33 @@ int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType type,
 
     /* Assign corresponding title and icon: */
     QString strTitle;
-    QIMessageBox::Icon icon;
+    QIMessageBox::IconType icon;
     switch (type)
     {
         default:
         case MessageType_Info:
             strTitle = tr("VirtualBox - Information", "msg box title");
-            icon = QIMessageBox::Information;
+            icon = QIMessageBox::IconType_Information;
             break;
         case MessageType_Question:
             strTitle = tr("VirtualBox - Question", "msg box title");
-            icon = QIMessageBox::Question;
+            icon = QIMessageBox::IconType_Question;
             break;
         case MessageType_Warning:
             strTitle = tr("VirtualBox - Warning", "msg box title");
-            icon = QIMessageBox::Warning;
+            icon = QIMessageBox::IconType_Warning;
             break;
         case MessageType_Error:
             strTitle = tr("VirtualBox - Error", "msg box title");
-            icon = QIMessageBox::Critical;
+            icon = QIMessageBox::IconType_Critical;
             break;
         case MessageType_Critical:
             strTitle = tr("VirtualBox - Critical Error", "msg box title");
-            icon = QIMessageBox::Critical;
+            icon = QIMessageBox::IconType_Critical;
             break;
         case MessageType_GuruMeditation:
             strTitle = "VirtualBox - Guru Meditation"; /* don't translate this */
-            icon = QIMessageBox::GuruMeditation;
+            icon = QIMessageBox::IconType_GuruMeditation;
             break;
     }
 
@@ -794,9 +794,9 @@ void UIMessageCenter::cannotAccessUSB(const COMBaseWithEI &object) const
         return;
     /* Show the message: */
     message(mainWindowShown(), res.isWarning() ? MessageType_Warning : MessageType_Error,
-             tr("Failed to access the USB subsystem."),
-             formatErrorInfo(res),
-             "cannotAccessUSB");
+            tr("Failed to access the USB subsystem."),
+            formatErrorInfo(res),
+            "cannotAccessUSB");
 }
 
 void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties) const
@@ -2983,33 +2983,33 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
 
     /* Choose title and icon: */
     QString title;
-    QIMessageBox::Icon icon;
+    QIMessageBox::IconType icon;
     switch (type)
     {
         default:
         case MessageType_Info:
             title = tr("VirtualBox - Information", "msg box title");
-            icon = QIMessageBox::Information;
+            icon = QIMessageBox::IconType_Information;
             break;
         case MessageType_Question:
             title = tr("VirtualBox - MessageType_Question", "msg box title");
-            icon = QIMessageBox::Question;
+            icon = QIMessageBox::IconType_Question;
             break;
         case MessageType_Warning:
             title = tr("VirtualBox - MessageType_Warning", "msg box title");
-            icon = QIMessageBox::Warning;
+            icon = QIMessageBox::IconType_Warning;
             break;
         case MessageType_Error:
             title = tr("VirtualBox - MessageType_Error", "msg box title");
-            icon = QIMessageBox::Critical;
+            icon = QIMessageBox::IconType_Critical;
             break;
         case MessageType_Critical:
             title = tr("VirtualBox - MessageType_Critical MessageType_Error", "msg box title");
-            icon = QIMessageBox::Critical;
+            icon = QIMessageBox::IconType_Critical;
             break;
         case MessageType_GuruMeditation:
             title = "VirtualBox - Guru Meditation"; /* don't translate this */
-            icon = QIMessageBox::GuruMeditation;
+            icon = QIMessageBox::IconType_GuruMeditation;
             break;
     }
 

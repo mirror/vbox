@@ -50,7 +50,7 @@
  *  See QMessageBox for details.
  */
 QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
-                            Icon aIcon, int aButton0, int aButton1, int aButton2,
+                            IconType aIcon, int aButton0, int aButton1, int aButton2,
                             QWidget *aParent, const char *aName, bool aModal)
     : QIDialog (aParent)
     , mText (aText)
@@ -155,7 +155,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
 
     /* If this is an error message add an "Copy to clipboard" button for easier
      * bug reports. */
-    if (aIcon == QIMessageBox::Critical)
+    if (aIcon == QIMessageBox::IconType_Critical)
     {
         QPushButton *pCopyButton = createButton(Copy);
         pCopyButton->setToolTip(tr("Copy all errors to the clipboard"));
@@ -315,24 +315,24 @@ void QIMessageBox::setDetailsText (const QString &aText)
     refreshDetails();
 }
 
-QPixmap QIMessageBox::standardPixmap (QIMessageBox::Icon aIcon)
+QPixmap QIMessageBox::standardPixmap (QIMessageBox::IconType aIcon)
 {
     QIcon icon;
     switch (aIcon)
     {
-        case QIMessageBox::Information:
+        case QIMessageBox::IconType_Information:
             icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxInformationIcon, this);
             break;
         case QMessageBox::Warning:
             icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxWarningIcon, this);
             break;
-        case QIMessageBox::Critical:
+        case QIMessageBox::IconType_Critical:
             icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxCriticalIcon, this);
             break;
-        case QIMessageBox::Question:
+        case QIMessageBox::IconType_Question:
             icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxQuestionIcon, this);
             break;
-        case QIMessageBox::GuruMeditation:
+        case QIMessageBox::IconType_GuruMeditation:
             icon = QIcon(":/meditation_32px.png");
             break;
         default:
@@ -363,7 +363,7 @@ void QIMessageBox::showEvent (QShowEvent *e)
         resize (minimumSizeHint());
         mTextLabel->useSizeHintForWidth (mTextLabel->width());
         mTextLabel->updateGeometry();
-        setFixedWidth (width());
+        setFixedSize(size());
         mDetailsSplitter->toggleWidget();
         mWasPolished = true;
     }
