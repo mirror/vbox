@@ -547,7 +547,7 @@ static int pdmCritSectRwLeaveSharedWorker(PPDMCRITSECTRW pThis, bool fNoVal)
             c--;
 
             if (   c > 0
-                || (u64State & RTCSRW_CNT_RD_MASK) == 0)
+                || (u64State & RTCSRW_CNT_WR_MASK) == 0)
             {
                 /* Don't change the direction. */
                 u64State &= ~RTCSRW_CNT_RD_MASK;
@@ -572,13 +572,14 @@ static int pdmCritSectRwLeaveSharedWorker(PPDMCRITSECTRW pThis, bool fNoVal)
                 PVM         pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
                 PVMCPU      pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
                 uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwShrdLeaves++;
-                LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3\n", i, pThis));
+                LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3 c=%d (%#llx)\n", i, pThis, c, u64State));
                 AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves));
                 pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i] = MMHyperCCToR3(pVM, pThis);
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
                 STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
                 STAM_REL_COUNTER_INC(&pThis->s.StatContentionRZLeaveShared);
+                break;
 #endif
             }
 
