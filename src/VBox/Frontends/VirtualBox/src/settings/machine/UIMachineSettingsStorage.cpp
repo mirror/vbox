@@ -1814,7 +1814,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
 #endif /* Q_WS_MAC */
 
     /* Setup choose-medium button: */
-    QMenu *pOpenMediumMenu = new QMenu(this);
+    QMenu *pOpenMediumMenu = new QMenu(mTbOpen);
     mTbOpen->setMenu(pOpenMediumMenu);
 
     /* Controller pane initialization: */
