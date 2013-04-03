@@ -18,7 +18,7 @@
 #ifndef ___IOMInternal_h
 #define ___IOMInternal_h
 
-//#define IOM_WITH_CRIT_SECT_RW
+#define IOM_WITH_CRIT_SECT_RW
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -436,7 +436,7 @@ DECLCALLBACK(int)   IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, voi
 #ifdef IOM_WITH_CRIT_SECT_RW
 # define IOM_LOCK_EXCL(a_pVM)                   PDMCritSectRwEnterExcl(&(a_pVM)->iom.s.CritSect, VERR_SEM_BUSY)
 # define IOM_UNLOCK_EXCL(a_pVM)                 do { PDMCritSectRwLeaveExcl(&(a_pVM)->iom.s.CritSect); } while (0)
-# if 0 /* for the time being (the lookup caches needs to be in VMCPU) */
+# if 0 /* (in case needed for debugging) */
 # define IOM_LOCK_SHARED_EX(a_pVM, a_rcBusy)    PDMCritSectRwEnterExcl(&(a_pVM)->iom.s.CritSect, (a_rcBusy))
 # define IOM_UNLOCK_SHARED(a_pVM)               do { PDMCritSectRwLeaveExcl(&(a_pVM)->iom.s.CritSect); } while (0)
 # define IOM_IS_SHARED_LOCK_OWNER(a_pVM)        PDMCritSectRwIsWriteOwner(&(a_pVM)->iom.s.CritSect)
