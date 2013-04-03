@@ -495,7 +495,7 @@ RTDECL(int) RTSemRWReleaseRead(RTSEMRW hRWSem)
             c--;
 
             if (   c > 0
-                || (u64State & RTSEMRW_CNT_RD_MASK) == 0)
+                || (u64State & RTSEMRW_CNT_WD_MASK) == 0)
             {
                 /* Don't change the direction. */
                 u64State &= ~RTSEMRW_CNT_RD_MASK;
