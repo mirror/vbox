@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -347,19 +347,19 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     /* Check if we're already running and jump out if so. */
     /* Do not use a global namespace ("Global\\") for mutex name here, will blow up NT4 compatibility! */
     HANDLE hMutexAppRunning = CreateMutex(NULL, FALSE, "VBoxStubInstaller");
-    if (   (hMutexAppRunning != NULL)
-        && (GetLastError() == ERROR_ALREADY_EXISTS))
+    if (   hMutexAppRunning != NULL
+        && GetLastError() == ERROR_ALREADY_EXISTS)
     {
         /* Close the mutex for this application instance. */
         CloseHandle(hMutexAppRunning);
         hMutexAppRunning = NULL;
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     /* Init IPRT. */
     int vrc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(vrc))
-        return vrc;
+        return RTMsgInitFailure(vrc);
 
     /*
      * Parse arguments.
@@ -493,11 +493,16 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         }
     }
 
+    /** @todo The rest of this function should be done in smaller functions,
+     *        we've lost the overview here! Too much state going around! */
+
     HRESULT hr = S_OK;
 
     do /* break loop */
     {
-        /* Get/create our temp path (only if not already set). */
+        /*
+         * Determine and create our temp path (only if not already set).
+         */
         if (szExtractPath[0] == '\0')
         {
             vrc = RTPathTemp(szExtractPath, sizeof(szExtractPath));
@@ -683,12 +688,15 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                                         ShowError("Installation failed! Error: %u", uStatus);
                                     if (hModule)
                                         FreeLibrary(hModule);
+                                    /** @todo program exit code needs to be set */
                                     break;
                                 }
                             }
 
                             vrc = VERR_NO_CHANGE; /* No change done to the system. */
                         }
+                        else
+                            /** @todo program exit code needs to be for ERROR_INSTALL_USEREXIT. */
                     }
                     RTStrFree(pszTempFile);
                 } /* Package needed? */
@@ -699,7 +707,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         if (   !fExtractOnly
             && RT_SUCCESS(vrc))
         {
-            for (int i=0; i<5; i++)
+            for (int i = 0; i < 5; i++)
             {
                 vrc = RTDirRemoveRecursive(szExtractPath, 0 /*fFlags*/);
                 if (RT_SUCCESS(vrc))
@@ -728,18 +736,12 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         hMutexAppRunning = NULL;
     }
 
-    /* Set final exit (return) code (error level). */
+    /*
+     * Figure the exit code (not very difficult at the moment).
+     */
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     if (RT_FAILURE(vrc))
-    {
-        switch(vrc)
-        {
-            case VERR_NO_CHANGE:
-            default:
-                vrc = 1;
-        }
-    }
-    else /* Always set to (VINF_SUCCESS), even if we got something else (like a VWRN etc). */
-        vrc = VINF_SUCCESS;
-    return vrc;
+        rcExit = RTEXITCODE_FAILURE;
+    return rcExit;
 }
 
