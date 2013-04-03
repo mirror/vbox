@@ -97,32 +97,29 @@ bool UIWizardNewVMPage3::getWithNewVirtualDiskWizard()
 
 void UIWizardNewVMPage3::ensureNewVirtualDiskDeleted()
 {
-    /* Make sure virtual-disk exists: */
+    /* Make sure virtual-disk valid: */
     if (m_virtualDisk.isNull())
         return;
 
-    /* Remember virtual-disk ID: */
+    /* Remember virtual-disk attributes: */
     QString strId = m_virtualDisk.GetId();
-
-    /* 1st step: start delete-storage progress: */
+    QString strLocation = m_virtualDisk.GetLocation();
+    /* Prepare delete storage progress: */
     CProgress progress = m_virtualDisk.DeleteStorage();
-    /* Get initial state: */
-    bool fSuccess = m_virtualDisk.isOk();
-
-    /* 2nd step: show delete-storage progress: */
-    if (fSuccess)
+    if (m_virtualDisk.isOk())
     {
+        /* Show delete storage progress: */
         msgCenter().showModalProgressDialog(progress, thisImp()->windowTitle(), ":/progress_media_delete_90px.png", thisImp());
-        fSuccess = progress.isOk() && progress.GetResultCode() == S_OK;
+        if (!progress.isOk() || progress.GetResultCode() != 0)
+            msgCenter().cannotDeleteHardDiskStorage(progress, strLocation, thisImp());
     }
-
-    /* 3rd step: notify GUI about virtual-disk was deleted or show error if any: */
-    if (fSuccess)
-        vboxGlobal().removeMedium(UIMediumType_HardDisk, strId);
     else
-        msgCenter().cannotDeleteHardDiskStorage(m_virtualDisk, progress, thisImp());
+        msgCenter().cannotDeleteHardDiskStorage(m_virtualDisk, strLocation, thisImp());
 
-    /* Detach virtual-disk finally: */
+    /* Remove virtual-disk from GUI anyway: */
+    vboxGlobal().removeMedium(UIMediumType_HardDisk, strId);
+
+    /* Detach virtual-disk anyway: */
     m_virtualDisk.detach();
 }
 

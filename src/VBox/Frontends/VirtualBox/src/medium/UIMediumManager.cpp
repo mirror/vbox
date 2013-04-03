@@ -1167,15 +1167,24 @@ void UIMediumManager::doRemoveMedium()
 
             if (deleteStorage)
             {
+                /* Remember virtual-disk attributes: */
+                QString strLocation = hardDisk.GetLocation();
+                /* Prepare delete storage progress: */
                 CProgress progress = hardDisk.DeleteStorage();
                 if (hardDisk.isOk())
                 {
+                    /* Show delete storage progress: */
                     msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_delete_90px.png", this);
-                    if (!(progress.isOk() && progress.GetResultCode() == S_OK))
+                    if (!progress.isOk() || progress.GetResultCode() != 0)
                     {
-                        msgCenter().cannotDeleteHardDiskStorage(hardDisk, progress, this);
+                        msgCenter().cannotDeleteHardDiskStorage(progress, strLocation, this);
                         return;
                     }
+                }
+                else
+                {
+                    msgCenter().cannotDeleteHardDiskStorage(hardDisk, strLocation, this);
+                    return;
                 }
             }
 
