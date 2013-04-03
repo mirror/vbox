@@ -1492,7 +1492,7 @@ void UIMachineLogic::sltMountStorageMedium()
     {
         /* Ask for force remounting: */
         if (msgCenter().cannotRemountMedium(machine, vboxGlobal().findMedium(fMount ? newId : currentId),
-                                            fMount, true /* retry? */, activeMachineWindow()) == QIMessageBox::Ok)
+                                            fMount, true /* retry? */, activeMachineWindow()) == AlertButton_Ok)
         {
             /* Force remount medium to the predefined port/device: */
             machine.MountMedium(target.name, target.port, target.device, medium, true /* force */);
@@ -1553,7 +1553,7 @@ void UIMachineLogic::sltMountRecentStorageMedium()
         {
             /* Ask for force remounting: */
             if (msgCenter().cannotRemountMedium(machine, vboxGlobal().findMedium(fMount ? strNewId : strCurrentId),
-                                                fMount, true /* retry? */, activeMachineWindow()) == QIMessageBox::Ok)
+                                                fMount, true /* retry? */, activeMachineWindow()) == AlertButton_Ok)
             {
                 /* Force remount medium to the predefined port/device: */
                 machine.MountMedium(target.name, target.port, target.device, comMedium, true /* force? */);

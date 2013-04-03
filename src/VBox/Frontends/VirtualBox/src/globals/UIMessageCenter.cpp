@@ -129,37 +129,37 @@ int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType type,
 {
     /* If no buttons are set, using single 'OK' button: */
     if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0)
-        iButton1 = QIMessageBox::Ok | QIMessageBox::Default;
+        iButton1 = AlertButton_Ok | AlertButtonOption_Default;
 
     /* Assign corresponding title and icon: */
     QString strTitle;
-    QIMessageBox::IconType icon;
+    AlertIconType icon;
     switch (type)
     {
         default:
         case MessageType_Info:
             strTitle = tr("VirtualBox - Information", "msg box title");
-            icon = QIMessageBox::IconType_Information;
+            icon = AlertIconType_Information;
             break;
         case MessageType_Question:
             strTitle = tr("VirtualBox - Question", "msg box title");
-            icon = QIMessageBox::IconType_Question;
+            icon = AlertIconType_Question;
             break;
         case MessageType_Warning:
             strTitle = tr("VirtualBox - Warning", "msg box title");
-            icon = QIMessageBox::IconType_Warning;
+            icon = AlertIconType_Warning;
             break;
         case MessageType_Error:
             strTitle = tr("VirtualBox - Error", "msg box title");
-            icon = QIMessageBox::IconType_Critical;
+            icon = AlertIconType_Critical;
             break;
         case MessageType_Critical:
             strTitle = tr("VirtualBox - Critical Error", "msg box title");
-            icon = QIMessageBox::IconType_Critical;
+            icon = AlertIconType_Critical;
             break;
         case MessageType_GuruMeditation:
             strTitle = "VirtualBox - Guru Meditation"; /* don't translate this */
-            icon = QIMessageBox::IconType_GuruMeditation;
+            icon = AlertIconType_GuruMeditation;
             break;
     }
 
@@ -195,7 +195,7 @@ int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType type,
 
     /* Save option: */
     if (pBox->isFlagChecked())
-        rc |= QIMessageBox::OptionChosen;
+        rc |= AlertOption_CheckBox;
 
     /* Delete message-box: */
     if (pBox)
@@ -571,15 +571,15 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) cons
     return cInacessibleMachineCount == machines.size() ?
            message(mainWindowShown(), MessageType_Question,
                    strText, 0 /* auto-confirm id */,
-                   QIMessageBox::Ok | QIMessageBox::Default,
-                   QIMessageBox::Cancel | QIMessageBox::Escape,
+                   AlertButton_Ok | AlertButtonOption_Default,
+                   AlertButton_Cancel | AlertButtonOption_Escape,
                    0,
                    tr("Remove")) :
            message(mainWindowShown(), MessageType_Question,
                    strText, 0 /* auto-confirm id */,
-                   QIMessageBox::Yes,
-                   QIMessageBox::No | QIMessageBox::Default,
-                   QIMessageBox::Cancel | QIMessageBox::Escape,
+                   AlertButton_Yes,
+                   AlertButton_No | AlertButtonOption_Default,
+                   AlertButton_Cancel | AlertButtonOption_Escape,
                    tr("Delete all files"),
                    tr("Remove only"));
 }
@@ -696,16 +696,16 @@ int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bo
                              tr("Create a snapshot of the current machine state"),
                              !vboxGlobal().virtualBox().GetExtraDataStringList(GUI_InvertMessageOption).contains("confirmSnapshotRestoring"),
                              QString() /* details */,
-                             QIMessageBox::Ok | QIMessageBox::Default,
-                             QIMessageBox::Cancel | QIMessageBox::Escape,
+                             AlertButton_Ok | AlertButtonOption_Default,
+                             AlertButton_Cancel | AlertButtonOption_Escape,
                              0 /* 3rd button */,
                              tr("Restore"), tr("Cancel"), QString() /* 3rd button text */) :
            message(mainWindowShown(), MessageType_Question,
                    tr("<p>Are you sure you want to restore snapshot <nobr><b>%1</b></nobr>?</p>")
                       .arg(strSnapshotName),
                    0 /* auto-confirm id */,
-                   QIMessageBox::Ok | QIMessageBox::Default,
-                   QIMessageBox::Cancel | QIMessageBox::Escape,
+                   AlertButton_Ok | AlertButtonOption_Default,
+                   AlertButton_Cancel | AlertButtonOption_Escape,
                    0 /* 3rd button */,
                    tr("Restore"), tr("Cancel"), QString() /* 3rd button text */);
 }
@@ -865,9 +865,9 @@ int UIMessageCenter::askAboutHardDiskAttachmentCreation(const QString &strContro
                       "<p>Would you like to create a new, empty file to hold the disk contents or select an existing one?</p>")
                       .arg(strControllerName),
                    0 /* auto-confirm id */,
-                   QIMessageBox::Yes,
-                   QIMessageBox::No,
-                   QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
+                   AlertButton_Yes,
+                   AlertButton_No,
+                   AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                    tr("Create &new disk", "add attachment routine"),
                    tr("&Choose existing disk", "add attachment routine"));
 }
@@ -880,9 +880,9 @@ int UIMessageCenter::askAboutOpticalAttachmentCreation(const QString &strControl
                       "or to leave it empty for now?</p>")
                       .arg(strControllerName),
                    0 /* auto-confirm id */,
-                   QIMessageBox::Yes,
-                   QIMessageBox::No,
-                   QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
+                   AlertButton_Yes,
+                   AlertButton_No,
+                   AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                    tr("&Choose disk", "add attachment routine"),
                    tr("Leave &empty", "add attachment routine"));
 }
@@ -895,9 +895,9 @@ int UIMessageCenter::askAboutFloppyAttachmentCreation(const QString &strControll
                       "or to leave it empty for now?</p>")
                       .arg(strControllerName),
                    0 /* auto-confirm id */,
-                   QIMessageBox::Yes,
-                   QIMessageBox::No,
-                   QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
+                   AlertButton_Yes,
+                   AlertButton_No,
+                   AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                    tr("&Choose disk", "add attachment routine"),
                    tr("Leave &empty", "add attachment routine"));
 }
@@ -1032,9 +1032,9 @@ int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QW
                       "disk to the list later again.</p>")
                       .arg(strLocation),
                    0 /* auto-confirm id */,
-                   QIMessageBox::Yes,
-                   QIMessageBox::No | QIMessageBox::Default,
-                   QIMessageBox::Cancel | QIMessageBox::Escape,
+                   AlertButton_Yes,
+                   AlertButton_No | AlertButtonOption_Default,
+                   AlertButton_Cancel | AlertButtonOption_Escape,
                    tr("Delete", "hard disk storage"),
                    tr("Keep", "hard disk storage"));
 }
@@ -1320,11 +1320,11 @@ bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent)
            "until you add one. In the mean time you will only be able to start the "
            "machine using a virtual optical disk or from the network."),
         0 /* auto-confirm id */,
-        QIMessageBox::Ok,
-        QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
+        AlertButton_Ok | AlertButtonOption_Default,
+        AlertButton_Cancel | AlertButtonOption_Escape,
         0,
         tr("Continue", "no hard disk attached"),
-        tr("Go Back", "no hard disk attached")) == QIMessageBox::Ok;
+        tr("Go Back", "no hard disk attached")) == AlertButton_Ok;
 }
 
 void UIMessageCenter::cannotImportAppliance(CAppliance *pAppliance,
@@ -1772,15 +1772,15 @@ bool UIMessageCenter::confirmInputCapture(bool *pfAutoConfirmed /* = NULL */)
            "additional message box paragraph")
             .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
         "confirmInputCapture",
-        QIMessageBox::Ok | QIMessageBox::Default,
-        QIMessageBox::Cancel | QIMessageBox::Escape,
+        AlertButton_Ok | AlertButtonOption_Default,
+        AlertButton_Cancel | AlertButtonOption_Escape,
         0,
         tr("Capture", "do input capture"));
 
     if (pfAutoConfirmed)
         *pfAutoConfirmed = (rc & AutoConfirmed);
 
-    return (rc & QIMessageBox::ButtonMask) == QIMessageBox::Ok;
+    return (rc & AlertButtonMask) == AlertButton_Ok;
 }
 
 void UIMessageCenter::remindAboutAutoCapture()
@@ -1908,8 +1908,8 @@ int UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */,
                  "or press <b>Cancel</b> to cancel the operation.</p>")
              .arg(VBoxGlobal::formatSize(uMinVRAM)),
              0 /* auto-confirm id */,
-             QIMessageBox::Ignore | QIMessageBox::Default,
-             QIMessageBox::Cancel | QIMessageBox::Escape);
+             AlertButton_Ignore | AlertButtonOption_Default,
+             AlertButton_Cancel | AlertButtonOption_Escape);
 }
 
 void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM)
@@ -1933,8 +1933,8 @@ int UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM)
                       "or press <b>Cancel</b> to cancel the operation.</p>")
                    .arg(VBoxGlobal::formatSize(uMinVRAM)),
                    0 /* auto-confirm id */,
-                   QIMessageBox::Ignore | QIMessageBox::Default,
-                   QIMessageBox::Cancel | QIMessageBox::Escape);
+                   AlertButton_Ignore | AlertButtonOption_Default,
+                   AlertButton_Cancel | AlertButtonOption_Escape);
 }
 
 bool UIMessageCenter::confirmGoingFullscreen(const QString &strHotKey)
@@ -2082,10 +2082,10 @@ bool UIMessageCenter::remindAboutGuruMeditation(const CConsole &console, const Q
            "it is recommended to press <b>OK</b> now.</p>")
             .arg(strLogFolder),
         0 /* auto-confirm id */,
-        QIMessageBox::Ok | QIMessageBox::Default,
-        QIMessageBox::Ignore | QIMessageBox::Escape);
+        AlertButton_Ok | AlertButtonOption_Default,
+        AlertButton_Ignore | AlertButtonOption_Escape);
 
-    return rc == QIMessageBox::Ok;
+    return rc == AlertButton_Ok;
 }
 
 bool UIMessageCenter::askAboutCancelAllNetworkRequest(QWidget *pParent)
@@ -2211,7 +2211,7 @@ bool UIMessageCenter::requestUserDownloadExtensionPack(const QString &strExtPack
                       "<p>You should download and install version %3 of this extension pack from Oracle!</p>")
                       .arg(strExtPackVersion).arg(strExtPackName).arg(strVBoxVersion),
                       0 /* auto-confirm id */,
-                      QIMessageBox::Ok | QIMessageBox::Default,
+                      AlertButton_Ok | AlertButtonOption_Default,
                       0,
                       0,
                       tr("Ok", "extension pack"));
@@ -2959,7 +2959,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
 {
     /* Choose the 'default' button: */
     if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0)
-        iButton1 = QIMessageBox::Ok | QIMessageBox::Default;
+        iButton1 = AlertButton_Ok | AlertButtonOption_Default;
 
     /* Check if message-box was auto-confirmed before: */
     CVirtualBox vbox;
@@ -2971,45 +2971,45 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
         if (confirmedMessageList.contains(strAutoConfirmId))
         {
             int iResultCode = AutoConfirmed;
-            if (iButton1 & QIMessageBox::Default)
-                iResultCode |= (iButton1 & QIMessageBox::ButtonMask);
-            if (iButton2 & QIMessageBox::Default)
-                iResultCode |= (iButton2 & QIMessageBox::ButtonMask);
-            if (iButton3 & QIMessageBox::Default)
-                iResultCode |= (iButton3 & QIMessageBox::ButtonMask);
+            if (iButton1 & AlertButtonOption_Default)
+                iResultCode |= (iButton1 & AlertButtonMask);
+            if (iButton2 & AlertButtonOption_Default)
+                iResultCode |= (iButton2 & AlertButtonMask);
+            if (iButton3 & AlertButtonOption_Default)
+                iResultCode |= (iButton3 & AlertButtonMask);
             return iResultCode;
         }
     }
 
     /* Choose title and icon: */
     QString title;
-    QIMessageBox::IconType icon;
+    AlertIconType icon;
     switch (type)
     {
         default:
         case MessageType_Info:
             title = tr("VirtualBox - Information", "msg box title");
-            icon = QIMessageBox::IconType_Information;
+            icon = AlertIconType_Information;
             break;
         case MessageType_Question:
             title = tr("VirtualBox - MessageType_Question", "msg box title");
-            icon = QIMessageBox::IconType_Question;
+            icon = AlertIconType_Question;
             break;
         case MessageType_Warning:
             title = tr("VirtualBox - MessageType_Warning", "msg box title");
-            icon = QIMessageBox::IconType_Warning;
+            icon = AlertIconType_Warning;
             break;
         case MessageType_Error:
             title = tr("VirtualBox - MessageType_Error", "msg box title");
-            icon = QIMessageBox::IconType_Critical;
+            icon = AlertIconType_Critical;
             break;
         case MessageType_Critical:
             title = tr("VirtualBox - MessageType_Critical MessageType_Error", "msg box title");
-            icon = QIMessageBox::IconType_Critical;
+            icon = AlertIconType_Critical;
             break;
         case MessageType_GuruMeditation:
             title = "VirtualBox - Guru Meditation"; /* don't translate this */
-            icon = QIMessageBox::IconType_GuruMeditation;
+            icon = AlertIconType_GuruMeditation;
             break;
     }
 

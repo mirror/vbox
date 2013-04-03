@@ -1158,9 +1158,9 @@ void UIMediumManager::doRemoveMedium()
                 caps & MediumFormatCapabilities_File)
             {
                 int rc = msgCenter().confirmDeleteHardDiskStorage(item->location(), this);
-                if (rc == QIMessageBox::Cancel)
+                if (rc == AlertButton_Cancel)
                     return;
-                deleteStorage = rc == QIMessageBox::Yes;
+                deleteStorage = rc == AlertButton_Yes;
             }
 
             CMedium hardDisk = item->medium().medium();

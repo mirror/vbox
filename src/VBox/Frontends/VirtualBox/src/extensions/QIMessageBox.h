@@ -36,6 +36,45 @@ class QIArrowSplitter;
 class QIDialogButtonBox;
 class QILabel;
 
+/* Button type enumerator: */
+enum AlertButton
+{
+    AlertButton_NoButton      =  0x0,  /* 00000000 00000000 */
+    AlertButton_Ok            =  0x1,  /* 00000000 00000001 */
+    AlertButton_Cancel        =  0x2,  /* 00000000 00000010 */
+    AlertButton_Yes           =  0x4,  /* 00000000 00000100 */
+    AlertButton_No            =  0x8,  /* 00000000 00001000 */
+    AlertButton_Ignore        = 0x10,  /* 00000000 00010000 */
+    AlertButton_Copy          = 0x20,  /* 00000000 00100000 */
+    AlertButtonMask           = 0xFF   /* 00000000 11111111 */
+};
+
+/* Button option enumerator: */
+enum AlertButtonOption
+{
+    AlertButtonOption_Default = 0x100, /* 00000001 00000000 */
+    AlertButtonOption_Escape  = 0x200, /* 00000010 00000000 */
+    AlertButtonOptionMask     = 0x300  /* 00000011 00000000 */
+};
+
+/* Alert option enumerator: */
+enum AlertOption
+{
+    AlertOption_CheckBox      = 0x400, /* 00000100 00000000 */
+    AlertOptionMask           = 0xFC00 /* 11111100 00000000 */
+};
+
+/* Icon type enumerator: */
+enum AlertIconType
+{
+    AlertIconType_NoIcon = QMessageBox::NoIcon,
+    AlertIconType_Information = QMessageBox::Information,
+    AlertIconType_Warning = QMessageBox::Warning,
+    AlertIconType_Critical = QMessageBox::Critical,
+    AlertIconType_Question = QMessageBox::Question,
+    AlertIconType_GuruMeditation
+};
+
 /* QIDialog extension representing GUI alerts: */
 class QIMessageBox : public QIDialog
 {
@@ -43,32 +82,9 @@ class QIMessageBox : public QIDialog
 
 public:
 
-    /* Icon type enumerator: */
-    enum IconType
-    {
-        IconType_NoIcon = QMessageBox::NoIcon,
-        IconType_Information = QMessageBox::Information,
-        IconType_Warning = QMessageBox::Warning,
-        IconType_Critical = QMessageBox::Critical,
-        IconType_Question = QMessageBox::Question,
-        IconType_GuruMeditation,
-    };
-
-    enum
-    {
-        NoButton = 0, Ok = 1, Cancel = 2, Yes = 3, No = 4, Abort = 5,
-        Retry = 6, Ignore = 7, YesAll = 8, NoAll = 9, Copy = 10,
-        ButtonMask = 0xFF,
-
-        Default = 0x100, Escape = 0x200,
-        FlagMask = 0x300,
-
-        OptionChosen = 0x400
-    };
-
-    QIMessageBox (const QString &aCaption, const QString &aText,
-                  IconType aIcon, int aButton0, int aButton1 = 0, int aButton2 = 0,
-                  QWidget *aParent = 0, const char *aName = 0, bool aModal = TRUE);
+    QIMessageBox(const QString &aCaption, const QString &aText,
+                 AlertIconType aIcon, int aButton0, int aButton1 = 0, int aButton2 = 0,
+                 QWidget *aParent = 0, const char *aName = 0, bool aModal = TRUE);
 
     QString buttonText (int aButton) const;
     void setButtonText (int aButton, const QString &aText);
@@ -82,7 +98,7 @@ public:
     QString detailsText () const { return mDetailsText->toHtml(); }
     void setDetailsText (const QString &aText);
 
-    QPixmap standardPixmap (QIMessageBox::IconType aIcon);
+    QPixmap standardPixmap(AlertIconType aIcon);
 
 private:
 
@@ -101,9 +117,9 @@ private slots:
     void detailsBack();
     void detailsNext();
 
-    void done0() { mWasDone = true; done (mButton0 & ButtonMask); }
-    void done1() { mWasDone = true; done (mButton1 & ButtonMask); }
-    void done2() { mWasDone = true; done (mButton2 & ButtonMask); }
+    void done0() { mWasDone = true; done (mButton0 & AlertButtonMask); }
+    void done1() { mWasDone = true; done (mButton1 & AlertButtonMask); }
+    void done2() { mWasDone = true; done (mButton2 & AlertButtonMask); }
 
     void reject();
 

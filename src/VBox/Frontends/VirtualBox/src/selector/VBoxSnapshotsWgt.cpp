@@ -584,11 +584,11 @@ void VBoxSnapshotsWgt::sltRestoreSnapshot()
 
     /* Ask the user if he really wants to restore the snapshot: */
     int iResultCode = msgCenter().confirmSnapshotRestoring(snapshot.GetName(), mMachine.GetCurrentStateModified());
-    if (iResultCode & QIMessageBox::Cancel)
+    if (iResultCode & AlertButton_Cancel)
         return;
 
     /* If user also confirmed new snapshot creation: */
-    if (iResultCode & QIMessageBox::OptionChosen)
+    if (iResultCode & AlertOption_CheckBox)
     {
         /* Take snapshot of changed current state: */
         mTreeWidget->setCurrentItem(curStateItem());
