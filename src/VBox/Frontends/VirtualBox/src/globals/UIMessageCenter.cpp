@@ -194,7 +194,7 @@ int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType type,
         return rc;
 
     /* Save option: */
-    if (pBox->isFlagChecked())
+    if (pBox->flagChecked())
         rc |= AlertOption_CheckBox;
 
     /* Delete message-box: */
@@ -3049,7 +3049,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
     /* Remember auto-confirmation check-box value: */
     if (!strAutoConfirmId.isEmpty())
     {
-        if (pMessageBox->isFlagChecked())
+        if (pMessageBox->flagChecked())
         {
             confirmedMessageList << strAutoConfirmId;
             vbox.SetExtraData(GUI_SuppressMessages, confirmedMessageList.join(","));
