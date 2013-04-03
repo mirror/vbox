@@ -407,7 +407,7 @@ RTDECL(int) RTCritSectRwLeaveShared(PRTCRITSECTRW pThis)
             c--;
 
             if (   c > 0
-                || (u64State & RTCSRW_CNT_RD_MASK) == 0)
+                || (u64State & RTCSRW_CNT_WR_MASK) == 0)
             {
                 /* Don't change the direction. */
                 u64State &= ~RTCSRW_CNT_RD_MASK;
@@ -554,21 +554,34 @@ static int rtCritSectRwEnterExcl(PRTCRITSECTRW pThis, PCRTLOCKVALSRCPOS pSrcPos,
     if (!fDone)
     {
         /*
+         * If only trying, undo the above writer incrementation and return.
+         */
+        if (fTryOnly)
+        {
+            for (;;)
+            {
+                u64OldState = u64State = ASMAtomicReadU64(&pThis->u64State);
+                uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT; Assert(c > 0);
+                c--;
+                u64State &= ~RTCSRW_CNT_WR_MASK;
+                u64State |= c << RTCSRW_CNT_WR_SHIFT;
+                if (ASMAtomicCmpXchgU64(&pThis->u64State, u64State, u64OldState))
+                    break;
+            }
+            return VERR_SEM_BUSY;
+        }
+
+        /*
          * Wait for our turn.
          */
         for (uint32_t iLoop = 0; ; iLoop++)
         {
             int rc;
 #ifdef RTCRITSECTRW_STRICT
-            if (!fTryOnly)
-            {
-                if (hThreadSelf == NIL_RTTHREAD)
-                    hThreadSelf = RTThreadSelfAutoAdopt();
-                rc = RTLockValidatorRecExclCheckBlocking(pThis->pValidatorWrite, hThreadSelf, pSrcPos, true,
-                                                         RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_WRITE, false);
-            }
-            else
-                rc = VINF_SUCCESS;
+            if (hThreadSelf == NIL_RTTHREAD)
+                hThreadSelf = RTThreadSelfAutoAdopt();
+            rc = RTLockValidatorRecExclCheckBlocking(pThis->pValidatorWrite, hThreadSelf, pSrcPos, true,
+                                                     RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_WRITE, false);
             if (RT_SUCCESS(rc))
 #else
             RTTHREAD hThreadSelf = RTThreadSelf();
