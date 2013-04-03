@@ -237,31 +237,39 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
  */
 static void iomR3FlushCache(PVM pVM)
 {
-    IOM_LOCK(pVM);
-
     /*
-     * Caching of port and statistics (saves some time in rep outs/ins instruction emulation)
+     * Since all relevant (1) cache use requires at least read access to the
+     * critical section, we can exclude all other EMTs by grabbing exclusive
+     * access to the critical section and then safely update the caches of
+     * other EMTs.
+     * (1) The irrelvant access not holding the lock is in assertion code.
      */
-    pVM->iom.s.pRangeLastReadR0  = NIL_RTR0PTR;
-    pVM->iom.s.pRangeLastWriteR0 = NIL_RTR0PTR;
-    pVM->iom.s.pStatsLastReadR0  = NIL_RTR0PTR;
-    pVM->iom.s.pStatsLastWriteR0 = NIL_RTR0PTR;
-    pVM->iom.s.pMMIORangeLastR0  = NIL_RTR0PTR;
-    pVM->iom.s.pMMIOStatsLastR0  = NIL_RTR0PTR;
+    IOM_LOCK(pVM);
+    VMCPUID iCpu = pVM->cCpus;
+    while (iCpu-- > 0)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[iCpu];
+        pVCpu->iom.s.pRangeLastReadR0  = NIL_RTR0PTR;
+        pVCpu->iom.s.pRangeLastWriteR0 = NIL_RTR0PTR;
+        pVCpu->iom.s.pStatsLastReadR0  = NIL_RTR0PTR;
+        pVCpu->iom.s.pStatsLastWriteR0 = NIL_RTR0PTR;
+        pVCpu->iom.s.pMMIORangeLastR0  = NIL_RTR0PTR;
+        pVCpu->iom.s.pMMIOStatsLastR0  = NIL_RTR0PTR;
 
-    pVM->iom.s.pRangeLastReadR3  = NULL;
-    pVM->iom.s.pRangeLastWriteR3 = NULL;
-    pVM->iom.s.pStatsLastReadR3  = NULL;
-    pVM->iom.s.pStatsLastWriteR3 = NULL;
-    pVM->iom.s.pMMIORangeLastR3  = NULL;
-    pVM->iom.s.pMMIOStatsLastR3  = NULL;
+        pVCpu->iom.s.pRangeLastReadR3  = NULL;
+        pVCpu->iom.s.pRangeLastWriteR3 = NULL;
+        pVCpu->iom.s.pStatsLastReadR3  = NULL;
+        pVCpu->iom.s.pStatsLastWriteR3 = NULL;
+        pVCpu->iom.s.pMMIORangeLastR3  = NULL;
+        pVCpu->iom.s.pMMIOStatsLastR3  = NULL;
 
-    pVM->iom.s.pRangeLastReadRC  = NIL_RTRCPTR;
-    pVM->iom.s.pRangeLastWriteRC = NIL_RTRCPTR;
-    pVM->iom.s.pStatsLastReadRC  = NIL_RTRCPTR;
-    pVM->iom.s.pStatsLastWriteRC = NIL_RTRCPTR;
-    pVM->iom.s.pMMIORangeLastRC  = NIL_RTRCPTR;
-    pVM->iom.s.pMMIOStatsLastRC  = NIL_RTRCPTR;
+        pVCpu->iom.s.pRangeLastReadRC  = NIL_RTRCPTR;
+        pVCpu->iom.s.pRangeLastWriteRC = NIL_RTRCPTR;
+        pVCpu->iom.s.pStatsLastReadRC  = NIL_RTRCPTR;
+        pVCpu->iom.s.pStatsLastWriteRC = NIL_RTRCPTR;
+        pVCpu->iom.s.pMMIORangeLastRC  = NIL_RTRCPTR;
+        pVCpu->iom.s.pMMIOStatsLastRC  = NIL_RTRCPTR;
+    }
 
     IOM_UNLOCK(pVM);
 }
@@ -303,20 +311,19 @@ VMMR3_INT_DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         pVM->iom.s.pfnMMIOHandlerRC += offDelta;
 
     /*
-     * Apply relocations to the cached GC handlers
+     * Reset the raw-mode cache (don't bother relocating it).
      */
-    if (pVM->iom.s.pRangeLastReadRC)
-        pVM->iom.s.pRangeLastReadRC  += offDelta;
-    if (pVM->iom.s.pRangeLastWriteRC)
-        pVM->iom.s.pRangeLastWriteRC += offDelta;
-    if (pVM->iom.s.pStatsLastReadRC)
-        pVM->iom.s.pStatsLastReadRC  += offDelta;
-    if (pVM->iom.s.pStatsLastWriteRC)
-        pVM->iom.s.pStatsLastWriteRC += offDelta;
-    if (pVM->iom.s.pMMIORangeLastRC)
-        pVM->iom.s.pMMIORangeLastRC  += offDelta;
-    if (pVM->iom.s.pMMIOStatsLastRC)
-        pVM->iom.s.pMMIOStatsLastRC  += offDelta;
+    VMCPUID iCpu = pVM->cCpus;
+    while (iCpu-- > 0)
+    {
+        PVMCPU pVCpu = &pVM->aCpus[iCpu];
+        pVCpu->iom.s.pRangeLastReadRC  = NIL_RTRCPTR;
+        pVCpu->iom.s.pRangeLastWriteRC = NIL_RTRCPTR;
+        pVCpu->iom.s.pStatsLastReadRC  = NIL_RTRCPTR;
+        pVCpu->iom.s.pStatsLastWriteRC = NIL_RTRCPTR;
+        pVCpu->iom.s.pMMIORangeLastRC  = NIL_RTRCPTR;
+        pVCpu->iom.s.pMMIOStatsLastRC  = NIL_RTRCPTR;
+    }
 }
 
 
@@ -1316,84 +1323,6 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                     sizeof(RTRCPTR) * 2,      "Out             ",
                     sizeof(RTRCPTR) * 2,      "pvUser          ");
     RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesR3->IOPortTreeRC, true, iomR3IOPortInfoOneRC, (void *)pHlp);
-
-    if (pVM->iom.s.pRangeLastReadRC)
-    {
-        PIOMIOPORTRANGERC pRange = (PIOMIOPORTRANGERC)MMHyperRCToCC(pVM, pVM->iom.s.pRangeLastReadRC);
-        pHlp->pfnPrintf(pHlp, "RC Read  Ports: %#04x-%#04x %RRv %s\n",
-                        pRange->Port, pRange->Port + pRange->cPorts, pVM->iom.s.pRangeLastReadRC, pRange->pszDesc);
-    }
-    if (pVM->iom.s.pStatsLastReadRC)
-    {
-        PIOMIOPORTSTATS pRange = (PIOMIOPORTSTATS)MMHyperRCToCC(pVM, pVM->iom.s.pStatsLastReadRC);
-        pHlp->pfnPrintf(pHlp, "RC Read  Stats: %#04x %RRv\n",
-                        pRange->Core.Key, pVM->iom.s.pStatsLastReadRC);
-    }
-
-    if (pVM->iom.s.pRangeLastWriteRC)
-    {
-        PIOMIOPORTRANGERC pRange = (PIOMIOPORTRANGERC)MMHyperRCToCC(pVM, pVM->iom.s.pRangeLastWriteRC);
-        pHlp->pfnPrintf(pHlp, "RC Write Ports: %#04x-%#04x %RRv %s\n",
-                        pRange->Port, pRange->Port + pRange->cPorts, pVM->iom.s.pRangeLastWriteRC, pRange->pszDesc);
-    }
-    if (pVM->iom.s.pStatsLastWriteRC)
-    {
-        PIOMIOPORTSTATS pRange = (PIOMIOPORTSTATS)MMHyperRCToCC(pVM, pVM->iom.s.pStatsLastWriteRC);
-        pHlp->pfnPrintf(pHlp, "RC Write Stats: %#04x %RRv\n",
-                        pRange->Core.Key, pVM->iom.s.pStatsLastWriteRC);
-    }
-
-    if (pVM->iom.s.pRangeLastReadR3)
-    {
-        PIOMIOPORTRANGER3 pRange = pVM->iom.s.pRangeLastReadR3;
-        pHlp->pfnPrintf(pHlp, "R3 Read  Ports: %#04x-%#04x %p %s\n",
-                        pRange->Port, pRange->Port + pRange->cPorts, pRange, pRange->pszDesc);
-    }
-    if (pVM->iom.s.pStatsLastReadR3)
-    {
-        PIOMIOPORTSTATS pRange = pVM->iom.s.pStatsLastReadR3;
-        pHlp->pfnPrintf(pHlp, "R3 Read  Stats: %#04x %p\n",
-                        pRange->Core.Key, pRange);
-    }
-
-    if (pVM->iom.s.pRangeLastWriteR3)
-    {
-        PIOMIOPORTRANGER3 pRange = pVM->iom.s.pRangeLastWriteR3;
-        pHlp->pfnPrintf(pHlp, "R3 Write Ports: %#04x-%#04x %p %s\n",
-                        pRange->Port, pRange->Port + pRange->cPorts, pRange, pRange->pszDesc);
-    }
-    if (pVM->iom.s.pStatsLastWriteR3)
-    {
-        PIOMIOPORTSTATS pRange = pVM->iom.s.pStatsLastWriteR3;
-        pHlp->pfnPrintf(pHlp, "R3 Write Stats: %#04x %p\n",
-                        pRange->Core.Key, pRange);
-    }
-
-    if (pVM->iom.s.pRangeLastReadR0)
-    {
-        PIOMIOPORTRANGER0 pRange = (PIOMIOPORTRANGER0)MMHyperR0ToCC(pVM, pVM->iom.s.pRangeLastReadR0);
-        pHlp->pfnPrintf(pHlp, "R0 Read  Ports: %#04x-%#04x %p %s\n",
-                        pRange->Port, pRange->Port + pRange->cPorts, pRange, pRange->pszDesc);
-    }
-    if (pVM->iom.s.pStatsLastReadR0)
-    {
-        PIOMIOPORTSTATS pRange = (PIOMIOPORTSTATS)MMHyperR0ToCC(pVM, pVM->iom.s.pStatsLastReadR0);
-        pHlp->pfnPrintf(pHlp, "R0 Read  Stats: %#04x %p\n",
-                        pRange->Core.Key, pRange);
-    }
-
-    if (pVM->iom.s.pRangeLastWriteR0)
-    {
-        PIOMIOPORTRANGER0 pRange = (PIOMIOPORTRANGER0)MMHyperR0ToCC(pVM, pVM->iom.s.pRangeLastWriteR0);
-        pHlp->pfnPrintf(pHlp, "R0 Write Ports: %#04x-%#04x %p %s\n",
-                        pRange->Port, pRange->Port + pRange->cPorts, pRange, pRange->pszDesc);
-    }
-    if (pVM->iom.s.pStatsLastWriteR0)
-    {
-        PIOMIOPORTSTATS pRange = (PIOMIOPORTSTATS)MMHyperR0ToCC(pVM, pVM->iom.s.pStatsLastWriteR0);
-        pHlp->pfnPrintf(pHlp, "R0 Write Stats: %#04x %p\n",
-                        pRange->Core.Key, pRange);
-    }
 }
 
 
@@ -1531,6 +1460,7 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
  * @param   pfnWriteCallback    Pointer to function which is gonna handle Write operations.
  * @param   pfnReadCallback     Pointer to function which is gonna handle Read operations.
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
+ * @thread  EMT
  */
 VMMR3_INT_DECL(int)
 IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTGCPTR pvUser,
@@ -1548,12 +1478,13 @@ IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
         AssertMsgFailed(("No callbacks! %RGp LB%#x %s\n", GCPhysStart, cbRange));
         return VERR_INVALID_PARAMETER;
     }
+    PVMCPU pVCpu = VMMGetCpu(pVM); Assert(pVCpu);
 
     /*
      * Find the MMIO range and check that the input matches.
      */
     IOM_LOCK(pVM);
-    PIOMMMIORANGE pRange = iomMmioGetRange(pVM, GCPhysStart);
+    PIOMMMIORANGE pRange = iomMmioGetRange(pVM, pVCpu, GCPhysStart);
     AssertReturnStmt(pRange, IOM_UNLOCK(pVM), VERR_IOM_MMIO_RANGE_NOT_FOUND);
     AssertReturnStmt(pRange->pDevInsR3 == pDevIns, IOM_UNLOCK(pVM), VERR_IOM_NOT_MMIO_RANGE_OWNER);
     AssertReturnStmt(pRange->GCPhys == GCPhysStart, IOM_UNLOCK(pVM), VERR_IOM_INVALID_MMIO_RANGE);
@@ -1587,6 +1518,7 @@ IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
  * @param   pfnWriteCallback    Pointer to function which is gonna handle Write operations.
  * @param   pfnReadCallback     Pointer to function which is gonna handle Read operations.
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
+ * @thread  EMT
  */
 VMMR3_INT_DECL(int)
 IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTR0PTR pvUser,
@@ -1605,12 +1537,13 @@ IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
         AssertMsgFailed(("No callbacks! %RGp LB%#x %s\n", GCPhysStart, cbRange));
         return VERR_INVALID_PARAMETER;
     }
+    PVMCPU pVCpu = VMMGetCpu(pVM); Assert(pVCpu);
 
     /*
      * Find the MMIO range and check that the input matches.
      */
     IOM_LOCK(pVM);
-    PIOMMMIORANGE pRange = iomMmioGetRange(pVM, GCPhysStart);
+    PIOMMMIORANGE pRange = iomMmioGetRange(pVM, pVCpu, GCPhysStart);
     AssertReturnStmt(pRange, IOM_UNLOCK(pVM), VERR_IOM_MMIO_RANGE_NOT_FOUND);
     AssertReturnStmt(pRange->pDevInsR3 == pDevIns, IOM_UNLOCK(pVM), VERR_IOM_NOT_MMIO_RANGE_OWNER);
     AssertReturnStmt(pRange->GCPhys == GCPhysStart, IOM_UNLOCK(pVM), VERR_IOM_INVALID_MMIO_RANGE);
@@ -1655,6 +1588,7 @@ VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GC
         AssertMsgFailed(("Wrapped! %#x LB%#x\n", GCPhysStart, cbRange));
         return VERR_IOM_INVALID_MMIO_RANGE;
     }
+    PVMCPU pVCpu = VMMGetCpu(pVM); Assert(pVCpu);
 
     IOM_LOCK(pVM);
 
@@ -1664,7 +1598,7 @@ VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GC
     RTGCPHYS GCPhys = GCPhysStart;
     while (GCPhys <= GCPhysLast && GCPhys >= GCPhysStart)
     {
-        PIOMMMIORANGE pRange = iomMmioGetRange(pVM, GCPhys);
+        PIOMMMIORANGE pRange = iomMmioGetRange(pVM, pVCpu, GCPhys);
         if (!pRange)
         {
             IOM_UNLOCK(pVM);

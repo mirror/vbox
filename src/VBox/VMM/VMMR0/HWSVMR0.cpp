@@ -2474,14 +2474,14 @@ ResumeExecution:
                 {
                     Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringWrite);
-                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->fPrefix,
+                    rc = IOMInterpretOUTSEx(pVM, pVCpu, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->fPrefix,
                                             (DISCPUMODE)pDis->uAddrMode, uIOSize);
                 }
                 else
                 {
                     Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringRead);
-                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->fPrefix,
+                    rc = IOMInterpretINSEx(pVM, pVCpu, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->fPrefix,
                                            (DISCPUMODE)pDis->uAddrMode, uIOSize);
                 }
             }
@@ -2498,7 +2498,7 @@ ResumeExecution:
                 Log2(("IOMIOPortWrite %RGv %x %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, pCtx->eax & uAndVal,
                       uIOSize));
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOWrite);
-                rc = IOMIOPortWrite(pVM, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
+                rc = IOMIOPortWrite(pVM, pVCpu, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
                 if (rc == VINF_IOM_R3_IOPORT_WRITE)
                 {
                     HMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pvVMCB->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port,
@@ -2510,7 +2510,7 @@ ResumeExecution:
                 uint32_t u32Val = 0;
 
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIORead);
-                rc = IOMIOPortRead(pVM, IoExitInfo.n.u16Port, &u32Val, uIOSize);
+                rc = IOMIOPortRead(pVM, pVCpu, IoExitInfo.n.u16Port, &u32Val, uIOSize);
                 if (IOM_SUCCESS(rc))
                 {
                     /* Write back to the EAX register. */

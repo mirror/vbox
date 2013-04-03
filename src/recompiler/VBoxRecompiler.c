@@ -92,12 +92,12 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
 static void     remR3StateUpdate(PVM pVM, PVMCPU pVCpu);
 static int      remR3InitPhysRamSizeAndDirtyMap(PVM pVM, bool fGuarded);
 
-static uint32_t remR3MMIOReadU8(void *pvVM, target_phys_addr_t GCPhys);
-static uint32_t remR3MMIOReadU16(void *pvVM, target_phys_addr_t GCPhys);
-static uint32_t remR3MMIOReadU32(void *pvVM, target_phys_addr_t GCPhys);
-static void     remR3MMIOWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32);
-static void     remR3MMIOWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32);
-static void     remR3MMIOWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32);
+static uint32_t remR3MMIOReadU8(void *pvEnv, target_phys_addr_t GCPhys);
+static uint32_t remR3MMIOReadU16(void *pvEnv, target_phys_addr_t GCPhys);
+static uint32_t remR3MMIOReadU32(void *pvEnv, target_phys_addr_t GCPhys);
+static void     remR3MMIOWriteU8(void *pvEnv, target_phys_addr_t GCPhys, uint32_t u32);
+static void     remR3MMIOWriteU16(void *pvEnv, target_phys_addr_t GCPhys, uint32_t u32);
+static void     remR3MMIOWriteU32(void *pvEnv, target_phys_addr_t GCPhys, uint32_t u32);
 
 static uint32_t remR3HandlerReadU8(void *pvVM, target_phys_addr_t GCPhys);
 static uint32_t remR3HandlerReadU16(void *pvVM, target_phys_addr_t GCPhys);
@@ -333,7 +333,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     /*
      * Register ram types.
      */
-    pVM->rem.s.iMMIOMemType    = cpu_register_io_memory(g_apfnMMIORead, g_apfnMMIOWrite, pVM);
+    pVM->rem.s.iMMIOMemType    = cpu_register_io_memory(g_apfnMMIORead, g_apfnMMIOWrite, &pVM->rem.s.Env);
     AssertReleaseMsg(pVM->rem.s.iMMIOMemType >= 0, ("pVM->rem.s.iMMIOMemType=%d\n", pVM->rem.s.iMMIOMemType));
     pVM->rem.s.iHandlerMemType = cpu_register_io_memory(g_apfnHandlerRead, g_apfnHandlerWrite, pVM);
     AssertReleaseMsg(pVM->rem.s.iHandlerMemType >= 0, ("pVM->rem.s.iHandlerMemType=%d\n", pVM->rem.s.iHandlerMemType));
@@ -3784,59 +3784,65 @@ void remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val)
 #define LOG_GROUP LOG_GROUP_REM_MMIO
 
 /** Read MMIO memory. */
-static uint32_t remR3MMIOReadU8(void *pvVM, target_phys_addr_t GCPhys)
+static uint32_t remR3MMIOReadU8(void *pvEnv, target_phys_addr_t GCPhys)
 {
-    uint32_t u32 = 0;
-    int rc = IOMMMIORead((PVM)pvVM, GCPhys, &u32, 1);
+    CPUX86State *env = (CPUX86State *)pvEnv;
+    uint32_t     u32 = 0;
+    int rc = IOMMMIORead(env->pVM, env->pVCpu, GCPhys, &u32, 1);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
     Log2(("remR3MMIOReadU8: GCPhys=%RGp -> %02x\n", (RTGCPHYS)GCPhys, u32));
     return u32;
 }
 
 /** Read MMIO memory. */
-static uint32_t remR3MMIOReadU16(void *pvVM, target_phys_addr_t GCPhys)
+static uint32_t remR3MMIOReadU16(void *pvEnv, target_phys_addr_t GCPhys)
 {
-    uint32_t u32 = 0;
-    int rc = IOMMMIORead((PVM)pvVM, GCPhys, &u32, 2);
+    CPUX86State *env = (CPUX86State *)pvEnv;
+    uint32_t     u32 = 0;
+    int rc = IOMMMIORead(env->pVM, env->pVCpu, GCPhys, &u32, 2);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
     Log2(("remR3MMIOReadU16: GCPhys=%RGp -> %04x\n", (RTGCPHYS)GCPhys, u32));
     return u32;
 }
 
 /** Read MMIO memory. */
-static uint32_t remR3MMIOReadU32(void *pvVM, target_phys_addr_t GCPhys)
+static uint32_t remR3MMIOReadU32(void *pvEnv, target_phys_addr_t GCPhys)
 {
-    uint32_t u32 = 0;
-    int rc = IOMMMIORead((PVM)pvVM, GCPhys, &u32, 4);
+    CPUX86State *env = (CPUX86State *)pvEnv;
+    uint32_t     u32 = 0;
+    int rc = IOMMMIORead(env->pVM, env->pVCpu, GCPhys, &u32, 4);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
     Log2(("remR3MMIOReadU32: GCPhys=%RGp -> %08x\n", (RTGCPHYS)GCPhys, u32));
     return u32;
 }
 
 /** Write to MMIO memory. */
-static void     remR3MMIOWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
+static void     remR3MMIOWriteU8(void *pvEnv, target_phys_addr_t GCPhys, uint32_t u32)
 {
-    int rc;
+    CPUX86State *env = (CPUX86State *)pvEnv;
+    int          rc;
     Log2(("remR3MMIOWriteU8: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
-    rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 1);
+    rc = IOMMMIOWrite(env->pVM, env->pVCpu, GCPhys, u32, 1);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
 }
 
 /** Write to MMIO memory. */
-static void     remR3MMIOWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
+static void     remR3MMIOWriteU16(void *pvEnv, target_phys_addr_t GCPhys, uint32_t u32)
 {
-    int rc;
+    CPUX86State *env = (CPUX86State *)pvEnv;
+    int          rc;
     Log2(("remR3MMIOWriteU16: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
-    rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 2);
+    rc = IOMMMIOWrite(env->pVM, env->pVCpu, GCPhys, u32, 2);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
 }
 
 /** Write to MMIO memory. */
-static void     remR3MMIOWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
+static void     remR3MMIOWriteU32(void *pvEnv, target_phys_addr_t GCPhys, uint32_t u32)
 {
-    int rc;
+    CPUX86State *env = (CPUX86State *)pvEnv;
+    int          rc;
     Log2(("remR3MMIOWriteU32: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
-    rc = IOMMMIOWrite((PVM)pvVM, GCPhys, u32, 4);
+    rc = IOMMMIOWrite(env->pVM, env->pVCpu, GCPhys, u32, 4);
     AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc)); NOREF(rc);
 }
 
@@ -4556,7 +4562,7 @@ void cpu_outb(CPUX86State *env, pio_addr_t addr, uint8_t val)
     if (addr != 0x80 && addr != 0x70 && addr != 0x61)
         Log2(("cpu_outb: addr=%#06x val=%#x\n", addr, val));
 
-    rc = IOMIOPortWrite(env->pVM, (RTIOPORT)addr, val, 1);
+    rc = IOMIOPortWrite(env->pVM, env->pVCpu, (RTIOPORT)addr, val, 1);
     if (RT_LIKELY(rc == VINF_SUCCESS))
         return;
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
@@ -4571,7 +4577,7 @@ void cpu_outb(CPUX86State *env, pio_addr_t addr, uint8_t val)
 void cpu_outw(CPUX86State *env, pio_addr_t addr, uint16_t val)
 {
     //Log2(("cpu_outw: addr=%#06x val=%#x\n", addr, val));
-    int rc = IOMIOPortWrite(env->pVM, (RTIOPORT)addr, val, 2);
+    int rc = IOMIOPortWrite(env->pVM, env->pVCpu, (RTIOPORT)addr, val, 2);
     if (RT_LIKELY(rc == VINF_SUCCESS))
         return;
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
@@ -4587,7 +4593,7 @@ void cpu_outl(CPUX86State *env, pio_addr_t addr, uint32_t val)
 {
     int rc;
     Log2(("cpu_outl: addr=%#06x val=%#x\n", addr, val));
-    rc = IOMIOPortWrite(env->pVM, (RTIOPORT)addr, val, 4);
+    rc = IOMIOPortWrite(env->pVM, env->pVCpu, (RTIOPORT)addr, val, 4);
     if (RT_LIKELY(rc == VINF_SUCCESS))
         return;
     if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
@@ -4602,7 +4608,7 @@ void cpu_outl(CPUX86State *env, pio_addr_t addr, uint32_t val)
 uint8_t cpu_inb(CPUX86State *env, pio_addr_t addr)
 {
     uint32_t u32 = 0;
-    int rc = IOMIOPortRead(env->pVM, (RTIOPORT)addr, &u32, 1);
+    int rc = IOMIOPortRead(env->pVM, env->pVCpu, (RTIOPORT)addr, &u32, 1);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         if (/*addr != 0x61 && */addr != 0x71)
@@ -4622,7 +4628,7 @@ uint8_t cpu_inb(CPUX86State *env, pio_addr_t addr)
 uint16_t cpu_inw(CPUX86State *env, pio_addr_t addr)
 {
     uint32_t u32 = 0;
-    int rc = IOMIOPortRead(env->pVM, (RTIOPORT)addr, &u32, 2);
+    int rc = IOMIOPortRead(env->pVM, env->pVCpu, (RTIOPORT)addr, &u32, 2);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         Log2(("cpu_inw: addr=%#06x -> %#x\n", addr, u32));
@@ -4641,7 +4647,7 @@ uint16_t cpu_inw(CPUX86State *env, pio_addr_t addr)
 uint32_t cpu_inl(CPUX86State *env, pio_addr_t addr)
 {
     uint32_t u32 = 0;
-    int rc = IOMIOPortRead(env->pVM, (RTIOPORT)addr, &u32, 4);
+    int rc = IOMIOPortRead(env->pVM, env->pVCpu, (RTIOPORT)addr, &u32, 4);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
 //if (addr==0x01f0 && u32 == 0x6b6d)

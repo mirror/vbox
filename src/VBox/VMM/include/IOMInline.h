@@ -62,15 +62,16 @@ DECLINLINE(PIOMIOPORTRANGER3) iomIOPortGetRangeR3(PVM pVM, RTIOPORT Port)
  * @returns NULL if address not in a MMIO range.
  *
  * @param   pVM     Pointer to the VM.
+ * @param   pVCpu   Pointer to the virtual CPU structure of the caller.
  * @param   GCPhys  Physical address to lookup.
  */
-DECLINLINE(PIOMMMIORANGE) iomMmioGetRange(PVM pVM, RTGCPHYS GCPhys)
+DECLINLINE(PIOMMMIORANGE) iomMmioGetRange(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
 {
     Assert(IOM_IS_SHARED_LOCK_OWNER(pVM));
-    PIOMMMIORANGE pRange = pVM->iom.s.CTX_SUFF(pMMIORangeLast);
+    PIOMMMIORANGE pRange = pVCpu->iom.s.CTX_SUFF(pMMIORangeLast);
     if (    !pRange
         ||  GCPhys - pRange->GCPhys >= pRange->cb)
-        pVM->iom.s.CTX_SUFF(pMMIORangeLast) = pRange
+        pVCpu->iom.s.CTX_SUFF(pMMIORangeLast) = pRange
             = (PIOMMMIORANGE)RTAvlroGCPhysRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->MMIOTree, GCPhys);
     return pRange;
 }
@@ -97,17 +98,18 @@ DECLINLINE(void) iomMmioRetainRange(PIOMMMIORANGE pRange)
  * @returns NULL if address not in a MMIO range.
  *
  * @param   pVM     Pointer to the VM.
+ * @param   pVCpu   Pointer to the virtual CPU structure of the caller.
  * @param   GCPhys  Physical address to lookup.
  */
-DECLINLINE(PIOMMMIORANGE) iomMmioGetRangeWithRef(PVM pVM, RTGCPHYS GCPhys)
+DECLINLINE(PIOMMMIORANGE) iomMmioGetRangeWithRef(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
 {
     int rc = IOM_LOCK_SHARED_EX(pVM, VINF_SUCCESS);
     AssertRCReturn(rc, NULL);
 
-    PIOMMMIORANGE pRange = pVM->iom.s.CTX_SUFF(pMMIORangeLast);
+    PIOMMMIORANGE pRange = pVCpu->iom.s.CTX_SUFF(pMMIORangeLast);
     if (   !pRange
         || GCPhys - pRange->GCPhys >= pRange->cb)
-        pVM->iom.s.CTX_SUFF(pMMIORangeLast) = pRange
+        pVCpu->iom.s.CTX_SUFF(pMMIORangeLast) = pRange
             = (PIOMMMIORANGE)RTAvlroGCPhysRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->MMIOTree, GCPhys);
     if (pRange)
         iomMmioRetainRange(pRange);
@@ -139,14 +141,15 @@ DECLINLINE(void) iomMmioReleaseRange(PVM pVM, PIOMMMIORANGE pRange)
  * @returns NULL if address not in a MMIO range.
  *
  * @param   pVM     Pointer to the VM.
+ * @param   pVCpu   Pointer to the virtual CPU structure of the caller.
  * @param   GCPhys  Physical address to lookup.
  */
-DECLINLINE(PIOMMMIORANGE) iomMMIOGetRangeUnsafe(PVM pVM, RTGCPHYS GCPhys)
+DECLINLINE(PIOMMMIORANGE) iomMMIOGetRangeUnsafe(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
 {
-    PIOMMMIORANGE pRange = pVM->iom.s.CTX_SUFF(pMMIORangeLast);
+    PIOMMMIORANGE pRange = pVCpu->iom.s.CTX_SUFF(pMMIORangeLast);
     if (    !pRange
         ||  GCPhys - pRange->GCPhys >= pRange->cb)
-        pVM->iom.s.CTX_SUFF(pMMIORangeLast) = pRange
+        pVCpu->iom.s.CTX_SUFF(pMMIORangeLast) = pRange
             = (PIOMMMIORANGE)RTAvlroGCPhysRangeGet(&pVM->iom.s.CTX_SUFF(pTrees)->MMIOTree, GCPhys);
     return pRange;
 }
@@ -163,11 +166,12 @@ DECLINLINE(PIOMMMIORANGE) iomMMIOGetRangeUnsafe(PVM pVM, RTGCPHYS GCPhys)
  * @returns Pointer to MMIO stats.
  * @returns NULL if not found (R0/GC), or out of memory (R3).
  *
- * @param   pVM         Pointer to the VM.
- * @param   GCPhys      Physical address to lookup.
- * @param   pRange      The MMIO range.
+ * @param   pVM     Pointer to the VM.
+ * @param   pVCpu   Pointer to the virtual CPU structure of the caller.
+ * @param   GCPhys  Physical address to lookup.
+ * @param   pRange  The MMIO range.
  */
-DECLINLINE(PIOMMMIOSTATS) iomMmioGetStats(PVM pVM, RTGCPHYS GCPhys, PIOMMMIORANGE pRange)
+DECLINLINE(PIOMMMIOSTATS) iomMmioGetStats(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, PIOMMMIORANGE pRange)
 {
     IOM_LOCK_SHARED_EX(pVM, VINF_SUCCESS);
 
@@ -175,7 +179,7 @@ DECLINLINE(PIOMMMIOSTATS) iomMmioGetStats(PVM pVM, RTGCPHYS GCPhys, PIOMMMIORANG
     if (pRange->cb > PAGE_SIZE)
         GCPhys = pRange->GCPhys;
 
-    PIOMMMIOSTATS pStats = pVM->iom.s.CTX_SUFF(pMMIOStatsLast);
+    PIOMMMIOSTATS pStats = pVCpu->iom.s.CTX_SUFF(pMMIOStatsLast);
     if (    !pStats
         ||  pStats->Core.Key != GCPhys)
     {

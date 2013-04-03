@@ -61,26 +61,27 @@
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  *
  * @param   pVM         The virtual machine handle.
+ * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
  * @param   pCpu        Disassembler CPU state.
  */
-VMMRCDECL(VBOXSTRICTRC) IOMRCIOPortHandler(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
+VMMRCDECL(VBOXSTRICTRC) IOMRCIOPortHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
     switch (pCpu->pCurInstr->uOpcode)
     {
         case OP_IN:
-            return IOMInterpretIN(pVM, pRegFrame, pCpu);
+            return IOMInterpretIN(pVM, pVCpu, pRegFrame, pCpu);
 
         case OP_OUT:
-            return IOMInterpretOUT(pVM, pRegFrame, pCpu);
+            return IOMInterpretOUT(pVM, pVCpu, pRegFrame, pCpu);
 
         case OP_INSB:
         case OP_INSWD:
-            return IOMInterpretINS(pVM, pRegFrame, pCpu);
+            return IOMInterpretINS(pVM, pVCpu, pRegFrame, pCpu);
 
         case OP_OUTSB:
         case OP_OUTSWD:
-            return IOMInterpretOUTS(pVM, pRegFrame, pCpu);
+            return IOMInterpretOUTS(pVM, pVCpu, pRegFrame, pCpu);
 
         /*
          * The opcode wasn't know to us, freak out.

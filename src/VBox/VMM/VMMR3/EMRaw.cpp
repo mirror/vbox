@@ -434,14 +434,14 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
                 case OP_IN:
                 {
                     STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIn);
-                    rcStrict = IOMInterpretIN(pVM, CPUMCTX2CORE(pCtx), &Cpu);
+                    rcStrict = IOMInterpretIN(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu);
                     break;
                 }
 
                 case OP_OUT:
                 {
                     STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatOut);
-                    rcStrict = IOMInterpretOUT(pVM, CPUMCTX2CORE(pCtx), &Cpu);
+                    rcStrict = IOMInterpretOUT(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu);
                     break;
                 }
             }
@@ -454,7 +454,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
                 case OP_INSWD:
                 {
                     STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIn);
-                    rcStrict = IOMInterpretINS(pVM, CPUMCTX2CORE(pCtx), &Cpu);
+                    rcStrict = IOMInterpretINS(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu);
                     break;
                 }
 
@@ -462,7 +462,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
                 case OP_OUTSWD:
                 {
                     STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatOut);
-                    rcStrict = IOMInterpretOUTS(pVM, CPUMCTX2CORE(pCtx), &Cpu);
+                    rcStrict = IOMInterpretOUTS(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu);
                     break;
                 }
             }

@@ -1214,7 +1214,8 @@ static uint32_t vga_mem_readb(PVGASTATE pThis, target_phys_addr_t addr, int *prc
         {
             /** @todo only allow read access (doesn't work now) */
             STAM_COUNTER_INC(&pThis->StatMapPage);
-            IOMMMIOMapMMIO2Page(PDMDevHlpGetVM(pThis->CTX_SUFF(pDevIns)), GCPhys, pThis->GCPhysVRAM + addr, X86_PTE_RW|X86_PTE_P);
+            IOMMMIOMapMMIO2Page(PDMDevHlpGetVM(pThis->CTX_SUFF(pDevIns)), GCPhys,
+                                pThis->GCPhysVRAM + addr, X86_PTE_RW | X86_PTE_P);
             /* Set as dirty as write accesses won't be noticed now. */
             vga_set_dirty(pThis, addr);
             pThis->fRemappedVGA = true;
@@ -1296,7 +1297,8 @@ static int vga_mem_writeb(PVGASTATE pThis, target_phys_addr_t addr, uint32_t val
                 && !vga_is_dirty(pThis, addr))
             {
                 STAM_COUNTER_INC(&pThis->StatMapPage);
-                IOMMMIOMapMMIO2Page(PDMDevHlpGetVM(pThis->CTX_SUFF(pDevIns)), GCPhys, pThis->GCPhysVRAM + addr, X86_PTE_RW | X86_PTE_P);
+                IOMMMIOMapMMIO2Page(PDMDevHlpGetVM(pThis->CTX_SUFF(pDevIns)), GCPhys,
+                                    pThis->GCPhysVRAM + addr, X86_PTE_RW | X86_PTE_P);
                 pThis->fRemappedVGA = true;
             }
 # endif /* IN_RC */
