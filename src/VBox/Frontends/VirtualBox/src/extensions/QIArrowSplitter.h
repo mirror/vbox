@@ -53,6 +53,8 @@ public:
 
     void setName (const QString &aName);
 
+    QSize minimumSizeHint() const;
+
 public slots:
 
     void toggleWidget();
