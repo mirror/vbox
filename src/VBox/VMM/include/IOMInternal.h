@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,12 +18,17 @@
 #ifndef ___IOMInternal_h
 #define ___IOMInternal_h
 
+//#define IOM_WITH_CRIT_SECT_RW
+
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/pdmcritsect.h>
+#ifdef IOM_WITH_CRIT_SECT_RW
+# include <VBox/vmm/pdmcritsectrw.h>
+#endif
 #include <VBox/param.h>
 #include <iprt/assert.h>
 #include <iprt/avl.h>
@@ -323,7 +328,11 @@ typedef struct IOM
 #endif
 
     /** Lock serializing EMT access to IOM. */
+#ifdef IOM_WITH_CRIT_SECT_RW
+    PDMCRITSECTRW                   CritSect;
+#else
     PDMCRITSECT                     CritSect;
+#endif
 
     /** @name Caching of I/O Port and MMIO ranges and statistics.
      * (Saves quite some time in rep outs/ins instruction emulation.)
@@ -425,8 +434,28 @@ DECLCALLBACK(int)   IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, voi
 #endif
 
 /* IOM locking helpers. */
-#define IOM_LOCK(a_pVM)     PDMCritSectEnter(&(a_pVM)->iom.s.CritSect, VERR_SEM_BUSY)
-#define IOM_UNLOCK(a_pVM)   do { PDMCritSectLeave(&(a_pVM)->iom.s.CritSect); } while (0)
+#ifdef IOM_WITH_CRIT_SECT_RW
+# define IOM_LOCK(a_pVM)                        PDMCritSectRwEnterExcl(&(a_pVM)->iom.s.CritSect, VERR_SEM_BUSY)
+# define IOM_UNLOCK(a_pVM)                      do { PDMCritSectRwLeaveExcl(&(a_pVM)->iom.s.CritSect); } while (0)
+# if 1 /* for the time being (the lookup caches needs to be in VMCPU) */
+# define IOM_LOCK_SHARED_EX(a_pVM, a_rcBusy)    PDMCritSectRwEnterExcl(&(a_pVM)->iom.s.CritSect, (a_rcBusy))
+# define IOM_UNLOCK_SHARED(a_pVM)               do { PDMCritSectRwLeaveExcl(&(a_pVM)->iom.s.CritSect); } while (0)
+# define IOM_IS_SHARED_LOCK_OWNER(a_pVM)        PDMCritSectRwIsWriteOwner(&(a_pVM)->iom.s.CritSect)
+# else
+# define IOM_LOCK_SHARED_EX(a_pVM, a_rcBusy)    PDMCritSectRwEnterShared(&(a_pVM)->iom.s.CritSect, (a_rcBusy))
+# define IOM_UNLOCK_SHARED(a_pVM)               do { PDMCritSectRwLeaveShared(&(a_pVM)->iom.s.CritSect); } while (0)
+# define IOM_IS_SHARED_LOCK_OWNER(a_pVM)        PDMCritSectRwIsReadOwner(&(a_pVM)->iom.s.CritSect, true)
+# endif
+# define IOM_IS_EXCL_LOCK_OWNER(a_pVM)          PDMCritSectRwIsWriteOwner(&(a_pVM)->iom.s.CritSect)
+#else
+# define IOM_LOCK(a_pVM)                        PDMCritSectEnter(&(a_pVM)->iom.s.CritSect, VERR_SEM_BUSY)
+# define IOM_UNLOCK(a_pVM)                      do { PDMCritSectLeave(&(a_pVM)->iom.s.CritSect); } while (0)
+# define IOM_LOCK_SHARED_EX(a_pVM, a_rcBusy)    PDMCritSectEnter(&(a_pVM)->iom.s.CritSect, (a_rcBusy))
+# define IOM_UNLOCK_SHARED(a_pVM)               do { PDMCritSectLeave(&(a_pVM)->iom.s.CritSect); } while (0)
+# define IOM_IS_SHARED_LOCK_OWNER(a_pVM)        PDMCritSectIsOwner(&(a_pVM)->iom.s.CritSect)
+# define IOM_IS_EXCL_LOCK_OWNER(a_pVM)          PDMCritSectIsOwner(&(a_pVM)->iom.s.CritSect)
+#endif
+#define IOM_LOCK_SHARED(a_pVM)                  IOM_LOCK_SHARED_EX(a_pVM, VERR_SEM_BUSY)
 
 
 /* Disassembly helpers used in IOMAll.cpp & IOMAllMMIO.cpp */

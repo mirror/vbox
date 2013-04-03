@@ -287,7 +287,7 @@ VMMDECL(VBOXSTRICTRC)   IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtx
 VMMDECL(int)            IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags);
 VMMDECL(int)            IOMMMIOMapMMIOHCPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint64_t fPageFlags);
 VMMDECL(int)            IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys);
-VMMDECL(bool)           IOMIsLockOwner(PVM pVM);
+VMMDECL(bool)           IOMIsLockWriteOwner(PVM pVM);
 
 #ifdef IN_RC
 /** @defgroup grp_iom_rc    The IOM Raw-Mode Context API

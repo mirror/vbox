@@ -989,7 +989,7 @@ typedef struct VM
 #ifdef ___IOMInternal_h
         struct IOM s;
 #endif
-        uint8_t     padding[832];       /* multiple of 64 */
+        uint8_t     padding[896];       /* multiple of 64 */
     } iom;
 
     /** PATM part. */
@@ -1086,7 +1086,7 @@ typedef struct VM
 
 
     /** Padding for aligning the cpu array on a page boundary. */
-    uint8_t         abAlignment2[542];
+    uint8_t         abAlignment2[478];
 
     /* ---- end small stuff ---- */
 
