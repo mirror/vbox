@@ -1060,7 +1060,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE))
 
     uint32_t        u32Value;
     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-        rcStrict = IOMIOPortRead(pVM, pCtx->dx, &u32Value, OP_SIZE / 8);
+        rcStrict = IOMIOPortRead(pVM, IEMCPU_TO_VMCPU(pIemCpu), pCtx->dx, &u32Value, OP_SIZE / 8);
     else
         rcStrict = iemVerifyFakeIOPortRead(pIemCpu, pCtx->dx, &u32Value, OP_SIZE / 8);
     if (IOM_SUCCESS(rcStrict))
@@ -1090,8 +1090,9 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE))
  */
 IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
 {
-    PVM         pVM  = IEMCPU_TO_VM(pIemCpu);
-    PCPUMCTX    pCtx = pIemCpu->CTX_SUFF(pCtx);
+    PVM         pVM   = IEMCPU_TO_VM(pIemCpu);
+    PVMCPU      pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
+    PCPUMCTX    pCtx  = pIemCpu->CTX_SUFF(pCtx);
 
     /*
      * Setup.
@@ -1172,7 +1173,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
                 {
                     uint32_t u32Value;
                     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-                        rcStrict = IOMIOPortRead(pVM, u16Port, &u32Value, OP_SIZE / 8);
+                        rcStrict = IOMIOPortRead(pVM, pVCpu, u16Port, &u32Value, OP_SIZE / 8);
                     else
                         rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
                     if (IOM_SUCCESS(rcStrict))
@@ -1223,7 +1224,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
 
             uint32_t u32Value;
             if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-                rcStrict = IOMIOPortRead(pVM, u16Port, &u32Value, OP_SIZE / 8);
+                rcStrict = IOMIOPortRead(pVM, pVCpu, u16Port, &u32Value, OP_SIZE / 8);
             else
                 rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
             if (!IOM_SUCCESS(rcStrict))
@@ -1279,7 +1280,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
     if (rcStrict == VINF_SUCCESS)
     {
         if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-            rcStrict = IOMIOPortWrite(pVM, pCtx->dx, uValue, OP_SIZE / 8);
+            rcStrict = IOMIOPortWrite(pVM, IEMCPU_TO_VMCPU(pIemCpu), pCtx->dx, uValue, OP_SIZE / 8);
         else
             rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, pCtx->dx, uValue, OP_SIZE / 8);
         if (IOM_SUCCESS(rcStrict))
@@ -1302,8 +1303,9 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
  */
 IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg)
 {
-    PVM         pVM  = IEMCPU_TO_VM(pIemCpu);
-    PCPUMCTX    pCtx = pIemCpu->CTX_SUFF(pCtx);
+    PVM         pVM   = IEMCPU_TO_VM(pIemCpu);
+    PVMCPU      pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
+    PCPUMCTX    pCtx  = pIemCpu->CTX_SUFF(pCtx);
 
     /*
      * Setup.
@@ -1376,7 +1378,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                 {
                     uint32_t u32Value = *puMem++;
                     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-                        rcStrict = IOMIOPortWrite(pVM, u16Port, u32Value, OP_SIZE / 8);
+                        rcStrict = IOMIOPortWrite(pVM, pVCpu, u16Port, u32Value, OP_SIZE / 8);
                     else
                         rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, OP_SIZE / 8);
                     if (IOM_SUCCESS(rcStrict))
@@ -1425,7 +1427,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                 return rcStrict;
 
             if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-                rcStrict = IOMIOPortWrite(pVM, u16Port, uValue, OP_SIZE / 8);
+                rcStrict = IOMIOPortWrite(pVM, pVCpu, u16Port, uValue, OP_SIZE / 8);
             else
                 rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, uValue, OP_SIZE / 8);
             if (IOM_SUCCESS(rcStrict))

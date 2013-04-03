@@ -1071,7 +1071,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
     if (    pVCpu->trpm.s.uActiveErrorCode == 0
         &&  (Cpu.pCurInstr->fOpType & DISOPTYPE_PORTIO))
     {
-        VBOXSTRICTRC rcStrict = IOMRCIOPortHandler(pVM, pRegFrame, &Cpu);
+        VBOXSTRICTRC rcStrict = IOMRCIOPortHandler(pVM, pVCpu, pRegFrame, &Cpu);
         if (IOM_SUCCESS(rcStrict))
             pRegFrame->rip += cbOp;
         rc = VBOXSTRICTRC_TODO(rcStrict);

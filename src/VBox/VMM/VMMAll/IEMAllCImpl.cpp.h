@@ -3837,7 +3837,7 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
      */
     uint32_t u32Value;
     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-        rcStrict = IOMIOPortRead(IEMCPU_TO_VM(pIemCpu), u16Port, &u32Value, cbReg);
+        rcStrict = IOMIOPortRead(IEMCPU_TO_VM(pIemCpu), IEMCPU_TO_VMCPU(pIemCpu), u16Port, &u32Value, cbReg);
     else
         rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, cbReg);
     if (IOM_SUCCESS(rcStrict))
@@ -3899,7 +3899,7 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
         default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
     }
     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-        rcStrict = IOMIOPortWrite(IEMCPU_TO_VM(pIemCpu), u16Port, u32Value, cbReg);
+        rcStrict = IOMIOPortWrite(IEMCPU_TO_VM(pIemCpu), IEMCPU_TO_VMCPU(pIemCpu), u16Port, u32Value, cbReg);
     else
         rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, cbReg);
     if (IOM_SUCCESS(rcStrict))

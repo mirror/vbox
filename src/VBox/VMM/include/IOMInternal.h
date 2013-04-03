@@ -334,31 +334,6 @@ typedef struct IOM
     PDMCRITSECT                     CritSect;
 #endif
 
-    /** @name Caching of I/O Port and MMIO ranges and statistics.
-     * (Saves quite some time in rep outs/ins instruction emulation.)
-     * @{ */
-    R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastReadR3;
-    R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastWriteR3;
-    R3PTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadR3;
-    R3PTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteR3;
-    R3PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR3;
-    R3PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR3;
-
-    R0PTRTYPE(PIOMIOPORTRANGER0)    pRangeLastReadR0;
-    R0PTRTYPE(PIOMIOPORTRANGER0)    pRangeLastWriteR0;
-    R0PTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadR0;
-    R0PTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteR0;
-    R0PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR0;
-    R0PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR0;
-
-    RCPTRTYPE(PIOMIOPORTRANGERC)    pRangeLastReadRC;
-    RCPTRTYPE(PIOMIOPORTRANGERC)    pRangeLastWriteRC;
-    RCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadRC;
-    RCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteRC;
-    RCPTRTYPE(PIOMMMIORANGE)        pMMIORangeLastRC;
-    RCPTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastRC;
-    /** @} */
-
     /** @name I/O Port statistics.
      * @{ */
     STAMCOUNTER                     StatInstIn;
@@ -413,6 +388,31 @@ typedef struct IOMCPU
     /** For saving stack space, the disassembler state is allocated here instead of
      * on the stack. */
     DISCPUSTATE                     DisState;
+
+    /** @name Caching of I/O Port and MMIO ranges and statistics.
+     * (Saves quite some time in rep outs/ins instruction emulation.)
+     * @{ */
+    R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastReadR3;
+    R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastWriteR3;
+    R3PTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadR3;
+    R3PTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteR3;
+    R3PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR3;
+    R3PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR3;
+
+    R0PTRTYPE(PIOMIOPORTRANGER0)    pRangeLastReadR0;
+    R0PTRTYPE(PIOMIOPORTRANGER0)    pRangeLastWriteR0;
+    R0PTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadR0;
+    R0PTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteR0;
+    R0PTRTYPE(PIOMMMIORANGE)        pMMIORangeLastR0;
+    R0PTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastR0;
+
+    RCPTRTYPE(PIOMIOPORTRANGERC)    pRangeLastReadRC;
+    RCPTRTYPE(PIOMIOPORTRANGERC)    pRangeLastWriteRC;
+    RCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadRC;
+    RCPTRTYPE(PIOMIOPORTSTATS)      pStatsLastWriteRC;
+    RCPTRTYPE(PIOMMMIORANGE)        pMMIORangeLastRC;
+    RCPTRTYPE(PIOMMMIOSTATS)        pMMIOStatsLastRC;
+    /** @} */
 } IOMCPU;
 /** Pointer to IOM per virtual CPU instance data. */
 typedef IOMCPU *PIOMCPU;

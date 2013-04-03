@@ -4608,13 +4608,15 @@ ResumeExecution:
                 {
                     Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringWrite);
-                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), uPort, pDis->fPrefix, (DISCPUMODE)pDis->uAddrMode, cbSize);
+                    rc = IOMInterpretOUTSEx(pVM, pVCpu, CPUMCTX2CORE(pCtx), uPort, pDis->fPrefix,
+                                            (DISCPUMODE)pDis->uAddrMode, cbSize);
                 }
                 else
                 {
                     Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, uPort, cbSize));
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringRead);
-                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), uPort, pDis->fPrefix, (DISCPUMODE)pDis->uAddrMode, cbSize);
+                    rc = IOMInterpretINSEx(pVM, pVCpu, CPUMCTX2CORE(pCtx), uPort, pDis->fPrefix,
+                                           (DISCPUMODE)pDis->uAddrMode, cbSize);
                 }
             }
             else
@@ -4630,7 +4632,7 @@ ResumeExecution:
             if (fIOWrite)
             {
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOWrite);
-                rc = IOMIOPortWrite(pVM, uPort, pCtx->eax & uAndVal, cbSize);
+                rc = IOMIOPortWrite(pVM, pVCpu, uPort, pCtx->eax & uAndVal, cbSize);
                 if (rc == VINF_IOM_R3_IOPORT_WRITE)
                     HMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pCtx->rip + cbInstr, uPort, uAndVal, cbSize);
             }
@@ -4639,7 +4641,7 @@ ResumeExecution:
                 uint32_t u32Val = 0;
 
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIORead);
-                rc = IOMIOPortRead(pVM, uPort, &u32Val, cbSize);
+                rc = IOMIOPortRead(pVM, pVCpu, uPort, &u32Val, cbSize);
                 if (IOM_SUCCESS(rc))
                 {
                     /* Write back to the EAX register. */
@@ -4762,7 +4764,7 @@ ResumeExecution:
                 GCPhys += VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(exitQualification);
 
                 LogFlow(("Apic access at %RGp\n", GCPhys));
-                rc = IOMMMIOPhysHandler(pVM, (uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ) ? 0 : X86_TRAP_PF_RW,
+                rc = IOMMMIOPhysHandler(pVM, pVCpu, (uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ) ? 0 : X86_TRAP_PF_RW,
                                         CPUMCTX2CORE(pCtx), GCPhys);
                 if (rc == VINF_SUCCESS)
                     goto ResumeExecution;   /* rip already updated */

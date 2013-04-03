@@ -679,6 +679,7 @@ static const REMPARMDESC g_aArgsHMR3CanExecuteGuest[] =
 static const REMPARMDESC g_aArgsIOMIOPortRead[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTIOPORT),           NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
@@ -686,6 +687,7 @@ static const REMPARMDESC g_aArgsIOMIOPortRead[] =
 static const REMPARMDESC g_aArgsIOMIOPortWrite[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTIOPORT),           NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
@@ -693,6 +695,7 @@ static const REMPARMDESC g_aArgsIOMIOPortWrite[] =
 static const REMPARMDESC g_aArgsIOMMMIORead[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
@@ -700,6 +703,7 @@ static const REMPARMDESC g_aArgsIOMMMIORead[] =
 static const REMPARMDESC g_aArgsIOMMMIOWrite[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
@@ -1233,7 +1237,7 @@ static REMFNDESC g_aVMMImports[] =
     { "EMRemIsLockOwner",                       VMM_FN(EMRemIsLockOwner),               &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   sizeof(bool),       NULL },
     { "EMGetInhibitInterruptsPC",               VMM_FN(EMGetInhibitInterruptsPC),       &g_aArgsVMCPU[0],                           RT_ELEMENTS(g_aArgsVMCPU),                             REMFNDESC_FLAGS_RET_INT,    sizeof(RTGCPTR),    NULL },
     { "EMSetInhibitInterruptsPC",               VMM_FN(EMSetInhibitInterruptsPC),       &g_aArgsEMSetInhibitInterruptsPC[0],        RT_ELEMENTS(g_aArgsEMSetInhibitInterruptsPC),          REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
-    { "HMR3CanExecuteGuest",                VMM_FN(HMR3CanExecuteGuest),        &g_aArgsHMR3CanExecuteGuest[0],         RT_ELEMENTS(g_aArgsHMR3CanExecuteGuest),           REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "HMR3CanExecuteGuest",                    VMM_FN(HMR3CanExecuteGuest),            &g_aArgsHMR3CanExecuteGuest[0],             RT_ELEMENTS(g_aArgsHMR3CanExecuteGuest),               REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "IOMIOPortRead",                          VMM_FN(IOMIOPortRead),                  &g_aArgsIOMIOPortRead[0],                   RT_ELEMENTS(g_aArgsIOMIOPortRead),                     REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "IOMIOPortWrite",                         VMM_FN(IOMIOPortWrite),                 &g_aArgsIOMIOPortWrite[0],                  RT_ELEMENTS(g_aArgsIOMIOPortWrite),                    REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "IOMMMIORead",                            VMM_FN(IOMMMIORead),                    &g_aArgsIOMMMIORead[0],                     RT_ELEMENTS(g_aArgsIOMMMIORead),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
