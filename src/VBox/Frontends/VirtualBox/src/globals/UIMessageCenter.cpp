@@ -3017,7 +3017,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
     QWidget *pMessageBoxParent = mwManager().realParentWindow(pParent);
     QPointer<QIMessageBox> pMessageBox = new QIMessageBox(title, strMessage, icon,
                                                           iButton1, iButton2, iButton3,
-                                                          pMessageBoxParent, strAutoConfirmId.toAscii().constData());
+                                                          pMessageBoxParent);
     mwManager().registerNewParent(pMessageBox, pMessageBoxParent);
 
     /* Prepare auto-confirmation check-box: */
