@@ -20,20 +20,21 @@
 #define __QIMessageBox_h__
 
 /* Qt includes: */
-#include <QCheckBox>
 #include <QMessageBox>
-#include <QTextEdit>
 
 /* GUI includes: */
 #include "QIDialog.h"
 
 /* Forward declarations: */
+class QShowEvent;
 class QCloseEvent;
 class QLabel;
+class QTextEdit;
+class QCheckBox;
 class QPushButton;
+class QILabel;
 class QIArrowSplitter;
 class QIDialogButtonBox;
-class QILabel;
 
 /* Button type enumerator: */
 enum AlertButton
@@ -85,49 +86,57 @@ public:
     QIMessageBox(const QString &strCaption, const QString &strMessage, AlertIconType iconType,
                  int iButton1 = 0, int iButton2 = 0, int iButton3 = 0, QWidget *pParent = 0);
 
-    QString buttonText (int aButton) const;
-    void setButtonText (int aButton, const QString &aText);
+    /* API: Details stuff: */
+    QString detailsText() const;
+    void setDetailsText(const QString &strText);
 
-    QString flagText() const { return m_pFlagCheckBox->isVisible() ? m_pFlagCheckBox->text() : QString::null; }
-    void setFlagText (const QString &aText);
+    /* API: Flag stuff: */
+    bool flagChecked() const;
+    void setFlagChecked(bool fChecked);
+    QString flagText() const;
+    void setFlagText(const QString &strText);
 
-    bool isFlagChecked() const { return m_pFlagCheckBox->isChecked(); }
-    void setFlagChecked (bool aChecked) { m_pFlagCheckBox->setChecked (aChecked); }
-
-    QString detailsText () const { return m_pDetailsTextView->toHtml(); }
-    void setDetailsText (const QString &aText);
-
-    QPixmap standardPixmap(AlertIconType aIcon);
-
-private:
-
-    /* Helper: Prepare stuff: */
-    void prepareContent();
-
-    QPushButton *createButton (int aButton);
-
-    void closeEvent (QCloseEvent *e);
-    void polishEvent(QShowEvent *pPolishEvent);
-
-    void refreshDetails();
-    void setDetailsShown (bool aShown);
+    /* API: Button stuff: */
+    QString buttonText(int iButton) const;
+    void setButtonText(int iButton, const QString &strText);
 
 private slots:
 
-    void sltUpdateSize();
+    /* Handler: Reject slot reimplementation: */
+    void reject();
 
+    /* Handlers: Done slot variants for up to three buttons: */
+    void done1() { m_fDone = true; done(m_iButton1 & AlertButtonMask); }
+    void done2() { m_fDone = true; done(m_iButton2 & AlertButtonMask); }
+    void done3() { m_fDone = true; done(m_iButton3 & AlertButtonMask); }
+
+    /* Handler: Copy button stuff: */
+    void copy() const;
+
+    /* Handlers: Details navigation stuff: */
     void detailsBack();
     void detailsNext();
 
-    void done1() { m_fDone = true; done (m_iButton1 & AlertButtonMask); }
-    void done2() { m_fDone = true; done (m_iButton2 & AlertButtonMask); }
-    void done3() { m_fDone = true; done (m_iButton3 & AlertButtonMask); }
-
-    void reject();
-
-    void copy() const;
+    /* Handler: Update stuff: */
+    void sltUpdateSize();
 
 private:
+
+    /* Helpers: Prepare stuff: */
+    void prepareContent();
+    QPushButton* createButton(int iButton);
+
+    /* Handler: Event-processing stuff: */
+    void polishEvent(QShowEvent *pPolishEvent);
+    void closeEvent(QCloseEvent *pCloseEvent);
+
+    /* Helpers: Update stuff: */
+    void updateDetailsContainer();
+    void updateDetailsPage();
+    void updateCheckBox();
+
+    /* Static helper: Standard pixmap stuff: */
+    static QPixmap standardPixmap(AlertIconType iconType, QWidget *pWidget = 0);
 
     /* Variables: */
     int m_iButton1, m_iButton2, m_iButton3, m_iButtonEsc;
@@ -135,13 +144,12 @@ private:
     QLabel *m_pIconLabel;
     QILabel *m_pTextLabel;
     QPushButton *m_pButton1, *m_pButton2, *m_pButton3;
-    QCheckBox *m_pFlagCheckBox, *m_pFlagCheckBox_Main, *m_pFlagCheckBox_Details;
-    QWidget *m_pDetailsWidget;
-    QIArrowSplitter *m_pDetailsSplitter;
+    QCheckBox *m_pFlagCheckBox;
+    QIArrowSplitter *m_pDetailsContainer;
     QTextEdit *m_pDetailsTextView;
     QIDialogButtonBox *m_pButtonBox;
     QString m_strMessage;
-    QList<QPair<QString, QString> > m_detailsList;
+    QList<QPair<QString, QString> > m_details;
     int m_iDetailsIndex;
     bool m_fDone : 1;
 };
