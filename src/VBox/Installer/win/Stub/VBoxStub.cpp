@@ -133,30 +133,24 @@ static int ReadData(HINSTANCE   hInst,
                     PVOID      *ppvResource,
                     DWORD      *pdwSize)
 {
-    do
-    {
-        AssertMsgBreak(pszDataName, ("Resource name is empty!\n"));
+    AssertReturn(pszDataName, VERR_INVALID_PARAMETER);
 
-        /* Find our resource. */
-        HRSRC hRsrc = FindResourceEx(hInst, RT_RCDATA, pszDataName, MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));
-        AssertMsgBreak(hRsrc, ("Could not find resource!\n"));
+    /* Find our resource. */
+    HRSRC hRsrc = FindResourceEx(hInst, RT_RCDATA, pszDataName, MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));
+    AssertReturn(hRsrc, VERR_IO_GEN_FAILURE);
 
-        /* Get resource size. */
-        *pdwSize = SizeofResource(hInst, hRsrc);
-        AssertMsgBreak(*pdwSize > 0, ("Size of resource is invalid!\n"));
+    /* Get resource size. */
+    *pdwSize = SizeofResource(hInst, hRsrc);
+    AssertReturn(*pdwSize > 0, VERR_NO_DATA);
 
-        /* Get pointer to resource. */
-        HGLOBAL hData = LoadResource(hInst, hRsrc);
-        AssertMsgBreak(hData, ("Could not load resource!\n"));
+    /* Get pointer to resource. */
+    HGLOBAL hData = LoadResource(hInst, hRsrc);
+    AssertReturn(hData, VERR_IO_GEN_FAILURE);
 
-        /* Lock resource. */
-        *ppvResource = LockResource(hData);
-        AssertMsgBreak(*ppvResource, ("Could not lock resource!\n"));
-        return VINF_SUCCESS;
-
-    } while (0);
-
-    return VERR_IO_GEN_FAILURE;
+    /* Lock resource. */
+    *ppvResource = LockResource(hData);
+    AssertReturn(*ppvResource, VERR_IO_GEN_FAILURE);
+    return VINF_SUCCESS;
 }
 
 
@@ -695,7 +689,6 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
                             vrc = VERR_NO_CHANGE; /* No change done to the system. */
                         }
-                        else
                             /** @todo program exit code needs to be for ERROR_INSTALL_USEREXIT. */
                     }
                     RTStrFree(pszTempFile);
