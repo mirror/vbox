@@ -1330,6 +1330,11 @@ void        pdmLock(PVM pVM);
 int         pdmLockEx(PVM pVM, int rc);
 void        pdmUnlock(PVM pVM);
 
+#if defined(IN_RING3) || defined(IN_RING0)
+void        pdmCritSectRwLeaveSharedQueued(PPDMCRITSECTRW pThis);
+void        pdmCritSectRwLeaveExclQueued(PPDMCRITSECTRW pThis);
+#endif
+
 /** @} */
 
 RT_C_DECLS_END

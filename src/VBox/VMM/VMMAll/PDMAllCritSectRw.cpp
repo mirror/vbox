@@ -79,7 +79,7 @@ DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectRwGetNativeSelf(PCPDMCRITSECTRW pTh
     NOREF(pThis);
     RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
 #else
-    AssertMsgReturn(pThis->s.Core.u32Magic == RTCRITSECT_MAGIC, ("%RX32\n", pThis->s.Core.u32Magic),
+    AssertMsgReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, ("%RX32\n", pThis->s.Core.u32Magic),
                     NIL_RTNATIVETHREAD);
     PVM             pVM         = pThis->s.CTX_SUFF(pVM);   AssertPtr(pVM);
     PVMCPU          pVCpu       = VMMGetCpu(pVM);           AssertPtr(pVCpu);
@@ -122,7 +122,17 @@ VMMDECL(uint32_t) PDMR3CritSectRwSetSubClass(PPDMCRITSECTRW pThis, uint32_t uSub
 #endif /* IN_RING3 */
 
 
-static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALSRCPOS pSrcPos, bool fTryOnly)
+/**
+ * Worker that enters a read/write critical section with shard access.
+ *
+ * @returns VBox status code.
+ * @param   pThis       Pointer to the read/write critical section.
+ * @param   rcBusy      The busy return code for ring-0 and ring-3.
+ * @param   fTryOnly    Only try enter it, don't wait.
+ * @param   pSrcPos     The source position. (Can be NULL.)
+ * @param   fNoVal      No validation records.
+ */
+static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly, PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
 {
     /*
      * Validate input.
@@ -165,7 +175,8 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
             if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
             {
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-                RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
+                if (!fNoVal)
+                    RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
 #endif
                 break;
             }
@@ -179,7 +190,8 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
             {
                 Assert(!pThis->s.Core.fNeedReset);
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-                RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
+                if (!fNoVal)
+                    RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
 #endif
                 break;
             }
@@ -193,18 +205,27 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
             if (hNativeSelf == hNativeWriter)
             {
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-                int rc9 = RTLockValidatorRecExclRecursionMixed(pThis->s.Core.pValidatorWrite, &pThis->s.Core.pValidatorRead->Core, pSrcPos);
-                if (RT_FAILURE(rc9))
-                    return rc9;
+                if (!fNoVal)
+                {
+                    int rc9 = RTLockValidatorRecExclRecursionMixed(pThis->s.Core.pValidatorWrite, &pThis->s.Core.pValidatorRead->Core, pSrcPos);
+                    if (RT_FAILURE(rc9))
+                        return rc9;
+                }
 #endif
                 Assert(pThis->s.Core.cWriterReads < UINT32_MAX / 2);
                 ASMAtomicIncU32(&pThis->s.Core.cWriterReads);
+                STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterShared));
                 return VINF_SUCCESS; /* don't break! */
             }
 
-            /* If we're only trying, return already. */
+            /*
+             * If we're only trying, return already.
+             */
             if (fTryOnly)
+            {
+                STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterShared));
                 return VERR_SEM_BUSY;
+            }
 
 #if defined(IN_RING3)
             /*
@@ -298,7 +319,8 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
                 }
 
 # if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-                RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
+                if (!fNoVal)
+                    RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
 # endif
                 break;
             }
@@ -308,6 +330,7 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
              * We cannot call SUPSemEventMultiWaitNoResume in this context. Go
              * back to ring-3 and do it there or return rcBusy.
              */
+            STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterShared));
             if (rcBusy == VINF_SUCCESS)
             {
                 PVM     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
@@ -361,10 +384,10 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVA
 VMMDECL(int) PDMCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy)
 {
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterShared(pThis, rcBusy, NULL, false /*fTryOnly*/);
+    return pdmCritSectRwEnterShared(pThis, rcBusy, false /*fTryOnly*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return pdmCritSectRwEnterShared(pThis, rcBusy, &SrcPos, false /*fTryOnly*/);
+    return pdmCritSectRwEnterShared(pThis, rcBusy, false /*fTryOnly*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -394,10 +417,10 @@ VMMDECL(int) PDMCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy)
 VMMDECL(int) PDMCritSectRwEnterSharedDebug(PPDMCRITSECTRW pThis, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, NULL, false /*fTryOnly*/);
+    return pdmCritSectRwEnterShared(pThis, rcBusy, false /*fTryOnly*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return pdmCritSectRwEnterShared(pThis, rcBusy, &SrcPos, false /*fTryOnly*/);
+    return pdmCritSectRwEnterShared(pThis, rcBusy, false /*fTryOnly*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -424,10 +447,10 @@ VMMDECL(int) PDMCritSectRwEnterSharedDebug(PPDMCRITSECTRW pThis, int rcBusy, RTH
 VMMDECL(int) PDMCritSectRwTryEnterShared(PPDMCRITSECTRW pThis)
 {
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, NULL, true /*fTryOnly*/);
+    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, true /*fTryOnly*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, &SrcPos, true /*fTryOnly*/);
+    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, true /*fTryOnly*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -454,10 +477,10 @@ VMMDECL(int) PDMCritSectRwTryEnterShared(PPDMCRITSECTRW pThis)
 VMMDECL(int) PDMCritSectRwTryEnterSharedDebug(PPDMCRITSECTRW pThis, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, NULL, true /*fTryOnly*/);
+    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, true /*fTryOnly*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, &SrcPos, true /*fTryOnly*/);
+    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, true /*fTryOnly*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -475,20 +498,9 @@ VMMDECL(int) PDMCritSectRwTryEnterSharedDebug(PPDMCRITSECTRW pThis, RTHCUINTPTR 
  */
 VMMR3DECL(int) PDMR3CritSectRwEnterSharedEx(PPDMCRITSECTRW pThis, bool fCallRing3)
 {
-    int rc = pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, NULL, false /*fTryAgain*/);
-    if (    rc == VINF_SUCCESS
-        &&  fCallRing3
-        &&  pThis->s.Core.pValidatorRead)
-    {
-        Assert(pThis->s.Core.pValidatorWrite);
-        if (pThis->s.Core.hNativeWriter == NIL_RTNATIVETHREAD)
-            RTLockValidatorRecSharedCheckAndRelease(pThis->s.Core.pValidatorRead, NIL_RTTHREAD);
-        else
-            RTLockValidatorRecExclUnwindMixed(pThis->s.Core.pValidatorWrite, &pThis->s.Core.pValidatorRead->Core);
-    }
-    return rc;
+    return pdmCritSectRwEnterShared(pThis, VERR_SEM_BUSY, NULL, false /*fTryAgain*/, fCallRing3);
 }
-#endif /* IN_RING3 */
+#endif
 
 
 /**
@@ -497,12 +509,13 @@ VMMR3DECL(int) PDMR3CritSectRwEnterSharedEx(PPDMCRITSECTRW pThis, bool fCallRing
  * @returns VBox status code.
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
- * @param   pThis       Pointer to the read/write critical section.
+ * @param   pThis       Pointer to the read/write critical section. 
+ * @param   fNoVal      No validation records (i.e. queued release).
  * @sa      PDMCritSectRwEnterShared, PDMCritSectRwTryEnterShared,
  *          PDMCritSectRwEnterSharedDebug, PDMCritSectRwTryEnterSharedDebug,
  *          PDMCritSectRwLeaveExcl, RTCritSectRwLeaveShared.
  */
-VMMDECL(int) PDMCritSectRwLeaveShared(PPDMCRITSECTRW pThis)
+static int pdmCritSectRwLeaveSharedWorker(PPDMCRITSECTRW pThis, bool fNoVal)
 {
     /*
      * Validate handle.
@@ -518,9 +531,14 @@ VMMDECL(int) PDMCritSectRwLeaveShared(PPDMCRITSECTRW pThis)
     if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
     {
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-        int rc9 = RTLockValidatorRecSharedCheckAndRelease(pThis->s.Core.pValidatorRead, NIL_RTTHREAD);
-        if (RT_FAILURE(rc9))
-            return rc9;
+        if (fNoVal)
+            Assert(!RTLockValidatorRecSharedIsOwner(pThis->s.Core.pValidatorRead, NIL_RTTHREAD));
+        else
+        {
+            int rc9 = RTLockValidatorRecSharedCheckAndRelease(pThis->s.Core.pValidatorRead, NIL_RTTHREAD);
+            if (RT_FAILURE(rc9))
+                return rc9;
+        }
 #endif
         for (;;)
         {
@@ -577,9 +595,12 @@ VMMDECL(int) PDMCritSectRwLeaveShared(PPDMCRITSECTRW pThis)
         AssertReturn(hNativeSelf == hNativeWriter, VERR_NOT_OWNER);
         AssertReturn(pThis->s.Core.cWriterReads > 0, VERR_NOT_OWNER);
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-        int rc = RTLockValidatorRecExclUnwindMixed(pThis->s.Core.pValidatorWrite, &pThis->s.Core.pValidatorRead->Core);
-        if (RT_FAILURE(rc))
-            return rc;
+        if (!fNoVal)
+        {
+            int rc = RTLockValidatorRecExclUnwindMixed(pThis->s.Core.pValidatorWrite, &pThis->s.Core.pValidatorRead->Core);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
 #endif
         ASMAtomicDecU32(&pThis->s.Core.cWriterReads);
     }
@@ -587,8 +608,47 @@ VMMDECL(int) PDMCritSectRwLeaveShared(PPDMCRITSECTRW pThis)
     return VINF_SUCCESS;
 }
 
+/**
+ * Leave a critical section held with shared access.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
+ *          during the operation.
+ * @param   pThis       Pointer to the read/write critical section.
+ * @sa      PDMCritSectRwEnterShared, PDMCritSectRwTryEnterShared,
+ *          PDMCritSectRwEnterSharedDebug, PDMCritSectRwTryEnterSharedDebug,
+ *          PDMCritSectRwLeaveExcl, RTCritSectRwLeaveShared.
+ */
+VMMDECL(int) PDMCritSectRwLeaveShared(PPDMCRITSECTRW pThis)
+{
+    return pdmCritSectRwLeaveSharedWorker(pThis, false /*fNoVal*/);
+}
 
-static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALSRCPOS pSrcPos, bool fTryOnly)
+
+#if defined(IN_RING3) || defined(IN_RING0)
+/**
+ * PDMCritSectBothFF interface.
+ *
+ * @param   pThis       Pointer to the read/write critical section.
+ */
+void pdmCritSectRwLeaveSharedQueued(PPDMCRITSECTRW pThis)
+{
+    pdmCritSectRwLeaveSharedWorker(pThis, true /*fNoVal*/);
+}
+#endif
+
+
+/**
+ * Worker that enters a read/write critical section with exclusive access.
+ *
+ * @returns VBox status code.
+ * @param   pThis       Pointer to the read/write critical section.
+ * @param   rcBusy      The busy return code for ring-0 and ring-3.
+ * @param   fTryOnly    Only try enter it, don't wait.
+ * @param   pSrcPos     The source position. (Can be NULL.)
+ * @param   fNoVal      No validation records.
+ */
+static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnly, PCRTLOCKVALSRCPOS pSrcPos, bool fNoVal)
 {
     /*
      * Validate input.
@@ -617,9 +677,12 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
     {
         Assert((ASMAtomicReadU64(&pThis->s.Core.u64State) & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT));
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-        int rc9 = RTLockValidatorRecExclRecursion(pThis->s.Core.pValidatorWrite, pSrcPos);
-        if (RT_FAILURE(rc9))
-            return rc9;
+        if (!fNoVal)
+        {
+            int rc9 = RTLockValidatorRecExclRecursion(pThis->s.Core.pValidatorWrite, pSrcPos);
+            if (RT_FAILURE(rc9))
+                return rc9;
+        }
 #endif
         Assert(pThis->s.Core.cWriteRecursions < UINT32_MAX / 2);
         STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterExcl));
@@ -656,8 +719,11 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
                 break;
         }
         else if (fTryOnly)
+        {
             /* Wrong direction and we're not supposed to wait, just return. */
+            STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterExcl));
             return VERR_SEM_BUSY;
+        }
         else
         {
             /* Add ourselves to the write count and break out to do the wait. */
@@ -692,89 +758,99 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
         ASMAtomicCmpXchgHandle(&pThis->s.Core.hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
     if (!fDone)
     {
+        STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterExcl));
+
 #if defined(IN_RING3)
-        /*
-         * Wait for our turn.
-         */
-        for (uint32_t iLoop = 0; ; iLoop++)
+        if (!fTryOnly)
         {
-            int rc;
-# if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-            if (!fTryOnly)
+            /*
+             * Wait for our turn.
+             */
+            for (uint32_t iLoop = 0; ; iLoop++)
             {
+                int rc;
+# if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
                 if (hThreadSelf == NIL_RTTHREAD)
                     hThreadSelf = RTThreadSelfAutoAdopt();
                 rc = RTLockValidatorRecExclCheckBlocking(pThis->s.Core.pValidatorWrite, hThreadSelf, pSrcPos, true,
                                                          RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_WRITE, false);
-            }
-            else
-                rc = VINF_SUCCESS;
-            if (RT_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
 # else
-            RTTHREAD hThreadSelf = RTThreadSelf();
-            RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE, false);
+                RTTHREAD hThreadSelf = RTThreadSelf();
+                RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE, false);
 # endif
-            {
-                do
-                    rc = SUPSemEventWaitNoResume(pThis->s.CTX_SUFF(pVM)->pSession,
-                                                 (SUPSEMEVENT)pThis->s.Core.hEvtWrite,
-                                                 RT_INDEFINITE_WAIT);
-                while (rc == VERR_INTERRUPTED && pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC);
-                RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
-                if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
-                    return VERR_SEM_DESTROYED;
-            }
-            if (RT_FAILURE(rc))
-            {
-                /* Decrement the counts and return the error. */
-                for (;;)
                 {
-                    u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
-                    uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT; Assert(c > 0);
-                    c--;
-                    u64State &= ~RTCSRW_CNT_WR_MASK;
-                    u64State |= c << RTCSRW_CNT_WR_SHIFT;
-                    if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
+                    do
+                        rc = SUPSemEventWaitNoResume(pThis->s.CTX_SUFF(pVM)->pSession,
+                                                     (SUPSEMEVENT)pThis->s.Core.hEvtWrite,
+                                                     RT_INDEFINITE_WAIT);
+                    while (rc == VERR_INTERRUPTED && pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC);
+                    RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+                    if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
+                        return VERR_SEM_DESTROYED;
+                }
+                if (RT_FAILURE(rc))
+                {
+                    /* Decrement the counts and return the error. */
+                    for (;;)
+                    {
+                        u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
+                        uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT; Assert(c > 0);
+                        c--;
+                        u64State &= ~RTCSRW_CNT_WR_MASK;
+                        u64State |= c << RTCSRW_CNT_WR_SHIFT;
+                        if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
+                            break;
+                    }
+                    return rc;
+                }
+
+                u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
+                if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT))
+                {
+                    ASMAtomicCmpXchgHandle(&pThis->s.Core.hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
+                    if (fDone)
                         break;
                 }
-                return rc;
+                AssertMsg(iLoop < 1000, ("%u\n", iLoop)); /* may loop a few times here... */
             }
 
-            u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
-            if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT))
+        }
+        else
+#endif /* IN_RING3 */
+        {
+#ifdef IN_RING3
+            /* TryEnter call - decrement the number of (waiting) writers.  */
+#else
+            /* We cannot call SUPSemEventWaitNoResume in this context. Go back to
+               ring-3 and do it there or return rcBusy. */
+#endif
+
+            for (;;)
             {
-                ASMAtomicCmpXchgHandle(&pThis->s.Core.hNativeWriter, hNativeSelf, NIL_RTNATIVETHREAD, fDone);
-                if (fDone)
+                u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
+                uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT; Assert(c > 0);
+                c--;
+                u64State &= ~RTCSRW_CNT_WR_MASK;
+                u64State |= c << RTCSRW_CNT_WR_SHIFT;
+                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
                     break;
             }
-            AssertMsg(iLoop < 1000, ("%u\n", iLoop)); /* may loop a few times here... */
-        }
 
+#ifdef IN_RING3
+            return VERR_SEM_BUSY;
 #else
-        /* We cannot call SUPSemEventWaitNoResume in this context. Go back to
-           ring-3 and do it there or return rcBusy. */
-        for (;;)
-        {
-            u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
-            uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT; Assert(c > 0);
-            c--;
-            u64State &= ~RTCSRW_CNT_WR_MASK;
-            u64State |= c << RTCSRW_CNT_WR_SHIFT;
-            if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
-                break;
-        }
-
-        if (rcBusy == VINF_SUCCESS)
-        {
-            PVM     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
-            PVMCPU  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
-            /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
-             *        back to ring-3. Goes for both kind of crit sects. */
-            return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_EXCL, MMHyperCCToR3(pVM, pThis));
-        }
-        return rcBusy;
-
+            if (rcBusy == VINF_SUCCESS)
+            {
+                PVM     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
+                PVMCPU  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+                /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
+                 *        back to ring-3. Goes for both kind of crit sects. */
+                return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_EXCL, MMHyperCCToR3(pVM, pThis));
+            }
+            return rcBusy;
 #endif
+        }
     }
 
     /*
@@ -784,7 +860,8 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
     ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 1);
     Assert(pThis->s.Core.cWriterReads == 0);
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-    RTLockValidatorRecExclSetOwner(pThis->s.Core.pValidatorWrite, hThreadSelf, pSrcPos, true);
+    if (!fNoVal)
+        RTLockValidatorRecExclSetOwner(pThis->s.Core.pValidatorWrite, hThreadSelf, pSrcPos, true);
 #endif
     STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(Stat,EnterExcl));
     STAM_PROFILE_ADV_START(&pThis->s.StatWriteLocked, swl);
@@ -815,10 +892,10 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, PCRTLOCKVALS
 VMMDECL(int) PDMCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy)
 {
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterExcl(pThis, rcBusy, NULL, false /*fTryAgain*/);
+    return pdmCritSectRwEnterExcl(pThis, rcBusy, false /*fTryAgain*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return pdmCritSectRwEnterExcl(pThis, rcBusy, &SrcPos, false /*fTryAgain*/);
+    return pdmCritSectRwEnterExcl(pThis, rcBusy, false /*fTryAgain*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -849,10 +926,10 @@ VMMDECL(int) PDMCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy)
 VMMDECL(int) PDMCritSectRwEnterExclDebug(PPDMCRITSECTRW pThis, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterExcl(pThis, rcBusy, NULL, false /*fTryAgain*/);
+    return pdmCritSectRwEnterExcl(pThis, rcBusy, false /*fTryAgain*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return pdmCritSectRwEnterExcl(pThis, rcBusy, &SrcPos, false /*fTryAgain*/);
+    return pdmCritSectRwEnterExcl(pThis, rcBusy, false /*fTryAgain*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -875,10 +952,10 @@ VMMDECL(int) PDMCritSectRwEnterExclDebug(PPDMCRITSECTRW pThis, int rcBusy, RTHCU
 VMMDECL(int) PDMCritSectRwTryEnterExcl(PPDMCRITSECTRW pThis)
 {
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, NULL, true /*fTryAgain*/);
+    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, true /*fTryAgain*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
-    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, &SrcPos, true /*fTryAgain*/);
+    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, true /*fTryAgain*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -905,10 +982,10 @@ VMMDECL(int) PDMCritSectRwTryEnterExcl(PPDMCRITSECTRW pThis)
 VMMDECL(int) PDMCritSectRwTryEnterExclDebug(PPDMCRITSECTRW pThis, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
 #if !defined(PDMCRITSECTRW_STRICT) || !defined(IN_RING3)
-    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, NULL, true /*fTryAgain*/);
+    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, true /*fTryAgain*/, NULL,    false /*fNoVal*/);
 #else
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
-    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, &SrcPos, true /*fTryAgain*/);
+    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, true /*fTryAgain*/, &SrcPos, false /*fNoVal*/);
 #endif
 }
 
@@ -926,13 +1003,7 @@ VMMDECL(int) PDMCritSectRwTryEnterExclDebug(PPDMCRITSECTRW pThis, RTHCUINTPTR uI
  */
 VMMR3DECL(int) PDMR3CritSectRwEnterExclEx(PPDMCRITSECTRW pThis, bool fCallRing3)
 {
-    int rc = pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, NULL, false /*fTryAgain*/);
-    if (    rc == VINF_SUCCESS
-        &&  fCallRing3
-        &&  pThis->s.Core.pValidatorWrite
-        &&  pThis->s.Core.pValidatorWrite->hThread != NIL_RTTHREAD)
-        RTLockValidatorRecExclReleaseOwnerUnchecked(pThis->s.Core.pValidatorWrite);
-    return rc;
+    return pdmCritSectRwEnterExcl(pThis, VERR_SEM_BUSY, NULL, false /*fTryAgain*/, fCallRing3 /*fNoVal*/);
 }
 #endif /* IN_RING3 */
 
@@ -944,9 +1015,10 @@ VMMR3DECL(int) PDMR3CritSectRwEnterExclEx(PPDMCRITSECTRW pThis, bool fCallRing3)
  * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
  *          during the operation.
  * @param   pThis       Pointer to the read/write critical section.
+ * @param   fNoVal      No validation records (i.e. queued release).
  * @sa      PDMCritSectRwLeaveShared, RTCritSectRwLeaveExcl.
  */
-VMMDECL(int) PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pThis)
+static int pdmCritSectRwLeaveExclWorker(PPDMCRITSECTRW pThis, bool fNoVal)
 {
     /*
      * Validate handle.
@@ -966,9 +1038,14 @@ VMMDECL(int) PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pThis)
     {
         AssertReturn(pThis->s.Core.cWriterReads == 0, VERR_WRONG_ORDER); /* (must release all read recursions before the final write.) */
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-        int rc9 = RTLockValidatorRecExclReleaseOwner(pThis->s.Core.pValidatorWrite, true);
-        if (RT_FAILURE(rc9))
-            return rc9;
+        if (fNoVal)
+            Assert(pThis->s.Core.pValidatorWrite->hThread == NIL_RTTHREAD);
+        else
+        {
+            int rc9 = RTLockValidatorRecExclReleaseOwner(pThis->s.Core.pValidatorWrite, true);
+            if (RT_FAILURE(rc9))
+                return rc9;
+        }
 #endif
         /*
          * Update the state.
@@ -1046,15 +1123,48 @@ VMMDECL(int) PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pThis)
          */
         Assert(pThis->s.Core.cWriteRecursions != 0);
 #if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-        int rc9 = RTLockValidatorRecExclUnwind(pThis->s.Core.pValidatorWrite);
-        if (RT_FAILURE(rc9))
-            return rc9;
+        if (fNoVal)
+            Assert(pThis->s.Core.pValidatorWrite->hThread == NIL_RTTHREAD);
+        else
+        {
+            int rc9 = RTLockValidatorRecExclUnwind(pThis->s.Core.pValidatorWrite);
+            if (RT_FAILURE(rc9))
+                return rc9;
+        }
 #endif
         ASMAtomicDecU32(&pThis->s.Core.cWriteRecursions);
     }
 
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Leave a critical section held exclusively.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_SEM_DESTROYED if the critical section is delete before or
+ *          during the operation.
+ * @param   pThis       Pointer to the read/write critical section.
+ * @sa      PDMCritSectRwLeaveShared, RTCritSectRwLeaveExcl.
+ */
+VMMDECL(int) PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pThis)
+{
+    return pdmCritSectRwLeaveExclWorker(pThis, false /*fNoVal*/);
+}
+
+
+#if defined(IN_RING3) || defined(IN_RING0)
+/**
+ * PDMCritSectBothFF interface.
+ *
+ * @param   pThis       Pointer to the read/write critical section.
+ */
+void pdmCritSectRwLeaveExclQueued(PPDMCRITSECTRW pThis)
+{
+    pdmCritSectRwLeaveExclWorker(pThis, true /*fNoVal*/);
+}
+#endif
 
 
 /**
