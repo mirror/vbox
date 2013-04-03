@@ -429,7 +429,11 @@ int vboxPciOsDevDetachHostDriver(PVBOXRAWPCIINS pIns)
         if (!pNewCreds)
                 goto done;
 
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+        pNewCreds->fsuid = GLOBAL_ROOT_UID;
+# else
         pNewCreds->fsuid = 0;
+# endif
         pOldCreds = override_creds(pNewCreds);
 #endif
 
@@ -539,7 +543,11 @@ int vboxPciOsDevReattachHostDriver(PVBOXRAWPCIINS pIns)
         if (!pNewCreds)
             goto done;
 
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
+        pNewCreds->fsuid = GLOBAL_ROOT_UID;
+# else
         pNewCreds->fsuid = 0;
+# endif
         pOldCreds = override_creds(pNewCreds);
 #endif
         RTStrPrintf(szFileBuf, cMaxBuf,
