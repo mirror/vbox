@@ -235,10 +235,10 @@ public:
     bool confirmSnapshotRemoval(const QString &strSnapshotName) const;
     bool warnAboutSnapshotRemovalFreeSpace(const QString &strSnapshotName, const QString &strTargetImageName,
                                            const QString &strTargetImageMaxSize, const QString &strTargetFileSystemFree) const;
-    void cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName) const;
-    void cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName) const;
-    void cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName) const;
-    void cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName) const;
+    void cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName, QWidget *pParent = 0) const;
+    void cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName, QWidget *pParent = 0) const;
+    void cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const;
+    void cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
 
     /* API: Settings warnings: */
     void cannotAccessUSB(const COMBaseWithEI &object) const;
