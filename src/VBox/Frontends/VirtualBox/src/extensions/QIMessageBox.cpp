@@ -50,7 +50,7 @@
  *  See QMessageBox for details.
  */
 QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
-                            IconType aIcon, int aButton0, int aButton1, int aButton2,
+                            AlertIconType aIcon, int aButton0, int aButton1, int aButton2,
                             QWidget *aParent, const char *aName, bool aModal)
     : QIDialog (aParent)
     , mText (aText)
@@ -155,9 +155,9 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
 
     /* If this is an error message add an "Copy to clipboard" button for easier
      * bug reports. */
-    if (aIcon == QIMessageBox::IconType_Critical)
+    if (aIcon == AlertIconType_Critical)
     {
-        QPushButton *pCopyButton = createButton(Copy);
+        QPushButton *pCopyButton = createButton(AlertButton_Copy);
         pCopyButton->setToolTip(tr("Copy all errors to the clipboard"));
         connect(pCopyButton, SIGNAL(clicked()), SLOT(copy()));
     }
@@ -254,14 +254,14 @@ QPushButton *QIMessageBox::createButton (int aButton)
 
     QString text;
     QDialogButtonBox::ButtonRole role;
-    switch (aButton & ButtonMask)
+    switch (aButton & AlertButtonMask)
     {
-        case Ok:     text = tr("OK");     role = QDialogButtonBox::AcceptRole; break;
-        case Yes:    text = tr("Yes");    role = QDialogButtonBox::YesRole; break;
-        case No:     text = tr("No");     role = QDialogButtonBox::NoRole; break;
-        case Cancel: text = tr("Cancel"); role = QDialogButtonBox::RejectRole; break;
-        case Ignore: text = tr("Ignore"); role = QDialogButtonBox::AcceptRole; break;
-        case Copy:   text = tr("Copy");   role = QDialogButtonBox::ActionRole; break;
+        case AlertButton_Ok:     text = tr("OK");     role = QDialogButtonBox::AcceptRole; break;
+        case AlertButton_Cancel: text = tr("Cancel"); role = QDialogButtonBox::RejectRole; break;
+        case AlertButton_Yes:    text = tr("Yes");    role = QDialogButtonBox::YesRole; break;
+        case AlertButton_No:     text = tr("No");     role = QDialogButtonBox::NoRole; break;
+        case AlertButton_Ignore: text = tr("Ignore"); role = QDialogButtonBox::AcceptRole; break;
+        case AlertButton_Copy:   text = tr("Copy");   role = QDialogButtonBox::ActionRole; break;
         default:
             AssertMsgFailed(("Type %d is not implemented", aButton));
             return NULL;
@@ -269,14 +269,14 @@ QPushButton *QIMessageBox::createButton (int aButton)
 
     QPushButton *b = mButtonBox->addButton (text, role);
 
-    if (aButton & Default)
+    if (aButton & AlertButtonOption_Default)
     {
         b->setDefault (true);
         b->setFocus();
     }
 
-    if (aButton & Escape)
-        mButtonEsc = aButton & ButtonMask;
+    if (aButton & AlertButtonOption_Escape)
+        mButtonEsc = aButton & AlertButtonMask;
 
     return b;
 }
@@ -315,24 +315,24 @@ void QIMessageBox::setDetailsText (const QString &aText)
     refreshDetails();
 }
 
-QPixmap QIMessageBox::standardPixmap (QIMessageBox::IconType aIcon)
+QPixmap QIMessageBox::standardPixmap(AlertIconType aIcon)
 {
     QIcon icon;
     switch (aIcon)
     {
-        case QIMessageBox::IconType_Information:
+        case AlertIconType_Information:
             icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxInformationIcon, this);
             break;
         case QMessageBox::Warning:
             icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxWarningIcon, this);
             break;
-        case QIMessageBox::IconType_Critical:
+        case AlertIconType_Critical:
             icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxCriticalIcon, this);
             break;
-        case QIMessageBox::IconType_Question:
+        case AlertIconType_Question:
             icon = UIIconPool::defaultIcon(UIIconPool::MessageBoxQuestionIcon, this);
             break;
-        case QIMessageBox::IconType_GuruMeditation:
+        case AlertIconType_GuruMeditation:
             icon = QIcon(":/meditation_32px.png");
             break;
         default:
@@ -465,7 +465,7 @@ void QIMessageBox::reject()
     if (mButtonEsc)
     {
         QDialog::reject();
-        setResult (mButtonEsc & ButtonMask);
+        setResult (mButtonEsc & AlertButtonMask);
     }
 }
 

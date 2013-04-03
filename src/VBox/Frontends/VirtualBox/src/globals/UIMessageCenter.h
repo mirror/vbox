@@ -113,11 +113,11 @@ public:
                       const QString &strNoButtonText = QString()) const
     {
         return (message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
-                        QIMessageBox::Yes | QIMessageBox::Default,
-                        QIMessageBox::No | QIMessageBox::Escape,
+                        AlertButton_Yes | AlertButtonOption_Default,
+                        AlertButton_No | AlertButtonOption_Escape,
                         0,
                         strYesButtonText, strNoButtonText, QString()) &
-                QIMessageBox::ButtonMask) == QIMessageBox::Yes;
+                AlertButtonMask) == AlertButton_Yes;
     }
 
     /* API: Alert providing stuff: Wrapper to the function above,
@@ -142,13 +142,13 @@ public:
                          const QString &strCancelButtonText = QString(),
                          bool fOkByDefault = true) const
     {
-        int iOkButton = fOkByDefault ? QIMessageBox::Ok | QIMessageBox::Default :
-                                       QIMessageBox::Ok;
-        int iCancelButton = fOkByDefault ? QIMessageBox::Cancel | QIMessageBox::Escape :
-                                           QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default;
+        int iOkButton = fOkByDefault ? AlertButton_Ok | AlertButtonOption_Default :
+                                       AlertButton_Ok;
+        int iCancelButton = fOkByDefault ? AlertButton_Cancel | AlertButtonOption_Escape :
+                                           AlertButton_Cancel | AlertButtonOption_Escape | AlertButtonOption_Default;
         return (message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
                         iOkButton, iCancelButton, 0, strOkButtonText, strCancelButtonText, QString()) &
-                QIMessageBox::ButtonMask) == QIMessageBox::Ok;
+                AlertButtonMask) == AlertButton_Ok;
     }
 
     /* API: Alert providing stuff: Wrapper to the function above,
