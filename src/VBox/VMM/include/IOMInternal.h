@@ -422,7 +422,6 @@ RT_C_DECLS_BEGIN
 
 void                iomMmioFreeRange(PVM pVM, PIOMMMIORANGE pRange);
 #ifdef IN_RING3
-PIOMIOPORTSTATS     iomR3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDesc);
 PIOMMMIOSTATS       iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc);
 #endif /* IN_RING3 */
 
@@ -435,9 +434,9 @@ DECLCALLBACK(int)   IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, voi
 
 /* IOM locking helpers. */
 #ifdef IOM_WITH_CRIT_SECT_RW
-# define IOM_LOCK(a_pVM)                        PDMCritSectRwEnterExcl(&(a_pVM)->iom.s.CritSect, VERR_SEM_BUSY)
-# define IOM_UNLOCK(a_pVM)                      do { PDMCritSectRwLeaveExcl(&(a_pVM)->iom.s.CritSect); } while (0)
-# if 1 /* for the time being (the lookup caches needs to be in VMCPU) */
+# define IOM_LOCK_EXCL(a_pVM)                   PDMCritSectRwEnterExcl(&(a_pVM)->iom.s.CritSect, VERR_SEM_BUSY)
+# define IOM_UNLOCK_EXCL(a_pVM)                 do { PDMCritSectRwLeaveExcl(&(a_pVM)->iom.s.CritSect); } while (0)
+# if 0 /* for the time being (the lookup caches needs to be in VMCPU) */
 # define IOM_LOCK_SHARED_EX(a_pVM, a_rcBusy)    PDMCritSectRwEnterExcl(&(a_pVM)->iom.s.CritSect, (a_rcBusy))
 # define IOM_UNLOCK_SHARED(a_pVM)               do { PDMCritSectRwLeaveExcl(&(a_pVM)->iom.s.CritSect); } while (0)
 # define IOM_IS_SHARED_LOCK_OWNER(a_pVM)        PDMCritSectRwIsWriteOwner(&(a_pVM)->iom.s.CritSect)
@@ -448,8 +447,8 @@ DECLCALLBACK(int)   IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, voi
 # endif
 # define IOM_IS_EXCL_LOCK_OWNER(a_pVM)          PDMCritSectRwIsWriteOwner(&(a_pVM)->iom.s.CritSect)
 #else
-# define IOM_LOCK(a_pVM)                        PDMCritSectEnter(&(a_pVM)->iom.s.CritSect, VERR_SEM_BUSY)
-# define IOM_UNLOCK(a_pVM)                      do { PDMCritSectLeave(&(a_pVM)->iom.s.CritSect); } while (0)
+# define IOM_LOCK_EXCL(a_pVM)                   PDMCritSectEnter(&(a_pVM)->iom.s.CritSect, VERR_SEM_BUSY)
+# define IOM_UNLOCK_EXCL(a_pVM)                 do { PDMCritSectLeave(&(a_pVM)->iom.s.CritSect); } while (0)
 # define IOM_LOCK_SHARED_EX(a_pVM, a_rcBusy)    PDMCritSectEnter(&(a_pVM)->iom.s.CritSect, (a_rcBusy))
 # define IOM_UNLOCK_SHARED(a_pVM)               do { PDMCritSectLeave(&(a_pVM)->iom.s.CritSect); } while (0)
 # define IOM_IS_SHARED_LOCK_OWNER(a_pVM)        PDMCritSectIsOwner(&(a_pVM)->iom.s.CritSect)

@@ -166,14 +166,20 @@ DECLINLINE(PIOMMMIORANGE) iomMMIOGetRangeUnsafe(PVM pVM, PVMCPU pVCpu, RTGCPHYS 
  * @returns Pointer to MMIO stats.
  * @returns NULL if not found (R0/GC), or out of memory (R3).
  *
- * @param   pVM     Pointer to the VM.
- * @param   pVCpu   Pointer to the virtual CPU structure of the caller.
- * @param   GCPhys  Physical address to lookup.
- * @param   pRange  The MMIO range.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
+ * @param   GCPhys      Physical address to lookup.
+ * @param   pRange      The MMIO range.
+ *
+ * @remarks The caller holds the IOM critical section with shared access prior
+ *          to calling this method.  Upon return, the lock has been released!
+ *          This is ugly, but it's a necessary evil since we cannot upgrade read
+ *          locks to write locks and the whole purpose here is calling
+ *          iomR3MMIOStatsCreate.
  */
 DECLINLINE(PIOMMMIOSTATS) iomMmioGetStats(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, PIOMMMIORANGE pRange)
 {
-    IOM_LOCK_SHARED_EX(pVM, VINF_SUCCESS);
+    Assert(IOM_IS_SHARED_LOCK_OWNER(pVM));
 
     /* For large ranges, we'll put everything on the first byte. */
     if (pRange->cb > PAGE_SIZE)
@@ -186,7 +192,10 @@ DECLINLINE(PIOMMMIOSTATS) iomMmioGetStats(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys
         pStats = (PIOMMMIOSTATS)RTAvloGCPhysGet(&pVM->iom.s.CTX_SUFF(pTrees)->MmioStatTree, GCPhys);
 # ifdef IN_RING3
         if (!pStats)
-            pStats = iomR3MMIOStatsCreate(pVM, GCPhys, pRange->pszDesc);
+        {
+            IOM_UNLOCK_SHARED(pVM);
+            return iomR3MMIOStatsCreate(pVM, GCPhys, pRange->pszDesc);
+        }
 # endif
     }
 
