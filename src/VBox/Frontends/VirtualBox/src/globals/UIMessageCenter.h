@@ -255,15 +255,16 @@ public:
     bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
 
     /* API: Virtual Medium Manager warnings: */
-    void cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType, QWidget *pParent = 0);
-    bool confirmMediumRelease(const UIMedium &medium, const QString &strUsage, QWidget *pParent = 0);
-    bool confirmMediumRemoval(const UIMedium &medium, QWidget *pParent = 0);
-    int confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0);
-    void cannotDeleteHardDiskStorage(const CMedium &medium, const CProgress &progress, QWidget *pParent = 0);
-    void cannotDetachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
-    int cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent = 0);
-    void cannotOpenMedium(const CVirtualBox &vbox, UIMediumType type, const QString &strLocation, QWidget *pParent = 0);
-    void cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent = 0);
+    void cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType, QWidget *pParent = 0) const;
+    bool confirmMediumRelease(const UIMedium &medium, const QString &strUsage, QWidget *pParent = 0) const;
+    bool confirmMediumRemoval(const UIMedium &medium, QWidget *pParent = 0) const;
+    int confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0) const;
+    void cannotDeleteHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent = 0) const;
+    void cannotDeleteHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent = 0) const;
+    void cannotDetachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0) const;
+    int cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent = 0) const;
+    void cannotOpenMedium(const CVirtualBox &vbox, UIMediumType type, const QString &strLocation, QWidget *pParent = 0) const;
+    void cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent = 0) const;
 
     /* API: Wizards warnings: */
     void cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent = 0);

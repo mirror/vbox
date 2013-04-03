@@ -916,7 +916,7 @@ bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /*= 
 }
 
 void UIMessageCenter::cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType,
-                                             QWidget *pParent /*= 0*/)
+                                             QWidget *pParent /*= 0*/) const
 {
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("<p>Error changing medium type from <b>%1</b> to <b>%2</b>.</p>")
@@ -924,7 +924,7 @@ void UIMessageCenter::cannotChangeMediumType(const CMedium &medium, KMediumType 
             formatErrorInfo(medium));
 }
 
-bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, const QString &strUsage, QWidget *pParent /*= 0*/)
+bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, const QString &strUsage, QWidget *pParent /*= 0*/) const
 {
     /* Prepare the message: */
     QString strMessage;
@@ -957,7 +957,7 @@ bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, const QString
                            0 /* auto-confirm id */, tr("Release", "detach medium"));
 }
 
-bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pParent /*= 0*/)
+bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pParent /*= 0*/) const
 {
     /* Prepare the message: */
     QString strMessage;
@@ -1007,7 +1007,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
                            "confirmMediumRemoval" /* auto-confirm id */, tr("Remove", "medium"));
 }
 
-int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent /*= 0*/)
+int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
     return message(pParent ? pParent : mainWindowShown(), MessageType_Question,
                    tr("<p>Do you want to delete the storage unit of the hard disk "
@@ -1028,20 +1028,23 @@ int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QW
                    tr("Keep", "hard disk storage"));
 }
 
-void UIMessageCenter::cannotDeleteHardDiskStorage(const CMedium &medium, const CProgress &progress, QWidget *pParent /*= 0*/)
+void UIMessageCenter::cannotDeleteHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
-    /* Preserve error-info: */
-    QString strErrorInfo = !medium.isOk() ? formatErrorInfo(medium) :
-                           !progress.isOk() ? formatErrorInfo(progress) :
-                           formatErrorInfo(progress.GetErrorInfo());
-    /* Show the message: */
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
-               .arg(medium.GetLocation()),
-            strErrorInfo);
+               .arg(strLocation),
+            formatErrorInfo(medium));
 }
 
-void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent /*= 0*/)
+void UIMessageCenter::cannotDeleteHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent /*= 0*/) const
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
+               .arg(strLocation),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
+}
+
+void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent /*= 0*/) const
 {
     /* Preserve error-info: */
     QString strErrorInfo = formatErrorInfo(machine);
@@ -1074,7 +1077,7 @@ void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType t
     message(pParent ? pParent : mainWindowShown(), MessageType_Error, strMessage, strErrorInfo);
 }
 
-int UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent /*= 0*/)
+int UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent /*= 0*/) const
 {
     /* Preserve error-info: */
     QString strErrorInfo = formatErrorInfo(machine);
@@ -1129,7 +1132,7 @@ int UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMedium
                    strErrorInfo);
 }
 
-void UIMessageCenter::cannotOpenMedium(const CVirtualBox &vbox, UIMediumType type, const QString &strLocation, QWidget *pParent /*= 0*/)
+void UIMessageCenter::cannotOpenMedium(const CVirtualBox &vbox, UIMediumType type, const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
     /* Prepare the message: */
     QString strMessage;
@@ -1158,7 +1161,7 @@ void UIMessageCenter::cannotOpenMedium(const CVirtualBox &vbox, UIMediumType typ
             strMessage.arg(strLocation), formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent /*= 0*/)
+void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent /*= 0*/) const
 {
     /* Prepare the message: */
     QString strMessage;
