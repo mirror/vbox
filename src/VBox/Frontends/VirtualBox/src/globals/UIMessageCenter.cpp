@@ -411,22 +411,23 @@ void UIMessageCenter::cannotOpenSession(const CSession &session) const
             formatErrorInfo(session));
 }
 
-void UIMessageCenter::cannotOpenSession(const CMachine &machine, const CProgress &progress /* = CProgress() */) const
+void UIMessageCenter::cannotOpenSession(const CMachine &machine) const
 {
-    /* Format error-info: */
-    Assert(!machine.isOk() || !progress.isNull());
-    QString strErrorInfo = !machine.isOk() ? formatErrorInfo(machine) :
-                           !progress.isOk() ? formatErrorInfo(progress) :
-                           formatErrorInfo(progress.GetErrorInfo());
-    /* Compose machine name: */
-    QString strName = machine.GetName();
-    if (strName.isEmpty())
-        strName = QFileInfo(machine.GetSettingsFilePath()).baseName();
+    /* Preserve error-info: */
+    QString strErrorInfo = formatErrorInfo(machine);
     /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
             tr("Failed to open a session for the virtual machine <b>%1</b>.")
-               .arg(strName),
+               .arg(machine.GetName()),
             strErrorInfo);
+}
+
+void UIMessageCenter::cannotOpenSession(const CProgress &progress, const QString &strMachineName) const
+{
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to open a session for the virtual machine <b>%1</b>.")
+               .arg(strMachineName),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
 void UIMessageCenter::cannotGetMediaAccessibility(const UIMedium &medium) const
@@ -602,7 +603,7 @@ void UIMessageCenter::cannotRemoveMachine(const CMachine &machine, const CProgre
             MessageType_Error,
             tr("Failed to remove the virtual machine <b>%1</b>.")
                .arg(machine.GetName()),
-            formatErrorInfo(progress.GetErrorInfo()));
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
 bool UIMessageCenter::remindAboutInaccessibleMedia() const
