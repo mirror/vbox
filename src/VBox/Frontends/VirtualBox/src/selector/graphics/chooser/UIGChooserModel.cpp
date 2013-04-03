@@ -1483,7 +1483,7 @@ void UIGChooserModel::unregisterMachines(const QStringList &ids)
             }
             /* And show cleanup progress finally: */
             msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_delete_90px.png");
-            if (progress.GetResultCode() != 0)
+            if (!progress.isOk() || progress.GetResultCode() != 0)
             {
                 msgCenter().cannotRemoveMachine(machine, progress);
                 continue;

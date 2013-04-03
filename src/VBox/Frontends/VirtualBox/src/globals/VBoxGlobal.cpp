@@ -1726,44 +1726,57 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
 CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = KLockType_Shared */)
 {
-    /* Create empty session instance: */
+    /* Prepare session: */
     CSession session;
-    session.createInstance(CLSID_Session);
-    if (session.isNull())
-    {
-        msgCenter().cannotOpenSession(session);
-        return session;
-    }
 
-    /* Search for the corresponding machine: */
-    CMachine machine = mVBox.FindMachine(strId);
-    if (machine.isNull())
+    /* Simulate try-catch block: */
+    bool fSuccess = false;
+    do
     {
-        msgCenter().cannotFindMachineById(mVBox, strId);
-        return session;
-    }
+        /* Create empty session instance: */
+        session.createInstance(CLSID_Session);
+        if (session.isNull())
+        {
+            msgCenter().cannotOpenSession(session);
+            break;
+        }
 
-    /* Lock found machine to session: */
-    machine.LockMachine(session, lockType);
-    if (!machine.isOk())
-    {
-        msgCenter().cannotOpenSession(machine);
+        /* Search for the corresponding machine: */
+        CMachine machine = mVBox.FindMachine(strId);
+        if (machine.isNull())
+        {
+            msgCenter().cannotFindMachineById(mVBox, strId);
+            break;
+        }
+
+        /* Lock found machine to session: */
+        machine.LockMachine(session, lockType);
+        if (!machine.isOk())
+        {
+            msgCenter().cannotOpenSession(machine);
+            break;
+        }
+
+        /* Pass the language ID as the property to the guest: */
+        if (session.GetType() == KSessionType_Shared)
+        {
+            CMachine startedMachine = session.GetMachine();
+            /* Make sure that the language is in two letter code.
+             * Note: if languageId() returns an empty string lang.name() will
+             * return "C" which is an valid language code. */
+            QLocale lang(VBoxGlobal::languageId());
+            startedMachine.SetGuestPropertyValue("/VirtualBox/HostInfo/GUI/LanguageID", lang.name());
+        }
+
+        /* Success finally: */
+        fSuccess = true;
+    }
+    while (0);
+    /* Cleanup try-catch block: */
+    if (!fSuccess)
         session.detach();
-        return session;
-    }
 
-    /* Pass the language ID as the property to the guest: */
-    if (session.GetType() == KSessionType_Shared)
-    {
-        CMachine startedMachine = session.GetMachine();
-        /* Make sure that the language is in two letter code.
-         * Note: if languageId() returns an empty string lang.name() will
-         * return "C" which is an valid language code. */
-        QLocale lang(VBoxGlobal::languageId());
-        startedMachine.SetGuestPropertyValue("/VirtualBox/HostInfo/GUI/LanguageID", lang.name());
-    }
-
-    /* Return resulting session: */
+    /* Return session: */
     return session;
 }
 
@@ -4959,8 +4972,8 @@ bool VBoxGlobal::launchMachine(CMachine &machine, bool fHeadless /* = false */)
      * otherwise we better show the progress... */
     int iSpawningDuration = 60000;
     msgCenter().showModalProgressDialog(progress, machine.GetName(), "", mainWindow(), iSpawningDuration);
-    if (progress.GetResultCode() != 0)
-        msgCenter().cannotOpenSession(machine, progress);
+    if (!progress.isOk() || progress.GetResultCode() != 0)
+        msgCenter().cannotOpenSession(progress, machine.GetName());
 
     /* Unlock machine, close session: */
     session.UnlockMachine();
