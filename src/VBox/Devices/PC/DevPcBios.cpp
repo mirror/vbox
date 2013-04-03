@@ -203,18 +203,6 @@ static DECLCALLBACK(int) pcbiosIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIO
 static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     /*
-     * Bochs BIOS Panic
-     */
-    if (    cb == 2
-        &&  (   Port == 0x400
-             || Port == 0x401))
-    {
-        Log(("pcbios: PC BIOS panic at rombios.c(%d)\n", u32));
-        AssertReleaseMsgFailed(("PC BIOS panic at rombios.c(%d)\n", u32));
-        return VERR_INTERNAL_ERROR;
-    }
-
-    /*
      * Bochs BIOS char printing.
      */
     if (    cb == 1
