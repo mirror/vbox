@@ -144,8 +144,7 @@ VBOX_ADD_STRIP_MOD.linux = \
 	vboxmouse_drv_14.so \
 	vboxmouse_drv_15.so \
 	vboxmouse_drv_16.so \
-	$(foreach file,$(wildcard $(PATH_STAGE_BIN)/additions/vboxvideo_drv_*),\
-		$(notdir $(file))) \
+	$(addsuffix .so,$(filter vboxvideo_drv_%,$(DLLS))) \
 	$(if $(VBOX_WITH_PAM),pam_vbox.so,) \
 	mount.vboxsf
 
