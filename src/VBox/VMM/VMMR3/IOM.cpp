@@ -165,7 +165,11 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
     /*
      * Initialize the REM critical section.
      */
+#ifdef IOM_WITH_CRIT_SECT_RW
+    int rc = PDMR3CritSectRwInit(pVM, &pVM->iom.s.CritSect, RT_SRC_POS, "IOM Lock");
+#else
     int rc = PDMR3CritSectInit(pVM, &pVM->iom.s.CritSect, RT_SRC_POS, "IOM Lock");
+#endif
     AssertRCReturn(rc, rc);
 
     /*
@@ -405,7 +409,8 @@ VMMR3_INT_DECL(int) IOMR3Term(PVM pVM)
  */
 PIOMIOPORTSTATS iomR3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDesc)
 {
-    Assert(IOMIsLockOwner(pVM));
+    Assert(IOM_IS_EXCL_LOCK_OWNER(pVM));
+
     /* check if it already exists. */
     PIOMIOPORTSTATS pPort = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.pTreesR3->IOPortStatTree, Port);
     if (pPort)
@@ -458,10 +463,11 @@ PIOMIOPORTSTATS iomR3IOPortStatsCreate(PVM pVM, RTIOPORT Port, const char *pszDe
  */
 PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc)
 {
-    Assert(IOMIsLockOwner(pVM));
+    Assert(IOM_IS_EXCL_LOCK_OWNER(pVM));
 #ifdef DEBUG_sandervl
     AssertGCPhys32(GCPhys);
 #endif
+
     /* check if it already exists. */
     PIOMMMIOSTATS pStats = (PIOMMMIOSTATS)RTAvloGCPhysGet(&pVM->iom.s.pTreesR3->MmioStatTree, GCPhys);
     if (pStats)

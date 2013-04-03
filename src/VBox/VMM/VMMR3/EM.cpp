@@ -1693,7 +1693,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             /* Try not to cause deadlocks. */
             if (    pVM->cCpus == 1
                 ||  (   !PGMIsLockOwner(pVM)
-                     && !IOMIsLockOwner(pVM))
+                     && !IOMIsLockWriteOwner(pVM))
                )
             {
                 EMRemLock(pVM);

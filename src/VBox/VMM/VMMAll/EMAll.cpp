@@ -250,7 +250,7 @@ VMMDECL(void) EMRemLock(PVM pVM)
         return;     /* early init */
 
     Assert(!PGMIsLockOwner(pVM));
-    Assert(!IOMIsLockOwner(pVM));
+    Assert(!IOMIsLockWriteOwner(pVM));
     int rc = PDMCritSectEnter(&pVM->em.s.CritSectREM, VERR_SEM_BUSY);
     AssertRCSuccess(rc);
 #endif

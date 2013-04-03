@@ -40,14 +40,18 @@
 
 
 /**
- * Check if this VCPU currently owns the IOM lock.
+ * Check if this VCPU currently owns the IOM lock exclusively.
  *
  * @returns bool owner/not owner
  * @param   pVM         Pointer to the VM.
  */
-VMMDECL(bool) IOMIsLockOwner(PVM pVM)
+VMMDECL(bool) IOMIsLockWriteOwner(PVM pVM)
 {
+#ifdef IOM_WITH_CRIT_SECT_RW
+    return PDMCritSectRwIsWriteOwner(&pVM->iom.s.CritSect);
+#else
     return PDMCritSectIsOwner(&pVM->iom.s.CritSect);
+#endif
 }
 
 
