@@ -607,12 +607,12 @@ void VBoxSnapshotsWgt::sltRestoreSnapshot()
     if (console.isOk())
     {
         msgCenter().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_restore_90px.png",
-                                              msgCenter().mainWindowShown(), true);
+                                            msgCenter().mainWindowShown(), true);
         if (progress.GetResultCode() != 0)
-            msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
+            msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), mMachine.GetName());
     }
     else
-        msgCenter().cannotRestoreSnapshot(console, snapshot.GetName());
+        msgCenter().cannotRestoreSnapshot(console, snapshot.GetName(), mMachine.GetName());
 
     /* Unlock machine finally: */
     session.UnlockMachine();
@@ -655,14 +655,14 @@ void VBoxSnapshotsWgt::sltDeleteSnapshot()
     if (console.isOk())
     {
         /* Show the progress dialog */
-        msgCenter().showModalProgressDialog (progress, mMachine.GetName(), ":/progress_snapshot_discard_90px.png",
-                                               msgCenter().mainWindowShown(), true);
+        msgCenter().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_discard_90px.png",
+                                            msgCenter().mainWindowShown(), true);
 
         if (progress.GetResultCode() != 0)
-            msgCenter().cannotRemoveSnapshot (progress,  snapshot.GetName());
+            msgCenter().cannotRemoveSnapshot(progress,  snapshot.GetName(), mMachine.GetName());
     }
     else
-        msgCenter().cannotRemoveSnapshot (console,  snapshot.GetName());
+        msgCenter().cannotRemoveSnapshot(console,  snapshot.GetName(), mMachine.GetName());
 
     session.UnlockMachine();
 }

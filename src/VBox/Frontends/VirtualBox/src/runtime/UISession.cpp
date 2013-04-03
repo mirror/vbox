@@ -390,14 +390,14 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
                     if (progress.GetResultCode() != 0)
                     {
                         /* Failed in progress: */
-                        msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName());
+                        msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), machine.GetName(), machineLogic()->activeMachineWindow());
                         return false;
                     }
                 }
                 else
                 {
                     /* Failed in console: */
-                    msgCenter().cannotRestoreSnapshot(console, snapshot.GetName());
+                    msgCenter().cannotRestoreSnapshot(console, snapshot.GetName(), machine.GetName(), machineLogic()->activeMachineWindow());
                     return false;
                 }
             }

@@ -741,48 +741,36 @@ bool UIMessageCenter::warnAboutSnapshotRemovalFreeSpace(const QString &strSnapsh
                            tr("Delete"));
 }
 
-void UIMessageCenter::cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName) const
+void UIMessageCenter::cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName, QWidget *pParent /*= 0*/) const
 {
-    message(mainWindowShown(), MessageType_Error,
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-               .arg(strSnapshotName).arg(CConsole(console).GetMachine().GetName()),
+               .arg(strSnapshotName, strMachineName),
             formatErrorInfo(console));
 }
 
-void UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName) const
+void UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName, QWidget *pParent /*= 0*/) const
 {
-    /* Get console: */
-    AssertWrapperOk(progress);
-    CConsole console(CProgress(progress).GetInitiator());
-    AssertWrapperOk(console);
-    /* Show the message: */
-    message(mainWindowShown(), MessageType_Error,
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-               .arg(strSnapshotName).arg(console.GetMachine().GetName()),
-            formatErrorInfo(progress.GetErrorInfo()));
+               .arg(strSnapshotName, strMachineName),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName) const
+void UIMessageCenter::cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const
 {
     message(mainWindowShown(), MessageType_Error,
             tr("Failed to delete the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-               .arg(strSnapshotName)
-               .arg(CConsole(console).GetMachine().GetName()),
+               .arg(strSnapshotName, strMachineName),
             formatErrorInfo(console));
 }
 
-void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName) const
+void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const
 {
-    /* Get console: */
-    AssertWrapperOk(progress);
-    CConsole console(CProgress(progress).GetInitiator());
-    AssertWrapperOk(console);
-    /* Show the message: */
     message(mainWindowShown(), MessageType_Error,
             tr("Failed to delete the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
-               .arg(strSnapshotName)
-               .arg(console.GetMachine().GetName()),
-            formatErrorInfo(progress.GetErrorInfo()));
+               .arg(strSnapshotName).arg(strMachineName),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
 void UIMessageCenter::cannotAccessUSB(const COMBaseWithEI &object) const
