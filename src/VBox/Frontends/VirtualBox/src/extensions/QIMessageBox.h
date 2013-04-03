@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,46 +19,39 @@
 #ifndef __QIMessageBox_h__
 #define __QIMessageBox_h__
 
-/* VBox includes */
-#include "QIDialog.h"
-
-/* Qt includes */
+/* Qt includes: */
 #include <QCheckBox>
 #include <QMessageBox>
 #include <QTextEdit>
 
-/* VBox forwards */
-class QIArrowSplitter;
-class QIDialogButtonBox;
-class QILabel;
+/* GUI includes: */
+#include "QIDialog.h"
 
-/* Qt forwards */
+/* Forward declarations: */
 class QCloseEvent;
 class QLabel;
 class QPushButton;
 class QSpacerItem;
+class QIArrowSplitter;
+class QIDialogButtonBox;
+class QILabel;
 
-/** @class QIMessageBox
- *
- *  The QIMessageBox class is a message box similar to QMessageBox.
- *  It partly implements the QMessageBox interface and adds some enhanced
- *  functionality.
- */
+/* QIDialog extension representing GUI alerts: */
 class QIMessageBox : public QIDialog
 {
     Q_OBJECT;
 
 public:
 
-    // for compatibility with QMessageBox
-    enum Icon
+    /* Icon type enumerator: */
+    enum IconType
     {
-        NoIcon = QMessageBox::NoIcon,
-        Information = QMessageBox::Information,
-        Warning = QMessageBox::Warning,
-        Critical = QMessageBox::Critical,
-        Question = QMessageBox::Question,
-        GuruMeditation,
+        IconType_NoIcon = QMessageBox::NoIcon,
+        IconType_Information = QMessageBox::Information,
+        IconType_Warning = QMessageBox::Warning,
+        IconType_Critical = QMessageBox::Critical,
+        IconType_Question = QMessageBox::Question,
+        IconType_GuruMeditation,
     };
 
     enum
@@ -74,7 +67,7 @@ public:
     };
 
     QIMessageBox (const QString &aCaption, const QString &aText,
-                  Icon aIcon, int aButton0, int aButton1 = 0, int aButton2 = 0,
+                  IconType aIcon, int aButton0, int aButton1 = 0, int aButton2 = 0,
                   QWidget *aParent = 0, const char *aName = 0, bool aModal = TRUE);
 
     QString buttonText (int aButton) const;
@@ -89,7 +82,7 @@ public:
     QString detailsText () const { return mDetailsText->toHtml(); }
     void setDetailsText (const QString &aText);
 
-    QPixmap standardPixmap (QIMessageBox::Icon aIcon);
+    QPixmap standardPixmap (QIMessageBox::IconType aIcon);
 
 private:
 
