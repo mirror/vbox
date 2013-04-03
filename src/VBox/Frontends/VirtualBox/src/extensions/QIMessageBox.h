@@ -31,7 +31,6 @@
 class QCloseEvent;
 class QLabel;
 class QPushButton;
-class QSpacerItem;
 class QIArrowSplitter;
 class QIDialogButtonBox;
 class QILabel;
@@ -83,24 +82,27 @@ class QIMessageBox : public QIDialog
 public:
 
     /* Constructor: */
-    QIMessageBox(const QString &strCaption, const QString &strMessage, AlertIconType icon,
+    QIMessageBox(const QString &strCaption, const QString &strMessage, AlertIconType iconType,
                  int iButton1 = 0, int iButton2 = 0, int iButton3 = 0, QWidget *pParent = 0);
 
     QString buttonText (int aButton) const;
     void setButtonText (int aButton, const QString &aText);
 
-    QString flagText() const { return mFlagCB->isVisible() ? mFlagCB->text() : QString::null; }
+    QString flagText() const { return m_pFlagCheckBox->isVisible() ? m_pFlagCheckBox->text() : QString::null; }
     void setFlagText (const QString &aText);
 
-    bool isFlagChecked() const { return mFlagCB->isChecked(); }
-    void setFlagChecked (bool aChecked) { mFlagCB->setChecked (aChecked); }
+    bool isFlagChecked() const { return m_pFlagCheckBox->isChecked(); }
+    void setFlagChecked (bool aChecked) { m_pFlagCheckBox->setChecked (aChecked); }
 
-    QString detailsText () const { return mDetailsText->toHtml(); }
+    QString detailsText () const { return m_pDetailsTextView->toHtml(); }
     void setDetailsText (const QString &aText);
 
     QPixmap standardPixmap(AlertIconType aIcon);
 
 private:
+
+    /* Helper: Prepare stuff: */
+    void prepareContent();
 
     QPushButton *createButton (int aButton);
 
@@ -117,9 +119,9 @@ private slots:
     void detailsBack();
     void detailsNext();
 
-    void done0() { m_fDone = true; done (mButton1 & AlertButtonMask); }
-    void done1() { m_fDone = true; done (mButton2 & AlertButtonMask); }
-    void done2() { m_fDone = true; done (mButton3 & AlertButtonMask); }
+    void done1() { m_fDone = true; done (m_iButton1 & AlertButtonMask); }
+    void done2() { m_fDone = true; done (m_iButton2 & AlertButtonMask); }
+    void done3() { m_fDone = true; done (m_iButton3 & AlertButtonMask); }
 
     void reject();
 
@@ -127,18 +129,19 @@ private slots:
 
 private:
 
-    int mButton1, mButton2, mButton3, mButtonEsc;
-    QLabel *mIconLabel;
-    QILabel *mTextLabel;
-    QPushButton *mButton0PB, *mButton1PB, *mButton2PB;
-    QCheckBox *mFlagCB, *mFlagCB_Main, *mFlagCB_Details;
-    QWidget *mDetailsVBox;
-    QIArrowSplitter *mDetailsSplitter;
-    QTextEdit *mDetailsText;
-    QSpacerItem *mSpacer;
-    QIDialogButtonBox *mButtonBox;
+    /* Variables: */
+    int m_iButton1, m_iButton2, m_iButton3, m_iButtonEsc;
+    AlertIconType m_iconType;
+    QLabel *m_pIconLabel;
+    QILabel *m_pTextLabel;
+    QPushButton *m_pButton1, *m_pButton2, *m_pButton3;
+    QCheckBox *m_pFlagCheckBox, *m_pFlagCheckBox_Main, *m_pFlagCheckBox_Details;
+    QWidget *m_pDetailsWidget;
+    QIArrowSplitter *m_pDetailsSplitter;
+    QTextEdit *m_pDetailsTextView;
+    QIDialogButtonBox *m_pButtonBox;
     QString m_strMessage;
-    QList < QPair <QString, QString> > mDetailsList;
+    QList<QPair<QString, QString> > m_detailsList;
     int m_iDetailsIndex;
     bool m_fDone : 1;
 };
