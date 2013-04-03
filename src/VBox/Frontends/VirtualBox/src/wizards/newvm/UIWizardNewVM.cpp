@@ -189,7 +189,7 @@ bool UIWizardNewVM::createVM()
     vbox.RegisterMachine(m_machine);
     if (!vbox.isOk())
     {
-        msgCenter().cannotCreateMachine(vbox, m_machine, this);
+        msgCenter().cannotRegisterMachine(vbox, m_machine.GetName(), this);
         return false;
     }
 

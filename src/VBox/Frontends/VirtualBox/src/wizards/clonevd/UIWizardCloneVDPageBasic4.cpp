@@ -233,7 +233,7 @@ bool UIWizardCloneVDPageBasic4::validatePage()
     QString strMediumPath(mediumPath());
     fResult = !QFileInfo(strMediumPath).exists();
     if (!fResult)
-        msgCenter().cannotOverwriteHardDiskStorage(this, strMediumPath);
+        msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
 
     if (fResult)
     {

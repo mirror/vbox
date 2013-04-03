@@ -262,7 +262,7 @@ bool UIWizardCloneVDPageExpert::validatePage()
     QString strMediumPath(mediumPath());
     fResult = !QFileInfo(strMediumPath).exists();
     if (!fResult)
-        msgCenter().cannotOverwriteHardDiskStorage(this, strMediumPath);
+        msgCenter().cannotOverwriteHardDiskStorage(strMediumPath, this);
 
     /* Try to copy virtual-disk: */
     if (fResult)

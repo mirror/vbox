@@ -268,13 +268,13 @@ public:
 
     /* API: Wizards warnings: */
     void cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent = 0);
-    void cannotCreateMachine(const CVirtualBox &vbox, const CMachine &machine, QWidget *pParent = 0);
-    void cannotRegisterMachine(const CVirtualBox &vbox, const CMachine &machine, QWidget *pParent);
+    void cannotRegisterMachine(const CVirtualBox &vbox, const QString &strMachineName, QWidget *pParent = 0);
     void cannotCreateClone(const CMachine &machine, QWidget *pParent = 0);
-    void cannotCreateClone(const CMachine &machine, const CProgress &progress, QWidget *pParent = 0);
-    void cannotOverwriteHardDiskStorage(QWidget *pParent, const QString &strLocation);
-    void cannotCreateHardDiskStorage(QWidget *pParent, const CVirtualBox &vbox, const QString &strLocation,
-                                     const CMedium &medium, const CProgress &progress);
+    void cannotCreateClone(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0);
+    void cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0);
+    void cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation,QWidget *pParent = 0);
+    void cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent = 0);
+    void cannotCreateHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent = 0);
     void warnAboutCannotRemoveMachineFolder(QWidget *pParent, const QString &strFolderName);
     void warnAboutCannotRewriteMachineFolder(QWidget *pParent, const QString &strFolderName);
     void warnAboutCannotCreateMachineFolder(QWidget *pParent, const QString &strFolderName);
