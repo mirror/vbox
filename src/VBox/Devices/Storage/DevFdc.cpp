@@ -317,7 +317,7 @@ static fd_format_t fd_formats[] = {
     /* 360 kB must match 5"1/4 better than 3"1/2... */
     { FDRIVE_DRV_144, FDRIVE_DISK_720,  9, 80, 0, FDRIVE_RATE_250K,  "360 kB 3\"1/2", },
     /* end */
-    { FDRIVE_DRV_NONE, FDRIVE_DISK_NONE, -1, -1, 0, (fdrive_rate_t)0, NULL, },
+    { FDRIVE_DRV_NONE, FDRIVE_DISK_NONE, (uint8_t)-1, (uint8_t)-1, 0, (fdrive_rate_t)0, NULL, },
 };
 
 /* Revalidate a disk drive after a disk change */
