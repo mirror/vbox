@@ -61,33 +61,31 @@ bool UIWizardNewVD::createVirtualDisk()
     AssertReturn(!strMediumPath.isNull(), false);
     AssertReturn(uSize > 0, false);
 
-    /* Get vbox object: */
+    /* Get VBox object: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
-    /* Create new virtual disk: */
+    /* Create new virtual hard-disk: */
     CMedium virtualDisk = vbox.CreateHardDisk(mediumFormat.GetName(), strMediumPath);
-    CProgress progress;
     if (!vbox.isOk())
     {
-        msgCenter().cannotCreateHardDiskStorage(this, vbox, strMediumPath, virtualDisk, progress);
+        msgCenter().cannotCreateHardDiskStorage(vbox, strMediumPath, this);
         return false;
     }
 
-    QVector<KMediumVariant> l_variants(sizeof(qulonglong)*8);
-
-    for (int i = 0; i < l_variants.size(); ++i)
+    /* Compose medium-variant: */
+    QVector<KMediumVariant> variants(sizeof(qulonglong)*8);
+    for (int i = 0; i < variants.size(); ++i)
     {
         qulonglong temp = uVariant;
         temp &= 1<<i;
-        l_variants [i] = (KMediumVariant)temp;
+        variants[i] = (KMediumVariant)temp;
     }
 
-    /* Create base storage for the new hard disk: */
-    progress = virtualDisk.CreateBaseStorage(uSize, l_variants);
-
+    /* Create base storage for the new virtual-disk: */
+    CProgress progress = virtualDisk.CreateBaseStorage(uSize, variants);
     if (!virtualDisk.isOk())
     {
-        msgCenter().cannotCreateHardDiskStorage(this, vbox, strMediumPath, virtualDisk, progress);
+        msgCenter().cannotCreateHardDiskStorage(virtualDisk, strMediumPath, this);
         return false;
     }
 
@@ -97,7 +95,7 @@ bool UIWizardNewVD::createVirtualDisk()
         return false;
     if (!progress.isOk() || progress.GetResultCode() != 0)
     {
-        msgCenter().cannotCreateHardDiskStorage(this, vbox, strMediumPath, virtualDisk, progress);
+        msgCenter().cannotCreateHardDiskStorage(progress, strMediumPath, this);
         return false;
     }
 

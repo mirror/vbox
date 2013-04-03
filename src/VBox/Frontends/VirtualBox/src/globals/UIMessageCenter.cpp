@@ -1190,91 +1190,72 @@ void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult 
             strMessage.arg(medium.location()), formatErrorInfo(rc));
 }
 
-void UIMessageCenter::cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent /* = 0 */)
+void UIMessageCenter::cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent /*= 0*/)
 {
-    message(
-        pParent ? pParent : mainWindowShown(),
-        MessageType_Error,
-        tr("Failed to create a new virtual machine."),
-        formatErrorInfo(vbox)
-    );
-}
-
-void UIMessageCenter::cannotCreateMachine(const CVirtualBox &vbox,
-                                          const CMachine &machine,
-                                          QWidget *pParent /* = 0 */)
-{
-    message(
-        pParent ? pParent : mainWindowShown(),
-        MessageType_Error,
-        tr("Failed to create a new virtual machine <b>%1</b>.")
-            .arg(machine.GetName()),
-        formatErrorInfo(vbox)
-    );
-}
-
-void UIMessageCenter::cannotRegisterMachine(const CVirtualBox &vbox,
-                                            const CMachine &machine,
-                                            QWidget *pParent)
-{
-    message(pParent ? pParent : mainWindowShown(),
-            MessageType_Error,
-            tr("Failed to register the virtual machine <b>%1</b>.")
-            .arg(machine.GetName()),
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to create a new virtual machine."),
             formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotCreateClone(const CMachine &machine,
-                                        QWidget *pParent /* = 0 */)
+void UIMessageCenter::cannotRegisterMachine(const CVirtualBox &vbox, const QString &strMachineName, QWidget *pParent /*= 0*/)
 {
-    message(
-        pParent ? pParent : mainWindowShown(),
-        MessageType_Error,
-        tr("Failed to clone the virtual machine <b>%1</b>.")
-            .arg(machine.GetName()),
-        formatErrorInfo(machine)
-    );
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to register the virtual machine <b>%1</b>.")
+               .arg(strMachineName),
+            formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotCreateClone(const CMachine &machine,
-                                        const CProgress &progress,
-                                        QWidget *pParent /* = 0 */)
+void UIMessageCenter::cannotCreateClone(const CMachine &machine, QWidget *pParent /*= 0*/)
 {
-    AssertWrapperOk(progress);
-
-    message(pParent ? pParent : mainWindowShown(),
-        MessageType_Error,
-        tr("Failed to clone the virtual machine <b>%1</b>.")
-            .arg(machine.GetName()),
-        formatErrorInfo(progress.GetErrorInfo())
-    );
+    /* Preserve error-info: */
+    QString strErrorInfo = formatErrorInfo(machine);
+    /* Show the message: */
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to clone the virtual machine <b>%1</b>.")
+               .arg(machine.GetName()),
+            strErrorInfo);
 }
 
-void UIMessageCenter::cannotOverwriteHardDiskStorage(QWidget *pParent,
-                                                     const QString &strLocation)
+void UIMessageCenter::cannotCreateClone(const CProgress &progress, const QString &strMachineName, QWidget *pParent /* = 0 */)
 {
-    message(pParent, MessageType_Info,
-        tr("<p>The hard disk storage unit at location <b>%1</b> already "
-           "exists. You cannot create a new virtual hard disk that uses this "
-           "location because it can be already used by another virtual hard "
-           "disk.</p>"
-           "<p>Please specify a different location.</p>")
-        .arg(strLocation));
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to clone the virtual machine <b>%1</b>.")
+               .arg(strMachineName),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::cannotCreateHardDiskStorage(QWidget *pParent,
-                                                  const CVirtualBox &vbox,
-                                                  const QString &strLocation,
-                                                  const CMedium &medium,
-                                                  const CProgress &progress)
+void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent /*= 0*/)
 {
-    message(pParent, MessageType_Error,
-        tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
-        .arg(strLocation),
-        !vbox.isOk() ? formatErrorInfo(vbox) :
-        !medium.isOk() ? formatErrorInfo(medium) :
-        !progress.isOk() ? formatErrorInfo(progress) :
-        formatErrorInfo(progress.GetErrorInfo()));
+    message(pParent ? pParent : mainWindowShown(), MessageType_Info,
+            tr("<p>The hard disk storage unit at location <b>%1</b> already exists. "
+               "You cannot create a new virtual hard disk that uses this location "
+               "because it can be already used by another virtual hard disk.</p>"
+               "<p>Please specify a different location.</p>")
+               .arg(strLocation));
+}
+
+void UIMessageCenter::cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation, QWidget *pParent /*= 0*/)
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
+               .arg(strLocation),
+            formatErrorInfo(vbox));
+}
+
+void UIMessageCenter::cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /*= 0*/)
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
+               .arg(strLocation),
+            formatErrorInfo(medium));
+}
+
+void UIMessageCenter::cannotCreateHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent /*= 0*/)
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
+               .arg(strLocation),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
 void UIMessageCenter::warnAboutCannotRemoveMachineFolder(QWidget *pParent, const QString &strFolderName)

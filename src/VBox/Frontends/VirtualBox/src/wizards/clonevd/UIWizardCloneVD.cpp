@@ -61,29 +61,28 @@ bool UIWizardCloneVD::copyVirtualDisk()
     /* Get VBox object: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
-    /* Create new virtual-disk: */
+    /* Create new virtual hard-disk: */
     CMedium virtualDisk = vbox.CreateHardDisk(mediumFormat.GetName(), strMediumPath);
-    CProgress progress;
     if (!vbox.isOk())
     {
-        msgCenter().cannotCreateHardDiskStorage(this, vbox, strMediumPath, virtualDisk, progress);
+        msgCenter().cannotCreateHardDiskStorage(vbox, strMediumPath, this);
         return false;
     }
 
-    QVector<KMediumVariant> l_variants(sizeof(uVariant)*8);
-
-    for (int i = 0; i < l_variants.size(); ++i)
+    /* Compose medium-variant: */
+    QVector<KMediumVariant> variants(sizeof(qulonglong)*8);
+    for (int i = 0; i < variants.size(); ++i)
     {
         qulonglong temp = uVariant;
         temp &= 1<<i;
-        l_variants [i] = (KMediumVariant)temp;
+        variants[i] = (KMediumVariant)temp;
     }
 
     /* Copy existing virtual-disk to the new virtual-disk: */
-    progress = sourceVirtualDisk.CloneTo(virtualDisk, l_variants, CMedium());
-    if (!virtualDisk.isOk())
+    CProgress progress = sourceVirtualDisk.CloneTo(virtualDisk, variants, CMedium());
+    if (!sourceVirtualDisk.isOk())
     {
-        msgCenter().cannotCreateHardDiskStorage(this, vbox, strMediumPath, virtualDisk, progress);
+        msgCenter().cannotCreateHardDiskStorage(sourceVirtualDisk, strMediumPath, this);
         return false;
     }
 
@@ -93,7 +92,7 @@ bool UIWizardCloneVD::copyVirtualDisk()
         return false;
     if (!progress.isOk() || progress.GetResultCode() != 0)
     {
-        msgCenter().cannotCreateHardDiskStorage(this, vbox, strMediumPath, virtualDisk, progress);
+        msgCenter().cannotCreateHardDiskStorage(progress, strMediumPath, this);
         return false;
     }
 
