@@ -82,9 +82,9 @@ class QIMessageBox : public QIDialog
 
 public:
 
-    QIMessageBox(const QString &aCaption, const QString &aText,
-                 AlertIconType aIcon, int aButton0, int aButton1 = 0, int aButton2 = 0,
-                 QWidget *aParent = 0, const char *aName = 0, bool aModal = TRUE);
+    /* Constructor: */
+    QIMessageBox(const QString &strCaption, const QString &strMessage, AlertIconType icon,
+                 int iButton1 = 0, int iButton2 = 0, int iButton3 = 0, QWidget *pParent = 0);
 
     QString buttonText (int aButton) const;
     void setButtonText (int aButton, const QString &aText);
@@ -105,7 +105,7 @@ private:
     QPushButton *createButton (int aButton);
 
     void closeEvent (QCloseEvent *e);
-    void showEvent (QShowEvent *e);
+    void polishEvent(QShowEvent *pPolishEvent);
 
     void refreshDetails();
     void setDetailsShown (bool aShown);
@@ -117,9 +117,9 @@ private slots:
     void detailsBack();
     void detailsNext();
 
-    void done0() { mWasDone = true; done (mButton0 & AlertButtonMask); }
-    void done1() { mWasDone = true; done (mButton1 & AlertButtonMask); }
-    void done2() { mWasDone = true; done (mButton2 & AlertButtonMask); }
+    void done0() { m_fDone = true; done (mButton1 & AlertButtonMask); }
+    void done1() { m_fDone = true; done (mButton2 & AlertButtonMask); }
+    void done2() { m_fDone = true; done (mButton3 & AlertButtonMask); }
 
     void reject();
 
@@ -127,7 +127,7 @@ private slots:
 
 private:
 
-    int mButton0, mButton1, mButton2, mButtonEsc;
+    int mButton1, mButton2, mButton3, mButtonEsc;
     QLabel *mIconLabel;
     QILabel *mTextLabel;
     QPushButton *mButton0PB, *mButton1PB, *mButton2PB;
@@ -137,11 +137,10 @@ private:
     QTextEdit *mDetailsText;
     QSpacerItem *mSpacer;
     QIDialogButtonBox *mButtonBox;
-    QString mText;
+    QString m_strMessage;
     QList < QPair <QString, QString> > mDetailsList;
-    int mDetailsIndex;
-    bool mWasDone : 1;
-    bool mWasPolished : 1;
+    int m_iDetailsIndex;
+    bool m_fDone : 1;
 };
 
 #endif

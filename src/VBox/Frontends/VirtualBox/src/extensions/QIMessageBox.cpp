@@ -39,33 +39,18 @@
 # include "UIMachineWindowSeamless.h"
 #endif /* Q_WS_MAC */
 
-/** @class QIMessageBox
- *
- *  The QIMessageBox class is a message box similar to QMessageBox.
- *  It partly implements the QMessageBox interface and adds some enhanced
- *  functionality.
- */
-
-/**
- *  See QMessageBox for details.
- */
-QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
-                            AlertIconType aIcon, int aButton0, int aButton1, int aButton2,
-                            QWidget *aParent, const char *aName, bool aModal)
-    : QIDialog (aParent)
-    , mText (aText)
-    , mDetailsIndex (-1)
-    , mWasDone (false)
-    , mWasPolished (false)
+QIMessageBox::QIMessageBox(const QString &strCaption, const QString &strMessage, AlertIconType icon,
+                           int iButton1 /*= 0*/, int iButton2 /*= 0*/, int iButton3 /*= 0*/, QWidget *pParent /*= 0*/)
+    : QIDialog(pParent)
+    , mButton1(iButton1)
+    , mButton2(iButton2)
+    , mButton3(iButton3)
+    , m_strMessage(strMessage)
+    , m_iDetailsIndex(-1)
+    , m_fDone(false)
 {
-    setWindowTitle (aCaption);
-    /* Necessary to later find some of the message boxes */
-    setObjectName (aName);
-    setModal (aModal);
-
-    mButton0 = aButton0;
-    mButton1 = aButton1;
-    mButton2 = aButton2;
+    /* Set alert caption: */
+    setWindowTitle(strCaption);
 
     QVBoxLayout *layout = new QVBoxLayout (this);
 #ifdef Q_WS_MAC
@@ -84,7 +69,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     layout->addWidget (main);
 
     mIconLabel = new QLabel();
-    mIconLabel->setPixmap (standardPixmap (aIcon));
+    mIconLabel->setPixmap (standardPixmap (icon));
     mIconLabel->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Minimum);
     mIconLabel->setAlignment (Qt::AlignHCenter | Qt::AlignTop);
     hLayout->addWidget (mIconLabel);
@@ -94,7 +79,7 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     messageVBoxLayout->setSpacing (10);
     hLayout->addLayout (messageVBoxLayout);
 
-    mTextLabel = new QILabel (aText);
+    mTextLabel = new QILabel (m_strMessage);
     mTextLabel->setAlignment (Qt::AlignLeft | Qt::AlignTop);
     mTextLabel->setWordWrap (true);
     QSizePolicy sp (QSizePolicy::Minimum, QSizePolicy::Minimum);
@@ -143,19 +128,19 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
 
     mButtonEsc = 0;
 
-    mButton0PB = createButton (aButton0);
+    mButton0PB = createButton (iButton1);
     if (mButton0PB)
         connect (mButton0PB, SIGNAL (clicked()), SLOT (done0()));
-    mButton1PB = createButton (aButton1);
+    mButton1PB = createButton (iButton2);
     if (mButton1PB)
         connect (mButton1PB, SIGNAL (clicked()), SLOT (done1()));
-    mButton2PB = createButton (aButton2);
+    mButton2PB = createButton (iButton3);
     if (mButton2PB)
         connect (mButton2PB, SIGNAL (clicked()), SLOT (done2()));
 
     /* If this is an error message add an "Copy to clipboard" button for easier
      * bug reports. */
-    if (aIcon == AlertIconType_Critical)
+    if (icon == AlertIconType_Critical)
     {
         QPushButton *pCopyButton = createButton(AlertButton_Copy);
         pCopyButton->setToolTip(tr("Copy all errors to the clipboard"));
@@ -311,7 +296,7 @@ void QIMessageBox::setDetailsText (const QString &aText)
     }
 
     mDetailsSplitter->setMultiPaging (mDetailsList.size() > 1);
-    mDetailsIndex = 0;
+    m_iDetailsIndex = 0;
     refreshDetails();
 }
 
@@ -349,46 +334,47 @@ QPixmap QIMessageBox::standardPixmap(AlertIconType aIcon)
 
 void QIMessageBox::closeEvent (QCloseEvent *e)
 {
-    if (mWasDone)
+    if (m_fDone)
         e->accept();
     else
         e->ignore();
 }
 
-void QIMessageBox::showEvent (QShowEvent *e)
+void QIMessageBox::polishEvent(QShowEvent *pPolishEvent)
 {
-    if (!mWasPolished)
-    {
-        /* Polishing sub-widgets */
-        resize (minimumSizeHint());
-        mTextLabel->useSizeHintForWidth (mTextLabel->width());
-        mTextLabel->updateGeometry();
-        setFixedSize(size());
-        mDetailsSplitter->toggleWidget();
-        mWasPolished = true;
-    }
+    /* Tune our size: */
+    resize(minimumSizeHint());
+    mTextLabel->useSizeHintForWidth(mTextLabel->width());
+    mTextLabel->updateGeometry();
 
-    QIDialog::showEvent (e);
+    /* Call to base-class: */
+    QIDialog::polishEvent(pPolishEvent);
+
+    /* Make the size fixed: */
+    setFixedSize(size());
+
+    /* Toggle details-widget: */
+    mDetailsSplitter->toggleWidget();
 }
 
 void QIMessageBox::refreshDetails()
 {
     /* Update message text iteself */
-    mTextLabel->setText (mText + mDetailsList [mDetailsIndex].first);
+    mTextLabel->setText (m_strMessage + mDetailsList [m_iDetailsIndex].first);
     /* Update details table */
-    mDetailsText->setText (mDetailsList [mDetailsIndex].second);
+    mDetailsText->setText (mDetailsList [m_iDetailsIndex].second);
     setDetailsShown (!mDetailsText->toPlainText().isEmpty());
 
     /* Update multi-paging system */
     if (mDetailsList.size() > 1)
     {
-        mDetailsSplitter->setButtonEnabled (true, mDetailsIndex < mDetailsList.size() - 1);
-        mDetailsSplitter->setButtonEnabled (false, mDetailsIndex > 0);
+        mDetailsSplitter->setButtonEnabled (true, m_iDetailsIndex < mDetailsList.size() - 1);
+        mDetailsSplitter->setButtonEnabled (false, m_iDetailsIndex > 0);
     }
 
     /* Update details label */
     mDetailsSplitter->setName (mDetailsList.size() == 1 ? tr ("&Details") :
-        tr ("&Details (%1 of %2)").arg (mDetailsIndex + 1).arg (mDetailsList.size()));
+        tr ("&Details (%1 of %2)").arg (m_iDetailsIndex + 1).arg (mDetailsList.size()));
 }
 
 /**
@@ -444,18 +430,18 @@ void QIMessageBox::sltUpdateSize()
 
 void QIMessageBox::detailsBack()
 {
-    if (mDetailsIndex > 0)
+    if (m_iDetailsIndex > 0)
     {
-        -- mDetailsIndex;
+        -- m_iDetailsIndex;
         refreshDetails();
     }
 }
 
 void QIMessageBox::detailsNext()
 {
-    if (mDetailsIndex < mDetailsList.size() - 1)
+    if (m_iDetailsIndex < mDetailsList.size() - 1)
     {
-        ++ mDetailsIndex;
+        ++ m_iDetailsIndex;
         refreshDetails();
     }
 }
@@ -472,7 +458,7 @@ void QIMessageBox::reject()
 void QIMessageBox::copy() const
 {
     /* Create the error string with all errors. First the html version. */
-    QString strError = "<html><body><p>" + mText + "</p>";
+    QString strError = "<html><body><p>" + m_strMessage + "</p>";
     for (int i = 0; i < mDetailsList.size(); ++i)
         strError += mDetailsList.at(i).first + mDetailsList.at(i).second + "<br>";
     strError += "</body></html>";
