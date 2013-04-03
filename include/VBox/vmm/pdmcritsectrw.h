@@ -67,7 +67,7 @@ VMMDECL(int)        PDMCritSectRwTryEnterExcl(PPDMCRITSECTRW pCritSect);
 VMMDECL(int)        PDMCritSectRwTryEnterExclDebug(PPDMCRITSECTRW pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 VMMDECL(int)        PDMCritSectRwLeaveExcl(PPDMCRITSECTRW pCritSect);
 
-VMMDECL(bool)       PDMCritSectRwIsWriteOwner(PCRTCRITSECTRW pCritSect);
+VMMDECL(bool)       PDMCritSectRwIsWriteOwner(PPDMCRITSECTRW pCritSect);
 VMMDECL(bool)       PDMCritSectRwIsReadOwner(PPDMCRITSECTRW pCritSect, bool fWannaHear);
 VMMDECL(uint32_t)   PDMCritSectRwGetWriteRecursion(PPDMCRITSECTRW pCritSect);
 VMMDECL(uint32_t)   PDMCritSectRwGetWriterReadRecursion(PPDMCRITSECTRW pCritSect);
