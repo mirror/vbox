@@ -205,6 +205,11 @@ static void crServerTearDown( void )
     }
     cr_server.pCleanupClient = NULL;
 
+    if (crServerRpwIsInitialized(&cr_server.RpwWorker))
+    {
+        crServerRpwTerm(&cr_server.RpwWorker);
+    }
+
 #if 1
     /* disable these two lines if trying to get stack traces with valgrind */
     crSPUUnloadChain(cr_server.head_spu);
@@ -360,6 +365,8 @@ crServerInit(int argc, char *argv[])
     VBoxVrListInit(&cr_server.RootVr);
     crMemset(&cr_server.RootVrCurPoint, 0, sizeof (cr_server.RootVrCurPoint));
 
+    crMemset(&cr_server.RpwWorker, 0, sizeof (cr_server.RpwWorker));
+
     env = crGetenv("CR_SERVER_BFB");
     if (env)
     {
@@ -459,6 +466,8 @@ GLboolean crVBoxServerInit(void)
     cr_server.fRootVrOn = GL_FALSE;
     VBoxVrListInit(&cr_server.RootVr);
     crMemset(&cr_server.RootVrCurPoint, 0, sizeof (cr_server.RootVrCurPoint));
+
+    crMemset(&cr_server.RpwWorker, 0, sizeof (cr_server.RpwWorker));
 
     env = crGetenv("CR_SERVER_BFB");
     if (env)
@@ -2542,7 +2551,7 @@ int32_t crServerSetOffscreenRenderingMode(GLuint value)
 DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value)
 {
     return crServerSetOffscreenRenderingMode(value ?
-            cr_server.fPresentModeDefault | CR_SERVER_REDIR_F_FBO_RAM_VRDP
+            cr_server.fPresentModeDefault | CR_SERVER_REDIR_F_FBO_RAM_VRDP | cr_server.fVramPresentModeDefault
             : cr_server.fPresentModeDefault);
 }
 
