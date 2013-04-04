@@ -632,36 +632,58 @@ bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames) const
                            tr("Discard", "saved state"));
 }
 
-bool UIMessageCenter::confirmVMReset(const QString &strNames) const
+bool UIMessageCenter::confirmResetMachine(const QString &strNames) const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
                            tr("<p>Do you really want to reset the following virtual machines?</p>"
                               "<p><b>%1</b></p><p>This will cause any unsaved data "
                               "in applications running inside it to be lost.</p>")
                               .arg(strNames),
-                           "confirmVMReset" /* auto-confirm id */,
+                           "confirmResetMachine" /* auto-confirm id */,
                            tr("Reset", "machine"));
 }
 
-bool UIMessageCenter::confirmVMACPIShutdown(const QString &strNames) const
+bool UIMessageCenter::confirmACPIShutdownMachine(const QString &strNames) const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
                            tr("<p>Do you really want to send an ACPI shutdown signal "
                               "to the following virtual machines?</p><p><b>%1</b></p>")
                               .arg(strNames),
-                           "confirmVMACPIShutdown" /* auto-confirm id */,
+                           "confirmACPIShutdownMachine" /* auto-confirm id */,
                            tr("ACPI Shutdown", "machine"));
 }
 
-bool UIMessageCenter::confirmVMPowerOff(const QString &strNames) const
+bool UIMessageCenter::confirmPowerOffMachine(const QString &strNames) const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Question,
                            tr("<p>Do you really want to power off the following virtual machines?</p>"
                               "<p><b>%1</b></p><p>This will cause any unsaved data in applications "
                               "running inside it to be lost.</p>")
                               .arg(strNames),
-                           "confirmVMPowerOff" /* auto-confirm id */,
+                           "confirmPowerOffMachine" /* auto-confirm id */,
                            tr("Power Off", "machine"));
+}
+
+void UIMessageCenter::cannotPauseMachine(const CConsole &console) const
+{
+    /* Preserve error-info: */
+    COMResult res(console);
+    /* Show the message: */
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to pause the execution of the virtual machine <b>%1</b>.")
+               .arg(console.GetMachine().GetName()),
+            formatErrorInfo(res));
+}
+
+void UIMessageCenter::cannotResumeMachine(const CConsole &console) const
+{
+    /* Preserve error-info: */
+    COMResult res(console);
+    /* Show the message: */
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to resume the execution of the virtual machine <b>%1</b>.")
+               .arg(console.GetMachine().GetName()),
+            formatErrorInfo(res));
 }
 
 void UIMessageCenter::cannotDiscardSavedState(const CConsole &console) const
@@ -675,7 +697,38 @@ void UIMessageCenter::cannotDiscardSavedState(const CConsole &console) const
             formatErrorInfo(res));
 }
 
-void UIMessageCenter::cannotStopMachine(const CConsole &console) const
+void UIMessageCenter::cannotSaveMachineState(const CConsole &console)
+{
+    /* Preserve error-info: */
+    COMResult res(console);
+    /* Show the message: */
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to save the state of the virtual machine <b>%1</b>.")
+               .arg(console.GetMachine().GetName()),
+            formatErrorInfo(res));
+}
+
+void UIMessageCenter::cannotSaveMachineState(const CProgress &progress, const QString &strName)
+{
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to save the state of the virtual machine <b>%1</b>.")
+               .arg(strName),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
+}
+
+void UIMessageCenter::cannotACPIShutdownMachine(const CConsole &console) const
+{
+    /* Preserve error-info: */
+    COMResult res(console);
+    /* Show the message: */
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to send the ACPI Power Button press event to the "
+               "virtual machine <b>%1</b>.")
+               .arg(console.GetMachine().GetName()),
+            formatErrorInfo(res));
+}
+
+void UIMessageCenter::cannotPowerDownMachine(const CConsole &console) const
 {
     /* Preserve error-info: */
     COMResult res(console);
@@ -684,6 +737,14 @@ void UIMessageCenter::cannotStopMachine(const CConsole &console) const
             tr("Failed to stop the virtual machine <b>%1</b>.")
                .arg(console.GetMachine().GetName()),
             formatErrorInfo(res));
+}
+
+void UIMessageCenter::cannotPowerDownMachine(const CProgress &progress, const QString &strName) const
+{
+    message(mainWindowShown(), MessageType_Error,
+            tr("Failed to stop the virtual machine <b>%1</b>.")
+                .arg(strName),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
 int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const
@@ -739,6 +800,22 @@ bool UIMessageCenter::warnAboutSnapshotRemovalFreeSpace(const QString &strSnapsh
                                .arg(strTargetFileSystemFree),
                            0 /* auto-confirm id */,
                            tr("Delete"));
+}
+
+void UIMessageCenter::cannotTakeSnapshot(const CConsole &console, const QString &strMachineName, QWidget *pParent /*= 0*/) const
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
+               .arg(strMachineName),
+            formatErrorInfo(console));
+}
+
+void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent /*= 0*/) const
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
+               .arg(strMachineName),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
 void UIMessageCenter::cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName, QWidget *pParent /*= 0*/) const
@@ -1386,23 +1463,30 @@ void UIMessageCenter::cannotFindSnapshotByName(const CMachine &machine, const QS
             formatErrorInfo(machine));
 }
 
-void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal,
-                                       const QString &strErrorId,
-                                       const QString &strErrorMsg) const
+void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const
 {
+    /* Prepare auto-confirm id: */
     QByteArray autoConfimId = "showRuntimeError.";
 
+    /* Prepare variables: */
     CConsole console1 = console;
     KMachineState state = console1.GetState();
     MessageType type;
     QString severity;
 
+    // TODO: Move to Runtime UI!
+    /* Preprocessing: */
     if (fFatal)
     {
-        /* the machine must be paused on fFatal errors */
+        /* The machine must be paused on fFatal errors: */
         Assert(state == KMachineState_Paused);
         if (state != KMachineState_Paused)
             console1.Pause();
+    }
+
+    /* Compose type, severity, advance confirm id: */
+    if (fFatal)
+    {
         type = MessageType_Critical;
         severity = tr("<nobr>Fatal Error</nobr>", "runtime error info");
         autoConfimId += "fatal.";
@@ -1419,247 +1503,121 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal,
         severity = tr("<nobr>Warning</nobr>", "runtime error info");
         autoConfimId += "warning.";
     }
-
+    /* Advance auto-confirm id: */
     autoConfimId += strErrorId.toUtf8();
 
+    /* Format error-details: */
     QString formatted("<!--EOM-->");
-
     if (!strErrorMsg.isEmpty())
         formatted.prepend(QString("<p>%1.</p>").arg(vboxGlobal().emphasize(strErrorMsg)));
-
     if (!strErrorId.isEmpty())
         formatted += QString("<table bgcolor=#EEEEEE border=0 cellspacing=0 "
                              "cellpadding=0 width=100%>"
                              "<tr><td>%1</td><td>%2</td></tr>"
                              "<tr><td>%3</td><td>%4</td></tr>"
                              "</table>")
-                              .arg(tr("<nobr>Error ID: </nobr>", "runtime error info"),
-                                    strErrorId)
-                              .arg(tr("Severity: ", "runtime error info"),
-                                    severity);
-
+                             .arg(tr("<nobr>Error ID: </nobr>", "runtime error info"), strErrorId)
+                             .arg(tr("Severity: ", "runtime error info"), severity);
     if (!formatted.isEmpty())
         formatted = "<qt>" + formatted + "</qt>";
 
-    int rc = 0;
-
+    /* Show the message: */
     if (type == MessageType_Critical)
     {
-        rc = message(mainMachineWindowShown(), type,
-            tr("<p>A fatal error has occurred during virtual machine execution! "
-               "The virtual machine will be powered off. Please copy the "
-               "following error message using the clipboard to help diagnose "
-               "the problem:</p>"),
-            formatted, autoConfimId.data());
-
-        /* always power down after a fFatal error */
-        console1.PowerDown();
+        message(mainMachineWindowShown(), type,
+                tr("<p>A fatal error has occurred during virtual machine execution! "
+                   "The virtual machine will be powered off. Please copy the following error message "
+                   "using the clipboard to help diagnose the problem:</p>"),
+                formatted, autoConfimId.data());
     }
     else if (type == MessageType_Error)
     {
-        rc = message(mainMachineWindowShown(), type,
-            tr("<p>An error has occurred during virtual machine execution! "
-               "The error details are shown below. You may try to correct "
-               "the error and resume the virtual machine "
-               "execution.</p>"),
-            formatted, autoConfimId.data());
+        message(mainMachineWindowShown(), type,
+                tr("<p>An error has occurred during virtual machine execution! "
+                   "The error details are shown below. You may try to correct the error "
+                   "and resume the virtual machine execution.</p>"),
+                formatted, autoConfimId.data());
     }
     else
     {
-        rc = message(mainMachineWindowShown(), type,
-            tr("<p>The virtual machine execution may run into an error "
-               "condition as described below. "
-               "We suggest that you take "
-               "an appropriate action to avert the error."
-               "</p>"),
-            formatted, autoConfimId.data());
+        message(mainMachineWindowShown(), type,
+                tr("<p>The virtual machine execution may run into an error condition as described below. "
+                   "We suggest that you take an appropriate action to avert the error.</p>"),
+                formatted, autoConfimId.data());
     }
 
-    NOREF(rc);
+    // TODO: Move to Runtime UI!
+    /* Postprocessing: */
+    if (fFatal)
+    {
+        /* Power down after a fFatal error: */
+        console1.PowerDown();
+    }
 }
 
 bool UIMessageCenter::warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported)
 {
     if (fHWVirtExSupported)
-        return messageOkCancel(mainWindowShown(), MessageType_Error,
-            tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is "
-                "not operational. Your 64-bit guest will fail to detect a "
-                "64-bit CPU and will not be able to boot.</p><p>Please ensure "
-                "that you have enabled VT-x/AMD-V properly in the BIOS of your "
-                "host computer.</p>"),
-            0 /* auto-confirm id */,
-            tr("Close VM"), tr("Continue"));
+        return messageOkCancel(mainMachineWindowShown(), MessageType_Error,
+                               tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is "
+                                  "not operational. Your 64-bit guest will fail to detect a "
+                                  "64-bit CPU and will not be able to boot.</p><p>Please ensure "
+                                  "that you have enabled VT-x/AMD-V properly in the BIOS of your "
+                                  "host computer.</p>"),
+                               0 /* auto-confirm id */,
+                               tr("Close VM"), tr("Continue"));
     else
-        return messageOkCancel(mainWindowShown(), MessageType_Error,
-            tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
-                "Your 64-bit guest will fail to detect a 64-bit CPU and will "
-                "not be able to boot."),
-            0 /* auto-confirm id */,
-            tr("Close VM"), tr("Continue"));
+        return messageOkCancel(mainMachineWindowShown(), MessageType_Error,
+                               tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
+                                  "Your 64-bit guest will fail to detect a 64-bit CPU and will "
+                                  "not be able to boot."),
+                               0 /* auto-confirm id */,
+                               tr("Close VM"), tr("Continue"));
 }
 
 bool UIMessageCenter::warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported)
 {
     if (fHWVirtExSupported)
-        return messageOkCancel(mainWindowShown(), MessageType_Error,
-            tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is "
-                "not operational. Certain guests (e.g. OS/2 and QNX) require "
-                "this feature.</p><p>Please ensure "
-                "that you have enabled VT-x/AMD-V properly in the BIOS of your "
-                "host computer.</p>"),
-            0 /* auto-confirm id */,
-            tr("Close VM"), tr("Continue"));
+        return messageOkCancel(mainMachineWindowShown(), MessageType_Error,
+                               tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is not operational. "
+                                  "Certain guests (e.g. OS/2 and QNX) require this feature.</p>"
+                                  "<p>Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.</p>"),
+                               0 /* auto-confirm id */,
+                               tr("Close VM"), tr("Continue"));
     else
-        return messageOkCancel(mainWindowShown(), MessageType_Error,
-            tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
-                "Certain guests (e.g. OS/2 and QNX) require this feature and will "
-                "fail to boot without it.</p>"),
-            0 /* auto-confirm id */,
-            tr("Close VM"), tr("Continue"));
+        return messageOkCancel(mainMachineWindowShown(), MessageType_Error,
+                               tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
+                                  "Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.</p>"),
+                               0 /* auto-confirm id */,
+                               tr("Close VM"), tr("Continue"));
 }
 
-bool UIMessageCenter::cannotStartWithoutNetworkIf(const QString &strMachineName,
-                                                  const QString &strIfNames)
+bool UIMessageCenter::cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames)
 {
     return messageOkCancel(mainMachineWindowShown(), MessageType_Error,
-             tr("<p>Could not start the machine <b>%1</b> because the "
-                "following physical network interfaces were not found:</p>"
-                "<p><b>%2</b></p>"
-                "<p>You can either change the machine's network "
-                "settings or stop the machine.</p>")
-             .arg(strMachineName)
-             .arg(strIfNames),
-             0 /* auto-confirm id */,
-             tr("Change Network Settings"),
-             tr("Close Virtual Machine"));
+                           tr("<p>Could not start the machine <b>%1</b> because the following "
+                              "physical network interfaces were not found:</p><p><b>%2</b></p>"
+                              "<p>You can either change the machine's network settings or stop the machine.</p>")
+                              .arg(strMachineName)
+                              .arg(strIfNames),
+                           0 /* auto-confirm id */,
+                           tr("Change Network Settings"), tr("Close VM"));
 }
 
-void UIMessageCenter::cannotStartMachine(const CConsole &console)
+void UIMessageCenter::cannotStartMachine(const CConsole &console, const QString &strName)
 {
-    /* preserve the current error info before calling the object again */
-    COMResult res(console);
-
-    message(mainWindowShown(), MessageType_Error,
-        tr("Failed to start the virtual machine <b>%1</b>.")
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(res));
+    message(mainMachineWindowShown(), MessageType_Error,
+            tr("Failed to start the virtual machine <b>%1</b>.")
+               .arg(strName),
+            formatErrorInfo(console));
 }
 
-void UIMessageCenter::cannotStartMachine(const CProgress &progress)
+void UIMessageCenter::cannotStartMachine(const CProgress &progress, const QString &strName)
 {
-    /* Get console: */
-    AssertWrapperOk(progress);
-    CConsole console(CProgress(progress).GetInitiator());
-    AssertWrapperOk(console);
-    /* Show the message: */
-    message(
-        mainWindowShown(),
-        MessageType_Error,
-        tr("Failed to start the virtual machine <b>%1</b>.")
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(progress.GetErrorInfo())
-    );
-}
-
-void UIMessageCenter::cannotPauseMachine(const CConsole &console)
-{
-    /* preserve the current error info before calling the object again */
-    COMResult res(console);
-
-    message(mainWindowShown(), MessageType_Error,
-        tr("Failed to pause the execution of the virtual machine <b>%1</b>.")
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(res));
-}
-
-void UIMessageCenter::cannotResumeMachine(const CConsole &console)
-{
-    /* preserve the current error info before calling the object again */
-    COMResult res(console);
-
-    message(mainWindowShown(), MessageType_Error,
-        tr("Failed to resume the execution of the virtual machine <b>%1</b>.")
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(res));
-}
-
-void UIMessageCenter::cannotACPIShutdownMachine(const CConsole &console)
-{
-    /* preserve the current error info before calling the object again */
-    COMResult res(console);
-
-    message(mainWindowShown(), MessageType_Error,
-        tr("Failed to send the ACPI Power Button press event to the "
-            "virtual machine <b>%1</b>.")
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(res));
-}
-
-void UIMessageCenter::cannotSaveMachineState(const CConsole &console)
-{
-    /* preserve the current error info before calling the object again */
-    COMResult res(console);
-
-    message(mainWindowShown(), MessageType_Error,
-        tr("Failed to save the state of the virtual machine <b>%1</b>.")
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(res));
-}
-
-void UIMessageCenter::cannotSaveMachineState(const CProgress &progress)
-{
-    /* Get console: */
-    AssertWrapperOk(progress);
-    CConsole console(CProgress(progress).GetInitiator());
-    AssertWrapperOk(console);
-    /* Show the message: */
-    message(
-        mainWindowShown(),
-        MessageType_Error,
-        tr("Failed to save the state of the virtual machine <b>%1</b>.")
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(progress.GetErrorInfo())
-    );
-}
-
-void UIMessageCenter::cannotTakeSnapshot(const CConsole &console)
-{
-    /* preserve the current error info before calling the object again */
-    COMResult res(console);
-
-    message(mainWindowShown(), MessageType_Error,
-        tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(res));
-}
-
-void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress)
-{
-    /* Get console: */
-    AssertWrapperOk(progress);
-    CConsole console(CProgress(progress).GetInitiator());
-    AssertWrapperOk(console);
-    /* Show the message: */
-    message(
-        mainWindowShown(),
-        MessageType_Error,
-        tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(progress.GetErrorInfo())
-    );
-}
-
-void UIMessageCenter::cannotStopMachine(const CProgress &progress)
-{
-    /* Get console: */
-    AssertWrapperOk(progress);
-    CConsole console(CProgress(progress).GetInitiator());
-    AssertWrapperOk(console);
-    /* Show the message: */
-    message(mainWindowShown(), MessageType_Error,
-        tr("Failed to stop the virtual machine <b>%1</b>.")
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(progress.GetErrorInfo()));
+    message(mainMachineWindowShown(), MessageType_Error,
+            tr("Failed to start the virtual machine <b>%1</b>.")
+               .arg(strName),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
 void UIMessageCenter::cannotSendACPIToMachine()

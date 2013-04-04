@@ -224,17 +224,25 @@ public:
     void cannotRemoveMachine(const CMachine &machine, const CProgress &progress) const;
     bool remindAboutInaccessibleMedia() const;
     bool confirmDiscardSavedState(const QString &strNames) const;
-    bool confirmVMReset(const QString &strNames) const;
-    bool confirmVMACPIShutdown(const QString &strNames) const;
-    bool confirmVMPowerOff(const QString &strNames) const;
+    bool confirmResetMachine(const QString &strNames) const;
+    bool confirmACPIShutdownMachine(const QString &strNames) const;
+    bool confirmPowerOffMachine(const QString &strNames) const;
+    void cannotPauseMachine(const CConsole &console) const;
+    void cannotResumeMachine(const CConsole &console) const;
     void cannotDiscardSavedState(const CConsole &console) const;
-    void cannotStopMachine(const CConsole &console) const;
+    void cannotSaveMachineState(const CConsole &console);
+    void cannotSaveMachineState(const CProgress &progress, const QString &strName);
+    void cannotACPIShutdownMachine(const CConsole &console) const;
+    void cannotPowerDownMachine(const CConsole &console) const;
+    void cannotPowerDownMachine(const CProgress &progress, const QString &strName) const;
 
     /* API: Snapshot warnings: */
     int confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const;
     bool confirmSnapshotRemoval(const QString &strSnapshotName) const;
     bool warnAboutSnapshotRemovalFreeSpace(const QString &strSnapshotName, const QString &strTargetImageName,
                                            const QString &strTargetImageMaxSize, const QString &strTargetFileSystemFree) const;
+    void cannotTakeSnapshot(const CConsole &console, const QString &strMachineName, QWidget *pParent = 0) const;
+    void cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0) const;
     void cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName, QWidget *pParent = 0) const;
     void cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName, QWidget *pParent = 0) const;
     void cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const;
@@ -290,22 +298,12 @@ public:
     void cannotFindSnapshotByName(const CMachine &machine, const QString &strMachine, QWidget *pParent = 0) const;
 
     /* API: Runtime UI warnings: */
-    void showRuntimeError(const CConsole &console, bool fFatal,
-                          const QString &strErrorId,
-                          const QString &strErrorMsg) const;
+    void showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const;
     bool warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported);
     bool warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported);
     bool cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames);
-    void cannotStartMachine(const CConsole &console);
-    void cannotStartMachine(const CProgress &progress);
-    void cannotPauseMachine(const CConsole &console);
-    void cannotResumeMachine(const CConsole &console);
-    void cannotACPIShutdownMachine(const CConsole &console);
-    void cannotSaveMachineState(const CConsole &console);
-    void cannotSaveMachineState(const CProgress &progress);
-    void cannotTakeSnapshot(const CConsole &console);
-    void cannotTakeSnapshot(const CProgress &progress);
-    void cannotStopMachine(const CProgress &progress);
+    void cannotStartMachine(const CConsole &console, const QString &strName);
+    void cannotStartMachine(const CProgress &progress, const QString &strName);
     void cannotSendACPIToMachine();
     bool confirmInputCapture(bool *pfAutoConfirmed = NULL);
     void remindAboutAutoCapture();

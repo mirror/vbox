@@ -87,13 +87,13 @@ bool UIWizardCloneVM::cloneVM()
 
             if (!progress.isOk() || progress.GetResultCode() != 0)
             {
-                msgCenter().cannotTakeSnapshot(progress);
+                msgCenter().cannotTakeSnapshot(progress, m_machine.GetName(), this);
                 return false;
             }
         }
         else
         {
-            msgCenter().cannotTakeSnapshot(console);
+            msgCenter().cannotTakeSnapshot(console, m_machine.GetName(), this);
             return false;
         }
 
