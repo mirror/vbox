@@ -5532,9 +5532,6 @@ static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Log(("hmR0VmxLongJmpToRing3: rcExit=%d\n", rcExit));
 
-    /* We're going back to ring-3, clear the flag that we need to go back to ring-3. */
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
-
     int rc = hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);
     AssertRC(rc);
 
@@ -5549,21 +5546,6 @@ static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int
         CPUMR0LoadHostDebugState(pVM, pVCpu);
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
     }
-
-    /* Signal changes to the recompiler. */
-    CPUMSetChangedFlags(pVCpu,  CPUM_CHANGED_SYSENTER_MSR
-                              | CPUM_CHANGED_LDTR
-                              | CPUM_CHANGED_GDTR
-                              | CPUM_CHANGED_IDTR
-                              | CPUM_CHANGED_TR
-                              | CPUM_CHANGED_HIDDEN_SEL_REGS);
-
-    /* On our way back from ring-3 the following needs to be done. */
-    /** @todo This can change with preemption hooks. */
-    if (rcExit == VINF_EM_RAW_INTERRUPT)
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
-    else
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchToR3);
 }
@@ -5600,8 +5582,26 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
     /* We need to do this only while truly exiting the "inner loop" back to ring-3 and -not- for any longjmp to ring3. */
     hmR0VmxUpdateTRPMTrap(pVCpu);
 
-    /* Sync. the rest of the state before going back to ring-3. */
+    /* Sync. the guest state. */
     hmR0VmxLongJmpToRing3(pVM, pVCpu, pMixedCtx, rcExit);
+
+    /* We're going back to ring-3, clear the flag that we need to go back to ring-3. */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
+
+    /* Signal changes to the recompiler. */
+    CPUMSetChangedFlags(pVCpu,  CPUM_CHANGED_SYSENTER_MSR
+                              | CPUM_CHANGED_LDTR
+                              | CPUM_CHANGED_GDTR
+                              | CPUM_CHANGED_IDTR
+                              | CPUM_CHANGED_TR
+                              | CPUM_CHANGED_HIDDEN_SEL_REGS);
+
+    /* On our way back from ring-3 the following needs to be done. */
+    /** @todo This can change with preemption hooks. */
+    if (rcExit == VINF_EM_RAW_INTERRUPT)
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
+    else
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
 
     VMMRZCallRing3Enable(pVCpu);
 }
@@ -6386,7 +6386,7 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
     Assert(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_CONTEXT));
     int rc = VMXR0LoadGuestState(pVM, pVCpu, pMixedCtx);
     AssertRC(rc);
-    AssertMsg(pVCpu->hm.s.fContextUseFlags == 0, ("fContextUseFlags =%#x\n", pVCpu->hm.s.fContextUseFlags));
+    AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags =%#x\n", pVCpu->hm.s.fContextUseFlags));
 
     /* Cache the TPR-shadow for checking on every VM-exit if it might have changed. */
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
@@ -6600,7 +6600,6 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     return rc;
 }
 
-/* Validates input parameters for VM-exit handler functions. Later change this to be debug builds only. */
 #ifdef DEBUG
 /* Is there some generic IPRT define for this that are not in Runtime/internal/\* ?? */
 # define VMX_ASSERT_PREEMPT_CPUID_VAR() \
