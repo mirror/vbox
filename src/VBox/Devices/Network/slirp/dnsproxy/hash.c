@@ -29,7 +29,7 @@
 #define HASH(id) (id & ((1 << HASHSIZE) - 1))
 
 static struct request *request_hash[1 << HASHSIZE];
-#else
+#else /* VBOX */
 # include "slirp.h"
 #endif
 
