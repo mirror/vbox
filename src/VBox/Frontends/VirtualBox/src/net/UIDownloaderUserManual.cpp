@@ -76,7 +76,7 @@ UIDownloaderUserManual::~UIDownloaderUserManual()
 
 bool UIDownloaderUserManual::askForDownloadingConfirmation(UINetworkReply *pReply)
 {
-    return msgCenter().confirmUserManualDownload(source().toString(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
+    return msgCenter().confirmDownloadUserManual(source().toString(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
 }
 
 void UIDownloaderUserManual::handleDownloadedObject(UINetworkReply *pReply)
@@ -102,7 +102,7 @@ void UIDownloaderUserManual::handleDownloadedObject(UINetworkReply *pReply)
         }
 
         /* Warn user about user-manual was downloaded but was NOT saved: */
-        msgCenter().warnAboutUserManualCantBeSaved(source().toString(), QDir::toNativeSeparators(target()));
+        msgCenter().cannotSaveUserManual(source().toString(), QDir::toNativeSeparators(target()));
 
         /* Ask the user for another location for the user-manual file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),

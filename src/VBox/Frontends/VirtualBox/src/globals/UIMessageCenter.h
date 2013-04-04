@@ -324,35 +324,37 @@ public:
     void remindAboutGuestAdditionsAreNotActive(QWidget *pParent = 0);
 
     /* API: Network management warnings: */
-    bool askAboutCancelAllNetworkRequest(QWidget *pParent);
+    bool confirmCancelingAllNetworkRequests();
     void showUpdateSuccess(const QString &strVersion, const QString &strLink);
     void showUpdateNotFound();
+    bool askUserToDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion, const QString &strVBoxVersion);
 
     /* API: Downloading warnings: */
-    bool cannotFindGuestAdditions();
-    bool confirmDownloadAdditions(const QString &strUrl, qulonglong uSize);
-    bool confirmMountAdditions(const QString &strUrl, const QString &strSrc);
-    void cannotMountGuestAdditions(const QString &strMachineName);
-    void warnAboutAdditionsCantBeSaved(const QString &strTarget);
-    bool askAboutUserManualDownload(const QString &strMissedLocation);
-    bool confirmUserManualDownload(const QString &strURL, qulonglong uSize);
-    void warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget);
-    void warnAboutUserManualCantBeSaved(const QString &strURL, const QString &strTarget);
-    bool proposeDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion);
-    bool requestUserDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion, const QString &strVBoxVersion);
-    bool confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize);
-    bool proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo);
-    void warnAboutExtentionPackCantBeSaved(const QString &strExtPackName, const QString &strFrom, const QString &strTo);
-    void cannotUpdateGuestAdditions(const CProgress &progress, QWidget *pParent /* = NULL */) const;
-    void cannotOpenExtPack(const QString &strFilename, const CExtPackManager &extPackManager, QWidget *pParent);
-    void badExtPackFile(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent);
-    void cannotInstallExtPack(const QString &strFilename, const CExtPackFile &extPackFile, const CProgress &progress, QWidget *pParent);
-    void cannotUninstallExtPack(const QString &strPackName, const CExtPackManager &extPackManager, const CProgress &progress, QWidget *pParent);
-    bool confirmInstallingPackage(const QString &strPackName, const QString &strPackVersion, const QString &strPackDescription, QWidget *pParent);
-    bool confirmReplacePackage(const QString &strPackName, const QString &strPackVersionNew, const QString &strPackVersionOld,
-                               const QString &strPackDescription, QWidget *pParent);
-    bool confirmRemovingPackage(const QString &strPackName, QWidget *pParent);
-    void notifyAboutExtPackInstalled(const QString &strPackName, QWidget *pParent);
+    bool cannotFindGuestAdditions() const;
+    bool confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const;
+    void cannotSaveGuestAdditions(const QString &strURL, const QString &strTarget) const;
+    bool proposeMountGuestAdditions(const QString &strUrl, const QString &strSrc) const;
+    void cannotMountGuestAdditions(const QString &strMachineName) const;
+    void cannotUpdateGuestAdditions(const CProgress &progress) const;
+    bool cannotFindUserManual(const QString &strMissedLocation) const;
+    bool confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const;
+    void cannotSaveUserManual(const QString &strURL, const QString &strTarget) const;
+    void warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget) const;
+    bool warAboutOutdatedExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const;
+    bool confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const;
+    void cannotSaveExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
+    bool proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const;
+    bool confirmInstallExtensionPack(const QString &strPackName, const QString &strPackVersion, const QString &strPackDescription, QWidget *pParent = 0) const;
+    bool confirmReplaceExtensionPack(const QString &strPackName, const QString &strPackVersionNew, const QString &strPackVersionOld,
+                                     const QString &strPackDescription, QWidget *pParent = 0) const;
+    bool confirmRemoveExtensionPack(const QString &strPackName, QWidget *pParent = 0) const;
+    void cannotOpenExtPack(const QString &strFilename, const CExtPackManager &extPackManager, QWidget *pParent = 0) const;
+    void warnAboutBadExtPackFile(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent = 0) const;
+    void cannotInstallExtPack(const CExtPackFile &extPackFile, const QString &strFilename, QWidget *pParent = 0) const;
+    void cannotInstallExtPack(const CProgress &progress, const QString &strFilename, QWidget *pParent = 0) const;
+    void cannotUninstallExtPack(const CExtPackManager &extPackManager, const QString &strPackName, QWidget *pParent = 0) const;
+    void cannotUninstallExtPack(const CProgress &progress, const QString &strPackName, QWidget *pParent = 0) const;
+    void warnAboutExtPackInstalled(const QString &strPackName, QWidget *pParent = 0) const;
 
     /* API: License-viewer warnings: */
     void cannotOpenLicenseFile(QWidget *pParent, const QString &strPath);

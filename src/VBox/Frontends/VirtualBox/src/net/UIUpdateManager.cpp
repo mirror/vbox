@@ -413,14 +413,14 @@ private slots:
         if (strExtPackEdition.contains("ENTERPRISE"))
         {
             /* Inform the user that he should update the extension pack: */
-            msgCenter().requestUserDownloadExtensionPack(GUI_ExtPackName, strExtPackVersion, strVBoxVersion);
+            msgCenter().askUserToDownloadExtensionPack(GUI_ExtPackName, strExtPackVersion, strVBoxVersion);
             /* Never try to download for ENTERPRISE version: */
             emit sigStepComplete();
             return;
         }
 
         /* Ask the user about extension pack downloading: */
-        if (!msgCenter().proposeDownloadExtensionPack(GUI_ExtPackName, strExtPackVersion))
+        if (!msgCenter().warAboutOutdatedExtensionPack(GUI_ExtPackName, strExtPackVersion))
         {
             emit sigStepComplete();
             return;

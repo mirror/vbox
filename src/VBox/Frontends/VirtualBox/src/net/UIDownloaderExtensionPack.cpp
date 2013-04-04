@@ -115,7 +115,7 @@ void UIDownloaderExtensionPack::handleDownloadedObject(UINetworkReply *pReply)
         }
 
         /* Warn the user about extension-pack was downloaded but was NOT saved: */
-        msgCenter().warnAboutExtentionPackCantBeSaved(GUI_ExtPackName, source().toString(), QDir::toNativeSeparators(target()));
+        msgCenter().cannotSaveExtensionPack(GUI_ExtPackName, source().toString(), QDir::toNativeSeparators(target()));
 
         /* Ask the user for another location for the extension-pack file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
