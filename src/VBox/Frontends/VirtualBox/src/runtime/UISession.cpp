@@ -208,7 +208,7 @@ void UISession::powerUp()
     if (!console.isOk())
     {
         if (vboxGlobal().showStartVMErrors())
-            msgCenter().cannotStartMachine(console);
+            msgCenter().cannotStartMachine(console, machine.GetName());
         closeRuntimeUI();
         return;
     }
@@ -224,16 +224,15 @@ void UISession::powerUp()
         /* If restoring from saved state, guest MachineView
            should be notified about host MachineWindow geometry change */
         adjustGuestView();
-
     }
     else
         msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_start_90px.png", mainMachineWindow());
 
     /* Check for a progress failure: */
-    if (progress.GetResultCode() != 0)
+    if (!progress.isOk() || progress.GetResultCode() != 0)
     {
         if (vboxGlobal().showStartVMErrors())
-            msgCenter().cannotStartMachine(progress);
+            msgCenter().cannotStartMachine(progress, machine.GetName());
         closeRuntimeUI();
         return;
     }
@@ -281,14 +280,14 @@ void UISession::powerUp()
                     uimachine()->machineLogic()->setPreventAutoClose(true);
                 /* Show the power down progress dialog */
                 msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png", mainMachineWindow());
-                if (progress.GetResultCode() != 0)
-                    msgCenter().cannotStopMachine(progress);
+                if (!progress.isOk() || progress.GetResultCode() != 0)
+                    msgCenter().cannotPowerDownMachine(progress, machine.GetName());
                 /* Allow further auto-closing: */
                 if (uimachine()->machineLogic())
                     uimachine()->machineLogic()->setPreventAutoClose(false);
             }
             else
-                msgCenter().cannotStopMachine(console);
+                msgCenter().cannotPowerDownMachine(console);
             closeRuntimeUI();
             return;
         }
@@ -323,10 +322,10 @@ bool UISession::saveState()
         msgCenter().showModalProgressDialog(progress, machine.GetName(),
                                             ":/progress_state_save_90px.png",
                                             machineLogic()->activeMachineWindow());
-        if (progress.GetResultCode() != 0)
+        if (!progress.isOk() || progress.GetResultCode() != 0)
         {
             /* Failed in progress: */
-            msgCenter().cannotSaveMachineState(progress);
+            msgCenter().cannotSaveMachineState(progress, machine.GetName());
             return false;
         }
     }
@@ -405,7 +404,7 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
         else
         {
             /* Failed in progress: */
-            msgCenter().cannotStopMachine(progress);
+            msgCenter().cannotPowerDownMachine(progress, machine.GetName());
             return false;
         }
     }
@@ -417,7 +416,7 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
         if (FAILED_DEAD_INTERFACE(res.rc()))
             fServerCrashed = true;
         else
-            msgCenter().cannotStopMachine(console);
+            msgCenter().cannotPowerDownMachine(console);
         return false;
     }
     /* Passed: */

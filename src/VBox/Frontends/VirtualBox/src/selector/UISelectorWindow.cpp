@@ -561,7 +561,7 @@ void UISelectorWindow::sltPerformResetAction()
     AssertMsg(!machineNames.isEmpty(), ("This action should not be allowed!"));
 
     /* Confirm reseting VM: */
-    if (!msgCenter().confirmVMReset(machineNames.join(", ")))
+    if (!msgCenter().confirmResetMachine(machineNames.join(", ")))
         return;
 
     /* For each selected item: */
@@ -602,18 +602,18 @@ void UISelectorWindow::sltPerformSaveAction()
 
         /* Get session console: */
         CConsole console = session.GetConsole();
-        /* Save machine state: */
+        /* Prepare machine state saving: */
         CProgress progress = console.SaveState();
-        if (!console.isOk())
-            msgCenter().cannotSaveMachineState(console);
-        else
+        if (console.isOk())
         {
-            /* Show the "VM saving" progress dialog: */
+            /* Show machine state saving progress: */
             CMachine machine = session.GetMachine();
             msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_save_90px.png", this);
-            if (progress.GetResultCode() != 0)
-                msgCenter().cannotSaveMachineState(progress);
+            if (!progress.isOk() || progress.GetResultCode() != 0)
+                msgCenter().cannotSaveMachineState(progress, machine.GetName());
         }
+        else
+            msgCenter().cannotSaveMachineState(console);
 
         /* Unlock machine finally: */
         session.UnlockMachine();
@@ -638,7 +638,7 @@ void UISelectorWindow::sltPerformACPIShutdownAction()
     AssertMsg(!machineNames.isEmpty(), ("This action should not be allowed!"));
 
     /* Confirm ACPI shutdown current VM: */
-    if (!msgCenter().confirmVMACPIShutdown(machineNames.join(", ")))
+    if (!msgCenter().confirmACPIShutdownMachine(machineNames.join(", ")))
         return;
 
     /* For each selected item: */
@@ -653,6 +653,8 @@ void UISelectorWindow::sltPerformACPIShutdownAction()
         CConsole console = session.GetConsole();
         /* ACPI Shutdown: */
         console.PowerButton();
+        if (!console.isOk())
+            msgCenter().cannotACPIShutdownMachine(console);
 
         /* Unlock machine finally: */
         session.UnlockMachine();
@@ -677,7 +679,7 @@ void UISelectorWindow::sltPerformPowerOffAction()
     AssertMsg(!machineNames.isEmpty(), ("This action should not be allowed!"));
 
     /* Confirm Power Off current VM: */
-    if (!msgCenter().confirmVMPowerOff(machineNames.join(", ")))
+    if (!msgCenter().confirmPowerOffMachine(machineNames.join(", ")))
         return;
 
     /* For each selected item: */
@@ -690,10 +692,18 @@ void UISelectorWindow::sltPerformPowerOffAction()
 
         /* Get session console: */
         CConsole console = session.GetConsole();
-        /* Power Off: */
-        console.PowerDown();
-        if (!console.isOk())
-            msgCenter().cannotStopMachine(console);
+        /* Prepare machine power down: */
+        CProgress progress = console.PowerDown();
+        if (console.isOk())
+        {
+            /* Show machine power down progress: */
+            CMachine machine = session.GetMachine();
+            msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png", this);
+            if (!progress.isOk() || progress.GetResultCode() != 0)
+                msgCenter().cannotPowerDownMachine(progress, machine.GetName());
+        }
+        else
+            msgCenter().cannotPowerDownMachine(console);
 
         /* Unlock machine finally: */
         session.UnlockMachine();

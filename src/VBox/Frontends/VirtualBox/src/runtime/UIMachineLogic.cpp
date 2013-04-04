@@ -324,7 +324,7 @@ void UIMachineLogic::sltMachineStateChanged()
             {
                 console.PowerDown();
                 if (!console.isOk())
-                    msgCenter().cannotStopMachine(console);
+                    msgCenter().cannotPowerDownMachine(console);
             }
             break;
         }
@@ -1024,11 +1024,11 @@ void UIMachineLogic::sltTakeSnapshot()
             {
                 /* Show the take-snapshot progress: */
                 msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_create_90px.png", activeMachineWindow());
-                if (progress.GetResultCode() != 0)
-                    msgCenter().cannotTakeSnapshot(progress);
+                if (!progress.isOk() || progress.GetResultCode() != 0)
+                    msgCenter().cannotTakeSnapshot(progress, machine.GetName(), activeMachineWindow());
             }
             else
-                msgCenter().cannotTakeSnapshot(console);
+                msgCenter().cannotTakeSnapshot(console, machine.GetName(), activeMachineWindow());
         }
     }
 
@@ -1124,12 +1124,13 @@ void UIMachineLogic::sltShowInformationDialog()
 void UIMachineLogic::sltReset()
 {
     /* Confirm/Reset current console: */
-    if (msgCenter().confirmVMReset(0))
+    CMachine machine = session().GetMachine();
+    if (msgCenter().confirmResetMachine(machine.GetName()))
         session().GetConsole().Reset();
 
     /* TODO_NEW_CORE: On reset the additional screens didn't get a display
        update. Emulate this for now until it get fixed. */
-    ulong uMonitorCount = session().GetMachine().GetMonitorCount();
+    ulong uMonitorCount = machine.GetMonitorCount();
     for (ulong uScreenId = 1; uScreenId < uMonitorCount; ++uScreenId)
         machineWindows().at(uScreenId)->update();
 }
