@@ -60,7 +60,7 @@
                 <Publish Event="NewDialog" Value="VBoxLicenseAgreementDlg">1</Publish>
         <?else ?>
                 <!-- Decide which dialog to show next: The serial number dialog (if this is a branded build)
-                     or directly proceed to the customization dialog (Vbox not installed yet) -->
+                     or directly proceed to the customization dialog (VBox not installed yet) -->
                 <?if $(env.VBOX_WITH_SERIALNUMBER_INSTALL) = "yes" ?>
                     <Publish Event="NewDialog" Value="VBoxCheckSerialDlg">1</Publish>
                 <?else ?>
@@ -126,7 +126,7 @@
                 <Condition Action="disable"><![CDATA[IAgree <> "Yes"]]></Condition>
                 <Condition Action="enable"><![CDATA[IAgree = "Yes"]]></Condition>
                 <!-- Decide which dialog to show next: The serial number dialog (if this is a branded build)
-                     or directly proceed to the customization dialog (Vbox not installed yet) -->
+                     or directly proceed to the customization dialog (VBox not installed yet) -->
             <?if $(env.VBOX_WITH_SERIALNUMBER_INSTALL) = "yes" ?>
                 <Publish Event="NewDialog" Value="VBoxCheckSerialDlg">1</Publish>
             <?else ?>
