@@ -2501,7 +2501,7 @@ endif
 #
 # Windows build tool.
 #
-BLDPROGS.win = ntBldSymDb
+BLDPROGS.win += ntBldSymDb
 ntBldSymDb_TEMPLATE = VBoxAdvBldProg
 ntBldSymDb_INCS = .
 ntBldSymDb_SOURCES = r0drv/nt/ntBldSymDb.cpp
