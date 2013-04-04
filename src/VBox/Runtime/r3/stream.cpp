@@ -311,6 +311,7 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
         pStream->i32Error = VINF_SUCCESS;
         pStream->fCurrentCodeSet = false;
         pStream->fBinary  = fBinary;
+        pStream->fRecheckMode = false;
 #ifndef HAVE_FWRITE_UNLOCKED
         pStream->pCritSect = NULL;
 #endif /* HAVE_FWRITE_UNLOCKED */
