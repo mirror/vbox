@@ -49,9 +49,6 @@ QIMessageBox::QIMessageBox(const QString &strCaption, const QString &strMessage,
     /* Set caption: */
     setWindowTitle(strCaption);
 
-    /* Set focus to dialog initially: */
-    setFocus();
-
     /* Prepare content: */
     prepareContent();
 }
@@ -199,12 +196,27 @@ void QIMessageBox::prepareContent()
     /* Create main-layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
+        /* Configure layout: */
+#ifdef Q_WS_MAC
+        pMainLayout->setContentsMargins(40, 11, 40, 11);
+        pMainLayout->setSpacing(15);
+#else /* !Q_WS_MAC */
+        VBoxGlobal::setLayoutMargin(pMainLayout, 11);
+        pMainLayout->setSpacing(10);
+#endif /* !Q_WS_MAC */
         /* Create top-layout: */
         QHBoxLayout *pTopLayout = new QHBoxLayout;
         {
+            /* Insert into parent layout: */
+            pMainLayout->addLayout(pTopLayout);
+            /* Configure layout: */
+            VBoxGlobal::setLayoutMargin(pTopLayout, 0);
+            pTopLayout->setSpacing(10);
             /* Create icon-label: */
             m_pIconLabel = new QLabel;
             {
+                /* Insert into parent layout: */
+                pTopLayout->addWidget(m_pIconLabel);
                 /* Configure label: */
                 m_pIconLabel->setPixmap(standardPixmap(m_iconType, this));
                 m_pIconLabel->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
@@ -213,6 +225,8 @@ void QIMessageBox::prepareContent()
             /* Create text-label: */
             m_pTextLabel = new QILabel(m_strMessage);
             {
+                /* Insert into parent layout: */
+                pTopLayout->addWidget(m_pTextLabel);
                 /* Configure label: */
                 m_pTextLabel->setWordWrap(true);
                 m_pTextLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -220,11 +234,6 @@ void QIMessageBox::prepareContent()
                 sizePolicy.setHeightForWidth(true);
                 m_pTextLabel->setSizePolicy(sizePolicy);
             }
-            /* Configure layout: */
-            VBoxGlobal::setLayoutMargin(pTopLayout, 0);
-            pTopLayout->setSpacing(10);
-            pTopLayout->addWidget(m_pIconLabel);
-            pTopLayout->addWidget(m_pTextLabel);
         }
         /* Create details text-view: */
         m_pDetailsTextView = new QTextEdit;
@@ -239,6 +248,8 @@ void QIMessageBox::prepareContent()
         /* Create details-container: */
         m_pDetailsContainer = new QIArrowSplitter(m_pDetailsTextView);
         {
+            /* Insert into parent layout: */
+            pMainLayout->addWidget(m_pDetailsContainer);
             /* Configure container: */
             connect(m_pDetailsContainer, SIGNAL(showBackDetails()), this, SLOT(detailsBack()));
             connect(m_pDetailsContainer, SIGNAL(showNextDetails()), this, SLOT(detailsNext()));
@@ -249,6 +260,8 @@ void QIMessageBox::prepareContent()
         /* Create details check-box: */
         m_pFlagCheckBox = new QCheckBox;
         {
+            /* Insert into parent layout: */
+            pMainLayout->addWidget(m_pFlagCheckBox, 0, Qt::AlignHCenter | Qt::AlignVCenter);
             /* Configure check-box: */
             m_pFlagCheckBox->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
             /* And update check-box finally: */
@@ -257,6 +270,8 @@ void QIMessageBox::prepareContent()
         /* Create button-box: */
         m_pButtonBox = new QIDialogButtonBox;
         {
+            /* Insert into parent layout: */
+            pMainLayout->addWidget(m_pButtonBox);
             /* Configure button-box: */
             m_pButtonBox->setCenterButtons(true);
             m_pButton1 = createButton(m_iButton1);
@@ -276,18 +291,6 @@ void QIMessageBox::prepareContent()
                 connect(pCopyButton, SIGNAL(clicked()), SLOT(copy()));
             }
         }
-        /* Configure layout: */
-#ifdef Q_WS_MAC
-        pMainLayout->setContentsMargins(40, 11, 40, 11);
-        pMainLayout->setSpacing(15);
-#else /* !Q_WS_MAC */
-        VBoxGlobal::setLayoutMargin(pMainLayout, 11);
-        pMainLayout->setSpacing(10);
-#endif /* !Q_WS_MAC */
-        pMainLayout->addLayout(pTopLayout);
-        pMainLayout->addWidget(m_pDetailsContainer);
-        pMainLayout->addWidget(m_pFlagCheckBox, 0, Qt::AlignHCenter | Qt::AlignVCenter);
-        pMainLayout->addWidget(m_pButtonBox);
     }
 }
 
