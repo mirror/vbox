@@ -147,14 +147,14 @@ bool UIWizardExportApp::exportVMs(CAppliance &appliance)
             return false;
         if (!progress.isOk() || progress.GetResultCode() != 0)
         {
-            msgCenter().cannotExportAppliance(progress, &appliance, this);
+            msgCenter().cannotExportAppliance(progress, appliance.GetPath(), this);
             return false;
         }
         else
             return true;
     }
     if (!fResult)
-        msgCenter().cannotExportAppliance(&appliance, this);
+        msgCenter().cannotExportAppliance(appliance, this);
     return false;
 }
 

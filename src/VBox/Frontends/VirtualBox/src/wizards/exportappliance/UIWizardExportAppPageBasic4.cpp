@@ -58,7 +58,7 @@ void UIWizardExportAppPage4::refreshApplianceSettingsWidget()
                 fResult = machine.isOk();
                 if (!fResult)
                 {
-                    msgCenter().cannotExportAppliance(machine, pAppliance, thisImp());
+                    msgCenter().cannotExportAppliance(machine, pAppliance->GetPath(), thisImp());
                     return;
                 }
                 /* Now add some new fields the user may change: */
@@ -76,7 +76,7 @@ void UIWizardExportAppPage4::refreshApplianceSettingsWidget()
         m_pApplianceWidget->populate();
     }
     if (!fResult)
-        msgCenter().cannotExportAppliance(pAppliance, thisImp());
+        msgCenter().cannotExportAppliance(*pAppliance, thisImp());
 }
 
 UIWizardExportAppPageBasic4::UIWizardExportAppPageBasic4()

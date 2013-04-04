@@ -1190,14 +1190,26 @@ void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult 
             strMessage.arg(medium.location()), formatErrorInfo(rc));
 }
 
-void UIMessageCenter::cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent /*= 0*/)
+bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /*= 0*/) const
+{
+    return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Warning,
+                           tr("You are about to create a new virtual machine without a hard drive. "
+                              "You will not be able to install an operating system on the machine "
+                              "until you add one. In the mean time you will only be able to start the "
+                              "machine using a virtual optical disk or from the network."),
+                           0 /* auto-confirm id */,
+                           tr("Continue", "no hard disk attached"),
+                           tr("Go Back", "no hard disk attached"));
+}
+
+void UIMessageCenter::cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent /*= 0*/) const
 {
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("Failed to create a new virtual machine."),
             formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotRegisterMachine(const CVirtualBox &vbox, const QString &strMachineName, QWidget *pParent /*= 0*/)
+void UIMessageCenter::cannotRegisterMachine(const CVirtualBox &vbox, const QString &strMachineName, QWidget *pParent /*= 0*/) const
 {
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("Failed to register the virtual machine <b>%1</b>.")
@@ -1205,7 +1217,7 @@ void UIMessageCenter::cannotRegisterMachine(const CVirtualBox &vbox, const QStri
             formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotCreateClone(const CMachine &machine, QWidget *pParent /*= 0*/)
+void UIMessageCenter::cannotCreateClone(const CMachine &machine, QWidget *pParent /*= 0*/) const
 {
     /* Preserve error-info: */
     QString strErrorInfo = formatErrorInfo(machine);
@@ -1216,7 +1228,7 @@ void UIMessageCenter::cannotCreateClone(const CMachine &machine, QWidget *pParen
             strErrorInfo);
 }
 
-void UIMessageCenter::cannotCreateClone(const CProgress &progress, const QString &strMachineName, QWidget *pParent /* = 0 */)
+void UIMessageCenter::cannotCreateClone(const CProgress &progress, const QString &strMachineName, QWidget *pParent /*= 0*/) const
 {
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("Failed to clone the virtual machine <b>%1</b>.")
@@ -1224,7 +1236,7 @@ void UIMessageCenter::cannotCreateClone(const CProgress &progress, const QString
             !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent /*= 0*/)
+void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
     message(pParent ? pParent : mainWindowShown(), MessageType_Info,
             tr("<p>The hard disk storage unit at location <b>%1</b> already exists. "
@@ -1234,7 +1246,7 @@ void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation,
                .arg(strLocation));
 }
 
-void UIMessageCenter::cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation, QWidget *pParent /*= 0*/)
+void UIMessageCenter::cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
@@ -1242,7 +1254,7 @@ void UIMessageCenter::cannotCreateHardDiskStorage(const CVirtualBox &vbox, const
             formatErrorInfo(vbox));
 }
 
-void UIMessageCenter::cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /*= 0*/)
+void UIMessageCenter::cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
@@ -1250,7 +1262,7 @@ void UIMessageCenter::cannotCreateHardDiskStorage(const CMedium &medium, const Q
             formatErrorInfo(medium));
 }
 
-void UIMessageCenter::cannotCreateHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent /*= 0*/)
+void UIMessageCenter::cannotCreateHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
@@ -1258,7 +1270,7 @@ void UIMessageCenter::cannotCreateHardDiskStorage(const CProgress &progress, con
             !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::warnAboutCannotRemoveMachineFolder(QWidget *pParent, const QString &strFolderName)
+void UIMessageCenter::cannotRemoveMachineFolder(const QString &strFolderName, QWidget *pParent /*= 0*/) const
 {
     QFileInfo fi(strFolderName);
     message(pParent ? pParent : mainWindowShown(), MessageType_Critical,
@@ -1267,7 +1279,7 @@ void UIMessageCenter::warnAboutCannotRemoveMachineFolder(QWidget *pParent, const
                .arg(fi.fileName()));
 }
 
-void UIMessageCenter::warnAboutCannotRewriteMachineFolder(QWidget *pParent, const QString &strFolderName)
+void UIMessageCenter::cannotRewriteMachineFolder(const QString &strFolderName, QWidget *pParent /*= 0*/) const
 {
     QFileInfo fi(strFolderName);
     message(pParent ? pParent : mainWindowShown(), MessageType_Critical,
@@ -1276,7 +1288,7 @@ void UIMessageCenter::warnAboutCannotRewriteMachineFolder(QWidget *pParent, cons
                .arg(fi.fileName()).arg(fi.absolutePath()));
 }
 
-void UIMessageCenter::warnAboutCannotCreateMachineFolder(QWidget *pParent, const QString &strFolderName)
+void UIMessageCenter::cannotCreateMachineFolder(const QString &strFolderName, QWidget *pParent /*= 0*/) const
 {
     QFileInfo fi(strFolderName);
     message(pParent ? pParent : mainWindowShown(), MessageType_Critical,
@@ -1285,153 +1297,88 @@ void UIMessageCenter::warnAboutCannotCreateMachineFolder(QWidget *pParent, const
                .arg(fi.fileName()).arg(fi.absolutePath()));
 }
 
-bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent)
+void UIMessageCenter::cannotImportAppliance(CAppliance &appliance, QWidget *pParent /*= 0*/) const
 {
-    return message(pParent, MessageType_Warning,
-        tr("You are about to create a new virtual machine without a hard drive. "
-           "You will not be able to install an operating system on the machine "
-           "until you add one. In the mean time you will only be able to start the "
-           "machine using a virtual optical disk or from the network."),
-        0 /* auto-confirm id */,
-        AlertButton_Ok | AlertButtonOption_Default,
-        AlertButton_Cancel | AlertButtonOption_Escape,
-        0,
-        tr("Continue", "no hard disk attached"),
-        tr("Go Back", "no hard disk attached")) == AlertButton_Ok;
+    /* Preserve error-info: */
+    QString strErrorInfo = formatErrorInfo(appliance);
+    /* Add the warnings in the case of an early error: */
+    QString strWarningInfo;
+    foreach(const QString &strWarning, appliance.GetWarnings())
+        strWarningInfo += QString("<br />Warning: %1").arg(strWarning);
+    if (!strWarningInfo.isEmpty())
+        strWarningInfo = "<br />" + strWarningInfo;
+    /* Show the message: */
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to open/interpret appliance <b>%1</b>.")
+               .arg(appliance.GetPath()),
+            strWarningInfo + strErrorInfo);
 }
 
-void UIMessageCenter::cannotImportAppliance(CAppliance *pAppliance,
-                                            QWidget *pParent /* = NULL */) const
+void UIMessageCenter::cannotImportAppliance(const CProgress &progress, const QString &strPath, QWidget *pParent /*= 0*/) const
 {
-    if (pAppliance->isNull())
-    {
-        message(pParent ? pParent : mainWindowShown(),
-                MessageType_Error,
-                tr("Failed to open appliance."));
-    }
-    else
-    {
-        /* Preserve the current error info before calling the object again */
-        COMResult res(*pAppliance);
-
-        /* Add the warnings in the case of an early error */
-        QVector<QString> w = pAppliance->GetWarnings();
-        QString wstr;
-        foreach(const QString &str, w)
-            wstr += QString("<br />Warning: %1").arg(str);
-        if (!wstr.isEmpty())
-            wstr = "<br />" + wstr;
-
-        message(pParent ? pParent : mainWindowShown(),
-                MessageType_Error,
-                tr("Failed to open/interpret appliance <b>%1</b>.").arg(pAppliance->GetPath()),
-                wstr +
-                formatErrorInfo(res));
-    }
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to import appliance <b>%1</b>.")
+               .arg(strPath),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::cannotImportAppliance(const CProgress &progress,
-                                            CAppliance* pAppliance,
-                                            QWidget *pParent /* = NULL */) const
+void UIMessageCenter::cannotCheckFiles(const CProgress &progress, QWidget *pParent /*= 0*/) const
 {
-    AssertWrapperOk(progress);
-
-    message(pParent ? pParent : mainWindowShown(),
-            MessageType_Error,
-            tr("Failed to import appliance <b>%1</b>.").arg(pAppliance->GetPath()),
-            formatErrorInfo(progress.GetErrorInfo()));
-}
-
-void UIMessageCenter::cannotCheckFiles(const CProgress &progress,
-                                       QWidget *pParent /* = NULL */) const
-{
-    AssertWrapperOk(progress);
-
-    message(pParent ? pParent : mainWindowShown(),
-            MessageType_Error,
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("Failed to check files."),
-            formatErrorInfo(progress.GetErrorInfo()));
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::cannotRemoveFiles(const CProgress &progress,
-                                        QWidget *pParent /* = NULL */) const
+void UIMessageCenter::cannotRemoveFiles(const CProgress &progress, QWidget *pParent /*= 0*/) const
 {
-    AssertWrapperOk(progress);
-
-    message(pParent ? pParent : mainWindowShown(),
-            MessageType_Error,
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("Failed to remove file."),
-            formatErrorInfo(progress.GetErrorInfo()));
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
-bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &strMachineNames,
-                                                       QWidget *pParent /* = NULL */) const
+bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent /*= 0*/) const
 {
     return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Warning,
-        tr("<p>The %n following virtual machine(s) are currently in a saved state: <b>%1</b></p>"
-           "<p>If you continue the runtime state of the exported machine(s) "
-           "will be discarded. The other machine(s) will not be changed.</p>", "This text is never used with n == 0.  Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn't need to be told).",
-           strMachineNames.size()).arg(VBoxGlobal::toHumanReadableList(strMachineNames)),
-        0 /* auto-confirm id */,
-        tr("Continue"));
+                           tr("<p>The %n following virtual machine(s) are currently in a saved state: <b>%1</b></p>"
+                              "<p>If you continue the runtime state of the exported machine(s) will be discarded. "
+                              "The other machine(s) will not be changed.</p>",
+                              "This text is never used with n == 0. Feel free to drop the %n where possible, "
+                              "we only included it because of problems with Qt Linguist "
+                              "(but the user can see how many machines are in the list and doesn't need to be told).",
+                              machineNames.size())
+                              .arg(machineNames.join(", ")),
+                           0 /* auto-confirm id */,
+                           tr("Continue"));
 }
 
-void UIMessageCenter::cannotExportAppliance(CAppliance *pAppliance,
-                                            QWidget *pParent /* = NULL */) const
+void UIMessageCenter::cannotExportAppliance(const CAppliance &appliance, QWidget *pParent /*= 0*/) const
 {
-    if (pAppliance->isNull())
-    {
-        message(pParent ? pParent : mainWindowShown(),
-                MessageType_Error,
-                tr("Failed to create appliance."));
-    }
-    else
-    {
-        /* Preserve the current error info before calling the object again */
-        COMResult res(*pAppliance);
-
-        message(pParent ? pParent : mainWindowShown(),
-                MessageType_Error,
-                tr("Failed to prepare the export of the appliance <b>%1</b>.").arg(pAppliance->GetPath()),
-                formatErrorInfo(res));
-    }
+    /* Preserve error-info: */
+    QString strErrorInfo = formatErrorInfo(appliance);
+    /* Show the message: */
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to prepare the export of the appliance <b>%1</b>.")
+               .arg(appliance.GetPath()),
+            strErrorInfo);
 }
 
-void UIMessageCenter::cannotExportAppliance(const CMachine &machine,
-                                            CAppliance *pAppliance,
-                                            QWidget *pParent /* = NULL */) const
+void UIMessageCenter::cannotExportAppliance(const CMachine &machine, const QString &strPath, QWidget *pParent /*= 0*/) const
 {
-    if (pAppliance->isNull() ||
-        machine.isNull())
-    {
-        message(pParent ? pParent : mainWindowShown(),
-                MessageType_Error,
-                tr("Failed to create an appliance."));
-    }
-    else
-    {
-        message(pParent ? pParent : mainWindowShown(),
-                MessageType_Error,
-                tr("Failed to prepare the export of the appliance <b>%1</b>.").arg(pAppliance->GetPath()),
-                formatErrorInfo(machine));
-    }
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to prepare the export of the appliance <b>%1</b>.")
+               .arg(strPath),
+            formatErrorInfo(machine));
 }
 
-void UIMessageCenter::cannotExportAppliance(const CProgress &progress,
-                                            CAppliance* pAppliance,
-                                            QWidget *pParent /* = NULL */) const
+void UIMessageCenter::cannotExportAppliance(const CProgress &progress, const QString &strPath, QWidget *pParent /*= 0*/) const
 {
-    AssertWrapperOk(progress);
-
-    message(pParent ? pParent : mainWindowShown(),
-            MessageType_Error,
-            tr("Failed to export appliance <b>%1</b>.").arg(pAppliance->GetPath()),
-            formatErrorInfo(progress.GetErrorInfo()));
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to export appliance <b>%1</b>.")
+               .arg(strPath),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::cannotFindSnapshotByName(QWidget *pParent,
-                                               const CMachine &machine,
-                                               const QString &strName) const
+void UIMessageCenter::cannotFindSnapshotByName(const CMachine &machine, const QString &strName, QWidget *pParent /*= 0*/) const
 {
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
             tr("Can't find snapshot named <b>%1</b>.")
