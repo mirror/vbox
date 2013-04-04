@@ -66,7 +66,6 @@ signals:
 
     /* Notifiers: Synchronization stuff: */
     void sigRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
-    void sigRemindAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent);
 
 public:
 
@@ -412,7 +411,6 @@ private slots:
 
     /* Handlers: Synchronization stuff: */
     void sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
-    void sltRemindAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent);
 
 private:
 
