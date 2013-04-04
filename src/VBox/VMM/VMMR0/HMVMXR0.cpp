@@ -6218,10 +6218,9 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
 
-    /* For longjmp reentrants we need not load the guest state again. */
-    if (!pVCpu->hm.s.fContextUseFlags)
-        return VINF_SUCCESS;
-    
+    /* Currently we always atleast reload CR0 (longjmps included because of FPU state sharing). */
+    Log(("LdGstFlags=%#RX32\n", pVCpu->hm.s.fContextUseFlags));
+
     /* Determine real-on-v86 mode. */
     pVCpu->hm.s.vmx.RealMode.fRealOnV86Active = false;
     if (   !pVM->hm.s.vmx.fUnrestrictedGuest
@@ -6229,8 +6228,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         pVCpu->hm.s.vmx.RealMode.fRealOnV86Active = true;
     }
-
-    Log(("LoadGuest flags=%#RX32\n", pVCpu->hm.s.fContextUseFlags));
 
     int rc = hmR0VmxLoadGuestEntryCtls(pVM, pVCpu, pCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestEntryCtls! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
