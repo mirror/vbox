@@ -147,7 +147,7 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
 
     if (!extPackFile.GetUsable())
     {
-        msgCenter().badExtPackFile(strFilePath, extPackFile, pParent);
+        msgCenter().warnAboutBadExtPackFile(strFilePath, extPackFile, pParent);
         return;
     }
 
@@ -165,7 +165,7 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     if (fReplaceIt)
     {
         QString strPackVersionCur = QString("%1r%2%3").arg(extPackCur.GetVersion()).arg(extPackCur.GetRevision()).arg(extPackCur.GetEdition());
-        if (!msgCenter().confirmReplacePackage(strPackName, strPackVersion, strPackVersionCur, strPackDescription, pParent))
+        if (!msgCenter().confirmReplaceExtensionPack(strPackName, strPackVersion, strPackVersionCur, strPackDescription, pParent))
             return;
     }
     /*
@@ -173,7 +173,7 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
      */
     else
     {
-        if (!msgCenter().confirmInstallingPackage(strPackName, strPackVersion, strPackDescription, pParent))
+        if (!msgCenter().confirmInstallExtensionPack(strPackName, strPackVersion, strPackDescription, pParent))
             return;
     }
 
@@ -195,29 +195,26 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
      * do a refresh even on failure.
      */
     QString displayInfo;
-#ifdef RT_OS_WINDOWS
+#ifdef Q_WS_WIN
     if (pParent)
         displayInfo.sprintf("hwnd=%#llx", (uint64_t)(uintptr_t)pParent->winId());
-#endif
+#endif /* Q_WS_WIN */
+    /* Prepare installation progress: */
     CProgress progress = extPackFile.Install(fReplaceIt, displayInfo);
     if (extPackFile.isOk())
     {
-        if (progress.isNull())
-            msgCenter().notifyAboutExtPackInstalled(strPackName, pParent);
-        else
+        /* Show installation progress: */
+        msgCenter().showModalProgressDialog(progress, tr("Extensions"), "", pParent);
+        if (!progress.GetCanceled())
         {
-            msgCenter().showModalProgressDialog(progress, tr("Extensions"), "", pParent);
-            if (!progress.GetCanceled())
-            {
-                if (progress.isOk() && progress.GetResultCode() == 0)
-                    msgCenter().notifyAboutExtPackInstalled(strPackName, pParent);
-                else
-                    msgCenter().cannotInstallExtPack(strFilePath, extPackFile, progress, pParent);
-            }
+            if (progress.isOk() && progress.GetResultCode() == 0)
+                msgCenter().warnAboutExtPackInstalled(strPackName, pParent);
+            else
+                msgCenter().cannotInstallExtPack(progress, strFilePath, pParent);
         }
     }
     else
-        msgCenter().cannotInstallExtPack(strFilePath, extPackFile, progress, pParent);
+        msgCenter().cannotInstallExtPack(extPackFile, strFilePath, pParent);
 
     if (pstrExtPackName)
         *pstrExtPackName = strPackName;
@@ -408,7 +405,7 @@ void UIGlobalSettingsExtension::sltRemovePackage()
         /* Get name of current package: */
         QString strSelectedPackageName = pItem->name();
         /* Ask the user about package removing: */
-        if (msgCenter().confirmRemovingPackage(strSelectedPackageName, this))
+        if (msgCenter().confirmRemoveExtensionPack(strSelectedPackageName, this))
         {
             /*
              * Uninstall the package.
@@ -416,19 +413,16 @@ void UIGlobalSettingsExtension::sltRemovePackage()
             CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
             /** @todo Refuse this if any VMs are running. */
             QString displayInfo;
-#ifdef RT_OS_WINDOWS
+#ifdef Q_WS_WIN
             displayInfo.sprintf("hwnd=%#llx", (uint64_t)(uintptr_t)this->winId());
-#endif
+#endif /* Q_WS_WIN */
+            /* Prepare uninstallation progress: */
             CProgress progress = manager.Uninstall(strSelectedPackageName, false /* forced removal? */, displayInfo);
             if (manager.isOk())
             {
-                bool fOk = true;
-                if (!progress.isNull())
-                {
-                    msgCenter().showModalProgressDialog(progress, tr("Extensions"), "", window());
-                    fOk = progress.isOk() && progress.GetResultCode() == 0;
-                }
-                if (fOk)
+                /* Show uninstallation progress: */
+                msgCenter().showModalProgressDialog(progress, tr("Extensions"), "", this);
+                if (progress.isOk() && progress.GetResultCode() == 0)
                 {
                     /* Remove selected package from cache: */
                     for (int i = 0; i < m_cache.m_items.size(); ++i)
@@ -439,15 +433,14 @@ void UIGlobalSettingsExtension::sltRemovePackage()
                             break;
                         }
                     }
-
                     /* Remove selected package from tree: */
                     delete pItem;
                 }
                 else
-                    msgCenter().cannotUninstallExtPack(strSelectedPackageName, manager, progress, this);
+                    msgCenter().cannotUninstallExtPack(progress, strSelectedPackageName, this);
             }
             else
-                msgCenter().cannotUninstallExtPack(strSelectedPackageName, manager, progress, this);
+                msgCenter().cannotUninstallExtPack(manager, strSelectedPackageName, this);
         }
     }
 }

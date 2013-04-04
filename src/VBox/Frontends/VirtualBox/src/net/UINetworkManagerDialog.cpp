@@ -144,7 +144,7 @@ void UINetworkManagerDialog::removeNetworkRequestWidget(const QUuid &uuid)
 void UINetworkManagerDialog::sltHandleCancelAllButtonPress()
 {
     /* Ask if user wants to cancel all current network-requests: */
-    if (msgCenter().askAboutCancelAllNetworkRequest(this))
+    if (msgCenter().confirmCancelingAllNetworkRequests())
         emit sigCancelNetworkRequests();
 }
 

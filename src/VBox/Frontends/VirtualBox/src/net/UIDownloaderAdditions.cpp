@@ -73,7 +73,7 @@ UIDownloaderAdditions::~UIDownloaderAdditions()
 
 bool UIDownloaderAdditions::askForDownloadingConfirmation(UINetworkReply *pReply)
 {
-    return msgCenter().confirmDownloadAdditions(source().toString(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
+    return msgCenter().confirmDownloadGuestAdditions(source().toString(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
 }
 
 void UIDownloaderAdditions::handleDownloadedObject(UINetworkReply *pReply)
@@ -92,13 +92,13 @@ void UIDownloaderAdditions::handleDownloadedObject(UINetworkReply *pReply)
             file.close();
 
             /* Warn the user about additions-image loaded and saved, propose to mount it: */
-            if (msgCenter().confirmMountAdditions(source().toString(), QDir::toNativeSeparators(target())))
+            if (msgCenter().proposeMountGuestAdditions(source().toString(), QDir::toNativeSeparators(target())))
                 emit sigDownloadFinished(target());
             break;
         }
 
         /* Warn the user about additions-image was downloaded but was NOT saved: */
-        msgCenter().warnAboutAdditionsCantBeSaved(target());
+        msgCenter().cannotSaveGuestAdditions(source().toString(), QDir::toNativeSeparators(target()));
 
         /* Ask the user for another location for the additions-image file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
