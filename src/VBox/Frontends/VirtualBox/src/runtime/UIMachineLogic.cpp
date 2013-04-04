@@ -312,18 +312,28 @@ void UIMachineLogic::sltMachineStateChanged()
             /* Prevent machine view from resizing: */
             uisession()->setGuestResizeIgnored(true);
 
-            /* Get console and log folder. */
+            /* Get variables: */
             CConsole console = session().GetConsole();
-            const QString &strLogFolder = console.GetMachine().GetLogFolder();
+            CMachine machine = console.GetMachine();
+            QString strMachineName = machine.GetName();
+            QString strLogFolder = machine.GetLogFolder();
 
-            /* Take the screenshot for debugging purposes and save it. */
+            /* Take the screenshot for debugging purposes: */
             takeScreenshot(strLogFolder + "/VBox.png", "png");
 
-            /* Warn the user about GURU: */
-            if (msgCenter().remindAboutGuruMeditation(console, QDir::toNativeSeparators(strLogFolder)))
+            /* Warn the user about GURU meditation: */
+            if (msgCenter().remindAboutGuruMeditation(QDir::toNativeSeparators(strLogFolder)))
             {
-                console.PowerDown();
-                if (!console.isOk())
+                /* Prepare machine power down progress: */
+                CProgress progress = console.PowerDown();
+                if (console.isOk())
+                {
+                    /* Show machine power down progress: */
+                    msgCenter().showModalProgressDialog(progress, strMachineName, ":/progress_poweroff_90px.png", activeMachineWindow());
+                    if (!progress.isOk() || progress.GetResultCode() != 0)
+                        msgCenter().cannotPowerDownMachine(progress, strMachineName);
+                }
+                else
                     msgCenter().cannotPowerDownMachine(console);
             }
             break;
@@ -417,9 +427,9 @@ void UIMachineLogic::sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsA
     if (!error.isNull())
     {
         if (fIsAttached)
-            msgCenter().cannotAttachUSBDevice(session().GetConsole(), vboxGlobal().details(device), error);
+            msgCenter().cannotAttachUSBDevice(error, vboxGlobal().details(device), session().GetMachine().GetName());
         else
-            msgCenter().cannotDetachUSBDevice(session().GetConsole(), vboxGlobal().details(device), error);
+            msgCenter().cannotDetachUSBDevice(error, vboxGlobal().details(device), session().GetMachine().GetName());
     }
 }
 

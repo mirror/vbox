@@ -299,6 +299,7 @@ public:
 
     /* API: Runtime UI warnings: */
     void showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const;
+    bool remindAboutGuruMeditation(const QString &strLogFolder);
     bool warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported) const;
     bool warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported) const;
     bool cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames) const;
@@ -316,15 +317,11 @@ public:
     void cannotEnterSeamlessMode(ULONG uWidth, ULONG uHeight, ULONG uBpp, ULONG64 uMinVRAM) const;
     bool cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const;
     void cannotSwitchScreenInSeamless(quint64 uMinVRAM) const;
-    void cannotAttachUSBDevice(const CConsole &console, const QString &device);
-    void cannotAttachUSBDevice(const CConsole &console, const QString &device,
-                               const CVirtualBoxErrorInfo &error);
-    void cannotDetachUSBDevice(const CConsole &console, const QString &device);
-    void cannotDetachUSBDevice(const CConsole &console, const QString &device,
-                               const CVirtualBoxErrorInfo &error);
-    void remindAboutGuestAdditionsAreNotActive(QWidget *pParent);
-    void cannotMountGuestAdditions(const QString &strMachineName);
-    bool remindAboutGuruMeditation(const CConsole &console, const QString &strLogFolder);
+    void cannotAttachUSBDevice(const CConsole &console, const QString &strDevice);
+    void cannotAttachUSBDevice(const CVirtualBoxErrorInfo &error, const QString &strDevice, const QString &strMachineName);
+    void cannotDetachUSBDevice(const CConsole &console, const QString &strDevice);
+    void cannotDetachUSBDevice(const CVirtualBoxErrorInfo &error, const QString &strDevice, const QString &strMachineName);
+    void remindAboutGuestAdditionsAreNotActive(QWidget *pParent = 0);
 
     /* API: Network management warnings: */
     bool askAboutCancelAllNetworkRequest(QWidget *pParent);
@@ -335,6 +332,7 @@ public:
     bool cannotFindGuestAdditions();
     bool confirmDownloadAdditions(const QString &strUrl, qulonglong uSize);
     bool confirmMountAdditions(const QString &strUrl, const QString &strSrc);
+    void cannotMountGuestAdditions(const QString &strMachineName);
     void warnAboutAdditionsCantBeSaved(const QString &strTarget);
     bool askAboutUserManualDownload(const QString &strMissedLocation);
     bool confirmUserManualDownload(const QString &strURL, qulonglong uSize);

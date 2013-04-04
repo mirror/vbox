@@ -1555,6 +1555,32 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     }
 }
 
+bool UIMessageCenter::remindAboutGuruMeditation(const QString &strLogFolder)
+{
+    return messageOkCancel(mainMachineWindowShown(), MessageType_GuruMeditation,
+                           tr("<p>A critical error has occurred while running the virtual "
+                              "machine and the machine execution has been stopped.</p>"
+                              ""
+                              "<p>For help, please see the Community section on "
+                              "<a href=http://www.virtualbox.org>http://www.virtualbox.org</a> "
+                              "or your support contract. Please provide the contents of the "
+                              "log file <tt>VBox.log</tt> and the image file <tt>VBox.png</tt>, "
+                              "which you can find in the <nobr><b>%1</b></nobr> directory, "
+                              "as well as a description of what you were doing when this error happened. "
+                              ""
+                              "Note that you can also access the above files by selecting <b>Show Log</b> "
+                              "from the <b>Machine</b> menu of the main VirtualBox window.</p>"
+                              ""
+                              "<p>Press <b>OK</b> if you want to power off the machine "
+                              "or press <b>Ignore</b> if you want to leave it as is for debugging. "
+                              "Please note that debugging requires special knowledge and tools, "
+                              "so it is recommended to press <b>OK</b> now.</p>")
+                              .arg(strLogFolder),
+                           0 /* auto-confirm id */,
+                           QIMessageBox::tr("Ok"),
+                           QIMessageBox::tr("Ignore"));
+}
+
 bool UIMessageCenter::warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported) const
 {
     if (fHWVirtExSupported)
@@ -1809,113 +1835,53 @@ void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM) const
                .arg(VBoxGlobal::formatSize(uMinVRAM)));
 }
 
-void UIMessageCenter::cannotAttachUSBDevice(const CConsole &console,
-                                            const QString &device)
+void UIMessageCenter::cannotAttachUSBDevice(const CConsole &console, const QString &strDevice)
 {
-    /* preserve the current error info before calling the object again */
-    COMResult res(console);
-
+    /* Preserve error-info: */
+    QString strErrorInfo = formatErrorInfo(console);
+    /* Show the message: */
     message(mainMachineWindowShown(), MessageType_Error,
-        tr("Failed to attach the USB device <b>%1</b> "
-           "to the virtual machine <b>%2</b>.")
-            .arg(device)
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(res));
+            tr("Failed to attach the USB device <b>%1</b> to the virtual machine <b>%2</b>.")
+               .arg(strDevice, console.GetMachine().GetName()),
+            strErrorInfo);
 }
 
-void UIMessageCenter::cannotAttachUSBDevice(const CConsole &console,
-                                            const QString &device,
-                                            const CVirtualBoxErrorInfo &error)
+void UIMessageCenter::cannotAttachUSBDevice(const CVirtualBoxErrorInfo &error, const QString &strDevice, const QString &strMachineName)
 {
     message(mainMachineWindowShown(), MessageType_Error,
-        tr("Failed to attach the USB device <b>%1</b> "
-           "to the virtual machine <b>%2</b>.")
-            .arg(device)
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(error));
+            tr("Failed to attach the USB device <b>%1</b> to the virtual machine <b>%2</b>.")
+               .arg(strDevice, strMachineName),
+            formatErrorInfo(error));
 }
 
-void UIMessageCenter::cannotDetachUSBDevice(const CConsole &console,
-                                            const QString &device)
+void UIMessageCenter::cannotDetachUSBDevice(const CConsole &console, const QString &strDevice)
 {
-    /* preserve the current error info before calling the object again */
-    COMResult res(console);
-
+    /* Preserve error-info: */
+    QString strErrorInfo = formatErrorInfo(console);
+    /* Show the message: */
     message(mainMachineWindowShown(), MessageType_Error,
-        tr("Failed to detach the USB device <b>%1</b> "
-           "from the virtual machine <b>%2</b>.")
-            .arg(device)
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(res));
+            tr("Failed to detach the USB device <b>%1</b> from the virtual machine <b>%2</b>.")
+               .arg(strDevice, console.GetMachine().GetName()),
+            strErrorInfo);
 }
 
-void UIMessageCenter::cannotDetachUSBDevice(const CConsole &console,
-                                            const QString &device,
-                                            const CVirtualBoxErrorInfo &error)
+void UIMessageCenter::cannotDetachUSBDevice(const CVirtualBoxErrorInfo &error, const QString &strDevice, const QString &strMachineName)
 {
     message(mainMachineWindowShown(), MessageType_Error,
-        tr("Failed to detach the USB device <b>%1</b> "
-           "from the virtual machine <b>%2</b>.")
-            .arg(device)
-            .arg(console.GetMachine().GetName()),
-        formatErrorInfo(error));
+            tr("Failed to detach the USB device <b>%1</b> from the virtual machine <b>%2</b>.")
+               .arg(strDevice, strMachineName),
+            formatErrorInfo(error));
 }
 
-void UIMessageCenter::remindAboutGuestAdditionsAreNotActive(QWidget *pParent)
+void UIMessageCenter::remindAboutGuestAdditionsAreNotActive(QWidget *pParent /*= 0*/)
 {
-    message(pParent, MessageType_Warning,
-             tr("<p>The VirtualBox Guest Additions do not appear to be "
-                "available on this virtual machine, and shared folders "
-                "cannot be used without them. To use shared folders inside "
-                "the virtual machine, please install the Guest Additions "
-                "if they are not installed, or re-install them if they are "
-                "not working correctly, by selecting <b>Install Guest Additions</b> "
-                "from the <b>Devices</b> menu. "
-                "If they are installed but the machine is not yet fully started "
-                "then shared folders will be available once it is.</p>"),
-             "remindAboutGuestAdditionsAreNotActive");
-}
-
-void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName)
-{
-    message(mainMachineWindowShown(), MessageType_Error,
-             tr("<p>Could not insert the VirtualBox Guest Additions "
-                "installer CD image into the virtual machine <b>%1</b>, as the machine "
-                "has no CD/DVD-ROM drives. Please add a drive using the "
-                "storage page of the virtual machine settings dialog.</p>")
-                 .arg(strMachineName));
-}
-
-bool UIMessageCenter::remindAboutGuruMeditation(const CConsole &console, const QString &strLogFolder)
-{
-    Q_UNUSED(console);
-
-    int rc = message(mainMachineWindowShown(), MessageType_GuruMeditation,
-        tr("<p>A critical error has occurred while running the virtual "
-           "machine and the machine execution has been stopped.</p>"
-           ""
-           "<p>For help, please see the Community section on "
-           "<a href=http://www.virtualbox.org>http://www.virtualbox.org</a> "
-           "or your support contract. Please provide the contents of the "
-           "log file <tt>VBox.log</tt> and the image file <tt>VBox.png</tt>, "
-           "which you can find in the <nobr><b>%1</b></nobr> directory, "
-           "as well as a description of what you were doing when this error "
-           "happened. "
-           ""
-           "Note that you can also access the above files by selecting "
-           "<b>Show Log</b> from the <b>Machine</b> menu of the main "
-           "VirtualBox window.</p>"
-           ""
-           "<p>Press <b>OK</b> if you want to power off the machine "
-           "or press <b>Ignore</b> if you want to leave it as is for debugging. "
-           "Please note that debugging requires special knowledge and tools, so "
-           "it is recommended to press <b>OK</b> now.</p>")
-            .arg(strLogFolder),
-        0 /* auto-confirm id */,
-        AlertButton_Ok | AlertButtonOption_Default,
-        AlertButton_Ignore | AlertButtonOption_Escape);
-
-    return rc == AlertButton_Ok;
+    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Warning,
+            tr("<p>The VirtualBox Guest Additions do not appear to be available on this virtual machine, "
+               "and shared folders cannot be used without them. To use shared folders inside the virtual machine, "
+               "please install the Guest Additions if they are not installed, or re-install them if they are "
+               "not working correctly, by selecting <b>Install Guest Additions</b> from the <b>Devices</b> menu. "
+               "If they are installed but the machine is not yet fully started then shared folders will be available once it is.</p>"),
+            "remindAboutGuestAdditionsAreNotActive");
 }
 
 bool UIMessageCenter::askAboutCancelAllNetworkRequest(QWidget *pParent)
@@ -1970,6 +1936,16 @@ bool UIMessageCenter::confirmMountAdditions(const QString &strUrl, const QString
                                .arg(strUrl).arg(strUrl).arg(strSrc),
                            0 /* auto-confirm id */,
                            tr("Mount", "additions"));
+}
+
+void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName)
+{
+    message(mainMachineWindowShown(), MessageType_Error,
+             tr("<p>Could not insert the VirtualBox Guest Additions "
+                "installer CD image into the virtual machine <b>%1</b>, as the machine "
+                "has no CD/DVD-ROM drives. Please add a drive using the "
+                "storage page of the virtual machine settings dialog.</p>")
+                 .arg(strMachineName));
 }
 
 void UIMessageCenter::warnAboutAdditionsCantBeSaved(const QString &strTarget)
