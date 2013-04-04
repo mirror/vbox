@@ -299,25 +299,23 @@ public:
 
     /* API: Runtime UI warnings: */
     void showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const;
-    bool warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported);
-    bool warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported);
-    bool cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames);
-    void cannotStartMachine(const CConsole &console, const QString &strName);
-    void cannotStartMachine(const CProgress &progress, const QString &strName);
-    void cannotSendACPIToMachine();
-    bool confirmInputCapture(bool *pfAutoConfirmed = NULL);
-    void remindAboutAutoCapture();
-    void remindAboutMouseIntegration(bool fSupportsAbsolute);
-    bool remindAboutPausedVMInput();
-    void cannotEnterSeamlessMode(ULONG uWidth, ULONG uHeight,
-                                 ULONG uBpp, ULONG64 uMinVRAM);
-    int cannotEnterFullscreenMode(ULONG uWidth, ULONG uHeight,
-                                  ULONG uBpp, ULONG64 uMinVRAM);
-    void cannotSwitchScreenInSeamless(quint64 uMinVRAM);
-    int cannotSwitchScreenInFullscreen(quint64 uMinVRAM);
-    bool confirmGoingFullscreen(const QString &strHotKey);
-    bool confirmGoingSeamless(const QString &strHotKey);
-    bool confirmGoingScale(const QString &strHotKey);
+    bool warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported) const;
+    bool warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported) const;
+    bool cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames) const;
+    void cannotStartMachine(const CConsole &console, const QString &strName) const;
+    void cannotStartMachine(const CProgress &progress, const QString &strName) const;
+    void cannotSendACPIToMachine() const;
+    bool confirmInputCapture(bool &fAutoConfirmed) const;
+    void remindAboutAutoCapture() const;
+    void remindAboutMouseIntegration(bool fSupportsAbsolute) const;
+    bool remindAboutPausedVMInput() const;
+    bool confirmGoingFullscreen(const QString &strHotKey) const;
+    bool confirmGoingSeamless(const QString &strHotKey) const;
+    bool confirmGoingScale(const QString &strHotKey) const;
+    bool cannotEnterFullscreenMode(ULONG uWidth, ULONG uHeight, ULONG uBpp, ULONG64 uMinVRAM) const;
+    void cannotEnterSeamlessMode(ULONG uWidth, ULONG uHeight, ULONG uBpp, ULONG64 uMinVRAM) const;
+    bool cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const;
+    void cannotSwitchScreenInSeamless(quint64 uMinVRAM) const;
     void cannotAttachUSBDevice(const CConsole &console, const QString &device);
     void cannotAttachUSBDevice(const CConsole &console, const QString &device,
                                const CVirtualBoxErrorInfo &error);

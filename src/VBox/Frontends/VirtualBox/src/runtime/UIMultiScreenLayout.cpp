@@ -225,7 +225,7 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
             if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
                 msgCenter().cannotSwitchScreenInSeamless((((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
             else
-                fSuccess = msgCenter().cannotSwitchScreenInFullscreen((((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M) != AlertButton_Cancel;
+                fSuccess = msgCenter().cannotSwitchScreenInFullscreen((((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
         }
     }
     /* Make sure memory requirements matched: */
