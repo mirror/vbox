@@ -2980,6 +2980,7 @@ DECLINLINE(int) hmR0VmxLoadGuestDebugRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         AssertRCReturn(rc, rc);
         Assert(CPUMIsGuestDebugStateActive(pVCpu));
         Assert(fInterceptMovDRx == false);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
     }
     else if (    CPUMGetHyperDR7(pVCpu) & (X86_DR7_ENABLED_MASK | X86_DR7_GD)
              && !CPUMIsHyperDebugStateActive(pVCpu))
@@ -5547,7 +5548,7 @@ static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
     }
 
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchToR3);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 }
 
 
@@ -5584,11 +5585,9 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
 
     /* Sync. the guest state. */
     hmR0VmxLongJmpToRing3(pVM, pVCpu, pMixedCtx, rcExit);
+    STAM_COUNTER_DEC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
-    /* We're going back to ring-3, clear the flag that we need to go back to ring-3. */
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
-
-    /* Signal changes to the recompiler. */
     CPUMSetChangedFlags(pVCpu,  CPUM_CHANGED_SYSENTER_MSR
                               | CPUM_CHANGED_LDTR
                               | CPUM_CHANGED_GDTR
@@ -5603,6 +5602,7 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
     else
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
 
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExitToR3);
     VMMRZCallRing3Enable(pVCpu);
 }
 

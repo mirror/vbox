@@ -881,7 +881,8 @@ typedef struct HMCPU
 
     STAMCOUNTER             StatSwitchGuestIrq;
     STAMCOUNTER             StatSwitchHmToR3FF;
-    STAMCOUNTER             StatSwitchToR3;
+    STAMCOUNTER             StatSwitchExitToR3;
+    STAMCOUNTER             StatSwitchLongJmpToR3;
 
     STAMCOUNTER             StatTscOffset;
     STAMCOUNTER             StatTscIntercept;

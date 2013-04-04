@@ -581,7 +581,8 @@ static int hmR3InitCPU(PVM pVM)
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchGuestIrq,         "/HM/CPU%d/Switch/IrqPending");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchHmToR3FF,         "/HM/CPU%d/Switch/HmToR3FF");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchToR3,             "/HM/CPU%d/Switch/ToR3");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchExitToR3,         "/HM/CPU%d/Switch/ExitToR3");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchLongJmpToR3,      "/HM/CPU%d/Switch/LongJmpToR3");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatIntInject,              "/HM/CPU%d/Irq/Inject");
         HM_REG_COUNTER(&pVCpu->hm.s.StatIntReinject,            "/HM/CPU%d/Irq/Reinject");
