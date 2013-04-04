@@ -36,6 +36,7 @@
 #include <iprt/file.h>
 
 #include <curl/curl.h>
+#include <openssl/ssl.h>
 #include "internal/magics.h"
 
 
@@ -194,6 +195,50 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, uint32_t cHeaders, const char *pcsz
     int rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_HTTPHEADER, pHeaders);
     if (CURL_FAILED(rcCurl))
         return VERR_INVALID_PARAMETER;
+
+    return VINF_SUCCESS;
+}
+
+RTR3DECL(int) RTHttpCertDigest(RTHTTP hHttp, char *pcszCert, size_t cbCert,
+                               uint8_t **pabSha1,   size_t *pcbSha1,
+                               uint8_t **pabSha512, size_t *pcbSha512)
+{
+    BIO *cert = BIO_new_mem_buf(pcszCert, cbCert);
+    if (!cert)
+        return VERR_INTERNAL_ERROR;
+
+    X509 *crt = NULL;
+    if (!PEM_read_bio_X509(cert, &crt, NULL, NULL))
+        return VERR_INTERNAL_ERROR;
+
+    unsigned cb;
+    unsigned char md[EVP_MAX_MD_SIZE];
+
+    const EVP_MD *digest = EVP_sha1();
+    int rc = X509_digest(crt, digest, md, &cb);
+    if (rc <= 0)
+        return VERR_INTERNAL_ERROR;
+    *pabSha1 = (uint8_t*)RTMemAlloc(cb);
+    if (!*pabSha1)
+        return VERR_NO_MEMORY;
+    memcpy(*pabSha1, md, cb);
+    *pcbSha1 = cb;
+
+    digest = EVP_sha512();
+    rc = X509_digest(crt, digest, md, &cb);
+    if (rc <= 0)
+    {
+        RTMemFree(*pabSha1);
+        return VERR_INTERNAL_ERROR;
+    }
+    *pabSha512 = (uint8_t*)RTMemAlloc(cb);
+    if (!*pabSha512)
+    {
+        RTMemFree(*pabSha512);
+        return VERR_NO_MEMORY;
+    }
+    memcpy(*pabSha512, md, cb);
+    *pcbSha512 = cb;
 
     return VINF_SUCCESS;
 }
