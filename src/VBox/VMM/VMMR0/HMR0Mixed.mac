@@ -130,9 +130,13 @@ ALIGN(16)
 %endif
 
     ; Restore CR2
-    mov     ebx, [xSI + CPUMCTX.cr2]
+    mov     xBX, [xSI + CPUMCTX.cr2]
+    mov     xDX, cr2
+    cmp     xBX, xDX
+    je      .skipcr2write32
     mov     cr2, xBX
 
+.skipcr2write32:
     mov     eax, VMX_VMCS_HOST_RSP
     vmwrite xAX, xSP
     ;/* Note: assumes success... */
@@ -184,6 +188,11 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     mov     [ss:xDI + CPUMCTX.edx], edx
     mov     [ss:xDI + CPUMCTX.esi], esi
     mov     [ss:xDI + CPUMCTX.ebp], ebp
+%ifndef VBOX_WITH_OLD_VTX_CODE
+    mov     xAX, cr2
+    mov     [ss:xDI + CPUMCTX.cr2], xAX
+%endif
+
 %ifdef RT_ARCH_AMD64
     pop     xAX                                 ; the guest edi we pushed above
     mov     dword [ss:xDI + CPUMCTX.edi], eax
@@ -232,9 +241,11 @@ ALIGN(16)
     jnz     .cached_read
 .no_cached_reads:
 
+%ifdef VBOX_WITH_OLD_VTX_CODE
     ; Save CR2 for EPT
     mov     xAX, cr2
     mov     [ss:xDX + VMCSCACHE.cr2], xAX
+%endif
 %endif
 
     ; Restore segment registers
@@ -439,8 +450,12 @@ ALIGN(16)
 
     ; Restore CR2
     mov     rbx, qword [xSI + CPUMCTX.cr2]
+    mov     rdx, cr2
+    cmp     rbx, rdx
+    je      .skipcr2write
     mov     cr2, rbx
 
+.skipcr2write:
     mov     eax, VMX_VMCS_HOST_RSP
     vmwrite xAX, xSP
     ;/* Note: assumes success... */
@@ -508,6 +523,10 @@ ALIGNCODE(16)
     mov     qword [xDI + CPUMCTX.r13], r13
     mov     qword [xDI + CPUMCTX.r14], r14
     mov     qword [xDI + CPUMCTX.r15], r15
+%ifndef VBOX_WITH_OLD_VTX_CODE
+    mov     rax, cr2
+    mov     qword [xDI + CPUMCTX.cr2], rax
+%endif
 
     pop     xAX                                 ; the guest edi we pushed above
     mov     qword [xDI + CPUMCTX.edi], rax
@@ -562,9 +581,11 @@ ALIGN(16)
     jnz     .cached_read
 .no_cached_reads:
 
+%ifdef VBOX_WITH_OLD_VTX_CODE
     ; Save CR2 for EPT
     mov     xAX, cr2
     mov     [xDX + VMCSCACHE.cr2], xAX
+%endif
 %endif
 
     ; Restore segment registers
