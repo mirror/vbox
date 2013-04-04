@@ -85,8 +85,11 @@ VMMRZDECL(int) VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLRING3 enmOperation, 
 #ifdef IN_RC
     pVM->vmm.s.pfnRCToHost(VINF_VMM_CALL_HOST);
 #else
-    if (pVCpu->vmm.s.pfnCallRing3CallbackR0)
+    if (   pVCpu->vmm.s.pfnCallRing3CallbackR0
+        && enmOperation != VMMCALLRING3_VM_R0_ASSERTION)
+    {
         pVCpu->vmm.s.pfnCallRing3CallbackR0(pVCpu, enmOperation, pVCpu->vmm.s.pvCallRing3CallbackUserR0);
+    }
     int rc = vmmR0CallRing3LongJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, VINF_VMM_CALL_HOST);
     if (RT_FAILURE(rc))
         return rc;
