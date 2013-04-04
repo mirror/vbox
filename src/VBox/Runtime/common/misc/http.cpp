@@ -91,7 +91,7 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
     if (CURL_FAILED(rcCurl))
         return VERR_INTERNAL_ERROR;
 
-    CURL* pCurl = curl_easy_init();
+    CURL *pCurl = curl_easy_init();
     if (!pCurl)
         return VERR_INTERNAL_ERROR;
 
@@ -118,7 +118,7 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp)
     pHttpInt->u32Magic = RTHTTP_MAGIC_DEAD;
 
     curl_easy_cleanup(pHttpInt->pCurl);
-        
+
     if (pHttpInt->pHeaders)
         curl_slist_free_all(pHttpInt->pHeaders);
 
@@ -187,7 +187,7 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, uint32_t cHeaders, const char *pcsz
         return VINF_SUCCESS;
     }
 
-    struct curl_slist* pHeaders = NULL;
+    struct curl_slist *pHeaders = NULL;
     for (unsigned i = 0; i < cHeaders; i++)
         pHeaders = curl_slist_append(pHeaders, pcszHeaders[i]);
 
@@ -203,44 +203,62 @@ RTR3DECL(int) RTHttpCertDigest(RTHTTP hHttp, char *pcszCert, size_t cbCert,
                                uint8_t **pabSha1,   size_t *pcbSha1,
                                uint8_t **pabSha512, size_t *pcbSha512)
 {
+    int rc = VINF_SUCCESS;
+
     BIO *cert = BIO_new_mem_buf(pcszCert, (int)cbCert);
-    if (!cert)
-        return VERR_INTERNAL_ERROR;
-
-    X509 *crt = NULL;
-    if (!PEM_read_bio_X509(cert, &crt, NULL, NULL))
-        return VERR_INTERNAL_ERROR;
-
-    unsigned cb;
-    unsigned char md[EVP_MAX_MD_SIZE];
-
-    const EVP_MD *digest = EVP_sha1();
-    int rc = X509_digest(crt, digest, md, &cb);
-    if (rc <= 0)
-        return VERR_INTERNAL_ERROR;
-    *pabSha1 = (uint8_t*)RTMemAlloc(cb);
-    if (!*pabSha1)
-        return VERR_NO_MEMORY;
-    memcpy(*pabSha1, md, cb);
-    *pcbSha1 = cb;
-
-    digest = EVP_sha512();
-    rc = X509_digest(crt, digest, md, &cb);
-    if (rc <= 0)
+    if (cert)
     {
-        RTMemFree(*pabSha1);
-        return VERR_INTERNAL_ERROR;
+        X509 *crt = NULL;
+        if (PEM_read_bio_X509(cert, &crt, NULL, NULL))
+        {
+            unsigned cb;
+            unsigned char md[EVP_MAX_MD_SIZE];
+
+            int rc1 = X509_digest(crt, EVP_sha1(), md, &cb);
+            if (rc1 > 0)
+            {
+                *pabSha1 = (uint8_t*)RTMemAlloc(cb);
+                if (*pabSha1)
+                {
+                    memcpy(*pabSha1, md, cb);
+                    *pcbSha1 = cb;
+
+                    rc1 = X509_digest(crt, EVP_sha512(), md, &cb);
+                    if (rc1 > 0)
+                    {
+                        *pabSha512 = (uint8_t*)RTMemAlloc(cb);
+                        if (*pabSha512)
+                        {
+                            memcpy(*pabSha512, md, cb);
+                            *pcbSha512 = cb;
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
+                    }
+                    else
+                        rc = VERR_INTERNAL_ERROR;
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+            else
+                rc = VERR_INTERNAL_ERROR;
+            X509_free(crt);
+        }
+        else
+            rc = VERR_INTERNAL_ERROR;
+        BIO_free(cert);
     }
-    *pabSha512 = (uint8_t*)RTMemAlloc(cb);
-    if (!*pabSha512)
+    else
+        rc = VERR_INTERNAL_ERROR;
+
+    if (RT_FAILURE(rc))
     {
         RTMemFree(*pabSha512);
-        return VERR_NO_MEMORY;
+        RTMemFree(*pabSha1);
     }
-    memcpy(*pabSha512, md, cb);
-    *pcbSha512 = cb;
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 RTR3DECL(int) RTHttpSetCAFile(RTHTTP hHttp, const char *pcszCAFile)
@@ -319,7 +337,7 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
         {
             case CURLE_URL_MALFORMAT:
             case CURLE_COULDNT_RESOLVE_HOST:
-                rc = VERR_HTTP_NOT_FOUND; 
+                rc = VERR_HTTP_NOT_FOUND;
                 break;
             default:
                 break;
