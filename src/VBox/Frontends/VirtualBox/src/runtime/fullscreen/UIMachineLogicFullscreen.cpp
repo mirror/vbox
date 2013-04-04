@@ -59,9 +59,7 @@ bool UIMachineLogicFullscreen::checkAvailability()
         quint64 usedBits = m_pScreenLayout->memoryRequirements();
         if (availBits < usedBits)
         {
-            int result = msgCenter().cannotEnterFullscreenMode(0, 0, 0,
-                                                               (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
-            if (result == AlertButton_Cancel)
+            if (!msgCenter().cannotEnterFullscreenMode(0, 0, 0, (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M))
                 return false;
         }
     }

@@ -1555,7 +1555,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     }
 }
 
-bool UIMessageCenter::warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported)
+bool UIMessageCenter::warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported) const
 {
     if (fHWVirtExSupported)
         return messageOkCancel(mainMachineWindowShown(), MessageType_Error,
@@ -1575,7 +1575,7 @@ bool UIMessageCenter::warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported
                                tr("Close VM"), tr("Continue"));
 }
 
-bool UIMessageCenter::warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported)
+bool UIMessageCenter::warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported) const
 {
     if (fHWVirtExSupported)
         return messageOkCancel(mainMachineWindowShown(), MessageType_Error,
@@ -1592,7 +1592,7 @@ bool UIMessageCenter::warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupport
                                tr("Close VM"), tr("Continue"));
 }
 
-bool UIMessageCenter::cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames)
+bool UIMessageCenter::cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames) const
 {
     return messageOkCancel(mainMachineWindowShown(), MessageType_Error,
                            tr("<p>Could not start the machine <b>%1</b> because the following "
@@ -1604,7 +1604,7 @@ bool UIMessageCenter::cannotStartWithoutNetworkIf(const QString &strMachineName,
                            tr("Change Network Settings"), tr("Close VM"));
 }
 
-void UIMessageCenter::cannotStartMachine(const CConsole &console, const QString &strName)
+void UIMessageCenter::cannotStartMachine(const CConsole &console, const QString &strName) const
 {
     message(mainMachineWindowShown(), MessageType_Error,
             tr("Failed to start the virtual machine <b>%1</b>.")
@@ -1612,7 +1612,7 @@ void UIMessageCenter::cannotStartMachine(const CConsole &console, const QString 
             formatErrorInfo(console));
 }
 
-void UIMessageCenter::cannotStartMachine(const CProgress &progress, const QString &strName)
+void UIMessageCenter::cannotStartMachine(const CProgress &progress, const QString &strName) const
 {
     message(mainMachineWindowShown(), MessageType_Error,
             tr("Failed to start the virtual machine <b>%1</b>.")
@@ -1620,241 +1620,193 @@ void UIMessageCenter::cannotStartMachine(const CProgress &progress, const QStrin
             !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::cannotSendACPIToMachine()
+void UIMessageCenter::cannotSendACPIToMachine() const
 {
-    message(mainWindowShown(),  MessageType_Warning,
-        tr("You are trying to shut down the guest with the ACPI power "
-            "button. This is currently not possible because the guest "
-            "does not support software shutdown."));
+    message(mainMachineWindowShown(),  MessageType_Warning,
+            tr("You are trying to shut down the guest with the ACPI power button. "
+               "This is currently not possible because the guest does not support software shutdown."));
 }
 
-bool UIMessageCenter::confirmInputCapture(bool *pfAutoConfirmed /* = NULL */)
+bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
 {
     int rc = message(mainMachineWindowShown(), MessageType_Info,
-        tr("<p>You have <b>clicked the mouse</b> inside the Virtual Machine display "
-           "or pressed the <b>host key</b>. This will cause the Virtual Machine to "
-           "<b>capture</b> the host mouse pointer (only if the mouse pointer "
-           "integration is not currently supported by the guest OS) and the "
-           "keyboard, which will make them unavailable to other applications "
-           "running on your host machine."
-           "</p>"
-           "<p>You can press the <b>host key</b> at any time to <b>uncapture</b> the "
-           "keyboard and mouse (if it is captured) and return them to normal "
-           "operation. The currently assigned host key is shown on the status bar "
-           "at the bottom of the Virtual Machine window, next to the&nbsp;"
-           "<img src=:/hostkey_16px.png/>&nbsp;icon. This icon, together "
-           "with the mouse icon placed nearby, indicate the current keyboard "
-           "and mouse capture state."
-           "</p>") +
-        tr("<p>The host key is currently defined as <b>%1</b>.</p>",
-           "additional message box paragraph")
-            .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
-        "confirmInputCapture",
-        AlertButton_Ok | AlertButtonOption_Default,
-        AlertButton_Cancel | AlertButtonOption_Escape,
-        0,
-        tr("Capture", "do input capture"));
-
-    if (pfAutoConfirmed)
-        *pfAutoConfirmed = (rc & AutoConfirmed);
-
+                     tr("<p>You have <b>clicked the mouse</b> inside the Virtual Machine display or pressed the <b>host key</b>. "
+                        "This will cause the Virtual Machine to <b>capture</b> the host mouse pointer (only if the mouse pointer "
+                        "integration is not currently supported by the guest OS) and the keyboard, which will make them "
+                        "unavailable to other applications running on your host machine.</p>"
+                        "<p>You can press the <b>host key</b> at any time to <b>uncapture</b> the keyboard and mouse "
+                        "(if it is captured) and return them to normal operation. "
+                        "The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, "
+                        "next to the&nbsp;<img src=:/hostkey_16px.png/>&nbsp;icon. "
+                        "This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.</p>") +
+                     tr("<p>The host key is currently defined as <b>%1</b>.</p>", "additional message box paragraph")
+                        .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
+                     "confirmInputCapture",
+                     AlertButton_Ok | AlertButtonOption_Default,
+                     AlertButton_Cancel | AlertButtonOption_Escape,
+                     0,
+                     tr("Capture", "do input capture"));
+    /* Was the message auto-confirmed? */
+    fAutoConfirmed = (rc & AutoConfirmed);
+    /* True if "Ok" was pressed: */
     return (rc & AlertButtonMask) == AlertButton_Ok;
 }
 
-void UIMessageCenter::remindAboutAutoCapture()
+void UIMessageCenter::remindAboutAutoCapture() const
 {
     message(mainMachineWindowShown(), MessageType_Info,
-        tr("<p>You have the <b>Auto capture keyboard</b> option turned on. "
-           "This will cause the Virtual Machine to automatically <b>capture</b> "
-           "the keyboard every time the VM window is activated and make it "
-           "unavailable to other applications running on your host machine: "
-           "when the keyboard is captured, all keystrokes (including system ones "
-           "like Alt-Tab) will be directed to the VM."
-           "</p>"
-           "<p>You can press the <b>host key</b> at any time to <b>uncapture</b> the "
-           "keyboard and mouse (if it is captured) and return them to normal "
-           "operation. The currently assigned host key is shown on the status bar "
-           "at the bottom of the Virtual Machine window, next to the&nbsp;"
-           "<img src=:/hostkey_16px.png/>&nbsp;icon. This icon, together "
-           "with the mouse icon placed nearby, indicate the current keyboard "
-           "and mouse capture state."
-           "</p>") +
-        tr("<p>The host key is currently defined as <b>%1</b>.</p>",
-           "additional message box paragraph")
-            .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
-        "remindAboutAutoCapture");
+            tr("<p>You have the <b>Auto capture keyboard</b> option turned on. "
+               "This will cause the Virtual Machine to automatically <b>capture</b> "
+               "the keyboard every time the VM window is activated and make it "
+               "unavailable to other applications running on your host machine: "
+               "when the keyboard is captured, all keystrokes (including system ones "
+               "like Alt-Tab) will be directed to the VM.</p>"
+               "<p>You can press the <b>host key</b> at any time to <b>uncapture</b> the "
+               "keyboard and mouse (if it is captured) and return them to normal "
+               "operation. The currently assigned host key is shown on the status bar "
+               "at the bottom of the Virtual Machine window, next to the&nbsp;"
+               "<img src=:/hostkey_16px.png/>&nbsp;icon. This icon, together "
+               "with the mouse icon placed nearby, indicate the current keyboard "
+               "and mouse capture state.</p>") +
+            tr("<p>The host key is currently defined as <b>%1</b>.</p>",
+               "additional message box paragraph")
+                .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
+            "remindAboutAutoCapture");
 }
 
-void UIMessageCenter::remindAboutMouseIntegration(bool fSupportsAbsolute)
+void UIMessageCenter::remindAboutMouseIntegration(bool fSupportsAbsolute) const
 {
+    /* Do not show this async warning more than one at time: */
     if (warningShown("remindAboutMouseIntegration"))
         return;
     setWarningShown("remindAboutMouseIntegration", true);
 
+    /* Show one of warnings, do not close outdated, not possible in current archi: */
     static const char *kNames [2] =
     {
         "remindAboutMouseIntegrationOff",
         "remindAboutMouseIntegrationOn"
     };
-
-    /* Close the previous (outdated) window if any. We use kName as
-     * pcszAutoConfirmId which is also used as the widget name by default. */
-    {
-        QWidget *outdated =
-            VBoxGlobal::findWidget(NULL, kNames [int (!fSupportsAbsolute)],
-                                    "QIMessageBox");
-        if (outdated)
-            outdated->close();
-    }
-
     if (fSupportsAbsolute)
     {
         message(mainMachineWindowShown(), MessageType_Info,
-            tr("<p>The Virtual Machine reports that the guest OS supports "
-               "<b>mouse pointer integration</b>. This means that you do not "
-               "need to <i>capture</i> the mouse pointer to be able to use it "
-               "in your guest OS -- all "
-               "mouse actions you perform when the mouse pointer is over the "
-               "Virtual Machine's display are directly sent to the guest OS. "
-               "If the mouse is currently captured, it will be automatically "
-               "uncaptured."
-               "</p>"
-               "<p>The mouse icon on the status bar will look like&nbsp;"
-               "<img src=:/mouse_seamless_16px.png/>&nbsp;to inform you that mouse "
-               "pointer integration is supported by the guest OS and is "
-               "currently turned on."
-               "</p>"
-               "<p><b>Note</b>: Some applications may behave incorrectly in "
-               "mouse pointer integration mode. You can always disable it for "
-               "the current session (and enable it again) by selecting the "
-               "corresponding action from the menu bar."
-               "</p>"),
-            kNames [1] /* auto-confirm id */);
+                tr("<p>The Virtual Machine reports that the guest OS supports <b>mouse pointer integration</b>. "
+                   "This means that you do not need to <i>capture</i> the mouse pointer to be able to use it in your guest OS -- "
+                   "all mouse actions you perform when the mouse pointer is over the Virtual Machine's display "
+                   "are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.</p>"
+                   "<p>The mouse icon on the status bar will look like&nbsp;<img src=:/mouse_seamless_16px.png/>&nbsp;to inform you "
+                   "that mouse pointer integration is supported by the guest OS and is currently turned on.</p>"
+                   "<p><b>Note</b>: Some applications may behave incorrectly in mouse pointer integration mode. "
+                   "You can always disable it for the current session (and enable it again) "
+                   "by selecting the corresponding action from the menu bar.</p>"),
+                kNames [1] /* auto-confirm id */);
     }
     else
     {
         message(mainMachineWindowShown(), MessageType_Info,
-            tr("<p>The Virtual Machine reports that the guest OS does not "
-               "support <b>mouse pointer integration</b> in the current video "
-               "mode. You need to capture the mouse (by clicking over the VM "
-               "display or pressing the host key) in order to use the "
-               "mouse inside the guest OS.</p>"),
-            kNames [0] /* auto-confirm id */);
+                tr("<p>The Virtual Machine reports that the guest OS does not support <b>mouse pointer integration</b> "
+                   "in the current video mode. You need to capture the mouse (by clicking over the VM display "
+                   "or pressing the host key) in order to use the mouse inside the guest OS.</p>"),
+                kNames [0] /* auto-confirm id */);
     }
 
+    /* Allow to show this async warning: */
     setWarningShown("remindAboutMouseIntegration", false);
 }
 
-bool UIMessageCenter::remindAboutPausedVMInput()
+bool UIMessageCenter::remindAboutPausedVMInput() const
 {
-    int rc = message(
-        mainMachineWindowShown(),
-        MessageType_Info,
-        tr("<p>The Virtual Machine is currently in the <b>Paused</b> state and "
-           "not able to see any keyboard or mouse input. If you want to "
-           "continue to work inside the VM, you need to resume it by selecting the "
-           "corresponding action from the menu bar.</p>"),
-        "remindAboutPausedVMInput"
-    );
+    int rc = message(mainMachineWindowShown(), MessageType_Info,
+                     tr("<p>The Virtual Machine is currently in the <b>Paused</b> state and "
+                        "not able to see any keyboard or mouse input. If you want to "
+                        "continue to work inside the VM, you need to resume it by selecting the "
+                        "corresponding action from the menu bar.</p>"),
+                        "remindAboutPausedVMInput");
     return !(rc & AutoConfirmed);
 }
 
-void UIMessageCenter::cannotEnterSeamlessMode(ULONG /* uWidth */,
-                                              ULONG /* uHeight */,
-                                              ULONG /* uBpp */,
-                                              ULONG64 uMinVRAM)
+bool UIMessageCenter::confirmGoingFullscreen(const QString &strHotKey) const
+{
+    return messageOkCancel(mainMachineWindowShown(), MessageType_Info,
+                           tr("<p>The virtual machine window will be now switched to <b>fullscreen</b> mode. "
+                              "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
+                              "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
+                              "<p>Note that the main menu bar is hidden in fullscreen mode. "
+                              "You can access it by pressing <b>Host+Home</b>.</p>")
+                              .arg(strHotKey)
+                              .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
+                           "confirmGoingFullscreen",
+                           tr("Switch"));
+}
+
+bool UIMessageCenter::confirmGoingSeamless(const QString &strHotKey) const
+{
+    return messageOkCancel(mainMachineWindowShown(), MessageType_Info,
+                           tr("<p>The virtual machine window will be now switched to <b>Seamless</b> mode. "
+                              "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
+                              "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
+                              "<p>Note that the main menu bar is hidden in seamless mode. "
+                              "You can access it by pressing <b>Host+Home</b>.</p>")
+                              .arg(strHotKey)
+                              .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
+                           "confirmGoingSeamless",
+                           tr("Switch"));
+}
+
+bool UIMessageCenter::confirmGoingScale(const QString &strHotKey) const
+{
+    return messageOkCancel(mainMachineWindowShown(), MessageType_Info,
+                           tr("<p>The virtual machine window will be now switched to <b>Scale</b> mode. "
+                              "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
+                              "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
+                              "<p>Note that the main menu bar is hidden in scale mode. "
+                              "You can access it by pressing <b>Host+Home</b>.</p>")
+                              .arg(strHotKey)
+                              .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
+                           "confirmGoingScale",
+                           tr("Switch"));
+}
+
+bool UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */, ULONG /* uHeight */, ULONG /* uBpp */, ULONG64 uMinVRAM) const
+{
+    return messageOkCancel(mainMachineWindowShown(), MessageType_Warning,
+                           tr("<p>Could not switch the guest display to fullscreen mode due to insufficient guest video memory.</p>"
+                              "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
+                              "<p>Press <b>Ignore</b> to switch to fullscreen mode anyway or press <b>Cancel</b> to cancel the operation.</p>")
+                              .arg(VBoxGlobal::formatSize(uMinVRAM)),
+                           0 /* auto-confirm id */,
+                           QIMessageBox::tr("Ignore"));
+}
+
+void UIMessageCenter::cannotEnterSeamlessMode(ULONG /* uWidth */, ULONG /* uHeight */, ULONG /* uBpp */, ULONG64 uMinVRAM) const
 {
     message(mainMachineWindowShown(), MessageType_Error,
-             tr("<p>Could not enter seamless mode due to insufficient guest "
-                  "video memory.</p>"
-                  "<p>You should configure the virtual machine to have at "
-                  "least <b>%1</b> of video memory.</p>")
-             .arg(VBoxGlobal::formatSize(uMinVRAM)));
+            tr("<p>Could not enter seamless mode due to insufficient guest "
+               "video memory.</p>"
+               "<p>You should configure the virtual machine to have at "
+               "least <b>%1</b> of video memory.</p>")
+               .arg(VBoxGlobal::formatSize(uMinVRAM)));
 }
 
-int UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */,
-                                               ULONG /* uHeight */,
-                                               ULONG /* uBpp */,
-                                               ULONG64 uMinVRAM)
+bool UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const
 {
-    return message(mainMachineWindowShown(), MessageType_Warning,
-             tr("<p>Could not switch the guest display to fullscreen mode due "
-                 "to insufficient guest video memory.</p>"
-                 "<p>You should configure the virtual machine to have at "
-                 "least <b>%1</b> of video memory.</p>"
-                 "<p>Press <b>Ignore</b> to switch to fullscreen mode anyway "
-                 "or press <b>Cancel</b> to cancel the operation.</p>")
-             .arg(VBoxGlobal::formatSize(uMinVRAM)),
-             0 /* auto-confirm id */,
-             AlertButton_Ignore | AlertButtonOption_Default,
-             AlertButton_Cancel | AlertButtonOption_Escape);
+    return messageOkCancel(mainMachineWindowShown(), MessageType_Warning,
+                           tr("<p>Could not change the guest screen to this host screen due to insufficient guest video memory.</p>"
+                              "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
+                              "<p>Press <b>Ignore</b> to switch the screen anyway or press <b>Cancel</b> to cancel the operation.</p>")
+                              .arg(VBoxGlobal::formatSize(uMinVRAM)),
+                           0 /* auto-confirm id */,
+                           QIMessageBox::tr("Ignore"));
 }
 
-void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM)
+void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM) const
 {
     message(mainMachineWindowShown(), MessageType_Error,
             tr("<p>Could not change the guest screen to this host screen "
                "due to insufficient guest video memory.</p>"
                "<p>You should configure the virtual machine to have at "
                "least <b>%1</b> of video memory.</p>")
-            .arg(VBoxGlobal::formatSize(uMinVRAM)));
-}
-
-int UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM)
-{
-    return message(mainMachineWindowShown(), MessageType_Warning,
-                   tr("<p>Could not change the guest screen to this host screen "
-                      "due to insufficient guest video memory.</p>"
-                      "<p>You should configure the virtual machine to have at "
-                      "least <b>%1</b> of video memory.</p>"
-                      "<p>Press <b>Ignore</b> to switch the screen anyway "
-                      "or press <b>Cancel</b> to cancel the operation.</p>")
-                   .arg(VBoxGlobal::formatSize(uMinVRAM)),
-                   0 /* auto-confirm id */,
-                   AlertButton_Ignore | AlertButtonOption_Default,
-                   AlertButton_Cancel | AlertButtonOption_Escape);
-}
-
-bool UIMessageCenter::confirmGoingFullscreen(const QString &strHotKey)
-{
-    return messageOkCancel(mainMachineWindowShown(), MessageType_Info,
-        tr("<p>The virtual machine window will be now switched to <b>fullscreen</b> mode. "
-           "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
-           "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
-           "<p>Note that the main menu bar is hidden in fullscreen mode. "
-           "You can access it by pressing <b>Host+Home</b>.</p>")
-            .arg(strHotKey)
-            .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
-        "confirmGoingFullscreen",
-        tr("Switch", "fullscreen"));
-}
-
-bool UIMessageCenter::confirmGoingSeamless(const QString &strHotKey)
-{
-    return messageOkCancel(mainMachineWindowShown(), MessageType_Info,
-        tr("<p>The virtual machine window will be now switched to <b>Seamless</b> mode. "
-           "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
-           "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
-           "<p>Note that the main menu bar is hidden in seamless mode. "
-           "You can access it by pressing <b>Host+Home</b>.</p>")
-            .arg(strHotKey)
-            .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
-        "confirmGoingSeamless",
-        tr("Switch", "seamless"));
-}
-
-bool UIMessageCenter::confirmGoingScale(const QString &strHotKey)
-{
-    return messageOkCancel(mainMachineWindowShown(), MessageType_Info,
-        tr("<p>The virtual machine window will be now switched to <b>Scale</b> mode. "
-           "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
-           "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
-           "<p>Note that the main menu bar is hidden in scale mode. "
-           "You can access it by pressing <b>Host+Home</b>.</p>")
-            .arg(strHotKey)
-            .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
-        "confirmGoingScale",
-        tr("Switch", "scale"));
+               .arg(VBoxGlobal::formatSize(uMinVRAM)));
 }
 
 void UIMessageCenter::cannotAttachUSBDevice(const CConsole &console,
