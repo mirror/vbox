@@ -135,22 +135,23 @@ GLboolean crServerSupportRedirMuralFBO(void);
 /* guest window data get redirected to FBO on host */
 #define CR_SERVER_REDIR_F_FBO           0x02
 /* used with CR_SERVER_REDIR_F_FBO only
- * makes a separate texture to be used for maintaining the window framebuffer presented data */
-#define CR_SERVER_REDIR_F_FBO_VMFB_TEX  0x04
-/* used with CR_SERVER_REDIR_F_FBO only
  * indicates that FBO data should be copied to RAM for further processing */
-#define CR_SERVER_REDIR_F_FBO_RAM       0x08
+#define CR_SERVER_REDIR_F_FBO_RAM       0x04
 /* used with CR_SERVER_REDIR_F_FBO_RAM only
  * indicates that FBO data should be passed to VRDP backend */
-#define CR_SERVER_REDIR_F_FBO_RAM_VRDP  0x10
+#define CR_SERVER_REDIR_F_FBO_RAM_VRDP  0x08
 /* used with CR_SERVER_REDIR_F_FBO_RAM only
  * indicates that FBO data should be passed to VM Framebuffer */
-#define CR_SERVER_REDIR_F_FBO_RAM_VMFB  0x20
+#define CR_SERVER_REDIR_F_FBO_RAM_VMFB  0x10
+/* used with CR_SERVER_REDIR_F_FBO_RAM only
+ * makes the RPW (Read Pixels Worker) mechanism to be used for GPU memory aquisition */
+#define CR_SERVER_REDIR_F_FBO_RPW       0x20
+
 
 #define CR_SERVER_REDIR_F_ALL           0x3f
 
 #define CR_SERVER_REDIR_FGROUP_REQUIRE_FBO     (CR_SERVER_REDIR_F_ALL & ~CR_SERVER_REDIR_F_DISPLAY)
-#define CR_SERVER_REDIR_FGROUP_REQUIRE_FBO_RAM (CR_SERVER_REDIR_F_FBO_RAM_VRDP | CR_SERVER_REDIR_F_FBO_RAM_VMFB)
+#define CR_SERVER_REDIR_FGROUP_REQUIRE_FBO_RAM (CR_SERVER_REDIR_F_FBO_RAM_VRDP | CR_SERVER_REDIR_F_FBO_RAM_VMFB | CR_SERVER_REDIR_F_FBO_RPW)
 
 DECLINLINE(GLuint) crServerRedirModeAdjust(GLuint value)
 {
@@ -167,7 +168,6 @@ DECLINLINE(GLuint) crServerRedirModeAdjust(GLuint value)
 
 int32_t crServerSetOffscreenRenderingMode(GLuint value);
 void crServerRedirMuralFBO(CRMuralInfo *mural, GLuint redir);
-void crServerEnableDisplayMuralFBO(CRMuralInfo *mural, GLboolean fEnable);
 void crServerDeleteMuralFBO(CRMuralInfo *mural);
 void crServerPresentFBO(CRMuralInfo *mural);
 GLboolean crServerIsRedirectedToFBO();
@@ -194,6 +194,185 @@ PCR_DISPLAY crServerDisplayGetInitialized(uint32_t idScreen);
 
 void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo );
 
+PCR_BLITTER crServerVBoxBlitterGet();
+
+DECLINLINE(void) crServerVBoxBlitterWinInit(CR_BLITTER_WINDOW *win, CRMuralInfo *mural)
+{
+    win->Base.id = mural->spuWindow;
+    win->Base.visualBits = mural->CreateInfo.visualBits;
+    win->width = mural->width;
+    win->height = mural->height;
+}
+
+DECLINLINE(void) crServerVBoxBlitterCtxInit(CR_BLITTER_CONTEXT *ctx, CRContextInfo *ctxInfo)
+{
+    ctx->Base.id = ctxInfo->SpuContext;
+    if (ctx->Base.id < 0)
+        ctx->Base.id = cr_server.MainContextInfo.SpuContext;
+    ctx->Base.visualBits = cr_server.curClient->currentCtxInfo->CreateInfo.visualBits;
+}
+
+/* display worker thread.
+ * see comments for CR_SERVER_RPW struct definition in cr_server.h */
+DECLINLINE(void) crServerXchgI8(int8_t *pu8Val1, int8_t *pu8Val2)
+{
+    int8_t tmp;
+    tmp = *pu8Val1;
+    *pu8Val1 = *pu8Val2;
+    *pu8Val2 = tmp;
+}
+
+#ifdef DEBUG_misha
+# define CR_SERVER_RPW_DEBUG
+#endif
+/* *
+ * _name : Draw, Submitted, Worker, Gpu
+ */
+
+#ifdef CR_SERVER_RPW_DEBUG
+# define crServerRpwEntryDbgVerify(_pE) crServerRpwEntryDbgDoVerify(_pE)
+#else
+# define crServerRpwEntryDbgVerify(_pE) do {} while (0)
+#endif
+
+
+#define CR_SERVER_RPW_ENTRY_TEX_IS_VALID(_pEntry, _name) ((_pEntry)->iTex##_name > 0)
+
+#define CR_SERVER_RPW_ENTRY_TEX_INVALIDATE(_pEntry, _name) do { \
+        crServerRpwEntryDbgVerify(_pEntry); \
+        Assert(CR_SERVER_RPW_ENTRY_TEX_IS_VALID(_pEntry, _name)); \
+        (_pEntry)->iTex##_name = -(_pEntry)->iTex##_name; \
+        crServerRpwEntryDbgVerify(_pEntry); \
+    } while (0)
+
+#define CR_SERVER_RPW_ENTRY_TEX_PROMOTE(_pEntry, _fromName, _toName) do { \
+        crServerRpwEntryDbgVerify(_pEntry); \
+        Assert(CR_SERVER_RPW_ENTRY_TEX_IS_VALID(_pEntry, _fromName)); \
+        Assert(!CR_SERVER_RPW_ENTRY_TEX_IS_VALID(_pEntry, _toName)); \
+        crServerXchgI8(&(_pEntry)->iTex##_fromName, &(_pEntry)->iTex##_toName); \
+        crServerRpwEntryDbgVerify(_pEntry); \
+    } while (0)
+
+#define CR_SERVER_RPW_ENTRY_TEX_XCHG_VALID(_pEntry, _fromName, _toName) do { \
+        crServerRpwEntryDbgVerify(_pEntry); \
+        Assert(CR_SERVER_RPW_ENTRY_TEX_IS_VALID(_pEntry, _fromName)); \
+        Assert(CR_SERVER_RPW_ENTRY_TEX_IS_VALID(_pEntry, _toName)); \
+        crServerXchgI8(&(_pEntry)->iTex##_fromName, &(_pEntry)->iTex##_toName); \
+        Assert(CR_SERVER_RPW_ENTRY_TEX_IS_VALID(_pEntry, _fromName)); \
+        Assert(CR_SERVER_RPW_ENTRY_TEX_IS_VALID(_pEntry, _toName)); \
+        crServerRpwEntryDbgVerify(_pEntry); \
+    } while (0)
+
+
+#define CR_SERVER_RPW_ENTRY_TEX_PROMOTE_KEEPVALID(_pEntry, _fromName, _toName) do { \
+        crServerRpwEntryDbgVerify(_pEntry); \
+        Assert(CR_SERVER_RPW_ENTRY_TEX_IS_VALID(_pEntry, _fromName)); \
+        Assert(!CR_SERVER_RPW_ENTRY_TEX_IS_VALID(_pEntry, _toName)); \
+        crServerXchgI8(&(_pEntry)->iTex##_fromName, &(_pEntry)->iTex##_toName); \
+        (_pEntry)->iTex##_fromName = -(_pEntry)->iTex##_fromName; \
+        Assert(CR_SERVER_RPW_ENTRY_TEX_IS_VALID(_pEntry, _fromName)); \
+        Assert(CR_SERVER_RPW_ENTRY_TEX_IS_VALID(_pEntry, _toName)); \
+        crServerRpwEntryDbgVerify(_pEntry); \
+    } while (0)
+
+#define CR_SERVER_RPW_ENTRY_TEX(_pEntry, _name) ((_pEntry)->aidWorkerTexs[(_pEntry)->iTex##_name - 1])
+
+#define CR_SERVER_RPW_ENTRY_PBO_NEXT_ID(_i) (((_i) + 1) % 2)
+#define CR_SERVER_RPW_ENTRY_PBO_IS_ACTIVE(_pEntry) ((_pEntry)->iCurPBO >= 0)
+#define CR_SERVER_RPW_ENTRY_PBO_CUR(_pEntry) ((_pEntry)->aidPBOs[(_pEntry)->iCurPBO])
+#define CR_SERVER_RPW_ENTRY_PBO_COMPLETED(_pEntry) ((_pEntry)->aidPBOs[CR_SERVER_RPW_ENTRY_PBO_NEXT_ID((_pEntry)->iCurPBO)])
+#define CR_SERVER_RPW_ENTRY_PBO_FLIP(_pEntry) do { \
+        (_pEntry)->iCurPBO = CR_SERVER_RPW_ENTRY_PBO_NEXT_ID((_pEntry)->iCurPBO); \
+    } while (0)
+
+#ifdef CR_SERVER_RPW_DEBUG
+DECLINLINE(void) crServerRpwEntryDbgDoVerify(CR_SERVER_RPW_ENTRY *pEntry)
+{
+    int tstMask = 0;
+    int8_t iVal;
+    Assert(CR_SERVER_RPW_ENTRY_TEX_IS_VALID(pEntry, Draw));
+
+#define CR_VERVER_RPW_ENTRY_DBG_CHECKVAL(_v) do { \
+        iVal = RT_ABS(_v); \
+        Assert(iVal > 0); \
+        Assert(iVal < 5); \
+        Assert(!(tstMask & (1 << iVal))); \
+        tstMask |= (1 << iVal); \
+    } while (0)
+
+    CR_VERVER_RPW_ENTRY_DBG_CHECKVAL(pEntry->iTexDraw);
+    CR_VERVER_RPW_ENTRY_DBG_CHECKVAL(pEntry->iTexSubmitted);
+    CR_VERVER_RPW_ENTRY_DBG_CHECKVAL(pEntry->iTexWorker);
+    CR_VERVER_RPW_ENTRY_DBG_CHECKVAL(pEntry->iTexGpu);
+    Assert(tstMask == 0x1E);
+}
+#endif
+
+DECLINLINE(bool) crServerRpwIsInitialized(const CR_SERVER_RPW *pWorker)
+{
+    return !!pWorker->ctxId;
+}
+int crServerRpwInit(CR_SERVER_RPW *pWorker);
+int crServerRpwTerm(CR_SERVER_RPW *pWorker);
+DECLINLINE(bool) crServerRpwEntryIsInitialized(const CR_SERVER_RPW_ENTRY *pEntry)
+{
+    return !!pEntry->pfnData;
+}
+int crServerRpwEntryInit(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *pEntry, uint32_t width, uint32_t height, PFNCR_SERVER_RPW_DATA pfnData);
+int crServerRpwEntryCleanup(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *pEntry);
+int crServerRpwEntryResize(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *pEntry, uint32_t width, uint32_t height);
+int crServerRpwEntrySubmit(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *pEntry);
+int crServerRpwEntryWaitComplete(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *pEntry);
+int crServerRpwEntryCancel(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *pEntry);
+DECLINLINE(void) crServerRpwEntryDrawSettingsToTex(const CR_SERVER_RPW_ENTRY *pEntry, VBOXVR_TEXTURE *pTex)
+{
+    pTex->width = pEntry->Size.cx;
+    pTex->height = pEntry->Size.cy;
+    pTex->target = GL_TEXTURE_2D;
+    CR_SERVER_RPW_ENTRY_TEX_IS_VALID(pEntry, Draw);
+    pTex->hwid = CR_SERVER_RPW_ENTRY_TEX(pEntry, Draw);
+}
+/**/
+
+typedef struct CR_SERVER_CTX_SWITCH
+{
+    GLuint idDrawFBO, idReadFBO;
+    CRContext *pNewCtx;
+    CRContext *pOldCtx;
+} CR_SERVER_CTX_SWITCH;
+
+DECLINLINE(void) cr_serverCtxSwitchPrepare(CR_SERVER_CTX_SWITCH *pData, CRContext *pNewCtx)
+{
+    CRMuralInfo *pCurrentMural = cr_server.currentMural;
+    CRContextInfo *pCurCtxInfo = cr_server.currentCtxInfo;
+    GLuint idDrawFBO, idReadFBO;
+    CRContext *pCurCtx = pCurCtxInfo ? pCurCtxInfo->pContext : NULL;
+
+    CRASSERT(pCurCtx == crStateGetCurrent());
+
+    if (pCurrentMural)
+    {
+        idDrawFBO = pCurrentMural->aidFBOs[pCurrentMural->iCurDrawBuffer];
+        idReadFBO = pCurrentMural->aidFBOs[pCurrentMural->iCurReadBuffer];
+    }
+    else
+    {
+        idDrawFBO = 0;
+        idReadFBO = 0;
+    }
+
+    crStateSwitchPrepare(pNewCtx, pCurCtx, idDrawFBO, idReadFBO);
+
+    pData->idDrawFBO = idDrawFBO;
+    pData->idReadFBO = idReadFBO;
+    pData->pNewCtx = pNewCtx;
+    pData->pOldCtx = pCurCtx;
+}
+
+DECLINLINE(void) cr_serverCtxSwitchPostprocess(CR_SERVER_CTX_SWITCH *pData)
+{
+    crStateSwitchPostprocess(pData->pOldCtx, pData->pNewCtx, pData->idDrawFBO, pData->idReadFBO);
+}
 RT_C_DECLS_END
 
 #endif /* CR_SERVER_H */

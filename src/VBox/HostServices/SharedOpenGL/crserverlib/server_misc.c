@@ -742,14 +742,6 @@ int crServerVBoxBlitterTexInit(CRContext *ctx, CRMuralInfo *mural, PVBOXVR_TEXTU
     return VINF_SUCCESS;
 }
 
-void crServerVBoxBlitterWinInit(CRMuralInfo *mural, CR_BLITTER_WINDOW *win)
-{
-    win->Base.id = mural->spuWindow;
-    win->Base.visualBits = mural->CreateInfo.visualBits;
-    win->width = mural->width;
-    win->height = mural->height;
-}
-
 int crServerVBoxBlitterBlitCurrentCtx(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1,
         GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1,
         GLbitfield mask, GLenum filter)
@@ -811,14 +803,11 @@ int crServerVBoxBlitterBlitCurrentCtx(GLint srcX0, GLint srcY0, GLint srcX1, GLi
         return VERR_GENERAL_FAILURE;
     }
 
-    crServerVBoxBlitterWinInit(mural, &BltInfo);
+    crServerVBoxBlitterWinInit(&BltInfo, mural);
+
+    crServerVBoxBlitterCtxInit(&Ctx, cr_server.curClient->currentCtxInfo);
 
     CrBltMuralSetCurrent(pBlitter, &BltInfo);
-
-    Ctx.Base.id = cr_server.curClient->currentCtxInfo->SpuContext;
-    if (Ctx.Base.id < 0)
-        Ctx.Base.id = cr_server.MainContextInfo.SpuContext;
-    Ctx.Base.visualBits = cr_server.curClient->currentCtxInfo->CreateInfo.visualBits;
 
     idDrawFBO = mural->aidFBOs[mural->iCurDrawBuffer];
     idReadFBO = mural->aidFBOs[mural->iCurReadBuffer];

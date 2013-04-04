@@ -21,6 +21,10 @@
 #include <iprt/types.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
+#include <iprt/list.h>
+#include <iprt/thread.h>
+#include <iprt/critsect.h>
+#include <iprt/semaphore.h>
 
 #include <VBox/vmm/ssm.h>
 
@@ -86,6 +90,116 @@ typedef struct {
     int32_t externalID;
 } CRCreateInfo_t;
 
+
+/* VRAM->RAM worker thread */
+
+typedef enum
+{
+    CR_SERVER_RPW_STATE_UNINITIALIZED = 0,
+    CR_SERVER_RPW_STATE_INITIALIZING,
+    CR_SERVER_RPW_STATE_INITIALIZED,
+    CR_SERVER_RPW_STATE_UNINITIALIZING,
+} CR_SERVER_RPW_STATE;
+
+/* worker control command */
+typedef enum
+{
+    CR_SERVER_RPW_CTL_TYPE_UNDEFINED = 0,
+    CR_SERVER_RPW_CTL_TYPE_WAIT_COMPLETE,
+    CR_SERVER_RPW_CTL_TYPE_TERM
+} CR_SERVER_RPW_CTL_TYPE;
+
+struct CR_SERVER_RPW_ENTRY;
+
+typedef struct CR_SERVER_RPW_CTL {
+    CR_SERVER_RPW_CTL_TYPE enmType;
+    int rc;
+    RTSEMEVENT hCompleteEvent;
+    /* valid for *_WAIT_COMPLETE and *_CANCEL */
+    struct CR_SERVER_RPW_ENTRY *pEntry;
+} CR_SERVER_RPW_CTL;
+
+
+struct CR_SERVER_RPW_ENTRY;
+
+typedef DECLCALLBACKPTR(void, PFNCR_SERVER_RPW_DATA) (const struct CR_SERVER_RPW_ENTRY* pEntry, void *pvEntryTexData);
+
+typedef struct CR_SERVER_RPW_ENTRY
+{
+    RTRECTSIZE Size;
+    /*  We have to use 4 textures here.
+     *
+     *  1. iDrawTex - the texture clients can draw to and then submit it for contents acquisition via crServerRpwEntrySubmit
+     *  2. iSubmittedTex - the texture submitted to the worker for processing and, whose processing has not start yet,
+     *     i.e. it is being in the queue and can be safely removed/replaced [from] there
+     *  3. iWorkerTex - the texture being prepared & passed by the worker to the GPU (stage 1 of a worker contents acquisition process)
+     *  4. iGpuTex - the texture passed/processed to/by the GPU, whose data is then acquired by the server (stage 2 of a worker contents acquisition process)
+     *
+     *  - There can be valid distinct iGpuTex, iWorkerTex, iSubmittedTex and iDrawTex present simultaneously.
+     *  - Either or both of iSubmittedTex and iFreeTex are always valid
+     *
+     *  Detail:
+     *
+     *  - iSubmittedTex and iFreeTex modifications are performed under CR_SERVER_RPW::CritSect lock.
+     *
+     *  - iDrawTex can only be changed by client side (i.e. the crServerRpwEntrySubmit caller), this is why client thread can access it w/o a lock
+     *  - iSubmittedTex and iFreeTex can be modified by both client and worker, so lock is always required
+     *
+     *  - iDrawTex can be accessed by client code only
+     *  - iWorkerTex and iGpuTex can be accessed by worker code only
+     *  - iSubmittedTex and iFreeTex can be accessed under CR_SERVER_RPW::CritSect lock only
+     *  - either or both of iSubmittedTex and iFreeTex are always valid (see below for more explanation),
+     *    this is why client can easily determine the new iDrawTex value on Submit, i.e. :
+     *
+     *          (if initial iSubmittedTex was valid)
+     *                ---------------
+     *                |              ^
+     *                >              |
+     *   Submit-> iDrawTex -> iSubmittedTex
+     *                ^
+     *                | (if initial iSubmittedTex was NOT valid)
+     *              iFreeTex
+     *
+     *  - The worker can invalidate the iSubmittedTex (i.e. do iSubmittedTex -> iWorkerTex) only after it is done
+     *    with the last iWorkerTex -> iGpuTex transformation freeing the previously used iGpuTex to iFreeTex.
+     *
+     *  - A simplified worker iXxxTex transformation logic is:
+     *    1. iFreeTex is initially valid
+     *    2. iSubmittedTex -> iWorkerTex;
+     *    3. submit iWorkerTex acquire request to the GPU
+     *    4. complete current iGpuTex
+     *    5. iGpuTex -> iFreeTex
+     *    6. iWorkerTex -> iGpuTex
+     *    7. goto 1
+     *
+     *  */
+    int8_t iTexDraw;
+    int8_t iTexSubmitted;
+    int8_t iTexWorker;
+    int8_t iTexGpu;
+    int8_t iCurPBO;
+    GLuint aidWorkerTexs[4];
+    GLuint aidPBOs[2];
+    RTLISTNODE WorkEntry;
+    RTLISTNODE WorkerWorkEntry;
+    RTLISTNODE GpuSubmittedEntry;
+    PFNCR_SERVER_RPW_DATA pfnData;
+} CR_SERVER_RPW_ENTRY;
+
+typedef struct CR_SERVER_RPW {
+    RTLISTNODE WorkList;
+    RTCRITSECT CritSect;
+    RTSEMEVENT hSubmitEvent;
+    /* only one outstanding command is supported,
+     * and ctl requests must be cynchronized, hold it right here */
+    CR_SERVER_RPW_CTL Ctl;
+    int ctxId;
+    GLint ctxVisBits;
+    RTTHREAD hThread;
+} CR_SERVER_RPW;
+/* */
+
+
 /**
  * Mural info
  */
@@ -141,6 +255,8 @@ typedef struct {
     /* if root Visible regions are set, these two contain actual regions being passed to render spu */
     VBOXVR_SCR_COMPOSITOR_ENTRY RootVrCEntry;
     VBOXVR_SCR_COMPOSITOR RootVrCompositor;
+
+    CR_SERVER_RPW_ENTRY RpwEntry;
 
     /* bitfield representing contexts the mural has been ever current with
      * we just reuse CR_STATE_SHAREDOBJ_USAGE_XXX API here for simplicity */
@@ -268,6 +384,7 @@ void* CrHlpGetTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLuint idPB
 void CrHlpPutTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLenum enmFormat, void *pvData);
 
 /* */
+
 /* BFB (BlitFramebuffer Blitter) flags
  * so far only CR_SERVER_BFB_ON_ALWAIS is supported and is alwais used if any flag is set */
 #define CR_SERVER_BFB_DISABLED 0
@@ -336,6 +453,8 @@ typedef struct {
     uint32_t fBlitterMode;
     CR_BLITTER Blitter;
 
+    CR_SERVER_RPW RpwWorker;
+
     /** configuration options */
     /*@{*/
     int useL2;
@@ -394,6 +513,7 @@ typedef struct {
     GLuint                fPresentMode; /*Force server to render 3d data offscreen
                                                      *using callback above to update vbox framebuffers*/
     GLuint                fPresentModeDefault; /*can be set with CR_SERVER_DEFAULT_RENDER_TYPE*/
+    GLuint                fVramPresentModeDefault;
     GLboolean             bUsePBOForReadback;       /*Use PBO's for data readback*/
 
     GLboolean             bUseOutputRedirect;       /* Whether the output redirect was set. */

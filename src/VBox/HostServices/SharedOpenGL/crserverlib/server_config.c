@@ -53,6 +53,7 @@ setDefaults(void)
     cr_server.screenCount = 0;
     cr_server.fPresentMode = CR_SERVER_REDIR_F_NONE;
     cr_server.fPresentModeDefault = cr_server.fPresentMode;
+    cr_server.fVramPresentModeDefault = CR_SERVER_REDIR_F_FBO_RAM;
     cr_server.bUsePBOForReadback = GL_FALSE;
     cr_server.bUseOutputRedirect = GL_FALSE;
 }
@@ -233,6 +234,7 @@ void crServerSetVBoxConfiguration()
     }
 #endif
     cr_server.fPresentModeDefault = cr_server.fPresentMode;
+    cr_server.fVramPresentModeDefault = CR_SERVER_REDIR_F_FBO_RAM/* | CR_SERVER_REDIR_F_FBO_RPW*/;
 
     /* Need to do this as early as possible */
 
@@ -376,6 +378,7 @@ void crServerSetVBoxConfigurationHGCM()
     }
 #endif
     cr_server.fPresentModeDefault = cr_server.fPresentMode;
+    cr_server.fVramPresentModeDefault = CR_SERVER_REDIR_F_FBO_RAM/* | CR_SERVER_REDIR_F_FBO_RPW*/;
 
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_POSITION_CR, 0, GL_INT, 2, &dims[0]);
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_SIZE_CR, 0, GL_INT, 2, &dims[2]);

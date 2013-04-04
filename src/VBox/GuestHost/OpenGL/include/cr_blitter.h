@@ -115,6 +115,12 @@ DECLINLINE(GLboolean) CrBltIsEntered(PCR_BLITTER pBlitter)
     return !!pBlitter->pRestoreCtxInfo;
 }
 
+DECLINLINE(GLint) CrBltGetVisBits(PCR_BLITTER pBlitter)
+{
+    return pBlitter->CtxInfo.Base.visualBits;
+}
+
+
 DECLINLINE(GLboolean) CrBltIsEverEntered(PCR_BLITTER pBlitter)
 {
     return !!pBlitter->Flags.Initialized;
