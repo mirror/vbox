@@ -2969,19 +2969,6 @@ QString VBoxGlobal::sizeRegexp()
     return regexp;
 }
 
-/* static */
-QString VBoxGlobal::toHumanReadableList(const QStringList &list)
-{
-    QString strList;
-    for (int i = 0; i < list.size(); ++i)
-    {
-        strList += list.at(i);
-        if (i < list.size() - 1)
-            strList += + " ";
-    }
-    return strList;
-}
-
 /**
  *  Parses the given size string that should be in form of
  *  <tt>####[.##] B|KB|MB|GB|TB|PB</tt> and returns

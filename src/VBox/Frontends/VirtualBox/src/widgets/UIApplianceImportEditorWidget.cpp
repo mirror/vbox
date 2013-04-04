@@ -115,9 +115,9 @@ bool UIApplianceImportEditorWidget::setFile(const QString& strFile)
         if (!fResult)
         {
             if (progress.isNull())
-                msgCenter().cannotImportAppliance(m_pAppliance, this);
+                msgCenter().cannotImportAppliance(*m_pAppliance, this);
             else
-                msgCenter().cannotImportAppliance(progress, m_pAppliance, this);
+                msgCenter().cannotImportAppliance(progress, m_pAppliance->GetPath(), this);
             /* Delete the appliance in a case of an error */
             delete m_pAppliance;
             m_pAppliance = NULL;
@@ -151,14 +151,14 @@ bool UIApplianceImportEditorWidget::import()
                 return false;
             if (!progress.isOk() || progress.GetResultCode() != 0)
             {
-                msgCenter().cannotImportAppliance(progress, m_pAppliance, this);
+                msgCenter().cannotImportAppliance(progress, m_pAppliance->GetPath(), this);
                 return false;
             }
             else
                 return true;
         }
         if (!fResult)
-            msgCenter().cannotImportAppliance(m_pAppliance, this);
+            msgCenter().cannotImportAppliance(*m_pAppliance, this);
     }
     return false;
 }

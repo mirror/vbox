@@ -175,7 +175,7 @@ bool UIWizardNewVMPage1::createMachineFolder()
     /* Cleanup previosly created folder if any: */
     if (machineFolderCreated() && !cleanupMachineFolder())
     {
-        msgCenter().warnAboutCannotRemoveMachineFolder(thisImp(), m_strMachineFolder);
+        msgCenter().cannotRemoveMachineFolder(m_strMachineFolder, thisImp());
         return false;
     }
 
@@ -193,7 +193,7 @@ bool UIWizardNewVMPage1::createMachineFolder()
     /* Make sure that folder doesn't exists: */
     if (QDir(strMachineFolder).exists())
     {
-        msgCenter().warnAboutCannotRewriteMachineFolder(thisImp(), strMachineFolder);
+        msgCenter().cannotRewriteMachineFolder(strMachineFolder, thisImp());
         return false;
     }
 
@@ -201,7 +201,7 @@ bool UIWizardNewVMPage1::createMachineFolder()
     bool fMachineFolderCreated = QDir().mkpath(strMachineFolder);
     if (!fMachineFolderCreated)
     {
-        msgCenter().warnAboutCannotCreateMachineFolder(thisImp(), strMachineFolder);
+        msgCenter().cannotCreateMachineFolder(strMachineFolder, thisImp());
         return false;
     }
 

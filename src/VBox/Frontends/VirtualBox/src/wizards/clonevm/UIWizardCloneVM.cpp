@@ -104,7 +104,7 @@ bool UIWizardCloneVM::cloneVM()
         const CSnapshot &newSnapshot = m_machine.FindSnapshot(strSnapshotName);
         if (newSnapshot.isNull())
         {
-            msgCenter().cannotFindSnapshotByName(this, m_machine, strSnapshotName);
+            msgCenter().cannotFindSnapshotByName(m_machine, strSnapshotName, this);
             return false;
         }
         srcMachine = newSnapshot.GetMachine();

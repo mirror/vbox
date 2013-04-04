@@ -267,27 +267,27 @@ public:
     void cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent = 0) const;
 
     /* API: Wizards warnings: */
-    void cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent = 0);
-    void cannotRegisterMachine(const CVirtualBox &vbox, const QString &strMachineName, QWidget *pParent = 0);
-    void cannotCreateClone(const CMachine &machine, QWidget *pParent = 0);
-    void cannotCreateClone(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0);
-    void cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0);
-    void cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation,QWidget *pParent = 0);
-    void cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent = 0);
-    void cannotCreateHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent = 0);
-    void warnAboutCannotRemoveMachineFolder(QWidget *pParent, const QString &strFolderName);
-    void warnAboutCannotRewriteMachineFolder(QWidget *pParent, const QString &strFolderName);
-    void warnAboutCannotCreateMachineFolder(QWidget *pParent, const QString &strFolderName);
-    bool confirmHardDisklessMachine(QWidget *pParent);
-    void cannotImportAppliance(CAppliance *pAppliance, QWidget *pParent = NULL) const;
-    void cannotImportAppliance(const CProgress &progress, CAppliance *pAppliance, QWidget *pParent = NULL) const;
-    void cannotCheckFiles(const CProgress &progress, QWidget *pParent = NULL) const;
-    void cannotRemoveFiles(const CProgress &progress, QWidget *pParent = NULL) const;
-    bool confirmExportMachinesInSaveState(const QStringList &strMachineNames, QWidget *pParent = NULL) const;
-    void cannotExportAppliance(CAppliance *pAppliance, QWidget *pParent = NULL) const;
-    void cannotExportAppliance(const CMachine &machine, CAppliance *pAppliance, QWidget *pParent = NULL) const;
-    void cannotExportAppliance(const CProgress &progress, CAppliance *pAppliance, QWidget *pParent = NULL) const;
-    void cannotFindSnapshotByName(QWidget *pParent, const CMachine &machine, const QString &strMachine) const;
+    bool confirmHardDisklessMachine(QWidget *pParent = 0) const;
+    void cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent = 0) const;
+    void cannotRegisterMachine(const CVirtualBox &vbox, const QString &strMachineName, QWidget *pParent = 0) const;
+    void cannotCreateClone(const CMachine &machine, QWidget *pParent = 0) const;
+    void cannotCreateClone(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0) const;
+    void cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent = 0) const;
+    void cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation,QWidget *pParent = 0) const;
+    void cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent = 0) const;
+    void cannotCreateHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent = 0) const;
+    void cannotRemoveMachineFolder(const QString &strFolderName, QWidget *pParent = 0) const;
+    void cannotRewriteMachineFolder(const QString &strFolderName, QWidget *pParent = 0) const;
+    void cannotCreateMachineFolder(const QString &strFolderName, QWidget *pParent = 0) const;
+    void cannotImportAppliance(CAppliance &appliance, QWidget *pParent = 0) const;
+    void cannotImportAppliance(const CProgress &progress, const QString &strPath, QWidget *pParent = 0) const;
+    void cannotCheckFiles(const CProgress &progress, QWidget *pParent = 0) const;
+    void cannotRemoveFiles(const CProgress &progress, QWidget *pParent = 0) const;
+    bool confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent = 0) const;
+    void cannotExportAppliance(const CAppliance &appliance, QWidget *pParent = 0) const;
+    void cannotExportAppliance(const CMachine &machine, const QString &strPath, QWidget *pParent = 0) const;
+    void cannotExportAppliance(const CProgress &progress, const QString &strPath, QWidget *pParent = 0) const;
+    void cannotFindSnapshotByName(const CMachine &machine, const QString &strMachine, QWidget *pParent = 0) const;
 
     /* API: Runtime UI warnings: */
     void showRuntimeError(const CConsole &console, bool fFatal,

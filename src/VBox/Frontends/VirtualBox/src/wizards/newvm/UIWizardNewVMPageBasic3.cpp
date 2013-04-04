@@ -250,7 +250,7 @@ bool UIWizardNewVMPageBasic3::validatePage()
     if (m_pDiskSkip->isChecked())
     {
         /* Ask user about disk-less machine: */
-        fResult = msgCenter().confirmHardDisklessMachine(this);
+        fResult = msgCenter().confirmHardDisklessMachine(thisImp());
     }
     else if (m_pDiskCreate->isChecked())
     {
