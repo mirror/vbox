@@ -108,6 +108,28 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, uint32_t cHeaders, const char *pcsz
 RTR3DECL(int) RTHttpSetCAFile(RTHTTP hHttp, const char *pcszCAFile);
 /** @} */
 
+
+/**
+ * Determine the digest (fingerprint) of a certificate. Allocate memory for
+ * storing the SHA1 fingerprint as well as the SHA512 fingerprint. This
+ * memory has to be freed by RTMemFree().
+ *
+ * @todo Move this function to somewhere else.
+ *
+ * @returns iprt status code.
+ *
+ * @param    hHttp         HTTP interface handle (ignored).
+ * @param    pcszCert      The certificate in PEM format.
+ * @param    cbCert        Size of the certificate.
+ * @param    pabSha1       Where to store the pointer to the SHA1 fingerprint.
+ * @param    pcbSha1       Where to store the size of the SHA1 fingerprint.
+ * @param    pabSha512     Where to store the pointer to the SHA512 fingerprint.
+ * @param    pcbSha512     Where to store the size of the SHA512 fingerprint.
+ */
+RTR3DECL(int) RTHttpCertDigest(RTHTTP hHttp, char *pcszCert, size_t cbCert,
+                               uint8_t **pabSha1, size_t *pcbSha1,
+                               uint8_t **pabSha512, size_t *pcbSha512);
+
 RT_C_DECLS_END
 
 #endif
