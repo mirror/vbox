@@ -2501,9 +2501,10 @@ endif
 #
 # Windows build tool.
 #
-##BLDPROGS.win = ntBldSymDb
-##ntBldSymDb_TEMPLATE = VBoxAdvBldProg
-##ntBldSymDb_SOURCES = r0drv/nt/ntBldSymDb.cpp
+BLDPROGS.win = ntBldSymDb
+ntBldSymDb_TEMPLATE = VBoxAdvBldProg
+ntBldSymDb_INCS = .
+ntBldSymDb_SOURCES = r0drv/nt/ntBldSymDb.cpp
 
 #
 # Generate the rules (we're the to sub-makefile).
