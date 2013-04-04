@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -86,7 +86,6 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse);
 RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxyUrl, uint32_t uPort,
                              const char *pcszProxyUser, const char *pcszProxyPwd);
 
-
 /**
  * Set custom headers.
  *
@@ -97,6 +96,16 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxyUrl, uint32_t uP
  * @param    pcszHeaders   array of headers in form "foo: bar".
  */
 RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, uint32_t cHeaders, const char *pcszHeaders[]);
+
+/**
+ * Set a custom certification authority file, containing root certificates.
+ *
+ * @returns iprt status code.
+ *
+ * @param    hHttp         HTTP interface handle.
+ * @param    pcszCAFile    File name containing root certificates.
+ */
+RTR3DECL(int) RTHttpSetCAFile(RTHTTP hHttp, const char *pcszCAFile);
 /** @} */
 
 RT_C_DECLS_END

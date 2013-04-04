@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,9 +30,12 @@
 #include <iprt/err.h>
 #include <iprt/http.h>
 #include <iprt/mem.h>
+#include <iprt/file.h>
 #include <iprt/stream.h>
+#include <iprt/string.h>
 #include <iprt/initterm.h>
-#include <iprt/thread.h>
+
+#define CAFILE_NAME "tstHttp-tempcafile.crt"
 
 int main()
 {
@@ -43,14 +46,72 @@ int main()
     RTHTTP hHttp;
     int rc = RTHttpCreate(&hHttp);
     char *pszBuf = NULL;
+    PRTSTREAM CAFile = NULL;
+
+    // create certificate file
+    rc = RTStrmOpen(CAFILE_NAME, "w+b", &CAFile);
+
+    // fetch root CA certificate (new one, often avoided in cert chains by
+    // using an intermediate cert which is signed by old root)
+    if (RT_SUCCESS(rc))
+        rc = RTHttpGet(hHttp,
+                       "http://www.verisign.com/repository/roots/root-certificates/PCA-3G5.pem",
+                       &pszBuf);
+    if (RT_SUCCESS(rc) && pszBuf)
+    {
+	/// @todo check certificate fingerprint against a strong hash,
+	// otherwise there's a simple way for a man-in-the-middle attack
+        rc = RTStrmWrite(CAFile, pszBuf, strlen(pszBuf));
+	if (RT_SUCCESS(rc))
+            rc = RTStrmWrite(CAFile, RTFILE_LINEFEED, strlen(RTFILE_LINEFEED));
+    }
+    if (pszBuf)
+    {
+        RTMemFree(pszBuf);
+        pszBuf = NULL;
+    }
+
+    // fetch root CA certificate (old one, but still very widely used)
+    if (RT_SUCCESS(rc))
+        rc = RTHttpGet(hHttp,
+                       "http://www.verisign.com/repository/roots/root-certificates/PCA-3.pem",
+                       &pszBuf);
+    if (RT_SUCCESS(rc) && pszBuf)
+    {
+	/// @todo check certificate fingerprint against a strong hash,
+	// otherwise there's a simple way for a man-in-the-middle attack
+        rc = RTStrmWrite(CAFile, pszBuf, strlen(pszBuf));
+	if (RT_SUCCESS(rc))
+            rc = RTStrmWrite(CAFile, RTFILE_LINEFEED, strlen(RTFILE_LINEFEED));
+    }
+    if (pszBuf)
+    {
+        RTMemFree(pszBuf);
+        pszBuf = NULL;
+    }
+
+    // close certificate file
+    if (CAFile)
+    {
+        RTStrmClose(CAFile);
+        CAFile = NULL;
+    }
+
+    if (RT_SUCCESS(rc))
+        rc = RTHttpSetCAFile(hHttp, CAFILE_NAME);
     if (RT_SUCCESS(rc))
         rc = RTHttpGet(hHttp,
                        "https://update.virtualbox.org/query.php?platform=LINUX_32BITS_UBUNTU_12_04&version=4.1.18",
                        &pszBuf);
     RTHttpDestroy(hHttp);
 
+    if (RT_FAILURE(rc))
+        cErrors++;
+
     RTPrintf("Error code: %Rrc\nGot: %s\n", rc, pszBuf);
     RTMemFree(pszBuf);
+
+//    RTFileDelete(CAFILE_NAME);
 
     return !!cErrors;
 }
