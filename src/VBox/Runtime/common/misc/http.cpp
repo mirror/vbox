@@ -1,11 +1,10 @@
-
 /* $Id$ */
 /** @file
  * IPRT - HTTP communication API.
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,6 +33,7 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/file.h>
 
 #include <curl/curl.h>
 #include "internal/magics.h"
@@ -48,6 +48,7 @@ typedef struct RTHTTPINTERNAL
     CURL *pCurl;
     long lLastResp;
     struct curl_slist *pHeaders;
+    const char *pcszCAFile;
 } RTHTTPINTERNAL;
 typedef RTHTTPINTERNAL *PRTHTTPINTERNAL;
 
@@ -197,6 +198,16 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, uint32_t cHeaders, const char *pcsz
     return VINF_SUCCESS;
 }
 
+RTR3DECL(int) RTHttpSetCAFile(RTHTTP hHttp, const char *pcszCAFile)
+{
+    PRTHTTPINTERNAL pHttpInt = hHttp;
+    RTHTTP_VALID_RETURN(pHttpInt);
+
+    pHttpInt->pcszCAFile = pcszCAFile;
+
+    return VINF_SUCCESS;
+}
+
 RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
 {
     PRTHTTPINTERNAL pHttpInt = hHttp;
@@ -212,10 +223,15 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
         return VERR_INVALID_PARAMETER;
 #endif
 
-    /* XXX */
-    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_CAINFO, "/etc/ssl/certs/ca-certificates.crt");
-    if (CURL_FAILED(rcCurl))
-        return VERR_INTERNAL_ERROR;
+    const char *pcszCAFile = "/etc/ssl/certs/ca-certificates.crt";
+    if (pHttpInt->pcszCAFile)
+        pcszCAFile = pHttpInt->pcszCAFile;
+    if (RTFileExists(pcszCAFile))
+    {
+        rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_CAINFO, pcszCAFile);
+        if (CURL_FAILED(rcCurl))
+            return VERR_INTERNAL_ERROR;
+    }
 
     RTHTTPMEMCHUNK chunk = { NULL, 0 };
     rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_WRITEFUNCTION, &rtHttpWriteData);
