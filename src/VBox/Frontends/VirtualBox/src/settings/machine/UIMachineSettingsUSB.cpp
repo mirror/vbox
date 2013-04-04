@@ -573,6 +573,7 @@ bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTi
                             "It will be disabled in the meantime unless you cancel the current settings changes.")
                             .arg(GUI_ExtPackName);
         msgCenter().remindAboutUnsupportedUSB2(GUI_ExtPackName, this);
+        mCbUSB2->setChecked(false);
         return true;
     }
 #endif
