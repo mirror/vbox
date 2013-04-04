@@ -152,8 +152,19 @@ int UIProgressDialog::run(int cRefreshInterval)
             QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 #endif /* Q_WS_MAC */
 
-        /* Enter the modal loop, but don't show the window immediately */
-        exec(false);
+        /* Create a local event-loop: */
+        {
+            /* Guard ourself for the case
+             * we destroyed ourself in our event-loop: */
+            QPointer<UIProgressDialog> guard = this;
+
+            /* Enter the modal loop, but don't show the window immediately: */
+            exec(false);
+
+            /* Are we still valid? */
+            if (guard.isNull())
+                return Rejected;
+        }
 
         /* Kill refresh timer */
         killTimer(id);
