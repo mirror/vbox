@@ -2590,8 +2590,7 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
      * Guest CR0.
      * Guest FPU.
      */
-    if (   (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR0)
-        || (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_FPU))
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR0)
     {
         uint64_t u64GuestCR0 = pCtx->cr0;
 
@@ -2733,14 +2732,13 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
         rc |= VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR0_MASK, u64CR0Mask);
         AssertRCReturn(rc, rc);
 
-        pVCpu->hm.s.fContextUseFlags &= ~(HM_CHANGED_GUEST_CR0 | HM_CHANGED_GUEST_FPU);
+        pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR0;
     }
 
     /*
      * Guest CR2.
-     * It's always loaded late in the assembler code. Nothing to do here.
+     * It's always loaded in the assembler code. Nothing to do here.
      */
-    pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR2;
 
     /*
      * Guest CR3.
@@ -6220,10 +6218,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
 
-    /* For longjmp reentrants we need not load the guest state all over again. */
+    /* For longjmp reentrants we need not load the guest state again. */
     if (!pVCpu->hm.s.fContextUseFlags)
         return VINF_SUCCESS;
-
+    
     /* Determine real-on-v86 mode. */
     pVCpu->hm.s.vmx.RealMode.fRealOnV86Active = false;
     if (   !pVM->hm.s.vmx.fUnrestrictedGuest
@@ -6231,6 +6229,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         pVCpu->hm.s.vmx.RealMode.fRealOnV86Active = true;
     }
+
+    Log(("LoadGuest flags=%#RX32\n", pVCpu->hm.s.fContextUseFlags));
 
     int rc = hmR0VmxLoadGuestEntryCtls(pVM, pVCpu, pCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestEntryCtls! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
@@ -7521,7 +7521,6 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
                     break;
                 case 2: /* CR2 */
                     Log(("CR2 write rc=%d\n", rc));
-                    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR2;
                     break;
                 case 3: /* CR3 */
                     Assert(!pVM->hm.s.fNestedPaging || !CPUMIsGuestPagingEnabledEx(pMixedCtx));
@@ -8182,7 +8181,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptNM(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
     {
         Assert(CPUMIsGuestFPUStateActive(pVCpu));
 
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_FPU;
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowNM);
         return VINF_SUCCESS;
     }
@@ -8476,7 +8475,6 @@ static DECLCALLBACK(int) hmR0VmxExitXcptPF(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
         if (RT_LIKELY(!pVmxTransient->fVectoringPF))
         {
             pMixedCtx->cr2 = pVmxTransient->uExitQualification;
-            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR2;
             rc = hmR0VmxInjectEventVmcs(pVM, pVCpu, pMixedCtx,
                                         VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
                                         pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode);
@@ -8560,7 +8558,6 @@ static DECLCALLBACK(int) hmR0VmxExitXcptPF(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
             uint32_t uGstErrorCode = TRPMGetErrorCode(pVCpu);
             TRPMResetTrap(pVCpu);
             pMixedCtx->cr2 = pVmxTransient->uExitQualification;
-            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR2;
             rc = hmR0VmxInjectEventVmcs(pVM, pVCpu, pMixedCtx,
                                         VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
                                         pVmxTransient->cbInstr, uGstErrorCode);
