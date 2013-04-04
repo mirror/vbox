@@ -1193,6 +1193,9 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
     va_list     args;
     char        szMsg[512];
 
+    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+        return 0;
+
     va_start(args, pszFormat);
     RTStrPrintfV(szMsg, sizeof(szMsg) - 1, pszFormat, args);
     va_end(args);
