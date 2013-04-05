@@ -329,7 +329,7 @@ DECLINLINE(void) crServerRpwEntryDrawSettingsToTex(const CR_SERVER_RPW_ENTRY *pE
     pTex->width = pEntry->Size.cx;
     pTex->height = pEntry->Size.cy;
     pTex->target = GL_TEXTURE_2D;
-    CR_SERVER_RPW_ENTRY_TEX_IS_VALID(pEntry, Draw);
+    Assert(CR_SERVER_RPW_ENTRY_TEX_IS_VALID(pEntry, Draw));
     pTex->hwid = CR_SERVER_RPW_ENTRY_TEX(pEntry, Draw);
 }
 /**/
