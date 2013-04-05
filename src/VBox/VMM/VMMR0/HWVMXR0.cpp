@@ -3149,7 +3149,7 @@ ResumeExecution:
     uOldEFlags = ASMIntDisableFlags();
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPreemptPending);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         rc = VINF_EM_RAW_INTERRUPT;
         goto end;
     }
@@ -3526,6 +3526,7 @@ ResumeExecution:
         {
             Assert(exitReason == VMX_EXIT_EXT_INT);
             /* External interrupt; leave to allow it to be dispatched again. */
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitExtInt);
             rc = VINF_EM_RAW_INTERRUPT;
             break;
         }

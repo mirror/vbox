@@ -1375,7 +1375,7 @@ ResumeExecution:
     uOldEFlags = ASMIntDisableFlags();
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPreemptPending);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         rc = VINF_EM_RAW_INTERRUPT;
         goto end;
     }
