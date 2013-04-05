@@ -375,30 +375,6 @@ static const char* const s_apszVmxInstrErrors[VMX_INSTR_ERROR_MAX + 1] =
 
 
 /**
- * Disables longjmps to ring-3.
- * @param   pVCpu       Pointer to the VMCPU.
- */
-DECLINLINE(void) hmR0VmxCallRing3Disable(PVMCPU pVCpu)
-{
-    while (VMMRZCallRing3IsEnabled(pVCpu))
-        VMMRZCallRing3Disable(pVCpu);
-    Assert(VMMR0IsLogFlushDisabled(pVCpu));
-}
-
-
-/**
- * Enables longjmps to ring-3.
- * @param   pVCpu       Pointer to the VMCPU.
- */
-DECLINLINE(void) hmR0VmxCallRing3Enable(PVMCPU pVCpu)
-{
-    while (!VMMRZCallRing3IsEnabled(pVCpu))
-        VMMRZCallRing3Enable(pVCpu);
-    Assert(!VMMR0IsLogFlushDisabled(pVCpu));
-}
-
-
-/**
  * Updates the VM's last error record. If there was a VMX instruction error,
  * reads the error data from the VMCS and updates VCPU's last error record as
  * well.
@@ -6337,7 +6313,7 @@ DECLINLINE(int) hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
         ASMSetFlags(pVmxTransient->uEFlags);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPreemptPending);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         /* Don't use VINF_EM_RAW_INTERRUPT_HYPER as we can't assume the host does kernel preemption. Maybe some day? */
         return VINF_EM_RAW_INTERRUPT;
     }
@@ -6373,6 +6349,7 @@ DECLINLINE(int) hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
 DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+    Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
 #ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /** @todo I don't see the point of this, VMMR0EntryFast() already disables interrupts for the entire period. */
@@ -6485,7 +6462,7 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     pVmxTransient->fVMEntryFailed = VMX_ENTRY_INTERRUPTION_INFO_VALID(pVmxTransient->uEntryIntrInfo);
 
     VMMRZCallRing3SetNotification(pVCpu, hmR0VmxCallRing3Callback, pMixedCtx);
-    hmR0VmxCallRing3Enable(pVCpu);                              /* It is now safe to do longjmps to ring-3!!! */
+    VMMRZCallRing3Enable(pVCpu);                                /* It is now safe to do longjmps to ring-3!!! */
 
     /* If the VMLAUNCH/VMRESUME failed, we can bail out early. This does -not- cover VMX_EXIT_ERR_*. */
     if (RT_UNLIKELY(rcVMRun != VINF_SUCCESS))
@@ -6553,7 +6530,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
          * This also disables flushing of the R0-logger instance (if any).
          */
-        hmR0VmxCallRing3Disable(pVCpu);
+        VMMRZCallRing3Disable(pVCpu);
         VMMRZCallRing3RemoveNotification(pVCpu);
         hmR0VmxPreRunGuestCommitted(pVM, pVCpu, pCtx, &VmxTransient);
 
@@ -6640,7 +6617,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 static DECLCALLBACK(int) hmR0VmxExitExtInt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitExtInt);
     return VINF_SUCCESS;
 }
 
@@ -6654,15 +6631,12 @@ static DECLCALLBACK(int) hmR0VmxExitXcptNmi(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMix
     int rc = hmR0VmxReadExitIntrInfoVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
-    uint8_t u8IntrType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVmxTransient->uExitIntrInfo);
+    uint32_t uIntrType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVmxTransient->uExitIntrInfo);
     Assert(   !(pVCpu->hm.s.vmx.u32ExitCtls & VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXT_INT)
-           && u8IntrType != VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT);
+           && uIntrType != VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT);
 
-    if (u8IntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
+    if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
         return VINF_EM_RAW_INTERRUPT;
-
-    uint32_t uExitIntrInfo = pVmxTransient->uExitIntrInfo;
-    Assert(VMX_EXIT_INTERRUPTION_INFO_VALID(uExitIntrInfo));
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
     rc = hmR0VmxCheckExitDueToEventDelivery(pVM, pVCpu, pMixedCtx, pVmxTransient);
@@ -6671,8 +6645,9 @@ static DECLCALLBACK(int) hmR0VmxExitXcptNmi(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMix
     else if (RT_UNLIKELY(rc == VINF_EM_RESET))
         return rc;
 
-    uint32_t uVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(uExitIntrInfo);
-    switch (VMX_EXIT_INTERRUPTION_INFO_TYPE(uExitIntrInfo))
+    uint32_t uExitIntrInfo = pVmxTransient->uExitIntrInfo;
+    uint32_t uVector       = VMX_EXIT_INTERRUPTION_INFO_VECTOR(uExitIntrInfo);
+    switch (uIntrType)
     {
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT:   /* Software exception. (#BP or #OF) */
             Assert(uVector == X86_XCPT_DB || uVector == X86_XCPT_BP || uVector == X86_XCPT_OF);
@@ -6709,8 +6684,8 @@ static DECLCALLBACK(int) hmR0VmxExitXcptNmi(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMix
                     {
                         Assert(pVM->hm.s.vmx.pRealModeTSS);
                         Assert(PDMVmmDevHeapIsEnabled(pVM));
-                        rc     = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
-                        rc    |= hmR0VmxReadExitIntrErrorCodeVmcs(pVmxTransient);
+                        rc  = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                        rc |= hmR0VmxReadExitIntrErrorCodeVmcs(pVmxTransient);
                         AssertRCReturn(rc, rc);
                         rc = hmR0VmxInjectEventVmcs(pVM, pVCpu, pMixedCtx,
                                                     VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(uExitIntrInfo),
@@ -7507,8 +7482,14 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
     {
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_WRITE:       /* MOV to CRx */
         {
+#if 0
             /* EMInterpretCRxWrite() references a lot of guest state (EFER, RFLAGS, Segment Registers, etc.) Sync entire state */
             rc = hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);
+#else
+            rc  = hmR0VmxSaveGuestGprs(pVM, pVCpu, pMixedCtx);
+            rc |= hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);
+            rc |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
+#endif
             AssertRCReturn(rc, rc);
 
             rc = EMInterpretCRxWrite(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx),
@@ -7551,7 +7532,7 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_READ:        /* MOV from CRx */
         {
             /* EMInterpretCRxRead() requires EFER MSR, CS. */
-            rc |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
+            rc = hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
             Assert(   !pVM->hm.s.fNestedPaging
                    || !CPUMIsGuestPagingEnabledEx(pMixedCtx)
@@ -7575,8 +7556,7 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
             rc  = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
             rc |= EMInterpretCLTS(pVM, pVCpu);
             AssertRCReturn(rc, rc);
-            if (RT_LIKELY(rc == VINF_SUCCESS))
-                pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClts);
             Log(("CRX CLTS write rc=%d\n", rc));
             break;
@@ -7585,8 +7565,8 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
         {
             rc  = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
-            rc |= EMInterpretLMSW(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(uExitQualification));
             AssertRCReturn(rc, rc);
+            rc = EMInterpretLMSW(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(uExitQualification));
             if (RT_LIKELY(rc == VINF_SUCCESS))
                 pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
