@@ -38,11 +38,6 @@ signals:
     void sigGUILanguageChange(QString strLang);
     void sigSelectorShortcutsChanged();
     void sigMachineShortcutsChanged();
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    void sigMainWindowCountChange(int count);
-    void sigCanShowTrayIcon(bool fEnabled);
-    void sigTrayIconChange(bool fEnabled);
-#endif /* VBOX_GUI_WITH_SYSTRAY */
 #ifdef RT_OS_DARWIN
     void sigPresentationModeChange(bool fEnabled);
     void sigDockIconAppearanceChange(bool fEnabled);

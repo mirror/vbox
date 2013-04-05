@@ -123,13 +123,6 @@ const char* UIDefs::GUI_Accelerate2D_PixformatYUY2 = "GUI/Accelerate2D/Pixformat
 const char* UIDefs::GUI_Accelerate2D_PixformatAYUV = "GUI/Accelerate2D/PixformatAYUV";
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-#ifdef VBOX_GUI_WITH_SYSTRAY
-/* Tray icon declarations: */
-const char* UIDefs::GUI_TrayIconWinID = "GUI/TrayIcon/WinID";
-const char* UIDefs::GUI_TrayIconEnabled = "GUI/TrayIcon/Enabled";
-const char* UIDefs::GUI_MainWindowCount = "GUI/MainWindowCount";
-#endif /* VBOX_GUI_WITH_SYSTRAY */
-
 /* File extensions definitions: */
 QStringList UIDefs::VBoxFileExts = QStringList() << "xml" << "vbox";
 QStringList UIDefs::VBoxExtPackFileExts = QStringList() << "vbox-extpack";

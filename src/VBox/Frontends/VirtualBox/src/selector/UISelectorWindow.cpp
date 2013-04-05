@@ -940,14 +940,6 @@ void UISelectorWindow::retranslateUi()
     /* Ensure the details and screenshot view are updated: */
     sltCurrentVMItemChanged();
 
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    if (vboxGlobal().isTrayMenu())
-    {
-        m_pTrayIcon->retranslateUi();
-        m_pTrayIcon->refresh();
-    }
-#endif /* VBOX_GUI_WITH_SYSTRAY */
-
 #ifdef QT_MAC_USE_COCOA
     /* There is a bug in Qt Cocoa which result in showing a "more arrow" when
        the necessary size of the toolbar is increased. Also for some languages
@@ -1484,16 +1476,6 @@ void UISelectorWindow::prepareConnections()
     connect(m_pVMDesktop, SIGNAL(sigCurrentChanged(int)), this, SLOT(sltDetailsViewIndexChanged(int)));
     connect(m_pDetails, SIGNAL(sigLinkClicked(const QString&, const QString&, const QString&)),
             this, SLOT(sltShowMachineSettingsDialog(const QString&, const QString&, const QString&)));
-
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    /* Tray icon connections: */
-    connect(m_pTrayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
-            this, SLOT(sltTrayIconActivated(QSystemTrayIcon::ActivationReason)));
-    connect(gEDataEvents, SIGNAL(sigMainWindowCountChange(int)), this, SLOT(sltMainWindowCountChanged(int)));
-    connect(gEDataEvents, SIGNAL(sigCanShowTrayIcon(bool)), this, SLOT(sltTrayIconCanShow(bool)));
-    connect(gEDataEvents, SIGNAL(sigTrayIconChange(bool)), this, SLOT(sltTrayIconChanged(bool)));
-    connect(&vboxGlobal(), SIGNAL(sigTrayIconShow(bool)), this, SLOT(sltTrayIconShow(bool)));
-#endif /* VBOX_GUI_WITH_SYSTRAY */
 
     /* Global event handlers: */
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltStateChanged(QString)));

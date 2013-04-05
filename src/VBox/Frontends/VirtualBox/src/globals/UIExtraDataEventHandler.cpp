@@ -39,9 +39,6 @@ public:
 
     UIExtraDataEventHandlerPrivate(QObject *pParent = 0)
         : QObject(pParent)
-#ifdef VBOX_GUI_WITH_SYSTRAY
-        , m_fIsTrayIconOwner(false)
-#endif /* VBOX_GUI_WITH_SYSTRAY */
     {}
 
 public slots:
@@ -53,19 +50,6 @@ public slots:
             /* it's a global extra data key someone wants to change */
             if (strKey.startsWith("GUI/"))
             {
-#ifdef VBOX_GUI_WITH_SYSTRAY
-                if (strKey == GUI_TrayIconWinID)
-                {
-                    if (m_fIsTrayIconOwner)
-                    {
-                        if (!(strValue.isEmpty() ||
-                              strValue == QString("%1")
-                              .arg((qulonglong)vboxGlobal().mainWindow()->winId())))
-                            fVeto = true;
-                    }
-                    return;
-                }
-#endif /* VBOX_GUI_WITH_SYSTRAY */
                 /* Try to set the global setting to check its syntax */
                 VBoxGlobalSettings gs(false /* non-null */);
                 if (gs.setPublicProperty (strKey, strValue))
@@ -95,28 +79,6 @@ public slots:
                     emit sigSelectorShortcutsChanged();
                 if (strKey == GUI_Input_MachineShortcuts && gActionPool->type() == UIActionPoolType_Runtime)
                     emit sigMachineShortcutsChanged();
-#ifdef VBOX_GUI_WITH_SYSTRAY
-                if (strKey == GUI_MainWindowCount)
-                    emit sigMainWindowCountChange(strValue.toInt());
-                if (strKey == GUI_TrayIconWinID)
-                {
-                    if (strValue.isEmpty())
-                    {
-                        m_fIsTrayIconOwner = false;
-                        emit sigCanShowTrayIcon(true);
-                    }
-                    else if (strValue == QString("%1")
-                             .arg((qulonglong)vboxGlobal().mainWindow()->winId()))
-                    {
-                        m_fIsTrayIconOwner = true;
-                        emit sigCanShowTrayIcon(true);
-                    }
-                    else
-                        emit sigCanShowTrayIcon(false);
-                }
-                if (strKey == GUI_TrayIconEnabled)
-                    emit sigTrayIconChange((strValue.toLower() == "true") ? true : false);
-#endif /* VBOX_GUI_WITH_SYSTRAY */
 #ifdef Q_WS_MAC
                 if (strKey == GUI_PresentationModeEnabled)
                 {
@@ -155,11 +117,6 @@ signals:
     void sigGUILanguageChange(QString strLang);
     void sigSelectorShortcutsChanged();
     void sigMachineShortcutsChanged();
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    void sigMainWindowCountChange(int count);
-    void sigCanShowTrayIcon(bool fEnabled);
-    void sigTrayIconChange(bool fEnabled);
-#endif /* VBOX_GUI_WITH_SYSTRAY */
 #ifdef RT_OS_DARWIN
     void sigPresentationModeChange(bool fEnabled);
     void sigDockIconAppearanceChange(bool fEnabled);
@@ -169,11 +126,6 @@ private:
 
     /** protects #OnExtraDataChange() */
     QMutex m_mutex;
-
-    /* Private member vars */
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    bool m_fIsTrayIconOwner;
-#endif /* VBOX_GUI_WITH_SYSTRAY */
 };
 
 /* static */
@@ -237,20 +189,6 @@ UIExtraDataEventHandler::UIExtraDataEventHandler()
     connect(m_pHandler, SIGNAL(sigMachineShortcutsChanged()),
             this, SIGNAL(sigMachineShortcutsChanged()),
             Qt::QueuedConnection);
-
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    connect(m_pHandler, SIGNAL(sigMainWindowCountChange(int)),
-            this, SIGNAL(sigMainWindowCountChange(int)),
-            Qt::QueuedConnection);
-
-    connect(m_pHandler, SIGNAL(sigCanShowTrayIcon(bool)),
-            this, SIGNAL(sigCanShowTrayIcon(bool)),
-            Qt::QueuedConnection);
-
-    connect(m_pHandler, SIGNAL(sigTrayIconChange(bool)),
-            this, SIGNAL(sigTrayIconChange(bool)),
-            Qt::QueuedConnection);
-#endif /* VBOX_GUI_WITH_SYSTRAY */
 
 #ifdef Q_WS_MAC
     connect(m_pHandler, SIGNAL(sigPresentationModeChange(bool)),

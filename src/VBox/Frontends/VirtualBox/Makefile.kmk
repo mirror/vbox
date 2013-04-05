@@ -712,14 +712,6 @@ ifdef VBOX_WITH_ICHAT_THEATER
 	src/platform/darwin/VBoxIChatTheaterWrapper.m
 endif
 
-ifdef VBOX_GUI_WITH_SYSTRAY
- VirtualBox_DEFS += VBOX_GUI_WITH_SYSTRAY
- VirtualBox_QT_MOCHDRS += \
-	src/selector/VBoxTrayIcon.h
- VirtualBox_SOURCES += \
-	src/selector/VBoxTrayIcon.cpp
-endif
-
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_SOURCES += \
 	src/VBoxFBOverlay.cpp \
