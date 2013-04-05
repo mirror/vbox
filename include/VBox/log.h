@@ -343,6 +343,10 @@ typedef enum LOGGROUP
     LOG_GROUP_USB_MSD,
     /** USB webcam. */
     LOG_GROUP_USB_WEBCAM,
+    /** VBox Guest Additions Driver (VBoxGuest). */
+    LOG_GROUP_VBGD,
+    /** VBox Guest Additions Library. */
+    LOG_GROUP_VBGL,
     /** Generic virtual disk layer. */
     LOG_GROUP_VD,
     /** DMG virtual disk backend. */
@@ -538,6 +542,8 @@ typedef enum LOGGROUP
     "USB_MOUSE",    \
     "USB_MSD",      \
     "USB_WEBCAM",   \
+    "VBGD",         \
+    "VBGL",         \
     "VD",           \
     "VD_DMG",       \
     "VD_ISCSI",     \
