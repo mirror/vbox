@@ -33,6 +33,8 @@
 
 #include <iprt/alloca.h>
 #include <iprt/dir.h>
+#include <iprt/file.h>
+#include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/list.h>
 #include <iprt/mem.h>
@@ -99,8 +101,10 @@ typedef MYSET *PMYSET;
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Set if verbose operation.*/
-static bool     g_fVerbose = false;
+/** Set if verbose operation (-v, --verbose). */
+static bool     g_fOptVerbose = false;
+/** Set if we should force ahead despite errors. */
+static bool     g_fOptForce = false;
 
 /** The members of the KPRCB structure that we're interested in. */
 static MYMEMBER g_aKprcbMembers[] =
@@ -131,7 +135,7 @@ static RTLISTANCHOR g_SetList;
  */
 static void MyDbgPrintf(const char *pszFormat, ...)
 {
-    if (g_fVerbose)
+    if (g_fOptVerbose)
     {
         va_list va;
         va_start(va, pszFormat);
@@ -660,6 +664,114 @@ static bool strIEndsWith(const char *pszString, const char *pszSuffix)
     return RTStrICmp(pszString + cchString - cchSuffix, pszSuffix) == 0;
 }
 
+#if 0
+/** Indicates that there is a filename.
+ * If not set, a directory was specified using a trailing slash or a volume
+ * was specified without any file/dir name following it. */
+#define RTPATHSPLIT_PROP_FILENAME       UINT16_C(0x0001)
+/** Indicates that this is an UNC path (Windows and OS/2 only). */
+#define RTPATHSPLIT_PROP_UNC            UINT16_C(0x0002)
+/** A root is specified. */
+#define RTPATHSPLIT_PROP_ROOT           UINT16_C(0x0004)
+/** A volume (drive) is specified. */
+#define RTPATHSPLIT_PROP_VOLSPEC        UINT16_C(0x0008)
+
+typedef struct RTPATHSPLIT
+{
+    /** Number of path components. */
+    uint32_t    cComponents;
+    /** The first directory.  */
+    uint8_t     iFirstDir;
+    uint8_t     fReserved1; /**< Reserved */
+    /** Path property flags, RTPATHSPLIT_PROP_XXX */
+    uint16_t    fProps;
+    /** Pointer to the dot in the filename suffix. If no suffix, this points to
+     * the terminator character. */
+    const char *pszSuffix;
+    /** Array of pointers to components.
+     * @remarks This is variable sized and is followed by the strings it points to.
+     *          It's set to 8 instead of the usual 1 as that's the minimum size of
+     *          the RTPathSplit buffer. */
+    const char *apszComponents[8];
+} RTPATHSPLIT;
+/** Pointer to to a path split result. */
+typedef RTPATHSPLIT *PRTPATHSPLIT;
+/** Pointer to to a const path split result. */
+typedef RTPATHSPLIT *PCRTPATHSPLIT;
+
+
+int RTPathSplit(const char *pszPath, PRTPATHSPLIT pOutput, size_t cbOutput)
+{
+    AssertReturn(cbOutput >= sizeof(*pOutput), VERR_BUFFER_UNDERFLOW);
+    AssertPtr(pszPath);
+    AsserPtr(pOutput);
+
+    /*
+     * Parse the path, we're using apszComponents to store offset + length of
+     * each component while parsing to avoid duplicating code and effort.
+     */
+    struct TMPOFFSIZE
+    {
+        uint16_t    off;
+        uint16_t    cch;
+    }          *paComponents   = (struct TMPOFFSIZE *)&pOutput->apszComponents;
+    uint32_t    cMaxComponents = (cbOutput - RT_OFFSETOF(RTPATHSPLIT, apszComponents)) / sizeof(paComponents[0]);
+    uint32_t    iComponent     = 0;
+    size_t      cbStrings      = 0;
+    uint16_t    fFlags         = 0;
+    size_t      off            = 0;
+
+    paComponents[0].off = 0;
+
+    /* The volume specifier bit first, it's special. */
+    if (RTPATH_IS_SLASH(pszPath[0]))
+    {
+#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
+        if (   RTPATH_IS_SLASH(pszPath[1])
+            && !RTPATH_IS_SLASH(pszPath[2])
+            && pszPath[2])
+        {
+            fFlags |= RTPATHSPLIT_PROP_UNC;
+
+            /* UNC server name */
+            off = 2;
+            while (!RTPATH_IS_SLASH(pszPath[off]) && pszPath[off])
+                off++;
+            paComponents[0].cch = off;
+            size_t      cbStrings      = 0;
+
+
+            while (RTPATH_IS_SLASH(pszPath[off]))
+                off++;
+
+            /* UNC share */
+            while (!RTPATH_IS_SLASH(pszPath[off]) && pszPath[off])
+                off++;
+        }
+        else
+#endif
+        {
+            fFlags |= RTPATHSPLIT_PROP_ROOT;
+            cbString = sizeof("/");
+            iComponent = 1;
+            off = 1;
+        }
+        while (RTPATH_IS_SLASH(pszPath[off]))
+            off++;
+    }
+#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
+    else if (RT_C_IS_ALPHA(pszPath[0]) && pszPath[1] == ':')
+    {
+        off = 2;
+        while (RTPATH_IS_SLASH(pszPath[off]))
+            off++;
+    }
+#endif
+    Assert(!RTPATH_IS_SLASH(pszPath[off]));
+
+
+}
+#endif
 
 /**
  * Use various hysterics to figure out the OS version details from the PDB path.
@@ -697,6 +809,7 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
     else
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Giving up on '%s'...\n", pszPdb);
 
+
     return RTEXITCODE_SUCCESS;
 }
 
@@ -707,7 +820,7 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
  * @returns Fully bitched exit code.
  * @param   pszPdb              The path to the PDB.
  */
-static RTEXITCODE processOnePdb(const char *pszPdb)
+static RTEXITCODE processPdb(const char *pszPdb)
 {
     /*
      * We need the size later on, so get that now and present proper IPRT error
@@ -843,7 +956,7 @@ static RTEXITCODE processDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX pDirE
                      * Found debug info file of interest, process it.
                      */
                     memcpy(&pszDir[cchDir], pDirEntry->szName, pDirEntry->cbName + 1);
-                    RTEXITCODE rcExit2 = processOnePdb(pszDir);
+                    RTEXITCODE rcExit2 = processPdb(pszDir);
                     if (rcExit2 != RTEXITCODE_SUCCESS)
                         rcExit = rcExit2;
                     break;
@@ -904,17 +1017,91 @@ int main(int argc, char **argv)
     /*
      * Parse options.
      */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--force",            'f', RTGETOPT_REQ_NOTHING },
+        { "--output",           'o', RTGETOPT_REQ_STRING  },
+        { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
+    };
 
+    RTEXITCODE  rcExit      = RTEXITCODE_SUCCESS;
+    bool        fFoundInput = false;
+    const char *pszOutput   = "-";
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1,
+                 RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'f':
+                g_fOptForce = true;
+                break;
+
+            case 'v':
+                g_fOptVerbose = true;
+                break;
+
+            case 'o':
+                pszOutput = ValueUnion.psz;
+                break;
+
+            case 'V':
+                RTPrintf("$Revision$");
+                break;
+
+            case 'h':
+                RTPrintf("usage: %s [-v|--verbose] [-f|--force] [-o|--output <file.h>] <dir1|pdb1> [...]\n"
+                         "   or: %s [-V|--version]\n"
+                         "   or: %s [-h|--help]\n",
+                         argv[0], argv[0], argv[0]);
+                return RTEXITCODE_SUCCESS;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                RTEXITCODE rcExit2;
+                if (RTFileExists(ValueUnion.psz))
+                    rcExit2 = processPdb(ValueUnion.psz);
+                else
+                    rcExit2 = processDir(ValueUnion.psz);
+                if (rcExit2 != RTEXITCODE_SUCCESS)
+                {
+                    if (!g_fOptForce)
+                        return rcExit2;
+                    rcExit = rcExit2;
+                }
+                break;
+            }
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+    if (!fFoundInput)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Not input files or directories specified.\n");
 
     /*
-     * Do job.
+     * Generate the output.
      */
-    RTEXITCODE rcExit = processOnePdb(argv[argc - 1]);
-
-    if (rcExit == RTEXITCODE_SUCCESS)
+    PRTSTREAM pOut = g_pStdOut;
+    if (strcmp(pszOutput, "-"))
     {
-        generateHeader(g_pStdOut);
+        rc = RTStrmOpen(pszOutput, "w", &pOut);
+        if (RT_FAILURE(rc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error opening '%s' for writing: %Rrc\n", pszOutput, rc);
     }
 
+    generateHeader(pOut);
+
+    if (pOut != g_pStdOut)
+        rc = RTStrmClose(pOut);
+    else
+        rc = RTStrmFlush(pOut);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error %s '%s': %Rrc\n", pszOutput,
+                              pOut != g_pStdOut ? "closing" : "flushing", rc);
     return rcExit;
 }
