@@ -218,6 +218,10 @@ UIMediumManager::UIMediumManager (QWidget *aParent /* = 0 */, Qt::WindowFlags aF
     /* Apply UI decorations */
     Ui::UIMediumManager::setupUi (this);
 
+    /* No need to count that window as important for application,
+     * it will NOT be taken into account when other top-level windows will be closed: */
+    setAttribute(Qt::WA_QuitOnClose, false);
+
     /* Apply window icons */
     setWindowIcon(UIIconPool::iconSetFull(QSize (32, 32), QSize (16, 16),
                                           ":/diskimage_32px.png", ":/diskimage_16px.png"));
@@ -560,10 +564,6 @@ void UIMediumManager::showModeless (QWidget *aCenterWidget /* = 0 */, bool aRefr
         mModelessDialog->centerAccording (aCenterWidget);
         mModelessDialog->setAttribute (Qt::WA_DeleteOnClose);
         mModelessDialog->setup (UIMediumType_All, false /* aDoSelect */, aRefresh);
-
-        /* Setup 'closing' connection if main window is UISelectorWindow: */
-        if (vboxGlobal().mainWindow() && vboxGlobal().mainWindow()->inherits("UISelectorWindow"))
-            connect(vboxGlobal().mainWindow(), SIGNAL(closing()), mModelessDialog, SLOT(close()));
 
         /* listen to events that may change the media status and refresh
          * the contents of the modeless dialog */

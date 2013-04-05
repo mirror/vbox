@@ -324,9 +324,9 @@ QWidget* UIMessageCenter::mainWindowShown() const
     /* For VM console process: */
     if (vboxGlobal().isVMConsoleProcess())
     {
-        /* It will be currently active machine window if visible: */
-        if (vboxGlobal().vmWindow()->isVisible())
-            return vboxGlobal().vmWindow();
+        /* It will be currently active machine-window if visible: */
+        if (vboxGlobal().activeMachineWindow()->isVisible())
+            return vboxGlobal().activeMachineWindow();
     }
     /* Otherwise: */
     else

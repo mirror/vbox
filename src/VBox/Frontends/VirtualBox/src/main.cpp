@@ -482,11 +482,8 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
             if (vboxGlobal().isVMConsoleProcess())
             {
-                if (vboxGlobal().startMachine (vboxGlobal().managedVMUuid()))
-                {
-                    vboxGlobal().setMainWindow (vboxGlobal().vmWindow());
+                if (vboxGlobal().startMachine(vboxGlobal().managedVMUuid()))
                     rc = a.exec();
-                }
             }
             else if (noSelector)
             {
@@ -496,7 +493,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             {
 #ifdef VBOX_BLEEDING_EDGE
                 msgCenter().showBEBWarning();
-#else
+#else /* VBOX_BLEEDING_EDGE */
 # ifndef DEBUG
                 /* Check for BETA version */
                 QString vboxVersion (vboxGlobal().virtualBox().GetVersion());
@@ -508,12 +505,10 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
                     if (str != vboxVersion)
                         msgCenter().showBETAWarning();
                 }
-# endif
-#endif
-
-                vboxGlobal().setMainWindow (&vboxGlobal().selectorWnd());
-                    vboxGlobal().selectorWnd().show();
-                    rc = a.exec();
+# endif /* !DEBUG */
+#endif /* !VBOX_BLEEDING_EDGE*/
+                vboxGlobal().selectorWnd().show();
+                rc = a.exec();
             }
         }
         while (0);

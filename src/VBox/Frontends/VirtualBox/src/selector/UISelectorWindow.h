@@ -46,11 +46,6 @@ class UISelectorWindow : public QIWithRetranslateUI2<QMainWindow>
 {
     Q_OBJECT;
 
-signals:
-
-    /* Obsolete: Signal to notify listeners about this dialog closed: */
-    void closing();
-
 public:
 
     /* Constructor/destructor: */
@@ -116,7 +111,6 @@ private:
     bool event(QEvent *pEvent);
     void showEvent(QShowEvent *pEvent);
     void polishEvent(QShowEvent *pEvent);
-    void closeEvent(QCloseEvent *pEvent);
 #ifdef Q_WS_MAC
     bool eventFilter(QObject *pObject, QEvent *pEvent);
 #endif /* Q_WS_MAC */

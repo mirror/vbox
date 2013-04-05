@@ -89,11 +89,7 @@ public:
     /* VM stuff: */
     bool startMachine(const QString &strMachineId);
     UIMachine* virtualMachine();
-    QWidget* vmWindow();
-
-    /* Main application window storage: */
-    void setMainWindow(QWidget *pMainWindow) { mMainWindow = pMainWindow; }
-    QWidget* mainWindow() const { return mMainWindow; }
+    QWidget* activeMachineWindow();
 
     bool is3DAvailable() const { return m3DAvailable; }
 
@@ -450,7 +446,6 @@ private:
 
     UISelectorWindow *mSelectorWnd;
     UIMachine *m_pVirtualMachine;
-    QWidget* mMainWindow;
 
     QString vmUuid;
     QList<QUrl> m_ArgUrlList;

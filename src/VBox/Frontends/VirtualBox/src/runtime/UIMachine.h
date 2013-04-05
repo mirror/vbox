@@ -46,7 +46,7 @@ public:
     virtual ~UIMachine();
 
     /* Public getters: */
-    QWidget* mainWindow() const;
+    QWidget* activeWindow() const;
     UISession *uisession() const { return m_pSession; }
 
 private slots:

@@ -181,10 +181,6 @@ UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
     /* Set VM-specific application icon: */
     setWindowIcon(vboxGlobal().vmGuestOSTypeIcon(machine().GetOSTypeId()));
 #endif /* !Q_WS_MAC */
-
-    /* Set the main application window for VBoxGlobal: */
-    if (m_uScreenId == 0)
-        vboxGlobal().setMainWindow(this);
 }
 
 UISession* UIMachineWindow::uisession() const
