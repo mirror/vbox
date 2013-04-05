@@ -72,6 +72,8 @@ static void crServerRpwWorkerGpuComplete(PRTLISTNODE pGpuSubmitedList)
 
         cr_server.head_spu->dispatch_table.UnmapBufferARB(GL_PIXEL_PACK_BUFFER_ARB);
 
+        cr_server.head_spu->dispatch_table.BufferDataARB(GL_PIXEL_PACK_BUFFER_ARB, pCurEntry->Size.cx*pCurEntry->Size.cy*4, 0, GL_STREAM_READ_ARB);
+
         cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
     }
 }
@@ -127,10 +129,11 @@ static DECLCALLBACK(int) crServerRpwWorkerThread(RTTHREAD ThreadSelf, void *pvUs
     CRMuralInfo *pDummyMural = crServerGetDummyMural(pWorker->ctxVisBits);
     bool fExit = false;
     bool fForceComplete = false;
+    bool fNotifyCmdCompleted = false;
 
     CRASSERT(pDummyMural);
 
-    int rc = RTSemEventSignal(pWorker->hSubmitEvent);
+    int rc = RTSemEventSignal(pWorker->Ctl.hCompleteEvent);
     if (!RT_SUCCESS(rc))
     {
         crWarning("RTSemEventSignal failed rc %d", rc);
@@ -180,6 +183,7 @@ static DECLCALLBACK(int) crServerRpwWorkerThread(RTTHREAD ThreadSelf, void *pvUs
             }
             enmCtlType = CR_SERVER_RPW_CTL_TYPE_UNDEFINED;
             pCtlEntry = NULL;
+            fNotifyCmdCompleted = true;
         }
 
         bool fNewItems = !RTListIsEmpty(&WorkList);
@@ -219,6 +223,17 @@ static DECLCALLBACK(int) crServerRpwWorkerThread(RTTHREAD ThreadSelf, void *pvUs
         {
             RTCritSectLeave(&pWorker->CritSect);
 
+            if (fNotifyCmdCompleted)
+            {
+                rc = RTSemEventSignal(pWorker->Ctl.hCompleteEvent);
+                if (!RT_SUCCESS(rc))
+                {
+                    crWarning("RTSemEventSignal failed rc %d", rc);
+                    break;
+                }
+                fNotifyCmdCompleted = false;
+            }
+
             if (fExit)
                 break;
 
@@ -238,6 +253,13 @@ static DECLCALLBACK(int) crServerRpwWorkerThread(RTTHREAD ThreadSelf, void *pvUs
             {
                 Assert(!RTListIsEmpty(&GpuSubmittedList));
                 fForceComplete = true;
+            }
+
+            rc = RTCritSectEnter(&pWorker->CritSect);
+            if (!RT_SUCCESS(rc))
+            {
+                crWarning("RTCritSectEnter failed, rc %d", rc);
+                break;
             }
         }
     }
@@ -365,7 +387,7 @@ int crServerRpwInit(CR_SERVER_RPW *pWorker)
                         rc = RTThreadCreate(&pWorker->hThread, crServerRpwWorkerThread, pWorker, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "CrServerDw");
                         if (RT_SUCCESS(rc))
                         {
-                            rc = RTSemEventWait(pWorker->hSubmitEvent, RT_INDEFINITE_WAIT);
+                            rc = RTSemEventWait(pWorker->Ctl.hCompleteEvent, RT_INDEFINITE_WAIT);
                             if (RT_SUCCESS(rc))
                             {
                                 return VINF_SUCCESS;
