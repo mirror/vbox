@@ -2497,7 +2497,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 endif
 	$(QUIET)$(APPEND) -t $@
 
-
+if !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_TESTSUITE) && !defined(VBOX_ONLY_DOCS)
 #
 # Windows build tool.
 #
@@ -2505,6 +2505,7 @@ BLDPROGS.win += ntBldSymDb
 ntBldSymDb_TEMPLATE = VBoxAdvBldProg
 ntBldSymDb_INCS = .
 ntBldSymDb_SOURCES = r0drv/nt/ntBldSymDb.cpp
+endif
 
 #
 # Generate the rules (we're the to sub-makefile).
