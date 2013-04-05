@@ -102,7 +102,7 @@ void UIDownloaderAdditions::handleDownloadedObject(UINetworkReply *pReply)
 
         /* Ask the user for another location for the additions-image file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
-                                                               msgCenter().networkManagerOrMainMachineWindowShown(),
+                                                               msgCenter().networkManagerOrMainWindowShown(),
                                                                tr("Select folder to save Guest Additions image to"), true);
 
         /* Check if user had really set a new target: */

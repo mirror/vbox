@@ -505,7 +505,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     if (fResult)
     {
         msgCenter().showModalProgressDialog(progressInstall, tr("Updating Guest Additions"), ":/progress_install_guest_additions_90px.png",
-                                            mainMachineWindow(), 500 /* 500ms delay. */);
+                                            machineLogic()->activeMachineWindow(), 500 /* 500ms delay. */);
         if (progressInstall.GetCanceled())
             return;
 

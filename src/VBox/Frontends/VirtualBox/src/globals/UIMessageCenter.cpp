@@ -316,47 +316,33 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
 QWidget* UIMessageCenter::mainWindowShown() const
 {
     /* It may happen that this method is called during VBoxGlobal
-     * initialization or even after it failed (for example, to show some
-     * error message). Return no main window in this case: */
+     * initialization or even after it failed (for example, to show some error message).
+     * Return no main window in this case: */
     if (!vboxGlobal().isValid())
         return 0;
 
+    /* For VM console process: */
     if (vboxGlobal().isVMConsoleProcess())
     {
-        if (vboxGlobal().vmWindow() && vboxGlobal().vmWindow()->isVisible()) /* VM window is visible */
-            return vboxGlobal().vmWindow(); /* return that window */
+        /* It will be currently active machine window if visible: */
+        if (vboxGlobal().vmWindow()->isVisible())
+            return vboxGlobal().vmWindow();
     }
+    /* Otherwise: */
     else
     {
-        if (vboxGlobal().selectorWnd().isVisible()) /* VM selector is visible */
-            return &vboxGlobal().selectorWnd(); /* return that window */
+        /* It will be the selector window if visible: */
+        if (vboxGlobal().selectorWnd().isVisible())
+            return &vboxGlobal().selectorWnd();
     }
 
-    return 0;
-}
-
-QWidget* UIMessageCenter::mainMachineWindowShown() const
-{
-    /* It may happen that this method is called during VBoxGlobal
-     * initialization or even after it failed (for example, to show some
-     * error message). Return no main window in this case: */
-    if (!vboxGlobal().isValid())
-        return 0;
-
-    if (vboxGlobal().vmWindow() && vboxGlobal().vmWindow()->isVisible()) /* VM window is visible */
-        return vboxGlobal().vmWindow(); /* return that window */
-
+    /* Nothing by default: */
     return 0;
 }
 
 QWidget* UIMessageCenter::networkManagerOrMainWindowShown() const
 {
     return gNetworkManager->window()->isVisible() ? gNetworkManager->window() : mainWindowShown();
-}
-
-QWidget* UIMessageCenter::networkManagerOrMainMachineWindowShown() const
-{
-    return gNetworkManager->window()->isVisible() ? gNetworkManager->window() : mainMachineWindowShown();
 }
 
 #ifdef RT_OS_LINUX
@@ -876,7 +862,7 @@ bool UIMessageCenter::warnAboutSnapshotRemovalFreeSpace(const QString &strSnapsh
 
 void UIMessageCenter::cannotTakeSnapshot(const CConsole &console, const QString &strMachineName, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
              .arg(strMachineName),
           formatErrorInfo(console));
@@ -884,7 +870,7 @@ void UIMessageCenter::cannotTakeSnapshot(const CConsole &console, const QString 
 
 void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to create a snapshot of the virtual machine <b>%1</b>.")
              .arg(strMachineName),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
@@ -892,7 +878,7 @@ void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress, const QStrin
 
 void UIMessageCenter::cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
              .arg(strSnapshotName, strMachineName),
           formatErrorInfo(console));
@@ -900,7 +886,7 @@ void UIMessageCenter::cannotRestoreSnapshot(const CConsole &console, const QStri
 
 void UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
              .arg(strSnapshotName, strMachineName),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
@@ -924,7 +910,7 @@ void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress, const QStr
 
 bool UIMessageCenter::confirmHostInterfaceRemoval(const QString &strName, QWidget *pParent /*= 0*/) const
 {
-    return questionBinary(pParent ? pParent : mainWindowShown(), MessageType_Question,
+    return questionBinary(pParent, MessageType_Question,
                           tr("<p>Deleting this host-only network will remove "
                              "the host-only interface this network is based on. Do you want to "
                              "remove the (host-only network) interface <nobr><b>%1</b>?</nobr></p>"
@@ -940,21 +926,21 @@ bool UIMessageCenter::confirmHostInterfaceRemoval(const QString &strName, QWidge
 
 void UIMessageCenter::cannotCreateHostInterface(const CHost &host, QWidget *pParent /*= 0*/)
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to create the host network interface."),
           formatErrorInfo(host));
 }
 
 void UIMessageCenter::cannotCreateHostInterface(const CProgress &progress, QWidget *pParent /*= 0*/)
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to create the host network interface."),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
 void UIMessageCenter::cannotRemoveHostInterface(const CHost &host, const QString &strName, QWidget *pParent /*= 0*/)
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to remove the host network interface <b>%1</b>.")
              .arg(strName),
           formatErrorInfo(host));
@@ -962,7 +948,7 @@ void UIMessageCenter::cannotRemoveHostInterface(const CHost &host, const QString
 
 void UIMessageCenter::cannotRemoveHostInterface(const CProgress &progress, const QString &strName, QWidget *pParent /*= 0*/)
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to remove the host network interface <b>%1</b>.")
              .arg(strName),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
@@ -970,7 +956,7 @@ void UIMessageCenter::cannotRemoveHostInterface(const CProgress &progress, const
 
 void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Critical,
+    error(pParent, MessageType_Critical,
           tr("Failed to set global VirtualBox properties."),
           formatErrorInfo(properties));
 }
@@ -984,7 +970,7 @@ void UIMessageCenter::warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWid
     if (res.rc() == E_NOTIMPL)
         return;
     /* Show the error: */
-    error(pParent ? pParent : mainWindowShown(), res.isWarning() ? MessageType_Warning : MessageType_Error,
+    error(pParent, res.isWarning() ? MessageType_Warning : MessageType_Error,
           tr("Failed to access the USB subsystem."),
           formatErrorInfo(res),
           "warnAboutUnaccessibleUSB");
@@ -996,7 +982,7 @@ void UIMessageCenter::warnAboutUnsupportedUSB2(const QString &strExtPackName, QW
         return;
     setWarningShown("warnAboutUnsupportedUSB2", true);
 
-    alert(pParent ? pParent : mainMachineWindowShown(), MessageType_Warning,
+    alert(pParent, MessageType_Warning,
           tr("<p>USB 2.0 is currently enabled for this virtual machine. "
              "However, this requires the <b><nobr>%1</nobr></b> to be installed.</p>"
              "<p>Please install the Extension Pack from the VirtualBox download site. "
@@ -1014,7 +1000,7 @@ void UIMessageCenter::warnAboutStateChange(QWidget *pParent /*= 0*/) const
         return;
     setWarningShown("warnAboutStateChange", true);
     /* Show the error: */
-    alert(pParent ? pParent : mainWindowShown(), MessageType_Warning,
+    alert(pParent, MessageType_Warning,
           tr("The virtual machine that you are changing has been started. "
              "Only certain settings can be changed while a machine is running. "
              "All other changes will be lost if you close this window now."));
@@ -1024,7 +1010,7 @@ void UIMessageCenter::warnAboutStateChange(QWidget *pParent /*= 0*/) const
 
 bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /*= 0*/) const
 {
-    return questionBinary(pParent ? pParent : mainWindowShown(), MessageType_Question,
+    return questionBinary(pParent, MessageType_Question,
                           tr("<p>The machine settings were changed while you were editing them. "
                              "You currently have unsaved setting changes.</p>"
                              "<p>Would you like to reload the changed settings or to keep your own changes?</p>"),
@@ -1034,7 +1020,7 @@ bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /*= 0*/) const
 
 int UIMessageCenter::confirmHardDiskAttachmentCreation(const QString &strControllerName, QWidget *pParent /*= 0*/) const
 {
-    return questionTrinary(pParent ? pParent : mainWindowShown(), MessageType_Question,
+    return questionTrinary(pParent, MessageType_Question,
                            tr("<p>You are about to add a virtual hard disk to controller <b>%1</b>.</p>"
                               "<p>Would you like to create a new, empty file to hold the disk contents or select an existing one?</p>")
                               .arg(strControllerName),
@@ -1045,7 +1031,7 @@ int UIMessageCenter::confirmHardDiskAttachmentCreation(const QString &strControl
 
 int UIMessageCenter::confirmOpticalAttachmentCreation(const QString &strControllerName, QWidget *pParent /*= 0*/) const
 {
-    return questionTrinary(pParent ? pParent : mainWindowShown(), MessageType_Question,
+    return questionTrinary(pParent, MessageType_Question,
                            tr("<p>You are about to add a new CD/DVD drive to controller <b>%1</b>.</p>"
                               "<p>Would you like to choose a virtual CD/DVD disk to put in the drive "
                               "or to leave it empty for now?</p>")
@@ -1057,7 +1043,7 @@ int UIMessageCenter::confirmOpticalAttachmentCreation(const QString &strControll
 
 int UIMessageCenter::confirmFloppyAttachmentCreation(const QString &strControllerName, QWidget *pParent /*= 0*/) const
 {
-    return questionTrinary(pParent ? pParent : mainWindowShown(), MessageType_Question,
+    return questionTrinary(pParent, MessageType_Question,
                            tr("<p>You are about to add a new floppy drive to controller <b>%1</b>.</p>"
                               "<p>Would you like to choose a virtual floppy disk to put in the drive "
                               "or to leave it empty for now?</p>")
@@ -1069,7 +1055,7 @@ int UIMessageCenter::confirmFloppyAttachmentCreation(const QString &strControlle
 
 int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /*= 0*/) const
 {
-    return questionBinary(pParent ? pParent : mainWindowShown(), MessageType_Info,
+    return questionBinary(pParent, MessageType_Info,
                           tr("<p>Are you sure you want to delete the CD/DVD-ROM device?</p>"
                              "<p>You will not be able to mount any CDs or ISO images "
                              "or install the Guest Additions without it!</p>"),
@@ -1105,20 +1091,20 @@ void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType t
         default:
             break;
     }
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           strMessage, formatErrorInfo(machine));
 }
 
 void UIMessageCenter::warnAboutIncorrectPort(QWidget *pParent /*= 0*/) const
 {
-    alert(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    alert(pParent, MessageType_Error,
           tr("The current port forwarding rules are not valid. "
              "None of the host or guest port values may be set to zero."));
 }
 
 bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /*= 0*/) const
 {
-    return questionBinary(pParent ? pParent : mainWindowShown(), MessageType_Question,
+    return questionBinary(pParent, MessageType_Question,
                           tr("<p>There are unsaved changes in the port forwarding configuration.</p>"
                              "<p>If you proceed your changes will be discarded.</p>"));
 }
@@ -1127,7 +1113,7 @@ void UIMessageCenter::cannotCreateSharedFolder(const CMachine &machine, const QS
                                                const QString &strName, const QString &strPath,
                                                QWidget *pParent /*= 0*/)
 {
-    error(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to create the shared folder <b>%1</b> (pointing to "
              "<nobr><b>%2</b></nobr>) for the virtual machine <b>%3</b>.")
              .arg(strName, strPath, strMachineName),
@@ -1138,7 +1124,7 @@ void UIMessageCenter::cannotCreateSharedFolder(const CConsole &console, const QS
                                                const QString &strName, const QString &strPath,
                                                QWidget *pParent /*= 0*/)
 {
-    error(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to create the shared folder <b>%1</b> (pointing to "
              "<nobr><b>%2</b></nobr>) for the virtual machine <b>%3</b>.")
              .arg(strName, strPath, strMachineName),
@@ -1149,7 +1135,7 @@ void UIMessageCenter::cannotRemoveSharedFolder(const CMachine &machine, const QS
                                                const QString &strName, const QString &strPath,
                                                QWidget *pParent /*= 0*/)
 {
-    error(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("<p>Failed to remove the shared folder <b>%1</b> (pointing to "
              "<nobr><b>%2</b></nobr>) from the virtual machine <b>%3</b>.</p>"
              "<p>Please close all programs in the guest OS that "
@@ -1162,7 +1148,7 @@ void UIMessageCenter::cannotRemoveSharedFolder(const CConsole &console, const QS
                                                const QString &strName, const QString &strPath,
                                                QWidget *pParent /*= 0*/)
 {
-    error(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("<p>Failed to remove the shared folder <b>%1</b> (pointing to "
              "<nobr><b>%2</b></nobr>) from the virtual machine <b>%3</b>.</p>"
              "<p>Please close all programs in the guest OS that "
@@ -1176,7 +1162,7 @@ void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget
     /* Preserve error-info: */
     COMResult res(machine);
     /* Show the error: */
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to save the settings of the virtual machine <b>%1</b> to <b><nobr>%2</nobr></b>.")
              .arg(machine.GetName(), machine.GetSettingsFilePath()),
           formatErrorInfo(res));
@@ -1185,7 +1171,7 @@ void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget
 void UIMessageCenter::cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType,
                                              QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("<p>Error changing medium type from <b>%1</b> to <b>%2</b>.</p>")
              .arg(gpConverter->toString(oldMediumType)).arg(gpConverter->toString(newMediumType)),
           formatErrorInfo(medium));
@@ -1219,7 +1205,7 @@ bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, const QString
             break;
     }
     /* Show the question: */
-    return questionBinary(pParent ? pParent : mainWindowShown(), MessageType_Question,
+    return questionBinary(pParent, MessageType_Question,
                           strMessage.arg(medium.location(), strUsage),
                           0 /* auto-confirm id */, tr("Release", "detach medium"));
 }
@@ -1269,14 +1255,14 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
             break;
     }
     /* Show the question: */
-    return questionBinary(pParent ? pParent : mainWindowShown(), MessageType_Question,
+    return questionBinary(pParent, MessageType_Question,
                           strMessage.arg(medium.location()),
                           "confirmMediumRemoval" /* auto-confirm id */, tr("Remove", "medium"));
 }
 
 int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
-    return questionTrinary(pParent ? pParent : mainWindowShown(), MessageType_Question,
+    return questionTrinary(pParent, MessageType_Question,
                            tr("<p>Do you want to delete the storage unit of the hard disk "
                               "<nobr><b>%1</b></nobr>?</p>"
                               "<p>If you select <b>Delete</b> then the specified storage unit "
@@ -1294,7 +1280,7 @@ int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QW
 
 void UIMessageCenter::cannotDeleteHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
              .arg(strLocation),
           formatErrorInfo(medium));
@@ -1302,7 +1288,7 @@ void UIMessageCenter::cannotDeleteHardDiskStorage(const CMedium &medium, const Q
 
 void UIMessageCenter::cannotDeleteHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to delete the storage unit of the hard disk <b>%1</b>.")
              .arg(strLocation),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
@@ -1338,7 +1324,7 @@ void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType t
             break;
     }
     /* Show the error: */
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           strMessage, strErrorInfo);
 }
 
@@ -1387,12 +1373,12 @@ bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMediu
     }
     /* Show the messsage: */
     if (fRetry)
-        return errorWithQuestion(pParent ? pParent : mainWindowShown(), MessageType_Question,
+        return errorWithQuestion(pParent, MessageType_Question,
                                  strMessage.arg(medium.isHostDrive() ? medium.name() : medium.location()).arg(machine.GetName()),
                                  strErrorInfo,
                                  0 /* Auto Confirm ID */,
                                  tr("Force Unmount"));
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           strMessage.arg(medium.isHostDrive() ? medium.name() : medium.location()).arg(machine.GetName()),
           strErrorInfo);
     return false;
@@ -1423,7 +1409,7 @@ void UIMessageCenter::cannotOpenMedium(const CVirtualBox &vbox, UIMediumType typ
             break;
     }
     /* Show the error: */
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           strMessage.arg(strLocation), formatErrorInfo(vbox));
 }
 
@@ -1452,13 +1438,13 @@ void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult 
             break;
     }
     /* Show the error: */
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           strMessage.arg(medium.location()), formatErrorInfo(rc));
 }
 
 bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /*= 0*/) const
 {
-    return questionBinary(pParent ? pParent : mainWindowShown(), MessageType_Warning,
+    return questionBinary(pParent, MessageType_Warning,
                           tr("You are about to create a new virtual machine without a hard drive. "
                              "You will not be able to install an operating system on the machine "
                              "until you add one. In the mean time you will only be able to start the "
@@ -1470,14 +1456,14 @@ bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /*= 0*/) const
 
 void UIMessageCenter::cannotCreateMachine(const CVirtualBox &vbox, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to create a new virtual machine."),
           formatErrorInfo(vbox));
 }
 
 void UIMessageCenter::cannotRegisterMachine(const CVirtualBox &vbox, const QString &strMachineName, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to register the virtual machine <b>%1</b>.")
              .arg(strMachineName),
           formatErrorInfo(vbox));
@@ -1488,7 +1474,7 @@ void UIMessageCenter::cannotCreateClone(const CMachine &machine, QWidget *pParen
     /* Preserve error-info: */
     QString strErrorInfo = formatErrorInfo(machine);
     /* Show the error: */
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to clone the virtual machine <b>%1</b>.")
              .arg(machine.GetName()),
           strErrorInfo);
@@ -1496,7 +1482,7 @@ void UIMessageCenter::cannotCreateClone(const CMachine &machine, QWidget *pParen
 
 void UIMessageCenter::cannotCreateClone(const CProgress &progress, const QString &strMachineName, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to clone the virtual machine <b>%1</b>.")
              .arg(strMachineName),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
@@ -1504,7 +1490,7 @@ void UIMessageCenter::cannotCreateClone(const CProgress &progress, const QString
 
 void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
-    alert(pParent ? pParent : mainWindowShown(), MessageType_Info,
+    alert(pParent, MessageType_Info,
           tr("<p>The hard disk storage unit at location <b>%1</b> already exists. "
              "You cannot create a new virtual hard disk that uses this location "
              "because it can be already used by another virtual hard disk.</p>"
@@ -1514,7 +1500,7 @@ void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation,
 
 void UIMessageCenter::cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
              .arg(strLocation),
           formatErrorInfo(vbox));
@@ -1522,7 +1508,7 @@ void UIMessageCenter::cannotCreateHardDiskStorage(const CVirtualBox &vbox, const
 
 void UIMessageCenter::cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
              .arg(strLocation),
           formatErrorInfo(medium));
@@ -1530,7 +1516,7 @@ void UIMessageCenter::cannotCreateHardDiskStorage(const CMedium &medium, const Q
 
 void UIMessageCenter::cannotCreateHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
              .arg(strLocation),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
@@ -1539,7 +1525,7 @@ void UIMessageCenter::cannotCreateHardDiskStorage(const CProgress &progress, con
 void UIMessageCenter::cannotRemoveMachineFolder(const QString &strFolderName, QWidget *pParent /*= 0*/) const
 {
     QFileInfo fi(strFolderName);
-    alert(pParent ? pParent : mainWindowShown(), MessageType_Critical,
+    alert(pParent, MessageType_Critical,
           tr("<p>Cannot remove the machine folder <nobr><b>%1</b>.</nobr></p>"
              "<p>Please check that this folder really exists and that you have permissions to remove it.</p>")
              .arg(fi.fileName()));
@@ -1548,7 +1534,7 @@ void UIMessageCenter::cannotRemoveMachineFolder(const QString &strFolderName, QW
 void UIMessageCenter::cannotRewriteMachineFolder(const QString &strFolderName, QWidget *pParent /*= 0*/) const
 {
     QFileInfo fi(strFolderName);
-    alert(pParent ? pParent : mainWindowShown(), MessageType_Critical,
+    alert(pParent, MessageType_Critical,
           tr("<p>Cannot create the machine folder <b>%1</b> in the parent folder <nobr><b>%2</b>.</nobr></p>"
              "<p>This folder already exists and possibly belongs to another machine.</p>")
              .arg(fi.fileName()).arg(fi.absolutePath()));
@@ -1557,7 +1543,7 @@ void UIMessageCenter::cannotRewriteMachineFolder(const QString &strFolderName, Q
 void UIMessageCenter::cannotCreateMachineFolder(const QString &strFolderName, QWidget *pParent /*= 0*/) const
 {
     QFileInfo fi(strFolderName);
-    alert(pParent ? pParent : mainWindowShown(), MessageType_Critical,
+    alert(pParent, MessageType_Critical,
           tr("<p>Cannot create the machine folder <b>%1</b> in the parent folder <nobr><b>%2</b>.</nobr></p>"
              "<p>Please check that the parent really exists and that you have permissions to create the machine folder.</p>")
              .arg(fi.fileName()).arg(fi.absolutePath()));
@@ -1574,7 +1560,7 @@ void UIMessageCenter::cannotImportAppliance(CAppliance &appliance, QWidget *pPar
     if (!strWarningInfo.isEmpty())
         strWarningInfo = "<br />" + strWarningInfo;
     /* Show the error: */
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to open/interpret appliance <b>%1</b>.")
              .arg(appliance.GetPath()),
           strWarningInfo + strErrorInfo);
@@ -1582,7 +1568,7 @@ void UIMessageCenter::cannotImportAppliance(CAppliance &appliance, QWidget *pPar
 
 void UIMessageCenter::cannotImportAppliance(const CProgress &progress, const QString &strPath, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to import appliance <b>%1</b>.")
              .arg(strPath),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
@@ -1590,21 +1576,21 @@ void UIMessageCenter::cannotImportAppliance(const CProgress &progress, const QSt
 
 void UIMessageCenter::cannotCheckFiles(const CProgress &progress, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to check files."),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
 void UIMessageCenter::cannotRemoveFiles(const CProgress &progress, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to remove file."),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
 bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent /*= 0*/) const
 {
-    return questionBinary(pParent ? pParent : mainWindowShown(), MessageType_Warning,
+    return questionBinary(pParent, MessageType_Warning,
                           tr("<p>The %n following virtual machine(s) are currently in a saved state: <b>%1</b></p>"
                              "<p>If you continue the runtime state of the exported machine(s) will be discarded. "
                              "The other machine(s) will not be changed.</p>",
@@ -1621,7 +1607,7 @@ void UIMessageCenter::cannotExportAppliance(const CAppliance &appliance, QWidget
     /* Preserve error-info: */
     QString strErrorInfo = formatErrorInfo(appliance);
     /* Show the error: */
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to prepare the export of the appliance <b>%1</b>.")
              .arg(appliance.GetPath()),
           strErrorInfo);
@@ -1629,7 +1615,7 @@ void UIMessageCenter::cannotExportAppliance(const CAppliance &appliance, QWidget
 
 void UIMessageCenter::cannotExportAppliance(const CMachine &machine, const QString &strPath, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to prepare the export of the appliance <b>%1</b>.")
              .arg(strPath),
           formatErrorInfo(machine));
@@ -1637,7 +1623,7 @@ void UIMessageCenter::cannotExportAppliance(const CMachine &machine, const QStri
 
 void UIMessageCenter::cannotExportAppliance(const CProgress &progress, const QString &strPath, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to export appliance <b>%1</b>.")
              .arg(strPath),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
@@ -1645,7 +1631,7 @@ void UIMessageCenter::cannotExportAppliance(const CProgress &progress, const QSt
 
 void UIMessageCenter::cannotFindSnapshotByName(const CMachine &machine, const QString &strName, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Can't find snapshot named <b>%1</b>.")
              .arg(strName),
           formatErrorInfo(machine));
@@ -1712,7 +1698,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     /* Show the error: */
     if (type == MessageType_Critical)
     {
-        error(mainMachineWindowShown(), type,
+        error(mainWindowShown(), type,
               tr("<p>A fatal error has occurred during virtual machine execution! "
                  "The virtual machine will be powered off. Please copy the following error message "
                  "using the clipboard to help diagnose the problem:</p>"),
@@ -1720,7 +1706,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     }
     else if (type == MessageType_Error)
     {
-        error(mainMachineWindowShown(), type,
+        error(mainWindowShown(), type,
               tr("<p>An error has occurred during virtual machine execution! "
                  "The error details are shown below. You may try to correct the error "
                  "and resume the virtual machine execution.</p>"),
@@ -1728,7 +1714,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     }
     else
     {
-        error(mainMachineWindowShown(), type,
+        error(mainWindowShown(), type,
               tr("<p>The virtual machine execution may run into an error condition as described below. "
                  "We suggest that you take an appropriate action to avert the error.</p>"),
               formatted, autoConfimId.data());
@@ -1745,7 +1731,7 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
 
 bool UIMessageCenter::remindAboutGuruMeditation(const QString &strLogFolder)
 {
-    return questionBinary(mainMachineWindowShown(), MessageType_GuruMeditation,
+    return questionBinary(mainWindowShown(), MessageType_GuruMeditation,
                           tr("<p>A critical error has occurred while running the virtual "
                              "machine and the machine execution has been stopped.</p>"
                              ""
@@ -1772,7 +1758,7 @@ bool UIMessageCenter::remindAboutGuruMeditation(const QString &strLogFolder)
 bool UIMessageCenter::warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported) const
 {
     if (fHWVirtExSupported)
-        return questionBinary(mainMachineWindowShown(), MessageType_Error,
+        return questionBinary(mainWindowShown(), MessageType_Error,
                               tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is "
                                  "not operational. Your 64-bit guest will fail to detect a "
                                  "64-bit CPU and will not be able to boot.</p><p>Please ensure "
@@ -1781,7 +1767,7 @@ bool UIMessageCenter::warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported
                               0 /* auto-confirm id */,
                               tr("Close VM"), tr("Continue"));
     else
-        return questionBinary(mainMachineWindowShown(), MessageType_Error,
+        return questionBinary(mainWindowShown(), MessageType_Error,
                               tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
                                  "Your 64-bit guest will fail to detect a 64-bit CPU and will "
                                  "not be able to boot."),
@@ -1792,14 +1778,14 @@ bool UIMessageCenter::warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported
 bool UIMessageCenter::warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported) const
 {
     if (fHWVirtExSupported)
-        return questionBinary(mainMachineWindowShown(), MessageType_Error,
+        return questionBinary(mainWindowShown(), MessageType_Error,
                               tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is not operational. "
                                  "Certain guests (e.g. OS/2 and QNX) require this feature.</p>"
                                  "<p>Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.</p>"),
                               0 /* auto-confirm id */,
                               tr("Close VM"), tr("Continue"));
     else
-        return questionBinary(mainMachineWindowShown(), MessageType_Error,
+        return questionBinary(mainWindowShown(), MessageType_Error,
                               tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
                                  "Certain guests (e.g. OS/2 and QNX) require this feature and will fail to boot without it.</p>"),
                               0 /* auto-confirm id */,
@@ -1808,7 +1794,7 @@ bool UIMessageCenter::warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupport
 
 bool UIMessageCenter::cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames) const
 {
-    return questionBinary(mainMachineWindowShown(), MessageType_Error,
+    return questionBinary(mainWindowShown(), MessageType_Error,
                           tr("<p>Could not start the machine <b>%1</b> because the following "
                              "physical network interfaces were not found:</p><p><b>%2</b></p>"
                              "<p>You can either change the machine's network settings or stop the machine.</p>")
@@ -1819,7 +1805,7 @@ bool UIMessageCenter::cannotStartWithoutNetworkIf(const QString &strMachineName,
 
 void UIMessageCenter::cannotStartMachine(const CConsole &console, const QString &strName) const
 {
-    error(mainMachineWindowShown(), MessageType_Error,
+    error(mainWindowShown(), MessageType_Error,
           tr("Failed to start the virtual machine <b>%1</b>.")
              .arg(strName),
           formatErrorInfo(console));
@@ -1827,7 +1813,7 @@ void UIMessageCenter::cannotStartMachine(const CConsole &console, const QString 
 
 void UIMessageCenter::cannotStartMachine(const CProgress &progress, const QString &strName) const
 {
-    error(mainMachineWindowShown(), MessageType_Error,
+    error(mainWindowShown(), MessageType_Error,
           tr("Failed to start the virtual machine <b>%1</b>.")
              .arg(strName),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
@@ -1835,14 +1821,14 @@ void UIMessageCenter::cannotStartMachine(const CProgress &progress, const QStrin
 
 void UIMessageCenter::cannotSendACPIToMachine() const
 {
-    alert(mainMachineWindowShown(),  MessageType_Warning,
+    alert(mainWindowShown(),  MessageType_Warning,
           tr("You are trying to shut down the guest with the ACPI power button. "
              "This is currently not possible because the guest does not support software shutdown."));
 }
 
 bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
 {
-    int rc = question(mainMachineWindowShown(), MessageType_Info,
+    int rc = question(mainWindowShown(), MessageType_Info,
                       tr("<p>You have <b>clicked the mouse</b> inside the Virtual Machine display or pressed the <b>host key</b>. "
                          "This will cause the Virtual Machine to <b>capture</b> the host mouse pointer (only if the mouse pointer "
                          "integration is not currently supported by the guest OS) and the keyboard, which will make them "
@@ -1867,7 +1853,7 @@ bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
 
 void UIMessageCenter::remindAboutAutoCapture() const
 {
-    alert(mainMachineWindowShown(), MessageType_Info,
+    alert(mainWindowShown(), MessageType_Info,
           tr("<p>You have the <b>Auto capture keyboard</b> option turned on. "
              "This will cause the Virtual Machine to automatically <b>capture</b> "
              "the keyboard every time the VM window is activated and make it "
@@ -1902,7 +1888,7 @@ void UIMessageCenter::remindAboutMouseIntegration(bool fSupportsAbsolute) const
     };
     if (fSupportsAbsolute)
     {
-        alert(mainMachineWindowShown(), MessageType_Info,
+        alert(mainWindowShown(), MessageType_Info,
               tr("<p>The Virtual Machine reports that the guest OS supports <b>mouse pointer integration</b>. "
                  "This means that you do not need to <i>capture</i> the mouse pointer to be able to use it in your guest OS -- "
                  "all mouse actions you perform when the mouse pointer is over the Virtual Machine's display "
@@ -1916,7 +1902,7 @@ void UIMessageCenter::remindAboutMouseIntegration(bool fSupportsAbsolute) const
     }
     else
     {
-        alert(mainMachineWindowShown(), MessageType_Info,
+        alert(mainWindowShown(), MessageType_Info,
               tr("<p>The Virtual Machine reports that the guest OS does not support <b>mouse pointer integration</b> "
                  "in the current video mode. You need to capture the mouse (by clicking over the VM display "
                  "or pressing the host key) in order to use the mouse inside the guest OS.</p>"),
@@ -1929,7 +1915,7 @@ void UIMessageCenter::remindAboutMouseIntegration(bool fSupportsAbsolute) const
 
 void UIMessageCenter::remindAboutPausedVMInput() const
 {
-    alert(mainMachineWindowShown(), MessageType_Info,
+    alert(mainWindowShown(), MessageType_Info,
           tr("<p>The Virtual Machine is currently in the <b>Paused</b> state and "
              "not able to see any keyboard or mouse input. If you want to "
              "continue to work inside the VM, you need to resume it by selecting the "
@@ -1939,7 +1925,7 @@ void UIMessageCenter::remindAboutPausedVMInput() const
 
 bool UIMessageCenter::confirmGoingFullscreen(const QString &strHotKey) const
 {
-    return questionBinary(mainMachineWindowShown(), MessageType_Info,
+    return questionBinary(mainWindowShown(), MessageType_Info,
                           tr("<p>The virtual machine window will be now switched to <b>fullscreen</b> mode. "
                              "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
                              "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
@@ -1952,7 +1938,7 @@ bool UIMessageCenter::confirmGoingFullscreen(const QString &strHotKey) const
 
 bool UIMessageCenter::confirmGoingSeamless(const QString &strHotKey) const
 {
-    return questionBinary(mainMachineWindowShown(), MessageType_Info,
+    return questionBinary(mainWindowShown(), MessageType_Info,
                           tr("<p>The virtual machine window will be now switched to <b>Seamless</b> mode. "
                              "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
                              "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
@@ -1965,7 +1951,7 @@ bool UIMessageCenter::confirmGoingSeamless(const QString &strHotKey) const
 
 bool UIMessageCenter::confirmGoingScale(const QString &strHotKey) const
 {
-    return questionBinary(mainMachineWindowShown(), MessageType_Info,
+    return questionBinary(mainWindowShown(), MessageType_Info,
                           tr("<p>The virtual machine window will be now switched to <b>Scale</b> mode. "
                              "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
                              "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
@@ -1978,7 +1964,7 @@ bool UIMessageCenter::confirmGoingScale(const QString &strHotKey) const
 
 bool UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */, ULONG /* uHeight */, ULONG /* uBpp */, ULONG64 uMinVRAM) const
 {
-    return questionBinary(mainMachineWindowShown(), MessageType_Warning,
+    return questionBinary(mainWindowShown(), MessageType_Warning,
                           tr("<p>Could not switch the guest display to fullscreen mode due to insufficient guest video memory.</p>"
                              "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
                              "<p>Press <b>Ignore</b> to switch to fullscreen mode anyway or press <b>Cancel</b> to cancel the operation.</p>")
@@ -1989,7 +1975,7 @@ bool UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */, ULONG /* uHe
 
 void UIMessageCenter::cannotEnterSeamlessMode(ULONG /* uWidth */, ULONG /* uHeight */, ULONG /* uBpp */, ULONG64 uMinVRAM) const
 {
-    alert(mainMachineWindowShown(), MessageType_Error,
+    alert(mainWindowShown(), MessageType_Error,
           tr("<p>Could not enter seamless mode due to insufficient guest "
              "video memory.</p>"
              "<p>You should configure the virtual machine to have at "
@@ -1999,7 +1985,7 @@ void UIMessageCenter::cannotEnterSeamlessMode(ULONG /* uWidth */, ULONG /* uHeig
 
 bool UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const
 {
-    return questionBinary(mainMachineWindowShown(), MessageType_Warning,
+    return questionBinary(mainWindowShown(), MessageType_Warning,
                           tr("<p>Could not change the guest screen to this host screen due to insufficient guest video memory.</p>"
                              "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
                              "<p>Press <b>Ignore</b> to switch the screen anyway or press <b>Cancel</b> to cancel the operation.</p>")
@@ -2010,7 +1996,7 @@ bool UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const
 
 void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM) const
 {
-    alert(mainMachineWindowShown(), MessageType_Error,
+    alert(mainWindowShown(), MessageType_Error,
           tr("<p>Could not change the guest screen to this host screen "
              "due to insufficient guest video memory.</p>"
              "<p>You should configure the virtual machine to have at "
@@ -2023,7 +2009,7 @@ void UIMessageCenter::cannotAttachUSBDevice(const CConsole &console, const QStri
     /* Preserve error-info: */
     QString strErrorInfo = formatErrorInfo(console);
     /* Show the error: */
-    error(mainMachineWindowShown(), MessageType_Error,
+    error(mainWindowShown(), MessageType_Error,
           tr("Failed to attach the USB device <b>%1</b> to the virtual machine <b>%2</b>.")
              .arg(strDevice, console.GetMachine().GetName()),
           strErrorInfo);
@@ -2031,7 +2017,7 @@ void UIMessageCenter::cannotAttachUSBDevice(const CConsole &console, const QStri
 
 void UIMessageCenter::cannotAttachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const
 {
-    error(mainMachineWindowShown(), MessageType_Error,
+    error(mainWindowShown(), MessageType_Error,
           tr("Failed to attach the USB device <b>%1</b> to the virtual machine <b>%2</b>.")
              .arg(strDevice, strMachineName),
           formatErrorInfo(errorInfo));
@@ -2042,7 +2028,7 @@ void UIMessageCenter::cannotDetachUSBDevice(const CConsole &console, const QStri
     /* Preserve error-info: */
     QString strErrorInfo = formatErrorInfo(console);
     /* Show the error: */
-    error(mainMachineWindowShown(), MessageType_Error,
+    error(mainWindowShown(), MessageType_Error,
           tr("Failed to detach the USB device <b>%1</b> from the virtual machine <b>%2</b>.")
              .arg(strDevice, console.GetMachine().GetName()),
           strErrorInfo);
@@ -2050,7 +2036,7 @@ void UIMessageCenter::cannotDetachUSBDevice(const CConsole &console, const QStri
 
 void UIMessageCenter::cannotDetachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const
 {
-    error(mainMachineWindowShown(), MessageType_Error,
+    error(mainWindowShown(), MessageType_Error,
           tr("Failed to detach the USB device <b>%1</b> from the virtual machine <b>%2</b>.")
              .arg(strDevice, strMachineName),
           formatErrorInfo(errorInfo));
@@ -2058,7 +2044,7 @@ void UIMessageCenter::cannotDetachUSBDevice(const CVirtualBoxErrorInfo &errorInf
 
 void UIMessageCenter::remindAboutGuestAdditionsAreNotActive(QWidget *pParent /*= 0*/) const
 {
-    alert(pParent ? pParent : mainMachineWindowShown(), MessageType_Warning,
+    alert(pParent, MessageType_Warning,
           tr("<p>The VirtualBox Guest Additions do not appear to be available on this virtual machine, "
              "and shared folders cannot be used without them. To use shared folders inside the virtual machine, "
              "please install the Guest Additions if they are not installed, or re-install them if they are "
@@ -2100,7 +2086,7 @@ void UIMessageCenter::askUserToDownloadExtensionPack(const QString &strExtPackNa
 
 bool UIMessageCenter::cannotFindGuestAdditions() const
 {
-    return questionBinary(mainMachineWindowShown(), MessageType_Question,
+    return questionBinary(mainWindowShown(), MessageType_Question,
                           tr("<p>Could not find the <b>VirtualBox Guest Additions</b> CD image.</p>"
                              "<p>Do you wish to download this CD image from the Internet?</p>"),
                           0 /* auto-confirm id */,
@@ -2110,7 +2096,7 @@ bool UIMessageCenter::cannotFindGuestAdditions() const
 bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const
 {
     QLocale loc(VBoxGlobal::languageId());
-    return questionBinary(networkManagerOrMainMachineWindowShown(), MessageType_Question,
+    return questionBinary(networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b>VirtualBox Guest Additions</b> CD image "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
                              .arg(strUrl, loc.toString(uSize)),
@@ -2120,7 +2106,7 @@ bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulon
 
 void UIMessageCenter::cannotSaveGuestAdditions(const QString &strURL, const QString &strTarget) const
 {
-    alert(networkManagerOrMainMachineWindowShown(), MessageType_Error,
+    alert(networkManagerOrMainWindowShown(), MessageType_Error,
           tr("<p>The <b>VirtualBox Guest Additions</b> CD image has been successfully downloaded "
              "from <nobr><a href=\"%1\">%1</a></nobr> "
              "but can't be saved locally as <nobr><b>%2</b>.</nobr></p>"
@@ -2130,7 +2116,7 @@ void UIMessageCenter::cannotSaveGuestAdditions(const QString &strURL, const QStr
 
 bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QString &strSrc) const
 {
-    return questionBinary(networkManagerOrMainMachineWindowShown(), MessageType_Question,
+    return questionBinary(networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("<p>The <b>VirtualBox Guest Additions</b> CD image has been successfully downloaded "
                              "from <nobr><a href=\"%1\">%1</a></nobr> "
                              "and saved locally as <nobr><b>%2</b>.</nobr></p>"
@@ -2142,7 +2128,7 @@ bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QS
 
 void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName) const
 {
-    alert(mainMachineWindowShown(), MessageType_Error,
+    alert(mainWindowShown(), MessageType_Error,
           tr("<p>Could not insert the <b>VirtualBox Guest Additions</b> CD image into the virtual machine <b>%1</b>, "
              "as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the "
              "virtual machine settings dialog.</p>")
@@ -2151,7 +2137,7 @@ void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName) c
 
 void UIMessageCenter::cannotUpdateGuestAdditions(const CProgress &progress) const
 {
-    error(mainMachineWindowShown(), MessageType_Error,
+    error(mainWindowShown(), MessageType_Error,
           tr("Failed to update Guest Additions. "
              "The Guest Additions installation image will be mounted to provide a manual installation."),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
@@ -2244,8 +2230,7 @@ bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName,
 bool UIMessageCenter::confirmInstallExtensionPack(const QString &strPackName, const QString &strPackVersion,
                                                   const QString &strPackDescription, QWidget *pParent /*= 0*/) const
 {
-    return questionBinary(pParent ? pParent : mainWindowShown(),
-                          MessageType_Question,
+    return questionBinary(pParent, MessageType_Question,
                           tr("<p>You are about to install a VirtualBox extension pack. "
                              "Extension packs complement the functionality of VirtualBox and can contain system level software "
                              "that could be potentially harmful to your system. Please review the description below and only proceed "
@@ -2278,8 +2263,7 @@ bool UIMessageCenter::confirmReplaceExtensionPack(const QString &strPackName, co
     /* Show the question: */
     bool fRc;
     if (iVerCmp > 0)
-        fRc = questionBinary(pParent ? pParent : mainWindowShown(),
-                             MessageType_Question,
+        fRc = questionBinary(pParent, MessageType_Question,
                              tr("<p>An older version of the extension pack is already installed, would you like to upgrade? "
                                 "<p>%1</p>"
                                 "<p><table cellpadding=0 cellspacing=0>"
@@ -2292,8 +2276,7 @@ bool UIMessageCenter::confirmReplaceExtensionPack(const QString &strPackName, co
                              0,
                              tr("&Upgrade"));
     else if (iVerCmp < 0)
-        fRc = questionBinary(pParent ? pParent : mainWindowShown(),
-                             MessageType_Question,
+        fRc = questionBinary(pParent, MessageType_Question,
                              tr("<p>An newer version of the extension pack is already installed, would you like to downgrade? "
                                 "<p>%1</p>"
                                 "<p><table cellpadding=0 cellspacing=0>"
@@ -2306,8 +2289,7 @@ bool UIMessageCenter::confirmReplaceExtensionPack(const QString &strPackName, co
                              0,
                              tr("&Downgrade"));
     else
-        fRc = questionBinary(pParent ? pParent : mainWindowShown(),
-                             MessageType_Question,
+        fRc = questionBinary(pParent, MessageType_Question,
                              tr("<p>The extension pack is already installed with the same version, would you like reinstall it? "
                                 "<p>%1</p>"
                                 "<p><table cellpadding=0 cellspacing=0>"
@@ -2323,8 +2305,7 @@ bool UIMessageCenter::confirmReplaceExtensionPack(const QString &strPackName, co
 
 bool UIMessageCenter::confirmRemoveExtensionPack(const QString &strPackName, QWidget *pParent /*= 0*/) const
 {
-    return questionBinary(pParent ? pParent : mainWindowShown(),
-                          MessageType_Question,
+    return questionBinary(pParent, MessageType_Question,
                           tr("<p>You are about to remove the VirtualBox extension pack <b>%1</b>.</p>"
                              "<p>Are you sure you want to proceed?</p>")
                              .arg(strPackName),
@@ -2334,21 +2315,21 @@ bool UIMessageCenter::confirmRemoveExtensionPack(const QString &strPackName, QWi
 
 void UIMessageCenter::cannotOpenExtPack(const QString &strFilename, const CExtPackManager &extPackManager, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to open the Extension Pack <b>%1</b>.").arg(strFilename),
           formatErrorInfo(extPackManager));
 }
 
 void UIMessageCenter::warnAboutBadExtPackFile(const QString &strFilename, const CExtPackFile &extPackFile, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to open the Extension Pack <b>%1</b>.").arg(strFilename),
           "<!--EOM-->" + extPackFile.GetWhyUnusable());
 }
 
 void UIMessageCenter::cannotInstallExtPack(const CExtPackFile &extPackFile, const QString &strFilename, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to install the Extension Pack <b>%1</b>.")
              .arg(strFilename),
           formatErrorInfo(extPackFile));
@@ -2356,7 +2337,7 @@ void UIMessageCenter::cannotInstallExtPack(const CExtPackFile &extPackFile, cons
 
 void UIMessageCenter::cannotInstallExtPack(const CProgress &progress, const QString &strFilename, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to install the Extension Pack <b>%1</b>.")
              .arg(strFilename),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
@@ -2364,7 +2345,7 @@ void UIMessageCenter::cannotInstallExtPack(const CProgress &progress, const QStr
 
 void UIMessageCenter::cannotUninstallExtPack(const CExtPackManager &extPackManager, const QString &strPackName, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to uninstall the Extension Pack <b>%1</b>.")
              .arg(strPackName),
           formatErrorInfo(extPackManager));
@@ -2372,7 +2353,7 @@ void UIMessageCenter::cannotUninstallExtPack(const CExtPackManager &extPackManag
 
 void UIMessageCenter::cannotUninstallExtPack(const CProgress &progress, const QString &strPackName, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to uninstall the Extension Pack <b>%1</b>.")
              .arg(strPackName),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
@@ -2380,7 +2361,7 @@ void UIMessageCenter::cannotUninstallExtPack(const CProgress &progress, const QS
 
 void UIMessageCenter::warnAboutExtPackInstalled(const QString &strPackName, QWidget *pParent /*= 0*/) const
 {
-    alert(pParent ? pParent : mainWindowShown(), MessageType_Info,
+    alert(pParent, MessageType_Info,
           tr("The extension pack <br><nobr><b>%1</b><nobr><br> was installed successfully.")
              .arg(strPackName));
 }
@@ -2388,14 +2369,14 @@ void UIMessageCenter::warnAboutExtPackInstalled(const QString &strPackName, QWid
 #ifdef VBOX_WITH_DRAG_AND_DROP
 void UIMessageCenter::cannotDropData(const CGuest &guest, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to drop data."),
           formatErrorInfo(guest));
 }
 
 void UIMessageCenter::cannotDropData(const CProgress &progress, QWidget *pParent /*= 0*/) const
 {
-    error(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    error(pParent, MessageType_Error,
           tr("Failed to drop data."),
           !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
@@ -2403,7 +2384,7 @@ void UIMessageCenter::cannotDropData(const CProgress &progress, QWidget *pParent
 
 void UIMessageCenter::cannotOpenLicenseFile(const QString &strPath, QWidget *pParent /*= 0*/) const
 {
-    alert(pParent ? pParent : mainWindowShown(), MessageType_Error,
+    alert(pParent, MessageType_Error,
           tr("Failed to open the license file <nobr><b>%1</b></nobr>. Check file permissions.")
              .arg(strPath));
 }
@@ -2641,7 +2622,7 @@ void UIMessageCenter::sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWante
             outdated->close();
     }
 
-    alert(mainMachineWindowShown(), MessageType_Info,
+    alert(mainWindowShown(), MessageType_Info,
           tr("<p>The virtual machine window is optimized to work in "
              "<b>%1&nbsp;bit</b> color mode but the "
              "virtual display is currently set to <b>%2&nbsp;bit</b>.</p>"
@@ -2849,7 +2830,7 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
     }
 
     /* Create message-box: */
-    QWidget *pMessageBoxParent = mwManager().realParentWindow(pParent);
+    QWidget *pMessageBoxParent = mwManager().realParentWindow(pParent ? pParent : mainWindowShown());
     QPointer<QIMessageBox> pMessageBox = new QIMessageBox(title, strMessage, icon,
                                                           iButton1, iButton2, iButton3,
                                                           pMessageBoxParent);
