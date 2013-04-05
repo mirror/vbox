@@ -210,7 +210,6 @@ int main()
         rc = RTHttpGet(hHttp,
                        "https://update.virtualbox.org/query.php?platform=LINUX_32BITS_UBUNTU_12_04&version=4.1.18",
                        &pszBuf);
-    RTHttpDestroy(hHttp);
 
     if (RT_FAILURE(rc))
         cErrors++;
@@ -220,7 +219,13 @@ int main()
     else
         RTPrintf("Success!\n");
     RTPrintf("Got: %s\n", pszBuf);
-    RTMemFree(pszBuf);
+    if (pszBuf)
+    {
+        RTMemFree(pszBuf);
+        pszBuf = NULL;
+    }
+
+    RTHttpDestroy(hHttp);
 
 //    RTFileDelete(CAFILE_NAME);
 
