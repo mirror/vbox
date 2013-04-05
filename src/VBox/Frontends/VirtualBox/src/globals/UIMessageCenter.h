@@ -154,9 +154,7 @@ public:
 
     /* API: Main window stuff: */
     QWidget* mainWindowShown() const;
-    QWidget* mainMachineWindowShown() const;
     QWidget* networkManagerOrMainWindowShown() const;
-    QWidget* networkManagerOrMainMachineWindowShown() const;
 
     /* API: Main (startup) warnings: */
 #ifdef RT_OS_LINUX
