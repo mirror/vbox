@@ -1399,13 +1399,18 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
 
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
 
+#ifdef VBOX_WITH_OLD_VTX_CODE
     /* Always load the guest's FPU/XMM state on-demand. */
     CPUMDeactivateGuestFPUState(pVCpu);
 
     /* Always load the guest's debug state on-demand. */
     CPUMDeactivateGuestDebugState(pVCpu);
+#else
+    Assert(!CPUMIsGuestFPUStateActive(pVCpu));
+    Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+#endif
 
-    /* Always reload the host context and the guest's CR0 register. (!!!!) */
+    /* Always reload the host context and the guest's CR0 register (for the FPU bits). */
     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0 | HM_CHANGED_HOST_CONTEXT;
 
     /* Setup the register and mask according to the current execution mode. */
@@ -1470,6 +1475,8 @@ VMMR0_INT_DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
     /** @todo r=bird: This can't be entirely right? */
     AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
 
+    /* The new code does FPU restoration in the VMX R0 code. */
+#ifdef VBOX_WITH_OLD_VTX_CODE
     /*
      * Save the guest FPU and XMM state if necessary.
      *
@@ -1486,6 +1493,7 @@ VMMR0_INT_DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
         Assert(!CPUMIsGuestFPUStateActive(pVCpu));
     }
+#endif
 
     rc = g_HvmR0.pfnLeaveSession(pVM, pVCpu, pCtx);
 
@@ -1493,8 +1501,15 @@ VMMR0_INT_DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
        guests, so we must make sure the recompiler flushes its TLB the next
        time it executes code. */
     if (    pVM->hm.s.fNestedPaging
-        &&  CPUMIsGuestInPagedProtectedModeEx(pCtx))
+#ifdef VBOX_WITH_OLD_VTX_CODE
+        &&  CPUMIsGuestInPagedProtectedModeEx(pCtx)
+#else
+        &&  CPUMIsGuestPagingEnabledEx(pCtx)
+#endif
+       )
+    {
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+    }
 
     /* Keep track of the CPU owning the VMCS for debugging scheduling weirdness
        and ring-3 calls. */

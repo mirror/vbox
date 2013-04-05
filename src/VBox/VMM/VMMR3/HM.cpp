@@ -486,8 +486,6 @@ static int hmR3InitCPU(PVM pVM)
                              "Profiling of VMXR0RunGuestCode entry",
                              "/PROF/HM/CPU%d/StatEntry", i);
         AssertRC(rc);
-        /** @todo r=ramshankar: should be sorted out for the new-code which doesn't
-         *        have 2 exit parts. */
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExit1, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of VMXR0RunGuestCode exit part 1",
                              "/PROF/HM/CPU%d/SwitchFromGC_1", i);
@@ -496,7 +494,8 @@ static int hmR3InitCPU(PVM pVM)
                              "Profiling of VMXR0RunGuestCode exit part 2",
                              "/PROF/HM/CPU%d/SwitchFromGC_2", i);
         AssertRC(rc);
-# if 1 /* temporary for tracking down darwin holdup. */
+# ifdef VBOX_WITH_OLD_VTX_CODE
+        /* temporary for tracking down darwin holdup. */
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExit2Sub1, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Temporary - I/O",
                              "/PROF/HM/CPU%d/SwitchFromGC_2/Sub1", i);
@@ -510,8 +509,12 @@ static int hmR3InitCPU(PVM pVM)
                              "/PROF/HM/CPU%d/SwitchFromGC_2/Sub3", i);
         AssertRC(rc);
 # endif
+        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatLoadGuestState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
+                             "Profiling of VMXR0LoadGuestState",
+                             "/PROF/HM/CPU%d/StatLoadGuestState", i);
+        AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatInGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Profiling of vmlaunch",
+                             "Profiling of vmlaunch/vmresume",
                              "/PROF/HM/CPU%d/InGC", i);
         AssertRC(rc);
 
