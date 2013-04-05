@@ -664,17 +664,69 @@ static bool strIEndsWith(const char *pszString, const char *pszSuffix)
     return RTStrICmp(pszString + cchString - cchSuffix, pszSuffix) == 0;
 }
 
+
 #if 0
+/** @name Path properties returned by RTPathParse and RTPathSplit.
+ * @{ */
 /** Indicates that there is a filename.
  * If not set, a directory was specified using a trailing slash or a volume
  * was specified without any file/dir name following it. */
-#define RTPATHSPLIT_PROP_FILENAME       UINT16_C(0x0001)
+#define RTPATH_PROP_FILENAME        UINT16_C(0x0001)
+/** The filename has a suffix (extension). */
+#define RTPATH_PROP_SUFFIX          UINT16_C(0x0002)
 /** Indicates that this is an UNC path (Windows and OS/2 only). */
-#define RTPATHSPLIT_PROP_UNC            UINT16_C(0x0002)
-/** A root is specified. */
-#define RTPATHSPLIT_PROP_ROOT           UINT16_C(0x0004)
+#define RTPATH_PROP_UNC             UINT16_C(0x0010)
+/** A root is specified. The path is relative if not set. */
+#define RTPATH_PROP_ROOT            UINT16_C(0x0020)
 /** A volume (drive) is specified. */
-#define RTPATHSPLIT_PROP_VOLSPEC        UINT16_C(0x0008)
+#define RTPATH_PROP_VOLSPEC         UINT16_C(0x0040)
+/** The path is absolute. */
+#define RTPATH_PROP_ABSOLUTE        UINT16_C(0x0100)
+/** @} */
+
+
+/**
+ * Parsed path.
+ *
+ * The first component is the root and volume specifier. If UNC, the first
+ * component does not include the share/service name, that is found as the
+ * second component if present.
+ */
+typedef struct RTPATHPARSED
+{
+    /** Number of path components. */
+    uint16_t    cComponents;
+    /** The offset of the filename suffix, offset of the NUL char if none. */
+    uint16_t    offSuffix;
+    /** Path property flags, RTPATH_PROP_XXX */
+    uint16_t    fProps;
+    /** The number of bytes used (on success) or needed (on buffer overflow). */
+    uint16_t    cbUsed;
+    /** Array of component descriptors (variable size). */
+    struct
+    {
+        /** The offset of the component. */
+        uint16_t    off;
+        /** The  */
+        uint16_t    cch;
+    } aComponents[1];
+} RTPATHPARSED;
+/** Pointer to to a parsed path result. */
+typedef RTPATHPARSED *PRTPATHPARSED;
+/** Pointer to to a const parsed path result. */
+typedef RTPATHPARSED *PCRTPATHPARSED;
+
+
+int RTPathParse(const char *pszPath, PRTPATHPARSED pOutput, size_t cbOutput)
+{
+    AssertReturn(cbOutput >= sizeof(*pOutput), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(pOutput, VERR_INVALID_POINTER);
+
+}
+
+
+
 
 typedef struct RTPATHSPLIT
 {
@@ -771,6 +823,7 @@ int RTPathSplit(const char *pszPath, PRTPATHSPLIT pOutput, size_t cbOutput)
 
 
 }
+
 #endif
 
 /**
