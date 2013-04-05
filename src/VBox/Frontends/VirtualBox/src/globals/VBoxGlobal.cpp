@@ -85,15 +85,6 @@
 # include "VBoxFBOverlay.h"
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-#ifdef VBOX_GUI_WITH_SYSTRAY
-#include <iprt/process.h>
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-#define HOSTSUFF_EXE ".exe"
-#else /* !RT_OS_WINDOWS */
-#define HOSTSUFF_EXE ""
-#endif /* !RT_OS_WINDOWS */
-#endif /* VBOX_GUI_WITH_SYSTRAY */
-
 /* COM includes: */
 #include "CMachine.h"
 #include "CSystemProperties.h"
@@ -279,10 +270,6 @@ VBoxGlobal::VBoxGlobal()
     , mSelectorWnd (NULL)
     , m_pVirtualMachine(0)
     , mMainWindow (NULL)
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    , mIsTrayMenu (false)
-    , mIncreasedWindowCounter (false)
-#endif
     , mMediaEnumThread (NULL)
     , mIsKWinManaged (false)
     , mDisablePatm(false)
@@ -524,113 +511,6 @@ QString VBoxGlobal::brandingGetKey (QString aKey)
     QSettings s(mBrandingConfig, QSettings::IniFormat);
     return s.value(QString("%1").arg(aKey)).toString();
 }
-
-#ifdef VBOX_GUI_WITH_SYSTRAY
-
-/**
- *  Returns true if the current instance a systray menu only (started with
- *  "-systray" parameter).
- */
-bool VBoxGlobal::isTrayMenu() const
-{
-    return mIsTrayMenu;
-}
-
-void VBoxGlobal::setTrayMenu(bool aIsTrayMenu)
-{
-    mIsTrayMenu = aIsTrayMenu;
-}
-
-/**
- *  Spawns a new selector window (process).
- */
-void VBoxGlobal::trayIconShowSelector()
-{
-    /* Get the path to the executable. */
-    char path[RTPATH_MAX];
-    RTPathAppPrivateArch(path, RTPATH_MAX);
-    size_t sz = strlen(path);
-    path[sz++] = RTPATH_DELIMITER;
-    path[sz] = 0;
-    char *cmd = path + sz;
-    sz = RTPATH_MAX - sz;
-
-    int rc = 0;
-    const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
-    Assert(sz >= sizeof(VirtualBox_exe));
-    strcpy(cmd, VirtualBox_exe);
-    const char * args[] = {path, 0 };
-    rc = RTProcCreate(path, args, RTENV_DEFAULT, RTPROC_FLAGS_DETACHED, NULL);
-    if (RT_FAILURE(rc))
-        LogRel(("Systray: Failed to start new selector window! Path=%s, rc=%Rrc\n", path, rc));
-}
-
-/**
- *  Tries to install the tray icon using the current instance (singleton).
- *  Returns true if this instance is the tray icon, false if not.
- */
-bool VBoxGlobal::trayIconInstall()
-{
-    int rc = 0;
-    QString strTrayWinID = mVBox.GetExtraData(GUI_TrayIconWinID);
-    if (false == strTrayWinID.isEmpty())
-    {
-        /* Check if current tray icon is alive by writing some bogus value. */
-        mVBox.SetExtraData(GUI_TrayIconWinID, "0");
-        if (mVBox.isOk())
-        {
-            /* Current tray icon died - clean up. */
-            mVBox.SetExtraData(GUI_TrayIconWinID, NULL);
-            strTrayWinID.clear();
-        }
-    }
-
-    /* Is there already a tray icon or is tray icon not active? */
-    if (   (mIsTrayMenu == false)
-        && (vboxGlobal().settings().trayIconEnabled())
-        && (QSystemTrayIcon::isSystemTrayAvailable())
-        && (strTrayWinID.isEmpty()))
-    {
-        /* Get the path to the executable. */
-        char path[RTPATH_MAX];
-        RTPathAppPrivateArch(path, RTPATH_MAX);
-        size_t sz = strlen(path);
-        path[sz++] = RTPATH_DELIMITER;
-        path[sz] = 0;
-        char *cmd = path + sz;
-        sz = RTPATH_MAX - sz;
-
-        const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
-        Assert(sz >= sizeof(VirtualBox_exe));
-        strcpy(cmd, VirtualBox_exe);
-        const char * args[] = {path, "-systray", 0 };
-        rc = RTProcCreate(path, args, RTENV_DEFAULT, RTPROC_FLAGS_DETACHED, NULL);
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("Systray: Failed to start systray window! Path=%s, rc=%Rrc\n", path, rc));
-            return false;
-        }
-    }
-
-    if (mIsTrayMenu)
-    {
-        // Use this selector for displaying the tray icon
-        mVBox.SetExtraData(GUI_TrayIconWinID,
-                           QString("%1").arg((qulonglong)vboxGlobal().mainWindow()->winId()));
-
-        /* The first process which can grab this "mutex" will win ->
-         * It will be the tray icon menu then. */
-        if (mVBox.isOk())
-        {
-            emit sigTrayIconShow(true);
-            return true;
-        }
-    }
-
-    return false;
-}
-
-#endif
 
 #ifdef Q_WS_X11
 QList<QRect> XGetDesktopList()
@@ -2302,18 +2182,6 @@ QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocatio
 
     return QString();
 }
-
-#ifdef VBOX_GUI_WITH_SYSTRAY
-/**
- *  Returns the number of current running Fe/Qt4 main windows.
- *
- *  @return Number of running main windows.
- */
-int VBoxGlobal::mainWindowCount ()
-{
-    return mVBox.GetExtraData (GUI_MainWindowCount).toInt();
-}
-#endif
 
 /**
  *  Native language name of the currently installed translation.
@@ -4186,18 +4054,6 @@ void VBoxGlobal::init()
     connect(gEDataEvents, SIGNAL(sigGUILanguageChange(QString)),
             this, SLOT(sltGUILanguageChange(QString)));
 
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    {
-        /* Increase open Fe/Qt4 windows reference count. */
-        int c = mVBox.GetExtraData (GUI_MainWindowCount).toInt() + 1;
-        AssertMsgReturnVoid ((c >= 0) || (mVBox.isOk()),
-            ("Something went wrong with the window reference count!"));
-        mVBox.SetExtraData (GUI_MainWindowCount, QString ("%1").arg (c));
-        mIncreasedWindowCounter = mVBox.isOk();
-        AssertReturnVoid (mIncreasedWindowCounter);
-    }
-#endif
-
     /* Initialize guest OS Type list. */
     CGuestOSTypeVector coll = mVBox.GetGuestOSTypes();
     int osTypeCount = coll.size();
@@ -4379,12 +4235,6 @@ void VBoxGlobal::init()
         {
             bForceFullscreen = true;
         }
-#ifdef VBOX_GUI_WITH_SYSTRAY
-        else if (!::strcmp (arg, "-systray") || !::strcmp (arg, "--systray"))
-        {
-            mIsTrayMenu = true;
-        }
-#endif
         else if (!::strcmp (arg, "-comment") || !::strcmp (arg, "--comment"))
         {
             ++i;
@@ -4611,26 +4461,6 @@ void VBoxGlobal::cleanup()
         AssertMsgFailed (("Should never be called directly\n"));
         return;
     }
-
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    if (mIncreasedWindowCounter)
-    {
-        /* Decrease open Fe/Qt4 windows reference count. */
-        int c = mVBox.GetExtraData (GUI_MainWindowCount).toInt() - 1;
-        AssertMsg ((c >= 0) || (mVBox.isOk()),
-            ("Something went wrong with the window reference count!"));
-        if (c < 0)
-            c = 0;   /* Clean up the mess. */
-        mVBox.SetExtraData (GUI_MainWindowCount,
-                            (c > 0) ? QString ("%1").arg (c) : NULL);
-        AssertWrapperOk (mVBox);
-        if (c == 0)
-        {
-            mVBox.SetExtraData (GUI_TrayIconWinID, NULL);
-            AssertWrapperOk (mVBox);
-        }
-    }
-#endif
 
 #ifdef VBOX_GUI_WITH_PIDFILE
     deletePidfile();

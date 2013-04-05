@@ -200,13 +200,6 @@ namespace UIDefs
     extern const char* GUI_Accelerate2D_PixformatAYUV;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    /* Tray icon declarations: */
-    extern const char* GUI_TrayIconWinID;
-    extern const char* GUI_TrayIconEnabled;
-    extern const char* GUI_MainWindowCount;
-#endif /* VBOX_GUI_WITH_SYSTRAY */
-
     /* File extensions declarations: */
     extern QStringList VBoxFileExts;
     extern QStringList VBoxExtPackFileExts;

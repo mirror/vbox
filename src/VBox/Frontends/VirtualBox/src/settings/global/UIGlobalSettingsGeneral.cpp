@@ -30,10 +30,6 @@ UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsGeneral::setupUi(this);
 
-#ifndef VBOX_GUI_WITH_SYSTRAY
-    m_pEnableTrayIconCheckbox->hide();
-    m_pSpacerWidget1->hide();
-#endif /* !VBOX_GUI_WITH_SYSTRAY */
 #ifndef Q_WS_MAC
     m_pEnablePresentationModeCheckbox->hide();
     m_pSpacerWidget2->hide();

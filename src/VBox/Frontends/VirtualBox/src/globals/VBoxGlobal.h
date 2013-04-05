@@ -113,12 +113,6 @@ public:
 
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
     bool showStartVMErrors() const { return mShowStartVMErrors; }
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    bool isTrayMenu() const;
-    void setTrayMenu(bool aIsTrayMenu);
-    void trayIconShowSelector();
-    bool trayIconInstall();
-#endif
     QString managedVMUuid() const { return vmUuid; }
     QList<QUrl> &argUrlList() { return m_ArgUrlList; }
 
@@ -423,10 +417,6 @@ signals:
     /** Emitted when the media is removed using #removeMedia(). */
     void mediumRemoved (UIMediumType, const QString &);
 
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    void sigTrayIconShow(bool fEnabled);
-#endif
-
 public slots:
 
     bool openURL (const QString &aURL);
@@ -464,11 +454,6 @@ private:
 
     QString vmUuid;
     QList<QUrl> m_ArgUrlList;
-
-#ifdef VBOX_GUI_WITH_SYSTRAY
-    bool mIsTrayMenu : 1; /*< Tray icon active/desired? */
-    bool mIncreasedWindowCounter : 1;
-#endif
 
     /** Whether to show error message boxes for VM start errors. */
     bool mShowStartVMErrors;
