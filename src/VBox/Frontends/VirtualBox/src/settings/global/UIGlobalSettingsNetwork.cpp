@@ -418,9 +418,8 @@ void UIGlobalSettingsNetwork::sltAddInterface()
     CProgress progress = host.CreateHostOnlyNetworkInterface(iface);
     if (host.isOk())
     {
-        msgCenter().showModalProgressDialog(progress, tr("Networking"),
-                                            ":/nw_32px.png", window(), 0);
-        if (progress.GetResultCode() == 0)
+        msgCenter().showModalProgressDialog(progress, tr("Networking"), ":/nw_32px.png", this, 0);
+        if (progress.isOk() && progress.GetResultCode() == 0)
         {
             /* Create DHCP server: */
             CDHCPServer dhcp = vbox.FindDHCPServerByNetworkName(iface.GetNetworkName());
@@ -430,7 +429,6 @@ void UIGlobalSettingsNetwork::sltAddInterface()
                 dhcp = vbox.FindDHCPServerByNetworkName(iface.GetNetworkName());
             }
             AssertMsg(!dhcp.isNull(), ("DHCP server creation failed!\n"));
-
             /* Append cache with new item: */
             appendCacheItem(iface);
             /* Append list with new item: */
@@ -452,7 +450,7 @@ void UIGlobalSettingsNetwork::sltDelInterface()
     /* Get interface name: */
     QString strInterfaceName(pItem->name());
     /* Asking user about deleting selected network interface: */
-    if (!msgCenter().confirmDeletingHostInterface(strInterfaceName, this))
+    if (!msgCenter().confirmHostInterfaceRemoval(strInterfaceName, this))
         return;
 
     /* Prepare useful variables: */
@@ -471,9 +469,8 @@ void UIGlobalSettingsNetwork::sltDelInterface()
     CProgress progress = host.RemoveHostOnlyNetworkInterface(iface.GetId());
     if (host.isOk())
     {
-        msgCenter().showModalProgressDialog(progress, tr("Networking"),
-                                            ":/nw_32px.png", window(), 0);
-        if (progress.GetResultCode() == 0)
+        msgCenter().showModalProgressDialog(progress, tr("Networking"), ":/nw_32px.png", this, 0);
+        if (progress.isOk() && progress.GetResultCode() == 0)
         {
             /* Remove list item: */
             removeListItem(pItem);
@@ -481,10 +478,10 @@ void UIGlobalSettingsNetwork::sltDelInterface()
             removeCacheItem(strInterfaceName);
         }
         else
-            msgCenter().cannotRemoveHostInterface(progress, iface, this);
+            msgCenter().cannotRemoveHostInterface(progress, strInterfaceName, this);
     }
     else
-        msgCenter().cannotRemoveHostInterface(host, iface, this);
+        msgCenter().cannotRemoveHostInterface(host, strInterfaceName, this);
 }
 
 /* Edits selected network interface: */

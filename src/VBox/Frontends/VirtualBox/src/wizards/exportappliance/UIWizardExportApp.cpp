@@ -96,7 +96,7 @@ bool UIWizardExportApp::exportAppliance()
     }
     QVector<QString> exists = explorer.Exists(files);
     /* Check if the file exists already, if yes get confirmation for overwriting from the user. */
-    if (!msgCenter().askForOverridingFiles(exists, this))
+    if (!msgCenter().confirmOverridingFiles(exists, this))
         return false;
     /* Ok all is confirmed so delete all the files which exists: */
     if (!exists.isEmpty())

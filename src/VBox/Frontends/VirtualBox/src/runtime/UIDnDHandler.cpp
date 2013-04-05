@@ -93,11 +93,10 @@ Qt::DropAction UIDnDHandler::dragHGDrop(CGuest &guest, ulong screenId, int x, in
             memcpy(dv.data(), d.constData(), d.size());
 
             CProgress progress = guest.DragHGPutData(screenId, format, dv);
-            if (    guest.isOk()
-                && !progress.isNull())
+            if (guest.isOk())
             {
                 msgCenter().showModalProgressDialog(progress, tr("Dropping data ..."), ":/progress_dnd_hg_90px.png", pParent);
-                if (!progress.GetCanceled() && progress.isOk() && progress.GetResultCode() != 0)
+                if (!progress.GetCanceled() && (!progress.isOk() || progress.GetResultCode() != 0))
                 {
                     msgCenter().cannotDropData(progress, pParent);
                     result = KDragAndDropAction_Ignore;
@@ -184,36 +183,40 @@ protected:
         /* No, start getting the data from the guest. First inform the guest we
          * want the data in the specified mime-type. */
         CProgress progress = guest.DragGHDropped(mimeType, UIDnDHandler::toVBoxDnDAction(m_defAction));
-        if (    guest.isOk()
-            && !progress.isNull())
+        if (guest.isOk())
         {
             msgCenter().showModalProgressDialog(progress, tr("Dropping data ..."), ":/progress_dnd_gh_90px.png", m_pParent);
-            if (!progress.GetCanceled() && progress.isOk() && progress.GetResultCode() != 0)
-                msgCenter().cannotDropData(progress, m_pParent);
-            else if (!progress.GetCanceled())
+            if (!progress.GetCanceled())
             {
-                /* After the data is successfully arrived from the guest, we
-                 * query it from Main. */
-                QVector<uint8_t> data = guest.DragGHGetData();
-                if (!data.isEmpty())
+                if (progress.isOk() && progress.GetResultCode() == 0)
                 {
-//                    printf("qt data (%d, %d, '%s'): %s\n", data.size(), type, qPrintable(mimeType), data.data());
-                    /* Todo: not sure what to add here more: needs more testing. */
-                    switch (type)
+                    /* After the data is successfully arrived from the guest, we query it from Main. */
+                    QVector<uint8_t> data = guest.DragGHGetData();
+                    if (!data.isEmpty())
                     {
-                        case QVariant::String:    m_data = QVariant(QString(reinterpret_cast<const char*>(data.data()))); break;
-                        case QVariant::ByteArray:
+                        /* Todo: not sure what to add here more: needs more testing. */
+                        switch (type)
                         {
-                            QByteArray ba(reinterpret_cast<const char*>(data.constData()), data.size());
-                            m_data = QVariant(ba);
-                            break;
+                            case QVariant::String:
+                            {
+                                m_data = QVariant(QString(reinterpret_cast<const char*>(data.data())));
+                                break;
+                            }
+                            case QVariant::ByteArray:
+                            {
+                                QByteArray ba(reinterpret_cast<const char*>(data.constData()), data.size());
+                                m_data = QVariant(ba);
+                                break;
+                            }
+                            default: break;
                         }
-                        default: break;
                     }
+                    m_fState = Finished;
                 }
-                m_fState = Finished;
+                else
+                    msgCenter().cannotDropData(progress, m_pParent);
             }
-            if (progress.GetCanceled())
+            else
                 m_fState = Canceled;
         }
         else
