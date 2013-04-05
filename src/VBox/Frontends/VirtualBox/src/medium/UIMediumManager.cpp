@@ -1160,7 +1160,7 @@ void UIMediumManager::doRemoveMedium()
                 int rc = msgCenter().confirmDeleteHardDiskStorage(item->location(), this);
                 if (rc == AlertButton_Cancel)
                     return;
-                deleteStorage = rc == AlertButton_Yes;
+                deleteStorage = rc == AlertButton_Choice1;
             }
 
             CMedium hardDisk = item->medium().medium();
