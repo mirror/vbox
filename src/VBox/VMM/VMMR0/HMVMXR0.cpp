@@ -3636,7 +3636,7 @@ DECLINLINE(int) hmR0VmxLoadGuestActivityState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
- * @remarks Requires RIP, RFLAGS (debug assert).
+ * @remarks Requires RIP, RFLAGS.
  */
 DECLINLINE(int) hmR0VmxLoadGuestIntrState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -3663,6 +3663,8 @@ DECLINLINE(int) hmR0VmxLoadGuestIntrState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
         else if (pCtx->eflags.u32 & X86_EFL_IF)
         {
+            /** @todo Pretty sure we don't need to check for Rflags.IF here.
+             *        Interrupt-shadow only matters when RIP changes. */
             /*
              * We don't have enough information to distinguish a block-by-STI vs. block-by-MOV SS. Intel seems to think there
              * is a slight difference regarding MOV SS additionally blocking some debug exceptions.
@@ -4849,17 +4851,18 @@ DECLINLINE(int) hmR0VmxSaveGuestIntrState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
 
     uint32_t uIntrState = 0;
     int rc = VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
-    if (uIntrState != 0)
+    if (!uIntrState)
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    else
     {
         Assert(   uIntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI
                || uIntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
-        rc = hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
+        rc  = hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
+        rc |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);    /* RFLAGS is needed in hmR0VmxLoadGuestIntrState(). */
         AssertRCReturn(rc, rc);
         EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
         Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
     }
-    else
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 
     pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_INTR_STATE;
     return rc;
@@ -6379,11 +6382,8 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
 
     /* Load the required guest state bits (for guest-state changes in the inner execution loop). */
     Assert(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_CONTEXT));
-    int rc;
-    if (pVCpu->hm.s.fContextUseFlags == HM_CHANGED_GUEST_INTR_STATE)
-        rc = hmR0VmxLoadGuestIntrState(pVM, pVCpu, pMixedCtx);
-    else
-        rc = VMXR0LoadGuestState(pVM, pVCpu, pMixedCtx);
+    Log(("LoadFlags=%#RX32\n", pVCpu->hm.s.fContextUseFlags));
+    int rc = VMXR0LoadGuestState(pVM, pVCpu, pMixedCtx);
     AssertRC(rc);
     AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags =%#x\n", pVCpu->hm.s.fContextUseFlags));
 
