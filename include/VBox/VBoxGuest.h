@@ -376,12 +376,8 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 # define VBOXGUEST_IOCTL_DPC_LATENCY_CHECKER        VBOXGUEST_IOCTL_CODE_(30, 0)
 #endif
 
-/** IOCTL to for setting the mouse driver callback. (kernel only)
- * @todo r=bird: Why is this using VBOXGUEST_IOCTL_CODE_ and not
- *       VBOXGUEST_IOCTL_CODE? Doesn't make any sense to me as the data is bit
- *       specific...
- */
-#define VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK   VBOXGUEST_IOCTL_CODE_(31, sizeof(VBoxGuestMouseSetNotifyCallback))
+/** IOCTL to for setting the mouse driver callback. (kernel only) */
+#define VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK   VBOXGUEST_IOCTL_CODE(31, sizeof(VBoxGuestMouseSetNotifyCallback))
 
 typedef DECLCALLBACK(void) FNVBOXGUESTMOUSENOTIFY(void *pfnUser);
 typedef FNVBOXGUESTMOUSENOTIFY *PFNVBOXGUESTMOUSENOTIFY;

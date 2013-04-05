@@ -393,7 +393,7 @@ RTDECL(RTEXITCODE) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion);
  * This is useful for converting a response file or similar to an argument
  * vector that can be used with RTGetOptInit().
  *
- * This function aims at following the bourn shell string quoting rules.
+ * This function aims at following the bourne shell string quoting rules.
  *
  * @returns IPRT status code.
  *

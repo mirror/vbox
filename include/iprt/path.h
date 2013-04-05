@@ -293,7 +293,7 @@ RTDECL(char *) RTPathChangeToDosSlashes(char *pszPath, bool fForce);
 RTDECL(char *) RTPathChangeToUnixSlashes(char *pszPath, bool fForce);
 
 /**
- * Parses a path.
+ * Simple parsing of the a path.
  *
  * It figures the length of the directory component, the offset of
  * the file name and the location of the suffix dot.
@@ -310,7 +310,7 @@ RTDECL(char *) RTPathChangeToUnixSlashes(char *pszPath, bool fForce);
  *                      If empty string or if it's ending with a slash this
  *                      will be set to -1. Optional.
  */
-RTDECL(size_t) RTPathParse(const char *pszPath, size_t *pcchDir, ssize_t *poffName, ssize_t *poffSuff);
+RTDECL(size_t) RTPathParseSimple(const char *pszPath, size_t *pcchDir, ssize_t *poffName, ssize_t *poffSuff);
 
 /**
  * Finds the filename in a path.
