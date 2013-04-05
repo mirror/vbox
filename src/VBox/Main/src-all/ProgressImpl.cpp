@@ -883,7 +883,7 @@ STDMETHODIMP Progress::WaitForAsyncProgressCompletion(IProgress *pProgressAsync)
              * in the meantime more than one async operation was finished. So we
              * have to loop as long as we reached the same operation count. */
             ULONG curOp;
-            for(;;)
+            for (;;)
             {
                 rc = pProgressAsync->COMGETTER(Operation(&curOp));
                 if (FAILED(rc)) return rc;

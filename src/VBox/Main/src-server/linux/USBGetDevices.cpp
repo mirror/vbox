@@ -1430,7 +1430,7 @@ void TestUSBSetInotifyAvailable(bool fHaveInotifyLibC, bool fHaveInotifyKernel)
     s_fHaveInotifyKernel = fHaveInotifyKernel;
 }
 # define dlsym testDLSym
-# define close(a) do {} while(0)
+# define close(a) do {} while (0)
 #endif
 
 /** Is inotify available and working on this system?  This is a requirement

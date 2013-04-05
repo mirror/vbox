@@ -1443,7 +1443,7 @@ void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut
     const char* pszStr = aStr.c_str();
     ssize_t cbOut = RTBase64DecodedSize(pszStr, NULL);
 
-    if(cbOut > DECODE_STR_MAX)
+    if (cbOut > DECODE_STR_MAX)
     {
         WebLog("Decode string too long.\n");
         RaiseSoapRuntimeFault(soap, pszMethodName, E_INVALIDARG, pObj, iid);

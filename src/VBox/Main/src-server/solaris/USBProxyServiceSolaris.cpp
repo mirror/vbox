@@ -304,7 +304,7 @@ static int solarisWalkDeviceNode(di_node_t Node, void *pvArg)
                 pList->pTail = pList->pHead = pCur;
 
             rc = DI_WALK_CONTINUE;
-        } while(0);
+        } while (0);
 
         di_devfs_path_free(pszDevicePath);
         if (!fValidDevice)

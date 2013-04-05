@@ -123,9 +123,9 @@ DECLINLINE(ULONG) composeIPv6PrefixLenghFromAddress(PRTNETADDRIPV6 aAddrPtr)
 
 DECLINLINE(int) prefixLength2IPv6Address(ULONG cPrefix, PRTNETADDRIPV6 aAddrPtr)
 {
-    if(cPrefix > 128)
+    if (cPrefix > 128)
         return VERR_INVALID_PARAMETER;
-    if(!aAddrPtr)
+    if (!aAddrPtr)
         return VERR_INVALID_PARAMETER;
 
     memset(aAddrPtr, 0, sizeof(RTNETADDRIPV6));

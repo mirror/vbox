@@ -53,9 +53,9 @@ public:
 
     int setOption(DHCPCFG opt, const char *val, bool enabled)
     {
-        if(opt == 0 || opt >= DHCPCFG_NOTOPT_MAXVAL)
+        if (opt == 0 || opt >= DHCPCFG_NOTOPT_MAXVAL)
             return VERR_INVALID_PARAMETER;
-        if(isRunning())
+        if (isRunning())
             return VERR_INVALID_STATE;
 
         mOptions[opt] = val;

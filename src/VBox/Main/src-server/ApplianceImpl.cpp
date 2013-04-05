@@ -273,12 +273,12 @@ Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type)
     return strType;
 }
 
-bool checkComplianceDigestAndOVFVersion(bool digestType, ovf::OVFVersion_T ovfVersion)
+bool checkComplianceDigestAndOVFVersion(bool fDigestType, ovf::OVFVersion_T ovfVersion)
 {
     bool res = false;
-    if ((ovfVersion == ovf::OVFVersion_2_0 && digestType == true) ||
-        (ovfVersion == ovf::OVFVersion_1_0 && digestType == false) ||
-        (ovfVersion == ovf::OVFVersion_0_9 && digestType == false))
+    if (   (ovfVersion == ovf::OVFVersion_2_0 &&  fDigestType)
+        || (ovfVersion == ovf::OVFVersion_1_0 && !fDigestType)
+        || (ovfVersion == ovf::OVFVersion_0_9 && !fDigestType))
         res = true;
     return res;
 }
@@ -793,7 +793,7 @@ void Appliance::waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis,
            that in the meantime more than one async operation was finished. So
            we have to loop as long as we reached the same operation count. */
         ULONG curOp;
-        for(;;)
+        for (;;)
         {
             rc = pProgressAsync->COMGETTER(Operation(&curOp));
             if (FAILED(rc)) throw rc;
