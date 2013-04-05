@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - RTPathParse
+ * IPRT - RTPathParseSimple
  */
 
 /*
@@ -50,7 +50,7 @@
  *                      If empty string or if it's ending with a slash this
  *                      will be set to -1. Optional.
  */
-RTDECL(size_t) RTPathParse(const char *pszPath, size_t *pcchDir, ssize_t *poffName, ssize_t *poffSuff)
+RTDECL(size_t) RTPathParseSimple(const char *pszPath, size_t *pcchDir, ssize_t *poffName, ssize_t *poffSuff)
 {
     const char *psz = pszPath;
     ssize_t     offRoot = 0;

@@ -149,7 +149,7 @@ RTDECL(int) RTDirCreateTempSecure(char *pszTemplate)
     /* bool fSafe; */
 
     /* Temporarily convert pszTemplate to a path. */
-    RTPathParse(pszTemplate, &cchDir, NULL, NULL);
+    RTPathParseSimple(pszTemplate, &cchDir, NULL, NULL);
     chOld = pszTemplate[cchDir];
     pszTemplate[cchDir] = '\0';
     /** @todo Implement this. */
@@ -218,7 +218,7 @@ RTDECL(int) RTFileCreateTempSecure(char *pszTemplate)
     /* bool fSafe; */
 
     /* Temporarily convert pszTemplate to a path. */
-    RTPathParse(pszTemplate, &cchDir, NULL, NULL);
+    RTPathParseSimple(pszTemplate, &cchDir, NULL, NULL);
     chOld = pszTemplate[cchDir];
     pszTemplate[cchDir] = '\0';
     /** @todo Implement this. */

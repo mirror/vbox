@@ -803,7 +803,7 @@ EXPORTS
     RTPathJoin
     RTPathJoinA
     RTPathJoinEx
-    RTPathParse
+    RTPathParseSimple
     RTPathQueryInfo
     RTPathQueryInfoEx
     RTPathReal
