@@ -47,6 +47,7 @@ struct LocationInfo
 struct Appliance::Data
 {
     enum ApplianceState { ApplianceIdle, ApplianceImporting, ApplianceExporting };
+    enum digest_T {SHA1, SHA256};
 
     Data()
       : state(ApplianceIdle)
@@ -74,6 +75,8 @@ struct Appliance::Data
     LocationInfo        locInfo;        // location info for the currently processed OVF
     bool                fManifest;      // Create a manifest file on export
     bool                fSha256;        // true = SHA256 (OVF 2.0), false = SHA1 (OVF 1.0)
+    Utf8Str             strOVFSHADigest;//SHA digest of OVf file. It is stored here after reading OVF file (before import) 
+
     RTCList<ImportOptions_T> optList;
 
     ovf::OVFReader      *pReader;
@@ -87,7 +90,6 @@ struct Appliance::Data
     ULONG               ulWeightForManifestOperation;
     ULONG               ulTotalDisksMB;
     ULONG               cDisks;
-    Utf8Str             strOVFSHADigest;
 
     std::list<Guid>     llGuidsMachinesCreated;
 };
@@ -224,6 +226,8 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
 ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox);
 
 Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type);
+
+bool checkComplianceDigestAndOVFVersion(bool digestType, ovf::OVFVersion_T ovfVersion);
 
 typedef struct SHASTORAGE
 {

@@ -663,6 +663,7 @@ EXPORTS
     RTManifestVerify
     RTManifestVerifyFiles
     RTManifestVerifyFilesBuf
+    RTManifestVerifyDigestType
     RTManifestWriteFiles
     RTManifestWriteFilesBuf
     RTManifestWriteStandard
