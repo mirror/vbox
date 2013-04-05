@@ -788,11 +788,12 @@ typedef struct HMCPU
     STAMPROFILEADV          StatEntry;
     STAMPROFILEADV          StatExit1;
     STAMPROFILEADV          StatExit2;
-#if 1 /* temporary for tracking down darwin issues. */
+#ifdef VBOX_WITH_OLD_VTX_CODE /* temporary for tracking down darwin issues. */
     STAMPROFILEADV          StatExit2Sub1;
     STAMPROFILEADV          StatExit2Sub2;
     STAMPROFILEADV          StatExit2Sub3;
 #endif
+    STAMPROFILEADV          StatLoadGuestState;
     STAMPROFILEADV          StatInGC;
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)

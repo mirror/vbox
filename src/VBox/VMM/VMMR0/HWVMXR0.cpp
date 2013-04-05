@@ -1747,7 +1747,7 @@ VMMR0DECL(void) VMXR0LoadMinimalGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * NOTE: This function reads the host TSC value. Therefore it must be executed very
  * shortly before a VM entry and execution MUST NOT be rescheduled between a call to
  * this function and a VM entry without calling this function again.
- * 
+ *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
@@ -1826,6 +1826,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     int         rc = VINF_SUCCESS;
     RTGCUINTPTR val;
+
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestState, x);
 
     /*
      * VMX_VMCS_CTRL_ENTRY_CONTROLS
@@ -2419,6 +2421,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     /* Minimal guest state update (ESP, EIP, EFLAGS mostly) */
     VMXR0LoadMinimalGuestState(pVM, pVCpu, pCtx);
+
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
 }
 
