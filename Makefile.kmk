@@ -157,6 +157,11 @@ else
 endif
 
 
+# Below we might need TOOL_ZIP_UNPACK (for the additions/docs/efifw packages
+# from the build server), and it's not really worth the effort of dragging in
+# this tool only if absolutely needed.
+TOOL += ZIP
+
 #
 # For building the combined package, just get the additions .ISO
 # once for amd64 to prevent version inconsistences. In all other
@@ -228,9 +233,6 @@ buildserver-docs_CLEANS = \
 		VirtualBox.chm UserManual.pdf \
 		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf))
 
-## @todo Hack to get at TOOL_ZIP_UNPACK; see if this can be integrated somehow...
-include $(KBUILD_PATH)/tools/ZIP.kmk
-
 $$(buildserver-docs_0_OUTDIR)/unpacked.ts +| $(PATH_TARGET)/VirtualBox.chm $(PATH_TARGET)/UserManual.pdf \
 $(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_TARGET)/VirtualBox_$(f).chm $(PATH_TARGET)/UserManual_$(f).pdf): \
 		$$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip
@@ -277,9 +279,6 @@ endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
    	$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip \
    	$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip.tmp
    ## @todo rainy day: cleanup the output directory (zip contains lots more)
-
-   ## @todo Hack to get at TOOL_ZIP_UNPACK; see if this can be integrated somehow...
-   include $(KBUILD_PATH)/tools/ZIP.kmk
 
    $$(buildserver-efifw_0_OUTDIR)/unpacked.ts \
    +| $$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd \
