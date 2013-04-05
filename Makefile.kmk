@@ -160,7 +160,8 @@ endif
 # Below we might need TOOL_ZIP_UNPACK (for the additions/docs/efifw packages
 # from the build server), and it's not really worth the effort of dragging in
 # this tool only if absolutely needed.
-TOOL += ZIP
+## @todo Hack to get at TOOL_ZIP_UNPACK; see if this can be integrated somehow...
+include $(KBUILD_PATH)/tools/ZIP.kmk
 
 #
 # For building the combined package, just get the additions .ISO
