@@ -1287,10 +1287,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             com::SafeArray<VBoxEventType_T> eventTypes;
             eventTypes.push_back(VBoxEventType_OnGuestPropertyChanged);
 
-            /* Set the notification pattern to not cause too much load.
-             * Remove (or extend) this pattern when more guest properties need to be handled. */
-            CHECK_ERROR(machine, COMSETTER(GuestPropertyNotificationPatterns)(Bstr("/VirtualBox/GuestInfo/OS/*Logged*").raw()));
-
+            /**
+             * @todo Set the notification pattern to "/VirtualBox/GuestInfo/OS/ *Logged*"
+             *       to not cause too much load. The current API is broken as
+             *       IMachine::GuestPropertyNotificationPatterns() would change the
+             *       filter for _all_ clients. This is not what we want!
+             */
             CHECK_ERROR(es, RegisterListener(vboxListener, ComSafeArrayAsInParam(eventTypes), true));
         }
 
