@@ -103,35 +103,6 @@ public:
     }
 
     /* API: Alert providing stuff: Wrapper to the main function,
-     * Takes button type(s) as "Yes / No": */
-    bool messageYesNo(QWidget *pParent, MessageType type,
-                      const QString &strMessage,
-                      const QString &strDetails = QString(),
-                      const char *pcszAutoConfirmId = 0,
-                      const QString &strYesButtonText = QString(),
-                      const QString &strNoButtonText = QString()) const
-    {
-        return (message(pParent, type, strMessage, strDetails, pcszAutoConfirmId,
-                        AlertButton_Yes | AlertButtonOption_Default,
-                        AlertButton_No | AlertButtonOption_Escape,
-                        0,
-                        strYesButtonText, strNoButtonText, QString()) &
-                AlertButtonMask) == AlertButton_Yes;
-    }
-
-    /* API: Alert providing stuff: Wrapper to the function above,
-     * Omits details. Takes button type(s) as "Yes / No": */
-    bool messageYesNo(QWidget *pParent, MessageType type,
-                      const QString &strMessage,
-                      const char *pcszAutoConfirmId,
-                      const QString &strYesButtonText = QString(),
-                      const QString &strNoButtonText = QString()) const
-    {
-        return messageYesNo(pParent, type, strMessage, QString(),
-                            pcszAutoConfirmId, strYesButtonText, strNoButtonText);
-    }
-
-    /* API: Alert providing stuff: Wrapper to the main function,
      * Takes button type(s) as "Ok / Cancel": */
     bool messageOkCancel(QWidget *pParent, MessageType type,
                          const QString &strMessage,
