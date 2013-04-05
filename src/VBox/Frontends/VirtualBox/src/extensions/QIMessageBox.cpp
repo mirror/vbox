@@ -305,12 +305,11 @@ QPushButton* QIMessageBox::createButton(int iButton)
     QDialogButtonBox::ButtonRole role;
     switch (iButton & AlertButtonMask)
     {
-        case AlertButton_Ok:     strText = tr("OK");     role = QDialogButtonBox::AcceptRole; break;
-        case AlertButton_Cancel: strText = tr("Cancel"); role = QDialogButtonBox::RejectRole; break;
-        case AlertButton_Yes:    strText = tr("Yes");    role = QDialogButtonBox::YesRole; break;
-        case AlertButton_No:     strText = tr("No");     role = QDialogButtonBox::NoRole; break;
-        case AlertButton_Ignore: strText = tr("Ignore"); role = QDialogButtonBox::AcceptRole; break;
-        case AlertButton_Copy:   strText = tr("Copy");   role = QDialogButtonBox::ActionRole; break;
+        case AlertButton_Ok:      strText = tr("OK");     role = QDialogButtonBox::AcceptRole; break;
+        case AlertButton_Cancel:  strText = tr("Cancel"); role = QDialogButtonBox::RejectRole; break;
+        case AlertButton_Choice1: strText = tr("Yes");    role = QDialogButtonBox::YesRole; break;
+        case AlertButton_Choice2: strText = tr("No");     role = QDialogButtonBox::NoRole; break;
+        case AlertButton_Copy:    strText = tr("Copy");   role = QDialogButtonBox::ActionRole; break;
         default:
             AssertMsgFailed(("Type %d is not supported!", iButton));
             return 0;

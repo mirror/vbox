@@ -1465,7 +1465,7 @@ void UIGChooserModel::unregisterMachines(const QStringList &ids)
     {
         /* Get iterated machine: */
         CMachine &machine = machines[iMachineIndex];
-        if (iResultCode == AlertButton_Yes)
+        if (iResultCode == AlertButton_Choice1)
         {
             /* Unregister machine first: */
             CMediumVector mediums = machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
@@ -1489,7 +1489,7 @@ void UIGChooserModel::unregisterMachines(const QStringList &ids)
                 continue;
             }
         }
-        else
+        else if (iResultCode == AlertButton_Choice2)
         {
             /* Just unregister machine: */
             machine.Unregister(KCleanupMode_DetachAllReturnNone);

@@ -3045,27 +3045,27 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
         case KDeviceType_HardDisk:
         {
             int iAnswer = msgCenter().confirmHardDiskAttachmentCreation(strControllerName, this);
-            if (iAnswer == AlertButton_Yes)
+            if (iAnswer == AlertButton_Choice1)
                 strMediumId = getWithNewHDWizard();
-            else if (iAnswer == AlertButton_No)
+            else if (iAnswer == AlertButton_Choice2)
                 strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_HardDisk, this, strMachineFolder);
             break;
         }
         case KDeviceType_DVD:
         {
             int iAnswer = msgCenter().confirmOpticalAttachmentCreation(strControllerName, this);
-            if (iAnswer == AlertButton_Yes)
+            if (iAnswer == AlertButton_Choice1)
                 strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_DVD, this, strMachineFolder);
-            else if (iAnswer == AlertButton_No)
+            else if (iAnswer == AlertButton_Choice2)
                 strMediumId = vboxGlobal().findMedium(strMediumId).id();
             break;
         }
         case KDeviceType_Floppy:
         {
             int iAnswer = msgCenter().confirmFloppyAttachmentCreation(strControllerName, this);
-            if (iAnswer == AlertButton_Yes)
+            if (iAnswer == AlertButton_Choice1)
                 strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_Floppy, this, strMachineFolder);
-            else if (iAnswer == AlertButton_No)
+            else if (iAnswer == AlertButton_Choice2)
                 strMediumId = vboxGlobal().findMedium(strMediumId).id();
             break;
         }

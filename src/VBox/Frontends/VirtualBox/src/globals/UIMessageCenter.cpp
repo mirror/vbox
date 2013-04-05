@@ -578,8 +578,8 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) cons
                    tr("Remove")) :
            message(mainWindowShown(), MessageType_Question,
                    strText, 0 /* auto-confirm id */,
-                   AlertButton_Yes,
-                   AlertButton_No | AlertButtonOption_Default,
+                   AlertButton_Choice1,
+                   AlertButton_Choice2 | AlertButtonOption_Default,
                    AlertButton_Cancel | AlertButtonOption_Escape,
                    tr("Delete all files"),
                    tr("Remove only"));
@@ -617,7 +617,7 @@ bool UIMessageCenter::warnAboutInaccessibleMedia() const
                               "see what media are inaccessible, or press <b>Ignore</b> to "
                               "ignore this message.</p>"),
                            "warnAboutInaccessibleMedia",
-                           tr("Check", "inaccessible media message box"), tr("Cancel"), false);
+                           tr("Ignore"), tr("Check", "inaccessible media message box"));
 }
 
 bool UIMessageCenter::confirmDiscardSavedState(const QString &strNames) const
@@ -967,9 +967,9 @@ int UIMessageCenter::confirmHardDiskAttachmentCreation(const QString &strControl
                       "<p>Would you like to create a new, empty file to hold the disk contents or select an existing one?</p>")
                       .arg(strControllerName),
                    0 /* auto-confirm id */,
-                   AlertButton_Yes,
-                   AlertButton_No,
-                   AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
+                   AlertButton_Choice1,
+                   AlertButton_Choice2 | AlertButtonOption_Default,
+                   AlertButton_Cancel | AlertButtonOption_Escape,
                    tr("Create &new disk", "add attachment routine"),
                    tr("&Choose existing disk", "add attachment routine"));
 }
@@ -982,9 +982,9 @@ int UIMessageCenter::confirmOpticalAttachmentCreation(const QString &strControll
                       "or to leave it empty for now?</p>")
                       .arg(strControllerName),
                    0 /* auto-confirm id */,
-                   AlertButton_Yes,
-                   AlertButton_No,
-                   AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
+                   AlertButton_Choice1 | AlertButtonOption_Default,
+                   AlertButton_Choice2,
+                   AlertButton_Cancel | AlertButtonOption_Escape,
                    tr("&Choose disk", "add attachment routine"),
                    tr("Leave &empty", "add attachment routine"));
 }
@@ -997,9 +997,9 @@ int UIMessageCenter::confirmFloppyAttachmentCreation(const QString &strControlle
                       "or to leave it empty for now?</p>")
                       .arg(strControllerName),
                    0 /* auto-confirm id */,
-                   AlertButton_Yes,
-                   AlertButton_No,
-                   AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
+                   AlertButton_Choice1 | AlertButtonOption_Default,
+                   AlertButton_Choice2,
+                   AlertButton_Cancel | AlertButtonOption_Escape,
                    tr("&Choose disk", "add attachment routine"),
                    tr("Leave &empty", "add attachment routine"));
 }
@@ -1224,8 +1224,8 @@ int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QW
                       "disk to the list later again.</p>")
                       .arg(strLocation),
                    0 /* auto-confirm id */,
-                   AlertButton_Yes,
-                   AlertButton_No | AlertButtonOption_Default,
+                   AlertButton_Choice1,
+                   AlertButton_Choice2 | AlertButtonOption_Default,
                    AlertButton_Cancel | AlertButtonOption_Escape,
                    tr("Delete", "hard disk storage"),
                    tr("Keep", "hard disk storage"));
@@ -1703,8 +1703,8 @@ bool UIMessageCenter::remindAboutGuruMeditation(const QString &strLogFolder)
                               "so it is recommended to press <b>OK</b> now.</p>")
                               .arg(strLogFolder),
                            0 /* auto-confirm id */,
-                           QIMessageBox::tr("Ok"),
-                           QIMessageBox::tr("Ignore"));
+                           QIMessageBox::tr("OK"),
+                           tr("Ignore"));
 }
 
 bool UIMessageCenter::warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported) const
@@ -1927,7 +1927,7 @@ bool UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */, ULONG /* uHe
                               "<p>Press <b>Ignore</b> to switch to fullscreen mode anyway or press <b>Cancel</b> to cancel the operation.</p>")
                               .arg(VBoxGlobal::formatSize(uMinVRAM)),
                            0 /* auto-confirm id */,
-                           QIMessageBox::tr("Ignore"));
+                           tr("Ignore"));
 }
 
 void UIMessageCenter::cannotEnterSeamlessMode(ULONG /* uWidth */, ULONG /* uHeight */, ULONG /* uBpp */, ULONG64 uMinVRAM) const
@@ -1948,7 +1948,7 @@ bool UIMessageCenter::cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const
                               "<p>Press <b>Ignore</b> to switch the screen anyway or press <b>Cancel</b> to cancel the operation.</p>")
                               .arg(VBoxGlobal::formatSize(uMinVRAM)),
                            0 /* auto-confirm id */,
-                           QIMessageBox::tr("Ignore"));
+                           tr("Ignore"));
 }
 
 void UIMessageCenter::cannotSwitchScreenInSeamless(quint64 uMinVRAM) const

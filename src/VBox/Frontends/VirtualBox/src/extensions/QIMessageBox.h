@@ -42,10 +42,9 @@ enum AlertButton
     AlertButton_NoButton      =  0x0,  /* 00000000 00000000 */
     AlertButton_Ok            =  0x1,  /* 00000000 00000001 */
     AlertButton_Cancel        =  0x2,  /* 00000000 00000010 */
-    AlertButton_Yes           =  0x4,  /* 00000000 00000100 */
-    AlertButton_No            =  0x8,  /* 00000000 00001000 */
-    AlertButton_Ignore        = 0x10,  /* 00000000 00010000 */
-    AlertButton_Copy          = 0x20,  /* 00000000 00100000 */
+    AlertButton_Choice1       =  0x4,  /* 00000000 00000100 */
+    AlertButton_Choice2       =  0x8,  /* 00000000 00001000 */
+    AlertButton_Copy          = 0x10,  /* 00000000 00010000 */
     AlertButtonMask           = 0xFF   /* 00000000 11111111 */
 };
 
