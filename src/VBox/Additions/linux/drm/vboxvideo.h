@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -67,7 +67,7 @@ struct vboxvideo_device
     struct vboxvideo_mc mc;
     struct vboxvideo_mode_info  mode_info;
 
-    int				    num_crtc;
+    int                 num_crtc;
 };
 
-#endif                /* __DRM_VBOXVIDEO_H__ */
+#endif /* __DRM_VBOXVIDEO_H__ */

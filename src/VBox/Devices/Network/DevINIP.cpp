@@ -338,9 +338,9 @@ static DECLCALLBACK(int) devINIPNetworkConfiguration(PPDMDEVINS pDevIns, PDEVINT
     {
         PDMDEV_SET_ERROR(pDevIns, rc,
                          N_("Configuration error: Failed to get the \"IP\" value"));
-	/* @todo: perhaps we should panic if IPv4 address isn't specify, with assumtion that 
-	 * ISCSI target specified in IPv6 form.  
-	 */
+        /* @todo: perhaps we should panic if IPv4 address isn't specify, with assumtion that 
+         * ISCSI target specified in IPv6 form.  
+         */
         return rc;
     }
 
@@ -444,9 +444,9 @@ static DECLCALLBACK(int) devINIPNetworkDown_Input(PPDMINETWORKDOWN pInterface, c
                 lwip_pbuf_free(p);
         }
 #else
-    	/* We've setup flags NETIF_FLAG_ETHARP and NETIF_FLAG_ETHERNET
-    	  so this should be thread-safe. */
-    	tcpip_input(p,iface);
+        /* We've setup flags NETIF_FLAG_ETHARP and NETIF_FLAG_ETHERNET
+          so this should be thread-safe. */
+        tcpip_input(p,iface);
 #endif
     }
 

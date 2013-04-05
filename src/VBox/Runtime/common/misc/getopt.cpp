@@ -102,7 +102,7 @@ RT_EXPORT_SYMBOL(RTGetOptInit);
 static int rtgetoptConvertIPv4Addr(const char *pszValue, PRTNETADDRIPV4 pAddr)
 {
     if (RT_FAILURE(RTNetStrToIPv4Addr(pszValue, pAddr)))
-	return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+        return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
     return VINF_SUCCESS;
 }
 
@@ -411,16 +411,16 @@ static int rtGetOptProcessValue(uint32_t fFlags, const char *pszValue, PRTGETOPT
             break;
         }
 
-	case RTGETOPT_REQ_IPV4CIDR:
-	{
-	    RTNETADDRIPV4 network;
-	    RTNETADDRIPV4 netmask;
-	    if (RT_FAILURE(RTCidrStrToIPv4(pszValue, &network, &netmask)))
-	      return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
-	    pValueUnion->CidrIPv4.IPv4Network.u = network.u;
-	    pValueUnion->CidrIPv4.IPv4Netmask.u = netmask.u;
-	    break;
-	}
+        case RTGETOPT_REQ_IPV4CIDR:
+        {
+            RTNETADDRIPV4 network;
+            RTNETADDRIPV4 netmask;
+            if (RT_FAILURE(RTCidrStrToIPv4(pszValue, &network, &netmask)))
+              return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+            pValueUnion->CidrIPv4.IPv4Network.u = network.u;
+            pValueUnion->CidrIPv4.IPv4Netmask.u = netmask.u;
+            break;
+        }
 
         case RTGETOPT_REQ_MACADDR:
         {

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -516,7 +516,7 @@ int main(int argc, char *argv[])
 #endif
             { "dhcpserver",       USAGE_DHCPSERVER,        handleDHCPServer},
 #ifdef VBOX_WITH_NAT_SERVICE
-	    { "natnetwork",       USAGE_NATNETWORK,        handleNATNetwork},
+            { "natnetwork",       USAGE_NATNETWORK,        handleNATNetwork},
 #endif
             { "extpack",          USAGE_EXTPACK,           handleExtPack},
             { "bandwidthctl",     USAGE_BANDWIDTHCONTROL,  handleBandwidthControl},

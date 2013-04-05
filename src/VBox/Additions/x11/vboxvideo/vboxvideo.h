@@ -101,9 +101,9 @@ if (!(expr)) \
 #include "xf86str.h"
 #include "xf86Cursor.h"
 
-#define VBOX_VERSION		4000  /* Why? */
-#define VBOX_NAME		      "VBoxVideo"
-#define VBOX_DRIVER_NAME	  "vboxvideo"
+#define VBOX_VERSION            4000  /* Why? */
+#define VBOX_NAME               "VBoxVideo"
+#define VBOX_DRIVER_NAME        "vboxvideo"
 
 #ifdef VBOX_DRI
 /* DRI support */

@@ -211,7 +211,7 @@ struct VirtualBox::Data
           lockDHCPServers(LOCKCLASS_LISTOFOTHEROBJECTS),
           allDHCPServers(lockDHCPServers),
           lockNATNetworks(LOCKCLASS_LISTOFOTHEROBJECTS),
-	  allNATNetworks(lockNATNetworks),
+          allNATNetworks(lockNATNetworks),
           mtxProgressOperations(LOCKCLASS_PROGRESSLIST),
           updateReq(UPDATEREQARG),
           threadClientWatcher(NIL_RTTHREAD),
@@ -508,8 +508,8 @@ HRESULT VirtualBox::init()
             if (FAILED(rc)) throw rc;
         }
 
-	/* net services - nat networks */
-	for (settings::NATNetworksList::const_iterator it = m->pMainConfigFile->llNATNetworks.begin();
+        /* net services - nat networks */
+        for (settings::NATNetworksList::const_iterator it = m->pMainConfigFile->llNATNetworks.begin();
              it != m->pMainConfigFile->llNATNetworks.end();
              ++it)
         {
@@ -3180,24 +3180,24 @@ void VirtualBox::onNATNetworkStartStop(IN_BSTR aName, BOOL fStart)
     fireNATNetworkStartStopEvent(m->pEventSource, aName, fStart);
 }
 void VirtualBox::onNATNetworkSetting(IN_BSTR aNetworkName, BOOL aEnabled, 
-				     IN_BSTR aNetwork, IN_BSTR aGateway, 
-				     BOOL aAdvertiseDefaultIpv6RouteEnabled, 
-				     BOOL fNeedDhcpServer)
+                                     IN_BSTR aNetwork, IN_BSTR aGateway, 
+                                     BOOL aAdvertiseDefaultIpv6RouteEnabled, 
+                                     BOOL fNeedDhcpServer)
 {
     fireNATNetworkSettingEvent(m->pEventSource, aNetworkName, aEnabled, 
-			       aNetwork, aGateway, 
-			       aAdvertiseDefaultIpv6RouteEnabled, fNeedDhcpServer);
+                               aNetwork, aGateway,
+                               aAdvertiseDefaultIpv6RouteEnabled, fNeedDhcpServer);
 }
 
 void VirtualBox::onNATNetworkPortForward(IN_BSTR aNetworkName, BOOL create, BOOL fIpv6, 
-					 IN_BSTR aRuleName, NATProtocol_T proto, 
-					 IN_BSTR aHostIp, LONG aHostPort, 
-					 IN_BSTR aGuestIp, LONG aGuestPort)
+                                         IN_BSTR aRuleName, NATProtocol_T proto, 
+                                         IN_BSTR aHostIp, LONG aHostPort, 
+                                         IN_BSTR aGuestIp, LONG aGuestPort)
 {
     fireNATNetworkPortForwardEvent(m->pEventSource, aNetworkName, create, 
-				   fIpv6, aRuleName, proto,
-				   aHostIp, aHostPort,
-				   aGuestIp, aGuestPort);
+                                   fIpv6, aRuleName, proto,
+                                   aHostIp, aHostPort,
+                                   aGuestIp, aGuestPort);
 }
 
 /**
@@ -4278,7 +4278,7 @@ HRESULT VirtualBox::saveSettings()
         }
 
 #ifdef VBOX_WITH_NAT_SERVICE
-	/* Saving NAT Network configuration */
+        /* Saving NAT Network configuration */
         m->pMainConfigFile->llNATNetworks.clear();
         {
             AutoReadLock natNetworkLock(m->allNATNetworks.getLockHandle() COMMA_LOCKVAL_SRC_POS);

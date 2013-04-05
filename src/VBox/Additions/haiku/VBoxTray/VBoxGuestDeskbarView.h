@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -71,7 +71,7 @@ class VBoxGuestDeskbarView : public BView
         VBoxGuestDeskbarView(BMessage *archive);
         virtual ~VBoxGuestDeskbarView();
 
-		static  BArchivable*   Instantiate(BMessage *data);
+        static  BArchivable*   Instantiate(BMessage *data);
         virtual status_t       Archive(BMessage *data, bool deep = true) const;
 
         void                   Draw(BRect rect);

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,7 +30,7 @@
 
 /*
  * This code implements the MD5 message-digest algorithm.
- * The algorithm is due to Ron Rivest.	This code was
+ * The algorithm is due to Ron Rivest.  This code was
  * written by Colin Plumb in 1993, no copyright is claimed.
  * This code is in the public domain; do with it what you wish.
  *
@@ -51,7 +51,7 @@
 #include <iprt/md5.h>
 #include "internal/iprt.h"
 
-#include <iprt/string.h>		 /* for memcpy() */
+#include <iprt/string.h>                 /* for memcpy() */
 #if defined(RT_BIG_ENDIAN)
 # include <iprt/asm.h>                   /* RT_LE2H_U32 uses ASMByteSwapU32. */
 #endif
@@ -239,7 +239,7 @@ RTDECL(void) RTMd5Update(PRTMD5CONTEXT ctx, const void *pvBuf, size_t len)
     ctx->bits[1]++; /* Carry from low to high */
     ctx->bits[1] += (uint32_t)(len >> 29);
 
-    t = (t >> 3) & 0x3f;	/* Bytes already in shsInfo->data */
+    t = (t >> 3) & 0x3f;        /* Bytes already in shsInfo->data */
 
     /* Handle any leading odd-sized chunks */
     if (t)

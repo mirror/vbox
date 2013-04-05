@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -203,7 +203,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
         {
             CHECK_ERROR(net, COMSETTER(Network)(Bstr(pNetworkCidr).raw()));
             if(FAILED(rc))
-	      return errorArgument("Failed to set configuration");
+              return errorArgument("Failed to set configuration");
         }
         if (dhcp >= 0)
         {
@@ -223,31 +223,31 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
         {
             CHECK_ERROR(net, COMSETTER(Enabled) ((BOOL)enable));
             if(FAILED(rc))
-	      return errorArgument("Failed to set configuration");
+              return errorArgument("Failed to set configuration");
 
         }
-	break;
+        break;
     }
     case OP_REMOVE:
     {
         CHECK_ERROR(a->virtualBox, RemoveNATNetwork(net));
         if(FAILED(rc))
-	  return errorArgument("Failed to remove nat network");
-	break;
+          return errorArgument("Failed to remove nat network");
+        break;
     }
     case OP_START:
     {
-	CHECK_ERROR(net, Start(Bstr("whatever").raw()));
+        CHECK_ERROR(net, Start(Bstr("whatever").raw()));
         if(FAILED(rc))
-	  return errorArgument("Failed to start network");
-	break;
+          return errorArgument("Failed to start network");
+        break;
     }
     case OP_STOP:
     {
-	CHECK_ERROR(net, Stop());
+        CHECK_ERROR(net, Stop());
         if(FAILED(rc))
-	  return errorArgument("Failed to start network");
-	break;
+          return errorArgument("Failed to start network");
+        break;
     }
     default:;
     }

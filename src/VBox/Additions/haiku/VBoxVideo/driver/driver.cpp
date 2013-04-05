@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012 Oracle-2013 Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -113,11 +113,11 @@ struct Benaphore
 
 struct DeviceInfo
 {
-    uint32          openCount;      		/* Count of how many times device has been opened */
-    uint32          flags;					/* Device flags */
-    area_id         sharedArea;     		/* Area shared between driver and all accelerants */
-    SharedInfo     *sharedInfo;     		/* Pointer to shared info area memory */
-    pci_info        pciInfo;        		/* Copy of pci info for this device */
+    uint32          openCount;              /* Count of how many times device has been opened */
+    uint32          flags;                  /* Device flags */
+    area_id         sharedArea;             /* Area shared between driver and all accelerants */
+    SharedInfo     *sharedInfo;             /* Pointer to shared info area memory */
+    pci_info        pciInfo;                /* Copy of pci info for this device */
     char            name[B_OS_NAME_LENGTH]; /* Name of device */
 };
 
