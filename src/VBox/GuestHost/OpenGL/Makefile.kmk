@@ -27,6 +27,12 @@ BLDDIRS += \
 	$(VBOX_PATH_CROGL_GENFILES)/state/
 
 ifdef VBOX_WITH_ADDITIONS
+ ifn1of ($(KBUILD_TARGET), darwin os2)
+  VBOX_WITH_CROGL_ADDITIONS = 1
+ endif
+endif
+
+ifdef VBOX_WITH_CROGL_ADDITIONS
  DLLS      += VBoxOGLcrutil VBoxOGLerrorspu
  LIBRARIES += VBoxOGLcrpacker VBoxOGLspuload VBoxOGLcrstate
 endif
@@ -106,7 +112,7 @@ VBoxOGLcrutil_CLEAN = \
 VBoxOGLcrutil_pixel.c_CFLAGS.win.x86     += -Od
 VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
 
-if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
+if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
 #
 # VBoxOGLcrutil-x86 - x86 VBoxOGLcrutil version built for amd64 build
 #
@@ -261,7 +267,7 @@ ifdef VBOX_WITH_WDDM
 VBoxOGLcrpacker_DEFS.win   += VBOX_WITH_WDDM
 endif
 
-if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
+if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
 #
 # VBoxOGLcrpacker-x86 - x86 VBoxOGLcrpacker version built for amd64 build
 #
@@ -345,7 +351,7 @@ ifdef VBOX_WITH_WDDM
 VBoxOGLspuload_DEFS.win   += VBOX_WITH_WDDM
 endif
 
-if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
+if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
 #
 # VBoxOGLspuload-x86 - x86 VBoxOGLspuload version built for amd64 build
 #
@@ -477,7 +483,7 @@ ifdef VBOX_WITH_WDDM
 VBoxOGLcrstate_DEFS.win   += VBOX_WITH_WDDM
 endif
 
-if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
+if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
 #
 # VBoxOGLcrstate-x86 - x86 VBoxOGLcrstate version built for amd64 build
 #
@@ -602,7 +608,7 @@ VBoxOGLerrorspu_DEFS.win   += VBOX_WITH_WDDM
 endif
 
 
-if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_ADDITIONS)
+if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
 #
 # VBoxOGLerrorspu-x86 - x86 VBoxOGLerrorspu version built for amd64 build
 #
