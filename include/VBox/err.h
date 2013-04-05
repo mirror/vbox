@@ -1894,6 +1894,8 @@
 #define VERR_VMX_NOT_IN_VMX_ROOT_MODE               (-4018)
 /** Undefined VM exit code. */
 #define VERR_VMX_UNDEFINED_EXIT_CODE                (-4019)
+/** Resume guest execution after injecting a double-fault. */
+#define VINF_VMX_DOUBLE_FAULT                       4020
 /** @} */
 
 
