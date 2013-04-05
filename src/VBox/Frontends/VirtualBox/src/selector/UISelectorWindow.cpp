@@ -1025,13 +1025,6 @@ void UISelectorWindow::polishEvent(QShowEvent*)
     QTimer::singleShot(0, this, SLOT(sltMediumEnumFinished()));
 }
 
-void UISelectorWindow::closeEvent(QCloseEvent *pEvent)
-{
-    // TODO: Such things are obsolete, rework required!
-    emit closing();
-    QMainWindow::closeEvent(pEvent);
-}
-
 #ifdef Q_WS_MAC
 bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
 {

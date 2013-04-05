@@ -414,13 +414,13 @@ UIMachine::~UIMachine()
     QApplication::quit();
 }
 
-QWidget* UIMachine::mainWindow() const
+QWidget* UIMachine::activeWindow() const
 {
     /* Null if machine-logic not yet created: */
     if (!machineLogic())
         return 0;
-    /* Main machine-window otherwise: */
-    return machineLogic()->mainMachineWindow();
+    /* Active machine-window otherwise: */
+    return machineLogic()->activeMachineWindow();
 }
 
 void UIMachine::sltChangeVisualState(UIVisualStateType newVisualStateType)
