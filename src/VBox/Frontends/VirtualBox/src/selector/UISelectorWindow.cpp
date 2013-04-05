@@ -191,7 +191,7 @@ void UISelectorWindow::sltMediumEnumFinished()
             break;
 
     /* Warn the user about inaccessible medium: */
-    if (it != list.end() && msgCenter().remindAboutInaccessibleMedia())
+    if (it != list.end() && msgCenter().warnAboutInaccessibleMedia())
     {
         /* Open the MM window (without refresh): */
         UIMediumManager::showModeless(this, false /* refresh? */);

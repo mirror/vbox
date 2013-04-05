@@ -465,7 +465,7 @@ void UISettingsDialogGlobal::saveData()
     VBoxGlobalSettings newSettings = pGlobalSettingsSaver->data().value<UISettingsDataGlobal>().m_settings;
     /* If properties are not OK => show the error: */
     if (!newProperties.isOk())
-        msgCenter().cannotSetSystemProperties(newProperties);
+        msgCenter().cannotSetSystemProperties(newProperties, this);
     /* Else save the new settings if they were changed: */
     else if (!(newSettings == settings))
         vboxGlobal().setSettings(newSettings);
@@ -529,7 +529,7 @@ bool UISettingsDialogGlobal::isPageAvailable(int iPageId)
             CHost host = vboxGlobal().host();
             /* Show the host error message if any: */
             if (!host.isReallyOk())
-                msgCenter().cannotAccessUSB(host);
+                msgCenter().warnAboutUnaccessibleUSB(host, this);
             /* Check if USB is implemented: */
             CHostUSBDeviceFilterVector filters = host.GetUSBDeviceFilters();
             Q_UNUSED(filters);
@@ -1115,7 +1115,7 @@ bool UISettingsDialogMachine::isPageAvailable(int iPageId)
             CUSBController controller = m_machine.GetUSBController();
             /* Show the machine error message if any: */
             if (!m_machine.isReallyOk() && !controller.isNull() && controller.GetEnabled())
-                msgCenter().cannotAccessUSB(m_machine);
+                msgCenter().warnAboutUnaccessibleUSB(m_machine, this);
             /* Check if USB is implemented: */
             if (controller.isNull() || !controller.GetProxyAvailable())
                 return false;

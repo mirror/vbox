@@ -79,7 +79,7 @@ int VBoxLicenseViewer::showLicenseFromFile(const QString &strLicenseFileName)
     }
     else
     {
-        msgCenter().cannotOpenLicenseFile(this, strLicenseFileName);
+        msgCenter().cannotOpenLicenseFile(strLicenseFileName, this);
         return QDialog::Rejected;
     }
 }

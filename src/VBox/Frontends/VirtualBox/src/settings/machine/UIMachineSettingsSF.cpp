@@ -749,6 +749,8 @@ bool UIMachineSettingsSF::removeSharedFolder(const UICacheSettingsSharedFolder &
             sharedFolder = sharedFolders[iSharedFolderIndex];
     if (!sharedFolder.isNull())
     {
+        /* Get machine-name: */
+        QString strMachineName(m_machine.GetName());
         /* Remove existing shared folder: */
         switch(sharedFoldersType)
         {
@@ -760,7 +762,7 @@ bool UIMachineSettingsSF::removeSharedFolder(const UICacheSettingsSharedFolder &
                     /* Mark the page as failed: */
                     setFailed(true);
                     /* Show error message: */
-                    msgCenter().cannotRemoveSharedFolder(m_machine, strName, strPath);
+                    msgCenter().cannotRemoveSharedFolder(m_machine, strMachineName, strName, strPath, this);
                     /* Finish early: */
                     return false;
                 }
@@ -774,7 +776,7 @@ bool UIMachineSettingsSF::removeSharedFolder(const UICacheSettingsSharedFolder &
                     /* Mark the page as failed: */
                     setFailed(true);
                     /* Show error message: */
-                    msgCenter().cannotRemoveSharedFolder(m_console, strName, strPath);
+                    msgCenter().cannotRemoveSharedFolder(m_console, strMachineName, strName, strPath, this);
                     /* Finish early: */
                     return false;
                 }
@@ -806,6 +808,8 @@ bool UIMachineSettingsSF::createSharedFolder(const UICacheSettingsSharedFolder &
             sharedFolder = sharedFolders[iSharedFolderIndex];
     if (sharedFolder.isNull())
     {
+        /* Get machine-name: */
+        QString strMachineName(m_machine.GetName());
         /* Create new shared folder: */
         switch(sharedFoldersType)
         {
@@ -817,7 +821,7 @@ bool UIMachineSettingsSF::createSharedFolder(const UICacheSettingsSharedFolder &
                     /* Mark the page as failed: */
                     setFailed(true);
                     /* Show error message: */
-                    msgCenter().cannotCreateSharedFolder(m_machine, strName, strPath);
+                    msgCenter().cannotCreateSharedFolder(m_machine, strMachineName, strName, strPath, this);
                     /* Finish early: */
                     return false;
                 }
@@ -832,7 +836,7 @@ bool UIMachineSettingsSF::createSharedFolder(const UICacheSettingsSharedFolder &
                     /* Mark the page as failed: */
                     setFailed(true);
                     /* Show error message: */
-                    msgCenter().cannotCreateSharedFolder(m_console, strName, strPath);
+                    msgCenter().cannotCreateSharedFolder(m_console, strMachineName, strName, strPath, this);
                     /* Finish early: */
                     return false;
                 }

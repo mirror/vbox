@@ -3044,7 +3044,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
     {
         case KDeviceType_HardDisk:
         {
-            int iAnswer = msgCenter().askAboutHardDiskAttachmentCreation(strControllerName, this);
+            int iAnswer = msgCenter().confirmHardDiskAttachmentCreation(strControllerName, this);
             if (iAnswer == AlertButton_Yes)
                 strMediumId = getWithNewHDWizard();
             else if (iAnswer == AlertButton_No)
@@ -3053,7 +3053,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
         }
         case KDeviceType_DVD:
         {
-            int iAnswer = msgCenter().askAboutOpticalAttachmentCreation(strControllerName, this);
+            int iAnswer = msgCenter().confirmOpticalAttachmentCreation(strControllerName, this);
             if (iAnswer == AlertButton_Yes)
                 strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_DVD, this, strMachineFolder);
             else if (iAnswer == AlertButton_No)
@@ -3062,7 +3062,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
         }
         case KDeviceType_Floppy:
         {
-            int iAnswer = msgCenter().askAboutFloppyAttachmentCreation(strControllerName, this);
+            int iAnswer = msgCenter().confirmFloppyAttachmentCreation(strControllerName, this);
             if (iAnswer == AlertButton_Yes)
                 strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_Floppy, this, strMachineFolder);
             else if (iAnswer == AlertButton_No)
@@ -3512,8 +3512,8 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMach
             {
                 /* Show error message: */
                 msgCenter().cannotAttachDevice(m_machine, mediumTypeToLocal(attachmentDeviceType),
-                                                 vboxMedium.location(),
-                                                 StorageSlot(controllerBus, iAttachmentPort, iAttachmentDevice), this);
+                                               vboxMedium.location(),
+                                               StorageSlot(controllerBus, iAttachmentPort, iAttachmentDevice), this);
             }
         }
     }

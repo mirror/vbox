@@ -221,7 +221,7 @@ public:
     int confirmMachineRemoval(const QList<CMachine> &machines) const;
     void cannotRemoveMachine(const CMachine &machine) const;
     void cannotRemoveMachine(const CMachine &machine, const CProgress &progress) const;
-    bool remindAboutInaccessibleMedia() const;
+    bool warnAboutInaccessibleMedia() const;
     bool confirmDiscardSavedState(const QString &strNames) const;
     bool confirmResetMachine(const QString &strNames) const;
     bool confirmACPIShutdownMachine(const QString &strNames) const;
@@ -247,19 +247,31 @@ public:
     void cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const;
     void cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
 
-    /* API: Settings warnings: */
-    void cannotAccessUSB(const COMBaseWithEI &object) const;
-    void cannotSetSystemProperties(const CSystemProperties &properties) const;
-    void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
+    /* API: Global settings warnings: */
+    bool confirmHostInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
+    void cannotCreateHostInterface(const CHost &host, QWidget *pParent = 0);
+    void cannotCreateHostInterface(const CProgress &progress, QWidget *pParent = 0);
+    void cannotRemoveHostInterface(const CHost &host, const QString &strName, QWidget *pParent = 0);
+    void cannotRemoveHostInterface(const CProgress &progress, const QString &strName, QWidget *pParent = 0);
+    void cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent = 0) const;
+
+    /* API: Machine settings warnings: */
+    void warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent = 0) const;
+    void warnAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent = 0);
     void warnAboutStateChange(QWidget *pParent = 0) const;
     bool confirmSettingsReloading(QWidget *pParent = 0) const;
-    bool confirmDeletingHostInterface(const QString &strName, QWidget *pParent = 0) const;
-    int askAboutHardDiskAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
-    int askAboutOpticalAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
-    int askAboutFloppyAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
+    int confirmHardDiskAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
+    int confirmOpticalAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
+    int confirmFloppyAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
     int confirmRemovingOfLastDVDDevice(QWidget *pParent = 0) const;
+    void cannotAttachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
     void warnAboutIncorrectPort(QWidget *pParent = 0) const;
     bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
+    void cannotCreateSharedFolder(const CMachine &machine, const QString &strMachineName, const QString &strName, const QString &strPath, QWidget *pParent = 0);
+    void cannotCreateSharedFolder(const CConsole &console, const QString &strMachineName, const QString &strName, const QString &strPath, QWidget *pParent = 0);
+    void cannotRemoveSharedFolder(const CMachine &machine, const QString &strMachineName, const QString &strName, const QString &strPath, QWidget *pParent = 0);
+    void cannotRemoveSharedFolder(const CConsole &console, const QString &strMachineName, const QString &strName, const QString &strPath, QWidget *pParent = 0);
+    void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
 
     /* API: Virtual Medium Manager warnings: */
     void cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType, QWidget *pParent = 0) const;
@@ -355,45 +367,34 @@ public:
     void cannotUninstallExtPack(const CProgress &progress, const QString &strPackName, QWidget *pParent = 0) const;
     void warnAboutExtPackInstalled(const QString &strPackName, QWidget *pParent = 0) const;
 
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    /* API: Drag&drop warnings: */
+    void cannotDropData(const CGuest &guest, QWidget *pParent = 0) const;
+    void cannotDropData(const CProgress &progress, QWidget *pParent = 0) const;
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+
     /* API: License-viewer warnings: */
-    void cannotOpenLicenseFile(QWidget *pParent, const QString &strPath);
+    void cannotOpenLicenseFile(const QString &strPath, QWidget *pParent = 0);
 
     /* API: File-dialog warnings: */
-    bool askForOverridingFile(const QString &strPath, QWidget *pParent = 0);
-    bool askForOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent = 0);
-    bool askForOverridingFileIfExists(const QString &strPath, QWidget *pParent = 0);
-    bool askForOverridingFilesIfExists(const QVector<QString> &strPaths, QWidget *pParent = 0);
+    bool confirmOverridingFile(const QString &strPath, QWidget *pParent = 0);
+    bool confirmOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent = 0);
+    bool confirmOverridingFileIfExists(const QString &strPath, QWidget *pParent = 0);
+    bool confirmOverridingFilesIfExists(const QVector<QString> &strPaths, QWidget *pParent = 0);
 
+    /* API: Static helpers: */
     static QString formatRC(HRESULT rc);
     static QString formatErrorInfo(const COMErrorInfo &info, HRESULT wrapperRC = S_OK);
     static QString formatErrorInfo(const CVirtualBoxErrorInfo &info);
     static QString formatErrorInfo(const COMBaseWithEI &wrapper);
     static QString formatErrorInfo(const COMResult &rc);
 
-    /* Stuff supporting interthreading: */
-    void cannotCreateHostInterface(const CHost &host, QWidget *pParent = 0);
-    void cannotCreateHostInterface(const CProgress &progress, QWidget *pParent = 0);
-    void cannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent = 0);
-    void cannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent = 0);
-    void cannotAttachDevice(const CMachine &machine, UIMediumType type,
-                            const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
-    void cannotCreateSharedFolder(const CMachine &machine, const QString &strName,
-                                  const QString &strPath, QWidget *pParent = 0);
-    void cannotRemoveSharedFolder(const CMachine &machine, const QString &strName,
-                                  const QString &strPath, QWidget *pParent = 0);
-    void cannotCreateSharedFolder(const CConsole &console, const QString &strName,
-                                  const QString &strPath, QWidget *pParent = 0);
-    void cannotRemoveSharedFolder(const CConsole &console, const QString &strName,
-                                  const QString &strPath, QWidget *pParent = 0);
-#ifdef VBOX_WITH_DRAG_AND_DROP
-    void cannotDropData(const CGuest &guest, QWidget *pParent = 0) const;
-    void cannotDropData(const CProgress &progress, QWidget *pParent = 0) const;
-#endif /* VBOX_WITH_DRAG_AND_DROP */
+    /* API: Async stuff: */
     void remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
-    void remindAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent = 0);
 
 public slots:
 
+    /* Handlers: Help menu stuff: */
     void sltShowHelpWebDialog();
     void sltShowHelpAboutDialog();
     void sltShowHelpHelpDialog();

@@ -204,7 +204,7 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     if (extPackFile.isOk())
     {
         /* Show installation progress: */
-        msgCenter().showModalProgressDialog(progress, tr("Extensions"), "", pParent);
+        msgCenter().showModalProgressDialog(progress, tr("Extensions"), ":/progress_install_guest_additions_90px.png", pParent);
         if (!progress.GetCanceled())
         {
             if (progress.isOk() && progress.GetResultCode() == 0)
@@ -421,7 +421,7 @@ void UIGlobalSettingsExtension::sltRemovePackage()
             if (manager.isOk())
             {
                 /* Show uninstallation progress: */
-                msgCenter().showModalProgressDialog(progress, tr("Extensions"), "", this);
+                msgCenter().showModalProgressDialog(progress, tr("Extensions"), ":/progress_install_guest_additions_90px.png", this);
                 if (progress.isOk() && progress.GetResultCode() == 0)
                 {
                     /* Remove selected package from cache: */

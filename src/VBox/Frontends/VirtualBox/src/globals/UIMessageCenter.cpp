@@ -86,10 +86,10 @@ void UIMessageCenter::setWarningShown(const QString &strWarningName, bool fWarni
 int UIMessageCenter::message(QWidget *pParent, MessageType type,
                              const QString &strMessage,
                              const QString &strDetails /* = QString() */,
-                             const char *pcszAutoConfirmId /* = 0 */,
-                             int iButton1 /* = 0 */,
-                             int iButton2 /* = 0 */,
-                             int iButton3 /* = 0 */,
+                             const char *pcszAutoConfirmId /*= 0*/,
+                             int iButton1 /*= 0*/,
+                             int iButton2 /*= 0*/,
+                             int iButton3 /*= 0*/,
                              const QString &strButtonText1 /* = QString() */,
                              const QString &strButtonText2 /* = QString() */,
                              const QString &strButtonText3 /* = QString() */) const
@@ -120,9 +120,9 @@ int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType type,
                                        const QString &strOptionText,
                                        bool fDefaultOptionValue /* = true */,
                                        const QString &strDetails /* = QString() */,
-                                       int iButton1 /* = 0 */,
-                                       int iButton2 /* = 0 */,
-                                       int iButton3 /* = 0 */,
+                                       int iButton1 /*= 0*/,
+                                       int iButton2 /*= 0*/,
+                                       int iButton3 /*= 0*/,
                                        const QString &strButtonName1 /* = QString() */,
                                        const QString &strButtonName2 /* = QString() */,
                                        const QString &strButtonName3 /* = QString() */) const
@@ -207,7 +207,7 @@ int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType type,
 bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
                                               const QString &strTitle,
                                               const QString &strImage /* = "" */,
-                                              QWidget *pParent /* = 0 */,
+                                              QWidget *pParent /*= 0*/,
                                               int cMinDuration /* = 2000 */)
 {
     /* Prepare pixmap: */
@@ -606,7 +606,7 @@ void UIMessageCenter::cannotRemoveMachine(const CMachine &machine, const CProgre
             !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
-bool UIMessageCenter::remindAboutInaccessibleMedia() const
+bool UIMessageCenter::warnAboutInaccessibleMedia() const
 {
     return messageOkCancel(mainWindowShown(), MessageType_Warning,
                            tr("<p>One or more virtual hard disks, CD/DVD or "
@@ -616,7 +616,7 @@ bool UIMessageCenter::remindAboutInaccessibleMedia() const
                               "<p>Press <b>Check</b> to open the Virtual Media Manager window and "
                               "see what media are inaccessible, or press <b>Ignore</b> to "
                               "ignore this message.</p>"),
-                           "remindAboutInaccessibleMedia",
+                           "warnAboutInaccessibleMedia",
                            tr("Check", "inaccessible media message box"), tr("Cancel"), false);
 }
 
@@ -850,7 +850,60 @@ void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress, const QStr
             !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
 }
 
-void UIMessageCenter::cannotAccessUSB(const COMBaseWithEI &object) const
+bool UIMessageCenter::confirmHostInterfaceRemoval(const QString &strName, QWidget *pParent /*= 0*/) const
+{
+    return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Question,
+                           tr("<p>Deleting this host-only network will remove "
+                              "the host-only interface this network is based on. Do you want to "
+                              "remove the (host-only network) interface <nobr><b>%1</b>?</nobr></p>"
+                              "<p><b>Note:</b> this interface may be in use by one or more "
+                              "virtual network adapters belonging to one of your VMs. "
+                              "After it is removed, these adapters will no longer be usable until "
+                              "you correct their settings by either choosing a different interface "
+                              "name or a different adapter attachment type.</p>")
+                              .arg(strName),
+                           0 /* auto-confirm id */,
+                           tr("Remove"));
+}
+
+void UIMessageCenter::cannotCreateHostInterface(const CHost &host, QWidget *pParent /*= 0*/)
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to create the host network interface."),
+            formatErrorInfo(host));
+}
+
+void UIMessageCenter::cannotCreateHostInterface(const CProgress &progress, QWidget *pParent /*= 0*/)
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to create the host network interface."),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
+}
+
+void UIMessageCenter::cannotRemoveHostInterface(const CHost &host, const QString &strName, QWidget *pParent /*= 0*/)
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to remove the host network interface <b>%1</b>.")
+               .arg(strName),
+            formatErrorInfo(host));
+}
+
+void UIMessageCenter::cannotRemoveHostInterface(const CProgress &progress, const QString &strName, QWidget *pParent /*= 0*/)
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to remove the host network interface <b>%1</b>.")
+               .arg(strName),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
+}
+
+void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent /*= 0*/) const
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Critical,
+            tr("Failed to set global VirtualBox properties."),
+            formatErrorInfo(properties));
+}
+
+void UIMessageCenter::warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent /*= 0*/) const
 {
     /* If IMachine::GetUSBController(), IHost::GetUSBDevices() etc. return
      * E_NOTIMPL, it means the USB support is intentionally missing
@@ -859,28 +912,27 @@ void UIMessageCenter::cannotAccessUSB(const COMBaseWithEI &object) const
     if (res.rc() == E_NOTIMPL)
         return;
     /* Show the message: */
-    message(mainWindowShown(), res.isWarning() ? MessageType_Warning : MessageType_Error,
+    message(pParent ? pParent : mainWindowShown(), res.isWarning() ? MessageType_Warning : MessageType_Error,
             tr("Failed to access the USB subsystem."),
             formatErrorInfo(res),
-            "cannotAccessUSB");
+            "warnAboutUnaccessibleUSB");
 }
 
-void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties) const
+void UIMessageCenter::warnAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent)
 {
-    message(mainWindowShown(), MessageType_Critical,
-            tr("Failed to set global VirtualBox properties."),
-            formatErrorInfo(properties));
-}
+    if (warningShown("warnAboutUnsupportedUSB2"))
+        return;
+    setWarningShown("warnAboutUnsupportedUSB2", true);
 
-void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent /*= 0*/) const
-{
-    /* Preserve error-info: */
-    COMResult res(machine);
-    /* Show the message: */
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-            tr("Failed to save the settings of the virtual machine <b>%1</b> to <b><nobr>%2</nobr></b>.")
-               .arg(machine.GetName(), machine.GetSettingsFilePath()),
-            formatErrorInfo(res));
+    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Warning,
+            tr("<p>USB 2.0 is currently enabled for this virtual machine. "
+               "However, this requires the <b><nobr>%1</nobr></b> to be installed.</p>"
+               "<p>Please install the Extension Pack from the VirtualBox download site. "
+               "After this you will be able to re-enable USB 2.0. "
+               "It will be disabled in the meantime unless you cancel the current settings changes.</p>")
+               .arg(strExtPackName));
+
+    setWarningShown("warnAboutUnsupportedUSB2", false);
 }
 
 void UIMessageCenter::warnAboutStateChange(QWidget *pParent /*= 0*/) const
@@ -908,23 +960,7 @@ bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /*= 0*/) const
                            tr("Reload settings"), tr("Keep changes"));
 }
 
-bool UIMessageCenter::confirmDeletingHostInterface(const QString &strName, QWidget *pParent /*= 0*/) const
-{
-    return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Question,
-                           tr("<p>Deleting this host-only network will remove "
-                              "the host-only interface this network is based on. Do you want to "
-                              "remove the (host-only network) interface <nobr><b>%1</b>?</nobr></p>"
-                              "<p><b>Note:</b> this interface may be in use by one or more "
-                              "virtual network adapters belonging to one of your VMs. "
-                              "After it is removed, these adapters will no longer be usable until "
-                              "you correct their settings by either choosing a different interface "
-                              "name or a different adapter attachment type.</p>")
-                              .arg(strName),
-                           0 /* auto-confirm id */,
-                           tr("Remove"));
-}
-
-int UIMessageCenter::askAboutHardDiskAttachmentCreation(const QString &strControllerName, QWidget *pParent /*= 0*/) const
+int UIMessageCenter::confirmHardDiskAttachmentCreation(const QString &strControllerName, QWidget *pParent /*= 0*/) const
 {
     return message(pParent ? pParent : mainWindowShown(), MessageType_Question,
                    tr("<p>You are about to add a virtual hard disk to controller <b>%1</b>.</p>"
@@ -938,7 +974,7 @@ int UIMessageCenter::askAboutHardDiskAttachmentCreation(const QString &strContro
                    tr("&Choose existing disk", "add attachment routine"));
 }
 
-int UIMessageCenter::askAboutOpticalAttachmentCreation(const QString &strControllerName, QWidget *pParent /*= 0*/) const
+int UIMessageCenter::confirmOpticalAttachmentCreation(const QString &strControllerName, QWidget *pParent /*= 0*/) const
 {
     return message(pParent ? pParent : mainWindowShown(), MessageType_Question,
                    tr("<p>You are about to add a new CD/DVD drive to controller <b>%1</b>.</p>"
@@ -953,7 +989,7 @@ int UIMessageCenter::askAboutOpticalAttachmentCreation(const QString &strControl
                    tr("Leave &empty", "add attachment routine"));
 }
 
-int UIMessageCenter::askAboutFloppyAttachmentCreation(const QString &strControllerName, QWidget *pParent /*= 0*/) const
+int UIMessageCenter::confirmFloppyAttachmentCreation(const QString &strControllerName, QWidget *pParent /*= 0*/) const
 {
     return message(pParent ? pParent : mainWindowShown(), MessageType_Question,
                    tr("<p>You are about to add a new floppy drive to controller <b>%1</b>.</p>"
@@ -978,6 +1014,37 @@ int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /*= 0*/) co
                            tr("&Remove", "medium"));
 }
 
+void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,
+                                         const QString &strLocation, const StorageSlot &storageSlot,
+                                         QWidget *pParent /*= 0*/)
+{
+    QString strMessage;
+    switch (type)
+    {
+        case UIMediumType_HardDisk:
+        {
+            strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        case UIMediumType_DVD:
+        {
+            strMessage = tr("Failed to attach the CD/DVD device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        case UIMediumType_Floppy:
+        {
+            strMessage = tr("Failed to attach the floppy device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
+            break;
+        }
+        default:
+            break;
+    }
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error, strMessage, formatErrorInfo(machine));
+}
+
 void UIMessageCenter::warnAboutIncorrectPort(QWidget *pParent /*= 0*/) const
 {
     message(pParent ? pParent : mainWindowShown(), MessageType_Error,
@@ -990,6 +1057,65 @@ bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /*= 
     return messageOkCancel(pParent ? pParent : mainWindowShown(), MessageType_Question,
                            tr("<p>There are unsaved changes in the port forwarding configuration.</p>"
                               "<p>If you proceed your changes will be discarded.</p>"));
+}
+
+void UIMessageCenter::cannotCreateSharedFolder(const CMachine &machine, const QString &strMachineName,
+                                               const QString &strName, const QString &strPath,
+                                               QWidget *pParent /*= 0*/)
+{
+    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
+            tr("Failed to create the shared folder <b>%1</b> (pointing to "
+               "<nobr><b>%2</b></nobr>) for the virtual machine <b>%3</b>.")
+               .arg(strName, strPath, strMachineName),
+            formatErrorInfo(machine));
+}
+
+void UIMessageCenter::cannotCreateSharedFolder(const CConsole &console, const QString &strMachineName,
+                                               const QString &strName, const QString &strPath,
+                                               QWidget *pParent /*= 0*/)
+{
+    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
+            tr("Failed to create the shared folder <b>%1</b> (pointing to "
+               "<nobr><b>%2</b></nobr>) for the virtual machine <b>%3</b>.")
+               .arg(strName, strPath, strMachineName),
+            formatErrorInfo(console));
+}
+
+void UIMessageCenter::cannotRemoveSharedFolder(const CMachine &machine, const QString &strMachineName,
+                                               const QString &strName, const QString &strPath,
+                                               QWidget *pParent /*= 0*/)
+{
+    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
+            tr("<p>Failed to remove the shared folder <b>%1</b> (pointing to "
+               "<nobr><b>%2</b></nobr>) from the virtual machine <b>%3</b>.</p>"
+               "<p>Please close all programs in the guest OS that "
+               "may be using this shared folder and try again.</p>")
+               .arg(strName, strPath, strMachineName),
+            formatErrorInfo(machine));
+}
+
+void UIMessageCenter::cannotRemoveSharedFolder(const CConsole &console, const QString &strMachineName,
+                                               const QString &strName, const QString &strPath,
+                                               QWidget *pParent /*= 0*/)
+{
+    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
+            tr("<p>Failed to remove the shared folder <b>%1</b> (pointing to "
+               "<nobr><b>%2</b></nobr>) from the virtual machine <b>%3</b>.</p>"
+               "<p>Please close all programs in the guest OS that "
+               "may be using this shared folder and try again.</p>")
+               .arg(strName, strPath, strMachineName),
+            formatErrorInfo(console));
+}
+
+void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent /*= 0*/) const
+{
+    /* Preserve error-info: */
+    COMResult res(machine);
+    /* Show the message: */
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to save the settings of the virtual machine <b>%1</b> to <b><nobr>%2</nobr></b>.")
+               .arg(machine.GetName(), machine.GetSettingsFilePath()),
+            formatErrorInfo(res));
 }
 
 void UIMessageCenter::cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType,
@@ -2207,14 +2333,30 @@ void UIMessageCenter::warnAboutExtPackInstalled(const QString &strPackName, QWid
                .arg(strPackName));
 }
 
-void UIMessageCenter::cannotOpenLicenseFile(QWidget *pParent, const QString &strPath)
+#ifdef VBOX_WITH_DRAG_AND_DROP
+void UIMessageCenter::cannotDropData(const CGuest &guest, QWidget *pParent /*= 0*/) const
 {
-    message(pParent, MessageType_Error,
-            tr("Failed to open the license file <nobr><b>%1</b></nobr>. "
-               "Check file permissions.").arg(strPath));
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to drop data."),
+            formatErrorInfo(guest));
 }
 
-bool UIMessageCenter::askForOverridingFile(const QString &strPath, QWidget *pParent /* = 0 */)
+void UIMessageCenter::cannotDropData(const CProgress &progress, QWidget *pParent /*= 0*/) const
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to drop data."),
+            !progress.isOk() ? formatErrorInfo(progress) : formatErrorInfo(progress.GetErrorInfo()));
+}
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+
+void UIMessageCenter::cannotOpenLicenseFile(const QString &strPath, QWidget *pParent /*= 0*/)
+{
+    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
+            tr("Failed to open the license file <nobr><b>%1</b></nobr>. Check file permissions.")
+               .arg(strPath));
+}
+
+bool UIMessageCenter::confirmOverridingFile(const QString &strPath, QWidget *pParent /*= 0*/)
 {
     return messageYesNo(pParent, MessageType_Question,
                         tr("A file named <b>%1</b> already exists. "
@@ -2222,11 +2364,11 @@ bool UIMessageCenter::askForOverridingFile(const QString &strPath, QWidget *pPar
                            "Replacing it will overwrite its contents.").arg(strPath));
 }
 
-bool UIMessageCenter::askForOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent /* = 0 */)
+bool UIMessageCenter::confirmOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent /*= 0*/)
 {
     /* If it is only one file use the single question versions above: */
     if (strPaths.size() == 1)
-        return askForOverridingFile(strPaths.at(0), pParent);
+        return confirmOverridingFile(strPaths.at(0), pParent);
     else if (strPaths.size() > 1)
         return messageYesNo(pParent, MessageType_Question,
                             tr("The following files already exist:<br /><br />%1<br /><br />"
@@ -2237,16 +2379,16 @@ bool UIMessageCenter::askForOverridingFiles(const QVector<QString> &strPaths, QW
         return true;
 }
 
-bool UIMessageCenter::askForOverridingFileIfExists(const QString &strPath, QWidget *pParent /* = 0 */)
+bool UIMessageCenter::confirmOverridingFileIfExists(const QString &strPath, QWidget *pParent /*= 0*/)
 {
     QFileInfo fi(strPath);
     if (fi.exists())
-        return askForOverridingFile(strPath, pParent);
+        return confirmOverridingFile(strPath, pParent);
     else
         return true;
 }
 
-bool UIMessageCenter::askForOverridingFilesIfExists(const QVector<QString> &strPaths, QWidget *pParent /* = 0 */)
+bool UIMessageCenter::confirmOverridingFilesIfExists(const QVector<QString> &strPaths, QWidget *pParent /*= 0*/)
 {
     QVector<QString> existingFiles;
     foreach(const QString &file, strPaths)
@@ -2257,9 +2399,9 @@ bool UIMessageCenter::askForOverridingFilesIfExists(const QVector<QString> &strP
     }
     /* If it is only one file use the single question versions above: */
     if (existingFiles.size() == 1)
-        return askForOverridingFileIfExists(existingFiles.at(0), pParent);
+        return confirmOverridingFileIfExists(existingFiles.at(0), pParent);
     else if (existingFiles.size() > 1)
-        return askForOverridingFiles(existingFiles, pParent);
+        return confirmOverridingFiles(existingFiles, pParent);
     else
         return true;
 }
@@ -2331,163 +2473,9 @@ QString UIMessageCenter::formatErrorInfo(const COMResult &rc)
     return formatErrorInfo(rc.errorInfo(), rc.rc());
 }
 
-void UIMessageCenter::cannotCreateHostInterface(const CHost &host, QWidget *pParent /* = 0 */)
-{
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-            tr("Failed to create the host-only network interface."),
-            formatErrorInfo(host));
-}
-
-void UIMessageCenter::cannotCreateHostInterface(const CProgress &progress, QWidget *pParent /* = 0 */)
-{
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-            tr("Failed to create the host-only network interface."),
-            formatErrorInfo(progress.GetErrorInfo()));
-}
-
-void UIMessageCenter::cannotRemoveHostInterface(const CHost &host, const CHostNetworkInterface &iface, QWidget *pParent /* = 0 */)
-{
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-            tr("Failed to remove the host network interface <b>%1</b>.")
-               .arg(iface.GetName()),
-            formatErrorInfo(host));
-}
-
-void UIMessageCenter::cannotRemoveHostInterface(const CProgress &progress, const CHostNetworkInterface &iface, QWidget *pParent /* = 0 */)
-{
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error,
-            tr("Failed to remove the host network interface <b>%1</b>.")
-               .arg(iface.GetName()),
-            formatErrorInfo(progress.GetErrorInfo()));
-}
-
-void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType type,
-                                         const QString &strLocation, const StorageSlot &storageSlot,
-                                         QWidget *pParent /* = 0 */)
-{
-    QString strMessage;
-    switch (type)
-    {
-        case UIMediumType_HardDisk:
-        {
-            strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
-            break;
-        }
-        case UIMediumType_DVD:
-        {
-            strMessage = tr("Failed to attach the CD/DVD device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
-            break;
-        }
-        case UIMediumType_Floppy:
-        {
-            strMessage = tr("Failed to attach the floppy device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
-                           .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
-            break;
-        }
-        default:
-            break;
-    }
-    message(pParent ? pParent : mainWindowShown(), MessageType_Error, strMessage, formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotCreateSharedFolder(const CMachine &machine, const QString &strName,
-                                               const QString &strPath, QWidget *pParent /* = 0 */)
-{
-    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
-            tr("Failed to create the shared folder <b>%1</b> "
-               "(pointing to <nobr><b>%2</b></nobr>) "
-               "for the virtual machine <b>%3</b>.")
-               .arg(strName)
-               .arg(strPath)
-               .arg(CMachine(machine).GetName()),
-            formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotRemoveSharedFolder(const CMachine &machine, const QString &strName,
-                                               const QString &strPath, QWidget *pParent /* = 0 */)
-{
-    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
-            tr("Failed to remove the shared folder <b>%1</b> "
-               "(pointing to <nobr><b>%2</b></nobr>) "
-               "from the virtual machine <b>%3</b>.")
-               .arg(strName)
-               .arg(strPath)
-               .arg(CMachine(machine).GetName()),
-            formatErrorInfo(machine));
-}
-
-void UIMessageCenter::cannotCreateSharedFolder(const CConsole &console, const QString &strName,
-                                               const QString &strPath, QWidget *pParent /* = 0 */)
-{
-    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
-            tr("Failed to create the shared folder <b>%1</b> "
-               "(pointing to <nobr><b>%2</b></nobr>) "
-               "for the virtual machine <b>%3</b>.")
-               .arg(strName)
-               .arg(strPath)
-               .arg(CConsole(console).GetMachine().GetName()),
-            formatErrorInfo(console));
-}
-
-void UIMessageCenter::cannotRemoveSharedFolder(const CConsole &console, const QString &strName,
-                                               const QString &strPath, QWidget *pParent /* = 0 */)
-{
-    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Error,
-            tr("<p>Failed to remove the shared folder <b>%1</b> "
-               "(pointing to <nobr><b>%2</b></nobr>) "
-               "from the virtual machine <b>%3</b>.</p>"
-               "<p>Please close all programs in the guest OS that "
-               "may be using this shared folder and try again.</p>")
-               .arg(strName)
-               .arg(strPath)
-               .arg(CConsole(console).GetMachine().GetName()),
-            formatErrorInfo(console));
-}
-
-#ifdef VBOX_WITH_DRAG_AND_DROP
-void UIMessageCenter::cannotDropData(const CGuest &guest,
-                                     QWidget *pParent /* = 0 */) const
-{
-    message(pParent ? pParent : mainWindowShown(),
-            MessageType_Error,
-            tr("Failed to drop data."),
-            formatErrorInfo(guest));
-}
-
-void UIMessageCenter::cannotDropData(const CProgress &progress,
-                                     QWidget *pParent /* = 0 */) const
-{
-    AssertWrapperOk(progress);
-
-    message(pParent ? pParent : mainWindowShown(),
-            MessageType_Error,
-            tr("Failed to drop data."),
-            formatErrorInfo(progress.GetErrorInfo()));
-}
-#endif /* VBOX_WITH_DRAG_AND_DROP */
-
 void UIMessageCenter::remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP)
 {
     emit sigRemindAboutWrongColorDepth(uRealBPP, uWantedBPP);
-}
-
-void UIMessageCenter::remindAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent)
-{
-    if (warningShown("remindAboutUnsupportedUSB2"))
-        return;
-    setWarningShown("remindAboutUnsupportedUSB2", true);
-
-    message(pParent ? pParent : mainMachineWindowShown(), MessageType_Warning,
-            tr("<p>USB 2.0 is currently enabled for this virtual machine. "
-               "However, this requires the <b><nobr>%1</nobr></b> to be installed.</p>"
-               "<p>Please install the Extension Pack from the VirtualBox download site. "
-               "After this you will be able to re-enable USB 2.0. "
-               "It will be disabled in the meantime unless you cancel the current settings changes.</p>")
-               .arg(strExtPackName));
-
-    setWarningShown("remindAboutUnsupportedUSB2", false);
 }
 
 void UIMessageCenter::sltShowHelpWebDialog()
