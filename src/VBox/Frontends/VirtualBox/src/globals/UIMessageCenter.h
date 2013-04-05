@@ -65,7 +65,7 @@ signals:
                              const QString &strAutoConfirmId) const;
 
     /* Notifiers: Synchronization stuff: */
-    void sigRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
+    void sigRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP) const;
 
 public:
 
@@ -78,52 +78,70 @@ public:
     bool warningShown(const QString &strWarningName) const;
     void setWarningShown(const QString &strWarningName, bool fWarningShown) const;
 
-    /* API: Alert providing stuff: Main function: */
+    /* API: Main message function, used directly only in exceptional cases: */
     int message(QWidget *pParent, MessageType type,
                 const QString &strMessage,
-                const QString &strDetails = QString(),
+                const QString &strDetails,
                 const char *pcszAutoConfirmId = 0,
                 int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
                 const QString &strButtonText1 = QString(),
                 const QString &strButtonText2 = QString(),
                 const QString &strButtonText3 = QString()) const;
 
-    /* API: Alert providing stuff: Wrapper to the main function,
+    /* API: Wrapper to 'message' function.
+     * Provides single OK button: */
+    void error(QWidget *pParent, MessageType type,
+               const QString &strMessage,
+               const QString &strDetails,
+               const char *pcszAutoConfirmId = 0) const;
+
+    /* API: Wrapper to 'message' function,
+     * Error with question providing two buttons (OK and Cancel by default): */
+    bool errorWithQuestion(QWidget *pParent, MessageType type,
+                           const QString &strMessage,
+                           const QString &strDetails,
+                           const char *pcszAutoConfirmId = 0,
+                           const QString &strOkButtonText = QString(),
+                           const QString &strCancelButtonText = QString()) const;
+
+    /* API: Wrapper to 'error' function.
      * Omits details: */
-    int message(QWidget *pParent, MessageType type,
-                const QString &strMessage,
-                const char *pcszAutoConfirmId,
-                int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
-                const QString &strButtonText1 = QString(),
-                const QString &strButtonText2 = QString(),
-                const QString &strButtonText3 = QString()) const;
+    void alert(QWidget *pParent, MessageType type,
+               const QString &strMessage,
+               const char *pcszAutoConfirmId = 0) const;
 
-    /* API: Alert providing stuff: Wrapper to the main function,
-     * Takes button type(s) as "Ok / Cancel": */
-    bool messageOkCancel(QWidget *pParent, MessageType type,
-                         const QString &strMessage,
-                         const QString &strDetails = QString(),
-                         const char *pcszAutoConfirmId = 0,
-                         const QString &strOkButtonText = QString(),
-                         const QString &strCancelButtonText = QString(),
-                         bool fOkByDefault = true) const;
+    /* API: Wrapper to 'message' function.
+     * Omits details, provides two or three buttons: */
+    int question(QWidget *pParent, MessageType type,
+                 const QString &strMessage,
+                 const char *pcszAutoConfirmId = 0,
+                 int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
+                 const QString &strButtonText1 = QString(),
+                 const QString &strButtonText2 = QString(),
+                 const QString &strButtonText3 = QString()) const;
 
-    /* API: Alert providing stuff: Wrapper to the function above,
-     * Takes button type(s) as "Ok / Cancel",
-     * Omits details. */
-    bool messageOkCancel(QWidget *pParent, MessageType type,
-                         const QString &strMessage,
-                         const char *pcszAutoConfirmId,
-                         const QString &strOkButtonText = QString(),
-                         const QString &strCancelButtonText = QString(),
-                         bool fOkByDefault = true) const;
+    /* API: Wrapper to 'question' function,
+     * Question providing two buttons (OK and Cancel by default): */
+    bool questionBinary(QWidget *pParent, MessageType type,
+                        const QString &strMessage,
+                        const char *pcszAutoConfirmId = 0,
+                        const QString &strOkButtonText = QString(),
+                        const QString &strCancelButtonText = QString()) const;
 
-    /* API: Alert providing stuff: One more main function: */
+    /* API: Wrapper to 'question' function,
+     * Question providing three buttons (Yes, No and Cancel by default): */
+    int questionTrinary(QWidget *pParent, MessageType type,
+                        const QString &strMessage,
+                        const char *pcszAutoConfirmId = 0,
+                        const QString &strChoice1ButtonText = QString(),
+                        const QString &strChoice2ButtonText = QString(),
+                        const QString &strCancelButtonText = QString()) const;
+
+    /* API: One more main function: */
     int messageWithOption(QWidget *pParent, MessageType type,
                           const QString &strMessage,
                           const QString &strOptionText,
                           bool fDefaultOptionValue = true,
-                          const QString &strDetails = QString(),
                           int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
                           const QString &strButtonText1 = QString(),
                           const QString &strButtonText2 = QString(),
@@ -236,7 +254,7 @@ public:
     void cannotDeleteHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent = 0) const;
     void cannotDeleteHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent = 0) const;
     void cannotDetachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0) const;
-    int cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent = 0) const;
+    bool cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent = 0) const;
     void cannotOpenMedium(const CVirtualBox &vbox, UIMediumType type, const QString &strLocation, QWidget *pParent = 0) const;
     void cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent = 0) const;
 
@@ -275,7 +293,7 @@ public:
     bool confirmInputCapture(bool &fAutoConfirmed) const;
     void remindAboutAutoCapture() const;
     void remindAboutMouseIntegration(bool fSupportsAbsolute) const;
-    bool remindAboutPausedVMInput() const;
+    void remindAboutPausedVMInput() const;
     bool confirmGoingFullscreen(const QString &strHotKey) const;
     bool confirmGoingSeamless(const QString &strHotKey) const;
     bool confirmGoingScale(const QString &strHotKey) const;
@@ -283,17 +301,17 @@ public:
     void cannotEnterSeamlessMode(ULONG uWidth, ULONG uHeight, ULONG uBpp, ULONG64 uMinVRAM) const;
     bool cannotSwitchScreenInFullscreen(quint64 uMinVRAM) const;
     void cannotSwitchScreenInSeamless(quint64 uMinVRAM) const;
-    void cannotAttachUSBDevice(const CConsole &console, const QString &strDevice);
-    void cannotAttachUSBDevice(const CVirtualBoxErrorInfo &error, const QString &strDevice, const QString &strMachineName);
-    void cannotDetachUSBDevice(const CConsole &console, const QString &strDevice);
-    void cannotDetachUSBDevice(const CVirtualBoxErrorInfo &error, const QString &strDevice, const QString &strMachineName);
-    void remindAboutGuestAdditionsAreNotActive(QWidget *pParent = 0);
+    void cannotAttachUSBDevice(const CConsole &console, const QString &strDevice) const;
+    void cannotAttachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const;
+    void cannotDetachUSBDevice(const CConsole &console, const QString &strDevice) const;
+    void cannotDetachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const;
+    void remindAboutGuestAdditionsAreNotActive(QWidget *pParent = 0) const;
 
     /* API: Network management warnings: */
-    bool confirmCancelingAllNetworkRequests();
-    void showUpdateSuccess(const QString &strVersion, const QString &strLink);
-    void showUpdateNotFound();
-    bool askUserToDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion, const QString &strVBoxVersion);
+    bool confirmCancelingAllNetworkRequests() const;
+    void showUpdateSuccess(const QString &strVersion, const QString &strLink) const;
+    void showUpdateNotFound() const;
+    void askUserToDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion, const QString &strVBoxVersion) const;
 
     /* API: Downloading warnings: */
     bool cannotFindGuestAdditions() const;
@@ -329,13 +347,13 @@ public:
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
     /* API: License-viewer warnings: */
-    void cannotOpenLicenseFile(const QString &strPath, QWidget *pParent = 0);
+    void cannotOpenLicenseFile(const QString &strPath, QWidget *pParent = 0) const;
 
     /* API: File-dialog warnings: */
-    bool confirmOverridingFile(const QString &strPath, QWidget *pParent = 0);
-    bool confirmOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent = 0);
-    bool confirmOverridingFileIfExists(const QString &strPath, QWidget *pParent = 0);
-    bool confirmOverridingFilesIfExists(const QVector<QString> &strPaths, QWidget *pParent = 0);
+    bool confirmOverridingFile(const QString &strPath, QWidget *pParent = 0) const;
+    bool confirmOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent = 0) const;
+    bool confirmOverridingFileIfExists(const QString &strPath, QWidget *pParent = 0) const;
+    bool confirmOverridingFilesIfExists(const QVector<QString> &strPaths, QWidget *pParent = 0) const;
 
     /* API: Static helpers: */
     static QString formatRC(HRESULT rc);
@@ -345,7 +363,7 @@ public:
     static QString formatErrorInfo(const COMResult &rc);
 
     /* API: Async stuff: */
-    void remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
+    void remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP) const;
 
 public slots:
 
@@ -366,7 +384,7 @@ private slots:
                            const QString &strAutoConfirmId) const;
 
     /* Handlers: Synchronization stuff: */
-    void sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
+    void sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP) const;
 
 private:
 
