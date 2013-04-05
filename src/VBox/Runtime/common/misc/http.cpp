@@ -339,6 +339,9 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
             case CURLE_COULDNT_RESOLVE_HOST:
                 rc = VERR_HTTP_NOT_FOUND;
                 break;
+            case CURLE_COULDNT_CONNECT:
+                rc = VERR_HTTP_COULDNT_CONNECT;
+                break;
             default:
                 break;
         }

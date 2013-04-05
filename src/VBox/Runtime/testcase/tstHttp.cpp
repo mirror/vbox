@@ -41,7 +41,7 @@ int main()
 {
     unsigned cErrors = 0;
 
-    RTR3InitExeNoArguments(RTR3INIT_FLAGS_SUPLIB);
+    RTR3InitExeNoArguments(0);
 
     RTHTTP hHttp;
     char *pszBuf = NULL;
@@ -211,7 +211,8 @@ int main()
                        "https://update.virtualbox.org/query.php?platform=LINUX_32BITS_UBUNTU_12_04&version=4.1.18",
                        &pszBuf);
 
-    if (RT_FAILURE(rc))
+    if (   RT_FAILURE(rc)
+        && rc != VERR_HTTP_COULDNT_CONNECT)
         cErrors++;
 
     if (RT_FAILURE(rc))
