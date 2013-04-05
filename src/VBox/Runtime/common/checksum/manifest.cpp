@@ -321,6 +321,9 @@ RTR3DECL(int) RTManifestVerifyDigestType(void *pvBuf, size_t cbSize, RTDIGESTTYP
             digestType = RTDIGESTTYPE_SHA256;
             break;
         }
+
+        pcBuf += cch;
+        cbRead += cch;
     }
 
     return rc;

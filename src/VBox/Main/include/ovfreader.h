@@ -178,6 +178,19 @@ struct EnvelopeData
         else
             return OVFVersion_unknown;
     }
+
+
+    RTCString getStringOVFVersion() const
+    {
+        if(version == "0.9")
+            return "0.9";
+        else if(version == "1.0")
+            return "1.0";
+        else if(version == "2.0")
+            return "2.0";
+        else
+            return "";
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
