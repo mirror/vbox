@@ -590,7 +590,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
             {
                 /* Ask for force mounting: */
                 if (msgCenter().cannotRemountMedium(machine, vboxMedium, true /* mount? */,
-                                                    true /* retry? */, mainMachineWindow()) == AlertButton_Ok)
+                                                    true /* retry? */, mainMachineWindow()))
                 {
                     /* Force mount medium to the predefined port/device: */
                     machine.MountMedium(strCntName, iCntPort, iCntDevice, vboxMedium.medium(), true /* force */);

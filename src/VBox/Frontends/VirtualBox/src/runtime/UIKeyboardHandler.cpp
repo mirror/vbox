@@ -905,12 +905,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                 {
                     /* Show a possible warning on key release which seems to be more expected by the end user: */
                     if (uisession()->isPaused())
-                    {
-                        /* If the reminder is disabled we pass the event to Qt to enable normal
-                         * keyboard functionality (for example, menu access with Alt+Letter): */
-                        if (!msgCenter().remindAboutPausedVMInput())
-                            break;
-                    }
+                        msgCenter().remindAboutPausedVMInput();
                 }
                 break;
             }
