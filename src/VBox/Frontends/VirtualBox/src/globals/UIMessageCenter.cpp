@@ -2047,11 +2047,11 @@ bool UIMessageCenter::askUserToDownloadExtensionPack(const QString &strExtPackNa
 
 bool UIMessageCenter::cannotFindGuestAdditions() const
 {
-    return messageYesNo(mainMachineWindowShown(), MessageType_Question,
-                        tr("<p>Could not find the <b>VirtualBox Guest Additions</b> CD image.</p>"
-                           "<p>Do you wish to download this CD image from the Internet?</p>"),
-                        0 /* auto-confirm id */,
-                        tr("Download"));
+    return messageOkCancel(mainMachineWindowShown(), MessageType_Question,
+                           tr("<p>Could not find the <b>VirtualBox Guest Additions</b> CD image.</p>"
+                              "<p>Do you wish to download this CD image from the Internet?</p>"),
+                           0 /* auto-confirm id */,
+                           tr("Download"));
 }
 
 bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const
@@ -2106,12 +2106,12 @@ void UIMessageCenter::cannotUpdateGuestAdditions(const CProgress &progress) cons
 
 bool UIMessageCenter::cannotFindUserManual(const QString &strMissedLocation) const
 {
-    return messageYesNo(mainWindowShown(), MessageType_Question,
-                        tr("<p>Could not find the <b>VirtualBox User Manual</b> <nobr><b>%1</b>.</nobr></p>"
-                           "<p>Do you wish to download this file from the Internet?</p>")
-                           .arg(strMissedLocation),
-                        0 /* auto-confirm id */,
-                        tr("Download"));
+    return messageOkCancel(mainWindowShown(), MessageType_Question,
+                           tr("<p>Could not find the <b>VirtualBox User Manual</b> <nobr><b>%1</b>.</nobr></p>"
+                              "<p>Do you wish to download this file from the Internet?</p>")
+                              .arg(strMissedLocation),
+                           0 /* auto-confirm id */,
+                           tr("Download"));
 }
 
 bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const
@@ -2146,13 +2146,13 @@ void UIMessageCenter::warnAboutUserManualDownloaded(const QString &strURL, const
 
 bool UIMessageCenter::warAboutOutdatedExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const
 {
-    return messageYesNo(mainWindowShown(),
-                        MessageType_Question,
-                        tr("<p>You have an old version (%1) of the <b><nobr>%2</nobr></b> installed.</p>"
-                           "<p>Do you wish to download latest one from the Internet?</p>")
-                           .arg(strExtPackVersion).arg(strExtPackName),
-                        0 /* auto-confirm id */,
-                        tr("Download"));
+    return messageOkCancel(mainWindowShown(),
+                           MessageType_Question,
+                           tr("<p>You have an old version (%1) of the <b><nobr>%2</nobr></b> installed.</p>"
+                              "<p>Do you wish to download latest one from the Internet?</p>")
+                              .arg(strExtPackVersion).arg(strExtPackName),
+                           0 /* auto-confirm id */,
+                           tr("Download"));
 }
 
 bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const
@@ -2358,10 +2358,11 @@ void UIMessageCenter::cannotOpenLicenseFile(const QString &strPath, QWidget *pPa
 
 bool UIMessageCenter::confirmOverridingFile(const QString &strPath, QWidget *pParent /*= 0*/)
 {
-    return messageYesNo(pParent, MessageType_Question,
-                        tr("A file named <b>%1</b> already exists. "
-                           "Are you sure you want to replace it?<br /><br />"
-                           "Replacing it will overwrite its contents.").arg(strPath));
+    return messageOkCancel(pParent, MessageType_Question,
+                           tr("A file named <b>%1</b> already exists. "
+                              "Are you sure you want to replace it?<br /><br />"
+                              "Replacing it will overwrite its contents.")
+                              .arg(strPath));
 }
 
 bool UIMessageCenter::confirmOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent /*= 0*/)
@@ -2370,11 +2371,11 @@ bool UIMessageCenter::confirmOverridingFiles(const QVector<QString> &strPaths, Q
     if (strPaths.size() == 1)
         return confirmOverridingFile(strPaths.at(0), pParent);
     else if (strPaths.size() > 1)
-        return messageYesNo(pParent, MessageType_Question,
-                            tr("The following files already exist:<br /><br />%1<br /><br />"
-                               "Are you sure you want to replace them? "
-                               "Replacing them will overwrite their contents.")
-                               .arg(QStringList(strPaths.toList()).join("<br />")));
+        return messageOkCancel(pParent, MessageType_Question,
+                               tr("The following files already exist:<br /><br />%1<br /><br />"
+                                  "Are you sure you want to replace them? "
+                                  "Replacing them will overwrite their contents.")
+                                  .arg(QStringList(strPaths.toList()).join("<br />")));
     else
         return true;
 }
