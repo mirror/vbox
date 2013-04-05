@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,9 +28,12 @@
 
 
 /** @todo Use some header that we have in common with VBoxGuestLib.h... */
-DECLVBGL(void *) VBoxGuestIDCOpen(uint32_t *pu32Version);
-DECLVBGL(int) VBoxGuestIDCClose(void *pvSession);
-DECLVBGL(int) VBoxGuestIDCCall(void *pvSession, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned);
+/** @todo fix DECLVBGL usage. */
+RT_C_DECLS_BEGIN
+DECLEXPORT(void *) VBOXCALL VBoxGuestIDCOpen(uint32_t *pu32Version);
+DECLEXPORT(int) VBOXCALL VBoxGuestIDCClose(void *pvSession);
+DECLEXPORT(int) VBOXCALL VBoxGuestIDCCall(void *pvSession, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned);
+RT_C_DECLS_END
 
 
 /**
@@ -39,7 +42,7 @@ DECLVBGL(int) VBoxGuestIDCCall(void *pvSession, unsigned iCmd, void *pvData, siz
  * @returns Opaque pointer to session object.
  * @param   pu32Version         Where to store VMMDev version.
  */
-DECLVBGL(void *) VBoxGuestIDCOpen(uint32_t *pu32Version)
+DECLEXPORT(void *) VBOXCALL VBoxGuestIDCOpen(uint32_t *pu32Version)
 {
     PVBOXGUESTSESSION   pSession;
     int                 rc;
@@ -96,7 +99,7 @@ DECLVBGL(void *) VBoxGuestIDCOpen(uint32_t *pu32Version)
  * @returns VBox error code.
  * @param   pvState             Opaque pointer to the session object.
  */
-DECLVBGL(int) VBoxGuestIDCClose(void *pvSession)
+DECLEXPORT(int) VBOXCALL VBoxGuestIDCClose(void *pvSession)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
     LogFlow(("VBoxGuestIDCClose:\n"));
@@ -131,7 +134,7 @@ DECLVBGL(int) VBoxGuestIDCClose(void *pvSession)
  * @param   cbData              Size of the data buffer.
  * @param   pcbDataReturned     Where to store the amount of returned data.
  */
-DECLVBGL(int) VBoxGuestIDCCall(void *pvSession, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned)
+DECLEXPORT(int) VBOXCALL VBoxGuestIDCCall(void *pvSession, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
     LogFlow(("VBoxGuestIDCCall: %pvSession=%p Cmd=%u pvData=%p cbData=%d\n", pvSession, iCmd, pvData, cbData));
