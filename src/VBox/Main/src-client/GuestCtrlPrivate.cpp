@@ -655,7 +655,7 @@ int GuestEnvironment::Set(const Utf8Str &strPair)
 
     int rc = VINF_SUCCESS;
     size_t p = 0;
-    while(p < listPair.size() && RT_SUCCESS(rc))
+    while (p < listPair.size() && RT_SUCCESS(rc))
     {
         Utf8Str strKey = listPair.at(p++);
         if (   strKey.isEmpty()

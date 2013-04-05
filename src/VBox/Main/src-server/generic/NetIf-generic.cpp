@@ -315,7 +315,7 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId,
     ComPtr<IHost> host;
     int rc = VINF_SUCCESS;
     HRESULT hr = pVBox->COMGETTER(Host)(host.asOutParam());
-    if(SUCCEEDED(hr))
+    if (SUCCEEDED(hr))
     {
         Bstr ifname;
         ComPtr<IHostNetworkInterface> iface;
@@ -328,7 +328,7 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVBox, IN_GUID aId,
         rc = progress->init(pVBox, host,
                             Bstr("Removing host network interface").raw(),
                             FALSE /* aCancelable */);
-        if(SUCCEEDED(rc))
+        if (SUCCEEDED(rc))
         {
             progress.queryInterfaceTo(aProgress);
             rc = NetIfAdpCtl(Utf8Str(ifname).c_str(), "remove", NULL, NULL);

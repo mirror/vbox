@@ -436,7 +436,7 @@ STDMETHODIMP USBController::COMGETTER(DeviceFilters)(ComSafeArrayOut(IUSBDeviceF
     CheckComArgOutSafeArrayPointerValid(aDevicesFilters);
 
     AutoCaller autoCaller(this);
-    if(FAILED(autoCaller.rc())) return autoCaller.rc();
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 

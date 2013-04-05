@@ -548,7 +548,7 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
     HRESULT hr;
     int rc = VERR_GENERAL_FAILURE;
 
-    hr = pncc->GetDisplayName( &lpszName );
+    hr = pncc->GetDisplayName(&lpszName);
     Assert(hr == S_OK);
     if (hr == S_OK)
     {
@@ -641,10 +641,10 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces)(ComSafeArrayOut(IHostNetworkInte
     INetCfgBindingInterface *pBi;
 
     /* we are using the INetCfg API for getting the list of miniports */
-    hr = VBoxNetCfgWinQueryINetCfg( FALSE,
-                       VBOX_APP_NAME,
-                       &pNc,
-                       &lpszApp );
+    hr = VBoxNetCfgWinQueryINetCfg(FALSE,
+                                   VBOX_APP_NAME,
+                                   &pNc,
+                                   &lpszApp);
     Assert(hr == S_OK);
     if (hr == S_OK)
     {
@@ -667,24 +667,24 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces)(ComSafeArrayOut(IHostNetworkInte
         {
             hr = VBoxNetCfgWinGetBindingPathEnum(pTcpIpNcc, EBP_BELOW, &pEnumBp);
             Assert(hr == S_OK);
-            if ( hr == S_OK )
+            if (hr == S_OK)
             {
                 hr = VBoxNetCfgWinGetFirstBindingPath(pEnumBp, &pBp);
                 Assert(hr == S_OK || hr == S_FALSE);
-                while( hr == S_OK )
+                while (hr == S_OK)
                 {
                     /* S_OK == enabled, S_FALSE == disabled */
                     if (pBp->IsEnabled() == S_OK)
                     {
                         hr = VBoxNetCfgWinGetBindingInterfaceEnum(pBp, &pEnumBi);
                         Assert(hr == S_OK);
-                        if ( hr == S_OK )
+                        if (hr == S_OK)
                         {
                             hr = VBoxNetCfgWinGetFirstBindingInterface(pEnumBi, &pBi);
                             Assert(hr == S_OK);
-                            while(hr == S_OK)
+                            while (hr == S_OK)
                             {
-                                hr = pBi->GetLowerComponent( &pMpNcc );
+                                hr = pBi->GetLowerComponent(&pMpNcc);
                                 Assert(hr == S_OK);
                                 if (hr == S_OK)
                                 {
@@ -698,7 +698,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces)(ComSafeArrayOut(IHostNetworkInte
                                             vboxNetWinAddComponent(&list, pMpNcc);
                                         }
                                     }
-                                    VBoxNetCfgWinReleaseRef( pMpNcc );
+                                    VBoxNetCfgWinReleaseRef(pMpNcc);
                                 }
                                 VBoxNetCfgWinReleaseRef(pBi);
 

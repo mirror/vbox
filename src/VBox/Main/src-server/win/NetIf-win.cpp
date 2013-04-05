@@ -1512,7 +1512,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                             {
                                 hr = pBp->EnumBindingInterfaces(&pEnumBi);
                                 Assert(hr == S_OK);
-                                if ( hr == S_OK )
+                                if (hr == S_OK)
                                 {
                                     hr = pEnumBi->Reset();
                                     Assert(hr == S_OK);
@@ -1520,7 +1520,7 @@ int NetIfList(std::list<ComObjPtr<HostNetworkInterface> > &list)
                                     {
                                         while ((hr = pEnumBi->Next(1, &pBi, NULL)) == S_OK)
                                         {
-                                            hr = pBi->GetLowerComponent( &pMpNcc );
+                                            hr = pBi->GetLowerComponent(&pMpNcc);
                                             Assert(hr == S_OK);
                                             if (hr == S_OK)
                                             {

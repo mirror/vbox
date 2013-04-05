@@ -107,7 +107,7 @@ typedef struct SHASTORAGEINTERNAL
 #if 0
 # define DEBUG_PRINT_FLOW() RTPrintf("%s\n", __FUNCTION__)
 #else
-# define DEBUG_PRINT_FLOW() do {} while(0)
+# define DEBUG_PRINT_FLOW() do {} while (0)
 #endif
 
 /******************************************************************************
@@ -477,7 +477,7 @@ DECLCALLBACK(int) shaCalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
 
     int rc = VINF_SUCCESS;
     bool fLoop = true;
-    while(fLoop)
+    while (fLoop)
     {
         /* What should we do next? */
         uint32_t u32Status = ASMAtomicReadU32(&pInt->u32Status);
@@ -755,7 +755,7 @@ static int shaOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen
             rc = shaSignalManifestThread(pInt, STATUS_READ);
         }
     }
-    while(0);
+    while (0);
 
     if (RT_FAILURE(rc))
     {
@@ -1014,7 +1014,7 @@ static int shaWriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
         if ((cbWrite - cbAllWritten) > cbAvail)
         {
             rc = shaSignalManifestThread(pInt, STATUS_WRITE);
-            if(RT_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 break;
             /* If there is _no_ free space available, we have to wait until it is. */
             if (cbAvail == 0)
@@ -1101,7 +1101,7 @@ static int shaReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
         if ((cbRead - cbAllRead) > cbAvail)
         {
             rc = shaSignalManifestThread(pInt, STATUS_READ);
-            if(RT_FAILURE(rc))
+            if (RT_FAILURE(rc))
                 break;
             /* If there is _no_ data available, we have to wait until it is. */
             if (cbAvail == 0)
@@ -1274,7 +1274,7 @@ int ShaReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTE
             memcpy(&((char*)pvBuf)[cbAllRead], pvTmpBuf, cbRead);
             cbAllRead += cbRead;
         }
-    }while(0);
+    } while (0);
 
     pIfIo->pfnClose(pvUser, pvStorage);
 

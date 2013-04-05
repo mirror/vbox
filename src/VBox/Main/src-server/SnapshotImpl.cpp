@@ -2523,8 +2523,8 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 ComPtr<IMediumFormat> pTargetFormat;
 
                 {
-                    if ( pSource_local.isNull() ||
-                         pSource_local == pTarget_local )
+                    if (   pSource_local.isNull()
+                        || pSource_local == pTarget_local)
                     {
                         ++it_md;
                         continue;

@@ -1676,7 +1676,7 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             break;
         }
         rc = writeFSImpl(pTask, writeLock, pShaIo, &storage);
-    }while(0);
+    } while (0);
 
     /* Cleanup */
     if (pShaIo)
@@ -1730,7 +1730,7 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             break;
         }
         rc = writeFSImpl(pTask, writeLock, pShaIo, &storage);
-    }while(0);
+    } while (0);
 
     RTTarClose(tar);
 
@@ -1741,7 +1741,7 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         RTMemFree(pTarIo);
 
     /* Delete ova file on error */
-    if(FAILED(rc))
+    if (FAILED(rc))
         RTFileDelete(pTask->locInfo.strPath.c_str());
 
     LogFlowFuncLeave();

@@ -1282,7 +1282,7 @@ hotplugInotifyImpl::hotplugInotifyImpl(const char *pcszDevicesRoot) :
             break;
         if (RT_FAILURE(rc = pipeCreateSimple(&mhWakeupPipeR, &mhWakeupPipeW)))
             break;
-    } while(0);
+    } while (0);
     mStatus = rc;
     if (RT_FAILURE(rc))
         term();

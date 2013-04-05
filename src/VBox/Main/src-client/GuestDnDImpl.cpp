@@ -440,7 +440,7 @@ void GuestDnDPrivate::toFormatSafeArray(const RTCString &strFormats, ComSafeArra
 {
     RTCList<RTCString> list = strFormats.split("\r\n");
     size_t i = 0;
-    while(i < list.size())
+    while (i < list.size())
     {
         /* Only keep allowed format types. */
         if (!m_sstrAllowedMimeTypes.contains(list.at(i)))

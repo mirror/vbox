@@ -851,7 +851,7 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
                 //read the manifest file and find a type of used digest
                 RTFILE pFile = NULL;
                 vrc = RTFileOpen(&pFile, strMfFile.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
-                if(RT_SUCCESS(vrc) && pFile != NULL)
+                if (RT_SUCCESS(vrc) && pFile != NULL)
                 {
                     uint64_t cbFile = 0;
                     uint64_t maxFileSize = _1M;
@@ -931,7 +931,7 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
             rc = rc2;
         }
 
-    }while(0);
+    }while (0);
 
     /* Cleanup */
     if (pShaIo)
@@ -1067,7 +1067,7 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
                 if (FAILED(rc))
                     break;
 
-            }while(0);
+            } while (0);
 
             RTTarClose(tar);
         }
