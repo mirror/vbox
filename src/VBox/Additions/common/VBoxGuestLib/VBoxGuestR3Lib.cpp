@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2012 Oracle Corporation
+ * Copyright (C) 2007-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -382,9 +382,8 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     return rc;
 
 #elif defined(RT_OS_HAIKU)
-	/* The ioctl hook in Haiku does take the len parameter when specified,
-	 * so just use it.
-	 */
+    /* The ioctl hook in Haiku does take the len parameter when specified,
+     * so just use it. */
     int rc = ioctl((int)g_File, iFunction, pvData, cbData);
     if (RT_LIKELY(rc == 0))
         return VINF_SUCCESS;

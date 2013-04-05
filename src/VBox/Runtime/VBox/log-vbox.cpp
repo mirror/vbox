@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -374,7 +374,7 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
         team_info info;
         if (get_team_info(0, &info) == B_OK)
         {
-        	/* there is an info.argc, but no way to know arg boundaries */
+            /* there is an info.argc, but no way to know arg boundaries */
             RTLogLoggerEx(pLogger, 0, ~0U, "Commandline: %.64s\n", info.args);
         }
 

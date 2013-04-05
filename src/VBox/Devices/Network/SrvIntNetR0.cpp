@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -4997,11 +4997,11 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
         case kIntNetTrunkType_None:
         case kIntNetTrunkType_WhateverNone:
 #ifdef VBOX_WITH_NAT_SERVICE
-	    /* 
-	     * Well, here we don't want load anything special,
-	     * just communicate between processes via internal network. 
-	     */
-	case kIntNetTrunkType_SrvNat:
+            /* 
+             * Well, here we don't want load anything special,
+             * just communicate between processes via internal network. 
+             */
+        case kIntNetTrunkType_SrvNat:
 #endif
             return VINF_SUCCESS;
 
@@ -5023,8 +5023,8 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
 #endif /* VBOXNETADP_DO_NOT_USE_NETFLT */
             break;
 #ifndef VBOX_WITH_NAT_SERVICE   
-	case kIntNetTrunkType_SrvNat:
-	    pszName = "VBoxSrvNat";
+        case kIntNetTrunkType_SrvNat:
+            pszName = "VBoxSrvNat";
             break;
 #endif
     }
@@ -5487,10 +5487,10 @@ static int intnetR0OpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
             int rc;
             if (   enmTrunkType == kIntNetTrunkType_WhateverNone
 #ifdef VBOX_WITH_NAT_SERVICE
-		|| enmTrunkType == kIntNetTrunkType_SrvNat /* @todo: what does it mean */
+                || enmTrunkType == kIntNetTrunkType_SrvNat /* @todo: what does it mean */
 #endif
                 || (   pCur->enmTrunkType == enmTrunkType
-		    && !strcmp(pCur->szTrunk, pszTrunk)))
+                    && !strcmp(pCur->szTrunk, pszTrunk)))
             {
                 rc = intnetR0CheckOpenNetworkFlags(pCur, fFlags);
                 if (RT_SUCCESS(rc))
@@ -5587,7 +5587,7 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
                        | INTNET_OPEN_FLAGS_TRUNK_WIRE_CHASTE_MODE;
     if (   enmTrunkType == kIntNetTrunkType_WhateverNone
 #ifdef VBOX_WITH_NAT_SERVICE
-	|| enmTrunkType == kIntNetTrunkType_SrvNat /* simialar security */
+        || enmTrunkType == kIntNetTrunkType_SrvNat /* simialar security */
 #endif
         || enmTrunkType == kIntNetTrunkType_None)
         fDefFlags |= INTNET_OPEN_FLAGS_ACCESS_RESTRICTED;
@@ -5755,7 +5755,7 @@ INTNETR0DECL(int) IntNetR0Open(PSUPDRVSESSION pSession, const char *pszNetwork,
         case kIntNetTrunkType_None:
         case kIntNetTrunkType_WhateverNone:
 #ifdef VBOX_WITH_NAT_SERVICE
-	case kIntNetTrunkType_SrvNat:
+        case kIntNetTrunkType_SrvNat:
 #endif
             if (*pszTrunk)
                 return VERR_INVALID_PARAMETER;

@@ -930,7 +930,7 @@ static DECLCALLBACK(int) drvvdINIPGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAdd
             memcpy(&pAddr->uAddr.IPv6, &u.Ipv6.sin6_addr, sizeof(RTNETADDRIPV6));
         }
 #endif
-	else
+        else
             return VERR_NET_ADDRESS_FAMILY_NOT_SUPPORTED;
         return VINF_SUCCESS;
     }
@@ -958,7 +958,7 @@ static DECLCALLBACK(int) drvvdINIPGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr
             pAddr->uAddr.IPv4.u = u.Ipv4.sin_addr.s_addr;
         }
 #ifdef VBOX_WITH_NEW_LWIP
-	else if (   cbAddr == sizeof(struct sockaddr_in6)
+        else if (   cbAddr == sizeof(struct sockaddr_in6)
                  && u.Addr.sa_family == AF_INET6)
         {
             RT_ZERO(*pAddr);

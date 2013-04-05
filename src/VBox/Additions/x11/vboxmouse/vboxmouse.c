@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -116,7 +116,7 @@ VBoxInit(DeviceIntPtr device)
 
 #elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 3
                                  VBoxPtrCtrlProc, GetMotionHistorySize(),
-								 2 /* Number of axes */
+                                 2 /* Number of axes */
 #else
 # error Unsupported version of X.Org
 #endif

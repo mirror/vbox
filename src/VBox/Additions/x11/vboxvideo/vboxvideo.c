@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -156,12 +156,12 @@ static const struct pci_id_match vbox_device_match[] = {
 static SymTabRec VBOXChipsets[] =
 {
     {VBOX_DEVICEID, "vbox"},
-    {-1,	 NULL}
+    {-1,            NULL}
 };
 
 static PciChipsets VBOXPCIchipsets[] = {
   { VBOX_DEVICEID, VBOX_DEVICEID, RES_SHARED_VGA },
-  { -1,		-1,		    RES_UNDEFINED },
+  { -1,            -1,            RES_UNDEFINED },
 };
 
 /*
@@ -198,7 +198,7 @@ DriverRec VBOXVIDEO = {
 
 /* No options for now */
 static const OptionInfoRec VBOXOptions[] = {
-    { -1,		NULL,		OPTV_NONE,	{0},	FALSE }
+    { -1, NULL, OPTV_NONE, {0}, FALSE }
 };
 
 #ifndef XORG_7X
@@ -390,7 +390,7 @@ vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
     TRACE_LOG("HDisplay=%d, VDisplay=%d\n", mode->HDisplay, mode->VDisplay);
     /* We always like modes specified by the user in the configuration
      * file and modes requested by the host, as doing otherwise is likely to
-	 * annoy people. */
+     * annoy people. */
     if (   !(mode->type & M_T_USERDEF)
         && !(mode->type & M_T_PREFERRED)
         && vbox_device_available(VBOXGetRec(pScrn))
@@ -575,7 +575,7 @@ static XF86ModuleVersionInfo vboxVersionRec =
     1,                          /* Module major version. Xorg-specific */
     0,                          /* Module minor version. Xorg-specific */
     1,                          /* Module patchlevel. Xorg-specific */
-    ABI_CLASS_VIDEODRV,	        /* This is a video driver */
+    ABI_CLASS_VIDEODRV,         /* This is a video driver */
     ABI_VIDEODRV_VERSION,
     MOD_CLASS_VIDEODRV,
     {0, 0, 0, 0}
@@ -1130,7 +1130,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
 
     /* colourmap code */
     if (!miCreateDefColormap(pScreen))
-	return (FALSE);
+        return (FALSE);
 
     if(!xf86HandleColormaps(pScreen, 256, 8, vboxLoadPalette, NULL, 0))
         return (FALSE);
