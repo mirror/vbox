@@ -87,29 +87,6 @@
     </widget>
    </item>
    <item row="4" column="0">
-    <widget class="QWidget" name="m_pSpacerWidget1">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="minimumWidth">
-      <number>34</number>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1" colspan="2">
-    <widget class="QCheckBox" name="m_pEnableTrayIconCheckbox">
-     <property name="whatsThis">
-      <string>When checked, the application will provide an icon with the context menu in the system tray.</string>
-     </property>
-     <property name="text">
-      <string>&amp;Show System Tray Icon</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="0">
     <widget class="QWidget" name="m_pSpacerWidget2">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
@@ -122,14 +99,14 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="1" colspan="2">
+   <item row="4" column="1" colspan="2">
     <widget class="QCheckBox" name="m_pEnablePresentationModeCheckbox">
      <property name="text">
       <string>&amp;Auto show Dock and Menubar in fullscreen</string>
      </property>
     </widget>
    </item>
-   <item row="6" column="0">
+   <item row="5" column="0">
     <widget class="QWidget" name="m_pSpacerWidget3">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
@@ -142,7 +119,7 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="1" colspan="2">
+   <item row="5" column="1" colspan="2">
     <widget class="QCheckBox" name="m_pDisableHostScreenSaverCheckbox">
      <property name="whatsThis">
       <string>When checked, the host screen saver will be disabled whenever a virtual machine is running.</string>
@@ -152,7 +129,7 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0" colspan="3">
+   <item row="6" column="0" colspan="3">
     <spacer>
      <property name="orientation">
       <enum>Qt::Vertical</enum>

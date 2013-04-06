@@ -44,7 +44,6 @@ private:
     QString maxGuestRes;
     QString remapScancodes;
     QString proxySettings;
-    bool trayIconEnabled;
     bool presentationModeEnabled;
     bool hostScreenSaverDisabled;
 
@@ -63,7 +62,6 @@ class VBoxGlobalSettings : public QObject, public CIShared <VBoxGlobalSettingsDa
     Q_PROPERTY (QString maxGuestRes READ maxGuestRes WRITE setMaxGuestRes)
     Q_PROPERTY (QString remapScancodes READ remapScancodes WRITE setRemapScancodes)
     Q_PROPERTY (QString proxySettings READ proxySettings WRITE setProxySettings)
-    Q_PROPERTY (bool trayIconEnabled READ trayIconEnabled WRITE setTrayIconEnabled)
     Q_PROPERTY (bool presentationModeEnabled READ presentationModeEnabled WRITE setPresentationModeEnabled)
     Q_PROPERTY (bool hostScreenSaverDisabled READ hostScreenSaverDisabled WRITE setHostScreenSaverDisabled)
 
@@ -119,12 +117,6 @@ public:
     void setProxySettings (const QString &aProxySettings)
     {
         mData()->proxySettings = aProxySettings;
-    }
-
-    bool trayIconEnabled() const { return data()->trayIconEnabled; }
-    void setTrayIconEnabled (bool enabled)
-    {
-        mData()->trayIconEnabled = enabled;
     }
 
     bool presentationModeEnabled() const { return data()->presentationModeEnabled; }

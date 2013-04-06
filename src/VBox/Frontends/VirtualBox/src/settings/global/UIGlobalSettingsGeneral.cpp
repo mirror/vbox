@@ -40,8 +40,7 @@ UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
 //#endif /* !Q_WS_WIN */
 
     /* If all checkboxes hidden, hide separator too: */
-    if (m_pEnableTrayIconCheckbox->isHidden() &&
-        m_pEnablePresentationModeCheckbox->isHidden() &&
+    if (m_pEnablePresentationModeCheckbox->isHidden() &&
         m_pDisableHostScreenSaverCheckbox->isHidden())
         m_pLineSeparator2->hide();
 
@@ -64,7 +63,6 @@ void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
     /* Load to cache: */
     m_cache.m_strDefaultMachineFolder = m_properties.GetDefaultMachineFolder();
     m_cache.m_strVRDEAuthLibrary = m_properties.GetVRDEAuthLibrary();
-    m_cache.m_fTrayIconEnabled = m_settings.trayIconEnabled();
 #ifdef Q_WS_MAC
     m_cache.m_fPresentationModeEnabled = m_settings.presentationModeEnabled();
 #endif /* Q_WS_MAC */
@@ -81,7 +79,6 @@ void UIGlobalSettingsGeneral::getFromCache()
     /* Fetch from cache: */
     m_pMachineFolderSelector->setPath(m_cache.m_strDefaultMachineFolder);
     m_pVRDPLibNameSelector->setPath(m_cache.m_strVRDEAuthLibrary);
-    m_pEnableTrayIconCheckbox->setChecked(m_cache.m_fTrayIconEnabled);
 #ifdef Q_WS_MAC
     m_pEnablePresentationModeCheckbox->setChecked(m_cache.m_fPresentationModeEnabled);
 #endif /* Q_WS_MAC */
@@ -95,7 +92,6 @@ void UIGlobalSettingsGeneral::putToCache()
     /* Upload to cache: */
     m_cache.m_strDefaultMachineFolder = m_pMachineFolderSelector->path();
     m_cache.m_strVRDEAuthLibrary = m_pVRDPLibNameSelector->path();
-    m_cache.m_fTrayIconEnabled = m_pEnableTrayIconCheckbox->isChecked();
 #ifdef Q_WS_MAC
     m_cache.m_fPresentationModeEnabled = m_pEnablePresentationModeCheckbox->isChecked();
 #endif /* Q_WS_MAC */
@@ -114,7 +110,6 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
         m_properties.SetDefaultMachineFolder(m_cache.m_strDefaultMachineFolder);
     if (m_properties.isOk() && m_pVRDPLibNameSelector->isModified())
         m_properties.SetVRDEAuthLibrary(m_cache.m_strVRDEAuthLibrary);
-    m_settings.setTrayIconEnabled(m_cache.m_fTrayIconEnabled);
 #ifdef Q_WS_MAC
     m_settings.setPresentationModeEnabled(m_cache.m_fPresentationModeEnabled);
 #endif /* Q_WS_MAC */
@@ -129,8 +124,7 @@ void UIGlobalSettingsGeneral::setOrderAfter(QWidget *pWidget)
 {
     setTabOrder(pWidget, m_pMachineFolderSelector);
     setTabOrder(m_pMachineFolderSelector, m_pVRDPLibNameSelector);
-    setTabOrder(m_pVRDPLibNameSelector, m_pEnableTrayIconCheckbox);
-    setTabOrder(m_pEnableTrayIconCheckbox, m_pEnablePresentationModeCheckbox);
+    setTabOrder(m_pVRDPLibNameSelector, m_pEnablePresentationModeCheckbox);
     setTabOrder(m_pEnablePresentationModeCheckbox, m_pDisableHostScreenSaverCheckbox);
 }
 
