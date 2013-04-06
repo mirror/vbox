@@ -28,7 +28,6 @@ struct UISettingsCacheGlobalGeneral
 {
     QString m_strDefaultMachineFolder;
     QString m_strVRDEAuthLibrary;
-    bool m_fTrayIconEnabled;
 #ifdef Q_WS_MAC
     bool m_fPresentationModeEnabled;
 #endif /* Q_WS_MAC */
