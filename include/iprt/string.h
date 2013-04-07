@@ -166,7 +166,7 @@ RT_C_DECLS_BEGIN
 #define RTSTR_MAX       (~(size_t)0)
 
 
-/** @def RTMEM_TAG
+/** @def RTSTR_TAG
  * The default allocation tag used by the RTStr allocation APIs.
  *
  * When not defined before the inclusion of iprt/string.h, this will default to
