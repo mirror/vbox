@@ -54,7 +54,7 @@ DECLHIDDEN(size_t) rtPathRootSpecLen(const char *pszPath)
     size_t off = 0;
     if (RTPATH_IS_SLASH(pszPath[0]))
     {
-#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
         if (   RTPATH_IS_SLASH(pszPath[1])
             && !RTPATH_IS_SLASH(pszPath[2])
             && pszPath[2])
@@ -78,7 +78,7 @@ DECLHIDDEN(size_t) rtPathRootSpecLen(const char *pszPath)
         while (RTPATH_IS_SLASH(pszPath[off]))
             off++;
     }
-#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
     else if (RT_C_IS_ALPHA(pszPath[0]) && pszPath[1] == ':')
     {
         off = 2;

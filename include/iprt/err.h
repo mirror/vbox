@@ -654,6 +654,8 @@ RT_C_DECLS_END
 #define VERR_VERSION_MISMATCH               (-11)
 /** The request function is not implemented. */
 #define VERR_NOT_IMPLEMENTED                (-12)
+/** Invalid flags was given. */
+#define VERR_INVALID_FLAGS                  (-13)
 
 /** Not equal. */
 #define VERR_NOT_EQUAL                      (-18)
@@ -978,6 +980,8 @@ RT_C_DECLS_END
 #define VERR_PATH_IS_RELATIVE               (-143)
 /** A path is not relative (start with root), expected an relative path. */
 #define VERR_PATH_IS_NOT_RELATIVE           (-144)
+/** Zero length path. */
+#define VERR_PATH_ZERO_LENGTH               (-145)
 /** @} */
 
 
