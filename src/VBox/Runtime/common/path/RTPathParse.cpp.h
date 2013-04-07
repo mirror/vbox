@@ -192,7 +192,10 @@ static int RTPATH_STYLE_FN(rtPathParse)(const char *pszPath, PRTPATHPARSED pPars
                 if (ch)
                 {
                     if (!(fFlags & RTPATH_STR_F_NO_END))
-                        fProps |= RTPATH_PROP_DIR_SLASH; /* (not counted) */
+                    {
+                        fProps |= RTPATH_PROP_DIR_SLASH; /* (not counted in component, but in cchPath) */
+                        cchPath++;
+                    }
                     else
                         fProps |= RTPATH_PROP_EXTRA_SLASHES;
                 }

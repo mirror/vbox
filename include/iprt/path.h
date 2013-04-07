@@ -49,6 +49,17 @@ RT_C_DECLS_BEGIN
 # define RTPATH_MAX         (4096 + 4)    /* (PATH_MAX + 1) on linux w/ some alignment */
 #endif
 
+/** @def RTPATH_TAG
+ * The default allocation tag used by the RTPath allocation APIs.
+ *
+ * When not defined before the inclusion of iprt/string.h, this will default to
+ * the pointer to the current file name.  The string API will make of use of
+ * this as pointer to a volatile but read-only string.
+ */
+#ifndef RTPATH_TAG
+# define RTPATH_TAG     (__FILE__)
+#endif
+
 
 /** @name RTPATH_F_XXX - Generic flags for APIs working on the file system.
  * @{ */
@@ -451,7 +462,8 @@ RTDECL(int) RTPathCopyComponents(char *pszDst, size_t cbDst, const char *pszSrc,
 /** Indicates that a directory was specified using a trailing slash.
  * @note This is not set for lone root specifications (RTPATH_PROP_UNC,
  *       RTPATH_PROP_ROOT_SLASH, or RTPATH_PROP_VOLUME).
- * @note The slash is not counted into the last component.  */
+ * @note The slash is not counted into the last component. However, it is
+ *       counted into cchPath. */
 #define RTPATH_PROP_DIR_SLASH       UINT16_C(0x0002)
 
 /** The filename has a suffix (extension). */
@@ -518,12 +530,12 @@ RTDECL(int) RTPathCopyComponents(char *pszDst, size_t cbDst, const char *pszSrc,
  * joining it with something else.
  * (All other components in a split or parsed path requies slashes added.) */
 #define RTPATH_PROP_FIRST_NEEDS_NO_SLASH(a_fProps) \
-    ( (a_fProps) & (RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_VOLUME | RTPATH_PROP_UNC) )
+    RT_BOOL( (a_fProps) & (RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_VOLUME | RTPATH_PROP_UNC) )
 
 /** Macro to determin whether there is a root specification of any kind
  * (unix, volumes, unc). */
 #define RTPATH_PROP_HAS_ROOT_SPEC(a_fProps) \
-    ( (a_fProps) & (RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_VOLUME | RTPATH_PROP_UNC) )
+    RT_BOOL( (a_fProps) & (RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_VOLUME | RTPATH_PROP_UNC) )
 
 /** @} */
 
@@ -614,7 +626,7 @@ typedef struct RTPATHSPLIT
     /** On success this is the length of the described path, i.e. sum of all
      * component lengths and necessary separators.
      * Do NOT use this to index in the source path in case it contains
-     * unnecessary slashes that RTPathParsed has ignored here. */
+     * unnecessary slashes that RTPathSplit has ignored here. */
     uint16_t    cchPath;
     /** Reserved (internal use).  */
     uint16_t    u16Reserved;
@@ -655,10 +667,12 @@ typedef RTPATHSPLIT const *PCRTPATHSPLIT;
  * @param   cbSplit             The size of the buffer pointed to by @a pSplit
  *                              (variable sized array at the end).  Must be at
  *                              least the size of RTPATHSPLIT.
+ * @param   fFlags              Combination of RTPATH_STR_F_XXX flags.
+ *                              Most users will pass 0.
  *
  * @sa      RTPathSplitA, RTPathParse.
  */
-RTDECL(int) RTPathSplit(const char *pszPath, PRTPATHSPLIT pSplit, size_t cbSplit);
+RTDECL(int) RTPathSplit(const char *pszPath, PRTPATHSPLIT pSplit, size_t cbSplit, uint32_t fFlags);
 
 /**
  * Splits the path into individual component strings, allocating the buffer on
@@ -672,9 +686,30 @@ RTDECL(int) RTPathSplit(const char *pszPath, PRTPATHSPLIT pSplit, size_t cbSplit
  * @param   ppSplit             Where to return the pointer to the output on
  *                              success.  This must be freed by calling
  *                              RTPathSplitFree().
+ * @param   fFlags              Combination of RTPATH_STR_F_XXX flags.
+ *                              Most users will pass 0.
  * @sa      RTPathSplitFree, RTPathSplit, RTPathParse.
  */
-RTDECL(int) RTPathSplitA(const char *pszPath, PRTPATHSPLIT *ppSplit);
+#define  RTPathSplitA(pszPath, ppSplit, fFlags)     RTPathSplitATag(pszPath, ppSplit, fFlags, RTPATH_TAG)
+
+/**
+ * Splits the path into individual component strings, allocating the buffer on
+ * the default thread heap.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_POINTER if pParsed or pszPath is an invalid pointer.
+ * @retval  VERR_PATH_ZERO_LENGTH if the path is empty.
+ *
+ * @param   pszPath             The path to parse.
+ * @param   ppSplit             Where to return the pointer to the output on
+ *                              success.  This must be freed by calling
+ *                              RTPathSplitFree().
+ * @param   fFlags              Combination of RTPATH_STR_F_XXX flags.
+ *                              Most users will pass 0.
+ * @param   pszTag              Allocation tag used for statistics and such.
+ * @sa      RTPathSplitFree, RTPathSplit, RTPathParse.
+ */
+RTDECL(int) RTPathSplitATag(const char *pszPath, PRTPATHSPLIT *ppSplit, uint32_t fFlags, const char *pszTag);
 
 /**
  * Frees buffer returned by RTPathSplitA.
