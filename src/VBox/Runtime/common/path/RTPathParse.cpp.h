@@ -47,7 +47,7 @@ static int RTPATH_STYLE_FN(rtPathParse)(const char *pszPath, PRTPATHPARSED pPars
 
     if (RTPATH_IS_SLASH(pszPath[0]))
     {
-        if (fFlags & RTPATHPARSE_FLAGS_NO_START)
+        if (fFlags & RTPATH_STR_F_NO_START)
         {
             offCur = 1;
             while (RTPATH_IS_SLASH(pszPath[offCur]))
@@ -57,7 +57,7 @@ static int RTPATH_STYLE_FN(rtPathParse)(const char *pszPath, PRTPATHPARSED pPars
             fProps = RTPATH_PROP_RELATIVE | RTPATH_PROP_EXTRA_SLASHES;
             cchPath = 0;
         }
-#ifdef RTPATH_STYLE_DOS
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
         else if (   RTPATH_IS_SLASH(pszPath[1])
                  && !RTPATH_IS_SLASH(pszPath[2])
                  && pszPath[2])
@@ -83,7 +83,7 @@ static int RTPATH_STYLE_FN(rtPathParse)(const char *pszPath, PRTPATHPARSED pPars
 #endif
         else
         {
-#ifdef RTPATH_STYLE_DOS
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
             fProps = RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_RELATIVE;
 #else
             fProps = RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE;
@@ -91,7 +91,7 @@ static int RTPATH_STYLE_FN(rtPathParse)(const char *pszPath, PRTPATHPARSED pPars
             offCur = 1;
         }
     }
-#ifdef RTPATH_STYLE_DOS
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
     else if (RT_C_IS_ALPHA(pszPath[0]) && pszPath[1] == ':')
     {
         if (!RTPATH_IS_SLASH(pszPath[2]))
@@ -114,7 +114,7 @@ static int RTPATH_STYLE_FN(rtPathParse)(const char *pszPath, PRTPATHPARSED pPars
     }
 
     /*  Add it to the component array . */
-    if (offCur && !(fFlags & RTPATHPARSE_FLAGS_NO_START))
+    if (offCur && !(fFlags & RTPATH_STR_F_NO_START))
     {
         cchPath = offCur;
         if (idxComp < cMaxComps)
@@ -191,12 +191,12 @@ static int RTPATH_STYLE_FN(rtPathParse)(const char *pszPath, PRTPATHPARSED pPars
                 pParsed->cchSuffix = 0;
                 if (ch)
                 {
-                    if (!(fFlags & RTPATHPARSE_FLAGS_NO_END))
+                    if (!(fFlags & RTPATH_STR_F_NO_END))
                         fProps |= RTPATH_PROP_DIR_SLASH; /* (not counted) */
                     else
                         fProps |= RTPATH_PROP_EXTRA_SLASHES;
                 }
-                else if (!(fFlags & RTPATHPARSE_FLAGS_NO_END))
+                else if (!(fFlags & RTPATH_STR_F_NO_END))
                 {
                     fProps |= RTPATH_PROP_FILENAME;
 

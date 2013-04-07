@@ -52,39 +52,39 @@ static void testParser(RTTEST hTest)
         uint32_t    fFlags;
     } const s_aTests[] =
     {
-        { 2, 13,  9,  "C:/Config.sys",    RTPATH_PROP_VOLUME | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX,       RTPATHPARSE_FLAGS_STYLE_DOS },
-        { 2, 13, 10,  "C://Config.sys",   RTPATH_PROP_VOLUME | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX | RTPATH_PROP_EXTRA_SLASHES, RTPATHPARSE_FLAGS_STYLE_DOS },
-        { 2, 12,  8,  "C:Config.sys",     RTPATH_PROP_VOLUME | RTPATH_PROP_RELATIVE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX,                                RTPATHPARSE_FLAGS_STYLE_DOS },
-        { 1, 10,  6,  "Config.sys",       RTPATH_PROP_RELATIVE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX,                                                     RTPATHPARSE_FLAGS_STYLE_DOS },
-        { 1,  4,  4,  "//./",             RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE,                                                      RTPATHPARSE_FLAGS_STYLE_DOS },
-        { 2,  5,  5,  "//./f",            RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                               RTPATHPARSE_FLAGS_STYLE_DOS },
-        { 2,  5,  6,  "//.//f",           RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_EXTRA_SLASHES,   RTPATHPARSE_FLAGS_STYLE_DOS },
-        { 3,  7,  7,  "//././f",          RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_DOT_REFS,        RTPATHPARSE_FLAGS_STYLE_DOS },
-        { 3,  8,  8,  "//.././f",         RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_DOT_REFS,        RTPATHPARSE_FLAGS_STYLE_DOS },
-        { 3,  9,  9,  "//../../f",        RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_RELATIVE | RTPATH_PROP_FILENAME | RTPATH_PROP_DOTDOT_REFS,     RTPATHPARSE_FLAGS_STYLE_DOS },
-        { 1,  1,  1,  "/",                RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE,                                                                        RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 2,  4,  4,  "/bin",             RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 2,  4,  5,  "/bin/",            RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_DIR_SLASH,                                                RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 3,  7,  7,  "/bin/ls",          RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 3,  12, 7,  "/etc/rc.conf",     RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX,                            RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 1,  1,  2,  "//",               RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_EXTRA_SLASHES,                                            RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 1,  1,  3,  "///",              RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_EXTRA_SLASHES,                                            RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 3,  6,  7,  "/.//bin",          RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_EXTRA_SLASHES | RTPATH_PROP_DOT_REFS | RTPATH_PROP_FILENAME, RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 1,  3,  3,  "bin",              RTPATH_PROP_RELATIVE | RTPATH_PROP_FILENAME,                                                                          RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 1,  3,  4,  "bin/",             RTPATH_PROP_RELATIVE | RTPATH_PROP_DIR_SLASH,                                                                         RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 1,  3,  7,  "bin////",          RTPATH_PROP_RELATIVE | RTPATH_PROP_DIR_SLASH | RTPATH_PROP_EXTRA_SLASHES,                                             RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 3, 10, 10,  "bin/../usr",       RTPATH_PROP_RELATIVE | RTPATH_PROP_DOTDOT_REFS | RTPATH_PROP_FILENAME,                                                RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 4, 11, 11,  "/bin/../usr",      RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_RELATIVE | RTPATH_PROP_DOTDOT_REFS | RTPATH_PROP_FILENAME,                       RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 4,  8,  8,  "/a/.../u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 4,  8,  8,  "/a/.b./u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 4,  8,  8,  "/a/..c/u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 4,  8,  8,  "/a/d../u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 4,  8,  8,  "/a/.e/.u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 4,  8,  8,  "/a/.f/.u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 4,  8,  8,  "/a/.g/u.",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATHPARSE_FLAGS_STYLE_UNIX },
-        { 3,  9, 10,  "/a/h/u.ext",       RTPATH_PROP_EXTRA_SLASHES | RTPATH_PROP_RELATIVE,                                                                     RTPATHPARSE_FLAGS_STYLE_UNIX | RTPATHPARSE_FLAGS_MIDDLE },
-        { 3,  9,  9,  "a/h/u.ext",        RTPATH_PROP_RELATIVE,                                                                                                 RTPATHPARSE_FLAGS_STYLE_UNIX | RTPATHPARSE_FLAGS_MIDDLE },
-        { 3,  9, 10,  "a/h/u.ext/",       RTPATH_PROP_EXTRA_SLASHES | RTPATH_PROP_RELATIVE,                                                                     RTPATHPARSE_FLAGS_STYLE_UNIX | RTPATHPARSE_FLAGS_MIDDLE },
+        { 2, 13,  9,  "C:/Config.sys",    RTPATH_PROP_VOLUME | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX,       RTPATH_STR_F_STYLE_DOS },
+        { 2, 13, 10,  "C://Config.sys",   RTPATH_PROP_VOLUME | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX | RTPATH_PROP_EXTRA_SLASHES, RTPATH_STR_F_STYLE_DOS },
+        { 2, 12,  8,  "C:Config.sys",     RTPATH_PROP_VOLUME | RTPATH_PROP_RELATIVE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX,                                RTPATH_STR_F_STYLE_DOS },
+        { 1, 10,  6,  "Config.sys",       RTPATH_PROP_RELATIVE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX,                                                     RTPATH_STR_F_STYLE_DOS },
+        { 1,  4,  4,  "//./",             RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE,                                                      RTPATH_STR_F_STYLE_DOS },
+        { 2,  5,  5,  "//./f",            RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                               RTPATH_STR_F_STYLE_DOS },
+        { 2,  5,  6,  "//.//f",           RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_EXTRA_SLASHES,   RTPATH_STR_F_STYLE_DOS },
+        { 3,  7,  7,  "//././f",          RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_DOT_REFS,        RTPATH_STR_F_STYLE_DOS },
+        { 3,  8,  8,  "//.././f",         RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_DOT_REFS,        RTPATH_STR_F_STYLE_DOS },
+        { 3,  9,  9,  "//../../f",        RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_RELATIVE | RTPATH_PROP_FILENAME | RTPATH_PROP_DOTDOT_REFS,     RTPATH_STR_F_STYLE_DOS },
+        { 1,  1,  1,  "/",                RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE,                                                                        RTPATH_STR_F_STYLE_UNIX },
+        { 2,  4,  4,  "/bin",             RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATH_STR_F_STYLE_UNIX },
+        { 2,  4,  5,  "/bin/",            RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_DIR_SLASH,                                                RTPATH_STR_F_STYLE_UNIX },
+        { 3,  7,  7,  "/bin/ls",          RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATH_STR_F_STYLE_UNIX },
+        { 3,  12, 7,  "/etc/rc.conf",     RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX,                            RTPATH_STR_F_STYLE_UNIX },
+        { 1,  1,  2,  "//",               RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_EXTRA_SLASHES,                                            RTPATH_STR_F_STYLE_UNIX },
+        { 1,  1,  3,  "///",              RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_EXTRA_SLASHES,                                            RTPATH_STR_F_STYLE_UNIX },
+        { 3,  6,  7,  "/.//bin",          RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_EXTRA_SLASHES | RTPATH_PROP_DOT_REFS | RTPATH_PROP_FILENAME, RTPATH_STR_F_STYLE_UNIX },
+        { 1,  3,  3,  "bin",              RTPATH_PROP_RELATIVE | RTPATH_PROP_FILENAME,                                                                          RTPATH_STR_F_STYLE_UNIX },
+        { 1,  3,  4,  "bin/",             RTPATH_PROP_RELATIVE | RTPATH_PROP_DIR_SLASH,                                                                         RTPATH_STR_F_STYLE_UNIX },
+        { 1,  3,  7,  "bin////",          RTPATH_PROP_RELATIVE | RTPATH_PROP_DIR_SLASH | RTPATH_PROP_EXTRA_SLASHES,                                             RTPATH_STR_F_STYLE_UNIX },
+        { 3, 10, 10,  "bin/../usr",       RTPATH_PROP_RELATIVE | RTPATH_PROP_DOTDOT_REFS | RTPATH_PROP_FILENAME,                                                RTPATH_STR_F_STYLE_UNIX },
+        { 4, 11, 11,  "/bin/../usr",      RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_RELATIVE | RTPATH_PROP_DOTDOT_REFS | RTPATH_PROP_FILENAME,                       RTPATH_STR_F_STYLE_UNIX },
+        { 4,  8,  8,  "/a/.../u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATH_STR_F_STYLE_UNIX },
+        { 4,  8,  8,  "/a/.b./u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATH_STR_F_STYLE_UNIX },
+        { 4,  8,  8,  "/a/..c/u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATH_STR_F_STYLE_UNIX },
+        { 4,  8,  8,  "/a/d../u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATH_STR_F_STYLE_UNIX },
+        { 4,  8,  8,  "/a/.e/.u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATH_STR_F_STYLE_UNIX },
+        { 4,  8,  8,  "/a/.f/.u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATH_STR_F_STYLE_UNIX },
+        { 4,  8,  8,  "/a/.g/u.",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATH_STR_F_STYLE_UNIX },
+        { 3,  9, 10,  "/a/h/u.ext",       RTPATH_PROP_EXTRA_SLASHES | RTPATH_PROP_RELATIVE,                                                                     RTPATH_STR_F_STYLE_UNIX | RTPATH_STR_F_MIDDLE },
+        { 3,  9,  9,  "a/h/u.ext",        RTPATH_PROP_RELATIVE,                                                                                                 RTPATH_STR_F_STYLE_UNIX | RTPATH_STR_F_MIDDLE },
+        { 3,  9, 10,  "a/h/u.ext/",       RTPATH_PROP_EXTRA_SLASHES | RTPATH_PROP_RELATIVE,                                                                     RTPATH_STR_F_STYLE_UNIX | RTPATH_STR_F_MIDDLE },
     };
 
     union
@@ -130,6 +130,32 @@ int main()
     if (rc)
         return rc;
     RTTestBanner(hTest);
+
+    RTTestSub(hTest, "Environment");
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+    RTTESTI_CHECK(RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS);
+# if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+# else
+    RTTestIFailed("#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS");
+# endif
+    RTTESTI_CHECK(strcmp(RTPATH_SLASH_STR, "\\") == 0);
+    RTTESTI_CHECK(RTPATH_SLASH == '\\');
+    RTTESTI_CHECK(RTPATH_IS_SEP('/'));
+    RTTESTI_CHECK(RTPATH_IS_SEP('\\'));
+    RTTESTI_CHECK(RTPATH_IS_SEP(':'));
+
+#else
+    RTTESTI_CHECK(RTPATH_STYLE == RTPATH_STR_F_STYLE_UNIX);
+# if RTPATH_STYLE == RTPATH_STR_F_STYLE_UNIX
+# else
+    RTTestIFailed("#if RTPATH_STYLE == RTPATH_STR_F_STYLE_UNIX");
+# endif
+    RTTESTI_CHECK(strcmp(RTPATH_SLASH_STR, "/") == 0);
+    RTTESTI_CHECK(RTPATH_SLASH == '/');
+    RTTESTI_CHECK(RTPATH_IS_SEP('/'));
+    RTTESTI_CHECK(!RTPATH_IS_SEP('\\'));
+    RTTESTI_CHECK(!RTPATH_IS_SEP(':'));
+#endif
 
     /*
      * RTPathExecDir, RTPathUserHome and RTProcGetExecutablePath.

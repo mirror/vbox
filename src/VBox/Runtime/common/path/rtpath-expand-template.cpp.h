@@ -25,52 +25,57 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-
-/*
- * The following should move to a helper header!
- */
 #undef  RTPATH_DELIMITER
 
-/* DOS style */
-#undef  RTPATH_STYLE_UNIX
-#undef  RTPATH_STYLE_DOS
+/*
+ * DOS style
+ */
+#undef  RTPATH_STYLE
+#undef  RTPATH_SLASH
 #undef  RTPATH_SLASH_STR
 #undef  RTPATH_IS_SLASH
 #undef  RTPATH_IS_VOLSEP
 #undef  RTPATH_STYLE_FN
 
-#define RTPATH_STYLE_DOS
+#define RTPATH_STYLE            RTPATH_STR_F_STYLE_DOS
+#define RTPATH_SLASH            '\\'
 #define RTPATH_SLASH_STR        "\\"
 #define RTPATH_IS_SLASH(a_ch)   ( (a_ch) == '\\' || (a_ch) == '/' )
 #define RTPATH_IS_VOLSEP(a_ch)  ( (a_ch) == ':' )
 #define RTPATH_STYLE_FN(a_Name) a_Name ## StyleDos
 #include RTPATH_TEMPLATE_CPP_H
 
-/* Unix style. */
-#undef  RTPATH_STYLE_UNIX
-#undef  RTPATH_STYLE_DOS
+/*
+ * Unix style.
+ */
+#undef  RTPATH_STYLE
+#undef  RTPATH_SLASH
 #undef  RTPATH_SLASH_STR
 #undef  RTPATH_IS_SLASH
 #undef  RTPATH_IS_VOLSEP
 #undef  RTPATH_STYLE_FN
 
-#define RTPATH_STYLE_UNIX
+#define RTPATH_STYLE            RTPATH_STR_F_STYLE_UNIX
+#define RTPATH_SLASH            '/'
 #define RTPATH_SLASH_STR        "/"
 #define RTPATH_IS_SLASH(a_ch)   ( (a_ch) == '/' )
 #define RTPATH_IS_VOLSEP(a_ch)  ( false )
 #define RTPATH_STYLE_FN(a_Name) a_Name ## StyleUnix
 #include RTPATH_TEMPLATE_CPP_H
 
-/* Restore original style. */
+/*
+ * Clean up and restore the host style.
+ */
 #undef RTPATH_STYLE_FN
 #if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
-# undef  RTPATH_STYLE_UNIX
-# undef  RTPATH_STYLE_DOS
+# undef  RTPATH_STYLE
 # undef  RTPATH_SLASH_STR
 # undef  RTPATH_IS_SLASH
 # undef  RTPATH_IS_VOLSEP
-# define RTPATH_SLASH_STR        "\\"
-# define RTPATH_IS_SLASH(a_ch)   ( (a_ch) == '\\' || (a_ch) == '/' )
-# define RTPATH_IS_VOLSEP(a_ch)  ( (a_ch) == ':' )
+# define RTPATH_STYLE           RTPATH_STR_F_STYLE_DOS
+# define RTPATH_SLASH           '\\'
+# define RTPATH_SLASH_STR       "\\"
+# define RTPATH_IS_SLASH(a_ch)  ( (a_ch) == '\\' || (a_ch) == '/' )
+# define RTPATH_IS_VOLSEP(a_ch) ( (a_ch) == ':' )
 #endif
 
