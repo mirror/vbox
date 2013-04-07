@@ -937,6 +937,7 @@
 # define RTPathJoin                                     RT_MANGLER(RTPathJoin)
 # define RTPathJoinA                                    RT_MANGLER(RTPathJoinA)
 # define RTPathJoinEx                                   RT_MANGLER(RTPathJoinEx)
+# define RTPathParse                                    RT_MANGLER(RTPathParse)
 # define RTPathParseSimple                              RT_MANGLER(RTPathParseSimple)
 # define RTPathQueryInfo                                RT_MANGLER(RTPathQueryInfo)
 # define RTPathQueryInfoEx                              RT_MANGLER(RTPathQueryInfoEx)
