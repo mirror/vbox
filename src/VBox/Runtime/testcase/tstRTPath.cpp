@@ -38,10 +38,8 @@
 #include <iprt/test.h>
 
 
-static void testParser(RTTEST hTest)
+static void testParserAndSplitter(RTTEST hTest)
 {
-    RTTestSub(hTest, "RTPathParse");
-
     static struct
     {
         uint16_t    cComps;
@@ -52,6 +50,7 @@ static void testParser(RTTEST hTest)
         uint32_t    fFlags;
     } const s_aTests[] =
     {
+        { 2,  5,  5,  "/bin/",            RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_DIR_SLASH,                                                RTPATH_STR_F_STYLE_UNIX },
         { 2, 13,  9,  "C:/Config.sys",    RTPATH_PROP_VOLUME | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX,       RTPATH_STR_F_STYLE_DOS },
         { 2, 13, 10,  "C://Config.sys",   RTPATH_PROP_VOLUME | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX | RTPATH_PROP_EXTRA_SLASHES, RTPATH_STR_F_STYLE_DOS },
         { 2, 12,  8,  "C:Config.sys",     RTPATH_PROP_VOLUME | RTPATH_PROP_RELATIVE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX,                                RTPATH_STR_F_STYLE_DOS },
@@ -64,15 +63,15 @@ static void testParser(RTTEST hTest)
         { 3,  9,  9,  "//../../f",        RTPATH_PROP_UNC | RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_RELATIVE | RTPATH_PROP_FILENAME | RTPATH_PROP_DOTDOT_REFS,     RTPATH_STR_F_STYLE_DOS },
         { 1,  1,  1,  "/",                RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE,                                                                        RTPATH_STR_F_STYLE_UNIX },
         { 2,  4,  4,  "/bin",             RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATH_STR_F_STYLE_UNIX },
-        { 2,  4,  5,  "/bin/",            RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_DIR_SLASH,                                                RTPATH_STR_F_STYLE_UNIX },
+        { 2,  5,  5,  "/bin/",            RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_DIR_SLASH,                                                RTPATH_STR_F_STYLE_UNIX },
         { 3,  7,  7,  "/bin/ls",          RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATH_STR_F_STYLE_UNIX },
         { 3,  12, 7,  "/etc/rc.conf",     RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME | RTPATH_PROP_SUFFIX,                            RTPATH_STR_F_STYLE_UNIX },
         { 1,  1,  2,  "//",               RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_EXTRA_SLASHES,                                            RTPATH_STR_F_STYLE_UNIX },
         { 1,  1,  3,  "///",              RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_EXTRA_SLASHES,                                            RTPATH_STR_F_STYLE_UNIX },
         { 3,  6,  7,  "/.//bin",          RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_EXTRA_SLASHES | RTPATH_PROP_DOT_REFS | RTPATH_PROP_FILENAME, RTPATH_STR_F_STYLE_UNIX },
         { 1,  3,  3,  "bin",              RTPATH_PROP_RELATIVE | RTPATH_PROP_FILENAME,                                                                          RTPATH_STR_F_STYLE_UNIX },
-        { 1,  3,  4,  "bin/",             RTPATH_PROP_RELATIVE | RTPATH_PROP_DIR_SLASH,                                                                         RTPATH_STR_F_STYLE_UNIX },
-        { 1,  3,  7,  "bin////",          RTPATH_PROP_RELATIVE | RTPATH_PROP_DIR_SLASH | RTPATH_PROP_EXTRA_SLASHES,                                             RTPATH_STR_F_STYLE_UNIX },
+        { 1,  4,  4,  "bin/",             RTPATH_PROP_RELATIVE | RTPATH_PROP_DIR_SLASH,                                                                         RTPATH_STR_F_STYLE_UNIX },
+        { 1,  4,  7,  "bin////",          RTPATH_PROP_RELATIVE | RTPATH_PROP_DIR_SLASH | RTPATH_PROP_EXTRA_SLASHES,                                             RTPATH_STR_F_STYLE_UNIX },
         { 3, 10, 10,  "bin/../usr",       RTPATH_PROP_RELATIVE | RTPATH_PROP_DOTDOT_REFS | RTPATH_PROP_FILENAME,                                                RTPATH_STR_F_STYLE_UNIX },
         { 4, 11, 11,  "/bin/../usr",      RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_RELATIVE | RTPATH_PROP_DOTDOT_REFS | RTPATH_PROP_FILENAME,                       RTPATH_STR_F_STYLE_UNIX },
         { 4,  8,  8,  "/a/.../u",         RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_ABSOLUTE | RTPATH_PROP_FILENAME,                                                 RTPATH_STR_F_STYLE_UNIX },
@@ -90,11 +89,14 @@ static void testParser(RTTEST hTest)
     union
     {
         RTPATHPARSED    Parsed;
+        RTPATHSPLIT     Split;
         uint8_t         ab[4096];
     } u;
 
+    RTTestSub(hTest, "RTPathParse");
     for (uint32_t i = 0; i < RT_ELEMENTS(s_aTests); i++)
     {
+        memset(&u, i & 1 ? 0xff : 0, sizeof(u));
         int rc = RTPathParse(s_aTests[i].pszPath, &u.Parsed, sizeof(u), s_aTests[i].fFlags);
         if (   rc != VINF_SUCCESS
             || s_aTests[i].cComps    != u.Parsed.cComps
@@ -113,6 +115,52 @@ static void testParser(RTTEST hTest)
                                  s_aTests[i].fProps,    u.Parsed.fProps, s_aTests[i].fProps ^ u.Parsed.fProps,
                                  s_aTests[i].offSuffix, u.Parsed.offSuffix,
                                  s_aTests[i].cchPath,   u.Parsed.cchPath);
+        }
+    }
+
+    RTTestSub(hTest, "RTPathSplit");
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aTests); i++)
+    {
+        memset(&u, i & 1 ? 0xff : 0, sizeof(u));
+        int rc = RTPathSplit(s_aTests[i].pszPath, &u.Split, sizeof(u), s_aTests[i].fFlags);
+        if (   rc != VINF_SUCCESS
+            || s_aTests[i].cComps    != u.Split.cComps
+            || s_aTests[i].fProps    != u.Split.fProps
+            || s_aTests[i].cchPath   != u.Split.cchPath)
+        {
+            RTTestFailed(hTest, "i=%d rc=%Rrc %s", i, rc, s_aTests[i].pszPath);
+            RTTestFailureDetails(hTest,
+                                 "  cComps    %u, got %u\n"
+                                 "  fProps    %#x, got %#x, xor=>%#x\n"
+                                 "  cchPath   %u, got %u\n"
+                                 ,
+                                 s_aTests[i].cComps,    u.Split.cComps,
+                                 s_aTests[i].fProps,    u.Split.fProps, s_aTests[i].fProps ^ u.Split.fProps,
+                                 s_aTests[i].cchPath,   u.Split.cchPath);
+        }
+        else
+        {
+            RTTESTI_CHECK_MSG(*u.Split.pszSuffix == '\0' || *u.Split.pszSuffix == '.', ("%s", u.Split.pszSuffix));
+            for (uint32_t idxComp = RTPATH_PROP_HAS_ROOT_SPEC(u.Split.fProps); idxComp < u.Split.cComps; idxComp++)
+                if ( (s_aTests[i].fFlags & RTPATH_STR_F_STYLE_MASK) == RTPATH_STR_F_STYLE_DOS
+                    ? strpbrk(u.Split.apszComps[idxComp], "/\\")
+                    : strchr(u.Split.apszComps[idxComp], RTPATH_SLASH) )
+                    RTTestFailed(hTest, "i=%d idxComp=%d '%s'", i, idxComp, u.Split.apszComps[idxComp]);
+
+            PRTPATHSPLIT pSplit = NULL;
+            RTTESTI_CHECK_RC(rc = RTPathSplitA(s_aTests[i].pszPath, &pSplit, s_aTests[i].fFlags), VINF_SUCCESS);
+            if (RT_SUCCESS(rc))
+            {
+                RTTESTI_CHECK(pSplit);
+                RTTESTI_CHECK(pSplit->cComps   == u.Split.cComps);
+                RTTESTI_CHECK(pSplit->fProps   == u.Split.fProps);
+                RTTESTI_CHECK(pSplit->cchPath  == u.Split.cchPath);
+                RTTESTI_CHECK(pSplit->cbNeeded == u.Split.cbNeeded);
+                RTTESTI_CHECK(!strcmp(pSplit->pszSuffix, u.Split.pszSuffix));
+                for (uint32_t idxComp = 0; idxComp < u.Split.cComps; idxComp++)
+                    RTTESTI_CHECK(!strcmp(pSplit->apszComps[idxComp], pSplit->apszComps[idxComp]));
+                RTPathSplitFree(pSplit);
+            }
         }
     }
 }
@@ -701,7 +749,7 @@ int main()
                           pszFrom, pszTo, szPath, s_aRelPath[i].pszExpected);
     }
 
-    testParser(hTest);
+    testParserAndSplitter(hTest);
 
     /*
      * Summary.

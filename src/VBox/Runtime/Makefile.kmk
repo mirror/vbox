@@ -365,6 +365,8 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathParseSimple.cpp \
 	common/path/RTPathRealDup.cpp \
 	common/path/RTPathRmCmd.cpp \
+	common/path/RTPathSplit.cpp \
+	common/path/RTPathSplitA.cpp \
 	common/path/RTPathStartsWithRoot.cpp \
 	common/path/RTPathStripExt.cpp \
 	common/path/RTPathStripFilename.cpp \
@@ -1709,7 +1711,6 @@ RuntimeR0Drv_SOURCES    = \
 	common/path/RTPathFilename.cpp \
 	common/path/RTPathHasExt.cpp \
 	common/path/RTPathHasPath.cpp \
-	common/path/RTPathParse.cpp \
 	common/path/RTPathParseSimple.cpp \
 	common/path/RTPathRealDup.cpp \
 	common/path/RTPathStripExt.cpp \
