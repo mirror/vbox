@@ -49,16 +49,81 @@ RT_C_DECLS_BEGIN
 # define RTPATH_MAX         (4096 + 4)    /* (PATH_MAX + 1) on linux w/ some alignment */
 #endif
 
+
+/** @name RTPATH_F_XXX - Generic flags for APIs working on the file system.
+ * @{ */
+/** Last component: Work on the link. */
+#define RTPATH_F_ON_LINK          RT_BIT_32(0)
+/** Last component: Follow if link. */
+#define RTPATH_F_FOLLOW_LINK      RT_BIT_32(1)
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
+#define RTPATH_F_NO_SYMLINKS      RT_BIT_32(2)
+/** @} */
+
+/** Validates a flags parameter containing RTPATH_F_*.
+ * @remarks The parameters will be referenced multiple times. */
+#define RTPATH_F_IS_VALID(a_fFlags, a_fIgnore) \
+    (    ((a_fFlags) & ~(uint32_t)((a_fIgnore) | RTPATH_F_NO_SYMLINKS)) == RTPATH_F_ON_LINK \
+      || ((a_fFlags) & ~(uint32_t)((a_fIgnore) | RTPATH_F_NO_SYMLINKS)) == RTPATH_F_FOLLOW_LINK )
+
+
+/** @name RTPATH_STR_F_XXX - Generic flags for APIs working with path strings.
+ * @{
+ */
+/** Host OS path style (default 0 value). */
+#define RTPATH_STR_F_STYLE_HOST         UINT32_C(0x00000000)
+/** DOS, OS/2 and Windows path style. */
+#define RTPATH_STR_F_STYLE_DOS          UINT32_C(0x00000001)
+/** Unix path style. */
+#define RTPATH_STR_F_STYLE_UNIX         UINT32_C(0x00000002)
+/** Reserved path style. */
+#define RTPATH_STR_F_STYLE_RESERVED     UINT32_C(0x00000003)
+/** The path style mask. */
+#define RTPATH_STR_F_STYLE_MASK         UINT32_C(0x00000003)
+/** Partial path - no start.
+ * This causes the API to skip the root specification parsing.  */
+#define RTPATH_STR_F_NO_START           UINT32_C(0x00000010)
+/** Partial path - no end.
+ * This causes the API to skip the filename and dir-slash parsing.  */
+#define RTPATH_STR_F_NO_END             UINT32_C(0x00000020)
+/** Partial path - no start and no end. */
+#define RTPATH_STR_F_MIDDLE             (RTPATH_STR_F_NO_START | RTPATH_STR_F_NO_END)
+
+/** Reserved for future use. */
+#define RTPATH_STR_F_RESERVED_MASK      UINT32_C(0x0000ffcc)
+/** @} */
+
+/** Validates a flags parameter containing RTPATH_FSTR_.
+ * @remarks The parameters will be references multiple times.  */
+#define RTPATH_STR_F_IS_VALID(a_fFlags, a_fIgnore) \
+      (   ((a_fFlags) & ~((uint32_t)(a_fIgnore) | RTPATH_STR_F_STYLE_MASK | RTPATH_STR_F_MIDDLE)) == 0 \
+       && ((a_fFlags) & RTPATH_STR_F_STYLE_MASK) != RTPATH_STR_F_STYLE_RESERVED \
+       && ((a_fFlags) & RTPATH_STR_F_RESERVED_MASK) == 0 )
+
+
+/** @def RTPATH_STYLE
+ * The host path style. This is set to RTPATH_STR_F_STYLE_DOS,
+ * RTPATH_STR_F_STYLE_UNIX, or other future styles. */
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+# define RTPATH_STYLE       RTPATH_STR_F_STYLE_DOS
+#else
+# define RTPATH_STYLE       RTPATH_STR_F_STYLE_UNIX
+#endif
+
+
 /** @def RTPATH_SLASH
  * The preferred slash character.
  *
  * @remark IPRT will always accept unix slashes. So, normally you would
  *         never have to use this define.
  */
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
 # define RTPATH_SLASH       '\\'
-#else
+#elif RTPATH_STYLE == RTPATH_STR_F_STYLE_UNIX
 # define RTPATH_SLASH       '/'
+#else
+# error "Unsupported RTPATH_STYLE value."
 #endif
 
 /** @deprecated Use '/'! */
@@ -72,10 +137,12 @@ RT_C_DECLS_BEGIN
  * @remark IPRT will always accept unix slashes. So, normally you would
  *         never have to use this define.
  */
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
 # define RTPATH_SLASH_STR   "\\"
-#else
+#elif RTPATH_STYLE == RTPATH_STR_F_STYLE_UNIX
 # define RTPATH_SLASH_STR   "/"
+#else
+# error "Unsupported RTPATH_STYLE value."
 #endif
 
 
@@ -83,12 +150,14 @@ RT_C_DECLS_BEGIN
  * Checks if a character is a slash.
  *
  * @returns true if it's a slash and false if not.
- * @returns @param      ch      Char to check.
+ * @returns @param      a_ch    Char to check.
  */
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
-# define RTPATH_IS_SLASH(ch)    ( (ch) == '\\' || (ch) == '/' )
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+# define RTPATH_IS_SLASH(a_ch)      ( (a_ch) == '\\' || (a_ch) == '/' )
+#elif RTPATH_STYLE == RTPATH_STR_F_STYLE_UNIX
+# define RTPATH_IS_SLASH(a_ch)      ( (a_ch) == '/' )
 #else
-# define RTPATH_IS_SLASH(ch)    ( (ch) == '/' )
+# error "Unsupported RTPATH_STYLE value."
 #endif
 
 
@@ -101,12 +170,14 @@ RT_C_DECLS_BEGIN
  *          Use the RTPath@<too be created@>() instead.
  *
  * @returns true if it is and false if it isn't.
- * @returns @param      ch      Char to check.
+ * @returns @param      a_ch    Char to check.
  */
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
-# define RTPATH_IS_VOLSEP(ch)   ( (ch) == ':' )
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+# define RTPATH_IS_VOLSEP(a_ch)   ( (a_ch) == ':' )
+#elif RTPATH_STYLE == RTPATH_STR_F_STYLE_UNIX
+# define RTPATH_IS_VOLSEP(a_ch)   (false)
 #else
-# define RTPATH_IS_VOLSEP(ch)   (false)
+# error "Unsupported RTPATH_STYLE value."
 #endif
 
 
@@ -114,29 +185,10 @@ RT_C_DECLS_BEGIN
  * Checks if a character is path component separator
  *
  * @returns true if it is and false if it isn't.
- * @returns @param      ch      Char to check.
+ * @returns @param      a_ch    Char to check.
  * @
  */
-#define RTPATH_IS_SEP(ch)       ( RTPATH_IS_SLASH(ch) || RTPATH_IS_VOLSEP(ch) )
-
-
-/** @name Generic RTPath flags
- * @{ */
-/** Last component: Work on the link. */
-#define RTPATH_F_ON_LINK          RT_BIT_32(0)
-/** Last component: Follow if link. */
-#define RTPATH_F_FOLLOW_LINK      RT_BIT_32(1)
-/** Don't allow symbolic links as part of the path.
- * @remarks this flag is currently not implemented and will be ignored. */
-#define RTPATH_F_NO_SYMLINKS      RT_BIT_32(2)
-/** @} */
-
-
-/** Validates a flags parameter containing RTPATH_F_*.
- * @remarks The parameters will be referenced multiple times. */
-#define RTPATH_F_IS_VALID(fFlags, fIgnore) \
-    (    ((fFlags) & ~(uint32_t)((fIgnore)|RTPATH_F_NO_SYMLINKS)) == RTPATH_F_ON_LINK \
-      || ((fFlags) & ~(uint32_t)((fIgnore)|RTPATH_F_NO_SYMLINKS)) == RTPATH_F_FOLLOW_LINK )
+#define RTPATH_IS_SEP(a_ch)     ( RTPATH_IS_SLASH(a_ch) || RTPATH_IS_VOLSEP(a_ch) )
 
 
 /**
@@ -542,38 +594,11 @@ typedef RTPATHPARSED *PCRTPATHPARSED;
  * @param   pParsed             Where to store the details of the parsed path.
  * @param   cbParsed            The size of the buffer. Must be at least the
  *                              size of RTPATHPARSED.
- * @param   fFlags              Combination of RTPATHPARSE_FLAGS_XXX that can be
- *                              used to change how the start and end of the
- *                              path is parsed. Most users will pass 0.
+ * @param   fFlags              Combination of RTPATH_STR_F_XXX flags.
+ *                              Most users will pass 0.
  * @sa      RTPathSplit, RTPathSplitA.
  */
 RTDECL(int) RTPathParse(const char *pszPath,  PRTPATHPARSED pParsed, size_t cbParsed, uint32_t fFlags);
-
-/** @name RTPATHPARSE_FLAGS_XXX - RTPathParse flags.
- * @{ */
-/** Partial path - no start.
- * This causes RTPathParse to skip the root specification parsing.  */
-#define RTPATHPARSE_FLAGS_NO_START          RT_BIT_32(0)
-/** Partial path - no end.
- * This causes RTPathParse to skip the filename and dir-slash parsing.  */
-#define RTPATHPARSE_FLAGS_NO_END            RT_BIT_32(1)
-/** Partial path - no start and no end. */
-#define RTPATHPARSE_FLAGS_MIDDLE            (RTPATHPARSE_FLAGS_NO_START | RTPATHPARSE_FLAGS_NO_END)
-
-/** Host OS path style. */
-#define RTPATHPARSE_FLAGS_STYLE_HOST        UINT32_C(0x00000000)
-/** DOS, OS/2 and Windows path style. */
-#define RTPATHPARSE_FLAGS_STYLE_DOS         UINT32_C(0x00000010)
-/** Unix path style. */
-#define RTPATHPARSE_FLAGS_STYLE_UNIX        UINT32_C(0x00000020)
-/** Reserved path style. */
-#define RTPATHPARSE_FLAGS_STYLE_RESERVED    UINT32_C(0x00000030)
-/** The path style mask. */
-#define RTPATHPARSE_FLAGS_STYLE_MASK        UINT32_C(0x00000030)
-
-/** Mask containing the valid flags. */
-#define RTPATHPARSE_FLAGS_VALID_MASK        UINT32_C(0x00000033)
-/** @}  */
 
 /**
  * Output buffer for RTPathSplit and RTPathSplitA.

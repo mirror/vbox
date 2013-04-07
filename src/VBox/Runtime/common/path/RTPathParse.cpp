@@ -49,27 +49,27 @@ RTDECL(int) RTPathParse(const char *pszPath, PRTPATHPARSED pParsed, size_t cbPar
     AssertPtrReturn(pParsed, VERR_INVALID_POINTER);
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(*pszPath, VERR_PATH_ZERO_LENGTH);
-    AssertReturn(!(fFlags & ~RTPATHPARSE_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(RTPATH_STR_F_IS_VALID(fFlags, 0), VERR_INVALID_FLAGS);
 
     /*
      * Invoke the worker for the selected path style.
      */
-    switch (fFlags & RTPATHPARSE_FLAGS_STYLE_MASK)
+    switch (fFlags & RTPATH_STR_F_STYLE_MASK)
     {
 #if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
-        case RTPATHPARSE_FLAGS_STYLE_HOST:
+        case RTPATH_STR_F_STYLE_HOST:
 #endif
-        case RTPATHPARSE_FLAGS_STYLE_DOS:
+        case RTPATH_STR_F_STYLE_DOS:
             return rtPathParseStyleDos(pszPath, pParsed, cbParsed, fFlags);
 
 #if !defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS)
-        case RTPATHPARSE_FLAGS_STYLE_HOST:
+        case RTPATH_STR_F_STYLE_HOST:
 #endif
-        case RTPATHPARSE_FLAGS_STYLE_UNIX:
+        case RTPATH_STR_F_STYLE_UNIX:
             return rtPathParseStyleUnix(pszPath, pParsed, cbParsed, fFlags);
 
         default:
-            AssertFailedReturn(VERR_INVALID_FLAGS);
+            AssertFailedReturn(VERR_INVALID_FLAGS); /* impossible */
     }
 }
 
