@@ -388,6 +388,278 @@ RTDECL(size_t) RTPathCountComponents(const char *pszPath);
  */
 RTDECL(int) RTPathCopyComponents(char *pszDst, size_t cbDst, const char *pszSrc, size_t cComponents);
 
+/** @name Path properties returned by RTPathParse and RTPathSplit.
+ * @{ */
+
+/** Indicates that there is a filename.
+ * If not set, either a lone root spec was given (RTPATH_PROP_UNC,
+ * RTPATH_PROP_ROOT_SLASH, or RTPATH_PROP_VOLUME) or the final component had a
+ * trailing slash (RTPATH_PROP_DIR_SLASH). */
+#define RTPATH_PROP_FILENAME        UINT16_C(0x0001)
+/** Indicates that a directory was specified using a trailing slash.
+ * @note This is not set for lone root specifications (RTPATH_PROP_UNC,
+ *       RTPATH_PROP_ROOT_SLASH, or RTPATH_PROP_VOLUME).
+ * @note The slash is not counted into the last component.  */
+#define RTPATH_PROP_DIR_SLASH       UINT16_C(0x0002)
+
+/** The filename has a suffix (extension). */
+#define RTPATH_PROP_SUFFIX          UINT16_C(0x0004)
+/** Indicates that this is an UNC path (Windows and OS/2 only).
+ *
+ * UNC = Universal Naming Convention.  It is on the form '//Computer/',
+ * '//Namespace/', '//ComputerName/Resource' and '//Namespace/Resource'.
+ * RTPathParse, RTPathSplit and friends does not consider the 'Resource'  as
+ * part of the UNC root specifier.  Thus the root specs for the above examples
+ * would be '//ComputerName/' or '//Namespace/'.
+ *
+ * Please note that  '//something' is not a UNC path, there must be a slash
+ * following the computer or namespace.
+ */
+#define RTPATH_PROP_UNC             UINT16_C(0x0010)
+/** A root slash was specified (unix style root).
+ * (While the path must relative if not set, this being set doesn't make it
+ * absolute.)
+ *
+ * This will be set in the following examples: '/', '/bin', 'C:/', 'C:/Windows',
+ * '//./', '//./PhysicalDisk0', '//example.org/', and '//example.org/share'.
+ *
+ * It will not be set for the following examples: '.', 'bin/ls', 'C:', and
+ * 'C:Windows'.
+ */
+#define RTPATH_PROP_ROOT_SLASH      UINT16_C(0x0020)
+/** A volume is specified (Windows, DOS and OS/2).
+ * For examples: 'C:', 'C:/', and 'A:/AutoExec.bat'. */
+#define RTPATH_PROP_VOLUME          UINT16_C(0x0040)
+/** The path is absolute, i.e. has a root specifier (root-slash,
+ * volume or UNC) and contains no winding '..' bits, though it may contain
+ * unnecessary slashes (RTPATH_PROP_EXTRA_SLASHES) and '.' components
+ * (RTPATH_PROP_DOT_REFS).
+ *
+ * On systems without volumes and UNC (unix style) it will be set for '/',
+ * '/bin/ls', and '/bin//./ls', but not for 'bin/ls', /bin/../usr/bin/env',
+ * '/./bin/ls' or '/.'.
+ *
+ * On systems with volumes, it will be set for 'C:/', C:/Windows', and
+ * 'C:/./Windows//', but not for 'C:', 'C:Windows', or 'C:/Windows/../boot.ini'.
+ *
+ * On systems with UNC paths, it will be set for '//localhost/',
+ * '//localhost/C$', '//localhost/C$/Windows/System32', '//localhost/.', and
+ * '//localhost/C$//./AutoExec.bat', but not for
+ * '//localhost/C$/Windows/../AutoExec.bat'.
+ *
+ * @note For the RTPathAbs definition, this flag needs to be set while both
+ *       RTPATH_PROP_EXTRA_SLASHES and RTPATH_PROP_DOT_REFS must be cleared.
+ */
+#define RTPATH_PROP_ABSOLUTE        UINT16_C(0x0100)
+/** Relative path. Inverse of RTPATH_PROP_ABSOLUTE. */
+#define RTPATH_PROP_RELATIVE        UINT16_C(0x0200)
+/** The path contains unnecessary slashes. Meaning, that if  */
+#define RTPATH_PROP_EXTRA_SLASHES   UINT16_C(0x0400)
+/** The path contains references to the special '.' (dot) directory link. */
+#define RTPATH_PROP_DOT_REFS        UINT16_C(0x0800)
+/** The path contains references to the special '..' (dot) directory link.
+ * RTPATH_PROP_RELATIVE will always be set together with this.  */
+#define RTPATH_PROP_DOTDOT_REFS     UINT16_C(0x1000)
+
+
+/** Macro to determin whether to insert a slash after the first component when
+ * joining it with something else.
+ * (All other components in a split or parsed path requies slashes added.) */
+#define RTPATH_PROP_FIRST_NEEDS_NO_SLASH(a_fProps) \
+    ( (a_fProps) & (RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_VOLUME | RTPATH_PROP_UNC) )
+
+/** Macro to determin whether there is a root specification of any kind
+ * (unix, volumes, unc). */
+#define RTPATH_PROP_HAS_ROOT_SPEC(a_fProps) \
+    ( (a_fProps) & (RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_VOLUME | RTPATH_PROP_UNC) )
+
+/** @} */
+
+
+/**
+ * Parsed path.
+ *
+ * The first component is the root, volume or UNC specifier, if present.  Use
+ * RTPATH_PROP_HAS_ROOT_SPEC() on RTPATHPARSED::fProps to determine its
+ * precense.
+ *
+ * Other than the root component, no component will include directory separators
+ * (slashes).
+ */
+typedef struct RTPATHPARSED
+{
+    /** Number of path components.
+     * This will always be set on VERR_BUFFER_OVERFLOW returns from RTPathParsed
+     * so the caller can calculate the required buffer size. */
+    uint16_t    cComps;
+    /** Path property flags, RTPATH_PROP_XXX */
+    uint16_t    fProps;
+    /** On success this is the length of the described path, i.e. sum of all
+     * component lengths and necessary separators.
+     * Do NOT use this to index in the source path in case it contains
+     * unnecessary slashes that RTPathParsed has ignored here. */
+    uint16_t    cchPath;
+    /** Reserved for future use. */
+    uint16_t    u16Reserved;
+    /** The offset of the filename suffix, offset of the NUL char if none. */
+    uint16_t    offSuffix;
+    /** The lenght of the suffix. */
+    uint16_t    cchSuffix;
+    /** Array of component descriptors (variable size).
+     * @note Don't try figure the end of the input path by adding up off and cch
+     *       of the last component.  If RTPATH_PROP_DIR_SLASH is set, there may
+     *       be one or more trailing slashes that are unaccounted for! */
+    struct
+    {
+        /** The offset of the component. */
+        uint16_t    off;
+        /** The length of the component. */
+        uint16_t    cch;
+    } aComps[1];
+} RTPATHPARSED;
+/** Pointer to to a parsed path result. */
+typedef RTPATHPARSED *PRTPATHPARSED;
+/** Pointer to to a const parsed path result. */
+typedef RTPATHPARSED *PCRTPATHPARSED;
+
+
+/**
+ * Parses the path.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_POINTER if pParsed or pszPath is an invalid pointer.
+ * @retval  VERR_INVALID_PARAMETER if cbOutput is less than the RTPATHPARSED
+ *          strucuture. No output. (asserted)
+ * @retval  VERR_BUFFER_OVERFLOW there are more components in the path than
+ *          there is space in aComps. The required amount of space can be
+ *          determined from the pParsed->cComps:
+ *          @code
+ *              RT_OFFSETOF(RTPATHPARSED, aComps[pParsed->cComps])
+ *          @endcode
+ * @retval  VERR_PATH_ZERO_LENGTH if the path is empty.
+ *
+ * @param   pszPath             The path to parse.
+ * @param   pParsed             Where to store the details of the parsed path.
+ * @param   cbParsed            The size of the buffer. Must be at least the
+ *                              size of RTPATHPARSED.
+ * @param   fFlags              Combination of RTPATHPARSE_FLAGS_XXX that can be
+ *                              used to change how the start and end of the
+ *                              path is parsed. Most users will pass 0.
+ * @sa      RTPathSplit, RTPathSplitA.
+ */
+RTDECL(int) RTPathParse(const char *pszPath,  PRTPATHPARSED pParsed, size_t cbParsed, uint32_t fFlags);
+
+/** @name RTPATHPARSE_FLAGS_XXX - RTPathParse flags.
+ * @{ */
+/** Partial path - no start.
+ * This causes RTPathParse to skip the root specification parsing.  */
+#define RTPATHPARSE_FLAGS_NO_START          RT_BIT_32(0)
+/** Partial path - no end.
+ * This causes RTPathParse to skip the filename and dir-slash parsing.  */
+#define RTPATHPARSE_FLAGS_NO_END            RT_BIT_32(1)
+/** Partial path - no start and no end. */
+#define RTPATHPARSE_FLAGS_MIDDLE            (RTPATHPARSE_FLAGS_NO_START | RTPATHPARSE_FLAGS_NO_END)
+
+/** Host OS path style. */
+#define RTPATHPARSE_FLAGS_STYLE_HOST        UINT32_C(0x00000000)
+/** DOS, OS/2 and Windows path style. */
+#define RTPATHPARSE_FLAGS_STYLE_DOS         UINT32_C(0x00000010)
+/** Unix path style. */
+#define RTPATHPARSE_FLAGS_STYLE_UNIX        UINT32_C(0x00000020)
+/** Reserved path style. */
+#define RTPATHPARSE_FLAGS_STYLE_RESERVED    UINT32_C(0x00000030)
+/** The path style mask. */
+#define RTPATHPARSE_FLAGS_STYLE_MASK        UINT32_C(0x00000030)
+
+/** Mask containing the valid flags. */
+#define RTPATHPARSE_FLAGS_VALID_MASK        UINT32_C(0x00000033)
+/** @}  */
+
+/**
+ * Output buffer for RTPathSplit and RTPathSplitA.
+ */
+typedef struct RTPATHSPLIT
+{
+    /** Number of path components.
+     * This will always be set on VERR_BUFFER_OVERFLOW returns from RTPathParsed
+     * so the caller can calculate the required buffer size. */
+    uint16_t    cComps;
+    /** Path property flags, RTPATH_PROP_XXX */
+    uint16_t    fProps;
+    /** On success this is the length of the described path, i.e. sum of all
+     * component lengths and necessary separators.
+     * Do NOT use this to index in the source path in case it contains
+     * unnecessary slashes that RTPathParsed has ignored here. */
+    uint16_t    cchPath;
+    /** Reserved (internal use).  */
+    uint16_t    u16Reserved;
+    /** The amount of memory used (on success) or required (on
+     *  VERR_BUFFER_OVERFLOW) of this structure and it's strings. */
+    uint32_t    cbNeeded;
+    /** Pointer to the filename suffix (the dot), if any. Points to the NUL
+     * character of the last component if none or if RTPATH_PROP_DIR_SLASH is
+     * present. */
+    const char *pszSuffix;
+    /** Array of component strings (variable size). */
+    char       *apszComps[1];
+} RTPATHSPLIT;
+/** Pointer to a split path buffer. */
+typedef RTPATHSPLIT *PRTPATHSPLIT;
+/** Pointer to a const split path buffer. */
+typedef RTPATHSPLIT const *PCRTPATHSPLIT;
+
+/**
+ * Splits the path into individual component strings, carved from user supplied
+ * the given buffer block.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_POINTER if pParsed or pszPath is an invalid pointer.
+ * @retval  VERR_INVALID_PARAMETER if cbOutput is less than the RTPATHSPLIT
+ *          strucuture. No output. (asserted)
+ * @retval  VERR_BUFFER_OVERFLOW there are more components in the path than
+ *          there is space in aComps. The required amount of space can be
+ *          determined from the pParsed->cComps:
+ *          @code
+ *              RT_OFFSETOF(RTPATHPARSED, aComps[pParsed->cComps])
+ *          @endcode
+ * @retval  VERR_PATH_ZERO_LENGTH if the path is empty.
+ * @retval  VERR_FILENAME_TOO_LONG if the filename is too long (close to 64 KB).
+ *
+ * @param   pszPath             The path to parse.
+ * @param   pSplit              Where to store the details of the parsed path.
+ * @param   cbSplit             The size of the buffer pointed to by @a pSplit
+ *                              (variable sized array at the end).  Must be at
+ *                              least the size of RTPATHSPLIT.
+ *
+ * @sa      RTPathSplitA, RTPathParse.
+ */
+RTDECL(int) RTPathSplit(const char *pszPath, PRTPATHSPLIT pSplit, size_t cbSplit);
+
+/**
+ * Splits the path into individual component strings, allocating the buffer on
+ * the default thread heap.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_POINTER if pParsed or pszPath is an invalid pointer.
+ * @retval  VERR_PATH_ZERO_LENGTH if the path is empty.
+ *
+ * @param   pszPath             The path to parse.
+ * @param   ppSplit             Where to return the pointer to the output on
+ *                              success.  This must be freed by calling
+ *                              RTPathSplitFree().
+ * @sa      RTPathSplitFree, RTPathSplit, RTPathParse.
+ */
+RTDECL(int) RTPathSplitA(const char *pszPath, PRTPATHSPLIT *ppSplit);
+
+/**
+ * Frees buffer returned by RTPathSplitA.
+ *
+ * @param   pSplit              What RTPathSplitA returned.
+ * @sa      RTPathSplitA
+ */
+RTDECL(void) RTPathSplitFree(PRTPATHSPLIT pSplit);
+
+
 /**
  * Compares two paths.
  *
