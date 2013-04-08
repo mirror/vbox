@@ -2794,13 +2794,13 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
             AssertRCReturn(rc, rc);
             Log(("VMX_VMCS64_CTRL_EPTP_FULL=%#RX64\n", pVCpu->hm.s.vmx.GCPhysEPTP));
 
-            if (   CPUMIsGuestPagingEnabledEx(pCtx)
-                || pVM->hm.s.vmx.fUnrestrictedGuest)
+            if (   pVM->hm.s.vmx.fUnrestrictedGuest
+                || CPUMIsGuestPagingEnabledEx(pCtx))
             {
                 /* If the guest is in PAE mode, pass the PDPEs to VT-x using the VMCS fields. */
                 if (CPUMIsGuestInPAEModeEx(pCtx))
                 {
-                    rc = PGMGstGetPaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
+                    rc  = PGMGstGetPaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
                     rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE0_FULL, pVCpu->hm.s.aPdpes[0].u);
                     rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, pVCpu->hm.s.aPdpes[1].u);
                     rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, pVCpu->hm.s.aPdpes[2].u);
@@ -5266,7 +5266,7 @@ static int hmR0VmxSaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (pVCpu->hm.s.vmx.fUpdatedGuestState == VMX_UPDATED_GUEST_ALL)
         return VINF_SUCCESS;
 
-    VMMRZCallRing3Disable(pVCpu);   /* We're not using hmR0VmxCallRing3Disable() as we want to respect nesting here. */
+    VMMRZCallRing3Disable(pVCpu);
 
     int rc = hmR0VmxSaveGuestGprs(pVM, pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestGprs failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
@@ -7531,8 +7531,9 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_CLTS:        /* CLTS (Clear Task-Switch Flag in CR0) */
         {
-            rc  = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
-            rc |= EMInterpretCLTS(pVM, pVCpu);
+            rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
+            AssertRCReturn(rc, rc);
+            rc = EMInterpretCLTS(pVM, pVCpu);
             AssertRCReturn(rc, rc);
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClts);
@@ -7542,7 +7543,7 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
         {
-            rc  = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
+            rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
             rc = EMInterpretLMSW(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(uExitQualification));
             if (RT_LIKELY(rc == VINF_SUCCESS))
