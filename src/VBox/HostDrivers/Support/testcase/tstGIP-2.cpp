@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -96,7 +96,8 @@ int main(int argc, char **argv)
     {
         if (g_pSUPGlobalInfoPage)
         {
-            RTPrintf("tstGIP-2: u32UpdateHz=%RU32  u32UpdateIntervalNS=%RU32  u64NanoTSLastUpdateHz=%RX64  u32Mode=%d (%s) u32Version=%#x\n",
+            RTPrintf("tstGIP-2: cCpus=%d  u32UpdateHz=%RU32  u32UpdateIntervalNS=%RU32  u64NanoTSLastUpdateHz=%RX64  u32Mode=%d (%s) u32Version=%#x\n",
+                     g_pSUPGlobalInfoPage->cCpus,
                      g_pSUPGlobalInfoPage->u32UpdateHz,
                      g_pSUPGlobalInfoPage->u32UpdateIntervalNS,
                      g_pSUPGlobalInfoPage->u64NanoTSLastUpdateHz,
@@ -108,16 +109,16 @@ int main(int argc, char **argv)
             RTPrintf(fHex
                      ? "tstGIP-2:     it: u64NanoTS        delta     u64TSC           UpIntTSC H  TransId           CpuHz TSC Interval History...\n"
                      : "tstGIP-2:     it: u64NanoTS        delta     u64TSC             UpIntTSC H    TransId           CpuHz TSC Interval History...\n");
-            static SUPGIPCPU s_aaCPUs[2][RT_ELEMENTS(g_pSUPGlobalInfoPage->aCPUs)];
+            static SUPGIPCPU s_aaCPUs[2][256];
             for (uint32_t i = 0; i < cIterations; i++)
             {
                 /* copy the data */
-                memcpy(&s_aaCPUs[i & 1][0], &g_pSUPGlobalInfoPage->aCPUs[0], sizeof(g_pSUPGlobalInfoPage->aCPUs));
+                memcpy(&s_aaCPUs[i & 1][0], &g_pSUPGlobalInfoPage->aCPUs[0], g_pSUPGlobalInfoPage->cCpus * sizeof(g_pSUPGlobalInfoPage->aCPUs[0]));
 
                 /* display it & find something to spin on. */
                 uint32_t u32TransactionId = 0;
                 uint32_t volatile *pu32TransactionId = NULL;
-                for (unsigned iCpu = 0; iCpu < RT_ELEMENTS(g_pSUPGlobalInfoPage->aCPUs); iCpu++)
+                for (unsigned iCpu = 0; iCpu < g_pSUPGlobalInfoPage->cCpus; iCpu++)
                     if (    g_pSUPGlobalInfoPage->aCPUs[iCpu].u64CpuHz > 0
                         &&  g_pSUPGlobalInfoPage->aCPUs[iCpu].u64CpuHz != _4G + 1)
                     {
