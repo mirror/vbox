@@ -1051,7 +1051,8 @@ typedef union
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_EFER_MSR         RT_BIT(20)
 /** This control determines whether the host IA32_EFER MSR is loaded on VM exit. */
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR          RT_BIT(21)
-/** This control determines whether the value of the VMX preemption timer is saved on VM exit. */
+/** This control determines whether the value of the VMX preemption timer is
+ *  saved on every VM exit. */
 #define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER      RT_BIT(22)
 /** @} */
 
