@@ -168,7 +168,7 @@ typedef struct VMXTRANSIENT
     /** Mask of currently read VMCS fields; VMX_TRANSIENT_*. */
     uint32_t        fVmcsFieldsRead;
     /** Whether TSC-offsetting should be setup before VM-entry. */
-    bool            fUpdateTscOffsetting;
+    bool            fUpdateTscOffsettingAndPreemptTimer;
     /** Whether the VM-exit was caused by a page-fault during delivery of a
      *  contributary exception or a page-fault. */
     bool            fVectoringPF;
@@ -2352,8 +2352,10 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVM pVM, PVMCPU pVCpu)
          *        VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR,
          *        VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_PAT_MSR,
          *        VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_EFER_MSR,
-         *        VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR,
-         *        VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER. */
+         *        VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR. */
+
+        if (pVM->hm.s.vmx.msr.vmx_exit.n.allowed1 & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER)
+            val |= VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER;
 
         if ((val & zap) != val)
         {
@@ -4794,7 +4796,7 @@ static int hmR0VmxSaveGuestGprs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 
 /**
- * Gets the guest's interruptibility-state ("interrupt shadow" as AMD calls it)
+ * Saves the guest's interruptibility-state ("interrupt shadow" as AMD calls it)
  * from the guest-state area in the VMCS.
  *
  * @param   pVM         Pointer to the VM.
@@ -6347,10 +6349,10 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
     pVM->hm.s.vmx.pfnFlushTaggedTlb(pVM, pVCpu);                /* Flush the TLB of guest entries as necessary. */
 
     /* Setup TSC-offsetting or intercept RDTSC(P)s and update the preemption timer. */
-    if (pVmxTransient->fUpdateTscOffsetting)
+    if (pVmxTransient->fUpdateTscOffsettingAndPreemptTimer)
     {
         hmR0VmxUpdateTscOffsettingAndPreemptTimer(pVM, pVCpu, pMixedCtx);
-        pVmxTransient->fUpdateTscOffsetting = false;
+        pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = false;
     }
 
     /*
@@ -6482,7 +6484,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     VMXTRANSIENT VmxTransient;
-    VmxTransient.fUpdateTscOffsetting = true;
+    VmxTransient.fUpdateTscOffsettingAndPreemptTimer = true;
     int          rc     = VERR_INTERNAL_ERROR_5;
     unsigned     cLoops = 0;
 
@@ -6821,7 +6823,7 @@ static DECLCALLBACK(int) hmR0VmxExitRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
 
         /* If we get a spurious VM-exit when offsetting is enabled, we must reset offsetting on VM-reentry. See @bugref{6634}. */
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TSC_OFFSETTING)
-            pVmxTransient->fUpdateTscOffsetting = true;
+            pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
     }
     else
     {
@@ -6856,7 +6858,7 @@ static DECLCALLBACK(int) hmR0VmxExitRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 
         /* If we get a spurious VM-exit when offsetting is enabled, we must reset offsetting on VM-reentry. See @bugref{6634}. */
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TSC_OFFSETTING)
-            pVmxTransient->fUpdateTscOffsetting = true;
+            pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
     }
     else
     {
@@ -7128,11 +7130,15 @@ static DECLCALLBACK(int) hmR0VmxExitInjectXcptUD(PVM pVM, PVMCPU pVCpu, PCPUMCTX
 static DECLCALLBACK(int) hmR0VmxExitPreemptionTimer(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    /* If we're saving the preemption-timer value on every VM-exit & we've reached zero, reset it up on next VM-entry. */
+    if (pVCpu->hm.s.vmx.u32ExitCtls & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER)
+        pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
+
     /* If there are any timer events pending, fall back to ring-3, otherwise resume guest execution. */
     bool fTimersPending = TMTimerPollBool(pVM, pVCpu);
-    int rc = fTimersPending ? VINF_EM_RAW_TIMER_PENDING : VINF_SUCCESS;
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitPreemptTimer);
-    return rc;
+    return fTimersPending ? VINF_EM_RAW_TIMER_PENDING : VINF_SUCCESS;
 }
 
 
