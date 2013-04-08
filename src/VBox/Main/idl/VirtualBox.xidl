@@ -9490,6 +9490,7 @@
     <desc>
       Process execution statuses.
     </desc>
+    
     <const name="Undefined"             value="0">
       <desc>Process is in an undefined state.</desc>
     </const>
@@ -9527,7 +9528,63 @@
       <desc>Something went wrong.</desc>
     </const>
   </enum>
+  
+  <enum
+    name="ProcessInputStatus"
+    uuid="a4a0ef9c-29cc-4805-9803-c8215ae9da6c"
+    >
+    <desc>
+      Process input statuses.
+    </desc>
+    
+    <const name="Undefined"             value="0">
+      <desc>Undefined state.</desc>
+    </const>
+    <const name="Broken"                value="1">
+      <desc>TODO</desc>
+    </const>
+    <const name="Available"             value="10">
+      <desc>TODO</desc>
+    </const>
+    <const name="Written"               value="50">
+      <desc>TODO</desc>
+    </const>
+    <const name="Overflow"              value="100">
+      <desc>TODO</desc>
+    </const>
+  </enum>
 
+  <enum
+    name="FileStatus"
+    uuid="8c86468b-b97b-4080-8914-e29f5b0abd2c"
+    >
+    <desc>
+      File statuses.
+    </desc>
+    
+    <const name="Undefined"             value="0">
+      <desc>File is in an undefined state.</desc>
+    </const>
+    <const name="Opening"               value="10">
+      <desc>TODO</desc>
+    </const>
+    <const name="Open"                  value="100">
+      <desc>TODO</desc>
+    </const>
+    <const name="Closing"               value="150">
+      <desc>TODO</desc>
+    </const>
+    <const name="Closed"                value="200">
+      <desc>TODO</desc>
+    </const>
+    <const name="Down"                  value="600">
+      <desc>TODO</desc>
+    </const>
+    <const name="Error"                 value="800">
+      <desc>Something went wrong.</desc>
+    </const>
+  </enum>
+  
   <enum
     name="FsObjType"
     uuid="a1ed437c-b3c3-4ca2-b19c-4239d658d5e8"
@@ -9604,10 +9661,29 @@
       <desc>Don't allow symbolic links as part of the path.</desc>
     </const>
   </enum>
+  
+  <interface
+    name="IGuestErrorInfo" extends="$unknown"
+    uuid="ab576a37-dcfc-4d80-9a73-493d15e293c4"
+    wsmap="managed"
+    >
+    <desc>
+      TODO
+    </desc>
+
+    <attribute name="result" type="long" readonly="yes">
+      <desc>TODO</desc>
+    </attribute>
+    
+    <attribute name="text" type="wstring" readonly="yes">
+      <desc>TODO</desc>
+    </attribute>
+    
+  </interface>
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="56f551a2-f924-43ab-8a69-a954109db878"
+    uuid="c8e8607b-5e67-4073-8f14-146515d0c1ff"
     wsmap="managed"
     >
     <desc>
@@ -9686,6 +9762,12 @@
     <attribute name="files" type="IGuestFile" readonly="yes" safearray="yes">
       <desc>
         Returns all currently opened guest files.
+      </desc>
+    </attribute>
+    
+    <attribute name="eventSource" type="IEventSource" readonly="yes">
+      <desc>
+        Event source for guest session events.
       </desc>
     </attribute>
 
@@ -10705,12 +10787,17 @@
 
   <interface
     name="IFile" extends="$unknown"
-    uuid="b702a560-6139-4a8e-a892-bbf14b97bf97"
+    uuid="0b45a95f-6267-499e-a7f2-efa5f8e081f2"
     wsmap="managed"
     >
     <desc>
       Abstract parent interface for files handled by VirtualBox.
     </desc>
+    <attribute name="status" type="FileStatus" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
     <attribute name="creationMode" type="unsigned long" readonly="yes">
       <desc>
         The creation mode.
@@ -18572,7 +18659,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="0d67e79e-b7b1-4919-aab3-b36866075515"
+    uuid="83c03e4b-ffe5-421c-a0fb-0b27b2d56753"
     >
 
     <desc>
@@ -18870,9 +18957,58 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="INATNetworkPortForwardEvent">INATNetworkPortForwardEvent</link>.
       </desc>
     </const>
-
+    <const name="OnGuestSessionStateChanged" value="80">
+      <desc>
+        TODO
+      </desc>
+    </const>
+    <const name="OnGuestSessionRegistered" value="81">
+      <desc>
+        TODO
+      </desc>
+    </const>
+    <const name="OnGuestProcessRegistered" value="82">
+      <desc>
+        TODO
+      </desc>
+    </const>
+    <const name="OnGuestProcessStateChanged" value="83">
+      <desc>
+        TODO
+      </desc>
+    </const>
+    <const name="OnGuestProcessInputNotify" value="84">
+      <desc>
+        TODO
+      </desc>
+    </const>
+    <const name="OnGuestProcessOutput" value="85">
+      <desc>
+        TODO
+      </desc>
+    </const>
+    <const name="OnGuestFileStateChanged" value="86">
+      <desc>
+        TODO
+      </desc>
+    </const>
+    <const name="OnGuestFileOffsetChanged" value="87">
+      <desc>
+        TODO
+      </desc>
+    </const>
+    <const name="OnGuestFileRead" value="88">
+      <desc>
+        For performance reasons ... TODO
+      </desc>
+    </const>
+    <const name="OnGuestFileWrite" value="89">
+      <desc>
+        For performance reasons ... TODO
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="80">
+    <const name="Last" value="90">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -19744,7 +19880,276 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   </interface>
 
+  <interface
+    name="IGuestSessionEvent" extends="IEvent"
+    uuid="b9acd33f-647d-45ac-8fe9-f49b3183ba37"
+    wsmap="managed" id="GuestSessionEvent"
+    >
+    <desc>Base abstract interface for all guest session events.</desc>
 
+    <attribute name="session" type="IGuestSession" readonly="yes">
+      <desc>Guest session that is subject to change.</desc>
+    </attribute>
+
+  </interface>
+  
+  <interface
+    name="IGuestSessionStateChangedEvent" extends="IGuestSessionEvent"
+    uuid="9c288479-6564-451d-9574-7e7ac0b7e443"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestSessionStateChanged"
+    >
+    <desc>
+      TODO
+    </desc>
+    
+    <attribute name="id" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    <attribute name="status" type="GuestSessionStatus" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>    
+    <attribute name="error" type="IGuestErrorInfo" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+  
+  </interface>
+  
+  <interface
+    name="IGuestSessionRegisteredEvent" extends="IGuestSessionEvent"
+    uuid="b79de686-eabd-4fa6-960a-f1756c99ea1c"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestSessionRegistered"
+    >
+    <desc>
+      TODO
+    </desc>
+    
+    <attribute name="registered" type="boolean" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+  
+  </interface>
+  
+  <interface
+    name="IGuestProcessEvent" extends="IGuestSessionEvent"
+    uuid="ee4be6e7-76c5-4517-a623-d4b1957d4ea4"
+    wsmap="managed" id="GuestProcessEvent"
+    >
+    <desc>Base abstract interface for all guest process events.</desc>
+
+    <attribute name="process" type="IGuestProcess" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    <attribute name="pid" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+
+  </interface>
+  
+  <interface
+    name="IGuestProcessRegisteredEvent" extends="IGuestProcessEvent"
+    uuid="1d89e2b3-c6ea-45b6-9d43-dc6f70cc9f02"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessRegistered"
+    >
+    <desc>
+      TODO
+    </desc>
+    
+    <attribute name="registered" type="boolean" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+  
+  </interface>
+  
+  <interface
+    name="IGuestProcessStateChangedEvent" extends="IGuestProcessEvent"
+    uuid="9360d372-d4d9-4948-8e67-e0a0e603acf9"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessStateChanged"
+    >
+    <desc>
+      TODO
+    </desc>
+    
+    <attribute name="status" type="ProcessStatus" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    <attribute name="error" type="IGuestErrorInfo" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+
+  </interface>
+  
+  <interface
+    name="IGuestProcessInputNotifyEvent" extends="IGuestProcessEvent"
+    uuid="b3d6bb71-0392-4971-a908-f71c931995fd"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessInputNotify"
+    >
+    <desc>
+      TODO
+    </desc>
+    
+    <attribute name="status" type="ProcessInputStatus" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    
+    <attribute name="handle" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    
+    <attribute name="processed" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+
+  </interface>
+  
+  <interface
+    name="IGuestProcessOutputEvent" extends="IGuestProcessEvent"
+    uuid="a13533b9-4aba-4937-836e-81325859c9d8"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessOutput"
+    >
+    <desc>
+      TODO
+    </desc>
+    
+    <attribute name="handle" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    
+    <attribute name="data" type="octet" safearray="yes" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+
+  </interface>
+  
+  <interface
+    name="IGuestFileEvent" extends="IGuestSessionEvent"
+    uuid="912f748f-d2f9-4fea-84d2-d36a017cc5f8"
+    wsmap="managed" id="GuestFileEvent"
+    >
+    <desc>Base abstract interface for all guest file events.</desc>
+
+    <attribute name="file" type="IGuestFile" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+
+  </interface>
+  
+  <interface
+    name="IGuestFileStateChangedEvent" extends="IGuestFileEvent"
+    uuid="841951c4-4df3-4ee1-bb99-91e5761c18ff"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestFileStateChanged"
+    >
+    <desc>
+      TODO
+    </desc>
+    
+    <attribute name="status" type="FileStatus" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    <attribute name="error" type="IGuestErrorInfo" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    <!-- Note: No events for reads/writes for performance reasons.
+               See dedidcated events IGuestFileReadEvent and
+               IGuestFileWriteEvent. -->
+
+  </interface>
+  
+  <interface
+    name="IGuestFileIOEvent" extends="IGuestFileEvent"
+    uuid="b5191a7c-9536-4ef8-820e-3b0e17e5bbc8"
+    wsmap="managed" id="OnGuestFileIO"
+    >
+    <desc>
+      TODO
+    </desc>
+
+    <attribute name="offset" type="long long" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    <attribute name="processed" type="unsigned long" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+      
+    </attribute>
+    
+  </interface>
+  
+  <interface
+    name="IGuestFileOffsetChangedEvent" extends="IGuestFileIOEvent"
+    uuid="e8f79a21-1207-4179-94cf-ca250036308f"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestFileOffsetChanged"
+    >
+    <desc>
+      TODO
+    </desc>
+
+  </interface>
+  
+  <interface
+    name="IGuestFileReadEvent" extends="IGuestFileIOEvent"
+    uuid="4ee3cbcb-486f-40db-9150-deee3fd24189"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestFileRead"
+    >
+    <desc>
+      TODO
+    </desc>
+    
+    <attribute name="data" type="octet" safearray="yes" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+    
+  </interface>
+  
+  <interface
+    name="IGuestFileWriteEvent" extends="IGuestFileIOEvent"
+    uuid="e062a915-3cf5-4c0a-bc90-9b8d4cc94d89"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestFileWrite"
+    >
+    <desc>
+      TODO
+    </desc>
+    
+  </interface>
+  
   <interface
     name="IVRDEServerChangedEvent" extends="IEvent"
     uuid="a06fd66a-3188-4c8c-8756-1395e8cb691c"

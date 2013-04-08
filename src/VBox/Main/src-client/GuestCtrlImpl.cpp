@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,7 @@
 #include "Global.h"
 #include "ConsoleImpl.h"
 #include "ProgressImpl.h"
+#include "VBoxEvents.h"
 #include "VMMDev.h"
 
 #include "AutoCaller.h"
@@ -158,7 +159,7 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(Additio
         switch (rc)
         {
             case VERR_MAX_PROCS_REACHED:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest sessions (%ld) reached"),
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of concurrent guest sessions (%ld) reached"),
                               VBOX_GUESTCTRL_MAX_SESSIONS);
                 break;
 
@@ -315,19 +316,23 @@ int Guest::sessionRemove(GuestSession *pSession)
 
     LogFlowFunc(("Closing session (ID=%RU32) ...\n", pSession->getId()));
 
-    for (GuestSessions::iterator itSessions = mData.mGuestSessions.begin();
-         itSessions != mData.mGuestSessions.end(); ++itSessions)
+    GuestSessions::iterator itSessions = mData.mGuestSessions.begin();
+    while (itSessions != mData.mGuestSessions.end())
     {
         if (pSession == itSessions->second)
         {
             LogFlowFunc(("Removing session (pSession=%p, ID=%RU32) (now total %ld sessions)\n",
                          (GuestSession *)itSessions->second, itSessions->second->getId(), mData.mGuestSessions.size() - 1));
 
-            mData.mGuestSessions.erase(itSessions++);
+            mData.mGuestSessions.erase(itSessions);
 
+            fireGuestSessionRegisteredEvent(mEventSource, pSession,
+                                            false /* Unregistered */);
             rc = VINF_SUCCESS;
             break;
         }
+
+        itSessions++;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -397,13 +402,12 @@ int Guest::sessionCreate(const GuestSessionStartupInfo &ssInfo,
         /*
          * Add session object to our session map. This is necessary
          * before calling openSession because the guest calls back
-         * with the creation result to this session.
+         * with the creation result of this session.
          */
         mData.mGuestSessions[uNewSessionID] = pGuestSession;
 
-        /* Drop write lock before opening session, because this will
-         * involve the main dispatcher to run. */
-        alock.release();
+        fireGuestSessionRegisteredEvent(mEventSource, pGuestSession,
+                                        true /* Registered */);
     }
     catch (int rc2)
     {
@@ -458,21 +462,11 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
             rc = VERR_COM_OBJECT_NOT_FOUND;
     }
 
-    int guestRc;
     if (RT_SUCCESS(rc))
     {
-        /** @todo Do we need to use openSessioAsync() here? Otherwise
-         *        there might be a problem on webservice calls (= timeouts)
-         *        if opening the guest session takes too long -> Use
-         *        the new session.getStatus() API call! */
-
-        /* Start (fork) the session on the guest. */
-        rc = pSession->startSessionIntenal(&guestRc);
-        if (RT_SUCCESS(rc))
-        {
-            LogFlowFunc(("Created new guest session (pSession=%p), now %zu sessions total\n",
-                         (GuestSession *)pSession, mData.mGuestSessions.size()));
-        }
+        /* Start (fork) the session asynchronously
+         * on the guest. */
+        rc = pSession->startSessionAsync();
     }
 
     HRESULT hr = S_OK;
@@ -481,12 +475,8 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
     {
         switch (rc)
         {
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestSession::setErrorExternal(this, guestRc);
-                break;
-
             case VERR_MAX_PROCS_REACHED:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of guest sessions (%ld) reached"),
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of concurrent guest sessions (%ld) reached"),
                               VBOX_GUESTCTRL_MAX_SESSIONS);
                 break;
 

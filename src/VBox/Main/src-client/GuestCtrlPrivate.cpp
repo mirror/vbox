@@ -1257,132 +1257,50 @@ int GuestProcessStream::ParseBlock(GuestProcessStreamBlock &streamBlock)
     return rc;
 }
 
+GuestBase::GuestBase(void)
+    : mConsole(NULL),
+      mNextContextID(0)
+{
+}
+
+GuestBase::~GuestBase(void)
+{
+}
+
+int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32_t *puContextID)
+{
+    AssertPtrReturn(puContextID, VERR_INVALID_POINTER);
+
+    uint32_t uCount = mNextContextID++;
+    if (uCount == VBOX_GUESTCTRL_MAX_CONTEXTS)
+        uCount = 0;
+
+    uint32_t uNewContextID =
+        VBOX_GUESTCTRL_CONTEXTID_MAKE(uSessionID, uObjectID, uCount);
+
+    *puContextID = uNewContextID;
+}
+
+GuestObject::GuestObject(void)
+    : mSession(NULL),
+      mObjectID(0)
+{
+}
+
+GuestObject::~GuestObject(void)
+{
+}
+
 int GuestObject::bindToSession(Console *pConsole, GuestSession *pSession, uint32_t uObjectID)
 {
     AssertPtrReturn(pConsole, VERR_INVALID_POINTER);
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
 
-    mObject.mConsole = pConsole;
-    mObject.mSession = pSession;
-
-    mObject.mNextContextID = 0;
-    mObject.mObjectID = uObjectID;
+    mConsole  = pConsole;
+    mSession  = pSession;
+    mObjectID = uObjectID;
 
     return VINF_SUCCESS;
-}
-
-int GuestObject::callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puContextID)
-{
-    const ComObjPtr<GuestSession> pSession(mObject.mSession);
-    Assert(!pSession.isNull());
-    ULONG uSessionID = 0;
-    pSession->COMGETTER(Id)(&uSessionID);
-
-    /* Create a new context ID and assign it. */
-    int vrc = VERR_NOT_FOUND;
-
-    ULONG uCount = mObject.mNextContextID++;
-    ULONG uNewContextID = 0;
-    ULONG uTries = 0;
-    for (;;)
-    {
-        if (uCount == VBOX_GUESTCTRL_MAX_CONTEXTS)
-            uCount = 0;
-
-        /* Create a new context ID ... */
-        uNewContextID = VBOX_GUESTCTRL_CONTEXTID_MAKE(uSessionID, mObject.mObjectID, uCount);
-
-        /* Is the context ID already used?  Try next ID ... */
-        if (!callbackExists(uCount))
-        {
-            /* Callback with context ID was not found. This means
-             * we can use this context ID for our new callback we want
-             * to add below. */
-            vrc = VINF_SUCCESS;
-            break;
-        }
-
-        uCount++;
-        if (++uTries == UINT32_MAX)
-            break; /* Don't try too hard. */
-    }
-
-    if (RT_SUCCESS(vrc))
-    {
-        /* Add callback with new context ID to our callback map.
-         * Note: This is *not* uNewContextID (which also includes
-         *       the session + process ID), just the context count
-         *       will be used here. */
-        mObject.mCallbacks[uCount] = pCallback;
-        Assert(mObject.mCallbacks.size());
-
-        /* Report back new context ID. */
-        if (puContextID)
-            *puContextID = uNewContextID;
-
-        LogFlowThisFunc(("Added new callback (Session: %RU32, Object: %RU32, Count: %RU32) CID=%RU32\n",
-                         uSessionID, mObject.mObjectID, uCount, uNewContextID));
-    }
-
-    return vrc;
-}
-
-void GuestObject::callbackDelete(GuestCtrlCallback *pCallback)
-{
-    if (pCallback)
-    {
-        delete pCallback;
-        pCallback = NULL;
-    }
-}
-
-bool GuestObject::callbackExists(uint32_t uContextID)
-{
-    GuestCtrlCallbacks::const_iterator it =
-        mObject.mCallbacks.find(VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID));
-    return (it == mObject.mCallbacks.end()) ? false : true;
-}
-
-int GuestObject::callbackRemove(uint32_t uContextID)
-{
-    LogFlowThisFunc(("Removing callback (Session=%RU32, Object=%RU32, Count=%RU32) CID=%RU32\n",
-                     VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID),
-                     VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(uContextID),
-                     VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID),
-                     uContextID));
-
-    GuestCtrlCallbacks::iterator it =
-        mObject.mCallbacks.find(VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID));
-    if (it != mObject.mCallbacks.end())
-    {
-        mObject.mCallbacks.erase(it);
-
-        return VINF_SUCCESS;
-    }
-
-    return VERR_NOT_FOUND;
-}
-
-int GuestObject::callbackRemoveAll(void)
-{
-    int vrc = VINF_SUCCESS;
-
-    /*
-     * Cancel all callbacks + waiters.
-     * Note: Deleting them is the job of the caller!
-     */
-    for (GuestCtrlCallbacks::iterator itCallbacks = mObject.mCallbacks.begin();
-         itCallbacks != mObject.mCallbacks.end(); ++itCallbacks)
-    {
-        GuestCtrlCallback *pCallback = itCallbacks->second;
-        AssertPtr(pCallback);
-        int rc2 = pCallback->Cancel();
-        if (RT_SUCCESS(vrc))
-            vrc = rc2;
-    }
-    mObject.mCallbacks.clear();
-
-    return vrc;
 }
 
 int GuestObject::sendCommand(uint32_t uFunction,
@@ -1391,7 +1309,7 @@ int GuestObject::sendCommand(uint32_t uFunction,
     LogFlowThisFuncEnter();
 
 #ifndef VBOX_GUESTCTRL_TEST_CASE
-    ComObjPtr<Console> pConsole = mObject.mConsole;
+    ComObjPtr<Console> pConsole = mConsole;
     Assert(!pConsole.isNull());
 
     /* Forward the information to the VMM device. */

@@ -160,6 +160,31 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgSetFilter(uint32_t uClientId,
 
 
 /**
+ * Tells the host service to skip the current message returned by
+ * VbglR3GuestCtrlMsgWaitFor().
+ *
+ * @return  IPRT status code.
+ * @param   uClientId       The client id returned by VbglR3GuestCtrlConnect().
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId)
+{
+    HGCMMsgCmdSkip Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = uClientId;
+    Msg.hdr.u32Function = GUEST_MSG_SKIP; /* Tell the host we want to skip
+                                             the current assigned command. */
+    Msg.hdr.cParms      = 0;              /* No parameters needed. */
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+        rc = Msg.hdr.result;
+
+    return rc;
+}
+
+
+/**
  * Asks the host to cancel (release) all pending waits which were deferred.
  *
  * @returns VBox status code.

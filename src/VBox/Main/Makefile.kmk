@@ -610,6 +610,7 @@ VBoxC_SOURCES = \
 	src-client/DisplayImpl.cpp \
 	src-client/GuestImpl.cpp \
 	src-client/GuestDirectoryImpl.cpp \
+	src-client/GuestErrorInfoImpl.cpp \
 	src-client/GuestFileImpl.cpp \
 	src-client/GuestFsObjInfoImpl.cpp \
 	src-client/GuestProcessImpl.cpp \

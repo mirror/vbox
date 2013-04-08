@@ -20,6 +20,7 @@
 #define ____H_GUESTSESSIONIMPL
 
 #include "VirtualBoxBase.h"
+#include "EventImpl.h"
 
 #include "GuestCtrlImplPrivate.h"
 #include "GuestProcessImpl.h"
@@ -237,6 +238,7 @@ protected:
  */
 class ATL_NO_VTABLE GuestSession :
     public VirtualBoxBase,
+    public GuestBase,
     VBOX_SCRIPTABLE_IMPL(IGuestSession)
 {
 public:
@@ -270,6 +272,7 @@ public:
     STDMETHOD(COMGETTER(Processes))(ComSafeArrayOut(IGuestProcess *, aProcesses));
     STDMETHOD(COMGETTER(Directories))(ComSafeArrayOut(IGuestDirectory *, aDirectories));
     STDMETHOD(COMGETTER(Files))(ComSafeArrayOut(IGuestFile *, aFiles));
+    STDMETHOD(COMGETTER(EventSource))(IEventSource ** aEventSource);
     /** @}  */
 
     /** @name IGuestSession methods.
@@ -344,15 +347,17 @@ public:
     int                     fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc);
     const GuestCredentials &getCredentials(void);
     const GuestEnvironment &getEnvironment(void);
+    EventSource            *getEventSource(void) { return mEventSource; }
     Utf8Str                 getName(void);
     ULONG                   getId(void) { return mData.mSession.mID; }
     static Utf8Str          guestErrorToString(int guestRc);
-    int                     onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    HRESULT                 isReadyExternal(void);
+    int                     onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int                     startSessionIntenal(int *pGuestRc);
     int                     startSessionAsync(void);
     static DECLCALLBACK(int)
                             startSessionThread(RTTHREAD Thread, void *pvUser);
-    Guest                  *getParent(void) { return mData.mParent; }
+    Guest                  *getParent(void) { return mParent; }
     uint32_t                getProtocolVersion(void) { return mData.mProtocolVersion; }
     int                     processRemoveFromList(GuestProcess *pProcess);
     int                     processCreateExInteral(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
@@ -360,17 +365,27 @@ public:
     inline int              processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess);
     int                     sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
     static HRESULT          setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
+    int                     setSessionStatus(GuestSessionStatus_T sessionStatus, int sessionRc);
+    int                     signalWaiters(GuestSessionWaitResult_T enmWaitResult, int rc /*= VINF_SUCCESS */);
     int                     startTaskAsync(const Utf8Str &strTaskDesc, GuestSessionTask *pTask, ComObjPtr<Progress> &pProgress);
     int                     queryInfo(void);
     int                     waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWaitResult_T &waitResult, int *pGuestRc);
+    int                     waitForStateChange(uint32_t fWaitFlags, uint32_t uTimeoutMS, GuestSessionStatus_T *pSessionStatus, int *pGuestRc);
     /** @}  */
 
 private:
 
+    /** Pointer to the parent (Guest). */
+    Guest                          *mParent;
+    /**
+     * This can safely be used without holding any locks.
+     * An AutoCaller suffices to prevent it being destroy while in use and
+     * internally there is a lock providing the necessary serialization.
+     */
+    const ComObjPtr<EventSource>    mEventSource;
+
     struct Data
     {
-        /** Pointer to the parent (Guest). */
-        Guest                      *mParent;
         /** The session credentials. */
         GuestCredentials            mCredentials;
         /** The session's startup info. */
@@ -380,9 +395,6 @@ private:
         /** The session's environment block. Can be
          *  overwritten/extended by ProcessCreate(Ex). */
         GuestEnvironment            mEnvironment;
-        /** The session callback, needed for communicating
-         *  with the guest. */
-        GuestCtrlCallback           mCallback;
         /** Directory objects bound to this session. */
         SessionDirectories          mDirectories;
         /** File objects bound to this session. */
@@ -401,12 +413,6 @@ private:
         /** The last returned session status
          *  returned from the guest side. */
         int                         mRC;
-        /** How many waiters? At the moment there can only
-         *  be one. */
-        uint32_t                    mWaitCount;
-        /** The actual session event for doing the waits.
-         *  At the moment we only support one wait a time. */
-        GuestSessionWaitEvent      *mWaitEvent;
     } mData;
 };
 

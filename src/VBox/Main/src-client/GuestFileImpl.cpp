@@ -20,6 +20,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include "GuestErrorInfoImpl.h"
 #include "GuestFileImpl.h"
 #include "GuestSessionImpl.h"
 #include "GuestCtrlImplPrivate.h"
@@ -27,7 +28,9 @@
 
 #include "Global.h"
 #include "AutoCaller.h"
+#include "VBoxEvents.h"
 
+#include <iprt/cpp/utils.h> /* For unconst(). */
 #include <iprt/file.h>
 #include <VBox/com/array.h>
 
@@ -87,13 +90,23 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession, ULONG uFileID, co
     {
         mData.mID = 0;
         mData.mInitialSize = 0;
+        mData.mStatus = FileStatus_Undefined;
 
-        /* Confirm a successful initialization when it's the case. */
-        autoInitSpan.setSucceeded();
-        return vrc;
+        unconst(mEventSource).createObject();
+        HRESULT hr = mEventSource->init(static_cast<IGuestFile*>(this));
+        if (FAILED(hr))
+            vrc = VERR_COM_UNEXPECTED;
     }
 
-    autoInitSpan.setFailed();
+    if (RT_SUCCESS(vrc))
+    {
+        /* Confirm a successful initialization when it's the case. */
+        autoInitSpan.setSucceeded();
+    }
+    else
+        autoInitSpan.setFailed();
+
+    LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
@@ -111,11 +124,7 @@ void GuestFile::uninit(void)
         return;
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-    /*
-     * Cancel + remove all callbacks + waiters.
-     * Note: Deleting them is the job of the caller!
-     */
-    callbackRemoveAll();
+    unconst(mEventSource).setNull();
 #endif
 
     LogFlowThisFuncLeave();
@@ -234,6 +243,24 @@ STDMETHODIMP GuestFile::COMGETTER(OpenMode)(ULONG *aOpenMode)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+STDMETHODIMP GuestFile::COMGETTER(Status)(FileStatus_T *aStatus)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aStatus = mData.mStatus;
+
+    return S_OK;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -247,31 +274,15 @@ int GuestFile::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Get the optional callback associated to this context ID.
-     * The callback may not be around anymore if just kept locally by the caller when
-     * doing the actual HGCM sending stuff. */
-    GuestCtrlCallback *pCallback = NULL;
-    GuestCtrlCallbacks::const_iterator it
-        = mData.mCallbacks.find(VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(pCbCtx->uContextID));
-    if (it != mData.mCallbacks.end())
-    {
-        pCallback = it->second;
-        AssertPtr(pCallback);
-#ifdef DEBUG
-        LogFlowThisFunc(("pCallback=%p, CID=%RU32, Count=%RU32\n",
-                         pCallback, pCbCtx->uContextID, VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(pCbCtx->uContextID)));
-#endif
-    }
-
     int vrc;
     switch (pCbCtx->uFunction)
     {
         case GUEST_DISCONNECTED:
-            vrc = onGuestDisconnected(pCbCtx, pSvcCb, pCallback); /* Affects all callbacks. */
+            vrc = onGuestDisconnected(pCbCtx, pSvcCb);
             break;
 
         case GUEST_FILE_NOTIFY:
-            vrc = onFileNotify(pCbCtx, pSvcCb, pCallback);
+            vrc = onFileNotify(pCbCtx, pSvcCb);
             break;
 
         default:
@@ -290,16 +301,21 @@ int GuestFile::closeFile(int *pGuestRc)
 {
     LogFlowThisFunc(("strFile=%s\n", mData.mOpenInfo.mFileName.c_str()));
 
-    /* Prepare HGCM call. */
-    VBOXHGCMSVCPARM paParms[4];
-    int i = 1; /* Context ID will be set in sendFileComannd(). */
-    paParms[i++].setUInt32(mData.mID /* Guest file ID */);
+    uint32_t uContextID;
+    int vrc = generateContextID(mSession->getId(), mObjectID,
+                                &uContextID);
+    if (RT_SUCCESS(vrc))
+    {
+        /* Prepare HGCM call. */
+        VBOXHGCMSVCPARM paParms[4];
+        int i = 0;
+        paParms[i++].setUInt32(mData.mID /* Guest file ID */);
 
-    int guestRc;
-    int vrc = sendFileCommand(HOST_FILE_CLOSE, i, paParms, 30 * 1000 /* 30s timeout */,
-                              &guestRc, NULL /* ppCallback */);
-    if (pGuestRc)
-        *pGuestRc = guestRc;
+        vrc = sendCommand(HOST_FILE_CLOSE, i, paParms);
+        if (RT_SUCCESS(vrc))
+            vrc = waitForStatusChange(30 * 1000 /* Timeout in ms */,
+                                      NULL /* FileStatus */);
+    }
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -382,12 +398,10 @@ Utf8Str GuestFile::guestErrorToString(int guestRc)
     return strError;
 }
 
-int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData,
-                            GuestCtrlCallback *pCallback)
+int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
-    /* pCallback is optional. */
 
     if (pSvcCbData->mParms < 3)
         return VERR_INVALID_PARAMETER;
@@ -400,13 +414,21 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
     pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.uType);
     pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.rc);
 
+    int guestRc = (int)dataCb.rc; /* uint32_t vs. int. */
+
     switch (dataCb.uType)
     {
         case GUEST_FILE_NOTIFYTYPE_ERROR:
-            /* No extra data. */
+        {
+            AssertMsg(mData.mStatus != FileStatus_Error, ("File status already set to error\n"));
+
+            int rc2 = setFileStatus(FileStatus_Error, guestRc);
+            AssertRC(rc2);
             break;
+        }
 
         case GUEST_FILE_NOTIFYTYPE_OPEN:
+        {
             if (pSvcCbData->mParms == 4)
             {
                 pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.u.open.uHandle);
@@ -416,22 +438,41 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
                 AssertMsg(mData.mID == VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID),
                           ("File ID %RU32 does not match context ID %RU32\n", mData.mID,
                            VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID)));
+
+                /* Set the process status. */
+                int rc2 = setFileStatus(FileStatus_Open, guestRc);
+                if (RT_SUCCESS(vrc))
+                    vrc = rc2;
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
+
             break;
+        }
 
         case GUEST_FILE_NOTIFYTYPE_CLOSE:
-            /* No extra data. */
+        {
+            int rc2 = setFileStatus(FileStatus_Closed, guestRc);
+            AssertRC(rc2);
+
             break;
+        }
 
         case GUEST_FILE_NOTIFYTYPE_READ:
             if (pSvcCbData->mParms == 4)
             {
                 pSvcCbData->mpaParms[idx++].getPointer(&dataCb.u.read.pvData,
                                                        &dataCb.u.read.cbData);
+                uint32_t cbRead = dataCb.u.read.cbData;
+                if (cbRead)
+                {
+                    mData.mOffCurrent += cbRead;
 
-                mData.mOffCurrent += dataCb.u.read.cbData;
+                    com::SafeArray<BYTE> data((size_t)cbRead);
+                    data.initFrom((BYTE*)dataCb.u.read.pvData, cbRead);
+                    fireGuestFileReadEvent(mEventSource, mSession, this, mData.mOffCurrent,
+                                           cbRead, ComSafeArrayAsInParam(data));
+                }
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
@@ -443,6 +484,10 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
                 pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.u.write.cbWritten);
 
                 mData.mOffCurrent += dataCb.u.write.cbWritten;
+
+                if (dataCb.u.write.cbWritten)
+                    fireGuestFileWriteEvent(mEventSource, mSession, this, mData.mOffCurrent,
+                                            dataCb.u.write.cbWritten);
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
@@ -454,6 +499,10 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
                 pSvcCbData->mpaParms[idx++].getUInt64(&dataCb.u.seek.uOffActual);
 
                 mData.mOffCurrent = dataCb.u.seek.uOffActual;
+
+                if (dataCb.u.seek.uOffActual)
+                    fireGuestFileOffsetChangedEvent(mEventSource, mSession, this,
+                                                    mData.mOffCurrent, 0 /* Processed */);
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
@@ -464,7 +513,13 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
             {
                 pSvcCbData->mpaParms[idx++].getUInt64(&dataCb.u.tell.uOffActual);
 
-                mData.mOffCurrent = dataCb.u.tell.uOffActual;
+                if (mData.mOffCurrent != dataCb.u.tell.uOffActual)
+                {
+                    mData.mOffCurrent = dataCb.u.tell.uOffActual;
+
+                    fireGuestFileOffsetChangedEvent(mEventSource, mSession, this,
+                                                    mData.mOffCurrent, 0 /* Processed */);
+                }
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
@@ -475,10 +530,9 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
             break;
     }
 
-    LogFlowThisFunc(("strName=%s, uType=%RU32, rc=%Rrc, pCallback=%p\n",
-                     mData.mOpenInfo.mFileName.c_str(), dataCb.uType, dataCb.rc, pCallback));
+    LogFlowThisFunc(("strName=%s, uType=%RU32, guestRc=%Rrc\n",
+                     mData.mOpenInfo.mFileName.c_str(), dataCb.uType, dataCb.rc));
 
-    int guestRc = (int)dataCb.rc; /* uint32_t vs. int. */
     if (RT_SUCCESS(vrc))
     {
         /* Nothing to do here yet. */
@@ -489,37 +543,19 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
         guestRc = VERR_NOT_SUPPORTED;
     }
 
-    /* Signal callback in every case (if available). */
-    if (pCallback)
-    {
-        int rc2 = pCallback->SetData(&dataCb, sizeof(dataCb));
-        if (RT_SUCCESS(vrc))
-            vrc = rc2;
-        rc2 = pCallback->Signal(guestRc);
-        if (RT_SUCCESS(vrc))
-            vrc = rc2;
-    }
-
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
-int GuestFile::onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData,
-                                   GuestCtrlCallback *pCallback)
+int GuestFile::onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
 {
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
-    /* pCallback is optional. */
 
-    LogFlowThisFunc(("strFile=%s, pCallback=%p\n",
-                     mData.mOpenInfo.mFileName.c_str(), pCallback));
+    LogFlowThisFunc(("strFile=%s\n",
+                     mData.mOpenInfo.mFileName.c_str()));
 
-    /* First, signal callback in every case. */
-    if (pCallback)
-        pCallback->Signal();
-
-    /** @todo More on onGuestDisconnected? */
-    int vrc = VINF_SUCCESS;
+    int vrc = setFileStatus(FileStatus_Down, VINF_SUCCESS);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -533,7 +569,7 @@ int GuestFile::openFile(int *pGuestRc)
 
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[8];
-    int i = 1; /* Context ID will be set in sendFileComannd(). */
+    int i = 0;
     paParms[i++].setPointer((void*)mData.mOpenInfo.mFileName.c_str(),
                             (ULONG)mData.mOpenInfo.mFileName.length() + 1);
     paParms[i++].setPointer((void*)mData.mOpenInfo.mOpenMode.c_str(),
@@ -543,246 +579,103 @@ int GuestFile::openFile(int *pGuestRc)
     paParms[i++].setUInt32(mData.mOpenInfo.mCreationMode);
     paParms[i++].setUInt64(mData.mOpenInfo.mInitialOffset);
 
-    int vrc = sendFileCommand(HOST_FILE_OPEN, i, paParms, 30 * 1000 /* 30s timeout */,
-                              pGuestRc, NULL /* ppCallback */);
+    int vrc = sendCommand(HOST_FILE_OPEN, i, paParms);
+    if (RT_SUCCESS(vrc))
+        vrc = waitForStatusChange(30 * 1000 /* Timeout in ms */,
+                                  NULL /* FileStatus */);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
-int GuestFile::readData(uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData,
-                        size_t *pcbRead, int *pGuestRc)
+int GuestFile::readData(uint32_t uSize, uint32_t uTimeoutMS,
+                        void* pvData, uint32_t cbData, uint32_t* pcbRead)
 {
     LogFlowThisFunc(("uSize=%RU32, uTimeoutMS=%RU32, pvData=%p, cbData=%zu\n",
                      uSize, uTimeoutMS, pvData, cbData));
 
-    /* Prepare HGCM call. */
-    VBOXHGCMSVCPARM paParms[4];
-    int i = 1; /* Context ID will be set in sendFileComannd(). */
-    paParms[i++].setUInt32(mData.mID /* File handle */);
-    paParms[i++].setUInt32(uSize /* Size (in bytes) to read */);
-
-    GuestCtrlCallback *pCallback = NULL; int guestRc;
-    int vrc = sendFileCommand(HOST_FILE_READ, i, paParms, uTimeoutMS,
-                              &guestRc, &pCallback);
-
+    uint32_t uContextID;
+    int vrc = generateContextID(mSession->getId(), mObjectID,
+                                &uContextID);
     if (RT_SUCCESS(vrc))
     {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        /* Prepare HGCM call. */
+        VBOXHGCMSVCPARM paParms[4];
+        int i = 0;
+        paParms[i++].setUInt32(mData.mID /* File handle */);
+        paParms[i++].setUInt32(uSize /* Size (in bytes) to read */);
 
-        Assert(pCallback->GetDataSize() == sizeof(CALLBACKDATA_FILE_NOTIFY));
-        PCALLBACKDATA_FILE_NOTIFY pData = (PCALLBACKDATA_FILE_NOTIFY)pCallback->GetDataRaw();
-        AssertPtr(pData);
-        Assert(pData->uType == GUEST_FILE_NOTIFYTYPE_READ);
+        uint32_t cbRead;
+        vrc = sendCommand(HOST_FILE_READ, i, paParms);
+        if (RT_SUCCESS(vrc))
+            vrc = waitForRead(uTimeoutMS, pvData, cbData, &cbRead);
 
-        size_t cbRead = pData->u.read.cbData;
-        if (cbRead)
+        if (RT_SUCCESS(vrc))
         {
-            Assert(cbData >= cbRead);
-            memcpy(pvData, pData->u.read.pvData, cbRead);
+            LogFlowThisFunc(("cbRead=%RU32\n", cbRead));
+
+            if (pcbRead)
+                *pcbRead = cbRead;
         }
-
-        LogFlowThisFunc(("cbRead=%RU32\n", cbRead));
-
-        if (pcbRead)
-            *pcbRead = cbRead;
     }
-
-    callbackDelete(pCallback);
-
-    if (pGuestRc)
-        *pGuestRc = guestRc;
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
 int GuestFile::readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
-                          void *pvData, size_t cbData,
-                          size_t *pcbRead, int *pGuestRc)
+                          void* pvData, size_t cbData, size_t* pcbRead)
 {
     LogFlowThisFunc(("uOffset=%RU64, uSize=%RU32, uTimeoutMS=%RU32, pvData=%p, cbData=%zu\n",
                      uOffset, uSize, uTimeoutMS, pvData, cbData));
 
-    /* Prepare HGCM call. */
-    VBOXHGCMSVCPARM paParms[4];
-    int i = 1; /* Context ID will be set in sendFileComannd(). */
-    paParms[i++].setUInt32(mData.mID /* File handle */);
-    paParms[i++].setUInt64(uOffset /* Offset (in bytes) to start reading */);
-    paParms[i++].setUInt32(uSize /* Size (in bytes) to read */);
-
-    GuestCtrlCallback *pCallback = NULL; int guestRc;
-    int vrc = sendFileCommand(HOST_FILE_READ_AT, i, paParms, uTimeoutMS,
-                              &guestRc, &pCallback);
-
+    uint32_t uContextID;
+    int vrc = generateContextID(mSession->getId(), mObjectID,
+                                &uContextID);
     if (RT_SUCCESS(vrc))
     {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        Assert(pCallback->GetDataSize() == sizeof(CALLBACKDATA_FILE_NOTIFY));
-        PCALLBACKDATA_FILE_NOTIFY pData = (PCALLBACKDATA_FILE_NOTIFY)pCallback->GetDataRaw();
-        AssertPtr(pData);
-        Assert(pData->uType == GUEST_FILE_NOTIFYTYPE_READ);
+        /* Prepare HGCM call. */
+        VBOXHGCMSVCPARM paParms[4];
+        int i = 0;
+        paParms[i++].setUInt32(mData.mID /* File handle */);
+        paParms[i++].setUInt64(uOffset /* Offset (in bytes) to start reading */);
+        paParms[i++].setUInt32(uSize /* Size (in bytes) to read */);
 
-        size_t cbRead = pData->u.read.cbData;
-        if (cbRead)
+        uint32_t cbRead;
+        int vrc = sendCommand(HOST_FILE_READ_AT, i, paParms);
+        if (RT_SUCCESS(vrc))
+            vrc = waitForRead(uTimeoutMS, pvData, cbData, &cbRead);
+
+        if (RT_SUCCESS(vrc))
         {
-            Assert(cbData >= cbRead);
-            memcpy(pvData, pData->u.read.pvData, cbRead);
+            LogFlowThisFunc(("cbRead=%RU32\n", cbRead));
+
+            if (pcbRead)
+                *pcbRead = cbRead;
         }
-
-        LogFlowThisFunc(("cbRead=%RU32\n", cbRead));
-
-        if (pcbRead)
-            *pcbRead = cbRead;
     }
-
-    callbackDelete(pCallback);
-
-    if (pGuestRc)
-        *pGuestRc = guestRc;
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
 int GuestFile::seekAt(uint64_t uOffset, GUEST_FILE_SEEKTYPE eSeekType,
-                      uint32_t uTimeoutMS, int *pGuestRc)
+                      uint32_t uTimeoutMS, uint64_t *puOffset)
 {
     LogFlowThisFunc(("uOffset=%RU64, uTimeoutMS=%RU32\n",
                      uOffset, uTimeoutMS));
 
     /* Prepare HGCM call. */
     VBOXHGCMSVCPARM paParms[4];
-    int i = 1; /* Context ID will be set in sendFileComannd(). */
+    int i = 0;
     paParms[i++].setUInt32(mData.mID /* File handle */);
     paParms[i++].setUInt32(eSeekType /* Seek method */);
     paParms[i++].setUInt64(uOffset /* Offset (in bytes) to start reading */);
 
-    int guestRc;
-    int vrc = sendFileCommand(HOST_FILE_SEEK, i, paParms, uTimeoutMS,
-                              &guestRc, NULL /* ppCallback */);
-    if (pGuestRc)
-        *pGuestRc = guestRc;
-
-    LogFlowFuncLeaveRC(vrc);
-    return vrc;
-}
-
-/**
- * Handles the common parts of sending a file command to the guest.
- * If ppCallback is returned it must be removed via callbackRemove()
- * by the caller in any case.
- *
- * @return  IPRT status code.
- * @param   uFunction               HGCM function of command to send.
- * @param   uParms                  Number of HGCM parameters to send.
- *                                  At least one parameter must be present.
- * @param   paParms                 Array of HGCM parameters to send.
- *                                  Index [0] must not be used and will be
- *                                  filled out by the function.
- * @param   uTimeoutMS              Timeout (in ms).
- * @param   pGuestRc                Guest result. Optional.
- * @param   ppCallback              Pointer which will receive the callback for
- *                                  further processing by the caller. Must
- *                                  be deleted with callbackDelete() when done. Optional.
- */
-int GuestFile::sendFileCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms,
-                               uint32_t uTimeoutMS, int *pGuestRc, GuestCtrlCallback **ppCallback)
-{
-    AssertReturn(uParms, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(paParms, VERR_INVALID_POINTER);
-    /** pGuestRc is optional. */
-    /** ppCallback is optional. */
-
-    LogFlowThisFunc(("strFile=%s, uFunction=%RU32, uParms=%RU32\n",
-                     mData.mOpenInfo.mFileName.c_str(), uFunction, uParms));
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    AssertPtr(mData.mSession);
-    uint32_t uProtocol = mData.mSession->getProtocolVersion();
-    if (uProtocol < 2)
-        return VERR_NOT_SUPPORTED;
-
-    int vrc = VINF_SUCCESS;
-    uint32_t uContextID = 0;
-
-    GuestCtrlCallback *pCallback;
-    try
-    {
-        pCallback = new GuestCtrlCallback();
-    }
-    catch(std::bad_alloc &)
-    {
-        vrc = VERR_NO_MEMORY;
-    }
-
+    int vrc = sendCommand(HOST_FILE_SEEK, i, paParms);
     if (RT_SUCCESS(vrc))
-    {
-        /* Create callback and add it to the map. */
-        vrc = pCallback->Init(CALLBACKTYPE_FILE_NOTIFY);
-        if (RT_SUCCESS(vrc))
-            vrc = callbackAdd(pCallback, &uContextID);
-    }
-
-    if (RT_SUCCESS(vrc))
-    {
-        /* Assign context ID. */
-        paParms[0].setUInt32(uContextID);
-
-        GuestSession *pSession = mData.mSession;
-        AssertPtr(pSession);
-
-        alock.release(); /* Drop the write lock again. */
-
-        /* Note: Don't hold the write lock in here. */
-        vrc = sendCommand(uFunction, uParms, paParms);
-
-        if (RT_SUCCESS(vrc))
-        {
-            /*
-             * Let's wait for the process being started.
-             * Note: Be sure not keeping a AutoRead/WriteLock here.
-             */
-            LogFlowThisFunc(("Waiting for callback (%RU32ms) ...\n",
-                             uTimeoutMS));
-            vrc = pCallback->Wait(uTimeoutMS);
-            if (RT_SUCCESS(vrc)) /* Wait was successful, check for supplied information. */
-            {
-                int guestRc = pCallback->GetResultCode();
-                if (RT_SUCCESS(guestRc))
-                {
-                    /* Nothing to do here yet. */
-                }
-                else
-                    vrc = VERR_GSTCTL_GUEST_ERROR;
-
-                if (pGuestRc)
-                    *pGuestRc = guestRc;
-                LogFlowThisFunc(("Callback returned rc=%Rrc\n", guestRc));
-            }
-        }
-
-        alock.acquire(); /* Get write lock again. */
-
-        AssertPtr(pCallback);
-        int rc2 = callbackRemove(uContextID);
-        if (RT_SUCCESS(vrc))
-            vrc = rc2;
-
-        if (ppCallback)
-        {
-            /* Return callback to the caller which then will be
-             * responsible for removing it. Don't forget to lock write
-             * access before using this callback then! */
-            *ppCallback = pCallback;
-        }
-        else
-        {
-            delete pCallback;
-        }
-    }
+        vrc = waitForOffsetChange(uTimeoutMS, puOffset);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -797,8 +690,146 @@ HRESULT GuestFile::setErrorExternal(VirtualBoxBase *pInterface, int guestRc)
     return pInterface->setError(VBOX_E_IPRT_ERROR, GuestFile::guestErrorToString(guestRc).c_str());
 }
 
-int GuestFile::writeData(uint32_t uTimeoutMS, void *pvData, size_t cbData,
-                         uint32_t *pcbWritten, int *pGuestRc)
+/* Does not do locking; caller is responsible for that! */
+int GuestFile::setFileStatus(FileStatus_T fileStatus, int fileRc)
+{
+    LogFlowThisFunc(("oldStatus=%ld, newStatus=%ld, fileRc=%Rrc\n",
+                     mData.mStatus, fileStatus, fileRc));
+
+#ifdef VBOX_STRICT
+    if (fileStatus == FileStatus_Error)
+    {
+        AssertMsg(RT_FAILURE(fileRc), ("Guest rc must be an error (%Rrc)\n", fileRc));
+    }
+    else
+        AssertMsg(RT_SUCCESS(fileRc), ("Guest rc must not be an error (%Rrc)\n", fileRc));
+#endif
+
+    if (mData.mStatus != fileStatus)
+    {
+        mData.mStatus = fileStatus;
+
+        ComObjPtr<GuestErrorInfo> errorInfo;
+        HRESULT hr = errorInfo.createObject();
+        ComAssertComRC(hr);
+        if (RT_FAILURE(fileRc))
+        {
+            int rc2 = errorInfo->init(fileRc, guestErrorToString(fileRc));
+            AssertRC(rc2);
+        }
+
+        fireGuestFileStateChangedEvent(mEventSource, mSession,
+                                       this, mData.mStatus, errorInfo);
+    }
+
+    return VINF_SUCCESS;
+}
+
+int GuestFile::waitForOffsetChange(uint32_t uTimeoutMS, uint64_t *puOffset)
+{
+    return VINF_SUCCESS;
+}
+
+int GuestFile::waitForRead(uint32_t uTimeoutMS, void* pvData, size_t cbData, uint32_t *pcbRead)
+{
+    return VINF_SUCCESS;
+}
+
+int GuestFile::waitForStatusChange(uint32_t uTimeoutMS, FileStatus_T *pFileStatus)
+{
+    int vrc;
+
+    /** @todo Parameter validation. */
+
+    ComPtr<IEventListener> pListener;
+    HRESULT hr = mEventSource->CreateListener(pListener.asOutParam());
+    if (SUCCEEDED(hr))
+    {
+        com::SafeArray <VBoxEventType_T> eventTypes(1);
+        eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
+        hr = mEventSource->RegisterListener(pListener, ComSafeArrayAsInParam(eventTypes), false);
+    }
+    else
+        vrc = VERR_COM_UNEXPECTED;
+
+    if (SUCCEEDED(hr))
+    {
+        LogFlowThisFunc(("Waiting for guest file status change event (timeout=%RU32ms) ...\n",
+                         uTimeoutMS));
+
+        vrc = VINF_SUCCESS;
+
+        uint64_t u64Started = RTTimeMilliTS();
+        bool fSignalled = false;
+        do
+        {
+            unsigned cMsWait;
+            if (uTimeoutMS == RT_INDEFINITE_WAIT)
+                cMsWait = 1000;
+            else
+            {
+                uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
+                if (cMsElapsed >= uTimeoutMS)
+                    break; /* timed out */
+                cMsWait = RT_MIN(1000, uTimeoutMS - (uint32_t)cMsElapsed);
+            }
+
+            ComPtr<IEvent> pEvent;
+            hr = mEventSource->GetEvent(pListener, cMsWait, pEvent.asOutParam());
+            if (   SUCCEEDED(hr)
+                && !pEvent.isNull())
+            {
+                VBoxEventType_T aType;
+                hr = pEvent->COMGETTER(Type)(&aType);
+                ComAssertComRC(hr);
+                switch (aType)
+                {
+                    case VBoxEventType_OnGuestFileStateChanged:
+                    {
+                        ComPtr<IGuestFileStateChangedEvent> pChangedEvent = pEvent;
+                        Assert(!pChangedEvent.isNull());
+
+                        ComPtr<IGuestFile> pFile;
+                        pChangedEvent->COMGETTER(File)(pFile.asOutParam());
+                        Assert(!pFile.isNull());
+
+                        if (pFile != this)
+                            continue;
+                    }
+
+                    default:
+                        AssertMsgFailed(("Unhandled event type %ld\n", aType));
+                        break;
+                }
+
+                fSignalled = true;
+                break;
+            }
+
+        } while (!fSignalled);
+
+        if (   RT_SUCCESS(vrc)
+            && !fSignalled)
+        {
+            vrc = VERR_TIMEOUT;
+        }
+
+        mEventSource->UnregisterListener(pListener);
+    }
+    else
+        vrc = VERR_COM_UNEXPECTED;
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+int GuestFile::waitForWrite(uint32_t uTimeoutMS, uint32_t *pcbWritten)
+{
+    return VINF_SUCCESS;
+}
+
+int GuestFile::writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
+                         uint32_t *pcbWritten)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
@@ -806,45 +837,39 @@ int GuestFile::writeData(uint32_t uTimeoutMS, void *pvData, size_t cbData,
     LogFlowThisFunc(("uTimeoutMS=%RU32, pvData=%p, cbData=%zu\n",
                      uTimeoutMS, pvData, cbData));
 
-    /* Prepare HGCM call. */
-    VBOXHGCMSVCPARM paParms[4];
-    int i = 1; /* Context ID will be set in sendFileComannd(). */
-    paParms[i++].setUInt32(mData.mID /* File handle */);
-    paParms[i++].setUInt32(cbData /* Size (in bytes) to write */);
-    paParms[i++].setPointer(pvData, cbData);
-
-    GuestCtrlCallback *pCallback = NULL; int guestRc;
-    int vrc = sendFileCommand(HOST_FILE_WRITE, i, paParms, uTimeoutMS,
-                              &guestRc, &pCallback);
-
+    uint32_t uContextID;
+    int vrc = generateContextID(mSession->getId(), mObjectID,
+                                &uContextID);
     if (RT_SUCCESS(vrc))
     {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        /* Prepare HGCM call. */
+        VBOXHGCMSVCPARM paParms[8];
+        int i = 0;
+        paParms[i++].setUInt32(uContextID);
+        paParms[i++].setUInt32(mData.mID /* File handle */);
+        paParms[i++].setUInt32(cbData /* Size (in bytes) to write */);
+        paParms[i++].setPointer(pvData, cbData);
 
-        Assert(pCallback->GetDataSize() == sizeof(CALLBACKDATA_FILE_NOTIFY));
-        PCALLBACKDATA_FILE_NOTIFY pData = (PCALLBACKDATA_FILE_NOTIFY)pCallback->GetDataRaw();
-        AssertPtr(pData);
-        Assert(pData->uType == GUEST_FILE_NOTIFYTYPE_WRITE);
+        uint32_t cbWritten;
+        vrc = sendCommand(HOST_FILE_WRITE, i, paParms);
+        if (RT_SUCCESS(vrc))
+            vrc = waitForWrite(uTimeoutMS, &cbWritten);
 
-        size_t cbWritten = pData->u.write.cbWritten;
-        LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
+        if (RT_SUCCESS(vrc))
+        {
+            LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
 
-        if (pcbWritten)
-            *pcbWritten = cbWritten;
+            if (cbWritten)
+                *pcbWritten = cbWritten;
+        }
     }
-
-    callbackDelete(pCallback);
-
-    if (pGuestRc)
-        *pGuestRc = guestRc;
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
 int GuestFile::writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
-                           void *pvData, size_t cbData,
-                           uint32_t *pcbWritten, int *pGuestRc)
+                           void *pvData, uint32_t cbData, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
@@ -852,38 +877,36 @@ int GuestFile::writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
     LogFlowThisFunc(("uOffset=%RU64, uTimeoutMS=%RU32, pvData=%p, cbData=%zu\n",
                      uOffset, uTimeoutMS, pvData, cbData));
 
-    /* Prepare HGCM call. */
-    VBOXHGCMSVCPARM paParms[4];
-    int i = 1; /* Context ID will be set in sendFileComannd(). */
-    paParms[i++].setUInt32(mData.mID /* File handle */);
-    paParms[i++].setUInt64(uOffset /* Offset where to starting writing */);
-    paParms[i++].setUInt32(cbData /* Size (in bytes) to write */);
-    paParms[i++].setPointer(pvData, cbData);
-
-    GuestCtrlCallback *pCallback = NULL; int guestRc;
-    int vrc = sendFileCommand(HOST_FILE_WRITE_AT, i, paParms, uTimeoutMS,
-                              &guestRc, &pCallback);
-
+    uint32_t uContextID;
+    int vrc = generateContextID(mSession->getId(), mObjectID,
+                                &uContextID);
     if (RT_SUCCESS(vrc))
     {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        /* Prepare HGCM call. */
+        VBOXHGCMSVCPARM paParms[8];
+        int i = 0;
+        paParms[i++].setUInt32(mData.mID /* File handle */);
+        paParms[i++].setUInt64(uOffset /* Offset where to starting writing */);
+        paParms[i++].setUInt32(cbData /* Size (in bytes) to write */);
+        paParms[i++].setPointer(pvData, cbData);
 
-        Assert(pCallback->GetDataSize() == sizeof(CALLBACKDATA_FILE_NOTIFY));
-        PCALLBACKDATA_FILE_NOTIFY pData = (PCALLBACKDATA_FILE_NOTIFY)pCallback->GetDataRaw();
-        AssertPtr(pData);
-        Assert(pData->uType == GUEST_FILE_NOTIFYTYPE_WRITE);
+        vrc = sendCommand(HOST_FILE_WRITE_AT, i, paParms);
+        if (RT_SUCCESS(vrc))
+        {
+            uint32_t cbWritten;
+            vrc = sendCommand(HOST_FILE_WRITE, i, paParms);
+            if (RT_SUCCESS(vrc))
+                vrc = waitForWrite(uTimeoutMS, &cbWritten);
 
-        size_t cbWritten = pData->u.write.cbWritten;
-        LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
+            if (RT_SUCCESS(vrc))
+            {
+                LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
 
-        if (pcbWritten)
-            *pcbWritten = cbWritten;
+                if (cbWritten)
+                    *pcbWritten = cbWritten;
+            }
+        }
     }
-
-    callbackDelete(pCallback);
-
-    if (pGuestRc)
-        *pGuestRc = guestRc;
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -908,8 +931,8 @@ STDMETHODIMP GuestFile::Close(void)
     /* On failure don't return here, instead do all the cleanup
      * work first and then return an error. */
 
-    AssertPtr(mData.mSession);
-    int rc2 = mData.mSession->fileRemoveFromList(this);
+    AssertPtr(mSession);
+    int rc2 = mSession->fileRemoveFromList(this);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -963,9 +986,9 @@ STDMETHODIMP GuestFile::Read(ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BY
 
     HRESULT hr = S_OK;
 
-    size_t cbRead; int guestRc;
+    uint32_t cbRead;
     int vrc = readData(aToRead, aTimeoutMS,
-                       data.raw(), aToRead, &cbRead, &guestRc);
+                       data.raw(), aToRead, &cbRead);
     if (RT_SUCCESS(vrc))
     {
         if (data.size() != cbRead)
@@ -976,10 +999,6 @@ STDMETHODIMP GuestFile::Read(ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BY
     {
         switch (vrc)
         {
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestFile::setErrorExternal(this, guestRc);
-                break;
-
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Reading from file \"%s\" failed: %Rrc"),
@@ -1012,9 +1031,9 @@ STDMETHODIMP GuestFile::ReadAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, 
 
     HRESULT hr = S_OK;
 
-    size_t cbRead; int guestRc;
+    size_t cbRead;
     int vrc = readDataAt(aOffset, aToRead, aTimeoutMS,
-                         data.raw(), aToRead, &cbRead, &guestRc);
+                         data.raw(), aToRead, &cbRead);
     if (RT_SUCCESS(vrc))
     {
         if (data.size() != cbRead)
@@ -1025,10 +1044,6 @@ STDMETHODIMP GuestFile::ReadAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, 
     {
         switch (vrc)
         {
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestFile::setErrorExternal(this, guestRc);
-                break;
-
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Reading from file \"%s\" (at offset %RU64) failed: %Rrc"),
@@ -1072,17 +1087,12 @@ STDMETHODIMP GuestFile::Seek(LONG64 aOffset, FileSeekType_T aType)
             break;
     }
 
-    int guestRc;
     int vrc = seekAt(aOffset, eSeekType,
-                     30 * 1000 /* 30s timeout */, &guestRc);
+                     30 * 1000 /* 30s timeout */, NULL /* puOffset */);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
         {
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestFile::setErrorExternal(this, guestRc);
-                break;
-
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Seeking file \"%s\" (to offset %RU64) failed: %Rrc"),
@@ -1122,16 +1132,13 @@ STDMETHODIMP GuestFile::Write(ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULO
 
     HRESULT hr = S_OK;
 
-    com::SafeArray<BYTE> data(ComSafeArrayInArg(aData)); int guestRc;
-    int vrc = writeData(aTimeoutMS, data.raw(), data.size(), (uint32_t*)aWritten, &guestRc);
+    com::SafeArray<BYTE> data(ComSafeArrayInArg(aData));
+    int vrc = writeData(aTimeoutMS, data.raw(), (uint32_t)data.size(),
+                        (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
         {
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestFile::setErrorExternal(this, guestRc);
-                break;
-
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Writing to file \"%s\" failed: %Rrc"),
@@ -1161,16 +1168,13 @@ STDMETHODIMP GuestFile::WriteAt(LONG64 aOffset, ComSafeArrayIn(BYTE, aData), ULO
 
     HRESULT hr = S_OK;
 
-    com::SafeArray<BYTE> data(ComSafeArrayInArg(aData)); int guestRc;
-    int vrc = writeData(aTimeoutMS, data.raw(), data.size(), (uint32_t*)aWritten, &guestRc);
+    com::SafeArray<BYTE> data(ComSafeArrayInArg(aData));
+    int vrc = writeData(aTimeoutMS, data.raw(), (uint32_t)data.size(),
+                         (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
         {
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestFile::setErrorExternal(this, guestRc);
-                break;
-
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Writing to file \"%s\" (at offset %RU64) failed: %Rrc"),

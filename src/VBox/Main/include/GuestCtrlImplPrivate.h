@@ -131,7 +131,7 @@ public:
 
     int Init(CALLBACKTYPE enmType);
 
-    CALLBACKTYPE GetCallbackType(void) { return mType; }
+    CALLBACKTYPE GetType(void) { return mType; }
 
     const void* GetDataRaw(void) const { return pvData; }
 
@@ -567,16 +567,42 @@ public:
     ULONG   uFlags;
 };
 
-/**
- * Pure virtual class (interface) for guest objects (processes, files, ...) --
- * contains all per-object callback management.
- */
-class GuestObject
+class GuestBase
 {
 
 public:
 
-    ULONG getObjectID(void) { return mObject.mObjectID; }
+    GuestBase(void);
+    virtual ~GuestBase(void);
+
+public:
+
+    int generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32_t *puContextID);
+
+protected:
+
+    /** Pointer to the console object. Needed
+     *  for HGCM (VMMDev) communication. */
+    Console                 *mConsole;
+    /** The next upcoming context ID for this object. */
+    uint32_t                 mNextContextID;
+};
+
+/**
+ * Virtual class (interface) for guest objects (processes, files, ...) --
+ * contains all per-object callback management.
+ */
+class GuestObject : public GuestBase
+{
+
+public:
+
+    GuestObject(void);
+    virtual ~GuestObject(void);
+
+public:
+
+    ULONG getObjectID(void) { return mObjectID; }
 
 protected:
 
@@ -586,234 +612,26 @@ protected:
 protected:
 
     int bindToSession(Console *pConsole, GuestSession *pSession, uint32_t uObjectID);
-    int callbackAdd(GuestCtrlCallback *pCallback, uint32_t *puContextID);
-    void callbackDelete(GuestCtrlCallback *pCallback);
-    bool callbackExists(uint32_t uContextID);
-    int callbackRemove(uint32_t uContextID);
-    int callbackRemoveAll(void);
     int sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
 
 protected:
 
     /**
-     * Commom structure for all derived objects, when then have
+     * Commom parameters for all derived objects, when then have
      * an own mData structure to keep their specific data around.
      */
-    struct Object
-    {
-        /** Pointer to parent session. Per definition
-         *  this objects *always* lives shorter than the
-         *  parent. */
-        GuestSession            *mSession;
-        /** Pointer to the console object. Needed
-         *  for HGCM (VMMDev) communication. */
-        Console                 *mConsole;
-        /** All related callbacks to this object. */
-        GuestCtrlCallbacks       mCallbacks;
-        /** The next upcoming context ID for this object. */
-        ULONG                    mNextContextID;
-        /** The object ID -- must be unique for each guest
-         *  session and is encoded into the context ID. Must
-         *  be set manually when initializing the object.
-         *
-         *  For guest processes this is the internal PID,
-         *  for guest files this is the internal file ID. */
-        uint32_t                 mObjectID;
-    } mObject;
+
+    /** Pointer to parent session. Per definition
+     *  this objects *always* lives shorter than the
+     *  parent. */
+    GuestSession            *mSession;
+    /** The object ID -- must be unique for each guest
+     *  object and is encoded into the context ID. Must
+     *  be set manually when initializing the object.
+     *
+     *  For guest processes this is the internal PID,
+     *  for guest files this is the internal file ID. */
+    uint32_t                 mObjectID;
 };
-
-#if 0
-/*
- * Guest (HGCM) callbacks. All classes will throw
- * an exception on misuse.
- */
-
-/** Callback class for guest process status. */
-class GuestCbProcessStatus : public GuestCtrlCallback
-{
-
-public:
-
-    int Init(uint32_t uProtocol, uint32_t uFunction,
-             PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
-    {
-        AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
-
-        int rc = GuestCtrlCallback::Init();
-        if (RT_FAILURE(rc))
-            return rc;
-
-        if (   uFunction != GUEST_EXEC_SEND_STATUS
-            || pSvcCb->mParms < 5)
-            return VERR_INVALID_PARAMETER;
-
-        /* pSvcCb->mpaParms[0] always contains the context ID. */
-        pSvcCb->mpaParms[1].getUInt32(&mPID);
-        pSvcCb->mpaParms[2].getUInt32(&mStatus);
-        pSvcCb->mpaParms[3].getUInt32(&mFlags); /* Can contain an IPRT error, which is a signed int. */
-        pSvcCb->mpaParms[4].getPointer(&mData, &mcbData);
-
-        return VINF_SUCCESS;
-    }
-
-    void Destroy(void) { }
-
-    uint32_t  mPID;
-    uint32_t  mStatus;
-    uint32_t  mFlags;
-    void     *mData;
-    uint32_t  mcbData;
-};
-
-/** Callback class for guest process input. */
-class GuestCbProcessInput : public GuestCtrlCallback
-{
-
-public:
-
-    int Init(uint32_t uProtocol, uint32_t uFunction,
-             PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
-    {
-        AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
-
-        int rc = GuestCtrlCallback::Init();
-        if (RT_FAILURE(rc))
-            return rc;
-
-        if (   uFunction != GUEST_EXEC_SEND_INPUT_STATUS
-            || pSvcCb->mParms < 5)
-            return VERR_INVALID_PARAMETER;
-
-        /* pSvcCb->mpaParms[0] always contains the context ID. */
-        pSvcCb->mpaParms[1].getUInt32(&mPID);
-        /* Associated file handle. */
-        pSvcCb->mpaParms[2].getUInt32(&mStatus);
-        pSvcCb->mpaParms[3].getUInt32(&mFlags);
-        pSvcCb->mpaParms[4].getUInt32(&mProcessed);
-
-        return VINF_SUCCESS;
-    }
-
-    void Destroy(void) { }
-
-    GuestCbProcessInput& operator=(const GuestCbProcessInput &that)
-    {
-        mPID = that.mPID;
-        mStatus = that.mStatus;
-        mFlags = that.mFlags;
-        mProcessed = that.mProcessed;
-        return *this;
-    }
-
-    uint32_t  mPID;
-    uint32_t  mStatus;
-    uint32_t  mFlags;
-    uint32_t  mProcessed;
-};
-
-/** Callback class for guest process output. */
-class GuestCbProcessOutput : public GuestCtrlCallback
-{
-
-public:
-
-    int Init(uint32_t uProtocol, uint32_t uFunction,
-             PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
-    {
-        AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
-
-        int rc = GuestCtrlCallback::Init();
-        if (RT_FAILURE(rc))
-            return rc;
-
-        if (   uFunction != GUEST_EXEC_SEND_OUTPUT
-            || pSvcCb->mParms < 5)
-            return VERR_INVALID_PARAMETER;
-
-        /* pSvcCb->mpaParms[0] always contains the context ID. */
-        pSvcCb->mpaParms[1].getUInt32(&mPID);
-        /* Associated file handle. */
-        pSvcCb->mpaParms[2].getUInt32(&mHandle);
-        pSvcCb->mpaParms[3].getUInt32(&mFlags);
-
-        void *pbData; uint32_t cbData;
-        rc = pSvcCb->mpaParms[4].getPointer(&pbData, &cbData);
-        if (RT_SUCCESS(rc))
-        {
-            Assert(cbData);
-            mData = RTMemAlloc(cbData);
-            AssertPtrReturn(mData, VERR_NO_MEMORY);
-            memcpy(mData, pbData, cbData);
-            mcbData = cbData;
-        }
-
-        return rc;
-    }
-
-    void Destroy(void)
-    {
-        if (mData)
-        {
-            RTMemFree(mData);
-            mData = NULL;
-            mcbData = 0;
-        }
-    }
-
-    GuestCbProcessOutput& operator=(const GuestCbProcessOutput &that)
-    {
-        mPID = that.mPID;
-        mHandle = that.mHandle;
-        mFlags = that.mFlags;
-
-        Destroy();
-        if (that.mcbData)
-        {
-            void *pvData = RTMemAlloc(that.mcbData);
-            if (pvData)
-            {
-                AssertPtr(pvData);
-                memcpy(pvData, that.mData, that.mcbData);
-                mData = pvData;
-                mcbData = that.mcbData;
-            }
-        }
-
-        return *this;
-    }
-
-    uint32_t  mPID;
-    uint32_t  mHandle;
-    uint32_t  mFlags;
-    void     *mData;
-    size_t    mcbData;
-};
-
-/** Callback class for guest process IO notifications. */
-class GuestCbProcessIO : public GuestCtrlCallback
-{
-
-public:
-
-    int Init(uint32_t uProtocol, uint32_t uFunction,
-             PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
-    {
-        AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
-
-        int rc = GuestCtrlCallback::Init();
-        if (RT_FAILURE(rc))
-            return rc;
-
-        return VERR_NOT_IMPLEMENTED;
-    }
-
-    void Destroy(void) { GuestCtrlCallback::Destroy(); }
-
-    GuestCbProcessIO& operator=(const GuestCbProcessIO &that)
-    {
-        return *this;
-    }
-};
-#endif
 #endif // ____H_GUESTIMPLPRIVATE
 

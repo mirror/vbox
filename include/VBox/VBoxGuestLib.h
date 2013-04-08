@@ -602,6 +602,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *puClientId);
 VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t uClientId);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *puMsg, uint32_t *puNumParms);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgSetFilter(uint32_t uClientId, uint32_t uFilterAdd, uint32_t uFilterRemove);
+VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId);
 VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t u32ClientId);
 /* Guest session handling. */
 VBGLR3DECL(int) VbglR3GuestCtrlSessionNotify(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uType, uint32_t uResult);

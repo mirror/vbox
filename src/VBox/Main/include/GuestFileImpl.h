@@ -20,6 +20,7 @@
 #define ____H_GUESTFILEIMPL
 
 #include "VirtualBoxBase.h"
+#include "EventImpl.h"
 
 #include "GuestFsObjInfoImpl.h"
 #include "GuestCtrlImplPrivate.h"
@@ -62,6 +63,7 @@ public:
     STDMETHOD(COMGETTER(InitialSize))(LONG64 *aInitialSize);
     STDMETHOD(COMGETTER(Offset))(LONG64 *aOffset);
     STDMETHOD(COMGETTER(OpenMode))(ULONG *aOpenMode);
+    STDMETHOD(COMGETTER(Status))(FileStatus_T *aStatus);
 
     STDMETHOD(Close)(void);
     STDMETHOD(QueryInfo)(IFsObjInfo **aInfo);
@@ -79,28 +81,38 @@ public:
     int             callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int             closeFile(int *pGuestRc);
     static uint32_t getDispositionFromString(const Utf8Str &strDisposition);
+    EventSource    *getEventSource(void) { return mEventSource; }
     static uint32_t getOpenModeFromString(const Utf8Str &strOpenMode);
     static Utf8Str  guestErrorToString(int guestRc);
-    int             onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData, GuestCtrlCallback *pCallback);
-    int             onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData, GuestCtrlCallback *pCallback);
+    int             onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int             onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int             openFile(int *pGuestRc);
-    int             readData(uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, size_t *pcbRead, int *pGuestRc);
-    int             readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, size_t *pcbRead, int *pGuestRc);
-    int             seekAt(uint64_t uOffset, GUEST_FILE_SEEKTYPE eSeekType, uint32_t uTimeoutMS, int *pGuestRc);
-    int             sendFileCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms, uint32_t uTimeoutMS, int *pGuestRc, GuestCtrlCallback **ppCallback);
+    int             readData(uint32_t uSize, uint32_t uTimeoutMS, void* pvData, uint32_t cbData, uint32_t* pcbRead);
+    int             readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS, void* pvData, size_t cbData, size_t* pcbRead);
+    int             seekAt(uint64_t uOffset, GUEST_FILE_SEEKTYPE eSeekType, uint32_t uTimeoutMS, uint64_t *puOffset);
     static HRESULT  setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
-    int             writeData(uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbWritten, int *pGuestRc);
-    int             writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbWritten, int *pGuestRc);
+    int             setFileStatus(FileStatus_T fileStatus, int fileRc);
+    int             waitForOffsetChange(uint32_t uTimeoutMS, uint64_t *puOffset);
+    int             waitForRead(uint32_t uTimeoutMS, void* pvData, size_t cbData, uint32_t *pcbRead);
+    int             waitForStatusChange(uint32_t uTimeoutMS, FileStatus_T *pFileStatus);
+    int             waitForWrite(uint32_t uTimeoutMS, uint32_t *pcbWritten);
+    int             writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData, uint32_t *pcbWritten);
+    int             writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS, void *pvData, uint32_t cbData, uint32_t *pcbWritten);
     /** @}  */
 
 private:
 
+    /** The internal console object. */
+    Console                *mConsole;
+    /** The associate session this file belongs to. */
+    GuestSession           *mSession;
+    /** This can safely be used without holding any locks.
+     * An AutoCaller suffices to prevent it being destroy while in use and
+     * internally there is a lock providing the necessary serialization. */
+    const ComObjPtr<EventSource> mEventSource;
+
     struct Data
     {
-        /** The internal console object. */
-        Console                *mConsole;
-        /** The associate session this file belongs to. */
-        GuestSession           *mSession;
         /** All related callbacks to this file. */
         GuestCtrlCallbacks      mCallbacks;
         /** The file's open info. */
@@ -109,6 +121,8 @@ private:
         uint64_t                mInitialSize;
         /** The file's internal ID. */
         uint32_t                mID;
+        /** The current file status. */
+        FileStatus_T            mStatus;
         /** The file's current offset. */
         uint64_t                mOffCurrent;
     } mData;
