@@ -202,6 +202,10 @@ typedef enum VMXMSREXITWRITE
 static void               hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTGCPTR GCPtr);
 static int                hmR0VmxInjectEventVmcs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntrInfo,
                                                  uint32_t cbInstr, uint32_t u32ErrCode);
+#if 0
+DECLINLINE(int)           hmR0VmxHandleExit(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient,
+                                            unsigned rcReason);
+#endif
 
 static DECLCALLBACK(int)  hmR0VmxExitXcptNmi(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 static DECLCALLBACK(int)  hmR0VmxExitExtInt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
@@ -6338,9 +6342,15 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
     Log(("LoadFlags=%#RX32\n", pVCpu->hm.s.fContextUseFlags));
     int rc = VINF_SUCCESS;
     if (pVCpu->hm.s.fContextUseFlags == HM_CHANGED_GUEST_RIP)
+    {
         rc = hmR0VmxLoadGuestRip(pVM, pVCpu, pMixedCtx);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadMinimal);
+    }
     else if (pVCpu->hm.s.fContextUseFlags)
+    {
         rc = VMXR0LoadGuestState(pVM, pVCpu, pMixedCtx);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
+    }
     AssertRC(rc);
     AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags =%#x\n", pVCpu->hm.s.fContextUseFlags));
 
@@ -6551,6 +6561,79 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     hmR0VmxExitToRing3(pVM, pVCpu, pCtx, rc);
     return rc;
 }
+
+#if 0
+DECLINLINE(int) hmR0VmxHandleExit(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, unsigned rcReason)
+{
+    int rc;
+    switch (rcReason)
+    {
+        case VMX_EXIT_EPT_MISCONFIG:           rc = hmR0VmxExitEptMisconfig(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_EPT_VIOLATION:           rc = hmR0VmxExitEptViolation(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_IO_INSTR:                rc = hmR0VmxExitIoInstr(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_CPUID:                   rc = hmR0VmxExitCpuid(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_RDTSC:                   rc = hmR0VmxExitRdtsc(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_RDTSCP:                  rc = hmR0VmxExitRdtscp(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_APIC_ACCESS:             rc = hmR0VmxExitApicAccess(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_XCPT_NMI:                rc = hmR0VmxExitXcptNmi(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_MOV_CRX:                 rc = hmR0VmxExitMovCRx(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_EXT_INT:                 rc = hmR0VmxExitExtInt(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_INT_WINDOW:              rc = hmR0VmxExitIntWindow(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_MWAIT:                   rc = hmR0VmxExitMwait(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_MONITOR:                 rc = hmR0VmxExitMonitor(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_TASK_SWITCH:             rc = hmR0VmxExitTaskSwitch(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_PREEMPTION_TIMER:        rc = hmR0VmxExitPreemptionTimer(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_RDMSR:                   rc = hmR0VmxExitRdmsr(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_WRMSR:                   rc = hmR0VmxExitWrmsr(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_MOV_DRX:                 rc = hmR0VmxExitMovDRx(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_TPR_BELOW_THRESHOLD:     rc = hmR0VmxExitTprBelowThreshold(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_HLT:                     rc = hmR0VmxExitHlt(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_INVD:                    rc = hmR0VmxExitInvd(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_INVLPG:                  rc = hmR0VmxExitInvlpg(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_RSM:                     rc = hmR0VmxExitRsm(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_MTF:                     rc = hmR0VmxExitMtf(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_PAUSE:                   rc = hmR0VmxExitPause(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_XDTR_ACCESS:             rc = hmR0VmxExitXdtrAccess(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_TR_ACCESS:               rc = hmR0VmxExitXdtrAccess(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_WBINVD:                  rc = hmR0VmxExitWbinvd(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_XSETBV:                  rc = hmR0VmxExitXsetbv(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_RDRAND:                  rc = hmR0VmxExitRdrand(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_INVPCID:                 rc = hmR0VmxExitInvpcid(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_GETSEC:                  rc = hmR0VmxExitGetsec(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_RDPMC:                   rc = hmR0VmxExitRdpmc(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+
+        case VMX_EXIT_TRIPLE_FAULT:            rc = hmR0VmxExitTripleFault(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_NMI_WINDOW:              rc = hmR0VmxExitNmiWindow(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_INIT_SIGNAL:             rc = hmR0VmxExitInitSignal(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_SIPI:                    rc = hmR0VmxExitSipi(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_IO_SMI:                  rc = hmR0VmxExitIoSmi(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_SMI:                     rc = hmR0VmxExitSmi(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_ERR_MSR_LOAD:            rc = hmR0VmxExitErrMsrLoad(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_ERR_INVALID_GUEST_STATE: rc = hmR0VmxExitErrInvalidGuestState(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_ERR_MACHINE_CHECK:       rc = hmR0VmxExitErrMachineCheck(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+
+        case VMX_EXIT_VMCALL:
+        case VMX_EXIT_VMCLEAR:
+        case VMX_EXIT_VMLAUNCH:
+        case VMX_EXIT_VMPTRLD:
+        case VMX_EXIT_VMPTRST:
+        case VMX_EXIT_VMREAD:
+        case VMX_EXIT_VMRESUME:
+        case VMX_EXIT_VMWRITE:
+        case VMX_EXIT_VMXOFF:
+        case VMX_EXIT_VMXON:
+        case VMX_EXIT_INVEPT:
+        case VMX_EXIT_INVVPID:
+        case VMX_EXIT_VMFUNC:
+            rc = hmR0VmxExitInjectXcptUD(pVM, pVCpu, pMixedCtx, pVmxTransient);
+            break;
+        default:
+            rc = hmR0VmxExitErrUndefined(pVM, pVCpu, pMixedCtx, pVmxTransient);
+            break;
+    }
+    return rc;
+}
+#endif
 
 #ifdef DEBUG
 /* Is there some generic IPRT define for this that are not in Runtime/internal/\* ?? */
