@@ -82,6 +82,14 @@ typedef struct MYSTRUCT
     uint32_t const              fFlags;
 } MYSTRUCT;
 
+/** Architecture. */
+typedef enum MYARCH
+{
+    MYARCH_X86,
+    MYARCH_AMD64,
+    MYARCH_DETECT
+} MYARCH;
+
 /** Set of structures for one kernel. */
 typedef struct MYSET
 {
@@ -91,6 +99,8 @@ typedef struct MYSET
     char           *pszPdb;
     /** The OS version we've harvested structs for */
     RTNTSDBOSVER    OsVerInfo;
+    /** The architecture. */
+    MYARCH          enmArch;
     /** The structures and their member. */
     MYSTRUCT        aStructs[1];
 } MYSET;
@@ -267,7 +277,9 @@ static void generateHeader(PRTSTREAM pOut)
     PMYSET pSet;
     RTListForEach(&g_SetList, pSet, MYSET, ListEntry)
     {
+        const char *pszArch = pSet->enmArch == MYARCH_AMD64 ? "AMD64" : "X86";
         RTStrmPrintf(pOut,
+                     "#ifdef RT_ARCH_%s\n"
                      "    {   /* Source: %s */\n"
                      "        /*.OsVerInfo = */\n"
                      "        {\n"
@@ -278,6 +290,7 @@ static void generateHeader(PRTSTREAM pOut)
                      "            /* .uCsdNo    = */ %u,\n"
                      "            /* .uBuildNo  = */ %u,\n"
                      "        },\n",
+                     pszArch,
                      pSet->pszPdb,
                      pSet->OsVerInfo.uMajorVer,
                      pSet->OsVerInfo.uMinorVer,
@@ -305,7 +318,9 @@ static void generateHeader(PRTSTREAM pOut)
                          "        },\n");
         }
         RTStrmPrintf(pOut,
-                     "    },\n");
+                     "    },\n"
+                     "#endif\n"
+                     );
     }
 
     RTStrmPrintf(pOut,
@@ -324,7 +339,7 @@ static void generateHeader(PRTSTREAM pOut)
  * @returns Fully complained exit code.
  * @param   pOsVerInfo      The OS version info.
  */
-static RTEXITCODE saveStructures(PRTNTSDBOSVER pOsVerInfo, const char *pszPdb)
+static RTEXITCODE saveStructures(PRTNTSDBOSVER pOsVerInfo, MYARCH enmArch, const char *pszPdb)
 {
     /*
      * Allocate one big chunk, figure it's size once.
@@ -345,6 +360,7 @@ static RTEXITCODE saveStructures(PRTNTSDBOSVER pOsVerInfo, const char *pszPdb)
     /*
      * Copy over the data.
      */
+    pSet->enmArch = enmArch;
     memcpy(&pSet->OsVerInfo, pOsVerInfo, sizeof(pSet->OsVerInfo));
     memcpy(&pSet->aStructs[0], g_aStructs, sizeof(g_aStructs));
 
@@ -665,167 +681,6 @@ static bool strIEndsWith(const char *pszString, const char *pszSuffix)
 }
 
 
-#if 0
-/** @name Path properties returned by RTPathParse and RTPathSplit.
- * @{ */
-/** Indicates that there is a filename.
- * If not set, a directory was specified using a trailing slash or a volume
- * was specified without any file/dir name following it. */
-#define RTPATH_PROP_FILENAME        UINT16_C(0x0001)
-/** The filename has a suffix (extension). */
-#define RTPATH_PROP_SUFFIX          UINT16_C(0x0002)
-/** Indicates that this is an UNC path (Windows and OS/2 only). */
-#define RTPATH_PROP_UNC             UINT16_C(0x0010)
-/** A root is specified. The path is relative if not set. */
-#define RTPATH_PROP_ROOT            UINT16_C(0x0020)
-/** A volume (drive) is specified. */
-#define RTPATH_PROP_VOLSPEC         UINT16_C(0x0040)
-/** The path is absolute. */
-#define RTPATH_PROP_ABSOLUTE        UINT16_C(0x0100)
-/** @} */
-
-
-/**
- * Parsed path.
- *
- * The first component is the root and volume specifier. If UNC, the first
- * component does not include the share/service name, that is found as the
- * second component if present.
- */
-typedef struct RTPATHPARSED
-{
-    /** Number of path components. */
-    uint16_t    cComponents;
-    /** The offset of the filename suffix, offset of the NUL char if none. */
-    uint16_t    offSuffix;
-    /** Path property flags, RTPATH_PROP_XXX */
-    uint16_t    fProps;
-    /** The number of bytes used (on success) or needed (on buffer overflow). */
-    uint16_t    cbUsed;
-    /** Array of component descriptors (variable size). */
-    struct
-    {
-        /** The offset of the component. */
-        uint16_t    off;
-        /** The  */
-        uint16_t    cch;
-    } aComponents[1];
-} RTPATHPARSED;
-/** Pointer to to a parsed path result. */
-typedef RTPATHPARSED *PRTPATHPARSED;
-/** Pointer to to a const parsed path result. */
-typedef RTPATHPARSED *PCRTPATHPARSED;
-
-
-int RTPathParse(const char *pszPath, PRTPATHPARSED pOutput, size_t cbOutput)
-{
-    AssertReturn(cbOutput >= sizeof(*pOutput), VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
-    AssertPtrReturn(pOutput, VERR_INVALID_POINTER);
-
-}
-
-
-
-
-typedef struct RTPATHSPLIT
-{
-    /** Number of path components. */
-    uint32_t    cComponents;
-    /** The first directory.  */
-    uint8_t     iFirstDir;
-    uint8_t     fReserved1; /**< Reserved */
-    /** Path property flags, RTPATHSPLIT_PROP_XXX */
-    uint16_t    fProps;
-    /** Pointer to the dot in the filename suffix. If no suffix, this points to
-     * the terminator character. */
-    const char *pszSuffix;
-    /** Array of pointers to components.
-     * @remarks This is variable sized and is followed by the strings it points to.
-     *          It's set to 8 instead of the usual 1 as that's the minimum size of
-     *          the RTPathSplit buffer. */
-    const char *apszComponents[8];
-} RTPATHSPLIT;
-/** Pointer to to a path split result. */
-typedef RTPATHSPLIT *PRTPATHSPLIT;
-/** Pointer to to a const path split result. */
-typedef RTPATHSPLIT *PCRTPATHSPLIT;
-
-
-int RTPathSplit(const char *pszPath, PRTPATHSPLIT pOutput, size_t cbOutput)
-{
-    AssertReturn(cbOutput >= sizeof(*pOutput), VERR_BUFFER_UNDERFLOW);
-    AssertPtr(pszPath);
-    AsserPtr(pOutput);
-
-    /*
-     * Parse the path, we're using apszComponents to store offset + length of
-     * each component while parsing to avoid duplicating code and effort.
-     */
-    struct TMPOFFSIZE
-    {
-        uint16_t    off;
-        uint16_t    cch;
-    }          *paComponents   = (struct TMPOFFSIZE *)&pOutput->apszComponents;
-    uint32_t    cMaxComponents = (cbOutput - RT_OFFSETOF(RTPATHSPLIT, apszComponents)) / sizeof(paComponents[0]);
-    uint32_t    iComponent     = 0;
-    size_t      cbStrings      = 0;
-    uint16_t    fFlags         = 0;
-    size_t      off            = 0;
-
-    paComponents[0].off = 0;
-
-    /* The volume specifier bit first, it's special. */
-    if (RTPATH_IS_SLASH(pszPath[0]))
-    {
-#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
-        if (   RTPATH_IS_SLASH(pszPath[1])
-            && !RTPATH_IS_SLASH(pszPath[2])
-            && pszPath[2])
-        {
-            fFlags |= RTPATHSPLIT_PROP_UNC;
-
-            /* UNC server name */
-            off = 2;
-            while (!RTPATH_IS_SLASH(pszPath[off]) && pszPath[off])
-                off++;
-            paComponents[0].cch = off;
-            size_t      cbStrings      = 0;
-
-
-            while (RTPATH_IS_SLASH(pszPath[off]))
-                off++;
-
-            /* UNC share */
-            while (!RTPATH_IS_SLASH(pszPath[off]) && pszPath[off])
-                off++;
-        }
-        else
-#endif
-        {
-            fFlags |= RTPATHSPLIT_PROP_ROOT;
-            cbString = sizeof("/");
-            iComponent = 1;
-            off = 1;
-        }
-        while (RTPATH_IS_SLASH(pszPath[off]))
-            off++;
-    }
-#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
-    else if (RT_C_IS_ALPHA(pszPath[0]) && pszPath[1] == ':')
-    {
-        off = 2;
-        while (RTPATH_IS_SLASH(pszPath[off]))
-            off++;
-    }
-#endif
-    Assert(!RTPATH_IS_SLASH(pszPath[off]));
-
-
-}
-
-#endif
-
 /**
  * Use various hysterics to figure out the OS version details from the PDB path.
  *
@@ -838,11 +693,28 @@ int RTPathSplit(const char *pszPath, PRTPATHSPLIT pOutput, size_t cbOutput)
  * @returns Fully complained exit code.
  * @param   pszPdb              The path to the PDB.
  * @param   pVerInfo            Where to return the version info.
+ * @param   penmArch            Where to return the architecture.
  */
-static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInfo)
+static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInfo, MYARCH *penmArch)
 {
-    const char *pszFilename = RTPathFilename(pszPdb);
+    /*
+     * Split the path.
+     */
+    union
+    {
+        RTPATHSPLIT Split;
+        uint8_t     abPad[RTPATH_MAX + 1024];
+    } u;
+    int rc = RTPathSplit(pszPdb, &u.Split, sizeof(u), 0);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathSplit failed on '%s': %Rrc", pszPdb, rc);
+    if (!(u.Split.fProps & RTPATH_PROP_FILENAME))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPATH_PROP_FILENAME not set for: '%s'", pszPdb);
+    const char *pszFilename = u.Split.apszComps[u.Split.cComps - 1];
 
+    /*
+     * SMP or UNI kernel?
+     */
     if (!RTStrICmp(pszFilename, "ntkrnlmp.pdb"))
         pVerInfo->fSmp = true;
     else if (!RTStrICmp(pszFilename, "ntoskrnl.pdb"))
@@ -850,7 +722,109 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
     else
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Doesn't recognize the filename '%s'...", pszFilename);
 
-    /* testing only */
+    /*
+     * Look for symbol pack names in the path. This is stuff like:
+     *  - WindowsVista.6002.090410-1830.x86fre
+     *  - WindowsVista.6002.090410-1830.amd64chk
+     *  - Windows_Win7.7600.16385.090713-1255.X64CHK
+     *  - Windows_Win7SP1.7601.17514.101119-1850.AMD64FRE
+     *  - Windows_Win8.9200.16384.120725-1247.X86CHK
+     */
+    bool fFound = false;
+    uint32_t i = u.Split.cComps - 1;
+    while (i-- > 0)
+    {
+        static struct
+        {
+            const char *pszPrefix;
+            size_t      cchPrefix;
+            uint8_t     uMajorVer;
+            uint8_t     uMinorVer;
+            uint8_t     uCsdNo;
+            uint8_t     uChecked;   /**< */
+            MYARCH      enmArch;
+            uint32_t    uBuildNo;   /**< UINT32_MAX means the number immediately after the prefix. */
+        } const s_aSymPacks[] =
+        {
+            { RT_STR_TUPLE("Windows2003."),           5, 2, 0, UINT8_MAX, MYARCH_DETECT, UINT32_MAX },
+            { RT_STR_TUPLE("WindowsVista.6000."),     6, 0, 0, UINT8_MAX, MYARCH_DETECT, 6000 },
+            { RT_STR_TUPLE("Windows_Longhorn.6001."), 6, 0, 1, UINT8_MAX, MYARCH_DETECT, 6001 }, /* server 2008 */
+            { RT_STR_TUPLE("WindowsVista.6002."),     6, 0, 2, UINT8_MAX, MYARCH_DETECT, 6002 },
+        };
+
+        const char *pszComp = u.Split.apszComps[i];
+        uint32_t j = RT_ELEMENTS(s_aSymPacks);
+        while (j-- > 0)
+            if (!RTStrNICmp(pszComp, s_aSymPacks[i].pszPrefix, s_aSymPacks[i].cchPrefix))
+                break;
+        if (j >= RT_ELEMENTS(s_aSymPacks))
+            continue;
+
+        pVerInfo->uMajorVer = s_aSymPacks[j].uMajorVer;
+        pVerInfo->uMinorVer = s_aSymPacks[j].uMinorVer;
+        pVerInfo->uCsdNo    = s_aSymPacks[j].uCsdNo;
+        pVerInfo->fChecked  = s_aSymPacks[j].uChecked == 1;
+        pVerInfo->uBuildNo  = s_aSymPacks[j].uBuildNo;
+        *penmArch           = s_aSymPacks[j].enmArch;
+
+        /* Parse build number if necessary. */
+        if (s_aSymPacks[j].uBuildNo == UINT32_MAX)
+        {
+            char *pszNext;
+            rc = RTStrToUInt32Ex(pszComp + s_aSymPacks[j].cchPrefix, &pszNext, 10, &pVerInfo->uBuildNo);
+            if (RT_FAILURE(rc))
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to decode build number in '%s': %Rrc", pszComp, rc);
+            if (*pszNext != '.' && *pszNext != '_' && *pszNext != '-')
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to decode build number in '%s': '%c'", pszComp, *pszNext);
+        }
+
+        /* Look for build arch and checked/free. */
+        if (   RTStrIStr(pszComp, ".x86.chk.")
+            || RTStrIStr(pszComp, ".x86chk.")
+            || RTStrIStr(pszComp, "_x86_chk_")
+            || RTStrIStr(pszComp, "_x86chk_")
+            || RTStrIStr(pszComp, "-x86-DEBUG")
+            || (RTStrIStr(pszComp, "-x86-") && RTStrIStr(pszComp, "-DEBUG"))
+           )
+        {
+            pVerInfo->fChecked = true;
+            *penmArch = MYARCH_X86;
+        }
+        else if (   RTStrIStr(pszComp, ".amd64.chk.")
+                 || RTStrIStr(pszComp, ".amd64chk.")
+                 || RTStrIStr(pszComp, ".x64.chk.")
+                 || RTStrIStr(pszComp, ".x64chk.")
+                )
+        {
+            pVerInfo->fChecked = true;
+            *penmArch = MYARCH_AMD64;
+        }
+        else if (   RTStrIStr(pszComp, ".amd64.fre.")
+                 || RTStrIStr(pszComp, ".amd64fre.")
+                 || RTStrIStr(pszComp, ".x64.fre.")
+                 || RTStrIStr(pszComp, ".x64fre.")
+                )
+        {
+            pVerInfo->fChecked = false;
+            *penmArch = MYARCH_AMD64;
+        }
+        else if (RTStrIStr(pszComp, "DEBUG"))
+        {
+            pVerInfo->fChecked = true;
+            *penmArch = MYARCH_X86;
+        }
+        else
+        {
+            pVerInfo->fChecked = false;
+            *penmArch = MYARCH_X86;
+        }
+        return RTEXITCODE_SUCCESS;
+    }
+
+
+    /*
+     * testing only
+     */
     if (strIEndsWith(pszPdb, "ntkrnlmp.pdb\\B2DA40502FA744C18B9022FD187ADB592\\ntkrnlmp.pdb"))
     {
         pVerInfo->uMajorVer = 6;
@@ -887,8 +861,9 @@ static RTEXITCODE processPdb(const char *pszPdb)
     /*
      * Figure the windows version details for the given PDB.
      */
+    MYARCH       enmArch;
     RTNTSDBOSVER OsVerInfo;
-    RTEXITCODE rcExit = FigurePdbVersionInfo(pszPdb, &OsVerInfo);
+    RTEXITCODE rcExit = FigurePdbVersionInfo(pszPdb, &OsVerInfo, &enmArch);
     if (rcExit != RTEXITCODE_SUCCESS)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to figure the OS version info for '%s'.\n'", pszPdb);
 
@@ -921,7 +896,7 @@ static RTEXITCODE processPdb(const char *pszPdb)
             /*
              * Save the details for later when we produce the header.
              */
-            rcExit = saveStructures(&OsVerInfo, pszPdb);
+            rcExit = saveStructures(&OsVerInfo, enmArch, pszPdb);
         }
     }
     else
@@ -1086,7 +1061,7 @@ int main(int argc, char **argv)
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1,
                  RTGETOPTINIT_FLAGS_OPTS_FIRST);
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (ch)
         {
