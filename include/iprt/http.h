@@ -68,7 +68,8 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp);
  *
  * @param    hHttp         HTTP interface handle.
  * @param    pcszUrl       URL.
- * @param    ppszResponse  HTTP response.
+ * @param    ppszResponse  HTTP response. It is guaranteed that this string is
+ *                         '\0'-terminated.
  */
 RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse);
 
