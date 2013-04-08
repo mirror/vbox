@@ -69,6 +69,7 @@
 #undef RTPATH_STYLE_FN
 #if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
 # undef  RTPATH_STYLE
+# undef  RTPATH_SLASH
 # undef  RTPATH_SLASH_STR
 # undef  RTPATH_IS_SLASH
 # undef  RTPATH_IS_VOLSEP
