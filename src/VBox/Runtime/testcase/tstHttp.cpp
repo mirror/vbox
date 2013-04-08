@@ -65,6 +65,7 @@ int main()
         size_t  cbSha1;
         uint8_t *abSha512;
         size_t  cbSha512;
+        size_t cbBuf = strlen(pszBuf);
         const uint8_t abSha1PCA3G5[] =
         {
             0x4e, 0xb6, 0xd5, 0x78, 0x49, 0x9b, 0x1c, 0xcf, 0x5f, 0x58,
@@ -81,7 +82,7 @@ int main()
             0x44, 0xeb, 0x2c, 0x74, 0x25, 0x9e, 0x5d, 0xfb,
             0xd2, 0x6b, 0xa8, 0x9a, 0xf0, 0xb3, 0x6a, 0x01
         };
-        rc = RTHttpCertDigest(hHttp, pszBuf, strlen(pszBuf),
+        rc = RTHttpCertDigest(hHttp, pszBuf, cbBuf,
                               &abSha1, &cbSha1, &abSha512, &cbSha512);
         if (RT_SUCCESS(rc))
         {
@@ -114,7 +115,7 @@ int main()
             RTMemFree(abSha1);
             RTMemFree(abSha512);
             if (RT_SUCCESS(rc))
-                rc = RTStrmWrite(CAFile, pszBuf, strlen(pszBuf));
+                rc = RTStrmWrite(CAFile, pszBuf, cbBuf);
             if (RT_SUCCESS(rc))
                 rc = RTStrmWrite(CAFile, RTFILE_LINEFEED, strlen(RTFILE_LINEFEED));
         }
@@ -136,6 +137,7 @@ int main()
         size_t  cbSha1;
         uint8_t *abSha512;
         size_t  cbSha512;
+        size_t  cbBuf = strlen(pszBuf);
         const uint8_t abSha1PCA3[] =
         {
             0xa1, 0xdb, 0x63, 0x93, 0x91, 0x6f, 0x17, 0xe4, 0x18, 0x55,
@@ -152,7 +154,7 @@ int main()
             0x77, 0xa5, 0x40, 0x22, 0x18, 0x12, 0xcb, 0x3d,
             0x0a, 0x67, 0x83, 0x87, 0xc5, 0x45, 0xc4, 0x99
         };
-        rc = RTHttpCertDigest(hHttp, pszBuf, strlen(pszBuf),
+        rc = RTHttpCertDigest(hHttp, pszBuf, cbBuf,
                               &abSha1, &cbSha1, &abSha512, &cbSha512);
         if (RT_SUCCESS(rc))
         {
@@ -185,7 +187,7 @@ int main()
             RTMemFree(abSha1);
             RTMemFree(abSha512);
             if (RT_SUCCESS(rc))
-                rc = RTStrmWrite(CAFile, pszBuf, strlen(pszBuf));
+                rc = RTStrmWrite(CAFile, pszBuf, cbBuf);
             if (RT_SUCCESS(rc))
                 rc = RTStrmWrite(CAFile, RTFILE_LINEFEED, strlen(RTFILE_LINEFEED));
         }

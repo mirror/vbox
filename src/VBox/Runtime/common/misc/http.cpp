@@ -34,6 +34,7 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/file.h>
+#include <iprt/stream.h>
 
 #include <curl/curl.h>
 #include <openssl/ssl.h>
@@ -89,11 +90,11 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
 
     CURLcode rcCurl = curl_global_init(CURL_GLOBAL_ALL);
     if (CURL_FAILED(rcCurl))
-        return VERR_INTERNAL_ERROR;
+        return VERR_HTTP_INIT_FAILED;
 
     CURL *pCurl = curl_easy_init();
     if (!pCurl)
-        return VERR_INTERNAL_ERROR;
+        return VERR_HTTP_INIT_FAILED;
 
     PRTHTTPINTERNAL pHttpInt = (PRTHTTPINTERNAL)RTMemAllocZ(sizeof(RTHTTPINTERNAL));
     if (!pHttpInt)
@@ -236,17 +237,17 @@ RTR3DECL(int) RTHttpCertDigest(RTHTTP hHttp, char *pcszCert, size_t cbCert,
                             rc = VERR_NO_MEMORY;
                     }
                     else
-                        rc = VERR_INTERNAL_ERROR;
+                        rc = VERR_HTTP_CACERT_WRONG_FORMAT;
                 }
                 else
                     rc = VERR_NO_MEMORY;
             }
             else
-                rc = VERR_INTERNAL_ERROR;
+                rc = VERR_HTTP_CACERT_WRONG_FORMAT;
             X509_free(crt);
         }
         else
-            rc = VERR_INTERNAL_ERROR;
+            rc = VERR_HTTP_CACERT_WRONG_FORMAT;
         BIO_free(cert);
     }
     else
@@ -333,6 +334,7 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
     }
     else
     {
+        RTPrintf("rcCurl = %d\n", rcCurl);
         switch (rcCurl)
         {
             case CURLE_URL_MALFORMAT:
@@ -341,6 +343,18 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
                 break;
             case CURLE_COULDNT_CONNECT:
                 rc = VERR_HTTP_COULDNT_CONNECT;
+                break;
+            case CURLE_SSL_CONNECT_ERROR:
+                rc = VERR_HTTP_SSL_CONNECT_ERROR;
+                break;
+            case CURLE_SSL_CACERT:
+                /* The peer certificate cannot be authenticated with the CA certificates
+                 * set by RTHttpSetCAFile(). We need other or additional CA certificates. */
+                rc = VERR_HTTP_CACERT_CANNOT_AUTHENTICATE;
+                break;
+            case CURLE_SSL_CACERT_BADFILE:
+                /* CAcert file (see RTHttpSetCAFile()) has wrong format */
+                rc = VERR_HTTP_CACERT_WRONG_FORMAT;
                 break;
             default:
                 break;

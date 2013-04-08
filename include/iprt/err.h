@@ -1571,14 +1571,22 @@ RT_C_DECLS_END
 
 /** @name HTTP status codes
  * @{ */
+/** HTTP initialization failed. */
+#define VERR_HTTP_INIT_FAILED                   (-885)
 /** The server has not found anything matching the URI given. */
-#define VERR_HTTP_NOT_FOUND                     (-885)
+#define VERR_HTTP_NOT_FOUND                     (-886)
 /** The request is for something forbidden. Authorization will not help. */
-#define VERR_HTTP_ACCESS_DENIED                 (-886)
+#define VERR_HTTP_ACCESS_DENIED                 (-887)
 /** The server did not understand the request due to bad syntax. */
-#define VERR_HTTP_BAD_REQUEST                   (-887)
-/** Couldn't connect to the server (proxy?) */
-#define VERR_HTTP_COULDNT_CONNECT               (-888)
+#define VERR_HTTP_BAD_REQUEST                   (-888)
+/** Couldn't connect to the server (proxy?). */
+#define VERR_HTTP_COULDNT_CONNECT               (-889)
+/** SSL connection error. */
+#define VERR_HTTP_SSL_CONNECT_ERROR             (-890)
+/** CAcert is missing or has the wrong format. */
+#define VERR_HTTP_CACERT_WRONG_FORMAT           (-891)
+/** Certificate cannot be authenticated with the given CA certificates. */
+#define VERR_HTTP_CACERT_CANNOT_AUTHENTICATE    (-892)
 /** @} */
 
 /** @name RTManifest status codes
