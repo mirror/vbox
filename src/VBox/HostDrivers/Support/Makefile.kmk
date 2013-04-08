@@ -304,7 +304,10 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBoxDrv_LDFLAGS.win.x86  = -Entry:DriverEntry@8
  VBoxDrv_LDFLAGS.win.amd64= -Entry:DriverEntry
 
- VBoxDrv_SOURCES.darwin   = darwin/SUPDrv-darwin.cpp
+ VBoxDrv_SOURCES.darwin   = \
+	darwin/SUPDrv-darwin.cpp
+ VBoxDrv_SOURCES.linux    = \
+	linux/SUPDrv-linux.c
  VBoxDrv_SOURCES.solaris  = \
 	solaris/SUPDrv-solaris.c
  VBoxDrv_SOURCES.win      = \
