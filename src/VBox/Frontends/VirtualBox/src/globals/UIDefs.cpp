@@ -60,6 +60,7 @@ const char* UIDefs::GUI_Seamless = "GUI/Seamless";
 const char* UIDefs::GUI_Scale = "GUI/Scale";
 const char* UIDefs::GUI_VirtualScreenToHostScreen = "GUI/VirtualScreenToHostScreen";
 const char* UIDefs::GUI_AutoresizeGuest = "GUI/AutoresizeGuest";
+const char* UIDefs::GUI_AutomountGuestScreens = "GUI/AutomountGuestScreens";
 const char* UIDefs::GUI_SaveMountedAtRuntime = "GUI/SaveMountedAtRuntime";
 const char* UIDefs::GUI_PassCAD = "GUI/PassCAD";
 

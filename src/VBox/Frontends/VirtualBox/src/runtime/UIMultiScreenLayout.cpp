@@ -29,6 +29,7 @@
 #include "UIMachineLogic.h"
 #include "UISession.h"
 #include "UIMessageCenter.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -74,6 +75,8 @@ void UIMultiScreenLayout::update()
      * We have to make sure they are valid, which means there have to be unique combinations
      * and all guests screens need there own host screen. */
     CMachine machine = m_pMachineLogic->session().GetMachine();
+    CDisplay display = m_pMachineLogic->session().GetConsole().GetDisplay();
+    bool fShouldWeAutoMountGuestScreens = VBoxGlobal::shouldWeAutoMountGuestScreens(machine, false);
     QDesktopWidget *pDW = QApplication::desktop();
     foreach (int iGuestScreen, m_guestScreens)
     {
@@ -133,6 +136,33 @@ void UIMultiScreenLayout::update()
             m_screenMap.insert(iGuestScreen, iHostScreen);
             /* Remove it from the list of available host screens: */
             availableScreens.removeOne(iHostScreen);
+        }
+        /* Do we have opinion about what to do with excessive guest-screen? */
+        else if (fShouldWeAutoMountGuestScreens)
+        {
+            /* Then we have to disable excessive guest-screen: */
+            display.SetVideoModeHint(iGuestScreen, false, false, 0, 0, 0, 0, 0);
+        }
+    }
+
+    /* Are we still have available host-screens
+     * and have opinion about what to do with disabled guest-screens? */
+    if (!availableScreens.isEmpty() && fShouldWeAutoMountGuestScreens)
+    {
+        /* How many excessive host-screens do we have? */
+        int cExcessiveHostScreens = availableScreens.size();
+        /* How many disabled guest-screens do we have? */
+        int cDisabledGuestScreens = m_disabledGuestScreens.size();
+        /* We have to try to enable disabled guest-screens if any: */
+        int cGuestScreensToEnable = qMin(cExcessiveHostScreens, cDisabledGuestScreens);
+        for (int iGuestScreenIndex = 0; iGuestScreenIndex < cGuestScreensToEnable; ++iGuestScreenIndex)
+        {
+            /* Get corresponding guest-screen: */
+            int iGuestScreen = m_disabledGuestScreens[iGuestScreenIndex];
+            /* Re-enable guest-screen with the old arguments: */
+            ULONG iWidth, iHeight, iBpp;
+            display.GetScreenResolution(iGuestScreen, iWidth, iHeight, iBpp);
+            display.SetVideoModeHint(iGuestScreen, true, false, 0, 0, iWidth, iHeight, iBpp);
         }
     }
 
@@ -253,11 +283,14 @@ void UIMultiScreenLayout::calculateGuestScreenCount()
 {
     /* Get machine: */
     CMachine machine = m_pMachineLogic->session().GetMachine();
-    /* Enumerate all the visible guest screens: */
+    /* Enumerate all the guest screens: */
     m_guestScreens.clear();
+    m_disabledGuestScreens.clear();
     for (uint iGuestScreen = 0; iGuestScreen < machine.GetMonitorCount(); ++iGuestScreen)
         if (m_pMachineLogic->uisession()->isScreenVisible(iGuestScreen))
             m_guestScreens << iGuestScreen;
+        else
+            m_disabledGuestScreens << iGuestScreen;
 }
 
 void UIMultiScreenLayout::prepareViewMenu()
