@@ -334,7 +334,6 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
     }
     else
     {
-        RTPrintf("rcCurl = %d\n", rcCurl);
         switch (rcCurl)
         {
             case CURLE_URL_MALFORMAT:
