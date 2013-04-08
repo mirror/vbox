@@ -378,6 +378,7 @@ public:
                                                     bool fIncludingMachineStateCheck = false);
     static bool shouldWeShowDetails(CMachine &machine,
                                     bool fIncludingMachineGeneralCheck = false);
+    static bool shouldWeAutoMountGuestScreens(CMachine &machine, bool fIncludingSanityCheck = true);
 
 #ifdef RT_OS_LINUX
     static void checkForWrongUSBMounted();

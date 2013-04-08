@@ -3736,6 +3736,27 @@ bool VBoxGlobal::shouldWeShowDetails(CMachine &machine,
     return !isApprovedByExtraData(machine, GUI_HideDetails);
 }
 
+/* static */
+bool VBoxGlobal::shouldWeAutoMountGuestScreens(CMachine &machine,
+                                               bool fIncludingSanityCheck /*= true*/)
+{
+    if (fIncludingSanityCheck)
+    {
+        /* 'false' for null machines,
+         * there is nothing to start anyway: */
+        if (machine.isNull())
+            return false;
+
+        /* 'false' for inaccessible machines,
+         * we can't start them anyway: */
+        if (!machine.GetAccessible())
+            return false;
+    }
+
+    /* 'true' if guest-screen auto-mounting approved by the extra-data: */
+    return isApprovedByExtraData(machine, GUI_AutomountGuestScreens);
+}
+
 #ifdef RT_OS_LINUX
 /* static */
 void VBoxGlobal::checkForWrongUSBMounted()
