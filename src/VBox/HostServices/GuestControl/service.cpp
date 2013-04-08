@@ -473,16 +473,16 @@ typedef std::map< uint32_t, ClientContext >::const_iterator ClientContextMapIter
 typedef struct ClientState
 {
     ClientState(void)
-        : mID(0),
-          mSvcHelpers(NULL),
+        : mSvcHelpers(NULL),
+          mID(0),
           mFlags(0), mContextFilter(0),
           mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
           mHostCmdTS(0),
           mIsPending(false) { }
 
     ClientState(PVBOXHGCMSVCHELPERS pSvcHelpers, uint32_t uClientID)
-        : mID(uClientID),
-          mSvcHelpers(pSvcHelpers),
+        : mSvcHelpers(pSvcHelpers),
+          mID(uClientID),
           mFlags(0), mContextFilter(0),
           mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
           mHostCmdTS(0),
@@ -500,23 +500,6 @@ typedef struct ClientState
         HostCmdListIter curCmd = mHostCmdList.begin();
         if (curCmd != mHostCmdList.end())
             Dequeue(curCmd);
-    }
-
-    void Dequeue(HostCommand *pHostCmd)
-    {
-        AssertPtrReturnVoid(pHostCmd);
-
-        HostCmdListIter curItem = mHostCmdList.begin();
-        while (curItem != mHostCmdList.end())
-        {
-            if ((*curItem) == pHostCmd)
-            {
-                Dequeue(curItem);
-                break;
-            }
-
-            curItem++;
-        }
     }
 
     void Dequeue(HostCmdListIter &curItem)
@@ -678,7 +661,20 @@ typedef struct ClientState
             rc = mHostCmdRc;
 
         if (fRemove)
-            Dequeue(pHostCmd);
+        {
+            /** @todo Fix this (slow) lookup. Too late today. */
+            HostCmdListIter curItem = mHostCmdList.begin();
+            while (curItem != mHostCmdList.end())
+            {
+                if ((*curItem) == pHostCmd)
+                {
+                    Dequeue(curItem);
+                    break;
+                }
+
+                curItem++;
+            }
+        }
 
         LogFlowFunc(("[Client %RU32] Returned with rc=%Rrc\n", mID, rc));
         return rc;
