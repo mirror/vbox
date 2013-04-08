@@ -72,10 +72,9 @@
 #define VMX_UPDATED_GUEST_SYSENTER_CS_MSR       RT_BIT(15)
 #define VMX_UPDATED_GUEST_SYSENTER_EIP_MSR      RT_BIT(16)
 #define VMX_UPDATED_GUEST_SYSENTER_ESP_MSR      RT_BIT(17)
-#define VMX_UPDATED_GUEST_INTR_STATE            RT_BIT(18)
-#define VMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  RT_BIT(19)
-#define VMX_UPDATED_GUEST_ACTIVITY_STATE        RT_BIT(20)
-#define VMX_UPDATED_GUEST_APIC_STATE            RT_BIT(21)
+#define VMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  RT_BIT(18)
+#define VMX_UPDATED_GUEST_ACTIVITY_STATE        RT_BIT(19)
+#define VMX_UPDATED_GUEST_APIC_STATE            RT_BIT(20)
 #define VMX_UPDATED_GUEST_ALL                   (  VMX_UPDATED_GUEST_FPU                   \
                                                  | VMX_UPDATED_GUEST_RIP                   \
                                                  | VMX_UPDATED_GUEST_RSP                   \
@@ -94,7 +93,6 @@
                                                  | VMX_UPDATED_GUEST_SYSENTER_CS_MSR       \
                                                  | VMX_UPDATED_GUEST_SYSENTER_EIP_MSR      \
                                                  | VMX_UPDATED_GUEST_SYSENTER_ESP_MSR      \
-                                                 | VMX_UPDATED_GUEST_INTR_STATE            \
                                                  | VMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  \
                                                  | VMX_UPDATED_GUEST_ACTIVITY_STATE        \
                                                  | VMX_UPDATED_GUEST_APIC_STATE)
@@ -2435,6 +2433,52 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
+ * Loads the guest's interruptibility-state ("interrupt shadow" as AMD calls it)
+ * into the guest-state area in the VMCS.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
+ *                      out-of-sync. Make sure to update the required fields
+ *                      before using them.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+DECLINLINE(void) hmR0VmxLoadGuestIntrState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+{
+    /*
+     * Instructions like STI and MOV SS inhibit interrupts till the next instruction completes. Check if we should
+     * inhibit interrupts or clear any existing interrupt-inhibition.
+     */
+    uint32_t uIntrState = 0;
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    {
+        /* If inhibition is active, RIP & RFLAGS should've been accessed (i.e. read previously from the VMCS or from ring-3). */
+        AssertMsg((pVCpu->hm.s.vmx.fUpdatedGuestState & (VMX_UPDATED_GUEST_RIP | VMX_UPDATED_GUEST_RFLAGS)),
+                  ("%#x\n", pVCpu->hm.s.vmx.fUpdatedGuestState));
+        if (pMixedCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
+        {
+            /*
+             * We can clear the inhibit force flag as even if we go back to the recompiler without executing guest code in
+             * VT-x the flag's condition to be cleared is met and thus the cleared state is correct.
+             * hmR0VmxInjectPendingInterrupt() relies on us clearing this flag here.
+             */
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+        }
+        else if (pMixedCtx->eflags.Bits.u1IF)
+            uIntrState = VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI;
+        else
+            uIntrState = VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS;
+    }
+
+    Assert(!(uIntrState & 0xfffffff0));                             /* Bits 31:4 MBZ. */
+    Assert((uIntrState & 0x3) != 0x3);                              /* Block-by-STI and MOV SS cannot be simultaneously set. */
+    int rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, uIntrState);
+    AssertRC(rc);
+}
+
+
+/**
  * Loads the guest's RIP into the guest-state area in the VMCS.
  *
  * @returns VBox status code.
@@ -3603,65 +3647,6 @@ DECLINLINE(int) hmR0VmxLoadGuestActivityState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
 
 
 /**
- * Loads the guest-interruptibility state (or "interrupt shadow" as AMD calls
- * it) into the guest-state area in the VMCS.
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest-CPU context.
- *
- * @remarks No-long-jump zone!!!
- * @remarks Requires RIP, RFLAGS.
- */
-DECLINLINE(int) hmR0VmxLoadGuestIntrState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    if (!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_INTR_STATE))
-        return VINF_SUCCESS;
-
-    /*
-     * Instructions like STI and MOV SS inhibit interrupts till the next instruction completes. Check if we should
-     * inhibit interrupts or clear any existing interrupt-inhibition.
-     */
-    uint32_t uIntrState = 0;
-    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-    {
-        if (pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
-        {
-            /*
-             * We can clear the inhibit force flag as even if we go back to the recompiler without executing guest code in VT-x
-             * the flag's condition to be cleared is met and thus the cleared state is correct. Additionally, this means
-             * we need not re-read the VMCS field on the VM-exit path and clear/set this flag on every VM-exit. Finally,
-             * hmR0VmxInjectPendingInterrupt() relies on us clearing this flag here.
-             */
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-            uIntrState = 0;     /* Clear interrupt inhibition. */
-        }
-        else if (pCtx->eflags.u32 & X86_EFL_IF)
-        {
-            /** @todo Pretty sure we don't need to check for Rflags.IF here.
-             *        Interrupt-shadow only matters when RIP changes. */
-            /*
-             * We don't have enough information to distinguish a block-by-STI vs. block-by-MOV SS. Intel seems to think there
-             * is a slight difference regarding MOV SS additionally blocking some debug exceptions.
-             * See Intel spec. 24.2.2 "Guest Non-Register State" table "Format of Interruptibility State".
-             */
-            uIntrState = VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI;
-        }
-    }
-    else
-        uIntrState = 0;         /* No interrupt inhibition. */
-
-    Assert((uIntrState & 0x3) != 0x3);                              /* Block-by-STI and MOV SS cannot be simultaneously set. */
-    Assert((pCtx->eflags.u32 & X86_EFL_IF) || uIntrState == 0);     /* If EFLAGS.IF is not set, no interrupt inhibition. */
-    int rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, uIntrState);
-    AssertRCReturn(rc ,rc);
-    pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_INTR_STATE;
-    return rc;
-}
-
-
-/**
  * Sets up the appropriate function to run guest code.
  *
  * @returns VBox status code.
@@ -4443,7 +4428,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVM pVM, PVMCPU pVCpu, PCP
  * @returns true if the exception is benign, false otherwise.
  * @param   uVector     The exception vector.
  */
-DECLINLINE(bool) hmR0VmxIsBenignXcpt(const uint8_t uVector)
+DECLINLINE(bool) hmR0VmxIsBenignXcpt(const uint32_t uVector)
 {
     switch (uVector)
     {
@@ -4473,7 +4458,7 @@ DECLINLINE(bool) hmR0VmxIsBenignXcpt(const uint8_t uVector)
  * @returns true if the exception is contributory, false otherwise.
  * @param   uVector     The exception vector.
  */
-DECLINLINE(bool) hmR0VmxIsContributoryXcpt(const uint8_t uVector)
+DECLINLINE(bool) hmR0VmxIsContributoryXcpt(const uint32_t uVector)
 {
     switch (uVector)
     {
@@ -4539,9 +4524,9 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
         rc = hmR0VmxReadExitIntrInfoVmcs(pVmxTransient);
         AssertRCReturn(rc, rc);
 
-        uint8_t uIntType    = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
-        uint8_t uExitVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVmxTransient->uExitIntrInfo);
-        uint8_t uIdtVector  = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
+        uint32_t uIntType    = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
+        uint32_t uExitVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVmxTransient->uExitIntrInfo);
+        uint32_t uIdtVector  = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
 
         typedef enum
         {
@@ -4750,7 +4735,7 @@ DECLINLINE(int) hmR0VmxSaveGuestRsp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         return VINF_SUCCESS;
 
     RTGCUINTREG uVal = 0;
-    int rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP,     &uVal);
+    int rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &uVal);
     AssertRCReturn(rc, rc);
     pMixedCtx->rsp = uVal;
     pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_RSP;
@@ -4809,9 +4794,9 @@ static int hmR0VmxSaveGuestGprs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 
 /**
- * Saves the guest's interruptibility state.
+ * Gets the guest's interruptibility-state ("interrupt shadow" as AMD calls it)
+ * from the guest-state area in the VMCS.
  *
- * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
@@ -4820,13 +4805,12 @@ static int hmR0VmxSaveGuestGprs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestIntrState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(void) hmR0VmxSaveGuestIntrState(PVM pVM,  PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    if (pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_INTR_STATE)
-        return VINF_SUCCESS;
-
     uint32_t uIntrState = 0;
     int rc = VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
+    AssertRC(rc);
+
     if (!uIntrState)
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
     else
@@ -4834,14 +4818,11 @@ DECLINLINE(int) hmR0VmxSaveGuestIntrState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
         Assert(   uIntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI
                || uIntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
         rc  = hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        rc |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);    /* RFLAGS is needed in hmR0VmxLoadGuestIntrState(). */
-        AssertRCReturn(rc, rc);
+        rc |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);    /* for hmR0VmxLoadGuestIntrState(). */
+        AssertRC(rc);
         EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
         Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
     }
-
-    pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_INTR_STATE;
-    return rc;
 }
 
 
@@ -5309,9 +5290,6 @@ static int hmR0VmxSaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVM, pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestAutoLoadStoreMsrs failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-    rc = hmR0VmxSaveGuestIntrState(pVM, pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestIntrState failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
-
     rc = hmR0VmxSaveGuestActivityState(pVM, pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestActivityState failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
@@ -5496,7 +5474,6 @@ static void hmR0VmxUpdateTRPMTrap(PVMCPU pVCpu)
 static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rcExit)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-    Log(("hmR0VmxLongJmpToRing3: rcExit=%d\n", rcExit));
 
     int rc = hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);
     AssertRC(rc);
@@ -5602,6 +5579,7 @@ DECLCALLBACK(void) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperat
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     VMMRZCallRing3Disable(pVCpu);
+    Log(("hmR0VmxLongJmpToRing3\n"));
     hmR0VmxLongJmpToRing3(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser, VINF_VMM_UNKNOWN_RING3_CALL);
     VMMRZCallRing3Enable(pVCpu);
 }
@@ -5686,7 +5664,7 @@ static int hmR0VmxInjectTRPMTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
  *
- * @remarks This must be called only after hmR0VmxSaveGuestIntrState().
+ * @remarks Must be called after hmR0VmxLoadGuestIntrState().
  */
 static int hmR0VmxInjectPendingInterrupt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
@@ -5726,21 +5704,11 @@ static int hmR0VmxInjectPendingInterrupt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedC
         if (VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)))
         {
             /*
-             * When external interrupts are pending and the guest has disabled interrupts, cause a VM-exit using "interrupt-window
-             * exiting" so we can deliver the interrupt when the guest is ready to receive them. Otherwise, if the guest
-             * can receive interrupts now, convert the PDM interrupt into a TRPM event and inject it.
+             * If the guest can receive interrupts now (interrupts enabled and no interrupt inhibition is active) convert
+             * the PDM interrupt into a TRPM event and inject it.
              */
-            if (!(pMixedCtx->eflags.u32 & X86_EFL_IF))  /** @todo we can use interrupt-window exiting for block-by-STI. */
-            {
-                if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT))
-                {
-                    pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT;
-                    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
-                    AssertRCReturn(rc, rc);
-                }
-                /* else we will deliver interrupts whenever the guest exits next and it's in a state to receive interrupts. */
-            }
-            else if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+            if (   (pMixedCtx->eflags.u32 & X86_EFL_IF)
+                && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
             {
                 uint8_t u8Interrupt = 0;
                 rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
@@ -5752,11 +5720,19 @@ static int hmR0VmxInjectPendingInterrupt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedC
                 }
                 else
                 {
-                    /** @todo Does this actually happen? If not turn it into an assertion.   */
+                    /** @todo Does this actually happen? If not turn it into an assertion. */
                     Assert(!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)));
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
                 }
             }
+            else if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT))
+            {
+                /* Instruct VT-x to cause an interrupt-window exit as soon as the guest is ready to receive interrupts again. */
+                pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT;
+                rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+                AssertRCReturn(rc, rc);
+            }
+            /* else we will deliver interrupts whenever the guest exits next and it's in a state to receive interrupts. */
         }
     }
 
@@ -6231,9 +6207,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     rc = hmR0VmxLoadGuestGprs(pVM, pVCpu, pCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestGprs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-    rc = hmR0VmxLoadGuestIntrState(pVM, pVCpu, pCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestIntrState! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
-
     rc = hmR0VmxSetupVMRunHandler(pVM, pVCpu, pCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
@@ -6325,6 +6298,7 @@ DECLINLINE(int) hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
      * (before running guest code) after calling this function (e.g. how do we reverse the effects of calling PDMGetInterrupt()?)
      * This is why this is done after all possible exits-to-ring-3 paths in this code.
      */
+    hmR0VmxLoadGuestIntrState(pVM, pVCpu, pMixedCtx);
     rc = hmR0VmxInjectPendingInterrupt(pVM, pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
     return rc;
@@ -6471,23 +6445,23 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         return;
     }
 
-    /* We need to update our interruptibility-state on every VM-exit and VM-entry. */
-    rc = hmR0VmxSaveGuestIntrState(pVM, pVCpu, pMixedCtx);
-    AssertRC(rc);
-    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_INTR_STATE;
-
-    /*
-     * If the TPR was raised by the guest, it wouldn't cause a VM-exit immediately. Instead we sync the TPR lazily whenever we
-     * eventually get a VM-exit for any reason. This maybe expensive as PDMApicSetTPR() can longjmp to ring-3; also why we do
-     * it outside of hmR0VmxSaveGuestState() which must never cause longjmps.
-     */
-    if (   !pVmxTransient->fVMEntryFailed
-        && (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
-        && pVmxTransient->u8GuestTpr != pVCpu->hm.s.vmx.pbVirtApic[0x80])
+    if (RT_LIKELY(!pVmxTransient->fVMEntryFailed))
     {
-        rc = PDMApicSetTPR(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[0x80]);
-        AssertRC(rc);
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_GUEST_APIC_STATE;
+        /* Update the guest interruptibility-state from the VMCS. */
+        hmR0VmxSaveGuestIntrState(pVM, pVCpu, pMixedCtx);
+
+        /*
+         * If the TPR was raised by the guest, it wouldn't cause a VM-exit immediately. Instead we sync the TPR lazily whenever
+         * we eventually get a VM-exit for any reason. This maybe expensive as PDMApicSetTPR() can longjmp to ring-3; also why
+         * we do it outside of hmR0VmxSaveGuestState() which must never cause longjmps.
+         */
+        if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
+            && pVmxTransient->u8GuestTpr != pVCpu->hm.s.vmx.pbVirtApic[0x80])
+        {
+            rc = PDMApicSetTPR(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[0x80]);
+            AssertRC(rc);
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_GUEST_APIC_STATE;
+        }
     }
 }
 
@@ -6721,16 +6695,10 @@ static DECLCALLBACK(int) hmR0VmxExitXcptNmi(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMix
 static DECLCALLBACK(int) hmR0VmxExitIntWindow(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = VERR_INTERNAL_ERROR_5;
-#ifdef DEBUG
-    rc = hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);
-    AssertRC(rc);
-    Assert(pMixedCtx->eflags.u32 & X86_EFL_IF);
-#endif
 
     /* Indicate that we no longer need to VM-exit when the guest is ready to receive interrupts, it is now ready. */
     pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT;
-    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
     AssertRCReturn(rc, rc);
 
     /* Deliver the pending interrupt via hmR0VmxPreRunGuest()->hmR0VmxInjectPendingInterrupt() and resume guest execution. */
@@ -7477,7 +7445,7 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
     AssertRCReturn(rc, rc);
 
     const RTGCUINTPTR uExitQualification = pVmxTransient->uExitQualification;
-    const uint8_t uAccessType            = VMX_EXIT_QUALIFICATION_CRX_ACCESS(uExitQualification);
+    const uint32_t uAccessType           = VMX_EXIT_QUALIFICATION_CRX_ACCESS(uExitQualification);
     switch (uAccessType)
     {
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_WRITE:       /* MOV to CRx */
@@ -8305,7 +8273,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptGP(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
                 pMixedCtx->rip += pDis->cbInstr;
                 EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
                 Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
-                pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_INTR_STATE | HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS;
+                pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS;
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitSti);
                 break;
 
