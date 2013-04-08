@@ -643,7 +643,7 @@ int GuestFile::readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
         paParms[i++].setUInt32(uSize /* Size (in bytes) to read */);
 
         uint32_t cbRead;
-        int vrc = sendCommand(HOST_FILE_READ_AT, i, paParms);
+        vrc = sendCommand(HOST_FILE_READ_AT, i, paParms);
         if (RT_SUCCESS(vrc))
             vrc = waitForRead(uTimeoutMS, pvData, cbData, &cbRead);
 

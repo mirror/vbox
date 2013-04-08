@@ -189,11 +189,6 @@ void GuestSession::uninit(void)
     for (SessionDirectories::iterator itDirs = mData.mDirectories.begin();
          itDirs != mData.mDirectories.end(); ++itDirs)
     {
-# ifdef DEBUG
-        ULONG cRefs = (*itDirs)->AddRef();
-        LogFlowThisFunc(("pFile=%p, cRefs=%RU32\n", (*itDirs), cRefs - 1));
-        (*itDirs)->Release();
-# endif
         (*itDirs)->uninit();
     }
     mData.mDirectories.clear();
@@ -203,11 +198,6 @@ void GuestSession::uninit(void)
     for (SessionFiles::iterator itFiles = mData.mFiles.begin();
          itFiles != mData.mFiles.end(); ++itFiles)
     {
-# ifdef DEBUG
-        ULONG cRefs = itFiles->second->AddRef();
-        LogFlowThisFunc(("pFile=%p, cRefs=%RU32\n", (*itFiles), cRefs - 1));
-        itFiles->second->Release();
-# endif
         itFiles->second->uninit();
     }
     mData.mFiles.clear();
@@ -217,11 +207,6 @@ void GuestSession::uninit(void)
     for (SessionProcesses::iterator itProcs = mData.mProcesses.begin();
          itProcs != mData.mProcesses.end(); ++itProcs)
     {
-# ifdef DEBUG
-        ULONG cRefs = itProcs->second->AddRef();
-        LogFlowThisFunc(("pProcess=%p, cRefs=%RU32\n", itProcs->second, cRefs - 1));
-        itProcs->second->Release();
-# endif
         itProcs->second->uninit();
     }
     mData.mProcesses.clear();
