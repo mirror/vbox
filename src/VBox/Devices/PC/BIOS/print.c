@@ -47,8 +47,6 @@
 // Debug printf support
 
 /* Redirect INFO output to backdoor logging port. */
-#define PANIC_PORT  0x400
-#define PANIC_PORT2 0x401
 #define INFO_PORT   0x504
 #define DEBUG_PORT  0x403
 
@@ -162,9 +160,6 @@ void bios_printf(uint16_t action, const char *s, ...)
     format_width = 0;
     
     if ((action & BIOS_PRINTF_DEBHALT) == BIOS_PRINTF_DEBHALT) {
-#if BX_VIRTUAL_PORTS
-        outb(PANIC_PORT2, 0x00);
-#endif
         bios_printf (BIOS_PRINTF_SCREEN, "FATAL: ");
     }
 
