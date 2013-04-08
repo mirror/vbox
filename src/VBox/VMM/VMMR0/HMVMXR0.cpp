@@ -4549,16 +4549,16 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
             {
                 enmReflect = VMXREFLECTXCPT_XCPT;
             }
-            else if (   hmR0VmxIsContributoryXcpt(uIdtVector)
-                     && hmR0VmxIsContributoryXcpt(uExitVector))
-            {
-                enmReflect = VMXREFLECTXCPT_DF;
-            }
             else if (   (pVCpu->hm.s.vmx.u32XcptBitmap & RT_BIT(X86_XCPT_PF))
                      && uIdtVector == X86_XCPT_PF
                      && uExitVector == X86_XCPT_PF)
             {
                 pVmxTransient->fVectoringPF = true;
+            }
+            else if (   hmR0VmxIsContributoryXcpt(uIdtVector)
+                     && hmR0VmxIsContributoryXcpt(uExitVector))
+            {
+                enmReflect = VMXREFLECTXCPT_DF;
             }
             else if (   hmR0VmxInterceptingContributoryXcpts(pVCpu)
                      && uIdtVector == X86_XCPT_PF
@@ -6336,7 +6336,11 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
     /* Load the required guest state bits (for guest-state changes in the inner execution loop). */
     Assert(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_CONTEXT));
     Log(("LoadFlags=%#RX32\n", pVCpu->hm.s.fContextUseFlags));
-    int rc = VMXR0LoadGuestState(pVM, pVCpu, pMixedCtx);
+    int rc = VINF_SUCCESS;
+    if (pVCpu->hm.s.fContextUseFlags == HM_CHANGED_GUEST_RIP)
+        rc = hmR0VmxLoadGuestRip(pVM, pVCpu, pMixedCtx);
+    else if (pVCpu->hm.s.fContextUseFlags)
+        rc = VMXR0LoadGuestState(pVM, pVCpu, pMixedCtx);
     AssertRC(rc);
     AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags =%#x\n", pVCpu->hm.s.fContextUseFlags));
 
@@ -6493,7 +6497,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Assert(!HMR0SuspendPending());
         AssertMsg(pVCpu->hm.s.idEnteredCpu == RTMpCpuId(),
                   ("Illegal migration! Entered on CPU %u Current %u cLoops=%u\n", (unsigned)pVCpu->hm.s.idEnteredCpu,
-                   (unsigned)RTMpCpuId(), cLoops));
+                  (unsigned)RTMpCpuId(), cLoops));
 
         /* Preparatory work for running guest code, this may return to ring-3 for some last minute updates. */
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
@@ -8021,7 +8025,7 @@ static DECLCALLBACK(int) hmR0VmxExitEptViolation(PVM pVM, PVMCPU pVCpu, PCPUMCTX
     rc |= hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);     /** @todo Can we do better?  */
 #else
     /* Aggressive state sync. for now. */
-    rc  = hmR0VmxSaveGuestGprs(pVM, pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestGprs(pVM, pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
 #endif
