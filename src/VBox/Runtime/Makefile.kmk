@@ -362,11 +362,13 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathJoinA.cpp \
 	common/path/RTPathJoinEx.cpp \
 	common/path/RTPathParse.cpp \
+	common/path/RTPathParsedReassemble.cpp \
 	common/path/RTPathParseSimple.cpp \
 	common/path/RTPathRealDup.cpp \
 	common/path/RTPathRmCmd.cpp \
 	common/path/RTPathSplit.cpp \
 	common/path/RTPathSplitA.cpp \
+	common/path/RTPathSplitReassemble.cpp \
 	common/path/RTPathStartsWithRoot.cpp \
 	common/path/RTPathStripExt.cpp \
 	common/path/RTPathStripFilename.cpp \

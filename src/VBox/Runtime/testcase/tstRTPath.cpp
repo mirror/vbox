@@ -86,6 +86,7 @@ static void testParserAndSplitter(RTTEST hTest)
         { 3,  9, 10,  "a/h/u.ext/",       RTPATH_PROP_EXTRA_SLASHES | RTPATH_PROP_RELATIVE,                                                                     RTPATH_STR_F_STYLE_UNIX | RTPATH_STR_F_MIDDLE },
     };
 
+    char szPath1[RTPATH_MAX];
     union
     {
         RTPATHPARSED    Parsed;
@@ -115,6 +116,20 @@ static void testParserAndSplitter(RTTEST hTest)
                                  s_aTests[i].fProps,    u.Parsed.fProps, s_aTests[i].fProps ^ u.Parsed.fProps,
                                  s_aTests[i].offSuffix, u.Parsed.offSuffix,
                                  s_aTests[i].cchPath,   u.Parsed.cchPath);
+        }
+        else
+        {
+            rc = RTPathParsedReassemble(s_aTests[i].pszPath, &u.Parsed, s_aTests[i].fFlags & ~RTPATH_STR_F_MIDDLE,
+                                        szPath1, sizeof(szPath1));
+            if (rc == VINF_SUCCESS)
+            {
+                RTTESTI_CHECK_MSG(strlen(szPath1) == s_aTests[i].cchPath, ("%s\n", szPath1));
+                if (   !(u.Parsed.fProps & RTPATH_PROP_EXTRA_SLASHES)
+                    && (s_aTests[i].fFlags & RTPATH_STR_F_STYLE_MASK) != RTPATH_STR_F_STYLE_DOS)
+                    RTTESTI_CHECK_MSG(strcmp(szPath1, s_aTests[i].pszPath) == 0, ("%s\n", szPath1));
+            }
+            else
+                RTTestIFailed("RTPathParsedReassemble -> %Rrc", rc);
         }
     }
 
@@ -161,6 +176,17 @@ static void testParserAndSplitter(RTTEST hTest)
                     RTTESTI_CHECK(!strcmp(pSplit->apszComps[idxComp], pSplit->apszComps[idxComp]));
                 RTPathSplitFree(pSplit);
             }
+
+            rc = RTPathSplitReassemble(&u.Split, s_aTests[i].fFlags & ~RTPATH_STR_F_MIDDLE, szPath1, sizeof(szPath1));
+            if (rc == VINF_SUCCESS)
+            {
+                RTTESTI_CHECK_MSG(strlen(szPath1) == s_aTests[i].cchPath, ("%s\n", szPath1));
+                if (   !(u.Parsed.fProps & RTPATH_PROP_EXTRA_SLASHES)
+                    && (s_aTests[i].fFlags & RTPATH_STR_F_STYLE_MASK) != RTPATH_STR_F_STYLE_DOS)
+                    RTTESTI_CHECK_MSG(strcmp(szPath1, s_aTests[i].pszPath) == 0, ("%s\n", szPath1));
+            }
+            else
+                RTTestIFailed("RTPathSplitReassemble -> %Rrc", rc);
         }
     }
 }
