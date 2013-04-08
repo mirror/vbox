@@ -4023,8 +4023,16 @@ DxgkDdiEscape(
                 Assert(pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD));
                 if (pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD))
                 {
-                    Status = vboxVideoCmEscape(&pContext->CmContext, pRegions, pEscape->PrivateDriverDataSize);
-                    Assert(Status == STATUS_SUCCESS);
+                    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D)
+                    {
+                        Status = vboxVideoCmEscape(&pContext->CmContext, pRegions, pEscape->PrivateDriverDataSize);
+                        Assert(Status == STATUS_SUCCESS);
+                    }
+                    else
+                    {
+                        WARN(("VBOXESC_GETVBOXVIDEOCMCMD recieved invalid context type %d", pContext->enmType));
+                        Status = STATUS_INVALID_PARAMETER;
+                    }
                 }
                 else
                     Status = STATUS_BUFFER_TOO_SMALL;
