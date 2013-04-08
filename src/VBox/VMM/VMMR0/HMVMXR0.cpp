@@ -830,9 +830,6 @@ cleanup:
 VMMR0DECL(int) VMXR0GlobalInit(void)
 {
     /* Setup the main VM exit handlers. */
-    /** @todo I'm told lookup table for function pointers is a bad idea in terms
-     *        of performance. Make these static for now and not do change anything
-     *        at runtime so we can easily switch to a switch-case approach later. */
     AssertCompile(VMX_EXIT_MAX + 1 == RT_ELEMENTS(s_apfnVMExitHandlers));
 #ifdef DEBUG
     for (unsigned i = 0; i < RT_ELEMENTS(s_apfnVMExitHandlers); i++)
@@ -1140,7 +1137,6 @@ static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbNone(PVM pVM, PVMCPU pVCpu)
  *          statements since the host-CPU copies are named "ASID".
  *
  * @remarks Called with interrupts disabled.
- * @todo Statistics.
  */
 static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
 {
@@ -1258,7 +1254,6 @@ static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @remarks Called with interrupts disabled.
- * @todo Statistics.
  */
 static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu)
 {
@@ -1325,7 +1320,6 @@ static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu)
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @remarks Called with interrupts disabled.
- * @todo Statistics.
  */
 static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu)
 {
@@ -2741,8 +2735,8 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
          */
         uint64_t u64CR0Mask = 0;
         u64CR0Mask =  X86_CR0_PE
-                    | X86_CR0_WP    /** @todo do we need to monitor WP with nested paging? */
-                    | X86_CR0_PG    /** @todo do we need to monitor PG with nested paging? */
+                    | X86_CR0_WP
+                    | X86_CR0_PG
                     | X86_CR0_ET    /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.ET */
                     | X86_CR0_CD    /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.CD */
                     | X86_CR0_NW;   /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.NW */
@@ -2931,9 +2925,9 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
         /* Setup CR4 mask. CR4 flags owned by the host, if the guest attempts to change them, that would cause a VM exit. */
         uint64_t u64CR4Mask = 0;
         u64CR4Mask =  X86_CR4_VME
-                    | X86_CR4_PAE   /** @todo should we intercept this bit with Nested Paging? */
-                    | X86_CR4_PGE   /** @todo why should we care if guest changes PGE bit or not with Nested Paging? */
-                    | X86_CR4_PSE   /** @todo do we care about page-size extensions in the Nested Paging case? */
+                    | X86_CR4_PAE
+                    | X86_CR4_PGE
+                    | X86_CR4_PSE
                     | X86_CR4_VMXE;
         pVCpu->hm.s.vmx.cr4_mask = u64CR4Mask;
         rc |= VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR4_MASK, u64CR4Mask);
@@ -3062,7 +3056,6 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         && (   !CPUMIsGuestInRealModeEx(pCtx)
             && !CPUMIsGuestInV86ModeEx(pCtx)))
     {
-        /** @todo DPL checks for CS, SS. */
         /* Protected mode checks */
         /* CS */
         Assert(pCtx->cs.Attr.n.u1Present);
@@ -3661,7 +3654,6 @@ DECLINLINE(int) hmR0VmxLoadGuestActivityState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
- * @todo change this to return void.
  */
 DECLINLINE(int) hmR0VmxSetupVMRunHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -8150,9 +8142,6 @@ static DECLCALLBACK(int) hmR0VmxExitEptViolation(PVM pVM, PVMCPU pVCpu, PCPUMCTX
     }
 
     Log(("EPT return to ring-3 rc=%d\n"));
-
-    /* We need to go back to ring-3 to emulate the instruction as we could not handle it correctly, tell TRPM. */
-    /** @todo Shouldn't we update TRPM here?  */
     return rc;
 }
 
@@ -8237,7 +8226,6 @@ static DECLCALLBACK(int) hmR0VmxExitXcptDB(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
-        /** @todo revisit this.  */
         /* DR6, DR7.GD and IA32_DEBUGCTL.LBR are not updated yet. See Intel spec. 27.1 "Architectural State before a VM-Exit". */
         pMixedCtx->dr[6] = uDR6;
 
