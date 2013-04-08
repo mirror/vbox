@@ -115,14 +115,13 @@ RT_C_DECLS_BEGIN
 # define HM_CHANGED_GUEST_SYSENTER_CS_MSR        RT_BIT(14)
 # define HM_CHANGED_GUEST_SYSENTER_EIP_MSR       RT_BIT(15)
 # define HM_CHANGED_GUEST_SYSENTER_ESP_MSR       RT_BIT(16)
-# define HM_CHANGED_GUEST_INTR_STATE             RT_BIT(17)
-# define HM_CHANGED_VMX_GUEST_AUTO_MSRS          RT_BIT(18)
-# define HM_CHANGED_VMX_GUEST_ACTIVITY_STATE     RT_BIT(19)
-# define HM_CHANGED_VMX_GUEST_APIC_STATE         RT_BIT(20)
-# define HM_CHANGED_VMX_ENTRY_CTLS               RT_BIT(21)
-# define HM_CHANGED_VMX_EXIT_CTLS                RT_BIT(22)
+# define HM_CHANGED_VMX_GUEST_AUTO_MSRS          RT_BIT(17)
+# define HM_CHANGED_VMX_GUEST_ACTIVITY_STATE     RT_BIT(18)
+# define HM_CHANGED_VMX_GUEST_APIC_STATE         RT_BIT(19)
+# define HM_CHANGED_VMX_ENTRY_CTLS               RT_BIT(20)
+# define HM_CHANGED_VMX_EXIT_CTLS                RT_BIT(21)
 
-# define HM_CHANGED_HOST_CONTEXT                 RT_BIT(23)
+# define HM_CHANGED_HOST_CONTEXT                 RT_BIT(22)
 
 # define HM_CHANGED_ALL_GUEST   (  HM_CHANGED_GUEST_RIP                \
                                  | HM_CHANGED_GUEST_RSP                \
@@ -141,7 +140,6 @@ RT_C_DECLS_BEGIN
                                  | HM_CHANGED_GUEST_SYSENTER_CS_MSR    \
                                  | HM_CHANGED_GUEST_SYSENTER_EIP_MSR   \
                                  | HM_CHANGED_GUEST_SYSENTER_ESP_MSR   \
-                                 | HM_CHANGED_GUEST_INTR_STATE         \
                                  | HM_CHANGED_VMX_GUEST_AUTO_MSRS      \
                                  | HM_CHANGED_VMX_GUEST_ACTIVITY_STATE \
                                  | HM_CHANGED_VMX_GUEST_APIC_STATE     \
