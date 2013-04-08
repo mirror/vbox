@@ -58,7 +58,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_HGCM
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_GUEST_CONTROL
 #include <VBox/HostServices/GuestControlSvc.h>
 
 #include <VBox/log.h>
@@ -83,7 +86,7 @@
 namespace guestControl {
 
 /** Flag for indicating that the client only is interested in
- *  messages for specific contexts. */
+ *  messages of specific context IDs. */
 #define CLIENTSTATE_FLAG_CONTEXTFILTER      RT_BIT(0)
 
 /**
@@ -112,14 +115,19 @@ typedef struct HostCommand
 
     uint32_t AddRef(void)
     {
+#ifdef DEBUG_andy
+        LogFlowFunc(("Adding reference pHostCmd=%p, CID=%RU32, new refCount=%RU32\n",
+                     this, mContextID, mRefCount + 1));
+#endif
         return ++mRefCount;
     }
 
     uint32_t Release(void)
     {
-        LogFlowFunc(("Releasing CID=%RU32, refCount=%RU32\n",
-                     mContextID, mRefCount));
-
+#ifdef DEBUG_andy
+        LogFlowFunc(("Releasing reference pHostCmd=%p, CID=%RU32, new refCount=%RU32\n",
+                     this, mContextID, mRefCount - 1));
+#endif
         /* Release reference for current command. */
         Assert(mRefCount);
         if (--mRefCount == 0)
@@ -138,8 +146,8 @@ typedef struct HostCommand
      */
     int Allocate(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     {
-        LogFlowFunc(("Allocating uMsg=%RU32, cParms=%RU32, paParms=%p\n",
-                     uMsg, cParms, paParms));
+        LogFlowFunc(("Allocating pHostCmd=%p, uMsg=%RU32, cParms=%RU32, paParms=%p\n",
+                     this, uMsg, cParms, paParms));
 
         if (!cParms) /* At least one parameter (context ID) must be present. */
             return VERR_INVALID_PARAMETER;
@@ -218,6 +226,10 @@ typedef struct HostCommand
              * assign the context ID to the command.
              */
             rc = mpParms[0].getUInt32(&mContextID);
+
+            /* Set timestamp so that clients can distinguish between already
+             * processed commands and new ones. */
+            mTimestamp = RTTimeNanoTS();
         }
 
         LogFlowFunc(("Returned with rc=%Rrc\n", rc));
@@ -231,11 +243,11 @@ typedef struct HostCommand
      */
     void Free(void)
     {
-        AssertMsg(mRefCount == 0, ("Command CID=%RU32 still being used by a client (%RU32 refs), cannot free yet\n",
-                                   mContextID, mRefCount));
+        AssertMsg(mRefCount == 0, ("pHostCmd=%p, CID=%RU32 still being used by a client (%RU32 refs), cannot free yet\n",
+                                   this, mContextID, mRefCount));
 
-        LogFlowFunc(("Freeing host command CID=%RU32, mMsgType=%RU32, mParmCount=%RU32, mpParms=%p\n",
-                     mContextID, mMsgType, mParmCount, mpParms));
+        LogFlowFunc(("Freeing host command pHostCmd=%p, CID=%RU32, mMsgType=%RU32, mParmCount=%RU32, mpParms=%p\n",
+                     this, mContextID, mMsgType, mParmCount, mpParms));
 
         for (uint32_t i = 0; i < mParmCount; i++)
         {
@@ -259,8 +271,8 @@ typedef struct HostCommand
 
         mParmCount = 0;
 
-       /* Removes the command from its list */
-       RTListNodeRemove(&Node);
+        /* Removes the command from its list */
+        RTListNodeRemove(&Node);
     }
 
     /**
@@ -273,6 +285,9 @@ typedef struct HostCommand
      */
     int CopyTo(VBOXHGCMSVCPARM paDstParms[], uint32_t cDstParms) const
     {
+        LogFlowFunc(("pHostCmd=%p, mMsgType=%RU32, mParmCount=%RU32, mContextID=%RU32\n",
+                     this, mMsgType, mParmCount, mContextID));
+
         int rc = VINF_SUCCESS;
         if (cDstParms != mParmCount)
         {
@@ -293,10 +308,6 @@ typedef struct HostCommand
                 }
                 else
                 {
-#ifdef DEBUG_andy
-                    LogFlowFunc(("\tmpParms[%RU32] type = %RU32\n",
-                                 i, mpParms[i].type));
-#endif
                     switch (mpParms[i].type)
                     {
                         case VBOX_HGCM_SVC_PARM_32BIT:
@@ -361,8 +372,8 @@ typedef struct HostCommand
 
         int rc;
 
-        LogFlowFunc(("mMsgType=%RU32, mParmCount=%RU32, mpParms=%p\n",
-                     mMsgType, mParmCount, mpParms));
+        LogFlowFunc(("pHostCmd=%p, mMsgType=%RU32, mParmCount=%RU32, mpParms=%p\n",
+                     this, mMsgType, mParmCount, mpParms));
 
         /* Does the current host command need more parameter space which
          * the client does not provide yet? */
@@ -391,7 +402,6 @@ typedef struct HostCommand
                 rc = VERR_TOO_MUCH_DATA;
         }
 
-        LogFlowFunc(("Returned with rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -399,10 +409,8 @@ typedef struct HostCommand
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
 
-        LogFlowFunc(("mMsgType=%RU32, mParmCount=%RU32, mpParms=%p\n",
-                     mMsgType, mParmCount, mpParms));
-        LogFlowFunc(("Telling client the next upcoming message type=%RU32, count=%RU32\n",
-                     mMsgType, mParmCount));
+        LogFlowFunc(("pHostCmd=%p, mMsgType=%RU32, mParmCount=%RU32, mpParms=%p\n",
+                     this, mMsgType, mParmCount, mpParms));
 
         if (pConnection->mNumParms >= 2)
         {
@@ -430,9 +438,16 @@ typedef struct HostCommand
     uint32_t mContextID;
     /** Dynamic structure for holding the HGCM parms */
     uint32_t mMsgType;
+    /** Number of HGCM parameters. */
     uint32_t mParmCount;
+    /** Array of HGCM parameters. */
     PVBOXHGCMSVCPARM mpParms;
+    /** Incoming timestamp (us). */
+    uint64_t mTimestamp;
 } HostCommand;
+typedef std::list< HostCommand *> HostCmdList;
+typedef std::list< HostCommand *>::iterator HostCmdListIter;
+typedef std::list< HostCommand *>::const_iterator HostCmdListIterConst;
 
 /**
  * Per-client structure used for book keeping/state tracking a
@@ -458,51 +473,132 @@ typedef std::map< uint32_t, ClientContext >::const_iterator ClientContextMapIter
 typedef struct ClientState
 {
     ClientState(void)
-        : mSvcHelpers(NULL),
+        : mID(0),
+          mSvcHelpers(NULL),
           mFlags(0), mContextFilter(0),
-          mpHostCmd(NULL), mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
-          mIsPending(false) {}
+          mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
+          mHostCmdTS(0),
+          mIsPending(false) { }
 
-    ClientState(PVBOXHGCMSVCHELPERS pSvcHelpers)
-        : mSvcHelpers(pSvcHelpers),
+    ClientState(PVBOXHGCMSVCHELPERS pSvcHelpers, uint32_t uClientID)
+        : mID(uClientID),
+          mSvcHelpers(pSvcHelpers),
           mFlags(0), mContextFilter(0),
-          mpHostCmd(NULL), mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
-          mIsPending(false) {}
+          mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
+          mHostCmdTS(0),
+          mIsPending(false) { }
+
+    void DequeueAll(void)
+    {
+        HostCmdListIter curItem = mHostCmdList.begin();
+        while (curItem != mHostCmdList.end())
+            Dequeue(curItem++);
+    }
+
+    void DequeueCurrent(void)
+    {
+        HostCmdListIter curCmd = mHostCmdList.begin();
+        if (curCmd != mHostCmdList.end())
+            Dequeue(curCmd);
+    }
+
+    void Dequeue(HostCommand *pHostCmd)
+    {
+        AssertPtrReturnVoid(pHostCmd);
+
+        HostCmdListIter curItem = mHostCmdList.begin();
+        while (curItem != mHostCmdList.end())
+        {
+            if ((*curItem) == pHostCmd)
+            {
+                Dequeue(curItem);
+                break;
+            }
+
+            curItem++;
+        }
+    }
+
+    void Dequeue(HostCmdListIter &curItem)
+    {
+        HostCommand *pHostCmd = (*curItem);
+        AssertPtr(pHostCmd);
+
+        if (pHostCmd->Release() == 0)
+        {
+            LogFlowFunc(("[Client %RU32] Destroying pHostCmd=%p\n",
+                         mID, (*curItem)));
+
+            delete pHostCmd;
+            pHostCmd = NULL;
+        }
+
+        mHostCmdList.erase(curItem);
+
+        /* Reset everything else. */
+        mHostCmdRc    = VINF_SUCCESS;
+        mHostCmdTries = 0;
+    }
+
+    int EnqueueCommand(HostCommand *pHostCmd)
+    {
+        AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
+
+        int rc = VINF_SUCCESS;
+
+        try
+        {
+            mHostCmdList.push_back(pHostCmd);
+            pHostCmd->AddRef();
+        }
+        catch (std::bad_alloc)
+        {
+            rc = VERR_NO_MEMORY;
+        }
+
+        return rc;
+    }
 
     bool WantsHostCommand(const HostCommand *pHostCmd) const
     {
         AssertPtrReturn(pHostCmd, false);
 
 #ifdef DEBUG_andy
-            LogFlowFunc(("mFlags=%x, mContextID=%RU32, mContextFilter=%x, filterRes=%x\n",
-                         mFlags, pHostCmd->mContextID, mContextFilter, pHostCmd->mContextID & mContextFilter));
+        LogFlowFunc(("mHostCmdTS=%RU64, pHostCmdTS=%RU64\n",
+                     mHostCmdTS, pHostCmd->mTimestamp));
+#endif
+
+        /* Only process newer commands. */
+        if (pHostCmd->mTimestamp <= mHostCmdTS)
+            return false;
+
+#ifdef DEBUG_andy
+            LogFlowFunc(("[Client %RU32] mFlags=%x, mContextID=%RU32, mContextFilter=%x, filterRes=%x, sessionID=%RU32\n",
+                         mID, mFlags, pHostCmd->mContextID, mContextFilter,
+                         pHostCmd->mContextID & mContextFilter, VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostCmd->mContextID)));
 #endif
         /*
          * If a sesseion filter is set, only obey those sessions we're interested in.
          */
+        bool fWant = false;
         if (mFlags & CLIENTSTATE_FLAG_CONTEXTFILTER)
         {
             if ((pHostCmd->mContextID & mContextFilter) == mContextFilter)
-                return true;
+                fWant = true;
         }
         else /* Client is interested in all commands. */
-            return true;
+            fWant = true;
 
-        return false;
+        return fWant;
     }
 
     int SetPending(const ClientConnection *pConnection)
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
 
-        LogFlowFunc(("mIsPending=%RTbool, mpHostCmd=%p, CID=%RU32, type=%RU32\n",
-                     mIsPending, mpHostCmd,
-                     mpHostCmd ? mpHostCmd->mContextID : 0,
-                     mpHostCmd ? mpHostCmd->mMsgType : 0));
-
         if (mIsPending)
         {
-            LogFlowFunc(("Client already is in pending mode\n"));
+            LogFlowFunc(("[Client %RU32] Already is in pending mode\n", mID));
 
             /*
              * Signal that we don't and can't return yet.
@@ -510,18 +606,18 @@ typedef struct ClientState
             return VINF_HGCM_ASYNC_EXECUTE;
         }
 
-        if (mpHostCmd == NULL)
+        if (mHostCmdList.empty())
         {
             AssertMsg(mIsPending == false,
-                      ("Client %p already is pending but tried to receive a new host command\n", this));
+                      ("Client ID=%RU32 already is pending but tried to receive a new host command\n", mID));
 
-            mPending.mHandle   = pConnection->mHandle;
-            mPending.mNumParms = pConnection->mNumParms;
-            mPending.mParms    = pConnection->mParms;
+            mPendingCon.mHandle   = pConnection->mHandle;
+            mPendingCon.mNumParms = pConnection->mNumParms;
+            mPendingCon.mParms    = pConnection->mParms;
 
             mIsPending = true;
 
-            LogFlowFunc(("Client now is in pending mode\n"));
+            LogFlowFunc(("[Client %RU32] Is now in pending mode\n", mID));
 
             /*
              * Signal that we don't and can't return yet.
@@ -537,179 +633,125 @@ typedef struct ClientState
         return VERR_SIGNAL_PENDING;
     }
 
-    int SetNextCommand(HostCommand *pHostCmd)
-    {
-        AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
-
-        mpHostCmd = pHostCmd;
-        AssertPtr(mpHostCmd);
-        mpHostCmd->AddRef();
-
-        /* Create a command context to keep track of client-specific
-         * information about a certain command. */
-        Assert(mContextMap.find(mpHostCmd->mContextID) == mContextMap.end());
-        mContextMap[mpHostCmd->mContextID] = ClientContext(mpHostCmd);
-        /** @todo Exception handling! */
-
-        LogFlowFunc(("Assigning next host comamnd CID=%RU32, cmdType=%RU32, cmdParms=%RU32, new refCount=%RU32\n",
-                     mpHostCmd->mContextID, mpHostCmd->mMsgType, mpHostCmd->mParmCount, mpHostCmd->mRefCount));
-
-        return VINF_SUCCESS;
-    }
-
     int Run(const ClientConnection *pConnection,
-            const RTLISTANCHOR     *pHostCmdList)
-    {
-        int rc = VINF_SUCCESS;
-
-        LogFlowFunc(("Client pConnection=%p, pHostCmdList=%p\n",
-                      pConnection, pHostCmdList));
-        LogFlowFunc(("Client hostCmd=%p, mHostCmdRc=%Rrc, mHostCmdTries=%RU32\n",
-                      mpHostCmd, mHostCmdRc, mHostCmdTries));
-
-        /* No current command? Try getting a new one to process now. */
-        if (mpHostCmd == NULL)
-        {
-            /* Get the next host command the clienet is interested in. */
-            bool fFoundCmd = false;
-            HostCommand *pCurCmd;
-            RTListForEach(pHostCmdList, pCurCmd, HostCommand, Node)
-            {
-                fFoundCmd = WantsHostCommand(pCurCmd);
-                if (fFoundCmd)
-                {
-                    int rc2 = SetNextCommand(pCurCmd);
-                    if (RT_SUCCESS(rc2))
-                        break;
-                }
-            }
-
-            LogFlowFunc(("Client %s new command\n",
-                         fFoundCmd ? "found" : "did not find a"));
-
-            /* If no new command was found, set client into pending state. */
-            if (!fFoundCmd)
-                rc = SetPending(pConnection);
-        }
-
-        if (mpHostCmd)
-        {
-            AssertPtr(mpHostCmd);
-            mHostCmdRc = SendReply(pConnection, mpHostCmd);
-            LogFlowFunc(("Processing command CID=%RU32 ended with rc=%Rrc\n",
-                         mpHostCmd->mContextID, mHostCmdRc));
-
-            bool fRemove = false;
-            if (RT_FAILURE(mHostCmdRc))
-            {
-                mHostCmdTries++;
-
-                /*
-                 * If the client understood the message but supplied too little buffer space
-                 * don't send this message again and drop it after 3 unsuccessful attempts.
-                 * The host then should take care of next actions (maybe retry it with a smaller buffer).
-                 */
-                if (   mHostCmdRc    == VERR_TOO_MUCH_DATA
-                    && mHostCmdTries >= 3)
-                {
-                    fRemove = true;
-                }
-                /* Client did not understand the message or something else weird happened. Try again one
-                 * more time and drop it if it didn't get handled then. */
-                else if (mHostCmdTries > 1)
-                    fRemove = true;
-            }
-            else
-                fRemove = true; /* Everything went fine, remove it. */
-
-            LogFlowFunc(("Client tried CID=%RU32 for %RU32 times, (last result=%Rrc, fRemove=%RTbool)\n",
-                         mpHostCmd->mContextID, mHostCmdTries, mHostCmdRc, fRemove));
-
-            if (fRemove)
-            {
-                /* Try fetching next command. */
-                HostCommand *pCmdNext = RTListGetNext(pHostCmdList, mpHostCmd, HostCommand, Node);
-
-                LogFlowFunc(("Client removes itself from command CID=%RU32 (next command: %p, CID=%RU32)\n",
-                              mpHostCmd->mContextID, pCmdNext, pCmdNext ? pCmdNext->mContextID : 0));
-
-                /* Remove command from context map. */
-                /** @todo Exception handling! */
-                mContextMap.erase(mpHostCmd->mContextID);
-
-                /* Release reference for current command. */
-                if (mpHostCmd->Release() == 0)
-                {
-                    LogFlowFunc(("Destroying command CID=%RU32\n",
-                                 mpHostCmd->mContextID));
-
-                    RTMemFree(mpHostCmd);
-                }
-
-                /* Assign next command (if any) to this client. */
-                if (pCmdNext)
-                {
-                    rc = SetNextCommand(pCmdNext);
-                }
-                else
-                    mpHostCmd = NULL;
-
-                /* Reset everything else. */
-                mHostCmdRc    = VINF_SUCCESS;
-                mHostCmdTries = 0;
-            }
-
-            if (RT_SUCCESS(rc))
-                rc = mHostCmdRc;
-        }
-
-        LogFlowFunc(("Returned with rc=%Rrc\n", rc));
-        return rc;
-    }
-
-    int RunNow(const ClientConnection *pConnection,
-               const PRTLISTANCHOR     pHostCmdList)
+                  HostCommand      *pHostCmd)
     {
         AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
-        AssertPtrReturn(pHostCmdList, VERR_INVALID_POINTER);
+        AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
 
-        AssertMsgReturn(!mIsPending, ("Can't use another connection when client still is in pending mode\n"),
-                        VERR_INVALID_PARAMETER);
+        int rc = VINF_SUCCESS;
 
-        int rc = Run(pConnection, pHostCmdList);
+        LogFlowFunc(("[Client %RU32] pConnection=%p, mHostCmdRc=%Rrc, mHostCmdTries=%RU32\n",
+                      mID, pConnection, mHostCmdRc, mHostCmdTries));
 
-        LogFlowFunc(("Returned with rc=%Rrc\n"));
+        mHostCmdRc = SendReply(pConnection, pHostCmd);
+        LogFlowFunc(("[Client %RU32] Processing pHostCmd=%p ended with rc=%Rrc\n",
+                     mID, pHostCmd, mHostCmdRc));
+
+        bool fRemove = false;
+        if (RT_FAILURE(mHostCmdRc))
+        {
+            mHostCmdTries++;
+
+            /*
+             * If the client understood the message but supplied too little buffer space
+             * don't send this message again and drop it after 3 unsuccessful attempts.
+             * The host then should take care of next actions (maybe retry it with a smaller buffer).
+             */
+            if (mHostCmdRc == VERR_TOO_MUCH_DATA)
+            {
+                if (mHostCmdTries >= 3)
+                    fRemove = true;
+            }
+            /* Client did not understand the message or something else weird happened. Try again one
+             * more time and drop it if it didn't get handled then. */
+            else if (mHostCmdTries > 1)
+                fRemove = true;
+        }
+        else
+            fRemove = true; /* Everything went fine, remove it. */
+
+        LogFlowFunc(("[Client %RU32] Tried pHostCmd=%p for %RU32 times, (last result=%Rrc, fRemove=%RTbool)\n",
+                     mID, pHostCmd, mHostCmdTries, mHostCmdRc, fRemove));
+
+        if (RT_SUCCESS(rc))
+            rc = mHostCmdRc;
+
+        if (fRemove)
+            Dequeue(pHostCmd);
+
+        LogFlowFunc(("[Client %RU32] Returned with rc=%Rrc\n", mID, rc));
         return rc;
     }
 
-    int Wakeup(const PRTLISTANCHOR pHostCmdList)
+    int RunCurrent(const ClientConnection *pConnection)
     {
-        AssertPtrReturn(pHostCmdList, VERR_INVALID_POINTER);
-        AssertMsgReturn(mIsPending, ("Cannot wake up a client which is not in pending mode\n"),
-                        VERR_INVALID_PARAMETER);
+        AssertPtrReturn(pConnection, VERR_INVALID_POINTER);
 
-        int rc = Run(&mPending, pHostCmdList);
+        int rc;
+        if (mHostCmdList.empty())
+        {
+            rc = SetPending(pConnection);
+        }
+        else
+        {
+            AssertMsgReturn(!mIsPending,
+                            ("Client ID=%RU32 still is in pending mode; can't use another connection\n", mID), VERR_INVALID_PARAMETER);
 
-        /* Reset pending state. */
-        mIsPending = false;
+            HostCmdListIter curCmd = mHostCmdList.begin();
+            Assert(curCmd != mHostCmdList.end());
+            HostCommand *pHostCmd = (*curCmd);
+            AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
 
-        LogFlowFunc(("Returned with rc=%Rrc\n"));
+            rc = Run(pConnection, pHostCmd);
+        }
+
         return rc;
+    }
+
+    int Wakeup(void)
+    {
+        int rc = VINF_NO_CHANGE;
+
+        if (mIsPending)
+        {
+            LogFlowFunc(("[Client %RU32] Waking up ...\n", mID));
+
+            rc = VINF_SUCCESS;
+
+            HostCmdListIter curCmd = mHostCmdList.begin();
+            if (curCmd != mHostCmdList.end())
+            {
+                HostCommand *pHostCmd = (*curCmd);
+                AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
+
+                LogFlowFunc(("[Client %RU32] Current host command is pHostCmd=%p, CID=%RU32, cmdType=%RU32, cmdParms=%RU32, refCount=%RU32\n",
+                             mID, pHostCmd, pHostCmd->mContextID, pHostCmd->mMsgType, pHostCmd->mParmCount, pHostCmd->mRefCount));
+
+                rc = Run(&mPendingCon, pHostCmd);
+            }
+            else
+                AssertMsgFailed(("Waking up client ID=%RU32 with no host command in queue is a bad idea\n", mID));
+
+            return rc;
+        }
+
+        return VINF_NO_CHANGE;
     }
 
     int CancelWaiting(int rcPending)
     {
-        LogFlowFunc(("Cancelling waiting with %Rrc, isPending=%RTbool, pendingNumParms=%RU32, flags=%x\n",
-                     rcPending, mIsPending, mPending.mNumParms, mFlags));
+        LogFlowFunc(("[Client %RU32] Cancelling waiting with %Rrc, isPending=%RTbool, pendingNumParms=%RU32, flags=%x\n",
+                     mID, rcPending, mIsPending, mPendingCon.mNumParms, mFlags));
 
         if (   mIsPending
-            && mPending.mNumParms >= 2)
+            && mPendingCon.mNumParms >= 2)
         {
-            mPending.mParms[0].setUInt32(HOST_CANCEL_PENDING_WAITS); /* Message ID. */
-            mPending.mParms[1].setUInt32(0);                         /* Required parameters for message. */
+            mPendingCon.mParms[0].setUInt32(HOST_CANCEL_PENDING_WAITS); /* Message ID. */
+            mPendingCon.mParms[1].setUInt32(0);                         /* Required parameters for message. */
 
             AssertPtr(mSvcHelpers);
-            mSvcHelpers->pfnCallComplete(mPending.mHandle, rcPending);
+            mSvcHelpers->pfnCallComplete(mPendingCon.mHandle, rcPending);
 
             mIsPending = false;
         }
@@ -739,35 +781,40 @@ typedef struct ClientState
                 rc = pHostCmd->Peek(pConnection);
         }
 
+        /* Reset pending status. */
+        mIsPending = false;
+
         /* In any case the client did something, so complete
          * the pending call with the result we just got. */
         AssertPtr(mSvcHelpers);
         mSvcHelpers->pfnCallComplete(pConnection->mHandle, rc);
 
-        LogFlowFunc(("pConnection=%p, pHostCmd=%p, rc=%Rrc\n",
-                     pConnection, pHostCmd, rc));
+        LogFlowFunc(("[Client %RU32] pConnection=%p, pHostCmd=%p, replyRc=%Rrc\n",
+                     mID, pConnection, pHostCmd, rc));
         return rc;
     }
 
     PVBOXHGCMSVCHELPERS mSvcHelpers;
+    /** The client's ID. */
+    uint32_t mID;
     /** Client flags. @sa CLIENTSTATE_FLAG_ flags. */
     uint32_t mFlags;
     /** The context ID filter, based on the flags set. */
     uint32_t mContextFilter;
-    /** Pointer to current host command to process. */
-    HostCommand *mpHostCmd;
+    /** Host command list to process. */
+    HostCmdList mHostCmdList;
     /** Last (most recent) rc after handling the
      *  host command. */
     int mHostCmdRc;
     /** How many times the host service has tried to deliver this
      *  command to the according client. */
     uint32_t mHostCmdTries;
-    /** Map containing all context IDs a client is assigned to. */
-    ClientContextMap mContextMap;
+    /** Timestamp (us) of last host command processed. */
+    uint64_t mHostCmdTS;
     /** Flag indicating whether the client currently is pending. */
     bool mIsPending;
     /** The client's pending connection. */
-    ClientConnection mPending;
+    ClientConnection mPendingCon;
 } ClientState;
 typedef std::map< uint32_t, ClientState > ClientStateMap;
 typedef std::map< uint32_t, ClientState >::iterator ClientStateMapIter;
@@ -830,8 +877,8 @@ public:
                                          void *pvClient)
     {
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
-        LogFlowFunc (("pvService=%p, u32ClientID=%u, pvClient=%p\n", pvService, u32ClientID, pvClient));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
+        AssertPtrReturn(pSelf, VERR_INVALID_POINTER);
         return pSelf->clientConnect(u32ClientID, pvClient);
     }
 
@@ -844,8 +891,8 @@ public:
                                             void *pvClient)
     {
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
-        LogFlowFunc (("pvService=%p, u32ClientID=%u, pvClient=%p\n", pvService, u32ClientID, pvClient));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
+        AssertPtrReturn(pSelf, VERR_INVALID_POINTER);
         return pSelf->clientDisconnect(u32ClientID, pvClient);
     }
 
@@ -862,9 +909,8 @@ public:
                                        VBOXHGCMSVCPARM paParms[])
     {
         AssertLogRelReturnVoid(VALID_PTR(pvService));
-        LogFlowFunc (("pvService=%p, callHandle=%p, u32ClientID=%u, pvClient=%p, u32Function=%u, cParms=%u, paParms=%p\n",
-                      pvService, callHandle, u32ClientID, pvClient, u32Function, cParms, paParms));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
+        AssertPtrReturnVoid(pSelf);
         pSelf->call(callHandle, u32ClientID, pvClient, u32Function, cParms, paParms);
     }
 
@@ -878,8 +924,8 @@ public:
                                           VBOXHGCMSVCPARM paParms[])
     {
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
-        LogFlowFunc (("pvService=%p, u32Function=%u, cParms=%u, paParms=%p\n", pvService, u32Function, cParms, paParms));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
+        AssertPtrReturn(pSelf, VERR_INVALID_POINTER);
         return pSelf->hostCall(u32Function, cParms, paParms);
     }
 
@@ -893,6 +939,7 @@ public:
     {
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
+        AssertPtrReturn(pSelf, VERR_INVALID_POINTER);
         pSelf->mpfnHostCallback = pfnExtension;
         pSelf->mpvHostData = pvExtension;
         return VINF_SUCCESS;
@@ -905,6 +952,7 @@ private:
     int clientDisconnect(uint32_t u32ClientID, void *pvClient);
     int clientGetCommand(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientSetMsgFilter(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int clientSkipMsg(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int cancelHostCmd(uint32_t u32ContextID);
     int cancelPendingWaits(uint32_t u32ClientID, int rcPending);
     int hostCallback(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
@@ -923,7 +971,7 @@ private:
  */
 int Service::clientConnect(uint32_t u32ClientID, void *pvClient)
 {
-    LogFlowFunc(("New client with ID=%RU32 connected\n", u32ClientID));
+    LogFlowFunc(("[Client %RU32] Connected\n", u32ClientID));
 #ifdef VBOX_STRICT
     ClientStateMapIterConst it = mClientStateMap.find(u32ClientID);
     if (it != mClientStateMap.end())
@@ -933,8 +981,8 @@ int Service::clientConnect(uint32_t u32ClientID, void *pvClient)
         return VERR_ALREADY_EXISTS;
     }
 #endif
-    ClientState cs(mpHelpers);
-    mClientStateMap[u32ClientID] = cs;
+    ClientState clientState(mpHelpers, u32ClientID);
+    mClientStateMap[u32ClientID] = clientState;
     /** @todo Exception handling! */
     return VINF_SUCCESS;
 }
@@ -950,70 +998,30 @@ int Service::clientConnect(uint32_t u32ClientID, void *pvClient)
  */
 int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
 {
-    LogFlowFunc(("Client with ID=%RU32 (%zu clients total) disconnected\n",
+    LogFlowFunc(("[Client %RU32] Disonnected (%zu clients total)\n",
                  u32ClientID, mClientStateMap.size()));
 
-    /* If this was the last connected (guest) client we need to
-     * unblock all eventually queued up (waiting) host calls. */
-    bool fAllClientsDisconnected = mClientStateMap.size() == 0;
-    if (fAllClientsDisconnected)
-        LogFlowFunc(("No connected clients left, notifying all queued up host callbacks\n"));
+    AssertMsg(mClientStateMap.size(),
+              ("No clients in list anymore when there should (client ID=%RU32)\n", u32ClientID));
 
-    /*
-     * Throw out all stale clients.
-     */
     int rc = VINF_SUCCESS;
 
-    ClientStateMapIter itClientState = mClientStateMap.begin();
-    while (   itClientState != mClientStateMap.end()
-           && RT_SUCCESS(rc))
+    ClientStateMapIter itClientState = mClientStateMap.find(u32ClientID);
+    AssertMsg(itClientState != mClientStateMap.end(),
+              ("Clients ID=%RU32 not found in client list when it should be there\n", u32ClientID));
+
+    if (itClientState != mClientStateMap.end())
     {
-        /*
-         * Unblock/call back all queued items of the specified client
-         * or for all items in case there is no waiting client around
-         * anymore.
-         */
-        if (   itClientState->first == u32ClientID
-            || fAllClientsDisconnected)
-        {
-            LogFlowFunc(("Cancelling %RU32 context(s) of client ID=%RU32\n",
-                         itClientState->second.mContextMap.size(), u32ClientID));
+        itClientState->second.DequeueAll();
 
-            ClientContextMapIter itContext = itClientState->second.mContextMap.begin();
-            while (itContext != itClientState->second.mContextMap.end())
-            {
-                uint32_t uContextID = itContext->first;
-
-                /*
-                 * Notify the host that clients with u32ClientID are no longer
-                 * around and need to be cleaned up (canceling waits etc).
-                 */
-                LogFlowFunc(("Notifying CID=%RU32 of disconnect ...\n", uContextID));
-                int rc2 = cancelHostCmd(uContextID);
-                if (RT_FAILURE(rc2))
-                {
-                    LogFlowFunc(("Cancelling host command with CID=%RU32 failed with rc=%Rrc\n",
-                                 uContextID, rc2));
-                    /* Keep going. */
-                }
-
-                AssertPtr(itContext->second.mpHostCmd);
-                itContext->second.mpHostCmd->Release();
-
-                itContext++;
-            }
-
-            itClientState->second.mContextMap.clear();
-
-            /** @todo Exception handling! */
-            mClientStateMap.erase(itClientState++);
-        }
-        else
-            itClientState++;
+        mClientStateMap.erase(itClientState);
     }
 
+    bool fAllClientsDisconnected = mClientStateMap.size() == 0;
     if (fAllClientsDisconnected)
     {
+        LogFlowFunc(("All clients disconnected, cancelling all host commands ...\n"));
+
         /*
          * If all clients disconnected we also need to make sure that all buffered
          * host commands need to be notified, because Main is waiting a notification
@@ -1033,10 +1041,10 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
                 /* Keep going. */
             }
 
-            pCurCmd->Free();
+            while (pCurCmd->Release());
 
-            RTListNodeRemove(&pCurCmd->Node);
-            RTMemFree(pCurCmd);
+            delete pCurCmd;
+            pCurCmd = NULL;
 
             if (fLast)
                 break;
@@ -1081,23 +1089,7 @@ int Service::clientGetCommand(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandl
     thisCon.mNumParms = cParms;
     thisCon.mParms    = paParms;
 
-    /*
-     * If host command list is empty (nothing to do right now) just
-     * defer the call until we got something to do (makes the client
-     * wait).
-     */
-    int rc;
-    if (RTListIsEmpty(&mHostCmdList))
-    {
-        rc = clientState.SetPending(&thisCon);
-    }
-    else
-    {
-        rc = clientState.RunNow(&thisCon, &mHostCmdList);
-    }
-
-    LogFlowFunc(("Returned with rc=%Rrc\n", rc));
-    return rc;
+    return clientState.RunCurrent(&thisCon);
 }
 
 int Service::clientSetMsgFilter(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
@@ -1122,8 +1114,6 @@ int Service::clientSetMsgFilter(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHan
         rc = paParms[1].getUInt32(&uMaskRemove);
     if (RT_SUCCESS(rc))
     {
-        /* paParms[1] unused yet. */
-
         ClientState &clientState = itClientState->second;
 
         clientState.mFlags |= CLIENTSTATE_FLAG_CONTEXTFILTER;
@@ -1137,8 +1127,30 @@ int Service::clientSetMsgFilter(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHan
                      uMaskAdd, uMaskRemove));
     }
 
-    LogFlowFunc(("Returned with rc=%Rrc\n", rc));
     return rc;
+}
+
+int Service::clientSkipMsg(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
+                           uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+{
+    /*
+     * Lookup client in our list so that we can assign the context ID of
+     * a command to that client.
+     */
+    ClientStateMapIter itClientState = mClientStateMap.find(u32ClientID);
+    AssertMsg(itClientState != mClientStateMap.end(), ("Client ID=%RU32 not found when it should be present\n",
+                                                       u32ClientID));
+    if (itClientState == mClientStateMap.end())
+        return VERR_NOT_FOUND; /* Should never happen. */
+
+    if (cParms != 0)
+        return VERR_INVALID_PARAMETER;
+
+    LogFlowFunc(("Client ID=%RU32 skipping message ...\n", u32ClientID));
+
+    itClientState->second.DequeueCurrent();
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -1227,20 +1239,24 @@ int Service::hostProcessCommand(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVC
         return VERR_NOT_FOUND;
 
     int rc;
-    HostCommand *pHostCmd = (HostCommand*)RTMemAllocZ(sizeof(HostCommand));
-    if (pHostCmd)
+
+    HostCommand *pHostCmd = NULL;
+    try
     {
+        pHostCmd = new HostCommand();
         rc = pHostCmd->Allocate(eFunction, cParms, paParms);
         if (RT_SUCCESS(rc))
-            RTListAppend(&mHostCmdList, &pHostCmd->Node);
+            /* rc = */ RTListAppend(&mHostCmdList, &pHostCmd->Node);
     }
-    else
+    catch (std::bad_alloc)
+    {
         rc = VERR_NO_MEMORY;
+    }
 
     if (RT_SUCCESS(rc))
     {
-        LogFlowFunc(("Handling host command CID=%RU32, numClients=%zu\n",
-                     pHostCmd->mContextID, mClientStateMap.size()));
+        LogFlowFunc(("Handling host command CID=%RU32, eFunction=%RU32, cParms=%RU32, paParms=%p, numClients=%zu\n",
+                     pHostCmd->mContextID, eFunction, cParms, paParms, mClientStateMap.size()));
 
         /*
          * Wake up all pending clients which are interested in this
@@ -1249,38 +1265,35 @@ int Service::hostProcessCommand(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVC
 #ifdef DEBUG
         uint32_t uClientsWokenUp = 0;
 #endif
-
         ClientStateMapIter itClientState = mClientStateMap.begin();
         AssertMsg(itClientState != mClientStateMap.end(), ("Client state map is empty when it should not\n"));
         while (itClientState != mClientStateMap.end())
         {
-            if (itClientState->second.mIsPending) /* Only wake up pending clients. */
-            {
-                LogFlowFunc(("Waking up client ID=%RU32 (isPending=%RTbool) ...\n",
-                             itClientState->first, itClientState->second.mIsPending));
+            ClientState &clientState = itClientState->second;
 
-                ClientState &clientState = itClientState->second;
-                int rc2 = clientState.Wakeup(&mHostCmdList);
-                LogFlowFunc(("Client ID=%RU32 wakeup ended with rc=%Rrc\n",
-                             itClientState->first, rc2));
-#ifdef DEBUG
+            /* If a client indicates that it it wants the new host command,
+             * add a reference to not delete it.*/
+            if (clientState.WantsHostCommand(pHostCmd))
+            {
+                clientState.EnqueueCommand(pHostCmd);
+
+                int rc2 = clientState.Wakeup();
+                if (RT_FAILURE(rc2))
+                    LogFlowFunc(("Waking up client ID=%RU32 failed with rc=%Rrc\n",
+                                 itClientState->first, rc2));
+#ifdef DEBUG_andy
                 uClientsWokenUp++;
 #endif
             }
-            else
-                LogFlowFunc(("Client ID=%RU32 is not in pending state\n",
-                             itClientState->first));
 
             itClientState++;
         }
 
-#ifdef DEBUG
-        LogFlowFunc(("%RU32 clients have been succcessfully woken up\n",
-                      uClientsWokenUp));
+#ifdef DEBUG_andy
+        LogFlowFunc(("%RU32 clients have been woken up\n", uClientsWokenUp));
 #endif
     }
 
-    LogFlowFunc(("Returned with rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1298,7 +1311,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                    VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
-    LogFlowFunc(("u32ClientID=%RU32, fn=%RU32, cParms=%RU32, paParms=0x%p\n",
+    LogFlowFunc(("[Client %RU32] eFunction=%RU32, cParms=%RU32, paParms=0x%p\n",
                  u32ClientID, eFunction, cParms, paParms));
     try
     {
@@ -1307,7 +1320,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
          */
         if (eFunction == GUEST_MSG_WAIT)
         {
-            LogFlowFunc(("GUEST_MSG_GET\n"));
+            LogFlowFunc(("[Client %RU32] GUEST_MSG_GET\n", u32ClientID));
             rc = clientGetCommand(u32ClientID, callHandle, cParms, paParms);
         }
         else
@@ -1320,7 +1333,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                  * client can gracefully shut down.
                  */
                 case GUEST_CANCEL_PENDING_WAITS:
-                    LogFlowFunc(("GUEST_CANCEL_PENDING_WAITS\n"));
+                    LogFlowFunc(("[Client %RU32] GUEST_CANCEL_PENDING_WAITS\n", u32ClientID));
                     rc = cancelPendingWaits(u32ClientID, VINF_SUCCESS /* Pending result */);
                     break;
 
@@ -1329,8 +1342,17 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                  * Since VBox 4.3+.
                  */
                 case GUEST_MSG_FILTER:
-                    LogFlowFunc(("GUEST_MSG_FILTER\n"));
+                    LogFlowFunc(("[Client %RU32] GUEST_MSG_FILTER\n", u32ClientID));
                     rc = clientSetMsgFilter(u32ClientID, callHandle, cParms, paParms);
+                    break;
+
+                /*
+                 * The guest only wants skip the currently assigned messages.
+                 * Since VBox 4.3+.
+                 */
+                case GUEST_MSG_SKIP:
+                    LogFlowFunc(("[Client %RU32] GUEST_MSG_SKIP\n", u32ClientID));
+                    rc = clientSkipMsg(u32ClientID, callHandle, cParms, paParms);
                     break;
 
                 /*
@@ -1415,22 +1437,22 @@ using guestControl::Service;
 /**
  * @copydoc VBOXHGCMSVCLOAD
  */
-extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *ptable)
+extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTable)
 {
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("ptable = %p\n", ptable));
+    LogFlowFunc(("pTable=%p\n", pTable));
 
-    if (!VALID_PTR(ptable))
+    if (!VALID_PTR(pTable))
     {
         rc = VERR_INVALID_PARAMETER;
     }
     else
     {
-        LogFlowFunc(("ptable->cbSize = %d, ptable->u32Version = 0x%08X\n", ptable->cbSize, ptable->u32Version));
+        LogFlowFunc(("pTable->cbSize=%d, pTable->u32Version=0x%08X\n", pTable->cbSize, pTable->u32Version));
 
-        if (   ptable->cbSize != sizeof (VBOXHGCMSVCFNTABLE)
-            || ptable->u32Version != VBOX_HGCM_SVC_VERSION)
+        if (   pTable->cbSize != sizeof (VBOXHGCMSVCFNTABLE)
+            || pTable->u32Version != VBOX_HGCM_SVC_VERSION)
         {
             rc = VERR_VERSION_MISMATCH;
         }
@@ -1439,7 +1461,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pta
             std::auto_ptr<Service> apService;
             /* No exceptions may propagate outside. */
             try {
-                apService = std::auto_ptr<Service>(new Service(ptable->pHelpers));
+                apService = std::auto_ptr<Service>(new Service(pTable->pHelpers));
             } catch (int rcThrown) {
                 rc = rcThrown;
             } catch (...) {
@@ -1452,25 +1474,25 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pta
                  * We don't need an additional client data area on the host,
                  * because we're a class which can have members for that :-).
                  */
-                ptable->cbClient = 0;
+                pTable->cbClient = 0;
 
                 /* Register functions. */
-                ptable->pfnUnload             = Service::svcUnload;
-                ptable->pfnConnect            = Service::svcConnect;
-                ptable->pfnDisconnect         = Service::svcDisconnect;
-                ptable->pfnCall               = Service::svcCall;
-                ptable->pfnHostCall           = Service::svcHostCall;
-                ptable->pfnSaveState          = NULL;  /* The service is stateless, so the normal */
-                ptable->pfnLoadState          = NULL;  /* construction done before restoring suffices */
-                ptable->pfnRegisterExtension  = Service::svcRegisterExtension;
+                pTable->pfnUnload             = Service::svcUnload;
+                pTable->pfnConnect            = Service::svcConnect;
+                pTable->pfnDisconnect         = Service::svcDisconnect;
+                pTable->pfnCall               = Service::svcCall;
+                pTable->pfnHostCall           = Service::svcHostCall;
+                pTable->pfnSaveState          = NULL;  /* The service is stateless, so the normal */
+                pTable->pfnLoadState          = NULL;  /* construction done before restoring suffices */
+                pTable->pfnRegisterExtension  = Service::svcRegisterExtension;
 
                 /* Service specific initialization. */
-                ptable->pvService = apService.release();
+                pTable->pvService = apService.release();
             }
         }
     }
 
-    LogFlowFunc(("returning %Rrc\n", rc));
+    LogFlowFunc(("Returning %Rrc\n", rc));
     return rc;
 }
 

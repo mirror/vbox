@@ -82,6 +82,9 @@ public:
     int startProcessAsync(void);
     int terminateProcess(int *pGuestRc);
     int waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResult_T &waitResult, int *pGuestRc);
+    int waitForInputNotify(uint32_t uHandle, uint32_t uTimeoutMS, ProcessInputStatus_T *pInputStatus, size_t *pcbProcessed);
+    int waitForOutput(uint32_t uHandle, uint32_t uTimeoutMS, void* pvData, size_t cbData, size_t* pcbRead);
+    int waitForStatusChange(uint32_t fWaitFlags, uint32_t uTimeoutMS, ProcessStatus_T *pProcessStatus, int *pGuestRc);
     int writeData(uint32_t uHandle, uint32_t uFlags, void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten, int *pGuestRc);
     /** @}  */
 
@@ -89,18 +92,24 @@ protected:
     /** @name Protected internal methods.
      * @{ */
     inline bool isAlive(void);
-    int onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int onProcessInputStatus(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int onProcessNotifyIO(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback * pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, GuestCtrlCallback *pCallback, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int onProcessInputStatus(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int onProcessNotifyIO(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
+    int onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, ULONG *pcbList, ULONG *pcEnvVars);
     int setProcessStatus(ProcessStatus_T procStatus, int procRc);
-    int signalWaiters(ProcessWaitResult_T enmWaitResult, int rc = VINF_SUCCESS);
     static DECLCALLBACK(int) startProcessThread(RTTHREAD Thread, void *pvUser);
     /** @}  */
 
 private:
+
+    /**
+     * This can safely be used without holding any locks.
+     * An AutoCaller suffices to prevent it being destroy while in use and
+     * internally there is a lock providing the necessary serialization.
+     */
+    const ComObjPtr<EventSource> mEventSource;
 
     struct Data
     {
@@ -115,12 +124,6 @@ private:
         /** The last returned process status
          *  returned from the guest side. */
         int                      mRC;
-        /** How many waiters? At the moment there can only
-         *  be one. */
-        uint32_t                 mWaitCount;
-        /** The actual process event for doing the waits.
-         *  At the moment we only support one wait a time. */
-        GuestProcessWaitEvent   *mWaitEvent;
     } mData;
 };
 

@@ -176,24 +176,29 @@ private:
         Bstr                    mInterfaceVersion;
         GuestSessions           mGuestSessions;
         uint32_t                mNextSessionID;
-    };
+    } mData;
 
-    ULONG             mMemoryBalloonSize;
-    ULONG             mStatUpdateInterval;
-    uint64_t          mNetStatRx;
-    uint64_t          mNetStatTx;
-    uint64_t          mNetStatLastTs;
-    ULONG             mCurrentGuestStat[GUESTSTATTYPE_MAX];
-    ULONG             mVmValidStats;
-    BOOL              mCollectVMMStats;
-    BOOL              mfPageFusionEnabled;
+    ULONG                           mMemoryBalloonSize;
+    ULONG                           mStatUpdateInterval;
+    uint64_t                        mNetStatRx;
+    uint64_t                        mNetStatTx;
+    uint64_t                        mNetStatLastTs;
+    ULONG                           mCurrentGuestStat[GUESTSTATTYPE_MAX];
+    ULONG                           mVmValidStats;
+    BOOL                            mCollectVMMStats;
+    BOOL                            mfPageFusionEnabled;
 
-    Console *mParent;
-    Data mData;
+    Console                        *mParent;
 
 #ifdef VBOX_WITH_GUEST_CONTROL
+    /**
+     * This can safely be used without holding any locks.
+     * An AutoCaller suffices to prevent it being destroy while in use and
+     * internally there is a lock providing the necessary serialization.
+     */
+    const ComObjPtr<EventSource>    mEventSource;
     /** General extension callback for guest control. */
-    HGCMSVCEXTHANDLE  mhExtCtrl;
+    HGCMSVCEXTHANDLE                mhExtCtrl;
 #endif
 
 #ifdef VBOX_WITH_DRAG_AND_DROP

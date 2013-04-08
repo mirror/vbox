@@ -62,7 +62,7 @@ namespace guestControl {
     ((uint32_t)((uSession) & 0x1f) << 27)
 /** Gets the session ID out of a context ID. */
 #define VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID) \
-    ((uContextID) >> 27)
+    (((uContextID) >> 27) & 0x1f)
 /** Gets the process ID out of a context ID. */
 #define VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(uContextID) \
     (((uContextID) >> 16) & 0x7ff)
@@ -307,6 +307,12 @@ enum eGuestFn
      */
     GUEST_MSG_FILTER = 4,
     /**
+     * Skips the current assigned message returned by GUEST_MSG_WAIT.
+     * Needed for telling the host service to not keep stale
+     * host commands in the queue.
+     */
+    GUEST_MSG_SKIP = 5,
+    /**
      * Guest reports back a guest session status.
      */
     GUEST_SESSION_NOTIFY = 20,
@@ -413,8 +419,9 @@ typedef struct HGCMMsgCmdWaitFor
 
 /**
  * Asks the guest control host service to set a command
- * filter for this client. The filter itself will affect
- * the context ID bound to a command.
+ * filter for this client. This filter will then only
+ * deliver messages to the client which match the
+ * wanted context ID (ranges).
  */
 typedef struct HGCMMsgCmdSetFilter
 {
@@ -428,8 +435,19 @@ typedef struct HGCMMsgCmdSetFilter
 } HGCMMsgCmdSetFilter;
 
 /**
+ * Asks the guest control host service to skip the
+ * currently assigned host command returned by
+ * VbglR3GuestCtrlMsgWaitFor().
+ */
+typedef struct HGCMMsgCmdSkip
+{
+    VBoxGuestHGCMCallInfo hdr;
+
+} HGCMMsgCmdSkip;
+
+/**
  * Asks the guest control host service to cancel all pending (outstanding)
- * waits which were not processed yet.  This is handy for a graceful shutdown.
+ * waits which were not processed yet. This is handy for a graceful shutdown.
  */
 typedef struct HGCMMsgCancelPendingWaits
 {

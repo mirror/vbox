@@ -273,7 +273,8 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                          * up to the guest session fork of VBoxService, so just
                          * skip all not wanted messages here.
                          */
-                        VBoxServiceVerbose(3, "Skipping msg=%RU32 ...\n", uMsg);
+                        rc = VbglR3GuestCtrlMsgSkip(g_uControlSvcClientID);
+                        VBoxServiceVerbose(3, "Skipping msg=%RU32, rc=%Rrc\n", uMsg, rc);
                     }
                     break;
                 }
@@ -322,8 +323,8 @@ static int gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
         VBoxServiceVerbose(3, "Client ID=%RU32 now is using protocol %RU32\n",
                            pHostCtx->uClientID, pHostCtx->uProtocol);
 
-        rc = GstCntlSessionThreadOpen(&g_lstControlSessionThreads,
-                                      &ssInfo, NULL /* Session */);
+        rc = GstCntlSessionThreadCreate(&g_lstControlSessionThreads,
+                                        &ssInfo, NULL /* Session */);
     }
 
     if (RT_FAILURE(rc))
@@ -349,7 +350,6 @@ static int gstcntlHandleSessionClose(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
     uint32_t uSessionID, uFlags;
-
     int rc = VbglR3GuestCtrlSessionGetClose(pHostCtx, &uFlags, &uSessionID);
     if (RT_SUCCESS(rc))
     {
@@ -360,11 +360,11 @@ static int gstcntlHandleSessionClose(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
         {
             if (pThread->StartupInfo.uSessionID == uSessionID)
             {
-                rc = GstCntlSessionThreadClose(pThread, uFlags);
+                rc = GstCntlSessionThreadDestroy(pThread, uFlags);
                 break;
             }
         }
-
+#if 0
         if (RT_FAILURE(rc))
         {
             /* Report back on failure. On success this will be done
@@ -378,10 +378,13 @@ static int gstcntlHandleSessionClose(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
                     rc = rc2;
             }
         }
+#endif
+        VBoxServiceVerbose(2, "Closing guest session %RU32 returned rc=%Rrc\n",
+                           uSessionID, rc);
     }
+    else
+        VBoxServiceError("Closing guest session failed with rc=%Rrc\n", rc);
 
-    VBoxServiceVerbose(2, "Closing guest session %RU32 returned rc=%Rrc\n",
-                       uSessionID, rc);
     return rc;
 }
 
@@ -419,8 +422,8 @@ static void VBoxServiceControlShutdown(void)
 {
     VBoxServiceVerbose(2, "Shutting down ...\n");
 
-    int rc2 = GstCntlSessionThreadCloseAll(&g_lstControlSessionThreads,
-                                           0 /* Flags */);
+    int rc2 = GstCntlSessionThreadDestroyAll(&g_lstControlSessionThreads,
+                                             0 /* Flags */);
     if (RT_FAILURE(rc2))
         VBoxServiceError("Closing session threads failed with rc=%Rrc\n", rc2);
 

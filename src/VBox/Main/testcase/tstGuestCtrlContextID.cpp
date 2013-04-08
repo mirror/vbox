@@ -34,7 +34,7 @@ using namespace com;
 int main()
 {
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstMakeup", &hTest);
+    int rc = RTTestInitAndCreate("tstGuestCtrlContextID", &hTest);
     if (rc)
         return rc;
     RTTestBanner(hTest);
@@ -75,8 +75,8 @@ int main()
     uint32_t uContextMax = UINT32_MAX;
     RTTestIPrintf(RTTESTLVL_DEBUG, "Max context is: %RU32\n", uContextMax);
 
-    /* Do 64 tests total. */
-    for (int t = 0; t < 64 && !RTTestErrorCount(hTest); t++)
+    /* Do 4048 tests total. */
+    for (int t = 0; t < 4048 && !RTTestErrorCount(hTest); t++)
     {
         /* VBOX_GUESTCTRL_MAX_* includes 0 as an object, so subtract one. */
         uint32_t s = RTRandU32Ex(0, VBOX_GUESTCTRL_MAX_SESSIONS - 1);

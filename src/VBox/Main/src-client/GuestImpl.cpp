@@ -79,20 +79,20 @@ HRESULT Guest::init(Console *aParent)
     autoInitSpan.setSucceeded();
 
     ULONG aMemoryBalloonSize;
-    HRESULT ret = mParent->machine()->COMGETTER(MemoryBalloonSize)(&aMemoryBalloonSize);
-    if (ret == S_OK)
+    HRESULT hr = mParent->machine()->COMGETTER(MemoryBalloonSize)(&aMemoryBalloonSize);
+    if (hr == S_OK) /** @todo r=andy SUCCEEDED? */
         mMemoryBalloonSize = aMemoryBalloonSize;
     else
-        mMemoryBalloonSize = 0;                     /* Default is no ballooning */
+        mMemoryBalloonSize = 0; /* Default is no ballooning */
 
     BOOL fPageFusionEnabled;
-    ret = mParent->machine()->COMGETTER(PageFusionEnabled)(&fPageFusionEnabled);
-    if (ret == S_OK)
+    hr = mParent->machine()->COMGETTER(PageFusionEnabled)(&fPageFusionEnabled);
+    if (hr == S_OK) /** @todo r=andy SUCCEEDED? */
         mfPageFusionEnabled = fPageFusionEnabled;
     else
-        mfPageFusionEnabled = false;                /* Default is no page fusion*/
+        mfPageFusionEnabled = false; /* Default is no page fusion*/
 
-    mStatUpdateInterval = 0;                    /* Default is not to report guest statistics at all */
+    mStatUpdateInterval = 0; /* Default is not to report guest statistics at all */
     mCollectVMMStats = false;
 
     /* Clear statistics. */
@@ -105,7 +105,15 @@ HRESULT Guest::init(Console *aParent)
     mMagic = GUEST_MAGIC;
     int vrc = RTTimerLRCreate(&mStatTimer, 1000 /* ms */,
                               &Guest::staticUpdateStats, this);
-    AssertMsgRC(vrc, ("Failed to create guest statistics update timer(%Rra)\n", vrc));
+    AssertMsgRC(vrc, ("Failed to create guest statistics update timer (%Rrc)\n", vrc));
+
+#ifdef VBOX_WITH_GUEST_CONTROL
+    unconst(mEventSource).createObject();
+    Assert(!mEventSource.isNull());
+    hr = mEventSource->init(static_cast<IGuest*>(this));
+#else
+    hr = S_OK;
+#endif
 
     try
     {
@@ -116,10 +124,10 @@ HRESULT Guest::init(Console *aParent)
     }
     catch(std::bad_alloc &)
     {
-        return E_OUTOFMEMORY;
+        hr = E_OUTOFMEMORY;
     }
 
-    return S_OK;
+    return hr;
 }
 
 /**
@@ -166,6 +174,9 @@ void Guest::uninit()
     }
 #endif
 
+#ifdef VBOX_WITH_GUEST_CONTROL
+    unconst(mEventSource).setNull();
+#endif
     unconst(mParent) = NULL;
 
     LogFlowFuncLeave();
