@@ -75,7 +75,7 @@ RTDECL(int) RTPathSplitReassemble(PRTPATHSPLIT pSplit, uint32_t fFlags, char *ps
      * Do the joining.
      */
     uint32_t const  cchOrgPath = pSplit->cchPath;
-    uint32_t        cchDstPath = 0;
+    size_t          cchDstPath = 0;
     uint32_t const  cComps     = pSplit->cComps;
     uint32_t        idxComp    = 0;
     char           *pszDst     = pszDstPath;
