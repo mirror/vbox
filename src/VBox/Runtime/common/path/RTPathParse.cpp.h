@@ -38,7 +38,7 @@ static int RTPATH_STYLE_FN(rtPathParse)(const char *pszPath, PRTPATHPARSED pPars
      * (keep it on the stack for speed).
      */
     uint32_t const  cMaxComps =  cbParsed < RT_UOFFSETOF(RTPATHPARSED, aComps[0xfff0])
-                              ? (cbParsed - RT_UOFFSETOF(RTPATHPARSED, aComps)) / sizeof(pParsed->aComps[0])
+                              ? (uint32_t)((cbParsed - RT_UOFFSETOF(RTPATHPARSED, aComps)) / sizeof(pParsed->aComps[0]))
                               : 0xfff0;
     uint32_t        idxComp   = 0;
     uint32_t        cchPath;
