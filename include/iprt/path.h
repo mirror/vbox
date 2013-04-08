@@ -610,7 +610,29 @@ typedef RTPATHPARSED *PCRTPATHPARSED;
  *                              Most users will pass 0.
  * @sa      RTPathSplit, RTPathSplitA.
  */
-RTDECL(int) RTPathParse(const char *pszPath,  PRTPATHPARSED pParsed, size_t cbParsed, uint32_t fFlags);
+RTDECL(int) RTPathParse(const char *pszPath, PRTPATHPARSED pParsed, size_t cbParsed, uint32_t fFlags);
+
+/**
+ * Reassembles a path parsed by RTPathParse.
+ *
+ * This will be more useful as more APIs manipulating the RTPATHPARSED output
+ * are added.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_BUFFER_OVERFLOW if @a cbDstPath is less than or equal to
+ *          RTPATHPARSED::cchPath.
+ *
+ * @param   pszSrcPath          The source path.
+ * @param   pParsed             The parser output for @a pszSrcPath.
+ * @param   fFlags              Combination of RTPATH_STR_F_STYLE_XXX.
+ *                              Most users will pass 0.
+ * @param   pszDstPath          Pointer to the buffer where the path is to be
+ *                              reassembled.
+ * @param   cbDstPath           The size of the output buffer.
+ */
+RTDECL(int) RTPathParsedReassemble(const char *pszSrcPath, PRTPATHPARSED pParsed, uint32_t fFlags,
+                                   char *pszDstPath, size_t cbDstPath);
+
 
 /**
  * Output buffer for RTPathSplit and RTPathSplitA.
@@ -690,7 +712,7 @@ RTDECL(int) RTPathSplit(const char *pszPath, PRTPATHSPLIT pSplit, size_t cbSplit
  *                              Most users will pass 0.
  * @sa      RTPathSplitFree, RTPathSplit, RTPathParse.
  */
-#define  RTPathSplitA(pszPath, ppSplit, fFlags)     RTPathSplitATag(pszPath, ppSplit, fFlags, RTPATH_TAG)
+#define RTPathSplitA(pszPath, ppSplit, fFlags)      RTPathSplitATag(pszPath, ppSplit, fFlags, RTPATH_TAG)
 
 /**
  * Splits the path into individual component strings, allocating the buffer on
@@ -719,6 +741,24 @@ RTDECL(int) RTPathSplitATag(const char *pszPath, PRTPATHSPLIT *ppSplit, uint32_t
  */
 RTDECL(void) RTPathSplitFree(PRTPATHSPLIT pSplit);
 
+/**
+ * Reassembles a path parsed by RTPathSplit.
+ *
+ * This will be more useful as more APIs manipulating the RTPATHSPLIT output are
+ * added.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_BUFFER_OVERFLOW if @a cbDstPath is less than or equal to
+ *          RTPATHSPLIT::cchPath.
+ *
+ * @param   pParsed             The parser output for @a pszSrcPath.
+ * @param   fFlags              Combination of RTPATH_STR_F_STYLE_XXX.
+ *                              Most users will pass 0.
+ * @param   pszDstPath          Pointer to the buffer where the path is to be
+ *                              reassembled.
+ * @param   cbDstPath           The size of the output buffer.
+ */
+RTDECL(int) RTPathSplitReassemble(PRTPATHSPLIT pSplit, uint32_t fFlags, char *pszDstPath, size_t cbDstPath);
 
 /**
  * Compares two paths.
