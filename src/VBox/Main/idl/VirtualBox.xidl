@@ -9526,7 +9526,7 @@
     <desc>
       Process execution statuses.
     </desc>
-    
+
     <const name="Undefined"             value="0">
       <desc>Process is in an undefined state.</desc>
     </const>
@@ -9564,7 +9564,7 @@
       <desc>Something went wrong.</desc>
     </const>
   </enum>
-  
+
   <enum
     name="ProcessInputStatus"
     uuid="a4a0ef9c-29cc-4805-9803-c8215ae9da6c"
@@ -9572,7 +9572,7 @@
     <desc>
       Process input statuses.
     </desc>
-    
+
     <const name="Undefined"             value="0">
       <desc>Undefined state.</desc>
     </const>
@@ -9597,7 +9597,7 @@
     <desc>
       File statuses.
     </desc>
-    
+
     <const name="Undefined"             value="0">
       <desc>File is in an undefined state.</desc>
     </const>
@@ -9620,7 +9620,7 @@
       <desc>Something went wrong.</desc>
     </const>
   </enum>
-  
+
   <enum
     name="FsObjType"
     uuid="a1ed437c-b3c3-4ca2-b19c-4239d658d5e8"
@@ -9697,7 +9697,7 @@
       <desc>Don't allow symbolic links as part of the path.</desc>
     </const>
   </enum>
-  
+
   <interface
     name="IGuestErrorInfo" extends="$unknown"
     uuid="ab576a37-dcfc-4d80-9a73-493d15e293c4"
@@ -9710,11 +9710,11 @@
     <attribute name="result" type="long" readonly="yes">
       <desc>TODO</desc>
     </attribute>
-    
+
     <attribute name="text" type="wstring" readonly="yes">
       <desc>TODO</desc>
     </attribute>
-    
+
   </interface>
 
   <interface
@@ -9800,7 +9800,7 @@
         Returns all currently opened guest files.
       </desc>
     </attribute>
-    
+
     <attribute name="eventSource" type="IEventSource" readonly="yes">
       <desc>
         Event source for guest session events.
@@ -19928,7 +19928,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
   </interface>
-  
+
   <interface
     name="IGuestSessionStateChangedEvent" extends="IGuestSessionEvent"
     uuid="9c288479-6564-451d-9574-7e7ac0b7e443"
@@ -19937,7 +19937,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       TODO
     </desc>
-    
+
     <attribute name="id" type="unsigned long" readonly="yes">
       <desc>
         TODO
@@ -19947,15 +19947,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         TODO
       </desc>
-    </attribute>    
+    </attribute>
     <attribute name="error" type="IGuestErrorInfo" readonly="yes">
       <desc>
         TODO
       </desc>
     </attribute>
-  
+
   </interface>
-  
+
   <interface
     name="IGuestSessionRegisteredEvent" extends="IGuestSessionEvent"
     uuid="b79de686-eabd-4fa6-960a-f1756c99ea1c"
@@ -19964,15 +19964,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       TODO
     </desc>
-    
+
     <attribute name="registered" type="boolean" readonly="yes">
       <desc>
         TODO
       </desc>
     </attribute>
-  
+
   </interface>
-  
+
   <interface
     name="IGuestProcessEvent" extends="IGuestSessionEvent"
     uuid="ee4be6e7-76c5-4517-a623-d4b1957d4ea4"
@@ -19992,7 +19992,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
   </interface>
-  
+
   <interface
     name="IGuestProcessRegisteredEvent" extends="IGuestProcessEvent"
     uuid="1d89e2b3-c6ea-45b6-9d43-dc6f70cc9f02"
@@ -20001,15 +20001,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       TODO
     </desc>
-    
+
     <attribute name="registered" type="boolean" readonly="yes">
       <desc>
         TODO
       </desc>
     </attribute>
-  
+
   </interface>
-  
+
   <interface
     name="IGuestProcessStateChangedEvent" extends="IGuestProcessEvent"
     uuid="9360d372-d4d9-4948-8e67-e0a0e603acf9"
@@ -20018,7 +20018,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       TODO
     </desc>
-    
+
     <attribute name="status" type="ProcessStatus" readonly="yes">
       <desc>
         TODO
@@ -20031,7 +20031,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
   </interface>
-  
+
   <interface
     name="IGuestProcessInputNotifyEvent" extends="IGuestProcessEvent"
     uuid="b3d6bb71-0392-4971-a908-f71c931995fd"
@@ -20040,19 +20040,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       TODO
     </desc>
-    
+
     <attribute name="status" type="ProcessInputStatus" readonly="yes">
       <desc>
         TODO
       </desc>
     </attribute>
-    
+
     <attribute name="handle" type="unsigned long" readonly="yes">
       <desc>
         TODO
       </desc>
     </attribute>
-    
+
     <attribute name="processed" type="unsigned long" readonly="yes">
       <desc>
         TODO
@@ -20060,7 +20060,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
   </interface>
-  
+
   <interface
     name="IGuestProcessOutputEvent" extends="IGuestProcessEvent"
     uuid="a13533b9-4aba-4937-836e-81325859c9d8"
@@ -20069,13 +20069,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       TODO
     </desc>
-    
+
     <attribute name="handle" type="unsigned long" readonly="yes">
       <desc>
         TODO
       </desc>
     </attribute>
-    
+
     <attribute name="data" type="octet" safearray="yes" readonly="yes">
       <desc>
         TODO
@@ -20083,7 +20083,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
   </interface>
-  
+
   <interface
     name="IGuestFileEvent" extends="IGuestSessionEvent"
     uuid="912f748f-d2f9-4fea-84d2-d36a017cc5f8"
@@ -20098,7 +20098,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
   </interface>
-  
+
   <interface
     name="IGuestFileStateChangedEvent" extends="IGuestFileEvent"
     uuid="841951c4-4df3-4ee1-bb99-91e5761c18ff"
@@ -20107,7 +20107,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       TODO
     </desc>
-    
+
     <attribute name="status" type="FileStatus" readonly="yes">
       <desc>
         TODO
@@ -20123,7 +20123,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
                IGuestFileWriteEvent. -->
 
   </interface>
-  
+
   <interface
     name="IGuestFileIOEvent" extends="IGuestFileEvent"
     uuid="b5191a7c-9536-4ef8-820e-3b0e17e5bbc8"
@@ -20142,11 +20142,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         TODO
       </desc>
-      
+
     </attribute>
-    
+
   </interface>
-  
+
   <interface
     name="IGuestFileOffsetChangedEvent" extends="IGuestFileIOEvent"
     uuid="e8f79a21-1207-4179-94cf-ca250036308f"
@@ -20157,7 +20157,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
 
   </interface>
-  
+
   <interface
     name="IGuestFileReadEvent" extends="IGuestFileIOEvent"
     uuid="4ee3cbcb-486f-40db-9150-deee3fd24189"
@@ -20166,15 +20166,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       TODO
     </desc>
-    
+
     <attribute name="data" type="octet" safearray="yes" readonly="yes">
       <desc>
         TODO
       </desc>
     </attribute>
-    
+
   </interface>
-  
+
   <interface
     name="IGuestFileWriteEvent" extends="IGuestFileIOEvent"
     uuid="e062a915-3cf5-4c0a-bc90-9b8d4cc94d89"
@@ -20183,9 +20183,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       TODO
     </desc>
-    
+
   </interface>
-  
+
   <interface
     name="IVRDEServerChangedEvent" extends="IEvent"
     uuid="a06fd66a-3188-4c8c-8756-1395e8cb691c"
