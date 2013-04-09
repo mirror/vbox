@@ -2235,6 +2235,8 @@
  */
 /** Guest side reported an error. */
 #define VERR_GSTCTL_GUEST_ERROR                     (-6200)
+/** A guest control object has changed its overall status. */
+#define VWRN_GSTCTL_OBJECTSTATE_CHANGED             6220
 /** @} */
 
 

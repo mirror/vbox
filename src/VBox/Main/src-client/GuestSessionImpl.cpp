@@ -866,15 +866,14 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
             ComAssertComRC(hr);
 
             Assert(mData.mNumObjects);
-            LogFlowThisFunc(("Removing file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
+            LogFlowThisFunc(("Removing guest file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
                              Utf8Str(strName).c_str(), mData.mSession.mID, mData.mFiles.size() - 1, mData.mNumObjects - 1));
-#ifdef DEBUG
-            ULONG cRefs = pFile->AddRef();
-            LogFlowThisFunc(("pObject=%p, cRefs=%RU32\n", pFile, cRefs));
-            pFile->Release();
-#endif
+
             mData.mFiles.erase(itFiles);
             mData.mNumObjects--;
+
+            fireGuestFileRegisteredEvent(mEventSource, this, pFile,
+                                         false /* Unregistered */);
             return VINF_SUCCESS;
         }
     }
@@ -973,8 +972,11 @@ int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo, ComObjPtr<
         mData.mNumObjects++;
         Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
-        LogFlowFunc(("Added new file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
+        LogFlowFunc(("Added new guest file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
                      openInfo.mFileName.c_str(), mData.mSession.mID, mData.mFiles.size(), mData.mNumObjects));
+
+        fireGuestFileRegisteredEvent(mEventSource, this, pFile,
+                                     true /* Registered */);
     }
 
     if (pGuestRc)
