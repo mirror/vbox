@@ -345,6 +345,13 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
             pVM->tm.s.fMaybeUseOffsettedHostTSC = tmR3HasFixedTSC(pVM);
         else
             pVM->tm.s.fMaybeUseOffsettedHostTSC = true;
+        /** @todo needs a better fix, for now disable offsetted mode for VMs
+         * with more than one VCPU. With the current TSC handling (frequent
+         * switching between offsetted mode and taking VM exits, on all VCPUs
+         * without any kind of coordination) it will lead to inconsistent TSC
+         * behavior with guest SMP, including TSC going backwards. */
+        if (pVM->cCpus != 1)
+            pVM->tm.s.fMaybeUseOffsettedHostTSC = false;
     }
 
     /** @cfgm{TM/TSCTicksPerSecond, uint32_t, Current TSC frequency from GIP}
@@ -446,7 +453,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
 
     /** @cfgm{TM/CatchUpPrecentage[0..9], uint32_t, %, 1, 2000, various}
      * The catch-up percent for a given period.  */
-    /** @cfgm{TM/CatchUpStartThreshold[0..9], uint64_t, ns, 0, UINT64_MAX,
+    /** @cfgm{TM/CatchUpStartThreshold[0..9], uint64_t, ns, 0, UINT64_MAX}
      * The catch-up period threshold, or if you like, when a period starts.  */
 #define TM_CFG_PERIOD(iPeriod, DefStart, DefPct) \
     do \
