@@ -1193,7 +1193,7 @@ RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
     va_list     args;
     char        szMsg[512];
 
-    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))    /** @todo this will change when preemption hooks are implemented. */
         return 0;
 
     va_start(args, pszFormat);

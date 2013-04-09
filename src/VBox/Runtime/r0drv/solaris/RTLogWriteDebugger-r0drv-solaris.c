@@ -45,7 +45,7 @@ RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)
 {
     if (pch[cb] != '\0')
         AssertBreakpoint();
-    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))    /** @todo this will change when preemptions hook are implemented. */
         return;
     if (    !g_frtSolSplSetsEIF
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
