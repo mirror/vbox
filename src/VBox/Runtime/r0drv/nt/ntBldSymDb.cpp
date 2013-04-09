@@ -279,7 +279,7 @@ static void generateHeader(PRTSTREAM pOut)
     {
         const char *pszArch = pSet->enmArch == MYARCH_AMD64 ? "AMD64" : "X86";
         RTStrmPrintf(pOut,
-                     "#ifdef RT_ARCH_%s\n"
+                     "# ifdef RT_ARCH_%s\n"
                      "    {   /* Source: %s */\n"
                      "        /*.OsVerInfo = */\n"
                      "        {\n"
@@ -319,7 +319,7 @@ static void generateHeader(PRTSTREAM pOut)
         }
         RTStrmPrintf(pOut,
                      "    },\n"
-                     "#endif\n"
+                     "# endif\n"
                      );
     }
 
@@ -741,15 +741,27 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
             uint8_t     uMajorVer;
             uint8_t     uMinorVer;
             uint8_t     uCsdNo;
-            uint8_t     uChecked;   /**< */
-            MYARCH      enmArch;
             uint32_t    uBuildNo;   /**< UINT32_MAX means the number immediately after the prefix. */
         } const s_aSymPacks[] =
         {
-            { RT_STR_TUPLE("Windows2003."),           5, 2, 0, UINT8_MAX, MYARCH_DETECT, UINT32_MAX },
-            { RT_STR_TUPLE("WindowsVista.6000."),     6, 0, 0, UINT8_MAX, MYARCH_DETECT, 6000 },
-            { RT_STR_TUPLE("Windows_Longhorn.6001."), 6, 0, 1, UINT8_MAX, MYARCH_DETECT, 6001 }, /* server 2008 */
-            { RT_STR_TUPLE("WindowsVista.6002."),     6, 0, 2, UINT8_MAX, MYARCH_DETECT, 6002 },
+            { RT_STR_TUPLE("windowsxp"),                        5, 1, 0, 2600 },
+            { RT_STR_TUPLE("xpsp1sym"),                         5, 1, 1, 2600 },
+            { RT_STR_TUPLE("WindowsXP-KB835935-SP2-"),          5, 1, 2, 2600 },
+            { RT_STR_TUPLE("WindowsXP-KB936929-SP3-"),          5, 1, 3, 2600 },
+            { RT_STR_TUPLE("Windows2003."),                     5, 2, 0, 3790 },
+            { RT_STR_TUPLE("Windows2003_sp1."),                 5, 2, 1, 3790 },
+            { RT_STR_TUPLE("WindowsServer2003-KB933548-v1"),    5, 2, 1, 3790 },
+            { RT_STR_TUPLE("WindowsVista.6000."),               6, 0, 0, 6000 },
+            { RT_STR_TUPLE("Windows_Longhorn.6001."),           6, 0, 1, 6001 }, /* incl w2k8 */
+            { RT_STR_TUPLE("WindowsVista.6002."),               6, 0, 2, 6002 }, /* incl w2k8 */
+            { RT_STR_TUPLE("Windows_Winmain.7000"),             6, 1, 0, 7000 }, /* Beta */
+            { RT_STR_TUPLE("Windows_Winmain.7100"),             6, 1, 0, 7100 }, /* RC */
+            { RT_STR_TUPLE("Windows_Win7.7600"),                6, 1, 0, 7600 }, /* RC */
+            { RT_STR_TUPLE("Windows_Win7SP1.7601"),             6, 1, 1, 7601 }, /* RC */
+            { RT_STR_TUPLE("Windows_Winmain.8102"),             6, 1, 0, 8102 }, /* preview */
+            { RT_STR_TUPLE("Windows_Winmain.8250"),             6, 1, 0, 8250 }, /* beta */
+            { RT_STR_TUPLE("Windows_Winmain.8400"),             6, 1, 0, 8400 }, /* RC */
+            { RT_STR_TUPLE("Windows_Win8.9200"),                6, 1, 0, 9200 }, /* RTM */
         };
 
         const char *pszComp = u.Split.apszComps[i];
@@ -763,9 +775,8 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
         pVerInfo->uMajorVer = s_aSymPacks[j].uMajorVer;
         pVerInfo->uMinorVer = s_aSymPacks[j].uMinorVer;
         pVerInfo->uCsdNo    = s_aSymPacks[j].uCsdNo;
-        pVerInfo->fChecked  = s_aSymPacks[j].uChecked == 1;
+        pVerInfo->fChecked  = false;
         pVerInfo->uBuildNo  = s_aSymPacks[j].uBuildNo;
-        *penmArch           = s_aSymPacks[j].enmArch;
 
         /* Parse build number if necessary. */
         if (s_aSymPacks[j].uBuildNo == UINT32_MAX)
@@ -1053,7 +1064,6 @@ int main(int argc, char **argv)
     };
 
     RTEXITCODE  rcExit      = RTEXITCODE_SUCCESS;
-    bool        fFoundInput = false;
     const char *pszOutput   = "-";
 
     int ch;
@@ -1108,8 +1118,8 @@ int main(int argc, char **argv)
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
-    if (!fFoundInput)
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Not input files or directories specified.\n");
+    if (RTListIsEmpty(&g_SetList))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "No usable debug files found.\n");
 
     /*
      * Generate the output.
