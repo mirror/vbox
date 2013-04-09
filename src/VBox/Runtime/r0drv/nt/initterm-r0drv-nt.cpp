@@ -140,19 +140,27 @@ static bool rtR0NtTryMatchSymSet(PCRTNTSDBSET pSet, uint8_t *pbPrcb, const char 
 
     /*
      * Do the CPU vendor test.
+     *
+     * Note! The MmIsAddressValid call is the real #PF security here as the
+     *       __try/__except has limited/no ability to catch everything we need.
      */
+    char *pszPrcbVendorString = (char *)&pbPrcb[pSet->KPRCB.offVendorString];
+    if (!MmIsAddressValid(&pszPrcbVendorString[4 * 3 - 1]))
+    {
+        DbgPrint("IPRT: #%d invalid vendor string address.\n", pSet - &g_artNtSdbSets[0]);
+        return false;
+    }
     __try
     {
-        if (memcmp(&pbPrcb[pSet->KPRCB.offVendorString], pszVendor,
-                   RT_MIN(4 * 3, pSet->KPRCB.cbVendorString)) != 0)
+        if (memcmp(pszPrcbVendorString, pszVendor, RT_MIN(4 * 3, pSet->KPRCB.cbVendorString)) != 0)
         {
-            //DbgPrint("IPRT: #%d Vendor string mismatch.\n");
+            DbgPrint("IPRT: #%d Vendor string mismatch.\n", pSet - &g_artNtSdbSets[0]);
             return false;
         }
     }
-    __except(EXCEPTION_EXECUTE_HANDLER) /** @todo this handler doesn't seem to work... Because of Irql? */
+    __except(EXCEPTION_EXECUTE_HANDLER)
     {
-        //DbgPrint("IPRT: Exception\n");
+        DbgPrint("IPRT: %#d Exception\n", pSet - &g_artNtSdbSets[0]);
         return false;
     }
 
@@ -223,15 +231,22 @@ DECLHIDDEN(int) rtR0InitNative(void)
 #endif
 
     /*
-     * HACK ALERT (and déjà vu warning)!
+     * HACK ALERT! (and déjà vu warning - remember win32k.sys?)
      *
      * Try find _KPRCB::QuantumEnd and _KPRCB::[DpcData.]DpcQueueDepth.
      * For purpose of verification we use the VendorString member (12+1 chars).
      *
      * The offsets was initially derived by poking around with windbg
-     * (dt _KPRCB, !prcb ++, and such like). Systematic harvesting is now done
-     * by means of dia2dump, grep and the symbol packs. Typically:
+     * (dt _KPRCB, !prcb ++, and such like). Systematic harvesting was then
+     * planned using dia2dump, grep and the symbol pack in a manner like this:
      *      dia2dump -type _KDPC_DATA -type _KPRCB EXE\ntkrnlmp.pdb | grep -wE "QuantumEnd|DpcData|DpcQueueDepth|VendorString"
+     *
+     * The final solution ended up using a custom harvester program called
+     * ntBldSymDb that recursively searches thru unpacked symbol packages for
+     * the desired structure offsets.  The program assumes that the packages
+     * are unpacked into directories with the same name as the package, with
+     * exception of some of the w2k packages which requires a 'w2k' prefix to
+     * be distinguishable from another.
      */
 
     RTNTSDBOSVER OsVerInfo;
@@ -252,7 +267,7 @@ DECLHIDDEN(int) rtR0InitNative(void)
     u.szVendor[4*3] = '\0';
 
     uint8_t *pbPrcb;
-    __try
+    __try /* Warning. This try/except statement may provide some false safety. */
     {
 #if defined(RT_ARCH_X86)
         PKPCR    pPcr   = (PKPCR)__readfsdword(RT_OFFSETOF(KPCR,SelfPcr));
@@ -265,12 +280,10 @@ DECLHIDDEN(int) rtR0InitNative(void)
         pbPrcb = NULL;
 #endif
     }
-    __except(EXCEPTION_EXECUTE_HANDLER) /** @todo this handler doesn't seem to work... Because of Irql? */
+    __except(EXCEPTION_EXECUTE_HANDLER)
     {
         pbPrcb = NULL;
     }
-
-    KeLowerIrql(OldIrql); /* Lowering the IRQL early in the hope that we may catch exceptions below. */
 
     /*
      * Search the database
@@ -309,7 +322,6 @@ DECLHIDDEN(int) rtR0InitNative(void)
                 iBest      = i;
             }
         }
-        iBest = RT_ELEMENTS(g_artNtSdbSets)-1;
         if (iBest < RT_ELEMENTS(g_artNtSdbSets))
         {
             /* Try all sets: iBest -> End; iBest -> Start. */
@@ -331,6 +343,8 @@ DECLHIDDEN(int) rtR0InitNative(void)
     }
     else
         DbgPrint("IPRT: Failed to get PCBR pointer.\n");
+
+    KeLowerIrql(OldIrql); /* Lowering the IRQL early in the hope that we may catch exceptions below. */
 
 #ifndef IN_GUEST
     if (!g_offrtNtPbQuantumEnd && !g_offrtNtPbDpcQueueDepth)
