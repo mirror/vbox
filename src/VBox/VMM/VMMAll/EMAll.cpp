@@ -407,7 +407,6 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
  *
  * @returns VBox status code, see SELMToFlatEx and EMInterpretDisasOneEx for
  *          details.
- * @retval  VERR_EM_INTERNAL_DISAS_ERROR on DISCoreOneEx failure.
  *
  * @param   pVM             Pointer to the VM.
  * @param   pVCpu           Pointer to the VMCPU.
@@ -441,7 +440,6 @@ VMM_INT_DECL(int) EMInterpretDisasCurrent(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pD
  * This is used by internally by the interpreter and by trap/access handlers.
  *
  * @returns VBox status code.
- * @retval  VERR_EM_INTERNAL_DISAS_ERROR on DISCoreOneEx failure.
  *
  * @param   pVM             Pointer to the VM.
  * @param   pVCpu           Pointer to the VMCPU.
