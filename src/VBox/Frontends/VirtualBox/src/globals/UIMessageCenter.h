@@ -185,7 +185,7 @@ public:
     /* API: Selector warnings: */
     void cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const;
     void cannotReregisterExistingMachine(const QString &strMachinePath, const QString &strMachineName) const;
-    void cannotResolveCollisionAutomatically(const QString &strName, const QString &strGroupName) const;
+    void cannotResolveCollisionAutomatically(const QString &strCollisionName, const QString &strGroupName) const;
     bool confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName) const;
     void cannotSetGroups(const CMachine &machine) const;
     bool confirmMachineItemRemoval(const QStringList &names) const;
@@ -201,10 +201,10 @@ public:
     void cannotResumeMachine(const CConsole &console) const;
     void cannotDiscardSavedState(const CConsole &console) const;
     void cannotSaveMachineState(const CConsole &console);
-    void cannotSaveMachineState(const CProgress &progress, const QString &strName);
+    void cannotSaveMachineState(const CProgress &progress, const QString &strMachineName);
     void cannotACPIShutdownMachine(const CConsole &console) const;
     void cannotPowerDownMachine(const CConsole &console) const;
-    void cannotPowerDownMachine(const CProgress &progress, const QString &strName) const;
+    void cannotPowerDownMachine(const CProgress &progress, const QString &strMachineName) const;
 
     /* API: Snapshot warnings: */
     int confirmSnapshotRestoring(const QString &strSnapshotName, bool fAlsoCreateNewSnapshot) const;
@@ -213,8 +213,8 @@ public:
                                            const QString &strTargetImageMaxSize, const QString &strTargetFileSystemFree) const;
     void cannotTakeSnapshot(const CConsole &console, const QString &strMachineName, QWidget *pParent = 0) const;
     void cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0) const;
-    void cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName, QWidget *pParent = 0) const;
-    void cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName, QWidget *pParent = 0) const;
+    void cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const;
+    void cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
     void cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const;
     void cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
 
@@ -222,8 +222,8 @@ public:
     bool confirmHostInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
     void cannotCreateHostInterface(const CHost &host, QWidget *pParent = 0);
     void cannotCreateHostInterface(const CProgress &progress, QWidget *pParent = 0);
-    void cannotRemoveHostInterface(const CHost &host, const QString &strName, QWidget *pParent = 0);
-    void cannotRemoveHostInterface(const CProgress &progress, const QString &strName, QWidget *pParent = 0);
+    void cannotRemoveHostInterface(const CHost &host, const QString &strInterfaceName, QWidget *pParent = 0);
+    void cannotRemoveHostInterface(const CProgress &progress, const QString &strInterfaceName, QWidget *pParent = 0);
     void cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent = 0) const;
 
     /* API: Machine settings warnings: */
@@ -238,10 +238,10 @@ public:
     void cannotAttachDevice(const CMachine &machine, UIMediumType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
     void warnAboutIncorrectPort(QWidget *pParent = 0) const;
     bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
-    void cannotCreateSharedFolder(const CMachine &machine, const QString &strMachineName, const QString &strName, const QString &strPath, QWidget *pParent = 0);
-    void cannotCreateSharedFolder(const CConsole &console, const QString &strMachineName, const QString &strName, const QString &strPath, QWidget *pParent = 0);
-    void cannotRemoveSharedFolder(const CMachine &machine, const QString &strMachineName, const QString &strName, const QString &strPath, QWidget *pParent = 0);
-    void cannotRemoveSharedFolder(const CConsole &console, const QString &strMachineName, const QString &strName, const QString &strPath, QWidget *pParent = 0);
+    void cannotCreateSharedFolder(const CMachine &machine, const QString &strName, const QString &strPath, QWidget *pParent = 0);
+    void cannotCreateSharedFolder(const CConsole &console, const QString &strName, const QString &strPath, QWidget *pParent = 0);
+    void cannotRemoveSharedFolder(const CMachine &machine, const QString &strName, const QString &strPath, QWidget *pParent = 0);
+    void cannotRemoveSharedFolder(const CConsole &console, const QString &strName, const QString &strPath, QWidget *pParent = 0);
     void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
 
     /* API: Virtual Medium Manager warnings: */
@@ -303,7 +303,7 @@ public:
     void cannotAttachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const;
     void cannotDetachUSBDevice(const CConsole &console, const QString &strDevice) const;
     void cannotDetachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const;
-    void remindAboutGuestAdditionsAreNotActive(QWidget *pParent = 0) const;
+    void remindAboutGuestAdditionsAreNotActive() const;
 
     /* API: Network management warnings: */
     bool confirmCancelingAllNetworkRequests() const;
@@ -355,6 +355,7 @@ public:
 
     /* API: Static helpers: */
     static QString formatRC(HRESULT rc);
+    static QString formatErrorInfo(const CProgress &progress);
     static QString formatErrorInfo(const COMErrorInfo &info, HRESULT wrapperRC = S_OK);
     static QString formatErrorInfo(const CVirtualBoxErrorInfo &info);
     static QString formatErrorInfo(const COMBaseWithEI &wrapper);

@@ -329,7 +329,7 @@ void UIMachineLogic::sltMachineStateChanged()
                 if (console.isOk())
                 {
                     /* Show machine power down progress: */
-                    msgCenter().showModalProgressDialog(progress, strMachineName, ":/progress_poweroff_90px.png", activeMachineWindow());
+                    msgCenter().showModalProgressDialog(progress, strMachineName, ":/progress_poweroff_90px.png");
                     if (!progress.isOk() || progress.GetResultCode() != 0)
                         msgCenter().cannotPowerDownMachine(progress, strMachineName);
                 }
@@ -1033,12 +1033,12 @@ void UIMachineLogic::sltTakeSnapshot()
             if (console.isOk())
             {
                 /* Show the take-snapshot progress: */
-                msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_create_90px.png", activeMachineWindow());
+                msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_create_90px.png");
                 if (!progress.isOk() || progress.GetResultCode() != 0)
-                    msgCenter().cannotTakeSnapshot(progress, machine.GetName(), activeMachineWindow());
+                    msgCenter().cannotTakeSnapshot(progress, machine.GetName());
             }
             else
-                msgCenter().cannotTakeSnapshot(console, machine.GetName(), activeMachineWindow());
+                msgCenter().cannotTakeSnapshot(console, machine.GetName());
         }
     }
 
@@ -1225,7 +1225,7 @@ void UIMachineLogic::sltOpenSharedFoldersDialog()
 {
     /* Do not process if additions are not loaded! */
     if (!uisession()->isGuestAdditionsActive())
-        msgCenter().remindAboutGuestAdditionsAreNotActive(activeMachineWindow());
+        msgCenter().remindAboutGuestAdditionsAreNotActive();
 
     /* Open VM settings : Shared folders page: */
     sltOpenVMSettingsDialog("#sharedFolders");
