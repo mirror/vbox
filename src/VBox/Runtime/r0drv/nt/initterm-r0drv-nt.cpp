@@ -147,14 +147,14 @@ static bool rtR0NtTryMatchSymSet(PCRTNTSDBSET pSet, uint8_t *pbPrcb, const char 
     char *pszPrcbVendorString = (char *)&pbPrcb[pSet->KPRCB.offVendorString];
     if (!MmIsAddressValid(&pszPrcbVendorString[4 * 3 - 1]))
     {
-        DbgPrint("IPRT: #%d invalid vendor string address.\n", pSet - &g_artNtSdbSets[0]);
+        //DbgPrint("IPRT: #%d invalid vendor string address.\n", pSet - &g_artNtSdbSets[0]);
         return false;
     }
     __try
     {
         if (memcmp(pszPrcbVendorString, pszVendor, RT_MIN(4 * 3, pSet->KPRCB.cbVendorString)) != 0)
         {
-            DbgPrint("IPRT: #%d Vendor string mismatch.\n", pSet - &g_artNtSdbSets[0]);
+            //DbgPrint("IPRT: #%d Vendor string mismatch.\n", pSet - &g_artNtSdbSets[0]);
             return false;
         }
     }
