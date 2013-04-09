@@ -237,10 +237,7 @@
 /** Start instruction stepping (debug only). */
 #define VINF_EM_RAW_EMULATE_DBG_STEP        1151
 /** Patch TPR access instruction. */
-#define VINF_EM_HM_PATCH_TPR_INSTR      1152
-/** The EMInterpretDisasOne / EMInterpretDisasOneEx methods failed to
- * disassemble the instruction. */
-#define VERR_EM_INTERNAL_DISAS_ERROR        (-1153)
+#define VINF_EM_HM_PATCH_TPR_INSTR          1152
 /** Unexpected guest mapping conflict detected. */
 #define VERR_EM_UNEXPECTED_MAPPING_CONFLICT (-1154)
 /** @} */
@@ -1968,8 +1965,6 @@
 #define VERR_DIS_INVALID_MODRM                      (-4203)
 /** Invalid parameter index. */
 #define VERR_DIS_INVALID_PARAMETER                  (-4204)
-/** Reading opcode bytes failed. */
-#define VERR_DIS_MEM_READ                           (-4205)
 /** The instruction is too long. */
 #define VERR_DIS_TOO_LONG_INSTR                     (-4206)
 /** @} */

@@ -119,8 +119,6 @@ VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
                         return VINF_SUCCESS;
                 }
             }
-            else if (RT_UNLIKELY(rc == VERR_EM_INTERNAL_DISAS_ERROR))
-                return rc;
             break;
         }
 

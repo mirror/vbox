@@ -292,7 +292,7 @@ DECL_NO_INLINE(static, void) disReadMore(PDISSTATE pDis, uint8_t offInstr, uint8
     else
     {
         Log(("disReadMore failed with rc=%Rrc!!\n", rc));
-        pDis->rc = VERR_DIS_MEM_READ;
+        pDis->rc = rc;
     }
 }
 
@@ -2607,7 +2607,7 @@ DECL_FORCE_INLINE(void) disPrefetchBytes(PDISSTATE pDis)
     else
     {
         Log(("Initial read failed with rc=%Rrc!!\n", rc));
-        pDis->rc = VERR_DIS_MEM_READ;
+        pDis->rc = rc;
     }
 }
 
