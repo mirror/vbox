@@ -33,8 +33,7 @@ class UIModalWindowManager : public QObject
 
 public:
 
-    /* Static API: Instance stuff: */
-    static UIModalWindowManager* instance();
+    /* Static API: Create/destroy stuff: */
     static void create();
     static void destroy();
 
@@ -64,8 +63,9 @@ private:
     QList<QList<QWidget*> > m_windows;
     static UIModalWindowManager* m_spInstance;
 
-    /* Friends: */
-    friend UIModalWindowManager& modalWindowManager();
+    /* Static API: Instance stuff: */
+    static UIModalWindowManager* instance();
+    friend UIModalWindowManager& mwManager();
 };
 
 /* Shortcut to the static UIModalWindowManager::instance() method: */
