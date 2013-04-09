@@ -722,9 +722,13 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
     /*
      * SMP or UNI kernel?
      */
-    if (!RTStrICmp(pszFilename, "ntkrnlmp.pdb"))
+    if (   !RTStrICmp(pszFilename, "ntkrnlmp.pdb")
+        || !RTStrICmp(pszFilename, "ntkrpamp.pdb")
+       )
         pVerInfo->fSmp = true;
-    else if (!RTStrICmp(pszFilename, "ntoskrnl.pdb"))
+    else if (   !RTStrICmp(pszFilename, "ntoskrnl.pdb")
+             || !RTStrICmp(pszFilename, "ntkrnlpa.pdb")
+            )
         pVerInfo->fSmp = false;
     else
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Doesn't recognize the filename '%s'...", pszFilename);
@@ -992,21 +996,31 @@ static RTEXITCODE processDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX pDirE
                 RT_STR_TUPLE("ntoskrnl.pdb"),
                 RT_STR_TUPLE("ntkrnlmp.dbg"),
                 RT_STR_TUPLE("ntkrnlmp.pdb"),
+                RT_STR_TUPLE("ntkrnlpa.pdb"),
+                RT_STR_TUPLE("ntkrnlpa.dbg"),
+                RT_STR_TUPLE("ntkrpamp.pdb"),
+                RT_STR_TUPLE("ntkrpamp.dbg"),
             };
-            int i = RT_ELEMENTS(s_aNames);
-            while (i-- > 0)
-                if (   s_aNames[i].cch == pDirEntry->cbName
-                    && !RTStrICmp(s_aNames[i].psz, pDirEntry->szName))
-                {
-                    /*
-                     * Found debug info file of interest, process it.
-                     */
-                    memcpy(&pszDir[cchDir], pDirEntry->szName, pDirEntry->cbName + 1);
-                    RTEXITCODE rcExit2 = processPdb(pszDir);
-                    if (rcExit2 != RTEXITCODE_SUCCESS)
-                        rcExit = rcExit2;
-                    break;
-                }
+            if (   pDirEntry->cbName == sizeof("ntkrpamp.dbg") - 1
+                && (pDirEntry->szName[0] == 'n' || pDirEntry->szName[0] == 'N')
+                && (pDirEntry->szName[1] == 't' || pDirEntry->szName[1] == 'T')
+               )
+            {
+                int i = RT_ELEMENTS(s_aNames);
+                while (i-- > 0)
+                    if (   s_aNames[i].cch == pDirEntry->cbName
+                        && !RTStrICmp(s_aNames[i].psz, pDirEntry->szName))
+                    {
+                        /*
+                         * Found debug info file of interest, process it.
+                         */
+                        memcpy(&pszDir[cchDir], pDirEntry->szName, pDirEntry->cbName + 1);
+                        RTEXITCODE rcExit2 = processPdb(pszDir);
+                        if (rcExit2 != RTEXITCODE_SUCCESS)
+                            rcExit = rcExit2;
+                        break;
+                    }
+            }
         }
         else if (RTFS_IS_DIRECTORY(pDirEntry->Info.Attr.fMode))
         {
