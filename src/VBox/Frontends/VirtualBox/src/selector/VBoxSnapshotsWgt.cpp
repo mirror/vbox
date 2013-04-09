@@ -813,9 +813,9 @@ bool VBoxSnapshotsWgt::takeSnapshot()
         if (fIsValid)
         {
             /* Create take-snapshot dialog: */
-            QWidget *pDlgParent = mwManager().realParentWindow(this);
+            QWidget *pDlgParent = windowManager().realParentWindow(this);
             QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(pDlgParent, mMachine);
-            mwManager().registerNewParent(pDlg, pDlgParent);
+            windowManager().registerNewParent(pDlg, pDlgParent);
 
             /* Assign corresponding icon: */
             pDlg->mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(mMachine.GetOSTypeId()));

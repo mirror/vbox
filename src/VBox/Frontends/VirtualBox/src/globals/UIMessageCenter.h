@@ -151,10 +151,6 @@ public:
                                  const QString &strImage = "", QWidget *pParent = 0,
                                  int cMinDuration = 2000);
 
-    /* API: Main window stuff: */
-    QWidget* mainWindowShown() const;
-    QWidget* networkManagerOrMainWindowShown() const;
-
     /* API: Main (startup) warnings: */
 #ifdef RT_OS_LINUX
     void warnAboutWrongUSBMounted() const;

@@ -19,6 +19,10 @@
 
 /* GUI includes: */
 #include "UIModalWindowManager.h"
+#include "UINetworkManagerDialog.h"
+#include "UINetworkManager.h"
+#include "UISelectorWindow.h"
+#include "VBoxGlobal.h"
 
 /* Other VBox includes: */
 #include <VBox/sup.h>
@@ -61,6 +65,44 @@ UIModalWindowManager::~UIModalWindowManager()
     /* Make sure instance still assigned: */
     if (m_spInstance == this)
         m_spInstance = 0;
+}
+
+QWidget* UIModalWindowManager::mainWindowShown() const
+{
+    /* Later this function will be independent of VBoxGlobal at all,
+     * but for now VBoxGlobal creates all the main application windows,
+     * so we should honor this fact.
+     *
+     * It may happen that this method is called during VBoxGlobal
+     * initialization or even after it had failed (for example, to show some message).
+     * Return NULL pointer in this case: */
+    if (!vboxGlobal().isValid())
+        return 0;
+
+    /* For VM console process: */
+    if (vboxGlobal().isVMConsoleProcess())
+    {
+        /* It will be currently active machine-window if visible: */
+        if (vboxGlobal().activeMachineWindow()->isVisible())
+            return vboxGlobal().activeMachineWindow();
+    }
+    /* Otherwise: */
+    else
+    {
+        /* It will be the selector window if visible: */
+        if (vboxGlobal().selectorWnd().isVisible())
+            return &vboxGlobal().selectorWnd();
+    }
+
+    /* Nothing by default: */
+    return 0;
+}
+
+QWidget* UIModalWindowManager::networkManagerOrMainWindowShown() const
+{
+    /* It may happen that this method is called before network-manager initialization
+     * or when the network-manager is hidden, return main application window in this case: */
+    return gNetworkManager && gNetworkManager->window()->isVisible() ? gNetworkManager->window() : mainWindowShown();
 }
 
 QWidget* UIModalWindowManager::realParentWindow(QWidget *pWidget)

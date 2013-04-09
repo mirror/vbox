@@ -27,6 +27,7 @@
 #include "QIFileDialog.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
 
 /* static */
 UIDownloaderAdditions* UIDownloaderAdditions::m_spInstance = 0;
@@ -102,7 +103,7 @@ void UIDownloaderAdditions::handleDownloadedObject(UINetworkReply *pReply)
 
         /* Ask the user for another location for the additions-image file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
-                                                               msgCenter().networkManagerOrMainWindowShown(),
+                                                               windowManager().networkManagerOrMainWindowShown(),
                                                                tr("Select folder to save Guest Additions image to"), true);
 
         /* Check if user had really set a new target: */

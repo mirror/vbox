@@ -192,7 +192,7 @@ void UIProgressDialog::timerEvent(QTimerEvent* /* pEvent */)
      * This could happens in case of some other
      * modal dialog prevents our event-loop from
      * being exit overlapping 'this'. */
-    if (m_fEnded && !isHidden() && mwManager().isWindowOnTheTopOfTheModalWindowStack(this))
+    if (m_fEnded && !isHidden() && windowManager().isWindowOnTheTopOfTheModalWindowStack(this))
     {
         hide();
         return;
@@ -203,7 +203,7 @@ void UIProgressDialog::timerEvent(QTimerEvent* /* pEvent */)
     if (!m_fEnded && (!m_progress.isOk() || m_progress.GetCompleted()))
     {
         /* Is this progress-dialog a top-level modal-dialog now? */
-        if (mwManager().isWindowOnTheTopOfTheModalWindowStack(this))
+        if (windowManager().isWindowOnTheTopOfTheModalWindowStack(this))
         {
             /* Progress finished: */
             if (m_progress.isOk())

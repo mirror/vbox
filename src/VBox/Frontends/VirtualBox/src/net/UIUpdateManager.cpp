@@ -31,6 +31,7 @@
 #include "UINetworkRequest.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
 #include "VBoxUtils.h"
 #include "UIDownloaderExtensionPack.h"
 #include "UIGlobalSettingsExtension.h"
@@ -442,7 +443,7 @@ private slots:
     {
         /* Warn the user about extension pack was downloaded and saved, propose to install it: */
         if (msgCenter().proposeInstallExtentionPack(GUI_ExtPackName, strSource, QDir::toNativeSeparators(strTarget)))
-            UIGlobalSettingsExtension::doInstallation(strTarget, strDigest, msgCenter().networkManagerOrMainWindowShown(), NULL);
+            UIGlobalSettingsExtension::doInstallation(strTarget, strDigest, windowManager().networkManagerOrMainWindowShown(), NULL);
     }
 };
 

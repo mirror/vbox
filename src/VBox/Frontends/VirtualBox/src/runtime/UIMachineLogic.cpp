@@ -998,9 +998,9 @@ void UIMachineLogic::sltTakeSnapshot()
     CMachine machine = session().GetMachine();
 
     /* Create take-snapshot dialog: */
-    QWidget *pDlgParent = mwManager().realParentWindow(activeMachineWindow());
+    QWidget *pDlgParent = windowManager().realParentWindow(activeMachineWindow());
     QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(pDlgParent, machine);
-    mwManager().registerNewParent(pDlg, pDlgParent);
+    windowManager().registerNewParent(pDlg, pDlgParent);
 
     /* Assign corresponding icon: */
     QString strTypeId = machine.GetOSTypeId();

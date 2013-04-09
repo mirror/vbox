@@ -27,6 +27,7 @@
 #include "QIFileDialog.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
 
 /* static */
 UIDownloaderUserManual* UIDownloaderUserManual::m_spInstance = 0;
@@ -106,7 +107,7 @@ void UIDownloaderUserManual::handleDownloadedObject(UINetworkReply *pReply)
 
         /* Ask the user for another location for the user-manual file: */
         QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
-                                                               msgCenter().networkManagerOrMainWindowShown(),
+                                                               windowManager().networkManagerOrMainWindowShown(),
                                                                tr("Select folder to save User Manual to"), true);
 
         /* Check if user had really set a new target: */
