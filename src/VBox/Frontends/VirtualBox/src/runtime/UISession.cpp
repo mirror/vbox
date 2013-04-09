@@ -513,7 +513,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
             if (   !SUCCEEDED_WARNING(rc)
                 && rc != VBOX_E_NOT_SUPPORTED)
             {
-                msgCenter().cannotUpdateGuestAdditions(progressInstall, mainMachineWindow());
+                msgCenter().cannotUpdateGuestAdditions(progressInstall);
 
                 /* Log the error message in the release log. */
                 QString strErr = progressInstall.GetErrorInfo().GetText();
