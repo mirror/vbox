@@ -242,10 +242,10 @@ int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType type,
     }
 
     /* Create message-box: */
-    QWidget *pBoxParent = mwManager().realParentWindow(pParent);
+    QWidget *pBoxParent = windowManager().realParentWindow(pParent);
     QPointer<QIMessageBox> pBox = new QIMessageBox(strTitle, strMessage, icon,
                                                    iButton1, iButton2, iButton3, pBoxParent);
-    mwManager().registerNewParent(pBox, pBoxParent);
+    windowManager().registerNewParent(pBox, pBoxParent);
 
     /* Load option: */
     if (!strOptionText.isNull())
@@ -292,9 +292,9 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
         pPixmap = new QPixmap(strImage);
 
     /* Create progress-dialog: */
-    QWidget *pDlgParent = mwManager().realParentWindow(pParent ? pParent : mainWindowShown());
+    QWidget *pDlgParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
     QPointer<UIProgressDialog> pProgressDlg = new UIProgressDialog(progress, strTitle, pPixmap, cMinDuration, pDlgParent);
-    mwManager().registerNewParent(pProgressDlg, pDlgParent);
+    windowManager().registerNewParent(pProgressDlg, pDlgParent);
 
     /* Run the dialog with the 350 ms refresh interval. */
     pProgressDlg->run(350);
@@ -311,38 +311,6 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
         delete pPixmap;
 
     return true;
-}
-
-QWidget* UIMessageCenter::mainWindowShown() const
-{
-    /* It may happen that this method is called during VBoxGlobal
-     * initialization or even after it failed (for example, to show some error message).
-     * Return no main window in this case: */
-    if (!vboxGlobal().isValid())
-        return 0;
-
-    /* For VM console process: */
-    if (vboxGlobal().isVMConsoleProcess())
-    {
-        /* It will be currently active machine-window if visible: */
-        if (vboxGlobal().activeMachineWindow()->isVisible())
-            return vboxGlobal().activeMachineWindow();
-    }
-    /* Otherwise: */
-    else
-    {
-        /* It will be the selector window if visible: */
-        if (vboxGlobal().selectorWnd().isVisible())
-            return &vboxGlobal().selectorWnd();
-    }
-
-    /* Nothing by default: */
-    return 0;
-}
-
-QWidget* UIMessageCenter::networkManagerOrMainWindowShown() const
-{
-    return gNetworkManager->window()->isVisible() ? gNetworkManager->window() : mainWindowShown();
 }
 
 #ifdef RT_OS_LINUX
@@ -1988,13 +1956,13 @@ void UIMessageCenter::remindAboutGuestAdditionsAreNotActive() const
 
 bool UIMessageCenter::confirmCancelingAllNetworkRequests() const
 {
-    return questionBinary(networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("Do you wish to cancel all current network operations?"));
 }
 
 void UIMessageCenter::showUpdateSuccess(const QString &strVersion, const QString &strLink) const
 {
-    alert(networkManagerOrMainWindowShown(), MessageType_Info,
+    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Info,
           tr("<p>A new version of VirtualBox has been released! Version <b>%1</b> is available "
              "at <a href=\"http://www.virtualbox.org/\">virtualbox.org</a>.</p>"
              "<p>You can download this version using the link:</p>"
@@ -2004,13 +1972,13 @@ void UIMessageCenter::showUpdateSuccess(const QString &strVersion, const QString
 
 void UIMessageCenter::showUpdateNotFound() const
 {
-    alert(networkManagerOrMainWindowShown(), MessageType_Info,
+    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Info,
           tr("You are already running the most recent version of VirtualBox."));
 }
 
 void UIMessageCenter::askUserToDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion, const QString &strVBoxVersion) const
 {
-    alert(networkManagerOrMainWindowShown(), MessageType_Info,
+    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Info,
           tr("<p>You have version %1 of the <b><nobr>%2</nobr></b> installed.</p>"
              "<p>You should download and install version %3 of this extension pack from Oracle!</p>")
              .arg(strExtPackVersion).arg(strExtPackName).arg(strVBoxVersion));
@@ -2027,7 +1995,7 @@ bool UIMessageCenter::cannotFindGuestAdditions() const
 
 bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const
 {
-    return questionBinary(networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b>VirtualBox Guest Additions</b> CD image "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
                              .arg(strUrl, QLocale(VBoxGlobal::languageId()).toString(uSize)),
@@ -2037,7 +2005,7 @@ bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulon
 
 void UIMessageCenter::cannotSaveGuestAdditions(const QString &strURL, const QString &strTarget) const
 {
-    alert(networkManagerOrMainWindowShown(), MessageType_Error,
+    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Error,
           tr("<p>The <b>VirtualBox Guest Additions</b> CD image has been successfully downloaded "
              "from <nobr><a href=\"%1\">%1</a></nobr> "
              "but can't be saved locally as <nobr><b>%2</b>.</nobr></p>"
@@ -2047,7 +2015,7 @@ void UIMessageCenter::cannotSaveGuestAdditions(const QString &strURL, const QStr
 
 bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QString &strSrc) const
 {
-    return questionBinary(networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("<p>The <b>VirtualBox Guest Additions</b> CD image has been successfully downloaded "
                              "from <nobr><a href=\"%1\">%1</a></nobr> "
                              "and saved locally as <nobr><b>%2</b>.</nobr></p>"
@@ -2086,7 +2054,7 @@ bool UIMessageCenter::cannotFindUserManual(const QString &strMissedLocation) con
 
 bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const
 {
-    return questionBinary(networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b>VirtualBox User Manual</b> "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
                              .arg(strURL, QLocale(VBoxGlobal::languageId()).toString(uSize)),
@@ -2096,7 +2064,7 @@ bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglon
 
 void UIMessageCenter::cannotSaveUserManual(const QString &strURL, const QString &strTarget) const
 {
-    alert(networkManagerOrMainWindowShown(), MessageType_Error,
+    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Error,
           tr("<p>The VirtualBox User Manual has been successfully downloaded "
              "from <nobr><a href=\"%1\">%1</a></nobr> "
              "but can't be saved locally as <nobr><b>%2</b>.</nobr></p>"
@@ -2106,7 +2074,7 @@ void UIMessageCenter::cannotSaveUserManual(const QString &strURL, const QString 
 
 void UIMessageCenter::warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget) const
 {
-    alert(networkManagerOrMainWindowShown(), MessageType_Warning,
+    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Warning,
           tr("<p>The VirtualBox User Manual has been successfully downloaded "
              "from <nobr><a href=\"%1\">%1</a></nobr> "
              "and saved locally as <nobr><b>%2</b>.</nobr></p>")
@@ -2115,7 +2083,7 @@ void UIMessageCenter::warnAboutUserManualDownloaded(const QString &strURL, const
 
 bool UIMessageCenter::warAboutOutdatedExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const
 {
-    return questionBinary(networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("<p>You have an old version (%1) of the <b><nobr>%2</nobr></b> installed.</p>"
                              "<p>Do you wish to download latest one from the Internet?</p>")
                              .arg(strExtPackVersion).arg(strExtPackName),
@@ -2125,7 +2093,7 @@ bool UIMessageCenter::warAboutOutdatedExtensionPack(const QString &strExtPackNam
 
 bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const
 {
-    return questionBinary(networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("<p>Are you sure you want to download the <b><nobr>%1</nobr></b> "
                              "from <nobr><a href=\"%2\">%2</a></nobr> (size %3 bytes)?</p>")
                              .arg(strExtPackName, strURL, QLocale(VBoxGlobal::languageId()).toString(uSize)),
@@ -2135,7 +2103,7 @@ bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName
 
 void UIMessageCenter::cannotSaveExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const
 {
-    alert(networkManagerOrMainWindowShown(), MessageType_Error,
+    alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Error,
           tr("<p>The <b><nobr>%1</nobr></b> has been successfully downloaded "
              "from <nobr><a href=\"%2\">%2</a></nobr> "
              "but can't be saved locally as <nobr><b>%3</b>.</nobr></p>"
@@ -2145,7 +2113,7 @@ void UIMessageCenter::cannotSaveExtensionPack(const QString &strExtPackName, con
 
 bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo) const
 {
-    return questionBinary(networkManagerOrMainWindowShown(), MessageType_Question,
+    return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
                           tr("<p>The <b><nobr>%1</nobr></b> has been successfully downloaded "
                              "from <nobr><a href=\"%2\">%2</a></nobr> "
                              "and saved locally as <nobr><b>%3</b>.</nobr></p>"
@@ -2468,7 +2436,7 @@ void UIMessageCenter::sltShowHelpAboutDialog()
     }
     AssertWrapperOk(vbox);
 
-    (new VBoxAboutDlg(mainWindowShown(), strFullVersion))->show();
+    (new VBoxAboutDlg(windowManager().mainWindowShown(), strFullVersion))->show();
 }
 
 void UIMessageCenter::sltShowHelpHelpDialog()
@@ -2754,11 +2722,11 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
     }
 
     /* Create message-box: */
-    QWidget *pMessageBoxParent = mwManager().realParentWindow(pParent ? pParent : mainWindowShown());
+    QWidget *pMessageBoxParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
     QPointer<QIMessageBox> pMessageBox = new QIMessageBox(title, strMessage, icon,
                                                           iButton1, iButton2, iButton3,
                                                           pMessageBoxParent);
-    mwManager().registerNewParent(pMessageBox, pMessageBoxParent);
+    windowManager().registerNewParent(pMessageBox, pMessageBoxParent);
 
     /* Prepare auto-confirmation check-box: */
     if (!strAutoConfirmId.isEmpty())

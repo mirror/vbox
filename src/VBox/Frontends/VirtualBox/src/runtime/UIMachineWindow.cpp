@@ -272,9 +272,9 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     }
 
     /* Prepare close-dialog: */
-    QWidget *pParentDlg = mwManager().realParentWindow(this);
+    QWidget *pParentDlg = windowManager().realParentWindow(this);
     QPointer<UIVMCloseDialog> pCloseDlg = new UIVMCloseDialog(pParentDlg, machineCopy, session());
-    mwManager().registerNewParent(pCloseDlg, pParentDlg);
+    windowManager().registerNewParent(pCloseDlg, pParentDlg);
 
     /* Makes sure the dialog is valid: */
     if (!pCloseDlg->isValid())

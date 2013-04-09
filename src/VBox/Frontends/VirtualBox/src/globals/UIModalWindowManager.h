@@ -45,6 +45,10 @@ public:
     /* API: Register stuff: */
     void registerNewParent(QWidget *pWindow, QWidget *pParentWindow = 0);
 
+    /* API: Main application window stuff: */
+    QWidget* mainWindowShown() const;
+    QWidget* networkManagerOrMainWindowShown() const;
+
 private slots:
 
     /* Handler: Stack cleanup stuff: */
@@ -65,10 +69,10 @@ private:
 
     /* Static API: Instance stuff: */
     static UIModalWindowManager* instance();
-    friend UIModalWindowManager& mwManager();
+    friend UIModalWindowManager& windowManager();
 };
 
 /* Shortcut to the static UIModalWindowManager::instance() method: */
-inline UIModalWindowManager& mwManager() { return *(UIModalWindowManager::instance()); }
+inline UIModalWindowManager& windowManager() { return *(UIModalWindowManager::instance()); }
 
 #endif /* !__UIModalWindowManager_h__ */

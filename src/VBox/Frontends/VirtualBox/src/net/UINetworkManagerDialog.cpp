@@ -33,6 +33,7 @@
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIModalWindowManager.h"
 #include "QIDialogButtonBox.h"
 
 void UINetworkManagerDialog::showNormal()
@@ -167,7 +168,7 @@ void UINetworkManagerDialog::showEvent(QShowEvent *pShowEvent)
     resize(minimumSizeHint());
 
     /* Center according current main application window: */
-    vboxGlobal().centerWidget(this, msgCenter().mainWindowShown(), false);
+    vboxGlobal().centerWidget(this, windowManager().mainWindowShown(), false);
 
     /* Pass event to the base-class: */
     QMainWindow::showEvent(pShowEvent);
