@@ -49,6 +49,10 @@
        </listitem>
 
        <listitem>
+         <para>Windows hosts: don't cause massive DPC latency (bug #6242)</para>
+       </listitem>
+
+       <listitem>
          <para>Windows Additions: fixed misbehavior with guest display
            power management (WDDM driver only; bug #11170)</para>
        </listitem>
