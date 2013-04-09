@@ -220,13 +220,13 @@ void UISession::powerUp()
     /* Show "Starting/Restoring" progress dialog: */
     if (isSaved())
     {
-        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_restore_90px.png", mainMachineWindow(), 0);
+        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_restore_90px.png", 0, 0);
         /* If restoring from saved state, guest MachineView
            should be notified about host MachineWindow geometry change */
         adjustGuestView();
     }
     else
-        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_start_90px.png", mainMachineWindow());
+        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_start_90px.png");
 
     /* Check for a progress failure: */
     if (!progress.isOk() || progress.GetResultCode() != 0)
@@ -279,7 +279,7 @@ void UISession::powerUp()
                 if (uimachine()->machineLogic())
                     uimachine()->machineLogic()->setPreventAutoClose(true);
                 /* Show the power down progress dialog */
-                msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png", mainMachineWindow());
+                msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png");
                 if (!progress.isOk() || progress.GetResultCode() != 0)
                     msgCenter().cannotPowerDownMachine(progress, machine.GetName());
                 /* Allow further auto-closing: */
@@ -319,9 +319,7 @@ bool UISession::saveState()
     if (console.isOk())
     {
         /* Show the saving progress: */
-        msgCenter().showModalProgressDialog(progress, machine.GetName(),
-                                            ":/progress_state_save_90px.png",
-                                            machineLogic()->activeMachineWindow());
+        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_save_90px.png");
         if (!progress.isOk() || progress.GetResultCode() != 0)
         {
             /* Failed in progress: */
@@ -369,9 +367,7 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
     if (console.isOk())
     {
         /* Show the power-off progress: */
-        msgCenter().showModalProgressDialog(progress, machine.GetName(),
-                                            ":/progress_poweroff_90px.png",
-                                            machineLogic()->activeMachineWindow());
+        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png");
         if (progress.GetResultCode() == 0)
         {
             /* Discard the current state if requested: */
@@ -383,20 +379,18 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
                 if (console.isOk())
                 {
                     /* Show the snapshot-discard progress: */
-                    msgCenter().showModalProgressDialog(progress, machine.GetName(),
-                                                        ":/progress_snapshot_discard_90px.png",
-                                                        machineLogic()->activeMachineWindow());
+                    msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_discard_90px.png");
                     if (progress.GetResultCode() != 0)
                     {
                         /* Failed in progress: */
-                        msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), machine.GetName(), machineLogic()->activeMachineWindow());
+                        msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), machine.GetName());
                         return false;
                     }
                 }
                 else
                 {
                     /* Failed in console: */
-                    msgCenter().cannotRestoreSnapshot(console, snapshot.GetName(), machine.GetName(), machineLogic()->activeMachineWindow());
+                    msgCenter().cannotRestoreSnapshot(console, snapshot.GetName(), machine.GetName());
                     return false;
                 }
             }
@@ -504,8 +498,9 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     bool fResult = guest.isOk();
     if (fResult)
     {
-        msgCenter().showModalProgressDialog(progressInstall, tr("Updating Guest Additions"), ":/progress_install_guest_additions_90px.png",
-                                            machineLogic()->activeMachineWindow(), 500 /* 500ms delay. */);
+        msgCenter().showModalProgressDialog(progressInstall, tr("Updating Guest Additions"),
+                                            ":/progress_install_guest_additions_90px.png",
+                                            0, 500 /* 500ms delay. */);
         if (progressInstall.GetCanceled())
             return;
 
