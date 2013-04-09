@@ -55,6 +55,7 @@ public:
      * @{ */
     STDMETHOD(COMGETTER(Arguments))(ComSafeArrayOut(BSTR, aArguments));
     STDMETHOD(COMGETTER(Environment))(ComSafeArrayOut(BSTR, aEnvironment));
+    STDMETHOD(COMGETTER(EventSource))(IEventSource ** aEventSource);
     STDMETHOD(COMGETTER(ExecutablePath))(BSTR *aExecutablePath);
     STDMETHOD(COMGETTER(ExitCode))(LONG *aExitCode);
     STDMETHOD(COMGETTER(Name))(BSTR *aName);

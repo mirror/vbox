@@ -170,6 +170,19 @@ STDMETHODIMP GuestFile::COMGETTER(Disposition)(ULONG *aDisposition)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+STDMETHODIMP GuestFile::COMGETTER(EventSource)(IEventSource ** aEventSource)
+{
+    CheckComArgOutPointerValid(aEventSource);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    // no need to lock - lifetime constant
+    mEventSource.queryInterfaceTo(aEventSource);
+
+    return S_OK;
+}
+
 STDMETHODIMP GuestFile::COMGETTER(FileName)(BSTR *aFileName)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL

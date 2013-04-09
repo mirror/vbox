@@ -91,10 +91,6 @@ DEFINE_EMPTY_CTOR_DTOR(GuestSession)
 HRESULT GuestSession::FinalConstruct(void)
 {
     LogFlowThisFunc(("\n"));
-
-    mData.mRC = VINF_SUCCESS;
-    mData.mStatus = GuestSessionStatus_Undefined;
-
     return BaseFinalConstruct();
 }
 
@@ -122,11 +118,15 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
     LogFlowThisFunc(("pGuest=%p, ssInfo=%p, guestCreds=%p\n",
                       pGuest, &ssInfo, &guestCreds));
 
-    AssertPtrReturn(pGuest, VERR_INVALID_POINTER);
-
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), VERR_OBJECT_DESTROYED);
+
+#ifndef VBOX_WITH_GUEST_CONTROL
+    autoInitSpan.setSucceeded();
+    return VINF_SUCCESS;
+#else
+    AssertPtrReturn(pGuest, VERR_INVALID_POINTER);
 
     mParent = pGuest;
 
@@ -143,6 +143,7 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
     mData.mCredentials.mPassword = guestCreds.mPassword;
     mData.mCredentials.mDomain = guestCreds.mDomain;
 
+    mData.mRC = VINF_SUCCESS;
     mData.mStatus = GuestSessionStatus_Undefined;
     mData.mNumObjects = 0;
 
@@ -166,6 +167,7 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 /**
@@ -494,6 +496,11 @@ STDMETHODIMP GuestSession::COMGETTER(Files)(ComSafeArrayOut(IGuestFile *, aFiles
 
 STDMETHODIMP GuestSession::COMGETTER(EventSource)(IEventSource ** aEventSource)
 {
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
     CheckComArgOutPointerValid(aEventSource);
 
     AutoCaller autoCaller(this);
@@ -502,7 +509,9 @@ STDMETHODIMP GuestSession::COMGETTER(EventSource)(IEventSource ** aEventSource)
     // no need to lock - lifetime constant
     mEventSource.queryInterfaceTo(aEventSource);
 
+    LogFlowFuncLeaveRC(S_OK);
     return S_OK;
+#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 // private methods
