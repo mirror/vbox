@@ -524,13 +524,13 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
 #ifndef VBOX_WITH_HARDENING
 
-int main (int argc, char **argv, char **envp)
+int main(int argc, char **argv, char **envp)
 {
-    /* Initialize VBox Runtime. Initialize the SUPLib as well only if we
-     * are really about to start a VM. Don't do this if we are only starting
-     * the selector window. */
+    /* Initialize VBox Runtime.
+     * Initialize the SUPLib as well only if we are really about to start a VM.
+     * Don't do this if we are only starting the selector window. */
     bool fInitSUPLib = false;
-    for (int i = 1; i < argc; i++)
+    for (int i = 1; i < argc; ++i)
     {
         /* NOTE: the check here must match the corresponding check for the
          * options to start a VM in hardenedmain.cpp and VBoxGlobal.cpp exactly,
@@ -542,140 +542,128 @@ int main (int argc, char **argv, char **envp)
             break;
         }
     }
-
     int rc = RTR3InitExe(argc, &argv, fInitSUPLib ? RTR3INIT_FLAGS_SUPLIB : 0);
+
+    /* Initialization failed: */
     if (RT_FAILURE(rc))
     {
-        QApplication a (argc, &argv[0]);
+        /* We have to create QApplication anyway
+         * just to show the only one error-message: */
+        QApplication a(argc, &argv[0]);
 #ifdef Q_OS_SOLARIS
-        /* Use plastique look 'n feel for Solaris instead of the default motif (Qt 4.7.x) */
-        QApplication::setStyle (new QPlastiqueStyle);
-#endif
-        QString msgTitle = QApplication::tr ("VirtualBox - Runtime Error");
-        QString msgText = "<html>";
+        /* Use plastique look&feel for Solaris instead of the default motif (Qt 4.7.x): */
+        QApplication::setStyle(new QPlastiqueStyle);
+#endif /* Q_OS_SOLARIS */
 
+        /* Prepare the error-message: */
+        QString strTitle = QApplication::tr("VirtualBox - Runtime Error");
+        QString strText = "<html>";
         switch (rc)
         {
             case VERR_VM_DRIVER_NOT_INSTALLED:
             case VERR_VM_DRIVER_LOAD_ERROR:
-                msgText += QApplication::tr (
-                        "<b>Cannot access the kernel driver!</b><br/><br/>");
+                strText += QApplication::tr("<b>Cannot access the kernel driver!</b><br/><br/>");
 # ifdef RT_OS_LINUX
-                msgText += g_QStrHintLinuxNoDriver;
-# else
-                msgText += g_QStrHintOtherNoDriver;
-# endif
+                strText += g_QStrHintLinuxNoDriver;
+# else /* RT_OS_LINUX */
+                strText += g_QStrHintOtherNoDriver;
+# endif /* !RT_OS_LINUX */
                 break;
 # ifdef RT_OS_LINUX
             case VERR_NO_MEMORY:
-                msgText += g_QStrHintLinuxNoMemory;
+                strText += g_QStrHintLinuxNoMemory;
                 break;
-# endif
+# endif /* RT_OS_LINUX */
             case VERR_VM_DRIVER_NOT_ACCESSIBLE:
-                msgText += QApplication::tr ("Kernel driver not accessible");
+                strText += QApplication::tr("Kernel driver not accessible");
                 break;
             case VERR_VM_DRIVER_VERSION_MISMATCH:
 # ifdef RT_OS_LINUX
-                msgText += g_QStrHintLinuxWrongDriverVersion;
-# else
-                msgText += g_QStrHintOtherWrongDriverVersion;
-# endif
+                strText += g_QStrHintLinuxWrongDriverVersion;
+# else /* RT_OS_LINUX */
+                strText += g_QStrHintOtherWrongDriverVersion;
+# endif /* !RT_OS_LINUX */
                 break;
             default:
-                msgText += QApplication::tr (
-                        "Unknown error %2 during initialization of the Runtime"
-                        ).arg (rc);
+                strText += QApplication::tr("Unknown error %2 during initialization of the Runtime").arg(rc);
                 break;
         }
-        msgText += "</html>";
-        QMessageBox::critical (
-                               0,                      /* parent */
-                               msgTitle,
-                               msgText,
-                               QMessageBox::Abort,     /* button0 */
-                               0);                     /* button1 */
+        strText += "</html>";
+
+        /* Show the error-message: */
+        QMessageBox::critical(0 /* parent */, strTitle, strText,
+                              QMessageBox::Abort /* 1st button */, 0 /* 2nd button */);
+
+        /* Default error-result: */
         return 1;
     }
 
-    return TrustedMain (argc, argv, envp);
+    /* Actual main function: */
+    return TrustedMain(argc, argv, envp);
 }
 
 #else  /* VBOX_WITH_HARDENING */
 
-/**
- * Hardened main failed, report the error without any unnecessary fuzz.
- *
- * @remarks Do not call IPRT here unless really required, it might not be
- *          initialized.
- */
-extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va)
+extern "C" DECLEXPORT(void) TrustedError(const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va)
 {
-# if defined(RT_OS_DARWIN)
+# ifdef RT_OS_DARWIN
     ShutUpAppKit();
-# endif
+# endif /* RT_OS_DARWIN */
 
-    /*
-     * Init the Qt application object. This is a bit hackish as we
-     * don't have the argument vector handy.
-     */
+    /* We have to create QApplication anyway just to show the only one error-message.
+     * This is a bit hackish as we don't have the argument vector handy. */
     int argc = 0;
     char *argv[2] = { NULL, NULL };
-    QApplication a (argc, &argv[0]);
+    QApplication a(argc, &argv[0]);
 
-    /*
-     * Compose and show the error message.
-     */
-    QString msgTitle = QApplication::tr ("VirtualBox - Error In %1").arg (pszWhere);
-
+    /* Prepare the error-message: */
+    QString strTitle = QApplication::tr("VirtualBox - Error In %1").arg(pszWhere);
     char msgBuf[1024];
-    vsprintf (msgBuf, pszMsgFmt, va);
-
-    QString msgText = QApplication::tr (
-            "<html><b>%1 (rc=%2)</b><br/><br/>").arg (msgBuf).arg (rc);
+    vsprintf(msgBuf, pszMsgFmt, va);
+    QString strText = QApplication::tr("<html><b>%1 (rc=%2)</b><br/><br/>").arg(msgBuf).arg(rc);
     switch (enmWhat)
     {
         case kSupInitOp_Driver:
 # ifdef RT_OS_LINUX
-            msgText += g_QStrHintLinuxNoDriver;
-# else
-            msgText += g_QStrHintOtherNoDriver;
-# endif
+            strText += g_QStrHintLinuxNoDriver;
+# else /* RT_OS_LINUX */
+            strText += g_QStrHintOtherNoDriver;
+# endif /* !RT_OS_LINUX */
             break;
 # ifdef RT_OS_LINUX
         case kSupInitOp_IPRT:
             if (rc == VERR_NO_MEMORY)
-                msgText += g_QStrHintLinuxNoMemory;
+                strText += g_QStrHintLinuxNoMemory;
             else
-# endif
+# endif /* RT_OS_LINUX */
             if (rc == VERR_VM_DRIVER_VERSION_MISMATCH)
 # ifdef RT_OS_LINUX
-                msgText += g_QStrHintLinuxWrongDriverVersion;
-# else
-                msgText += g_QStrHintOtherWrongDriverVersion;
-# endif
+                strText += g_QStrHintLinuxWrongDriverVersion;
+# else /* RT_OS_LINUX */
+                strText += g_QStrHintOtherWrongDriverVersion;
+# endif /* !RT_OS_LINUX */
             else
-                msgText += g_QStrHintReinstall;
+                strText += g_QStrHintReinstall;
             break;
         case kSupInitOp_Integrity:
         case kSupInitOp_RootCheck:
-            msgText += g_QStrHintReinstall;
+            strText += g_QStrHintReinstall;
             break;
         default:
             /* no hints here */
             break;
     }
-    msgText += "</html>";
+    strText += "</html>";
 
 # ifdef RT_OS_LINUX
+    /* We have to to make sure that we display the error-message
+     * after the parent displayed its own message. */
     sleep(2);
-# endif
-    QMessageBox::critical (
-        0,                      /* parent */
-        msgTitle,               /* title */
-        msgText,                /* text */
-        QMessageBox::Abort,     /* button0 */
-        0);                     /* button1 */
-    qFatal ("%s", msgText.toAscii().constData());
+# endif /* RT_OS_LINUX */
+
+    QMessageBox::critical(0 /* parent */, strTitle, strText,
+                          QMessageBox::Abort /* 1st button */, 0 /* 2nd button */);
+    qFatal("%s", strText.toAscii().constData());
 }
 
 #endif /* VBOX_WITH_HARDENING */
