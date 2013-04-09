@@ -381,11 +381,18 @@ static RTEXITCODE saveStructures(PRTNTSDBOSVER pOsVerInfo, MYARCH enmArch, const
     PMYSET pInsertBefore;
     RTListForEach(&g_SetList, pInsertBefore, MYSET, ListEntry)
     {
-        if (rtNtOsVerInfoCompare(&pSet->OsVerInfo, &pInsertBefore->OsVerInfo) >= 0)
-            break;
+        int iDiff = rtNtOsVerInfoCompare(&pInsertBefore->OsVerInfo, &pSet->OsVerInfo);
+        if (iDiff >= 0)
+        {
+            if (iDiff > 0 || pInsertBefore->enmArch > pSet->enmArch)
+            {
+                RTListPrepend(&pInsertBefore->ListEntry, &pSet->ListEntry);
+                return RTEXITCODE_SUCCESS;
+            }
+        }
     }
-    RTListPrepend(&pInsertBefore->ListEntry, &pSet->ListEntry);
 
+    RTListAppend(&g_SetList, &pSet->ListEntry);
     return RTEXITCODE_SUCCESS;
 }
 
@@ -764,25 +771,25 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
             { RT_STR_TUPLE("Windows_Win8.9200"),                6, 1, 0, 9200 }, /* RTM */
         };
 
-        const char *pszComp = u.Split.apszComps[i];
-        uint32_t j = RT_ELEMENTS(s_aSymPacks);
-        while (j-- > 0)
-            if (!RTStrNICmp(pszComp, s_aSymPacks[i].pszPrefix, s_aSymPacks[i].cchPrefix))
+        const char *pszComp  = u.Split.apszComps[i];
+        uint32_t    iSymPack = RT_ELEMENTS(s_aSymPacks);
+        while (iSymPack-- > 0)
+            if (!RTStrNICmp(pszComp, s_aSymPacks[iSymPack].pszPrefix, s_aSymPacks[iSymPack].cchPrefix))
                 break;
-        if (j >= RT_ELEMENTS(s_aSymPacks))
+        if (iSymPack >= RT_ELEMENTS(s_aSymPacks))
             continue;
 
-        pVerInfo->uMajorVer = s_aSymPacks[j].uMajorVer;
-        pVerInfo->uMinorVer = s_aSymPacks[j].uMinorVer;
-        pVerInfo->uCsdNo    = s_aSymPacks[j].uCsdNo;
+        pVerInfo->uMajorVer = s_aSymPacks[iSymPack].uMajorVer;
+        pVerInfo->uMinorVer = s_aSymPacks[iSymPack].uMinorVer;
+        pVerInfo->uCsdNo    = s_aSymPacks[iSymPack].uCsdNo;
         pVerInfo->fChecked  = false;
-        pVerInfo->uBuildNo  = s_aSymPacks[j].uBuildNo;
+        pVerInfo->uBuildNo  = s_aSymPacks[iSymPack].uBuildNo;
 
         /* Parse build number if necessary. */
-        if (s_aSymPacks[j].uBuildNo == UINT32_MAX)
+        if (s_aSymPacks[iSymPack].uBuildNo == UINT32_MAX)
         {
             char *pszNext;
-            rc = RTStrToUInt32Ex(pszComp + s_aSymPacks[j].cchPrefix, &pszNext, 10, &pVerInfo->uBuildNo);
+            rc = RTStrToUInt32Ex(pszComp + s_aSymPacks[iSymPack].cchPrefix, &pszNext, 10, &pVerInfo->uBuildNo);
             if (RT_FAILURE(rc))
                 return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to decode build number in '%s': %Rrc", pszComp, rc);
             if (*pszNext != '.' && *pszNext != '_' && *pszNext != '-')
