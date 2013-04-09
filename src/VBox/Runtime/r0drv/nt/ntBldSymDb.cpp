@@ -259,7 +259,7 @@ static void generateHeader(PRTSTREAM pOut)
     for (uint32_t i = 0; i < RT_ELEMENTS(g_aStructs); i++)
     {
         const char *pszStructName = figureCStructName(&g_aStructs[i]);
-        RTStrmPrintf(pOut, "    RTNTSDBTYPE_%-20s %s\n", pszStructName, pszStructName);
+        RTStrmPrintf(pOut, "    RTNTSDBTYPE_%-20s %s;\n", pszStructName, pszStructName);
     }
     RTStrmPrintf(pOut,
                  "} RTNTSDBSET;\n"
@@ -272,7 +272,7 @@ static void generateHeader(PRTSTREAM pOut)
     RTStrmPrintf(pOut,
                  "\n"
                  "#ifndef RTNTSDB_NO_DATA\n"
-                 "const RTNTSDBSET g_rtNtSdbSets[] = \n"
+                 "const RTNTSDBSET g_artNtSdbSets[] = \n"
                  "{\n");
     PMYSET pSet;
     RTListForEach(&g_SetList, pSet, MYSET, ListEntry)
@@ -298,14 +298,14 @@ static void generateHeader(PRTSTREAM pOut)
                      pSet->OsVerInfo.fSmp     ? "true" : "false",
                      pSet->OsVerInfo.uCsdNo,
                      pSet->OsVerInfo.uBuildNo);
-        for (uint32_t i = 0; i < RT_ELEMENTS(g_aStructs); i++)
+        for (uint32_t i = 0; i < RT_ELEMENTS(pSet->aStructs); i++)
         {
-            const char *pszStructName = figureCStructName(&g_aStructs[i]);
+            const char *pszStructName = figureCStructName(&pSet->aStructs[i]);
             RTStrmPrintf(pOut,
                          "        /* .%s = */\n"
                          "        {\n", pszStructName);
-            PMYMEMBER paMembers = g_aStructs[i].paMembers;
-            for (uint32_t j = 0; j < g_aStructs->cMembers; j++)
+            PMYMEMBER paMembers = pSet->aStructs[i].paMembers;
+            for (uint32_t j = 0; j < pSet->aStructs[i].cMembers; j++)
             {
                 const char *pszMemName = figureCMemberName(&paMembers[j]);
                 RTStrmPrintf(pOut,
@@ -328,7 +328,7 @@ static void generateHeader(PRTSTREAM pOut)
                  "#endif /* !RTNTSDB_NO_DATA */\n"
                  "\n");
 
-    RTStrmPrintf(pOut, "\n#endif\n");
+    RTStrmPrintf(pOut, "\n#endif\n\n");
 }
 
 
@@ -386,7 +386,7 @@ static RTEXITCODE saveStructures(PRTNTSDBOSVER pOsVerInfo, MYARCH enmArch, const
         {
             if (iDiff > 0 || pInsertBefore->enmArch > pSet->enmArch)
             {
-                RTListPrepend(&pInsertBefore->ListEntry, &pSet->ListEntry);
+                RTListNodeInsertBefore(&pInsertBefore->ListEntry, &pSet->ListEntry);
                 return RTEXITCODE_SUCCESS;
             }
         }

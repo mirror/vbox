@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,12 +35,14 @@
 #include <iprt/string.h>
 #include "internal/initterm.h"
 #include "internal-r0drv-nt.h"
+#include "symdb.h"
+#include "symdbdata.h"
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** The Nt CPU set.
+/** The NT CPU set.
  * KeQueryActiveProcssors() cannot be called at all IRQLs and therefore we'll
  * have to cache it. Fortunately, Nt doesn't really support taking CPUs offline
  * or online. It's first with W2K8 that support for CPU hotplugging was added.
@@ -61,6 +63,8 @@ PFNHALSENDSOFTWAREINTERRUPT g_pfnrtNtHalSendSoftwareInterrupt;
 PFNRTSENDIPI                g_pfnrtSendIpi;
 /** KeIpiGenericCall - Windows Server 2003+ only */
 PFNRTKEIPIGENERICCALL       g_pfnrtKeIpiGenericCall;
+/** RtlGetVersion, introduced in ??. */
+PFNRTRTLGETVERSION          g_pfnrtRtlGetVersion;
 
 /** Offset of the _KPRCB::QuantumEnd field. 0 if not found. */
 uint32_t                    g_offrtNtPbQuantumEnd;
@@ -69,6 +73,108 @@ uint32_t                    g_cbrtNtPbQuantumEnd;
 /** Offset of the _KPRCB::DpcQueueDepth field. 0 if not found. */
 uint32_t                    g_offrtNtPbDpcQueueDepth;
 
+
+/**
+ * Determines the NT kernel verison information.
+ *
+ * @param   pOsVerInfo          Where to return the version information.
+ *
+ * @remarks pOsVerInfo->fSmp is only definitive if @c true.
+ * @remarks pOsVerInfo->uCsdNo is set to MY_NIL_CSD if it cannot be determined.
+ */
+static void rtR0NtGetOsVersionInfo(PRTNTSDBOSVER pOsVerInfo)
+{
+    ULONG       ulMajorVersion = 0;
+    ULONG       ulMinorVersion = 0;
+    ULONG       ulBuildNumber  = 0;
+
+    pOsVerInfo->fChecked    = PsGetVersion(&ulMajorVersion, &ulMinorVersion, &ulBuildNumber, NULL) == TRUE;
+    pOsVerInfo->uMajorVer   = (uint8_t)ulMajorVersion;
+    pOsVerInfo->uMinorVer   = (uint8_t)ulMinorVersion;
+    pOsVerInfo->uBuildNo    = ulBuildNumber;
+#define MY_NIL_CSD      0x3f
+    pOsVerInfo->uCsdNo      = MY_NIL_CSD;
+
+    if (g_pfnrtRtlGetVersion)
+    {
+        RTL_OSVERSIONINFOEXW VerInfo;
+        RT_ZERO(VerInfo);
+        VerInfo.dwOSVersionInfoSize = sizeof(VerInfo);
+
+        NTSTATUS rcNt = g_pfnrtRtlGetVersion(&VerInfo);
+        if (NT_SUCCESS(rcNt))
+            pOsVerInfo->uCsdNo = VerInfo.wServicePackMajor;
+    }
+
+    /* Note! We cannot quite say if something is MP or UNI. So, fSmp is
+             redefined to indicate that it must be MP. */
+    pOsVerInfo->fSmp        = RTMpGetCount() >  1
+                           || ulMajorVersion >= 6; /* Vista and later has no UNI kernel AFAIK. */
+}
+
+
+/**
+ * Tries a set against the current kernel.
+ *
+ * @retval @c true if it matched up, global variables are updated.
+ * @retval @c false otherwise (no globals updated).
+ * @param   pSet                The data set.
+ * @param   pbPrcb              Pointer to the processor control block.
+ * @param   pszVendor           Pointer to the processor vendor string.
+ * @param   pOsVerInfo          The OS version info.
+ */
+static bool rtR0NtTryMatchSymSet(PCRTNTSDBSET pSet, uint8_t *pbPrcb, const char *pszVendor, PCRTNTSDBOSVER pOsVerInfo)
+{
+    /*
+     * Don't bother trying stuff where the NT kernel version number differs, or
+     * if the build type or SMPness doesn't match up.
+     */
+    if (   pSet->OsVerInfo.uMajorVer != pOsVerInfo->uMajorVer
+        || pSet->OsVerInfo.uMinorVer != pOsVerInfo->uMinorVer
+        || pSet->OsVerInfo.fChecked  != pOsVerInfo->fChecked
+        || (!pSet->OsVerInfo.fSmp && pOsVerInfo->fSmp /*must-be-smp*/) )
+    {
+        //DbgPrint("IPRT: #%d Version/type mismatch.\n", pSet - &g_artNtSdbSets[0]);
+        return false;
+    }
+
+    /*
+     * Do the CPU vendor test.
+     */
+    __try
+    {
+        if (memcmp(&pbPrcb[pSet->KPRCB.offVendorString], pszVendor,
+                   RT_MIN(4 * 3, pSet->KPRCB.cbVendorString)) != 0)
+        {
+            //DbgPrint("IPRT: #%d Vendor string mismatch.\n");
+            return false;
+        }
+    }
+    __except(EXCEPTION_EXECUTE_HANDLER) /** @todo this handler doesn't seem to work... Because of Irql? */
+    {
+        //DbgPrint("IPRT: Exception\n");
+        return false;
+    }
+
+    /*
+     * Got a match, update the global variables and report succcess.
+     */
+    g_offrtNtPbQuantumEnd    = pSet->KPRCB.offQuantumEnd;
+    g_cbrtNtPbQuantumEnd     = pSet->KPRCB.cbQuantumEnd;
+    g_offrtNtPbDpcQueueDepth = pSet->KPRCB.offDpcQueueDepth;
+
+#if 0
+    DbgPrint("IPRT: Using data set #%u for %u.%usp%u build %u %s %s.\n",
+             pSet - &g_artNtSdbSets[0],
+             pSet->OsVerInfo.uMajorVer,
+             pSet->OsVerInfo.uMinorVer,
+             pSet->OsVerInfo.uCsdNo,
+             pSet->OsVerInfo.uBuildNo,
+             pSet->OsVerInfo.fSmp ? "smp" : "uni",
+             pSet->OsVerInfo.fChecked ? "checked" : "free");
+#endif
+    return true;
+}
 
 
 DECLHIDDEN(int) rtR0InitNative(void)
@@ -91,6 +197,7 @@ DECLHIDDEN(int) rtR0InitNative(void)
     g_pfnrtNtHalRequestIpi = NULL;
     g_pfnrtNtHalSendSoftwareInterrupt = NULL;
     g_pfnrtKeIpiGenericCall = NULL;
+    g_pfnrtRtlGetVersion = NULL;
 #else
     /*
      * Initialize the function pointers.
@@ -110,45 +217,10 @@ DECLHIDDEN(int) rtR0InitNative(void)
 
     RtlInitUnicodeString(&RoutineName, L"KeIpiGenericCall");
     g_pfnrtKeIpiGenericCall = (PFNRTKEIPIGENERICCALL)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"RtlGetVersion");
+    g_pfnrtRtlGetVersion = (PFNRTRTLGETVERSION)MmGetSystemRoutineAddress(&RoutineName);
 #endif
-
-    /*
-     * Get some info that might come in handy below.
-     */
-    ULONG MajorVersion = 0;
-    ULONG MinorVersion = 0;
-    ULONG BuildNumber  = 0;
-    BOOLEAN fChecked = PsGetVersion(&MajorVersion, &MinorVersion, &BuildNumber, NULL);
-
-    g_pfnrtSendIpi = rtMpSendIpiDummy;
-#ifndef IPRT_TARGET_NT4
-    if (    g_pfnrtNtHalRequestIpi
-        &&  MajorVersion == 6
-        &&  MinorVersion == 0)
-    {
-        /* Vista or Windows Server 2008 */
-        g_pfnrtSendIpi = rtMpSendIpiVista;
-    }
-    else
-    if (    g_pfnrtNtHalSendSoftwareInterrupt
-        &&  MajorVersion == 6
-        &&  MinorVersion == 1)
-    {
-        /* Windows 7 or Windows Server 2008 R2 */
-        g_pfnrtSendIpi = rtMpSendIpiWin7;
-    }
-    /* Windows XP should send always send an IPI -> VERIFY */
-#endif
-    KIRQL OldIrql;
-    KeRaiseIrql(DISPATCH_LEVEL, &OldIrql); /* make sure we stay on the same cpu */
-
-    union
-    {
-        uint32_t auRegs[4];
-        char szVendor[4*3+1];
-    } u;
-    ASMCpuId(0, &u.auRegs[3], &u.auRegs[0], &u.auRegs[2], &u.auRegs[1]);
-    u.szVendor[4*3] = '\0';
 
     /*
      * HACK ALERT (and déjà vu warning)!
@@ -161,102 +233,137 @@ DECLHIDDEN(int) rtR0InitNative(void)
      * by means of dia2dump, grep and the symbol packs. Typically:
      *      dia2dump -type _KDPC_DATA -type _KPRCB EXE\ntkrnlmp.pdb | grep -wE "QuantumEnd|DpcData|DpcQueueDepth|VendorString"
      */
-    /** @todo array w/ data + script for extracting a row. (save space + readability; table will be short.) */
+
+    RTNTSDBOSVER OsVerInfo;
+    rtR0NtGetOsVersionInfo(&OsVerInfo);
+
+    /*
+     * Gather consistent CPU vendor string and PRCB pointers.
+     */
+    KIRQL OldIrql;
+    KeRaiseIrql(DISPATCH_LEVEL, &OldIrql); /* make sure we stay on the same cpu */
+
+    union
+    {
+        uint32_t auRegs[4];
+        char szVendor[4*3+1];
+    } u;
+    ASMCpuId(0, &u.auRegs[3], &u.auRegs[0], &u.auRegs[2], &u.auRegs[1]);
+    u.szVendor[4*3] = '\0';
+
+    uint8_t *pbPrcb;
     __try
     {
 #if defined(RT_ARCH_X86)
         PKPCR    pPcr   = (PKPCR)__readfsdword(RT_OFFSETOF(KPCR,SelfPcr));
-        uint8_t *pbPrcb = (uint8_t *)pPcr->Prcb;
-
-        if (    BuildNumber == 2600                             /* XP SP2 */
-            &&  !memcmp(&pbPrcb[0x900], &u.szVendor[0], 4*3))
-        {
-            g_offrtNtPbQuantumEnd    = 0x88c;
-            g_cbrtNtPbQuantumEnd     = 4;
-            g_offrtNtPbDpcQueueDepth = 0x870;
-        }
-        /* WindowsVista.6002.090410-1830.x86fre.Symbols.exe
-           WindowsVista.6002.090410-1830.x86chk.Symbols.exe
-           WindowsVista.6002.090130-1715.x86fre.Symbols.exe
-           WindowsVista.6002.090130-1715.x86chk.Symbols.exe */
-        else if (   BuildNumber == 6002
-                 && !memcmp(&pbPrcb[0x1c2c], &u.szVendor[0], 4*3))
-        {
-            g_offrtNtPbQuantumEnd    = 0x1a41;
-            g_cbrtNtPbQuantumEnd     = 1;
-            g_offrtNtPbDpcQueueDepth = 0x19e0 + 0xc;
-        }
-        else if (   BuildNumber == 3790                         /* Server 2003 SP2 */
-                 && !memcmp(&pbPrcb[0xb60], &u.szVendor[0], 4*3))
-        {
-            g_offrtNtPbQuantumEnd    = 0x981;
-            g_cbrtNtPbQuantumEnd     = 1;
-            g_offrtNtPbDpcQueueDepth = 0x920 + 0xc;
-        }
-
-        /** @todo more */
-        //pbQuantumEnd = (uint8_t volatile *)pPcr->Prcb + 0x1a41;
-
+        pbPrcb = (uint8_t *)pPcr->Prcb;
 #elif defined(RT_ARCH_AMD64)
         PKPCR    pPcr   = (PKPCR)__readgsqword(RT_OFFSETOF(KPCR,Self));
-        uint8_t *pbPrcb = (uint8_t *)pPcr->CurrentPrcb;
-
-        if (    BuildNumber == 3790                             /* XP64 / W2K3-AMD64 SP1 */
-            &&  !memcmp(&pbPrcb[0x22b4], &u.szVendor[0], 4*3))
-        {
-            g_offrtNtPbQuantumEnd    = 0x1f75;
-            g_cbrtNtPbQuantumEnd     = 1;
-            g_offrtNtPbDpcQueueDepth = 0x1f00 + 0x18;
-        }
-        else if (   BuildNumber == 6000                         /* Vista/AMD64 */
-                 && !memcmp(&pbPrcb[0x38bc], &u.szVendor[0], 4*3))
-        {
-            g_offrtNtPbQuantumEnd    = 0x3375;
-            g_cbrtNtPbQuantumEnd     = 1;
-            g_offrtNtPbDpcQueueDepth = 0x3300 + 0x18;
-        }
-        /* WindowsVista.6002.090410-1830.amd64fre.Symbols
-           WindowsVista.6002.090130-1715.amd64fre.Symbols
-           WindowsVista.6002.090410-1830.amd64chk.Symbols */
-        else if (   BuildNumber == 6002
-                 && !memcmp(&pbPrcb[0x399c], &u.szVendor[0], 4*3))
-        {
-            g_offrtNtPbQuantumEnd    = 0x3475;
-            g_cbrtNtPbQuantumEnd     = 1;
-            g_offrtNtPbDpcQueueDepth = 0x3400 + 0x18;
-        }
-        /* Windows7.7600.16539.amd64fre.win7_gdr.100226-1909 */
-        else if (    BuildNumber == 7600
-                 && !memcmp(&pbPrcb[0x4bb8], &u.szVendor[0], 4*3))
-        {
-            g_offrtNtPbQuantumEnd    = 0x21d9;
-            g_cbrtNtPbQuantumEnd     = 1;
-            g_offrtNtPbDpcQueueDepth = 0x2180 + 0x18;
-        }
-
+        pbPrcb = (uint8_t *)pPcr->CurrentPrcb;
 #else
 # error "port me"
+        pbPrcb = NULL;
 #endif
     }
     __except(EXCEPTION_EXECUTE_HANDLER) /** @todo this handler doesn't seem to work... Because of Irql? */
     {
-        g_offrtNtPbQuantumEnd    = 0;
-        g_cbrtNtPbQuantumEnd     = 0;
-        g_offrtNtPbDpcQueueDepth = 0;
+        pbPrcb = NULL;
     }
 
-    KeLowerIrql(OldIrql);
+    KeLowerIrql(OldIrql); /* Lowering the IRQL early in the hope that we may catch exceptions below. */
 
-#ifndef IN_GUEST /** @todo fix above for all Nt versions. */
+    /*
+     * Search the database
+     */
+    if (pbPrcb)
+    {
+        /* Find the best matching kernel version based on build number. */
+        uint32_t iBest      = UINT32_MAX;
+        int32_t  iBestDelta = INT32_MAX;
+        for (uint32_t i = 0; i < RT_ELEMENTS(g_artNtSdbSets); i++)
+        {
+            if (g_artNtSdbSets[i].OsVerInfo.fChecked != OsVerInfo.fChecked)
+                continue;
+            if (OsVerInfo.fSmp /*must-be-smp*/ && !g_artNtSdbSets[i].OsVerInfo.fSmp)
+                continue;
+
+            int32_t iDelta = RT_ABS((int32_t)OsVerInfo.uBuildNo - (int32_t)g_artNtSdbSets[i].OsVerInfo.uBuildNo);
+            if (   iDelta == 0
+                && (g_artNtSdbSets[i].OsVerInfo.uCsdNo == OsVerInfo.uCsdNo || OsVerInfo.uCsdNo == MY_NIL_CSD))
+            {
+                /* prefect */
+                iBestDelta = iDelta;
+                iBest      = i;
+                break;
+            }
+            if (   iDelta < iBestDelta
+                || iBest == UINT32_MAX
+                || (   iDelta == iBestDelta
+                    && OsVerInfo.uCsdNo != MY_NIL_CSD
+                    &&   RT_ABS(g_artNtSdbSets[i    ].OsVerInfo.uCsdNo - (int32_t)OsVerInfo.uCsdNo)
+                       < RT_ABS(g_artNtSdbSets[iBest].OsVerInfo.uCsdNo - (int32_t)OsVerInfo.uCsdNo)
+                   )
+                )
+            {
+                iBestDelta = iDelta;
+                iBest      = i;
+            }
+        }
+        iBest = RT_ELEMENTS(g_artNtSdbSets)-1;
+        if (iBest < RT_ELEMENTS(g_artNtSdbSets))
+        {
+            /* Try all sets: iBest -> End; iBest -> Start. */
+            bool    fDone = false;
+            int32_t i     = iBest;
+            while (   i < RT_ELEMENTS(g_artNtSdbSets)
+                   && !(fDone = rtR0NtTryMatchSymSet(&g_artNtSdbSets[i], pbPrcb, u.szVendor, &OsVerInfo)))
+                i++;
+            if (!fDone)
+            {
+                i = (int32_t)iBest - 1;
+                while (   i >= 0
+                       && !(fDone = rtR0NtTryMatchSymSet(&g_artNtSdbSets[i], pbPrcb, u.szVendor, &OsVerInfo)))
+                    i--;
+            }
+        }
+        else
+            DbgPrint("IPRT: Failed to locate data set.\n");
+    }
+    else
+        DbgPrint("IPRT: Failed to get PCBR pointer.\n");
+
+#ifndef IN_GUEST
     if (!g_offrtNtPbQuantumEnd && !g_offrtNtPbDpcQueueDepth)
         DbgPrint("IPRT: Neither _KPRCB::QuantumEnd nor _KPRCB::DpcQueueDepth was not found! Kernel %u.%u %u %s\n",
-                 MajorVersion, MinorVersion, BuildNumber, fChecked ? "checked" : "free");
+                 OsVerInfo.uMajorVer, OsVerInfo.uMinorVer, OsVerInfo.uBuildNo, OsVerInfo.fChecked ? "checked" : "free");
 # ifdef DEBUG
     else
-        DbgPrint("IPRT: _KPRCB:{.QuantumEnd=%x/%d, .DpcQueueDepth=%x/%d} Kernel %ul.%ul %ul %s\n",
+        DbgPrint("IPRT: _KPRCB:{.QuantumEnd=%x/%d, .DpcQueueDepth=%x/%d} Kernel %u.%u %u %s\n",
                  g_offrtNtPbQuantumEnd, g_cbrtNtPbQuantumEnd, g_offrtNtPbDpcQueueDepth,
-                 MajorVersion, MinorVersion, BuildNumber, fChecked ? "checked" : "free");
+                 OsVerInfo.uMajorVer, OsVerInfo.uMinorVer, OsVerInfo.uBuildNo, OsVerInfo.fChecked ? "checked" : "free");
 # endif
+#endif
+
+    /*
+     * Special IPI fun.
+     */
+    g_pfnrtSendIpi = rtMpSendIpiDummy;
+#ifndef IPRT_TARGET_NT4
+    if (    g_pfnrtNtHalRequestIpi
+        &&  OsVerInfo.uMajorVer == 6
+        &&  OsVerInfo.uMinorVer == 0)
+    {
+        /* Vista or Windows Server 2008 */
+        g_pfnrtSendIpi = rtMpSendIpiVista;
+    }
+    else if (   g_pfnrtNtHalSendSoftwareInterrupt
+             && OsVerInfo.uMajorVer == 6
+             && OsVerInfo.uMinorVer == 1)
+    {
+        /* Windows 7 or Windows Server 2008 R2 */
+        g_pfnrtSendIpi = rtMpSendIpiWin7;
+    }
+    /* Windows XP should send always send an IPI -> VERIFY */
 #endif
 
     return VINF_SUCCESS;
