@@ -21,7 +21,6 @@
 
 /* Qt includes: */
 #include <QObject>
-#include <QPointer>
 
 /* GUI includes: */
 #include "QIMessageBox.h"
