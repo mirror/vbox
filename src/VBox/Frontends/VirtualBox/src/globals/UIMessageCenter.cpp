@@ -2546,17 +2546,7 @@ void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType type,
 
 void UIMessageCenter::sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP) const
 {
-    const char *kName = "remindAboutWrongColorDepth";
-
-    /* Close the previous (outdated) window if any. We use kName as
-     * pcszAutoConfirmId which is also used as the widget name by default. */
-    {
-        QWidget *outdated = VBoxGlobal::findWidget(NULL, kName, "QIMessageBox");
-        if (outdated)
-            outdated->close();
-    }
-
-    alert(mainWindowShown(), MessageType_Info,
+    alert(0, MessageType_Info,
           tr("<p>The virtual machine window is optimized to work in "
              "<b>%1&nbsp;bit</b> color mode but the "
              "virtual display is currently set to <b>%2&nbsp;bit</b>.</p>"
@@ -2570,7 +2560,7 @@ void UIMessageCenter::sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWante
              "disable the message now if you are sure the required color "
              "mode (%4&nbsp;bit) is not available in the guest OS.</p>")
              .arg(uWantedBPP).arg(uRealBPP).arg(uWantedBPP).arg(uWantedBPP),
-          kName);
+          "remindAboutWrongColorDepth");
 }
 
 UIMessageCenter::UIMessageCenter()
