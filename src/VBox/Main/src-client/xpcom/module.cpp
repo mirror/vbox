@@ -38,6 +38,7 @@
 #include "GuestImpl.h"
 #ifdef VBOX_WITH_GUEST_CONTROL
 # include "GuestDirectoryImpl.h"
+# include "GuestErrorInfoImpl.h"
 # include "GuestFileImpl.h"
 # include "GuestFsObjInfoImpl.h"
 # include "GuestProcessImpl.h"
@@ -72,6 +73,8 @@ NS_DECL_CLASSINFO(GuestProcess)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(GuestProcess, IGuestProcess, IProcess)
 NS_DECL_CLASSINFO(GuestSession)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestSession, IGuestSession)
+NS_DECL_CLASSINFO(GuestErrorInfo)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestErrorInfo, IGuestErrorInfo)
 #endif
 NS_DECL_CLASSINFO(Keyboard)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Keyboard, IKeyboard)
