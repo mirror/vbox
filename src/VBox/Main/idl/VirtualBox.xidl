@@ -9749,21 +9749,17 @@
         users on the guest.
       </desc>
     </attribute>
-
     <attribute name="domain" type="wstring" readonly="yes">
       <desc>Returns the domain name used by this session to impersonate
         users on the guest.
       </desc>
     </attribute>
-
     <attribute name="name" type="wstring" readonly="yes">
       <desc>Returns the session's friendly name.</desc>
     </attribute>
-
     <attribute name="id" type="unsigned long" readonly="yes">
       <desc>Returns the internal session ID.</desc>
     </attribute>
-
     <attribute name="timeout" type="unsigned long">
       <desc>
         Returns the session timeout (in ms).
@@ -9772,35 +9768,29 @@
         </result>
       </desc>
     </attribute>
-
     <attribute name="status" type="GuestSessionStatus" readonly="yes">
       <desc>Returns the current session status.</desc>
     </attribute>
-
     <attribute name="environment" type="wstring" safearray="yes">
       <desc>
         Returns the current session environment.
       </desc>
     </attribute>
-
     <attribute name="processes" type="IGuestProcess" readonly="yes" safearray="yes">
       <desc>
         Returns all current guest processes.
       </desc>
     </attribute>
-
     <attribute name="directories" type="IGuestDirectory" readonly="yes" safearray="yes">
       <desc>
         Returns all currently opened guest directories.
       </desc>
     </attribute>
-
     <attribute name="files" type="IGuestFile" readonly="yes" safearray="yes">
       <desc>
         Returns all currently opened guest files.
       </desc>
     </attribute>
-
     <attribute name="eventSource" type="IEventSource" readonly="yes">
       <desc>
         Event source for guest session events.
@@ -10581,12 +10571,42 @@
 
   <interface
     name="IProcess" extends="$unknown"
-    uuid="08864d56-96ab-418b-adbc-5a679532aeb0"
+    uuid="5a4fe06d-8cb1-40ff-ac9e-9676e32f706e"
     wsmap="managed"
     >
     <desc>
       Abstract parent interface for processes handled by VirtualBox.
     </desc>
+
+    <attribute name="arguments" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        The arguments this process is using for execution.
+      </desc>
+    </attribute>
+    <attribute name="environment" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        The environment block this process is using during execution.
+      </desc>
+    </attribute>    
+    <attribute name="eventSource" type="IEventSource" readonly="yes">
+      <desc>
+        Event source for VirtualBox events.
+      </desc>
+    </attribute>
+    <attribute name="executablePath" type="wstring" readonly="yes">
+      <desc>Full path of the actual executable image.</desc>
+    </attribute>
+    <attribute name="exitCode" type="long" readonly="yes">
+      <desc>
+        The exit code. Only available when the process has been
+        terminated normally.
+      </desc>
+    </attribute>
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>
+        The friendly name of this process.
+      </desc>
+    </attribute>
     <attribute name="PID" type="unsigned long" readonly="yes">
       <desc>
         The process ID (PID).
@@ -10598,29 +10618,7 @@
         for more information.
       </desc>
     </attribute>
-    <attribute name="exitCode" type="long" readonly="yes">
-      <desc>
-        The exit code. Only available when the process has been
-        terminated normally.
-      </desc>
-    </attribute>
-    <attribute name="environment" type="wstring" readonly="yes" safearray="yes">
-      <desc>
-        The environment block this process is using during execution.
-      </desc>
-    </attribute>
-    <attribute name="arguments" type="wstring" readonly="yes" safearray="yes">
-      <desc>
-        The arguments this process is using for execution.
-      </desc>
-    </attribute>
-    <attribute name="executablePath" type="wstring" readonly="yes">
-      <desc>Full path of the actual executable image.</desc>
-    </attribute>
-    <attribute name="name" type="wstring" readonly="yes">
-      <desc>The friendly name of this process.</desc>
-    </attribute>
-
+    
     <method name="waitFor">
       <desc>
         Waits for one more events to happen.
@@ -10823,17 +10821,12 @@
 
   <interface
     name="IFile" extends="$unknown"
-    uuid="0b45a95f-6267-499e-a7f2-efa5f8e081f2"
+    uuid="ceb895d7-8b2d-4a39-8f7c-7d2270f341d5"
     wsmap="managed"
     >
     <desc>
       Abstract parent interface for files handled by VirtualBox.
     </desc>
-    <attribute name="status" type="FileStatus" readonly="yes">
-      <desc>
-        TODO
-      </desc>
-    </attribute>
     <attribute name="creationMode" type="unsigned long" readonly="yes">
       <desc>
         The creation mode.
@@ -10842,6 +10835,11 @@
     <attribute name="disposition" type="unsigned long" readonly="yes">
       <desc>
         The disposition mode.
+      </desc>
+    </attribute>
+    <attribute name="eventSource" type="IEventSource" readonly="yes">
+      <desc>
+        Event source for guest session events.
       </desc>
     </attribute>
     <attribute name="fileName" type="wstring" readonly="yes">
@@ -10862,6 +10860,11 @@
     <attribute name="offset" type="long long" readonly="yes">
       <desc>
         Current read/write offset in bytes.
+      </desc>
+    </attribute>
+    <attribute name="status" type="FileStatus" readonly="yes">
+      <desc>
+        TODO
       </desc>
     </attribute>
 
@@ -18695,7 +18698,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="83c03e4b-ffe5-421c-a0fb-0b27b2d56753"
+    uuid="c51645b3-7108-4dce-b5a3-bbf5e4f69ed2"
     >
 
     <desc>
@@ -19023,28 +19026,33 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         TODO
       </desc>
     </const>
-    <const name="OnGuestFileStateChanged" value="86">
+    <const name="OnGuestFileRegistered" value="86">
       <desc>
         TODO
       </desc>
     </const>
-    <const name="OnGuestFileOffsetChanged" value="87">
+    <const name="OnGuestFileStateChanged" value="87">
       <desc>
         TODO
       </desc>
     </const>
-    <const name="OnGuestFileRead" value="88">
+    <const name="OnGuestFileOffsetChanged" value="88">
+      <desc>
+        TODO
+      </desc>
+    </const>
+    <const name="OnGuestFileRead" value="89">
       <desc>
         For performance reasons ... TODO
       </desc>
     </const>
-    <const name="OnGuestFileWrite" value="89">
+    <const name="OnGuestFileWrite" value="90">
       <desc>
         For performance reasons ... TODO
       </desc>
     </const>
     <!-- Last event marker -->
-    <const name="Last" value="90">
+    <const name="Last" value="91">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -20099,6 +20107,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   </interface>
 
+  <interface
+    name="IGuestFileRegisteredEvent" extends="IGuestFileEvent"
+    uuid="d0d93830-70a2-487e-895e-d3fc9679f7b3"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestFileRegistered"
+    >
+    <desc>
+      TODO
+    </desc>
+
+    <attribute name="registered" type="boolean" readonly="yes">
+      <desc>
+        TODO
+      </desc>
+    </attribute>
+
+  </interface>
+  
   <interface
     name="IGuestFileStateChangedEvent" extends="IGuestFileEvent"
     uuid="841951c4-4df3-4ee1-bb99-91e5761c18ff"
