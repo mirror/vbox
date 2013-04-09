@@ -73,7 +73,8 @@ void GuestFile::FinalRelease(void)
  * @param   uFileID                 Host-based file ID (part of the context ID).
  * @param   openInfo                File opening information.
  */
-int GuestFile::init(Console *pConsole, GuestSession *pSession, ULONG uFileID, const GuestFileOpenInfo &openInfo)
+int GuestFile::init(Console *pConsole, GuestSession *pSession,
+                    ULONG uFileID, const GuestFileOpenInfo &openInfo)
 {
     LogFlowThisFunc(("pConsole=%p, pSession=%p, uFileID=%RU32, strPath=%s\n",
                      pConsole, pSession, uFileID, openInfo.mFileName.c_str()));
@@ -85,6 +86,10 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession, ULONG uFileID, co
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), VERR_OBJECT_DESTROYED);
 
+#ifndef VBOX_WITH_GUEST_CONTROL
+    autoInitSpan.setSucceeded();
+    return VINF_SUCCESS;
+#else
     int vrc = bindToSession(pConsole, pSession, uFileID /* Object ID */);
     if (RT_SUCCESS(vrc))
     {
@@ -108,6 +113,7 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession, ULONG uFileID, co
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
+#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 /**
@@ -172,6 +178,9 @@ STDMETHODIMP GuestFile::COMGETTER(Disposition)(ULONG *aDisposition)
 
 STDMETHODIMP GuestFile::COMGETTER(EventSource)(IEventSource ** aEventSource)
 {
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
     CheckComArgOutPointerValid(aEventSource);
 
     AutoCaller autoCaller(this);
@@ -181,6 +190,7 @@ STDMETHODIMP GuestFile::COMGETTER(EventSource)(IEventSource ** aEventSource)
     mEventSource.queryInterfaceTo(aEventSource);
 
     return S_OK;
+#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 STDMETHODIMP GuestFile::COMGETTER(FileName)(BSTR *aFileName)
@@ -604,6 +614,9 @@ int GuestFile::openFile(int *pGuestRc)
 int GuestFile::readData(uint32_t uSize, uint32_t uTimeoutMS,
                         void* pvData, uint32_t cbData, uint32_t* pcbRead)
 {
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
     LogFlowThisFunc(("uSize=%RU32, uTimeoutMS=%RU32, pvData=%p, cbData=%zu\n",
                      uSize, uTimeoutMS, pvData, cbData));
 
@@ -738,37 +751,33 @@ int GuestFile::setFileStatus(FileStatus_T fileStatus, int fileRc)
     return VINF_SUCCESS;
 }
 
-int GuestFile::waitForOffsetChange(uint32_t uTimeoutMS, uint64_t *puOffset)
+int GuestFile::waitForEvents(uint32_t uTimeoutMS, ComSafeArrayIn(VBoxEventType_T, pEvents),
+                             VBoxEventType_T *pType, IEvent **ppEvent)
 {
-    return VINF_SUCCESS;
-}
+    AssertPtrReturn(pType, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppEvent, VERR_INVALID_POINTER);
 
-int GuestFile::waitForRead(uint32_t uTimeoutMS, void* pvData, size_t cbData, uint32_t *pcbRead)
-{
-    return VINF_SUCCESS;
-}
-
-int GuestFile::waitForStatusChange(uint32_t uTimeoutMS, FileStatus_T *pFileStatus)
-{
     int vrc;
 
     /** @todo Parameter validation. */
+
+    com::SafeArray <VBoxEventType_T> arrEventTypes(ComSafeArrayInArg(pEvents));
 
     ComPtr<IEventListener> pListener;
     HRESULT hr = mEventSource->CreateListener(pListener.asOutParam());
     if (SUCCEEDED(hr))
     {
-        com::SafeArray <VBoxEventType_T> eventTypes(1);
-        eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
-        hr = mEventSource->RegisterListener(pListener, ComSafeArrayAsInParam(eventTypes), false);
+        arrEventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
+        hr = mEventSource->RegisterListener(pListener, ComSafeArrayAsInParam(arrEventTypes),
+                                            TRUE /* Passive listener */);
     }
     else
         vrc = VERR_COM_UNEXPECTED;
 
     if (SUCCEEDED(hr))
     {
-        LogFlowThisFunc(("Waiting for guest file status change event (timeout=%RU32ms) ...\n",
-                         uTimeoutMS));
+        LogFlowThisFunc(("Waiting for guest file event(s) (timeout=%RU32ms, %zu events) ...\n",
+                         uTimeoutMS, arrEventTypes.size()));
 
         vrc = VINF_SUCCESS;
 
@@ -787,37 +796,58 @@ int GuestFile::waitForStatusChange(uint32_t uTimeoutMS, FileStatus_T *pFileStatu
                 cMsWait = RT_MIN(1000, uTimeoutMS - (uint32_t)cMsElapsed);
             }
 
-            ComPtr<IEvent> pEvent;
-            hr = mEventSource->GetEvent(pListener, cMsWait, pEvent.asOutParam());
+            ComPtr<IEvent> pThisEvent;
+            hr = mEventSource->GetEvent(pListener, cMsWait, pThisEvent.asOutParam());
             if (   SUCCEEDED(hr)
-                && !pEvent.isNull())
+                && !pThisEvent.isNull())
             {
-                VBoxEventType_T aType;
-                hr = pEvent->COMGETTER(Type)(&aType);
+                VBoxEventType_T type;
+                hr = pThisEvent->COMGETTER(Type)(&type);
                 ComAssertComRC(hr);
-                switch (aType)
+
+                for (size_t i = 0; i < arrEventTypes.size() && !fSignalled; i++)
                 {
-                    case VBoxEventType_OnGuestFileStateChanged:
+                    if (type == arrEventTypes[i])
                     {
-                        ComPtr<IGuestFileStateChangedEvent> pChangedEvent = pEvent;
-                        Assert(!pChangedEvent.isNull());
+                        switch (type)
+                        {
+                            case VBoxEventType_OnGuestFileStateChanged:
+                            case VBoxEventType_OnGuestFileOffsetChanged:
+                            case VBoxEventType_OnGuestFileRead:
+                            case VBoxEventType_OnGuestFileWrite:
+                            {
+                                ComPtr<IGuestFileEvent> pFileEvent = pThisEvent;
+                                Assert(!pFileEvent.isNull());
 
-                        ComPtr<IGuestFile> pFile;
-                        pChangedEvent->COMGETTER(File)(pFile.asOutParam());
-                        Assert(!pFile.isNull());
+                                ComPtr<IGuestFile> pFile;
+                                pFileEvent->COMGETTER(File)(pFile.asOutParam());
+                                Assert(!pFile.isNull());
 
-                        if (pFile != this)
-                            continue;
+                                fSignalled = (pFile == this);
+                                break;
+                            }
+
+                            default:
+                                AssertMsgFailed(("Unhandled event %ld\n", type));
+                                break;
+                        }
+
+                        if (fSignalled)
+                        {
+                            if (pType)
+                                *pType = type;
+                            if (ppEvent)
+                                pThisEvent.queryInterfaceTo(ppEvent);
+                            if (   type == VBoxEventType_OnGuestFileStateChanged
+                                && RT_SUCCESS(vrc))
+                                vrc = VWRN_GSTCTL_OBJECTSTATE_CHANGED;
+                            break;
+                        }
                     }
-
-                    default:
-                        AssertMsgFailed(("Unhandled event type %ld\n", aType));
-                        break;
                 }
-
-                fSignalled = true;
-                break;
             }
+            else
+                vrc = VERR_COM_UNEXPECTED;
 
         } while (!fSignalled);
 
@@ -827,7 +857,8 @@ int GuestFile::waitForStatusChange(uint32_t uTimeoutMS, FileStatus_T *pFileStatu
             vrc = VERR_TIMEOUT;
         }
 
-        mEventSource->UnregisterListener(pListener);
+        hr = mEventSource->UnregisterListener(pListener);
+        ComAssertComRC(hr);
     }
     else
         vrc = VERR_COM_UNEXPECTED;
@@ -836,9 +867,110 @@ int GuestFile::waitForStatusChange(uint32_t uTimeoutMS, FileStatus_T *pFileStatu
     return vrc;
 }
 
+int GuestFile::waitForOffsetChange(uint32_t uTimeoutMS, uint64_t *puOffset)
+{
+    VBoxEventType_T evtType;
+    ComPtr<IEvent> pEvent;
+    com::SafeArray<VBoxEventType_T> eventTypes;
+    eventTypes.push_back(VBoxEventType_OnGuestFileOffsetChanged);
+    int vrc = waitForEvents(uTimeoutMS, ComSafeArrayAsInParam(eventTypes),
+                           &evtType, pEvent.asOutParam());
+    if (   vrc == VINF_SUCCESS /* Can also return VWRN_GSTCTL_OBJECTSTATE_CHANGED. */
+        && puOffset)
+    {
+        Assert(evtType == VBoxEventType_OnGuestFileOffsetChanged);
+        ComPtr<IGuestFileOffsetChangedEvent> pFileEvent = pEvent;
+        Assert(!pFileEvent.isNull());
+
+        HRESULT hr = pFileEvent->COMGETTER(Offset)((LONG64*)puOffset);
+        ComAssertComRC(hr);
+    }
+
+    return vrc;
+}
+
+int GuestFile::waitForRead(uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead)
+{
+    VBoxEventType_T evtType;
+    ComPtr<IEvent> pEvent;
+    com::SafeArray<VBoxEventType_T> eventTypes;
+    eventTypes.push_back(VBoxEventType_OnGuestFileRead);
+    int vrc = waitForEvents(uTimeoutMS, ComSafeArrayAsInParam(eventTypes),
+                           &evtType, pEvent.asOutParam());
+    if (vrc == VINF_SUCCESS) /* Can also return VWRN_GSTCTL_OBJECTSTATE_CHANGED. */
+    {
+        Assert(evtType == VBoxEventType_OnGuestFileRead);
+        ComPtr<IGuestFileReadEvent> pFileEvent = pEvent;
+        Assert(!pFileEvent.isNull());
+
+        HRESULT hr;
+        if (pvData)
+        {
+            com::SafeArray <BYTE> data;
+            hr = pFileEvent->COMGETTER(Data)(ComSafeArrayAsOutParam(data));
+            ComAssertComRC(hr);
+            size_t cbRead = data.size();
+            if (   cbRead
+                && cbRead <= cbData)
+            {
+                memcpy(pvData, data.raw(), data.size());
+            }
+            else
+                vrc = VERR_BUFFER_OVERFLOW;
+        }
+        if (pcbRead)
+        {
+            hr = pFileEvent->COMGETTER(Processed)((ULONG*)pcbRead);
+            ComAssertComRC(hr);
+        }
+    }
+
+    return vrc;
+}
+
+int GuestFile::waitForStatusChange(uint32_t uTimeoutMS, FileStatus_T *pFileStatus)
+{
+    VBoxEventType_T evtType;
+    ComPtr<IEvent> pEvent;
+    com::SafeArray<VBoxEventType_T> eventTypes;
+    /* No own event types needed. VBoxEventType_OnGuestFileStateChanged already will
+     * part of the array when processed in waitForEvents. */
+    int vrc = waitForEvents(uTimeoutMS, ComSafeArrayAsInParam(eventTypes),
+                           &evtType, pEvent.asOutParam());
+    if (   vrc == VINF_SUCCESS /* Can also return VWRN_GSTCTL_OBJECTSTATE_CHANGED. */
+        && pFileStatus)
+    {
+        Assert(evtType == VBoxEventType_OnGuestFileStateChanged);
+        ComPtr<IGuestFileStateChangedEvent> pFileEvent = pEvent;
+        Assert(!pFileEvent.isNull());
+
+        HRESULT hr = pFileEvent->COMGETTER(Status)(pFileStatus);
+        ComAssertComRC(hr);
+    }
+
+    return vrc;
+}
+
 int GuestFile::waitForWrite(uint32_t uTimeoutMS, uint32_t *pcbWritten)
 {
-    return VINF_SUCCESS;
+    VBoxEventType_T evtType;
+    ComPtr<IEvent> pEvent;
+    com::SafeArray<VBoxEventType_T> eventTypes;
+    eventTypes.push_back(VBoxEventType_OnGuestFileWrite);
+    int vrc = waitForEvents(uTimeoutMS, ComSafeArrayAsInParam(eventTypes),
+                           &evtType, pEvent.asOutParam());
+    if (   vrc == VINF_SUCCESS /* Can also return VWRN_GSTCTL_OBJECTSTATE_CHANGED. */
+        && pcbWritten)
+    {
+        Assert(evtType == VBoxEventType_OnGuestFileWrite);
+        ComPtr<IGuestFileWriteEvent> pFileEvent = pEvent;
+        Assert(!pFileEvent.isNull());
+
+        HRESULT hr = pFileEvent->COMGETTER(Processed)((ULONG*)pcbWritten);
+        ComAssertComRC(hr);
+    }
+
+    return vrc;
 }
 
 int GuestFile::writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
@@ -903,21 +1035,17 @@ int GuestFile::writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
         paParms[i++].setUInt32(cbData /* Size (in bytes) to write */);
         paParms[i++].setPointer(pvData, cbData);
 
+        uint32_t cbWritten;
         vrc = sendCommand(HOST_FILE_WRITE_AT, i, paParms);
         if (RT_SUCCESS(vrc))
+            vrc = waitForWrite(uTimeoutMS, &cbWritten);
+
+        if (RT_SUCCESS(vrc))
         {
-            uint32_t cbWritten;
-            vrc = sendCommand(HOST_FILE_WRITE, i, paParms);
-            if (RT_SUCCESS(vrc))
-                vrc = waitForWrite(uTimeoutMS, &cbWritten);
+            LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
 
-            if (RT_SUCCESS(vrc))
-            {
-                LogFlowThisFunc(("cbWritten=%RU32\n", cbWritten));
-
-                if (cbWritten)
-                    *pcbWritten = cbWritten;
-            }
+            if (cbWritten)
+                *pcbWritten = cbWritten;
         }
     }
 
@@ -1020,8 +1148,6 @@ STDMETHODIMP GuestFile::Read(ULONG aToRead, ULONG aTimeoutMS, ComSafeArrayOut(BY
         }
     }
 
-    LogFlowThisFunc(("rc=%Rrc, cbRead=%RU64\n", vrc, cbRead));
-
     LogFlowFuncLeaveRC(vrc);
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -1064,8 +1190,6 @@ STDMETHODIMP GuestFile::ReadAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, 
                 break;
         }
     }
-
-    LogFlowThisFunc(("rc=%Rrc, cbRead=%RU64\n", vrc, cbRead));
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
@@ -1154,13 +1278,11 @@ STDMETHODIMP GuestFile::Write(ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULO
         {
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Writing to file \"%s\" failed: %Rrc"),
-                              mData.mOpenInfo.mFileName.c_str(), vrc);
+                              tr("Writing %zubytes to file \"%s\" failed: %Rrc"),
+                              data.size(), mData.mOpenInfo.mFileName.c_str(), vrc);
                 break;
         }
     }
-
-    LogFlowThisFunc(("rc=%Rrc, aWritten=%RU32\n", vrc, aWritten));
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
@@ -1190,13 +1312,11 @@ STDMETHODIMP GuestFile::WriteAt(LONG64 aOffset, ComSafeArrayIn(BYTE, aData), ULO
         {
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Writing to file \"%s\" (at offset %RU64) failed: %Rrc"),
-                              mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
+                              tr("Writing %zubytes to file \"%s\" (at offset %RU64) failed: %Rrc"),
+                              data.size(), mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
                 break;
         }
     }
-
-    LogFlowThisFunc(("rc=%Rrc, aWritten=%RU32\n", vrc, aWritten));
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
