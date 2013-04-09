@@ -83,7 +83,8 @@ QWidget* UIModalWindowManager::mainWindowShown() const
     if (vboxGlobal().isVMConsoleProcess())
     {
         /* It will be currently active machine-window if visible: */
-        if (vboxGlobal().activeMachineWindow()->isVisible())
+        if (vboxGlobal().activeMachineWindow() &&
+            vboxGlobal().activeMachineWindow()->isVisible())
             return vboxGlobal().activeMachineWindow();
     }
     /* Otherwise: */
