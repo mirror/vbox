@@ -298,13 +298,16 @@ static void showHelp()
     /** @todo Show this as a dialog on windows. */
 }
 
-extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
+extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 {
+    /* Start logging: */
     LogFlowFuncEnter();
-# if defined(RT_OS_DARWIN)
-    ShutUpAppKit();
-# endif
 
+# ifdef RT_OS_DARWIN
+    ShutUpAppKit();
+# endif /* RT_OS_DARWIN */
+
+    /* Console help preprocessing: */
     for (int i=0; i<argc; i++)
         if (   !strcmp(argv[i], "-h")
             || !strcmp(argv[i], "-?")
@@ -316,35 +319,35 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
         }
 
 #if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
-    /* install our signal handler to backtrace the call stack */
+    /* Install our signal handler to backtrace the call stack: */
     struct sigaction sa;
     sa.sa_sigaction = bt_sighandler;
-    sigemptyset (&sa.sa_mask);
+    sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
-    sigaction (SIGSEGV, &sa, NULL);
-    sigaction (SIGBUS, &sa, NULL);
-    sigaction (SIGUSR1, &sa, NULL);
+    sigaction(SIGSEGV, &sa, NULL);
+    sigaction(SIGBUS, &sa, NULL);
+    sigaction(SIGUSR1, &sa, NULL);
 #endif
 
 #ifdef QT_MAC_USE_COCOA
     /* Instantiate our NSApplication derivative before QApplication
      * forces NSApplication to be instantiated. */
     UICocoaApplication::instance();
-#endif
+#endif /* QT_MAC_USE_COCOA */
 
-    qInstallMsgHandler (QtMessageOutput);
+    qInstallMsgHandler(QtMessageOutput);
 
     int rc = 1; /* failure */
 
-    /* scope the QApplication variable */
+    /* Scope the QApplication variable: */
     {
 #ifdef Q_WS_X11
         /* Qt has a complex algorithm for selecting the right visual which
-         * doesn't always seem to work.  So we naively choose a visual - the
-         * default one - ourselves and pass that to Qt.  This means that we
+         * doesn't always seem to work. So we naively choose a visual - the
+         * default one - ourselves and pass that to Qt. This means that we
          * also have to open the display ourselves.
          * We check the Qt parameter list and handle Qt's -display argument
-         * ourselves, since we open the display connection.  We also check the
+         * ourselves, since we open the display connection. We also check the
          * to see if the user has passed Qt's -visual parameter, and if so we
          * assume that the user wants Qt to handle visual selection after all,
          * and don't supply a visual. */
@@ -353,7 +356,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
         for (int i = 0; i < argc; ++i)
         {
             if (!::strcmp(argv[i], "-display") && (i + 1 < argc))
-            /* What if it isn't?  Rely on QApplication to complain? */
+            /* What if it isn't? Rely on QApplication to complain? */
             {
                 pszDisplay = argv[i + 1];
                 ++i;
@@ -372,62 +375,37 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
         Visual *pVisual =   useDefaultVisual
                           ? DefaultVisual(pDisplay, DefaultScreen(pDisplay))
                           : NULL;
-        /* Now create the application object */
-        QApplication a (pDisplay, argc, argv, (Qt::HANDLE) pVisual);
+        /* Now create the application object: */
+        QApplication a(pDisplay, argc, argv, (Qt::HANDLE)pVisual);
 #else /* Q_WS_X11 */
-        QApplication a (argc, argv);
+        QApplication a(argc, argv);
 #endif /* Q_WS_X11 */
 
-        UIModalWindowManager::create();
-
-        /* Qt4.3 version has the QProcess bug which freezing the application
-         * for 30 seconds. This bug is internally used at initialization of
-         * Cleanlooks style. So we have to change this style to another one.
-         * See http://trolltech.com/developer/task-tracker/index_html?id=179200&method=entry
-         * for details. */
-        if (VBoxGlobal::qtRTVersionString().startsWith ("4.3") &&
-            qobject_cast <QCleanlooksStyle*> (QApplication::style()))
-            QApplication::setStyle (new QPlastiqueStyle);
-
 #ifdef Q_OS_SOLARIS
-        /* Use plastique look 'n feel for Solaris instead of the default motif (Qt 4.7.x) */
-        QApplication::setStyle (new QPlastiqueStyle);
-#endif
+        /* Use plastique look&feel for Solaris instead of the default motif (Qt 4.7.x): */
+        QApplication::setStyle(new QPlastiqueStyle);
+#endif /* Q_OS_SOLARIS */
 
 #ifdef Q_WS_X11
         /* This patch is not used for now on Solaris & OpenSolaris because
          * there is no anti-aliasing enabled by default, Qt4 to be rebuilt. */
-#ifndef Q_OS_SOLARIS
+# ifndef Q_OS_SOLARIS
         /* Cause Qt4 has the conflict with fontconfig application as a result
          * sometimes substituting some fonts with non scaleable-anti-aliased
          * bitmap font we are reseting substitutes for the current application
          * font family if it is non scaleable-anti-aliased. */
         QFontDatabase fontDataBase;
 
-        QString currentFamily (QApplication::font().family());
-        bool isCurrentScaleable = fontDataBase.isScalable (currentFamily);
-
-        /*
-        LogFlowFunc (("Font: Current family is '%s'. It is %s.\n",
-            currentFamily.toLatin1().constData(),
-            isCurrentScaleable ? "scalable" : "not scalable"));
-        QStringList subFamilies (QFont::substitutes (currentFamily));
-        foreach (QString sub, subFamilies)
-        {
-            bool isSubScalable = fontDataBase.isScalable (sub);
-            LogFlowFunc (("Font: Substitute family is '%s'. It is %s.\n",
-                sub.toLatin1().constData(),
-                isSubScalable ? "scalable" : "not scalable"));
-        }
-        */
+        QString currentFamily(QApplication::font().family());
+        bool isCurrentScaleable = fontDataBase.isScalable(currentFamily);
 
         QString subFamily (QFont::substitute (currentFamily));
         bool isSubScaleable = fontDataBase.isScalable (subFamily);
 
         if (isCurrentScaleable && !isSubScaleable)
             QFont::removeSubstitution (currentFamily);
-#endif /* Q_OS_SOLARIS */
-#endif
+# endif /* Q_OS_SOLARIS */
+#endif /* Q_WS_X11 */
 
 #ifdef Q_WS_WIN
         /* Drag in the sound drivers and DLLs early to get rid of the delay taking
@@ -436,38 +414,42 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
          * happens when the VM is executing in real mode (which gives 100% CPU
          * load and slows down the load process that happens on the main GUI
          * thread to several seconds). */
-        PlaySound (NULL, NULL, 0);
-#endif
+        PlaySound(NULL, NULL, 0);
+#endif /* Q_WS_WIN */
 
 #ifdef Q_WS_MAC
+        /* Disable menu icons on MacOS X host: */
         ::darwinDisableIconsInMenus();
 #endif /* Q_WS_MAC */
 
 #ifdef Q_WS_X11
-        /* version check (major.minor are sensitive, fix number is ignored) */
+        /* Qt version check (major.minor are sensitive, fix number is ignored): */
         if (VBoxGlobal::qtRTVersion() < (VBoxGlobal::qtCTVersion() & 0xFFFF00))
         {
-            QString msg =
-                QApplication::tr ("Executable <b>%1</b> requires Qt %2.x, found Qt %3.")
-                                  .arg (qAppName())
-                                  .arg (VBoxGlobal::qtCTVersionString().section ('.', 0, 1))
-                                  .arg (VBoxGlobal::qtRTVersionString());
-            QMessageBox::critical (
-                0, QApplication::tr ("Incompatible Qt Library Error"),
-                msg, QMessageBox::Abort, 0);
-            qFatal ("%s", msg.toAscii().constData());
+            QString strMsg = QApplication::tr("Executable <b>%1</b> requires Qt %2.x, found Qt %3.")
+                                              .arg(qAppName())
+                                              .arg(VBoxGlobal::qtCTVersionString().section('.', 0, 1))
+                                              .arg(VBoxGlobal::qtRTVersionString());
+            QMessageBox::critical(0, QApplication::tr("Incompatible Qt Library Error"),
+                                  strMsg, QMessageBox::Abort, 0);
+            qFatal("%s", strMsg.toAscii().constData());
         }
-#endif
+#endif /* Q_WS_X11 */
 
-        /* load a translation based on the current locale */
+        /* Create modal-window manager: */
+        UIModalWindowManager::create();
+
+        /* Load a translation based on the current locale: */
         VBoxGlobal::loadLanguage();
 
+        /* Simulate try-catch block: */
         do
         {
+            /* Exit if VBoxGlobal is not valid: */
             if (!vboxGlobal().isValid())
                 break;
 
-
+            /* Exit if VBoxGlobal unable to process arguments: */
             if (vboxGlobal().processArgs())
                 return 0;
 
@@ -476,49 +458,62 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             VBoxGlobal::checkForWrongUSBMounted();
 #endif /* RT_OS_LINUX */
 
+            /* Load application settings: */
             VBoxGlobalSettings settings = vboxGlobal().settings();
-            /* Process known keys */
-            bool noSelector = settings.isFeatureActive ("noSelector");
 
+            /* VM console process: */
             if (vboxGlobal().isVMConsoleProcess())
             {
-                if (vboxGlobal().startMachine(vboxGlobal().managedVMUuid()))
-                    rc = a.exec();
-            }
-            else if (noSelector)
-            {
-                msgCenter().cannotStartSelector();
+                /* Make sure VM is started: */
+                if (!vboxGlobal().startMachine(vboxGlobal().managedVMUuid()))
+                    break;
+
+                /* Start application: */
+                rc = a.exec();
             }
             else
             {
+                /* Make sure VM selector is permitted: */
+                if (settings.isFeatureActive("noSelector"))
+                {
+                    msgCenter().cannotStartSelector();
+                    break;
+                }
+
 #ifdef VBOX_BLEEDING_EDGE
                 msgCenter().showBEBWarning();
 #else /* VBOX_BLEEDING_EDGE */
 # ifndef DEBUG
-                /* Check for BETA version */
-                QString vboxVersion (vboxGlobal().virtualBox().GetVersion());
-                if (vboxVersion.contains ("BETA"))
+                /* Check for BETA version: */
+                QString vboxVersion(vboxGlobal().virtualBox().GetVersion());
+                if (vboxVersion.contains("BETA"))
                 {
-                    /* Allow to prevent this message */
-                    QString str = vboxGlobal().virtualBox().
-                        GetExtraData(GUI_PreventBetaWarning);
+                    /* Allow to prevent this message: */
+                    QString str = vboxGlobal().virtualBox().GetExtraData(GUI_PreventBetaWarning);
                     if (str != vboxVersion)
                         msgCenter().showBETAWarning();
                 }
 # endif /* !DEBUG */
 #endif /* !VBOX_BLEEDING_EDGE*/
+
+                /* Create/show selector window: */
                 vboxGlobal().selectorWnd().show();
+
+                /* Start application: */
                 rc = a.exec();
             }
         }
         while (0);
 
+        /* Create modal-window manager: */
         UIModalWindowManager::destroy();
     }
 
-    LogFlowFunc (("rc=%d\n", rc));
+    /* Finish logging: */
+    LogFlowFunc(("rc=%d\n", rc));
     LogFlowFuncLeave();
 
+    /* Return result: */
     return rc;
 }
 
