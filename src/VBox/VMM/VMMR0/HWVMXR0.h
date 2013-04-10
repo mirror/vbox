@@ -72,9 +72,11 @@ DECLINLINE(int) VMXReadCachedVmcsEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
 # if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 # define VMXReadVmcsHstN                                 VMXReadVmcs32
 # define VMXReadVmcsGstN(idxField, pVal)                 VMXReadCachedVmcsEx(pVCpu, idxField##_CACHE_IDX, pVal)
+# define VMXReadVmcsGstNByIdxVal(idxField, pVal)         VMXReadCachedVmcsEx(pVCpu, idxField, pVal)
 # else
 # define VMXReadVmcsHstN                                 VMXReadVmcs64
 # define VMXReadVmcsGstN                                 VMXReadVmcs64
+# define VMXReadVmcsGstNByIdxVal                         VMXReadVmcs64
 # endif
 #endif
 

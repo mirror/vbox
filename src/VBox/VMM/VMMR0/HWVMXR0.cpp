@@ -5499,7 +5499,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
 }
 
 
-# ifdef VBOX_STRICT
+#ifdef VBOX_STRICT
 static bool hmR0VmxIsValidReadField(uint32_t idxField)
 {
     switch (idxField)
@@ -5595,7 +5595,7 @@ static bool hmR0VmxIsValidWriteField(uint32_t idxField)
     }
     return false;
 }
-# endif /* VBOX_STRICT */
+#endif /* VBOX_STRICT */
 
 
 /**
