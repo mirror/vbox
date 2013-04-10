@@ -1587,6 +1587,8 @@ RT_C_DECLS_END
 #define VERR_HTTP_CACERT_WRONG_FORMAT           (-891)
 /** Certificate cannot be authenticated with the given CA certificates. */
 #define VERR_HTTP_CACERT_CANNOT_AUTHENTICATE    (-892)
+/** The current HTTP request was forcefully aborted */
+#define VERR_HTTP_ABORTED                       (-893)
 /** @} */
 
 /** @name RTManifest status codes
