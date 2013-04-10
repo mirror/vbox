@@ -173,9 +173,10 @@ include $(FILE_KBUILD_SUB_FOOTER)
 #
 
 # Darwin / Mac OS X
+## @todo Create .pkg files not run files. The build server shall create a combined packaged, goverend by
+# the VBOX_WITH_COMBINED_DARWIN_GUEST_PACKAGE macro.
 ifdef VBOX_WITH_ADDITIONS_ISO.darwin.x86
  VBOX_PATH_ADDITIONS.darwin.x86 = $(PATH_OUT_BASE)/darwin.x86/$(KBUILD_TYPE)/dist/additions
- # or dmg?
  GUESTADDITIONS_FILESPEC.darwin.x86 = \
 	VBoxDarwinAdditions-x86.run=$(VBOX_PATH_ADDITIONS.darwin.x86)/VBoxDarwinAdditions-x86.run
 endif
