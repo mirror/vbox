@@ -303,44 +303,56 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
     /* Start logging: */
     LogFlowFuncEnter();
 
-# ifdef RT_OS_DARWIN
-    ShutUpAppKit();
-# endif /* RT_OS_DARWIN */
+    /* Failed result initially: */
+    int iResultCode = 1;
 
-    /* Console help preprocessing: */
-    for (int i=0; i<argc; i++)
-        if (   !strcmp(argv[i], "-h")
-            || !strcmp(argv[i], "-?")
-            || !strcmp(argv[i], "-help")
-            || !strcmp(argv[i], "--help"))
+    /* Simulate try-catch block: */
+    do
+    {
+#ifdef RT_OS_DARWIN
+        ShutUpAppKit();
+#endif /* RT_OS_DARWIN */
+
+        /* Console help preprocessing: */
+        bool fHelpShown = false;
+        for (int i = 0; i < argc; ++i)
         {
-            showHelp();
-            return 0;
+            if (   !strcmp(argv[i], "-h")
+                || !strcmp(argv[i], "-?")
+                || !strcmp(argv[i], "-help")
+                || !strcmp(argv[i], "--help"))
+            {
+                showHelp();
+                fHelpShown = true;
+                break;
+            }
+        }
+        if (fHelpShown)
+        {
+            iResultCode = 0;
+            break;
         }
 
 #if defined(DEBUG) && defined(Q_WS_X11) && defined(RT_OS_LINUX)
-    /* Install our signal handler to backtrace the call stack: */
-    struct sigaction sa;
-    sa.sa_sigaction = bt_sighandler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART | SA_SIGINFO;
-    sigaction(SIGSEGV, &sa, NULL);
-    sigaction(SIGBUS, &sa, NULL);
-    sigaction(SIGUSR1, &sa, NULL);
+        /* Install our signal handler to backtrace the call stack: */
+        struct sigaction sa;
+        sa.sa_sigaction = bt_sighandler;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = SA_RESTART | SA_SIGINFO;
+        sigaction(SIGSEGV, &sa, NULL);
+        sigaction(SIGBUS, &sa, NULL);
+        sigaction(SIGUSR1, &sa, NULL);
 #endif
 
 #ifdef QT_MAC_USE_COCOA
-    /* Instantiate our NSApplication derivative before QApplication
-     * forces NSApplication to be instantiated. */
-    UICocoaApplication::instance();
+        /* Instantiate our NSApplication derivative before QApplication
+         * forces NSApplication to be instantiated. */
+        UICocoaApplication::instance();
 #endif /* QT_MAC_USE_COCOA */
 
-    qInstallMsgHandler(QtMessageOutput);
+        /* Install Qt console message handler: */
+        qInstallMsgHandler(QtMessageOutput);
 
-    int rc = 1; /* failure */
-
-    /* Scope the QApplication variable: */
-    {
 #ifdef Q_WS_X11
         /* Qt has a complex algorithm for selecting the right visual which
          * doesn't always seem to work. So we naively choose a visual - the
@@ -370,7 +382,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             RTPrintf(pszDisplay ? "Failed to open the X11 display \"%s\"!\n"
                                 : "Failed to open the X11 display!\n",
                      pszDisplay);
-            return 0;
+            break;
         }
         Visual *pVisual =   useDefaultVisual
                           ? DefaultVisual(pDisplay, DefaultScreen(pDisplay))
@@ -449,9 +461,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
             if (!vboxGlobal().isValid())
                 break;
 
-            /* Exit if VBoxGlobal unable to process arguments: */
+            /* Exit if VBoxGlobal was able to pre-process arguments: */
             if (vboxGlobal().processArgs())
-                return 0;
+                break;
 
 #ifdef RT_OS_LINUX
             /* Make sure no wrong USB mounted: */
@@ -469,8 +481,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
                     break;
 
                 /* Start application: */
-                rc = a.exec();
+                iResultCode = a.exec();
             }
+            /* VM selector process: */
             else
             {
                 /* Make sure VM selector is permitted: */
@@ -500,21 +513,22 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
                 vboxGlobal().selectorWnd().show();
 
                 /* Start application: */
-                rc = a.exec();
+                iResultCode = a.exec();
             }
         }
         while (0);
 
-        /* Create modal-window manager: */
+        /* Destroy modal-window manager: */
         UIModalWindowManager::destroy();
     }
+    while (0);
 
     /* Finish logging: */
-    LogFlowFunc(("rc=%d\n", rc));
+    LogFlowFunc(("rc=%d\n", iResultCode));
     LogFlowFuncLeave();
 
     /* Return result: */
-    return rc;
+    return iResultCode;
 }
 
 #ifndef VBOX_WITH_HARDENING
