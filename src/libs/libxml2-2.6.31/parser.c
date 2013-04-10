@@ -111,7 +111,7 @@ xmlFatalErr(xmlParserCtxtPtr ctxt, xmlParserErrors error, const char *info);
  */
 static int
 xmlParserEntityCheck(xmlParserCtxtPtr ctxt, size_t size,
-                     xmlEntityPtr ent)
+                     xmlEntityPtr ent, size_t replacement)
 {
     size_t consumed = 0;
 
@@ -119,7 +119,24 @@ xmlParserEntityCheck(xmlParserCtxtPtr ctxt, size_t size,
         return (0);
     if (ctxt->lastError.code == XML_ERR_ENTITY_LOOP)
         return (1);
-    if (size != 0) {
+    if (replacement != 0) {
+	if (replacement < XML_MAX_TEXT_LENGTH)
+	    return(0);
+
+        /*
+	 * If the volume of entity copy reaches 10 times the
+	 * amount of parsed data and over the large text threshold
+	 * then that's very likely to be an abuse.
+	 */
+        if (ctxt->input != NULL) {
+	    consumed = ctxt->input->consumed +
+	               (ctxt->input->cur - ctxt->input->base);
+	}
+        consumed += ctxt->sizeentities;
+
+        if (replacement < XML_PARSER_NON_LINEAR * consumed)
+	    return(0);
+    } else if (size != 0) {
         /*
          * Do the check based on the replacement size of the entity
          */
@@ -165,7 +182,6 @@ xmlParserEntityCheck(xmlParserCtxtPtr ctxt, size_t size,
          */
         return (0);
     }
-
     xmlFatalErr(ctxt, XML_ERR_ENTITY_LOOP, NULL);
     return (1);
 }
@@ -2378,7 +2394,7 @@ xmlStringLenDecodeEntities(xmlParserCtxtPtr ctxt, const xmlChar *str, int len,
 		    while (*current != 0) { /* non input consuming loop */
 			buffer[nbchars++] = *current++;
 			if (nbchars + XML_PARSER_BUFFER_SIZE > buffer_size) {
-			    if (xmlParserEntityCheck(ctxt, nbchars, ent)) {
+			    if (xmlParserEntityCheck(ctxt, nbchars, ent, 0)) {
 			        xmlFree(rep);
 			        goto int_error;
 			    }
@@ -2420,7 +2436,7 @@ xmlStringLenDecodeEntities(xmlParserCtxtPtr ctxt, const xmlChar *str, int len,
 		    while (*current != 0) { /* non input consuming loop */
 			buffer[nbchars++] = *current++;
 			if (nbchars + XML_PARSER_BUFFER_SIZE > buffer_size) {
-			    if (xmlParserEntityCheck(ctxt, nbchars, ent)) {
+			    if (xmlParserEntityCheck(ctxt, nbchars, ent, 0)) {
 			        xmlFree(rep);
 			        goto int_error;
 			    }
@@ -6277,7 +6293,7 @@ xmlParseReference(xmlParserCtxtPtr ctxt) {
 			xmlFreeNodeList(list);
 			return;
 		    }
-		    if (xmlParserEntityCheck(ctxt, 0, ent)) {
+		    if (xmlParserEntityCheck(ctxt, 0, ent, 0)) {
 			xmlFreeNodeList(list);
 			return;
 		    }
@@ -6430,6 +6446,13 @@ xmlParseReference(xmlParserCtxtPtr ctxt) {
 			xmlNodePtr nw = NULL, cur, firstChild = NULL;
 
 			/*
+			 * We are copying here, make sure there is no abuse
+			 */
+			ctxt->sizeentcopy += ent->length;
+			if (xmlParserEntityCheck(ctxt, 0, ent, ctxt->sizeentcopy))
+			    return;
+
+			/*
 			 * when operating on a reader, the entities definitions
 			 * are always owning the entities subtree.
 			if (ctxt->parseMode == XML_PARSE_READER)
@@ -6469,6 +6492,14 @@ xmlParseReference(xmlParserCtxtPtr ctxt) {
 		    } else if (list == NULL) {
 			xmlNodePtr nw = NULL, cur, next, last,
 			           firstChild = NULL;
+
+			/*
+			 * We are copying here, make sure there is no abuse
+			 */
+			ctxt->sizeentcopy += ent->length;
+			if (xmlParserEntityCheck(ctxt, 0, ent, ctxt->sizeentcopy))
+			    return;
+
 			/*
 			 * Copy the entity child list and make it the new
 			 * entity child list. The goal is to make sure any
@@ -13307,6 +13338,7 @@ xmlCtxtReset(xmlParserCtxtPtr ctxt)
     ctxt->catalogs = NULL;
     ctxt->nbentities = 0;
     ctxt->sizeentities = 0;
+    ctxt->sizeentcopy = 0;
     xmlInitNodeInfoSeq(&ctxt->node_seq);
 
     if (ctxt->attsDefault != NULL) {
