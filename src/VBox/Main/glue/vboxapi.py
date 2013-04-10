@@ -1,5 +1,5 @@
 """
-Copyright (C) 2009-2012 Oracle Corporation
+Copyright (C) 2009-2013 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -253,6 +253,8 @@ class PlatformMSCOM:
         d['BaseClass'] = impl
         d['arg'] = arg
         d['tlb_guid'] = PlatformMSCOM.VBOX_TLB_GUID
+        d['tlb_major'] = PlatformMSCOM.VBOX_TLB_MAJOR
+        d['tlb_minor'] = PlatformMSCOM.VBOX_TLB_MINOR
         str = ""
         str += "import win32com.server.util\n"
         str += "import pythoncom\n"
@@ -260,7 +262,7 @@ class PlatformMSCOM:
         str += "class ListenerImpl(BaseClass):\n"
         str += "   _com_interfaces_ = ['IEventListener']\n"
         str += "   _typelib_guid_ = tlb_guid\n"
-        str += "   _typelib_version_ = 1, 0\n"
+        str += "   _typelib_version_ = tlb_major, tlb_minor\n"
         str += "   _reg_clsctx_ = pythoncom.CLSCTX_INPROC_SERVER\n"
         # Maybe we'd better implement Dynamic invoke policy, to be more flexible here
         str += "   _reg_policy_spec_ = 'win32com.server.policy.EventHandlerPolicy'\n"
