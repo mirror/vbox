@@ -158,7 +158,15 @@ ifndef VBOX_ONLY_TESTSUITE
  # The packing target rule, but only if we're on the local build box.
  # (VBOX_WITHOUT_ADDITIONS_ISO is used by the additions build box, see the root makefile.)
  ifndef VBOX_WITHOUT_ADDITIONS_ISO
-  PACKING += $(PATH_STAGE_BIN)/additions/VBoxGuestAdditions.zip
+
+  ifdef VBOX_WITH_ADDITIONS_ISO.darwin.x86
+    PACKING += $(VBOX_PATH_DIST)/additions/VBoxGuestAdditions.zip
+  else ifdef VBOX_WITH_ADDITIONS_ISO.darwin.amd64
+    PACKING += $(VBOX_PATH_DIST)/additions/VBoxGuestAdditions.zip
+  else
+    PACKING += $(PATH_STAGE_BIN)/additions/VBoxGuestAdditions.zip
+  endif
+
  endif
 endif # !VBOX_ONLY_TESTSUITE
 
@@ -174,14 +182,14 @@ include $(FILE_KBUILD_SUB_FOOTER)
 
 # Darwin / Mac OS X
 ifdef VBOX_WITH_ADDITIONS_ISO.darwin.x86
- VBOX_PATH_ADDITIONS.darwin.x86 = $(PATH_OUT_BASE)/darwin.x86/$(KBUILD_TYPE)/bin/additions
+ VBOX_PATH_ADDITIONS.darwin.x86 = $(PATH_OUT_BASE)/darwin.x86/$(KBUILD_TYPE)/dist/additions
  # or dmg?
  GUESTADDITIONS_FILESPEC.darwin.x86 = \
 	VBoxDarwinAdditions-x86.run=$(VBOX_PATH_ADDITIONS.darwin.x86)/VBoxDarwinAdditions-x86.run
 endif
 
 ifdef VBOX_WITH_ADDITIONS_ISO.darwin.amd64
- VBOX_PATH_ADDITIONS.darwin.amd64 = $(PATH_OUT_BASE)/darwin.amd64/$(KBUILD_TYPE)/bin/additions
+ VBOX_PATH_ADDITIONS.darwin.amd64 = $(PATH_OUT_BASE)/darwin.amd64/$(KBUILD_TYPE)/dist/additions
  GUESTADDITIONS_FILESPEC.darwin.amd64 = \
 	VBoxDarwinAdditions-amd64.run=$(VBOX_PATH_ADDITIONS.darwin.amd64)/VBoxDarwinAdditions-amd64.run
 endif
