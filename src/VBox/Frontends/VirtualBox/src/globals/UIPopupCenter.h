@@ -22,12 +22,28 @@
 /* Qt includes: */
 #include <QMap>
 #include <QObject>
+#include <QWidget>
 #include <QPointer>
+
+/* GUI includes: */
+#include "QIMessageBox.h"
+
+/* Forward declaration: */
+class UIPopupPane;
+class QVBoxLayout;
+class QPushButton;
+class QIRichTextLabel;
+class QIDialogButtonBox;
 
 /* Global popup-center object: */
 class UIPopupCenter: public QObject
 {
     Q_OBJECT;
+
+signals:
+
+    /* Notifier: Popup complete stuff: */
+    void sigPopupDone(QString strId, int iButtonCode) const;
 
 public:
 
@@ -83,6 +99,11 @@ public:
                          const QString &strChoice2ButtonText = QString(),
                          const QString &strCancelButtonText = QString()) const;
 
+private slots:
+
+    /* Handler: Popup done stuff: */
+    void sltPopupDone(int iButtonCode) const;
+
 private:
 
     /* Constructor/destructor: */
@@ -97,7 +118,7 @@ private:
                       const QString &strAutoConfirmId) const;
 
     /* Variables: */
-    mutable QMap<QString, QPointer<QWidget> > m_popups;
+    mutable QMap<QString, QPointer<UIPopupPane> > m_popups;
 
     /* Instance stuff: */
     static UIPopupCenter* m_spInstance;
@@ -108,5 +129,67 @@ private:
 /* Shortcut to the static UIPopupCenter::instance() method: */
 inline UIPopupCenter& popupCenter() { return *UIPopupCenter::instance(); }
 
-#endif /* __UIPopupCenter_h__ */
+/* Popup-pane prototype class: */
+class UIPopupPane : public QWidget
+{
+    Q_OBJECT;
 
+signals:
+
+    /* Notifier: Complete stuff: */
+    void sigDone(int iButtonCode) const;
+
+public:
+
+    /* Constructor/destructor: */
+    UIPopupPane(QWidget *pParent, const QString &strId,
+                const QString &strMessage, const QString &strDetails,
+                int iButton1, int iButton2, int iButton3,
+                const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3);
+    ~UIPopupPane();
+
+    /* API: Id stuff: */
+    const QString& id() const { return m_strId; }
+
+private slots:
+
+    /* Handlers: Done slot variants for every button: */
+    void done1() { done(m_iButton1 & AlertButtonMask); }
+    void done2() { done(m_iButton2 & AlertButtonMask); }
+    void done3() { done(m_iButton3 & AlertButtonMask); }
+
+private:
+
+    /* Handler: Event-filter stuff: */
+    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+
+    /* Handlers: Event stuff: */
+    virtual void showEvent(QShowEvent *pEvent);
+    virtual void polishEvent(QShowEvent *pEvent);
+
+    /* Helpers: Move/resize stuff: */
+    void moveAccordingParent();
+    void resizeAccordingParent();
+
+    /* Helpers: Prepare stuff: */
+    void prepareContent();
+    QPushButton* createButton(int iButton);
+
+    /* Helper: */
+    void done(int iButtonCode);
+
+    /* Variables: */
+    bool m_fPolished;
+    const QString m_strId;
+    QString m_strMessage, m_strDetails;
+    int m_iButton1, m_iButton2, m_iButton3;
+    QString m_strButtonText1, m_strButtonText2, m_strButtonText3;
+
+    /* Widgets: */
+    QVBoxLayout *m_pMainLayout;
+    QIRichTextLabel *m_pTextPane;
+    QPushButton *m_pButton1, *m_pButton2, *m_pButton3;
+    QIDialogButtonBox *m_pButtonBox;
+};
+
+#endif /* __UIPopupCenter_h__ */
