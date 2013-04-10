@@ -54,7 +54,7 @@
 #  include <Windows.h>
 # endif
 #endif
-#if defined(RT_OS_SOLARIS)
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
 # include <iprt/rand.h>
 #endif
 
@@ -76,7 +76,7 @@ static int VBoxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
 *******************************************************************************/
 static const size_t cbChangeMemBalloonReq = RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]);
 
-#if defined(RT_OS_SOLARIS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
 /**
  * Drag in the rest of IRPT since we share it with the
  * rest of the kernel modules on Solaris.
@@ -96,7 +96,7 @@ PFNRT g_apfnVBoxGuestIPRTDeps[] =
     (PFNRT)RTSemMutexIsOwned,
     NULL
 };
-#endif  /* RT_OS_SOLARIS */
+#endif  /* RT_OS_DARWIN || RT_OS_SOLARIS  */
 
 
 /**

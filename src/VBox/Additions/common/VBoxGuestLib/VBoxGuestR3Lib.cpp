@@ -36,14 +36,19 @@
 # define INCL_ERRORS
 # include <os2.h>
 
-#elif defined(RT_OS_FREEBSD) \
+#elif defined(RT_OS_DARWIN) \
+   || defined(RT_OS_FREEBSD) \
    || defined(RT_OS_HAIKU) \
    || defined(RT_OS_LINUX) \
    || defined(RT_OS_SOLARIS)
 # include <sys/types.h>
 # include <sys/stat.h>
-# if defined(RT_OS_LINUX) /** @todo check this on solaris+freebsd as well. */
+# if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) /** @todo check this on solaris+freebsd as well. */
 #  include <sys/ioctl.h>
+# endif
+# if defined(RT_OS_DARWIN)
+#  include <mach/mach_port.h>
+#  include <IOKit/IOKitLib.h>
 # endif
 # include <errno.h>
 # include <unistd.h>
@@ -86,6 +91,10 @@ static RTFILE g_File = NIL_RTFILE;
  * inside a single process space.
  */
 static uint32_t volatile g_cInits = 0;
+#ifdef RT_OS_DARWIN
+/** I/O Kit connection handle. */
+static io_connect_t g_uConnection = 0;
+#endif
 
 
 
@@ -190,6 +199,40 @@ static int vbglR3Init(const char *pszDeviceName)
     }
     g_File = (RTFILE)hf;
 
+#elif defined(RT_OS_DARWIN)
+    /* 
+     * Darwin is kind of special we need to engage the device via I/O first 
+     * before we open it via the BSD device node. 
+     */
+    mach_port_t MasterPort;
+    kern_return_t kr = IOMasterPort(MACH_PORT_NULL, &MasterPort);
+    if (kr != kIOReturnSuccess)
+        return VERR_GENERAL_FAILURE;
+
+    CFDictionaryRef ClassToMatch = IOServiceMatching("org_virtualbox_VBoxGuest");
+    if (!ClassToMatch)
+        return VERR_GENERAL_FAILURE;
+
+    io_service_t ServiceObject = IOServiceGetMatchingService(kIOMasterPortDefault, ClassToMatch);
+    if (!ServiceObject)
+        return VERR_NOT_FOUND;
+
+    io_connect_t uConnection;
+    kr = IOServiceOpen(ServiceObject, mach_task_self(), 0, &uConnection);
+    IOObjectRelease(ServiceObject);
+    if (kr != kIOReturnSuccess)
+        return VERR_OPEN_FAILED;
+
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pszDeviceName, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_FAILURE(rc))
+    {
+        IOServiceClose(uConnection);
+        return rc;
+    }
+    g_File = hFile;
+    g_uConnection = uConnection;
+
 #elif defined(VBOX_VBGLR3_XFREE86)
     int File = xf86open(pszDeviceName, XF86_O_RDWR);
     if (File == -1)
@@ -263,12 +306,21 @@ VBGLR3DECL(void) VbglR3Term(void)
     Assert(fRc); NOREF(fRc);
 
 # elif defined(RT_OS_OS2)
-
     RTFILE File = g_File;
     g_File = NIL_RTFILE;
     AssertReturnVoid(File != NIL_RTFILE);
     APIRET rc = DosClose((uintptr_t)File);
     AssertMsg(!rc, ("%ld\n", rc));
+
+#elif defined(RT_OS_DARWIN)
+    io_connect_t    uConnection = g_uConnection;
+    RTFILE          hFile       = g_File;
+    g_uConnection = 0;
+    g_File        = NIL_RTFILE;
+    kern_return_t kr = IOServiceClose(uConnection);
+    AssertMsg(kr == kIOReturnSuccess, ("%#x (%d)\n", kr, kr));
+    int rc = RTFileClose(hFile);
+    AssertRC(rc);
 
 # else /* The IPRT case. */
     RTFILE File = g_File;
@@ -358,7 +410,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     }
     return VINF_SUCCESS;
 
-#elif defined(RT_OS_LINUX)
+#elif defined(RT_OS_DARWIN) || defined(RT_OS_LINUX)
 # ifdef VBOX_VBGLR3_XFREE86
     int rc = xf86ioctl((int)g_File, iFunction, pvData);
 # else

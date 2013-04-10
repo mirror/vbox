@@ -47,7 +47,7 @@
 #  include <sys/sockio.h>
 #  include <net/if_arp.h>
 # endif
-# ifdef RT_OS_FREEBSD
+# if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
 #  include <ifaddrs.h> /* getifaddrs, freeifaddrs */
 #  include <net/if_dl.h> /* LLADDR */
 #  include <netdb.h> /* getnameinfo */
@@ -449,8 +449,13 @@ static int vboxserviceVMInfoWriteUsers(void)
     while (   (ut_user = getutxent())
            && RT_SUCCESS(rc))
     {
+#ifdef RT_OS_DARWIN /* No ut_user->ut_session on Darwin */
+        VBoxServiceVerbose(4, "Found entry \"%s\" (type: %d, PID: %RU32)\n",
+                           ut_user->ut_user, ut_user->ut_type, ut_user->ut_pid);
+#else
         VBoxServiceVerbose(4, "Found entry \"%s\" (type: %d, PID: %RU32, session: %RU32)\n",
                            ut_user->ut_user, ut_user->ut_type, ut_user->ut_pid, ut_user->ut_session);
+#endif
         if (cUsersInList > cListSize)
         {
             cListSize += 32;
@@ -907,7 +912,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
     /** @todo Haiku: implement network info. retreival */
     return VERR_NOT_IMPLEMENTED;
 
-#elif defined(RT_OS_FREEBSD)
+#elif defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
     struct ifaddrs *pIfHead = NULL;
 
     /* Get all available interfaces */
