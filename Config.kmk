@@ -5407,6 +5407,11 @@ else
 	$(PATH_DEVTOOLS)/linux.x86/jdk1.6.0_27 \
 	/usr/lib/jvm/java-6-sun  \
 	/usr/lib/jvm/java-6-openjdk \
+	/usr/lib/jvm/java-6-openjdk-i386 \
+	/usr/lib/jvm/java-6-openjdk-amd64 \
+	/usr/lib/jvm/java-7-openjdk-i386 \
+	/usr/lib/jvm/java-7-openjdk-amd64 \
+	/usr/lib/jvm/default-java \
 	\
 	/usr/lib/jvm/sun-jdk-1.6 \
 	) /usr/lib/jvm/java-6-sun)
