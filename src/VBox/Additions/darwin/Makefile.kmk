@@ -1,0 +1,22 @@
+# $Id$
+## @file
+# Makefile for the Mac OS guest additions base directory.
+#
+
+#
+# Copyright (C) 2010-2012 Oracle Corporation
+#
+# Oracle Corporation confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+$(PATH_STAGE_BIN)/additions/VBoxDawrinAdditions-x86.run:
+	touch $@
+
+$(PATH_STAGE_BIN)/additions/VBoxDawrinAdditions-amd64.run:
+	touch $@
+
+include $(FILE_KBUILD_SUB_FOOTER)
