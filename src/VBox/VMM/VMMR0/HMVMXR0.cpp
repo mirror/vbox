@@ -440,7 +440,7 @@ DECLINLINE(int) hmR0VmxReadEntryXcptErrorCodeVmcs(PVMXTRANSIENT pVmxTransient)
  * the VMX transient structure.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU. 
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  *
  * @remarks No-long-jump zone!!!
@@ -458,7 +458,7 @@ DECLINLINE(int) hmR0VmxReadEntryInstrLenVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTra
  * transient structure.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU. 
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
 DECLINLINE(int) hmR0VmxReadExitIntrInfoVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
@@ -478,7 +478,7 @@ DECLINLINE(int) hmR0VmxReadExitIntrInfoVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
  * transient structure.
  *
  * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU. 
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
 DECLINLINE(int) hmR0VmxReadExitIntrErrorCodeVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
@@ -497,8 +497,8 @@ DECLINLINE(int) hmR0VmxReadExitIntrErrorCodeVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVm
  * Reads the VM-exit instruction length field from the VMCS into the VMX
  * transient structure.
  *
- * @returns VBox status code. 
- * @param   pVCpu           Pointer to the VMCPU. 
+ * @returns VBox status code.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
 DECLINLINE(int) hmR0VmxReadExitInstrLenVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
@@ -516,8 +516,8 @@ DECLINLINE(int) hmR0VmxReadExitInstrLenVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
 /**
  * Reads the exit qualification from the VMCS into the VMX transient structure.
  *
- * @returns VBox status code. 
- * @param   pVCpu           Pointer to the VMCPU. 
+ * @returns VBox status code.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
 DECLINLINE(int) hmR0VmxReadExitQualificationVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
@@ -557,7 +557,7 @@ DECLINLINE(int) hmR0VmxReadIdtVectoringInfoVmcs(PVMXTRANSIENT pVmxTransient)
  * Reads the IDT-vectoring error code from the VMCS into the VMX
  * transient structure.
  *
- * @returns VBox status code. 
+ * @returns VBox status code.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
 DECLINLINE(int) hmR0VmxReadIdtVectoringErrorCodeVmcs(PVMXTRANSIENT pVmxTransient)
@@ -2323,11 +2323,11 @@ DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU. 
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
  *                      before using them.
- *  
+ *
  * @remarks requires EFER.
  */
 DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
@@ -4430,10 +4430,10 @@ VMMR0DECL(int) VMXWriteCachedVmcsEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u6
 
 /**
  * Loads the VMCS write-cache into the CPU (by executing VMWRITEs).
- *  
- * @param   pVCpu           Pointer to the VMCPU. 
+ *
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCache          Pointer to the VMCS cache.
- *  
+ *
  * @remarks No-long-jump zone!!!
  */
 VMMR0DECL(void) VMXWriteCachedVmcsLoad(PVMCPU pVCpu, PVMCSCACHE pCache)
@@ -4451,9 +4451,9 @@ VMMR0DECL(void) VMXWriteCachedVmcsLoad(PVMCPU pVCpu, PVMCSCACHE pCache)
 /**
  * Stores the VMCS read-cache from the CPU (by executing VMREADs).
  *
- * @param   pVCpu           Pointer to the VMCPU. 
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCache          Pointer to the VMCS cache.
- *  
+ *
  * @remarks No-long-jump zone!!!
  */
 VMMR0DECL(void) VMXReadCachedVmcsStore(PVMCPU pVCpu, PVMCSCACHE pCache)
@@ -5160,15 +5160,15 @@ DECLINLINE(int) hmR0VmxSaveGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMix
  * Reads a guest segment register from the current VMCS into the guest-CPU
  * context.
  *
- * @returns VBox status code. 
- * @param   pVCpu       Pointer to the VMCPU. 
+ * @returns VBox status code.
+ * @param   pVCpu       Pointer to the VMCPU.
  * @param   idxSel      Index of the selector in the VMCS.
  * @param   idxLimit    Index of the segment limit in the VMCS.
  * @param   idxBase     Index of the segment base in the VMCS.
  * @param   idxAccess   Index of the access rights of the segment in the VMCS.
  * @param   pSelReg     Pointer to the segment selector.
  *
- * @remarks No-long-jump zone!!! 
+ * @remarks No-long-jump zone!!!
  * @remarks Never call this function directly. Use the VMXLOCAL_READ_SEG() macro
  *          as that takes care of whether to read from the VMCS cache or not.
  */
@@ -5223,11 +5223,11 @@ static int hmR0VmxSaveGuestSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
 #define VMXLOCAL_READ_SEG(Sel, CtxSel) \
     hmR0VmxReadSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_##Sel, VMX_VMCS32_GUEST_##Sel##_LIMIT,                  \
-                          VMX_VMCS_GUEST_##Sel##_BASE_CACHE_IDX, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, &pMixedCtx->##CtxSel)
+                          VMX_VMCS_GUEST_##Sel##_BASE_CACHE_IDX, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, &pMixedCtx->CtxSel)
 #else
-#define VMXLOCAL_READ_SEG(Sel, Val) \
+#define VMXLOCAL_READ_SEG(Sel, CtxSel) \
     hmR0VmxReadSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_##Sel, VMX_VMCS32_GUEST_##Sel##_LIMIT,                  \
-                          VMX_VMCS_GUEST_##Sel##_BASE, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, &pMixedCtx->##CtxSel)
+                          VMX_VMCS_GUEST_##Sel##_BASE, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, &pMixedCtx->CtxSel)
 #endif
 
     int rc = VINF_SUCCESS;
