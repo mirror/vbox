@@ -2633,12 +2633,6 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                  *        and VMX_VMCS_CTRL_ENTRY_INSTR_LENGTH from the VMCS. */
                 break;
 
-            case VERR_VMX_UNABLE_TO_RESUME_VM:
-                LogRel(("HM: VERR_VMX_UNABLE_TO_RESUME_VM:\n"));
-                LogRel(("HM: CPU%d instruction error %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError));
-                LogRel(("HM: CPU%d exit reason       %x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32ExitReason));
-                break;
-
             case VERR_VMX_INVALID_VMXON_PTR:
                 break;
         }

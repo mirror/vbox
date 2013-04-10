@@ -1857,14 +1857,10 @@
 #define VERR_VMX_INVALID_VMCS_PTR                   (-4001)
 /** Invalid VMXON pointer. */
 #define VERR_VMX_INVALID_VMXON_PTR                  (-4002)
-/** Generic VMX failure. */
-#define VERR_VMX_GENERIC                            (-4003)
 /** Invalid CPU mode for VMX execution. */
 #define VERR_VMX_UNSUPPORTED_MODE                   (-4004)
 /** Unable to start VM execution. */
 #define VERR_VMX_UNABLE_TO_START_VM                 (-4005)
-/** Unable to resume VM execution. */
-#define VERR_VMX_UNABLE_TO_RESUME_VM                (-4006)
 /** Unable to switch due to invalid host state. */
 #define VERR_VMX_INVALID_HOST_STATE                 (-4007)
 /** IA32_FEATURE_CONTROL MSR not setup correcty (turn on VMX in the host system BIOS) */
@@ -1893,6 +1889,8 @@
 #define VERR_VMX_UNDEFINED_EXIT_CODE                (-4019)
 /** Resume guest execution after injecting a double-fault. */
 #define VINF_VMX_DOUBLE_FAULT                       4020
+/** VMPTRLD failed; possibly because of invalid VMCS launch-state. */
+#define VERR_VMX_VMPTRLD_FAILED                     (-4021)
 /** @} */
 
 

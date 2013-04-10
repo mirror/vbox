@@ -112,7 +112,7 @@ BEGINPROC VMXGCStartVM64
 
 .vmxon_success:
     jnz     .vmxon_success2
-    mov     rax, VERR_VMX_GENERIC
+    mov     rax, VERR_VMX_VMXON_FAILED
     jmp     .vmstart64_vmxon_failed
 
 .vmxon_success2:
@@ -124,7 +124,7 @@ BEGINPROC VMXGCStartVM64
 
 .vmptrld_success:
     jnz     .vmptrld_success2
-    mov     rax, VERR_VMX_GENERIC
+    mov     rax, VERR_VMX_VMPTRLD_FAILED
     jmp     .vmstart64_vmxoff_end
 
 .vmptrld_success2:

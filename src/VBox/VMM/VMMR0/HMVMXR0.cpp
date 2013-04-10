@@ -386,13 +386,15 @@ static const char* const s_apszVmxInstrErrors[VMX_INSTR_ERROR_MAX + 1] =
  *
  * @param    pVM        Pointer to the VM.
  * @param    pVCpu      Pointer to the VMCPU (can be NULL if @a rc is not
- *                      VERR_VMX_GENERIC).
+ *                      VERR_VMX_UNABLE_TO_START_VM or
+ *                      VERR_VMX_INVALID_VMCS_FIELD).
  * @param    rc         The error code.
  */
 static void hmR0VmxUpdateErrorRecord(PVM pVM, PVMCPU pVCpu, int rc)
 {
     AssertPtr(pVM);
-    if (rc == VERR_VMX_GENERIC)
+    if (   rc == VERR_VMX_INVALID_VMCS_FIELD
+        || rc == VERR_VMX_UNABLE_TO_START_VM)
     {
         AssertPtrReturnVoid(pVCpu);
         VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &pVCpu->hm.s.vmx.lasterror.u32InstrError);
@@ -602,6 +604,8 @@ DECLINLINE(int) hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCp
 
     /* Enter VMXON root mode. */
     int rc = VMXEnable(HCPhysCpuPage);
+    if (RT_FAILURE(rc))
+        ASMSetCR4(uCr4);
 
     /* Restore interrupts. */
     ASMSetFlags(fFlags);
@@ -1532,7 +1536,10 @@ static int hmR0VmxSetupPinCtls(PVM pVM, PVMCPU pVCpu)
 
     /* Enable the VMX preemption timer. */
     if (pVM->hm.s.vmx.fUsePreemptTimer)
+    {
+        Assert(pVM->hm.s.vmx.msr.vmx_pin_ctls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER);
         val |= VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER;
+    }
 
     if ((val & zap) != val)
     {
@@ -1656,7 +1663,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
     /*
      * Secondary processor-based VM-execution controls.
      */
-    if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+    if (RT_LIKELY(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL))
     {
         val = pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;           /* Bits set here must be set in the VMCS. */
         zap = pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;              /* Bits cleared here must be cleared in the VMCS. */
@@ -3740,9 +3747,8 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         case VERR_VMX_INVALID_VMXON_PTR:
             AssertFailed();
             break;
-        case VINF_SUCCESS:      /* VMLAUNCH/VMRESUME succeeded but VM-entry failed... yeah, true story. */
-        case VERR_VMX_UNABLE_TO_START_VM:
-        case VERR_VMX_UNABLE_TO_RESUME_VM:
+        case VINF_SUCCESS:                  /* VMLAUNCH/VMRESUME succeeded but VM-entry failed... yeah, true story. */
+        case VERR_VMX_UNABLE_TO_START_VM:   /* VMLAUNCH/VMRESUME itself failed. */
         {
             int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_REASON, &pVCpu->hm.s.vmx.lasterror.u32ExitReason);
             rc    |= VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &pVCpu->hm.s.vmx.lasterror.u32InstrError);
@@ -4098,7 +4104,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     {
         ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
         ASMSetFlags(uOldEFlags);
-        return VERR_VMX_VMXON_FAILED;
+        return rc2;
     }
 
     rc2 = VMXActivateVMCS(pVCpu->hm.s.vmx.HCPhysVmcs);
@@ -6923,7 +6929,7 @@ static DECLCALLBACK(int) hmR0VmxExitWbinvd(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 
 
 /**
- * VM-exit handler for WBINVD (VMX_EXIT_INVD). Unconditional VM-exit.
+ * VM-exit handler for INVD (VMX_EXIT_INVD). Unconditional VM-exit.
  */
 static DECLCALLBACK(int) hmR0VmxExitInvd(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {

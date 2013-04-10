@@ -178,7 +178,8 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc
  */
 static void hmR0VmxCheckError(PVM pVM, PVMCPU pVCpu, int rc)
 {
-    if (rc == VERR_VMX_GENERIC)
+    if (   rc == VERR_VMX_UNABLE_TO_START_VM
+        || rc == VERR_VMX_INVALID_VMCS_FIELD)
     {
         RTCCUINTREG instrError;
 
@@ -534,7 +535,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
                  * We cannot ignore EPT at this point as we've already setup Unrestricted Guest execution.
                  */
                 pVM->hm.s.vmx.enmFlushEpt = VMX_FLUSH_EPT_NOT_SUPPORTED;
-                return VERR_VMX_GENERIC;
+                return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
             }
         }
         else
@@ -543,7 +544,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
              * Should never really happen. EPT is supported but INVEPT instruction is not supported.
              */
             pVM->hm.s.vmx.enmFlushEpt = VMX_FLUSH_EPT_NOT_SUPPORTED;
-            return VERR_VMX_GENERIC;
+            return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
     }
 
@@ -5284,7 +5285,6 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc
             break;
 
         case VERR_VMX_UNABLE_TO_START_VM:
-        case VERR_VMX_UNABLE_TO_RESUME_VM:
         {
             int         rc2;
             RTCCUINTREG exitReason, instrError;
