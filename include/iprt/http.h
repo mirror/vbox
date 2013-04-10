@@ -74,6 +74,17 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp);
 RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse);
 
 /**
+ * Abort a pending HTTP request. A blocking RTHttpGet() call will return with
+ * VERR_HTTP_ABORTED. It may take some time (current cURL implementation needs
+ * up to 1 second) before the request is aborted.
+ *
+ * @returns iprt status code.
+ *
+ * @param    hHttp         HTTP interface handle.
+ */
+RTR3DECL(int) RTHttpAbort(RTHTTP hHttp);
+
+/**
  * Specify proxy settings.
  *
  * @returns iprt status code.

@@ -46,11 +46,17 @@
 *******************************************************************************/
 typedef struct RTHTTPINTERNAL
 {
+    /** magic value */
     uint32_t u32Magic;
+    /** cURL handle */
     CURL *pCurl;
     long lLastResp;
+    /** custom headers */
     struct curl_slist *pHeaders;
+    /** CA certificate for HTTPS authentication check */
     const char *pcszCAFile;
+    /** abort the current HTTP request if true */
+    bool fAbort;
 } RTHTTPINTERNAL;
 typedef RTHTTPINTERNAL *PRTHTTPINTERNAL;
 
@@ -128,7 +134,7 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp)
     curl_global_cleanup();
 }
 
-static size_t rtHttpWriteData(void *pvBuf, size_t cb, size_t n, void *pvUser)
+static DECLCALLBACK(size_t) rtHttpWriteData(void *pvBuf, size_t cb, size_t n, void *pvUser)
 {
     PRTHTTPMEMCHUNK pMem = (PRTHTTPMEMCHUNK)pvUser;
     size_t cbAll = cb * n;
@@ -141,6 +147,25 @@ static size_t rtHttpWriteData(void *pvBuf, size_t cb, size_t n, void *pvUser)
         pMem->pszMem[pMem->cb] = '\0';
     }
     return cbAll;
+}
+
+static DECLCALLBACK(int) rtHttpProgress(void *pData, double DlTotal, double DlNow,
+                                        double UlTotal, double UlNow)
+{
+    PRTHTTPINTERNAL pHttpInt = (PRTHTTPINTERNAL)pData;
+    AssertReturn(pHttpInt->u32Magic == RTHTTP_MAGIC, 1);
+
+    return pHttpInt->fAbort ? 1 : 0;
+}
+
+RTR3DECL(int) RTHttpAbort(RTHTTP hHttp)
+{
+    PRTHTTPINTERNAL pHttpInt = hHttp;
+    RTHTTP_VALID_RETURN(pHttpInt);
+
+    pHttpInt->fAbort = true;
+
+    return VINF_SUCCESS;
 }
 
 RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort,
@@ -277,6 +302,8 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
     PRTHTTPINTERNAL pHttpInt = hHttp;
     RTHTTP_VALID_RETURN(pHttpInt);
 
+    pHttpInt->fAbort = false;
+
     int rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_URL, pcszUrl);
     if (CURL_FAILED(rcCurl))
         return VERR_INVALID_PARAMETER;
@@ -302,6 +329,15 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
     if (CURL_FAILED(rcCurl))
         return VERR_INTERNAL_ERROR;
     rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_WRITEDATA, (void*)&chunk);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INTERNAL_ERROR;
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSFUNCTION, &rtHttpProgress);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INTERNAL_ERROR;
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSDATA, (void*)pHttpInt);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INTERNAL_ERROR;
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_NOPROGRESS, (long)0);
     if (CURL_FAILED(rcCurl))
         return VERR_INTERNAL_ERROR;
 
@@ -354,6 +390,10 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
             case CURLE_SSL_CACERT_BADFILE:
                 /* CAcert file (see RTHttpSetCAFile()) has wrong format */
                 rc = VERR_HTTP_CACERT_WRONG_FORMAT;
+                break;
+            case CURLE_ABORTED_BY_CALLBACK:
+                /* forcefully aborted */
+                rc = VERR_HTTP_ABORTED;
                 break;
             default:
                 break;
