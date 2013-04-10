@@ -853,6 +853,9 @@ static int hmR3InitFinalizeR0(PVM pVM)
             uint64_t zap;
             RTGCPHYS GCPhys = 0;
 
+#ifndef VBOX_WITH_OLD_VTX_CODE
+            LogRel(("HM: Using VT-x implementation 2.0!\n"));
+#endif
             LogRel(("HM: Host CR4=%08X\n", pVM->hm.s.vmx.hostCR4));
             LogRel(("HM: MSR_IA32_FEATURE_CONTROL      = %RX64\n", pVM->hm.s.vmx.msr.feature_ctrl));
             LogRel(("HM: MSR_IA32_VMX_BASIC_INFO       = %RX64\n", pVM->hm.s.vmx.msr.vmx_basic_info));
