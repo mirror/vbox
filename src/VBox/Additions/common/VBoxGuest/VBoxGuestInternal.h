@@ -194,7 +194,7 @@ typedef VBOXGUESTDEVEXT *PVBOXGUESTDEVEXT;
  */
 typedef struct VBOXGUESTSESSION
 {
-#if defined(RT_OS_OS2) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
     /** Pointer to the next session with the same hash. */
     PVBOXGUESTSESSION           pNextHash;
 #endif
@@ -223,7 +223,12 @@ typedef struct VBOXGUESTSESSION
     /** Mouse features supported.  A feature enabled in any guest session will
      * be enabled for the host. */
     uint32_t volatile           fMouseStatus;
-
+#ifdef RT_OS_DARWIN
+    /** Pointer to the associated org_virtualbox_VBoxGuestClient object. */
+    void                       *pvVBoxGuestClient;
+    /** Whether this session has been opened or not. */
+    bool                        fOpened;
+#endif
 } VBOXGUESTSESSION;
 
 RT_C_DECLS_BEGIN

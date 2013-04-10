@@ -42,6 +42,7 @@ VBoxControl_SOURCES = \
 	VBoxControl.cpp
 VBoxControl_SOURCES.win = \
 	VBoxControl.rc
+VBoxControl_LDFLAGS.darwin = -framework IOKit
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

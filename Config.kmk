@@ -93,7 +93,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  INST_DLL             = $(INST_BIN)
  INST_SYS             = $(INST_BIN)
  INST_TESTCASE        = $(INST_BIN)testcase/
- INST_ADDITIONS       = $(INST_BIN)additions/
+ INST_ADDITIONS       = $(INST_DIST)additions/
  INST_ADDITIONS_ISO   = $(INST_BIN)
 
  # other paths
@@ -283,10 +283,7 @@ VBOX_PACKAGE_STRING = $(VBOX_PACKAGE_OS)_$(VBOX_PACKAGE_ARCH)_$(VBOX_PACKAGE_DIS
 ## @{
 # This indicates that additions (of some kind or another) is being _built_.
 # VBOX_WITHOUT_ADDITIONS overrides it.
-#if1of ($(KBUILD_TARGET), freebsd linux os2 solaris win)
-if1of ($(KBUILD_TARGET), freebsd linux solaris win)
- VBOX_WITH_ADDITIONS = 1
-endif
+VBOX_WITH_ADDITIONS = 1
 # Build the optional ring-0 part of the additions for syntax checking.
 # (Except when cross-building on linux since we're using /usr/src/...)
 ifn1of ($(KBUILD_TARGET).$(KBUILD_HOST_ARCH).$(KBUILD_TARGET_ARCH), linux.x86.amd64 linux.amd64.x86)
@@ -4822,7 +4819,7 @@ TEMPLATE_VBOXGUESTR3EXE_DEFS     := $(filter-out $(ARCH_BITS_DEFS), $(TEMPLATE_V
 TEMPLATE_VBOXGUESTR3EXE_DEFS.linux := $(TEMPLATE_VBOXR3EXE_DEFS.linux) LOG_USE_C99 RT_WITHOUT_EXEC_ALLOC
 ifeq ($(KBUILD_TARGET),linux) # As few libs as possible on linux.
  TEMPLATE_VBOXGUESTR3EXE_LIBS     = pthread rt m dl
-else if1of ($(KBUILD_TARGET), freebsd netbsd openbsd)
+else if1of ($(KBUILD_TARGET), darwin freebsd netbsd openbsd)
  TEMPLATE_VBOXGUESTR3EXE_LIBS     = $(TEMPLATE_VBOXR3EXE_LIBS) iconv
 else ifeq ($(KBUILD_TARGET), solaris)
  TEMPLATE_VBOXGUESTR3EXE_LIBS     = $(TEMPLATE_VBOXR3EXE_LIBS) nsl
