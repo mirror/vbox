@@ -1507,7 +1507,7 @@ USES += dtrace
 #
 # Compiler optimization flags.
 #
-VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) -Wno-unused -Wno-trigraphs $(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_no-unused-parameter)
+VBOX_GCC_WARN     ?= -Wall $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) -Wno-unused -Wno-trigraphs $(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-unused-parameter)
 VBOX_GCC_WARN_PEDANTIC = -Wshadow $(VBOX_GCC_WARN) -Wno-long-long
 ifdef VBOX_WITH_MASOCHISTIC_WARNINGS
  VBOX_GCC_WARN_PEDANTIC += -Wunused-variable -Wunused-function -Wunused-label -Wunused-parameter
@@ -2292,7 +2292,7 @@ endif
 # Prevent warnings about unused parameters as of gcc-4.8 as this warning is now very verbose
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CXX),)'
 	$(QUIET)$(APPEND) '$@' ' ifneq ($$(int-ge $$(VBOX_GCC_VERSION_CXX),40800),)'
-	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_no-unused-parameter ?= -Wno-unused-parameter'
+	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_Wno-unused-parameter ?= -Wno-unused-parameter'
 	$(QUIET)$(APPEND) '$@' ' endif'
 	$(QUIET)$(APPEND) '$@' 'endif'
 ifeq ($(KBUILD_TARGET),solaris)
