@@ -597,13 +597,13 @@ DECLINLINE(int) hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCp
     /* Disable interrupts. Interrupts handlers might, in theory, change CR4. */
     RTCCUINTREG fFlags = ASMIntDisableFlags();
 
-    /* Enable the VMX bit in CR4. */
+    /* Enable the VMX bit in CR4 if necessary. */
     RTCCUINTREG uCr4 = ASMGetCR4();
     if (!(uCr4 & X86_CR4_VMXE))
         ASMSetCR4(uCr4 | X86_CR4_VMXE);
 
-    /* Enter VMXON root mode. */
-    int rc = VMXEnable(HCPhysCpuPage);
+    /* Enter VMX root mode. */
+    int rc = VMXEnable(HCPhysCpuPage);  /** @todo This would #GP(0) if we are already in VMX root mode... try skip it? */
     if (RT_FAILURE(rc))
         ASMSetCR4(uCr4);
 
@@ -627,7 +627,7 @@ static int hmR0VmxLeaveRootMode(void)
     /* If we're for some reason not in VMX root mode, then don't leave it. */
     if (ASMGetCR4() & X86_CR4_VMXE)
     {
-        /* Exit root mode using VMXOFF & clear the VMX bit in CR4 */
+        /* Exit VMX root mode and clear the VMX bit in CR4 */
         VMXDisable();
         ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
     }
