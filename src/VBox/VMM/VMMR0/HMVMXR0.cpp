@@ -1541,7 +1541,6 @@ static int hmR0VmxSetupPinCtls(PVM pVM, PVMCPU pVCpu)
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
 
-    val &= zap;
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PIN_EXEC_CONTROLS, val);
     AssertRCReturn(rc, rc);
 
@@ -1648,7 +1647,6 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
 
-    val &= zap;
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, val);
     AssertRCReturn(rc, rc);
 
@@ -1711,7 +1709,6 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
 
-        val &= zap;
         rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS2, val);
         AssertRCReturn(rc, rc);
 
@@ -2226,8 +2223,11 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
 #endif
 
     /* Shouldn't ever happen but there -is- a number. We're well within the recommended 512. */
-    if (idxHostMsr > MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc))
+    if (RT_UNLIKELY(idxHostMsr > MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc)))
+    {
+        LogRel(("idxHostMsr=%u Cpu=%u\n", idxHostMsr, (unsigned)MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc)));
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
+    }
 
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, idxHostMsr);
 
@@ -2307,7 +2307,6 @@ DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
 
-        val &= zap;
         rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_CONTROLS, val);
         AssertRCReturn(rc, rc);
 
@@ -2374,8 +2373,8 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedC
             return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
         }
 
-        val &= zap;
         rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_CONTROLS, val);
+        AssertRCReturn(rc, rc);
 
         /* Update VCPU with the currently set VM-exit controls. */
         pVCpu->hm.s.vmx.u32ExitCtls = val;
