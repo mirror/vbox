@@ -345,6 +345,10 @@ endif
 ## @{
 # Enable the tradition raw-mode virtualization.
 VBOX_WITH_RAW_MODE = 1
+# Enable the ring-1 compression option (mainly for QNX).
+VBOX_WITH_RAW_RING1 = 1
+# Enable safe STR (store task register) emulation for raw-mode.
+VBOX_WITH_SAFE_STR = 1
 # Enable support for 64-bit guests.
 VBOX_WITH_64_BITS_GUESTS = 1
 # Enable multi-core VCPUs.
