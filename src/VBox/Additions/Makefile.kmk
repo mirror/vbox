@@ -158,15 +158,7 @@ ifndef VBOX_ONLY_TESTSUITE
  # The packing target rule, but only if we're on the local build box.
  # (VBOX_WITHOUT_ADDITIONS_ISO is used by the additions build box, see the root makefile.)
  ifndef VBOX_WITHOUT_ADDITIONS_ISO
-
-  ifdef VBOX_WITH_ADDITIONS_ISO.darwin.x86
-    PACKING += $(VBOX_PATH_DIST)/additions/VBoxGuestAdditions.zip
-  else ifdef VBOX_WITH_ADDITIONS_ISO.darwin.amd64
-    PACKING += $(VBOX_PATH_DIST)/additions/VBoxGuestAdditions.zip
-  else
-    PACKING += $(PATH_STAGE_BIN)/additions/VBoxGuestAdditions.zip
-  endif
-
+  PACKING += $(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.zip
  endif
 endif # !VBOX_ONLY_TESTSUITE
 
