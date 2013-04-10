@@ -63,7 +63,10 @@ class VBoxGlobal : public QObject
 
 public:
 
-    static VBoxGlobal &instance();
+    /* Static API: Create/destroy stuff: */
+    static VBoxGlobal* instance();
+    static void create();
+    static void destroy();
 
     bool isValid() { return mValid; }
 
@@ -283,9 +286,6 @@ public:
 
     void retranslateUi();
 
-    /** @internal made public for internal purposes */
-    void cleanup();
-
     /* public static stuff */
 
     static bool isDOSType (const QString &aOSTypeId);
@@ -421,6 +421,12 @@ public slots:
     void sltGUILanguageChange(QString strLang);
     void sltProcessGlobalSettingChange();
 
+protected slots:
+
+    /* Handlers: Prepare/cleanup stuff: */
+    void prepare();
+    void cleanup();
+
 protected:
 
     bool event (QEvent *e);
@@ -428,10 +434,10 @@ protected:
 
 private:
 
+    /* Constructor/destructor: */
     VBoxGlobal();
     ~VBoxGlobal();
 
-    void init();
 #ifdef VBOX_WITH_DEBUGGER_GUI
     void initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const char *pszExtraDataName, bool fDefault = false);
     void setDebuggerVar(int *piDbgCfgVar, bool fState);
@@ -521,10 +527,14 @@ private:
     char mSettingsPw[256];
     bool mSettingsPwSet;
 
-    friend VBoxGlobal &vboxGlobal();
+    /* API: Instance stuff: */
+    static bool m_sfCleanupInProgress;
+    static VBoxGlobal* m_spInstance;
+    friend VBoxGlobal& vboxGlobal();
 };
 
-inline VBoxGlobal &vboxGlobal() { return VBoxGlobal::instance(); }
+/* Shortcut to the static VBoxGlobal::instance() method: */
+inline VBoxGlobal& vboxGlobal() { return *VBoxGlobal::instance(); }
 
 #endif /* __VBoxGlobal_h__ */
 

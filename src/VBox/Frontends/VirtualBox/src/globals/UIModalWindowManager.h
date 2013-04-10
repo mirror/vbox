@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIModalWindowManager class definition
+ * UIModalWindowManager class declaration
  */
 
 /*
@@ -65,9 +65,9 @@ private:
 
     /* Variables: */
     QList<QList<QWidget*> > m_windows;
-    static UIModalWindowManager* m_spInstance;
 
     /* Static API: Instance stuff: */
+    static UIModalWindowManager* m_spInstance;
     static UIModalWindowManager* instance();
     friend UIModalWindowManager& windowManager();
 };

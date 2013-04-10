@@ -28,15 +28,18 @@
 #include <VBox/sup.h>
 
 /* static */
-UIModalWindowManager* UIModalWindowManager::instance() { return m_spInstance; }
 UIModalWindowManager* UIModalWindowManager::m_spInstance = 0;
+UIModalWindowManager* UIModalWindowManager::instance() { return m_spInstance; }
 
 /* static */
 void UIModalWindowManager::create()
 {
-    /* Make sure instance is not created: */
+    /* Make sure instance is NOT created yet: */
     if (m_spInstance)
+    {
+        AssertMsgFailed(("UIModalWindowManager instance is already created!"));
         return;
+    }
 
     /* Create instance: */
     new UIModalWindowManager;
@@ -45,38 +48,35 @@ void UIModalWindowManager::create()
 /* static */
 void UIModalWindowManager::destroy()
 {
-    /* Make sure instance is created: */
+    /* Make sure instance is NOT destroyed yet: */
     if (!m_spInstance)
+    {
+        AssertMsgFailed(("UIModalWindowManager instance is already destroyed!"));
         return;
+    }
 
-    /* Create instance: */
+    /* Destroy instance: */
     delete m_spInstance;
 }
 
 UIModalWindowManager::UIModalWindowManager()
 {
-    /* Make sure instance is not assigned: */
-    if (m_spInstance != this)
-        m_spInstance = this;
+    /* Assign instance: */
+    m_spInstance = this;
 }
 
 UIModalWindowManager::~UIModalWindowManager()
 {
-    /* Make sure instance still assigned: */
-    if (m_spInstance == this)
-        m_spInstance = 0;
+    /* Unassign instance: */
+    m_spInstance = 0;
 }
 
 QWidget* UIModalWindowManager::mainWindowShown() const
 {
-    /* Later this function will be independent of VBoxGlobal at all,
-     * but for now VBoxGlobal creates all the main application windows,
-     * so we should honor this fact.
-     *
-     * It may happen that this method is called during VBoxGlobal
-     * initialization or even after it had failed (for example, to show some message).
-     * Return NULL pointer in this case: */
-    if (!vboxGlobal().isValid())
+    /* It may happen that this method is called before VBoxGlobal initialization
+     * or after initialization had failed (for example, to show some message).
+     * Return NULL pointer in such cases: */
+    if (!VBoxGlobal::instance() || !vboxGlobal().isValid())
         return 0;
 
     /* For VM console process: */
@@ -87,7 +87,7 @@ QWidget* UIModalWindowManager::mainWindowShown() const
             vboxGlobal().activeMachineWindow()->isVisible())
             return vboxGlobal().activeMachineWindow();
     }
-    /* Otherwise: */
+    /* For VM selector process: */
     else
     {
         /* It will be the selector window if visible: */
@@ -95,7 +95,7 @@ QWidget* UIModalWindowManager::mainWindowShown() const
             return &vboxGlobal().selectorWnd();
     }
 
-    /* Nothing by default: */
+    /* NULL by default: */
     return 0;
 }
 

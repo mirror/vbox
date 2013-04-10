@@ -31,9 +31,9 @@ class UIPopupCenter: public QObject
 
 public:
 
-    /* Prepare/cleanup stuff: */
-    static void prepare();
-    static void cleanup();
+    /* Static API: Create/destroy stuff: */
+    static void create();
+    static void destroy();
 
     /* API: Main message function, used directly only in exceptional cases: */
     void message(QWidget *pParent,
@@ -89,10 +89,6 @@ private:
     UIPopupCenter();
     ~UIPopupCenter();
 
-    /* Instance stuff: */
-    static UIPopupCenter* instance();
-    friend UIPopupCenter& popupCenter();
-
     /* Helper: Popup-box stuff: */
     void showPopupBox(QWidget *pParent,
                       const QString &strMessage, const QString &strDetails,
@@ -101,11 +97,15 @@ private:
                       const QString &strAutoConfirmId) const;
 
     /* Variables: */
-    static UIPopupCenter* m_spInstance;
     mutable QMap<QString, QPointer<QWidget> > m_popups;
+
+    /* Instance stuff: */
+    static UIPopupCenter* m_spInstance;
+    static UIPopupCenter* instance();
+    friend UIPopupCenter& popupCenter();
 };
 
-/* Shortcut to the static UIPopupCenter::instance() method, for convenience: */
+/* Shortcut to the static UIPopupCenter::instance() method: */
 inline UIPopupCenter& popupCenter() { return *UIPopupCenter::instance(); }
 
 #endif /* __UIPopupCenter_h__ */

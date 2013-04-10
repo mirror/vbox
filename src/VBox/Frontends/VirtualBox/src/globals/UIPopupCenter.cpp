@@ -31,9 +31,9 @@ UIPopupCenter* UIPopupCenter::m_spInstance = 0;
 UIPopupCenter* UIPopupCenter::instance() { return m_spInstance; }
 
 /* static */
-void UIPopupCenter::prepare()
+void UIPopupCenter::create()
 {
-    /* Make sure instance is not created yet: */
+    /* Make sure instance is NOT created yet: */
     if (m_spInstance)
         return;
 
@@ -42,28 +42,26 @@ void UIPopupCenter::prepare()
 }
 
 /* static */
-void UIPopupCenter::cleanup()
+void UIPopupCenter::destroy()
 {
-    /* Make sure instance is still created: */
+    /* Make sure instance is NOT destroyed yet: */
     if (!m_spInstance)
         return;
 
-    /* Create instance: */
+    /* Destroy instance: */
     delete m_spInstance;
 }
 
 UIPopupCenter::UIPopupCenter()
 {
-    /* Prepare instance: */
-    if (!m_spInstance)
-        m_spInstance = this;
+    /* Assign instance: */
+    m_spInstance = this;
 }
 
 UIPopupCenter::~UIPopupCenter()
 {
-    /* Cleanup instance: */
-    if (m_spInstance)
-        m_spInstance = 0;
+    /* Unassign instance: */
+    m_spInstance = 0;
 }
 
 void UIPopupCenter::message(QWidget *pParent,

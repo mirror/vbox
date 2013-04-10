@@ -73,6 +73,10 @@ public:
         AutoConfirmed = 0x8000
     };
 
+    /* Static API: Create/destroy stuff: */
+    static void create();
+    static void destroy();
+
     /* API: Warning registration stuff: */
     bool warningShown(const QString &strWarningName) const;
     void setWarningShown(const QString &strWarningName, bool fWarningShown) const;
@@ -382,12 +386,13 @@ private slots:
 
 private:
 
-    /* Constructor: */
+    /* Constructor/destructor: */
     UIMessageCenter();
+    ~UIMessageCenter();
 
-    /* Instance stuff: */
-    static UIMessageCenter &instance();
-    friend UIMessageCenter &msgCenter();
+    /* Helpers: Prepare/cleanup stuff: */
+    void prepare();
+    void cleanup();
 
     /* Helper: */
     static QString errorInfoToString(const COMErrorInfo &info, HRESULT wrapperRC = S_OK);
@@ -401,10 +406,15 @@ private:
 
     /* Variables: */
     mutable QStringList m_warnings;
+
+    /* API: Instance stuff: */
+    static UIMessageCenter* m_spInstance;
+    static UIMessageCenter* instance();
+    friend UIMessageCenter& msgCenter();
 };
 
-/* Shortcut to the static UIMessageCenter::instance() method, for convenience. */
-inline UIMessageCenter &msgCenter() { return UIMessageCenter::instance(); }
+/* Shortcut to the static UIMessageCenter::instance() method: */
+inline UIMessageCenter& msgCenter() { return *UIMessageCenter::instance(); }
 
 #endif // __UIMessageCenter_h__
 

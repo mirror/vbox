@@ -186,23 +186,6 @@ public:
 // VBoxGlobal
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool sVBoxGlobalInited = false;
-static bool sVBoxGlobalInCleanup = false;
-
-/** @internal
- *
- *  Special routine to do VBoxGlobal cleanup when the application is being
- *  terminated. It is called before some essential Qt functionality (for
- *  instance, QThread) becomes unavailable, allowing us to use it from
- *  VBoxGlobal::cleanup() if necessary.
- */
-static void vboxGlobalCleanup()
-{
-    Assert (!sVBoxGlobalInCleanup);
-    sVBoxGlobalInCleanup = true;
-    vboxGlobal().cleanup();
-}
-
 /** @internal
  *
  *  Determines the rendering mode from the argument. Sets the appropriate
@@ -257,14 +240,42 @@ static RenderMode vboxGetRenderMode (const char *aModeStr)
     return mode;
 }
 
-/** @class VBoxGlobal
- *
- *  The VBoxGlobal class encapsulates the global VirtualBox data.
- *
- *  There is only one instance of this class per VirtualBox application,
- *  the reference to it is returned by the static instance() method, or by
- *  the global vboxGlobal() function, that is just an inlined shortcut.
- */
+/* static */
+bool VBoxGlobal::m_sfCleanupInProgress = false;
+VBoxGlobal* VBoxGlobal::m_spInstance = 0;
+VBoxGlobal* VBoxGlobal::instance() { return m_spInstance; }
+
+/* static */
+void VBoxGlobal::create()
+{
+    /* Make sure instance is NOT created yet: */
+    if (m_spInstance)
+    {
+        AssertMsgFailed(("VBoxGlobal instance is already created!"));
+        return;
+    }
+
+    /* Create instance: */
+    new VBoxGlobal;
+    /* Prepare instance: */
+    m_spInstance->prepare();
+}
+
+/* static */
+void VBoxGlobal::destroy()
+{
+    /* Make sure instance is NOT destroyed yet: */
+    if (!m_spInstance)
+    {
+        AssertMsgFailed(("VBoxGlobal instance is already destroyed!"));
+        return;
+    }
+
+    /* Cleanup instance: */
+    /* Automatically on QApplication::aboutToQuit() signal: */
+    /* Destroy instance: */
+    delete m_spInstance;
+}
 
 VBoxGlobal::VBoxGlobal()
     : mValid (false)
@@ -281,63 +292,14 @@ VBoxGlobal::VBoxGlobal()
     , m3DAvailable(false)
     , mSettingsPwSet(false)
 {
-}
-
-//
-// Public members
-/////////////////////////////////////////////////////////////////////////////
-
-/**
- *  Returns a reference to the global VirtualBox data, managed by this class.
- *
- *  The main() function of the VBox GUI must call this function soon after
- *  creating a QApplication instance but before opening any of the main windows
- *  (to let the VBoxGlobal initialization procedure use various Qt facilities),
- *  and continue execution only when the isValid() method of the returned
- *  instancereturns true, i.e. do something like:
- *
- *  @code
- *  if ( !VBoxGlobal::instance().isValid() )
- *      return 1;
- *  @endcode
- *  or
- *  @code
- *  if ( !vboxGlobal().isValid() )
- *      return 1;
- *  @endcode
- *
- *  @note Some VBoxGlobal methods can be used on a partially constructed
- *  VBoxGlobal instance, i.e. from constructors and methods called
- *  from the VBoxGlobal::init() method, which obtain the instance
- *  using this instance() call or the ::vboxGlobal() function. Currently, such
- *  methods are:
- *      #vmStateText, #vmTypeIcon, #vmTypeText, #vmTypeTextList, #vmTypeFromText.
- *
- *  @see ::vboxGlobal
- */
-VBoxGlobal &VBoxGlobal::instance()
-{
-    static VBoxGlobal vboxGlobal_instance;
-
-    if (!sVBoxGlobalInited)
-    {
-        /* check that a QApplication instance is created */
-        if (qApp)
-        {
-            sVBoxGlobalInited = true;
-            vboxGlobal_instance.init();
-            /* add our cleanup handler to the list of Qt post routines */
-            qAddPostRoutine (vboxGlobalCleanup);
-        }
-        else
-            AssertMsgFailed (("Must construct a QApplication first!"));
-    }
-    return vboxGlobal_instance;
+    /* Assign instance: */
+    m_spInstance = this;
 }
 
 VBoxGlobal::~VBoxGlobal()
 {
-    qDeleteAll (mOsTypeIcons);
+    /* Unassign instance: */
+    m_spInstance = 0;
 }
 
 /* static */
@@ -1779,8 +1741,8 @@ void VBoxGlobal::startEnumeratingMedia()
     if (mMediaEnumThread != NULL)
         return;
 
-    /* ignore the request during application termination */
-    if (sVBoxGlobalInCleanup)
+    /* Ignore the request during VBoxGlobal cleanup: */
+    if (m_sfCleanupInProgress)
         return;
 
     /* composes a list of all currently known media & their children */
@@ -1816,7 +1778,7 @@ void VBoxGlobal::startEnumeratingMedia()
             QObject *self = &vboxGlobal();
 
             /* Enumerate the list */
-            for (int i = 0; i < mVector.size() && !sVBoxGlobalInCleanup; ++ i)
+            for (int i = 0; i < mVector.size() && !m_sfCleanupInProgress; ++ i)
             {
                 mVector [i].blockAndQueryState();
                 QApplication::
@@ -1826,7 +1788,7 @@ void VBoxGlobal::startEnumeratingMedia()
             }
 
             /* Post the end-of-enumeration event */
-            if (!sVBoxGlobalInCleanup)
+            if (!m_sfCleanupInProgress)
                 QApplication::postEvent (self, new VBoxMediaEnumEvent (mSavedIt));
 
             COMBase::CleanupCOM();
@@ -4018,10 +3980,18 @@ bool VBoxGlobal::processArgs()
     return fResult;
 }
 
-void VBoxGlobal::init()
+void VBoxGlobal::prepare()
 {
+    /* Make sure QApplication cleanup us on exit: */
+    connect(qApp, SIGNAL(aboutToQuit()), this, SLOT(cleanup()));
+
+    /* Create message-center: */
+    UIMessageCenter::create();
     /* Create popup-center: */
-    UIPopupCenter::prepare();
+    UIPopupCenter::create();
+
+    /* Load translation based on the current locale: */
+    loadLanguage();
 
 #ifdef DEBUG
     mVerString += " [DEBUG]";
@@ -4067,8 +4037,7 @@ void VBoxGlobal::init()
         return;
     }
 
-    /* Load the customized language as early as possible to get possible error
-     * messages translated */
+    /* Load translation based on the user settings: */
     QString sLanguageId = gset.languageId();
     if (!sLanguageId.isNull())
         loadLanguage (sLanguageId);
@@ -4459,14 +4428,12 @@ void VBoxGlobal::init()
     UIUpdateManager::schedule();
 }
 
-
-/** @internal
- *
- *  This method should be never called directly. It is called automatically
- *  when the application terminates.
- */
 void VBoxGlobal::cleanup()
 {
+    /* Preventing some unwanted stuff
+     * which could de called from the other threads: */
+    m_sfCleanupInProgress = true;
+
     /* Shutdown update manager: */
     UIUpdateManager::shutdown();
 
@@ -4479,13 +4446,6 @@ void VBoxGlobal::cleanup()
     /* Destroy shortcut pool: */
     UIShortcutPool::destroy();
 
-    /* sanity check */
-    if (!sVBoxGlobalInCleanup)
-    {
-        AssertMsgFailed (("Should never be called directly\n"));
-        return;
-    }
-
 #ifdef VBOX_GUI_WITH_PIDFILE
     deletePidfile();
 #endif
@@ -4496,7 +4456,6 @@ void VBoxGlobal::cleanup()
     /* Cleanup medium enumeration thread: */
     if (mMediaEnumThread)
     {
-        /* sVBoxGlobalInCleanup is true here, so just wait for the thread */
         mMediaEnumThread->wait();
         delete mMediaEnumThread;
         mMediaEnumThread = 0;
@@ -4508,6 +4467,9 @@ void VBoxGlobal::cleanup()
         delete m_pVirtualMachine;
 
     UIConverter::cleanup();
+
+    /* Ensure mOsTypeIcons is cleaned up: */
+    qDeleteAll(mOsTypeIcons);
 
     /* ensure CGuestOSType objects are no longer used */
     mFamilyIDs.clear();
@@ -4527,7 +4489,9 @@ void VBoxGlobal::cleanup()
     COMBase::CleanupCOM();
 
     /* Destroy popup-center: */
-    UIPopupCenter::cleanup();
+    UIPopupCenter::destroy();
+    /* Destroy message-center: */
+    UIMessageCenter::destroy();
 
     mValid = false;
 }
