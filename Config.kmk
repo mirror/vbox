@@ -94,7 +94,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  INST_SYS             = $(INST_BIN)
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_DIST)additions/
- INST_ADDITIONS_ISO   = $(INST_BIN)
+ INST_ADDITIONS_ISO   = $(INST_ADDITIONS)
 
  # other paths
  INST_LIB             = lib/
