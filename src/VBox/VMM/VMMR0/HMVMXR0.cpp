@@ -1663,7 +1663,8 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
         val = pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;           /* Bits set here must be set in the VMCS. */
         zap = pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;              /* Bits cleared here must be cleared in the VMCS. */
 
-        val |= VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT;                    /* WBINVD causes a VM-exit. */
+        if (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT)
+            val |= VMX_VMCS_CTRL_PROC_EXEC2_WBINVD_EXIT;                /* WBINVD causes a VM-exit. */
 
         if (pVM->hm.s.fNestedPaging)
             val |= VMX_VMCS_CTRL_PROC_EXEC2_EPT;                        /* Enable EPT. */
