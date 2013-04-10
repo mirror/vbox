@@ -1472,7 +1472,7 @@ DECLINLINE(int) VMXEnable(RTHCPHYS pVMXOn)
        "movl     $"STR(VERR_VMX_INVALID_VMXON_PTR)", %0         \n\t"
        "jmp      2f                                             \n\t"
        "1:                                                      \n\t"
-       "movl     $"STR(VERR_VMX_GENERIC)", %0                   \n\t"
+       "movl     $"STR(VERR_VMX_VMXON_FAILED)", %0              \n\t"
        "2:                                                      \n\t"
        "add      $8, %%esp                                      \n\t"
        :"=rm"(rc)
@@ -1497,7 +1497,7 @@ DECLINLINE(int) VMXEnable(RTHCPHYS pVMXOn)
 
 vmxon_good:
         jnz     the_end
-        mov     dword ptr [rc], VERR_VMX_GENERIC
+        mov     dword ptr [rc], VERR_VMX_VMXON_FAILED
 the_end:
         add     esp, 8
     }

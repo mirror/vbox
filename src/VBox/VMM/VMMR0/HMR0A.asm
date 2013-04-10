@@ -566,7 +566,7 @@ BEGINPROC VMXEnable
 
 .good:
     jnz     .the_end
-    mov     eax, VERR_VMX_GENERIC
+    mov     eax, VERR_VMX_VMXON_FAILED
 
 .the_end:
 %ifdef RT_ARCH_AMD64
