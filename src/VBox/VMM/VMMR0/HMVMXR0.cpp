@@ -2425,7 +2425,6 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             uint32_t u32TprThreshold = fPendingIntr ? (u8GuestTpr >> 4) : 0;
             Assert(!(u32TprThreshold & 0xfffffff0));            /* Bits 31:4 MBZ. */
 
-            Log(("Getting TPR=%d Threshold=%u\n", pVCpu->hm.s.vmx.pbVirtApic[0x80], u32TprThreshold));
             rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
             AssertRCReturn(rc, rc);
 
@@ -3441,7 +3440,7 @@ DECLINLINE(int) hmR0VmxLoadGuestSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
     {
         /* The unusable bit is specific to VT-x, if it's a null selector mark it as an unusable segment. */
         uint32_t u32Access = 0;
-        if (!(pCtx->ldtr.Attr.u & VMX_SEL_UNUSABLE))
+        if (!pCtx->ldtr.Attr.u)
             u32Access = VMX_SEL_UNUSABLE;
         else
             u32Access = pCtx->ldtr.Attr.u;
@@ -5558,16 +5557,18 @@ static void hmR0VmxUpdateTRPMTrap(PVMCPU pVCpu)
                 enmTrapType = TRPM_32BIT_HACK;
                 break;
         }
+        Log(("Converting pending HM event to TRPM trap uVector=%#x enmTrapType=%d\n", uVector, enmTrapType));
         int rc = TRPMAssertTrap(pVCpu, uVector, enmTrapType);
         AssertRC(rc);
         if (fErrorCodeValid)
             TRPMSetErrorCode(pVCpu, uErrorCode);
-
-        /* Clear the VT-x state bits now that TRPM has the information. */
-        pVCpu->hm.s.Event.fPending = false;
-        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);
         AssertRC(rc);
+        pVCpu->hm.s.Event.fPending = false;
     }
+
+    /* Clear the VT-x state bits to prevent any stale injection. */
+    int rc2 = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);
+    AssertRC(rc2);
 }
 
 
@@ -5785,6 +5786,7 @@ static int hmR0VmxInjectPendingInterrupt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedC
     /* First inject any pending HM interrupts. */
     if (pVCpu->hm.s.Event.fPending)
     {
+        Log(("Pending event\n"));
         int rc = hmR0VmxInjectEventVmcs(pVM, pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntrInfo, 0 /* cbInstr */,
                                     pVCpu->hm.s.Event.u32ErrCode);
         AssertRCReturn(rc, rc);
@@ -5802,6 +5804,7 @@ static int hmR0VmxInjectPendingInterrupt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedC
         uIntrInfo  = X86_XCPT_NMI;
         uIntrInfo |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
         uIntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+        Log(("Injecting NMI\n"));
         int rc = hmR0VmxInjectEventVmcs(pVM, pVCpu, pMixedCtx, uIntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */);
         AssertRCReturn(rc, rc);
         return rc;
@@ -5828,6 +5831,7 @@ static int hmR0VmxInjectPendingInterrupt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedC
                 rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
                 if (RT_SUCCESS(rc))
                 {
+                    Log(("PDMGetInterrupt: u8Interrupt=%#x\n", u8Interrupt));
                     /* Convert pending interrupt from PIC/APIC into TRPM and handle it below. */
                     rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
                     AssertRCReturn(rc, rc);
@@ -5856,7 +5860,9 @@ static int hmR0VmxInjectPendingInterrupt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedC
         && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
         && TRPMHasTrap(pVCpu))
     {
+        Log(("Injecting TRPM trap\n"));
         rc = hmR0VmxInjectTRPMTrap(pVM, pVCpu, pMixedCtx);
+        Assert(!TRPMHasTrap(pVCpu));
         AssertRCReturn(rc, rc);
     }
     return rc;
@@ -6445,7 +6451,7 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
 
     /* Load the required guest state bits (for guest-state changes in the inner execution loop). */
     Assert(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_CONTEXT));
-    Log(("LoadFlags=%#RX32\n", pVCpu->hm.s.fContextUseFlags));
+    Log4(("LoadFlags=%#RX32\n", pVCpu->hm.s.fContextUseFlags));
     int rc = VINF_SUCCESS;
     if (pVCpu->hm.s.fContextUseFlags == HM_CHANGED_GUEST_RIP)
     {
@@ -6580,7 +6586,6 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
             && pVmxTransient->u8GuestTpr != pVCpu->hm.s.vmx.pbVirtApic[0x80])
         {
-            Log(("Setting TPR=%d\n", pVCpu->hm.s.vmx.pbVirtApic[0x80]));
             rc = PDMApicSetTPR(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[0x80]);
             AssertRC(rc);
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_GUEST_APIC_STATE;
@@ -7670,9 +7675,6 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
                     Log(("CR0 write rc=%d\n", rc));
                     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
                     break;
-                case 2: /* CR2 */
-                    Log(("CR2 write rc=%d\n", rc));
-                    break;
                 case 3: /* CR3 */
                     Assert(!pVM->hm.s.fNestedPaging || !CPUMIsGuestPagingEnabledEx(pMixedCtx));
                     Log(("CR3 write rc=%d\n", rc));
@@ -8035,7 +8037,8 @@ static DECLCALLBACK(int) hmR0VmxExitApicAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
             VBOXSTRICTRC rc2 = IOMMMIOPhysHandler(pVM, pVCpu, (uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ) ? 0 : X86_TRAP_PF_RW,
                                                   CPUMCTX2CORE(pMixedCtx), GCPhys);
             rc = VBOXSTRICTRC_VAL(rc2);
-            Log(("ApicAccess %RGp %#x\n", GCPhys, VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification)));
+            Log(("ApicAccess %RGp %#x rc=%d\n", GCPhys,
+                 VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification), rc));
             if (   rc == VINF_SUCCESS
                 || rc == VERR_PAGE_TABLE_NOT_PRESENT
                 || rc == VERR_PAGE_NOT_PRESENT)
@@ -8314,7 +8317,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptBP(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
         AssertRCReturn(rc, rc);
     }
 
-    Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET);
+    Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_EM_DBG_BREAKPOINT);
     return rc;
 }
 
@@ -8427,6 +8430,8 @@ static DECLCALLBACK(int) hmR0VmxExitXcptGP(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
         rc  = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
         rc |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
         rc |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+        rc |= hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
+        Log(("#GP Gst: RIP %#RX64\n", pMixedCtx->rip));
         rc |= hmR0VmxInjectEventVmcs(pVM, pVCpu, pMixedCtx,
                                         VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
                                         pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode);
