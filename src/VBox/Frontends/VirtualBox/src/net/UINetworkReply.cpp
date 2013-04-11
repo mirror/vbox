@@ -41,12 +41,24 @@ public:
     UINetworkReplyPrivateThread(const QNetworkRequest &request)
         : m_request(request)
         , m_iError(VINF_SUCCESS)
+        , m_pHttp(0)
     {
     }
 
     /* API: */
     const QByteArray& readAll() const { return m_reply; }
     int error() const { return m_iError; }
+
+    /* API: Abort stuff: */
+    void abort()
+    {
+        /* Make sure http is created: */
+        if (!m_pHttp)
+            return;
+
+        /* Call for http abort: */
+        RTHttpAbort(m_pHttp);
+    }
 
 private:
 
@@ -57,14 +69,13 @@ private:
         RTR3InitExeNoArguments(RTR3INIT_FLAGS_SUPLIB);
 
         /* Create: */
-        RTHTTP hHttp;
-        m_iError = RTHttpCreate(&hHttp);
+        m_iError = RTHttpCreate(&m_pHttp);
 
         /* Setup proxy: */
         UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
         if (proxyManager.proxyEnabled())
         {
-            RTHttpSetProxy(hHttp,
+            RTHttpSetProxy(m_pHttp,
                            proxyManager.proxyHost().toAscii().constData(),
                            proxyManager.proxyPort().toUInt(), 0, 0);
         }
@@ -85,14 +96,14 @@ private:
                 formattedHeaderPointerVector << formattedHeaderVector.last().constData();
             }
             const char **ppFormattedHeaders = formattedHeaderPointerVector.data();
-            RTHttpSetHeaders(hHttp, formattedHeaderPointerVector.size(), ppFormattedHeaders);
+            RTHttpSetHeaders(m_pHttp, formattedHeaderPointerVector.size(), ppFormattedHeaders);
         }
 
         /* Acquire: */
         if (RT_SUCCESS(m_iError))
         {
             char *pszBuf = 0;
-            m_iError = RTHttpGet(hHttp,
+            m_iError = RTHttpGet(m_pHttp,
                                  m_request.url().toString().toAscii().constData(),
                                  &pszBuf);
             m_reply = QByteArray(pszBuf);
@@ -100,12 +111,14 @@ private:
         }
 
         /* Destroy: */
-        RTHttpDestroy(hHttp);
+        RTHttpDestroy(m_pHttp);
+        m_pHttp = 0;
     }
 
     /* Variables: */
     QNetworkRequest m_request;
     int m_iError;
+    RTHTTP m_pHttp;
     QByteArray m_reply;
 };
 
@@ -137,6 +150,7 @@ public:
     ~UINetworkReplyPrivate()
     {
         /* Terminate network-reply thread: */
+        m_pThread->abort();
         m_pThread->wait();
         delete m_pThread;
         m_pThread = 0;
@@ -145,8 +159,7 @@ public:
     /* API: Abort reply: */
     void abort()
     {
-        m_error = QNetworkReply::OperationCanceledError;
-        emit finished();
+        m_pThread->abort();
     }
 
     /* API: Error-code getter: */
@@ -187,6 +200,9 @@ private slots:
         {
             case VINF_SUCCESS:
                 m_error = QNetworkReply::NoError;
+                break;
+            case VERR_HTTP_ABORTED:
+                m_error = QNetworkReply::OperationCanceledError;
                 break;
             case VERR_HTTP_NOT_FOUND:
                 m_error = QNetworkReply::HostNotFoundError;
