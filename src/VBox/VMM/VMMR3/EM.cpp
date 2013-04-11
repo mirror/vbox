@@ -1319,20 +1319,17 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (!EMIsRawRing0Enabled(pVM))
             return EMSTATE_REM;
 
-# ifdef VBOX_WITH_RAW_RING1
-        /* Only ring 0 and 1 supervisor code. */
         if (EMIsRawRing1Enabled(pVM))
         {
+            /* Only ring 0 and 1 supervisor code. */
             if ((uSS & X86_SEL_RPL) == 2)   /* ring 1 code is moved into ring 2, so we can't support ring-2 in that case. */
             {
                 Log2(("raw r0 mode refused: CPL %d\n", uSS & X86_SEL_RPL));
                 return EMSTATE_REM;
             }
         }
-        else
-# endif
         /* Only ring 0 supervisor code. */
-        if ((uSS & X86_SEL_RPL) != 0)
+        else if ((uSS & X86_SEL_RPL) != 0)
         {
             Log2(("raw r0 mode refused: CPL %d\n", uSS & X86_SEL_RPL));
             return EMSTATE_REM;

@@ -490,27 +490,9 @@ DECLASM(void)           CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint3
 DECLASM(void)           CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
 
 
-/**
- * Get the current privilege level of the guest.
- *
- * @returns CPL
- * @param   pVCpu       The current virtual CPU.
- * @param   pRegFrame   Pointer to the register frame.
- */
 VMMDECL(uint32_t)       CPUMRCGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
-
 #ifdef VBOX_WITH_RAW_RING1
-/**
- * Transforms the guest CPU state to raw-ring mode.
- *
- * This function will change the any of the cs and ss register with DPL=0 to DPL=1.
- *
- * @returns VBox status. (recompiler failure)
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtxCore    The context core (for trap usage).
- * @see     @ref pg_raw
- */
-VMMDECL(void)         CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
+VMMDECL(void)           CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
 #endif
 
 /** @} */

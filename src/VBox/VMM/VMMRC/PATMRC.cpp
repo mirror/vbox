@@ -154,11 +154,8 @@ VMMRC_INT_DECL(int) PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame
     int rc;
 
     /* Very important check -> otherwise we have a security leak. */
-#ifdef VBOX_WITH_RAW_RING1
-    AssertReturn(!pRegFrame->eflags.Bits.u1VM && (pRegFrame->ss.Sel & X86_SEL_RPL) <= (unsigned) (EMIsRawRing1Enabled(pVM) ? 2 : 1), VERR_ACCESS_DENIED);
-#else
-    AssertReturn(!pRegFrame->eflags.Bits.u1VM && (pRegFrame->ss.Sel & X86_SEL_RPL) == 1, VERR_ACCESS_DENIED);
-#endif
+    AssertReturn(!pRegFrame->eflags.Bits.u1VM && (pRegFrame->ss.Sel & X86_SEL_RPL) <= (EMIsRawRing1Enabled(pVM) ? 2U : 1U),
+                 VERR_ACCESS_DENIED);
     Assert(PATMIsPatchGCAddr(pVM, pRegFrame->eip));
 
     /* OP_ILLUD2 in PATM generated code? */
@@ -458,11 +455,9 @@ VMMRC_INT_DECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
     PPATMPATCHREC pRec;
     int rc;
 
-#ifdef VBOX_WITH_RAW_RING1
-    AssertReturn(!pRegFrame->eflags.Bits.u1VM && ((pRegFrame->ss.Sel & X86_SEL_RPL) == 1 || (EMIsRawRing1Enabled(pVM) && (pRegFrame->ss.Sel & X86_SEL_RPL) == 2)), VERR_ACCESS_DENIED);
-#else
-    AssertReturn(!pRegFrame->eflags.Bits.u1VM && (pRegFrame->ss.Sel & X86_SEL_RPL) == 1, VERR_ACCESS_DENIED);
-#endif
+    AssertReturn(!pRegFrame->eflags.Bits.u1VM
+                 && (   (pRegFrame->ss.Sel & X86_SEL_RPL) == 1
+                     || (EMIsRawRing1Enabled(pVM) && (pRegFrame->ss.Sel & X86_SEL_RPL) == 2)), VERR_ACCESS_DENIED);
 
     /* Int 3 in PATM generated code? (most common case) */
     if (PATMIsPatchGCAddr(pVM, pRegFrame->eip))

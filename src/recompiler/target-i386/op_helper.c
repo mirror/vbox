@@ -231,8 +231,8 @@ static inline int load_segment(uint32_t *e1_ptr, uint32_t *e2_ptr,
 
 #ifdef VBOX
     /* Trying to load a selector with CPL=1? */
-    /* @todo this is a hack to correct the incorrect checking order for pending interrupts in the patm iret replacement code (corrected in the ring-1 version) */
-    /* @todo in theory the iret could fault and we'd still need this. */
+    /** @todo this is a hack to correct the incorrect checking order for pending interrupts in the patm iret replacement code (corrected in the ring-1 version) */
+    /** @todo in theory the iret could fault and we'd still need this. */
     if ((env->hflags & HF_CPL_MASK) == 0 && (selector & 3) == 1 && (env->state & CPU_RAW_RING0) && !EMIsRawRing1Enabled(env->pVM))
     {
         Log(("RPL 1 -> sel %04X -> %04X\n", selector, selector & 0xfffc));
@@ -2560,8 +2560,10 @@ void helper_ltr(int selector)
     Log(("helper_ltr: pc=%RGv old tr=%RTsel {.base=%RGv, .limit=%RGv, .flags=%RX32} new=%RTsel\n",
          (RTGCPTR)env->eip, (RTSEL)env->tr.selector, (RTGCPTR)env->tr.base, (RTGCPTR)env->tr.limit,
          env->tr.flags, (RTSEL)(selector & 0xffff)));
+# if 0 /** @todo r=bird: This looks very fishy, need good reason to re-enable it. */
     ASMAtomicOrS32((int32_t volatile *)&env->interrupt_request,
                     CPU_INTERRUPT_EXTERNAL_EXIT);
+# endif
 #endif
     selector &= 0xffff;
     if ((selector & 0xfffc) == 0) {
@@ -3185,7 +3187,6 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
 #ifdef VBOX
         if ((new_cs & 0x3) == 1 && (env->state & CPU_RAW_RING0))
         {
-# ifdef VBOX_WITH_RAW_RING1
             if (   !EMIsRawRing1Enabled(env->pVM)
                 ||  env->segs[R_CS].selector == (new_cs & 0xfffc))
             {
@@ -3197,19 +3198,12 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
                 /* Ugly assumption: assume a genuine switch to ring-1. */
                 Log(("Genuine switch to ring-1 (iret)\n"));
             }
-# else
-            Log(("RPL 1 -> new_cs %04X -> %04X\n", new_cs, new_cs & 0xfffc));
-            new_cs = new_cs & 0xfffc;
-# endif
         }
-# ifdef VBOX_WITH_RAW_RING1
-        else
-        if ((new_cs & 0x3) == 2 && (env->state & CPU_RAW_RING0) && EMIsRawRing1Enabled(env->pVM))
+        else if ((new_cs & 0x3) == 2 && (env->state & CPU_RAW_RING0) && EMIsRawRing1Enabled(env->pVM))
         {
             Log(("RPL 2 -> new_cs %04X -> %04X\n", new_cs, (new_cs & 0xfffc) | 1));
             new_cs = (new_cs & 0xfffc) | 1;
         }
-# endif
 #endif
     } else {
         /* 16 bits */

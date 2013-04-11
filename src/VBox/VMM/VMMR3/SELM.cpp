@@ -62,6 +62,7 @@
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/stam.h>
+#include <VBox/vmm/em.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/pgm.h>
@@ -79,6 +80,7 @@
 #include <iprt/thread.h>
 #include <iprt/string.h>
 
+#include "SELMInline.h"
 
 
 /** SELM saved state version. */
@@ -956,7 +958,7 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
     }
 
 #ifdef VBOX_WITH_SAFE_STR
-    /** Use the guest's TR selector to plug the str virtualization hole. */
+    /* Use the guest's TR selector to plug the str virtualization hole. */
     if (CPUMGetGuestTR(pVCpu, NULL) != 0)
     {
         Log(("SELM: Use guest TSS selector %x\n", CPUMGetGuestTR(pVCpu, NULL)));
@@ -1028,6 +1030,7 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
         ||  GDTR.cbGdt != pVM->selm.s.GuestGdtr.cbGdt)
     {
         Log(("SELMR3UpdateFromCPUM: Guest's GDT is changed to pGdt=%016RX64 cbGdt=%08X\n", GDTR.pGdt, GDTR.cbGdt));
+
 #ifdef SELM_TRACK_GUEST_GDT_CHANGES
         /*
          * [Re]Register write virtual handler for guest's GDT.
@@ -1043,9 +1046,11 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
                                          0, selmR3GuestGDTWriteHandler, "selmRCGuestGDTWriteHandler", 0,
                                          "Guest GDT write access handler");
 # ifdef VBOX_WITH_RAW_RING1
-        /* Some guest OSes (QNX) share code and the GDT on the same page; PGMR3HandlerVirtualRegister doesn't support more than one handler, so we kick out the 
-         * PATM handler as this one is more important. 
-         * @todo fix this properly in PGMR3HandlerVirtualRegister
+        /** @todo !HACK ALERT!
+         * Some guest OSes (QNX) share code and the GDT on the same page;
+         * PGMR3HandlerVirtualRegister doesn't support more than one handler,
+         * so we kick out the  PATM handler as this one is more important.
+         * Fix this properly in PGMR3HandlerVirtualRegister?
          */
         if (rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT)
         {
@@ -1061,7 +1066,8 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
 # endif
         if (RT_FAILURE(rc))
             return rc;
-#endif
+#endif /* SELM_TRACK_GUEST_GDT_CHANGES */
+
         /* Update saved Guest GDTR. */
         pVM->selm.s.GuestGdtr = GDTR;
         pVM->selm.s.fGDTRangeRegistered = true;
@@ -1242,7 +1248,7 @@ static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
      */
     /** @todo investigate how intel handle various operations on half present cross page entries. */
     off = GCPtrLdt & (sizeof(X86DESC) - 1);
-////    AssertMsg(!off, ("LDT is not aligned on entry size! GCPtrLdt=%08x\n", GCPtrLdt));
+    AssertMsg(!off, ("LDT is not aligned on entry size! GCPtrLdt=%08x\n", GCPtrLdt));
 
     /* Note: Do not skip the first selector; unlike the GDT, a zero LDT selector is perfectly valid. */
     unsigned    cbLeft = cbLdt + 1;
@@ -1472,8 +1478,9 @@ VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
 
     STAM_PROFILE_STOP(&pVM->selm.s.StatUpdateFromCPUM, a);
     return rcStrict;
-#endif
+#endif /* VBOX_WITH_RAW_MODE */
 }
+
 
 #ifdef SELM_TRACK_GUEST_GDT_CHANGES
 /**
@@ -1567,6 +1574,7 @@ static DECLCALLBACK(int) selmR3GuestTSSWriteHandler(PVM pVM, RTGCPTR GCPtr, void
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 #endif
+
 
 /**
  * Synchronize the shadowed fields in the TSS.
@@ -1718,12 +1726,12 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
 
 #ifdef VBOX_WITH_RAW_RING1
             /* Update our TSS structure for the guest's ring 2 stack */
-            selmSetRing2Stack(pVM, (Tss.ss1 & ~1) | 2, Tss.esp1);
-
-            if (    (pVM->selm.s.Tss.ss2 != ((Tss.ss1 & ~2) | 1))
-                ||  pVM->selm.s.Tss.esp2 != Tss.esp1)
+            if (EMIsRawRing1Enabled(pVM))
             {
-                Log(("SELMR3SyncTSS: Updating TSS ring 1 stack to %04X:%08X from %04X:%08X\n", Tss.ss1, Tss.esp1, (pVM->selm.s.Tss.ss2 & ~2) | 1, pVM->selm.s.Tss.esp2));
+                if (    (pVM->selm.s.Tss.ss2 != ((Tss.ss1 & ~2) | 1))
+                    ||  pVM->selm.s.Tss.esp2 != Tss.esp1)
+                    Log(("SELMR3SyncTSS: Updating TSS ring 1 stack to %04X:%08X from %04X:%08X\n", Tss.ss1, Tss.esp1, (pVM->selm.s.Tss.ss2 & ~2) | 1, pVM->selm.s.Tss.esp2));
+                selmSetRing2Stack(pVM, (Tss.ss1 & ~1) | 2, Tss.esp1);
             }
 #endif
         }
@@ -1769,9 +1777,11 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
             if (RT_FAILURE(rc))
             {
 # ifdef VBOX_WITH_RAW_RING1
-                /* Some guest OSes (QNX) share code and the TSS on the same page; PGMR3HandlerVirtualRegister doesn't support more than one handler, so we kick out the 
-                 * PATM handler as this one is more important. 
-                 * @todo fix this properly in PGMR3HandlerVirtualRegister
+                /** @todo !HACK ALERT!
+                 * Some guest OSes (QNX) share code and the TSS on the same page;
+                 * PGMR3HandlerVirtualRegister doesn't support more than one
+                 * handler, so we kick out the PATM handler as this one is more
+                 * important. Fix this properly in PGMR3HandlerVirtualRegister?
                  */
                 if (rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT)
                 {
@@ -1793,7 +1803,8 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
                 return rc;
 # endif
            }
-#endif
+#endif /* SELM_TRACK_GUEST_TSS_CHANGES */
+
             /* Update saved Guest TSS info. */
             pVM->selm.s.GCPtrGuestTss       = GCPtrTss;
             pVM->selm.s.cbMonitoredGuestTss = cbMonitoredTss;
@@ -2094,9 +2105,10 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 #endif /* !VBOX_STRICT */
 }
 
+
 # ifdef VBOX_WITH_SAFE_STR
 /**
- * Validates the RawR0 TR shadow GDT entry
+ * Validates the RawR0 TR shadow GDT entry.
  *
  * @returns true if it matches.
  * @returns false and assertions on mismatch..
@@ -2134,7 +2146,7 @@ VMMR3DECL(bool) SELMR3CheckShadowTR(PVM pVM)
 #  endif
     return true;
 }
-# endif 
+# endif /* VBOX_WITH_SAFE_STR */
 
 #endif /* VBOX_WITH_RAW_MODE */
 

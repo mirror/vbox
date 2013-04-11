@@ -2665,11 +2665,10 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
 # ifdef VBOX_WITH_RAW_RING1
                 if (pVCpu->cpum.s.fRawEntered)
                 {
-                    if (    EMIsRawRing1Enabled(pVCpu->CTX_SUFF(pVM))
-                        &&  uCpl == 2)
+                    if (   uCpl == 2
+                        && EMIsRawRing1Enabled(pVCpu->CTX_SUFF(pVM)))
                         uCpl = 1;
-                    else
-                    if (uCpl == 1)
+                    else if (uCpl == 1)
                         uCpl = 0;
                 }
                 Assert(uCpl != 2);  /* ring 2 support not allowed anymore. */

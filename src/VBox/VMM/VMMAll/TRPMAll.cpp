@@ -624,16 +624,13 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
 
                     if (!fConforming && dpl < cpl)
                     {
-#ifdef IN_RC /* Only in GC mode we still see tracing of our ring modifications */
-                        if (    (pRegFrame->ss.Sel & X86_SEL_RPL) == 1 
+#ifdef IN_RC /* Only in RC we still see tracing of our ring modifications. */
+                        if (    (pRegFrame->ss.Sel & X86_SEL_RPL) == 1
                             &&  !eflags.Bits.u1VM)
                             pTrapStack[--idx] = pRegFrame->ss.Sel & ~1;         /* Mask away traces of raw ring 0 execution (ring 1). */
-# ifdef VBOX_WITH_RAW_RING1
-                        else
-                        if (    EMIsRawRing1Enabled(pVM)
-                            &&  (pRegFrame->ss.Sel & X86_SEL_RPL) == 2)
+                        else if (   EMIsRawRing1Enabled(pVM)
+                                 && (pRegFrame->ss.Sel & X86_SEL_RPL) == 2)
                             pTrapStack[--idx] = (pRegFrame->ss.Sel & ~2) | 1;   /* Mask away traces of raw ring 1 execution (ring 2). */
-# endif
                         else
 #endif  /* IN_RC */
                             pTrapStack[--idx] = pRegFrame->ss.Sel;
@@ -644,16 +641,14 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                     /* Note: We use the eflags copy, that includes the virtualized bits! */
                     /* Note: Not really necessary as we grab include those bits in the trap/irq handler trampoline */
                     pTrapStack[--idx] = eflags.u32;
-#ifdef IN_RC /* Only in GC mode we still see tracing of our ring modifications */
-                    if (    (pRegFrame->cs.Sel & X86_SEL_RPL) == 1 
+
+#ifdef IN_RC /* Only in RC mode we still see tracing of our ring modifications */
+                    if (    (pRegFrame->cs.Sel & X86_SEL_RPL) == 1
                         &&  !eflags.Bits.u1VM)
                         pTrapStack[--idx] = pRegFrame->cs.Sel & ~1;         /* Mask away traces of raw ring execution (ring 1). */
-# ifdef VBOX_WITH_RAW_RING1
-                    else
-                    if (    EMIsRawRing1Enabled(pVM)
-                        &&  (pRegFrame->cs.Sel & X86_SEL_RPL) == 2)
+                    else if (   EMIsRawRing1Enabled(pVM)
+                             && (pRegFrame->cs.Sel & X86_SEL_RPL) == 2)
                         pTrapStack[--idx] = (pRegFrame->cs.Sel & ~2) | 1;   /* Mask away traces of raw ring 1 execution (ring 2). */
-# endif
                     else
 #endif  /* IN_RC */
                         pTrapStack[--idx] = pRegFrame->cs.Sel;
