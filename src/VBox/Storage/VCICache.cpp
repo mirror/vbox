@@ -1666,7 +1666,6 @@ static int vciRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
     if (pcbActuallyRead)
         *pcbActuallyRead = VCI_BLOCK2BYTE(cBlocksToRead);
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1681,7 +1680,6 @@ static int vciWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
     int rc = VINF_SUCCESS;
     uint64_t cBlocksToWrite = VCI_BYTE2BLOCK(cbToWrite);
     uint64_t offBlockAddr  = VCI_BYTE2BLOCK(uOffset);
-    PVCICACHEEXTENT pExtent;
 
     AssertPtr(pCache);
     Assert(uOffset % 512 == 0);
@@ -1693,7 +1691,7 @@ static int vciWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
     }
 
     *pcbWriteProcess = cbToWrite; /** @todo: Implement. */
-out:
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1864,7 +1862,6 @@ static int vciSetComment(void *pBackendData, const char *pszComment)
     else
         rc = VERR_VD_NOT_OPENED;
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
