@@ -249,7 +249,7 @@ static DECLCALLBACK(int)  hmR0VmxExitXdtrAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX 
 static DECLCALLBACK(int)  hmR0VmxExitEptViolation(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 static DECLCALLBACK(int)  hmR0VmxExitEptMisconfig(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 static DECLCALLBACK(int)  hmR0VmxExitRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static DECLCALLBACK(int)  hmR0VmxExitPreemptionTimer(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static DECLCALLBACK(int)  hmR0VmxExitPreemptTimer(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 static DECLCALLBACK(int)  hmR0VmxExitWbinvd(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 static DECLCALLBACK(int)  hmR0VmxExitXsetbv(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 static DECLCALLBACK(int)  hmR0VmxExitRdrand(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
@@ -335,7 +335,7 @@ static const PFNVMEXITHANDLER s_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
  /* 49  VMX_EXIT_EPT_MISCONFIG           */  hmR0VmxExitEptMisconfig,
  /* 50  VMX_EXIT_INVEPT                  */  hmR0VmxExitInjectXcptUD,
  /* 51  VMX_EXIT_RDTSCP                  */  hmR0VmxExitRdtscp,
- /* 52  VMX_EXIT_PREEMPTION_TIMER        */  hmR0VmxExitPreemptionTimer,
+ /* 52  VMX_EXIT_PREEMPT_TIMER           */  hmR0VmxExitPreemptTimer,
  /* 53  VMX_EXIT_INVVPID                 */  hmR0VmxExitInjectXcptUD,
  /* 54  VMX_EXIT_WBINVD                  */  hmR0VmxExitWbinvd,
  /* 55  VMX_EXIT_XSETBV                  */  hmR0VmxExitXsetbv,
@@ -2425,6 +2425,7 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             uint32_t u32TprThreshold = fPendingIntr ? (u8GuestTpr >> 4) : 0;
             Assert(!(u32TprThreshold & 0xfffffff0));            /* Bits 31:4 MBZ. */
 
+            Log(("Getting TPR=%d Threshold=%u\n", pVCpu->hm.s.vmx.pbVirtApic[0x80], u32TprThreshold));
             rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
             AssertRCReturn(rc, rc);
 
@@ -4252,7 +4253,7 @@ static int hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu)
 #if 0
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_ACTIVITY_STATE);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_SMBASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_PREEMPTION_TIMER_VALUE);
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE);
 #endif
 
     /* Natural width guest-state fields. */
@@ -4502,7 +4503,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVM pVM, PVMCPU pVCpu, PCP
         cTicksToDeadline >>= pVM->hm.s.vmx.cPreemptTimerShift;
 
         uint32_t cPreemptionTickCount = (uint32_t)RT_MIN(cTicksToDeadline, UINT32_MAX - 16);
-        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_PREEMPTION_TIMER_VALUE, cPreemptionTickCount);        AssertRC(rc);
+        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE, cPreemptionTickCount);           AssertRC(rc);
     }
     else
         fOffsettedTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset);
@@ -6577,6 +6578,7 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
             && pVmxTransient->u8GuestTpr != pVCpu->hm.s.vmx.pbVirtApic[0x80])
         {
+            Log(("Setting TPR=%d\n", pVCpu->hm.s.vmx.pbVirtApic[0x80]));
             rc = PDMApicSetTPR(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[0x80]);
             AssertRC(rc);
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_GUEST_APIC_STATE;
@@ -6685,7 +6687,7 @@ DECLINLINE(int) hmR0VmxHandleExit(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
         case VMX_EXIT_MWAIT:                   rc = hmR0VmxExitMwait(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
         case VMX_EXIT_MONITOR:                 rc = hmR0VmxExitMonitor(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
         case VMX_EXIT_TASK_SWITCH:             rc = hmR0VmxExitTaskSwitch(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
-        case VMX_EXIT_PREEMPTION_TIMER:        rc = hmR0VmxExitPreemptionTimer(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
+        case VMX_EXIT_PREEMPT_TIMER:           rc = hmR0VmxExitPreemptTimer(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
         case VMX_EXIT_RDMSR:                   rc = hmR0VmxExitRdmsr(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
         case VMX_EXIT_WRMSR:                   rc = hmR0VmxExitWrmsr(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
         case VMX_EXIT_MOV_DRX:                 rc = hmR0VmxExitMovDRx(pVM, pVCpu, pMixedCtx, pVmxTransient); break;
@@ -7315,7 +7317,7 @@ static DECLCALLBACK(int) hmR0VmxExitInjectXcptUD(PVM pVM, PVMCPU pVCpu, PCPUMCTX
 /**
  * VM-exit handler for expiry of the VMX preemption timer.
  */
-static DECLCALLBACK(int) hmR0VmxExitPreemptionTimer(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+static DECLCALLBACK(int) hmR0VmxExitPreemptTimer(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
@@ -8005,7 +8007,7 @@ static DECLCALLBACK(int) hmR0VmxExitApicAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
     rc = hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);
 #else
     /* Aggressive state sync. for now. */
-    rc = hmR0VmxSaveGuestGprs(pVM, pVCpu, pMixedCtx);
+    rc  = hmR0VmxSaveGuestGprs(pVM, pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
 #endif

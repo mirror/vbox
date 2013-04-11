@@ -1770,7 +1770,7 @@ VMMR0DECL(int) VMXR0SetupTscOffsetAndPreemption(PVM pVM, PVMCPU pVCpu)
 
         cTicksToDeadline >>= pVM->hm.s.vmx.cPreemptTimerShift;
         uint32_t cPreemptionTickCount = (uint32_t)RT_MIN(cTicksToDeadline, UINT32_MAX - 16);
-        rc = VMXWriteVmcs(VMX_VMCS32_GUEST_PREEMPTION_TIMER_VALUE, cPreemptionTickCount);
+        rc = VMXWriteVmcs(VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE, cPreemptionTickCount);
         AssertRC(rc);
     }
     else
@@ -4784,7 +4784,7 @@ ResumeExecution:
         break;
     }
 
-    case VMX_EXIT_PREEMPTION_TIMER:     /* 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
+    case VMX_EXIT_PREEMPT_TIMER:        /* 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
         if (!TMTimerPollBool(pVM, pVCpu))
             goto ResumeExecution;
         rc = VINF_EM_RAW_TIMER_PENDING;
@@ -4807,7 +4807,7 @@ ResumeExecution:
     case VMX_EXIT_EXT_INT:              /* 1 External interrupt. */
     case VMX_EXIT_EPT_VIOLATION:
     case VMX_EXIT_EPT_MISCONFIG:        /* 49 EPT misconfig is used by the PGM/MMIO optimizations. */
-    case VMX_EXIT_PREEMPTION_TIMER:     /* 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
+    case VMX_EXIT_PREEMPT_TIMER:        /* 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
         /* Already handled above. */
         break;
 

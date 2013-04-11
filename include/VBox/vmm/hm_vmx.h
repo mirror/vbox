@@ -617,7 +617,7 @@ typedef union
 /** 51 RDTSCP. Guest software attempted to execute RDTSCP. */
 #define VMX_EXIT_RDTSCP             51
 /** 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
-#define VMX_EXIT_PREEMPTION_TIMER   52
+#define VMX_EXIT_PREEMPT_TIMER      52
 /** 53 INVVPID. Guest software attempted to execute INVVPID. */
 #define VMX_EXIT_INVVPID            53
 /** 54 WBINVD. Guest software attempted to execute WBINVD. */
@@ -1156,7 +1156,7 @@ typedef union
 #define VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE                   0x4824
 #define VMX_VMCS32_GUEST_ACTIVITY_STATE                           0x4826
 #define VMX_VMCS32_GUEST_SYSENTER_CS                              0x482A  /**< MSR IA32_SYSENTER_CS */
-#define VMX_VMCS32_GUEST_PREEMPTION_TIMER_VALUE                   0x482E
+#define VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE                      0x482E
 /** @} */
 
 
