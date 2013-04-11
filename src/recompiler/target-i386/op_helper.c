@@ -2560,10 +2560,6 @@ void helper_ltr(int selector)
     Log(("helper_ltr: pc=%RGv old tr=%RTsel {.base=%RGv, .limit=%RGv, .flags=%RX32} new=%RTsel\n",
          (RTGCPTR)env->eip, (RTSEL)env->tr.selector, (RTGCPTR)env->tr.base, (RTGCPTR)env->tr.limit,
          env->tr.flags, (RTSEL)(selector & 0xffff)));
-# if 0 /** @todo r=bird: This looks very fishy, need good reason to re-enable it. */
-    ASMAtomicOrS32((int32_t volatile *)&env->interrupt_request,
-                    CPU_INTERRUPT_EXTERNAL_EXIT);
-# endif
 #endif
     selector &= 0xffff;
     if ((selector & 0xfffc) == 0) {
