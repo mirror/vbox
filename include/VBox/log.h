@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -239,6 +239,278 @@ typedef enum LOGGROUP
     LOG_GROUP_IPC,
     /** Main group. */
     LOG_GROUP_MAIN,
+    /** Main group, IAdditionsFacility. */
+    LOG_GROUP_MAIN_ADDITIONSFACILITY,
+    /** Main group, IAdditionsStateChangedEvent. */
+    LOG_GROUP_MAIN_ADDITIONSSTATECHANGEDEVENT,
+    /** Main group, IAppliance. */
+    LOG_GROUP_MAIN_APPLIANCE,
+    /** Main group, IAudioAdapter. */
+    LOG_GROUP_MAIN_AUDIOADAPTER,
+    /** Main group, IBandwidthControl. */
+    LOG_GROUP_MAIN_BANDWIDTHCONTROL,
+    /** Main group, IBandwidthGroup. */
+    LOG_GROUP_MAIN_BANDWIDTHGROUP,
+    /** Main group, IBandwidthGroupChangedEvent. */
+    LOG_GROUP_MAIN_BANDWIDTHGROUPCHANGEDEVENT,
+    /** Main group, IBIOSSettings. */
+    LOG_GROUP_MAIN_BIOSSETTINGS,
+    /** Main group, ICanShowWindowEvent. */
+    LOG_GROUP_MAIN_CANSHOWWINDOWEVENT,
+    /** Main group, IClipboardModeChangedEvent. */
+    LOG_GROUP_MAIN_CLIPBOARDMODECHANGEDEVENT,
+    /** Main group, IConsole. */
+    LOG_GROUP_MAIN_CONSOLE,
+    /** Main group, ICPUChangedEvent. */
+    LOG_GROUP_MAIN_CPUCHANGEDEVENT,
+    /** Main group, ICPUExecutionCapChangedEvent. */
+    LOG_GROUP_MAIN_CPUEXECUTIONCAPCHANGEDEVENT,
+    /** Main group, IDHCPServer. */
+    LOG_GROUP_MAIN_DHCPSERVER,
+    /** Main group, IDirectory. */
+    LOG_GROUP_MAIN_DIRECTORY,
+    /** Main group, IDisplay. */
+    LOG_GROUP_MAIN_DISPLAY,
+    /** Main group, IDragAndDropModeChangedEvent. */
+    LOG_GROUP_MAIN_DRAGANDDROPMODECHANGEDEVENT,
+    /** Main group, IEvent. */
+    LOG_GROUP_MAIN_EVENT,
+    /** Main group, IEventListener. */
+    LOG_GROUP_MAIN_EVENTLISTENER,
+    /** Main group, IEventSource. */
+    LOG_GROUP_MAIN_EVENTSOURCE,
+    /** Main group, IEventSourceChangedEvent. */
+    LOG_GROUP_MAIN_EVENTSOURCECHANGEDEVENT,
+    /** Main group, IExtPack. */
+    LOG_GROUP_MAIN_EXTPACK,
+    /** Main group, IExtPackBase. */
+    LOG_GROUP_MAIN_EXTPACKBASE,
+    /** Main group, IExtPackFile. */
+    LOG_GROUP_MAIN_EXTPACKFILE,
+    /** Main group, IExtPackManager. */
+    LOG_GROUP_MAIN_EXTPACKMANAGER,
+    /** Main group, IExtPackPlugIn. */
+    LOG_GROUP_MAIN_EXTPACKPLUGIN,
+    /** Main group, IExtraDataCanChangeEvent. */
+    LOG_GROUP_MAIN_EXTRADATACANCHANGEEVENT,
+    /** Main group, IExtraDataChangedEvent. */
+    LOG_GROUP_MAIN_EXTRADATACHANGEDEVENT,
+    /** Main group, IFile. */
+    LOG_GROUP_MAIN_FILE,
+    /** Main group, IFramebuffer. */
+    LOG_GROUP_MAIN_FRAMEBUFFER,
+    /** Main group, IFramebufferOverlay. */
+    LOG_GROUP_MAIN_FRAMEBUFFEROVERLAY,
+    /** Main group, IFsObjInfo. */
+    LOG_GROUP_MAIN_FSOBJINFO,
+    /** Main group, IGuest. */
+    LOG_GROUP_MAIN_GUEST,
+    /** Main group, IGuestDirectory. */
+    LOG_GROUP_MAIN_GUESTDIRECTORY,
+    /** Main group, IGuestErrorInfo. */
+    LOG_GROUP_MAIN_GUESTERRORINFO,
+    /** Main group, IGuestFile. */
+    LOG_GROUP_MAIN_GUESTFILE,
+    /** Main group, IGuestFileEvent. */
+    LOG_GROUP_MAIN_GUESTFILEEVENT,
+    /** Main group, IGuestFileIOEvent. */
+    LOG_GROUP_MAIN_GUESTFILEIOEVENT,
+    /** Main group, IGuestFileOffsetChangedEvent. */
+    LOG_GROUP_MAIN_GUESTFILEOFFSETCHANGEDEVENT,
+    /** Main group, IGuestFileReadEvent. */
+    LOG_GROUP_MAIN_GUESTFILEREADEVENT,
+    /** Main group, IGuestFileRegisteredEvent. */
+    LOG_GROUP_MAIN_GUESTFILEREGISTEREDEVENT,
+    /** Main group, IGuestFileStateChangedEvent. */
+    LOG_GROUP_MAIN_GUESTFILESTATECHANGEDEVENT,
+    /** Main group, IGuestFileWriteEvent. */
+    LOG_GROUP_MAIN_GUESTFILEWRITEEVENT,
+    /** Main group, IGuestFsObjInfo. */
+    LOG_GROUP_MAIN_GUESTFSOBJINFO,
+    /** Main group, IGuestKeyboardEvent. */
+    LOG_GROUP_MAIN_GUESTKEYBOARDEVENT,
+    /** Main group, IGuestMonitorChangedEvent. */
+    LOG_GROUP_MAIN_GUESTMONITORCHANGEDEVENT,
+    /** Main group, IGuestMouseEvent. */
+    LOG_GROUP_MAIN_GUESTMOUSEEVENT,
+    /** Main group, IGuestOSType. */
+    LOG_GROUP_MAIN_GUESTOSTYPE,
+    /** Main group, IGuestProcess. */
+    LOG_GROUP_MAIN_GUESTPROCESS,
+    /** Main group, IGuestProcessEvent. */
+    LOG_GROUP_MAIN_GUESTPROCESSEVENT,
+    /** Main group, IGuestProcessInputNotifyEvent. */
+    LOG_GROUP_MAIN_GUESTPROCESSINPUTNOTIFYEVENT,
+    /** Main group, IGuestProcessIOEvent. */
+    LOG_GROUP_MAIN_GUESTPROCESSIOEVENT,
+    /** Main group, IGuestProcessOutputEvent. */
+    LOG_GROUP_MAIN_GUESTPROCESSOUTPUTEVENT,
+    /** Main group, IGuestProcessRegisteredEvent. */
+    LOG_GROUP_MAIN_GUESTPROCESSREGISTEREDEVENT,
+    /** Main group, IGuestProcessStateChangedEvent. */
+    LOG_GROUP_MAIN_GUESTPROCESSSTATECHANGEDEVENT,
+    /** Main group, IGuestPropertyChangedEvent. */
+    LOG_GROUP_MAIN_GUESTPROPERTYCHANGEDEVENT,
+    /** Main group, IGuestSession. */
+    LOG_GROUP_MAIN_GUESTSESSION,
+    /** Main group, IGuestSessionEvent. */
+    LOG_GROUP_MAIN_GUESTSESSIONEVENT,
+    /** Main group, IGuestSessionRegisteredEvent. */
+    LOG_GROUP_MAIN_GUESTSESSIONREGISTEREDEVENT,
+    /** Main group, IGuestSessionStateChangedEvent. */
+    LOG_GROUP_MAIN_GUESTSESSIONSTATECHANGEDEVENT,
+    /** Main group, IHost. */
+    LOG_GROUP_MAIN_HOST,
+    /** Main group, IHostNetworkInterface. */
+    LOG_GROUP_MAIN_HOSTNETWORKINTERFACE,
+    /** Main group, IHostPCIDevicePlugEvent. */
+    LOG_GROUP_MAIN_HOSTPCIDEVICEPLUGEVENT,
+    /** Main group, IHostUSBDevice. */
+    LOG_GROUP_MAIN_HOSTUSBDEVICE,
+    /** Main group, IHostUSBDeviceFilter. */
+    LOG_GROUP_MAIN_HOSTUSBDEVICEFILTER,
+    /** Main group, IInternalMachineControl. */
+    LOG_GROUP_MAIN_INTERNALMACHINECONTROL,
+    /** Main group, IInternalSessionControl. */
+    LOG_GROUP_MAIN_INTERNALSESSIONCONTROL,
+    /** Main group, IKeyboard. */
+    LOG_GROUP_MAIN_KEYBOARD,
+    /** Main group, IKeyboardLedsChangedEvent. */
+    LOG_GROUP_MAIN_KEYBOARDLEDSCHANGEDEVENT,
+    /** Main group, IMachine. */
+    LOG_GROUP_MAIN_MACHINE,
+    /** Main group, IMachineDataChangedEvent. */
+    LOG_GROUP_MAIN_MACHINEDATACHANGEDEVENT,
+    /** Main group, IMachineDebugger. */
+    LOG_GROUP_MAIN_MACHINEDEBUGGER,
+    /** Main group, IMachineEvent. */
+    LOG_GROUP_MAIN_MACHINEEVENT,
+    /** Main group, IMachineRegisteredEvent. */
+    LOG_GROUP_MAIN_MACHINEREGISTEREDEVENT,
+    /** Main group, IMachineStateChangedEvent. */
+    LOG_GROUP_MAIN_MACHINESTATECHANGEDEVENT,
+    /** Main group, IMedium. */
+    LOG_GROUP_MAIN_MEDIUM,
+    /** Main group, IMediumAttachment. */
+    LOG_GROUP_MAIN_MEDIUMATTACHMENT,
+    /** Main group, IMediumChangedEvent. */
+    LOG_GROUP_MAIN_MEDIUMCHANGEDEVENT,
+    /** Main group, IMediumFormat. */
+    LOG_GROUP_MAIN_MEDIUMFORMAT,
+    /** Main group, IMediumRegisteredEvent. */
+    LOG_GROUP_MAIN_MEDIUMREGISTEREDEVENT,
+    /** Main group, IMouse. */
+    LOG_GROUP_MAIN_MOUSE,
+    /** Main group, IMouseCapabilityChangedEvent. */
+    LOG_GROUP_MAIN_MOUSECAPABILITYCHANGEDEVENT,
+    /** Main group, IMousePointerShapeChangedEvent. */
+    LOG_GROUP_MAIN_MOUSEPOINTERSHAPECHANGEDEVENT,
+    /** Main group, INATEngine. */
+    LOG_GROUP_MAIN_NATENGINE,
+    /** Main group, INATNetwork. */
+    LOG_GROUP_MAIN_NATNETWORK,
+    /** Main group, INATNetworkAlterEvent. */
+    LOG_GROUP_MAIN_NATNETWORKALTEREVENT,
+    /** Main group, INATNetworkChangedEvent. */
+    LOG_GROUP_MAIN_NATNETWORKCHANGEDEVENT,
+    /** Main group, INATNetworkCreationDeletionEvent. */
+    LOG_GROUP_MAIN_NATNETWORKCREATIONDELETIONEVENT,
+    /** Main group, INATNetworkPortForwardEvent. */
+    LOG_GROUP_MAIN_NATNETWORKPORTFORWARDEVENT,
+    /** Main group, INATNetworkSettingEvent. */
+    LOG_GROUP_MAIN_NATNETWORKSETTINGEVENT,
+    /** Main group, INATNetworkStartStopEvent. */
+    LOG_GROUP_MAIN_NATNETWORKSTARTSTOPEVENT,
+    /** Main group, INATRedirectEvent. */
+    LOG_GROUP_MAIN_NATREDIRECTEVENT,
+    /** Main group, INetworkAdapter. */
+    LOG_GROUP_MAIN_NETWORKADAPTER,
+    /** Main group, INetworkAdapterChangedEvent. */
+    LOG_GROUP_MAIN_NETWORKADAPTERCHANGEDEVENT,
+    /** Main group, IParallelPort. */
+    LOG_GROUP_MAIN_PARALLELPORT,
+    /** Main group, IParallelPortChangedEvent. */
+    LOG_GROUP_MAIN_PARALLELPORTCHANGEDEVENT,
+    /** Main group, IPCIAddress. */
+    LOG_GROUP_MAIN_PCIADDRESS,
+    /** Main group, IPCIDeviceAttachment. */
+    LOG_GROUP_MAIN_PCIDEVICEATTACHMENT,
+    /** Main group, IPerformanceCollector. */
+    LOG_GROUP_MAIN_PERFORMANCECOLLECTOR,
+    /** Main group, IPerformanceMetric. */
+    LOG_GROUP_MAIN_PERFORMANCEMETRIC,
+    /** Main group, IProcess. */
+    LOG_GROUP_MAIN_PROCESS,
+    /** Main group, IProgress. */
+    LOG_GROUP_MAIN_PROGRESS,
+    /** Main group, IReusableEvent. */
+    LOG_GROUP_MAIN_REUSABLEEVENT,
+    /** Main group, IRuntimeErrorEvent. */
+    LOG_GROUP_MAIN_RUNTIMEERROREVENT,
+    /** Main group, ISerialPort. */
+    LOG_GROUP_MAIN_SERIALPORT,
+    /** Main group, ISerialPortChangedEvent. */
+    LOG_GROUP_MAIN_SERIALPORTCHANGEDEVENT,
+    /** Main group, ISession. */
+    LOG_GROUP_MAIN_SESSION,
+    /** Main group, ISessionStateChangedEvent. */
+    LOG_GROUP_MAIN_SESSIONSTATECHANGEDEVENT,
+    /** Main group, ISharedFolder. */
+    LOG_GROUP_MAIN_SHAREDFOLDER,
+    /** Main group, ISharedFolderChangedEvent. */
+    LOG_GROUP_MAIN_SHAREDFOLDERCHANGEDEVENT,
+    /** Main group, IShowWindowEvent. */
+    LOG_GROUP_MAIN_SHOWWINDOWEVENT,
+    /** Main group, ISnapshot. */
+    LOG_GROUP_MAIN_SNAPSHOT,
+    /** Main group, ISnapshotChangedEvent. */
+    LOG_GROUP_MAIN_SNAPSHOTCHANGEDEVENT,
+    /** Main group, ISnapshotDeletedEvent. */
+    LOG_GROUP_MAIN_SNAPSHOTDELETEDEVENT,
+    /** Main group, ISnapshotEvent. */
+    LOG_GROUP_MAIN_SNAPSHOTEVENT,
+    /** Main group, ISnapshotTakenEvent. */
+    LOG_GROUP_MAIN_SNAPSHOTTAKENEVENT,
+    /** Main group, IStateChangedEvent. */
+    LOG_GROUP_MAIN_STATECHANGEDEVENT,
+    /** Main group, IStorageController. */
+    LOG_GROUP_MAIN_STORAGECONTROLLER,
+    /** Main group, IStorageControllerChangedEvent. */
+    LOG_GROUP_MAIN_STORAGECONTROLLERCHANGEDEVENT,
+    /** Main group, IStorageDeviceChangedEvent. */
+    LOG_GROUP_MAIN_STORAGEDEVICECHANGEDEVENT,
+    /** Main group, ISystemProperties. */
+    LOG_GROUP_MAIN_SYSTEMPROPERTIES,
+    /** Main group, IUSBController. */
+    LOG_GROUP_MAIN_USBCONTROLLER,
+    /** Main group, IUSBControllerChangedEvent. */
+    LOG_GROUP_MAIN_USBCONTROLLERCHANGEDEVENT,
+    /** Main group, IUSBDevice. */
+    LOG_GROUP_MAIN_USBDEVICE,
+    /** Main group, IUSBDeviceFilter. */
+    LOG_GROUP_MAIN_USBDEVICEFILTER,
+    /** Main group, IUSBDeviceStateChangedEvent. */
+    LOG_GROUP_MAIN_USBDEVICESTATECHANGEDEVENT,
+    /** Main group, IVBoxSVCAvailabilityChangedEvent. */
+    LOG_GROUP_MAIN_VBOXSVCAVAILABILITYCHANGEDEVENT,
+    /** Main group, IVetoEvent. */
+    LOG_GROUP_MAIN_VETOEVENT,
+    /** Main group, IVFSExplorer. */
+    LOG_GROUP_MAIN_VFSEXPLORER,
+    /** Main group, IVirtualBox. */
+    LOG_GROUP_MAIN_VIRTUALBOX,
+    /** Main group, IVirtualBoxClient. */
+    LOG_GROUP_MAIN_VIRTUALBOXCLIENT,
+    /** Main group, IVirtualSystemDescription. */
+    LOG_GROUP_MAIN_VIRTUALSYSTEMDESCRIPTION,
+    /** Main group, IVRDEServer. */
+    LOG_GROUP_MAIN_VRDESERVER,
+    /** Main group, IVRDEServerChangedEvent. */
+    LOG_GROUP_MAIN_VRDESERVERCHANGEDEVENT,
+    /** Main group, IVRDEServerInfo. */
+    LOG_GROUP_MAIN_VRDESERVERINFO,
+    /** Main group, IVRDEServerInfoChangedEvent. */
+    LOG_GROUP_MAIN_VRDESERVERINFOCHANGEDEVENT,
     /** Misc. group intended for external use only. */
     LOG_GROUP_MISC,
     /** MM group. */

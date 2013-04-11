@@ -2,7 +2,7 @@
 
 /** @file
  *
- * VirtualBox COM class implementation
+ * MediumFormat COM class implementation
  */
 
 /*
@@ -17,14 +17,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ____H_MEDIUMFORMAT
-#define ____H_MEDIUMFORMAT
+#ifndef MEDIUMFORMAT_IMPL_H_
+#define MEDIUMFORMAT_IMPL_H_
 
-#include "VirtualBoxBase.h"
+#include "MediumFormatWrap.h"
 
-#include <VBox/com/array.h>
-
-#include <list>
 
 struct VDBACKENDINFO;
 
@@ -38,8 +35,7 @@ struct VDBACKENDINFO;
  * wait!
  */
 class ATL_NO_VTABLE MediumFormat :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IMediumFormat)
+    public MediumFormatWrap
 {
 public:
 
@@ -52,31 +48,8 @@ public:
         Utf8Str     strDefaultValue;
     };
 
-    typedef std::list<Utf8Str>      StrList;
-    typedef std::list<DeviceType_T> DeviceTypeList;
-    typedef std::list<Property>     PropertyList;
-
-    struct Data
-    {
-        Data() : capabilities((MediumFormatCapabilities_T)0) {}
-
-        const Utf8Str        strId;
-        const Utf8Str        strName;
-        const StrList        llFileExtensions;
-        const DeviceTypeList llDeviceTypes;
-        const MediumFormatCapabilities_T capabilities;
-        const PropertyList   llProperties;
-    };
-
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(MediumFormat, IMediumFormat)
-
-    DECLARE_NOT_AGGREGATABLE(MediumFormat)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(MediumFormat)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IMediumFormat)
-    END_COM_MAP()
+    typedef std::vector<Property> PropertyArray;
+    typedef std::vector<com::Utf8Str> StrArray;
 
     DECLARE_EMPTY_CTOR_DTOR(MediumFormat)
 
@@ -87,39 +60,53 @@ public:
     HRESULT init(const VDBACKENDINFO *aVDInfo);
     void uninit();
 
-    // IMediumFormat properties
-    STDMETHOD(COMGETTER(Id))(BSTR *aId);
-    STDMETHOD(COMGETTER(Name))(BSTR *aName);
-    STDMETHOD(COMGETTER(Capabilities))(ComSafeArrayOut(MediumFormatCapabilities_T, aCaps));
-
-    // IMediumFormat methods
-    STDMETHOD(DescribeFileExtensions)(ComSafeArrayOut(BSTR, aFileExtensions),
-                                      ComSafeArrayOut(DeviceType_T, aDeviceTypes));
-    STDMETHOD(DescribeProperties)(ComSafeArrayOut(BSTR, aNames),
-                                  ComSafeArrayOut(BSTR, aDescriptions),
-                                  ComSafeArrayOut(DataType_T, aTypes),
-                                  ComSafeArrayOut(ULONG, aFlags),
-                                  ComSafeArrayOut(BSTR, aDefaults));
-
-    // public methods only for internal purposes
-
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
 
     /** Const, no need to lock */
-    const Utf8Str& getId() const { return m.strId; }
+    const Utf8Str &i_getId() const { return m.strId; }
     /** Const, no need to lock */
-    const StrList& getFileExtensions() const { return m.llFileExtensions; }
+    const StrArray &i_getFileExtensions() const { return m.maFileExtensions; }
     /** Const, no need to lock */
-    MediumFormatCapabilities_T getCapabilities() const { return m.capabilities; }
+    MediumFormatCapabilities_T i_getCapabilities() const { return m.capabilities; }
     /** Const, no need to lock */
-    const PropertyList& getProperties() const { return m.llProperties; }
+    const PropertyArray &i_getProperties() const { return m.maProperties; }
 
 private:
+
+    // wrapped IMediumFormat properties
+    HRESULT getId(com::Utf8Str &aId);
+    HRESULT getName(com::Utf8Str &aName);
+    HRESULT getCapabilities(std::vector<MediumFormatCapabilities_T> &aCapabilities);
+
+    // wrapped IMediumFormat methods
+    HRESULT describeFileExtensions(std::vector<com::Utf8Str> &aExtensions,
+                                   std::vector<DeviceType_T> &aTypes);
+    HRESULT describeProperties(std::vector<com::Utf8Str> &aNames,
+                               std::vector<com::Utf8Str> &aDescriptions,
+                               std::vector<DataType_T> &aTypes,
+                               std::vector<ULONG> &aFlags,
+                               std::vector<com::Utf8Str> &aDefaults);
+
+    // types
+    typedef std::vector<DeviceType_T> DeviceTypeArray;
+
+    // data
+    struct Data
+    {
+        Data() : capabilities((MediumFormatCapabilities_T)0) {}
+
+        const Utf8Str        strId;
+        const Utf8Str        strName;
+        const StrArray       maFileExtensions;
+        const DeviceTypeArray maDeviceTypes;
+        const MediumFormatCapabilities_T capabilities;
+        const PropertyArray  maProperties;
+    };
 
     Data m;
 };
 
-#endif // ____H_MEDIUMFORMAT
+#endif // MEDIUMFORMAT_IMPL_H_
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

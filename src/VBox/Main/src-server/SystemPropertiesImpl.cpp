@@ -1105,7 +1105,7 @@ ComObjPtr<MediumFormat> SystemProperties::mediumFormat(const Utf8Str &aFormat)
     {
         /* MediumFormat is all const, no need to lock */
 
-        if ((*it)->getId().compare(aFormat, Utf8Str::CaseInsensitive) == 0)
+        if ((*it)->i_getId().compare(aFormat, Utf8Str::CaseInsensitive) == 0)
         {
             format = *it;
             break;
@@ -1138,8 +1138,8 @@ ComObjPtr<MediumFormat> SystemProperties::mediumFormatFromExtension(const Utf8St
          ++it)
     {
         /* MediumFormat is all const, no need to lock */
-        MediumFormat::StrList aFileList = (*it)->getFileExtensions();
-        for (MediumFormat::StrList::const_iterator it1 = aFileList.begin();
+        MediumFormat::StrArray aFileList = (*it)->i_getFileExtensions();
+        for (MediumFormat::StrArray::const_iterator it1 = aFileList.begin();
              it1 != aFileList.end();
              ++it1)
         {
