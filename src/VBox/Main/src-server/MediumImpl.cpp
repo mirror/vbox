@@ -958,7 +958,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     rc = setLocation(aLocation);
     if (FAILED(rc)) return rc;
 
-    if (!(m->formatObj->i_getCapabilities() & (   MediumFormatCapabilities_CreateFixed
+    if (!(m->formatObj->getCapabilities() & (   MediumFormatCapabilities_CreateFixed
                                               | MediumFormatCapabilities_CreateDynamic))
        )
     {
@@ -1239,7 +1239,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     }
 
     Utf8Str strFull;
-    if (m->formatObj->i_getCapabilities() & MediumFormatCapabilities_File)
+    if (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
     {
         // compose full path of the medium, if it's not fully qualified...
         // slightly convoluted logic here. If the caller has given us a
@@ -2516,13 +2516,13 @@ STDMETHODIMP Medium::CreateBaseStorage(LONG64 aLogicalSize,
         mediumVariantFlags &= ((unsigned)~MediumVariant_Diff);
 
         if (    !(mediumVariantFlags & MediumVariant_Fixed)
-            &&  !(m->formatObj->i_getCapabilities() & MediumFormatCapabilities_CreateDynamic))
+            &&  !(m->formatObj->getCapabilities() & MediumFormatCapabilities_CreateDynamic))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support dynamic storage creation"),
                            m->strFormat.c_str());
 
         if (    (mediumVariantFlags & MediumVariant_Fixed)
-            &&  !(m->formatObj->i_getCapabilities() & MediumFormatCapabilities_CreateDynamic))
+            &&  !(m->formatObj->getCapabilities() & MediumFormatCapabilities_CreateDynamic))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support fixed storage creation"),
                            m->strFormat.c_str());
@@ -3193,7 +3193,7 @@ const ComObjPtr<MediumFormat>& Medium::getMediumFormat() const
 bool Medium::isMediumFormatFile() const
 {
     if (    m->formatObj
-         && (m->formatObj->i_getCapabilities() & MediumFormatCapabilities_File)
+         && (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
        )
         return true;
     return false;
@@ -4136,7 +4136,7 @@ Utf8Str Medium::getPreferredDiffFormat()
     AssertComRCReturn(autoCaller.rc(), Utf8Str::Empty);
 
     /* check that our own format supports diffs */
-    if (!(m->formatObj->i_getCapabilities() & MediumFormatCapabilities_Differencing))
+    if (!(m->formatObj->getCapabilities() & MediumFormatCapabilities_Differencing))
     {
         /* use the default format if not */
         Utf8Str tmp;
@@ -4269,7 +4269,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
                                       COMMA_LOCKVAL_SRC_POS);
         LogFlowThisFunc(("aWait=%RTbool locationFull=%s\n", aWait, getLocationFull().c_str() ));
 
-        if (    !(m->formatObj->i_getCapabilities() & (   MediumFormatCapabilities_CreateDynamic
+        if (    !(m->formatObj->getCapabilities() & (   MediumFormatCapabilities_CreateDynamic
                                                       | MediumFormatCapabilities_CreateFixed)))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support storage deletion"),
@@ -5675,7 +5675,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                 throw S_OK;
             }
 
-            if (formatObj->i_getCapabilities() & MediumFormatCapabilities_Uuid)
+            if (formatObj->getCapabilities() & MediumFormatCapabilities_Uuid)
             {
                 /* Modify the UUIDs if necessary. The associated fields are
                  * not modified by other code, so no need to copy. */
@@ -6203,7 +6203,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
     bool isImport = m->strFormat.isEmpty();
 
     if (   isImport
-        || (   (m->formatObj->i_getCapabilities() & MediumFormatCapabilities_File)
+        || (   (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
             && !m->hostDrive))
     {
         Guid id;
@@ -6213,7 +6213,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
         if (m->state == MediumState_NotCreated)
         {
             /* must be a file (formatObj must be already known) */
-            Assert(m->formatObj->i_getCapabilities() & MediumFormatCapabilities_File);
+            Assert(m->formatObj->getCapabilities() & MediumFormatCapabilities_File);
 
             if (RTPathFilename(aLocation.c_str()) == NULL)
             {
@@ -6221,11 +6221,11 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
                  * slash), generate a new UUID + file name if the state allows
                  * this */
 
-                ComAssertMsgRet(!m->formatObj->i_getFileExtensions().empty(),
+                ComAssertMsgRet(!m->formatObj->getFileExtensions().empty(),
                                 ("Must be at least one extension if it is MediumFormatCapabilities_File\n"),
                                 E_FAIL);
 
-                Utf8Str strExt = m->formatObj->i_getFileExtensions().front();
+                Utf8Str strExt = m->formatObj->getFileExtensions().front();
                 ComAssertMsgRet(!strExt.isEmpty(),
                                 ("Default extension must not be empty\n"),
                                 E_FAIL);
@@ -6239,7 +6239,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
 
         // we must always have full paths now (if it refers to a file)
         if (   (   m->formatObj.isNull()
-                || m->formatObj->i_getCapabilities() & MediumFormatCapabilities_File)
+                || m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
             && !RTPathStartsWithRoot(locationFull.c_str()))
             return setError(VBOX_E_FILE_ERROR,
                             tr("The given path '%s' is not fully qualified"),
@@ -6325,7 +6325,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
         m->strLocationFull = locationFull;
 
         /* is it still a file? */
-        if (    (m->formatObj->i_getCapabilities() & MediumFormatCapabilities_File)
+        if (    (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
              && (m->state == MediumState_NotCreated)
            )
             /* assign a new UUID (this UUID will be used when calling
@@ -6373,8 +6373,8 @@ HRESULT Medium::setFormat(const Utf8Str &aFormat)
 
         Assert(m->mapProperties.empty());
 
-        for (MediumFormat::PropertyArray::const_iterator it = m->formatObj->i_getProperties().begin();
-             it != m->formatObj->i_getProperties().end();
+        for (MediumFormat::PropertyList::const_iterator it = m->formatObj->getProperties().begin();
+             it != m->formatObj->getProperties().end();
              ++it)
         {
             m->mapProperties.insert(std::make_pair(it->strName, Utf8Str::Empty));
@@ -6763,7 +6763,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
 
         Utf8Str format(m->strFormat);
         Utf8Str location(m->strLocationFull);
-        uint64_t capabilities = m->formatObj->i_getCapabilities();
+        uint64_t capabilities = m->formatObj->getCapabilities();
         ComAssertThrow(capabilities & (  MediumFormatCapabilities_CreateFixed
                                        | MediumFormatCapabilities_CreateDynamic), E_FAIL);
         Assert(m->state == MediumState_Creating);
@@ -6903,7 +6903,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
 
         Utf8Str targetFormat(pTarget->m->strFormat);
         Utf8Str targetLocation(pTarget->m->strLocationFull);
-        uint64_t capabilities = pTarget->m->formatObj->i_getCapabilities();
+        uint64_t capabilities = pTarget->m->formatObj->getCapabilities();
         ComAssertThrow(capabilities & MediumFormatCapabilities_CreateDynamic, E_FAIL);
 
         Assert(pTarget->m->state == MediumState_Creating);
@@ -7441,7 +7441,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
 
             Utf8Str targetFormat(pTarget->m->strFormat);
             Utf8Str targetLocation(pTarget->m->strLocationFull);
-            uint64_t capabilities = pTarget->m->formatObj->i_getCapabilities();
+            uint64_t capabilities = pTarget->m->formatObj->getCapabilities();
 
             Assert(   pTarget->m->state == MediumState_Creating
                    || pTarget->m->state == MediumState_LockedWrite);
@@ -8124,9 +8124,9 @@ HRESULT Medium::taskExportHandler(Medium::ExportTask &task)
                                    vdError(vrc).c_str());
             }
 
-            Utf8Str targetFormat(task.mFormat->i_getId());
+            Utf8Str targetFormat(task.mFormat->getId());
             Utf8Str targetLocation(task.mFilename);
-            uint64_t capabilities = task.mFormat->i_getCapabilities();
+            uint64_t capabilities = task.mFormat->getCapabilities();
 
             Assert(m->state == MediumState_LockedRead);
 
@@ -8237,7 +8237,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
         {
             /* Open source medium. */
             vrc = VDOpen(hdd,
-                         task.mFormat->i_getId().c_str(),
+                         task.mFormat->getId().c_str(),
                          task.mFilename.c_str(),
                          VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SEQUENTIAL | m->uOpenFlagsDef,
                          task.mVDImageIfaces);
@@ -8249,7 +8249,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
 
             Utf8Str targetFormat(m->strFormat);
             Utf8Str targetLocation(m->strLocationFull);
-            uint64_t capabilities = task.mFormat->i_getCapabilities();
+            uint64_t capabilities = task.mFormat->getCapabilities();
 
             Assert(   m->state == MediumState_Creating
                    || m->state == MediumState_LockedWrite);

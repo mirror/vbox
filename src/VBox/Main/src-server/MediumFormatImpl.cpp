@@ -1,7 +1,7 @@
 /* $Id$ */
 /** @file
  *
- * MediumFormat COM class implementation
+ * VirtualBox COM class implementation
  */
 
 /*
@@ -75,7 +75,7 @@ HRESULT MediumFormat::init(const VDBACKENDINFO *aVDInfo)
         {
             DeviceType_T devType;
 
-            unconst(m.maFileExtensions).push_back(papExtension->pszExtension);
+            unconst(m.llFileExtensions).push_back(papExtension->pszExtension);
 
             switch(papExtension->enmType)
             {
@@ -93,7 +93,7 @@ HRESULT MediumFormat::init(const VDBACKENDINFO *aVDInfo)
                     return E_INVALIDARG;
             }
 
-            unconst(m.maDeviceTypes).push_back(devType);
+            unconst(m.llDeviceTypes).push_back(devType);
             ++papExtension;
         }
     }
@@ -156,7 +156,7 @@ HRESULT MediumFormat::init(const VDBACKENDINFO *aVDInfo)
                                     dt,
                                     flags,
                                     defaultValue };
-            unconst(m.maProperties).push_back(prop);
+            unconst(m.llProperties).push_back(prop);
             ++pa;
         }
     }
@@ -180,9 +180,9 @@ void MediumFormat::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst(m.maProperties).clear();
-    unconst(m.maFileExtensions).clear();
-    unconst(m.maDeviceTypes).clear();
+    unconst(m.llProperties).clear();
+    unconst(m.llFileExtensions).clear();
+    unconst(m.llDeviceTypes).clear();
     unconst(m.capabilities) = (MediumFormatCapabilities_T)0;
     unconst(m.strName).setNull();
     unconst(m.strId).setNull();
@@ -191,78 +191,130 @@ void MediumFormat::uninit()
 // IMediumFormat properties
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT MediumFormat::getId(com::Utf8Str &aId)
+STDMETHODIMP MediumFormat::COMGETTER(Id)(BSTR *aId)
 {
+    CheckComArgOutPointerValid(aId);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     /* this is const, no need to lock */
-    aId = m.strId;
+    m.strId.cloneTo(aId);
 
     return S_OK;
 }
 
-HRESULT MediumFormat::getName(com::Utf8Str &aName)
+STDMETHODIMP MediumFormat::COMGETTER(Name)(BSTR *aName)
 {
+    CheckComArgOutPointerValid(aName);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     /* this is const, no need to lock */
-    aName = m.strName;
+    m.strName.cloneTo(aName);
 
     return S_OK;
 }
 
-HRESULT MediumFormat::getCapabilities(std::vector<MediumFormatCapabilities_T> &aCapabilities)
+STDMETHODIMP MediumFormat::COMGETTER(Capabilities)(ComSafeArrayOut(MediumFormatCapabilities_T, aCaps))
 {
-    /* m.capabilities is const, no need to lock */
+    CheckComArgOutSafeArrayPointerValid(aCaps);
 
-    aCapabilities.resize(sizeof(MediumFormatCapabilities_T) * 8);
-    size_t cCapabilities = 0;
-    for (size_t i = 0; i < aCapabilities.size(); i++)
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    SafeArray<MediumFormatCapabilities_T> capabilities(sizeof(MediumFormatCapabilities_T)*8);
+
+    for (ULONG i = 0; i < capabilities.size(); ++i)
     {
-        uint64_t tmp = m.capabilities;
-        tmp &= 1ULL << i;
-        if (tmp)
-            aCapabilities[cCapabilities] = (MediumFormatCapabilities_T)tmp;
+        ULONG temp = m.capabilities;
+        temp &= 1<<i;
+        capabilities [i] = (MediumFormatCapabilities_T)temp;
     }
-    aCapabilities.resize(RT_MIN(cCapabilities, 1));
+
+    capabilities.detachTo(ComSafeArrayOutArg(aCaps));
+
+    return S_OK;
+}
+
+STDMETHODIMP MediumFormat::DescribeFileExtensions(ComSafeArrayOut(BSTR, aFileExtensions),
+                                                  ComSafeArrayOut(DeviceType_T, aDeviceTypes))
+{
+    CheckComArgOutSafeArrayPointerValid(aFileExtensions);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* this is const, no need to lock */
+    com::SafeArray<BSTR> fileExtentions(m.llFileExtensions.size());
+    int i = 0;
+    for (StrList::const_iterator it = m.llFileExtensions.begin();
+         it != m.llFileExtensions.end();
+         ++it, ++i)
+        (*it).cloneTo(&fileExtentions[i]);
+    fileExtentions.detachTo(ComSafeArrayOutArg(aFileExtensions));
+
+    com::SafeArray<DeviceType_T> deviceTypes(m.llDeviceTypes.size());
+    i = 0;
+    for (DeviceTypeList::const_iterator it = m.llDeviceTypes.begin();
+         it != m.llDeviceTypes.end();
+         ++it, ++i)
+        deviceTypes[i] = (*it);
+    deviceTypes.detachTo(ComSafeArrayOutArg(aDeviceTypes));
+
+    return S_OK;
+}
+
+STDMETHODIMP MediumFormat::DescribeProperties(ComSafeArrayOut(BSTR, aNames),
+                                              ComSafeArrayOut(BSTR, aDescriptions),
+                                              ComSafeArrayOut(DataType_T, aTypes),
+                                              ComSafeArrayOut(ULONG, aFlags),
+                                              ComSafeArrayOut(BSTR, aDefaults))
+{
+    CheckComArgOutSafeArrayPointerValid(aNames);
+    CheckComArgOutSafeArrayPointerValid(aDescriptions);
+    CheckComArgOutSafeArrayPointerValid(aTypes);
+    CheckComArgOutSafeArrayPointerValid(aFlags);
+    CheckComArgOutSafeArrayPointerValid(aDefaults);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* this is const, no need to lock */
+    size_t c = m.llProperties.size();
+    com::SafeArray<BSTR>        propertyNames(c);
+    com::SafeArray<BSTR>        propertyDescriptions(c);
+    com::SafeArray<DataType_T>  propertyTypes(c);
+    com::SafeArray<ULONG>       propertyFlags(c);
+    com::SafeArray<BSTR>        propertyDefaults(c);
+
+    int i = 0;
+    for (PropertyList::const_iterator it = m.llProperties.begin();
+         it != m.llProperties.end();
+         ++it, ++i)
+    {
+        const Property &prop = (*it);
+        prop.strName.cloneTo(&propertyNames[i]);
+        prop.strDescription.cloneTo(&propertyDescriptions[i]);
+        propertyTypes[i] = prop.type;
+        propertyFlags[i] = prop.flags;
+        prop.strDefaultValue.cloneTo(&propertyDefaults[i]);
+    }
+
+    propertyNames.detachTo(ComSafeArrayOutArg(aNames));
+    propertyDescriptions.detachTo(ComSafeArrayOutArg(aDescriptions));
+    propertyTypes.detachTo(ComSafeArrayOutArg(aTypes));
+    propertyFlags.detachTo(ComSafeArrayOutArg(aFlags));
+    propertyDefaults.detachTo(ComSafeArrayOutArg(aDefaults));
 
     return S_OK;
 }
 
 // IMediumFormat methods
 /////////////////////////////////////////////////////////////////////////////
-
-HRESULT MediumFormat::describeFileExtensions(std::vector<com::Utf8Str> &aExtensions,
-                                             std::vector<DeviceType_T> &aTypes)
-{
-    /* this is const, no need to lock */
-    aExtensions = m.maFileExtensions;
-    aTypes = m.maDeviceTypes;
-
-    return S_OK;
-}
-
-HRESULT MediumFormat::describeProperties(std::vector<com::Utf8Str> &aNames,
-                                         std::vector<com::Utf8Str> &aDescriptions,
-                                         std::vector<DataType_T> &aTypes,
-                                         std::vector<ULONG> &aFlags,
-                                         std::vector<com::Utf8Str> &aDefaults)
-{
-    /* this is const, no need to lock */
-    size_t c = m.maProperties.size();
-    aNames.resize(c);
-    aDescriptions.resize(c);
-    aTypes.resize(c);
-    aFlags.resize(c);
-    aDefaults.resize(c);
-    for (size_t i = 0; i < c; i++)
-    {
-        const Property &prop = m.maProperties[i];
-        aNames[i] = prop.strName;
-        aDescriptions[i] = prop.strDescription;
-        aTypes[i] = prop.type;
-        aFlags[i] = prop.flags;
-        aDefaults[i] = prop.strDefaultValue;
-    }
-
-    return S_OK;
-}
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
