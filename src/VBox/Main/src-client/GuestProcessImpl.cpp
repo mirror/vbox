@@ -592,7 +592,7 @@ int GuestProcess::onProcessInputStatus(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUES
     if (inputStatus != ProcessInputStatus_Undefined)
     {
         fireGuestProcessInputNotifyEvent(mEventSource, mSession, this,
-                                         mData.mPID, inputStatus, 0 /* StdIn */, dataCb.uProcessed);
+                                         mData.mPID, 0 /* StdIn */, dataCb.uProcessed, inputStatus);
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -738,14 +738,14 @@ int GuestProcess::onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
     data.initFrom((BYTE*)dataCb.pvData, dataCb.cbData);
 
     fireGuestProcessOutputEvent(mEventSource, mSession, this,
-                                mData.mPID, dataCb.uHandle, ComSafeArrayAsInParam(data));
+                                mData.mPID, dataCb.uHandle, dataCb.cbData, ComSafeArrayAsInParam(data));
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
 int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS,
-                           void *pvData, size_t cbData, size_t *pcbRead, int *pGuestRc)
+                           void *pvData, size_t cbData, uint32_t *pcbRead, int *pGuestRc)
 {
     LogFlowThisFunc(("uPID=%RU32, uHandle=%RU32, uSize=%RU32, uTimeoutMS=%RU32, pvData=%p, cbData=%RU32, pGuestRc=%p\n",
                      mData.mPID, uHandle, uSize, uTimeoutMS, pvData, cbData, pGuestRc));
@@ -1244,28 +1244,30 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResu
     return vrc;
 }
 
-int GuestProcess::waitForInputNotify(uint32_t uHandle, uint32_t uTimeoutMS,
-                                     ProcessInputStatus_T *pInputStatus, size_t *pcbProcessed)
+int GuestProcess::waitForEvents(uint32_t uTimeoutMS, ComSafeArrayIn(VBoxEventType_T, pEvents),
+                                VBoxEventType_T *pType, IEvent **ppEvent)
 {
+    AssertPtrReturn(pType, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppEvent, VERR_INVALID_POINTER);
+
     int vrc;
 
     /** @todo Parameter validation. */
 
+    com::SafeArray <VBoxEventType_T> arrEventTypes(ComSafeArrayInArg(pEvents));
+
     ComPtr<IEventListener> pListener;
     HRESULT hr = mEventSource->CreateListener(pListener.asOutParam());
     if (SUCCEEDED(hr))
-    {
-        com::SafeArray <VBoxEventType_T> eventTypes(1);
-        eventTypes.push_back(VBoxEventType_OnGuestProcessInputNotify);
-        hr = mEventSource->RegisterListener(pListener, ComSafeArrayAsInParam(eventTypes), false);
-    }
+        hr = mEventSource->RegisterListener(pListener, ComSafeArrayAsInParam(arrEventTypes),
+                                            FALSE /* Passive listener */);
     else
         vrc = VERR_COM_UNEXPECTED;
 
     if (SUCCEEDED(hr))
     {
-        LogFlowThisFunc(("Waiting for guest process input notify event (timeout=%RU32ms, handle=%RU32) ...\n",
-                         uTimeoutMS, uHandle));
+        LogFlowThisFunc(("Waiting for guest file event(s) (timeout=%RU32ms, %zu events) ...\n",
+                         uTimeoutMS, arrEventTypes.size()));
 
         vrc = VINF_SUCCESS;
 
@@ -1284,70 +1286,53 @@ int GuestProcess::waitForInputNotify(uint32_t uHandle, uint32_t uTimeoutMS,
                 cMsWait = RT_MIN(1000, uTimeoutMS - (uint32_t)cMsElapsed);
             }
 
-            ComPtr<IEvent> pEvent;
-            hr = mEventSource->GetEvent(pListener, cMsWait, pEvent.asOutParam());
+            ComPtr<IEvent> pThisEvent;
+            hr = mEventSource->GetEvent(pListener, cMsWait, pThisEvent.asOutParam());
             if (   SUCCEEDED(hr)
-                && !pEvent.isNull())
+                && !pThisEvent.isNull())
             {
-                VBoxEventType_T aType;
-                hr = pEvent->COMGETTER(Type)(&aType);
+                VBoxEventType_T type;
+                hr = pThisEvent->COMGETTER(Type)(&type);
                 ComAssertComRC(hr);
-                switch (aType)
+
+                for (size_t i = 0; i < arrEventTypes.size() && !fSignalled; i++)
                 {
-                    case VBoxEventType_OnGuestProcessInputNotify:
+                    if (type == arrEventTypes[i])
                     {
-                        ComPtr<IGuestProcessInputNotifyEvent> pOutputEvent = pEvent;
-                        Assert(!pOutputEvent.isNull());
+                        switch (type)
+                        {
+                            case VBoxEventType_OnGuestProcessStateChanged:
+                            case VBoxEventType_OnGuestProcessInputNotify:
+                            case VBoxEventType_OnGuestProcessOutput:
+                            {
+                                ComPtr<IGuestProcessEvent> pFileEvent = pThisEvent;
+                                Assert(!pFileEvent.isNull());
 
-                        ComPtr<IGuestSession> pSession;
-                        pOutputEvent->COMGETTER(Session)(pSession.asOutParam());
-                        Assert(!pSession.isNull());
-                        ULONG uSessionID;
-                        hr = pSession->COMGETTER(Id)(&uSessionID);
-                        ComAssertComRC(hr);
-                        if (uSessionID != mSession->getId())
-                            continue; /* Only the session this process runs in is of interest. */
+                                ComPtr<IGuestProcess> pProcess;
+                                pFileEvent->COMGETTER(Process)(pProcess.asOutParam());
+                                Assert(!pProcess.isNull());
 
-                        ULONG uPID;
-                        hr = pOutputEvent->COMGETTER(Pid)(&uPID);
-                        ComAssertComRC(hr);
-                        if (uPID != mData.mPID)
-                            continue; /* Only the this process is of interest. */
+                                fSignalled = (pProcess == this);
+                                break;
+                            }
 
-                        ULONG uHandleEvent;
-                        hr = pOutputEvent->COMGETTER(Handle)(&uHandleEvent);
-                        ComAssertComRC(hr);
+                            default:
+                                AssertMsgFailed(("Unhandled event %ld\n", type));
+                                break;
+                        }
 
-                        LogFlowThisFunc(("Got output event for process PID=%RU32, handle=%RU32 (session ID=%RU32)\n",
-                                         mData.mPID, uHandleEvent, mSession->getId()));
-
-                        bool fSignal = uHandleEvent == uHandle;
-                        if (!fSignal)
-                            continue;
-
-                        ProcessInputStatus_T inputStatus;
-                        hr = pOutputEvent->COMGETTER(Status)(&inputStatus);
-                        ComAssertComRC(hr);
-
-                        ULONG uProcessed;
-                        hr = pOutputEvent->COMGETTER(Processed)(&uProcessed);
-                        ComAssertComRC(hr);
-
-                        if (pInputStatus)
-                            *pInputStatus = inputStatus;
-                        if (pcbProcessed)
-                            *pcbProcessed = uProcessed;
-
-                        LogFlowThisFunc(("Input notify event for process PID=%RU32 (session ID=%RU32): %zubytes read\n",
-                                         uPID, mSession->getId(), uProcessed));
-
-                        fSignalled = true;
-                        break;
+                        if (fSignalled)
+                        {
+                            if (pType)
+                                *pType = type;
+                            if (ppEvent)
+                                pThisEvent.queryInterfaceTo(ppEvent);
+                            if (   type == VBoxEventType_OnGuestProcessStateChanged
+                                && RT_SUCCESS(vrc))
+                                vrc = VWRN_GSTCTL_OBJECTSTATE_CHANGED;
+                            break;
+                        }
                     }
-
-                    default:
-                         AssertMsgFailed(("Unhandled event type %ld\n", aType));
-                         break;
                 }
             }
 
@@ -1359,7 +1344,8 @@ int GuestProcess::waitForInputNotify(uint32_t uHandle, uint32_t uTimeoutMS,
             vrc = VERR_TIMEOUT;
         }
 
-        mEventSource->UnregisterListener(pListener);
+        hr = mEventSource->UnregisterListener(pListener);
+        ComAssertComRC(hr);
     }
     else
         vrc = VERR_COM_UNEXPECTED;
@@ -1368,128 +1354,97 @@ int GuestProcess::waitForInputNotify(uint32_t uHandle, uint32_t uTimeoutMS,
     return vrc;
 }
 
-int GuestProcess::waitForOutput(uint32_t uHandle, uint32_t uTimeoutMS,
-                                void *pvData, size_t cbData, size_t *pcbRead)
+int GuestProcess::waitForInputNotify(uint32_t uHandle, uint32_t uTimeoutMS,
+                                     ProcessInputStatus_T *pInputStatus, uint32_t *pcbProcessed)
 {
-    int vrc;
-
-    /** @todo Parameter validation. */
-
-    ComPtr<IEventListener> pListener;
-    HRESULT hr = mEventSource->CreateListener(pListener.asOutParam());
-    if (SUCCEEDED(hr))
+    VBoxEventType_T evtType;
+    ComPtr<IEvent> pEvent;
+    com::SafeArray<VBoxEventType_T> eventTypes;
+    eventTypes.push_back(VBoxEventType_OnGuestProcessInputNotify);
+    int vrc = waitForEvents(uTimeoutMS, ComSafeArrayAsInParam(eventTypes),
+                           &evtType, pEvent.asOutParam());
+    if (vrc == VINF_SUCCESS) /* Can also return VWRN_GSTCTL_OBJECTSTATE_CHANGED. */
     {
-        com::SafeArray <VBoxEventType_T> eventTypes(1);
-        eventTypes.push_back(VBoxEventType_OnGuestProcessOutput);
-        hr = mEventSource->RegisterListener(pListener, ComSafeArrayAsInParam(eventTypes), false);
+        Assert(evtType == VBoxEventType_OnGuestProcessInputNotify);
+        ComPtr<IGuestProcessInputNotifyEvent> pProcessEvent = pEvent;
+        Assert(!pProcessEvent.isNull());
+
+        if (pInputStatus)
+        {
+            HRESULT hr2 = pProcessEvent->COMGETTER(Status)(pInputStatus);
+            ComAssertComRC(hr2);
+        }
+        if (pcbProcessed)
+        {
+            HRESULT hr2 = pProcessEvent->COMGETTER(Processed)((ULONG*)pcbProcessed);
+            ComAssertComRC(hr2);
+        }
     }
-    else
-        vrc = VERR_COM_UNEXPECTED;
 
-    if (SUCCEEDED(hr))
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+int GuestProcess::waitForOutput(uint32_t uHandle, uint32_t uTimeoutMS,
+                                void *pvData, size_t cbData, uint32_t *pcbRead)
+{
+    VBoxEventType_T evtType;
+    ComPtr<IEvent> pEvent;
+    com::SafeArray<VBoxEventType_T> eventTypes;
+
+    int vrc = VINF_SUCCESS;
+
+    try
     {
-        LogFlowThisFunc(("Waiting for guest process output event (timeout=%RU32ms, handle=%RU32) ...\n",
-                         uTimeoutMS, uHandle));
+        eventTypes.push_back(VBoxEventType_OnGuestProcessOutput);
+    }
+    catch (std::bad_alloc)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
 
-        vrc = VINF_SUCCESS;
+    if (RT_FAILURE(vrc))
+        return vrc;
 
-        uint64_t u64Started = RTTimeMilliTS();
-        bool fSignalled = false;
-        do
+    do
+    {
+        vrc = waitForEvents(uTimeoutMS, ComSafeArrayAsInParam(eventTypes),
+                           &evtType, pEvent.asOutParam());
+        if (vrc == VINF_SUCCESS) /* Can also return VWRN_GSTCTL_OBJECTSTATE_CHANGED. */
         {
-            unsigned cMsWait;
-            if (uTimeoutMS == RT_INDEFINITE_WAIT)
-                cMsWait = 1000;
-            else
-            {
-                uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
-                if (cMsElapsed >= uTimeoutMS)
-                    break; /* timed out */
-                cMsWait = RT_MIN(1000, uTimeoutMS - (uint32_t)cMsElapsed);
-            }
+            Assert(evtType == VBoxEventType_OnGuestProcessOutput);
+            ComPtr<IGuestProcessOutputEvent> pProcessEvent = pEvent;
+            Assert(!pProcessEvent.isNull());
 
-            ComPtr<IEvent> pEvent;
-            hr = mEventSource->GetEvent(pListener, cMsWait, pEvent.asOutParam());
-            if (   SUCCEEDED(hr)
-                && !pEvent.isNull())
+            ULONG uHandleEvent;
+            HRESULT hr = pProcessEvent->COMGETTER(Handle)(&uHandleEvent);
+            if (uHandleEvent == uHandle)
             {
-                VBoxEventType_T aType;
-                hr = pEvent->COMGETTER(Type)(&aType);
-                ComAssertComRC(hr);
-                switch (aType)
+                if (pvData)
                 {
-                    case VBoxEventType_OnGuestProcessOutput:
+                    com::SafeArray <BYTE> data;
+                    hr = pProcessEvent->COMGETTER(Data)(ComSafeArrayAsOutParam(data));
+                    ComAssertComRC(hr);
+                    size_t cbRead = data.size();
+                    if (   cbRead
+                        && cbRead <= cbData)
                     {
-                        ComPtr<IGuestProcessOutputEvent> pOutputEvent = pEvent;
-                        Assert(!pOutputEvent.isNull());
-
-                        ComPtr<IGuestSession> pSession;
-                        pOutputEvent->COMGETTER(Session)(pSession.asOutParam());
-                        Assert(!pSession.isNull());
-                        ULONG uSessionID;
-                        hr = pSession->COMGETTER(Id)(&uSessionID);
-                        ComAssertComRC(hr);
-                        if (uSessionID != mSession->getId())
-                            continue; /* Only the session this process runs in is of interest. */
-
-                        ULONG uPID;
-                        hr = pOutputEvent->COMGETTER(Pid)(&uPID);
-                        ComAssertComRC(hr);
-                        if (uPID != mData.mPID)
-                            continue; /* Only the this process is of interest. */
-
-                        ULONG uHandleEvent;
-                        hr = pOutputEvent->COMGETTER(Handle)(&uHandleEvent);
-                        ComAssertComRC(hr);
-
-                        LogFlowThisFunc(("Got output event for process PID=%RU32, handle=%RU32 (session ID=%RU32): %ld\n",
-                                         mData.mPID, uHandleEvent, mSession->getId()));
-
-                        bool fSignal = uHandleEvent == uHandle;
-                        if (!fSignal)
-                            continue;
-
-                        com::SafeArray <BYTE> data;
-                        hr = pOutputEvent->COMGETTER(Data)(ComSafeArrayAsOutParam(data));
-                        ComAssertComRC(hr);
-
-                        size_t cbRead = data.size();
-
-                        if (pvData)
-                        {
-                            if (cbRead < cbData)
-                                cbData = cbRead;
-                            memcpy(pvData, data.raw(), cbData);
-                        }
-
-                        if (pcbRead)
-                            *pcbRead = cbRead;
-
-                        LogFlowThisFunc(("Output event for process PID=%RU32 (session ID=%RU32): %zubytes read\n",
-                                         uPID, mSession->getId(), cbRead));
-
-                        fSignalled = true;
-                        break;
+                        memcpy(pvData, data.raw(), data.size());
                     }
-
-                    default:
-                         AssertMsgFailed(("Unhandled event type %ld\n", aType));
-                         break;
+                    else
+                        vrc = VERR_BUFFER_OVERFLOW;
                 }
+                if (pcbRead)
+                {
+                    hr = pProcessEvent->COMGETTER(Processed)((ULONG*)pcbRead);
+                    ComAssertComRC(hr);
+                }
+
+                break;
             }
-
-        } while (!fSignalled);
-
-        if (   RT_SUCCESS(vrc)
-            && !fSignalled)
-        {
-            vrc = VERR_TIMEOUT;
         }
 
-        mEventSource->UnregisterListener(pListener);
-    }
-    else
-        vrc = VERR_COM_UNEXPECTED;
+    } while (RT_SUCCESS(vrc));
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1498,137 +1453,40 @@ int GuestProcess::waitForOutput(uint32_t uHandle, uint32_t uTimeoutMS,
 int GuestProcess::waitForStatusChange(uint32_t fWaitFlags, uint32_t uTimeoutMS,
                                       ProcessStatus_T *pProcessStatus, int *pGuestRc)
 {
-    int vrc;
+    /* All pointers are optional. */
 
-    ComPtr<IEventListener> pListener;
-    HRESULT hr = mEventSource->CreateListener(pListener.asOutParam());
-    if (SUCCEEDED(hr))
+    VBoxEventType_T evtType;
+    ComPtr<IEvent> pEvent;
+    com::SafeArray<VBoxEventType_T> eventTypes(1);
+    eventTypes.push_back(VBoxEventType_OnGuestProcessStateChanged);
+    int vrc = waitForEvents(uTimeoutMS, ComSafeArrayAsInParam(eventTypes),
+                            &evtType, pEvent.asOutParam());
+    if (RT_SUCCESS(vrc)) /* Includes VWRN_GSTCTL_OBJECTSTATE_CHANGED. */
     {
-        com::SafeArray <VBoxEventType_T> eventTypes(1);
-        eventTypes.push_back(VBoxEventType_OnGuestProcessStateChanged);
-        hr = mEventSource->RegisterListener(pListener, ComSafeArrayAsInParam(eventTypes), false);
-    }
-    else
-        vrc = VERR_COM_UNEXPECTED;
+        Assert(evtType == VBoxEventType_OnGuestProcessStateChanged);
+        ComPtr<IGuestProcessStateChangedEvent> pProcessEvent = pEvent;
+        Assert(!pProcessEvent.isNull());
 
-    if (SUCCEEDED(hr))
-    {
-        LogFlowThisFunc(("Waiting for guest process state changed event (timeout=%RU32ms, flags=%x) ...\n",
-                         uTimeoutMS, fWaitFlags));
-
-        vrc = VINF_SUCCESS;
-
-        uint64_t u64Started = RTTimeMilliTS();
-        bool fSignalled = false;
-        do
+        HRESULT hr;
+        if (pProcessStatus)
         {
-            unsigned cMsWait;
-            if (uTimeoutMS == RT_INDEFINITE_WAIT)
-                cMsWait = 1000;
-            else
-            {
-                uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
-                if (cMsElapsed >= uTimeoutMS)
-                    break; /* timed out */
-                cMsWait = RT_MIN(1000, uTimeoutMS - (uint32_t)cMsElapsed);
-            }
-
-            ComPtr<IEvent> pEvent;
-            hr = mEventSource->GetEvent(pListener, cMsWait, pEvent.asOutParam());
-            if (   SUCCEEDED(hr)
-                && !pEvent.isNull())
-            {
-                VBoxEventType_T aType;
-                hr = pEvent->COMGETTER(Type)(&aType);
-                ComAssertComRC(hr);
-                switch (aType)
-                {
-                    case VBoxEventType_OnGuestProcessStateChanged:
-                    {
-                        ComPtr<IGuestProcessStateChangedEvent> pChangedEvent = pEvent;
-                        Assert(!pChangedEvent.isNull());
-
-                        ComPtr<IGuestSession> pSession;
-                        pChangedEvent->COMGETTER(Session)(pSession.asOutParam());
-                        Assert(!pSession.isNull());
-                        ULONG uSessionID;
-                        hr = pSession->COMGETTER(Id)(&uSessionID);
-                        ComAssertComRC(hr);
-                        if (uSessionID != mSession->getId())
-                            continue; /* Only the session this process runs in is of interest. */
-
-                        ULONG uPID;
-                        hr = pChangedEvent->COMGETTER(Pid)(&uPID);
-                        ComAssertComRC(hr);
-                        if (uPID != mData.mPID)
-                            continue; /* Only the this process is of interest. */
-
-                        ProcessStatus_T processStatus;
-                        pChangedEvent->COMGETTER(Status)(&processStatus);
-                        if (pProcessStatus)
-                            *pProcessStatus = processStatus;
-
-                        LogFlowThisFunc(("Got status changed event for process PID=%RU32 (session ID=%RU32): %ld\n",
-                                         mData.mPID, mSession->getId(), processStatus));
-
-                        bool fSignal = false;
-                        if (fWaitFlags)
-                        {
-                            switch (processStatus)
-                            {
-                                case ProcessStatus_Started:
-                                    fSignal = (fWaitFlags & ProcessWaitForFlag_Start);
-                                    break;
-
-                                default:
-                                    fSignal = true;
-                                    break;
-                            }
-                        }
-                        else
-                            fSignal = true;
-
-                        if (!fSignal)
-                            continue;
-
-                        ComPtr<IGuestErrorInfo> errorInfo;
-                        hr = pChangedEvent->COMGETTER(Error)(errorInfo.asOutParam());
-                        ComAssertComRC(hr);
-
-                        LONG lGuestRc;
-                        hr = errorInfo->COMGETTER(Result)(&lGuestRc);
-                        ComAssertComRC(hr);
-                        if (RT_FAILURE((int)lGuestRc))
-                            vrc = VERR_GSTCTL_GUEST_ERROR;
-                        if (pGuestRc)
-                            *pGuestRc = (int)lGuestRc;
-
-                        LogFlowThisFunc(("Status changed event for process PID=%RU32 (session ID=%RU32): %ld (%Rrc)\n",
-                                         uPID, mSession->getId(), processStatus,
-                                         RT_SUCCESS((int)lGuestRc) ? VINF_SUCCESS : (int)lGuestRc));
-
-                        fSignalled = true;
-                        break;
-                    }
-
-                    default:
-                         AssertMsgFailed(("Unhandled event type %ld\n", aType));
-                         break;
-                }
-            }
-
-        } while (!fSignalled);
-
-        if (   RT_SUCCESS(vrc)
-            && !fSignalled)
-        {
-            vrc = VERR_TIMEOUT;
+            hr = pProcessEvent->COMGETTER(Status)(pProcessStatus);
+            ComAssertComRC(hr);
         }
 
-        mEventSource->UnregisterListener(pListener);
+        ComPtr<IGuestErrorInfo> errorInfo;
+        hr = pProcessEvent->COMGETTER(Error)(errorInfo.asOutParam());
+        ComAssertComRC(hr);
+
+        LONG lGuestRc;
+        hr = errorInfo->COMGETTER(Result)(&lGuestRc);
+        ComAssertComRC(hr);
+        if (RT_FAILURE((int)lGuestRc))
+            vrc = VERR_GSTCTL_GUEST_ERROR;
+
+        if (pGuestRc)
+            *pGuestRc = (int)lGuestRc;
     }
-    else
-        vrc = VERR_COM_UNEXPECTED;
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1674,7 +1532,7 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
         alock.release(); /* Drop the write lock before waiting. */
 
         ProcessInputStatus_T inputStatus;
-        size_t cbProcessed;
+        uint32_t cbProcessed;
         vrc = waitForInputNotify(uHandle, uTimeoutMS, &inputStatus, &cbProcessed);
         if (RT_SUCCESS(vrc))
         {
@@ -1710,7 +1568,7 @@ STDMETHODIMP GuestProcess::Read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, 
 
     HRESULT hr = S_OK;
 
-    size_t cbRead; int guestRc;
+    uint32_t cbRead; int guestRc;
     int vrc = readData(aHandle, aToRead, aTimeoutMS, data.raw(), aToRead, &cbRead, &guestRc);
     if (RT_SUCCESS(vrc))
     {
@@ -2078,7 +1936,7 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBl
     bool fDone = false;
 
     BYTE byBuf[_64K];
-    size_t cbRead;
+    uint32_t cbRead;
 
     bool fHandleStdOut = false;
     bool fHandleStdErr = false;

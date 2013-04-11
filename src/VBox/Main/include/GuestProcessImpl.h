@@ -77,14 +77,15 @@ public:
     inline int checkPID(uint32_t uPID);
     static Utf8Str guestErrorToString(int guestRc);
     bool isReady(void);
-    int readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, size_t *pcbRead, int *pGuestRc);
+    int readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead, int *pGuestRc);
     static HRESULT setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     int startProcess(int *pGuestRc);
     int startProcessAsync(void);
     int terminateProcess(int *pGuestRc);
     int waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResult_T &waitResult, int *pGuestRc);
-    int waitForInputNotify(uint32_t uHandle, uint32_t uTimeoutMS, ProcessInputStatus_T *pInputStatus, size_t *pcbProcessed);
-    int waitForOutput(uint32_t uHandle, uint32_t uTimeoutMS, void* pvData, size_t cbData, size_t* pcbRead);
+    int waitForEvents(uint32_t uTimeoutMS, ComSafeArrayIn(VBoxEventType_T, pEvents), VBoxEventType_T *pType, IEvent **ppEvent);
+    int waitForInputNotify(uint32_t uHandle, uint32_t uTimeoutMS, ProcessInputStatus_T *pInputStatus, uint32_t *pcbProcessed);
+    int waitForOutput(uint32_t uHandle, uint32_t uTimeoutMS, void* pvData, size_t cbData, uint32_t *pcbRead);
     int waitForStatusChange(uint32_t fWaitFlags, uint32_t uTimeoutMS, ProcessStatus_T *pProcessStatus, int *pGuestRc);
     int writeData(uint32_t uHandle, uint32_t uFlags, void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten, int *pGuestRc);
     /** @}  */

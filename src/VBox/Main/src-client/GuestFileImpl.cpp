@@ -769,7 +769,7 @@ int GuestFile::waitForEvents(uint32_t uTimeoutMS, ComSafeArrayIn(VBoxEventType_T
     {
         arrEventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
         hr = mEventSource->RegisterListener(pListener, ComSafeArrayAsInParam(arrEventTypes),
-                                            TRUE /* Passive listener */);
+                                            FALSE /* Passive listener */);
     }
     else
         vrc = VERR_COM_UNEXPECTED;
@@ -846,8 +846,6 @@ int GuestFile::waitForEvents(uint32_t uTimeoutMS, ComSafeArrayIn(VBoxEventType_T
                     }
                 }
             }
-            else
-                vrc = VERR_COM_UNEXPECTED;
 
         } while (!fSignalled);
 

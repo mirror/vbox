@@ -19927,7 +19927,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="IGuestSessionEvent" extends="IEvent"
     uuid="b9acd33f-647d-45ac-8fe9-f49b3183ba37"
-    wsmap="managed" id="GuestSessionEvent"
+    wsmap="managed"
     >
     <desc>Base abstract interface for all guest session events.</desc>
 
@@ -19983,8 +19983,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IGuestProcessEvent" extends="IGuestSessionEvent"
-    uuid="ee4be6e7-76c5-4517-a623-d4b1957d4ea4"
-    wsmap="managed" id="GuestProcessEvent"
+    uuid="2405f0e5-6588-40a3-9b0a-68c05ba52c4b"
+    wsmap="managed"
     >
     <desc>Base abstract interface for all guest process events.</desc>
 
@@ -20041,19 +20041,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-    name="IGuestProcessInputNotifyEvent" extends="IGuestProcessEvent"
-    uuid="b3d6bb71-0392-4971-a908-f71c931995fd"
-    wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessInputNotify"
+    name="IGuestProcessIOEvent" extends="IGuestProcessEvent"
+    uuid="9ea9227c-e9bb-49b3-bfc7-c5171e93ef38"
+    wsmap="managed"
     >
     <desc>
-      TODO
+      Base abstract interface for all guest process input/output (IO) events.
     </desc>
-
-    <attribute name="status" type="ProcessInputStatus" readonly="yes">
-      <desc>
-        TODO
-      </desc>
-    </attribute>
 
     <attribute name="handle" type="unsigned long" readonly="yes">
       <desc>
@@ -20068,21 +20062,32 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
   </interface>
-
+  
   <interface
-    name="IGuestProcessOutputEvent" extends="IGuestProcessEvent"
-    uuid="a13533b9-4aba-4937-836e-81325859c9d8"
-    wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessOutput"
+    name="IGuestProcessInputNotifyEvent" extends="IGuestProcessIOEvent"
+    uuid="0de887f2-b7db-4616-aac6-cfb94d89ba78"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessInputNotify"
     >
     <desc>
       TODO
     </desc>
 
-    <attribute name="handle" type="unsigned long" readonly="yes">
+    <attribute name="status" type="ProcessInputStatus" readonly="yes">
       <desc>
         TODO
       </desc>
     </attribute>
+
+  </interface>
+
+  <interface
+    name="IGuestProcessOutputEvent" extends="IGuestProcessIOEvent"
+    uuid="d3d5f1ee-bcb2-4905-a7ab-cc85448a742b"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessOutput"
+    >
+    <desc>
+      TODO
+    </desc>
 
     <attribute name="data" type="octet" safearray="yes" readonly="yes">
       <desc>
@@ -20094,8 +20099,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IGuestFileEvent" extends="IGuestSessionEvent"
-    uuid="912f748f-d2f9-4fea-84d2-d36a017cc5f8"
-    wsmap="managed" id="GuestFileEvent"
+    uuid="c8adb7b0-057d-4391-b928-f14b06b710c5"
+    wsmap="managed"
     >
     <desc>Base abstract interface for all guest file events.</desc>
 
@@ -20152,10 +20157,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="IGuestFileIOEvent" extends="IGuestFileEvent"
     uuid="b5191a7c-9536-4ef8-820e-3b0e17e5bbc8"
-    wsmap="managed" id="OnGuestFileIO"
+    wsmap="managed"
     >
     <desc>
-      TODO
+      Base abstract interface for all guest file input/output (IO) events.
     </desc>
 
     <attribute name="offset" type="long long" readonly="yes">
