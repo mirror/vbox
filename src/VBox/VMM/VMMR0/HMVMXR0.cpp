@@ -5589,6 +5589,7 @@ static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
     int rc = hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);
+    Assert(pVCpu->hm.s.vmx.fUpdatedGuestState == VMX_UPDATED_GUEST_ALL);
     AssertRC(rc);
 
     /* Restore FPU state if necessary and resync on next R0 reentry .*/
@@ -5838,7 +5839,8 @@ static int hmR0VmxInjectPendingInterrupt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedC
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
                 }
             }
-            else if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT))
+            else if (   !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT)
+                     && (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT))
             {
                 /* Instruct VT-x to cause an interrupt-window exit as soon as the guest is ready to receive interrupts again. */
                 pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT;
@@ -6891,6 +6893,7 @@ static DECLCALLBACK(int) hmR0VmxExitIntWindow(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
     /* Indicate that we no longer need to VM-exit when the guest is ready to receive interrupts, it is now ready. */
+    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT);
     pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT;
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
     AssertRCReturn(rc, rc);
@@ -8752,7 +8755,6 @@ static DECLCALLBACK(int) hmR0VmxExitXcptPF(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
          *        memory? We don't update the whole state here... */
         pVCpu->hm.s.fContextUseFlags |=   HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS
                                         | HM_CHANGED_VMX_GUEST_APIC_STATE;
-
         TRPMResetTrap(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPF);
         return rc;
@@ -8775,6 +8777,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptPF(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
             /* A guest page-fault occurred during delivery of a page-fault. Inject #DF. */
             Assert(!pVCpu->hm.s.Event.fPending);
             TRPMResetTrap(pVCpu);
+            Log(("#PF: Injecting #DF\n"));
             rc = hmR0VmxInjectXcptDF(pVM, pVCpu, pMixedCtx);
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
