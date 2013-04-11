@@ -4750,7 +4750,6 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  * Saves the guest's CR0 register from the VMCS into the guest-CPU context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -4758,7 +4757,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestCR0(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
     if (   !(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_CR0)
@@ -4781,7 +4780,6 @@ DECLINLINE(int) hmR0VmxSaveGuestCR0(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Saves the guest's CR4 register from the VMCS into the guest-CPU context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -4789,7 +4787,7 @@ DECLINLINE(int) hmR0VmxSaveGuestCR0(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestCR4(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_CR4))
@@ -4811,7 +4809,6 @@ DECLINLINE(int) hmR0VmxSaveGuestCR4(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Saves the guest's RIP register from the VMCS into the guest-CPU context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -4819,7 +4816,7 @@ DECLINLINE(int) hmR0VmxSaveGuestCR4(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestRip(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     if (pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_RIP)
         return VINF_SUCCESS;
@@ -4837,7 +4834,6 @@ DECLINLINE(int) hmR0VmxSaveGuestRip(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Saves the guest's RSP register from the VMCS into the guest-CPU context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -4845,7 +4841,7 @@ DECLINLINE(int) hmR0VmxSaveGuestRip(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestRsp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     if (pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_RSP)
         return VINF_SUCCESS;
@@ -4863,7 +4859,6 @@ DECLINLINE(int) hmR0VmxSaveGuestRsp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Saves the guest's RFLAGS from the VMCS into the guest-CPU context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -4871,7 +4866,7 @@ DECLINLINE(int) hmR0VmxSaveGuestRsp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestRflags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     if (pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_RFLAGS)
         return VINF_SUCCESS;
@@ -4884,6 +4879,7 @@ DECLINLINE(int) hmR0VmxSaveGuestRflags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
     /* Undo our real-on-v86-mode changes to eflags if necessary. */
     if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
     {
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
         Assert(pVM->hm.s.vmx.pRealModeTSS);
         Log(("Saving real-mode RFLAGS VT-x view=%#RX64\n", pMixedCtx->rflags.u64));
         pMixedCtx->eflags.Bits.u1VM   = 0;
@@ -4899,11 +4895,11 @@ DECLINLINE(int) hmR0VmxSaveGuestRflags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
  * Wrapper for saving the guest's RIP, RSP and RFLAGS from the VMCS into the
  * guest-CPU context.
  */
-static int hmR0VmxSaveGuestGprs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestGprs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    int rc = hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestRsp(pVM, pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestRsp(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
     return rc;
 }
 
@@ -4912,7 +4908,6 @@ static int hmR0VmxSaveGuestGprs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Saves the guest's interruptibility-state ("interrupt shadow" as AMD calls it)
  * from the guest-state area in the VMCS.
  *
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -4920,7 +4915,7 @@ static int hmR0VmxSaveGuestGprs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(void) hmR0VmxSaveGuestIntrState(PVM pVM,  PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(void) hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     uint32_t uIntrState = 0;
     int rc = VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
@@ -4932,8 +4927,8 @@ DECLINLINE(void) hmR0VmxSaveGuestIntrState(PVM pVM,  PVMCPU pVCpu, PCPUMCTX pMix
     {
         Assert(   uIntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI
                || uIntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
-        rc  = hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        rc |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);    /* for hmR0VmxLoadGuestIntrState(). */
+        rc  = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
+        rc |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);    /* for hmR0VmxLoadGuestIntrState(). */
         AssertRC(rc);
         EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
         Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
@@ -4945,7 +4940,6 @@ DECLINLINE(void) hmR0VmxSaveGuestIntrState(PVM pVM,  PVMCPU pVCpu, PCPUMCTX pMix
  * Saves the guest's activity state.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -4953,7 +4947,7 @@ DECLINLINE(void) hmR0VmxSaveGuestIntrState(PVM pVM,  PVMCPU pVCpu, PCPUMCTX pMix
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestActivityState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     /* Nothing to do for now until we make use of different guest-CPU activity state. Just update the flag. */
     pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_ACTIVITY_STATE;
@@ -4966,7 +4960,6 @@ DECLINLINE(int) hmR0VmxSaveGuestActivityState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  * the current VMCS into the guest-CPU context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -4974,7 +4967,7 @@ DECLINLINE(int) hmR0VmxSaveGuestActivityState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestSysenterMsrs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_SYSENTER_CS_MSR))
@@ -5007,7 +5000,6 @@ DECLINLINE(int) hmR0VmxSaveGuestSysenterMsrs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
  * context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -5015,7 +5007,7 @@ DECLINLINE(int) hmR0VmxSaveGuestSysenterMsrs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestFSBaseMsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestFSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     RTGCUINTREG uVal = 0;
     int rc = VINF_SUCCESS;
@@ -5034,7 +5026,6 @@ DECLINLINE(int) hmR0VmxSaveGuestFSBaseMsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
  * context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -5042,7 +5033,7 @@ DECLINLINE(int) hmR0VmxSaveGuestFSBaseMsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestGSBaseMsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestGSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     RTGCUINTREG uVal = 0;
     int rc = VINF_SUCCESS;
@@ -5061,7 +5052,6 @@ DECLINLINE(int) hmR0VmxSaveGuestGSBaseMsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
  * guest-CPU context. Currently these are LSTAR, STAR, SFMASK and TSC_AUX.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -5069,7 +5059,7 @@ DECLINLINE(int) hmR0VmxSaveGuestGSBaseMsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     if (pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS)
         return VINF_SUCCESS;
@@ -5106,7 +5096,6 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
  * context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -5114,22 +5103,23 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     RTGCUINTREG uVal    = 0;
     RTGCUINTREG uShadow = 0;
     int rc              = VINF_SUCCESS;
 
     /* Guest CR0. Guest FPU. */
-    rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
+    rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
 
     /* Guest CR4. */
-    rc |= hmR0VmxSaveGuestCR4(pVM, pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     /* Guest CR3. Only changes with Nested Paging. This must be done -after- saving CR0 and CR4 from the guest! */
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_CR3))
     {
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
         if (   pVM->hm.s.fNestedPaging
             && CPUMIsGuestPagingEnabledEx(pMixedCtx))
         {
@@ -5142,7 +5132,7 @@ DECLINLINE(int) hmR0VmxSaveGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMix
             }
 
             /* We require EFER to check PAE mode. */
-            rc |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVM, pVCpu, pMixedCtx);
+            rc |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
 
             /* If the guest is in PAE mode, sync back the PDPE's into the guest state. */
             if (CPUMIsGuestInPAEModeEx(pMixedCtx))  /* Reads CR0, CR4 and EFER MSR. */
@@ -5216,7 +5206,6 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
  * context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -5224,7 +5213,7 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxSaveGuestSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
 #define VMXLOCAL_READ_SEG(Sel, CtxSel) \
@@ -5241,7 +5230,7 @@ static int hmR0VmxSaveGuestSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
     /* Guest segment registers. */
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_SEGMENT_REGS))
     {
-        rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
+        rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
         rc |= VMXLOCAL_READ_SEG(CS, cs);
         rc |= VMXLOCAL_READ_SEG(SS, ss);
         rc |= VMXLOCAL_READ_SEG(DS, ds);
@@ -5296,7 +5285,7 @@ static int hmR0VmxSaveGuestSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
     /* Guest TR. */
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_TR))
     {
-        rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
+        rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
 
         /* For real-mode emulation using virtual-8086 mode we have the fake TSS (pRealModeTSS) in TR, don't save the fake one. */
         if (!pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
@@ -5313,7 +5302,6 @@ static int hmR0VmxSaveGuestSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
  * context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -5321,7 +5309,7 @@ static int hmR0VmxSaveGuestSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestDebugRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_DEBUG))
@@ -5340,7 +5328,6 @@ DECLINLINE(int) hmR0VmxSaveGuestDebugRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
  * Saves the guest APIC state from the currentl VMCS into the guest-CPU context.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
  *                      out-of-sync. Make sure to update the required fields
@@ -5348,7 +5335,7 @@ DECLINLINE(int) hmR0VmxSaveGuestDebugRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestApicState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     /* Updating TPR is already done in hmR0VmxPostRunGuest(). Just update the flag. */
     pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_APIC_STATE;
@@ -5361,15 +5348,13 @@ DECLINLINE(int) hmR0VmxSaveGuestApicState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
  * guest-CPU context. This essentially VMREADs all guest-data.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
  *                      before using them.
  */
-static int hmR0VmxSaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    Assert(pVM);
     Assert(pVCpu);
     Assert(pMixedCtx);
 
@@ -5378,35 +5363,35 @@ static int hmR0VmxSaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     VMMRZCallRing3Disable(pVCpu);
 
-    int rc = hmR0VmxSaveGuestGprs(pVM, pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestGprs failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    int rc = hmR0VmxSaveGuestGprs(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestGprs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
-    rc = hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestControlRegs failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    rc = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestControlRegs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
-    rc = hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestSegmentRegs failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    rc = hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestSegmentRegs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
-    rc = hmR0VmxSaveGuestDebugRegs(pVM, pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestDebugRegs failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    rc = hmR0VmxSaveGuestDebugRegs(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestDebugRegs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
-    rc = hmR0VmxSaveGuestSysenterMsrs(pVM, pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestSysenterMsrs failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    rc = hmR0VmxSaveGuestSysenterMsrs(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestSysenterMsrs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
-    rc = hmR0VmxSaveGuestFSBaseMsr(pVM, pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestFSBaseMsr failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    rc = hmR0VmxSaveGuestFSBaseMsr(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestFSBaseMsr failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
-    rc = hmR0VmxSaveGuestGSBaseMsr(pVM, pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestGSBaseMsr failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    rc = hmR0VmxSaveGuestGSBaseMsr(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestGSBaseMsr failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
-    rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVM, pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestAutoLoadStoreMsrs failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestAutoLoadStoreMsrs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
-    rc = hmR0VmxSaveGuestActivityState(pVM, pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestActivityState failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    rc = hmR0VmxSaveGuestActivityState(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestActivityState failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
-    rc = hmR0VmxSaveGuestApicState(pVM, pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestDebugRegs failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    rc = hmR0VmxSaveGuestApicState(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestDebugRegs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
     AssertMsg(pVCpu->hm.s.vmx.fUpdatedGuestState == VMX_UPDATED_GUEST_ALL,
               ("Missed guest state bits while saving state; residue %RX32\n", pVCpu->hm.s.vmx.fUpdatedGuestState));
@@ -5448,7 +5433,7 @@ static int hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                                      | VMCPU_FF_REQUEST | VMCPU_FF_HM_UPDATE_CR3 | VMCPU_FF_HM_UPDATE_PAE_PDPES))
     {
         /* We need the control registers now, make sure the guest-CPU context is updated. */
-        rc = hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);
+        rc = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
         AssertRCReturn(rc, rc);
 
         /* Pending HM CR3 sync. */
@@ -5589,7 +5574,7 @@ static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    int rc = hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     Assert(pVCpu->hm.s.vmx.fUpdatedGuestState == VMX_UPDATED_GUEST_ALL);
     AssertRC(rc);
 
@@ -5638,9 +5623,19 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
     Assert(pMixedCtx);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    /* We want to see what the guest-state was before VM-entry, don't resync here, as we will never continue guest execution.*/
-    if (rcExit == VERR_VMX_INVALID_GUEST_STATE)
+    if (RT_UNLIKELY(rcExit == VERR_VMX_INVALID_GUEST_STATE))
+    {
+        /* We want to see what the guest-state was before VM-entry, don't resync here, as we won't continue guest execution. */
         return;
+    }
+    else if (RT_UNLIKELY(rcExit == VERR_VMX_INVALID_VMCS_PTR))
+    {
+        VMXGetActivateVMCS(&pVCpu->hm.s.vmx.lasterror.u64VMCSPhys);
+        pVCpu->hm.s.vmx.lasterror.u32VMCSRevision = *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs;
+        pVCpu->hm.s.vmx.lasterror.idEnteredCpu    = pVCpu->hm.s.idEnteredCpu;
+        pVCpu->hm.s.vmx.lasterror.idCurrentCpu    = RTMpCpuId();
+        return;
+    }
 
     /* Please, no longjumps here (any logging shouldn't flush jump back to ring-3). NO LOGGING BEFORE THIS POINT! */
     VMMRZCallRing3Disable(pVCpu);
@@ -5811,7 +5806,7 @@ static int hmR0VmxInjectPendingInterrupt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedC
     }
 
     /* We need the guests's RFLAGS for sure from this point on, make sure it is updated. */
-    int rc = hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     /* If there isn't any active trap, check if we have pending interrupts and convert them to TRPM traps and deliver them. */
@@ -6051,7 +6046,7 @@ static int hmR0VmxInjectEventVmcs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, uin
     uint32_t u32IntrInfo = (uint32_t)u64IntrInfo;
 
     /* We require CR0 to check if the guest is in real-mode. */
-    int rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     const uint32_t uVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(u32IntrInfo);
@@ -6071,8 +6066,8 @@ static int hmR0VmxInjectEventVmcs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, uin
             Assert(pVM->hm.s.vmx.pRealModeTSS);
 
             /* Save the required guest state bits from the VMCS. */
-            rc  = hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
-            rc |= hmR0VmxSaveGuestGprs(pVM, pVCpu, pMixedCtx);
+            rc  = hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+            rc |= hmR0VmxSaveGuestGprs(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
 
             /* Check if the interrupt handler is present in the IVT (real-mode IDT). IDT limit is (4N - 1). */
@@ -6490,7 +6485,7 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
         Assert(!CPUMIsGuestInLongMode(pVCpu));
 
         /* Need guest's LSTAR MSR (which is part of the auto load/store MSRs in the VMCS), ensure we have the updated one. */
-        rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVM, pVCpu, pMixedCtx);
+        rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
         AssertRC(rc);
 
         /* The patch code uses the LSTAR as it's not used by a guest in 32-bit mode implicitly (i.e. SYSCALL is 64-bit only). */
@@ -6546,7 +6541,7 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     /* Restore the effects of TPR patching if any. */
     if (pVM->hm.s.fTPRPatchingActive)
     {
-        int rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVM, pVCpu, pMixedCtx);
+        int rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
         AssertRC(rc);
         pMixedCtx->msrLSTAR = ASMRdMsr(MSR_K8_LSTAR);           /* MSR_K8_LSTAR contains the guest TPR. */
         ASMWrMsr(MSR_K8_LSTAR, pVmxTransient->u64LStarMsr);
@@ -6576,7 +6571,7 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     if (RT_LIKELY(!pVmxTransient->fVMEntryFailed))
     {
         /* Update the guest interruptibility-state from the VMCS. */
-        hmR0VmxSaveGuestIntrState(pVM, pVCpu, pMixedCtx);
+        hmR0VmxSaveGuestIntrState(pVCpu, pMixedCtx);
 
         /*
          * If the TPR was raised by the guest, it wouldn't cause a VM-exit immediately. Instead we sync the TPR lazily whenever
@@ -6783,6 +6778,30 @@ DECLINLINE(int) hmR0VmxHandleExit(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
 #endif
 
 
+/**
+ * Advances the guest RIP after reading it from the VMCS.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pMixedCtx       Pointer to the guest-CPU context. The data maybe
+ *                          out-of-sync. Make sure to update the required fields
+ *                          before using them.
+ * @param   pVmxTransient   Pointer to the VMX transient structure.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+DECLINLINE(int) hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+{
+    int rc = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+    rc    |= hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
+    AssertRCReturn(rc, rc);
+
+    pMixedCtx->rip += pVmxTransient->cbInstr;
+    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
+    return rc;
+}
+
+
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- VM-exit handlers -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
@@ -6851,7 +6870,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptNmi(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMix
 #endif
                 default:
                 {
-                    rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
+                    rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
                     AssertRCReturn(rc, rc);
 
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestXcpUnk);
@@ -6926,15 +6945,8 @@ static DECLCALLBACK(int) hmR0VmxExitNmiWindow(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
 static DECLCALLBACK(int) hmR0VmxExitWbinvd(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-    AssertRCReturn(rc, rc);
-
-    pMixedCtx->rip += pVmxTransient->cbInstr;
-    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
-
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWbinvd);
-    return VINF_SUCCESS;
+    return hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
 }
 
 
@@ -6944,15 +6956,8 @@ static DECLCALLBACK(int) hmR0VmxExitWbinvd(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 static DECLCALLBACK(int) hmR0VmxExitInvd(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-    AssertRCReturn(rc, rc);
-
-    pMixedCtx->rip += pVmxTransient->cbInstr;
-    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
-
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvd);
-    return VINF_SUCCESS;
+    return hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
 }
 
 
@@ -6965,14 +6970,8 @@ static DECLCALLBACK(int) hmR0VmxExitCpuid(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
     int rc = EMInterpretCpuId(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-        rc  = hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        rc |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        AssertRCReturn(rc, rc);
+        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         Assert(pVmxTransient->cbInstr == 2);
-
-        Log(("hmR0VmxExitCpuid: RIP=%#RX64\n", pMixedCtx->rip));
-        pMixedCtx->rip += pVmxTransient->cbInstr;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
     }
     else
     {
@@ -6990,7 +6989,7 @@ static DECLCALLBACK(int) hmR0VmxExitCpuid(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
 static DECLCALLBACK(int) hmR0VmxExitGetsec(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc  = hmR0VmxSaveGuestCR4(pVM, pVCpu, pMixedCtx);
+    int rc  = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     if (pMixedCtx->cr4 & X86_CR4_SMXE)
@@ -7007,20 +7006,14 @@ static DECLCALLBACK(int) hmR0VmxExitGetsec(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 static DECLCALLBACK(int) hmR0VmxExitRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxSaveGuestCR4(pVM, pVCpu, pMixedCtx);    /** @todo review if CR4 is really required by EM. */
+    int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);    /** @todo review if CR4 is really required by EM. */
     AssertRCReturn(rc, rc);
 
     rc = EMInterpretRdtsc(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-        rc  = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        AssertRCReturn(rc, rc);
+        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         Assert(pVmxTransient->cbInstr == 2);
-
-        pMixedCtx->rip += pVmxTransient->cbInstr;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
-
         /* If we get a spurious VM-exit when offsetting is enabled, we must reset offsetting on VM-reentry. See @bugref{6634}. */
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TSC_OFFSETTING)
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
@@ -7041,21 +7034,15 @@ static DECLCALLBACK(int) hmR0VmxExitRdtsc(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
 static DECLCALLBACK(int) hmR0VmxExitRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxSaveGuestCR4(pVM, pVCpu, pMixedCtx);    /** @todo review if CR4 is really required by EM. */
-    rc    |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVM, pVCpu, pMixedCtx);  /* For MSR_K8_TSC_AUX */
+    int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);                /** @todo review if CR4 is really required by EM. */
+    rc    |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);  /* For MSR_K8_TSC_AUX */
     AssertRCReturn(rc, rc);
 
     rc = EMInterpretRdtscp(pVM, pVCpu, pMixedCtx);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-        rc  = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        AssertRCReturn(rc, rc);
+        rc  = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         Assert(pVmxTransient->cbInstr == 3);
-
-        pMixedCtx->rip += pVmxTransient->cbInstr;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
-
         /* If we get a spurious VM-exit when offsetting is enabled, we must reset offsetting on VM-reentry. See @bugref{6634}. */
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TSC_OFFSETTING)
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
@@ -7076,20 +7063,15 @@ static DECLCALLBACK(int) hmR0VmxExitRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 static DECLCALLBACK(int) hmR0VmxExitRdpmc(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxSaveGuestCR4(pVM, pVCpu, pMixedCtx);    /** @todo review if CR4 is really required by EM. */
-    rc    |= hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);    /** @todo review if CR0 is really required by EM. */
+    int rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);    /** @todo review if CR4 is really required by EM. */
+    rc    |= hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);    /** @todo review if CR0 is really required by EM. */
     AssertRCReturn(rc, rc);
 
     rc = EMInterpretRdpmc(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-        rc  = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        AssertRCReturn(rc, rc);
+        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         Assert(pVmxTransient->cbInstr == 2);
-
-        pMixedCtx->rip += pVmxTransient->cbInstr;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
     }
     else
     {
@@ -7108,20 +7090,13 @@ static DECLCALLBACK(int) hmR0VmxExitInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     VBOXSTRICTRC rc2 = EMInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), pVmxTransient->uExitQualification);
     rc = VBOXSTRICTRC_VAL(rc2);
     if (RT_LIKELY(rc == VINF_SUCCESS))
-    {
-        rc  = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        AssertRCReturn(rc, rc);
-
-        pMixedCtx->rip += pVmxTransient->cbInstr;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
-    }
+        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
     else
     {
         AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0VmxExitInvlpg: EMInterpretInvlpg %RGv failed with %Rrc\n",
@@ -7139,21 +7114,14 @@ static DECLCALLBACK(int) hmR0VmxExitInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 static DECLCALLBACK(int) hmR0VmxExitMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     rc = EMInterpretMonitor(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
-    {
-        rc  = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        AssertRCReturn(rc, rc);
-
-        pMixedCtx->rip += pVmxTransient->cbInstr;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
-    }
+        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
     else
     {
         AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0VmxExitMonitor: EMInterpretMonitor failed with %Rrc\n", rc));
@@ -7170,9 +7138,9 @@ static DECLCALLBACK(int) hmR0VmxExitMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMix
 static DECLCALLBACK(int) hmR0VmxExitMwait(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     VBOXSTRICTRC rc2 = EMInterpretMWait(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
@@ -7180,12 +7148,8 @@ static DECLCALLBACK(int) hmR0VmxExitMwait(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
     if (RT_LIKELY(   rc == VINF_SUCCESS
                   || rc == VINF_EM_HALT))
     {
-        int rc3  = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc3     |= hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
+        int rc3 = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         AssertRCReturn(rc3, rc3);
-
-        pMixedCtx->rip += pVmxTransient->cbInstr;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
 
         if (   rc == VINF_EM_HALT
             && EMShouldContinueAfterHalt(pVCpu, pMixedCtx))
@@ -7296,8 +7260,8 @@ static DECLCALLBACK(int) hmR0VmxExitHlt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
     Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT);
-    int rc = hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     pMixedCtx->rip++;
@@ -7378,7 +7342,7 @@ static DECLCALLBACK(int) hmR0VmxExitErrInvalidGuestState(PVM pVM, PVMCPU pVCpu, 
     rc     |= hmR0VmxReadEntryXcptErrorCodeVmcs(pVmxTransient);
     rc     |= hmR0VmxReadEntryInstrLenVmcs(pVCpu, pVmxTransient);
     rc     |= VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
-    rc     |= hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);
+    rc     |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     Log(("VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO    %#RX32\n", pVmxTransient->uEntryIntrInfo));
@@ -7478,9 +7442,9 @@ static DECLCALLBACK(int) hmR0VmxExitRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
     /* EMInterpretRdmsr() requires CR0, Eflags and SS segment register. */
-    int rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     rc = EMInterpretRdmsr(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
@@ -7491,13 +7455,8 @@ static DECLCALLBACK(int) hmR0VmxExitRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
     /* Update RIP and continue guest execution. */
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-        rc  = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        AssertRCReturn(rc, rc);
-
+        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         Assert(pVmxTransient->cbInstr == 2);
-        pMixedCtx->rip += pVmxTransient->cbInstr;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
     }
     return rc;
 }
@@ -7509,10 +7468,7 @@ static DECLCALLBACK(int) hmR0VmxExitRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
 static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-    AssertRCReturn(rc, rc);
-    Assert(pVmxTransient->cbInstr == 2);
-
+    int rc = VINF_SUCCESS;
     /* If TPR patching is active, LSTAR holds the guest TPR, writes to it must be propagated to the APIC. */
     if (   pVM->hm.s.fTPRPatchingActive
         && pMixedCtx->ecx == MSR_K8_LSTAR)
@@ -7524,10 +7480,8 @@ static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
             AssertRC(rc);
         }
 
-        rc = hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        AssertRCReturn(rc, rc);
-        pMixedCtx->rip += pVmxTransient->cbInstr;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
+        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
+        Assert(pVmxTransient->cbInstr == 2);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWrmsr);
         return VINF_SUCCESS;
     }
@@ -7568,9 +7522,9 @@ static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
 #endif
 
     /* EMInterpretWrmsr() requires CR0, EFLAGS and SS segment register. */
-    rc  = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
+    rc  = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     rc = EMInterpretWrmsr(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
@@ -7580,11 +7534,7 @@ static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixed
     /* Update guest-state and continue execution. */
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-        rc = hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        AssertRCReturn(rc, rc);
-
-        pMixedCtx->rip += pVmxTransient->cbInstr;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
+        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
 
         /* If this is an X2APIC WRMSR access, update the APIC state as well. */
         if (   pMixedCtx->ecx >= MSR_IA32_X2APIC_START
@@ -7656,11 +7606,11 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
         {
 #if 0
             /* EMInterpretCRxWrite() references a lot of guest state (EFER, RFLAGS, Segment Registers, etc.) Sync entire state */
-            rc = hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);
+            rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
 #else
-            rc  = hmR0VmxSaveGuestGprs(pVM, pVCpu, pMixedCtx);
-            rc |= hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);
-            rc |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
+            rc  = hmR0VmxSaveGuestGprs(pVCpu, pMixedCtx);
+            rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
+            rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
 #endif
             AssertRCReturn(rc, rc);
 
@@ -7674,6 +7624,9 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
                 case 0: /* CR0 */
                     Log(("CR0 write rc=%d\n", rc));
                     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+                    break;
+                case 2: /* C2 **/
+                    /* Nothing to do here, CR2 it's not part of the VMCS. */
                     break;
                 case 3: /* CR3 */
                     Assert(!pVM->hm.s.fNestedPaging || !CPUMIsGuestPagingEnabledEx(pMixedCtx));
@@ -7701,7 +7654,7 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_READ:        /* MOV from CRx */
         {
             /* EMInterpretCRxRead() requires EFER MSR, CS. */
-            rc = hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
+            rc = hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
             Assert(   !pVM->hm.s.fNestedPaging
                    || !CPUMIsGuestPagingEnabledEx(pMixedCtx)
@@ -7722,7 +7675,7 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_CLTS:        /* CLTS (Clear Task-Switch Flag in CR0) */
         {
-            rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
+            rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
             rc = EMInterpretCLTS(pVM, pVCpu);
             AssertRCReturn(rc, rc);
@@ -7734,7 +7687,7 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
         {
-            rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
+            rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
             rc = EMInterpretLMSW(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(uExitQualification));
             if (RT_LIKELY(rc == VINF_SUCCESS))
@@ -7755,11 +7708,8 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
     Assert(rc == VINF_SUCCESS || rc == VINF_PGM_CHANGE_MODE || rc == VERR_EM_INTERPRETER || rc == VINF_PGM_SYNC_CR3);
     if (RT_SUCCESS(rc))
     {
-        int rc2  = hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        rc2     |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+        int rc2 = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         AssertRCReturn(rc2, rc2);
-        pMixedCtx->rip += pVmxTransient->cbInstr;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
     }
 
     return rc;
@@ -7776,10 +7726,10 @@ static DECLCALLBACK(int) hmR0VmxExitIoInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMix
 
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);         /* Eflag checks in EMInterpretDisasCurrent(). */
-    rc    |= hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);    /* CR0 checks & PGM* in EMInterpretDisasCurrent(). */
-    rc    |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);    /* SELM checks in EMInterpretDisasCurrent(). */
+    rc    |= hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);         /* Eflag checks in EMInterpretDisasCurrent(). */
+    rc    |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);    /* CR0 checks & PGM* in EMInterpretDisasCurrent(). */
+    rc    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);    /* SELM checks in EMInterpretDisasCurrent(). */
     /* EFER also required for longmode checks in EMInterpretDisasCurrent(), but it's always up-to-date. */
     AssertRCReturn(rc, rc);
 
@@ -7865,7 +7815,7 @@ static DECLCALLBACK(int) hmR0VmxExitIoInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMix
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
-            rc = hmR0VmxSaveGuestDebugRegs(pVM, pVCpu, pMixedCtx);      /* For DR7. */
+            rc = hmR0VmxSaveGuestDebugRegs(pVCpu, pMixedCtx);      /* For DR7. */
             AssertRCReturn(rc, rc);
 
             /* If any IO breakpoints are armed, then we should check if a debug trap needs to be generated. */
@@ -8009,12 +7959,12 @@ static DECLCALLBACK(int) hmR0VmxExitApicAccess(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
 #if 0
     /** @todo Investigate if IOMMMIOPhysHandler() requires a lot of state, for now
      *   just sync the whole thing. */
-    rc = hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);
+    rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
 #else
     /* Aggressive state sync. for now. */
-    rc  = hmR0VmxSaveGuestGprs(pVM, pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
+    rc  = hmR0VmxSaveGuestGprs(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
 #endif
     AssertRCReturn(rc, rc);
 
@@ -8110,7 +8060,7 @@ static DECLCALLBACK(int) hmR0VmxExitMovDRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
      * hmR0VmxSaveGuestAutoLoadStoreMsrs(). Update only the segment registers from the CPU.
      */
     rc  = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
-    rc |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     if (VMX_EXIT_QUALIFICATION_DRX_DIRECTION(pVmxTransient->uExitQualification) == VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE)
@@ -8133,11 +8083,8 @@ static DECLCALLBACK(int) hmR0VmxExitMovDRx(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
     Assert(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER);
     if (RT_SUCCESS(rc))
     {
-        int rc2  = hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
-        rc2     |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+        int rc2 = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         AssertRCReturn(rc2, rc2);
-        pMixedCtx->rip += pVmxTransient->cbInstr;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
     }
     return rc;
 }
@@ -8163,12 +8110,12 @@ static DECLCALLBACK(int) hmR0VmxExitEptMisconfig(PVM pVM, PVMCPU pVCpu, PCPUMCTX
     rc = VMXReadVmcs64(VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL, &GCPhys);
 
 #if 0
-    rc = hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);     /** @todo Can we do better?  */
+    rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);     /** @todo Can we do better?  */
 #else
     /* Aggressive state sync. for now. */
-    rc |= hmR0VmxSaveGuestGprs(pVM, pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestGprs(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
 #endif
     AssertRCReturn(rc, rc);
 
@@ -8214,12 +8161,12 @@ static DECLCALLBACK(int) hmR0VmxExitEptViolation(PVM pVM, PVMCPU pVCpu, PCPUMCTX
     rc  = VMXReadVmcs64(VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL, &GCPhys);
     rc |= hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
 #if 0
-    rc |= hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);     /** @todo Can we do better?  */
+    rc |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);     /** @todo Can we do better?  */
 #else
     /* Aggressive state sync. for now. */
-    rc |= hmR0VmxSaveGuestGprs(pVM, pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestGprs(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
 #endif
     AssertRCReturn(rc, rc);
 
@@ -8272,7 +8219,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptMF(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 {
     VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
 
-    int rc = hmR0VmxSaveGuestCR0(pVM, pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);
 
@@ -8299,7 +8246,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptBP(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 
     /** @todo Try optimize this by not saving the entire guest state unless
      *        really needed. */
-    int rc = hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);
 
@@ -8330,8 +8277,8 @@ static DECLCALLBACK(int) hmR0VmxExitXcptDB(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
     VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
 
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+    rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     /* Refer Intel spec. Table 27-1. "Exit Qualifications for debug exceptions" for the format. */
@@ -8386,7 +8333,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptNM(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 #endif
 
     /* We require CR0 and EFER. EFER is always up-to-date. */
-    int rc = hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     /* Lazy FPU loading; Load the guest-FPU state transparently and continue execution of the guest. */
@@ -8430,7 +8377,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptGP(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
         rc  = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
         rc |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
         rc |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
+        rc |= hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
         Log(("#GP Gst: RIP %#RX64\n", pMixedCtx->rip));
         rc |= hmR0VmxInjectEventVmcs(pVM, pVCpu, pMixedCtx,
                                         VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
@@ -8448,7 +8395,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptGP(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
     Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
 
     /* EMInterpretDisasCurrent() requires a lot of the state, save the entire state. */
-    rc = hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);
+    rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
@@ -8709,9 +8656,9 @@ static DECLCALLBACK(int) hmR0VmxExitXcptPF(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
 #endif
 
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
-    rc  = hmR0VmxSaveGuestControlRegs(pVM, pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestSegmentRegs(pVM, pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestRflags(pVM, pVCpu, pMixedCtx);
+    rc  = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
     /* Shortcut for APIC TPR access, only for 32-bit guests. */
     if (   pVM->hm.s.fTRPPatchingAllowed
@@ -8728,7 +8675,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptPF(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
         if (    rc == VINF_SUCCESS
             &&  GCPhys == GCPhysApicBase)
         {
-            rc = hmR0VmxSaveGuestRip(pVM, pVCpu, pMixedCtx);
+            rc = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
 
             /* Only attempt to patch the instruction once. */
@@ -8743,7 +8690,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptPF(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixe
     TRPMSetFaultAddress(pVCpu, pVmxTransient->uExitQualification);
     TRPMSetErrorCode(pVCpu, pVmxTransient->uExitIntrErrorCode);
 
-    rc = hmR0VmxSaveGuestState(pVM, pVCpu, pMixedCtx);
+    rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     /* Forward it to the trap handler first. */
