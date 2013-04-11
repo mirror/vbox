@@ -894,8 +894,17 @@ DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used)
     GET_TOBJ(tobj, g, texture);
     if (!tobj)
     {
-        crWarning("crStateSetTextureUsed: failed to fined a HW name for texture(%d)!", texture);
-        return;
+#ifdef IN_GUEST
+        if (used)
+        {
+            tobj = crStateTextureAllocate_t(g, texture);
+        }
+        else
+#endif
+        {
+            crWarning("crStateSetTextureUsed: failed to fined a HW name for texture(%d)!", texture);
+            return;
+        }
     }
 
     if (used)
