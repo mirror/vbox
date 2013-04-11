@@ -9,7 +9,7 @@
         See webservice/Makefile.kmk for an overview of all the things
         generated for the webservice.
 
-    Copyright (C) 2006-2012 Oracle Corporation
+    Copyright (C) 2006-2013 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -35,7 +35,7 @@
 
 <xsl:variable name="G_xsltFilename" select="'websrv-typemap.xsl'" />
 
-<xsl:include href="websrv-shared.inc.xsl" />
+<xsl:include href="../idl/typemap-shared.inc.xsl" />
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
   root match

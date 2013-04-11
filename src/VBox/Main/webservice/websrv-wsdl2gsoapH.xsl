@@ -43,7 +43,7 @@
 
 <xsl:variable name="G_xsltFilename" select="'websrv-wsdl2gsoapH.xsl'" />
 
-<xsl:include href="websrv-shared.inc.xsl" />
+<xsl:include href="../idl/typemap-shared.inc.xsl" />
 
 <!-- collect all interfaces with "wsmap='suppress'" in a global variable for
      quick lookup -->

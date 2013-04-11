@@ -9,7 +9,7 @@
         See webservice/Makefile.kmk for an overview of all the things
         generated for the webservice.
 
-    Copyright (C) 2006-2012 Oracle Corporation
+    Copyright (C) 2006-2013 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -118,7 +118,7 @@
 
 <xsl:variable name="G_xsltFilename" select="'websrv-wsdl.xsl'" />
 
-<xsl:include href="websrv-shared.inc.xsl" />
+<xsl:include href="../idl/typemap-shared.inc.xsl" />
 
 <!-- collect all interfaces with "wsmap='suppress'" in a global variable for
      quick lookup -->
@@ -147,7 +147,7 @@
   <xsl:param name="methodname" />
   <xsl:param name="type" />
   <xsl:call-template name="debugMsg"><xsl:with-param name="msg" select="concat('......emitConvertedType: type=&quot;', $type, '&quot;')" /></xsl:call-template>
-  <!-- look up XML Schema type from IDL type from table array in websrv-shared.inc.xsl -->
+  <!-- look up XML Schema type from IDL type from table array in typemap-shared.inc.xsl -->
   <xsl:variable name="xmltypefield" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@xmlname" />
   <xsl:choose>
     <xsl:when test="$type=$G_typeIsGlobalRequestElementMarker"><xsl:value-of select="concat('vbox:', $ifname, $G_classSeparator, $methodname, $G_requestMessageElementSuffix)" /></xsl:when>

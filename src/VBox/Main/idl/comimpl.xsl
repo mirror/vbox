@@ -13,7 +13,7 @@
         rather trivial container classes for their read-only attributes.
         Further extension to other interfaces is possible and anticipated.
 
-    Copyright (C) 2010-2012 Oracle Corporation
+    Copyright (C) 2010-2013 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -30,7 +30,7 @@
   encoding="utf-8"
   indent="no"/>
 
-<xsl:include href="../webservice/websrv-shared.inc.xsl" />
+<xsl:include href="typemap-shared.inc.xsl" />
 
 <!-- $G_kind contains what kind of COM class implementation we generate -->
 <xsl:variable name="G_xsltFilename" select="'autogen.xsl'" />
@@ -46,7 +46,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
