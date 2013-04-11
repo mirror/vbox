@@ -49,7 +49,11 @@
 # define VMX_IS_64BIT_HOST_MODE()   (false)
 #endif
 
-#define VMX_SEL_UNUSABLE            RT_BIT(16)
+#define VMX_SEL_UNUSABLE                       RT_BIT(16)
+#define VMX_FLUSH_TAGGED_TLB_EPT_VPID          0
+#define VMX_FLUSH_TAGGED_TLB_EPT               1
+#define VMX_FLUSH_TAGGED_TLB_VPID              2
+#define VMX_FLUSH_TAGGED_TLB_NONE              3
 
 /**
  * Updated-guest-state flags.
@@ -1423,6 +1427,27 @@ static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu)
 
 
 /**
+ * Flushes the guest TLB entry based on CPU capabilities.
+ *
+ * @param pVCpu     Pointer to the VMCPU.
+ */
+DECLINLINE(void) hmR0VmxFlushTaggedTlb(PVMCPU pVCpu)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    switch (pVM->hm.s.vmx.uFlushTaggedTlb)
+    {
+        case VMX_FLUSH_TAGGED_TLB_EPT_VPID: hmR0VmxFlushTaggedTlbBoth(pVM, pVCpu); break;
+        case VMX_FLUSH_TAGGED_TLB_EPT:      hmR0VmxFlushTaggedTlbEpt(pVM, pVCpu);  break;
+        case VMX_FLUSH_TAGGED_TLB_VPID:     hmR0VmxFlushTaggedTlbVpid(pVM, pVCpu); break;
+        case VMX_FLUSH_TAGGED_TLB_NONE:     hmR0VmxFlushTaggedTlbNone(pVM, pVCpu); break;
+        default:
+            AssertMsgFailed(("Invalid flush-tag function identifier\n"));
+            break;
+    }
+}
+
+
+/**
  * Sets up the appropriate tagged TLB-flush level and handler for flushing guest
  * TLB entries from the host TLB before VM-entry.
  *
@@ -1502,13 +1527,13 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
      * Setup the handler for flushing tagged-TLBs.
      */
     if (pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid)
-        pVM->hm.s.vmx.pfnFlushTaggedTlb = hmR0VmxFlushTaggedTlbBoth;
+        pVM->hm.s.vmx.uFlushTaggedTlb = VMX_FLUSH_TAGGED_TLB_EPT_VPID;
     else if (pVM->hm.s.fNestedPaging)
-        pVM->hm.s.vmx.pfnFlushTaggedTlb = hmR0VmxFlushTaggedTlbEpt;
+        pVM->hm.s.vmx.uFlushTaggedTlb = VMX_FLUSH_TAGGED_TLB_EPT;
     else if (pVM->hm.s.vmx.fVpid)
-        pVM->hm.s.vmx.pfnFlushTaggedTlb = hmR0VmxFlushTaggedTlbVpid;
+        pVM->hm.s.vmx.uFlushTaggedTlb = VMX_FLUSH_TAGGED_TLB_VPID;
     else
-        pVM->hm.s.vmx.pfnFlushTaggedTlb = hmR0VmxFlushTaggedTlbNone;
+        pVM->hm.s.vmx.uFlushTaggedTlb = VMX_FLUSH_TAGGED_TLB_NONE;
     return VINF_SUCCESS;
 }
 
@@ -5548,7 +5573,7 @@ static void hmR0VmxUpdateTRPMTrap(PVMCPU pVCpu)
         pVCpu->hm.s.Event.fPending = false;
     }
 
-    /* Clear the VT-x state bits to prevent any stale injection. */
+    /* Clear the VT-x state bits to prevent any stale injection. This can happen when InjectEventVmcs() */
     int rc2 = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);
     AssertRC(rc2);
 }
@@ -6456,9 +6481,8 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
         pVmxTransient->u8GuestTpr = pVCpu->hm.s.vmx.pbVirtApic[0x80];
 
-    Assert(pVM->hm.s.vmx.pfnFlushTaggedTlb);
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB-shootdowns, set this across the world switch. */
-    pVM->hm.s.vmx.pfnFlushTaggedTlb(pVM, pVCpu);                /* Flush the TLB of guest entries as necessary. */
+    hmR0VmxFlushTaggedTlb(pVCpu);                               /* Invalidate the appropriate guest entries from the TLB. */
 
     /* Setup TSC-offsetting or intercept RDTSC(P)s and update the preemption timer. */
     if (pVmxTransient->fUpdateTscOffsettingAndPreemptTimer)

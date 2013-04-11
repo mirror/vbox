@@ -382,8 +382,13 @@ typedef struct HM
         RTHCPHYS                    HCPhysScratch;
         R0PTRTYPE(uint8_t *)        pbScratch;
 #endif
+
+#ifndef VBOX_WITH_OLD_VTX_CODE
+        unsigned                    uFlushTaggedTlb;
+#else
         /** Ring 0 handlers for VT-x. */
         DECLR0CALLBACKMEMBER(void, pfnFlushTaggedTlb, (PVM pVM, PVMCPU pVCpu));
+#endif
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
         uint32_t                    u32Alignment;
@@ -452,7 +457,7 @@ typedef struct HM
      */
     AVLOU32TREE                     PatchTree;
     uint32_t                        cPatches;
-    HMTPRPATCH                  aPatches[64];
+    HMTPRPATCH                      aPatches[64];
 
     struct
     {
