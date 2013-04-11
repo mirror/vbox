@@ -454,7 +454,7 @@ for func_name in ( "wglChoosePixelFormat",
            "wglGetPixelFormatAttribivEXT",
            "wglGetPixelFormatAttribfvEXT",
            "wglGetExtensionsStringEXT"):
-    print "%s@%d = %s_prox" % (func_name,stack_sizes[func_name],func_name)
+    print "%s = %s_prox" % (func_name,func_name)
 
 """
 for func_name in ( "CopyContext",
