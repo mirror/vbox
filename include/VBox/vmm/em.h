@@ -121,7 +121,7 @@ typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
  * @returns false if disabled.
  * @param   pVM         The VM to operate on.
  */
-#define EMIsRawRing3Enabled(pVM) (!(pVM)->fRecompileUser)
+#define EMIsRawRing3Enabled(pVM)            (!(pVM)->fRecompileUser)
 
 /**
  * Checks if raw ring-0 execute mode is enabled.
@@ -130,7 +130,7 @@ typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
  * @returns false if disabled.
  * @param   pVM         The VM to operate on.
  */
-#define EMIsRawRing0Enabled(pVM) (!(pVM)->fRecompileSupervisor)
+#define EMIsRawRing0Enabled(pVM)            (!(pVM)->fRecompileSupervisor)
 
 #ifdef VBOX_WITH_RAW_RING1
 /**
@@ -140,9 +140,9 @@ typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
  * @returns false if disabled.
  * @param   pVM         The VM to operate on.
  */
-#define EMIsRawRing1Enabled(pVM) ((pVM)->fRawRing1Enabled)
+# define EMIsRawRing1Enabled(pVM)           ((pVM)->fRawRing1Enabled)
 #else
-#define EMIsRawRing1Enabled(pVM) false
+# define EMIsRawRing1Enabled(pVM)           false
 #endif
 
 /**
@@ -152,7 +152,7 @@ typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
  * @returns false if disabled.
  * @param   pVM         The VM to operate on.
  */
-#define EMIsHwVirtExecutionEnabled(pVM) (!(pVM)->fRecompileSupervisor && !(pVM)->fRecompileUser)
+#define EMIsHwVirtExecutionEnabled(pVM)     (!(pVM)->fRecompileSupervisor && !(pVM)->fRecompileUser)
 
 /**
  * Checks if execution of supervisor code should be done in the

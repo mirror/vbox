@@ -438,13 +438,9 @@ int patmPatchGenIret(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, bool fSize
     AssertMsg(fSizeOverride == false, ("operand size override!!\n"));
     callInfo.pCurInstrGC = pCurInstrGC;
 
-#ifdef VBOX_WITH_RAW_RING1
     if (EMIsRawRing1Enabled(pVM))
-    {
         size = patmPatchGenCode(pVM, pPatch, pPB, &PATMIretRing1Record, 0, false, &callInfo);
-    }
     else
-#endif
         size = patmPatchGenCode(pVM, pPatch, pPB, &PATMIretRecord, 0, false, &callInfo);
 
     PATCHGEN_EPILOG(pPatch, size);
@@ -1082,10 +1078,10 @@ int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pIntHandlerGC)
 {
     int rc = VINF_SUCCESS;
 
-#ifdef VBOX_WITH_RAW_RING1
-    if (!EMIsRawRing1Enabled(pVM))    /* direct passthru of interrupts is not allowed in the ring-1 support case as we can't deal with the ring-1/2 ambiguity in the patm asm code and we don't need it either as TRPMForwardTrap takes care of the details. */
+    if (!EMIsRawRing1Enabled(pVM))    /* direct passthru of interrupts is not allowed in the ring-1 support case as we can't
+                                         deal with the ring-1/2 ambiguity in the patm asm code and we don't need it either as
+                                         TRPMForwardTrap takes care of the details. */
     {
-#endif
         uint32_t size;
         PATCHGEN_PROLOG(pVM, pPatch);
 
@@ -1098,9 +1094,7 @@ int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pIntHandlerGC)
                                 0, false);
 
         PATCHGEN_EPILOG(pPatch, size);
-#ifdef VBOX_WITH_RAW_RING1
     }
-#endif
 
     // Interrupt gates set IF to 0
     rc = patmPatchGenCli(pVM, pPatch);

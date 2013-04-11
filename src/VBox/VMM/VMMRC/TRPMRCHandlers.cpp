@@ -303,7 +303,7 @@ DECLASM(int) TRPMGCTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     RTGCUINTREG uDr6  = ASMGetAndClearDR6();
     PVM         pVM   = TRPMCPU_2_VM(pTrpmCpu);
     PVMCPU      pVCpu = TRPMCPU_2_VMCPU(pTrpmCpu);
-    //LogFlow(("TRPMGC01: cs:eip=%04x:%08x uDr6=%RTreg EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, uDr6, CPUMRawGetEFlags(pVCpu)));
+    LogFlow(("TRPMGC01: cs:eip=%04x:%08x uDr6=%RTreg EFL=%x\n", pRegFrame->cs.Sel, pRegFrame->eip, uDr6, CPUMRawGetEFlags(pVCpu)));
     TRPM_ENTER_DBG_HOOK(1);
 
     /*
@@ -444,13 +444,9 @@ DECLASM(int) TRPMGCTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     /*
      * PATM is using INT3s, let them have a go first.
      */
-#ifdef VBOX_WITH_RAW_RING1
-    if (    (   (pRegFrame->ss.Sel & X86_SEL_RPL) == 1
-             || (EMIsRawRing1Enabled(pVM) && (pRegFrame->ss.Sel & X86_SEL_RPL) == 2))
-#else
-    if (    (pRegFrame->ss.Sel & X86_SEL_RPL) == 1
-#endif
-        &&  !pRegFrame->eflags.Bits.u1VM)
+    if (   (   (pRegFrame->ss.Sel & X86_SEL_RPL) == 1
+            || (EMIsRawRing1Enabled(pVM) && (pRegFrame->ss.Sel & X86_SEL_RPL) == 2) )
+        && !pRegFrame->eflags.Bits.u1VM)
     {
         rc = PATMRCHandleInt3PatchTrap(pVM, pRegFrame);
         if (   rc == VINF_SUCCESS
@@ -527,11 +523,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     TRPM_ENTER_DBG_HOOK(6);
     PGMRZDynMapStartAutoSet(pVCpu);
 
-#ifdef VBOX_WITH_RAW_RING1
-    if (CPUMGetGuestCPL(pVCpu) <= (unsigned)(EMIsRawRing1Enabled(pVM) ? 1 : 0))
-#else
-    if (CPUMGetGuestCPL(pVCpu) == 0)
-#endif
+    if (CPUMGetGuestCPL(pVCpu) <= (EMIsRawRing1Enabled(pVM) ? 1U : 0U))
     {
         /*
          * Decode the instruction.

@@ -56,8 +56,9 @@
 #endif
 
 #ifdef VBOX_WITH_RAW_RING1
-#define EM_EMULATE_SMSW
+# define EM_EMULATE_SMSW
 #endif
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -3673,8 +3674,8 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
             || cpl > 1
             || pRegFrame->eflags.Bits.u2IOPL > cpl
            )
-        {
 #endif
+        {
             if (    cpl != 0
                 ||  pDis->pCurInstr->uOpcode != OP_RDTSC)    /* rdtsc requires emulation in ring 3 as well */
             {
@@ -3682,9 +3683,7 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
                 STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedUserMode));
                 return VERR_EM_INTERPRETER;
             }
-#ifdef VBOX_WITH_RAW_RING1
         }
-#endif
     }
     else
         Log2(("emInterpretInstructionCPU allowed to interpret user-level code!!\n"));

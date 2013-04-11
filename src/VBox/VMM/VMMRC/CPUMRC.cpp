@@ -114,6 +114,9 @@ DECLASM(void) CPUMRCAssertPreExecutionSanity(PVM pVM)
  * @returns CPL
  * @param   pVCpu       The current virtual CPU.
  * @param   pRegFrame   Pointer to the register frame.
+ *
+ * @todo    r=bird: This is very similar to CPUMGetGuestCPL and I cannot quite
+ *          see why this variant of the code is necessary.
  */
 VMMDECL(uint32_t) CPUMRCGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
@@ -141,11 +144,10 @@ VMMDECL(uint32_t) CPUMRCGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 # ifdef VBOX_WITH_RAW_RING1
         if (pVCpu->cpum.s.fRawEntered)
         {
-            if (    EMIsRawRing1Enabled(pVCpu->CTX_SUFF(pVM))
-                &&  uCpl == 2)
+            if (   uCpl == 2
+                && EMIsRawRing1Enabled(pVCpu->CTX_SUFF(pVM)) )
                 uCpl = 1;
-            else
-            if (uCpl == 1)
+            else if (uCpl == 1)
                 uCpl = 0;
         }
         Assert(uCpl != 2);  /* ring 2 support not allowed anymore. */
@@ -161,16 +163,20 @@ VMMDECL(uint32_t) CPUMRCGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     return uCpl;
 }
 
+
 #ifdef VBOX_WITH_RAW_RING1
 /**
  * Transforms the guest CPU state to raw-ring mode.
  *
  * This function will change the any of the cs and ss register with DPL=0 to DPL=1.
  *
- * @returns VBox status. (recompiler failure)
+ * Used by emInterpretIret() after the new state has been loaded.
+ *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtxCore    The context core (for trap usage).
  * @see     @ref pg_raw
+ * @remarks Will be probably obsoleted by #5653 (it will leave and reenter raw
+ *          mode instead, I think).
  */
 VMMDECL(void) CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 {
@@ -212,3 +218,4 @@ VMMDECL(void) CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
     pCtxCore->eflags.u32        |= X86_EFL_IF; /* paranoia */
 }
 #endif /* VBOX_WITH_RAW_RING1 */
+

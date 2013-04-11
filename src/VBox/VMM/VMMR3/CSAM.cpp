@@ -848,10 +848,8 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
 
     /* removing breaks win2k guests? */
     case OP_IRET:
-#ifdef VBOX_WITH_RAW_RING1
         if (EMIsRawRing1Enabled(pVM))
             break;
-#endif
         /* no break */
 
     case OP_ILLUD2:
