@@ -44,6 +44,9 @@ public:
     QTextOption::WrapMode wordWrapMode() const;
     void setWordWrapMode(QTextOption::WrapMode policy);
 
+    /* API: Event-filter stuff: */
+    void installEventFilter(QObject *pFilterObj);
+
 public slots:
 
     /* Minimum text-width setter: */

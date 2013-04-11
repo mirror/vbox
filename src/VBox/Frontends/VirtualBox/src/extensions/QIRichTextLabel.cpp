@@ -70,6 +70,13 @@ void QIRichTextLabel::setWordWrapMode(QTextOption::WrapMode policy)
     m_pTextEdit->setWordWrapMode(policy);
 }
 
+/* API: Event-filter setter: */
+void QIRichTextLabel::installEventFilter(QObject *pFilterObj)
+{
+    QWidget::installEventFilter(pFilterObj);
+    m_pTextEdit->installEventFilter(pFilterObj);
+}
+
 /* Minimum text-width setter: */
 void QIRichTextLabel::setMinimumTextWidth(int iMinimumTextWidth)
 {
