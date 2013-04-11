@@ -1063,7 +1063,7 @@ static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
             /* Validate checksum. */
             u32ChkSumSaved = pHdr1->u32Checksum;
             pHdr1->u32Checksum = 0;
-            //u32ChkSum = RTCrc32C(pHdr1, sizeof(*pHdr1));
+            //u32ChkSum = RTCrc32C(pHdr1, RT_OFFSETOF(VhdxHeader, u8Reserved[502]));
 
             if (   pHdr1->u32Signature == VHDX_HEADER_SIGNATURE
                 /*&& u32ChkSum == u32ChkSumSaved*/)
@@ -1080,7 +1080,7 @@ static int vhdxFindAndLoadCurrentHeader(PVHDXIMAGE pImage)
             /* Validate checksum. */
             u32ChkSumSaved = pHdr2->u32Checksum;
             pHdr2->u32Checksum = 0;
-            //u32ChkSum = RTCrc32C(pHdr2, sizeof(*pHdr2));
+            //u32ChkSum = RTCrc32C(pHdr2, RT_OFFSETOF(VhdxHeader, u8Reserved[502]));
 
             if (   pHdr2->u32Signature == VHDX_HEADER_SIGNATURE
                 /*&& u32ChkSum == u32ChkSumSaved*/)
@@ -2063,7 +2063,6 @@ static int vhdxSetPCHSGeometry(void *pBackendData,
     else
         rc = VERR_VD_NOT_OPENED;
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }

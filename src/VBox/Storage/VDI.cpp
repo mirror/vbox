@@ -1128,7 +1128,6 @@ static DECLCALLBACK(int) vdiDiscardBlockAsyncUpdate(void *pBackendData, PVDIOCTX
         case VDIBLOCKDISCARDSTATE_UPDATE_METADATA:
         {
             int rc2;
-            uint64_t cbImage;
 
             /* Block write complete. Update metadata. */
             pImage->paBlocksRev[pDiscardAsync->idxLastBlock] = VDI_IMAGE_BLOCK_FREE;
