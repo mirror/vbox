@@ -164,6 +164,30 @@ endif
 
 
 #
+# Generate library with API class wrappers from the XIDL file.
+#
+LIBRARIES += VBoxAPIWrap
+VBoxAPIWrap_TEMPLATE        = VBOXMAINLIB
+VBoxAPIWrap_SOURCES         = $(VBoxAPIWrap_GENERATEDCPP)
+VBoxAPIWrap_GENERATEDCPP    = $(filter %.cpp,$(VBoxAPIWrap_GENERATEDSOURCES))
+VBoxAPIWrap_GENERATEDSOURCES = $(addprefix $(VBoxAPIWrap_0_OUTDIR)/,$(VBoxAPIWrap_VBOX_APIWRAPPERFILES))
+VBoxAPIWrap_RAWSRC          = \
+	$(VBoxAPIWrap_0_OUTDIR)/apiwrappers
+VBoxAPIWrap_XSLT            = \
+	$(VBOX_PATH_MAIN_SRC)/idl/apiwrap-server.xsl
+VBoxAPIWrap_DEFS.win.x86 += _WIN32_WINNT=0x0500
+VBoxAPIWrap_DEFS.win.amd64 += _WIN32_WINNT=0x0510
+VBoxAPIWrap_INCS           += \
+	include
+VBoxAPIWrap_CLEAN           = \
+	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) \
+	$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h) \
+	$(VBoxAPIWrap_RAWSRC)
+VBoxAPIWrap_KMK = $(PATH_OUT)/vboxapiwrap.kmk
+include $(VBoxAPIWrap_KMK)
+
+
+#
 # Some SDK bit.
 #
 INSTALLS += VBox-main-xidl
@@ -255,10 +279,13 @@ VBoxSVC_DEFS.freebsd += VBOX_USE_LIBHAL
 
 VBoxSVC_CXXFLAGS = $(filter-out -Wno-unused,$(TEMPLATE_VBOXMAINEXE_CXXFLAGS))
 
+.PRECIOUS: C:/projects/vbox/out/win.x86/debug/obj/VBoxSVC/VBoxSVC.rsp
+
 VBoxSVC_INCS = \
 	include \
 	$(VBoxSVC_0_OUTDIR) \
 	$(dir $(VBOX_XML_SCHEMADEFS_H)) \
+	$(VBoxAPIWrap_0_OUTDIR) \
 	.
 VBoxSVC_INCS.win = \
 	$(VBoxCOM_0_OUTDIR)
@@ -268,6 +295,7 @@ ifdef VBOX_WITH_USB
 endif
 
 VBoxSVC_LIBS += \
+	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/SSMStandalone$(VBOX_SUFF_LIB) \
 	$(LIB_DDU)
 VBoxSVC_SDKS = VBOX_LIBPNG VBOX_ZLIB
@@ -546,6 +574,7 @@ endif
 VBoxC_INCS          = \
 	include \
 	$(VBoxC_0_OUTDIR) \
+	$(VBoxAPIWrap_0_OUTDIR) \
 	$(dir $(VBOX_XML_SCHEMADEFS_H))
 VBoxC_INCS.win      = \
 	$(VBoxCOM_0_OUTDIR) \
@@ -865,7 +894,7 @@ $(VBOX_JMSCOM_GEN)/jmscomglue.list: \
 		$(VBOX_FILESPLIT) \
 		| $(VBOX_JMSCOM_GEN)/java/
 	$(call MSG_L1,Generating Java MSCOM glue files from XIDL)
-	$(QUIET)$(RM) -f $(wildcard $(VBOX_JMSCOM_GEN)/java/*.java)
+	$(QUIET)$(RM) -f $(VBOX_JMSCOM_GEN)/java/*.java
 	$(QUIET)$(VBOX_XSLTPROC) \
               --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
               --stringparam G_vboxGlueStyle mscom              \
@@ -898,6 +927,25 @@ javagluesample_MODE = a+r,u+w
 javagluesample_SOURCES = \
 	$(VBOX_PATH_MAIN_SRC)/glue/tests/TestVBox.java=>TestVBox.java \
 	$(VBOX_PATH_MAIN_SRC)/glue/tests/Makefile=>Makefile
+
+# moved those rules to the end so that VBoxAPIWrap_0_OUTDIR can be expanded without $$ trickery
+$(VBoxAPIWrap_RAWSRC) \
++| $(VBoxAPIWrap_GENERATEDSOURCES): \
+		$(VBOX_XIDL_FILE) \
+		$(VBoxAPIWrap_XSLT) \
+		$(VBOX_FILESPLIT) \
+		| $$(dir $$@)
+	$(call MSG_L1,Generating C++ Server API wrapper files from XIDL)
+	$(QUIET)$(RM) -f $(filter-out $(VBoxAPIWrap_GENERATEDSOURCES),$(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.cpp) $(wildcard $(VBoxAPIWrap_0_OUTDIR)/*.h))
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam filelistonly "" -o $@ $(VBoxAPIWrap_XSLT) $<
+	$(QUIET)$(VBOX_FILESPLIT) $@ $(VBoxAPIWrap_0_OUTDIR)
+
+$(VBoxAPIWrap_KMK).ts +| $(VBoxAPIWrap_KMK): $(VBOX_XIDL_FILE) $(VBoxAPIWrap_XSLT)
+	$(call MSG_GENERATE,,$(VBoxAPIWrap_KMK))
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(MKDIR) -p $(@D)
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam filelistonly VBoxAPIWrap_VBOX_APIWRAPPERFILES -o $@ $(VBoxAPIWrap_XSLT) $<
+	$(QUIET)$(CP) --changed -fv $@ $(VBoxAPIWrap_KMK)
 
 updatenls::
 	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_VBOX_HEADERS) -ts $(VBoxSVC_VBOX_TRANSLATIONS)
