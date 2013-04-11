@@ -472,56 +472,56 @@ static int hmR3InitCPU(PVM pVM)
 
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatPoke, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of RTMpPokeCpu",
-                             "/PROF/HM/CPU%d/Poke", i);
+                             "/PROF/CPU%d/HM/Poke", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatSpinPoke, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of poke wait",
-                             "/PROF/HM/CPU%d/PokeWait", i);
+                             "/PROF/CPU%d/HM/PokeWait", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatSpinPokeFailed, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of poke wait when RTMpPokeCpu fails",
-                             "/PROF/HM/CPU%d/PokeWaitFailed", i);
+                             "/PROF/CPU%d/HM/PokeWaitFailed", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatEntry, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of VMXR0RunGuestCode entry",
-                             "/PROF/HM/CPU%d/StatEntry", i);
+                             "/PROF/CPU%d/HM/StatEntry", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExit1, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of VMXR0RunGuestCode exit part 1",
-                             "/PROF/HM/CPU%d/SwitchFromGC_1", i);
+                             "/PROF/CPU%d/HM/SwitchFromGC_1", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExit2, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of VMXR0RunGuestCode exit part 2",
-                             "/PROF/HM/CPU%d/SwitchFromGC_2", i);
+                             "/PROF/CPU%d/HM/SwitchFromGC_2", i);
         AssertRC(rc);
 # ifdef VBOX_WITH_OLD_VTX_CODE
         /* temporary for tracking down darwin holdup. */
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExit2Sub1, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Temporary - I/O",
-                             "/PROF/HM/CPU%d/SwitchFromGC_2/Sub1", i);
+                             "/PROF/CPU%d/HM/SwitchFromGC_2/Sub1", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExit2Sub2, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Temporary - CRx RWs",
-                             "/PROF/HM/CPU%d/SwitchFromGC_2/Sub2", i);
+                             "/PROF/CPU%d/HM/SwitchFromGC_2/Sub2", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExit2Sub3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Temporary - Exceptions",
-                             "/PROF/HM/CPU%d/SwitchFromGC_2/Sub3", i);
+                             "/PROF/CPU%d/HM/SwitchFromGC_2/Sub3", i);
         AssertRC(rc);
 # endif
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatLoadGuestState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of VMXR0LoadGuestState",
-                             "/PROF/HM/CPU%d/StatLoadGuestState", i);
+                             "/PROF/CPU%d/HM/StatLoadGuestState", i);
         AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatInGC, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of vmlaunch/vmresume",
-                             "/PROF/HM/CPU%d/InGC", i);
+                             "/PROF/CPU%d/HM/InGC", i);
         AssertRC(rc);
 
 # if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatWorldSwitch3264, STAMTYPE_PROFILE, STAMVISIBILITY_USED,
                              STAMUNIT_TICKS_PER_CALL, "Profiling of the 32/64 switcher",
-                             "/PROF/HM/CPU%d/Switcher3264", i);
+                             "/PROF/CPU%d/HM/Switcher3264", i);
         AssertRC(rc);
 # endif
 
