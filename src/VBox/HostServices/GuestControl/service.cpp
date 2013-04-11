@@ -102,7 +102,8 @@ typedef struct ClientConnection
     /** The call parameters */
     VBOXHGCMSVCPARM *mParms;
     /** The standard constructor. */
-    ClientConnection(void) : mHandle(0), mNumParms(0), mParms(NULL) {}
+    ClientConnection(void)
+        : mHandle(0), mNumParms(0), mParms(NULL) {}
 } ClientConnection;
 
 /**
@@ -418,7 +419,7 @@ typedef struct HostCommand
             pConnection->mParms[1].setUInt32(mParmCount); /* Required parameters for message */
         }
         else
-            LogFlowFunc(("Client has not (yet) submitted enough parameters (%RU32) to at least peak for the next message\n",
+            LogFlowFunc(("Warning: Client has not (yet) submitted enough parameters (%RU32, must be at least 2) to at least peak for the next message\n",
                          pConnection->mNumParms));
 
         /*
@@ -478,7 +479,8 @@ typedef struct ClientState
           mFlags(0), mContextFilter(0),
           mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
           mHostCmdTS(0),
-          mIsPending(false) { }
+          mIsPending(false),
+          mPeekCount(0) { }
 
     ClientState(PVBOXHGCMSVCHELPERS pSvcHelpers, uint32_t uClientID)
         : mSvcHelpers(pSvcHelpers),
@@ -486,7 +488,8 @@ typedef struct ClientState
           mFlags(0), mContextFilter(0),
           mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
           mHostCmdTS(0),
-          mIsPending(false) { }
+          mIsPending(false),
+          mPeekCount(0){ }
 
     void DequeueAll(void)
     {
@@ -764,19 +767,33 @@ typedef struct ClientState
         AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
 
         int rc;
+        /* If the client is in pending mode, always send back
+         * the peek result first. */
         if (mIsPending)
         {
-            /* If the client is in pending mode, always send back
-             * the peek result first. */
             rc = pHostCmd->Peek(pConnection);
+            mPeekCount++;
         }
         else
         {
-            /* Try assigning the host command to the client and store the
-             * result code for later use. */
-            rc = pHostCmd->Assign(pConnection);
-            if (RT_FAILURE(rc)) /* If something failed, let the client peek (again). */
+            if (!mPeekCount)
+            {
                 rc = pHostCmd->Peek(pConnection);
+                mPeekCount++;
+            }
+            else
+            {
+                /* Try assigning the host command to the client and store the
+                 * result code for later use. */
+                rc = pHostCmd->Assign(pConnection);
+                if (RT_FAILURE(rc)) /* If something failed, let the client peek (again). */
+                {
+                    rc = pHostCmd->Peek(pConnection);
+                    mPeekCount++;
+                }
+                else
+                    mPeekCount = 0;
+            }
         }
 
         /* Reset pending status. */
@@ -787,8 +804,8 @@ typedef struct ClientState
         AssertPtr(mSvcHelpers);
         mSvcHelpers->pfnCallComplete(pConnection->mHandle, rc);
 
-        LogFlowFunc(("[Client %RU32] pConnection=%p, pHostCmd=%p, replyRc=%Rrc\n",
-                     mID, pConnection, pHostCmd, rc));
+        LogFlowFunc(("[Client %RU32] mPeekCount=%RU32, pConnection=%p, pHostCmd=%p, replyRc=%Rrc\n",
+                     mID, mPeekCount, pConnection, pHostCmd, rc));
         return rc;
     }
 
@@ -809,8 +826,22 @@ typedef struct ClientState
     uint32_t mHostCmdTries;
     /** Timestamp (us) of last host command processed. */
     uint64_t mHostCmdTS;
-    /** Flag indicating whether the client currently is pending. */
+    /**
+     * Flag indicating whether the client currently is pending.
+     * This means the client waits for a new host command to reply
+     * and won't return from the waiting call until a new host
+     * command is available.
+     */
     bool mIsPending;
+    /**
+     * This is necessary for being compatible with older
+     * Guest Additions. In case there are commands which only
+     * have two (2) parameters and therefore would fit into the
+     * GUEST_MSG_WAIT reply immediately, we now can make sure
+     * that the client first gets back the GUEST_MSG_WAIT results
+     * first.
+     */
+    uint32_t mPeekCount;
     /** The client's pending connection. */
     ClientConnection mPendingCon;
 } ClientState;
@@ -1345,7 +1376,9 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                     break;
 
                 /*
-                 * The guest only wants skip the currently assigned messages.
+                 * The guest only wants skip the currently assigned messages. Neded
+                 * for dropping its assigned reference of the current assigned host
+                 * command in queue.
                  * Since VBox 4.3+.
                  */
                 case GUEST_MSG_SKIP:
