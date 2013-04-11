@@ -44,7 +44,7 @@ endif # !VBOX_ONLY_SDK
 
 # Construct VBOX_MAIN_DEFS
 ## @todo eliminate or expand VBOX_MAIN_DEFS.
-VBOX_MAIN_DEFS   = 
+VBOX_MAIN_DEFS   =
 ifneq ($(KBUILD_TARGET),win)
  ifndef VBOX_WITH_XPCOM
   $(error "VBox: VBOX_WITH_XPCOM isn't defined")
@@ -278,8 +278,6 @@ VBoxSVC_DEFS.solaris += VBOX_USE_LIBHAL
 VBoxSVC_DEFS.freebsd += VBOX_USE_LIBHAL
 
 VBoxSVC_CXXFLAGS = $(filter-out -Wno-unused,$(TEMPLATE_VBOXMAINEXE_CXXFLAGS))
-
-.PRECIOUS: C:/projects/vbox/out/win.x86/debug/obj/VBoxSVC/VBoxSVC.rsp
 
 VBoxSVC_INCS = \
 	include \
