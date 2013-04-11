@@ -1,12 +1,10 @@
 <!--
-    websrv-shared.inc.xsl:
-        this gets included from the other websrv-*.xsl XSLT stylesheets
-        so we can share some definitions that must be the same for
-        all of them (like method prefixes/suffices).
-        See webservice/Makefile.kmk for an overview of all the things
-        generated for the webservice.
+    typemap-shared.inc.xsl:
+    this gets included from other XSLT stylesheets including those
+    for the webservice, so we can share some definitions that must
+    be the same for all of them (like method prefixes/suffices).
 
-    Copyright (C) 2006-2012 Oracle Corporation
+    Copyright (C) 2006-2013 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -26,7 +24,10 @@
   xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
   xmlns:vbox="http://www.virtualbox.org/">
 
-<xsl:variable name="G_xsltIncludeFilename" select="'websrv-shared.inc.xsl'" />
+<xsl:variable name="G_xsltIncludeFilename" select="'typemap-shared.inc.xsl'" />
+
+<xsl:variable name="G_lowerCase" select="'abcdefghijklmnopqrstuvwxyz'" />
+<xsl:variable name="G_upperCase" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'" />
 
 <!-- target namespace; this must match the xmlns:vbox in stylesheet opening tags! -->
 <xsl:variable name="G_targetNamespace"
@@ -161,19 +162,19 @@
               select='"StructCom2Soap_"' />
 
 <xsl:variable name="G_aSharedTypes">
-  <type idlname="octet"              xmlname="unsignedByte"  cname="unsigned char"    gluename="BYTE"    javaname="byte" />
-  <type idlname="boolean"            xmlname="boolean"       cname="bool"             gluename="BOOL"    javaname="Boolean" />
-  <type idlname="short"              xmlname="short"         cname="short"            gluename="SHORT"   javaname="Short" />
-  <type idlname="unsigned short"     xmlname="unsignedShort" cname="unsigned short"   gluename="USHORT"  javaname="Integer" />
-  <type idlname="long"               xmlname="int"           cname="int"              gluename="LONG"    javaname="Integer" />
-  <type idlname="unsigned long"      xmlname="unsignedInt"   cname="unsigned int"     gluename="ULONG"   javaname="Long" />
-  <type idlname="long long"          xmlname="long"          cname="LONG64"           gluename="LONG64"  javaname="Long" />
-  <type idlname="unsigned long long" xmlname="unsignedLong"  cname="ULONG64"          gluename="ULONG64" javaname="BigInteger" />
-  <type idlname="double"             xmlname="double"        cname="double"           gluename=""        javaname="Double" />
-  <type idlname="float"              xmlname="float"         cname="float"            gluename=""        javaname="Float" />
-  <type idlname="wstring"            xmlname="string"        cname="std::string"      gluename=""        javaname="String" />
-  <type idlname="uuid"               xmlname="string"        cname="std::string"      gluename=""        javaname="String" />
-  <type idlname="result"             xmlname="unsignedInt"   cname="unsigned int"     gluename="HRESULT" javaname="Long" />
+  <type idlname="octet"              xmlname="unsignedByte"  cname="unsigned char"    gluename="BYTE"    gluefmt="%RU8"      javaname="byte" />
+  <type idlname="boolean"            xmlname="boolean"       cname="bool"             gluename="BOOL"    gluefmt="%RTbool"   javaname="Boolean" />
+  <type idlname="short"              xmlname="short"         cname="short"            gluename="SHORT"   gluefmt="%RI16"     javaname="Short" />
+  <type idlname="unsigned short"     xmlname="unsignedShort" cname="unsigned short"   gluename="USHORT"  gluefmt="%RU16"     javaname="Integer" />
+  <type idlname="long"               xmlname="int"           cname="int"              gluename="LONG"    gluefmt="%RI32"     javaname="Integer" />
+  <type idlname="unsigned long"      xmlname="unsignedInt"   cname="unsigned int"     gluename="ULONG"   gluefmt="%RU32"     javaname="Long" />
+  <type idlname="long long"          xmlname="long"          cname="LONG64"           gluename="LONG64"  gluefmt="%RI64"     javaname="Long" />
+  <type idlname="unsigned long long" xmlname="unsignedLong"  cname="ULONG64"          gluename="ULONG64" gluefmt="%RU64"     javaname="BigInteger" />
+  <type idlname="double"             xmlname="double"        cname="double"           gluename="DOUBLE"  gluefmt="%#RX64"    javaname="Double" />
+  <type idlname="float"              xmlname="float"         cname="float"            gluename="FLOAT"   gluefmt="%#RX32"    javaname="Float" />
+  <type idlname="wstring"            xmlname="string"        cname="std::string"      gluename="BSTR"    gluefmt="%ls"       javaname="String" />
+  <type idlname="uuid"               xmlname="string"        cname="std::string"      gluename="BSTR"    gluefmt="%ls"       javaname="String" />
+  <type idlname="result"             xmlname="unsignedInt"   cname="unsigned int"     gluename="HRESULT" gluefmt="%Rhrc"     javaname="Long" />
 </xsl:variable>
 
 <!--
@@ -222,7 +223,7 @@
   <xsl:param name="str" select="."/>
   <xsl:value-of select="
         concat(
-            translate(substring($str,1,1),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),
+            translate(substring($str,1,1),$G_upperCase,$G_lowerCase),
             substring($str,2)
         )
   "/>
@@ -239,9 +240,9 @@
   <xsl:choose>
     <xsl:when test="$strlen>1">
      <xsl:choose>
-       <xsl:when test="contains('ABCDEFGHIJKLMNOPQRSTUVWXYZ',substring($str,1,1))
+       <xsl:when test="contains($G_upperCase,substring($str,1,1))
                        and
-                       contains('ABCDEFGHIJKLMNOPQRSTUVWXYZ',substring($str,2,1))">
+                       contains($G_upperCase,substring($str,2,1))">
          <xsl:variable name="cdr">
            <xsl:call-template name="uncapitalize2">
              <xsl:with-param name="str" select="substring($str,2)"/>
@@ -250,8 +251,8 @@
          <xsl:value-of select="
            concat(
             translate(substring($str,1,1),
-                      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-                      'abcdefghijklmnopqrstuvwxyz'),
+                      $G_upperCase,
+                      $G_lowerCase),
             $cdr
            )
            "/>
@@ -265,8 +266,8 @@
     <xsl:when test="$strlen=1">
       <xsl:value-of select="
                             translate($str,
-                            'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-                            'abcdefghijklmnopqrstuvwxyz')
+                            $G_upperCase,
+                            $G_lowerCase)
                             "/>
     </xsl:when>
     <xsl:otherwise>
@@ -281,7 +282,7 @@
   <xsl:param name="str" select="."/>
   <xsl:value-of select="
         concat(
-            translate(substring($str,1,1),'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
+            translate(substring($str,1,1),$G_lowerCase,$G_upperCase),
             substring($str,2)
         )
   "/>

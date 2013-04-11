@@ -40,14 +40,14 @@
 <xsl:variable name="G_setSuppressedInterfaces"
               select="//interface[@wsmap='suppress']" />
 
-<xsl:include href="../webservice/websrv-shared.inc.xsl" />
+<xsl:include href="../idl/typemap-shared.inc.xsl" />
 
 <xsl:strip-space elements="*"/>
 
 <xsl:template name="fileheader">
   <xsl:param name="name" />
   <xsl:text>/*
- *  Copyright (C) 2010-2012 Oracle Corporation
+ *  Copyright (C) 2010-2013 Oracle Corporation
  *
  *  This file is part of the VirtualBox SDK, as available from
  *  http://www.virtualbox.org.  This library is free software; you can
@@ -643,7 +643,7 @@
   </xsl:if>
 
   <xsl:if test="not($needlist) or not($skiplisttype='yes')">
-    <!-- look up Java type from IDL type from table array in websrv-shared.inc.xsl -->
+    <!-- look up Java type from IDL type from table array in typemap-shared.inc.xsl -->
     <xsl:variable name="javatypefield" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@javaname" />
 
     <xsl:choose>

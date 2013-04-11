@@ -39,7 +39,7 @@
 
 <xsl:variable name="G_xsltFilename" select="'websrv-cpp.xsl'" />
 
-<xsl:include href="websrv-shared.inc.xsl" />
+<xsl:include href="../idl/typemap-shared.inc.xsl" />
 
 <!-- collect all interfaces with "wsmap='suppress'" in a global variable for
      quick lookup -->
@@ -360,7 +360,7 @@ const char *g_pcszIUnknown = "IUnknown";
   <xsl:param name="varprefix" />      <!-- only with nested get-attribute calls -->
   <xsl:param name="inptr" />          <!-- whether to add INPTR to BSTR (Dmitry template magic) -->
 
-  <!-- look up C++ glue type from IDL type from table array in websrv-shared.inc.xsl -->
+  <!-- look up C++ glue type from IDL type from table array in typemap-shared.inc.xsl -->
   <xsl:variable name="gluetypefield" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@gluename" />
 
   <xsl:choose>
@@ -984,7 +984,7 @@ const char *g_pcszIUnknown = "IUnknown";
       <xsl:call-template name="emitNewlineIndent8" />
       <xsl:value-of select="'{'" />
       <xsl:call-template name="emitNewlineIndent8" />
-      <!-- look up C++ glue type from IDL type from table array in websrv-shared.inc.xsl -->
+      <!-- look up C++ glue type from IDL type from table array in typemap-shared.inc.xsl -->
       <xsl:variable name="gluetypefield" select="exsl:node-set($G_aSharedTypes)/type[@idlname=$type]/@gluename" />
       <xsl:choose>
         <xsl:when test="//interface[@name=$type]">

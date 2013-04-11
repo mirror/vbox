@@ -9,7 +9,7 @@
         VirtualBox.xidl. This Python file represents our
         web service API. Depends on WSDL file for actual SOAP bindings.
 
-    Copyright (C) 2008-2012 Oracle Corporation
+    Copyright (C) 2008-2013 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -27,7 +27,7 @@
   encoding="utf-8"
   indent="no"/>
 
-<xsl:include href="websrv-shared.inc.xsl" />
+<xsl:include href="../idl/typemap-shared.inc.xsl" />
 
 <xsl:variable name="G_setSuppressedInterfaces"
               select="//interface[@wsmap='suppress']" />

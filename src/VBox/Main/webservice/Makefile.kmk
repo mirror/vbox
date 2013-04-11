@@ -6,7 +6,7 @@
 #
 
 #
-# Copyright (C) 2007-2012 Oracle Corporation
+# Copyright (C) 2007-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -150,6 +150,9 @@ BLDDIRS += $(VBOXWEB_OUT_DIR)
 
 # The webservice location
 VBOX_PATH_WEBSERVICE          := $(PATH_SUB_CURRENT)
+
+# The IDL subdirectory (contains some XSLT files)
+VBOX_PATH_IDL                 := $(abspath $(PATH_SUB_CURRENT)/../idl)
 
 # If this is set, all webservice files are considered out-of-date every time
 # this makefile is touched. Otherwise, set this to empty.
@@ -559,13 +562,13 @@ $(VBOXWEB_IDL_SRC): $(VBOXWEB_IDL_SRC_STRIPPED) $(VBOX_PATH_WEBSERVICE)/platform
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/platform-xidl.xsl $<
 
 # generate WSDL from main XIDL file
-$(VBOXWEB_WSDL): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl.xsl $(VBOX_PATH_WEBSERVICE)/websrv-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) ## @todo | $$(dir $$@)
+$(VBOXWEB_WSDL): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) ## @todo | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-wsdl.xsl)
 	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-wsdl.xsl $<
 
-$(VBOXWEBSERVICE_WSDL): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl-service.xsl $(VBOX_PATH_WEBSERVICE)/websrv-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) ## @todo | $$(dir $$@)
+$(VBOXWEBSERVICE_WSDL): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl-service.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) ## @todo | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-wsdl-service.xsl)
 	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(MKDIR) -p $(@D)
@@ -605,19 +608,19 @@ $(VBOXWEB_WS_PHP): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-php.xsl
 endif # VBOX_ONLY_SDK
 
 # generate typemap.dat (used by wsdl2h) from main XIDL file
-$(VBOXWEB_TYPEMAP): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-typemap.xsl $(VBOX_PATH_WEBSERVICE)/websrv-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
+$(VBOXWEB_TYPEMAP): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-typemap.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-typemap.xsl)
 	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-typemap.xsl $<
 
 # generate gsoap pseudo-C header file from that WSDL; once via XSLT...
-$(VBOXWEB_GSOAPH_FROM_XSLT): $(VBOXWEB_WSDL) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl2gsoapH.xsl $(VBOX_PATH_WEBSERVICE)/websrv-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
+$(VBOXWEB_GSOAPH_FROM_XSLT): $(VBOXWEB_WSDL) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl2gsoapH.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_WSDL) using websrv-wsdl2gsoapH.xsl)
 	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-wsdl2gsoapH.xsl $<
 
 VBOX_NSMAP = $(VBOXWEB_OUT_DIR)/vboxwebsrv.nsmap
-$(VBOX_NSMAP): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-nsmap.xsl $(VBOX_PATH_WEBSERVICE)/websrv-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
+$(VBOX_NSMAP): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-nsmap.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-nsmap.xsl)
 	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-nsmap.xsl $<
@@ -710,7 +713,7 @@ endif # VBOX_GSOAP_INSTALLED
 
 
 # generate method maps in server: map wsdl operations to com/xpcom method calls
-$(VBOXWEB_OUT_DIR)/methodmaps.cpp: $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-cpp.xsl $(VBOX_PATH_WEBSERVICE)/websrv-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
+$(VBOXWEB_OUT_DIR)/methodmaps.cpp: $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-cpp.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-cpp.xsl)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-cpp.xsl $<
 
