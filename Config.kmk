@@ -5314,8 +5314,9 @@ endif
 # Subversion tree revision.
 #
 # The VBOX_SVN_REV contains our best guess.  Use svn info on the root of the
-# tree to determin this it if .svn/entries is found, otherwise fall back on
-# the Config.kmk revision.
+# tree to determine this it if .svn/wc.db or .svn/entries is found (the former
+# also up to two directory levels higher to allow for checkouts of the entire
+# repository), otherwise fall back on the Config.kmk revision.
 #
 # Makefile rules using this information shall list $(VBOX_SVN_REV_KMK) as a
 # prerequisite.
@@ -5324,7 +5325,7 @@ SVN                    ?= svn$(HOSTSUFF_EXE)
 VBOX_SVN_REV_KMK        = $(PATH_OUT)/revision.kmk
 ifndef VBOX_SVN_REV
  VBOX_SVN_REV_FALLBACK := $(patsubst %:,,  $Rev$  )
- VBOX_SVN_DEP          := $(wildcard $(PATH_ROOT)/.svn/entries)
+ VBOX_SVN_DEP          := $(firstword $(wildcard $(PATH_ROOT)/.svn/wc.db $(abspath $(PATH_ROOT)/../.svn/wc.db) $(abspath $(PATH_ROOT)/../../.svn/wc.db) $(PATH_ROOT)/.svn/entries))
  ifeq ($(which $(SVN)),)
   VBOX_SVN_DEP         :=
  endif
