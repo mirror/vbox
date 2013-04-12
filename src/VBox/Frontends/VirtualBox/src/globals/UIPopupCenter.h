@@ -30,10 +30,11 @@
 
 /* Forward declaration: */
 class QPushButton;
-class QIRichTextLabel;
+class QLabel;
 class QIDialogButtonBox;
 class UIPopupPane;
 class UIPopupPaneFrame;
+class UIPopupPaneTextPane;
 
 /* Global popup-center object: */
 class UIPopupCenter: public QObject
@@ -141,6 +142,10 @@ class UIPopupPane : public QWidget
 
 signals:
 
+    /* Notifiers: Hover stuff: */
+    void sigHoverEnter();
+    void sigHoverLeave();
+
     /* Notifier: Complete stuff: */
     void sigDone(int iButtonCode) const;
 
@@ -163,6 +168,9 @@ private slots:
     void done2() { done(m_iButton2 & AlertButtonMask); }
     void done3() { done(m_iButton3 & AlertButtonMask); }
 
+    /* Handler: Layout stuff: */
+    void sltAdjustGeomerty();
+
 private:
 
     /* Helpers: Prepare/cleanup stuff: */
@@ -181,7 +189,6 @@ private:
     int minimumWidthHint() const;
     int minimumHeightHint() const;
     QSize minimumSizeHint() const;
-    void adjustAccordingParent();
     void updateLayout();
 
     /* Helpers: Prepare stuff: */
@@ -199,18 +206,27 @@ private:
     /* Variables: */
     bool m_fPolished;
     const QString m_strId;
-    int m_iMainLayoutMargin;
-    int m_iMainFrameLayoutMargin;
-    int m_iMainFrameLayoutSpacing;
+
+    /* Variables: Layout stuff: */
+    const int m_iMainLayoutMargin;
+    const int m_iMainFrameLayoutMargin;
+    const int m_iMainFrameLayoutSpacing;
+    const int m_iParentStatusBarHeight;
+
+    /* Variables: Text stuff: */
     QString m_strMessage, m_strDetails;
+
+    /* Variables: Button stuff: */
     int m_iButton1, m_iButton2, m_iButton3;
     QString m_strButtonText1, m_strButtonText2, m_strButtonText3;
     int m_iButtonEsc;
-    const int m_iParentStatusBarHeight;
+
+    /* Variables: Hover stuff: */
+    bool m_fHovered;
 
     /* Widgets: */
     UIPopupPaneFrame *m_pMainFrame;
-    QIRichTextLabel *m_pTextPane;
+    UIPopupPaneTextPane *m_pTextPane;
     QIDialogButtonBox *m_pButtonBox;
     QPushButton *m_pButton1, *m_pButton2, *m_pButton3;
 };
@@ -223,7 +239,7 @@ class UIPopupPaneFrame : public QWidget
 
 signals:
 
-    /* Notifiers: Hover-machine stuff: */
+    /* Notifiers: Hover stuff: */
     void sigHoverEnter();
     void sigHoverLeave();
 
@@ -240,19 +256,69 @@ private:
     void cleanup();
 
     /* Handlers: Event stuff: */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
 
-    /* Property: Hover-machine stuff: */
+    /* Property: Hover stuff: */
     int opacity() const { return m_iOpacity; }
     void setOpacity(int iOpacity) { m_iOpacity = iOpacity; update(); }
 
-    /* Hover-machine stuff: */
-    bool m_fHovered;
-    int m_iDefaultOpacity;
-    int m_iHoveredOpacity;
+    /* Variables: Hover stuff: */
+    const int m_iHoverAnimationDuration;
+    const int m_iDefaultOpacity;
+    const int m_iHoveredOpacity;
     int m_iOpacity;
-    int m_iHoverAnimationDuration;
+};
+
+/* Popup-pane text-pane prototype class: */
+class UIPopupPaneTextPane : public QWidget
+{
+    Q_OBJECT;
+    Q_PROPERTY(int percentage READ percentage WRITE setPercentage);
+
+signals:
+
+    /* Notifiers: Hover stuff: */
+    void sigHoverEnter();
+    void sigHoverLeave();
+    void sigGeometryChanged();
+
+public:
+
+    /* Constructor/destructor: */
+    UIPopupPaneTextPane(QWidget *pParent = 0);
+    ~UIPopupPaneTextPane();
+
+    /* API: Text stuff: */
+    void setText(const QString &strText);
+
+    /* API: Set desired width: */
+    void setDesiredWidth(int iDesiredWidth);
+
+    /* API: Minimum size-hint stuff: */
+    QSize minimumSizeHint() const;
+
+private:
+
+    /* Helpers: Prepare/cleanup stuff: */
+    void prepare();
+    void cleanup();
+
+    /* Helper: Content stuff: */
+    void prepareContent();
+
+    /* Property: Hover stuff: */
+    int percentage() const { return m_iPercentage; }
+    void setPercentage(int iPercentage);
+
+    /* Variables: Label stuff: */
+    QLabel *m_pLabel;
+    int m_iDesiredWidth;
+
+    /* Variables: Hover stuff: */
+    const int m_iHoverAnimationDuration;
+    const int m_iDefaultPercentage;
+    const int m_iHoveredPercentage;
+    int m_iPercentage;
 };
 
 #endif /* __UIPopupCenter_h__ */
