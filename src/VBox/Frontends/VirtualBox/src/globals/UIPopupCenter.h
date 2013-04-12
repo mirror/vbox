@@ -22,28 +22,20 @@
 /* Qt includes: */
 #include <QMap>
 #include <QObject>
-#include <QWidget>
 #include <QPointer>
 
-/* GUI includes: */
-#include "QIMessageBox.h"
-
 /* Forward declaration: */
-class QPushButton;
-class QLabel;
-class QIDialogButtonBox;
+class QWidget;
 class UIPopupPane;
-class UIPopupPaneFrame;
-class UIPopupPaneTextPane;
 
-/* Global popup-center object: */
+/* Popup-center singleton: */
 class UIPopupCenter: public QObject
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifier: Popup complete stuff: */
+    /* Notifier: Popup done stuff: */
     void sigPopupDone(QString strId, int iButtonCode) const;
 
 public:
@@ -108,13 +100,13 @@ private:
     UIPopupCenter();
     ~UIPopupCenter();
 
-    /* Helper: Popup-box stuff: */
-    void showPopupBox(QWidget *pParent, const QString &strId,
-                      const QString &strMessage, const QString &strDetails,
-                      int iButton1, int iButton2, int iButton3,
-                      const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3) const;
+    /* Helper: Popup-pane stuff: */
+    void showPopupPane(QWidget *pParent, const QString &strId,
+                       const QString &strMessage, const QString &strDetails,
+                       int iButton1, int iButton2, int iButton3,
+                       const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3) const;
 
-    /* Variables: */
+    /* Variables: Popup-pane stuff: */
     mutable QMap<QString, QPointer<UIPopupPane> > m_popups;
 
     /* Instance stuff: */
@@ -125,200 +117,5 @@ private:
 
 /* Shortcut to the static UIPopupCenter::instance() method: */
 inline UIPopupCenter& popupCenter() { return *UIPopupCenter::instance(); }
-
-/* UIAnimationFramework namespace: */
-namespace UIAnimationFramework
-{
-    /* API: Animation stuff: */
-    void installPropertyAnimation(QWidget *pParent, const QByteArray &strPropertyName,
-                                  int iStartValue, int iFinalValue, int iAnimationDuration,
-                                  const char *pSignalForward, const char *pSignalBackward);
-}
-
-/* Popup-pane prototype class: */
-class UIPopupPane : public QWidget
-{
-    Q_OBJECT;
-
-signals:
-
-    /* Notifiers: Hover stuff: */
-    void sigHoverEnter();
-    void sigHoverLeave();
-
-    /* Notifier: Complete stuff: */
-    void sigDone(int iButtonCode) const;
-
-public:
-
-    /* Constructor/destructor: */
-    UIPopupPane(QWidget *pParent, const QString &strId,
-                const QString &strMessage, const QString &strDetails,
-                int iButton1, int iButton2, int iButton3,
-                const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3);
-    ~UIPopupPane();
-
-    /* API: Id stuff: */
-    const QString& id() const { return m_strId; }
-
-private slots:
-
-    /* Handlers: Done slot variants for every button: */
-    void done1() { done(m_iButton1 & AlertButtonMask); }
-    void done2() { done(m_iButton2 & AlertButtonMask); }
-    void done3() { done(m_iButton3 & AlertButtonMask); }
-
-    /* Handler: Layout stuff: */
-    void sltAdjustGeomerty();
-
-private:
-
-    /* Helpers: Prepare/cleanup stuff: */
-    void prepare();
-    void cleanup();
-
-    /* Handler: Event-filter stuff: */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
-
-    /* Handlers: Event stuff: */
-    virtual void showEvent(QShowEvent *pEvent);
-    virtual void polishEvent(QShowEvent *pEvent);
-    virtual void keyPressEvent(QKeyEvent *pEvent);
-
-    /* Helper: Layout stuff: */
-    int minimumWidthHint() const;
-    int minimumHeightHint() const;
-    QSize minimumSizeHint() const;
-    void updateLayout();
-
-    /* Helpers: Prepare stuff: */
-    void prepareContent();
-    void prepareButtons();
-
-    /* Helper: Complete stuff: */
-    void done(int iButtonCode);
-
-    /* Static helpers: Prepare stuff: */
-    static int parentStatusBarHeight(QWidget *pParent);
-    static QList<QPushButton*> createButtons(QIDialogButtonBox *pButtonBox, const QList<int> description);
-    static QPushButton* createButton(QIDialogButtonBox *pButtonBox, int iButton);
-
-    /* Variables: */
-    bool m_fPolished;
-    const QString m_strId;
-
-    /* Variables: Layout stuff: */
-    const int m_iMainLayoutMargin;
-    const int m_iMainFrameLayoutMargin;
-    const int m_iMainFrameLayoutSpacing;
-    const int m_iParentStatusBarHeight;
-
-    /* Variables: Text stuff: */
-    QString m_strMessage, m_strDetails;
-
-    /* Variables: Button stuff: */
-    int m_iButton1, m_iButton2, m_iButton3;
-    QString m_strButtonText1, m_strButtonText2, m_strButtonText3;
-    int m_iButtonEsc;
-
-    /* Variables: Hover stuff: */
-    bool m_fHovered;
-
-    /* Widgets: */
-    UIPopupPaneFrame *m_pMainFrame;
-    UIPopupPaneTextPane *m_pTextPane;
-    QIDialogButtonBox *m_pButtonBox;
-    QPushButton *m_pButton1, *m_pButton2, *m_pButton3;
-};
-
-/* Popup-pane frame prototype class: */
-class UIPopupPaneFrame : public QWidget
-{
-    Q_OBJECT;
-    Q_PROPERTY(int opacity READ opacity WRITE setOpacity);
-
-signals:
-
-    /* Notifiers: Hover stuff: */
-    void sigHoverEnter();
-    void sigHoverLeave();
-
-public:
-
-    /* Constructor/destructor: */
-    UIPopupPaneFrame(QWidget *pParent = 0);
-    ~UIPopupPaneFrame();
-
-private:
-
-    /* Helpers: Prepare/cleanup stuff: */
-    void prepare();
-    void cleanup();
-
-    /* Handlers: Event stuff: */
-    void paintEvent(QPaintEvent *pEvent);
-
-    /* Property: Hover stuff: */
-    int opacity() const { return m_iOpacity; }
-    void setOpacity(int iOpacity) { m_iOpacity = iOpacity; update(); }
-
-    /* Variables: Hover stuff: */
-    const int m_iHoverAnimationDuration;
-    const int m_iDefaultOpacity;
-    const int m_iHoveredOpacity;
-    int m_iOpacity;
-};
-
-/* Popup-pane text-pane prototype class: */
-class UIPopupPaneTextPane : public QWidget
-{
-    Q_OBJECT;
-    Q_PROPERTY(int percentage READ percentage WRITE setPercentage);
-
-signals:
-
-    /* Notifiers: Hover stuff: */
-    void sigHoverEnter();
-    void sigHoverLeave();
-    void sigGeometryChanged();
-
-public:
-
-    /* Constructor/destructor: */
-    UIPopupPaneTextPane(QWidget *pParent = 0);
-    ~UIPopupPaneTextPane();
-
-    /* API: Text stuff: */
-    void setText(const QString &strText);
-
-    /* API: Set desired width: */
-    void setDesiredWidth(int iDesiredWidth);
-
-    /* API: Minimum size-hint stuff: */
-    QSize minimumSizeHint() const;
-
-private:
-
-    /* Helpers: Prepare/cleanup stuff: */
-    void prepare();
-    void cleanup();
-
-    /* Helper: Content stuff: */
-    void prepareContent();
-
-    /* Property: Hover stuff: */
-    int percentage() const { return m_iPercentage; }
-    void setPercentage(int iPercentage);
-
-    /* Variables: Label stuff: */
-    QLabel *m_pLabel;
-    int m_iDesiredWidth;
-
-    /* Variables: Hover stuff: */
-    const int m_iHoverAnimationDuration;
-    const int m_iDefaultPercentage;
-    const int m_iHoveredPercentage;
-    int m_iPercentage;
-};
 
 #endif /* __UIPopupCenter_h__ */
