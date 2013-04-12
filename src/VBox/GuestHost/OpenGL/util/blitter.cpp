@@ -28,18 +28,46 @@
 #include <iprt/mem.h>
 
 
-int CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, SPUDispatchTable *pDispatch)
+/* @param pCtxBase      - contains the blitter context info. Its value is treated differently depending on the fCreateNewCtx value
+ * @param fCreateNewCtx - if true  - the pCtxBase must NOT be NULL. its visualBits is used as a visual bits info for the new context,
+ *                                   its id field is used to specified the shared context id to be used for blitter context.
+ *                                   The id can be null to specify no shared context is needed
+ *                        if false - if pCtxBase is NOT null AND its id field is NOT null -
+ *                                     specified the blitter context to be used
+ *                                     blitter treats it as if it has default ogl state.
+ *                                   otherwise -
+ *                                     the blitter works in a "no-context" mode, i.e. a caller is responsible
+ *                                     to making a proper context current before calling the blitter.
+ *                                     Note that BltEnter/Leave MUST still be called, but the proper context
+ *                                     must be set before doing BltEnter, and ResoreContext info is ignored in that case.
+ *                                     Also note that blitter caches the current window info, and assumes the current context's values are preserved
+ *                                     wrt that window before the calls, so if one uses different contexts for one blitter,
+ *                                     the blitter current window values must be explicitly reset by doing CrBltMuralSetCurrent(pBlitter, NULL)
+ * @param fForceDrawBlt - if true  - forces the blitter to always use glDrawXxx-based blits even if GL_EXT_framebuffer_blit.
+ *                                   This is needed because BlitFramebufferEXT is known to be often buggy, and glDrawXxx-based blits appear to be more reliable
+ */
+int CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, bool fForceDrawBlt, SPUDispatchTable *pDispatch)
 {
-    if (pCtxBase->Base.id == 0 || pCtxBase->Base.id < -1)
+    if (pCtxBase && pCtxBase->Base.id < 0)
     {
         crWarning("Default share context not initialized!");
+        return VERR_INVALID_PARAMETER;
+    }
+
+    if (!pCtxBase && fCreateNewCtx)
+    {
+        crWarning("pCtxBase is zero while fCreateNewCtx is set!");
         return VERR_INVALID_PARAMETER;
     }
 
     memset(pBlitter, 0, sizeof (*pBlitter));
 
     pBlitter->pDispatch = pDispatch;
-    pBlitter->CtxInfo = *pCtxBase;
+    if (pCtxBase)
+        pBlitter->CtxInfo = *pCtxBase;
+
+    pBlitter->Flags.ForceDrawBlit = fForceDrawBlt;
+
     if (fCreateNewCtx)
     {
         pBlitter->CtxInfo.Base.id = pDispatch->CreateContext("", pCtxBase->Base.visualBits, pCtxBase->Base.id);
@@ -61,30 +89,39 @@ void CrBltTerm(PCR_BLITTER pBlitter)
         pBlitter->pDispatch->DestroyContext(pBlitter->CtxInfo.Base.id);
 }
 
-void CrBltMuralSetCurrent(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural)
+int CrBltMuralSetCurrent(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural)
 {
     if (pMural)
     {
         if (!memcmp(&pBlitter->CurrentMural, pMural, sizeof (pBlitter->CurrentMural)))
-            return;
+            return VINF_SUCCESS;
         memcpy(&pBlitter->CurrentMural, pMural, sizeof (pBlitter->CurrentMural));
     }
     else
     {
         if (!pBlitter->CurrentMural.Base.id)
-            return;
+            return VINF_SUCCESS;
         pBlitter->CurrentMural.Base.id = 0;
     }
 
     pBlitter->Flags.CurrentMuralChanged = 1;
 
     if (!CrBltIsEntered(pBlitter))
-        return;
+        return VINF_SUCCESS;
+    else if (!pBlitter->CtxInfo.Base.id)
+    {
+        crWarning("setting current mural for entered no-context blitter");
+        return VERR_INVALID_STATE;
+    }
+
+    pBlitter->pDispatch->Flush();
 
     if (pMural)
         pBlitter->pDispatch->MakeCurrent(pMural->Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
     else
         pBlitter->pDispatch->MakeCurrent(0, 0, 0);
+
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) crBltBlitTexBufImplFbo(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRect, const RTRECTSIZE *pDstSize, const RTRECT *paDstRect, uint32_t cRects, uint32_t fFlags)
@@ -435,6 +472,8 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, const V
         pBlitter->pDispatch->DisableClientState(GL_VERTEX_ARRAY);
     }
 
+    pBlitter->pDispatch->BindTexture(pSrc->target, 0);
+
     return VINF_SUCCESS;
 }
 
@@ -452,9 +491,8 @@ static int crBltInitOnMakeCurent(PCR_BLITTER pBlitter)
 
     /* BlitFramebuffer seems to be buggy on Intel, 
      * try always glDrawXxx for now */
-    if (0 && crStrstr(pszExtension, "GL_EXT_framebuffer_blit"))
+    if (!pBlitter->Flags.ForceDrawBlit && crStrstr(pszExtension, "GL_EXT_framebuffer_blit"))
     {
-        pBlitter->Flags.SupportsFBOBlit = 1;
         pBlitter->pfnBlt = crBltBlitTexBufImplFbo;
     }
     else
@@ -485,13 +523,16 @@ void CrBltLeave(PCR_BLITTER pBlitter)
 
     pBlitter->pDispatch->Flush();
 
-    if (pBlitter->pRestoreCtxInfo != &pBlitter->CtxInfo)
+    if (pBlitter->CtxInfo.Base.id)
     {
-        pBlitter->pDispatch->MakeCurrent(pBlitter->pRestoreMural->Base.id, 0, pBlitter->pRestoreCtxInfo->Base.id);
-    }
-    else
-    {
-        pBlitter->pDispatch->MakeCurrent(0, 0, 0);
+        if (pBlitter->pRestoreCtxInfo != &pBlitter->CtxInfo)
+        {
+            pBlitter->pDispatch->MakeCurrent(pBlitter->pRestoreMural->Base.id, 0, pBlitter->pRestoreCtxInfo->Base.id);
+        }
+        else
+        {
+            pBlitter->pDispatch->MakeCurrent(0, 0, 0);
+        }
     }
 
     pBlitter->pRestoreCtxInfo = NULL;
@@ -511,6 +552,19 @@ int CrBltEnter(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, 
         return VERR_INVALID_STATE;
     }
 
+    if (pBlitter->CurrentMural.Base.id) /* <- pBlitter->CurrentMural.Base.id can be null if the blitter is in a "no-context" mode (see comments to BltInit for detail)*/
+    {
+        pBlitter->pDispatch->MakeCurrent(pBlitter->CurrentMural.Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
+    }
+    else
+    {
+        if (pRestoreCtxInfo)
+        {
+            crWarning("pRestoreCtxInfo is not NULL for \"no-context\" blitter");
+            pRestoreCtxInfo = NULL;
+        }
+    }
+
     if (pRestoreCtxInfo)
     {
         pBlitter->pRestoreCtxInfo = pRestoreCtxInfo;
@@ -522,8 +576,6 @@ int CrBltEnter(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, 
     {
         pBlitter->pRestoreCtxInfo = &pBlitter->CtxInfo;
     }
-
-    pBlitter->pDispatch->MakeCurrent(pBlitter->CurrentMural.Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
 
     if (pBlitter->Flags.Initialized)
         return VINF_SUCCESS;
@@ -572,6 +624,8 @@ void CrBltBlitTexTex(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTR
 //    pBlitter->pDispatch->FramebufferTexture2DEXT(GL_DRAW_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
 
     crBltBlitTexBuf(pBlitter, pSrc, pSrcRect, GL_DRAW_FRAMEBUFFER, &DstSize, pDstRect, cRects, fFlags);
+
+    pBlitter->pDispatch->FramebufferTexture2DEXT(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, pDst->target, 0, 0);
 }
 
 void CrBltPresent(PCR_BLITTER pBlitter)
