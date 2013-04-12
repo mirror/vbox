@@ -29,6 +29,7 @@
 #include <VBox/types.h>
 #include <VBox/dis.h>
 
+#if defined(VBOX_WITH_RAW_MODE) || defined(DOXYGEN_RUNNING)
 
 RT_C_DECLS_BEGIN
 
@@ -215,5 +216,6 @@ VMMR3_INT_DECL(bool)            PATMR3HasBeenPatched(PVM pVM, RTRCPTR pInstrGC);
 /** @} */
 RT_C_DECLS_END
 
+#endif /* VBOX_WITH_RAW_MODE */
 
 #endif

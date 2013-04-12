@@ -4169,6 +4169,7 @@ VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdDefRCPtr(PVM pVM)
     return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.GuestCpuIdDef);
 }
 
+#ifdef VBOX_WITH_RAW_MODE
 
 /**
  * Transforms the guest CPU state to raw-ring mode.
@@ -4313,7 +4314,7 @@ VMMR3DECL(int) CPUMR3RawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc)
         PATMRawLeave(pVM, pCtxCore, rc);
         if (!pCtxCore->eflags.Bits.u1VM)
         {
-#ifdef VBOX_WITH_RAW_RING1
+# ifdef VBOX_WITH_RAW_RING1
             if (    EMIsRawRing1Enabled(pVM)
                 &&  (pCtxCore->ss.Sel & X86_SEL_RPL) == 2)
             {
@@ -4337,7 +4338,7 @@ VMMR3DECL(int) CPUMR3RawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc)
             }
             else
             {
-#endif
+# endif
                 /** @todo See what happens if we remove this. */
                 if ((pCtxCore->ds.Sel & X86_SEL_RPL) == 1)
                     pCtxCore->ds.Sel &= ~X86_SEL_RPL;
@@ -4347,14 +4348,16 @@ VMMR3DECL(int) CPUMR3RawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc)
                     pCtxCore->fs.Sel &= ~X86_SEL_RPL;
                 if ((pCtxCore->gs.Sel & X86_SEL_RPL) == 1)
                     pCtxCore->gs.Sel &= ~X86_SEL_RPL;
-#ifdef VBOX_WITH_RAW_RING1
+# ifdef VBOX_WITH_RAW_RING1
             }
-#endif
+# endif
         }
     }
 
     return rc;
 }
+
+#endif /* VBOX_WITH_RAW_MODE */
 
 
 /**

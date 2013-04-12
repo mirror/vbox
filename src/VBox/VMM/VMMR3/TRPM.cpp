@@ -780,6 +780,7 @@ VMMR3DECL(void) TRPMR3Reset(PVM pVM)
 }
 
 
+# ifdef VBOX_WITH_RAW_MODE
 /**
  * Resolve a builtin RC symbol.
  *
@@ -812,6 +813,7 @@ VMMR3_INT_DECL(int) TRPMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR p
         return VERR_SYMBOL_NOT_FOUND;
     return VINF_SUCCESS;
 }
+#endif /* VBOX_WITH_RAW_MODE */
 
 
 /**
@@ -1018,6 +1020,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
         return VINF_SUCCESS;    /* Nothing to do */
     }
 
+#ifdef VBOX_WITH_RAW_MODE
     if (fRawRing0 && CSAMIsEnabled(pVM))
     {
         /* Clear all handlers */
@@ -1029,6 +1032,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
         /* Scan them all (only the first time) */
         CSAMR3CheckGates(pVM, 0, 256);
     }
+#endif /* VBOX_WITH_RAW_MODE */
 
     /*
      * Get the IDTR.
@@ -1063,6 +1067,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
             rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
                                              0, trpmR3GuestIDTWriteHandler, "trpmRCGuestIDTWriteHandler", 0, "Guest IDT write access handler");
 
+# ifdef VBOX_WITH_RAW_MODE
             if (rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT)
             {
                 /* Could be a conflict with CSAM */
@@ -1073,6 +1078,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
                 rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
                                                  0, trpmR3GuestIDTWriteHandler, "trpmRCGuestIDTWriteHandler", 0, "Guest IDT write access handler");
             }
+# endif /* VBOX_WITH_RAW_MODE */
 
             AssertRCReturn(rc, rc);
         }
@@ -1174,6 +1180,7 @@ static DECLCALLBACK(int) trpmR3GuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
+#ifdef VBOX_WITH_RAW_MODE
 
 /**
  * Clear passthrough interrupt gate handler (reset to default handler)
@@ -1483,6 +1490,7 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
     return false;
 }
 
+#endif /* VBOX_WITH_RAW_MODE */
 
 /**
  * Inject event (such as external irq or trap)
@@ -1495,7 +1503,9 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
 VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
 {
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+#ifdef VBOX_WITH_RAW_MODE
     Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
+#endif
     Assert(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
 
     /* Currently only useful for external hardware interrupts. */

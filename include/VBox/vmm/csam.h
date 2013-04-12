@@ -28,6 +28,7 @@
 
 #include <VBox/types.h>
 
+#if defined(VBOX_WITH_RAW_MODE) || defined(DOXYGEN_RUNNING)
 
 /** @defgroup grp_csam      The Code Scanning and Analysis API
  * @{
@@ -101,6 +102,8 @@ VMMR3DECL(int)          CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall);
 
 /** @} */
 RT_C_DECLS_END
+
+#endif /* VBOX_WITH_RAW_MODE */
 
 #endif
 

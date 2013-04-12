@@ -41,17 +41,19 @@
 #include "REMInternal.h"
 #include "SSMInternal.h"
 #include "HMInternal.h"
-#include "PATMInternal.h"
 #include "VMMInternal.h"
 #include "DBGFInternal.h"
 #include "STAMInternal.h"
 #include "VMInternal.h"
-#include "CSAMInternal.h"
 #include "EMInternal.h"
 #include "IEMInternal.h"
 #include "REMInternal.h"
 #include "../VMMR0/GMMR0Internal.h"
 #include "../VMMR0/GVMMR0Internal.h"
+#ifdef VBOX_WITH_RAW_MODE
+# include "CSAMInternal.h"
+# include "PATMInternal.h"
+#endif
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
 #include <VBox/vmm/gvm.h>
@@ -213,8 +215,10 @@ int main()
     CHECK_PADDING_VM(64, mm);
     CHECK_PADDING_VM(64, pdm);
     CHECK_PADDING_VM(64, iom);
+#ifdef VBOX_WITH_RAW_MODE
     CHECK_PADDING_VM(64, patm);
     CHECK_PADDING_VM(64, csam);
+#endif
     CHECK_PADDING_VM(64, em);
     /*CHECK_PADDING_VM(64, iem);*/
     CHECK_PADDING_VM(64, tm);
@@ -379,7 +383,9 @@ int main()
     /* misc */
     CHECK_PADDING3(EMCPU, u.FatalLongJump, u.achPaddingFatalLongJump);
     CHECK_SIZE_ALIGNMENT(VMMR0JMPBUF, 8);
+#ifdef VBOX_WITH_RAW_MODE
     CHECK_SIZE_ALIGNMENT(PATCHINFO, 8);
+#endif
 #if 0
     PRINT_OFFSET(VM, fForcedActions);
     PRINT_OFFSET(VM, StatQemuToGC);

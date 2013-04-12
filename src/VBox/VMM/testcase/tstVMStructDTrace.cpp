@@ -42,14 +42,16 @@
 #include "IOMInternal.h"
 #include "REMInternal.h"
 #include "HMInternal.h"
-#include "PATMInternal.h"
 #include "VMMInternal.h"
 #include "DBGFInternal.h"
 #include "STAMInternal.h"
-#include "CSAMInternal.h"
 #include "EMInternal.h"
 #include "IEMInternal.h"
 #include "REMInternal.h"
+#ifdef VBOX_WITH_RAW_MODE
+# include "CSAMInternal.h"
+# include "PATMInternal.h"
+#endif
 #include <VBox/vmm/vm.h>
 #include <VBox/param.h>
 #include <iprt/x86.h>

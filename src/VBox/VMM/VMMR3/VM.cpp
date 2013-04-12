@@ -930,12 +930,14 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                         rc = TRPMR3Init(pVM);
                                         if (RT_SUCCESS(rc))
                                         {
+#ifdef VBOX_WITH_RAW_MODE
                                             rc = CSAMR3Init(pVM);
                                             if (RT_SUCCESS(rc))
                                             {
                                                 rc = PATMR3Init(pVM);
                                                 if (RT_SUCCESS(rc))
                                                 {
+#endif
                                                     rc = IOMR3Init(pVM);
                                                     if (RT_SUCCESS(rc))
                                                     {
@@ -954,8 +956,10 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                         rc = PGMR3InitDynMap(pVM);
                                                                         if (RT_SUCCESS(rc))
                                                                             rc = MMR3HyperInitFinalize(pVM);
+#ifdef VBOX_WITH_RAW_MODE
                                                                         if (RT_SUCCESS(rc))
                                                                             rc = PATMR3InitFinalize(pVM);
+#endif
                                                                         if (RT_SUCCESS(rc))
                                                                             rc = PGMR3InitFinalize(pVM);
                                                                         if (RT_SUCCESS(rc))
@@ -994,12 +998,14 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                         int rc2 = IOMR3Term(pVM);
                                                         AssertRC(rc2);
                                                     }
+#ifdef VBOX_WITH_RAW_MODE
                                                     int rc2 = PATMR3Term(pVM);
                                                     AssertRC(rc2);
                                                 }
                                                 int rc2 = CSAMR3Term(pVM);
                                                 AssertRC(rc2);
                                             }
+#endif
                                             int rc2 = TRPMR3Term(pVM);
                                             AssertRC(rc2);
                                         }
@@ -1189,8 +1195,10 @@ VMMR3_INT_DECL(void) VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     VMMR3Relocate(pVM, offDelta);
     SELMR3Relocate(pVM);                /* !hack! fix stack! */
     TRPMR3Relocate(pVM, offDelta);
+#ifdef VBOX_WITH_RAW_MODE
     PATMR3Relocate(pVM);
     CSAMR3Relocate(pVM, offDelta);
+#endif
     IOMR3Relocate(pVM, offDelta);
     EMR3Relocate(pVM);
     TMR3Relocate(pVM, offDelta);
@@ -2424,10 +2432,12 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         AssertRC(rc);
         rc = IOMR3Term(pVM);
         AssertRC(rc);
+#ifdef VBOX_WITH_RAW_MODE
         rc = CSAMR3Term(pVM);
         AssertRC(rc);
         rc = PATMR3Term(pVM);
         AssertRC(rc);
+#endif
         rc = TRPMR3Term(pVM);
         AssertRC(rc);
         rc = SELMR3Term(pVM);
@@ -2695,8 +2705,10 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
      */
     if (pVCpu->idCpu == 0)
     {
+#ifdef VBOX_WITH_RAW_MODE
         PATMR3Reset(pVM);
         CSAMR3Reset(pVM);
+#endif
         PDMR3Reset(pVM);
         PGMR3Reset(pVM);
         SELMR3Reset(pVM);

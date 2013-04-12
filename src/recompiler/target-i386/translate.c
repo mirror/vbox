@@ -106,7 +106,9 @@ uint8_t ldub_code_raw(target_ulong pc)
 {
     uint8_t b;
 
+# ifdef VBOX_WITH_RAW_MODE
     if (!remR3GetOpcode(cpu_single_env, pc, &b))
+# endif
         b = ldub_code(pc);
     return b;
 }
