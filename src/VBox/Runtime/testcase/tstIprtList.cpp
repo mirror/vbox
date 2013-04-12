@@ -33,6 +33,7 @@
 #include <iprt/test.h>
 #include <iprt/rand.h>
 #include <iprt/thread.h>
+#include <iprt/time.h>
 
 
 /*******************************************************************************
@@ -165,7 +166,7 @@ static void test1(const char *pcszDesc, T3 paTestData[], size_t cTestItems)
     /* Create a test list */
     L<T1, T2> testList;
 
-    const size_t defCap = L<T1, T2>::DefaultCapacity;
+    const size_t defCap = L<T1, T2>::kDefaultCapacity;
     RTTESTI_CHECK(testList.isEmpty());
     RTTESTI_CHECK(testList.size()     == 0);
     RTTESTI_CHECK(testList.capacity() == defCap);
@@ -375,13 +376,116 @@ static void test1(const char *pcszDesc, T3 paTestData[], size_t cTestItems)
     RTTESTI_CHECK_RETV(testList5.size() == 0);
     RTTESTI_CHECK(testList5.capacity()  == 0);
 
+    /*
+     * Negative testing.
+     */
+    bool fMayPanic = RTAssertMayPanic();
+    bool fQuiet    = RTAssertAreQuiet();
+    RTAssertSetMayPanic(false);
+    RTAssertSetQuiet(true);
+
+    L<T1, T2> testList6;
+    for (size_t i = 0; i < cTestItems; ++i)
+        testList6.insert(i, paTestData[i]);
+    RTTESTI_CHECK(testList6.size() == cTestItems);
+
+    /* Insertion beyond the end of the array ends up at the end. */
+    size_t cBefore = testList6.size();
+    testList6.insert(cBefore + 3, paTestData[0]);
+    RTTESTI_CHECK(testList6.size() == cBefore + 1);
+    RTTESTI_CHECK(testList6.at(cBefore) == paTestData[0]);
+
+    cBefore = testList6.size();
+    L<T1, T2> testList7(testList6);
+    testList6.insert(testList6.size() + 42, testList7);
+    RTTESTI_CHECK(testList6.size() == cBefore + testList7.size());
+
+    /* Inserting, appending or prepending a list to itself is not supported. */
+    cBefore = testList6.size();
+    testList6.insert(3, testList6);
+    RTTESTI_CHECK(testList6.size() == cBefore);
+
+    cBefore = testList6.size();
+    testList6.append(testList6);
+    RTTESTI_CHECK(testList6.size() == cBefore);
+
+    cBefore = testList6.size();
+    testList6.prepend(testList6);
+    RTTESTI_CHECK(testList6.size() == cBefore);
+
+    /* Replace does nothing if the index is bad. */
+    cBefore = testList6.size();
+    testList6.replace(cBefore, testList6[6]);
+    RTTESTI_CHECK(testList6.size() == cBefore);
+
+    cBefore = testList6.size();
+    testList6.replace(cBefore + 64, testList6[6]);
+    RTTESTI_CHECK(testList6.size() == cBefore);
+
+    /* Indexing beyond the array returns the last element. */
+    cBefore = testList6.size();
+    RTTESTI_CHECK(testList6[cBefore] == testList6.last());
+    RTTESTI_CHECK(testList6[cBefore + 42] == testList6.last());
+
+    RTTESTI_CHECK(&testList6[cBefore]      == &testList6[cBefore - 1]);
+    RTTESTI_CHECK(&testList6[cBefore + 42] == &testList6[cBefore - 1]);
+
+    /* removeAt does nothing if the index is bad. */
+    cBefore = testList6.size();
+    testList6.removeAt(cBefore);
+    RTTESTI_CHECK(testList6.size() == cBefore);
+
+    cBefore = testList6.size();
+    testList6.removeAt(cBefore + 42);
+    RTTESTI_CHECK(testList6.size() == cBefore);
+
+    L<T1, T2> testListEmpty1; RTTESTI_CHECK(!testListEmpty1.size());
+    testListEmpty1.removeFirst();
+    RTTESTI_CHECK(!testListEmpty1.size());
+
+    testListEmpty1.removeLast();
+    RTTESTI_CHECK(!testListEmpty1.size());
+
+    testListEmpty1.removeAt(128);
+    RTTESTI_CHECK(!testListEmpty1.size());
+
+    /* removeRange interprets indexes beyond the end as the end of array (asserted). */
+    testListEmpty1.removeRange(42, 128);
+    RTTESTI_CHECK(!testListEmpty1.size());
+
+    cBefore = testList6.size();
+    testList6.removeRange(cBefore, cBefore);
+    RTTESTI_CHECK(testList6.size() == cBefore);
+
+    cBefore = testList6.size();
+    testList6.removeRange(cBefore + 12, cBefore + 128);
+    RTTESTI_CHECK(testList6.size() == cBefore);
+
+    /* If end is less or equal to the start, nothing is done. */
+    testListEmpty1.removeRange(128, 0);
+    RTTESTI_CHECK(!testListEmpty1.size());
+
+    cBefore = testList6.size();
+    testList6.removeRange(cBefore, 0);
+    RTTESTI_CHECK(testList6.size() == cBefore);
+
+    cBefore = testList6.size();
+    testList6.removeRange(0, 0);
+    RTTESTI_CHECK(testList6.size() == cBefore);
+
+    cBefore = testList6.size();
+    testList6.removeRange(0, 0);
+    RTTESTI_CHECK(testList6.size() == cBefore);
+
+    RTAssertSetQuiet(fQuiet);
+    RTAssertSetMayPanic(fMayPanic);
 }
 
 /* define RTCList here to see what happens without MT support ;)
  * (valgrind is the preferred tool to check). */
-#define MTTESTLISTTYPE RTCMTList
-#define MTTESTTYPE uint32_t
-#define MTTESTITEMS 1000
+#define MTTESTLISTTYPE  RTCMTList
+#define MTTESTTYPE      uint32_t
+#define MTTESTITEMS     1000
 
 /**
  * Thread for prepending items to a shared list.
@@ -389,7 +493,7 @@ static void test1(const char *pcszDesc, T3 paTestData[], size_t cTestItems)
  * @param   hSelf       The thread handle.
  * @param   pvUser      The provided user data.
  */
-DECLCALLBACK(int) mttest1(RTTHREAD hSelf, void *pvUser)
+static DECLCALLBACK(int) MtTest1ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
 
@@ -406,7 +510,7 @@ DECLCALLBACK(int) mttest1(RTTHREAD hSelf, void *pvUser)
  * @param   hSelf       The thread handle.
  * @param   pvUser      The provided user data.
  */
-DECLCALLBACK(int) mttest2(RTTHREAD hSelf, void *pvUser)
+static DECLCALLBACK(int) MtTest2ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
 
@@ -423,7 +527,7 @@ DECLCALLBACK(int) mttest2(RTTHREAD hSelf, void *pvUser)
  * @param   hSelf       The thread handle.
  * @param   pvUser      The provided user data.
  */
-DECLCALLBACK(int) mttest3(RTTHREAD hSelf, void *pvUser)
+static DECLCALLBACK(int) MtTest3ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
 
@@ -440,7 +544,7 @@ DECLCALLBACK(int) mttest3(RTTHREAD hSelf, void *pvUser)
  * @param   hSelf       The thread handle.
  * @param   pvUser      The provided user data.
  */
-DECLCALLBACK(int) mttest4(RTTHREAD hSelf, void *pvUser)
+static DECLCALLBACK(int) MtTest4ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
 
@@ -449,7 +553,8 @@ DECLCALLBACK(int) mttest4(RTTHREAD hSelf, void *pvUser)
     for (size_t i = 0; i < MTTESTITEMS; ++i)
     {
         /* Make sure there is at least one item in the list. */
-        while (pTestList->isEmpty()) {};
+        while (pTestList->isEmpty())
+            RTThreadYield();
         a = pTestList->at(RTRandU32Ex(0, (uint32_t)pTestList->size() - 1));
     }
 
@@ -462,7 +567,7 @@ DECLCALLBACK(int) mttest4(RTTHREAD hSelf, void *pvUser)
  * @param   hSelf       The thread handle.
  * @param   pvUser      The provided user data.
  */
-DECLCALLBACK(int) mttest5(RTTHREAD hSelf, void *pvUser)
+static DECLCALLBACK(int) MtTest5ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
 
@@ -470,7 +575,8 @@ DECLCALLBACK(int) mttest5(RTTHREAD hSelf, void *pvUser)
     for (size_t i = 0; i < MTTESTITEMS; ++i)
     {
         /* Make sure there is at least one item in the list. */
-        while (pTestList->isEmpty()) {};
+        while (pTestList->isEmpty())
+            RTThreadYield();
         pTestList->replace(RTRandU32Ex(0, (uint32_t)pTestList->size() - 1), 0xFF00FF00);
     }
 
@@ -483,7 +589,7 @@ DECLCALLBACK(int) mttest5(RTTHREAD hSelf, void *pvUser)
  * @param   hSelf       The thread handle.
  * @param   pvUser      The provided user data.
  */
-DECLCALLBACK(int) mttest6(RTTHREAD hSelf, void *pvUser)
+static DECLCALLBACK(int) MtTest6ThreadProc(RTTHREAD hSelf, void *pvUser)
 {
     MTTESTLISTTYPE<MTTESTTYPE> *pTestList = (MTTESTLISTTYPE<MTTESTTYPE> *)pvUser;
 
@@ -491,7 +597,8 @@ DECLCALLBACK(int) mttest6(RTTHREAD hSelf, void *pvUser)
     for (size_t i = 0; i < MTTESTITEMS; ++i)
     {
         /* Make sure there is at least one item in the list. */
-        while (pTestList->isEmpty()) {};
+        while (pTestList->isEmpty())
+            RTThreadYield();
         pTestList->removeAt(RTRandU32Ex(0, (uint32_t)pTestList->size() - 1));
     }
 
@@ -507,35 +614,27 @@ static void test2()
 {
     RTTestISubF("MT test with 6 threads (%u tests per thread).", MTTESTITEMS);
 
-    RTTHREAD hThread1, hThread2, hThread3, hThread4, hThread5, hThread6;
-    int rc = VINF_SUCCESS;
+    int                         rc;
+    MTTESTLISTTYPE<MTTESTTYPE>  testList;
+    RTTHREAD                    ahThreads[6];
+    static PFNRTTHREAD          apfnThreads[6] =
+    {
+        MtTest1ThreadProc, MtTest2ThreadProc, MtTest3ThreadProc, MtTest4ThreadProc, MtTest5ThreadProc, MtTest6ThreadProc
+    };
 
-    MTTESTLISTTYPE<MTTESTTYPE> testList;
-    rc = RTThreadCreate(&hThread1, &mttest1, &testList, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest1");
-    AssertRC(rc);
-    rc = RTThreadCreate(&hThread2, &mttest2, &testList, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest2");
-    AssertRC(rc);
-    rc = RTThreadCreate(&hThread3, &mttest3, &testList, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest3");
-    AssertRC(rc);
-    rc = RTThreadCreate(&hThread4, &mttest4, &testList, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest4");
-    AssertRC(rc);
-    rc = RTThreadCreate(&hThread5, &mttest5, &testList, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest5");
-    AssertRC(rc);
-    rc = RTThreadCreate(&hThread6, &mttest6, &testList, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest6");
-    AssertRC(rc);
+    for (unsigned i = 0; i < RT_ELEMENTS(ahThreads); i++)
+    {
+        RTTESTI_CHECK_RC_RETV(RTThreadCreateF(&ahThreads[i], apfnThreads[i], &testList, 0,
+                                              RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "mttest%u", i), VINF_SUCCESS);
+    }
 
-    rc = RTThreadWait(hThread1, RT_INDEFINITE_WAIT, 0);
-    AssertRC(rc);
-    rc = RTThreadWait(hThread2, RT_INDEFINITE_WAIT, 0);
-    AssertRC(rc);
-    rc = RTThreadWait(hThread3, RT_INDEFINITE_WAIT, 0);
-    AssertRC(rc);
-    rc = RTThreadWait(hThread4, RT_INDEFINITE_WAIT, 0);
-    AssertRC(rc);
-    rc = RTThreadWait(hThread5, RT_INDEFINITE_WAIT, 0);
-    AssertRC(rc);
-    rc = RTThreadWait(hThread6, RT_INDEFINITE_WAIT, 0);
-    AssertRC(rc);
+    uint64_t tsMsDeadline = RTTimeMilliTS() + 60000;
+    for (unsigned i = 0; i < RT_ELEMENTS(ahThreads); i++)
+    {
+        uint64_t tsNow = RTTimeMilliTS();
+        uint32_t cWait = tsNow > tsMsDeadline ? 5000 : tsMsDeadline - tsNow;
+        RTTESTI_CHECK_RC(RTThreadWait(ahThreads[i], tsNow, NULL), VINF_SUCCESS);
+    }
 
     RTTESTI_CHECK_RETV(testList.size() == MTTESTITEMS * 2);
     for (size_t i = 0; i < testList.size(); ++i)
@@ -555,13 +654,6 @@ int main()
     if (rcExit)
         return rcExit;
     RTTestBanner(hTest);
-
-    /* Some host info. */
-    RTTestIPrintf(RTTESTLVL_ALWAYS, "sizeof(void*)=%d", sizeof(void*));
-
-    /*
-     * The tests.
-     */
 
     /*
      * Native types.

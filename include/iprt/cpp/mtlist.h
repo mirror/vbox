@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,7 +27,6 @@
 #define ___iprt_cpp_mtlist_h
 
 #include <iprt/cpp/list.h>
-
 #include <iprt/semaphore.h>
 
 /** @addtogroup grp_rt_cpp_list
@@ -41,8 +40,26 @@ template <>
 class RTCListGuard<true>
 {
 public:
-    RTCListGuard() { int rc = RTSemRWCreate(&m_hRWSem); AssertRC(rc); }
-    ~RTCListGuard() { RTSemRWDestroy(m_hRWSem); }
+    RTCListGuard() : m_hRWSem(NIL_RTSEMRW)
+    {
+#if defined(RT_LOCK_STRICT_ORDER) && defined(IN_RING3)
+        RTLOCKVALCLASS hClass;
+        int rc = RTLockValidatorClassCreate(&hClass, true /*fAutodidact*/, RT_SRC_POS, "RTCListGuard");
+        AssertStmt(RT_SUCCESS(rc), hClass = NIL_RTLOCKVALCLASS);
+        rc = RTSemRWCreateEx(&m_hRWSem, 0 /*fFlags*/, hClass, RTLOCKVAL_SUB_CLASS_NONE, NULL /*pszNameFmt*/);
+        AssertRC(rc);
+#else
+        int rc = RTSemRWCreateEx(&m_hRWSem, 0 /*fFlags*/, NIL_RTLOCKVALCLASS, 0, NULL);
+        AssertRC(rc);
+#endif
+    }
+
+    ~RTCListGuard()
+    {
+        RTSemRWDestroy(m_hRWSem);
+        m_hRWSem = NIL_RTSEMRW;
+    }
+
     inline void enterRead() const { int rc = RTSemRWRequestRead(m_hRWSem, RT_INDEFINITE_WAIT); AssertRC(rc); }
     inline void leaveRead() const { int rc = RTSemRWReleaseRead(m_hRWSem); AssertRC(rc); }
     inline void enterWrite()      { int rc = RTSemRWRequestWrite(m_hRWSem, RT_INDEFINITE_WAIT); AssertRC(rc); }
@@ -86,8 +103,8 @@ public:
      * @param   cCapacitiy   The initial capacity the list has.
      * @throws  std::bad_alloc
      */
-    RTCMTList(size_t cCapacity = BASE::DefaultCapacity)
-     : BASE(cCapacity) {}
+    RTCMTList(size_t cCapacity = BASE::kDefaultCapacity)
+        : BASE(cCapacity) {}
 
     /* Define our own new and delete. */
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
@@ -114,8 +131,8 @@ public:
      * @param   cCapacitiy   The initial capacity the list has.
      * @throws  std::bad_alloc
      */
-    RTCMTList(size_t cCapacity = BASE::DefaultCapacity)
-     : BASE(cCapacity) {}
+    RTCMTList(size_t cCapacity = BASE::kDefaultCapacity)
+        : BASE(cCapacity) {}
 
     /* Define our own new and delete. */
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
@@ -142,8 +159,8 @@ public:
      * @param   cCapacitiy   The initial capacity the list has.
      * @throws  std::bad_alloc
      */
-    RTCMTList(size_t cCapacity = BASE::DefaultCapacity)
-     : BASE(cCapacity) {}
+    RTCMTList(size_t cCapacity = BASE::kDefaultCapacity)
+        : BASE(cCapacity) {}
 
     /* Define our own new and delete. */
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
