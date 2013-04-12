@@ -25,8 +25,11 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/time.h>
+#include <iprt/assert.h>
 
 #include <cr_vreg.h>
+#include <cr_error.h>
+#include <cr_blitter.h>
 
 #include "renderspu.h"
 
@@ -86,9 +89,16 @@
 #ifdef DEBUG_misha
 # define DEBUG_MSG(text) \
     printf text
+# define DEBUG_WARN(text) do { \
+        crWarning text ; \
+        Assert(0); \
+    } while (0)
 #else
 # define DEBUG_MSG(text) \
     do {} while (0)
+# define DEBUG_WARN(text) do { \
+        crWarning text ; \
+    } while (0)
 #endif
 
 #ifdef DEBUG_VERBOSE
@@ -313,6 +323,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     /** This is necessary for clipping on the root window */
     NSPoint          m_RootShift;
     
+    CR_BLITTER *m_pBlitter;
     WindowInfo *m_pWinInfo;
     bool m_fNeedViewportUpdate;
     bool m_fNeedCtxUpdate;
@@ -346,6 +357,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 - (void)vboxPresentToDockTileCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor;
 - (void)vboxPresentToViewCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor;
 - (void)presentComposition:(PVBOXVR_SCR_COMPOSITOR_ENTRY)pChangedEntry;
+- (void)vboxBlitterSyncWindow;
 
 - (void)clearVisibleRegions;
 - (void)setVisibleRegions:(GLint)cRects paRects:(const GLint*)paRects;
@@ -740,6 +752,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     m_Pos                     = NSZeroPoint;
     m_Size                    = NSMakeSize(1, 1);
     m_RootShift               = NSZeroPoint;
+    m_pBlitter                = nil;
     m_pWinInfo             	  = pWinInfo;
     m_fNeedViewportUpdate     = true;        
     m_fNeedCtxUpdate          = true;
@@ -770,6 +783,10 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
         [m_pSharedGLCtx release];
 
         m_pSharedGLCtx = nil;
+        
+        CrBltTerm(m_pBlitter);
+        
+        m_pBlitter = nil;
     }
 
     [self clearVisibleRegions];
@@ -892,28 +909,14 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 
 - (void)updateViewportCS
 {
-    NSRect r;
-
     DEBUG_MSG(("OVIW(%p): updateViewport\n", (void*)self));
 
     {
         /* Update the viewport for our OpenGL view */
         [m_pSharedGLCtx update];
 
-        r = [self frame];
-        /* Setup all matrices */
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glViewport(0, 0, r.size.width, r.size.height);
-        glOrtho(0, r.size.width, 0, r.size.height, -1, 1);
-        DEBUG_MSG_1(("OVIW(%p): frame[%i, %i, %i, %i]\n", (void*)self, (int)r.origin.x, (int)r.origin.x, (int)r.size.width, (int)r.size.height));
-        DEBUG_MSG_1(("OVIW(%p): m_Pos(%i,%i) m_Size(%i,%i)\n", (void*)self, (int)m_Pos.x, (int)m_Pos.y, (int)m_Size.width, (int)m_Size.height));
-        DEBUG_MSG_1(("OVIW(%p): m_RootShift(%i, %i)\n", (void*)self, (int)m_RootShift.x, (int)m_RootShift.y));
-        glMatrixMode(GL_TEXTURE);
-        glLoadIdentity();
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-
+        [self vboxBlitterSyncWindow];
+        
         /* Clear background to transparent */
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     }
@@ -1075,14 +1078,38 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 	    	pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
 	    	if (pCompositor)
 	    	{
-		        /* Create a shared context out of the main context. Use the same pixel format. */
-		        m_pSharedGLCtx = [[NSOpenGLContext alloc] initWithFormat:[(OverlayOpenGLContext*)m_pGLCtx openGLPixelFormat] shareContext:m_pGLCtx];
-		
-		        /* Set the new context as non opaque */
-		        [m_pSharedGLCtx setValues:&opaque forParameter:NSOpenGLCPSurfaceOpacity];
-		        /* Set this view as the drawable for the new context */
-		        [m_pSharedGLCtx setView: self];
-		        m_fNeedViewportUpdate = true;
+	    	    Assert(!m_pBlitter);
+                m_pBlitter = RTMemAlloc(sizeof (*m_pBlitter));
+                if (m_pBlitter)
+                {
+                    int rc = CrBltInit(m_pBlitter, NULL, false, false, render_spu.blitterDispatch);
+                    if (RT_SUCCESS(rc))
+                    {
+                        DEBUG_MSG(("blitter created successfully for view 0x%p\n", (void*)self));
+                    }
+                    else
+                    {
+                        DEBUG_WARN(("CrBltInit failed, rc %d", rc));
+                        RTMemFree(m_pBlitter);
+                        m_pBlitter = NULL;
+                    }        
+                }
+                else
+                {
+                    DEBUG_WARN(("m_pBlitter allocation failed"));
+                }
+                    
+	    	    if (m_pBlitter)
+	    	    {
+    		        /* Create a shared context out of the main context. Use the same pixel format. */
+    		        m_pSharedGLCtx = [[NSOpenGLContext alloc] initWithFormat:[(OverlayOpenGLContext*)m_pGLCtx openGLPixelFormat] shareContext:m_pGLCtx];
+    		
+    		        /* Set the new context as non opaque */
+    		        [m_pSharedGLCtx setValues:&opaque forParameter:NSOpenGLCPSurfaceOpacity];
+    		        /* Set this view as the drawable for the new context */
+    		        [m_pSharedGLCtx setView: self];
+    		        m_fNeedViewportUpdate = true;
+    		    }
 #ifdef CR_RENDER_FORCE_PRESENT_MAIN_THREAD
 				renderspuVBoxCompositorRelease(m_pWinInfo);
 				pCompositor = NULL;
@@ -1229,25 +1256,39 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
         if (RT_SUCCESS(rc))
         {
             uint32_t i;
+            int rc = CrBltEnter(m_pBlitter, NULL, NULL);
+            if (RT_SUCCESS(rc))
+            {                   
+                for (i = 0; i < cRegions; ++i)
+                {
+                    const RTRECT * pSrcRect = &paSrcRegions[i];
+                    const RTRECT * pDstRect = &paDstRegions[i];
+                    RTRECT SrcRect, DstRect;
+                    if (m_RootShift.x)
+                    {
+                        DstRect.xLeft = pDstRect->xLeft - m_RootShift.x;
+                        DstRect.yTop = pDstRect->yTop;
+                        DstRect.xRight = pDstRect->xRight - m_RootShift.x;
+                        DstRect.yBottom = pDstRect->yBottom;
+                        pDstRect = &DstRect;
+                    }
                     
-            glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, m_FBOId);
-            glFramebufferTexture2DEXT(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, pEntry->Tex.target, pEntry->Tex.hwid, 0);
-            glReadBuffer(GL_COLOR_ATTACHMENT0);
+                    if (m_RootShift.y)
+                    {
+                        SrcRect.xLeft = pSrcRect->xLeft;
+                        SrcRect.yTop = pSrcRect->yTop - m_RootShift.y;
+                        SrcRect.xRight = pSrcRect->xRight;
+                        SrcRect.yBottom = pSrcRect->yBottom - m_RootShift.y;
+                        pSrcRect = &SrcRect;
+                    }
                     
-            for (i = 0; i < cRegions; ++i)
+                    CrBltBlitTexMural(m_pBlitter, &pEntry->Tex, pSrcRect, pDstRect, 1, CRBLT_F_LINEAR | CRBLT_F_INVERT_YCOORDS);
+                }
+                CrBltLeave(m_pBlitter);
+            }
+            else
             {
-                const RTRECT * pSrcRect = &paSrcRegions[i];
-                const RTRECT * pDstRect = &paDstRegions[i];
-                GLint srcY1 = r.size.height - pSrcRect->yTop;
-                GLint srcY2 = r.size.height - pSrcRect->yBottom;
-                GLint dstY1 = r.size.height - pDstRect->yTop;
-                GLint dstY2 = r.size.height - pDstRect->yBottom;
-                       
-                glBlitFramebufferEXT(pSrcRect->xLeft, srcY1 + m_RootShift.y,
-                						 pSrcRect->xRight, srcY2 + m_RootShift.y,
-                                         pDstRect->xLeft - m_RootShift.x, dstY1,
-                                         pDstRect->xRight - m_RootShift.x, dstY2,
-                                            GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                DEBUG_WARN(("CrBltEnter failed rc %d", rc));
             }
         }
         else
@@ -1267,6 +1308,24 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 - (void)presentComposition:(PVBOXVR_SCR_COMPOSITOR_ENTRY)pChangedEntry
 {
     [self vboxTryDraw];
+}
+
+- (void)vboxBlitterSyncWindow
+{
+    CR_BLITTER_WINDOW WinInfo;
+    NSRect r;
+    
+    if (!m_pBlitter)
+        return;
+        
+    memset(&WinInfo, 0, sizeof (WinInfo));
+    
+    r = [self frame];
+    WinInfo.width = r.size.width;
+    WinInfo.height = r.size.height;
+    
+    CrBltMuralSetCurrent(m_pBlitter, &WinInfo);
+    CrBltCheckUpdateViewport(m_pBlitter);
 }
 
 - (void)vboxPresentToDockTileCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor
@@ -1320,26 +1379,39 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
                 if (RT_SUCCESS(rc))
                 {
                     uint32_t i;
+                    int rc = CrBltEnter(m_pBlitter, NULL, NULL);
+                    if (RT_SUCCESS(rc))
+                    {                   
+                        for (i = 0; i < cRegions; ++i)
+                        {
+                            const RTRECT * pSrcRect = &paSrcRegions[i];
+                            const RTRECT * pDstRect = &paDstRegions[i];
+                            RTRECT SrcRect, DstRect;
+                            /*if (m_RootShift.x)*/
+                            {
+                                DstRect.xLeft = pDstRect->xLeft * m_FBOThumbScaleX;
+                                DstRect.yTop = (r.size.height - pDstRect->yTop) * m_FBOThumbScaleY;
+                                DstRect.xRight = pDstRect->xRight * m_FBOThumbScaleX;
+                                DstRect.yBottom = (r.size.height - pDstRect->yBottom) * m_FBOThumbScaleY;
+                                pDstRect = &DstRect;
+                            }
                     
-                    glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, m_FBOId);
-                    glFramebufferTexture2DEXT(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, pEntry->Tex.target, pEntry->Tex.hwid, 0);
-                    glReadBuffer(GL_COLOR_ATTACHMENT0);
+                            if (m_RootShift.y)
+                            {
+                                SrcRect.xLeft = pSrcRect->xLeft;
+                                SrcRect.yTop = pSrcRect->yTop - m_RootShift.y;
+                                SrcRect.xRight = pSrcRect->xRight;
+                                SrcRect.yBottom = pSrcRect->yBottom - m_RootShift.y;
+                                pSrcRect = &SrcRect;
+                            }
                     
-                    for (i = 0; i < cRegions; ++i)
+                            CrBltBlitTexMural(m_pBlitter, &pEntry->Tex, pSrcRect, pDstRect, 1, CRBLT_F_LINEAR | CRBLT_F_INVERT_SRC_YCOORDS);
+                        }
+                        CrBltLeave(m_pBlitter);
+                    }
+                    else
                     {
-                        const RTRECT * pSrcRect = &paSrcRegions[i];
-                        const RTRECT * pDstRect = &paDstRegions[i];
-                        GLint srcY1 = r.size.height - pSrcRect->yTop;
-                        GLint srcY2 = r.size.height - pSrcRect->yBottom;
-                        GLint dstY1 = r.size.height - pDstRect->yTop;
-                        GLint dstY2 = r.size.height - pDstRect->yBottom;
-                        
-                       
-                        glBlitFramebufferEXT(pSrcRect->xLeft, srcY1 + m_RootShift.y, 
-                        						pSrcRect->xRight, srcY2 + m_RootShift.y,
-                                            	pDstRect->xLeft * m_FBOThumbScaleX, dstY1 * m_FBOThumbScaleY,
-                                            	pDstRect->xRight * m_FBOThumbScaleX, dstY2 * m_FBOThumbScaleY,
-                                            	GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                        DEBUG_WARN(("CrBltEnter failed rc %d", rc));
                     }
                 }
                 else
