@@ -581,7 +581,7 @@ typedef struct HMCPU
     uint32_t                    uCurrentAsid;
     uint32_t                    u32Alignment;
 
-    /* Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
+    /** Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
     uint64_t                    u64HostTscAux;
 
     struct
@@ -654,14 +654,14 @@ typedef struct HMCPU
         /** Virtual address of the VM-exit MSR-load area (used for host MSRs). */
         R0PTRTYPE(void *)           pvHostMsr;
 
-        /* Number of automatically loaded/restored guest MSRs during the world switch. */
+        /** Number of automatically loaded/restored guest MSRs during the world switch. */
         uint32_t                    cGuestMsrs;
         uint32_t                    uAlignment;
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
-        /* The cached APIC-base MSR used for identifying when to map the HC physical APIC-access page. */
+        /** The cached APIC-base MSR used for identifying when to map the HC physical APIC-access page. */
         uint64_t                    u64MsrApicBase;
-        /* Last use TSC offset value. (cached) */
+        /** Last use TSC offset value. (cached) */
         uint64_t                    u64TSCOffset;
         /** VMCS cache. */
         VMCSCACHE                   VMCSCache;
@@ -730,7 +730,8 @@ typedef struct HMCPU
     {
         uint32_t                    fPending;
         uint32_t                    u32ErrCode;
-        uint32_t                    u32InstrLen;
+        uint32_t                    cbInstr;
+        uint32_t                    u32Padding; /**< Explicit alignment padding. */
         uint64_t                    u64IntrInfo;
     } Event;
 
@@ -748,8 +749,8 @@ typedef struct HMCPU
 
     struct
     {
-        /* Pending IO operation type. */
-        HMPENDINGIO         enmType;
+        /** Pending IO operation type. */
+        HMPENDINGIO             enmType;
         uint32_t                uPadding;
         RTGCPTR                 GCPtrRip;
         RTGCPTR                 GCPtrRipNext;
@@ -757,9 +758,9 @@ typedef struct HMCPU
         {
             struct
             {
-                unsigned        uPort;
-                unsigned        uAndVal;
-                unsigned        cbSize;
+                uint32_t        uPort;
+                uint32_t        uAndVal;
+                uint32_t        cbSize;
             } Port;
             uint64_t            aRaw[2];
         } s;
@@ -780,19 +781,18 @@ typedef struct HMCPU
     struct
     {
         RTGCPTR             aPages[HM_MAX_TLB_SHOOTDOWN_PAGES];
-        unsigned            cPages;
+        uint32_t            cPages;
+        uint32_t            u32Padding; /**< Explicit alignment padding. */
     } TlbShootdown;
 
     /** For saving stack space, the disassembler state is allocated here instead of
      * on the stack. */
     DISCPUSTATE             DisState;
 
-    uint32_t                padding2[1];
-
     STAMPROFILEADV          StatEntry;
     STAMPROFILEADV          StatExit1;
     STAMPROFILEADV          StatExit2;
-#ifdef VBOX_WITH_OLD_VTX_CODE /* temporary for tracking down darwin issues. */
+#ifdef VBOX_WITH_OLD_VTX_CODE /* "temporary" for tracking down darwin issues. */
     STAMPROFILEADV          StatExit2Sub1;
     STAMPROFILEADV          StatExit2Sub2;
     STAMPROFILEADV          StatExit2Sub3;

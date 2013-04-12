@@ -1180,7 +1180,7 @@ static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
         {
             /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
-            for (unsigned i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
+            for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
                 SVMR0InvlpgA(pVCpu->hm.s.TlbShootdown.aPages[i], pvVMCB->ctrl.TLBCtrl.n.u32ASID);
         }
     }
