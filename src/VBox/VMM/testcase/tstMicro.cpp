@@ -279,6 +279,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
     }
 #endif
 
+#ifdef VBOX_WITH_RAW_MODE
     /*
      * Do the profiling.
      */
@@ -316,8 +317,10 @@ static DECLCALLBACK(int) doit(PVM pVM)
         if (enmTest == TSTMICROTEST_OVERHEAD)
             pTst->u64Overhead = cMin;
     }
+#endif
 
 
+#ifdef VBOX_WITH_RAW_MODE
     /* execute the trap/cycle profiling tests. */
     RTPrintf("\n");
     PrintHeaderTraps();
@@ -329,7 +332,7 @@ static DECLCALLBACK(int) doit(PVM pVM)
         rc = VMMR3CallRC(pVM, RCPtrEntry, 2, pTst->RCPtr, enmTest);
         PrintResultTrap(pTst, enmTest, rc);
     }
-
+#endif
 
     RTPrintf(TESTCASE ": done!\n");
     return VINF_SUCCESS;

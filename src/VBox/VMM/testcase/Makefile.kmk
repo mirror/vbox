@@ -266,10 +266,11 @@ ifdef VBOX_WITH_RAW_MODE
  tstMicro_TEMPLATE       = VBOXR3EXE
  tstMicro_SOURCES        = tstMicro.cpp
  tstMicro_LIBS           = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+ tstMicro_DEFS           = $(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,)
 
  tstMicroRC_TEMPLATE     = VBoxRc
  tstMicroRC_SOURCES      = tstMicroRC.cpp tstMicroRCA.asm
- tstMicroRC_DEFS         =
+ tstMicroRC_DEFS         = $(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,)
  tstMicroRC_INCS         = $(VBOX_PATH_VMM_SRC)/testcase
  ifeq ($(VBOX_LDR_FMT32),pe)
   tstMicroRC_LDFLAGS     = -Entry:tstMicroRC
