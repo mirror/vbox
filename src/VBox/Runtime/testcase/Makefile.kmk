@@ -65,7 +65,7 @@ PROGRAMS += \
 	tstRTFileGetSize-1 \
 	tstFileLock \
 	tstFork \
-	tstHttp \
+	tstRTHttp \
 	tstRTFsQueries \
 	tstRTFilesystem \
 	tstRTGetOpt \
@@ -230,9 +230,9 @@ tstRTCType_SOURCES = tstRTCType.cpp
 tstRTDigest_SOURCES = tstRTDigest.cpp
 
 ifdef VBOX_WITH_LIBCURL
-tstHttp_TEMPLATE = VBOXR3TSTEXE
-tstHttp_SOURCES = tstHttp.cpp
-tstHttp_SDKS = VBOX_LIBCURL
+tstRTHttp_TEMPLATE = VBOXR3TSTEXE
+tstRTHttp_SOURCES = tstRTHttp.cpp
+tstRTHttp_SDKS = VBOX_LIBCURL
 endif
 
 tstDir_TEMPLATE = VBOXR3TSTEXE

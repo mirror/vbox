@@ -37,11 +37,28 @@
 
 #define CAFILE_NAME "tstHttp-tempcafile.crt"
 
-int main()
+int main(int argc, char **argv)
 {
     unsigned cErrors = 0;
 
-    RTR3InitExeNoArguments(0);
+    RTR3InitExe(argc, &argv, 0);
+
+    if (argc <= 1)
+    {
+        RTPrintf("usage: %s default\n", argv[0]);
+        return 1;
+    }
+
+    for (int i = 1; i < argc; i++)
+    {
+        if (!strcmp(argv[i], "default"))
+            ;
+        else
+        {
+            RTPrintf("Unknown parameter '%s'\n", argv[i]);
+            return 1;
+        }
+    }
 
     RTHTTP hHttp;
     char *pszBuf = NULL;
