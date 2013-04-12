@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -142,10 +142,8 @@ typedef struct VBOXGREETERCTX
     uint64_t        uTsAbort;
     /** The HGCM client ID. */
     uint32_t        uClientId;
-    /** The credentials. */
-    char           *pszUsername;
+    /** The credential password. */
     char           *pszPassword;
-    char           *pszDomain;
 } VBOXGREETERCTX, *PVBOXGREETERCTX;
 
 static void vboxGreeterError(const char *pszFormat, ...)
@@ -359,7 +357,9 @@ static int vboxGreeterCheckCreds(PVBOXGREETERCTX pCtx)
     }
     else
     {
-        rc = VbglR3CredentialsRetrieve(&pCtx->pszUsername, &pCtx->pszPassword, &pCtx->pszDomain);
+        /** @todo Domain handling needed?  */
+        char *pszUsername; /* User name only is kept local. */
+        rc = VbglR3CredentialsRetrieve(&pszUsername, &pCtx->pszPassword, NULL /* pszDomain */);
         if (RT_FAILURE(rc))
         {
             vboxGreeterError("vboxGreeterCheckCreds: could not retrieve credentials! rc=%Rrc. Aborting\n", rc);
@@ -367,20 +367,19 @@ static int vboxGreeterCheckCreds(PVBOXGREETERCTX pCtx)
         else
         {
 #ifdef DEBUG
-            vboxGreeterLog("vboxGreeterCheckCreds: credentials retrieved: user=%s, password=%s, domain=%s\n",
-                           pCtx->pszUsername, pCtx->pszPassword, pCtx->pszDomain);
+            vboxGreeterLog("vboxGreeterCheckCreds: credentials retrieved: user=%s, password=%s\n",
+                           pszUsername, pCtx->pszPassword);
 #else
             /* Don't log passwords in release mode! */
-            vboxGreeterLog("vboxGreeterCheckCreds: credentials retrieved: user=%s, password=XXX, domain=%s\n",
-                           pCtx->pszUsername, pCtx->pszDomain);
+            vboxGreeterLog("vboxGreeterCheckCreds: credentials retrieved: user=%s, password=XXX\n",
+                           pszUsername);
 #endif
-            lightdm_greeter_authenticate(pCtx->pGreeter, pCtx->pszUsername); /* Must be the real user name from host! */
-            /** @todo Add handling domains as well. */
-            /** @todo Move into context destroy! */
-#if 0
-            VbglR3CredentialsDestroy(pszUsername, pszPassword, pszDomain,
+            /* Trigger LightDM authentication with the user name just retrieved. */
+            lightdm_greeter_authenticate(pCtx->pGreeter, pszUsername); /* Must be the real user name from host! */
+
+            /* Securely wipe the user name again. */
+            VbglR3CredentialsDestroy(pszUsername, NULL /* pszPassword */, NULL /* pszDomain */,
                                      3 /* Three wipe passes */);
-#endif
         }
     }
 
@@ -441,13 +440,15 @@ static void cb_lightdm_show_prompt(LightDMGreeter *pGreeter,
             }
             break;
         }
+        /** @todo Other fields?  */
 
         default:
             break;
     }
 
-    VbglR3CredentialsDestroy(pCtx->pszUsername, pCtx->pszPassword, pCtx->pszDomain,
+    VbglR3CredentialsDestroy(NULL /* pszUsername */, pCtx->pszPassword, NULL /* pszDomain */,
                              3 /* Three wipe passes */);
+    pCtx->pszPassword = NULL;
 }
 
 /**
@@ -491,16 +492,24 @@ static void cb_lightdm_auth_complete(LightDMGreeter *pGreeter)
 
     if (lightdm_greeter_get_is_authenticated(pGreeter))
     {
-        lightdm_greeter_start_session_sync(pGreeter, NULL, NULL);
-
+        /** @todo Add non-default session support. */
         gchar *pszSession = g_strdup(lightdm_greeter_get_default_session_hint(pGreeter));
         if (pszSession)
         {
             vboxGreeterLog("starting session: %s\n", pszSession);
-            if (!lightdm_greeter_start_session_sync(pGreeter, pszSession, NULL))
+            GError *pError = NULL;
+            if (!lightdm_greeter_start_session_sync(pGreeter, pszSession, &pError))
             {
-                vboxGreeterError("unable to start session '%s'\n", pszSession);
+                vboxGreeterError("unable to start session '%s': %s\n", 
+                                 pszSession, pError ? pError->message : "Unknown error");
             }
+            else
+            {
+                AssertPtr(pszSession);
+                vboxGreeterLog("session '%s' successfully started\n", pszSession);
+            }
+            if (pError)
+                g_error_free(pError);
             g_free(pszSession);
         }
         else
@@ -715,21 +724,22 @@ static gboolean cb_check_creds(gpointer pvData)
     if (fAbort)
     {
         /* Get optional message. */
+        szVal[0] = '\0';
         int rc2 = vbox_read_prop(pCtx->uClientId,
                                  "/VirtualBox/GuestAdd/PAM/CredsMsgWaitAbort",
                                  true /* Read-only on guest */,
                                  szVal, sizeof(szVal), NULL /* Timestamp. */);
-        if (RT_SUCCESS(rc2))
-        {
+        if (   RT_FAILURE(rc2)
+            && rc2 != VERR_NOT_FOUND)
+            vboxGreeterError("cb_check_creds: getting wait abort message failed with rc=%Rrc\n", rc2);
 # ifdef VBOX_WITH_FLTK
-            /** @todo */
+        AssertPtr(pCtx->pLblInfo);
+        pCtx->pLblInfo->label(szVal);
 # else
-            GtkLabel *pLblInfo = GTK_LABEL(gtk_builder_get_object(pCtx->pBuilder, VBOX_GREETER_UI_LBL_INFO));
-            AssertPtr(pLblInfo);
-            gtk_label_set_text(pLblInfo, szVal);
+        GtkLabel *pLblInfo = GTK_LABEL(gtk_builder_get_object(pCtx->pBuilder, VBOX_GREETER_UI_LBL_INFO));
+        AssertPtr(pLblInfo);
+        gtk_label_set_text(pLblInfo, szVal);
 # endif /* VBOX_WITH_FLTK */
-        }
-
         vboxGreeterLog("cb_check_creds: got notification from host to abort waiting\n");
     }
     else
@@ -757,20 +767,22 @@ static gboolean cb_check_creds(gpointer pvData)
         if (pCtx->uTimeoutMS < u64Elapsed)
         {
 #ifdef VBOX_WITH_GUEST_PROPS
+            szVal[0] = '\0';
             int rc2 = vbox_read_prop(pCtx->uClientId,
                                      "/VirtualBox/GuestAdd/PAM/CredsMsgWaitTimeout",
                                      true /* Read-only on guest */,
                                      szVal, sizeof(szVal), NULL /* Timestamp. */);
-            if (RT_SUCCESS(rc2))
-            {
+            if (   RT_FAILURE(rc2)
+                && rc2 != VERR_NOT_FOUND)
+                vboxGreeterError("cb_check_creds: getting wait timeout message failed with rc=%Rrc\n", rc2);
 # ifdef VBOX_WITH_FLTK
-                /** @todo */
+            AssertPtr(pCtx->pLblInfo);
+            pCtx->pLblInfo->label(szVal);
 # else
-                GtkLabel *pLblInfo = GTK_LABEL(gtk_builder_get_object(pCtx->pBuilder, VBOX_GREETER_UI_LBL_INFO));
-                AssertPtr(pLblInfo);
-                gtk_label_set_text(pLblInfo, szVal);
+            GtkLabel *pLblInfo = GTK_LABEL(gtk_builder_get_object(pCtx->pBuilder, VBOX_GREETER_UI_LBL_INFO));
+            AssertPtr(pLblInfo);
+            gtk_label_set_text(pLblInfo, szVal);
 # endif
-            }
 #endif /* VBOX_WITH_GUEST_PROPS */
             vboxGreeterLog("cb_check_creds: waiting thread has reached timeout (%dms), exiting ...\n",
                            pCtx->uTimeoutMS);
