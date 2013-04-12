@@ -2460,7 +2460,7 @@ static int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
 //        }
     }
 
-    cr_server.head_spu->dispatch_table.WindowVisibleRegion(pMI->spuWindow, cRects, pRects);
+    cr_server.head_spu->dispatch_table.WindowVisibleRegion(pMI->spuWindow, cRects, (const GLint*)pRects);
 
     pMI->fRootVrOn = cr_server.fRootVrOn;
 

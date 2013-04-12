@@ -129,7 +129,7 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
                     || pRects[0].xRight != mural->width || pRects[0].yBottom != mural->height)
             {
                 /* do visible rects only ig they differ from the default */
-                cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, pRects);
+                cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, (const GLint*)pRects);
             }
         }
     }
@@ -557,7 +557,7 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
 
     cr_server.head_spu->dispatch_table.WindowSize(mural->spuWindow, width, height);
 
-    cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, pRects);
+    cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, (const GLint*)pRects);
 
     if (mural->pvOutputRedirectInstance)
     {
@@ -660,7 +660,7 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
 
                 if (RT_SUCCESS(rc))
                 {
-                    cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, pRects);
+                    cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, (const GLint*)pRects);
                 }
                 else
                 {
@@ -770,7 +770,7 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
             }
         }
 
-        cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRealRects, pRealRects);
+        cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRealRects, (const GLint*)pRealRects);
 
         if (mural->pvOutputRedirectInstance)
         {
