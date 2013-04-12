@@ -206,7 +206,7 @@ static int vbox_read_prop(uint32_t uClientID,
     int rc;
 
     uint64_t u64Timestamp = 0;
-    char *pszValTemp;
+    char *pszValTemp = NULL;
     char *pszFlags = NULL;
     /* The buffer for storing the data and its initial size.  We leave a bit
      * of space here in case the maximum values are raised. */
@@ -219,10 +219,9 @@ static int vbox_read_prop(uint32_t uClientID,
      * enough with buffer space. */
     for (unsigned i = 0; i < 10; i++)
     {
-        void *pvTmpBuf = RTMemRealloc(pvBuf, cbBuf);
-        if (pvTmpBuf)
+        pvBuf = RTMemRealloc(pvBuf, cbBuf);
+        if (pvBuf)
         {
-            pvBuf = pvTmpBuf;
             rc = VbglR3GuestPropRead(uClientID, pszKey, pvBuf, cbBuf,
                                      &pszValTemp, &u64Timestamp, &pszFlags,
                                      &cbBuf);
@@ -252,7 +251,7 @@ static int vbox_read_prop(uint32_t uClientID,
         /* Check security bits. */
         if (pszFlags)
         {
-            if (fReadOnly
+            if (   fReadOnly
                 && !RTStrStr(pszFlags, "RDONLYGUEST"))
             {
                 /* If we want a property which is read-only on the guest
@@ -273,6 +272,15 @@ static int vbox_read_prop(uint32_t uClientID,
                 *puTimestamp = u64Timestamp;
         }
     }
+
+#ifdef DEBUG
+    vboxGreeterLog("Read guest property \"%s\"=\"%s\" (Flags: %s, TS: %RU64): %Rrc\n",
+                   pszKey, pszValTemp ? pszValTemp : "<None>",
+                   pszFlags ? pszFlags : "<None>", u64Timestamp, rc);
+#endif
+
+    if (pvBuf)
+        RTMemFree(pvBuf);
 
     return rc;
 }
@@ -470,7 +478,7 @@ static void cb_lightdm_show_message(LightDMGreeter *pGreeter,
 
 #ifdef VBOX_WITH_FLTK
     AssertPtr(pCtx->pLblInfo);
-    pCtx->pLblInfo->label(pszText);
+    pCtx->pLblInfo->copy_label(pszText);
 #else
     GtkLabel *pLblInfo = GTK_LABEL(gtk_builder_get_object(pCtx->pBuilder, "lbl_info"));
     AssertPtr(pLblInfo);
@@ -734,7 +742,7 @@ static gboolean cb_check_creds(gpointer pvData)
             vboxGreeterError("cb_check_creds: getting wait abort message failed with rc=%Rrc\n", rc2);
 # ifdef VBOX_WITH_FLTK
         AssertPtr(pCtx->pLblInfo);
-        pCtx->pLblInfo->label(szVal);
+        pCtx->pLblInfo->copy_label(szVal);
 # else
         GtkLabel *pLblInfo = GTK_LABEL(gtk_builder_get_object(pCtx->pBuilder, VBOX_GREETER_UI_LBL_INFO));
         AssertPtr(pLblInfo);
@@ -777,7 +785,7 @@ static gboolean cb_check_creds(gpointer pvData)
                 vboxGreeterError("cb_check_creds: getting wait timeout message failed with rc=%Rrc\n", rc2);
 # ifdef VBOX_WITH_FLTK
             AssertPtr(pCtx->pLblInfo);
-            pCtx->pLblInfo->label(szVal);
+            pCtx->pLblInfo->copy_label(szVal);
 # else
             GtkLabel *pLblInfo = GTK_LABEL(gtk_builder_get_object(pCtx->pBuilder, VBOX_GREETER_UI_LBL_INFO));
             AssertPtr(pLblInfo);
@@ -1256,8 +1264,8 @@ int main(int argc, char **argv)
     char szLabel[255];
     RTStrPrintf(szLabel, sizeof(szLabel), "Oracle VM VirtualBox Guest Additions %sr%s",
                 RTBldCfgVersion(), RTBldCfgRevisionStr());
-    Fl_Box *pLblInfo = new Fl_Box(FL_NO_BOX, 90, uOffsetY + 150,
-                                  300, 20, szLabel);
+    Fl_Box *pLblInfo = new Fl_Box(FL_NO_BOX , 50, uOffsetY + 150,
+                                  400, 20, szLabel);
     AssertPtr(pLblInfo);
     ctx.pLblInfo = pLblInfo;
 
@@ -1374,11 +1382,15 @@ int main(int argc, char **argv)
                                  true /* Read-only on guest */,
                                  szVal, sizeof(szVal), NULL /* Timestamp. */);
             if (RT_SUCCESS(rc2))
+            {
 #ifdef VBOX_WITH_FLTK
-                pLblInfo->label(szVal);
+                Assert(pLblInfo);
+                pLblInfo->copy_label(szVal);
 #else
                 gtk_label_set_text(pLblInfo, szVal);
 #endif
+            }
+
             /* Get initial timestamp so that we can compare the time
              * whether the value has been changed or not in our event callback. */
             vbox_read_prop(uClientId,
@@ -1424,8 +1436,10 @@ int main(int argc, char **argv)
         g_main_context_iteration(pMainCtx,
                                  FALSE /* No blocking */);
         Fl::check();
+        /** @todo Abort condition? */
     }
 
+    /** @todo Never reached so far. */
     g_main_context_unref(pMainCtx);
 
 # ifdef VBOX_GREETER_WITH_PNG_SUPPORT
