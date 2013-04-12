@@ -138,6 +138,8 @@ DECLINLINE(const CR_BLITTER_WINDOW *) CrBltMuralGetCurrentInfo(PCR_BLITTER pBlit
     return &pBlitter->CurrentMural;
 }
 
+VBOXBLITTERDECL(void) CrBltCheckUpdateViewport(PCR_BLITTER pBlitter);
+
 VBOXBLITTERDECL(void) CrBltLeave(PCR_BLITTER pBlitter);
 VBOXBLITTERDECL(int) CrBltEnter(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, const CR_BLITTER_WINDOW *pRestoreMural);
 VBOXBLITTERDECL(void) CrBltBlitTexMural(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags);

@@ -600,6 +600,12 @@ static void crBltBlitTexBuf(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, co
     pBlitter->pfnBlt(pBlitter, pSrc, paSrcRects, pDstSize, paDstRects, cRects, fFlags);
 }
 
+void CrBltCheckUpdateViewport(PCR_BLITTER pBlitter)
+{
+    RTRECTSIZE DstSize = {pBlitter->CurrentMural.width, pBlitter->CurrentMural.height};
+    crBltCheckSetupViewport(pBlitter, &DstSize, false);
+}
+
 void CrBltBlitTexMural(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
 {
     RTRECTSIZE DstSize = {pBlitter->CurrentMural.width, pBlitter->CurrentMural.height};
