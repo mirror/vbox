@@ -213,6 +213,40 @@ void UIPopupCenter::remindAboutMouseIntegration(bool fSupportsAbsolute) const
     }
 }
 
+void UIAnimationFramework::installPropertyAnimation(QWidget *pParent, const QByteArray &strPropertyName,
+                                                    int iStartValue, int iFinalValue, int iAnimationDuration,
+                                                    const char *pSignalForward, const char *pSignalBackward)
+{
+    /* State-machine: */
+    QStateMachine *pStateMachine = new QStateMachine(pParent);
+    /* State-machine 'start' state: */
+    QState *pStateStart = new QState(pStateMachine);
+    /* State-machine 'final' state: */
+    QState *pStateFinal = new QState(pStateMachine);
+
+    /* State-machine 'forward' animation: */
+    QPropertyAnimation *pForwardAnimation = new QPropertyAnimation(pParent, strPropertyName, pParent);
+    pForwardAnimation->setDuration(iAnimationDuration);
+    pForwardAnimation->setStartValue(iStartValue);
+    pForwardAnimation->setEndValue(iFinalValue);
+    /* State-machine 'backward' animation: */
+    QPropertyAnimation *pBackwardAnimation = new QPropertyAnimation(pParent, strPropertyName, pParent);
+    pBackwardAnimation->setDuration(iAnimationDuration);
+    pBackwardAnimation->setStartValue(iFinalValue);
+    pBackwardAnimation->setEndValue(iStartValue);
+
+    /* State-machine state transitions: */
+    QSignalTransition *pDefaultToHovered = pStateStart->addTransition(pParent, pSignalForward, pStateFinal);
+    pDefaultToHovered->addAnimation(pForwardAnimation);
+    QSignalTransition *pHoveredToDefault = pStateFinal->addTransition(pParent, pSignalBackward, pStateStart);
+    pHoveredToDefault->addAnimation(pBackwardAnimation);
+
+    /* Initial state is 'start': */
+    pStateMachine->setInitialState(pStateStart);
+    /* Start hover-machine: */
+    pStateMachine->start();
+}
+
 UIPopupPane::UIPopupPane(QWidget *pParent, const QString &strId,
                          const QString &strMessage, const QString &strDetails,
                          int iButton1, int iButton2, int iButton3,
@@ -368,76 +402,63 @@ void UIPopupPane::prepareContent()
                     m_pFrameLayout->addWidget(m_pButtonBox);
                     /* Configure button-box: */
                     m_pButtonBox->installEventFilter(pMainFrame);
-                    QList<int> activeButtons;
-                    m_pButton1 = createButton(m_iButton1);
-                    if (m_pButton1)
-                    {
-                        activeButtons << m_iButton1;
-                        connect(m_pButton1, SIGNAL(clicked()), SLOT(done1()));
-                        if (!m_strButtonText1.isEmpty())
-                            m_pButton1->setText(m_strButtonText1);
-                    }
-                    m_pButton2 = createButton(m_iButton2);
-                    if (m_pButton2)
-                    {
-                        activeButtons << m_iButton2;
-                        connect(m_pButton2, SIGNAL(clicked()), SLOT(done2()));
-                        if (!m_strButtonText2.isEmpty())
-                            m_pButton1->setText(m_strButtonText2);
-                    }
-                    m_pButton3 = createButton(m_iButton3);
-                    if (m_pButton3)
-                    {
-                        activeButtons << m_iButton3;
-                        connect(m_pButton3, SIGNAL(clicked()), SLOT(done3()));
-                        if (!m_strButtonText3.isEmpty())
-                            m_pButton1->setText(m_strButtonText3);
-                    }
+                    prepareButtons();
                 }
             }
         }
     }
 }
 
-QPushButton* UIPopupPane::createButton(int iButton)
+void UIPopupPane::prepareButtons()
 {
-    /* Not for AlertButton_NoButton: */
-    if (iButton == 0)
-        return 0;
+    /* Prepare descriptions: */
+    QList<int> descriptions;
+    descriptions << m_iButton1 << m_iButton2 << m_iButton3;
 
-    /* Prepare button text & role: */
-    QString strText;
-    QDialogButtonBox::ButtonRole role;
-    switch (iButton & AlertButtonMask)
+    /* Choose 'escape' button: */
+    foreach (int iButton, descriptions)
+        if (iButton & AlertButtonOption_Escape)
+        {
+            m_iButtonEsc = iButton & AlertButtonMask;
+            break;
+        }
+
+    /* Create buttons: */
+    QList<QPushButton*> buttons = createButtons(m_pButtonBox, descriptions);
+
+    /* Install focus-proxy into the 'default' button: */
+    foreach (QPushButton *pButton, buttons)
+        if (pButton && pButton->isDefault())
+        {
+            setFocusProxy(pButton);
+            m_pTextPane->setFocusProxy(pButton);
+            break;
+        }
+
+    /* Prepare button 1: */
+    m_pButton1 = buttons[0];
+    if (m_pButton1)
     {
-        case AlertButton_Ok:      strText = tr("OK");     role = QDialogButtonBox::AcceptRole; break;
-        case AlertButton_Cancel:  strText = tr("Cancel"); role = QDialogButtonBox::RejectRole; break;
-        case AlertButton_Choice1: strText = tr("Yes");    role = QDialogButtonBox::YesRole; break;
-        case AlertButton_Choice2: strText = tr("No");     role = QDialogButtonBox::NoRole; break;
-        default: return 0;
+        connect(m_pButton1, SIGNAL(clicked()), SLOT(done1()));
+        if (!m_strButtonText1.isEmpty())
+            m_pButton1->setText(m_strButtonText1);
     }
-
-    /* Create push-button: */
-    QPushButton *pButton = m_pButtonBox->addButton(strText, role);
-
-    /* Configure <default> button: */
-    if (iButton & AlertButtonOption_Default)
+    /* Prepare button 2: */
+    m_pButton2 = buttons[1];
+    if (m_pButton2)
     {
-        pButton->setDefault(true);
-        pButton->setFocusPolicy(Qt::StrongFocus);
-        setFocusProxy(pButton);
-        m_pTextPane->setFocusProxy(pButton);
-        pButton->setFocus();
+        connect(m_pButton2, SIGNAL(clicked()), SLOT(done2()));
+        if (!m_strButtonText2.isEmpty())
+            m_pButton1->setText(m_strButtonText2);
     }
-
-    /* Configure <escape> button: */
-    if (iButton & AlertButtonOption_Escape)
+    /* Prepare button 3: */
+    m_pButton3 = buttons[2];
+    if (m_pButton3)
     {
-        m_iButtonEsc = iButton & AlertButtonMask;
+        connect(m_pButton3, SIGNAL(clicked()), SLOT(done3()));
+        if (!m_strButtonText3.isEmpty())
+            m_pButton1->setText(m_strButtonText3);
     }
-
-    /* Return button: */
-    return pButton;
 }
 
 void UIPopupPane::done(int iButtonCode)
@@ -456,7 +477,53 @@ int UIPopupPane::parentStatusBarHeight(QWidget *pParent)
     if (QMainWindow *pParentWindow = qobject_cast<QMainWindow*>(pParent))
         if (pParentWindow->statusBar())
             return pParentWindow->statusBar()->height();
+    /* Zero by default: */
     return 0;
+}
+
+/* static */
+QList<QPushButton*> UIPopupPane::createButtons(QIDialogButtonBox *pButtonBox, const QList<int> descriptions)
+{
+    /* Create button according descriptions: */
+    QList<QPushButton*> buttons;
+    foreach (int iButton, descriptions)
+        buttons << createButton(pButtonBox, iButton);
+    /* Return buttons: */
+    return buttons;
+}
+
+/* static */
+QPushButton* UIPopupPane::createButton(QIDialogButtonBox *pButtonBox, int iButton)
+{
+    /* Null for AlertButton_NoButton: */
+    if (iButton == 0)
+        return 0;
+
+    /* Prepare button text & role: */
+    QString strText;
+    QDialogButtonBox::ButtonRole role;
+    switch (iButton & AlertButtonMask)
+    {
+        case AlertButton_Ok:      strText = QIMessageBox::tr("OK");     role = QDialogButtonBox::AcceptRole; break;
+        case AlertButton_Cancel:  strText = QIMessageBox::tr("Cancel"); role = QDialogButtonBox::RejectRole; break;
+        case AlertButton_Choice1: strText = QIMessageBox::tr("Yes");    role = QDialogButtonBox::YesRole; break;
+        case AlertButton_Choice2: strText = QIMessageBox::tr("No");     role = QDialogButtonBox::NoRole; break;
+        default: return 0;
+    }
+
+    /* Create push-button: */
+    QPushButton *pButton = pButtonBox->addButton(strText, role);
+
+    /* Configure 'default' button: */
+    if (iButton & AlertButtonOption_Default)
+    {
+        pButton->setDefault(true);
+        pButton->setFocusPolicy(Qt::StrongFocus);
+        pButton->setFocus();
+    }
+
+    /* Return button: */
+    return pButton;
 }
 
 UIPopupPaneFrame::UIPopupPaneFrame(QWidget *pParent /*= 0*/)
@@ -482,9 +549,9 @@ void UIPopupPaneFrame::prepare()
     /* Install event-filter: */
     installEventFilter(this);
     /* Install 'hover' animation for 'opacity' property: */
-    installPropertyAnimation(this, QByteArray("opacity"),
-                             m_iDefaultOpacity, m_iHoveredOpacity, m_iHoverAnimationDuration,
-                             SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
+    UIAnimationFramework::installPropertyAnimation(this, QByteArray("opacity"),
+                                                   m_iDefaultOpacity, m_iHoveredOpacity, m_iHoverAnimationDuration,
+                                                   SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
 }
 
 void UIPopupPaneFrame::cleanup()
@@ -552,40 +619,5 @@ void UIPopupPaneFrame::paintEvent(QPaintEvent*)
     QColor currentColor(palette().color(QPalette::Window));
     QColor newColor(currentColor.red(), currentColor.green(), currentColor.blue(), opacity());
     painter.fillRect(rect, newColor);
-}
-
-/* static */
-void UIPopupPaneFrame::installPropertyAnimation(QWidget *pParent, const QByteArray &strPropertyName,
-                                                int iStartValue, int iFinalValue, int iAnimationDuration,
-                                                const char *pSignalForward, const char *pSignalBackward)
-{
-    /* State-machine: */
-    QStateMachine *pStateMachine = new QStateMachine(pParent);
-    /* State-machine 'start' state: */
-    QState *pStateStart = new QState(pStateMachine);
-    /* State-machine 'final' state: */
-    QState *pStateFinal = new QState(pStateMachine);
-
-    /* State-machine 'forward' animation: */
-    QPropertyAnimation *pForwardAnimation = new QPropertyAnimation(pParent, strPropertyName, pParent);
-    pForwardAnimation->setDuration(iAnimationDuration);
-    pForwardAnimation->setStartValue(iStartValue);
-    pForwardAnimation->setEndValue(iFinalValue);
-    /* State-machine 'backward' animation: */
-    QPropertyAnimation *pBackwardAnimation = new QPropertyAnimation(pParent, strPropertyName, pParent);
-    pBackwardAnimation->setDuration(iAnimationDuration);
-    pBackwardAnimation->setStartValue(iFinalValue);
-    pBackwardAnimation->setEndValue(iStartValue);
-
-    /* State-machine state transitions: */
-    QSignalTransition *pDefaultToHovered = pStateStart->addTransition(pParent, pSignalForward, pStateFinal);
-    pDefaultToHovered->addAnimation(pForwardAnimation);
-    QSignalTransition *pHoveredToDefault = pStateFinal->addTransition(pParent, pSignalBackward, pStateStart);
-    pHoveredToDefault->addAnimation(pBackwardAnimation);
-
-    /* Initial state is 'start': */
-    pStateMachine->setInitialState(pStateStart);
-    /* Start hover-machine: */
-    pStateMachine->start();
 }
 

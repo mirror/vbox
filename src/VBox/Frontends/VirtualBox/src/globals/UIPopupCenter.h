@@ -125,6 +125,15 @@ private:
 /* Shortcut to the static UIPopupCenter::instance() method: */
 inline UIPopupCenter& popupCenter() { return *UIPopupCenter::instance(); }
 
+/* UIAnimationFramework namespace: */
+namespace UIAnimationFramework
+{
+    /* API: Animation stuff: */
+    void installPropertyAnimation(QWidget *pParent, const QByteArray &strPropertyName,
+                                  int iStartValue, int iFinalValue, int iAnimationDuration,
+                                  const char *pSignalForward, const char *pSignalBackward);
+}
+
 /* Popup-pane prototype class: */
 class UIPopupPane : public QWidget
 {
@@ -173,13 +182,15 @@ private:
 
     /* Helpers: Prepare stuff: */
     void prepareContent();
-    QPushButton* createButton(int iButton);
+    void prepareButtons();
 
     /* Helper: Complete stuff: */
     void done(int iButtonCode);
 
-    /* Helper: Parent stuff: */
+    /* Static helpers: Prepare stuff: */
     static int parentStatusBarHeight(QWidget *pParent);
+    static QList<QPushButton*> createButtons(QIDialogButtonBox *pButtonBox, const QList<int> description);
+    static QPushButton* createButton(QIDialogButtonBox *pButtonBox, int iButton);
 
     /* Variables: */
     bool m_fPolished;
@@ -229,11 +240,6 @@ private:
     /* Property: Hover-machine stuff: */
     int opacity() const { return m_iOpacity; }
     void setOpacity(int iOpacity) { m_iOpacity = iOpacity; update(); }
-
-    /* Static helper: Animation stuff: */
-    static void installPropertyAnimation(QWidget *pParent, const QByteArray &strPropertyName,
-                                         int iStartValue, int iFinalValue, int iAnimationDuration,
-                                         const char *pSignalForward, const char *pSignalBackward);
 
     /* Hover-machine stuff: */
     bool m_fHovered;
