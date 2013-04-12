@@ -209,8 +209,8 @@ static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCt
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 static int                hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu);
 #endif
-#if 0
-DECLINLINE(int)           hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, unsigned rcReason);
+#if 1
+DECLINLINE(int)           hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, uint32_t rcReason);
 #endif
 
 static DECLCALLBACK(int)  hmR0VmxExitXcptNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
@@ -933,13 +933,13 @@ VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS H
  * Sets the permission bits for the specified MSR in the MSR bitmap.
  *
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   ulMSR       The MSR value.
+ * @param   uMSR        The MSR value.
  * @param   enmRead     Whether reading this MSR causes a VM-exit.
  * @param   enmWrite    Whether writing this MSR causes a VM-exit.
  */
-static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, unsigned ulMsr, VMXMSREXITREAD enmRead, VMXMSREXITWRITE enmWrite)
+static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, VMXMSREXITREAD enmRead, VMXMSREXITWRITE enmWrite)
 {
-    unsigned ulBit;
+    int32_t iBit;
     uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.vmx.pvMsrBitmap;
 
     /*
@@ -949,34 +949,34 @@ static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, unsigned ulMsr, VMXMSREXITREAD
      * 0x800 - 0xbff - Low MSR write bits
      * 0xc00 - 0xfff - High MSR write bits
      */
-    if (ulMsr <= 0x00001FFF)
+    if (uMsr <= 0x00001FFF)
     {
         /* Pentium-compatible MSRs */
-        ulBit = ulMsr;
+        iBit = uMsr;
     }
-    else if (   ulMsr >= 0xC0000000
-             && ulMsr <= 0xC0001FFF)
+    else if (   uMsr >= 0xC0000000
+             && uMsr <= 0xC0001FFF)
     {
         /* AMD Sixth Generation x86 Processor MSRs */
-        ulBit = (ulMsr - 0xC0000000);
+        iBit = (uMsr - 0xC0000000);
         pbMsrBitmap += 0x400;
     }
     else
     {
-        AssertMsgFailed(("Invalid MSR %lx\n", ulMsr));
+        AssertMsgFailed(("hmR0VmxSetMsrPermission: Invalid MSR %#RX32\n", uMsr));
         return;
     }
 
-    Assert(ulBit <= 0x1fff);
+    Assert(iBit <= 0x1fff);
     if (enmRead == VMXMSREXIT_INTERCEPT_READ)
-        ASMBitSet(pbMsrBitmap, ulBit);
+        ASMBitSet(pbMsrBitmap, iBit);
     else
-        ASMBitClear(pbMsrBitmap, ulBit);
+        ASMBitClear(pbMsrBitmap, iBit);
 
     if (enmWrite == VMXMSREXIT_INTERCEPT_WRITE)
-        ASMBitSet(pbMsrBitmap + 0x800, ulBit);
+        ASMBitSet(pbMsrBitmap + 0x800, iBit);
     else
-        ASMBitClear(pbMsrBitmap + 0x800, ulBit);
+        ASMBitClear(pbMsrBitmap + 0x800, iBit);
 }
 
 
@@ -2208,7 +2208,7 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     AssertPtr(pVCpu->hm.s.vmx.pvHostMsr);
 
     PVMXMSR  pHostMsr           = (PVMXMSR)pVCpu->hm.s.vmx.pvHostMsr;
-    unsigned idxHostMsr         = 0;
+    uint32_t cHostMsrs          = 0;
     uint32_t u32HostExtFeatures = pVM->hm.s.cpuid.u32AMDFeatureEDX;
 
     if (u32HostExtFeatures & (X86_CPUID_EXT_FEATURE_EDX_NX | X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
@@ -2224,7 +2224,7 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
         else
 #endif
             pHostMsr->u64Value = ASMRdMsr(MSR_K6_EFER);
-        pHostMsr++; idxHostMsr++;
+        pHostMsr++; cHostMsrs++;
     }
 
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -2233,33 +2233,33 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
         pHostMsr->u32IndexMSR  = MSR_K6_STAR;
         pHostMsr->u32Reserved  = 0;
         pHostMsr->u64Value     = ASMRdMsr(MSR_K6_STAR);              /* legacy syscall eip, cs & ss */
-        pHostMsr++; idxHostMsr++;
+        pHostMsr++; cHostMsrs++;
         pHostMsr->u32IndexMSR  = MSR_K8_LSTAR;
         pHostMsr->u32Reserved  = 0;
         pHostMsr->u64Value     = ASMRdMsr(MSR_K8_LSTAR);             /* 64 bits mode syscall rip */
-        pHostMsr++; idxHostMsr++;
+        pHostMsr++; cHostMsrs++;
         pHostMsr->u32IndexMSR  = MSR_K8_SF_MASK;
         pHostMsr->u32Reserved  = 0;
         pHostMsr->u64Value     = ASMRdMsr(MSR_K8_SF_MASK);           /* syscall flag mask */
-        pHostMsr++; idxHostMsr++;
+        pHostMsr++; cHostMsrs++;
         /* The KERNEL_GS_BASE MSR doesn't work reliably with auto load/store. See @bugref{6208}  */
 #if 0
         pMsr->u32IndexMSR = MSR_K8_KERNEL_GS_BASE;
         pMsr->u32Reserved = 0;
         pMsr->u64Value    = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);         /* swapgs exchange value */
-        pHostMsr++; idxHostMsr++;
+        pHostMsr++; cHostMsrs++;
 #endif
     }
 #endif
 
     /* Shouldn't ever happen but there -is- a number. We're well within the recommended 512. */
-    if (RT_UNLIKELY(idxHostMsr > MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc)))
+    if (RT_UNLIKELY(cHostMsrs > MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc)))
     {
-        LogRel(("idxHostMsr=%u Cpu=%u\n", idxHostMsr, (unsigned)MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc)));
+        LogRel(("cHostMsrs=%u Cpu=%u\n", cHostMsrs, (unsigned)MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc)));
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
 
-    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, idxHostMsr);
+    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, cHostMsrs);
 
     /*
      * Host Sysenter MSRs.
@@ -3563,7 +3563,7 @@ DECLINLINE(int) hmR0VmxLoadGuestMsrs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_VMX_GUEST_AUTO_MSRS)
     {
         PVMXMSR  pGuestMsr  = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMsr;
-        unsigned cGuestMsrs = 0;
+        uint32_t cGuestMsrs = 0;
 
         /* See Intel spec. 4.1.4 "Enumeration of Paging Features by CPUID". */
         const bool fSupportsNX       = CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
@@ -4441,7 +4441,7 @@ VMMR0DECL(int) VMXWriteCachedVmcsEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u6
                     ("entries=%u\n", pCache->Write.cValidEntries), VERR_ACCESS_DENIED);
 
     /* Make sure there are no duplicates. */
-    for (unsigned i = 0; i < pCache->Write.cValidEntries; i++)
+    for (uint32_t i = 0; i < pCache->Write.cValidEntries; i++)
     {
         if (pCache->Write.aField[i] == idxField)
         {
@@ -5101,7 +5101,7 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS)
         return VINF_SUCCESS;
 
-    for (unsigned i = 0; i < pVCpu->hm.s.vmx.cGuestMsrs; i++)
+    for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cGuestMsrs; i++)
     {
         PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMsr;
         pMsr += i;
@@ -6661,7 +6661,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     VMXTRANSIENT VmxTransient;
     VmxTransient.fUpdateTscOffsettingAndPreemptTimer = true;
     int          rc     = VERR_INTERNAL_ERROR_5;
-    unsigned     cLoops = 0;
+    uint32_t     cLoops = 0;
 
     for (;; cLoops++)
     {
@@ -6724,7 +6724,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 
 #if 1
-DECLINLINE(int) hmR0VmxHandleExit(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, unsigned rcReason)
+DECLINLINE(int) hmR0VmxHandleExit(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, uint32_t rcReason)
 {
     int rc;
     switch (rcReason)
@@ -7890,7 +7890,7 @@ static DECLCALLBACK(int) hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
                 for (unsigned i = 0; i < 4; i++)
                 {
-                    unsigned uBPLen = s_aIOSize[X86_DR7_GET_LEN(pMixedCtx->dr[7], i)];
+                    uint32_t uBPLen = s_aIOSize[X86_DR7_GET_LEN(pMixedCtx->dr[7], i)];
                     if (   (   uIOPort >= pMixedCtx->dr[i]
                             && uIOPort < pMixedCtx->dr[i] + uBPLen)
                         && (pMixedCtx->dr[7] & (X86_DR7_L(i) | X86_DR7_G(i)))
@@ -8035,7 +8035,7 @@ static DECLCALLBACK(int) hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx,
     AssertRCReturn(rc, rc);
 
     /* See Intel spec. 27-6 "Exit Qualifications for APIC-access VM-exits from Linear Accesses & Guest-Phyiscal Addresses" */
-    unsigned uAccessType = VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(pVmxTransient->uExitQualification);
+    uint32_t uAccessType = VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(pVmxTransient->uExitQualification);
     switch (uAccessType)
     {
         case VMX_APIC_ACCESS_TYPE_LINEAR_WRITE:
@@ -8466,7 +8466,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
     AssertRCReturn(rc, rc);
 
     PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
-    unsigned int cbOp = 0;
+    uint32_t cbOp     = 0;
     PVM pVM           = pVCpu->CTX_SUFF(pVM);
     rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, &cbOp);
     if (RT_SUCCESS(rc))
