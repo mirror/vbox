@@ -5892,12 +5892,12 @@ static int hmR0VmxInjectPendingInterrupt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedC
         rc = hmR0VmxInjectTRPMTrap(pVM, pVCpu, pMixedCtx);
         Assert(!TRPMHasTrap(pVCpu));
         AssertRCReturn(rc, rc);
-        return rc;
     }
 
-    /* Clear the VM-entry interruption info. if we're not injecting anything; prevents any stale injection. */
-    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);
-    AssertRCReturn(rc, rc);
+    /*
+     * There's no need to clear the entry-interruption information field here if we're not injecting anything. VT-x clears the
+     * valid bit on every VM-exit. See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
+     */
     return rc;
 }
 
