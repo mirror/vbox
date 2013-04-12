@@ -540,7 +540,7 @@ void CrBltLeave(PCR_BLITTER pBlitter)
 
 int CrBltEnter(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, const CR_BLITTER_WINDOW *pRestoreMural)
 {
-    if (!pBlitter->CurrentMural.Base.id)
+    if (!pBlitter->CurrentMural.Base.id && pBlitter->CtxInfo.Base.id)
     {
         crWarning("current mural not initialized!");
         return VERR_INVALID_STATE;
@@ -554,6 +554,7 @@ int CrBltEnter(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, 
 
     if (pBlitter->CurrentMural.Base.id) /* <- pBlitter->CurrentMural.Base.id can be null if the blitter is in a "no-context" mode (see comments to BltInit for detail)*/
     {
+        pBlitter->pDispatch->Flush();
         pBlitter->pDispatch->MakeCurrent(pBlitter->CurrentMural.Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
     }
     else
@@ -569,8 +570,6 @@ int CrBltEnter(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, 
     {
         pBlitter->pRestoreCtxInfo = pRestoreCtxInfo;
         pBlitter->pRestoreMural = pRestoreMural;
-
-        pBlitter->pDispatch->Flush();
     }
     else
     {
