@@ -356,6 +356,7 @@ void UIPopupPane::prepareContent()
                     /* Add into layout: */
                     m_pFrameLayout->addWidget(m_pTextPane);
                     /* Configure label: */
+                    m_pTextPane->setFocusPolicy(Qt::StrongFocus);
                     m_pTextPane->installEventFilter(pMainFrame);
                     m_pTextPane->setText(m_strMessage);
                     m_pTextPane->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
@@ -367,7 +368,6 @@ void UIPopupPane::prepareContent()
                     m_pFrameLayout->addWidget(m_pButtonBox);
                     /* Configure button-box: */
                     m_pButtonBox->installEventFilter(pMainFrame);
-                    setFocusProxy(m_pButtonBox);
                     QList<int> activeButtons;
                     m_pButton1 = createButton(m_iButton1);
                     if (m_pButton1)
@@ -424,6 +424,9 @@ QPushButton* UIPopupPane::createButton(int iButton)
     if (iButton & AlertButtonOption_Default)
     {
         pButton->setDefault(true);
+        pButton->setFocusPolicy(Qt::StrongFocus);
+        setFocusProxy(pButton);
+        m_pTextPane->setFocusProxy(pButton);
         pButton->setFocus();
     }
 
