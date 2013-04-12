@@ -633,7 +633,7 @@ PCR_BLITTER crServerVBoxBlitterGet()
         CRASSERT(cr_server.MainContextInfo.SpuContext);
         Ctx.Base.id = cr_server.MainContextInfo.SpuContext;
         Ctx.Base.visualBits = cr_server.MainContextInfo.CreateInfo.visualBits;
-        rc = CrBltInit(&cr_server.Blitter, &Ctx, true, &cr_server.head_spu->dispatch_table);
+        rc = CrBltInit(&cr_server.Blitter, &Ctx, true, true, &cr_server.head_spu->dispatch_table);
         if (RT_SUCCESS(rc))
         {
             CRASSERT(CrBltIsInitialized(&cr_server.Blitter));

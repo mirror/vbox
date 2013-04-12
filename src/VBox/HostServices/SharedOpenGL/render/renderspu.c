@@ -761,7 +761,7 @@ PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window )
              * need to do it in a more proper way */
             ctx.Base.id = 1;
             ctx.Base.visualBits = window->visual->visAttribs;
-            rc = CrBltInit(pBlitter, &ctx, true, render_spu.blitterDispatch);
+            rc = CrBltInit(pBlitter, &ctx, true, true, render_spu.blitterDispatch);
             if (!RT_SUCCESS(rc))
             {
                 crWarning("CrBltInit failed, rc %d", rc);

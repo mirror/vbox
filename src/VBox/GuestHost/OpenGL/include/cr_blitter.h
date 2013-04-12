@@ -43,9 +43,9 @@ typedef union CR_BLITTER_FLAGS
         uint32_t Initialized         : 1;
         uint32_t CtxCreated          : 1;
         uint32_t SupportsFBO         : 1;
-        uint32_t SupportsFBOBlit     : 1;
         uint32_t CurrentMuralChanged : 1;
         uint32_t LastWasFBODraw      : 1;
+        uint32_t ForceDrawBlit       : 1;
         uint32_t Reserved            : 26;
     };
     uint32_t Value;
@@ -102,7 +102,8 @@ DECLINLINE(GLboolean) CrBltIsInitialized(PCR_BLITTER pBlitter)
     return !!pBlitter->pDispatch;
 }
 
-VBOXBLITTERDECL(int) CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, SPUDispatchTable *pDispatch);
+VBOXBLITTERDECL(int) CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, bool fForceDrawBlt, SPUDispatchTable *pDispatch);
+
 VBOXBLITTERDECL(void) CrBltTerm(PCR_BLITTER pBlitter);
 
 DECLINLINE(GLboolean) CrBltSupportsTexTex(PCR_BLITTER pBlitter)
@@ -131,7 +132,7 @@ DECLINLINE(void) CrBltSetMakeCurrentUserData(PCR_BLITTER pBlitter, int32_t i32Ma
     pBlitter->i32MakeCurrentUserData = i32MakeCurrentUserData;
 }
 
-VBOXBLITTERDECL(void) CrBltMuralSetCurrent(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural);
+VBOXBLITTERDECL(int) CrBltMuralSetCurrent(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural);
 DECLINLINE(const CR_BLITTER_WINDOW *) CrBltMuralGetCurrentInfo(PCR_BLITTER pBlitter)
 {
     return &pBlitter->CurrentMural;
