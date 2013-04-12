@@ -346,8 +346,10 @@ typedef struct EMCPU
     /** Inhibit interrupts for this instruction. Valid only when VM_FF_INHIBIT_INTERRUPTS is set. */
     RTGCUINTPTR             GCPtrInhibitInterrupts;
 
+#ifdef VBOX_WITH_RAW_MODE
     /** Pointer to the PATM status structure. (R3 Ptr) */
     R3PTRTYPE(PPATMGCSTATE) pPatmGCState;
+#endif
 
     /** Pointer to the guest CPUM state. (R3 Ptr) */
     R3PTRTYPE(PCPUMCTX)     pCtx;

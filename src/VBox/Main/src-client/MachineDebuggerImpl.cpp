@@ -294,12 +294,14 @@ STDMETHODIMP MachineDebugger::COMGETTER(PATMEnabled) (BOOL *aEnabled)
     if (FAILED(autoCaller.rc()))
         return autoCaller.rc();
 
+#ifdef VBOX_WITH_RAW_MODE
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Console::SafeVMPtrQuiet ptrVM(mParent);
     if (ptrVM.isOk())
         *aEnabled = PATMR3IsEnabled (ptrVM.rawUVM());
     else
+#endif
         *aEnabled = false;
 
     return S_OK;
@@ -318,6 +320,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(PATMEnabled) (BOOL aEnable)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+#ifdef VBOX_WITH_RAW_MODE
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (queueSettings())
@@ -335,6 +338,10 @@ STDMETHODIMP MachineDebugger::COMSETTER(PATMEnabled) (BOOL aEnable)
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_VM_ERROR, tr("PATMR3AllowPatching returned %Rrc"), vrc);
 
+#else  /* !VBOX_WITH_RAW_MODE */
+    if (aEnable)
+        return setError(VBOX_E_VM_ERROR, tr("PATM not present"), VERR_NOT_SUPPORTED);
+#endif /* !VBOX_WITH_RAW_MODE */
     return S_OK;
 }
 
@@ -351,6 +358,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(CSAMEnabled) (BOOL *aEnabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+#ifdef VBOX_WITH_RAW_MODE
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Console::SafeVMPtrQuiet ptrVM(mParent);
@@ -358,6 +366,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(CSAMEnabled) (BOOL *aEnabled)
     if (ptrVM.isOk())
         *aEnabled = CSAMR3IsEnabled(ptrVM.rawUVM());
     else
+#endif /* VBOX_WITH_RAW_MODE */
         *aEnabled = false;
 
     return S_OK;
@@ -376,6 +385,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(CSAMEnabled) (BOOL aEnable)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+#ifdef VBOX_WITH_RAW_MODE
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (queueSettings())
@@ -393,6 +403,10 @@ STDMETHODIMP MachineDebugger::COMSETTER(CSAMEnabled) (BOOL aEnable)
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_VM_ERROR, tr("CSAMR3SetScanningEnabled returned %Rrc"), vrc);
 
+#else  /* !VBOX_WITH_RAW_MODE */
+    if (aEnable)
+        return setError(VBOX_E_VM_ERROR, tr("CASM not present"), VERR_NOT_SUPPORTED);
+#endif /* !VBOX_WITH_RAW_MODE */
     return S_OK;
 }
 

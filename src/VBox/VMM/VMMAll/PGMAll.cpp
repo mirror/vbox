@@ -775,6 +775,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         Assert(!pVM->pgm.s.fMappingsFixed); Assert(!pVM->pgm.s.fMappingsDisabled);
     }
 
+# ifdef VBOX_WITH_RAW_MODE
     /*
      * Inform CSAM about the flush
      *
@@ -782,6 +783,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
      *       callbacks for virtual handlers, this is no longer required.
      */
     CSAMR3FlushPage(pVM, GCPtrPage);
+# endif
 #endif /* IN_RING3 */
 
     /* Ignore all irrelevant error codes. */

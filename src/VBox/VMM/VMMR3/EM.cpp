@@ -162,8 +162,10 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         pVCpu->em.s.fForceRAW    = false;
 
         pVCpu->em.s.pCtx         = CPUMQueryGuestCtxPtr(pVCpu);
+#ifdef VBOX_WITH_RAW_MODE
         pVCpu->em.s.pPatmGCState = PATMR3QueryGCStateHC(pVM);
         AssertMsg(pVCpu->em.s.pPatmGCState, ("PATMR3QueryGCStateHC failed!\n"));
+#endif
 
         /* Force reset of the time slice. */
         pVCpu->em.s.u64TimeSliceStart = 0;
@@ -1351,14 +1353,16 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             return EMSTATE_REM;
         }
 
+# ifdef VBOX_WITH_RAW_MODE
         if (PATMShouldUseRawMode(pVM, (RTGCPTR)pCtx->eip))
         {
             Log2(("raw r0 mode forced: patch code\n"));
-# ifdef VBOX_WITH_SAFE_STR
+#  ifdef VBOX_WITH_SAFE_STR
             Assert(pCtx->tr.Sel);
-# endif
+#  endif
             return EMSTATE_RAW;
         }
+# endif /* VBOX_WITH_RAW_MODE */
 
 # if !defined(VBOX_ALLOW_IF0) && !defined(VBOX_RUN_INTERRUPT_GATE_HANDLERS)
         if (!(EFlags.u32 & X86_EFL_IF))
@@ -1470,8 +1474,10 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES);
     }
 
+#ifdef VBOX_WITH_RAW_MODE
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
         CSAMR3DoPendingAction(pVM, pVCpu);
+#endif
 
     if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
     {
@@ -1599,8 +1605,10 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             /** @todo: check for 16 or 32 bits code! (D bit in the code selector) */
             Log(("Forced action VMCPU_FF_CSAM_SCAN_PAGE\n"));
 
+#ifdef VBOX_WITH_RAW_MODE
             CSAMR3CheckCodeEx(pVM, CPUMCTX2CORE(pCtx), pCtx->eip);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE);
+#endif
         }
 
         /*
@@ -1787,7 +1795,11 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             &&  !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             &&  (!rc || rc >= VINF_EM_RESCHEDULE_HM)
             &&  !TRPMHasTrap(pVCpu) /* an interrupt could already be scheduled for dispatching in the recompiler. */
+#ifdef VBOX_WITH_RAW_MODE
             &&  PATMAreInterruptsEnabled(pVM)
+#else
+            &&  (pVCpu->em.s.pCtx->eflags.u32 & X86_EFL_IF)
+#endif
             &&  !HMR3IsEventPending(pVCpu))
         {
             Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);

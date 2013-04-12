@@ -104,7 +104,7 @@ VBoxVMM_DEFS.darwin.x86 = \
 
 VBoxVMM_INCS     = \
 	include \
-	PATM
+	$(if-expr defined(VBOX_WITH_RAW_MODE),PATM,)
 VBoxVMM_ASINCS   = .
 
 VBoxVMM_SOURCES  = \
@@ -170,12 +170,14 @@ VBoxVMM_SOURCES  = \
 	VMMR3/VMMSwitcher.cpp \
 	VMMR3/VMMTests.cpp \
 	VMMR3/HM.cpp \
+	$(if-expr defined(VBOX_WITH_RAW_MODE), \
 	VMMR3/CSAM.cpp \
 	VMMR3/PATM.cpp \
 	VMMR3/PATMPatch.cpp \
 	VMMR3/PATMGuest.cpp \
 	VMMR3/PATMA.asm \
 	VMMR3/PATMSSM.cpp \
+       ,) \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMStack.cpp \
 	VMMAll/DBGFAll.cpp \
@@ -211,8 +213,10 @@ VBoxVMM_SOURCES  = \
 	VMMAll/VMAll.cpp \
 	VMMAll/VMMAll.cpp \
 	VMMAll/VMMAllA.asm \
+	$(if-expr defined(VBOX_WITH_RAW_MODE), \
 	VMMAll/CSAMAll.cpp \
-	VMMAll/PATMAll.cpp
+	VMMAll/PATMAll.cpp \
+	,)
 ifdef VBOX_WITH_VUSB
  VBoxVMM_SOURCES += VMMR3/PDMUsb.cpp
 endif
@@ -374,7 +378,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  VMMRC_INCS     := \
  	include \
  	VMMRC \
- 	PATM
+ 	$(if-expr defined(VBOX_WITH_RAW_MODE),PATM,)
 
  VMMRC_LIBS      = \
  	$(PATH_STAGE_LIB)/DisasmRC$(VBOX_SUFF_LIB) \
@@ -403,8 +407,10 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMRC/VMMRC.cpp \
  	VMMRC/VMMRCA.asm \
  	VMMRC/HMRCA.asm \
- 	VMMRC/CSAMRC.cpp \
+ 	$(if-expr defined(VBOX_WITH_RAW_MODE), \
+	VMMRC/CSAMRC.cpp \
  	VMMRC/PATMRC.cpp \
+	,) \
  	VMMRZ/DBGFRZ.cpp \
  	VMMRZ/PGMRZDynMap.cpp \
  	VMMRZ/VMMRZ.cpp \
@@ -438,8 +444,10 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/VMAll.cpp \
  	VMMAll/VMMAll.cpp \
  	VMMAll/VMMAllA.asm \
- 	VMMAll/CSAMAll.cpp \
- 	VMMAll/PATMAll.cpp
+ 	$(if-expr defined(VBOX_WITH_RAW_MODE),
+	VMMAll/CSAMAll.cpp \
+ 	VMMAll/PATMAll.cpp \
+       ,)
  ifeq ($(VBOX_LDR_FMT32),pe)
   VMMRC_SOURCES += VMMRC/VMMRC.def
  endif
@@ -494,7 +502,7 @@ ifndef VBOX_ONLY_EXTPACKS
  endif
  VMMR0_INCS      = \
  	include \
- 	PATM
+ 	$(if-expr defined(VBOX_WITH_RAW_MODE),PATM,)
 
  VMMR0_SOURCES   = \
  	VBoxVMM.d \
