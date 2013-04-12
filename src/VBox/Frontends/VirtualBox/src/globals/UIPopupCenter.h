@@ -29,11 +29,11 @@
 #include "QIMessageBox.h"
 
 /* Forward declaration: */
-class UIPopupPane;
-class QVBoxLayout;
 class QPushButton;
 class QIRichTextLabel;
 class QIDialogButtonBox;
+class UIPopupPane;
+class UIPopupPaneFrame;
 
 /* Global popup-center object: */
 class UIPopupCenter: public QObject
@@ -177,8 +177,12 @@ private:
     virtual void polishEvent(QShowEvent *pEvent);
     virtual void keyPressEvent(QKeyEvent *pEvent);
 
-    /* Helper: Adjust stuff: */
+    /* Helper: Layout stuff: */
+    int minimumWidthHint() const;
+    int minimumHeightHint() const;
+    QSize minimumSizeHint() const;
     void adjustAccordingParent();
+    void updateLayout();
 
     /* Helpers: Prepare stuff: */
     void prepareContent();
@@ -195,6 +199,9 @@ private:
     /* Variables: */
     bool m_fPolished;
     const QString m_strId;
+    int m_iMainLayoutMargin;
+    int m_iMainFrameLayoutMargin;
+    int m_iMainFrameLayoutSpacing;
     QString m_strMessage, m_strDetails;
     int m_iButton1, m_iButton2, m_iButton3;
     QString m_strButtonText1, m_strButtonText2, m_strButtonText3;
@@ -202,8 +209,7 @@ private:
     const int m_iParentStatusBarHeight;
 
     /* Widgets: */
-    QVBoxLayout *m_pMainLayout;
-    QVBoxLayout *m_pFrameLayout;
+    UIPopupPaneFrame *m_pMainFrame;
     QIRichTextLabel *m_pTextPane;
     QIDialogButtonBox *m_pButtonBox;
     QPushButton *m_pButton1, *m_pButton2, *m_pButton3;
