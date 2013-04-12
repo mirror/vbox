@@ -2609,7 +2609,6 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBDummy(PVM pVM, PVMCPU pVCpu)
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
     pVCpu->hm.s.TlbShootdown.cPages = 0;
-    return;
 }
 
 
@@ -2696,7 +2695,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBBoth(PVM pVM, PVMCPU pVCpu)
              */
             if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
             {
-                for (unsigned i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
+                for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
                     hmR0VmxFlushVPID(pVM, pVCpu, VMX_FLUSH_VPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
             }
             else
@@ -2774,7 +2773,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBEPT(PVM pVM, PVMCPU pVCpu)
             hmR0VmxFlushEPT(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         }
     }
-    pVCpu->hm.s.TlbShootdown.cPages= 0;
+    pVCpu->hm.s.TlbShootdown.cPages = 0;
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
 #ifdef VBOX_WITH_STATISTICS
@@ -2859,7 +2858,7 @@ static DECLCALLBACK(void) hmR0VmxSetupTLBVPID(PVM pVM, PVMCPU pVCpu)
              */
             if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
             {
-                for (unsigned i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
+                for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
                     hmR0VmxFlushVPID(pVM, pVCpu, VMX_FLUSH_VPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
             }
             else

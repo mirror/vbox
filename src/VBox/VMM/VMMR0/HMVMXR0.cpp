@@ -1235,7 +1235,7 @@ static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
              */
             if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
             {
-                for (unsigned i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
+                for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
                     hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
             }
             else
@@ -1321,7 +1321,7 @@ static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch);
     }
 
-    pVCpu->hm.s.TlbShootdown.cPages= 0;
+    pVCpu->hm.s.TlbShootdown.cPages = 0;
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 }
 
@@ -1401,7 +1401,7 @@ static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu)
             /* Flush individual guest entries using VPID or as little as possible with EPT as supported by the CPU. */
             if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
             {
-                for (unsigned i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
+                for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
                     hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
             }
             else
@@ -4651,7 +4651,7 @@ DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntrInfo, uint
     pVCpu->hm.s.Event.fPending    = true;
     pVCpu->hm.s.Event.u64IntrInfo = u32IntrInfo;
     pVCpu->hm.s.Event.u32ErrCode  = u32ErrCode;
-    pVCpu->hm.s.Event.u32InstrLen = cbInstr;
+    pVCpu->hm.s.Event.cbInstr     = cbInstr;
 }
 
 
@@ -5815,7 +5815,7 @@ static int hmR0VmxInjectPendingInterrupt(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedC
     if (pVCpu->hm.s.Event.fPending)
     {
         Log(("Injecting pending event\n"));
-        int rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.u32InstrLen,
+        int rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.cbInstr,
                                         pVCpu->hm.s.Event.u32ErrCode);
         AssertRCReturn(rc, rc);
         pVCpu->hm.s.Event.fPending = false;
