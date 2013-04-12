@@ -444,7 +444,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/VMAll.cpp \
  	VMMAll/VMMAll.cpp \
  	VMMAll/VMMAllA.asm \
- 	$(if-expr defined(VBOX_WITH_RAW_MODE),
+ 	$(if-expr defined(VBOX_WITH_RAW_MODE), \
 	VMMAll/CSAMAll.cpp \
  	VMMAll/PATMAll.cpp \
        ,)
