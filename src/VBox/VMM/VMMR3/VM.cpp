@@ -103,7 +103,9 @@ static int                  vmR3CreateUVM(uint32_t cCpus, PCVMM2USERMETHODS pVmm
 static int                  vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
 static int                  vmR3InitRing3(PVM pVM, PUVM pUVM);
 static int                  vmR3InitRing0(PVM pVM);
-static int                  vmR3InitGC(PVM pVM);
+#ifdef VBOX_WITH_RAW_MODE
+static int                  vmR3InitRC(PVM pVM);
+#endif
 static int                  vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 #ifdef LOG_ENABLED
 static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser);
@@ -736,10 +738,12 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
                                 pUVM->vm.s.pvDBGC = pvUser;
 #endif
                                 /*
-                                 * Init the Guest Context components.
+                                 * Init the Raw-Mode Context components.
                                  */
-                                rc = vmR3InitGC(pVM);
+#ifdef VBOX_WITH_RAW_MODE
+                                rc = vmR3InitRC(pVM);
                                 if (RT_SUCCESS(rc))
+#endif
                                 {
                                     /*
                                      * Now we can safely set the VM halt method to default.
@@ -1072,12 +1076,13 @@ static int vmR3InitRing0(PVM pVM)
 }
 
 
+#ifdef VBOX_WITH_RAW_MODE
 /**
- * Initializes all GC components of the VM
+ * Initializes all RC components of the VM
  */
-static int vmR3InitGC(PVM pVM)
+static int vmR3InitRC(PVM pVM)
 {
-    LogFlow(("vmR3InitGC:\n"));
+    LogFlow(("vmR3InitRC:\n"));
 
     /*
      * Check for FAKE suplib mode.
@@ -1092,16 +1097,17 @@ static int vmR3InitGC(PVM pVM)
         rc = VMMR3InitRC(pVM);
     }
     else
-        Log(("vmR3InitGC: skipping because of VBOX_SUPLIB_FAKE=fake\n"));
+        Log(("vmR3InitRC: skipping because of VBOX_SUPLIB_FAKE=fake\n"));
 
     /*
      * Do notifications and return.
      */
     if (RT_SUCCESS(rc))
         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_GC);
-    LogFlow(("vmR3InitGC: returns %Rrc\n", rc));
+    LogFlow(("vmR3InitRC: returns %Rrc\n", rc));
     return rc;
 }
+#endif /* VBOX_WITH_RAW_MODE */
 
 
 /**

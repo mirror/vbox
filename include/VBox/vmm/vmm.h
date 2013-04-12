@@ -255,23 +255,27 @@ VMM_INT_DECL(void)          VMMTrashVolatileXMMRegs(void);
  */
 VMMR3_INT_DECL(int)     VMMR3Init(PVM pVM);
 VMMR3_INT_DECL(int)     VMMR3InitR0(PVM pVM);
+# ifdef VBOX_WITH_RAW_MODE
 VMMR3_INT_DECL(int)     VMMR3InitRC(PVM pVM);
+# endif
 VMMR3_INT_DECL(int)     VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 VMMR3_INT_DECL(int)     VMMR3Term(PVM pVM);
 VMMR3_INT_DECL(void)    VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(int)     VMMR3UpdateLoggers(PVM pVM);
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg1(PVM pVM);
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg2(PVM pVM);
-VMMR3_INT_DECL(int)     VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
 VMMR3_INT_DECL(int)     VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
 VMMR3_INT_DECL(int)     VMMR3DisableSwitcher(PVM pVM);
 VMMR3_INT_DECL(RTR0PTR) VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
-VMMR3_INT_DECL(int)     VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(int)     VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu);
+# ifdef VBOX_WITH_RAW_MODE
+VMMR3_INT_DECL(int)     VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)          VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu);
+VMMR3_INT_DECL(int)     VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
 VMMR3DECL(int)          VMMR3CallRC(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, ...);
 VMMR3DECL(int)          VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list args);
+# endif
 VMMR3DECL(int)          VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr);
-VMMR3DECL(int)          VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(void)         VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr);
 VMMR3_INT_DECL(void)    VMMR3YieldSuspend(PVM pVM);
 VMMR3_INT_DECL(void)    VMMR3YieldStop(PVM pVM);
