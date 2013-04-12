@@ -494,21 +494,20 @@ static int hmR3InitCPU(PVM pVM)
                              "Profiling of VMXR0RunGuestCode exit part 2",
                              "/PROF/CPU%d/HM/SwitchFromGC_2", i);
         AssertRC(rc);
-# ifdef VBOX_WITH_OLD_VTX_CODE
-        /* temporary for tracking down darwin holdup. */
-        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExit2Sub1, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Temporary - I/O",
-                             "/PROF/CPU%d/HM/SwitchFromGC_2/Sub1", i);
+
+        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitIO, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
+                             "I/O",
+                             "/PROF/CPU%d/HM/SwitchFromGC_2/IO", i);
         AssertRC(rc);
-        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExit2Sub2, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Temporary - CRx RWs",
-                             "/PROF/CPU%d/HM/SwitchFromGC_2/Sub2", i);
+        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitMovCRx, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
+                             "MOV CRx",
+                             "/PROF/CPU%d/HM/SwitchFromGC_2/MovCRx", i);
         AssertRC(rc);
-        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExit2Sub3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
-                             "Temporary - Exceptions",
-                             "/PROF/CPU%d/HM/SwitchFromGC_2/Sub3", i);
+        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitXcptNmi, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
+                             "Exceptions, NMIs",
+                             "/PROF/CPU%d/HM/SwitchFromGC_2/XcptNmi", i);
         AssertRC(rc);
-# endif
+
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatLoadGuestState, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of VMXR0LoadGuestState",
                              "/PROF/CPU%d/HM/StatLoadGuestState", i);

@@ -996,11 +996,11 @@ static void hmR0VmxFlushEpt(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
     LogFlowFunc(("pVM=%p pVCpu=%p enmFlush=%d\n", pVM, pVCpu, enmFlush));
 
     uint64_t descriptor[2];
-    descriptor[0] = pVCpu->hm.s.vmx.GCPhysEPTP;
+    descriptor[0] = pVCpu->hm.s.vmx.HCPhysEPTP;
     descriptor[1] = 0;                           /* MBZ. Intel spec. 33.3 "VMX Instructions" */
 
     int rc = VMXR0InvEPT(enmFlush, &descriptor[0]);
-    AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvEPT %#x %RGv failed with %Rrc\n", enmFlush, pVCpu->hm.s.vmx.GCPhysEPTP, rc));
+    AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvEPT %#x %RGv failed with %Rrc\n", enmFlush, pVCpu->hm.s.vmx.HCPhysEPTP, rc));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushNestedPaging);
 }
 
@@ -2812,25 +2812,25 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
         uint64_t u64GuestCR3 = 0;
         if (pVM->hm.s.fNestedPaging)
         {
-            pVCpu->hm.s.vmx.GCPhysEPTP = PGMGetHyperCR3(pVCpu);
+            pVCpu->hm.s.vmx.HCPhysEPTP = PGMGetHyperCR3(pVCpu);
 
             /* Validate. See Intel spec. 28.2.2 "EPT Translation Mechanism" and 24.6.11 "Extended-Page-Table Pointer (EPTP)" */
-            Assert(pVCpu->hm.s.vmx.GCPhysEPTP);
-            Assert(!(pVCpu->hm.s.vmx.GCPhysEPTP & 0xfff0000000000000ULL));
-            Assert(!(pVCpu->hm.s.vmx.GCPhysEPTP & 0xfff));
+            Assert(pVCpu->hm.s.vmx.HCPhysEPTP);
+            Assert(!(pVCpu->hm.s.vmx.HCPhysEPTP & 0xfff0000000000000ULL));
+            Assert(!(pVCpu->hm.s.vmx.HCPhysEPTP & 0xfff));
 
             /* VMX_EPT_MEMTYPE_WB support is already checked in hmR0VmxSetupTaggedTlb(). */
-            pVCpu->hm.s.vmx.GCPhysEPTP |=  VMX_EPT_MEMTYPE_WB
+            pVCpu->hm.s.vmx.HCPhysEPTP |=  VMX_EPT_MEMTYPE_WB
                                          | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
 
             /* Validate. See Intel spec. 26.2.1 "Checks on VMX Controls" */
-            AssertMsg(   ((pVCpu->hm.s.vmx.GCPhysEPTP >> 3) & 0x07) == 3      /* Bits 3:5 (EPT page walk length - 1) must be 3. */
-                      && ((pVCpu->hm.s.vmx.GCPhysEPTP >> 6) & 0x3f) == 0,     /* Bits 6:11 MBZ. */
-                         ("EPTP %#RX64\n", pVCpu->hm.s.vmx.GCPhysEPTP));
+            AssertMsg(   ((pVCpu->hm.s.vmx.HCPhysEPTP >> 3) & 0x07) == 3      /* Bits 3:5 (EPT page walk length - 1) must be 3. */
+                      && ((pVCpu->hm.s.vmx.HCPhysEPTP >> 6) & 0x3f) == 0,     /* Bits 6:11 MBZ. */
+                         ("EPTP %#RX64\n", pVCpu->hm.s.vmx.HCPhysEPTP));
 
-            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, pVCpu->hm.s.vmx.GCPhysEPTP);
+            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, pVCpu->hm.s.vmx.HCPhysEPTP);
             AssertRCReturn(rc, rc);
-            Log(("VMX_VMCS64_CTRL_EPTP_FULL=%#RX64\n", pVCpu->hm.s.vmx.GCPhysEPTP));
+            Log(("VMX_VMCS64_CTRL_EPTP_FULL=%#RX64\n", pVCpu->hm.s.vmx.HCPhysEPTP));
 
             if (   pVM->hm.s.vmx.fUnrestrictedGuest
                 || CPUMIsGuestPagingEnabledEx(pCtx))
@@ -7659,6 +7659,7 @@ static DECLCALLBACK(int) hmR0VmxExitTprBelowThreshold(PVMCPU pVCpu, PCPUMCTX pMi
 static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitMovCRx, y2);
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
 
@@ -7765,18 +7766,20 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
         default:
         {
             AssertMsgFailed(("Invalid access-type in Mov CRx exit qualification %#x\n", uAccessType));
-            return VERR_VMX_UNEXPECTED_EXCEPTION;
+            rc = VERR_VMX_UNEXPECTED_EXCEPTION;
         }
     }
 
     /* Validate possible error codes. */
-    Assert(rc == VINF_SUCCESS || rc == VINF_PGM_CHANGE_MODE || rc == VERR_EM_INTERPRETER || rc == VINF_PGM_SYNC_CR3);
+    Assert(rc == VINF_SUCCESS || rc == VINF_PGM_CHANGE_MODE || rc == VERR_EM_INTERPRETER || rc == VINF_PGM_SYNC_CR3
+           || rc == VERR_VMX_UNEXPECTED_EXCEPTION);
     if (RT_SUCCESS(rc))
     {
         int rc2 = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
         AssertRCReturn(rc2, rc2);
     }
 
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
     return rc;
 }
 
@@ -7788,6 +7791,7 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
 static DECLCALLBACK(int) hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitIO, y1);
 
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
@@ -7947,6 +7951,7 @@ static DECLCALLBACK(int) hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
     }
 #endif
 
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitIO, y1);
     return rc;
 }
 

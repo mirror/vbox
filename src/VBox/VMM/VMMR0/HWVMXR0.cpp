@@ -2215,14 +2215,14 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (pVM->hm.s.fNestedPaging)
         {
             Assert(PGMGetHyperCR3(pVCpu));
-            pVCpu->hm.s.vmx.GCPhysEPTP = PGMGetHyperCR3(pVCpu);
+            pVCpu->hm.s.vmx.HCPhysEPTP = PGMGetHyperCR3(pVCpu);
 
-            Assert(!(pVCpu->hm.s.vmx.GCPhysEPTP & 0xfff));
+            Assert(!(pVCpu->hm.s.vmx.HCPhysEPTP & 0xfff));
             /** @todo Check the IA32_VMX_EPT_VPID_CAP MSR for other supported memory types. */
-            pVCpu->hm.s.vmx.GCPhysEPTP |=   VMX_EPT_MEMTYPE_WB
+            pVCpu->hm.s.vmx.HCPhysEPTP |=   VMX_EPT_MEMTYPE_WB
                                              | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
 
-            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, pVCpu->hm.s.vmx.GCPhysEPTP);
+            rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, pVCpu->hm.s.vmx.HCPhysEPTP);
             AssertRC(rc);
 
             if (    !CPUMIsGuestInPagedProtectedModeEx(pCtx)
@@ -3530,7 +3530,7 @@ ResumeExecution:
             rc = VINF_EM_RAW_INTERRUPT;
             break;
         }
-        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExit2Sub3, y3);
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitXcptNmi, y3);
         switch (VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo))
         {
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI:       /* Non-maskable interrupt. */
@@ -3566,7 +3566,7 @@ ResumeExecution:
                     /* Continue execution. */
                     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
 
-                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                     goto ResumeExecution;
                 }
 
@@ -3575,7 +3575,7 @@ ResumeExecution:
                 rc2 = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo),
                                          cbInstr, 0);
                 AssertRC(rc2);
-                STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                 goto ResumeExecution;
             }
 
@@ -3600,7 +3600,7 @@ ResumeExecution:
                                              cbInstr, errCode);
                     AssertRC(rc2);
 
-                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                     goto ResumeExecution;
                 }
 #else
@@ -3673,7 +3673,7 @@ ResumeExecution:
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPF);
 
                     TRPMResetTrap(pVCpu);
-                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                     goto ResumeExecution;
                 }
                 else if (rc == VINF_EM_RAW_GUEST_TRAP)
@@ -3695,7 +3695,7 @@ ResumeExecution:
                                              cbInstr, errCode);
                     AssertRC(rc2);
 
-                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                     goto ResumeExecution;
                 }
 #ifdef VBOX_STRICT
@@ -3726,7 +3726,7 @@ ResumeExecution:
                                          cbInstr, errCode);
                 AssertRC(rc2);
 
-                STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                 goto ResumeExecution;
             }
 
@@ -3778,7 +3778,7 @@ ResumeExecution:
                                              cbInstr, errCode);
                     AssertRC(rc2);
 
-                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                     goto ResumeExecution;
                 }
                 /* Return to ring 3 to deal with the debug exit code. */
@@ -3796,12 +3796,12 @@ ResumeExecution:
                     rc2 = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo),
                                              cbInstr, errCode);
                     AssertRC(rc2);
-                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                     goto ResumeExecution;
                 }
                 if (rc == VINF_SUCCESS)
                 {
-                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                     goto ResumeExecution;
                 }
                 Log(("Debugger BP at %04x:%RGv (rc=%Rrc)\n", pCtx->cs.Sel, pCtx->rip, VBOXSTRICTRC_VAL(rc)));
@@ -3822,7 +3822,7 @@ ResumeExecution:
                     rc2 = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(intInfo),
                                              cbInstr, errCode);
                     AssertRC(rc2);
-                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                     goto ResumeExecution;
                 }
 #endif
@@ -4054,7 +4054,7 @@ ResumeExecution:
                         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL;
 
                         /* Only resume if successful. */
-                        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                         goto ResumeExecution;
                     }
                 }
@@ -4087,7 +4087,7 @@ ResumeExecution:
                                          cbInstr, errCode);
                 AssertRC(rc2);
 
-                STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                 goto ResumeExecution;
             }
 #endif
@@ -4108,7 +4108,7 @@ ResumeExecution:
                         break;
                     }
 
-                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+                    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
                     goto ResumeExecution;
                 }
                 AssertMsgFailed(("Unexpected vm-exit caused by exception %x\n", vector));
@@ -4124,7 +4124,7 @@ ResumeExecution:
             break;
         }
 
-        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub3, y3);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
         break;
     }
 
@@ -4415,7 +4415,7 @@ ResumeExecution:
 
     case VMX_EXIT_MOV_CRX:             /* 28 Control-register accesses. */
     {
-        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExit2Sub2, y2);
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitMovCRx, y2);
 
         switch (VMX_EXIT_QUALIFICATION_CRX_ACCESS(exitQualification))
         {
@@ -4498,11 +4498,11 @@ ResumeExecution:
         if (rc == VINF_SUCCESS)
         {
             /* Only resume if successful. */
-            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub2, y2);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
             goto ResumeExecution;
         }
         Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
-        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub2, y2);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
         break;
     }
 
@@ -4578,7 +4578,7 @@ ResumeExecution:
     /* Note: We'll get a #GP if the IO instruction isn't allowed (IOPL or TSS bitmap); no need to double check. */
     case VMX_EXIT_IO_INSTR:              /* 30 I/O instruction. */
     {
-        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExit2Sub1, y1);
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitIO, y1);
         uint32_t uPort;
         uint32_t uIOWidth = VMX_EXIT_QUALIFICATION_IO_WIDTH(exitQualification);
         bool     fIOWrite = (VMX_EXIT_QUALIFICATION_IO_DIRECTION(exitQualification) == VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT);
@@ -4592,7 +4592,7 @@ ResumeExecution:
         if (RT_UNLIKELY(uIOWidth == 2 || uIOWidth >= 4))         /* paranoia */
         {
             rc = fIOWrite ? VINF_IOM_R3_IOPORT_WRITE : VINF_IOM_R3_IOPORT_READ;
-            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub1, y1);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitIO, y1);
             break;
         }
 
@@ -4719,15 +4719,15 @@ ResumeExecution:
                                                      0 /* cbInstr */, 0 /* errCode */);
                             AssertRC(rc2);
 
-                            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub1, y1);
+                            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitIO, y1);
                             goto ResumeExecution;
                         }
                     }
                 }
-                STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub1, y1);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitIO, y1);
                 goto ResumeExecution;
             }
-            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub1, y1);
+            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitIO, y1);
             break;
         }
 
@@ -4744,7 +4744,7 @@ ResumeExecution:
                       || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", VBOXSTRICTRC_VAL(rc)));
         }
 #endif
-        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2Sub1, y1);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitIO, y1);
         break;
     }
 
@@ -5151,10 +5151,10 @@ static void hmR0VmxFlushEPT(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
 
     LogFlow(("hmR0VmxFlushEPT %d\n", enmFlush));
     Assert(pVM->hm.s.fNestedPaging);
-    descriptor[0] = pVCpu->hm.s.vmx.GCPhysEPTP;
+    descriptor[0] = pVCpu->hm.s.vmx.HCPhysEPTP;
     descriptor[1] = 0; /* MBZ. Intel spec. 33.3 VMX Instructions */
     int rc = VMXR0InvEPT(enmFlush, &descriptor[0]);
-    AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvEPT %x %RGv failed with %d\n", enmFlush, pVCpu->hm.s.vmx.GCPhysEPTP, rc));
+    AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvEPT %x %RGv failed with %d\n", enmFlush, pVCpu->hm.s.vmx.HCPhysEPTP, rc));
 #ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushNestedPaging);
 #endif
