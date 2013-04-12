@@ -730,6 +730,7 @@ typedef struct HMCPU
     {
         uint32_t                    fPending;
         uint32_t                    u32ErrCode;
+        uint32_t                    u32InstrLen;
         uint64_t                    u64IntrInfo;
     } Event;
 
