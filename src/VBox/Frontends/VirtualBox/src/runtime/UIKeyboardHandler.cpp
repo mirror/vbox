@@ -799,36 +799,6 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                 }
                 break;
             }
-#elif defined(Q_WS_MAC)
-            case QEvent::WindowActivate:
-            {
-                /* If keyboard event handler is NOT currently installed;
-                 * Or installed but NOT for that window: */
-                if (m_iKeyboardGrabViewIndex != (int)uScreenId)
-                {
-                    /* If keyboard event handler is NOT currently installed: */
-                    if (m_iKeyboardGrabViewIndex == -1)
-                    {
-                        /* Install the keyboard event handler: */
-                        darwinGrabKeyboardEvents(true);
-                    }
-                    /* Update the id: */
-                    m_iKeyboardGrabViewIndex = uScreenId;
-                }
-                break;
-            }
-            case QEvent::WindowDeactivate:
-            {
-                /* If keyboard event handler is installed exactly for that window: */
-                if (m_iKeyboardGrabViewIndex == (int)uScreenId)
-                {
-                    /* Remove the keyboard event handler: */
-                    darwinGrabKeyboardEvents(false);
-                    /* Update the id: */
-                    m_iKeyboardGrabViewIndex = -1;
-                }
-                break;
-            }
 #endif
             default:
                 break;
@@ -847,6 +817,23 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
         switch (pEvent->type())
         {
             case QEvent::FocusIn:
+            {
+#ifdef Q_WS_MAC
+                /* If keyboard-event handler is NOT currently installed;
+                 * Or installed but NOT for that view: */
+                if (m_iKeyboardGrabViewIndex != (int)uScreenId)
+                {
+                    /* If keyboard-event handler is NOT currently installed: */
+                    if (m_iKeyboardGrabViewIndex == -1)
+                    {
+                        /* Install the keyboard-event handler: */
+                        darwinGrabKeyboardEvents(true);
+                    }
+                    /* Update the id: */
+                    m_iKeyboardGrabViewIndex = uScreenId;
+                }
+#endif /* Q_WS_MAC */
+
                 if (isSessionRunning())
                 {
                     /* Capture keyboard: */
@@ -862,13 +849,27 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                         setAutoCaptureDisabled(false);
                 }
                 break;
+            }
             case QEvent::FocusOut:
+            {
+#ifdef Q_WS_MAC
+                /* If keyboard-event handler is installed for that view: */
+                if (m_iKeyboardGrabViewIndex == (int)uScreenId)
+                {
+                    /* Remove the keyboard-event handler: */
+                    darwinGrabKeyboardEvents(false);
+                    /* Update the id: */
+                    m_iKeyboardGrabViewIndex = -1;
+                }
+#endif /* Q_WS_MAC */
+
                 /* Release keyboard: */
                 if (isSessionRunning())
                     releaseKeyboard();
                 /* And all pressed keys: */
                 releaseAllPressedKeys(true);
                 break;
+            }
             case QEvent::KeyPress:
             case QEvent::KeyRelease:
             {
