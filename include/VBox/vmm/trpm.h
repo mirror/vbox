@@ -72,13 +72,16 @@ VMMDECL(int)        TRPMQueryTrap(PVMCPU pVCpu, uint8_t *pu8TrapNo, PTRPMEVENT p
 VMMDECL(uint8_t)    TRPMGetTrapNo(PVMCPU pVCpu);
 VMMDECL(RTGCUINT)   TRPMGetErrorCode(PVMCPU pVCpu);
 VMMDECL(RTGCUINTPTR) TRPMGetFaultAddress(PVMCPU pVCpu);
+VMMDECL(uint8_t)    TRPMGetInstrLength(PVMCPU pVCpu);
 VMMDECL(int)        TRPMResetTrap(PVMCPU pVCpu);
 VMMDECL(int)        TRPMAssertTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType);
+VMMDECL(int)        TRPMAssertXcptPF(PVMCPU pVCpu, RTGCUINTPTR uCR2, RTGCUINT uErrorCode);
 VMMDECL(void)       TRPMSetErrorCode(PVMCPU pVCpu, RTGCUINT uErrorCode);
 VMMDECL(void)       TRPMSetFaultAddress(PVMCPU pVCpu, RTGCUINTPTR uCR2);
+VMMDECL(void)       TRPMSetInstrLength(PVMCPU pVCpu, uint8_t cbInstr);
 VMMDECL(bool)       TRPMIsSoftwareInterrupt(PVMCPU pVCpu);
 VMMDECL(bool)       TRPMHasTrap(PVMCPU pVCpu);
-VMMDECL(int)        TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, PTRPMEVENT pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2);
+VMMDECL(int)        TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, PTRPMEVENT pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2, uint8_t *pu8InstrLen);
 VMMDECL(void)       TRPMSaveTrap(PVMCPU pVCpu);
 VMMDECL(void)       TRPMRestoreTrap(PVMCPU pVCpu);
 VMMDECL(int)        TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t cbInstr, TRPMERRORCODE enmError, TRPMEVENT enmType, int32_t iOrgTrap);
