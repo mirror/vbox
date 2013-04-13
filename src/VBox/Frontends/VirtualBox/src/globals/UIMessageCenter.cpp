@@ -278,7 +278,7 @@ int UIMessageCenter::messageWithOption(QWidget *pParent, MessageType type,
     }
 
     /* Create message-box: */
-    QWidget *pBoxParent = windowManager().realParentWindow(pParent);
+    QWidget *pBoxParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
     QPointer<QIMessageBox> pBox = new QIMessageBox(strTitle, strMessage, icon,
                                                    iButton1, iButton2, iButton3, pBoxParent);
     windowManager().registerNewParent(pBox, pBoxParent);
