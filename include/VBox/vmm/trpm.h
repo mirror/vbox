@@ -100,11 +100,11 @@ VMMR3DECL(void)     TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3DECL(void)     TRPMR3ResetCpu(PVMCPU pVCpu);
 VMMR3DECL(void)     TRPMR3Reset(PVM pVM);
 VMMR3DECL(int)      TRPMR3Term(PVM pVM);
-VMMR3DECL(void)     TRPMR3DisableMonitoring(PVM pVM);
-VMMR3DECL(int)      TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)      TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent);
 # ifdef VBOX_WITH_RAW_MODE
+VMMR3DECL(void)     TRPMR3DisableMonitoring(PVM pVM);
 VMMR3_INT_DECL(int) TRPMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
+VMMR3DECL(int)      TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(bool)     TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr);
 VMMR3DECL(uint32_t) TRPMR3QueryGateByHandler(PVM pVM, RTRCPTR GCPtr);
 VMMR3DECL(int)      TRPMR3EnableGuestTrapHandler(PVM pVM, unsigned iTrap);

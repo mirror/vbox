@@ -271,6 +271,16 @@ typedef struct VMCPU
 /** The name of the Ring 0 Context VMM Core module. */
 #define VMMR0_MAIN_MODULE_NAME          "VMMR0.r0"
 
+/**
+ * Wrapper macro for avoiding too much \#ifdef VBOX_WITH_RAW_MODE.
+ */
+#ifdef VBOX_WITH_RAW_MODE
+# define VM_WHEN_RAW_MODE(a_WithExpr, a_WithoutExpr)    a_WithExpr
+#else
+# define VM_WHEN_RAW_MODE(a_WithExpr, a_WithoutExpr)    a_WithoutExpr
+#endif
+
+
 /** VM Forced Action Flags.
  *
  * Use the VM_FF_SET() and VM_FF_CLEAR() macros to change the force
@@ -369,20 +379,24 @@ typedef struct VMCPU
 #define VMCPU_FF_TLB_FLUSH                  RT_BIT_32(VMCPU_FF_TLB_FLUSH_BIT)
 /** The bit number for VMCPU_FF_TLB_FLUSH. */
 #define VMCPU_FF_TLB_FLUSH_BIT              19
+#ifdef VBOX_WITH_RAW_MODE
 /** Check the interrupt and trap gates */
-#define VMCPU_FF_TRPM_SYNC_IDT              RT_BIT_32(20)
+# define VMCPU_FF_TRPM_SYNC_IDT             RT_BIT_32(20)
 /** Check Guest's TSS ring 0 stack */
-#define VMCPU_FF_SELM_SYNC_TSS              RT_BIT_32(21)
+# define VMCPU_FF_SELM_SYNC_TSS             RT_BIT_32(21)
 /** Check Guest's GDT table */
-#define VMCPU_FF_SELM_SYNC_GDT              RT_BIT_32(22)
+# define VMCPU_FF_SELM_SYNC_GDT             RT_BIT_32(22)
 /** Check Guest's LDT table */
-#define VMCPU_FF_SELM_SYNC_LDT              RT_BIT_32(23)
+# define VMCPU_FF_SELM_SYNC_LDT             RT_BIT_32(23)
+#endif /* VBOX_WITH_RAW_MODE */
 /** Inhibit interrupts pending. See EMGetInhibitInterruptsPC(). */
 #define VMCPU_FF_INHIBIT_INTERRUPTS         RT_BIT_32(24)
+#ifdef VBOX_WITH_RAW_MODE
 /** CSAM needs to scan the page that's being executed */
-#define VMCPU_FF_CSAM_SCAN_PAGE             RT_BIT_32(26)
+# define VMCPU_FF_CSAM_SCAN_PAGE            RT_BIT_32(26)
 /** CSAM needs to do some homework. */
-#define VMCPU_FF_CSAM_PENDING_ACTION        RT_BIT_32(27)
+# define VMCPU_FF_CSAM_PENDING_ACTION       RT_BIT_32(27)
+#endif /* VBOX_WITH_RAW_MODE */
 /** Force return to Ring-3. */
 #define VMCPU_FF_TO_R3                      RT_BIT_32(28)
 
@@ -395,36 +409,43 @@ typedef struct VMCPU
 #define VM_FF_EXTERNAL_HALTED_MASK              (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_REQUEST \
                                                  | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_EMT_RENDEZVOUS)
 /** Externally forced VMCPU actions. Used to quit the idle/wait loop. */
-#define VMCPU_FF_EXTERNAL_HALTED_MASK           (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_REQUEST | VMCPU_FF_TIMER)
+#define VMCPU_FF_EXTERNAL_HALTED_MASK           (  VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_REQUEST \
+                                                 | VMCPU_FF_TIMER)
 
 /** High priority VM pre-execution actions. */
 #define VM_FF_HIGH_PRIORITY_PRE_MASK            (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_TM_VIRTUAL_SYNC \
-                                                 | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS)
+                                                 | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY \
+                                                 | VM_FF_EMT_RENDEZVOUS)
 /** High priority VMCPU pre-execution actions. */
-#define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 \
-                                                 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
-                                                 | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_INHIBIT_INTERRUPTS)
+#define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC \
+                                                 | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
+                                                 | VMCPU_FF_INHIBIT_INTERRUPTS \
+                                                 | VM_WHEN_RAW_MODE(  VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
+                                                                    | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT, 0 ) )
 
 /** High priority VM pre raw-mode execution mask. */
 #define VM_FF_HIGH_PRIORITY_PRE_RAW_MASK        (VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY)
 /** High priority VMCPU pre raw-mode execution mask. */
-#define VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK     (  VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
-                                                 | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_INHIBIT_INTERRUPTS)
+#define VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK     (  VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
+                                                 | VMCPU_FF_INHIBIT_INTERRUPTS \
+                                                 | VM_WHEN_RAW_MODE( VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
+                                                                    | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT, 0) )
 
 /** High priority post-execution actions. */
 #define VM_FF_HIGH_PRIORITY_POST_MASK           (VM_FF_PGM_NO_MEMORY)
 /** High priority post-execution actions. */
-#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT | VMCPU_FF_CSAM_PENDING_ACTION \
+#define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) \
                                                  | VMCPU_FF_HM_UPDATE_CR3 | VMCPU_FF_HM_UPDATE_PAE_PDPES)
 
 /** Normal priority VM post-execution actions. */
 #define VM_FF_NORMAL_PRIORITY_POST_MASK         (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET \
                                                  | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS)
 /** Normal priority VMCPU post-execution actions. */
-#define VMCPU_FF_NORMAL_PRIORITY_POST_MASK      (VMCPU_FF_CSAM_SCAN_PAGE)
+#define VMCPU_FF_NORMAL_PRIORITY_POST_MASK      VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_SCAN_PAGE, 0)
 
 /** Normal priority VM actions. */
-#define VM_FF_NORMAL_PRIORITY_MASK              (VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY | VM_FF_EMT_RENDEZVOUS)
+#define VM_FF_NORMAL_PRIORITY_MASK              (  VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY \
+                                                 | VM_FF_EMT_RENDEZVOUS)
 /** Normal priority VMCPU actions. */
 #define VMCPU_FF_NORMAL_PRIORITY_MASK           (VMCPU_FF_REQUEST)
 
@@ -432,9 +453,10 @@ typedef struct VMCPU
 #define VMCPU_FF_RESUME_GUEST_MASK              (VMCPU_FF_TO_R3)
 
 /** VM Flags that cause the HM loops to go back to ring-3. */
-#define VM_FF_HM_TO_R3_MASK                 (VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_PDM_QUEUES | VM_FF_EMT_RENDEZVOUS)
+#define VM_FF_HM_TO_R3_MASK                     (  VM_FF_TM_VIRTUAL_SYNC | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY \
+                                                 | VM_FF_PDM_QUEUES | VM_FF_EMT_RENDEZVOUS)
 /** VMCPU Flags that cause the HM loops to go back to ring-3. */
-#define VMCPU_FF_HM_TO_R3_MASK              (VMCPU_FF_TO_R3 | VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT)
+#define VMCPU_FF_HM_TO_R3_MASK                  (VMCPU_FF_TO_R3 | VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT)
 
 /** All the forced VM flags. */
 #define VM_FF_ALL_MASK                          (~0U)
@@ -446,8 +468,9 @@ typedef struct VMCPU
 #define VM_FF_ALL_REM_MASK                      (~(VM_FF_HIGH_PRIORITY_PRE_RAW_MASK) | VM_FF_PGM_NO_MEMORY)
 /** All the forced VMCPU flags except those related to raw-mode and hardware
  * assisted execution. */
-#define VMCPU_FF_ALL_REM_MASK                   (~(VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK | VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_PDM_CRITSECT | VMCPU_FF_TLB_FLUSH | VMCPU_FF_TLB_SHOOTDOWN))
-
+#define VMCPU_FF_ALL_REM_MASK                   (~(  VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK | VMCPU_FF_PDM_CRITSECT \
+                                                   | VMCPU_FF_TLB_FLUSH | VMCPU_FF_TLB_SHOOTDOWN \
+                                                   | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) ))
 /** @} */
 
 /** @def VM_FF_SET

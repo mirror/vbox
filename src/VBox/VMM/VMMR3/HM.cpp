@@ -727,11 +727,11 @@ static void hmR3DisableRawMode(PVM pVM)
     /* Disable PATM & CSAM. */
     PATMR3AllowPatching(pVM->pUVM, false);
     CSAMDisableScanning(pVM);
-#endif
 
     /* Turn off IDT/LDT/GDT and TSS monitoring and sycing. */
     SELMR3DisableMonitoring(pVM);
     TRPMR3DisableMonitoring(pVM);
+#endif
 
     /* Disable the switcher code (safety precaution). */
     VMMR3DisableSwitcher(pVM);

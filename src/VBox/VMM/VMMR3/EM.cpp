@@ -1146,9 +1146,11 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
         TMTimerPollVoid(pVM, pVCpu);
 #endif
-        AssertCompile((VMCPU_FF_ALL_REM_MASK & ~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE)) & VMCPU_FF_TIMER);
+        AssertCompile(VMCPU_FF_ALL_REM_MASK & VMCPU_FF_TIMER);
         if (    VM_FF_ISPENDING(pVM, VM_FF_ALL_REM_MASK)
-            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_REM_MASK & ~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE)))
+            ||  VMCPU_FF_ISPENDING(pVCpu,
+                                     VMCPU_FF_ALL_REM_MASK
+                                   & VM_WHEN_RAW_MODE(~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE), UINT32_MAX)) )
         {
 l_REMDoForcedActions:
 #ifdef VBOX_WITH_REM
@@ -1530,7 +1532,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
      * Post execution chunk first.
      */
     if (    VM_FF_ISPENDING(pVM, VM_FF_NORMAL_PRIORITY_POST_MASK)
-        ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_NORMAL_PRIORITY_POST_MASK))
+        ||  (VMCPU_FF_NORMAL_PRIORITY_POST_MASK && VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_NORMAL_PRIORITY_POST_MASK)) )
     {
         /*
          * EMT Rendezvous (must be serviced before termination).
@@ -1594,6 +1596,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             UPDATE_RC();
         }
 
+#ifdef VBOX_WITH_RAW_MODE
         /*
          * CSAM page scanning.
          */
@@ -1605,11 +1608,10 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             /** @todo: check for 16 or 32 bits code! (D bit in the code selector) */
             Log(("Forced action VMCPU_FF_CSAM_SCAN_PAGE\n"));
 
-#ifdef VBOX_WITH_RAW_MODE
             CSAMR3CheckCodeEx(pVM, CPUMCTX2CORE(pCtx), pCtx->eip);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE);
-#endif
         }
+#endif
 
         /*
          * Out of memory? Putting this after CSAM as it may in theory cause us to run out of memory.
@@ -1624,7 +1626,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
         /* check that we got them all  */
         AssertCompile(VM_FF_NORMAL_PRIORITY_POST_MASK == (VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS));
-        AssertCompile(VMCPU_FF_NORMAL_PRIORITY_POST_MASK == VMCPU_FF_CSAM_SCAN_PAGE);
+        AssertCompile(VMCPU_FF_NORMAL_PRIORITY_POST_MASK == VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_SCAN_PAGE, 0));
     }
 
     /*
@@ -1922,7 +1924,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
         /* check that we got them all  */
         AssertCompile(VM_FF_HIGH_PRIORITY_PRE_MASK == (VM_FF_TM_VIRTUAL_SYNC | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS));
-        AssertCompile(VMCPU_FF_HIGH_PRIORITY_PRE_MASK == (VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_INHIBIT_INTERRUPTS));
+        AssertCompile(VMCPU_FF_HIGH_PRIORITY_PRE_MASK == (VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_INHIBIT_INTERRUPTS | VM_WHEN_RAW_MODE(VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT, 0)));
     }
 
 #undef UPDATE_RC
