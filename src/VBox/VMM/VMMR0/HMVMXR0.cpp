@@ -4984,7 +4984,7 @@ DECLINLINE(void) hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(   uIntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI
                || uIntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
         rc  = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
-        rc |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);    /* for hmR0VmxLoadGuestIntrState(). */
+        rc |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);    /* for hmR0VmxGetGuestIntrState(). */
         AssertRC(rc);
         EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
         Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
@@ -5557,11 +5557,13 @@ static int hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 
 /**
- * Converts any TRPM trap into a pending VMX event.
+ * Converts any TRPM trap into a pending VMX event. This is typically used when
+ * entering from ring-3 (not longjmp returns).
  *
  * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pCtx            Pointer to the guest-CPU context.
  */
-static void hmR0VmxUpdatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static void hmR0VmxUpdatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     if (!TRPMHasTrap(pVCpu))
         return;
@@ -5605,7 +5607,7 @@ static void hmR0VmxUpdatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             {
                 u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
                 if (uVector == X86_XCPT_PF)
-                    pMixedCtx->cr2 = TRPMGetFaultAddress(pVCpu);
+                    pCtx->cr2 = TRPMGetFaultAddress(pVCpu);
                 break;
             }
         }
@@ -5623,6 +5625,7 @@ static void hmR0VmxUpdatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertMsgFailed(("Invalid TRPM event type %d\n", enmTrpmEvent));
 
     rc = TRPMResetTrap(pVCpu);
+    AssertRC(rc);
     Log(("Converted TRPM trap: u32IntrInfo=%#RX32 enmTrpmEvent=%d cbInstr=%u u32ErrCode=%#RX32 GCPtrFaultAddress=%#RGv\n",
          u32IntrInfo, enmTrpmEvent, u32ErrCode, GCPtrFaultAddress));
     hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, cbInstr, u32ErrCode, GCPtrFaultAddress);
@@ -5635,7 +5638,7 @@ static void hmR0VmxUpdatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @param   pvCpu           Pointer to the VMCPU.
  */
-static void hmR0VmxUpdateTRPMTrap(PVMCPU pVCpu)
+static void hmR0VmxUpdateTRPM(PVMCPU pVCpu)
 {
     if (pVCpu->hm.s.Event.fPending)
     {
@@ -5669,12 +5672,11 @@ static void hmR0VmxUpdateTRPMTrap(PVMCPU pVCpu)
         }
 
         Log(("Converting pending HM event to TRPM trap uVector=%#x enmTrapType=%d\n", uVector, enmTrapType));
-
         int rc = TRPMAssertTrap(pVCpu, uVector, enmTrapType);
         AssertRC(rc);
+
         if (fErrorCodeValid)
             TRPMSetErrorCode(pVCpu, uErrorCode);
-
         /* A page-fault exception during a page-fault would become a double-fault. */
         if (   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
             && uVector == X86_XCPT_PF)
@@ -5779,7 +5781,7 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
     Log(("hmR0VmxExitToRing3: rcExit=%d\n", rcExit));
 
     /* We need to do this only while truly exiting the "inner loop" back to ring-3 and -not- for any longjmp to ring3. */
-    hmR0VmxUpdateTRPMTrap(pVCpu);
+    hmR0VmxUpdateTRPM(pVCpu);
 
     /* Sync. the guest state. */
     hmR0VmxLongJmpToRing3(pVM, pVCpu, pMixedCtx, rcExit);
@@ -5855,8 +5857,8 @@ DECLINLINE(void) hmR0VmxSetIntWindowExitVmcs(PVMCPU pVCpu)
 
 
 /**
- * Checks if there are any pending guest interrupts to be delivered and injects
- * them into the VM by updating the VMCS.
+ * Injects any pending events into the guest if the guest is in a state to
+ * receive them.
  *
  * @returns VBox status code (informational status codes included).
  * @param   pVCpu           Pointer to the VMCPU.
@@ -5957,7 +5959,9 @@ static int hmR0VmxInjectEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      * There's no need to clear the entry-interruption information field here if we're not injecting anything.
      * VT-x clears the valid bit on every VM-exit. See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
      */
-    hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
+    int rc2 = hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
+    AssertRC(rc2);
+    Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET);
     return rc;
 }
 
@@ -5972,7 +5976,6 @@ static int hmR0VmxInjectEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    /* Refer Intel spec. 24.8.3 "VM-entry Controls for Event Injection" for the format of u32IntrInfo. */
     uint32_t u32IntrInfo = X86_XCPT_UD | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatIntInject);
     hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
@@ -6143,6 +6146,9 @@ DECLINLINE(int) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint1
  *                          interrupts, exceptions and privileged software
  *                          exceptions).
  * @param   u32ErrCode      The VM-entry exception error code.
+ * @param   puIntrState     Pointer to the current guest interruptibility-state.
+ *                          This interruptibility-state will be updated if
+ *                          necessary. This cannot not be NULL.
  *
  * @remarks No-long-jump zone!!!
  * @remarks Requires CR0!
@@ -6161,8 +6167,6 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
     /* Cannot inject an NMI when block-by-MOV SS is in effect. */
     Assert(   uIntrType != VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI
            || !((*puIntrState) & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS));
-
-    STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedIrqsR0[uVector & MASK_INJECT_IRQ_STAT]);
 
     /* We require CR0 to check if the guest is in real-mode. */
     int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
@@ -6267,19 +6271,18 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
         }
     }
 
-    /* Add the valid bit, maybe the caller was lazy. */
-    u32IntrInfo |= (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
-
+    /* Validate. */
+    Assert(VMX_EXIT_INTERRUPTION_INFO_VALID(u32IntrInfo));              /* Bit 31 (Valid bit) must be set by caller. */
     Assert(!VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(u32IntrInfo));       /* Bit 12 MBZ. */
     Assert(!(u32IntrInfo & 0x7ffff000));                                /* Bits 30:12 MBZ. */
+
+    /* Inject. */
     Log(("Injecting u32IntrInfo=%#x u32ErrCode=%#x instrlen=%#x\n", u32IntrInfo, u32ErrCode, cbInstr));
     rc  = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, u32IntrInfo);
     if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntrInfo))
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE, u32ErrCode);
     rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH, cbInstr);
     AssertRCReturn(rc, rc);
-
-    Assert(uIntrType != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT);
     return rc;
 }
 
