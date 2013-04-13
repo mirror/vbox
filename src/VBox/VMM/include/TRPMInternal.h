@@ -233,6 +233,16 @@ typedef struct TRPMCPU
 
     /** Previous trap vector # - for debugging. */
     RTGCUINT                uPrevVector;
+
+    /** Instruction length for software interrupts and software exceptions (#BP,
+     *  #OF) */
+    uint8_t                 cbInstr;
+
+    /** Saved instruction length. */
+    uint8_t                 cbSavedInstr;
+
+    /** Padding. */
+    uint8_t                 au8Padding[2];
 } TRPMCPU;
 
 /** Pointer to TRPMCPU Data. */

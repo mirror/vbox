@@ -50,7 +50,7 @@
  * @param   pu8TrapNo               Where to store the trap number.
  * @param   pEnmType                Where to store the trap type
  */
-VMMDECL(int)  TRPMQueryTrap(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType)
+VMMDECL(int) TRPMQueryTrap(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType)
 {
     /*
      * Check if we have a trap at present.
@@ -77,7 +77,7 @@ VMMDECL(int)  TRPMQueryTrap(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmTyp
  * @returns The current trap number.
  * @param   pVCpu                   Pointer to the VMCPU.
  */
-VMMDECL(uint8_t)  TRPMGetTrapNo(PVMCPU pVCpu)
+VMMDECL(uint8_t) TRPMGetTrapNo(PVMCPU pVCpu)
 {
     AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
     return (uint8_t)pVCpu->trpm.s.uActiveVector;
@@ -93,19 +93,19 @@ VMMDECL(uint8_t)  TRPMGetTrapNo(PVMCPU pVCpu)
  * @returns Error code.
  * @param   pVCpu                   Pointer to the VMCPU.
  */
-VMMDECL(RTGCUINT)  TRPMGetErrorCode(PVMCPU pVCpu)
+VMMDECL(RTGCUINT) TRPMGetErrorCode(PVMCPU pVCpu)
 {
     AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
 #ifdef VBOX_STRICT
     switch (pVCpu->trpm.s.uActiveVector)
     {
-        case 0x0a:
-        case 0x0b:
-        case 0x0c:
-        case 0x0d:
-        case 0x0e:
-        case 0x11:
-        case 0x08:
+        case X86_XCPT_TS:
+        case X86_XCPT_NP:
+        case X86_XCPT_SS:
+        case X86_XCPT_GP:
+        case X86_XCPT_PF:
+        case X86_XCPT_AC:
+        case X86_XCPT_DF:
             break;
         default:
             AssertMsgFailed(("This trap (%#x) doesn't have any error code\n", pVCpu->trpm.s.uActiveVector));
@@ -131,6 +131,24 @@ VMMDECL(RTGCUINTPTR) TRPMGetFaultAddress(PVMCPU pVCpu)
     AssertMsg(pVCpu->trpm.s.uActiveVector == 0xe, ("Not trap 0e!\n"));
     return pVCpu->trpm.s.uActiveCR2;
 }
+
+
+/**
+ * Gets the instruction-length for the current trap (only relevant for software
+ * interrupts and software exceptions #BP and #OF).
+ *
+ * The caller is responsible for making sure there is an active trap 0x0e when
+ * making this request.
+ *
+ * @returns Fault address associated with the trap.
+ * @param   pVCpu                   Pointer to the VMCPU.
+ */
+VMMDECL(uint8_t) TRPMGetInstrLength(PVMCPU pVCpu)
+{
+    AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
+    return pVCpu->trpm.s.cbInstr;
+}
+
 
 
 /**
@@ -172,7 +190,7 @@ VMMDECL(int) TRPMResetTrap(PVMCPU pVCpu)
  * @param   u8TrapNo            The trap vector to assert.
  * @param   enmType             Trap type.
  */
-VMMDECL(int)  TRPMAssertTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
+VMMDECL(int) TRPMAssertTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
 {
     Log2(("TRPMAssertTrap: u8TrapNo=%02x type=%d\n", u8TrapNo, enmType));
 
@@ -189,6 +207,40 @@ VMMDECL(int)  TRPMAssertTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
     pVCpu->trpm.s.enmActiveType               = enmType;
     pVCpu->trpm.s.uActiveErrorCode            = ~(RTGCUINT)0;
     pVCpu->trpm.s.uActiveCR2                  = 0xdeadface;
+    pVCpu->trpm.s.cbInstr                     = UINT8_MAX;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Assert a page-fault exception.
+ *
+ * The caller is responsible for making sure there is no active trap
+ * when making this request.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu               Pointer to the VMCPU.
+ * @param   uCR2                The new fault address.
+ * @param   uErrorCode          The error code for the page-fault.
+ */
+VMMDECL(int) TRPMAssertXcptPF(PVMCPU pVCpu, RTGCUINTPTR uCR2, RTGCUINT uErrorCode)
+{
+    Log2(("TRPMAssertXcptPF: uCR2=%RGv uErrorCode=%RGv\n", uCR2, uErrorCode)); /** @todo RTGCUINT to be fixed. */
+
+    /*
+     * Cannot assert a trap when one is already active.
+     */
+    if (pVCpu->trpm.s.uActiveVector != ~0U)
+    {
+        AssertMsgFailed(("CPU%d: Active trap %#x\n", pVCpu->idCpu, pVCpu->trpm.s.uActiveVector));
+        return VERR_TRPM_ACTIVE_TRAP;
+    }
+
+    pVCpu->trpm.s.uActiveVector               = X86_XCPT_PF;
+    pVCpu->trpm.s.enmActiveType               = TRPM_TRAP;
+    pVCpu->trpm.s.uActiveErrorCode            = uErrorCode;
+    pVCpu->trpm.s.uActiveCR2                  = uCR2;
+    pVCpu->trpm.s.cbInstr                     = UINT8_MAX;
     return VINF_SUCCESS;
 }
 
@@ -203,7 +255,7 @@ VMMDECL(int)  TRPMAssertTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
  * @param   pVCpu               Pointer to the VMCPU.
  * @param   uErrorCode          The new error code.
  */
-VMMDECL(void)  TRPMSetErrorCode(PVMCPU pVCpu, RTGCUINT uErrorCode)
+VMMDECL(void) TRPMSetErrorCode(PVMCPU pVCpu, RTGCUINT uErrorCode)
 {
     Log2(("TRPMSetErrorCode: uErrorCode=%RGv\n", uErrorCode)); /** @todo RTGCUINT mess! */
     AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
@@ -226,8 +278,8 @@ VMMDECL(void)  TRPMSetErrorCode(PVMCPU pVCpu, RTGCUINT uErrorCode)
 
 
 /**
- * Sets the error code of the current trap.
- * (This function is for use in trap handlers and such.)
+ * Sets the fault address of the current #PF trap. (This function is for use in
+ * trap handlers and such.)
  *
  * The caller is responsible for making sure there is an active trap 0e
  * when making this request.
@@ -235,12 +287,35 @@ VMMDECL(void)  TRPMSetErrorCode(PVMCPU pVCpu, RTGCUINT uErrorCode)
  * @param   pVCpu               Pointer to the VMCPU.
  * @param   uCR2                The new fault address (cr2 register).
  */
-VMMDECL(void)  TRPMSetFaultAddress(PVMCPU pVCpu, RTGCUINTPTR uCR2)
+VMMDECL(void) TRPMSetFaultAddress(PVMCPU pVCpu, RTGCUINTPTR uCR2)
 {
     Log2(("TRPMSetFaultAddress: uCR2=%RGv\n", uCR2));
     AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
-    AssertMsg(pVCpu->trpm.s.uActiveVector == 0xe, ("Not trap 0e!\n"));
+    AssertMsg(pVCpu->trpm.s.uActiveVector == X86_XCPT_PF, ("Not trap 0e!\n"));
     pVCpu->trpm.s.uActiveCR2 = uCR2;
+}
+
+
+/**
+ * Sets the instruction-length of the current trap (relevant for software
+ * interrupts and software exceptions like #BP, #OF).
+ *
+ * The caller is responsible for making sure there is an active trap 0e
+ * when making this request.
+ *
+ * @param   pVCpu               Pointer to the VMCPU.
+ * @param   cbInstr             The instruction length.
+ */
+VMMDECL(void) TRPMSetInstrLength(PVMCPU pVCpu, uint8_t cbInstr)
+{
+    Log2(("TRPMSetInstrLength: cbInstr=%u\n", cbInstr));
+    AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
+    AssertMsg(   pVCpu->trpm.s.enmActiveType == TRPM_SOFTWARE_INT
+              || (   pVCpu->trpm.s.enmActiveType == TRPM_TRAP
+                  && (   pVCpu->trpm.s.uActiveVector == X86_XCPT_BP
+                      || pVCpu->trpm.s.uActiveVector == X86_XCPT_OF)),
+              ("Invalid trap type %#x\n", pVCpu->trpm.s.enmActiveType));
+    pVCpu->trpm.s.cbInstr = cbInstr;
 }
 
 
@@ -268,7 +343,7 @@ VMMDECL(bool) TRPMIsSoftwareInterrupt(PVMCPU pVCpu)
  * @returns true if trap active, false if not.
  * @param   pVCpu               Pointer to the VMCPU.
  */
-VMMDECL(bool)  TRPMHasTrap(PVMCPU pVCpu)
+VMMDECL(bool) TRPMHasTrap(PVMCPU pVCpu)
 {
     return pVCpu->trpm.s.uActiveVector != ~0U;
 }
@@ -285,8 +360,11 @@ VMMDECL(bool)  TRPMHasTrap(PVMCPU pVCpu)
  * @param   puErrorCode             Where to store the error code associated with some traps.
  *                                  ~0U is stored if the trap has no error code.
  * @param   puCR2                   Where to store the CR2 associated with a trap 0E.
+ * @param   pu8InstrLen             Where to store the instruction-length
+ *                                  associated with some traps.
  */
-VMMDECL(int)  TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2)
+VMMDECL(int) TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2,
+                               uint8_t *pu8InstrLen)
 {
     /*
      * Check if we have a trap at present.
@@ -302,7 +380,8 @@ VMMDECL(int)  TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnm
         *puErrorCode    = pVCpu->trpm.s.uActiveErrorCode;
     if (puCR2)
         *puCR2          = pVCpu->trpm.s.uActiveCR2;
-
+    if (pu8InstrLen)
+        *pu8InstrLen    = pVCpu->trpm.s.cbInstr;
     return VINF_SUCCESS;
 }
 
@@ -322,6 +401,7 @@ VMMDECL(void) TRPMSaveTrap(PVMCPU pVCpu)
     pVCpu->trpm.s.enmSavedType        = pVCpu->trpm.s.enmActiveType;
     pVCpu->trpm.s.uSavedErrorCode     = pVCpu->trpm.s.uActiveErrorCode;
     pVCpu->trpm.s.uSavedCR2           = pVCpu->trpm.s.uActiveCR2;
+    pVCpu->trpm.s.cbSavedInstr        = pVCpu->trpm.s.cbInstr;
 }
 
 
@@ -338,6 +418,7 @@ VMMDECL(void) TRPMRestoreTrap(PVMCPU pVCpu)
     pVCpu->trpm.s.enmActiveType       = pVCpu->trpm.s.enmSavedType;
     pVCpu->trpm.s.uActiveErrorCode    = pVCpu->trpm.s.uSavedErrorCode;
     pVCpu->trpm.s.uActiveCR2          = pVCpu->trpm.s.uSavedCR2;
+    pVCpu->trpm.s.cbInstr             = pVCpu->trpm.s.cbSavedInstr;
 }
 
 
@@ -787,6 +868,7 @@ VMMDECL(int) TRPMRaiseXcpt(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt)
     pVCpu->trpm.s.enmActiveType            = TRPM_TRAP;
     pVCpu->trpm.s.uActiveErrorCode         = 0xdeadbeef;
     pVCpu->trpm.s.uActiveCR2               = 0xdeadface;
+    pVCpu->trpm.s.cbInstr                  = UINT8_MAX;
     return VINF_EM_RAW_GUEST_TRAP;
 }
 
@@ -814,6 +896,7 @@ VMMDECL(int) TRPMRaiseXcptErr(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXc
     pVCpu->trpm.s.enmActiveType            = TRPM_TRAP;
     pVCpu->trpm.s.uActiveErrorCode         = uErr;
     pVCpu->trpm.s.uActiveCR2               = 0xdeadface;
+    pVCpu->trpm.s.cbInstr                  = UINT8_MAX;
     return VINF_EM_RAW_GUEST_TRAP;
 }
 
@@ -842,6 +925,7 @@ VMMDECL(int) TRPMRaiseXcptErrCR2(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT en
     pVCpu->trpm.s.enmActiveType            = TRPM_TRAP;
     pVCpu->trpm.s.uActiveErrorCode         = uErr;
     pVCpu->trpm.s.uActiveCR2               = uCR2;
+    pVCpu->trpm.s.cbInstr                  = UINT8_MAX;
     return VINF_EM_RAW_GUEST_TRAP;
 }
 

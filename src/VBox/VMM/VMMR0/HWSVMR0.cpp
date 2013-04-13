@@ -674,7 +674,7 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pvVMCB,
     if (TRPMHasTrap(pVCpu))
     {
         uint8_t     u8Vector;
-        rc = TRPMQueryTrapAll(pVCpu, &u8Vector, 0, 0, 0);
+        rc = TRPMQueryTrapAll(pVCpu, &u8Vector, 0, NULL, NULL, NULL);
         AssertRC(rc);
     }
 #endif
@@ -692,7 +692,7 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pvVMCB,
         Event.au64[0] = 0;
 
         /* If a new event is pending, then dispatch it now. */
-        rc = TRPMQueryTrapAll(pVCpu, &u8Vector, &enmType, &u32ErrorCode, 0);
+        rc = TRPMQueryTrapAll(pVCpu, &u8Vector, &enmType, &u32ErrorCode, NULL, NULL);
         AssertRC(rc);
         Assert(pCtx->eflags.Bits.u1IF == 1 || enmType == TRPM_TRAP);
         Assert(enmType != TRPM_SOFTWARE_INT);

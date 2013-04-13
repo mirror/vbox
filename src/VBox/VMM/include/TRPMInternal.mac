@@ -79,6 +79,9 @@ struc TRPMCPU
     .uSavedErrorCode    RTGCPTR_RES 1
     .uSavedCR2          RTGCPTR_RES 1
     .uPrevVector        RTGCPTR_RES 1
+    .cbInstr            resb 1
+    .cbSavedInstr       resb 1
+    .au8Padding         resb 2
 endstruc
 
 struc VBOXTSS
