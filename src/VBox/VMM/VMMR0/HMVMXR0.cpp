@@ -5873,6 +5873,9 @@ static int hmR0VmxInjectEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     const bool fBlockMovSS = (uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
     const bool fBlockSti   = (uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
 
+    Assert(!fBlockSti || (pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_RFLAGS));
+    Assert(!fBlockSti || pMixedCtx->eflags.Bits.u1IF);          /* Cannot set block-by-STI when interrupts are disabled. */
+
     int rc = VINF_SUCCESS;
     if (pVCpu->hm.s.Event.fPending)     /* First, inject any pending HM events. */
     {
@@ -5956,7 +5959,7 @@ static int hmR0VmxInjectEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     }
 
     /*
-     * There's no need to clear the entry-interruption information field here if we're not injecting anything.
+     * There's no need to clear the VM entry-interruption information field here if we're not injecting anything.
      * VT-x clears the valid bit on every VM-exit. See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
      */
     int rc2 = hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
@@ -6272,9 +6275,9 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
     }
 
     /* Validate. */
-    Assert(VMX_EXIT_INTERRUPTION_INFO_VALID(u32IntrInfo));              /* Bit 31 (Valid bit) must be set by caller. */
-    Assert(!VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(u32IntrInfo));       /* Bit 12 MBZ. */
-    Assert(!(u32IntrInfo & 0x7ffff000));                                /* Bits 30:12 MBZ. */
+    Assert(VMX_EXIT_INTERRUPTION_INFO_VALID(u32IntrInfo));          /* Bit 31 (Valid bit) must be set by caller. */
+    Assert(!VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(u32IntrInfo));   /* Bit 12 MBZ. */
+    Assert(!(u32IntrInfo & 0x7ffff000));                            /* Bits 30:12 MBZ. */
 
     /* Inject. */
     Log(("Injecting u32IntrInfo=%#x u32ErrCode=%#x instrlen=%#x\n", u32IntrInfo, u32ErrCode, cbInstr));
