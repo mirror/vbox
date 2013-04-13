@@ -33,22 +33,24 @@
  * @{
  */
 
-/**
- * Enable or disable tracking of Shadow GDT/LDT/TSS.
+/** Enable or disable tracking of Shadow GDT/LDT/TSS.
  * @{
  */
-#define SELM_TRACK_SHADOW_GDT_CHANGES
-#define SELM_TRACK_SHADOW_LDT_CHANGES
-#define SELM_TRACK_SHADOW_TSS_CHANGES
+#if defined(VBOX_WITH_RAW_MODE) || defined(DOXYGEN_RUNNING)
+# define SELM_TRACK_SHADOW_GDT_CHANGES
+# define SELM_TRACK_SHADOW_LDT_CHANGES
+# define SELM_TRACK_SHADOW_TSS_CHANGES
+#endif
 /** @} */
 
-/**
- * Enable or disable tracking of Guest GDT/LDT/TSS.
+/** Enable or disable tracking of Guest GDT/LDT/TSS.
  * @{
  */
-#define SELM_TRACK_GUEST_GDT_CHANGES
-#define SELM_TRACK_GUEST_LDT_CHANGES
-#define SELM_TRACK_GUEST_TSS_CHANGES
+#if defined(VBOX_WITH_RAW_MODE) || defined(DOXYGEN_RUNNING)
+# define SELM_TRACK_GUEST_GDT_CHANGES
+# define SELM_TRACK_GUEST_LDT_CHANGES
+# define SELM_TRACK_GUEST_TSS_CHANGES
+#endif
 /** @} */
 
 
@@ -97,6 +99,7 @@ typedef struct SELM
      * See SELM2VM(). */
     RTINT                   offVM;
 
+/** @todo #ifdef VBOX_WITH_RAW_MODE */
     /** Flat CS, DS, 64 bit mode CS, TSS & trap 8 TSS. */
     RTSEL                   aHyperSel[SELM_HYPER_SEL_MAX];
 

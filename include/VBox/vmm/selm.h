@@ -94,11 +94,13 @@ VMMR3DECL(int)          SELMR3InitFinalize(PVM pVM);
 VMMR3DECL(void)         SELMR3Relocate(PVM pVM);
 VMMR3DECL(int)          SELMR3Term(PVM pVM);
 VMMR3DECL(void)         SELMR3Reset(PVM pVM);
+# ifdef VBOX_WITH_RAW_MODE
+VMMR3DECL(void)         SELMR3DisableMonitoring(PVM pVM);
 VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)          SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu);
+# endif
 VMMR3DECL(int)          SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInfo);
 VMMR3DECL(int)          SELMR3GetShadowSelectorInfo(PVM pVM, RTSEL Sel, PDBGFSELINFO pSelInfo);
-VMMR3DECL(void)         SELMR3DisableMonitoring(PVM pVM);
 VMMR3DECL(void)         SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMsg);
 VMMR3DECL(void)         SELMR3DumpHyperGDT(PVM pVM);
 VMMR3DECL(void)         SELMR3DumpHyperLDT(PVM pVM);
@@ -106,9 +108,9 @@ VMMR3DECL(void)         SELMR3DumpGuestGDT(PVM pVM);
 VMMR3DECL(void)         SELMR3DumpGuestLDT(PVM pVM);
 VMMR3DECL(bool)         SELMR3CheckTSS(PVM pVM);
 VMMR3DECL(int)          SELMR3DebugCheck(PVM pVM);
-#ifdef VBOX_WITH_SAFE_STR
+# ifdef VBOX_WITH_SAFE_STR
 VMMR3DECL(bool)         SELMR3CheckShadowTR(PVM pVM);
-#endif
+# endif
 
 /** @def SELMR3_DEBUG_CHECK
  * Invokes SELMR3DebugCheck in stricts builds. */

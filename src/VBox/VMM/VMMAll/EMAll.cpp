@@ -1536,8 +1536,10 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
         }
 # endif
+# ifdef VBOX_WITH_RAW_MODE
         if ((val ^ oldval) & X86_CR4_VME)
             VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+# endif
 
         rc2 = PGMChangeMode(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR4(pVCpu), CPUMGetGuestEFER(pVCpu));
         return rc2 == VINF_SUCCESS ? rc : rc2;

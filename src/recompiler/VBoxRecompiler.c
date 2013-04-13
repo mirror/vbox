@@ -1795,8 +1795,10 @@ void remR3FlushPage(CPUX86State *env, RTGCPTR GCPtr)
     Assert(pCtx);
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
+#ifdef VBOX_WITH_RAW_MODE
     if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
         VMCPU_FF_SET(env->pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+#endif
     pCtx->cr4 = env->cr[4];
 
     /*
@@ -1916,8 +1918,10 @@ void remR3FlushTLB(CPUX86State *env, bool fGlobal)
     Assert(pCtx);
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
+#ifdef VBOX_WITH_RAW_MODE
     if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
         VMCPU_FF_SET(env->pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+#endif
     pCtx->cr4 = env->cr[4];
 
     /*
@@ -1956,8 +1960,10 @@ void remR3ChangeCpuMode(CPUX86State *env)
     Assert(pCtx);
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
+#ifdef VBOX_WITH_RAW_MODE
     if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
         VMCPU_FF_SET(env->pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+#endif
     pCtx->cr4 = env->cr[4];
 #ifdef TARGET_X86_64
     efer = env->efer;
@@ -2643,8 +2649,10 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     pCtx->cr0           = pVM->rem.s.Env.cr[0];
     pCtx->cr2           = pVM->rem.s.Env.cr[2];
     pCtx->cr3           = pVM->rem.s.Env.cr[3];
+#ifdef VBOX_WITH_RAW_MODE
     if ((pVM->rem.s.Env.cr[4] ^ pCtx->cr4) & X86_CR4_VME)
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+#endif
     pCtx->cr4           = pVM->rem.s.Env.cr[4];
 
     for (i = 0; i < 8; i++)
@@ -2655,7 +2663,9 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     {
         pCtx->gdtr.pGdt = pVM->rem.s.Env.gdt.base;
         STAM_COUNTER_INC(&gStatREMGDTChange);
+#ifdef VBOX_WITH_RAW_MODE
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+#endif
     }
 
     pCtx->idtr.cbIdt    = pVM->rem.s.Env.idt.limit;
@@ -2663,7 +2673,9 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     {
         pCtx->idtr.pIdt = pVM->rem.s.Env.idt.base;
         STAM_COUNTER_INC(&gStatREMIDTChange);
+#ifdef VBOX_WITH_RAW_MODE
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
+#endif
     }
 
     if (    pCtx->ldtr.Sel      != pVM->rem.s.Env.ldt.selector
@@ -2681,7 +2693,9 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         pCtx->ldtr.u32Limit = pVM->rem.s.Env.ldt.limit;
         pCtx->ldtr.Attr.u   = (pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF;
         STAM_COUNTER_INC(&gStatREMLDTRChange);
+#ifdef VBOX_WITH_RAW_MODE
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
+#endif
     }
 
     if (    pCtx->tr.Sel      != pVM->rem.s.Env.tr.selector
@@ -2708,7 +2722,9 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         if (pCtx->tr.Attr.u)
             pCtx->tr.Attr.u |= DESC_TSS_BUSY_MASK >> 8;
         STAM_COUNTER_INC(&gStatREMTRChange);
+#ifdef VBOX_WITH_RAW_MODE
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+#endif
     }
 
     /* Sysenter MSR */
@@ -2865,8 +2881,10 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
     pCtx->cr0           = pVM->rem.s.Env.cr[0];
     pCtx->cr2           = pVM->rem.s.Env.cr[2];
     pCtx->cr3           = pVM->rem.s.Env.cr[3];
+#ifdef VBOX_WITH_RAW_MODE
     if ((pVM->rem.s.Env.cr[4] ^ pCtx->cr4) & X86_CR4_VME)
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+#endif
     pCtx->cr4           = pVM->rem.s.Env.cr[4];
 
     for (i = 0; i < 8; i++)
@@ -2877,7 +2895,9 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
     {
         pCtx->gdtr.pGdt     = (RTGCPTR)pVM->rem.s.Env.gdt.base;
         STAM_COUNTER_INC(&gStatREMGDTChange);
+#ifdef VBOX_WITH_RAW_MODE
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+#endif
     }
 
     pCtx->idtr.cbIdt    = pVM->rem.s.Env.idt.limit;
@@ -2885,7 +2905,9 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
     {
         pCtx->idtr.pIdt     = (RTGCPTR)pVM->rem.s.Env.idt.base;
         STAM_COUNTER_INC(&gStatREMIDTChange);
+#ifdef VBOX_WITH_RAW_MODE
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
+#endif
     }
 
     if (    pCtx->ldtr.Sel      != pVM->rem.s.Env.ldt.selector
@@ -2903,7 +2925,9 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
         pCtx->ldtr.u32Limit = pVM->rem.s.Env.ldt.limit;
         pCtx->ldtr.Attr.u   = (pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF;
         STAM_COUNTER_INC(&gStatREMLDTRChange);
+#ifdef VBOX_WITH_RAW_MODE
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
+#endif
     }
 
     if (    pCtx->tr.Sel      != pVM->rem.s.Env.tr.selector
@@ -2930,7 +2954,9 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
         if (pCtx->tr.Attr.u)
             pCtx->tr.Attr.u |= DESC_TSS_BUSY_MASK >> 8;
         STAM_COUNTER_INC(&gStatREMTRChange);
+#ifdef VBOX_WITH_RAW_MODE
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+#endif
     }
 
     /* Sysenter MSR */

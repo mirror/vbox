@@ -423,11 +423,12 @@ static VBOXIDTE_GENERIC     g_aIdt[256] =
 };
 
 
-/** Enable or disable tracking of Guest's IDT. */
+#ifdef VBOX_WITH_RAW_MODE
+/ ** Enable or disable tracking of Guest's IDT. */
 #define TRPM_TRACK_GUEST_IDT_CHANGES
-
 /** Enable or disable tracking of Shadow IDT. */
-#define TRPM_TRACK_SHADOW_IDT_CHANGES
+# define TRPM_TRACK_SHADOW_IDT_CHANGES
+#endif
 
 /** TRPM saved state version. */
 #define TRPM_SAVED_STATE_VERSION        9
@@ -439,7 +440,9 @@ static VBOXIDTE_GENERIC     g_aIdt[256] =
 *******************************************************************************/
 static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+#ifdef TRPM_TRACK_GUEST_IDT_CHANGES
 static DECLCALLBACK(int) trpmR3GuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
+#endif
 
 
 /**
@@ -570,11 +573,13 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->trpm.s.StatTrap0dDisasm,            STAMTYPE_PROFILE, "/TRPM/RC/Traps/0d/Disasm",   STAMUNIT_TICKS_PER_CALL, "Profiling disassembly part of trpmGCTrap0dHandler.");
     STAM_REG(pVM, &pVM->trpm.s.StatTrap0dRdTsc,             STAMTYPE_COUNTER, "/TRPM/RC/Traps/0d/RdTsc",        STAMUNIT_OCCURENCES, "Number of RDTSC #GPs.");
 
+#ifdef VBOX_WITH_RAW_MODE
     /*
      * Default action when entering raw mode for the first time
      */
     PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
+#endif
     return 0;
 }
 
@@ -772,11 +777,13 @@ VMMR3DECL(void) TRPMR3Reset(PVM pVM)
     memset(pVM->trpm.s.aGuestTrapHandler, 0, sizeof(pVM->trpm.s.aGuestTrapHandler));
     TRPMR3Relocate(pVM, 0);
 
+#ifdef VBOX_WITH_RAW_MODE
     /*
      * Default action when entering raw mode for the first time
      */
     PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
+#endif
 }
 
 
@@ -846,7 +853,7 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
     }
     SSMR3PutBool(pSSM,      pTrpm->fDisableMonitoring);
     PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies 1 VCPU */
-    SSMR3PutUInt(pSSM,      VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT));
+    SSMR3PutUInt(pSSM,      VM_WHEN_RAW_MODE(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT), 0));
     SSMR3PutMem(pSSM,       &pTrpm->au32IdtPatched[0], sizeof(pTrpm->au32IdtPatched));
     SSMR3PutU32(pSSM, ~0);              /* separator. */
 
@@ -946,12 +953,14 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
         AssertMsgFailed(("fSyncIDT=%#x\n", fSyncIDT));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
+#ifdef VBOX_WITH_RAW_MODE
     if (fSyncIDT)
     {
         PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies 1 VCPU */
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
     }
     /* else: cleared by reset call above. */
+#endif
 
     SSMR3GetMem(pSSM, &pTrpm->au32IdtPatched[0], sizeof(pTrpm->au32IdtPatched));
 
@@ -999,6 +1008,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_RAW_MODE
 
 /**
  * Check if gate handlers were updated
@@ -1020,7 +1030,6 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
         return VINF_SUCCESS;    /* Nothing to do */
     }
 
-#ifdef VBOX_WITH_RAW_MODE
     if (fRawRing0 && CSAMIsEnabled(pVM))
     {
         /* Clear all handlers */
@@ -1032,7 +1041,6 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
         /* Scan them all (only the first time) */
         CSAMR3CheckGates(pVM, 0, 256);
     }
-#endif /* VBOX_WITH_RAW_MODE */
 
     /*
      * Get the IDTR.
@@ -1045,7 +1053,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
         return DBGFSTOP(pVM);
     }
 
-#ifdef TRPM_TRACK_GUEST_IDT_CHANGES
+# ifdef TRPM_TRACK_GUEST_IDT_CHANGES
     /*
      * Check if Guest's IDTR has changed.
      */
@@ -1067,7 +1075,6 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
             rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
                                              0, trpmR3GuestIDTWriteHandler, "trpmRCGuestIDTWriteHandler", 0, "Guest IDT write access handler");
 
-# ifdef VBOX_WITH_RAW_MODE
             if (rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT)
             {
                 /* Could be a conflict with CSAM */
@@ -1078,7 +1085,6 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
                 rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
                                                  0, trpmR3GuestIDTWriteHandler, "trpmRCGuestIDTWriteHandler", 0, "Guest IDT write access handler");
             }
-# endif /* VBOX_WITH_RAW_MODE */
 
             AssertRCReturn(rc, rc);
         }
@@ -1086,7 +1092,7 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
         /* Update saved Guest IDTR. */
         pVM->trpm.s.GuestIdtr = IDTR;
     }
-#endif
+# endif
 
     /*
      * Sync the interrupt gate.
@@ -1124,7 +1130,7 @@ VMMR3DECL(void) TRPMR3DisableMonitoring(PVM pVM)
     /*
      * Deregister any virtual handlers.
      */
-#ifdef TRPM_TRACK_GUEST_IDT_CHANGES
+# ifdef TRPM_TRACK_GUEST_IDT_CHANGES
     if (pVM->trpm.s.GuestIdtr.pIdt != RTRCPTR_MAX)
     {
         if (!pVM->trpm.s.fSafeToDropGuestIDTMonitoring)
@@ -1135,16 +1141,16 @@ VMMR3DECL(void) TRPMR3DisableMonitoring(PVM pVM)
         pVM->trpm.s.GuestIdtr.pIdt = RTRCPTR_MAX;
     }
     pVM->trpm.s.GuestIdtr.cbIdt = 0;
-#endif
+# endif
 
-#ifdef TRPM_TRACK_SHADOW_IDT_CHANGES
+# ifdef TRPM_TRACK_SHADOW_IDT_CHANGES
     if (pVM->trpm.s.pvMonShwIdtRC != RTRCPTR_MAX)
     {
         int rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.pvMonShwIdtRC);
         AssertRC(rc);
         pVM->trpm.s.pvMonShwIdtRC = RTRCPTR_MAX;
     }
-#endif
+# endif
 
     PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
@@ -1180,7 +1186,6 @@ static DECLCALLBACK(int) trpmR3GuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
-#ifdef VBOX_WITH_RAW_MODE
 
 /**
  * Clear passthrough interrupt gate handler (reset to default handler)
