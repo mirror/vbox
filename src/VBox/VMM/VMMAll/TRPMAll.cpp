@@ -128,7 +128,7 @@ VMMDECL(RTGCUINT) TRPMGetErrorCode(PVMCPU pVCpu)
 VMMDECL(RTGCUINTPTR) TRPMGetFaultAddress(PVMCPU pVCpu)
 {
     AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
-    AssertMsg(pVCpu->trpm.s.uActiveVector == 0xe, ("Not trap 0e!\n"));
+    AssertMsg(pVCpu->trpm.s.uActiveVector == X86_XCPT_PF, ("Not page-fault trap!\n"));
     return pVCpu->trpm.s.uActiveCR2;
 }
 
@@ -148,7 +148,6 @@ VMMDECL(uint8_t) TRPMGetInstrLength(PVMCPU pVCpu)
     AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
     return pVCpu->trpm.s.cbInstr;
 }
-
 
 
 /**
@@ -263,10 +262,10 @@ VMMDECL(void) TRPMSetErrorCode(PVMCPU pVCpu, RTGCUINT uErrorCode)
 #ifdef VBOX_STRICT
     switch (pVCpu->trpm.s.uActiveVector)
     {
-        case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e:
+        case X86_XCPT_TS: case X86_XCPT_NP: case X86_XCPT_SS: case X86_XCPT_GP: case X86_XCPT_PF:
             AssertMsg(uErrorCode != ~(RTGCUINT)0, ("Invalid uErrorCode=%#x u8TrapNo=%d\n", uErrorCode, pVCpu->trpm.s.uActiveVector));
             break;
-        case 0x11: case 0x08:
+        case X86_XCPT_AC: case X86_XCPT_DF:
             AssertMsg(uErrorCode == 0,            ("Invalid uErrorCode=%#x u8TrapNo=%d\n", uErrorCode, pVCpu->trpm.s.uActiveVector));
             break;
         default:
