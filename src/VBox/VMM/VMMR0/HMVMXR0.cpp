@@ -4725,7 +4725,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     int rc = hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
-    AssertRCReturn(rc, rc);
+    AssertRC(rc);
     if (VMX_IDT_VECTORING_INFO_VALID(pVmxTransient->uIdtVectoringInfo))
     {
         rc = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
@@ -4748,15 +4748,13 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         if (uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT)
         {
             if (   hmR0VmxIsBenignXcpt(uIdtVector)
-                || hmR0VmxIsBenignXcpt(uExitVector)
-                || (   hmR0VmxIsContributoryXcpt(uIdtVector)
-                    && uExitVector == X86_XCPT_PF))
+                || hmR0VmxIsBenignXcpt(uExitVector))
             {
                 enmReflect = VMXREFLECTXCPT_XCPT;
             }
-            else if (   (pVCpu->hm.s.vmx.u32XcptBitmap & RT_BIT(X86_XCPT_PF))
-                     && uIdtVector == X86_XCPT_PF
-                     && uExitVector == X86_XCPT_PF)
+            else if (   uExitVector == X86_XCPT_PF
+                     && (   hmR0VmxIsContributoryXcpt(uIdtVector)
+                         || uIdtVector == X86_XCPT_PF))
             {
                 pVmxTransient->fVectoringPF = true;
             }
@@ -4767,7 +4765,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             }
             else if (   hmR0VmxInterceptingContributoryXcptsOrPF(pVCpu)
                      && uIdtVector == X86_XCPT_PF
-                     && hmR0VmxIsContributoryXcpt(uExitVector))
+                     && (   hmR0VmxIsContributoryXcpt(uExitVector)
+                         || uExitVector == X86_XCPT_PF))
             {
                 enmReflect = VMXREFLECTXCPT_DF;
             }
@@ -4820,7 +4819,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 break;
             }
 
-            default:    /* shut up gcc. */
+            default:
+                Assert(rc == VINF_SUCCESS);
                 break;
         }
     }
