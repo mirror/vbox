@@ -4737,9 +4737,9 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
 
         typedef enum
         {
-            VMXREFLECTXCPT_XCPT,    /* Reflect Idt-vectoring exception. */
-            VMXREFLECTXCPT_DF,      /* Reflect a double-fault to the guest. */
-            VMXREFLECTXCPT_TF,      /* Reflect a triple fault state to the VMM. */
+            VMXREFLECTXCPT_XCPT,    /* Reflect the exception to the guest or for further evaluation by VMM. */
+            VMXREFLECTXCPT_DF,      /* Reflect the exception as a double-fault to the guest. */
+            VMXREFLECTXCPT_TF,      /* Indicate a triple faulted state to the VMM. */
             VMXREFLECTXCPT_NONE     /* Nothing to reflect. */
         } VMXREFLECTXCPT;
 
@@ -4753,10 +4753,10 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 enmReflect = VMXREFLECTXCPT_XCPT;
             }
             else if (   uExitVector == X86_XCPT_PF
-                     && (   hmR0VmxIsContributoryXcpt(uIdtVector)
-                         || uIdtVector == X86_XCPT_PF))
+                     && uIdtVector == X86_XCPT_PF)
             {
                 pVmxTransient->fVectoringPF = true;
+                enmReflect = VMXREFLECTXCPT_XCPT;
             }
             else if (   hmR0VmxIsContributoryXcpt(uIdtVector)
                      && hmR0VmxIsContributoryXcpt(uExitVector))
@@ -4784,7 +4784,6 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             enmReflect = VMXREFLECTXCPT_XCPT;
         }
 
-        Assert(pVmxTransient->fVectoringPF == false || enmReflect == VMXREFLECTXCPT_NONE);
         switch (enmReflect)
         {
             case VMXREFLECTXCPT_XCPT:
@@ -8825,6 +8824,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
         {
             /* A guest page-fault occurred during delivery of a page-fault. Inject #DF. */
             Log(("Pending #DF due to vectoring #PF.\n"));
+            pVCpu->hm.s.Event.fPending = false;
             rc = hmR0VmxSetPendingXcptDF(pVCpu, pMixedCtx);
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
@@ -8865,6 +8865,8 @@ static DECLCALLBACK(int) hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
     }
 #endif
 
+    Assert(!pVmxTransient->fVectoringPF || pVCpu->hm.s.Event.fPending);
+
     rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
@@ -8897,12 +8899,13 @@ static DECLCALLBACK(int) hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
             TRPMResetTrap(pVCpu);
             pMixedCtx->cr2 = pVmxTransient->uExitQualification;
             hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
-                                   pVmxTransient->cbInstr, uGstErrorCode, pMixedCtx->cr2);
+                                   0 /* cbInstr */, uGstErrorCode, pMixedCtx->cr2);
         }
         else
         {
             /* A guest page-fault occurred during delivery of a page-fault. Inject #DF. */
             TRPMResetTrap(pVCpu);
+            pVCpu->hm.s.Event.fPending = false;
             hmR0VmxSetPendingXcptDF(pVCpu, pMixedCtx);
             Log(("#PF: Pending #DF due to vectoring #PF\n"));
         }
