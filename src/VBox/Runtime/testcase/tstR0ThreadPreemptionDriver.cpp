@@ -67,7 +67,7 @@ static DECLCALLBACK(int) MyThreadProc(RTTHREAD hSelf, void *pvCpuIdx)
         {
             ASMNopPause();
         } while (RTTimeMilliTS() - tsStart < 8);
-        RTThreadSleep(8);
+        RTThreadSleep(4);
     }
 
     return VINF_SUCCESS;
