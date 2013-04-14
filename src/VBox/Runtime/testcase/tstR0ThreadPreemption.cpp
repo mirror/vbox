@@ -102,6 +102,11 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             RTThreadPreemptDisable(&State);
             if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
             {
+#ifdef RT_OS_DARWIN
+                uint64_t const cNsMax = UINT64_C(8)*1000U*1000U*1000U;
+#else
+                uint64_t const cNsMax = UINT64_C(2)*1000U*1000U*1000U;
+#endif
                 if (ASMIntAreEnabled())
                 {
                     uint64_t    u64StartTS    = RTTimeNanoTS();
@@ -117,8 +122,8 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
                         cNanosSysElapsed = RTTimeSystemNanoTS() - u64StartSysTS;
                         cLoops++;
                     } while (   !fPending
-                             && cNanosElapsed    < UINT64_C(2)*1000U*1000U*1000U
-                             && cNanosSysElapsed < UINT64_C(2)*1000U*1000U*1000U
+                             && cNanosElapsed    < cNsMax
+                             && cNanosSysElapsed < cNsMax
                              && cLoops           < 100U*_1M);
                     if (!fPending)
                         RTStrPrintf(pszErr, cchErr, "!Preempt not pending after %'llu loops / %'llu ns / %'llu ns (sys)",
