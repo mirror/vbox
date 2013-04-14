@@ -4648,14 +4648,14 @@ DECLINLINE(bool) hmR0VmxIsBenignXcpt(const uint32_t uVector)
 
 
 /**
- * Determines if we are intercepting any contributory exceptions or page-faults.
+ * Determines if we are intercepting any contributory exceptions.
  *
  * @returns true if we are intercepting them, false otherwise.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-DECLINLINE(bool) hmR0VmxInterceptingContributoryXcptsOrPF(PVMCPU pVCpu)
+DECLINLINE(bool) hmR0VmxInterceptingContributoryXcpts(PVMCPU pVCpu)
 {
-    if (pVCpu->hm.s.vmx.u32XcptBitmap & (VMX_CONTRIBUTORY_XCPT_BITMAP | RT_BIT(X86_XCPT_PF)))
+    if (pVCpu->hm.s.vmx.u32XcptBitmap & VMX_CONTRIBUTORY_XCPT_BITMAP)
         return true;
     return false;
 }
@@ -4758,15 +4758,10 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 pVmxTransient->fVectoringPF = true;
                 enmReflect = VMXREFLECTXCPT_XCPT;
             }
-            else if (   hmR0VmxIsContributoryXcpt(uIdtVector)
-                     && hmR0VmxIsContributoryXcpt(uExitVector))
-            {
-                enmReflect = VMXREFLECTXCPT_DF;
-            }
-            else if (   hmR0VmxInterceptingContributoryXcptsOrPF(pVCpu)
-                     && uIdtVector == X86_XCPT_PF
-                     && (   hmR0VmxIsContributoryXcpt(uExitVector)
-                         || uExitVector == X86_XCPT_PF))
+            else if (   hmR0VmxInterceptingContributoryXcpts(pVCpu)
+                     && hmR0VmxIsContributoryXcpt(uExitVector)
+                     && (   hmR0VmxIsContributoryXcpt(uIdtVector)
+                         || uIdtVector == X86_XCPT_PF))
             {
                 enmReflect = VMXREFLECTXCPT_DF;
             }
