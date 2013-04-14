@@ -37,6 +37,7 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
+#include <iprt/time.h>
 #include <iprt/thread.h>
 #ifdef VBOX
 # include <VBox/sup.h>
@@ -60,7 +61,14 @@ static DECLCALLBACK(int) MyThreadProc(RTTHREAD hSelf, void *pvCpuIdx)
     RTThreadSetAffinity(&Affinity); /* ignore return code as it's not supported on all hosts. */
 
     while (!g_fTerminate)
-        RTThreadSleep(50);
+    {
+        uint64_t tsStart = RTTimeMilliTS();
+        do
+        {
+            ASMNopPause();
+        } while (RTTimeMilliTS() - tsStart < 8);
+        RTThreadSleep(8);
+    }
 
     return VINF_SUCCESS;
 }
@@ -192,9 +200,9 @@ int main(int argc, char **argv)
                             RTTHREADFLAGS_WAITABLE, "cpu=%u", i);
     }
 
-RTThreadSleep(250); /** @todo fix GIP initialization? */
 
     RTTestSub(hTest, "Pending Preemption");
+RTThreadSleep(250); /** @todo fix GIP initialization? */
     for (int i = 0; ; i++)
     {
         Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
@@ -202,7 +210,7 @@ RTThreadSleep(250); /** @todo fix GIP initialization? */
         Req.szMsg[0] = '\0';
         RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
                                                  TSTR0THREADPREMEPTION_IS_PENDING, 0, &Req.Hdr), VINF_SUCCESS);
-        if (    strcmp(Req.szMsg, "cLoops=1\n")
+        if (    strcmp(Req.szMsg, "!cLoops=1\n")
             ||  i >= 64)
         {
             if (Req.szMsg[0] == '!')
@@ -213,6 +221,8 @@ RTThreadSleep(250); /** @todo fix GIP initialization? */
         }
         if ((i % 3) == 0)
             RTThreadYield();
+        else if ((i % 16) == 0)
+            RTThreadSleep(8);
     }
 
     ASMAtomicWriteBool(&g_fTerminate, true);
