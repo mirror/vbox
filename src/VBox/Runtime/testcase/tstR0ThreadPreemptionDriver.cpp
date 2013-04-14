@@ -162,6 +162,22 @@ int main(int argc, char **argv)
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
 
     /*
+     * Is it trusty.
+     */
+    RTTestSub(hTest, "RTThreadPreemptIsPendingTrusty");
+    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
+    Req.Hdr.cbReq = sizeof(Req);
+    Req.szMsg[0] = '\0';
+    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
+                                             TSTR0THREADPREMEPTION_IS_TRUSTY, 0, &Req.Hdr), VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        return RTTestSummaryAndDestroy(hTest);
+    if (Req.szMsg[0] == '!')
+        RTTestIFailed("%s", &Req.szMsg[1]);
+    else if (Req.szMsg[0])
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
+
+    /*
      * Stay in ring-0 until preemption is pending.
      */
     RTTHREAD ahThreads[RTCPUSET_MAX_CPUS];

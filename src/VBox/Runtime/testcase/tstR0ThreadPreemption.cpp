@@ -91,6 +91,11 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             break;
         }
 
+        case TSTR0THREADPREMEPTION_IS_TRUSTY:
+            if (RTThreadPreemptIsPendingTrusty())
+                RTStrPrintf(pszErr, cchErr, "!Untrusty");
+            break;
+
         case TSTR0THREADPREMEPTION_IS_PENDING:
         {
             RTTHREADPREEMPTSTATE State = RTTHREADPREEMPTSTATE_INITIALIZER;
