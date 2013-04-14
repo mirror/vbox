@@ -4648,20 +4648,6 @@ DECLINLINE(bool) hmR0VmxIsBenignXcpt(const uint32_t uVector)
 
 
 /**
- * Determines if we are intercepting any contributory exceptions.
- *
- * @returns true if we are intercepting them, false otherwise.
- * @param   pVCpu       Pointer to the VMCPU.
- */
-DECLINLINE(bool) hmR0VmxInterceptingContributoryXcpts(PVMCPU pVCpu)
-{
-    if (pVCpu->hm.s.vmx.u32XcptBitmap & VMX_CONTRIBUTORY_XCPT_BITMAP)
-        return true;
-    return false;
-}
-
-
-/**
  * Sets an event as a pending event to be injected into the guest.
  *
  * @param   pVCpu               Pointer to the VMCPU.
@@ -4758,7 +4744,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 pVmxTransient->fVectoringPF = true;
                 enmReflect = VMXREFLECTXCPT_XCPT;
             }
-            else if (   hmR0VmxInterceptingContributoryXcpts(pVCpu)
+            else if (   (pVCpu->hm.s.vmx.u32XcptBitmap & VMX_CONTRIBUTORY_XCPT_BITMAP)
                      && hmR0VmxIsContributoryXcpt(uExitVector)
                      && (   hmR0VmxIsContributoryXcpt(uIdtVector)
                          || uIdtVector == X86_XCPT_PF))
