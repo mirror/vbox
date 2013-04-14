@@ -5693,7 +5693,7 @@ static void hmR0VmxUpdateTRPM(PVMCPU pVCpu)
             case VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT:
             case VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT:      /* #BP and #OF */
             case VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT:
-                enmTrapType = TRPM_TRAP;
+                enmTrapType = TRPM_TRAP;            /** @tod does #BP and #OF come under TRAP or SOFTWARE_INT?? */
                 break;
             default:
                 AssertMsgFailed(("Invalid trap type %#x\n", uVectorType));
@@ -5714,7 +5714,8 @@ static void hmR0VmxUpdateTRPM(PVMCPU pVCpu)
             TRPMSetFaultAddress(pVCpu, pVCpu->hm.s.Event.GCPtrFaultAddress);
         }
         else if (   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
-                 || uVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT)
+                 || uVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT
+                 || uVectorType == VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT)
         {
             AssertMsg(   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
                       || (uVector == X86_XCPT_BP || uVector == X86_XCPT_OF),
