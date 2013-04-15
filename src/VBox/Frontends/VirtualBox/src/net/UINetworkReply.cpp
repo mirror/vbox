@@ -38,82 +38,32 @@ class UINetworkReplyPrivateThread : public QThread
 public:
 
     /* Constructor: */
-    UINetworkReplyPrivateThread(const QNetworkRequest &request)
-        : m_request(request)
-        , m_iError(VINF_SUCCESS)
-        , m_pHttp(0)
-    {
-    }
+    UINetworkReplyPrivateThread(const QNetworkRequest &request);
 
-    /* API: */
+    /* API: Read stuff: */
     const QByteArray& readAll() const { return m_reply; }
+
+    /* API: Error stuff: */
     int error() const { return m_iError; }
 
-    /* API: Abort stuff: */
-    void abort()
-    {
-        /* Make sure http is created: */
-        if (!m_pHttp)
-            return;
-
-        /* Call for http abort: */
-        RTHttpAbort(m_pHttp);
-    }
+    /* API: HTTP stuff: */
+    void abort();
 
 private:
 
-    /* Thread runner: */
-    void run()
-    {
-        /* Init: */
-        RTR3InitExeNoArguments(RTR3INIT_FLAGS_SUPLIB);
+    /* Private API: HTTP stuff: */
+    int applyProxyRules();
+    int applyRawHeaders();
+    int performMainRequest();
 
-        /* Create: */
-        m_iError = RTHttpCreate(&m_pHttp);
+    /* Helper: Thread runner: */
+    void run();
 
-        /* Setup proxy: */
-        UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
-        if (proxyManager.proxyEnabled())
-        {
-            RTHttpSetProxy(m_pHttp,
-                           proxyManager.proxyHost().toAscii().constData(),
-                           proxyManager.proxyPort().toUInt(), 0, 0);
-        }
-
-        /* Do we have raw headers? */
-        QList<QByteArray> rawHeaders = m_request.rawHeaderList();
-        if (!rawHeaders.isEmpty())
-        {
-            /* We should format them first: */
-            QVector<QByteArray> formattedHeaderVector;
-            QVector<const char*> formattedHeaderPointerVector;
-            /* For each existing raw-header: */
-            foreach (const QByteArray &rawHeader, rawHeaders)
-            {
-                /* Prepare formatted representation: */
-                QString strFormattedString = QString("%1: %2").arg(QString(rawHeader), QString(m_request.rawHeader(rawHeader)));
-                formattedHeaderVector << strFormattedString.toAscii();
-                formattedHeaderPointerVector << formattedHeaderVector.last().constData();
-            }
-            const char **ppFormattedHeaders = formattedHeaderPointerVector.data();
-            RTHttpSetHeaders(m_pHttp, formattedHeaderPointerVector.size(), ppFormattedHeaders);
-        }
-
-        /* Acquire: */
-        if (RT_SUCCESS(m_iError))
-        {
-            char *pszBuf = 0;
-            m_iError = RTHttpGet(m_pHttp,
-                                 m_request.url().toString().toAscii().constData(),
-                                 &pszBuf);
-            m_reply = QByteArray(pszBuf);
-            RTMemFree(pszBuf);
-        }
-
-        /* Destroy: */
-        RTHttpDestroy(m_pHttp);
-        m_pHttp = 0;
-    }
+    /* Static helpers: HTTP stuff: */
+    static int abort(RTHTTP pHttp);
+    static int applyProxyRules(RTHTTP pHttp, const QString &strHostName, int iPort);
+    static int applyRawHeaders(RTHTTP pHttp, const QList<QByteArray> &headers, const QNetworkRequest &request);
+    static int performGetRequest(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply);
 
     /* Variables: */
     QNetworkRequest m_request;
@@ -121,6 +71,153 @@ private:
     RTHTTP m_pHttp;
     QByteArray m_reply;
 };
+
+UINetworkReplyPrivateThread::UINetworkReplyPrivateThread(const QNetworkRequest &request)
+    : m_request(request)
+    , m_iError(VINF_SUCCESS)
+    , m_pHttp(0)
+{
+}
+
+void UINetworkReplyPrivateThread::abort()
+{
+    /* Call for HTTP abort: */
+    abort(m_pHttp);
+}
+
+int UINetworkReplyPrivateThread::applyProxyRules()
+{
+    /* Make sure proxy is enabled in Proxy Manager: */
+    UIProxyManager proxyManager(vboxGlobal().settings().proxySettings());
+    if (!proxyManager.proxyEnabled())
+        return VINF_SUCCESS;
+
+    /* Apply proxy rules: */
+    return applyProxyRules(m_pHttp,
+                           proxyManager.proxyHost(),
+                           proxyManager.proxyPort().toUInt());
+}
+
+int UINetworkReplyPrivateThread::applyRawHeaders()
+{
+    /* Make sure we have a raw headers at all: */
+    QList<QByteArray> headers = m_request.rawHeaderList();
+    if (headers.isEmpty())
+        return VINF_SUCCESS;
+
+    /* Apply raw headers: */
+    return applyRawHeaders(m_pHttp, headers, m_request);
+}
+
+int UINetworkReplyPrivateThread::performMainRequest()
+{
+    /* Perform GET request: */
+    return performGetRequest(m_pHttp, m_request, m_reply);
+}
+
+void UINetworkReplyPrivateThread::run()
+{
+    /* Init: */
+    RTR3InitExeNoArguments(RTR3INIT_FLAGS_SUPLIB);
+
+    /* Create HTTP object: */
+    m_iError = RTHttpCreate(&m_pHttp);
+
+    /* Was HTTP created? */
+    if (RT_SUCCESS(m_iError) && m_pHttp)
+    {
+        /* Simulate try-catch block: */
+        do
+        {
+            /* Apply proxy-rules: */
+            m_iError = applyProxyRules();
+            if (!RT_SUCCESS(m_iError))
+                break;
+
+            /* Assign raw headers: */
+            m_iError = applyRawHeaders();
+            if (!RT_SUCCESS(m_iError))
+                break;
+
+            /* Perform main request: */
+            m_iError = performMainRequest();
+        }
+        while (0);
+    }
+
+    /* Destroy HTTP object: */
+    if (m_pHttp)
+    {
+        RTHttpDestroy(m_pHttp);
+        m_pHttp = 0;
+    }
+}
+
+/* static */
+int UINetworkReplyPrivateThread::abort(RTHTTP pHttp)
+{
+    /* Make sure HTTP is created: */
+    if (!pHttp)
+        return VERR_INVALID_POINTER;
+
+    /* Call for HTTP abort: */
+    return RTHttpAbort(pHttp);
+}
+
+/* static */
+int UINetworkReplyPrivateThread::applyProxyRules(RTHTTP pHttp, const QString &strHostName, int iPort)
+{
+    /* Make sure HTTP is created: */
+    if (!pHttp)
+        return VERR_INVALID_POINTER;
+
+    /* Assign HTTP proxy: */
+    return RTHttpSetProxy(pHttp,
+                          strHostName.toAscii().constData(),
+                          iPort,
+                          0 /* login */, 0 /* password */);
+}
+
+/* static */
+int UINetworkReplyPrivateThread::applyRawHeaders(RTHTTP pHttp, const QList<QByteArray> &headers, const QNetworkRequest &request)
+{
+    /* Make sure HTTP is created: */
+    if (!pHttp)
+        return VERR_INVALID_POINTER;
+
+    /* We should format them first: */
+    QVector<QByteArray> formattedHeaders;
+    QVector<const char*> formattedHeaderPointers;
+    foreach (const QByteArray &header, headers)
+    {
+        /* Prepare formatted representation: */
+        QString strFormattedString = QString("%1: %2").arg(QString(header), QString(request.rawHeader(header)));
+        formattedHeaders << strFormattedString.toAscii();
+        formattedHeaderPointers << formattedHeaders.last().constData();
+    }
+    const char **ppFormattedHeaders = formattedHeaderPointers.data();
+
+    /* Assign HTTP headers: */
+    return RTHttpSetHeaders(pHttp, formattedHeaderPointers.size(), ppFormattedHeaders);
+}
+
+/* static */
+int UINetworkReplyPrivateThread::performGetRequest(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply)
+{
+    /* Make sure HTTP is created: */
+    if (!pHttp)
+        return VERR_INVALID_POINTER;
+
+    /* Perform blocking HTTP GET request: */
+    char *pszBuf = 0;
+    int rc = RTHttpGet(pHttp,
+                       request.url().toString().toAscii().constData(),
+                       &pszBuf);
+    reply = QByteArray(pszBuf);
+    RTMemFree(pszBuf);
+    return rc;
+}
+
 
 /* Our network-reply object: */
 class UINetworkReplyPrivate : public QObject

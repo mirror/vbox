@@ -27,9 +27,6 @@
 /* GUI includes: */
 #include "UINetworkDefs.h"
 
-/* Forward declarations: */
-class UINetworkReplyPrivateThread;
-
 /* Network-reply interface: */
 class UINetworkReply : public QObject
 {
