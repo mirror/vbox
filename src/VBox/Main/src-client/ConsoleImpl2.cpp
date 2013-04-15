@@ -955,20 +955,11 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         if (fHWVirtExEnabled)
         {
             /* Indicate whether 64-bit guests are supported or not. */
-            /** @todo This is currently only forced off on 32-bit hosts only because it
-             *        makes a lof of difference there (REM and Solaris performance). */
-            if (fIsGuest64Bit)
-            {
-                InsertConfigInteger(pHWVirtExt, "64bitEnabled", 1);
+            InsertConfigInteger(pHWVirtExt, "64bitEnabled", fIsGuest64Bit);
 #if ARCH_BITS == 32 /* The recompiler must use VBoxREM64 (32-bit host only). */
-                PCFGMNODE pREM;
-                InsertConfigNode(pRoot, "REM", &pREM);
-                InsertConfigInteger(pREM, "64bitEnabled", 1);
-#endif
-            }
-#if ARCH_BITS == 32 /* 32-bit guests only. */
-            else
-                InsertConfigInteger(pHWVirtExt, "64bitEnabled", 0);
+            PCFGMNODE pREM;
+            InsertConfigNode(pRoot, "REM", &pREM);
+            InsertConfigInteger(pREM, "64bitEnabled", 1);
 #endif
 
             /** @todo Not exactly pretty to check strings; VBOXOSTYPE would be better, but that requires quite a bit of API change in Main. */
