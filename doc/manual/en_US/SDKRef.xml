@@ -3611,6 +3611,37 @@ AuthResult AUTHCALL AuthEntry(
           image). The old behavior was no longer acceptable, as each image
           can have a different capacity.</para>
         </listitem>
+
+        <listitem>
+          <para>Guest control APIs now emit own events to provide clients much
+            finer control and the ability to write own frontends for guest
+            operations. The event <xref linkend="IGuestSessionEvent"
+            xreflabel="IGuestSessionEvent" /> acts as an abstract base class
+            for all guest control events. Certain guest events contain a
+            <xref linkend="IGuestErrorInfo" xreflabel="IGuestErrorInfo" /> member
+            to provide more information in case of an error happened on the
+            guest side.</para>
+        </listitem>
+
+        <listitem>
+          <para>Guest control sessions on the guest started by <xref
+            linkend="IGuest__createSession" xreflabel="IGuest::createSession()" />
+            now are dedicated processes to provide more safety and performance
+            for certain operations. Also, the <xref linkend="IGuest__createSession"
+            xreflabel="IGuest::createSession()" /> call does not wait for the
+            guest session being created anymore due to the dedicated guest session
+            processes just mentioned. This also will enable webservice clients to
+            handle guest session creation more gracefully. To wait for a guest
+            session being started, use the newly added attribute <xref
+            linkend="IGuestSession__status" xreflabel="IGuestSession::status()" />
+            to query the current guest session status.</para>
+        </listitem>
+
+        <listitem>
+          <para>The <xref linkend="IGuestFile" xreflabel="IGuestFile" />
+            APIs are now implemented to provide native guest file access from
+            the host.</para>
+        </listitem>
       </itemizedlist>
     </sect1>
 
