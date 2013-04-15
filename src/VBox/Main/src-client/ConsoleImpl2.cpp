@@ -871,63 +871,93 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCPUM, "MWaitExtensions", true);
         }
 
+        if (fOsXGuest)
+            InsertConfigInteger(pCPUM, "EnableHVP", 1);
+
+        /* Synthetic CPU */
+        BOOL fSyntheticCpu = false;
+        hrc = pMachine->GetCPUProperty(CPUPropertyType_Synthetic, &fSyntheticCpu);          H();
+        InsertConfigInteger(pCPUM, "SyntheticCpu", fSyntheticCpu);
+
+        /* Physical Address Extension (PAE) */
+        BOOL fEnablePAE = false;
+        hrc = pMachine->GetCPUProperty(CPUPropertyType_PAE, &fEnablePAE);                   H();
+        InsertConfigInteger(pRoot, "EnablePAE", fEnablePAE);
+
+
         /*
          * Hardware virtualization extensions.
          */
+        BOOL fIsGuest64Bit;
+        hrc = guestOSType->COMGETTER(Is64Bit)(&fIsGuest64Bit);                              H();
+        BOOL fSupportsLongMode;
+        hrc = host->GetProcessorFeature(ProcessorFeature_LongMode, &fSupportsLongMode);     H();
+        if (!fSupportsLongMode && fIsGuest64Bit)
+        {
+            LogRel(("WARNING! 64-bit guest type selected but the host CPU does NOT support 64-bit.\n"));
+            fIsGuest64Bit = FALSE;
+        }
+
         BOOL fHWVirtExEnabled;
-        BOOL fHwVirtExtForced = false;
-#ifdef VBOX_WITH_RAW_MODE
         hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &fHWVirtExEnabled); H();
-        if (cCpus > 1) /** @todo SMP: This isn't nice, but things won't work on mac otherwise. */
+        if (cCpus > 1 && !fHWVirtExEnabled)
+        {
+            LogRel(("Forced fHWVirtExEnabled to TRUE by SMP guest.\n"));
             fHWVirtExEnabled = TRUE;
-# ifdef RT_OS_DARWIN
-        fHwVirtExtForced = fHWVirtExEnabled;
-# else
+        }
+        if (!fHWVirtExEnabled && fIsGuest64Bit)
+        {
+            LogRel(("WARNING! 64-bit guest type selected on host without hardware virtualization (VT-x or AMD-V).\n"));
+            fIsGuest64Bit = FALSE;
+        }
+
+        BOOL fHwVirtExtForced;
+#ifdef VBOX_WITH_RAW_MODE
         /* - With more than 4GB PGM will use different RAMRANGE sizes for raw
              mode and hv mode to optimize lookup times.
-           - With more than one virtual CPU, raw-mode isn't a fallback option. */
+           - With more than one virtual CPU, raw-mode isn't a fallback option.
+           - With a 64-bit guest, raw-mode isn't a fallback option either. */
         fHwVirtExtForced = fHWVirtExEnabled
                         && (   cbRam + cbRamHole > _4G
-                            || cCpus > 1);
+                            || cCpus > 1
+                            || fIsGuest64Bit);
+# ifdef RT_OS_DARWIN
+        fHwVirtExtForced = fHWVirtExEnabled;
 # endif
+        if (fHwVirtExtForced)
+        {
+            if (cbRam + cbRamHole > _4G)
+                LogRel(("fHwVirtExtForced=TRUE - Lots of RAM\n"));
+            if (cCpus > 1)
+                LogRel(("fHwVirtExtForced=TRUE - SMP\n"));
+            if (fIsGuest64Bit)
+                LogRel(("fHwVirtExtForced=TRUE - 64-bit guest\n"));
+# ifdef RT_OS_DARWIN
+            LogRel(("fHwVirtExtForced=TRUE - Darwin host\n"));
+# endif
+        }
 #else  /* !VBOX_WITH_RAW_MODE */
-        fHWVirtExEnabled = fHwVirtExtForced = true;
+        fHWVirtExEnabled = fHwVirtExtForced = TRUE;
+        LogRel(("fHwVirtExtForced=TRUE - No raw-mode support in this build!\n"));
 #endif /* !VBOX_WITH_RAW_MODE */
-        /* only honor the property value if there was no other reason to enable it */
-        if (!fHwVirtExtForced)
+        if (!fHwVirtExtForced) /* No need to query if already forced above. */
         {
             hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Force, &fHwVirtExtForced); H();
+            if (fHwVirtExtForced)
+                LogRel(("fHwVirtExtForced=TRUE - HWVirtExPropertyType_Force\n"));
         }
-        InsertConfigInteger(pRoot, "HwVirtExtForced",      fHwVirtExtForced);
+        InsertConfigInteger(pRoot, "HwVirtExtForced", fHwVirtExtForced);
 
-
-        /*
-         * MM values.
-         */
-        PCFGMNODE pMM;
-        InsertConfigNode(pRoot, "MM", &pMM);
-        InsertConfigInteger(pMM, "CanUseLargerHeap", chipsetType == ChipsetType_ICH9);
-
-        /*
-         * Hardware virtualization settings.
-         */
-        BOOL        fIsGuest64Bit = false;
-        PCFGMNODE   pHWVirtExt;
+        /* /HWVirtExt/xzy */
+        PCFGMNODE pHWVirtExt;
         InsertConfigNode(pRoot, "HWVirtExt", &pHWVirtExt);
+        InsertConfigInteger(pHWVirtExt, "Enabled", fHWVirtExEnabled);
         if (fHWVirtExEnabled)
         {
-            InsertConfigInteger(pHWVirtExt, "Enabled",     1);
-
             /* Indicate whether 64-bit guests are supported or not. */
             /** @todo This is currently only forced off on 32-bit hosts only because it
-             *        makes a lof of difference there (REM and Solaris performance).
-             */
-            BOOL fSupportsLongMode = false;
-            hrc = host->GetProcessorFeature(ProcessorFeature_LongMode,
-                                            &fSupportsLongMode);                            H();
-            hrc = guestOSType->COMGETTER(Is64Bit)(&fIsGuest64Bit);                          H();
-
-            if (fSupportsLongMode && fIsGuest64Bit)
+             *        makes a lof of difference there (REM and Solaris performance). */
+            if (fIsGuest64Bit)
             {
                 InsertConfigInteger(pHWVirtExt, "64bitEnabled", 1);
 #if ARCH_BITS == 32 /* The recompiler must use VBoxREM64 (32-bit host only). */
@@ -938,9 +968,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             }
 #if ARCH_BITS == 32 /* 32-bit guests only. */
             else
-            {
                 InsertConfigInteger(pHWVirtExt, "64bitEnabled", 0);
-            }
 #endif
 
             /** @todo Not exactly pretty to check strings; VBOXOSTYPE would be better, but that requires quite a bit of API change in Main. */
@@ -978,21 +1006,12 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &fEnableVPID);       H();
         InsertConfigInteger(pHWVirtExt, "EnableVPID", fEnableVPID);
 
-        /* Physical Address Extension (PAE) */
-        BOOL fEnablePAE = false;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_PAE, &fEnablePAE);                   H();
-        InsertConfigInteger(pRoot, "EnablePAE", fEnablePAE);
-
-        /* Synthetic CPU */
-        BOOL fSyntheticCpu = false;
-        hrc = pMachine->GetCPUProperty(CPUPropertyType_Synthetic, &fSyntheticCpu);          H();
-        InsertConfigInteger(pCPUM, "SyntheticCpu", fSyntheticCpu);
-
-        if (fOsXGuest)
-            InsertConfigInteger(pCPUM, "EnableHVP", 1);
-
-        BOOL fPXEDebug;
-        hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                         H();
+        /*
+         * MM values.
+         */
+        PCFGMNODE pMM;
+        InsertConfigNode(pRoot, "MM", &pMM);
+        InsertConfigInteger(pMM, "CanUseLargerHeap", chipsetType == ChipsetType_ICH9);
 
         /*
          * PDM config.
@@ -1419,6 +1438,8 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigString(pBiosCfg,   "HardDiskDevice",       "piix3ide");
             InsertConfigString(pBiosCfg,   "FloppyDevice",         "i82078");
             InsertConfigInteger(pBiosCfg,  "IOAPIC",               fIOAPIC);
+            BOOL fPXEDebug;
+            hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                     H();
             InsertConfigInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);
             InsertConfigBytes(pBiosCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             InsertConfigNode(pBiosCfg,     "NetBoot", &pNetBootCfg);
@@ -1426,12 +1447,8 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pBiosCfg,  "McfgLength", cbMcfgLength);
 
             DeviceType_T bootDevice;
-            if (SchemaDefs::MaxBootPosition > 9)
-            {
-                AssertMsgFailed(("Too many boot devices %d\n",
-                                SchemaDefs::MaxBootPosition));
-                return VERR_INVALID_PARAMETER;
-            }
+            AssertMsgReturn(SchemaDefs::MaxBootPosition <= 9, ("Too many boot devices %d\n", SchemaDefs::MaxBootPosition),
+                            VERR_INVALID_PARAMETER);
 
             for (ULONG pos = 1; pos <= SchemaDefs::MaxBootPosition; ++pos)
             {
@@ -1532,7 +1549,6 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigInteger(pCfg, "DmiUseHostInfo", 1);
                 InsertConfigInteger(pCfg, "DmiExposeMemoryTable", 1);
             }
-            PCFGMNODE pDrv;
             InsertConfigNode(pInst,    "LUN#0", &pLunL0);
             InsertConfigString(pLunL0, "Driver", "NvramStorage");
             InsertConfigNode(pLunL0,   "Config", &pCfg);
