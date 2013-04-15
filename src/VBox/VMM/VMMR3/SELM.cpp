@@ -482,7 +482,7 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
         /*
          * Update shadow GDT/LDT/TSS write access handlers.
          */
-        int rc;
+        int rc; NOREF(rc);
 #ifdef SELM_TRACK_SHADOW_GDT_CHANGES
         if (pVM->selm.s.paGdtRC != NIL_RTRCPTR)
         {

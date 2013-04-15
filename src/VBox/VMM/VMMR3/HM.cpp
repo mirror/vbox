@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -49,6 +50,7 @@
 #include <iprt/string.h>
 #include <iprt/env.h>
 #include <iprt/thread.h>
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -279,13 +281,14 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
             LogRel(("HM:    " #featflag " *must* be cleared\n")); \
         if ((disallowed0) & (featflag)) \
             LogRel(("HM:    " #featflag " *must* be set\n")); \
-    } while(0)
+    } while (0)
 
 #define VMX_REPORT_CAPABILITY(msrcaps, cap) \
     do { \
         if ((msrcaps) & (cap)) \
             LogRel(("HM:    " #cap "\n")); \
-    } while(0)
+    } while (0)
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -295,6 +298,7 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
 static int hmR3InitCPU(PVM pVM);
 static int hmR3InitFinalizeR0(PVM pVM);
 static int hmR3TermCPU(PVM pVM);
+
 
 
 /**
