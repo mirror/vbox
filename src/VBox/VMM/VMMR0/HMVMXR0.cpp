@@ -4964,7 +4964,7 @@ DECLINLINE(int) hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Wrapper for saving the guest's RIP, RSP and RFLAGS from the VMCS into the
  * guest-CPU context.
  */
-static int hmR0VmxSaveGuestGprs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestRipRspRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
     rc    |= hmR0VmxSaveGuestRsp(pVCpu, pMixedCtx);
@@ -5433,8 +5433,8 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     VMMRZCallRing3Disable(pVCpu);
 
-    int rc = hmR0VmxSaveGuestGprs(pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestGprs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
+    int rc = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestRipRspRflags failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
     rc = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestControlRegs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
@@ -6196,7 +6196,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
 
             /* Save the required guest state bits from the VMCS. */
             rc  = hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
-            rc |= hmR0VmxSaveGuestGprs(pVCpu, pMixedCtx);
+            rc |= hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
 
             /* Check if the interrupt handler is present in the IVT (real-mode IDT). IDT limit is (4N - 1). */
@@ -7771,7 +7771,7 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
             /* EMInterpretCRxWrite() references a lot of guest state (EFER, RFLAGS, Segment Registers, etc.) Sync entire state */
             rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
 #else
-            rc  = hmR0VmxSaveGuestGprs(pVCpu, pMixedCtx);
+            rc  = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
             rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
             rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
 #endif
@@ -8133,7 +8133,7 @@ static DECLCALLBACK(int) hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx,
     rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
 #else
     /* Aggressive state sync. for now. */
-    rc  = hmR0VmxSaveGuestGprs(pVCpu, pMixedCtx);
+    rc  = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
 #endif
@@ -8288,7 +8288,7 @@ static DECLCALLBACK(int) hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCt
     rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);     /** @todo Can we do better?  */
 #else
     /* Aggressive state sync. for now. */
-    rc |= hmR0VmxSaveGuestGprs(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
 #endif
@@ -8340,7 +8340,7 @@ static DECLCALLBACK(int) hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCt
     rc |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);     /** @todo Can we do better?  */
 #else
     /* Aggressive state sync. for now. */
-    rc |= hmR0VmxSaveGuestGprs(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
 #endif
