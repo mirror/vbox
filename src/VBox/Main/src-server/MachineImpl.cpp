@@ -3775,10 +3775,10 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                         aControllerName);
 
     bool fSilent = false;
-    Bstr strReconfig;
+    Utf8Str strReconfig;
 
     /* Check whether the flag to allow silent storage attachment reconfiguration is set. */
-    rc = mParent->GetExtraData(Bstr("StorageMgmt/SilentReconfigureWhilePaused").raw(), strReconfig.asOutParam());
+    strReconfig = getExtraData(Utf8Str("VBoxInternal2/SilentReconfigureWhilePaused"));
     if (FAILED(rc))
         return rc;
     if (   mData->mMachineState == MachineState_Paused
@@ -4225,10 +4225,10 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
                         aControllerName);
 
     bool fSilent = false;
-    Bstr strReconfig;
+    Utf8Str strReconfig;
 
     /* Check whether the flag to allow silent storage attachment reconfiguration is set. */
-    rc = mParent->GetExtraData(Bstr("StorageMgmt/SilentReconfigureWhilePaused").raw(), strReconfig.asOutParam());
+    strReconfig = getExtraData(Utf8Str("VBoxInternal2/SilentReconfigureWhilePaused"));
     if (FAILED(rc))
         return rc;
     if (   mData->mMachineState == MachineState_Paused
@@ -7877,6 +7877,21 @@ void Machine::releaseStateDependency()
             RTSemEventMultiSignal (mData->mMachineStateDepsSem);
         }
     }
+}
+
+Utf8Str Machine::getExtraData(const Utf8Str &strKey)
+{
+    /* start with nothing found */
+    Utf8Str strResult("");
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    settings::StringsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.find(strKey);
+    if (it != mData->pMachineConfigFile->mapExtraDataItems.end())
+        // found:
+        strResult = it->second; // source is a Utf8Str
+
+    return strResult;
 }
 
 // protected methods
