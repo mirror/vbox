@@ -1124,20 +1124,29 @@ int SessionTaskUpdateAdditions::Run(void)
                  * can't do automated updates here. */
                 /* Windows XP 64-bit (5.2) is a Windows 2003 Server actually, so skip this here. */
                 if (   RT_SUCCESS(rc)
-                    && (   strOSVer.startsWith("5.0")  /* Exclude the build number. */
-                        || strOSVer.startsWith("5.1")) /* Exclude the build number. */
-                   )
+                    && RTStrVersionCompare(strOSVer.c_str(), "5.0") >= 0)
                 {
-                    /* If we don't have AdditionsUpdateFlag_WaitForUpdateStartOnly set we can't continue
-                     * because the Windows Guest Additions installer will fail because of WHQL popups. If the
-                     * flag is set this update routine ends successfully as soon as the installer was started
-                     * (and the user has to deal with it in the guest). */
-                    if (!(mFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
+                    if (   strOSVer.startsWith("5.0") /* Exclude the build number. */
+                        || strOSVer.startsWith("5.1") /* Exclude the build number. */)
                     {
-                        hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
-                                                 Utf8StrFmt(GuestSession::tr("Windows 2000 and XP are not supported for automatic updating due to WHQL interaction, please update manually")));
-                        rc = VERR_NOT_SUPPORTED;
+                        /* If we don't have AdditionsUpdateFlag_WaitForUpdateStartOnly set we can't continue
+                         * because the Windows Guest Additions installer will fail because of WHQL popups. If the
+                         * flag is set this update routine ends successfully as soon as the installer was started
+                         * (and the user has to deal with it in the guest). */
+                        if (!(mFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
+                        {
+                            hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                                     Utf8StrFmt(GuestSession::tr("Windows 2000 and XP are not supported for automatic updating due to WHQL interaction, please update manually")));
+                            rc = VERR_NOT_SUPPORTED;
+                        }
                     }
+                }
+                else
+                {
+                    hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
+                                             Utf8StrFmt(GuestSession::tr("%s (%s) not supported for automatic updating, please update manually"),
+                                                        strOSType.c_str(), strOSVer.c_str()));
+                    rc = VERR_NOT_SUPPORTED;
                 }
             }
             else if (strOSType.contains("Solaris", Utf8Str::CaseInsensitive))
@@ -1148,7 +1157,8 @@ int SessionTaskUpdateAdditions::Run(void)
                 osType = eOSType_Linux;
 
 #if 1 /* Only Windows is supported (and tested) at the moment. */
-            if (osType != eOSType_Windows)
+            if (   RT_SUCCESS(rc)
+                && osType != eOSType_Windows)
             {
                 hr = setProgressErrorMsg(VBOX_E_NOT_SUPPORTED,
                                          Utf8StrFmt(GuestSession::tr("Detected guest OS (%s) does not support automatic Guest Additions updating, please update manually"),
