@@ -4740,8 +4740,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             {
                 enmReflect = VMXREFLECTXCPT_XCPT;
             }
-            if (   hmR0VmxIsContributoryXcpt(uIdtVector)
-                && uExitVector == X86_XCPT_PF)
+            else if (   hmR0VmxIsContributoryXcpt(uIdtVector)
+                     && uExitVector == X86_XCPT_PF)
             {
                 enmReflect = VMXREFLECTXCPT_XCPT;
                 GCPtrFaultAddress = pMixedCtx->cr2;
