@@ -122,7 +122,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
         switch (c)
         {
             case 't':   // --netname
-                if(pNetName)
+                if (pNetName)
                     return errorSyntax(USAGE_NATNETWORK, "You can only specify --netname once.");
                 else
                 {
@@ -131,7 +131,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
             break;
 
             case 'n':   // --network
-                if(pNetworkCidr)
+                if (pNetworkCidr)
                     return errorSyntax(USAGE_NATNETWORK, "You can only specify --network once.");
                 else
                 {
@@ -149,7 +149,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
             break;
 
             case 'd':   // --disable
-                if(enable >= 0)
+                if (enable >= 0)
                     return errorSyntax(USAGE_NATNETWORK, "You can specify either --enable or --disable once.");
                 else
                 {
