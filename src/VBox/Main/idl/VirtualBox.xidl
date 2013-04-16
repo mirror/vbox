@@ -10589,7 +10589,7 @@
       <desc>
         The environment block this process is using during execution.
       </desc>
-    </attribute>    
+    </attribute>
     <attribute name="eventSource" type="IEventSource" readonly="yes">
       <desc>
         Event source for VirtualBox events.
@@ -10620,7 +10620,7 @@
         for more information.
       </desc>
     </attribute>
-    
+
     <method name="waitFor">
       <desc>
         Waits for one more events to happen.
@@ -19046,17 +19046,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="OnGuestFileRead" value="89">
       <desc>
         See <link to="IGuestFileReadEvent">IGuestFileReadEvent</link>.
-        
+
         <note internal="yes">For performance reasons this is a separate event to
-          not unnecessarily overflow the event queue.</note>          
+          not unnecessarily overflow the event queue.</note>
       </desc>
     </const>
     <const name="OnGuestFileWrite" value="90">
       <desc>
         See <link to="IGuestFileWriteEvent">IGuestFileWriteEvent</link>.
-      
+
         <note internal="yes">For performance reasons this is a separate event to
-          not unnecessarily overflow the event queue.</note>          
+          not unnecessarily overflow the event queue.</note>
       </desc>
     </const>
     <!-- Last event marker -->
@@ -20075,7 +20075,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
   </interface>
-  
+
   <interface
     name="IGuestProcessInputNotifyEvent" extends="IGuestProcessIOEvent"
     uuid="0de887f2-b7db-4616-aac6-cfb94d89ba78"
@@ -20143,7 +20143,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
   </interface>
-  
+
   <interface
     name="IGuestFileStateChangedEvent" extends="IGuestFileEvent"
     uuid="841951c4-4df3-4ee1-bb99-91e5761c18ff"
