@@ -9577,16 +9577,16 @@
       <desc>Undefined state.</desc>
     </const>
     <const name="Broken"                value="1">
-      <desc>TODO</desc>
+      <desc>Input pipe is broken.</desc>
     </const>
     <const name="Available"             value="10">
-      <desc>TODO</desc>
+      <desc>Input pipe became available for writing.</desc>
     </const>
     <const name="Written"               value="50">
-      <desc>TODO</desc>
+      <desc>Data has been successfully written.</desc>
     </const>
     <const name="Overflow"              value="100">
-      <desc>TODO</desc>
+      <desc>Too much input data supplied, data overflow.</desc>
     </const>
   </enum>
 
@@ -9602,19 +9602,19 @@
       <desc>File is in an undefined state.</desc>
     </const>
     <const name="Opening"               value="10">
-      <desc>TODO</desc>
+      <desc>Guest file is opening.</desc>
     </const>
     <const name="Open"                  value="100">
-      <desc>TODO</desc>
+      <desc>Guest file has been successfully opened.</desc>
     </const>
     <const name="Closing"               value="150">
-      <desc>TODO</desc>
+      <desc>Guest file closing.</desc>
     </const>
     <const name="Closed"                value="200">
-      <desc>TODO</desc>
+      <desc>Guest file has been closed.</desc>
     </const>
     <const name="Down"                  value="600">
-      <desc>TODO</desc>
+      <desc>Service/OS is stopping, guest file was closed.</desc>
     </const>
     <const name="Error"                 value="800">
       <desc>Something went wrong.</desc>
@@ -9704,15 +9704,17 @@
     wsmap="managed"
     >
     <desc>
-      TODO
+      The IGuestErrorInfo interface represents extended error information which
+      happened while performing an operation on the guest.
     </desc>
 
     <attribute name="result" type="long" readonly="yes">
-      <desc>TODO</desc>
+      <desc>Runtime (IPRT) error code. See include/iprt/err.h and include/VBox/err.h
+        for details.</desc>
     </attribute>
 
     <attribute name="text" type="wstring" readonly="yes">
-      <desc>TODO</desc>
+      <desc>Text description of the error.</desc>
     </attribute>
 
   </interface>
@@ -10864,7 +10866,7 @@
     </attribute>
     <attribute name="status" type="FileStatus" readonly="yes">
       <desc>
-        TODO
+        Current file status.
       </desc>
     </attribute>
 
@@ -18998,57 +19000,63 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="OnGuestSessionStateChanged" value="80">
       <desc>
-        TODO
+        See <link to="IGuestSessionStateChangedEvent">IGuestSessionStateChangedEvent</link>.
       </desc>
     </const>
     <const name="OnGuestSessionRegistered" value="81">
       <desc>
-        TODO
+        See <link to="IGuestSessionRegisteredEvent">IGuestSessionRegisteredEvent</link>.
       </desc>
     </const>
     <const name="OnGuestProcessRegistered" value="82">
       <desc>
-        TODO
+        See <link to="IGuestProcessRegisteredEvent">IGuestProcessRegisteredEvent</link>.
       </desc>
     </const>
     <const name="OnGuestProcessStateChanged" value="83">
       <desc>
-        TODO
+        See <link to="IGuestProcessStateChangedEvent">IGuestProcessStateChangedEvent</link>.
       </desc>
     </const>
     <const name="OnGuestProcessInputNotify" value="84">
       <desc>
-        TODO
+        See <link to="IGuestProcessInputNotifyEvent">IGuestProcessInputNotifyEvent</link>.
       </desc>
     </const>
     <const name="OnGuestProcessOutput" value="85">
       <desc>
-        TODO
+        See <link to="IGuestProcessOutputEvent">IGuestProcessOutputEvent</link>.
       </desc>
     </const>
     <const name="OnGuestFileRegistered" value="86">
       <desc>
-        TODO
+        See <link to="IGuestFileRegisteredEvent">IGuestFileRegisteredEvent</link>.
       </desc>
     </const>
     <const name="OnGuestFileStateChanged" value="87">
       <desc>
-        TODO
+        See <link to="IGuestFileStateChangedEvent">IGuestFileStateChangedEvent</link>.
       </desc>
     </const>
     <const name="OnGuestFileOffsetChanged" value="88">
       <desc>
-        TODO
+        See <link to="IGuestFileOffsetChangedEvent">IGuestFileOffsetChangedEvent</link>.
       </desc>
     </const>
     <const name="OnGuestFileRead" value="89">
       <desc>
-        For performance reasons ... TODO
+        See <link to="IGuestFileReadEvent">IGuestFileReadEvent</link>.
+        
+        <note internal="yes">For performance reasons this is a separate event to
+          not unnecessarily overflow the event queue.</note>          
       </desc>
     </const>
     <const name="OnGuestFileWrite" value="90">
       <desc>
-        For performance reasons ... TODO
+        See <link to="IGuestFileWriteEvent">IGuestFileWriteEvent</link>.
+      
+        <note internal="yes">For performance reasons this is a separate event to
+          not unnecessarily overflow the event queue.</note>          
       </desc>
     </const>
     <!-- Last event marker -->
@@ -19943,22 +19951,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnGuestSessionStateChanged"
     >
     <desc>
-      TODO
+      Notification when a guest session changed its state.
     </desc>
 
     <attribute name="id" type="unsigned long" readonly="yes">
       <desc>
-        TODO
+        Session ID of guest session which was changed.
       </desc>
     </attribute>
     <attribute name="status" type="GuestSessionStatus" readonly="yes">
       <desc>
-        TODO
+        New session status.
       </desc>
     </attribute>
     <attribute name="error" type="IGuestErrorInfo" readonly="yes">
       <desc>
-        TODO
+        Extended guest error information in case of new session
+        status is indicating an error.
       </desc>
     </attribute>
 
@@ -19970,12 +19979,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnGuestSessionRegistered"
     >
     <desc>
-      TODO
+      Notification when a guest session was registered or unregistered.
     </desc>
 
     <attribute name="registered" type="boolean" readonly="yes">
       <desc>
-        TODO
+        If @c true, the guest session was registered, otherwise it was
+        unregistered.
       </desc>
     </attribute>
 
@@ -19990,12 +20000,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="process" type="IGuestProcess" readonly="yes">
       <desc>
-        TODO
+        Guest process object which is related to this event.
       </desc>
     </attribute>
     <attribute name="pid" type="unsigned long" readonly="yes">
       <desc>
-        TODO
+        Guest process ID (PID).
       </desc>
     </attribute>
 
@@ -20007,12 +20017,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessRegistered"
     >
     <desc>
-      TODO
+      Notification when a guest process was registered or unregistered.
     </desc>
 
     <attribute name="registered" type="boolean" readonly="yes">
       <desc>
-        TODO
+        If @c true, the guest process was registered, otherwise it was
+        unregistered.
       </desc>
     </attribute>
 
@@ -20024,17 +20035,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessStateChanged"
     >
     <desc>
-      TODO
+      Notification when a guest process changed its state.
     </desc>
 
     <attribute name="status" type="ProcessStatus" readonly="yes">
       <desc>
-        TODO
+        New guest process status.
       </desc>
     </attribute>
     <attribute name="error" type="IGuestErrorInfo" readonly="yes">
       <desc>
-        TODO
+        Extended guest error information in case of new process
+        status is indicating an error.
       </desc>
     </attribute>
 
@@ -20051,13 +20063,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="handle" type="unsigned long" readonly="yes">
       <desc>
-        TODO
+        Input/output (IO) handle involved in this event. Usually 0 is stdin,
+        1 is stdout and 2 is stderr.
       </desc>
     </attribute>
 
     <attribute name="processed" type="unsigned long" readonly="yes">
       <desc>
-        TODO
+        Processed input or output (in bytes).
       </desc>
     </attribute>
 
@@ -20069,12 +20082,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessInputNotify"
     >
     <desc>
-      TODO
+      Notification when a guest process' stdin became available.
+      <note>This event is right now not implemented!</note>
     </desc>
 
     <attribute name="status" type="ProcessInputStatus" readonly="yes">
       <desc>
-        TODO
+        Current process input status.
       </desc>
     </attribute>
 
@@ -20086,12 +20100,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessOutput"
     >
     <desc>
-      TODO
+      Notification when there is guest process output available for reading.
     </desc>
 
     <attribute name="data" type="octet" safearray="yes" readonly="yes">
       <desc>
-        TODO
+        Actual output data.
       </desc>
     </attribute>
 
@@ -20106,7 +20120,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="file" type="IGuestFile" readonly="yes">
       <desc>
-        TODO
+        Guest file object which is related to this event.
       </desc>
     </attribute>
 
@@ -20118,12 +20132,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnGuestFileRegistered"
     >
     <desc>
-      TODO
+      Notification when a guest file was registered or unregistered.
     </desc>
 
     <attribute name="registered" type="boolean" readonly="yes">
       <desc>
-        TODO
+        If @c true, the guest file was registered, otherwise it was
+        unregistered.
       </desc>
     </attribute>
 
@@ -20135,17 +20150,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnGuestFileStateChanged"
     >
     <desc>
-      TODO
+      Notification when a guest file changed its state.
     </desc>
 
     <attribute name="status" type="FileStatus" readonly="yes">
       <desc>
-        TODO
+        New guest file status.
       </desc>
     </attribute>
     <attribute name="error" type="IGuestErrorInfo" readonly="yes">
       <desc>
-        TODO
+        Extended guest error information in case of new file
+        status is indicating an error.
       </desc>
     </attribute>
     <!-- Note: No events for reads/writes for performance reasons.
@@ -20165,14 +20181,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="offset" type="long long" readonly="yes">
       <desc>
-        TODO
+        Current offset (in bytes).
       </desc>
     </attribute>
     <attribute name="processed" type="unsigned long" readonly="yes">
       <desc>
-        TODO
+        Processed input or output (in bytes).
       </desc>
-
     </attribute>
 
   </interface>
@@ -20183,7 +20198,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnGuestFileOffsetChanged"
     >
     <desc>
-      TODO
+      Notification when a guest file changed its current offset.
     </desc>
 
   </interface>
@@ -20194,12 +20209,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnGuestFileRead"
     >
     <desc>
-      TODO
+      Notification when data has been read from a guest file.
     </desc>
 
     <attribute name="data" type="octet" safearray="yes" readonly="yes">
       <desc>
-        TODO
+        Actual data read.
       </desc>
     </attribute>
 
@@ -20211,7 +20226,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnGuestFileWrite"
     >
     <desc>
-      TODO
+      Notification when data has been written to a guest file.
     </desc>
 
   </interface>
