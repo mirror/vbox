@@ -801,7 +801,7 @@ crServerDispatchWindowShow( GLint window, GLint state )
          return;
     }
 
-    if (mural->fPresentMode && CR_SERVER_REDIR_F_DISPLAY)
+    if (mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY)
     {
         cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, state);
     }
