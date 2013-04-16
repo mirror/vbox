@@ -799,6 +799,8 @@ int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32
         VBOX_GUESTCTRL_CONTEXTID_MAKE(uSessionID, uObjectID, uCount);
 
     *puContextID = uNewContextID;
+
+    return VINF_SUCCESS;
 }
 
 GuestObject::GuestObject(void)
