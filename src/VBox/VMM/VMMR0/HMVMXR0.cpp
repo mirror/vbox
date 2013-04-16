@@ -4736,11 +4736,16 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         if (uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT)
         {
             if (   hmR0VmxIsBenignXcpt(uIdtVector)
-                || hmR0VmxIsBenignXcpt(uExitVector)
-                || (   hmR0VmxIsContributoryXcpt(uIdtVector)
-                    && uExitVector == X86_XCPT_PF))
+                || hmR0VmxIsBenignXcpt(uExitVector))
             {
                 enmReflect = VMXREFLECTXCPT_XCPT;
+            }
+            if (   hmR0VmxIsContributoryXcpt(uIdtVector)
+                && uExitVector == X86_XCPT_PF)
+            {
+                enmReflect = VMXREFLECTXCPT_XCPT;
+                GCPtrFaultAddress = pMixedCtx->cr2;
+                Log(("IDT: Contributory #PF uCR2=%#RGv\n", pMixedCtx->cr2));
             }
             else if (   uExitVector == X86_XCPT_PF
                      && uIdtVector == X86_XCPT_PF)
@@ -4748,7 +4753,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 pVmxTransient->fVectoringPF = true;
                 enmReflect = VMXREFLECTXCPT_XCPT;
                 GCPtrFaultAddress = pMixedCtx->cr2;
-                Log(("Vectoring #PF uCR2=%#RGv\n", pMixedCtx->cr2));
+                Log(("IDT: Vectoring #PF uCR2=%#RGv\n", pMixedCtx->cr2));
             }
             else if (   (pVCpu->hm.s.vmx.u32XcptBitmap & VMX_CONTRIBUTORY_XCPT_BITMAP)
                      && hmR0VmxIsContributoryXcpt(uExitVector)
@@ -4759,6 +4764,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             }
             else if (uIdtVector == X86_XCPT_DF)
                 enmReflect = VMXREFLECTXCPT_TF;
+            else
+                AssertMsgFailed(("Invalid!\n"));
         }
         else if (   uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_INT
                  && uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT
@@ -4785,7 +4792,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INTR_INFO_FROM_EXIT_IDT_INFO(pVmxTransient->uIdtVectoringInfo),
                                        0 /* cbInstr */,  u32ErrCode, GCPtrFaultAddress);
                 rc = VINF_SUCCESS;
-                Log(("Pending vectoring event %#RX64 Err=%#RX32\n", pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.u32ErrCode));
+                Log(("IDT: Pending vectoring event %#RX64 Err=%#RX32\n", pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.u32ErrCode));
                 break;
             }
 
@@ -4793,14 +4800,14 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             {
                 hmR0VmxSetPendingXcptDF(pVCpu, pMixedCtx);
                 rc = VINF_VMX_DOUBLE_FAULT;
-                Log(("Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntrInfo, uIdtVector,
+                Log(("IDT: Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntrInfo, uIdtVector,
                      uExitVector));
                 break;
             }
 
             case VMXREFLECTXCPT_TF:
             {
-                Log(("Pending vectoring triple-fault uIdt=%#x uExit=%#x\n", uIdtVector, uExitVector));
+                Log(("IDT: Pending vectoring triple-fault uIdt=%#x uExit=%#x\n", uIdtVector, uExitVector));
                 rc = VINF_EM_RESET;
                 break;
             }
@@ -6283,7 +6290,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
     Assert(!(u32IntrInfo & 0x7ffff000));                            /* Bits 30:12 MBZ. */
 
     /* Inject. */
-    Log(("Injecting u32IntrInfo=%#x u32ErrCode=%#x instrlen=%#x\n", u32IntrInfo, u32ErrCode, cbInstr));
+    Log(("Injecting u32IntrInfo=%#x u32ErrCode=%#x cbInstr=%#x uCR2=%#RGv\n", u32IntrInfo, u32ErrCode, cbInstr, pMixedCtx->cr2));
     rc  = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, u32IntrInfo);
     if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntrInfo))
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE, u32ErrCode);
@@ -6900,7 +6907,8 @@ DECLINLINE(int) hmR0VmxHandleExit(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
                 Assert(ASMIntAreEnabled());                                  \
                 Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));             \
                 VMX_ASSERT_PREEMPT_CPUID_VAR();                              \
-                LogFunc(("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n")); \
+                LogFunc(("vcpu[%u] vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", \
+                        (unsigned)pVCpu->idCpu));                            \
                 Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));             \
                 if (VMMR0IsLogFlushDisabled(pVCpu))                          \
                     VMX_ASSERT_PREEMPT_CPUID();                              \
@@ -7627,8 +7635,8 @@ static DECLCALLBACK(int) hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
 static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    int rc = VINF_SUCCESS;
     PVM pVM = pVCpu->CTX_SUFF(pVM);
+    int rc = VINF_SUCCESS;
 
     /* If TPR patching is active, LSTAR holds the guest TPR, writes to it must be propagated to the APIC. */
     if (   pVM->hm.s.fTPRPatchingActive
@@ -7646,41 +7654,6 @@ static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWrmsr);
         return VINF_SUCCESS;
     }
-
-    /* Update MSRs that are part of the VMCS when MSR-bitmaps are not supported. */
-    if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS))
-    {
-        switch (pMixedCtx->ecx)
-        {
-            case MSR_IA32_SYSENTER_CS:  pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SYSENTER_CS_MSR;  break;
-            case MSR_IA32_SYSENTER_EIP: pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SYSENTER_EIP_MSR; break;
-            case MSR_IA32_SYSENTER_ESP: pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SYSENTER_ESP_MSR; break;
-            case MSR_K8_FS_BASE:        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_FS_BASE_MSR;      break;
-            case MSR_K8_GS_BASE:        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_GS_BASE_MSR;      break;
-        }
-    }
-#ifdef VBOX_STRICT
-    else
-    {
-        /* Paranoia. Validate that MSRs in the MSR-bitmaps with write-passthru are not intercepted. */
-        switch (pMixedCtx->ecx)
-        {
-            case MSR_IA32_SYSENTER_CS:
-            case MSR_IA32_SYSENTER_EIP:
-            case MSR_IA32_SYSENTER_ESP:
-            case MSR_K8_FS_BASE:
-            case MSR_K8_GS_BASE:
-                AssertMsgFailed(("Unexpected WRMSR for an MSR in the VMCS. ecx=%RX32\n", pMixedCtx->ecx));
-                return VERR_VMX_UNEXPECTED_EXIT_CODE;
-            case MSR_K8_LSTAR:
-            case MSR_K6_STAR:
-            case MSR_K8_SF_MASK:
-            case MSR_K8_TSC_AUX:
-                AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%RX32\n", pMixedCtx->ecx));
-                return VERR_VMX_UNEXPECTED_EXIT_CODE;
-        }
-    }
-#endif
 
     /* EMInterpretWrmsr() requires CR0, EFLAGS and SS segment register. */
     rc  = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
@@ -7703,6 +7676,55 @@ static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
         {
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_GUEST_APIC_STATE;
         }
+        else if (pMixedCtx->ecx == MSR_K6_EFER)         /* EFER is the only MSR we auto-load but don't allow write-passthrough. */
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_GUEST_AUTO_MSRS;
+
+        /* Update MSRs that are part of the VMCS when MSR-bitmaps are not supported. */
+        if (RT_UNLIKELY(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)))
+        {
+            switch (pMixedCtx->ecx)
+            {
+                case MSR_IA32_SYSENTER_CS:  pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SYSENTER_CS_MSR;  break;
+                case MSR_IA32_SYSENTER_EIP: pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SYSENTER_EIP_MSR; break;
+                case MSR_IA32_SYSENTER_ESP: pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SYSENTER_ESP_MSR; break;
+                case MSR_K8_FS_BASE:        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_FS_BASE_MSR;      break;
+                case MSR_K8_GS_BASE:        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_GS_BASE_MSR;      break;
+                case MSR_K8_KERNEL_GS_BASE: /* If we auto-load it, update HM_CHANGED_VMX_GUEST_AUTO_MSRS. */   break;
+            }
+        }
+#ifdef VBOX_STRICT
+        else
+        {
+            /* Paranoia. Validate that MSRs in the MSR-bitmaps with write-passthru are not intercepted. */
+            switch (pMixedCtx->ecx)
+            {
+                case MSR_IA32_SYSENTER_CS:
+                case MSR_IA32_SYSENTER_EIP:
+                case MSR_IA32_SYSENTER_ESP:
+                case MSR_K8_FS_BASE:
+                case MSR_K8_GS_BASE:
+                    AssertMsgFailed(("Unexpected WRMSR for an MSR in the VMCS. ecx=%#RX32\n", pMixedCtx->ecx));
+                    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+
+                case MSR_K8_LSTAR:
+                case MSR_K6_STAR:
+                case MSR_K8_SF_MASK:
+                case MSR_K8_TSC_AUX:
+                {
+                    AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
+                                     pMixedCtx->ecx));
+                    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+                }
+
+                case MSR_K8_KERNEL_GS_BASE:
+                {
+                    AssertMsgFailed(("Unexpected WRMSR for an MSR that is manually loaded/stored on every VM-exit. ecx=%#RX32\n",
+                                     pMixedCtx->ecx));
+                    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+                }
+            }
+        }
+#endif  /* VBOX_STRICT */
     }
     return rc;
 }
