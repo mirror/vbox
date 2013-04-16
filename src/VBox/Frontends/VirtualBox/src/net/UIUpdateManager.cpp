@@ -146,11 +146,7 @@ public:
     /* Constructor: */
     UIUpdateStepVirtualBox(UIUpdateQueue *pQueue, bool fForceCall)
         : UIUpdateStep(pQueue, fForceCall)
-#ifdef Q_WS_X11
         , m_url("https://update.virtualbox.org/query.php")
-#else /* Q_WS_X11 */
-        , m_url("http://update.virtualbox.org/query.php")
-#endif /* !Q_WS_X11 */
     {
     }
 
@@ -200,11 +196,7 @@ private:
         QNetworkRequest request;
         request.setUrl(url);
         request.setRawHeader("User-Agent", strUserAgent.toAscii());
-#ifdef Q_WS_X11
         createNetworkRequest(request, UINetworkRequestType_GET_Our, tr("Checking for a new VirtualBox version..."));
-#else /* Q_WS_X11 */
-        createNetworkRequest(request, UINetworkRequestType_GET, tr("Checking for a new VirtualBox version..."));
-#endif /* !Q_WS_X11 */
     }
 
     /* Handle network reply canceled: */

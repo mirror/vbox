@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,6 +17,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QDir>
+#include <QFile>
+#include <QThread>
+#include <QSslCertificate>
+
 /* GUI includes: */
 #include "UINetworkReply.h"
 #include "UINetworkManager.h"
@@ -24,11 +30,9 @@
 #include "VBoxUtils.h"
 
 /* Other VBox includes; */
-#include <iprt/err.h>
-#include <iprt/http.h>
-#include <iprt/stream.h>
 #include <iprt/initterm.h>
-#include <iprt/mem.h>
+#include <iprt/http.h>
+#include <iprt/err.h>
 
 /* Our network-reply thread: */
 class UINetworkReplyPrivateThread : public QThread
@@ -51,26 +55,43 @@ public:
 
 private:
 
-    /* Private API: HTTP stuff: */
+    /* Helpers: HTTP stuff: */
     int applyProxyRules();
+    int applyHttpsCertificates();
     int applyRawHeaders();
     int performMainRequest();
 
-    /* Helper: Thread runner: */
+    /* Helper: Main thread runner: */
     void run();
+
+    /* Static helper: File stuff: */
+    static QString fullCertificateFileName();
 
     /* Static helpers: HTTP stuff: */
     static int abort(RTHTTP pHttp);
     static int applyProxyRules(RTHTTP pHttp, const QString &strHostName, int iPort);
+    static int applyCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
     static int applyRawHeaders(RTHTTP pHttp, const QList<QByteArray> &headers, const QNetworkRequest &request);
     static int performGetRequest(RTHTTP pHttp, const QNetworkRequest &request, QByteArray &reply);
+    static int checkCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
+    static int downloadCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName);
+    static int downloadCertificatePca3G5(RTHTTP pHttp, QFile &file);
+    static int downloadCertificatePca3(RTHTTP pHttp, QFile &file);
+    static int verifyCertificatePca3G5(RTHTTP pHttp, QByteArray &certificate);
+    static int verifyCertificatePca3(RTHTTP pHttp, QByteArray &certificate);
+    static int verifyCertificate(RTHTTP pHttp, QByteArray &certificate, const QByteArray &sha1, const QByteArray &sha512);
+    static int saveCertificate(QFile &file, const QByteArray &certificate);
 
     /* Variables: */
     QNetworkRequest m_request;
     int m_iError;
     RTHTTP m_pHttp;
     QByteArray m_reply;
+    static const QString m_strCertificateFileName;
 };
+
+/* static */
+const QString UINetworkReplyPrivateThread::m_strCertificateFileName = QString("vbox-ssl-cacertificate.crt");
 
 UINetworkReplyPrivateThread::UINetworkReplyPrivateThread(const QNetworkRequest &request)
     : m_request(request)
@@ -81,7 +102,7 @@ UINetworkReplyPrivateThread::UINetworkReplyPrivateThread(const QNetworkRequest &
 
 void UINetworkReplyPrivateThread::abort()
 {
-    /* Call for HTTP abort: */
+    /* Call for abort: */
     abort(m_pHttp);
 }
 
@@ -96,6 +117,30 @@ int UINetworkReplyPrivateThread::applyProxyRules()
     return applyProxyRules(m_pHttp,
                            proxyManager.proxyHost(),
                            proxyManager.proxyPort().toUInt());
+}
+
+int UINetworkReplyPrivateThread::applyHttpsCertificates()
+{
+    /* Prepare variables: */
+    const QString strFullCertificateFileName(fullCertificateFileName());
+    int rc = VINF_SUCCESS;
+
+    /* Check certificates if present: */
+    if (QFile::exists(strFullCertificateFileName))
+        rc = checkCertificates(m_pHttp, strFullCertificateFileName);
+    else
+        rc = VERR_FILE_NOT_FOUND;
+
+    /* Download certificates if necessary: */
+    if (!RT_SUCCESS(rc))
+        rc = downloadCertificates(m_pHttp, strFullCertificateFileName);
+
+    /* Apply certificates: */
+    if (RT_SUCCESS(rc))
+        rc = applyCertificates(m_pHttp, strFullCertificateFileName);
+
+    /* Return result-code: */
+    return rc;
 }
 
 int UINetworkReplyPrivateThread::applyRawHeaders()
@@ -121,29 +166,24 @@ void UINetworkReplyPrivateThread::run()
     RTR3InitExeNoArguments(RTR3INIT_FLAGS_SUPLIB);
 
     /* Create HTTP object: */
-    m_iError = RTHttpCreate(&m_pHttp);
+    if (RT_SUCCESS(m_iError))
+        m_iError = RTHttpCreate(&m_pHttp);
 
-    /* Was HTTP created? */
-    if (RT_SUCCESS(m_iError) && m_pHttp)
-    {
-        /* Simulate try-catch block: */
-        do
-        {
-            /* Apply proxy-rules: */
-            m_iError = applyProxyRules();
-            if (!RT_SUCCESS(m_iError))
-                break;
+    /* Apply proxy-rules: */
+    if (RT_SUCCESS(m_iError))
+        m_iError = applyProxyRules();
 
-            /* Assign raw headers: */
-            m_iError = applyRawHeaders();
-            if (!RT_SUCCESS(m_iError))
-                break;
+    /* Apply https-certificates: */
+    if (RT_SUCCESS(m_iError))
+        m_iError = applyHttpsCertificates();
 
-            /* Perform main request: */
-            m_iError = performMainRequest();
-        }
-        while (0);
-    }
+    /* Assign raw-headers: */
+    if (RT_SUCCESS(m_iError))
+        m_iError = applyRawHeaders();
+
+    /* Perform main request: */
+    if (RT_SUCCESS(m_iError))
+        m_iError = performMainRequest();
 
     /* Destroy HTTP object: */
     if (m_pHttp)
@@ -151,6 +191,13 @@ void UINetworkReplyPrivateThread::run()
         RTHttpDestroy(m_pHttp);
         m_pHttp = 0;
     }
+}
+
+/* static */
+QString UINetworkReplyPrivateThread::fullCertificateFileName()
+{
+    const QDir homeDir(QDir::toNativeSeparators(vboxGlobal().virtualBox().GetHomeFolder()));
+    return QDir::toNativeSeparators(homeDir.absoluteFilePath(m_strCertificateFileName));
 }
 
 /* static */
@@ -171,11 +218,22 @@ int UINetworkReplyPrivateThread::applyProxyRules(RTHTTP pHttp, const QString &st
     if (!pHttp)
         return VERR_INVALID_POINTER;
 
-    /* Assign HTTP proxy: */
+    /* Apply HTTP proxy: */
     return RTHttpSetProxy(pHttp,
                           strHostName.toAscii().constData(),
                           iPort,
                           0 /* login */, 0 /* password */);
+}
+
+/* static */
+int UINetworkReplyPrivateThread::applyCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName)
+{
+    /* Make sure HTTP is created: */
+    if (!pHttp)
+        return VERR_INVALID_POINTER;
+
+    /* Apply HTTPs certificates: */
+    return RTHttpSetCAFile(pHttp, strFullCertificateFileName.toAscii().constData());
 }
 
 /* static */
@@ -197,7 +255,7 @@ int UINetworkReplyPrivateThread::applyRawHeaders(RTHTTP pHttp, const QList<QByte
     }
     const char **ppFormattedHeaders = formattedHeaderPointers.data();
 
-    /* Assign HTTP headers: */
+    /* Apply HTTP headers: */
     return RTHttpSetHeaders(pHttp, formattedHeaderPointers.size(), ppFormattedHeaders);
 }
 
@@ -215,6 +273,213 @@ int UINetworkReplyPrivateThread::performGetRequest(RTHTTP pHttp, const QNetworkR
                        &pszBuf);
     reply = QByteArray(pszBuf);
     RTMemFree(pszBuf);
+    return rc;
+}
+
+/* static */
+int UINetworkReplyPrivateThread::checkCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName)
+{
+    /* Open certificates file: */
+    QFile file(strFullCertificateFileName);
+    bool fFileOpened = file.open(QIODevice::ReadOnly);
+    int rc = fFileOpened ? VINF_SUCCESS : VERR_OPEN_FAILED;
+
+    /* Read certificates file: */
+    if (RT_SUCCESS(rc))
+    {
+        /* Parse the file content: */
+        QByteArray data(file.readAll());
+        QList<QSslCertificate> certificates = QSslCertificate::fromData(data);
+        if (certificates.size() != 2)
+            rc = VERR_FILE_IO_ERROR;
+
+        /* Verify certificates: */
+        if (RT_SUCCESS(rc))
+        {
+            QByteArray certificate = certificates.first().toPem();
+            rc = verifyCertificatePca3G5(pHttp, certificate);
+        }
+        if (RT_SUCCESS(rc))
+        {
+            QByteArray certificate = certificates.last().toPem();
+            rc = verifyCertificatePca3(pHttp, certificate);
+        }
+    }
+
+    /* Close certificates file: */
+    if (fFileOpened)
+        file.close();
+
+    /* Return result-code: */
+    return rc;
+}
+
+/* static */
+int UINetworkReplyPrivateThread::downloadCertificates(RTHTTP pHttp, const QString &strFullCertificateFileName)
+{
+    /* Open certificates file: */
+    QFile file(strFullCertificateFileName);
+    bool fFileOpened = file.open(QIODevice::WriteOnly);
+    int rc = fFileOpened ? VINF_SUCCESS : VERR_OPEN_FAILED;
+
+    /* Download PCA-3G5 certificate: */
+    if (RT_SUCCESS(rc))
+        rc = downloadCertificatePca3G5(pHttp, file);
+    /* Download PCA-3 certificate: */
+    if (RT_SUCCESS(rc))
+        rc = downloadCertificatePca3(pHttp, file);
+
+    /* Close certificates file: */
+    if (fFileOpened)
+        file.close();
+
+    /* Return result-code: */
+    return rc;
+}
+
+/* static */
+int UINetworkReplyPrivateThread::downloadCertificatePca3G5(RTHTTP pHttp, QFile &file)
+{
+    /* Receive certificate: */
+    QByteArray certificate;
+    const QNetworkRequest address(QUrl("http://www.verisign.com/repository/roots/root-certificates/PCA-3G5.pem"));
+    int rc = performGetRequest(pHttp, address, certificate);
+
+    /* Verify certificate: */
+    if (RT_SUCCESS(rc))
+        rc = verifyCertificatePca3G5(pHttp, certificate);
+
+    /* Save certificate: */
+    if (RT_SUCCESS(rc))
+        rc = saveCertificate(file, certificate);
+
+    /* Return result-code: */
+    return rc;
+}
+
+/* static */
+int UINetworkReplyPrivateThread::downloadCertificatePca3(RTHTTP pHttp, QFile &file)
+{
+    /* Receive certificate: */
+    QByteArray certificate;
+    const QNetworkRequest address(QUrl("http://www.verisign.com/repository/roots/root-certificates/PCA-3.pem"));
+    int rc = performGetRequest(pHttp, address, certificate);
+
+    /* Verify certificate: */
+    if (RT_SUCCESS(rc))
+        rc = verifyCertificatePca3(pHttp, certificate);
+
+    /* Save certificate: */
+    if (RT_SUCCESS(rc))
+        rc = saveCertificate(file, certificate);
+
+    /* Return result-code: */
+    return rc;
+}
+
+/* static */
+int UINetworkReplyPrivateThread::verifyCertificatePca3G5(RTHTTP pHttp, QByteArray &certificate)
+{
+    /* PCA 3G5 secure hash algorithm 1: */
+    const char baSha1PCA3G5[] =
+    {
+        0x4e, 0xb6, 0xd5, 0x78, 0x49, 0x9b, 0x1c, 0xcf, 0x5f, 0x58,
+        0x1e, 0xad, 0x56, 0xbe, 0x3d, 0x9b, 0x67, 0x44, 0xa5, 0xe5
+    };
+    /* PCA 3G5 secure hash algorithm 512: */
+    const char baSha512PCA3G5[] =
+    {
+        0xd4, 0xf8, 0x10, 0x54, 0x72, 0x77, 0x0a, 0x2d,
+        0xe3, 0x17, 0xb3, 0xcf, 0xed, 0x61, 0xae, 0x5c,
+        0x5d, 0x3e, 0xde, 0xa1, 0x41, 0x35, 0xb2, 0xdf,
+        0x60, 0xe2, 0x61, 0xfe, 0x3a, 0xc1, 0x66, 0xa3,
+        0x3c, 0x88, 0x54, 0x04, 0x4f, 0x1d, 0x13, 0x46,
+        0xe3, 0x8c, 0x06, 0x92, 0x9d, 0x70, 0x54, 0xc3,
+        0x44, 0xeb, 0x2c, 0x74, 0x25, 0x9e, 0x5d, 0xfb,
+        0xd2, 0x6b, 0xa8, 0x9a, 0xf0, 0xb3, 0x6a, 0x01
+    };
+    QByteArray pca3G5sha1 = QByteArray::fromRawData(baSha1PCA3G5, sizeof(baSha1PCA3G5));
+    QByteArray pca3G5sha512 = QByteArray::fromRawData(baSha512PCA3G5, sizeof(baSha512PCA3G5));
+
+    /* Verify certificate: */
+    return verifyCertificate(pHttp, certificate, pca3G5sha1, pca3G5sha512);
+}
+
+/* static */
+int UINetworkReplyPrivateThread::verifyCertificatePca3(RTHTTP pHttp, QByteArray &certificate)
+{
+    /* PCA 3 secure hash algorithm 1: */
+    const char baSha1PCA3[] =
+    {
+        0xa1, 0xdb, 0x63, 0x93, 0x91, 0x6f, 0x17, 0xe4, 0x18, 0x55,
+        0x09, 0x40, 0x04, 0x15, 0xc7, 0x02, 0x40, 0xb0, 0xae, 0x6b
+    };
+    /* PCA 3 secure hash algorithm 512: */
+    const char baSha512PCA3[] =
+    {
+        0xbb, 0xf7, 0x8a, 0x19, 0x9f, 0x37, 0xee, 0xa2,
+        0xce, 0xc8, 0xaf, 0xe3, 0xd6, 0x22, 0x54, 0x20,
+        0x74, 0x67, 0x6e, 0xa5, 0x19, 0xb7, 0x62, 0x1e,
+        0xc1, 0x2f, 0xd5, 0x08, 0xf4, 0x64, 0xc4, 0xc6,
+        0xbb, 0xc2, 0xf2, 0x35, 0xe7, 0xbe, 0x32, 0x0b,
+        0xde, 0xb2, 0xfc, 0x44, 0x92, 0x5b, 0x8b, 0x9b,
+        0x77, 0xa5, 0x40, 0x22, 0x18, 0x12, 0xcb, 0x3d,
+        0x0a, 0x67, 0x83, 0x87, 0xc5, 0x45, 0xc4, 0x99
+    };
+    QByteArray pca3sha1 = QByteArray::fromRawData(baSha1PCA3, sizeof(baSha1PCA3));
+    QByteArray pca3sha512 = QByteArray::fromRawData(baSha512PCA3, sizeof(baSha512PCA3));
+
+    /* Verify certificate: */
+    return verifyCertificate(pHttp, certificate, pca3sha1, pca3sha512);
+}
+
+/* static */
+int UINetworkReplyPrivateThread::verifyCertificate(RTHTTP pHttp, QByteArray &certificate, const QByteArray &sha1, const QByteArray &sha512)
+{
+    /* Make sure HTTP is created: */
+    if (!pHttp)
+        return VERR_INVALID_POINTER;
+
+    /* Create digest: */
+    uint8_t *abSha1;
+    size_t  cbSha1;
+    uint8_t *abSha512;
+    size_t  cbSha512;
+    int rc = RTHttpCertDigest(pHttp, certificate.data(), certificate.size(),
+                              &abSha1, &cbSha1, &abSha512, &cbSha512);
+
+    /* Verify digest: */
+    if (cbSha1 != (size_t)sha1.size())
+    {
+        rc = VERR_HTTP_CACERT_WRONG_FORMAT;
+    }
+    else if (memcmp(sha1.constData(), abSha1, cbSha1))
+    {
+        rc = VERR_HTTP_CACERT_WRONG_FORMAT;
+    }
+    if (cbSha512 != (size_t)sha512.size())
+    {
+        rc = VERR_HTTP_CACERT_WRONG_FORMAT;
+    }
+    else if (memcmp(sha512.constData(), abSha512, cbSha512))
+    {
+        rc = VERR_HTTP_CACERT_WRONG_FORMAT;
+    }
+
+    /* Cleanup digest: */
+    RTMemFree(abSha1);
+    RTMemFree(abSha512);
+
+    /* Return result-code: */
+    return rc;
+}
+
+/* static */
+int UINetworkReplyPrivateThread::saveCertificate(QFile &file, const QByteArray &certificate)
+{
+    /* Save certificate: */
+    QSslCertificate formattedCertificate = QSslCertificate::fromData(certificate).first();
+    int rc = file.write(formattedCertificate.toPem()) != -1 ? VINF_SUCCESS : VERR_WRITE_ERROR;
     return rc;
 }
 
@@ -271,13 +536,14 @@ public:
                 break;
             case QNetworkReply::HostNotFoundError:
                 return tr("Host not found");
-                break;
             case QNetworkReply::ContentAccessDenied:
                 return tr("Content access denied");
-                break;
             case QNetworkReply::ProtocolFailure:
                 return tr("Protocol failure");
-                break;
+            case QNetworkReply::AuthenticationRequiredError:
+                return tr("Wrong SSL certificate format");
+            case QNetworkReply::SslHandshakeFailedError:
+                return tr("SSL authentication failed");
             default:
                 return tr("Unknown reason");
                 break;
@@ -309,6 +575,12 @@ private slots:
                 break;
             case VERR_HTTP_BAD_REQUEST:
                 m_error = QNetworkReply::ProtocolFailure;
+                break;
+            case VERR_HTTP_CACERT_WRONG_FORMAT:
+                m_error = QNetworkReply::AuthenticationRequiredError;
+                break;
+            case VERR_HTTP_CACERT_CANNOT_AUTHENTICATE:
+                m_error = QNetworkReply::SslHandshakeFailedError;
                 break;
             default:
                 m_error = QNetworkReply::UnknownNetworkError;
