@@ -68,13 +68,13 @@ ifdef VBOX_WITH_LWIP_NAT
 
 PROGRAMS += VBoxNetLwipNAT
 VBoxNetLwipNAT_TEMPLATE =
-VBoxNetLwipNAT_TEMPLATE := VBOXR3$(if-expr defined(VBOX_WITH_HARDENING),,EXE)
-#VBoxNetLwipNAT_INCS += ${LWIP_INCS}
+VBoxNetLwipNAT_TEMPLATE := VBOXMAINCLIENTEXE
 VBoxNetLwipNAT_INCS += ../../Devices/Network \
 	../../Devices/Network/lwip-new/vbox # testproxy.h
 VBoxNetLwipNAT_DEFS += ${LWIP_DEFS} 
 VBoxNetLwipNAT_SOURCES += VBoxNetLwipNAT.cpp	\
 	../NetLib/VBoxNetBaseService.cpp \
+	../NetLib/VBoxNetPortForwardString.cpp \
 	../../Devices/Network/VBoxLwipCore.cpp
 VBoxNetLwipNAT_LIBS = \
 	$(LIB_RUNTIME)
@@ -88,5 +88,13 @@ $(foreach file,$(LWIP_SOURCES),$(eval $(call def_vbox_nat_network_service_source
 $(foreach incs,$(LWIP_INCS),$(eval $(call def_vbox_nat_network_service_incs, VBoxNetLwipNAT, ../../Devices,$(incs))))
 
 endif
+
+PROGRAMS += tstNetPfAddressPortPairParse
+
+tstNetPfAddressPortPairParse_TEMPLATE = VBOXR3TSTEXE
+#tstNetPfAddressPortPairParse_INSTTYPE = none
+tstNetPfAddressPortPairParse_SOURCES = 	../NetLib/testcase/tstNetPfAddressPortPairParse.cpp \
+	../NetLib/VBoxNetPortForwardString.cpp
+
 
 include $(FILE_KBUILD_SUB_FOOTER)
