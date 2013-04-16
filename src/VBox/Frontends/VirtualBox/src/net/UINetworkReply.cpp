@@ -21,7 +21,7 @@
 #include <QDir>
 #include <QFile>
 #include <QThread>
-#include <QSslCertificate>
+#include <QRegExp>
 
 /* GUI includes: */
 #include "UINetworkReply.h"
@@ -288,20 +288,23 @@ int UINetworkReplyPrivateThread::checkCertificates(RTHTTP pHttp, const QString &
     if (RT_SUCCESS(rc))
     {
         /* Parse the file content: */
-        QByteArray data(file.readAll());
-        QList<QSslCertificate> certificates = QSslCertificate::fromData(data);
-        if (certificates.size() != 2)
+        QString strData(file.readAll());
+        QRegExp regExp("(-{5}BEGIN CERTIFICATE-{5}[\\s\\S\\n]+-{5}END CERTIFICATE-{5})\\n"
+                       "(-{5}BEGIN CERTIFICATE-{5}[\\s\\S\\n]+-{5}END CERTIFICATE-{5})");
+        regExp.setMinimal(true);
+        int iIndex = regExp.indexIn(strData);
+        if (iIndex == -1)
             rc = VERR_FILE_IO_ERROR;
 
         /* Verify certificates: */
         if (RT_SUCCESS(rc))
         {
-            QByteArray certificate = certificates.first().toPem();
+            QByteArray certificate = regExp.cap(1).toAscii();
             rc = verifyCertificatePca3G5(pHttp, certificate);
         }
         if (RT_SUCCESS(rc))
         {
-            QByteArray certificate = certificates.last().toPem();
+            QByteArray certificate = regExp.cap(2).toAscii();
             rc = verifyCertificatePca3(pHttp, certificate);
         }
     }
@@ -478,8 +481,15 @@ int UINetworkReplyPrivateThread::verifyCertificate(RTHTTP pHttp, QByteArray &cer
 int UINetworkReplyPrivateThread::saveCertificate(QFile &file, const QByteArray &certificate)
 {
     /* Save certificate: */
-    QSslCertificate formattedCertificate = QSslCertificate::fromData(certificate).first();
-    int rc = file.write(formattedCertificate.toPem()) != -1 ? VINF_SUCCESS : VERR_WRITE_ERROR;
+    int rc = VINF_SUCCESS;
+    if (RT_SUCCESS(rc))
+        rc = file.write(certificate) != -1 ? VINF_SUCCESS : VERR_WRITE_ERROR;
+
+    /* Add 'new-line' character: */
+    if (RT_SUCCESS(rc))
+        rc = file.write("\n") != -1 ? VINF_SUCCESS : VERR_WRITE_ERROR;
+
+    /* Return result-code: */
     return rc;
 }
 
