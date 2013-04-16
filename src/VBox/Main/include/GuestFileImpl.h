@@ -115,8 +115,6 @@ private:
 
     struct Data
     {
-        /** All related callbacks to this file. */
-        GuestCtrlCallbacks      mCallbacks;
         /** The file's open info. */
         GuestFileOpenInfo       mOpenInfo;
         /** The file's initial size on open. */
