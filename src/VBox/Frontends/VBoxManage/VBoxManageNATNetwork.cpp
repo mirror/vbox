@@ -19,6 +19,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #ifndef VBOX_ONLY_DOCS
+
+
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
@@ -28,6 +30,11 @@
 #include <VBox/com/VirtualBox.h>
 #endif /* !VBOX_ONLY_DOCS */
 
+#include <netinet/in.h>
+
+#define IPv6
+
+#include <iprt/cdefs.h>
 #include <iprt/cidr.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -39,9 +46,13 @@
 
 #include <VBox/log.h>
 
+#include <vector>
+
 #include "VBoxManage.h"
+#include "VBoxPortForwardString.h"
 
 #ifndef VBOX_ONLY_DOCS
+
 using namespace com;
 
 typedef enum enMainOpCodes
@@ -61,8 +72,22 @@ static const RTGETOPTDEF g_aNATNetworkIPOptions[]
         { "--ipv6",             '6', RTGETOPT_REQ_BOOL},
         { "--enable",           'e', RTGETOPT_REQ_NOTHING },
         { "--disable",          'd', RTGETOPT_REQ_NOTHING },
-
+        { "--port-forward-4",   'p', RTGETOPT_REQ_STRING },
+        { "--port-forward-6",   'P', RTGETOPT_REQ_STRING },
       };
+
+typedef struct PFNAME2DELETE
+{
+    char aszName[PF_NAMELEN];
+    bool fIPv6;
+} PFNAME2DELETE, *PPFNAME2DELETE;
+
+typedef std::vector<PFNAME2DELETE> VPF2DELETE;
+typedef VPF2DELETE::const_iterator VPF2DELETEITERATOR;
+
+typedef std::vector<PORTFORWARDRULE> VPF2ADD;
+typedef VPF2ADD::const_iterator VPF2ADDITERATOR;
+
 
 static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
 {
@@ -78,9 +103,13 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
     int dhcp = -1;
     int ipv6 = -1;
 
+    VPF2DELETE vPfName2Delete;
+    VPF2ADD vPf2Add;
+
     int c;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
+
     RTGetOptInit(&GetState,
                  a->argc,
                  a->argv,
@@ -100,6 +129,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                     pNetName = ValueUnion.psz;
                 }
             break;
+
             case 'n':   // --network
                 if(pNetworkCidr)
                     return errorSyntax(USAGE_NATNETWORK, "You can only specify --network once.");
@@ -108,6 +138,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                     pNetworkCidr = ValueUnion.psz;
                 }
             break;
+
             case 'e':   // --enable
                 if(enable >= 0)
                     return errorSyntax(USAGE_NATNETWORK, "You can specify either --enable or --disable once.");
@@ -116,6 +147,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                     enable = 1;
                 }
             break;
+
             case 'd':   // --disable
                 if(enable >= 0)
                     return errorSyntax(USAGE_NATNETWORK, "You can specify either --enable or --disable once.");
@@ -124,31 +156,89 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                     enable = 0;
                 }
             break;
-            case VINF_GETOPT_NOT_OPTION:
-                return errorSyntax(USAGE_NATNETWORK, "unhandled parameter: %s", ValueUnion.psz);
-            break;
+           
             case 'h':
                 if (dhcp != -1)
                     return errorSyntax(USAGE_NATNETWORK, "You can specify --dhcp once.");
                 dhcp = ValueUnion.f;
                 break;
+
             case '6':
                 if (ipv6 != -1)
                     return errorSyntax(USAGE_NATNETWORK, "You can specify --ipv6 once.");
                 ipv6 = ValueUnion.f;
                 break;
+
+            case 'P': /* ipv6 portforwarding*/
+            case 'p': /* ipv4 portforwarding */
+            {
+                if (RTStrCmp(ValueUnion.psz, "delete") != 0)
+                {
+                    PORTFORWARDRULE Pfr;
+
+                    /* netPfStrToPf will clean up the Pfr */
+                    int irc = netPfStrToPf(ValueUnion.psz, (c == 'P'), &Pfr);
+                    if (RT_FAILURE(irc))
+                        return errorSyntax(USAGE_NATNETWORK,
+                                           "Invalid port-forward rule %s\n",
+                                           ValueUnion.psz);
+                    
+                    vPf2Add.push_back(Pfr);
+                }
+                else
+                {
+                    int vrc;
+                    RTGETOPTUNION NamePf2DeleteUnion;
+                    PFNAME2DELETE Name2Delete;
+
+                    if (enmCode != OP_MODIFY)
+                        return errorSyntax(USAGE_NATNETWORK,
+                                           "Port-forward could be deleted on modify \n");
+
+                    vrc = RTGetOptFetchValue(&GetState, 
+                                             &NamePf2DeleteUnion, 
+                                             RTGETOPT_REQ_STRING);
+                    if (RT_FAILURE(vrc))
+                        return errorSyntax(USAGE_NATNETWORK,
+                                           "Not enough parmaters\n");
+                    
+                    if (strlen(NamePf2DeleteUnion.psz) > PF_NAMELEN)
+                        return errorSyntax(USAGE_NATNETWORK,
+                                           "Port-forward rule name is too long\n");
+
+                    RT_ZERO(Name2Delete);
+                    RTStrCopy(Name2Delete.aszName, 
+                              PF_NAMELEN, 
+                              NamePf2DeleteUnion.psz);
+                    Name2Delete.fIPv6 = (c == 'P');
+
+                    vPfName2Delete.push_back(Name2Delete);
+                }
+                break;
+            }
+
+            case VINF_GETOPT_NOT_OPTION:
+                return errorSyntax(USAGE_NATNETWORK, 
+                                   "unhandled parameter: %s", 
+                                   ValueUnion.psz);
+            break;
+
             default:
                 if (c > 0)
                 {
                     if (RT_C_IS_GRAPH(c))
-                        return errorSyntax(USAGE_NATNETWORK, "unhandled option: -%c", c);
+                        return errorSyntax(USAGE_NATNETWORK, 
+                                           "unhandled option: -%c", c);
                     else
-                        return errorSyntax(USAGE_NATNETWORK, "unhandled option: %i", c);
+                        return errorSyntax(USAGE_NATNETWORK, 
+                                           "unhandled option: %i", c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_NATNETWORK, "unknown option: %s", ValueUnion.psz);
+                    return errorSyntax(USAGE_NATNETWORK, 
+                                       "unknown option: %s", ValueUnion.psz);
                 else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_NATNETWORK, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                    return errorSyntax(USAGE_NATNETWORK, 
+                                       "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
                     return errorSyntax(USAGE_NATNETWORK, "%Rrs", c);
         }
@@ -217,6 +307,46 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
               CHECK_ERROR(net, COMSETTER(IPv6Enabled) ((BOOL)ipv6));
               if(FAILED(rc))
                 return errorArgument("Failed to set configuration");
+        }
+        
+        if (!vPfName2Delete.empty())
+        {
+            VPF2DELETEITERATOR it;
+            for (it = vPfName2Delete.begin(); it != vPfName2Delete.end(); ++it)
+            {
+                CHECK_ERROR(net, RemovePortForwardRule((BOOL)(*it).fIPv6,
+                                                       Bstr((*it).aszName).raw()));
+                if(FAILED(rc))
+                    return errorArgument("Failed to delete pf");
+
+            }
+        }
+
+        if (!vPf2Add.empty())
+        {
+            VPF2ADDITERATOR it;
+            for(it = vPf2Add.begin(); it != vPf2Add.end(); ++it)
+            {
+                NATProtocol_T proto = NATProtocol_TCP;
+                if ((*it).iPfrProto == IPPROTO_TCP)
+                    proto = NATProtocol_TCP;
+                else if ((*it).iPfrProto == IPPROTO_UDP)
+                    proto = NATProtocol_UDP;
+                else
+                    continue; /* XXX: warning here. */
+
+                CHECK_ERROR(net, AddPortForwardRule(
+                              (BOOL)(*it).fPfrIPv6,
+                              Bstr((*it).aszPfrName).raw(),
+                              proto,
+                              Bstr((*it).aszPfrHostAddr).raw(),
+                              (*it).u16PfrHostPort,
+                              Bstr((*it).aszPfrGuestAddr).raw(),
+                              (*it).u16PfrGuestPort));
+                if(FAILED(rc))
+                    return errorArgument("Failed to add pf");
+
+            }
         }
         
         if(enable >= 0)

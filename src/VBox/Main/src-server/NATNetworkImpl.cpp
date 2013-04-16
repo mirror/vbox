@@ -32,6 +32,8 @@
 #include <VBox/settings.h>
 
 #include "EventImpl.h"
+#include "VBoxEvents.h"
+
 #include "NATNetworkServiceRunner.h"
 #include "VirtualBoxImpl.h"
 
@@ -118,14 +120,23 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox, IN_BSTR aName)
 
     /* share VirtualBox weakly (parent remains NULL so far) */
     unconst(mVirtualBox) = aVirtualBox;
-
     unconst(mName) = aName;
     m = new Data();
     m->IPv4Gateway = "10.0.2.2";
     m->IPv4NetworkCidr = "10.0.2.0/24";
     m->IPv6Prefix = "fe80::/64";
     m->fEnabled = FALSE;
+
+    
+    
     RecalculateIpv4AddressAssignments();
+
+    HRESULT hrc = unconst(m->pEventSource).createObject();
+    if (FAILED(hrc)) throw hrc;
+
+    hrc = m->pEventSource->init(static_cast<INATNetwork *>(this));
+    if (FAILED(hrc)) throw hrc;
+        
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
@@ -149,13 +160,15 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox,
     m->fEnabled = data.fEnabled;
     m->fAdvertiseDefaultIPv6Route = data.fAdvertiseDefaultIPv6Route;
     m->fNeedDhcpServer = data.fNeedDhcpServer;
+
     RecalculateIpv4AddressAssignments();
+
     /* IPv4 port-forward rules */
     m->mapName2PortForwardRule4.clear();
     for (settings::NATRuleList::const_iterator it = data.llPortForwardRules4.begin();
         it != data.llPortForwardRules4.end(); ++it)
     {
-        m->mapName2PortForwardRule4.insert(std::make_pair(it->strName, *it));
+        m->mapName2PortForwardRule4.insert(std::make_pair(it->strName.c_str(), *it));
     }
 
     /* IPv6 port-forward rules */
@@ -165,6 +178,12 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox,
     {
         m->mapName2PortForwardRule6.insert(std::make_pair(it->strName, *it));
     }
+
+    HRESULT hrc = unconst(m->pEventSource).createObject();
+    if (FAILED(hrc)) throw hrc;
+
+    hrc = m->pEventSource->init(static_cast<INATNetwork *>(this));
+    if (FAILED(hrc)) throw hrc;
    
     autoInitSpan.setSucceeded();
 
@@ -198,6 +217,7 @@ HRESULT NATNetwork::saveSettings(settings::NATNetwork &data)
     for (NATRuleMap::iterator it = m->mapName2PortForwardRule6.begin();
          it != m->mapName2PortForwardRule6.end(); ++it)
       data.llPortForwardRules4.push_back(it->second);
+
     /* XXX: should we do here a copy of params */
     /* XXX: should we unlock here? */
     mVirtualBox->onNATNetworkSetting(mName.raw(), 
@@ -246,6 +266,7 @@ STDMETHODIMP NATNetwork::COMSETTER(NetworkName) (IN_BSTR aName)
     unconst(mName) = aName;
 
     alock.release();
+
 #ifdef NAT_XML_SERIALIZATION
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     rc = mVirtualBox->saveSettings();
@@ -321,6 +342,7 @@ STDMETHODIMP NATNetwork::COMSETTER(Network) (IN_BSTR aIPv4NetworkCidr)
         unconst(m->IPv4NetworkCidr) = Bstr(aIPv4NetworkCidr);
         RecalculateIpv4AddressAssignments();
         alock.release();
+
 #ifdef NAT_XML_SERIALIZATION
         AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
         rc = mVirtualBox->saveSettings();
@@ -351,6 +373,7 @@ STDMETHODIMP NATNetwork::COMSETTER(IPv6Enabled)(BOOL aAdvertiseDefaultIPv6Route)
 
     // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
+
 #ifdef NAT_XML_SERIALIZATION
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     rc = mVirtualBox->saveSettings();
@@ -380,8 +403,9 @@ STDMETHODIMP NATNetwork::COMSETTER(IPv6Prefix) (IN_BSTR aIPv6Prefix)
     {
 
         unconst(m->IPv6Prefix) = Bstr(aIPv6Prefix);
-        /* @todo: do we need recalcualtion ? */
+        /* @todo: do we need recalculation ? */
         alock.release();
+
 #ifdef NAT_XML_SERIALIZATION
         AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
         rc = mVirtualBox->saveSettings();
@@ -412,6 +436,7 @@ STDMETHODIMP NATNetwork::COMSETTER(AdvertiseDefaultIPv6RouteEnabled)(BOOL aAdver
 
     // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
+
 #ifdef NAT_XML_SERIALIZATION
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     rc = mVirtualBox->saveSettings();
@@ -438,9 +463,12 @@ STDMETHODIMP NATNetwork::COMSETTER(NeedDhcpServer)(BOOL aNeedDhcpServer)
     HRESULT rc = S_OK;
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->fNeedDhcpServer = aNeedDhcpServer;
+
     RecalculateIpv4AddressAssignments();
+
     // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
+
 #ifdef NAT_XML_SERIALIZATION
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     rc = mVirtualBox->saveSettings();
@@ -456,12 +484,14 @@ STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules4)(ComSafeArrayOut(BSTR, aPor
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    GetPortForwardRulesFromMap(ComSafeArrayInArg(aPortForwardRules4), m->mapName2PortForwardRule4);
+    GetPortForwardRulesFromMap(ComSafeArrayInArg(aPortForwardRules4), 
+                               m->mapName2PortForwardRule4);
     alock.release();
     return S_OK;
 }
 
-STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules6)(ComSafeArrayOut(BSTR, aPortForwardRules6))
+STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules6)(ComSafeArrayOut(BSTR, 
+								      aPortForwardRules6))
 {
     CheckComArgOutSafeArrayPointerValid(aPortForwardRules6);
 
@@ -502,11 +532,12 @@ STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
             return E_INVALIDARG;
     }
     if (name.isEmpty())
-      name = Utf8StrFmt("%s_%s:%d_%s:%d", proto.c_str(), 
-                        Utf8Str(aHostIp).c_str(), aHostPort, 
+      name = Utf8StrFmt("%s_[%s]%%%d_[%s]%%%d", proto.c_str(), 
+                        Utf8Str(aHostIp).c_str(), aHostPort,
                         Utf8Str(aGuestIp).c_str(), aGuestPort);
 
     NATRuleMap::iterator it;
+
     for (it = mapRules.begin(); it != mapRules.end(); ++it)
     {
         r = it->second;
@@ -533,39 +564,62 @@ STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
                                          aPortForwardRuleName, aProto, 
                                          aHostIp, aHostPort, 
                                          aGuestIp, aGuestPort);
+
+    /* Notify listerners listening on this network only */
+    fireNATNetworkPortForwardEvent(m->pEventSource, mName.raw(), TRUE, 
+                                   aIsIpv6, aPortForwardRuleName, aProto,
+                                   aHostIp, aHostPort,
+                                   aGuestIp, aGuestPort);
+
 #ifdef NAT_XML_SERIALIZATION
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     rc = mVirtualBox->saveSettings();
 #endif
-    /* @todo: fire the event */
     return rc;
 }
 
 STDMETHODIMP NATNetwork::RemovePortForwardRule(BOOL aIsIpv6, IN_BSTR aPortForwardRuleName)
 {
     int rc = S_OK;
+    Utf8Str strHostIP, strGuestIP;
+    uint16_t u16HostPort, u16GuestPort;
+    NATProtocol_T proto = NATProtocol_TCP;
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     NATRuleMap& mapRules = aIsIpv6 ? m->mapName2PortForwardRule6 : m->mapName2PortForwardRule4;
     NATRuleMap::iterator it = mapRules.find(aPortForwardRuleName);
+    
     if (it == mapRules.end())
         return E_INVALIDARG;
-   
+    
+    strHostIP = it->second.strHostIP;
+    strGuestIP = it->second.strGuestIP;
+    u16HostPort = it->second.u16HostPort;
+    u16GuestPort = it->second.u16GuestPort;
+    proto = it->second.proto;
+
     mapRules.erase(it);
     
     alock.release();
-    /* we need only name here, it supposed to be uniq within IP version protocols */
+
     mVirtualBox->onNATNetworkPortForward(mName.raw(), FALSE, aIsIpv6, 
-                                         aPortForwardRuleName, NATProtocol_TCP, 
-                                         Bstr().raw(), 0, 
-                                         Bstr().raw(), 0);
+                                         aPortForwardRuleName, proto, 
+                                         Bstr(strHostIP).raw(), u16HostPort, 
+                                         Bstr(strGuestIP).raw(), u16GuestPort);
+
+    /* Notify listerners listening on this network only */
+    fireNATNetworkPortForwardEvent(m->pEventSource, mName.raw(), FALSE, 
+                                   aIsIpv6, aPortForwardRuleName, proto,
+                                   Bstr(strHostIP).raw(), u16HostPort,
+                                   Bstr(strGuestIP).raw(), u16GuestPort);
 #ifdef NAT_XML_SERIALIZATION
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     rc = mVirtualBox->saveSettings();
 #endif
-    /* @todo: fire the event */
+
     return rc;
 }
 
@@ -581,6 +635,24 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
     m->NATRunner.setOption(NATSCCFG_TRUNKTYPE, Utf8Str(aTrunkType), true);
     m->NATRunner.setOption(NATSCCFG_IPADDRESS, m->IPv4Gateway, true);
     m->NATRunner.setOption(NATSCCFG_NETMASK, m->IPv4NetworkMask, true);
+    
+    /* port-forwarding */
+    
+    for (constNATRuleMapIterator it = m->mapName2PortForwardRule4.begin();
+	 it != m->mapName2PortForwardRule4.end(); ++it)
+    {
+	settings::NATRule r = it->second;
+	m->NATRunner.setOption(NATSCCFG_PORTFORWARD4, 
+			       Bstr(Utf8StrFmt("%s:%d:[%s]:%d:[%s]:%d",
+					       r.strName.c_str(),
+					       r.proto,
+					       r.strHostIP.isEmpty() ? 
+					              "0.0.0.0" :
+					               r.strHostIP.c_str(),
+					       r.u16HostPort,
+					       r.strGuestIP.c_str(),
+					       r.u16GuestPort)), true);
+    }
 
     if (m->fNeedDhcpServer)
     {
@@ -683,9 +755,9 @@ void NATNetwork::GetPortForwardRulesFromMap(ComSafeArrayOut(BSTR, aPortForwardRu
          it != aRules.end(); ++it, ++i)
       {
         settings::NATRule r = it->second;
-        BstrFmt bstr("%s,%d,%s,%d,%s,%d",
+        BstrFmt bstr("%s:%s:[%s]:%d:[%s]:%d",
                      r.strName.c_str(),
-                     r.proto,
+                     (r.proto == NATProtocol_TCP? "tcp" : "udp"),
                      r.strHostIP.c_str(),
                      r.u16HostPort,
                      r.strGuestIP.c_str(),
@@ -697,12 +769,6 @@ void NATNetwork::GetPortForwardRulesFromMap(ComSafeArrayOut(BSTR, aPortForwardRu
 
 int NATNetwork::RecalculateIpv4AddressAssignments()
 {
-    /**
-     * We assume that port-forwarding rules set is empty!
-     * possible scenarious on change of CIDR we clean up (1) pfs 
-     * or (2) rewrite all rules to new network.
-     */
-    AssertReturn(m->mapName2PortForwardRule4.empty(), VERR_INTERNAL_ERROR);
     RTNETADDRIPV4 network, netmask, gateway;
     char aszGatewayIp[16], aszNetmask[16];
     RT_ZERO(aszNetmask);

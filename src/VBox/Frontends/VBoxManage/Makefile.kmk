@@ -55,7 +55,8 @@ VBoxManage_SOURCES = \
 	VBoxManageSnapshot.cpp \
 	VBoxManageStorageController.cpp \
 	VBoxManageUSB.cpp \
-	$(if $(VBOX_WITH_NAT_SERVICE),VBoxManageNATNetwork.cpp,)
+	$(if $(VBOX_WITH_NAT_SERVICE),VBoxManageNATNetwork.cpp,) \
+	$(if $(VBOX_WITH_NAT_SERVICE),../../NetworkServices/NetLib/VBoxNetPortForwardString.cpp,)
 VBoxManage_LIBS      += $(LIB_DDU)
 
 VBoxManage_DEFS      += \
@@ -80,6 +81,9 @@ VBoxManage_DEFS      += \
 	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH) \
 	$(if $(VBOX_WITH_VPX),VBOX_WITH_VPX) \
 	$(if $(VBOX_WITH_NAT_SERVICE),VBOX_WITH_NAT_SERVICE)
+
+# VBoxNetPortForwardString.h
+VBoxManageNATNetwork.cpp_INCS += ../../NetworkServices/NetLib/
 
 ifneq ($(KBUILD_TARGET),win)
  # Workaround for buggy gcc-4.3 compilers, see
