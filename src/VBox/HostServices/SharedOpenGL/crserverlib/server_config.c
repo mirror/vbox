@@ -56,6 +56,7 @@ setDefaults(void)
     cr_server.fVramPresentModeDefault = CR_SERVER_REDIR_F_FBO_RAM;
     cr_server.bUsePBOForReadback = GL_FALSE;
     cr_server.bUseOutputRedirect = GL_FALSE;
+    cr_server.bWindowsInitiallyHidden = GL_FALSE;
 }
 
 static int crServerVBoxParseNumerics(const char *pszStr, const int defaultVal)

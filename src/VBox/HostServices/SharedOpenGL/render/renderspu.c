@@ -466,11 +466,7 @@ GLint renderspuWindowCreateEx( const char *dpyName, GLint visBits, GLint id )
     
     crHashtableAdd(render_spu.windowTable, id, window);
 
-    if (render_spu.force_hidden_wdn_create
-            || ((render_spu.render_to_app_window || render_spu.render_to_crut_window) && !crGetenv("CRNEWSERVER")))
-        showIt = 0;
-    else
-        showIt = (id != CR_RENDER_DEFAULT_WINDOW_ID);
+    showIt = 0;
 
     /*
     crDebug("Render SPU: Creating window (visBits=0x%x, id=%d)", visBits, window->BltInfo.Base.id);
@@ -1232,9 +1228,6 @@ static void RENDER_APIENTRY renderspuChromiumParameteriCR(GLenum target, GLint v
 
     switch (target)
     {
-        case GL_HOST_WND_CREATED_HIDDEN:
-            render_spu.force_hidden_wdn_create = value ? GL_TRUE : GL_FALSE;
-            break;
         default:
 //            crWarning("Unhandled target in renderspuChromiumParameteriCR()");
             break;

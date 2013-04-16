@@ -238,6 +238,9 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParameteriCR(GLenum target
     case GL_SERVER_CURRENT_EYE_CR:
         cr_server.currentEye = value ? 1 : 0;
         break;
+    case GL_HOST_WND_CREATED_HIDDEN:
+        cr_server.bWindowsInitiallyHidden = value ? 1 : 0;
+        break;
     default:
         /* Pass the parameter info to the head SPU */
         cr_server.head_spu->dispatch_table.ChromiumParameteriCR( target, value );

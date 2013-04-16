@@ -78,12 +78,10 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     mural->width = dims[0];
     mural->height = dims[1];
     
-    cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_VISIBILITY_CR, spuWindow, GL_INT, 1, dims);
-
     mural->spuWindow = spuWindow;
     mural->screenId = 0;
     mural->fHasParentWindow = !!cr_server.screen[0].winID;
-    mural->bVisible = !!dims[0];
+    mural->bVisible = cr_server.bWindowsInitiallyHidden;
     mural->fPresentMode = CR_SERVER_REDIR_F_NONE;
 
     mural->cVisibleRects = 0;
