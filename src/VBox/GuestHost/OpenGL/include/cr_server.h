@@ -521,6 +521,8 @@ typedef struct {
 
     GLboolean             bUseMultipleContexts;
 
+    GLboolean             bWindowsInitiallyHidden;
+
     /* @todo: should we use just one blitter?
      * we use two currently because the drawable attribs can differ*/
     CR_DISPLAY_ENTRY_MAP  PresentTexturepMap;

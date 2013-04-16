@@ -316,8 +316,6 @@ typedef struct {
     bool fInit;
 # endif
 #endif /* RT_OS_DARWIN */
-
-    int force_hidden_wdn_create;
 } RenderSPU;
 
 #ifdef RT_OS_WINDOWS
