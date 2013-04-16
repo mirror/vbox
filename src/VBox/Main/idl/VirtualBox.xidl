@@ -16756,7 +16756,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="3e83963a-1c3b-400d-8c5f-f2d077b0a597"
+    uuid="0ba8d8b3-204b-448e-99c2-242eaa666ea8"
     internal="yes"
     wsmap="suppress"
     >
