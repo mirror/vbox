@@ -72,6 +72,45 @@ void UIAnimationFramework::installPropertyAnimation(QWidget *pParent, const QByt
     pStateMachine->start();
 }
 
+QStateMachine* UIAnimationFramework::installPropertyAnimation(QWidget *pTarget, const QByteArray &strPropertyName,
+                                                              const QByteArray &strValuePropertyNameStart, const QByteArray &strValuePropertyNameFinal,
+                                                              const char *pSignalForward, const char *pSignalBackward,
+                                                              bool fReversive /*= false*/, int iAnimationDuration /*= 300*/)
+{
+    /* State-machine: */
+    QStateMachine *pStateMachine = new QStateMachine(pTarget);
+    /* State-machine 'start' state: */
+    QState *pStateStart = new QState(pStateMachine);
+    /* State-machine 'final' state: */
+    QState *pStateFinal = new QState(pStateMachine);
+
+    /* State-machine 'forward' animation: */
+    QPropertyAnimation *pForwardAnimation = new QPropertyAnimation(pTarget, strPropertyName, pStateMachine);
+    pForwardAnimation->setEasingCurve(QEasingCurve(QEasingCurve::InOutCubic));
+    pForwardAnimation->setDuration(iAnimationDuration);
+    pForwardAnimation->setStartValue(pTarget->property(strValuePropertyNameStart));
+    pForwardAnimation->setEndValue(pTarget->property(strValuePropertyNameFinal));
+    /* State-machine 'backward' animation: */
+    QPropertyAnimation *pBackwardAnimation = new QPropertyAnimation(pTarget, strPropertyName, pStateMachine);
+    pBackwardAnimation->setEasingCurve(QEasingCurve(QEasingCurve::InOutCubic));
+    pBackwardAnimation->setDuration(iAnimationDuration);
+    pBackwardAnimation->setStartValue(pTarget->property(strValuePropertyNameFinal));
+    pBackwardAnimation->setEndValue(pTarget->property(strValuePropertyNameStart));
+
+    /* State-machine state transitions: */
+    QSignalTransition *pDefaultToHovered = pStateStart->addTransition(pTarget, pSignalForward, pStateFinal);
+    pDefaultToHovered->addAnimation(pForwardAnimation);
+    QSignalTransition *pHoveredToDefault = pStateFinal->addTransition(pTarget, pSignalBackward, pStateStart);
+    pHoveredToDefault->addAnimation(pBackwardAnimation);
+
+    /* Initial state is 'start': */
+    pStateMachine->setInitialState(!fReversive ? pStateStart : pStateFinal);
+    /* Start hover-machine: */
+    pStateMachine->start();
+    /* Return machine: */
+    return pStateMachine;
+}
+
 
 /* Popup-pane frame prototype class: */
 class UIPopupPaneFrame : public QWidget
@@ -81,7 +120,7 @@ class UIPopupPaneFrame : public QWidget
 
 signals:
 
-    /* Notifiers: Animation stuff: */
+    /* Notifiers: Parent propagation stuff: */
     void sigHoverEnter();
     void sigHoverLeave();
     void sigFocusEnter();
@@ -118,16 +157,15 @@ private:
 class UIPopupPaneTextPane : public QWidget
 {
     Q_OBJECT;
-    Q_PROPERTY(int percentage READ percentage WRITE setPercentage);
 
 signals:
 
-    /* Notifier: Animation stuff: */
-    void sigHoverEnter();
-    void sigHoverLeave();
+    /* Notifiers: Parent propagation stuff: */
     void sigFocusEnter();
     void sigFocusLeave();
-    void sigGeometryChanged();
+
+    /* Notifier: Animation stuff: */
+    void sigSizeChanged();
 
 public:
 
@@ -141,9 +179,16 @@ public:
     /* API: Set desired width: */
     void setDesiredWidth(int iDesiredWidth);
 
-    /* API: Minimum size-hint stuff: */
+    /* API: Size-hint stuff: */
     QSize minimumSizeHint() const;
+    QSize sizeHint() const;
 
+private slots:
+
+    /* Handlers: Animation stuff: */
+    void sltFocusEnter();
+    void sltFocusLeave();
+    
 private:
 
     /* Helpers: Prepare/cleanup stuff: */
@@ -153,19 +198,23 @@ private:
     /* Helper: Content stuff: */
     void prepareContent();
 
-    /* Property: Hover stuff: */
-    int percentage() const { return m_iPercentage; }
-    void setPercentage(int iPercentage);
+    /* Helper: Size-hint stuff: */
+    void updateGeometry();
+
+    /* Handler: Animation stuff: */
+    void resizeEvent(QResizeEvent *pEvent);
 
     /* Variables: Label stuff: */
     QLabel *m_pLabel;
     int m_iDesiredWidth;
 
-    /* Variables: Hover stuff: */
-    const int m_iHoverAnimationDuration;
-    const int m_iDefaultPercentage;
-    const int m_iHoveredPercentage;
-    int m_iPercentage;
+    /* Variables: Size-hint stuff: */
+    QSize m_minimumSizeHint;
+    QSize m_sizeHint;
+
+    /* Variables: Animation stuff: */
+    bool m_fFocused;
+    QObject *m_pAnimation;
 };
 
 
@@ -224,14 +273,6 @@ void UIPopupPane::sltAdjustGeomerty()
     const int iWidth = parentWidget()->width();
     const int iHeight = parentWidget()->height();
 
-    /* Adjust text-pane according parent width: */
-    if (m_pTextPane)
-    {
-        m_pTextPane->setDesiredWidth(iWidth - 2 * m_iMainLayoutMargin
-                                            - 2 * m_iMainFrameLayoutMargin
-                                            - m_pButtonBox->minimumSizeHint().width());
-    }
-
     /* Resize popup according parent width: */
     resize(iWidth, minimumSizeHint().height());
 
@@ -267,7 +308,7 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
             return false;
 
         /* Adjust geometry: */
-        sltAdjustGeomerty();
+        adjustGeometry();
     }
     /* Other objects subscribed for hovering: */
     else
@@ -340,7 +381,7 @@ void UIPopupPane::showEvent(QShowEvent *pEvent)
 void UIPopupPane::polishEvent(QShowEvent*)
 {
     /* Adjust geometry: */
-    sltAdjustGeomerty();
+    adjustGeometry();
 }
 
 void UIPopupPane::keyPressEvent(QKeyEvent *pEvent)
@@ -367,7 +408,7 @@ int UIPopupPane::minimumWidthHint() const
         iMinimumWidthHint += 2 * m_iMainFrameLayoutMargin;
         {
             /* Take into account widgets: */
-            iMinimumWidthHint += m_pTextPane->minimumSizeHint().width();
+            iMinimumWidthHint += m_pTextPane->width();
             iMinimumWidthHint += m_iMainFrameLayoutSpacing;
             iMinimumWidthHint += m_pButtonBox->minimumSizeHint().width();
         }
@@ -389,7 +430,7 @@ int UIPopupPane::minimumHeightHint() const
         iMinimumHeightHint += 2 * m_iMainFrameLayoutMargin;
         {
             /* Take into account widgets: */
-            const int iTextPaneHeight = m_pTextPane->minimumSizeHint().height();
+            const int iTextPaneHeight = m_pTextPane->height();
             const int iButtonBoxHeight = m_pButtonBox->minimumSizeHint().height();
             iMinimumHeightHint += qMax(iTextPaneHeight, iButtonBoxHeight);
         }
@@ -402,6 +443,23 @@ int UIPopupPane::minimumHeightHint() const
 QSize UIPopupPane::minimumSizeHint() const
 {
     return QSize(minimumWidthHint(), minimumHeightHint());
+}
+
+void UIPopupPane::adjustGeometry()
+{
+    /* Get parent width: */
+    const int iWidth = parentWidget()->width();
+
+    /* Adjust text-pane according parent width: */
+    if (m_pTextPane)
+    {
+        m_pTextPane->setDesiredWidth(iWidth - 2 * m_iMainLayoutMargin
+                                            - 2 * m_iMainFrameLayoutMargin
+                                            - m_pButtonBox->minimumSizeHint().width());
+    }
+
+    /* Adjust other widgets: */
+    sltAdjustGeomerty();
 }
 
 void UIPopupPane::updateLayout()
@@ -419,14 +477,21 @@ void UIPopupPane::updateLayout()
         const int iMainFrameHeight = m_pMainFrame->height();
         /* Main-frame layout: */
         {
+            /* Variables: */
+            const int iTextPaneWidth = m_pTextPane->width();
+            const int iTextPaneHeight = m_pTextPane->height();
+            const QSize buttonBoxMinimumSizeHint = m_pButtonBox->minimumSizeHint();
+            const int iButtonBoxWidth = buttonBoxMinimumSizeHint.width();
+            const int iButtonBoxHeight = buttonBoxMinimumSizeHint.height();
+            const int iMaximumHeight = qMax(iTextPaneHeight, iButtonBoxHeight);
+            const int iMinimumHeight = qMin(iTextPaneHeight, iButtonBoxHeight);
+            const int iHeightShift = (iMaximumHeight - iMinimumHeight) / 2;
+            const bool fTextPaneShifted = iTextPaneHeight < iButtonBoxHeight;
             /* Text-pane: */
-            const int iTextPaneWidth = m_pTextPane->minimumSizeHint().width();
             m_pTextPane->move(m_iMainFrameLayoutMargin,
-                              m_iMainFrameLayoutMargin);
-            m_pTextPane->resize(iTextPaneWidth,
-                                iMainFrameHeight - 2 * m_iMainFrameLayoutMargin);
+                              fTextPaneShifted ? m_iMainFrameLayoutMargin + iHeightShift : m_iMainFrameLayoutMargin);
+            m_pTextPane->resize(iTextPaneWidth, iTextPaneHeight);
             /* Button-box: */
-            const int iButtonBoxWidth = m_pButtonBox->minimumSizeHint().width();
             m_pButtonBox->move(m_iMainFrameLayoutMargin + iTextPaneWidth + m_iMainFrameLayoutSpacing,
                                m_iMainFrameLayoutMargin);
             m_pButtonBox->resize(iButtonBoxWidth,
@@ -449,7 +514,7 @@ void UIPopupPane::prepareContent()
         m_pTextPane = new UIPopupPaneTextPane(m_pMainFrame);
         {
             /* Prepare label: */
-            connect(m_pTextPane, SIGNAL(sigGeometryChanged()),
+            connect(m_pTextPane, SIGNAL(sigSizeChanged()),
                     this, SLOT(sltAdjustGeomerty()));
             m_pTextPane->installEventFilter(this);
             m_pTextPane->setFocusPolicy(Qt::StrongFocus);
@@ -659,10 +724,8 @@ UIPopupPaneTextPane::UIPopupPaneTextPane(QWidget *pParent /*= 0*/)
     : QWidget(pParent)
     , m_pLabel(0)
     , m_iDesiredWidth(-1)
-    , m_iHoverAnimationDuration(300)
-    , m_iDefaultPercentage(1)
-    , m_iHoveredPercentage(100)
-    , m_iPercentage(m_iDefaultPercentage)
+    , m_fFocused(false)
+    , m_pAnimation(0)
 {
     /* Prepare: */
     prepare();
@@ -699,22 +762,44 @@ QSize UIPopupPaneTextPane::minimumSizeHint() const
     /* Check if desired-width set: */
     if (m_iDesiredWidth >= 0)
         /* Return dependent size-hint: */
-        return QSize(m_iDesiredWidth, (int)(((qreal)percentage() / 100) * m_pLabel->heightForWidth(m_iDesiredWidth)));
-    /* Return golden-rule size-hint by default: */
+        return m_minimumSizeHint;
+    /* Return golden-rule minimum size-hint by default: */
     return m_pLabel->minimumSizeHint();
+}
+
+QSize UIPopupPaneTextPane::sizeHint() const
+{
+    /* Check if desired-width set: */
+    if (m_iDesiredWidth >= 0)
+        /* Return dependent size-hint: */
+        return m_sizeHint;
+    /* Return golden-rule size-hint by default: */
+    return m_pLabel->sizeHint();
+}
+
+void UIPopupPaneTextPane::sltFocusEnter()
+{
+    if (!m_fFocused)
+    {
+        m_fFocused = true;
+        emit sigFocusEnter();
+    }
+}
+
+void UIPopupPaneTextPane::sltFocusLeave()
+{
+    if (m_fFocused)
+    {
+        m_fFocused = false;
+        emit sigFocusLeave();
+    }
 }
 
 void UIPopupPaneTextPane::prepare()
 {
     /* Propagate parent signals: */
-    connect(parent(), SIGNAL(sigHoverEnter()), this, SIGNAL(sigHoverEnter()));
-    connect(parent(), SIGNAL(sigHoverLeave()), this, SIGNAL(sigHoverLeave()));
-    connect(parent(), SIGNAL(sigFocusEnter()), this, SIGNAL(sigFocusEnter()));
-    connect(parent(), SIGNAL(sigFocusLeave()), this, SIGNAL(sigFocusLeave()));
-    /* Install 'focus' animation for 'height' property: */
-    UIAnimationFramework::installPropertyAnimation(this, QByteArray("percentage"),
-                                                   m_iDefaultPercentage, m_iHoveredPercentage, m_iHoverAnimationDuration,
-                                                   SIGNAL(sigFocusEnter()), SIGNAL(sigFocusLeave()));
+    connect(parent(), SIGNAL(sigFocusEnter()), this, SLOT(sltFocusEnter()));
+    connect(parent(), SIGNAL(sigFocusLeave()), this, SLOT(sltFocusLeave()));
     /* Prepare content: */
     prepareContent();
 }
@@ -743,16 +828,29 @@ void UIPopupPaneTextPane::prepareContent()
             m_pLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
             m_pLabel->setWordWrap(true);
         }
-        /* Activate layout: */
-        updateGeometry();
     }
 }
 
-void UIPopupPaneTextPane::setPercentage(int iPercentage)
+void UIPopupPaneTextPane::updateGeometry()
 {
-    m_iPercentage = iPercentage;
-    updateGeometry();
-    emit sigGeometryChanged();
+    /* Recalculate size-hints: */
+    QFontMetrics fm(m_pLabel->font(), m_pLabel);
+    m_sizeHint = QSize(m_iDesiredWidth, m_pLabel->heightForWidth(m_iDesiredWidth));
+    m_minimumSizeHint = QSize(m_iDesiredWidth, fm.height());
+    /* Update geometry: */
+    QWidget::updateGeometry();
+    /* Resize to required size: */
+    resize(m_fFocused ? sizeHint() : minimumSizeHint());
+    /* Reinstall animation: */
+    delete m_pAnimation;
+    m_pAnimation = UIAnimationFramework::installPropertyAnimation(this, "size", "minimumSizeHint", "sizeHint",
+                                                                  SIGNAL(sigFocusEnter()), SIGNAL(sigFocusLeave()),
+                                                                  m_fFocused);
+}
+
+void UIPopupPaneTextPane::resizeEvent(QResizeEvent*)
+{
+    emit sigSizeChanged();
 }
 
 #include "UIPopupPane.moc"

@@ -26,6 +26,7 @@
 #include "QIMessageBox.h"
 
 /* Forward declaration: */
+class QStateMachine;
 class QLabel;
 class QPushButton;
 class QIDialogButtonBox;
@@ -40,6 +41,12 @@ namespace UIAnimationFramework
     void installPropertyAnimation(QWidget *pParent, const QByteArray &strPropertyName,
                                   int iStartValue, int iFinalValue, int iAnimationDuration,
                                   const char *pSignalForward, const char *pSignalBackward);
+
+    /* API: Animation stuff: */
+    QStateMachine* installPropertyAnimation(QWidget *pTarget, const QByteArray &strPropertyName,
+                                            const QByteArray &strValuePropertyNameStart, const QByteArray &strValuePropertyNameFinal,
+                                            const char *pSignalForward, const char *pSignalBackward,
+                                            bool fReversive = false, int iAnimationDuration = 300);
 }
 
 /* Popup-pane prototype class: */
@@ -102,6 +109,7 @@ private:
     int minimumWidthHint() const;
     int minimumHeightHint() const;
     QSize minimumSizeHint() const;
+    void adjustGeometry();
     void updateLayout();
 
     /* Helpers: Prepare stuff: */
