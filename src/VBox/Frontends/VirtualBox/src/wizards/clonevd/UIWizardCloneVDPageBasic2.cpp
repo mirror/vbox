@@ -103,8 +103,11 @@ UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2()
                     if (medFormat.GetName() != "VDI")
                         addFormatButton(this, pFormatLayout, medFormat);
                 }
-                m_pFormatButtonGroup->button(0)->click();
-                m_pFormatButtonGroup->button(0)->setFocus();
+                if (!m_pFormatButtonGroup->buttons().isEmpty())
+                {
+                    m_pFormatButtonGroup->button(0)->click();
+                    m_pFormatButtonGroup->button(0)->setFocus();
+                }
             }
         }
         pMainLayout->addWidget(m_pLabel);
@@ -153,23 +156,29 @@ bool UIWizardCloneVDPageBasic2::isComplete() const
 int UIWizardCloneVDPageBasic2::nextId() const
 {
     /* Show variant page only if there is something to show: */
-    CMediumFormat medFormat = mediumFormat();
-//    ULONG uCapabilities = medFormat.GetCapabilities();
-    ULONG uCapabilities = 0;
-    QVector<KMediumFormatCapabilities> capabilities;
-    capabilities = medFormat.GetCapabilities();
-    for (int i = 0; i < capabilities.size(); i++)
-        uCapabilities |= capabilities[i];
+    CMediumFormat mf = mediumFormat();
+    if (mf.isNull())
+    {
+        AssertMsgFailed(("No medium format set!"));
+    }
+    else
+    {
+        ULONG uCapabilities = 0;
+        QVector<KMediumFormatCapabilities> capabilities;
+        capabilities = mf.GetCapabilities();
+        for (int i = 0; i < capabilities.size(); i++)
+            uCapabilities |= capabilities[i];
 
-    int cTest = 0;
-    if (uCapabilities & KMediumFormatCapabilities_CreateDynamic)
-        ++cTest;
-    if (uCapabilities & KMediumFormatCapabilities_CreateFixed)
-        ++cTest;
-    if (uCapabilities & KMediumFormatCapabilities_CreateSplit2G)
-        ++cTest;
-    if (cTest > 1)
-        return UIWizardCloneVD::Page3;
+        int cTest = 0;
+        if (uCapabilities & KMediumFormatCapabilities_CreateDynamic)
+            ++cTest;
+        if (uCapabilities & KMediumFormatCapabilities_CreateFixed)
+            ++cTest;
+        if (uCapabilities & KMediumFormatCapabilities_CreateSplit2G)
+            ++cTest;
+        if (cTest > 1)
+            return UIWizardCloneVD::Page3;
+    }
     /* Skip otherwise: */
     return UIWizardCloneVD::Page4;
 }
