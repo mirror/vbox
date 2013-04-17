@@ -49,9 +49,11 @@ class UIPopupPane : public QWidget
 
 signals:
 
-    /* Notifiers: Hover stuff: */
+    /* Notifiers: Animation stuff: */
     void sigHoverEnter();
     void sigHoverLeave();
+    void sigFocusEnter();
+    void sigFocusLeave();
 
     /* Notifier: Complete stuff: */
     void sigDone(int iButtonCode) const;
@@ -132,8 +134,9 @@ private:
     QString m_strButtonText1, m_strButtonText2, m_strButtonText3;
     int m_iButtonEsc;
 
-    /* Variables: Hover stuff: */
+    /* Variables: Animation stuff: */
     bool m_fHovered;
+    bool m_fFocused;
 
     /* Widgets: */
     UIPopupPaneFrame *m_pMainFrame;
