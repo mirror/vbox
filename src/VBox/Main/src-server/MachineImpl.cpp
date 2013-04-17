@@ -11379,7 +11379,7 @@ void Machine::commit()
     mHWData.commit();
 
     if (mMediaData.isBackedUp())
-        commitMedia();
+        commitMedia(Global::IsOnline(mData->mMachineState));
 
     mBIOSSettings->commit();
     mVRDEServer->commit();
