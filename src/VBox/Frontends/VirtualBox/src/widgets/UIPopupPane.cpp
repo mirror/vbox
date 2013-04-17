@@ -81,9 +81,11 @@ class UIPopupPaneFrame : public QWidget
 
 signals:
 
-    /* Notifiers: Hover stuff: */
+    /* Notifiers: Animation stuff: */
     void sigHoverEnter();
     void sigHoverLeave();
+    void sigFocusEnter();
+    void sigFocusLeave();
 
 public:
 
@@ -120,9 +122,11 @@ class UIPopupPaneTextPane : public QWidget
 
 signals:
 
-    /* Notifiers: Hover stuff: */
+    /* Notifier: Animation stuff: */
     void sigHoverEnter();
     void sigHoverLeave();
+    void sigFocusEnter();
+    void sigFocusLeave();
     void sigGeometryChanged();
 
 public:
@@ -179,6 +183,7 @@ UIPopupPane::UIPopupPane(QWidget *pParent, const QString &strId,
     , m_strButtonText1(strButtonText1), m_strButtonText2(strButtonText2), m_strButtonText3(strButtonText3)
     , m_iButtonEsc(0)
     , m_fHovered(false)
+    , m_fFocused(false)
     , m_pMainFrame(0), m_pTextPane(0), m_pButtonBox(0)
     , m_pButton1(0), m_pButton2(0), m_pButton3(0)
 {
@@ -288,6 +293,26 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
                 {
                     m_fHovered = false;
                     emit sigHoverLeave();
+                }
+                break;
+            }
+            case QEvent::FocusIn:
+            {
+                if (!m_fFocused)
+                {
+                    m_fFocused = true;
+                    emit sigFocusEnter();
+                }
+                break;
+            }
+            case QEvent::FocusOut:
+            {
+                if (m_fFocused && (pWatched == m_pButton1 ||
+                                   pWatched == m_pButton2 ||
+                                   pWatched == m_pButton3))
+                {
+                    m_fFocused = false;
+                    emit sigFocusLeave();
                 }
                 break;
             }
@@ -414,12 +439,12 @@ void UIPopupPane::prepareContent()
 {
     /* Prepare this: */
     installEventFilter(this);
-    setFocusPolicy(Qt::StrongFocus);
     /* Create main-frame: */
     m_pMainFrame = new UIPopupPaneFrame(this);
     {
         /* Prepare frame: */
         m_pMainFrame->installEventFilter(this);
+        m_pMainFrame->setFocusPolicy(Qt::StrongFocus);
         /* Create message-label: */
         m_pTextPane = new UIPopupPaneTextPane(m_pMainFrame);
         {
@@ -462,7 +487,7 @@ void UIPopupPane::prepareButtons()
     foreach (QPushButton *pButton, buttons)
         if (pButton && pButton->isDefault())
         {
-            setFocusProxy(pButton);
+            m_pMainFrame->setFocusProxy(pButton);
             m_pTextPane->setFocusProxy(pButton);
             break;
         }
@@ -471,6 +496,7 @@ void UIPopupPane::prepareButtons()
     m_pButton1 = buttons[0];
     if (m_pButton1)
     {
+        m_pButton1->installEventFilter(this);
         connect(m_pButton1, SIGNAL(clicked()), SLOT(done1()));
         if (!m_strButtonText1.isEmpty())
             m_pButton1->setText(m_strButtonText1);
@@ -479,6 +505,7 @@ void UIPopupPane::prepareButtons()
     m_pButton2 = buttons[1];
     if (m_pButton2)
     {
+        m_pButton2->installEventFilter(this);
         connect(m_pButton2, SIGNAL(clicked()), SLOT(done2()));
         if (!m_strButtonText2.isEmpty())
             m_pButton1->setText(m_strButtonText2);
@@ -487,6 +514,7 @@ void UIPopupPane::prepareButtons()
     m_pButton3 = buttons[2];
     if (m_pButton3)
     {
+        m_pButton3->installEventFilter(this);
         connect(m_pButton3, SIGNAL(clicked()), SLOT(done3()));
         if (!m_strButtonText3.isEmpty())
             m_pButton1->setText(m_strButtonText3);
@@ -546,13 +574,12 @@ QPushButton* UIPopupPane::createButton(QIDialogButtonBox *pButtonBox, int iButto
     /* Create push-button: */
     QPushButton *pButton = pButtonBox->addButton(strText, role);
 
+    /* Configure button: */
+    pButton->setFocusPolicy(Qt::StrongFocus);
+
     /* Configure 'default' button: */
     if (iButton & AlertButtonOption_Default)
-    {
         pButton->setDefault(true);
-        pButton->setFocusPolicy(Qt::StrongFocus);
-        pButton->setFocus();
-    }
 
     /* Return button: */
     return pButton;
@@ -578,9 +605,12 @@ UIPopupPaneFrame::~UIPopupPaneFrame()
 
 void UIPopupPaneFrame::prepare()
 {
-    /* Install 'hover' animation for 'opacity' property: */
+    /* Propagate parent signals: */
     connect(parent(), SIGNAL(sigHoverEnter()), this, SIGNAL(sigHoverEnter()));
     connect(parent(), SIGNAL(sigHoverLeave()), this, SIGNAL(sigHoverLeave()));
+    connect(parent(), SIGNAL(sigFocusEnter()), this, SIGNAL(sigFocusEnter()));
+    connect(parent(), SIGNAL(sigFocusLeave()), this, SIGNAL(sigFocusLeave()));
+    /* Install 'hover' animation for 'opacity' property: */
     UIAnimationFramework::installPropertyAnimation(this, QByteArray("opacity"),
                                                    m_iDefaultOpacity, m_iHoveredOpacity, m_iHoverAnimationDuration,
                                                    SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
@@ -676,12 +706,15 @@ QSize UIPopupPaneTextPane::minimumSizeHint() const
 
 void UIPopupPaneTextPane::prepare()
 {
-    /* Install 'hover' animation for 'height' property: */
+    /* Propagate parent signals: */
     connect(parent(), SIGNAL(sigHoverEnter()), this, SIGNAL(sigHoverEnter()));
     connect(parent(), SIGNAL(sigHoverLeave()), this, SIGNAL(sigHoverLeave()));
+    connect(parent(), SIGNAL(sigFocusEnter()), this, SIGNAL(sigFocusEnter()));
+    connect(parent(), SIGNAL(sigFocusLeave()), this, SIGNAL(sigFocusLeave()));
+    /* Install 'focus' animation for 'height' property: */
     UIAnimationFramework::installPropertyAnimation(this, QByteArray("percentage"),
                                                    m_iDefaultPercentage, m_iHoveredPercentage, m_iHoverAnimationDuration,
-                                                   SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
+                                                   SIGNAL(sigFocusEnter()), SIGNAL(sigFocusLeave()));
     /* Prepare content: */
     prepareContent();
 }
