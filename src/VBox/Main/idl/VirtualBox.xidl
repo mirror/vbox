@@ -10287,12 +10287,15 @@
 
     <method name="processCreate">
       <desc>
-        Executes an existing program inside the guest VM.
+        Creates a new process running on the guest. The new process will be
+        started asynchronously, meaning on return of this function it is not
+        guaranteed that the guest process is in a started state. To wait for
+        successful startup, use the <link to="IProcess::waitFor"/> call.
 
         <note>
           Starting at VirtualBox 4.2 guest process execution by default is limited
           to serve up to 255 guest processes at a time. If all 255 guest processes
-          are still active and running, starting a new guest process will result in an
+          are still active and running, creating a new guest process will result in an
           appropriate error message.
 
           If ProcessCreateFlag_WaitForStdOut and / or respectively ProcessCreateFlag_WaitForStdErr
@@ -10307,7 +10310,7 @@
         </note>
 
         <result name="VBOX_E_IPRT_ERROR">
-          Could not create process.
+          Error creating guest process.
         </result>
       </desc>
       <param name="command" type="wstring" dir="in">
@@ -10321,13 +10324,12 @@
       </param>
       <param name="environment" type="wstring" dir="in" safearray="yes">
         <desc>
-          Environment variables that can be set while the command is being
+          <para>Environment variables that can be set while the command is being
           executed, in form of "NAME=VALUE"; one pair per entry. To unset a
-          variable just set its name ("NAME") without a value.
-
-          This parameter can be used to override environment variables set by
+          variable just set its name ("NAME") without a value.</para>
+          <para>This parameter can be used to override environment variables set by
           the guest session, which will be applied to the newly started process
-          in any case.
+          in any case.</para>
         </desc>
       </param>
       <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
@@ -10338,8 +10340,10 @@
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
         <desc>
-          Timeout (in ms) to wait for the operation to complete.
-          Pass 0 for an infinite timeout.
+          Timeout (in ms) for limiting the guest process' running time.
+          Pass 0 for an infinite timeout. On timeout the guest process will be
+          killed and its status will be put to an appropriate value. See
+          <link to="ProcessStatus"/> for more information.
         </desc>
       </param>
       <param name="guestProcess" type="IGuestProcess" dir="return">
@@ -10349,29 +10353,11 @@
 
     <method name="processCreateEx">
       <desc>
-        Executes an existing program inside the guest VM. Extended version for
-        also setting the process priority and affinity.
+        <para>Creates a new process running on the guest. Extended version for
+          also setting the process priority and affinity.</para>
 
-        <note>
-          Starting at VirtualBox 4.2 guest process execution by default is limited
-          to serve up to 255 guest processes at a time. If all 255 guest processes
-          are still active and running, starting a new guest process will result in an
-          appropriate error message.
-
-          If ProcessCreateFlag_WaitForStdOut and / or respectively ProcessCreateFlag_WaitForStdErr
-          is / are set, the guest process will not exit until all data from the specified
-          stream(s) is / are read out.
-
-          To raise or lower the guest process execution limit, either the guest property
-          "/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept" or VBoxService'
-          command line by specifying "--control-procs-max-kept" needs to be modified.
-          A restart of the guest OS is required afterwards. To serve unlimited guest
-          processes, a value of "0" needs to be set (not recommended).
-        </note>
-
-        <result name="VBOX_E_IPRT_ERROR">
-          Could not create process.
-        </result>
+        <para>See <link to="IGuestSession::processCreate"/> for more
+          information.</para>
       </desc>
       <param name="command" type="wstring" dir="in">
         <desc>
@@ -10384,13 +10370,12 @@
       </param>
       <param name="environment" type="wstring" dir="in" safearray="yes">
         <desc>
-          Environment variables that can be set while the command is being
+          <para>Environment variables that can be set while the command is being
           executed, in form of "NAME=VALUE"; one pair per entry. To unset a
-          variable just set its name ("NAME") without a value.
-
-          This parameter can be used to override environment variables set by
+          variable just set its name ("NAME") without a value.</para>
+          <para>This parameter can be used to override environment variables set by
           the guest session, which will be applied to the newly started process
-          in any case.
+          in any case.</para>
         </desc>
       </param>
       <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
@@ -10401,8 +10386,10 @@
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
         <desc>
-          Timeout (in ms) to wait for the operation to complete.
-          Pass 0 for an infinite timeout.
+          Timeout (in ms) for limiting the guest process' running time.
+          Pass 0 for an infinite timeout. On timeout the guest process will be
+          killed and its status will be put to an appropriate value. See
+          <link to="ProcessStatus"/> for more information.
         </desc>
       </param>
       <param name="priority" type="ProcessPriority" dir="in">
