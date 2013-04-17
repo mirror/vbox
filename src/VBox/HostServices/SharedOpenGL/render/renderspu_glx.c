@@ -1758,8 +1758,8 @@ renderspu_SystemWindowSize( WindowInfo *window, GLint w, GLint h )
             if (window->visible)
             {
                 renderspu_SystemShowWindow( window, GL_FALSE );
-                return;
             }
+            return;
         }
         /* Resize ordinary X window */
         /*
