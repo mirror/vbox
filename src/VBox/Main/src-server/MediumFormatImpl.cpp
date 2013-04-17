@@ -218,9 +218,9 @@ HRESULT MediumFormat::getCapabilities(std::vector<MediumFormatCapabilities_T> &a
         uint64_t tmp = m.capabilities;
         tmp &= 1ULL << i;
         if (tmp)
-            aCapabilities[cCapabilities] = (MediumFormatCapabilities_T)tmp;
+            aCapabilities[cCapabilities++] = (MediumFormatCapabilities_T)tmp;
     }
-    aCapabilities.resize(RT_MIN(cCapabilities, 1));
+    aCapabilities.resize(RT_MAX(cCapabilities, 1));
 
     return S_OK;
 }
