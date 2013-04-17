@@ -4710,15 +4710,10 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         RTGCUINTPTR GCPtrFaultAddress = 0;
         if (uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT)
         {
-            if (   hmR0VmxIsBenignXcpt(uIdtVector)
-                || hmR0VmxIsBenignXcpt(uExitVector))
-            {
-                enmReflect = VMXREFLECTXCPT_XCPT;
-            }
-            else if (   hmR0VmxIsContributoryXcpt(uIdtVector)
+            enmReflect = VMXREFLECTXCPT_XCPT;
+            if (   hmR0VmxIsContributoryXcpt(uIdtVector)
                      && uExitVector == X86_XCPT_PF)
             {
-                enmReflect = VMXREFLECTXCPT_XCPT;
                 GCPtrFaultAddress = pMixedCtx->cr2;
                 Log(("IDT: Contributory #PF uCR2=%#RGv\n", pMixedCtx->cr2));
             }
@@ -4726,7 +4721,6 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                      && uIdtVector == X86_XCPT_PF)
             {
                 pVmxTransient->fVectoringPF = true;
-                enmReflect = VMXREFLECTXCPT_XCPT;
                 GCPtrFaultAddress = pMixedCtx->cr2;
                 Log(("IDT: Vectoring #PF uCR2=%#RGv\n", pMixedCtx->cr2));
             }
@@ -4739,8 +4733,6 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             }
             else if (uIdtVector == X86_XCPT_DF)
                 enmReflect = VMXREFLECTXCPT_TF;
-            else
-                AssertMsgFailed(("Invalid!\n"));
         }
         else if (   uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_INT
                  && uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT
@@ -5237,7 +5229,7 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
     pSelReg->u64Base = uGCVal;
 
     rc |= VMXReadVmcs32(idxAccess, &u32Val);
-    pSelReg->Attr.u  = u32Val;
+    pSelReg->Attr.u = u32Val;
     AssertRCReturn(rc, rc);
 
     /*
@@ -7660,6 +7652,7 @@ static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
         if (   pMixedCtx->ecx >= MSR_IA32_X2APIC_START
             && pMixedCtx->ecx <= MSR_IA32_X2APIC_END)
         {
+            Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_APIC_STATE);
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_GUEST_APIC_STATE;
         }
         else if (pMixedCtx->ecx == MSR_K6_EFER)         /* EFER is the only MSR we auto-load but don't allow write-passthrough. */
@@ -8319,8 +8312,8 @@ static DECLCALLBACK(int) hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCt
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     VBOXSTRICTRC rc2 = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pMixedCtx), GCPhys, UINT32_MAX);
-    Log(("EPT misconfig at %#RX64 RIP=%#RX64 rc=%d\n", GCPhys, pMixedCtx->rip, rc));
     rc = VBOXSTRICTRC_VAL(rc2);
+    Log(("EPT misconfig at %#RX64 RIP=%#RX64 rc=%d\n", GCPhys, pMixedCtx->rip, rc));
     if (   rc == VINF_SUCCESS
         || rc == VERR_PAGE_TABLE_NOT_PRESENT
         || rc == VERR_PAGE_NOT_PRESENT)
