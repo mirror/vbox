@@ -32,8 +32,8 @@
     ;
     ; OpenSSL symbols
     ;
-    _CONF_get_section
-    _CONF_get_string
+;;    _CONF_get_section
+;;    _CONF_get_string
     a2d_ASN1_OBJECT
     a2i_ASN1_INTEGER
     a2i_ASN1_STRING
@@ -442,10 +442,10 @@
     CRYPTO_dbg_free
     CRYPTO_dbg_get_options
     CRYPTO_dbg_malloc
-    CRYPTO_dbg_pop_info
-    CRYPTO_dbg_push_info
+;;    CRYPTO_dbg_pop_info
+;;    CRYPTO_dbg_push_info
     CRYPTO_dbg_realloc
-    CRYPTO_dbg_remove_all_info
+;;    CRYPTO_dbg_remove_all_info
     CRYPTO_dbg_set_options
     CRYPTO_destroy_dynlockid
     CRYPTO_dup_ex_data
@@ -474,7 +474,7 @@
     CRYPTO_is_mem_check_on
     CRYPTO_lock
     CRYPTO_malloc
-    CRYPTO_malloc_debug_init
+;;    CRYPTO_malloc_debug_init
     CRYPTO_malloc_locked
     CRYPTO_mem_ctrl
     CRYPTO_mem_leaks
@@ -502,7 +502,7 @@
     CRYPTO_set_mem_debug_options
     CRYPTO_set_mem_ex_functions
     CRYPTO_set_mem_functions
-    CRYPTO_set_mem_info_functions
+;;    CRYPTO_set_mem_info_functions
     CRYPTO_strdup
     CRYPTO_thread_id
     d2i_ACCESS_DESCRIPTION
@@ -1123,8 +1123,8 @@
     NOTICEREF_new
     o2i_ECPublicKey
     OBJ_add_object
-    OBJ_bsearch
-    OBJ_bsearch_ex
+;;    OBJ_bsearch
+;;    OBJ_bsearch_ex
     OBJ_cleanup
     OBJ_cmp
     OBJ_create
@@ -1283,7 +1283,7 @@
     RSA_size
     RSA_up_ref
     RSA_verify
-    RSAPrivateKey_asn1_meth
+;;    RSAPrivateKey_asn1_meth
     RSAPrivateKey_dup
     RSAPublicKey_dup
     s2i_ASN1_INTEGER
@@ -1428,7 +1428,7 @@
     X509_ALGOR_set0
     X509_alias_get0
     X509_alias_set1
-    X509_asn1_meth
+;;    X509_asn1_meth
     X509_ATTRIBUTE_count
     X509_ATTRIBUTE_create
     X509_ATTRIBUTE_create_by_NID
