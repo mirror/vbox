@@ -49,11 +49,13 @@ void UIAnimationFramework::installPropertyAnimation(QWidget *pParent, const QByt
 
     /* State-machine 'forward' animation: */
     QPropertyAnimation *pForwardAnimation = new QPropertyAnimation(pParent, strPropertyName, pParent);
+    pForwardAnimation->setEasingCurve(QEasingCurve(QEasingCurve::InOutCubic));
     pForwardAnimation->setDuration(iAnimationDuration);
     pForwardAnimation->setStartValue(iStartValue);
     pForwardAnimation->setEndValue(iFinalValue);
     /* State-machine 'backward' animation: */
     QPropertyAnimation *pBackwardAnimation = new QPropertyAnimation(pParent, strPropertyName, pParent);
+    pBackwardAnimation->setEasingCurve(QEasingCurve(QEasingCurve::InOutCubic));
     pBackwardAnimation->setDuration(iAnimationDuration);
     pBackwardAnimation->setStartValue(iFinalValue);
     pBackwardAnimation->setEndValue(iStartValue);
@@ -188,6 +190,27 @@ UIPopupPane::~UIPopupPane()
 {
     /* Cleanup: */
     cleanup();
+}
+
+void UIPopupPane::setMessage(const QString &strMessage)
+{
+    /* Make sure somthing changed: */
+    if (m_strMessage == strMessage)
+        return;
+
+    /* Fetch new message: */
+    m_strMessage = strMessage;
+    m_pTextPane->setText(m_strMessage);
+}
+
+void UIPopupPane::setDetails(const QString &strDetails)
+{
+    /* Make sure somthing changed: */
+    if (m_strDetails == strDetails)
+        return;
+
+    /* Fetch new details: */
+    m_strDetails = strDetails;
 }
 
 void UIPopupPane::sltAdjustGeomerty()
@@ -578,7 +601,7 @@ void UIPopupPaneFrame::paintEvent(QPaintEvent*)
 
     /* Configure painter clipping: */
     QPainterPath path;
-    int iDiameter = 5;
+    int iDiameter = 6;
     QSizeF arcSize(2 * iDiameter, 2 * iDiameter);
     path.moveTo(iDiameter, 0);
     path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-iDiameter, 0), 90, 90);
@@ -593,8 +616,12 @@ void UIPopupPaneFrame::paintEvent(QPaintEvent*)
 
     /* Fill with background: */
     QColor currentColor(palette().color(QPalette::Window));
-    QColor newColor(currentColor.red(), currentColor.green(), currentColor.blue(), opacity());
-    painter.fillRect(rect, newColor);
+    QColor newColor1(currentColor.red(), currentColor.green(), currentColor.blue(), opacity());
+    QColor newColor2 = newColor1.darker(115);
+    QLinearGradient headerGradient(rect.topLeft(), rect.topRight());
+    headerGradient.setColorAt(0, newColor1);
+    headerGradient.setColorAt(1, newColor2);
+    painter.fillRect(rect, headerGradient);
 }
 
 
@@ -677,6 +704,9 @@ void UIPopupPaneTextPane::prepareContent()
             /* Add into layout: */
             pMainLayout->addWidget(m_pLabel);
             /* Prepare label: */
+            QFont currentFont = m_pLabel->font();
+            currentFont.setPointSize(currentFont.pointSize() - 2);
+            m_pLabel->setFont(currentFont);
             m_pLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
             m_pLabel->setWordWrap(true);
         }

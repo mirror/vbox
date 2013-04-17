@@ -140,19 +140,35 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strId,
                                  int iButton1, int iButton2, int iButton3,
                                  const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3) const
 {
-    /* Choose at least one button by 'default': */
-    if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0)
-        iButton1 = AlertButton_Ok | AlertButtonOption_Default | AlertButtonOption_Escape;
-
-    /* Create popup-box window: */
-    QWidget *pPopupBoxParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
-    UIPopupPane *pPopupBox = new UIPopupPane(pPopupBoxParent, strId,
-                                             strMessage, strDetails,
-                                             iButton1, iButton2, iButton3,
-                                             strButtonText1, strButtonText2, strButtonText3);
-    m_popups.insert(strId, pPopupBox);
-    connect(pPopupBox, SIGNAL(sigDone(int)), this, SLOT(sltPopupDone(int)));
-    pPopupBox->show();
+    /* Prepare popup-pane: */
+    UIPopupPane *pPopupPane = 0;
+    /* Is there already popup-pane with the same ID? */
+    if (m_popups.contains(strId))
+    {
+        /* Get existing one: */
+        pPopupPane = m_popups[strId];
+        /* And update message and details: */
+        pPopupPane->setMessage(strMessage);
+        pPopupPane->setDetails(strDetails);
+    }
+    /* There is no popup-pane with the same ID? */
+    else
+    {
+        /* Choose at least one button to be the 'default' and 'escape': */
+        if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0)
+            iButton1 = AlertButton_Ok | AlertButtonOption_Default | AlertButtonOption_Escape;
+        /* Create popup-pane and insert it into our map: */
+        QWidget *pPopupBoxParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
+        pPopupPane = new UIPopupPane(pPopupBoxParent, strId,
+                                     strMessage, strDetails,
+                                     iButton1, iButton2, iButton3,
+                                     strButtonText1, strButtonText2, strButtonText3);
+        m_popups.insert(strId, pPopupPane);
+        /* Attach popup-pane connections: */
+        connect(pPopupPane, SIGNAL(sigDone(int)), this, SLOT(sltPopupDone(int)));
+    }
+    /* Show popup-pane: */
+    pPopupPane->show();
 }
 
 void UIPopupCenter::sltPopupDone(int iButtonCode) const
@@ -181,7 +197,7 @@ void UIPopupCenter::remindAboutMouseIntegration(bool fSupportsAbsolute) const
 {
     if (fSupportsAbsolute)
     {
-        alert(0, QString("remindAboutMouseIntegrationOn"),
+        alert(0, QString("remindAboutMouseIntegration"),
               tr("<p>The Virtual Machine reports that the guest OS supports <b>mouse pointer integration</b>. "
                  "This means that you do not need to <i>capture</i> the mouse pointer to be able to use it in your guest OS -- "
                  "all mouse actions you perform when the mouse pointer is over the Virtual Machine's display "
@@ -194,7 +210,7 @@ void UIPopupCenter::remindAboutMouseIntegration(bool fSupportsAbsolute) const
     }
     else
     {
-        alert(0, QString("remindAboutMouseIntegrationOff"),
+        alert(0, QString("remindAboutMouseIntegration"),
               tr("<p>The Virtual Machine reports that the guest OS does not support <b>mouse pointer integration</b> "
                  "in the current video mode. You need to capture the mouse (by clicking over the VM display "
                  "or pressing the host key) in order to use the mouse inside the guest OS.</p>"));
