@@ -288,7 +288,9 @@ HRESULT MediumLockListMap::Remove(const ComObjPtr<MediumAttachment> &aMediumAtta
     MediumLockListMap::Base::iterator it = mMediumLocks.find(aMediumAttachment);
     if (it == mMediumLocks.end())
         return VBOX_E_INVALID_OBJECT_STATE;
+    MediumLockList *pMediumLockList = it->second;
     mMediumLocks.erase(it);
+    delete pMediumLockList;
     return S_OK;
 }
 
