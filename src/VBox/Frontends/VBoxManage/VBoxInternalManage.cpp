@@ -672,7 +672,7 @@ static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, 
     }
 
     /* Open the image */
-    rc = VDOpen(pDisk, pszFormat, argv[1], VD_OPEN_FLAGS_NORMAL, NULL);
+    rc = VDOpen(pDisk, pszFormat, argv[1], VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_INFO, NULL);
     if (RT_FAILURE(rc))
     {
         RTMsgError("Cannot open the image: %Rrc", rc);
