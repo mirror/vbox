@@ -6944,7 +6944,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
                 vrc = VDOpen(hdd,
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
-                             VD_OPEN_FLAGS_READONLY | m->uOpenFlagsDef,
+                             VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | m->uOpenFlagsDef,
                              pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
