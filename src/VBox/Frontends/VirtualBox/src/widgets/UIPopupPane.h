@@ -68,6 +68,10 @@ public:
     /* API: Id stuff: */
     const QString& id() const { return m_strId; }
 
+    /* API: Text stuff: */
+    void setMessage(const QString &strMessage);
+    void setDetails(const QString &strDetails);
+
 private slots:
 
     /* Handlers: Done slot variants for every button: */
