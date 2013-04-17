@@ -130,8 +130,11 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
                         if (medFormat.GetName() != "VDI")
                             addFormatButton(m_pFormatCnt, pFormatCntLayout, medFormat);
                     }
-                    m_pFormatButtonGroup->button(0)->click();
-                    m_pFormatButtonGroup->button(0)->setFocus();
+                    if (!m_pFormatButtonGroup->buttons().isEmpty())
+                    {
+                        m_pFormatButtonGroup->button(0)->click();
+                        m_pFormatButtonGroup->button(0)->setFocus();
+                    }
                 }
             }
         }
@@ -187,6 +190,11 @@ void UIWizardNewVDPageExpert::sltMediumFormatChanged()
 {
     /* Get medium format: */
     CMediumFormat mf = mediumFormat();
+    if (mf.isNull())
+    {
+        AssertMsgFailed(("No medium format set!"));
+        return;
+    }
 
     /* Enable/disable widgets: */
     ULONG uCapabilities = 0;
