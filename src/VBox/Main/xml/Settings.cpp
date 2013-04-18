@@ -1733,6 +1733,7 @@ Hardware::Hardware()
           fHardwareVirtForce(false),
           fSyntheticCpu(false),
           fPAE(false),
+          enmLongMode(HC_ARCH_BITS == 64 ? Hardware::LongMode_Enabled : Hardware::LongMode_Disabled),
           cCPUs(1),
           fCpuHotPlug(false),
           fHPETEnabled(false),
@@ -1799,6 +1800,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fHardwareVirtForce        == h.fHardwareVirtForce)
                   && (fSyntheticCpu             == h.fSyntheticCpu)
                   && (fPAE                      == h.fPAE)
+                  && (enmLongMode               == h.enmLongMode)
                   && (cCPUs                     == h.cCPUs)
                   && (fCpuHotPlug               == h.fCpuHotPlug)
                   && (ulCpuExecutionCap         == h.ulCpuExecutionCap)
@@ -2535,6 +2537,13 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             }
             else
                 pelmCPUChild->getAttributeValue("enabled", hw.fPAE);
+
+            bool fLongMode;
+            if (   (pelmCPUChild = pelmHwChild->findChildElement("LongMode"))
+                && pelmCPUChild->getAttributeValue("enabled", fLongMode) )
+                hw.enmLongMode = fLongMode ? Hardware::LongMode_Enabled : Hardware::LongMode_Disabled;
+            else
+                hw.enmLongMode = Hardware::LongMode_Legacy;
 
             if ((pelmCPUChild = pelmHwChild->findChildElement("SyntheticCpu")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fSyntheticCpu);
@@ -3700,6 +3709,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     pelmCPU->createChild("HardwareVirtExNestedPaging")->setAttribute("enabled", hw.fNestedPaging);
     pelmCPU->createChild("HardwareVirtExVPID")->setAttribute("enabled", hw.fVPID);
     pelmCPU->createChild("PAE")->setAttribute("enabled", hw.fPAE);
+    if (m->sv >= SettingsVersion_v1_14 && hw.enmLongMode != Hardware::LongMode_Legacy)
+        pelmCPU->createChild("LongMode")->setAttribute("enabled", hw.enmLongMode == Hardware::LongMode_Enabled);
 
     if (hw.fSyntheticCpu)
         pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
@@ -4989,7 +5000,8 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     if (m->sv < SettingsVersion_v1_14)
     {
         // VirtualBox 4.3 adds default frontend setting.
-        if (!hardwareMachine.strDefaultFrontend.isEmpty())
+        if (   !hardwareMachine.strDefaultFrontend.isEmpty()
+            || hardwareMachine.enmLongMode != Hardware::LongMode_Legacy)
             m->sv = SettingsVersion_v1_14;
     }
 

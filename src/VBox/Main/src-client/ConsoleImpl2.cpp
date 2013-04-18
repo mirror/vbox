@@ -889,7 +889,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
          * Hardware virtualization extensions.
          */
         BOOL fIsGuest64Bit;
-        hrc = guestOSType->COMGETTER(Is64Bit)(&fIsGuest64Bit);                              H();
+        hrc = pMachine->GetCPUProperty(CPUPropertyType_LongMode, &fIsGuest64Bit);           H();
         BOOL fSupportsLongMode;
         hrc = host->GetProcessorFeature(ProcessorFeature_LongMode, &fSupportsLongMode);     H();
         if (!fSupportsLongMode && fIsGuest64Bit)

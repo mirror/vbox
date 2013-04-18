@@ -799,6 +799,8 @@ struct Hardware
                         fHardwareVirtForce,
                         fSyntheticCpu,
                         fPAE;
+    typedef enum LongModeType { LongMode_Enabled, LongMode_Disabled, LongMode_Legacy } LongModeType;
+    LongModeType        enmLongMode;
     uint32_t            cCPUs;
     bool                fCpuHotPlug;            // requires settings version 1.10 (VirtualBox 3.2)
     CpuList             llCpus;                 // requires settings version 1.10 (VirtualBox 3.2)

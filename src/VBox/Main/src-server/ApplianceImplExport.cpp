@@ -126,11 +126,16 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
         // nested paging enabled?
         // HWVirtExVPIDEnabled?
         // PAEEnabled?
+        // Long mode enabled?
+        BOOL fLongMode;
+        rc = GetCPUProperty(CPUPropertyType_LongMode, &fLongMode);
+        if (FAILED(rc)) throw rc;
+
         // snapshotFolder?
         // VRDPServer?
 
         /* Guest OS type */
-        ovf::CIMOSType_T cim = convertVBoxOSType2CIMOSType(strOsTypeVBox.c_str());
+        ovf::CIMOSType_T cim = convertVBoxOSType2CIMOSType(strOsTypeVBox.c_str(), fLongMode);
         pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
                            "",
                            Utf8StrFmt("%RI32", cim),
