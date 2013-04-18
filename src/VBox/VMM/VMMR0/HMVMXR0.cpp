@@ -40,6 +40,7 @@
 #define VBOX_ALWAYS_TRAP_ALL_EXCEPTIONS
 #endif
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -50,6 +51,10 @@
 #else
 # define VMX_IS_64BIT_HOST_MODE()   (false)
 #endif
+
+/** Use the function table. */
+#define HMVMX_USE_FUNCTION_TABLE
+
 
 #define VMX_SEL_UNUSABLE                       RT_BIT(16)
 #define VMX_FLUSH_TAGGED_TLB_EPT_VPID          0
@@ -135,6 +140,7 @@
 /** Maximum VM-instruction error number. */
 #define VMX_INSTR_ERROR_MAX     28
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -208,6 +214,7 @@ typedef enum VMXMSREXITWRITE
     VMXMSREXIT_PASSTHRU_WRITE
 } VMXMSREXITWRITE;
 
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -217,7 +224,7 @@ static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCt
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 static int                hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu);
 #endif
-#if 1
+#ifndef HMVMX_USE_FUNCTION_TABLE
 DECLINLINE(int)           hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, uint32_t rcReason);
 #endif
 
@@ -274,9 +281,11 @@ static int                hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
 static int                hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 static int                hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+#ifdef HMVMX_USE_FUNCTION_TABLE
 /**
  * VM-exit handler.
  *
@@ -358,8 +367,10 @@ static const PFNVMEXITHANDLER g_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
  /* 59  VMX_EXIT_VMFUNC                  */  hmR0VmxExitSetPendingXcptUD
 };
 
+#endif /* HMVMX_USE_FUNCTION_TABLE */
+
 #ifdef VBOX_STRICT
-static const char* const g_apszVmxInstrErrors[VMX_INSTR_ERROR_MAX + 1] =
+static const char * const g_apszVmxInstrErrors[VMX_INSTR_ERROR_MAX + 1] =
 {
     /*  0 */ "(Not Used)",
     /*  1 */ "VMCALL executed in VMX root operation.",
@@ -391,7 +402,9 @@ static const char* const g_apszVmxInstrErrors[VMX_INSTR_ERROR_MAX + 1] =
     /* 27 */ "(Not Used)",
     /* 28 */ "Invalid operand to INVEPT/INVVPID."
 };
-#endif
+#endif /* VBOX_STRICT */
+
+
 
 /**
  * Updates the VM's last error record. If there was a VMX instruction error,
@@ -855,11 +868,13 @@ cleanup:
  */
 VMMR0DECL(int) VMXR0GlobalInit(void)
 {
+#ifdef HMVMX_USE_FUNCTION_TABLE
     /* Setup the main VM exit handlers. */
     AssertCompile(VMX_EXIT_MAX + 1 == RT_ELEMENTS(g_apfnVMExitHandlers));
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
     for (unsigned i = 0; i < RT_ELEMENTS(g_apfnVMExitHandlers); i++)
         Assert(g_apfnVMExitHandlers[i]);
+# endif
 #endif
     return VINF_SUCCESS;
 }
@@ -6780,7 +6795,14 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         STAM_COUNTER_INC(&pVCpu->hm.s.paStatExitReasonR0[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
         STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
         AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
-        rc = (*g_apfnVMExitHandlers[VmxTransient.uExitReason])(pVCpu, pCtx, &VmxTransient);
+#ifdef HM_PROFILE_EXIT_DISPATCH
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitDispatch, ed);
+#endif
+#ifdef HMVMX_USE_FUNCTION_TABLE
+        rc = g_apfnVMExitHandlers[VmxTransient.uExitReason](pVCpu, pCtx, &VmxTransient);
+#else
+        rc = hmR0VmxHandleExit(pVCpu, pCtx, &VmxTransient, VmxTransient.uExitReason);
+#endif
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
         if (rc != VINF_SUCCESS)
             break;
@@ -6799,8 +6821,9 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     return rc;
 }
 
-#if 1
-DECLINLINE(int) hmR0VmxHandleExit(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, uint32_t rcReason)
+
+#ifndef HMVMX_USE_FUNCTION_TABLE
+DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, uint32_t rcReason)
 {
     int rc;
     switch (rcReason)
@@ -6872,6 +6895,15 @@ DECLINLINE(int) hmR0VmxHandleExit(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
 }
 #endif
 
+
+/** Profiling macro. */
+#ifdef HM_PROFILE_EXIT_DISPATCH
+# define HMVMX_STOP_EXIT_DISPATCH_PROF() STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitDispatch, ed)
+#else
+# define HMVMX_STOP_EXIT_DISPATCH_PROF() do { } while (0)
+#endif
+
+
 #ifdef DEBUG
 /* Is there some generic IPRT define for this that are not in Runtime/internal/\* ?? */
 # define VMX_ASSERT_PREEMPT_CPUID_VAR() \
@@ -6897,13 +6929,14 @@ DECLINLINE(int) hmR0VmxHandleExit(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
                 Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));             \
                 if (VMMR0IsLogFlushDisabled(pVCpu))                          \
                     VMX_ASSERT_PREEMPT_CPUID();                              \
+                HMVMX_STOP_EXIT_DISPATCH_PROF(); \
             } while (0)
 # define VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS() \
             do {                                 \
                 LogFunc(("\n"));                 \
             } while(0)
 #else   /* Release builds */
-# define VMX_VALIDATE_EXIT_HANDLER_PARAMS() do { } while(0)
+# define VMX_VALIDATE_EXIT_HANDLER_PARAMS() do { HMVMX_STOP_EXIT_DISPATCH_PROF(); } while(0)
 # define VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS() do { } while(0)
 #endif
 

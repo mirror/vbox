@@ -620,6 +620,13 @@ static int hmR3InitCPU(PVM pVM)
         AssertRC(rc);
 # endif
 
+# ifdef HM_PROFILE_EXIT_DISPATCH
+        rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatExitDispatch, STAMTYPE_PROFILE_ADV, STAMVISIBILITY_USED,
+                             STAMUNIT_TICKS_PER_CALL, "Profiling the dispatching of exit handlers",
+                             "/PROF/CPU%d/HM/ExitDispatch", i);
+        AssertRC(rc);
+# endif
+
 # define HM_REG_COUNTER(a, b) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, "Profiling of HM", b, i); \
         AssertRC(rc);
