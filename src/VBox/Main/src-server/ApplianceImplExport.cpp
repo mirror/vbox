@@ -86,32 +86,26 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
         // store the machine object so we can dump the XML in Appliance::Write()
         pNewDesc->m->pMachine = this;
 
-        // now fill it with description items
-        Bstr bstrName1;
-        Bstr bstrDescription;
-        Bstr bstrGuestOSType;
-        uint32_t cCPUs;
-        uint32_t ulMemSizeMB;
-        BOOL fUSBEnabled;
-        BOOL fAudioEnabled;
-        AudioControllerType_T audioController;
-
-        ComPtr<IUSBController> pUsbController;
-        ComPtr<IAudioAdapter> pAudioAdapter;
-
         // first, call the COM methods, as they request locks
+        ComPtr<IUSBController> pUsbController;
         rc = COMGETTER(USBController)(pUsbController.asOutParam());
+        BOOL fUSBEnabled;
         if (FAILED(rc))
             fUSBEnabled = false;
         else
+        {
             rc = pUsbController->COMGETTER(Enabled)(&fUSBEnabled);
+            if (FAILED(rc)) throw rc;
+        }
 
         // request the machine lock while accessing internal members
         AutoReadLock alock1(this COMMA_LOCKVAL_SRC_POS);
 
-        pAudioAdapter = mAudioAdapter;
+        ComPtr<IAudioAdapter> pAudioAdapter = mAudioAdapter;
+        BOOL fAudioEnabled;
         rc = pAudioAdapter->COMGETTER(Enabled)(&fAudioEnabled);
         if (FAILED(rc)) throw rc;
+        AudioControllerType_T audioController;
         rc = pAudioAdapter->COMGETTER(AudioController)(&audioController);
         if (FAILED(rc)) throw rc;
 
@@ -122,9 +116,9 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
         // get guest OS
         Utf8Str strOsTypeVBox = mUserData->s.strOsType;
         // CPU count
-        cCPUs = mHWData->mCPUCount;
+        uint32_t cCPUs = mHWData->mCPUCount;
         // memory size in MB
-        ulMemSizeMB = mHWData->mMemorySize;
+        uint32_t ulMemSizeMB = mHWData->mMemorySize;
         // VRAM size?
         // BIOS settings?
         // 3D acceleration enabled?
