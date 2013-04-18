@@ -76,7 +76,7 @@ cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
 	     $(if $(NOWINE),,--setup-wine) \
-	     $(if $(NOWEBSVC),,--enable-webservice) \
+	     $(if $(NOWEBSVC),,$(if $(ose),--enable-webservice,)) \
 	     $(if $(VNC),--enable-vnc,) \
 	     --disable-extpack
 
