@@ -265,13 +265,14 @@ static DECLCALLBACK(int)  hmR0VmxExitWbinvd(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
 static DECLCALLBACK(int)  hmR0VmxExitXsetbv(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 static DECLCALLBACK(int)  hmR0VmxExitRdrand(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 static DECLCALLBACK(int)  hmR0VmxExitInvpcid(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static DECLCALLBACK(int)  hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static DECLCALLBACK(int)  hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static DECLCALLBACK(int)  hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static DECLCALLBACK(int)  hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static DECLCALLBACK(int)  hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static DECLCALLBACK(int)  hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static DECLCALLBACK(int)  hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+
+static int                hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static int                hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static int                hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static int                hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static int                hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static int                hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static int                hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -5678,7 +5679,6 @@ static void hmR0VmxUpdateTRPM(PVMCPU pVCpu)
 
         if (fErrorCodeValid)
             TRPMSetErrorCode(pVCpu, uErrorCode);
-        /* A page-fault exception during a page-fault would become a double-fault. */
         if (   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
             && uVector == X86_XCPT_PF)
         {
@@ -7679,9 +7679,9 @@ static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
                 case MSR_IA32_SYSENTER_CS:  pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SYSENTER_CS_MSR;  break;
                 case MSR_IA32_SYSENTER_EIP: pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SYSENTER_EIP_MSR; break;
                 case MSR_IA32_SYSENTER_ESP: pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SYSENTER_ESP_MSR; break;
-                case MSR_K8_FS_BASE:        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SEGMENT_REGS;     break;
-                case MSR_K8_GS_BASE:        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SEGMENT_REGS;     break;
                 case MSR_K8_KERNEL_GS_BASE: /* If we auto-load it, update HM_CHANGED_VMX_GUEST_AUTO_MSRS. */   break;
+                case MSR_K8_FS_BASE:        /* no break */
+                case MSR_K8_GS_BASE:        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SEGMENT_REGS;     break;
             }
         }
 #ifdef VBOX_STRICT
@@ -8411,7 +8411,7 @@ static DECLCALLBACK(int) hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCt
 /**
  * VM-exit exception handler for #MF (Math Fault: floating point exception).
  */
-static DECLCALLBACK(int) hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);
@@ -8434,7 +8434,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
 /**
  * VM-exit exception handler for #BP (Breakpoint exception).
  */
-static DECLCALLBACK(int) hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);
@@ -8465,7 +8465,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
 /**
  * VM-exit exception handler for #DB (Debug exception).
  */
-static DECLCALLBACK(int) hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
@@ -8517,7 +8517,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
  * VM-exit exception handler for #NM (Device-not-available exception: floating
  * point exception).
  */
-static DECLCALLBACK(int) hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
 
@@ -8556,7 +8556,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
  *
  * @remarks Requires pVmxTransient->uExitIntrInfo to be up-to-date.
  */
-static DECLCALLBACK(int) hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
@@ -8796,7 +8796,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
  * @remarks Requires uExitIntrInfo, uExitIntrErrorCode, cbInstr fields in the
  *          VMX transient structure to be up-to-date.
  */
-static DECLCALLBACK(int) hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
 
@@ -8815,7 +8815,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx
 /**
  * VM-exit exception handler for #PF (Page-fault exception).
  */
-static DECLCALLBACK(int) hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
     PVM pVM = pVCpu->CTX_SUFF(pVM);

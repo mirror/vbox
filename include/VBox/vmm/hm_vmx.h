@@ -1348,9 +1348,9 @@ typedef union
  * @{
  */
 /** 0-11:   If the APIC-access VM exit is due to a linear access, the offset of access within the APIC page. */
-#define VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(a)    (a & 0xfff)
+#define VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(a)    ((a) & 0xfff)
 /** 12-15:  Access type. */
-#define VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(a)      ((a >> 12) & 0xf)
+#define VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(a)      ((a) & 0xf000)
 /* Rest reserved. */
 /** @} */
 
