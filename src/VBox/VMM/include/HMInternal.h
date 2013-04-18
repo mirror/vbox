@@ -43,6 +43,12 @@
 # define VMX_USE_CACHED_VMCS_ACCESSES
 #endif
 
+/** @def HM_PROFILE_EXIT_DISPATCH
+ * Enables profiling of the VM exit handler dispatching. */
+#if 0
+# define HM_PROFILE_EXIT_DISPATCH
+#endif
+
 #define HM_VMX_EMULATE_REALMODE
 
 /* The MSR auto load/store does not work for KERNEL_GS_BASE MSR, thus we
@@ -899,6 +905,9 @@ typedef struct HMCPU
     R0PTRTYPE(PSTAMCOUNTER) paStatExitReasonR0;
     R3PTRTYPE(PSTAMCOUNTER) paStatInjectedIrqs;
     R0PTRTYPE(PSTAMCOUNTER) paStatInjectedIrqsR0;
+#endif
+#ifdef HM_PROFILE_EXIT_DISPATCH
+    STAMPROFILEADV          StatExitDispatch;
 #endif
 } HMCPU;
 /** Pointer to HM VM instance data. */
