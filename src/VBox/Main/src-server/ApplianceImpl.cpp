@@ -272,7 +272,7 @@ ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVBox, BOOL fLongMod
         }
     }
 
-    return ovf::CIMOSType_CIMOS_Other;
+    return fLongMode ? ovf::CIMOSType_CIMOS_Other_64 : ovf::CIMOSType_CIMOS_Other;
 }
 
 Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type)
