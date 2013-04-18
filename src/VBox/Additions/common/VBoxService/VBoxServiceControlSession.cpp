@@ -819,7 +819,7 @@ int GstCntlSessionHandleProcTerminate(const PVBOXSERVICECTRLSESSION pSession,
             PVBOXSERVICECTRLPROCESS pProcess = GstCntlSessionAcquireProcess(pSession, uPID);
             if (pProcess)
             {
-                rc = GstCntlProcessPerform(pProcess, pRequest);
+                rc = GstCntlProcessPerform(pProcess, pRequest, false /* Async */);
                 GstCntlProcessRelease(pProcess);
             }
             else
@@ -854,7 +854,7 @@ int GstCntlSessionHandleProcWaitFor(const PVBOXSERVICECTRLSESSION pSession,
             PVBOXSERVICECTRLPROCESS pProcess = GstCntlSessionAcquireProcess(pSession, uPID);
             if (pProcess)
             {
-                rc = GstCntlProcessPerform(pProcess, pRequest);
+                rc = GstCntlProcessPerform(pProcess, pRequest, false /* Async */);
                 GstCntlProcessRelease(pProcess);
             }
             else
@@ -1023,7 +1023,7 @@ static DECLCALLBACK(int) gstcntlSessionThread(RTTHREAD ThreadSelf, void *pvUser)
     int rcWait;
     if (RT_SUCCESS(rc))
     {
-        uint32_t uTimeoutsMS = 30 * 1000; /** @todo Make this configurable. Later. */
+        uint32_t uTimeoutsMS = 5 * 60 * 1000; /** @todo Make this configurable. Later. */
         uint64_t u64TimeoutStart = 0;
 
         for (;;)
@@ -1303,11 +1303,14 @@ int GstCntlSessionClose(PVBOXSERVICECTRLSESSION pSession)
         /*
          * Close all guest processes.
          */
+        VBoxServiceVerbose(0, "Stopping all guest processes ...\n");
 
         /* Signal all guest processes in the active list that we want to shutdown. */
         PVBOXSERVICECTRLPROCESS pProcess;
         RTListForEach(&pSession->lstProcessesActive, pProcess, VBOXSERVICECTRLPROCESS, Node)
             GstCntlProcessStop(pProcess);
+
+        VBoxServiceVerbose(1, "All guest processes signalled to stop\n");
 
         /* Wait for all active threads to shutdown and destroy the active thread list. */
         pProcess = RTListGetFirst(&pSession->lstProcessesActive, VBOXSERVICECTRLPROCESS, Node);
@@ -1327,6 +1330,8 @@ int GstCntlSessionClose(PVBOXSERVICECTRLSESSION pSession)
                 /* Keep going. */
             }
 
+            RTListNodeRemove(&pProcess->Node);
+
             rc2 = GstCntlProcessFree(pProcess);
             if (RT_FAILURE(rc2))
             {
@@ -1335,8 +1340,6 @@ int GstCntlSessionClose(PVBOXSERVICECTRLSESSION pSession)
                     rc = rc2;
                 /* Keep going. */
             }
-
-            RTListNodeRemove(&pProcess->Node);
 
             if (fLast)
                 break;
@@ -1356,6 +1359,8 @@ int GstCntlSessionClose(PVBOXSERVICECTRLSESSION pSession)
         /*
          * Close all left guest files.
          */
+        VBoxServiceVerbose(0, "Closing all guest files ...\n");
+
         PVBOXSERVICECTRLFILE pFile;
         pFile = RTListGetFirst(&pSession->lstFiles, VBOXSERVICECTRLFILE, Node);
         while (pFile)
@@ -1426,7 +1431,7 @@ static int gstcntlSessionGetOutput(const PVBOXSERVICECTRLSESSION pSession,
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
-    AssertPtrNullReturn(pcbRead, VERR_INVALID_POINTER);
+    /* pcbRead is optional. */
 
     int                         rc      = VINF_SUCCESS;
     VBOXSERVICECTRLREQUESTTYPE  reqType = VBOXSERVICECTRLREQUEST_UNKNOWN; /* (gcc maybe, well, wrong.) */
@@ -1455,7 +1460,7 @@ static int gstcntlSessionGetOutput(const PVBOXSERVICECTRLSESSION pSession,
             PVBOXSERVICECTRLPROCESS pProcess = GstCntlSessionAcquireProcess(pSession, uPID);
             if (pProcess)
             {
-                rc = GstCntlProcessPerform(pProcess, pRequest);
+                rc = GstCntlProcessPerform(pProcess, pRequest, false /* Async */);
                 GstCntlProcessRelease(pProcess);
             }
             else
@@ -1699,7 +1704,7 @@ int gstcntlSessionSetInput(const PVBOXSERVICECTRLSESSION pSession,
         PVBOXSERVICECTRLPROCESS pProcess = GstCntlSessionAcquireProcess(pSession, uPID);
         if (pProcess)
         {
-            rc = GstCntlProcessPerform(pProcess, pRequest);
+            rc = GstCntlProcessPerform(pProcess, pRequest, false /* Async */);
             GstCntlProcessRelease(pProcess);
         }
         else
@@ -2089,8 +2094,7 @@ int GstCntlSessionThreadWait(PVBOXSERVICECTRLSESSIONTHREAD pThread,
 
     /*
      * The fork should have received the same closing request,
-     * so just wait 30s for the process to close. On timeout kill
-     * it in a not so gentle manner.
+     * so just wait for the process to close.
      */
     if (ASMAtomicReadBool(&pThread->fStarted))
     {
@@ -2128,7 +2132,7 @@ int GstCntlSessionThreadDestroy(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint32_t 
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
 
     int rc = GstCntlSessionThreadWait(pThread,
-                                      30 * 1000 /* 30s timeout */, uFlags);
+                                      5 * 60 * 1000 /* 5 minutes timeout */, uFlags);
     /** @todo Kill session process if still around? */
 
     /* Remove session from list and destroy object. */
