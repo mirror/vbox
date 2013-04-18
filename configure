@@ -2643,10 +2643,10 @@ fi
 
 [ -n "$SETUP_WINE" ] && setup_wine
 
-if [ $OSE -ge 1 ]; then
-  if [ $WITH_GSOAP -eq 1 ]; then
-    check_gsoap
-  else
+if [ $WITH_GSOAP -eq 1 ]; then
+  check_gsoap
+else
+  if [ $OSE -ge 1 ]; then
     cnf_append "VBOX_WITH_WEBSERVICES" ""
   fi
 fi
