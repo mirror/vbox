@@ -268,6 +268,7 @@ public:
         BOOL                mHWVirtExForceEnabled;
         BOOL                mAccelerate2DVideoEnabled;
         BOOL                mPAEEnabled;
+        settings::Hardware::LongModeType mLongMode;
         BOOL                mSyntheticCpu;
         ULONG               mCPUCount;
         BOOL                mCPUHotPlugEnabled;

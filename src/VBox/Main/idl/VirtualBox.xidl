@@ -938,6 +938,12 @@
         teleporting between host systems that differ significantly.
       </desc>
     </const>
+    <const name="LongMode"             value="3">
+      <desc>
+        This setting determines whether VirtualBox will advertice long mode
+        (i.e. 64-bit guest support) and let the guest enter it.
+      </desc>
+    </const>
   </enum>
 
 

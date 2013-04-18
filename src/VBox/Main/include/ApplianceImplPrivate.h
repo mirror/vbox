@@ -223,7 +223,7 @@ struct VirtualSystemDescription::Data
 
 void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf8Str &cStr);
 
-ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVBox);
+ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVBox, BOOL fLongMode);
 
 Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type);
 

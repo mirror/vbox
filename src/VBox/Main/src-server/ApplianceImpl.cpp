@@ -244,14 +244,32 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
 /**
  * Private helper func that suggests a VirtualBox guest OS type
  * for the given OVF operating system type.
+ * @returns CIM OS type.
  * @param pcszVBox  Our guest OS type identifier string.
+ * @param fLongMode Whether long mode is enabled and a 64-bit CIM type is
+ *                  preferred even if the VBox guest type isn't 64-bit.
  */
-ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVBox)
+ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVBox, BOOL fLongMode)
 {
     for (size_t i = 0; i < RT_ELEMENTS(g_osTypes); ++i)
     {
         if (!RTStrICmp(pcszVBox, Global::OSTypeId(g_osTypes[i].osType)))
+        {
+            if (fLongMode && !(g_osTypes[i].osType & VBOXOSTYPE_x64))
+            {
+                VBOXOSTYPE enmDesiredOsType = (VBOXOSTYPE)((int)g_osTypes[i].osType | (int)VBOXOSTYPE_x64);
+                size_t     j = i;
+                while (++j < RT_ELEMENTS(g_osTypes))
+                    if (g_osTypes[j].osType == enmDesiredOsType)
+                        return g_osTypes[j].cim;
+                j = i;
+                while (--j > 0)
+                    if (g_osTypes[j].osType == enmDesiredOsType)
+                        return g_osTypes[j].cim;
+                /* Not all OSes have 64-bit versions, so just return the 32-bit variant. */
+            }
             return g_osTypes[i].cim;
+        }
     }
 
     return ovf::CIMOSType_CIMOS_Other;

@@ -64,6 +64,9 @@
 #include "Performance.h"
 
 #include <iprt/asm.h>
+#if HC_ARCH_BITS == 32
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
@@ -190,6 +193,7 @@ Machine::HWData::HWData()
 #else
     mPAEEnabled = false;
 #endif
+    mLongMode =  HC_ARCH_BITS == 64 ? settings::Hardware::LongMode_Enabled : settings::Hardware::LongMode_Disabled;
     mSyntheticCpu = false;
     mHPETEnabled = false;
 
@@ -350,6 +354,10 @@ HRESULT Machine::init(VirtualBox *aParent,
             /* Apply serial port defaults */
             for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
                 mSerialPorts[slot]->applyDefaults(aOsType);
+
+            /* Let the OS type select 64-bit ness. */
+            mHWData->mLongMode = aOsType->is64Bit()
+                               ? settings::Hardware::LongMode_Enabled : settings::Hardware::LongMode_Disabled;
         }
 
         /* At this point the changing of the current state modification
@@ -2027,18 +2035,50 @@ STDMETHODIMP Machine::GetCPUProperty(CPUPropertyType_T property, BOOL *aVal)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    switch(property)
+    switch (property)
     {
-    case CPUPropertyType_PAE:
-        *aVal = mHWData->mPAEEnabled;
-        break;
+        case CPUPropertyType_PAE:
+            *aVal = mHWData->mPAEEnabled;
+            break;
 
-    case CPUPropertyType_Synthetic:
-        *aVal = mHWData->mSyntheticCpu;
-        break;
+        case CPUPropertyType_Synthetic:
+            *aVal = mHWData->mSyntheticCpu;
+            break;
 
-    default:
-        return E_INVALIDARG;
+        case CPUPropertyType_LongMode:
+            if (mHWData->mLongMode == settings::Hardware::LongMode_Enabled)
+                *aVal = TRUE;
+            else if (mHWData->mLongMode == settings::Hardware::LongMode_Disabled)
+                *aVal = FALSE;
+#if HC_ARCH_BITS == 64
+            else
+                *aVal = TRUE;
+#else
+            else
+            {
+                *aVal = FALSE;
+
+                ComPtr<IGuestOSType> guestOSType;
+                HRESULT hrc2 = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(), guestOSType.asOutParam());
+                if (SUCCEEDED(hrc2))
+                {
+                    BOOL fIs64Bit = FALSE;
+                    hrc2 = pGuestOSType->COMGETTER(Is64Bit)(&fIs64Bit); AssertComRC(hrc);
+                    if (SUCCEEDED(hrc2) && fIs64Bit)
+                    {
+                        ComObjPtr<Host> ptrHost = mParent->host();
+                        alock.release();
+                        hrc2 = ptrHost->GetProcessorFeature(ProcessorFeature_LongMode, aVal)
+                        AssertComRC(hrc);
+                        if (FAILURE(hrc2))
+                            *aVal = FALSE;
+                    }
+            }
+#endif
+            break;
+
+        default:
+            return E_INVALIDARG;
     }
     return S_OK;
 }
@@ -2053,22 +2093,28 @@ STDMETHODIMP Machine::SetCPUProperty(CPUPropertyType_T property, BOOL aVal)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
-    switch(property)
+    switch (property)
     {
-    case CPUPropertyType_PAE:
-        setModified(IsModified_MachineData);
-        mHWData.backup();
-        mHWData->mPAEEnabled = !!aVal;
-        break;
+        case CPUPropertyType_PAE:
+            setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mPAEEnabled = !!aVal;
+            break;
 
-    case CPUPropertyType_Synthetic:
-        setModified(IsModified_MachineData);
-        mHWData.backup();
-        mHWData->mSyntheticCpu = !!aVal;
-        break;
+        case CPUPropertyType_Synthetic:
+            setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mSyntheticCpu = !!aVal;
+            break;
 
-    default:
-        return E_INVALIDARG;
+        case CPUPropertyType_LongMode:
+            setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mLongMode = !aVal ? settings::Hardware::LongMode_Disabled : settings::Hardware::LongMode_Enabled;
+            break;
+
+        default:
+            return E_INVALIDARG;
     }
     return S_OK;
 }
@@ -8596,7 +8642,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mHWVirtExForceEnabled        = data.fHardwareVirtForce;
         mHWData->mPAEEnabled                  = data.fPAE;
         mHWData->mSyntheticCpu                = data.fSyntheticCpu;
-
+        mHWData->mLongMode                    = data.enmLongMode;
         mHWData->mCPUCount                    = data.cCPUs;
         mHWData->mCPUHotPlugEnabled           = data.fCpuHotPlug;
         mHWData->mCpuExecutionCap             = data.ulCpuExecutionCap;
@@ -9826,6 +9872,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.fVPID                  = !!mHWData->mHWVirtExVPIDEnabled;
         data.fHardwareVirtForce     = !!mHWData->mHWVirtExForceEnabled;
         data.fPAE                   = !!mHWData->mPAEEnabled;
+        data.enmLongMode            = mHWData->mLongMode;
         data.fSyntheticCpu          = !!mHWData->mSyntheticCpu;
 
         /* Standard and Extended CPUID leafs. */
