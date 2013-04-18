@@ -18,10 +18,12 @@
  */
 
 /* Qt includes: */
+#include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QEvent>
+#include <QKeyEvent>
 #include <QMainWindow>
 #include <QStatusBar>
 #include <QPainter>
@@ -31,7 +33,8 @@
 
 /* GUI includes: */
 #include "UIPopupPane.h"
-#include "QIDialogButtonBox.h"
+#include "UIIconPool.h"
+#include "QIToolButton.h"
 
 /* Other VBox includes: */
 #include <VBox/sup.h>
@@ -128,17 +131,15 @@ signals:
 
 public:
 
-    /* Constructor/destructor: */
+    /* Constructor: */
     UIPopupPaneFrame(QWidget *pParent = 0);
-    ~UIPopupPaneFrame();
 
 private:
 
-    /* Helpers: Prepare/cleanup stuff: */
+    /* Helper: Prepare stuff: */
     void prepare();
-    void cleanup();
 
-    /* Handlers: Event stuff: */
+    /* Handler: Event stuff: */
     void paintEvent(QPaintEvent *pEvent);
 
     /* Property: Hover stuff: */
@@ -169,9 +170,8 @@ signals:
 
 public:
 
-    /* Constructor/destructor: */
+    /* Constructor: */
     UIPopupPaneTextPane(QWidget *pParent = 0);
-    ~UIPopupPaneTextPane();
 
     /* API: Text stuff: */
     void setText(const QString &strText);
@@ -191,11 +191,8 @@ private slots:
     
 private:
 
-    /* Helpers: Prepare/cleanup stuff: */
+    /* Helperss: Prepare stuff: */
     void prepare();
-    void cleanup();
-
-    /* Helper: Content stuff: */
     void prepareContent();
 
     /* Helper: Size-hint stuff: */
@@ -218,32 +215,68 @@ private:
 };
 
 
+/* Popup-pane button-pane prototype class: */
+class UIPopupPaneButtonPane : public QWidget
+{
+    Q_OBJECT;
+
+signals:
+
+    /* Notifier: Button stuff: */
+    void sigButtonClicked(int iButtonID);
+
+public:
+
+    /* Constructor: */
+    UIPopupPaneButtonPane(QWidget *pParent = 0);
+
+    /* API: Button stuff: */
+    void setButtons(const QMap<int, QString> &buttonDescriptions);
+
+private slots:
+
+    /* Handler: Button stuff: */
+    void sltButtonClicked();
+
+private:
+
+    /* Helpers: Prepare/cleanup stuff: */
+    void prepare();
+    void prepareLayouts();
+    void prepareButtons();
+    void cleanupButtons();
+
+    /* Handler: Event stuff: */
+    void keyPressEvent(QKeyEvent *pEvent);
+
+    /* Static helpers: Button stuff: */
+    static QIToolButton* addButton(int iButtonID, const QString &strToolTip);
+    static QString defaultToolTip(int iButtonID);
+    static QIcon defaultIcon(int iButtonID);
+
+    /* Widgets: */
+    QHBoxLayout *m_pButtonLayout;
+    QMap<int, QString> m_buttonDescriptions;
+    QMap<int, QIToolButton*> m_buttons;
+    int m_iDefaultButton;
+    int m_iEscapeButton;
+};
+
+
 UIPopupPane::UIPopupPane(QWidget *pParent, const QString &strId,
                          const QString &strMessage, const QString &strDetails,
-                         int iButton1, int iButton2, int iButton3,
-                         const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3)
+                         const QMap<int, QString> &buttonDescriptions)
     : QWidget(pParent)
     , m_fPolished(false)
     , m_strId(strId)
     , m_iMainLayoutMargin(2), m_iMainFrameLayoutMargin(10), m_iMainFrameLayoutSpacing(5)
     , m_iParentStatusBarHeight(parentStatusBarHeight(pParent))
-    , m_strMessage(strMessage), m_strDetails(strDetails)
-    , m_iButton1(iButton1), m_iButton2(iButton2), m_iButton3(iButton3)
-    , m_strButtonText1(strButtonText1), m_strButtonText2(strButtonText2), m_strButtonText3(strButtonText3)
-    , m_iButtonEsc(0)
-    , m_fHovered(false)
-    , m_fFocused(false)
-    , m_pMainFrame(0), m_pTextPane(0), m_pButtonBox(0)
-    , m_pButton1(0), m_pButton2(0), m_pButton3(0)
+    , m_strMessage(strMessage), m_strDetails(strDetails), m_buttonDescriptions(buttonDescriptions)
+    , m_fHovered(false) , m_fFocused(false)
+    , m_pMainFrame(0), m_pTextPane(0), m_pButtonPane(0)
 {
     /* Prepare: */
     prepare();
-}
-
-UIPopupPane::~UIPopupPane()
-{
-    /* Cleanup: */
-    cleanup();
 }
 
 void UIPopupPane::setMessage(const QString &strMessage)
@@ -265,6 +298,11 @@ void UIPopupPane::setDetails(const QString &strDetails)
 
     /* Fetch new details: */
     m_strDetails = strDetails;
+}
+
+void UIPopupPane::sltButtonClicked(int iButtonID)
+{
+    done(iButtonID & AlertButtonMask);
 }
 
 void UIPopupPane::sltAdjustGeomerty()
@@ -294,8 +332,39 @@ void UIPopupPane::prepare()
     prepareContent();
 }
 
-void UIPopupPane::cleanup()
+void UIPopupPane::prepareContent()
 {
+    /* Prepare this: */
+    installEventFilter(this);
+    /* Create main-frame: */
+    m_pMainFrame = new UIPopupPaneFrame(this);
+    {
+        /* Prepare frame: */
+        m_pMainFrame->installEventFilter(this);
+        m_pMainFrame->setFocusPolicy(Qt::StrongFocus);
+        /* Create message-label: */
+        m_pTextPane = new UIPopupPaneTextPane(m_pMainFrame);
+        {
+            /* Prepare label: */
+            connect(m_pTextPane, SIGNAL(sigSizeChanged()),
+                    this, SLOT(sltAdjustGeomerty()));
+            m_pTextPane->installEventFilter(this);
+            m_pTextPane->setFocusPolicy(Qt::StrongFocus);
+            m_pTextPane->setText(m_strMessage);
+        }
+        /* Create button-box: */
+        m_pButtonPane = new UIPopupPaneButtonPane(m_pMainFrame);
+        {
+            /* Prepare button-box: */
+            connect(m_pButtonPane, SIGNAL(sigButtonClicked(int)),
+                    this, SLOT(sltButtonClicked(int)));
+            m_pButtonPane->installEventFilter(this);
+            m_pButtonPane->setButtons(m_buttonDescriptions);
+            m_pButtonPane->setFocusPolicy(Qt::StrongFocus);
+            m_pMainFrame->setFocusProxy(m_pButtonPane);
+            m_pTextPane->setFocusProxy(m_pButtonPane);
+        }
+    }
 }
 
 bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -348,9 +417,7 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
             }
             case QEvent::FocusOut:
             {
-                if (m_fFocused && (pWatched == m_pButton1 ||
-                                   pWatched == m_pButton2 ||
-                                   pWatched == m_pButton3))
+                if (m_fFocused)
                 {
                     m_fFocused = false;
                     emit sigFocusLeave();
@@ -384,18 +451,6 @@ void UIPopupPane::polishEvent(QShowEvent*)
     adjustGeometry();
 }
 
-void UIPopupPane::keyPressEvent(QKeyEvent *pEvent)
-{
-    /* Preprocess Escape key: */
-    if (pEvent->key() == Qt::Key_Escape && m_iButtonEsc)
-    {
-        done(m_iButtonEsc);
-        return;
-    }
-    /* Handle all the other keys: */
-    QWidget::keyPressEvent(pEvent);
-}
-
 int UIPopupPane::minimumWidthHint() const
 {
     /* Prepare minimum width hint: */
@@ -410,7 +465,7 @@ int UIPopupPane::minimumWidthHint() const
             /* Take into account widgets: */
             iMinimumWidthHint += m_pTextPane->width();
             iMinimumWidthHint += m_iMainFrameLayoutSpacing;
-            iMinimumWidthHint += m_pButtonBox->minimumSizeHint().width();
+            iMinimumWidthHint += m_pButtonPane->minimumSizeHint().width();
         }
     }
 
@@ -431,7 +486,7 @@ int UIPopupPane::minimumHeightHint() const
         {
             /* Take into account widgets: */
             const int iTextPaneHeight = m_pTextPane->height();
-            const int iButtonBoxHeight = m_pButtonBox->minimumSizeHint().height();
+            const int iButtonBoxHeight = m_pButtonPane->minimumSizeHint().height();
             iMinimumHeightHint += qMax(iTextPaneHeight, iButtonBoxHeight);
         }
     }
@@ -455,7 +510,7 @@ void UIPopupPane::adjustGeometry()
     {
         m_pTextPane->setDesiredWidth(iWidth - 2 * m_iMainLayoutMargin
                                             - 2 * m_iMainFrameLayoutMargin
-                                            - m_pButtonBox->minimumSizeHint().width());
+                                            - m_pButtonPane->minimumSizeHint().width());
     }
 
     /* Adjust other widgets: */
@@ -480,7 +535,7 @@ void UIPopupPane::updateLayout()
             /* Variables: */
             const int iTextPaneWidth = m_pTextPane->width();
             const int iTextPaneHeight = m_pTextPane->height();
-            const QSize buttonBoxMinimumSizeHint = m_pButtonBox->minimumSizeHint();
+            const QSize buttonBoxMinimumSizeHint = m_pButtonPane->minimumSizeHint();
             const int iButtonBoxWidth = buttonBoxMinimumSizeHint.width();
             const int iButtonBoxHeight = buttonBoxMinimumSizeHint.height();
             const int iMaximumHeight = qMax(iTextPaneHeight, iButtonBoxHeight);
@@ -492,97 +547,11 @@ void UIPopupPane::updateLayout()
                               fTextPaneShifted ? m_iMainFrameLayoutMargin + iHeightShift : m_iMainFrameLayoutMargin);
             m_pTextPane->resize(iTextPaneWidth, iTextPaneHeight);
             /* Button-box: */
-            m_pButtonBox->move(m_iMainFrameLayoutMargin + iTextPaneWidth + m_iMainFrameLayoutSpacing,
-                               m_iMainFrameLayoutMargin);
-            m_pButtonBox->resize(iButtonBoxWidth,
-                                 iMainFrameHeight - 2 * m_iMainFrameLayoutMargin);
+            m_pButtonPane->move(m_iMainFrameLayoutMargin + iTextPaneWidth + m_iMainFrameLayoutSpacing,
+                                m_iMainFrameLayoutMargin);
+            m_pButtonPane->resize(iButtonBoxWidth,
+                                  iMainFrameHeight - 2 * m_iMainFrameLayoutMargin);
         }
-    }
-}
-
-void UIPopupPane::prepareContent()
-{
-    /* Prepare this: */
-    installEventFilter(this);
-    /* Create main-frame: */
-    m_pMainFrame = new UIPopupPaneFrame(this);
-    {
-        /* Prepare frame: */
-        m_pMainFrame->installEventFilter(this);
-        m_pMainFrame->setFocusPolicy(Qt::StrongFocus);
-        /* Create message-label: */
-        m_pTextPane = new UIPopupPaneTextPane(m_pMainFrame);
-        {
-            /* Prepare label: */
-            connect(m_pTextPane, SIGNAL(sigSizeChanged()),
-                    this, SLOT(sltAdjustGeomerty()));
-            m_pTextPane->installEventFilter(this);
-            m_pTextPane->setFocusPolicy(Qt::StrongFocus);
-            m_pTextPane->setText(m_strMessage);
-        }
-        /* Create button-box: */
-        m_pButtonBox = new QIDialogButtonBox(m_pMainFrame);
-        {
-            /* Prepare button-box: */
-            m_pButtonBox->installEventFilter(this);
-            m_pButtonBox->setOrientation(Qt::Vertical);
-            prepareButtons();
-        }
-    }
-}
-
-void UIPopupPane::prepareButtons()
-{
-    /* Prepare descriptions: */
-    QList<int> descriptions;
-    descriptions << m_iButton1 << m_iButton2 << m_iButton3;
-
-    /* Choose 'escape' button: */
-    foreach (int iButton, descriptions)
-        if (iButton & AlertButtonOption_Escape)
-        {
-            m_iButtonEsc = iButton & AlertButtonMask;
-            break;
-        }
-
-    /* Create buttons: */
-    QList<QPushButton*> buttons = createButtons(m_pButtonBox, descriptions);
-
-    /* Install focus-proxy into the 'default' button: */
-    foreach (QPushButton *pButton, buttons)
-        if (pButton && pButton->isDefault())
-        {
-            m_pMainFrame->setFocusProxy(pButton);
-            m_pTextPane->setFocusProxy(pButton);
-            break;
-        }
-
-    /* Prepare button 1: */
-    m_pButton1 = buttons[0];
-    if (m_pButton1)
-    {
-        m_pButton1->installEventFilter(this);
-        connect(m_pButton1, SIGNAL(clicked()), SLOT(done1()));
-        if (!m_strButtonText1.isEmpty())
-            m_pButton1->setText(m_strButtonText1);
-    }
-    /* Prepare button 2: */
-    m_pButton2 = buttons[1];
-    if (m_pButton2)
-    {
-        m_pButton2->installEventFilter(this);
-        connect(m_pButton2, SIGNAL(clicked()), SLOT(done2()));
-        if (!m_strButtonText2.isEmpty())
-            m_pButton1->setText(m_strButtonText2);
-    }
-    /* Prepare button 3: */
-    m_pButton3 = buttons[2];
-    if (m_pButton3)
-    {
-        m_pButton3->installEventFilter(this);
-        connect(m_pButton3, SIGNAL(clicked()), SLOT(done3()));
-        if (!m_strButtonText3.isEmpty())
-            m_pButton1->setText(m_strButtonText3);
     }
 }
 
@@ -606,50 +575,6 @@ int UIPopupPane::parentStatusBarHeight(QWidget *pParent)
     return 0;
 }
 
-/* static */
-QList<QPushButton*> UIPopupPane::createButtons(QIDialogButtonBox *pButtonBox, const QList<int> descriptions)
-{
-    /* Create button according descriptions: */
-    QList<QPushButton*> buttons;
-    foreach (int iButton, descriptions)
-        buttons << createButton(pButtonBox, iButton);
-    /* Return buttons: */
-    return buttons;
-}
-
-/* static */
-QPushButton* UIPopupPane::createButton(QIDialogButtonBox *pButtonBox, int iButton)
-{
-    /* Null for AlertButton_NoButton: */
-    if (iButton == 0)
-        return 0;
-
-    /* Prepare button text & role: */
-    QString strText;
-    QDialogButtonBox::ButtonRole role;
-    switch (iButton & AlertButtonMask)
-    {
-        case AlertButton_Ok:      strText = QIMessageBox::tr("OK");     role = QDialogButtonBox::AcceptRole; break;
-        case AlertButton_Cancel:  strText = QIMessageBox::tr("Cancel"); role = QDialogButtonBox::RejectRole; break;
-        case AlertButton_Choice1: strText = QIMessageBox::tr("Yes");    role = QDialogButtonBox::YesRole; break;
-        case AlertButton_Choice2: strText = QIMessageBox::tr("No");     role = QDialogButtonBox::NoRole; break;
-        default: return 0;
-    }
-
-    /* Create push-button: */
-    QPushButton *pButton = pButtonBox->addButton(strText, role);
-
-    /* Configure button: */
-    pButton->setFocusPolicy(Qt::StrongFocus);
-
-    /* Configure 'default' button: */
-    if (iButton & AlertButtonOption_Default)
-        pButton->setDefault(true);
-
-    /* Return button: */
-    return pButton;
-}
-
 
 UIPopupPaneFrame::UIPopupPaneFrame(QWidget *pParent /*= 0*/)
     : QWidget(pParent)
@@ -660,12 +585,6 @@ UIPopupPaneFrame::UIPopupPaneFrame(QWidget *pParent /*= 0*/)
 {
     /* Prepare: */
     prepare();
-}
-
-UIPopupPaneFrame::~UIPopupPaneFrame()
-{
-    /* Cleanup: */
-    cleanup();
 }
 
 void UIPopupPaneFrame::prepare()
@@ -679,10 +598,6 @@ void UIPopupPaneFrame::prepare()
     UIAnimationFramework::installPropertyAnimation(this, QByteArray("opacity"),
                                                    m_iDefaultOpacity, m_iHoveredOpacity, m_iHoverAnimationDuration,
                                                    SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
-}
-
-void UIPopupPaneFrame::cleanup()
-{
 }
 
 void UIPopupPaneFrame::paintEvent(QPaintEvent*)
@@ -729,12 +644,6 @@ UIPopupPaneTextPane::UIPopupPaneTextPane(QWidget *pParent /*= 0*/)
 {
     /* Prepare: */
     prepare();
-}
-
-UIPopupPaneTextPane::~UIPopupPaneTextPane()
-{
-    /* Cleanup: */
-    cleanup();
 }
 
 void UIPopupPaneTextPane::setText(const QString &strText)
@@ -804,10 +713,6 @@ void UIPopupPaneTextPane::prepare()
     prepareContent();
 }
 
-void UIPopupPaneTextPane::cleanup()
-{
-}
-
 void UIPopupPaneTextPane::prepareContent()
 {
     /* Create main layout: */
@@ -851,6 +756,174 @@ void UIPopupPaneTextPane::updateGeometry()
 void UIPopupPaneTextPane::resizeEvent(QResizeEvent*)
 {
     emit sigSizeChanged();
+}
+
+
+UIPopupPaneButtonPane::UIPopupPaneButtonPane(QWidget *pParent /*= 0*/)
+    : QWidget(pParent)
+    , m_iDefaultButton(0)
+    , m_iEscapeButton(0)
+{
+    /* Prepare: */
+    prepare();
+}
+
+void UIPopupPaneButtonPane::setButtons(const QMap<int, QString> &buttonDescriptions)
+{
+    /* Make sure something changed: */
+    if (m_buttonDescriptions == buttonDescriptions)
+        return;
+
+    /* Assign new button-descriptions: */
+    m_buttonDescriptions = buttonDescriptions;
+    /* Recreate buttons: */
+    cleanupButtons();
+    prepareButtons();
+}
+
+void UIPopupPaneButtonPane::sltButtonClicked()
+{
+    /* Make sure the slot is called by the button: */
+    QIToolButton *pButton = qobject_cast<QIToolButton*>(sender());
+    if (!pButton)
+        return;
+
+    /* Make sure we still have that button: */
+    int iButtonID = m_buttons.key(pButton, 0);
+    if (!iButtonID)
+        return;
+
+    /* Notify listeners button was clicked: */
+    emit sigButtonClicked(iButtonID);
+}
+
+void UIPopupPaneButtonPane::prepare()
+{
+    /* Prepare layouts: */
+    prepareLayouts();
+}
+
+void UIPopupPaneButtonPane::prepareLayouts()
+{
+    /* Create layouts: */
+    m_pButtonLayout = new QHBoxLayout;
+    m_pButtonLayout->setContentsMargins(0, 0, 0, 0);
+    m_pButtonLayout->setSpacing(0);
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    pMainLayout->setContentsMargins(0, 0, 0, 0);
+    pMainLayout->setSpacing(0);
+    pMainLayout->addLayout(m_pButtonLayout);
+    pMainLayout->addStretch();
+}
+
+void UIPopupPaneButtonPane::prepareButtons()
+{
+    /* Add all the buttons: */
+    const QList<int> &buttonsIDs = m_buttonDescriptions.keys();
+    foreach (int iButtonID, buttonsIDs)
+        if (QIToolButton *pButton = addButton(iButtonID, m_buttonDescriptions[iButtonID]))
+        {
+            m_pButtonLayout->addWidget(pButton);
+            m_buttons[iButtonID] = pButton;
+            connect(pButton, SIGNAL(clicked(bool)), this, SLOT(sltButtonClicked()));
+            if (pButton->property("default").toBool())
+                m_iDefaultButton = iButtonID;
+            if (pButton->property("escape").toBool())
+                m_iEscapeButton = iButtonID;
+        }
+}
+
+void UIPopupPaneButtonPane::cleanupButtons()
+{
+    /* Remove all the buttons: */
+    const QList<int> &buttonsIDs = m_buttons.keys();
+    foreach (int iButtonID, buttonsIDs)
+    {
+        delete m_buttons[iButtonID];
+        m_buttons.remove(iButtonID);
+    }
+}
+
+void UIPopupPaneButtonPane::keyPressEvent(QKeyEvent *pEvent)
+{
+    /* Depending on pressed key: */
+    switch (pEvent->key())
+    {
+        case Qt::Key_Enter:
+        case Qt::Key_Return:
+        {
+            if (m_iDefaultButton)
+            {
+                pEvent->accept();
+                emit sigButtonClicked(m_iDefaultButton);
+                return;
+            }
+            break;
+        }
+        case Qt::Key_Escape:
+        {
+            if (m_iEscapeButton)
+            {
+                pEvent->accept();
+                emit sigButtonClicked(m_iEscapeButton);
+                return;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    /* Call to base-class: */
+    QWidget::keyPressEvent(pEvent);
+}
+
+/* static */
+QIToolButton* UIPopupPaneButtonPane::addButton(int iButtonID, const QString &strToolTip)
+{
+    /* Create button: */
+    QIToolButton *pButton = new QIToolButton;
+    pButton->setToolTip(strToolTip.isEmpty() ? defaultToolTip(iButtonID) : strToolTip);
+    pButton->setIcon(defaultIcon(iButtonID));
+
+    /* Sign the 'default' button: */
+    if (iButtonID & AlertButtonOption_Default)
+        pButton->setProperty("default", true);
+    /* Sign the 'escape' button: */
+    if (iButtonID & AlertButtonOption_Escape)
+        pButton->setProperty("escape", true);
+
+    /* Return button: */
+    return pButton;
+}
+
+/* static */
+QString UIPopupPaneButtonPane::defaultToolTip(int iButtonID)
+{
+    QString strToolTip;
+    switch (iButtonID & AlertButtonMask)
+    {
+        case AlertButton_Ok:      strToolTip = QIMessageBox::tr("OK");     break;
+        case AlertButton_Cancel:  strToolTip = QIMessageBox::tr("Cancel"); break;
+        case AlertButton_Choice1: strToolTip = QIMessageBox::tr("Yes");    break;
+        case AlertButton_Choice2: strToolTip = QIMessageBox::tr("No");     break;
+        default:                  strToolTip = QString();                  break;
+    }
+    return strToolTip;
+}
+
+/* static */
+QIcon UIPopupPaneButtonPane::defaultIcon(int iButtonID)
+{
+    QIcon icon;
+    switch (iButtonID & AlertButtonMask)
+    {
+        case AlertButton_Ok:      icon = UIIconPool::iconSet(":/ok_16px.png");     break;
+        case AlertButton_Cancel:  icon = UIIconPool::iconSet(":/cancel_16px.png"); break;
+        case AlertButton_Choice1: break;
+        case AlertButton_Choice2: break;
+        default:                  break;
+    }
+    return icon;
 }
 
 #include "UIPopupPane.moc"

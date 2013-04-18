@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 #include <QWidget>
+#include <QMap>
 
 /* GUI includes: */
 #include "QIMessageBox.h"
@@ -29,10 +30,10 @@
 class QStateMachine;
 class QLabel;
 class QPushButton;
-class QIDialogButtonBox;
 class UIPopupPane;
 class UIPopupPaneFrame;
 class UIPopupPaneTextPane;
+class UIPopupPaneButtonPane;
 
 /* UIAnimationFramework namespace: */
 namespace UIAnimationFramework
@@ -67,12 +68,10 @@ signals:
 
 public:
 
-    /* Constructor/destructor: */
+    /* Constructor: */
     UIPopupPane(QWidget *pParent, const QString &strId,
                 const QString &strMessage, const QString &strDetails,
-                int iButton1, int iButton2, int iButton3,
-                const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3);
-    ~UIPopupPane();
+                const QMap<int, QString> &buttonDescriptions);
 
     /* API: Id stuff: */
     const QString& id() const { return m_strId; }
@@ -83,19 +82,17 @@ public:
 
 private slots:
 
-    /* Handlers: Done slot variants for every button: */
-    void done1() { done(m_iButton1 & AlertButtonMask); }
-    void done2() { done(m_iButton2 & AlertButtonMask); }
-    void done3() { done(m_iButton3 & AlertButtonMask); }
+    /* Handler: Button stuff: */
+    void sltButtonClicked(int iButtonID);
 
     /* Handler: Layout stuff: */
     void sltAdjustGeomerty();
 
 private:
 
-    /* Helpers: Prepare/cleanup stuff: */
+    /* Helpers: Prepare stuff: */
     void prepare();
-    void cleanup();
+    void prepareContent();
 
     /* Handler: Event-filter stuff: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
@@ -103,7 +100,6 @@ private:
     /* Handlers: Event stuff: */
     virtual void showEvent(QShowEvent *pEvent);
     virtual void polishEvent(QShowEvent *pEvent);
-    virtual void keyPressEvent(QKeyEvent *pEvent);
 
     /* Helper: Layout stuff: */
     int minimumWidthHint() const;
@@ -112,17 +108,11 @@ private:
     void adjustGeometry();
     void updateLayout();
 
-    /* Helpers: Prepare stuff: */
-    void prepareContent();
-    void prepareButtons();
-
     /* Helper: Complete stuff: */
     void done(int iButtonCode);
 
     /* Static helpers: Prepare stuff: */
     static int parentStatusBarHeight(QWidget *pParent);
-    static QList<QPushButton*> createButtons(QIDialogButtonBox *pButtonBox, const QList<int> description);
-    static QPushButton* createButton(QIDialogButtonBox *pButtonBox, int iButton);
 
     /* Variables: */
     bool m_fPolished;
@@ -138,9 +128,7 @@ private:
     QString m_strMessage, m_strDetails;
 
     /* Variables: Button stuff: */
-    int m_iButton1, m_iButton2, m_iButton3;
-    QString m_strButtonText1, m_strButtonText2, m_strButtonText3;
-    int m_iButtonEsc;
+    QMap<int, QString> m_buttonDescriptions;
 
     /* Variables: Animation stuff: */
     bool m_fHovered;
@@ -149,8 +137,7 @@ private:
     /* Widgets: */
     UIPopupPaneFrame *m_pMainFrame;
     UIPopupPaneTextPane *m_pTextPane;
-    QIDialogButtonBox *m_pButtonBox;
-    QPushButton *m_pButton1, *m_pButton2, *m_pButton3;
+    UIPopupPaneButtonPane *m_pButtonPane;
 };
 
 #endif /* __UIPopupPane_h__ */
