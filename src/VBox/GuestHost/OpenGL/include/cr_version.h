@@ -15,6 +15,10 @@
 #define SHCROGL_SSM_VERSION_WITH_CORUPTED_STATE                     30
 /* version with invalid glGetError state */
 #define SHCROGL_SSM_VERSION_WITH_INVALID_ERROR_STATE                30
+/* VBox 4.2.12 had a bug that incorrectly CRMuralInfo data
+ * in a different format without changing the state version,
+ * i.e. 30 version can have both "correct" and "incorrect" CRMuralInfo data */
+#define SHCROGL_SSM_VERSION_WITH_BUGGY_MURAL_INFO                   30
 /* the saved state has incorrect front and back buffer image data */
 #define SHCROGL_SSM_VERSION_WITH_BUGGY_FB_IMAGE_DATA                31
 #define SHCROGL_SSM_VERSION_WITH_STATE_BITS                         33
