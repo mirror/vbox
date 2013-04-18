@@ -157,12 +157,17 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strId,
         /* Choose at least one button to be the 'default' and 'escape': */
         if (iButton1 == 0 && iButton2 == 0 && iButton3 == 0)
             iButton1 = AlertButton_Ok | AlertButtonOption_Default | AlertButtonOption_Escape;
+        /* Compose button description map: */
+        QMap<int, QString> buttonDescriptions;
+        if (iButton1 != 0 && !buttonDescriptions.contains(iButton1))
+            buttonDescriptions[iButton1] = strButtonText1;
+        if (iButton2 != 0 && !buttonDescriptions.contains(iButton2))
+            buttonDescriptions[iButton2] = strButtonText2;
+        if (iButton3 != 0 && !buttonDescriptions.contains(iButton3))
+            buttonDescriptions[iButton3] = strButtonText3;
         /* Create popup-pane and insert it into our map: */
         QWidget *pPopupBoxParent = windowManager().realParentWindow(pParent ? pParent : windowManager().mainWindowShown());
-        pPopupPane = new UIPopupPane(pPopupBoxParent, strId,
-                                     strMessage, strDetails,
-                                     iButton1, iButton2, iButton3,
-                                     strButtonText1, strButtonText2, strButtonText3);
+        pPopupPane = new UIPopupPane(pPopupBoxParent, strId, strMessage, strDetails, buttonDescriptions);
         m_popups.insert(strId, pPopupPane);
         /* Attach popup-pane connections: */
         connect(pPopupPane, SIGNAL(sigDone(int)), this, SLOT(sltPopupDone(int)));
