@@ -2805,10 +2805,11 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
                     | X86_CR0_ET    /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.ET */
                     | X86_CR0_CD    /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.CD */
                     | X86_CR0_NW;   /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.NW */
-
-        /* We don't need to intercept changes to CR0.PE with unrestricted guests. */
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
             u64CR0Mask &= ~X86_CR0_PE;
+        /* Enable this later. */
+        /* if (pVM->hm.s.fNestedPaging)
+            u64CR0Mask &= ~X86_CR0_WP; */
 
         /* If the guest FPU state is active, don't need to VM-exit on writes to FPU related bits in CR0. */
         if (fInterceptNM)
@@ -2834,7 +2835,7 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
      */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR3)
     {
-        uint64_t u64GuestCR3 = 0;
+        RTGCPHYS GCPhysGuestCR3 = NIL_RTGCPHYS;
         if (pVM->hm.s.fNestedPaging)
         {
             pVCpu->hm.s.vmx.HCPhysEPTP = PGMGetHyperCR3(pVCpu);
@@ -2873,7 +2874,7 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
 
                 /* The guest's view of its CR3 is unblemished with Nested Paging when the guest is using paging or we
                    have Unrestricted Execution to handle the guest when it's not using paging. */
-                u64GuestCR3 = pCtx->cr3;
+                GCPhysGuestCR3 = pCtx->cr3;
             }
             else
             {
@@ -2890,17 +2891,17 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
                 rc = PDMVmmDevHeapR3ToGCPhys(pVM, pVM->hm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
                 AssertRCReturn(rc, rc);
 
-                u64GuestCR3 = GCPhys;
+                GCPhysGuestCR3 = GCPhys;
             }
         }
         else
         {
             /* Non-nested paging case, just use the hypervisor's CR3. */
-            u64GuestCR3 = PGMGetHyperCR3(pVCpu);
+            GCPhysGuestCR3 = PGMGetHyperCR3(pVCpu);
         }
 
-        Log(("Load: VMX_VMCS_GUEST_CR3=%#RX64\n", u64GuestCR3));
-        rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR3, u64GuestCR3);
+        Log(("Load: VMX_VMCS_GUEST_CR3=%#RGv\n", GCPhysGuestCR3));
+        rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR3, GCPhysGuestCR3);
         AssertRCReturn(rc, rc);
 
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR3;
@@ -2911,7 +2912,8 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
      */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR4)
     {
-        uint64_t u64GuestCR4 = pCtx->cr4;
+        uint32_t u64GuestCR4 = pCtx->cr4;
+        Assert(!(pCtx->cr4 >> 32));
 
         /* The guest's view of its CR4 is unblemished. */
         rc  = VMXWriteVmcsGstN(VMX_VMCS_CTRL_CR4_READ_SHADOW, u64GuestCR4);
@@ -3056,32 +3058,38 @@ DECLINLINE(int) hmR0VmxLoadGuestDebugRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     else
         Assert(fInterceptDB == false);      /* If we are not single stepping in DBGF, there is no need to intercept #DB. */
 
+
     /*
      * If the guest is using its DRx registers and the host DRx does not yet contain the guest DRx values,
      * load the guest DRx registers into the host and don't cause VM-exits on guest's MOV DRx accesses.
      * The same for the hypervisor DRx registers, priority is for the guest here.
      */
-    if (    (pCtx->dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
-        && !CPUMIsGuestDebugStateActive(pVCpu))
+    if (pCtx->dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
     {
-        /* Save the host and load the guest debug registers. This will make the guest debug state active. */
-        rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
-        AssertRC(rc);
+        if (!CPUMIsGuestDebugStateActive(pVCpu))
+        {
+            rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
+            AssertRC(rc);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
+        }
         Assert(CPUMIsGuestDebugStateActive(pVCpu));
         Assert(fInterceptMovDRx == false);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
     }
-    else if (    CPUMGetHyperDR7(pVCpu) & (X86_DR7_ENABLED_MASK | X86_DR7_GD)
-             && !CPUMIsHyperDebugStateActive(pVCpu))
+    else if (CPUMGetHyperDR7(pVCpu) & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
     {
-        /* Save the host and load the hypervisor debug registers. This will make the hyper debug state active. */
-        rc = CPUMR0LoadHyperDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
-        AssertRC(rc);
+        if (!CPUMIsHyperDebugStateActive(pVCpu))
+        {
+            rc = CPUMR0LoadHyperDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
+            AssertRC(rc);
+        }
         Assert(CPUMIsHyperDebugStateActive(pVCpu));
         fInterceptMovDRx = true;
     }
-    else
-        Assert(fInterceptMovDRx == false);  /* No need to intercept MOV DRx if DBGF is not active nor the guest is debugging. */
+    else if (!CPUMIsGuestDebugStateActive(pVCpu))
+    {
+        /* For the first time we would need to intercept MOV DRx accesses even when the guest debug state isn't active. */
+        fInterceptMovDRx = true;
+    }
 
     /* Update the exception bitmap regarding intercepting #DB generated by the guest. */
     if (fInterceptDB)
@@ -7227,11 +7235,13 @@ static DECLCALLBACK(int) hmR0VmxExitRdpmc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
 static DECLCALLBACK(int) hmR0VmxExitInvlpg(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    Assert(!pVM->hm.s.fNestedPaging);
+
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
     VBOXSTRICTRC rc2 = EMInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), pVmxTransient->uExitQualification);
     rc = VBOXSTRICTRC_VAL(rc2);
     if (RT_LIKELY(rc == VINF_SUCCESS))
@@ -7240,7 +7250,6 @@ static DECLCALLBACK(int) hmR0VmxExitInvlpg(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
     {
         AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0VmxExitInvlpg: EMInterpretInvlpg %#RGv failed with %Rrc\n",
                                               pVmxTransient->uExitQualification, rc));
-        rc = VERR_EM_INTERPRETER;
     }
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvlpg);
     return rc;
@@ -8218,8 +8227,6 @@ static DECLCALLBACK(int) hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
     if (   !DBGFIsStepping(pVCpu)
         && !CPUMIsHyperDebugStateActive(pVCpu))
     {
-        Assert(!CPUMIsGuestDebugStateActive(pVCpu));
-
         /* Don't intercept MOV DRx. */
         pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT;
         rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
@@ -8243,8 +8250,6 @@ static DECLCALLBACK(int) hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
         return VINF_SUCCESS;
     }
 
-    /** @todo clear VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT after the first
-     *        time and restore DRx registers afterwards */
     /*
      * EMInterpretDRx[Write|Read]() calls CPUMIsGuestIn64BitCode() which requires EFER, CS. EFER is always up-to-date, see
      * hmR0VmxSaveGuestAutoLoadStoreMsrs(). Update only the segment registers from the CPU.
@@ -8878,8 +8883,8 @@ static DECLCALLBACK(int) hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
     rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
-    Log(("#PF: cr2=%#RGv cs:rip=%#04x:%#RGv uErrCode %#RX32\n", pVmxTransient->uExitQualification, pMixedCtx->cs.Sel,
-         pMixedCtx->rip, pVmxTransient->uExitIntrErrorCode));
+    Log(("#PF: cr2=%#RGv cs:rip=%#04x:%#RGv uErrCode %#RX32 cr3=%#RGv\n", pVmxTransient->uExitQualification, pMixedCtx->cs.Sel,
+         pMixedCtx->rip, pVmxTransient->uExitIntrErrorCode, pMixedCtx->cr3));
 
     TRPMAssertXcptPF(pVCpu, pVmxTransient->uExitQualification, (RTGCUINT)pVmxTransient->uExitIntrErrorCode);
     rc = PGMTrap0eHandler(pVCpu, pVmxTransient->uExitIntrErrorCode, CPUMCTX2CORE(pMixedCtx),
