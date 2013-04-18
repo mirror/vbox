@@ -306,17 +306,20 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
     }
     crStateSwitchPrepare(cr_server.bUseMultipleContexts ? NULL : ctx, oldCtx, idDrawFBO, idReadFBO);
 
-    /*
-    crDebug("**** %s client %d  curCtx=%d curWin=%d", __func__,
-                    cr_server.curClient->number, ctxPos, window);
-    */
-    cr_server.curClient->currentContextNumber = context;
-    cr_server.curClient->currentCtxInfo = ctxInfo;
-    cr_server.curClient->currentMural = mural;
-    cr_server.curClient->currentWindow = window;
+    if (cr_server.curClient)
+    {
+        /*
+        crDebug("**** %s client %d  curCtx=%d curWin=%d", __func__,
+                        cr_server.curClient->number, ctxPos, window);
+        */
+        cr_server.curClient->currentContextNumber = context;
+        cr_server.curClient->currentCtxInfo = ctxInfo;
+        cr_server.curClient->currentMural = mural;
+        cr_server.curClient->currentWindow = window;
 
-    CRASSERT(cr_server.curClient->currentCtxInfo);
-    CRASSERT(cr_server.curClient->currentCtxInfo->pContext);
+        CRASSERT(cr_server.curClient->currentCtxInfo);
+        CRASSERT(cr_server.curClient->currentCtxInfo->pContext);
+    }
 
     /* This is a hack to force updating the 'current' attribs */
     crStateUpdateColorBits();
@@ -400,7 +403,8 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
     crStateSwitchPostprocess(ctx, cr_server.bUseMultipleContexts ? NULL : oldCtx, idDrawFBO, idReadFBO);
 
     if (!ctx->framebufferobject.drawFB
-            && (ctx->buffer.drawBuffer == GL_FRONT || ctx->buffer.drawBuffer == GL_FRONT_LEFT))
+            && (ctx->buffer.drawBuffer == GL_FRONT || ctx->buffer.drawBuffer == GL_FRONT_LEFT)
+            && cr_server.curClient)
         cr_server.curClient->currentMural->bFbDraw = GL_TRUE;
 
     if (!(mural->fPresentMode & CR_SERVER_REDIR_F_FBO))
