@@ -2058,21 +2058,22 @@ STDMETHODIMP Machine::GetCPUProperty(CPUPropertyType_T property, BOOL *aVal)
             {
                 *aVal = FALSE;
 
-                ComPtr<IGuestOSType> guestOSType;
-                HRESULT hrc2 = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(), guestOSType.asOutParam());
+                ComPtr<IGuestOSType> ptrGuestOSType;
+                HRESULT hrc2 = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(), ptrGuestOSType.asOutParam());
                 if (SUCCEEDED(hrc2))
                 {
                     BOOL fIs64Bit = FALSE;
-                    hrc2 = pGuestOSType->COMGETTER(Is64Bit)(&fIs64Bit); AssertComRC(hrc);
+                    hrc2 = ptrGuestOSType->COMGETTER(Is64Bit)(&fIs64Bit); AssertComRC(hrc2);
                     if (SUCCEEDED(hrc2) && fIs64Bit)
                     {
                         ComObjPtr<Host> ptrHost = mParent->host();
                         alock.release();
-                        hrc2 = ptrHost->GetProcessorFeature(ProcessorFeature_LongMode, aVal)
-                        AssertComRC(hrc);
-                        if (FAILURE(hrc2))
+
+                        hrc2 = ptrHost->GetProcessorFeature(ProcessorFeature_LongMode, aVal); AssertComRC(hrc2);
+                        if (FAILED(hrc2))
                             *aVal = FALSE;
                     }
+                }
             }
 #endif
             break;
