@@ -235,18 +235,6 @@ VMM_INT_DECL(uint32_t)      VMMGetSvnRev(void);
 VMM_INT_DECL(VMMSWITCHER)   VMMGetSwitcher(PVM pVM);
 VMM_INT_DECL(void)          VMMTrashVolatileXMMRegs(void);
 
-/** @def VMMIsHwVirtExtForced
- * Checks if forced to use the hardware assisted virtualization extensions.
- *
- * This is intended for making setup decisions where we can save resources when
- * using hardware assisted virtualization.
- *
- * @returns true / false.
- * @param   pVM     Pointer to the shared VM structure.
- * @internal
- */
-#define VMMIsHwVirtExtForced(pVM)   ((pVM)->fHwVirtExtForced)
-
 
 #ifdef IN_RING3
 /** @defgroup grp_vmm_r3    The VMM Host Context Ring 3 API

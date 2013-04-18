@@ -1344,7 +1344,7 @@
     GEN_CHECK_OFF(VM, fPATMEnabled);
     GEN_CHECK_OFF(VM, fCSAMEnabled);
     GEN_CHECK_OFF(VM, fHMEnabled);
-    GEN_CHECK_OFF(VM, fHwVirtExtForced);
+    GEN_CHECK_OFF(VM, fHMEnabledFixed);
     GEN_CHECK_OFF(VM, fFaultTolerantMaster);
     GEN_CHECK_OFF(VM, fUseLargePages);
     GEN_CHECK_OFF(VM, hTraceBufRC);

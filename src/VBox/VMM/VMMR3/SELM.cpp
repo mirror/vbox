@@ -63,6 +63,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/em.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/pgm.h>
@@ -477,7 +478,7 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
     /* TRPM will be updating the eip */
 
     if (    !pVM->selm.s.fDisableMonitoring
-        &&  !VMMIsHwVirtExtForced(pVM))
+        &&  !HMIsEnabled(pVM))
     {
         /*
          * Update shadow GDT/LDT/TSS write access handlers.

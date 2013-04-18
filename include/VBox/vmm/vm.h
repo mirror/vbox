@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -84,7 +84,9 @@ typedef enum VMCPUSTATE
 
 
 /**
- * Per virtual CPU data.
+ * The cross context virtual CPU structure.
+ *
+ * Run 'kmk run-struct-tests' (from src/VBox/VMM if you like) after updating!
  */
 typedef struct VMCPU
 {
@@ -783,17 +785,17 @@ typedef struct VMCPU
 
 
 
-/** This is the VM structure.
+/**
+ * The cross context VM structure.
  *
- * It contains (nearly?) all the VM data which have to be available in all
- * contexts. Even if it contains all the data the idea is to use APIs not
- * to modify all the members all around the place. Therefore we make use of
- * unions to hide everything which isn't local to the current source module.
- * This means we'll have to pay a little bit of attention when adding new
- * members to structures in the unions and make sure to keep the padding sizes
- * up to date.
+ * It contains all the VM data which have to be available in all contexts.
+ * Even if it contains all the data the idea is to use APIs not to modify all
+ * the members all around the place.  Therefore we make use of unions to hide
+ * everything which isn't local to the current source module.  This means we'll
+ * have to pay a little bit of attention when adding new members to structures
+ * in the unions and make sure to keep the padding sizes up to date.
  *
- * Run tstVMStructSize after update!
+ * Run 'kmk run-struct-tests' (from src/VBox/VMM if you like) after updating!
  */
 typedef struct VM
 {
@@ -874,14 +876,18 @@ typedef struct VM
      * This is placed here for performance reasons. */
     bool                        fCSAMEnabled;
     /** Hardware VM support is available and enabled.
+     * Determined very early during init.
      * This is placed here for performance reasons. */
     bool                        fHMEnabled;
-    /** Hardware VM support is required and non-optional.
-     * This is initialized together with the rest of the VM structure. */
-    bool                        fHwVirtExtForced;
-    /** Set when this VM is the master FT node. */
+    /** For asserting on fHMEnable usage. */
+    bool                        fHMEnabledFixed;
+    /** Set when this VM is the master FT node.
+     * @todo This doesn't need to be here, FTM should store it in it's own
+     *       structures instead. */
     bool                        fFaultTolerantMaster;
-    /** Large page enabled flag. */
+    /** Large page enabled flag.
+     * @todo This doesn't need to be here, PGM should store it in it's own
+     *       structures instead. */
     bool                        fUseLargePages;
     /** @} */
 

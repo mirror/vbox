@@ -670,7 +670,7 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     CPUMSetHyperIDTR(pVCpu, VM_RC_ADDR(pVM, &pVM->trpm.s.aIdt[0]), sizeof(pVM->trpm.s.aIdt)-1);
 
     if (    !pVM->trpm.s.fDisableMonitoring
-        &&  !VMMIsHwVirtExtForced(pVM))
+        &&  !HMIsEnabled(pVM))
     {
 #ifdef TRPM_TRACK_SHADOW_IDT_CHANGES
         if (pVM->trpm.s.pvMonShwIdtRC != RTRCPTR_MAX)

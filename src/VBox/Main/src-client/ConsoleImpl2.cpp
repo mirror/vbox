@@ -898,64 +898,64 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             fIsGuest64Bit = FALSE;
         }
 
-        BOOL fHWVirtExEnabled;
-        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &fHWVirtExEnabled); H();
-        if (cCpus > 1 && !fHWVirtExEnabled)
+        BOOL fHMEnabled;
+        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &fHMEnabled); H();
+        if (cCpus > 1 && !fHMEnabled)
         {
-            LogRel(("Forced fHWVirtExEnabled to TRUE by SMP guest.\n"));
-            fHWVirtExEnabled = TRUE;
+            LogRel(("Forced fHMEnabled to TRUE by SMP guest.\n"));
+            fHMEnabled = TRUE;
         }
-        if (!fHWVirtExEnabled && fIsGuest64Bit)
+        if (!fHMEnabled && fIsGuest64Bit)
         {
             LogRel(("WARNING! 64-bit guest type selected on host without hardware virtualization (VT-x or AMD-V).\n"));
             fIsGuest64Bit = FALSE;
         }
 
-        BOOL fHwVirtExtForced;
+        BOOL fHMForced;
 #ifdef VBOX_WITH_RAW_MODE
         /* - With more than 4GB PGM will use different RAMRANGE sizes for raw
              mode and hv mode to optimize lookup times.
            - With more than one virtual CPU, raw-mode isn't a fallback option.
            - With a 64-bit guest, raw-mode isn't a fallback option either. */
-        fHwVirtExtForced = fHWVirtExEnabled
-                        && (   cbRam + cbRamHole > _4G
-                            || cCpus > 1
-                            || fIsGuest64Bit);
+        fHMForced = fHMEnabled
+                 && (   cbRam + cbRamHole > _4G
+                     || cCpus > 1
+                     || fIsGuest64Bit);
 # ifdef RT_OS_DARWIN
-        fHwVirtExtForced = fHWVirtExEnabled;
+        fHMForced = fHMEnabled;
 # endif
-        if (fHwVirtExtForced)
+        if (fHMForced)
         {
             if (cbRam + cbRamHole > _4G)
-                LogRel(("fHwVirtExtForced=TRUE - Lots of RAM\n"));
+                LogRel(("fHMForced=TRUE - Lots of RAM\n"));
             if (cCpus > 1)
-                LogRel(("fHwVirtExtForced=TRUE - SMP\n"));
+                LogRel(("fHMForced=TRUE - SMP\n"));
             if (fIsGuest64Bit)
-                LogRel(("fHwVirtExtForced=TRUE - 64-bit guest\n"));
+                LogRel(("fHMForced=TRUE - 64-bit guest\n"));
 # ifdef RT_OS_DARWIN
-            LogRel(("fHwVirtExtForced=TRUE - Darwin host\n"));
+            LogRel(("fHMForced=TRUE - Darwin host\n"));
 # endif
         }
 #else  /* !VBOX_WITH_RAW_MODE */
-        fHWVirtExEnabled = fHwVirtExtForced = TRUE;
-        LogRel(("fHwVirtExtForced=TRUE - No raw-mode support in this build!\n"));
+        fHMEnabled = fHMForced = TRUE;
+        LogRel(("fHMForced=TRUE - No raw-mode support in this build!\n"));
 #endif /* !VBOX_WITH_RAW_MODE */
-        if (!fHwVirtExtForced) /* No need to query if already forced above. */
+        if (!fHMForced) /* No need to query if already forced above. */
         {
-            hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Force, &fHwVirtExtForced); H();
-            if (fHwVirtExtForced)
-                LogRel(("fHwVirtExtForced=TRUE - HWVirtExPropertyType_Force\n"));
+            hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Force, &fHMForced); H();
+            if (fHMForced)
+                LogRel(("fHMForced=TRUE - HWVirtExPropertyType_Force\n"));
         }
-        InsertConfigInteger(pRoot, "HwVirtExtForced", fHwVirtExtForced);
+        InsertConfigInteger(pRoot, "HMEnabled", fHMEnabled);
 
-        /* /HWVirtExt/xzy */
-        PCFGMNODE pHWVirtExt;
-        InsertConfigNode(pRoot, "HWVirtExt", &pHWVirtExt);
-        InsertConfigInteger(pHWVirtExt, "Enabled", fHWVirtExEnabled);
-        if (fHWVirtExEnabled)
+        /* /HM/xzy */
+        PCFGMNODE pHM;
+        InsertConfigNode(pRoot, "HM", &pHM);
+        InsertConfigInteger(pRoot, "HMForced", fHMForced);
+        if (fHMEnabled)
         {
             /* Indicate whether 64-bit guests are supported or not. */
-            InsertConfigInteger(pHWVirtExt, "64bitEnabled", fIsGuest64Bit);
+            InsertConfigInteger(pHM, "64bitEnabled", fIsGuest64Bit);
 #if ARCH_BITS == 32 /* The recompiler must use VBoxREM64 (32-bit host only). */
             PCFGMNODE pREM;
             InsertConfigNode(pRoot, "REM", &pREM);
@@ -973,29 +973,29 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 /* Only allow TPR patching for NT, Win2k, XP and Windows Server 2003. (32 bits mode)
                  * We may want to consider adding more guest OSes (Solaris) later on.
                  */
-                InsertConfigInteger(pHWVirtExt, "TPRPatchingEnabled", 1);
+                InsertConfigInteger(pHM, "TPRPatchingEnabled", 1);
             }
         }
 
         /* HWVirtEx exclusive mode */
-        BOOL fHWVirtExExclusive = true;
-        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Exclusive, &fHWVirtExExclusive); H();
-        InsertConfigInteger(pHWVirtExt, "Exclusive", fHWVirtExExclusive);
+        BOOL fHMExclusive = true;
+        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Exclusive, &fHMExclusive); H();
+        InsertConfigInteger(pHM, "Exclusive", fHMExclusive);
 
         /* Nested paging (VT-x/AMD-V) */
         BOOL fEnableNestedPaging = false;
         hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, &fEnableNestedPaging); H();
-        InsertConfigInteger(pHWVirtExt, "EnableNestedPaging", fEnableNestedPaging);
+        InsertConfigInteger(pHM, "EnableNestedPaging", fEnableNestedPaging);
 
         /* Large pages; requires nested paging */
         BOOL fEnableLargePages = false;
         hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_LargePages, &fEnableLargePages); H();
-        InsertConfigInteger(pHWVirtExt, "EnableLargePages", fEnableLargePages);
+        InsertConfigInteger(pHM, "EnableLargePages", fEnableLargePages);
 
         /* VPID (VT-x) */
         BOOL fEnableVPID = false;
         hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &fEnableVPID);       H();
-        InsertConfigInteger(pHWVirtExt, "EnableVPID", fEnableVPID);
+        InsertConfigInteger(pHM, "EnableVPID", fEnableVPID);
 
         /*
          * MM values.
@@ -1334,7 +1334,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         hrc = pMachine->COMGETTER(MonitorCount)(&cMonitorCount);                            H();
         InsertConfigInteger(pCfg,  "MonitorCount",         cMonitorCount);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-        InsertConfigInteger(pCfg,  "R0Enabled",            fHWVirtExEnabled);
+        InsertConfigInteger(pCfg,  "R0Enabled",            fHMEnabled);
 #endif
 
         /*

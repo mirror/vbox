@@ -1947,6 +1947,12 @@
 #define VERR_HM_UNKNOWN_IO_INSTRUCTION              (-4111)
 /** Unsupported CPU feature combination. */
 #define VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO       (-4112)
+/** Internal processing error \#3 in the HM code.  */
+#define VERR_HM_IPE_3                               (-4113)
+/** Internal processing error \#3 in the HM code.  */
+#define VERR_HM_IPE_4                               (-4114)
+/** Internal processing error \#3 in the HM code.  */
+#define VERR_HM_IPE_5                               (-4115)
 /** @} */
 
 

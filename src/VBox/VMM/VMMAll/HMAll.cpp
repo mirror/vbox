@@ -35,6 +35,22 @@
 #include <iprt/x86.h>
 
 
+
+/**
+ * Query HM state (enabled/disabled)
+ *
+ * @returns @c false if disabled, @c true if enabled.
+ * @param   pVM         The cross context VM structure.
+ * @sa      HMIsEnabled, HMR3IsEnabled
+ * @internal
+ */
+VMMDECL(bool) HMIsEnabledNotMacro(PVM pVM)
+{
+    Assert(pVM->fHMEnabledFixed);
+    return pVM->fHMEnabled;
+}
+
+
 /**
  * Queues a page for invalidation
  *
