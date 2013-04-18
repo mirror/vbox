@@ -2657,4 +2657,23 @@ alice = {
       url="http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html">http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html</ulink></literal>.</para>
     </sect2>
   </sect1>
+
+  <sect1 id="vboxexpertstoragemgmt">
+    <title>VirtualBox expert storage management</title>
+
+    <para>In case the snapshot model of VirtualBox is not sufficient
+    it is possible to enable a special mode which makes it possible to
+    reconfigure storage attachments while the VM is paused.
+    The user has to make sure that the disk data stays consistent to the guest
+    because unlike with hotplugging the guest is not informed about detached
+    or newly attached media.</para>
+
+    <para>The expert storage management mode can be enabled per VM executing:</para>
+
+    <screen>VBoxManage setextradata vmname "VBoxInternal2/SilentReconfigureWhilePaused" 1
+</screen>
+
+    <para>Storage attachments can be reconfigured while the VM is paused afterwards using:</para>
+    <screen>VBoxManage storageattach ...</screen>
+  </sect1>
 </chapter>
