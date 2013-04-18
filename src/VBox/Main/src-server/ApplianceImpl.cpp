@@ -244,14 +244,13 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
 /**
  * Private helper func that suggests a VirtualBox guest OS type
  * for the given OVF operating system type.
- * @param osTypeVBox
- * @param c
+ * @param pcszVBox  Our guest OS type identifier string.
  */
-ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox)
+ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVBox)
 {
     for (size_t i = 0; i < RT_ELEMENTS(g_osTypes); ++i)
     {
-        if (!RTStrICmp(pcszVbox, Global::OSTypeId(g_osTypes[i].osType)))
+        if (!RTStrICmp(pcszVBox, Global::OSTypeId(g_osTypes[i].osType)))
             return g_osTypes[i].cim;
     }
 
