@@ -81,7 +81,7 @@
 
 # ifndef RHEL_RELEASE_CODE
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 39) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
-#   ifdef DRM_SWITCH_POWER_ON
+#   if defined(DRM_MODE_OBJECT_PLANE) && defined(DRM_IOCTL_MODE_ADDFB2)
 #    define DRM_DEBIAN_34ON32
 #   endif
 #  endif
