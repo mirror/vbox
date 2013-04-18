@@ -1887,7 +1887,8 @@ int GstCntlProcessPerform(PVBOXSERVICECTRLPROCESS pProcess,
                     ("Another request still is in progress (%p)\n", pProcess->pRequest),
                     VERR_ACCESS_DENIED);
 
-    if (ASMAtomicReadBool(&pProcess->fShutdown))
+    if (   ASMAtomicReadBool(&pProcess->fShutdown)
+        || ASMAtomicReadBool(&pProcess->fStopped))
     {
         rc = VERR_CANCELLED;
     }
