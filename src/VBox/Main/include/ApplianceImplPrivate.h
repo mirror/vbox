@@ -223,7 +223,7 @@ struct VirtualSystemDescription::Data
 
 void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf8Str &cStr);
 
-ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox);
+ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVBox);
 
 Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type);
 
@@ -243,5 +243,5 @@ PVDINTERFACEIO TarCreateInterface();
 int ShaReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pIfIo, void *pvUser);
 int ShaWriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pIfIo, void *pvUser);
 
-#endif // ____H_APPLIANCEIMPLPRIVATE
+#endif // !____H_APPLIANCEIMPLPRIVATE
 
