@@ -61,8 +61,8 @@ struc VM
     .fRawRing1Enabled       resb 1
     .fPATMEnabled           resb 1
     .fCSAMEnabled           resb 1
-    .fHMEnabled         resb 1
-    .fHwVirtExtForced       resb 1
+    .fHMEnabled             resb 1
+    .fHMEnabledFixed        resb 1
     .fFaultTolerantMaster   resb 1
     .fUseLargePages         resb 1
 

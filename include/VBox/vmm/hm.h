@@ -43,9 +43,14 @@ RT_C_DECLS_BEGIN
  *
  * @returns 0 - disabled, 1 - enabled
  * @param   a_pVM       Pointer to the shared VM structure.
+ * @sa      HMIsEnabledNotMacro, HMR3IsEnabled
  * @internal
  */
-#define HMIsEnabled(a_pVM)    ((a_pVM)->fHMEnabled)
+#if defined(VBOX_STRICT) && defined(IN_RING3)
+# define HMIsEnabled(a_pVM)   HMIsEnabledNotMacro(a_pVM)
+#else
+# define HMIsEnabled(a_pVM)   ((a_pVM)->fHMEnabled)
+#endif
 
  /**
  * Check if the current CPU state is valid for emulating IO blocks in the recompiler
@@ -65,6 +70,7 @@ RT_C_DECLS_BEGIN
  */
 #define HMCanEmulateIoBlockEx(a_pCtx)   (!CPUMIsGuestInPagedProtectedModeEx(a_pCtx))
 
+VMMDECL(bool)                   HMIsEnabledNotMacro(PVM pVM);
 VMM_INT_DECL(int)               HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
 VMM_INT_DECL(bool)              HMHasPendingIrq(PVM pVM);
 VMM_INT_DECL(PX86PDPE)          HMGetPaePdpes(PVMCPU pVCpu);
@@ -125,7 +131,6 @@ VMMR3DECL(bool)                 HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx);
 VMMR3_INT_DECL(void)            HMR3NotifyScheduled(PVMCPU pVCpu);
 VMMR3_INT_DECL(void)            HMR3NotifyEmulated(PVMCPU pVCpu);
 VMMR3_INT_DECL(bool)            HMR3IsActive(PVMCPU pVCpu);
-VMMR3_INT_DECL(bool)            HMR3IsAllowed(PVM pVM);
 VMMR3_INT_DECL(void)            HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
 VMMR3_INT_DECL(int)             HMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx);
 VMMR3_INT_DECL(VBOXSTRICTRC)    HMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);

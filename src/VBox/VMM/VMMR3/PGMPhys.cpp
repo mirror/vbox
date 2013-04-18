@@ -1567,7 +1567,7 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
     void        *pvChunk      = NULL;
     int rc = SUPR3PageAllocEx(cChunkPages, 0 /*fFlags*/, &pvChunk,
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                              VMMIsHwVirtExtForced(pVM) ? &R0PtrChunk : NULL,
+                              HMIsEnabled(pVM) ? &R0PtrChunk : NULL,
 #else
                               NULL,
 #endif
@@ -1575,7 +1575,7 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
     if (RT_SUCCESS(rc))
     {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-        if (!VMMIsHwVirtExtForced(pVM))
+        if (!HMIsEnabled(pVM))
             R0PtrChunk = NIL_RTR0PTR;
 #else
         R0PtrChunk = (uintptr_t)pvChunk;
@@ -1697,7 +1697,7 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
          */
         uint32_t cbChunk;
         uint32_t cPagesPerChunk;
-        if (VMMIsHwVirtExtForced(pVM))
+        if (HMIsEnabled(pVM))
         {
             cbChunk = 16U*_1M;
             cPagesPerChunk = 1048048; /* max ~1048059 */

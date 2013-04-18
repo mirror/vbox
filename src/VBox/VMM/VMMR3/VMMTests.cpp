@@ -26,6 +26,7 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/dbg.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/selm.h>
@@ -33,7 +34,6 @@
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <VBox/vmm/hm.h>
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -483,7 +483,7 @@ VMMR3DECL(int) VMMDoHmTest(PVM pVM)
     RTGCPHYS CR3Phys = 0x0; /* fake address */
     PVMCPU   pVCpu = &pVM->aCpus[0];
 
-    if (!HMR3IsAllowed(pVM))
+    if (!HMIsEnabled(pVM))
     {
         RTPrintf("VMM: Hardware accelerated test not available!\n");
         return VERR_ACCESS_DENIED;

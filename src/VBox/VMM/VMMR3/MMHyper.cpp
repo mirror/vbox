@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_MM_HYPER
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/dbgf.h>
 #include "MMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -55,9 +56,6 @@ static uint32_t mmR3ComputeHyperHeapSize(PVM pVM)
     /*
      * Gather parameters.
      */
-    bool const  fHwVirtExtForced = VMMIsHwVirtExtForced(pVM)
-                                || pVM->cCpus > 1;
-
     bool        fCanUseLargerHeap;
     int rc = CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM"), "CanUseLargerHeap", &fCanUseLargerHeap, false);
     AssertStmt(RT_SUCCESS(rc), fCanUseLargerHeap = false);
@@ -71,7 +69,7 @@ static uint32_t mmR3ComputeHyperHeapSize(PVM pVM)
      * so lets filter out that case first.
      */
     if (   !fCanUseLargerHeap
-        && !fHwVirtExtForced
+        && !HMIsEnabled(pVM)
         && cbRam < 16*_1G64)
         return 1280 * _1K;
 
@@ -810,7 +808,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
                               0 /*fFlags*/,
                               &pv,
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                              VMMIsHwVirtExtForced(pVM) ? &pvR0 : NULL,
+                              HMIsEnabled(pVM) ? &pvR0 : NULL,
 #else
                               NULL,
 #endif
@@ -818,7 +816,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
     if (RT_SUCCESS(rc))
     {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-        if (!VMMIsHwVirtExtForced(pVM))
+        if (!HMIsEnabled(pVM))
             pvR0 = NIL_RTR0PTR;
 #else
         pvR0 = (uintptr_t)pv;
@@ -974,7 +972,7 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
     /*
      * Set MMHYPER_AONR_FLAGS_KERNEL_MAPPING if we're in going to execute in ring-0.
      */
-    if (VMMIsHwVirtExtForced(pVM))
+    if (HMIsEnabled(pVM))
         fFlags |= MMHYPER_AONR_FLAGS_KERNEL_MAPPING;
 #endif
 

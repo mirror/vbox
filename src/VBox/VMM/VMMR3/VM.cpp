@@ -101,6 +101,7 @@ static PUVM         g_pUVMsHead = NULL;
 *******************************************************************************/
 static int                  vmR3CreateUVM(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods, PUVM *ppUVM);
 static int                  vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
+static int                  vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus);
 static int                  vmR3InitRing3(PVM pVM, PUVM pUVM);
 static int                  vmR3InitRing0(PVM pVM);
 #ifdef VBOX_WITH_RAW_MODE
@@ -642,65 +643,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
         rc = CFGMR3Init(pVM, pfnCFGMConstructor, pvUserCFGM);
         if (RT_SUCCESS(rc))
         {
-            PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
-            rc = CFGMR3QueryBoolDef(pRoot, "HwVirtExtForced", &pVM->fHwVirtExtForced, false);
-            if (RT_SUCCESS(rc) && pVM->fHwVirtExtForced)
-                pVM->fHMEnabled = true;
-
-            /*
-             * If executing in fake suplib mode disable RR3 and RR0 in the config.
-             */
-            const char *psz = RTEnvGet("VBOX_SUPLIB_FAKE");
-            if (psz && !strcmp(psz, "fake"))
-            {
-                CFGMR3RemoveValue(pRoot, "RawR3Enabled");
-                CFGMR3InsertInteger(pRoot, "RawR3Enabled", 0);
-                CFGMR3RemoveValue(pRoot, "RawR0Enabled");
-                CFGMR3InsertInteger(pRoot, "RawR0Enabled", 0);
-            }
-
-            /*
-             * Make sure the CPU count in the config data matches.
-             */
-            if (RT_SUCCESS(rc))
-            {
-                uint32_t cCPUsCfg;
-                rc = CFGMR3QueryU32Def(pRoot, "NumCPUs", &cCPUsCfg, 1);
-                AssertLogRelMsgRC(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Rrc\n", rc));
-                if (RT_SUCCESS(rc) && cCPUsCfg != cCpus)
-                {
-                    AssertLogRelMsgFailed(("Configuration error: \"NumCPUs\"=%RU32 and VMR3CreateVM::cCpus=%RU32 does not match!\n",
-                                           cCPUsCfg, cCpus));
-                    rc = VERR_INVALID_PARAMETER;
-                }
-            }
-
-            /*
-             * Get the CPU execution cap.
-             */
-            if (RT_SUCCESS(rc))
-            {
-                rc = CFGMR3QueryU32Def(pRoot, "CpuExecutionCap", &pVM->uCpuExecutionCap, 100);
-                AssertLogRelMsgRC(rc, ("Configuration error: Querying \"CpuExecutionCap\" as integer failed, rc=%Rrc\n", rc));
-            }
-
-            /*
-             * Get the VM name and UUID.
-             */
-            if (RT_SUCCESS(rc))
-            {
-                rc = CFGMR3QueryStringAllocDef(pRoot, "Name", &pUVM->vm.s.pszName, "<unknown>");
-                AssertLogRelMsg(RT_SUCCESS(rc), ("Configuration error: Querying \"Name\" failed, rc=%Rrc\n", rc));
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                rc = CFGMR3QueryBytes(pRoot, "UUID", &pUVM->vm.s.Uuid, sizeof(pUVM->vm.s.Uuid));
-                if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-                    rc = VINF_SUCCESS;
-                AssertLogRelMsg(RT_SUCCESS(rc), ("Configuration error: Querying \"UUID\" failed, rc=%Rrc\n", rc));
-            }
-
+            rc = vmR3ReadBaseConfig(pVM, pUVM, cCpus);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -820,6 +763,89 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
 
 
 /**
+ * Reads the base configuation from CFGM.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The cross context VM structure.
+ * @param   pUVM                The user mode VM structure.
+ * @param   cCpus               The CPU count given to VMR3Create.
+ */
+static int vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus)
+{
+    int         rc;
+    bool        fEnabled;
+    PCFGMNODE   pRoot = CFGMR3GetRoot(pVM);
+
+    /*
+     * If executing in fake suplib mode disable RR3 and RR0 in the config.
+     */
+    const char *psz = RTEnvGet("VBOX_SUPLIB_FAKE");
+    if (psz && !strcmp(psz, "fake"))
+    {
+        CFGMR3RemoveValue(pRoot, "RawR3Enabled");
+        CFGMR3InsertInteger(pRoot, "RawR3Enabled", 0);
+        CFGMR3RemoveValue(pRoot, "RawR0Enabled");
+        CFGMR3InsertInteger(pRoot, "RawR0Enabled", 0);
+    }
+
+    /*
+     * Base EM and HM config properties.
+     */
+    Assert(pVM->fRecompileUser == false); /* ASSUMES all zeros at this point */
+#ifdef VBOX_WITH_RAW_MODE
+    rc = CFGMR3QueryBoolDef(pRoot, "RawR3Enabled", &fEnabled, false); AssertRCReturn(rc, rc);
+    pVM->fRecompileUser       = !fEnabled;
+    rc = CFGMR3QueryBoolDef(pRoot, "RawR0Enabled", &fEnabled, false); AssertRCReturn(rc, rc);
+    pVM->fRecompileSupervisor = !fEnabled;
+# ifdef VBOX_WITH_RAW_RING1
+    rc = CFGMR3QueryBoolDef(pRoot, "RawR1Enabled", &pVM->fRawRing1Enabled, false);
+# endif
+    rc = CFGMR3QueryBoolDef(pRoot, "PATMEnabled",  &pVM->fPATMEnabled, true);   AssertRCReturn(rc, rc);
+    rc = CFGMR3QueryBoolDef(pRoot, "CSAMEnabled",  &pVM->fCSAMEnabled, true);   AssertRCReturn(rc, rc);
+    rc = CFGMR3QueryBoolDef(pRoot, "HMEnabled",    &pVM->fHMEnabled, true);     AssertRCReturn(rc, rc);
+#else
+    pVM->fHMEnabled = true;
+#endif
+    Assert(!pVM->fHMEnabledFixed);
+    LogRel(("VM: fHMEnabled=%RTbool (configured) fRecompileUser=%RTbool fRecompileSupervisor=%RTbool\n"
+            "VM: fRawRing1Enabled=%RTbool CSAM=%RTbool PATM=%RTbool\n",
+            pVM->fHMEnabled, pVM->fRecompileUser, pVM->fRecompileSupervisor,
+            pVM->fRawRing1Enabled, pVM->fCSAMEnabled, pVM->fPATMEnabled));
+
+
+    /*
+     * Make sure the CPU count in the config data matches.
+     */
+    uint32_t cCPUsCfg;
+    rc = CFGMR3QueryU32Def(pRoot, "NumCPUs", &cCPUsCfg, 1);
+    AssertLogRelMsgRCReturn(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Rrc\n", rc), rc);
+    AssertLogRelMsgReturn(cCPUsCfg == cCpus,
+                          ("Configuration error: \"NumCPUs\"=%RU32 and VMR3Create::cCpus=%RU32 does not match!\n",
+                           cCPUsCfg, cCpus),
+                          VERR_INVALID_PARAMETER);
+
+    /*
+     * Get the CPU execution cap.
+     */
+    rc = CFGMR3QueryU32Def(pRoot, "CpuExecutionCap", &pVM->uCpuExecutionCap, 100);
+    AssertLogRelMsgRCReturn(rc, ("Configuration error: Querying \"CpuExecutionCap\" as integer failed, rc=%Rrc\n", rc), rc);
+
+    /*
+     * Get the VM name and UUID.
+     */
+    rc = CFGMR3QueryStringAllocDef(pRoot, "Name", &pUVM->vm.s.pszName, "<unknown>");
+    AssertLogRelMsgRCReturn(rc, ("Configuration error: Querying \"Name\" failed, rc=%Rrc\n", rc), rc);
+
+    rc = CFGMR3QueryBytes(pRoot, "UUID", &pUVM->vm.s.Uuid, sizeof(pUVM->vm.s.Uuid));
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        rc = VINF_SUCCESS;
+    AssertLogRelMsgRCReturn(rc, ("Configuration error: Querying \"UUID\" failed, rc=%Rrc\n", rc), rc);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Register the calling EMT with GVM.
  *
  * @returns VBox status code.
@@ -854,55 +880,59 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
     }
 
     /*
-     * Init all R3 components, the order here might be important.
+     * Register statistics.
      */
-    rc = MMR3Init(pVM);
+    STAM_REG(pVM, &pVM->StatTotalInGC,          STAMTYPE_PROFILE_ADV, "/PROF/VM/InGC",          STAMUNIT_TICKS_PER_CALL,    "Profiling the total time spent in GC.");
+    STAM_REG(pVM, &pVM->StatSwitcherToGC,       STAMTYPE_PROFILE_ADV, "/PROF/VM/SwitchToGC",    STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
+    STAM_REG(pVM, &pVM->StatSwitcherToHC,       STAMTYPE_PROFILE_ADV, "/PROF/VM/SwitchToHC",    STAMUNIT_TICKS_PER_CALL,    "Profiling switching to HC.");
+    STAM_REG(pVM, &pVM->StatSwitcherSaveRegs,   STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/SaveRegs", STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
+    STAM_REG(pVM, &pVM->StatSwitcherSysEnter,   STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/SysEnter", STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
+    STAM_REG(pVM, &pVM->StatSwitcherDebug,      STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/Debug",    STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
+    STAM_REG(pVM, &pVM->StatSwitcherCR0,        STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/CR0",  STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
+    STAM_REG(pVM, &pVM->StatSwitcherCR4,        STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/CR4",  STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
+    STAM_REG(pVM, &pVM->StatSwitcherLgdt,       STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/Lgdt", STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
+    STAM_REG(pVM, &pVM->StatSwitcherLidt,       STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/Lidt", STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
+    STAM_REG(pVM, &pVM->StatSwitcherLldt,       STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/Lldt", STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
+    STAM_REG(pVM, &pVM->StatSwitcherTSS,        STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/TSS",  STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
+    STAM_REG(pVM, &pVM->StatSwitcherJmpCR3,     STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/JmpCR3",   STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
+    STAM_REG(pVM, &pVM->StatSwitcherRstrRegs,   STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/RstrRegs", STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
+
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltYield,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Profiling halted state yielding.",  "/PROF/CPU%d/VM/Halt/Yield", idCpu);
+        AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlock,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Profiling halted state blocking.",  "/PROF/CPU%d/VM/Halt/Block", idCpu);
+        AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlockOverslept,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Time wasted by blocking too long.", "/PROF/CPU%d/VM/Halt/BlockOverslept", idCpu);
+        AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlockInsomnia,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Time slept when returning to early.","/PROF/CPU%d/VM/Halt/BlockInsomnia", idCpu);
+        AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlockOnTime,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Time slept on time.",                "/PROF/CPU%d/VM/Halt/BlockOnTime", idCpu);
+        AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltTimers,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Profiling halted state timer tasks.", "/PROF/CPU%d/VM/Halt/Timers", idCpu);
+        AssertRC(rc);
+    }
+
+    STAM_REG(pVM, &pUVM->vm.s.StatReqAllocNew,   STAMTYPE_COUNTER,     "/VM/Req/AllocNew",       STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc returning a new packet.");
+    STAM_REG(pVM, &pUVM->vm.s.StatReqAllocRaces, STAMTYPE_COUNTER,     "/VM/Req/AllocRaces",     STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc causing races.");
+    STAM_REG(pVM, &pUVM->vm.s.StatReqAllocRecycled, STAMTYPE_COUNTER,  "/VM/Req/AllocRecycled",  STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc returning a recycled packet.");
+    STAM_REG(pVM, &pUVM->vm.s.StatReqFree,       STAMTYPE_COUNTER,     "/VM/Req/Free",           STAMUNIT_OCCURENCES,        "Number of VMR3ReqFree calls.");
+    STAM_REG(pVM, &pUVM->vm.s.StatReqFreeOverflow, STAMTYPE_COUNTER,   "/VM/Req/FreeOverflow",   STAMUNIT_OCCURENCES,        "Number of times the request was actually freed.");
+    STAM_REG(pVM, &pUVM->vm.s.StatReqProcessed,  STAMTYPE_COUNTER,     "/VM/Req/Processed",      STAMUNIT_OCCURENCES,        "Number of processed requests (any queue).");
+    STAM_REG(pVM, &pUVM->vm.s.StatReqMoreThan1,  STAMTYPE_COUNTER,     "/VM/Req/MoreThan1",      STAMUNIT_OCCURENCES,        "Number of times there are more than one request on the queue when processing it.");
+    STAM_REG(pVM, &pUVM->vm.s.StatReqPushBackRaces, STAMTYPE_COUNTER,  "/VM/Req/PushBackRaces",  STAMUNIT_OCCURENCES,        "Number of push back races.");
+
+    /*
+     * Init all R3 components, the order here might be important.
+     * HM shall be initialized first!
+     */
+    rc = HMR3Init(pVM);
     if (RT_SUCCESS(rc))
     {
-        STAM_REG(pVM, &pVM->StatTotalInGC,          STAMTYPE_PROFILE_ADV, "/PROF/VM/InGC",          STAMUNIT_TICKS_PER_CALL,    "Profiling the total time spent in GC.");
-        STAM_REG(pVM, &pVM->StatSwitcherToGC,       STAMTYPE_PROFILE_ADV, "/PROF/VM/SwitchToGC",    STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
-        STAM_REG(pVM, &pVM->StatSwitcherToHC,       STAMTYPE_PROFILE_ADV, "/PROF/VM/SwitchToHC",    STAMUNIT_TICKS_PER_CALL,    "Profiling switching to HC.");
-        STAM_REG(pVM, &pVM->StatSwitcherSaveRegs,   STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/SaveRegs", STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
-        STAM_REG(pVM, &pVM->StatSwitcherSysEnter,   STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/SysEnter", STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
-        STAM_REG(pVM, &pVM->StatSwitcherDebug,      STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/Debug",    STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
-        STAM_REG(pVM, &pVM->StatSwitcherCR0,        STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/CR0",  STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
-        STAM_REG(pVM, &pVM->StatSwitcherCR4,        STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/CR4",  STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
-        STAM_REG(pVM, &pVM->StatSwitcherLgdt,       STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/Lgdt", STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
-        STAM_REG(pVM, &pVM->StatSwitcherLidt,       STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/Lidt", STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
-        STAM_REG(pVM, &pVM->StatSwitcherLldt,       STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/Lldt", STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
-        STAM_REG(pVM, &pVM->StatSwitcherTSS,        STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/TSS",  STAMUNIT_TICKS_PER_CALL,    "Profiling switching to GC.");
-        STAM_REG(pVM, &pVM->StatSwitcherJmpCR3,     STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/JmpCR3",   STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
-        STAM_REG(pVM, &pVM->StatSwitcherRstrRegs,   STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/RstrRegs", STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
-
-        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-        {
-            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltYield,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Profiling halted state yielding.",  "/PROF/CPU%d/VM/Halt/Yield", idCpu);
-            AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlock,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Profiling halted state blocking.",  "/PROF/CPU%d/VM/Halt/Block", idCpu);
-            AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlockOverslept,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Time wasted by blocking too long.", "/PROF/CPU%d/VM/Halt/BlockOverslept", idCpu);
-            AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlockInsomnia,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Time slept when returning to early.","/PROF/CPU%d/VM/Halt/BlockInsomnia", idCpu);
-            AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlockOnTime,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Time slept on time.",                "/PROF/CPU%d/VM/Halt/BlockOnTime", idCpu);
-            AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltTimers,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Profiling halted state timer tasks.", "/PROF/CPU%d/VM/Halt/Timers", idCpu);
-            AssertRC(rc);
-        }
-
-        STAM_REG(pVM, &pUVM->vm.s.StatReqAllocNew,   STAMTYPE_COUNTER,     "/VM/Req/AllocNew",       STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc returning a new packet.");
-        STAM_REG(pVM, &pUVM->vm.s.StatReqAllocRaces, STAMTYPE_COUNTER,     "/VM/Req/AllocRaces",     STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc causing races.");
-        STAM_REG(pVM, &pUVM->vm.s.StatReqAllocRecycled, STAMTYPE_COUNTER,  "/VM/Req/AllocRecycled",  STAMUNIT_OCCURENCES,        "Number of VMR3ReqAlloc returning a recycled packet.");
-        STAM_REG(pVM, &pUVM->vm.s.StatReqFree,       STAMTYPE_COUNTER,     "/VM/Req/Free",           STAMUNIT_OCCURENCES,        "Number of VMR3ReqFree calls.");
-        STAM_REG(pVM, &pUVM->vm.s.StatReqFreeOverflow, STAMTYPE_COUNTER,   "/VM/Req/FreeOverflow",   STAMUNIT_OCCURENCES,        "Number of times the request was actually freed.");
-        STAM_REG(pVM, &pUVM->vm.s.StatReqProcessed,  STAMTYPE_COUNTER,     "/VM/Req/Processed",      STAMUNIT_OCCURENCES,        "Number of processed requests (any queue).");
-        STAM_REG(pVM, &pUVM->vm.s.StatReqMoreThan1,  STAMTYPE_COUNTER,     "/VM/Req/MoreThan1",      STAMUNIT_OCCURENCES,        "Number of times there are more than one request on the queue when processing it.");
-        STAM_REG(pVM, &pUVM->vm.s.StatReqPushBackRaces, STAMTYPE_COUNTER,  "/VM/Req/PushBackRaces",  STAMUNIT_OCCURENCES,        "Number of push back races.");
-
-        rc = CPUMR3Init(pVM);
+        rc = MMR3Init(pVM);
         if (RT_SUCCESS(rc))
         {
-            rc = HMR3Init(pVM);
+            rc = CPUMR3Init(pVM);
             if (RT_SUCCESS(rc))
             {
                 rc = PGMR3Init(pVM);
@@ -1029,14 +1059,15 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                     int rc2 = PGMR3Term(pVM);
                     AssertRC(rc2);
                 }
-                int rc2 = HMR3Term(pVM);
-                AssertRC(rc2);
+                //int rc2 = CPUMR3Term(pVM);
+                //AssertRC(rc2);
             }
-            //int rc2 = CPUMR3Term(pVM);
-            //AssertRC(rc2);
+            /* MMR3Term is not called here because it'll kill the heap. */
         }
-        /* MMR3Term is not called here because it'll kill the heap. */
+        int rc2 = HMR3Term(pVM);
+        AssertRC(rc2);
     }
+
 
     LogFlow(("vmR3InitRing3: returns %Rrc\n", rc));
     return rc;
@@ -1109,7 +1140,7 @@ static int vmR3InitRC(PVM pVM)
      * Do notifications and return.
      */
     if (RT_SUCCESS(rc))
-        rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_GC);
+        rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RC);
     LogFlow(("vmR3InitRC: returns %Rrc\n", rc));
     return rc;
 }
