@@ -8081,18 +8081,25 @@ static DECLCALLBACK(int) hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pMixedCtx,
                 && uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT
                 && uIntType != VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT)
             {
+                uint32_t uVector     = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
+                bool fErrorCodeValid = !!VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uIdtVectoringInfo);
+
                 /* Save it as a pending event and it'll be converted to a TRPM event on the way out to ring-3. */
-                Log(("Pending event on TaskSwitch uIntrType=%#x uVector=%#x\n", uIntType,
-                     VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo)));
                 Assert(!pVCpu->hm.s.Event.fPending);
                 pVCpu->hm.s.Event.fPending = true;
                 pVCpu->hm.s.Event.u64IntrInfo = pVmxTransient->uIdtVectoringInfo;
                 rc = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
                 AssertRCReturn(rc, rc);
-                if (VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uIdtVectoringErrorCode))
+                if (fErrorCodeValid)
                     pVCpu->hm.s.Event.u32ErrCode = pVmxTransient->uIdtVectoringErrorCode;
                 else
                     pVCpu->hm.s.Event.u32ErrCode = 0;
+                if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
+                    && uVector == X86_XCPT_PF)
+                {
+                    pVCpu->hm.s.Event.GCPtrFaultAddress = pMixedCtx->cr2;
+                }
+                Log(("Pending event on TaskSwitch uIntType=%#x uVector=%#x\n", uIntType, uVector));
             }
         }
     }
