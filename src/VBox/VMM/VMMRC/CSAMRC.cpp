@@ -76,7 +76,7 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     REMFlushTBs(pVM);
 #endif
 
-    pPATMGCState = PATMQueryGCState(pVM);
+    pPATMGCState = PATMGetGCState(pVM);
     Assert(pPATMGCState);
 
     Assert(pPATMGCState->fPIF || fPatchCode);

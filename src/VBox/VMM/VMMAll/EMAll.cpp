@@ -3400,7 +3400,7 @@ static int emInterpretLIGdt(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
 static int emInterpretSti(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
     NOREF(pcbSize);
-    PPATMGCSTATE pGCState = PATMQueryGCState(pVM);
+    PPATMGCSTATE pGCState = PATMGetGCState(pVM);
 
     if(!pGCState)
     {

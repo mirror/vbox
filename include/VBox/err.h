@@ -359,6 +359,8 @@
 #define VINF_PATM_SPINLOCK_FAILED           (1429)
 /** Continue execution after patch trap. */
 #define VINF_PATCH_CONTINUE                 (1430)
+/** The patch manager is not used because we're using HM and VT-x/AMD-V. */
+#define VERR_PATM_HM_IPE                    (-1431)
 
 /** @} */
 
@@ -374,6 +376,8 @@
 #define VWRN_CSAM_PAGE_NOT_FOUND            1502
 /** Reason for leaving RC: CSAM wants perform a task in ring-3. */
 #define VINF_CSAM_PENDING_ACTION            1503
+/** The CSAM is not used because we're using HM and VT-x/AMD-V. */
+#define VERR_CSAM_HM_IPE                    (-1504)
 /** @} */
 
 

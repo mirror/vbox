@@ -26,9 +26,9 @@
 #include <VBox/vmm/cpumdis.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/iom.h>
-#include <VBox/sup.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/em.h>
+#include <VBox/vmm/hm.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
@@ -43,13 +43,16 @@
 #include "CSAMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
+
 #include <VBox/dbg.h>
+#include <VBox/sup.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
-#include <iprt/assert.h>
-#include <iprt/string.h>
+
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
+#include <iprt/assert.h>
+#include <iprt/string.h>
 #include "internal/pgm.h"
 
 
@@ -68,6 +71,7 @@
 *******************************************************************************/
 static DECLCALLBACK(int) csamr3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+static DECLCALLBACK(int) csamR3LoadDummy(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 static DECLCALLBACK(int) CSAMCodePageInvalidate(PVM pVM, RTGCPTR GCPtr);
 
@@ -221,6 +225,21 @@ VMMR3_INT_DECL(int) CSAMR3Init(PVM pVM)
 {
     int rc;
 
+    /*
+     * We only need a saved state dummy loader if HM is enabled.
+     */
+    if (HMIsEnabled(pVM))
+    {
+        pVM->fCSAMEnabled = false;
+        return SSMR3RegisterInternal(pVM, "CSAM", 0, CSAM_SSM_VERSION, 0,
+                                     NULL, NULL, NULL,
+                                     NULL, NULL, NULL,
+                                     NULL, csamR3LoadDummy, NULL);
+    }
+
+    /*
+     * Raw-mode.
+     */
     LogFlow(("CSAMR3Init\n"));
 
     /* Allocate bitmap for the page directory. */
@@ -328,6 +347,7 @@ static int csamReinit(PVM pVM)
      */
     AssertRelease(!(RT_OFFSETOF(VM, csam.s) & 31));
     AssertRelease(sizeof(pVM->csam.s) <= sizeof(pVM->csam.padding));
+    AssertRelease(!HMIsEnabled(pVM));
 
     /*
      * Setup any fixed pointers and offsets.
@@ -367,7 +387,7 @@ static int csamReinit(PVM pVM)
  */
 VMMR3_INT_DECL(void) CSAMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
-    if (offDelta)
+    if (offDelta && !HMIsEnabled(pVM))
     {
         /* Adjust pgdir and page bitmap pointers. */
         pVM->csam.s.pPDBitmapGC   = MMHyperR3ToRC(pVM, pVM->csam.s.pPDGCBitmapHC);
@@ -395,6 +415,9 @@ VMMR3_INT_DECL(void) CSAMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  */
 VMMR3_INT_DECL(int) CSAMR3Term(PVM pVM)
 {
+    if (HMIsEnabled(pVM))
+        return VINF_SUCCESS;
+
     int rc;
 
     rc = CSAMR3Reset(pVM);
@@ -420,8 +443,11 @@ VMMR3_INT_DECL(int) CSAMR3Term(PVM pVM)
  */
 VMMR3_INT_DECL(int) CSAMR3Reset(PVM pVM)
 {
+    if (HMIsEnabled(pVM))
+        return VINF_SUCCESS;
+
     /* Clear page bitmaps. */
-    for(int i=0;i<CSAM_PGDIRBMP_CHUNKS;i++)
+    for (int i = 0; i < CSAM_PGDIRBMP_CHUNKS; i++)
     {
         if (pVM->csam.s.pPDBitmapHC[i])
         {
@@ -431,15 +457,12 @@ VMMR3_INT_DECL(int) CSAMR3Reset(PVM pVM)
     }
 
     /* Remove all CSAM page records. */
-    while(true)
+    for (;;)
     {
         PCSAMPAGEREC pPageRec = (PCSAMPAGEREC)RTAvlPVGetBestFit(&pVM->csam.s.pPageTree, 0, true);
-        if (pPageRec)
-        {
-            csamRemovePageRecord(pVM, pPageRec->page.pPageGC);
-        }
-        else
+        if (!pPageRec)
             break;
+        csamRemovePageRecord(pVM, pPageRec->page.pPageGC);
     }
     Assert(!pVM->csam.s.pPageTree);
 
@@ -543,6 +566,16 @@ static DECLCALLBACK(int) csamr3Save(PVM pVM, PSSMHANDLE pSSM)
     /** @note we don't restore aDangerousInstr; it will be recreated automatically. */
     return VINF_SUCCESS;
 }
+
+
+/**
+ * @callback_method_impl{FNSSMINTLOADEXEC, Dummy load function for HM mode.}
+ */
+DECLCALLBACK(int) csamR3LoadDummy(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    return SSMR3SkipToEndOfUnit(pSSM);
+}
+
 
 /**
  * Execute state load operation.
@@ -1620,6 +1653,7 @@ static int csamFlushPage(PVM pVM, RTRCPTR addr, bool fRemovePage)
 
     if (!CSAMIsEnabled(pVM))
         return VINF_SUCCESS;
+    Assert(!HMIsEnabled(pVM));
 
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
@@ -1736,6 +1770,8 @@ VMMR3_INT_DECL(int) CSAMR3RemovePage(PVM pVM, RTRCPTR addr)
 {
     PCSAMPAGEREC pPageRec;
     int          rc;
+
+    AssertReturn(!HMIsEnabled(pVM), VERR_CSAM_HM_IPE);
 
     addr = addr & PAGE_BASE_GC_MASK;
 
@@ -1913,7 +1949,8 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
     int          rc;
     bool         fMonitorInvalidation;
     Assert(pVM->cCpus == 1);
-    PVMCPU pVCpu = VMMGetCpu0(pVM);
+    PVMCPU       pVCpu = VMMGetCpu0(pVM);
+    Assert(!HMIsEnabled(pVM));
 
     /* Dirty pages must be handled before calling this function!. */
     Assert(!pVM->csam.s.cDirtyPages);
@@ -2033,6 +2070,8 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
  */
 VMMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
 {
+    Assert(!HMIsEnabled(pVM));
+
     pPageAddrGC &= PAGE_BASE_GC_MASK;
 
     Log(("CSAMR3UnmonitorPage %RRv %d\n", pPageAddrGC, enmTag));
@@ -2294,6 +2333,7 @@ VMMR3_INT_DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t cbInstr, bo
 
     Assert(!fScanned);   /* other case not implemented. */
     Assert(!PATMIsPatchGCAddr(pVM, pInstr));
+    Assert(!HMIsEnabled(pVM));
 
     if (csamIsCodeScanned(pVM, pInstr, &pPage) == false)
     {
@@ -2317,6 +2357,7 @@ VMMR3_INT_DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t cbInstr, bo
  */
 VMMR3_INT_DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrGC)
 {
+    Assert(!HMIsEnabled(pVM));
     if (EMIsRawRing0Enabled(pVM) == false || PATMIsPatchGCAddr(pVM, pInstrGC) == true)
     {
         // No use
@@ -2345,6 +2386,7 @@ VMMR3_INT_DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC)
 {
     int rc;
     PCSAMPAGE pPage = NULL;
+    Assert(!HMIsEnabled(pVM));
 
     if (    EMIsRawRing0Enabled(pVM) == false
         ||  PATMIsPatchGCAddr(pVM, pInstrGC) == true)
@@ -2462,6 +2504,8 @@ static int csamR3FlushCodePages(PVM pVM)
  */
 VMMR3_INT_DECL(int) CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu)
 {
+    AssertReturn(!HMIsEnabled(pVM), VERR_CSAM_HM_IPE);
+
     csamR3FlushDirtyPages(pVM);
     csamR3FlushCodePages(pVM);
 
@@ -2490,6 +2534,7 @@ VMMR3_INT_DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
     PVBOXIDTE   pGuestIdte;
     int         rc;
 
+    AssertReturn(!HMIsEnabled(pVM), VERR_CSAM_HM_IPE);
     if (EMIsRawRing0Enabled(pVM) == false)
     {
         /* Enabling interrupt gates only works when raw ring 0 is enabled. */
@@ -2697,6 +2742,7 @@ VMMR3_INT_DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
  */
 VMMR3DECL(int) CSAMR3RecordCallAddress(PVM pVM, RTRCPTR GCPtrCall)
 {
+    Assert(!HMIsEnabled(pVM));
     for (unsigned i=0;i<RT_ELEMENTS(pVM->csam.s.pvCallInstruction);i++)
     {
         if (pVM->csam.s.pvCallInstruction[i] == GCPtrCall)
@@ -2741,6 +2787,12 @@ VMMR3DECL(int) CSAMR3SetScanningEnabled(PUVM pUVM, bool fEnabled)
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
+    if (HMIsEnabled(pVM))
+    {
+        Assert(!pVM->fCSAMEnabled);
+        return VINF_SUCCESS;
+    }
+
     int rc;
     if (fEnabled)
         rc = CSAMEnableScanning(pVM);
@@ -2760,6 +2812,9 @@ static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
     DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     NOREF(cArgs); NOREF(paArgs);
 
+    if (HMR3IsEnabled(pUVM))
+        return DBGCCmdHlpPrintf(pCmdHlp, "CSAM is permanently disabled by HM.\n");
+
     int rc = CSAMR3SetScanningEnabled(pUVM, false);
     if (RT_FAILURE(rc))
         return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "CSAMR3SetScanningEnabled");
@@ -2773,6 +2828,9 @@ static DECLCALLBACK(int) csamr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM p
 {
     DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     NOREF(cArgs); NOREF(paArgs);
+
+    if (HMR3IsEnabled(pUVM))
+        return DBGCCmdHlpPrintf(pCmdHlp, "CSAM is permanently disabled by HM.\n");
 
     int rc = CSAMR3SetScanningEnabled(pUVM, true);
     if (RT_FAILURE(rc))

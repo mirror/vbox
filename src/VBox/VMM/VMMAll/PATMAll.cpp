@@ -21,10 +21,8 @@
 #define LOG_GROUP LOG_GROUP_PATM
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/cpum.h>
-#include <VBox/dis.h>
-#include <VBox/disopcode.h>
 #include <VBox/vmm/em.h>
-#include <VBox/err.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/mm.h>
 #include "PATMInternal.h"
@@ -32,6 +30,9 @@
 #include <VBox/vmm/vmm.h>
 #include "PATMA.h"
 
+#include <VBox/dis.h>
+#include <VBox/disopcode.h>
+#include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 
@@ -49,6 +50,7 @@
 VMM_INT_DECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
     bool fPatchCode = PATMIsPatchGCAddr(pVM, pCtxCore->eip);
+    Assert(!HMIsEnabled(pVM));
 
     /*
      * Currently we don't bother to check whether PATM is enabled or not.
@@ -119,6 +121,7 @@ VMM_INT_DECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
  */
 VMM_INT_DECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
 {
+    Assert(!HMIsEnabled(pVM));
     bool fPatchCode = PATMIsPatchGCAddr(pVM, pCtxCore->eip);
     /*
      * We will only be called if PATMRawEnter was previously called.
@@ -211,6 +214,7 @@ VMM_INT_DECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
  */
 VMM_INT_DECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTXCORE pCtxCore)
 {
+    Assert(!HMIsEnabled(pVM));
     uint32_t efl = pCtxCore->eflags.u32;
     efl &= ~PATM_VIRTUAL_FLAGS_MASK;
     efl |= pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & PATM_VIRTUAL_FLAGS_MASK;
@@ -227,6 +231,7 @@ VMM_INT_DECL(uint32_t) PATMRawGetEFlags(PVM pVM, PCCPUMCTXCORE pCtxCore)
  */
 VMM_INT_DECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl)
 {
+    Assert(!HMIsEnabled(pVM));
     pVM->patm.s.CTXSUFF(pGCState)->uVMFlags = efl & PATM_VIRTUAL_FLAGS_MASK;
     efl &= ~PATM_VIRTUAL_FLAGS_MASK;
     efl |= X86_EFL_IF;
@@ -251,8 +256,9 @@ VMM_INT_DECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMM_INT_DECL(RCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM)
+VMM_INT_DECL(RCPTRTYPE(PPATMGCSTATE)) PATMGetGCState(PVM pVM)
 {
+    AssertReturn(!HMIsEnabled(pVM), NULL);
     return pVM->patm.s.pGCStateGC;
 }
 
@@ -279,8 +285,11 @@ VMMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCUINTPTR pAddrGC)
  */
 VMM_INT_DECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData)
 {
-    pVM->patm.s.mmio.GCPhys = GCPhys;
-    pVM->patm.s.mmio.pCachedData = (RTRCPTR)pCachedData;
+    if (!HMIsEnabled(pVM))
+    {
+        pVM->patm.s.mmio.GCPhys = GCPhys;
+        pVM->patm.s.mmio.pCachedData = (RTRCPTR)pCachedData;
+    }
 
     return VINF_SUCCESS;
 }
@@ -292,6 +301,7 @@ VMM_INT_DECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCached
  * @returns false if it's disabled.
  *
  * @param   pVM         Pointer to the VM.
+ * @todo CPUM should wrap this, EM.cpp shouldn't call us.
  */
 VMM_INT_DECL(bool) PATMAreInterruptsEnabled(PVM pVM)
 {
@@ -308,11 +318,13 @@ VMM_INT_DECL(bool) PATMAreInterruptsEnabled(PVM pVM)
  *
  * @param   pVM         Pointer to the VM.
  * @param   pCtxCore    CPU context
+ * @todo CPUM should wrap this, EM.cpp shouldn't call us.
  */
 VMM_INT_DECL(bool) PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
     if (PATMIsEnabled(pVM))
     {
+        Assert(!HMIsEnabled(pVM));
         if (PATMIsPatchGCAddr(pVM, pCtxCore->eip))
             return false;
     }
@@ -354,6 +366,7 @@ PPATMPATCHREC patmQueryFunctionPatch(PVM pVM, RTRCPTR pInstrGC)
 VMM_INT_DECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode, uint32_t *pSize)
 {
     PPATMPATCHREC pRec;
+    Assert(!HMIsEnabled(pVM));
 
     pRec = (PPATMPATCHREC)RTAvloU32Get(&CTXSUFF(pVM->patm.s.PatchLookupTree)->PatchTree, (AVLOU32KEY)pInstrGC);
     if (    pRec
@@ -380,6 +393,7 @@ VMM_INT_DECL(bool) PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode,
 VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu0(pVM));
+    AssertReturn(!HMIsEnabled(pVM), VERR_PATM_HM_IPE);
 
     if (pCpu->pCurInstr->uOpcode == OP_SYSENTER)
     {
