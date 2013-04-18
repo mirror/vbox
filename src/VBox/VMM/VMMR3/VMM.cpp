@@ -683,7 +683,7 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
             break;
         }
 
-        case VMINITCOMPLETED_RING0:
+        case VMINITCOMPLETED_HM:
         {
             /*
              * Disable the periodic preemption timers if we can use the
