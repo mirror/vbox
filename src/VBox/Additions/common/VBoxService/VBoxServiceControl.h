@@ -49,8 +49,6 @@ typedef enum VBOXSERVICECTRLREQUESTTYPE
 {
     /** Unknown request. */
     VBOXSERVICECTRLREQUEST_UNKNOWN          = 0,
-    /** Main control thread asked used to quit. */
-    VBOXSERVICECTRLREQUEST_QUIT             = 1,
     /** Performs reading from stdout. */
     VBOXSERVICECTRLREQUEST_PROC_STDOUT      = 50,
     /** Performs reading from stderr. */
@@ -98,6 +96,8 @@ typedef struct VBOXSERVICECTRLREQUEST
 {
     /** Event semaphore to serialize access. */
     RTSEMEVENTMULTI            Event;
+    /** Flag indicating if this request is asynchronous or not. */
+    bool                       fAsync;
     /** The request type to handle. */
     VBOXSERVICECTRLREQUESTTYPE enmType;
     /** Payload size; on input, this contains the (maximum) amount
@@ -320,9 +320,11 @@ typedef struct VBOXSERVICECTRLPROCESS
     /** Shutdown indicator; will be set when the thread
       * needs (or is asked) to shutdown. */
     bool volatile                   fShutdown;
-    /** Indicator set by the service thread exiting. */
+    /** Whether the guest process thread already was
+     *  stopped or not. */
     bool volatile                   fStopped;
-    /** Whether the service was started or not. */
+    /** Whether the guest process thread was started
+     *  or not. */
     bool                            fStarted;
     /** Client ID. */
     uint32_t                        uClientID;
@@ -381,7 +383,7 @@ extern int                      GstCntlSessionListSet(PVBOXSERVICECTRLSESSION pS
 extern int                      GstCntlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession, bool *pbAllowed);
 extern int                      GstCntlSessionReapProcesses(PVBOXSERVICECTRLSESSION pSession);
 /* Per-thread guest process functions. */
-extern int                      GstCntlProcessPerform(PVBOXSERVICECTRLPROCESS pProcess, PVBOXSERVICECTRLREQUEST pRequest);
+extern int                      GstCntlProcessPerform(PVBOXSERVICECTRLPROCESS pProcess, PVBOXSERVICECTRLREQUEST pRequest, bool fAsync);
 extern int                      GstCntlProcessStart(const PVBOXSERVICECTRLSESSION pSession, const PVBOXSERVICECTRLPROCSTARTUPINFO pStartupInfo, uint32_t uContext);
 extern int                      GstCntlProcessStop(PVBOXSERVICECTRLPROCESS pProcess);
 extern void                     GstCntlProcessRelease(const PVBOXSERVICECTRLPROCESS pProcess);
