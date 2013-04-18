@@ -32,6 +32,17 @@ namespace ovf
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * CIM OS values.
+ *
+ * The OVF 1.10 spec refers to some CIM_OperatingSystem.mof doc.  Could this be it:
+ *  http://cvs.opengroup.org/cgi-bin/cvsweb.cgi/pegasus/Schemas/CIM231/DMTF/System/CIM_OperatingSystem.mof
+ *
+ * @todo r=bird: Why are the values are repeating 'CIMOS'. CIMOSType_T is also
+ *               repeating it self, 'Type' and '_T'. Why not call it kCIOMOpSys,
+ *               easier to read as well.
+ *               Then also apply: s/CIMOSType_CIMOS_/kCIMOpSys_/g
+ */
 enum CIMOSType_T
 {
     CIMOSType_CIMOS_Unknown = 0,
@@ -489,4 +500,5 @@ public:
 
 } // end namespace ovf
 
-#endif // ____H_OVFREADER
+#endif // !____H_OVFREADER
+
