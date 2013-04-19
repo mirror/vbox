@@ -1781,7 +1781,7 @@ static int crServerLsrDataPutMem(CR_SERVER_LOADSTATE_READER *pReader, void *pvBu
     return VINF_SUCCESS;
 }
 
-/* data to bi skipped by */
+/* data to be skipped */
 
 typedef struct CR_SERVER_BUGGY_MURAL_DATA_2
 {
