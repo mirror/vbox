@@ -5926,30 +5926,40 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     }
 
     /*
-     * There's no need to clear the VM entry-interruption information field here if we're not injecting anything.
-     * VT-x clears the valid bit on every VM-exit. See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
-     */
-    int rc2 = hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
-
-    /*
      * Delivery pending debug exception if the guest is single-stepping. The interruptibility-state could have been changed by
      * hmR0VmxInjectEventVmcs() (e.g. real-on-v86 injecting software interrupts), re-evaluate it and set the BS bit.
      */
-    fBlockMovSS    = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
-    fBlockSti      = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
+    fBlockMovSS = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
+    fBlockSti   = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
+    int rc2 = VINF_SUCCESS;
     if (   fBlockSti
         || fBlockMovSS)
     {
-        Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS);
-        if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
+        if (!DBGFIsStepping(pVCpu))
         {
-            /* This field is cleared on all VM-exits except (VMX_EXIT_TPR_BELOW_THRESHOLD, VMX_EXIT_APIC_WRITE,
-               VMX_EXIT_VIRTUALIZED_EOI, VMX_EXIT_MTF). See Intel spec. 27.3.4 "Saving Non-Register State". */
-            rc2 |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
+            Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS);
+            if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
+            {
+                /* This field is cleared on all VM-exits except (VMX_EXIT_TPR_BELOW_THRESHOLD, VMX_EXIT_APIC_WRITE,
+                   VMX_EXIT_VIRTUALIZED_EOI, VMX_EXIT_MTF). See Intel spec. 27.3.4 "Saving Non-Register State". */
+                rc2 = VMXWriteVmcsGstN(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
+            }
+        }
+        else
+        {
+            /* We are single-stepping in the hypervisor debugger, clear interrupt inhibition as setting the BS bit would mean
+               delivering a #DB to the guest upon VM-entry when it shouldn't be. */
+            uIntrState = 0;
         }
     }
 
+    /*
+     * There's no need to clear the VM entry-interruption information field here if we're not injecting anything.
+     * VT-x clears the valid bit on every VM-exit. See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
+     */
+    rc2 |= hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
     AssertRC(rc2);
+
     Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET);
     return rc;
 }
