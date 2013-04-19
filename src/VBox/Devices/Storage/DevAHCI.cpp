@@ -42,6 +42,7 @@
 #include <VBox/vmm/pdmqueue.h>
 #include <VBox/vmm/pdmthread.h>
 #include <VBox/vmm/pdmcritsect.h>
+#include <VBox/sup.h>
 #include <VBox/scsi.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -449,6 +450,8 @@ typedef struct AHCIPort
     volatile bool                   fAsyncIOThreadIdle;
     /** Flag whether the port is in redo task mode. */
     volatile bool                   fRedo;
+    /** Flag whether the worker thread is sleeping. */
+    volatile bool                   fWrkThreadSleeping;
 
     /** Number of total sectors. */
     uint64_t                        cTotalSectors;
@@ -515,8 +518,6 @@ typedef struct AHCIPort
 
     /** Async IO Thread. */
     R3PTRTYPE(PPDMTHREAD)           pAsyncIOThread;
-    /** Request semaphore. */
-    RTSEMEVENT                      AsyncIORequestSem;
     /**
      * Array of cached tasks. The tag number is the index value.
      * Only used with the async interface.
@@ -526,6 +527,9 @@ typedef struct AHCIPort
     R3PTRTYPE(volatile PAHCIREQ)    pTaskErr;
     /** The current tracklist of the loaded medium if passthrough is used. */
     R3PTRTYPE(PTRACKLIST)           pTrackList;
+
+    /** The event semaphore the processing thread waits on. */
+    SUPSEMEVENT                     hEvtProcess;
 
     /** Release statistics: number of DMA commands. */
     STAMCOUNTER                     StatDMA;
@@ -693,6 +697,8 @@ typedef struct AHCI
     /** Flag whether we have written the first 4bytes in an 8byte MMIO write successfully. */
     volatile bool                   f8ByteMMIO4BytesWrittenSuccessfully;
 
+    /** The support driver session handle. */
+    R3R0PTRTYPE(PSUPDRVSESSION)     pSupDrvSession;
 } AHCI;
 /** Pointer to the state of an AHCI device. */
 typedef AHCI *PAHCI;
@@ -1063,16 +1069,21 @@ static int PortCmdIssue_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32
         u32Value &= ~pAhciPort->regCI;
 
         ASMAtomicOrU32(&pAhciPort->u32TasksNew, u32Value);
-        u32Tasks = ASMAtomicReadU32(&pAhciPort->u32TasksNew);
 
         /* Send a notification to R3 if u32TasksNew was before our write. */
-        if (!(u32Tasks ^ u32Value))
+        if (ASMAtomicReadBool(&pAhciPort->fWrkThreadSleeping))
         {
+#ifdef IN_RC
             PDEVPORTNOTIFIERQUEUEITEM pItem = (PDEVPORTNOTIFIERQUEUEITEM)PDMQueueAlloc(ahci->CTX_SUFF(pNotifierQueue));
             AssertMsg(VALID_PTR(pItem), ("Allocating item for queue failed\n"));
 
             pItem->iPort = pAhciPort->iLUN;
             PDMQueueInsert(ahci->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
+#else
+            LogFlowFunc(("Singal event semaphore\n"));
+            int rc = SUPSemEventSignal(ahci->pSupDrvSession, pAhciPort->hEvtProcess);
+            AssertRC(rc);
+#endif
         }
     }
 
@@ -2402,7 +2413,7 @@ static DECLCALLBACK(int) ahciR3MMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iReg
 
     /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
     /** @todo change this to IOMMMIO_FLAGS_WRITE_ONLY_DWORD once EM/IOM starts
-     * handling 2nd DWORD failures on split accesses correctly. */ 
+     * handling 2nd DWORD failures on split accesses correctly. */
     rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
                                IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD_QWORD,
                                ahciMMIOWrite, ahciMMIORead, "AHCI");
@@ -5607,6 +5618,9 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
     uint64_t tsNow = RTTimeMilliTS();
     AHCITXSTATE enmTxState = AHCITXSTATE_INVALID;
 
+    LogFlowFunc(("pAhciPort=%p pAhciReq=%p rcReq=%d fFreeReq=%RTbool\n",
+                 pAhciPort, pAhciReq, rcReq, fFreeReq));
+
     ASMAtomicReadSize(&pAhciReq->enmTxState, &enmTxState);
     VBOXDD_AHCI_REQ_COMPLETED(pAhciReq, rcReq, enmTxState, pAhciReq->uOffset, pAhciReq->cbTransfer);
     VBOXDD_AHCI_REQ_COMPLETED_TIMESTAMP(pAhciReq, tsNow);
@@ -6206,22 +6220,54 @@ static void ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
     PDEVPORTNOTIFIERQUEUEITEM pNotifierItem = (PDEVPORTNOTIFIERQUEUEITEM)pItem;
-    PAHCI                     pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    PAHCIPort                 pAhciPort = &pAhci->ahciPort[pNotifierItem->iPort];
+    PAHCI                     pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCIPort                 pAhciPort = &pThis->ahciPort[pNotifierItem->iPort];
     int                       rc = VINF_SUCCESS;
 
-    if (!pAhciPort->fAsyncInterface)
-    {
-        ahciLog(("%s: Got notification from GC\n", __FUNCTION__));
-        /* Notify the async IO thread. */
-        rc = RTSemEventSignal(pAhciPort->AsyncIORequestSem);
-        AssertRC(rc);
-    }
-    else
+    ahciLog(("%s: Got notification from GC\n", __FUNCTION__));
+    /* Notify the async IO thread. */
+    rc = SUPSemEventSignal(pThis->pSupDrvSession, pAhciPort->hEvtProcess);
+    AssertRC(rc);
+
+    return true;
+}
+
+/* The async IO thread for one port. */
+static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    PAHCIPort pAhciPort = (PAHCIPort)pThread->pvUser;
+    PAHCI     pAhci     = pAhciPort->CTX_SUFF(pAhci);
+    int rc = VINF_SUCCESS;
+    uint64_t u64StartTime = 0;
+    uint64_t u64StopTime  = 0;
+    uint32_t uIORequestsProcessed = 0;
+    uint32_t uIOsPerSec = 0;
+    uint32_t fTasksToProcess = 0;
+
+    ahciLog(("%s: Port %d entering async IO loop.\n", __FUNCTION__, pAhciPort->iLUN));
+
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         unsigned idx = 0;
-        uint32_t u32Tasks = ASMAtomicXchgU32(&pAhciPort->u32TasksNew, 0);
+        uint32_t u32Tasks = 0;
 
+        ASMAtomicWriteBool(&pAhciPort->fWrkThreadSleeping, true);
+        u32Tasks = ASMAtomicXchgU32(&pAhciPort->u32TasksNew, 0);
+        if (!u32Tasks)
+        {
+            Assert(ASMAtomicReadBool(&pAhciPort->fWrkThreadSleeping));
+            rc = SUPSemEventWaitNoResume(pAhci->pSupDrvSession, pAhciPort->hEvtProcess, RT_INDEFINITE_WAIT);
+            AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
+            if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
+                break;
+            LogFlowFunc(("Woken up with rc=%Rrc\n", rc));
+            u32Tasks = ASMAtomicXchgU32(&pAhciPort->u32TasksNew, 0);
+        }
+
+        ASMAtomicWriteBool(&pAhciPort->fWrkThreadSleeping, false);
         idx = ASMBitFirstSetU32(u32Tasks);
         while (idx)
         {
@@ -6279,20 +6325,18 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
 
                     ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
                     AssertMsg(fXchg, ("Task is not active\n"));
-                    return true;
+                    break;
                 }
-
-                if (pAhciPort->fResetDevice) /* The bit is not set and we are in a reset state. */
+                else if (pAhciPort->fResetDevice) /* The bit is not set and we are in a reset state. */
                 {
                     ahciFinishStorageDeviceReset(pAhciPort, pAhciReq);
 
                     ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
                     AssertMsg(fXchg, ("Task is not active\n"));
-                    return true;
+                    break;
                 }
-
-                /* We are not in a reset state update the control registers. */
-                AssertMsgFailed(("%s: Update the control register\n", __FUNCTION__));
+                else /* We are not in a reset state update the control registers. */
+                    AssertMsgFailed(("%s: Update the control register\n", __FUNCTION__));
             }
             else
             {
@@ -6317,40 +6361,79 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
 
                     if (!(pAhciReq->fFlags & AHCI_REQ_OVERFLOW))
                     {
-                        VBOXDD_AHCI_REQ_SUBMIT(pAhciReq, enmTxDir, pAhciReq->uOffset, pAhciReq->cbTransfer);
-                        VBOXDD_AHCI_REQ_SUBMIT_TIMESTAMP(pAhciReq, pAhciReq->tsStart);
-                        if (enmTxDir == AHCITXDIR_FLUSH)
-                            rc = pAhciPort->pDrvBlockAsync->pfnStartFlush(pAhciPort->pDrvBlockAsync, pAhciReq);
-                        else if (enmTxDir == AHCITXDIR_TRIM)
+                        if (pAhciPort->fAsyncInterface)
                         {
-                            rc = ahciTrimRangesCreate(pAhciPort, pAhciReq);
-                            if (RT_SUCCESS(rc))
+                            VBOXDD_AHCI_REQ_SUBMIT(pAhciReq, enmTxDir, pAhciReq->uOffset, pAhciReq->cbTransfer);
+                            VBOXDD_AHCI_REQ_SUBMIT_TIMESTAMP(pAhciReq, pAhciReq->tsStart);
+                            if (enmTxDir == AHCITXDIR_FLUSH)
+                            {
+                                rc = pAhciPort->pDrvBlockAsync->pfnStartFlush(pAhciPort->pDrvBlockAsync,
+                                                                              pAhciReq);
+                            }
+                            else if (enmTxDir == AHCITXDIR_TRIM)
+                            {
+                                rc = ahciTrimRangesCreate(pAhciPort, pAhciReq);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
+                                    rc = pAhciPort->pDrvBlockAsync->pfnStartDiscard(pAhciPort->pDrvBlockAsync, pAhciReq->u.Trim.paRanges,
+                                                                                    pAhciReq->u.Trim.cRanges, pAhciReq);
+                                }
+                            }
+                            else if (enmTxDir == AHCITXDIR_READ)
+                            {
+                                pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
+                                rc = pAhciPort->pDrvBlockAsync->pfnStartRead(pAhciPort->pDrvBlockAsync, pAhciReq->uOffset,
+                                                                             &pAhciReq->u.Io.DataSeg, 1,
+                                                                             pAhciReq->cbTransfer,
+                                                                             pAhciReq);
+                            }
+                            else
                             {
                                 pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                                rc = pAhciPort->pDrvBlockAsync->pfnStartDiscard(pAhciPort->pDrvBlockAsync, pAhciReq->u.Trim.paRanges,
-                                                                                pAhciReq->u.Trim.cRanges, pAhciReq);
+                                rc = pAhciPort->pDrvBlockAsync->pfnStartWrite(pAhciPort->pDrvBlockAsync, pAhciReq->uOffset,
+                                                                              &pAhciReq->u.Io.DataSeg, 1,
+                                                                              pAhciReq->cbTransfer,
+                                                                              pAhciReq);
                             }
-                        }
-                        else if (enmTxDir == AHCITXDIR_READ)
-                        {
-                            pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
-                            rc = pAhciPort->pDrvBlockAsync->pfnStartRead(pAhciPort->pDrvBlockAsync, pAhciReq->uOffset,
-                                                                         &pAhciReq->u.Io.DataSeg, 1,
-                                                                         pAhciReq->cbTransfer,
-                                                                         pAhciReq);
+                            if (rc == VINF_VD_ASYNC_IO_FINISHED)
+                                rc = ahciTransferComplete(pAhciPort, pAhciReq, VINF_SUCCESS, true);
+                            else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
+                                rc = ahciTransferComplete(pAhciPort, pAhciReq, rc, true);
                         }
                         else
                         {
-                            pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                            rc = pAhciPort->pDrvBlockAsync->pfnStartWrite(pAhciPort->pDrvBlockAsync, pAhciReq->uOffset,
-                                                                          &pAhciReq->u.Io.DataSeg, 1,
-                                                                          pAhciReq->cbTransfer,
-                                                                          pAhciReq);
-                        }
-                        if (rc == VINF_VD_ASYNC_IO_FINISHED)
-                            rc = ahciTransferComplete(pAhciPort, pAhciReq, VINF_SUCCESS, true);
-                        else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
+                            if (enmTxDir == AHCITXDIR_FLUSH)
+                                rc = pAhciPort->pDrvBlock->pfnFlush(pAhciPort->pDrvBlock);
+                            else if (enmTxDir == AHCITXDIR_TRIM)
+                            {
+                                rc = ahciTrimRangesCreate(pAhciPort, pAhciReq);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
+                                    rc = pAhciPort->pDrvBlock->pfnDiscard(pAhciPort->pDrvBlock, pAhciReq->u.Trim.paRanges,
+                                                                          pAhciReq->u.Trim.cRanges);
+                                    pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 0;
+                                }
+                            }
+                            else if (enmTxDir == AHCITXDIR_READ)
+                            {
+                                pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
+                                rc = pAhciPort->pDrvBlock->pfnRead(pAhciPort->pDrvBlock, pAhciReq->uOffset,
+                                                                   pAhciReq->u.Io.DataSeg.pvSeg,
+                                                                   pAhciReq->cbTransfer);
+                                pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 0;
+                            }
+                            else
+                            {
+                                pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
+                                rc = pAhciPort->pDrvBlock->pfnWrite(pAhciPort->pDrvBlock, pAhciReq->uOffset,
+                                                                    pAhciReq->u.Io.DataSeg.pvSeg,
+                                                                    pAhciReq->cbTransfer);
+                                pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 0;
+                            }
                             rc = ahciTransferComplete(pAhciPort, pAhciReq, rc, true);
+                        }
                     }
                 }
                 else
@@ -6360,239 +6443,7 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
             u32Tasks &= ~RT_BIT_32(idx); /* Clear task bit. */
             idx = ASMBitFirstSetU32(u32Tasks);
         } /* while tasks available */
-    } /* fUseAsyncInterface */
-
-    return true;
-}
-
-/* The async IO thread for one port. */
-static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
-{
-    PAHCIPort pAhciPort = (PAHCIPort)pThread->pvUser;
-    PAHCI     pAhci     = pAhciPort->CTX_SUFF(pAhci);
-    PAHCIREQ pAhciReq;
-    int rc = VINF_SUCCESS;
-    uint64_t u64StartTime = 0;
-    uint64_t u64StopTime  = 0;
-    uint32_t uIORequestsProcessed = 0;
-    uint32_t uIOsPerSec = 0;
-    uint32_t fTasksToProcess = 0;
-    unsigned idx = 0;
-
-    ahciLog(("%s: Port %d entering async IO loop.\n", __FUNCTION__, pAhciPort->iLUN));
-
-    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
-        return VINF_SUCCESS;
-
-    /* We use only one task structure. */
-    pAhciReq = (PAHCIREQ)RTMemAllocZ(sizeof(AHCIREQ));
-    if (!pAhciReq)
-    {
-        AssertMsgFailed(("Failed to allocate task state memory\n"));
-        return VERR_NO_MEMORY;
-    }
-
-    pAhciReq->enmTxState = AHCITXSTATE_FREE;
-
-    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
-    {
-        /* New run to get number of I/O requests per second?. */
-        if (!u64StartTime)
-            u64StartTime = RTTimeMilliTS();
-
-        ASMAtomicXchgBool(&pAhciPort->fAsyncIOThreadIdle, true);
-        if (pAhci->fSignalIdle)
-            PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
-
-        rc = RTSemEventWait(pAhciPort->AsyncIORequestSem, 1000);
-        if (rc == VERR_TIMEOUT)
-        {
-            /* No I/O requests in-between. Reset statistics and wait again. */
-            pAhciPort->StatIORequestsPerSecond.c = 0;
-            rc = RTSemEventWait(pAhciPort->AsyncIORequestSem, RT_INDEFINITE_WAIT);
-        }
-
-        if (RT_FAILURE(rc) || (pThread->enmState != PDMTHREADSTATE_RUNNING))
-            break;
-
-        /* Go to sleep again if we are in redo mode. */
-        if (RT_UNLIKELY(pAhciPort->fRedo))
-            continue;
-
-        AssertMsg(pAhciPort->pDrvBase, ("I/O thread without attached device?!\n"));
-
-        ASMAtomicXchgBool(&pAhciPort->fAsyncIOThreadIdle, false);
-        fTasksToProcess = ASMAtomicXchgU32(&pAhciPort->u32TasksNew, 0);
-
-        idx = ASMBitFirstSetU32(fTasksToProcess);
-
-        /* Process commands. */
-        while (   idx
-               && RT_LIKELY(!pAhciPort->fPortReset))
-        {
-            bool fReqCanceled = false;
-            AHCITXDIR enmTxDir;
-
-            idx--;
-            STAM_PROFILE_START(&pAhciPort->StatProfileProcessTime, a);
-
-            pAhciReq->tsStart       = RTTimeMilliTS();
-            pAhciReq->uATARegStatus = 0;
-            pAhciReq->uATARegError  = 0;
-            pAhciReq->fFlags        = 0;
-            pAhciReq->uTag          = idx;
-            AssertMsg(pAhciReq->uTag < AHCI_NR_COMMAND_SLOTS, ("%s: Invalid Tag number %u!!\n", __FUNCTION__, pAhciReq->uTag));
-
-            bool fXchg;
-            ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_ACTIVE, AHCITXSTATE_FREE, fXchg);
-            AssertMsg(fXchg, ("Task is already active\n"));
-
-            /* Set current command slot */
-            ASMAtomicWriteU32(&pAhciPort->u32CurrentCommandSlot, pAhciReq->uTag);
-            pAhciPort->aCachedTasks[0] = pAhciReq; /* Make cancelling the request possible. */
-
-            /* Mark the task as processed by the HBA if this is a queued task so that it doesn't occur in the CI register anymore. */
-            if (pAhciPort->regSACT & (1 << idx))
-            {
-                pAhciReq->fFlags |= AHCI_REQ_CLEAR_SACT;
-                ASMAtomicOrU32(&pAhciPort->u32TasksFinished, (1 << pAhciReq->uTag));
-            }
-
-            ahciPortTaskGetCommandFis(pAhciPort, pAhciReq);
-
-            ahciLog(("%s: Got command at slot %d\n", __FUNCTION__, pAhciReq->uTag));
-
-            if (!(pAhciReq->cmdFis[AHCI_CMDFIS_BITS] & AHCI_CMDFIS_C))
-            {
-                /* If the reset bit is set put the device into reset state. */
-                if (pAhciReq->cmdFis[AHCI_CMDFIS_CTL] & AHCI_CMDFIS_CTL_SRST)
-                {
-                    ahciLog(("%s: Setting device into reset state\n", __FUNCTION__));
-                    pAhciPort->fResetDevice = true;
-                    ahciSendD2HFis(pAhciPort, pAhciReq, &pAhciReq->cmdFis[0], true);
-                }
-                else if (pAhciPort->fResetDevice) /* The bit is not set and we are in a reset state. */
-                {
-                    ahciFinishStorageDeviceReset(pAhciPort, pAhciReq);
-                }
-                /* TODO: We are not in a reset state update the control registers. */
-
-                ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
-                AssertMsg(fXchg, ("Task is already free\n"));
-            }
-            else
-            {
-                AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) < AHCI_NR_COMMAND_SLOTS,
-                                 ("There are more than 32 requests active"));
-                ASMAtomicIncU32(&pAhciPort->cTasksActive);
-                enmTxDir = ahciProcessCmd(pAhciPort, pAhciReq, &pAhciReq->cmdFis[0]);
-                pAhciReq->enmTxDir = enmTxDir;
-
-                if (enmTxDir == AHCITXDIR_FLUSH)
-                    rc = pAhciPort->pDrvBlock->pfnFlush(pAhciPort->pDrvBlock);
-                else if (enmTxDir == AHCITXDIR_TRIM)
-                {
-                    rc = ahciTrimRangesCreate(pAhciPort, pAhciReq);
-                    if (RT_SUCCESS(rc))
-                    {
-                        pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                        rc = pAhciPort->pDrvBlock->pfnDiscard(pAhciPort->pDrvBlock,
-                                                              pAhciReq->u.Trim.paRanges,
-                                                              pAhciReq->u.Trim.cRanges);
-                        pAhciPort->Led.Actual.s.fWriting = 0;
-                    }
-                }
-                else if (enmTxDir != AHCITXDIR_NONE)
-                {
-                    uint64_t uOffset = 0;
-                    size_t cbTransfer = 0;
-
-                    rc = ahciIoBufAllocate(pAhciPort->pDevInsR3, pAhciReq, pAhciReq->cbTransfer);
-                    if (RT_FAILURE(rc))
-                        AssertMsgFailed(("%s: Failed to get number of list elments %Rrc\n", __FUNCTION__, rc));
-
-                    if (!(pAhciReq->fFlags & AHCI_REQ_OVERFLOW))
-                    {
-                        STAM_REL_COUNTER_INC(&pAhciPort->StatDMA);
-
-                        /* Initialize all values. */
-                        uOffset     = pAhciReq->uOffset;
-                        cbTransfer  = pAhciReq->cbTransfer;
-
-                        STAM_PROFILE_START(&pAhciPort->StatProfileReadWrite, b);
-
-                        AssertMsg(!(uOffset % 512), ("Offset is not sector aligned %llu\n", uOffset));
-                        AssertMsg(!(cbTransfer % 512), ("Number of bytes to process is not sector aligned %lu\n", cbTransfer));
-
-                        if (enmTxDir == AHCITXDIR_READ)
-                        {
-                            pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
-                            rc = pAhciPort->pDrvBlock->pfnRead(pAhciPort->pDrvBlock, uOffset,
-                                                               pAhciReq->u.Io.DataSeg.pvSeg,
-                                                               cbTransfer);
-                            pAhciPort->Led.Actual.s.fReading = 0;
-                            STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesRead, cbTransfer);
-                        }
-                        else
-                        {
-                            pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                            rc = pAhciPort->pDrvBlock->pfnWrite(pAhciPort->pDrvBlock, uOffset,
-                                                                pAhciReq->u.Io.DataSeg.pvSeg,
-                                                                cbTransfer);
-                            pAhciPort->Led.Actual.s.fWriting = 0;
-                            STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesWritten, cbTransfer);
-                        }
-
-                        STAM_PROFILE_STOP(&pAhciPort->StatProfileReadWrite, b);
-                    }
-                }
-
-                fReqCanceled = ahciTransferComplete(pAhciPort, pAhciReq, rc, false /* fFreeReq */);
-                uIORequestsProcessed++;
-                STAM_PROFILE_STOP(&pAhciPort->StatProfileProcessTime, a);
-            }
-
-            if (!pAhciPort->fRedo)
-            {
-#ifdef DEBUG
-                /* Be paranoid. */
-                memset(&pAhciReq->cmdHdr, 0, sizeof(CmdHdr));
-                memset(&pAhciReq->cmdFis, 0, AHCI_CMDFIS_TYPE_H2D_SIZE);
-                pAhciReq->GCPhysCmdHdrAddr = 0;
-                pAhciReq->uOffset = 0;
-                pAhciReq->cbTransfer = 0;
-#endif
-            }
-
-            /*
-             * Don't process other requests if the last one was canceled,
-             * the others are not valid anymore.
-             */
-            if (fReqCanceled)
-                break;
-            fTasksToProcess &= ~(1 << idx);
-            idx = ASMBitFirstSetU32(fTasksToProcess);
-        } /* while tasks to process */
-
-        u64StopTime = RTTimeMilliTS();
-        /* Check if one second has passed. */
-        if (u64StopTime - u64StartTime >= 1000)
-        {
-            /* Calculate number of I/O requests per second. */
-            uIOsPerSec = uIORequestsProcessed / ((u64StopTime - u64StartTime) / 1000);
-            ahciLog(("%s: Processed %u requests in %llu ms -> %u requests/s\n", __FUNCTION__, uIORequestsProcessed, u64StopTime - u64StartTime, uIOsPerSec));
-            u64StartTime = 0;
-            uIORequestsProcessed = 0;
-            /* For the release statistics. There is no macro to set the counter to a specific value. */
-            pAhciPort->StatIORequestsPerSecond.c = uIOsPerSec;
-        }
     } /* While running */
-
-    if (pAhci->fSignalIdle)
-        PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
-
-    RTMemFree(pAhciReq);
-    memset(pAhciPort->aCachedTasks, 0, sizeof(pAhciPort->aCachedTasks));
 
     ahciLog(("%s: Port %d async IO thread exiting\n", __FUNCTION__, pAhciPort->iLUN));
     return VINF_SUCCESS;
@@ -6607,8 +6458,9 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
  */
 static DECLCALLBACK(int) ahciAsyncIOLoopWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
     PAHCIPort pAhciPort = (PAHCIPort)pThread->pvUser;
-    return RTSemEventSignal(pAhciPort->AsyncIORequestSem);
+    return SUPSemEventSignal(pThis->pSupDrvSession, pAhciPort->hEvtProcess);
 }
 
 /* -=-=-=-=- DBGF -=-=-=-=- */
@@ -7536,7 +7388,7 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
 
     AssertMsg(iLUN < pAhci->cPortsImpl, ("iLUN=%u", iLUN));
 
-    if (!pAhciPort->fAsyncInterface)
+    if (pAhciPort->pAsyncIOThread)
     {
         int rcThread;
         /* Destroy the thread. */
@@ -7545,10 +7397,6 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
             AssertMsgFailed(("%s Failed to destroy async IO thread rc=%Rrc rcThread=%Rrc\n", __FUNCTION__, rc, rcThread));
 
         pAhciPort->pAsyncIOThread = NULL;
-
-        rc = RTSemEventDestroy(pAhciPort->AsyncIORequestSem);
-        if (RT_FAILURE(rc))
-            AssertMsgFailed(("%s: Failed to destroy the event semaphore rc=%Rrc.\n", __FUNCTION__, rc));
     }
 
     if (pAhciPort->fATAPI)
@@ -7632,26 +7480,13 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
             && !pAhciPort->fATAPI)
             pAhciPort->fAsyncInterface = true;
         else
-        {
             pAhciPort->fAsyncInterface = false;
 
-            /* Create event semaphore. */
-            rc = RTSemEventCreate(&pAhciPort->AsyncIORequestSem);
-            if (RT_FAILURE(rc))
-            {
-                Log(("%s: Failed to create event semaphore for %s.\n", __FUNCTION__, szName));
-                return rc;
-            }
-
-            /* Create the async IO thread. */
-            rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop, ahciAsyncIOLoopWakeUp, 0,
-                                       RTTHREADTYPE_IO, szName);
-            if (RT_FAILURE(rc))
-            {
-                AssertMsgFailed(("%s: Async IO Thread creation for %s failed rc=%d\n", __FUNCTION__, szName, rc));
-                return rc;
-            }
-        }
+        /* Create the async IO thread. */
+        rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop, ahciAsyncIOLoopWakeUp, 0,
+                                   RTTHREADTYPE_IO, szName);
+        if (RT_FAILURE(rc))
+            return rc;
 
         /*
          * Init vendor product data.
@@ -7764,7 +7599,7 @@ static DECLCALLBACK(void) ahciR3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
 {
-    PAHCI       pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI       pThis = PDMINS_2_DATA(pDevIns, PAHCI);
     int         rc    = VINF_SUCCESS;
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
@@ -7773,23 +7608,20 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
      * this module again. So, no coordination is needed here and PDM
      * will take care of terminating and cleaning up the thread.
      */
-    if (PDMCritSectIsInitialized(&pAhci->lock))
+    if (PDMCritSectIsInitialized(&pThis->lock))
     {
-        TMR3TimerDestroy(pAhci->CTX_SUFF(pHbaCccTimer));
-        pAhci->CTX_SUFF(pHbaCccTimer) = NULL;
+        TMR3TimerDestroy(pThis->CTX_SUFF(pHbaCccTimer));
+        pThis->CTX_SUFF(pHbaCccTimer) = NULL;
 
         Log(("%s: Destruct every port\n", __FUNCTION__));
-        for (unsigned iActPort = 0; iActPort < pAhci->cPortsImpl; iActPort++)
+        for (unsigned iActPort = 0; iActPort < pThis->cPortsImpl; iActPort++)
         {
-            PAHCIPort pAhciPort = &pAhci->ahciPort[iActPort];
+            PAHCIPort pAhciPort = &pThis->ahciPort[iActPort];
 
-            if (pAhciPort->pAsyncIOThread)
+            if (pAhciPort->hEvtProcess != NIL_SUPSEMEVENT)
             {
-                /* Destroy the event semaphore. */
-                rc = RTSemEventDestroy(pAhciPort->AsyncIORequestSem);
-                if (RT_FAILURE(rc))
-                    Log(("%s: Destroying event semaphore for port %d failed rc=%Rrc\n", __FUNCTION__, iActPort, rc));
-                pAhciPort->AsyncIORequestSem = NIL_RTSEMEVENT;
+                SUPSemEventClose(pThis->pSupDrvSession, pAhciPort->hEvtProcess);
+                pAhciPort->hEvtProcess = NIL_SUPSEMEVENT;
             }
 
             /* Free all cached tasks. */
@@ -7801,7 +7633,7 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
                 }
         }
 
-        PDMR3CritSectDelete(&pAhci->lock);
+        PDMR3CritSectDelete(&pThis->lock);
     }
 
     return rc;
@@ -7898,6 +7730,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->pSupDrvSession = PDMDevHlpGetSupDrvSession(pDevIns);
 
     PCIDevSetVendorId    (&pThis->dev, 0x8086); /* Intel */
     PCIDevSetDeviceId    (&pThis->dev, 0x2829); /* ICH-8M */
@@ -7945,8 +7778,8 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         pAhciPort->pAhciRC              = PDMINS_2_DATA_RCPTR(pDevIns);
         pAhciPort->Led.u32Magic         = PDMLED_MAGIC;
         pAhciPort->pDrvBase             = NULL;
-        pAhciPort->AsyncIORequestSem    = NIL_RTSEMEVENT;
         pAhciPort->pAsyncIOThread       = NULL;
+        pAhciPort->hEvtProcess          = NIL_SUPSEMEVENT;
     }
 
     /*
@@ -8055,6 +7888,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
     {
         PAHCIPort pAhciPort = &pThis->ahciPort[i];
+
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatDMA, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                                "Number of DMA transfers.", "/Devices/SATA%d/Port%d/DMA", iInstance, i);
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatBytesRead, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_BYTES,
@@ -8128,15 +7962,18 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             {
                 LogRel(("AHCI: LUN#%d: using normal I/O\n", pAhciPort->iLUN));
                 pAhciPort->fAsyncInterface = false;
-
-                rc = RTSemEventCreate(&pAhciPort->AsyncIORequestSem);
-                AssertMsgRC(rc, ("Failed to create event semaphore for %s rc=%Rrc.\n", szName, rc));
-
-
-                rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop,
-                                           ahciAsyncIOLoopWakeUp, 0, RTTHREADTYPE_IO, szName);
-                AssertMsgRC(rc, ("%s: Async IO Thread creation for %s failed rc=%Rrc\n", szName, rc));
             }
+
+            rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop,
+                                       ahciAsyncIOLoopWakeUp, 0, RTTHREADTYPE_IO, szName);
+            if (RT_FAILURE(rc))
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                           N_("AHCI: Failed to create worker thread %s"), szName);
+
+            rc = SUPSemEventCreate(pThis->pSupDrvSession, &pAhciPort->hEvtProcess);
+            if (RT_FAILURE(rc))
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                           N_("AHCI: Failed to create SUP event semaphore"));
         }
         else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
