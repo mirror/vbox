@@ -258,7 +258,7 @@ VMM_INT_DECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC)
  */
 VMM_INT_DECL(RCPTRTYPE(PPATMGCSTATE)) PATMGetGCState(PVM pVM)
 {
-    AssertReturn(!HMIsEnabled(pVM), NULL);
+    AssertReturn(!HMIsEnabled(pVM), NIL_RTRCPTR);
     return pVM->patm.s.pGCStateGC;
 }
 
