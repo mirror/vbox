@@ -5944,12 +5944,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                  * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD, VMX_EXIT_MTF
                  * VMX_EXIT_APIC_WRITE, VMX_EXIT_VIRTUALIZED_EOI. See Intel spec. 27.3.4 "Saving Non-Register State".
                  */
-#ifndef HMVMX_TRAP_ALL_EXCEPTIONS
-                /* Don't intercept the #DB resulting from the pending-debug exception. */
-                pVCpu->hm.s.vmx.u32XcptBitmap &= ~RT_BIT(X86_XCPT_DB);
-                rc2  = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
-#endif
-                rc2 |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
+                rc2 = VMXWriteVmcsGstN(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
             }
         }
         else
