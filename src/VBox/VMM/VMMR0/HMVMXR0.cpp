@@ -3057,7 +3057,7 @@ DECLINLINE(int) hmR0VmxLoadGuestDebugRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     bool fInterceptMovDRx = false;
     if (DBGFIsStepping(pVCpu))
     {
-        /* If the CPU supports the monitor trap flag, use it for single stepping in DBGF. */
+        /* If the CPU supports the monitor trap flag, use it for single stepping in DBGF and avoid intercepting #DB. */
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG)
         {
             pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG;
@@ -3065,25 +3065,21 @@ DECLINLINE(int) hmR0VmxLoadGuestDebugRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             AssertRCReturn(rc, rc);
             Assert(fInterceptDB == false);
         }
-        else if (pCtx->eflags.Bits.u1TF)    /* If the guest is using its TF bit, we cannot single step in DBGF. */
-        {
-            Assert(fInterceptDB == false);
-            /** @todo can we somehow signal DBGF that it cannot single-step instead of
-             *        just continuing? */
-        }
         else
             fInterceptDB = true;
     }
-    else
-        Assert(fInterceptDB == false);      /* If we are not single stepping in DBGF, there is no need to intercept #DB. */
 
-
-    /*
-     * If the guest is using its DRx registers and the host DRx does not yet contain the guest DRx values,
-     * load the guest DRx registers into the host and don't cause VM-exits on guest's MOV DRx accesses.
-     * The same for the hypervisor DRx registers, priority is for the guest here.
-     */
-    if (pCtx->dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
+    if (CPUMGetHyperDR7(pVCpu) & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
+    {
+        if (!CPUMIsHyperDebugStateActive(pVCpu))
+        {
+            rc = CPUMR0LoadHyperDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
+            AssertRC(rc);
+        }
+        Assert(CPUMIsHyperDebugStateActive(pVCpu));
+        fInterceptMovDRx = true;
+    }
+    else if (pCtx->dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
     {
         if (!CPUMIsGuestDebugStateActive(pVCpu))
         {
@@ -3094,19 +3090,9 @@ DECLINLINE(int) hmR0VmxLoadGuestDebugRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Assert(CPUMIsGuestDebugStateActive(pVCpu));
         Assert(fInterceptMovDRx == false);
     }
-    else if (CPUMGetHyperDR7(pVCpu) & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
-    {
-        if (!CPUMIsHyperDebugStateActive(pVCpu))
-        {
-            rc = CPUMR0LoadHyperDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
-            AssertRC(rc);
-        }
-        Assert(CPUMIsHyperDebugStateActive(pVCpu));
-        fInterceptMovDRx = true;
-    }
     else if (!CPUMIsGuestDebugStateActive(pVCpu))
     {
-        /* For the first time we would need to intercept MOV DRx accesses even when the guest debug state isn't active. */
+        /* For the first time we would need to intercept MOV DRx accesses even when the guest debug registers aren't loaded. */
         fInterceptMovDRx = true;
     }
 
@@ -8525,6 +8511,8 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         if (CPUMIsGuestDebugStateActive(pVCpu))
             ASMSetDR6(pMixedCtx->dr[6]);
 
+        rc = hmR0VmxSaveGuestDebugRegs(pVCpu, pMixedCtx);
+
         /* X86_DR7_GD will be cleared if DRx accesses should be trapped inside the guest. */
         pMixedCtx->dr[7] &= ~X86_DR7_GD;
 
@@ -8534,17 +8522,26 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         pMixedCtx->dr[7] |= 0x400;                                                   /* must be one */
 
         /* Resync DR7. */
-        rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_DR7, pMixedCtx->dr[7]);
-
-        rc |= hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
+        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_DR7, pMixedCtx->dr[7]);
         AssertRCReturn(rc,rc);
+    }
+
+    /*
+     * If the #DB exception was meant for the guest, reflect it to the guest upon VM-reentry. If our hypervisor is
+     * simultaneously single-stepping with the guest, return to the debugger but also reflect #DB to the guest upon VM-reentry.
+     */
+    if (   rc == VINF_EM_RAW_GUEST_TRAP
+        || rc == VINF_EM_DBG_STEPPED)
+    {
+        int rc2 = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
+        rc2 |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+        rc2 |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
+        AssertRCReturn(rc2, rc2);
         hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
                                pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode, 0 /* GCPtrFaultAddress */);
-        return rc;
+        if (rc == VINF_EM_RAW_GUEST_TRAP)
+            rc = VINF_SUCCESS;
     }
-    /* Return to ring 3 to deal with the debug exit code. */
     return rc;
 }
 
