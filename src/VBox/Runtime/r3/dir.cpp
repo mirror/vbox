@@ -533,7 +533,7 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
     if (!pszFilter)
     {
         cbFilter = cucFilter0 = 0;
-        rc = RTPathReal(pszPath, szRealPath, sizeof(szRealPath) - 1);
+        rc = RTPathAbs(pszPath, szRealPath, sizeof(szRealPath) - 1);
     }
     else
     {
@@ -547,7 +547,7 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
             if (!pszTmp)
                 return VERR_NO_MEMORY;
             pszTmp[pszFilter - pszPath] = '\0';
-            rc = RTPathReal(pszTmp, szRealPath, sizeof(szRealPath) - 1);
+            rc = RTPathAbs(pszTmp, szRealPath, sizeof(szRealPath) - 1);
             RTStrFree(pszTmp);
         }
         else
