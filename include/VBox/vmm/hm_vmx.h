@@ -1165,11 +1165,12 @@ typedef union
  */
 /** The logical processor is active. */
 #define VMX_VMCS_GUEST_ACTIVITY_ACTIVE                           0x0
-/** The logiVMCS processor is inactive, because executed a HLT instruction. */
+/** The logical processor is inactive, because executed a HLT instruction. */
 #define VMX_VMCS_GUEST_ACTIVITY_HLT                              0x1
-/** The logiVMCS processor is inactive, because of a triple fault or other serious error. */
+/** The logical processor is inactive, because of a triple fault or other
+ *  serious error. */
 #define VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN                         0x2
-/** The logiVMCS processor is inactive, because it's waiting for a startup-IPI */
+/** The logical processor is inactive, because it's waiting for a startup-IPI */
 #define VMX_VMCS_GUEST_ACTIVITY_SIPI_WAIT                        0x3
 /** @} */
 
