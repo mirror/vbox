@@ -298,6 +298,8 @@ RTR3DECL(int) RTHttpSetCAFile(RTHTTP hHttp, const char *pcszCAFile)
     if (pHttpInt->pcszCAFile)
         RTStrFree(pHttpInt->pcszCAFile);
     pHttpInt->pcszCAFile = RTStrDup(pcszCAFile);
+    if (!pHttpInt->pcszCAFile)
+        return VERR_NO_MEMORY;
 
     return VINF_SUCCESS;
 }
