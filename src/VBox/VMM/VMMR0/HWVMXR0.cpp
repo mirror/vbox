@@ -2940,7 +2940,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         fSetupTPRCaching = true;
     }
 
-    Log2(("\nE"));
+    Log2(("\n"));
 
     /* This is not ideal, but if we don't clear the event injection in the VMCS right here,
      * we may end up injecting some stale event into a VM, including injecting an event that
