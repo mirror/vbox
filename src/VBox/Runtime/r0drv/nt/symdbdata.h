@@ -53,7 +53,623 @@ typedef RTNTSDBSET const *PCRTNTSDBSET;
 const RTNTSDBSET g_artNtSdbSets[] = 
 {
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\windowsxp.x86.fre.rtm.symbols\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\uold\w2ksp3sym_nec98\exe\ntkrnlpa.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 3,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp3sym_en\exe\ntkrnlpa.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 3,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp3sym_en_chk\exe\ntkrnlpa.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ true,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 3,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp3sym_en_chk\exe\ntoskrnl.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ true,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 3,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp3sym_nec98\exe\ntkrpamp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 3,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp3sym_nec98\exe\ntkrnlmp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 3,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp3sym_en\exe\ntkrnlmp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 3,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp3sym_en\exe\ntkrpamp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 3,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp3sym_en_chk\exe\ntkrnlmp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ true,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 3,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp3sym_en_chk\exe\ntkrpamp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ true,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 3,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\Windows2000-KB891861-x86-Symbols-ENU\symbols\exe\ntkrnlpa.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\Windows2000-KB891861-x86-Symbols-ENU\symbols\exe\ntoskrnl.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp4sym_en\exe\ntkrnlpa.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp4sym_nec98\exe\ntkrnlpa.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\Windows2000-KB891861-nec98-Symbols-JPN\symbols\exe\ntkrnlpa.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\Windows2000-KB891861-nec98-Symbols-JPN\symbols\exe\ntoskrnl.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp4sym_en_chk\exe\ntoskrnl.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ true,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp4sym_en_chk\exe\ntkrnlpa.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ true,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\Windows2000-KB891861-x86-Symbols-ENU\symbols\exe\ntkrpamp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\Windows2000-KB891861-x86-Symbols-ENU\symbols\exe\ntkrnlmp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp4sym_en\exe\ntkrnlmp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp4sym_en\exe\ntkrpamp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp4sym_nec98\exe\ntkrpamp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp4sym_nec98\exe\ntkrnlmp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\Windows2000-KB891861-nec98-Symbols-JPN\symbols\exe\ntkrnlmp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\Windows2000-KB891861-nec98-Symbols-JPN\symbols\exe\ntkrpamp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp4sym_en_chk\exe\ntkrnlmp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ true,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\uold\w2ksp4sym_en_chk\exe\ntkrpamp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 0,
+            /* .fChecked  = */ true,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 4,
+            /* .uBuildNo  = */ 2195,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0750,
+            /* .cbQuantumEnd                 = */ 0x0004,
+            /* .offDpcQueueDepth             = */ 0x06e8,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x072d,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\u\windowsxp.x86.fre.rtm.symbols\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -75,7 +691,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\windowsxp.x86.fre.rtm.symbols\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\windowsxp.x86.fre.rtm.symbols\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -97,7 +713,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\windowsxp.x86.chk.rtm.symbols\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\u\windowsxp.x86.chk.rtm.symbols\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -119,7 +735,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\windowsxp.x86.chk.rtm.symbols\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\windowsxp.x86.chk.rtm.symbols\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -141,7 +757,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\windowsxp.x86.fre.rtm.symbols\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\windowsxp.x86.fre.rtm.symbols\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -163,7 +779,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\windowsxp.x86.fre.rtm.symbols\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\windowsxp.x86.fre.rtm.symbols\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -185,7 +801,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\windowsxp.x86.chk.rtm.symbols\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\windowsxp.x86.chk.rtm.symbols\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -207,7 +823,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\windowsxp.x86.chk.rtm.symbols\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\windowsxp.x86.chk.rtm.symbols\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -229,7 +845,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\xpsp1sym_x86\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\u\xpsp1sym_x86\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -251,7 +867,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\xpsp1sym_x86\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\xpsp1sym_x86\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -273,12 +889,12 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\xpsp1sym_x86_chk\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\u\xpsp1sym_x86_chk\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
             /* .uMinorVer = */ 1,
-            /* .fChecked  = */ false,
+            /* .fChecked  = */ true,
             /* .fSmp      = */ false,
             /* .uCsdNo    = */ 1,
             /* .uBuildNo  = */ 2600,
@@ -295,12 +911,12 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\xpsp1sym_x86_chk\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\xpsp1sym_x86_chk\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
             /* .uMinorVer = */ 1,
-            /* .fChecked  = */ false,
+            /* .fChecked  = */ true,
             /* .fSmp      = */ false,
             /* .uCsdNo    = */ 1,
             /* .uBuildNo  = */ 2600,
@@ -317,7 +933,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\xpsp1sym_x86\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\xpsp1sym_x86\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -339,7 +955,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\xpsp1sym_x86\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\xpsp1sym_x86\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -361,12 +977,12 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\xpsp1sym_x86_chk\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\xpsp1sym_x86_chk\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
             /* .uMinorVer = */ 1,
-            /* .fChecked  = */ false,
+            /* .fChecked  = */ true,
             /* .fSmp      = */ true,
             /* .uCsdNo    = */ 1,
             /* .uBuildNo  = */ 2600,
@@ -383,12 +999,12 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\xpsp1sym_x86_chk\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\xpsp1sym_x86_chk\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
             /* .uMinorVer = */ 1,
-            /* .fChecked  = */ false,
+            /* .fChecked  = */ true,
             /* .fSmp      = */ true,
             /* .uCsdNo    = */ 1,
             /* .uBuildNo  = */ 2600,
@@ -405,7 +1021,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB835935-SP2-slp-Symbols\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB835935-SP2-slp-Symbols\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -427,7 +1043,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB835935-SP2-slp-Symbols\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB835935-SP2-slp-Symbols\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -449,7 +1065,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB835935-SP2-Debug-slp-Symbols\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB835935-SP2-Debug-slp-Symbols\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -471,7 +1087,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB835935-SP2-Debug-slp-Symbols\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB835935-SP2-Debug-slp-Symbols\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -493,7 +1109,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB835935-SP2-slp-Symbols\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB835935-SP2-slp-Symbols\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -515,7 +1131,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB835935-SP2-slp-Symbols\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB835935-SP2-slp-Symbols\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -537,7 +1153,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB835935-SP2-Debug-slp-Symbols\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB835935-SP2-Debug-slp-Symbols\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -559,7 +1175,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB835935-SP2-Debug-slp-Symbols\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB835935-SP2-Debug-slp-Symbols\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -581,7 +1197,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB936929-SP3-x86-symbols-full-ENU\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB936929-SP3-x86-symbols-full-ENU\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -603,7 +1219,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB936929-SP3-x86-symbols-full-ENU\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB936929-SP3-x86-symbols-full-ENU\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -625,7 +1241,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB936929-SP3-x86-DEBUG-symbols-full-ENU-DEBUG\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB936929-SP3-x86-DEBUG-symbols-full-ENU-DEBUG\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -647,7 +1263,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB936929-SP3-x86-DEBUG-symbols-full-ENU-DEBUG\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB936929-SP3-x86-DEBUG-symbols-full-ENU-DEBUG\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -669,7 +1285,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB936929-SP3-x86-symbols-full-ENU\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB936929-SP3-x86-symbols-full-ENU\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -691,7 +1307,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB936929-SP3-x86-symbols-full-ENU\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB936929-SP3-x86-symbols-full-ENU\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -713,7 +1329,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB936929-SP3-x86-DEBUG-symbols-full-ENU-DEBUG\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB936929-SP3-x86-DEBUG-symbols-full-ENU-DEBUG\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -735,7 +1351,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsXP-KB936929-SP3-x86-DEBUG-symbols-full-ENU-DEBUG\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsXP-KB936929-SP3-x86-DEBUG-symbols-full-ENU-DEBUG\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -757,7 +1373,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003.x86.fre.rtm.symbols\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003.x86.fre.rtm.symbols\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -779,7 +1395,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003.x86.fre.rtm.symbols\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003.x86.fre.rtm.symbols\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -801,7 +1417,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003.x86.chk.rtm.symbols\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003.x86.chk.rtm.symbols\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -823,7 +1439,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003.x86.chk.rtm.symbols\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003.x86.chk.rtm.symbols\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -845,7 +1461,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003.x86.fre.rtm.symbols\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003.x86.fre.rtm.symbols\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -867,7 +1483,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003.x86.fre.rtm.symbols\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003.x86.fre.rtm.symbols\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -889,7 +1505,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003.x86.chk.rtm.symbols\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003.x86.chk.rtm.symbols\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -911,7 +1527,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003.x86.chk.rtm.symbols\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003.x86.chk.rtm.symbols\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -933,51 +1549,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003_sp1.x86.fre.rtm.symbols\exe\ntkrnlpa.pdb */
-        /*.OsVerInfo = */
-        {
-            /* .uMajorVer = */ 5,
-            /* .uMinorVer = */ 2,
-            /* .fChecked  = */ false,
-            /* .fSmp      = */ false,
-            /* .uCsdNo    = */ 1,
-            /* .uBuildNo  = */ 3790,
-        },
-        /* .KPRCB = */
-        {
-            /* .offQuantumEnd                = */ 0x0981,
-            /* .cbQuantumEnd                 = */ 0x0001,
-            /* .offDpcQueueDepth             = */ 0x092c,
-            /* .cbDpcQueueDepth              = */ 0x0004,
-            /* .offVendorString              = */ 0x0b60,
-            /* .cbVendorString               = */ 0x000d,
-        },
-    },
-# endif
-# ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003_sp1.x86.fre.rtm.symbols\exe\ntoskrnl.pdb */
-        /*.OsVerInfo = */
-        {
-            /* .uMajorVer = */ 5,
-            /* .uMinorVer = */ 2,
-            /* .fChecked  = */ false,
-            /* .fSmp      = */ false,
-            /* .uCsdNo    = */ 1,
-            /* .uBuildNo  = */ 3790,
-        },
-        /* .KPRCB = */
-        {
-            /* .offQuantumEnd                = */ 0x0981,
-            /* .cbQuantumEnd                 = */ 0x0001,
-            /* .offDpcQueueDepth             = */ 0x092c,
-            /* .cbDpcQueueDepth              = */ 0x0004,
-            /* .offVendorString              = */ 0x0b60,
-            /* .cbVendorString               = */ 0x000d,
-        },
-    },
-# endif
-# ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsServer2003-KB933548-v1-x64-symbols-NRL-ENU\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsServer2003-KB933548-v1-x64-symbols-NRL-ENU\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -999,7 +1571,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003_sp1.x86.fre.rtm.symbols\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1021,7 +1593,51 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003_sp1.x86.fre.rtm.symbols\exe\ntkrnlpa.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 2,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 1,
+            /* .uBuildNo  = */ 3790,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0981,
+            /* .cbQuantumEnd                 = */ 0x0001,
+            /* .offDpcQueueDepth             = */ 0x092c,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x0b60,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\u\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU\exe\ntoskrnl.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 2,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ false,
+            /* .uCsdNo    = */ 1,
+            /* .uBuildNo  = */ 3790,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0981,
+            /* .cbQuantumEnd                 = */ 0x0001,
+            /* .offDpcQueueDepth             = */ 0x092c,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x0b60,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\u\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1043,7 +1659,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u3\Windows2003_sp1.amd64.fre.rtm.symbols\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003_sp1.amd64.fre.rtm.symbols\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1065,7 +1681,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003_sp1.x86.chk.rtm.symbols\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU-DEBUG\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1087,7 +1703,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003_sp1.x86.chk.rtm.symbols\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU-DEBUG\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1109,7 +1725,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsServer2003-KB933548-v1-x64-symbols-NRL-ENU-DEBUG\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsServer2003-KB933548-v1-x64-symbols-NRL-ENU-DEBUG\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1131,7 +1747,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU-DEBUG\exe\ntkrnlpa.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003_sp1.x86.chk.rtm.symbols\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1153,7 +1769,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU-DEBUG\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003_sp1.x86.chk.rtm.symbols\exe\ntkrnlpa.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1175,7 +1791,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u3\Windows2003_sp1.amd64.chk.rtm.symbols\exe\ntoskrnl.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003_sp1.amd64.chk.rtm.symbols\exe\ntoskrnl.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1197,51 +1813,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003_sp1.x86.fre.rtm.symbols\exe\ntkrnlmp.pdb */
-        /*.OsVerInfo = */
-        {
-            /* .uMajorVer = */ 5,
-            /* .uMinorVer = */ 2,
-            /* .fChecked  = */ false,
-            /* .fSmp      = */ true,
-            /* .uCsdNo    = */ 1,
-            /* .uBuildNo  = */ 3790,
-        },
-        /* .KPRCB = */
-        {
-            /* .offQuantumEnd                = */ 0x0981,
-            /* .cbQuantumEnd                 = */ 0x0001,
-            /* .offDpcQueueDepth             = */ 0x092c,
-            /* .cbDpcQueueDepth              = */ 0x0004,
-            /* .offVendorString              = */ 0x0b60,
-            /* .cbVendorString               = */ 0x000d,
-        },
-    },
-# endif
-# ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003_sp1.x86.fre.rtm.symbols\exe\ntkrpamp.pdb */
-        /*.OsVerInfo = */
-        {
-            /* .uMajorVer = */ 5,
-            /* .uMinorVer = */ 2,
-            /* .fChecked  = */ false,
-            /* .fSmp      = */ true,
-            /* .uCsdNo    = */ 1,
-            /* .uBuildNo  = */ 3790,
-        },
-        /* .KPRCB = */
-        {
-            /* .offQuantumEnd                = */ 0x0981,
-            /* .cbQuantumEnd                 = */ 0x0001,
-            /* .offDpcQueueDepth             = */ 0x092c,
-            /* .cbDpcQueueDepth              = */ 0x0004,
-            /* .offVendorString              = */ 0x0b60,
-            /* .cbVendorString               = */ 0x000d,
-        },
-    },
-# endif
-# ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsServer2003-KB933548-v1-x64-symbols-NRL-ENU\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsServer2003-KB933548-v1-x64-symbols-NRL-ENU\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1263,7 +1835,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003_sp1.x86.fre.rtm.symbols\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1285,7 +1857,51 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003_sp1.x86.fre.rtm.symbols\exe\ntkrnlmp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 2,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 1,
+            /* .uBuildNo  = */ 3790,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0981,
+            /* .cbQuantumEnd                 = */ 0x0001,
+            /* .offDpcQueueDepth             = */ 0x092c,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x0b60,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\u\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU\exe\ntkrnlmp.pdb */
+        /*.OsVerInfo = */
+        {
+            /* .uMajorVer = */ 5,
+            /* .uMinorVer = */ 2,
+            /* .fChecked  = */ false,
+            /* .fSmp      = */ true,
+            /* .uCsdNo    = */ 1,
+            /* .uBuildNo  = */ 3790,
+        },
+        /* .KPRCB = */
+        {
+            /* .offQuantumEnd                = */ 0x0981,
+            /* .cbQuantumEnd                 = */ 0x0001,
+            /* .offDpcQueueDepth             = */ 0x092c,
+            /* .cbDpcQueueDepth              = */ 0x0004,
+            /* .offVendorString              = */ 0x0b60,
+            /* .cbVendorString               = */ 0x000d,
+        },
+    },
+# endif
+# ifdef RT_ARCH_X86
+    {   /* Source: s:\WinSyms\u\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1307,7 +1923,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u3\Windows2003_sp1.amd64.fre.rtm.symbols\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003_sp1.amd64.fre.rtm.symbols\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1329,7 +1945,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003_sp1.x86.chk.rtm.symbols\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU-DEBUG\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1351,7 +1967,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\Windows2003_sp1.x86.chk.rtm.symbols\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU-DEBUG\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1373,7 +1989,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsServer2003-KB933548-v1-x64-symbols-NRL-ENU-DEBUG\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsServer2003-KB933548-v1-x64-symbols-NRL-ENU-DEBUG\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1395,7 +2011,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU-DEBUG\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003_sp1.x86.chk.rtm.symbols\exe\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1417,7 +2033,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u3\WindowsServer2003-KB933548-v1-x86-symbols-NRL-ENU-DEBUG\exe\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003_sp1.x86.chk.rtm.symbols\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1439,7 +2055,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u3\Windows2003_sp1.amd64.chk.rtm.symbols\exe\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows2003_sp1.amd64.chk.rtm.symbols\exe\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 5,
@@ -1461,7 +2077,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u2\WindowsVista.6000.061101-2205.x86fre.Symbols\EXE\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsVista.6000.061101-2205.x86fre.Symbols\EXE\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1483,7 +2099,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u2\WindowsVista.6000.061101-2205.x86fre.Symbols\EXE\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsVista.6000.061101-2205.x86fre.Symbols\EXE\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1505,7 +2121,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u2\WindowsVista.6000.061101-2205.amd64fre.Symbols\EXE\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsVista.6000.061101-2205.amd64fre.Symbols\EXE\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1527,7 +2143,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u2\WindowsVista.6000.061101-2205.x86chk.Symbols\EXE\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsVista.6000.061101-2205.x86chk.Symbols\EXE\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1549,7 +2165,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u2\WindowsVista.6000.061101-2205.x86chk.Symbols\EXE\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsVista.6000.061101-2205.x86chk.Symbols\EXE\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1571,7 +2187,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u2\WindowsVista.6000.061101-2205.amd64chk.Symbols\EXE\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsVista.6000.061101-2205.amd64chk.Symbols\EXE\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1593,7 +2209,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u2\Windows_Longhorn.6001.080118-1840.x86fre.Symbols\EXE\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Longhorn.6001.080118-1840.x86fre.Symbols\EXE\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1615,7 +2231,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u2\Windows_Longhorn.6001.080118-1840.x86fre.Symbols\EXE\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Longhorn.6001.080118-1840.x86fre.Symbols\EXE\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1637,7 +2253,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u2\Windows_Longhorn.6001.080118-1840.amd64fre.Symbols\EXE\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Longhorn.6001.080118-1840.amd64fre.Symbols\EXE\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1659,7 +2275,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u2\Windows_Longhorn.6001.080118-1840.x86chk.Symbols\EXE\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Longhorn.6001.080118-1840.x86chk.Symbols\EXE\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1681,7 +2297,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u2\Windows_Longhorn.6001.080118-1840.x86chk.Symbols\EXE\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Longhorn.6001.080118-1840.x86chk.Symbols\EXE\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1703,7 +2319,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u2\Windows_Longhorn.6001.080118-1840.amd64chk.Symbols\EXE\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Longhorn.6001.080118-1840.amd64chk.Symbols\EXE\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1725,7 +2341,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u2\WindowsVista.6002.090410-1830.x86fre.Symbols\EXE\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsVista.6002.090410-1830.x86fre.Symbols\EXE\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1747,7 +2363,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u2\WindowsVista.6002.090410-1830.x86fre.Symbols\EXE\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsVista.6002.090410-1830.x86fre.Symbols\EXE\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1769,7 +2385,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u2\WindowsVista.6002.090410-1830.amd64fre.Symbols\EXE\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsVista.6002.090410-1830.amd64fre.Symbols\EXE\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1791,7 +2407,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u2\WindowsVista.6002.090410-1830.x86chk.Symbols\EXE\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsVista.6002.090410-1830.x86chk.Symbols\EXE\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1813,7 +2429,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u2\WindowsVista.6002.090410-1830.x86chk.Symbols\EXE\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsVista.6002.090410-1830.x86chk.Symbols\EXE\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1835,7 +2451,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u2\WindowsVista.6002.090410-1830.amd64chk.Symbols\EXE\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\WindowsVista.6002.090410-1830.amd64chk.Symbols\EXE\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1857,7 +2473,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u\Windows_Win7.7600.16385.090713-1255.X86FRE.Symbols\Symbols\ntkrnlmp.pdb\998A3472EEA6405CB8C089DE868F26222\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win7.7600.16385.090713-1255.X86FRE.Symbols\Symbols\ntkrpamp.pdb\5B308B4ED6464159B87117C711E7340C2\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1879,7 +2495,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u\Windows_Win7.7600.16385.090713-1255.X86FRE.Symbols\Symbols\ntkrpamp.pdb\5B308B4ED6464159B87117C711E7340C2\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win7.7600.16385.090713-1255.X86FRE.Symbols\Symbols\ntkrnlmp.pdb\998A3472EEA6405CB8C089DE868F26222\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1901,7 +2517,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u\Windows_Win7.7600.16385.090713-1255.X64FRE.Symbols\Symbols\ntkrnlmp.pdb\F8E2A8B5C9B74BF4A6E4A48F180099942\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win7.7600.16385.090713-1255.X64FRE.Symbols\Symbols\ntkrnlmp.pdb\F8E2A8B5C9B74BF4A6E4A48F180099942\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1923,7 +2539,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u\Windows_Win7.7600.16385.090713-1255.X86CHK.Symbols\Symbols\ntkrnlmp.pdb\9E7882E37C3E4AC9BB60F4EAD9DB492A1\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win7.7600.16385.090713-1255.X86CHK.Symbols\Symbols\ntkrnlmp.pdb\9E7882E37C3E4AC9BB60F4EAD9DB492A1\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1945,7 +2561,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u\Windows_Win7.7600.16385.090713-1255.X86CHK.Symbols\Symbols\ntkrpamp.pdb\3269AC66C11B41FC995991F129E95D5C1\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win7.7600.16385.090713-1255.X86CHK.Symbols\Symbols\ntkrpamp.pdb\3269AC66C11B41FC995991F129E95D5C1\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1967,7 +2583,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u\Windows_Win7.7600.16385.090713-1255.X64CHK.Symbols\Symbols\ntkrnlmp.pdb\C491E3167994497FA91338D08A7787041\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win7.7600.16385.090713-1255.X64CHK.Symbols\Symbols\ntkrnlmp.pdb\C491E3167994497FA91338D08A7787041\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -1989,7 +2605,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u\Windows_Win7SP1.7601.17514.101119-1850.X86FRE.Symbols\Symbols\ntkrnlmp.pdb\00625D7D36754CBEBA4533BA9A0F3FE22\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win7SP1.7601.17514.101119-1850.X86FRE.Symbols\Symbols\ntkrpamp.pdb\684DA42A30CC450F81C535B4D18944B12\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -2011,7 +2627,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u\Windows_Win7SP1.7601.17514.101119-1850.X86FRE.Symbols\Symbols\ntkrpamp.pdb\684DA42A30CC450F81C535B4D18944B12\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win7SP1.7601.17514.101119-1850.X86FRE.Symbols\Symbols\ntkrnlmp.pdb\00625D7D36754CBEBA4533BA9A0F3FE22\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -2033,7 +2649,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u\Windows_Win7SP1.7601.17514.101119-1850.AMD64FRE.Symbols\Symbols\ntkrnlmp.pdb\3844DBB920174967BE7AA4A2C20430FA2\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win7SP1.7601.17514.101119-1850.AMD64FRE.Symbols\Symbols\ntkrnlmp.pdb\3844DBB920174967BE7AA4A2C20430FA2\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -2055,7 +2671,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u\Windows_Win7SP1.7601.17514.101119-1850.X86CHK.Symbols\Symbols\ntkrnlmp.pdb\1477BEA3E003427CB248D5233B0601951\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win7SP1.7601.17514.101119-1850.X86CHK.Symbols\Symbols\ntkrpamp.pdb\C3355A163C47464183D85DE0B836F83A1\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -2077,7 +2693,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u\Windows_Win7SP1.7601.17514.101119-1850.X86CHK.Symbols\Symbols\ntkrpamp.pdb\C3355A163C47464183D85DE0B836F83A1\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win7SP1.7601.17514.101119-1850.X86CHK.Symbols\Symbols\ntkrnlmp.pdb\1477BEA3E003427CB248D5233B0601951\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -2099,7 +2715,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u\Windows_Win7SP1.7601.17514.101119-1850.AMD64CHK.Symbols\Symbols\ntkrnlmp.pdb\FF0DE75C807A4B85A7668D2113A62EF11\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win7SP1.7601.17514.101119-1850.AMD64CHK.Symbols\Symbols\ntkrnlmp.pdb\FF0DE75C807A4B85A7668D2113A62EF11\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -2121,7 +2737,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u\Windows_Win8.9200.16384.120725-1247.X86FRE.Symbols\Symbols\ntkrpamp.pdb\E2342527EA214C109CD28A19ED4FBCCE2\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win8.9200.16384.120725-1247.X86FRE.Symbols\Symbols\ntkrpamp.pdb\E2342527EA214C109CD28A19ED4FBCCE2\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -2143,7 +2759,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u\Windows_Win8.9200.16384.120725-1247.x64FRE.Symbols\Symbols\ntkrnlmp.pdb\724821001C1C4A03AED8C4C71C2E8D1D2\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win8.9200.16384.120725-1247.x64FRE.Symbols\Symbols\ntkrnlmp.pdb\724821001C1C4A03AED8C4C71C2E8D1D2\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -2165,7 +2781,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_X86
-    {   /* Source: d:\u\Windows_Win8.9200.16384.120725-1247.X86CHK.Symbols\Symbols\ntkrpamp.pdb\C4F414C9D1854DE495BDAD814A722C4D1\ntkrpamp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win8.9200.16384.120725-1247.X86CHK.Symbols\Symbols\ntkrpamp.pdb\C4F414C9D1854DE495BDAD814A722C4D1\ntkrpamp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
@@ -2187,7 +2803,7 @@ const RTNTSDBSET g_artNtSdbSets[] =
     },
 # endif
 # ifdef RT_ARCH_AMD64
-    {   /* Source: d:\u\Windows_Win8.9200.16384.120725-1247.x64CHK.Symbols\Symbols\ntkrnlmp.pdb\FC0361C3243D459496EE02EF1A7ACD271\ntkrnlmp.pdb */
+    {   /* Source: s:\WinSyms\u\Windows_Win8.9200.16384.120725-1247.x64CHK.Symbols\Symbols\ntkrnlmp.pdb\FC0361C3243D459496EE02EF1A7ACD271\ntkrnlmp.pdb */
         /*.OsVerInfo = */
         {
             /* .uMajorVer = */ 6,
