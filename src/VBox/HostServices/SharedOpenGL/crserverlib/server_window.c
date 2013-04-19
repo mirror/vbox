@@ -291,6 +291,11 @@ void crServerMuralTerm(CRMuralInfo *mural)
 
     if (mural->CreateInfo.pszDpyName)
         crFree(mural->CreateInfo.pszDpyName);
+
+    CrVrScrCompositorTerm(&mural->Compositor);
+
+    if (mural->fRootVrOn)
+        CrVrScrCompositorTerm(&mural->RootVrCompositor);
 }
 
 static void crServerCleanupCtxMuralRefsCB(unsigned long key, void *data1, void *data2)
@@ -389,11 +394,6 @@ crServerDispatchWindowDestroy( GLint window )
         pNode = pNode->next;
     }
 
-    CrVrScrCompositorTerm(&mural->Compositor);
-
-    if (mural->fRootVrOn)
-        CrVrScrCompositorTerm(&mural->RootVrCompositor);
-
     crHashtableDelete(cr_server.muralTable, window, crFree);
 }
 
@@ -464,6 +464,7 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
     /* NOTE: we can do it even if mural->fPresentMode == CR_SERVER_REDIR_F_NONE to make sure the compositor data is always up to date */
     /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
     /* CrVrScrCompositorLock(&mural->Compositor); */
+#if 0
     if (!mural->bReceivedRects)
     {
         rc = CrVrScrCompositorEntryRemove(&mural->Compositor, &mural->CEntry);
@@ -487,6 +488,7 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
         }
     }
     else
+#endif
     {
         rc = CrVrScrCompositorEntryTexUpdate(&mural->Compositor, &mural->CEntry, &Tex);
         if (!RT_SUCCESS(rc))
