@@ -1151,6 +1151,7 @@ int main()
     GEN_CHECK_OFF(AHCIPort, fResetDevice);
     GEN_CHECK_OFF(AHCIPort, fAsyncIOThreadIdle);
     GEN_CHECK_OFF(AHCIPort, fRedo);
+    GEN_CHECK_OFF(AHCIPort, fWrkThreadSleeping);
     GEN_CHECK_OFF(AHCIPort, cTotalSectors);
     GEN_CHECK_OFF(AHCIPort, cMultSectors);
     GEN_CHECK_OFF(AHCIPort, uATATransferMode);
@@ -1176,11 +1177,11 @@ int main()
     GEN_CHECK_OFF(AHCIPort, PCHSGeometry);
     GEN_CHECK_OFF(AHCIPort, Led);
     GEN_CHECK_OFF(AHCIPort, pAsyncIOThread);
-    GEN_CHECK_OFF(AHCIPort, AsyncIORequestSem);
 
     GEN_CHECK_OFF(AHCIPort, aCachedTasks);
     GEN_CHECK_OFF(AHCIPort, pTaskErr);
     GEN_CHECK_OFF(AHCIPort, pTrackList);
+    GEN_CHECK_OFF(AHCIPort, hEvtProcess);
     GEN_CHECK_OFF(AHCIPort, StatDMA);
     GEN_CHECK_OFF(AHCIPort, StatBytesWritten);
     GEN_CHECK_OFF(AHCIPort, StatBytesRead);
@@ -1244,6 +1245,7 @@ int main()
     GEN_CHECK_OFF(AHCI, cPortsImpl);
     GEN_CHECK_OFF(AHCI, cCmdSlotsAvail);
     GEN_CHECK_OFF(AHCI, f8ByteMMIO4BytesWrittenSuccessfully);
+    GEN_CHECK_OFF(AHCI, pSupDrvSession);
 #endif /* VBOX_WITH_AHCI */
 
 #ifdef VBOX_WITH_E1000
