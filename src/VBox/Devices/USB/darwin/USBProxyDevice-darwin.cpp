@@ -569,6 +569,7 @@ static void usbProxyDarwinUrbAsyncComplete(void *pvUrbOsX, IOReturn irc, void *S
         }
     }
 
+    Assert(pDevOsX->pInFlightHead == pUrbOsX);
     /*
      * Remove from the active list.
      */
@@ -577,10 +578,7 @@ static void usbProxyDarwinUrbAsyncComplete(void *pvUrbOsX, IOReturn irc, void *S
     if (pUrbOsX->pPrev)
         pUrbOsX->pPrev->pNext = pUrbOsX->pNext;
     else
-    {
-        Assert(pDevOsX->pInFlightHead == pUrbOsX);
         pDevOsX->pInFlightHead = pUrbOsX->pNext;
-    }
 
     /*
      * Link it into the taxing list.
@@ -1529,8 +1527,15 @@ static int usbProxyDarwinUrbQueue(PVUSBURB pUrb)
                      pUrb->pszDesc, pProxyDev->pUsbIns->pszName, pUrb->EndPt, pUrb->cbData));
             return false;
         }
+
+        if (!CFRunLoopContainsSource(CFRunLoopGetCurrent(), pIf->RunLoopSrcRef, g_pRunLoopMode))
+            CFRunLoopAddSource(CFRunLoopGetCurrent(), pIf->RunLoopSrcRef, g_pRunLoopMode);
+
     }
     /* else: pIf == NULL -> default control pipe.*/
+
+    if (!CFRunLoopContainsSource(CFRunLoopGetCurrent(), pDevOsX->RunLoopSrcRef, g_pRunLoopMode))
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), pDevOsX->RunLoopSrcRef, g_pRunLoopMode);
 
     /*
      * Allocate a Darwin urb.
@@ -1748,7 +1753,9 @@ static PVUSBURB usbProxyDarwinUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMill
     }
 
     if (pUrb)
-        LogFlow(("%s: usbProxyDarwinUrbReap: pProxyDev=%s returns %p\n", pUrb->pszDesc, pProxyDev->pUsbIns->pszName, pUrb));
+        LogFlowFunc(("LEAVE: %s: pProxyDev=%s returns %p\n", pUrb->pszDesc, pProxyDev->pUsbIns->pszName, pUrb));
+    else
+        LogFlowFunc(("LEAVE: NULL pProxyDev=%s returns NULL", pProxyDev->pUsbIns->pszName));
     return pUrb;
 }
 
