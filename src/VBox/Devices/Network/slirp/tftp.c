@@ -433,7 +433,7 @@ DECLINLINE(int) tftpSessionEvaluateOptions(PNATState pData, PTFTPSESSION pTftpSe
     rc = pftpSessionOpenFile(pData, pTftpSession, &hSessionFile);
     if (RT_FAILURE(rc))
     {
-        LogFlowFuncLeave();
+        LogFlowFuncLeaveRC(rc);
         return rc;
     }
 
@@ -441,13 +441,13 @@ DECLINLINE(int) tftpSessionEvaluateOptions(PNATState pData, PTFTPSESSION pTftpSe
     RTFileClose(hSessionFile);
     if (RT_FAILURE(rc))
     {
-        LogFlowFuncLeave();
+        LogFlowFuncLeaveRC(rc);
         return rc;
     }
 
     if (pTftpSession->OptionTSize.fRequested)
     {
-       pTftpSession->OptionTSize.u64Value = cbSessionFile;
+        pTftpSession->OptionTSize.u64Value = cbSessionFile;
     }
     if (   !pTftpSession->OptionBlkSize.u64Value
         && !pTftpSession->OptionBlkSize.fRequested)
@@ -569,7 +569,7 @@ DECLINLINE(int) tftpSendOACK(PNATState pData,
     rc = tftpSessionEvaluateOptions(pData, pTftpSession);
     if (RT_FAILURE(rc))
     {
-        tftpSendError(pData, pTftpSession, 2, "Internal Error (blksize evaluation)", pcTftpIpHeaderRecv);
+        tftpSendError(pData, pTftpSession, 2, "Option negotiation failure (file not found or inaccessible?)", pcTftpIpHeaderRecv);
         LogFlowFuncLeave();
         return -1;
     }
@@ -577,8 +577,6 @@ DECLINLINE(int) tftpSendOACK(PNATState pData,
     m = slirpTftpMbufAlloc(pData);
     if (!m)
         return -1;
-
-
 
     m->m_data += if_maxlinkhdr;
     m->m_pkthdr.header = mtod(m, void *);
@@ -756,9 +754,10 @@ static void tftpProcessACK(PNATState pData, PTFTPIPHDR pTftpIpHeader)
     if (RT_FAILURE(rc))
         return;
 
-    AssertReturnVoid(tftpSendData(pData,
-                                    pTftpSession,
-                                    RT_N2H_U16(pTftpIpHeader->Core.u16TftpOpCode), pTftpIpHeader) == 0);
+    if (tftpSendData(pData, pTftpSession,
+                     RT_N2H_U16(pTftpIpHeader->Core.u16TftpOpCode),
+                     pTftpIpHeader))
+        LogRel(("NAT TFTP: failure\n"));
 }
 
 int slirpTftpInit(PNATState pData)
