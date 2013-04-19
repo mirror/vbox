@@ -5940,9 +5940,16 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS);
             if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
             {
-                /* This field is cleared on all VM-exits except (VMX_EXIT_TPR_BELOW_THRESHOLD, VMX_EXIT_APIC_WRITE,
-                   VMX_EXIT_VIRTUALIZED_EOI, VMX_EXIT_MTF). See Intel spec. 27.3.4 "Saving Non-Register State". */
-                rc2 = VMXWriteVmcsGstN(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
+                /*
+                 * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD, VMX_EXIT_MTF
+                 * VMX_EXIT_APIC_WRITE, VMX_EXIT_VIRTUALIZED_EOI. See Intel spec. 27.3.4 "Saving Non-Register State".
+                 */
+#ifndef HMVMX_TRAP_ALL_EXCEPTIONS
+                /* Don't intercept the #DB resulting from the pending-debug exception. */
+                pVCpu->hm.s.vmx.u32XcptBitmap &= ~RT_BIT(X86_XCPT_DB);
+                rc2  = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
+#endif
+                rc2 |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
             }
         }
         else
@@ -8508,24 +8515,16 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         /* Resync DR7. */
         rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_DR7, pMixedCtx->dr[7]);
         AssertRCReturn(rc,rc);
-    }
 
-    /*
-     * If the #DB exception was meant for the guest, reflect it to the guest upon VM-reentry. If our hypervisor is
-     * simultaneously single-stepping with the guest, return to the debugger but also reflect #DB to the guest upon VM-reentry.
-     */
-    if (   rc == VINF_EM_RAW_GUEST_TRAP
-        || rc == VINF_EM_DBG_STEPPED)
-    {
         int rc2 = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
         rc2 |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
         rc2 |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
         AssertRCReturn(rc2, rc2);
         hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
                                pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode, 0 /* GCPtrFaultAddress */);
-        if (rc == VINF_EM_RAW_GUEST_TRAP)
-            rc = VINF_SUCCESS;
+        rc = VINF_SUCCESS;
     }
+
     return rc;
 }
 
