@@ -64,9 +64,6 @@
 #include "Performance.h"
 
 #include <iprt/asm.h>
-#if HC_ARCH_BITS == 32
-# include <iprt/asm-amd64-x86.h>
-#endif
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
