@@ -5832,9 +5832,9 @@ DECLINLINE(void) hmR0VmxSetIntWindowExitVmcs(PVMCPU pVCpu)
 static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     /* Get the current interruptibility-state of the guest and then figure out what can be injected. */
-    uint32_t uIntrState    = hmR0VmxGetGuestIntrState(pVCpu, pMixedCtx);
-    const bool fBlockMovSS = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
-    const bool fBlockSti   = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
+    uint32_t uIntrState = hmR0VmxGetGuestIntrState(pVCpu, pMixedCtx);
+    bool fBlockMovSS    = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
+    bool fBlockSti      = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
 
     Assert(!fBlockSti || (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS));
     Assert(   !(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI)      /* We don't support block-by-NMI and SMI yet.*/
@@ -5930,6 +5930,25 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      * VT-x clears the valid bit on every VM-exit. See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
      */
     int rc2 = hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
+
+    /*
+     * Delivery pending debug exception if the guest is single-stepping. The interruptibility-state could have been changed by
+     * hmR0VmxInjectEventVmcs() (e.g. real-on-v86 injecting software interrupts), re-evaluate it and set the BS bit.
+     */
+    fBlockMovSS    = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
+    fBlockSti      = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
+    if (   fBlockSti
+        || fBlockMovSS)
+    {
+        Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS);
+        if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
+        {
+            /* This field is cleared on all VM-exits except (VMX_EXIT_TPR_BELOW_THRESHOLD, VMX_EXIT_APIC_WRITE,
+               VMX_EXIT_VIRTUALIZED_EOI, VMX_EXIT_MTF). See Intel spec. 27.3.4 "Saving Non-Register State". */
+            rc2 |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
+        }
+    }
+
     AssertRC(rc2);
     Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET);
     return rc;
