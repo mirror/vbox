@@ -24,6 +24,7 @@
 #include <VBox/vmm/vmm.h>
 #include "MMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
