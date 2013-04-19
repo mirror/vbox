@@ -2061,7 +2061,10 @@ int remR3NotifyTrap(CPUX86State *env, uint32_t uTrap, uint32_t uErrorCode, RTGCP
             return VERR_REM_TOO_MANY_TRAPS;
         }
         if(pVM->rem.s.uPendingException != uTrap || pVM->rem.s.uPendingExcptEIP != env->eip || pVM->rem.s.uPendingExcptCR2 != env->cr[2])
+        {
+            Log(("remR3NotifyTrap: uTrap=%#x set as pending\n", uTrap));
             pVM->rem.s.cPendingExceptions = 1;
+        }
         pVM->rem.s.uPendingException = uTrap;
         pVM->rem.s.uPendingExcptEIP  = env->eip;
         pVM->rem.s.uPendingExcptCR2  = env->cr[2];
@@ -2496,14 +2499,14 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
         {
             switch (u8TrapNo)
             {
-                case 0x0e:
+                case X86_XCPT_PF:
                     pVM->rem.s.Env.cr[2] = TRPMGetFaultAddress(pVCpu);
                     /* fallthru */
-                case 0x0a: case 0x0b: case 0x0c: case 0x0d:
+                case X86_XCPT_TS: case X86_XCPT_NP: case X86_XCPT_SS: case X86_XCPT_GP:
                     pVM->rem.s.Env.error_code = TRPMGetErrorCode(pVCpu);
                     break;
 
-                case 0x11: case 0x08:
+                case X86_XCPT_AC: case X86_XCPT_DF:
                 default:
                     pVM->rem.s.Env.error_code = 0;
                     break;
@@ -2771,11 +2774,11 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         AssertRC(rc);
         switch (pVM->rem.s.Env.exception_index)
         {
-            case 0x0e:
+            case X86_XCPT_PF:
                 TRPMSetFaultAddress(pVCpu, pCtx->cr2);
                 /* fallthru */
-            case 0x0a: case 0x0b: case 0x0c: case 0x0d:
-            case 0x11: case 0x08: /* 0 */
+            case X86_XCPT_TS: case X86_XCPT_NP: case X86_XCPT_SS: case X86_XCPT_GP:
+            case X86_XCPT_AC: case X86_XCPT_DF: /* 0 */
                 TRPMSetErrorCode(pVCpu, pVM->rem.s.Env.error_code);
                 break;
         }
