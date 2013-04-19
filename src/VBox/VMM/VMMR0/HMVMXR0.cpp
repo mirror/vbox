@@ -67,29 +67,27 @@
 /**
  * Updated-guest-state flags.
  */
-#define HMVMX_UPDATED_GUEST_FPU                   RT_BIT(0)
-#define HMVMX_UPDATED_GUEST_RIP                   RT_BIT(1)
-#define HMVMX_UPDATED_GUEST_RSP                   RT_BIT(2)
-#define HMVMX_UPDATED_GUEST_RFLAGS                RT_BIT(3)
-#define HMVMX_UPDATED_GUEST_CR0                   RT_BIT(4)
-#define HMVMX_UPDATED_GUEST_CR3                   RT_BIT(5)
-#define HMVMX_UPDATED_GUEST_CR4                   RT_BIT(6)
-#define HMVMX_UPDATED_GUEST_GDTR                  RT_BIT(7)
-#define HMVMX_UPDATED_GUEST_IDTR                  RT_BIT(8)
-#define HMVMX_UPDATED_GUEST_LDTR                  RT_BIT(9)
-#define HMVMX_UPDATED_GUEST_TR                    RT_BIT(10)
-#define HMVMX_UPDATED_GUEST_SEGMENT_REGS          RT_BIT(11)
-#define HMVMX_UPDATED_GUEST_DEBUG                 RT_BIT(12)
-#define HMVMX_UPDATED_GUEST_FS_BASE_MSR           RT_BIT(13)
-#define HMVMX_UPDATED_GUEST_GS_BASE_MSR           RT_BIT(14)
-#define HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR       RT_BIT(15)
-#define HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR      RT_BIT(16)
-#define HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR      RT_BIT(17)
-#define HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  RT_BIT(18)
-#define HMVMX_UPDATED_GUEST_ACTIVITY_STATE        RT_BIT(19)
-#define HMVMX_UPDATED_GUEST_APIC_STATE            RT_BIT(20)
-#define HMVMX_UPDATED_GUEST_ALL                   (  HMVMX_UPDATED_GUEST_FPU                   \
-                                                   | HMVMX_UPDATED_GUEST_RIP                   \
+#define HMVMX_UPDATED_GUEST_RIP                   RT_BIT(0)
+#define HMVMX_UPDATED_GUEST_RSP                   RT_BIT(1)
+#define HMVMX_UPDATED_GUEST_RFLAGS                RT_BIT(2)
+#define HMVMX_UPDATED_GUEST_CR0                   RT_BIT(3)
+#define HMVMX_UPDATED_GUEST_CR3                   RT_BIT(4)
+#define HMVMX_UPDATED_GUEST_CR4                   RT_BIT(5)
+#define HMVMX_UPDATED_GUEST_GDTR                  RT_BIT(6)
+#define HMVMX_UPDATED_GUEST_IDTR                  RT_BIT(7)
+#define HMVMX_UPDATED_GUEST_LDTR                  RT_BIT(8)
+#define HMVMX_UPDATED_GUEST_TR                    RT_BIT(9)
+#define HMVMX_UPDATED_GUEST_SEGMENT_REGS          RT_BIT(10)
+#define HMVMX_UPDATED_GUEST_DEBUG                 RT_BIT(11)
+#define HMVMX_UPDATED_GUEST_FS_BASE_MSR           RT_BIT(12)
+#define HMVMX_UPDATED_GUEST_GS_BASE_MSR           RT_BIT(13)
+#define HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR       RT_BIT(14)
+#define HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR      RT_BIT(15)
+#define HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR      RT_BIT(16)
+#define HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  RT_BIT(17)
+#define HMVMX_UPDATED_GUEST_ACTIVITY_STATE        RT_BIT(18)
+#define HMVMX_UPDATED_GUEST_APIC_STATE            RT_BIT(19)
+#define HMVMX_UPDATED_GUEST_ALL                   (  HMVMX_UPDATED_GUEST_RIP                   \
                                                    | HMVMX_UPDATED_GUEST_RSP                   \
                                                    | HMVMX_UPDATED_GUEST_RFLAGS                \
                                                    | HMVMX_UPDATED_GUEST_CR0                   \
@@ -369,7 +367,6 @@ static const PFNVMEXITHANDLER g_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
  /* 58  VMX_EXIT_INVPCID                 */  hmR0VmxExitInvpcid,
  /* 59  VMX_EXIT_VMFUNC                  */  hmR0VmxExitSetPendingXcptUD
 };
-
 #endif /* HMVMX_USE_FUNCTION_TABLE */
 
 #ifdef VBOX_STRICT
@@ -4572,7 +4569,8 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVM pVM, PVMCPU pVCpu, PCP
 
 /**
  * Determines if an exception is a contributory exception. Contributory
- * exceptions are ones which can cause double-faults.
+ * exceptions are ones which can cause double-faults. Page-fault is
+ * intentionally not included here as it's a conditional contributory exception.
  *
  * @returns true if the exception is contributory, false otherwise.
  * @param   uVector     The exception vector.
@@ -4591,48 +4589,6 @@ DECLINLINE(bool) hmR0VmxIsContributoryXcpt(const uint32_t uVector)
             break;
     }
     return false;
-}
-
-
-/**
- * Determines if an exception is a benign exception. Benign exceptions
- * are ones which cannot cause double-faults.
- *
- * @returns true if the exception is benign, false otherwise.
- * @param   uVector     The exception vector.
- */
-DECLINLINE(bool) hmR0VmxIsBenignXcpt(const uint32_t uVector)
-{
-    if (   uVector == X86_XCPT_PF
-        || uVector == X86_XCPT_DF)
-    {
-        return false;
-    }
-
-    bool fIsBenignXcpt = !hmR0VmxIsContributoryXcpt(uVector);
-#ifdef VBOX_STRICT
-    switch (uVector)
-    {
-        case X86_XCPT_DB:
-        case X86_XCPT_NMI:
-        case X86_XCPT_BP:
-        case X86_XCPT_OF:
-        case X86_XCPT_BR:
-        case X86_XCPT_UD:
-        case X86_XCPT_NM:
-        case X86_XCPT_CO_SEG_OVERRUN:
-        case X86_XCPT_MF:
-        case X86_XCPT_AC:
-        case X86_XCPT_MC:
-        case X86_XCPT_XF:
-            AssertMsg(fIsBenignXcpt, ("%#x\n", uVector));
-            break;
-        default:
-            AssertMsg(!fIsBenignXcpt, ("%#x\n", uVector));
-            break;
-    }
-#endif
-    return fIsBenignXcpt;
 }
 
 
@@ -4725,7 +4681,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         {
             enmReflect = VMXREFLECTXCPT_XCPT;
             if (   hmR0VmxIsContributoryXcpt(uIdtVector)
-                     && uExitVector == X86_XCPT_PF)
+                && uExitVector == X86_XCPT_PF)
             {
                 GCPtrFaultAddress = pMixedCtx->cr2;
                 Log(("IDT: Contributory #PF uCR2=%#RGv\n", pMixedCtx->cr2));
@@ -4816,8 +4772,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
 DECLINLINE(int) hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
-    if (   !(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0)
-        || !(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_FPU))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0))
     {
         RTGCUINTREG uVal    = 0;
         RTCCUINTREG uShadow = 0;
@@ -4826,7 +4781,7 @@ DECLINLINE(int) hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertRCReturn(rc, rc);
         uVal = (uShadow & pVCpu->hm.s.vmx.cr0_mask) | (uVal & ~pVCpu->hm.s.vmx.cr0_mask);
         CPUMSetGuestCR0(pVCpu, uVal);
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_CR0 | HMVMX_UPDATED_GUEST_FPU;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_CR0;
     }
     return rc;
 }
