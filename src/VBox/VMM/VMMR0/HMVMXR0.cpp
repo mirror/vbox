@@ -35,9 +35,9 @@
 # include <VBox/vmm/rem.h>
 #endif
 #ifdef DEBUG_ramshankar
-#define VBOX_ALWAYS_SAVE_FULL_VTX_STATE
-#define VBOX_ALWAYS_SYNC_FULL_VTX_STATE
-#define VBOX_ALWAYS_TRAP_ALL_EXCEPTIONS
+#define HMVMX_SAVE_FULL_GUEST_STATE
+#define HMVMX_SYNC_FULL_GUEST_STATE
+#define HMVMX_TRAP_ALL_EXCEPTIONS
 #endif
 
 
@@ -45,100 +45,103 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 #if defined(RT_ARCH_AMD64)
-# define VMX_IS_64BIT_HOST_MODE()   (true)
+# define HMVMX_IS_64BIT_HOST_MODE()   (true)
 #elif defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-# define VMX_IS_64BIT_HOST_MODE()   (g_fVMXIs64bitHost != 0)
+# define HMVMX_IS_64BIT_HOST_MODE()   (g_fVMXIs64bitHost != 0)
 #else
-# define VMX_IS_64BIT_HOST_MODE()   (false)
+# define HMVMX_IS_64BIT_HOST_MODE()   (false)
 #endif
 
 /** Use the function table. */
 #define HMVMX_USE_FUNCTION_TABLE
 
+/** This bit indicates the segment selector is unusable in VT-x. */
+#define HMVMX_SEL_UNUSABLE                       RT_BIT(16)
 
-#define VMX_SEL_UNUSABLE                       RT_BIT(16)
-#define VMX_FLUSH_TAGGED_TLB_EPT_VPID          0
-#define VMX_FLUSH_TAGGED_TLB_EPT               1
-#define VMX_FLUSH_TAGGED_TLB_VPID              2
-#define VMX_FLUSH_TAGGED_TLB_NONE              3
+/** Determine which tagged-TLB flush handler to use. */
+#define HMVMX_FLUSH_TAGGED_TLB_EPT_VPID          0
+#define HMVMX_FLUSH_TAGGED_TLB_EPT               1
+#define HMVMX_FLUSH_TAGGED_TLB_VPID              2
+#define HMVMX_FLUSH_TAGGED_TLB_NONE              3
 
 /**
  * Updated-guest-state flags.
  */
-#define VMX_UPDATED_GUEST_FPU                   RT_BIT(0)
-#define VMX_UPDATED_GUEST_RIP                   RT_BIT(1)
-#define VMX_UPDATED_GUEST_RSP                   RT_BIT(2)
-#define VMX_UPDATED_GUEST_RFLAGS                RT_BIT(3)
-#define VMX_UPDATED_GUEST_CR0                   RT_BIT(4)
-#define VMX_UPDATED_GUEST_CR3                   RT_BIT(5)
-#define VMX_UPDATED_GUEST_CR4                   RT_BIT(6)
-#define VMX_UPDATED_GUEST_GDTR                  RT_BIT(7)
-#define VMX_UPDATED_GUEST_IDTR                  RT_BIT(8)
-#define VMX_UPDATED_GUEST_LDTR                  RT_BIT(9)
-#define VMX_UPDATED_GUEST_TR                    RT_BIT(10)
-#define VMX_UPDATED_GUEST_SEGMENT_REGS          RT_BIT(11)
-#define VMX_UPDATED_GUEST_DEBUG                 RT_BIT(12)
-#define VMX_UPDATED_GUEST_FS_BASE_MSR           RT_BIT(13)
-#define VMX_UPDATED_GUEST_GS_BASE_MSR           RT_BIT(14)
-#define VMX_UPDATED_GUEST_SYSENTER_CS_MSR       RT_BIT(15)
-#define VMX_UPDATED_GUEST_SYSENTER_EIP_MSR      RT_BIT(16)
-#define VMX_UPDATED_GUEST_SYSENTER_ESP_MSR      RT_BIT(17)
-#define VMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  RT_BIT(18)
-#define VMX_UPDATED_GUEST_ACTIVITY_STATE        RT_BIT(19)
-#define VMX_UPDATED_GUEST_APIC_STATE            RT_BIT(20)
-#define VMX_UPDATED_GUEST_ALL                   (  VMX_UPDATED_GUEST_FPU                   \
-                                                 | VMX_UPDATED_GUEST_RIP                   \
-                                                 | VMX_UPDATED_GUEST_RSP                   \
-                                                 | VMX_UPDATED_GUEST_RFLAGS                \
-                                                 | VMX_UPDATED_GUEST_CR0                   \
-                                                 | VMX_UPDATED_GUEST_CR3                   \
-                                                 | VMX_UPDATED_GUEST_CR4                   \
-                                                 | VMX_UPDATED_GUEST_GDTR                  \
-                                                 | VMX_UPDATED_GUEST_IDTR                  \
-                                                 | VMX_UPDATED_GUEST_LDTR                  \
-                                                 | VMX_UPDATED_GUEST_TR                    \
-                                                 | VMX_UPDATED_GUEST_SEGMENT_REGS          \
-                                                 | VMX_UPDATED_GUEST_DEBUG                 \
-                                                 | VMX_UPDATED_GUEST_FS_BASE_MSR           \
-                                                 | VMX_UPDATED_GUEST_GS_BASE_MSR           \
-                                                 | VMX_UPDATED_GUEST_SYSENTER_CS_MSR       \
-                                                 | VMX_UPDATED_GUEST_SYSENTER_EIP_MSR      \
-                                                 | VMX_UPDATED_GUEST_SYSENTER_ESP_MSR      \
-                                                 | VMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  \
-                                                 | VMX_UPDATED_GUEST_ACTIVITY_STATE        \
-                                                 | VMX_UPDATED_GUEST_APIC_STATE)
+#define HMVMX_UPDATED_GUEST_FPU                   RT_BIT(0)
+#define HMVMX_UPDATED_GUEST_RIP                   RT_BIT(1)
+#define HMVMX_UPDATED_GUEST_RSP                   RT_BIT(2)
+#define HMVMX_UPDATED_GUEST_RFLAGS                RT_BIT(3)
+#define HMVMX_UPDATED_GUEST_CR0                   RT_BIT(4)
+#define HMVMX_UPDATED_GUEST_CR3                   RT_BIT(5)
+#define HMVMX_UPDATED_GUEST_CR4                   RT_BIT(6)
+#define HMVMX_UPDATED_GUEST_GDTR                  RT_BIT(7)
+#define HMVMX_UPDATED_GUEST_IDTR                  RT_BIT(8)
+#define HMVMX_UPDATED_GUEST_LDTR                  RT_BIT(9)
+#define HMVMX_UPDATED_GUEST_TR                    RT_BIT(10)
+#define HMVMX_UPDATED_GUEST_SEGMENT_REGS          RT_BIT(11)
+#define HMVMX_UPDATED_GUEST_DEBUG                 RT_BIT(12)
+#define HMVMX_UPDATED_GUEST_FS_BASE_MSR           RT_BIT(13)
+#define HMVMX_UPDATED_GUEST_GS_BASE_MSR           RT_BIT(14)
+#define HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR       RT_BIT(15)
+#define HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR      RT_BIT(16)
+#define HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR      RT_BIT(17)
+#define HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  RT_BIT(18)
+#define HMVMX_UPDATED_GUEST_ACTIVITY_STATE        RT_BIT(19)
+#define HMVMX_UPDATED_GUEST_APIC_STATE            RT_BIT(20)
+#define HMVMX_UPDATED_GUEST_ALL                   (  HMVMX_UPDATED_GUEST_FPU                   \
+                                                   | HMVMX_UPDATED_GUEST_RIP                   \
+                                                   | HMVMX_UPDATED_GUEST_RSP                   \
+                                                   | HMVMX_UPDATED_GUEST_RFLAGS                \
+                                                   | HMVMX_UPDATED_GUEST_CR0                   \
+                                                   | HMVMX_UPDATED_GUEST_CR3                   \
+                                                   | HMVMX_UPDATED_GUEST_CR4                   \
+                                                   | HMVMX_UPDATED_GUEST_GDTR                  \
+                                                   | HMVMX_UPDATED_GUEST_IDTR                  \
+                                                   | HMVMX_UPDATED_GUEST_LDTR                  \
+                                                   | HMVMX_UPDATED_GUEST_TR                    \
+                                                   | HMVMX_UPDATED_GUEST_SEGMENT_REGS          \
+                                                   | HMVMX_UPDATED_GUEST_DEBUG                 \
+                                                   | HMVMX_UPDATED_GUEST_FS_BASE_MSR           \
+                                                   | HMVMX_UPDATED_GUEST_GS_BASE_MSR           \
+                                                   | HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR       \
+                                                   | HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR      \
+                                                   | HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR      \
+                                                   | HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  \
+                                                   | HMVMX_UPDATED_GUEST_ACTIVITY_STATE        \
+                                                   | HMVMX_UPDATED_GUEST_APIC_STATE)
 
 /**
- * Flags to skip redundant reads of some common VMCS fields.
+ * Flags to skip redundant reads of some common VMCS fields that are not part of
+ * the guest-CPU state but are in the transient structure.
  */
-#define VMX_TRANSIENT_IDT_VECTORING_INFO            RT_BIT(0)
-#define VMX_TRANSIENT_IDT_VECTORING_ERROR_CODE      RT_BIT(1)
-#define VMX_TRANSIENT_EXIT_QUALIFICATION            RT_BIT(2)
-#define VMX_TRANSIENT_EXIT_INSTR_LEN                RT_BIT(3)
-#define VMX_TRANSIENT_EXIT_INTERRUPTION_INFO        RT_BIT(4)
-#define VMX_TRANSIENT_EXIT_INTERRUPTION_ERROR_CODE  RT_BIT(5)
+#define HMVMX_UPDATED_TRANSIENT_IDT_VECTORING_INFO            RT_BIT(0)
+#define HMVMX_UPDATED_TRANSIENT_IDT_VECTORING_ERROR_CODE      RT_BIT(1)
+#define HMVMX_UPDATED_TRANSIENT_EXIT_QUALIFICATION            RT_BIT(2)
+#define HMVMX_UPDATED_TRANSIENT_EXIT_INSTR_LEN                RT_BIT(3)
+#define HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_INFO        RT_BIT(4)
+#define HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_ERROR_CODE  RT_BIT(5)
 
 /**
  * Exception bitmap mask for real-mode guests (real-on-v86). We need to intercept all exceptions manually (except #PF).
  * #NM is also handled spearetely, see hmR0VmxLoadGuestControlRegs(). #PF need not be intercepted even in real-mode if
  * we have Nested Paging support.
  */
-#define VMX_REAL_MODE_XCPT_BITMAP  ( RT_BIT(X86_XCPT_DE)             | RT_BIT(X86_XCPT_DB)    | RT_BIT(X86_XCPT_NMI)   \
-                                   | RT_BIT(X86_XCPT_BP)             | RT_BIT(X86_XCPT_OF)    | RT_BIT(X86_XCPT_BR)    \
-                                   | RT_BIT(X86_XCPT_UD)            /* RT_BIT(X86_XCPT_NM) */ | RT_BIT(X86_XCPT_DF)    \
-                                   | RT_BIT(X86_XCPT_CO_SEG_OVERRUN) | RT_BIT(X86_XCPT_TS)    | RT_BIT(X86_XCPT_NP)    \
-                                   | RT_BIT(X86_XCPT_SS)             | RT_BIT(X86_XCPT_GP)   /* RT_BIT(X86_XCPT_PF) */ \
-                                   | RT_BIT(X86_XCPT_MF)             | RT_BIT(X86_XCPT_AC)    | RT_BIT(X86_XCPT_MC)    \
-                                   | RT_BIT(X86_XCPT_XF))
+#define HMVMX_REAL_MODE_XCPT_MASK    (  RT_BIT(X86_XCPT_DE)             | RT_BIT(X86_XCPT_DB)    | RT_BIT(X86_XCPT_NMI)   \
+                                      | RT_BIT(X86_XCPT_BP)             | RT_BIT(X86_XCPT_OF)    | RT_BIT(X86_XCPT_BR)    \
+                                      | RT_BIT(X86_XCPT_UD)            /* RT_BIT(X86_XCPT_NM) */ | RT_BIT(X86_XCPT_DF)    \
+                                      | RT_BIT(X86_XCPT_CO_SEG_OVERRUN) | RT_BIT(X86_XCPT_TS)    | RT_BIT(X86_XCPT_NP)    \
+                                      | RT_BIT(X86_XCPT_SS)             | RT_BIT(X86_XCPT_GP)   /* RT_BIT(X86_XCPT_PF) */ \
+                                      | RT_BIT(X86_XCPT_MF)             | RT_BIT(X86_XCPT_AC)    | RT_BIT(X86_XCPT_MC)    \
+                                      | RT_BIT(X86_XCPT_XF))
 
 /**
  * Exception bitmap mask for all contributory exceptions.
  */
-#define VMX_CONTRIBUTORY_XCPT_BITMAP  ( RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_TS) \
-                                      | RT_BIT(X86_XCPT_DE))
+#define HMVMX_CONTRIBUTORY_XCPT_MASK  ( RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_TS) \
+                                       | RT_BIT(X86_XCPT_DE))
 
 /** Maximum VM-instruction error number. */
-#define VMX_INSTR_ERROR_MAX     28
+#define HMVMX_INSTR_ERROR_MAX     28
 
 
 /*******************************************************************************
@@ -183,7 +186,7 @@ typedef struct VMXTRANSIENT
     /** IDT-vectoring error code. */
     uint32_t        uIdtVectoringErrorCode;
 
-    /** Mask of currently read VMCS fields; VMX_TRANSIENT_*. */
+    /** Mask of currently read VMCS fields; HMVMX_UPDATED_TRANSIENT_*. */
     uint32_t        fVmcsFieldsRead;
     /** Whether TSC-offsetting should be setup before VM-entry. */
     bool            fUpdateTscOffsettingAndPreemptTimer;
@@ -370,7 +373,7 @@ static const PFNVMEXITHANDLER g_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
 #endif /* HMVMX_USE_FUNCTION_TABLE */
 
 #ifdef VBOX_STRICT
-static const char * const g_apszVmxInstrErrors[VMX_INSTR_ERROR_MAX + 1] =
+static const char * const g_apszVmxInstrErrors[HMVMX_INSTR_ERROR_MAX + 1] =
 {
     /*  0 */ "(Not Used)",
     /*  1 */ "VMCALL executed in VMX root operation.",
@@ -492,11 +495,11 @@ DECLINLINE(int) hmR0VmxReadEntryInstrLenVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTra
  */
 DECLINLINE(int) hmR0VmxReadExitIntrInfoVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    if (!(pVmxTransient->fVmcsFieldsRead & VMX_TRANSIENT_EXIT_INTERRUPTION_INFO))
+    if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_INFO))
     {
         int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO, &pVmxTransient->uExitIntrInfo);
         AssertRCReturn(rc, rc);
-        pVmxTransient->fVmcsFieldsRead |= VMX_TRANSIENT_EXIT_INTERRUPTION_INFO;
+        pVmxTransient->fVmcsFieldsRead |= HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_INFO;
     }
     return VINF_SUCCESS;
 }
@@ -512,11 +515,11 @@ DECLINLINE(int) hmR0VmxReadExitIntrInfoVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
  */
 DECLINLINE(int) hmR0VmxReadExitIntrErrorCodeVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    if (!(pVmxTransient->fVmcsFieldsRead & VMX_TRANSIENT_EXIT_INTERRUPTION_ERROR_CODE))
+    if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_ERROR_CODE))
     {
         int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE, &pVmxTransient->uExitIntrErrorCode);
         AssertRCReturn(rc, rc);
-        pVmxTransient->fVmcsFieldsRead |= VMX_TRANSIENT_EXIT_INTERRUPTION_ERROR_CODE;
+        pVmxTransient->fVmcsFieldsRead |= HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_ERROR_CODE;
     }
     return VINF_SUCCESS;
 }
@@ -532,11 +535,11 @@ DECLINLINE(int) hmR0VmxReadExitIntrErrorCodeVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVm
  */
 DECLINLINE(int) hmR0VmxReadExitInstrLenVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    if (!(pVmxTransient->fVmcsFieldsRead & VMX_TRANSIENT_EXIT_INSTR_LEN))
+    if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INSTR_LEN))
     {
         int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INSTR_LENGTH, &pVmxTransient->cbInstr);
         AssertRCReturn(rc, rc);
-        pVmxTransient->fVmcsFieldsRead |= VMX_TRANSIENT_EXIT_INSTR_LEN;
+        pVmxTransient->fVmcsFieldsRead |= HMVMX_UPDATED_TRANSIENT_EXIT_INSTR_LEN;
     }
     return VINF_SUCCESS;
 }
@@ -551,11 +554,11 @@ DECLINLINE(int) hmR0VmxReadExitInstrLenVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
  */
 DECLINLINE(int) hmR0VmxReadExitQualificationVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    if (!(pVmxTransient->fVmcsFieldsRead & VMX_TRANSIENT_EXIT_QUALIFICATION))
+    if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_QUALIFICATION))
     {
         int rc = VMXReadVmcsGstN(VMX_VMCS_RO_EXIT_QUALIFICATION, &pVmxTransient->uExitQualification);
         AssertRCReturn(rc, rc);
-        pVmxTransient->fVmcsFieldsRead |= VMX_TRANSIENT_EXIT_QUALIFICATION;
+        pVmxTransient->fVmcsFieldsRead |= HMVMX_UPDATED_TRANSIENT_EXIT_QUALIFICATION;
     }
     return VINF_SUCCESS;
 }
@@ -572,11 +575,11 @@ DECLINLINE(int) hmR0VmxReadExitQualificationVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVm
  */
 DECLINLINE(int) hmR0VmxReadIdtVectoringInfoVmcs(PVMXTRANSIENT pVmxTransient)
 {
-    if (!(pVmxTransient->fVmcsFieldsRead & VMX_TRANSIENT_IDT_VECTORING_INFO))
+    if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_IDT_VECTORING_INFO))
     {
         int rc = VMXReadVmcs32(VMX_VMCS32_RO_IDT_INFO, &pVmxTransient->uIdtVectoringInfo);
         AssertRCReturn(rc, rc);
-        pVmxTransient->fVmcsFieldsRead |= VMX_TRANSIENT_IDT_VECTORING_INFO;
+        pVmxTransient->fVmcsFieldsRead |= HMVMX_UPDATED_TRANSIENT_IDT_VECTORING_INFO;
     }
     return VINF_SUCCESS;
 }
@@ -591,11 +594,11 @@ DECLINLINE(int) hmR0VmxReadIdtVectoringInfoVmcs(PVMXTRANSIENT pVmxTransient)
  */
 DECLINLINE(int) hmR0VmxReadIdtVectoringErrorCodeVmcs(PVMXTRANSIENT pVmxTransient)
 {
-    if (!(pVmxTransient->fVmcsFieldsRead & VMX_TRANSIENT_IDT_VECTORING_ERROR_CODE))
+    if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_IDT_VECTORING_ERROR_CODE))
     {
         int rc = VMXReadVmcs32(VMX_VMCS32_RO_IDT_ERROR_CODE, &pVmxTransient->uIdtVectoringErrorCode);
         AssertRCReturn(rc, rc);
-        pVmxTransient->fVmcsFieldsRead |= VMX_TRANSIENT_IDT_VECTORING_ERROR_CODE;
+        pVmxTransient->fVmcsFieldsRead |= HMVMX_UPDATED_TRANSIENT_IDT_VECTORING_ERROR_CODE;
     }
     return VINF_SUCCESS;
 }
@@ -1463,10 +1466,10 @@ DECLINLINE(void) hmR0VmxFlushTaggedTlb(PVMCPU pVCpu)
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     switch (pVM->hm.s.vmx.uFlushTaggedTlb)
     {
-        case VMX_FLUSH_TAGGED_TLB_EPT_VPID: hmR0VmxFlushTaggedTlbBoth(pVM, pVCpu); break;
-        case VMX_FLUSH_TAGGED_TLB_EPT:      hmR0VmxFlushTaggedTlbEpt(pVM, pVCpu);  break;
-        case VMX_FLUSH_TAGGED_TLB_VPID:     hmR0VmxFlushTaggedTlbVpid(pVM, pVCpu); break;
-        case VMX_FLUSH_TAGGED_TLB_NONE:     hmR0VmxFlushTaggedTlbNone(pVM, pVCpu); break;
+        case HMVMX_FLUSH_TAGGED_TLB_EPT_VPID: hmR0VmxFlushTaggedTlbBoth(pVM, pVCpu); break;
+        case HMVMX_FLUSH_TAGGED_TLB_EPT:      hmR0VmxFlushTaggedTlbEpt(pVM, pVCpu);  break;
+        case HMVMX_FLUSH_TAGGED_TLB_VPID:     hmR0VmxFlushTaggedTlbVpid(pVM, pVCpu); break;
+        case HMVMX_FLUSH_TAGGED_TLB_NONE:     hmR0VmxFlushTaggedTlbNone(pVM, pVCpu); break;
         default:
             AssertMsgFailed(("Invalid flush-tag function identifier\n"));
             break;
@@ -1554,13 +1557,13 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
      * Setup the handler for flushing tagged-TLBs.
      */
     if (pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid)
-        pVM->hm.s.vmx.uFlushTaggedTlb = VMX_FLUSH_TAGGED_TLB_EPT_VPID;
+        pVM->hm.s.vmx.uFlushTaggedTlb = HMVMX_FLUSH_TAGGED_TLB_EPT_VPID;
     else if (pVM->hm.s.fNestedPaging)
-        pVM->hm.s.vmx.uFlushTaggedTlb = VMX_FLUSH_TAGGED_TLB_EPT;
+        pVM->hm.s.vmx.uFlushTaggedTlb = HMVMX_FLUSH_TAGGED_TLB_EPT;
     else if (pVM->hm.s.vmx.fVpid)
-        pVM->hm.s.vmx.uFlushTaggedTlb = VMX_FLUSH_TAGGED_TLB_VPID;
+        pVM->hm.s.vmx.uFlushTaggedTlb = HMVMX_FLUSH_TAGGED_TLB_VPID;
     else
-        pVM->hm.s.vmx.uFlushTaggedTlb = VMX_FLUSH_TAGGED_TLB_NONE;
+        pVM->hm.s.vmx.uFlushTaggedTlb = HMVMX_FLUSH_TAGGED_TLB_NONE;
     return VINF_SUCCESS;
 }
 
@@ -1872,7 +1875,7 @@ static int hmR0VmxInitXcptBitmap(PVM pVM, PVMCPU pVCpu)
 static int hmR0VmxInitUpdatedGuestStateMask(PVMCPU pVCpu)
 {
     /* Initially the guest-state is up-to-date as there is nothing in the VMCS. */
-    pVCpu->hm.s.vmx.fUpdatedGuestState = VMX_UPDATED_GUEST_ALL;
+    pVCpu->hm.s.vmx.fUpdatedGuestState = HMVMX_UPDATED_GUEST_ALL;
     return VINF_SUCCESS;
 }
 
@@ -2043,7 +2046,7 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
 
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     /* For the darwin 32-bit hybrid kernel, we need the 64-bit CR3 as it uses 64-bit paging. */
-    if (VMX_IS_64BIT_HOST_MODE())
+    if (HMVMX_IS_64BIT_HOST_MODE())
     {
         uint64_t uReg = hmR0Get64bitCR3();
         rc |= VMXWriteVmcs64(VMX_VMCS_HOST_CR3, uReg);
@@ -2085,7 +2088,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
      * Host Selector registers.
      */
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    if (VMX_IS_64BIT_HOST_MODE())
+    if (HMVMX_IS_64BIT_HOST_MODE())
     {
         uSelCS = (RTSEL)(uintptr_t)&SUPR0Abs64bitKernelCS;
         uSelSS = (RTSEL)(uintptr_t)&SUPR0Abs64bitKernelSS;
@@ -2149,7 +2152,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     RTGDTR Gdtr;
     RT_ZERO(Gdtr);
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    if (VMX_IS_64BIT_HOST_MODE())
+    if (HMVMX_IS_64BIT_HOST_MODE())
     {
         X86XDTR64 Gtr64;
         X86XDTR64 Idtr64;
@@ -2182,7 +2185,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 
     PCX86DESCHC pDesc = (PCX86DESCHC)(Gdtr.pGdt + (uSelTR & X86_SEL_MASK));
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    if (VMX_IS_64BIT_HOST_MODE())
+    if (HMVMX_IS_64BIT_HOST_MODE())
     {
         /* We need the 64-bit TR base for hybrid darwin. */
         uint64_t u64TRBase = X86DESC64_BASE((PX86DESC64)pDesc);
@@ -2207,7 +2210,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
      * would take care of the bases. In 64-bit, the MSRs come into play.
      */
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-    if (VMX_IS_64BIT_HOST_MODE())
+    if (HMVMX_IS_64BIT_HOST_MODE())
     {
         uint64_t u64FSBase = ASMRdMsr(MSR_K8_FS_BASE);
         uint64_t u64GSBase = ASMRdMsr(MSR_K8_GS_BASE);
@@ -2255,7 +2258,7 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     }
 
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-    if (VMX_IS_64BIT_HOST_MODE())
+    if (HMVMX_IS_64BIT_HOST_MODE())
     {
         pHostMsr->u32IndexMSR  = MSR_K6_STAR;
         pHostMsr->u32Reserved  = 0;
@@ -2293,7 +2296,7 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
      */
     rc |= VMXWriteVmcs32(VMX_VMCS32_HOST_SYSENTER_CS,    ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    if (VMX_IS_64BIT_HOST_MODE())
+    if (HMVMX_IS_64BIT_HOST_MODE())
     {
         rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_ESP,   ASMRdMsr(MSR_IA32_SYSENTER_ESP));
         rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_EIP,   ASMRdMsr(MSR_IA32_SYSENTER_EIP));
@@ -2400,7 +2403,7 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedC
 
         /* Set the host long mode active (EFER.LMA) bit (which Intel calls "Host address-space size") if necessary. */
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (VMX_IS_64BIT_HOST_MODE())
+        if (HMVMX_IS_64BIT_HOST_MODE())
             val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE;
         else
             Assert(!(val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE));
@@ -2522,8 +2525,8 @@ DECLINLINE(uint32_t) hmR0VmxGetGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     {
         /* If inhibition is active, RIP & RFLAGS should've been accessed (i.e. read previously from the VMCS or from ring-3). */
-        AssertMsg((pVCpu->hm.s.vmx.fUpdatedGuestState & (VMX_UPDATED_GUEST_RIP | VMX_UPDATED_GUEST_RFLAGS))
-                   == (VMX_UPDATED_GUEST_RIP | VMX_UPDATED_GUEST_RFLAGS), ("%#x\n", pVCpu->hm.s.vmx.fUpdatedGuestState));
+        AssertMsg((pVCpu->hm.s.vmx.fUpdatedGuestState & (HMVMX_UPDATED_GUEST_RIP | HMVMX_UPDATED_GUEST_RFLAGS))
+                   == (HMVMX_UPDATED_GUEST_RIP | HMVMX_UPDATED_GUEST_RFLAGS), ("%#x\n", pVCpu->hm.s.vmx.fUpdatedGuestState));
         if (pMixedCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
         {
             /*
@@ -2756,12 +2759,12 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
         {
             Assert(PDMVmmDevHeapIsEnabled(pVM));
             Assert(pVM->hm.s.vmx.pRealModeTSS);
-            pVCpu->hm.s.vmx.u32XcptBitmap |= VMX_REAL_MODE_XCPT_BITMAP;
+            pVCpu->hm.s.vmx.u32XcptBitmap |= HMVMX_REAL_MODE_XCPT_MASK;
             fInterceptNM = true;
             fInterceptMF = true;
         }
         else
-            pVCpu->hm.s.vmx.u32XcptBitmap &= ~VMX_REAL_MODE_XCPT_BITMAP;
+            pVCpu->hm.s.vmx.u32XcptBitmap &= ~HMVMX_REAL_MODE_XCPT_MASK;
 
         if (fInterceptNM)
             pVCpu->hm.s.vmx.u32XcptBitmap |= RT_BIT(X86_XCPT_NM);
@@ -3154,7 +3157,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                || !(pCtx->cs.Attr.n.u1Granularity));
         Assert(   !(pCtx->cs.u32Limit & 0xfff00000)
                || (pCtx->cs.Attr.n.u1Granularity));
-        Assert(pCtx->cs.Attr.u && pCtx->cs.Attr.u != VMX_SEL_UNUSABLE);  /* CS cannot be loaded with NULL in protected mode. */
+        Assert(pCtx->cs.Attr.u && pCtx->cs.Attr.u != HMVMX_SEL_UNUSABLE);  /* CS cannot be loaded with NULL in protected mode. */
         if (pCtx->cs.Attr.n.u4Type == 9 || pCtx->cs.Attr.n.u4Type == 11)
             Assert(pCtx->cs.Attr.n.u2Dpl == pCtx->ss.Attr.n.u2Dpl);
         else if (pCtx->cs.Attr.n.u4Type == 13 || pCtx->cs.Attr.n.u4Type == 15)
@@ -3162,7 +3165,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         else
             AssertMsgFailed(("Invalid CS Type %#x\n", pCtx->cs.Attr.n.u2Dpl));
         /* SS */
-        if (pCtx->ss.Attr.u && pCtx->ss.Attr.u != VMX_SEL_UNUSABLE)
+        if (pCtx->ss.Attr.u && pCtx->ss.Attr.u != HMVMX_SEL_UNUSABLE)
         {
             Assert((pCtx->ss.Sel & X86_SEL_RPL) == (pCtx->cs.Sel & X86_SEL_RPL));
             Assert(pCtx->ss.Attr.n.u4Type == 3 || pCtx->ss.Attr.n.u4Type == 7);
@@ -3181,7 +3184,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             Assert(!pCtx->ss.Attr.n.u2Dpl);
 #endif
         /* DS, ES, FS, GS - only check for usable selectors, see hmR0VmxWriteSegmentReg(). */
-        if (pCtx->ds.Attr.u && pCtx->ds.Attr.u != VMX_SEL_UNUSABLE)
+        if (pCtx->ds.Attr.u && pCtx->ds.Attr.u != HMVMX_SEL_UNUSABLE)
         {
             Assert(pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
             Assert(pCtx->ds.Attr.n.u1Present);
@@ -3195,7 +3198,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             Assert(   !(pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_CODE)
                    || (pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_READ));
         }
-        if (pCtx->es.Attr.u && pCtx->es.Attr.u != VMX_SEL_UNUSABLE)
+        if (pCtx->es.Attr.u && pCtx->es.Attr.u != HMVMX_SEL_UNUSABLE)
         {
             Assert(pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
             Assert(pCtx->es.Attr.n.u1Present);
@@ -3209,7 +3212,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             Assert(   !(pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_CODE)
                    || (pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_READ));
         }
-        if (pCtx->fs.Attr.u && pCtx->fs.Attr.u != VMX_SEL_UNUSABLE)
+        if (pCtx->fs.Attr.u && pCtx->fs.Attr.u != HMVMX_SEL_UNUSABLE)
         {
             Assert(pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
             Assert(pCtx->fs.Attr.n.u1Present);
@@ -3223,7 +3226,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             Assert(   !(pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_CODE)
                    || (pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_READ));
         }
-        if (pCtx->gs.Attr.u && pCtx->gs.Attr.u != VMX_SEL_UNUSABLE)
+        if (pCtx->gs.Attr.u && pCtx->gs.Attr.u != HMVMX_SEL_UNUSABLE)
         {
             Assert(pCtx->gs.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
             Assert(pCtx->gs.Attr.n.u1Present);
@@ -3339,11 +3342,11 @@ DECLINLINE(int) hmR0VmxWriteSegmentReg(PVM pVM, PVMCPU pVCpu, uint32_t idxSel, u
          * loaded in protected-mode have their attribute as 0.
          */
         if (!u32Access)
-            u32Access = VMX_SEL_UNUSABLE;
+            u32Access = HMVMX_SEL_UNUSABLE;
     }
 
     /* Validate segment access rights. Refer to Intel spec. "26.3.1.2 Checks on Guest Segment Registers". */
-    AssertMsg((u32Access == VMX_SEL_UNUSABLE) || (u32Access & X86_SEL_TYPE_ACCESSED),
+    AssertMsg((u32Access == HMVMX_SEL_UNUSABLE) || (u32Access & X86_SEL_TYPE_ACCESSED),
               ("Access bit not set for usable segment. idx=%#x sel=%#x attr %#x\n", idxBase, pSelReg, pSelReg->Attr.u));
 
     rc = VMXWriteVmcs32(idxAccess, u32Access);           /* 32-bit guest segment access-rights field. */
@@ -3470,7 +3473,7 @@ DECLINLINE(int) hmR0VmxLoadGuestSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
         Assert(!(u16Sel & RT_BIT(2)));
         AssertMsg(   (u32AccessRights & 0xf) == X86_SEL_TYPE_SYS_386_TSS_BUSY
                   || (u32AccessRights & 0xf) == X86_SEL_TYPE_SYS_286_TSS_BUSY, ("TSS is not busy!? %#x\n", u32AccessRights));
-        AssertMsg(!(u32AccessRights & VMX_SEL_UNUSABLE), ("TR unusable bit is not clear!? %#x\n", u32AccessRights));
+        AssertMsg(!(u32AccessRights & HMVMX_SEL_UNUSABLE), ("TR unusable bit is not clear!? %#x\n", u32AccessRights));
         Assert(!(u32AccessRights & RT_BIT(4)));           /* System MBZ.*/
         Assert(u32AccessRights & RT_BIT(7));              /* Present MB1.*/
         Assert(!(u32AccessRights & 0xf00));               /* 11:8 MBZ. */
@@ -3512,7 +3515,7 @@ DECLINLINE(int) hmR0VmxLoadGuestSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
         /* The unusable bit is specific to VT-x, if it's a null selector mark it as an unusable segment. */
         uint32_t u32Access = 0;
         if (!pCtx->ldtr.Attr.u)
-            u32Access = VMX_SEL_UNUSABLE;
+            u32Access = HMVMX_SEL_UNUSABLE;
         else
             u32Access = pCtx->ldtr.Attr.u;
 
@@ -3523,7 +3526,7 @@ DECLINLINE(int) hmR0VmxLoadGuestSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx
         AssertRCReturn(rc, rc);
 
         /* Validate. */
-        if (!(u32Access & VMX_SEL_UNUSABLE))
+        if (!(u32Access & HMVMX_SEL_UNUSABLE))
         {
             Assert(!(pCtx->ldtr.Sel & RT_BIT(2)));              /* TI MBZ. */
             Assert(pCtx->ldtr.Attr.n.u4Type == 2);              /* Type MB2 (LDT). */
@@ -3804,10 +3807,10 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                                                                     pVmxTransient->uExitReason));
                 Log(("Exit Qualification %#x\n", pVmxTransient->uExitQualification));
                 Log(("InstrError         %#x\n", pVCpu->hm.s.vmx.lasterror.u32InstrError));
-                if (pVCpu->hm.s.vmx.lasterror.u32InstrError <= VMX_INSTR_ERROR_MAX)
+                if (pVCpu->hm.s.vmx.lasterror.u32InstrError <= HMVMX_INSTR_ERROR_MAX)
                     Log(("InstrError Desc.  \"%s\"\n", g_apszVmxInstrErrors[pVCpu->hm.s.vmx.lasterror.u32InstrError]));
                 else
-                    Log(("InstrError Desc.    Range exceeded %u\n", VMX_INSTR_ERROR_MAX));
+                    Log(("InstrError Desc.    Range exceeded %u\n", HMVMX_INSTR_ERROR_MAX));
 
                 /* VMX control bits. */
                 uint32_t    u32Val;
@@ -3951,7 +3954,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 rc = VMXReadVmcsHstN(VMX_VMCS_HOST_RIP, &uHCReg); AssertRC(rc);
                 Log(("Host RIP %#RHv\n", uHCReg));
 # if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-                if (VMX_IS_64BIT_HOST_MODE())
+                if (HMVMX_IS_64BIT_HOST_MODE())
                 {
                     Log(("MSR_K6_EFER            = %#RX64\n", ASMRdMsr(MSR_K6_EFER)));
                     Log(("MSR_K6_STAR            = %#RX64\n", ASMRdMsr(MSR_K6_STAR)));
@@ -4748,7 +4751,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 GCPtrFaultAddress = pMixedCtx->cr2;
                 Log(("IDT: Vectoring #PF uCR2=%#RGv\n", pMixedCtx->cr2));
             }
-            else if (   (pVCpu->hm.s.vmx.u32XcptBitmap & VMX_CONTRIBUTORY_XCPT_BITMAP)
+            else if (   (pVCpu->hm.s.vmx.u32XcptBitmap & HMVMX_CONTRIBUTORY_XCPT_MASK)
                      && hmR0VmxIsContributoryXcpt(uExitVector)
                      && (   hmR0VmxIsContributoryXcpt(uIdtVector)
                          || uIdtVector == X86_XCPT_PF))
@@ -4827,8 +4830,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
 DECLINLINE(int) hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
-    if (   !(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_CR0)
-        || !(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_FPU))
+    if (   !(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0)
+        || !(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_FPU))
     {
         RTGCUINTREG uVal    = 0;
         RTCCUINTREG uShadow = 0;
@@ -4837,7 +4840,7 @@ DECLINLINE(int) hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertRCReturn(rc, rc);
         uVal = (uShadow & pVCpu->hm.s.vmx.cr0_mask) | (uVal & ~pVCpu->hm.s.vmx.cr0_mask);
         CPUMSetGuestCR0(pVCpu, uVal);
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_CR0 | VMX_UPDATED_GUEST_FPU;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_CR0 | HMVMX_UPDATED_GUEST_FPU;
     }
     return rc;
 }
@@ -4857,7 +4860,7 @@ DECLINLINE(int) hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 DECLINLINE(int) hmR0VmxSaveGuestCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_CR4))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR4))
     {
         RTGCUINTREG uVal    = 0;
         RTCCUINTREG uShadow = 0;
@@ -4866,7 +4869,7 @@ DECLINLINE(int) hmR0VmxSaveGuestCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertRCReturn(rc, rc);
         uVal = (uShadow & pVCpu->hm.s.vmx.cr4_mask) | (uVal & ~pVCpu->hm.s.vmx.cr4_mask);
         CPUMSetGuestCR4(pVCpu, uVal);
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_CR4;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_CR4;
     }
     return rc;
 }
@@ -4885,14 +4888,14 @@ DECLINLINE(int) hmR0VmxSaveGuestCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(int) hmR0VmxSaveGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    if (pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_RIP)
+    if (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RIP)
         return VINF_SUCCESS;
 
     RTGCUINTREG uVal = 0;
     int rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &uVal);
     AssertRCReturn(rc, rc);
     pMixedCtx->rip = uVal;
-    pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_RIP;
+    pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RIP;
     return rc;
 }
 
@@ -4910,14 +4913,14 @@ DECLINLINE(int) hmR0VmxSaveGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(int) hmR0VmxSaveGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    if (pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_RSP)
+    if (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RSP)
         return VINF_SUCCESS;
 
     RTGCUINTREG uVal = 0;
     int rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &uVal);
     AssertRCReturn(rc, rc);
     pMixedCtx->rsp = uVal;
-    pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_RSP;
+    pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RSP;
     return rc;
 }
 
@@ -4935,7 +4938,7 @@ DECLINLINE(int) hmR0VmxSaveGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(int) hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    if (pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_RFLAGS)
+    if (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS)
         return VINF_SUCCESS;
 
     RTGCUINTREG uVal = 0;
@@ -4953,7 +4956,7 @@ DECLINLINE(int) hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         pMixedCtx->eflags.Bits.u2IOPL = pVCpu->hm.s.vmx.RealMode.eflags.Bits.u2IOPL;
     }
 
-    pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_RFLAGS;
+    pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RFLAGS;
     return rc;
 }
 
@@ -5017,7 +5020,7 @@ DECLINLINE(void) hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 DECLINLINE(int) hmR0VmxSaveGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     /* Nothing to do for now until we make use of different guest-CPU activity state. Just update the flag. */
-    pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_ACTIVITY_STATE;
+    pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_ACTIVITY_STATE;
     return VINF_SUCCESS;
 }
 
@@ -5037,26 +5040,26 @@ DECLINLINE(int) hmR0VmxSaveGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 DECLINLINE(int) hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_SYSENTER_CS_MSR))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR))
     {
         uint32_t u32Val = 0;
         rc = VMXReadVmcs32(VMX_VMCS32_GUEST_SYSENTER_CS, &u32Val);     AssertRCReturn(rc, rc);
         pMixedCtx->SysEnter.cs = u32Val;
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_SYSENTER_CS_MSR;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR;
     }
 
     RTGCUINTREG uGCVal = 0;
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_SYSENTER_EIP_MSR))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR))
     {
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_SYSENTER_EIP, &uGCVal);    AssertRCReturn(rc, rc);
         pMixedCtx->SysEnter.eip = uGCVal;
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_SYSENTER_EIP_MSR;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR;
     }
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_SYSENTER_ESP_MSR))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR))
     {
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_SYSENTER_ESP, &uGCVal);    AssertRCReturn(rc, rc);
         pMixedCtx->SysEnter.esp = uGCVal;
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_SYSENTER_ESP_MSR;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR;
     }
     return rc;
 }
@@ -5078,11 +5081,11 @@ DECLINLINE(int) hmR0VmxSaveGuestFSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     RTGCUINTREG uVal = 0;
     int rc = VINF_SUCCESS;
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_FS_BASE_MSR))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_FS_BASE_MSR))
     {
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_FS_BASE, &uVal);   AssertRCReturn(rc, rc);
         pMixedCtx->fs.u64Base = uVal;
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_FS_BASE_MSR;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_FS_BASE_MSR;
     }
     return rc;
 }
@@ -5104,11 +5107,11 @@ DECLINLINE(int) hmR0VmxSaveGuestGSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     RTGCUINTREG uVal = 0;
     int rc = VINF_SUCCESS;
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_GS_BASE_MSR))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_GS_BASE_MSR))
     {
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_GS_BASE, &uVal);   AssertRCReturn(rc, rc);
         pMixedCtx->gs.u64Base = uVal;
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_GS_BASE_MSR;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_GS_BASE_MSR;
     }
     return rc;
 }
@@ -5128,7 +5131,7 @@ DECLINLINE(int) hmR0VmxSaveGuestGSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    if (pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS)
+    if (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS)
         return VINF_SUCCESS;
 
     for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cGuestMsrs; i++)
@@ -5153,7 +5156,7 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             }
         }
     }
-    pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS;
+    pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS;
     return VINF_SUCCESS;
 }
 
@@ -5184,7 +5187,7 @@ DECLINLINE(int) hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     AssertRCReturn(rc, rc);
 
     /* Guest CR3. Only changes with Nested Paging. This must be done -after- saving CR0 and CR4 from the guest! */
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_CR3))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR3))
     {
         PVM pVM = pVCpu->CTX_SUFF(pVM);
         if (   pVM->hm.s.fNestedPaging
@@ -5214,7 +5217,7 @@ DECLINLINE(int) hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             AssertRCReturn(rc, rc);
         }
 
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_CR3;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_CR3;
     }
     return rc;
 }
@@ -5260,10 +5263,10 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
      * If VT-x marks the segment as unusable, the rest of the attributes are undefined.
      * See Intel spec. 27.3.2 "Saving Segment Registers and Descriptor-Table Registers.
      */
-    if (pSelReg->Attr.u & VMX_SEL_UNUSABLE)
+    if (pSelReg->Attr.u & HMVMX_SEL_UNUSABLE)
     {
         Assert(idxSel != VMX_VMCS16_GUEST_FIELD_TR);
-        pSelReg->Attr.u = VMX_SEL_UNUSABLE;
+        pSelReg->Attr.u = HMVMX_SEL_UNUSABLE;
     }
     return rc;
 }
@@ -5296,7 +5299,7 @@ static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
 
     /* Guest segment registers. */
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_SEGMENT_REGS))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_SEGMENT_REGS))
     {
         rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
         rc |= VMXLOCAL_READ_SEG(CS, cs);
@@ -5317,41 +5320,41 @@ static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             pMixedCtx->fs.Attr.u = pVCpu->hm.s.vmx.RealMode.uAttrFS.u;
             pMixedCtx->gs.Attr.u = pVCpu->hm.s.vmx.RealMode.uAttrGS.u;
         }
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_SEGMENT_REGS;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_SEGMENT_REGS;
     }
 
     /* Guest LDTR. */
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_LDTR))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_LDTR))
     {
         rc = VMXLOCAL_READ_SEG(LDTR, ldtr);
         AssertRCReturn(rc, rc);
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_LDTR;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_LDTR;
     }
 
     /* Guest GDTR. */
     RTGCUINTREG uGCVal = 0;
     uint32_t    u32Val = 0;
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_GDTR))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_GDTR))
     {
         rc  = VMXReadVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE, &uGCVal);
         rc |= VMXReadVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, &u32Val);  AssertRCReturn(rc, rc);
         pMixedCtx->gdtr.pGdt  = uGCVal;
         pMixedCtx->gdtr.cbGdt = u32Val;
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_GDTR;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_GDTR;
     }
 
     /* Guest IDTR. */
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_IDTR))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_IDTR))
     {
         rc  = VMXReadVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE, &uGCVal);
         rc |= VMXReadVmcs32(VMX_VMCS32_GUEST_IDTR_LIMIT, &u32Val);   AssertRCReturn(rc, rc);
         pMixedCtx->idtr.pIdt  = uGCVal;
         pMixedCtx->idtr.cbIdt = u32Val;
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_IDTR;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_IDTR;
     }
 
     /* Guest TR. */
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_TR))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_TR))
     {
         rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
 
@@ -5359,7 +5362,7 @@ static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (!pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
             rc |= VMXLOCAL_READ_SEG(TR, tr);
         AssertRCReturn(rc, rc);
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_TR;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_TR;
     }
     return rc;
 }
@@ -5380,13 +5383,13 @@ static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 DECLINLINE(int) hmR0VmxSaveGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
-    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_DEBUG))
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_DEBUG))
     {
         RTGCUINTREG uVal;
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_DR7, &uVal);          AssertRCReturn(rc, rc);
         pMixedCtx->dr[7] = uVal;
 
-        pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_DEBUG;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_DEBUG;
     }
     return rc;
 }
@@ -5406,7 +5409,7 @@ DECLINLINE(int) hmR0VmxSaveGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 DECLINLINE(int) hmR0VmxSaveGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     /* Updating TPR is already done in hmR0VmxPostRunGuest(). Just update the flag. */
-    pVCpu->hm.s.vmx.fUpdatedGuestState |= VMX_UPDATED_GUEST_APIC_STATE;
+    pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_APIC_STATE;
     return VINF_SUCCESS;
 }
 
@@ -5426,7 +5429,7 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(pVCpu);
     Assert(pMixedCtx);
 
-    if (pVCpu->hm.s.vmx.fUpdatedGuestState == VMX_UPDATED_GUEST_ALL)
+    if (pVCpu->hm.s.vmx.fUpdatedGuestState == HMVMX_UPDATED_GUEST_ALL)
         return VINF_SUCCESS;
 
     VMMRZCallRing3Disable(pVCpu);
@@ -5463,7 +5466,7 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     rc = hmR0VmxSaveGuestApicState(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestDebugRegs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
-    AssertMsg(pVCpu->hm.s.vmx.fUpdatedGuestState == VMX_UPDATED_GUEST_ALL,
+    AssertMsg(pVCpu->hm.s.vmx.fUpdatedGuestState == HMVMX_UPDATED_GUEST_ALL,
               ("Missed guest state bits while saving state; residue %RX32\n", pVCpu->hm.s.vmx.fUpdatedGuestState));
 
     VMMRZCallRing3Enable(pVCpu);
@@ -5732,7 +5735,7 @@ static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
     int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
-    Assert(pVCpu->hm.s.vmx.fUpdatedGuestState == VMX_UPDATED_GUEST_ALL);
+    Assert(pVCpu->hm.s.vmx.fUpdatedGuestState == HMVMX_UPDATED_GUEST_ALL);
     AssertRC(rc);
 
     /* Restore FPU state if necessary and resync on next R0 reentry .*/
@@ -5892,7 +5895,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     const bool fBlockMovSS = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
     const bool fBlockSti   = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
 
-    Assert(!fBlockSti || (pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_RFLAGS));
+    Assert(!fBlockSti || (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS));
     Assert(   !(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI)      /* We don't support block-by-NMI and SMI yet.*/
            && !(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI));
     Assert(!fBlockSti || pMixedCtx->eflags.Bits.u1IF);       /* Cannot set block-by-STI when interrupts are disabled. */
@@ -6586,7 +6589,7 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
     /* Load the required guest state bits (for guest-state changes in the inner execution loop). */
     Assert(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_CONTEXT));
     Log4(("LoadFlags=%#RX32\n", pVCpu->hm.s.fContextUseFlags));
-#ifdef VBOX_ALWAYS_SYNC_FULL_VTX_STATE
+#ifdef HMVMX_SYNC_FULL_GUEST_STATE
     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
 #endif
     int rc = VINF_SUCCESS;
@@ -6713,7 +6716,7 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     {
         /* Update the guest interruptibility-state from the VMCS. */
         hmR0VmxSaveGuestIntrState(pVCpu, pMixedCtx);
-#if defined(VBOX_ALWAYS_SYNC_FULL_VTX_STATE) || defined(VBOX_ALWAYS_SAVE_FULL_VTX_STATE)
+#if defined(HMVMX_SYNC_FULL_GUEST_STATE) || defined(HMVMX_SAVE_FULL_GUEST_STATE)
         rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
         AssertRC(rc);
 #endif
@@ -7694,7 +7697,7 @@ static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
         if (   pMixedCtx->ecx >= MSR_IA32_X2APIC_START
             && pMixedCtx->ecx <= MSR_IA32_X2APIC_END)
         {
-            Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & VMX_UPDATED_GUEST_APIC_STATE);
+            Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_APIC_STATE);
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_GUEST_APIC_STATE;
         }
         else if (pMixedCtx->ecx == MSR_K6_EFER)         /* EFER is the only MSR we auto-load but don't allow write-passthrough. */
@@ -8838,7 +8841,7 @@ static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     int rc =  hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
-    Assert(pVmxTransient->fVmcsFieldsRead & VMX_TRANSIENT_EXIT_INTERRUPTION_INFO);
+    Assert(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_INFO);
     hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
                            pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode, 0 /* GCPtrFaultAddress */);
     return VINF_SUCCESS;
