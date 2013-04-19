@@ -54,7 +54,7 @@ typedef struct RTHTTPINTERNAL
     /** custom headers */
     struct curl_slist *pHeaders;
     /** CA certificate for HTTPS authentication check */
-    const char *pcszCAFile;
+    char *pcszCAFile;
     /** abort the current HTTP request if true */
     bool fAbort;
 } RTHTTPINTERNAL;
@@ -128,6 +128,9 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp)
 
     if (pHttpInt->pHeaders)
         curl_slist_free_all(pHttpInt->pHeaders);
+
+    if (pHttpInt->pcszCAFile)
+        RTStrFree(pHttpInt->pcszCAFile);
 
     RTMemFree(pHttpInt);
 
@@ -292,7 +295,9 @@ RTR3DECL(int) RTHttpSetCAFile(RTHTTP hHttp, const char *pcszCAFile)
     PRTHTTPINTERNAL pHttpInt = hHttp;
     RTHTTP_VALID_RETURN(pHttpInt);
 
-    pHttpInt->pcszCAFile = pcszCAFile;
+    if (pHttpInt->pcszCAFile)
+        RTStrFree(pHttpInt->pcszCAFile);
+    pHttpInt->pcszCAFile = RTStrDup(pcszCAFile);
 
     return VINF_SUCCESS;
 }
