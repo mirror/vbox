@@ -111,8 +111,8 @@ typedef MYSET *PMYSET;
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Set if verbose operation (-v, --verbose). */
-static bool     g_fOptVerbose = false;
+/** Verbosity level (-v, --verbose). */
+static uint32_t g_iOptVerbose = 1;
 /** Set if we should force ahead despite errors. */
 static bool     g_fOptForce = false;
 
@@ -145,7 +145,7 @@ static RTLISTANCHOR g_SetList;
  */
 static void MyDbgPrintf(const char *pszFormat, ...)
 {
-    if (g_fOptVerbose)
+    if (g_iOptVerbose > 1)
     {
         va_list va;
         va_start(va, pszFormat);
@@ -653,8 +653,12 @@ static RTEXITCODE findMembers(HANDLE hFake, uint64_t uModAddr, uint32_t idxType,
  * @param   hFake           Fake process handle.
  * @param   uModAddr        The module address.
  * @param   pszLogTag       The log tag.
+ * @param   pszPdb          The full PDB path.
+ * @param   pOsVerInfo      The OS version info for altering the error handling
+ *                          for older OSes.
  */
-static RTEXITCODE findStructures(HANDLE hFake, uint64_t uModAddr, const char *pszLogTag)
+static RTEXITCODE findStructures(HANDLE hFake, uint64_t uModAddr, const char *pszLogTag, const char *pszPdb,
+                                 PCRTNTSDBOSVER pOsVerInfo)
 {
     RTEXITCODE   rcExit   = RTEXITCODE_SUCCESS;
     PSYMBOL_INFO pSymInfo = (PSYMBOL_INFO)alloca(sizeof(*pSymInfo));
@@ -663,7 +667,12 @@ static RTEXITCODE findStructures(HANDLE hFake, uint64_t uModAddr, const char *ps
         pSymInfo->SizeOfStruct = sizeof(*pSymInfo);
         pSymInfo->MaxNameLen   = 0;
         if (!SymGetTypeFromName(hFake, uModAddr, g_aStructs[iStruct].pszName, pSymInfo))
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Failed to find _KPRCB: %u\n", pszLogTag, GetLastError());
+        {
+            if (!(pOsVerInfo->uMajorVer == 5 && pOsVerInfo->uMinorVer == 0) /* w2k */)
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "%s: Failed to find _KPRCB: %u\n", pszPdb, GetLastError());
+            RTMsgInfo("%s: Skipping - failed to find _KPRCB: %u\n", pszPdb, GetLastError());
+            return RTEXITCODE_SKIPPED;
+        }
 
         MyDbgPrintf(" %s: TypeIndex=%u\n", g_aStructs[iStruct].pszName, pSymInfo->TypeIndex);
         MyDbgPrintf(" %s: Size=%u (%#x)\n", g_aStructs[iStruct].pszName, pSymInfo->Size, pSymInfo->Size);
@@ -755,6 +764,12 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
             uint32_t    uBuildNo;   /**< UINT32_MAX means the number immediately after the prefix. */
         } const s_aSymPacks[] =
         {
+            { RT_STR_TUPLE("w2kSP1SYM"),                        5, 0, 1, 2195 },
+            { RT_STR_TUPLE("w2ksp2srp1"),                       5, 0, 2, 2195 },
+            { RT_STR_TUPLE("w2ksp2sym"),                        5, 0, 2, 2195 },
+            { RT_STR_TUPLE("w2ksp3sym"),                        5, 0, 3, 2195 },
+            { RT_STR_TUPLE("w2ksp4sym"),                        5, 0, 4, 2195 },
+            { RT_STR_TUPLE("Windows2000-KB891861"),             5, 0, 4, 2195 },
             { RT_STR_TUPLE("windowsxp"),                        5, 1, 0, 2600 },
             { RT_STR_TUPLE("xpsp1sym"),                         5, 1, 1, 2600 },
             { RT_STR_TUPLE("WindowsXP-KB835935-SP2-"),          5, 1, 2, 2600 },
@@ -830,7 +845,9 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
             pVerInfo->fChecked = false;
             *penmArch = MYARCH_AMD64;
         }
-        else if (RTStrIStr(pszComp, "DEBUG"))
+        else if (   RTStrIStr(pszComp, "DEBUG")
+                 || RTStrIStr(pszComp, "_chk")
+                 )
         {
             pVerInfo->fChecked = true;
             *penmArch = MYARCH_X86;
@@ -843,23 +860,7 @@ static RTEXITCODE FigurePdbVersionInfo(const char *pszPdb, PRTNTSDBOSVER pVerInf
         return RTEXITCODE_SUCCESS;
     }
 
-
-    /*
-     * testing only
-     */
-    if (strIEndsWith(pszPdb, "ntkrnlmp.pdb\\B2DA40502FA744C18B9022FD187ADB592\\ntkrnlmp.pdb"))
-    {
-        pVerInfo->uMajorVer = 6;
-        pVerInfo->uMinorVer = 1;
-        pVerInfo->fChecked  = false;
-        pVerInfo->uCsdNo    = 1;
-        pVerInfo->uBuildNo  = 7601;
-    }
-    else
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Giving up on '%s'...\n", pszPdb);
-
-
-    return RTEXITCODE_SUCCESS;
+    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Giving up on '%s'...\n", pszPdb);
 }
 
 
@@ -910,7 +911,7 @@ static RTEXITCODE processPdb(const char *pszPdb)
         /*
          * Find the structures.
          */
-        rcExit = findStructures(hFake, uModAddr, szLogTag);
+        rcExit = findStructures(hFake, uModAddr, szLogTag, pszPdb, &OsVerInfo);
         if (rcExit == RTEXITCODE_SUCCESS)
             rcExit = checkThatWeFoundEverything();
         if (rcExit == RTEXITCODE_SUCCESS)
@@ -926,12 +927,46 @@ static RTEXITCODE processPdb(const char *pszPdb)
 
     if (!SymCleanup(hFake))
         rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "SymCleanup failed: %u\n", GetLastError());
+
+    if (rcExit == RTEXITCODE_SKIPPED)
+        rcExit = RTEXITCODE_SUCCESS;
     return rcExit;
 }
 
 
 /** The size of the directory entry buffer we're using.  */
 #define MY_DIRENTRY_BUF_SIZE (sizeof(RTDIRENTRYEX) + RTPATH_MAX)
+
+/**
+ * Checks if the name is of interest to us.
+ *
+ * @returns true/false.
+ * @param   pszName             The name.
+ * @param   cchName             The length of the name.
+ */
+static bool isInterestingName(const char *pszName, size_t cchName)
+{
+    static struct { const char *psz; size_t cch; } const s_aNames[] =
+    {
+        RT_STR_TUPLE("ntoskrnl.pdb"),
+        RT_STR_TUPLE("ntkrnlmp.pdb"),
+        RT_STR_TUPLE("ntkrnlpa.pdb"),
+        RT_STR_TUPLE("ntkrpamp.pdb"),
+    };
+
+    if (   cchName == s_aNames[0].cch
+        && (pszName[0] == 'n' || pszName[0] == 'N')
+        && (pszName[1] == 't' || pszName[1] == 'T')
+       )
+    {
+        int i = RT_ELEMENTS(s_aNames);
+        while (i-- > 0)
+            if (   s_aNames[i].cch == cchName
+                && !RTStrICmp(s_aNames[i].psz, pszName))
+                return true;
+    }
+    return false;
+}
 
 
 /**
@@ -942,7 +977,7 @@ static RTEXITCODE processPdb(const char *pszPdb)
  * @param   cchDir              The length of pszDir in pszDir.
  * @param   pDirEntry           Pointer to the directory buffer.
  */
-static RTEXITCODE processDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX pDirEntry)
+static RTEXITCODE processDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX pDirEntry, int iLogDepth)
 {
     Assert(cchDir > 0); Assert(pszDir[cchDir] == '\0');
 
@@ -989,49 +1024,37 @@ static RTEXITCODE processDirSub(char *pszDir, size_t cchDir, PRTDIRENTRYEX pDirE
 
         if (RTFS_IS_FILE(pDirEntry->Info.Attr.fMode))
         {
-            /* Is this a file which might interest us? */
-            static struct { const char *psz; size_t cch; } const s_aNames[] =
+            /*
+             * Process debug info files of interest.
+             */
+            if (isInterestingName(pDirEntry->szName, pDirEntry->cbName))
             {
-                RT_STR_TUPLE("ntoskrnl.dbg"),
-                RT_STR_TUPLE("ntoskrnl.pdb"),
-                RT_STR_TUPLE("ntkrnlmp.dbg"),
-                RT_STR_TUPLE("ntkrnlmp.pdb"),
-                RT_STR_TUPLE("ntkrnlpa.pdb"),
-                RT_STR_TUPLE("ntkrnlpa.dbg"),
-                RT_STR_TUPLE("ntkrpamp.pdb"),
-                RT_STR_TUPLE("ntkrpamp.dbg"),
-            };
-            if (   pDirEntry->cbName == sizeof("ntkrpamp.dbg") - 1
-                && (pDirEntry->szName[0] == 'n' || pDirEntry->szName[0] == 'N')
-                && (pDirEntry->szName[1] == 't' || pDirEntry->szName[1] == 'T')
-               )
-            {
-                int i = RT_ELEMENTS(s_aNames);
-                while (i-- > 0)
-                    if (   s_aNames[i].cch == pDirEntry->cbName
-                        && !RTStrICmp(s_aNames[i].psz, pDirEntry->szName))
-                    {
-                        /*
-                         * Found debug info file of interest, process it.
-                         */
-                        memcpy(&pszDir[cchDir], pDirEntry->szName, pDirEntry->cbName + 1);
-                        RTEXITCODE rcExit2 = processPdb(pszDir);
-                        if (rcExit2 != RTEXITCODE_SUCCESS)
-                            rcExit = rcExit2;
-                        break;
-                    }
+                memcpy(&pszDir[cchDir], pDirEntry->szName, pDirEntry->cbName + 1);
+                RTEXITCODE rcExit2 = processPdb(pszDir);
+                if (rcExit2 != RTEXITCODE_SUCCESS)
+                    rcExit = rcExit2;
             }
         }
         else if (RTFS_IS_DIRECTORY(pDirEntry->Info.Attr.fMode))
         {
             /*
-             * Recurse into the subdirectory.
+             * Recurse into the subdirectory.  In order to speed up Win7+
+             * symbol pack traversals, we skip directories with ".pdb" suffixes
+             * unless they match any of the .pdb files we're looking for.
+             *
              * Note! When we get back pDirEntry will be invalid.
              */
-            memcpy(&pszDir[cchDir], pDirEntry->szName, pDirEntry->cbName + 1);
-            RTEXITCODE rcExit2 = processDirSub(pszDir, cchDir + pDirEntry->cbName, pDirEntry);
-            if (rcExit2 != RTEXITCODE_SUCCESS)
-                rcExit = rcExit2;
+            if (   pDirEntry->cbName <= 4
+                || RTStrICmp(&pDirEntry->szName[pDirEntry->cbName - 4], ".pdb")
+                || isInterestingName(pDirEntry->szName, pDirEntry->cbName))
+            {
+                memcpy(&pszDir[cchDir], pDirEntry->szName, pDirEntry->cbName + 1);
+                if (iLogDepth > 0)
+                    RTMsgInfo("%s%s ...\n", pszDir, RTPATH_SLASH_STR);
+                RTEXITCODE rcExit2 = processDirSub(pszDir, cchDir + pDirEntry->cbName, pDirEntry, iLogDepth - 1);
+                if (rcExit2 != RTEXITCODE_SUCCESS)
+                    rcExit = rcExit2;
+            }
         }
     }
     if (rc != VERR_NO_MORE_FILES)
@@ -1062,7 +1085,7 @@ static RTEXITCODE processDir(const char *pszDir)
         uint8_t         abPadding[MY_DIRENTRY_BUF_SIZE];
         RTDIRENTRYEX    DirEntry;
     } uBuf;
-    return processDirSub(szPath, strlen(szPath), &uBuf.DirEntry);
+    return processDirSub(szPath, strlen(szPath), &uBuf.DirEntry, g_iOptVerbose);
 }
 
 
@@ -1082,6 +1105,7 @@ int main(int argc, char **argv)
         { "--force",            'f', RTGETOPT_REQ_NOTHING },
         { "--output",           'o', RTGETOPT_REQ_STRING  },
         { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
+        { "--quiet",            'q', RTGETOPT_REQ_NOTHING },
     };
 
     RTEXITCODE  rcExit      = RTEXITCODE_SUCCESS;
@@ -1101,7 +1125,11 @@ int main(int argc, char **argv)
                 break;
 
             case 'v':
-                g_fOptVerbose = true;
+                g_iOptVerbose++;
+                break;
+
+            case 'q':
+                g_iOptVerbose++;
                 break;
 
             case 'o':
@@ -1113,7 +1141,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'h':
-                RTPrintf("usage: %s [-v|--verbose] [-f|--force] [-o|--output <file.h>] <dir1|pdb1> [...]\n"
+                RTPrintf("usage: %s [-v|--verbose] [-q|--quiet] [-f|--force] [-o|--output <file.h>] <dir1|pdb1> [...]\n"
                          "   or: %s [-V|--version]\n"
                          "   or: %s [-h|--help]\n",
                          argv[0], argv[0], argv[0]);
