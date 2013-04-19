@@ -608,7 +608,14 @@ void crStateSwitchPostprocess(CRContext *toCtx, CRContext *fromCtx, GLuint idDra
         GLenum err;
         while ((err = diff_api.GetError()) != GL_NO_ERROR)
         {
-            crWarning("gl error (0x%x) after context switch, ignoring..", err);
+            static int cErrPrints = 0;
+#ifndef DEBUG_misha
+            if (cErrPrints < 5)
+#endif
+            {
+                ++cErrPrints;
+                crWarning("gl error (0x%x) after context switch, ignoring.. (%d out of 5) ..", err, cErrPrints);
+            }
         }
     }
 #ifdef CR_EXT_framebuffer_object
