@@ -39,6 +39,7 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/err.h>
 #include <VBox/pci.h>
+#include <VBox/sup.h>
 #include <iprt/stdarg.h>
 
 
@@ -3601,6 +3602,16 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(uint64_t, pfnTMTimeVirtGetNano,(PPDMDEVINS pDevIns));
 
+    /**
+     * Gets the support driver session.
+     *
+     * This is intended for working with the semaphore API.
+     *
+     * @returns Support driver session handle.
+     * @param   pDrvIns         The driver instance.
+     */
+    DECLR3CALLBACKMEMBER(PSUPDRVSESSION, pfnGetSupDrvSession,(PPDMDEVINS pDevIns));
+
     /** @} */
 
     /** Just a safety precaution. (PDM_DEVHLPR3_VERSION) */
@@ -3613,7 +3624,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 11, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 12, 0)
 
 
 /**
@@ -5189,6 +5200,13 @@ DECLINLINE(void) PDMDevHlpGetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t 
     pDevIns->pHlpR3->pfnGetCpuId(pDevIns, iLeaf, pEax, pEbx, pEcx, pEdx);
 }
 
+/*
+ * @copydoc PDMDEVHLPR3::pfnGetSupDrvSession
+ */
+DECLINLINE(PSUPDRVSESSION) PDMDevHlpGetSupDrvSession(PPDMDEVINS pDevIns)
+{
+    return pDevIns->pHlpR3->pfnGetSupDrvSession(pDevIns);
+}
 #endif /* IN_RING3 */
 #ifdef IN_RING0
 
