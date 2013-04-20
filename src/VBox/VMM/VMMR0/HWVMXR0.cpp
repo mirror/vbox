@@ -5052,6 +5052,7 @@ end:
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit1, x);
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExitToR3);
     Log2(("X"));
     return VBOXSTRICTRC_TODO(rc);
 }
@@ -5133,6 +5134,10 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     int rc = VMXClearVMCS(pVCpu->hm.s.vmx.HCPhysVmcs);
     AssertRC(rc);
 
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitIO, y1);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
     return VINF_SUCCESS;
 }
 

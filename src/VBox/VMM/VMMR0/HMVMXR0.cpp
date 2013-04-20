@@ -2554,7 +2554,7 @@ DECLINLINE(uint32_t) hmR0VmxGetGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * @param pVCpu         Pointer to the VMCPU.
  * @param uIntrState    The interruptibility-state to set.
  */
-DECLINLINE(int) hmR0VmxLoadGuestIntrState(PVMCPU pVCpu, uint32_t uIntrState)
+static int hmR0VmxLoadGuestIntrState(PVMCPU pVCpu, uint32_t uIntrState)
 {
     AssertMsg(!(uIntrState & 0xfffffff0), ("%#x\n", uIntrState));   /* Bits 31:4 MBZ. */
     Assert((uIntrState & 0x3) != 0x3);                              /* Block-by-STI and MOV SS cannot be simultaneously set. */
@@ -2575,7 +2575,7 @@ DECLINLINE(int) hmR0VmxLoadGuestIntrState(PVMCPU pVCpu, uint32_t uIntrState)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxLoadGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxLoadGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_RIP)
@@ -2600,7 +2600,7 @@ DECLINLINE(int) hmR0VmxLoadGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxLoadGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxLoadGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_RSP)
@@ -2624,7 +2624,7 @@ DECLINLINE(int) hmR0VmxLoadGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxLoadGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxLoadGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_RFLAGS)
@@ -2670,7 +2670,7 @@ DECLINLINE(int) hmR0VmxLoadGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxLoadGuestRipRspRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxLoadGuestRipRspRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = hmR0VmxLoadGuestRip(pVCpu, pMixedCtx);
     rc    |= hmR0VmxLoadGuestRsp(pVCpu, pMixedCtx);
@@ -2692,7 +2692,7 @@ DECLINLINE(int) hmR0VmxLoadGuestRipRspRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     int rc  = VINF_SUCCESS;
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -3041,7 +3041,7 @@ DECLINLINE(int) hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     if (!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_DEBUG))
         return VINF_SUCCESS;
@@ -3307,7 +3307,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxWriteSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLimit, uint32_t idxBase,
+static int hmR0VmxWriteSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLimit, uint32_t idxBase,
                                        uint32_t idxAccess, PCPUMSELREG pSelReg, PCPUMCTX pCtx)
 {
     int rc;
@@ -3359,7 +3359,7 @@ DECLINLINE(int) hmR0VmxWriteSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t i
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc  = VERR_INTERNAL_ERROR_5;
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -3570,7 +3570,7 @@ DECLINLINE(int) hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     AssertPtr(pVCpu);
     AssertPtr(pVCpu->hm.s.vmx.pvGuestMsr);
@@ -3691,7 +3691,7 @@ DECLINLINE(int) hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxLoadGuestActivityState(PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0VmxLoadGuestActivityState(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /** @todo See if we can make use of other states, e.g.
      *        VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN or HLT.  */
@@ -3717,7 +3717,7 @@ DECLINLINE(int) hmR0VmxLoadGuestActivityState(PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     if (CPUMIsGuestInLongModeEx(pMixedCtx))
     {
@@ -4784,7 +4784,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0))
@@ -4813,7 +4813,7 @@ DECLINLINE(int) hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR4))
@@ -4842,16 +4842,17 @@ DECLINLINE(int) hmR0VmxSaveGuestCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    if (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RIP)
-        return VINF_SUCCESS;
-
-    RTGCUINTREG uVal = 0;
-    int rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &uVal);
-    AssertRCReturn(rc, rc);
-    pMixedCtx->rip = uVal;
-    pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RIP;
+    int rc = VINF_SUCCESS;
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RIP))
+    {
+        RTGCUINTREG uVal = 0;
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &uVal);
+        AssertRCReturn(rc, rc);
+        pMixedCtx->rip = uVal;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RIP;
+    }
     return rc;
 }
 
@@ -4867,16 +4868,17 @@ DECLINLINE(int) hmR0VmxSaveGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    if (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RSP)
-        return VINF_SUCCESS;
-
-    RTGCUINTREG uVal = 0;
-    int rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &uVal);
-    AssertRCReturn(rc, rc);
-    pMixedCtx->rsp = uVal;
-    pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RSP;
+    int rc = VINF_SUCCESS;
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RSP))
+    {
+        RTGCUINTREG uVal = 0;
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &uVal);
+        AssertRCReturn(rc, rc);
+        pMixedCtx->rsp = uVal;
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RSP;
+    }
     return rc;
 }
 
@@ -4892,27 +4894,28 @@ DECLINLINE(int) hmR0VmxSaveGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    if (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS)
-        return VINF_SUCCESS;
-
-    RTGCUINTREG uVal = 0;
-    int rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RFLAGS, &uVal);
-    AssertRCReturn(rc, rc);
-    pMixedCtx->rflags.u64 = uVal;
-
-    /* Undo our real-on-v86-mode changes to eflags if necessary. */
-    if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+    int rc = VINF_SUCCESS;
+    if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS))
     {
-        PVM pVM = pVCpu->CTX_SUFF(pVM);
-        Assert(pVM->hm.s.vmx.pRealModeTSS);
-        Log(("Saving real-mode RFLAGS VT-x view=%#RX64\n", pMixedCtx->rflags.u64));
-        pMixedCtx->eflags.Bits.u1VM   = 0;
-        pMixedCtx->eflags.Bits.u2IOPL = pVCpu->hm.s.vmx.RealMode.eflags.Bits.u2IOPL;
-    }
+        RTGCUINTREG uVal = 0;
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RFLAGS, &uVal);
+        AssertRCReturn(rc, rc);
+        pMixedCtx->rflags.u64 = uVal;
 
-    pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RFLAGS;
+        /* Undo our real-on-v86-mode changes to eflags if necessary. */
+        if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+        {
+            PVM pVM = pVCpu->CTX_SUFF(pVM);
+            Assert(pVM->hm.s.vmx.pRealModeTSS);
+            Log(("Saving real-mode RFLAGS VT-x view=%#RX64\n", pMixedCtx->rflags.u64));
+            pMixedCtx->eflags.Bits.u1VM   = 0;
+            pMixedCtx->eflags.Bits.u2IOPL = pVCpu->hm.s.vmx.RealMode.eflags.Bits.u2IOPL;
+        }
+
+        pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RFLAGS;
+    }
     return rc;
 }
 
@@ -4921,7 +4924,7 @@ DECLINLINE(int) hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * Wrapper for saving the guest's RIP, RSP and RFLAGS from the VMCS into the
  * guest-CPU context.
  */
-static int hmR0VmxSaveGuestRipRspRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxSaveGuestRipRspRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
     rc    |= hmR0VmxSaveGuestRsp(pVCpu, pMixedCtx);
@@ -4941,7 +4944,7 @@ static int hmR0VmxSaveGuestRipRspRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(void) hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static void hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     uint32_t uIntrState = 0;
     int rc = VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
@@ -4973,7 +4976,7 @@ DECLINLINE(void) hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     /* Nothing to do for now until we make use of different guest-CPU activity state. Just update the flag. */
     pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_ACTIVITY_STATE;
@@ -4993,7 +4996,7 @@ DECLINLINE(int) hmR0VmxSaveGuestActivityState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR))
@@ -5033,7 +5036,7 @@ DECLINLINE(int) hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestFSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestFSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     RTGCUINTREG uVal = 0;
     int rc = VINF_SUCCESS;
@@ -5059,7 +5062,7 @@ DECLINLINE(int) hmR0VmxSaveGuestFSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestGSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestGSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     RTGCUINTREG uVal = 0;
     int rc = VINF_SUCCESS;
@@ -5129,7 +5132,7 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     RTGCUINTREG uVal    = 0;
     RTGCUINTREG uShadow = 0;
@@ -5336,7 +5339,7 @@ static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_DEBUG))
@@ -5362,7 +5365,7 @@ DECLINLINE(int) hmR0VmxSaveGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxSaveGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     /* Updating TPR is already done in hmR0VmxPostRunGuest(). Just update the flag. */
     pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_APIC_STATE;
@@ -5715,6 +5718,10 @@ static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int
         Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT);
     }
 
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitIO, y1);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 }
 
