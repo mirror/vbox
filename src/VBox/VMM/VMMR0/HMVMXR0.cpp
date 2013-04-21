@@ -869,7 +869,6 @@ cleanup:
 VMMR0DECL(int) VMXR0GlobalInit(void)
 {
 #ifdef HMVMX_USE_FUNCTION_TABLE
-    /* Setup the main VM exit handlers. */
     AssertCompile(VMX_EXIT_MAX + 1 == RT_ELEMENTS(g_apfnVMExitHandlers));
 # ifdef VBOX_STRICT
     for (unsigned i = 0; i < RT_ELEMENTS(g_apfnVMExitHandlers); i++)
@@ -977,14 +976,10 @@ static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, VMXMSREXITREAD 
      * 0xc00 - 0xfff - High MSR write bits
      */
     if (uMsr <= 0x00001FFF)
-    {
-        /* Pentium-compatible MSRs */
         iBit = uMsr;
-    }
     else if (   uMsr >= 0xC0000000
              && uMsr <= 0xC0001FFF)
     {
-        /* AMD Sixth Generation x86 Processor MSRs */
         iBit = (uMsr - 0xC0000000);
         pbMsrBitmap += 0x400;
     }
@@ -1983,27 +1978,22 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         AssertLogRelMsgRCReturnStmt(rc, ("VMXR0SetupVM: VMXActivateVMCS failed! rc=%Rrc (pVM=%p)\n", rc, pVM),
                                     hmR0VmxUpdateErrorRecord(pVM, pVCpu, rc), rc);
 
-        /* Setup the pin-based VM-execution controls. */
         rc = hmR0VmxSetupPinCtls(pVM, pVCpu);
         AssertLogRelMsgRCReturnStmt(rc, ("VMXR0SetupVM: hmR0VmxSetupPinCtls failed! rc=%Rrc (pVM=%p)\n", rc, pVM),
                                     hmR0VmxUpdateErrorRecord(pVM, pVCpu, rc), rc);
 
-        /* Setup the processor-based VM-execution controls. */
         rc = hmR0VmxSetupProcCtls(pVM, pVCpu);
         AssertLogRelMsgRCReturnStmt(rc, ("VMXR0SetupVM: hmR0VmxSetupProcCtls failed! rc=%Rrc (pVM=%p)\n", rc, pVM),
                                     hmR0VmxUpdateErrorRecord(pVM, pVCpu, rc), rc);
 
-        /* Setup the rest (miscellaneous) VM-execution controls. */
         rc = hmR0VmxSetupMiscCtls(pVM, pVCpu);
         AssertLogRelMsgRCReturnStmt(rc, ("VMXR0SetupVM: hmR0VmxSetupMiscCtls failed! rc=%Rrc (pVM=%p)\n", rc, pVM),
                                     hmR0VmxUpdateErrorRecord(pVM, pVCpu, rc), rc);
 
-        /* Setup the initial exception bitmap. */
         rc = hmR0VmxInitXcptBitmap(pVM, pVCpu);
         AssertLogRelMsgRCReturnStmt(rc, ("VMXR0SetupVM: hmR0VmxInitXcptBitmap failed! rc=%Rrc (pVM=%p)\n", rc, pVM),
                                     hmR0VmxUpdateErrorRecord(pVM, pVCpu, rc), rc);
 
-        /* Setup the initial guest-state mask. */
         rc = hmR0VmxInitUpdatedGuestStateMask(pVCpu);
         AssertLogRelMsgRCReturnStmt(rc, ("VMXR0SetupVM: hmR0VmxInitUpdatedGuestStateMask failed! rc=%Rrc (pVM=%p)\n", rc, pVM),
                                     hmR0VmxUpdateErrorRecord(pVM, pVCpu, rc), rc);
@@ -2020,7 +2010,6 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         AssertLogRelMsgRCReturnStmt(rc, ("VMXR0SetupVM: VMXClearVMCS(2) failed! rc=%Rrc (pVM=%p)\n", rc, pVM),
                                     hmR0VmxUpdateErrorRecord(pVM, pVCpu, rc), rc);
 
-        /* Update the last error record for this VCPU. */
         hmR0VmxUpdateErrorRecord(pVM, pVCpu, rc);
     }
 
@@ -3657,7 +3646,7 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /*
      * Guest Sysenter MSRs.
      * These flags are only set when MSR-bitmaps are not supported by the CPU and we cause
-     * VM exits on WRMSRs for these MSRs.
+     * VM-exits on WRMSRs for these MSRs.
      */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_SYSENTER_CS_MSR)
     {
@@ -5566,7 +5555,6 @@ static void hmR0VmxUpdatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
             case X86_XCPT_BP:
             case X86_XCPT_OF:
             {
-                /* These exceptions must be delivered as software exceptions. They have no error codes associated with them. */
                 u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
                 break;
             }
@@ -5580,8 +5568,6 @@ static void hmR0VmxUpdatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
             case X86_XCPT_SS:
             case X86_XCPT_GP:
             case X86_XCPT_AC:
-                /* These exceptions must be delivered as hardware exceptions. They have error codes associated with
-                   them which VT-x/VMM pushes to the guest stack. */
                 u32IntrInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
                 /* no break! */
             default:
@@ -5830,7 +5816,6 @@ DECLINLINE(void) hmR0VmxSetIntWindowExitVmcs(PVMCPU pVCpu)
 {
     if (RT_LIKELY(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT))
     {
-        /* Enable interrupt-window exiting if it's not in effect already. */
         if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT))
         {
             pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT;
@@ -6016,7 +6001,6 @@ DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(int) hmR0VmxInjectXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t *puIntrState)
 {
-    /* Inject the double-fault. */
     uint32_t u32IntrInfo = X86_XCPT_DF | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
     u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     u32IntrInfo         |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
@@ -6035,7 +6019,6 @@ DECLINLINE(int) hmR0VmxInjectXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t *
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    /* Inject the debug-exception. */
     uint32_t u32IntrInfo = X86_XCPT_DB | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
     u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatIntInject);
@@ -6055,7 +6038,6 @@ DECLINLINE(void) hmR0VmxSetPendingXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t cbInstr)
 {
-    /* Inject the overflow exception. */
     uint32_t u32IntrInfo = X86_XCPT_OF | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
     u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatIntInject);
@@ -6076,7 +6058,6 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint3
 DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErrorCodeValid, uint32_t u32ErrorCode,
                                     uint32_t *puIntrState)
 {
-    /* Inject the general-protection fault. */
     uint32_t u32IntrInfo = X86_XCPT_GP | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
     u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     if (fErrorCodeValid)
@@ -6099,7 +6080,6 @@ DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErro
  */
 DECLINLINE(void) hmR0VmxSetPendingIntN(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint16_t uVector, uint32_t cbInstr)
 {
-    /* Inject the INTn. */
     uint32_t u32IntrInfo = uVector | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
     u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatIntInject);
@@ -6172,11 +6152,11 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
     Assert(   uIntrType != VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI
            || !(*puIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS));
 
+    STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedIrqsR0[uVector & MASK_INJECT_IRQ_STAT]);
+
     /* We require CR0 to check if the guest is in real-mode. */
     int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
-
-    STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedIrqsR0[uVector & MASK_INJECT_IRQ_STAT]);
 
     /*
      * Hardware interrupts & exceptions cannot be delivered through the software interrupt redirection bitmap to the real
@@ -6215,7 +6195,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
                 return hmR0VmxInjectXcptGP(pVCpu, pMixedCtx, false /* fErrCodeValid */, 0 /* u32ErrCode */, puIntrState);
             }
 
-            /* Software exceptions (#BP and #OF exceptions thrown as a result of INT 3 or INTO) */
+            /* Software exceptions (#BP and #OF exceptions thrown as a result of INT3 or INTO) */
             uint16_t uGuestIp = pMixedCtx->ip;
             if (VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntrInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT)
             {
@@ -6389,7 +6369,6 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
     rc = hmR0VmxSaveHostMsrs(pVM, pVCpu);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveHostMsrs failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-    /* Reset the host-state-changed flag. */
     pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_HOST_CONTEXT;
     return rc;
 }
@@ -6432,6 +6411,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         pVCpu->hm.s.vmx.RealMode.fRealOnV86Active = true;
     }
 
+    /** @todo if the order of loading is important, inform it via comments here */
     int rc = hmR0VmxLoadGuestEntryCtls(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestEntryCtls! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
@@ -6609,7 +6589,6 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB-shootdowns, set this across the world switch. */
     hmR0VmxFlushTaggedTlb(pVCpu);                               /* Invalidate the appropriate guest entries from the TLB. */
 
-    /* Setup TSC-offsetting or intercept RDTSC(P)s and update the preemption timer. */
     if (pVmxTransient->fUpdateTscOffsettingAndPreemptTimer)
     {
         hmR0VmxUpdateTscOffsettingAndPreemptTimer(pVCpu, pMixedCtx);
@@ -7024,7 +7003,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT:   /* Software exception. (#BP or #OF) */
             Assert(uVector == X86_XCPT_DB || uVector == X86_XCPT_BP || uVector == X86_XCPT_OF);
             /* no break */
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT:   /* Hardware exception. */
+        case VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT:
         {
             switch (uVector)
             {
@@ -7642,7 +7621,6 @@ static DECLCALLBACK(int) hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
               ("hmR0VmxExitRdmsr: failed, invalid error code %Rrc\n", rc));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
 
-    /* Update RIP and continue guest execution. */
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
@@ -7689,7 +7667,6 @@ static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
     AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER, ("hmR0VmxExitWrmsr: failed, invalid error code %Rrc\n", rc));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWrmsr);
 
-    /* Update guest-state and continue execution. */
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
@@ -8536,7 +8513,6 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         pMixedCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
         pMixedCtx->dr[7] |= 0x400;                                                   /* must be one */
 
-        /* Resync DR7. */
         rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_DR7, pMixedCtx->dr[7]);
         AssertRCReturn(rc,rc);
 
@@ -8569,7 +8545,7 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     int rc = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
-    /* Lazy FPU loading; Load the guest-FPU state transparently and continue execution of the guest. */
+    /* Lazy FPU loading; load the guest-FPU state transparently and continue execution of the guest. */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     rc = CPUMR0LoadGuestFPU(pVM, pVCpu, pMixedCtx);
     if (rc == VINF_SUCCESS)
