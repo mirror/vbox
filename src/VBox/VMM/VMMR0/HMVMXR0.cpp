@@ -2820,8 +2820,8 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
             u64CR0Mask &= ~X86_CR0_PE;
         /* Enable this later. */
-        /* if (pVM->hm.s.fNestedPaging)
-            u64CR0Mask &= ~X86_CR0_WP; */
+        if (pVM->hm.s.fNestedPaging)
+            u64CR0Mask &= ~X86_CR0_WP;
 
         /* If the guest FPU state is active, don't need to VM-exit on writes to FPU related bits in CR0. */
         if (fInterceptNM)
