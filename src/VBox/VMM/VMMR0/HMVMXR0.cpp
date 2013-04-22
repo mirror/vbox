@@ -5504,7 +5504,7 @@ static int hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
         {
             Log(("hmR0VmxCheckForceFlags: PGM pool flush pending forcing us back to ring-3\n"));
-            return rc = VINF_PGM_POOL_FLUSH_PENDING;
+            return VINF_PGM_POOL_FLUSH_PENDING;
         }
 
         /* Pending DMA requests. */
