@@ -383,6 +383,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UILineTextEdit.h \
 	src/widgets/UIPopupBox.h \
 	src/widgets/UIPopupPane.h \
+	src/widgets/UIPopupStack.h \
 	src/widgets/UIProgressDialog.h \
 	src/widgets/UISpacerWidgets.h \
 	src/widgets/UISpecialControls.h \
@@ -629,6 +630,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UILineTextEdit.cpp \
 	src/widgets/UIPopupBox.cpp \
 	src/widgets/UIPopupPane.cpp \
+	src/widgets/UIPopupStack.cpp \
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIToolBar.cpp \
