@@ -191,7 +191,7 @@ void pm_unwind(uint16_t args);
     "push   cx"             \
     "retf"                  \
     parm [ax] modify nomemory aborts;
-    
+
 // @todo: This method is silly. The RTC should be programmed to fire an interrupt
 // instead of hogging the CPU with inaccurate code.
 void timer_wait(uint16_t lo, uint16_t hi);
@@ -223,18 +223,18 @@ void timer_wait(uint16_t lo, uint16_t hi);
 bx_bool set_enable_a20(bx_bool val)
 {
     uint8_t     oldval;
-    
+
     // Use PS/2 System Control port A to set A20 enable
-    
+
     // get current setting first
     oldval = inb(0x92);
-    
+
     // change A20 status
     if (val)
         outb(0x92, oldval | 0x02);
     else
         outb(0x92, oldval & 0xfd);
-    
+
     return((oldval & 0x02) != 0);
 }
 
@@ -275,6 +275,8 @@ void set_e820_range(uint16_t ES, uint16_t DI, uint32_t start, uint32_t end,
 #define EBX     r.gr.u.r32.ebx
 #define ECX     r.gr.u.r32.ecx
 #define EDX     r.gr.u.r32.edx
+#define ESI     r.gr.u.r32.esi
+#define EDI     r.gr.u.r32.edi
 #define ES      r.es
 
 
@@ -385,7 +387,7 @@ void BIOSCALL int15_function(sys_regs_t r)
             SET_AH(UNSUPPORTED_FUNCTION);
             SET_AL(GET_AL() - 1);
         }
-        
+
         break;
         }
 
@@ -396,15 +398,15 @@ void BIOSCALL int15_function(sys_regs_t r)
 #endif
         // +++ should probably have descriptor checks
         // +++ should have exception handlers
-        
+
         // turn off interrupts
         int_disable();    //@todo: aren't they disabled already?
-        
+
         prev_a20_enable = set_enable_a20(1); // enable A20 line
-        
+
         // 128K max of transfer on 386+ ???
         // source == destination ???
-        
+
         // ES:SI points to descriptor table
         // offset   use     initially  comments
         // ==============================================
@@ -414,14 +416,14 @@ void BIOSCALL int15_function(sys_regs_t r)
         // 18..1f   dest    dddddddd   destination of data
         // 20..27   CS      zeros      filled in by BIOS
         // 28..2f   SS      zeros      filled in by BIOS
-        
+
         //es:si
         //eeee0
         //0ssss
         //-----
-        
+
         // check for access rights of source & dest here
-        
+
         // Initialize GDT descriptor
         base15_00 = (ES << 4) + SI;
         base23_16 = ES >> 12;
@@ -432,14 +434,14 @@ void BIOSCALL int15_function(sys_regs_t r)
         write_byte(ES, SI+0x08+4, base23_16);// base 23:16
         write_byte(ES, SI+0x08+5, 0x93);     // access
         write_word(ES, SI+0x08+6, 0x0000);   // base 31:24/reserved/limit 19:16
-        
+
         // Initialize CS descriptor
         write_word(ES, SI+0x20+0, 0xffff);// limit 15:00 = normal 64K limit
         write_word(ES, SI+0x20+2, 0x0000);// base 15:00
         write_byte(ES, SI+0x20+4, 0x000f);// base 23:16
         write_byte(ES, SI+0x20+5, 0x9b);  // access
         write_word(ES, SI+0x20+6, 0x0000);// base 31:24/reserved/limit 19:16
-        
+
         // Initialize SS descriptor
         ss = read_ss();
         base15_00 = ss << 4;
@@ -449,18 +451,18 @@ void BIOSCALL int15_function(sys_regs_t r)
         write_byte(ES, SI+0x28+4, base23_16);// base 23:16
         write_byte(ES, SI+0x28+5, 0x93);     // access
         write_word(ES, SI+0x28+6, 0x0000);   // base 31:24/reserved/limit 19:16
-        
+
         pm_stack_save(CX, ES, SI);
         pm_enter();
         pm_copy();
         pm_exit();
         pm_stack_restore();
-        
+
         set_enable_a20(prev_a20_enable);
-        
+
         // turn interrupts back on
         int_enable();
-        
+
         SET_AH(0);
         CLEAR_CF();
         break;
@@ -472,12 +474,12 @@ void BIOSCALL int15_function(sys_regs_t r)
         SET_CF();
 #else
         AX = (inb_cmos(0x31) << 8) | inb_cmos(0x30);
-        
+
         // According to Ralf Brown's interrupt the limit should be 15M,
         // but real machines mostly return max. 63M.
         if(AX > 0xffc0)
             AX = 0xffc0;
-        
+
         CLEAR_CF();
 #endif
         break;
@@ -487,12 +489,12 @@ void BIOSCALL int15_function(sys_regs_t r)
         // ES:DI points to user-supplied GDT
         // BH/BL contains starting interrupt numbers for PIC0/PIC1
         // This subfunction does not return!
-        
+
         // turn off interrupts
         int_disable();  //@todo: aren't they off already?
-        
+
         set_enable_a20(1); // enable A20 line; we're supposed to fail if that fails
-        
+
         // Initialize CS descriptor for BIOS
         write_word(ES, SI+0x38+0, 0xffff);// limit 15:00 = normal 64K limit
         write_word(ES, SI+0x38+2, 0x0000);// base 15:00
@@ -591,7 +593,21 @@ void BIOSCALL int15_function32(sys32_regs_t r)
         int_enable();
         timer_wait(DX, CX);
         break;
-    
+
+    case 0xd0:
+        if (GET_AL() != 0x4f)
+            goto int15_unimplemented;
+        if (EBX == 0x50524f43 && ECX == 0x4d4f4445 && ESI == 0 && EDI == 0)
+        {
+            CLEAR_CF();
+            ESI = EBX;
+            EDI = ECX;
+            EAX = 0x49413332;
+        }
+        else
+            goto int15_unimplemented;
+        break;
+
     case 0xe8:
         switch(GET_AL()) {
         case 0x20: // coded by osmaker aka K.J.
@@ -765,24 +781,24 @@ void BIOSCALL int15_function32(sys32_regs_t r)
         case 0x01:
             // do we have any reason to fail here ?
             CLEAR_CF();
-            
+
             // my real system sets ax and bx to 0
             // this is confirmed by Ralph Brown list
             // but syslinux v1.48 is known to behave
             // strangely if ax is set to 0
             // regs.u.r16.ax = 0;
             // regs.u.r16.bx = 0;
-            
+
             // Get the amount of extended memory (above 1M)
             CX = (inb_cmos(0x31) << 8) | inb_cmos(0x30);
-            
+
             // limit to 15M
             if(CX > 0x3c00)
                 CX = 0x3c00;
-            
+
             // Get the amount of extended memory above 16M in 64k blocks
             DX = (inb_cmos(0x35) << 8) | inb_cmos(0x34);
-            
+
             // Set configured memory equal to extended memory
             AX = CX;
             BX = DX;

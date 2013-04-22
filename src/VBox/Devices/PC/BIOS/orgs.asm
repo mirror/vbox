@@ -1551,6 +1551,8 @@ int15_handler:
 		je	int15_handler32
 		cmp	ah, 0E8h
 		je	int15_handler32
+		cmp	ah, 0d0h
+		je	int15_handler32
 		pusha
 		cmp	ah, 53h		; APM function?
 		je	apm_call
