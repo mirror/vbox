@@ -3782,26 +3782,6 @@
     </attribute>
   </interface>
 
-  <enum
-    name="CleanupMode"
-    uuid="67897c50-7cca-47a9-83f6-ce8fd8eb5441"
-    >
-    <desc>Cleanup mode, used with <link to="IMachine::unregister" />.
-    </desc>
-    <const name="UnregisterOnly"                  value="1">
-      <desc>Unregister only the machine, but neither delete snapshots nor detach media.</desc>
-    </const>
-    <const name="DetachAllReturnNone"             value="2">
-      <desc>Delete all snapshots and detach all media but return none; this will keep all media registered.</desc>
-    </const>
-    <const name="DetachAllReturnHardDisksOnly"    value="3">
-      <desc>Delete all snapshots, detach all media and return hard disks for closing, but not removable media.</desc>
-    </const>
-    <const name="Full"                            value="4">
-      <desc>Delete all snapshots, detach all media and return all media for closing.</desc>
-    </const>
-  </enum>
-
   <interface
     name="IPCIAddress" extends="$unknown"
     uuid="D88B324F-DB19-4D3B-A1A9-BF5B127199A8"
@@ -3882,6 +3862,40 @@
   </interface>
 
   <enum
+    name="GraphicsControllerType"
+    uuid="79c96ca0-9f39-4900-948e-68c41cbe127a"
+    >
+    <desc>Graphics controller type, used with <link to="IMachine::unregister" />.
+    </desc>
+    <const name="Null"      value="0">
+      <desc>Reserved value, invalid.</desc>
+    </const>
+    <const name="VBoxVGA"   value="1">
+      <desc>Default VirtualBox VGA device.</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="CleanupMode"
+    uuid="67897c50-7cca-47a9-83f6-ce8fd8eb5441"
+    >
+    <desc>Cleanup mode, used with <link to="IMachine::unregister" />.
+    </desc>
+    <const name="UnregisterOnly"                  value="1">
+      <desc>Unregister only the machine, but neither delete snapshots nor detach media.</desc>
+    </const>
+    <const name="DetachAllReturnNone"             value="2">
+      <desc>Delete all snapshots and detach all media but return none; this will keep all media registered.</desc>
+    </const>
+    <const name="DetachAllReturnHardDisksOnly"    value="3">
+      <desc>Delete all snapshots, detach all media and return hard disks for closing, but not removable media.</desc>
+    </const>
+    <const name="Full"                            value="4">
+      <desc>Delete all snapshots, detach all media and return all media for closing.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="CloneMode" extends="$unknown"
     uuid="A7A159FE-5096-4B8D-8C3C-D033CB0B35A8"
     >
@@ -3953,7 +3967,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="381e3f31-2b27-45b7-818a-30609ade86b3"
+    uuid="1af27b33-9e69-44a5-b6d2-d375dd329a73"
     wsmap="managed"
     >
     <desc>
@@ -4177,6 +4191,10 @@
         This setting determines whether VirtualBox allows page
         fusion for this machine (64 bits host only).
       </desc>
+    </attribute>
+
+    <attribute name="graphicsControllerType" type="GraphicsControllerType">
+      <desc>Graphics controller type.</desc>
     </attribute>
 
     <attribute name="VRAMSize" type="unsigned long">

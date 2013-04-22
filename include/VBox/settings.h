@@ -813,6 +813,7 @@ struct Hardware
 
     BootOrderMap        mapBootOrder;           // item 0 has highest priority
 
+    GraphicsControllerType_T graphicsControllerType;
     uint32_t            ulVRAMSizeMB;
     uint32_t            cMonitors;
     bool                fAccelerate3D,
