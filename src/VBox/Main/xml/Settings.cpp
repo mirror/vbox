@@ -811,10 +811,10 @@ void ConfigFileBase::readMediaRegistry(const xml::ElementNode &elmMediaRegistry,
 }
 
 /**
- * This is common version for reading NAT port forward rule in per-_machine's_adapter_ and 
+ * This is common version for reading NAT port forward rule in per-_machine's_adapter_ and
  * per-network approaches.
- * Note: this function doesn't in fill given list from xml::ElementNodesList, because there is conflicting 
- * deaclration in ovmfreader.h. 
+ * Note: this function doesn't in fill given list from xml::ElementNodesList, because there is conflicting
+ * declaration in ovmfreader.h.
  */
 void ConfigFileBase::readNATForwardRuleList(const xml::ElementNode &elmParent, NATRuleList &llRules)
 {
@@ -1174,22 +1174,23 @@ void ConfigFileBase::buildNATForwardRuleList(xml::ElementNode &elmParent, const 
 {
     for (NATRuleList::const_iterator r = natRuleList.begin();
          r != natRuleList.end(); ++r)
-      {
-          xml::ElementNode *pelmPF;
-          pelmPF = elmParent.createChild("Forwarding");
-          if ((*r).strName.length())
+    {
+        xml::ElementNode *pelmPF;
+        pelmPF = elmParent.createChild("Forwarding");
+        if ((*r).strName.length())
             pelmPF->setAttribute("name", (*r).strName);
-          pelmPF->setAttribute("proto", (*r).proto);
-          if ((*r).strHostIP.length())
+        pelmPF->setAttribute("proto", (*r).proto);
+        if ((*r).strHostIP.length())
             pelmPF->setAttribute("hostip", (*r).strHostIP);
-          if ((*r).u16HostPort)
+        if ((*r).u16HostPort)
             pelmPF->setAttribute("hostport", (*r).u16HostPort);
-          if ((*r).strGuestIP.length())
+        if ((*r).strGuestIP.length())
             pelmPF->setAttribute("guestip", (*r).strGuestIP);
-          if ((*r).u16GuestPort)
+        if ((*r).u16GuestPort)
             pelmPF->setAttribute("guestport", (*r).u16GuestPort);
-      }
+    }
 }
+
 /**
  * Cleans up memory allocated by the internal XML parser. To be called by
  * descendant classes when they're done analyzing the DOM tree to discard it.
@@ -1333,19 +1334,19 @@ void MainConfigFile::readNATNetworks(const xml::ElementNode &elmNATNetworks)
                  && (pelmNet->getAttributeValue("advertiseDefaultIPv6Route", net.fAdvertiseDefaultIPv6Route))
                  && (pelmNet->getAttributeValue("needDhcp", net.fNeedDhcpServer))
                )
-              {
-                  const xml::ElementNode *pelmPortForwardRules4;
-                  if ((pelmPortForwardRules4 = pelmNet->findChildElement("PortForwarding4")))
+            {
+                const xml::ElementNode *pelmPortForwardRules4;
+                if ((pelmPortForwardRules4 = pelmNet->findChildElement("PortForwarding4")))
                     readNATForwardRuleList(*pelmPortForwardRules4,
-                                            net.llPortForwardRules4);             
-                  
-                  const xml::ElementNode *pelmPortForwardRules6;
-                  if ((pelmPortForwardRules6 = pelmNet->findChildElement("PortForwarding6")))
-                    readNATForwardRuleList(*pelmPortForwardRules6, 
-                                            net.llPortForwardRules6);             
-                  
-                  llNATNetworks.push_back(net);
-              }
+                                           net.llPortForwardRules4);
+
+                const xml::ElementNode *pelmPortForwardRules6;
+                if ((pelmPortForwardRules6 = pelmNet->findChildElement("PortForwarding6")))
+                    readNATForwardRuleList(*pelmPortForwardRules6,
+                                           net.llPortForwardRules6);
+
+                llNATNetworks.push_back(net);
+            }
             else
                 throw ConfigFileError(this, pelmNet, N_("Required NATNetwork/@networkName, @gateway, @network,@advertiseDefaultIpv6Route , @needDhcp or @enabled attribute is missing"));
         }
@@ -1493,6 +1494,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         pelmThis->setAttribute("upperIP", d.strIPUpper);
         pelmThis->setAttribute("enabled", (d.fEnabled) ? 1 : 0);        // too bad we chose 1 vs. 0 here
     }
+
     /* TODO: bump main version ? */
     xml::ElementNode *pelmNATNetworks;
     /* don't create entry if no NAT networks are registered. */
@@ -1739,6 +1741,7 @@ Hardware::Hardware()
           fHPETEnabled(false),
           ulCpuExecutionCap(100),
           ulMemorySizeMB((uint32_t)-1),
+          graphicsControllerType(GraphicsControllerType_VBoxVGA),
           ulVRAMSizeMB(8),
           cMonitors(1),
           fAccelerate3D(false),
@@ -1809,6 +1812,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (llCpuIdLeafs              == h.llCpuIdLeafs)
                   && (ulMemorySizeMB            == h.ulMemorySizeMB)
                   && (mapBootOrder              == h.mapBootOrder)
+                  && (graphicsControllerType    == h.graphicsControllerType)
                   && (ulVRAMSizeMB              == h.ulVRAMSizeMB)
                   && (cMonitors                 == h.cMonitors)
                   && (fAccelerate3D             == h.fAccelerate3D)
@@ -2210,7 +2214,7 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
             pelmTFTP->getAttributeValue("boot-file", nic.nat.strTFTPBootFile);
             pelmTFTP->getAttributeValue("next-server", nic.nat.strTFTPNextServer);
         }
-        
+
         readNATForwardRuleList(elmMode, nic.nat.llRules);
     }
     else if (   (elmMode.nameEquals("HostInterface"))
@@ -2687,6 +2691,19 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("Display"))
         {
+            Utf8Str strGraphicsControllerType;
+            if (!pelmHwChild->getAttributeValue("controller", strGraphicsControllerType))
+                hw.graphicsControllerType = GraphicsControllerType_VBoxVGA;
+            else
+            {
+                strGraphicsControllerType.toUpper();
+                GraphicsControllerType_T type;
+                if (strGraphicsControllerType == "VBOXVGA")
+                    type = GraphicsControllerType_VBoxVGA;
+                else
+                    throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in Display/@controller attribute"), strGraphicsControllerType.c_str());
+                hw.graphicsControllerType = type;
+            }
             pelmHwChild->getAttributeValue("VRAMSize", hw.ulVRAMSizeMB);
             if (!pelmHwChild->getAttributeValue("monitorCount", hw.cMonitors))
                 pelmHwChild->getAttributeValue("MonitorCount", hw.cMonitors);       // pre-v1.5 variant

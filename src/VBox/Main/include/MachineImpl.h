@@ -254,6 +254,7 @@ public:
         ULONG               mMemorySize;
         ULONG               mMemoryBalloonSize;
         BOOL                mPageFusionEnabled;
+        GraphicsControllerType_T mGraphicsControllerType;
         ULONG               mVRAMSize;
         ULONG               mVideoCaptureWidth;
         ULONG               mVideoCaptureHeight;
@@ -418,8 +419,16 @@ public:
     STDMETHOD(COMSETTER(MemoryBalloonSize))(ULONG memoryBalloonSize);
     STDMETHOD(COMGETTER(PageFusionEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(PageFusionEnabled))(BOOL enabled);
+    STDMETHOD(COMGETTER(GraphicsControllerType))(GraphicsControllerType_T *aGraphicsController);
+    STDMETHOD(COMSETTER(GraphicsControllerType))(GraphicsControllerType_T aGraphicsController);
     STDMETHOD(COMGETTER(VRAMSize))(ULONG *memorySize);
     STDMETHOD(COMSETTER(VRAMSize))(ULONG memorySize);
+    STDMETHOD(COMGETTER(Accelerate3DEnabled))(BOOL *enabled);
+    STDMETHOD(COMSETTER(Accelerate3DEnabled))(BOOL enabled);
+    STDMETHOD(COMGETTER(Accelerate2DVideoEnabled))(BOOL *enabled);
+    STDMETHOD(COMSETTER(Accelerate2DVideoEnabled))(BOOL enabled);
+    STDMETHOD(COMGETTER(MonitorCount))(ULONG *monitorCount);
+    STDMETHOD(COMSETTER(MonitorCount))(ULONG monitorCount);
     STDMETHOD(COMGETTER(VideoCaptureEnabled))(BOOL *u8VideoRecEnabled);
     STDMETHOD(COMSETTER(VideoCaptureEnabled))(BOOL  u8VideoRecEnabled);
     STDMETHOD(COMGETTER(VideoCaptureFile))(BSTR * ppChVideoRecFilename);
@@ -428,12 +437,6 @@ public:
     STDMETHOD(COMSETTER(VideoCaptureWidth))(ULONG u32VideoRecHorzRes);
     STDMETHOD(COMGETTER(VideoCaptureHeight))(ULONG *u32VideoRecVertRes);
     STDMETHOD(COMSETTER(VideoCaptureHeight))(ULONG u32VideoRecVertRes);
-    STDMETHOD(COMGETTER(MonitorCount))(ULONG *monitorCount);
-    STDMETHOD(COMSETTER(MonitorCount))(ULONG monitorCount);
-    STDMETHOD(COMGETTER(Accelerate3DEnabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(Accelerate3DEnabled))(BOOL enabled);
-    STDMETHOD(COMGETTER(Accelerate2DVideoEnabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(Accelerate2DVideoEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(BIOSSettings))(IBIOSSettings **biosSettings);
     STDMETHOD(COMGETTER(SnapshotFolder))(BSTR *aSavedStateFolder);
     STDMETHOD(COMSETTER(SnapshotFolder))(IN_BSTR aSavedStateFolder);
