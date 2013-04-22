@@ -965,19 +965,19 @@ static bool disCode(uint32_t uFlatAddr, uint32_t cb, bool fIs16Bit)
                      && pb[4] == 0xc8
                      && pb[5] == 0x58
                     )
-                 || (   pb[0] == 0x72   /* _pci16_function switch */
+                 || (   pb[0] == 0xc9   /* _pci16_function switch */
                      && pb[1] == 0x8d
-                     && pb[2] == 0x8c
+                     && pb[2] == 0xe3
                      && pb[3] == 0x8d
-                     && pb[4] == 0x9f
+                     && pb[4] == 0xf6
                      && pb[5] == 0x8d
                      )
-                 || (   pb[0] == 0xd0   /* _int1a_function switch */
+                 || (   pb[0] == 0xa3   /* _int1a_function switch */
                      && pb[1] == 0x67
-                     && pb[2] == 0xf7
+                     && pb[2] == 0xca
                      && pb[3] == 0x67
-                     && pb[4] == 0x1c
-                     && pb[5] == 0x68
+                     && pb[4] == 0xef
+                     && pb[5] == 0x67
                     )
                  || (   pb[0] == 0x0b   /* _ahci_init byte table */
                      && pb[1] == 0x05
