@@ -727,6 +727,7 @@ QIToolButton* UIPopupPaneButtonPane::addButton(int iButtonID, const QString &str
 {
     /* Create button: */
     QIToolButton *pButton = new QIToolButton;
+    pButton->removeBorder();
     pButton->setToolTip(strToolTip.isEmpty() ? defaultToolTip(iButtonID) : strToolTip);
     pButton->setIcon(defaultIcon(iButtonID));
 
