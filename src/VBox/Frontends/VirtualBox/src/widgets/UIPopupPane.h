@@ -62,6 +62,7 @@ signals:
     void sigHoverLeave();
     void sigFocusEnter();
     void sigFocusLeave();
+    void sigSizeHintChanged();
 
     /* Notifier: Complete stuff: */
     void sigDone(int iButtonCode) const;
@@ -69,24 +70,25 @@ signals:
 public:
 
     /* Constructor: */
-    UIPopupPane(QWidget *pParent, const QString &strId,
+    UIPopupPane(QWidget *pParent,
                 const QString &strMessage, const QString &strDetails,
                 const QMap<int, QString> &buttonDescriptions);
-
-    /* API: Id stuff: */
-    const QString& id() const { return m_strId; }
 
     /* API: Text stuff: */
     void setMessage(const QString &strMessage);
     void setDetails(const QString &strDetails);
 
+    /* API: Layout stuff: */
+    void setDesiredWidth(int iWidth);
+    int minimumWidthHint() const;
+    int minimumHeightHint() const;
+    QSize minimumSizeHint() const;
+    void layoutContent();
+
 private slots:
 
     /* Handler: Button stuff: */
     void sltButtonClicked(int iButtonID);
-
-    /* Handler: Layout stuff: */
-    void sltAdjustGeomerty();
 
 private:
 
@@ -97,32 +99,16 @@ private:
     /* Handler: Event-filter stuff: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
-    /* Handlers: Event stuff: */
-    virtual void showEvent(QShowEvent *pEvent);
-    virtual void polishEvent(QShowEvent *pEvent);
-
-    /* Helper: Layout stuff: */
-    int minimumWidthHint() const;
-    int minimumHeightHint() const;
-    QSize minimumSizeHint() const;
-    void adjustGeometry();
-    void updateLayout();
-
     /* Helper: Complete stuff: */
     void done(int iButtonCode);
 
-    /* Static helpers: Prepare stuff: */
-    static int parentStatusBarHeight(QWidget *pParent);
-
     /* Variables: */
-    bool m_fPolished;
     const QString m_strId;
 
     /* Variables: Layout stuff: */
     const int m_iMainLayoutMargin;
     const int m_iMainFrameLayoutMargin;
     const int m_iMainFrameLayoutSpacing;
-    const int m_iParentStatusBarHeight;
 
     /* Variables: Text stuff: */
     QString m_strMessage, m_strDetails;
