@@ -161,6 +161,7 @@ Machine::HWData::HWData()
     mCPUHotPlugEnabled = false;
     mMemoryBalloonSize = 0;
     mPageFusionEnabled = false;
+    mGraphicsControllerType = GraphicsControllerType_VBoxVGA;
     mVRAMSize = 8;
     mAccelerate3DEnabled = false;
     mAccelerate2DVideoEnabled = false;
@@ -1786,6 +1787,45 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureHeight)(ULONG ulVertRes)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     mHWData->mVideoCaptureHeight = ulVertRes;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(GraphicsControllerType)(GraphicsControllerType_T *aGraphicsControllerType)
+{
+    CheckComArgOutPointerValid(aGraphicsControllerType);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aGraphicsControllerType = mHWData->mGraphicsControllerType;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(GraphicsControllerType)(GraphicsControllerType_T aGraphicsControllerType)
+{
+    switch (aGraphicsControllerType)
+    {
+        case GraphicsControllerType_VBoxVGA:
+            break;
+        default:
+            return setError(E_INVALIDARG, tr("The graphics controller type (%d) is invalid"), aGraphicsControllerType);
+    }
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mGraphicsControllerType = aGraphicsControllerType;
+
     return S_OK;
 }
 
@@ -8716,6 +8756,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
                 mHWData->mBootOrder[i] = it->second;
         }
 
+        mHWData->mGraphicsControllerType = data.graphicsControllerType;
         mHWData->mVRAMSize      = data.ulVRAMSizeMB;
         mHWData->mMonitorCount  = data.cMonitors;
         mHWData->mAccelerate3DEnabled = data.fAccelerate3D;
@@ -9932,6 +9973,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
             data.mapBootOrder[i] = mHWData->mBootOrder[i];
 
         // display
+        data.graphicsControllerType = mHWData->mGraphicsControllerType;
         data.ulVRAMSizeMB = mHWData->mVRAMSize;
         data.cMonitors = mHWData->mMonitorCount;
         data.fAccelerate3D = !!mHWData->mAccelerate3DEnabled;
