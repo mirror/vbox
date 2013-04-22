@@ -31,7 +31,6 @@ class QStateMachine;
 class QLabel;
 class QPushButton;
 class UIPopupPane;
-class UIPopupPaneFrame;
 class UIPopupPaneTextPane;
 class UIPopupPaneButtonPane;
 
@@ -40,8 +39,9 @@ namespace UIAnimationFramework
 {
     /* API: Animation stuff: */
     void installPropertyAnimation(QWidget *pParent, const QByteArray &strPropertyName,
-                                  int iStartValue, int iFinalValue, int iAnimationDuration,
-                                  const char *pSignalForward, const char *pSignalBackward);
+                                  int iStartValue, int iFinalValue,
+                                  const char *pSignalForward, const char *pSignalBackward,
+                                  int iAnimationDuration = 300);
 
     /* API: Animation stuff: */
     QStateMachine* installPropertyAnimation(QWidget *pTarget, const QByteArray &strPropertyName,
@@ -54,14 +54,19 @@ namespace UIAnimationFramework
 class UIPopupPane : public QWidget
 {
     Q_OBJECT;
+    Q_PROPERTY(int opacity READ opacity WRITE setOpacity);
 
 signals:
 
-    /* Notifiers: Animation stuff: */
+    /* Notifiers: Hover stuff: */
     void sigHoverEnter();
     void sigHoverLeave();
+
+    /* Notifiers: Focus stuff: */
     void sigFocusEnter();
     void sigFocusLeave();
+
+    /* Notifier: Layout stuff: */
     void sigSizeHintChanged();
 
     /* Notifier: Complete stuff: */
@@ -99,16 +104,20 @@ private:
     /* Handler: Event-filter stuff: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
+    /* Handler: Event stuff: */
+    void paintEvent(QPaintEvent *pEvent);
+
     /* Helper: Complete stuff: */
     void done(int iButtonCode);
 
-    /* Variables: */
-    const QString m_strId;
+    /* Property: Hover stuff: */
+    int opacity() const { return m_iOpacity; }
+    void setOpacity(int iOpacity) { m_iOpacity = iOpacity; update(); }
 
-    /* Variables: Layout stuff: */
-    const int m_iMainLayoutMargin;
-    const int m_iMainFrameLayoutMargin;
-    const int m_iMainFrameLayoutSpacing;
+    /* Variables: General stuff: */
+    const QString m_strId;
+    const int m_iLayoutMargin;
+    const int m_iLayoutSpacing;
 
     /* Variables: Text stuff: */
     QString m_strMessage, m_strDetails;
@@ -116,12 +125,16 @@ private:
     /* Variables: Button stuff: */
     QMap<int, QString> m_buttonDescriptions;
 
-    /* Variables: Animation stuff: */
+    /* Variables: Hover stuff: */
     bool m_fHovered;
+    const int m_iDefaultOpacity;
+    const int m_iHoveredOpacity;
+    int m_iOpacity;
+
+    /* Variables: Focus stuff: */
     bool m_fFocused;
 
     /* Widgets: */
-    UIPopupPaneFrame *m_pMainFrame;
     UIPopupPaneTextPane *m_pTextPane;
     UIPopupPaneButtonPane *m_pButtonPane;
 };

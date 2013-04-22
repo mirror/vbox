@@ -32,8 +32,7 @@
 UIPopupStack::UIPopupStack(QWidget *pParent)
     : QWidget(pParent)
     , m_fPolished(false)
-    , m_iStackLayoutMargin(0)
-    , m_iStackLayoutSpacing(0)
+    , m_iLayoutMargin(2), m_iLayoutSpacing(0)
     , m_iParentStatusBarHeight(parentStatusBarHeight(pParent))
 {
     /* Prepare: */
@@ -139,7 +138,7 @@ int UIPopupStack::minimumWidthHint()
         iWidthHint = qMax(iWidthHint, pPane->minimumWidthHint());
 
     /* And two margins finally: */
-    iWidthHint += 2 * m_iStackLayoutMargin;
+    iWidthHint += 2 * m_iLayoutMargin;
 
     /* Return width hint: */
     return iWidthHint;
@@ -156,10 +155,10 @@ int UIPopupStack::minimumHeightHint()
 
     /* Take into account all the spacings, if any: */
     if (!m_panes.isEmpty())
-        iHeightHint += (m_panes.size() - 1) * m_iStackLayoutSpacing;
+        iHeightHint += (m_panes.size() - 1) * m_iLayoutSpacing;
 
     /* And two margins finally: */
-    iHeightHint += 2 * m_iStackLayoutMargin;
+    iHeightHint += 2 * m_iLayoutMargin;
 
     /* Return height hint: */
     return iHeightHint;
@@ -175,7 +174,7 @@ void UIPopupStack::setDesiredWidth(int iWidth)
 {
     /* Propagate desired width to all the popup-panes we have: */
     foreach (UIPopupPane *pPane, m_panes)
-        pPane->setDesiredWidth(iWidth - 2 * m_iStackLayoutMargin);
+        pPane->setDesiredWidth(iWidth - 2 * m_iLayoutMargin);
 }
 
 void UIPopupStack::layoutContent()
@@ -183,21 +182,21 @@ void UIPopupStack::layoutContent()
     /* Get attributes: */
     const int iWidth = width();
     const int iHeight = height();
-    int iX = m_iStackLayoutMargin;
-    int iY = iHeight - m_iStackLayoutMargin;
+    int iX = m_iLayoutMargin;
+    int iY = iHeight - m_iLayoutMargin;
 
     /* Layout every pane we have: */
     foreach (UIPopupPane *pPane, m_panes)
     {
         /* Get pane attributes: */
-        const int iPaneWidth = iWidth - 2 * m_iStackLayoutMargin;
+        const int iPaneWidth = iWidth - 2 * m_iLayoutMargin;
         const int iPaneHeight = pPane->minimumHeightHint();
         /* Adjust geometry for the pane: */
         pPane->move(iX, iY - iPaneHeight);
         pPane->resize(iPaneWidth, iPaneHeight);
         pPane->layoutContent();
         /* Increment placeholder: */
-        iY -= (iPaneHeight + m_iStackLayoutSpacing);
+        iY -= (iPaneHeight + m_iLayoutSpacing);
     }
 }
 

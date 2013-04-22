@@ -36,8 +36,9 @@
 #include <VBox/sup.h>
 
 void UIAnimationFramework::installPropertyAnimation(QWidget *pParent, const QByteArray &strPropertyName,
-                                                    int iStartValue, int iFinalValue, int iAnimationDuration,
-                                                    const char *pSignalForward, const char *pSignalBackward)
+                                                    int iStartValue, int iFinalValue,
+                                                    const char *pSignalForward, const char *pSignalBackward,
+                                                    int iAnimationDuration /*= 300*/)
 {
     /* State-machine: */
     QStateMachine *pStateMachine = new QStateMachine(pParent);
@@ -109,45 +110,6 @@ QStateMachine* UIAnimationFramework::installPropertyAnimation(QWidget *pTarget, 
     /* Return machine: */
     return pStateMachine;
 }
-
-
-/* Popup-pane frame prototype class: */
-class UIPopupPaneFrame : public QWidget
-{
-    Q_OBJECT;
-    Q_PROPERTY(int opacity READ opacity WRITE setOpacity);
-
-signals:
-
-    /* Notifiers: Parent propagation stuff: */
-    void sigHoverEnter();
-    void sigHoverLeave();
-    void sigFocusEnter();
-    void sigFocusLeave();
-
-public:
-
-    /* Constructor: */
-    UIPopupPaneFrame(QWidget *pParent = 0);
-
-private:
-
-    /* Helper: Prepare stuff: */
-    void prepare();
-
-    /* Handler: Event stuff: */
-    void paintEvent(QPaintEvent *pEvent);
-
-    /* Property: Hover stuff: */
-    int opacity() const { return m_iOpacity; }
-    void setOpacity(int iOpacity) { m_iOpacity = iOpacity; update(); }
-
-    /* Variables: Hover stuff: */
-    const int m_iHoverAnimationDuration;
-    const int m_iDefaultOpacity;
-    const int m_iHoveredOpacity;
-    int m_iOpacity;
-};
 
 
 /* Popup-pane text-pane prototype class: */
@@ -266,10 +228,14 @@ UIPopupPane::UIPopupPane(QWidget *pParent,
                          const QString &strMessage, const QString &strDetails,
                          const QMap<int, QString> &buttonDescriptions)
     : QWidget(pParent)
-    , m_iMainLayoutMargin(2), m_iMainFrameLayoutMargin(10), m_iMainFrameLayoutSpacing(5)
+    , m_iLayoutMargin(10), m_iLayoutSpacing(5)
     , m_strMessage(strMessage), m_strDetails(strDetails), m_buttonDescriptions(buttonDescriptions)
-    , m_fHovered(false) , m_fFocused(false)
-    , m_pMainFrame(0), m_pTextPane(0), m_pButtonPane(0)
+    , m_fHovered(false)
+    , m_iDefaultOpacity(128)
+    , m_iHoveredOpacity(230)
+    , m_iOpacity(m_iDefaultOpacity)
+    , m_fFocused(false)
+    , m_pTextPane(0), m_pButtonPane(0)
 {
     /* Prepare: */
     prepare();
@@ -303,8 +269,7 @@ void UIPopupPane::setDesiredWidth(int iWidth)
         return;
 
     /* Propagate desired width to the text-pane we have: */
-    m_pTextPane->setDesiredWidth(iWidth - 2 * m_iMainLayoutMargin
-                                        - 2 * m_iMainFrameLayoutMargin
+    m_pTextPane->setDesiredWidth(iWidth - 2 * m_iLayoutMargin
                                         - m_pButtonPane->minimumSizeHint().width());
 }
 
@@ -313,17 +278,13 @@ int UIPopupPane::minimumWidthHint() const
     /* Prepare width hint: */
     int iWidthHint = 0;
 
-    /* Take into account main layout: */
-    iWidthHint += 2 * m_iMainLayoutMargin;
+    /* Take into account layout: */
+    iWidthHint += 2 * m_iLayoutMargin;
     {
-        /* Take into account main-frame layout: */
-        iWidthHint += 2 * m_iMainFrameLayoutMargin;
-        {
-            /* Take into account widgets: */
-            iWidthHint += m_pTextPane->minimumSizeHint().width();
-            iWidthHint += m_iMainFrameLayoutSpacing;
-            iWidthHint += m_pButtonPane->minimumSizeHint().width();
-        }
+        /* Take into account widgets: */
+        iWidthHint += m_pTextPane->minimumSizeHint().width();
+        iWidthHint += m_iLayoutSpacing;
+        iWidthHint += m_pButtonPane->minimumSizeHint().width();
     }
 
     /* Return width hint: */
@@ -335,17 +296,13 @@ int UIPopupPane::minimumHeightHint() const
     /* Prepare height hint: */
     int iHeightHint = 0;
 
-    /* Take into account main layout: */
-    iHeightHint += 2 * m_iMainLayoutMargin;
+    /* Take into account layout: */
+    iHeightHint += 2 * m_iLayoutMargin;
     {
-        /* Take into account main-frame layout: */
-        iHeightHint += 2 * m_iMainFrameLayoutMargin;
-        {
-            /* Take into account widgets: */
-            const int iTextPaneHeight = m_pTextPane->minimumSizeHint().height();
-            const int iButtonBoxHeight = m_pButtonPane->minimumSizeHint().height();
-            iHeightHint += qMax(iTextPaneHeight, iButtonBoxHeight);
-        }
+        /* Take into account widgets: */
+        const int iTextPaneHeight = m_pTextPane->minimumSizeHint().height();
+        const int iButtonBoxHeight = m_pButtonPane->minimumSizeHint().height();
+        iHeightHint += qMax(iTextPaneHeight, iButtonBoxHeight);
     }
 
     /* Return height hint: */
@@ -360,40 +317,29 @@ QSize UIPopupPane::minimumSizeHint() const
 
 void UIPopupPane::layoutContent()
 {
-    /* This attributes: */
+    /* Variables: */
     const int iWidth = width();
     const int iHeight = height();
-    /* Main layout: */
-    {
-        /* Main-frame: */
-        const int iMainFrameWidth = iWidth - 2 * m_iMainLayoutMargin;
-        const int iMainFrameHeight = iHeight - 2 * m_iMainLayoutMargin;
-        m_pMainFrame->move(m_iMainLayoutMargin, m_iMainLayoutMargin);
-        m_pMainFrame->resize(iMainFrameWidth, iMainFrameHeight);
-        /* Main-frame layout: */
-        {
-            /* Variables: */
-            const QSize buttonPaneMinimumSizeHint = m_pButtonPane->minimumSizeHint();
-            const int iButtonPaneMinimumWidth = buttonPaneMinimumSizeHint.width();
-            const int iButtonPaneMinimumHeight = buttonPaneMinimumSizeHint.height();
-            const int iTextPaneWidth = iMainFrameWidth - 2 * m_iMainFrameLayoutMargin - m_iMainFrameLayoutSpacing - iButtonPaneMinimumWidth;
-            const int iTextPaneHeight = m_pTextPane->minimumSizeHint().height();
-            const int iMaximumHeight = qMax(iTextPaneHeight, iButtonPaneMinimumHeight);
-            const int iMinimumHeight = qMin(iTextPaneHeight, iButtonPaneMinimumHeight);
-            const int iHeightShift = (iMaximumHeight - iMinimumHeight) / 2;
-            const bool fTextPaneShifted = iTextPaneHeight < iButtonPaneMinimumHeight;
-            /* Text-pane: */
-            m_pTextPane->move(m_iMainFrameLayoutMargin,
-                              fTextPaneShifted ? m_iMainFrameLayoutMargin + iHeightShift : m_iMainFrameLayoutMargin);
-            m_pTextPane->resize(iTextPaneWidth,
-                                iTextPaneHeight);
-            /* Button-box: */
-            m_pButtonPane->move(m_iMainFrameLayoutMargin + iTextPaneWidth + m_iMainFrameLayoutSpacing,
-                                m_iMainFrameLayoutMargin);
-            m_pButtonPane->resize(iButtonPaneMinimumWidth,
-                                  iMainFrameHeight - 2 * m_iMainFrameLayoutMargin);
-        }
-    }
+    const QSize buttonPaneMinimumSizeHint = m_pButtonPane->minimumSizeHint();
+    const int iButtonPaneMinimumWidth = buttonPaneMinimumSizeHint.width();
+    const int iButtonPaneMinimumHeight = buttonPaneMinimumSizeHint.height();
+    const int iTextPaneWidth = iWidth - 2 * m_iLayoutMargin - m_iLayoutSpacing - iButtonPaneMinimumWidth;
+    const int iTextPaneHeight = m_pTextPane->minimumSizeHint().height();
+    const int iMaximumHeight = qMax(iTextPaneHeight, iButtonPaneMinimumHeight);
+    const int iMinimumHeight = qMin(iTextPaneHeight, iButtonPaneMinimumHeight);
+    const int iHeightShift = (iMaximumHeight - iMinimumHeight) / 2;
+    const bool fTextPaneShifted = iTextPaneHeight < iButtonPaneMinimumHeight;
+
+    /* Text-pane: */
+    m_pTextPane->move(m_iLayoutMargin,
+                      fTextPaneShifted ? m_iLayoutMargin + iHeightShift : m_iLayoutMargin);
+    m_pTextPane->resize(iTextPaneWidth,
+                        iTextPaneHeight);
+    /* Button-box: */
+    m_pButtonPane->move(m_iLayoutMargin + iTextPaneWidth + m_iLayoutSpacing,
+                        m_iLayoutMargin);
+    m_pButtonPane->resize(iButtonPaneMinimumWidth,
+                          iHeight - 2 * m_iLayoutMargin);
 }
 
 void UIPopupPane::sltButtonClicked(int iButtonID)
@@ -403,6 +349,10 @@ void UIPopupPane::sltButtonClicked(int iButtonID)
 
 void UIPopupPane::prepare()
 {
+    /* Install 'hover' animation for 'opacity' property: */
+    UIAnimationFramework::installPropertyAnimation(this, QByteArray("opacity"),
+                                                   m_iDefaultOpacity, m_iHoveredOpacity,
+                                                   SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
     /* Prepare content: */
     prepareContent();
 }
@@ -411,35 +361,31 @@ void UIPopupPane::prepareContent()
 {
     /* Prepare this: */
     installEventFilter(this);
-    /* Create main-frame: */
-    m_pMainFrame = new UIPopupPaneFrame(this);
+    /* Create message-label: */
+    m_pTextPane = new UIPopupPaneTextPane(this);
     {
-        /* Prepare frame: */
-        m_pMainFrame->installEventFilter(this);
-        m_pMainFrame->setFocusPolicy(Qt::StrongFocus);
-        /* Create message-label: */
-        m_pTextPane = new UIPopupPaneTextPane(m_pMainFrame);
-        {
-            /* Prepare label: */
-            connect(m_pTextPane, SIGNAL(sigSizeHintChanged()),
-                    this, SIGNAL(sigSizeHintChanged()));
-            m_pTextPane->installEventFilter(this);
-            m_pTextPane->setFocusPolicy(Qt::StrongFocus);
-            m_pTextPane->setText(m_strMessage);
-        }
-        /* Create button-box: */
-        m_pButtonPane = new UIPopupPaneButtonPane(m_pMainFrame);
-        {
-            /* Prepare button-box: */
-            connect(m_pButtonPane, SIGNAL(sigButtonClicked(int)),
-                    this, SLOT(sltButtonClicked(int)));
-            m_pButtonPane->installEventFilter(this);
-            m_pButtonPane->setButtons(m_buttonDescriptions);
-            m_pButtonPane->setFocusPolicy(Qt::StrongFocus);
-            m_pMainFrame->setFocusProxy(m_pButtonPane);
-            m_pTextPane->setFocusProxy(m_pButtonPane);
-        }
+        /* Prepare label: */
+        connect(m_pTextPane, SIGNAL(sigSizeHintChanged()),
+                this, SIGNAL(sigSizeHintChanged()));
+        m_pTextPane->installEventFilter(this);
+        m_pTextPane->setText(m_strMessage);
     }
+    /* Create button-box: */
+    m_pButtonPane = new UIPopupPaneButtonPane(this);
+    {
+        /* Prepare button-box: */
+        connect(m_pButtonPane, SIGNAL(sigButtonClicked(int)),
+                this, SLOT(sltButtonClicked(int)));
+        m_pButtonPane->installEventFilter(this);
+        m_pButtonPane->setButtons(m_buttonDescriptions);
+    }
+
+    /* Prepare focus rules: */
+    setFocusPolicy(Qt::StrongFocus);
+    m_pTextPane->setFocusPolicy(Qt::StrongFocus);
+    m_pButtonPane->setFocusPolicy(Qt::StrongFocus);
+    setFocusProxy(m_pButtonPane);
+    m_pTextPane->setFocusProxy(m_pButtonPane);
 }
 
 bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -493,41 +439,7 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
     return false;
 }
 
-void UIPopupPane::done(int iButtonCode)
-{
-    /* Close the window: */
-    close();
-
-    /* Notify listeners: */
-    emit sigDone(iButtonCode);
-}
-
-
-UIPopupPaneFrame::UIPopupPaneFrame(QWidget *pParent /*= 0*/)
-    : QWidget(pParent)
-    , m_iHoverAnimationDuration(300)
-    , m_iDefaultOpacity(128)
-    , m_iHoveredOpacity(230)
-    , m_iOpacity(m_iDefaultOpacity)
-{
-    /* Prepare: */
-    prepare();
-}
-
-void UIPopupPaneFrame::prepare()
-{
-    /* Propagate parent signals: */
-    connect(parent(), SIGNAL(sigHoverEnter()), this, SIGNAL(sigHoverEnter()));
-    connect(parent(), SIGNAL(sigHoverLeave()), this, SIGNAL(sigHoverLeave()));
-    connect(parent(), SIGNAL(sigFocusEnter()), this, SIGNAL(sigFocusEnter()));
-    connect(parent(), SIGNAL(sigFocusLeave()), this, SIGNAL(sigFocusLeave()));
-    /* Install 'hover' animation for 'opacity' property: */
-    UIAnimationFramework::installPropertyAnimation(this, QByteArray("opacity"),
-                                                   m_iDefaultOpacity, m_iHoveredOpacity, m_iHoverAnimationDuration,
-                                                   SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
-}
-
-void UIPopupPaneFrame::paintEvent(QPaintEvent*)
+void UIPopupPane::paintEvent(QPaintEvent*)
 {
     /* Compose painting rectangle: */
     const QRect rect(0, 0, width(), height());
@@ -559,6 +471,15 @@ void UIPopupPaneFrame::paintEvent(QPaintEvent*)
     headerGradient.setColorAt(0, newColor1);
     headerGradient.setColorAt(1, newColor2);
     painter.fillRect(rect, headerGradient);
+}
+
+void UIPopupPane::done(int iButtonCode)
+{
+    /* Close the window: */
+    close();
+
+    /* Notify listeners: */
+    emit sigDone(iButtonCode);
 }
 
 
