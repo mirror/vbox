@@ -2590,7 +2590,7 @@ VMMR3DECL(bool) HMR3IsEnabled(PUVM pUVM)
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, false);
-    return HMIsEnabled(pVM);
+    return pVM->fHMEnabled; /* Don't use the macro as the GUI may query us very very early. */
 }
 
 
