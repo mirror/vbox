@@ -151,26 +151,38 @@ tstVMMConfigConstructor(PUVM pUVM, PVM pVM, void *pvUser)
 {
     NOREF(pvUser);
     int rc = CFGMR3ConstructDefaultTree(pVM);
-    if (    RT_SUCCESS(rc)
-        &&  g_cCpus > 1)
+    if (RT_SUCCESS(rc))
     {
         PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
-        CFGMR3RemoveValue(pRoot, "NumCPUs");
-        rc = CFGMR3InsertInteger(pRoot, "NumCPUs", g_cCpus);
-        RTTESTI_CHECK_MSG_RET(RT_SUCCESS(rc), ("CFGMR3InsertInteger(pRoot,\"NumCPUs\",) -> %Rrc\n", rc), rc);
+        if (g_cCpus < 2)
+        {
+            rc = CFGMR3InsertInteger(pRoot, "HMEnabled", false);
+            RTTESTI_CHECK_MSG_RET(RT_SUCCESS(rc),
+                                  ("CFGMR3InsertInteger(pRoot,\"HMEnabled\",) -> %Rrc\n", rc), rc);
+        }
+        else if (g_cCpus > 1)
+        {
+            CFGMR3RemoveValue(pRoot, "NumCPUs");
+            rc = CFGMR3InsertInteger(pRoot, "NumCPUs", g_cCpus);
+            RTTESTI_CHECK_MSG_RET(RT_SUCCESS(rc),
+                                  ("CFGMR3InsertInteger(pRoot,\"NumCPUs\",) -> %Rrc\n", rc), rc);
 
-        CFGMR3RemoveValue(pRoot, "HwVirtExtForced");
-        rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced", true);
-        RTTESTI_CHECK_MSG_RET(RT_SUCCESS(rc), ("CFGMR3InsertInteger(pRoot,\"HwVirtExtForced\",) -> %Rrc\n", rc), rc);
-
-        PCFGMNODE pHwVirtExt = CFGMR3GetChild(pRoot, "HWVirtExt");
-        CFGMR3RemoveNode(pHwVirtExt);
-        rc = CFGMR3InsertNode(pRoot, "HWVirtExt", &pHwVirtExt);
-        RTTESTI_CHECK_MSG_RET(RT_SUCCESS(rc), ("CFGMR3InsertNode(pRoot,\"HWVirtExt\",) -> %Rrc\n", rc), rc);
-        rc = CFGMR3InsertInteger(pHwVirtExt, "Enabled", true);
-        RTTESTI_CHECK_MSG_RET(RT_SUCCESS(rc), ("CFGMR3InsertInteger(pHwVirtExt,\"Enabled\",) -> %Rrc\n", rc), rc);
-        rc = CFGMR3InsertInteger(pHwVirtExt, "64bitEnabled", false);
-        RTTESTI_CHECK_MSG_RET(RT_SUCCESS(rc), ("CFGMR3InsertInteger(pHwVirtExt,\"64bitEnabled\",) -> %Rrc\n", rc), rc);
+            CFGMR3RemoveValue(pRoot, "HwVirtExtForced");
+            rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced", true);
+            RTTESTI_CHECK_MSG_RET(RT_SUCCESS(rc),
+                                  ("CFGMR3InsertInteger(pRoot,\"HwVirtExtForced\",) -> %Rrc\n", rc), rc);
+            PCFGMNODE pHwVirtExt = CFGMR3GetChild(pRoot, "HWVirtExt");
+            CFGMR3RemoveNode(pHwVirtExt);
+            rc = CFGMR3InsertNode(pRoot, "HWVirtExt", &pHwVirtExt);
+            RTTESTI_CHECK_MSG_RET(RT_SUCCESS(rc),
+                                  ("CFGMR3InsertNode(pRoot,\"HWVirtExt\",) -> %Rrc\n", rc), rc);
+            rc = CFGMR3InsertInteger(pHwVirtExt, "Enabled", true);
+            RTTESTI_CHECK_MSG_RET(RT_SUCCESS(rc),
+                                  ("CFGMR3InsertInteger(pHwVirtExt,\"Enabled\",) -> %Rrc\n", rc), rc);
+            rc = CFGMR3InsertInteger(pHwVirtExt, "64bitEnabled", false);
+            RTTESTI_CHECK_MSG_RET(RT_SUCCESS(rc),
+                                  ("CFGMR3InsertInteger(pHwVirtExt,\"64bitEnabled\",) -> %Rrc\n", rc), rc);
+        }
     }
     return rc;
 }
