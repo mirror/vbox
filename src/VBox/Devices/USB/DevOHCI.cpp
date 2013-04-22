@@ -3552,8 +3552,10 @@ static void ohciCancelOrphanedURBs(POHCI pThis)
     uint32_t    EdAddr;
     PVUSBURB    pUrb;
 
-    /* If the HCCA is not currently valid, there's nothing to do. */
-    if (!fValidHCCA)
+    /* If the HCCA is not currently valid, or there are no in-flight URBs,
+     * there's nothing to do.
+     */
+    if (!fValidHCCA || !pThis->cInFlight)
         return;
 
     /* Initially mark all in-flight URBs as inactive. */
@@ -3590,18 +3592,23 @@ static void ohciCancelOrphanedURBs(POHCI pThis)
             OHCITD Td;
             ohciReadEd(pThis, EdAddr, &Ed);
             uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
+            uint32_t TailP  = Ed.TailP & ED_PTR_MASK;
             unsigned k = 0;
-            do
+            if (  !(Ed.hwinfo & ED_HWINFO_SKIP)
+                && (TdAddr != TailP)) 
             {
-                ohciReadTd(pThis, TdAddr, &Td);
-                j = ohci_in_flight_find(pThis, TdAddr);
-                if (j > -1)
-                    pThis->aInFlight[j].fInactive = false;
-                TdAddr = Td.NextTD & ED_PTR_MASK;
-                /* Failsafe for temporarily looped lists. */
-                if (++k == 128)
-                    break;
-            } while (TdAddr != (Ed.TailP & ED_PTR_MASK));
+                do
+                {
+                    ohciReadTd(pThis, TdAddr, &Td);
+                    j = ohci_in_flight_find(pThis, TdAddr);
+                    if (j > -1)
+                        pThis->aInFlight[j].fInactive = false;
+                    TdAddr = Td.NextTD & ED_PTR_MASK;
+                    /* Failsafe for temporarily looped lists. */
+                    if (++k == 128)
+                        break;
+                } while (TdAddr != (Ed.TailP & ED_PTR_MASK));
+            }
             EdAddr = Ed.NextED & ED_PTR_MASK;
         }
     }
