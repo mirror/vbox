@@ -21,11 +21,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLabel>
-#include <QPushButton>
-#include <QEvent>
 #include <QKeyEvent>
-#include <QMainWindow>
-#include <QStatusBar>
 #include <QPainter>
 #include <QStateMachine>
 #include <QPropertyAnimation>
@@ -158,6 +154,9 @@ private:
 class UIPopupPaneTextPane : public QWidget
 {
     Q_OBJECT;
+    Q_PROPERTY(QSize collapsedSizeHint READ collapsedSizeHint);
+    Q_PROPERTY(QSize expandedSizeHint READ expandedSizeHint);
+    Q_PROPERTY(QSize minimumSizeHint READ minimumSizeHint WRITE setMinimumSizeHint);
 
 signals:
 
@@ -166,7 +165,7 @@ signals:
     void sigFocusLeave();
 
     /* Notifier: Animation stuff: */
-    void sigSizeChanged();
+    void sigSizeHintChanged();
 
 public:
 
@@ -181,7 +180,7 @@ public:
 
     /* API: Size-hint stuff: */
     QSize minimumSizeHint() const;
-    QSize sizeHint() const;
+    void setMinimumSizeHint(const QSize &minimumSizeHint);
 
 private slots:
 
@@ -196,18 +195,18 @@ private:
     void prepareContent();
 
     /* Helper: Size-hint stuff: */
-    void updateGeometry();
-
-    /* Handler: Animation stuff: */
-    void resizeEvent(QResizeEvent *pEvent);
+    QSize collapsedSizeHint() const { return m_collapsedSizeHint; }
+    QSize expandedSizeHint() const { return m_expandedSizeHint; }
+    void updateSizeHint();
 
     /* Variables: Label stuff: */
     QLabel *m_pLabel;
     int m_iDesiredWidth;
 
     /* Variables: Size-hint stuff: */
+    QSize m_collapsedSizeHint;
+    QSize m_expandedSizeHint;
     QSize m_minimumSizeHint;
-    QSize m_sizeHint;
 
     /* Variables: Animation stuff: */
     bool m_fFocused;
@@ -263,14 +262,11 @@ private:
 };
 
 
-UIPopupPane::UIPopupPane(QWidget *pParent, const QString &strId,
+UIPopupPane::UIPopupPane(QWidget *pParent,
                          const QString &strMessage, const QString &strDetails,
                          const QMap<int, QString> &buttonDescriptions)
     : QWidget(pParent)
-    , m_fPolished(false)
-    , m_strId(strId)
     , m_iMainLayoutMargin(2), m_iMainFrameLayoutMargin(10), m_iMainFrameLayoutSpacing(5)
-    , m_iParentStatusBarHeight(parentStatusBarHeight(pParent))
     , m_strMessage(strMessage), m_strDetails(strDetails), m_buttonDescriptions(buttonDescriptions)
     , m_fHovered(false) , m_fFocused(false)
     , m_pMainFrame(0), m_pTextPane(0), m_pButtonPane(0)
@@ -300,34 +296,113 @@ void UIPopupPane::setDetails(const QString &strDetails)
     m_strDetails = strDetails;
 }
 
+void UIPopupPane::setDesiredWidth(int iWidth)
+{
+    /* Make sure text-pane exists: */
+    if (!m_pTextPane)
+        return;
+
+    /* Propagate desired width to the text-pane we have: */
+    m_pTextPane->setDesiredWidth(iWidth - 2 * m_iMainLayoutMargin
+                                        - 2 * m_iMainFrameLayoutMargin
+                                        - m_pButtonPane->minimumSizeHint().width());
+}
+
+int UIPopupPane::minimumWidthHint() const
+{
+    /* Prepare width hint: */
+    int iWidthHint = 0;
+
+    /* Take into account main layout: */
+    iWidthHint += 2 * m_iMainLayoutMargin;
+    {
+        /* Take into account main-frame layout: */
+        iWidthHint += 2 * m_iMainFrameLayoutMargin;
+        {
+            /* Take into account widgets: */
+            iWidthHint += m_pTextPane->minimumSizeHint().width();
+            iWidthHint += m_iMainFrameLayoutSpacing;
+            iWidthHint += m_pButtonPane->minimumSizeHint().width();
+        }
+    }
+
+    /* Return width hint: */
+    return iWidthHint;
+}
+
+int UIPopupPane::minimumHeightHint() const
+{
+    /* Prepare height hint: */
+    int iHeightHint = 0;
+
+    /* Take into account main layout: */
+    iHeightHint += 2 * m_iMainLayoutMargin;
+    {
+        /* Take into account main-frame layout: */
+        iHeightHint += 2 * m_iMainFrameLayoutMargin;
+        {
+            /* Take into account widgets: */
+            const int iTextPaneHeight = m_pTextPane->minimumSizeHint().height();
+            const int iButtonBoxHeight = m_pButtonPane->minimumSizeHint().height();
+            iHeightHint += qMax(iTextPaneHeight, iButtonBoxHeight);
+        }
+    }
+
+    /* Return height hint: */
+    return iHeightHint;
+}
+
+QSize UIPopupPane::minimumSizeHint() const
+{
+    /* Wrap reimplemented getters: */
+    return QSize(minimumWidthHint(), minimumHeightHint());
+}
+
+void UIPopupPane::layoutContent()
+{
+    /* This attributes: */
+    const int iWidth = width();
+    const int iHeight = height();
+    /* Main layout: */
+    {
+        /* Main-frame: */
+        const int iMainFrameWidth = iWidth - 2 * m_iMainLayoutMargin;
+        const int iMainFrameHeight = iHeight - 2 * m_iMainLayoutMargin;
+        m_pMainFrame->move(m_iMainLayoutMargin, m_iMainLayoutMargin);
+        m_pMainFrame->resize(iMainFrameWidth, iMainFrameHeight);
+        /* Main-frame layout: */
+        {
+            /* Variables: */
+            const QSize buttonPaneMinimumSizeHint = m_pButtonPane->minimumSizeHint();
+            const int iButtonPaneMinimumWidth = buttonPaneMinimumSizeHint.width();
+            const int iButtonPaneMinimumHeight = buttonPaneMinimumSizeHint.height();
+            const int iTextPaneWidth = iMainFrameWidth - 2 * m_iMainFrameLayoutMargin - m_iMainFrameLayoutSpacing - iButtonPaneMinimumWidth;
+            const int iTextPaneHeight = m_pTextPane->minimumSizeHint().height();
+            const int iMaximumHeight = qMax(iTextPaneHeight, iButtonPaneMinimumHeight);
+            const int iMinimumHeight = qMin(iTextPaneHeight, iButtonPaneMinimumHeight);
+            const int iHeightShift = (iMaximumHeight - iMinimumHeight) / 2;
+            const bool fTextPaneShifted = iTextPaneHeight < iButtonPaneMinimumHeight;
+            /* Text-pane: */
+            m_pTextPane->move(m_iMainFrameLayoutMargin,
+                              fTextPaneShifted ? m_iMainFrameLayoutMargin + iHeightShift : m_iMainFrameLayoutMargin);
+            m_pTextPane->resize(iTextPaneWidth,
+                                iTextPaneHeight);
+            /* Button-box: */
+            m_pButtonPane->move(m_iMainFrameLayoutMargin + iTextPaneWidth + m_iMainFrameLayoutSpacing,
+                                m_iMainFrameLayoutMargin);
+            m_pButtonPane->resize(iButtonPaneMinimumWidth,
+                                  iMainFrameHeight - 2 * m_iMainFrameLayoutMargin);
+        }
+    }
+}
+
 void UIPopupPane::sltButtonClicked(int iButtonID)
 {
     done(iButtonID & AlertButtonMask);
 }
 
-void UIPopupPane::sltAdjustGeomerty()
-{
-    /* Get parent attributes: */
-    const int iWidth = parentWidget()->width();
-    const int iHeight = parentWidget()->height();
-
-    /* Resize popup according parent width: */
-    resize(iWidth, minimumSizeHint().height());
-
-    /* Move popup according parent: */
-    move(0, iHeight - height() - m_iParentStatusBarHeight);
-
-    /* Raise popup according parent: */
-    raise();
-
-    /* Update layout: */
-    updateLayout();
-}
-
 void UIPopupPane::prepare()
 {
-    /* Install event-filter to parent: */
-    parent()->installEventFilter(this);
     /* Prepare content: */
     prepareContent();
 }
@@ -346,8 +421,8 @@ void UIPopupPane::prepareContent()
         m_pTextPane = new UIPopupPaneTextPane(m_pMainFrame);
         {
             /* Prepare label: */
-            connect(m_pTextPane, SIGNAL(sigSizeChanged()),
-                    this, SLOT(sltAdjustGeomerty()));
+            connect(m_pTextPane, SIGNAL(sigSizeHintChanged()),
+                    this, SIGNAL(sigSizeHintChanged()));
             m_pTextPane->installEventFilter(this);
             m_pTextPane->setFocusPolicy(Qt::StrongFocus);
             m_pTextPane->setText(m_strMessage);
@@ -369,190 +444,53 @@ void UIPopupPane::prepareContent()
 
 bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-    /* If its parent event came: */
-    if (pWatched == parent())
+    /* Depending on event-type: */
+    switch (pEvent->type())
     {
-        /* Make sure its resize event came: */
-        if (pEvent->type() != QEvent::Resize)
-            return false;
-
-        /* Adjust geometry: */
-        adjustGeometry();
-    }
-    /* Other objects subscribed for hovering: */
-    else
-    {
-        /* Depending on event-type: */
-        switch (pEvent->type())
+        /* Something is hovered: */
+        case QEvent::HoverEnter:
+        case QEvent::Enter:
         {
-            /* Something is hovered: */
-            case QEvent::HoverEnter:
-            case QEvent::Enter:
+            if (!m_fHovered)
             {
-                if (!m_fHovered)
-                {
-                    m_fHovered = true;
-                    emit sigHoverEnter();
-                }
-                break;
+                m_fHovered = true;
+                emit sigHoverEnter();
             }
-            /* Nothing is hovered: */
-            case QEvent::Leave:
-            {
-                if (pWatched == this && m_fHovered)
-                {
-                    m_fHovered = false;
-                    emit sigHoverLeave();
-                }
-                break;
-            }
-            case QEvent::FocusIn:
-            {
-                if (!m_fFocused)
-                {
-                    m_fFocused = true;
-                    emit sigFocusEnter();
-                }
-                break;
-            }
-            case QEvent::FocusOut:
-            {
-                if (m_fFocused)
-                {
-                    m_fFocused = false;
-                    emit sigFocusLeave();
-                }
-                break;
-            }
-            /* Default case: */
-            default: break;
+            break;
         }
+        /* Nothing is hovered: */
+        case QEvent::Leave:
+        {
+            if (pWatched == this && m_fHovered)
+            {
+                m_fHovered = false;
+                emit sigHoverLeave();
+            }
+            break;
+        }
+        case QEvent::FocusIn:
+        {
+            if (!m_fFocused)
+            {
+                m_fFocused = true;
+                emit sigFocusEnter();
+            }
+            break;
+        }
+        case QEvent::FocusOut:
+        {
+            if (m_fFocused)
+            {
+                m_fFocused = false;
+                emit sigFocusLeave();
+            }
+            break;
+        }
+        /* Default case: */
+        default: break;
     }
     /* Do not filter anything: */
     return false;
-}
-
-void UIPopupPane::showEvent(QShowEvent *pEvent)
-{
-    /* Make sure we should polish dialog: */
-    if (m_fPolished)
-        return;
-
-    /* Call to polish-event: */
-    polishEvent(pEvent);
-
-    /* Mark dialog as polished: */
-    m_fPolished = true;
-}
-
-void UIPopupPane::polishEvent(QShowEvent*)
-{
-    /* Adjust geometry: */
-    adjustGeometry();
-}
-
-int UIPopupPane::minimumWidthHint() const
-{
-    /* Prepare minimum width hint: */
-    int iMinimumWidthHint = 0;
-
-    /* Take into account main layout: */
-    iMinimumWidthHint += 2 * m_iMainLayoutMargin;
-    {
-        /* Take into account main-frame layout: */
-        iMinimumWidthHint += 2 * m_iMainFrameLayoutMargin;
-        {
-            /* Take into account widgets: */
-            iMinimumWidthHint += m_pTextPane->width();
-            iMinimumWidthHint += m_iMainFrameLayoutSpacing;
-            iMinimumWidthHint += m_pButtonPane->minimumSizeHint().width();
-        }
-    }
-
-    /* Return minimum width hint: */
-    return iMinimumWidthHint;
-}
-
-int UIPopupPane::minimumHeightHint() const
-{
-    /* Prepare minimum height hint: */
-    int iMinimumHeightHint = 0;
-
-    /* Take into account main layout: */
-    iMinimumHeightHint += 2 * m_iMainLayoutMargin;
-    {
-        /* Take into account main-frame layout: */
-        iMinimumHeightHint += 2 * m_iMainFrameLayoutMargin;
-        {
-            /* Take into account widgets: */
-            const int iTextPaneHeight = m_pTextPane->height();
-            const int iButtonBoxHeight = m_pButtonPane->minimumSizeHint().height();
-            iMinimumHeightHint += qMax(iTextPaneHeight, iButtonBoxHeight);
-        }
-    }
-
-    /* Return minimum height hint: */
-    return iMinimumHeightHint;
-}
-
-QSize UIPopupPane::minimumSizeHint() const
-{
-    return QSize(minimumWidthHint(), minimumHeightHint());
-}
-
-void UIPopupPane::adjustGeometry()
-{
-    /* Get parent width: */
-    const int iWidth = parentWidget()->width();
-
-    /* Adjust text-pane according parent width: */
-    if (m_pTextPane)
-    {
-        m_pTextPane->setDesiredWidth(iWidth - 2 * m_iMainLayoutMargin
-                                            - 2 * m_iMainFrameLayoutMargin
-                                            - m_pButtonPane->minimumSizeHint().width());
-    }
-
-    /* Adjust other widgets: */
-    sltAdjustGeomerty();
-}
-
-void UIPopupPane::updateLayout()
-{
-    /* This attributes: */
-    const int iWidth = width();
-    const int iHeight = height();
-    /* Main layout: */
-    {
-        /* Main-frame: */
-        m_pMainFrame->move(m_iMainLayoutMargin,
-                           m_iMainLayoutMargin);
-        m_pMainFrame->resize(iWidth - 2 * m_iMainLayoutMargin,
-                             iHeight - 2 * m_iMainLayoutMargin);
-        const int iMainFrameHeight = m_pMainFrame->height();
-        /* Main-frame layout: */
-        {
-            /* Variables: */
-            const int iTextPaneWidth = m_pTextPane->width();
-            const int iTextPaneHeight = m_pTextPane->height();
-            const QSize buttonBoxMinimumSizeHint = m_pButtonPane->minimumSizeHint();
-            const int iButtonBoxWidth = buttonBoxMinimumSizeHint.width();
-            const int iButtonBoxHeight = buttonBoxMinimumSizeHint.height();
-            const int iMaximumHeight = qMax(iTextPaneHeight, iButtonBoxHeight);
-            const int iMinimumHeight = qMin(iTextPaneHeight, iButtonBoxHeight);
-            const int iHeightShift = (iMaximumHeight - iMinimumHeight) / 2;
-            const bool fTextPaneShifted = iTextPaneHeight < iButtonBoxHeight;
-            /* Text-pane: */
-            m_pTextPane->move(m_iMainFrameLayoutMargin,
-                              fTextPaneShifted ? m_iMainFrameLayoutMargin + iHeightShift : m_iMainFrameLayoutMargin);
-            m_pTextPane->resize(iTextPaneWidth, iTextPaneHeight);
-            /* Button-box: */
-            m_pButtonPane->move(m_iMainFrameLayoutMargin + iTextPaneWidth + m_iMainFrameLayoutSpacing,
-                                m_iMainFrameLayoutMargin);
-            m_pButtonPane->resize(iButtonBoxWidth,
-                                  iMainFrameHeight - 2 * m_iMainFrameLayoutMargin);
-        }
-    }
 }
 
 void UIPopupPane::done(int iButtonCode)
@@ -562,17 +500,6 @@ void UIPopupPane::done(int iButtonCode)
 
     /* Notify listeners: */
     emit sigDone(iButtonCode);
-}
-
-/* static */
-int UIPopupPane::parentStatusBarHeight(QWidget *pParent)
-{
-    /* Check if passed parent is QMainWindow and contains status-bar: */
-    if (QMainWindow *pParentWindow = qobject_cast<QMainWindow*>(pParent))
-        if (pParentWindow->statusBar())
-            return pParentWindow->statusBar()->height();
-    /* Zero by default: */
-    return 0;
 }
 
 
@@ -653,7 +580,7 @@ void UIPopupPaneTextPane::setText(const QString &strText)
         return;
     /* Update the pane for new text: */
     m_pLabel->setText(strText);
-    updateGeometry();
+    updateSizeHint();
 }
 
 void UIPopupPaneTextPane::setDesiredWidth(int iDesiredWidth)
@@ -663,7 +590,7 @@ void UIPopupPaneTextPane::setDesiredWidth(int iDesiredWidth)
         return;
     /* Update the pane for new desired-width: */
     m_iDesiredWidth = iDesiredWidth;
-    updateGeometry();
+    updateSizeHint();
 }
 
 QSize UIPopupPaneTextPane::minimumSizeHint() const
@@ -676,14 +603,15 @@ QSize UIPopupPaneTextPane::minimumSizeHint() const
     return m_pLabel->minimumSizeHint();
 }
 
-QSize UIPopupPaneTextPane::sizeHint() const
+void UIPopupPaneTextPane::setMinimumSizeHint(const QSize &minimumSizeHint)
 {
-    /* Check if desired-width set: */
-    if (m_iDesiredWidth >= 0)
-        /* Return dependent size-hint: */
-        return m_sizeHint;
-    /* Return golden-rule size-hint by default: */
-    return m_pLabel->sizeHint();
+    /* Make sure the size-hint is changed: */
+    if (m_minimumSizeHint == minimumSizeHint)
+        return;
+    /* Assign new size-hint: */
+    m_minimumSizeHint = minimumSizeHint;
+    /* Notify parent popup-pane: */
+    emit sigSizeHintChanged();
 }
 
 void UIPopupPaneTextPane::sltFocusEnter()
@@ -740,26 +668,18 @@ void UIPopupPaneTextPane::prepareContent()
     }
 }
 
-void UIPopupPaneTextPane::updateGeometry()
+void UIPopupPaneTextPane::updateSizeHint()
 {
     /* Recalculate size-hints: */
     QFontMetrics fm(m_pLabel->font(), m_pLabel);
-    m_sizeHint = QSize(m_iDesiredWidth, m_pLabel->heightForWidth(m_iDesiredWidth));
-    m_minimumSizeHint = QSize(m_iDesiredWidth, fm.height());
-    /* Update geometry: */
-    QWidget::updateGeometry();
-    /* Resize to required size: */
-    resize(m_fFocused ? sizeHint() : minimumSizeHint());
+    m_collapsedSizeHint = QSize(m_iDesiredWidth, fm.height());
+    m_expandedSizeHint = QSize(m_iDesiredWidth, m_pLabel->heightForWidth(m_iDesiredWidth));
+    m_minimumSizeHint = m_fFocused ? m_expandedSizeHint : m_collapsedSizeHint;
     /* Reinstall animation: */
     delete m_pAnimation;
-    m_pAnimation = UIAnimationFramework::installPropertyAnimation(this, "size", "minimumSizeHint", "sizeHint",
+    m_pAnimation = UIAnimationFramework::installPropertyAnimation(this, "minimumSizeHint", "collapsedSizeHint", "expandedSizeHint",
                                                                   SIGNAL(sigFocusEnter()), SIGNAL(sigFocusLeave()),
                                                                   m_fFocused);
-}
-
-void UIPopupPaneTextPane::resizeEvent(QResizeEvent*)
-{
-    emit sigSizeChanged();
 }
 
 

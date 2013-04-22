@@ -26,6 +26,7 @@
 
 /* Forward declaration: */
 class QWidget;
+class UIPopupStack;
 class UIPopupPane;
 
 /* Popup-center singleton: */
@@ -35,8 +36,8 @@ class UIPopupCenter: public QObject
 
 signals:
 
-    /* Notifier: Popup done stuff: */
-    void sigPopupDone(QString strId, int iButtonCode) const;
+    /* Notifier: Popup-pane done stuff: */
+    void sigPopupPaneDone(QString strID, int iButtonCode);
 
 public:
 
@@ -50,17 +51,17 @@ public:
                  int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
                  const QString &strButtonText1 = QString(),
                  const QString &strButtonText2 = QString(),
-                 const QString &strButtonText3 = QString()) const;
+                 const QString &strButtonText3 = QString());
 
     /* API: Wrapper to 'message' function.
      * Provides single OK button: */
     void error(QWidget *pParent, const QString &strId,
-               const QString &strMessage, const QString &strDetails) const;
+               const QString &strMessage, const QString &strDetails);
 
     /* API: Wrapper to 'error' function.
      * Omits details: */
     void alert(QWidget *pParent, const QString &strId,
-               const QString &strMessage) const;
+               const QString &strMessage);
 
     /* API: Wrapper to 'message' function.
      * Omits details, provides two or three buttons: */
@@ -69,14 +70,14 @@ public:
                   int iButton1 = 0, int iButton2 = 0, int iButton3 = 0,
                   const QString &strButtonText1 = QString(),
                   const QString &strButtonText2 = QString(),
-                  const QString &strButtonText3 = QString()) const;
+                  const QString &strButtonText3 = QString());
 
     /* API: Wrapper to 'question' function,
      * Question providing two buttons (OK and Cancel by default): */
     void questionBinary(QWidget *pParent, const QString &strId,
                         const QString &strMessage,
                         const QString &strOkButtonText = QString(),
-                        const QString &strCancelButtonText = QString()) const;
+                        const QString &strCancelButtonText = QString());
 
     /* API: Wrapper to 'question' function,
      * Question providing three buttons (Yes, No and Cancel by default): */
@@ -84,15 +85,15 @@ public:
                          const QString &strMessage,
                          const QString &strChoice1ButtonText = QString(),
                          const QString &strChoice2ButtonText = QString(),
-                         const QString &strCancelButtonText = QString()) const;
+                         const QString &strCancelButtonText = QString());
 
     /* API: Runtime UI stuff: */
-    void remindAboutMouseIntegration(bool fSupportsAbsolute) const;
+    void remindAboutMouseIntegration(bool fSupportsAbsolute, QWidget *pParent);
 
 private slots:
 
-    /* Handler: Popup done stuff: */
-    void sltPopupDone(int iButtonCode) const;
+    /* Handler: Popup-stack stuff: */
+    void sltRemovePopupStack();
 
 private:
 
@@ -101,13 +102,13 @@ private:
     ~UIPopupCenter();
 
     /* Helper: Popup-pane stuff: */
-    void showPopupPane(QWidget *pParent, const QString &strId,
+    void showPopupPane(QWidget *pParent, const QString &strPopupPaneID,
                        const QString &strMessage, const QString &strDetails,
                        int iButton1, int iButton2, int iButton3,
-                       const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3) const;
+                       const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3);
 
-    /* Variables: Popup-pane stuff: */
-    mutable QMap<QString, QPointer<UIPopupPane> > m_popups;
+    /* Variables: Popup-stack stuff: */
+    QMap<QString, QPointer<UIPopupStack> > m_stacks;
 
     /* Instance stuff: */
     static UIPopupCenter* m_spInstance;
@@ -117,5 +118,70 @@ private:
 
 /* Shortcut to the static UIPopupCenter::instance() method: */
 inline UIPopupCenter& popupCenter() { return *UIPopupCenter::instance(); }
+
+
+/* Qt includes: */
+#include <QWidget>
+
+/* Popup-stack prototype class: */
+class UIPopupStack : public QWidget
+{
+    Q_OBJECT;
+
+signals:
+
+    /* Notifier: Popup-pane stuff: */
+    void sigPopupPaneDone(QString strID, int iButtonCode);
+
+    /* Notifier: Popup-stack stuff: */
+    void sigRemove();
+
+public:
+
+    /* Constructor: */
+    UIPopupStack(QWidget *pParent);
+
+    /* API: Popup-pane stuff: */
+    void updatePopupPane(const QString &strPopupPaneID,
+                         const QString &strMessage, const QString &strDetails,
+                         const QMap<int, QString> &buttonDescriptions);
+
+private slots:
+
+    /* Handler: Layout stuff: */
+    void sltAdjustGeometry();
+
+    /* Handler: Popup-pane stuff: */
+    void sltPopupPaneDone(int iButtonCode);
+
+private:
+
+    /* Prepare stuff: */
+    void prepare();
+
+    /* Helpers: Layout stuff: */
+    int minimumWidthHint();
+    int minimumHeightHint();
+    QSize minimumSizeHint();
+    void setDesiredWidth(int iWidth);
+    void layoutContent();
+
+    /* Handler: Event-filter stuff: */
+    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+
+    /* Handlers: Event stuff: */
+    virtual void showEvent(QShowEvent *pEvent);
+    virtual void polishEvent(QShowEvent *pEvent);
+
+    /* Static helpers: Prepare stuff: */
+    static int parentStatusBarHeight(QWidget *pParent);
+
+    /* Variables: */
+    bool m_fPolished;
+    const int m_iStackLayoutMargin;
+    const int m_iStackLayoutSpacing;
+    QMap<QString, UIPopupPane*> m_panes;
+    const int m_iParentStatusBarHeight;
+};
 
 #endif /* __UIPopupCenter_h__ */
