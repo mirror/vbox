@@ -81,8 +81,8 @@ private:
 
     /* Variables: */
     bool m_fPolished;
-    const int m_iStackLayoutMargin;
-    const int m_iStackLayoutSpacing;
+    const int m_iLayoutMargin;
+    const int m_iLayoutSpacing;
     const int m_iParentStatusBarHeight;
     QMap<QString, UIPopupPane*> m_panes;
 };
