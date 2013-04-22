@@ -302,10 +302,9 @@ typedef struct OHCI
     struct ohci_td_in_flight
     {
         /** Address of the transport descriptor. */
-        uint32_t GCPhysTD;
-#if HC_ARCH_BITS == 64
-        uint32_t Alignment0; /**< Alignment pUrb correctly. */
-#endif
+        uint32_t    GCPhysTD;
+        /** Flag indicating an inactive (not-linked) URB. */
+        bool        fInactive;
         /** Pointer to the URB. */
         R3PTRTYPE(PVUSBURB) pUrb;
     } aInFlight[257];
@@ -3445,7 +3444,20 @@ static void ohciServicePeriodicList(POHCI pThis)
             else
                 break;
         }
-
+        else
+        {
+            if (Ed.hwinfo & ED_HWINFO_SKIP)
+            {
+                LogFlow(("ohciServicePeriodicList: Ed=%#010RX32 Ed.TailP=%#010RX32 SKIP\n", EdAddr, Ed.TailP));
+                /* If the ED is in 'skip' state, no transactions on it are allowed and we must
+                 * cancel outstanding URBs, if any.
+                 */
+                uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
+                PVUSBURB pUrb = ohciTdInFlightUrb(pThis, TdAddr);
+                if (pUrb)
+                    pThis->RootHub.pIRhConn->pfnCancelUrbsEp(pThis->RootHub.pIRhConn, pUrb);
+            }
+        }
         /* next end point */
         EdAddr = Ed.NextED & ED_PTR_MASK;
     }
@@ -3521,6 +3533,92 @@ static void ohciCalcTimerIntervals(POHCI pThis, uint32_t u32FrameRate)
     pThis->uFrameRate         = u32FrameRate;
 }
 
+/**
+ * Go over the in-flight URB list and cancel any URBs that are no longer in use.
+ * This occurs when the host removes EDs or TDs from the lists and we don't notice
+ * the sKip bit. Such URBs must be promptly canceled, otherwise there is a risk
+ * they might "steal" data destined for another URB.
+ */
+static void ohciCancelOrphanedURBs(POHCI pThis)
+{
+    bool fValidHCCA = !(    pThis->hcca >= OHCI_HCCA_MASK
+                        ||  pThis->hcca < ~OHCI_HCCA_MASK);
+    unsigned    i, cLeft;
+    int         j;
+    uint32_t    EdAddr;
+    PVUSBURB    pUrb;
+
+    /* If the HCCA is not currently valid, there's nothing to do. */
+    if (!fValidHCCA)
+        return;
+
+    /* Initially mark all in-flight URBs as inactive. */
+    for (i = 0, cLeft = pThis->cInFlight; cLeft && i < RT_ELEMENTS(pThis->aInFlight); i++)
+    {
+        if (pThis->aInFlight[i].pUrb)
+        {
+            pThis->aInFlight[i].fInactive = true;
+            cLeft--;
+        }
+    }
+    Assert(cLeft == 0);
+
+    /* Go over all bulk/control/interrupt endpoint lists; any URB found in these lists
+     * is marked as active again.
+     */
+    for (i = 0; i < OHCI_HCCA_NUM_INTR + 2; i++)
+    {
+        switch (i)
+        {
+        case OHCI_HCCA_NUM_INTR:
+            EdAddr = pThis->bulk_head;
+            break;
+        case OHCI_HCCA_NUM_INTR + 1:
+            EdAddr = pThis->ctrl_head;
+            break;
+        default:
+            ohciGetDWords(pThis, pThis->hcca + i * sizeof(EdAddr), &EdAddr, 1);
+            break;
+        }
+        while (EdAddr)
+        {
+            OHCIED Ed;
+            OHCITD Td;
+            ohciReadEd(pThis, EdAddr, &Ed);
+            uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
+            unsigned k = 0;
+            do
+            {
+                ohciReadTd(pThis, TdAddr, &Td);
+                j = ohci_in_flight_find(pThis, TdAddr);
+                if (j > -1)
+                    pThis->aInFlight[j].fInactive = false;
+                TdAddr = Td.NextTD & ED_PTR_MASK;
+                /* Failsafe for temporarily looped lists. */
+                if (++k == 128)
+                    break;
+            } while (TdAddr != (Ed.TailP & ED_PTR_MASK));
+            EdAddr = Ed.NextED & ED_PTR_MASK;
+        }
+    }
+
+    /* In-flight URBs still marked as inactive are not used anymore and need
+     * to be canceled.
+     */
+    for (i = 0, cLeft = pThis->cInFlight; cLeft && i < RT_ELEMENTS(pThis->aInFlight); i++)
+    {
+        if (pThis->aInFlight[i].pUrb)
+        {
+            cLeft--;
+            pUrb = pThis->aInFlight[i].pUrb;
+            if (pThis->aInFlight[i].fInactive
+                && pUrb->enmState == VUSBURBSTATE_IN_FLIGHT
+                && !pUrb->enmType == VUSBXFERTYPE_CTRL)
+                pThis->RootHub.pIRhConn->pfnCancelUrbsEp(pThis->RootHub.pIRhConn, pUrb);
+        }
+    }
+    Assert(cLeft == 0);
+}
 
 /**
  * Generate a Start-Of-Frame event, and set a timer for End-Of-Frame.
@@ -3699,6 +3797,9 @@ static void ohciFrameBoundaryTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     bump_frame_number(pThis);
     if ( (pThis->dqic != 0x7) && (pThis->dqic != 0) )
         pThis->dqic--;
+
+    /* Clean up any URBs that have been removed */
+    ohciCancelOrphanedURBs(pThis);
 
     /* Start the next frame */
     ohciStartOfFrame(pThis);
