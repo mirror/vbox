@@ -1823,7 +1823,7 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
 
     /* Setup debug controls */
     rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_DEBUGCTL_FULL, 0);                /** @todo think about this. */
-    rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS,  0);    /** @todo Intel spec. 26.6.3 think about this */
+    rc |= VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, 0);
     AssertRCReturn(rc, rc);
     return rc;
 }
@@ -1999,7 +1999,6 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
                                     hmR0VmxUpdateErrorRecord(pVM, pVCpu, rc), rc);
 
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        /* Setup the VMCS read cache as we queue up certain VMWRITEs that can only be done in 64-bit mode for 64-bit guests. */
         rc = hmR0VmxInitVmcsReadCache(pVM, pVCpu);
         AssertLogRelMsgRCReturnStmt(rc, ("VMXR0SetupVM: hmR0VmxInitVmcsReadCache failed! rc=%Rrc (pVM=%p)\n", rc, pVM),
                                     hmR0VmxUpdateErrorRecord(pVM, pVCpu, rc), rc);
@@ -2692,12 +2691,13 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
      */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR0)
     {
-        uint64_t u64GuestCR0 = pCtx->cr0;
+        Assert(!(pCtx->cr0 >> 32));
+        uint32_t u32GuestCR0 = pCtx->cr0;
 
         /* The guest's view (read access) of its CR0 is unblemished. */
-        rc  = VMXWriteVmcsGstN(VMX_VMCS_CTRL_CR0_READ_SHADOW, u64GuestCR0);
+        rc  = VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, u32GuestCR0);
         AssertRCReturn(rc, rc);
-        Log(("Load: VMX_VMCS_CTRL_CR0_READ_SHADOW=%#RX64\n", u64GuestCR0));
+        Log(("Load: VMX_VMCS_CTRL_CR0_READ_SHADOW=%#RX32\n", u32GuestCR0));
 
         /* Setup VT-x's view of the guest CR0. */
         /* Minimize VM-exits due to CR3 changes when we have NestedPaging. */
@@ -2720,14 +2720,14 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
             AssertRCReturn(rc, rc);
         }
         else
-            u64GuestCR0 |= X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a VM-exit. */
+            u32GuestCR0 |= X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a VM-exit. */
 
         /*
          * Guest FPU bits.
          * Intel spec. 23.8 "Restrictions on VMX operation" mentions that CR0.NE bit must always be set on the first
          * CPUs to support VT-x and no mention of with regards to UX in VM-entry checks.
          */
-        u64GuestCR0 |= X86_CR0_NE;
+        u32GuestCR0 |= X86_CR0_NE;
         bool fInterceptNM = false;
         if (CPUMIsGuestFPUStateActive(pVCpu))
         {
@@ -2738,7 +2738,7 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         else
         {
             fInterceptNM = true;               /* Guest FPU inactive, VM-exit on #NM for lazy FPU loading. */
-            u64GuestCR0 |=  X86_CR0_TS         /* Guest can task switch quickly and do lazy FPU syncing. */
+            u32GuestCR0 |=  X86_CR0_TS         /* Guest can task switch quickly and do lazy FPU syncing. */
                           | X86_CR0_MP;        /* FWAIT/WAIT should not ignore CR0.TS and should generate #NM. */
         }
 
@@ -2788,21 +2788,21 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         Assert(pVM->hm.s.fNestedPaging || (pVCpu->hm.s.vmx.u32XcptBitmap & RT_BIT(X86_XCPT_PF)));
 
         /* Set/clear the CR0 specific bits along with their exceptions (PE, PG, CD, NW). */
-        uint64_t uSetCR0 = (pVM->hm.s.vmx.msr.vmx_cr0_fixed0 & pVM->hm.s.vmx.msr.vmx_cr0_fixed1);
-        uint64_t uZapCR0 = (pVM->hm.s.vmx.msr.vmx_cr0_fixed0 | pVM->hm.s.vmx.msr.vmx_cr0_fixed1);
+        uint32_t uSetCR0 = (uint32_t)(pVM->hm.s.vmx.msr.vmx_cr0_fixed0 & pVM->hm.s.vmx.msr.vmx_cr0_fixed1);
+        uint32_t uZapCR0 = (uint32_t)(pVM->hm.s.vmx.msr.vmx_cr0_fixed0 | pVM->hm.s.vmx.msr.vmx_cr0_fixed1);
         if (pVM->hm.s.vmx.fUnrestrictedGuest)               /* Exceptions for unrestricted-guests for fixed CR0 bits (PE, PG). */
             uSetCR0 &= ~(X86_CR0_PE | X86_CR0_PG);
         else
             Assert((uSetCR0 & (X86_CR0_PE | X86_CR0_PG)) == (X86_CR0_PE | X86_CR0_PG));
 
-        u64GuestCR0 |= uSetCR0;
-        u64GuestCR0 &= uZapCR0;
-        u64GuestCR0 &= ~(X86_CR0_CD | X86_CR0_NW);          /* Always enable caching. */
+        u32GuestCR0 |= uSetCR0;
+        u32GuestCR0 &= uZapCR0;
+        u32GuestCR0 &= ~(X86_CR0_CD | X86_CR0_NW);          /* Always enable caching. */
 
         /* Write VT-x's view of the guest CR0 into the VMCS and update the exception bitmap. */
-        rc  = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR0, u64GuestCR0);
+        rc  = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0, u32GuestCR0);
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
-        Log(("Load: VMX_VMCS_GUEST_CR0=%RGv (uSetCR0=%#RGv uZapCR0=%#RGv)\n", u64GuestCR0, uSetCR0, uZapCR0));
+        Log(("Load: VMX_VMCS_GUEST_CR0=%#RX32 (uSetCR0=%#RX32 uZapCR0=%#RX32)\n", u32GuestCR0, uSetCR0, uZapCR0));
 
         /*
          * CR0 is shared between host and guest along with a CR0 read shadow. Therefore, certain bits must not be changed
@@ -2819,7 +2819,6 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                     | X86_CR0_NW;   /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.NW */
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
             u64CR0Mask &= ~X86_CR0_PE;
-        /* Enable this later. */
         if (pVM->hm.s.fNestedPaging)
             u64CR0Mask &= ~X86_CR0_WP;
 
@@ -2924,13 +2923,13 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
      */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR4)
     {
-        uint32_t u64GuestCR4 = pCtx->cr4;
         Assert(!(pCtx->cr4 >> 32));
+        uint32_t u32GuestCR4 = pCtx->cr4;
 
         /* The guest's view of its CR4 is unblemished. */
-        rc  = VMXWriteVmcsGstN(VMX_VMCS_CTRL_CR4_READ_SHADOW, u64GuestCR4);
+        rc  = VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, u32GuestCR4);
         AssertRCReturn(rc, rc);
-        Log(("Load: VMX_VMCS_CTRL_CR4_READ_SHADOW=%#RGv\n", u64GuestCR4));
+        Log(("Load: VMX_VMCS_CTRL_CR4_READ_SHADOW=%#RX32\n", u32GuestCR4));
 
         /* Setup VT-x's view of the guest CR4. */
         /*
@@ -2942,7 +2941,7 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             Assert(pVM->hm.s.vmx.pRealModeTSS);
             Assert(PDMVmmDevHeapIsEnabled(pVM));
-            u64GuestCR4 &= ~X86_CR4_VME;
+            u32GuestCR4 &= ~X86_CR4_VME;
         }
 
         if (pVM->hm.s.fNestedPaging)
@@ -2951,9 +2950,9 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                 && !pVM->hm.s.vmx.fUnrestrictedGuest)
             {
                 /* We use 4 MB pages in our identity mapping page table when the guest doesn't have paging. */
-                u64GuestCR4 |= X86_CR4_PSE;
+                u32GuestCR4 |= X86_CR4_PSE;
                 /* Our identity mapping is a 32 bits page directory. */
-                u64GuestCR4 &= ~X86_CR4_PAE;
+                u32GuestCR4 &= ~X86_CR4_PAE;
             }
             /* else use guest CR4.*/
         }
@@ -2969,14 +2968,14 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                 case PGMMODE_PROTECTED:         /* Protected mode without paging. */
                 case PGMMODE_32_BIT:            /* 32-bit paging. */
                 {
-                    u64GuestCR4 &= ~X86_CR4_PAE;
+                    u32GuestCR4 &= ~X86_CR4_PAE;
                     break;
                 }
 
                 case PGMMODE_PAE:               /* PAE paging. */
                 case PGMMODE_PAE_NX:            /* PAE paging with NX. */
                 {
-                    u64GuestCR4 |= X86_CR4_PAE;
+                    u32GuestCR4 |= X86_CR4_PAE;
                     break;
                 }
 
@@ -2994,12 +2993,12 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         /* We need to set and clear the CR4 specific bits here (mainly the X86_CR4_VMXE bit). */
         uint64_t uSetCR4 = (pVM->hm.s.vmx.msr.vmx_cr4_fixed0 & pVM->hm.s.vmx.msr.vmx_cr4_fixed1);
         uint64_t uZapCR4 = (pVM->hm.s.vmx.msr.vmx_cr4_fixed0 | pVM->hm.s.vmx.msr.vmx_cr4_fixed1);
-        u64GuestCR4 |= uSetCR4;
-        u64GuestCR4 &= uZapCR4;
+        u32GuestCR4 |= uSetCR4;
+        u32GuestCR4 &= uZapCR4;
 
         /* Write VT-x's view of the guest CR4 into the VMCS. */
-        Log(("Load: VMX_VMCS_GUEST_CR4=%#RGv (Set=%#RX32 Zap=%#RX32)\n", u64GuestCR4, uSetCR4, uZapCR4));
-        rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR4, u64GuestCR4);
+        Log(("Load: VMX_VMCS_GUEST_CR4=%#RX32 (Set=%#RX32 Zap=%#RX32)\n", u32GuestCR4, uSetCR4, uZapCR4));
+        rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR4, u32GuestCR4);
 
         /* Setup CR4 mask. CR4 flags owned by the host, if the guest attempts to change them, that would cause a VM exit. */
         uint64_t u64CR4Mask = 0;
@@ -3970,99 +3969,42 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
 #endif
 
 #ifdef VBOX_STRICT
-static bool hmR0VmxIsValidReadField(uint32_t idxField)
+static bool hmR0VmxIsValidWriteField(uint32_t idxField)
 {
     switch (idxField)
     {
         case VMX_VMCS_GUEST_RIP:
         case VMX_VMCS_GUEST_RSP:
         case VMX_VMCS_GUEST_RFLAGS:
-        case VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE:
-        case VMX_VMCS_CTRL_CR0_READ_SHADOW:
-        case VMX_VMCS_GUEST_CR0:
-        case VMX_VMCS_CTRL_CR4_READ_SHADOW:
-        case VMX_VMCS_GUEST_CR4:
         case VMX_VMCS_GUEST_DR7:
-        case VMX_VMCS32_GUEST_SYSENTER_CS:
         case VMX_VMCS_GUEST_SYSENTER_EIP:
         case VMX_VMCS_GUEST_SYSENTER_ESP:
-        case VMX_VMCS32_GUEST_GDTR_LIMIT:
         case VMX_VMCS_GUEST_GDTR_BASE:
-        case VMX_VMCS32_GUEST_IDTR_LIMIT:
         case VMX_VMCS_GUEST_IDTR_BASE:
-        case VMX_VMCS16_GUEST_FIELD_CS:
-        case VMX_VMCS32_GUEST_CS_LIMIT:
         case VMX_VMCS_GUEST_CS_BASE:
-        case VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS:
-        case VMX_VMCS16_GUEST_FIELD_DS:
-        case VMX_VMCS32_GUEST_DS_LIMIT:
         case VMX_VMCS_GUEST_DS_BASE:
-        case VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS:
-        case VMX_VMCS16_GUEST_FIELD_ES:
-        case VMX_VMCS32_GUEST_ES_LIMIT:
         case VMX_VMCS_GUEST_ES_BASE:
-        case VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS:
-        case VMX_VMCS16_GUEST_FIELD_FS:
-        case VMX_VMCS32_GUEST_FS_LIMIT:
         case VMX_VMCS_GUEST_FS_BASE:
-        case VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS:
-        case VMX_VMCS16_GUEST_FIELD_GS:
-        case VMX_VMCS32_GUEST_GS_LIMIT:
         case VMX_VMCS_GUEST_GS_BASE:
-        case VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS:
-        case VMX_VMCS16_GUEST_FIELD_SS:
-        case VMX_VMCS32_GUEST_SS_LIMIT:
         case VMX_VMCS_GUEST_SS_BASE:
-        case VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS:
-        case VMX_VMCS16_GUEST_FIELD_LDTR:
-        case VMX_VMCS32_GUEST_LDTR_LIMIT:
         case VMX_VMCS_GUEST_LDTR_BASE:
-        case VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS:
-        case VMX_VMCS16_GUEST_FIELD_TR:
-        case VMX_VMCS32_GUEST_TR_LIMIT:
         case VMX_VMCS_GUEST_TR_BASE:
-        case VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS:
-        case VMX_VMCS32_RO_EXIT_REASON:
-        case VMX_VMCS32_RO_VM_INSTR_ERROR:
-        case VMX_VMCS32_RO_EXIT_INSTR_LENGTH:
-        case VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE:
-        case VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO:
-        case VMX_VMCS32_RO_EXIT_INSTR_INFO:
-        case VMX_VMCS_RO_EXIT_QUALIFICATION:
-        case VMX_VMCS32_RO_IDT_INFO:
-        case VMX_VMCS32_RO_IDT_ERROR_CODE:
         case VMX_VMCS_GUEST_CR3:
-        case VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL:
             return true;
     }
     return false;
 }
 
-static bool hmR0VmxIsValidWriteField(uint32_t idxField)
+static bool hmR0VmxIsValidReadField(uint32_t idxField)
 {
     switch (idxField)
     {
-        case VMX_VMCS_GUEST_LDTR_BASE:
-        case VMX_VMCS_GUEST_TR_BASE:
-        case VMX_VMCS_GUEST_GDTR_BASE:
-        case VMX_VMCS_GUEST_IDTR_BASE:
-        case VMX_VMCS_GUEST_SYSENTER_EIP:
-        case VMX_VMCS_GUEST_SYSENTER_ESP:
-        case VMX_VMCS_GUEST_CR0:
-        case VMX_VMCS_GUEST_CR4:
-        case VMX_VMCS_GUEST_CR3:
-        case VMX_VMCS_GUEST_DR7:
-        case VMX_VMCS_GUEST_RIP:
-        case VMX_VMCS_GUEST_RSP:
-        case VMX_VMCS_GUEST_CS_BASE:
-        case VMX_VMCS_GUEST_DS_BASE:
-        case VMX_VMCS_GUEST_ES_BASE:
-        case VMX_VMCS_GUEST_FS_BASE:
-        case VMX_VMCS_GUEST_GS_BASE:
-        case VMX_VMCS_GUEST_SS_BASE:
+        /* Read-only fields. */
+        case VMX_VMCS_RO_EXIT_QUALIFICATION:
             return true;
     }
-    return false;
+    /* All readable fields should also be part of the VMCS write cache. */
+    return hmR0VmxIsValidWriteField(idxField);
 }
 #endif /* VBOX_STRICT */
 
@@ -4240,58 +4182,20 @@ static int hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu)
     Assert(pCache->Read.aField[idxField##_CACHE_IDX] == 0);                         \
     pCache->Read.aField[idxField##_CACHE_IDX] = idxField;                           \
     pCache->Read.aFieldVal[idxField##_CACHE_IDX] = 0;                               \
-}
-
-#define VMXLOCAL_INIT_VMCS_SELREG(REG, pCache)                                      \
-{                                                                                   \
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS16_GUEST_FIELD_##REG);           \
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_##REG##_LIMIT);         \
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_##REG##_BASE);            \
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_##REG##_ACCESS_RIGHTS); \
+    ++cReadFields;                                                                  \
 }
 
     AssertPtr(pVM);
     AssertPtr(pVCpu);
     PVMCSCACHE pCache = &pVCpu->hm.s.vmx.VMCSCache;
+    uint32_t cReadFields = 0;
 
-    /* 16-bit guest-state fields (16-bit selectors and their corresponding 32-bit limit & 32-bit access-rights fields). */
-    VMXLOCAL_INIT_VMCS_SELREG(ES,   pCache);
-    VMXLOCAL_INIT_VMCS_SELREG(CS,   pCache);
-    VMXLOCAL_INIT_VMCS_SELREG(SS,   pCache);
-    VMXLOCAL_INIT_VMCS_SELREG(DS,   pCache);
-    VMXLOCAL_INIT_VMCS_SELREG(FS,   pCache);
-    VMXLOCAL_INIT_VMCS_SELREG(GS,   pCache);
-    VMXLOCAL_INIT_VMCS_SELREG(LDTR, pCache);
-    VMXLOCAL_INIT_VMCS_SELREG(TR,   pCache);
-
-    /* 64-bit guest-state fields; unused as we use two 32-bit VMREADs for these 64-bit fields (using "FULL" and "HIGH" fields). */
+    /* Guest-natural selector base fields */
 #if 0
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_DEBUGCTL_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PAT_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_EFER_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PDPTE0_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PDPTE1_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PDPTE2_FULL);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PDPTE3_FULL);
-#endif
-
-    /* 32-bit guest-state fields. */
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_GDTR_LIMIT);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_IDTR_LIMIT);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_SYSENTER_CS);
-    /* Unused 32-bit guest-state fields. */
-#if 0
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_ACTIVITY_STATE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_SMBASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE);
-#endif
-
-    /* Natural width guest-state fields. */
+    /* These are 32-bit in practice. See Intel spec. 2.5 "Control Registers". */
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_CR0);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_CR4);
+#endif
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_ES_BASE);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_CS_BASE);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_SS_BASE);
@@ -4306,24 +4210,47 @@ static int hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu)
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_RSP);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_RIP);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_RFLAGS);
-    /* Unused natural width guest-state fields. */
 #if 0
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS);
+    /* Unused natural width guest-state fields. */
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_CR3); /* Handled in Nested Paging case */
 #endif
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_SYSENTER_ESP);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_SYSENTER_EIP);
 
+    /* 64-bit guest-state fields; unused as we use two 32-bit VMREADs for these 64-bit fields (using "FULL" and "HIGH" fields). */
+#if 0
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL);
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_DEBUGCTL_FULL);
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PAT_FULL);
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_EFER_FULL);
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL);
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PDPTE0_FULL);
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PDPTE1_FULL);
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PDPTE2_FULL);
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_GUEST_PDPTE3_FULL);
+#endif
+
+    /* Natural width guest-state fields. */
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_RO_EXIT_QUALIFICATION);
+#if 0
+    /* Currently unused field. */
+    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_RO_EXIT_GUEST_LINEAR_ADDR);
+#endif
+
     if (pVM->hm.s.fNestedPaging)
     {
         VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_CR3);
-        VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL);
+        AssertMsg(cReadFields == VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX, ("cReadFields=%u expected %u\n", cReadFields,
+                                                                        VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX));
         pCache->Read.cValidEntries = VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX;
     }
     else
+    {
+        AssertMsg(cReadFields == VMX_VMCS_MAX_CACHE_IDX, ("cReadFields=%u expected %u\n", cReadFields, VMX_VMCS_MAX_CACHE_IDX));
         pCache->Read.cValidEntries = VMX_VMCS_MAX_CACHE_IDX;
+    }
 
-#undef VMXLOCAL_INIT_VMCS_SELREG
 #undef VMXLOCAL_INIT_READ_CACHE_FIELD
     return VINF_SUCCESS;
 }
@@ -4379,7 +4306,7 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
         case VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL:
         {
             rc  = VMXWriteVmcs32(idxField, u64Val);
-            rc |= VMXWriteVmcs32(idxField + 1, (uint32_t)(u64Val >> 32ULL));    /* hmpf, do we really need the "ULL" suffix? */
+            rc |= VMXWriteVmcs32(idxField + 1, (uint32_t)(u64Val >> 32));
             break;
         }
 
@@ -4388,9 +4315,7 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
          * values). When we switch the host to 64-bit mode for running 64-bit guests, these VMWRITEs get executed then.
          */
         /* Natural-width Guest-state fields.  */
-        case VMX_VMCS_GUEST_CR0:
         case VMX_VMCS_GUEST_CR3:
-        case VMX_VMCS_GUEST_CR4:
         case VMX_VMCS_GUEST_ES_BASE:
         case VMX_VMCS_GUEST_CS_BASE:
         case VMX_VMCS_GUEST_SS_BASE:
@@ -4405,11 +4330,10 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
         case VMX_VMCS_GUEST_RSP:
         case VMX_VMCS_GUEST_RIP:
         case VMX_VMCS_GUEST_RFLAGS:
-        case VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS:
         case VMX_VMCS_GUEST_SYSENTER_ESP:
         case VMX_VMCS_GUEST_SYSENTER_EIP:
         {
-            if ((u64Val >> 32ULL) == 0)
+            if (!(u64Val >> 32))
             {
                 /* If this field is 64-bit, VT-x will zero out the top bits. */
                 rc = VMXWriteVmcs32(idxField, (uint32_t)u64Val);
@@ -4778,10 +4702,10 @@ static int hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0))
     {
-        RTGCUINTREG uVal    = 0;
-        RTCCUINTREG uShadow = 0;
-        rc  = VMXReadVmcsGstN(VMX_VMCS_GUEST_CR0,            &uVal);
-        rc |= VMXReadVmcsHstN(VMX_VMCS_CTRL_CR0_READ_SHADOW, &uShadow);
+        uint32_t uVal    = 0;
+        uint32_t uShadow = 0;
+        rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR0,            &uVal);
+        rc |= VMXReadVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, &uShadow);
         AssertRCReturn(rc, rc);
         uVal = (uShadow & pVCpu->hm.s.vmx.cr0_mask) | (uVal & ~pVCpu->hm.s.vmx.cr0_mask);
         CPUMSetGuestCR0(pVCpu, uVal);
@@ -4807,10 +4731,10 @@ static int hmR0VmxSaveGuestCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR4))
     {
-        RTGCUINTREG uVal    = 0;
-        RTCCUINTREG uShadow = 0;
-        rc  = VMXReadVmcsGstN(VMX_VMCS_GUEST_CR4,            &uVal);
-        rc |= VMXReadVmcsHstN(VMX_VMCS_CTRL_CR4_READ_SHADOW, &uShadow);
+        uint32_t uVal    = 0;
+        uint32_t uShadow = 0;
+        rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR4,            &uVal);
+        rc |= VMXReadVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, &uShadow);
         AssertRCReturn(rc, rc);
         uVal = (uShadow & pVCpu->hm.s.vmx.cr4_mask) | (uVal & ~pVCpu->hm.s.vmx.cr4_mask);
         CPUMSetGuestCR4(pVCpu, uVal);
@@ -5951,7 +5875,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                  * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD, VMX_EXIT_MTF
                  * VMX_EXIT_APIC_WRITE, VMX_EXIT_VIRTUALIZED_EOI. See Intel spec. 27.3.4 "Saving Non-Register State".
                  */
-                rc2 = VMXWriteVmcsGstN(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
+                rc2 = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
             }
         }
         else
@@ -6081,7 +6005,13 @@ DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErro
 DECLINLINE(void) hmR0VmxSetPendingIntN(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint16_t uVector, uint32_t cbInstr)
 {
     uint32_t u32IntrInfo = uVector | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
-    u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+    if (   uVector == X86_XCPT_BP
+        || uVector == X86_XCPT_OF)
+    {
+        u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+    }
+    else
+        u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatIntInject);
     hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
@@ -7505,6 +7435,7 @@ static DECLCALLBACK(int) hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX 
     uint32_t    uIntrState;
     RTHCUINTREG uHCReg;
     uint64_t    u64Val;
+    uint32_t    u32Val;
 
     int rc  = hmR0VmxReadEntryIntrInfoVmcs(pVmxTransient);
     rc     |= hmR0VmxReadEntryXcptErrorCodeVmcs(pVmxTransient);
@@ -7518,8 +7449,8 @@ static DECLCALLBACK(int) hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX 
     Log(("VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH         %#RX32\n", pVmxTransient->cbEntryInstr));
     Log(("VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE    %#RX32\n", uIntrState));
 
-    rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_CR0, &u64Val);                      AssertRC(rc);
-    Log(("VMX_VMCS_GUEST_CR0                         %#RX64\n", u64Val));
+    rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR0, &u32Val);                        AssertRC(rc);
+    Log(("VMX_VMCS_GUEST_CR0                         %#RX32\n", u32Val));
     rc = VMXReadVmcsHstN(VMX_VMCS_CTRL_CR0_MASK, &uHCReg);                  AssertRC(rc);
     Log(("VMX_VMCS_CTRL_CR0_MASK                     %#RHr\n", uHCReg));
     rc = VMXReadVmcsHstN(VMX_VMCS_CTRL_CR0_READ_SHADOW, &uHCReg);           AssertRC(rc);
@@ -8339,7 +8270,7 @@ static DECLCALLBACK(int) hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCt
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     VBOXSTRICTRC rc2 = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pMixedCtx), GCPhys, UINT32_MAX);
     rc = VBOXSTRICTRC_VAL(rc2);
-    Log(("EPT misconfig at %#RX64 RIP=%#RX64 rc=%d\n", GCPhys, pMixedCtx->rip, rc));
+    Log(("EPT misconfig at %#RGv RIP=%#RGv rc=%d\n", GCPhys, pMixedCtx->rip, rc));
     if (   rc == VINF_SUCCESS
         || rc == VERR_PAGE_TABLE_NOT_PRESENT
         || rc == VERR_PAGE_NOT_PRESENT)
@@ -8946,4 +8877,5 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPFEM);
     return rc;
 }
+
 
