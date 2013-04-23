@@ -288,7 +288,7 @@ public:
 private:
 
     /**
-     *  Base template for AutoVMCaller and SaveVMPtr. Template arguments
+     *  Base template for AutoVMCaller and SafeVMPtr. Template arguments
      *  have the same meaning as arguments of Console::addVMCaller().
      */
     template <bool taQuiet = false, bool taAllowNullVM = false>
@@ -379,7 +379,7 @@ private:
     typedef AutoVMCallerBase<true, true> AutoVMCallerQuietWeak;
 
     /**
-     *  Base template for SaveVMPtr and SaveVMPtrQuiet.
+     *  Base template for SafeVMPtr and SafeVMPtrQuiet.
      */
     template<bool taQuiet = false>
     class SafeVMPtrBase : public AutoVMCallerBase<taQuiet, true>
@@ -418,7 +418,7 @@ public:
      *  by calling addVMCaller() on construction and releaseVMCaller() on
      *  destruction. Intended for Console children. The usage pattern is:
      *  <code>
-     *      Console::SaveVMPtr ptrVM(mParent);
+     *      Console::SafeVMPtr ptrVM(mParent);
      *      if (!ptrVM.isOk())
      *          return ptrVM.rc();
      *      ...
@@ -434,11 +434,11 @@ public:
     typedef SafeVMPtrBase<false> SafeVMPtr;
 
     /**
-     *  A deviation of SaveVMPtr that doesn't set the error info on failure.
+     *  A deviation of SafeVMPtr that doesn't set the error info on failure.
      *  Intended for pieces of code that don't need to return the VM access
      *  failure to the caller. The usage pattern is:
      *  <code>
-     *      Console::SaveVMPtrQuiet pVM(mParent);
+     *      Console::SafeVMPtrQuiet pVM(mParent);
      *      if (pVM.rc())
      *          VMR3ReqCall(pVM, ...
      *      return S_OK;
@@ -524,6 +524,10 @@ private:
     int configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachine *pMachine);
     int configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMachine);
 
+    int configGraphicsController(PCFGMNODE pDevices, const char *pcszDevice,
+                                 BusAssignmentManager *pBusMgr,
+                                 const ComPtr<IMachine> &pMachine,
+                                 const ComPtr<IBIOSSettings> &biosSettings);
     int configMediumAttachment(PCFGMNODE pCtlInst,
                                const char *pcszDevice,
                                unsigned uInstance,

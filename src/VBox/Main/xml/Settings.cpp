@@ -2700,6 +2700,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 GraphicsControllerType_T type;
                 if (strGraphicsControllerType == "VBOXVGA")
                     type = GraphicsControllerType_VBoxVGA;
+                else if (strGraphicsControllerType == "NONE")
+                    type = GraphicsControllerType_Null;
                 else
                     throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in Display/@controller attribute"), strGraphicsControllerType.c_str());
                 hw.graphicsControllerType = type;
@@ -3878,6 +3880,16 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     }
 
     xml::ElementNode *pelmDisplay = pelmHardware->createChild("Display");
+    if (hw.graphicsControllerType != GraphicsControllerType_VBoxVGA)
+    {
+        const char *pcszGraphics;
+        switch (hw.graphicsControllerType)
+        {
+            case GraphicsControllerType_VBoxVGA:            pcszGraphics = "VBoxVGA"; break;
+            default: /*case GraphicsControllerType_Null:*/  pcszGraphics = "None"; break;
+        }
+        pelmDisplay->setAttribute("controller", pcszGraphics);
+    }
     pelmDisplay->setAttribute("VRAMSize", hw.ulVRAMSizeMB);
     pelmDisplay->setAttribute("monitorCount", hw.cMonitors);
     pelmDisplay->setAttribute("accelerate3D", hw.fAccelerate3D);
@@ -5016,8 +5028,10 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_14)
     {
-        // VirtualBox 4.3 adds default frontend setting.
+        // VirtualBox 4.3 adds default frontend setting, graphics controller
+        // setting, explicit long mode setting.
         if (   !hardwareMachine.strDefaultFrontend.isEmpty()
+            || hardwareMachine.graphicsControllerType != GraphicsControllerType_VBoxVGA
             || hardwareMachine.enmLongMode != Hardware::LongMode_Legacy)
             m->sv = SettingsVersion_v1_14;
     }

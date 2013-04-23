@@ -1325,94 +1325,18 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         hrc = pMachine->COMGETTER(GraphicsControllerType)(&graphicsController);             H();
         switch (graphicsController)
         {
+            case GraphicsControllerType_Null:
+                break;
             case GraphicsControllerType_VBoxVGA:
-                InsertConfigNode(pDevices, "vga", &pDev);
-                InsertConfigNode(pDev,     "0", &pInst);
-                InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-
-                hrc = pBusMgr->assignPCIDevice("vga", pInst);                               H();
-                InsertConfigNode(pInst,    "Config", &pCfg);
-                ULONG cVRamMBs;
-                hrc = pMachine->COMGETTER(VRAMSize)(&cVRamMBs);                             H();
-                InsertConfigInteger(pCfg,  "VRamSize",             cVRamMBs * _1M);
-                ULONG cMonitorCount;
-                hrc = pMachine->COMGETTER(MonitorCount)(&cMonitorCount);                    H();
-                InsertConfigInteger(pCfg,  "MonitorCount",         cMonitorCount);
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                InsertConfigInteger(pCfg,  "R0Enabled",            fHMEnabled);
-#endif
+                rc = configGraphicsController(pDevices, "vga", pBusMgr, pMachine, biosSettings);
+                if (FAILED(rc))
+                    return rc;
                 break;
             default:
                 AssertMsgFailed(("Invalid graphicsController=%d\n", graphicsController));
                 return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS,
                                     N_("Invalid graphics controller type '%d'"), graphicsController);
         }
-
-        /*
-         * BIOS logo
-         */
-        BOOL fFadeIn;
-        hrc = biosSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                                H();
-        InsertConfigInteger(pCfg,  "FadeIn",  fFadeIn ? 1 : 0);
-        BOOL fFadeOut;
-        hrc = biosSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                              H();
-        InsertConfigInteger(pCfg,  "FadeOut", fFadeOut ? 1: 0);
-        ULONG logoDisplayTime;
-        hrc = biosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);                   H();
-        InsertConfigInteger(pCfg,  "LogoTime", logoDisplayTime);
-        Bstr logoImagePath;
-        hrc = biosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());           H();
-        InsertConfigString(pCfg,   "LogoFile", Utf8Str(!logoImagePath.isEmpty() ? logoImagePath : "") );
-
-        /*
-         * Boot menu
-         */
-        BIOSBootMenuMode_T eBootMenuMode;
-        int iShowBootMenu;
-        biosSettings->COMGETTER(BootMenuMode)(&eBootMenuMode);
-        switch (eBootMenuMode)
-        {
-            case BIOSBootMenuMode_Disabled: iShowBootMenu = 0;  break;
-            case BIOSBootMenuMode_MenuOnly: iShowBootMenu = 1;  break;
-            default:                        iShowBootMenu = 2;  break;
-        }
-        InsertConfigInteger(pCfg, "ShowBootMenu", iShowBootMenu);
-
-        /* Custom VESA mode list */
-        unsigned cModes = 0;
-        for (unsigned iMode = 1; iMode <= 16; ++iMode)
-        {
-            char szExtraDataKey[sizeof("CustomVideoModeXX")];
-            RTStrPrintf(szExtraDataKey, sizeof(szExtraDataKey), "CustomVideoMode%u", iMode);
-            hrc = pMachine->GetExtraData(Bstr(szExtraDataKey).raw(), bstr.asOutParam());    H();
-            if (bstr.isEmpty())
-                break;
-            InsertConfigString(pCfg, szExtraDataKey, bstr);
-            ++cModes;
-        }
-        InsertConfigInteger(pCfg, "CustomVideoModes", cModes);
-
-        /* VESA height reduction */
-        ULONG ulHeightReduction;
-        IFramebuffer *pFramebuffer = getDisplay()->getFramebuffer();
-        if (pFramebuffer)
-        {
-            hrc = pFramebuffer->COMGETTER(HeightReduction)(&ulHeightReduction);             H();
-        }
-        else
-        {
-            /* If framebuffer is not available, there is no height reduction. */
-            ulHeightReduction = 0;
-        }
-        InsertConfigInteger(pCfg,  "HeightReduction", ulHeightReduction);
-
-        /* Attach the display. */
-        InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-        InsertConfigString(pLunL0, "Driver",               "MainDisplay");
-        InsertConfigNode(pLunL0,   "Config", &pCfg);
-        Display *pDisplay = mDisplay;
-        InsertConfigInteger(pCfg,  "Object", (uintptr_t)pDisplay);
-
 
         /*
          * Firmware.
@@ -3109,6 +3033,113 @@ int Console::configDumpAPISettingsTweaks(IVirtualBox *pVirtualBox, IMachine *pMa
     return VINF_SUCCESS;
 }
 
+int Console::configGraphicsController(PCFGMNODE pDevices,
+                                      const char *pcszDevice,
+                                      BusAssignmentManager *pBusMgr,
+                                      const ComPtr<IMachine> &pMachine,
+                                      const ComPtr<IBIOSSettings> &biosSettings)
+{
+    // InsertConfig* throws
+    try
+    {
+        PCFGMNODE pDev, pInst, pCfg, pLunL0;
+        HRESULT hrc;
+        Bstr    bstr;
+
+#define H()         AssertMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_GENERAL_FAILURE)
+        InsertConfigNode(pDevices, pcszDevice, &pDev);
+        InsertConfigNode(pDev,     "0", &pInst);
+        InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
+
+        hrc = pBusMgr->assignPCIDevice(pcszDevice, pInst);                                  H();
+        InsertConfigNode(pInst,    "Config", &pCfg);
+        ULONG cVRamMBs;
+        hrc = pMachine->COMGETTER(VRAMSize)(&cVRamMBs);                                     H();
+        InsertConfigInteger(pCfg,  "VRamSize",             cVRamMBs * _1M);
+        ULONG cMonitorCount;
+        hrc = pMachine->COMGETTER(MonitorCount)(&cMonitorCount);                            H();
+        InsertConfigInteger(pCfg,  "MonitorCount",         cMonitorCount);
+    #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+        InsertConfigInteger(pCfg,  "R0Enabled",            fHMEnabled);
+    #endif
+
+        /* Custom VESA mode list */
+        unsigned cModes = 0;
+        for (unsigned iMode = 1; iMode <= 16; ++iMode)
+        {
+            char szExtraDataKey[sizeof("CustomVideoModeXX")];
+            RTStrPrintf(szExtraDataKey, sizeof(szExtraDataKey), "CustomVideoMode%u", iMode);
+            hrc = pMachine->GetExtraData(Bstr(szExtraDataKey).raw(), bstr.asOutParam());    H();
+            if (bstr.isEmpty())
+                break;
+            InsertConfigString(pCfg, szExtraDataKey, bstr);
+            ++cModes;
+        }
+        InsertConfigInteger(pCfg, "CustomVideoModes", cModes);
+
+        /* VESA height reduction */
+        ULONG ulHeightReduction;
+        IFramebuffer *pFramebuffer = getDisplay()->getFramebuffer();
+        if (pFramebuffer)
+        {
+            hrc = pFramebuffer->COMGETTER(HeightReduction)(&ulHeightReduction);             H();
+        }
+        else
+        {
+            /* If framebuffer is not available, there is no height reduction. */
+            ulHeightReduction = 0;
+        }
+        InsertConfigInteger(pCfg,  "HeightReduction", ulHeightReduction);
+
+        /*
+         * BIOS logo
+         */
+        BOOL fFadeIn;
+        hrc = biosSettings->COMGETTER(LogoFadeIn)(&fFadeIn);                                H();
+        InsertConfigInteger(pCfg,  "FadeIn",  fFadeIn ? 1 : 0);
+        BOOL fFadeOut;
+        hrc = biosSettings->COMGETTER(LogoFadeOut)(&fFadeOut);                              H();
+        InsertConfigInteger(pCfg,  "FadeOut", fFadeOut ? 1: 0);
+        ULONG logoDisplayTime;
+        hrc = biosSettings->COMGETTER(LogoDisplayTime)(&logoDisplayTime);                   H();
+        InsertConfigInteger(pCfg,  "LogoTime", logoDisplayTime);
+        Bstr logoImagePath;
+        hrc = biosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());           H();
+        InsertConfigString(pCfg,   "LogoFile", Utf8Str(!logoImagePath.isEmpty() ? logoImagePath : "") );
+
+        /*
+         * Boot menu
+         */
+        BIOSBootMenuMode_T eBootMenuMode;
+        int iShowBootMenu;
+        biosSettings->COMGETTER(BootMenuMode)(&eBootMenuMode);
+        switch (eBootMenuMode)
+        {
+            case BIOSBootMenuMode_Disabled: iShowBootMenu = 0;  break;
+            case BIOSBootMenuMode_MenuOnly: iShowBootMenu = 1;  break;
+            default:                        iShowBootMenu = 2;  break;
+        }
+        InsertConfigInteger(pCfg, "ShowBootMenu", iShowBootMenu);
+
+        /* Attach the display. */
+        InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+        InsertConfigString(pLunL0, "Driver",               "MainDisplay");
+        InsertConfigNode(pLunL0,   "Config", &pCfg);
+        Display *pDisplay = mDisplay;
+        InsertConfigInteger(pCfg,  "Object", (uintptr_t)pDisplay);
+    }
+    catch (ConfigError &x)
+    {
+        // InsertConfig threw something:
+        return x.m_vrc;
+    }
+
+#undef H
+
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Ellipsis to va_list wrapper for calling setVMRuntimeErrorCallback.
  */
@@ -3535,7 +3566,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
 
 #undef H
 
-    return VINF_SUCCESS;;
+    return VINF_SUCCESS;
 }
 
 int Console::configMedium(PCFGMNODE pLunL0,

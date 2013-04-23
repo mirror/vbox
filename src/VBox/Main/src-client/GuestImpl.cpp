@@ -267,7 +267,7 @@ void Guest::updateStats(uint64_t iTick)
      * process. This is why we took a snapshot of currently collected stats
      * and released the lock.
      */
-    Console::SafeVMPtr ptrVM(mParent);
+    Console::SafeVMPtrQuiet ptrVM(mParent);
     if (ptrVM.isOk())
     {
         int rc;

@@ -436,40 +436,8 @@ HRESULT Display::init(Console *aParent)
 
     unconst(mParent) = aParent;
 
-    // by default, we have an internal framebuffer which is
-    // NULL, i.e. a black hole for no display output
-    mFramebufferOpened = false;
-
     ULONG ul;
     mParent->machine()->COMGETTER(MonitorCount)(&ul);
-
-#ifdef VBOX_WITH_VPX
-    if (VideoRecContextCreate(&mpVideoRecContext))
-    {
-        LogFlow(("Failed to create Video Recording Context\n"));
-        return E_FAIL;
-    }
-
-    BOOL fEnabled = false;
-    mParent->machine()->COMGETTER(VideoCaptureEnabled)(&fEnabled);
-    if (fEnabled)
-    {
-        ULONG ulVideoCaptureHorzRes;
-        mParent->machine()->COMGETTER(VideoCaptureWidth)(&ulVideoCaptureHorzRes);
-        ULONG ulVideoCaptureVertRes;
-        mParent->machine()->COMGETTER(VideoCaptureHeight)(&ulVideoCaptureVertRes);
-        BSTR strVideoCaptureFile;
-        mParent->machine()->COMGETTER(VideoCaptureFile)(&strVideoCaptureFile);
-        LogFlow(("VidoeRecording VPX enabled\n"));
-        if (VideoRecContextInit(mpVideoRecContext, strVideoCaptureFile,
-                                ulVideoCaptureHorzRes, ulVideoCaptureVertRes))
-        {
-            LogFlow(("Failed to initialize video recording context\n"));
-            return E_FAIL;
-        }
-    }
-#endif
-
     mcMonitors = ul;
 
     for (ul = 0; ul < mcMonitors; ul++)
@@ -509,6 +477,33 @@ HRESULT Display::init(Console *aParent)
         maFramebuffers[ul].pVBVAHostFlags = NULL;
 #endif /* VBOX_WITH_HGSMI */
     }
+
+#ifdef VBOX_WITH_VPX
+    if (VideoRecContextCreate(&mpVideoRecContext))
+    {
+        LogFlow(("Failed to create Video Recording Context\n"));
+        return E_FAIL;
+    }
+
+    BOOL fEnabled = false;
+    mParent->machine()->COMGETTER(VideoCaptureEnabled)(&fEnabled);
+    if (fEnabled)
+    {
+        ULONG ulVideoCaptureHorzRes;
+        mParent->machine()->COMGETTER(VideoCaptureWidth)(&ulVideoCaptureHorzRes);
+        ULONG ulVideoCaptureVertRes;
+        mParent->machine()->COMGETTER(VideoCaptureHeight)(&ulVideoCaptureVertRes);
+        BSTR strVideoCaptureFile;
+        mParent->machine()->COMGETTER(VideoCaptureFile)(&strVideoCaptureFile);
+        LogFlow(("VidoeRecording VPX enabled\n"));
+        if (VideoRecContextInit(mpVideoRecContext, strVideoCaptureFile,
+                                ulVideoCaptureHorzRes, ulVideoCaptureVertRes))
+        {
+            LogFlow(("Failed to initialize video recording context\n"));
+            return E_FAIL;
+        }
+    }
+#endif
 
     {
         // register listener for state change events
@@ -2037,7 +2032,7 @@ STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
 
     if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
-        CHECK_CONSOLE_DRV (mpDrv);
+        CHECK_CONSOLE_DRV(mpDrv);
 
         u32Width = mpDrv->IConnector.cx;
         u32Height = mpDrv->IConnector.cy;
@@ -2167,7 +2162,7 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aDisplay, BOOL aEnabled,
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CHECK_CONSOLE_DRV (mpDrv);
+    CHECK_CONSOLE_DRV(mpDrv);
 
     /*
      * Do some rough checks for valid input
@@ -2437,7 +2432,8 @@ STDMETHODIMP Display::TakeScreenShot(ULONG aScreenId, BYTE *address, ULONG width
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CHECK_CONSOLE_DRV(mpDrv);
+    if (!mpDrv)
+        return E_FAIL;
 
     Console::SafeVMPtr ptrVM(mParent);
     if (!ptrVM.isOk())
@@ -2490,7 +2486,8 @@ STDMETHODIMP Display::TakeScreenShotToArray(ULONG aScreenId, ULONG width, ULONG 
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CHECK_CONSOLE_DRV(mpDrv);
+    if (!mpDrv)
+        return E_FAIL;
 
     Console::SafeVMPtr ptrVM(mParent);
     if (!ptrVM.isOk())
@@ -2755,7 +2752,7 @@ STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULO
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CHECK_CONSOLE_DRV (mpDrv);
+    CHECK_CONSOLE_DRV(mpDrv);
 
     Console::SafeVMPtr ptrVM(mParent);
     if (!ptrVM.isOk())
@@ -2891,7 +2888,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CHECK_CONSOLE_DRV (mpDrv);
+    CHECK_CONSOLE_DRV(mpDrv);
 
     Console::SafeVMPtr ptrVM(mParent);
     if (!ptrVM.isOk())

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -53,7 +53,7 @@ public:
         VBOX_DEFAULT_INTERFACE_ENTRIES(IVRDEServer)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (VRDEServer)
+    DECLARE_EMPTY_CTOR_DTOR(VRDEServer)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -61,29 +61,30 @@ public:
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *aParent);
     HRESULT init(Machine *aParent, VRDEServer *aThat);
-    HRESULT initCopy (Machine *aParent, VRDEServer *aThat);
+    HRESULT initCopy(Machine *aParent, VRDEServer *aThat);
     void uninit();
 
     // IVRDEServer properties
-    STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
-    STDMETHOD(COMSETTER(Enabled)) (BOOL aEnable);
-    STDMETHOD(COMGETTER(AuthType)) (AuthType_T *aType);
-    STDMETHOD(COMSETTER(AuthType)) (AuthType_T aType);
-    STDMETHOD(COMGETTER(AuthTimeout)) (ULONG *aTimeout);
-    STDMETHOD(COMSETTER(AuthTimeout)) (ULONG aTimeout);
-    STDMETHOD(COMGETTER(AllowMultiConnection)) (BOOL *aAllowMultiConnection);
-    STDMETHOD(COMSETTER(AllowMultiConnection)) (BOOL aAllowMultiConnection);
-    STDMETHOD(COMGETTER(ReuseSingleConnection)) (BOOL *aReuseSingleConnection);
-    STDMETHOD(COMSETTER(ReuseSingleConnection)) (BOOL aReuseSingleConnection);
+    STDMETHOD(COMGETTER(CheckPrerequisites))(BOOL *aCheckPrerequisites);
+    STDMETHOD(COMGETTER(Enabled))(BOOL *aEnabled);
+    STDMETHOD(COMSETTER(Enabled))(BOOL aEnable);
+    STDMETHOD(COMGETTER(AuthType))(AuthType_T *aType);
+    STDMETHOD(COMSETTER(AuthType))(AuthType_T aType);
+    STDMETHOD(COMGETTER(AuthTimeout))(ULONG *aTimeout);
+    STDMETHOD(COMSETTER(AuthTimeout))(ULONG aTimeout);
+    STDMETHOD(COMGETTER(AllowMultiConnection))(BOOL *aAllowMultiConnection);
+    STDMETHOD(COMSETTER(AllowMultiConnection))(BOOL aAllowMultiConnection);
+    STDMETHOD(COMGETTER(ReuseSingleConnection))(BOOL *aReuseSingleConnection);
+    STDMETHOD(COMSETTER(ReuseSingleConnection))(BOOL aReuseSingleConnection);
     STDMETHOD(COMGETTER(VRDEExtPack))(BSTR *aExtPack);
     STDMETHOD(COMSETTER(VRDEExtPack))(IN_BSTR aExtPack);
-    STDMETHOD(COMGETTER(AuthLibrary)) (BSTR *aValue);
-    STDMETHOD(COMSETTER(AuthLibrary)) (IN_BSTR aValue);
-    STDMETHOD(COMGETTER(VRDEProperties)) (ComSafeArrayOut (BSTR, aProperties));
+    STDMETHOD(COMGETTER(AuthLibrary))(BSTR *aValue);
+    STDMETHOD(COMSETTER(AuthLibrary))(IN_BSTR aValue);
+    STDMETHOD(COMGETTER(VRDEProperties))(ComSafeArrayOut(BSTR, aProperties));
 
     // IVRDEServer methods
-    STDMETHOD(SetVRDEProperty) (IN_BSTR aKey, IN_BSTR aValue);
-    STDMETHOD(GetVRDEProperty) (IN_BSTR aKey, BSTR *aValue);
+    STDMETHOD(SetVRDEProperty)(IN_BSTR aKey, IN_BSTR aValue);
+    STDMETHOD(GetVRDEProperty)(IN_BSTR aKey, BSTR *aValue);
 
     // public methods only for internal purposes
 
@@ -92,7 +93,7 @@ public:
 
     void rollback();
     void commit();
-    void copyFrom (VRDEServer *aThat);
+    void copyFrom(VRDEServer *aThat);
 
 private:
 
