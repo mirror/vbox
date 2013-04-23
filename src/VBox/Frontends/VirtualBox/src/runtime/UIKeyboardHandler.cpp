@@ -447,6 +447,13 @@ bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
             }
 
             bool result = keyEvent(vkey, scan, flags, uScreenId);
+            /* Always let Windows see key releases to prevent stuck keys.
+             * Hopefully this won't cause any other issues. */
+            if (pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP)
+            {
+                fResult = false;
+                break;
+            }
             if (!result && m_fIsKeyboardCaptured)
             {
                 /* keyEvent() returned that it didn't process the message, but since the
