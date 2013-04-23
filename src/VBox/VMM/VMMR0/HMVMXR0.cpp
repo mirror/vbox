@@ -3967,7 +3967,6 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
 #ifndef VMX_USE_CACHED_VMCS_ACCESSES
 # error "VMX_USE_CACHED_VMCS_ACCESSES not defined when it should be!"
 #endif
-
 #ifdef VBOX_STRICT
 static bool hmR0VmxIsValidWriteField(uint32_t idxField)
 {
@@ -4286,8 +4285,6 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
         case VMX_VMCS64_CTRL_VMFUNC_CTRLS_FULL:
         case VMX_VMCS64_CTRL_EPTP_FULL:
         case VMX_VMCS64_CTRL_EPTP_LIST_FULL:
-        /* 64-bit Read-only data fields. */
-        case VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL:
         /* 64-bit Guest-state fields. */
         case VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL:
         case VMX_VMCS64_GUEST_DEBUGCTL_FULL:
@@ -4346,7 +4343,7 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
 
         default:
         {
-            AssertMsgFailed(("VMXWriteVmcs64Ex: invalid field %#x (pVCpu=%p u64Val=%RX64)\n", (unsigned)idxField, pVCpu, u64Val));
+            AssertMsgFailed(("VMXWriteVmcs64Ex: Invalid field %#RX32 (pVCpu=%p u64Val=%#RX64)\n", idxField, pVCpu, u64Val));
             rc = VERR_INVALID_PARAMETER;
             break;
         }
@@ -4388,8 +4385,9 @@ VMMR0DECL(int) VMXWriteCachedVmcsEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u6
     return VINF_SUCCESS;
 }
 
-
-/**
+/* Enable later when the assembly code uses these as callbacks. */
+#if 0
+/*
  * Loads the VMCS write-cache into the CPU (by executing VMWRITEs).
  *
  * @param   pVCpu           Pointer to the VMCPU.
@@ -4426,6 +4424,7 @@ VMMR0DECL(void) VMXReadCachedVmcsStore(PVMCPU pVCpu, PVMCSCACHE pCache)
         AssertRC(rc);
     }
 }
+#endif
 #endif /* HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL) */
 
 
@@ -4948,10 +4947,10 @@ static int hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestFSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    RTGCUINTREG uVal = 0;
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_FS_BASE_MSR))
     {
+        RTGCUINTREG uVal = 0;
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_FS_BASE, &uVal);   AssertRCReturn(rc, rc);
         pMixedCtx->fs.u64Base = uVal;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_FS_BASE_MSR;
@@ -4974,10 +4973,10 @@ static int hmR0VmxSaveGuestFSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestGSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    RTGCUINTREG uVal = 0;
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_GS_BASE_MSR))
     {
+        RTGCUINTREG uVal = 0;
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_GS_BASE, &uVal);   AssertRCReturn(rc, rc);
         pMixedCtx->gs.u64Base = uVal;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_GS_BASE_MSR;
@@ -5044,12 +5043,8 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    RTGCUINTREG uVal    = 0;
-    RTGCUINTREG uShadow = 0;
-    int rc              = VINF_SUCCESS;
-
     /* Guest CR0. Guest FPU. */
-    rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
 
     /* Guest CR4. */
     rc |= hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);
@@ -5062,6 +5057,7 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (   pVM->hm.s.fNestedPaging
             && CPUMIsGuestPagingEnabledEx(pMixedCtx))
         {
+            RTGCUINTREG uVal = 0;
             rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_CR3, &uVal);
             if (pMixedCtx->cr3 != uVal)
             {
