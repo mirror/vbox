@@ -89,12 +89,13 @@ $(foreach incs,$(LWIP_INCS),$(eval $(call def_vbox_nat_network_service_incs, VBo
 
 endif
 
+ifdef VBOX_WITH_TESTCASES
 PROGRAMS += tstNetPfAddressPortPairParse
 
 tstNetPfAddressPortPairParse_TEMPLATE = VBOXR3TSTEXE
 #tstNetPfAddressPortPairParse_INSTTYPE = none
 tstNetPfAddressPortPairParse_SOURCES = 	../NetLib/testcase/tstNetPfAddressPortPairParse.cpp \
 	../NetLib/VBoxNetPortForwardString.cpp
-
+endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
