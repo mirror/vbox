@@ -1431,22 +1431,10 @@ int ConsoleVRDPServer::Launch(void)
     AssertReturn(server, VERR_INTERNAL_ERROR_2);
 
     /*
-     * Check if the prerequisites for VRDE are present.
-     */
-    BOOL fPrerequisites;
-    HRESULT hrc = server->COMGETTER(CheckPrerequisites)(&fPrerequisites);
-    AssertComRCReturn(hrc, Global::vboxStatusCodeFromCOM(hrc));
-    if (!fPrerequisites)
-    {
-        LogRel(("VRDE: prerequisite missing, skipped start\n"));
-        return VINF_SUCCESS;
-    }
-
-    /*
      * Check if VRDE is enabled.
      */
     BOOL fEnabled;
-    hrc = server->COMGETTER(Enabled)(&fEnabled);
+    HRESULT hrc = server->COMGETTER(Enabled)(&fEnabled);
     AssertComRCReturn(hrc, Global::vboxStatusCodeFromCOM(hrc));
     if (!fEnabled)
         return VINF_SUCCESS;

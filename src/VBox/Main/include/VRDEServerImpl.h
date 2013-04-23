@@ -65,7 +65,6 @@ public:
     void uninit();
 
     // IVRDEServer properties
-    STDMETHOD(COMGETTER(CheckPrerequisites))(BOOL *aCheckPrerequisites);
     STDMETHOD(COMGETTER(Enabled))(BOOL *aEnabled);
     STDMETHOD(COMSETTER(Enabled))(BOOL aEnable);
     STDMETHOD(COMGETTER(AuthType))(AuthType_T *aType);
