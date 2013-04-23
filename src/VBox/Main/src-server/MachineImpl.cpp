@@ -5832,11 +5832,19 @@ HRESULT Machine::setGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
         if (!directControl)
             rc = E_ACCESSDENIED;
         else
+        {
             /** @todo Fix when adding DeleteGuestProperty(),
                          see defect. */
             rc = directControl->AccessGuestProperty(aName, aValue, aFlags,
                                                     true /* isSetter */,
                                                     &dummy, &dummy64, &dummy);
+            if (FAILED(rc))
+            {
+                /* testbox hacking: a shot in the dark. */
+                ErrorInfoKeeper eik;
+                return rc;
+            }
+        }
     }
     catch (std::bad_alloc &)
     {
