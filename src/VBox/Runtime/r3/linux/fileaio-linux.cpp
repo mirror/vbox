@@ -183,6 +183,8 @@ typedef struct RTFILEAIOCTXINTERNAL
     volatile bool       fWokenUp;
     /** Flag whether the thread is currently waiting in the syscall. */
     volatile bool       fWaiting;
+    /** Flags given during creation. */
+    uint32_t            fFlags;
     /** Magic value (RTFILEAIOCTX_MAGIC). */
     uint32_t            u32Magic;
 } RTFILEAIOCTXINTERNAL;
@@ -472,10 +474,12 @@ RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hReq, size_t *pcbTransfered)
 }
 
 
-RTDECL(int) RTFileAioCtxCreate(PRTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax)
+RTDECL(int) RTFileAioCtxCreate(PRTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax,
+                               uint32_t fFlags)
 {
     PRTFILEAIOCTXINTERNAL pCtxInt;
     AssertPtrReturn(phAioCtx, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~RTFILEAIOCTX_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
 
     /* The kernel interface needs a maximum. */
     if (cAioReqsMax == RTFILEAIO_UNLIMITED_REQS)
@@ -493,6 +497,7 @@ RTDECL(int) RTFileAioCtxCreate(PRTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax)
         pCtxInt->fWaiting     = false;
         pCtxInt->hThreadWait  = NIL_RTTHREAD;
         pCtxInt->cRequestsMax = cAioReqsMax;
+        pCtxInt->fFlags       = fFlags;
         pCtxInt->u32Magic     = RTFILEAIOCTX_MAGIC;
         *phAioCtx = (RTFILEAIOCTX)pCtxInt;
     }
@@ -658,7 +663,8 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, RTMSINTERVAL
     /*
      * Can't wait if there are not requests around.
      */
-    if (RT_UNLIKELY(ASMAtomicUoReadS32(&pCtxInt->cRequests) == 0))
+    if (   RT_UNLIKELY(ASMAtomicUoReadS32(&pCtxInt->cRequests) == 0)
+        && !(pCtxInt->fFlags & RTFILEAIOCTX_FLAGS_WAIT_WITHOUT_PENDING_REQUESTS))
         return VERR_FILE_AIO_NO_REQUEST;
 
     /*
