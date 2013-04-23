@@ -154,11 +154,29 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
     /* Only visible windows that are present on the desktop are interesting here */
     if (GetWindowRect(hwnd, &rectWindow))
     {
-        rectVisible = rectWindow;
-
         char szWindowText[256];
         szWindowText[0] = 0;
+        OSVERSIONINFO OSinfo;
+        HWND hStart = NULL;
         GetWindowText(hwnd, szWindowText, sizeof(szWindowText));
+        OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
+        GetVersionEx (&OSinfo);
+        if (OSinfo.dwMajorVersion >= 6)
+        {
+            hStart = ::FindWindowEx(GetDesktopWindow(), NULL, "Button", "Start");
+            if (  hwnd == hStart && szWindowText != NULL
+                && !(strcmp(szWindowText, "Start"))
+               )
+            {
+                /* for vista and above. To solve the issue of small bar above
+                 * the Start button when mouse is hovered over the start button in seamless mode.
+                 * Difference of 7 is observed in Win 7 platform between the dimensionsof rectangle with Start title and its shadow.
+                 */
+                rectWindow.top += 7;
+                rectWindow.bottom -=7;
+            }
+        }
+        rectVisible = rectWindow;
 
 #ifdef LOG_ENABLED
         DWORD pid = 0;
