@@ -5499,11 +5499,11 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
     ReturnComNotImplemented();
 #else /* VBOX_WITH_GUEST_PROPS */
     if (!VALID_PTR(aName))
-        return E_INVALIDARG;
+        return setError(E_INVALIDARG, tr("Name cannot be NULL or an invalid pointer"));
     if ((aValue != NULL) && !VALID_PTR(aValue))
-        return E_INVALIDARG;
+        return setError(E_INVALIDARG, tr("Invalid value pointer"));
     if ((aFlags != NULL) && !VALID_PTR(aFlags))
-        return E_INVALIDARG;
+        return setError(E_INVALIDARG, tr("Invalid flags pointer"));
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
