@@ -54,9 +54,9 @@ int pdmacFileAioMgrNormalInit(PPDMACEPFILEMGR pAioMgr)
 {
     pAioMgr->cRequestsActiveMax = PDMACEPFILEMGR_REQS_STEP;
 
-    int rc = RTFileAioCtxCreate(&pAioMgr->hAioCtx, RTFILEAIO_UNLIMITED_REQS);
+    int rc = RTFileAioCtxCreate(&pAioMgr->hAioCtx, RTFILEAIO_UNLIMITED_REQS, 0 /* fFlags */);
     if (rc == VERR_OUT_OF_RANGE)
-        rc = RTFileAioCtxCreate(&pAioMgr->hAioCtx, pAioMgr->cRequestsActiveMax);
+        rc = RTFileAioCtxCreate(&pAioMgr->hAioCtx, pAioMgr->cRequestsActiveMax, 0 /* fFlags */);
 
     if (RT_SUCCESS(rc))
     {
@@ -354,9 +354,9 @@ static int pdmacFileAioMgrNormalGrow(PPDMACEPFILEMGR pAioMgr)
     pAioMgr->cRequestsActiveMax += PDMACEPFILEMGR_REQS_STEP;
 
     RTFILEAIOCTX hAioCtxNew = NIL_RTFILEAIOCTX;
-    int rc = RTFileAioCtxCreate(&hAioCtxNew, RTFILEAIO_UNLIMITED_REQS);
+    int rc = RTFileAioCtxCreate(&hAioCtxNew, RTFILEAIO_UNLIMITED_REQS, 0 /* fFlags */);
     if (rc == VERR_OUT_OF_RANGE)
-        rc = RTFileAioCtxCreate(&hAioCtxNew, pAioMgr->cRequestsActiveMax);
+        rc = RTFileAioCtxCreate(&hAioCtxNew, pAioMgr->cRequestsActiveMax, 0 /* fFlags */);
 
     if (RT_SUCCESS(rc))
     {

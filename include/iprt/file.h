@@ -1215,12 +1215,21 @@ RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hReq, size_t *pcbTransferred);
  *                          to handle. Pass RTFILEAIO_UNLIMITED_REQS if the
  *                          context should support an unlimited number of
  *                          requests.
+ * @param   fFlags          Combination of RTFILEAIOCTX_FLAGS_*.
  */
-RTDECL(int) RTFileAioCtxCreate(PRTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax);
+RTDECL(int) RTFileAioCtxCreate(PRTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax,
+                               uint32_t fFlags);
 
 /** Unlimited number of requests.
  * Used with RTFileAioCtxCreate and RTFileAioCtxGetMaxReqCount. */
 #define RTFILEAIO_UNLIMITED_REQS    UINT32_MAX
+
+/** When set RTFileAioCtxWait() will always wait for completing requests,
+ * even when there is none waiting currently, instead of returning 
+ * VERR_FILE_AIO_NO_REQUEST. */
+#define RTFILEAIOCTX_FLAGS_WAIT_WITHOUT_PENDING_REQUESTS RT_BIT_32(0)
+/** mask of valid flags. */
+#define RTFILEAIOCTX_FLAGS_VALID_MASK (RTFILEAIOCTX_FLAGS_WAIT_WITHOUT_PENDING_REQUESTS)
 
 /**
  * Destroys an async I/O context.
