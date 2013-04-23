@@ -5498,11 +5498,11 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
 #else /* VBOX_WITH_GUEST_PROPS */
-    if (!VALID_PTR(aName))
+    if (!RT_VALID_PTR(aName))
         return setError(E_INVALIDARG, tr("Name cannot be NULL or an invalid pointer"));
-    if ((aValue != NULL) && !VALID_PTR(aValue))
+    if (aValue != NULL && !RT_VALID_PTR(aValue))
         return setError(E_INVALIDARG, tr("Invalid value pointer"));
-    if ((aFlags != NULL) && !VALID_PTR(aFlags))
+    if (aFlags != NULL && !RT_VALID_PTR(aFlags))
         return setError(E_INVALIDARG, tr("Invalid flags pointer"));
 
     AutoCaller autoCaller(this);
@@ -5516,34 +5516,36 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * ptrVM, so there is no need to hold a lock of this */
 
-    HRESULT rc = E_UNEXPECTED;
     using namespace guestProp;
 
     VBOXHGCMSVCPARM parm[3];
-    Utf8Str Utf8Name = aName;
-    int vrc = VINF_SUCCESS;
 
+    Utf8Str Utf8Name = aName;
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
     parm[0].u.pointer.addr = (void*)Utf8Name.c_str();
     /* The + 1 is the null terminator */
     parm[0].u.pointer.size = (uint32_t)Utf8Name.length() + 1;
-    Utf8Str Utf8Value = aValue;
+
     if (aValue != NULL)
     {
+        Utf8Str Utf8Value = aValue;
         parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
-        parm[1].u.pointer.addr = (void*)Utf8Value.c_str();
+        parm[1].u.pointer.addr = (void *)Utf8Value.c_str();
         /* The + 1 is the null terminator */
         parm[1].u.pointer.size = (uint32_t)Utf8Value.length() + 1;
     }
-    Utf8Str Utf8Flags = aFlags;
+
     if (aFlags != NULL)
     {
+        Utf8Str Utf8Flags = aFlags;
         parm[2].type = VBOX_HGCM_SVC_PARM_PTR;
         parm[2].u.pointer.addr = (void*)Utf8Flags.c_str();
         /* The + 1 is the null terminator */
         parm[2].u.pointer.size = (uint32_t)Utf8Flags.length() + 1;
     }
-    if ((aValue != NULL) && (aFlags != NULL))
+
+    int vrc;
+    if (aValue != NULL && aFlags != NULL)
         vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", SET_PROP_HOST,
                                       3, &parm[0]);
     else if (aValue != NULL)
@@ -5552,13 +5554,12 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
     else
         vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", DEL_PROP_HOST,
                                     1, &parm[0]);
+    HRESULT hrc;
     if (RT_SUCCESS(vrc))
-        rc = S_OK;
+        hrc = S_OK;
     else
-        rc = setError(E_UNEXPECTED,
-            tr("The service call failed with the error %Rrc"),
-            vrc);
-    return rc;
+        hrc = setError(E_UNEXPECTED, tr("The service call failed with the error %Rrc"), vrc);
+    return hrc;
 #endif /* VBOX_WITH_GUEST_PROPS */
 }
 
