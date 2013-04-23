@@ -527,7 +527,8 @@ private:
     int configGraphicsController(PCFGMNODE pDevices, const char *pcszDevice,
                                  BusAssignmentManager *pBusMgr,
                                  const ComPtr<IMachine> &pMachine,
-                                 const ComPtr<IBIOSSettings> &biosSettings);
+                                 const ComPtr<IBIOSSettings> &biosSettings,
+                                 bool fHMEnabled);
     int configMediumAttachment(PCFGMNODE pCtlInst,
                                const char *pcszDevice,
                                unsigned uInstance,

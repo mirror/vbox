@@ -1328,7 +1328,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             case GraphicsControllerType_Null:
                 break;
             case GraphicsControllerType_VBoxVGA:
-                rc = configGraphicsController(pDevices, "vga", pBusMgr, pMachine, biosSettings);
+                rc = configGraphicsController(pDevices, "vga", pBusMgr, pMachine, biosSettings, fHMEnabled);
                 if (FAILED(rc))
                     return rc;
                 break;
@@ -3037,7 +3037,8 @@ int Console::configGraphicsController(PCFGMNODE pDevices,
                                       const char *pcszDevice,
                                       BusAssignmentManager *pBusMgr,
                                       const ComPtr<IMachine> &pMachine,
-                                      const ComPtr<IBIOSSettings> &biosSettings)
+                                      const ComPtr<IBIOSSettings> &biosSettings,
+                                      bool fHMEnabled)
 {
     // InsertConfig* throws
     try
@@ -3059,9 +3060,11 @@ int Console::configGraphicsController(PCFGMNODE pDevices,
         ULONG cMonitorCount;
         hrc = pMachine->COMGETTER(MonitorCount)(&cMonitorCount);                            H();
         InsertConfigInteger(pCfg,  "MonitorCount",         cMonitorCount);
-    #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
         InsertConfigInteger(pCfg,  "R0Enabled",            fHMEnabled);
-    #endif
+#else
+        NOREF(fHMEnabled);
+#endif
 
         /* Custom VESA mode list */
         unsigned cModes = 0;
