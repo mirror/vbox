@@ -1808,6 +1808,7 @@ STDMETHODIMP Machine::COMSETTER(GraphicsControllerType)(GraphicsControllerType_T
 {
     switch (aGraphicsControllerType)
     {
+        case GraphicsControllerType_Null:
         case GraphicsControllerType_VBoxVGA:
             break;
         default:

@@ -1967,7 +1967,7 @@ STDMETHODIMP Console::COMGETTER(VRDEServerInfo)(IVRDEServerInfo **aVRDEServerInf
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* mDisplay is constant during life time, no need to lock */
+    /* mVRDEServerInfo is constant during life time, no need to lock */
     mVRDEServerInfo.queryInterfaceTo(aVRDEServerInfo);
 
     return S_OK;
@@ -5429,12 +5429,12 @@ HRESULT Console::getGuestProperty(IN_BSTR aName, BSTR *aValue,
     AssertComRCReturnRC(autoCaller.rc());
 
     /* protect mpUVM (if not NULL) */
-    AutoVMCallerWeak autoVMCaller(this);
-    if (FAILED(autoVMCaller.rc()))
-        return autoVMCaller.rc();
+    SafeVMPtrQuiet ptrVM(this);
+    if (FAILED(ptrVM.rc()))
+        return ptrVM.rc();
 
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
-     * autoVMCaller, so there is no need to hold a lock of this */
+     * ptrVM, so there is no need to hold a lock of this */
 
     HRESULT rc = E_UNEXPECTED;
     using namespace guestProp;
@@ -5509,12 +5509,12 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
     AssertComRCReturnRC(autoCaller.rc());
 
     /* protect mpUVM (if not NULL) */
-    AutoVMCallerWeak autoVMCaller(this);
-    if (FAILED(autoVMCaller.rc()))
-        return autoVMCaller.rc();
+    SafeVMPtrQuiet ptrVM(this);
+    if (FAILED(ptrVM.rc()))
+        return ptrVM.rc();
 
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
-     * autoVMCaller, so there is no need to hold a lock of this */
+     * ptrVM, so there is no need to hold a lock of this */
 
     HRESULT rc = E_UNEXPECTED;
     using namespace guestProp;
