@@ -18,6 +18,7 @@
 #include "renderspu_cocoa_helper.h"
 
 #import <Cocoa/Cocoa.h>
+#undef PVM
 
 #include "chromium.h" /* For the visual bits of chromium */
 
