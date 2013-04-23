@@ -245,26 +245,6 @@ HRESULT VRDEServer::saveSettings(settings::VRDESettings &data)
 // IVRDEServer properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP VRDEServer::COMGETTER(CheckPrerequisites)(BOOL *aCheckPrerequisites)
-{
-    CheckComArgOutPointerValid(aCheckPrerequisites);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    BOOL res = TRUE;
-    GraphicsControllerType_T graphicsController = GraphicsControllerType_Null;
-    HRESULT rc = mParent->COMGETTER(GraphicsControllerType)(&graphicsController);
-    if (SUCCEEDED(rc))
-        res &= (graphicsController != GraphicsControllerType_Null);
-    else
-        res = FALSE;
-
-    *aCheckPrerequisites = res;
-
-    return S_OK;
-}
-
 STDMETHODIMP VRDEServer::COMGETTER(Enabled)(BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);

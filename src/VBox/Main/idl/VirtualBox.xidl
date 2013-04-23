@@ -16571,13 +16571,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IVRDEServer" extends="$unknown"
-    uuid="e129c465-b575-48ea-adbb-49cbd9d3d458"
+    uuid="d38de40a-c2c1-4e95-b5a4-167b05f5694c"
     wsmap="managed"
     >
-    <attribute name="checkPrerequisites" type="boolean" readonly="yes">
-      <desc>Checks if the prerequisites for running the VRDE server are
-      fulfilled, returns @c true if they are.</desc>
-    </attribute>
 
     <attribute name="enabled" type="boolean">
       <desc>Flag if VRDE server is enabled.</desc>
