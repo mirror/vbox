@@ -2618,11 +2618,11 @@ static int hmR0VmxLoadGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_RFLAGS)
     {
         /* Intel spec. 2.3.1 "System Flags and Fields in IA-32e Mode" claims the upper 32-bits of RFLAGS are reserved (MBZ).
-           Let us assert it as such and use native-width VMWRITE. */
-        X86RFLAGS uRFlags = pMixedCtx->rflags;
-        Assert(uRFlags.u64 >> 32 == 0);
-        uRFlags.u64 &= VMX_EFLAGS_RESERVED_0;                   /* Bits 22-31, 15, 5 & 3 MBZ. */
-        uRFlags.u64 |= VMX_EFLAGS_RESERVED_1;                   /* Bit 1 MB1. */
+           Let us assert it as such and use 32-bit VMWRITE. */
+        Assert(!(pMixedCtx->rflags.u64 >> 32));
+        X86EFLAGS uEFlags = pMixedCtx->eflags;
+        uEFlags.u32 &= VMX_EFLAGS_RESERVED_0;                   /* Bits 22-31, 15, 5 & 3 MBZ. */
+        uEFlags.u32 |= VMX_EFLAGS_RESERVED_1;                   /* Bit 1 MB1. */
 
         /*
          * If we're emulating real-mode using Virtual 8086 mode, save the real-mode eflags so we can restore them on VM exit.
@@ -2632,15 +2632,15 @@ static int hmR0VmxLoadGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.pRealModeTSS);
             Assert(PDMVmmDevHeapIsEnabled(pVCpu->CTX_SUFF(pVM)));
-            pVCpu->hm.s.vmx.RealMode.eflags.u32 = uRFlags.u64; /* Save the original eflags of the real-mode guest. */
-            uRFlags.Bits.u1VM   = 1;                           /* Set the Virtual 8086 mode bit. */
-            uRFlags.Bits.u2IOPL = 0;                           /* Change IOPL to 0, otherwise certain instructions won't fault. */
+            pVCpu->hm.s.vmx.RealMode.eflags.u32 = uEFlags.u32; /* Save the original eflags of the real-mode guest. */
+            uEFlags.Bits.u1VM   = 1;                           /* Set the Virtual 8086 mode bit. */
+            uEFlags.Bits.u2IOPL = 0;                           /* Change IOPL to 0, otherwise certain instructions won't fault. */
         }
 
-        rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_RFLAGS, uRFlags.u64);
+        rc = VMXWriteVmcs32(VMX_VMCS_GUEST_RFLAGS, uEFlags.u32);
         AssertRCReturn(rc, rc);
 
-        Log(("Load: VMX_VMCS_GUEST_RFLAGS=%#RX64\n", uRFlags.u64));
+        Log(("Load: VMX_VMCS_GUEST_RFLAGS=%#RX32\n", uEFlags.u32));
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_RFLAGS;
     }
     return rc;
@@ -3847,12 +3847,12 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
 
                 /* Guest bits. */
                 RTGCUINTREG uGCReg;
-                rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &uGCReg);      AssertRC(rc);
+                rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &uGCReg);        AssertRC(rc);
                 Log(("Old Guest Rip %#RGv New %#RGv\n", (RTGCPTR)pCtx->rip, (RTGCPTR)uGCReg));
-                rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &uGCReg);      AssertRC(rc);
+                rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &uGCReg);        AssertRC(rc);
                 Log(("Old Guest Rsp %#RGv New %#RGv\n", (RTGCPTR)pCtx->rsp, (RTGCPTR)uGCReg));
-                rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RFLAGS, &uGCReg);   AssertRC(rc);
-                Log(("Old Guest Rflags %#RGr New %#RGr\n", (RTGCPTR)pCtx->rflags.u64, (RTGCPTR)uGCReg));
+                rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32Val);       AssertRC(rc);
+                Log(("Old Guest Rflags %#RX32 New %#RX32\n", pCtx->eflags.u32, u32Val));
                 rc = VMXReadVmcs32(VMX_VMCS16_GUEST_FIELD_VPID, &u32Val); AssertRC(rc);
                 Log(("VMX_VMCS16_GUEST_FIELD_VPID %u\n", u32Val));
 
@@ -3975,7 +3975,6 @@ static bool hmR0VmxIsValidWriteField(uint32_t idxField)
     {
         case VMX_VMCS_GUEST_RIP:
         case VMX_VMCS_GUEST_RSP:
-        case VMX_VMCS_GUEST_RFLAGS:
         case VMX_VMCS_GUEST_DR7:
         case VMX_VMCS_GUEST_SYSENTER_EIP:
         case VMX_VMCS_GUEST_SYSENTER_ESP:
@@ -4209,7 +4208,6 @@ static int hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu)
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_DR7);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_RSP);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_RIP);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_RFLAGS);
 #if 0
     /* Unused natural width guest-state fields. */
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS);
@@ -4329,7 +4327,6 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
         case VMX_VMCS_GUEST_DR7:
         case VMX_VMCS_GUEST_RSP:
         case VMX_VMCS_GUEST_RIP:
-        case VMX_VMCS_GUEST_RFLAGS:
         case VMX_VMCS_GUEST_SYSENTER_ESP:
         case VMX_VMCS_GUEST_SYSENTER_EIP:
         {
@@ -4812,10 +4809,10 @@ static int hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS))
     {
-        RTGCUINTREG uVal = 0;
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RFLAGS, &uVal);
+        uint32_t uVal = 0;
+        rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &uVal);
         AssertRCReturn(rc, rc);
-        pMixedCtx->rflags.u64 = uVal;
+        pMixedCtx->eflags.u32 = uVal;
 
         /* Undo our real-on-v86-mode changes to eflags if necessary. */
         if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
