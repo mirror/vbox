@@ -844,12 +844,12 @@ DECLINLINE(PINTNETMACTABENTRY) intnetR0NetworkFindMacAddrEntry(PINTNETNETWORK pN
  */
 DECLINLINE(bool) intnetR0IPv6AddrIsGood(RTNETADDRIPV6 addr)
 {
-    return  !(   (   addr.QWords.qw0 == 0 && addr.QWords.qw1 == 0)                      /* :: */
-              || (   addr.Words.w0 & RT_H2BE_U16(0xff00) == RT_H2BE_U16(0xff00)) /* multicast */
+    return  !(   (   addr.QWords.qw0 == 0 && addr.QWords.qw1 == 0)                       /* :: */
+              || (  (addr.Words.w0 & RT_H2BE_U16(0xff00)) == RT_H2BE_U16(0xff00)) /* multicast */
               || (   addr.Words.w0 == 0 && addr.Words.w1 == 0
                   && addr.Words.w2 == 0 && addr.Words.w3 == 0
                   && addr.Words.w4 == 0 && addr.Words.w5 == 0
-                  && addr.Words.w6 == 0 && addr.Words.w7 == RT_H2BE_U16(0x0001)));     /* ::1 */
+                  && addr.Words.w6 == 0 && addr.Words.w7 == RT_H2BE_U16(0x0001)));      /* ::1 */
 }
 
 
