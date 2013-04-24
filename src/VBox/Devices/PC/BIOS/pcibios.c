@@ -115,8 +115,8 @@ typedef struct {
 
 typedef struct {
     pushad_regs_t   gr;
-    uint16_t        es;
     uint16_t        ds;
+    uint16_t        es;
     iret_addr_t     ra;
 } pci_regs_t;
 
@@ -387,6 +387,9 @@ void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
         break;
     case GET_IRQ_ROUTING:
         route_buf = ES :> (void *)DI;
+        BX_DEBUG_PCI("PCI: Route Buf %04X:%04X size %04X (at %04X:%04X)\n",
+                     FP_SEG(route_buf->buf_ptr), FP_OFF(route_buf->buf_ptr),
+                     route_buf->buf_size, ES, DI);
         if (pci_routing_table_size > route_buf->buf_size) {
             SET_AH(BUFFER_TOO_SMALL);
             SET_CF();
@@ -395,6 +398,7 @@ void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
             /* IRQs 9 and 11 are PCI only. */
             BX = (1 << 9) | (1 << 11);
         }
+        route_buf->buf_size = pci_routing_table_size;
         break;
     default:
         BX_INFO("PCI: Unsupported function AX=%04X BX=%04X called\n", AX, BX);
