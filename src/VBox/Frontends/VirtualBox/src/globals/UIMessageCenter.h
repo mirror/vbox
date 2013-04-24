@@ -68,11 +68,6 @@ signals:
 
 public:
 
-    enum
-    {
-        AutoConfirmed = 0x8000
-    };
-
     /* Static API: Create/destroy stuff: */
     static void create();
     static void destroy();

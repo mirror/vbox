@@ -59,7 +59,8 @@ enum AlertButtonOption
 /* Alert option enumerator: */
 enum AlertOption
 {
-    AlertOption_CheckBox      = 0x400, /* 00000100 00000000 */
+    AlertOption_AutoConfirmed = 0x400, /* 00000100 00000000 */
+    AlertOption_CheckBox      = 0x800, /* 00001000 00000000 */
     AlertOptionMask           = 0xFC00 /* 11111100 00000000 */
 };
 
