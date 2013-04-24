@@ -801,7 +801,7 @@ STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR
                         tr("Machine is not locked by session (session state: %s)."),
                         Global::stringifySessionState(mState));
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
-    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgStrNotEmptyOrNull1(aName, 0x80face05);
     if (!aIsSetter && !VALID_PTR(aRetValue))
         return E_POINTER;
     if (!aIsSetter && !VALID_PTR(aRetTimestamp))
@@ -810,10 +810,10 @@ STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR
         return E_POINTER;
     /* aValue can be NULL for a setter call if the property is to be deleted. */
     if (aIsSetter && (aValue != NULL) && !VALID_PTR(aValue))
-        return setError(E_INVALIDARG, tr("Invalid value pointer"));
+        return setError(0x80face06, tr("Invalid value pointer"));
     /* aFlags can be null if it is to be left as is */
     if (aIsSetter && (aFlags != NULL) && !VALID_PTR(aFlags))
-        return setError(E_INVALIDARG, tr("Invalid flags pointer"));
+        return setError(0x80face07, tr("Invalid flags pointer"));
 
     /* If this session is not in a VM process fend off the call. The caller
      * handles this correctly, by doing the operation in VBoxSVC. */
