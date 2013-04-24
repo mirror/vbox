@@ -974,6 +974,8 @@
 #define VERR_TRPM_IPE_2                     (-2408)
 /** Internal processing error \#3 in TRPM. */
 #define VERR_TRPM_IPE_3                     (-2409)
+/** Got into a part of TRPM that is not used when HM (VT-x/AMD-V) is enabled. */
+#define VERR_TRPM_HM_IPE                    (-2410)
 /** @} */
 
 
@@ -1005,6 +1007,8 @@
 /** The guest GDT so full that we cannot find free space for our own
  * selectors. */
 #define VERR_SELM_GDT_TOO_FULL              (-2508)
+/** Got into a part of SELM that is not used when HM (VT-x/AMD-V) is enabled. */
+#define VERR_SELM_HM_IPE                    (-2509)
 /** @} */
 
 
@@ -1125,6 +1129,8 @@
 #define VERR_VMM_SWITCHER_IPE_1             (-2713)
 /** Reason for leaving RZ: Unknown call to ring-3. */
 #define VINF_VMM_UNKNOWN_RING3_CALL         (2714)
+/** Attempted to use stub switcher. */
+#define VERR_VMM_SWITCHER_STUB              (-2715)
 /** @} */
 
 

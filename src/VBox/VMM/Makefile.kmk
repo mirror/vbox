@@ -240,10 +240,12 @@ ifdef VBOX_WITH_RAW_MODE
  	VMMSwitcher/32BitToAMD64.asm \
  	VMMSwitcher/PAETo32Bit.asm \
  	VMMSwitcher/PAEToAMD64.asm \
- 	VMMSwitcher/PAEToPAE.asm
+ 	VMMSwitcher/PAEToPAE.asm \
+ 	VMMSwitcher/X86Stub.asm
  VBoxVMM_SOURCES.amd64 = \
  	VMMSwitcher/AMD64To32Bit.asm \
- 	VMMSwitcher/AMD64ToPAE.asm
+ 	VMMSwitcher/AMD64ToPAE.asm \
+ 	VMMSwitcher/AMD64Stub.asm
  VBoxVMM_SOURCES.darwin.x86 += \
  	VMMSwitcher/AMD64ToPAE.asm
 endif

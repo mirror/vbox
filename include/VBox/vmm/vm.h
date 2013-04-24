@@ -881,6 +881,9 @@ typedef struct VM
     bool                        fHMEnabled;
     /** For asserting on fHMEnable usage. */
     bool                        fHMEnabledFixed;
+    /** Hardware VM support requires a minimal raw-mode context.
+     * This is never set on 64-bit hosts, only 32-bit hosts requires it. */
+    bool                        fHMNeedRawModeCtx;
     /** Set when this VM is the master FT node.
      * @todo This doesn't need to be here, FTM should store it in it's own
      *       structures instead. */
@@ -892,7 +895,7 @@ typedef struct VM
     /** @} */
 
     /** Alignment padding.. */
-    uint8_t                     uPadding1[3];
+    uint8_t                     uPadding1[2];
 
     /** @name Debugging
      * @{ */

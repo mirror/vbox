@@ -83,7 +83,9 @@ static int emR3HmStep(PVM pVM, PVMCPU pVCpu)
 
     int         rc;
     PCPUMCTX    pCtx   = pVCpu->em.s.pCtx;
-    VMCPU_FF_CLEAR(pVCpu, (VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
+# ifdef VBOX_WITH_RAW_MODE
+    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
+# endif
 
     /*
      * Check vital forced actions, but ignore pending interrupts and timers.
@@ -500,6 +502,7 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #ifdef VBOX_WITH_RAW_MODE
         /** @todo change this FF hack into an assertion, they simply SHALL NOT be set in
          *        HM mode. */
+        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
         VMCPU_FF_CLEAR(pVCpu, (VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS)); /* not relevant in HM mode; shouldn't be set really. */
 #endif
         if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)

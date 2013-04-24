@@ -41,7 +41,6 @@ RT_C_DECLS_BEGIN
 VMMDECL(RTSEL)          SELMGetTrap8Selector(PVM pVM);
 VMMDECL(void)           SELMSetTrap8EIP(PVM pVM, uint32_t u32EIP);
 VMMDECL(int)            SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp);
-VMMDECL(RTGCPTR)        SELMGetGuestTSS(PVM pVM);
 VMMDECL(RTSEL)          SELMGetHyperCS(PVM pVM);
 VMMDECL(RTSEL)          SELMGetHyperCS64(PVM pVM);
 VMMDECL(RTSEL)          SELMGetHyperDS(PVM pVM);

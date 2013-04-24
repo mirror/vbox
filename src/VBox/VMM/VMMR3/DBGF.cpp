@@ -359,18 +359,10 @@ VMMR3_INT_DECL(int) DBGFR3VMMForcedAction(PVM pVM)
         PVMCPU pVCpu = VMMGetCpu(pVM);
 
         /*
-         * Commands?
+         * Command pending? Process it.
          */
         if (pVM->dbgf.s.enmVMMCmd != DBGFCMD_NO_COMMAND)
         {
-#ifdef VBOX_WITH_RAW_MODE
-            /** @todo stupid GDT/LDT sync hack. go away! */
-            SELMR3UpdateFromCPUM(pVM, pVCpu);
-#endif
-
-            /*
-             * Process the command.
-             */
             bool            fResumeExecution;
             DBGFCMDDATA     CmdData = pVM->dbgf.s.VMMCmdData;
             DBGFCMD         enmCmd = dbgfR3SetCmd(pVM, DBGFCMD_NO_COMMAND);
@@ -671,11 +663,6 @@ static int dbgfR3VMMWait(PVM pVM)
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
     LogFlow(("dbgfR3VMMWait:\n"));
-
-#ifdef VBOX_WITH_RAW_MODE
-    /** @todo stupid GDT/LDT sync hack. go away! */
-    SELMR3UpdateFromCPUM(pVM, pVCpu);
-#endif
     int rcRet = VINF_SUCCESS;
 
     /*

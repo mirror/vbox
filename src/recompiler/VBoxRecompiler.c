@@ -1796,7 +1796,7 @@ void remR3FlushPage(CPUX86State *env, RTGCPTR GCPtr)
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
 #ifdef VBOX_WITH_RAW_MODE
-    if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
+    if (((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME) && !HMIsEnabled(pVM))
         VMCPU_FF_SET(env->pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 #endif
     pCtx->cr4 = env->cr[4];
@@ -1919,7 +1919,7 @@ void remR3FlushTLB(CPUX86State *env, bool fGlobal)
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
 #ifdef VBOX_WITH_RAW_MODE
-    if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
+    if (((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME) && !HMIsEnabled(pVM))
         VMCPU_FF_SET(env->pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 #endif
     pCtx->cr4 = env->cr[4];
@@ -1961,7 +1961,7 @@ void remR3ChangeCpuMode(CPUX86State *env)
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
 #ifdef VBOX_WITH_RAW_MODE
-    if ((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME)
+    if (((env->cr[4] ^ pCtx->cr4) & X86_CR4_VME) && !HMIsEnabled(pVM))
         VMCPU_FF_SET(env->pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 #endif
     pCtx->cr4 = env->cr[4];
@@ -2653,7 +2653,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     pCtx->cr2           = pVM->rem.s.Env.cr[2];
     pCtx->cr3           = pVM->rem.s.Env.cr[3];
 #ifdef VBOX_WITH_RAW_MODE
-    if ((pVM->rem.s.Env.cr[4] ^ pCtx->cr4) & X86_CR4_VME)
+    if (((pVM->rem.s.Env.cr[4] ^ pCtx->cr4) & X86_CR4_VME) && !HMIsEnabled(pVM))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 #endif
     pCtx->cr4           = pVM->rem.s.Env.cr[4];
@@ -2667,7 +2667,8 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         pCtx->gdtr.pGdt = pVM->rem.s.Env.gdt.base;
         STAM_COUNTER_INC(&gStatREMGDTChange);
 #ifdef VBOX_WITH_RAW_MODE
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+        if (!HMIsEnabled(pVM))
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
 #endif
     }
 
@@ -2697,7 +2698,8 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         pCtx->ldtr.Attr.u   = (pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF;
         STAM_COUNTER_INC(&gStatREMLDTRChange);
 #ifdef VBOX_WITH_RAW_MODE
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
+        if (!HMIsEnabled(pVM))
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
 #endif
     }
 
@@ -2726,7 +2728,8 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
             pCtx->tr.Attr.u |= DESC_TSS_BUSY_MASK >> 8;
         STAM_COUNTER_INC(&gStatREMTRChange);
 #ifdef VBOX_WITH_RAW_MODE
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+        if (!HMIsEnabled(pVM))
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 #endif
     }
 
@@ -2885,7 +2888,7 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
     pCtx->cr2           = pVM->rem.s.Env.cr[2];
     pCtx->cr3           = pVM->rem.s.Env.cr[3];
 #ifdef VBOX_WITH_RAW_MODE
-    if ((pVM->rem.s.Env.cr[4] ^ pCtx->cr4) & X86_CR4_VME)
+    if (((pVM->rem.s.Env.cr[4] ^ pCtx->cr4) & X86_CR4_VME) && !HMIsEnabled(pVM))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 #endif
     pCtx->cr4           = pVM->rem.s.Env.cr[4];
@@ -2899,7 +2902,8 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
         pCtx->gdtr.pGdt     = (RTGCPTR)pVM->rem.s.Env.gdt.base;
         STAM_COUNTER_INC(&gStatREMGDTChange);
 #ifdef VBOX_WITH_RAW_MODE
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+        if (!HMIsEnabled(pVM))
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
 #endif
     }
 
@@ -2929,7 +2933,8 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
         pCtx->ldtr.Attr.u   = (pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF;
         STAM_COUNTER_INC(&gStatREMLDTRChange);
 #ifdef VBOX_WITH_RAW_MODE
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
+        if (!HMIsEnabled(pVM))
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
 #endif
     }
 
@@ -2958,7 +2963,8 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
             pCtx->tr.Attr.u |= DESC_TSS_BUSY_MASK >> 8;
         STAM_COUNTER_INC(&gStatREMTRChange);
 #ifdef VBOX_WITH_RAW_MODE
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+        if (!HMIsEnabled(pVM))
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
 #endif
     }
 

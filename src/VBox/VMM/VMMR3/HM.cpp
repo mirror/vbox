@@ -486,6 +486,13 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
             else
                 AssertLogRelMsgFailedReturn(("SUPR3QueryVTCaps didn't return either AMD-V or VT-x flag set (%#x)!\n", fCaps),
                                             VERR_INTERNAL_ERROR_5);
+
+            /*
+             * Do we require a little bit or raw-mode for 64-bit guest execution?
+             */
+            pVM->fHMNeedRawModeCtx = HC_ARCH_BITS == 32
+                                  && pVM->fHMEnabled
+                                  && pVM->hm.s.fAllow64BitGuests;
         }
         else
         {
@@ -830,23 +837,13 @@ VMMR3_INT_DECL(int) HMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 static void hmR3DisableRawMode(PVM pVM)
 {
 #ifdef VBOX_WITH_RAW_MODE
-    /* Disable PATM & CSAM. */
-    PATMR3AllowPatching(pVM->pUVM, false);
-    CSAMDisableScanning(pVM);
-
     /* Turn off IDT/LDT/GDT and TSS monitoring and sycing. */
     SELMR3DisableMonitoring(pVM);
     TRPMR3DisableMonitoring(pVM);
 #endif
 
-    /* Disable the switcher code (safety precaution). */
-    VMMR3DisableSwitcher(pVM);
-
     /* Disable mapping of the hypervisor into the shadow page table. */
     PGMR3MappingsDisable(pVM);
-
-    /* Disable the switcher */
-    VMMR3DisableSwitcher(pVM);
 
     /* Reinit the paging mode to force the new shadow mode. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
