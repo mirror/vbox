@@ -825,6 +825,9 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
          */
         case DBGFCMD_GO:
         {
+            /** @todo SMP */
+            PVMCPU pVCpu = VMMGetCpu0(pVM);
+            pVCpu->dbgf.s.fSingleSteppingRaw = false;
             fSendEvent = false;
             fResume = true;
             break;
