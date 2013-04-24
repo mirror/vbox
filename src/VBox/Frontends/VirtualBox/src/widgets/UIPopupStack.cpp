@@ -41,7 +41,8 @@ UIPopupStack::UIPopupStack(QWidget *pParent)
 
 void UIPopupStack::updatePopupPane(const QString &strPopupPaneID,
                                    const QString &strMessage, const QString &strDetails,
-                                   const QMap<int, QString> &buttonDescriptions)
+                                   const QMap<int, QString> &buttonDescriptions,
+                                   bool fProposeAutoConfirmation)
 {
     /* Looking for the corresponding popup-pane: */
     UIPopupPane *pPopupPane = 0;
@@ -50,7 +51,7 @@ void UIPopupStack::updatePopupPane(const QString &strPopupPaneID,
     {
         /* Get existing one: */
         pPopupPane = m_panes[strPopupPaneID];
-        /* And update message and details: */
+        /* Update message and details: */
         pPopupPane->setMessage(strMessage);
         pPopupPane->setDetails(strDetails);
     }
@@ -60,7 +61,8 @@ void UIPopupStack::updatePopupPane(const QString &strPopupPaneID,
         /* Create new one: */
         pPopupPane = m_panes[strPopupPaneID] = new UIPopupPane(this,
                                                                strMessage, strDetails,
-                                                               buttonDescriptions);
+                                                               buttonDescriptions,
+                                                               fProposeAutoConfirmation);
         /* Attach popup-pane connection: */
         connect(pPopupPane, SIGNAL(sigSizeHintChanged()), this, SLOT(sltAdjustGeometry()));
         connect(pPopupPane, SIGNAL(sigDone(int)), this, SLOT(sltPopupPaneDone(int)));
@@ -89,7 +91,7 @@ void UIPopupStack::sltAdjustGeometry()
     layoutContent();
 }
 
-void UIPopupStack::sltPopupPaneDone(int iButtonCode)
+void UIPopupStack::sltPopupPaneDone(int iResultCode)
 {
     /* Make sure the sender is the popup-pane: */
     UIPopupPane *pPopupPane = qobject_cast<UIPopupPane*>(sender());
@@ -108,7 +110,7 @@ void UIPopupStack::sltPopupPaneDone(int iButtonCode)
     }
 
     /* Notify listeners about popup-pane: */
-    emit sigPopupPaneDone(strPopupPaneID, iButtonCode);
+    emit sigPopupPaneDone(strPopupPaneID, iResultCode);
 
     /* Cleanup the popup-pane: */
     m_panes.remove(strPopupPaneID);

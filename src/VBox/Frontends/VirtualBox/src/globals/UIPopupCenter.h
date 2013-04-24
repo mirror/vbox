@@ -35,8 +35,8 @@ class UIPopupCenter: public QObject
 
 signals:
 
-    /* Notifier: Popup-pane done stuff: */
-    void sigPopupPaneDone(QString strID, int iButtonCode);
+    /* Notifier: Popup-pane stuff: */
+    void sigPopupPaneDone(QString strPopupPaneID, int iResultCode);
 
 public:
 
@@ -51,17 +51,20 @@ public:
                  const QString &strMessage, const QString &strDetails,
                  int iButton1 = 0, int iButton2 = 0,
                  const QString &strButtonText1 = QString(),
-                 const QString &strButtonText2 = QString());
+                 const QString &strButtonText2 = QString(),
+                 bool fProposeAutoConfirmation = false);
 
     /* API: Wrapper to 'message' function.
      * Provides single OK button: */
     void error(QWidget *pParent, const QString &strId,
-               const QString &strMessage, const QString &strDetails);
+               const QString &strMessage, const QString &strDetails,
+               bool fProposeAutoConfirmation = false);
 
     /* API: Wrapper to 'error' function.
      * Omits details: */
     void alert(QWidget *pParent, const QString &strId,
-               const QString &strMessage);
+               const QString &strMessage,
+               bool fProposeAutoConfirmation = false);
 
     /* API: Wrapper to 'message' function.
      * Omits details, provides up to two buttons.
@@ -70,19 +73,24 @@ public:
                   const QString &strMessage,
                   int iButton1 = 0, int iButton2 = 0,
                   const QString &strButtonText1 = QString(),
-                  const QString &strButtonText2 = QString());
+                  const QString &strButtonText2 = QString(),
+                  bool fProposeAutoConfirmation = false);
 
     /* API: Wrapper to 'question' function,
      * Question providing two buttons (OK and Cancel by default): */
     void questionBinary(QWidget *pParent, const QString &strId,
                         const QString &strMessage,
                         const QString &strOkButtonText = QString(),
-                        const QString &strCancelButtonText = QString());
+                        const QString &strCancelButtonText = QString(),
+                        bool fProposeAutoConfirmation = false);
 
     /* API: Runtime UI stuff: */
     void remindAboutMouseIntegration(QWidget *pParent, bool fSupportsAbsolute);
 
 private slots:
+
+    /* Handler: Popup-pane stuff: */
+    void sltPopupPaneDone(QString strPopupPaneID, int iResultCode);
 
     /* Handler: Popup-stack stuff: */
     void sltRemovePopupStack();
@@ -97,7 +105,8 @@ private:
     void showPopupPane(QWidget *pParent, const QString &strPopupPaneID,
                        const QString &strMessage, const QString &strDetails,
                        int iButton1, int iButton2,
-                       const QString &strButtonText1, const QString &strButtonText2);
+                       const QString &strButtonText1, const QString &strButtonText2,
+                       bool fProposeAutoConfirmation);
 
     /* Variable: Popup-stack stuff: */
     QMap<QString, QPointer<UIPopupStack> > m_stacks;

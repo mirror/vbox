@@ -34,7 +34,7 @@ class UIPopupStack : public QWidget
 signals:
 
     /* Notifier: Popup-pane stuff: */
-    void sigPopupPaneDone(QString strID, int iButtonCode);
+    void sigPopupPaneDone(QString strID, int iResultCode);
 
     /* Notifier: Popup-stack stuff: */
     void sigRemove();
@@ -47,7 +47,8 @@ public:
     /* API: Popup-pane stuff: */
     void updatePopupPane(const QString &strPopupPaneID,
                          const QString &strMessage, const QString &strDetails,
-                         const QMap<int, QString> &buttonDescriptions);
+                         const QMap<int, QString> &buttonDescriptions,
+                         bool fProposeAutoConfirmation);
 
 private slots:
 
