@@ -5528,18 +5528,20 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
     /* The + 1 is the null terminator */
     parm[0].u.pointer.size = (uint32_t)Utf8Name.length() + 1;
 
+    Utf8Str Utf8Value;
     if (aValue != NULL)
     {
-        Utf8Str Utf8Value = aValue;
+        Utf8Value = aValue;
         parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
         parm[1].u.pointer.addr = (void *)Utf8Value.c_str();
         /* The + 1 is the null terminator */
         parm[1].u.pointer.size = (uint32_t)Utf8Value.length() + 1;
     }
 
+    Utf8Str Utf8Flags;
     if (aFlags != NULL)
     {
-        Utf8Str Utf8Flags = aFlags;
+        Utf8Flags = aFlags;
         parm[2].type = VBOX_HGCM_SVC_PARM_PTR;
         parm[2].u.pointer.addr = (void*)Utf8Flags.c_str();
         /* The + 1 is the null terminator */
