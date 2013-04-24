@@ -395,6 +395,7 @@ typedef const RTUINT64U *PCRTUINT64U;
 /**
  * 128-bit unsigned integer union.
  */
+#pragma pack(1)
 typedef union RTUINT128U
 {
     /** Natural view.
@@ -470,6 +471,7 @@ typedef union RTUINT128U
     /** 8-bit view. */
     uint8_t     au8[16];
 } RTUINT128U;
+#pragma pack()
 /** Pointer to a 64-bit unsigned integer union. */
 typedef RTUINT128U *PRTUINT128U;
 /** Pointer to a const 64-bit unsigned integer union. */

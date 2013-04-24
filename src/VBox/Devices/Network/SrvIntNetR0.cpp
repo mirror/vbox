@@ -838,6 +838,22 @@ DECLINLINE(PINTNETMACTABENTRY) intnetR0NetworkFindMacAddrEntry(PINTNETNETWORK pN
 
 
 /**
+ * Checks if the IPv6 address is a good interface address.
+ * @returns true/false.
+ * @param   addr        The address, network endian.
+ */
+DECLINLINE(bool) intnetR0IPv6AddrIsGood(RTNETADDRIPV6 addr)
+{
+    return  !(   (   addr.QWords.qw0 == 0 && addr.QWords.qw1 == 0)                      /* :: */
+              || (   addr.Words.w0 & RT_H2BE_U16(0xff00) == RT_H2BE_U16(0xff00)) /* multicast */
+              || (   addr.Words.w0 == 0 && addr.Words.w1 == 0
+                  && addr.Words.w2 == 0 && addr.Words.w3 == 0
+                  && addr.Words.w4 == 0 && addr.Words.w5 == 0
+                  && addr.Words.w6 == 0 && addr.Words.w7 == RT_H2BE_U16(0x0001)));     /* ::1 */
+}
+
+
+/**
  * Checks if the IPv4 address is a broadcast address.
  * @returns true/false.
  * @param   Addr        The address, network endian.
@@ -1070,8 +1086,12 @@ static void intnetR0IfAddrCacheDeleteIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, 
     switch (enmAddrType)
     {
         case kIntNetAddrType_IPv4:
-            Log(("intnetR0IfAddrCacheDeleteIt: hIf=%#x MAC=%.6Rhxs IPv4 added #%d %d.%d.%d.%d %s\n",
-                 pIf->hIf, &pIf->MacAddr, iEntry, pAddr->au8[0], pAddr->au8[1], pAddr->au8[2], pAddr->au8[3], pszMsg));
+            Log(("intnetR0IfAddrCacheDeleteIt: hIf=%#x MAC=%.6Rhxs IPv4 deleted #%d  %RTnaipv4 %s\n",
+                 pIf->hIf, &pIf->MacAddr, iEntry, pAddr->IPv4, pszMsg));
+            break;
+        case kIntNetAddrType_IPv6:
+            Log(("intnetR0IfAddrCacheDeleteIt: hIf=%#x MAC=%.6Rhxs IPv6 deleted #%d %RTnaipv6 %s\n",
+                pIf->hIf, &pIf->MacAddr, iEntry, pAddr->IPv6, pszMsg));
             break;
         default:
             Log(("intnetR0IfAddrCacheDeleteIt: hIf=%RX32 MAC=%.6Rhxs type=%d #%d %.*Rhxs %s\n",
@@ -1247,8 +1267,12 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCR
     switch (enmAddrType)
     {
         case kIntNetAddrType_IPv4:
-            Log(("intnetR0IfAddrCacheAddIt: hIf=%#x MAC=%.6Rhxs IPv4 added #%d %d.%d.%d.%d %s\n",
-                 pIf->hIf, &pIf->MacAddr, pCache->cEntries, pAddr->au8[0], pAddr->au8[1], pAddr->au8[2], pAddr->au8[3], pszMsg));
+            Log(("intnetR0IfAddrCacheAddIt: hIf=%#x MAC=%.6Rhxs IPv4 added #%d %RTnaipv4 %s\n",
+                 pIf->hIf, &pIf->MacAddr, pCache->cEntries, pAddr->IPv4, pszMsg));
+            break;
+        case kIntNetAddrType_IPv6:
+            Log(("intnetR0IfAddrCacheAddIt: hIf=%#x MAC=%.6Rhxs IPv6 added #%d %RTnaipv6 %s\n", 
+                 pIf->hIf, &pIf->MacAddr, pCache->cEntries, pAddr->IPv6, pszMsg));
             break;
         default:
             Log(("intnetR0IfAddrCacheAddIt: hIf=%#x MAC=%.6Rhxs type=%d added #%d %.*Rhxs %s\n",
@@ -2333,19 +2357,47 @@ static void intnetR0TrunkIfSnoopAddr(PINTNETNETWORK pNetwork, PCINTNETSG pSG, ui
             break;
         }
 
-        case RTNET_ETHERTYPE_IPV6:
-        {
-            /** @todo IPv6: Check for ICMPv6. It looks like type 133 (Router solicitation) might
-             * need to be edited. Check out how NDP works...  */
-            break;
-        }
-
         case RTNET_ETHERTYPE_ARP:
             intnetR0TrunkIfSnoopArp(pNetwork, pSG);
             break;
     }
 }
 #endif /* INTNET_WITH_DHCP_SNOOPING */
+
+/**
+ * Deals with an IPv6 packet.
+ *
+ * This will fish out the source IP address and add it to the cache.
+ * Then it will look for DHCPRELEASE requests (?) and anything else
+ * that we might find useful later.
+ *
+ * @param   pIf             The interface that's sending the frame.
+ * @param   pIpHdr          Pointer to the IPv4 header in the frame.
+ * @param   cbPacket        The size of the packet, or more correctly the
+ *                          size of the frame without the ethernet header.
+ * @param   fGso            Set if this is a GSO frame, clear if regular.
+ */
+static void intnetR0IfSnoopIPv6SourceAddr(PINTNETIF pIf, PCRTNETIPV6 pIpHdr, uint32_t cbPacket, bool fGso)
+{
+    /*
+     * Check the header size first to prevent access invalid data.
+     */
+    if (cbPacket < RTNETIPV6_MIN_LEN)
+        return;
+
+    /*
+     * If the source address is good (not multicast) and
+     * not already in the address cache of the sender, add it.
+     */
+    RTNETADDRU Addr;
+    Addr.IPv6 = pIpHdr->ip6_src;
+
+    if (    intnetR0IPv6AddrIsGood(Addr.IPv6) && (pIpHdr->ip6_hlim == 0xff)
+        &&  intnetR0IfAddrCacheLookupLikely(&pIf->aAddrCache[kIntNetAddrType_IPv6], &Addr, sizeof(Addr.IPv6)) < 0)
+    {
+        intnetR0IfAddrCacheAddIt(pIf, &pIf->aAddrCache[kIntNetAddrType_IPv6], &Addr, "if/ipv6");
+    }
+}
 
 
 /**
@@ -2497,13 +2549,11 @@ static void intnetR0IfSnoopAddr(PINTNETIF pIf, uint8_t const *pbFrame, uint32_t 
         case RTNET_ETHERTYPE_IPV4:
             intnetR0IfSnoopIPv4SourceAddr(pIf, (PCRTNETIPV4)((PCRTNETETHERHDR)pbFrame + 1), cbFrame, fGso);
             break;
-#if 0 /** @todo IntNet: implement IPv6 for wireless MAC sharing. */
+
         case RTNET_ETHERTYPE_IPV6:
-            /** @todo IPv6: Check for ICMPv6. It looks like type 133 (Router solicitation) might
-             * need to be edited. Check out how NDP works...  */
-            intnetR0IfSnoopIPv6SourceAddr(pIf, (PCINTNETIPV6)((PCRTNETETHERHDR)pbFrame + 1), cbFrame, fGso, pfSgFlags);
+            intnetR0IfSnoopIPv6SourceAddr(pIf, (PCRTNETIPV6)((PCRTNETETHERHDR)pbFrame + 1), cbFrame, fGso);
             break;
-#endif
+
 #if 0 /** @todo IntNet: implement IPX for wireless MAC sharing? */
         case RTNET_ETHERTYPE_IPX_1:
         case RTNET_ETHERTYPE_IPX_2:
@@ -2687,6 +2737,43 @@ DECLINLINE(bool) intnetR0TrunkIfCanHandleGsoFrame(PINTNETTRUNKIF pThis, PINTNETS
 
 
 /**
+ * Calculates the checksum of a full ipv6 frame.
+ *
+ * @returns 16-bit hecksum value.
+ * @param   pIpHdr          The IPv6 header (network endian (big)).
+ * @param   bProtocol       The protocol number.  This can be the same as the
+ *                          ip6_nxt field, but doesn't need to be.
+ * @param   cbPkt           The packet size (host endian of course).  This can
+ *                          be the same as the ip6_plen field, but as with @a
+ *                          bProtocol it won't be when extension headers are
+ *                          present.  For UDP this will be uh_ulen converted to
+ *                          host endian.
+ */
+static uint16_t computeIPv6FullChecksum(PCRTNETIPV6 pIpHdr)
+{
+    uint16_t const *data;
+    int len         = RT_BE2H_U16(pIpHdr->ip6_plen);
+    uint32_t sum    = RTNetIPv6PseudoChecksum(pIpHdr);
+
+    /* add the payload */
+    data = (uint16_t *) (pIpHdr + 1);
+    while(len > 1)
+    {
+        sum += *(data);
+        data++;
+        len -= 2;
+    }
+
+    if(len > 0)
+        sum += *((uint8_t *) data);
+
+    while(sum >> 16)
+        sum = (sum & 0xffff) + (sum >> 16);
+
+    return (uint16_t) ~sum;
+}
+
+/**
  * Sends a frame down the trunk.
  *
  * @param   pThis           The trunk.
@@ -2765,9 +2852,51 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
                 pArp->ar_tha = pThis->MacAddr;
             }
         }
-        //else if (pSG->fFlags & INTNETSG_FLAGS_ICMPV6_NDP)
-        //{ /// @todo move the editing into a different function
-        //}
+        else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
+        { 
+            /*
+             * IPV6 ICMP Neighbor Discovery : replace 
+             * 1) the advertised source mac address in outgoing neighbor sollicitations
+             *    with the HW MAC address of the trunk interface,
+             * 2) the advertised target mac address in outgoing neighbor advertisements
+             *    with the HW mac address of the trunk interface.
+             *
+             * Note that this only applies to traffic going out on the trunk. Incoming
+             * NS/NA will never advertise any VM mac address, so we do not need to touch
+             * them. Other VMs on this bridge as well as the host will see and use the VM's 
+             * actual mac addresses.
+             *
+             */
+
+            PRTNETIPV6 pIPv6            = (PRTNETIPV6)(pEthHdr + 1);
+            PRTNETNDP pNd               = (PRTNETNDP)(pIPv6 + 1); 
+            PRTNETNDP_SLLA_OPT pLLAOpt  = (PRTNETNDP_SLLA_OPT)(pNd + 1); 
+
+            /* make sure we have enough bytes to work with */
+            if(pSG->cbTotal >= (RTNETIPV6_MIN_LEN + RTNETIPV6_ICMPV6_ND_WITH_LLA_OPT_MIN_LEN) &&
+               /* ensure the packet came from our LAN (not gone through any router) */
+               pIPv6->ip6_hlim == 0xff &&
+               /* protocol has to be icmpv6 */
+                pIPv6->ip6_nxt == RTNETIPV6_PROT_ICMPV6 && 
+               /* we either have a sollicitation with source link layer addr. opt, or */
+                ((pNd->icmp6_type == RTNETIPV6_ICMP_NS_TYPE &&
+                            pNd->icmp6_code == RTNETIPV6_ICMPV6_CODE_0 &&
+                            pLLAOpt->type == RTNETIPV6_ICMP_ND_SLLA_OPT) ||
+                 /* an advertisement with target link layer addr. option */
+                ((pNd->icmp6_type == RTNETIPV6_ICMP_NA_TYPE &&
+                            pNd->icmp6_code == RTNETIPV6_ICMPV6_CODE_0 &&
+                            pLLAOpt->type == RTNETIPV6_ICMP_ND_TLLA_OPT)) ) &&
+                pLLAOpt->len == RTNETIPV6_ICMP_ND_LLA_LEN)
+            {
+                /* swap the advertised VM MAC address with the trunk's */
+                pLLAOpt->slla   = pThis->MacAddr;
+
+                /* recompute the checksum since we changed the packet */
+                pNd->icmp6_cksum = 0;
+                pNd->icmp6_cksum = computeIPv6FullChecksum(pIPv6);
+            }
+            
+        }
     }
 
     /*
@@ -2790,6 +2919,124 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
 }
 
 
+/**
+ * Work around the issue with WiFi routers that replace IPv6 multicast
+ * Ethernet addresses with unicast ones. We check IPv6 destination address
+ * to determine if the packet originally had a multicast address, and if so
+ * we restore the original address and treat the modified packet as being a
+ * broadcast.
+ *
+ * @param   pNetwork        The network the frame is being sent to.
+ * @param   pSG             Pointer to the gather list for the frame.
+ * @param   pEthHdr         Pointer to the ethernet header. 
+ */
+static bool intnetR0NetworkDetectAndFixNdBroadcast(PINTNETNETWORK pNetwork, PINTNETSG pSG, PRTNETETHERHDR pEthHdr)
+{
+    if (RT_BE2H_U16(pEthHdr->EtherType) != RTNET_ETHERTYPE_IPV6)
+        return false;
+    /*
+     * Check the minimum size and get a linear copy of the thing to work on,
+     * using the temporary buffer if necessary.
+     */
+    if (RT_UNLIKELY(pSG->cbTotal < sizeof(RTNETETHERHDR) + sizeof(RTNETIPV6) + 
+                                            sizeof(RTNETNDP)))
+        return false;
+    uint8_t bTmp[sizeof(RTNETIPV6) + sizeof(RTNETNDP)];
+    PRTNETIPV6 pIPv6 = (PRTNETIPV6)((uint8_t *)pSG->aSegs[0].pv + sizeof(RTNETETHERHDR));
+    if (    pSG->cSegsUsed != 1
+        &&  pSG->aSegs[0].cb < sizeof(RTNETETHERHDR) + sizeof(RTNETIPV6) +
+                                                        sizeof(RTNETNDP))
+    {
+        Log6(("fw: Copying IPv6 pkt %u\n", sizeof(RTNETIPV6)));
+        if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR), sizeof(RTNETIPV6)
+                                               + sizeof(RTNETNDP), bTmp))
+            return false;
+        pIPv6 = (PRTNETIPV6)bTmp;
+    }
+
+    PCRTNETNDP pNd  = (PCRTNETNDP) (pIPv6 + 1);
+
+    /* Check IPv6 destination address if it is a multicast address. */
+    static uint8_t auSolicitedNodeMulticastPrefix[] =
+        {
+            0xFF, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x01, 0xff
+        };
+    if (memcmp(pIPv6->ip6_dst.au8, auSolicitedNodeMulticastPrefix,
+               sizeof(auSolicitedNodeMulticastPrefix)) == 0)
+    {
+        /*
+         * The original must have been composed of 0x3333 followed by the last
+         * four bytes of the solicited-node multicast address.
+         */
+        if (pSG->aSegs[0].cb < sizeof(RTNETETHERHDR))
+        {
+            RTMAC DstMac;
+            DstMac.au16[0] = 0x3333;
+            DstMac.au16[1] = pIPv6->ip6_dst.au16[6];
+            DstMac.au16[2] = pIPv6->ip6_dst.au16[7];
+            return intnetR0SgWritePart(pSG, RT_OFFSETOF(RTNETETHERHDR, DstMac), sizeof(RTMAC), &DstMac);
+        }
+        pEthHdr = (PRTNETETHERHDR)pSG->aSegs[0].pv;
+        pEthHdr->DstMac.au16[0] = 0x3333;
+        pEthHdr->DstMac.au16[1] = pIPv6->ip6_dst.au16[6];
+        pEthHdr->DstMac.au16[2] = pIPv6->ip6_dst.au16[7];
+        return true;
+    }
+
+    return false;
+}
+
+
+/**
+ * Snoops a multicast ICMPv6 ND DAD from the wire via the trunk connection.
+ *
+ * @param   pNetwork        The network the frame is being sent to.
+ * @param   pSG             Pointer to the gather list for the frame.
+ * @param   pEthHdr         Pointer to the ethernet header. 
+ */
+static void intnetR0NetworkSnoopNAFromWire(PINTNETNETWORK pNetwork, PINTNETSG pSG, PRTNETETHERHDR pEthHdr)
+{
+    /*
+     * Check the minimum size and get a linear copy of the thing to work on,
+     * using the temporary buffer if necessary.
+     */
+    if (RT_UNLIKELY(pSG->cbTotal < sizeof(RTNETETHERHDR) + sizeof(RTNETIPV6) + 
+                                            sizeof(RTNETNDP)))
+        return;
+    PRTNETIPV6 pIPv6 = (PRTNETIPV6)((uint8_t *)pSG->aSegs[0].pv + sizeof(RTNETETHERHDR));
+    if (    pSG->cSegsUsed != 1
+        &&  pSG->aSegs[0].cb < sizeof(RTNETETHERHDR) + sizeof(RTNETIPV6) +
+                                                        sizeof(RTNETNDP))
+    {
+        Log6(("fw: Copying IPv6 pkt %u\n", sizeof(RTNETIPV6)));
+        if (!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR), sizeof(RTNETIPV6)
+                                               + sizeof(RTNETNDP), pNetwork->pbTmp))
+            return;
+        pSG->fFlags |= INTNETSG_FLAGS_PKT_CP_IN_TMP;
+        pIPv6 = (PRTNETIPV6)pNetwork->pbTmp;
+    }
+
+    PCRTNETNDP pNd  = (PCRTNETNDP) (pIPv6 + 1);
+
+    /*
+     * a multicast NS with :: as source address means a DAD packet.
+     * if it comes from the wire and we have the DAD'd address in our cache,
+     * flush the entry as the address is being acquired by someone else on
+     * the network.
+     */
+    if (    pIPv6->ip6_hlim == 0xff
+        &&  pIPv6->ip6_nxt  == RTNETIPV6_PROT_ICMPV6
+        &&  pNd->icmp6_type == RTNETIPV6_ICMP_NS_TYPE
+        &&  pNd->icmp6_code == RTNETIPV6_ICMPV6_CODE_0
+        &&  pIPv6->ip6_src.QWords.qw0 == 0
+        &&  pIPv6->ip6_src.QWords.qw1 == 0)
+    {
+        
+        intnetR0NetworkAddrCacheDelete(pNetwork, (PCRTNETADDRU) &pNd->target_address, 
+                                        kIntNetAddrType_IPv6, sizeof(RTNETADDRIPV6), "tif/ip6");
+    }
+}
 /**
  * Edits an ARP packet arriving from the wire via the trunk connection.
  *
@@ -3097,6 +3344,17 @@ static INTNETSWDECISION intnetR0NetworkSharedMacFixAndSwitchBroadcast(PINTNETNET
         return INTNETSWDECISION_BAD_CONTEXT;
 
     /*
+     * Check for ICMPv6 Neighbor Advertisements coming from the trunk.
+     * If we see an advertisement for an IP in our cache, we can safely remove
+     * it as the IP has probably moved.
+     */
+    if (    (fSrc & INTNETTRUNKDIR_WIRE)
+        &&  RT_BE2H_U16(pEthHdr->EtherType) == RTNET_ETHERTYPE_IPV6
+        &&  pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID)
+        intnetR0NetworkSnoopNAFromWire(pNetwork, pSG, pEthHdr);
+
+
+    /*
      * Check for ARP packets from the wire since we'll have to make
      * modification to them if we're sharing the MAC address with the host.
      */
@@ -3174,8 +3432,7 @@ static INTNETSWDECISION intnetR0NetworkSharedMacFixAndSwitchUnicast(PINTNETNETWO
             Log6(("intnetshareduni: IPv4 %d.%d.%d.%d\n", Addr.au8[0], Addr.au8[1], Addr.au8[2], Addr.au8[3]));
             break;
 
-#if 0 /** @todo IntNet: implement IPv6 for wireless MAC sharing. */
-        case RTNET_ETHERTYPE_IPV6
+        case RTNET_ETHERTYPE_IPV6:
             if (RT_UNLIKELY(!intnetR0SgReadPart(pSG, sizeof(RTNETETHERHDR) + RT_OFFSETOF(RTNETIPV6, ip6_dst), sizeof(Addr.IPv6), &Addr)))
             {
                 Log(("intnetshareduni: failed to read ip6_dst! cbTotal=%#x\n", pSG->cbTotal));
@@ -3184,7 +3441,6 @@ static INTNETSWDECISION intnetR0NetworkSharedMacFixAndSwitchUnicast(PINTNETNETWO
             enmAddrType = kIntNetAddrType_IPv6;
             cbAddr = sizeof(Addr.IPv6);
             break;
-#endif
 #if 0 /** @todo IntNet: implement IPX for wireless MAC sharing? */
         case RTNET_ETHERTYPE_IPX_1:
         case RTNET_ETHERTYPE_IPX_2:
@@ -3400,7 +3656,12 @@ static INTNETSWDECISION intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF p
         if (intnetR0IsMacAddrMulticast(&EthHdr.DstMac))
             enmSwDecision = intnetR0NetworkSharedMacFixAndSwitchBroadcast(pNetwork, fSrc, pIfSender, pSG, &EthHdr, pDstTab);
         else if (fSrc & INTNETTRUNKDIR_WIRE)
-            enmSwDecision = intnetR0NetworkSharedMacFixAndSwitchUnicast(pNetwork, pSG, &EthHdr, pDstTab);
+        {
+            if (intnetR0NetworkDetectAndFixNdBroadcast(pNetwork, pSG, &EthHdr))
+                enmSwDecision = intnetR0NetworkSharedMacFixAndSwitchBroadcast(pNetwork, fSrc, pIfSender, pSG, &EthHdr, pDstTab);
+            else
+                enmSwDecision = intnetR0NetworkSharedMacFixAndSwitchUnicast(pNetwork, pSG, &EthHdr, pDstTab);
+        }
         else
             enmSwDecision = intnetR0NetworkSwitchUnicast(pNetwork, fSrc, pIfSender, &EthHdr.DstMac, pDstTab);
     }
