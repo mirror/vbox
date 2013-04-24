@@ -735,7 +735,8 @@ int GuestProcess::onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
     AssertRCReturn(vrc, vrc);
 
     com::SafeArray<BYTE> data((size_t)dataCb.cbData);
-    data.initFrom((BYTE*)dataCb.pvData, dataCb.cbData);
+    if (dataCb.cbData)
+        data.initFrom((BYTE*)dataCb.pvData, dataCb.cbData);
 
     fireGuestProcessOutputEvent(mEventSource, mSession, this,
                                 mData.mPID, dataCb.uHandle, dataCb.cbData, ComSafeArrayAsInParam(data));
@@ -754,11 +755,17 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
     AssertReturn(cbData >= uSize, VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
 
-    /** @todo Validate uHandle. */
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mData.mStatus != ProcessStatus_Started)
+    if (   mData.mStatus != ProcessStatus_Started
+        /* Skip reading if the process wasn't started with the appropriate
+         * flags. */
+        || (   (   uHandle == OUTPUT_HANDLE_ID_STDOUT
+                || uHandle == OUTPUT_HANDLE_ID_STDOUT_DEPRECATED)
+            && !(mData.mProcess.mFlags & ProcessCreateFlag_WaitForStdOut))
+        || (   uHandle == OUTPUT_HANDLE_ID_STDERR
+            && !(mData.mProcess.mFlags & ProcessCreateFlag_WaitForStdErr))
+       )
     {
         if (pcbRead)
             *pcbRead = 0;
@@ -779,16 +786,14 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
         paParms[i++].setUInt32(uHandle);
         paParms[i++].setUInt32(0 /* Flags, none set yet. */);
 
+        alock.release(); /* Drop the write lock before sending. */
+
         vrc = sendCommand(HOST_EXEC_GET_OUTPUT, i, paParms);
     }
 
     if (RT_SUCCESS(vrc))
-    {
-        alock.release(); /* Drop the write lock before waiting. */
-
         vrc = waitForOutput(uHandle, uTimeoutMS,
                             pvData, cbData, pcbRead);
-    }
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -904,6 +909,8 @@ int GuestProcess::startProcess(int *pGuestRc)
         if (RT_SUCCESS(vrc))
             vrc = mData.mProcess.mEnvironment.BuildEnvironmentBlock(&pvEnv, &cbEnv, NULL /* cEnv */);
 
+        uint32_t uTimeoutMS = mData.mProcess.mTimeoutMS;
+
         if (RT_SUCCESS(vrc))
         {
             AssertPtr(mSession);
@@ -938,7 +945,7 @@ int GuestProcess::startProcess(int *pGuestRc)
             if (mData.mProcess.mFlags & ProcessCreateFlag_WaitForProcessStartOnly)
                 paParms[i++].setUInt32(UINT32_MAX /* Infinite timeout */);
             else
-                paParms[i++].setUInt32(mData.mProcess.mTimeoutMS);
+                paParms[i++].setUInt32(uTimeoutMS);
             if (uProtocol >= 2)
             {
                 paParms[i++].setUInt32(mData.mProcess.mPriority);
@@ -948,6 +955,8 @@ int GuestProcess::startProcess(int *pGuestRc)
                 /* The actual CPU affinity blocks. */
                 paParms[i++].setPointer((void*)&mData.mProcess.mAffinity, sizeof(mData.mProcess.mAffinity));
             }
+
+            alock.release(); /* Drop the write lock before sending. */
 
             /* Note: Don't hold the write lock in here. */
             vrc = sendCommand(HOST_EXEC_CMD, i, paParms);
@@ -962,14 +971,9 @@ int GuestProcess::startProcess(int *pGuestRc)
         if (pszArgs)
             RTStrFree(pszArgs);
 
-        uint32_t uTimeoutMS = mData.mProcess.mTimeoutMS;
-
-        /* Drop the write lock again before waiting. */
-        alock.release();
-
         if (RT_SUCCESS(vrc))
         {
-            vrc = waitForStatusChange(ProcessWaitForFlag_Start, 30 * 1000 /* Timeout */,
+            vrc = waitForStatusChange(ProcessWaitForFlag_Start, uTimeoutMS,
                                       NULL /* Process status */, pGuestRc);
         }
     }
@@ -1054,18 +1058,15 @@ int GuestProcess::terminateProcess(int *pGuestRc)
         paParms[i++].setUInt32(uContextID);
         paParms[i++].setUInt32(mData.mPID);
 
+        alock.release(); /* Drop the write lock before sending. */
+
         vrc = sendCommand(HOST_EXEC_TERMINATE, i, paParms);
     }
 
     if (RT_SUCCESS(vrc))
-    {
-        alock.release(); /* Drop the write lock before waiting. */
-
         vrc = waitForStatusChange(ProcessWaitForFlag_Terminate,
                                   30 * 1000 /* 30s timeout */,
                                   NULL /* ProcessStatus */, pGuestRc);
-    }
-
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
@@ -1266,7 +1267,7 @@ int GuestProcess::waitForEvents(uint32_t uTimeoutMS, ComSafeArrayIn(VBoxEventTyp
 
     if (SUCCEEDED(hr))
     {
-        LogFlowThisFunc(("Waiting for guest file event(s) (timeout=%RU32ms, %zu events) ...\n",
+        LogFlowThisFunc(("Waiting for guest process event(s) (timeout=%RU32ms, %zu events) ...\n",
                          uTimeoutMS, arrEventTypes.size()));
 
         vrc = VINF_SUCCESS;
@@ -1426,18 +1427,23 @@ int GuestProcess::waitForOutput(uint32_t uHandle, uint32_t uTimeoutMS,
                     hr = pProcessEvent->COMGETTER(Data)(ComSafeArrayAsOutParam(data));
                     ComAssertComRC(hr);
                     size_t cbRead = data.size();
-                    if (   cbRead
-                        && cbRead <= cbData)
+                    if (cbRead)
                     {
-                        memcpy(pvData, data.raw(), data.size());
+                        if (cbRead <= cbData)
+                        {
+                            /* Copy data from event into our buffer. */
+                            memcpy(pvData, data.raw(), data.size());
+                        }
+                        else
+                            vrc = VERR_BUFFER_OVERFLOW;
                     }
-                    else
-                        vrc = VERR_BUFFER_OVERFLOW;
                 }
                 if (pcbRead)
                 {
-                    hr = pProcessEvent->COMGETTER(Processed)((ULONG*)pcbRead);
+                    ULONG cbRead;
+                    hr = pProcessEvent->COMGETTER(Processed)(&cbRead);
                     ComAssertComRC(hr);
+                    *pcbRead = (uint32_t)cbRead;
                 }
 
                 break;
@@ -1524,13 +1530,13 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
         paParms[i++].setPointer(pvData, cbData);
         paParms[i++].setUInt32(cbData);
 
+        alock.release(); /* Drop the write lock before sending. */
+
         vrc = sendCommand(HOST_EXEC_SET_INPUT, i, paParms);
     }
 
     if (RT_SUCCESS(vrc))
     {
-        alock.release(); /* Drop the write lock before waiting. */
-
         ProcessInputStatus_T inputStatus;
         uint32_t cbProcessed;
         vrc = waitForInputNotify(uHandle, uTimeoutMS, &inputStatus, &cbProcessed);
@@ -1592,7 +1598,7 @@ STDMETHODIMP GuestProcess::Read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, 
         }
     }
 
-    LogFlowThisFunc(("rc=%Rrc, cbRead=%RU64\n", vrc, cbRead));
+    LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32\n", vrc, cbRead));
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
@@ -1735,10 +1741,12 @@ STDMETHODIMP GuestProcess::Write(ULONG aHandle, ULONG aFlags,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    com::SafeArray<BYTE> data(ComSafeArrayInArg(aData));
+
     HRESULT hr = S_OK;
 
-    com::SafeArray<BYTE> data(ComSafeArrayInArg(aData)); int guestRc;
-    int vrc = writeData(aHandle, aFlags, data.raw(), data.size(), aTimeoutMS, (uint32_t*)aWritten, &guestRc);
+    uint32_t cbWritten; int guestRc;
+    int vrc = writeData(aHandle, aFlags, data.raw(), data.size(), aTimeoutMS, &cbWritten, &guestRc);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
@@ -1755,7 +1763,9 @@ STDMETHODIMP GuestProcess::Write(ULONG aHandle, ULONG aFlags,
         }
     }
 
-    LogFlowThisFunc(("rc=%Rrc, aWritten=%RU32\n", vrc, aWritten));
+    LogFlowThisFunc(("rc=%Rrc, aWritten=%RU32\n", vrc, cbWritten));
+
+    *aWritten = (ULONG)cbWritten;
 
     LogFlowFuncLeaveRC(vrc);
     return hr;

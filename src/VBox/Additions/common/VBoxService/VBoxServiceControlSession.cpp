@@ -552,9 +552,9 @@ int GstCntlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession,
                                          /* Flags */
                                          &startupInfo.uFlags,
                                          /* Arguments */
-                                         startupInfo.szArgs,     sizeof(startupInfo.szArgs), &startupInfo.uNumArgs,
+                                         startupInfo.szArgs,     sizeof(startupInfo.szArgs),    &startupInfo.uNumArgs,
                                          /* Environment */
-                                         startupInfo.szEnv, &startupInfo.cbEnv, &startupInfo.uNumEnvVars,
+                                         startupInfo.szEnv,      &startupInfo.cbEnv,            &startupInfo.uNumEnvVars,
                                          /* Credentials; for hosts with VBox < 4.3 (protocol version 1).
                                           * For protocl v2 and up the credentials are part of the session
                                           * opening call. */
@@ -600,18 +600,19 @@ int GstCntlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession,
         VBoxServiceError("Starting process failed with rc=%Rrc, protocol=%RU32, parameters=%RU32\n",
                          rc, pHostCtx->uProtocol, pHostCtx->uNumParms);
 
-        /*
-         * Note: The context ID can be 0 because we mabye weren't able to fetch the command
-         *       from the host. The host in case has to deal with that!
-         */
-        int rc2 = VbglR3GuestCtrlProcCbStatus(pHostCtx, 0 /* PID, invalid */,
-                                              PROC_STS_ERROR, rc,
-                                              NULL /* pvData */, 0 /* cbData */);
-        if (RT_FAILURE(rc2))
+        /* Don't report back if we didn't supply sufficient buffer for getting
+         * the actual command -- we don't have the matching context ID. */
+        if (rc != VERR_TOO_MUCH_DATA)
         {
-            VBoxServiceError("Error sending start process status to host, rc=%Rrc\n", rc2);
-            if (RT_SUCCESS(rc))
-                rc = rc2;
+            /*
+             * Note: The context ID can be 0 because we mabye weren't able to fetch the command
+             *       from the host. The host in case has to deal with that!
+             */
+            int rc2 = VbglR3GuestCtrlProcCbStatus(pHostCtx, 0 /* PID, invalid */,
+                                                  PROC_STS_ERROR, rc,
+                                                  NULL /* pvData */, 0 /* cbData */);
+            if (RT_FAILURE(rc2))
+                VBoxServiceError("Error sending start process status to host, rc=%Rrc\n", rc2);
         }
     }
 
@@ -880,9 +881,15 @@ int GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession,
 
     int rc = VINF_SUCCESS;
 
-    /* Only anonymous sessions (that is, sessions which run with local
+    /** @todo Implement asynchronous handling of all commands to speed up overall
+     *        performance for handling multiple guest processes at once. At the moment
+     *        only one guest process at a time can and will be served. */
+
+    /**
+     * Only anonymous sessions (that is, sessions which run with local
      * service privileges) or forked session processes can do certain
-     * operations. */
+     * operations.
+     */
     bool fImpersonated = (   pSession->uFlags & VBOXSERVICECTRLSESSION_FLAG_FORK
                           || pSession->uFlags & VBOXSERVICECTRLSESSION_FLAG_ANONYMOUS);
 
@@ -1254,8 +1261,8 @@ RTEXITCODE gstcntlSessionForkWorker(PVBOXSERVICECTRLSESSION pSession)
 
 
 /**
- * Finds a (formerly) started guest process given by its PID and locks it.
- * Must be unlocked by the caller with GstCntlProcessRelease().
+ * Finds a (formerly) started guest process given by its PID and increses
+ * its reference count. Must be decreased by the caller with GstCntlProcessRelease().
  *
  * @return  PVBOXSERVICECTRLTHREAD      Locked guest process if found, otherwise NULL.
  * @param   PVBOXSERVICECTRLSESSION     Pointer to guest session where to search process in.
@@ -1276,14 +1283,20 @@ PVBOXSERVICECTRLPROCESS GstCntlSessionAcquireProcess(PVBOXSERVICECTRLSESSION pSe
             {
                 rc = RTCritSectEnter(&pCurProcess->CritSect);
                 if (RT_SUCCESS(rc))
+                {
+                    pCurProcess->cRefs++;
+                    rc = RTCritSectLeave(&pCurProcess->CritSect);
+                    AssertRC(rc);
+                }
+
+                if (RT_SUCCESS(rc))
                     pProcess = pCurProcess;
                 break;
             }
         }
 
-        int rc2 = RTCritSectLeave(&pSession->CritSect);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        rc = RTCritSectLeave(&pSession->CritSect);
+        AssertRC(rc);
     }
 
     return pProcess;

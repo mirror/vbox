@@ -331,7 +331,8 @@ typedef struct HostCommand
                             if (!paDstParms[i].u.pointer.addr)
                                 rc = VERR_INVALID_PARAMETER;
 
-                            if (paDstParms[i].u.pointer.size < mpParms[i].u.pointer.size)
+                            if (   RT_SUCCESS(rc)
+                                && paDstParms[i].u.pointer.size < mpParms[i].u.pointer.size)
                                 rc = VERR_BUFFER_OVERFLOW;
 
                             if (RT_SUCCESS(rc))
@@ -524,6 +525,7 @@ typedef struct ClientState
         /* Reset everything else. */
         mHostCmdRc    = VINF_SUCCESS;
         mHostCmdTries = 0;
+        mPeekCount    = 0;
 
         return nextItem;
     }
@@ -629,8 +631,8 @@ typedef struct ClientState
 
         int rc = VINF_SUCCESS;
 
-        LogFlowFunc(("[Client %RU32] pConnection=%p, mHostCmdRc=%Rrc, mHostCmdTries=%RU32\n",
-                      mID, pConnection, mHostCmdRc, mHostCmdTries));
+        LogFlowFunc(("[Client %RU32] pConnection=%p, mHostCmdRc=%Rrc, mHostCmdTries=%RU32, mPeekCount=%RU32\n",
+                      mID, pConnection, mHostCmdRc, mHostCmdTries, mPeekCount));
 
         mHostCmdRc = SendReply(pConnection, pHostCmd);
         LogFlowFunc(("[Client %RU32] Processing pHostCmd=%p ended with rc=%Rrc\n",
@@ -643,12 +645,21 @@ typedef struct ClientState
 
             /*
              * If the client understood the message but supplied too little buffer space
-             * don't send this message again and drop it after 3 unsuccessful attempts.
-             * The host then should take care of next actions (maybe retry it with a smaller buffer).
+             * don't send this message again and drop it after 6 unsuccessful attempts.
+             *
+             * Note: Due to legacy reasons this the retry counter has to be even because on
+             *       every peek there will be the actual command retrieval from the client side.
+             *       To not get the actual command if the client actually only wants to peek for
+             *       the next command, there needs to be two rounds per try, e.g. 3 rounds = 6 tries.
+             *
+             ** @todo Fix the mess stated above. GUEST_MSG_WAIT should be become GUEST_MSG_PEEK, *only*
+             *        (and every time) returning the next upcoming host command (if any, blocking). Then
+             *        it's up to the client what to do next, either peeking again or getting the actual
+             *        host command via an own GUEST_ type message.
              */
             if (mHostCmdRc == VERR_TOO_MUCH_DATA)
             {
-                if (mHostCmdTries >= 3)
+                if (mHostCmdTries == 6)
                     fRemove = true;
             }
             /* Client did not understand the message or something else weird happened. Try again one
@@ -776,6 +787,9 @@ typedef struct ClientState
         }
         else
         {
+            /* If this is the very first peek, make sure to *always* give back the peeking answer
+             * instead of the actual command, even if this command would fit into the current
+             * connection buffer. */
             if (!mPeekCount)
             {
                 rc = pHostCmd->Peek(pConnection);

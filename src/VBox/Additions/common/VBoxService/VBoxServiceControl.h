@@ -96,7 +96,10 @@ typedef struct VBOXSERVICECTRLREQUEST
 {
     /** Event semaphore to serialize access. */
     RTSEMEVENTMULTI            Event;
-    /** Flag indicating if this request is asynchronous or not. */
+    /** Flag indicating if this request is asynchronous or not.
+     *  If asynchronous, this request will be deleted automatically
+     *  on completion. Otherwise the caller has to delete the
+     *  request again. */
     bool                       fAsync;
     /** The request type to handle. */
     VBOXSERVICECTRLREQUESTTYPE enmType;
@@ -312,6 +315,8 @@ typedef struct VBOXSERVICECTRLPROCESS
     PRTLISTANCHOR                   pAnchor;
     /** Node. */
     RTLISTNODE                      Node;
+    /** Number of references using this struct. */
+    uint32_t                        cRefs;
     /** The worker thread. */
     RTTHREAD                        Thread;
     /** The session this guest process
