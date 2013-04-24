@@ -88,7 +88,7 @@ static PVMMSWITCHERDEF g_apRawModeSwitchers[VMMSWITCHER_MAX] =
     NULL,
 #endif /* !VBOX_WITH_RAW_MODE */
 #ifndef RT_ARCH_AMD64
-    &vmmR3SwitcherX64Stub_Def,
+    &vmmR3SwitcherX86Stub_Def,
     NULL,
 #else
     NULL,
@@ -124,7 +124,7 @@ static PVMMSWITCHERDEF g_apHmSwitchers[VMMSWITCHER_MAX] =
     NULL,
 #endif /* !VBOX_WITH_RAW_MODE */
 #ifndef RT_ARCH_AMD64
-    &vmmR3SwitcherX64Stub_Def,
+    &vmmR3SwitcherX86Stub_Def,
     NULL,
 #else
     NULL,
