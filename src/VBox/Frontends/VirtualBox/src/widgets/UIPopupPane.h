@@ -70,18 +70,22 @@ signals:
     void sigSizeHintChanged();
 
     /* Notifier: Complete stuff: */
-    void sigDone(int iButtonCode) const;
+    void sigDone(int iResultCode) const;
 
 public:
 
     /* Constructor: */
     UIPopupPane(QWidget *pParent,
                 const QString &strMessage, const QString &strDetails,
-                const QMap<int, QString> &buttonDescriptions);
+                const QMap<int, QString> &buttonDescriptions,
+                bool fProposeAutoConfirmation);
 
     /* API: Text stuff: */
     void setMessage(const QString &strMessage);
     void setDetails(const QString &strDetails);
+
+    /* API: Auto-confirmation stuff: */
+    void setProposeAutoConfirmation(bool fPropose);
 
     /* API: Layout stuff: */
     void setDesiredWidth(int iWidth);
@@ -108,7 +112,7 @@ private:
     void paintEvent(QPaintEvent *pEvent);
 
     /* Helper: Complete stuff: */
-    void done(int iButtonCode);
+    void done(int iResultCode);
 
     /* Property: Hover stuff: */
     int opacity() const { return m_iOpacity; }
@@ -121,6 +125,9 @@ private:
 
     /* Variables: Text stuff: */
     QString m_strMessage, m_strDetails;
+
+    /* Variables: Auto-confirmation stuff: */
+    bool m_fProposeAutoConfirmation;
 
     /* Variables: Button stuff: */
     QMap<int, QString> m_buttonDescriptions;
