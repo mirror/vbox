@@ -5200,13 +5200,14 @@ DECLINLINE(void) PDMDevHlpGetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t 
     pDevIns->pHlpR3->pfnGetCpuId(pDevIns, iLeaf, pEax, pEbx, pEcx, pEdx);
 }
 
-/*
+/**
  * @copydoc PDMDEVHLPR3::pfnGetSupDrvSession
  */
 DECLINLINE(PSUPDRVSESSION) PDMDevHlpGetSupDrvSession(PPDMDEVINS pDevIns)
 {
     return pDevIns->pHlpR3->pfnGetSupDrvSession(pDevIns);
 }
+
 #endif /* IN_RING3 */
 #ifdef IN_RING0
 
