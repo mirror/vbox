@@ -41,6 +41,45 @@
 
 #include <iprt/buildconfig.h>
 
+/* Default desktop state tracking */
+#include <Wtsapi32.h>
+
+#ifdef DEBUG_misha
+#define WARN(_m) do { \
+            Assert(0); \
+            Log(_m); \
+        } while (0)
+#else
+#define WARN(_m) do { \
+            Log(_m); \
+        } while (0)
+#endif
+
+/*
+ * St (session [state] tracking) functionality API
+ *
+ * !!!NOTE: this API is NOT thread-safe!!!
+ * it is supposed to be called & used from within the window message handler thread
+ * of the window passed to vboxStInit */
+static int vboxStInit(HWND hWnd);
+static void vboxStTerm();
+/* @returns true on "IsActiveConsole" state change */
+static BOOL vboxStHandleEvent(WPARAM EventID, LPARAM SessionID);
+static BOOL vboxStIsActiveConsole();
+
+/*
+ * Dt (desktop [state] tracking) functionality API
+ *
+ * !!!NOTE: this API is NOT thread-safe!!!
+ * */
+static int vboxDtInit();
+static void vboxDtTerm();
+/* @returns true on "IsInputDesktop" state change */
+static BOOL vboxDtHandleEvent();
+/* @returns true iff the application (VBoxTray) desktop is input */
+static BOOL vboxDtIsInputDesktop();
+static HANDLE vboxDtGetNotifyEvent();
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -58,13 +97,14 @@ static int vboxTrayGlMsgTaskbarCreated(WPARAM lParam, LPARAM wParam);
 *******************************************************************************/
 HANDLE                ghVBoxDriver;
 HANDLE                ghStopSem;
-HANDLE                ghSeamlessNotifyEvent = 0;
+HANDLE                ghSeamlessWtNotifyEvent = 0;
 SERVICE_STATUS        gVBoxServiceStatus;
 SERVICE_STATUS_HANDLE gVBoxServiceStatusHandle;
 HINSTANCE             ghInstance;
 HWND                  ghwndToolWindow;
 NOTIFYICONDATA        gNotifyIconData;
 DWORD                 gMajorVersion;
+BOOL                  gfIsSeamlessOn = FALSE;
 
 
 /* The service table. */
@@ -524,8 +564,8 @@ static int vboxTraySetupSeamless(void)
         if (   dwErr == ERROR_SUCCESS
             && gMajorVersion >= 5) /* Only for W2K and up ... */
         {
-            ghSeamlessNotifyEvent = CreateEvent(&SecAttr, FALSE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
-            if (ghSeamlessNotifyEvent == NULL)
+            ghSeamlessWtNotifyEvent = CreateEvent(&SecAttr, FALSE, FALSE, VBOXHOOK_GLOBAL_WT_EVENT_NAME);
+            if (ghSeamlessWtNotifyEvent == NULL)
             {
                 dwErr = GetLastError();
                 Log(("VBoxTray: CreateEvent for Seamless failed, last error = %08X\n", dwErr));
@@ -537,10 +577,10 @@ static int vboxTraySetupSeamless(void)
 
 static void vboxTrayShutdownSeamless(void)
 {
-    if (ghSeamlessNotifyEvent)
+    if (ghSeamlessWtNotifyEvent)
     {
-        CloseHandle(ghSeamlessNotifyEvent);
-        ghSeamlessNotifyEvent = NULL;
+        CloseHandle(ghSeamlessWtNotifyEvent);
+        ghSeamlessWtNotifyEvent = NULL;
     }
 }
 
@@ -616,10 +656,10 @@ static int vboxTrayServiceMain(void)
                  * Wait for the stop semaphore to be posted or a window event to arrive
                  */
 
-                DWORD dwEventCount = 2;
-                HANDLE hWaitEvent[2] = { ghStopSem, ghSeamlessNotifyEvent };
+                HANDLE hWaitEvent[3] = { ghStopSem, ghSeamlessWtNotifyEvent, vboxDtGetNotifyEvent() };
+                DWORD dwEventCount = RT_ELEMENTS(hWaitEvent);
 
-                if (0 == ghSeamlessNotifyEvent) /* If seamless mode is not active / supported, reduce event array count. */
+                if (0 == ghSeamlessWtNotifyEvent) /* If seamless mode is not active / supported, reduce event array count. */
                     dwEventCount = 1;
 
                 Log(("VBoxTray: Number of events to wait in main loop: %ld\n", dwEventCount));
@@ -638,12 +678,26 @@ static int vboxTrayServiceMain(void)
                         break;
                     }
                     else if (   waitResult == 1
-                             && ghSeamlessNotifyEvent != 0) /* Only jump in, if seamless is active! */
+                             && ghSeamlessWtNotifyEvent != 0) /* Only jump in, if seamless is active! */
                     {
                         Log(("VBoxTray: Event 'Seamless' triggered\n"));
 
                         /* seamless window notification */
                         VBoxSeamlessCheckWindows();
+                    }
+                    else if (   waitResult == 2
+                             && vboxDtGetNotifyEvent() != 0) /* Only jump in, if Dt is active! */
+                    {
+                        BOOL fOldSeamlessAllowedState = VBoxSeamlessIsAllowed();
+                        if (vboxDtHandleEvent())
+                        {
+                            if (!VBoxSeamlessIsAllowed() != !fOldSeamlessAllowedState)
+                            {
+                                rc = VBoxSeamlessOnAllowChange(!fOldSeamlessAllowedState);
+                                if (!RT_SUCCESS(rc))
+                                    Log(("VBoxTray: WndProc: Failed to set seamless capability\n"));
+                            }
+                        }
                     }
                     else
                     {
@@ -712,6 +766,26 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         rc = vboxTrayCreateToolWindow();
         if (RT_SUCCESS(rc))
         {
+            rc = vboxStInit(ghwndToolWindow);
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("VBoxTray: vboxStInit failed, rc %d"));
+                /* ignore the St Init failure. this can happen for < XP win that do not support WTS API
+                 * in that case the session is treated as active connected to the physical console
+                 * (i.e. fallback to the old behavior that was before introduction of VBoxSt) */
+                Assert(vboxStIsActiveConsole());
+            }
+
+            rc = vboxDtInit();
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("VBoxTray: vboxDtInit failed, rc %d"));
+                /* ignore the Dt Init failure. this can happen for < XP win that do not support WTS API
+                 * in that case the session is treated as active connected to the physical console
+                 * (i.e. fallback to the old behavior that was before introduction of VBoxSt) */
+                Assert(vboxDtIsInputDesktop());
+            }
+
             rc = vboxTraySetupSeamless();
             if (RT_SUCCESS(rc))
             {
@@ -721,6 +795,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
                     hlpReportStatus(VBoxGuestFacilityStatus_Terminating);
                 vboxTrayShutdownSeamless();
             }
+
+            /* it should be safe to call vboxDtTerm even if vboxStInit above failed */
+            vboxDtTerm();
+
+            /* it should be safe to call vboxStTerm even if vboxStInit above failed */
+            vboxStTerm();
+
             vboxTrayDestroyToolWindow();
         }
         if (RT_SUCCESS(rc))
@@ -798,16 +879,21 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
             }
             return 0;
 
-        case WM_VBOX_INSTALL_SEAMLESS_HOOK:
-            VBoxSeamlessInstallHook();
+        case WM_VBOX_SEAMLESS_ENABLE:
+            gfIsSeamlessOn = TRUE;
+            if (VBoxSeamlessIsAllowed())
+                VBoxSeamlessInstallHook();
             return 0;
 
-        case WM_VBOX_REMOVE_SEAMLESS_HOOK:
-            VBoxSeamlessRemoveHook();
+        case WM_VBOX_SEAMLESS_DISABLE:
+            gfIsSeamlessOn = FALSE;
+            if (VBoxSeamlessIsAllowed())
+                VBoxSeamlessRemoveHook();
             return 0;
 
         case WM_VBOX_SEAMLESS_UPDATE:
-            VBoxSeamlessCheckWindows();
+            if (gfIsSeamlessOn && VBoxSeamlessIsAllowed())
+                VBoxSeamlessCheckWindows();
             return 0;
 
         case WM_VBOXTRAY_VM_RESTORED:
@@ -818,6 +904,20 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
             VBoxRestoreCheckVRDP();
             return 0;
 
+        case WM_WTSSESSION_CHANGE:
+        {
+            BOOL fOldSeamlessAllowedState = VBoxSeamlessIsAllowed();
+            if (vboxStHandleEvent(wParam, lParam))
+            {
+                if (!VBoxSeamlessIsAllowed() != !fOldSeamlessAllowedState)
+                {
+                    int rc = VBoxSeamlessOnAllowChange(!fOldSeamlessAllowedState);
+                    if (!RT_SUCCESS(rc))
+                        Log(("VBoxTray: WndProc: Failed to set seamless capability\n"));
+                }
+            }
+            return 0;
+        }
         default:
 
             /* Handle all globally registered window messages. */
@@ -834,3 +934,396 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
+/* St (session [state] tracking) functionality API impl */
+
+typedef struct VBOXST
+{
+    HWND hWTSAPIWnd;
+    HMODULE hWTSAPI32;
+    BOOL fIsConsole;
+    WTS_CONNECTSTATE_CLASS enmConnectState;
+    BOOL (WINAPI * pfnWTSRegisterSessionNotification)(HWND hWnd, DWORD dwFlags);
+    BOOL (WINAPI * pfnWTSUnRegisterSessionNotification)(HWND hWnd);
+    BOOL (WINAPI * pfnWTSQuerySessionInformationA)(HANDLE hServer, DWORD SessionId, WTS_INFO_CLASS WTSInfoClass, LPTSTR *ppBuffer, DWORD *pBytesReturned);
+} VBOXST;
+
+static VBOXST gVBoxSt;
+
+static int vboxStInit(HWND hWnd)
+{
+    int rc = VINF_SUCCESS;
+    memset(&gVBoxSt, 0, sizeof (gVBoxSt));
+    gVBoxSt.hWTSAPI32 = LoadLibrary("WTSAPI32.DLL");
+    if (gVBoxSt.hWTSAPI32)
+    {
+        *(uintptr_t *)&gVBoxSt.pfnWTSRegisterSessionNotification = (uintptr_t)GetProcAddress(gVBoxSt.hWTSAPI32, "WTSRegisterSessionNotification");
+        if (!gVBoxSt.pfnWTSRegisterSessionNotification)
+        {
+            WARN(("VBoxTray: WTSRegisterSessionNotification not found\n"));
+            rc = VERR_NOT_SUPPORTED;
+        }
+
+        *(uintptr_t *)&gVBoxSt.pfnWTSUnRegisterSessionNotification = (uintptr_t)GetProcAddress(gVBoxSt.hWTSAPI32, "WTSUnRegisterSessionNotification");
+        if (!gVBoxSt.pfnWTSUnRegisterSessionNotification)
+        {
+            WARN(("VBoxTray: WTSUnRegisterSessionNotification not found\n"));
+            rc = VERR_NOT_SUPPORTED;
+        }
+
+        *(uintptr_t *)&gVBoxSt.pfnWTSQuerySessionInformationA = (uintptr_t)GetProcAddress(gVBoxSt.hWTSAPI32, "WTSQuerySessionInformationA");
+        if (!gVBoxSt.pfnWTSQuerySessionInformationA)
+        {
+            WARN(("VBoxTray: WTSQuerySessionInformationA not found\n"));
+            rc = VERR_NOT_SUPPORTED;
+        }
+
+        if (rc == VINF_SUCCESS)
+        {
+            gVBoxSt.hWTSAPIWnd = hWnd;
+            if (gVBoxSt.pfnWTSRegisterSessionNotification(gVBoxSt.hWTSAPIWnd, NOTIFY_FOR_THIS_SESSION))
+            {
+                WTS_CONNECTSTATE_CLASS *penmConnectState = NULL;
+                USHORT *pProtocolType = NULL;
+                DWORD cbBuf = 0;
+                if (gVBoxSt.pfnWTSQuerySessionInformationA(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSConnectState, (LPTSTR *)&penmConnectState, &cbBuf))
+                {
+                    if (gVBoxSt.pfnWTSQuerySessionInformationA(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSClientProtocolType, (LPTSTR *)&pProtocolType, &cbBuf))
+                    {
+                        gVBoxSt.fIsConsole = (*pProtocolType == 0);
+                        gVBoxSt.enmConnectState = *penmConnectState;
+                    }
+                    else
+                    {
+                        DWORD dwErr = GetLastError();
+                        WARN(("VBoxTray: WTSQuerySessionInformationA WTSClientProtocolType failed, error = %08X\n", dwErr));
+                        rc = RTErrConvertFromWin32(dwErr);
+                    }
+                }
+                else
+                {
+                    DWORD dwErr = GetLastError();
+                    WARN(("VBoxTray: WTSQuerySessionInformationA WTSConnectState failed, error = %08X\n", dwErr));
+                    rc = RTErrConvertFromWin32(dwErr);
+                }
+                return VINF_SUCCESS;
+            }
+            else
+            {
+                DWORD dwErr = GetLastError();
+                WARN(("VBoxTray: WTSRegisterSessionNotification failed, error = %08X\n", dwErr));
+                rc = RTErrConvertFromWin32(dwErr);
+            }
+        }
+
+        FreeLibrary(gVBoxSt.hWTSAPI32);
+    }
+    else
+    {
+        DWORD dwErr = GetLastError();
+        WARN(("VBoxTray: WTSAPI32 load failed, error = %08X\n", dwErr));
+        rc = RTErrConvertFromWin32(dwErr);
+    }
+
+    memset(&gVBoxSt, 0, sizeof (gVBoxSt));
+    gVBoxSt.fIsConsole = TRUE;
+    gVBoxSt.enmConnectState = WTSActive;
+    return rc;
+}
+
+static void vboxStTerm()
+{
+    if (gVBoxSt.hWTSAPIWnd)
+    {
+        WARN(("VBoxTray: vboxStTerm called for non-initialized St\n"));
+        return;
+    }
+
+    if (!gVBoxSt.pfnWTSUnRegisterSessionNotification(gVBoxSt.hWTSAPIWnd))
+    {
+        DWORD dwErr = GetLastError();
+        WARN(("VBoxTray: WTSAPI32 load failed, error = %08X\n", dwErr));
+    }
+
+    FreeLibrary(gVBoxSt.hWTSAPI32);
+    memset(&gVBoxSt, 0, sizeof (gVBoxSt));
+}
+
+#define VBOXST_DBG_MAKECASE(_val) case _val: return #_val;
+
+static const char* vboxStDbgGetString(DWORD val)
+{
+    switch (val)
+    {
+        VBOXST_DBG_MAKECASE(WTS_CONSOLE_CONNECT);
+        VBOXST_DBG_MAKECASE(WTS_CONSOLE_DISCONNECT);
+        VBOXST_DBG_MAKECASE(WTS_REMOTE_CONNECT);
+        VBOXST_DBG_MAKECASE(WTS_REMOTE_DISCONNECT);
+        VBOXST_DBG_MAKECASE(WTS_SESSION_LOGON);
+        VBOXST_DBG_MAKECASE(WTS_SESSION_LOGOFF);
+        VBOXST_DBG_MAKECASE(WTS_SESSION_LOCK);
+        VBOXST_DBG_MAKECASE(WTS_SESSION_UNLOCK);
+        VBOXST_DBG_MAKECASE(WTS_SESSION_REMOTE_CONTROL);
+        default:
+            WARN(("VBoxTray: invalid WTS state %d", val));
+            return "Unknown";
+    }
+}
+
+static BOOL vboxStHandleEvent(WPARAM wEvent, LPARAM SessionID)
+{
+    WARN(("VBoxTray: WTS Event: %s\n", vboxStDbgGetString(wEvent)));
+    BOOL fOldIsActiveConsole = vboxStIsActiveConsole();
+    switch (wEvent)
+    {
+        case WTS_CONSOLE_CONNECT:
+            gVBoxSt.enmConnectState = WTSConnected;
+            gVBoxSt.fIsConsole = TRUE;
+            break;
+        case WTS_CONSOLE_DISCONNECT:
+            gVBoxSt.enmConnectState = WTSDisconnected;
+            break;
+        case WTS_REMOTE_CONNECT:
+            gVBoxSt.enmConnectState = WTSConnected;
+            gVBoxSt.fIsConsole = FALSE;
+            break;
+        case WTS_REMOTE_DISCONNECT:
+            gVBoxSt.enmConnectState = WTSDisconnected;
+            break;
+        case WTS_SESSION_LOGON:
+            Assert(gVBoxSt.enmConnectState == WTSConnected);
+            gVBoxSt.enmConnectState = WTSActive;
+            break;
+        case WTS_SESSION_LOGOFF:
+            Assert(gVBoxSt.enmConnectState == WTSActive);
+            gVBoxSt.enmConnectState = WTSConnected;
+            break;
+        case WTS_SESSION_LOCK:
+            Assert(gVBoxSt.enmConnectState == WTSActive);
+            gVBoxSt.enmConnectState = WTSConnected;
+            break;
+        case WTS_SESSION_UNLOCK:
+            Assert(gVBoxSt.enmConnectState == WTSConnected);
+            gVBoxSt.enmConnectState = WTSActive;
+            break;
+        case WTS_SESSION_REMOTE_CONTROL:
+            /* todo */
+            WARN(("WTS_SESSION_REMOTE_CONTROL handling not implemented!"));
+            break;
+        default:
+            WARN(("unexpected session change notification %d", (DWORD)wEvent));
+            break;
+    }
+
+    return !vboxStIsActiveConsole() != !fOldIsActiveConsole;
+}
+
+static BOOL vboxStIsActiveConsole()
+{
+    return (gVBoxSt.enmConnectState == WTSActive && gVBoxSt.fIsConsole);
+}
+
+/*
+ * Dt (desktop [state] tracking) functionality API impl
+ *
+ * !!!NOTE: this API is NOT thread-safe!!!
+ * */
+
+typedef struct VBOXDT
+{
+    HANDLE hNotifyEvent;
+    BOOL fIsInputDesktop;
+    HMODULE hHookModule;
+    BOOL (* pfnVBoxHookInstallActiveDesktopTracker)(HMODULE hDll);
+    BOOL (* pfnVBoxHookRemoveActiveDesktopTracker)();
+    HMODULE hUSER32;
+    HDESK (WINAPI * pfnGetThreadDesktop)(DWORD dwThreadId);
+    HDESK (WINAPI * pfnOpenInputDesktop)(DWORD dwFlags, BOOL fInherit, ACCESS_MASK dwDesiredAccess);
+    BOOL (WINAPI * pfnCloseDesktop)(HDESK hDesktop);
+} VBOXDT;
+
+static VBOXDT gVBoxDt;
+
+static BOOL vboxDtCalculateIsInputDesktop()
+{
+    BOOL fIsInputDt = FALSE;
+    HDESK hInput = gVBoxDt.pfnOpenInputDesktop(0, FALSE, DESKTOP_CREATEWINDOW);
+    if (hInput)
+    {
+//        DWORD dwThreadId = GetCurrentThreadId();
+//        HDESK hThreadDt = gVBoxDt.pfnGetThreadDesktop(dwThreadId);
+//        if (hThreadDt)
+//        {
+            fIsInputDt = TRUE;
+//        }
+//        else
+//        {
+//            DWORD dwErr = GetLastError();
+//            WARN(("VBoxTray: pfnGetThreadDesktop for Seamless failed, last error = %08X\n", dwErr));
+//        }
+
+        gVBoxDt.pfnCloseDesktop(hInput);
+    }
+    else
+    {
+        DWORD dwErr = GetLastError();
+        WARN(("VBoxTray: pfnOpenInputDesktop for Seamless failed, last error = %08X\n", dwErr));
+    }
+    return fIsInputDt;
+}
+static int vboxDtInit()
+{
+    int rc = VINF_SUCCESS;
+    OSVERSIONINFO info;
+    gMajorVersion = 5; /* Default to Windows XP. */
+    info.dwOSVersionInfoSize = sizeof(info);
+    if (GetVersionEx(&info))
+    {
+        WARN(("VBoxTray: Windows version %ld.%ld\n", info.dwMajorVersion, info.dwMinorVersion));
+        gMajorVersion = info.dwMajorVersion;
+    }
+
+    memset(&gVBoxDt, 0, sizeof (gVBoxDt));
+
+    /* For Vista and up we need to change the integrity of the security descriptor, too. */
+    if (gMajorVersion >= 6)
+    {
+        gVBoxDt.hNotifyEvent = CreateEvent(NULL, FALSE, FALSE, VBOXHOOK_GLOBAL_DT_EVENT_NAME);
+        if (gVBoxDt.hNotifyEvent != NULL)
+        {
+            gVBoxDt.hHookModule = LoadLibrary(VBOXHOOK_DLL_NAME);
+            if (gVBoxDt.hHookModule)
+            {
+                *(uintptr_t *)&gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker = (uintptr_t)GetProcAddress(gVBoxDt.hHookModule, "VBoxHookInstallActiveDesktopTracker");
+                if (!gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker)
+                {
+                    WARN(("VBoxTray: VBoxHookInstallActiveDesktopTracker not found\n"));
+                    rc = VERR_NOT_SUPPORTED;
+                }
+
+                *(uintptr_t *)&gVBoxDt.pfnVBoxHookRemoveActiveDesktopTracker  = (uintptr_t)GetProcAddress(gVBoxDt.hHookModule, "VBoxHookInstallActiveDesktopTracker");
+                if (!gVBoxDt.pfnVBoxHookRemoveActiveDesktopTracker)
+                {
+                    WARN(("VBoxTray: VBoxHookRemoveActiveDesktopTracker not found\n"));
+                    rc = VERR_NOT_SUPPORTED;
+                }
+
+                if (VINF_SUCCESS == rc)
+                {
+                    gVBoxDt.hUSER32 = LoadLibrary("User32.dll");
+                    if (gVBoxDt.hUSER32)
+                    {
+                        *(uintptr_t *)&gVBoxDt.pfnGetThreadDesktop = (uintptr_t)GetProcAddress(gVBoxDt.hUSER32, "GetThreadDesktop");
+                        if (!gVBoxDt.pfnGetThreadDesktop)
+                        {
+                            WARN(("VBoxTray: GetThreadDesktop not found\n"));
+                            rc = VERR_NOT_SUPPORTED;
+                        }
+
+                        *(uintptr_t *)&gVBoxDt.pfnOpenInputDesktop = (uintptr_t)GetProcAddress(gVBoxDt.hUSER32, "OpenInputDesktop");
+                        if (!gVBoxDt.pfnOpenInputDesktop)
+                        {
+                            WARN(("VBoxTray: OpenInputDesktop not found\n"));
+                            rc = VERR_NOT_SUPPORTED;
+                        }
+
+                        *(uintptr_t *)&gVBoxDt.pfnCloseDesktop = (uintptr_t)GetProcAddress(gVBoxDt.hUSER32, "CloseDesktop");
+                        if (!gVBoxDt.pfnCloseDesktop)
+                        {
+                            WARN(("VBoxTray: CloseDesktop not found\n"));
+                            rc = VERR_NOT_SUPPORTED;
+                        }
+
+                        if (VINF_SUCCESS == rc)
+                        {
+                            gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker(gVBoxDt.hHookModule);
+                            gVBoxDt.fIsInputDesktop = vboxDtCalculateIsInputDesktop();
+                            return VINF_SUCCESS;
+                        }
+                        FreeLibrary(gVBoxDt.hUSER32);
+                    }
+                }
+
+                FreeLibrary(gVBoxDt.hHookModule);
+            }
+            else
+            {
+                DWORD dwErr = GetLastError();
+                WARN(("VBoxTray: CreateEvent for Seamless failed, last error = %08X\n", dwErr));
+                rc = RTErrConvertFromWin32(dwErr);
+            }
+
+            CloseHandle(gVBoxDt.hNotifyEvent);
+        }
+        else
+        {
+            DWORD dwErr = GetLastError();
+            WARN(("VBoxTray: CreateEvent for Seamless failed, last error = %08X\n", dwErr));
+            rc = RTErrConvertFromWin32(dwErr);
+        }
+    }
+
+    memset(&gVBoxDt, 0, sizeof (gVBoxDt));
+    gVBoxDt.fIsInputDesktop = TRUE;
+
+    return rc;
+}
+
+static void vboxDtTerm()
+{
+    if (!gVBoxDt.hHookModule)
+        return;
+
+    gVBoxDt.pfnVBoxHookRemoveActiveDesktopTracker();
+
+    FreeLibrary(gVBoxDt.hUSER32);
+    FreeLibrary(gVBoxDt.hHookModule);
+    CloseHandle(gVBoxDt.hNotifyEvent);
+
+    memset(&gVBoxDt, 0, sizeof (gVBoxDt));
+}
+/* @returns true on "IsInputDesktop" state change */
+static BOOL vboxDtHandleEvent()
+{
+    BOOL fIsInputDesktop = gVBoxDt.fIsInputDesktop;
+    gVBoxDt.fIsInputDesktop = vboxDtCalculateIsInputDesktop();
+    return !fIsInputDesktop != !gVBoxDt.fIsInputDesktop;
+}
+
+static HANDLE vboxDtGetNotifyEvent()
+{
+    return gVBoxDt.hNotifyEvent;
+}
+
+/* @returns true iff the application (VBoxTray) desktop is input */
+static BOOL vboxDtIsInputDesktop()
+{
+    return gVBoxDt.fIsInputDesktop;
+}
+
+
+/* helper state tracking API */
+BOOL VBoxSeamlessIsAllowed()
+{
+    return vboxDtIsInputDesktop() && vboxStIsActiveConsole();
+}
+
+int VBoxSeamlessOnAllowChange(BOOL fAllowed)
+{
+    int rc;
+    if (fAllowed)
+    {
+        rc = VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_SEAMLESS, 0);
+        if (gfIsSeamlessOn)
+            VBoxSeamlessInstallHook();
+    }
+    else
+    {
+        if (gfIsSeamlessOn)
+            VBoxSeamlessRemoveHook();
+        rc = VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_SEAMLESS);
+    }
+    if (!RT_SUCCESS(rc))
+        WARN(("VBoxTray: VMMDEV_GUEST_SUPPORTS_SEAMLESS: Failed to %s seamless capability\n", fAllowed ? "set" : "clear" ));
+
+    return rc;
+}

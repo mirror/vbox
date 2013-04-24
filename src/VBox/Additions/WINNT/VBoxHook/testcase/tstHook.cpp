@@ -21,12 +21,12 @@ int main(int argc, char **argv)
 {
     printf("Enabling global hook\n");
 
-    HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
+    HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, VBOXHOOK_GLOBAL_WT_EVENT_NAME);
 
-    VBoxInstallHook(GetModuleHandle("VBoxHook.dll"));
+    VBoxHookInstallWindowTracker(GetModuleHandle("VBoxHook.dll"));
     getchar();
 
     printf("Disabling global hook\n");
-    VBoxRemoveHook();
+    VBoxHookRemoveWindowTracker();
     return 0;
 }

@@ -18,5 +18,7 @@ LIBRARY VBoxHook
 
 
 EXPORTS
-   VBoxInstallHook
-   VBoxRemoveHook
+    VBoxHookInstallActiveDesktopTracker
+    VBoxHookRemoveActiveDesktopTracker
+    VBoxHookInstallWindowTracker
+    VBoxHookRemoveWindowTracker

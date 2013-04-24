@@ -18,11 +18,13 @@
 #include <stdio.h>
 
 #pragma data_seg("SHARED")
-static HWINEVENTHOOK    hEventHook[2]    = {0};
+static HWINEVENTHOOK    hWinEventHook[2]    = {0};
+static HWINEVENTHOOK    hDesktopEventHook   = NULL;
 #pragma data_seg()
 #pragma comment(linker, "/section:SHARED,RWS")
 
-static HANDLE   hNotifyEvent = 0;
+static HANDLE   hWinNotifyEvent = 0;
+static HANDLE   hDesktopNotifyEvent = 0;
 
 #ifdef DEBUG
 void WriteLog(char *String, ...);
@@ -32,7 +34,7 @@ void WriteLog(char *String, ...);
 #endif /* DEBUG */
 
 
-void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
+static void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
                                  LONG idObject, LONG idChild,
                                  DWORD dwEventThread, DWORD dwmsEventTime)
 {
@@ -75,50 +77,89 @@ void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
             break;
         }
 #endif
-        if (!hNotifyEvent)
+        if (!hWinNotifyEvent)
         {
-            hNotifyEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, VBOXHOOK_GLOBAL_EVENT_NAME);
-            dprintf(("OpenEvent returned %x (last err=%x)\n", hNotifyEvent, GetLastError()));
+            hWinNotifyEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, VBOXHOOK_GLOBAL_WT_EVENT_NAME);
+            dprintf(("OpenEvent returned %x (last err=%x)\n", hWinNotifyEvent, GetLastError()));
         }
-        BOOL ret = SetEvent(hNotifyEvent);
-        dprintf(("SetEvent %x returned %d (last error %x)\n", hNotifyEvent, ret, GetLastError()));
+        BOOL ret = SetEvent(hWinNotifyEvent);
+        dprintf(("SetEvent %x returned %d (last error %x)\n", hWinNotifyEvent, ret, GetLastError()));
         break;
     }
 }
 
-
-/* Install the global message hook */
-BOOL VBoxInstallHook(HMODULE hDll)
+static void CALLBACK VBoxHandleDesktopEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
+                                 LONG idObject, LONG idChild,
+                                 DWORD dwEventThread, DWORD dwmsEventTime)
 {
-    if (hEventHook[0] || hEventHook[1])
+    if (!hDesktopNotifyEvent)
+    {
+        hDesktopNotifyEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, VBOXHOOK_GLOBAL_DT_EVENT_NAME);
+        dprintf(("OpenEvent returned %x (last err=%x)\n", hDesktopNotifyEvent, GetLastError()));
+    }
+    BOOL ret = SetEvent(hDesktopNotifyEvent);
+    dprintf(("SetEvent %x returned %d (last error %x)\n", hDesktopNotifyEvent, ret, GetLastError()));
+}
+
+BOOL VBoxHookInstallActiveDesktopTracker(HMODULE hDll)
+{
+    if (hDesktopEventHook)
         return TRUE;
 
     CoInitialize(NULL);
-    hEventHook[0] = SetWinEventHook(EVENT_OBJECT_LOCATIONCHANGE, EVENT_OBJECT_LOCATIONCHANGE,
+    hDesktopEventHook = SetWinEventHook(EVENT_SYSTEM_DESKTOPSWITCH, EVENT_SYSTEM_DESKTOPSWITCH,
+                                    hDll,
+                                    VBoxHandleDesktopEvent,
+                                    0, 0,
+                                    0);
+
+    return !!hDesktopEventHook;
+
+}
+
+BOOL VBoxHookRemoveActiveDesktopTracker()
+{
+    if (hDesktopEventHook)
+    {
+        UnhookWinEvent(hDesktopEventHook);
+        CoUninitialize();
+    }
+    hDesktopEventHook = 0;
+    return TRUE;
+}
+
+/* Install the global message hook */
+BOOL VBoxHookInstallWindowTracker(HMODULE hDll)
+{
+    if (hWinEventHook[0] || hWinEventHook[1])
+        return TRUE;
+
+    CoInitialize(NULL);
+    hWinEventHook[0] = SetWinEventHook(EVENT_OBJECT_LOCATIONCHANGE, EVENT_OBJECT_LOCATIONCHANGE,
                                     hDll,
                                     VBoxHandleWinEvent,
                                     0, 0,
                                     WINEVENT_INCONTEXT | WINEVENT_SKIPOWNPROCESS);
 
-    hEventHook[1] = SetWinEventHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_HIDE,
+    hWinEventHook[1] = SetWinEventHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_HIDE,
                                     hDll,
                                     VBoxHandleWinEvent,
                                     0, 0,
                                     WINEVENT_INCONTEXT | WINEVENT_SKIPOWNPROCESS);
-    return !!hEventHook[0];
+    return !!hWinEventHook[0];
 }
 
 /* Remove the global message hook */
-BOOL VBoxRemoveHook()
+BOOL VBoxHookRemoveWindowTracker()
 {
-    if (hEventHook[0] && hEventHook[1])
+    if (hWinEventHook[0] && hWinEventHook[1])
     {
-        UnhookWinEvent(hEventHook[0]);
-        UnhookWinEvent(hEventHook[1]);
+        UnhookWinEvent(hWinEventHook[0]);
+        UnhookWinEvent(hWinEventHook[1]);
         CoUninitialize();
     }
-    hEventHook[0]  = hEventHook[1] = 0;
-    return true;
+    hWinEventHook[0]  = hWinEventHook[1] = 0;
+    return TRUE;
 }
 
 

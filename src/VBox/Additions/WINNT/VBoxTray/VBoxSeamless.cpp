@@ -32,8 +32,8 @@ typedef struct _VBOXSEAMLESSCONTEXT
 
     HMODULE    hModule;
 
-    BOOL    (* pfnVBoxInstallHook)(HMODULE hDll);
-    BOOL    (* pfnVBoxRemoveHook)();
+    BOOL    (* pfnVBoxHookInstallWindowTracker)(HMODULE hDll);
+    BOOL    (* pfnVBoxHookRemoveWindowTracker)();
 
     PVBOXDISPIFESCAPE lpEscapeData;
 } VBOXSEAMLESSCONTEXT;
@@ -74,18 +74,24 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
         gCtx.hModule = LoadLibrary(VBOXHOOK_DLL_NAME);
         if (gCtx.hModule)
         {
-            *(uintptr_t *)&gCtx.pfnVBoxInstallHook = (uintptr_t)GetProcAddress(gCtx.hModule, "VBoxInstallHook");
-            *(uintptr_t *)&gCtx.pfnVBoxRemoveHook  = (uintptr_t)GetProcAddress(gCtx.hModule, "VBoxRemoveHook");
+            *(uintptr_t *)&gCtx.pfnVBoxHookInstallWindowTracker = (uintptr_t)GetProcAddress(gCtx.hModule, "VBoxHookInstallWindowTracker");
+            *(uintptr_t *)&gCtx.pfnVBoxHookRemoveWindowTracker  = (uintptr_t)GetProcAddress(gCtx.hModule, "VBoxHookRemoveWindowTracker");
 
-            /* Inform the host that we support the seamless window mode. */
-            rc = VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_SEAMLESS, 0);
+            /* rc should contain success status */
+            AssertRC(rc);
+
+            if (VBoxSeamlessIsAllowed())
+            {
+                rc = VBoxSeamlessOnAllowChange(TRUE);
+                if (!RT_SUCCESS(rc))
+                    Log(("VBoxTray: VBoxSeamlessInit: Failed to set seamless capability\n"));
+            }
+
             if (RT_SUCCESS(rc))
             {
                 *pfStartThread = true;
                 *ppInstance = &gCtx;
             }
-            else
-                Log(("VBoxTray: VBoxSeamlessInit: Failed to set seamless capability\n"));
         }
         else
         {
@@ -107,8 +113,8 @@ void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     if (RT_FAILURE(rc))
         Log(("VBoxTray: VBoxSeamlessDestroy: Failed to unset seamless capability, rc=%Rrc\n", rc));
 
-    if (gCtx.pfnVBoxRemoveHook)
-        gCtx.pfnVBoxRemoveHook();
+    if (gCtx.pfnVBoxHookRemoveWindowTracker)
+        gCtx.pfnVBoxHookRemoveWindowTracker();
     if (gCtx.hModule)
         FreeLibrary(gCtx.hModule);
     gCtx.hModule = 0;
@@ -117,19 +123,19 @@ void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 
 void VBoxSeamlessInstallHook()
 {
-    if (gCtx.pfnVBoxInstallHook)
+    if (gCtx.pfnVBoxHookInstallWindowTracker)
     {
         /* Check current visible region state */
         VBoxSeamlessCheckWindows();
 
-        gCtx.pfnVBoxInstallHook(gCtx.hModule);
+        gCtx.pfnVBoxHookInstallWindowTracker(gCtx.hModule);
     }
 }
 
 void VBoxSeamlessRemoveHook()
 {
-    if (gCtx.pfnVBoxRemoveHook)
-        gCtx.pfnVBoxRemoveHook();
+    if (gCtx.pfnVBoxHookRemoveWindowTracker)
+        gCtx.pfnVBoxHookRemoveWindowTracker();
 
     if (gCtx.lpEscapeData)
     {
@@ -375,7 +381,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                                 if (!ret)
                                     Log(("VBoxTray: SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
                             }
-                            PostMessage(ghwndToolWindow, WM_VBOX_REMOVE_SEAMLESS_HOOK, 0, 0);
+                            PostMessage(ghwndToolWindow, WM_VBOX_SEAMLESS_DISABLE, 0, 0);
                             break;
 
                         case VMMDev_Seamless_Visible_Region:
@@ -389,7 +395,7 @@ unsigned __stdcall VBoxSeamlessThread(void *pInstance)
                             ret = SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, 0);
                             if (!ret)
                                 Log(("VBoxTray: SystemParametersInfo SPI_SETSCREENSAVEACTIVE failed with %d\n", GetLastError()));
-                            PostMessage(ghwndToolWindow, WM_VBOX_INSTALL_SEAMLESS_HOOK, 0, 0);
+                            PostMessage(ghwndToolWindow, WM_VBOX_SEAMLESS_ENABLE, 0, 0);
                             break;
 
                         case VMMDev_Seamless_Host_Window:
