@@ -94,7 +94,6 @@ VMMR3DECL(void)         SELMR3Relocate(PVM pVM);
 VMMR3DECL(int)          SELMR3Term(PVM pVM);
 VMMR3DECL(void)         SELMR3Reset(PVM pVM);
 # ifdef VBOX_WITH_RAW_MODE
-VMMR3DECL(void)         SELMR3DisableMonitoring(PVM pVM);
 VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)          SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu);
 # endif

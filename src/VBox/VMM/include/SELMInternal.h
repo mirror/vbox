@@ -166,12 +166,9 @@ typedef struct SELM
     /** Indicates that the Guest GDT access handler have been registered. */
     bool                    fGDTRangeRegistered;
 
-    /** Indicates whether LDT/GDT/TSS monitoring and syncing is disabled. */
-    bool                    fDisableMonitoring;
-
     /** Indicates whether the TSS stack selector & base address need to be refreshed.  */
     bool                    fSyncTSSRing0Stack;
-    bool                    fPadding2[1+2];
+    bool                    fPadding2[4];
 
     /** SELMR3UpdateFromCPUM() profiling. */
     STAMPROFILE             StatUpdateFromCPUM;
