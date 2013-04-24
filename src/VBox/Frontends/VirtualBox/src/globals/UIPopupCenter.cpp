@@ -64,25 +64,25 @@ UIPopupCenter::~UIPopupCenter()
     m_spInstance = 0;
 }
 
-void UIPopupCenter::message(QWidget *pParent, const QString &strId,
+void UIPopupCenter::message(QWidget *pParent, const QString &strPopupPaneID,
                             const QString &strMessage, const QString &strDetails,
                             int iButton1 /*= 0*/, int iButton2 /*= 0*/,
                             const QString &strButtonText1 /*= QString()*/,
                             const QString &strButtonText2 /*= QString()*/,
                             bool fProposeAutoConfirmation /*= false*/)
 {
-    showPopupPane(pParent, strId,
+    showPopupPane(pParent, strPopupPaneID,
                   strMessage, strDetails,
                   iButton1, iButton2,
                   strButtonText1, strButtonText2,
                   fProposeAutoConfirmation);
 }
 
-void UIPopupCenter::error(QWidget *pParent, const QString &strId,
+void UIPopupCenter::error(QWidget *pParent, const QString &strPopupPaneID,
                           const QString &strMessage, const QString &strDetails,
                           bool fProposeAutoConfirmation /*= false*/)
 {
-    message(pParent, strId,
+    message(pParent, strPopupPaneID,
             strMessage, strDetails,
             AlertButton_Ok | AlertButtonOption_Default | AlertButtonOption_Escape /* 1st button */,
             0 /* 2nd button */,
@@ -91,36 +91,36 @@ void UIPopupCenter::error(QWidget *pParent, const QString &strId,
             fProposeAutoConfirmation);
 }
 
-void UIPopupCenter::alert(QWidget *pParent, const QString &strId,
+void UIPopupCenter::alert(QWidget *pParent, const QString &strPopupPaneID,
                           const QString &strMessage,
                           bool fProposeAutoConfirmation /*= false*/)
 {
-    error(pParent, strId,
+    error(pParent, strPopupPaneID,
           strMessage, QString(),
           fProposeAutoConfirmation);
 }
 
-void UIPopupCenter::question(QWidget *pParent, const QString &strId,
+void UIPopupCenter::question(QWidget *pParent, const QString &strPopupPaneID,
                              const QString &strMessage,
                              int iButton1 /*= 0*/, int iButton2 /*= 0*/,
                              const QString &strButtonText1 /*= QString()*/,
                              const QString &strButtonText2 /*= QString()*/,
                              bool fProposeAutoConfirmation /*= false*/)
 {
-    message(pParent, strId,
+    message(pParent, strPopupPaneID,
             strMessage, QString(),
             iButton1, iButton2,
             strButtonText1, strButtonText2,
             fProposeAutoConfirmation);
 }
 
-void UIPopupCenter::questionBinary(QWidget *pParent, const QString &strId,
+void UIPopupCenter::questionBinary(QWidget *pParent, const QString &strPopupPaneID,
                                    const QString &strMessage,
                                    const QString &strOkButtonText /*= QString()*/,
                                    const QString &strCancelButtonText /*= QString()*/,
                                    bool fProposeAutoConfirmation /*= false*/)
 {
-    question(pParent, strId,
+    question(pParent, strPopupPaneID,
              strMessage,
              AlertButton_Ok | AlertButtonOption_Default,
              AlertButton_Cancel | AlertButtonOption_Escape,
@@ -181,14 +181,24 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
         pPopupStack->show();
     }
 
-    /* Compose button description map: */
-    QMap<int, QString> buttonDescriptions;
-    if (iButton1 != 0 && !buttonDescriptions.contains(iButton1))
-        buttonDescriptions[iButton1] = strButtonText1;
-    if (iButton2 != 0 && !buttonDescriptions.contains(iButton2))
-        buttonDescriptions[iButton2] = strButtonText2;
-    /* Update corresponding popup-pane: */
-    pPopupStack->updatePopupPane(strPopupPaneID, strMessage, strDetails, buttonDescriptions, fProposeAutoConfirmation);
+    /* Looking for the corresponding popup-pane: */
+    if (pPopupStack->exists(strPopupPaneID))
+    {
+        /* Update existing one: */
+        pPopupStack->updatePopupPane(strPopupPaneID, strMessage, strDetails);
+    }
+    else
+    {
+        /* Compose button description map: */
+        QMap<int, QString> buttonDescriptions;
+        if (iButton1 != 0 && !buttonDescriptions.contains(iButton1))
+            buttonDescriptions[iButton1] = strButtonText1;
+        if (iButton2 != 0 && !buttonDescriptions.contains(iButton2))
+            buttonDescriptions[iButton2] = strButtonText2;
+        /* Create new one: */
+        pPopupStack->createPopupPane(strPopupPaneID, strMessage, strDetails,
+                                     buttonDescriptions, fProposeAutoConfirmation);
+    }
 }
 
 void UIPopupCenter::sltPopupPaneDone(QString strPopupPaneID, int iResultCode)

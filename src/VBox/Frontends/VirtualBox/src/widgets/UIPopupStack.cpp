@@ -39,36 +39,56 @@ UIPopupStack::UIPopupStack(QWidget *pParent)
     prepare();
 }
 
-void UIPopupStack::updatePopupPane(const QString &strPopupPaneID,
+bool UIPopupStack::exists(const QString &strPopupPaneID) const
+{
+    /* Is there already popup-pane with the same ID? */
+    return m_panes.contains(strPopupPaneID);
+}
+
+void UIPopupStack::createPopupPane(const QString &strPopupPaneID,
                                    const QString &strMessage, const QString &strDetails,
                                    const QMap<int, QString> &buttonDescriptions,
                                    bool fProposeAutoConfirmation)
 {
-    /* Looking for the corresponding popup-pane: */
-    UIPopupPane *pPopupPane = 0;
-    /* Is there already popup-pane with the same ID? */
+    /* Make sure there is no such popup-pane already: */
     if (m_panes.contains(strPopupPaneID))
     {
-        /* Get existing one: */
-        pPopupPane = m_panes[strPopupPaneID];
-        /* Update message and details: */
-        pPopupPane->setMessage(strMessage);
-        pPopupPane->setDetails(strDetails);
+        AssertMsgFailed(("Popup-pane already exists!"));
+        return;
     }
-    /* There is no popup-pane with the same ID? */
-    else
+
+    /* Create new popup-pane: */
+    UIPopupPane *pPopupPane = m_panes[strPopupPaneID] = new UIPopupPane(this,
+                                                                        strMessage, strDetails,
+                                                                        buttonDescriptions,
+                                                                        fProposeAutoConfirmation);
+    /* Attach popup-pane connection: */
+    connect(pPopupPane, SIGNAL(sigSizeHintChanged()), this, SLOT(sltAdjustGeometry()));
+    connect(pPopupPane, SIGNAL(sigDone(int)), this, SLOT(sltPopupPaneDone(int)));
+    /* Show popup-pane: */
+    pPopupPane->show();
+
+    /* Propagate desired width: */
+    setDesiredWidth(parentWidget()->width());
+    /* Adjust geometry: */
+    sltAdjustGeometry();
+}
+
+void UIPopupStack::updatePopupPane(const QString &strPopupPaneID,
+                                   const QString &strMessage, const QString &strDetails)
+{
+    /* Make sure there is such popup-pane already: */
+    if (!m_panes.contains(strPopupPaneID))
     {
-        /* Create new one: */
-        pPopupPane = m_panes[strPopupPaneID] = new UIPopupPane(this,
-                                                               strMessage, strDetails,
-                                                               buttonDescriptions,
-                                                               fProposeAutoConfirmation);
-        /* Attach popup-pane connection: */
-        connect(pPopupPane, SIGNAL(sigSizeHintChanged()), this, SLOT(sltAdjustGeometry()));
-        connect(pPopupPane, SIGNAL(sigDone(int)), this, SLOT(sltPopupPaneDone(int)));
-        /* Show popup-pane: */
-        pPopupPane->show();
+        AssertMsgFailed(("Popup-pane doesn't exists!"));
+        return;
     }
+
+    /* Get existing popup-pane: */
+    UIPopupPane *pPopupPane = m_panes[strPopupPaneID];
+    /* Update message and details: */
+    pPopupPane->setMessage(strMessage);
+    pPopupPane->setDetails(strDetails);
 
     /* Propagate desired width: */
     setDesiredWidth(parentWidget()->width());
