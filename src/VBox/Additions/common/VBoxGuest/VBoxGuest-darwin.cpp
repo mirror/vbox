@@ -648,24 +648,31 @@ static int VbgdDarwinErr2DarwinErr(int rc)
  *
  */
 
+/**
+ * Just a plug
+ */
 static void
 interruptHandler(OSObject *pOwner, IOInterruptEventSource *pSrc, int cInts)
 {
-    if (!pSrc)
-        return;
-
-    bool fTaken = VBoxGuestCommonISR(&g_DevExt);
-    if (!fTaken)
-        printf("VBoxGuestCommonISR error\n");
+    NOREF(pOwner);
+    NOREF(pSrc);
+    NOREF(cInts);
 }
 
+/**
+ * Callback triggered when interrupt occurs.
+ */
 static bool
 checkForInterrupt(OSObject *pOwner, IOFilterInterruptEventSource *pSrc)
 {
     if (!pSrc)
         return false;
 
-    return true;
+    bool fTaken = VBoxGuestCommonISR(&g_DevExt);
+    if (!fTaken)
+        printf("VBoxGuestCommonISR error\n");
+
+    return fTaken;
 }
 
 bool
