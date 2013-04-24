@@ -288,6 +288,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
         case VINF_EM_RAW_IRET_TRAP:
         case VINF_EM_DBG_HYPER_BREAKPOINT:
         case VINF_EM_DBG_HYPER_STEPPED:
+        case VINF_EM_TRIPLE_FAULT:
         case VERR_VMM_HYPER_CR3_MISMATCH:
         {
             /*

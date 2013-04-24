@@ -5499,9 +5499,7 @@ static void hmR0VmxUpdatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
             u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     }
     else if (enmTrpmEvent == TRPM_SOFTWARE_INT)
-    {
         u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-    }
     else
         AssertMsgFailed(("Invalid TRPM event type %d\n", enmTrpmEvent));
 
@@ -6048,14 +6046,14 @@ DECLINLINE(int) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint1
  * @retval VINF_EM_RESET if event injection resulted in a triple-fault.
  *
  * @param   pVCpu               Pointer to the VMCPU.
- * @param   pMixedCtx           Pointer to the guest-CPU context. The data may 
+ * @param   pMixedCtx           Pointer to the guest-CPU context. The data may
  *                              be out-of-sync. Make sure to update the required
  *                              fields before using them.
  * @param   u64IntrInfo         The VM-entry interruption-information field.
- * @param   cbInstr             The VM-entry instruction length in bytes (for 
+ * @param   cbInstr             The VM-entry instruction length in bytes (for
  *                              software interrupts, exceptions and privileged
  *                              software exceptions).
- * @param   u32ErrCode          The VM-entry exception error code. 
+ * @param   u32ErrCode          The VM-entry exception error code.
  * @param   GCPtrFaultAddress   The page-fault address for #PF exceptions.
  * @param   puIntrState         Pointer to the current guest interruptibility-state.
  *                              This interruptibility-state will be updated if
@@ -6734,6 +6732,8 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
+    else if (rc == VINF_EM_RESET)
+        rc = VINF_EM_TRIPLE_FAULT;
     hmR0VmxExitToRing3(pVM, pVCpu, pCtx, rc);
     return rc;
 }
