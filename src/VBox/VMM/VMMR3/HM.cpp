@@ -1246,8 +1246,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
      * Log configuration details.
      */
     LogRel((pVM->hm.s.fAllow64BitGuests
-            ? "HM: 32-bit and 64-bit guests supported.\n"
-            : "HM: 32-bit guests supported.\n"));
+            ? "HM: Guest support: 32-bit and 64-bit.\n"
+            : "HM: Guest support: 32-bit only.\n"));
     if (pVM->hm.s.fNestedPaging)
     {
         LogRel(("HM: Nested paging enabled!\n"));
