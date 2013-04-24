@@ -5884,7 +5884,9 @@ STDMETHODIMP Machine::SetGuestPropertyValue(IN_BSTR aName, IN_BSTR aValue)
 
 STDMETHODIMP Machine::DeleteGuestProperty(IN_BSTR aName)
 {
-    return SetGuestProperty(aName, NULL, NULL);
+    HRESULT hrc = SetGuestProperty(aName, NULL, NULL);
+    LogRel(("DeleteGuestProperty: %ls -> %Rhrc\n", aName, hrc)); /* !REMOVE ME! Debugging testboxes! */
+    return hrc;
 }
 
 #ifdef VBOX_WITH_GUEST_PROPS
