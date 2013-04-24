@@ -884,7 +884,7 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
 
         Log(("Internal SELM GDT conflict: use non-present entries\n"));
         STAM_REL_COUNTER_INC(&pVM->selm.s.StatScanForHyperSels);
-        while (pGDTECur > pGDTEStart)
+        while ((uintptr_t)pGDTECur > (uintptr_t)pGDTEStart)
         {
             /* We can reuse non-present entries */
             if (!pGDTECur->Gen.u1Present)
