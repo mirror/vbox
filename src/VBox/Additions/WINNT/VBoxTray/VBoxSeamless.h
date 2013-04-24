@@ -27,4 +27,8 @@ void VBoxSeamlessInstallHook();
 void VBoxSeamlessRemoveHook();
 void VBoxSeamlessCheckWindows();
 
+/* NOTE: both can only be called from Main thread only! */
+BOOL VBoxSeamlessIsAllowed();
+int VBoxSeamlessOnAllowChange(BOOL fEnable);
+
 #endif /* __VBOXSERVICESEAMLESS__H */

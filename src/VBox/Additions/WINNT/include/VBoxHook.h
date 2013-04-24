@@ -16,18 +16,19 @@
 #define __VBoxHook_h__
 
 /* custom messages as we must install the hook from the main thread */
-#define WM_VBOX_INSTALL_SEAMLESS_HOOK               0x2001
-#define WM_VBOX_REMOVE_SEAMLESS_HOOK                0x2002
+#define WM_VBOX_SEAMLESS_ENABLE                     0x2001
+#define WM_VBOX_SEAMLESS_DISABLE                    0x2002
 #define WM_VBOX_SEAMLESS_UPDATE                     0x2003
 
 
 #define VBOXHOOK_DLL_NAME           "VBoxHook.dll"
-#define VBOXHOOK_GLOBAL_EVENT_NAME  "Local\\VBoxHookNotifyEvent"
+#define VBOXHOOK_GLOBAL_DT_EVENT_NAME  "Local\\VBoxHookDtNotifyEvent"
+#define VBOXHOOK_GLOBAL_WT_EVENT_NAME  "Local\\VBoxHookWtNotifyEvent"
 
-/* Install the global message hook */
-BOOL VBoxInstallHook(HMODULE hDll);
+BOOL VBoxHookInstallActiveDesktopTracker(HMODULE hDll);
+BOOL VBoxHookRemoveActiveDesktopTracker();
 
-/* Remove the global message hook */
-BOOL VBoxRemoveHook();
+BOOL VBoxHookInstallWindowTracker(HMODULE hDll);
+BOOL VBoxHookRemoveWindowTracker();
 
 #endif /* __VBoxHook_h__ */
