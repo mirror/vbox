@@ -228,11 +228,13 @@ ALIGN(16)
     ; *
     ; */
 
+%ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     ; Load the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
-    ;; @todo use the automatic load feature for MSRs
     LOADGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
     LOADGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
     LOADGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
+%endif
+    ; Kernel GS Base is special, we need to manually load/store it, see @bugref{6208}.
     LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
@@ -244,8 +246,12 @@ ALIGN(16)
 
     ; Restore CR2
     mov     rbx, qword [rsi + CPUMCTX.cr2]
+    mov     rdx, cr2
+    cmp     rdx, rbx
+    je      .skipcr2write64
     mov     cr2, rbx
 
+.skipcr2write64:
     mov     eax, VMX_VMCS_HOST_RSP
     vmwrite rax, rsp
     ;/* Note: assumes success... */
@@ -295,16 +301,22 @@ ALIGNCODE(16)
     mov     qword [rdi + CPUMCTX.r13], r13
     mov     qword [rdi + CPUMCTX.r14], r14
     mov     qword [rdi + CPUMCTX.r15], r15
+%ifndef VBOX_WITH_OLD_VTX_CODE
+    mov     rax, cr2
+    mov     qword [rdi + CPUMCTX.cr2], rax
+%endif
 
     pop     rax                                 ; the guest edi we pushed above
     mov     qword [rdi + CPUMCTX.edi], rax
 
     pop     rsi         ; pCtx (needed in rsi by the macros below)
 
-    ;; @todo use the automatic load feature for MSRs
+%ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     SAVEGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
     SAVEGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
     SAVEGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
+%endif
+    ; Kernel GS Base is special, we need to manually load/store it, see @bugref{6208}.
     SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -334,9 +346,11 @@ ALIGN(16)
     jnz     .cached_read
 .no_cached_reads:
 
+ %ifdef VBOX_WITH_OLD_VTX_CODE
     ; Save CR2 for EPT
     mov     rax, cr2
     mov     [rdi + VMCSCACHE.cr2], rax
+ %endif
  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     dword [rdi + VMCSCACHE.uPos], 8
  %endif
