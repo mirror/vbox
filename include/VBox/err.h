@@ -240,6 +240,9 @@
 #define VINF_EM_HM_PATCH_TPR_INSTR          1152
 /** Unexpected guest mapping conflict detected. */
 #define VERR_EM_UNEXPECTED_MAPPING_CONFLICT (-1154)
+/** Reason for leaving RC: A triple-fault condition. Currently, causes
+ *  a guru meditation. */
+#define VINF_EM_TRIPLE_FAULT                1155
 /** @} */
 
 

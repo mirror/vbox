@@ -2245,6 +2245,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Guru mediations.
                  */
                 case VERR_VMM_RING0_ASSERTION:
+                case VINF_EM_TRIPLE_FAULT:
                     Log(("EMR3ExecuteVM: %Rrc: %d -> %d (EMSTATE_GURU_MEDITATION)\n", rc, enmOldState, EMSTATE_GURU_MEDITATION));
                     pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     break;
