@@ -64,7 +64,7 @@ static PVMMSWITCHERDEF g_apRawModeSwitchers[VMMSWITCHER_MAX] =
 #  else
     NULL,   //&vmmR3SwitcherAMD64ToPAE_Def,
 #  endif
-    NULL    //&vmmR3SwitcherAMD64ToAMD64_Def,
+    NULL,   //&vmmR3SwitcherAMD64ToAMD64_Def,
 # else  /* RT_ARCH_AMD64 */
     NULL,   //&vmmR3Switcher32BitTo32Bit_Def,
     NULL,   //&vmmR3Switcher32BitToPAE_Def,
