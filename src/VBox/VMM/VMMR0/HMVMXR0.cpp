@@ -37,7 +37,8 @@
 #ifdef DEBUG_ramshankar
 #define HMVMX_SAVE_FULL_GUEST_STATE
 #define HMVMX_SYNC_FULL_GUEST_STATE
-#define HMVMX_TRAP_ALL_EXCEPTIONS
+#define HMVMX_ALWAYS_TRAP_ALL_XCPTS
+#define HMVMX_ALWAYS_TRAP_PF
 #endif
 
 
@@ -2783,7 +2784,7 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
             pVCpu->hm.s.vmx.u32XcptBitmap &= ~RT_BIT(X86_XCPT_MF);
 
         /* Additional intercepts for debugging, define these yourself explicitly. */
-#ifdef VBOX_ALWAYS_TRAP_ALL_EXCEPTIONS
+#ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
         pVCpu->hm.s.vmx.u32XcptBitmap |=   RT_BIT(X86_XCPT_BP)
                                          | RT_BIT(X86_XCPT_DB)
                                          | RT_BIT(X86_XCPT_DE)
@@ -2794,7 +2795,7 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                                          | RT_BIT(X86_XCPT_GP)
                                          | RT_BIT(X86_XCPT_PF)
                                          | RT_BIT(X86_XCPT_MF);
-#elif defined(VBOX_ALWAYS_TRAP_PF)
+#elif defined(HMVMX_ALWAYS_TRAP_PF)
         pVCpu->hm.s.vmx.u32XcptBitmap    |= RT_BIT(X86_XCPT_PF)
 #endif
 
@@ -3108,7 +3109,7 @@ static int hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         pVCpu->hm.s.vmx.u32XcptBitmap |= RT_BIT(X86_XCPT_DB);
     else if (!pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
     {
-#ifndef VBOX_ALWAYS_TRAP_ALL_EXCEPTIONS
+#ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
         pVCpu->hm.s.vmx.u32XcptBitmap &= ~RT_BIT(X86_XCPT_DB);
 #endif
     }
@@ -6965,7 +6966,7 @@ static DECLCALLBACK(int) hmR0VmxExitXcptNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
                 case X86_XCPT_MF: rc = hmR0VmxExitXcptMF(pVCpu, pMixedCtx, pVmxTransient);      break;
                 case X86_XCPT_DB: rc = hmR0VmxExitXcptDB(pVCpu, pMixedCtx, pVmxTransient);      break;
                 case X86_XCPT_BP: rc = hmR0VmxExitXcptBP(pVCpu, pMixedCtx, pVmxTransient);      break;
-#ifdef VBOX_ALWAYS_TRAP_ALL_EXCEPTIONS
+#ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
                 case X86_XCPT_XF: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestXF);
                                   rc = hmR0VmxExitXcptGeneric(pVCpu, pMixedCtx, pVmxTransient); break;
                 case X86_XCPT_DE: STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
@@ -8490,7 +8491,7 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 {
     VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
 
-#ifndef VBOX_ALWAYS_TRAP_ALL_EXCEPTIONS
+#ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
     Assert(!CPUMIsGuestFPUStateActive(pVCpu));
 #endif
 
@@ -8533,7 +8534,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     int rc = VERR_INTERNAL_ERROR_5;
     if (!pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
     {
-#ifdef VBOX_ALWAYS_TRAP_ALL_EXCEPTIONS
+#ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
         /* If the guest is not in real-mode or we have unrestricted execution support, reflect #GP to the guest. */
         rc  = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
         rc |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
@@ -8792,7 +8793,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     rc    |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
 
-#if defined(VBOX_ALWAYS_TRAP_ALL_EXCEPTIONS) || defined(VBOX_ALWAYS_TRAP_PF)
+#if defined(HMVMX_ALWAYS_TRAP_ALL_XCPTS) || defined(HMVMX_ALWAYS_TRAP_PF)
     if (pVM->hm.s.fNestedPaging)
     {
         if (RT_LIKELY(!pVmxTransient->fVectoringPF))
