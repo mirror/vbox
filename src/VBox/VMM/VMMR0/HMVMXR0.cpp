@@ -153,24 +153,33 @@ typedef struct VMXTRANSIENT
 {
     /** The host's rflags/eflags. */
     RTCCUINTREG     uEFlags;
+#if HC_ARCH_BITS == 32
+    uint32_t        u32Alignment0;
+#endif
     /** The guest's LSTAR MSR value used for TPR patching for 32-bit guests. */
     uint64_t        u64LStarMsr;
     /** The guest's TPR value used for TPR shadowing. */
     uint8_t         u8GuestTpr;
+    /** Alignment. */
+    uint8_t         abAlignment0[6];
 
     /** The basic VM-exit reason. */
     uint16_t        uExitReason;
-    /** The VM-exit exit qualification. */
-    RTGCUINTPTR     uExitQualification;
+    /** Alignment. */
+    uint16_t        u16Alignment0;
     /** The VM-exit interruption error code. */
     uint32_t        uExitIntrErrorCode;
+    /** The VM-exit exit qualification. */
+    RTGCUINTPTR     uExitQualification;
 
     /** The VM-exit interruption-information field. */
     uint32_t        uExitIntrInfo;
-    /** Whether the VM-entry failed or not. */
-    bool            fVMEntryFailed;
     /** The VM-exit instruction-length field. */
     uint32_t        cbInstr;
+    /** Whether the VM-entry failed or not. */
+    bool            fVMEntryFailed;
+    /** Alignment. */
+    uint8_t         abAlignment1[5];
 
     /** The VM-entry interruption-information field. */
     uint32_t        uEntryIntrInfo;
@@ -192,6 +201,10 @@ typedef struct VMXTRANSIENT
      *  contributary exception or a page-fault. */
     bool            fVectoringPF;
 } VMXTRANSIENT, *PVMXTRANSIENT;
+AssertCompileMemberAlignment(VMXTRANSIENT, uExitReason,    sizeof(uint64_t));
+AssertCompileMemberAlignment(VMXTRANSIENT, uExitIntrInfo,  sizeof(uint64_t));
+AssertCompileMemberAlignment(VMXTRANSIENT, uEntryIntrInfo, sizeof(uint64_t));
+
 
 /**
  * MSR-bitmap read permissions.
