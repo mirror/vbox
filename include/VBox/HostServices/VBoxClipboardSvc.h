@@ -1,10 +1,9 @@
 /** @file
- * Shared Clipboard:
- * Common header for host service and guest clients.
+ * Shared Clipboard - Common header for host service and guest clients.
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,9 +42,9 @@
 /*
  * Supported data formats. Bit mask.
  */
-#define VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT 0x01
-#define VBOX_SHARED_CLIPBOARD_FMT_BITMAP      0x02
-#define VBOX_SHARED_CLIPBOARD_FMT_HTML        0x04
+#define VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT   UINT32_C(0x01)
+#define VBOX_SHARED_CLIPBOARD_FMT_BITMAP        UINT32_C(0x02)
+#define VBOX_SHARED_CLIPBOARD_FMT_HTML          UINT32_C(0x04)
 
 /*
  * The service functions which are callable by host.
