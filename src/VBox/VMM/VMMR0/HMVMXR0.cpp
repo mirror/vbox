@@ -8802,7 +8802,8 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     {
         if (RT_LIKELY(!pVmxTransient->fVectoringPF))
         {
-            pVCpu->hm.s.Event.fPending = false;     /* In case it's a contributory #PF. */
+            pVCpu->hm.s.Event.fPending = false;                  /* In case it's a contributory #PF. */
+            pMixedCtx->cr2 = pVmxTransient->uExitQualification;  /* Update here in case we go back to ring-3 before injection. */
             hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
                                    0 /* cbInstr */, pVmxTransient->uExitIntrErrorCode, pVmxTransient->uExitQualification);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
@@ -8881,7 +8882,8 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
             /* It's a guest page fault and needs to be reflected to the guest. */
             uint32_t uGstErrorCode = TRPMGetErrorCode(pVCpu);
             TRPMResetTrap(pVCpu);
-            pVCpu->hm.s.Event.fPending = false;     /* In case it's a contributory #PF. */
+            pVCpu->hm.s.Event.fPending = false;                 /* In case it's a contributory #PF. */
+            pMixedCtx->cr2 = pVmxTransient->uExitQualification; /* Update here in case we go back to ring-3 before injection. */
             hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
                                    0 /* cbInstr */, uGstErrorCode, pVmxTransient->uExitQualification);
         }
