@@ -2796,7 +2796,7 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                                          | RT_BIT(X86_XCPT_PF)
                                          | RT_BIT(X86_XCPT_MF);
 #elif defined(HMVMX_ALWAYS_TRAP_PF)
-        pVCpu->hm.s.vmx.u32XcptBitmap    |= RT_BIT(X86_XCPT_PF)
+        pVCpu->hm.s.vmx.u32XcptBitmap    |= RT_BIT(X86_XCPT_PF);
 #endif
 
         Assert(pVM->hm.s.fNestedPaging || (pVCpu->hm.s.vmx.u32XcptBitmap & RT_BIT(X86_XCPT_PF)));
