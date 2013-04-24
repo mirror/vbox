@@ -914,14 +914,14 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
         aHyperSel[SELM_HYPER_SEL_TSS_TRAP08] = SELM_HYPER_DEFAULT_SEL_TSS_TRAP08;
     }
 
-#ifdef VBOX_WITH_SAFE_STR
+# ifdef VBOX_WITH_SAFE_STR
     /* Use the guest's TR selector to plug the str virtualization hole. */
     if (CPUMGetGuestTR(pVCpu, NULL) != 0)
     {
         Log(("SELM: Use guest TSS selector %x\n", CPUMGetGuestTR(pVCpu, NULL)));
         aHyperSel[SELM_HYPER_SEL_TSS] = CPUMGetGuestTR(pVCpu, NULL);
     }
-#endif
+# endif
 
     /*
      * Work thru the copied GDT entries adjusting them for correct virtualization.
@@ -960,13 +960,12 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
          */
         VMR3Relocate(pVM, 0);
     }
-    else 
-#ifdef VBOX_WITH_SAFE_STR
-    if (    cbEffLimit >= SELM_HYPER_DEFAULT_BASE
-        ||  CPUMGetGuestTR(pVCpu, NULL) != 0)       /* Our shadow TR entry was overwritten when we synced the guest's GDT. */
-#else
-    if (cbEffLimit >= SELM_HYPER_DEFAULT_BASE)
-#endif
+# ifdef VBOX_WITH_SAFE_STR
+    else if (   cbEffLimit >= SELM_HYPER_DEFAULT_BASE
+             || CPUMGetGuestTR(pVCpu, NULL) != 0) /* Our shadow TR entry was overwritten when we synced the guest's GDT. */
+# else
+    else if (cbEffLimit >= SELM_HYPER_DEFAULT_BASE)
+# endif
         /* We overwrote all entries above, so we have to save them again. */
         selmR3SetupHyperGDTSelectors(pVM);
 
@@ -988,7 +987,7 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
     {
         Log(("SELMR3UpdateFromCPUM: Guest's GDT is changed to pGdt=%016RX64 cbGdt=%08X\n", GDTR.pGdt, GDTR.cbGdt));
 
-#ifdef SELM_TRACK_GUEST_GDT_CHANGES
+# ifdef SELM_TRACK_GUEST_GDT_CHANGES
         /*
          * [Re]Register write virtual handler for guest's GDT.
          */
@@ -1002,7 +1001,7 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
                                          GDTR.pGdt, GDTR.pGdt + GDTR.cbGdt /* already inclusive */,
                                          0, selmR3GuestGDTWriteHandler, "selmRCGuestGDTWriteHandler", 0,
                                          "Guest GDT write access handler");
-# ifdef VBOX_WITH_RAW_RING1
+#  ifdef VBOX_WITH_RAW_RING1
         /** @todo !HACK ALERT!
          * Some guest OSes (QNX) share code and the GDT on the same page;
          * PGMR3HandlerVirtualRegister doesn't support more than one handler,
@@ -1020,10 +1019,10 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
                                              0, selmR3GuestGDTWriteHandler, "selmRCGuestGDTWriteHandler", 0,
                                              "Guest GDT write access handler");
         }
-# endif
+#  endif
         if (RT_FAILURE(rc))
             return rc;
-#endif /* SELM_TRACK_GUEST_GDT_CHANGES */
+# endif /* SELM_TRACK_GUEST_GDT_CHANGES */
 
         /* Update saved Guest GDTR. */
         pVM->selm.s.GuestGdtr = GDTR;
@@ -1135,7 +1134,7 @@ static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
             Log(("SELMR3UpdateFromCPUM: Guest LDT changed to from %RGv:%04x to %RGv:%04x. (GDTR=%016RX64:%04x)\n",
                  pVM->selm.s.GCPtrGuestLdt, pVM->selm.s.cbLdtLimit, GCPtrLdt, cbLdt, pVM->selm.s.GuestGdtr.pGdt, pVM->selm.s.GuestGdtr.cbGdt));
 
-#ifdef SELM_TRACK_GUEST_LDT_CHANGES
+# ifdef SELM_TRACK_GUEST_LDT_CHANGES
             /*
              * [Re]Register write virtual handler for guest's GDT.
              * In the event of LDT overlapping something, don't install it just assume it's being updated.
@@ -1145,10 +1144,10 @@ static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
                 rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
                 AssertRC(rc);
             }
-# ifdef DEBUG
+#  ifdef LOG_ENABLED
             if (pDesc->Gen.u1Present)
                 Log(("LDT selector marked not present!!\n"));
-# endif
+#  endif
             rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, GCPtrLdt, GCPtrLdt + cbLdt /* already inclusive */,
                                              0, selmR3GuestLDTWriteHandler, "selmRCGuestLDTWriteHandler", 0, "Guest LDT write access handler");
             if (rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT)
@@ -1165,9 +1164,9 @@ static int selmR3UpdateShadowLdt(PVM pVM, PVMCPU pVCpu)
                 CPUMSetHyperLDTR(pVCpu, 0);
                 return rc;
             }
-#else
+# else
             pVM->selm.s.GCPtrGuestLdt = GCPtrLdt;
-#endif
+# endif
             pVM->selm.s.cbLdtLimit = cbLdt;
         }
     }
