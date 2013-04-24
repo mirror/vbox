@@ -3378,7 +3378,8 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
     enmShadowMode = pgmR3CalcShadowMode(pVM, enmGuestMode, pVM->pgm.s.enmHostMode, pVCpu->pgm.s.enmShadowMode, &enmSwitcher);
 
 #ifdef VBOX_WITH_RAW_MODE
-    if (enmSwitcher != VMMSWITCHER_INVALID)
+    if (   enmSwitcher != VMMSWITCHER_INVALID
+        && !HMIsEnabled(pVM))
     {
         /*
          * Select new switcher.

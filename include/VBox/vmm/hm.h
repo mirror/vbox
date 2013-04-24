@@ -39,10 +39,12 @@
 RT_C_DECLS_BEGIN
 
 /**
- * Query HM state (enabled/disabled)
+ * Checks whether HM (VT-x/AMD-V) is being used by this VM.
  *
- * @returns 0 - disabled, 1 - enabled
- * @param   a_pVM       Pointer to the shared VM structure.
+ * @retval  @c true if used.
+ * @retval  @c false if software virtualization (raw-mode) is used.
+ *
+ * @param   a_pVM       The cross context VM structure.
  * @sa      HMIsEnabledNotMacro, HMR3IsEnabled
  * @internal
  */
@@ -50,6 +52,22 @@ RT_C_DECLS_BEGIN
 # define HMIsEnabled(a_pVM)   HMIsEnabledNotMacro(a_pVM)
 #else
 # define HMIsEnabled(a_pVM)   ((a_pVM)->fHMEnabled)
+#endif
+
+/**
+ * Checks whether raw-mode context is required for any purpose.
+ *
+ * @retval  @c true if required either by raw-mode itself or by HM for doing
+ *          switching the cpu to 64-bit mode.
+ * @retval  @c false if not required.
+ *
+ * @param   a_pVM       The cross context VM structure.
+ * @internal
+ */
+#if HC_ARCH_BITS == 64
+# define HMIsRawModeCtxNeeded(a_pVM)   (!HMIsEnabled(a_pVM))
+#else
+# define HMIsRawModeCtxNeeded(a_pVM)   (!HMIsEnabled(a_pVM) || (a_pVM)->fHMNeedRawModeCtx)
 #endif
 
  /**

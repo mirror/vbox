@@ -333,7 +333,7 @@
 %define MSR_IA32_VMX_CR4_FIXED1             0x489
 %define MSR_IA32_VMX_VMCS_ENUM              0x48A
 %define MSR_IA32_VMX_PROCBASED_CTLS2        0x48B
-%define MSR_IA32_VMX_EPT_CAPS               0x48C
+%define MSR_IA32_VMX_EPT_VPID_CAP           0x48C
 %define MSR_IA32_DS_AREA                    0x600
 %define MSR_IA32_X2APIC_START               0x800
 %define MSR_IA32_X2APIC_TPR                 0x808
@@ -646,6 +646,7 @@
 %define X86_SEL_LDT             0x0004
 %define X86_SEL_RPL             0x0003
 %define X86_SEL_RPL_LDT         0x0007
+%define X86_XCPT_MAX                (X86_XCPT_XF)
 %define X86_TRAP_ERR_EXTERNAL       1
 %define X86_TRAP_ERR_IDT            2
 %define X86_TRAP_ERR_TI             4

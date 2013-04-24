@@ -86,6 +86,7 @@
 #include <internal/pgm.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/em.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/dbgf.h>
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0

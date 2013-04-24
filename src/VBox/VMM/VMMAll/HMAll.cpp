@@ -37,9 +37,10 @@
 
 
 /**
- * Query HM state (enabled/disabled)
+ * Checks whether HM (VT-x/AMD-V) is being used by this VM.
  *
- * @returns @c false if disabled, @c true if enabled.
+ * @retval  @c true if used.
+ * @retval  @c false if software virtualization (raw-mode) is used.
  * @param   pVM         The cross context VM structure.
  * @sa      HMIsEnabled, HMR3IsEnabled
  * @internal

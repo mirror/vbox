@@ -659,80 +659,67 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
          */
         case VMMR0_DO_RAW_RUN:
         {
-            /* Some safety precautions first. */
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-            if (RT_LIKELY(   !pVM->vmm.s.fSwitcherDisabled /* hm */
-                          && pVM->cCpus == 1               /* !smp */
-                          && PGMGetHyperCR3(pVCpu)))
-#else
-            if (RT_LIKELY(   !pVM->vmm.s.fSwitcherDisabled
-                          && pVM->cCpus == 1))
-#endif
+            /* Some safety precautions first. */
+            if (RT_UNLIKELY(!PGMGetHyperCR3(pVCpu)))
             {
-                /* Disable preemption and update the periodic preemption timer. */
-                RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-                RTThreadPreemptDisable(&PreemptState);
-                RTCPUID idHostCpu = RTMpCpuId();
-#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-                CPUMR0SetLApic(pVM, idHostCpu);
+                pVCpu->vmm.s.iLastGZRc = VERR_PGM_NO_CR3_SHADOW_ROOT;
+                break;
+            }
 #endif
-                ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
-                if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
-                    GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
 
-                /* We might need to disable VT-x if the active switcher turns off paging. */
-                bool fVTxDisabled;
-                int rc = HMR0EnterSwitcher(pVM, pVM->vmm.s.enmSwitcher, &fVTxDisabled);
-                if (RT_SUCCESS(rc))
+            /* Disable preemption and update the periodic preemption timer. */
+            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+            RTThreadPreemptDisable(&PreemptState);
+            RTCPUID idHostCpu = RTMpCpuId();
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+            CPUMR0SetLApic(pVM, idHostCpu);
+#endif
+            ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
+            if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
+                GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
+
+            /* We might need to disable VT-x if the active switcher turns off paging. */
+            bool fVTxDisabled;
+            int rc = HMR0EnterSwitcher(pVM, pVM->vmm.s.enmSwitcher, &fVTxDisabled);
+            if (RT_SUCCESS(rc))
+            {
+                RTCCUINTREG uFlags = ASMIntDisableFlags();
+
+                for (;;)
                 {
-                    RTCCUINTREG uFlags = ASMIntDisableFlags();
+                    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
+                    TMNotifyStartOfExecution(pVCpu);
 
-                    for (;;)
-                    {
-                        VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-                        TMNotifyStartOfExecution(pVCpu);
+                    rc = pVM->vmm.s.pfnR0ToRawMode(pVM);
+                    pVCpu->vmm.s.iLastGZRc = rc;
 
-                        rc = pVM->vmm.s.pfnR0ToRawMode(pVM);
-                        pVCpu->vmm.s.iLastGZRc = rc;
+                    TMNotifyEndOfExecution(pVCpu);
+                    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
 
-                        TMNotifyEndOfExecution(pVCpu);
-                        VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+                    if (rc != VINF_VMM_CALL_TRACER)
+                        break;
+                    SUPR0TracerUmodProbeFire(pVM->pSession, &pVCpu->vmm.s.TracerCtx);
+                }
 
-                        if (rc != VINF_VMM_CALL_TRACER)
-                            break;
-                        SUPR0TracerUmodProbeFire(pVM->pSession, &pVCpu->vmm.s.TracerCtx);
-                    }
+                /* Re-enable VT-x if previously turned off. */
+                HMR0LeaveSwitcher(pVM, fVTxDisabled);
 
-                    /* Re-enable VT-x if previously turned off. */
-                    HMR0LeaveSwitcher(pVM, fVTxDisabled);
+                if (    rc == VINF_EM_RAW_INTERRUPT
+                    ||  rc == VINF_EM_RAW_INTERRUPT_HYPER)
+                    TRPMR0DispatchHostInterrupt(pVM);
 
-                    if (    rc == VINF_EM_RAW_INTERRUPT
-                        ||  rc == VINF_EM_RAW_INTERRUPT_HYPER)
-                        TRPMR0DispatchHostInterrupt(pVM);
-
-                    ASMSetFlags(uFlags);
+                ASMSetFlags(uFlags);
 
 #ifdef VBOX_WITH_STATISTICS
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
-                    vmmR0RecordRC(pVM, pVCpu, rc);
+                STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
+                vmmR0RecordRC(pVM, pVCpu, rc);
 #endif
-                }
-                else
-                    pVCpu->vmm.s.iLastGZRc = rc;
-                ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-                RTThreadPreemptRestore(&PreemptState);
             }
             else
-            {
-                Assert(!pVM->vmm.s.fSwitcherDisabled);
-                pVCpu->vmm.s.iLastGZRc = VERR_NOT_SUPPORTED;
-                if (pVM->cCpus != 1)
-                    pVCpu->vmm.s.iLastGZRc = VERR_RAW_MODE_INVALID_SMP;
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
-                if (!PGMGetHyperCR3(pVCpu))
-                    pVCpu->vmm.s.iLastGZRc = VERR_PGM_NO_CR3_SHADOW_ROOT;
-#endif
-            }
+                pVCpu->vmm.s.iLastGZRc = rc;
+            ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+            RTThreadPreemptRestore(&PreemptState);
             break;
         }
 
@@ -979,11 +966,6 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
         {
             int rc;
             bool fVTxDisabled;
-
-            /* Safety precaution as HM can disable the switcher. */
-            Assert(!pVM->vmm.s.fSwitcherDisabled);
-            if (RT_UNLIKELY(pVM->vmm.s.fSwitcherDisabled))
-                return VERR_NOT_SUPPORTED;
 
 #ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
             if (RT_UNLIKELY(!PGMGetHyperCR3(VMMGetCpu0(pVM))))

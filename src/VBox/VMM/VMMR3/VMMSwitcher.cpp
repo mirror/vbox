@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,12 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VMM
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/sup.h>
@@ -45,7 +47,7 @@
 /** Array of switcher definitions.
  * The type and index shall match!
  */
-static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
+static PVMMSWITCHERDEF g_apRawModeSwitchers[VMMSWITCHER_MAX] =
 {
     NULL, /* invalid entry */
 #ifdef VBOX_WITH_RAW_MODE
@@ -72,7 +74,7 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
     NULL,   //&vmmR3SwitcherPAEToAMD64_Def,
     &vmmR3SwitcherAMD64To32Bit_Def,
     &vmmR3SwitcherAMD64ToPAE_Def,
-    NULL    //&vmmR3SwitcherAMD64ToAMD64_Def,
+    NULL,   //&vmmR3SwitcherAMD64ToAMD64_Def,
 # endif /* RT_ARCH_AMD64 */
 #else  /* !VBOX_WITH_RAW_MODE */
     NULL,
@@ -83,8 +85,51 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
     NULL,
     NULL,
     NULL,
-    NULL
+    NULL,
 #endif /* !VBOX_WITH_RAW_MODE */
+#ifndef RT_ARCH_AMD64
+    &vmmR3SwitcherX64Stub_Def,
+    NULL,
+#else
+    NULL,
+    &vmmR3SwitcherAMD64Stub_Def,
+#endif
+};
+
+/** Array of switcher definitions.
+ * The type and index shall match!
+ */
+static PVMMSWITCHERDEF g_apHmSwitchers[VMMSWITCHER_MAX] =
+{
+    NULL, /* invalid entry */
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+    NULL,   //&vmmR3Switcher32BitTo32Bit_Def,
+    NULL,   //&vmmR3Switcher32BitToPAE_Def,
+    &vmmR3Switcher32BitToAMD64_Def,
+    NULL,   //&vmmR3SwitcherPAETo32Bit_Def,
+    NULL,   //&vmmR3SwitcherPAEToPAE_Def,
+    &vmmR3SwitcherPAEToAMD64_Def,
+    NULL,   //&vmmR3SwitcherPAETo32Bit_Def,
+    NULL,   //&vmmR3SwitcherAMD64ToPAE_Def,
+    NULL,   //&vmmR3SwitcherAMD64ToAMD64_Def,
+#else  /* !VBOX_WITH_RAW_MODE */
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+#endif /* !VBOX_WITH_RAW_MODE */
+#ifndef RT_ARCH_AMD64
+    &vmmR3SwitcherX64Stub_Def,
+    NULL,
+#else
+    NULL,
+    &vmmR3SwitcherAMD64Stub_Def,
+#endif
 };
 
 
@@ -99,17 +144,18 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
  */
 int vmmR3SwitcherInit(PVM pVM)
 {
-#ifndef VBOX_WITH_RAW_MODE
+#ifndef VBOX_WITH_RAW_MODE /** @todo 64-bit on 32-bit. */
     return VINF_SUCCESS;
 #else
     /*
      * Calc the size.
      */
+    const PVMMSWITCHERDEF *papSwitchers = HMIsEnabled(pVM) ? g_apHmSwitchers : g_apRawModeSwitchers;
     unsigned cbCoreCode = 0;
-    for (unsigned iSwitcher = 0; iSwitcher < RT_ELEMENTS(s_apSwitchers); iSwitcher++)
+    for (unsigned iSwitcher = 0; iSwitcher < VMMSWITCHER_MAX; iSwitcher++)
     {
         pVM->vmm.s.aoffSwitchers[iSwitcher] = cbCoreCode;
-        PVMMSWITCHERDEF pSwitcher = s_apSwitchers[iSwitcher];
+        PVMMSWITCHERDEF pSwitcher = papSwitchers[iSwitcher];
         if (pSwitcher)
         {
             AssertRelease((unsigned)pSwitcher->enmType == iSwitcher);
@@ -179,9 +225,9 @@ int vmmR3SwitcherInit(PVM pVM)
         /*
          * copy the code.
          */
-        for (unsigned iSwitcher = 0; iSwitcher < RT_ELEMENTS(s_apSwitchers); iSwitcher++)
+        for (unsigned iSwitcher = 0; iSwitcher < VMMSWITCHER_MAX; iSwitcher++)
         {
-            PVMMSWITCHERDEF pSwitcher = s_apSwitchers[iSwitcher];
+            PVMMSWITCHERDEF pSwitcher = papSwitchers[iSwitcher];
             if (pSwitcher)
                 memcpy((uint8_t *)pVM->vmm.s.pvCoreCodeR3 + pVM->vmm.s.aoffSwitchers[iSwitcher],
                        pSwitcher->pvCode, pSwitcher->cbCode);
@@ -204,6 +250,7 @@ int vmmR3SwitcherInit(PVM pVM)
              * Finally, PGM probably has selected a switcher already but we need
              * to get the routine addresses, so we'll reselect it.
              * This may legally fail so, we're ignoring the rc.
+             * Note! See HMIsEnabled hack in selector function.
              */
             VMMR3SelectSwitcher(pVM, pVM->vmm.s.enmSwitcher);
             return rc;
@@ -237,9 +284,10 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Relocate all the switchers.
      */
-    for (unsigned iSwitcher = 0; iSwitcher < RT_ELEMENTS(s_apSwitchers); iSwitcher++)
+    const PVMMSWITCHERDEF *papSwitchers = HMIsEnabled(pVM) ? g_apHmSwitchers : g_apRawModeSwitchers;
+    for (unsigned iSwitcher = 0; iSwitcher < VMMSWITCHER_MAX; iSwitcher++)
     {
-        PVMMSWITCHERDEF pSwitcher = s_apSwitchers[iSwitcher];
+        PVMMSWITCHERDEF pSwitcher = papSwitchers[iSwitcher];
         if (pSwitcher && pSwitcher->pfnRelocate)
         {
             unsigned off = pVM->vmm.s.aoffSwitchers[iSwitcher];
@@ -255,12 +303,17 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Recalc the RC address for the current switcher.
      */
-    PVMMSWITCHERDEF pSwitcher   = s_apSwitchers[pVM->vmm.s.enmSwitcher];
-    RTRCPTR         RCPtr       = pVM->vmm.s.pvCoreCodeRC + pVM->vmm.s.aoffSwitchers[pVM->vmm.s.enmSwitcher];
-    pVM->vmm.s.pfnRCToHost              = RCPtr + pSwitcher->offRCToHost;
-    pVM->vmm.s.pfnCallTrampolineRC      = RCPtr + pSwitcher->offRCCallTrampoline;
-    pVM->pfnVMMRCToHostAsm              = RCPtr + pSwitcher->offRCToHostAsm;
-    pVM->pfnVMMRCToHostAsmNoReturn      = RCPtr + pSwitcher->offRCToHostAsmNoReturn;
+    PVMMSWITCHERDEF pSwitcher   = papSwitchers[pVM->vmm.s.enmSwitcher];
+    if (pSwitcher)
+    {
+        RTRCPTR     RCPtr       = pVM->vmm.s.pvCoreCodeRC + pVM->vmm.s.aoffSwitchers[pVM->vmm.s.enmSwitcher];
+        pVM->vmm.s.pfnRCToHost              = RCPtr + pSwitcher->offRCToHost;
+        pVM->vmm.s.pfnCallTrampolineRC      = RCPtr + pSwitcher->offRCCallTrampoline;
+        pVM->pfnVMMRCToHostAsm              = RCPtr + pSwitcher->offRCToHostAsm;
+        pVM->pfnVMMRCToHostAsmNoReturn      = RCPtr + pSwitcher->offRCToHostAsmNoReturn;
+    }
+    else
+        AssertRelease(HMIsEnabled(pVM));
 
 //    AssertFailed();
 #else
@@ -961,14 +1014,17 @@ VMMR3_INT_DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
         return VERR_INVALID_PARAMETER;
     }
 
-    /* Do nothing if the switcher is disabled. */
-    if (pVM->vmm.s.fSwitcherDisabled)
-        return VINF_SUCCESS;
+    /*
+     * Override it if HM is active.
+     */
+    if (HMIsEnabled(pVM))
+        pVM->vmm.s.enmSwitcher = HC_ARCH_BITS == 64 ? VMMSWITCHER_AMD64_STUB : VMMSWITCHER_X86_STUB;
 
     /*
      * Select the new switcher.
      */
-    PVMMSWITCHERDEF pSwitcher = s_apSwitchers[enmSwitcher];
+    const PVMMSWITCHERDEF *papSwitchers = HMIsEnabled(pVM) ? g_apHmSwitchers : g_apRawModeSwitchers;
+    PVMMSWITCHERDEF pSwitcher = papSwitchers[enmSwitcher];
     if (pSwitcher)
     {
         Log(("VMMR3SelectSwitcher: enmSwitcher %d -> %d %s\n", pVM->vmm.s.enmSwitcher, enmSwitcher, pSwitcher->pszDesc));
@@ -989,26 +1045,6 @@ VMMR3_INT_DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
 }
 
 #endif /* VBOX_WITH_RAW_MODE */
-
-
-/**
- * Disable the switcher logic permanently.
- *
- * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
- */
-VMMR3_INT_DECL(int) VMMR3DisableSwitcher(PVM pVM)
-{
-/** @todo r=bird: I would suggest that we create a dummy switcher which just does something like:
- * @code
- *       mov eax, VERR_VMM_DUMMY_SWITCHER
- *       ret
- * @endcode
- * And then check for fSwitcherDisabled in VMMR3SelectSwitcher() in order to prevent it from being removed.
- */
-    pVM->vmm.s.fSwitcherDisabled = true;
-    return VINF_SUCCESS;
-}
 
 
 /**
@@ -1033,7 +1069,8 @@ VMMR3_INT_DECL(RTR0PTR) VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwit
     /*
      * Select the new switcher.
      */
-    PVMMSWITCHERDEF pSwitcher = s_apSwitchers[enmSwitcher];
+    const PVMMSWITCHERDEF *papSwitchers = HMIsEnabled(pVM) ? g_apHmSwitchers : g_apRawModeSwitchers;
+    PVMMSWITCHERDEF pSwitcher = papSwitchers[enmSwitcher];
     if (pSwitcher)
     {
         RTR0PTR     pbCodeR0 = (RTR0PTR)pVM->vmm.s.pvCoreCodeR0 + pVM->vmm.s.aoffSwitchers[enmSwitcher]; /** @todo fix the pvCoreCodeR0 type */

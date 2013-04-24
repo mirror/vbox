@@ -63,6 +63,10 @@ typedef enum VMMSWITCHER
     VMMSWITCHER_AMD64_TO_PAE,
     /** Switcher for AMD64 host paging to AMD64 shadow paging. */
     VMMSWITCHER_AMD64_TO_AMD64,
+    /** Stub switcher for 32-bit and PAE. */
+    VMMSWITCHER_X86_STUB,
+    /** Stub switcher for AMD64. */
+    VMMSWITCHER_AMD64_STUB,
     /** Used to make a count for array declarations and suchlike. */
     VMMSWITCHER_MAX,
     /** The usual 32-bit paranoia. */
@@ -253,7 +257,6 @@ VMMR3_INT_DECL(int)     VMMR3UpdateLoggers(PVM pVM);
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg1(PVM pVM);
 VMMR3DECL(const char *) VMMR3GetRZAssertMsg2(PVM pVM);
 VMMR3_INT_DECL(int)     VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
-VMMR3_INT_DECL(int)     VMMR3DisableSwitcher(PVM pVM);
 VMMR3_INT_DECL(RTR0PTR) VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwitcher);
 VMMR3_INT_DECL(int)     VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu);
 # ifdef VBOX_WITH_RAW_MODE

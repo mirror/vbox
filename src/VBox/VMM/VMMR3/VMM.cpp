@@ -211,9 +211,6 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     rc = RTSemEventCreate(&pVM->vmm.s.hEvtRendezvousDoneCaller);
     AssertRCReturn(rc, rc);
 
-    /* GC switchers are enabled by default. Turned off by HM. */
-    pVM->vmm.s.fSwitcherDisabled = false;
-
     /*
      * Register the saved state data unit.
      */
@@ -548,7 +545,7 @@ VMMR3_INT_DECL(int) VMMR3InitRC(PVM pVM)
     Assert(pVCpu && pVCpu->idCpu == 0);
 
     /* In VMX mode, there's no need to init RC. */
-    if (pVM->vmm.s.fSwitcherDisabled)
+    if (HMIsEnabled(pVM))
         return VINF_SUCCESS;
 
     AssertReturn(pVM->cCpus == 1, VERR_RAW_MODE_INVALID_SMP);
