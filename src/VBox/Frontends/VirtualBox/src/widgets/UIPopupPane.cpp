@@ -37,45 +37,9 @@
 /* Other VBox includes: */
 #include <VBox/sup.h>
 
-void UIAnimationFramework::installPropertyAnimation(QWidget *pParent, const QByteArray &strPropertyName,
-                                                    int iStartValue, int iFinalValue,
-                                                    const char *pSignalForward, const char *pSignalBackward,
-                                                    int iAnimationDuration /*= 300*/)
-{
-    /* State-machine: */
-    QStateMachine *pStateMachine = new QStateMachine(pParent);
-    /* State-machine 'start' state: */
-    QState *pStateStart = new QState(pStateMachine);
-    /* State-machine 'final' state: */
-    QState *pStateFinal = new QState(pStateMachine);
 
-    /* State-machine 'forward' animation: */
-    QPropertyAnimation *pForwardAnimation = new QPropertyAnimation(pParent, strPropertyName, pParent);
-    pForwardAnimation->setEasingCurve(QEasingCurve(QEasingCurve::InOutCubic));
-    pForwardAnimation->setDuration(iAnimationDuration);
-    pForwardAnimation->setStartValue(iStartValue);
-    pForwardAnimation->setEndValue(iFinalValue);
-    /* State-machine 'backward' animation: */
-    QPropertyAnimation *pBackwardAnimation = new QPropertyAnimation(pParent, strPropertyName, pParent);
-    pBackwardAnimation->setEasingCurve(QEasingCurve(QEasingCurve::InOutCubic));
-    pBackwardAnimation->setDuration(iAnimationDuration);
-    pBackwardAnimation->setStartValue(iFinalValue);
-    pBackwardAnimation->setEndValue(iStartValue);
-
-    /* State-machine state transitions: */
-    QSignalTransition *pDefaultToHovered = pStateStart->addTransition(pParent, pSignalForward, pStateFinal);
-    pDefaultToHovered->addAnimation(pForwardAnimation);
-    QSignalTransition *pHoveredToDefault = pStateFinal->addTransition(pParent, pSignalBackward, pStateStart);
-    pHoveredToDefault->addAnimation(pBackwardAnimation);
-
-    /* Initial state is 'start': */
-    pStateMachine->setInitialState(pStateStart);
-    /* Start hover-machine: */
-    pStateMachine->start();
-}
-
-QStateMachine* UIAnimationFramework::installPropertyAnimation(QWidget *pTarget, const QByteArray &strPropertyName,
-                                                              const QByteArray &strValuePropertyNameStart, const QByteArray &strValuePropertyNameFinal,
+QStateMachine* UIAnimationFramework::installPropertyAnimation(QWidget *pTarget, const char *pszPropertyName,
+                                                              const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
                                                               const char *pSignalForward, const char *pSignalBackward,
                                                               bool fReversive /*= false*/, int iAnimationDuration /*= 300*/)
 {
@@ -87,17 +51,17 @@ QStateMachine* UIAnimationFramework::installPropertyAnimation(QWidget *pTarget, 
     QState *pStateFinal = new QState(pStateMachine);
 
     /* State-machine 'forward' animation: */
-    QPropertyAnimation *pForwardAnimation = new QPropertyAnimation(pTarget, strPropertyName, pStateMachine);
+    QPropertyAnimation *pForwardAnimation = new QPropertyAnimation(pTarget, pszPropertyName, pStateMachine);
     pForwardAnimation->setEasingCurve(QEasingCurve(QEasingCurve::InOutCubic));
     pForwardAnimation->setDuration(iAnimationDuration);
-    pForwardAnimation->setStartValue(pTarget->property(strValuePropertyNameStart));
-    pForwardAnimation->setEndValue(pTarget->property(strValuePropertyNameFinal));
+    pForwardAnimation->setStartValue(pTarget->property(pszValuePropertyNameStart));
+    pForwardAnimation->setEndValue(pTarget->property(pszValuePropertyNameFinal));
     /* State-machine 'backward' animation: */
-    QPropertyAnimation *pBackwardAnimation = new QPropertyAnimation(pTarget, strPropertyName, pStateMachine);
+    QPropertyAnimation *pBackwardAnimation = new QPropertyAnimation(pTarget, pszPropertyName, pStateMachine);
     pBackwardAnimation->setEasingCurve(QEasingCurve(QEasingCurve::InOutCubic));
     pBackwardAnimation->setDuration(iAnimationDuration);
-    pBackwardAnimation->setStartValue(pTarget->property(strValuePropertyNameFinal));
-    pBackwardAnimation->setEndValue(pTarget->property(strValuePropertyNameStart));
+    pBackwardAnimation->setStartValue(pTarget->property(pszValuePropertyNameFinal));
+    pBackwardAnimation->setEndValue(pTarget->property(pszValuePropertyNameStart));
 
     /* State-machine state transitions: */
     QSignalTransition *pDefaultToHovered = pStateStart->addTransition(pTarget, pSignalForward, pStateFinal);
@@ -128,7 +92,7 @@ signals:
     void sigFocusEnter();
     void sigFocusLeave();
 
-    /* Notifier: Animation stuff: */
+    /* Notifier: Layout stuff: */
     void sigSizeHintChanged();
 
 public:
@@ -147,14 +111,14 @@ public:
     bool autoConfirmationProposed() const;
     bool isAutoConfirmed() const;
 
-    /* API: Size-hint stuff: */
+    /* API: Layout stuff: */
     QSize minimumSizeHint() const;
     void setMinimumSizeHint(const QSize &minimumSizeHint);
     void layoutContent();
 
 private slots:
 
-    /* Handlers: Animation stuff: */
+    /* Handlers: Focus stuff: */
     void sltFocusEnter();
     void sltFocusLeave();
 
@@ -167,12 +131,14 @@ private:
     /* Helper: Translate stuff: */
     void retranslateUi();
 
-    /* Helper: Size-hint stuff: */
-    QSize collapsedSizeHint() const { return m_collapsedSizeHint; }
-    QSize expandedSizeHint() const { return m_expandedSizeHint; }
+    /* Helper: Layout stuff: */
     void updateSizeHint();
 
-    /* Variables: Size-hint stuff: */
+    /* Property: Focus stuff: */
+    QSize collapsedSizeHint() const { return m_collapsedSizeHint; }
+    QSize expandedSizeHint() const { return m_expandedSizeHint; }
+
+    /* Variables: Layout stuff: */
     const int m_iLayoutMargin;
     const int m_iLayoutSpacing;
     QSize m_labelSizeHint;
@@ -187,7 +153,7 @@ private:
     QCheckBox *m_pAutoConfirmCheckBox;
     bool m_fProposeAutoConfirmation;
 
-    /* Variables: Animation stuff: */
+    /* Variables: Focus stuff: */
     bool m_fFocused;
     QObject *m_pAnimation;
 };
@@ -232,7 +198,7 @@ private:
     static QString defaultToolTip(int iButtonID);
     static QIcon defaultIcon(int iButtonID);
 
-    /* Widgets: */
+    /* Variables: Widget stuff: */
     QHBoxLayout *m_pButtonLayout;
     QMap<int, QString> m_buttonDescriptions;
     QMap<int, QIToolButton*> m_buttons;
@@ -382,8 +348,7 @@ void UIPopupPane::sltButtonClicked(int iButtonID)
 void UIPopupPane::prepare()
 {
     /* Install 'hover' animation for 'opacity' property: */
-    UIAnimationFramework::installPropertyAnimation(this, QByteArray("opacity"),
-                                                   m_iDefaultOpacity, m_iHoveredOpacity,
+    UIAnimationFramework::installPropertyAnimation(this, "opacity", "defaultOpacity", "hoveredOpacity",
                                                    SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
     /* Prepare content: */
     prepareContent();
@@ -680,6 +645,7 @@ void UIPopupPaneTextPane::prepareContent()
 #endif /* !Q_WS_MAC */
         m_pLabel->setFont(currentFont);
         m_pLabel->setWordWrap(true);
+        m_pLabel->setFocusPolicy(Qt::NoFocus);
     }
     /* Create check-box: */
     m_pAutoConfirmCheckBox = new QCheckBox(this);
@@ -692,6 +658,7 @@ void UIPopupPaneTextPane::prepareContent()
         currentFont.setPointSize(currentFont.pointSize() - 1);
 #endif /* !Q_WS_MAC */
         m_pAutoConfirmCheckBox->setFont(currentFont);
+        m_pAutoConfirmCheckBox->setFocusPolicy(Qt::NoFocus);
     }
     /* Translate UI finally: */
     retranslateUi();

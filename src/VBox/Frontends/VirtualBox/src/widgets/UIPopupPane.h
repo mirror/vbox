@@ -28,9 +28,6 @@
 
 /* Forward declaration: */
 class QStateMachine;
-class QLabel;
-class QPushButton;
-class UIPopupPane;
 class UIPopupPaneTextPane;
 class UIPopupPaneButtonPane;
 
@@ -38,14 +35,8 @@ class UIPopupPaneButtonPane;
 namespace UIAnimationFramework
 {
     /* API: Animation stuff: */
-    void installPropertyAnimation(QWidget *pParent, const QByteArray &strPropertyName,
-                                  int iStartValue, int iFinalValue,
-                                  const char *pSignalForward, const char *pSignalBackward,
-                                  int iAnimationDuration = 300);
-
-    /* API: Animation stuff: */
-    QStateMachine* installPropertyAnimation(QWidget *pTarget, const QByteArray &strPropertyName,
-                                            const QByteArray &strValuePropertyNameStart, const QByteArray &strValuePropertyNameFinal,
+    QStateMachine* installPropertyAnimation(QWidget *pTarget, const char *pszPropertyName,
+                                            const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
                                             const char *pSignalForward, const char *pSignalBackward,
                                             bool fReversive = false, int iAnimationDuration = 300);
 }
@@ -54,6 +45,8 @@ namespace UIAnimationFramework
 class UIPopupPane : public QWidget
 {
     Q_OBJECT;
+    Q_PROPERTY(int defaultOpacity READ defaultOpacity);
+    Q_PROPERTY(int hoveredOpacity READ hoveredOpacity);
     Q_PROPERTY(int opacity READ opacity WRITE setOpacity);
 
 signals:
@@ -115,6 +108,8 @@ private:
     void done(int iResultCode);
 
     /* Property: Hover stuff: */
+    int defaultOpacity() const { return m_iDefaultOpacity; }
+    int hoveredOpacity() const { return m_iHoveredOpacity; }
     int opacity() const { return m_iOpacity; }
     void setOpacity(int iOpacity) { m_iOpacity = iOpacity; update(); }
 

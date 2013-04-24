@@ -45,9 +45,9 @@ public:
     static void destroy();
 
     /* API: Main message function.
-     * Provides up to two buttons.
+     * Provides one-two buttons.
      * Used directly only in exceptional cases: */
-    void message(QWidget *pParent, const QString &strId,
+    void message(QWidget *pParent, const QString &strPopupPaneID,
                  const QString &strMessage, const QString &strDetails,
                  int iButton1 = 0, int iButton2 = 0,
                  const QString &strButtonText1 = QString(),
@@ -56,20 +56,20 @@ public:
 
     /* API: Wrapper to 'message' function.
      * Provides single OK button: */
-    void error(QWidget *pParent, const QString &strId,
+    void error(QWidget *pParent, const QString &strPopupPaneID,
                const QString &strMessage, const QString &strDetails,
                bool fProposeAutoConfirmation = false);
 
     /* API: Wrapper to 'error' function.
      * Omits details: */
-    void alert(QWidget *pParent, const QString &strId,
+    void alert(QWidget *pParent, const QString &strPopupPaneID,
                const QString &strMessage,
                bool fProposeAutoConfirmation = false);
 
     /* API: Wrapper to 'message' function.
      * Omits details, provides up to two buttons.
      * Used directly only in exceptional cases: */
-    void question(QWidget *pParent, const QString &strId,
+    void question(QWidget *pParent, const QString &strPopupPaneID,
                   const QString &strMessage,
                   int iButton1 = 0, int iButton2 = 0,
                   const QString &strButtonText1 = QString(),
@@ -78,7 +78,7 @@ public:
 
     /* API: Wrapper to 'question' function,
      * Question providing two buttons (OK and Cancel by default): */
-    void questionBinary(QWidget *pParent, const QString &strId,
+    void questionBinary(QWidget *pParent, const QString &strPopupPaneID,
                         const QString &strMessage,
                         const QString &strOkButtonText = QString(),
                         const QString &strCancelButtonText = QString(),
