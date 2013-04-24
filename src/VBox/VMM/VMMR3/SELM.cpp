@@ -178,7 +178,6 @@ VMMR3DECL(int) SELMR3Init(PVM pVM)
     pVM->selm.s.pvMonShwTssRC      = RTRCPTR_MAX;
     pVM->selm.s.GCSelTss           = RTSEL_MAX;
 
-    pVM->selm.s.fDisableMonitoring = false;
     pVM->selm.s.fSyncTSSRing0Stack = false;
 
     /* The I/O bitmap starts right after the virtual interrupt redirection
@@ -631,84 +630,6 @@ VMMR3DECL(void) SELMR3Reset(PVM pVM)
 }
 
 
-#ifdef VBOX_WITH_RAW_MODE
-/**
- * Disable GDT/LDT/TSS monitoring and syncing
- *
- * @param   pVM         Pointer to the VM.
- */
-VMMR3DECL(void) SELMR3DisableMonitoring(PVM pVM)
-{
-    /*
-     * Uninstall guest GDT/LDT/TSS write access handlers.
-     */
-    int rc;
-    if (pVM->selm.s.GuestGdtr.pGdt != RTRCPTR_MAX && pVM->selm.s.fGDTRangeRegistered)
-    {
-# ifdef SELM_TRACK_GUEST_GDT_CHANGES
-        rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GuestGdtr.pGdt);
-        AssertRC(rc);
-# endif
-        pVM->selm.s.GuestGdtr.pGdt = RTRCPTR_MAX;
-        pVM->selm.s.GuestGdtr.cbGdt = 0;
-    }
-    pVM->selm.s.fGDTRangeRegistered = false;
-    if (pVM->selm.s.GCPtrGuestLdt != RTRCPTR_MAX)
-    {
-# ifdef SELM_TRACK_GUEST_LDT_CHANGES
-        rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestLdt);
-        AssertRC(rc);
-# endif
-        pVM->selm.s.GCPtrGuestLdt = RTRCPTR_MAX;
-    }
-    if (pVM->selm.s.GCPtrGuestTss != RTRCPTR_MAX)
-    {
-# ifdef SELM_TRACK_GUEST_TSS_CHANGES
-        rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.GCPtrGuestTss);
-        AssertRC(rc);
-# endif
-        pVM->selm.s.GCPtrGuestTss = RTRCPTR_MAX;
-        pVM->selm.s.GCSelTss      = RTSEL_MAX;
-    }
-
-    /*
-     * Unregister shadow GDT/LDT/TSS write access handlers.
-     */
-# ifdef SELM_TRACK_SHADOW_GDT_CHANGES
-    if (pVM->selm.s.paGdtRC != NIL_RTRCPTR)
-    {
-        rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.paGdtRC);
-        AssertRC(rc);
-        pVM->selm.s.paGdtRC = NIL_RTRCPTR;
-    }
-# endif
-# ifdef SELM_TRACK_SHADOW_TSS_CHANGES
-    if (pVM->selm.s.pvMonShwTssRC != RTRCPTR_MAX)
-    {
-        rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.pvMonShwTssRC);
-        AssertRC(rc);
-        pVM->selm.s.pvMonShwTssRC = RTRCPTR_MAX;
-    }
-# endif
-# ifdef SELM_TRACK_SHADOW_LDT_CHANGES
-    if (pVM->selm.s.pvLdtRC != RTRCPTR_MAX)
-    {
-        rc = PGMHandlerVirtualDeregister(pVM, pVM->selm.s.pvLdtRC);
-        AssertRC(rc);
-        pVM->selm.s.pvLdtRC = RTRCPTR_MAX;
-    }
-# endif
-
-    PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
-
-    pVM->selm.s.fDisableMonitoring = true;
-}
-#endif /* VBOX_WITH_RAW_MODE */
-
-
 /**
  * Execute state save operation.
  *
@@ -725,7 +646,7 @@ static DECLCALLBACK(int) selmR3Save(PVM pVM, PSSMHANDLE pSSM)
      */
     PSELM pSelm = &pVM->selm.s;
 
-    SSMR3PutBool(pSSM, pSelm->fDisableMonitoring);
+    SSMR3PutBool(pSSM, HMIsEnabled(pVM));
     SSMR3PutBool(pSSM, pSelm->fSyncTSSRing0Stack);
     SSMR3PutSel(pSSM, pSelm->aHyperSel[SELM_HYPER_SEL_CS]);
     SSMR3PutSel(pSSM, pSelm->aHyperSel[SELM_HYPER_SEL_DS]);
@@ -765,7 +686,8 @@ static DECLCALLBACK(int) selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
     SELMR3Reset(pVM);
 
     /* Get the monitoring flag. */
-    SSMR3GetBool(pSSM, &pVM->selm.s.fDisableMonitoring);
+    bool fIgnored;
+    SSMR3GetBool(pSSM, &fIgnored);
 
     /* Get the TSS state flag. */
     SSMR3GetBool(pSSM, &pVM->selm.s.fSyncTSSRing0Stack);
