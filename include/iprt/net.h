@@ -334,7 +334,8 @@ typedef RTNETIPV6 const *PCRTNETIPV6;
 
 /** The minimum IPv6 header length (in bytes).
  * Up to and including RTNETIPV6::ip6_dst. */
-#define RTNETIPV6_MIN_LEN   (40)
+#define RTNETIPV6_MIN_LEN                           (40)
+#define RTNETIPV6_ICMPV6_ND_WITH_LLA_OPT_MIN_LEN    (32)
 
 RTDECL(uint32_t) RTNetIPv6PseudoChecksum(PCRTNETIPV6 pIpHdr);
 RTDECL(uint32_t) RTNetIPv6PseudoChecksumEx(PCRTNETIPV6 pIpHdr, uint8_t bProtocol, uint16_t cbPkt);
@@ -748,6 +749,51 @@ typedef RTNETICMPV4 const *PCRTNETICMPV4;
 
 /** @todo add ICMPv6 when needed. */
 
+#define RTNETIPV6_PROT_ICMPV6       (58)
+#define RTNETIPV6_ICMPV6_CODE_0     (0)
+#define RTNETIPV6_ICMP_NS_TYPE      (135)
+#define RTNETIPV6_ICMP_NA_TYPE      (136)
+#define RTNETIPV6_ICMP_ND_SLLA_OPT  (1)
+#define RTNETIPV6_ICMP_ND_TLLA_OPT  (2)
+#define RTNETIPV6_ICMP_ND_LLA_LEN   (1)
+
+/** ICMPv6 ND Source Link Layer Address option */
+#pragma pack(1)
+typedef struct RTNETNDP_SLLA_OPT
+{
+    uint8_t type;
+    uint8_t len;
+    RTMAC slla;
+} RTNETNDP_SLLA_OPT;
+#pragma pack()
+
+AssertCompileSize(RTNETNDP_SLLA_OPT, 1+1+6);
+
+typedef RTNETNDP_SLLA_OPT *PRTNETNDP_SLLA_OPT;
+typedef RTNETNDP_SLLA_OPT const *PCRTNETNDP_SLLA_OPT;
+
+/** ICMPv6 ND Neighbor Sollicitation */
+#pragma pack(1)
+typedef struct RTNETNDP
+{
+    /** ICMPv6 type. */
+    uint8_t icmp6_type;
+    /** ICMPv6 code. */
+    uint8_t icmp6_code;
+    /** ICMPv6 checksum */
+    uint16_t icmp6_cksum;
+    /** reserved */
+    uint32_t reserved;
+    /** target address */
+    RTNETADDRIPV6 target_address;
+} RTNETNDP;
+#pragma pack()
+AssertCompileSize(RTNETNDP, 1+1+2+4+16);
+/** Pointer to a NDP ND packet. */
+typedef RTNETNDP *PRTNETNDP;
+/** Pointer to a const NDP NS packet. */
+typedef RTNETNDP const *PCRTNETNDP;
+
 
 /**
  * Ethernet ARP header.
@@ -814,9 +860,6 @@ AssertCompileSize(RTNETARPIPV4, 8+6+4+6+4);
 typedef RTNETARPIPV4 *PRTNETARPIPV4;
 /** Pointer to a const ethernet IPv4+MAC ARP request packet. */
 typedef RTNETARPIPV4 const *PCRTNETARPIPV4;
-
-
-/** @todo RTNETNDP (IPv6)*/
 
 
 /** @} */
