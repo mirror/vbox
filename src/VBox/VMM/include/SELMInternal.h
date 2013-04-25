@@ -99,7 +99,6 @@ typedef struct SELM
      * See SELM2VM(). */
     RTINT                   offVM;
 
-/** @todo #ifdef VBOX_WITH_RAW_MODE */
     /** Flat CS, DS, 64 bit mode CS, TSS & trap 8 TSS. */
     RTSEL                   aHyperSel[SELM_HYPER_SEL_MAX];
 
