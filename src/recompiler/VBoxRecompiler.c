@@ -2770,22 +2770,26 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     if (    pVM->rem.s.Env.exception_index >= 0
         &&  pVM->rem.s.Env.exception_index < 256)
     {
+        /* This cannot be a hardware-interrupt because exception_index < EXCP_INTERRUPT. */
         int rc;
 
         Log(("REMR3StateBack: Pending trap %x %d\n", pVM->rem.s.Env.exception_index, pVM->rem.s.Env.exception_is_int));
-        rc = TRPMAssertTrap(pVCpu, pVM->rem.s.Env.exception_index, (pVM->rem.s.Env.exception_is_int) ? TRPM_SOFTWARE_INT : TRPM_HARDWARE_INT);
+        TRPMEVENT enmType = pVM->rem.s.Env.exception_is_int ? TRPM_SOFTWARE_INT : TRPM_TRAP;
+        rc = TRPMAssertTrap(pVCpu, pVM->rem.s.Env.exception_index, enmType);
         AssertRC(rc);
-        switch (pVM->rem.s.Env.exception_index)
+        if (enmType == TRPM_TRAP)
         {
-            case X86_XCPT_PF:
-                TRPMSetFaultAddress(pVCpu, pCtx->cr2);
-                /* fallthru */
-            case X86_XCPT_TS: case X86_XCPT_NP: case X86_XCPT_SS: case X86_XCPT_GP:
-            case X86_XCPT_AC: case X86_XCPT_DF: /* 0 */
-                TRPMSetErrorCode(pVCpu, pVM->rem.s.Env.error_code);
-                break;
+            switch (pVM->rem.s.Env.exception_index)
+            {
+                case X86_XCPT_PF:
+                    TRPMSetFaultAddress(pVCpu, pCtx->cr2);
+                    /* fallthru */
+                case X86_XCPT_TS: case X86_XCPT_NP: case X86_XCPT_SS: case X86_XCPT_GP:
+                case X86_XCPT_AC: case X86_XCPT_DF: /* 0 */
+                    TRPMSetErrorCode(pVCpu, pVM->rem.s.Env.error_code);
+                    break;
+            }
         }
-
     }
 
     /*
