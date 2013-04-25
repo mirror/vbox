@@ -4627,7 +4627,6 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             {
                 Log(("IDT: Contributory #PF uCR2=%#RGv\n", pMixedCtx->cr2));
             }
-            else
 #endif
             if (   uExitVector == X86_XCPT_PF
                 && uIdtVector == X86_XCPT_PF)
