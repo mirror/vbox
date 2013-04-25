@@ -508,7 +508,6 @@ VMMDECL(void)       PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable);
 VMMR3DECL(int)      PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, uint32_t fFlags, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc);
 VMMR3DECL(int)      PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr);
 VMMR3DECL(int)      PGMR3FinalizeMappings(PVM pVM);
-VMMR3DECL(int)      PGMR3MappingsDisable(PVM pVM);
 VMMR3DECL(int)      PGMR3MappingsSize(PVM pVM, uint32_t *pcb);
 VMMR3DECL(int)      PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb);
 VMMR3DECL(int)      PGMR3MappingsUnfix(PVM pVM);

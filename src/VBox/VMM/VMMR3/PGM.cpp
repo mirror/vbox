@@ -1225,9 +1225,6 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     /*
      * Init the structure.
      */
-#ifdef PGM_WITHOUT_MAPPINGS
-    pVM->pgm.s.fMappingsDisabled = true;
-#endif
     pVM->pgm.s.offVM       = RT_OFFSETOF(VM, pgm.s);
     pVM->pgm.s.offVCpuPGM  = RT_OFFSETOF(VMCPU, pgm.s);
 
