@@ -1959,6 +1959,19 @@ typedef RTVFSSYMLINK                               *PRTVFSSYMLINK;
 /** A NIL VFS symbolic link handle. */
 #define NIL_RTVFSSYMLINK                            ((RTVFSSYMLINK)~(uintptr_t)0)
 
+/** Async I/O manager handle. */
+typedef struct RTAIOMGRINT                         *RTAIOMGR;
+/** Pointer to a async I/O manager handle. */
+typedef RTAIOMGR                                   *PRTAIOMGR;
+/** A NIL async I/O manager handle. */
+#define NIL_RTAIOMGR                                ((RTAIOMGR)~(uintptr_t)0)
+
+/** Async I/O manager file handle. */
+typedef struct RTAIOMGRFILEINT                     *RTAIOMGRFILE;
+/** Pointer to a async I/O manager file handle. */
+typedef RTAIOMGRFILE                               *PRTAIOMGRFILE;
+/** A NIL async I/O manager file handle. */
+#define NIL_RTAIOMGRFILE                            ((RTAIOMGRFILE)~(uintptr_t)0)
 
 /**
  * Handle type.
