@@ -54,10 +54,10 @@ static PVMMSWITCHERDEF g_apRawModeSwitchers[VMMSWITCHER_MAX] =
 # ifndef RT_ARCH_AMD64
     &vmmR3Switcher32BitTo32Bit_Def,
     &vmmR3Switcher32BitToPAE_Def,
-    &vmmR3Switcher32BitToAMD64_Def,
+    NULL,   //&vmmR3Switcher32BitToAMD64_Def,
     &vmmR3SwitcherPAETo32Bit_Def,
     &vmmR3SwitcherPAEToPAE_Def,
-    &vmmR3SwitcherPAEToAMD64_Def,
+    NULL,   //&vmmR3SwitcherPAEToAMD64_Def,
     NULL,   //&vmmR3SwitcherPAETo32Bit_Def,
 #  ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     &vmmR3SwitcherAMD64ToPAE_Def,
