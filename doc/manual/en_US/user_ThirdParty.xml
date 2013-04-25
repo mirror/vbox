@@ -127,6 +127,13 @@
       </listitem>
 
       <listitem>
+        <para>VirtualBox may contain iPXE which is governed by the license
+          in <xref linkend="licGPL" xrefstyle="template: %n" /> and</para>
+        <para>Copyright (C) Michael Brown &lt;mbrown@fensystems.co.uk&gt;
+          and others.</para>
+      </listitem>
+
+      <listitem>
         <para>VirtualBox contains code from Wine which is governed by the
         license in <xref linkend="licLGPL" xrefstyle="template: %n" />
         and</para>
