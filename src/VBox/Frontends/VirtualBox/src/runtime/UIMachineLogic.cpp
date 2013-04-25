@@ -296,6 +296,59 @@ UIMachineView* UIMachineLogic::dockPreviewView() const
 }
 #endif /* Q_WS_MAC */
 
+void UIMachineLogic::saveState()
+{
+    /* Prevent auto-closure: */
+    setPreventAutoClose(true);
+
+    /* Was the step successful? */
+    bool fSuccess = true;
+    /* If VM is not paused, we should pause it: */
+    bool fWasPaused = uisession()->isPaused();
+    if (fSuccess && !fWasPaused)
+        fSuccess = uisession()->pause();
+    /* Save-state: */
+    if (fSuccess)
+        fSuccess = uisession()->saveState();
+
+    /* Allow auto-closure: */
+    setPreventAutoClose(false);
+
+    /* Manually close Runtime UI: */
+    if (fSuccess)
+        uisession()->closeRuntimeUI();
+}
+
+void UIMachineLogic::shutdown()
+{
+    /* Warn the user about ACPI is not available if so: */
+    CConsole console = session().GetConsole();
+    if (!console.GetGuestEnteredACPIMode())
+        return msgCenter().cannotSendACPIToMachine();
+
+    /* Shutdown: */
+    uisession()->shutdown();
+}
+
+void UIMachineLogic::powerOff(bool fDiscardingState)
+{
+    /* Prevent auto-closure: */
+    setPreventAutoClose(true);
+
+    /* Was the step successful? */
+    bool fSuccess = true;
+    /* Power-off: */
+    bool fServerCrashed = false;
+    fSuccess = uisession()->powerOff(fDiscardingState, fServerCrashed) || fServerCrashed;
+
+    /* Allow auto-closure: */
+    setPreventAutoClose(false);
+
+    /* Manually close Runtime UI: */
+    if (fSuccess)
+        uisession()->closeRuntimeUI();
+}
+
 void UIMachineLogic::sltMachineStateChanged()
 {
     /* Get machine state: */
@@ -304,38 +357,21 @@ void UIMachineLogic::sltMachineStateChanged()
     /* Update action groups: */
     m_pRunningActions->setEnabled(uisession()->isRunning());
     m_pRunningOrPausedActions->setEnabled(uisession()->isRunning() || uisession()->isPaused());
+    m_pRunningOrPausedOrStackedActions->setEnabled(uisession()->isRunning() || uisession()->isPaused() || uisession()->isStuck());
 
     switch (state)
     {
-        case KMachineState_Stuck: // TODO: Test it!
+        case KMachineState_Stuck:
         {
-            /* Prevent machine view from resizing: */
+            /* Prevent machine-view from resizing: */
             uisession()->setGuestResizeIgnored(true);
-
-            /* Get variables: */
-            CConsole console = session().GetConsole();
-            CMachine machine = console.GetMachine();
-            QString strMachineName = machine.GetName();
-            QString strLogFolder = machine.GetLogFolder();
-
+            /* Get log-folder: */
+            QString strLogFolder = session().GetMachine().GetLogFolder();
             /* Take the screenshot for debugging purposes: */
             takeScreenshot(strLogFolder + "/VBox.png", "png");
-
             /* Warn the user about GURU meditation: */
             if (msgCenter().remindAboutGuruMeditation(QDir::toNativeSeparators(strLogFolder)))
-            {
-                /* Prepare machine power down progress: */
-                CProgress progress = console.PowerDown();
-                if (console.isOk())
-                {
-                    /* Show machine power down progress: */
-                    msgCenter().showModalProgressDialog(progress, strMachineName, ":/progress_poweroff_90px.png");
-                    if (!progress.isOk() || progress.GetResultCode() != 0)
-                        msgCenter().cannotPowerDownMachine(progress, strMachineName);
-                }
-                else
-                    msgCenter().cannotPowerDownMachine(console);
-            }
+                powerOff(session().GetMachine().GetSnapshotCount() > 0);
             break;
         }
         case KMachineState_Paused:
@@ -479,6 +515,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pMouseHandler(0)
     , m_pRunningActions(0)
     , m_pRunningOrPausedActions(0)
+    , m_pRunningOrPausedOrStackedActions(0)
     , m_pSharedClipboardActions(0)
     , m_pDragAndDropActions(0)
     , m_fIsWindowsCreated(false)
@@ -630,6 +667,12 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions = new QActionGroup(this);
     m_pRunningOrPausedActions->setExclusive(false);
 
+    /* Create group for all actions that are enabled when the VM is running or paused or stucked.
+     * Note that only actions whose enabled state depends exclusively on the
+     * execution state of the VM are added to this group. */
+    m_pRunningOrPausedOrStackedActions = new QActionGroup(this);
+    m_pRunningOrPausedOrStackedActions->setExclusive(false);
+
     /* Move actions into running actions group: */
     m_pRunningActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TypeCAD));
 #ifdef Q_WS_X11
@@ -644,6 +687,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow));
 
     /* Move actions into running-n-paused actions group: */
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_Save));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SettingsDialog));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TakeSnapshot));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TakeScreenshot));
@@ -662,6 +706,9 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_InstallGuestTools));
+
+    /* Move actions into running-n-paused-n-stucked actions group: */
+    m_pRunningOrPausedOrStackedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_PowerOff));
 }
 
 void UIMachineLogic::prepareActionConnections()
@@ -687,8 +734,12 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltPause(bool)));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_Reset), SIGNAL(triggered()),
             this, SLOT(sltReset()));
+    connect(gActionPool->action(UIActionIndexRuntime_Simple_Save), SIGNAL(triggered()),
+            this, SLOT(sltSaveState()));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_Shutdown), SIGNAL(triggered()),
-            this, SLOT(sltACPIShutdown()));
+            this, SLOT(sltShutdown()));
+    connect(gActionPool->action(UIActionIndexRuntime_Simple_PowerOff), SIGNAL(triggered()),
+            this, SLOT(sltPowerOff()));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_Close), SIGNAL(triggered()),
             this, SLOT(sltClose()));
 
@@ -1150,19 +1201,40 @@ void UIMachineLogic::sltPause(bool fOn)
     uisession()->setPause(fOn);
 }
 
-void UIMachineLogic::sltACPIShutdown()
+void UIMachineLogic::sltSaveState()
 {
-    /* Get console: */
-    CConsole console = session().GetConsole();
+    /* Make sure machine is in one of the allowed states: */
+    if (!uisession()->isRunning() && !uisession()->isPaused())
+    {
+        AssertMsgFailed(("Invalid machine-state. Action should be prohibited!"));
+        return;
+    }
 
-    /* Warn the user about ACPI is not available if so: */
-    if (!console.GetGuestEnteredACPIMode())
-        return msgCenter().cannotSendACPIToMachine();
+    saveState();
+}
 
-    /* Send ACPI shutdown signal, warn if failed: */
-    console.PowerButton();
-    if (!console.isOk())
-        msgCenter().cannotACPIShutdownMachine(console);
+void UIMachineLogic::sltShutdown()
+{
+    /* Make sure machine is in one of the allowed states: */
+    if (!uisession()->isRunning())
+    {
+        AssertMsgFailed(("Invalid machine-state. Action should be prohibited!"));
+        return;
+    }
+
+    shutdown();
+}
+
+void UIMachineLogic::sltPowerOff()
+{
+    /* Make sure machine is in one of the allowed states: */
+    if (!uisession()->isRunning() && !uisession()->isPaused() && !uisession()->isStuck())
+    {
+        AssertMsgFailed(("Invalid machine-state. Action should be prohibited!"));
+        return;
+    }
+
+    powerOff(session().GetMachine().GetSnapshotCount() > 0);
 }
 
 void UIMachineLogic::sltClose()

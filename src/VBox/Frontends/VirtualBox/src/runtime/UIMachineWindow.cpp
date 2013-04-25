@@ -243,113 +243,112 @@ bool UIMachineWindow::x11Event(XEvent *pEvent)
 
 void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
 {
-    /* Always ignore close-event: */
+    /* Always ignore close-event first: */
     pEvent->ignore();
 
-    /* Should we close Runtime UI? */
-    bool fCloseRuntimeUI = false;
-
     /* Make sure machine is in one of the allowed states: */
-    KMachineState machineState = uisession()->machineState();
-    if (   machineState != KMachineState_Running
-        && machineState != KMachineState_Paused
-        && machineState != KMachineState_Stuck
-        && machineState != KMachineState_LiveSnapshotting
-        && machineState != KMachineState_Teleporting
-        && machineState != KMachineState_TeleportingPausedVM)
+    if (!uisession()->isRunning() && !uisession()->isPaused() && !uisession()->isStuck())
         return;
 
-    /* Get the machine: */
-    CMachine machineCopy = machine();
-
     /* If there is a close hook script defined: */
-    const QString& strScript = machineCopy.GetExtraData(GUI_CloseActionHook);
+    QString strScript = machine().GetExtraData(GUI_CloseActionHook);
     if (!strScript.isEmpty())
     {
         /* Execute asynchronously and leave: */
-        QProcess::startDetached(strScript, QStringList() << machineCopy.GetId());
+        QProcess::startDetached(strScript, QStringList() << machine().GetId());
         return;
     }
 
-    /* Prepare close-dialog: */
-    QWidget *pParentDlg = windowManager().realParentWindow(this);
-    QPointer<UIVMCloseDialog> pCloseDlg = new UIVMCloseDialog(pParentDlg, machineCopy, session());
-    windowManager().registerNewParent(pCloseDlg, pParentDlg);
+    /* Choose the close action: */
+    UIVMCloseDialog::ResultCode closeAction = UIVMCloseDialog::ResultCode_Cancel;
 
-    /* Makes sure the dialog is valid: */
-    if (!pCloseDlg->isValid())
+    /* If there IS default close-action defined: */
+    QString strDefaultAction = machine().GetExtraData(GUI_DefaultCloseAction);
+    if (!strDefaultAction.isEmpty())
     {
-        /* Destroy and leave: */
-        delete pCloseDlg;
-        return;
+        /* Parse the close-action which was defined: */
+        closeAction = UIVMCloseDialog::parseResultCode(strDefaultAction);
+        /* If VM is stuck, and the default close-action is not 'power-off',
+         * we should ask the user about what to do: */
+        if (uisession()->isStuck() &&
+            closeAction != UIVMCloseDialog::ResultCode_PowerOff)
+            closeAction = UIVMCloseDialog::ResultCode_Cancel;
+        /* If the default-action is 'power-off',
+         * we should check if its possible to discard machine-state: */
+        if (closeAction == UIVMCloseDialog::ResultCode_PowerOff &&
+            machine().GetSnapshotCount() > 0)
+            closeAction = UIVMCloseDialog::ResultCode_PowerOff_With_Discarding;
     }
 
-    /* This flag will keep the status of every further logical operation: */
-    bool fSuccess = true;
-    /* This flag determines if VM was paused before we called for close-event: */
-    bool fWasPaused = uisession()->isPaused();
-
-    if (fSuccess)
+    /* If the close-action still undefined: */
+    if (closeAction == UIVMCloseDialog::ResultCode_Cancel)
     {
-        /* Pause VM if necessary: */
-        if (!fWasPaused)
-            fSuccess = uisession()->pause();
-    }
+        /* Prepare close-dialog: */
+        QWidget *pParentDlg = windowManager().realParentWindow(this);
+        QPointer<UIVMCloseDialog> pCloseDlg = new UIVMCloseDialog(pParentDlg, machine(), session());
 
-    if (fSuccess)
-    {
-        /* Preventing auto-closure: */
-        machineLogic()->setPreventAutoClose(true);
-
-        /* Show the close-dialog: */
-        UIVMCloseDialog::ResultCode dialogResult = (UIVMCloseDialog::ResultCode)pCloseDlg->exec();
-
-        /* Destroy the dialog early: */
-        delete pCloseDlg;
-
-        /* Was the dialog accepted? */
-        if (dialogResult != UIVMCloseDialog::ResultCode_Cancel)
+        /* Make sure close-dialog is valid: */
+        if (pCloseDlg->isValid())
         {
-            switch (dialogResult)
+            /* If VM is not paused and not stuck, we should pause it first: */
+            bool fWasPaused = uisession()->isPaused() || uisession()->isStuck();
+            if (fWasPaused || uisession()->pause())
             {
-                case UIVMCloseDialog::ResultCode_Save:
+                /* Show close-dialog to let the user make the choice: */
+                windowManager().registerNewParent(pCloseDlg, pParentDlg);
+                closeAction = (UIVMCloseDialog::ResultCode)pCloseDlg->exec();
+
+                /* Make sure the dialog still valid: */
+                if (!pCloseDlg)
+                    return;
+
+                /* If VM was not paused before but paused now,
+                 * we should resume it if user canceled dialog or chosen shutdown: */
+                if (!fWasPaused && uisession()->isPaused() &&
+                    (closeAction == UIVMCloseDialog::ResultCode_Cancel ||
+                     closeAction == UIVMCloseDialog::ResultCode_Shutdown))
                 {
-                    fSuccess = uisession()->saveState();
-                    fCloseRuntimeUI = fSuccess;
-                    break;
+                    /* If we unable to resume VM, cancel closing: */
+                    if (!uisession()->unpause())
+                        closeAction = UIVMCloseDialog::ResultCode_Cancel;
                 }
-                case UIVMCloseDialog::ResultCode_Shutdown:
-                {
-                    fSuccess = uisession()->shutDown();
-                    if (fSuccess)
-                        fWasPaused = true;
-                    break;
-                }
-                case UIVMCloseDialog::ResultCode_PowerOff:
-                case UIVMCloseDialog::ResultCode_PowerOff_With_Discarding:
-                {
-                    bool fServerCrashed = false;
-                    fSuccess = uisession()->powerOff(dialogResult == UIVMCloseDialog::ResultCode_PowerOff_With_Discarding,
-                                                     fServerCrashed);
-                    fCloseRuntimeUI = fSuccess || fServerCrashed;
-                    break;
-                }
-                default:
-                    break;
             }
         }
+        else
+        {
+            /* Else user misconfigured .vbox file, 'power-off' will be the action: */
+            closeAction = UIVMCloseDialog::ResultCode_PowerOff;
+        }
 
-        /* Restore the running state if needed: */
-        if (fSuccess && !fCloseRuntimeUI && !fWasPaused && uisession()->machineState() == KMachineState_Paused)
-            uisession()->unpause();
-
-        /* Allowing auto-closure: */
-        machineLogic()->setPreventAutoClose(false);
+        /* Cleanup close-dialog: */
+        delete pCloseDlg;
     }
 
-    /* We've received a request to close Runtime UI: */
-    if (fCloseRuntimeUI)
-        uisession()->closeRuntimeUI();
+    /* Depending on chosen result: */
+    switch (closeAction)
+    {
+        case UIVMCloseDialog::ResultCode_Save:
+        {
+            /* Save VM state: */
+            machineLogic()->saveState();
+            break;
+        }
+        case UIVMCloseDialog::ResultCode_Shutdown:
+        {
+            /* Shutdown VM: */
+            machineLogic()->shutdown();
+            break;
+        }
+        case UIVMCloseDialog::ResultCode_PowerOff:
+        case UIVMCloseDialog::ResultCode_PowerOff_With_Discarding:
+        {
+            /* Power VM off: */
+            machineLogic()->powerOff(closeAction == UIVMCloseDialog::ResultCode_PowerOff_With_Discarding);
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 void UIMachineWindow::prepareSessionConnections()

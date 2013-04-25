@@ -207,7 +207,9 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu)
     pMenu->addSeparator();
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Pause));
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_Reset));
+    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_Save));
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_Shutdown));
+    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_PowerOff));
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
 #endif /* !Q_WS_MAC */

@@ -244,5 +244,7 @@
         <file alias="close_16px.png">images/close_16px.png</file>
         <file alias="ok_16px.png">images/ok_16px.png</file>
         <file alias="cancel_16px.png">images/cancel_16px.png</file>
+        <file alias="save_state_16px.png">images/save_state_16px.png</file>
+        <file alias="save_state_disabled_16px.png">images/save_state_disabled_16px.png</file>
     </qresource>
 </RCC>

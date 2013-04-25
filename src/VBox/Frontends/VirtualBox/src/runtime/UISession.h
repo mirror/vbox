@@ -89,7 +89,7 @@ public:
     /* API: Runtime UI stuff: */
     void powerUp();
     bool saveState();
-    bool shutDown();
+    bool shutdown();
     bool powerOff(bool fIncludingDiscard, bool &fServerCrashed);
     void closeRuntimeUI();
 
@@ -112,6 +112,7 @@ public:
     bool isRunning() const { return machineState() == KMachineState_Running ||
                                     machineState() == KMachineState_Teleporting ||
                                     machineState() == KMachineState_LiveSnapshotting; }
+    bool isStuck() const { return machineState() == KMachineState_Stuck; }
     bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
     bool isIgnoreRuntimeMediumsChanging() const { return m_fIsIgnoreRuntimeMediumsChanging; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }

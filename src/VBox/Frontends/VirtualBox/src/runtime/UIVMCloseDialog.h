@@ -56,6 +56,9 @@ public:
     /* API: Validation stuff: */
     bool isValid() const { return m_fValid; }
 
+    /* Static API: Parse string containing result-code: */
+    static ResultCode parseResultCode(const QString &strCloseAction);
+
 private slots:
 
     /* Handler: Update stuff: */
