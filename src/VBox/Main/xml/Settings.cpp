@@ -5081,7 +5081,8 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     if (m->sv < SettingsVersion_v1_12)
     {
         // VirtualBox 4.1 adds PCI passthrough.
-        if (hardwareMachine.pciAttachments.size())
+        if (   hardwareMachine.pciAttachments.size()
+            || hardwareMachine.fVideoCaptureEnabled)
             m->sv = SettingsVersion_v1_12;
     }
 
