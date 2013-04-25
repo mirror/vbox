@@ -555,11 +555,10 @@ VBOX_WITH_TESTCASES = 1
 VBOX_WITH_VDITOOL =
 # Enable this to build vbox-img even if VBOX_WITH_TESTCASES is disabled
 VBOX_WITH_VBOX_IMG =
-# Enables the ffmpeg module for recording test runs.
-# TODO: Enable this for normal build server builds?
-#if1of ($(KBUILD_TARGET), linux)
-# VBOX_WITH_FFMPEG = 1
-#endif
+# Enables the VPX module for VM video capturing
+if1of ($(KBUILD_TARGET), linux)
+ VBOX_WITH_VPX = 1
+endif
 # Enable shared folders
 VBOX_WITH_SHARED_FOLDERS = 1
 # Enable shared clipboard
