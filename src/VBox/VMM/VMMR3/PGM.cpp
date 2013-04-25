@@ -81,6 +81,12 @@
  * code to do the work. All memory use for those page tables is located below
  * 4GB (this includes page tables for guest context mappings).
  *
+ * Note! The intermediate memory context is also used for 64-bit guest
+ *       execution on 32-bit hosts.  Because we need to load 64-bit registers
+ *       prior to switching to guest context, we need to be in 64-bit mode
+ *       first.  So, HM has some 64-bit worker routines in VMMRC.rc that get
+ *       invoked via the special world switcher code in LegacyToAMD64.asm.
+ *
  *
  * @subsection      subsec_pgm_int_gc       Guest Context Mappings
  *

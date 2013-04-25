@@ -1,4 +1,8 @@
-; VMM - World Switchers, 32Bit to AMD64.
+; $Id$
+;; @file
+; VMM - World Switchers, 32Bit to AMD64 intermediate context.
+;
+; This is used for running 64-bit guest on 32-bit hosts, not normal raw-mode.
 ;
 
 ;
