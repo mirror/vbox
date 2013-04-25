@@ -95,9 +95,6 @@ typedef struct TRPM
      * See TRPM2TRPMCPU(). */
     RTINT                   offTRPMCPU;
 
-    /** IDT monitoring and sync flag (HWACC). */
-    bool                    fDisableMonitoring; /** @todo r=bird: bool and 7 byte achPadding1. */
-
     /** Whether monitoring of the guest IDT is enabled or not.
      *
      * This configuration option is provided for speeding up guest like Solaris
@@ -113,7 +110,7 @@ typedef struct TRPM
     bool                    fSafeToDropGuestIDTMonitoring;
 
     /** Padding to get the IDTs at a 16 byte alignment. */
-    uint8_t                 abPadding1[6];
+    uint8_t                 abPadding1[7];
     /** IDTs. Aligned at 16 byte offset for speed. */
     VBOXIDTE                aIdt[256];
 
@@ -158,8 +155,6 @@ typedef struct TRPM
     /** Statistics for interrupt handlers (allocated on the hypervisor heap) - R3
      * pointer. */
     R3PTRTYPE(PSTAMCOUNTER) paStatForwardedIRQR3;
-    /** Statistics for interrupt handlers - R0 pointer. */
-    R0PTRTYPE(PSTAMCOUNTER) paStatForwardedIRQR0;
     /** Statistics for interrupt handlers - RC pointer. */
     RCPTRTYPE(PSTAMCOUNTER) paStatForwardedIRQRC;
 
@@ -167,8 +162,6 @@ typedef struct TRPM
     RCPTRTYPE(PSTAMCOUNTER) paStatHostIrqRC;
     /** Host interrupt statistics (allocated on the hypervisor heap) - R3 ptr. */
     R3PTRTYPE(PSTAMCOUNTER) paStatHostIrqR3;
-    /** Host interrupt statistics (allocated on the hypervisor heap) - R0 ptr. */
-    R0PTRTYPE(PSTAMCOUNTER) paStatHostIrqR0;
 #endif
 } TRPM;
 
@@ -265,16 +258,7 @@ VMMDECL(int) trpmClearGuestTrapHandler(PVM pVM, unsigned iTrap);
 
 
 #ifdef IN_RING3
-
-/**
- * Clear passthrough interrupt gate handler (reset to default handler)
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   iTrap       Trap/interrupt gate number.
- */
-VMMR3DECL(int) trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap);
-
+int trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap);
 #endif
 
 

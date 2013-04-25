@@ -500,10 +500,7 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Process high priority pre-execution raw-mode FFs.
          */
 #ifdef VBOX_WITH_RAW_MODE
-        /** @todo change this FF hack into an assertion, they simply SHALL NOT be set in
-         *        HM mode. */
         Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
-        VMCPU_FF_CLEAR(pVCpu, (VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS)); /* not relevant in HM mode; shouldn't be set really. */
 #endif
         if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
