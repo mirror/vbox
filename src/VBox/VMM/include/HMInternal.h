@@ -250,13 +250,13 @@ typedef struct
 typedef HMTPRPATCH *PHMTPRPATCH;
 
 /**
- * Switcher function, HC to RC.
+ * Switcher function, HC to the special 64-bit RC.
  *
  * @param   pVM             Pointer to the VM.
- * @param   uOffsetVMCPU    VMCPU offset from pVM
+ * @param   offCpumVCpu     Offset from pVM->cpum to pVM->aCpus[idCpu].cpum.
  * @returns Return code indicating the action to take.
  */
-typedef DECLCALLBACK (int) FNHMSWITCHERHC(PVM pVM, uint32_t uOffsetVMCPU);
+typedef DECLCALLBACK(int) FNHMSWITCHERHC(PVM pVM, uint32_t offCpumVCpu);
 /** Pointer to switcher function. */
 typedef FNHMSWITCHERHC *PFNHMSWITCHERHC;
 
@@ -314,7 +314,7 @@ typedef struct HM
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     /** 32 to 64 bits switcher entrypoint. */
-    R0PTRTYPE(PFNHMSWITCHERHC) pfnHost32ToGuest64R0;
+    R0PTRTYPE(PFNHMSWITCHERHC)  pfnHost32ToGuest64R0;
 
     /* AMD-V 64 bits vmrun handler */
     RTRCPTR                     pfnSVMGCVMRun64;
