@@ -3406,7 +3406,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             }
         }
 #endif
-        rc =  hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_CS, VMX_VMCS32_GUEST_CS_LIMIT, VMX_VMCS_GUEST_CS_BASE,
+        rc  = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_CS, VMX_VMCS32_GUEST_CS_LIMIT, VMX_VMCS_GUEST_CS_BASE,
                                      VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS, &pMixedCtx->cs, pMixedCtx);
         rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_SS, VMX_VMCS32_GUEST_SS_LIMIT, VMX_VMCS_GUEST_SS_BASE,
                                      VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS, &pMixedCtx->ss, pMixedCtx);
@@ -4617,11 +4617,11 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         } VMXREFLECTXCPT;
 
         /* See Intel spec. 30.7.1.1 "Reflecting Exceptions to Guest Software". */
-        VMXREFLECTXCPT enmReflect     = VMXREFLECTXCPT_NONE;
+        VMXREFLECTXCPT enmReflect = VMXREFLECTXCPT_NONE;
         if (uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT)
         {
             enmReflect = VMXREFLECTXCPT_XCPT;
-#if 0
+#ifdef VBOX_STRICT
             if (   hmR0VmxIsContributoryXcpt(uIdtVector)
                 && uExitVector == X86_XCPT_PF)
             {
@@ -6211,7 +6211,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
     Assert(!(u32IntrInfo & 0x7ffff000));                            /* Bits 30:12 MBZ. */
 
     /* Inject. */
-    rc  = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, u32IntrInfo);
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, u32IntrInfo);
     if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntrInfo))
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE, u32ErrCode);
     rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH, cbInstr);
@@ -8280,7 +8280,7 @@ static DECLCALLBACK(int) hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCt
     rc = VMXReadVmcs64(VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL, &GCPhys);
 
 #if 0
-    rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);     /** @todo Can we do better?  */
+    rc |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);     /** @todo Can we do better?  */
 #else
     /* Aggressive state sync. for now. */
     rc |= hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
