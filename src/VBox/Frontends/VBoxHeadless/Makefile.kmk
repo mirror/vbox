@@ -19,9 +19,6 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
-ifdef VBOX_WITH_FFMPEG
- include $(PATH_SUB_CURRENT)/VideoCapture/Makefile.kmk
-endif
 
 #
 # Targets.
