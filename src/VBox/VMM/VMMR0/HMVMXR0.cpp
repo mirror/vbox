@@ -65,9 +65,7 @@
 #define HMVMX_FLUSH_TAGGED_TLB_VPID              2
 #define HMVMX_FLUSH_TAGGED_TLB_NONE              3
 
-/**
- * Updated-guest-state flags.
- */
+/** Updated-guest-state flags. */
 #define HMVMX_UPDATED_GUEST_RIP                   RT_BIT(0)
 #define HMVMX_UPDATED_GUEST_RSP                   RT_BIT(1)
 #define HMVMX_UPDATED_GUEST_RFLAGS                RT_BIT(2)
@@ -3142,6 +3140,8 @@ static int hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /* Validate segment registers. See Intel spec. 26.3.1.2 "Checks on Guest Segment Registers". */
+    Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0);
+    Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS);
     if (   !pVM->hm.s.vmx.fUnrestrictedGuest
         && (   !CPUMIsGuestInRealModeEx(pCtx)
             && !CPUMIsGuestInV86ModeEx(pCtx)))
