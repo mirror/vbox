@@ -40,6 +40,8 @@
 #include <iprt/string.h>
 #include <iprt/ctype.h>
 
+#include "HMInternal.h" /* for VBOX_ENABLE_64_BITS_GUESTS */
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
