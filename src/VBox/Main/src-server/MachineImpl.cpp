@@ -8774,7 +8774,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mAccelerate2DVideoEnabled = data.fAccelerate2DVideo;
         mHWData->mVideoCaptureWidth = data.ulVideoCaptureHorzRes;
         mHWData->mVideoCaptureHeight = data.ulVideoCaptureVertRes;
-        mHWData->mVideoCaptureEnabled = false; /* @todo r=klaus restore to data.fVideoCaptureEnabled */
+        mHWData->mVideoCaptureEnabled = data.fVideoCaptureEnabled;
         mHWData->mVideoCaptureFile = data.strVideoCaptureFile;
         mHWData->mFirmwareType = data.firmwareType;
         mHWData->mPointingHIDType = data.pointingHIDType;

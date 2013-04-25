@@ -367,6 +367,12 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--autostop-type disabled|savestate|poweroff|\n"
                      "                                             acpishutdown]\n"
 #endif
+#ifdef VBOX_WITH_VPX
+                     "                            [--vcpenabled on|off]\n"
+                     "                            [--vcpfile <filename>]\n"
+                     "                            [--vcpwidth <width>]\n"
+                     "                            [--vcpheight <height>]\n"
+#endif
                      "                            [--defaultfrontend default|<name]\n"
                      "\n");
     }

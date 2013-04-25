@@ -495,13 +495,13 @@ HRESULT Display::init(Console *aParent)
         mParent->machine()->COMGETTER(VideoCaptureHeight)(&ulVideoCaptureVertRes);
         BSTR strVideoCaptureFile;
         mParent->machine()->COMGETTER(VideoCaptureFile)(&strVideoCaptureFile);
-        LogFlow(("VidoeRecording VPX enabled\n"));
         if (VideoRecContextInit(mpVideoRecContext, strVideoCaptureFile,
                                 ulVideoCaptureHorzRes, ulVideoCaptureVertRes))
         {
-            LogFlow(("Failed to initialize video recording context\n"));
+            LogFlow(("Failed to initialize video recording context!\n"));
             return E_FAIL;
         }
+        LogFlow(("Vidoe recording VPX enabled!\n"));
     }
 #endif
 
