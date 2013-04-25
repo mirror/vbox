@@ -188,7 +188,6 @@ VMMDECL(int) SELMToFlatEx(PVMCPU pVCpu, DISSELREG SelReg, PCPUMCTXCORE pCtxCore,
         return VINF_SUCCESS;
     }
 
-
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
     if (!CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
         CPUMGuestLazyLoadHiddenSelectorReg(pVCpu, pSReg);
