@@ -1035,7 +1035,7 @@ void Display::getFramebufferDimensions(int32_t *px1, int32_t *py1,
         return;
     /* If VBVA is not in use then this flag will not be set and this
      * will still work as it should. */
-    if (!(maFramebuffers[0].fDisabled))
+    if (!maFramebuffers[0].fDisabled)
     {
         x1 = (int32_t)maFramebuffers[0].xOrigin;
         y1 = (int32_t)maFramebuffers[0].yOrigin;
@@ -1044,7 +1044,7 @@ void Display::getFramebufferDimensions(int32_t *px1, int32_t *py1,
     }
     for (unsigned i = 1; i < mcMonitors; ++i)
     {
-        if (!(maFramebuffers[i].fDisabled))
+        if (!maFramebuffers[i].fDisabled)
         {
             x1 = RT_MIN(x1, maFramebuffers[i].xOrigin);
             y1 = RT_MIN(y1, maFramebuffers[i].yOrigin);
@@ -2679,7 +2679,7 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, 
                  * it to update. And for default format, render the guest VRAM to framebuffer.
                  */
                 if (   pFBInfo->fDefaultFormat
-                    && !(pFBInfo->fDisabled))
+                    && !pFBInfo->fDisabled)
                 {
                     address = NULL;
                     HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
@@ -2808,7 +2808,7 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpda
         else
         {
             if (   !pFBInfo->pFramebuffer.isNull()
-                && !(pFBInfo->fDisabled)
+                && !pFBInfo->fDisabled
                 && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
             {
                 /* Render complete VRAM screen to the framebuffer.
@@ -3314,7 +3314,8 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     }
 
 #ifdef VBOX_WITH_VPX
-    if (VideoRecIsEnabled(pDisplay->mpVideoRecContext))
+    if (   pDisplay->mpVideoRecContext
+        && VideoRecIsEnabled(pDisplay->mpVideoRecContext))
     {
         uint32_t u32VideoRecImgFormat = VPX_IMG_FMT_NONE;
         ULONG ulGuestHeight = 0;
@@ -3323,8 +3324,8 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         int rc;
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
 
-        if (    !pFBInfo->pFramebuffer.isNull()
-            && !(pFBInfo->fDisabled)
+        if (   !pFBInfo->pFramebuffer.isNull()
+            && !pFBInfo->fDisabled
             && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
         {
             if (pFBInfo->fVBVAEnabled && pFBInfo->pu8FramebufferVRAM)
@@ -3910,7 +3911,7 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
                 pDrv->pUpPort->pfnUpdateDisplayRect (pDrv->pUpPort, pCmd->x, pCmd->y, pCmd->w, pCmd->h);
             }
             else if (   !pFBInfo->pFramebuffer.isNull()
-                     && !(pFBInfo->fDisabled))
+                     && !pFBInfo->fDisabled)
             {
                 /* Render VRAM content to the framebuffer. */
                 BYTE *address = NULL;
