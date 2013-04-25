@@ -5861,7 +5861,7 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName, IN_BSTR aValue,
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
 #else // VBOX_WITH_GUEST_PROPS
-    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgStrNotEmptyOrNull1(aName, 0x80face08);
     CheckComArgMaybeNull1(aFlags, 0x80face03);
     CheckComArgMaybeNull1(aValue, 0x80face04);
 
