@@ -53,7 +53,8 @@ BITS 32
 ;;
 ; The C interface.
 ; @param    [esp + 04h]  Param 1 - VM handle
-; @param    [esp + 08h]  Param 2 - VMCPU offset
+; @param    [esp + 08h]  Param 2 - Offset from VM::CPUM to the CPUMCPU
+;                                  structure for the calling EMT.
 ;
 BEGINPROC vmmR0ToRawMode
 %ifdef DEBUG_STUFF
@@ -71,7 +72,7 @@ BEGINPROC vmmR0ToRawMode
 %endif
 
     push    ebp
-    mov     ebp, [esp + 12]             ; VMCPU offset
+    mov     ebp, [esp + 12]             ; CPUMCPU offset
 
     ; turn off interrupts
     pushf
@@ -132,7 +133,7 @@ ENDPROC vmmR0ToRawMode
 ;
 ; INPUT:
 ;       - edx       virtual address of CPUM structure (valid in host context)
-;       - ebp       offset of the CPUMCPU structure
+;       - ebp       offset of the CPUMCPU structure relative to CPUM.
 ;
 ; USES/DESTROYS:
 ;       - eax, ecx, edx, esi
