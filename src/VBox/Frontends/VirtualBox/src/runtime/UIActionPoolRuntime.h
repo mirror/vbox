@@ -39,7 +39,9 @@ enum UIActionIndexRuntime
 #endif /* Q_WS_X11 */
     UIActionIndexRuntime_Toggle_Pause,
     UIActionIndexRuntime_Simple_Reset,
+    UIActionIndexRuntime_Simple_Save,
     UIActionIndexRuntime_Simple_Shutdown,
+    UIActionIndexRuntime_Simple_PowerOff,
     UIActionIndexRuntime_Simple_Close,
 
     /* 'View' menu actions: */

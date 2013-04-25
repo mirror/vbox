@@ -337,14 +337,8 @@ bool UISession::saveState()
     return true;
 }
 
-bool UISession::shutDown()
+bool UISession::shutdown()
 {
-    /* Resume VM to let it grab the ACPI shutdown signal: */
-    if (!unpause())
-    {
-        /* Failed in console: */
-        return false;
-    }
     /* Send ACPI shutdown signal if possible: */
     CConsole console = m_session.GetConsole();
     console.PowerButton();
@@ -368,7 +362,7 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
     {
         /* Show the power-off progress: */
         msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_poweroff_90px.png");
-        if (progress.GetResultCode() == 0)
+        if (progress.isOk() && progress.GetResultCode() == 0)
         {
             /* Discard the current state if requested: */
             if (fIncludingDiscard)

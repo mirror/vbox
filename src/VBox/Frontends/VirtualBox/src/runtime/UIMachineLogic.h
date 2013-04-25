@@ -88,6 +88,11 @@ public:
     UIMachineView* dockPreviewView() const;
 #endif /* Q_WS_MAC */
 
+    /* API: Close actions: */
+    void saveState();
+    void shutdown();
+    void powerOff(bool fDiscardingState);
+
 protected slots:
 
     /* Console callback handlers: */
@@ -174,7 +179,9 @@ private slots:
     void sltShowInformationDialog();
     void sltReset();
     void sltPause(bool fOn);
-    void sltACPIShutdown();
+    void sltSaveState();
+    void sltShutdown();
+    void sltPowerOff();
     void sltClose();
 
     /* "Device" menu functionality: */
@@ -223,6 +230,7 @@ private:
 
     QActionGroup *m_pRunningActions;
     QActionGroup *m_pRunningOrPausedActions;
+    QActionGroup *m_pRunningOrPausedOrStackedActions;
     QActionGroup *m_pSharedClipboardActions;
     QActionGroup *m_pDragAndDropActions;
 

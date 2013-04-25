@@ -888,7 +888,7 @@ class UIActionSimpleSave : public UIActionSimple
 public:
 
     UIActionSimpleSave(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/state_saved_16px.png")
+        : UIActionSimple(pParent, ":/save_state_16px.png", ":/save_state_disabled_16px.png")
     {
         retranslateUi();
     }
