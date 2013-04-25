@@ -55,10 +55,28 @@
  */
 
 /**
- * Indicates that there are no guest mappings to care about.
- * Currently on raw-mode related code uses mappings, i.e. RC and R3 code.
+ * Indicates that there are no guest mappings in the shadow tables.
+ *
+ * Note! In ring-3 the macro is also used to exclude the managment of the
+ * intermediate context page tables.  On 32-bit systems we use the intermediate
+ * context to support 64-bit guest execution.  Thus, we cannot fully make it
+ * without mappings there even when VBOX_WITH_RAW_MODE is not defined.
+ *
+ * In raw-mode context there are by design always guest mappings (the code is
+ * executed from one), while in ring-0 there are none at all.  Neither context
+ * manages the page tables for intermediate switcher context, that's all done in
+ * ring-3.
+ *
+ * On 32-bit darwin (hybrid kernel) we do 64-bit guest support differently, so
+ * there we can safely work without mappings if we don't compile in raw-mode.
  */
-#if defined(IN_RING0) || !defined(VBOX_WITH_RAW_MODE)
+#if defined(IN_RING0) \
+  || (   !defined(VBOX_WITH_RAW_MODE) \
+      && (   HC_ARCH_BITS != 32 \
+          || defined(VBOX_WITH_HYBRID_32BIT_KERNEL) \
+          || !defined(VBOX_WITH_64_BITS_GUESTS) \
+         ) \
+     )
 # define PGM_WITHOUT_MAPPINGS
 #endif
 
