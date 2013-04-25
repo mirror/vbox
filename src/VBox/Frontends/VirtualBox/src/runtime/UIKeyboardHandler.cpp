@@ -944,11 +944,7 @@ bool UIKeyboardHandler::winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &eve
 
     /* It's possible that a key has been pressed while the keyboard was not
      * captured, but is being released under the capture. Detect this situation
-     * and return false to let Windows process the message normally and update
-     * its key state table (to avoid the stuck key effect). */
-    /** @todo Is there any reason why we can't generally return "false" for
-     * key releases, even if we do process them?  It would let us drop this
-     * hard-to-read logic. */
+     * and do not pass on the key press to the virtual machine. */
     uint8_t what_pressed =      (event.flags & 0x01)
                              && (event.vkCode != VK_RSHIFT)
                            ? IsExtKeyPressed : IsKeyPressed;
