@@ -2724,7 +2724,8 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, 
         rc = VERR_INVALID_PARAMETER;
     }
 
-    if (RT_SUCCESS(rc) && pDisplay->maFramebuffers[aScreenId].u32ResizeStatus == ResizeStatus_Void)
+    if (   RT_SUCCESS(rc)
+        && pDisplay->maFramebuffers[aScreenId].u32ResizeStatus == ResizeStatus_Void)
         pDisplay->mParent->consoleVRDPServer()->SendUpdateBitmap(aScreenId, x, y, width, height);
 
     pDisplay->vbvaUnlock();
@@ -3366,10 +3367,13 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                     break;
             }
 
-                /* Just return in case of failure without any assertion */
+            /* Just return in case of failure without any assertion */
+            if (RT_SUCCESS(rc))
+            {
+                rc = VideoRecDoRGBToYUV(pDisplay->mpVideoRecContext, u32VideoRecImgFormat);
                 if (RT_SUCCESS(rc))
-                    if (RT_SUCCESS(VideoRecDoRGBToYUV(pDisplay->mpVideoRecContext, u32VideoRecImgFormat)))
-                        VideoRecEncodeAndWrite(pDisplay->mpVideoRecContext, ulGuestWidth, ulGuestHeight);
+                    VideoRecEncodeAndWrite(pDisplay->mpVideoRecContext, ulGuestWidth, ulGuestHeight);
+            }
         }
     }
 #endif
