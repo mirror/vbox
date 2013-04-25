@@ -836,9 +836,6 @@ VMMR3_INT_DECL(int) HMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
  */
 static void hmR3DisableRawMode(PVM pVM)
 {
-    /* Disable mapping of the hypervisor into the shadow page table. */
-    PGMR3MappingsDisable(pVM);
-
     /* Reinit the paging mode to force the new shadow mode. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {

@@ -3027,7 +3027,7 @@ typedef struct PGM
     /** Set if PCI passthrough is enabled. */
     bool                            fPciPassthrough;
     /** Alignment padding that makes the next member start on a 8 byte boundary. */
-    bool                            afAlignment1[2];
+    bool                            afAlignment1[3];
 
     /** Indicates that PGMR3FinalizeMappings has been called and that further
      * PGMR3MapIntermediate calls will be rejected. */
@@ -3037,9 +3037,6 @@ typedef struct PGM
     /** If set if restored as fixed but we were unable to re-fixate at the old
      *  location because of room or address incompatibilities. */
     bool                            fMappingsFixedRestored;
-    /** If set, then no mappings are put into the shadow page table.
-     * Use pgmMapAreMappingsEnabled() instead of direct access. */
-    bool                            fMappingsDisabled;
     /** Size of fixed mapping.
      * This is valid if either fMappingsFixed or fMappingsFixedRestored is set. */
     uint32_t                        cbMappingFixed;

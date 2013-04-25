@@ -772,7 +772,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         &&  (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3))
     {
         pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-        Assert(!pVM->pgm.s.fMappingsFixed); Assert(!pVM->pgm.s.fMappingsDisabled);
+        Assert(!pVM->pgm.s.fMappingsFixed); Assert(pgmMapAreMappingsEnabled(pVM));
     }
 
 # ifdef VBOX_WITH_RAW_MODE
@@ -1905,7 +1905,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
         if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3)
         {
             pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-            Assert(!pVM->pgm.s.fMappingsFixed); Assert(!pVM->pgm.s.fMappingsDisabled);
+            Assert(!pVM->pgm.s.fMappingsFixed); Assert(pgmMapAreMappingsEnabled(pVM));
         }
         if (fGlobal)
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FlushTLBSameCR3Global));
@@ -1942,7 +1942,7 @@ VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
 
     /* We assume we're only called in nested paging mode. */
     Assert(pVCpu->CTX_SUFF(pVM)->pgm.s.fNestedPaging || pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
-    Assert(pVCpu->CTX_SUFF(pVM)->pgm.s.fMappingsDisabled);
+    Assert(!pgmMapAreMappingsEnabled(pVCpu->CTX_SUFF(pVM)));
     Assert(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3));
 
     /*
@@ -2106,7 +2106,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
         {
             pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
             Assert(!pVCpu->CTX_SUFF(pVM)->pgm.s.fMappingsFixed);
-            Assert(!pVCpu->CTX_SUFF(pVM)->pgm.s.fMappingsDisabled);
+            Assert(pgmMapAreMappingsEnabled(pVCpu->CTX_SUFF(pVM)));
         }
     }
 
