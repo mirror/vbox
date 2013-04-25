@@ -557,7 +557,7 @@ VBOX_WITH_VDITOOL =
 VBOX_WITH_VBOX_IMG =
 # Enables the VPX module for VM video capturing
 if1of ($(KBUILD_TARGET), linux)
- VBOX_WITH_VPX = 1
+# VBOX_WITH_VPX = 1
 endif
 # Enable shared folders
 VBOX_WITH_SHARED_FOLDERS = 1
