@@ -23,6 +23,7 @@
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/stam.h>
@@ -48,9 +49,9 @@
  * @returns VBox status code.
  * @param   pVCpu                   Pointer to the VMCPU.
  * @param   pu8TrapNo               Where to store the trap number.
- * @param   pEnmType                Where to store the trap type
+ * @param   penmType                Where to store the trap type
  */
-VMMDECL(int) TRPMQueryTrap(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType)
+VMMDECL(int) TRPMQueryTrap(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *penmType)
 {
     /*
      * Check if we have a trap at present.
@@ -59,8 +60,8 @@ VMMDECL(int) TRPMQueryTrap(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType
     {
         if (pu8TrapNo)
             *pu8TrapNo = (uint8_t)pVCpu->trpm.s.uActiveVector;
-        if (pEnmType)
-            *pEnmType = pVCpu->trpm.s.enmActiveType;
+        if (penmType)
+            *penmType = pVCpu->trpm.s.enmActiveType;
         return VINF_SUCCESS;
     }
 
@@ -359,11 +360,11 @@ VMMDECL(bool) TRPMHasTrap(PVMCPU pVCpu)
  * @param   puErrorCode             Where to store the error code associated with some traps.
  *                                  ~0U is stored if the trap has no error code.
  * @param   puCR2                   Where to store the CR2 associated with a trap 0E.
- * @param   pu8InstrLen             Where to store the instruction-length
+ * @param   pcbInstr                Where to store the instruction-length
  *                                  associated with some traps.
  */
 VMMDECL(int) TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2,
-                               uint8_t *pu8InstrLen)
+                               uint8_t *pcbInstr)
 {
     /*
      * Check if we have a trap at present.
@@ -379,8 +380,8 @@ VMMDECL(int) TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmT
         *puErrorCode    = pVCpu->trpm.s.uActiveErrorCode;
     if (puCR2)
         *puCR2          = pVCpu->trpm.s.uActiveCR2;
-    if (pu8InstrLen)
-        *pu8InstrLen    = pVCpu->trpm.s.cbInstr;
+    if (pcbInstr)
+        *pcbInstr       = pVCpu->trpm.s.cbInstr;
     return VINF_SUCCESS;
 }
 
@@ -441,6 +442,7 @@ VMMDECL(void) TRPMRestoreTrap(PVMCPU pVCpu)
 VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGate, uint32_t cbInstr,
                              TRPMERRORCODE enmError, TRPMEVENT enmType, int32_t iOrgTrap)
 {
+    AssertReturn(!HMIsEnabled(pVCpu->CTX_SUFF(pVM)), VERR_TRPM_HM_IPE);
 #ifdef TRPM_FORWARD_TRAPS_IN_GC
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     X86EFLAGS eflags;
@@ -939,14 +941,8 @@ VMMDECL(int) TRPMRaiseXcptErrCR2(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT en
  */
 VMMDECL(int) trpmClearGuestTrapHandler(PVM pVM, unsigned iTrap)
 {
-    /*
-     * Validate.
-     */
-    if (iTrap >= RT_ELEMENTS(pVM->trpm.s.aIdt))
-    {
-        AssertMsg(iTrap < TRPM_HANDLER_INT_BASE, ("Illegal gate number %d!\n", iTrap));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(!HMIsEnabled(pVM), VERR_TRPM_HM_IPE);
+    AssertMsgReturn(iTrap < RT_ELEMENTS(pVM->trpm.s.aIdt), ("Illegal gate number %d!\n", iTrap), VERR_INVALID_PARAMETER);
 
     if (ASMBitTest(&pVM->trpm.s.au32IdtPatched[0], iTrap))
 # ifdef IN_RING3

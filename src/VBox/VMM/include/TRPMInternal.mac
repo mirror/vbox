@@ -29,9 +29,8 @@
 struc TRPM
     .offVM              resd 1
     .offTRPMCPU         resd 1
-    .fDisableMonitoring resb 1
     .fSafeToDropGuestIDTMonitoring resb 1
-    .abPadding1         resb 6
+    .abPadding1         resb 7
     .aIdt               resd 512
     .au32IdtPatched     resd 8
     .aTmpTrapHandlers   RTRCPTR_RES 256
@@ -59,11 +58,9 @@ struc TRPM
 
 %ifdef VBOX_WITH_STATISTICS
     .paStatForwardedIRQR3    RTR3PTR_RES 1
-    .paStatForwardedIRQR0    RTR0PTR_RES 1
     .paStatForwardedIRQRC    RTRCPTR_RES 1
     .paStatHostIrqRC         RTRCPTR_RES 1
     .paStatHostIrqR3         RTR3PTR_RES 1
-    .paStatHostIrqR0         RTR0PTR_RES 1
 %endif
 endstruc
 

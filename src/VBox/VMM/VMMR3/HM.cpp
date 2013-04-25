@@ -836,11 +836,6 @@ VMMR3_INT_DECL(int) HMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
  */
 static void hmR3DisableRawMode(PVM pVM)
 {
-#ifdef VBOX_WITH_RAW_MODE
-    /* Turn off IDT/LDT/GDT and TSS monitoring and sycing. */
-    TRPMR3DisableMonitoring(pVM);
-#endif
-
     /* Disable mapping of the hypervisor into the shadow page table. */
     PGMR3MappingsDisable(pVM);
 
