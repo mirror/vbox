@@ -19,6 +19,8 @@
 #define WM_VBOX_SEAMLESS_ENABLE                     0x2001
 #define WM_VBOX_SEAMLESS_DISABLE                    0x2002
 #define WM_VBOX_SEAMLESS_UPDATE                     0x2003
+#define WM_VBOX_GRAPHICS_SUPPORTED                  0x2004
+#define WM_VBOX_GRAPHICS_UNSUPPORTED                0x2005
 
 
 #define VBOXHOOK_DLL_NAME           "VBoxHook.dll"

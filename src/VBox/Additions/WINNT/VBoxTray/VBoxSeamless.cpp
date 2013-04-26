@@ -80,14 +80,9 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
             /* rc should contain success status */
             AssertRC(rc);
 
-            if (VBoxSeamlessIsAllowed())
-            {
-                rc = VBoxSeamlessOnAllowChange(TRUE);
-                if (!RT_SUCCESS(rc))
-                    Log(("VBoxTray: VBoxSeamlessInit: Failed to set seamless capability\n"));
-            }
+            VBoxSeamlessSetSupported(TRUE);
 
-            if (RT_SUCCESS(rc))
+//            if (RT_SUCCESS(rc))
             {
                 *pfStartThread = true;
                 *ppInstance = &gCtx;
@@ -108,11 +103,9 @@ void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
     Log(("VBoxTray: VBoxSeamlessDestroy\n"));
 
-    /* Inform the host that we no longer support the seamless window mode. */
-    int rc = VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_SEAMLESS);
-    if (RT_FAILURE(rc))
-        Log(("VBoxTray: VBoxSeamlessDestroy: Failed to unset seamless capability, rc=%Rrc\n", rc));
+    VBoxSeamlessSetSupported(FALSE);
 
+    /* Inform the host that we no longer support the seamless window mode. */
     if (gCtx.pfnVBoxHookRemoveWindowTracker)
         gCtx.pfnVBoxHookRemoveWindowTracker();
     if (gCtx.hModule)
