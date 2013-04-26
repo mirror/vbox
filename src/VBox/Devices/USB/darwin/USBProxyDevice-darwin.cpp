@@ -36,6 +36,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
+#include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/once.h>
 #include <iprt/string.h>
@@ -165,6 +166,13 @@ typedef struct USBPROXYPIPEOSX
     uint64_t                u64NextFrameNo;
 } USBPROXYPIPEOSX, *PUSBPROXYPIPEOSX, **PPUSBPROXYPIPEOSX;
 
+typedef struct RUNLOOPREFLIST
+{
+    RTLISTNODE   List;
+    CFRunLoopRef RunLoopRef;
+} RUNLOOPREFLIST, *PRUNLOOPREFLIST;
+typedef RUNLOOPREFLIST **PPRUNLOOPREFLIST;
+
 /**
  * Per-interface data for the Darwin usb proxy backend.
  */
@@ -191,6 +199,7 @@ typedef struct USBPROXYIFOSX
     CFRunLoopSourceRef      RunLoopSrcRef;
     /** List of isochronous buffer collections.
      * These are allocated on demand by the URB queuing routine and then recycled until the interface is destroyed. */
+    RTLISTANCHOR HeadOfRunLoopLst;
     PUSBPROXYISOCBUFCOL     pIsocBufCols;
 } USBPROXYIFOSX, *PUSBPROXYIFOSX, **PPUSBPROXYIFOSX;
 /** Pointer to a pointer to an darwin interface. */
@@ -208,9 +217,9 @@ typedef struct USBPROXYDEVOSX
     /** The run loop source for the async operations on the device level
      * (i.e. the default control pipe stuff). */
     CFRunLoopSourceRef      RunLoopSrcRef;
-    /** The run loop this device and its interfaces send their events to. */
-    CFRunLoopRef            RunLoopRef;
-
+    /** we want to add and remove RunLoopSourceRefs to run loop's of 
+     * every EMT thread participated in USB processing. */
+    RTLISTANCHOR        HeadOfRunLoopLst;
     /** Pointer to the proxy device instance. */
     PUSBPROXYDEV            pProxyDev;
 
@@ -269,6 +278,65 @@ static DECLCALLBACK(int32_t) usbProxyDarwinInitOnce(void *pvUser1)
     else
         rc = RTErrConvertFromDarwin(krc);
     return rc;
+}
+
+/**
+ * Adds Source ref to current run loop and adds it the list of runloops.
+ */
+static int usbProxyDarwinAddRunLoopRef(PRTLISTANCHOR pListHead, 
+                                       CFRunLoopSourceRef SourceRef)
+{
+    AssertPtrReturn(pListHead, VERR_INVALID_PARAMETER);
+    AssertReturn(CFRunLoopSourceIsValid(SourceRef), VERR_INVALID_PARAMETER);
+
+    if (CFRunLoopContainsSource(CFRunLoopGetCurrent(), SourceRef, g_pRunLoopMode))
+        return VINF_SUCCESS;
+
+    /* Add to the list */
+    PRUNLOOPREFLIST pListNode = (PRUNLOOPREFLIST)RTMemAllocZ(sizeof(RUNLOOPREFLIST));
+    if (!pListNode)
+        return VERR_NO_MEMORY;
+
+    pListNode->RunLoopRef = CFRunLoopGetCurrent();
+
+    CFRetain(pListNode->RunLoopRef);
+    CFRetain(SourceRef); /* We want to be aware of releasing */
+
+    CFRunLoopAddSource(pListNode->RunLoopRef, SourceRef, g_pRunLoopMode);
+
+    RTListInit(&pListNode->List);
+
+    RTListAppend((PRTLISTNODE)pListHead, &pListNode->List);
+     
+    return VINF_SUCCESS;
+}
+
+
+/*
+ * Removes all source reference from mode of run loop's we've registered them.
+ * 
+ */
+static int usbProxyDarwinRemoveSourceRefFromAllRunLoops(PRTLISTANCHOR pHead, 
+                                                        CFRunLoopSourceRef SourceRef)
+{
+    AssertPtrReturn(pHead, VERR_INVALID_PARAMETER);
+   
+    while (RTListIsEmpty(pHead)) 
+    {
+        PRUNLOOPREFLIST pNode = RTListGetFirst(pHead, RUNLOOPREFLIST, List);
+        /* XXX: Should Release Reference? */
+        Assert(CFGetRetainCount(pNode->RunLoopRef));
+        
+        CFRunLoopRemoveSource(pNode->RunLoopRef, SourceRef, g_pRunLoopMode);
+        CFRelease(SourceRef);
+        CFRelease(pNode->RunLoopRef);
+
+        RTListNodeRemove(&pNode->List);
+
+        RTMemFree(pNode);
+    } 
+
+    return VINF_SUCCESS;
 }
 
 
@@ -569,7 +637,6 @@ static void usbProxyDarwinUrbAsyncComplete(void *pvUrbOsX, IOReturn irc, void *S
         }
     }
 
-    Assert(pDevOsX->pInFlightHead == pUrbOsX);
     /*
      * Remove from the active list.
      */
@@ -578,7 +645,10 @@ static void usbProxyDarwinUrbAsyncComplete(void *pvUrbOsX, IOReturn irc, void *S
     if (pUrbOsX->pPrev)
         pUrbOsX->pPrev->pNext = pUrbOsX->pNext;
     else
+    {
+        Assert(pDevOsX->pInFlightHead == pUrbOsX);
         pDevOsX->pInFlightHead = pUrbOsX->pNext;
+    }
 
     /*
      * Link it into the taxing list.
@@ -614,9 +684,12 @@ static void usbProxyDarwinReleaseAllInterfaces(PUSBPROXYDEVOSX pDevOsX)
 
         if (pIf->RunLoopSrcRef)
         {
-            CFRunLoopRemoveSource(pDevOsX->RunLoopRef, pIf->RunLoopSrcRef, g_pRunLoopMode);
+            int rc = usbProxyDarwinRemoveSourceRefFromAllRunLoops((PRTLISTANCHOR)&pIf->HeadOfRunLoopLst, pIf->RunLoopSrcRef);
+            AssertRC(rc);
+
             CFRelease(pIf->RunLoopSrcRef);
             pIf->RunLoopSrcRef = NULL;
+            RTListInit((PRTLISTNODE)&pIf->HeadOfRunLoopLst);
         }
 
         while (pIf->pIsocBufCols)
@@ -821,7 +894,9 @@ static int usbProxyDarwinSeizeAllInterfaces(PUSBPROXYDEVOSX pDevOsX, bool fMakeT
                                     irc = (*ppIfI)->CreateInterfaceAsyncEventSource(ppIfI, &pIf->RunLoopSrcRef);
                                     if (irc == kIOReturnSuccess)
                                     {
-                                        CFRunLoopAddSource(pDevOsX->RunLoopRef, pIf->RunLoopSrcRef, g_pRunLoopMode);
+                                        RTListInit((PRTLISTNODE)&pIf->HeadOfRunLoopLst);
+                                        usbProxyDarwinAddRunLoopRef(&pIf->HeadOfRunLoopLst, 
+                                                                    pIf->RunLoopSrcRef);
 
                                         /*
                                          * Just link the interface into the list and we're good.
@@ -1149,14 +1224,13 @@ static int usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, vo
                 PUSBPROXYDEVOSX pDevOsX = (PUSBPROXYDEVOSX)RTMemAllocZ(sizeof(*pDevOsX));
                 if (pDevOsX)
                 {
+                    RTListInit((PRTLISTNODE)&pDevOsX->HeadOfRunLoopLst);
                     vrc = RTCritSectInit(&pDevOsX->CritSect);
                     if (RT_SUCCESS(vrc))
                     {
                         pDevOsX->USBDevice = USBDevice;
                         pDevOsX->ppDevI = ppDevI;
                         pDevOsX->pProxyDev = pProxyDev;
-                        pDevOsX->RunLoopRef = CFRunLoopGetCurrent();
-                        CFRetain(pDevOsX->RunLoopRef); /* paranoia */
 
                         /*
                          * Try seize all the interface.
@@ -1173,8 +1247,6 @@ static int usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, vo
                             irc = (*ppDevI)->CreateDeviceAsyncEventSource(ppDevI, &pDevOsX->RunLoopSrcRef);
                             if (irc == kIOReturnSuccess)
                             {
-                                CFRunLoopAddSource(pDevOsX->RunLoopRef, pDevOsX->RunLoopSrcRef, g_pRunLoopMode);
-
                                 /*
                                  * Determine the active configuration.
                                  * Can cause hangs, so drop it for now.
@@ -1189,11 +1261,10 @@ static int usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, vo
                                     pProxyDev->cIgnoreSetConfigs = 1;
 
                                     pProxyDev->Backend.pv = pDevOsX;
+                                    usbProxyDarwinAddRunLoopRef(&pDevOsX->HeadOfRunLoopLst, pDevOsX->RunLoopSrcRef);
                                     return VINF_SUCCESS;        /* return */
                                 }
                                 vrc = VERR_VUSB_DEVICE_NOT_ATTACHED;
-
-                                CFRunLoopRemoveSource(pDevOsX->RunLoopRef, pDevOsX->RunLoopSrcRef, g_pRunLoopMode);
                             }
                             else
                                 vrc = RTErrConvertFromDarwin(irc);
@@ -1266,7 +1337,11 @@ static void usbProxyDarwinClose(PUSBPROXYDEV pProxyDev)
 
     if (pDevOsX->RunLoopSrcRef)
     {
-        CFRunLoopRemoveSource(pDevOsX->RunLoopRef, pDevOsX->RunLoopSrcRef, g_pRunLoopMode);
+        int rc = usbProxyDarwinRemoveSourceRefFromAllRunLoops(&pDevOsX->HeadOfRunLoopLst, pDevOsX->RunLoopSrcRef);
+        AssertRC(rc);
+
+        RTListInit((PRTLISTNODE)&pDevOsX->HeadOfRunLoopLst);
+
         CFRelease(pDevOsX->RunLoopSrcRef);
         pDevOsX->RunLoopSrcRef = NULL;
     }
@@ -1294,12 +1369,6 @@ static void usbProxyDarwinClose(PUSBPROXYDEV pProxyDev)
      * Free all the resources.
      */
     RTCritSectDelete(&pDevOsX->CritSect);
-
-    if (pDevOsX->RunLoopRef)
-    {
-        CFRelease(pDevOsX->RunLoopRef);
-        pDevOsX->RunLoopRef = NULL;
-    }
 
     PUSBPROXYURBOSX pUrbOsX;
     while ((pUrbOsX = pDevOsX->pInFlightHead) != NULL)
@@ -1529,13 +1598,13 @@ static int usbProxyDarwinUrbQueue(PVUSBURB pUrb)
         }
 
         if (!CFRunLoopContainsSource(CFRunLoopGetCurrent(), pIf->RunLoopSrcRef, g_pRunLoopMode))
-            CFRunLoopAddSource(CFRunLoopGetCurrent(), pIf->RunLoopSrcRef, g_pRunLoopMode);
+            usbProxyDarwinAddRunLoopRef(&pIf->HeadOfRunLoopLst, pIf->RunLoopSrcRef);
 
     }
     /* else: pIf == NULL -> default control pipe.*/
 
     if (!CFRunLoopContainsSource(CFRunLoopGetCurrent(), pDevOsX->RunLoopSrcRef, g_pRunLoopMode))
-        CFRunLoopAddSource(CFRunLoopGetCurrent(), pDevOsX->RunLoopSrcRef, g_pRunLoopMode);
+        usbProxyDarwinAddRunLoopRef(&pDevOsX->HeadOfRunLoopLst, pDevOsX->RunLoopSrcRef);
 
     /*
      * Allocate a Darwin urb.
