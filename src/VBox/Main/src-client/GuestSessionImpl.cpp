@@ -135,7 +135,7 @@ private:
 };
 typedef ListenerImpl<GuestSessionListener, GuestSession*> GuestSessionListenerImpl;
 
-VBOX_LISTENER_DECLARE(GuestProcessListenerImpl)
+VBOX_LISTENER_DECLARE(GuestSessionListenerImpl)
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
