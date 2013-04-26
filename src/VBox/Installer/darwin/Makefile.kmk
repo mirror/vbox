@@ -407,11 +407,11 @@ VBOX_DI_VBAPP_DYLIBS = \
 	MacOS/VBoxDDU.dylib \
 	MacOS/VBoxREM.dylib \
 	MacOS/VBoxRT.dylib \
-	MacOS/VBoxSharedFolders.dylib \
-	MacOS/VBoxSharedClipboard.dylib \
-	MacOS/VBoxDragAndDropSvc.dylib \
-	MacOS/VBoxVPX.dylib \
-	MacOS/VBoxGuestPropSvc.dylib \
+	$(if $(VBOX_WITH_SHARED_FOLDERS),MacOS/VBoxSharedFolders.dylib,) \
+	$(if $(VBOX_WITH_SHARED_CLIPBOARD),MacOS/VBoxSharedClipboard.dylib,) \
+	$(if $(VBOX_WITH_DRAG_AND_DROP),MacOS/VBoxDragAndDropSvc.dylib,) \
+	$(if $(VBOX_WITH_VPX),MacOS/VBoxVPX.dylib,) \
+	$(if $(VBOX_WITH_GUEST_PROPS),MacOS/VBoxGuestPropSvc.dylib,) \
 	MacOS/VBoxHostChannel.dylib \
 	MacOS/VBoxVMM.dylib \
 	MacOS/VBoxXPCOM.dylib \
@@ -420,14 +420,11 @@ VBOX_DI_VBAPP_DYLIBS = \
 	MacOS/components/VBoxSVCM.dylib \
 	MacOS/components/VBoxXPCOMIPCC.dylib \
 	MacOS/VBoxAuth.dylib \
-	MacOS/VBoxAuthSimple.dylib
+	MacOS/VBoxAuthSimple.dylib \
+	$(if $(VBOX_WITH_GUEST_CONTROL),MacOS/VBoxGuestControlSvc.dylib,)
 ifneq ($(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/accessible/libqtaccessiblewidgets.dylib),)
  VBOX_DI_VBAPP_DYLIBS += \
 	MacOS/accessible/libqtaccessiblewidgets.dylib
-endif
-ifdef VBOX_WITH_GUEST_CONTROL
- VBOX_DI_VBAPP_DYLIBS += \
-	MacOS/VBoxGuestControlSvc.dylib
 endif
 if defined(VBOX_WITH_VRDP) && !defined(VBOX_WITH_EXTPACK_PUEL)
  VBOX_DI_VBAPP_DYLIBS += \
