@@ -173,10 +173,6 @@ VBOX_LNX_STRIP_BIN = \
 	VBoxTunctl \
 	helpers/generate_service_file
 
-if defined(VBOX_WITH_VPX) && ("$(SDK_VBOX_VPX_LIBS)" == "$(SDK_VBOX_VPX_DEFAULT_LIBS)")
- VBOX_LNX_STRIP_BIN += VBoxVPX.so
-endif
-
 # Do not remove relocation information of these binaries
 VBOX_LNX_STRIP_OBJ = \
 	VBoxDD2R0.r0 \
