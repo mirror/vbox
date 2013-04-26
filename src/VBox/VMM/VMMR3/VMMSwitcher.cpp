@@ -916,6 +916,23 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
 }
 
 /**
+ * Wrapper around SELMGetHyperGDT() that avoids calling it when raw-mode context
+ * is not initialized.
+ *
+ * @returns Raw-mode contet GDT address. Null pointer if not applicable.
+ * @param   pVM         The cross context VM structure.
+ */
+static RTRCPTR vmmR3SwitcherGetHyperGDT(PVM pVM)
+{
+    if (HMIsRawModeCtxNeeded(pVM))
+        return SELMGetHyperGDT(pVM);
+#if HC_ARCH_BITS != 32 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+    AssertFailed(); /* This path is only applicable to some 32-bit hosts. */
+#endif
+    return NIL_RTRCPTR;
+}
+
+/**
  * Relocator for the 32-Bit to 32-Bit world switcher.
  */
 DECLCALLBACK(void) vmmR3Switcher32BitTo32Bit_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
@@ -941,7 +958,7 @@ DECLCALLBACK(void) vmmR3Switcher32BitToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSw
 DECLCALLBACK(void) vmmR3Switcher32BitToAMD64_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
 {
     vmmR3SwitcherGenericRelocate(pVM, pSwitcher, R0PtrCode, pu8CodeR3, GCPtrCode, u32IDCode,
-                                 SELMGetHyperCS(pVM), SELMGetHyperDS(pVM), SELMGetHyperTSS(pVM), SELMGetHyperGDT(pVM), SELMGetHyperCS64(pVM));
+                                 SELMGetHyperCS(pVM), SELMGetHyperDS(pVM), SELMGetHyperTSS(pVM), vmmR3SwitcherGetHyperGDT(pVM), SELMGetHyperCS64(pVM));
 }
 
 
@@ -970,7 +987,7 @@ DECLCALLBACK(void) vmmR3SwitcherPAEToPAE_Relocate(PVM pVM, PVMMSWITCHERDEF pSwit
 DECLCALLBACK(void) vmmR3SwitcherPAEToAMD64_Relocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR0PTR R0PtrCode, uint8_t *pu8CodeR3, RTGCPTR GCPtrCode, uint32_t u32IDCode)
 {
     vmmR3SwitcherGenericRelocate(pVM, pSwitcher, R0PtrCode, pu8CodeR3, GCPtrCode, u32IDCode,
-                                 SELMGetHyperCS(pVM), SELMGetHyperDS(pVM), SELMGetHyperTSS(pVM), SELMGetHyperGDT(pVM), SELMGetHyperCS64(pVM));
+                                 SELMGetHyperCS(pVM), SELMGetHyperDS(pVM), SELMGetHyperTSS(pVM), vmmR3SwitcherGetHyperGDT(pVM), SELMGetHyperCS64(pVM));
 }
 
 
@@ -1059,21 +1076,21 @@ VMMR3_INT_DECL(RTR0PTR) VMMR3GetHostToGuestSwitcher(PVM pVM, VMMSWITCHER enmSwit
     /*
      * Validate input.
      */
-    if (    enmSwitcher < VMMSWITCHER_INVALID
-        ||  enmSwitcher >= VMMSWITCHER_MAX)
-    {
-        AssertMsgFailed(("Invalid input enmSwitcher=%d\n", enmSwitcher));
-        return NIL_RTR0PTR;
-    }
+    AssertMsgReturn(   enmSwitcher == VMMSWITCHER_32_TO_AMD64
+                    || enmSwitcher == VMMSWITCHER_PAE_TO_AMD64,
+                    ("%d\n", enmSwitcher),
+                    NIL_RTR0PTR);
+    AssertReturn(HMIsEnabled(pVM), NIL_RTR0PTR);
 
     /*
      * Select the new switcher.
      */
-    const PVMMSWITCHERDEF *papSwitchers = HMIsEnabled(pVM) ? g_apHmSwitchers : g_apRawModeSwitchers;
+    const PVMMSWITCHERDEF *papSwitchers = g_apHmSwitchers;
     PVMMSWITCHERDEF pSwitcher = papSwitchers[enmSwitcher];
     if (pSwitcher)
     {
-        RTR0PTR     pbCodeR0 = (RTR0PTR)pVM->vmm.s.pvCoreCodeR0 + pVM->vmm.s.aoffSwitchers[enmSwitcher]; /** @todo fix the pvCoreCodeR0 type */
+        /** @todo fix the pvCoreCodeR0 type */
+        RTR0PTR pbCodeR0 = (RTR0PTR)pVM->vmm.s.pvCoreCodeR0 + pVM->vmm.s.aoffSwitchers[enmSwitcher];
         return pbCodeR0 + pSwitcher->offR0ToRawMode;
     }
     return NIL_RTR0PTR;
