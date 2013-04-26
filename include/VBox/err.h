@@ -1966,6 +1966,8 @@
 #define VERR_HM_IPE_4                               (-4114)
 /** Internal processing error \#3 in the HM code.  */
 #define VERR_HM_IPE_5                               (-4115)
+/** Invalid HM64ON32OP value.  */
+#define VERR_HM_INVALID_HM64ON32OP                  (-4116)
 /** @} */
 
 

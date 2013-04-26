@@ -237,9 +237,7 @@ ifdef VBOX_WITH_RAW_MODE
  VBoxVMM_SOURCES.x86 += \
  	VMMSwitcher/32BitTo32Bit.asm \
  	VMMSwitcher/32BitToPAE.asm \
- 	VMMSwitcher/32BitToAMD64.asm \
  	VMMSwitcher/PAETo32Bit.asm \
- 	VMMSwitcher/PAEToAMD64.asm \
  	VMMSwitcher/PAEToPAE.asm
  VBoxVMM_SOURCES.amd64 = \
  	VMMSwitcher/AMD64To32Bit.asm \
@@ -248,6 +246,8 @@ ifdef VBOX_WITH_RAW_MODE
  	VMMSwitcher/AMD64ToPAE.asm
 endif
 VBoxVMM_SOURCES.x86 += \
+ 	VMMSwitcher/32BitToAMD64.asm \
+ 	VMMSwitcher/PAEToAMD64.asm \
 	VMMSwitcher/X86Stub.asm
 VBoxVMM_SOURCES.amd64 += \
 	VMMSwitcher/AMD64Stub.asm
@@ -410,7 +410,6 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMRC/TRPMRCHandlersA.asm \
  	VMMRC/VMMRC.cpp \
  	VMMRC/VMMRCA.asm \
- 	VMMRC/HMRCA.asm \
  	$(if-expr defined(VBOX_WITH_RAW_MODE), \
 	VMMRC/CSAMRC.cpp \
  	VMMRC/PATMRC.cpp \

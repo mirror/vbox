@@ -3121,7 +3121,7 @@ DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS HCPhysVMCBHost, RTHCPHYS HCPhysVMCB, 
     aParam[2] = (uint32_t)(HCPhysVMCB);                      /* Param 2: HCPhysVMCB - Lo. */
     aParam[3] = (uint32_t)(HCPhysVMCB >> 32);                /* Param 2: HCPhysVMCB - Hi. */
 
-    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnSVMGCVMRun64, 4, &aParam[0]);
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_SVMRCVMRun64, 4, &aParam[0]);
 }
 
 
@@ -3132,17 +3132,18 @@ DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS HCPhysVMCBHost, RTHCPHYS HCPhysVMCB, 
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
- * @param   pfnHandler  Pointer to the RC handler function.
+ * @param   enmOp       The operation to perform.
  * @param   cbParam     Number of parameters.
  * @param   paParam     Array of 32-bit parameters.
  */
-VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam,
+VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, HM64ON32OP enmOp, uint32_t cbParam,
                                          uint32_t *paParam)
 {
     int             rc;
     RTHCUINTREG     uOldEFlags;
 
-    Assert(pfnHandler);
+    AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
+    Assert(enmOp > HM64ON32OP_INVALID && enmOp < HM64ON32OP_END);
 
     /* Disable interrupts. */
     uOldEFlags = ASMIntDisableFlags();
@@ -3153,7 +3154,7 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
 #endif
 
     CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVCpu));
-    CPUMSetHyperEIP(pVCpu, pfnHandler);
+    CPUMSetHyperEIP(pVCpu, enmOp);
     for (int i = (int)cbParam - 1; i >= 0; i--)
         CPUMPushHyper(pVCpu, paParam[i]);
 

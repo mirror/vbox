@@ -315,25 +315,7 @@ typedef struct HM
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     /** 32 to 64 bits switcher entrypoint. */
     R0PTRTYPE(PFNHMSWITCHERHC)  pfnHost32ToGuest64R0;
-
-    /* AMD-V 64 bits vmrun handler */
-    RTRCPTR                     pfnSVMGCVMRun64;
-
-    /* VT-x 64 bits vmlaunch handler */
-    RTRCPTR                     pfnVMXGCStartVM64;
-
-    /* RC handler to setup the 64 bits FPU state. */
-    RTRCPTR                     pfnSaveGuestFPU64;
-
-    /* RC handler to setup the 64 bits debug state. */
-    RTRCPTR                     pfnSaveGuestDebug64;
-
-    /* Test handler */
-    RTRCPTR                     pfnTest64;
-
-    RTRCPTR                     uAlignment[2];
-/*#elif defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-    uint32_t                    u32Alignment[1]; */
+    RTR0PTR                     uPadding2;
 #endif
 
     struct
