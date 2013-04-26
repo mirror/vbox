@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -55,22 +55,28 @@ typedef struct _VRDPBCHASH
 } VRDPBCHASH;
 #pragma pack ()
 
+#define VRDP_BC_ENTRY_STATUS_EMPTY     0
+#define VRDP_BC_ENTRY_STATUS_TEMPORARY 1
+#define VRDP_BC_ENTRY_STATUS_CACHED    2
+
 typedef struct _VRDPBCENTRY
 {
-    bool fUsed;
     struct _VRDPBCENTRY *next;
     struct _VRDPBCENTRY *prev;
     VRDPBCHASH hash;
+    uint32_t u32Status;
 } VRDPBCENTRY;
 
 typedef struct _VRDPBC
 {
-    VRDPBCENTRY *head;
-    VRDPBCENTRY *tail;
+    VRDPBCENTRY *headTmp;
+    VRDPBCENTRY *tailTmp;
+    VRDPBCENTRY *headCached;
+    VRDPBCENTRY *tailCached;
     VRDPBCENTRY aEntries[VRDPBMP_N_CACHED_BITMAPS];
 } VRDPBC;
 
 void vrdpbmpReset (VRDPBC *pCache);
-int vrdpbmpCacheSurface (VRDPBC *pCache, const SURFOBJ *pso, VRDPBCHASH *phash, VRDPBCHASH *phashDeleted);
+int vrdpbmpCacheSurface (VRDPBC *pCache, const SURFOBJ *pso, VRDPBCHASH *phash, VRDPBCHASH *phashDeleted, BOOL bForce);
 
 #endif /*VBOXDISPVRDPBMP_H*/
