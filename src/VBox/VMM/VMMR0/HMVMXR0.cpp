@@ -3386,10 +3386,11 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (!pVM->hm.s.vmx.fUnrestrictedGuest)
         {
             Assert(pVM->hm.s.vmx.pRealModeTSS);
-            if (   pVCpu->hm.s.vmx.fWasInRealMode 
+            AssertCompile(PGMMODE_REAL < PGMMODE_PROTECTED);
+            if (   pVCpu->hm.s.vmx.fWasInRealMode
                 && PGMGetGuestMode(pVCpu) >= PGMMODE_PROTECTED)
             {
-                /* Signal that recompiler must flush its code-cache as the guest -may- rewrite code it will later execute
+                /* Signal that the recompiler must flush its code-cache as the guest -may- rewrite code it will later execute
                    in real-mode (e.g. OpenBSD 4.0) */
                 REMFlushTBs(pVM);
                 Log(("Load: Switch to protected mode detected!\n"));
@@ -3493,7 +3494,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE,  pMixedCtx->gdtr.pGdt);
         AssertRCReturn(rc, rc);
 
-        Assert(!(pMixedCtx->gdtr.cbGdt & 0xffff0000ULL));      /* Bits 31:16 MBZ. */
+        Assert(!(pMixedCtx->gdtr.cbGdt & 0xffff0000ULL));       /* Bits 31:16 MBZ. */
         Log(("Load: VMX_VMCS_GUEST_GDTR_BASE=%#RX64\n", pMixedCtx->gdtr.pGdt));
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_GDTR;
     }
@@ -3544,7 +3545,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE,  pMixedCtx->idtr.pIdt);
         AssertRCReturn(rc, rc);
 
-        Assert(!(pMixedCtx->idtr.cbIdt & 0xffff0000ULL));      /* Bits 31:16 MBZ. */
+        Assert(!(pMixedCtx->idtr.cbIdt & 0xffff0000ULL));       /* Bits 31:16 MBZ. */
         Log(("Load: VMX_VMCS_GUEST_IDTR_BASE=%#RX64\n", pMixedCtx->idtr.pIdt));
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_IDTR;
     }
