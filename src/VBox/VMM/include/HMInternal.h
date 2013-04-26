@@ -687,12 +687,17 @@ typedef struct HMCPU
             uint32_t                padding;
         } lasterror;
 
+#ifdef VBOX_WITH_OLD_VTX_CODE
         /** The last seen guest paging mode (by VT-x). */
         PGMMODE                     enmLastSeenGuestMode;
         /** Current guest paging mode (as seen by HMR3PagingModeChanged). */
         PGMMODE                     enmCurrGuestMode;
         /** Previous guest paging mode (as seen by HMR3PagingModeChanged). */
         PGMMODE                     enmPrevGuestMode;
+#else
+        /** Set if guest was executing in real mode (extra checks). */
+        bool                        fWasInRealMode;
+#endif
     } vmx;
 
     struct

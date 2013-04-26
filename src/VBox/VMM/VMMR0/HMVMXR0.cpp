@@ -1909,14 +1909,6 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         return rc;
     }
 
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-
-        /* Current guest paging mode. */
-        pVCpu->hm.s.vmx.enmLastSeenGuestMode = PGMMODE_REAL;
-    }
-
     return VINF_SUCCESS;
 }
 
@@ -3394,19 +3386,14 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (!pVM->hm.s.vmx.fUnrestrictedGuest)
         {
             Assert(pVM->hm.s.vmx.pRealModeTSS);
-            PGMMODE enmGuestMode = PGMGetGuestMode(pVCpu);
-            if (pVCpu->hm.s.vmx.enmLastSeenGuestMode != enmGuestMode)
+            if (   pVCpu->hm.s.vmx.fWasInRealMode 
+                && PGMGetGuestMode(pVCpu) >= PGMMODE_PROTECTED)
             {
-                AssertCompile(PGMMODE_REAL < PGMMODE_PROTECTED);
-                if (   pVCpu->hm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
-                    && enmGuestMode >= PGMMODE_PROTECTED)
-                {
-                    /* Signal that recompiler must flush its code-cache as the guest -may- rewrite code it will later execute
-                       in real-mode (e.g. OpenBSD 4.0) */
-                    REMFlushTBs(pVM);
-                    Log(("Load: Switch to protected mode detected!\n"));
-                }
-                pVCpu->hm.s.vmx.enmLastSeenGuestMode = enmGuestMode;
+                /* Signal that recompiler must flush its code-cache as the guest -may- rewrite code it will later execute
+                   in real-mode (e.g. OpenBSD 4.0) */
+                REMFlushTBs(pVM);
+                Log(("Load: Switch to protected mode detected!\n"));
+                pVCpu->hm.s.vmx.fWasInRealMode = false;
             }
         }
 #endif

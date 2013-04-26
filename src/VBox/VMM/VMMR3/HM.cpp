@@ -1486,8 +1486,10 @@ VMMR3_INT_DECL(void) HMR3Relocate(PVM pVM)
             PVMCPU pVCpu = &pVM->aCpus[i];
 
             pVCpu->hm.s.enmShadowMode            = PGMGetShadowMode(pVCpu);
+#ifdef VBOX_WITH_OLD_VTX_CODE
             Assert(pVCpu->hm.s.vmx.enmCurrGuestMode == PGMGetGuestMode(pVCpu));
             pVCpu->hm.s.vmx.enmCurrGuestMode     = PGMGetGuestMode(pVCpu);
+#endif
         }
     }
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -1566,7 +1568,6 @@ VMMR3_INT_DECL(void) HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmSha
             pCtx->ss.Attr.n.u2Dpl  = 0;
         }
     }
-#endif
 
     if (pVCpu->hm.s.vmx.enmCurrGuestMode != enmGuestMode)
     {
@@ -1582,6 +1583,16 @@ VMMR3_INT_DECL(void) HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmSha
             pVCpu->hm.s.vmx.enmLastSeenGuestMode = pVCpu->hm.s.vmx.enmPrevGuestMode;
         }
     }
+#else
+    /* If the guest left protected mode VMX execution, we'll have to be extra
+     * careful if/when the guest switches back to protected mode.
+     */
+    if (enmGuestMode == PGMMODE_REAL)
+    {
+        Log(("HMR3PagingModeChanged indicates real mode execution\n"));
+        pVCpu->hm.s.vmx.fWasInRealMode = true;
+    }
+#endif
 
     /** @todo r=ramshankar: Why do we need to do this? Most likely
      *        VBOX_WITH_OLD_VTX_CODE only. */
@@ -1668,10 +1679,14 @@ VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
     pVCpu->hm.s.fActive        = false;
     pVCpu->hm.s.Event.fPending = false;
 
+#ifdef VBOX_WITH_OLD_VTX_CODE
     /* Reset state information for real-mode emulation in VT-x. */
     pVCpu->hm.s.vmx.enmLastSeenGuestMode = PGMMODE_REAL;
     pVCpu->hm.s.vmx.enmPrevGuestMode     = PGMMODE_REAL;
     pVCpu->hm.s.vmx.enmCurrGuestMode     = PGMMODE_REAL;
+#else
+    pVCpu->hm.s.vmx.fWasInRealMode = true;
+#endif
 
     /* Reset the contents of the read cache. */
     PVMCSCACHE pCache = &pVCpu->hm.s.vmx.VMCSCache;
@@ -2382,8 +2397,12 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                 /* Verify the requirements for executing code in protected
                    mode. VT-x can't handle the CPU state right after a switch
                    from real to protected mode. (all sorts of RPL & DPL assumptions) */
+#if VBOX_WITH_OLD_VTX_CODE
                 if (    pVCpu->hm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
                     &&  enmGuestMode >= PGMMODE_PROTECTED)
+#else
+                if (pVCpu->hm.s.vmx.fWasInRealMode)
+#endif
                 {
                     if (   (pCtx->cs.Sel & X86_SEL_RPL)
                         || (pCtx->ds.Sel & X86_SEL_RPL)
@@ -2783,12 +2802,24 @@ static DECLCALLBACK(int) hmR3Save(PVM pVM, PSSMHANDLE pSSM)
         rc = SSMR3PutU64(pSSM, pVM->aCpus[i].hm.s.Event.u64IntrInfo);
         AssertRCReturn(rc, rc);
 
+#if VBOX_WITH_OLD_VTX_CODE
         rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.vmx.enmLastSeenGuestMode);
         AssertRCReturn(rc, rc);
         rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.vmx.enmCurrGuestMode);
         AssertRCReturn(rc, rc);
         rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.vmx.enmPrevGuestMode);
         AssertRCReturn(rc, rc);
+#else
+        //@todo: We only need to save pVM->aCpus[i].hm.s.vmx.fWasInRealMode and
+        // perhaps not even that (the initial value of 'true' is safe).
+        uint32_t u32Dummy = PGMMODE_REAL;
+        rc = SSMR3PutU32(pSSM, u32Dummy);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU32(pSSM, u32Dummy);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutU32(pSSM, u32Dummy);
+        AssertRCReturn(rc, rc);
+#endif
     }
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
     rc = SSMR3PutGCPtr(pSSM, pVM->hm.s.pGuestPatchMem);
@@ -2881,6 +2912,7 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
         {
             uint32_t val;
 
+#ifdef VBOX_WITH_OLD_VTX_CODE
             rc = SSMR3GetU32(pSSM, &val);
             AssertRCReturn(rc, rc);
             pVM->aCpus[i].hm.s.vmx.enmLastSeenGuestMode = (PGMMODE)val;
@@ -2892,6 +2924,15 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
             rc = SSMR3GetU32(pSSM, &val);
             AssertRCReturn(rc, rc);
             pVM->aCpus[i].hm.s.vmx.enmPrevGuestMode = (PGMMODE)val;
+#else
+            //@todo: See note above re saving enmLastSeenGuestMode
+            rc = SSMR3GetU32(pSSM, &val);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetU32(pSSM, &val);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetU32(pSSM, &val);
+            AssertRCReturn(rc, rc);
+#endif
         }
     }
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
