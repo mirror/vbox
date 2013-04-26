@@ -556,7 +556,7 @@ VBOX_WITH_VDITOOL =
 # Enable this to build vbox-img even if VBOX_WITH_TESTCASES is disabled
 VBOX_WITH_VBOX_IMG =
 # Enables the VPX module for VM video capturing
-if1of ($(KBUILD_TARGET), darwin linux)
+if1of ($(KBUILD_TARGET), darwin linux solaris)
  VBOX_WITH_VPX = 1
 endif
 # Enable shared folders
