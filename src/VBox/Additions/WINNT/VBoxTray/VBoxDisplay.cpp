@@ -728,12 +728,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
         return 0;
     }
 
-    int rc = VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("VBoxTray: VBoxDisplayThread: Failed to set the graphics capability with rc=%Rrc, thread exiting\n", rc));
-        return 0;
-    }
+    PostMessage(ghwndToolWindow, WM_VBOX_GRAPHICS_SUPPORTED, 0, 0);
 
     do
     {
@@ -1002,7 +997,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
     maskInfo.u32NotMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
     if (!DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
         Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask - not) failed\n"));
-    VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+    PostMessage(ghwndToolWindow, WM_VBOX_GRAPHICS_UNSUPPORTED, 0, 0);
 
     Log(("VBoxTray: VBoxDisplayThread: finished display change request thread\n"));
     return 0;
