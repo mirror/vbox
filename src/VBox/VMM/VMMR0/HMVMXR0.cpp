@@ -7780,7 +7780,7 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
             {
                 case 0: /* CR0 */
                     Log(("CRX CR0 write rc=%d CR0=%#RGv\n", rc, pMixedCtx->cr0));
-                    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0 | HM_CHANGED_GUEST_CR3;
+                    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
                     break;
                 case 2: /* C2 **/
                     /* Nothing to do here, CR2 it's not part of the VMCS. */
