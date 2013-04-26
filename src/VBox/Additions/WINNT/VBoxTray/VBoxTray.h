@@ -80,6 +80,7 @@
  * Timer IDs.
  */
 #define TIMERID_VBOXTRAY_CHECK_HOSTVERSION      1000
+#define TIMERID_VBOXTRAY_CAPS_TIMER             1001
 
 /* The environment information for services. */
 typedef struct _VBOXSERVICEENV
