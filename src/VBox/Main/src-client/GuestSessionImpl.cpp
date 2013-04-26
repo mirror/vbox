@@ -83,6 +83,60 @@ public:
         : GuestSessionTaskInternal(pSession) { }
 };
 
+/**
+ * Internal listener class to serve events in an
+ * active manner, e.g. without polling delays.
+ */
+class GuestSessionListener
+{
+public:
+
+    GuestSessionListener(void)
+    {
+    }
+
+    HRESULT init(GuestSession *pSession)
+    {
+        mSession = pSession;
+        return S_OK;
+    }
+
+    void uninit(void)
+    {
+        mSession.setNull();
+    }
+
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
+    {
+        switch (aType)
+        {
+            case VBoxEventType_OnGuestSessionStateChanged:
+            {
+                Assert(!mSession.isNull());
+                int rc2 = mSession->signalWaitEvents(aType, aEvent);
+#ifdef DEBUG_andy
+                LogFlowFunc(("Signalling events of type=%ld, session=%p resulted in rc=%Rrc\n",
+                             aType, mSession, rc2));
+#endif
+                break;
+            }
+
+            default:
+                AssertMsgFailed(("Unhandled event %ld\n", aType));
+                break;
+        }
+
+        return S_OK;
+    }
+
+private:
+
+    ComObjPtr<GuestSession> mSession;
+};
+typedef ListenerImpl<GuestSessionListener, GuestSession*> GuestSessionListenerImpl;
+
+VBOX_LISTENER_DECLARE(GuestProcessListenerImpl)
+
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
@@ -147,6 +201,8 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
     mData.mStatus = GuestSessionStatus_Undefined;
     mData.mNumObjects = 0;
 
+    HRESULT hr;
+
     int rc = queryInfo();
     if (RT_SUCCESS(rc))
     {
@@ -155,6 +211,42 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
         HRESULT hr = mEventSource->init(static_cast<IGuestSession*>(this));
         if (FAILED(hr))
             rc = VERR_COM_UNEXPECTED;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        try
+        {
+            GuestSessionListener *pListener = new GuestSessionListener();
+            ComObjPtr<GuestSessionListenerImpl> thisListener;
+            hr = thisListener.createObject();
+            if (SUCCEEDED(hr))
+                hr = thisListener->init(pListener, this);
+
+            if (SUCCEEDED(hr))
+            {
+                mListener = thisListener;
+
+                com::SafeArray <VBoxEventType_T> eventTypes;
+                eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
+                hr = mEventSource->RegisterListener(mListener,
+                                                    ComSafeArrayAsInParam(eventTypes),
+                                                    TRUE /* Active listener */);
+                if (SUCCEEDED(hr))
+                {
+                    rc = RTCritSectInit(&mWaitEventCritSect);
+                    AssertRC(rc);
+                }
+                else
+                    rc = VERR_COM_UNEXPECTED;
+            }
+            else
+                rc = VERR_COM_UNEXPECTED;
+        }
+        catch(std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
+        }
     }
 
     if (RT_SUCCESS(rc))
@@ -216,6 +308,7 @@ void GuestSession::uninit(void)
     LogFlowThisFunc(("mNumObjects=%RU32\n", mData.mNumObjects));
 
     unconst(mEventSource).setNull();
+    unregisterEventListener();
 
 #endif /* VBOX_WITH_GUEST_CONTROL */
     LogFlowFuncLeaveRC(rc);
@@ -536,32 +629,43 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
     if (mData.mStatus != GuestSessionStatus_Started)
         return VINF_SUCCESS;
 
-    uint32_t uContextID;
-    int vrc = generateContextID(mData.mSession.mID, 0 /* Object ID */,
-                                &uContextID);
+    int vrc;
+
+    GuestWaitEvent *pEvent = NULL;
+    std::list < VBoxEventType_T > eventTypes;
+    try
+    {
+        eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
+
+        vrc = registerEvent(mData.mSession.mID, 0 /* Object ID */,
+                            eventTypes, &pEvent);
+    }
+    catch (std::bad_alloc)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
+
+    if (RT_FAILURE(vrc))
+        return vrc;
+
+    LogFlowThisFunc(("Sending closing request to guest session ID=%RU32, uFlags=%x\n",
+                     mData.mSession.mID, uFlags));
+
+    VBOXHGCMSVCPARM paParms[4];
+    int i = 0;
+    paParms[i++].setUInt32(pEvent->ContextID());
+    paParms[i++].setUInt32(uFlags);
+
+    vrc = sendCommand(HOST_SESSION_CLOSE, i, paParms);
     if (RT_SUCCESS(vrc))
     {
-        if (RT_SUCCESS(vrc))
-        {
-            LogFlowThisFunc(("Sending closing request to guest session ID=%RU32, uFlags=%x\n",
-                             mData.mSession.mID, uFlags));
+        alock.release(); /* Drop the write lock before waiting. */
 
-            VBOXHGCMSVCPARM paParms[4];
-            int i = 0;
-            paParms[i++].setUInt32(uContextID);
-            paParms[i++].setUInt32(uFlags);
-
-            vrc = sendCommand(HOST_SESSION_CLOSE, i, paParms);
-        }
-
-        if (RT_SUCCESS(vrc))
-        {
-            alock.release(); /* Drop the write lock before waiting. */
-
-            vrc = waitForStateChange(GuestSessionWaitForFlag_Terminate, uTimeoutMS,
-                                     NULL /* Session status */, pGuestRc);
-        }
+        vrc = waitForStatusChange(pEvent, GuestSessionWaitForFlag_Terminate, uTimeoutMS,
+                                  NULL /* Session status */, pGuestRc);
     }
+
+    unregisterEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1240,34 +1344,49 @@ int GuestSession::startSessionIntenal(int *pGuestRc)
     /* Set current session status. */
     mData.mStatus = GuestSessionStatus_Starting;
 
-    uint32_t uContextID;
-    int vrc = generateContextID(mData.mSession.mID, 0 /* Object ID */,
-                                &uContextID);
-    if (RT_SUCCESS(vrc))
+    int vrc;
+
+    GuestWaitEvent *pEvent = NULL;
+    std::list < VBoxEventType_T > eventTypes;
+    try
     {
-        VBOXHGCMSVCPARM paParms[8];
+        eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
 
-        int i = 0;
-        paParms[i++].setUInt32(uContextID);
-        paParms[i++].setUInt32(mData.mProtocolVersion);
-        paParms[i++].setPointer((void*)mData.mCredentials.mUser.c_str(),
-                                (ULONG)mData.mCredentials.mUser.length() + 1);
-        paParms[i++].setPointer((void*)mData.mCredentials.mPassword.c_str(),
-                                (ULONG)mData.mCredentials.mPassword.length() + 1);
-        paParms[i++].setPointer((void*)mData.mCredentials.mDomain.c_str(),
-                                (ULONG)mData.mCredentials.mDomain.length() + 1);
-        paParms[i++].setUInt32(mData.mSession.mOpenFlags);
-
-        vrc = sendCommand(HOST_SESSION_CREATE, i, paParms);
+        vrc = registerEvent(mData.mSession.mID, 0 /* Object ID */,
+                            eventTypes, &pEvent);
+    }
+    catch (std::bad_alloc)
+    {
+        vrc = VERR_NO_MEMORY;
     }
 
+    if (RT_FAILURE(vrc))
+        return vrc;
+
+    VBOXHGCMSVCPARM paParms[8];
+
+    int i = 0;
+    paParms[i++].setUInt32(pEvent->ContextID());
+    paParms[i++].setUInt32(mData.mProtocolVersion);
+    paParms[i++].setPointer((void*)mData.mCredentials.mUser.c_str(),
+                            (ULONG)mData.mCredentials.mUser.length() + 1);
+    paParms[i++].setPointer((void*)mData.mCredentials.mPassword.c_str(),
+                            (ULONG)mData.mCredentials.mPassword.length() + 1);
+    paParms[i++].setPointer((void*)mData.mCredentials.mDomain.c_str(),
+                            (ULONG)mData.mCredentials.mDomain.length() + 1);
+    paParms[i++].setUInt32(mData.mSession.mOpenFlags);
+
+    vrc = sendCommand(HOST_SESSION_CREATE, i, paParms);
     if (RT_SUCCESS(vrc))
     {
         alock.release(); /* Drop write lock before waiting. */
 
-        vrc = waitForStateChange(GuestSessionWaitForFlag_Start,  30 * 1000 /* 30s timeout */,
-                                 NULL /* Session status */, pGuestRc);
+        vrc = waitForStatusChange(pEvent, GuestSessionWaitForFlag_Start,
+                                  30 * 1000 /* 30s timeout */,
+                                  NULL /* Session status */, pGuestRc);
     }
+
+    unregisterEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1781,8 +1900,28 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
 
     alock.release(); /* Release lock before waiting. */
 
+    int vrc;
+
+    GuestWaitEvent *pEvent = NULL;
+    std::list < VBoxEventType_T > eventTypes;
+    try
+    {
+        eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
+
+        vrc = registerEvent(mData.mSession.mID, 0 /* Object ID */,
+                            eventTypes, &pEvent);
+    }
+    catch (std::bad_alloc)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
+
+    if (RT_FAILURE(vrc))
+        return vrc;
+
     GuestSessionStatus_T sessionStatus;
-    int vrc = waitForStateChange(fWaitFlags, uTimeoutMS, &sessionStatus, pGuestRc);
+    vrc = waitForStatusChange(pEvent, fWaitFlags,
+                              uTimeoutMS, &sessionStatus, pGuestRc);
     if (RT_SUCCESS(vrc))
     {
         switch (sessionStatus)
@@ -1814,137 +1953,49 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
         }
     }
 
+    unregisterEvent(pEvent);
+
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
-int GuestSession::waitForStateChange(uint32_t fWaitFlags, uint32_t uTimeoutMS,
-                                     GuestSessionStatus_T *pSessionStatus, int *pGuestRc)
+int GuestSession::waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFlags, uint32_t uTimeoutMS,
+                                      GuestSessionStatus_T *pSessionStatus, int *pGuestRc)
 {
-    /** @todo Param validation. */
+    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
-    int vrc;
-
-    ComPtr<IEventListener> pListener;
-    HRESULT hr = mEventSource->CreateListener(pListener.asOutParam());
-    if (SUCCEEDED(hr))
+    VBoxEventType_T evtType;
+    ComPtr<IEvent> pIEvent;
+    int vrc = waitForEvent(pEvent, uTimeoutMS,
+                           &evtType, pIEvent.asOutParam());
+    if (RT_SUCCESS(vrc))
     {
-        com::SafeArray <VBoxEventType_T> eventTypes(1);
-        eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
-        hr = mEventSource->RegisterListener(pListener, ComSafeArrayAsInParam(eventTypes), false);
+        Assert(evtType == VBoxEventType_OnGuestSessionStateChanged);
+
+        ComPtr<IGuestSessionStateChangedEvent> pChangedEvent = pIEvent;
+        Assert(!pChangedEvent.isNull());
+
+        GuestSessionStatus_T sessionStatus;
+        pChangedEvent->COMGETTER(Status)(&sessionStatus);
+        if (pSessionStatus)
+            *pSessionStatus = sessionStatus;
+
+        ComPtr<IGuestErrorInfo> errorInfo;
+        HRESULT hr = pChangedEvent->COMGETTER(Error)(errorInfo.asOutParam());
+        ComAssertComRC(hr);
+
+        LONG lGuestRc;
+        hr = errorInfo->COMGETTER(Result)(&lGuestRc);
+        ComAssertComRC(hr);
+        if (RT_FAILURE((int)lGuestRc))
+            vrc = VERR_GSTCTL_GUEST_ERROR;
+        if (pGuestRc)
+            *pGuestRc = (int)lGuestRc;
+
+        LogFlowThisFunc(("Status changed event for session ID=%RU32: %ld (%Rrc)\n",
+                         mData.mSession.mID, sessionStatus,
+                         RT_SUCCESS((int)lGuestRc) ? VINF_SUCCESS : (int)lGuestRc));
     }
-    else
-        vrc = VERR_COM_UNEXPECTED;
-
-    if (SUCCEEDED(hr))
-    {
-        LogFlowThisFunc(("Waiting for guest session state changed event (timeout=%RU32ms, flags=%x) ...\n",
-                         uTimeoutMS, fWaitFlags));
-
-        vrc = VINF_SUCCESS;
-
-        uint64_t u64Started = RTTimeMilliTS();
-        bool fSignalled = false;
-        do
-        {
-            unsigned cMsWait;
-            if (uTimeoutMS == RT_INDEFINITE_WAIT)
-                cMsWait = 1000;
-            else
-            {
-                uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
-                if (cMsElapsed >= uTimeoutMS)
-                    break; /* timed out */
-                cMsWait = RT_MIN(1000, uTimeoutMS - (uint32_t)cMsElapsed);
-            }
-
-            ComPtr<IEvent> pEvent;
-            hr = mEventSource->GetEvent(pListener, cMsWait, pEvent.asOutParam());
-            if (   SUCCEEDED(hr)
-                && !pEvent.isNull())
-            {
-                VBoxEventType_T aType;
-                hr = pEvent->COMGETTER(Type)(&aType);
-                ComAssertComRC(hr);
-                switch (aType)
-                {
-                    case VBoxEventType_OnGuestSessionStateChanged:
-                    {
-                        ComPtr<IGuestSessionStateChangedEvent> pChangedEvent = pEvent;
-                        Assert(!pChangedEvent.isNull());
-
-                        ULONG uSessionID;
-                        pChangedEvent->COMGETTER(Id)(&uSessionID);
-                        if (uSessionID != mData.mSession.mID)
-                            continue; /* Only our own session is of interest. */
-
-                        GuestSessionStatus_T sessionStatus;
-                        pChangedEvent->COMGETTER(Status)(&sessionStatus);
-                        if (pSessionStatus)
-                            *pSessionStatus = sessionStatus;
-
-                        LogFlowThisFunc(("Got status changed event for session ID=%RU32: %ld\n",
-                                         mData.mSession.mID, sessionStatus));
-
-                        bool fSignal = false;
-                        if (fWaitFlags)
-                        {
-                            switch (sessionStatus)
-                            {
-                                case GuestSessionStatus_Started:
-                                    fSignal = (   fWaitFlags & GuestSessionWaitForFlag_Start
-                                               || fWaitFlags & GuestSessionWaitForFlag_Status);
-                                    break;
-
-                                default:
-                                    fSignal = true;
-                                    break;
-                            }
-                        }
-                        else
-                            fSignal = true;
-
-                        if (!fSignal)
-                            continue;
-
-                        ComPtr<IGuestErrorInfo> errorInfo;
-                        hr = pChangedEvent->COMGETTER(Error)(errorInfo.asOutParam());
-                        ComAssertComRC(hr);
-
-                        LONG lGuestRc;
-                        hr = errorInfo->COMGETTER(Result)(&lGuestRc);
-                        ComAssertComRC(hr);
-                        if (RT_FAILURE((int)lGuestRc))
-                            vrc = VERR_GSTCTL_GUEST_ERROR;
-                        if (pGuestRc)
-                            *pGuestRc = (int)lGuestRc;
-
-                        LogFlowThisFunc(("Status changed event for session ID=%RU32: %ld (%Rrc)\n",
-                                         mData.mSession.mID, sessionStatus,
-                                         RT_SUCCESS((int)lGuestRc) ? VINF_SUCCESS : (int)lGuestRc));
-
-                        fSignalled = true;
-                        break;
-                    }
-
-                    default:
-                         AssertMsgFailed(("Unhandled event type %ld\n", aType));
-                         break;
-                }
-            }
-
-        } while (!fSignalled);
-
-        if (   RT_SUCCESS(vrc)
-            && !fSignalled)
-        {
-            vrc = VERR_TIMEOUT;
-        }
-
-        mEventSource->UnregisterListener(pListener);
-    }
-    else
-        vrc = VERR_COM_UNEXPECTED;
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
