@@ -100,6 +100,23 @@ RT_C_DECLS_BEGIN
 # define HMIsInHwVirtCtx(a_pVCpu)       (false)
 #endif
 
+/**
+ * Checks whether we're in the special hardware virtualization context and we
+ * cannot perform long jump without guru meditating and possibly messing up the
+ * host and/or guest state.
+ *
+ * This is after we've turned interrupts off and such.
+ *
+ * @returns true / false.
+ * @param   a_pVCpu     The caller's cross context virtual CPU structure.
+ * @thread  EMT
+ */
+#ifdef IN_RING0
+# define HMIsInHwVirtNoLongJmpCtx(a_pVCpu)  (VMCPU_GET_STATE(a_pVCpu) == VMCPUSTATE_STARTED_EXEC)
+#else
+# define HMIsInHwVirtNoLongJmpCtx(a_pVCpu)  (false)
+#endif
+
 
 VMMDECL(bool)                   HMIsEnabledNotMacro(PVM pVM);
 VMM_INT_DECL(int)               HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
