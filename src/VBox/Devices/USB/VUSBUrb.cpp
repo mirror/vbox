@@ -759,6 +759,7 @@ void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
         &&  ((pSetup->bmRequestType >> 5) & 0x3) >= 2 /* vendor */
         &&  (fComplete || !(pSetup->bmRequestType >> 7))
         &&  pDev
+        &&  pDev->pDescCache
         &&  pDev->pDescCache->pDevice
         &&  pDev->pDescCache->pDevice->idVendor == 0x046d
         &&  (   pDev->pDescCache->pDevice->idProduct == 0x8f6
@@ -1960,7 +1961,14 @@ void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies)
              * Reap most URBs pending on a single device.
              */
             PVUSBURB pRipe;
-            while ((pRipe = pDev->pUsbIns->pReg->pfnUrbReap(pDev->pUsbIns, cMillies)) != NULL)
+            
+            /**
+             * This is workaround for race(should be fixed) detach on one EMT thread and frame boundary timer on other 
+             * and leaked URBs (shouldn't be affected by leaked URBs).
+             */
+            Assert(pDev->pUsbIns);
+            while (   pDev->pUsbIns 
+                   && ((pRipe = pDev->pUsbIns->pReg->pfnUrbReap(pDev->pUsbIns, cMillies)) != NULL))
             {
                 vusbUrbAssert(pRipe);
                 if (pRipe == pUrbNext)
