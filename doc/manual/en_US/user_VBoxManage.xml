@@ -1025,7 +1025,7 @@ Statistics update:  disabled
         </itemizedlist></para>
     </sect2>
 
-    <sect2>
+    <sect2 id="vboxmanage-modifyvm-vrde">
       <title>Remote machine settings</title>
 
       <para>The following settings that affect remote machine behavior are
@@ -1060,6 +1060,22 @@ Statistics update:  disabled
             interface the VRDE server will bind to. If specified, the server
             will accept connections only on the specified host network
             interface.</para>
+            <para>The setting can be used to specify whether the VRDP server
+            should accept either IPv4 or IPv6 or both connections:
+            <itemizedlist>
+              <listitem>
+                <para>only IPv4: <computeroutput>--vrdeaddress "0.0.0.0"
+                </computeroutput></para>
+              </listitem>
+              <listitem>
+                <para>only IPv6: <computeroutput>--vrdeaddress "::"
+                </computeroutput></para>
+              </listitem>
+              <listitem>
+                <para>both IPv6 and IPv4 (default): <computeroutput>--vrdeaddress ""
+                </computeroutput></para>
+              </listitem>
+            </itemizedlist></para>
           </listitem>
 
           <listitem>

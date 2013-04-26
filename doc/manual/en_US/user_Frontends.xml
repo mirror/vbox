@@ -8,7 +8,7 @@
     <title id="vrde">Remote display (VRDP support)</title>
 
     <para>VirtualBox can display virtual machines remotely, meaning that a
-    virtual machine can execute on one machine even though the machine will be
+    virtual machine can execute on one computer even though the machine will be
     displayed on a second computer, and the machine will be controlled from
     there as well, as if the virtual machine was running on that second
     computer.</para>
@@ -28,10 +28,8 @@
     VirtualBox before 4.0 did.</para>
 
     <para>VRDP is a backwards-compatible extension to Microsoft's Remote
-    Desktop Protocol (RDP). Typically graphics updates and audio are sent from
-    the remote machine to the client, while keyboard and mouse events are sent
-    back. As a result, you can use any standard RDP client to control the
-    remote VM.</para>
+    Desktop Protocol (RDP). As a result, you can use any standard RDP client
+    to control the remote VM.</para>
 
     <para>Even when the extension is installed, the VRDP server is disabled by
     default. It can easily be enabled on a per-VM basis either in the
@@ -43,6 +41,35 @@
     further below), VRDP support will be automatically enabled since
     VBoxHeadless has no other means of output.</para>
 
+    <para>By default, the VRDP server uses TCP port
+    <computeroutput>3389</computeroutput>. You will need to change the
+    default port if you run more than one VRDP server, since the port can
+    only be used by one server at a time; you might also need to change it
+    on Windows hosts since the default port might already be used by the RDP
+    server that is built into Windows itself. Ports 5000 through 5050 are
+    typically not used and might be a good choice.</para>
+
+    <para>The port can be changed either in the "Display" settings of the
+    graphical user interface or with
+    <computeroutput>--vrdeport</computeroutput> option of the
+    <computeroutput>VBoxManage modifyvm</computeroutput> command. You can
+    specify a comma-separated list of ports or ranges of ports. Use a dash
+    between two port numbers to specify a range. The VRDP server will bind
+    to <emphasis role="bold">one</emphasis> of available ports from the
+    specified list. For example, <computeroutput>VBoxManage modifyvm "VM
+    name" --vrdeport 5000,5010-5012</computeroutput> will configure the
+    server to bind to one of the ports 5000, 5010, 5011 or 5012. See <xref
+    linkend="vboxmanage-modifyvm-vrde" /> for details.</para>
+
+    <para>The actual port used by a running VM can be either queried with
+    <computeroutput>VBoxManage showvminfo</computeroutput> command or seen
+    in the GUI on the "Runtime" tab of the "Session Information Dialog",
+    which is accessible via the "Machine" menu of the VM window.</para>
+
+    <para>Support for IPv6 has been implemented in VirtualBox 4.3.
+    If the host OS supports IPv6 the VRDP server will automatically
+    listen for IPv6 connections in addition to IPv4.</para>
+
     <sect2 id="rdp-viewers">
       <title>Common third-party RDP viewers</title>
 
@@ -52,32 +79,7 @@
       <emphasis role="bold">IP address</emphasis> of your
       <emphasis>host</emphasis> system (not of the virtual machine!) as the
       server address to connect to, as well as the <emphasis role="bold">port
-      number</emphasis> that the RDP server is using.</para>
-
-      <para>By default, VRDP uses TCP port
-      <computeroutput>3389</computeroutput>. You will need to change the
-      default port if you run more than one VRDP server, since the port can
-      only be used by one server at a time; you might also need to change it
-      on Windows hosts since the default port might already be used by the RDP
-      server that is built into Windows itself. Ports 5000 through 5050 are
-      typically not used and might be a good choice.</para>
-
-      <para>The port can be changed either in the "Display" settings of the
-      graphical user interface or with
-      <computeroutput>--vrdeport</computeroutput> option of the
-      <computeroutput>VBoxManage modifyvm</computeroutput> command. You can
-      specify a comma-separated list of ports or ranges of ports. Use a dash
-      between two port numbers to specify a range. The VRDP server will bind
-      to <emphasis role="bold">one</emphasis> of available ports from the
-      specified list. For example, <computeroutput>VBoxManage modifyvm "VM
-      name" --vrdeport 5000,5010-5012</computeroutput> will configure the
-      server to bind to one of the ports 5000, 5010, 5011 or 5012. See <xref
-      linkend="vboxmanage-modifyvm" /> for details.</para>
-
-      <para>The actual port used by a running VM can be either queried with
-      <computeroutput>VBoxManage showvminfo</computeroutput> command or seen
-      in the GUI on the "Runtime" tab of the "Session Information Dialog",
-      which is accessible via the "Machine" menu of the VM window.</para>
+      number</emphasis> that the VRDP server is using.</para>
 
       <para>Here follow examples for the most common RDP viewers:<itemizedlist>
           <listitem>
@@ -87,10 +89,15 @@
             (press the Windows key and "R") and typing "mstsc". You can also
             find it under "Start" -&gt; "All Programs" -&gt; "Accessories"
             -&gt; "Remote Desktop Connection". If you use the "Run" dialog,
-            you can type in options directly:<screen>mstsc 1.2.3.4[:3389]</screen></para>
+            you can type in options directly:<screen>mstsc 1.2.3.4:3389</screen></para>
 
-            <para>Replace "1.2.3.4" with the host IP address, and 3389 with a
-            different port if necessary.</para>
+            <para>Replace <computeroutput>1.2.3.4</computeroutput> with the host IP address,
+            and <computeroutput>3389</computeroutput> with a different port if necessary.</para>
+
+            <note>
+              <para>IPv6 address must be enclosed in square brackets to specify a port.
+              For example: <computeroutput>mstsc [fe80::1:2:3:4]:3389</computeroutput></para>
+            </note>
 
             <note>
               <para>When connecting to localhost in order to test the
@@ -113,8 +120,8 @@
             <para>With rdesktop, use a command line such as the
             following:<screen>rdesktop -a 16 -N 1.2.3.4:3389</screen></para>
 
-            <para>As said for the Microsoft viewer above, replace "1.2.3.4"
-            with the host IP address, and 3389 with a different port if
+            <para>As said for the Microsoft viewer above, replace <computeroutput>1.2.3.4</computeroutput>
+            with the host IP address, and <computeroutput>3389</computeroutput> with a different port if
             necessary. The <computeroutput>-a 16</computeroutput> option
             requests a color depth of 16 bits per pixel, which we recommend.
             (For best performance, after installation of the guest operating
@@ -126,11 +133,11 @@
           <listitem>
             <para>If you run the KDE desktop, you might prefer
             <computeroutput>krdc</computeroutput>, the KDE RDP viewer. The
-            command line would look like this:<screen>krdc rdp://1.2.3.4[:3389]</screen></para>
+            command line would look like this:<screen>krdc rdp://1.2.3.4:3389</screen></para>
 
-            <para>Again, replace "1.2.3.4" with the host IP address, and 3389
-            with a different port if necessary. The "rdp://" bit is required
-            with krdc to switch it into RDP mode.</para>
+            <para>Again, replace <computeroutput>1.2.3.4</computeroutput> with the host IP address,
+            and <computeroutput>3389</computeroutput> with a different port if necessary.
+            The "rdp://" bit is required with krdc to switch it into RDP mode.</para>
           </listitem>
 
           <listitem>
