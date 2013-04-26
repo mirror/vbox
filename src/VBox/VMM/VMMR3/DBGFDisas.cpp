@@ -221,7 +221,8 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
 
             /* translate the address */
             pState->GCPtrPage = GCPtr & PAGE_BASE_GC_MASK;
-            if (MMHyperIsInsideArea(pState->pVM, pState->GCPtrPage))
+            if (   !HMIsEnabled(pState->pVM)
+                && MMHyperIsInsideArea(pState->pVM, pState->GCPtrPage))
             {
                 pState->pvPageR3 = MMHyperRCToR3(pState->pVM, (RTRCPTR)pState->GCPtrPage);
                 if (!pState->pvPageR3)
