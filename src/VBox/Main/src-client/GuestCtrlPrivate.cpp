@@ -803,6 +803,152 @@ int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32
     return VINF_SUCCESS;
 }
 
+int GuestBase::registerEvent(uint32_t uSessionID, uint32_t uObjectID,
+                             const std::list<VBoxEventType_T> &lstEvents,
+                             GuestWaitEvent **ppEvent)
+{
+    AssertPtrReturn(ppEvent, VERR_INVALID_POINTER);
+
+    uint32_t uContextID;
+    int rc = generateContextID(uSessionID, uObjectID, &uContextID);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = RTCritSectEnter(&mWaitEventCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        try
+        {
+            GuestWaitEvent *pEvent = new GuestWaitEvent(uContextID, lstEvents);
+            AssertPtr(pEvent);
+
+            for (std::list<VBoxEventType_T>::const_iterator itEvents = lstEvents.begin();
+                 itEvents != lstEvents.end(); itEvents++)
+            {
+                mWaitEvents[(*itEvents)].push_back(pEvent);
+            }
+
+            *ppEvent = pEvent;
+        }
+        catch(std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
+        }
+
+        int rc2 = RTCritSectLeave(&mWaitEventCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+int GuestBase::signalWaitEvents(VBoxEventType_T aType, IEvent *aEvent)
+{
+    int rc = RTCritSectEnter(&mWaitEventCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        GuestWaitEventTypes::iterator itTypes = mWaitEvents.find(aType);
+        if (itTypes != mWaitEvents.end())
+        {
+            for (GuestWaitEvents::iterator itEvents = itTypes->second.begin();
+                 itEvents != itTypes->second.end(); itEvents++)
+            {
+                ComPtr<IEvent> pThisEvent = aEvent;
+                Assert(!pThisEvent.isNull());
+                int rc2 = (*itEvents)->Signal(aEvent);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+        }
+
+        int rc2 = RTCritSectLeave(&mWaitEventCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+void GuestBase::unregisterEvent(GuestWaitEvent *pEvent)
+{
+    AssertPtrReturnVoid(pEvent);
+
+    int rc = RTCritSectEnter(&mWaitEventCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        const std::list<VBoxEventType_T> lstTypes = pEvent->Types();
+        for (std::list<VBoxEventType_T>::const_iterator itEvents = lstTypes.begin();
+             itEvents != lstTypes.end(); itEvents++)
+        {
+            /** @todo Slow O(n) lookup. Optimize this. */
+            GuestWaitEvents::iterator itCurEvent = mWaitEvents[(*itEvents)].begin();
+            while (itCurEvent != mWaitEvents[(*itEvents)].end())
+            {
+             if ((*itCurEvent) == pEvent)
+             {
+                 itCurEvent = mWaitEvents[(*itEvents)].erase(itCurEvent);
+                 break;
+             }
+             else
+                 itCurEvent++;
+            }
+        }
+
+        delete pEvent;
+
+        int rc2 = RTCritSectLeave(&mWaitEventCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+}
+
+void GuestBase::unregisterEventListener(void)
+{
+    if (mListener)
+    {
+        ComPtr<IEventSource> es;
+        HRESULT hr = mConsole->COMGETTER(EventSource)(es.asOutParam());
+        if (SUCCEEDED(hr))
+        {
+            Assert(!es.isNull());
+            es->UnregisterListener(mListener);
+        }
+
+        mListener.setNull();
+    }
+
+    int rc2 = RTCritSectDelete(&mWaitEventCritSect);
+    AssertRC(rc2);
+}
+
+int GuestBase::waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
+                            VBoxEventType_T *pType, IEvent **ppEvent)
+{
+    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("pEvent=%p, uTimeoutMS=%RU32\n",
+                 pEvent, uTimeoutMS));
+
+    int vrc = pEvent->Wait(uTimeoutMS);
+    if (RT_SUCCESS(vrc))
+    {
+        const ComPtr<IEvent> pThisEvent = pEvent->Event();
+        Assert(!pThisEvent.isNull());
+
+        if (pType)
+        {
+            HRESULT hr = pThisEvent->COMGETTER(Type)(pType);
+            ComAssertComRC(hr);
+        }
+        if (ppEvent)
+            pThisEvent.queryInterfaceTo(ppEvent);
+    }
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
 GuestObject::GuestObject(void)
     : mSession(NULL),
       mObjectID(0)
@@ -823,6 +969,13 @@ int GuestObject::bindToSession(Console *pConsole, GuestSession *pSession, uint32
     mObjectID = uObjectID;
 
     return VINF_SUCCESS;
+}
+
+int GuestObject::registerEvent(const std::list<VBoxEventType_T> &lstEvents,
+                               GuestWaitEvent **ppEvent)
+{
+    AssertPtr(mSession);
+    return GuestBase::registerEvent(mSession->getId(), mObjectID, lstEvents, ppEvent);
 }
 
 int GuestObject::sendCommand(uint32_t uFunction,
@@ -850,5 +1003,47 @@ int GuestObject::sendCommand(uint32_t uFunction,
 #endif
     LogFlowFuncLeaveRC(vrc);
     return vrc;
+}
+
+GuestWaitEvent::GuestWaitEvent(uint32_t uCID,
+                               const std::list<VBoxEventType_T> &lstEvents)
+    : mCID(uCID),
+      mEventTypes(lstEvents),
+      mEventSem(NIL_RTSEMEVENT),
+      mEvent(false)
+{
+    int rc = RTSemEventCreate(&mEventSem);
+    AssertRC(rc);
+    /** @todo Throw an exception on failure! */
+}
+
+GuestWaitEvent::~GuestWaitEvent(void)
+{
+
+}
+
+int GuestWaitEvent::Signal(IEvent *pEvent)
+{
+    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
+    AssertReturn(mEventSem != NIL_RTSEMEVENT, VERR_CANCELLED);
+
+    mEvent = pEvent;
+
+    return RTSemEventSignal(mEventSem);
+}
+
+int GuestWaitEvent::Wait(RTMSINTERVAL uTimeoutMS)
+{
+    LogFlowThisFuncEnter();
+
+    AssertReturn(mEventSem != NIL_RTSEMEVENT, VERR_CANCELLED);
+
+    RTMSINTERVAL msInterval = uTimeoutMS;
+    if (!uTimeoutMS)
+        msInterval = RT_INDEFINITE_WAIT;
+    int rc = RTSemEventWait(mEventSem, msInterval);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
