@@ -939,7 +939,8 @@ int GuestBase::waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
         if (pType)
         {
             HRESULT hr = pThisEvent->COMGETTER(Type)(pType);
-            ComAssertComRC(hr);
+            if (FAILED(hr))
+                vrc = VERR_COM_UNEXPECTED;
         }
         if (ppEvent)
             pThisEvent.queryInterfaceTo(ppEvent);
