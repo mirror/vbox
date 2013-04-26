@@ -6486,6 +6486,9 @@ DECLINLINE(int) hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
      * (before running guest code) after calling this function (e.g. how do we reverse the effects of calling PDMGetInterrupt()?)
      * This is why this is done after all possible exits-to-ring-3 paths in this code.
      */
+    /** @todo r=bird: You reverse the effect of calling PDMGetInterrupt by
+     *        handing it over to TPRM like we do in REMR3StateBack using
+     *        TRPMAssertTrap and the other setters. */
     rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
     return rc;
@@ -6611,7 +6614,7 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
 
     TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
     Assert(!(ASMGetFlags() & X86_EFL_IF));
-    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
     /* Restore the effects of TPR patching if any. */
     if (pVM->hm.s.fTPRPatchingActive)

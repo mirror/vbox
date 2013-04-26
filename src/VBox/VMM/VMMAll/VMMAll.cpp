@@ -342,3 +342,20 @@ VMM_INT_DECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM)
     return pVM->vmm.s.enmSwitcher;
 }
 
+
+/**
+ * Checks whether we're in a ring-3 call or not.
+ *
+ * @returns true / false.
+ * @param   pVCpu               The caller's cross context VM structure.
+ * @thread  EMT
+ */
+VMM_INT_DECL(bool) VMMIsInRing3Call(PVMCPU pVCpu)
+{
+#ifdef RT_ARCH_X86
+    return pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call;
+#else
+    return pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call;
+#endif
+}
+

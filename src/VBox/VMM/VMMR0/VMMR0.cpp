@@ -761,9 +761,14 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 rc = HMR0Enter(pVM, pVCpu);
                 if (RT_SUCCESS(rc))
                 {
+                    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
+
                     rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, HMR0RunGuestCode, pVM, pVCpu); /* this may resume code. */
                     int rc2 = HMR0Leave(pVM, pVCpu);
                     AssertRC(rc2);
+
+                    VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
+                    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
                 }
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
             }
@@ -1367,6 +1372,27 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
     }
     return vmmR0EntryExWorker(pVM, idCpu, enmOperation, pReq, u64Arg, pSession);
 }
+
+
+/**
+ * Checks whether we've armed the ring-0 long jump machinery.
+ *
+ * @returns @c true / @c false
+ * @param   pVCpu           The caller's cross context virtual CPU structure.
+ * @thread  EMT
+ * @sa      VMMIsLongJumpArmed
+ */
+VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPU pVCpu)
+{
+#ifdef RT_ARCH_X86
+    return pVCpu->vmm.s.CallRing3JmpBufR0.eip
+        && !pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call;
+#else
+    return pVCpu->vmm.s.CallRing3JmpBufR0.rip
+        && !pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call;
+#endif
+}
+
 
 /**
  * Internal R0 logger worker: Flush logger.

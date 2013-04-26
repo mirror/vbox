@@ -88,6 +88,19 @@ RT_C_DECLS_BEGIN
  */
 #define HMCanEmulateIoBlockEx(a_pCtx)   (!CPUMIsGuestInPagedProtectedModeEx(a_pCtx))
 
+/**
+ * Checks whether we're in the special hardware virtualization context.
+ * @returns true / false.
+ * @param   a_pVCpu     The caller's cross context virtual CPU structure.
+ * @thread  EMT
+ */
+#ifdef IN_RING0
+# define HMIsInHwVirtCtx(a_pVCpu)       (VMCPU_GET_STATE(a_pVCpu) == VMCPUSTATE_STARTED_HM)
+#else
+# define HMIsInHwVirtCtx(a_pVCpu)       (false)
+#endif
+
+
 VMMDECL(bool)                   HMIsEnabledNotMacro(PVM pVM);
 VMM_INT_DECL(int)               HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
 VMM_INT_DECL(bool)              HMHasPendingIrq(PVM pVM);

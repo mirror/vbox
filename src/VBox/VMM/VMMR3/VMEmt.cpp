@@ -1098,7 +1098,7 @@ VMMR3_INT_DECL(int) VMR3WaitHalted(PVM pVM, PVMCPU pVCpu, bool fIgnoreInterrupts
     /*
      * Do the halt.
      */
-    Assert(VMCPU_GET_STATE(pVCpu) == VMCPUSTATE_STARTED);
+    VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HALTED);
     PUVM pUVM = pUVCpu->pUVM;
     int rc = g_aHaltMethods[pUVM->vm.s.iHaltMethod].pfnHalt(pUVCpu, fMask, u64Now);

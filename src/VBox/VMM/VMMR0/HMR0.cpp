@@ -1490,7 +1490,7 @@ VMMR0_INT_DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
         Log2(("CPUMR0SaveGuestFPU\n"));
         CPUMR0SaveGuestFPU(pVM, pVCpu, pCtx);
 
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0; /** @todo r=bird: Why HM_CHANGED_GUEST_CR0?? */
         Assert(!CPUMIsGuestFPUStateActive(pVCpu));
     }
 #endif

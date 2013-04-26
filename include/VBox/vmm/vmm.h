@@ -229,6 +229,21 @@ typedef struct VMM2USERMETHODS
 #define VMM2USERMETHODS_VERSION       UINT32_C(0x00020000)
 
 
+/**
+ * Checks whether we've armed the ring-0 long jump machinery.
+ *
+ * @returns @c true / @c false
+ * @param   pVCpu           The caller's cross context virtual CPU structure.
+ * @thread  EMT
+ * @sa      VMMR0IsLongJumpArmed
+ */
+#ifdef IN_RING0
+# define VMMIsLongJumpArmed(a_pVCpu)                VMMR0IsLongJumpArmed(a_pVCpu)
+#else
+# define VMMIsLongJumpArmed(a_pVCpu)                (false)
+#endif
+
+
 VMM_INT_DECL(RTRCPTR)       VMMGetStackRC(PVMCPU pVCpu);
 VMMDECL(VMCPUID)            VMMGetCpuId(PVM pVM);
 VMMDECL(PVMCPU)             VMMGetCpu(PVM pVM);
@@ -237,6 +252,7 @@ VMMDECL(PVMCPU)             VMMGetCpuById(PVM pVM, VMCPUID idCpu);
 VMMR3DECL(PVMCPU)           VMMR3GetCpuByIdU(PUVM pVM, VMCPUID idCpu);
 VMM_INT_DECL(uint32_t)      VMMGetSvnRev(void);
 VMM_INT_DECL(VMMSWITCHER)   VMMGetSwitcher(PVM pVM);
+VMM_INT_DECL(bool)          VMMIsInRing3Call(PVMCPU pVCpu);
 VMM_INT_DECL(void)          VMMTrashVolatileXMMRegs(void);
 
 
@@ -478,6 +494,8 @@ VMMR0DECL(int)      VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pv
 VMMR0DECL(void)     VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation);
 VMMR0DECL(int)      VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
 VMMR0DECL(int)      VMMR0TermVM(PVM pVM, PGVM pGVM);
+VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPU pVCpu);
+
 
 #ifdef LOG_ENABLED
 VMMR0DECL(void)     VMMR0LogFlushDisable(PVMCPU pVCpu);
