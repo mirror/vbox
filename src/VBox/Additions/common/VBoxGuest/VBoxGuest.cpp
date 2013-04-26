@@ -72,18 +72,18 @@ static int VBoxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
 
 static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask);
 
-#define VBOXGUEST_ACQUIRE_STYLE_CAPS (VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
+#define VBOXGUEST_ACQUIRE_STYLE_EVENTS (VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
 
 DECLINLINE(uint32_t) VBoxGuestCommonGetHandledEventsLocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
-    if(pDevExt->enmGuestCapsAcquireMode != VBOXGUUESTCAPS_MODE_ACQUIRE)
+    if(!pDevExt->u32AcquireModeGuestCaps)
         return VMMDEV_EVENT_VALID_EVENT_MASK;
 
-    uint32_t u32AquiredGuestCaps = pSession->u32AquiredGuestCaps;
-    uint32_t u32CleanupEvents = VBOXGUEST_ACQUIRE_STYLE_CAPS;
-    if (u32AquiredGuestCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS)
+    uint32_t u32AllowedGuestCaps = pSession->u32AquiredGuestCaps | (VMMDEV_EVENT_VALID_EVENT_MASK & ~pDevExt->u32AcquireModeGuestCaps);
+    uint32_t u32CleanupEvents = VBOXGUEST_ACQUIRE_STYLE_EVENTS;
+    if (u32AllowedGuestCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS)
         u32CleanupEvents &= ~VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-    if (u32AquiredGuestCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS)
+    if (u32AllowedGuestCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS)
         u32CleanupEvents &= ~VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
 
     return VMMDEV_EVENT_VALID_EVENT_MASK & ~u32CleanupEvents;
@@ -97,12 +97,26 @@ DECLINLINE(uint32_t) VBoxGuestCommonGetAndCleanPendingEventsLocked(PVBOXGUESTDEV
     return fMatches;
 }
 
-DECLINLINE(bool) VBoxGuestCommonGuestCapsModeSet(PVBOXGUESTDEVEXT pDevExt, VBOXGUUESTCAPS_MODE enmMode)
+DECLINLINE(bool) VBoxGuestCommonGuestCapsModeSet(PVBOXGUESTDEVEXT pDevExt, uint32_t fCaps, bool fAcquire, uint32_t *pu32OtherVal)
 {
-    VBOXGUUESTCAPS_MODE enmOldMode;
-    if (ASMAtomicCmpXchgExU32((volatile uint32_t*)&pDevExt->enmGuestCapsAcquireMode, enmMode, VBOXGUUESTCAPS_MODE_UNDEFINED, (uint32_t*)&enmOldMode))
-        return true;
-    return enmOldMode == enmMode;
+    uint32_t *pVal = fAcquire ? &pDevExt->u32AcquireModeGuestCaps : &pDevExt->u32SetModeGuestCaps;
+    const uint32_t fNotVal = !fAcquire ? pDevExt->u32AcquireModeGuestCaps : pDevExt->u32SetModeGuestCaps;
+    bool fResult = true;
+    RTSpinlockAcquire(pDevExt->EventSpinlock);
+
+    if (!(fNotVal & fCaps))
+        *pVal |= fCaps;
+    else
+    {
+        AssertMsgFailed(("trying to change caps mode\n"));
+        fResult = false;
+    }
+
+    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
+
+    if (pu32OtherVal)
+        *pu32OtherVal = fNotVal;
+    return fResult;
 }
 
 /*******************************************************************************
@@ -802,7 +816,8 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
                     pVMMDev->u32Version, VMMDEV_MEMORY_VERSION, pVMMDev->u32Size, cbMMIO));
     }
 
-    pDevExt->enmGuestCapsAcquireMode = VBOXGUUESTCAPS_MODE_UNDEFINED;
+    pDevExt->u32AcquireModeGuestCaps = 0;
+    pDevExt->u32SetModeGuestCaps = 0;
     pDevExt->u32GuestCaps = 0;
 
     /*
@@ -1584,18 +1599,23 @@ static int VBoxGuestCheckIfVMMReqAllowed(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
          * Anyone. But not for CapsAcquire mode
          */
         case VMMDevReq_SetGuestCapabilities:
-#if 0
-            /* @todo: currently windows clients use both Set and Acquire for different caps
-             * this should not lead to any problem, however, better switch to consistent behavior */
-            if (!VBoxGuestCommonGuestCapsModeSet(pDevExt, VBOXGUUESTCAPS_MODE_SET))
+        {
+            VMMDevReqGuestCapabilities2 *pCaps = (VMMDevReqGuestCapabilities2*)pReqHdr;
+            uint32_t fAcquireCaps = 0;
+            if (!VBoxGuestCommonGuestCapsModeSet(pDevExt, pCaps->u32OrMask, false, &fAcquireCaps))
             {
-                Assert(0);
-                LogRel(("calling caps set for invalid caps mode %d\n", pDevExt->enmGuestCapsAcquireMode));
+                AssertFailed();
+                LogRel(("calling caps set for acquired caps %d\n", pCaps->u32OrMask));
                 enmRequired = kLevel_NoOne;
                 break;
             }
-#endif
+            /* hack to adjust the notcaps.
+             * @todo: move to a better place
+             * user-mode apps are allowed to pass any mask to the notmask,
+             * the driver cleans up them accordingly */
+            pCaps->u32NotMask &= ~fAcquireCaps;
             /* do not break, make it fall through to the below enmRequired setting */
+        }
         /*
          * Anyone.
          */
@@ -2509,7 +2529,7 @@ static void VBoxGuestCommonCheckEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
     }
     ASMAtomicWriteU32(&pDevExt->f32PendingEvents, fEvents);
 
-    RTSpinlockRelease(pDevExt->EventSpinlock);
+    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
 
 #ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
     VBoxGuestWaitDoWakeUps(pDevExt);
@@ -2518,12 +2538,18 @@ static void VBoxGuestCommonCheckEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
 
 static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask)
 {
-    if (!VBoxGuestCommonGuestCapsModeSet(pDevExt, VBOXGUUESTCAPS_MODE_ACQUIRE))
+    uint32_t fSetCaps = 0;
+    if (!VBoxGuestCommonGuestCapsModeSet(pDevExt, fOrMask, true, &fSetCaps))
     {
         Assert(0);
-        LogRel(("calling caps acquire for invalid caps mode %d\n", pDevExt->enmGuestCapsAcquireMode));
+        LogRel(("calling caps acquire for set caps %d\n", fOrMask));
         return VERR_INVALID_STATE;
     }
+
+    /* user-mode apps are allowed to pass any mask to the notmask,
+     * the driver cleans up them accordingly */
+    fNotMask &= ~fSetCaps;
+
     if (!VBoxGuestCommonGuestCapsValidateValues(fOrMask))
         return VERR_INVALID_PARAMETER;
 
