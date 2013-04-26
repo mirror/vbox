@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1460,7 +1460,7 @@ void vrdpDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *
                 VRDPBCHASH hashDeleted;
                 int cacheResult;
 
-                LOG(("MEMBLT."));
+                LOG(("MEMBLT: bitmap %dx%d.", psoSrc->sizlBitmap.cx, psoSrc->sizlBitmap.cy));
                 if (   (psoSrc->fjBitmap & BMF_DONTCACHE) != 0
                     || psoSrc->iUniq == 0
                        /* Bitmaps with hdev == 0 seems to have different RGB layout for 16BPP modes.
@@ -1469,6 +1469,10 @@ void vrdpDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *
                     || (   psoSrc->hdev == 0
                         && !(psoSrc->iBitmapFormat == BMF_24BPP || psoSrc->iBitmapFormat == BMF_32BPP)
                        )
+                       /* Do not try to cache large bitmaps. The cache should be mostly used for icons, etc.
+                        * Computing a bitmap hash increases CPU load. Up to 384K pixels (~620x620)
+                        */
+                    || psoSrc->sizlBitmap.cx * psoSrc->sizlBitmap.cy > 384 * _1K
                    )
                 {
                     LOG(("MEMBLT: non cacheable bitmap."));
@@ -1476,17 +1480,11 @@ void vrdpDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *
                 }
                 else
                 {
-                    LOG(("going to cache."));
-                    cacheResult = vrdpbmpCacheSurface(&pDev->vrdpCache, psoSrc, &hash, &hashDeleted);
+                    LOG(("MEMBLT: going to cache."));
+                    cacheResult = vrdpbmpCacheSurface(&pDev->vrdpCache, psoSrc, &hash, &hashDeleted, FALSE);
                 }
 
-                LOG(("MEMBLT: cacheResult 0x%08X. trg %d,%d %dx%d src %dx%d from %d,%d",
-                         cacheResult,
-                         rclTrg.left, rclTrg.top,
-                         rclTrg.right - rclTrg.left,
-                         rclTrg.bottom - rclTrg.top,
-                         psoSrc->sizlBitmap.cx, psoSrc->sizlBitmap.cy,
-                         pptlSrc->x, pptlSrc->y));
+                LOG(("MEMBLT: cacheResult 0x%08X", cacheResult));
 
                 if (cacheResult & VRDPBMP_RC_F_DELETED)
                 {
@@ -1499,10 +1497,17 @@ void vrdpDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *
                 {
                     case VRDPBMP_RC_CACHED:
                         vrdpReportCachedBitmap(pDev, psoSrc, &hash);
+                        LOG(("MEMBLT: cached add %dx%d",
+                             psoSrc->sizlBitmap.cx, psoSrc->sizlBitmap.cy));
                         /* Continue and report MEMBLT order. */
 
                     case VRDPBMP_RC_ALREADY_CACHED:
                         vrdpReportMemBlt(pDev, &clipRects, pptlSrc, (uint8_t)rop4, &hash);
+                        LOG(("MEMBLT: cached use %dx%d from %d,%d %dx%d",
+                             psoSrc->sizlBitmap.cx, psoSrc->sizlBitmap.cy,
+                             pptlSrc->x, pptlSrc->y,
+                             rclTrg.right - rclTrg.left,
+                             rclTrg.bottom - rclTrg.top));
                         LOG(("        %08X %08X %08X %08X",
                                  *(uint32_t *)&((uint8_t *)&hash)[0],
                                  *(uint32_t *)&((uint8_t *)&hash)[4],
@@ -1513,7 +1518,11 @@ void vrdpDrvBitBlt(SURFOBJ *psoTrg, SURFOBJ *psoSrc, SURFOBJ *psoMask, CLIPOBJ *
 
                     default:
                         /* The surface was not cached. Fallback to dirty rects. */
-                        LOG(("MEMBLT: bitmap not cached."));
+                        LOG(("MEMBLT: not cached %dx%d from %d,%d %dx%d",
+                             psoSrc->sizlBitmap.cx, psoSrc->sizlBitmap.cy,
+                             pptlSrc->x, pptlSrc->y,
+                             rclTrg.right - rclTrg.left,
+                             rclTrg.bottom - rclTrg.top));
                         VBoxDispDumpPSO(psoSrc, "psoSrc");
                         vrdpReportDirtyRects(pDev, &clipRects);
                 }
