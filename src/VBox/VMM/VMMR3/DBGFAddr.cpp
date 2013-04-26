@@ -24,6 +24,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/hm.h>
 #include "DBGFInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
@@ -46,7 +47,7 @@
  */
 DECLINLINE(bool) dbgfR3IsHMA(PUVM pUVM, RTGCUINTPTR FlatPtr)
 {
-    return !HMIsEnabled(pVM)
+    return !HMIsEnabled(pUVM->pVM)
         && MMHyperIsInsideArea(pUVM->pVM, FlatPtr);
 }
 

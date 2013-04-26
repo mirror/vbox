@@ -29,6 +29,7 @@
 /** @todo Only use DBGHELP for reading modules since it doesn't do all we want (relocations), or is way to slow in some cases (add symbol)! */
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/pdmapi.h>
 #include "DBGFInternal.h"
 #include <VBox/vmm/vm.h>
