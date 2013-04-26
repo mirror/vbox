@@ -2521,7 +2521,8 @@ static void VBoxGuestCommonCheckEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
             RTListAppend(&pDevExt->WakeUpList, &pWait->ListNode);
 #else
             RTListAppend(&pDevExt->WokenUpList, &pWait->ListNode);
-            rc |= RTSemEventMultiSignal(pWait->Event);
+            int rc = RTSemEventMultiSignal(pWait->Event);
+            AssertRC(rc);
 #endif
             if (!fEvents)
                 break;
