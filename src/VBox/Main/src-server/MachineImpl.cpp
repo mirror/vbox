@@ -5724,7 +5724,11 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
     property.mFlags = NILFLAG;
 
     rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
+    if (FAILED(rc))
+    {
+        LogRel(("Machine::setGuestPropertyToService: %ls -> %Rhrc\n", aName, rc)); /* !REMOVE ME! Debugging testboxes! */
+        return rc;
+    }
 
     try
     {
@@ -5840,6 +5844,7 @@ HRESULT Machine::setGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
                                                     &dummy, &dummy64, &dummy);
             if (FAILED(rc))
             {
+                LogRel(("Machine::setGuestPropertyToVM: %ls -> %Rhrc\n", aName, rc)); /* !REMOVE ME! Debugging testboxes! */
                 /* testbox hacking: a shot in the dark. */
                 ErrorInfoKeeper eik;
                 return rc;
