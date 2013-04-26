@@ -45,10 +45,14 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+#define HMVMXHCUINTREG                RTHCUINTREG
 #if defined(RT_ARCH_AMD64)
 # define HMVMX_IS_64BIT_HOST_MODE()   (true)
 #elif defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+extern "C" uint32_t g_fVMXIs64bitHost;
 # define HMVMX_IS_64BIT_HOST_MODE()   (g_fVMXIs64bitHost != 0)
+# undef HMVMXHCUINTREG
+# define HMVMXHCUINTREG               uint64_t
 #else
 # define HMVMX_IS_64BIT_HOST_MODE()   (false)
 #endif
@@ -2049,8 +2053,8 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
     /* For the darwin 32-bit hybrid kernel, we need the 64-bit CR3 as it uses 64-bit paging. */
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
-        uint64_t uReg = hmR0Get64bitCR3();
-        rc |= VMXWriteVmcs64(VMX_VMCS_HOST_CR3, uReg);
+        uint64_t uRegCR3 = hmR0Get64bitCR3();
+        rc |= VMXWriteVmcs64(VMX_VMCS_HOST_CR3, uRegCR3);
     }
     else
 #endif
@@ -2155,7 +2159,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
-        X86XDTR64 Gtr64;
+        X86XDTR64 Gdtr64;
         X86XDTR64 Idtr64;
         hmR0Get64bitGdtrAndIdtr(&Gdtr64, &Idtr64);
         rc  = VMXWriteVmcs64(VMX_VMCS_HOST_GDTR_BASE, Gdtr64.uAddr);
@@ -3817,9 +3821,9 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                     Log(("InstrError Desc.    Range exceeded %u\n", HMVMX_INSTR_ERROR_MAX));
 
                 /* VMX control bits. */
-                uint32_t    u32Val;
-                uint64_t    u64Val;
-                RTHCUINTREG uHCReg;
+                uint32_t        u32Val;
+                uint64_t        u64Val;
+                HMVMXHCUINTREG  uHCReg;
                 rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PIN_EXEC_CONTROLS, &u32Val);         AssertRC(rc);
                 Log(("VMX_VMCS32_CTRL_PIN_EXEC_CONTROLS       %#RX32\n", u32Val));
                 rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, &u32Val);        AssertRC(rc);
@@ -4041,7 +4045,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     int             rc, rc2;
     PHMGLOBLCPUINFO pCpu;
     RTHCPHYS        HCPhysCpuPage;
-    RTHCUINTREG     uOldEFlags;
+    RTCCUINTREG     uOldEFlags;
 
     AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
     Assert(pfnHandler);
@@ -7463,10 +7467,10 @@ static DECLCALLBACK(int) hmR0VmxExitInvpcid(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
  */
 static DECLCALLBACK(int) hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
-    uint32_t    uIntrState;
-    RTHCUINTREG uHCReg;
-    uint64_t    u64Val;
-    uint32_t    u32Val;
+    uint32_t       uIntrState;
+    HMVMXHCUINTREG uHCReg;
+    uint64_t       u64Val;
+    uint32_t       u32Val;
 
     int rc  = hmR0VmxReadEntryIntrInfoVmcs(pVmxTransient);
     rc     |= hmR0VmxReadEntryXcptErrorCodeVmcs(pVmxTransient);
@@ -7775,19 +7779,19 @@ static DECLCALLBACK(int) hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVM
             switch (VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification))
             {
                 case 0: /* CR0 */
-                    Log(("CR0 write rc=%d CR0=%#RGv\n", rc, pMixedCtx->cr0));
-                    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+                    Log(("CRX CR0 write rc=%d CR0=%#RGv\n", rc, pMixedCtx->cr0));
+                    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0 | HM_CHANGED_GUEST_CR3;
                     break;
                 case 2: /* C2 **/
                     /* Nothing to do here, CR2 it's not part of the VMCS. */
                     break;
                 case 3: /* CR3 */
                     Assert(!pVM->hm.s.fNestedPaging || !CPUMIsGuestPagingEnabledEx(pMixedCtx));
-                    Log(("CR3 write rc=%d CR3=%#RGv\n", rc, pMixedCtx->cr3));
+                    Log(("CRX CR3 write rc=%d CR3=%#RGv\n", rc, pMixedCtx->cr3));
                     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR3;
                     break;
                 case 4: /* CR4 */
-                    Log(("CR4 write rc=%d CR4=%#RGv\n", rc, pMixedCtx->cr4));
+                    Log(("CRX CR4 write rc=%d CR4=%#RGv\n", rc, pMixedCtx->cr4));
                     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR4;
                     break;
                 case 8: /* CR8 */
