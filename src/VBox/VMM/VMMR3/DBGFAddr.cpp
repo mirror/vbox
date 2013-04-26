@@ -46,7 +46,8 @@
  */
 DECLINLINE(bool) dbgfR3IsHMA(PUVM pUVM, RTGCUINTPTR FlatPtr)
 {
-    return MMHyperIsInsideArea(pUVM->pVM, FlatPtr);
+    return !HMIsEnabled(pVM)
+        && MMHyperIsInsideArea(pUVM->pVM, FlatPtr);
 }
 
 
@@ -373,7 +374,8 @@ static DECLCALLBACK(int) dbgfR3AddrToVolatileR3PtrOnVCpu(PUVM pUVM, VMCPUID idCp
     {
         rc = VERR_NOT_SUPPORTED; /** @todo create some dedicated errors for this stuff. */
         /** @todo this may assert, create a debug version of this which doesn't. */
-        if (MMHyperIsInsideArea(pVM, pAddress->FlatPtr))
+        if (   !HMIsEnabled(pVM)
+            && MMHyperIsInsideArea(pVM, pAddress->FlatPtr))
         {
             void *pv = MMHyperRCToCC(pVM, (RTRCPTR)pAddress->FlatPtr);
             if (pv)

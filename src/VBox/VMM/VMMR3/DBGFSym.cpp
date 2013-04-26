@@ -935,7 +935,8 @@ VMMR3_INT_DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR
     /*
      * Try PDM.
      */
-    if (MMHyperIsInsideArea(pVM, Address))
+    if (   !HMIsEnabled(pVM)
+        && MMHyperIsInsideArea(pVM, Address))
     {
         char        szModName[64];
         RTRCPTR     RCPtrMod;
