@@ -107,6 +107,15 @@ typedef struct VBOXGUESTMEMBALLOON
 /** Pointer to a memory balloon. */
 typedef VBOXGUESTMEMBALLOON *PVBOXGUESTMEMBALLOON;
 
+typedef enum VBOXGUUESTCAPS_MODE
+{
+    VBOXGUUESTCAPS_MODE_UNDEFINED = 0,
+    /* uncomment when/if guests have consistent Acquire/Set behavior,
+     * i.e. only either of those should be used, while at leats on win they are used interchangeably */
+    /*VBOXGUUESTCAPS_MODE_SET,*/
+    VBOXGUUESTCAPS_MODE_ACQUIRE,
+    VBOXGUUESTCAPS_MODE_Make32bit = 0x7fffffff,
+} VBOXGUUESTCAPS_MODE;
 
 /**
  * VBox guest device (data) extension.
@@ -182,7 +191,7 @@ typedef struct VBOXGUESTDEVEXT
     VBoxGuestMouseSetNotifyCallback MouseNotifyCallback;
     /* true if the driver is in caps acquire mode,
      * i.e. no seamless of resize events are reported unless the driver has acquired the corresponding guest caps */
-    uint32_t                    u32GuestCapsAcquireMode;
+    volatile VBOXGUUESTCAPS_MODE enmGuestCapsAcquireMode;
     /* currently acquired (and reported) guest caps */
     uint32_t                    u32GuestCaps;
 } VBOXGUESTDEVEXT;
