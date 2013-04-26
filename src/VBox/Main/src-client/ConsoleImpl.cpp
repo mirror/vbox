@@ -5513,7 +5513,10 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
     /* protect mpUVM (if not NULL) */
     SafeVMPtrQuiet ptrVM(this);
     if (FAILED(ptrVM.rc()))
+    {
+        LogRel(("Console::setGuestProperty1: %ls -> %Rhrc\n", aName, ptrVM.rc())); /* !REMOVE ME! Debugging testboxes! */
         return ptrVM.rc();
+    }
 
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * ptrVM, so there is no need to hold a lock of this */
@@ -5562,7 +5565,10 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
     if (RT_SUCCESS(vrc))
         hrc = S_OK;
     else
+    {
+        LogRel(("Console::setGuestProperty2: %ls -> %Rrc\n", aName, vrc)); /* !REMOVE ME! Debugging testboxes! */
         hrc = setError(E_UNEXPECTED, tr("The service call failed with the error %Rrc"), vrc);
+    }
     return hrc;
 #endif /* VBOX_WITH_GUEST_PROPS */
 }
