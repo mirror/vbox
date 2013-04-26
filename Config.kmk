@@ -556,7 +556,7 @@ VBOX_WITH_VDITOOL =
 # Enable this to build vbox-img even if VBOX_WITH_TESTCASES is disabled
 VBOX_WITH_VBOX_IMG =
 # Enables the VPX module for VM video capturing
-if1of ($(KBUILD_TARGET), linux)
+if1of ($(KBUILD_TARGET), darwin linux)
  VBOX_WITH_VPX = 1
 endif
 # Enable shared folders
@@ -2735,10 +2735,8 @@ if1of ($(KBUILD_TARGET), darwin linux os2 solaris)
      $(PATH_ROOT)/src/libs/libvpx/vpx \
      $(PATH_ROOT)/src/libs/libvpx/vp8 \
      $(PATH_ROOT)/src/libs/libvpx/vpx_mem
- SDK_VBOX_VPX_LIBS ?= $(PATH_STAGE_BIN)/VBoxVPX.so
-else
- SDK_VBOX_VPX_LIBS ?= $(PATH_STAGE_BIN)/VBoxVPX$(SUFF_DLL)
 endif
+SDK_VBOX_VPX_LIBS ?= $(PATH_STAGE_BIN)/VBoxVPX$(SUFF_DLL)
 
 SDK_VBOX_BOOST       = .
 SDK_VBOX_BOOST_DEFS ?= BOOST_DISABLE_ASSERTS
