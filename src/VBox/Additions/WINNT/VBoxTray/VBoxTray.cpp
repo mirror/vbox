@@ -80,6 +80,39 @@ static BOOL vboxDtHandleEvent();
 static BOOL vboxDtIsInputDesktop();
 static HANDLE vboxDtGetNotifyEvent();
 
+/* caps API */
+#define VBOXCAPS_ENTRY_IDX_SEAMLESS  0
+#define VBOXCAPS_ENTRY_IDX_GRAPHICS  1
+#define VBOXCAPS_ENTRY_IDX_COUNT     2
+
+typedef enum VBOXCAPS_ENTRY_FUNCSTATE
+{
+    /* the cap is unsupported */
+    VBOXCAPS_ENTRY_FUNCSTATE_UNSUPPORTED = 0,
+    /* the cap is supported */
+    VBOXCAPS_ENTRY_FUNCSTATE_SUPPORTED,
+    /* the cap functionality is started, it can be disabled however if its AcState is not ACQUIRED */
+    VBOXCAPS_ENTRY_FUNCSTATE_STARTED,
+} VBOXCAPS_ENTRY_FUNCSTATE;
+
+
+static void VBoxCapsEntryFuncStateSet(uint32_t iCup, VBOXCAPS_ENTRY_FUNCSTATE enmFuncState);
+static int VBoxCapsInit();
+static int VBoxCapsReleaseAll();
+static void VBoxCapsTerm();
+static BOOL VBoxCapsEntryIsAcquired(uint32_t iCap);
+static BOOL VBoxCapsEntryIsEnabled(uint32_t iCap);
+static BOOL VBoxCapsCheckTimer(WPARAM wParam);
+static int VBoxCapsEntryRelease(uint32_t iCap);
+static int VBoxCapsEntryAcquire(uint32_t iCap);
+static int VBoxCapsAcquireAllSupported();
+
+/* console-related caps API */
+static BOOL VBoxConsoleIsAllowed();
+static void VBoxConsoleEnable(BOOL fEnable);
+static void VBoxConsoleCapSetSupported(uint32_t iCap, BOOL fSupported);
+
+static void VBoxGrapicsSetSupported(BOOL fSupported);
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -104,7 +137,6 @@ HINSTANCE             ghInstance;
 HWND                  ghwndToolWindow;
 NOTIFYICONDATA        gNotifyIconData;
 DWORD                 gMajorVersion;
-BOOL                  gfIsSeamlessOn = FALSE;
 
 
 /* The service table. */
@@ -656,11 +688,21 @@ static int vboxTrayServiceMain(void)
                  * Wait for the stop semaphore to be posted or a window event to arrive
                  */
 
-                HANDLE hWaitEvent[3] = { ghStopSem, ghSeamlessWtNotifyEvent, vboxDtGetNotifyEvent() };
-                DWORD dwEventCount = RT_ELEMENTS(hWaitEvent);
+                HANDLE hWaitEvent[3] = {0};
+                DWORD dwEventCount = 0;
 
-                if (0 == ghSeamlessWtNotifyEvent) /* If seamless mode is not active / supported, reduce event array count. */
-                    dwEventCount = 1;
+                hWaitEvent[dwEventCount++] = ghStopSem;
+
+                /* Check if seamless mode is not active and add seamless event to the list */
+                if (0 != ghSeamlessWtNotifyEvent)
+                {
+                    hWaitEvent[dwEventCount++] = ghSeamlessWtNotifyEvent;
+                }
+
+                if (0 != vboxDtGetNotifyEvent())
+                {
+                    hWaitEvent[dwEventCount++] = vboxDtGetNotifyEvent();
+                }
 
                 Log(("VBoxTray: Number of events to wait in main loop: %ld\n", dwEventCount));
                 while (true)
@@ -677,43 +719,50 @@ static int vboxTrayServiceMain(void)
                         /* exit */
                         break;
                     }
-                    else if (   waitResult == 1
-                             && ghSeamlessWtNotifyEvent != 0) /* Only jump in, if seamless is active! */
-                    {
-                        Log(("VBoxTray: Event 'Seamless' triggered\n"));
-
-                        /* seamless window notification */
-                        VBoxSeamlessCheckWindows();
-                    }
-                    else if (   waitResult == 2
-                             && vboxDtGetNotifyEvent() != 0) /* Only jump in, if Dt is active! */
-                    {
-                        BOOL fOldSeamlessAllowedState = VBoxSeamlessIsAllowed();
-                        if (vboxDtHandleEvent())
-                        {
-                            if (!VBoxSeamlessIsAllowed() != !fOldSeamlessAllowedState)
-                            {
-                                rc = VBoxSeamlessOnAllowChange(!fOldSeamlessAllowedState);
-                                if (!RT_SUCCESS(rc))
-                                    Log(("VBoxTray: WndProc: Failed to set seamless capability\n"));
-                            }
-                        }
-                    }
                     else
                     {
-                        /* timeout or a window message, handle it */
-                        MSG msg;
-                        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+                        BOOL fHandled = FALSE;
+                        if (waitResult < RT_ELEMENTS(hWaitEvent))
                         {
-                            Log(("VBoxTray: msg %p\n", msg.message));
-                            if (msg.message == WM_QUIT)
+                            if (hWaitEvent[waitResult])
                             {
-                                Log(("VBoxTray: WM_QUIT!\n"));
-                                SetEvent(ghStopSem);
-                                continue;
+                                if (hWaitEvent[waitResult] == ghSeamlessWtNotifyEvent)
+                                {
+                                    Log(("VBoxTray: Event 'Seamless' triggered\n"));
+
+                                    /* seamless window notification */
+                                    VBoxSeamlessCheckWindows();
+                                    fHandled = TRUE;
+                                }
+                                else if (hWaitEvent[waitResult] == vboxDtGetNotifyEvent())
+                                {
+                                    Log(("VBoxTray: Event 'Dt' triggered\n"));
+                                    BOOL fOldAllowedState = VBoxConsoleIsAllowed();
+                                    if (vboxDtHandleEvent())
+                                    {
+                                        if (!VBoxConsoleIsAllowed() != !fOldAllowedState)
+                                            VBoxConsoleEnable(!fOldAllowedState);
+                                    }
+                                    fHandled = TRUE;
+                                }
                             }
-                            TranslateMessage(&msg);
-                            DispatchMessage(&msg);
+                        }
+
+                        if (!fHandled)
+                        {
+                            /* timeout or a window message, handle it */
+                            MSG msg;
+                            while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+                            {
+                                Log(("VBoxTray: msg %p\n", msg.message));
+                                if (msg.message == WM_QUIT)
+                                {
+                                    Log(("VBoxTray: WM_QUIT!\n"));
+                                    SetEvent(ghStopSem);
+                                }
+                                TranslateMessage(&msg);
+                                DispatchMessage(&msg);
+                            }
                         }
                     }
                 }
@@ -766,6 +815,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         rc = vboxTrayCreateToolWindow();
         if (RT_SUCCESS(rc))
         {
+            VBoxCapsInit();
+
             rc = vboxStInit(ghwndToolWindow);
             if (!RT_SUCCESS(rc))
             {
@@ -801,6 +852,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
             /* it should be safe to call vboxStTerm even if vboxStInit above failed */
             vboxStTerm();
+
+            VBoxCapsTerm();
 
             vboxTrayDestroyToolWindow();
         }
@@ -853,6 +906,9 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
             return 0;
 
         case WM_TIMER:
+            if (VBoxCapsCheckTimer(wParam))
+                return 0;
+
             switch (wParam)
             {
                 case TIMERID_VBOXTRAY_CHECK_HOSTVERSION:
@@ -880,20 +936,24 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
             return 0;
 
         case WM_VBOX_SEAMLESS_ENABLE:
-            gfIsSeamlessOn = TRUE;
-            if (VBoxSeamlessIsAllowed())
-                VBoxSeamlessInstallHook();
+            VBoxCapsEntryFuncStateSet(VBOXCAPS_ENTRY_IDX_SEAMLESS, VBOXCAPS_ENTRY_FUNCSTATE_STARTED);
             return 0;
 
         case WM_VBOX_SEAMLESS_DISABLE:
-            gfIsSeamlessOn = FALSE;
-            if (VBoxSeamlessIsAllowed())
-                VBoxSeamlessRemoveHook();
+            VBoxCapsEntryFuncStateSet(VBOXCAPS_ENTRY_IDX_SEAMLESS, VBOXCAPS_ENTRY_FUNCSTATE_SUPPORTED);
             return 0;
 
         case WM_VBOX_SEAMLESS_UPDATE:
-            if (gfIsSeamlessOn && VBoxSeamlessIsAllowed())
+            if (VBoxCapsEntryIsEnabled(VBOXCAPS_ENTRY_IDX_SEAMLESS))
                 VBoxSeamlessCheckWindows();
+            return 0;
+
+        case WM_VBOX_GRAPHICS_SUPPORTED:
+            VBoxGrapicsSetSupported(TRUE);
+            return 0;
+
+        case WM_VBOX_GRAPHICS_UNSUPPORTED:
+            VBoxGrapicsSetSupported(FALSE);
             return 0;
 
         case WM_VBOXTRAY_VM_RESTORED:
@@ -906,15 +966,11 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 
         case WM_WTSSESSION_CHANGE:
         {
-            BOOL fOldSeamlessAllowedState = VBoxSeamlessIsAllowed();
+            BOOL fOldAllowedState = VBoxConsoleIsAllowed();
             if (vboxStHandleEvent(wParam, lParam))
             {
-                if (!VBoxSeamlessIsAllowed() != !fOldSeamlessAllowedState)
-                {
-                    int rc = VBoxSeamlessOnAllowChange(!fOldSeamlessAllowedState);
-                    if (!RT_SUCCESS(rc))
-                        Log(("VBoxTray: WndProc: Failed to set seamless capability\n"));
-                }
+                if (!VBoxConsoleIsAllowed() != !fOldAllowedState)
+                    VBoxConsoleEnable(!fOldAllowedState);
             }
             return 0;
         }
@@ -1301,29 +1357,348 @@ static BOOL vboxDtIsInputDesktop()
 }
 
 
-/* helper state tracking API */
-BOOL VBoxSeamlessIsAllowed()
+/* we need to perform Acquire/Release using the file handled we use for rewuesting events from VBoxGuest
+ * otherwise Acquisition mechanism will treat us as different client and will not propagate necessary requests
+ * */
+static int VBoxAcquireGuestCaps(uint32_t fOr, uint32_t fNot)
+{
+    DWORD cbReturned = 0;
+    VBoxGuestCapsAquire Info;
+    Info.rc = VERR_NOT_IMPLEMENTED;
+    Info.u32OrMask = fOr;
+    Info.u32NotMask = fNot;
+    if (!DeviceIoControl(ghVBoxDriver, VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE, &Info, sizeof(Info), &Info, sizeof(Info), &cbReturned, NULL))
+    {
+        DWORD LastErr = GetLastError();
+        WARN(("DeviceIoControl VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed LastErr %d", LastErr));
+        return RTErrConvertFromWin32(LastErr);
+    }
+
+    int rc = Info.rc;
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed rc %d", rc));
+        return rc;
+    }
+
+    return rc;
+}
+
+typedef enum VBOXCAPS_ENTRY_ACSTATE
+{
+    /* the given cap is released */
+    VBOXCAPS_ENTRY_ACSTATE_RELEASED = 0,
+    /* the given cap acquisition is in progress */
+    VBOXCAPS_ENTRY_ACSTATE_ACQUIRING,
+    /* the given cap is acquired */
+    VBOXCAPS_ENTRY_ACSTATE_ACQUIRED
+} VBOXCAPS_ENTRY_ACSTATE;
+
+
+struct VBOXCAPS_ENTRY;
+struct VBOXCAPS;
+
+typedef DECLCALLBACKPTR(void, PFNVBOXCAPS_ENTRY_ON_ENABLE)(struct VBOXCAPS *pConsole, struct VBOXCAPS_ENTRY *pCap, BOOL fEnabled);
+
+typedef struct VBOXCAPS_ENTRY
+{
+    uint32_t fCap;
+    uint32_t iCap;
+    /* the functionality is supported by the guest */
+    BOOL fIsSupported;
+    /* */
+    BOOL fIsOn;
+    VBOXCAPS_ENTRY_FUNCSTATE enmFuncState;
+    VBOXCAPS_ENTRY_ACSTATE enmAcState;
+    PFNVBOXCAPS_ENTRY_ON_ENABLE pfnOnEnable;
+} VBOXCAPS_ENTRY;
+
+
+typedef struct VBOXCAPS
+{
+    UINT_PTR idTimer;
+    VBOXCAPS_ENTRY aCaps[VBOXCAPS_ENTRY_IDX_COUNT];
+} VBOXCAPS;
+
+static VBOXCAPS gVBoxCaps;
+
+static DECLCALLBACK(void) vboxCapsOnEnableSeamles(struct VBOXCAPS *pConsole, struct VBOXCAPS_ENTRY *pCap, BOOL fEnabled)
+{
+    if (fEnabled)
+    {
+        Assert(pCap->enmAcState == VBOXCAPS_ENTRY_ACSTATE_ACQUIRED);
+        Assert(pCap->enmFuncState == VBOXCAPS_ENTRY_FUNCSTATE_STARTED);
+        VBoxSeamlessInstallHook();
+    }
+    else
+    {
+        Assert(pCap->enmAcState != VBOXCAPS_ENTRY_ACSTATE_ACQUIRED || pCap->enmFuncState != VBOXCAPS_ENTRY_FUNCSTATE_STARTED);
+        VBoxSeamlessRemoveHook();
+    }
+}
+
+static void vboxCapsEntryAcStateSet(VBOXCAPS_ENTRY *pCap, VBOXCAPS_ENTRY_ACSTATE enmAcState)
+{
+    VBOXCAPS *pConsole = &gVBoxCaps;
+    if (pCap->enmAcState == enmAcState)
+        return;
+
+    VBOXCAPS_ENTRY_ACSTATE enmOldAcState = pCap->enmAcState;
+    pCap->enmAcState = enmAcState;
+
+    if (enmAcState == VBOXCAPS_ENTRY_ACSTATE_ACQUIRED)
+    {
+        if (pCap->enmFuncState == VBOXCAPS_ENTRY_FUNCSTATE_STARTED)
+        {
+            if (pCap->pfnOnEnable)
+                pCap->pfnOnEnable(pConsole, pCap, TRUE);
+        }
+    }
+    else if (enmOldAcState == VBOXCAPS_ENTRY_ACSTATE_ACQUIRED && pCap->enmFuncState == VBOXCAPS_ENTRY_FUNCSTATE_STARTED)
+    {
+        if (pCap->pfnOnEnable)
+            pCap->pfnOnEnable(pConsole, pCap, FALSE);
+    }
+}
+
+static void vboxCapsEntryFuncStateSet(VBOXCAPS_ENTRY *pCap, VBOXCAPS_ENTRY_FUNCSTATE enmFuncState)
+{
+    VBOXCAPS *pConsole = &gVBoxCaps;
+    if (pCap->enmFuncState == enmFuncState)
+        return;
+
+    VBOXCAPS_ENTRY_FUNCSTATE enmOldFuncState = pCap->enmFuncState;
+
+    pCap->enmFuncState = enmFuncState;
+
+    if (enmFuncState == VBOXCAPS_ENTRY_FUNCSTATE_STARTED)
+    {
+        Assert(enmOldFuncState == VBOXCAPS_ENTRY_FUNCSTATE_SUPPORTED);
+        if (pCap->enmAcState == VBOXCAPS_ENTRY_ACSTATE_ACQUIRED)
+        {
+            if (pCap->pfnOnEnable)
+                pCap->pfnOnEnable(pConsole, pCap, TRUE);
+        }
+    }
+    else if (pCap->enmAcState == VBOXCAPS_ENTRY_ACSTATE_ACQUIRED && enmOldFuncState == VBOXCAPS_ENTRY_FUNCSTATE_STARTED)
+    {
+        if (pCap->pfnOnEnable)
+            pCap->pfnOnEnable(pConsole, pCap, FALSE);
+    }
+}
+
+static void VBoxCapsEntryFuncStateSet(uint32_t iCup, VBOXCAPS_ENTRY_FUNCSTATE enmFuncState)
+{
+    VBOXCAPS *pConsole = &gVBoxCaps;
+    VBOXCAPS_ENTRY *pCap = &pConsole->aCaps[iCup];
+    vboxCapsEntryFuncStateSet(pCap, enmFuncState);
+}
+
+static int VBoxCapsInit()
+{
+    VBOXCAPS *pConsole = &gVBoxCaps;
+    memset(pConsole, 0, sizeof (*pConsole));
+    pConsole->aCaps[VBOXCAPS_ENTRY_IDX_SEAMLESS].fCap = VMMDEV_GUEST_SUPPORTS_SEAMLESS;
+    pConsole->aCaps[VBOXCAPS_ENTRY_IDX_SEAMLESS].iCap = VBOXCAPS_ENTRY_IDX_SEAMLESS;
+    pConsole->aCaps[VBOXCAPS_ENTRY_IDX_SEAMLESS].pfnOnEnable = vboxCapsOnEnableSeamles;
+    pConsole->aCaps[VBOXCAPS_ENTRY_IDX_GRAPHICS].fCap = VMMDEV_GUEST_SUPPORTS_GRAPHICS;
+    pConsole->aCaps[VBOXCAPS_ENTRY_IDX_GRAPHICS].iCap = VBOXCAPS_ENTRY_IDX_GRAPHICS;
+    return VINF_SUCCESS;
+}
+
+static int VBoxCapsReleaseAll()
+{
+    VBOXCAPS *pConsole = &gVBoxCaps;
+    int rc = VBoxAcquireGuestCaps(0, VMMDEV_GUEST_SUPPORTS_SEAMLESS | VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("VBoxTray: vboxCapsEntryReleaseAll VBoxAcquireGuestCaps failed rc %d\n", rc));
+        return rc;
+    }
+
+    if (pConsole->idTimer)
+    {
+        KillTimer(ghwndToolWindow, pConsole->idTimer);
+        pConsole->idTimer = 0;
+    }
+
+    for (int i = 0; i < RT_ELEMENTS(pConsole->aCaps); ++i)
+    {
+        vboxCapsEntryAcStateSet(&pConsole->aCaps[i], VBOXCAPS_ENTRY_ACSTATE_RELEASED);
+    }
+
+    return rc;
+}
+
+static void VBoxCapsTerm()
+{
+    VBOXCAPS *pConsole = &gVBoxCaps;
+    VBoxCapsReleaseAll();
+    memset(pConsole, 0, sizeof (*pConsole));
+}
+
+static BOOL VBoxCapsEntryIsAcquired(uint32_t iCap)
+{
+    VBOXCAPS *pConsole = &gVBoxCaps;
+    return pConsole->aCaps[iCap].enmAcState == VBOXCAPS_ENTRY_ACSTATE_ACQUIRED;
+}
+
+static BOOL VBoxCapsEntryIsEnabled(uint32_t iCap)
+{
+    VBOXCAPS *pConsole = &gVBoxCaps;
+    return pConsole->aCaps[iCap].enmAcState == VBOXCAPS_ENTRY_ACSTATE_ACQUIRED
+            && pConsole->aCaps[iCap].enmFuncState == VBOXCAPS_ENTRY_FUNCSTATE_STARTED;
+}
+
+static BOOL VBoxCapsCheckTimer(WPARAM wParam)
+{
+    VBOXCAPS *pConsole = &gVBoxCaps;
+    if (wParam != pConsole->idTimer)
+        return FALSE;
+
+    uint32_t u32AcquiredCaps = 0;
+    BOOL fNeedNewTimer = FALSE;
+
+    for (int i = 0; i < RT_ELEMENTS(pConsole->aCaps); ++i)
+    {
+        VBOXCAPS_ENTRY *pCap = &pConsole->aCaps[i];
+        if (pCap->enmAcState != VBOXCAPS_ENTRY_ACSTATE_ACQUIRING)
+            continue;
+
+        int rc = VBoxAcquireGuestCaps(pCap->fCap, 0);
+        if (RT_SUCCESS(rc))
+        {
+            vboxCapsEntryAcStateSet(&pConsole->aCaps[i], VBOXCAPS_ENTRY_ACSTATE_ACQUIRED);
+            u32AcquiredCaps |= pCap->fCap;
+        }
+        else
+        {
+            Assert(rc == VERR_RESOURCE_BUSY);
+            fNeedNewTimer = TRUE;
+        }
+    }
+
+    if (!fNeedNewTimer)
+    {
+        KillTimer(ghwndToolWindow, pConsole->idTimer);
+        /* cleanup timer data */
+        pConsole->idTimer = 0;
+    }
+
+    return TRUE;
+}
+
+static int VBoxCapsEntryRelease(uint32_t iCap)
+{
+    VBOXCAPS *pConsole = &gVBoxCaps;
+    VBOXCAPS_ENTRY *pCap = &pConsole->aCaps[iCap];
+    if (pCap->enmAcState == VBOXCAPS_ENTRY_ACSTATE_RELEASED)
+    {
+        WARN(("invalid cap[%d] state[%d] on release\n", iCap, pCap->enmAcState));
+        return VERR_INVALID_STATE;
+    }
+
+    if (pCap->enmAcState == VBOXCAPS_ENTRY_ACSTATE_ACQUIRED)
+    {
+        int rc = VBoxAcquireGuestCaps(0, pCap->fCap);
+        AssertRC(rc);
+    }
+
+    vboxCapsEntryAcStateSet(pCap, VBOXCAPS_ENTRY_ACSTATE_RELEASED);
+
+    return VINF_SUCCESS;
+}
+
+static int VBoxCapsEntryAcquire(uint32_t iCap)
+{
+    VBOXCAPS *pConsole = &gVBoxCaps;
+    Assert(VBoxConsoleIsAllowed());
+    VBOXCAPS_ENTRY *pCap = &pConsole->aCaps[iCap];
+    if (pCap->enmAcState != VBOXCAPS_ENTRY_ACSTATE_RELEASED)
+    {
+        WARN(("invalid cap[%d] state[%d] on acquire\n", iCap, pCap->enmAcState));
+        return VERR_INVALID_STATE;
+    }
+
+    vboxCapsEntryAcStateSet(pCap, VBOXCAPS_ENTRY_ACSTATE_ACQUIRING);
+    int rc = VBoxAcquireGuestCaps(pCap->fCap, 0);
+    if (RT_SUCCESS(rc))
+    {
+        vboxCapsEntryAcStateSet(pCap, VBOXCAPS_ENTRY_ACSTATE_ACQUIRED);
+        return VINF_SUCCESS;
+    }
+
+    if (rc != VERR_RESOURCE_BUSY)
+    {
+        WARN(("VBoxTray: vboxCapsEntryReleaseAll VBoxAcquireGuestCaps failed rc %d\n", rc));
+        return rc;
+    }
+
+    WARN(("VBoxTray: iCap %d is busy!\n", iCap));
+
+    /* the cap was busy, most likely it is still used by other VBoxTray instance running in another session,
+     * queue the retry timer */
+    if (!pConsole->idTimer)
+    {
+        pConsole->idTimer = SetTimer(ghwndToolWindow, TIMERID_VBOXTRAY_CAPS_TIMER, 100, (TIMERPROC)NULL);
+        if (!pConsole->idTimer)
+        {
+            DWORD dwErr = GetLastError();
+            WARN(("VBoxTray: SetTimer error %08X\n", dwErr));
+            return RTErrConvertFromWin32(dwErr);
+        }
+    }
+
+    return rc;
+}
+
+static int VBoxCapsAcquireAllSupported()
+{
+    VBOXCAPS *pConsole = &gVBoxCaps;
+    for (int i = 0; i < RT_ELEMENTS(pConsole->aCaps); ++i)
+    {
+        if (pConsole->aCaps[i].enmFuncState >= VBOXCAPS_ENTRY_FUNCSTATE_SUPPORTED)
+            VBoxCapsEntryAcquire(i);
+    }
+    return VINF_SUCCESS;
+}
+
+static BOOL VBoxConsoleIsAllowed()
 {
     return vboxDtIsInputDesktop() && vboxStIsActiveConsole();
 }
 
-int VBoxSeamlessOnAllowChange(BOOL fAllowed)
+static void VBoxConsoleEnable(BOOL fEnable)
 {
-    int rc;
-    if (fAllowed)
+    if (fEnable)
+        VBoxCapsAcquireAllSupported();
+    else
+        VBoxCapsReleaseAll();
+}
+
+static void VBoxConsoleCapSetSupported(uint32_t iCap, BOOL fSupported)
+{
+    if (fSupported)
     {
-        rc = VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_SEAMLESS, 0);
-        if (gfIsSeamlessOn)
-            VBoxSeamlessInstallHook();
+        VBoxCapsEntryFuncStateSet(iCap, VBOXCAPS_ENTRY_FUNCSTATE_SUPPORTED);
+
+        if (VBoxConsoleIsAllowed())
+            VBoxCapsEntryAcquire(iCap);
     }
     else
     {
-        if (gfIsSeamlessOn)
-            VBoxSeamlessRemoveHook();
-        rc = VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_SEAMLESS);
-    }
-    if (!RT_SUCCESS(rc))
-        WARN(("VBoxTray: VMMDEV_GUEST_SUPPORTS_SEAMLESS: Failed to %s seamless capability\n", fAllowed ? "set" : "clear" ));
+        VBoxCapsEntryFuncStateSet(iCap, VBOXCAPS_ENTRY_FUNCSTATE_UNSUPPORTED);
 
-    return rc;
+        VBoxCapsEntryRelease(iCap);
+    }
+}
+
+void VBoxSeamlessSetSupported(BOOL fSupported)
+{
+    VBoxConsoleCapSetSupported(VBOXCAPS_ENTRY_IDX_SEAMLESS, fSupported);
+}
+
+static void VBoxGrapicsSetSupported(BOOL fSupported)
+{
+    VBoxConsoleCapSetSupported(VBOXCAPS_ENTRY_IDX_GRAPHICS, fSupported);
 }
