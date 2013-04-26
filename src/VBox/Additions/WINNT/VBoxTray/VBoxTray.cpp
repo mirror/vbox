@@ -1005,6 +1005,36 @@ typedef struct VBOXST
 
 static VBOXST gVBoxSt;
 
+static int vboxStCheckState()
+{
+    int rc = VINF_SUCCESS;
+    WTS_CONNECTSTATE_CLASS *penmConnectState = NULL;
+    USHORT *pProtocolType = NULL;
+    DWORD cbBuf = 0;
+    Assert(0);
+    if (gVBoxSt.pfnWTSQuerySessionInformationA(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSConnectState, (LPTSTR *)&penmConnectState, &cbBuf))
+    {
+        if (gVBoxSt.pfnWTSQuerySessionInformationA(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSClientProtocolType, (LPTSTR *)&pProtocolType, &cbBuf))
+        {
+            gVBoxSt.fIsConsole = (*pProtocolType == 0);
+            gVBoxSt.enmConnectState = *penmConnectState;
+        }
+        else
+        {
+            DWORD dwErr = GetLastError();
+            WARN(("VBoxTray: WTSQuerySessionInformationA WTSClientProtocolType failed, error = %08X\n", dwErr));
+            rc = RTErrConvertFromWin32(dwErr);
+        }
+    }
+    else
+    {
+        DWORD dwErr = GetLastError();
+        WARN(("VBoxTray: WTSQuerySessionInformationA WTSConnectState failed, error = %08X\n", dwErr));
+        rc = RTErrConvertFromWin32(dwErr);
+    }
+    return rc;
+}
+
 static int vboxStInit(HWND hWnd)
 {
     int rc = VINF_SUCCESS;
@@ -1033,34 +1063,15 @@ static int vboxStInit(HWND hWnd)
             rc = VERR_NOT_SUPPORTED;
         }
 
+        Assert(0);
+
+
         if (rc == VINF_SUCCESS)
         {
             gVBoxSt.hWTSAPIWnd = hWnd;
             if (gVBoxSt.pfnWTSRegisterSessionNotification(gVBoxSt.hWTSAPIWnd, NOTIFY_FOR_THIS_SESSION))
             {
-                WTS_CONNECTSTATE_CLASS *penmConnectState = NULL;
-                USHORT *pProtocolType = NULL;
-                DWORD cbBuf = 0;
-                if (gVBoxSt.pfnWTSQuerySessionInformationA(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSConnectState, (LPTSTR *)&penmConnectState, &cbBuf))
-                {
-                    if (gVBoxSt.pfnWTSQuerySessionInformationA(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSClientProtocolType, (LPTSTR *)&pProtocolType, &cbBuf))
-                    {
-                        gVBoxSt.fIsConsole = (*pProtocolType == 0);
-                        gVBoxSt.enmConnectState = *penmConnectState;
-                    }
-                    else
-                    {
-                        DWORD dwErr = GetLastError();
-                        WARN(("VBoxTray: WTSQuerySessionInformationA WTSClientProtocolType failed, error = %08X\n", dwErr));
-                        rc = RTErrConvertFromWin32(dwErr);
-                    }
-                }
-                else
-                {
-                    DWORD dwErr = GetLastError();
-                    WARN(("VBoxTray: WTSQuerySessionInformationA WTSConnectState failed, error = %08X\n", dwErr));
-                    rc = RTErrConvertFromWin32(dwErr);
-                }
+                vboxStCheckState();
                 return VINF_SUCCESS;
             }
             else
@@ -1129,46 +1140,8 @@ static BOOL vboxStHandleEvent(WPARAM wEvent, LPARAM SessionID)
 {
     WARN(("VBoxTray: WTS Event: %s\n", vboxStDbgGetString(wEvent)));
     BOOL fOldIsActiveConsole = vboxStIsActiveConsole();
-    switch (wEvent)
-    {
-        case WTS_CONSOLE_CONNECT:
-            gVBoxSt.enmConnectState = WTSConnected;
-            gVBoxSt.fIsConsole = TRUE;
-            break;
-        case WTS_CONSOLE_DISCONNECT:
-            gVBoxSt.enmConnectState = WTSDisconnected;
-            break;
-        case WTS_REMOTE_CONNECT:
-            gVBoxSt.enmConnectState = WTSConnected;
-            gVBoxSt.fIsConsole = FALSE;
-            break;
-        case WTS_REMOTE_DISCONNECT:
-            gVBoxSt.enmConnectState = WTSDisconnected;
-            break;
-        case WTS_SESSION_LOGON:
-            Assert(gVBoxSt.enmConnectState == WTSConnected);
-            gVBoxSt.enmConnectState = WTSActive;
-            break;
-        case WTS_SESSION_LOGOFF:
-            Assert(gVBoxSt.enmConnectState == WTSActive);
-            gVBoxSt.enmConnectState = WTSConnected;
-            break;
-        case WTS_SESSION_LOCK:
-            Assert(gVBoxSt.enmConnectState == WTSActive);
-            gVBoxSt.enmConnectState = WTSConnected;
-            break;
-        case WTS_SESSION_UNLOCK:
-            Assert(gVBoxSt.enmConnectState == WTSConnected);
-            gVBoxSt.enmConnectState = WTSActive;
-            break;
-        case WTS_SESSION_REMOTE_CONTROL:
-            /* todo */
-            WARN(("WTS_SESSION_REMOTE_CONTROL handling not implemented!"));
-            break;
-        default:
-            WARN(("unexpected session change notification %d", (DWORD)wEvent));
-            break;
-    }
+
+    vboxStCheckState();
 
     return !vboxStIsActiveConsole() != !fOldIsActiveConsole;
 }
@@ -1404,10 +1377,6 @@ typedef struct VBOXCAPS_ENTRY
 {
     uint32_t fCap;
     uint32_t iCap;
-    /* the functionality is supported by the guest */
-    BOOL fIsSupported;
-    /* */
-    BOOL fIsOn;
     VBOXCAPS_ENTRY_FUNCSTATE enmFuncState;
     VBOXCAPS_ENTRY_ACSTATE enmAcState;
     PFNVBOXCAPS_ENTRY_ON_ENABLE pfnOnEnable;

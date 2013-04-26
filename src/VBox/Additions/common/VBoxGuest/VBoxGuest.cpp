@@ -72,16 +72,15 @@ static int VBoxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
 
 static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask);
 
+#define VBOXGUEST_ACQUIRE_STYLE_CAPS (VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
+
 DECLINLINE(uint32_t) VBoxGuestCommonGetHandledEventsLocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
-    if(!pDevExt->u32GuestCapsAcquireMode)
+    if(pDevExt->enmGuestCapsAcquireMode != VBOXGUUESTCAPS_MODE_ACQUIRE)
         return VMMDEV_EVENT_VALID_EVENT_MASK;
 
     uint32_t u32AquiredGuestCaps = pSession->u32AquiredGuestCaps;
-    /* only VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST is filtered,
-     * for now we allow VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST to come through
-     * to make it still be propagated to r3 client and let clients deal with seamless validity on their own for simplicity */
-    uint32_t u32CleanupEvents = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
+    uint32_t u32CleanupEvents = VBOXGUEST_ACQUIRE_STYLE_CAPS;
     if (u32AquiredGuestCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS)
         u32CleanupEvents &= ~VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
     if (u32AquiredGuestCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS)
@@ -96,6 +95,14 @@ DECLINLINE(uint32_t) VBoxGuestCommonGetAndCleanPendingEventsLocked(PVBOXGUESTDEV
     if (fMatches)
         ASMAtomicAndU32(&pDevExt->f32PendingEvents, ~fMatches);
     return fMatches;
+}
+
+DECLINLINE(bool) VBoxGuestCommonGuestCapsModeSet(PVBOXGUESTDEVEXT pDevExt, VBOXGUUESTCAPS_MODE enmMode)
+{
+    VBOXGUUESTCAPS_MODE enmOldMode;
+    if (ASMAtomicCmpXchgExU32((volatile uint32_t*)&pDevExt->enmGuestCapsAcquireMode, enmMode, VBOXGUUESTCAPS_MODE_UNDEFINED, (uint32_t*)&enmOldMode))
+        return true;
+    return enmOldMode == enmMode;
 }
 
 /*******************************************************************************
@@ -795,7 +802,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
                     pVMMDev->u32Version, VMMDEV_MEMORY_VERSION, pVMMDev->u32Size, cbMMIO));
     }
 
-    pDevExt->u32GuestCapsAcquireMode = 0;
+    pDevExt->enmGuestCapsAcquireMode = VBOXGUUESTCAPS_MODE_UNDEFINED;
     pDevExt->u32GuestCaps = 0;
 
     /*
@@ -1508,7 +1515,7 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
  * @param   enmType             The request type.
  * @param   pReqHdr             The request.
  */
-static int VBoxGuestCheckIfVMMReqAllowed(PVBOXGUESTSESSION pSession, VMMDevRequestType enmType,
+static int VBoxGuestCheckIfVMMReqAllowed(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, VMMDevRequestType enmType,
                                          VMMDevRequestHeader const *pReqHdr)
 {
     /*
@@ -1574,6 +1581,22 @@ static int VBoxGuestCheckIfVMMReqAllowed(PVBOXGUESTSESSION pSession, VMMDevReque
             break;
 
         /*
+         * Anyone. But not for CapsAcquire mode
+         */
+        case VMMDevReq_SetGuestCapabilities:
+#if 0
+            /* @todo: currently windows clients use both Set and Acquire for different caps
+             * this should not lead to any problem, however, better switch to consistent behavior */
+            if (!VBoxGuestCommonGuestCapsModeSet(pDevExt, VBOXGUUESTCAPS_MODE_SET))
+            {
+                Assert(0);
+                LogRel(("calling caps set for invalid caps mode %d\n", pDevExt->enmGuestCapsAcquireMode));
+                enmRequired = kLevel_NoOne;
+                break;
+            }
+#endif
+            /* do not break, make it fall through to the below enmRequired setting */
+        /*
          * Anyone.
          */
         case VMMDevReq_GetMouseStatus:
@@ -1590,7 +1613,6 @@ static int VBoxGuestCheckIfVMMReqAllowed(PVBOXGUESTSESSION pSession, VMMDevReque
         case VMMDevReq_VideoModeSupported:
         case VMMDevReq_GetHeightReduction:
         case VMMDevReq_GetDisplayChangeRequest2:
-        case VMMDevReq_SetGuestCapabilities:
         case VMMDevReq_VideoModeSupported2:
         case VMMDevReq_VideoAccelEnable:
         case VMMDevReq_VideoAccelFlush:
@@ -1687,7 +1709,7 @@ static int VBoxGuestCommonIOCtl_VMMRequest(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
         return rc;
     }
 
-    rc = VBoxGuestCheckIfVMMReqAllowed(pSession, enmType, pReqHdr);
+    rc = VBoxGuestCheckIfVMMReqAllowed(pDevExt, pSession, enmType, pReqHdr);
     if (RT_FAILURE(rc))
     {
         Log(("VBoxGuestCommonIOCtl: VMMREQUEST: Operation not allowed! type=%#x rc=%Rrc\n", enmType, rc));
@@ -2458,8 +2480,50 @@ static bool VBoxGuestCommonGuestCapsValidateValues(uint32_t fCaps)
     return true;
 }
 
+static void VBoxGuestCommonCheckEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fGenFakeEvents)
+{
+    RTSpinlockAcquire(pDevExt->EventSpinlock);
+    uint32_t fEvents = fGenFakeEvents | pDevExt->f32PendingEvents;
+    PVBOXGUESTWAIT  pWait;
+    PVBOXGUESTWAIT  pSafe;
+
+    RTListForEachSafe(&pDevExt->WaitList, pWait, pSafe, VBOXGUESTWAIT, ListNode)
+    {
+        uint32_t fHandledEvents = VBoxGuestCommonGetHandledEventsLocked(pDevExt, pWait->pSession);
+        if (    (pWait->fReqEvents & fEvents & fHandledEvents)
+                    &&  !pWait->fResEvents)
+        {
+            pWait->fResEvents = pWait->fReqEvents & fEvents & fHandledEvents;
+            Assert(!(fGenFakeEvents & pWait->fResEvents) || pSession == pWait->pSession);
+            fEvents &= ~pWait->fResEvents;
+            RTListNodeRemove(&pWait->ListNode);
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+            RTListAppend(&pDevExt->WakeUpList, &pWait->ListNode);
+#else
+            RTListAppend(&pDevExt->WokenUpList, &pWait->ListNode);
+            rc |= RTSemEventMultiSignal(pWait->Event);
+#endif
+            if (!fEvents)
+                break;
+        }
+    }
+    ASMAtomicWriteU32(&pDevExt->f32PendingEvents, fEvents);
+
+    RTSpinlockRelease(pDevExt->EventSpinlock);
+
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+    VBoxGuestWaitDoWakeUps(pDevExt);
+#endif
+}
+
 static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask)
 {
+    if (!VBoxGuestCommonGuestCapsModeSet(pDevExt, VBOXGUUESTCAPS_MODE_ACQUIRE))
+    {
+        Assert(0);
+        LogRel(("calling caps acquire for invalid caps mode %d\n", pDevExt->enmGuestCapsAcquireMode));
+        return VERR_INVALID_STATE;
+    }
     if (!VBoxGuestCommonGuestCapsValidateValues(fOrMask))
         return VERR_INVALID_PARAMETER;
 
@@ -2474,7 +2538,6 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
 
     RTSpinlockAcquire(pDevExt->EventSpinlock);
 
-    pDevExt->u32GuestCapsAcquireMode = 1;
     fCurrentOwnedCaps      = pSession->u32AquiredGuestCaps;
     fSessionNotCaps        = fCurrentOwnedCaps & fNotMask;
     fSessionOrCaps         = fOrMask & ~fCurrentOwnedCaps;
@@ -2512,17 +2575,30 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
     }
 
     int rc = VBoxGuestSetGuestCapabilities(fSessionOrCaps, fSessionNotCaps);
-    if (RT_SUCCESS(rc))
+    if (!RT_SUCCESS(rc))
     {
-        /* success! return */
-        return VINF_SUCCESS;
+        /* Failure branch
+         * this is generally bad since e.g. failure to release the caps may result in other sessions not being able to use it
+         * so we are not trying to restore the caps back to their values before the VBoxGuestCommonGuestCapsAcquire call,
+         * but just pretend everithing is OK.
+         * @todo: better failure handling mechanism? */
     }
 
-    /* Failure branch
-     * this is generally bad since e.g. failure to release the caps may result in other sessions not being able to use it
-     * so we are not trying to restore the caps back to their values before the VBoxGuestCommonGuestCapsAcquire call,
-     * but just pretend everithing is OK.
-     * @todo: better failure handling mechanism? */
+    /* success! */
+    uint32_t fGenFakeEvents = 0;
+
+    if (fSessionOrCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS)
+    {
+        /* generate the seamless change event so that the r3 app could synch with the seamless state
+         * although this introduces a false alarming of r3 client, it still solve the problem of
+         * client state inconsistency in multiuser environment */
+        fGenFakeEvents |= VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
+    }
+
+    /* since the acquire filter mask has changed, we need to process events in any way to ensure they go from pending events field
+     * to the proper (un-filtered) entries */
+    VBoxGuestCommonCheckEvents(pDevExt, pSession, fGenFakeEvents);
+
     return VINF_SUCCESS;
 }
 
