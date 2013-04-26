@@ -68,7 +68,9 @@ typedef enum VMCPUSTATE
 
     /** CPU started. */
     VMCPUSTATE_STARTED,
-    /** Executing guest code and can be poked. */
+    /** CPU started in HM context. */
+    VMCPUSTATE_STARTED_HM,
+    /** Executing guest code and can be poked (RC or STI bits of HM). */
     VMCPUSTATE_STARTED_EXEC,
     /** Executing guest code in the recompiler. */
     VMCPUSTATE_STARTED_EXEC_REM,

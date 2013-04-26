@@ -3380,7 +3380,7 @@ ResumeExecution:
     }
 
     TMNotifyEndOfExecution(pVCpu);
-    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     Assert(!(ASMGetFlags() & X86_EFL_IF));
 
     /*
@@ -5041,7 +5041,7 @@ end:
     }
 
     /* Just set the correct state here instead of trying to catch every goto above. */
-    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED, VMCPUSTATE_STARTED_EXEC);
+    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /* Restore interrupts if we exited after disabling them. */
