@@ -1495,7 +1495,6 @@ VMMR3_INT_DECL(void) HMR3Relocate(PVM pVM)
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (HMIsEnabled(pVM))
     {
-        int rc;
         switch (PGMGetHostMode(pVM))
         {
             case PGMMODE_32_BIT:
@@ -1511,22 +1510,6 @@ VMMR3_INT_DECL(void) HMR3Relocate(PVM pVM)
                 AssertFailed();
                 break;
         }
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "VMXGCStartVM64", &pVM->hm.s.pfnVMXGCStartVM64);
-        AssertReleaseMsgRC(rc, ("VMXGCStartVM64 -> rc=%Rrc\n", rc));
-
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "SVMGCVMRun64",   &pVM->hm.s.pfnSVMGCVMRun64);
-        AssertReleaseMsgRC(rc, ("SVMGCVMRun64 -> rc=%Rrc\n", rc));
-
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HMSaveGuestFPU64",   &pVM->hm.s.pfnSaveGuestFPU64);
-        AssertReleaseMsgRC(rc, ("HMSetupFPU64 -> rc=%Rrc\n", rc));
-
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HMSaveGuestDebug64",   &pVM->hm.s.pfnSaveGuestDebug64);
-        AssertReleaseMsgRC(rc, ("HMSetupDebug64 -> rc=%Rrc\n", rc));
-
-# ifdef DEBUG
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       "HMTestSwitcher64",   &pVM->hm.s.pfnTest64);
-        AssertReleaseMsgRC(rc, ("HMTestSwitcher64 -> rc=%Rrc\n", rc));
-# endif
     }
 #endif
     return;

@@ -773,7 +773,6 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
 static int vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus)
 {
     int         rc;
-    bool        fEnabled;
     PCFGMNODE   pRoot = CFGMR3GetRoot(pVM);
 
     /*
@@ -793,6 +792,7 @@ static int vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus)
      */
     Assert(pVM->fRecompileUser == false); /* ASSUMES all zeros at this point */
 #ifdef VBOX_WITH_RAW_MODE
+    bool        fEnabled;
     rc = CFGMR3QueryBoolDef(pRoot, "RawR3Enabled", &fEnabled, false); AssertRCReturn(rc, rc);
     pVM->fRecompileUser       = !fEnabled;
     rc = CFGMR3QueryBoolDef(pRoot, "RawR0Enabled", &fEnabled, false); AssertRCReturn(rc, rc);

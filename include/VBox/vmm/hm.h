@@ -117,6 +117,25 @@ RT_C_DECLS_BEGIN
 # define HMIsInHwVirtNoLongJmpCtx(a_pVCpu)  (false)
 #endif
 
+/**
+ * 64-bit raw-mode (intermediate memory context) operations.
+ *
+ * These are special hypervisor eip values used when running 64-bit guests on
+ * 32-bit hosts. Each operation corresponds to a routine.
+ *
+ * @note Duplicated in the assembly code!
+ */
+typedef enum HM64ON32OP
+{
+    HM64ON32OP_INVALID = 0,
+    HM64ON32OP_VMXRCStartVM64,
+    HM64ON32OP_SVMRCVMRun64,
+    HM64ON32OP_HMRCSaveGuestFPU64,
+    HM64ON32OP_HMRCSaveGuestDebug64,
+    HM64ON32OP_HMRCTestSwitcher64,
+    HM64ON32OP_END,
+    HM64ON32OP_32BIT_HACK = 0x7fffffff
+} HM64ON32OP;
 
 VMMDECL(bool)                   HMIsEnabledNotMacro(PVM pVM);
 VMM_INT_DECL(int)               HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);

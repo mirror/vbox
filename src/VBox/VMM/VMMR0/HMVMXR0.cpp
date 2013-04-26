@@ -4023,11 +4023,11 @@ static bool hmR0VmxIsValidReadField(uint32_t idxField)
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
- * @param   pfnHandler  Pointer to the RC handler function.
+ * @param   enmOp       The operation to perform.
  * @param   cbParam     Number of parameters.
  * @param   paParam     Array of 32-bit parameters.
  */
-VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTRCPTR pfnHandler, uint32_t cbParam,
+VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, HM64ON32OP enmOp, uint32_t cbParam,
                                          uint32_t *paParam)
 {
     int             rc, rc2;
@@ -4036,7 +4036,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     RTCCUINTREG     uOldEFlags;
 
     AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
-    Assert(pfnHandler);
+    Assert(enmOp > HM64ON32OP_INVALID && enmOp < HM64ON32OP_END);
     Assert(pVCpu->hm.s.vmx.VMCSCache.Write.cValidEntries <= RT_ELEMENTS(pVCpu->hm.s.vmx.VMCSCache.Write.aField));
     Assert(pVCpu->hm.s.vmx.VMCSCache.Read.cValidEntries <= RT_ELEMENTS(pVCpu->hm.s.vmx.VMCSCache.Read.aField));
 
@@ -4068,7 +4068,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
 
     CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVCpu));
-    CPUMSetHyperEIP(pVCpu, pfnHandler);
+    CPUMSetHyperEIP(pVCpu, enmOp);
     for (int i = (int)cbParam - 1; i >= 0; i--)
         CPUMPushHyper(pVCpu, paParam[i]);
 
@@ -4116,6 +4116,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     PHMGLOBLCPUINFO pCpu          = NULL;
     RTHCPHYS        HCPhysCpuPage = 0;
     int             rc            = VERR_INTERNAL_ERROR_5;
+    AssertReturn(pVM->hm.s.pfnVMXGCStartVM64, VERR_HM_IPE_5);
 
     pCpu = HMR0GetCurrentCpu();
     HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
@@ -4147,7 +4148,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     pCtx->dr[4] = pVM->hm.s.vmx.pScratchPhys + 16 + 8;
     *(uint32_t *)(pVM->hm.s.vmx.pScratch + 16 + 8) = 1;
 #endif
-    rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnVMXGCStartVM64, 6, &aParam[0]);
+    rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_VMXRCStartVM64, 6, &aParam[0]);
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     Assert(*(uint32_t *)(pVM->hm.s.vmx.pScratch + 16 + 8) == 5);

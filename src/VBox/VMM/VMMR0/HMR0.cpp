@@ -1584,8 +1584,8 @@ VMMR0_INT_DECL(int)   HMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     STAM_COUNTER_INC(&pVCpu->hm.s.StatFpu64SwitchBack);
     if (pVM->hm.s.vmx.fSupported)
-        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnSaveGuestFPU64, 0, NULL);
-    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnSaveGuestFPU64, 0, NULL);
+        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_HMRCSaveGuestFPU64, 0, NULL);
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_HMRCSaveGuestFPU64, 0, NULL);
 }
 
 
@@ -1601,8 +1601,8 @@ VMMR0_INT_DECL(int)   HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     STAM_COUNTER_INC(&pVCpu->hm.s.StatDebug64SwitchBack);
     if (pVM->hm.s.vmx.fSupported)
-        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnSaveGuestDebug64, 0, NULL);
-    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnSaveGuestDebug64, 0, NULL);
+        return VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_HMRCSaveGuestDebug64, 0, NULL);
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_HMRCSaveGuestDebug64, 0, NULL);
 }
 
 
@@ -1621,9 +1621,9 @@ VMMR0_INT_DECL(int)   HMR0TestSwitcher3264(PVM pVM)
 
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatWorldSwitch3264, z);
     if (pVM->hm.s.vmx.fSupported)
-        rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnTest64, 5, &aParam[0]);
+        rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_HMRCTestSwitcher64, 5, &aParam[0]);
     else
-        rc = SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, pVM->hm.s.pfnTest64, 5, &aParam[0]);
+        rc = SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_HMRCTestSwitcher64, 5, &aParam[0]);
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatWorldSwitch3264, z);
 
     return rc;

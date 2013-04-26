@@ -144,9 +144,10 @@ static PVMMSWITCHERDEF g_apHmSwitchers[VMMSWITCHER_MAX] =
  */
 int vmmR3SwitcherInit(PVM pVM)
 {
-#ifndef VBOX_WITH_RAW_MODE /** @todo 64-bit on 32-bit. */
+#if !defined(VBOX_WITH_RAW_MODE) && (HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL))
     return VINF_SUCCESS;
 #else
+
     /*
      * Calc the size.
      */
@@ -280,7 +281,7 @@ int vmmR3SwitcherInit(PVM pVM)
  */
 void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
 {
-#ifdef VBOX_WITH_RAW_MODE
+#if defined(VBOX_WITH_RAW_MODE) || (HC_ARCH_BITS != 64 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL))
     /*
      * Relocate all the switchers.
      */
@@ -315,7 +316,6 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
     else
         AssertRelease(HMIsEnabled(pVM));
 
-//    AssertFailed();
 #else
     NOREF(pVM);
 #endif
@@ -323,7 +323,7 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
 }
 
 
-#ifdef VBOX_WITH_RAW_MODE
+#if defined(VBOX_WITH_RAW_MODE) || (HC_ARCH_BITS != 64 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL))
 
 /**
  * Generic switcher code relocator.
@@ -674,18 +674,18 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
                 break;
             }
 
-#if defined(RT_ARCH_AMD64) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+# if defined(RT_ARCH_AMD64) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
             /*
              * 64-bit HC Code Selector (no argument).
              */
             case FIX_HC_64BIT_CS:
             {
                 Assert(offSrc < pSwitcher->cbCode);
-# if defined(RT_OS_DARWIN) && defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#  if defined(RT_OS_DARWIN) && defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
                 *uSrc.pu16 = 0x80; /* KERNEL64_CS from i386/seg.h */
-# else
+#  else
                 AssertFatalMsgFailed(("FIX_HC_64BIT_CS not implemented for this host\n"));
-# endif
+#  endif
                 break;
             }
 
@@ -698,7 +698,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
                 *uSrc.pu64 = pVM->pVMR0 + RT_OFFSETOF(VM, cpum);
                 break;
             }
-#endif
+# endif
             /*
              * 64-bit HC pointer fixup to (HC) target within the code (32-bit offset).
              */
@@ -711,7 +711,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
                 break;
             }
 
-#ifdef RT_ARCH_X86
+# ifdef RT_ARCH_X86
             case FIX_GC_64_BIT_CPUM_OFF:
             {
                 uint32_t offCPUM = *u.pu32++;
@@ -719,7 +719,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
                 *uSrc.pu64 = (uint32_t)(VM_RC_ADDR(pVM, &pVM->cpum) + offCPUM);
                 break;
             }
-#endif
+# endif
 
             /*
              * 32-bit ID pointer to (ID) target within the code (32-bit offset).
@@ -760,7 +760,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
                 break;
             }
 
-#ifdef VBOX_WITH_NMI
+# ifdef VBOX_WITH_NMI
             /*
              * 32-bit address to the APIC base.
              */
@@ -769,7 +769,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
                 *uSrc.pu32 = pVM->vmm.s.GCPtrApicBase;
                 break;
             }
-#endif
+# endif
 
             default:
                 AssertReleaseMsgFailed(("Unknown fixup %d in switcher %s\n", u8, pSwitcher->pszDesc));
@@ -777,7 +777,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
         }
     }
 
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
     /*
      * If Log2 is enabled disassemble the switcher code.
      *
@@ -912,7 +912,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
             }
         }
     }
-#endif
+# endif
 }
 
 /**
@@ -926,9 +926,9 @@ static RTRCPTR vmmR3SwitcherGetHyperGDT(PVM pVM)
 {
     if (HMIsRawModeCtxNeeded(pVM))
         return SELMGetHyperGDT(pVM);
-#if HC_ARCH_BITS != 32 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+# if HC_ARCH_BITS != 32 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     AssertFailed(); /* This path is only applicable to some 32-bit hosts. */
-#endif
+# endif
     return NIL_RTRCPTR;
 }
 
@@ -1061,7 +1061,7 @@ VMMR3_INT_DECL(int) VMMR3SelectSwitcher(PVM pVM, VMMSWITCHER enmSwitcher)
     return VERR_NOT_IMPLEMENTED;
 }
 
-#endif /* VBOX_WITH_RAW_MODE */
+#endif /* #defined(VBOX_WITH_RAW_MODE) || (HC_ARCH_BITS != 64 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)) */
 
 
 /**

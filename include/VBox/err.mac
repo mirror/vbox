@@ -729,6 +729,7 @@
 %define VERR_HM_IPE_3    (-4113)
 %define VERR_HM_IPE_4    (-4114)
 %define VERR_HM_IPE_5    (-4115)
+%define VERR_HM_INVALID_HM64ON32OP    (-4116)
 %define VERR_DIS_INVALID_OPCODE    (-4200)
 %define VERR_DIS_GEN_FAILURE    (-4201)
 %define VERR_DIS_NO_READ_CALLBACK    (-4202)

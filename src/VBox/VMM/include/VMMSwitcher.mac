@@ -127,11 +127,19 @@ BEGINCODE
 ;%define DEBUG_STUFF 1
 
 %ifdef DEBUG_STUFF
-    %define DEBUG_CHAR(ch) COM_CHAR ch
-    %define DEBUG_S_CHAR(ch) COM_S_CHAR ch
+    %define DEBUG_CHAR(ch)      COM_CHAR ch
+    %define DEBUG32_CHAR(ch)    COM_CHAR ch
+    %define DEBUG64_CHAR(ch)    COM_CHAR ch
+    %define DEBUG_S_CHAR(ch)    COM_S_CHAR ch
+    %define DEBUG32_S_CHAR(ch)  COM32_S_CHAR ch
+    %define DEBUG64_S_CHAR(ch)  COM64_S_CHAR ch
 %else
     %define DEBUG_CHAR(ch)
+    %define DEBUG32_CHAR(ch)
+    %define DEBUG64_CHAR(ch)
     %define DEBUG_S_CHAR(ch)
+    %define DEBUG32_S_CHAR(ch)
+    %define DEBUG64_S_CHAR(ch)
 %endif
 
 %endif ; !___VMMSwitcher_mac

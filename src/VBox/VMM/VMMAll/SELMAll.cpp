@@ -866,8 +866,8 @@ void selmSetRing2Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
 }
 #endif
 
-#ifdef VBOX_WITH_RAW_MODE_NOT_R0
 
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
 /**
  * Gets ss:esp for ring1 in main Hypervisor's TSS.
  *
@@ -953,7 +953,10 @@ l_tryagain:
 
     return VINF_SUCCESS;
 }
+#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
+
+#if defined(VBOX_WITH_RAW_MODE) || (HC_ARCH_BITS != 64 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL))
 
 /**
  * Gets the hypervisor code selector (CS).
@@ -1027,7 +1030,7 @@ VMMDECL(RTRCPTR) SELMGetHyperGDT(PVM pVM)
     return (RTRCPTR)MMHyperR3ToRC(pVM, pVM->selm.s.paGdtR3);
 }
 
-#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
+#endif /* defined(VBOX_WITH_RAW_MODE) || (HC_ARCH_BITS != 64 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)) */
 
 /**
  * Gets info about the current TSS.
