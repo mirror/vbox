@@ -1329,7 +1329,7 @@ VBoxManage setextradata "VM name"
       interface</title>
 
       <para>For network booting in NAT mode, by default VirtualBox uses a
-      built-in TFTP server at the IP address 10.0.2.3. This default behavior
+      built-in TFTP server at the IP address 10.0.2.4. This default behavior
       should work fine for typical remote-booting scenarios. However, it is
       possible to change the boot server IP and the location of the boot image
       with the following commands: <screen>VBoxManage modifyvm "VM name" --nattftpserver1 10.0.2.2
