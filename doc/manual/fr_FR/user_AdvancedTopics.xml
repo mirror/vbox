@@ -1239,7 +1239,7 @@ VBoxManage setextradata "nom VM"
       réseau NAT</title>
 
       <para>Pour un amorçage réseau en mode NAT, VirtualBox utilise par défaut
-      le serveur TFTP inclu, qui se trouve à l'adresse 10.0.2.3. Ce comportement
+      le serveur TFTP inclu, qui se trouve à l'adresse 10.0.2.4. Ce comportement
       par défaut devrait très bien fonctionner pour les scénari de démarrage
       à distance courants. Cependant, il est possible de modifier l'IP du serveur
       d'amorçage et l'emplacement de l'image de démarrage avec les commandes
