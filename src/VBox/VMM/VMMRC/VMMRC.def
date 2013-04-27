@@ -75,11 +75,6 @@ EXPORTS
     vmmGCTestTrap8_FaultEIP
     VMSetError
     VMSetErrorV
-    VMXGCStartVM64
-    SVMGCVMRun64
-    HMSaveGuestFPU64
-    HMSaveGuestDebug64
-    HMTestSwitcher64
 
     ; runtime
     nocrt_memchr
