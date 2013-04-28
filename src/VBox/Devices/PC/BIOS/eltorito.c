@@ -108,6 +108,13 @@ cd_pkt_func     pktacc[DSKTYP_CNT] = {
 #endif
 };
 
+#if defined(VBOX_WITH_AHCI) || defined(VBOX_WITH_SCSI)
+uint16_t dummy_soft_reset(uint16_t device_id)
+{
+    return 0;
+}
+#endif
+
 /* Generic reset routine signature. */
 typedef uint16_t (* cd_rst_func)(uint16_t device_id);
 
@@ -115,10 +122,10 @@ typedef uint16_t (* cd_rst_func)(uint16_t device_id);
 cd_rst_func     softrst[DSKTYP_CNT] = {
     [DSK_TYPE_ATAPI]  = { ata_soft_reset },
 #ifdef VBOX_WITH_AHCI
-    [DSK_TYPE_AHCI]   = NULL,
+    [DSK_TYPE_AHCI]   = { dummy_soft_reset },
 #endif
 #ifdef VBOX_WITH_SCSI
-    [DSK_TYPE_SCSI]   = NULL,
+    [DSK_TYPE_SCSI]   = { dummy_soft_reset },
 #endif
 };
 
