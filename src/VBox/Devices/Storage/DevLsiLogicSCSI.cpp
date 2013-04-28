@@ -44,12 +44,15 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The current saved state version. */
-#define LSILOGIC_SAVED_STATE_VERSION          3
+#define LSILOGIC_SAVED_STATE_VERSION                4
+/** The saved state version used by VirtualBox before the doorbell status flag
+ * was changed from bool to a 32bit enum. */
+#define LSILOGIC_SAVED_STATE_VERSION_BOOL_DOORBELL  3
 /** The saved state version used by VirtualBox before SAS support was added. */
-#define LSILOGIC_SAVED_STATE_VERSION_PRE_SAS  2
+#define LSILOGIC_SAVED_STATE_VERSION_PRE_SAS        2
 /** The saved state version used by VirtualBox 3.0 and earlier.  It does not
  * include the device config part. */
-#define LSILOGIC_SAVED_STATE_VERSION_VBOX_30  1
+#define LSILOGIC_SAVED_STATE_VERSION_VBOX_30        1
 
 /** Maximum number of entries in the release log. */
 #define MAX_REL_LOG_ERRORS 1024
@@ -60,6 +63,7 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+
 /**
  * Reply data.
  */
@@ -142,19 +146,13 @@ typedef struct LSILOGICSCSI
     /** Who needs to init the driver to get into operational state. */
     LSILOGICWHOINIT      enmWhoInit;
     /** Flag whether we are in doorbell function. */
-    bool                 fDoorbellInProgress;
+    LSILOGICDOORBELLSTATE enmDoorbellState;
     /** Flag whether diagnostic access is enabled. */
     bool                 fDiagnosticEnabled;
-
     /** Flag whether a notification was send to R3. */
     bool                 fNotificationSend;
-
     /** Flag whether the guest enabled event notification from the IOC. */
     bool                 fEventNotificationEnabled;
-
-#if HC_ARCH_BITS == 64
-    uint32_t             Alignment0;
-#endif
 
     /** Queue to send tasks to R3. - R3 ptr */
     R3PTRTYPE(PPDMQUEUE) pNotificationQueueR3;
@@ -498,6 +496,7 @@ DECLINLINE(void) lsilogicSetIOCFaultCode(PLSILOGICSCSI pThis, uint16_t uIOCFault
 static int lsilogicR3HardReset(PLSILOGICSCSI pThis)
 {
     pThis->enmState = LSILOGICSTATE_RESET;
+    pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_NOT_IN_USE;
 
     /* The interrupts are masked out. */
     pThis->uInterruptMask |= LSILOGIC_REG_HOST_INTR_MASK_DOORBELL
@@ -583,7 +582,7 @@ static void lsilogicR3FinishContextReply(PLSILOGICSCSI pThis, uint32_t u32Messag
 
     LogFlowFunc(("pThis=%#p u32MessageContext=%#x\n", pThis, u32MessageContext));
 
-    AssertMsg(!pThis->fDoorbellInProgress, ("We are in a doorbell function\n"));
+    AssertMsg(pThis->enmDoorbellState == LSILOGICDOORBELLSTATE_NOT_IN_USE, ("We are in a doorbell function\n"));
 
     /* Write message context ID into reply post queue. */
     rc = PDMCritSectEnter(&pThis->ReplyPostQueueCritSect, VINF_SUCCESS);
@@ -662,7 +661,7 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
      * set the system doorbell status interrupt to notify the guest that
      * we are ready to send the reply.
      */
-    if (pThis->fDoorbellInProgress && !fForceReplyFifo)
+    if (pThis->enmDoorbellState != LSILOGICDOORBELLSTATE_NOT_IN_USE && !fForceReplyFifo)
     {
         /* Set size of the reply in 16bit words. The size in the reply is in 32bit dwords. */
         pThis->cReplySize = pReply->Header.u8MessageLength * 2;
@@ -731,7 +730,7 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
 
         if (fForceReplyFifo)
         {
-            pThis->fDoorbellInProgress = false;
+            pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_NOT_IN_USE;
             lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL);
         }
 
@@ -743,6 +742,24 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
         AssertMsgFailed(("This is not allowed to happen.\n"));
 #endif
     }
+}
+
+/**
+ * Returns the number of frames in the reply free queue.
+ *
+ * @returns Number of frames in the reply free queue.
+ * @param   pThis    Pointer to the LsiLogic device state.
+ */
+DECLINLINE(uint32_t) lsilogicReplyFreeQueueGetFrameCount(PLSILOGICSCSI pThis)
+{
+    uint32_t cReplyFrames = 0;
+
+    if (pThis->uReplyFreeQueueNextAddressRead <= pThis->uReplyFreeQueueNextEntryFreeWrite)
+        cReplyFrames = pThis->uReplyFreeQueueNextEntryFreeWrite - pThis->uReplyFreeQueueNextAddressRead;
+    else
+        cReplyFrames = pThis->cReplyQueueEntries - pThis->uReplyFreeQueueNextAddressRead + pThis->uReplyFreeQueueNextEntryFreeWrite;
+
+    return cReplyFrames;
 }
 
 #ifdef IN_RING3
@@ -1025,14 +1042,20 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
              * The guest needs to wait with posting new messages here until the bit is cleared.
              * Because the guest is not continuing execution while we are here we can skip this.
              */
-            if (!pThis->fDoorbellInProgress)
+            if (pThis->enmDoorbellState == LSILOGICDOORBELLSTATE_NOT_IN_USE)
             {
                 uint32_t uFunction = LSILOGIC_REG_DOORBELL_GET_FUNCTION(u32);
 
                 switch (uFunction)
                 {
+                    case LSILOGIC_DOORBELL_FUNCTION_IO_UNIT_RESET:
                     case LSILOGIC_DOORBELL_FUNCTION_IOC_MSG_UNIT_RESET:
                     {
+                        /*
+                         * The I/O unit reset does much more on real hardware like
+                         * reloading the firmware, nothing we need to do here,
+                         * so this is like the IOC message unit reset.
+                         */
                         pThis->enmState = LSILOGICSTATE_RESET;
 
                         /* Reset interrupt status. */
@@ -1046,12 +1069,10 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
                         pThis->uReplyPostQueueNextAddressRead = 0;
                         pThis->uRequestQueueNextEntryFreeWrite = 0;
                         pThis->uRequestQueueNextAddressRead = 0;
-                        pThis->enmState = LSILOGICSTATE_READY;
-                        break;
-                    }
-                    case LSILOGIC_DOORBELL_FUNCTION_IO_UNIT_RESET:
-                    {
-                        AssertMsgFailed(("todo\n"));
+
+                        /* Only the IOC message unit reset transisionts to the ready state. */
+                        if (uFunction == LSILOGIC_DOORBELL_FUNCTION_IOC_MSG_UNIT_RESET)
+                            pThis->enmState = LSILOGICSTATE_READY;
                         break;
                     }
                     case LSILOGIC_DOORBELL_FUNCTION_HANDSHAKE:
@@ -1060,21 +1081,23 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
                         pThis->iMessage = 0;
                         AssertMsg(pThis->cMessage <= RT_ELEMENTS(pThis->aMessage),
                                   ("Message doesn't fit into the buffer, cMessage=%u", pThis->cMessage));
-                        pThis->fDoorbellInProgress = true;
+                        pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_FN_HANDSHAKE;
                         /* Update the interrupt status to notify the guest that a doorbell function was started. */
                         lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL);
                         break;
                     }
                     case LSILOGIC_DOORBELL_FUNCTION_REPLY_FRAME_REMOVAL:
                     {
-                        AssertMsgFailed(("todo\n"));
+                        pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_RFR_FRAME_COUNT_LOW;
+                        /* Update the interrupt status to notify the guest that a doorbell function was started. */
+                        lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL);
                         break;
                     }
                     default:
                         AssertMsgFailed(("Unknown function %u to perform\n", uFunction));
                 }
             }
-            else
+            else if (pThis->enmDoorbellState == LSILOGICDOORBELLSTATE_FN_HANDSHAKE)
             {
                 /*
                  * We are already performing a doorbell function.
@@ -1116,15 +1139,24 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
              * We do not use lsilogicSetInterrupt here because the interrupt status
              * is updated afterwards anyway.
              */
-            if (   (pThis->fDoorbellInProgress)
+            if (   (pThis->enmDoorbellState == LSILOGICDOORBELLSTATE_FN_HANDSHAKE)
                 && (pThis->cMessage == pThis->iMessage))
             {
                 if (pThis->uNextReplyEntryRead == pThis->cReplySize)
                 {
                     /* Reply finished. Reset doorbell in progress status. */
                     Log(("%s: Doorbell function finished\n", __FUNCTION__));
-                    pThis->fDoorbellInProgress = false;
+                    pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_NOT_IN_USE;
                 }
+                ASMAtomicOrU32(&pThis->uInterruptStatus, LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL);
+            }
+            else if (   pThis->enmDoorbellState != LSILOGICDOORBELLSTATE_NOT_IN_USE
+                     && pThis->enmDoorbellState != LSILOGICDOORBELLSTATE_FN_HANDSHAKE)
+            {
+                /* Reply frame removal, check whether the reply free queue is empty. */
+                if (   pThis->uReplyFreeQueueNextAddressRead == pThis->uReplyFreeQueueNextEntryFreeWrite
+                    && pThis->enmDoorbellState == LSILOGICDOORBELLSTATE_RFR_NEXT_FRAME_LOW)
+                    pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_NOT_IN_USE;
                 ASMAtomicOrU32(&pThis->uInterruptStatus, LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL);
             }
 
@@ -1231,23 +1263,61 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
         case LSILOGIC_REG_DOORBELL:
         {
             u32  = LSILOGIC_REG_DOORBELL_SET_STATE(pThis->enmState);
-            u32 |= LSILOGIC_REG_DOORBELL_SET_USED(pThis->fDoorbellInProgress);
+            u32 |= LSILOGIC_REG_DOORBELL_SET_USED(pThis->enmDoorbellState);
             u32 |= LSILOGIC_REG_DOORBELL_SET_WHOINIT(pThis->enmWhoInit);
             /*
              * If there is a doorbell function in progress we pass the return value
              * instead of the status code. We transfer 16bit of the reply
              * during one read.
              */
-            if (pThis->fDoorbellInProgress)
+            switch (pThis->enmDoorbellState)
             {
-                /* Return next 16bit value. */
-                u32 |= pThis->ReplyBuffer.au16Reply[pThis->uNextReplyEntryRead++];
+                case LSILOGICDOORBELLSTATE_NOT_IN_USE:
+                    /* We return the status code of the I/O controller. */
+                    u32 |= pThis->u16IOCFaultCode;
+                    break;
+                case LSILOGICDOORBELLSTATE_FN_HANDSHAKE:
+                    /* Return next 16bit value. */
+                    u32 |= pThis->ReplyBuffer.au16Reply[pThis->uNextReplyEntryRead++];
+                    lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL);
+                    break;
+                case LSILOGICDOORBELLSTATE_RFR_FRAME_COUNT_LOW:
+                {
+                    uint32_t cReplyFrames = lsilogicReplyFreeQueueGetFrameCount(pThis);
+
+                    u32 |= cReplyFrames & UINT32_C(0xffff);
+                    pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_RFR_FRAME_COUNT_HIGH;
+                    lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL);
+                    break;
+                }
+                case LSILOGICDOORBELLSTATE_RFR_FRAME_COUNT_HIGH:
+                {
+                    uint32_t cReplyFrames = lsilogicReplyFreeQueueGetFrameCount(pThis);
+
+                    u32 |= cReplyFrames >> 16;
+                    pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_RFR_NEXT_FRAME_LOW;
+                    lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL);
+                    break;
+                }
+                case LSILOGICDOORBELLSTATE_RFR_NEXT_FRAME_LOW:
+                    if (pThis->uReplyFreeQueueNextEntryFreeWrite != pThis->uReplyFreeQueueNextAddressRead)
+                    {
+                        u32 |= pThis->CTX_SUFF(pReplyFreeQueueBase)[pThis->uReplyFreeQueueNextAddressRead] & UINT32_C(0xffff);
+                        pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_RFR_NEXT_FRAME_HIGH;
+                        lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL);
+                    }
+                    break;
+                case LSILOGICDOORBELLSTATE_RFR_NEXT_FRAME_HIGH:
+                    u32 |= pThis->CTX_SUFF(pReplyFreeQueueBase)[pThis->uReplyFreeQueueNextAddressRead] >> 16;
+                    pThis->uReplyFreeQueueNextAddressRead++;
+                    pThis->uReplyFreeQueueNextAddressRead %= pThis->cReplyQueueEntries;
+                    pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_RFR_NEXT_FRAME_LOW;
+                    lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL);
+                    break;
+                default:
+                    AssertMsgFailed(("Invalid doorbell state %d\n", pThis->enmDoorbellState));
             }
-            else
-            {
-                /* We return the status code of the I/O controller. */
-                u32 |= pThis->u16IOCFaultCode;
-            }
+
             break;
         }
         case LSILOGIC_REG_HOST_INTR_STATUS:
@@ -2021,18 +2091,22 @@ static int lsilogicR3ProcessSCSIIORequest(PLSILOGICSCSI pThis, PLSILOGICTASKSTAT
 
         if (pTargetDevice->pDrvBase)
         {
-            uint32_t uChainOffset;
 
-            /* Create Scatter gather list. */
-            uChainOffset = pTaskState->GuestRequest.SCSIIO.u8ChainOffset;
+            if (pTaskState->GuestRequest.SCSIIO.u32DataLength)
+            {
+                uint32_t uChainOffset;
 
-            if (uChainOffset)
-                uChainOffset = uChainOffset * sizeof(uint32_t) - sizeof(MptSCSIIORequest);
+                /* Create Scatter gather list. */
+                uChainOffset = pTaskState->GuestRequest.SCSIIO.u8ChainOffset;
 
-            rc = lsilogicR3ScatterGatherListCreate(pThis, pTaskState,
-                                                 pTaskState->GCPhysMessageFrameAddr + sizeof(MptSCSIIORequest),
-                                                 uChainOffset);
-            AssertRC(rc);
+                if (uChainOffset)
+                    uChainOffset = uChainOffset * sizeof(uint32_t) - sizeof(MptSCSIIORequest);
+
+                rc = lsilogicR3ScatterGatherListCreate(pThis, pTaskState,
+                                                       pTaskState->GCPhysMessageFrameAddr + sizeof(MptSCSIIORequest),
+                                                       uChainOffset);
+                AssertRC(rc);
+            }
 
 # if 0
             /* Map sense buffer. */
@@ -2133,7 +2207,7 @@ static DECLCALLBACK(int) lsilogicR3DeviceSCSIRequestCompleted(PPDMISCSIPORT pInt
      * add it to the list. */
     if (fRedo)
     {
-        if (!pTaskState->fBIOS)
+        if (!pTaskState->fBIOS && pTaskState->PDMScsiRequest.cbScatterGather)
             lsilogicR3ScatterGatherListDestroy(pThis, pTaskState);
 
         /* Add to the list. */
@@ -2170,7 +2244,8 @@ static DECLCALLBACK(int) lsilogicR3DeviceSCSIRequestCompleted(PPDMISCSIPORT pInt
                                   ? pTaskState->GuestRequest.SCSIIO.u8SenseBufferLength
                                   : pTaskState->PDMScsiRequest.cbSenseBuffer);
 # endif
-            lsilogicR3ScatterGatherListDestroy(pThis, pTaskState);
+            if (pTaskState->PDMScsiRequest.cbScatterGather)
+                lsilogicR3ScatterGatherListDestroy(pThis, pTaskState);
 
 
             if (RT_LIKELY(rcCompletion == SCSI_STATUS_OK))
@@ -3979,7 +4054,7 @@ static DECLCALLBACK(void) lsilogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
      */
     pHlp->pfnPrintf(pHlp, "enmState=%u\n", pThis->enmState);
     pHlp->pfnPrintf(pHlp, "enmWhoInit=%u\n", pThis->enmWhoInit);
-    pHlp->pfnPrintf(pHlp, "fDoorbellInProgress=%RTbool\n", pThis->fDoorbellInProgress);
+    pHlp->pfnPrintf(pHlp, "enmDoorbellState=%d\n", pThis->enmDoorbellState);
     pHlp->pfnPrintf(pHlp, "fDiagnosticEnabled=%RTbool\n", pThis->fDiagnosticEnabled);
     pHlp->pfnPrintf(pHlp, "fNotificationSend=%RTbool\n", pThis->fNotificationSend);
     pHlp->pfnPrintf(pHlp, "fEventNotificationEnabled=%RTbool\n", pThis->fEventNotificationEnabled);
@@ -4162,7 +4237,7 @@ static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /* Now the main device state. */
     SSMR3PutU32   (pSSM, pThis->enmState);
     SSMR3PutU32   (pSSM, pThis->enmWhoInit);
-    SSMR3PutBool  (pSSM, pThis->fDoorbellInProgress);
+    SSMR3PutU32   (pSSM, pThis->enmDoorbellState);
     SSMR3PutBool  (pSSM, pThis->fDiagnosticEnabled);
     SSMR3PutBool  (pSSM, pThis->fNotificationSend);
     SSMR3PutBool  (pSSM, pThis->fEventNotificationEnabled);
@@ -4374,7 +4449,22 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     /* Now the main device state. */
     SSMR3GetU32   (pSSM, (uint32_t *)&pThis->enmState);
     SSMR3GetU32   (pSSM, (uint32_t *)&pThis->enmWhoInit);
-    SSMR3GetBool  (pSSM, &pThis->fDoorbellInProgress);
+    if (uVersion <= LSILOGIC_SAVED_STATE_VERSION_BOOL_DOORBELL)
+    {
+        bool fDoorbellInProgress = false;
+
+        /*
+         * The doorbell status flag distinguishes only between
+         * doorbell not in use or a Function handshake is currently in progress.
+         */
+        SSMR3GetBool  (pSSM, &fDoorbellInProgress);
+        if (fDoorbellInProgress)
+            pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_FN_HANDSHAKE;
+        else
+            pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_NOT_IN_USE;
+    }
+    else
+        SSMR3GetU32(pSSM, (uint32_t *)&pThis->enmDoorbellState);
     SSMR3GetBool  (pSSM, &pThis->fDiagnosticEnabled);
     SSMR3GetBool  (pSSM, &pThis->fNotificationSend);
     SSMR3GetBool  (pSSM, &pThis->fEventNotificationEnabled);
