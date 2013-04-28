@@ -161,40 +161,30 @@ typedef struct LSILOGICSCSI
     /** Queue to send tasks to R3. - RC ptr */
     RCPTRTYPE(PPDMQUEUE) pNotificationQueueRC;
 
-#if HC_ARCH_BITS == 64
-    uint32_t             Alignment1;
-#endif
-
     /** Number of device states allocated. */
     uint32_t             cDeviceStates;
 
-#if HC_ARCH_BITS == 64
-    uint32_t             Alignment2;
-#endif
-
     /** States for attached devices. */
     R3PTRTYPE(PLSILOGICDEVICE) paDeviceStates;
-
-    /** MMIO address the device is mapped to. */
-    RTGCPHYS              GCPhysMMIOBase;
-    /** I/O port address the device is mapped to. */
-    RTIOPORT              IOPortBase;
+#if HC_ARCH_BITS == 32
+    RTR3PTR                 R3PtrPadding0;
+#endif
 
     /** Interrupt mask. */
     volatile uint32_t     uInterruptMask;
     /** Interrupt status register. */
     volatile uint32_t     uInterruptStatus;
 
-    /** Buffer for messages which are passed
-     * through the doorbell using the
+    /** Buffer for messages which are passed through the doorbell using the
      * handshake method. */
-    uint32_t              aMessage[sizeof(MptConfigurationRequest)];
+    uint32_t              aMessage[sizeof(MptConfigurationRequest)]; /** @todo r=bird: Looks like 4 tims the required size? Please explain in comment if this correct... */
     /** Actual position in the buffer. */
     uint32_t              iMessage;
     /** Size of the message which is given in the doorbell message in dwords. */
     uint32_t              cMessage;
 
-    /** Reply buffer. */
+    /** Reply buffer.
+     * @note 60 bytes  */
     MptReplyUnion         ReplyBuffer;
     /** Next entry to read. */
     uint32_t              uNextReplyEntryRead;
@@ -203,6 +193,11 @@ typedef struct LSILOGICSCSI
 
     /** The fault code of the I/O controller if we are in the fault state. */
     uint16_t              u16IOCFaultCode;
+
+    /** I/O port address the device is mapped to. */
+    RTIOPORT              IOPortBase;
+    /** MMIO address the device is mapped to. */
+    RTGCPHYS              GCPhysMMIOBase;
 
     /** Upper 32 bits of the message frame address to locate requests in guest memory. */
     uint32_t              u32HostMFAHighAddr;
@@ -224,9 +219,6 @@ typedef struct LSILOGICSCSI
     /** Number entries allocated for the outstanding request queue. */
     uint32_t              cRequestQueueEntries;
 
-#if HC_ARCH_BITS == 64
-    uint32_t              Alignment3;
-#endif
 
     /** Critical section protecting the reply post queue. */
     PDMCRITSECT           ReplyPostQueueCritSect;
@@ -253,6 +245,8 @@ typedef struct LSILOGICSCSI
     RCPTRTYPE(volatile uint32_t *) pReplyPostQueueBaseRC;
     /** Pointer to the start of the request queue - RC. */
     RCPTRTYPE(volatile uint32_t *) pRequestQueueBaseRC;
+    /** End these RC pointers on a 64-bit boundrary. */
+    RTRCPTR                        RCPtrPadding1;
 
     /** Next free entry in the reply queue the guest can write a address to. */
     volatile uint32_t              uReplyFreeQueueNextEntryFreeWrite;
@@ -274,18 +268,12 @@ typedef struct LSILOGICSCSI
     /** Handle counter */
     uint16_t                       u16NextHandle;
 
-    uint16_t                       u16Alignment4;
-    uint32_t                       u32Alignment5;
-
     /** Number of ports this controller has. */
     uint8_t                        cPorts;
 
-#if HC_ARCH_BITS == 64
-    uint32_t                       Alignment6;
-#endif
-
     /** BIOS emulation. */
     VBOXSCSI                       VBoxSCSI;
+
     /** Cache for allocated tasks. */
     R3PTRTYPE(RTMEMCACHE)          hTaskCache;
     /** Status LUN: The base interface. */

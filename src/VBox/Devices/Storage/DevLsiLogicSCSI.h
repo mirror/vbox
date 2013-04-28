@@ -1150,6 +1150,7 @@ typedef union MptReplyUnion
     MptFWDownloadReply         FWDownload;
     MptFWUploadReply           FWUpload;
 } MptReplyUnion, *PMptReplyUnion;
+AssertCompileSize(MptReplyUnion, 60);
 
 
 /**
