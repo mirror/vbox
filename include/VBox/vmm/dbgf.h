@@ -1347,6 +1347,9 @@ typedef DBGFREGSUBFIELD const *PCDBGFREGSUBFIELD;
 /** Macro for creating a read-write sub-field entry with getters. */
 #define DBGFREGSUBFIELD_RW_SG(a_szName, a_cBits, a_cShift, a_pfnGet, a_pfnSet) \
     { a_szName, 0 /*iFirstBit*/, a_cBits, a_cShift, 0 /*fFlags*/, a_pfnGet, a_pfnSet }
+/** Macro for creating a read-only sub-field entry without getters. */
+#define DBGFREGSUBFIELD_RO(a_szName, a_iFirstBit, a_cBits, a_cShift) \
+    { a_szName, a_iFirstBit, a_cBits, a_cShift, DBGFREGSUBFIELD_FLAGS_READ_ONLY, NULL /*pfnGet*/, NULL /*pfnSet*/ }
 /** Macro for creating a terminator sub-field entry.  */
 #define DBGFREGSUBFIELD_TERMINATOR() \
     { NULL, 0, 0, 0, 0, NULL, NULL }
