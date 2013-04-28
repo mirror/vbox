@@ -3465,6 +3465,32 @@ typedef enum LSILOGICWHOINIT
 
 
 /**
+ * Doorbell state.
+ */
+typedef enum LSILOGICDOORBELLSTATE
+{
+    /** Invalid value. */
+    LSILOGICDOORBELLSTATE_INVALID = 0,
+    /** Doorbell not in use. */
+    LSILOGICDOORBELLSTATE_NOT_IN_USE,
+    /** Reply frame removal, transfer number of entries, low 16bits. */
+    LSILOGICDOORBELLSTATE_RFR_FRAME_COUNT_LOW,
+    /** Reply frame removal, transfer number of entries, high 16bits. */
+    LSILOGICDOORBELLSTATE_RFR_FRAME_COUNT_HIGH,
+    /** Reply frame removal, remove next free frame, low part. */
+    LSILOGICDOORBELLSTATE_RFR_NEXT_FRAME_LOW,
+    /** Reply frame removal, remove next free frame, high part. */
+    LSILOGICDOORBELLSTATE_RFR_NEXT_FRAME_HIGH,
+    /** Function handshake. */
+    LSILOGICDOORBELLSTATE_FN_HANDSHAKE,
+    /** 32bit hack. */
+    LSILOGICDOORBELLSTATE_32BIT_HACK = 0x7fffffff
+} LSILOGICDOORBELLSTATE;
+/** Pointer to a doorbell state. */
+typedef LSILOGICDOORBELLSTATE *PLSILOGICDOORBELLSTATE;
+
+
+/**
  * IOC status codes.
  */
 #define LSILOGIC_IOCSTATUS_SUCCESS                0x0000
@@ -3490,7 +3516,7 @@ typedef enum LSILOGICWHOINIT
  */
 #define LSILOGIC_REG_DOORBELL 0x00
 # define LSILOGIC_REG_DOORBELL_SET_STATE(enmState)     (((enmState) & 0x0f) << 28)
-# define LSILOGIC_REG_DOORBELL_SET_USED(fUsed)         (((fUsed) ? 1 : 0) << 27)
+# define LSILOGIC_REG_DOORBELL_SET_USED(enmDoorbell)   (((enmDoorbell != LSILOGICDOORBELLSTATE_NOT_IN_USE) ? 1 : 0) << 27)
 # define LSILOGIC_REG_DOORBELL_SET_WHOINIT(enmWhoInit) (((enmWhoInit) & 0x07) << 24)
 # define LSILOGIC_REG_DOORBELL_SET_FAULT_CODE(u16Code) (u16Code)
 # define LSILOGIC_REG_DOORBELL_GET_FUNCTION(x)         (((x) & 0xff000000) >> 24)

@@ -1559,7 +1559,7 @@ int main()
     GEN_CHECK_OFF(LSILOGICSCSI, fR0Enabled);
     GEN_CHECK_OFF(LSILOGICSCSI, enmState);
     GEN_CHECK_OFF(LSILOGICSCSI, enmWhoInit);
-    GEN_CHECK_OFF(LSILOGICSCSI, fDoorbellInProgress);
+    GEN_CHECK_OFF(LSILOGICSCSI, enmDoorbellState);
     GEN_CHECK_OFF(LSILOGICSCSI, fDiagnosticEnabled);
     GEN_CHECK_OFF(LSILOGICSCSI, fNotificationSend);
     GEN_CHECK_OFF(LSILOGICSCSI, fEventNotificationEnabled);
