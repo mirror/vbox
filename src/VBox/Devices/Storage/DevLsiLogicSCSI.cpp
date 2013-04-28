@@ -285,15 +285,13 @@ typedef struct LSILOGICSCSI
     /** Pointer to the configuration page area. */
     R3PTRTYPE(PMptConfigurationPagesSupported) pConfigurationPages;
 
-#if HC_ARCH_BITS == 64
-    uint32_t                       Alignment7;
-#endif
-
     /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
      * a port is entering the idle state. */
     bool volatile                  fSignalIdle;
     /** Flag whether we have tasks which need to be processed again- */
     bool volatile                  fRedo;
+    /** Alignment padding. */
+    bool                            afPAdding2[HC_ARCH_BITS == 32 ? 2 : 6];
     /** List of tasks which can be redone. */
     R3PTRTYPE(volatile PLSILOGICTASKSTATE) pTasksRedoHead;
 
