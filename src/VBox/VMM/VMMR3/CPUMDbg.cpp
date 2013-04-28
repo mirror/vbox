@@ -912,35 +912,85 @@ static DBGFREGSUBFIELD const g_aCpumRegFields_xmmN[] =
 /** Sub-fields for the CR0 register. */
 static DBGFREGSUBFIELD const g_aCpumRegFields_cr0[] =
 {
-    /** @todo  */
+    DBGFREGSUBFIELD_RW("pe",      0,      1,  0),
+    DBGFREGSUBFIELD_RW("mp",      1,      1,  0),
+    DBGFREGSUBFIELD_RW("em",      2,      1,  0),
+    DBGFREGSUBFIELD_RW("ts",      3,      1,  0),
+    DBGFREGSUBFIELD_RO("et",      4,      1,  0),
+    DBGFREGSUBFIELD_RW("ne",      5,      1,  0),
+    DBGFREGSUBFIELD_RW("wp",     16,      1,  0),
+    DBGFREGSUBFIELD_RW("am",     18,      1,  0),
+    DBGFREGSUBFIELD_RW("nw",     29,      1,  0),
+    DBGFREGSUBFIELD_RW("cd",     30,      1,  0),
+    DBGFREGSUBFIELD_RW("pg",     31,      1,  0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
 /** Sub-fields for the CR3 register. */
 static DBGFREGSUBFIELD const g_aCpumRegFields_cr3[] =
 {
-    /** @todo  */
+    DBGFREGSUBFIELD_RW("pwt",     3,      1,  0),
+    DBGFREGSUBFIELD_RW("pcd",     4,      1,  0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
 /** Sub-fields for the CR4 register. */
 static DBGFREGSUBFIELD const g_aCpumRegFields_cr4[] =
 {
-    /** @todo  */
+    DBGFREGSUBFIELD_RW("vme",     0,      1,  0),
+    DBGFREGSUBFIELD_RW("pvi",     1,      1,  0),
+    DBGFREGSUBFIELD_RW("tsd",     2,      1,  0),
+    DBGFREGSUBFIELD_RW("de",      3,      1,  0),
+    DBGFREGSUBFIELD_RW("pse",     4,      1,  0),
+    DBGFREGSUBFIELD_RW("pae",     5,      1,  0),
+    DBGFREGSUBFIELD_RW("mce",     6,      1,  0),
+    DBGFREGSUBFIELD_RW("pge",     7,      1,  0),
+    DBGFREGSUBFIELD_RW("pce",     8,      1,  0),
+    DBGFREGSUBFIELD_RW("osfsxr",  9,      1,  0),
+    DBGFREGSUBFIELD_RW("osxmmeexcpt", 10, 1,  0),
+    DBGFREGSUBFIELD_RW("vmxe",   10,      1,  0),
+    DBGFREGSUBFIELD_RW("smxe",   13,      1,  0),
+    DBGFREGSUBFIELD_RW("pcide",  14,      1,  0),
+    DBGFREGSUBFIELD_RW("osxsave", 17,     1,  0),
+    DBGFREGSUBFIELD_RW("smep",   18,      1,  0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
 /** Sub-fields for the DR6 register. */
 static DBGFREGSUBFIELD const g_aCpumRegFields_dr6[] =
 {
-    /** @todo  */
+    DBGFREGSUBFIELD_RW("b0",      0,      1,  0),
+    DBGFREGSUBFIELD_RW("b1",      1,      1,  0),
+    DBGFREGSUBFIELD_RW("b2",      2,      1,  0),
+    DBGFREGSUBFIELD_RW("b3",      3,      1,  0),
+    DBGFREGSUBFIELD_RW("bd",     13,      1,  0),
+    DBGFREGSUBFIELD_RW("bs",     14,      1,  0),
+    DBGFREGSUBFIELD_RW("bt",     15,      1,  0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
 /** Sub-fields for the DR7 register. */
 static DBGFREGSUBFIELD const g_aCpumRegFields_dr7[] =
 {
-    /** @todo  */
+    DBGFREGSUBFIELD_RW("l0",      0,      1,  0),
+    DBGFREGSUBFIELD_RW("g0",      1,      1,  0),
+    DBGFREGSUBFIELD_RW("l1",      2,      1,  0),
+    DBGFREGSUBFIELD_RW("g1",      3,      1,  0),
+    DBGFREGSUBFIELD_RW("l2",      4,      1,  0),
+    DBGFREGSUBFIELD_RW("g2",      5,      1,  0),
+    DBGFREGSUBFIELD_RW("l3",      6,      1,  0),
+    DBGFREGSUBFIELD_RW("g3",      7,      1,  0),
+    DBGFREGSUBFIELD_RW("le",      8,      1,  0),
+    DBGFREGSUBFIELD_RW("ge",      9,      1,  0),
+    DBGFREGSUBFIELD_RW("gd",     13,      1,  0),
+    DBGFREGSUBFIELD_RW("rw0",    16,      2,  0),
+    DBGFREGSUBFIELD_RW("len0",   18,      2,  0),
+    DBGFREGSUBFIELD_RW("rw1",    20,      2,  0),
+    DBGFREGSUBFIELD_RW("len1",   22,      2,  0),
+    DBGFREGSUBFIELD_RW("rw2",    24,      2,  0),
+    DBGFREGSUBFIELD_RW("len2",   26,      2,  0),
+    DBGFREGSUBFIELD_RW("rw3",    28,      2,  0),
+    DBGFREGSUBFIELD_RW("len3",   30,      2,  0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
