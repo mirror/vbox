@@ -2211,7 +2211,7 @@ VMMDECL(int) PGMChangeMode(PVMCPU pVCpu, uint64_t cr0, uint64_t cr4, uint64_t ef
  * @param   pVCpu       The cross context virtual CPU structure of the caller.
  * @thread  EMT
  */
-VMM_INT_DECL(void) PGMCr0WpEnabled(PVMCPU pVCpu)
+VMMDECL(void) PGMCr0WpEnabled(PVMCPU pVCpu)
 {
     /*
      * Netware WP0+RO+US hack cleanup when WP0 -> WP1.
