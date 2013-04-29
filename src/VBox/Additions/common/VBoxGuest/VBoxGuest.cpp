@@ -1035,7 +1035,7 @@ int VBoxGuestCreateKernelSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *pp
     return VINF_SUCCESS;
 }
 
-
+static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
 
 /**
  * Closes a VBoxGuest session.
@@ -1050,6 +1050,8 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
          pSession, pSession->Process, (int)pSession->Process, (uintptr_t)pSession->R0Process)); /** @todo %RTr0proc */
 
     VBoxGuestCommonGuestCapsAcquire(pDevExt, pSession, 0, UINT32_MAX);
+
+    VBoxGuestCommonIOCtl_CancelAllWaitEvents(pDevExt, pSession);
 
 #ifdef VBOX_WITH_HGCM
     for (i = 0; i < RT_ELEMENTS(pSession->aHGCMClientIds); i++)
@@ -2546,10 +2548,6 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
         LogRel(("calling caps acquire for set caps %d\n", fOrMask));
         return VERR_INVALID_STATE;
     }
-
-    /* user-mode apps are allowed to pass any mask to the notmask,
-     * the driver cleans up them accordingly */
-    fNotMask &= ~fSetCaps;
 
     if (!VBoxGuestCommonGuestCapsValidateValues(fOrMask))
         return VERR_INVALID_PARAMETER;
