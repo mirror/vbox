@@ -983,7 +983,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
              */
             if (    !GstWalk.Core.fEffectiveRW
                 &&  (CPUMGetGuestCR0(pVCpu) & (X86_CR0_WP | X86_CR0_PG)) == X86_CR0_PG
-                &&  CPUMGetGuestCPL(pVCpu) > 3)
+                &&  CPUMGetGuestCPL(pVCpu) < 3)
             {
                 Assert((uErr & (X86_TRAP_PF_RW | X86_TRAP_PF_P)) == (X86_TRAP_PF_RW | X86_TRAP_PF_P));
 #    ifdef PGM_WITH_NETWARE_WP0_HACK
