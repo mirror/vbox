@@ -6538,14 +6538,16 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
         pVmxTransient->u8GuestTpr = pVCpu->hm.s.vmx.pbVirtApic[0x80];
 
-    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB-shootdowns, set this across the world switch. */
-    hmR0VmxFlushTaggedTlb(pVCpu);                               /* Invalidate the appropriate guest entries from the TLB. */
-
-    if (pVmxTransient->fUpdateTscOffsettingAndPreemptTimer)
+    if (   pVmxTransient->fUpdateTscOffsettingAndPreemptTimer
+        || HMR0GetCurrentCpu()->idCpu != pVCpu->hm.s.idLastCpu)
     {
         hmR0VmxUpdateTscOffsettingAndPreemptTimer(pVCpu, pMixedCtx);
         pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = false;
     }
+
+    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB-shootdowns, set this across the world switch. */
+    hmR0VmxFlushTaggedTlb(pVCpu);                               /* Invalidate the appropriate guest entries from the TLB. */
+    Assert(HMR0GetCurrentCpu()->idCpu == pVCpu->hm.s.idLastCpu);
 
     /*
      * TPR patching (only active for 32-bit guests on 64-bit capable CPUs) when the CPU does not supported virtualizing
@@ -7639,6 +7641,8 @@ static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
             AssertRCReturn(rc, rc);
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_GUEST_AUTO_MSRS;
         }
+        else if (pMixedCtx->ecx == MSR_IA32_TSC)        /* Windows 7 does this during bootup. See @bugref{6398}. */
+            pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
 
         /* Update MSRs that are part of the VMCS when MSR-bitmaps are not supported. */
         if (RT_UNLIKELY(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)))
