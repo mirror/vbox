@@ -1981,7 +1981,13 @@ ipcDConnectService::SerializeException(ipcMessageWriter &writer,
     if (!xcpt)
     {
       // write null address
+#ifdef VBOX
+      // see ipcDConnectService::DeserializeException()!
+      PtrBits bits = 0;
+      writer.PutBytes(&bits, sizeof(bits));
+#else
       writer.PutBytes(&xcpt, sizeof(xcpt));
+#endif
     }
     else
     {
