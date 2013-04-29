@@ -674,6 +674,12 @@ VMMDECL(int) CPUMSetGuestCR0(PVMCPU pVCpu, uint64_t cr0)
         pVCpu->cpum.s.fChanged |= CPUM_CHANGED_GLOBAL_TLB_FLUSH;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CR0;
 
+    /*
+     * Let PGM know if the WP goes from 0 to 1 (netware WP0+RO+US hack)
+     */
+    if (((cr0 ^ pVCpu->cpum.s.Guest.cr0) & X86_CR0_WP) && (cr0 & X86_CR0_WP))
+        PGMCr0WpEnabled(pVCpu);
+
     pVCpu->cpum.s.Guest.cr0 = cr0 | X86_CR0_ET;
     return VINF_SUCCESS;
 }

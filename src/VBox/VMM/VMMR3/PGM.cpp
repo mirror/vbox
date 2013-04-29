@@ -1891,6 +1891,8 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2OutOfSyncHndObs,  "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSyncObsHnd",   "Profiling of the Trap0eHandler body when the cause is an obsolete handler page.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2SyncPT,           "/PGM/CPU%u/RZ/Trap0e/Time2/SyncPT",            "Profiling of the Trap0eHandler body when the cause is lazy syncing of a PT.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2WPEmulation,      "/PGM/CPU%u/RZ/Trap0e/Time2/WPEmulation",       "Profiling of the Trap0eHandler body when the cause is CR0.WP emulation.");
+        PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2Wp0RoUsHack,      "/PGM/CPU%u/RZ/Trap0e/Time2/WP0R0USHack",       "Profiling of the Trap0eHandler body when the cause is CR0.WP and netware hack to be enabled.");
+        PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2Wp0RoUsUnhack,    "/PGM/CPU%u/RZ/Trap0e/Time2/WP0R0USUnhack",     "Profiling of the Trap0eHandler body when the cause is CR0.WP and netware hack to be disabled.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eConflicts,             "/PGM/CPU%u/RZ/Trap0e/Conflicts",               "The number of times #PF was caused by an undetected conflict.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersMapping,       "/PGM/CPU%u/RZ/Trap0e/Handlers/Mapping",        "Number of traps due to access handlers in mappings.");
         PGM_REG_COUNTER(&pCpuStats->StatRZTrap0eHandlersOutOfSync,     "/PGM/CPU%u/RZ/Trap0e/Handlers/OutOfSync",      "Number of traps due to out-of-sync handled pages.");
