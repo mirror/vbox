@@ -383,6 +383,50 @@ void UIHostComboEditor::sltClear()
 }
 
 #ifdef Q_WS_WIN
+/**
+ * @brief isSyntheticLCtrl
+ * @param   pMsg  Windows event message structure
+ * @return  true if this is a synthetic LCtrl event, false otherwise
+ * This function is a heuristic to tell whether a key event is the first in
+ * a synthetic LCtrl+RAlt sequence which Windows uses to signal AltGr.  Our
+ * heuristic is in two parts.  First of all, we check whether there is a pending
+ * RAlt key event matching this LCtrl event (i.e. both key up or both key down)
+ * and if there is, we check whether the current layout has an AltGr key.  We
+ * check this by comparing the translation of the 'A' virtual key with and
+ * without LCtrl and RAlt held down.  In all layouts I checked without an AltGr
+ * key, the translation was the same, and in all with it was different.  An
+ * alternative test would be to use GetKeyNameText() on the AltGr scan code.
+ * I feel marginally safer with the first test though.
+ */
+static bool isSyntheticLCtrl(MSG *pMsg)
+{
+    MSG peekMsg;
+    BYTE auKeyStates[256] = { 0 };
+    WORD achNoAltGr, achAltGr;
+    int cbToAscii;
+
+    if ((pMsg->lParam & 0x01FF0000) >> 16 != 0x1d /* LCtrl */)
+        return false;
+    if (!PeekMessage(&peekMsg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE))
+        return false;
+    if (   (pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN)
+        && (peekMsg.message != WM_KEYDOWN && peekMsg.message != WM_SYSKEYDOWN))
+        return false;
+    if (   (pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP)
+        && (peekMsg.message != WM_KEYUP && peekMsg.message != WM_SYSKEYUP))
+        return false;
+    if ((peekMsg.lParam & 0x01FF0000) >> 16 != 0x138 /* RAlt */)
+        return false;
+    auKeyStates[VK_LCTRL] = 0x80;
+    auKeyStates[VK_RMENU] = 0x80;
+    cbToAscii = ToAscii('A', 0, NULL, &achNoAltGr, 0);
+    if (!cbToAscii || cbToAscii != ToAscii('A', 0, auKeyStates, &achAltGr, 0))
+        return false;
+    if (achNoAltGr == achAltGr)
+        return false;
+    return true;
+}
+
 bool UIHostComboEditor::winEvent(MSG *pMsg, long* /* pResult */)
 {
     switch (pMsg->message)
@@ -394,6 +438,11 @@ bool UIHostComboEditor::winEvent(MSG *pMsg, long* /* pResult */)
         {
             /* Get key-code: */
             int iKeyCode = UINativeHotKey::distinguishModifierVKey((int)pMsg->wParam, (int)pMsg->lParam);
+
+            /* If this is the first event in a synthetic AltGr = LCtrl+RAlt
+             * sequence then swallow it. */
+            if (isSyntheticLCtrl(pMsg))
+                return true;
 
             /* Process the key event: */
             return processKeyEvent(iKeyCode, pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN);
