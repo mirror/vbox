@@ -79,6 +79,7 @@ static BOOL vboxDtHandleEvent();
 /* @returns true iff the application (VBoxTray) desktop is input */
 static BOOL vboxDtIsInputDesktop();
 static HANDLE vboxDtGetNotifyEvent();
+static BOOL vboxDtCheckTimer(WPARAM wParam);
 
 /* caps API */
 #define VBOXCAPS_ENTRY_IDX_SEAMLESS  0
@@ -616,6 +617,16 @@ static void vboxTrayShutdownSeamless(void)
     }
 }
 
+static void VBoxTrayCheckDt()
+{
+    BOOL fOldAllowedState = VBoxConsoleIsAllowed();
+    if (vboxDtHandleEvent())
+    {
+        if (!VBoxConsoleIsAllowed() != !fOldAllowedState)
+            VBoxConsoleEnable(!fOldAllowedState);
+    }
+}
+
 static int vboxTrayServiceMain(void)
 {
     int rc = VINF_SUCCESS;
@@ -737,12 +748,7 @@ static int vboxTrayServiceMain(void)
                                 else if (hWaitEvent[waitResult] == vboxDtGetNotifyEvent())
                                 {
                                     Log(("VBoxTray: Event 'Dt' triggered\n"));
-                                    BOOL fOldAllowedState = VBoxConsoleIsAllowed();
-                                    if (vboxDtHandleEvent())
-                                    {
-                                        if (!VBoxConsoleIsAllowed() != !fOldAllowedState)
-                                            VBoxConsoleEnable(!fOldAllowedState);
-                                    }
+                                    VBoxTrayCheckDt();
                                     fHandled = TRUE;
                                 }
                             }
@@ -907,6 +913,8 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 
         case WM_TIMER:
             if (VBoxCapsCheckTimer(wParam))
+                return 0;
+            if(vboxDtCheckTimer(wParam))
                 return 0;
 
             switch (wParam)
@@ -1157,6 +1165,7 @@ typedef struct VBOXDT
 {
     HANDLE hNotifyEvent;
     BOOL fIsInputDesktop;
+    UINT_PTR idTimer;
     HMODULE hHookModule;
     BOOL (* pfnVBoxHookInstallActiveDesktopTracker)(HMODULE hDll);
     BOOL (* pfnVBoxHookRemoveActiveDesktopTracker)();
@@ -1195,6 +1204,17 @@ static BOOL vboxDtCalculateIsInputDesktop()
     }
     return fIsInputDt;
 }
+
+static BOOL vboxDtCheckTimer(WPARAM wParam)
+{
+    if (wParam != gVBoxDt.idTimer)
+        return FALSE;
+
+    VBoxTrayCheckDt();
+
+    return TRUE;
+}
+
 static int vboxDtInit()
 {
     int rc = VINF_SUCCESS;
@@ -1209,75 +1229,88 @@ static int vboxDtInit()
 
     memset(&gVBoxDt, 0, sizeof (gVBoxDt));
 
-    /* For Vista and up we need to change the integrity of the security descriptor, too. */
-    if (gMajorVersion >= 6)
+    gVBoxDt.hNotifyEvent = CreateEvent(NULL, FALSE, FALSE, VBOXHOOK_GLOBAL_DT_EVENT_NAME);
+    if (gVBoxDt.hNotifyEvent != NULL)
     {
-        gVBoxDt.hNotifyEvent = CreateEvent(NULL, FALSE, FALSE, VBOXHOOK_GLOBAL_DT_EVENT_NAME);
-        if (gVBoxDt.hNotifyEvent != NULL)
+        gVBoxDt.hHookModule = LoadLibrary(VBOXHOOK_DLL_NAME);
+        if (gVBoxDt.hHookModule)
         {
-            gVBoxDt.hHookModule = LoadLibrary(VBOXHOOK_DLL_NAME);
-            if (gVBoxDt.hHookModule)
+            *(uintptr_t *)&gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker = (uintptr_t)GetProcAddress(gVBoxDt.hHookModule, "VBoxHookInstallActiveDesktopTracker");
+            if (!gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker)
             {
-                *(uintptr_t *)&gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker = (uintptr_t)GetProcAddress(gVBoxDt.hHookModule, "VBoxHookInstallActiveDesktopTracker");
-                if (!gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker)
-                {
-                    WARN(("VBoxTray: VBoxHookInstallActiveDesktopTracker not found\n"));
-                    rc = VERR_NOT_SUPPORTED;
-                }
+                WARN(("VBoxTray: VBoxHookInstallActiveDesktopTracker not found\n"));
+                rc = VERR_NOT_SUPPORTED;
+            }
 
-                *(uintptr_t *)&gVBoxDt.pfnVBoxHookRemoveActiveDesktopTracker  = (uintptr_t)GetProcAddress(gVBoxDt.hHookModule, "VBoxHookInstallActiveDesktopTracker");
-                if (!gVBoxDt.pfnVBoxHookRemoveActiveDesktopTracker)
-                {
-                    WARN(("VBoxTray: VBoxHookRemoveActiveDesktopTracker not found\n"));
-                    rc = VERR_NOT_SUPPORTED;
-                }
+            *(uintptr_t *)&gVBoxDt.pfnVBoxHookRemoveActiveDesktopTracker  = (uintptr_t)GetProcAddress(gVBoxDt.hHookModule, "VBoxHookInstallActiveDesktopTracker");
+            if (!gVBoxDt.pfnVBoxHookRemoveActiveDesktopTracker)
+            {
+                WARN(("VBoxTray: VBoxHookRemoveActiveDesktopTracker not found\n"));
+                rc = VERR_NOT_SUPPORTED;
+            }
 
-                if (VINF_SUCCESS == rc)
+            if (VINF_SUCCESS == rc)
+            {
+                gVBoxDt.hUSER32 = LoadLibrary("User32.dll");
+                if (gVBoxDt.hUSER32)
                 {
-                    gVBoxDt.hUSER32 = LoadLibrary("User32.dll");
-                    if (gVBoxDt.hUSER32)
+                    *(uintptr_t *)&gVBoxDt.pfnGetThreadDesktop = (uintptr_t)GetProcAddress(gVBoxDt.hUSER32, "GetThreadDesktop");
+                    if (!gVBoxDt.pfnGetThreadDesktop)
                     {
-                        *(uintptr_t *)&gVBoxDt.pfnGetThreadDesktop = (uintptr_t)GetProcAddress(gVBoxDt.hUSER32, "GetThreadDesktop");
-                        if (!gVBoxDt.pfnGetThreadDesktop)
+                        WARN(("VBoxTray: GetThreadDesktop not found\n"));
+                        rc = VERR_NOT_SUPPORTED;
+                    }
+
+                    *(uintptr_t *)&gVBoxDt.pfnOpenInputDesktop = (uintptr_t)GetProcAddress(gVBoxDt.hUSER32, "OpenInputDesktop");
+                    if (!gVBoxDt.pfnOpenInputDesktop)
+                    {
+                        WARN(("VBoxTray: OpenInputDesktop not found\n"));
+                        rc = VERR_NOT_SUPPORTED;
+                    }
+
+                    *(uintptr_t *)&gVBoxDt.pfnCloseDesktop = (uintptr_t)GetProcAddress(gVBoxDt.hUSER32, "CloseDesktop");
+                    if (!gVBoxDt.pfnCloseDesktop)
+                    {
+                        WARN(("VBoxTray: CloseDesktop not found\n"));
+                        rc = VERR_NOT_SUPPORTED;
+                    }
+
+                    if (VINF_SUCCESS == rc)
+                    {
+                        BOOL bRc = FALSE;
+                        /* For Vista and up we need to change the integrity of the security descriptor, too. */
+                        if (gMajorVersion >= 6)
                         {
-                            WARN(("VBoxTray: GetThreadDesktop not found\n"));
-                            rc = VERR_NOT_SUPPORTED;
+                            bRc = gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker(gVBoxDt.hHookModule);
+                            if (!bRc)
+                            {
+                                DWORD dwErr = GetLastError();
+                                WARN(("VBoxTray: pfnVBoxHookInstallActiveDesktopTracker failed, last error = %08X\n", dwErr));
+                            }
                         }
 
-                        *(uintptr_t *)&gVBoxDt.pfnOpenInputDesktop = (uintptr_t)GetProcAddress(gVBoxDt.hUSER32, "OpenInputDesktop");
-                        if (!gVBoxDt.pfnOpenInputDesktop)
+                        if (!bRc)
                         {
-                            WARN(("VBoxTray: OpenInputDesktop not found\n"));
-                            rc = VERR_NOT_SUPPORTED;
+                            gVBoxDt.idTimer = SetTimer(ghwndToolWindow, TIMERID_VBOXTRAY_DT_TIMER, 500, (TIMERPROC)NULL);
+                            if (!gVBoxDt.idTimer)
+                            {
+                                DWORD dwErr = GetLastError();
+                                WARN(("VBoxTray: SetTimer error %08X\n", dwErr));
+                                rc = RTErrConvertFromWin32(dwErr);
+                            }
                         }
 
-                        *(uintptr_t *)&gVBoxDt.pfnCloseDesktop = (uintptr_t)GetProcAddress(gVBoxDt.hUSER32, "CloseDesktop");
-                        if (!gVBoxDt.pfnCloseDesktop)
+                        if (RT_SUCCESS(rc))
                         {
-                            WARN(("VBoxTray: CloseDesktop not found\n"));
-                            rc = VERR_NOT_SUPPORTED;
-                        }
-
-                        if (VINF_SUCCESS == rc)
-                        {
-                            gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker(gVBoxDt.hHookModule);
                             gVBoxDt.fIsInputDesktop = vboxDtCalculateIsInputDesktop();
                             return VINF_SUCCESS;
                         }
-                        FreeLibrary(gVBoxDt.hUSER32);
                     }
+                    FreeLibrary(gVBoxDt.hUSER32);
                 }
-
-                FreeLibrary(gVBoxDt.hHookModule);
-            }
-            else
-            {
-                DWORD dwErr = GetLastError();
-                WARN(("VBoxTray: CreateEvent for Seamless failed, last error = %08X\n", dwErr));
-                rc = RTErrConvertFromWin32(dwErr);
             }
 
-            CloseHandle(gVBoxDt.hNotifyEvent);
+            FreeLibrary(gVBoxDt.hHookModule);
         }
         else
         {
@@ -1285,7 +1318,16 @@ static int vboxDtInit()
             WARN(("VBoxTray: CreateEvent for Seamless failed, last error = %08X\n", dwErr));
             rc = RTErrConvertFromWin32(dwErr);
         }
+
+        CloseHandle(gVBoxDt.hNotifyEvent);
     }
+    else
+    {
+        DWORD dwErr = GetLastError();
+        WARN(("VBoxTray: CreateEvent for Seamless failed, last error = %08X\n", dwErr));
+        rc = RTErrConvertFromWin32(dwErr);
+    }
+
 
     memset(&gVBoxDt, 0, sizeof (gVBoxDt));
     gVBoxDt.fIsInputDesktop = TRUE;
