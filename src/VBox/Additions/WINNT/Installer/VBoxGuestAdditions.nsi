@@ -213,7 +213,7 @@ Var g_strAddVerBuild                    ; Installed Guest Additions: Build numbe
 Var g_strAddVerRev                      ; Installed Guest Additions: SVN revision
 Var g_strWinVersion                     ; Current Windows version we're running on
 Var g_bLogEnable                        ; Do logging when installing? "true" or "false"
-Var g_bWithWDDM                         ; Install the WDDM driver instead of the XPDM one
+Var g_bWithWDDM                         ; Install the WDDM graphics driver instead of the XPDM one
 Var g_bCapDllCache                      ; Capability: Does the (Windows) guest have have a DLL cache which needs to be taken care of?
 Var g_bCapWDDM                          ; Capability: Is the guest able to handle/use our WDDM driver?
 
@@ -368,11 +368,11 @@ Function HandleCommandLine
         StrCpy $g_iSfOrder $5
         ${Break}
 
-    !ifdef WHQL_FAKE
+!ifdef WHQL_FAKE
       ${Case} '/unsig_drv'
         StrCpy $g_bFakeWHQL "true"
       ${Break}
-    !endif
+!endif
 
       ${Case} '/uninstall'
         StrCpy $g_bUninstall "true"
@@ -388,12 +388,18 @@ Function HandleCommandLine
         ${Break}
 !endif
 
-    !if $%VBOX_WITH_CROGL% == "1"
+!if $%VBOX_WITH_CROGL% == "1"
       ${Case} '/with_d3d'
       ${Case} '/with_direct3d'
         StrCpy $g_bWithD3D "true"
         ${Break}
-    !endif
+!endif
+
+!if $%VBOX_WITH_WDDM% == "1"
+      ${Case} '/with_wddm'
+        StrCpy $g_bWithWDDM "true"
+        ${Break}
+!endif
 
       ${Case} '/xres'
       ${Case} 'xres'
@@ -438,7 +444,8 @@ usage:
                     /uninstall$\t$\tJust uninstalls the Guest Additions and exits$\r$\n \
                     /with_autologon$\tInstalls auto-logon support$\r$\n \
                     /with_d3d$\tInstalls D3D support$\r$\n \
-                    /with_vboxmmr$\tInstalls multimedia redirection support$\r$\n \
+                    /with_vboxmmr$\tInstalls multimedia redirection (MMR) support$\r$\n \
+                    /with_wddm\$\tInstalls the WDDM instead of the XPDM graphics driver$\r$\n \
                     /xres=X$\t$\tSets the guest's display resolution (width in pixels)$\r$\n \
                     /yres=Y$\t$\tSets the guest's display resolution (height in pixels)$\r$\n \
                     $\r$\n \
