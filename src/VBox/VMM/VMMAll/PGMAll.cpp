@@ -2206,6 +2206,34 @@ VMMDECL(int) PGMChangeMode(PVMCPU pVCpu, uint64_t cr0, uint64_t cr4, uint64_t ef
 
 
 /**
+ * Called by CPUM or REM when CR0.WP changes to 1.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure of the caller.
+ * @thread  EMT
+ */
+VMM_INT_DECL(void) PGMCr0WpEnabled(PVMCPU pVCpu)
+{
+    /*
+     * Netware WP0+RO+US hack cleanup when WP0 -> WP1.
+     *
+     * Use the counter to judge whether there might be pool pages with active
+     * hacks in them.  If there are, we will be running the risk of messing up
+     * the guest by allowing it to write to read-only pages.  Thus, we have to
+     * clear the page pool ASAP if there is the slightest chance.
+     */
+    if (pVCpu->pgm.s.cNetwareWp0Hacks > 0)
+    {
+        Assert(pVCpu->CTX_SUFF(pVM)->cCpus == 1);
+
+        Log(("PGMCr0WpEnabled: %llu WP0 hacks active - clearing page pool\n", pVCpu->pgm.s.cNetwareWp0Hacks));
+        pVCpu->pgm.s.cNetwareWp0Hacks = 0;
+        pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_CLEAR_PGM_POOL;
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
+    }
+}
+
+
+/**
  * Gets the current guest paging mode.
  *
  * If you just need the CPU mode (real/protected/long), use CPUMGetGuestMode().

@@ -986,25 +986,42 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 &&  CPUMGetGuestCPL(pVCpu) < 3)
             {
                 Assert((uErr & (X86_TRAP_PF_RW | X86_TRAP_PF_P)) == (X86_TRAP_PF_RW | X86_TRAP_PF_P));
-#    ifdef PGM_WITH_NETWARE_WP0_HACK
+
+                /*
+                 * The Netware WP0+RO+US hack.
+                 *
+                 * Netware sometimes(/always?) runs with WP0.  It has been observed doing
+                 * accessive write accesses to pages which are mapped with US=1 and RW=0
+                 * while WP=0.  This causes a lot of exits and extremely slow execution.
+                 * To avoid trapping and emulating every write here, we change the shadow
+                 * page table entry to map it as US=0 and RW=1 until user mode tries to
+                 * access it again (see further below).  We count these shadow page table
+                 * changes so we can avoid having to clear the page pool every time the WP
+                 * bit changes to 1 (see PGMCr0WpEnabled()).
+                 */
                 if (   GstWalk.Core.fEffectiveUS
-                    && !GstWalk.Core.fBigPage)
+                    && !GstWalk.Core.fBigPage
+                    && pVM->cCpus == 1 /* Sorry, no go on SMP. Add CFGM option? */)
                 {
                     /* Temorarily change the page to a RW super visor page. We'll trap
                        and switch it back when user mode tries to read from it again.
                        (See further down.) */
                     Log(("PGM #PF: Netware WP0+RO+US hack: pvFault=%RGp uErr=%#x\n", pvFault, uErr));
                     rc = pgmShwMakePageSupervisorAndWritable(pVCpu, pvFault, PGM_MK_PG_IS_WRITE_FAULT);
-                    PGM_INVL_PG(pVCpu, pvFault);
                     if (rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3)
                     {
-                        STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2WPEmulation; });  /**< @todo New stat. */
+                        PGM_INVL_PG(pVCpu, pvFault);
+                        pVCpu->pgm.s.cNetwareWp0Hacks++;
+                        STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2Wp0RoUsHack; });
                         return rc;
                     }
+                    AssertMsg(RT_FAILURE_NP(rc), ("%Rrc\n", rc));
                     Log(("pgmShwMakePageSupervisorAndWritable(%RGv) failed with rc=%Rrc - ignored\n", pvFault, rc));
                 }
-#    endif
+
+                /* Interpret the access. */
                 rc = VBOXSTRICTRC_TODO(PGMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault));
+                Log(("PGM #PF: WP0 emulation (pvFault=%RGp uErr=%#x)\n", pvFault, uErr));
                 if (RT_SUCCESS(rc))
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eWPEmulInRZ);
                 else
@@ -1059,7 +1076,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 return VINF_SUCCESS;
             }
         }
-#    if defined(PGM_WITH_NETWARE_WP0_HACK) && PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+#    if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
         /*
          * Check for Netware WP0+RO+US hack from above and undo it when user
          * mode accesses the page again.
@@ -1067,8 +1084,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
         else if (    !GstWalk.Core.fEffectiveRW
                  &&  GstWalk.Core.fEffectiveUS
                  &&  GstWalk.Core.fBigPage
+                 &&  pVCpu->pgm.s.cNetwareWp0Hacks > 0
                  &&  (CPUMGetGuestCR0(pVCpu) & (X86_CR0_WP | X86_CR0_PG)) == X86_CR0_PG
                  &&  CPUMGetGuestCPL(pVCpu) == 3
+                 &&  pVM->cCpus == 1
                 )
         {
             Log(("PGM #PF: Undo netware WP0+RO+US hack: pvFault=%RGp uErr=%#x\n", pvFault, uErr));
@@ -1076,11 +1095,12 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             if (RT_SUCCESS(rc))
             {
                 PGM_INVL_PG(pVCpu, pvFault);
-                STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2WPEmulation; }); /**< @todo New stat. */
+                pVCpu->pgm.s.cNetwareWp0Hacks--;
+                STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2Wp0RoUsUnhack; });
                 return VINF_SUCCESS;
             }
         }
-#    endif
+#    endif /* PGM_WITH_PAGING */
 
         /** @todo else: why are we here? */
 

@@ -3432,6 +3432,8 @@ typedef struct PGMCPUSTATS
     STAMPROFILE StatRZTrap0eTime2OutOfSyncHndObs;   /**< RC/R0: Profiling of the Trap0eHandler body when the cause is an obsolete handler page. */
     STAMPROFILE StatRZTrap0eTime2SyncPT;            /**< RC/R0: Profiling of the Trap0eHandler body when the cause is lazy syncing of a PT. */
     STAMPROFILE StatRZTrap0eTime2WPEmulation;       /**< RC/R0: Profiling of the Trap0eHandler body when the cause is CR0.WP emulation. */
+    STAMPROFILE StatRZTrap0eTime2Wp0RoUsHack;       /**< RC/R0: Profiling of the Trap0eHandler body when the cause is CR0.WP and netware hack to be enabled. */
+    STAMPROFILE StatRZTrap0eTime2Wp0RoUsUnhack;     /**< RC/R0: Profiling of the Trap0eHandler body when the cause is CR0.WP and netware hack to be disabled. */
     STAMCOUNTER StatRZTrap0eConflicts;              /**< RC/R0: The number of times \#PF was caused by an undetected conflict. */
     STAMCOUNTER StatRZTrap0eHandlersMapping;        /**< RC/R0: Number of traps due to access handlers in mappings. */
     STAMCOUNTER StatRZTrap0eHandlersOutOfSync;      /**< RC/R0: Number of out-of-sync handled pages. */
@@ -3640,7 +3642,7 @@ typedef struct PGMCPU
     /** What needs syncing (PGM_SYNC_*).
      * This is used to queue operations for PGMSyncCR3, PGMInvalidatePage,
      * PGMFlushTLB, and PGMR3Load. */
-    RTUINT                          fSyncFlags;
+    uint32_t                        fSyncFlags;
 
     /** The shadow paging mode. */
     PGMMODE                         enmShadowMode;
@@ -3834,6 +3836,9 @@ typedef struct PGMCPU
     /** For saving stack space, the disassembler state is allocated here instead of
      * on the stack. */
     DISCPUSTATE                     DisState;
+
+    /** Counts the number of times the netware WP0+RO+US hack has been applied. */
+    uint64_t                        cNetwareWp0Hacks;
 
     /** Count the number of pgm pool access handler calls. */
     uint64_t                        cPoolAccessHandler;

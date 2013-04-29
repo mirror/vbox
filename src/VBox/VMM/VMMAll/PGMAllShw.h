@@ -460,7 +460,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
                     AssertRC(rc);
                     if (RT_SUCCESS(rc))
                     {
-                        Assert(fGstPte & X86_PTE_RW);
+                        Assert((fGstPte & X86_PTE_RW) || !(CPUMGetGuestCR0(pVCpu) & X86_CR0_WP /* allow netware hack */));
                         PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
                         Assert(pPage);
                         if (pPage)
