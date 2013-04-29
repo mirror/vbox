@@ -19945,7 +19945,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IGuestSessionStateChangedEvent" extends="IGuestSessionEvent"
-    uuid="9c288479-6564-451d-9574-7e7ac0b7e443"
+    uuid="327e3c00-ee61-462f-aed3-0dff6cbf9904"
     wsmap="managed" autogen="VBoxEvent" id="OnGuestSessionStateChanged"
     >
     <desc>
@@ -20032,7 +20032,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IGuestProcessStateChangedEvent" extends="IGuestProcessEvent"
-    uuid="9360d372-d4d9-4948-8e67-e0a0e603acf9"
+    uuid="c365fb7b-4430-499f-92c8-8bed814a567a"
     wsmap="managed" autogen="VBoxEvent" id="OnGuestProcessStateChanged"
     >
     <desc>
@@ -20150,7 +20150,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IGuestFileStateChangedEvent" extends="IGuestFileEvent"
-    uuid="841951c4-4df3-4ee1-bb99-91e5761c18ff"
+    uuid="d37fe88f-0979-486c-baa1-3abb144dc82d"
     wsmap="managed" autogen="VBoxEvent" id="OnGuestFileStateChanged"
     >
     <desc>
