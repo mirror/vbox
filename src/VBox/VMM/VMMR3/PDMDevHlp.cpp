@@ -23,6 +23,7 @@
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/iom.h>
 #ifdef VBOX_WITH_REM
@@ -64,7 +65,13 @@
  */
 DECLINLINE(int) pdmR3DevGetSymbolRCLazy(PPDMDEVINS pDevIns, const char *pszSymbol, PRTRCPTR ppvValue)
 {
-    return PDMR3LdrGetSymbolRCLazy(pDevIns->Internal.s.pVMR3,
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    if (HMIsEnabled(pVM))
+    {
+        *ppvValue = NIL_RTRCPTR;
+        return VINF_SUCCESS;
+    }
+    return PDMR3LdrGetSymbolRCLazy(pVM,
                                    pDevIns->Internal.s.pDevR3->pReg->szRCMod,
                                    pDevIns->Internal.s.pDevR3->pszRCSearchPath,
                                    pszSymbol, ppvValue);
@@ -120,7 +127,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPO
                                                       const char *pszOutStr, const char *pszInStr, const char *pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_IOPortRegisterRC: caller='%s'/%d: Port=%#x cPorts=%#x pvUser=%p pszOut=%p:{%s} pszIn=%p:{%s} pszOutStr=%p:{%s} pszInStr=%p:{%s} pszDesc=%p:{%s}\n", pDevIns->pReg->szName, pDevIns->iInstance,
              Port, cPorts, pvUser, pszOut, pszOut, pszIn, pszIn, pszOutStr, pszOutStr, pszInStr, pszInStr, pszDesc, pszDesc));
 
@@ -128,8 +136,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPO
      * Resolve the functions (one of the can be NULL).
      */
     int rc = VINF_SUCCESS;
-    if (    pDevIns->pReg->szRCMod[0]
-        &&  (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC))
+    if (   pDevIns->pReg->szRCMod[0]
+        && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
+        && !HMIsEnabled(pVM))
     {
         RTRCPTR RCPtrIn = NIL_RTRCPTR;
         if (pszIn)
@@ -167,12 +176,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPO
             }
 #endif
 
-            rc = IOMR3IOPortRegisterRC(pDevIns->Internal.s.pVMR3, pDevIns, Port, cPorts, pvUser, RCPtrOut, RCPtrIn, RCPtrOutStr, RCPtrInStr, pszDesc);
+            rc = IOMR3IOPortRegisterRC(pVM, pDevIns, Port, cPorts, pvUser, RCPtrOut, RCPtrIn, RCPtrOutStr, RCPtrInStr, pszDesc);
         }
     }
-    else
+    else if (!HMIsEnabled(pVM))
     {
-        AssertMsgFailed(("No GC module for this driver!\n"));
+        AssertMsgFailed(("No RC module for this driver!\n"));
         rc = VERR_INVALID_PARAMETER;
     }
 
@@ -294,7 +303,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
                                                     const char *pszWrite, const char *pszRead, const char *pszFill)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_MMIORegisterRC: caller='%s'/%d: GCPhysStart=%RGp cbRange=%#x pvUser=%p pszWrite=%p:{%s} pszRead=%p:{%s} pszFill=%p:{%s}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pszWrite, pszWrite, pszRead, pszRead, pszFill, pszFill));
 
@@ -304,8 +314,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
      * Not all function have to present, leave it to IOM to enforce this.
      */
     int rc = VINF_SUCCESS;
-    if (    pDevIns->pReg->szRCMod[0]
-        &&  (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC))
+    if (   pDevIns->pReg->szRCMod[0]
+        && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
+        && !HMIsEnabled(pVM))
     {
         RTRCPTR RCPtrWrite = NIL_RTRCPTR;
         if (pszWrite)
@@ -322,7 +333,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
             rc3 = pdmR3DevGetSymbolRCLazy(pDevIns, pszFill, &RCPtrFill);
 
         if (RT_SUCCESS(rc) && RT_SUCCESS(rc2) && RT_SUCCESS(rc3))
-            rc = IOMR3MmioRegisterRC(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvUser, RCPtrWrite, RCPtrRead, RCPtrFill);
+            rc = IOMR3MmioRegisterRC(pVM, pDevIns, GCPhysStart, cbRange, pvUser, RCPtrWrite, RCPtrRead, RCPtrFill);
         else
         {
             AssertMsgRC(rc,  ("Failed to resolve %s.%s (pszWrite)\n", pDevIns->pReg->szRCMod, pszWrite));
@@ -334,9 +345,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
                 rc = rc3;
         }
     }
-    else
+    else if (!HMIsEnabled(pVM))
     {
-        AssertMsgFailed(("No GC module for this driver!\n"));
+        AssertMsgFailed(("No RC module for this driver!\n"));
         rc = VERR_INVALID_PARAMETER;
     }
 

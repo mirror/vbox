@@ -259,8 +259,7 @@ typedef struct VGAState {
     PPDMDEVINSRC                pDevInsRC;
     /** Pointer to the GC vram mapping. */
     RCPTRTYPE(uint8_t *)        vram_ptrRC;
-    /** Pointer to vgaGCLFBAccessHandler(). */
-    RTRCPTR                     RCPtrLFBHandler;
+    uint32_t                    PaddingMinus1;
 
     /** Pointer to the device instance - R3 Ptr. */
     PPDMDEVINSR3                pDevInsR3;

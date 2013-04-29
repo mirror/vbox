@@ -57,15 +57,18 @@ PGM_GST_DECL(int, InitData)(PVM pVM, PPGMMODEDATA pModeData, bool fResolveGCAndR
     {
         int rc;
 
+        if (!HMIsEnabled(pVM))
+        {
 #if PGM_SHW_TYPE != PGM_TYPE_AMD64 /* No AMD64 for traditional virtualization, only VT-x and AMD-V. */
-        /* GC */
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(GetPage),          &pModeData->pfnRCGstGetPage);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(GetPage),  rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(ModifyPage),       &pModeData->pfnRCGstModifyPage);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(ModifyPage),  rc), rc);
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(GetPDE),           &pModeData->pfnRCGstGetPDE);
-        AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(GetPDE), rc), rc);
+            /* RC */
+            rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(GetPage),          &pModeData->pfnRCGstGetPage);
+            AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(GetPage),  rc), rc);
+            rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(ModifyPage),       &pModeData->pfnRCGstModifyPage);
+            AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(ModifyPage),  rc), rc);
+            rc = PDMR3LdrGetSymbolRC(pVM, NULL,       PGM_GST_NAME_RC_STR(GetPDE),           &pModeData->pfnRCGstGetPDE);
+            AssertMsgRCReturn(rc, ("%s -> rc=%Rrc\n", PGM_GST_NAME_RC_STR(GetPDE), rc), rc);
 #endif /* Not AMD64 shadow paging. */
+        }
 
         /* Ring-0 */
         rc = PDMR3LdrGetSymbolR0(pVM, NULL,       PGM_GST_NAME_R0_STR(GetPage),          &pModeData->pfnR0GstGetPage);

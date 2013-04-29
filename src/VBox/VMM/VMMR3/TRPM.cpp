@@ -1175,6 +1175,7 @@ int trpmR3ClearPassThroughHandler(PVM pVM, unsigned iTrap)
 {
     /* Only applies to raw mode which supports only 1 VCPU. */
     PVMCPU pVCpu = &pVM->aCpus[0];
+    Assert(!HMIsEnabled(pVM));
 
     /** @todo cleanup trpmR3ClearPassThroughHandler()! */
     RTRCPTR aGCPtrs[TRPM_HANDLER_MAX];

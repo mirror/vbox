@@ -2039,6 +2039,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
              * Do forced actions.
              */
             if (   !fFFDone
+                && RT_SUCCESS(rc)
                 && rc != VINF_EM_TERMINATE
                 && rc != VINF_EM_OFF
                 && (   VM_FF_ISPENDING(pVM, VM_FF_ALL_REM_MASK)

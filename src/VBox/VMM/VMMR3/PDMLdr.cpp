@@ -319,8 +319,8 @@ int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
     return rc;
 }
 
-
 #ifdef VBOX_WITH_RAW_MODE
+
 /**
  * Resolve an external symbol during RTLdrGetBits() of a RC module.
  *
@@ -608,8 +608,8 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
     RTMemTmpFree(pszFile);
     return rc;
 }
-#endif /* VBOX_WITH_RAW_MODE */
 
+#endif /* VBOX_WITH_RAW_MODE */
 
 /**
  * Loads a module into the ring-0 context.
@@ -883,6 +883,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const cha
 VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue)
 {
 #if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
+    Assert(!HMIsEnabled(pVM));
     *pRCPtrValue = 0xfeedf00d;
     return VINF_SUCCESS;
 
@@ -950,6 +951,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const cha
                                        PRTRCPTR pRCPtrValue)
 {
 #if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
+    Assert(!HMIsEnabled(pVM));
     *pRCPtrValue = 0xfeedf00d;
     return VINF_SUCCESS;
 

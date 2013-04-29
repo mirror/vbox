@@ -5271,7 +5271,6 @@ static DECLCALLBACK(void) vgaR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
         PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
         LogFlow(("vgaRelocate: offDelta = %08X\n", offDelta));
 
-        pThis->RCPtrLFBHandler += offDelta;
         pThis->vram_ptrRC += offDelta;
         pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     }
@@ -5563,14 +5562,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_VDMA) || defined(VBOX_WITH_WDDM))
     PCIDevSetInterruptPin(&pThis->Dev, 1);
 #endif
-
-    /* The LBF access handler - error handling is better here than in the map function.  */
-    rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pReg->szRCMod, NULL, "vgaRCLFBAccessHandler", &pThis->RCPtrLFBHandler);
-    if (RT_FAILURE(rc))
-    {
-        AssertReleaseMsgFailed(("PDMR3LdrGetSymbolRC(, %s, \"vgaRCLFBAccessHandler\",) -> %Rrc\n", pDevIns->pReg->szRCMod, rc));
-        return rc;
-    }
 
     /* the interfaces. */
     pThis->IBase.pfnQueryInterface      = vgaPortQueryInterface;

@@ -3893,7 +3893,12 @@ typedef PGMCPU *PPGMCPU;
 
 RT_C_DECLS_BEGIN
 
+#if defined(VBOX_STRICT) && defined(IN_RING3)
+int             pgmLockDebug(PVM pVM, RT_SRC_POS_DECL);
+# define pgmLock(a_pVM) pgmLockDebug(a_pVM, RT_SRC_POS)
+#else
 int             pgmLock(PVM pVM);
+#endif
 void            pgmUnlock(PVM pVM);
 /**
  * Asserts that the caller owns the PDM lock.

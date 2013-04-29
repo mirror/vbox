@@ -2424,9 +2424,17 @@ VMMDECL(int) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages)
  * @returns VBox status code
  * @param   pVM         Pointer to the VM.
  */
+#if defined(VBOX_STRICT) && defined(IN_RING3)
+int pgmLockDebug(PVM pVM, RT_SRC_POS_DECL)
+#else
 int pgmLock(PVM pVM)
+#endif
 {
+#if defined(VBOX_STRICT) && defined(IN_RING3)
+    int rc = PDMCritSectEnterDebug(&pVM->pgm.s.CritSectX, VERR_SEM_BUSY, (uintptr_t)ASMReturnAddress(), RT_SRC_POS_ARGS);
+#else
     int rc = PDMCritSectEnter(&pVM->pgm.s.CritSectX, VERR_SEM_BUSY);
+#endif
 #if defined(IN_RC) || defined(IN_RING0)
     if (rc == VERR_SEM_BUSY)
         rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_LOCK, 0);

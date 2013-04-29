@@ -24,6 +24,7 @@
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/cfgm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/sup.h>
 #include <VBox/vmm/vm.h>
@@ -721,9 +722,9 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                         pNew->pvInstanceDataR0      = MMHyperR3ToR0(pVM, &pNew->achInstanceData[0]);
                         rc = PDMR3LdrGetSymbolR0(pVM, NULL, "g_pdmR0DrvHlp", &pNew->pHlpR0);
                         AssertReleaseRCReturn(rc, rc);
-
                     }
-                    if (pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_RC)
+                    if (   (pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_RC)
+                        && !HMIsEnabled(pVM))
                     {
                         pNew->pvInstanceDataR0      = MMHyperR3ToRC(pVM, &pNew->achInstanceData[0]);
                         rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDrvHlp", &pNew->pHlpRC);

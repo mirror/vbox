@@ -347,11 +347,14 @@ static int vmmR3InitLoggers(PVM pVM)
     PRTLOGGER pLogger = RTLogDefaultInstance();
     if (pLogger)
     {
-        pVM->vmm.s.cbRCLogger = RT_OFFSETOF(RTLOGGERRC, afGroups[pLogger->cGroups]);
-        rc = MMR3HyperAllocOnceNoRel(pVM, pVM->vmm.s.cbRCLogger, 0, MM_TAG_VMM, (void **)&pVM->vmm.s.pRCLoggerR3);
-        if (RT_FAILURE(rc))
-            return rc;
-        pVM->vmm.s.pRCLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCLoggerR3);
+        if (!HMIsEnabled(pVM))
+        {
+            pVM->vmm.s.cbRCLogger = RT_OFFSETOF(RTLOGGERRC, afGroups[pLogger->cGroups]);
+            rc = MMR3HyperAllocOnceNoRel(pVM, pVM->vmm.s.cbRCLogger, 0, MM_TAG_VMM, (void **)&pVM->vmm.s.pRCLoggerR3);
+            if (RT_FAILURE(rc))
+                return rc;
+            pVM->vmm.s.pRCLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCLoggerR3);
+        }
 
 # ifdef VBOX_WITH_R0_LOGGING
         size_t const cbLogger = RTLogCalcSizeForR0(pLogger->cGroups, 0);
@@ -375,14 +378,17 @@ static int vmmR3InitLoggers(PVM pVM)
     /*
      * Allocate RC release logger instances (finalized in the relocator).
      */
-    PRTLOGGER pRelLogger = RTLogRelDefaultInstance();
-    if (pRelLogger)
+    if (!HMIsEnabled(pVM))
     {
-        pVM->vmm.s.cbRCRelLogger = RT_OFFSETOF(RTLOGGERRC, afGroups[pRelLogger->cGroups]);
-        rc = MMR3HyperAllocOnceNoRel(pVM, pVM->vmm.s.cbRCRelLogger, 0, MM_TAG_VMM, (void **)&pVM->vmm.s.pRCRelLoggerR3);
-        if (RT_FAILURE(rc))
-            return rc;
-        pVM->vmm.s.pRCRelLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCRelLoggerR3);
+        PRTLOGGER pRelLogger = RTLogRelDefaultInstance();
+        if (pRelLogger)
+        {
+            pVM->vmm.s.cbRCRelLogger = RT_OFFSETOF(RTLOGGERRC, afGroups[pRelLogger->cGroups]);
+            rc = MMR3HyperAllocOnceNoRel(pVM, pVM->vmm.s.cbRCRelLogger, 0, MM_TAG_VMM, (void **)&pVM->vmm.s.pRCRelLoggerR3);
+            if (RT_FAILURE(rc))
+                return rc;
+            pVM->vmm.s.pRCRelLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCRelLoggerR3);
+        }
     }
 #endif /* VBOX_WITH_RC_RELEASE_LOGGING */
     return VINF_SUCCESS;
@@ -828,11 +834,14 @@ VMMR3_INT_DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Get other RC entry points.
      */
-    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "CPUMGCResumeGuest", &pVM->vmm.s.pfnCPUMRCResumeGuest);
-    AssertReleaseMsgRC(rc, ("CPUMGCResumeGuest not found! rc=%Rra\n", rc));
+    if (!HMIsEnabled(pVM))
+    {
+        int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "CPUMGCResumeGuest", &pVM->vmm.s.pfnCPUMRCResumeGuest);
+        AssertReleaseMsgRC(rc, ("CPUMGCResumeGuest not found! rc=%Rra\n", rc));
 
-    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "CPUMGCResumeGuestV86", &pVM->vmm.s.pfnCPUMRCResumeGuestV86);
-    AssertReleaseMsgRC(rc, ("CPUMGCResumeGuestV86 not found! rc=%Rra\n", rc));
+        rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "CPUMGCResumeGuestV86", &pVM->vmm.s.pfnCPUMRCResumeGuestV86);
+        AssertReleaseMsgRC(rc, ("CPUMGCResumeGuestV86 not found! rc=%Rra\n", rc));
+    }
 
     /*
      * Update the logger.
@@ -855,18 +864,20 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
     int rc = VINF_SUCCESS;
     RTRCPTR RCPtrLoggerFlush = 0;
 
-    if (pVM->vmm.s.pRCLoggerR3
+    if (   pVM->vmm.s.pRCLoggerR3
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
         || pVM->vmm.s.pRCRelLoggerR3
 #endif
        )
     {
+        Assert(!HMIsEnabled(pVM));
         rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCLoggerFlush", &RCPtrLoggerFlush);
         AssertReleaseMsgRC(rc, ("vmmGCLoggerFlush not found! rc=%Rra\n", rc));
     }
 
     if (pVM->vmm.s.pRCLoggerR3)
     {
+        Assert(!HMIsEnabled(pVM));
         RTRCPTR RCPtrLoggerWrapper = 0;
         rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCLoggerWrapper", &RCPtrLoggerWrapper);
         AssertReleaseMsgRC(rc, ("vmmGCLoggerWrapper not found! rc=%Rra\n", rc));
@@ -880,6 +891,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
     if (pVM->vmm.s.pRCRelLoggerR3)
     {
+        Assert(!HMIsEnabled(pVM));
         RTRCPTR RCPtrLoggerWrapper = 0;
         rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "vmmGCRelLoggerWrapper", &RCPtrLoggerWrapper);
         AssertReleaseMsgRC(rc, ("vmmGCRelLoggerWrapper not found! rc=%Rra\n", rc));

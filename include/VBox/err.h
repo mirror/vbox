@@ -1088,6 +1088,8 @@
 #define VERR_IOM_MMIO_IPE_2                 (-2635)
 /** Internal processing error \#3 in the MMIO code. */
 #define VERR_IOM_MMIO_IPE_3                 (-2636)
+/** Got into a part of IOM that is not used when HM (VT-x/AMD-V) is enabled. */
+#define VERR_IOM_HM_IPE                     (-2637)
 /** @} */
 
 

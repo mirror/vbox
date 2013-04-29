@@ -124,6 +124,7 @@
 #include <iprt/asm-amd64-x86.h> /* for SUPGetCpuHzFromGIP from sup.h  */
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/dbgftrace.h>
@@ -938,21 +939,24 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
     /*
      * Resolve symbols.
      */
-    rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataRC.pfnBad);
-    AssertRCReturn(rc, rc);
-    rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataRC.pfnRediscover);
-    AssertRCReturn(rc, rc);
-    if (pVM->tm.s.pfnVirtualGetRawR3       == RTTimeNanoTSLFenceSync)
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawRC);
-    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLFenceAsync)
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawRC);
-    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacySync)
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawRC);
-    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacyAsync)
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawRC);
-    else
-        AssertFatalFailed();
-    AssertRCReturn(rc, rc);
+    if (!HMIsEnabled(pVM))
+    {
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataRC.pfnBad);
+        AssertRCReturn(rc, rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataRC.pfnRediscover);
+        AssertRCReturn(rc, rc);
+        if (pVM->tm.s.pfnVirtualGetRawR3       == RTTimeNanoTSLFenceSync)
+            rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawRC);
+        else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLFenceAsync)
+            rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawRC);
+        else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacySync)
+            rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawRC);
+        else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacyAsync)
+            rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawRC);
+        else
+            AssertFatalFailed();
+        AssertRCReturn(rc, rc);
+    }
 
     rc = PDMR3LdrGetSymbolR0(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataR0.pfnBad);
     AssertRCReturn(rc, rc);
@@ -998,28 +1002,31 @@ VMM_INT_DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     LogFlow(("TMR3Relocate\n"));
     NOREF(offDelta);
 
-    pVM->tm.s.pvGIPRC = MMHyperR3ToRC(pVM, pVM->tm.s.pvGIPR3);
-    pVM->tm.s.paTimerQueuesRC = MMHyperR3ToRC(pVM, pVM->tm.s.paTimerQueuesR3);
     pVM->tm.s.paTimerQueuesR0 = MMHyperR3ToR0(pVM, pVM->tm.s.paTimerQueuesR3);
 
-    pVM->tm.s.VirtualGetRawDataRC.pu64Prev = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
-    AssertFatal(pVM->tm.s.VirtualGetRawDataRC.pu64Prev);
-    rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataRC.pfnBad);
-    AssertFatalRC(rc);
-    rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataRC.pfnRediscover);
-    AssertFatalRC(rc);
+    if (!HMIsEnabled(pVM))
+    {
+        pVM->tm.s.pvGIPRC = MMHyperR3ToRC(pVM, pVM->tm.s.pvGIPR3);
+        pVM->tm.s.paTimerQueuesRC = MMHyperR3ToRC(pVM, pVM->tm.s.paTimerQueuesR3);
+        pVM->tm.s.VirtualGetRawDataRC.pu64Prev = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
+        AssertFatal(pVM->tm.s.VirtualGetRawDataRC.pu64Prev);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSBad",          &pVM->tm.s.VirtualGetRawDataRC.pfnBad);
+        AssertFatalRC(rc);
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "tmVirtualNanoTSRediscover",   &pVM->tm.s.VirtualGetRawDataRC.pfnRediscover);
+        AssertFatalRC(rc);
 
-    if (pVM->tm.s.pfnVirtualGetRawR3       == RTTimeNanoTSLFenceSync)
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawRC);
-    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLFenceAsync)
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawRC);
-    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacySync)
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawRC);
-    else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacyAsync)
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawRC);
-    else
-        AssertFatalFailed();
-    AssertFatalRC(rc);
+        if (pVM->tm.s.pfnVirtualGetRawR3       == RTTimeNanoTSLFenceSync)
+            rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLFenceSync",  &pVM->tm.s.pfnVirtualGetRawRC);
+        else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLFenceAsync)
+            rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLFenceAsync", &pVM->tm.s.pfnVirtualGetRawRC);
+        else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacySync)
+            rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLegacySync",  &pVM->tm.s.pfnVirtualGetRawRC);
+        else if (pVM->tm.s.pfnVirtualGetRawR3  == RTTimeNanoTSLegacyAsync)
+            rc = PDMR3LdrGetSymbolRC(pVM, NULL, "RTTimeNanoTSLegacyAsync", &pVM->tm.s.pfnVirtualGetRawRC);
+        else
+            AssertFatalFailed();
+        AssertFatalRC(rc);
+    }
 
     /*
      * Iterate the timers updating the pVMRC pointers.
