@@ -1952,12 +1952,19 @@ void remR3ChangeCpuMode(CPUX86State *env)
         return;
     Assert(pVM->rem.s.fInREM);
 
+    pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
+    Assert(pCtx);
+
+    /*
+     * Notify PGM about WP0 being enabled (like CPUSetGuestCR0 does).
+     */
+    if (((env->cr[0] ^ pCtx->cr0) & X86_CR0_WP) && (env->cr[0] & X86_CR0_WP))
+        PGMCr0WpEnabled(env->pVCpu);
+
     /*
      * Update the control registers before calling PGMChangeMode()
      * as it may need to map whatever cr3 is pointing to.
      */
-    pCtx = (PCPUMCTX)pVM->rem.s.pCtx;
-    Assert(pCtx);
     pCtx->cr0 = env->cr[0];
     pCtx->cr3 = env->cr[3];
 #ifdef VBOX_WITH_RAW_MODE
