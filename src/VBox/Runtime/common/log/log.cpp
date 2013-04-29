@@ -2763,39 +2763,47 @@ static void rtlogRotate(PRTLOGGER pLogger, uint32_t uTimeSlot, bool fFirst)
  */
 static void rtlogFlush(PRTLOGGER pLogger)
 {
-    if (pLogger->offScratch == 0)
+    uint32_t const cchScratch = pLogger->offScratch;
+    if (cchScratch == 0)
         return; /* nothing to flush. */
+
+    /* Make sure the string is terminated.  On Windows, RTLogWriteDebugger
+       will get upset if it isn't. */
+    if (RT_LIKELY(cchScratch < sizeof(pLogger->achScratch)))
+        pLogger->achScratch[cchScratch] = '\0';
+    else
+        AssertFailed();
 
 #ifndef IN_RC
     if (pLogger->fDestFlags & RTLOGDEST_USER)
-        RTLogWriteUser(pLogger->achScratch, pLogger->offScratch);
+        RTLogWriteUser(pLogger->achScratch, cchScratch);
 
     if (pLogger->fDestFlags & RTLOGDEST_DEBUGGER)
-        RTLogWriteDebugger(pLogger->achScratch, pLogger->offScratch);
+        RTLogWriteDebugger(pLogger->achScratch, cchScratch);
 
 # ifdef IN_RING3
     if (pLogger->fDestFlags & RTLOGDEST_FILE)
     {
         if (pLogger->pInt->hFile != NIL_RTFILE)
         {
-            RTFileWrite(pLogger->pInt->hFile, pLogger->achScratch, pLogger->offScratch, NULL);
+            RTFileWrite(pLogger->pInt->hFile, pLogger->achScratch, cchScratch, NULL);
             if (pLogger->fFlags & RTLOGFLAGS_FLUSH)
                 RTFileFlush(pLogger->pInt->hFile);
         }
         if (pLogger->pInt->cHistory)
-            pLogger->pInt->cbHistoryFileWritten += pLogger->offScratch;
+            pLogger->pInt->cbHistoryFileWritten += cchScratch;
     }
 # endif
 
     if (pLogger->fDestFlags & RTLOGDEST_STDOUT)
-        RTLogWriteStdOut(pLogger->achScratch, pLogger->offScratch);
+        RTLogWriteStdOut(pLogger->achScratch, cchScratch);
 
     if (pLogger->fDestFlags & RTLOGDEST_STDERR)
-        RTLogWriteStdErr(pLogger->achScratch, pLogger->offScratch);
+        RTLogWriteStdErr(pLogger->achScratch, cchScratch);
 
 # if (defined(IN_RING0) || defined(IN_RC)) && !defined(LOG_NO_COM)
     if (pLogger->fDestFlags & RTLOGDEST_COM)
-        RTLogWriteCom(pLogger->achScratch, pLogger->offScratch);
+        RTLogWriteCom(pLogger->achScratch, cchScratch);
 # endif
 #endif /* !IN_RC */
 
