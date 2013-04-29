@@ -3618,7 +3618,7 @@ AuthResult AUTHCALL AuthEntry(
             operations. The event <xref linkend="IGuestSessionEvent"
             xreflabel="IGuestSessionEvent" /> acts as an abstract base class
             for all guest control events. Certain guest events contain a
-            <xref linkend="IGuestErrorInfo" xreflabel="IGuestErrorInfo" /> member
+            <xref linkend="IVirtualBoxErrorInfo" xreflabel="IVirtualBoxErrorInfo" /> member
             to provide more information in case of an error happened on the
             guest side.</para>
         </listitem>
