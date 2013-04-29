@@ -145,6 +145,8 @@ else
   INCPNG=""
   LIBPNG="-lpng"
 fi
+INCVPX=""
+LIBVPX="-lvpx"
 PKGCONFIG="`which_wrapper pkg-config`"
 PYTHONDIR="/usr /usr/local"
 QT4DIR="/usr/lib/qt4 /usr/share/qt4 /usr/lib64/qt4 /usr /usr/local"
@@ -1634,14 +1636,12 @@ check_vpx()
     test_header libvpx
     if which_wrapper pkg-config > /dev/null; then
       libvpx_ver=`pkg-config vpx --modversion 2>> $LOG`
-      if [ $? -ne 0 ]; then
-        log_failure "libvpx not found"
-        fail
-      else
+      if [ $? -eq 0 ]; then
         FLGVPX=`pkg-config vpx --cflags`
         INCVPX=`strip_I "$FLGVPX"`
         LIBVPX=`pkg-config vpx --libs`
-    cat > $ODIR.tmp_src.cc << EOF
+      fi
+      cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <vpx/vpx_codec.h>
 extern "C" int main(void)
@@ -1663,18 +1663,16 @@ extern "C" int main(void)
    }
 }
 EOF
-        [ -n "$INCVPX" ] && I_INCVPX=`prefix_I "$INCVPX"`
-        if test_compile "$LIBVPX $LIBPTHREAD $I_INCVPX" vpx vpx; then
-          if test_execute; then
-            cnf_append "SDK_VBOX_VPX_INCS" "$INCVPX"
-            cnf_append "SDK_VBOX_VPX_LIBS" "`strip_l "$LIBVPX"`"
+      [ -n "$INCVPX" ] && I_INCVPX=`prefix_I "$INCVPX"`
+      if test_compile "$LIBVPX $I_INCVPX" vpx vpx; then
+        if test_execute; then
+          cnf_append "SDK_VBOX_VPX_INCS" "$INCVPX"
+          cnf_append "SDK_VBOX_VPX_LIBS" "`strip_l "$LIBVPX"`"
           fi
-        fi
       fi
     fi
   fi
 }
-
 
 
 #
