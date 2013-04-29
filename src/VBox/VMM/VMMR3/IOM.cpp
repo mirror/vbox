@@ -104,6 +104,7 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/sup.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/dbgf.h>
@@ -307,7 +308,7 @@ VMMR3_INT_DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesR3->IOPortTreeRC, true, iomR3RelocateIOPortCallback, &offDelta);
     RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesR3->MMIOTree,     true, iomR3RelocateMMIOCallback,   &offDelta);
 
-    if (pVM->iom.s.pfnMMIOHandlerRC)
+    if (pVM->iom.s.pfnMMIOHandlerRC != NIL_RTRCPTR)
         pVM->iom.s.pfnMMIOHandlerRC += offDelta;
 
     /*
@@ -642,6 +643,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
 {
     LogFlow(("IOMR3IOPortRegisterRC: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%RRv pfnOutCallback=%RRv pfnInCallback=%RRv pfnOutStrCallback=%RRv pfnInStrCallback=%RRv pszDesc=%s\n",
              pDevIns, PortStart, cPorts, pvUser, pfnOutCallback, pfnInCallback, pfnOutStrCallback, pfnInStrCallback, pszDesc));
+    AssertReturn(!HMIsEnabled(pVM), VERR_IOM_HM_IPE);
 
     /*
      * Validate input.
@@ -1380,8 +1382,11 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
      */
     if (pVM->iom.s.pfnMMIOHandlerR0 == NIL_RTR0PTR)
     {
-        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "IOMMMIOHandler", &pVM->iom.s.pfnMMIOHandlerRC);
-        AssertLogRelRCReturn(rc, rc);
+        if (!HMIsEnabled(pVM))
+        {
+            rc = PDMR3LdrGetSymbolRC(pVM, NULL, "IOMMMIOHandler", &pVM->iom.s.pfnMMIOHandlerRC);
+            AssertLogRelRCReturn(rc, rc);
+        }
         rc = PDMR3LdrGetSymbolR0(pVM, NULL, "IOMMMIOHandler", &pVM->iom.s.pfnMMIOHandlerR0);
         AssertLogRelRCReturn(rc, rc);
     }
@@ -1478,6 +1483,7 @@ IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
 {
     LogFlow(("IOMR3MmioRegisterRC: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RGv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x\n",
              pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback));
+    AssertReturn(!HMIsEnabled(pVM), VERR_IOM_HM_IPE);
 
     /*
      * Validate input.

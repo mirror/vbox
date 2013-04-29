@@ -25,6 +25,7 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/iom.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/cfgm.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
@@ -129,9 +130,12 @@ int pdmR3DevInit(PVM pVM)
     /*
      * Get the RC & R0 devhlps and create the devhlp R3 task queue.
      */
-    PCPDMDEVHLPRC pHlpRC;
-    rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pHlpRC);
-    AssertReleaseRCReturn(rc, rc);
+    PCPDMDEVHLPRC pHlpRC = NIL_RTRCPTR;
+    if (!HMIsEnabled(pVM))
+    {
+        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pHlpRC);
+        AssertReleaseRCReturn(rc, rc);
+    }
 
     PCPDMDEVHLPR0 pHlpR0;
     rc = PDMR3LdrGetSymbolR0(pVM, NULL, "g_pdmR0DevHlp", &pHlpR0);
