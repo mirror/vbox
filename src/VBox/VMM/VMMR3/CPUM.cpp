@@ -1560,8 +1560,13 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
      * The Intel docs don't mention it. */
     Assert(!pCtx->msrEFER);
 
+    /** @todo r=ramshankar: Currently broken for SMP as TMCpuTickSet() expects to be
+     *        called from each EMT while we're getting called by CPUMR3Reset()
+     *        iteratively on the same thread. Fix later.  */
+#if 0
     /* TSC must be 0. Intel spec. Table 9-1. "IA-32 Processor States Following Power-up, Reset, or INIT." */
     CPUMSetGuestMsr(pVCpu, MSR_IA32_TSC, 0);
+#endif
 
     /*
      * Get the APIC base MSR from the APIC device. For historical reasons (saved state), the APIC base
