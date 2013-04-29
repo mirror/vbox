@@ -49,6 +49,7 @@ void ErrorInfo::copyFrom(const ErrorInfo &x)
     mIsFullAvailable = x.mIsFullAvailable;
 
     mResultCode = x.mResultCode;
+    mResultDetail = x.mResultDetail;
     mInterfaceID = x.mInterfaceID;
     mComponent = x.mComponent;
     mText = x.mText;
@@ -77,6 +78,7 @@ void ErrorInfo::cleanup()
     }
 
     mResultCode = S_OK;
+    mResultDetail = 0;
     mInterfaceID.clear();
     mComponent.setNull();
     mText.setNull();
@@ -224,9 +226,13 @@ void ErrorInfo::init(IVirtualBoxErrorInfo *info)
     HRESULT rc = E_FAIL;
     bool gotSomething = false;
     bool gotAll = true;
-    LONG lrc;
+    LONG lrc, lrd;
 
     rc = info->COMGETTER(ResultCode)(&lrc); mResultCode = lrc;
+    gotSomething |= SUCCEEDED(rc);
+    gotAll &= SUCCEEDED(rc);
+
+    rc = info->COMGETTER(ResultDetail)(&lrd); mResultDetail = lrd;
     gotSomething |= SUCCEEDED(rc);
     gotAll &= SUCCEEDED(rc);
 

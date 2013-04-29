@@ -1260,7 +1260,7 @@
 
   <interface
     name="IVirtualBoxErrorInfo" extends="$errorinfo"
-    uuid="f91e6e91-49e1-4fd2-b21e-269003350d06"
+    uuid="c1bcc6d5-7966-481d-ab0b-d0ed73e28135"
     supportsErrorInfo="no"
     wsmap="managed"
     >
@@ -1307,6 +1307,13 @@
           In MS COM, there is no equivalent.
           In XPCOM, it is the same as nsIException::result.
         </note>
+      </desc>
+    </attribute>
+
+    <attribute name="resultDetail" type="long" readonly="yes">
+      <desc>
+        Optional result data of this error. This will vary depending on the
+        actual error usage. By default this attribute is not being used.
       </desc>
     </attribute>
 
@@ -9721,27 +9728,6 @@
       <desc>Don't allow symbolic links as part of the path.</desc>
     </const>
   </enum>
-
-  <interface
-    name="IGuestErrorInfo" extends="$unknown"
-    uuid="ab576a37-dcfc-4d80-9a73-493d15e293c4"
-    wsmap="managed"
-    >
-    <desc>
-      The IGuestErrorInfo interface represents extended error information which
-      happened while performing an operation on the guest.
-    </desc>
-
-    <attribute name="result" type="long" readonly="yes">
-      <desc>Runtime (IPRT) error code. See include/iprt/err.h and include/VBox/err.h
-        for details.</desc>
-    </attribute>
-
-    <attribute name="text" type="wstring" readonly="yes">
-      <desc>Text description of the error.</desc>
-    </attribute>
-
-  </interface>
 
   <interface
     name="IGuestSession" extends="$unknown"
@@ -19976,10 +19962,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         New session status.
       </desc>
     </attribute>
-    <attribute name="error" type="IGuestErrorInfo" readonly="yes">
+    <attribute name="error" type="IVirtualBoxErrorInfo" readonly="yes">
       <desc>
-        Extended guest error information in case of new session
-        status is indicating an error.
+        Error information in case of new session status is indicating an error.
+
+        The attribute <link to="IVirtualBoxErrorInfo::resultDetail"/> will contain
+        the runtime (IPRT) error code from the guest. See include/iprt/err.h and
+        include/VBox/err.h for details.
       </desc>
     </attribute>
 
@@ -20055,10 +20044,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         New guest process status.
       </desc>
     </attribute>
-    <attribute name="error" type="IGuestErrorInfo" readonly="yes">
+    <attribute name="error" type="IVirtualBoxErrorInfo" readonly="yes">
       <desc>
-        Extended guest error information in case of new process
-        status is indicating an error.
+        Error information in case of new session status is indicating an error.
+
+        The attribute <link to="IVirtualBoxErrorInfo::resultDetail"/> will contain
+        the runtime (IPRT) error code from the guest. See include/iprt/err.h and
+        include/VBox/err.h for details.
       </desc>
     </attribute>
 
@@ -20170,10 +20162,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         New guest file status.
       </desc>
     </attribute>
-    <attribute name="error" type="IGuestErrorInfo" readonly="yes">
+    <attribute name="error" type="IVirtualBoxErrorInfo" readonly="yes">
       <desc>
-        Extended guest error information in case of new file
-        status is indicating an error.
+        Error information in case of new session status is indicating an error.
+
+        The attribute <link to="IVirtualBoxErrorInfo::resultDetail"/> will contain
+        the runtime (IPRT) error code from the guest. See include/iprt/err.h and
+        include/VBox/err.h for details.
       </desc>
     </attribute>
     <!-- Note: No events for reads/writes for performance reasons.
