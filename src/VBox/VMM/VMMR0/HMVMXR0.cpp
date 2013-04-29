@@ -1839,7 +1839,7 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
     rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, 0);
 
     /* Set VMCS link pointer. Reserved for future use, must be -1. Intel spec. 24.4 "Guest-State Area". */
-    rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, 0xffffffffffffffffULL);
+    rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, UINT64_C(0xffffffffffffffff));
 
     /* Setup debug controls */
     rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_DEBUGCTL_FULL, 0);                /** @todo think about this. */
@@ -2865,12 +2865,12 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
 
             /* Validate. See Intel spec. 28.2.2 "EPT Translation Mechanism" and 24.6.11 "Extended-Page-Table Pointer (EPTP)" */
             Assert(pVCpu->hm.s.vmx.HCPhysEPTP);
-            Assert(!(pVCpu->hm.s.vmx.HCPhysEPTP & 0xfff0000000000000ULL));
+            Assert(!(pVCpu->hm.s.vmx.HCPhysEPTP & UINT64_C(0xfff0000000000000)));
             Assert(!(pVCpu->hm.s.vmx.HCPhysEPTP & 0xfff));
 
             /* VMX_EPT_MEMTYPE_WB support is already checked in hmR0VmxSetupTaggedTlb(). */
-            pVCpu->hm.s.vmx.HCPhysEPTP |=  VMX_EPT_MEMTYPE_WB
-                                         | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
+            pVCpu->hm.s.vmx.HCPhysEPTP |=   VMX_EPT_MEMTYPE_WB
+                                          | (VMX_EPT_PAGE_WALK_LENGTH_DEFAULT << VMX_EPT_PAGE_WALK_LENGTH_SHIFT);
 
             /* Validate. See Intel spec. 26.2.1 "Checks on VMX Controls" */
             AssertMsg(   ((pVCpu->hm.s.vmx.HCPhysEPTP >> 3) & 0x07) == 3      /* Bits 3:5 (EPT page walk length - 1) must be 3. */
@@ -3050,7 +3050,7 @@ static int hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Validate. Intel spec. 26.3.1.1 "Checks on Guest Controls Registers, Debug Registers, MSRs" */
     if (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG)
     {
-        Assert((pMixedCtx->dr[7] & 0xffffffff00000000ULL) == 0);  /* upper 32 bits are reserved (MBZ). */
+        Assert(!(pMixedCtx->dr[7] >> 32));                        /* upper 32 bits are reserved (MBZ). */
         /* Validate. Intel spec. 17.2 "Debug Registers", recompiler paranoia checks. */
         Assert((pMixedCtx->dr[7] & 0xd800) == 0);                 /* bits 15, 14, 12, 11 are reserved (MBZ). */
         Assert((pMixedCtx->dr[7] & 0x400) == 0x400);              /* bit 10 is reserved (MB1). */
@@ -3494,7 +3494,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE,  pMixedCtx->gdtr.pGdt);
         AssertRCReturn(rc, rc);
 
-        Assert(!(pMixedCtx->gdtr.cbGdt & 0xffff0000ULL));       /* Bits 31:16 MBZ. */
+        Assert(!(pMixedCtx->gdtr.cbGdt & UINT64_C(0xffff0000)));       /* Bits 31:16 MBZ. */
         Log(("Load: VMX_VMCS_GUEST_GDTR_BASE=%#RX64\n", pMixedCtx->gdtr.pGdt));
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_GDTR;
     }
@@ -3545,7 +3545,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE,  pMixedCtx->idtr.pIdt);
         AssertRCReturn(rc, rc);
 
-        Assert(!(pMixedCtx->idtr.cbIdt & 0xffff0000ULL));       /* Bits 31:16 MBZ. */
+        Assert(!(pMixedCtx->idtr.cbIdt & UINT64_C(0xffff0000)));       /* Bits 31:16 MBZ. */
         Log(("Load: VMX_VMCS_GUEST_IDTR_BASE=%#RX64\n", pMixedCtx->idtr.pIdt));
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_IDTR;
     }
@@ -5178,7 +5178,7 @@ static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Guest segment registers. */
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_SEGMENT_REGS))
     {
-        rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+        rc  = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
         rc |= VMXLOCAL_READ_SEG(CS, cs);
         rc |= VMXLOCAL_READ_SEG(SS, ss);
         rc |= VMXLOCAL_READ_SEG(DS, ds);
@@ -5635,6 +5635,7 @@ static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
+    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
 }
 
 
@@ -6014,10 +6015,10 @@ DECLINLINE(void) hmR0VmxSetPendingIntN(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint16_
     if (   uVector == X86_XCPT_BP
         || uVector == X86_XCPT_OF)
     {
-        u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+        u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     }
     else
-        u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+        u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatIntInject);
     hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
@@ -6471,6 +6472,7 @@ DECLINLINE(int) hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
         /* Don't use VINF_EM_RAW_INTERRUPT_HYPER as we can't assume the host does kernel preemption. Maybe some day? */
         return VINF_EM_RAW_INTERRUPT;
     }
+    VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
 
@@ -7416,9 +7418,8 @@ static DECLCALLBACK(int) hmR0VmxExitPreemptTimer(PVMCPU pVCpu, PCPUMCTX pMixedCt
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    /* If we're saving the preemption-timer value on every VM-exit & we've reached zero, reset it up on next VM-entry. */
-    if (pVCpu->hm.s.vmx.u32ExitCtls & VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER)
-        pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
+    /* If the preemption-timer has expired, reinitialize the preemption timer on next VM-entry. */
+    pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
 
     /* If there are any timer events pending, fall back to ring-3, otherwise resume guest execution. */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -8368,8 +8369,8 @@ static DECLCALLBACK(int) hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCt
     {
         /* Successfully synced our shadow page tables or emulation MMIO instruction. */
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitReasonNpf);
-        pVCpu->hm.s.fContextUseFlags |=  HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS
-                                       | HM_CHANGED_VMX_GUEST_APIC_STATE;
+        pVCpu->hm.s.fContextUseFlags |=   HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS
+                                        | HM_CHANGED_VMX_GUEST_APIC_STATE;
         return VINF_SUCCESS;
     }
 
