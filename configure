@@ -95,6 +95,7 @@ WITH_VDE=0
 WITH_VNC=0
 WITH_EXTPACK=1
 WITH_DOCS=1
+WITH_LIBVPX=1
 BUILD_LIBXML2=
 BUILD_LIBCURL=
 BUILD_LIBSSL=
@@ -2232,6 +2233,7 @@ EOF
 [ $OSE          -eq 1 ] && echo "  --enable-vnc             enable the VNC server"
 [ $OSE          -eq 0 ] && echo "  --disable-extpack        don't build the extpack"
 [ $WITH_DOCS    -eq 1 ] && echo "  --disable-docs           don't build the documentation"
+[ $WITH_LIBVPX  -eq 1 ] && echo "  --disable-libvpx         don't use libvpx for video capturing"
 [ "$OS" = "linux" -o "$OS" = "freebsd" ] && echo "  --enable-vde             enable VDE networking"
 cat << EOF
   --disable-udptunnel      disable UDP tunnel networking
@@ -2299,6 +2301,7 @@ if [ "$OS" = "darwin" ]; then
   BUILD_LIBXML2=1
   BUILD_LIBVPX=1
   [ $OSE -eq 1 ] || BUILD_LIBCURL=1
+  [ $OSE -eq 1 ] && WITH_LIBVPX=0
 elif [ "$OS" = "haiku" ]; then
   #WITH_SDL=0
   WITH_SDL_TTF=0
@@ -2311,11 +2314,14 @@ elif [ "$OS" = "haiku" ]; then
   WITH_XPCOM=0
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
+  WITH_LIBVPX=0
   # it is part of libroot, which is linked by default,
   # but the script wants something
   LIBPTHREAD="-lroot"
-  #[ $OSE -eq 1] || BUILD_LIBCURL=1
-  [ $OSE -eq 1] || BUILD_LIBSSL=1
+  #[ $OSE -eq 1 ] || BUILD_LIBCURL=1
+  [ $OSE -eq 1 ] || BUILD_LIBSSL=1
+elif [ "$OS" = "solaris" ]; then
+  [ $OSE -eq 1 ] && WITH_LIBVPX=0
 fi
 
 # scan command line options
@@ -2619,6 +2625,7 @@ fi
 [ $WITH_HARDENING -eq 0 ] && cnf_append "VBOX_WITHOUT_HARDENING" "1"
 [ $WITH_HARDENING -eq 2 ] && cnf_append "VBOX_WITH_HARDENING" "2"
 [ $WITH_VMMRAW    -eq 0 ] && cnf_append "VBOX_WITH_RAW_MODE" ""
+[ $WITH_LIBVPX    -eq 0 ] && cnf_append "VBOX_WITH_VPX" ""
 
 # Darwin-specific
 if [ "$OS" = "darwin" ]; then
@@ -2639,7 +2646,7 @@ check_libxml2
 [ $WITH_LIBIDL -eq 1 ] && check_libidl
 check_ssl
 check_curl
-check_vpx
+[ $WITH_LIBVPX -eq 1 ] && check_vpx
 [ "$OS" != "darwin"  ] && check_z
 [ "$OS" != "darwin"  ] && check_png
 [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
