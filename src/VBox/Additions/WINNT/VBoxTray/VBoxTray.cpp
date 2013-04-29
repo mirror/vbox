@@ -1200,7 +1200,7 @@ static BOOL vboxDtCalculateIsInputDesktop()
     else
     {
         DWORD dwErr = GetLastError();
-        WARN(("VBoxTray: pfnOpenInputDesktop for Seamless failed, last error = %08X\n", dwErr));
+//        WARN(("VBoxTray: pfnOpenInputDesktop for Seamless failed, last error = %08X\n", dwErr));
     }
     return fIsInputDt;
 }
