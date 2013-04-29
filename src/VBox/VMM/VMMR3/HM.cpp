@@ -399,6 +399,11 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCfgHM, "EnableNestedPaging", &pVM->hm.s.fAllowNestedPaging, false);
     AssertRCReturn(rc, rc);
 
+    /** @cfgm{/HM/EnableUnrestrictedExec, bool, true}
+     * Enables the VT-x unrestricted execution feature. */
+    rc = CFGMR3QueryBoolDef(pCfgHM, "EnableUnrestrictedExec", &pVM->hm.s.vmx.fAllowUnrestricted, true);
+    AssertRCReturn(rc, rc);
+
     /** @cfgm{/HM/EnableLargePages, bool, false}
      * Enables using large pages (2 MB) for guest memory, thus saving on (nested)
      * page table walking and maybe better TLB hit rate in some cases. */
@@ -1126,8 +1131,9 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         LogRel(("HM: Disabled RDTSCP\n"));
     }
 
-    /* Unrestricted guest execution relies on EPT. */
-    if (    pVM->hm.s.fNestedPaging
+    /* Unrestricted guest execution also requires EPT. */
+    if (    pVM->hm.s.vmx.fAllowUnrestricted
+        &&  pVM->hm.s.fNestedPaging
         &&  (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST))
         pVM->hm.s.vmx.fUnrestrictedGuest = true;
 
