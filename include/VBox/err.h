@@ -1413,6 +1413,8 @@
 /** The PCI device isn't configured as a busmaster, physical memory access
  * rejected. */
 #define VERR_PDM_NOT_PCI_BUS_MASTER                 (-2891)
+/** Got into a part of PDM that is not used when HM (VT-x/AMD-V) is enabled. */
+#define VERR_PDM_HM_IPE                             (-2892)
 /** @} */
 
 

@@ -95,16 +95,15 @@ VMMR3_INT_DECL(int) PDMR3LdrLoadVMMR0U(PUVM pUVM)
  */
 int pdmR3LdrInitU(PUVM pUVM)
 {
-#if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
-    return VINF_SUCCESS;
-
-#else
-
+#if !defined(PDMLDR_FAKE_MODE) && defined(VBOX_WITH_RAW_MODE)
     /*
-     * Load the mandatory GC module, the VMMR0.r0 is loaded before VM creation.
+     * Load the mandatory RC module, the VMMR0.r0 is loaded before VM creation.
      */
-    return PDMR3LdrLoadRC(pUVM->pVM, NULL, VMMGC_MAIN_MODULE_NAME);
+    PVM pVM = pUVM->pVM; AssertPtr(pVM);
+    if (!HMIsEnabled(pVM))
+        return PDMR3LdrLoadRC(pVM, NULL, VMMGC_MAIN_MODULE_NAME);
 #endif
+    return VINF_SUCCESS;
 }
 
 
@@ -451,6 +450,8 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
      * Validate input.
      */
     AssertMsg(PDMCritSectIsInitialized(&pVM->pdm.s.CritSect), ("bad init order!\n"));
+    AssertReturn(!HMIsEnabled(pVM), VERR_PDM_HM_IPE);
+
     PUVM     pUVM = pVM->pUVM;
     RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
     PPDMMOD  pCur = pUVM->pdm.s.pModules;
@@ -884,7 +885,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *p
 {
 #if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
     Assert(!HMIsEnabled(pVM));
-    *pRCPtrValue = 0xfeedf00d;
+    *pRCPtrValue = NIL_RTRCPTR;
     return VINF_SUCCESS;
 
 #else
@@ -952,7 +953,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const cha
 {
 #if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
     Assert(!HMIsEnabled(pVM));
-    *pRCPtrValue = 0xfeedf00d;
+    *pRCPtrValue = NIL_RTRCPTR;
     return VINF_SUCCESS;
 
 #else
@@ -1558,15 +1559,19 @@ VMMR3_INT_DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size
                                                 const char *pszSymPrefix, const char *pszSymList,
                                                 bool fRing0)
 {
+    bool const fNullRun = !fRing0 && HMIsEnabled(pVM);
+
     /*
      * Find the module.
      */
     int     rc      = VINF_SUCCESS;
-    PPDMMOD pModule = pdmR3LdrFindModule(pVM->pUVM,
-                                         pszModule ? pszModule : fRing0 ? "VMMR0.r0" : "VMMGC.gc",
-                                         fRing0 ? PDMMOD_TYPE_R0 : PDMMOD_TYPE_RC,
-                                         true /*fLazy*/, pszSearchPath);
-    if (pModule)
+    PPDMMOD pModule = NULL;
+    if (!fNullRun)
+        pModule = pdmR3LdrFindModule(pVM->pUVM,
+                                     pszModule ? pszModule : fRing0 ? "VMMR0.r0" : "VMMGC.gc",
+                                     fRing0 ? PDMMOD_TYPE_R0 : PDMMOD_TYPE_RC,
+                                     true /*fLazy*/, pszSearchPath);
+    if (pModule || fNullRun)
     {
         /* Prep the symbol name. */
         char            szSymbol[256];
@@ -1646,9 +1651,12 @@ VMMR3_INT_DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size
 
                 if (fRing0)
                 {
-                    void *pvValue;
-                    rc = SUPR3GetSymbolR0((void *)(RTR0PTR)pModule->ImageBase, szSymbol, &pvValue);
-                    AssertMsgRCBreak(rc, ("Couldn't find symbol '%s' in module '%s'\n", szSymbol, pModule->szName));
+                    void *pvValue = NULL;
+                    if (fNullRun)
+                    {
+                        rc = SUPR3GetSymbolR0((void *)(RTR0PTR)pModule->ImageBase, szSymbol, &pvValue);
+                        AssertMsgRCBreak(rc, ("Couldn't find symbol '%s' in module '%s'\n", szSymbol, pModule->szName));
+                    }
 
                     PRTR0PTR pValue = (PRTR0PTR)((uintptr_t)pvInterface + offInterface);
                     AssertMsgBreakStmt(offInterface + sizeof(*pValue) <= cbInterface,
@@ -1660,9 +1668,12 @@ VMMR3_INT_DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size
                 }
                 else
                 {
-                    RTUINTPTR Value;
-                    rc = RTLdrGetSymbolEx(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, szSymbol, &Value);
-                    AssertMsgRCBreak(rc, ("Couldn't find symbol '%s' in module '%s'\n", szSymbol, pModule->szName));
+                    RTUINTPTR Value = 0;
+                    if (fNullRun)
+                    {
+                        rc = RTLdrGetSymbolEx(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, szSymbol, &Value);
+                        AssertMsgRCBreak(rc, ("Couldn't find symbol '%s' in module '%s'\n", szSymbol, pModule->szName));
+                    }
 
                     PRTRCPTR pValue = (PRTRCPTR)((uintptr_t)pvInterface + offInterface);
                     AssertMsgBreakStmt(offInterface + sizeof(*pValue) <= cbInterface,
