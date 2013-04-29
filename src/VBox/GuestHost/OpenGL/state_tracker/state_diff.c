@@ -307,9 +307,11 @@ void crStateApplyFBImage(CRContext *to, CRFBData *data)
         for (i = 0; i < data->cElements; ++i)
         {
             CRFBDataElement *el = &data->aElements[i];
+#if 0
             char fname[200];
             sprintf(fname, "./img_apply_%p_%d_%d.tga", to, i, el->enmFormat);
             crDumpNamedTGA(fname, el->width, el->height, el->pvData);
+#endif
 
             if (el->enmFormat == GL_DEPTH_COMPONENT || el->enmFormat == GL_DEPTH_STENCIL)
             {
