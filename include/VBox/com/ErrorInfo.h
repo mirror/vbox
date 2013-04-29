@@ -173,6 +173,7 @@ public:
         : mIsBasicAvailable(false),
           mIsFullAvailable(false),
           mResultCode(S_OK),
+          mResultDetail(0),
           m_pNext(NULL)
     {
         init();
@@ -182,6 +183,7 @@ public:
         : mIsBasicAvailable(false),
           mIsFullAvailable(false),
           mResultCode(S_OK),
+          mResultDetail(0),
           m_pNext(NULL)
     {
         init(pObj, aIID);
@@ -190,7 +192,7 @@ public:
     /** Specialization for the IVirtualBoxErrorInfo smart pointer */
     ErrorInfo (const ComPtr <IVirtualBoxErrorInfo> &aPtr)
         : mIsBasicAvailable (false), mIsFullAvailable (false)
-        , mResultCode (S_OK)
+        , mResultCode (S_OK), mResultDetail(0)
         { init (aPtr); }
 
     /**
@@ -203,7 +205,7 @@ public:
      */
     ErrorInfo (IVirtualBoxErrorInfo *aInfo)
         : mIsBasicAvailable (false), mIsFullAvailable (false)
-        , mResultCode (S_OK)
+        , mResultCode (S_OK), mResultDetail(0)
         { init (aInfo); }
 
     ErrorInfo(const ErrorInfo &x)
@@ -263,6 +265,14 @@ public:
     HRESULT getResultCode() const
     {
         return mResultCode;
+    }
+
+    /**
+     *  Returns the (optional) result detail code of the failed operation.
+     */
+    LONG getResultDetail() const
+    {
+        return mResultDetail;
     }
 
     /**
@@ -358,6 +368,7 @@ protected:
     bool mIsFullAvailable : 1;
 
     HRESULT mResultCode;
+    LONG    mResultDetail;
     Guid    mInterfaceID;
     Bstr    mComponent;
     Bstr    mText;

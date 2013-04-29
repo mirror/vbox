@@ -93,11 +93,19 @@ public:
                  const Utf8Str &strText,
                  IVirtualBoxErrorInfo *aNext = NULL);
 
+    HRESULT initEx(HRESULT aResultCode,
+                   LONG aResultDetail,
+                   const GUID &aIID,
+                   const char *pcszComponent,
+                   const Utf8Str &strText,
+                   IVirtualBoxErrorInfo *aNext = NULL);
+
     HRESULT init(const com::ErrorInfo &ei,
                  IVirtualBoxErrorInfo *aNext = NULL);
 
     // IVirtualBoxErrorInfo properties
     STDMETHOD(COMGETTER(ResultCode))(LONG *aResultCode);
+    STDMETHOD(COMGETTER(ResultDetail))(LONG *aResultDetail);
     STDMETHOD(COMGETTER(InterfaceID))(BSTR *aIID);
     STDMETHOD(COMGETTER(Component))(BSTR *aComponent);
     STDMETHOD(COMGETTER(Text))(BSTR *aText);
@@ -113,6 +121,7 @@ private:
                             void *       /* c */) { return rc; }
 
     HRESULT m_resultCode;
+    LONG    m_resultDetail;
     Utf8Str m_strText;
     Guid    m_IID;
     Utf8Str m_strComponent;

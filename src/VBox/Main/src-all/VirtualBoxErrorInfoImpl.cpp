@@ -30,6 +30,7 @@ HRESULT VirtualBoxErrorInfo::init(HRESULT aResultCode,
                                   IVirtualBoxErrorInfo *aNext)
 {
     m_resultCode = aResultCode;
+    m_resultDetail = 0; /* Not being used. */
     m_IID = aIID;
     m_strComponent = pcszComponent;
     m_strText = strText;
@@ -38,10 +39,24 @@ HRESULT VirtualBoxErrorInfo::init(HRESULT aResultCode,
     return S_OK;
 }
 
+HRESULT VirtualBoxErrorInfo::initEx(HRESULT aResultCode,
+                                    LONG aResultDetail,
+                                    const GUID &aIID,
+                                    const char *pcszComponent,
+                                    const Utf8Str &strText,
+                                    IVirtualBoxErrorInfo *aNext)
+{
+    HRESULT hr = init(aResultCode, aIID, pcszComponent, strText, aNext);
+    m_resultDetail = aResultDetail;
+
+    return hr;
+}
+
 HRESULT VirtualBoxErrorInfo::init(const com::ErrorInfo &info,
                                   IVirtualBoxErrorInfo *aNext)
 {
     m_resultCode = info.getResultCode();
+    m_resultDetail = info.getResultDetail();
     m_IID = info.getInterfaceID();
     m_strComponent = info.getComponent();
     m_strText = info.getText();
@@ -71,6 +86,14 @@ STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(ResultCode)(LONG *aResultCode)
     CheckComArgOutPointerValid(aResultCode);
 
     *aResultCode = m_resultCode;
+    return S_OK;
+}
+
+STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(ResultDetail)(LONG *aResultDetail)
+{
+    CheckComArgOutPointerValid(aResultDetail);
+
+    *aResultDetail = m_resultDetail;
     return S_OK;
 }
 
@@ -123,6 +146,7 @@ HRESULT VirtualBoxErrorInfo::init(IErrorInfo *aInfo)
      * corresponding fields will simply remain null in this case). */
 
     m_resultCode = S_OK;
+    m_resultDetail = 0;
     rc = aInfo->GetGUID(m_IID.asOutParam());
     AssertComRC(rc);
     Bstr bstrComponent;
@@ -187,6 +211,7 @@ HRESULT VirtualBoxErrorInfo::init(nsIException *aInfo)
 
     rc = aInfo->GetResult(&m_resultCode);
     AssertComRC(rc);
+    m_resultDetail = 0; /* Not being used. */
 
     char *pszMsg;             /* No Utf8Str.asOutParam, different allocator! */
     rc = aInfo->GetMessage(&pszMsg);
