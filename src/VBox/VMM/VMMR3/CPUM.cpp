@@ -854,7 +854,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     bool fCmpXchg16b;
     rc = CFGMR3QueryBoolDef(pCpumCfg, "CMPXCHG16B", &fCmpXchg16b, false); AssertRCReturn(rc, rc);
-    
+
     bool fMonitor;
     rc = CFGMR3QueryBoolDef(pCpumCfg, "MONITOR", &fMonitor, true); AssertRCReturn(rc, rc);
 
@@ -1556,10 +1556,12 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
     /* Init PAT MSR */
     pCtx->msrPAT                    = UINT64_C(0x0007040600070406); /** @todo correct? */
 
-    /* Reset EFER; see AMD64 Architecture Programmer's Manual Volume 2: Table 14-1. Initial Processor State
-    * The Intel docs don't mention it.
-    */
-    pCtx->msrEFER                   = 0;
+    /* EFER MBZ; see AMD64 Architecture Programmer's Manual Volume 2: Table 14-1. Initial Processor State.
+     * The Intel docs don't mention it. */
+    Assert(!pCtx->msrEFER);
+
+    /* TSC must be 0. Intel spec. Table 9-1. "IA-32 Processor States Following Power-up, Reset, or INIT." */
+    CPUMSetGuestMsr(pVCpu, MSR_IA32_TSC, 0);
 
     /*
      * Get the APIC base MSR from the APIC device. For historical reasons (saved state), the APIC base
