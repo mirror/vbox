@@ -417,7 +417,7 @@ static bool isSyntheticLCtrl(MSG *pMsg)
         return false;
     if ((peekMsg.lParam & 0x01FF0000) >> 16 != 0x138 /* RAlt */)
         return false;
-    auKeyStates[VK_LCTRL] = 0x80;
+    auKeyStates[VK_LCONTROL] = 0x80;
     auKeyStates[VK_RMENU] = 0x80;
     cbToAscii = ToAscii('A', 0, NULL, &achNoAltGr, 0);
     if (!cbToAscii || cbToAscii != ToAscii('A', 0, auKeyStates, &achAltGr, 0))
