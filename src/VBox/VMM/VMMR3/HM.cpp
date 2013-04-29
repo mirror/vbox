@@ -2287,6 +2287,159 @@ VMMR3_INT_DECL(int) HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
+ * Checks if a code selector (CS) is suitable for execution 
+ * within VMX when unrestricted execution isn't available. 
+ *
+ * @returns true if selector is suitable for VMX, otherwise 
+ *        false.
+ * @param   pSel        Pointer to the selector to check (CS). 
+ *          uStackDpl   The DPL of the stack segment. 
+ */
+static bool hmR3IsCodeSelectorOkForVmx(PCPUMSELREG pSel, unsigned uStackDpl)
+{
+    bool    rc = false;
+
+    do 
+    {
+        /* Segment must be accessed. */
+        if (!(pSel->Attr.u & X86_SEL_TYPE_ACCESSED))
+            break;
+        /* Segment must be a code segment. */
+        if (!(pSel->Attr.u & X86_SEL_TYPE_CODE))
+            break;
+        /* The S bit must be set. */
+        if (!pSel->Attr.n.u1DescType)
+            break;
+        if (pSel->Attr.n.u4Type & X86_SEL_TYPE_CONF)
+        {
+            /* For conforming segments, CS.DPL must be <= SS.DPL. */
+            if (pSel->Attr.n.u2Dpl > uStackDpl)
+                break;
+        }
+        else
+        {
+            /* For non-conforming segments, CS.DPL must equal SS.DPL. */
+            if (pSel->Attr.n.u2Dpl != uStackDpl)
+                break;
+        }
+        /* Segment must be present. */
+        if (!pSel->Attr.n.u1Present)
+            break;
+        /* G bit must be set if any high limit bits are set. */
+        if ((pSel->u32Limit & 0xfff00000) && !pSel->Attr.n.u1Granularity)
+            break;
+        /* G bit must be clear if any low limit bits are clear. */
+        if ((pSel->u32Limit & 0x0fff) != 0x0fff && pSel->Attr.n.u1Granularity)
+            break;
+
+        rc = true;
+    } while (0);
+    return rc;
+}
+
+
+/**
+ * Checks if a data selector (DS/ES/FS/GS) is suitable for 
+ * execution within VMX when unrestricted execution isn't 
+ * available. 
+ *
+ * @returns true if selector is suitable for VMX, otherwise 
+ *        false.
+ * @param   pSel        Pointer to the selector to check 
+ *                      (DS/ES/FS/GS).
+ */
+static bool hmR3IsDataSelectorOkForVmx(PCPUMSELREG pSel)
+{
+    bool    rc = false;
+
+    /* If attributes are all zero, consider the segment unusable and therefore OK.
+     * This logic must be in sync with HMVMXR0.cpp!
+     */
+    if (!pSel->Attr.u)
+        return true;
+    
+    do 
+    {
+        /* Segment must be accessed. */
+        if (!(pSel->Attr.u & X86_SEL_TYPE_ACCESSED))
+            break;
+        /* Code segments must also be readable. */
+        if (pSel->Attr.u & X86_SEL_TYPE_CODE && !(pSel->Attr.u & X86_SEL_TYPE_READ))
+            break;
+        /* The S bit must be set. */
+        if (!pSel->Attr.n.u1DescType)
+            break;
+        /* Except for conforming segments, DPL >= RPL. */
+        if (pSel->Attr.n.u4Type <= X86_SEL_TYPE_ER_ACC && pSel->Attr.n.u2Dpl < (pSel->Sel & X86_SEL_RPL))
+            break;
+        /* Segment must be present. */
+        if (!pSel->Attr.n.u1Present)
+            break;
+        /* G bit must be set if any high limit bits are set. */
+        if ((pSel->u32Limit & 0xfff00000) && !pSel->Attr.n.u1Granularity)
+            break;
+        /* G bit must be clear if any low limit bits are clear. */
+        if ((pSel->u32Limit & 0x0fff) != 0x0fff && pSel->Attr.n.u1Granularity)
+            break;
+
+        rc = true;
+    } while (0);
+    return rc;
+}
+
+
+/**
+ * Checks if the stack selector (SS) is suitable for execution 
+ * within VMX when unrestricted execution isn't available. 
+ *
+ * @returns true if selector is suitable for VMX, otherwise 
+ *        false.
+ * @param   pSel        Pointer to the selector to check (SS).
+ */
+static bool hmR3IsStackSelectorOkForVmx(PCPUMSELREG pSel)
+{
+    bool    rc = false;
+
+    /* If attributes are all zero, consider the segment unusable and therefore OK.
+     * This logic must be in sync with HMVMXR0.cpp!
+     */
+    if (!pSel->Attr.u)
+        return true;
+    
+    do 
+    {
+        /* Segment must be accessed. */
+        if (!(pSel->Attr.u & X86_SEL_TYPE_ACCESSED))
+            break;
+        /* Segment must be writable. */
+        if (!(pSel->Attr.u & X86_SEL_TYPE_WRITE))
+            break;
+        /* Segment must not be a code segment. */
+        if (pSel->Attr.u & X86_SEL_TYPE_CODE)
+            break;
+        /* The S bit must be set. */
+        if (!pSel->Attr.n.u1DescType)
+            break;
+        /* DPL must equal RPL. */
+        if (pSel->Attr.n.u2Dpl != (pSel->Sel & X86_SEL_RPL))
+            break;
+        /* Segment must be present. */
+        if (!pSel->Attr.n.u1Present)
+            break;
+        /* G bit must be set if any high limit bits are set. */
+        if ((pSel->u32Limit & 0xfff00000) && !pSel->Attr.n.u1Granularity)
+            break;
+        /* G bit must be clear if any low limit bits are clear. */
+        if ((pSel->u32Limit & 0x0fff) != 0x0fff && pSel->Attr.n.u1Granularity)
+            break;
+
+        rc = true;
+    } while (0);
+    return rc;
+}
+
+
+/**
  * Force execution of the current IO code in the recompiler.
  *
  * @returns VBox status code.
@@ -2393,12 +2546,23 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                 if (pVCpu->hm.s.vmx.fWasInRealMode)
 #endif
                 {
+                    //@todo: If guest is in V86 mode, these checks should be different!
+#if VBOX_WITH_OLD_VTX_CODE
                     if (   (pCtx->cs.Sel & X86_SEL_RPL)
                         || (pCtx->ds.Sel & X86_SEL_RPL)
                         || (pCtx->es.Sel & X86_SEL_RPL)
                         || (pCtx->fs.Sel & X86_SEL_RPL)
                         || (pCtx->gs.Sel & X86_SEL_RPL)
                         || (pCtx->ss.Sel & X86_SEL_RPL))
+#else
+                    if (   ((pCtx->cs.Sel & X86_SEL_RPL) != (pCtx->ss.Sel & X86_SEL_RPL))
+                        || !hmR3IsCodeSelectorOkForVmx(&pCtx->cs, pCtx->ss.Attr.n.u2Dpl)
+                        || !hmR3IsDataSelectorOkForVmx(&pCtx->ds)
+                        || !hmR3IsDataSelectorOkForVmx(&pCtx->es)
+                        || !hmR3IsDataSelectorOkForVmx(&pCtx->fs)
+                        || !hmR3IsDataSelectorOkForVmx(&pCtx->gs)
+                        || !hmR3IsStackSelectorOkForVmx(&pCtx->ss))
+#endif
                     {
                         return false;
                     }
