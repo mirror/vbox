@@ -15,6 +15,10 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
+if test -n "$Path" -a test -z "$PATH"; then
+    export PATH="$Path"
+fi
+
 MY_DIR=`cd "${0}/.." && cmd /c cd | kmk_sed -e 's,\\\\,/,g' `
 if [ ! -d "${MY_DIR}" ]; then
     echo "Cannot find ${MY_DIR} or it's not a directory..."
