@@ -5499,13 +5499,11 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
     ReturnComNotImplemented();
 #else /* VBOX_WITH_GUEST_PROPS */
     if (!RT_VALID_PTR(aName))
-        /** @todo replace hardcoded constants with E_INVALIDARG once testboxes has
-         *        been debugged. */
-        return setError(0x80face00, tr("Name cannot be NULL or an invalid pointer"));
+        return setError(E_INVALIDARG, tr("Name cannot be NULL or an invalid pointer"));
     if (aValue != NULL && !RT_VALID_PTR(aValue))
-        return setError(0x80face01, tr("Invalid value pointer"));
+        return setError(E_INVALIDARG, tr("Invalid value pointer"));
     if (aFlags != NULL && !RT_VALID_PTR(aFlags))
-        return setError(0x80face02, tr("Invalid flags pointer"));
+        return setError(E_INVALIDARG, tr("Invalid flags pointer"));
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -5513,10 +5511,7 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
     /* protect mpUVM (if not NULL) */
     SafeVMPtrQuiet ptrVM(this);
     if (FAILED(ptrVM.rc()))
-    {
-        LogRel(("Console::setGuestProperty1: %ls -> %Rhrc\n", aName, ptrVM.rc())); /* !REMOVE ME! Debugging testboxes! */
         return ptrVM.rc();
-    }
 
     /* Note: validity of mVMMDev which is bound to uninit() is guaranteed by
      * ptrVM, so there is no need to hold a lock of this */
@@ -5565,10 +5560,7 @@ HRESULT Console::setGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
     if (RT_SUCCESS(vrc))
         hrc = S_OK;
     else
-    {
-        LogRel(("Console::setGuestProperty2: %ls -> %Rrc\n", aName, vrc)); /* !REMOVE ME! Debugging testboxes! */
         hrc = setError(E_UNEXPECTED, tr("The service call failed with the error %Rrc"), vrc);
-    }
     return hrc;
 #endif /* VBOX_WITH_GUEST_PROPS */
 }

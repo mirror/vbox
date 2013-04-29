@@ -5724,11 +5724,7 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
     property.mFlags = NILFLAG;
 
     rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc))
-    {
-        LogRel(("Machine::setGuestPropertyToService: %ls -> %Rhrc\n", aName, rc)); /* !REMOVE ME! Debugging testboxes! */
-        return rc;
-    }
+    if (FAILED(rc)) return rc;
 
     try
     {
@@ -5836,20 +5832,10 @@ HRESULT Machine::setGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
         if (!directControl)
             rc = E_ACCESSDENIED;
         else
-        {
-            /** @todo Fix when adding DeleteGuestProperty(),
-                         see defect. */
+            /** @todo Fix when adding DeleteGuestProperty(), see defect. */
             rc = directControl->AccessGuestProperty(aName, aValue, aFlags,
                                                     true /* isSetter */,
                                                     &dummy, &dummy64, &dummy);
-            if (FAILED(rc))
-            {
-                LogRel(("Machine::setGuestPropertyToVM: %ls -> %Rhrc\n", aName, rc)); /* !REMOVE ME! Debugging testboxes! */
-                /* testbox hacking: a shot in the dark. */
-                ErrorInfoKeeper eik;
-                return rc;
-            }
-        }
     }
     catch (std::bad_alloc &)
     {
@@ -5866,9 +5852,9 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName, IN_BSTR aValue,
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
 #else // VBOX_WITH_GUEST_PROPS
-    CheckComArgStrNotEmptyOrNull1(aName, 0x80face08);
-    CheckComArgMaybeNull1(aFlags, 0x80face03);
-    CheckComArgMaybeNull1(aValue, 0x80face04);
+    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgMaybeNull(aFlags);
+    CheckComArgMaybeNull(aValue);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc()))
@@ -5889,9 +5875,7 @@ STDMETHODIMP Machine::SetGuestPropertyValue(IN_BSTR aName, IN_BSTR aValue)
 
 STDMETHODIMP Machine::DeleteGuestProperty(IN_BSTR aName)
 {
-    HRESULT hrc = SetGuestProperty(aName, NULL, NULL);
-    LogRel(("DeleteGuestProperty: %ls -> %Rhrc\n", aName, hrc)); /* !REMOVE ME! Debugging testboxes! */
-    return hrc;
+    return SetGuestProperty(aName, NULL, NULL);
 }
 
 #ifdef VBOX_WITH_GUEST_PROPS

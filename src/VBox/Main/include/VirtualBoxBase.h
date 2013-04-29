@@ -338,12 +338,6 @@ public:
             return setError(E_INVALIDARG, tr("Argument %s is an invalid pointer"), #arg); \
     } while (0)
 
-#define CheckComArgMaybeNull1(arg, err) \
-    do { \
-        if (RT_UNLIKELY(!RT_VALID_PTR(arg) && (arg) != NULL)) \
-            return setError(err, tr("Argument %s is an invalid pointer"), #arg); \
-    } while (0)
-
 /**
  * Checks that safe array argument is not NULL and returns E_INVALIDARG +
  * extended error info on failure.
@@ -376,12 +370,6 @@ public:
         IN_BSTR const bstrInCheck = (a_bstrIn); /* type check */ \
         if (RT_UNLIKELY(!RT_VALID_PTR(bstrInCheck) || *(bstrInCheck) == '\0')) \
             return setError(E_INVALIDARG, tr("Argument %s is empty or an invalid pointer"), #a_bstrIn); \
-    } while (0)
-#define CheckComArgStrNotEmptyOrNull1(a_bstrIn, err) \
-    do { \
-        IN_BSTR const bstrInCheck = (a_bstrIn); /* type check */ \
-        if (RT_UNLIKELY(!RT_VALID_PTR(bstrInCheck) || *(bstrInCheck) == '\0')) \
-            return setError(err, tr("Argument %s is empty or an invalid pointer"), #a_bstrIn); \
     } while (0)
 
 /**
