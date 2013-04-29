@@ -1010,8 +1010,7 @@ GuestWaitEvent::GuestWaitEvent(uint32_t uCID,
                                const std::list<VBoxEventType_T> &lstEvents)
     : mCID(uCID),
       mEventTypes(lstEvents),
-      mEventSem(NIL_RTSEMEVENT),
-      mEvent(false)
+      mEventSem(NIL_RTSEMEVENT)
 {
     int rc = RTSemEventCreate(&mEventSem);
     AssertRC(rc);
