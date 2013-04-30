@@ -767,7 +767,15 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                     int rc2 = HMR0Leave(pVM, pVCpu);
                     AssertRC(rc2);
 
-                    VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
+                    if (RT_UNLIKELY(   VMCPU_GET_STATE(pVCpu) != VMCPUSTATE_STARTED_HM
+                                    && RT_SUCCESS_NP(rc)  && rc !=  VINF_VMM_CALL_HOST ))
+                    {
+                        /* Manual assert as normal assertions are going to crash in this case. */
+                        pVM->vmm.s.szRing0AssertMsg1[0] = '\0';
+                        RTStrPrintf(pVM->vmm.s.szRing0AssertMsg2, sizeof(pVM->vmm.s.szRing0AssertMsg2),
+                                    "Got VMCPU state %d expected %d.\n", VMCPU_GET_STATE(pVCpu), VMCPUSTATE_STARTED_HM);
+                        rc = VERR_VMM_WRONG_HM_VMCPU_STATE;
+                    }
                     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
                 }
                 STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);

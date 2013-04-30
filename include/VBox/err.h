@@ -1133,6 +1133,8 @@
 #define VINF_VMM_UNKNOWN_RING3_CALL         (2714)
 /** Attempted to use stub switcher. */
 #define VERR_VMM_SWITCHER_STUB              (-2715)
+/** HM returned in the wrong state. */
+#define VERR_VMM_WRONG_HM_VMCPU_STATE       (-2716)
 /** @} */
 
 
