@@ -6631,6 +6631,11 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
 
     if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
     {
+#ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+        /* Restore host's TSC_AUX. */
+        if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
+#endif
         /** @todo Find a way to fix hardcoding a guestimate.  */
         TMCpuTickSetLastSeen(pVCpu, ASMReadTSC()
                              + pVCpu->hm.s.vmx.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
@@ -6639,22 +6644,6 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
-
-#ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    /*
-     * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
-     * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
-     */
-    if (    (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
-        && !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
-    {
-        pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
-        uint64_t u64HostTscAux = 0;
-        int rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64HostTscAux);
-        AssertRC(rc2);
-        ASMWrMsr(MSR_K8_TSC_AUX, u64HostTscAux);
-    }
-#endif
 
     /* Restore the effects of TPR patching if any. */
     if (pVM->hm.s.fTPRPatchingActive)
