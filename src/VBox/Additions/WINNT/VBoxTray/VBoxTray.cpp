@@ -954,6 +954,7 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
             VBoxCapsEntryFuncStateSet(VBOXCAPS_ENTRY_IDX_SEAMLESS, VBOXCAPS_ENTRY_FUNCSTATE_SUPPORTED);
             return 0;
 
+        case WM_DISPLAYCHANGE:
         case WM_VBOX_SEAMLESS_UPDATE:
             if (VBoxCapsEntryIsEnabled(VBOXCAPS_ENTRY_IDX_SEAMLESS))
                 VBoxSeamlessCheckWindows();
