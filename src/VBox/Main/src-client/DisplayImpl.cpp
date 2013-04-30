@@ -479,7 +479,7 @@ HRESULT Display::init(Console *aParent)
     }
 
 #ifdef VBOX_WITH_VPX
-    if (VideoRecContextCreate(&mpVideoRecContext))
+    if (VideoRecContextCreate(&mpVideoRecCtx))
     {
         LogFlow(("Failed to create Video Recording Context\n"));
         return E_FAIL;
@@ -489,19 +489,21 @@ HRESULT Display::init(Console *aParent)
     mParent->machine()->COMGETTER(VideoCaptureEnabled)(&fEnabled);
     if (fEnabled)
     {
-        ULONG ulCaptWidth;
-        mParent->machine()->COMGETTER(VideoCaptureWidth)(&ulCaptWidth);
-        ULONG ulCaptHeight;
-        mParent->machine()->COMGETTER(VideoCaptureHeight)(&ulCaptHeight);
-        BSTR strCaptFile;
-        mParent->machine()->COMGETTER(VideoCaptureFile)(&strCaptFile);
-        if (VideoRecContextInit(mpVideoRecContext, strCaptFile, ulCaptWidth, ulCaptHeight))
+        ULONG ulWidth;
+        mParent->machine()->COMGETTER(VideoCaptureWidth)(&ulWidth);
+        ULONG ulHeight;
+        mParent->machine()->COMGETTER(VideoCaptureHeight)(&ulHeight);
+        ULONG ulRate;
+        mParent->machine()->COMGETTER(VideoCaptureRate)(&ulRate);
+        BSTR strFile;
+        mParent->machine()->COMGETTER(VideoCaptureFile)(&strFile);
+        if (VideoRecContextInit(mpVideoRecCtx, strFile, ulWidth, ulHeight, ulRate))
         {
             LogFlow(("Failed to initialize video recording context!\n"));
             return E_FAIL;
         }
-        LogFlow(("Video recording as VPX with %lux%lu to '%ls' enabled!\n",
-                  ulCaptWidth, ulCaptHeight, strCaptFile));
+        LogFlow(("Video recording as VPX with %lux%lu @ %lukbps to '%ls' enabled!\n",
+                  ulWidth, ulHeight, ulRate, strFile));
     }
 #endif
 
@@ -554,8 +556,8 @@ void Display::uninit()
     mfVMMDevInited = true;
 
 #ifdef VBOX_WITH_VPX
-    if (mpVideoRecContext)
-        VideoRecContextClose(mpVideoRecContext);
+    if (mpVideoRecCtx)
+        VideoRecContextClose(mpVideoRecCtx);
 #endif
 }
 
@@ -3314,8 +3316,8 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     }
 
 #ifdef VBOX_WITH_VPX
-    if (   pDisplay->mpVideoRecContext
-        && VideoRecIsEnabled(pDisplay->mpVideoRecContext))
+    if (   pDisplay->mpVideoRecCtx
+        && VideoRecIsEnabled(pDisplay->mpVideoRecCtx))
     {
         uint32_t u32VideoRecImgFormat = VPX_IMG_FMT_NONE;
         ULONG ulGuestHeight = 0;
@@ -3325,14 +3327,13 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
 
         uint64_t us = RTTimeProgramMicroTS();
-        LogRel(("CopyToIntBuffer start\n"));
         if (   !pFBInfo->pFramebuffer.isNull()
             && !pFBInfo->fDisabled
             && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
         {
             if (pFBInfo->fVBVAEnabled && pFBInfo->pu8FramebufferVRAM)
             {
-                rc = VideoRecCopyToIntBuffer(pDisplay->mpVideoRecContext, 0, 0,
+                rc = VideoRecCopyToIntBuffer(pDisplay->mpVideoRecCtx, 0, 0,
                                              FramebufferPixelFormat_FOURCC_RGB, pFBInfo->u16BitsPerPixel,
                                              pFBInfo->u32LineSize, pFBInfo->w, pFBInfo->h,
                                              pFBInfo->pu8FramebufferVRAM);
@@ -3342,7 +3343,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
             }
             else
             {
-                rc = VideoRecCopyToIntBuffer(pDisplay->mpVideoRecContext, 0, 0,
+                rc = VideoRecCopyToIntBuffer(pDisplay->mpVideoRecCtx, 0, 0,
                                              FramebufferPixelFormat_FOURCC_RGB, pDrv->IConnector.cBits,
                                              pDrv->IConnector.cbScanline, pDrv->IConnector.cx,
                                              pDrv->IConnector.cy, pDrv->IConnector.pu8Data);
@@ -3369,16 +3370,14 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                     Log2(("No Proper Format detected\n"));
                     break;
             }
-            LogRel(("  CopyToIntBuffer done %Rrc %llu\n", rc, RTTimeProgramMicroTS()-us));
 
             /* Just return in case of failure without any assertion */
             if (RT_SUCCESS(rc))
             {
-                LogRel(("  VideoRecDoRGBToYUV done %Rrc %llu\n", rc, RTTimeProgramMicroTS()-us));
-                rc = VideoRecDoRGBToYUV(pDisplay->mpVideoRecContext, u32VideoRecImgFormat);
+                rc = VideoRecDoRGBToYUV(pDisplay->mpVideoRecCtx, u32VideoRecImgFormat);
                 if (RT_SUCCESS(rc))
-                    VideoRecEncodeAndWrite(pDisplay->mpVideoRecContext, ulGuestWidth, ulGuestHeight);
-                LogRel(("  VideoRecEncodeAndWrite done %Rrc %llu\n", rc, RTTimeProgramMicroTS()-us));
+                    VideoRecEncodeAndWrite(pDisplay->mpVideoRecCtx, ulGuestWidth, ulGuestHeight);
+                LogRel(("Wrote video frame in %lluus\n", RTTimeProgramMicroTS()-us));
             }
         }
     }

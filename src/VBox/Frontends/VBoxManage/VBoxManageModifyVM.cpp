@@ -196,6 +196,7 @@ enum
     MODIFYVM_VCP_FILENAME,
     MODIFYVM_VCP_WIDTH,
     MODIFYVM_VCP_HEIGHT,
+    MODIFYVM_VCP_RATE,
 #endif
     MODIFYVM_CHIPSET,
     MODIFYVM_DEFAULTFRONTEND
@@ -340,6 +341,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vcpfile",                  MODIFYVM_VCP_FILENAME,              RTGETOPT_REQ_STRING },
     { "--vcpwidth",                 MODIFYVM_VCP_WIDTH,                 RTGETOPT_REQ_UINT32 },
     { "--vcpheight",                MODIFYVM_VCP_HEIGHT,                RTGETOPT_REQ_UINT32 },
+    { "--vcprate",                  MODIFYVM_VCP_RATE,                  RTGETOPT_REQ_UINT32 },
 #endif
     { "--autostart-enabled",        MODIFYVM_AUTOSTART_ENABLED,         RTGETOPT_REQ_BOOL_ONOFF },
     { "--autostart-delay",          MODIFYVM_AUTOSTART_DELAY,           RTGETOPT_REQ_UINT32 },
@@ -2442,6 +2444,11 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_VCP_HEIGHT:
             {
                 CHECK_ERROR(machine, COMSETTER(VideoCaptureHeight)(ValueUnion.u32));
+                break;
+            }
+            case MODIFYVM_VCP_RATE:
+            {
+                CHECK_ERROR(machine, COMSETTER(VideoCaptureRate)(ValueUnion.u32));
                 break;
             }
 #endif

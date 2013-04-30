@@ -294,7 +294,7 @@ private:
 #endif
 
 #ifdef VBOX_WITH_VPX
-    VIDEORECCONTEXT *mpVideoRecContext;
+    VIDEORECCONTEXT *mpVideoRecCtx;
 #endif
 };
 
