@@ -966,7 +966,6 @@ VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS H
     NOREF(pCpu);
     NOREF(pvCpuPage);
     NOREF(HCPhysCpuPage);
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     hmR0VmxLeaveRootMode();
     return VINF_SUCCESS;
