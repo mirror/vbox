@@ -4662,7 +4662,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INTR_INFO_FROM_EXIT_IDT_INFO(pVmxTransient->uIdtVectoringInfo),
                                        0 /* cbInstr */,  u32ErrCode, pMixedCtx->cr2);
                 rc = VINF_SUCCESS;
-                Log(("IDT: Pending vectoring event %#RX64 Err=%#RX32\n", pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.u32ErrCode));
+                Log(("IDT: Pending vectoring event %#RX64 Err=%#RX32\n", pVCpu->hm.s.Event.u64IntrInfo,
+                     pVCpu->hm.s.Event.u32ErrCode));
                 break;
             }
 
@@ -4670,8 +4671,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             {
                 hmR0VmxSetPendingXcptDF(pVCpu, pMixedCtx);
                 rc = VINF_VMX_DOUBLE_FAULT;
-                Log(("IDT: Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntrInfo, uIdtVector,
-                     uExitVector));
+                Log(("IDT: Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntrInfo,
+                     uIdtVector, uExitVector));
                 break;
             }
 
