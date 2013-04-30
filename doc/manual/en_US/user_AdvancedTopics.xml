@@ -1992,23 +1992,18 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
             <tbody>
               <row>
                 <entry><emphasis role="bold">Action</emphasis></entry>
-                <entry><emphasis role="bold">Default Host Key</emphasis></entry>
+                <entry><emphasis role="bold">Default Key</emphasis></entry>
                 <entry><emphasis role="bold">Action</emphasis></entry>
               </row>
               <row>
-                <entry>SettingsDialog</entry>
-                <entry>S</entry>
-                <entry>open the VM settings dialog</entry>
-              </row>
-              <row>
                 <entry>TakeSnapshot</entry>
-                <entry>S</entry>
+                <entry>T</entry>
                 <entry>take a snapshot</entry>
               </row>
               <row>
-                <entry>InformationsDialog</entry>
-                <entry>N</entry>
-                <entry>show the VM information dialog</entry>
+                <entry>TakeScreenshot</entry>
+                <entry>E</entry>
+                <entry>take a screenshot</entry>
               </row>
               <row>
                 <entry>MouseIntegration</entry>
@@ -2036,9 +2031,19 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
                 <entry>(hard) reset the guest</entry>
               </row>
               <row>
+                <entry>Save</entry>
+                <entry></entry>
+                <entry>save the VM state and terminate the VM</entry>
+              </row>
+              <row>
                 <entry>Shutdown</entry>
                 <entry>H</entry>
-                <entry>press the ACPI power button</entry>
+                <entry>press the (virtual) ACPI power button</entry>
+              </row>
+              <row>
+                <entry>PowerOff</entry>
+                <entry></entry>
+                <entry>power the VM off (without saving the state!)</entry>
               </row>
               <row>
                 <entry>Close</entry>
@@ -2061,9 +2066,44 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
                 <entry>switch the VM into scale mode</entry>
               </row>
               <row>
+                <entry>GuestAutoResize</entry>
+                <entry>G</entry>
+                <entry>automatically resize the guest window</entry>
+              </row>
+              <row>
+                <entry>WindowAdjust</entry>
+                <entry>A</entry>
+                <entry>immediately resize the guest window</entry>
+              </row>
+              <row>
                 <entry>PopupMenu</entry>
                 <entry>Home</entry>
                 <entry>show popup menu in fullscreen / seamless mode</entry>
+              </row>
+              <row>
+                <entry>SettingsDialog</entry>
+                <entry>S</entry>
+                <entry>open the VM settings dialog</entry>
+              </row>
+              <row>
+                <entry>InformationsDialog</entry>
+                <entry>N</entry>
+                <entry>show the VM information window</entry>
+              </row>
+              <row>
+                <entry>NetworkAdaptersDialog</entry>
+                <entry></entry>
+                <entry>show the VM network adapters dialog</entry>
+              </row>
+              <row>
+                <entry>SharedFoldersDialog</entry>
+                <entry></entry>
+                <entry>show the VM shared folders dialog</entry>
+              </row>
+              <row>
+                <entry>InstallGuestAdditions</entry>
+                <entry>D</entry>
+                <entry>mount the ISO containing the Guest Additions</entry>
               </row>
             </tbody>
           </tgroup>
