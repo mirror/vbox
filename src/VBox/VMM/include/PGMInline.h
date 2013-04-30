@@ -1487,7 +1487,7 @@ DECL_FORCE_INLINE(bool) pgmMapAreMappingsEnabled(PVM pVM)
     Assert(HMIsEnabled(pVM));
     return false;
 #else
-    Assert(pVM->cCpus == 1);
+    Assert(pVM->cCpus == 1 || HMIsEnabled());
     return !HMIsEnabled(pVM);
 #endif
 }
