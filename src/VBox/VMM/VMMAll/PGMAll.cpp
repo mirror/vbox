@@ -925,11 +925,44 @@ VMMDECL(int) PGMShwMakePageNotPresent(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpF
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   GCPtr       Virtual address of the first page in the range.
+ * @param   fBigPage    Whether or not this is a big page. If it is, we have to
+ *                      change the shadow PDE as well.  If it isn't, the caller
+ *                      has checked that the shadow PDE doesn't need changing.
+ *                      We ASSUME 4KB pages backing the big page here!
  * @param   fOpFlags    A combination of the PGM_MK_PG_XXX flags.
  */
-int pgmShwMakePageSupervisorAndWritable(PVMCPU pVCpu, RTGCPTR GCPtr, uint32_t fOpFlags)
+int pgmShwMakePageSupervisorAndWritable(PVMCPU pVCpu, RTGCPTR GCPtr, bool fBigPage, uint32_t fOpFlags)
 {
-    return pdmShwModifyPage(pVCpu, GCPtr, X86_PTE_RW, ~(uint64_t)X86_PTE_US, fOpFlags);
+    int rc = pdmShwModifyPage(pVCpu, GCPtr, X86_PTE_RW, ~(uint64_t)X86_PTE_US, fOpFlags);
+    if (rc == VINF_SUCCESS && fBigPage)
+    {
+        /* this is a bit ugly... */
+        switch (pVCpu->pgm.s.enmShadowMode)
+        {
+            case PGMMODE_32_BIT:
+            {
+                PX86PDE pPde = pgmShwGet32BitPDEPtr(pVCpu, GCPtr);
+                AssertReturn(pPde, VERR_INTERNAL_ERROR_3);
+                Log(("pgmShwMakePageSupervisorAndWritable: PDE=%#llx", pPde->u));
+                pPde->n.u1Write = 1;
+                Log(("-> PDE=%#llx (32)\n", pPde->u));
+                break;
+            }
+            case PGMMODE_PAE:
+            case PGMMODE_PAE_NX:
+            {
+                PX86PDEPAE pPde = pgmShwGetPaePDEPtr(pVCpu, GCPtr);
+                AssertReturn(pPde, VERR_INTERNAL_ERROR_3);
+                Log(("pgmShwMakePageSupervisorAndWritable: PDE=%#llx", pPde->u));
+                pPde->n.u1Write = 1;
+                Log(("-> PDE=%#llx (PAE)\n", pPde->u));
+                break;
+            }
+            default:
+                AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+        }
+    }
+    return rc;
 }
 
 
