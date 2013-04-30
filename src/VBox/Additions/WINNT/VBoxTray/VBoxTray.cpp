@@ -1183,6 +1183,7 @@ static BOOL vboxStCheckTimer(WPARAM wEvent)
     }
 
     vboxStCheckState();
+    return TRUE;
 }
 
 
