@@ -2299,6 +2299,32 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             RTPrintf("\n");
     }
 
+    {
+        /* Video capture */
+        BOOL bActive = FALSE;
+        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureEnabled)(&bActive), rc);
+        ULONG Width;
+        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureWidth)(&Width), rc);
+        ULONG Height;
+        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureHeight)(&Height), rc);
+        Bstr File;
+        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureFile)(File.asOutParam()), rc);
+        if (details == VMINFO_MACHINEREADABLE)
+        {
+            RTPrintf("VideoCaptureEnabled=\"%s\"\n", bActive ? "on" : "off");
+            RTPrintf("VideoCaptureWidth=%u\n", (unsigned)Width);
+            RTPrintf("VideoCaptureFile=\"%ls\"\n", File.raw());
+            RTPrintf("VideoCaptureHeight=%u\n", (unsigned)Height);
+        }
+        else
+        {
+            RTPrintf("Video capturing:    %s\n", bActive ? "active" : "not active");
+            RTPrintf("Capture file:       %ls\n", File.raw());
+            RTPrintf("Capture dimensions: %ux%u\n", Width, Height);
+            RTPrintf("\n");
+        }
+    }
+
     if (    details == VMINFO_STANDARD
         ||  details == VMINFO_FULL
         ||  details == VMINFO_MACHINEREADABLE)
