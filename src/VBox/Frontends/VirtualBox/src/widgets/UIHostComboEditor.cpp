@@ -407,23 +407,32 @@ static bool isSyntheticLCtrl(MSG *pMsg)
 
     if ((pMsg->lParam & 0x01FF0000) >> 16 != 0x1d /* LCtrl */)
         return false;
+    LogRel(("Got an LCtrl event.\n"));
     if (!PeekMessage(&peekMsg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE))
         return false;
+    LogRel(("Followed by another keyboard event.\n"));
     if (   (pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN)
         && (peekMsg.message != WM_KEYDOWN && peekMsg.message != WM_SYSKEYDOWN))
         return false;
     if (   (pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP)
         && (peekMsg.message != WM_KEYUP && peekMsg.message != WM_SYSKEYUP))
         return false;
+    LogRel((  (pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN)
+            ? "Both are KEYDOWN events.\n"
+            : "Both are KEYUP events.\n"));
     if ((peekMsg.lParam & 0x01FF0000) >> 16 != 0x138 /* RAlt */)
         return false;
+    LogRel(("The next keyboard event is RAlt.\n"));
     auKeyStates[VK_LCONTROL] = 0x80;
     auKeyStates[VK_RMENU] = 0x80;
     cbToAscii = ToAscii('A', 0, NULL, &achNoAltGr, 0);
-    if (!cbToAscii || cbToAscii != ToAscii('A', 0, auKeyStates, &achAltGr, 0))
+    if (!cbToAscii)
+        return false;  /* Not expected! */
+    LogRel(("Key A has an ASCII value attached.\n"));
+    if (   cbToAscii == ToAscii('A', 0, auKeyStates, &achAltGr, 0)
+        && (achNoAltGr == achAltGr))
         return false;
-    if (achNoAltGr == achAltGr)
-        return false;
+    LogRel(("Key A has a different value when AltGr is down.\n"));
     return true;
 }
 
