@@ -1432,7 +1432,6 @@ static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         AssertRCReturn(rc, rc);
 
         pThis->pHpetHlpRC = pThis->pHpetHlpR3->pfnGetRCHelpers(pDevIns);
-        AssertReturn(pThis->pHpetHlpRC != NIL_RTRCPTR, VERR_INTERNAL_ERROR);
     }
 
     if (fR0Enabled)
