@@ -2105,15 +2105,11 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 #endif
 
     /* Note: VT-x is picky about the RPL of the selectors here; we'll restore them manually. */
-    /** @todo Verify if we have any platform that actually run with DS or ES with
-     *        RPL != 0 in kernel space. */
-    uSelDS = 0;
-    uSelES = 0;
-    uSelFS = 0;
-    uSelGS = 0;
     uSelTR = ASMGetTR();
 
     /* Verification based on Intel spec. 26.2.3 "Checks on Host Segment and Descriptor-Table Registers"  */
+    /** @todo Verify if we have any platform that actually run with DS or ES with
+     *        RPL != 0 in kernel space. */
     Assert(!(uSelCS & X86_SEL_RPL)); Assert(!(uSelCS & X86_SEL_LDT));
     Assert(!(uSelSS & X86_SEL_RPL)); Assert(!(uSelSS & X86_SEL_LDT));
     Assert(!(uSelDS & X86_SEL_RPL)); Assert(!(uSelDS & X86_SEL_LDT));
@@ -8925,5 +8921,4 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPFEM);
     return rc;
 }
-
 
