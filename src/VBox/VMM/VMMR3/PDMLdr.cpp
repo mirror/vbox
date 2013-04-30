@@ -1652,7 +1652,7 @@ VMMR3_INT_DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size
                 if (fRing0)
                 {
                     void *pvValue = NULL;
-                    if (fNullRun)
+                    if (!fNullRun)
                     {
                         rc = SUPR3GetSymbolR0((void *)(RTR0PTR)pModule->ImageBase, szSymbol, &pvValue);
                         AssertMsgRCBreak(rc, ("Couldn't find symbol '%s' in module '%s'\n", szSymbol, pModule->szName));
@@ -1669,7 +1669,7 @@ VMMR3_INT_DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size
                 else
                 {
                     RTUINTPTR Value = 0;
-                    if (fNullRun)
+                    if (!fNullRun)
                     {
                         rc = RTLdrGetSymbolEx(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, szSymbol, &Value);
                         AssertMsgRCBreak(rc, ("Couldn't find symbol '%s' in module '%s'\n", szSymbol, pModule->szName));
