@@ -2713,14 +2713,13 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmHwChild->getAttributeValue("Accelerate3D", hw.fAccelerate3D);   // pre-v1.5 variant
             pelmHwChild->getAttributeValue("accelerate2DVideo", hw.fAccelerate2DVideo);
         }
-        else if (pelmHwChild->nameEquals("VideoRecording"))
+        else if (pelmHwChild->nameEquals("VideoCapture"))
         {
             pelmHwChild->getAttributeValue("enabled", hw.fVideoCaptureEnabled);
             pelmHwChild->getAttributeValue("file",    hw.strVideoCaptureFile);
             pelmHwChild->getAttributeValue("horzRes", hw.ulVideoCaptureHorzRes);
             pelmHwChild->getAttributeValue("vertRes", hw.ulVideoCaptureVertRes);
         }
-
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
         {
             pelmHwChild->getAttributeValue("enabled", hw.vrdeSettings.fEnabled);
@@ -3896,7 +3895,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
     if (m->sv >= SettingsVersion_v1_8)
         pelmDisplay->setAttribute("accelerate2DVideo", hw.fAccelerate2DVideo);
-    xml::ElementNode *pelmVideoCapture = pelmHardware->createChild("VideoRecording");
+    xml::ElementNode *pelmVideoCapture = pelmHardware->createChild("VideoCapture");
 
     if (m->sv >= SettingsVersion_v1_12)
     {
