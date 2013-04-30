@@ -82,6 +82,7 @@
 #define TIMERID_VBOXTRAY_CHECK_HOSTVERSION      1000
 #define TIMERID_VBOXTRAY_CAPS_TIMER             1001
 #define TIMERID_VBOXTRAY_DT_TIMER               1002
+#define TIMERID_VBOXTRAY_ST_DELAYED_INIT_TIMER  1003
 
 /* The environment information for services. */
 typedef struct _VBOXSERVICEENV
