@@ -4238,20 +4238,24 @@
 
     <attribute name="VideoCaptureFile" type="wstring" default="Test.webm">
       <desc>
-        This setting determines what filename VirtualBox uses to save
+        This setting determines the filename VirtualBox uses to save
         the recorded content.</desc>
     </attribute>
 
     <attribute name="VideoCaptureWidth" type="unsigned long" default="640">
       <desc>
-        This setting determines what should be the horizontal resolution of
-        recorded video.</desc>
+        This setting determines the horizontal resolution of the recorded video.</desc>
     </attribute>
 
     <attribute name="VideoCaptureHeight" type="unsigned long" default="480">
       <desc>
-        This setting determines what should be the vertical resolution
-        of recorded video.</desc>
+        This setting determines the vertical resolution of the recorded video.</desc>
+    </attribute>
+
+    <attribute name="VideoCaptureRate" type="unsigned long" default="512">
+      <desc>
+        This setting determines the bitrate in kilobits per second
+      </desc>
     </attribute>
 
     <attribute name="BIOSSettings" type="IBIOSSettings" readonly="yes">

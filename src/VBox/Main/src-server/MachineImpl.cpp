@@ -169,6 +169,7 @@ Machine::HWData::HWData()
     mVideoCaptureFile = "Test.webm";
     mVideoCaptureWidth = 1024;
     mVideoCaptureHeight = 768;
+    mVideoCaptureRate = 512;
     mVideoCaptureEnabled = false;
 
     mHWVirtExEnabled = true;
@@ -1517,21 +1518,21 @@ STDMETHODIMP Machine::COMSETTER(CPUExecutionCap)(ULONG aExecutionCap)
 }
 
 
-STDMETHODIMP Machine::COMGETTER(CPUHotPlugEnabled)(BOOL *enabled)
+STDMETHODIMP Machine::COMGETTER(CPUHotPlugEnabled)(BOOL *aEnabled)
 {
-    CheckComArgOutPointerValid(enabled);
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *enabled = mHWData->mCPUHotPlugEnabled;
+    *aEnabled = mHWData->mCPUHotPlugEnabled;
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(CPUHotPlugEnabled)(BOOL enabled)
+STDMETHODIMP Machine::COMSETTER(CPUHotPlugEnabled)(BOOL aEnabled)
 {
     HRESULT rc = S_OK;
 
@@ -1543,9 +1544,9 @@ STDMETHODIMP Machine::COMSETTER(CPUHotPlugEnabled)(BOOL enabled)
     rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
-    if (mHWData->mCPUHotPlugEnabled != enabled)
+    if (mHWData->mCPUHotPlugEnabled != aEnabled)
     {
-        if (enabled)
+        if (aEnabled)
         {
             setModified(IsModified_MachineData);
             mHWData.backup();
@@ -1584,31 +1585,31 @@ STDMETHODIMP Machine::COMSETTER(CPUHotPlugEnabled)(BOOL enabled)
         }
     }
 
-    mHWData->mCPUHotPlugEnabled = enabled;
+    mHWData->mCPUHotPlugEnabled = aEnabled;
 
     return rc;
 }
 
-STDMETHODIMP Machine::COMGETTER(EmulatedUSBCardReaderEnabled)(BOOL *enabled)
+STDMETHODIMP Machine::COMGETTER(EmulatedUSBCardReaderEnabled)(BOOL *aEnabled)
 {
 #ifdef VBOX_WITH_USB_CARDREADER
-    CheckComArgOutPointerValid(enabled);
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *enabled = mHWData->mEmulatedUSBCardReaderEnabled;
+    *aEnabled = mHWData->mEmulatedUSBCardReaderEnabled;
 
     return S_OK;
 #else
-    NOREF(enabled);
+    NOREF(aEnabled);
     return E_NOTIMPL;
 #endif
 }
 
-STDMETHODIMP Machine::COMSETTER(EmulatedUSBCardReaderEnabled)(BOOL enabled)
+STDMETHODIMP Machine::COMSETTER(EmulatedUSBCardReaderEnabled)(BOOL aEnabled)
 {
 #ifdef VBOX_WITH_USB_CARDREADER
     AutoCaller autoCaller(this);
@@ -1620,35 +1621,35 @@ STDMETHODIMP Machine::COMSETTER(EmulatedUSBCardReaderEnabled)(BOOL enabled)
 
     setModified(IsModified_MachineData);
     mHWData.backup();
-    mHWData->mEmulatedUSBCardReaderEnabled = enabled;
+    mHWData->mEmulatedUSBCardReaderEnabled = aEnabled;
 
     return S_OK;
 #else
-    NOREF(enabled);
+    NOREF(aEnabled);
     return E_NOTIMPL;
 #endif
 }
 
-STDMETHODIMP Machine::COMGETTER(EmulatedUSBWebcameraEnabled)(BOOL *enabled)
+STDMETHODIMP Machine::COMGETTER(EmulatedUSBWebcameraEnabled)(BOOL *aEnabled)
 {
 #ifdef VBOX_WITH_USB_VIDEO
-    CheckComArgOutPointerValid(enabled);
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *enabled = mHWData->mEmulatedUSBWebcamEnabled;
+    *aEnabled = mHWData->mEmulatedUSBWebcamEnabled;
 
     return S_OK;
 #else
-    NOREF(enabled);
+    NOREF(aEnabled);
     return E_NOTIMPL;
 #endif
 }
 
-STDMETHODIMP Machine::COMSETTER(EmulatedUSBWebcameraEnabled)(BOOL enabled)
+STDMETHODIMP Machine::COMSETTER(EmulatedUSBWebcameraEnabled)(BOOL aEnabled)
 {
 #ifdef VBOX_WITH_USB_VIDEO
     AutoCaller autoCaller(this);
@@ -1660,29 +1661,29 @@ STDMETHODIMP Machine::COMSETTER(EmulatedUSBWebcameraEnabled)(BOOL enabled)
 
     setModified(IsModified_MachineData);
     mHWData.backup();
-    mHWData->mEmulatedUSBWebcamEnabled = enabled;
+    mHWData->mEmulatedUSBWebcamEnabled = aEnabled;
 
     return S_OK;
 #else
-    NOREF(enabled);
+    NOREF(aEnabled);
     return E_NOTIMPL;
 #endif
 }
 
-STDMETHODIMP Machine::COMGETTER(HPETEnabled)(BOOL *enabled)
+STDMETHODIMP Machine::COMGETTER(HPETEnabled)(BOOL *aEnabled)
 {
-    CheckComArgOutPointerValid(enabled);
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *enabled = mHWData->mHPETEnabled;
+    *aEnabled = mHWData->mHPETEnabled;
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(HPETEnabled)(BOOL enabled)
+STDMETHODIMP Machine::COMSETTER(HPETEnabled)(BOOL aEnabled)
 {
     HRESULT rc = S_OK;
 
@@ -1696,7 +1697,7 @@ STDMETHODIMP Machine::COMSETTER(HPETEnabled)(BOOL enabled)
     setModified(IsModified_MachineData);
     mHWData.backup();
 
-    mHWData->mHPETEnabled = enabled;
+    mHWData->mHPETEnabled = aEnabled;
 
     return rc;
 }
@@ -1722,7 +1723,7 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureEnabled)(BOOL fEnabled)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(VideoCaptureFile)(BSTR * apFile)
+STDMETHODIMP Machine::COMGETTER(VideoCaptureFile)(BSTR *apFile)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1745,18 +1746,17 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureFile)(IN_BSTR aFile)
     return S_OK;
 }
 
-
-STDMETHODIMP Machine::COMGETTER(VideoCaptureWidth)(ULONG *ulHorzRes)
+STDMETHODIMP Machine::COMGETTER(VideoCaptureWidth)(ULONG *aHorzRes)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    *ulHorzRes = mHWData->mVideoCaptureWidth;
+    *aHorzRes = mHWData->mVideoCaptureWidth;
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(VideoCaptureWidth)(ULONG ulHorzRes)
+STDMETHODIMP Machine::COMSETTER(VideoCaptureWidth)(ULONG aHorzRes)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc()))
@@ -1766,27 +1766,47 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureWidth)(ULONG ulHorzRes)
     }
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    mHWData->mVideoCaptureWidth = ulHorzRes;
+    mHWData->mVideoCaptureWidth = aHorzRes;
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(VideoCaptureHeight)(ULONG *ulVertRes)
+STDMETHODIMP Machine::COMGETTER(VideoCaptureHeight)(ULONG *aVertRes)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-     *ulVertRes = mHWData->mVideoCaptureHeight;
+     *aVertRes = mHWData->mVideoCaptureHeight;
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(VideoCaptureHeight)(ULONG ulVertRes)
+STDMETHODIMP Machine::COMSETTER(VideoCaptureHeight)(ULONG aVertRes)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    mHWData->mVideoCaptureHeight = ulVertRes;
+    mHWData->mVideoCaptureHeight = aVertRes;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(VideoCaptureRate)(ULONG *aRate)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+     *aRate = mHWData->mVideoCaptureRate;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(VideoCaptureRate)(ULONG aRate)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    mHWData->mVideoCaptureHeight = aRate;
     return S_OK;
 }
 
@@ -1915,20 +1935,20 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize)(ULONG memoryBalloonSize)
 #endif
 }
 
-STDMETHODIMP Machine::COMGETTER(PageFusionEnabled) (BOOL *enabled)
+STDMETHODIMP Machine::COMGETTER(PageFusionEnabled) (BOOL *aEnabled)
 {
-    CheckComArgOutPointerValid(enabled);
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *enabled = mHWData->mPageFusionEnabled;
+    *aEnabled = mHWData->mPageFusionEnabled;
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(PageFusionEnabled) (BOOL enabled)
+STDMETHODIMP Machine::COMSETTER(PageFusionEnabled) (BOOL aEnabled)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     AutoCaller autoCaller(this);
@@ -1939,24 +1959,24 @@ STDMETHODIMP Machine::COMSETTER(PageFusionEnabled) (BOOL enabled)
     /** @todo must support changes for running vms and keep this in sync with IGuest. */
     setModified(IsModified_MachineData);
     mHWData.backup();
-    mHWData->mPageFusionEnabled = enabled;
+    mHWData->mPageFusionEnabled = aEnabled;
     return S_OK;
 #else
-    NOREF(enabled);
+    NOREF(aEnabled);
     return setError(E_NOTIMPL, tr("Page fusion is only supported on 64-bit hosts"));
 #endif
 }
 
-STDMETHODIMP Machine::COMGETTER(Accelerate3DEnabled)(BOOL *enabled)
+STDMETHODIMP Machine::COMGETTER(Accelerate3DEnabled)(BOOL *aEnabled)
 {
-    CheckComArgOutPointerValid(enabled);
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *enabled = mHWData->mAccelerate3DEnabled;
+    *aEnabled = mHWData->mAccelerate3DEnabled;
 
     return S_OK;
 }
@@ -1981,16 +2001,16 @@ STDMETHODIMP Machine::COMSETTER(Accelerate3DEnabled)(BOOL enable)
 }
 
 
-STDMETHODIMP Machine::COMGETTER(Accelerate2DVideoEnabled)(BOOL *enabled)
+STDMETHODIMP Machine::COMGETTER(Accelerate2DVideoEnabled)(BOOL *aEnabled)
 {
-    CheckComArgOutPointerValid(enabled);
+    CheckComArgOutPointerValid(aEnabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *enabled = mHWData->mAccelerate2DVideoEnabled;
+    *aEnabled = mHWData->mAccelerate2DVideoEnabled;
 
     return S_OK;
 }
@@ -8764,6 +8784,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mVideoCaptureWidth = data.ulVideoCaptureHorzRes;
         mHWData->mVideoCaptureHeight = data.ulVideoCaptureVertRes;
         mHWData->mVideoCaptureEnabled = data.fVideoCaptureEnabled;
+        mHWData->mVideoCaptureRate = data.ulVideoCaptureRate;
         mHWData->mVideoCaptureFile = data.strVideoCaptureFile;
         mHWData->mFirmwareType = data.firmwareType;
         mHWData->mPointingHIDType = data.pointingHIDType;
@@ -9980,6 +10001,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.fAccelerate2DVideo = !!mHWData->mAccelerate2DVideoEnabled;
         data.ulVideoCaptureHorzRes = mHWData->mVideoCaptureWidth;
         data.ulVideoCaptureVertRes = mHWData->mVideoCaptureHeight;
+        data.ulVideoCaptureRate = mHWData->mVideoCaptureRate;
         data.fVideoCaptureEnabled  = !!mHWData->mVideoCaptureEnabled;
         data.strVideoCaptureFile = mHWData->mVideoCaptureFile;
 
