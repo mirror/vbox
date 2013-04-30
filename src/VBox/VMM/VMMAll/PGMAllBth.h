@@ -991,7 +991,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                  * The Netware WP0+RO+US hack.
                  *
                  * Netware sometimes(/always?) runs with WP0.  It has been observed doing
-                 * accessive write accesses to pages which are mapped with US=1 and RW=0
+                 * excessive write accesses to pages which are mapped with US=1 and RW=0
                  * while WP=0.  This causes a lot of exits and extremely slow execution.
                  * To avoid trapping and emulating every write here, we change the shadow
                  * page table entry to map it as US=0 and RW=1 until user mode tries to
