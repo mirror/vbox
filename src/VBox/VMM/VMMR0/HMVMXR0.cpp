@@ -4114,7 +4114,6 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     PHMGLOBLCPUINFO pCpu          = NULL;
     RTHCPHYS        HCPhysCpuPage = 0;
     int             rc            = VERR_INTERNAL_ERROR_5;
-    AssertReturn(HM64ON32OP_VMXRCStartVM64, VERR_HM_IPE_5);
 
     pCpu = HMR0GetCurrentCpu();
     HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
