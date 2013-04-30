@@ -1532,13 +1532,11 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
             pMsr->u64Value    = ASMRdMsr(MSR_K8_SF_MASK);           /* syscall flag mask */
             pMsr++; idxMsr++;
 
-            /* The KERNEL_GS_BASE MSR doesn't work reliably with auto load/store. See @bugref{6208}  */
-#if 0
+            /* The KERNEL_GS_BASE MSR was previously not working reliably with auto load/store. See @bugref{6208}  */
             pMsr->u32IndexMSR = MSR_K8_KERNEL_GS_BASE;
             pMsr->u32Reserved = 0;
             pMsr->u64Value    = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);    /* swapgs exchange value */
             pMsr++; idxMsr++;
-#endif
         }
 # endif
 
@@ -2388,13 +2386,11 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             pMsr->u64Value    = pCtx->msrSFMASK;          /* syscall flag mask */
             pMsr++; idxMsr++;
 
-            /* The KERNEL_GS_BASE MSR doesn't work reliably with auto load/store. See @bugref{6208}  */
-#if 0
+            /* The KERNEL_GS_BASE MSR was previously not working reliably with auto load/store. See @bugref{6208}  */
             pMsr->u32IndexMSR = MSR_K8_KERNEL_GS_BASE;
             pMsr->u32Reserved = 0;
             pMsr->u64Value    = pCtx->msrKERNELGSBASE;    /* swapgs exchange value */
             pMsr++; idxMsr++;
-#endif
         }
     }
 
@@ -2571,12 +2567,10 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             case MSR_K8_SF_MASK:
                 pCtx->msrSFMASK = pMsr->u64Value;
                 break;
-            /* The KERNEL_GS_BASE MSR doesn't work reliably with auto load/store. See @bugref{6208}  */
-#if 0
+            /* The KERNEL_GS_BASE MSR was previously not working reliably with auto load/store. See @bugref{6208}  */
             case MSR_K8_KERNEL_GS_BASE:
                 pCtx->msrKERNELGSBASE = pMsr->u64Value;
                 break;
-#endif
             case MSR_K8_TSC_AUX:
                 CPUMSetGuestMsr(pVCpu, MSR_K8_TSC_AUX, pMsr->u64Value);
                 break;
@@ -3350,11 +3344,11 @@ ResumeExecution:
     if (    (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
         && !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
     {
-        pVCpu->hm.s.u64HostTSCAux = ASMRdMsr(MSR_K8_TSC_AUX);
-        uint64_t u64GuestTSCAux = 0;
-        rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64GuestTSCAux);
+        pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
+        uint64_t u64HostTscAux = 0;
+        rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64HostTscAux);
         AssertRC(rc2);
-        ASMWrMsr(MSR_K8_TSC_AUX, u64GuestTSCAux);
+        ASMWrMsr(MSR_K8_TSC_AUX, u64HostTscAux);
     }
 #endif
 
@@ -3372,7 +3366,7 @@ ResumeExecution:
 #ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /* Restore host's TSC_AUX. */
         if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
-            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTSCAux);
+            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
 #endif
 
         TMCpuTickSetLastSeen(pVCpu,

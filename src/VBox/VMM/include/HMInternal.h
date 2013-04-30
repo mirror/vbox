@@ -49,12 +49,15 @@
 # define HM_PROFILE_EXIT_DISPATCH
 #endif
 
-/* The MSR auto load/store does not work for KERNEL_GS_BASE MSR, thus we
- * handle this MSR manually. See @bugref{6208}. This is clearly visible while
- * booting Solaris 11 (11.1 b19) VMs with 2 Cpus.
+/* The MSR auto load/store used to not work for KERNEL_GS_BASE MSR, thus we
+ * used to handle this MSR manually. See @bugref{6208}. This was clearly visible while
+ * booting Solaris 11 (11.1 b19) VMs with 2 Cpus. This is no longer the case and we
+ * always auto load/store the KERNEL_GS_BASE MSR.
  *
  * Note: don't forget to update the assembly files while modifying this!
  */
+/** @todo This define should always be in effect and the define itself removed
+  after 'sufficient' testing. */
 # define VBOX_WITH_AUTO_MSR_LOAD_RESTORE
 
 RT_C_DECLS_BEGIN

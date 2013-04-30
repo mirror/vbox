@@ -752,8 +752,10 @@ static void hmR0VmxStructsFree(PVM pVM)
         PVMCPU pVCpu = &pVM->aCpus[i];
         AssertPtr(pVCpu);
 
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         hmR0VmxPageFree(&pVCpu->hm.s.vmx.hMemObjHostMsr, &pVCpu->hm.s.vmx.pvHostMsr, &pVCpu->hm.s.vmx.HCPhysHostMsr);
         hmR0VmxPageFree(&pVCpu->hm.s.vmx.hMemObjGuestMsr, &pVCpu->hm.s.vmx.pvGuestMsr, &pVCpu->hm.s.vmx.HCPhysGuestMsr);
+#endif
 
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
             hmR0VmxPageFree(&pVCpu->hm.s.vmx.hMemObjMsrBitmap, &pVCpu->hm.s.vmx.pvMsrBitmap, &pVCpu->hm.s.vmx.HCPhysMsrBitmap);
@@ -802,8 +804,10 @@ static int hmR0VmxStructsAlloc(PVM pVM)
         VMXLOCAL_INIT_VMCPU_MEMOBJ(Vmcs, pv);
         VMXLOCAL_INIT_VMCPU_MEMOBJ(VirtApic, pb);
         VMXLOCAL_INIT_VMCPU_MEMOBJ(MsrBitmap, pv);
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         VMXLOCAL_INIT_VMCPU_MEMOBJ(GuestMsr, pv);
         VMXLOCAL_INIT_VMCPU_MEMOBJ(HostMsr, pv);
+#endif
     }
 #undef VMXLOCAL_INIT_VMCPU_MEMOBJ
 #undef VMXLOCAL_INIT_VM_MEMOBJ
@@ -862,6 +866,7 @@ static int hmR0VmxStructsAlloc(PVM pVM)
             memset(pVCpu->hm.s.vmx.pvMsrBitmap, 0xff, PAGE_SIZE);
         }
 
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /* Allocate the VM-entry MSR-load and VM-exit MSR-store page for the guest MSRs. */
         rc = hmR0VmxPageAllocZ(&pVCpu->hm.s.vmx.hMemObjGuestMsr, &pVCpu->hm.s.vmx.pvGuestMsr, &pVCpu->hm.s.vmx.HCPhysGuestMsr);
         if (RT_FAILURE(rc))
@@ -871,6 +876,7 @@ static int hmR0VmxStructsAlloc(PVM pVM)
         rc = hmR0VmxPageAllocZ(&pVCpu->hm.s.vmx.hMemObjHostMsr, &pVCpu->hm.s.vmx.pvHostMsr, &pVCpu->hm.s.vmx.HCPhysHostMsr);
         if (RT_FAILURE(rc))
             goto cleanup;
+#endif
     }
 
     return VINF_SUCCESS;
@@ -1825,6 +1831,7 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
     rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_IO_BITMAP_A_FULL, 0);
     rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_IO_BITMAP_B_FULL, 0);
 
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     /* Setup MSR autoloading/autostoring. */
     Assert(pVCpu->hm.s.vmx.HCPhysGuestMsr);
     Assert(!(pVCpu->hm.s.vmx.HCPhysGuestMsr & 0xf));    /* Lower 4 bits MBZ. */
@@ -1837,6 +1844,11 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
     Assert(!(pVCpu->hm.s.vmx.HCPhysHostMsr & 0xf));     /* Lower 4 bits MBZ. */
     rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL,  pVCpu->hm.s.vmx.HCPhysHostMsr);
     rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, 0);
+#else
+    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, 0);
+    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, 0);
+    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,  0);
+#endif
 
     /* Set VMCS link pointer. Reserved for future use, must be -1. Intel spec. 24.4 "Guest-State Area". */
     rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, UINT64_C(0xffffffffffffffff));
@@ -2234,6 +2246,8 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     AssertPtr(pVCpu);
     AssertPtr(pVCpu->hm.s.vmx.pvHostMsr);
 
+    int rc = VINF_SUCCESS;
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     PVMXMSR  pHostMsr           = (PVMXMSR)pVCpu->hm.s.vmx.pvHostMsr;
     uint32_t cHostMsrs          = 0;
     uint32_t u32HostExtFeatures = pVM->hm.s.cpuid.u32AMDFeatureEDX;
@@ -2242,19 +2256,19 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     {
         pHostMsr->u32IndexMSR = MSR_K6_EFER;
         pHostMsr->u32Reserved = 0;
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+# if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (CPUMIsGuestInLongMode(pVCpu))
         {
             /* Must match the EFER value in our 64 bits switcher. */
             pHostMsr->u64Value = ASMRdMsr(MSR_K6_EFER) | MSR_K6_EFER_LME | MSR_K6_EFER_SCE | MSR_K6_EFER_NXE;
         }
         else
-#endif
+# endif
             pHostMsr->u64Value = ASMRdMsr(MSR_K6_EFER);
         pHostMsr++; cHostMsrs++;
     }
 
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
         pHostMsr->u32IndexMSR  = MSR_K6_STAR;
@@ -2263,21 +2277,18 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
         pHostMsr++; cHostMsrs++;
         pHostMsr->u32IndexMSR  = MSR_K8_LSTAR;
         pHostMsr->u32Reserved  = 0;
-        pHostMsr->u64Value     = ASMRdMsr(MSR_K8_LSTAR);             /* 64 bits mode syscall rip */
+        pHostMsr->u64Value     = ASMRdMsr(MSR_K8_LSTAR);             /* 64-bit mode syscall rip */
         pHostMsr++; cHostMsrs++;
         pHostMsr->u32IndexMSR  = MSR_K8_SF_MASK;
         pHostMsr->u32Reserved  = 0;
         pHostMsr->u64Value     = ASMRdMsr(MSR_K8_SF_MASK);           /* syscall flag mask */
         pHostMsr++; cHostMsrs++;
-        /* The KERNEL_GS_BASE MSR doesn't work reliably with auto load/store. See @bugref{6208}  */
-#if 0
-        pMsr->u32IndexMSR = MSR_K8_KERNEL_GS_BASE;
-        pMsr->u32Reserved = 0;
-        pMsr->u64Value    = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);         /* swapgs exchange value */
+        pHostMsr->u32IndexMSR = MSR_K8_KERNEL_GS_BASE;
+        pHostMsr->u32Reserved = 0;
+        pHostMsr->u64Value    = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);     /* swapgs exchange value */
         pHostMsr++; cHostMsrs++;
-#endif
     }
-#endif
+# endif
 
     /* Shouldn't ever happen but there -is- a number. We're well within the recommended 512. */
     if (RT_UNLIKELY(cHostMsrs > MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc)))
@@ -2286,13 +2297,14 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
 
-    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, cHostMsrs);
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, cHostMsrs);
+#endif  /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
     /*
      * Host Sysenter MSRs.
      */
     rc |= VMXWriteVmcs32(VMX_VMCS32_HOST_SYSENTER_CS,    ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
         rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_ESP,   ASMRdMsr(MSR_IA32_SYSENTER_ESP));
@@ -2303,13 +2315,13 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
         rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_ESP,   ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
         rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_EIP,   ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
     }
-#elif HC_ARCH_BITS == 32
+# elif HC_ARCH_BITS == 32
     rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_ESP,       ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
     rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_EIP,       ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
-#else
+# else
     rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_ESP,       ASMRdMsr(MSR_IA32_SYSENTER_ESP));
     rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_EIP,       ASMRdMsr(MSR_IA32_SYSENTER_EIP));
-#endif
+# endif
     AssertRCReturn(rc, rc);
 
     /** @todo IA32_PERF_GLOBALCTRL, IA32_PAT, IA32_EFER, also see
@@ -3579,6 +3591,7 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_VMX_GUEST_AUTO_MSRS)
     {
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         PVM pVM             = pVCpu->CTX_SUFF(pVM);
         PVMXMSR  pGuestMsr  = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMsr;
         uint32_t cGuestMsrs = 0;
@@ -3612,13 +3625,10 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 pGuestMsr->u32Reserved = 0;
                 pGuestMsr->u64Value    = pMixedCtx->msrSFMASK;          /* syscall flag mask */
                 pGuestMsr++; cGuestMsrs++;
-                /* The KERNEL_GS_BASE MSR doesn't work reliably with auto load/store. See @bugref{6208}  */
-#if 0
                 pGuestMsr->u32IndexMSR = MSR_K8_KERNEL_GS_BASE;
                 pGuestMsr->u32Reserved = 0;
                 pGuestMsr->u64Value    = pMixedCtx->msrKERNELGSBASE;    /* swapgs exchange value */
                 pGuestMsr++; cGuestMsrs++;
-#endif
             }
         }
 
@@ -3648,6 +3658,7 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc  = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, cGuestMsrs);
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, cGuestMsrs);
         AssertRCReturn(rc, rc);
+#endif  /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_VMX_GUEST_AUTO_MSRS;
     }
@@ -5014,6 +5025,7 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS)
         return VINF_SUCCESS;
 
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cGuestMsrs; i++)
     {
         PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMsr;
@@ -5021,13 +5033,10 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         switch (pMsr->u32IndexMSR)
         {
             case MSR_K8_LSTAR:          pMixedCtx->msrLSTAR  = pMsr->u64Value;                   break;
-            case MSR_K6_STAR:           pMixedCtx->msrSTAR   = pMsr->u64Value;                    break;
+            case MSR_K6_STAR:           pMixedCtx->msrSTAR   = pMsr->u64Value;                   break;
             case MSR_K8_SF_MASK:        pMixedCtx->msrSFMASK = pMsr->u64Value;                   break;
             case MSR_K8_TSC_AUX:        CPUMSetGuestMsr(pVCpu, MSR_K8_TSC_AUX, pMsr->u64Value);  break;
-#if 0
-            /* The KERNEL_GS_BASE MSR doesn't work reliably with auto load/store. See @bugref{6208}  */
             case MSR_K8_KERNEL_GS_BASE: pMixedCtx->msrKERNELGSBASE = pMsr->u64Value;             break;
-#endif
             case MSR_K6_EFER:          /* EFER can't be changed without causing a VM-exit. */    break;
             default:
             {
@@ -5036,6 +5045,8 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             }
         }
     }
+#endif
+
     pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS;
     return VINF_SUCCESS;
 }
@@ -6569,6 +6580,22 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
                                                                     see hmR0VmxLoadGuestApicState(). */
     }
 
+#ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+    /*
+     * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
+     * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
+     */
+    if (    (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+        && !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
+    {
+        pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
+        uint64_t u64HostTscAux = 0;
+        int rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64HostTscAux);
+        AssertRC(rc2);
+        ASMWrMsr(MSR_K8_TSC_AUX, u64HostTscAux);
+    }
+#endif
+
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
     TMNotifyStartOfExecution(pVCpu);                            /* Finally, notify TM to resume its clocks as we're about
                                                                     to start executing. */
@@ -6612,6 +6639,22 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
+
+#ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+    /*
+     * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
+     * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
+     */
+    if (    (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+        && !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
+    {
+        pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
+        uint64_t u64HostTscAux = 0;
+        int rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64HostTscAux);
+        AssertRC(rc2);
+        ASMWrMsr(MSR_K8_TSC_AUX, u64HostTscAux);
+    }
+#endif
 
     /* Restore the effects of TPR patching if any. */
     if (pVM->hm.s.fTPRPatchingActive)
@@ -7653,9 +7696,9 @@ static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
                 case MSR_IA32_SYSENTER_CS:  pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SYSENTER_CS_MSR;  break;
                 case MSR_IA32_SYSENTER_EIP: pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SYSENTER_EIP_MSR; break;
                 case MSR_IA32_SYSENTER_ESP: pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SYSENTER_ESP_MSR; break;
-                case MSR_K8_KERNEL_GS_BASE: /* If we auto-load it, update HM_CHANGED_VMX_GUEST_AUTO_MSRS. */   break;
                 case MSR_K8_FS_BASE:        /* no break */
                 case MSR_K8_GS_BASE:        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_SEGMENT_REGS;     break;
+                /* MSR_K8_KERNEL_GS_BASE: Nothing to do as it's not part of the VMCS. Manually loaded each time on VM-entry. */
             }
         }
 #ifdef VBOX_STRICT
@@ -7669,22 +7712,18 @@ static DECLCALLBACK(int) hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMX
                 case MSR_IA32_SYSENTER_ESP:
                 case MSR_K8_FS_BASE:
                 case MSR_K8_GS_BASE:
+                {
                     AssertMsgFailed(("Unexpected WRMSR for an MSR in the VMCS. ecx=%#RX32\n", pMixedCtx->ecx));
                     return VERR_VMX_UNEXPECTED_EXIT_CODE;
+                }
 
                 case MSR_K8_LSTAR:
                 case MSR_K6_STAR:
                 case MSR_K8_SF_MASK:
                 case MSR_K8_TSC_AUX:
-                {
-                    AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
-                                     pMixedCtx->ecx));
-                    return VERR_VMX_UNEXPECTED_EXIT_CODE;
-                }
-
                 case MSR_K8_KERNEL_GS_BASE:
                 {
-                    AssertMsgFailed(("Unexpected WRMSR for an MSR that is manually loaded/stored on every VM-exit. ecx=%#RX32\n",
+                    AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
                                      pMixedCtx->ecx));
                     return VERR_VMX_UNEXPECTED_EXIT_CODE;
                 }
