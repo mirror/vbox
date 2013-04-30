@@ -999,15 +999,14 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                  * changes so we can avoid having to clear the page pool every time the WP
                  * bit changes to 1 (see PGMCr0WpEnabled()).
                  */
+#    if (PGM_GST_TYPE == PGM_TYPE_32BIT || PGM_GST_TYPE == PGM_TYPE_PAE) && 1
                 if (   GstWalk.Core.fEffectiveUS
-                    && !GstWalk.Core.fBigPage
+                    && !GstWalk.Core.fEffectiveRW
+                    && (GstWalk.Core.fBigPage || GstWalk.Pde.n.u1Write)
                     && pVM->cCpus == 1 /* Sorry, no go on SMP. Add CFGM option? */)
                 {
-                    /* Temorarily change the page to a RW super visor page. We'll trap
-                       and switch it back when user mode tries to read from it again.
-                       (See further down.) */
-                    Log(("PGM #PF: Netware WP0+RO+US hack: pvFault=%RGp uErr=%#x\n", pvFault, uErr));
-                    rc = pgmShwMakePageSupervisorAndWritable(pVCpu, pvFault, PGM_MK_PG_IS_WRITE_FAULT);
+                    Log(("PGM #PF: Netware WP0+RO+US hack: pvFault=%RGp uErr=%#x (big=%d)\n", pvFault, uErr, GstWalk.Core.fBigPage));
+                    rc = pgmShwMakePageSupervisorAndWritable(pVCpu, pvFault, GstWalk.Core.fBigPage, PGM_MK_PG_IS_WRITE_FAULT);
                     if (rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3)
                     {
                         PGM_INVL_PG(pVCpu, pvFault);
@@ -1018,10 +1017,11 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                     AssertMsg(RT_FAILURE_NP(rc), ("%Rrc\n", rc));
                     Log(("pgmShwMakePageSupervisorAndWritable(%RGv) failed with rc=%Rrc - ignored\n", pvFault, rc));
                 }
+#    endif
 
                 /* Interpret the access. */
                 rc = VBOXSTRICTRC_TODO(PGMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault));
-                Log(("PGM #PF: WP0 emulation (pvFault=%RGp uErr=%#x)\n", pvFault, uErr));
+                Log(("PGM #PF: WP0 emulation (pvFault=%RGp uErr=%#x cpl=%d fBig=%d fEffUs=%d)\n", pvFault, uErr, CPUMGetGuestCPL(pVCpu), GstWalk.Core.fBigPage, GstWalk.Core.fEffectiveUS));
                 if (RT_SUCCESS(rc))
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eWPEmulInRZ);
                 else
@@ -1064,7 +1064,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 if (!pVM->pgm.s.fNestedPaging)
                 {
                     rc = PGMGstGetPage(pVCpu, pvFault, &fPageGst, &GCPhys2);
-                    AssertMsg(RT_SUCCESS(rc) && (fPageGst & X86_PTE_RW), ("rc=%Rrc fPageGst=%RX64\n", rc, fPageGst));
+                    AssertMsg(RT_SUCCESS(rc) && ((fPageGst & X86_PTE_RW) || ((CPUMGetGuestCR0(pVCpu) & (X86_CR0_WP | X86_CR0_PG)) == X86_CR0_PG && CPUMGetGuestCPL(pVCpu) < 3)), ("rc=%Rrc fPageGst=%RX64\n", rc, fPageGst));
                     LogFlow(("Obsolete physical monitor page out of sync %RGv - phys %RGp flags=%08llx\n", pvFault, GCPhys2, (uint64_t)fPageGst));
                 }
                 uint64_t fPageShw;
@@ -1081,9 +1081,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
          * Check for Netware WP0+RO+US hack from above and undo it when user
          * mode accesses the page again.
          */
-        else if (    !GstWalk.Core.fEffectiveRW
-                 &&  GstWalk.Core.fEffectiveUS
-                 &&  GstWalk.Core.fBigPage
+        else if (    GstWalk.Core.fEffectiveUS
+                 && !GstWalk.Core.fEffectiveRW
+                 && (GstWalk.Core.fBigPage || GstWalk.Pde.n.u1Write)
                  &&  pVCpu->pgm.s.cNetwareWp0Hacks > 0
                  &&  (CPUMGetGuestCR0(pVCpu) & (X86_CR0_WP | X86_CR0_PG)) == X86_CR0_PG
                  &&  CPUMGetGuestCPL(pVCpu) == 3
@@ -1123,8 +1123,13 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                  * Compare page flags.
                  * Note: we have AVL, A, D bits desynced.
                  */
-                AssertMsg(   (fPageShw & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK))
-                          == (fPageGst & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK)),
+                AssertMsg(      (fPageShw & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK))
+                             == (fPageGst & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK))
+                          || (   pVCpu->pgm.s.cNetwareWp0Hacks > 0
+                              &&    (fPageShw & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK | X86_PTE_RW | X86_PTE_US))
+                                 == (fPageGst & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK | X86_PTE_RW | X86_PTE_US))
+                              && (fPageShw & (X86_PTE_RW | X86_PTE_US)) == X86_PTE_RW
+                              && (fPageGst & (X86_PTE_RW | X86_PTE_US)) == X86_PTE_US),
                           ("Page flags mismatch! pvFault=%RGv uErr=%x GCPhys=%RGp fPageShw=%RX64 fPageGst=%RX64\n",
                            pvFault, (uint32_t)uErr, GCPhys, fPageShw, fPageGst));
             }
@@ -1321,7 +1326,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     if (PdeSrc.n.u1Present)
     {
         Assert(     PdeSrc.n.u1User == PdeDst.n.u1User
-               &&   (PdeSrc.n.u1Write || !PdeDst.n.u1Write));
+               &&   (PdeSrc.n.u1Write || !PdeDst.n.u1Write || pVCpu->pgm.s.cNetwareWp0Hacks > 0));
 # ifndef PGM_WITHOUT_MAPPING
         if (PdeDst.u & PGM_PDFLAGS_MAPPING)
         {
