@@ -630,10 +630,11 @@ DECLINLINE(int) hmR0VmxReadIdtVectoringErrorCodeVmcs(PVMXTRANSIENT pVmxTransient
  * @param   HCPhysCpuPage       Physical address of the VMXON region.
  * @param   pvCpuPage           Pointer to the VMXON region.
  */
-DECLINLINE(int) hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage)
+static int hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage)
 {
     AssertReturn(HCPhysCpuPage != 0 && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
     AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     if (pVM)
     {
@@ -641,21 +642,16 @@ DECLINLINE(int) hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCp
         *(uint32_t *)pvCpuPage = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hm.s.vmx.msr.vmx_basic_info);
     }
 
-    /* Disable interrupts. Interrupts handlers might, in theory, change CR4. */
-    RTCCUINTREG fFlags = ASMIntDisableFlags();
-
     /* Enable the VMX bit in CR4 if necessary. */
     RTCCUINTREG uCr4 = ASMGetCR4();
     if (!(uCr4 & X86_CR4_VMXE))
         ASMSetCR4(uCr4 | X86_CR4_VMXE);
 
     /* Enter VMX root mode. */
-    int rc = VMXEnable(HCPhysCpuPage);  /** @todo This would #GP(0) if we are already in VMX root mode... try skip it? */
+    int rc = VMXEnable(HCPhysCpuPage);
     if (RT_FAILURE(rc))
         ASMSetCR4(uCr4);
 
-    /* Restore interrupts. */
-    ASMSetFlags(fFlags);
     return rc;
 }
 
@@ -667,9 +663,7 @@ DECLINLINE(int) hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCp
  */
 static int hmR0VmxLeaveRootMode(void)
 {
-    /* Disable interrupts. Interrupt handlers might, in theory, change CR4. */
-    RTCCUINTREG fFlags = ASMIntDisableFlags();
-    int         rc     = VINF_SUCCESS;
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /* If we're for some reason not in VMX root mode, then don't leave it. */
     if (ASMGetCR4() & X86_CR4_VMXE)
@@ -677,13 +671,10 @@ static int hmR0VmxLeaveRootMode(void)
         /* Exit VMX root mode and clear the VMX bit in CR4 */
         VMXDisable();
         ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
+        return VINF_SUCCESS;
     }
-    else
-        rc = VERR_VMX_NOT_IN_VMX_ROOT_MODE;
 
-    /* Restore interrupts. */
-    ASMSetFlags(fFlags);
-    return rc;
+    return VERR_VMX_NOT_IN_VMX_ROOT_MODE;
 }
 
 
@@ -975,6 +966,7 @@ VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS H
     NOREF(pCpu);
     NOREF(pvCpuPage);
     NOREF(HCPhysCpuPage);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     hmR0VmxLeaveRootMode();
     return VINF_SUCCESS;
