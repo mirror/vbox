@@ -398,7 +398,7 @@ void UIHostComboEditor::sltClear()
 static bool isSyntheticLCtrl(MSG *pMsg)
 {
     MSG peekMsg;
-    BYTE auKeyStates[256] =
+    const BYTE auKeyStates[256] =
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80, 0x80 };
     WORD ach;
     unsigned i;
@@ -406,6 +406,12 @@ static bool isSyntheticLCtrl(MSG *pMsg)
     if ((pMsg->lParam & 0x01FF0000) >> 16 != 0x1d /* LCtrl */)
         return false;
     LogRel(("Got an LCtrl event.\n"));
+    for (i = '0'; i <= '9'; ++i)
+        if (ToAscii(i, 0, auKeyStates, &ach, 0))
+            break;
+    if (i > '9')
+        return false;
+    LogRel(("One of the number keys has an AltGr state.\n"));
     if (!PeekMessage(&peekMsg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE))
         return false;
     LogRel(("Followed by another keyboard event.\n"));
@@ -421,12 +427,6 @@ static bool isSyntheticLCtrl(MSG *pMsg)
     if ((peekMsg.lParam & 0x01FF0000) >> 16 != 0x138 /* RAlt */)
         return false;
     LogRel(("The next keyboard event is RAlt.\n"));
-    for (i = '0'; i <= '9'; ++i)
-        if (ToAscii(i, 0, auKeyStates, &ach, 0))
-            break;
-    if (i > '9')
-        return false;
-    LogRel(("One of the number keys has an AltGr state.\n"));
     return true;
 }
 
