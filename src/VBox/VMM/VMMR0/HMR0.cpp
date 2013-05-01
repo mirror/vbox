@@ -1470,8 +1470,6 @@ VMMR0_INT_DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
     /** @todo r=bird: This can't be entirely right? */
     AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
 
-    /* The new code does FPU restoration in the VMX R0 code. */
-#ifdef VBOX_WITH_OLD_VTX_CODE
     /*
      * Save the guest FPU and XMM state if necessary.
      *
@@ -1488,11 +1486,6 @@ VMMR0_INT_DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0; /** @todo r=bird: Why HM_CHANGED_GUEST_CR0?? */
         Assert(!CPUMIsGuestFPUStateActive(pVCpu));
     }
-#else
-    Assert(!CPUMIsGuestFPUStateActive(pVCpu));
-    Assert(!CPUMIsGuestDebugStateActive(pVCpu));
-    Assert(!CPUMIsHyperDebugStateActive(pVCpu));
-#endif
 
     rc = g_HvmR0.pfnLeaveSession(pVM, pVCpu, pCtx);
 
