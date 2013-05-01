@@ -2955,7 +2955,7 @@ static DECLCALLBACK(int) hmR3Save(PVM pVM, PSSMHANDLE pSSM)
         rc = SSMR3PutU64(pSSM, pVM->aCpus[i].hm.s.Event.u64IntrInfo);
         AssertRCReturn(rc, rc);
 
-#if VBOX_WITH_OLD_VTX_CODE
+#ifdef VBOX_WITH_OLD_VTX_CODE
         rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.vmx.enmLastSeenGuestMode);
         AssertRCReturn(rc, rc);
         rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.vmx.enmCurrGuestMode);
