@@ -60,6 +60,7 @@
 #include <iprt/stream.h>
 #include <iprt/system.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 #include <iprt/time.h>
 
 #include <VBox/log.h>
@@ -107,6 +108,7 @@ char                *g_pszProgName =  (char *)"";
 #else
  static int          g_iVerbosity = 0;
 #endif
+static bool          g_fRunning   = true;
 
 /** Logging parameters. */
 /** @todo Make this configurable later. */
@@ -353,15 +355,17 @@ static int vboxGreeterCheckCreds(PVBOXGREETERCTX pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
+    static bool s_fCredsNotFoundMsgShown = false;
     int rc = VbglR3CredentialsQueryAvailability();
     if (RT_FAILURE(rc))
     {
         if (rc != VERR_NOT_FOUND)
             vboxGreeterError("vboxGreeterCheckCreds: could not query for credentials! rc=%Rrc. Aborting\n", rc);
-#ifdef DEBUG
-        else
+        else if (!s_fCredsNotFoundMsgShown)
+        {
             vboxGreeterLog("vboxGreeterCheckCreds: no credentials available\n");
-#endif
+            s_fCredsNotFoundMsgShown = true;
+        }
     }
     else
     {
@@ -374,13 +378,12 @@ static int vboxGreeterCheckCreds(PVBOXGREETERCTX pCtx)
         }
         else
         {
-#ifdef DEBUG
             vboxGreeterLog("vboxGreeterCheckCreds: credentials retrieved: user=%s, password=%s\n",
-                           pszUsername, pCtx->pszPassword);
+                           pszUsername,
+#ifdef DEBUG
+                           pCtx->pszPassword);
 #else
-            /* Don't log passwords in release mode! */
-            vboxGreeterLog("vboxGreeterCheckCreds: credentials retrieved: user=%s, password=XXX\n",
-                           pszUsername);
+                           "XXX");
 #endif
             /* Trigger LightDM authentication with the user name just retrieved. */
             lightdm_greeter_authenticate(pCtx->pGreeter, pszUsername); /* Must be the real user name from host! */
@@ -404,9 +407,12 @@ static int vboxGreeterCheckCreds(PVBOXGREETERCTX pCtx)
  */
 static void cb_sigterm(int signum)
 {
-    vboxGreeterLog("received SIGTERM (%d), exiting\n", signum);
-
+    /* Note: This handler must be reentrant-safe. */
+#ifdef VBOX_WITH_FLTK
+    g_fRunning = false;
+#else
     exit(RTEXITCODE_SUCCESS);
+#endif
 }
 
 /**
@@ -421,7 +427,7 @@ static void cb_lightdm_show_prompt(LightDMGreeter *pGreeter,
                                    const gchar *pszText, LightDMPromptType enmType,
                                    gpointer pvData)
 {
-    vboxGreeterLog("cb_lightdm_show_prompt: %s (%d)\n", pszText, enmType);
+    vboxGreeterLog("cb_lightdm_show_prompt: text=%s, type=%d\n", pszText, enmType);
 
     PVBOXGREETERCTX pCtx = (PVBOXGREETERCTX)pvData;
     AssertPtr(pCtx);
@@ -471,10 +477,10 @@ static void cb_lightdm_show_message(LightDMGreeter *pGreeter,
                                     const gchar *pszText, LightDMPromptType enmType,
                                     gpointer pvData)
 {
-    vboxGreeterLog("cb_lightdm_show_message: %s (%d)\n", pszText, enmType);
+    vboxGreeterLog("cb_lightdm_show_message: text=%s, type=%d\n", pszText, enmType);
 
     PVBOXGREETERCTX pCtx = (PVBOXGREETERCTX)pvData;
-    AssertPtr(pCtx);
+    AssertPtrReturnVoid(pCtx);
 
 #ifdef VBOX_WITH_FLTK
     AssertPtr(pCtx->pLblInfo);
@@ -508,7 +514,7 @@ static void cb_lightdm_auth_complete(LightDMGreeter *pGreeter)
             GError *pError = NULL;
             if (!lightdm_greeter_start_session_sync(pGreeter, pszSession, &pError))
             {
-                vboxGreeterError("unable to start session '%s': %s\n", 
+                vboxGreeterError("unable to start session '%s': %s\n",
                                  pszSession, pError ? pError->message : "Unknown error");
             }
             else
@@ -558,15 +564,20 @@ void cb_btn_login(GtkWidget *pWidget, gpointer pvData)
 #endif
 
     /** @todo Add domain handling? */
-#ifdef DEBUG
-    vboxGreeterLog("login requested: greeter=%p, user=%s, password=%s\n",
+    vboxGreeterLog("login button pressed: greeter=%p, user=%s, password=%s\n",
                    pCtx->pGreeter,
                    pszUser ? pszUser : "<NONE>",
+#ifdef DEBUG
                    pszPwd ? pszPwd : "<NONE>");
+#else
+                   /* Don't log passwords in release mode! */
+                   "XXX");
 #endif
-
-    lightdm_greeter_respond(pCtx->pGreeter, pszPwd);
-    lightdm_greeter_authenticate(pCtx->pGreeter, pszUser);
+    if (strlen(pszUser)) /* Only authenticate if username is given. */
+    {
+        lightdm_greeter_respond(pCtx->pGreeter, pszPwd);
+        lightdm_greeter_authenticate(pCtx->pGreeter, pszUser);
+    }
 }
 
 /**
@@ -581,7 +592,7 @@ void cb_btn_menu(Fl_Widget *pWidget, void *pvData)
 void cb_btn_menu(GtkWidget *pWidget, gpointer pvData)
 #endif
 {
-
+    vboxGreeterLog("menu button pressed\n");
 }
 
 /**
@@ -596,6 +607,8 @@ void cb_btn_restart(Fl_Widget *pWidget, void *pvData)
 void cb_btn_restart(GtkWidget *pWidget, gpointer pvData)
 #endif
 {
+    vboxGreeterLog("restart button pressed\n");
+
     bool fRestart = true;
 #ifdef VBOX_WITH_FLTK
     int rc = fl_choice("Really restart the system?", "Yes", "No", NULL);
@@ -623,6 +636,8 @@ void cb_btn_shutdown(Fl_Widget *pWidget, void *pvData)
 void cb_btn_shutdown(GtkWidget *pWidget, gpointer pvData)
 #endif
 {
+    vboxGreeterLog("shutdown button pressed\n");
+
     bool fShutdown = true;
 #ifdef VBOX_WITH_FLTK
     int rc = fl_choice("Really shutdown the system?", "Yes", "No", NULL);
@@ -705,10 +720,10 @@ static gboolean cb_check_creds(gpointer pvData)
         switch (rc)
         {
             case VINF_SUCCESS:
-#ifdef DEBUG
+# ifdef DEBUG
                 vboxGreeterLog("cb_check_creds: tsAbort %RU64 <-> %RU64\n",
                                pCtx->uTsAbort, tsAbort);
-#endif
+# endif
                 if (tsAbort != pCtx->uTsAbort)
                     fAbort = true; /* Timestamps differs, abort. */
                 pCtx->uTsAbort = tsAbort;
@@ -743,11 +758,11 @@ static gboolean cb_check_creds(gpointer pvData)
 # ifdef VBOX_WITH_FLTK
         AssertPtr(pCtx->pLblInfo);
         pCtx->pLblInfo->copy_label(szVal);
-# else
+# else /* !VBOX_WITH_FLTK */
         GtkLabel *pLblInfo = GTK_LABEL(gtk_builder_get_object(pCtx->pBuilder, VBOX_GREETER_UI_LBL_INFO));
         AssertPtr(pLblInfo);
         gtk_label_set_text(pLblInfo, szVal);
-# endif /* VBOX_WITH_FLTK */
+# endif /* !VBOX_WITH_FLTK */
         vboxGreeterLog("cb_check_creds: got notification from host to abort waiting\n");
     }
     else
@@ -792,7 +807,7 @@ static gboolean cb_check_creds(gpointer pvData)
             gtk_label_set_text(pLblInfo, szVal);
 # endif
 #endif /* VBOX_WITH_GUEST_PROPS */
-            vboxGreeterLog("cb_check_creds: waiting thread has reached timeout (%dms), exiting ...\n",
+            vboxGreeterLog("cb_check_creds: no credentials retrieved within time (%RU32ms), giving up\n",
                            pCtx->uTimeoutMS);
             rc = VERR_TIMEOUT;
         }
@@ -1024,7 +1039,7 @@ int main(int argc, char **argv)
     uint32_t uOptsUI = VBOX_GREETER_UI_SHOW_RESTART
                      | VBOX_GREETER_UI_SHOW_SHUTDOWN;
 #ifdef VBOX_WITH_GUEST_PROPS
-    uint32_t uClientId;
+    uint32_t uClientId = 0;
     rc = VbglR3GuestPropConnect(&uClientId);
     if (RT_SUCCESS(rc))
     {
@@ -1136,6 +1151,8 @@ int main(int argc, char **argv)
             }
         }
     }
+    else
+        vboxGreeterError("unable to connect to guest property service, rc=%Rrc\n", rc);
 #endif
     vboxGreeterLog("UI options are: %RU32\n", uOptsUI);
 
@@ -1278,7 +1295,7 @@ int main(int argc, char **argv)
     pWndMain->end();
 
     pWndGreeter->show();
-#else
+#else /* !VBOX_WITH_FLTK */
     gtk_init(&argc, &argv);
 
     /* Set default cursor */
@@ -1319,7 +1336,7 @@ int main(int argc, char **argv)
     gtk_widget_show(GTK_WIDGET(pWndGreeter));
 
     g_clear_error(&pError);
-#endif
+#endif /* !VBOX_WITH_FLTK */
 
     /* GType is needed in any case (for LightDM), whether we
      * use GTK3 or not. */
@@ -1347,17 +1364,15 @@ int main(int argc, char **argv)
 
 #ifdef VBOX_WITH_GUEST_PROPS
     bool fCheckCreds = false;
-    if (uClientId)
+    if (uClientId) /* Connected to guest property service? */
     {
         char szVal[256];
-        rc = vbox_read_prop(uClientId,
-                            "/VirtualBox/GuestAdd/PAM/CredsWait",
-                            true /* Read-only on guest */,
+        rc2 = vbox_read_prop(uClientId,
+                             "/VirtualBox/GuestAdd/PAM/CredsWait",
+                             true /* Read-only on guest */,
                             szVal, sizeof(szVal), NULL /* Timestamp. */);
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(rc2))
         {
-            /* All calls which are checked against rc2 are not critical, e.g. it does
-             * not matter if they succeed or not. */
             uint32_t uTimeoutMS = RT_INDEFINITE_WAIT; /* Wait infinite by default. */
             rc2 = vbox_read_prop(uClientId,
                                  "/VirtualBox/GuestAdd/PAM/CredsWaitTimeout",
@@ -1383,12 +1398,12 @@ int main(int argc, char **argv)
                                  szVal, sizeof(szVal), NULL /* Timestamp. */);
             if (RT_SUCCESS(rc2))
             {
-#ifdef VBOX_WITH_FLTK
+# ifdef VBOX_WITH_FLTK
                 Assert(pLblInfo);
                 pLblInfo->copy_label(szVal);
-#else
+# else
                 gtk_label_set_text(pLblInfo, szVal);
-#endif
+# endif
             }
 
             /* Get initial timestamp so that we can compare the time
@@ -1415,11 +1430,14 @@ int main(int argc, char **argv)
 
         /* Start the timer to check credentials availability. */
         if (fCheckCreds)
-#ifdef VBOX_WITH_FLTK
+        {
+            vboxGreeterLog("No credentials available on startup, starting to check periodically ...\n");
+# ifdef VBOX_WITH_FLTK
             Fl::add_timeout(0.5 /* 500 ms */, cb_check_creds, &ctx);
-#else
+# else
             g_timeout_add(500 /* ms */, (GSourceFunc)cb_check_creds, &ctx);
-#endif
+# endif
+        }
     }
 #endif /* VBOX_WITH_GUEST_PROPS */
 
@@ -1431,15 +1449,14 @@ int main(int argc, char **argv)
     GMainContext *pMainCtx = g_main_context_default();
     AssertPtr(pMainCtx);
 
-    for (;;)
+    while (g_fRunning)
     {
         g_main_context_iteration(pMainCtx,
                                  FALSE /* No blocking */);
         Fl::check();
-        /** @todo Abort condition? */
+        RTThreadYield();
     }
 
-    /** @todo Never reached so far. */
     g_main_context_unref(pMainCtx);
 
 # ifdef VBOX_GREETER_WITH_PNG_SUPPORT
@@ -1449,22 +1466,32 @@ int main(int argc, char **argv)
         pImgBanner = NULL;
     }
 # endif /* VBOX_GREETER_WITH_PNG_SUPPORT */
-#else
+#else /* !VBOX_WITH_FLTK */
     gtk_main();
-#endif
+    /** @todo Never reached so far. LightDM sends a SIGTERM. */
+#endif /* !VBOX_WITH_FLTK */
 
     vboxGreeterLog("terminating\n");
 
-    rc2 = VbglR3GuestPropDisconnect(uClientId);
-    AssertRC(rc2);
+#ifdef VBOX_WITH_GUEST_PROPS
+    if (uClientId)
+    {
+        rc2 = VbglR3GuestPropDisconnect(uClientId);
+        AssertRC(rc2);
+    }
+#endif /* VBOX_WITH_GUEST_PROPS */
 
     VbglR3Term();
 
-    vboxGreeterLog("terminated with rc=%Rrc\n", rc);
+    RTEXITCODE rcExit = RT_SUCCESS(rc) 
+                      ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+
+    vboxGreeterLog("terminated with exit code %ld (rc=%Rrc)\n", 
+                   rcExit, rc);
 
     vboxGreeterLogDestroy();
 
-    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return rcExit;
 }
 
 #ifdef DEBUG
