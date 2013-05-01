@@ -1249,9 +1249,6 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         /*
          * Hardware accelerated raw-mode:
-         *
-         * Typically only 32-bits protected mode, with paging enabled, code is
-         * allowed here.
          */
         if (   EMIsHwVirtExecutionEnabled(pVM)
             && HMR3CanExecuteGuest(pVM, pCtx))

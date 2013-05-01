@@ -3157,6 +3157,8 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
 #endif
 
     /* Recheck all VCPUs if we can go straight into hm execution mode. */
+    /** @todo r=ramshankar: Not sure what this does. HMR3CanExecuteGuest() doesn't
+     *        have any side effects and the return value is not used at all. */
     if (HMIsEnabled(pVM))
     {
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
