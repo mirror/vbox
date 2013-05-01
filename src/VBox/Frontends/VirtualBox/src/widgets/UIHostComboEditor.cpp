@@ -392,18 +392,16 @@ void UIHostComboEditor::sltClear()
  * heuristic is in two parts.  First of all, we check whether there is a pending
  * RAlt key event matching this LCtrl event (i.e. both key up or both key down)
  * and if there is, we check whether the current layout has an AltGr key.  We
- * check this by comparing the translation of the 'A' virtual key with and
- * without LCtrl and RAlt held down.  In all layouts I checked without an AltGr
- * key, the translation was the same, and in all with it was different.  An
- * alternative test would be to use GetKeyNameText() on the AltGr scan code.
- * I feel marginally safer with the first test though.
+ * check this by looking to see if any of the number keys has a symbol
+ * associated when AltGr is pressed.  Let's see how well this works!
  */
 static bool isSyntheticLCtrl(MSG *pMsg)
 {
     MSG peekMsg;
-    BYTE auKeyStates[256] = { 0 };
-    WORD achNoAltGr, achAltGr;
-    int cbToAscii;
+    BYTE auKeyStates[256] =
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x80, 0x80 };
+    WORD ach;
+    unsigned i;
 
     if ((pMsg->lParam & 0x01FF0000) >> 16 != 0x1d /* LCtrl */)
         return false;
@@ -423,16 +421,12 @@ static bool isSyntheticLCtrl(MSG *pMsg)
     if ((peekMsg.lParam & 0x01FF0000) >> 16 != 0x138 /* RAlt */)
         return false;
     LogRel(("The next keyboard event is RAlt.\n"));
-    auKeyStates[VK_LCONTROL] = 0x80;
-    auKeyStates[VK_RMENU] = 0x80;
-    cbToAscii = ToAscii('A', 0, NULL, &achNoAltGr, 0);
-    if (!cbToAscii)
-        return false;  /* Not expected! */
-    LogRel(("Key A has an ASCII value attached.\n"));
-    if (   cbToAscii == ToAscii('A', 0, auKeyStates, &achAltGr, 0)
-        && (achNoAltGr == achAltGr))
+    for (i = '0'; i <= '9'; ++i)
+        if (ToAscii(i, 0, auKeyStates, &ach, 0))
+            break;
+    if (i > '9')
         return false;
-    LogRel(("Key A has a different value when AltGr is down.\n"));
+    LogRel(("One of the number keys has an AltGr state.\n"));
     return true;
 }
 
