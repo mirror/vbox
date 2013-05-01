@@ -1162,7 +1162,7 @@ VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
  *
  * @remarks Called with interrupts disabled.
  */
-static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbNone(PVM pVM, PVMCPU pVCpu)
+static void hmR0VmxFlushTaggedTlbNone(PVM pVM, PVMCPU pVCpu)
 {
     NOREF(pVM);
     AssertPtr(pVCpu);
@@ -1191,7 +1191,7 @@ static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbNone(PVM pVM, PVMCPU pVCpu)
  *
  * @remarks Called with interrupts disabled.
  */
-static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
+static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
 {
     AssertPtr(pVM);
     AssertPtr(pVCpu);
@@ -1308,7 +1308,7 @@ static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
  *
  * @remarks Called with interrupts disabled.
  */
-static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu)
+static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu)
 {
     AssertPtr(pVM);
     AssertPtr(pVCpu);
@@ -1374,7 +1374,7 @@ static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu)
  *
  * @remarks Called with interrupts disabled.
  */
-static DECLCALLBACK(void) hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu)
+static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu)
 {
     AssertPtr(pVM);
     AssertPtr(pVCpu);
