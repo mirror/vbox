@@ -321,7 +321,7 @@ typedef DBGDIGGERSOLARIS *PDBGDIGGERSOLARIS;
 #define SOL32_MAX_KRNL_ADDR             UINT32_C(0xfffff000)
 
 /** Min kernel address.  */
-#define SOL64_MIN_KRNL_ADDR             UINT64_C(0xFFFFFD8000000000)
+#define SOL64_MIN_KRNL_ADDR             UINT64_C(0xFFFFC00000000000)
 /** Max kernel address.  */
 #define SOL64_MAX_KRNL_ADDR             UINT64_C(0xFFFFFFFFFFF00000)
 
@@ -980,7 +980,7 @@ static DECLCALLBACK(int)  dbgDiggerSolarisInit(PUVM pUVM, void *pvData)
             rc = DBGFR3MemRead(pUVM, 0, &CurAddr, &ModCtl, cbModCtl);
             if (RT_FAILURE(rc))
             {
-                LogRel(("sol: bad modctl_t chain: %RGv - %Rrc\n", iMod, CurAddr.FlatPtr, rc));
+                LogRel(("sol: bad modctl_t chain for module %d: %RGv - %Rrc\n", iMod, CurAddr.FlatPtr, rc));
                 break;
             }
 
@@ -996,7 +996,7 @@ static DECLCALLBACK(int)  dbgDiggerSolarisInit(PUVM pUVM, void *pvData)
                 AssertCompile2MemberOffsets(SOL_modctl_t, v11_64.mod_next, v9_64.mod_next);
                 if (!SOL64_VALID_ADDRESS(ModCtl.v9_64.mod_next))
                 {
-                    LogRel(("sol64: bad modctl_t chain at %RGv: %RGv\n", iMod, CurAddr.FlatPtr, (RTGCUINTPTR)ModCtl.v9_64.mod_next));
+                    LogRel(("sol64: bad modctl_t chain for module %d at %RGv: %RGv\n", iMod, CurAddr.FlatPtr, (RTGCUINTPTR)ModCtl.v9_64.mod_next));
                     break;
                 }
                 DBGFR3AddrFromFlat(pUVM, &CurAddr, ModCtl.v9_64.mod_next);
@@ -1006,7 +1006,7 @@ static DECLCALLBACK(int)  dbgDiggerSolarisInit(PUVM pUVM, void *pvData)
                 AssertCompile2MemberOffsets(SOL_modctl_t, v11_32.mod_next, v9_32.mod_next);
                 if (!SOL32_VALID_ADDRESS(ModCtl.v9_32.mod_next))
                 {
-                    LogRel(("sol32: bad modctl_t chain at %RGv: %RGv\n", iMod, CurAddr.FlatPtr, (RTGCUINTPTR)ModCtl.v9_32.mod_next));
+                    LogRel(("sol32: bad modctl_t chain for module %d at %RGv: %RGv\n", iMod, CurAddr.FlatPtr, (RTGCUINTPTR)ModCtl.v9_32.mod_next));
                     break;
                 }
                 DBGFR3AddrFromFlat(pUVM, &CurAddr, ModCtl.v9_32.mod_next);
@@ -1048,7 +1048,7 @@ static DECLCALLBACK(bool)  dbgDiggerSolarisProbe(PUVM pUVM, void *pvData)
     {
         /* 64-bit.... */
         DBGFR3AddrFromFlat(pUVM, &Addr, UINT64_C(0xfffffffffb800000));
-        cbRange = UINT64_C(0xfffffffffbc00000) - UINT64_C(0xfffffffffb800000);
+        cbRange = UINT64_C(0xfffffffffbd00000) - UINT64_C(0xfffffffffb800000);
         rc = DBGFR3MemScan(pUVM, 0, &Addr, cbRange, 1, s_abSunRelease, sizeof(s_abSunRelease) - 1, &HitAddr);
         if (RT_FAILURE(rc))
             return false;
