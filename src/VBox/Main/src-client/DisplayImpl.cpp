@@ -3319,65 +3319,30 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     if (   pDisplay->mpVideoRecCtx
         && VideoRecIsEnabled(pDisplay->mpVideoRecCtx))
     {
-        uint32_t u32VideoRecImgFormat = VPX_IMG_FMT_NONE;
-        ULONG ulGuestHeight = 0;
-        ULONG ulGuestWidth = 0;
-        ULONG ulBitsPerPixel;
-        int rc;
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
 
-        uint64_t us = RTTimeProgramMicroTS();
         if (   !pFBInfo->pFramebuffer.isNull()
             && !pFBInfo->fDisabled
             && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
         {
-            if (pFBInfo->fVBVAEnabled && pFBInfo->pu8FramebufferVRAM)
+            uint64_t u64Now = RTTimeProgramMilliTS();
+            int rc;
+            if (   pFBInfo->fVBVAEnabled
+                && pFBInfo->pu8FramebufferVRAM)
             {
-                rc = VideoRecCopyToIntBuffer(pDisplay->mpVideoRecCtx, 0, 0,
-                                             FramebufferPixelFormat_FOURCC_RGB, pFBInfo->u16BitsPerPixel,
-                                             pFBInfo->u32LineSize, pFBInfo->w, pFBInfo->h,
-                                             pFBInfo->pu8FramebufferVRAM);
-                ulGuestWidth = pFBInfo->w;
-                ulGuestHeight = pFBInfo->h;
-                ulBitsPerPixel = pFBInfo->u16BitsPerPixel;
+                rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, 0, 0,
+                                          FramebufferPixelFormat_FOURCC_RGB,
+                                          pFBInfo->u16BitsPerPixel,
+                                          pFBInfo->u32LineSize, pFBInfo->w, pFBInfo->h,
+                                          pFBInfo->pu8FramebufferVRAM, u64Now);
             }
             else
             {
-                rc = VideoRecCopyToIntBuffer(pDisplay->mpVideoRecCtx, 0, 0,
-                                             FramebufferPixelFormat_FOURCC_RGB, pDrv->IConnector.cBits,
-                                             pDrv->IConnector.cbScanline, pDrv->IConnector.cx,
-                                             pDrv->IConnector.cy, pDrv->IConnector.pu8Data);
-                ulGuestWidth = pDrv->IConnector.cx;
-                ulGuestHeight = pDrv->IConnector.cy;
-                ulBitsPerPixel = pDrv->IConnector.cBits;
-            }
-
-            switch (ulBitsPerPixel)
-            {
-                case 32:
-                    u32VideoRecImgFormat = VPX_IMG_FMT_RGB32;
-                    Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB32\n"));
-                    break;
-                case 24:
-                    u32VideoRecImgFormat = VPX_IMG_FMT_RGB24;
-                    Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB24\n"));
-                    break;
-                case 16:
-                    u32VideoRecImgFormat = VPX_IMG_FMT_RGB565;
-                    Log2(("FFmpeg::RequestResize: setting ffmpeg pixel format to VPX_IMG_FMT_RGB565\n"));
-                    break;
-                default:
-                    Log2(("No Proper Format detected\n"));
-                    break;
-            }
-
-            /* Just return in case of failure without any assertion */
-            if (RT_SUCCESS(rc))
-            {
-                rc = VideoRecDoRGBToYUV(pDisplay->mpVideoRecCtx, u32VideoRecImgFormat);
-                if (RT_SUCCESS(rc))
-                    VideoRecEncodeAndWrite(pDisplay->mpVideoRecCtx, ulGuestWidth, ulGuestHeight);
-                LogRel(("Wrote video frame in %lluus\n", RTTimeProgramMicroTS()-us));
+                rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, 0, 0,
+                                          FramebufferPixelFormat_FOURCC_RGB,
+                                          pDrv->IConnector.cBits,
+                                          pDrv->IConnector.cbScanline, pDrv->IConnector.cx,
+                                          pDrv->IConnector.cy, pDrv->IConnector.pu8Data, u64Now);
             }
         }
     }
