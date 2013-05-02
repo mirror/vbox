@@ -5209,6 +5209,26 @@ static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_SEGMENT_REGS;
     }
 
+    return rc;
+}
+
+
+/**
+ * Saves the guest descriptor table registers and task register from the current
+ * VMCS into the guest-CPU context.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pMixedCtx   Pointer to the guest-CPU context. The data maybe
+ *                      out-of-sync. Make sure to update the required fields
+ *                      before using them.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+{
+    int rc = VINF_SUCCESS;
+
     /* Guest LDTR. */
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_LDTR))
     {
@@ -5330,6 +5350,9 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     rc = hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestSegmentRegs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
+
+    rc = hmR0VmxSaveGuestTableRegs(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestTableRegs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
     rc = hmR0VmxSaveGuestDebugRegs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestDebugRegs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
@@ -6117,10 +6140,12 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
             Assert(PDMVmmDevHeapIsEnabled(pVM));
             Assert(pVM->hm.s.vmx.pRealModeTSS);
 
-            /* Save the required guest state bits from the VMCS. */
+            /* We require RIP, RSP, RFLAGS, CS, IDTR. Save the required ones from the VMCS. */
             rc  = hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+            rc |= hmR0VmxSaveGuestTableRegs(pVCpu, pMixedCtx);
             rc |= hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
+            Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RIP);
 
             /* Check if the interrupt handler is present in the IVT (real-mode IDT). IDT limit is (4N - 1). */
             const size_t cbIdtEntry = 4;
@@ -8456,8 +8481,6 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
 
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     /* Refer Intel spec. Table 27-1. "Exit Qualifications for debug exceptions" for the format. */
@@ -8513,7 +8536,7 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 #endif
 
     /* We require CR0 and EFER. EFER is always up-to-date. */
-    int rc = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     /* Lazy FPU loading; load the guest-FPU state transparently and continue execution of the guest. */
