@@ -3143,6 +3143,8 @@ static int hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 #ifdef VBOX_STRICT
 /**
  * Strict function to validate segment registers.
+ *
+ * @remarks Requires CR0.
  */
 static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -3183,11 +3185,9 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                    || (pCtx->ss.Attr.n.u1Granularity));
         }
         Assert(pCtx->ss.Attr.n.u2Dpl == (pCtx->ss.Sel & X86_SEL_RPL));
-        /* CR0 might not be up-to-date here always, hence disabled. */
-#if 0
+        Assert(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR0));
         if (!pCtx->cr0 & X86_CR0_PE)
             Assert(!pCtx->ss.Attr.n.u2Dpl);
-#endif
         /* DS, ES, FS, GS - only check for usable selectors, see hmR0VmxWriteSegmentReg(). */
         if (pCtx->ds.Attr.u && pCtx->ds.Attr.u != HMVMX_SEL_UNUSABLE)
         {
@@ -3370,6 +3370,7 @@ static int hmR0VmxWriteSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLim
  *                      out-of-sync. Make sure to update the required fields
  *                      before using them.
  *
+ * @remarks Requires CR0 (strict builds validation).
  * @remarks No-long-jump zone!!!
  */
 static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
@@ -6393,7 +6394,11 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         pVCpu->hm.s.vmx.RealMode.fRealOnV86Active = true;
     }
 
-    /** @todo if the order of loading is important, inform it via comments here */
+    /*
+     * Load the guest-state into the VMCS.
+     * Any ordering dependency among the sub-functions below must be explicitly stated using comments.
+     * Ideally, assert that the cross-dependent bits are up to date at the point of using it.
+     */
     int rc = hmR0VmxLoadGuestEntryCtls(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestEntryCtls! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
@@ -6406,6 +6411,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     rc = hmR0VmxLoadGuestControlRegs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestControlRegs: rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
+    /* Must be done after CR0 is loaded (strict builds require CR0 for segment register validation checks). */
     rc = hmR0VmxLoadGuestSegmentRegs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestSegmentRegs: rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
