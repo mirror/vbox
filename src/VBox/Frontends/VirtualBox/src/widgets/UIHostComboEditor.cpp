@@ -406,8 +406,8 @@ static bool isSyntheticLCtrl(MSG *pMsg)
 
     Assert(   pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN
            || pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP);
-    if (   ((HIWORD(pMsg->lParam) & 0xFF) != 0x1d /* scan code: Control */)
-        || HIWORD(pMsg->lParam) & KF_EXTENDED)
+    if (   ((RT_HIWORD(pMsg->lParam) & 0xFF) != 0x1d /* scan code: Control */)
+        || RT_HIWORD(pMsg->lParam) & KF_EXTENDED)
         return false;
     if (!PeekMessage(&peekMsg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE))
         return false;
@@ -417,8 +417,8 @@ static bool isSyntheticLCtrl(MSG *pMsg)
     if (   (pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP)
         && (peekMsg.message != WM_KEYUP && peekMsg.message != WM_SYSKEYUP))
         return false;
-    if (   ((HIWORD(peekMsg.lParam) & 0xFF) != 0x38 /* scan code: Alt */)
-        || !(HIWORD(peekMsg.lParam) & KF_EXTENDED))
+    if (   ((RT_HIWORD(peekMsg.lParam) & 0xFF) != 0x38 /* scan code: Alt */)
+        || !(RT_HIWORD(peekMsg.lParam) & KF_EXTENDED))
         return false;
     LogRel(("The current event is a left control key event (time: %d).  There is a pending right alt key event (time: %d).\n",
             (int) pMsg->time, (int) peekMsg.time));
