@@ -714,8 +714,8 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pVideoRecCtx, uint32_t x, uint32_t y,
 
     /* One of the dimensions of the current frame is smaller than before so
      * clear the entire buffer to prevent artifacts from the previous frame */
-    if (   pVideoRecCtx->uLastSourceWidth  < uSourceWidth
-        || pVideoRecCtx->uLastSourceHeight < uSourceHeight)
+    if (   uSourceWidth  < pVideoRecCtx->uLastSourceWidth
+        || uSourceHeight < pVideoRecCtx->uLastSourceHeight)
     {
         memset(pVideoRecCtx->pu8RgbBuf, 0,
                pVideoRecCtx->uTargetWidth * pVideoRecCtx->uTargetHeight * 4);
