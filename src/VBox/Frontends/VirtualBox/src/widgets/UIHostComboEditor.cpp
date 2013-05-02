@@ -392,8 +392,8 @@ void UIHostComboEditor::sltClear()
  * heuristic is in two parts.  First of all, we check whether there is a pending
  * RAlt key event matching this LCtrl event (i.e. both key up or both key down)
  * and if there is, we check whether the current layout has an AltGr key.  We
- * check this by looking to see if any of the number keys has a symbol
- * associated when AltGr is pressed.  Let's see how well this works!
+ * check this by looking to see if any of the layout-dependent keys has a symbol
+ * associated when AltGr is pressed.
  */
 static bool isSyntheticLCtrl(MSG *pMsg)
 {
@@ -406,7 +406,16 @@ static bool isSyntheticLCtrl(MSG *pMsg)
 
     if ((pMsg->lParam & 0x01FF0000) >> 16 != 0x1d /* LCtrl */)
         return false;
-    LogRel(("Got an LCtrl event.\n"));
+    if (!PeekMessage(&peekMsg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE))
+        return false;
+    if (   (pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN)
+        && (peekMsg.message != WM_KEYDOWN && peekMsg.message != WM_SYSKEYDOWN))
+        return false;
+    if (   (pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP)
+        && (peekMsg.message != WM_KEYUP && peekMsg.message != WM_SYSKEYUP))
+        return false;
+    if ((peekMsg.lParam & 0x01FF0000) >> 16 != 0x138 /* RAlt */)
+        return false;
     for (i = '0'; i <= VK_OEM_102; ++i)
     {
         if (ToAscii(i, 0, auKeyStates, &ach, 0))
@@ -423,25 +432,6 @@ static bool isSyntheticLCtrl(MSG *pMsg)
     }
     if (i > VK_OEM_102)
         return false;
-    LogRel(("Virtual key %d has an AltGr state.\n", i));
-    if (!PeekMessage(&peekMsg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE))
-        return false;
-    LogRel(("Another keyboard event follows.\n"));
-    if (pMsg->time != peekMsg.time)
-       return false;
-    LogRel(("Both events have the same time stamp.\n"));
-    if (   (pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN)
-        && (peekMsg.message != WM_KEYDOWN && peekMsg.message != WM_SYSKEYDOWN))
-        return false;
-    if (   (pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP)
-        && (peekMsg.message != WM_KEYUP && peekMsg.message != WM_SYSKEYUP))
-        return false;
-    LogRel((  (pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN)
-            ? "Both are KEYDOWN events.\n"
-            : "Both are KEYUP events.\n"));
-    if ((peekMsg.lParam & 0x01FF0000) >> 16 != 0x138 /* RAlt */)
-        return false;
-    LogRel(("The next keyboard event is RAlt.\n"));
     return true;
 }
 
