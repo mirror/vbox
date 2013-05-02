@@ -170,7 +170,7 @@ ALIGN(16)
 
 ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte off.
 .vmlaunch_done:
-    jc      near .vmxstart_invalid_vmxon_ptr
+    jc      near .vmxstart_invalid_vmcs_ptr
     jz      near .vmxstart_start_failed
 
     ; Restore base and limit of the IDTR & GDTR
@@ -262,7 +262,7 @@ ALIGN(16)
     ret
 
 
-.vmxstart_invalid_vmxon_ptr:
+.vmxstart_invalid_vmcs_ptr:
     ; Restore base and limit of the IDTR & GDTR
     lidt    [xSP]
     add     xSP, xS*2
@@ -296,7 +296,7 @@ ALIGN(16)
 
     ; Restore all general purpose host registers.
     MYPOPAD
-    mov     eax, VERR_VMX_INVALID_VMXON_PTR
+    mov     eax, VERR_VMX_INVALID_VMCS_PTR_TO_START_VM
     jmp     .vmstart_end
 
 .vmxstart_start_failed:
@@ -501,7 +501,7 @@ ALIGN(16)
 
 ALIGNCODE(16)
 .vmlaunch64_done:
-    jc      near .vmxstart64_invalid_vmxon_ptr
+    jc      near .vmxstart64_invalid_vmcs_ptr
     jz      near .vmxstart64_start_failed
 
     ; Restore base and limit of the IDTR & GDTR
@@ -610,7 +610,7 @@ ALIGN(16)
     ret
 
 
-.vmxstart64_invalid_vmxon_ptr:
+.vmxstart64_invalid_vmcs_ptr:
     ; Restore base and limit of the IDTR & GDTR
     lidt    [xSP]
     add     xSP, xS*2
@@ -657,7 +657,7 @@ ALIGN(16)
 
     ; Restore all general purpose host registers.
     MYPOPAD
-    mov     eax, VERR_VMX_INVALID_VMXON_PTR
+    mov     eax, VERR_VMX_INVALID_VMCS_PTR_TO_START_VM
     jmp     .vmstart64_end
 
 .vmxstart64_start_failed:

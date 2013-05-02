@@ -773,7 +773,7 @@ ALIGN(16)
 
 ALIGNCODE(16)
 .vmlaunch64_done:
-    jc      near .vmstart64_invalid_vmxon_ptr
+    jc      near .vmstart64_invalid_vmcs_ptr
     jz      near .vmstart64_start_failed
 
     push    rdi
@@ -895,7 +895,7 @@ ALIGN(16)
     ret
 
 
-.vmstart64_invalid_vmxon_ptr:
+.vmstart64_invalid_vmcs_ptr:
     pop     rsi         ; pCtx (needed in rsi by the macros below)
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -914,7 +914,7 @@ ALIGN(16)
     MYPOPSEGS rax
 
     ; Restore all general purpose host registers.
-    mov     eax, VERR_VMX_INVALID_VMXON_PTR
+    mov     eax, VERR_VMX_INVALID_VMCS_PTR_TO_START_VM
     jmp     .vmstart64_end
 
 .vmstart64_start_failed:

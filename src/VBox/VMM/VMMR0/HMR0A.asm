@@ -582,9 +582,9 @@ BITS 64
     and     edx, 0ffffffffh
     xor     eax, eax
     vmxon   [rdx]
-    mov     r8d, VERR_INVALID_PARAMETER
+    mov     r8d, VERR_VMX_VMXON_FAILED
     cmovz   eax, r8d
-    mov     r9d, VERR_VMX_INVALID_VMCS_PTR
+    mov     r9d, VERR_VMX_INVALID_VMXON_PTR
     cmovc   eax, r9d
     jmp far [.fpret wrt rip]
 .fpret:                                 ; 16:32 Pointer to .the_end.

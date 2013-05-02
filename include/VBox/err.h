@@ -1910,6 +1910,8 @@
 #define VINF_VMX_DOUBLE_FAULT                       4020
 /** VMPTRLD failed; possibly because of invalid VMCS launch-state. */
 #define VERR_VMX_VMPTRLD_FAILED                     (-4021)
+/** Invalid VMCS pointer passed to VMLAUNCH/VMRESUME. */
+#define VERR_VMX_INVALID_VMCS_PTR_TO_START_VM       (-4022)
 /** @} */
 
 
