@@ -1806,7 +1806,7 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureRate)(ULONG aRate)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    mHWData->mVideoCaptureHeight = aRate;
+    mHWData->mVideoCaptureRate = aRate;
     return S_OK;
 }
 
