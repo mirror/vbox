@@ -415,11 +415,11 @@ static bool isSyntheticLCtrl(MSG *pMsg)
         if (i == '9')
             i = 'A' - 1;
         if (i == 'Z')
-            i = 'VK_OEM_1' - 1;
-        if (i == 'VK_OEM_3')
-            i = 'VK_OEM_4' - 1;
-        if (i == 'VK_OEM_8')
-            i = 'VK_OEM_102' - 1;
+            i = VK_OEM_1 - 1;
+        if (i == VK_OEM_3)
+            i = VK_OEM_4 - 1;
+        if (i == VK_OEM_8)
+            i = VK_OEM_102 - 1;
     }
     if (i > VK_OEM_102)
         return false;
@@ -429,7 +429,7 @@ static bool isSyntheticLCtrl(MSG *pMsg)
     LogRel(("Another keyboard event follows.\n"));
     if (pMsg->time != peekMsg.time)
        return false;
-    LogRel(("Both events have the same time stamp.\n"))
+    LogRel(("Both events have the same time stamp.\n"));
     if (   (pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN)
         && (peekMsg.message != WM_KEYDOWN && peekMsg.message != WM_SYSKEYDOWN))
         return false;
