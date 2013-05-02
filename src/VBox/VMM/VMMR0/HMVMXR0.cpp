@@ -3172,6 +3172,14 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         else
             AssertMsgFailed(("Invalid CS Type %#x\n", pCtx->cs.Attr.n.u2Dpl));
         /* SS */
+        Assert((pCtx->ss.Sel & X86_SEL_RPL) == (pCtx->cs.Sel & X86_SEL_RPL));
+        Assert(pCtx->ss.Attr.n.u2Dpl == (pCtx->ss.Sel & X86_SEL_RPL));
+        Assert(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR0));
+        if (   !(pCtx->cr0 & X86_CR0_PE)
+            || pCtx->cs.Attr.n.u4Type == 3)
+        {
+            Assert(!pCtx->ss.Attr.n.u2Dpl);
+        }
         if (pCtx->ss.Attr.u && pCtx->ss.Attr.u != HMVMX_SEL_UNUSABLE)
         {
             Assert((pCtx->ss.Sel & X86_SEL_RPL) == (pCtx->cs.Sel & X86_SEL_RPL));
@@ -3184,10 +3192,6 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             Assert(   !(pCtx->ss.u32Limit & 0xfff00000)
                    || (pCtx->ss.Attr.n.u1Granularity));
         }
-        Assert(pCtx->ss.Attr.n.u2Dpl == (pCtx->ss.Sel & X86_SEL_RPL));
-        Assert(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR0));
-        if (!pCtx->cr0 & X86_CR0_PE)
-            Assert(!pCtx->ss.Attr.n.u2Dpl);
         /* DS, ES, FS, GS - only check for usable selectors, see hmR0VmxWriteSegmentReg(). */
         if (pCtx->ds.Attr.u && pCtx->ds.Attr.u != HMVMX_SEL_UNUSABLE)
         {
@@ -5148,7 +5152,7 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
 
     /*
      * If VT-x marks the segment as unusable, the rest of the attributes are undefined.
-     * See Intel spec. 27.3.2 "Saving Segment Registers and Descriptor-Table Registers.
+     * See Intel spec. 27.3.2 "Saving Segment Registers and Descriptor-Table Registers".
      */
     if (pSelReg->Attr.u & HMVMX_SEL_UNUSABLE)
     {
