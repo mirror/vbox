@@ -216,8 +216,9 @@ int VBoxServicePropCacheUpdateEntry(PVBOXSERVICEVEPROPCACHE pCache,
 int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszName, const char *pszValueFormat, ...)
 {
     AssertPtrReturn(pCache, VERR_INVALID_POINTER);
-    Assert(pCache->uClientID);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+
+    Assert(pCache->uClientID);
 
     /*
      * Format the value first.
@@ -260,12 +261,15 @@ int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszNa
             {
                 /* Write the update. */
                 rc = vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName, pNode->fFlags, pszValue);
-                VBoxServiceVerbose(4, "PropCache %p: Written \"%s\"=\"%s\" (flags: %x), rc=%Rrc\n",
+                VBoxServiceVerbose(4, "[PropCache %p]: Written \"%s\"=\"%s\" (flags: %x), rc=%Rrc\n",
                                    pCache, pNode->pszName, pszValue, pNode->fFlags, rc);
-                RTStrFree(pNode->pszValue);
-                pNode->pszValue = RTStrDup(pszValue);
-                if (!pNode->pszValue)
-                    rc = VERR_NO_MEMORY;
+                if (RT_SUCCESS(rc)) /* Only update the node's value on successful write. */
+                {
+                    RTStrFree(pNode->pszValue);
+                    pNode->pszValue = RTStrDup(pszValue);
+                    if (!pNode->pszValue)
+                        rc = VERR_NO_MEMORY;
+                }
             }
             else
                 rc = VINF_NO_CHANGE; /* No update needed. */
@@ -275,13 +279,16 @@ int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszNa
             /* No value specified. Deletion (or no action required). */
             if (pNode->pszValue) /* Did we have a value before? Then the value needs to be deleted. */
             {
-                /* Delete property (but do not remove from cache) if not deleted yet. */
-                RTStrFree(pNode->pszValue);
-                pNode->pszValue = NULL;
                 rc = vboxServicePropCacheWritePropF(pCache->uClientID, pNode->pszName,
                                                     0, /* Flags */ NULL /* Value */);
-                VBoxServiceVerbose(4, "PropCache %p: Deleted \"%s\"=\"%s\" (flags: %x), rc=%Rrc\n",
+                VBoxServiceVerbose(4, "[PropCache %p]: Deleted \"%s\"=\"%s\" (flags: %x), rc=%Rrc\n",
                                    pCache, pNode->pszName, pNode->pszValue, pNode->fFlags, rc);
+                if (RT_SUCCESS(rc)) /* Only delete property value on successful Vbgl deletion. */
+                {
+                    /* Delete property (but do not remove from cache) if not deleted yet. */
+                    RTStrFree(pNode->pszValue);
+                    pNode->pszValue = NULL;
+                }
             }
             else
                 rc = VINF_NO_CHANGE; /* No update needed. */
@@ -290,6 +297,9 @@ int VBoxServicePropCacheUpdate(PVBOXSERVICEVEPROPCACHE pCache, const char *pszNa
         /* Release cache. */
         RTCritSectLeave(&pCache->CritSect);
     }
+
+    VBoxServiceVerbose(4, "[PropCache %p]: Updating \"%s\" resulted in rc=%Rrc\n",
+                       pCache, pszName, rc);
 
     /* Delete temp stuff. */
     RTStrFree(pszValue);

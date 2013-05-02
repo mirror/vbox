@@ -94,10 +94,14 @@ static uint32_t                 g_cMsVMInfoInterval = 0;
 static RTSEMEVENTMULTI          g_hVMInfoEvent = NIL_RTSEMEVENTMULTI;
 /** The guest property service client ID. */
 static uint32_t                 g_uVMInfoGuestPropSvcClientID = 0;
-/** Number of logged in users in OS. */
-static uint32_t                 g_cVMInfoLoggedInUsers = UINT32_MAX;
+/** Number of currently logged in users in OS. */
+static uint32_t                 g_cVMInfoLoggedInUsers = 0;
 /** The guest property cache. */
 static VBOXSERVICEVEPROPCACHE   g_VMInfoPropCache;
+static const char              *g_pszPropCacheValLoggedInUsersList = "/VirtualBox/GuestInfo/OS/LoggedInUsersList";
+static const char              *g_pszPropCacheValLoggedInUsers = "/VirtualBox/GuestInfo/OS/LoggedInUsers";
+static const char              *g_pszPropCacheValNoLoggedInUsers = "/VirtualBox/GuestInfo/OS/NoLoggedInUsers";
+static const char              *g_pszPropCacheValNetCount = "/VirtualBox/GuestInfo/Net/Count";
 /** The VM session ID. Changes whenever the VM is restored or reset. */
 static uint64_t                 g_idVMInfoSession;
 /** The last attached locartion awareness (LA) client timestamp. */
@@ -211,14 +215,25 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
         /*
          * Declare some guest properties with flags and reset values.
          */
-        VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList",
-                                        VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_TRANSIENT, NULL /* Delete on exit */);
-        VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsers",
-                                        VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_TRANSIENT, "0");
-        VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers",
-                                        VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_TRANSIENT, "true");
-        VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count",
-                                        VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE, NULL /* Delete on exit */);
+        int rc2 = VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, g_pszPropCacheValLoggedInUsersList,
+                                                  VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_TRANSIENT, NULL /* Delete on exit */);
+        if (RT_FAILURE(rc2))
+            VBoxServiceError("Failed to init property cache value \"%s\", rc=%Rrc\n", g_pszPropCacheValLoggedInUsersList, rc2);
+
+        rc2 = VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, g_pszPropCacheValLoggedInUsers,
+                                              VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_TRANSIENT, "0");
+        if (RT_FAILURE(rc2))
+            VBoxServiceError("Failed to init property cache value \"%s\", rc=%Rrc\n", g_pszPropCacheValLoggedInUsers, rc2);
+
+        rc2 = VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, g_pszPropCacheValNoLoggedInUsers,
+                                              VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_TRANSIENT, "true");
+        if (RT_FAILURE(rc2))
+            VBoxServiceError("Failed to init property cache value \"%s\", rc=%Rrc\n", g_pszPropCacheValNoLoggedInUsers, rc2);
+
+        rc2 = VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, g_pszPropCacheValNetCount,
+                                              VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE, NULL /* Delete on exit */);
+        if (RT_FAILURE(rc2))
+            VBoxServiceError("Failed to init property cache value \"%s\", rc=%Rrc\n", g_pszPropCacheValNetCount, rc2);
     }
     return rc;
 }
@@ -675,7 +690,7 @@ static int vboxserviceVMInfoWriteUsers(void)
                              pConnection && dbus_error_is_set(&dbErr) ? dbErr.message : "D-Bus not installed");
     }
 
-    if (   pConnection 
+    if (   pConnection
         && dbus_error_is_set(&dbErr))
         dbus_error_free(&dbErr);
 # endif /* RT_OS_LINUX */
@@ -727,42 +742,38 @@ static int vboxserviceVMInfoWriteUsers(void)
         {
             static int s_iVMInfoBitchedOOM = 0;
             if (s_iVMInfoBitchedOOM++ < 3)
-                VBoxServiceVerbose(0, "Warning: Not enough memory available to enumerate users! Keeping old value (%u)\n",
+                VBoxServiceVerbose(0, "Warning: Not enough memory available to enumerate users! Keeping old value (%RU32)\n",
                                    g_cVMInfoLoggedInUsers);
             cUsersInList = g_cVMInfoLoggedInUsers;
         }
         else
             cUsersInList = 0;
     }
+    else /* Preserve logged in users count. */
+        g_cVMInfoLoggedInUsers = cUsersInList;
 
     VBoxServiceVerbose(4, "cUsersInList=%RU32, pszUserList=%s, rc=%Rrc\n",
                        cUsersInList, pszUserList ? pszUserList : "<NULL>", rc);
 
-    if (pszUserList && cUsersInList > 0)
-        rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", "%s", pszUserList);
+    if (pszUserList)
+    {
+        AssertMsg(cUsersInList, ("pszUserList contains users whereas cUsersInList is 0\n"));
+        rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, g_pszPropCacheValLoggedInUsersList, "%s", pszUserList);
+    }
     else
-        rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", NULL);
+        rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, g_pszPropCacheValLoggedInUsersList, NULL);
     if (RT_FAILURE(rc))
-    {
-        VBoxServiceError("Error writing logged on users list, rc=%Rrc\n", rc);
-        cUsersInList = 0; /* Reset user count on error. */
-    }
+        VBoxServiceError("Error writing logged in users list, rc=%Rrc\n", rc);
 
-    rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%u", cUsersInList);
+    rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, g_pszPropCacheValLoggedInUsers, "%RU32", cUsersInList);
     if (RT_FAILURE(rc))
-    {
-        VBoxServiceError("Error writing logged on users count, rc=%Rrc\n", rc);
-        cUsersInList = 0; /* Reset user count on error. */
-    }
+        VBoxServiceError("Error writing logged in users count, rc=%Rrc\n", rc);
 
-    if (g_cVMInfoLoggedInUsers != cUsersInList)
-    {
-        rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers",
-                                        cUsersInList == 0 ? "true" : "false");
-        if (RT_FAILURE(rc))
-            VBoxServiceError("Error writing no logged in users beacon, rc=%Rrc\n", rc);
-        g_cVMInfoLoggedInUsers = cUsersInList;
-    }
+    rc = VBoxServicePropCacheUpdate(&g_VMInfoPropCache, g_pszPropCacheValNoLoggedInUsers,
+                                    cUsersInList == 0 ? "true" : "false");
+    if (RT_FAILURE(rc))
+        VBoxServiceError("Error writing no logged in users beacon, rc=%Rrc\n", rc);
+
     if (pszUserList)
         RTStrFree(pszUserList);
 
@@ -868,18 +879,18 @@ static int vboxserviceVMInfoWriteNetwork(void)
         Assert(pAddress);
         char szIp[32];
         RTStrPrintf(szIp, sizeof(szIp), "%s", inet_ntoa(pAddress->sin_addr));
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/V4/IP", cIfacesReport);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/IP", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szIp);
 
         pAddress = (sockaddr_in *) & (InterfaceList[i].iiBroadcastAddress);
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/V4/Broadcast", cIfacesReport);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/Broadcast", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
         pAddress = (sockaddr_in *)&(InterfaceList[i].iiNetmask);
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/V4/Netmask", cIfacesReport);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/Netmask", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/Status", cIfacesReport);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/Status", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, nFlags & IFF_UP ? "Up" : "Down");
 
 # ifndef TARGET_NT4
@@ -888,7 +899,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
             if (!strcmp(pAdp->IpAddressList.IpAddress.String, szIp))
                 break;
 
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/MAC", cIfacesReport);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/MAC", cIfacesReport);
         if (pAdp)
         {
             char szMac[32];
@@ -939,19 +950,19 @@ static int vboxserviceVMInfoWriteNetwork(void)
             memset(szInetAddr, 0, NI_MAXHOST);
             getnameinfo(pIfCurr->ifa_addr, sizeof(struct sockaddr_in),
                         szInetAddr, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-            RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/V4/IP", cIfacesReport);
+            RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/IP", cIfacesReport);
             VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szInetAddr);
 
             memset(szInetAddr, 0, NI_MAXHOST);
             getnameinfo(pIfCurr->ifa_broadaddr, sizeof(struct sockaddr_in),
                         szInetAddr, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-            RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/V4/Broadcast", cIfacesReport);
+            RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/Broadcast", cIfacesReport);
             VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szInetAddr);
 
             memset(szInetAddr, 0, NI_MAXHOST);
             getnameinfo(pIfCurr->ifa_netmask, sizeof(struct sockaddr_in),
                         szInetAddr, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-            RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/V4/Netmask", cIfacesReport);
+            RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/Netmask", cIfacesReport);
             VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szInetAddr);
 
             /* Search for the AF_LINK interface of the current AF_INET one and get the mac. */
@@ -968,13 +979,13 @@ static int vboxserviceVMInfoWriteNetwork(void)
                     pu8Mac = (uint8_t *)LLADDR(pLinkAddress);
                     RTStrPrintf(szMac, sizeof(szMac), "%02X%02X%02X%02X%02X%02X",
                                 pu8Mac[0], pu8Mac[1], pu8Mac[2], pu8Mac[3],  pu8Mac[4], pu8Mac[5]);
-                    RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/MAC", cIfacesReport);
+                    RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/MAC", cIfacesReport);
                     VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szMac);
                     break;
                 }
             }
 
-            RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/Status", cIfacesReport);
+            RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/Status", cIfacesReport);
             VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, pIfCurr->ifa_flags & IFF_UP ? "Up" : "Down");
 
             cIfacesReport++;
@@ -1023,7 +1034,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
         bool fIfUp = !!(ifrequest[i].ifr_flags & IFF_UP);
         pAddress = ((sockaddr_in *)&ifrequest[i].ifr_addr);
         Assert(pAddress);
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/V4/IP", cIfacesReport);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/IP", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
         if (ioctl(sd, SIOCGIFBRDADDR, &ifrequest[i]) < 0)
@@ -1033,7 +1044,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
             break;
         }
         pAddress = (sockaddr_in *)&ifrequest[i].ifr_broadaddr;
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/V4/Broadcast", cIfacesReport);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/Broadcast", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
         if (ioctl(sd, SIOCGIFNETMASK, &ifrequest[i]) < 0)
@@ -1048,7 +1059,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
         pAddress = (sockaddr_in *)&ifrequest[i].ifr_netmask;
 # endif
 
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/V4/Netmask", cIfacesReport);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/V4/Netmask", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
 # if defined(RT_OS_SOLARIS)
@@ -1105,18 +1116,18 @@ static int vboxserviceVMInfoWriteNetwork(void)
 #  endif
         RTStrPrintf(szMac, sizeof(szMac), "%02X%02X%02X%02X%02X%02X",
                     pu8Mac[0], pu8Mac[1], pu8Mac[2], pu8Mac[3],  pu8Mac[4], pu8Mac[5]);
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/MAC", cIfacesReport);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/MAC", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szMac);
 # endif /* !OS/2*/
 
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/Status", cIfacesReport);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%RU32/Status", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, fIfUp ? "Up" : "Down");
         cIfacesReport++;
     } /* For all interfaces */
 
     close(sd);
     if (RT_FAILURE(rc))
-        VBoxServiceError("VMInfo/Network: Network enumeration for interface %u failed with error %Rrc\n", cIfacesReport, rc);
+        VBoxServiceError("VMInfo/Network: Network enumeration for interface %RU32 failed with error %Rrc\n", cIfacesReport, rc);
 
 #endif /* !RT_OS_WINDOWS */
 
@@ -1128,19 +1139,19 @@ static int vboxserviceVMInfoWriteNetwork(void)
 
     /* Get former count. */
     uint32_t cIfacesReportOld;
-    rc = VBoxServiceReadPropUInt32(g_uVMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/Net/Count", &cIfacesReportOld,
+    rc = VBoxServiceReadPropUInt32(g_uVMInfoGuestPropSvcClientID, g_pszPropCacheValNetCount, &cIfacesReportOld,
                                    0 /* Min */, UINT32_MAX /* Max */);
     if (   RT_SUCCESS(rc)
         && cIfacesReportOld > cIfacesReport) /* Are some ifaces not around anymore? */
     {
-        VBoxServiceVerbose(3, "VMInfo/Network: Stale interface data detected (%u old vs. %u current)\n",
+        VBoxServiceVerbose(3, "VMInfo/Network: Stale interface data detected (%RU32 old vs. %RU32 current)\n",
                            cIfacesReportOld, cIfacesReport);
 
         uint32_t uIfaceDeleteIdx = cIfacesReport;
         do
         {
             VBoxServiceVerbose(3, "VMInfo/Network: Deleting stale data of interface %d ...\n", uIfaceDeleteIdx);
-            rc = VBoxServicePropCacheUpdateByPath(&g_VMInfoPropCache, NULL /* Value, delete */, 0 /* Flags */, "/VirtualBox/GuestInfo/Net/%u", uIfaceDeleteIdx++);
+            rc = VBoxServicePropCacheUpdateByPath(&g_VMInfoPropCache, NULL /* Value, delete */, 0 /* Flags */, "/VirtualBox/GuestInfo/Net/%RU32", uIfaceDeleteIdx++);
         } while (RT_SUCCESS(rc));
     }
     else if (   RT_FAILURE(rc)
@@ -1155,7 +1166,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
      * does not change. If this property is missing, the host assumes that all other GuestInfo
      * properties are no longer valid.
      */
-    VBoxServicePropCacheUpdate(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count", "%d",
+    VBoxServicePropCacheUpdate(&g_VMInfoPropCache, g_pszPropCacheValNetCount, "%RU32",
                                cIfacesReport);
 
     /* Don't fail here; just report everything we got. */
