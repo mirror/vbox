@@ -385,7 +385,7 @@ void UIHostComboEditor::sltClear()
 #ifdef Q_WS_WIN
 /**
  * @brief isSyntheticLCtrl
- * @param   pMsg  Windows event message structure
+ * @param   pMsg  Windows WM_[SYS]KEY* event message structure
  * @return  true if this is a synthetic LCtrl event, false otherwise
  * This function is a heuristic to tell whether a key event is the first in
  * a synthetic LCtrl+RAlt sequence which Windows uses to signal AltGr.  Our
@@ -404,7 +404,10 @@ static bool isSyntheticLCtrl(MSG *pMsg)
     WORD ach;
     unsigned i;
 
-    if ((pMsg->lParam & 0x01FF0000) >> 16 != 0x1d /* LCtrl */)
+    Assert(   pMsg->message == WM_KEYDOWN || pMsg->message == WM_SYSKEYDOWN
+           || pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP);
+    if (   ((HIWORD(pMsg->lParam) & 0xFF) != 0x1d /* scan code: Control */)
+        || HIWORD(pMsg->lParam) & KF_EXTENDED)
         return false;
     if (!PeekMessage(&peekMsg, NULL, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE))
         return false;
@@ -414,8 +417,24 @@ static bool isSyntheticLCtrl(MSG *pMsg)
     if (   (pMsg->message == WM_KEYUP || pMsg->message == WM_SYSKEYUP)
         && (peekMsg.message != WM_KEYUP && peekMsg.message != WM_SYSKEYUP))
         return false;
-    if ((peekMsg.lParam & 0x01FF0000) >> 16 != 0x138 /* RAlt */)
+    if (   ((HIWORD(peekMsg.lParam) & 0xFF) != 0x38 /* scan code: Alt */)
+        || !(HIWORD(peekMsg.lParam) & KF_EXTENDED))
         return false;
+    LogRel(("The current event is a left control key event (time: %d).  There is a pending right alt key event (time: %d).\n",
+            (int) pMsg->time, (int) peekMsg.time));
+    /* If we got this far then we have a key event which could potentially
+     * be a synthetic left control.  Now we check to see whether the current
+     * keyboard layout actually has an AltGr key by checking whether any of
+     * the keys which might do produce a symbol when AltGr (Control + Alt) is
+     * depressed.  Generally this loop will exit pretty early (it exits on the
+     * first iteration for my German layout).  If there is no AltGr key in the
+     * layout then it will run right through, but that should not happen very
+     * often as we should hardly ever reach the loop in that case.
+     *
+     * In theory we could do this once and cache the result, but that involves
+     * tracking layout switches to invalidate the cache, and I don't think
+     * that the added complexity is worth the price.
+     */
     for (i = '0'; i <= VK_OEM_102; ++i)
     {
         if (ToAscii(i, 0, auKeyStates, &ach, 0))
