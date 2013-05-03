@@ -3151,6 +3151,9 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* Validate segment registers. See Intel spec. 26.3.1.2 "Checks on Guest Segment Registers". */
     Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0);
     Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS);
+
+    /* NOTE: The reason we check for attribute value 0 and not just the unusable bit here is because hmR0VmxWriteSegmentReg()
+     * only updates the VMCS bits with the unusable bit and doesn't change the guest-context value. */
     if (   !pVM->hm.s.vmx.fUnrestrictedGuest
         && (   !CPUMIsGuestInRealModeEx(pCtx)
             && !CPUMIsGuestInV86ModeEx(pCtx)))
@@ -3164,7 +3167,8 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                || !(pCtx->cs.Attr.n.u1Granularity));
         Assert(   !(pCtx->cs.u32Limit & 0xfff00000)
                || (pCtx->cs.Attr.n.u1Granularity));
-        Assert(pCtx->cs.Attr.u && pCtx->cs.Attr.u != HMVMX_SEL_UNUSABLE);  /* CS cannot be loaded with NULL in protected mode. */
+        /* CS cannot be loaded with NULL in protected mode. */
+        Assert(pCtx->cs.Attr.u && !(pCtx->cs.Attr.u & HMVMX_SEL_UNUSABLE)); /** @todo is this really true even for 64-bit CS?!? */
         if (pCtx->cs.Attr.n.u4Type == 9 || pCtx->cs.Attr.n.u4Type == 11)
             Assert(pCtx->cs.Attr.n.u2Dpl == pCtx->ss.Attr.n.u2Dpl);
         else if (pCtx->cs.Attr.n.u4Type == 13 || pCtx->cs.Attr.n.u4Type == 15)
@@ -3180,7 +3184,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             Assert(!pCtx->ss.Attr.n.u2Dpl);
         }
-        if (pCtx->ss.Attr.u && pCtx->ss.Attr.u != HMVMX_SEL_UNUSABLE)
+        if (pCtx->ss.Attr.u && !(pCtx->ss.Attr.u & HMVMX_SEL_UNUSABLE))
         {
             Assert((pCtx->ss.Sel & X86_SEL_RPL) == (pCtx->cs.Sel & X86_SEL_RPL));
             Assert(pCtx->ss.Attr.n.u4Type == 3 || pCtx->ss.Attr.n.u4Type == 7);
@@ -3193,7 +3197,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                    || (pCtx->ss.Attr.n.u1Granularity));
         }
         /* DS, ES, FS, GS - only check for usable selectors, see hmR0VmxWriteSegmentReg(). */
-        if (pCtx->ds.Attr.u && pCtx->ds.Attr.u != HMVMX_SEL_UNUSABLE)
+        if (pCtx->ds.Attr.u && !(pCtx->ds.Attr.u & HMVMX_SEL_UNUSABLE))
         {
             Assert(pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
             Assert(pCtx->ds.Attr.n.u1Present);
@@ -3207,7 +3211,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             Assert(   !(pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_CODE)
                    || (pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_READ));
         }
-        if (pCtx->es.Attr.u && pCtx->es.Attr.u != HMVMX_SEL_UNUSABLE)
+        if (pCtx->es.Attr.u && !(pCtx->es.Attr.u & HMVMX_SEL_UNUSABLE))
         {
             Assert(pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
             Assert(pCtx->es.Attr.n.u1Present);
@@ -3221,7 +3225,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             Assert(   !(pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_CODE)
                    || (pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_READ));
         }
-        if (pCtx->fs.Attr.u && pCtx->fs.Attr.u != HMVMX_SEL_UNUSABLE)
+        if (pCtx->fs.Attr.u && !(pCtx->fs.Attr.u & HMVMX_SEL_UNUSABLE))
         {
             Assert(pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
             Assert(pCtx->fs.Attr.n.u1Present);
@@ -3235,7 +3239,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             Assert(   !(pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_CODE)
                    || (pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_READ));
         }
-        if (pCtx->gs.Attr.u && pCtx->gs.Attr.u != HMVMX_SEL_UNUSABLE)
+        if (pCtx->gs.Attr.u && !(pCtx->gs.Attr.u & HMVMX_SEL_UNUSABLE))
         {
             Assert(pCtx->gs.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
             Assert(pCtx->gs.Attr.n.u1Present);
@@ -3354,7 +3358,7 @@ static int hmR0VmxWriteSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLim
     }
 
     /* Validate segment access rights. Refer to Intel spec. "26.3.1.2 Checks on Guest Segment Registers". */
-    AssertMsg((u32Access == HMVMX_SEL_UNUSABLE) || (u32Access & X86_SEL_TYPE_ACCESSED),
+    AssertMsg((u32Access & HMVMX_SEL_UNUSABLE) || (u32Access & X86_SEL_TYPE_ACCESSED),
               ("Access bit not set for usable segment. idx=%#x sel=%#x attr %#x\n", idxBase, pSelReg, pSelReg->Attr.u));
 
     rc = VMXWriteVmcs32(idxAccess, u32Access);           /* 32-bit guest segment access-rights field. */
@@ -5151,15 +5155,15 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
     AssertRCReturn(rc, rc);
 
     /*
-     * If VT-x marks the segment as unusable, the rest of the attributes are undefined.
+     * If VT-x marks the segment as unusable, the rest of the attributes are undefined with certain exceptions (some bits in
+     * CS, SS). Regardless, we have to clear the bits here and only retain the unusable bit because the unusable bit is specific
+     * to VT-x, everyone else relies on the attribute being zero and have no clue what the unusable bit is.
+     *
      * See Intel spec. 27.3.2 "Saving Segment Registers and Descriptor-Table Registers".
      */
     if (pSelReg->Attr.u & HMVMX_SEL_UNUSABLE)
     {
-        Assert(idxSel != VMX_VMCS16_GUEST_FIELD_TR);
-        /** @todo r=ramshankar: This can't be right for CS, SS which have exceptions for
-         *        certain bits, they're not all undefined. Consider ORing
-         *        HMVMX_SEL_UNUSABLE instead? */
+        Assert(idxSel != VMX_VMCS16_GUEST_FIELD_TR);          /* TR is the only selector that can never be unusable. */
         pSelReg->Attr.u = HMVMX_SEL_UNUSABLE;
     }
     return rc;
