@@ -5157,6 +5157,9 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
     if (pSelReg->Attr.u & HMVMX_SEL_UNUSABLE)
     {
         Assert(idxSel != VMX_VMCS16_GUEST_FIELD_TR);
+        /** @todo r=ramshankar: This can't be right for CS, SS which have exceptions for
+         *        certain bits, they're not all undefined. Consider ORing
+         *        HMVMX_SEL_UNUSABLE instead? */
         pSelReg->Attr.u = HMVMX_SEL_UNUSABLE;
     }
     return rc;
