@@ -420,8 +420,6 @@ static bool isSyntheticLCtrl(MSG *pMsg)
     if (   ((RT_HIWORD(peekMsg.lParam) & 0xFF) != 0x38 /* scan code: Alt */)
         || !(RT_HIWORD(peekMsg.lParam) & KF_EXTENDED))
         return false;
-    LogRel(("The current event is a left control key event (time: %d).  There is a pending right alt key event (time: %d).\n",
-            (int) pMsg->time, (int) peekMsg.time));
     /* If we got this far then we have a key event which could potentially
      * be a synthetic left control.  Now we check to see whether the current
      * keyboard layout actually has an AltGr key by checking whether any of
