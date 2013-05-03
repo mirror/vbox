@@ -1328,7 +1328,8 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             case GraphicsControllerType_Null:
                 break;
             case GraphicsControllerType_VBoxVGA:
-                rc = configGraphicsController(pDevices, "vga", pBusMgr, pMachine, biosSettings, fHMEnabled);
+                rc = configGraphicsController(pDevices, "vga", pBusMgr, pMachine, biosSettings,
+                                              RT_BOOL(fHMEnabled));
                 if (FAILED(rc))
                     return rc;
                 break;

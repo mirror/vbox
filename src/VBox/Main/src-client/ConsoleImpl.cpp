@@ -5393,9 +5393,9 @@ HRESULT Console::onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOO
     if (ptrVM.isOk())
     {
         if (aRemove)
-            rc = doStorageDeviceDetach(aMediumAttachment, ptrVM.rawUVM(), aSilent);
+            rc = doStorageDeviceDetach(aMediumAttachment, ptrVM.rawUVM(), RT_BOOL(aSilent));
         else
-            rc = doStorageDeviceAttach(aMediumAttachment, ptrVM.rawUVM(), aSilent);
+            rc = doStorageDeviceAttach(aMediumAttachment, ptrVM.rawUVM(), RT_BOOL(aSilent));
         ptrVM.release();
     }
 

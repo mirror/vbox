@@ -2205,7 +2205,8 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aDisplay, BOOL aEnabled,
         PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
         if (pVMMDevPort)
             pVMMDevPort->pfnRequestDisplayChange(pVMMDevPort, aWidth, aHeight, aBitsPerPixel,
-                                                 aDisplay, aOriginX, aOriginY, aEnabled, aChangeOrigin);
+                                                 aDisplay, aOriginX, aOriginY,
+                                                 RT_BOOL(aEnabled), RT_BOOL(aChangeOrigin));
     }
     return S_OK;
 }
