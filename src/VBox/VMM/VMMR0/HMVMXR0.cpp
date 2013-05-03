@@ -5495,15 +5495,11 @@ static int hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * entering from ring-3 (not longjmp returns).
  *
  * @param   pVCpu           Pointer to the VMCPU.
- * @param   pCtx            Pointer to the guest-CPU context.
  */
-static void hmR0VmxUpdatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
+static void hmR0VmxTRPMTrapToPendingEvent(PVMCPU pVCpu)
 {
-    if (!TRPMHasTrap(pVCpu))
-    {
-        Assert(!pVCpu->hm.s.Event.fPending);
-        return;
-    }
+    Assert(TRPMHasTrap(pVCpu));
+    Assert(!pVCpu->hm.s.Event.fPending);
 
     uint8_t     uVector;
     TRPMEVENT   enmTrpmEvent;
@@ -5569,61 +5565,60 @@ static void hmR0VmxUpdatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @param   pvCpu           Pointer to the VMCPU.
  */
-static void hmR0VmxUpdateTRPM(PVMCPU pVCpu)
+static void hmR0VmxPendingEventToTRPMTrap(PVMCPU pVCpu)
 {
-    if (pVCpu->hm.s.Event.fPending)
+    Assert(pVCpu->hm.s.Event.fPending);
+
+    uint32_t uVectorType     = VMX_IDT_VECTORING_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo);
+    uint32_t uVector         = VMX_IDT_VECTORING_INFO_VECTOR(pVCpu->hm.s.Event.u64IntrInfo);
+    bool     fErrorCodeValid = !!VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntrInfo);
+    uint32_t uErrorCode      = pVCpu->hm.s.Event.u32ErrCode;
+
+    /* If a trap was already pending, we did something wrong! */
+    Assert(TRPMQueryTrap(pVCpu, NULL /* pu8TrapNo */, NULL /* pEnmType */) == VERR_TRPM_NO_ACTIVE_TRAP);
+
+    TRPMEVENT enmTrapType;
+    switch (uVectorType)
     {
-        uint32_t uVectorType     = VMX_IDT_VECTORING_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo);
-        uint32_t uVector         = VMX_IDT_VECTORING_INFO_VECTOR(pVCpu->hm.s.Event.u64IntrInfo);
-        bool     fErrorCodeValid = !!VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntrInfo);
-        uint32_t uErrorCode      = pVCpu->hm.s.Event.u32ErrCode;
-
-        /* If a trap was already pending, we did something wrong! */
-        Assert(TRPMQueryTrap(pVCpu, NULL /* pu8TrapNo */, NULL /* pEnmType */) == VERR_TRPM_NO_ACTIVE_TRAP);
-
-        TRPMEVENT enmTrapType;
-        switch (uVectorType)
-        {
-            case VMX_IDT_VECTORING_INFO_TYPE_EXT_INT:
-            case VMX_IDT_VECTORING_INFO_TYPE_NMI:
-               enmTrapType = TRPM_HARDWARE_INT;
-               break;
-            case VMX_IDT_VECTORING_INFO_TYPE_SW_INT:
-                enmTrapType = TRPM_SOFTWARE_INT;
-                break;
-            case VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT:
-            case VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT:      /* #BP and #OF */
-            case VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT:
-                enmTrapType = TRPM_TRAP;
-                break;
-            default:
-                AssertMsgFailed(("Invalid trap type %#x\n", uVectorType));
-                enmTrapType = TRPM_32BIT_HACK;
-                break;
-        }
-
-        Log(("Converting pending HM event to TRPM trap uVector=%#x enmTrapType=%d\n", uVector, enmTrapType));
-        int rc = TRPMAssertTrap(pVCpu, uVector, enmTrapType);
-        AssertRC(rc);
-
-        if (fErrorCodeValid)
-            TRPMSetErrorCode(pVCpu, uErrorCode);
-        if (   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
-            && uVector == X86_XCPT_PF)
-        {
-            TRPMSetFaultAddress(pVCpu, pVCpu->hm.s.Event.GCPtrFaultAddress);
-        }
-        else if (   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
-                 || uVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT
-                 || uVectorType == VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT)
-        {
-            AssertMsg(   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
-                      || (uVector == X86_XCPT_BP || uVector == X86_XCPT_OF),
-                      ("Invalid vector: uVector=%#x uVectorType=%#x\n", uVector, uVectorType));
-            TRPMSetInstrLength(pVCpu, pVCpu->hm.s.Event.cbInstr);
-        }
-        pVCpu->hm.s.Event.fPending = false;
+        case VMX_IDT_VECTORING_INFO_TYPE_EXT_INT:
+        case VMX_IDT_VECTORING_INFO_TYPE_NMI:
+           enmTrapType = TRPM_HARDWARE_INT;
+           break;
+        case VMX_IDT_VECTORING_INFO_TYPE_SW_INT:
+            enmTrapType = TRPM_SOFTWARE_INT;
+            break;
+        case VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT:
+        case VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT:      /* #BP and #OF */
+        case VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT:
+            enmTrapType = TRPM_TRAP;
+            break;
+        default:
+            AssertMsgFailed(("Invalid trap type %#x\n", uVectorType));
+            enmTrapType = TRPM_32BIT_HACK;
+            break;
     }
+
+    Log(("Converting pending HM event to TRPM trap uVector=%#x enmTrapType=%d\n", uVector, enmTrapType));
+    int rc = TRPMAssertTrap(pVCpu, uVector, enmTrapType);
+    AssertRC(rc);
+
+    if (fErrorCodeValid)
+        TRPMSetErrorCode(pVCpu, uErrorCode);
+    if (   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
+        && uVector == X86_XCPT_PF)
+    {
+        TRPMSetFaultAddress(pVCpu, pVCpu->hm.s.Event.GCPtrFaultAddress);
+    }
+    else if (   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
+             || uVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT
+             || uVectorType == VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT)
+    {
+        AssertMsg(   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
+                  || (uVector == X86_XCPT_BP || uVector == X86_XCPT_OF),
+                  ("Invalid vector: uVector=%#x uVectorType=%#x\n", uVector, uVectorType));
+        TRPMSetInstrLength(pVCpu, pVCpu->hm.s.Event.cbInstr);
+    }
+    pVCpu->hm.s.Event.fPending = false;
 }
 
 
@@ -5719,7 +5714,11 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
     Log(("hmR0VmxExitToRing3: rcExit=%d\n", rcExit));
 
     /* We need to do this only while truly exiting the "inner loop" back to ring-3 and -not- for any longjmp to ring3. */
-    hmR0VmxUpdateTRPM(pVCpu);
+    if (pVCpu->hm.s.Event.fPending)
+    {
+        hmR0VmxPendingEventToTRPMTrap(pVCpu);
+        Assert(!pVCpu->hm.s.Event.fPending);
+    }
 
     /* Sync. the guest state. */
     hmR0VmxLongJmpToRing3(pVM, pVCpu, pMixedCtx, rcExit);
@@ -6527,6 +6526,9 @@ DECLINLINE(int) hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
      * interrupts and handle returning to ring-3 afterwards, but requires very careful state restoration.
      */
     /** @todo Rework event evaluation and injection to be complete separate. */
+    if (TRPMHasTrap(pVCpu))
+        hmR0VmxTRPMTrapToPendingEvent(pVCpu);
+
     rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
     return rc;
@@ -6750,7 +6752,6 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     VmxTransient.fUpdateTscOffsettingAndPreemptTimer = true;
     int          rc     = VERR_INTERNAL_ERROR_5;
     uint32_t     cLoops = 0;
-    hmR0VmxUpdatePendingEvent(pVCpu, pCtx);
 
     for (;; cLoops++)
     {
