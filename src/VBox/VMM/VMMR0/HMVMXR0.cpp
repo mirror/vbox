@@ -4579,7 +4579,6 @@ DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntrInfo, uint
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    /* Inject the double-fault. */
     uint32_t u32IntrInfo = X86_XCPT_DF | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     u32IntrInfo         |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
