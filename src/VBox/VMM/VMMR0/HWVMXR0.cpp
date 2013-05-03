@@ -3452,7 +3452,7 @@ ResumeExecution:
     rc2 = VMXReadCachedVmcs(VMX_VMCS32_RO_IDT_INFO,            &val);
     AssertRC(rc2);
     pVCpu->hm.s.Event.u64IntrInfo = VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(val);
-    if (    VMX_EXIT_INTERRUPTION_INFO_VALID(pVCpu->hm.s.Event.u64IntrInfo)
+    if (    VMX_EXIT_INTERRUPTION_INFO_IS_VALID(pVCpu->hm.s.Event.u64IntrInfo)
         /* Ignore 'int xx' as they'll be restarted anyway. */
         &&  VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo) != VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT
         /* Ignore software exceptions (such as int3) as they'll reoccur when we restart the instruction anyway. */
@@ -3477,7 +3477,7 @@ ResumeExecution:
         }
     }
 #ifdef VBOX_STRICT
-    else if (   VMX_EXIT_INTERRUPTION_INFO_VALID(pVCpu->hm.s.Event.u64IntrInfo)
+    else if (   VMX_EXIT_INTERRUPTION_INFO_IS_VALID(pVCpu->hm.s.Event.u64IntrInfo)
                 /* Ignore software exceptions (such as int3) as they're reoccur when we restart the instruction anyway. */
              && VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT)
     {
@@ -3520,7 +3520,7 @@ ResumeExecution:
     {
         uint32_t vector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(intInfo);
 
-        if (!VMX_EXIT_INTERRUPTION_INFO_VALID(intInfo))
+        if (!VMX_EXIT_INTERRUPTION_INFO_IS_VALID(intInfo))
         {
             Assert(exitReason == VMX_EXIT_EXT_INT);
             /* External interrupt; leave to allow it to be dispatched again. */
@@ -5012,7 +5012,7 @@ end:
      * If we executed vmlaunch/vmresume and an external IRQ was pending, then we don't have to do a full sync the next time.
      */
     if (    exitReason == VMX_EXIT_EXT_INT
-        &&  !VMX_EXIT_INTERRUPTION_INFO_VALID(intInfo))
+        &&  !VMX_EXIT_INTERRUPTION_INFO_IS_VALID(intInfo))
     {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         /* On the next entry we'll only sync the host context. */

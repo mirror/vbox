@@ -4580,7 +4580,7 @@ DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntrInfo, uint
 DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     /* Inject the double-fault. */
-    uint32_t u32IntrInfo = X86_XCPT_DF | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+    uint32_t u32IntrInfo = X86_XCPT_DF | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     u32IntrInfo         |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
     hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo,  0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
@@ -5515,7 +5515,7 @@ static void hmR0VmxTRPMTrapToPendingEvent(PVMCPU pVCpu)
     AssertRC(rc);
 
     /* Refer Intel spec. 24.8.3 "VM-entry Controls for Event Injection" for the format of u32IntrInfo. */
-    uint32_t u32IntrInfo = uVector | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+    uint32_t u32IntrInfo = uVector | VMX_EXIT_INTERRUPTION_INFO_VALID;
     if (enmTrpmEvent == TRPM_TRAP)
     {
         switch (uVector)
@@ -5864,10 +5864,9 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             && !fBlockSti)
         {
             Log(("Injecting NMI\n"));
-            uint32_t uIntrInfo;
-            uIntrInfo  = X86_XCPT_NMI | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
-            uIntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-            rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, uIntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */,
+            uint32_t u32IntrInfo = X86_XCPT_NMI | VMX_EXIT_INTERRUPTION_INFO_VALID;
+            u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+            rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */,
                                         0 /* GCPtrFaultAddress */, &uIntrState);
             AssertRCReturn(rc, rc);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
@@ -5890,7 +5889,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             if (RT_SUCCESS(rc))
             {
                 Log(("Injecting interrupt u8Interrupt=%#x\n", u8Interrupt));
-                uint32_t u32IntrInfo = u8Interrupt | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+                uint32_t u32IntrInfo = u8Interrupt | VMX_EXIT_INTERRUPTION_INFO_VALID;
                 u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
                 rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntrInfo, 0 /* cbInstr */,  0 /* u32ErrCode */,
                                             0 /* GCPtrFaultAddress */, &uIntrState);
@@ -5960,7 +5959,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    uint32_t u32IntrInfo = X86_XCPT_UD | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+    uint32_t u32IntrInfo = X86_XCPT_UD | VMX_EXIT_INTERRUPTION_INFO_VALID;
     hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
 
@@ -5976,7 +5975,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(int) hmR0VmxInjectXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t *puIntrState)
 {
-    uint32_t u32IntrInfo = X86_XCPT_DF | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+    uint32_t u32IntrInfo = X86_XCPT_DF | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     u32IntrInfo         |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
     return hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */,
@@ -5994,7 +5993,7 @@ DECLINLINE(int) hmR0VmxInjectXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t *
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    uint32_t u32IntrInfo = X86_XCPT_DB | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+    uint32_t u32IntrInfo = X86_XCPT_DB | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
@@ -6012,7 +6011,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t cbInstr)
 {
-    uint32_t u32IntrInfo = X86_XCPT_OF | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+    uint32_t u32IntrInfo = X86_XCPT_OF | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
@@ -6031,7 +6030,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint3
 DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErrorCodeValid, uint32_t u32ErrorCode,
                                     uint32_t *puIntrState)
 {
-    uint32_t u32IntrInfo = X86_XCPT_GP | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+    uint32_t u32IntrInfo = X86_XCPT_GP | VMX_EXIT_INTERRUPTION_INFO_VALID;
     u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     if (fErrorCodeValid)
         u32IntrInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
@@ -6053,7 +6052,7 @@ DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErro
  */
 DECLINLINE(void) hmR0VmxSetPendingIntN(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint16_t uVector, uint32_t cbInstr)
 {
-    uint32_t u32IntrInfo = uVector | (1 << VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT);
+    uint32_t u32IntrInfo = uVector | VMX_EXIT_INTERRUPTION_INFO_VALID;
     if (   uVector == X86_XCPT_BP
         || uVector == X86_XCPT_OF)
     {
@@ -6242,7 +6241,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
     }
 
     /* Validate. */
-    Assert(VMX_EXIT_INTERRUPTION_INFO_VALID(u32IntrInfo));          /* Bit 31 (Valid bit) must be set by caller. */
+    Assert(VMX_EXIT_INTERRUPTION_INFO_IS_VALID(u32IntrInfo));       /* Bit 31 (Valid bit) must be set by caller. */
     Assert(!VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(u32IntrInfo));   /* Bit 12 MBZ. */
     Assert(!(u32IntrInfo & 0x7ffff000));                            /* Bits 30:12 MBZ. */
 
