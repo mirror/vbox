@@ -5168,6 +5168,15 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
     return rc;
 }
 
+#ifdef VMX_USE_CACHED_VMCS_ACCESSES
+#define VMXLOCAL_READ_SEG(Sel, CtxSel) \
+    hmR0VmxReadSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_##Sel, VMX_VMCS32_GUEST_##Sel##_LIMIT, \
+                          VMX_VMCS_GUEST_##Sel##_BASE_CACHE_IDX, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, &pMixedCtx->CtxSel)
+#else
+#define VMXLOCAL_READ_SEG(Sel, CtxSel) \
+    hmR0VmxReadSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_##Sel, VMX_VMCS32_GUEST_##Sel##_LIMIT, \
+                          VMX_VMCS_GUEST_##Sel##_BASE, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, &pMixedCtx->CtxSel)
+#endif
 
 /**
  * Saves the guest segment registers from the current VMCS into the guest-CPU
@@ -5183,16 +5192,6 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
  */
 static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-#ifdef VMX_USE_CACHED_VMCS_ACCESSES
-#define VMXLOCAL_READ_SEG(Sel, CtxSel) \
-    hmR0VmxReadSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_##Sel, VMX_VMCS32_GUEST_##Sel##_LIMIT,                  \
-                          VMX_VMCS_GUEST_##Sel##_BASE_CACHE_IDX, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, &pMixedCtx->CtxSel)
-#else
-#define VMXLOCAL_READ_SEG(Sel, CtxSel) \
-    hmR0VmxReadSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_##Sel, VMX_VMCS32_GUEST_##Sel##_LIMIT,                  \
-                          VMX_VMCS_GUEST_##Sel##_BASE, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, &pMixedCtx->CtxSel)
-#endif
-
     int rc = VINF_SUCCESS;
 
     /* Guest segment registers. */
@@ -5283,6 +5282,8 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     }
     return rc;
 }
+
+#undef VMXLOCAL_READ_SEG
 
 
 /**
