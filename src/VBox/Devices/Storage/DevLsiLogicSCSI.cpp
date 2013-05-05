@@ -2095,6 +2095,8 @@ static int lsilogicR3ProcessSCSIIORequest(PLSILOGICSCSI pThis, PLSILOGICTASKSTAT
                                                        uChainOffset);
                 AssertRC(rc);
             }
+            else
+                pTaskState->cSGListEntries = 0;
 
 # if 0
             /* Map sense buffer. */
