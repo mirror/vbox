@@ -351,12 +351,12 @@ renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx)
     }
     else if (!crWindow && !ctx)
     {
+        renderspu_SystemMakeCurrent( NULL, 0, NULL );
 #ifdef CHROMIUM_THREADSAFE
         crSetTSD(&_RenderTSD, NULL);
 #else
         render_spu.currentContext = NULL;
 #endif
-        renderspu_SystemMakeCurrent( NULL, 0, NULL );
     }
     else
     {
