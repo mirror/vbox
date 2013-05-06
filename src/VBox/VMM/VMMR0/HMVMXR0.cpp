@@ -5042,7 +5042,8 @@ static int hmR0VmxSaveGuestGSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 /**
  * Saves the auto load/store'd guest MSRs from the current VMCS into the
- * guest-CPU context. Currently these are LSTAR, STAR, SFMASK and TSC_AUX.
+ * guest-CPU context. Currently these are LSTAR, STAR, SFMASK, KERNEL-GS BASE
+ * and TSC_AUX.
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
@@ -5106,9 +5107,13 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
+    /* Guest CR2 - updated always during the world-switch or in #PF. */
     /* Guest CR3. Only changes with Nested Paging. This must be done -after- saving CR0 and CR4 from the guest! */
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR3))
     {
+        Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0);
+        Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR4);
+
         PVM pVM = pVCpu->CTX_SUFF(pVM);
         if (   pVM->hm.s.fNestedPaging
             && CPUMIsGuestPagingEnabledEx(pMixedCtx))
@@ -5122,12 +5127,8 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
             }
 
-            /* We require EFER to check PAE mode. */
-            rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
-            AssertRCReturn(rc, rc);
-
             /* If the guest is in PAE mode, sync back the PDPE's into the guest state. */
-            if (CPUMIsGuestInPAEModeEx(pMixedCtx))  /* Reads CR0, CR4 and EFER MSR. */
+            if (CPUMIsGuestInPAEModeEx(pMixedCtx))  /* Reads CR0, CR4 and EFER MSR (EFER is always up-to-date). */
             {
                 rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE0_FULL, &pVCpu->hm.s.aPdpes[0].u);        AssertRCReturn(rc, rc);
                 rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, &pVCpu->hm.s.aPdpes[1].u);        AssertRCReturn(rc, rc);
