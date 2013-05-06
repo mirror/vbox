@@ -2323,6 +2323,8 @@ elif [ "$OS" = "haiku" ]; then
 elif [ "$OS" = "solaris" ]; then
   [ $OSE -eq 1 ] && WITH_LIBVPX=0
 fi
+# ATM
+[ $OSE -eq 1 ] && WITH_LIBVPX=0
 
 # scan command line options
 for option in $*; do
