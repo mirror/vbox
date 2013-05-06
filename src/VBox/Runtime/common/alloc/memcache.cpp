@@ -141,8 +141,8 @@ typedef struct RTMEMCACHEINT
      * These are marked as used in the allocation bitmaps.
      *
      * @todo This doesn't scale well when several threads are beating on the
-     *       cache.  Also, it totally doesn't work when we've got a
-     *       constructor/destructor around or the objects are too small. */
+     *       cache.  Also, it totally doesn't work when the objects are too
+     *       small. */
     PRTMEMCACHEFREEOBJ volatile pFreeTop;
 } RTMEMCACHEINT;
 
@@ -547,8 +547,7 @@ RTDECL(void) RTMemCacheFree(RTMEMCACHE hMemCache, void *pvObj)
     }
     else
     {
-        /* Note: Do *NOT* attempt to poison the object if we have a constructor
-                 or/and destructor! */
+        /* Note: Do *NOT* attempt to poison the object! */
 
         /*
          * Find the cache page.  The page structure is at the start of the page.
