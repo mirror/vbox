@@ -2142,23 +2142,16 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 #endif
 
     /* Write these host selector fields into the host-state area in the VMCS. */
-    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_CS, uSelCS);
-    AssertRCReturn(rc, rc);
-    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_SS, uSelSS);
-    AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_CS, uSelCS);      AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_SS, uSelSS);      AssertRCReturn(rc, rc);
     /* Avoid the VMWRITEs as we set the following segments to 0 and the VMCS fields are already  0 (since g_HvmR0 is static) */
 #if 0
-    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_DS, uSelDS);
-    AssertRCReturn(rc, rc);
-    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_ES, uSelES);
-    AssertRCReturn(rc, rc);
-    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_FS, uSelFS);
-    AssertRCReturn(rc, rc);
-    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_GS, uSelGS);
-    AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_DS, uSelDS);      AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_ES, uSelES);      AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_FS, uSelFS);      AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_GS, uSelGS);      AssertRCReturn(rc, rc);
 #endif
-    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_TR, uSelTR);
-    AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_TR, uSelTR);      AssertRCReturn(rc, rc);
 
     /*
      * Host GDTR and IDTR.
@@ -2175,11 +2168,8 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         X86XDTR64 Gdtr64;
         X86XDTR64 Idtr64;
         hmR0Get64bitGdtrAndIdtr(&Gdtr64, &Idtr64);
-
-        rc = VMXWriteVmcs64(VMX_VMCS_HOST_GDTR_BASE, Gdtr64.uAddr);
-        AssertRCReturn(rc, rc);
-        rc = VMXWriteVmcs64(VMX_VMCS_HOST_IDTR_BASE, Idtr64.uAddr);
-        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs64(VMX_VMCS_HOST_GDTR_BASE, Gdtr64.uAddr);     AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs64(VMX_VMCS_HOST_IDTR_BASE, Idtr64.uAddr);     AssertRCReturn(rc, rc);
 
         Gdtr.cbGdt = Gdtr64.cb;
         Gdtr.pGdt  = (uintptr_t)Gdtr64.uAddr;
@@ -2190,11 +2180,8 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         RTIDTR Idtr;
         ASMGetGDTR(&Gdtr);
         ASMGetIDTR(&Idtr);
-
-        rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_GDTR_BASE, Gdtr.pGdt);
-        AssertRCReturn(rc, rc);
-        rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_IDTR_BASE, Idtr.pIdt);
-        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_GDTR_BASE, Gdtr.pGdt);      AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_IDTR_BASE, Idtr.pIdt);      AssertRCReturn(rc, rc);
     }
 
     /*
