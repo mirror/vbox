@@ -827,7 +827,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
             rc = vboxStInit(ghwndToolWindow);
             if (!RT_SUCCESS(rc))
             {
-                WARN(("VBoxTray: vboxStInit failed, rc %d"));
+                WARN(("VBoxTray: vboxStInit failed, rc %d\n"));
                 /* ignore the St Init failure. this can happen for < XP win that do not support WTS API
                  * in that case the session is treated as active connected to the physical console
                  * (i.e. fallback to the old behavior that was before introduction of VBoxSt) */
@@ -837,7 +837,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
             rc = vboxDtInit();
             if (!RT_SUCCESS(rc))
             {
-                WARN(("VBoxTray: vboxDtInit failed, rc %d"));
+                WARN(("VBoxTray: vboxDtInit failed, rc %d\n"));
                 /* ignore the Dt Init failure. this can happen for < XP win that do not support WTS API
                  * in that case the session is treated as active connected to the physical console
                  * (i.e. fallback to the old behavior that was before introduction of VBoxSt) */
@@ -1166,7 +1166,7 @@ static const char* vboxStDbgGetString(DWORD val)
         VBOXST_DBG_MAKECASE(WTS_SESSION_UNLOCK);
         VBOXST_DBG_MAKECASE(WTS_SESSION_REMOTE_CONTROL);
         default:
-            WARN(("VBoxTray: invalid WTS state %d", val));
+            WARN(("VBoxTray: invalid WTS state %d\n", val));
             return "Unknown";
     }
 }
@@ -1435,14 +1435,14 @@ static int VBoxAcquireGuestCaps(uint32_t fOr, uint32_t fNot)
     if (!DeviceIoControl(ghVBoxDriver, VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE, &Info, sizeof(Info), &Info, sizeof(Info), &cbReturned, NULL))
     {
         DWORD LastErr = GetLastError();
-        WARN(("DeviceIoControl VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed LastErr %d", LastErr));
+        WARN(("DeviceIoControl VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed LastErr %d\n", LastErr));
         return RTErrConvertFromWin32(LastErr);
     }
 
     int rc = Info.rc;
     if (!RT_SUCCESS(rc))
     {
-        WARN(("VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed rc %d", rc));
+        WARN(("VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed rc %d\n", rc));
         return rc;
     }
 
