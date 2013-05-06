@@ -68,10 +68,37 @@ crServerDispatchNewList( GLuint list, GLenum mode )
     cr_server.head_spu->dispatch_table.NewList( list, mode );
 }
 
+static void crServerQueryHWState()
+{
+    GLuint fbFbo, bbFbo;
+    CRClient *client = cr_server.curClient;
+    CRMuralInfo *mural = client ? client->currentMural : NULL;
+    if (mural && mural->fPresentMode & CR_SERVER_REDIR_F_FBO)
+    {
+        fbFbo = mural->aidFBOs[CR_SERVER_FBO_FB_IDX(mural)];
+        bbFbo = mural->aidFBOs[CR_SERVER_FBO_BB_IDX(mural)];
+    }
+    else
+    {
+        fbFbo = bbFbo = 0;
+    }
+    crStateQueryHWState(fbFbo, bbFbo);
+}
+
 void SERVER_DISPATCH_APIENTRY crServerDispatchEndList(void)
 {
+    CRContext *g = crStateGetCurrent();
+    CRListsState *l = &(g->lists);
+
     cr_server.head_spu->dispatch_table.EndList();
     crStateEndList();
+
+#ifndef IN_GUEST
+    if (l->mode==GL_COMPILE)
+    {
+        crServerQueryHWState();
+    }
+#endif
 }
 
 void SERVER_DISPATCH_APIENTRY
@@ -83,7 +110,7 @@ crServerDispatchCallList( GLuint list )
         /* we're not compiling, so execute the list now */
         /* Issue the list as-is */
         cr_server.head_spu->dispatch_table.CallList( list );
-        crStateQueryHWState();
+        crServerQueryHWState();
     }
     else {
         /* we're compiling glCallList into another list - just pass it through */
@@ -211,7 +238,7 @@ crServerDispatchCallLists( GLsizei n, GLenum type, const GLvoid *lists )
         /* we're not compiling, so execute the list now */
         /* Issue the list as-is */
         cr_server.head_spu->dispatch_table.CallLists( n, type, lists );
-        crStateQueryHWState();
+        crServerQueryHWState();
     }
     else {
         /* we're compiling glCallList into another list - just pass it through */
