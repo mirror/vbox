@@ -1813,51 +1813,54 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
     AssertPtr(pVM);
     AssertPtr(pVCpu);
 
+    /** @todo Shouldn't we able to avoid initializing with 0? */
     int rc = VERR_GENERAL_FAILURE;
 
     /* All CR3 accesses cause VM-exits. Later we optimize CR3 accesses (see hmR0VmxLoadGuestControlRegs())*/
-    rc  = VMXWriteVmcs32(VMX_VMCS32_CTRL_CR3_TARGET_COUNT, 0);
-
-    rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, 0);
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_CR3_TARGET_COUNT, 0);           AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, 0);            AssertRCReturn(rc, rc);
 
     /*
      * Set MASK & MATCH to 0. VMX checks if GuestPFErrCode & MASK == MATCH. If equal (in our case it always is)
      * and if the X86_XCPT_PF bit in the exception bitmap is set it causes a VM-exit, if clear doesn't cause an exit.
      * We thus use the exception bitmap to control it rather than use both.
      */
-    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK, 0);
-    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH, 0);
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK, 0);       AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH, 0);      AssertRCReturn(rc, rc);
 
     /** @todo Explore possibility of using IO-bitmaps. */
     /* All IO & IOIO instructions cause VM-exits. */
-    rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_IO_BITMAP_A_FULL, 0);
-    rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_IO_BITMAP_B_FULL, 0);
+    rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_IO_BITMAP_A_FULL, 0);           AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_IO_BITMAP_B_FULL, 0);           AssertRCReturn(rc, rc);
+
+    /* Initialize the MSR-bitmap area. */
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, 0);       AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, 0);       AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,  0);       AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    /* Setup MSR autoloading/autostoring. */
+    /* Setup MSR autoloading/storing. */
     Assert(pVCpu->hm.s.vmx.HCPhysGuestMsr);
     Assert(!(pVCpu->hm.s.vmx.HCPhysGuestMsr & 0xf));    /* Lower 4 bits MBZ. */
-    rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL, pVCpu->hm.s.vmx.HCPhysGuestMsr);
-    rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_EXIT_MSR_STORE_FULL, pVCpu->hm.s.vmx.HCPhysGuestMsr);
-    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, 0);
-    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, 0);
+    rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL, pVCpu->hm.s.vmx.HCPhysGuestMsr);
+    AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_EXIT_MSR_STORE_FULL, pVCpu->hm.s.vmx.HCPhysGuestMsr);
+    AssertRCReturn(rc, rc);
 
     Assert(pVCpu->hm.s.vmx.HCPhysHostMsr);
     Assert(!(pVCpu->hm.s.vmx.HCPhysHostMsr & 0xf));     /* Lower 4 bits MBZ. */
-    rc |= VMXWriteVmcs64(VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL,  pVCpu->hm.s.vmx.HCPhysHostMsr);
-    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, 0);
-#else
-    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, 0);
-    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, 0);
-    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,  0);
+    rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL,  pVCpu->hm.s.vmx.HCPhysHostMsr);
+    AssertRCReturn(rc, rc);
 #endif
 
     /* Set VMCS link pointer. Reserved for future use, must be -1. Intel spec. 24.4 "Guest-State Area". */
-    rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, UINT64_C(0xffffffffffffffff));
+    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, UINT64_C(0xffffffffffffffff));
+    AssertRCReturn(rc, rc);
 
     /* Setup debug controls */
-    rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_DEBUGCTL_FULL, 0);        /** @todo We don't support IA32_DEBUGCTL MSR. Should we? */
-    rc |= VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, 0);
+    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_DEBUGCTL_FULL, 0);        /** @todo We don't support IA32_DEBUGCTL MSR. Should we? */
+    AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, 0);
     AssertRCReturn(rc, rc);
     return rc;
 }
@@ -2054,23 +2057,25 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
 {
     RTCCUINTREG uReg = ASMGetCR0();
     int rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_CR0, uReg);
+    AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     /* For the darwin 32-bit hybrid kernel, we need the 64-bit CR3 as it uses 64-bit paging. */
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
         uint64_t uRegCR3 = hmR0Get64bitCR3();
-        rc |= VMXWriteVmcs64(VMX_VMCS_HOST_CR3, uRegCR3);
+        rc = VMXWriteVmcs64(VMX_VMCS_HOST_CR3, uRegCR3);
     }
     else
 #endif
     {
         uReg = ASMGetCR3();
-        rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_CR3, uReg);
+        rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_CR3, uReg);
     }
+    AssertRCReturn(rc, rc);
 
     uReg = ASMGetCR4();
-    rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_CR4, uReg);
+    rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_CR4, uReg);
     AssertRCReturn(rc, rc);
     return rc;
 }
@@ -2137,16 +2142,22 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 #endif
 
     /* Write these host selector fields into the host-state area in the VMCS. */
-    rc =  VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_CS, uSelCS);
-    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_SS, uSelSS);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_CS, uSelCS);
+    AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_SS, uSelSS);
+    AssertRCReturn(rc, rc);
     /* Avoid the VMWRITEs as we set the following segments to 0 and the VMCS fields are already  0 (since g_HvmR0 is static) */
 #if 0
-    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_DS, uSelDS);
-    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_ES, uSelES);
-    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_FS, uSelFS);
-    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_GS, uSelGS);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_DS, uSelDS);
+    AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_ES, uSelES);
+    AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_FS, uSelFS);
+    AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_GS, uSelGS);
+    AssertRCReturn(rc, rc);
 #endif
-    rc |= VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_TR, uSelTR);
+    rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_TR, uSelTR);
     AssertRCReturn(rc, rc);
 
     /*
@@ -2164,8 +2175,12 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         X86XDTR64 Gdtr64;
         X86XDTR64 Idtr64;
         hmR0Get64bitGdtrAndIdtr(&Gdtr64, &Idtr64);
-        rc  = VMXWriteVmcs64(VMX_VMCS_HOST_GDTR_BASE, Gdtr64.uAddr);
-        rc |= VMXWriteVmcs64(VMX_VMCS_HOST_IDTR_BASE, Idtr64.uAddr);
+
+        rc = VMXWriteVmcs64(VMX_VMCS_HOST_GDTR_BASE, Gdtr64.uAddr);
+        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs64(VMX_VMCS_HOST_IDTR_BASE, Idtr64.uAddr);
+        AssertRCReturn(rc, rc);
+
         Gdtr.cbGdt = Gdtr64.cb;
         Gdtr.pGdt  = (uintptr_t)Gdtr64.uAddr;
     }
@@ -2175,10 +2190,12 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         RTIDTR Idtr;
         ASMGetGDTR(&Gdtr);
         ASMGetIDTR(&Idtr);
-        rc  = VMXWriteVmcsHstN(VMX_VMCS_HOST_GDTR_BASE, Gdtr.pGdt);
-        rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_IDTR_BASE, Idtr.pIdt);
+
+        rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_GDTR_BASE, Gdtr.pGdt);
+        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_IDTR_BASE, Idtr.pIdt);
+        AssertRCReturn(rc, rc);
     }
-    AssertRCReturn(rc, rc);
 
     /*
      * Host TR base. Verify that TR selector doesn't point past the GDT. Masking off the TI and RPL bits
@@ -2221,8 +2238,9 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     {
         uint64_t u64FSBase = ASMRdMsr(MSR_K8_FS_BASE);
         uint64_t u64GSBase = ASMRdMsr(MSR_K8_GS_BASE);
-        rc  = VMXWriteVmcs64(VMX_VMCS_HOST_FS_BASE, u64FSBase);
-        rc |= VMXWriteVmcs64(VMX_VMCS_HOST_GS_BASE, u64GSBase);
+        rc = VMXWriteVmcs64(VMX_VMCS_HOST_FS_BASE, u64FSBase);
+        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs64(VMX_VMCS_HOST_GS_BASE, u64GSBase);
         AssertRCReturn(rc, rc);
     }
 #endif
@@ -2301,24 +2319,29 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     /*
      * Host Sysenter MSRs.
      */
-    rc |= VMXWriteVmcs32(VMX_VMCS32_HOST_SYSENTER_CS,        ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
+    rc = VMXWriteVmcs32(VMX_VMCS32_HOST_SYSENTER_CS,        ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
+    AssertRCReturn(rc, rc);
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
-        rc |= VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_ESP,     ASMRdMsr(MSR_IA32_SYSENTER_ESP));
-        rc |= VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_EIP,     ASMRdMsr(MSR_IA32_SYSENTER_EIP));
+        rc = VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_ESP,     ASMRdMsr(MSR_IA32_SYSENTER_ESP));
+        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_EIP,     ASMRdMsr(MSR_IA32_SYSENTER_EIP));
     }
     else
     {
-        rc |= VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_ESP,     ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
-        rc |= VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_EIP,     ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
+        rc = VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_ESP,     ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
+        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_EIP,     ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
     }
 # elif HC_ARCH_BITS == 32
-    rc |= VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_ESP,         ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
-    rc |= VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_EIP,         ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
+    rc = VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_ESP,         ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
+    AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_EIP,         ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
 # else
-    rc |= VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_ESP,         ASMRdMsr(MSR_IA32_SYSENTER_ESP));
-    rc |= VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_EIP,         ASMRdMsr(MSR_IA32_SYSENTER_EIP));
+    rc = VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_ESP,         ASMRdMsr(MSR_IA32_SYSENTER_ESP));
+    AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_EIP,         ASMRdMsr(MSR_IA32_SYSENTER_EIP));
 # endif
     AssertRCReturn(rc, rc);
 
@@ -2680,11 +2703,14 @@ static int hmR0VmxLoadGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxLoadGuestRipRspRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxLoadGuestRipRspRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     int rc = hmR0VmxLoadGuestRip(pVCpu, pMixedCtx);
-    rc    |= hmR0VmxLoadGuestRsp(pVCpu, pMixedCtx);
-    rc    |= hmR0VmxLoadGuestRflags(pVCpu, pMixedCtx);
+    AssertRCReturn(rc, rc);
+    rc     = hmR0VmxLoadGuestRsp(pVCpu, pMixedCtx);
+    AssertRCReturn(rc, rc);
+    rc     = hmR0VmxLoadGuestRflags(pVCpu, pMixedCtx);
+    AssertRCReturn(rc, rc);
     return rc;
 }
 
@@ -2822,8 +2848,10 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         u32GuestCR0 &= ~(X86_CR0_CD | X86_CR0_NW);          /* Always enable caching. */
 
         /* Write VT-x's view of the guest CR0 into the VMCS and update the exception bitmap. */
-        rc  = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0, u32GuestCR0);
-        rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
+        rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0, u32GuestCR0);
+        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
+        AssertRCReturn(rc, rc);
         Log(("Load: VMX_VMCS_GUEST_CR0=%#RX32 (uSetCR0=%#RX32 uZapCR0=%#RX32)\n", u32GuestCR0, uSetCR0, uZapCR0));
 
         /*
@@ -2852,7 +2880,7 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
 
         /* Write the CR0 mask into the VMCS and update the VCPU's copy of the current CR0 mask. */
         pVCpu->hm.s.vmx.cr0_mask = u32CR0Mask;
-        rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, u32CR0Mask);
+        rc = VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, u32CR0Mask);
         AssertRCReturn(rc, rc);
 
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR0;
@@ -2897,11 +2925,11 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                 /* If the guest is in PAE mode, pass the PDPEs to VT-x using the VMCS fields. */
                 if (CPUMIsGuestInPAEModeEx(pCtx))
                 {
-                    rc  = PGMGstGetPaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
-                    rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE0_FULL, pVCpu->hm.s.aPdpes[0].u);
-                    rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, pVCpu->hm.s.aPdpes[1].u);
-                    rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, pVCpu->hm.s.aPdpes[2].u);
-                    rc |= VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, pVCpu->hm.s.aPdpes[3].u);
+                    rc  = PGMGstGetPaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);                         AssertRCReturn(rc, rc);
+                    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE0_FULL, pVCpu->hm.s.aPdpes[0].u);     AssertRCReturn(rc, rc);
+                    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, pVCpu->hm.s.aPdpes[1].u);     AssertRCReturn(rc, rc);
+                    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, pVCpu->hm.s.aPdpes[2].u);     AssertRCReturn(rc, rc);
+                    rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, pVCpu->hm.s.aPdpes[3].u);     AssertRCReturn(rc, rc);
                     AssertRCReturn(rc, rc);
                 }
 
@@ -3024,6 +3052,7 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Write VT-x's view of the guest CR4 into the VMCS. */
         Log(("Load: VMX_VMCS_GUEST_CR4=%#RX32 (Set=%#RX32 Zap=%#RX32)\n", u32GuestCR4, uSetCR4, uZapCR4));
         rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR4, u32GuestCR4);
+        AssertRCReturn(rc, rc);
 
         /* Setup CR4 mask. CR4 flags owned by the host, if the guest attempts to change them, that would cause a VM exit. */
         uint32_t u32CR4Mask = 0;
@@ -3033,7 +3062,7 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                     | X86_CR4_PSE
                     | X86_CR4_VMXE;
         pVCpu->hm.s.vmx.cr4_mask = u32CR4Mask;
-        rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, u32CR4Mask);
+        rc = VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, u32CR4Mask);
         AssertRCReturn(rc, rc);
 
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR4;
@@ -3131,11 +3160,14 @@ static int hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     else
         pVCpu->hm.s.vmx.u32ProcCtls   &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT;
 
-    rc  = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP,   pVCpu->hm.s.vmx.u32XcptBitmap);
-    rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP,   pVCpu->hm.s.vmx.u32XcptBitmap);
+    AssertRCReturn(rc, rc);
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+    AssertRCReturn(rc, rc);
 
     /* The guest's view of its DR7 is unblemished. */
-    rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_DR7, pMixedCtx->dr[7]);
+    rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_DR7, pMixedCtx->dr[7]);
+    AssertRCReturn(rc, rc);
 
     pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_DEBUG;
     return rc;
@@ -3333,10 +3365,11 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 static int hmR0VmxWriteSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLimit, uint32_t idxBase,
                                        uint32_t idxAccess, PCPUMSELREG pSelReg, PCPUMCTX pCtx)
 {
-    int rc;
-    rc  = VMXWriteVmcs32(idxSel,    pSelReg->Sel);       /* 16-bit guest selector field. */
-    rc |= VMXWriteVmcs32(idxLimit,  pSelReg->u32Limit);  /* 32-bit guest segment limit field. */
-    rc |= VMXWriteVmcsGstN(idxBase, pSelReg->u64Base);   /* Natural width guest segment base field.*/
+    int rc = VMXWriteVmcs32(idxSel,    pSelReg->Sel);       /* 16-bit guest selector field. */
+    AssertRCReturn(rc, rc);
+    rc     = VMXWriteVmcs32(idxLimit,  pSelReg->u32Limit);  /* 32-bit guest segment limit field. */
+    AssertRCReturn(rc, rc);
+    rc     = VMXWriteVmcsGstN(idxBase, pSelReg->u64Base);   /* Natural width guest segment base field.*/
     AssertRCReturn(rc, rc);
 
     uint32_t u32Access = pSelReg->Attr.u;
@@ -3420,17 +3453,22 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             }
         }
 #endif
-        rc  = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_CS, VMX_VMCS32_GUEST_CS_LIMIT, VMX_VMCS_GUEST_CS_BASE,
+        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_CS, VMX_VMCS32_GUEST_CS_LIMIT, VMX_VMCS_GUEST_CS_BASE,
                                      VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS, &pMixedCtx->cs, pMixedCtx);
-        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_SS, VMX_VMCS32_GUEST_SS_LIMIT, VMX_VMCS_GUEST_SS_BASE,
+        AssertRCReturn(rc, rc);
+        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_SS, VMX_VMCS32_GUEST_SS_LIMIT, VMX_VMCS_GUEST_SS_BASE,
                                      VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS, &pMixedCtx->ss, pMixedCtx);
-        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_DS, VMX_VMCS32_GUEST_DS_LIMIT, VMX_VMCS_GUEST_DS_BASE,
+        AssertRCReturn(rc, rc);
+        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_DS, VMX_VMCS32_GUEST_DS_LIMIT, VMX_VMCS_GUEST_DS_BASE,
                                      VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS, &pMixedCtx->ds, pMixedCtx);
-        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_ES, VMX_VMCS32_GUEST_ES_LIMIT, VMX_VMCS_GUEST_ES_BASE,
+        AssertRCReturn(rc, rc);
+        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_ES, VMX_VMCS32_GUEST_ES_LIMIT, VMX_VMCS_GUEST_ES_BASE,
                                      VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS, &pMixedCtx->es, pMixedCtx);
-        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_FS, VMX_VMCS32_GUEST_FS_LIMIT, VMX_VMCS_GUEST_FS_BASE,
+        AssertRCReturn(rc, rc);
+        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_FS, VMX_VMCS32_GUEST_FS_LIMIT, VMX_VMCS_GUEST_FS_BASE,
                                      VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS, &pMixedCtx->fs, pMixedCtx);
-        rc |= hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_GS, VMX_VMCS32_GUEST_GS_LIMIT, VMX_VMCS_GUEST_GS_BASE,
+        AssertRCReturn(rc, rc);
+        rc = hmR0VmxWriteSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_GS, VMX_VMCS32_GUEST_GS_LIMIT, VMX_VMCS_GUEST_GS_BASE,
                                      VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS, &pMixedCtx->gs, pMixedCtx);
         AssertRCReturn(rc, rc);
 
@@ -3497,11 +3535,10 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(   !(pMixedCtx->tr.u32Limit & 0xfff00000)
                || (u32AccessRights & RT_BIT(15)));              /* Granularity MB1. */
 
-        rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_FIELD_TR,         u16Sel);
-        rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_TR_LIMIT,         u32Limit);
-        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_TR_BASE,          u64Base);
-        rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS, u32AccessRights);
-        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs32(VMX_VMCS16_GUEST_FIELD_TR,         u16Sel);                AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_TR_LIMIT,         u32Limit);              AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_TR_BASE,          u64Base);               AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS, u32AccessRights);       AssertRCReturn(rc, rc);
 
         Log(("Load: VMX_VMCS_GUEST_TR_BASE=%#RX64\n", u64Base));
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_TR;
@@ -3512,9 +3549,8 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_GDTR)
     {
-        rc  = VMXWriteVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, pMixedCtx->gdtr.cbGdt);
-        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE,  pMixedCtx->gdtr.pGdt);
-        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, pMixedCtx->gdtr.cbGdt);        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE,  pMixedCtx->gdtr.pGdt);         AssertRCReturn(rc, rc);
 
         Assert(!(pMixedCtx->gdtr.cbGdt & UINT64_C(0xffff0000)));       /* Bits 31:16 MBZ. */
         Log(("Load: VMX_VMCS_GUEST_GDTR_BASE=%#RX64\n", pMixedCtx->gdtr.pGdt));
@@ -3533,11 +3569,10 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         else
             u32Access = pMixedCtx->ldtr.Attr.u;
 
-        rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_FIELD_LDTR,         pMixedCtx->ldtr.Sel);
-        rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_LDTR_LIMIT,         pMixedCtx->ldtr.u32Limit);
-        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_LDTR_BASE,          pMixedCtx->ldtr.u64Base);
-        rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS, u32Access);
-        AssertRCReturn(rc, rc);
+        rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_FIELD_LDTR,         pMixedCtx->ldtr.Sel);         AssertRCReturn(rc, rc);
+        rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_LDTR_LIMIT,         pMixedCtx->ldtr.u32Limit);    AssertRCReturn(rc, rc);
+        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_LDTR_BASE,          pMixedCtx->ldtr.u64Base);     AssertRCReturn(rc, rc);
+        rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS, u32Access);                   AssertRCReturn(rc, rc);
 
         /* Validate. */
         if (!(u32Access & HMVMX_SEL_UNUSABLE))
@@ -3563,9 +3598,8 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_IDTR)
     {
-        rc  = VMXWriteVmcs32(VMX_VMCS32_GUEST_IDTR_LIMIT, pMixedCtx->idtr.cbIdt);
-        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE,  pMixedCtx->idtr.pIdt);
-        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_IDTR_LIMIT, pMixedCtx->idtr.cbIdt);         AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE,  pMixedCtx->idtr.pIdt);          AssertRCReturn(rc, rc);
 
         Assert(!(pMixedCtx->idtr.cbIdt & UINT64_C(0xffff0000)));       /* Bits 31:16 MBZ. */
         Log(("Load: VMX_VMCS_GUEST_IDTR_BASE=%#RX64\n", pMixedCtx->idtr.pIdt));
@@ -3665,9 +3699,8 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
         /* Update the VCPU's copy of the guest MSR count. */
         pVCpu->hm.s.vmx.cGuestMsrs = cGuestMsrs;
-        rc  = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, cGuestMsrs);
-        rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, cGuestMsrs);
-        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, cGuestMsrs);          AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, cGuestMsrs);          AssertRCReturn(rc, rc);
 #endif  /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_VMX_GUEST_AUTO_MSRS;
@@ -3680,20 +3713,19 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_SYSENTER_CS_MSR)
     {
-        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_SYSENTER_CS,   pMixedCtx->SysEnter.cs);
+        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_SYSENTER_CS,   pMixedCtx->SysEnter.cs);    AssertRCReturn(rc, rc);
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_SYSENTER_CS_MSR;
     }
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_SYSENTER_EIP_MSR)
     {
-        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_SYSENTER_EIP, pMixedCtx->SysEnter.eip);
+        rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_SYSENTER_EIP, pMixedCtx->SysEnter.eip);    AssertRCReturn(rc, rc);
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_SYSENTER_EIP_MSR;
     }
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_SYSENTER_ESP_MSR)
     {
-        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_SYSENTER_ESP, pMixedCtx->SysEnter.esp);
+        rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_SYSENTER_ESP, pMixedCtx->SysEnter.esp);    AssertRCReturn(rc, rc);
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_SYSENTER_ESP_MSR;
     }
-    AssertRCReturn(rc, rc);
 
     return rc;
 }
@@ -4761,9 +4793,11 @@ static int hmR0VmxSaveGuestCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     {
         uint32_t uVal    = 0;
         uint32_t uShadow = 0;
-        rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR4,            &uVal);
-        rc |= VMXReadVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, &uShadow);
+        rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR4,            &uVal);
         AssertRCReturn(rc, rc);
+        rc = VMXReadVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, &uShadow);
+        AssertRCReturn(rc, rc);
+
         uVal = (uShadow & pVCpu->hm.s.vmx.cr4_mask) | (uVal & ~pVCpu->hm.s.vmx.cr4_mask);
         CPUMSetGuestCR4(pVCpu, uVal);
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_CR4;
@@ -4791,6 +4825,7 @@ static int hmR0VmxSaveGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         RTGCUINTREG uVal = 0;
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &uVal);
         AssertRCReturn(rc, rc);
+
         pMixedCtx->rip = uVal;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RIP;
     }
@@ -4817,6 +4852,7 @@ static int hmR0VmxSaveGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         RTGCUINTREG uVal = 0;
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &uVal);
         AssertRCReturn(rc, rc);
+
         pMixedCtx->rsp = uVal;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RSP;
     }
@@ -4842,14 +4878,13 @@ static int hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         uint32_t uVal = 0;
         int rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &uVal);
         AssertRCReturn(rc, rc);
-        pMixedCtx->eflags.u32 = uVal;
 
-        /* Undo our real-on-v86-mode changes to eflags if necessary. */
-        if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+        pMixedCtx->eflags.u32 = uVal;
+        if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)        /* Undo our real-on-v86-mode changes to eflags if necessary. */
         {
-            PVM pVM = pVCpu->CTX_SUFF(pVM);
-            Assert(pVM->hm.s.vmx.pRealModeTSS);
-            Log(("Saving real-mode RFLAGS VT-x view=%#RX64\n", pMixedCtx->rflags.u64));
+            Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.pRealModeTSS);
+            Log(("Saving real-mode EFLAGS VT-x view=%#RX32\n", pMixedCtx->eflags.u32));
+
             pMixedCtx->eflags.Bits.u1VM   = 0;
             pMixedCtx->eflags.Bits.u2IOPL = pVCpu->hm.s.vmx.RealMode.eflags.Bits.u2IOPL;
         }
@@ -4897,8 +4932,10 @@ static void hmR0VmxSaveGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(   uIntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI
                || uIntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
         rc  = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
-        rc |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);    /* for hmR0VmxGetGuestIntrState(). */
         AssertRC(rc);
+        rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);    /* for hmR0VmxGetGuestIntrState(). */
+        AssertRC(rc);
+
         EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
         Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
     }
@@ -5076,9 +5113,10 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     /* Guest CR0. Guest FPU. */
     int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+    AssertRCReturn(rc, rc);
 
     /* Guest CR4. */
-    rc |= hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);
+    rc = hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     /* Guest CR3. Only changes with Nested Paging. This must be done -after- saving CR0 and CR4 from the guest! */
@@ -5098,19 +5136,19 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             }
 
             /* We require EFER to check PAE mode. */
-            rc |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
+            rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
+            AssertRCReturn(rc, rc);
 
             /* If the guest is in PAE mode, sync back the PDPE's into the guest state. */
             if (CPUMIsGuestInPAEModeEx(pMixedCtx))  /* Reads CR0, CR4 and EFER MSR. */
             {
-                rc |= VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE0_FULL, &pVCpu->hm.s.aPdpes[0].u);
-                rc |= VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, &pVCpu->hm.s.aPdpes[1].u);
-                rc |= VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, &pVCpu->hm.s.aPdpes[2].u);
-                rc |= VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, &pVCpu->hm.s.aPdpes[3].u);
+                rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE0_FULL, &pVCpu->hm.s.aPdpes[0].u);        AssertRCReturn(rc, rc);
+                rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, &pVCpu->hm.s.aPdpes[1].u);        AssertRCReturn(rc, rc);
+                rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, &pVCpu->hm.s.aPdpes[2].u);        AssertRCReturn(rc, rc);
+                rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, &pVCpu->hm.s.aPdpes[3].u);        AssertRCReturn(rc, rc);
                 /* Set the force flag to inform PGM about it when necessary. It is cleared by PGMGstUpdatePaePdpes(). */
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES);
             }
-            AssertRCReturn(rc, rc);
         }
 
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_CR3;
@@ -5261,8 +5299,8 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     uint32_t    u32Val = 0;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_GDTR))
     {
-        rc  = VMXReadVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE, &uGCVal);
-        rc |= VMXReadVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, &u32Val);  AssertRCReturn(rc, rc);
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE, &uGCVal);        AssertRCReturn(rc, rc);
+        rc = VMXReadVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, &u32Val);       AssertRCReturn(rc, rc);
         pMixedCtx->gdtr.pGdt  = uGCVal;
         pMixedCtx->gdtr.cbGdt = u32Val;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_GDTR;
@@ -5271,8 +5309,8 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Guest IDTR. */
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_IDTR))
     {
-        rc  = VMXReadVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE, &uGCVal);
-        rc |= VMXReadVmcs32(VMX_VMCS32_GUEST_IDTR_LIMIT, &u32Val);   AssertRCReturn(rc, rc);
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE, &uGCVal);        AssertRCReturn(rc, rc);
+        rc = VMXReadVmcs32(VMX_VMCS32_GUEST_IDTR_LIMIT, &u32Val);       AssertRCReturn(rc, rc);
         pMixedCtx->idtr.pIdt  = uGCVal;
         pMixedCtx->idtr.cbIdt = u32Val;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_IDTR;
@@ -5282,11 +5320,14 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_TR))
     {
         rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+        AssertRCReturn(rc, rc);
 
         /* For real-mode emulation using virtual-8086 mode we have the fake TSS (pRealModeTSS) in TR, don't save the fake one. */
         if (!pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
-            rc |= VMXLOCAL_READ_SEG(TR, tr);
-        AssertRCReturn(rc, rc);
+        {
+            rc = VMXLOCAL_READ_SEG(TR, tr);
+            AssertRCReturn(rc, rc);
+        }
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_TR;
     }
     return rc;
@@ -5936,6 +5977,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                  * VMX_EXIT_APIC_WRITE, VMX_EXIT_VIRTUALIZED_EOI. See Intel spec. 27.3.4 "Saving Non-Register State".
                  */
                 rc2 = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
+                AssertRCReturn(rc, rc);
             }
         }
         else
@@ -5950,7 +5992,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      * There's no need to clear the VM entry-interruption information field here if we're not injecting anything.
      * VT-x clears the valid bit on every VM-exit. See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
      */
-    rc2 |= hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
+    rc2 = hmR0VmxLoadGuestIntrState(pVCpu, uIntrState);
     AssertRC(rc2);
 
     Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET);
