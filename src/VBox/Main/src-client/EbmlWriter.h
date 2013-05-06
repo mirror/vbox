@@ -282,22 +282,6 @@ struct EbmlGlobal
     unsigned int cues;
 };
 
-int Ebml_Serialize(EbmlGlobal *glob, const void *, uint64_t);
-int Ebml_SerializeUnsigned32(EbmlGlobal *glob, uint32_t class_id, uint64_t ui);
-int Ebml_Write(EbmlGlobal *glob, const void *, uint64_t);
-int Ebml_StartSubElement(EbmlGlobal *glob, uint64_t *ebmlLoc, uint32_t class_id);
-int Ebml_EndSubElement(EbmlGlobal *glob, uint64_t *ebmlLoc);
-
-int Ebml_WriteLen(EbmlGlobal *glob, uint64_t val);
-int Ebml_WriteString(EbmlGlobal *glob, const char *str);
-int Ebml_WriteID(EbmlGlobal *glob, uint32_t class_id);
-int Ebml_SerializeUnsigned64(EbmlGlobal *glob, uint32_t class_id, uint64_t ui);
-int Ebml_SerializeUnsigned(EbmlGlobal *glob, uint32_t class_id, uint32_t ui);
-int Ebml_SerializeBinary(EbmlGlobal *glob, uint32_t class_id, uint32_t ui);
-int Ebml_SerializeFloat(EbmlGlobal *glob, uint32_t class_id, double d);
-
-int Ebml_SerializeString(EbmlGlobal *glob, uint32_t class_id, const char *s);
-
 int Ebml_WriteWebMSeekElement(EbmlGlobal *ebml, uint32_t id, uint64_t pos);
 int Ebml_WriteWebMSeekInfo(EbmlGlobal *ebml);
 int Ebml_WriteWebMFileHeader(EbmlGlobal *glob, const vpx_codec_enc_cfg_t *cfg, const struct vpx_rational *fps);

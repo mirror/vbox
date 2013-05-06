@@ -404,7 +404,9 @@ DECLCALLBACK(int) VideoRecThread(RTTHREAD ThreadSelf, void *pvUser)
             rc = videoRecRGBToYUV(pVideoRecCtx);
             ASMAtomicWriteBool(&pVideoRecCtx->fRgbFilled, false);
             if (RT_SUCCESS(rc))
-                videoRecEncodeAndWrite(pVideoRecCtx);
+                rc = videoRecEncodeAndWrite(pVideoRecCtx);
+           if (RT_FAILURE(rc))
+                LogRel(("Error %Rrc encoding video frame\n", rc));
         }
     }
 
@@ -553,11 +555,11 @@ static int videoRecEncodeAndWrite(PVIDEORECCONTEXT pVideoRecCtx)
     /* presentation time stamp */
     vpx_codec_pts_t pts = pVideoRecCtx->u64TimeStamp;
     vpx_codec_err_t rcv = vpx_codec_encode(&pVideoRecCtx->VpxCodec,
-                                             &pVideoRecCtx->VpxRawImage,
-                                             pts /* time stamp */,
-                                             10 /* how long to show this frame */,
-                                             0 /* flags */,
-                                             VPX_DL_REALTIME /* deadline */);
+                                           &pVideoRecCtx->VpxRawImage,
+                                           pts /* time stamp */,
+                                           10  /* how long to show this frame */,
+                                           0   /* flags */,
+                                           VPX_DL_REALTIME /* deadline */);
     if (rcv != VPX_CODEC_OK)
     {
         LogFlow(("Failed to encode:%s\n", vpx_codec_err_to_string(rcv)));
@@ -565,12 +567,12 @@ static int videoRecEncodeAndWrite(PVIDEORECCONTEXT pVideoRecCtx)
     }
 
     vpx_codec_iter_t iter = NULL;
-    int rc = VINF_SUCCESS;
+    int rc = VERR_NO_DATA;
     for (;;)
     {
         const vpx_codec_cx_pkt_t *pkt = vpx_codec_get_cx_data(&pVideoRecCtx->VpxCodec, &iter);
         if (!pkt)
-            return VERR_NO_DATA;
+            break;
         switch (pkt->kind)
         {
             case VPX_CODEC_CX_FRAME_PKT:
