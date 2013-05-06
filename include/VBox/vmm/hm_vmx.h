@@ -1728,18 +1728,26 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
 
 #ifdef VBOX_WITH_OLD_VTX_CODE
 # if HC_ARCH_BITS == 64
-# define VMXWriteVmcs VMXWriteVmcs64
+#  define VMXWriteVmcs VMXWriteVmcs64
 # else
-# define VMXWriteVmcs VMXWriteVmcs32
+#  define VMXWriteVmcs VMXWriteVmcs32
 # endif
 #else /* !VBOX_WITH_OLD_VTX_CODE */
-# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-# define VMXWriteVmcsHstN VMXWriteVmcs64
-# else
-# define VMXWriteVmcsHstN VMXWriteVmcs32
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+#  define VMXWriteVmcsHstN(idxField, uVal)       HMVMX_IS_64BIT_HOST_MODE() ?                     \
+                                                   VMXWriteVmcs64(idxField, uVal)                 \
+                                                 : VMXWriteVmcs32(idxField, uVal)
+#  define VMXWriteVmcsGstN(idxField, u64Val)     (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests) ? \
+                                                   VMXWriteVmcs64(idxField, u64Val)               \
+                                                 : VMXWriteVmcs32(idxField, u64Val)
+# elif HC_ARCH_BITS == 32
+#  define VMXWriteVmcsHstN                       VMXWriteVmcs32
+#  define VMXWriteVmcsGstN(idxField, u64Val)     VMXWriteVmcs64Ex(pVCpu, idxField, u64Val)
+# else  /* HC_ARCH_BITS == 64 */
+#  define VMXWriteVmcsHstN                       VMXWriteVmcs64
+#  define VMXWriteVmcsGstN                       VMXWriteVmcs64
 # endif
-# define VMXWriteVmcsGstN VMXWriteVmcs64
-#endif
+#endif  /* !VBOX_WITH_OLD_VTX_CODE */
 
 
 /**
@@ -1836,11 +1844,13 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData)
 }
 #endif
 
+#ifdef VBOX_WITH_OLD_VTX_CODE
 # if HC_ARCH_BITS == 64
 #  define VMXReadVmcsField VMXReadVmcs64
 # else
 #  define VMXReadVmcsField VMXReadVmcs32
 # endif
+#endif
 
 /**
  * Gets the last instruction error value from the current VMCS
