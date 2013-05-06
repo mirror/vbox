@@ -259,6 +259,7 @@ public:
         ULONG               mVideoCaptureWidth;
         ULONG               mVideoCaptureHeight;
         ULONG               mVideoCaptureRate;
+        ULONG               mVideoCaptureFps;
         Bstr                mVideoCaptureFile;
         BOOL                mVideoCaptureEnabled;
         ULONG               mMonitorCount;
@@ -440,6 +441,8 @@ public:
     STDMETHOD(COMSETTER(VideoCaptureHeight))(ULONG aVertRes);
     STDMETHOD(COMGETTER(VideoCaptureRate))(ULONG *aRate);
     STDMETHOD(COMSETTER(VideoCaptureRate))(ULONG aRate);
+    STDMETHOD(COMGETTER(VideoCaptureFps))(ULONG *aFps);
+    STDMETHOD(COMSETTER(VideoCaptureFps))(ULONG aFps);
     STDMETHOD(COMGETTER(BIOSSettings))(IBIOSSettings **biosSettings);
     STDMETHOD(COMGETTER(SnapshotFolder))(BSTR *aSavedStateFolder);
     STDMETHOD(COMSETTER(SnapshotFolder))(IN_BSTR aSavedStateFolder);

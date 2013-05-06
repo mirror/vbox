@@ -2309,6 +2309,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureHeight)(&Height), rc);
         ULONG Rate;
         CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureRate)(&Rate), rc);
+        ULONG Fps;
+        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureFps)(&Fps), rc);
         Bstr File;
         CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureFile)(File.asOutParam()), rc);
         if (details == VMINFO_MACHINEREADABLE)
@@ -2318,6 +2320,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             RTPrintf("VideoCaptureFile=\"%ls\"\n", File.raw());
             RTPrintf("VideoCaptureHeight=%u\n", (unsigned)Height);
             RTPrintf("VideoCaptureRate=%u\n", (unsigned)Rate);
+            RTPrintf("VideoCaptureFps=%u\n", (unsigned)Fps);
         }
         else
         {
@@ -2325,6 +2328,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             RTPrintf("Capture file:       %ls\n", File.raw());
             RTPrintf("Capture dimensions: %ux%u\n", Width, Height);
             RTPrintf("Capture rate:       %ukbps\n", Rate);
+            RTPrintf("Capture FPS:        %u\n", Fps);
             RTPrintf("\n");
         }
     }

@@ -96,6 +96,9 @@ typedef struct VIDEORECCONTEXT
     bool                fRgbFilled;
     /* pixel format of the current frame */
     uint32_t            u32PixelFormat;
+    /* maximum number of frames per second */
+    uint32_t            uDelay;
+    uint64_t            u64LastTimeStamp;
     /* time stamp of the current frame */
     uint64_t            u64TimeStamp;
 } VIDEORECCONTEXT;
@@ -425,7 +428,7 @@ DECLCALLBACK(int) VideoRecThread(RTTHREAD ThreadSelf, void *pvUser)
  * @param   uTargetHeight       Height of the target image in video recording file.
  */
 int VideoRecContextInit(PVIDEORECCONTEXT pVideoRecCtx, com::Bstr strFile,
-                        uint32_t uWidth, uint32_t uHeight, uint32_t uRate)
+                        uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFps)
 {
     pVideoRecCtx->uTargetWidth  = uWidth;
     pVideoRecCtx->uTargetHeight = uHeight;
@@ -459,6 +462,7 @@ int VideoRecContextInit(PVIDEORECCONTEXT pVideoRecCtx, com::Bstr strFile,
     pVideoRecCtx->VpxConfig.g_timebase.den = 1000;
     /* disable multithreading */
     pVideoRecCtx->VpxConfig.g_threads = 0;
+    pVideoRecCtx->uDelay = 1000 / uFps;
 
     struct vpx_rational arg_framerate = {30, 1};
     rc = Ebml_WriteWebMFileHeader(&pVideoRecCtx->ebml, &pVideoRecCtx->VpxConfig, &arg_framerate);
@@ -642,7 +646,7 @@ static int videoRecRGBToYUV(PVIDEORECCONTEXT pVideoRecCtx)
  * @param   uSourceWidth       Width of the source image (framebuffer).
  * @param   uSourceHeight      Height of the source image (framebuffer).
  * @param   pu8BufAddr         Pointer to source image(framebuffer).
- * @param   u64TimeStamp       Time stamp.
+ * @param   u64TimeStamp       Time stamp (milliseconds).
  */
 int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pVideoRecCtx, uint32_t x, uint32_t y,
                          uint32_t uPixelFormat, uint32_t uBitsPerPixel, uint32_t uBytesPerLine,
@@ -652,6 +656,10 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pVideoRecCtx, uint32_t x, uint32_t y,
     AssertPtrReturn(pu8BufAddr, VERR_INVALID_PARAMETER);
     AssertReturn(uSourceWidth, VERR_INVALID_PARAMETER);
     AssertReturn(uSourceHeight, VERR_INVALID_PARAMETER);
+
+    if (u64TimeStamp < pVideoRecCtx->u64LastTimeStamp + pVideoRecCtx->uDelay)
+        return VINF_TRY_AGAIN;
+    pVideoRecCtx->u64LastTimeStamp = u64TimeStamp;
 
     if (ASMAtomicReadBool(&pVideoRecCtx->fRgbFilled))
         return VERR_TRY_AGAIN;
