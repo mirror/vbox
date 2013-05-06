@@ -430,17 +430,19 @@ int VideoRecContextInit(PVIDEORECCONTEXT pVideoRecCtx, com::Bstr strFile,
     pVideoRecCtx->pu8RgbBuf = (uint8_t *)RTMemAllocZ(uWidth * uHeight * 4);
     AssertReturn(pVideoRecCtx->pu8RgbBuf, VERR_NO_MEMORY);
 
-    pVideoRecCtx->ebml.stream = fopen(com::Utf8Str(strFile).c_str(), "wb");
-    if (!pVideoRecCtx->ebml.stream)
+    int rc = RTFileOpen(&pVideoRecCtx->ebml.file,
+                        com::Utf8Str(strFile).c_str(),
+                        RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+    if (RT_FAILURE(rc))
     {
         LogFlow(("Failed to open the output File \n"));
         return VERR_GENERAL_FAILURE;
     }
 
-    vpx_codec_err_t rcVpx = vpx_codec_enc_config_default(DEFAULTCODEC, &pVideoRecCtx->VpxConfig, 0);
-    if (rcVpx != VPX_CODEC_OK)
+    vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pVideoRecCtx->VpxConfig, 0);
+    if (rcv != VPX_CODEC_OK)
     {
-        LogFlow(("Failed to configure codec \n", vpx_codec_err_to_string(rcVpx)));
+        LogFlow(("Failed to configure codec \n", vpx_codec_err_to_string(rcv)));
         return VERR_GENERAL_FAILURE;
     }
 
@@ -457,16 +459,15 @@ int VideoRecContextInit(PVIDEORECCONTEXT pVideoRecCtx, com::Bstr strFile,
     pVideoRecCtx->VpxConfig.g_threads = 0;
 
     struct vpx_rational arg_framerate = {30, 1};
-    Ebml_WriteWebMFileHeader(&pVideoRecCtx->ebml, &pVideoRecCtx->VpxConfig, &arg_framerate);
+    rc = Ebml_WriteWebMFileHeader(&pVideoRecCtx->ebml, &pVideoRecCtx->VpxConfig, &arg_framerate);
+    AssertRCReturn(rc, rc);
 
     /* Initialize codec */
-    rcVpx = vpx_codec_enc_init(&pVideoRecCtx->VpxCodec,
-                               DEFAULTCODEC,
-                               &pVideoRecCtx->VpxConfig,
-                               0);
-    if (rcVpx != VPX_CODEC_OK)
+    rcv = vpx_codec_enc_init(&pVideoRecCtx->VpxCodec, DEFAULTCODEC,
+                             &pVideoRecCtx->VpxConfig, 0);
+    if (rcv != VPX_CODEC_OK)
     {
-        LogFlow(("Failed to initialize encoder %s", vpx_codec_err_to_string(rcVpx)));
+        LogFlow(("Failed to initialize encoder %s", vpx_codec_err_to_string(rcv)));
         return VERR_GENERAL_FAILURE;
     }
 
@@ -501,12 +502,18 @@ void VideoRecContextClose(PVIDEORECCONTEXT pVideoRecCtx)
     if (ASMAtomicReadU32(&pVideoRecCtx->u32State) == VIDREC_UNINITIALIZED)
         return;
 
-    if (pVideoRecCtx->ebml.stream)
+    if (pVideoRecCtx->ebml.file != NIL_RTFILE)
     {
-        Ebml_WriteWebMFileFooter(&pVideoRecCtx->ebml, 0);
-        fclose(pVideoRecCtx->ebml.stream);
+        int rc = Ebml_WriteWebMFileFooter(&pVideoRecCtx->ebml, 0);
+        AssertRC(rc);
+        RTFileClose(pVideoRecCtx->ebml.file);
+        pVideoRecCtx->ebml.file = NIL_RTFILE;
     }
-
+    if (pVideoRecCtx->ebml.cue_list)
+    {
+        RTMemFree(pVideoRecCtx->ebml.cue_list);
+        pVideoRecCtx->ebml.cue_list = NULL;
+    }
     if (pVideoRecCtx->fEnabled)
     {
         ASMAtomicWriteU32(&pVideoRecCtx->u32State, VIDREC_TERMINATING);
@@ -545,19 +552,20 @@ static int videoRecEncodeAndWrite(PVIDEORECCONTEXT pVideoRecCtx)
 {
     /* presentation time stamp */
     vpx_codec_pts_t pts = pVideoRecCtx->u64TimeStamp;
-    vpx_codec_err_t rcVpx = vpx_codec_encode(&pVideoRecCtx->VpxCodec,
+    vpx_codec_err_t rcv = vpx_codec_encode(&pVideoRecCtx->VpxCodec,
                                              &pVideoRecCtx->VpxRawImage,
                                              pts /* time stamp */,
                                              10 /* how long to show this frame */,
                                              0 /* flags */,
                                              VPX_DL_REALTIME /* deadline */);
-    if (rcVpx != VPX_CODEC_OK)
+    if (rcv != VPX_CODEC_OK)
     {
-        LogFlow(("Failed to encode:%s\n", vpx_codec_err_to_string(rcVpx)));
+        LogFlow(("Failed to encode:%s\n", vpx_codec_err_to_string(rcv)));
         return VERR_GENERAL_FAILURE;
     }
 
     vpx_codec_iter_t iter = NULL;
+    int rc = VINF_SUCCESS;
     for (;;)
     {
         const vpx_codec_cx_pkt_t *pkt = vpx_codec_get_cx_data(&pVideoRecCtx->VpxCodec, &iter);
@@ -566,7 +574,7 @@ static int videoRecEncodeAndWrite(PVIDEORECCONTEXT pVideoRecCtx)
         switch (pkt->kind)
         {
             case VPX_CODEC_CX_FRAME_PKT:
-                Ebml_WriteWebMBlock(&pVideoRecCtx->ebml, &pVideoRecCtx->VpxConfig, pkt);
+                rc = Ebml_WriteWebMBlock(&pVideoRecCtx->ebml, &pVideoRecCtx->VpxConfig, pkt);
                 break;
             default:
                 LogFlow(("Unexpected CODEC Packet.\n"));
@@ -575,7 +583,7 @@ static int videoRecEncodeAndWrite(PVIDEORECCONTEXT pVideoRecCtx)
     }
 
     pVideoRecCtx->cFrame++;
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
