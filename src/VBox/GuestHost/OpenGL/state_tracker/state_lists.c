@@ -168,7 +168,7 @@ void crStateListsInit(CRContext *ctx)
         }                                                   \
     }
 
-void STATE_APIENTRY crStateQueryHWState()
+void STATE_APIENTRY crStateQueryHWState(GLuint fbFbo, GLuint bbFbo)
 {
     CRContext *g = GetCurrentContext();
     CRStateBits *sb = GetCurrentBits();
@@ -217,12 +217,68 @@ void STATE_APIENTRY crStateQueryHWState()
 
         if (CHECKDIRTY(sb->buffer.drawBuffer, negbitID))
         {
-            CRSTATE_SET_ENUM(buffer.drawBuffer, GL_DRAW_BUFFER);
+            GLuint buf = 0;
+            diff_api.GetIntegerv(GL_DRAW_BUFFER, &buf);
+
+            if (buf == GL_COLOR_ATTACHMENT0_EXT && (bbFbo || fbFbo))
+            {
+                GLuint binding = 0;
+                diff_api.GetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &binding);
+                if (!binding)
+                {
+                    crWarning("HW state synch: GL_DRAW_FRAMEBUFFER_BINDING is NULL");
+                }
+
+                if (bbFbo && binding == bbFbo)
+                {
+                    g->buffer.drawBuffer = GL_BACK;
+                }
+                else if (fbFbo && binding == fbFbo)
+                {
+                    g->buffer.drawBuffer = GL_FRONT;
+                }
+                else
+                {
+                    g->buffer.drawBuffer = buf;
+                }
+            }
+            else
+            {
+                g->buffer.drawBuffer = buf;
+            }
         }
 
         if (CHECKDIRTY(sb->buffer.readBuffer, negbitID))
         {
-            CRSTATE_SET_ENUM(buffer.readBuffer, GL_READ_BUFFER);
+            GLuint buf = 0;
+            diff_api.GetIntegerv(GL_READ_BUFFER, &buf);
+
+            if (buf == GL_COLOR_ATTACHMENT0_EXT && (bbFbo || fbFbo))
+            {
+                GLuint binding = 0;
+                diff_api.GetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &binding);
+                if (!binding)
+                {
+                    crWarning("HW state synch: GL_READ_FRAMEBUFFER_BINDING is NULL");
+                }
+
+                if (bbFbo && binding == bbFbo)
+                {
+                    g->buffer.readBuffer = GL_BACK;
+                }
+                else if (fbFbo && binding == fbFbo)
+                {
+                    g->buffer.readBuffer = GL_FRONT;
+                }
+                else
+                {
+                    g->buffer.readBuffer = buf;
+                }
+            }
+            else
+            {
+                g->buffer.readBuffer = buf;
+            }
         }
 
         if (CHECKDIRTY(sb->buffer.indexMask, negbitID))
@@ -1192,7 +1248,7 @@ void STATE_APIENTRY crStateNewList (GLuint list, GLenum mode)
     l->mode = mode;
 }
 
-void STATE_APIENTRY crStateEndList (void) 
+void STATE_APIENTRY crStateEndList (void)
 {
     CRContext *g = GetCurrentContext();
     CRListsState *l = &(g->lists);
@@ -1208,13 +1264,6 @@ void STATE_APIENTRY crStateEndList (void)
         crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glEndList called outside display list");
         return;
     }
-
-#ifndef IN_GUEST
-    if (l->mode==GL_COMPILE)
-    {
-        crStateQueryHWState();
-    }
-#endif
 
     l->currentIndex = 0;
     l->mode = 0;
