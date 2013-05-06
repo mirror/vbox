@@ -842,7 +842,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
     else if (rc2 == VINF_EM_RESCHEDULE)
     {
         if (rc == VINF_SUCCESS)
-            rc = rc2;
+            rc = VBOXSTRICTRC_VAL(rc2);
 # ifndef IN_RING3
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
 # endif
