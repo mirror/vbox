@@ -184,7 +184,7 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
 
     winID = overlappingScreenCount ? cr_server.screen[primaryS].winID : 0;
 
-    if (!winID == !mural->fHasParentWindow
+    if (!winID != !mural->fHasParentWindow
             || (winID && primaryS!=mural->screenId))
     {
         mural->fHasParentWindow = !!winID;
