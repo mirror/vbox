@@ -884,6 +884,16 @@ typedef struct HMCPU
     STAMCOUNTER             StatLoadMinimal;
     STAMCOUNTER             StatLoadFull;
 
+    STAMCOUNTER             StatVmxCheckBadRmSelBase;
+    STAMCOUNTER             StatVmxCheckBadRmSelLimit;
+    STAMCOUNTER             StatVmxCheckRmOk;
+
+    STAMCOUNTER             StatVmxCheckBadSel;
+    STAMCOUNTER             StatVmxCheckBadRpl;
+    STAMCOUNTER             StatVmxCheckBadLdt;
+    STAMCOUNTER             StatVmxCheckBadTr;
+    STAMCOUNTER             StatVmxCheckPmOk;
+
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     STAMCOUNTER             StatFpu64SwitchBack;
     STAMCOUNTER             StatDebug64SwitchBack;

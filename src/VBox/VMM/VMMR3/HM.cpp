@@ -730,6 +730,16 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatLoadMinimal,            "/HM/CPU%d/Load/Minimal", "VM-entry loading just RIP (+RSP, RFLAGs for old VT-x code).");
         HM_REG_COUNTER(&pVCpu->hm.s.StatLoadFull,               "/HM/CPU%d/Load/Full", "VM-entry loading more of the state.");
 
+        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelBase,   "/HM/CPU%d/VMXCheck/RMSelBase", "Could not use VMX due to unsuitable real-mode selector base.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelLimit,  "/HM/CPU%d/VMXCheck/RMSelLimit", "Could not use VMX due to unsuitable real-mode selector limit.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckRmOk,           "/HM/CPU%d/VMXCheck/VMX_RM", "VMX execution in real (V86) mode OK.");
+
+        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadSel,         "/HM/CPU%d/VMXCheck/Selector", "Could not use VMX due to unsuitable selector.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRpl,         "/HM/CPU%d/VMXCheck/RPL", "Could not use VMX due to unsuitable RPL.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadLdt,         "/HM/CPU%d/VMXCheck/LDT", "Could not use VMX due to unsuitable LDT.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadTr,          "/HM/CPU%d/VMXCheck/TR", "Could not use VMX due to unsuitable TR.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckPmOk,           "/HM/CPU%d/VMXCheck/VMX_PM", "VMX execution in protected mode OK.");
+
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         HM_REG_COUNTER(&pVCpu->hm.s.StatFpu64SwitchBack,        "/HM/CPU%d/Switch64/Fpu", "Saving guest FPU/XMM state.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatDebug64SwitchBack,      "/HM/CPU%d/Switch64/Debug", "Saving guest debug state.");
@@ -2524,16 +2534,22 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                     || pCtx->es.Sel != (pCtx->es.u64Base >> 4)
                     || pCtx->ss.Sel != (pCtx->ss.u64Base >> 4)
                     || pCtx->fs.Sel != (pCtx->fs.u64Base >> 4)
-                    || pCtx->gs.Sel != (pCtx->gs.u64Base >> 4)
-                    || (pCtx->cs.u32Limit != 0xffff)
+                    || pCtx->gs.Sel != (pCtx->gs.u64Base >> 4))
+                {
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadRmSelBase);
+                    return false;
+                }
+                if (   (pCtx->cs.u32Limit != 0xffff)
                     || (pCtx->ds.u32Limit != 0xffff)
                     || (pCtx->es.u32Limit != 0xffff)
                     || (pCtx->ss.u32Limit != 0xffff)
                     || (pCtx->fs.u32Limit != 0xffff)
                     || (pCtx->gs.u32Limit != 0xffff))
                 {
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadRmSelLimit);
                     return false;
                 }
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckRmOk);
             }
             else
             {
@@ -2556,26 +2572,43 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                         || (pCtx->fs.Sel & X86_SEL_RPL)
                         || (pCtx->gs.Sel & X86_SEL_RPL)
                         || (pCtx->ss.Sel & X86_SEL_RPL))
+                    {                        
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadSel);
+                        return false;
+                    }
 #else
-                    if (   ((pCtx->cs.Sel & X86_SEL_RPL) != (pCtx->ss.Sel & X86_SEL_RPL))
-                        || !hmR3IsCodeSelectorOkForVmx(&pCtx->cs, pCtx->ss.Attr.n.u2Dpl)
+                    if ((pCtx->cs.Sel & X86_SEL_RPL) != (pCtx->ss.Sel & X86_SEL_RPL))
+                    {
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadRpl);
+                        return false;
+                    }
+                    if (   !hmR3IsCodeSelectorOkForVmx(&pCtx->cs, pCtx->ss.Attr.n.u2Dpl)
                         || !hmR3IsDataSelectorOkForVmx(&pCtx->ds)
                         || !hmR3IsDataSelectorOkForVmx(&pCtx->es)
                         || !hmR3IsDataSelectorOkForVmx(&pCtx->fs)
                         || !hmR3IsDataSelectorOkForVmx(&pCtx->gs)
                         || !hmR3IsStackSelectorOkForVmx(&pCtx->ss))
+                    {                        
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadSel);
+                        return false;
+                    }
 #endif
+                }
+                /* VT-x also chokes on invalid tr or ldtr selectors (minix) */
+                if (pCtx->gdtr.cbGdt)
+                {
+                    if (pCtx->tr.Sel > pCtx->gdtr.cbGdt) 
                     {
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadTr);
+                        return false;
+                    }
+                    else if (pCtx->ldtr.Sel > pCtx->gdtr.cbGdt)
+                    {
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadLdt);
                         return false;
                     }
                 }
-                /* VT-x also chokes on invalid tr or ldtr selectors (minix) */
-                if (    pCtx->gdtr.cbGdt
-                    &&  (   pCtx->tr.Sel > pCtx->gdtr.cbGdt
-                         || pCtx->ldtr.Sel > pCtx->gdtr.cbGdt))
-                {
-                        return false;
-                }
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckPmOk);
             }
         }
         else
