@@ -3929,7 +3929,7 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
         pHdrUnconst->y -= (int16_t)pFBInfo->yOrigin;
 
         /* @todo new SendUpdate entry which can get a separate cmd header or coords. */
-        pThis->mParent->consoleVRDPServer()->SendUpdate (uScreenId, pCmd, cbCmd);
+        pThis->mParent->consoleVRDPServer()->SendUpdate (uScreenId, pCmd, (uint32_t)cbCmd);
 
         *pHdrUnconst = hdrSaved;
     }

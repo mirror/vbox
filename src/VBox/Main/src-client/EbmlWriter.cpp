@@ -389,7 +389,7 @@ int Ebml_WriteWebMBlock(EbmlGlobal                *glob,
         /* Open the new cluster */
         block_timecode = 0;
         glob->cluster_open = 1;
-        glob->cluster_timecode = pts_ms;
+        glob->cluster_timecode = (uint32_t)pts_ms;
         glob->cluster_pos = RTFileTell(glob->file);
         if (RT_SUCCESS(rc))
             rc = Ebml_StartSubElement(glob, &glob->startCluster, Cluster); //cluster

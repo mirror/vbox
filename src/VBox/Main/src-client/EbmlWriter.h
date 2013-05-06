@@ -252,7 +252,7 @@ enum mkv
 
 struct cue_entry
 {
-    uint64_t    time;
+    uint32_t    time;
     uint64_t    loc;
 };
 
@@ -275,7 +275,7 @@ struct EbmlGlobal
     uint64_t    startSegment;
     uint64_t    startCluster;
 
-    uint64_t    cluster_timecode;
+    uint32_t    cluster_timecode;
     int         cluster_open;
 
     struct cue_entry *cue_list;
