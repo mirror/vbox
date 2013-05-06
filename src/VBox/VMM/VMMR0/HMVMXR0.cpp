@@ -2197,7 +2197,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     {
         /* We need the 64-bit TR base for hybrid darwin. */
         uint64_t u64TRBase = X86DESC64_BASE((PX86DESC64)pDesc);
-        rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_TR_BASE, u64TRBase);
+        rc = VMXWriteVmcs64(VMX_VMCS_HOST_TR_BASE, u64TRBase);
     }
     else
 #endif
@@ -2222,8 +2222,8 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     {
         uint64_t u64FSBase = ASMRdMsr(MSR_K8_FS_BASE);
         uint64_t u64GSBase = ASMRdMsr(MSR_K8_GS_BASE);
-        rc  = VMXWriteVmcsHstN(VMX_VMCS_HOST_FS_BASE, u64FSBase);
-        rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_GS_BASE, u64GSBase);
+        rc  = VMXWriteVmcs64(VMX_VMCS_HOST_FS_BASE, u64FSBase);
+        rc |= VMXWriteVmcs64(VMX_VMCS_HOST_GS_BASE, u64GSBase);
         AssertRCReturn(rc, rc);
     }
 #endif
@@ -2302,24 +2302,24 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     /*
      * Host Sysenter MSRs.
      */
-    rc |= VMXWriteVmcs32(VMX_VMCS32_HOST_SYSENTER_CS,    ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
+    rc |= VMXWriteVmcs32(VMX_VMCS32_HOST_SYSENTER_CS,        ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
-        rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_ESP,   ASMRdMsr(MSR_IA32_SYSENTER_ESP));
-        rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_EIP,   ASMRdMsr(MSR_IA32_SYSENTER_EIP));
+        rc |= VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_ESP,     ASMRdMsr(MSR_IA32_SYSENTER_ESP));
+        rc |= VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_EIP,     ASMRdMsr(MSR_IA32_SYSENTER_EIP));
     }
     else
     {
-        rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_ESP,   ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
-        rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_EIP,   ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
+        rc |= VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_ESP,     ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
+        rc |= VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_EIP,     ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
     }
 # elif HC_ARCH_BITS == 32
-    rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_ESP,       ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
-    rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_EIP,       ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
+    rc |= VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_ESP,         ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
+    rc |= VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_EIP,         ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
 # else
-    rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_ESP,       ASMRdMsr(MSR_IA32_SYSENTER_ESP));
-    rc |= VMXWriteVmcsHstN(VMX_VMCS_HOST_SYSENTER_EIP,       ASMRdMsr(MSR_IA32_SYSENTER_EIP));
+    rc |= VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_ESP,         ASMRdMsr(MSR_IA32_SYSENTER_ESP));
+    rc |= VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_EIP,         ASMRdMsr(MSR_IA32_SYSENTER_EIP));
 # endif
     AssertRCReturn(rc, rc);
 
@@ -2832,8 +2832,8 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
          * by the guest because VT-x ignores saving/restoring them (namely CD, ET, NW) and for certain other bits
          * we want to be notified immediately of guest CR0 changes (e.g. PG to update our shadow page tables).
          */
-        uint64_t u64CR0Mask = 0;
-        u64CR0Mask =  X86_CR0_PE
+        uint64_t u32CR0Mask = 0;
+        u32CR0Mask =  X86_CR0_PE
                     | X86_CR0_NE
                     | X86_CR0_WP
                     | X86_CR0_PG
@@ -2841,19 +2841,19 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                     | X86_CR0_CD    /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.CD */
                     | X86_CR0_NW;   /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.NW */
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
-            u64CR0Mask &= ~X86_CR0_PE;
+            u32CR0Mask &= ~X86_CR0_PE;
         if (pVM->hm.s.fNestedPaging)
-            u64CR0Mask &= ~X86_CR0_WP;
+            u32CR0Mask &= ~X86_CR0_WP;
 
         /* If the guest FPU state is active, don't need to VM-exit on writes to FPU related bits in CR0. */
         if (fInterceptNM)
-            u64CR0Mask |=  (X86_CR0_TS | X86_CR0_MP);
+            u32CR0Mask |=  (X86_CR0_TS | X86_CR0_MP);
         else
-            u64CR0Mask &= ~(X86_CR0_TS | X86_CR0_MP);
+            u32CR0Mask &= ~(X86_CR0_TS | X86_CR0_MP);
 
         /* Write the CR0 mask into the VMCS and update the VCPU's copy of the current CR0 mask. */
-        pVCpu->hm.s.vmx.cr0_mask = u64CR0Mask;
-        rc |= VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR0_MASK, u64CR0Mask);
+        pVCpu->hm.s.vmx.cr0_mask = u32CR0Mask;
+        rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, u32CR0Mask);
         AssertRCReturn(rc, rc);
 
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR0;
@@ -2927,15 +2927,18 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
 
                 GCPhysGuestCR3 = GCPhys;
             }
+
+            Log(("Load: VMX_VMCS_GUEST_CR3=%#RGv (GstN)\n", GCPhysGuestCR3));
+            rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR3, GCPhysGuestCR3);
         }
         else
         {
             /* Non-nested paging case, just use the hypervisor's CR3. */
-            GCPhysGuestCR3 = PGMGetHyperCR3(pVCpu);
-        }
+            RTHCPHYS HCPhysGuestCR3 = PGMGetHyperCR3(pVCpu);
 
-        Log(("Load: VMX_VMCS_GUEST_CR3=%#RGv\n", GCPhysGuestCR3));
-        rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR3, GCPhysGuestCR3);
+            Log(("Load: VMX_VMCS_GUEST_CR3=%#RHv (HstN)\n", HCPhysGuestCR3));
+            rc = VMXWriteVmcsHstN(VMX_VMCS_GUEST_CR3, HCPhysGuestCR3);
+        }
         AssertRCReturn(rc, rc);
 
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR3;
@@ -2950,7 +2953,7 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         uint32_t u32GuestCR4 = pCtx->cr4;
 
         /* The guest's view of its CR4 is unblemished. */
-        rc  = VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, u32GuestCR4);
+        rc = VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, u32GuestCR4);
         AssertRCReturn(rc, rc);
         Log(("Load: VMX_VMCS_CTRL_CR4_READ_SHADOW=%#RX32\n", u32GuestCR4));
 
@@ -3024,14 +3027,14 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR4, u32GuestCR4);
 
         /* Setup CR4 mask. CR4 flags owned by the host, if the guest attempts to change them, that would cause a VM exit. */
-        uint64_t u64CR4Mask = 0;
-        u64CR4Mask =  X86_CR4_VME
+        uint32_t u32CR4Mask = 0;
+        u32CR4Mask =  X86_CR4_VME
                     | X86_CR4_PAE
                     | X86_CR4_PGE
                     | X86_CR4_PSE
                     | X86_CR4_VMXE;
-        pVCpu->hm.s.vmx.cr4_mask = u64CR4Mask;
-        rc |= VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR4_MASK, u64CR4Mask);
+        pVCpu->hm.s.vmx.cr4_mask = u32CR4Mask;
+        rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, u32CR4Mask);
         AssertRCReturn(rc, rc);
 
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR4;
