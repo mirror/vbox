@@ -979,8 +979,7 @@ VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS H
     NOREF(pvCpuPage);
     NOREF(HCPhysCpuPage);
 
-    hmR0VmxLeaveRootMode();
-    return VINF_SUCCESS;
+    return hmR0VmxLeaveRootMode();
 }
 
 
