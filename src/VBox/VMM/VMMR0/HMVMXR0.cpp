@@ -4726,19 +4726,20 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
  */
 static int hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0))
     {
         uint32_t uVal    = 0;
-        uint32_t uShadow = 0;
-        rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR0,            &uVal);
-        rc |= VMXReadVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, &uShadow);
+        int rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR0,            &uVal);
         AssertRCReturn(rc, rc);
+        uint32_t uShadow = 0;
+        rc     = VMXReadVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, &uShadow);
+        AssertRCReturn(rc, rc);
+
         uVal = (uShadow & pVCpu->hm.s.vmx.cr0_mask) | (uVal & ~pVCpu->hm.s.vmx.cr0_mask);
         CPUMSetGuestCR0(pVCpu, uVal);
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_CR0;
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -4836,11 +4837,10 @@ static int hmR0VmxSaveGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static int hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS))
     {
         uint32_t uVal = 0;
-        rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &uVal);
+        int rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &uVal);
         AssertRCReturn(rc, rc);
         pMixedCtx->eflags.u32 = uVal;
 
@@ -4856,7 +4856,7 @@ static int hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RFLAGS;
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -5136,24 +5136,27 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *          as that takes care of whether to read from the VMCS cache or not.
  */
 DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLimit, uint32_t idxBase, uint32_t idxAccess,
-                                    PCPUMSELREG pSelReg)
+                                      PCPUMSELREG pSelReg)
 {
     uint32_t u32Val = 0;
     int rc = VMXReadVmcs32(idxSel, &u32Val);
+    AssertRCReturn(rc, rc);
     pSelReg->Sel      = (uint16_t)u32Val;
     pSelReg->ValidSel = (uint16_t)u32Val;
     pSelReg->fFlags   = CPUMSELREG_FLAGS_VALID;
 
-    rc |= VMXReadVmcs32(idxLimit, &u32Val);
+    rc = VMXReadVmcs32(idxLimit, &u32Val);
+    AssertRCReturn(rc, rc);
     pSelReg->u32Limit = u32Val;
 
     RTGCUINTREG uGCVal = 0;
-    rc |= VMXReadVmcsGstNByIdxVal(idxBase, &uGCVal);
+    rc = VMXReadVmcsGstNByIdxVal(idxBase, &uGCVal);
+    AssertRCReturn(rc, rc);
     pSelReg->u64Base = uGCVal;
 
-    rc |= VMXReadVmcs32(idxAccess, &u32Val);
-    pSelReg->Attr.u = u32Val;
+    rc = VMXReadVmcs32(idxAccess, &u32Val);
     AssertRCReturn(rc, rc);
+    pSelReg->Attr.u = u32Val;
 
     /*
      * If VT-x marks the segment as unusable, the rest of the attributes are undefined with certain exceptions (some bits in
@@ -5167,7 +5170,7 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
         Assert(idxSel != VMX_VMCS16_GUEST_FIELD_TR);          /* TR is the only selector that can never be unusable. */
         pSelReg->Attr.u = HMVMX_SEL_UNUSABLE;
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -5194,18 +5197,22 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
  */
 static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    int rc = VINF_SUCCESS;
-
     /* Guest segment registers. */
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_SEGMENT_REGS))
     {
-        rc  = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
-        rc |= VMXLOCAL_READ_SEG(CS, cs);
-        rc |= VMXLOCAL_READ_SEG(SS, ss);
-        rc |= VMXLOCAL_READ_SEG(DS, ds);
-        rc |= VMXLOCAL_READ_SEG(ES, es);
-        rc |= VMXLOCAL_READ_SEG(FS, fs);
-        rc |= VMXLOCAL_READ_SEG(GS, gs);
+        int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+        AssertRCReturn(rc, rc);
+        rc = VMXLOCAL_READ_SEG(CS, cs);
+        AssertRCReturn(rc, rc);
+        rc = VMXLOCAL_READ_SEG(SS, ss);
+        AssertRCReturn(rc, rc);
+        rc = VMXLOCAL_READ_SEG(DS, ds);
+        AssertRCReturn(rc, rc);
+        rc = VMXLOCAL_READ_SEG(ES, es);
+        AssertRCReturn(rc, rc);
+        rc = VMXLOCAL_READ_SEG(FS, fs);
+        AssertRCReturn(rc, rc);
+        rc = VMXLOCAL_READ_SEG(GS, gs);
         AssertRCReturn(rc, rc);
 
         /* Restore segment attributes for real-on-v86 mode hack. */
@@ -5221,7 +5228,7 @@ static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_SEGMENT_REGS;
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -7628,8 +7635,10 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
     /* EMInterpretRdmsr() requires CR0, Eflags and SS segment register. */
     int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+    AssertRCReturn(rc, rc);
+    rc     = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
+    AssertRCReturn(rc, rc);
+    rc     = hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
