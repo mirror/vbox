@@ -1749,6 +1749,7 @@ Hardware::Hardware()
           ulVideoCaptureHorzRes(1024),
           ulVideoCaptureVertRes(768),
           ulVideoCaptureRate(512),
+          ulVideoCaptureFps(25),
           fVideoCaptureEnabled(false),
           strVideoCaptureFile("Test.webm"),
           firmwareType(FirmwareType_BIOS),
@@ -1823,6 +1824,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (ulVideoCaptureHorzRes     == h.ulVideoCaptureHorzRes)
                   && (ulVideoCaptureVertRes     == h.ulVideoCaptureVertRes)
                   && (ulVideoCaptureRate        == h.ulVideoCaptureRate)
+                  && (ulVideoCaptureFps         == h.ulVideoCaptureFps)
                   && (firmwareType              == h.firmwareType)
                   && (pointingHIDType           == h.pointingHIDType)
                   && (keyboardHIDType           == h.keyboardHIDType)
@@ -2722,6 +2724,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             pelmHwChild->getAttributeValue("horzRes", hw.ulVideoCaptureHorzRes);
             pelmHwChild->getAttributeValue("vertRes", hw.ulVideoCaptureVertRes);
             pelmHwChild->getAttributeValue("rate",    hw.ulVideoCaptureRate);
+            pelmHwChild->getAttributeValue("fps",     hw.ulVideoCaptureFps);
         }
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
         {
@@ -3907,6 +3910,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         pelmVideoCapture->setAttribute("horzRes", hw.ulVideoCaptureHorzRes);
         pelmVideoCapture->setAttribute("vertRes", hw.ulVideoCaptureVertRes);
         pelmVideoCapture->setAttribute("rate",    hw.ulVideoCaptureRate);
+        pelmVideoCapture->setAttribute("fps",     hw.ulVideoCaptureFps);
     }
 
     xml::ElementNode *pelmVRDE = pelmHardware->createChild("RemoteDisplay");

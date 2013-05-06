@@ -3974,7 +3974,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="d8b9ebbe-3f76-4844-af2c-accb462e64b0"
+    uuid="55bf39d3-ac8f-4a77-90d8-1e2c726170ce"
     wsmap="managed"
     >
     <desc>
@@ -4254,7 +4254,18 @@
 
     <attribute name="VideoCaptureRate" type="unsigned long" default="512">
       <desc>
-        This setting determines the bitrate in kilobits per second
+        This setting determines the bitrate in kilobits per second.
+        Increasing this value makes the video look better for the
+        cost of an increased file size.
+      </desc>
+    </attribute>
+
+    <attribute name="VideoCaptureFps" type="unsigned long" default="25">
+      <desc>
+        This setting determines the maximum number of frames per second.
+        Frames with a higher frequency will be skipped. Reducing this
+        value increses the number of skipped frames but reduces the
+        file size.
       </desc>
     </attribute>
 

@@ -495,9 +495,11 @@ HRESULT Display::init(Console *aParent)
         mParent->machine()->COMGETTER(VideoCaptureHeight)(&ulHeight);
         ULONG ulRate;
         mParent->machine()->COMGETTER(VideoCaptureRate)(&ulRate);
+        ULONG ulFps;
+        mParent->machine()->COMGETTER(VideoCaptureFps)(&ulFps);
         BSTR strFile;
         mParent->machine()->COMGETTER(VideoCaptureFile)(&strFile);
-        if (VideoRecContextInit(mpVideoRecCtx, strFile, ulWidth, ulHeight, ulRate))
+        if (VideoRecContextInit(mpVideoRecCtx, strFile, ulWidth, ulHeight, ulRate, ulFps))
         {
             LogFlow(("Failed to initialize video recording context!\n"));
             return E_FAIL;

@@ -170,6 +170,7 @@ Machine::HWData::HWData()
     mVideoCaptureWidth = 1024;
     mVideoCaptureHeight = 768;
     mVideoCaptureRate = 512;
+    mVideoCaptureFps = 25;
     mVideoCaptureEnabled = false;
 
     mHWVirtExEnabled = true;
@@ -1807,6 +1808,26 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureRate)(ULONG aRate)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     mHWData->mVideoCaptureRate = aRate;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(VideoCaptureFps)(ULONG *aFps)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+     *aFps = mHWData->mVideoCaptureFps;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(VideoCaptureFps)(ULONG aFps)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    mHWData->mVideoCaptureFps = aFps;
     return S_OK;
 }
 
@@ -8789,6 +8810,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mVideoCaptureHeight = data.ulVideoCaptureVertRes;
         mHWData->mVideoCaptureEnabled = data.fVideoCaptureEnabled;
         mHWData->mVideoCaptureRate = data.ulVideoCaptureRate;
+        mHWData->mVideoCaptureFps = data.ulVideoCaptureFps;
         mHWData->mVideoCaptureFile = data.strVideoCaptureFile;
         mHWData->mFirmwareType = data.firmwareType;
         mHWData->mPointingHIDType = data.pointingHIDType;
@@ -10006,6 +10028,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.ulVideoCaptureHorzRes = mHWData->mVideoCaptureWidth;
         data.ulVideoCaptureVertRes = mHWData->mVideoCaptureHeight;
         data.ulVideoCaptureRate = mHWData->mVideoCaptureRate;
+        data.ulVideoCaptureFps = mHWData->mVideoCaptureFps;
         data.fVideoCaptureEnabled  = !!mHWData->mVideoCaptureEnabled;
         data.strVideoCaptureFile = mHWData->mVideoCaptureFile;
 

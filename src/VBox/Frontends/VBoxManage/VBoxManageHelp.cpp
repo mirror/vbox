@@ -373,6 +373,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--vcpwidth <width>]\n"
                      "                            [--vcpheight <height>]\n"
                      "                            [--vcprate <rate>]\n"
+                     "                            [--vcpfps <fps>]\n"
 #endif
                      "                            [--defaultfrontend default|<name]\n"
                      "\n");
