@@ -5751,28 +5751,32 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
         Utf8Str utf8Name(aName);
         Utf8Str utf8Flags(aFlags);
         uint32_t fFlags = NILFLAG;
-        if (   (aFlags != NULL)
-            && RT_FAILURE(validateFlags(utf8Flags.c_str(), &fFlags))
-           )
+        if (   aFlags != NULL
+            && RT_FAILURE(validateFlags(utf8Flags.c_str(), &fFlags)))
             return setError(E_INVALIDARG,
                             tr("Invalid guest property flag values: '%ls'"),
                             aFlags);
 
+        bool fDelete = !RT_VALID_PTR(aValue) || *(aValue) == '\0';
         HWData::GuestPropertyMap::iterator it =
             mHWData->mGuestProperties.find(utf8Name);
 
         if (it == mHWData->mGuestProperties.end())
         {
-            setModified(IsModified_MachineData);
-            mHWData.backupEx();
+            /* only create the new property if this is really desired */
+            if (!fDelete)
+            {
+                setModified(IsModified_MachineData);
+                mHWData.backupEx();
 
-            RTTIMESPEC time;
-            HWData::GuestProperty prop;
-            prop.strValue = aValue;
-            prop.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
-            prop.mFlags = fFlags;
+                RTTIMESPEC time;
+                HWData::GuestProperty prop;
+                prop.strValue = aValue;
+                prop.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
+                prop.mFlags = fFlags;
 
-            mHWData->mGuestProperties[Utf8Str(aName)] = prop;
+                mHWData->mGuestProperties[Utf8Str(aName)] = prop;
+            }
         }
         else
         {
@@ -5792,7 +5796,7 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
                 it = mHWData->mGuestProperties.find(utf8Name);
                 Assert(it != mHWData->mGuestProperties.end());
 
-                if (RT_VALID_PTR(aValue) && *(aValue) != '\0')
+                if (!fDelete)
                 {
                     RTTIMESPEC time;
                     it->second.strValue = aValue;
