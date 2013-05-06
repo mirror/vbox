@@ -1084,7 +1084,11 @@ static int vboxStInit(HWND hWnd)
         if (rc == VINF_SUCCESS)
         {
             gVBoxSt.hWTSAPIWnd = hWnd;
-            if (!gVBoxSt.pfnWTSRegisterSessionNotification(gVBoxSt.hWTSAPIWnd, NOTIFY_FOR_THIS_SESSION))
+            if (gVBoxSt.pfnWTSRegisterSessionNotification(gVBoxSt.hWTSAPIWnd, NOTIFY_FOR_THIS_SESSION))
+            {
+                vboxStCheckState();
+            }
+            else
             {
                 DWORD dwErr = GetLastError();
                 WARN(("VBoxTray: WTSRegisterSessionNotification failed, error = %08X\n", dwErr));
@@ -1092,16 +1096,16 @@ static int vboxStInit(HWND hWnd)
                 {
                     gVBoxSt.idDelayedInitTimer = SetTimer(gVBoxSt.hWTSAPIWnd, TIMERID_VBOXTRAY_ST_DELAYED_INIT_TIMER, 2000, (TIMERPROC)NULL);
                     rc = VINF_SUCCESS;
+
+                    gVBoxSt.fIsConsole = TRUE;
+                    gVBoxSt.enmConnectState = WTSActive;
                 }
                 else
                     rc = RTErrConvertFromWin32(dwErr);
             }
 
             if (RT_SUCCESS(rc))
-            {
-                vboxStCheckState();
                 return VINF_SUCCESS;
-            }
         }
 
         FreeLibrary(gVBoxSt.hWTSAPI32);
@@ -1176,14 +1180,16 @@ static BOOL vboxStCheckTimer(WPARAM wEvent)
     {
         KillTimer(gVBoxSt.hWTSAPIWnd, gVBoxSt.idDelayedInitTimer);
         gVBoxSt.idDelayedInitTimer = 0;
+        vboxStCheckState();
     }
     else
     {
         DWORD dwErr = GetLastError();
         WARN(("VBoxTray: timer WTSRegisterSessionNotification failed, error = %08X\n", dwErr));
+        Assert(gVBoxSt.fIsConsole == TRUE);
+        Assert(gVBoxSt.enmConnectState == WTSActive);
     }
 
-    vboxStCheckState();
     return TRUE;
 }
 
