@@ -37,7 +37,17 @@ RT_C_DECLS_BEGIN
  * @ingroup grp_rt
  *
  * Optimized allocation, initialization, freeing and destruction of memory
- * objects of the same kind and size.
+ * objects of the same kind and size.  Objects are constructed once, then
+ * allocated and freed one or more times, until finally destructed together with
+ * the cache (RTMemCacheDestroy).  It's expected behavior, even when pfnCtor is
+ * NULL, that the user will be store information that should be persistent
+ * across RTMemCacheFree calls.
+ *
+ * The objects are zeroed prior to calling pfnCtor. For obvious reasons, the
+ * objects are not touched by the cache after that, so that RTMemCacheAlloc will
+ * return the object in the same state as when it as handed to RTMemCacheFree.
+ *
+ * @todo A callback for the reuse (at alloc time) might be of interest.
  *
  * @{
  */
