@@ -417,7 +417,7 @@ int Ebml_WriteWebMBlock(EbmlGlobal                *glob,
     if (RT_SUCCESS(rc))
         rc = ebml_WriteID(glob, SimpleBlock);
 
-    uint64_t block_length = pkt->data.frame.sz + 4;
+    uint32_t block_length = pkt->data.frame.sz + 4;
     block_length |= 0x10000000;
     if (RT_SUCCESS(rc))
         rc = ebml_WriteU32(glob, RT_H2BE_U32(block_length));
