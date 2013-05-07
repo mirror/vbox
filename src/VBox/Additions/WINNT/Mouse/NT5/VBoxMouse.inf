@@ -34,27 +34,28 @@ DefaultDestDir = 12	; DIRID_DRIVERS
 ;x86   %ORACLE%=VBoxMouse
 ;amd64 %ORACLE%=VBoxMouse, NTamd64
 
-[DefaultInstall]
-;
-; DefaultInstall section is used to install the class filter driver.
-;
+[VBoxMouse_Install]
 CopyFiles = @VBoxMouse.sys
-AddReg = VBoxMouse_AddReg
 
-[VBoxMouse_AddReg]
-HKLM, System\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}, UpperFilters, 0x00010000, "VBoxMouse", "mouclass"
+[VBoxMouse_Install.Services]
+AddService = VBoxMouse,,VBoxMouse.Service
+
+[DefaultInstall]
+CopyFiles = @VBoxMouse.sys
 
 [DefaultInstall.Services]
-AddService = VBoxMouse, , VBoxMouse_Service_Inst
+AddService = VBoxMouse,,VBoxMouse.Service
 
+[VBoxMouse.AddRegistry]
+HKLM, System\CurrentControlSet\Control\Class\{4D36E96F-E325-11CE-BFC1-08002BE10318}, UpperFilters, 0x00010000, "VBoxMouse", "mouclass"
 
-[VBoxMouse_Service_Inst]
+[VBoxMouse.Service]
 DisplayName    = %VBoxMouse.SvcDesc%
 ServiceType    = %SERVICE_KERNEL_DRIVER%
 StartType      = %SERVICE_DEMAND_START%
 ErrorControl   = %SERVICE_ERROR_IGNORE%
 ServiceBinary  = %12%\VBoxMouse.sys
-
+AddReg         = VBoxMouse.AddRegistry
 
 [Strings]
 VBoxMouse.SvcDesc       = "VirtualBox Guest Mouse Service"
