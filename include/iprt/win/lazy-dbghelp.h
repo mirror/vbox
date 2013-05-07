@@ -1,0 +1,99 @@
+﻿/** @file
+ * Symbols from dbghelp.dll, allowing us to select which one to load.
+ */
+
+/*
+ * Copyright (C) 2013 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+ * VirtualBox OSE distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
+ */
+
+#ifndef ___iprt_win_lazy_dbghelp_h
+#define ___iprt_win_lazy_dbghelp_h
+
+#include <iprt/ldrlazy.h>
+#include <iprt/path.h>
+#include <iprt/env.h>
+
+
+/**
+ * Custom loader callback.
+ * @returns Module handle or NIL_RTLDRMOD.
+ */
+static int rtLdrLazyLoadDbgHelp(const char *pszFile, PRTLDRMOD phMod)
+{
+    char        szPath[RTPATH_MAX];
+    size_t      cchPath;
+    int rc = RTEnvGetEx(RTENV_DEFAULT, "ProgramFiles", szPath, sizeof(szPath), &cchPath);
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo try Windows SDK location. */
+#ifdef RT_ARCH_X86
+        rc = RTPathAppend(szPath, sizeof(szPath), "Debugging Tools for Windows (x86)\\dbghelp.dll");
+#else
+        rc = RTPathAppend(szPath, sizeof(szPath), "Debugging Tools for Windows (amd64)\\dbghelp.dll");
+#endif
+        if (RTPathExists(szPath))
+        {
+            rc = RTLdrLoad(szPath, phMod);
+            if (RT_SUCCESS(rc))
+                return rc;
+        }
+    }
+
+    return RTLdrLoad(pszFile, phMod);
+}
+
+RTLDRLAZY_MODULE(dbghelp, "dbghelp.dll");
+
+RTLDRLAZY_FUNC(dbghelp, BOOL, WINAPI, SymInitialize, (HANDLE a1, PCWSTR a2, BOOL a3), (a1, a2, a3), FALSE);
+#undef SymInitialize
+#define SymInitialize RTLDRLAZY_FUNC_NAME(dbghelp, SymInitialize)
+
+RTLDRLAZY_FUNC(dbghelp, DWORD, WINAPI, SymGetOptions, (VOID), (), 0);
+#undef SymGetOptions
+#define SymGetOptions RTLDRLAZY_FUNC_NAME(dbghelp, SymGetOptions)
+
+RTLDRLAZY_FUNC(dbghelp, DWORD, WINAPI, SymSetOptions, (DWORD a1), (a1), 0);
+#undef SymSetOptions
+#define SymSetOptions RTLDRLAZY_FUNC_NAME(dbghelp, SymSetOptions)
+
+RTLDRLAZY_FUNC(dbghelp, BOOL, WINAPI, SymRegisterCallback64, (HANDLE a1, PSYMBOL_REGISTERED_CALLBACK64 a2, ULONG64 a3),
+               (a1, a2, a3), FALSE);
+#undef SymRegisterCallback64
+#define SymRegisterCallback64 RTLDRLAZY_FUNC_NAME(dbghelp, SymRegisterCallback64)
+
+RTLDRLAZY_FUNC(dbghelp, DWORD64, WINAPI, SymLoadModuleEx,
+               (HANDLE a1, HANDLE a2, PCSTR a3, PCSTR a4, DWORD64 a5, DWORD a6, PMODLOAD_DATA a7, DWORD a8),
+               (a1, a2, a3, a4, a5, a6, a7, a8), 0);
+#undef SymLoadModuleEx
+#define SymLoadModuleEx RTLDRLAZY_FUNC_NAME(dbghelp, SymLoadModuleEx)
+
+RTLDRLAZY_FUNC(dbghelp, BOOL, WINAPI, SymEnumSymbols,
+               (HANDLE a1, DWORD a2, PCSTR a3, PSYM_ENUMERATESYMBOLS_CALLBACK a4, PVOID a5),
+               (a1, a2, a3, a4, a5), FALSE);
+#undef SymEnumSymbols
+#define SymEnumSymbols RTLDRLAZY_FUNC_NAME(dbghelp, SymEnumSymbols)
+
+RTLDRLAZY_FUNC(dbghelp, BOOL, WINAPI, SymGetModuleInfo64, (HANDLE a1, DWORD64 a2, PIMAGEHLP_MODULE64 a3), (a1, a2, a3), FALSE);
+#undef SymGetModuleInfo64
+#define SymGetModuleInfo64 RTLDRLAZY_FUNC_NAME(dbghelp, SymGetModuleInfo64)
+
+
+#endif
+
