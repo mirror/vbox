@@ -1652,14 +1652,15 @@ extern "C" int main(void)
   int verMinor = VPX_VERSION_MINOR(version);
   int verPatch = VPX_VERSION_PATCH(version);
   printf("found version %d.%d.%d", verMajor, verMinor, verPatch);
-  if (verMajor == 1 && verMinor >= 0)
+  if (   verMajor == 1 && verMinor >= 0
+      || verMajor == 0 && verMinor == 9 && verPatch >= 5)
   {
       printf(", OK.\n");
       return 0;
   }
   else
   {
-      printf(", expected version 1.0.0 or higher\n");
+      printf(", expected version 0.9.5 or higher\n");
       return 1;
    }
 }
