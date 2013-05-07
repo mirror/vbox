@@ -192,6 +192,9 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
         renderspuSetWindowId(winID);
         renderspuReparentWindow(mural->spuWindow);
         renderspuSetWindowId(cr_server.screen[0].winID);
+
+        if (mural->bVisible && (mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY))
+            crVBoxServerNotifyEvent(mural->screenId);
     }
 
     mural->screenId = primaryS;
@@ -348,7 +351,10 @@ static void crServerEnableDisplayMuralFBO(CRMuralInfo *mural, GLboolean fEnable)
         if (!(mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY))
         {
             if  (mural->bVisible)
+            {
                 cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, GL_TRUE);
+                crVBoxServerNotifyEvent(mural->screenId);
+            }
             mural->fPresentMode |= CR_SERVER_REDIR_F_DISPLAY;
         }
     }
@@ -747,9 +753,31 @@ static void crServerVBoxCompositionSetEnableStateGlobalCB(unsigned long key, voi
 
 DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fEnable)
 {
+    if (!fEnable)
+        ++cr_server.cDisableEvent;
+
     crHashtableWalk(cr_server.muralTable, crServerVBoxCompositionSetEnableStateGlobalCB, (void*)fEnable);
 
     crHashtableWalk(cr_server.dummyMuralTable, crServerVBoxCompositionSetEnableStateGlobalCB, (void*)fEnable);
+
+    if (fEnable)
+    {
+        --cr_server.cDisableEvent;
+        CRASSERT(cr_server.cDisableEvent < UINT32_MAX/2);
+        if(!cr_server.cDisableEvent)
+        {
+            int i;
+            for (i = 0; i < cr_server.screenCount; ++i)
+            {
+                if (!ASMBitTest(cr_server.NotifyEventMap, i))
+                    continue;
+
+                cr_server.pfnNotifyEventCB(i, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_WINDOW, NULL);
+
+                ASMBitClear(cr_server.NotifyEventMap, i);
+            }
+        }
+    }
 }
 
 static void crServerPresentMuralVRAM(CRMuralInfo *mural, char *pixels)
@@ -906,6 +934,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
 
         cr_serverCtxSwitchPostprocess(&CtxSwitch);
 
+#if 1
         if (RT_SUCCESS(rc))
         {
             /* 2. submit RPW entry */
@@ -915,7 +944,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
                 crWarning("crServerRpwEntrySubmit failed rc %d", rc);
             }
         }
-
+#endif
         return;
     }
 

@@ -133,4 +133,8 @@ struct VBOXTLSREFDATA_DUMMY
         } \
     } while (0)
 
+
+/* host 3D->Fe[/Qt] notification mechanism defines */
+#define VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_WINDOW 1
+
 #endif /* #ifndef ___VBox_VBoxVideo3D_h */

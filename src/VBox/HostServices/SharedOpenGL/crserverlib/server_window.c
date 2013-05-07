@@ -806,9 +806,12 @@ crServerDispatchWindowShow( GLint window, GLint state )
     if (mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY)
     {
         cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, state);
+
+        if (state)
+            crVBoxServerNotifyEvent(mural->screenId);
     }
 
-    mural->bVisible = state;
+    mural->bVisible = !!state;
 }
 
 

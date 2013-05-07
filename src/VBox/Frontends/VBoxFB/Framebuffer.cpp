@@ -352,6 +352,11 @@ NS_IMETHODIMP VBoxDirectFB::ProcessVHWACommand(PRUint8 *command)
     return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+NS_IMETHODIMP VBoxDirectFB::Notify3DEvent(PRUint32 type, PRUint8 *reserved)
+{
+    return NS_ERROR_NOT_IMPLEMENTED;
+}
+
 int VBoxDirectFB::createSurface(uint32_t w, uint32_t h)
 {
     printf("creating a new internal surface, w = %u, h = %u...\n", w, h);

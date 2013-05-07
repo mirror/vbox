@@ -52,6 +52,7 @@ public:
 
     NS_IMETHOD ProcessVHWACommand(PRUint8 *pCommand);
 
+    NS_IMETHOD Notify3DEvent(PRUint32 type, PRUint8 *reserved);
 private:
     int createSurface(uint32_t w, uint32_t h);
 

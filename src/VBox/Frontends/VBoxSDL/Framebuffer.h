@@ -95,6 +95,8 @@ public:
 
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
 
+    STDMETHOD(Notify3DEvent)(ULONG uType, BYTE *pReserved);
+
     // internal public methods
     bool initialized() { return mfInitialized; }
     void resizeGuest();

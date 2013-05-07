@@ -14275,7 +14275,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IFramebuffer" extends="$unknown"
-    uuid="b7ed347a-5765-40a0-ae1c-f543eb4ddeaf"
+    uuid="e3f122c0-adab-4fc9-a8dc-da112fb48428"
     wsmap="suppress"
     >
     <attribute name="address" type="octet" mod="ptr" readonly="yes">
@@ -14597,6 +14597,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       <param name="command" type="octet" mod="ptr" dir="in">
         <desc>Pointer to VBOXVHWACMD containing the command to execute.</desc>
+      </param>
+    </method>
+
+    <method name="notify3DEvent">
+      <desc>
+        Notifies framebuffer about 3D backend event.
+      </desc>
+
+      <param name="type" type="unsigned long" dir="in">
+        <desc>event type. Currently only VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_WINDOW is supported.</desc>
+      </param>
+      <param name="reserved" type="octet" mod="ptr" dir="in">
+        <desc>Reserved for future use, must be NULL.</desc>
       </param>
     </method>
 

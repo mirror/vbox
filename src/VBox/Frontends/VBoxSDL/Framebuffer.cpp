@@ -621,6 +621,12 @@ STDMETHODIMP VBoxSDLFB::ProcessVHWACommand(BYTE *pCommand)
 {
     return E_NOTIMPL;
 }
+
+STDMETHODIMP VBoxSDLFB::Notify3DEvent(ULONG uType, BYTE *pReserved)
+{
+    return E_NOTIMPL;
+}
+
 //
 // Internal public methods
 //

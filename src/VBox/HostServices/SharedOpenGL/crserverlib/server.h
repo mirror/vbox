@@ -129,6 +129,8 @@ void crServerSetupOutputRedirect(CRMuralInfo *mural);
 void crServerCheckMuralGeometry(CRMuralInfo *mural);
 GLboolean crServerSupportRedirMuralFBO(void);
 
+void crVBoxServerNotifyEvent(int32_t idScreen);
+
 #define CR_SERVER_REDIR_F_NONE     0x00
 /* the data should be displayed on host (unset when is on or when CR_SERVER_REDIR_F_FBO_RAM_VMFB is set) */
 #define CR_SERVER_REDIR_F_DISPLAY       0x01

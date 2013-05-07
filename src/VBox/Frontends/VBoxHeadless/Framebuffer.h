@@ -69,6 +69,7 @@ public:
 
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
 
+    STDMETHOD(Notify3DEvent)(ULONG uType, BYTE *pReserved);
 private:
     /* If the format is Opaque, then internal memory buffer is used.
      * Otherwise guest VRAM is used directly.
