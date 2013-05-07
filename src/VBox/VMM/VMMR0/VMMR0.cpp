@@ -1637,9 +1637,16 @@ DECLEXPORT(void) RTCALL RTAssertMsg2WeakV(const char *pszFormat, va_list va)
     va_list vaCopy;
 
     /*
-     * Push the message to the logger.
+     * Push the message to the loggers.
      */
-    PRTLOGGER pLog = RTLogDefaultInstance(); /** @todo we want this for release as well! */
+    PRTLOGGER pLog = RTLogGetDefaultInstance(); /* Don't initialize it here... */
+    if (pLog)
+    {
+        va_copy(vaCopy, va);
+        RTLogFormatV(rtLogOutput, pLog, pszFormat, vaCopy);
+        va_end(vaCopy);
+    }
+    pLog = RTLogRelDefaultInstance();
     if (pLog)
     {
         va_copy(vaCopy, va);
