@@ -1811,7 +1811,7 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
             int32_t const cLineDelta = bOpCode % pLnState->Hdr.u8LineRange + (int32_t)pLnState->Hdr.s8LineBase;
             bOpCode /= pLnState->Hdr.u8LineRange;
 
-            uint64_t uTmp = bOpCode + pLnState->Regs.idxOp + bOpCode;
+            uint64_t uTmp = bOpCode + pLnState->Regs.idxOp;
             uint64_t const cAddressDelta = uTmp / pLnState->Hdr.cMaxOpsPerInstr * pLnState->Hdr.cbMinInstr;
             uint64_t const cOpIndexDelta = uTmp % pLnState->Hdr.cMaxOpsPerInstr;
 
