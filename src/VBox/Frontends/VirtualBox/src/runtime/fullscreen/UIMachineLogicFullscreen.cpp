@@ -140,7 +140,7 @@ void UIMachineLogicFullscreen::prepareOtherConnections()
 
 void UIMachineLogicFullscreen::prepareMachineWindows()
 {
-    /* Do not create window(s) if they created already: */
+    /* Do not create machine-window(s) if they created already: */
     if (isMachineWindowsCreated())
         return;
 
@@ -150,14 +150,14 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     ::darwinSetFrontMostProcess();
 #endif /* Q_WS_MAC */
 
-    /* Update the multi screen layout: */
+    /* Update the multi-screen layout: */
     m_pScreenLayout->update();
 
-    /* Create machine window(s): */
+    /* Create machine-window(s): */
     for (uint cScreenId = 0; cScreenId < session().GetMachine().GetMonitorCount(); ++cScreenId)
         addMachineWindow(UIMachineWindow::create(this, cScreenId));
 
-    /* Connect screen-layout change handler: */
+    /* Connect multi-screen layout change handler: */
     for (int i = 0; i < machineWindows().size(); ++i)
         connect(m_pScreenLayout, SIGNAL(sigScreenLayoutChanged()),
                 static_cast<UIMachineWindowFullscreen*>(machineWindows()[i]), SLOT(sltShowInNecessaryMode()));
@@ -171,7 +171,7 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     setPresentationModeEnabled(true);
 #endif /* Q_WS_MAC */
 
-    /* Remember what machine window(s) created: */
+    /* Mark machine-window(s) created: */
     setMachineWindowsCreated(true);
 }
 
@@ -186,11 +186,14 @@ void UIMachineLogicFullscreen::prepareMenu()
 
 void UIMachineLogicFullscreen::cleanupMachineWindows()
 {
-    /* Do not cleanup machine window(s) if not present: */
+    /* Do not destroy machine-window(s) if they destroyed already: */
     if (!isMachineWindowsCreated())
         return;
 
-    /* Cleanup machine window(s): */
+    /* Mark machine-window(s) destroyed: */
+    setMachineWindowsCreated(false);
+
+    /* Cleanup machine-window(s): */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
 

@@ -52,6 +52,12 @@ class UIMachineLogic : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
+signals:
+
+    /* Notifiers: Machine-window(s) stuff: */
+    void sigMachineWidnowsCreated();
+    void sigMachineWidnowsDestroyed();
+
 public:
 
     /* Factory functions to create/destroy required logic sub-child: */
@@ -111,12 +117,13 @@ protected slots:
 
 protected:
 
-    /* Constructor: */
+    /* Constructor/destructor: */
     UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualStateType visualStateType);
+    ~UIMachineLogic();
 
     /* Protected getters/setters: */
     bool isMachineWindowsCreated() const { return m_fIsWindowsCreated; }
-    void setMachineWindowsCreated(bool fIsWindowsCreated) { m_fIsWindowsCreated = fIsWindowsCreated; }
+    void setMachineWindowsCreated(bool fIsWindowsCreated);
 
     /* Protected members: */
     void setKeyboardHandler(UIKeyboardHandler *pKeyboardHandler);

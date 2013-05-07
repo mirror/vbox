@@ -42,7 +42,7 @@ signals:
 public:
 
     /* Constructor: */
-    UIPopupStack(QWidget *pParent);
+    UIPopupStack();
 
     /* API: Popup-pane stuff: */
     bool exists(const QString &strPopupPaneID) const;
@@ -52,6 +52,9 @@ public:
                          bool fProposeAutoConfirmation);
     void updatePopupPane(const QString &strPopupPaneID,
                          const QString &strMessage, const QString &strDetails);
+
+    /* API: Parent stuff: */
+    void setParent(QWidget *pParent);
 
 private slots:
 
@@ -63,9 +66,6 @@ private slots:
 
 private:
 
-    /* Helper: Prepare stuff: */
-    void prepare();
-
     /* Helpers: Layout stuff: */
     int minimumWidthHint();
     int minimumHeightHint();
@@ -76,18 +76,16 @@ private:
     /* Handler: Event-filter stuff: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
-    /* Handlers: Event stuff: */
-    virtual void showEvent(QShowEvent *pEvent);
-    virtual void polishEvent(QShowEvent *pEvent);
+    /* Handler: Event stuff: */
+    void showEvent(QShowEvent *pEvent);
 
     /* Static helpers: Prepare stuff: */
     static int parentStatusBarHeight(QWidget *pParent);
 
     /* Variables: */
-    bool m_fPolished;
     const int m_iLayoutMargin;
     const int m_iLayoutSpacing;
-    const int m_iParentStatusBarHeight;
+    int m_iParentStatusBarHeight;
     QMap<QString, UIPopupPane*> m_panes;
 };
 

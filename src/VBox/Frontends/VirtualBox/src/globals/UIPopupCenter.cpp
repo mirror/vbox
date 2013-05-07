@@ -20,6 +20,7 @@
 /* GUI includes: */
 #include "UIPopupCenter.h"
 #include "UIPopupStack.h"
+#include "UIMachineWindow.h"
 #include "QIMessageBox.h"
 #include "VBoxGlobal.h"
 
@@ -48,6 +49,8 @@ void UIPopupCenter::destroy()
     if (!m_spInstance)
         return;
 
+    /* Cleanup instance: */
+    m_spInstance->cleanup();
     /* Destroy instance: */
     delete m_spInstance;
 }
@@ -62,6 +65,16 @@ UIPopupCenter::~UIPopupCenter()
 {
     /* Unassign instance: */
     m_spInstance = 0;
+}
+
+void UIPopupCenter::cleanup()
+{
+    /* Make sure all the popup-stacks destroyed: */
+    foreach (const QString &strPopupStackID, m_stacks.keys())
+    {
+        delete m_stacks[strPopupStackID];
+        m_stacks.remove(strPopupStackID);
+    }
 }
 
 void UIPopupCenter::message(QWidget *pParent, const QString &strPopupPaneID,
@@ -161,7 +174,7 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
         return;
 
     /* Looking for the corresponding popup-stack: */
-    QString strPopupStackID = pParent->metaObject()->className();
+    const QString strPopupStackID(popupStackID(pParent));
     UIPopupStack *pPopupStack = 0;
     /* Is there already popup-stack with the same ID? */
     if (m_stacks.contains(strPopupStackID))
@@ -173,12 +186,12 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
     else
     {
         /* Create new one: */
-        pPopupStack = m_stacks[strPopupStackID] = new UIPopupStack(pParent);
+        pPopupStack = m_stacks[strPopupStackID] = new UIPopupStack;
         /* Attach popup-stack connections: */
         connect(pPopupStack, SIGNAL(sigPopupPaneDone(QString, int)), this, SLOT(sltPopupPaneDone(QString, int)));
         connect(pPopupStack, SIGNAL(sigRemove()), this, SLOT(sltRemovePopupStack()));
         /* Show popup-stack: */
-        pPopupStack->show();
+        showPopupStack(pParent);
     }
 
     /* Looking for the corresponding popup-pane: */
@@ -201,6 +214,48 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
     }
 }
 
+void UIPopupCenter::showPopupStack(QWidget *pParent)
+{
+    /* Make sure passed parent is valid: */
+    if (!pParent)
+    {
+        AssertMsgFailed(("Passed parent is NULL"));
+        return;
+    }
+
+    /* Do we have a stack for passed parent? */
+    const QString strPopupStackID(popupStackID(pParent));
+    if (!m_stacks.contains(strPopupStackID))
+        return;
+
+    /* Install stack to passed parent: */
+    UIPopupStack *pPopupStack = m_stacks[strPopupStackID];
+    pParent->installEventFilter(pPopupStack);
+    pPopupStack->setParent(pParent);
+    pPopupStack->show();
+}
+
+void UIPopupCenter::hidePopupStack(QWidget *pParent)
+{
+    /* Make sure passed parent is valid: */
+    if (!pParent)
+    {
+        AssertMsgFailed(("Passed parent is NULL"));
+        return;
+    }
+
+    /* Do we have a stack for passed parent? */
+    const QString strPopupStackID(popupStackID(pParent));
+    if (!m_stacks.contains(strPopupStackID))
+        return;
+
+    /* Uninstall stack from passed parent: */
+    UIPopupStack *pPopupStack = m_stacks[strPopupStackID];
+    pPopupStack->hide();
+    pPopupStack->setParent(0);
+    pParent->removeEventFilter(pPopupStack);
+}
+
 void UIPopupCenter::sltPopupPaneDone(QString strPopupPaneID, int iResultCode)
 {
     /* Was the result auto-confirmated? */
@@ -214,6 +269,16 @@ void UIPopupCenter::sltPopupPaneDone(QString strPopupPaneID, int iResultCode)
 
     /* Notify listeners: */
     emit sigPopupPaneDone(strPopupPaneID, iResultCode);
+}
+
+void UIPopupCenter::sltShowPopupStack()
+{
+    showPopupStack(vboxGlobal().activeMachineWindow());
+}
+
+void UIPopupCenter::sltHidePopupStack()
+{
+    hidePopupStack(vboxGlobal().activeMachineWindow());
 }
 
 void UIPopupCenter::sltRemovePopupStack()
@@ -237,6 +302,24 @@ void UIPopupCenter::sltRemovePopupStack()
     /* Cleanup the popup-stack: */
     m_stacks.remove(strPopupStackID);
     delete pPopupStack;
+}
+
+/* static */
+QString UIPopupCenter::popupStackID(QWidget *pParent)
+{
+    /* Make sure passed parent is always valid: */
+    if (!pParent)
+    {
+        AssertMsgFailed(("Passed parent is NULL"));
+        return QString();
+    }
+
+    /* Special handling for Runtime UI: */
+    if (qobject_cast<UIMachineWindow*>(pParent))
+        return QString("UIMachineWindow");
+
+    /* Common handling for other cases: */
+    return pParent->metaObject()->className();
 }
 
 void UIPopupCenter::remindAboutMouseIntegration(QWidget *pParent, bool fSupportsAbsolute)
