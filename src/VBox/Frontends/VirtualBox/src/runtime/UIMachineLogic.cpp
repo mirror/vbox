@@ -46,6 +46,7 @@
 #include "UISession.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIPopupCenter.h"
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxVMInformationDlg.h"
 #include "UISettingsDialogSpecific.h"
@@ -532,6 +533,46 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_DockIconPreviewMonitor(0)
 #endif /* Q_WS_MAC */
 {
+    /* Register popup-center connections: */
+    connect(this, SIGNAL(sigMachineWidnowsCreated()),
+            &popupCenter(), SLOT(sltShowPopupStack()));
+    connect(this, SIGNAL(sigMachineWidnowsDestroyed()),
+            &popupCenter(), SLOT(sltHidePopupStack()));
+}
+
+UIMachineLogic::~UIMachineLogic()
+{
+    /* Unregister popup-center connections: */
+    disconnect(this, SIGNAL(sigMachineWidnowsCreated()),
+               &popupCenter(), SLOT(sltShowPopupStack()));
+    disconnect(this, SIGNAL(sigMachineWidnowsDestroyed()),
+               &popupCenter(), SLOT(sltHidePopupStack()));
+}
+
+void UIMachineLogic::setMachineWindowsCreated(bool fIsWindowsCreated)
+{
+    /* Make sure something changed: */
+    if (m_fIsWindowsCreated == fIsWindowsCreated)
+        return;
+
+    /* Special handling for 'destroyed' case: */
+    if (!fIsWindowsCreated)
+    {
+        /* We emit this signal *before* the remembering new value
+         * because we want UIMachineLogic::activeMachineWindow() to be yet alive. */
+        emit sigMachineWidnowsDestroyed();
+    }
+
+    /* Remember new value: */
+    m_fIsWindowsCreated = fIsWindowsCreated;
+
+    /* Special handling for 'created' case: */
+    if (fIsWindowsCreated)
+    {
+        /* We emit this signal *after* the remembering new value
+         * because we want UIMachineLogic::activeMachineWindow() to be already alive. */
+        emit sigMachineWidnowsCreated();
+    }
 }
 
 void UIMachineLogic::addMachineWindow(UIMachineWindow *pMachineWindow)

@@ -25,18 +25,14 @@
 /* GUI includes: */
 #include "UIPopupStack.h"
 #include "UIPopupPane.h"
+#include "UIMachineWindowNormal.h"
 
 /* Other VBox includes: */
 #include <VBox/sup.h>
 
-UIPopupStack::UIPopupStack(QWidget *pParent)
-    : QWidget(pParent)
-    , m_fPolished(false)
-    , m_iLayoutMargin(2), m_iLayoutSpacing(0)
-    , m_iParentStatusBarHeight(parentStatusBarHeight(pParent))
+UIPopupStack::UIPopupStack()
+    : m_iLayoutMargin(1), m_iLayoutSpacing(1)
 {
-    /* Prepare: */
-    prepare();
 }
 
 bool UIPopupStack::exists(const QString &strPopupPaneID) const
@@ -68,10 +64,14 @@ void UIPopupStack::createPopupPane(const QString &strPopupPaneID,
     /* Show popup-pane: */
     pPopupPane->show();
 
-    /* Propagate desired width: */
-    setDesiredWidth(parentWidget()->width());
-    /* Adjust geometry: */
-    sltAdjustGeometry();
+    /* Adjust geometry only if parent is currently set: */
+    if (parent())
+    {
+        /* Propagate desired width: */
+        setDesiredWidth(parentWidget()->width());
+        /* Adjust geometry: */
+        sltAdjustGeometry();
+    }
 }
 
 void UIPopupStack::updatePopupPane(const QString &strPopupPaneID,
@@ -90,14 +90,30 @@ void UIPopupStack::updatePopupPane(const QString &strPopupPaneID,
     pPopupPane->setMessage(strMessage);
     pPopupPane->setDetails(strDetails);
 
-    /* Propagate desired width: */
-    setDesiredWidth(parentWidget()->width());
-    /* Adjust geometry: */
-    sltAdjustGeometry();
+    /* Adjust geometry only if parent is currently set: */
+    if (parent())
+    {
+        /* Propagate desired width: */
+        setDesiredWidth(parentWidget()->width());
+        /* Adjust geometry: */
+        sltAdjustGeometry();
+    }
+}
+
+void UIPopupStack::setParent(QWidget *pParent)
+{
+    /* Call to base-class: */
+    QWidget::setParent(pParent);
+    /* Recalculate parent status-bar height: */
+    m_iParentStatusBarHeight = parentStatusBarHeight(pParent);
 }
 
 void UIPopupStack::sltAdjustGeometry()
 {
+    /* Adjust geometry only if parent is currently set: */
+    if (!parent())
+        return;
+
     /* Get this attributes: */
     const int iWidth = parentWidget()->width();
     const int iHeight = minimumHeightHint();
@@ -136,18 +152,15 @@ void UIPopupStack::sltPopupPaneDone(int iResultCode)
     m_panes.remove(strPopupPaneID);
     delete pPopupPane;
 
+    /* Layout content: */
+    layoutContent();
+
     /* Make sure this stack still contains popup-panes: */
     if (!m_panes.isEmpty())
         return;
 
     /* Notify listeners about popup-stack: */
     emit sigRemove();
-}
-
-void UIPopupStack::prepare()
-{
-    /* Install event-filter to parent: */
-    parent()->installEventFilter(this);
 }
 
 int UIPopupStack::minimumWidthHint()
@@ -225,7 +238,7 @@ void UIPopupStack::layoutContent()
 bool UIPopupStack::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
     /* Make sure its parent event came: */
-    if (pWatched != parent())
+    if (!parent() || pWatched != parent())
         return false;
 
     /* Make sure its resize event came: */
@@ -241,34 +254,31 @@ bool UIPopupStack::eventFilter(QObject *pWatched, QEvent *pEvent)
     return false;
 }
 
-void UIPopupStack::showEvent(QShowEvent *pEvent)
+void UIPopupStack::showEvent(QShowEvent*)
 {
-    /* Make sure we should polish dialog: */
-    if (m_fPolished)
-        return;
-
-    /* Call to polish-event: */
-    polishEvent(pEvent);
-
-    /* Mark dialog as polished: */
-    m_fPolished = true;
-}
-
-void UIPopupStack::polishEvent(QShowEvent*)
-{
-    /* Propagate desired width: */
-    setDesiredWidth(parentWidget()->width());
-    /* Adjust geometry: */
-    sltAdjustGeometry();
+    /* Adjust geometry only if parent is currently set: */
+    if (parent())
+    {
+        /* Propagate desired width: */
+        setDesiredWidth(parentWidget()->width());
+        /* Adjust geometry: */
+        sltAdjustGeometry();
+    }
 }
 
 /* static */
 int UIPopupStack::parentStatusBarHeight(QWidget *pParent)
 {
-    /* Check if passed parent is QMainWindow and contains status-bar: */
-    if (QMainWindow *pParentWindow = qobject_cast<QMainWindow*>(pParent))
-        if (pParentWindow->statusBar())
-            return pParentWindow->statusBar()->height();
+    /* Status-bar can exist only on QMainWindow sub-class: */
+    if (QMainWindow *pMainWindow = qobject_cast<QMainWindow*>(pParent))
+    {
+        /* Status-bar can exist only:
+         * 1. on non-machine-window
+         * 2. on machine-window in normal mode: */
+        if (!qobject_cast<UIMachineWindow*>(pMainWindow) ||
+            qobject_cast<UIMachineWindowNormal*>(pMainWindow))
+            return pMainWindow->statusBar()->height();
+    }
     /* Zero by default: */
     return 0;
 }

@@ -92,7 +92,9 @@ private slots:
     /* Handler: Popup-pane stuff: */
     void sltPopupPaneDone(QString strPopupPaneID, int iResultCode);
 
-    /* Handler: Popup-stack stuff: */
+    /* Handlers: Popup-stack stuff: */
+    void sltShowPopupStack();
+    void sltHidePopupStack();
     void sltRemovePopupStack();
 
 private:
@@ -101,12 +103,22 @@ private:
     UIPopupCenter();
     ~UIPopupCenter();
 
+    /* Helper: Cleanup stuff: */
+    void cleanup();
+
     /* Helper: Popup-pane stuff: */
     void showPopupPane(QWidget *pParent, const QString &strPopupPaneID,
                        const QString &strMessage, const QString &strDetails,
                        int iButton1, int iButton2,
                        const QString &strButtonText1, const QString &strButtonText2,
                        bool fProposeAutoConfirmation);
+
+    /* Helpers: Popup-stack stuff: */
+    void showPopupStack(QWidget *pParent);
+    void hidePopupStack(QWidget *pParent);
+
+    /* Static helper: Popup-stack stuff: */
+    static QString popupStackID(QWidget *pParent);
 
     /* Variable: Popup-stack stuff: */
     QMap<QString, QPointer<UIPopupStack> > m_stacks;
