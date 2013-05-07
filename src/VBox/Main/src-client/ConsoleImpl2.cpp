@@ -4943,13 +4943,13 @@ static void configSetProperty(VMMDev * const pVMMDev,
     AssertPtrReturnVoid(pszFlags);
     parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
     parms[0].u.pointer.addr = (void *)pszName;
-    parms[0].u.pointer.size = strlen(pszName) + 1;
+    parms[0].u.pointer.size = (uint32_t)strlen(pszName) + 1;
     parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
     parms[1].u.pointer.addr = (void *)pszValue;
-    parms[1].u.pointer.size = strlen(pszValue) + 1;
+    parms[1].u.pointer.size = (uint32_t)strlen(pszValue) + 1;
     parms[2].type = VBOX_HGCM_SVC_PARM_PTR;
     parms[2].u.pointer.addr = (void *)pszFlags;
-    parms[2].u.pointer.size = strlen(pszFlags) + 1;
+    parms[2].u.pointer.size = (uint32_t)strlen(pszFlags) + 1;
     pVMMDev->hgcmHostCall("VBoxGuestPropSvc", guestProp::SET_PROP_HOST, 3,
                           &parms[0]);
 }

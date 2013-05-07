@@ -57,7 +57,7 @@ void Bstr::copyFromN(const char *a_pszSrc, size_t a_cchMax)
         throw std::bad_alloc();
     }
 
-    m_bstr = ::SysAllocStringByteLen(NULL, cwc * sizeof(OLECHAR));
+    m_bstr = ::SysAllocStringByteLen(NULL, (unsigned)(cwc * sizeof(OLECHAR)));
     if (RT_UNLIKELY(!m_bstr))
         throw std::bad_alloc();
 

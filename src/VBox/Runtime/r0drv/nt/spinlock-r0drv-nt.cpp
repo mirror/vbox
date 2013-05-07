@@ -74,7 +74,7 @@ typedef struct RTSPINLOCKINTERNAL
     /** The saved IRQL. */
     KIRQL volatile      SavedIrql;
     /** The saved interrupt flag. */
-    uint32_t volatile   fIntSaved;
+    RTCCUINTREG volatile fIntSaved;
     /** The spinlock creation flags. */
     uint32_t            fFlags;
     /** The NT spinlock structure. */
@@ -140,7 +140,7 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
     if (pThis->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)
     {
 #ifndef RTSPINLOCK_NT_HACK_NOIRQ
-        uint32_t fIntSaved = ASMGetFlags();
+        RTCCUINTREG fIntSaved = ASMGetFlags();
         ASMIntDisable();
         KeAcquireSpinLock(&pThis->Spinlock, &SavedIrql);
 #else
@@ -150,7 +150,7 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
             KeRaiseIrql(DISPATCH_LEVEL, &SavedIrql);
             Assert(SavedIrql < DISPATCH_LEVEL);
         }
-        uint32_t fIntSaved = ASMGetFlags();
+        RTCCUINTREG fIntSaved = ASMGetFlags();
         ASMIntDisable();
 
         if (!ASMAtomicCmpXchgU32(&pThis->u32Hack, RTSPINLOCK_NT_HACK_NOIRQ_TAKEN, RTSPINLOCK_NT_HACK_NOIRQ_FREE))
@@ -176,7 +176,7 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
     KIRQL SavedIrql = pThis->SavedIrql;
     if (pThis->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)
     {
-        uint32_t fIntSaved = pThis->fIntSaved;
+        RTCCUINTREG fIntSaved = pThis->fIntSaved;
         pThis->fIntSaved = 0;
 
 #ifndef RTSPINLOCK_NT_HACK_NOIRQ

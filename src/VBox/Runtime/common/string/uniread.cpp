@@ -919,7 +919,7 @@ static int Stream1Printf(const char *pszFormat, ...)
     if (!g_fQuiet)
         cch = vfprintf(stdout, pszFormat, va);
     else
-        cch = strlen(pszFormat);
+        cch = (int)strlen(pszFormat);
     va_end(va);
     return cch;
 }
