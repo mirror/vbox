@@ -5595,7 +5595,7 @@ static void hmR0VmxTRPMTrapToPendingEvent(PVMCPU pVCpu)
 
     rc = TRPMResetTrap(pVCpu);
     AssertRC(rc);
-    Log(("Converting TRPM trap: u32IntrInfo=%#RX32 enmTrpmEvent=%d cbInstr=%u uErrCode=%#RX32 GCPtrFaultAddress=%#RGv\n",
+    Log(("TRPM->HM event: u32IntrInfo=%#RX32 enmTrpmEvent=%d cbInstr=%u uErrCode=%#RX32 GCPtrFaultAddress=%#RGv\n",
          u32IntrInfo, enmTrpmEvent, cbInstr, uErrCode, GCPtrFaultAddress));
     hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, cbInstr, uErrCode, GCPtrFaultAddress);
 }
@@ -5640,7 +5640,7 @@ static void hmR0VmxPendingEventToTRPMTrap(PVMCPU pVCpu)
             break;
     }
 
-    Log(("Converting pending HM event to TRPM trap uVector=%#x enmTrapType=%d\n", uVector, enmTrapType));
+    Log(("HM event->TRPM: uVector=%#x enmTrapType=%d\n", uVector, enmTrapType));
     int rc = TRPMAssertTrap(pVCpu, uVector, enmTrapType);
     AssertRC(rc);
 
