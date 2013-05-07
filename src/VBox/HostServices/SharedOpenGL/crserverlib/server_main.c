@@ -2573,6 +2573,26 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 #define SCREEN(i) (cr_server.screen[i])
 #define MAPPED(screen) ((screen).winID != 0)
 
+extern DECLEXPORT(void) crServerVBoxSetNotifyEventCB(PFNCRSERVERNOTIFYEVENT pfnCb)
+{
+    cr_server.pfnNotifyEventCB = pfnCb;
+}
+
+void crVBoxServerNotifyEvent(int32_t idScreen)
+{
+    /* this is something unexpected, but just in case */
+    if (idScreen >= cr_server.screenCount)
+    {
+        crWarning("invalid screen id %d", idScreen);
+        return;
+    }
+
+    if (!cr_server.cDisableEvent)
+        cr_server.pfnNotifyEventCB(idScreen, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_WINDOW, NULL);
+    else
+        ASMBitSet(cr_server.NotifyEventMap, idScreen);
+}
+
 static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *data2)
 {
     CRMuralInfo *pMI = (CRMuralInfo*) data1;
@@ -2585,6 +2605,9 @@ static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *da
         crServerVBoxCompositionDisableEnter(pMI);
 
         renderspuReparentWindow(pMI->spuWindow);
+
+        if (pMI->bVisible && (pMI->fPresentMode & CR_SERVER_REDIR_F_DISPLAY))
+            crVBoxServerNotifyEvent(pMI->screenId);
 
         crServerVBoxCompositionDisableLeave(pMI, GL_FALSE);
     }
@@ -2721,7 +2744,7 @@ static int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
     GLboolean fForcePresent;
     uint32_t cRects;
     const RTRECT *pRects;
-    int rc;
+    int rc = VINF_SUCCESS;
 
     fForcePresent = crServerVBoxCompositionPresentNeeded(pMI);
 

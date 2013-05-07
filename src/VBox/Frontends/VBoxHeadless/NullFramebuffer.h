@@ -205,6 +205,11 @@ public:
         return E_NOTIMPL;
     }
 
+    STDMETHOD(Notify3DEvent)(ULONG uType, BYTE *pReserved)
+    {
+        return E_NOTIMPL;
+    }
+
 private:
     /** Guest framebuffer pixel format */
     ULONG mPixelFormat;

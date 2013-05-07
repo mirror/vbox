@@ -124,6 +124,8 @@ struct CR_SERVER_RPW_ENTRY;
 
 typedef DECLCALLBACKPTR(void, PFNCR_SERVER_RPW_DATA) (const struct CR_SERVER_RPW_ENTRY* pEntry, void *pvEntryTexData);
 
+typedef DECLCALLBACKPTR(void, PFNCRSERVERNOTIFYEVENT) (int32_t screenId, uint32_t uEvent, void*pvData);
+
 typedef struct CR_SERVER_RPW_ENTRY
 {
     RTRECTSIZE Size;
@@ -523,6 +525,10 @@ typedef struct {
 
     GLboolean             bWindowsInitiallyHidden;
 
+    uint32_t              NotifyEventMap[(CR_MAX_GUEST_MONITORS + 31)/32];
+    uint32_t              cDisableEvent;
+    PFNCRSERVERNOTIFYEVENT pfnNotifyEventCB;
+
     /* @todo: should we use just one blitter?
      * we use two currently because the drawable attribs can differ*/
     CR_DISPLAY_ENTRY_MAP  PresentTexturepMap;
@@ -563,6 +569,8 @@ extern DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value);
 extern DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect *pCallbacks);
 
 extern DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h);
+
+extern DECLEXPORT(void) crServerVBoxSetNotifyEventCB(PFNCRSERVERNOTIFYEVENT pfnCb);
 
 #ifdef VBOX_WITH_CRHGSMI
 /* We moved all CrHgsmi command processing to crserverlib to keep the logic of dealing with CrHgsmi commands in one place.
