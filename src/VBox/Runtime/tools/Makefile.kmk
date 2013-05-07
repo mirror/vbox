@@ -65,6 +65,11 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
  RTTar_TEMPLATE = VBOXR3TSTEXE
  RTTar_SOURCES = RTTar.cpp
 
+ # RTNtDbgHelp - our tar clone (for testing the tar/gzip/gunzip streaming code)
+ PROGRAMS.win += RTNtDbgHelp
+ RTNtDbgHelp_TEMPLATE = VBOXR3TSTEXE
+ RTNtDbgHelp_SOURCES = RTNtDbgHelp.cpp
+
 endif # !VBOX_ONLY_EXTPACKS_USE_IMPLIBS
 
 include $(FILE_KBUILD_SUB_FOOTER)
