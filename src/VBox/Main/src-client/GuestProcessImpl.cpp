@@ -1055,11 +1055,11 @@ int GuestProcess::startProcess(int *pGuestRc)
         paParms[i++].setPointer((void*)mData.mProcess.mCommand.c_str(),
                                 (ULONG)mData.mProcess.mCommand.length() + 1);
         paParms[i++].setUInt32(mData.mProcess.mFlags);
-        paParms[i++].setUInt32(mData.mProcess.mArguments.size());
-        paParms[i++].setPointer((void*)pszArgs, cbArgs);
-        paParms[i++].setUInt32(mData.mProcess.mEnvironment.Size());
-        paParms[i++].setUInt32(cbEnv);
-        paParms[i++].setPointer((void*)pvEnv, cbEnv);
+        paParms[i++].setUInt32((uint32_t)mData.mProcess.mArguments.size());
+        paParms[i++].setPointer((void*)pszArgs, (uint32_t)cbArgs);
+        paParms[i++].setUInt32((uint32_t)mData.mProcess.mEnvironment.Size());
+        paParms[i++].setUInt32((uint32_t)cbEnv);
+        paParms[i++].setPointer((void*)pvEnv, (uint32_t)cbEnv);
         if (uProtocol < 2)
         {
             /* In protocol v1 (VBox < 4.3) the credentials were part of the execution
@@ -1587,8 +1587,8 @@ int GuestProcess::writeData(uint32_t uHandle, uint32_t uFlags,
     paParms[i++].setUInt32(pEvent->ContextID());
     paParms[i++].setUInt32(mData.mPID);
     paParms[i++].setUInt32(uFlags);
-    paParms[i++].setPointer(pvData, cbData);
-    paParms[i++].setUInt32(cbData);
+    paParms[i++].setPointer(pvData, (uint32_t)cbData);
+    paParms[i++].setUInt32((uint32_t)cbData);
 
     alock.release(); /* Drop the write lock before sending. */
 
