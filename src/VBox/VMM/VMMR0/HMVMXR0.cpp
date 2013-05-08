@@ -2753,7 +2753,7 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
 
             /* If we have unrestricted guest execution, we never have to intercept CR3 reads. */
             if (pVM->hm.s.vmx.fUnrestrictedGuest)
-                pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT;
+                pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT;
 
             rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
             AssertRCReturn(rc, rc);
