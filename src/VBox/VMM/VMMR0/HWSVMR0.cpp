@@ -1523,7 +1523,7 @@ ResumeExecution:
     }
 
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    hmR0SVMRunWrapXMM(pVCpu->hm.s.svm.HCPhysVMCBHost, pVCpu->hm.s.svm.HCPhysVMCB, pCtx, pVM, pVCpu,
+    HMR0SVMRunWrapXMM(pVCpu->hm.s.svm.HCPhysVMCBHost, pVCpu->hm.s.svm.HCPhysVMCB, pCtx, pVM, pVCpu,
                           pVCpu->hm.s.svm.pfnVMRun);
 #else
     pVCpu->hm.s.svm.pfnVMRun(pVCpu->hm.s.svm.HCPhysVMCBHost, pVCpu->hm.s.svm.HCPhysVMCB, pCtx, pVM, pVCpu);
