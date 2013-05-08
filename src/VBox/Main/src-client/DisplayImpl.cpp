@@ -4349,18 +4349,17 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
 #endif
 
 #ifdef VBOX_WITH_VPX
-    rc = VideoRecContextCreate(&pDisplay->mpVideoRecCtx, pDisplay->mcMonitors);
-    if (RT_FAILURE(rc))
-    {
-        LogFlow(("Failed to create video recording context (%Rrc)!\n", rc));
-        return E_FAIL;
-    }
-
     ComPtr<IMachine> pMachine = pDisplay->mParent->machine();
     BOOL fEnabled = false;
     pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
     if (fEnabled)
     {
+        rc = VideoRecContextCreate(&pDisplay->mpVideoRecCtx, pDisplay->mcMonitors);
+        if (RT_FAILURE(rc))
+        {
+            LogFlow(("Failed to create video recording context (%Rrc)!\n", rc));
+            return E_FAIL;
+        }
         ULONG ulWidth;
         int hrc = pMachine->COMGETTER(VideoCaptureWidth)(&ulWidth);
         AssertComRCReturnRC(hrc);
