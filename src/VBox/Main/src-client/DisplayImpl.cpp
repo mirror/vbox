@@ -4399,7 +4399,7 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                                       pszName, ulWidth, ulHeight, ulRate, ulFps);
             if (RT_SUCCESS(rc))
                 LogRel(("WebM/VP8 video recording screen #%u with %ux%u @ %u kbps, %u fps to '%s' enabled!\n",
-                            uScreen, ulWidth, ulHeight, ulRate, ulFps, com::Utf8Str(strFile).c_str()));
+                        uScreen, ulWidth, ulHeight, ulRate, ulFps, pszName));
             else
                 LogRel(("Failed to initialize video recording context #%u (%Rrc)!\n", uScreen, rc));
             RTStrFree(pszName);
