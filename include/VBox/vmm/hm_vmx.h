@@ -871,7 +871,7 @@ typedef union
 #define VMX_VMCS64_CTRL_TSC_OFFSET_FULL                           0x2010
 #define VMX_VMCS64_CTRL_TSC_OFFSET_HIGH                           0x2011
 
-/** Optional (VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW) */
+/** Optional (VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW) */
 #define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_FULL                       0x2012
 #define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_HIGH                       0x2013
 
@@ -924,87 +924,87 @@ typedef union
 /** @name VMCS field encoding - 32 Bits control fields
  * @{
  */
-#define VMX_VMCS32_CTRL_PIN_EXEC_CONTROLS                       0x4000
-#define VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS                      0x4002
+#define VMX_VMCS32_CTRL_PIN_EXEC                                0x4000
+#define VMX_VMCS32_CTRL_PROC_EXEC                               0x4002
 #define VMX_VMCS32_CTRL_EXCEPTION_BITMAP                        0x4004
 #define VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MASK                    0x4006
 #define VMX_VMCS32_CTRL_PAGEFAULT_ERROR_MATCH                   0x4008
 #define VMX_VMCS32_CTRL_CR3_TARGET_COUNT                        0x400A
-#define VMX_VMCS32_CTRL_EXIT_CONTROLS                           0x400C
+#define VMX_VMCS32_CTRL_EXIT                                    0x400C
 #define VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT                    0x400E
 #define VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT                     0x4010
-#define VMX_VMCS32_CTRL_ENTRY_CONTROLS                          0x4012
+#define VMX_VMCS32_CTRL_ENTRY                                   0x4012
 #define VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT                    0x4014
 #define VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO                 0x4016
 #define VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE                 0x4018
 #define VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH                      0x401A
 #define VMX_VMCS32_CTRL_TPR_THRESHOLD                           0x401C
-#define VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS2                     0x401E
+#define VMX_VMCS32_CTRL_PROC_EXEC2                              0x401E
 /** @} */
 
 
-/** @name VMX_VMCS_CTRL_PIN_EXEC_CONTROLS
+/** @name VMX_VMCS_CTRL_PIN_EXEC
  * @{
  */
 /** External interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
-#define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT            RT_BIT(0)
+#define VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT            RT_BIT(0)
 /** Non-maskable interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
-#define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT                RT_BIT(3)
+#define VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT                RT_BIT(3)
 /** Virtual NMIs. */
-#define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_VIRTUAL_NMI             RT_BIT(5)
+#define VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI             RT_BIT(5)
 /** Activate VMX preemption timer. */
-#define VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER           RT_BIT(6)
+#define VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER           RT_BIT(6)
 /* All other bits are reserved and must be set according to MSR IA32_VMX_PROCBASED_CTLS. */
 /** @} */
 
-/** @name VMX_VMCS_CTRL_PROC_EXEC_CONTROLS
+/** @name VMX_VMCS_CTRL_PROC_EXEC
  * @{
  */
 /** VM Exit as soon as RFLAGS.IF=1 and no blocking is active. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT        RT_BIT(2)
+#define VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT        RT_BIT(2)
 /** Use timestamp counter offset. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TSC_OFFSETTING     RT_BIT(3)
+#define VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING     RT_BIT(3)
 /** VM Exit when executing the HLT instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT               RT_BIT(7)
+#define VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT               RT_BIT(7)
 /** VM Exit when executing the INVLPG instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT            RT_BIT(9)
+#define VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT            RT_BIT(9)
 /** VM Exit when executing the MWAIT instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT             RT_BIT(10)
+#define VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT             RT_BIT(10)
 /** VM Exit when executing the RDPMC instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT             RT_BIT(11)
+#define VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT             RT_BIT(11)
 /** VM Exit when executing the RDTSC/RDTSCP instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT             RT_BIT(12)
+#define VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT             RT_BIT(12)
 /** VM Exit when executing the MOV to CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT          RT_BIT(15)
+#define VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT          RT_BIT(15)
 /** VM Exit when executing the MOV from CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT         RT_BIT(16)
+#define VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT         RT_BIT(16)
 /** VM Exit on CR8 loads. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT          RT_BIT(19)
+#define VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT          RT_BIT(19)
 /** VM Exit on CR8 stores. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT         RT_BIT(20)
+#define VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT         RT_BIT(20)
 /** Use TPR shadow. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW         RT_BIT(21)
+#define VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW         RT_BIT(21)
 /** VM Exit when virtual nmi blocking is disabled. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_NMI_WINDOW_EXIT        RT_BIT(22)
+#define VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT        RT_BIT(22)
 /** VM Exit when executing a MOV DRx instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT            RT_BIT(23)
+#define VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT            RT_BIT(23)
 /** VM Exit when executing IO instructions. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT         RT_BIT(24)
+#define VMX_VMCS_CTRL_PROC_EXEC_UNCOND_IO_EXIT         RT_BIT(24)
 /** Use IO bitmaps. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_IO_BITMAPS         RT_BIT(25)
+#define VMX_VMCS_CTRL_PROC_EXEC_USE_IO_BITMAPS         RT_BIT(25)
 /** Monitor trap flag. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG      RT_BIT(27)
+#define VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG      RT_BIT(27)
 /** Use MSR bitmaps. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS        RT_BIT(28)
+#define VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS        RT_BIT(28)
 /** VM Exit when executing the MONITOR instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT           RT_BIT(29)
+#define VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT           RT_BIT(29)
 /** VM Exit when executing the PAUSE instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_PAUSE_EXIT             RT_BIT(30)
+#define VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT             RT_BIT(30)
 /** Determines whether the secondary processor based VM-execution controls are used. */
 #define VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL         RT_BIT(31)
 /** @} */
 
-/** @name VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2
+/** @name VMX_VMCS_CTRL_PROC_EXEC2
  * @{
  */
 /** Virtualize APIC access. */
@@ -1034,48 +1034,48 @@ typedef union
 /** @} */
 
 
-/** @name VMX_VMCS_CTRL_ENTRY_CONTROLS
+/** @name VMX_VMCS_CTRL_ENTRY
  * @{
  */
 /** Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-#define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG                 RT_BIT(2)
+#define VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG                 RT_BIT(2)
 /** 64 bits guest mode. Must be 0 for CPUs that don't support AMD64. */
-#define VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST           RT_BIT(9)
+#define VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST           RT_BIT(9)
 /** In SMM mode after VM-entry. */
-#define VMX_VMCS_CTRL_ENTRY_CONTROLS_ENTRY_SMM                  RT_BIT(10)
+#define VMX_VMCS_CTRL_ENTRY_ENTRY_SMM                  RT_BIT(10)
 /** Disable dual treatment of SMI and SMM; must be zero for VM-entry outside of SMM. */
-#define VMX_VMCS_CTRL_ENTRY_CONTROLS_DEACTIVATE_DUALMON         RT_BIT(11)
+#define VMX_VMCS_CTRL_ENTRY_DEACTIVATE_DUALMON         RT_BIT(11)
 /** This control determines whether the guest IA32_PERF_GLOBAL_CTRL MSR is loaded on VM entry. */
-#define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PERF_MSR        RT_BIT(13)
+#define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PERF_MSR        RT_BIT(13)
 /** This control determines whether the guest IA32_PAT MSR is loaded on VM entry. */
-#define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_PAT_MSR         RT_BIT(14)
+#define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PAT_MSR         RT_BIT(14)
 /** This control determines whether the guest IA32_EFER MSR is loaded on VM entry. */
-#define VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_GUEST_EFER_MSR        RT_BIT(15)
+#define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR        RT_BIT(15)
 /** @} */
 
 
-/** @name VMX_VMCS_CTRL_EXIT_CONTROLS
+/** @name VMX_VMCS_CTRL_EXIT
  * @{
  */
 /** Save guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG                  RT_BIT(2)
+#define VMX_VMCS_CTRL_EXIT_SAVE_DEBUG                  RT_BIT(2)
 /** Return to long mode after a VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE        RT_BIT(9)
+#define VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE        RT_BIT(9)
 /** This control determines whether the IA32_PERF_GLOBAL_CTRL MSR is loaded on VM exit. */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_PERF_MSR               RT_BIT(12)
+#define VMX_VMCS_CTRL_EXIT_LOAD_PERF_MSR               RT_BIT(12)
 /** Acknowledge external interrupts with the irq controller if one caused a VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_ACK_EXT_INT                 RT_BIT(15)
+#define VMX_VMCS_CTRL_EXIT_ACK_EXT_INT                 RT_BIT(15)
 /** This control determines whether the guest IA32_PAT MSR is saved on VM exit. */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_PAT_MSR          RT_BIT(18)
+#define VMX_VMCS_CTRL_EXIT_SAVE_GUEST_PAT_MSR          RT_BIT(18)
 /** This control determines whether the host IA32_PAT MSR is loaded on VM exit. */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_PAT_MSR           RT_BIT(19)
+#define VMX_VMCS_CTRL_EXIT_LOAD_HOST_PAT_MSR           RT_BIT(19)
 /** This control determines whether the guest IA32_EFER MSR is saved on VM exit. */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_GUEST_EFER_MSR         RT_BIT(20)
+#define VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR         RT_BIT(20)
 /** This control determines whether the host IA32_EFER MSR is loaded on VM exit. */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_LOAD_HOST_EFER_MSR          RT_BIT(21)
+#define VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR          RT_BIT(21)
 /** This control determines whether the value of the VMX preemption timer is
  *  saved on every VM exit. */
-#define VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_VMX_PREEMPT_TIMER      RT_BIT(22)
+#define VMX_VMCS_CTRL_EXIT_SAVE_VMX_PREEMPT_TIMER      RT_BIT(22)
 /** @} */
 
 /**  @name VMCS field encoding - 32 Bits read-only fields
