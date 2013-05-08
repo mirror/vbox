@@ -807,7 +807,7 @@ crServerDispatchWindowShow( GLint window, GLint state )
     {
         cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, state);
 
-        if (state)
+        if (state && mural->fHasParentWindow)
             crVBoxServerNotifyEvent(mural->screenId);
     }
 

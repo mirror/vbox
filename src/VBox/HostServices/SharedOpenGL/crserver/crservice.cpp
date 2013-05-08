@@ -249,8 +249,6 @@ static DECLCALLBACK(void) svcNotifyEventCB(int32_t screenId, uint32_t uEvent, vo
     ComPtr<IDisplay> pDisplay;
     ComPtr<IFramebuffer> pFramebuffer;
     LONG xo, yo;
-    LONG64 winId = 0;
-    ULONG monitorCount, i, w, h;
 
     if (!g_pConsole)
     {
