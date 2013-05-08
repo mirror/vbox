@@ -478,37 +478,6 @@ HRESULT Display::init(Console *aParent)
 #endif /* VBOX_WITH_HGSMI */
     }
 
-#ifdef VBOX_WITH_VPX
-    if (VideoRecContextCreate(&mpVideoRecCtx))
-    {
-        LogFlow(("Failed to create Video Recording Context\n"));
-        return E_FAIL;
-    }
-
-    BOOL fEnabled = false;
-    mParent->machine()->COMGETTER(VideoCaptureEnabled)(&fEnabled);
-    if (fEnabled)
-    {
-        ULONG ulWidth;
-        mParent->machine()->COMGETTER(VideoCaptureWidth)(&ulWidth);
-        ULONG ulHeight;
-        mParent->machine()->COMGETTER(VideoCaptureHeight)(&ulHeight);
-        ULONG ulRate;
-        mParent->machine()->COMGETTER(VideoCaptureRate)(&ulRate);
-        ULONG ulFps;
-        mParent->machine()->COMGETTER(VideoCaptureFps)(&ulFps);
-        BSTR strFile;
-        mParent->machine()->COMGETTER(VideoCaptureFile)(&strFile);
-        if (VideoRecContextInit(mpVideoRecCtx, strFile, ulWidth, ulHeight, ulRate, ulFps))
-        {
-            LogFlow(("Failed to initialize video recording context!\n"));
-            return E_FAIL;
-        }
-        LogFlow(("Video recording as VPX with %lux%lu @ %lukbps to '%ls' enabled!\n",
-                  ulWidth, ulHeight, ulRate, strFile));
-    }
-#endif
-
     {
         // register listener for state change events
         ComPtr<IEventSource> es;
@@ -661,7 +630,7 @@ static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId
 
     if (!finished)
     {
-        LogRelFlowFunc (("External framebuffer wants us to wait!\n"));
+        LogRelFlowFunc(("External framebuffer wants us to wait!\n"));
         return VINF_VGA_RESIZE_IN_PROGRESS;
     }
 
@@ -683,9 +652,9 @@ static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId
 int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM,
                                   uint32_t cbLine, int w, int h, uint16_t flags)
 {
-    LogRel (("Display::handleDisplayResize(): uScreenId = %d, pvVRAM=%p "
-             "w=%d h=%d bpp=%d cbLine=0x%X, flags=0x%X\n",
-             uScreenId, pvVRAM, w, h, bpp, cbLine, flags));
+    LogRel(("Display::handleDisplayResize(): uScreenId = %d, pvVRAM=%p "
+            "w=%d h=%d bpp=%d cbLine=0x%X, flags=0x%X\n",
+            uScreenId, pvVRAM, w, h, bpp, cbLine, flags));
 
     /* If there is no framebuffer, this call is not interesting. */
     if (   uScreenId >= mcMonitors
@@ -731,7 +700,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
          *
          * Note: the resize information is only accessed on EMT so no serialization is required.
          */
-        LogRel (("Display::handleDisplayResize(): Warning: resize postponed.\n"));
+        LogRel(("Display::handleDisplayResize(): Warning: resize postponed.\n"));
 
         maFramebuffers[uScreenId].pendingResize.fPending    = true;
         maFramebuffers[uScreenId].pendingResize.pixelFormat = pixelFormat;
@@ -865,7 +834,7 @@ void Display::handleResizeCompletedEMT (void)
 #endif /* DEBUG_sunlover */
 
         /* Inform VRDP server about the change of display parameters. */
-        LogRelFlowFunc (("Calling VRDP\n"));
+        LogRelFlowFunc(("Calling VRDP\n"));
         mParent->consoleVRDPServer()->SendResize();
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
@@ -926,17 +895,17 @@ unsigned mapCoordsToScreen(DISPLAYFBINFO *pInfos, unsigned cInfos, int *px, int 
 {
     DISPLAYFBINFO *pInfo = pInfos;
     unsigned uScreenId;
-    LogSunlover (("mapCoordsToScreen: %d,%d %dx%d\n", *px, *py, *pw, *ph));
+    LogSunlover(("mapCoordsToScreen: %d,%d %dx%d\n", *px, *py, *pw, *ph));
     for (uScreenId = 0; uScreenId < cInfos; uScreenId++, pInfo++)
     {
-        LogSunlover (("    [%d] %d,%d %dx%d\n", uScreenId, pInfo->xOrigin, pInfo->yOrigin, pInfo->w, pInfo->h));
+        LogSunlover(("    [%d] %d,%d %dx%d\n", uScreenId, pInfo->xOrigin, pInfo->yOrigin, pInfo->w, pInfo->h));
         if (   (pInfo->xOrigin <= *px && *px < pInfo->xOrigin + (int)pInfo->w)
             && (pInfo->yOrigin <= *py && *py < pInfo->yOrigin + (int)pInfo->h))
         {
             /* The rectangle belongs to the screen. Correct coordinates. */
             *px -= pInfo->xOrigin;
             *py -= pInfo->yOrigin;
-            LogSunlover (("    -> %d,%d", *px, *py));
+            LogSunlover(("    -> %d,%d", *px, *py));
             break;
         }
     }
@@ -945,7 +914,7 @@ unsigned mapCoordsToScreen(DISPLAYFBINFO *pInfos, unsigned cInfos, int *px, int 
         /* Map to primary screen. */
         uScreenId = 0;
     }
-    LogSunlover ((" scr %d\n", uScreenId));
+    LogSunlover((" scr %d\n", uScreenId));
     return uScreenId;
 }
 
@@ -965,7 +934,7 @@ void Display::handleDisplayUpdateLegacy (int x, int y, int w, int h)
     unsigned uScreenId = mapCoordsToScreen(maFramebuffers, mcMonitors, &x, &y, &w, &h);
 
 #ifdef DEBUG_sunlover
-    LogFlowFunc (("%d,%d %dx%d (checked)\n", x, y, w, h));
+    LogFlowFunc(("%d,%d %dx%d (checked)\n", x, y, w, h));
 #endif /* DEBUG_sunlover */
 
     handleDisplayUpdate (uScreenId, x, y, w, h);
@@ -979,8 +948,8 @@ void Display::handleDisplayUpdate (unsigned uScreenId, int x, int y, int w, int 
      */
 
 #ifdef DEBUG_sunlover
-    LogFlowFunc (("[%d] %d,%d %dx%d (%d,%d)\n",
-                  uScreenId, x, y, w, h, mpDrv->IConnector.cx, mpDrv->IConnector.cy));
+    LogFlowFunc(("[%d] %d,%d %dx%d (%d,%d)\n",
+                 uScreenId, x, y, w, h, mpDrv->IConnector.cx, mpDrv->IConnector.cy));
 #endif /* DEBUG_sunlover */
 
     IFramebuffer *pFramebuffer = maFramebuffers[uScreenId].pFramebuffer;
@@ -1218,8 +1187,8 @@ static void vbvaRgnInit (VBVADIRTYREGION *prgn, DISPLAYFBINFO *paFramebuffers, u
 
 static void vbvaRgnDirtyRect (VBVADIRTYREGION *prgn, unsigned uScreenId, VBVACMDHDR *phdr)
 {
-    LogSunlover (("x = %d, y = %d, w = %d, h = %d\n",
-                  phdr->x, phdr->y, phdr->w, phdr->h));
+    LogSunlover(("x = %d, y = %d, w = %d, h = %d\n",
+                 phdr->x, phdr->y, phdr->w, phdr->h));
 
     /*
      * Here update rectangles are accumulated to form an update area.
@@ -1419,7 +1388,7 @@ int Display::videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
      * Guest enabled acceleration at will. And it has to enable
      * acceleration after a mode change.
      */
-    LogRelFlowFunc (("mfVideoAccelEnabled = %d, fEnable = %d, pVbvaMemory = %p\n",
+    LogRelFlowFunc(("mfVideoAccelEnabled = %d, fEnable = %d, pVbvaMemory = %p\n",
                   mfVideoAccelEnabled, fEnable, pVbvaMemory));
 
     /* Strictly check parameters. Callers must not pass anything in the case. */
@@ -1436,7 +1405,7 @@ int Display::videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     {
         Assert (!mfVideoAccelEnabled);
 
-        LogRelFlowFunc (("Machine is not yet running.\n"));
+        LogRelFlowFunc(("Machine is not yet running.\n"));
 
         if (fEnable)
         {
@@ -1504,7 +1473,7 @@ int Display::videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
         LogRel(("VBVA: Disabled.\n"));
     }
 
-    LogRelFlowFunc (("VideoAccelEnable: rc = %Rrc.\n", rc));
+    LogRelFlowFunc(("VideoAccelEnable: rc = %Rrc.\n", rc));
 
     return rc;
 }
@@ -1659,8 +1628,8 @@ bool Display::vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
     uint32_t indexRecordFree = mpVbvaMemory->indexRecordFree;
 
 #ifdef DEBUG_sunlover
-    LogFlowFunc (("first = %d, free = %d\n",
-                  indexRecordFirst, indexRecordFree));
+    LogFlowFunc(("first = %d, free = %d\n",
+                 indexRecordFirst, indexRecordFree));
 #endif /* DEBUG_sunlover */
 
     if (!vbvaVerifyRingBuffer (mpVbvaMemory))
@@ -1677,7 +1646,7 @@ bool Display::vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
     VBVARECORD *pRecord = &mpVbvaMemory->aRecords[indexRecordFirst];
 
 #ifdef DEBUG_sunlover
-    LogFlowFunc (("cbRecord = 0x%08X\n", pRecord->cbRecord));
+    LogFlowFunc(("cbRecord = 0x%08X\n", pRecord->cbRecord));
 #endif /* DEBUG_sunlover */
 
     uint32_t cbRecord = pRecord->cbRecord & ~VBVA_F_RECORD_PARTIAL;
@@ -1688,7 +1657,7 @@ bool Display::vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
 
         Assert (mpu8VbvaPartial);
 
-        LogFlowFunc (("continue partial record mcbVbvaPartial = %d cbRecord 0x%08X, first = %d, free = %d\n",
+        LogFlowFunc(("continue partial record mcbVbvaPartial = %d cbRecord 0x%08X, first = %d, free = %d\n",
                       mcbVbvaPartial, pRecord->cbRecord, indexRecordFirst, indexRecordFree));
 
         if (cbRecord > mcbVbvaPartial)
@@ -1713,7 +1682,7 @@ bool Display::vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
             mpVbvaMemory->indexRecordFirst = (indexRecordFirst + 1) % VBVA_MAX_RECORDS;
 
 #ifdef DEBUG_sunlover
-            LogFlowFunc (("partial done ok, data = %d, free = %d\n",
+            LogFlowFunc(("partial done ok, data = %d, free = %d\n",
                           mpVbvaMemory->off32Data, mpVbvaMemory->off32Free));
 #endif /* DEBUG_sunlover */
         }
@@ -1733,7 +1702,7 @@ bool Display::vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
                 return false;
             }
 
-            LogFlowFunc (("started partial record mcbVbvaPartial = 0x%08X cbRecord 0x%08X, first = %d, free = %d\n",
+            LogFlowFunc(("started partial record mcbVbvaPartial = 0x%08X cbRecord 0x%08X, first = %d, free = %d\n",
                           mcbVbvaPartial, pRecord->cbRecord, indexRecordFirst, indexRecordFree));
         }
 
@@ -1768,7 +1737,7 @@ bool Display::vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
 
             if (!dst)
             {
-                LogRelFlowFunc (("could not allocate %d bytes from heap!!!\n", cbRecord));
+                LogRelFlowFunc(("could not allocate %d bytes from heap!!!\n", cbRecord));
                 mpVbvaMemory->off32Data = (mpVbvaMemory->off32Data + cbRecord) % VBVA_RING_BUFFER_SIZE;
                 return false;
             }
@@ -1778,7 +1747,7 @@ bool Display::vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
             *ppHdr = (VBVACMDHDR *)dst;
 
 #ifdef DEBUG_sunlover
-            LogFlowFunc (("Allocated from heap %p\n", dst));
+            LogFlowFunc(("Allocated from heap %p\n", dst));
 #endif /* DEBUG_sunlover */
         }
     }
@@ -1789,8 +1758,8 @@ bool Display::vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
     mpVbvaMemory->indexRecordFirst = (indexRecordFirst + 1) % VBVA_MAX_RECORDS;
 
 #ifdef DEBUG_sunlover
-    LogFlowFunc (("done ok, data = %d, free = %d\n",
-                  mpVbvaMemory->off32Data, mpVbvaMemory->off32Free));
+    LogFlowFunc(("done ok, data = %d, free = %d\n",
+                 mpVbvaMemory->off32Data, mpVbvaMemory->off32Free));
 #endif /* DEBUG_sunlover */
 
     return true;
@@ -1815,7 +1784,7 @@ void Display::vbvaReleaseCmd (VBVACMDHDR *pHdr, int32_t cbCmd)
         /* The pointer is outside. It is then an allocated copy. */
 
 #ifdef DEBUG_sunlover
-        LogFlowFunc (("Free heap %p\n", pHdr));
+        LogFlowFunc(("Free heap %p\n", pHdr));
 #endif /* DEBUG_sunlover */
 
         if ((uint8_t *)pHdr == mpu8VbvaPartial)
@@ -1852,7 +1821,7 @@ void Display::VideoAccelFlush (void)
 void Display::videoAccelFlush (void)
 {
 #ifdef DEBUG_sunlover_2
-    LogFlowFunc (("mfVideoAccelEnabled = %d\n", mfVideoAccelEnabled));
+    LogFlowFunc(("mfVideoAccelEnabled = %d\n", mfVideoAccelEnabled));
 #endif /* DEBUG_sunlover_2 */
 
     if (!mfVideoAccelEnabled)
@@ -1865,7 +1834,7 @@ void Display::videoAccelFlush (void)
     Assert(mpVbvaMemory);
 
 #ifdef DEBUG_sunlover_2
-    LogFlowFunc (("indexRecordFirst = %d, indexRecordFree = %d, off32Data = %d, off32Free = %d\n",
+    LogFlowFunc(("indexRecordFirst = %d, indexRecordFree = %d, off32Data = %d, off32Free = %d\n",
                   mpVbvaMemory->indexRecordFirst, mpVbvaMemory->indexRecordFree, mpVbvaMemory->off32Data, mpVbvaMemory->off32Free));
 #endif /* DEBUG_sunlover_2 */
 
@@ -1908,8 +1877,8 @@ void Display::videoAccelFlush (void)
         if (cbCmd != 0)
         {
 #ifdef DEBUG_sunlover
-            LogFlowFunc (("hdr: cbCmd = %d, x=%d, y=%d, w=%d, h=%d\n",
-                          cbCmd, phdr->x, phdr->y, phdr->w, phdr->h));
+            LogFlowFunc(("hdr: cbCmd = %d, x=%d, y=%d, w=%d, h=%d\n",
+                         cbCmd, phdr->x, phdr->y, phdr->w, phdr->h));
 #endif /* DEBUG_sunlover */
 
             VBVACMDHDR hdrSaved = *phdr;
@@ -2023,7 +1992,7 @@ int Display::videoAccelRefreshProcess(void)
 STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
     ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel)
 {
-    LogRelFlowFunc (("aScreenId = %d\n", aScreenId));
+    LogRelFlowFunc(("aScreenId = %d\n", aScreenId));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2067,7 +2036,7 @@ STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
 
 STDMETHODIMP Display::SetFramebuffer(ULONG aScreenId, IFramebuffer *aFramebuffer)
 {
-    LogRelFlowFunc (("\n"));
+    LogRelFlowFunc(("\n"));
 
     if (aFramebuffer != NULL)
         CheckComArgOutPointerValid(aFramebuffer);
@@ -2128,10 +2097,10 @@ STDMETHODIMP Display::SetFramebuffer(ULONG aScreenId, IFramebuffer *aFramebuffer
     return S_OK;
 }
 
-STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId,
-    IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin)
+STDMETHODIMP Display::GetFramebuffer(ULONG aScreenId,
+                                     IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin)
 {
-    LogRelFlowFunc (("aScreenId = %d\n", aScreenId));
+    LogRelFlowFunc(("aScreenId = %d\n", aScreenId));
 
     CheckComArgOutPointerValid(aFramebuffer);
 
@@ -2304,15 +2273,15 @@ int Display::displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_
                 uint32_t u32DstBitsPerPixel = 32;
 
                 rc = pDisplay->mpDrv->pUpPort->pfnCopyRect(pDisplay->mpDrv->pUpPort,
-                                                      width, height,
-                                                      pu8Src,
-                                                      xSrc, ySrc,
-                                                      u32SrcWidth, u32SrcHeight,
-                                                      u32SrcLineSize, u32SrcBitsPerPixel,
-                                                      pu8Dst,
-                                                      xDst, yDst,
-                                                      u32DstWidth, u32DstHeight,
-                                                      u32DstLineSize, u32DstBitsPerPixel);
+                                                           width, height,
+                                                           pu8Src,
+                                                           xSrc, ySrc,
+                                                           u32SrcWidth, u32SrcHeight,
+                                                           u32SrcLineSize, u32SrcBitsPerPixel,
+                                                           pu8Dst,
+                                                           xDst, yDst,
+                                                           u32DstWidth, u32DstHeight,
+                                                           u32DstLineSize, u32DstBitsPerPixel);
                 if (RT_SUCCESS(rc))
                 {
                     *ppu8Data = pu8Data;
@@ -2746,7 +2715,7 @@ STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULO
     //  check the machine state here (by enclosing the check and VMRequCall
     //  within the Console lock to make it atomic).
 
-    LogRelFlowFunc (("address=%p, x=%d, y=%d, width=%d, height=%d\n",
+    LogRelFlowFunc(("address=%p, x=%d, y=%d, width=%d, height=%d\n",
                   (void *)address, x, y, width, height));
 
     CheckComArgNotNull(address);
@@ -2794,7 +2763,7 @@ STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULO
 //        handleDisplayUpdate (x, y, width, height);
 //    }
 
-    LogRelFlowFunc (("rc=%08X\n", rc));
+    LogRelFlowFunc(("rc=%08X\n", rc));
     return rc;
 }
 
@@ -2902,7 +2871,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 
     HRESULT rc = S_OK;
 
-    LogRelFlowFunc (("Sending DPYUPDATE request\n"));
+    LogRelFlowFunc(("Sending DPYUPDATE request\n"));
 
     /* Have to release the lock when calling EMT.  */
     alock.release();
@@ -2916,7 +2885,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
         rc = setError(VBOX_E_IPRT_ERROR,
                       tr("Could not invalidate and update the screen (%Rrc)"), rcVBox);
 
-    LogRelFlowFunc (("rc=%08X\n", rc));
+    LogRelFlowFunc(("rc=%08X\n", rc));
     return rc;
 }
 
@@ -2928,7 +2897,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
  */
 STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
 {
-    LogRelFlowFunc (("\n"));
+    LogRelFlowFunc(("\n"));
 
     /// @todo (dmik) can we AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); here?
     //  This will require general code review and may add some details.
@@ -3009,7 +2978,7 @@ STDMETHODIMP Display::ViewportChanged(ULONG aScreenId, ULONG x, ULONG y, ULONG w
  */
 void Display::updateDisplayData(void)
 {
-    LogRelFlowFunc (("\n"));
+    LogRelFlowFunc(("\n"));
 
     /* the driver might not have been constructed yet */
     if (!mpDrv)
@@ -3069,7 +3038,7 @@ void Display::updateDisplayData(void)
         mpDrv->IConnector.cx = 0;
         mpDrv->IConnector.cy = 0;
     }
-    LogRelFlowFunc (("leave\n"));
+    LogRelFlowFunc(("leave\n"));
 }
 
 #ifdef VBOX_WITH_CRHGSMI
@@ -3123,7 +3092,7 @@ void Display::destructCrHgsmiData(void)
 DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
                                               unsigned uScreenId)
 {
-    LogRelFlowFunc (("uScreenId = %d\n", uScreenId));
+    LogRelFlowFunc(("uScreenId = %d\n", uScreenId));
 
     AssertReturn(that, VERR_INVALID_PARAMETER);
     AssertReturn(uScreenId < that->mcMonitors, VERR_INVALID_PARAMETER);
@@ -3181,7 +3150,7 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
         }
     }
 
-    LogRelFlowFunc (("leave\n"));
+    LogRelFlowFunc(("leave\n"));
     return VINF_SUCCESS;
 }
 
@@ -3195,7 +3164,7 @@ DECLCALLBACK(int) Display::displayResizeCallback(PPDMIDISPLAYCONNECTOR pInterfac
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
-    LogRelFlowFunc (("bpp %d, pvVRAM %p, cbLine %d, cx %d, cy %d\n",
+    LogRelFlowFunc(("bpp %d, pvVRAM %p, cbLine %d, cx %d, cy %d\n",
                   bpp, pvVRAM, cbLine, cx, cy));
 
     return pDrv->pDisplay->handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, bpp, pvVRAM, cbLine, cx, cy, VBVA_SCREEN_F_ACTIVE);
@@ -3212,8 +3181,8 @@ DECLCALLBACK(void) Display::displayUpdateCallback(PPDMIDISPLAYCONNECTOR pInterfa
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
 #ifdef DEBUG_sunlover
-    LogFlowFunc (("mfVideoAccelEnabled = %d, %d,%d %dx%d\n",
-                  pDrv->pDisplay->mfVideoAccelEnabled, x, y, cx, cy));
+    LogFlowFunc(("mfVideoAccelEnabled = %d, %d,%d %dx%d\n",
+                 pDrv->pDisplay->mfVideoAccelEnabled, x, y, cx, cy));
 #endif /* DEBUG_sunlover */
 
     /* This call does update regardless of VBVA status.
@@ -3238,8 +3207,8 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
 #endif /* DEBUG_sunlover */
 
 #ifdef DEBUG_sunlover_2
-    LogFlowFunc (("pDrv->pDisplay->mfVideoAccelEnabled = %d\n",
-                  pDrv->pDisplay->mfVideoAccelEnabled));
+    LogFlowFunc(("pDrv->pDisplay->mfVideoAccelEnabled = %d\n",
+                 pDrv->pDisplay->mfVideoAccelEnabled));
 #endif /* DEBUG_sunlover_2 */
 
     Display *pDisplay = pDrv->pDisplay;
@@ -3258,7 +3227,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
 
         if (u32ResizeStatus == ResizeStatus_UpdateDisplayData)
         {
-            LogRelFlowFunc (("ResizeStatus_UpdateDisplayData %d\n", uScreenId));
+            LogRelFlowFunc(("ResizeStatus_UpdateDisplayData %d\n", uScreenId));
             fNoUpdate = true; /* Always set it here, because pfnUpdateDisplayAll can cause a new resize. */
             /* The framebuffer was resized and display data need to be updated. */
             pDisplay->handleResizeCompletedEMT ();
@@ -3275,7 +3244,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         else if (u32ResizeStatus == ResizeStatus_InProgress)
         {
             /* The framebuffer is being resized. Do not call the VGA device back. Immediately return. */
-            LogRelFlowFunc (("ResizeStatus_InProcess\n"));
+            LogRelFlowFunc(("ResizeStatus_InProcess\n"));
             fNoUpdate = true;
             continue;
         }
@@ -3319,8 +3288,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     }
 
 #ifdef VBOX_WITH_VPX
-    if (   pDisplay->mpVideoRecCtx
-        && VideoRecIsEnabled(pDisplay->mpVideoRecCtx))
+    if (VideoRecIsEnabled(pDisplay->mpVideoRecCtx))
     {
         DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
 
@@ -3355,7 +3323,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
     STAM_PROFILE_STOP(&g_StatDisplayRefresh, a);
 #endif /* DEBUG_sunlover */
 #ifdef DEBUG_sunlover_2
-    LogFlowFunc (("leave\n"));
+    LogFlowFunc(("leave\n"));
 #endif /* DEBUG_sunlover_2 */
 }
 
@@ -3368,7 +3336,7 @@ DECLCALLBACK(void) Display::displayResetCallback(PPDMIDISPLAYCONNECTOR pInterfac
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
-    LogRelFlowFunc (("\n"));
+    LogRelFlowFunc(("\n"));
 
    /* Disable VBVA mode. */
     pDrv->pDisplay->VideoAccelEnable (false, NULL);
@@ -3383,7 +3351,7 @@ DECLCALLBACK(void) Display::displayLFBModeChangeCallback(PPDMIDISPLAYCONNECTOR p
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
-    LogRelFlowFunc (("fEnabled=%d\n", fEnabled));
+    LogRelFlowFunc(("fEnabled=%d\n", fEnabled));
 
     NOREF(fEnabled);
 
@@ -4192,7 +4160,7 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
         if (fNewOrigin)
         {
             /* VRDP server still need this notification. */
-            LogRelFlowFunc (("Calling VRDP\n"));
+            LogRelFlowFunc(("Calling VRDP\n"));
             pThis->mParent->consoleVRDPServer()->SendResize();
         }
         return VINF_SUCCESS;
@@ -4305,29 +4273,29 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     /*
      * Init Interfaces.
      */
-    pDrvIns->IBase.pfnQueryInterface        = Display::drvQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface           = Display::drvQueryInterface;
 
-    pThis->IConnector.pfnResize             = Display::displayResizeCallback;
-    pThis->IConnector.pfnUpdateRect         = Display::displayUpdateCallback;
-    pThis->IConnector.pfnRefresh            = Display::displayRefreshCallback;
-    pThis->IConnector.pfnReset              = Display::displayResetCallback;
-    pThis->IConnector.pfnLFBModeChange      = Display::displayLFBModeChangeCallback;
-    pThis->IConnector.pfnProcessAdapterData = Display::displayProcessAdapterDataCallback;
-    pThis->IConnector.pfnProcessDisplayData = Display::displayProcessDisplayDataCallback;
+    pThis->IConnector.pfnResize                = Display::displayResizeCallback;
+    pThis->IConnector.pfnUpdateRect            = Display::displayUpdateCallback;
+    pThis->IConnector.pfnRefresh               = Display::displayRefreshCallback;
+    pThis->IConnector.pfnReset                 = Display::displayResetCallback;
+    pThis->IConnector.pfnLFBModeChange         = Display::displayLFBModeChangeCallback;
+    pThis->IConnector.pfnProcessAdapterData    = Display::displayProcessAdapterDataCallback;
+    pThis->IConnector.pfnProcessDisplayData    = Display::displayProcessDisplayDataCallback;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    pThis->IConnector.pfnVHWACommandProcess = Display::displayVHWACommandProcess;
+    pThis->IConnector.pfnVHWACommandProcess    = Display::displayVHWACommandProcess;
 #endif
 #ifdef VBOX_WITH_CRHGSMI
     pThis->IConnector.pfnCrHgsmiCommandProcess = Display::displayCrHgsmiCommandProcess;
     pThis->IConnector.pfnCrHgsmiControlProcess = Display::displayCrHgsmiControlProcess;
 #endif
 #ifdef VBOX_WITH_HGSMI
-    pThis->IConnector.pfnVBVAEnable         = Display::displayVBVAEnable;
-    pThis->IConnector.pfnVBVADisable        = Display::displayVBVADisable;
-    pThis->IConnector.pfnVBVAUpdateBegin    = Display::displayVBVAUpdateBegin;
-    pThis->IConnector.pfnVBVAUpdateProcess  = Display::displayVBVAUpdateProcess;
-    pThis->IConnector.pfnVBVAUpdateEnd      = Display::displayVBVAUpdateEnd;
-    pThis->IConnector.pfnVBVAResize         = Display::displayVBVAResize;
+    pThis->IConnector.pfnVBVAEnable            = Display::displayVBVAEnable;
+    pThis->IConnector.pfnVBVADisable           = Display::displayVBVADisable;
+    pThis->IConnector.pfnVBVAUpdateBegin       = Display::displayVBVAUpdateBegin;
+    pThis->IConnector.pfnVBVAUpdateProcess     = Display::displayVBVAUpdateProcess;
+    pThis->IConnector.pfnVBVAUpdateEnd         = Display::displayVBVAUpdateEnd;
+    pThis->IConnector.pfnVBVAResize            = Display::displayVBVAResize;
     pThis->IConnector.pfnVBVAMousePointerShape = Display::displayVBVAMousePointerShape;
 #endif
 
@@ -4358,13 +4326,13 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
         return rc;
     }
-    pThis->pDisplay = (Display *)pv;        /** @todo Check this cast! */
+    Display *pDisplay = (Display *)pv;      /** @todo Check this cast! */
+    pThis->pDisplay = pDisplay;
     pThis->pDisplay->mpDrv = pThis;
-
     /*
      * Update our display information according to the framebuffer
      */
-    pThis->pDisplay->updateDisplayData();
+    pDisplay->updateDisplayData();
 
     /*
      * Start periodic screen refreshes
@@ -4372,7 +4340,45 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     pThis->pUpPort->pfnSetRefreshRate(pThis->pUpPort, 20);
 
 #ifdef VBOX_WITH_CRHGSMI
-    pThis->pDisplay->setupCrHgsmiData();
+    pDisplay->setupCrHgsmiData();
+#endif
+
+#ifdef VBOX_WITH_VPX
+    rc = VideoRecContextCreate(&pDisplay->mpVideoRecCtx);
+    if (RT_FAILURE(rc))
+    {
+        LogFlow(("Failed to create video recording context (%Rrc)!\n", rc));
+        return E_FAIL;
+    }
+
+    ComPtr<IMachine> pMachine = pDisplay->mParent->machine();
+    BOOL fEnabled = false;
+    pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
+    if (fEnabled)
+    {
+        ULONG ulWidth;
+        int hrc = pMachine->COMGETTER(VideoCaptureWidth)(&ulWidth);
+        AssertComRCReturnRC(hrc);
+        ULONG ulHeight;
+        hrc = pMachine->COMGETTER(VideoCaptureHeight)(&ulHeight);
+        AssertComRCReturnRC(hrc);
+        ULONG ulRate;
+        hrc = pMachine->COMGETTER(VideoCaptureRate)(&ulRate);
+        AssertComRCReturnRC(hrc);
+        ULONG ulFps;
+        hrc = pMachine->COMGETTER(VideoCaptureFps)(&ulFps);
+        AssertComRCReturnRC(hrc);
+        BSTR strFile;
+        hrc = pMachine->COMGETTER(VideoCaptureFile)(&strFile);
+        AssertComRCReturnRC(hrc);
+        rc = VideoRecContextInit(pDisplay->mpVideoRecCtx, com::Utf8Str(strFile).c_str(),
+                                 ulWidth, ulHeight, ulRate, ulFps);
+        if (RT_SUCCESS(rc))
+            LogRel(("WebM/VP8 video recording with %ux%u @ %u kbps, %u fps to '%s' enabled!\n",
+                   ulWidth, ulHeight, ulRate, ulFps, com::Utf8Str(strFile).c_str()));
+        else
+            LogRel(("Failed to initialize video recording context (%Rrc)!\n", rc));
+    }
 #endif
 
     return VINF_SUCCESS;
