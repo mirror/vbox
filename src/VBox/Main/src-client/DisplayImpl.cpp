@@ -48,6 +48,7 @@
 #include <VBox/com/array.h>
 
 #ifdef VBOX_WITH_VPX
+# include <iprt/path.h>
 # include "VideoRec.h"
 #endif
 
@@ -527,8 +528,7 @@ void Display::uninit()
     mfVMMDevInited = true;
 
 #ifdef VBOX_WITH_VPX
-    if (mpVideoRecCtx)
-        VideoRecContextClose(mpVideoRecCtx);
+    VideoRecContextClose(mpVideoRecCtx);
 #endif
 }
 
@@ -3317,7 +3317,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                                               pDrv->IConnector.cbScanline, pDrv->IConnector.cx,
                                               pDrv->IConnector.cy, pDrv->IConnector.pu8Data, u64Now);
                 }
-                if (rc == VERR_TRY_AGAIN)
+                if (rc == VINF_TRY_AGAIN)
                     break;
             }
         }
@@ -4378,8 +4378,23 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         AssertComRCReturnRC(hrc);
         for (unsigned uScreen = 0; uScreen < pDisplay->mcMonitors; uScreen++)
         {
+            char *pszAbsPath = RTPathAbsDup(com::Utf8Str(strFile).c_str());
+            char *pszExt = RTPathExt(pszAbsPath);
+            if (pszExt)
+                pszExt = RTStrDup(pszExt);
+            RTPathStripExt(pszAbsPath);
+            if (!pszAbsPath)
+                rc = VERR_INVALID_PARAMETER;
+            if (!pszExt)
+                pszExt = RTStrDup(".webm");
             char *pszName = NULL;
-            rc = RTStrAPrintf(&pszName, "%s-%u", com::Utf8Str(strFile).c_str(), uScreen);
+            if (RT_SUCCESS(rc))
+            {
+                if (pDisplay->mcMonitors > 1)
+                    rc = RTStrAPrintf(&pszName, "%s-%u%s", pszAbsPath, uScreen, pszExt);
+                else
+                    rc = RTStrAPrintf(&pszName, "%s%s", pszAbsPath, pszExt);
+            }
             if (RT_SUCCESS(rc))
                 rc = VideoRecStrmInit(pDisplay->mpVideoRecCtx, uScreen,
                                       pszName, ulWidth, ulHeight, ulRate, ulFps);
@@ -4388,8 +4403,9 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
                             uScreen, ulWidth, ulHeight, ulRate, ulFps, com::Utf8Str(strFile).c_str()));
             else
                 LogRel(("Failed to initialize video recording context #%u (%Rrc)!\n", uScreen, rc));
-            if (pszName)
-                RTStrFree(pszName);
+            RTStrFree(pszName);
+            RTStrFree(pszExt);
+            RTStrFree(pszAbsPath);
         }
     }
 #endif
