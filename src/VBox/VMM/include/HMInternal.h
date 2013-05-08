@@ -581,15 +581,15 @@ typedef struct HMCPU
         uint32_t                    u32Alignment1;
 #endif
 
-        /** Current VMX_VMCS32_CTRL_PIN_EXEC_CONTROLS. */
+        /** Current VMX_VMCS32_CTRL_PIN_EXEC. */
         uint32_t                    u32PinCtls;
-        /** Current VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS. */
+        /** Current VMX_VMCS32_CTRL_PROC_EXEC. */
         uint32_t                    u32ProcCtls;
-        /** Current VMX_VMCS32_CTRL_PROC_EXEC2_CONTROLS. */
+        /** Current VMX_VMCS32_CTRL_PROC_EXEC2. */
         uint32_t                    u32ProcCtls2;
-        /** Current VMX_VMCS32_CTRL_EXIT_CONTROLS. */
+        /** Current VMX_VMCS32_CTRL_EXIT. */
         uint32_t                    u32ExitCtls;
-        /** Current VMX_VMCS32_CTRL_ENTRY_CONTROLS. */
+        /** Current VMX_VMCS32_CTRL_ENTRY. */
         uint32_t                    u32EntryCtls;
         /** Physical address of the virtual APIC page for TPR caching. */
         RTHCPHYS                    HCPhysVirtApic;

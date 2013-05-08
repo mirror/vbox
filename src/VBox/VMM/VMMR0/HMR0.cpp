@@ -527,7 +527,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                  * Check for the VMX-Preemption Timer and adjust for the * "VMX-Preemption
                  * Timer Does Not Count Down at the Rate Specified" erratum.
                  */
-                if (g_HvmR0.vmx.msr.vmx_pin_ctls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER)
+                if (g_HvmR0.vmx.msr.vmx_pin_ctls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER)
                 {
                     g_HvmR0.vmx.fUsePreemptTimer   = true;
                     g_HvmR0.vmx.cPreemptTimerShift = MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(g_HvmR0.vmx.msr.vmx_misc);

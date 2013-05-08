@@ -317,7 +317,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
 
     pVM->hm.s.vmx.hMemObjApicAccess = NIL_RTR0MEMOBJ;
 
-    if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
+    if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
     {
         /* Allocate one page for the APIC physical page (serves for filtering accesses). */
         rc = RTR0MemObjAllocCont(&pVM->hm.s.vmx.hMemObjApicAccess, PAGE_SIZE, false /* fExecutable */);
@@ -383,7 +383,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         ASMMemZeroPage(pVCpu->hm.s.vmx.pbVirtApic);
 
         /* Allocate the MSR bitmap if this feature is supported. */
-        if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
+        if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
         {
             rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjMsrBitmap, PAGE_SIZE, false /* fExecutable */);
             AssertRC(rc);
@@ -605,65 +605,65 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             goto vmx_end;
 
         /*
-         * VMX_VMCS_CTRL_PIN_EXEC_CONTROLS
+         * VMX_VMCS_CTRL_PIN_EXEC
          * Set required bits to one and zero according to the MSR capabilities.
          */
         val = pVM->hm.s.vmx.msr.vmx_pin_ctls.n.disallowed0;
-        val |=    VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_EXT_INT_EXIT      /* External interrupts */
-                | VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_NMI_EXIT;         /* Non-maskable interrupts */
+        val |=    VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT      /* External interrupts */
+                | VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT;         /* Non-maskable interrupts */
 
         /*
          * Enable the VMX preemption timer.
          */
         if (pVM->hm.s.vmx.fUsePreemptTimer)
-            val |= VMX_VMCS_CTRL_PIN_EXEC_CONTROLS_PREEMPT_TIMER;
+            val |= VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER;
         val &= pVM->hm.s.vmx.msr.vmx_pin_ctls.n.allowed1;
 
-        rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PIN_EXEC_CONTROLS, val);
+        rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PIN_EXEC, val);
         AssertRC(rc);
         pVCpu->hm.s.vmx.u32PinCtls = val;
 
         /*
-         * VMX_VMCS_CTRL_PROC_EXEC_CONTROLS
+         * VMX_VMCS_CTRL_PROC_EXEC
          * Set required bits to one and zero according to the MSR capabilities.
          */
         val = pVM->hm.s.vmx.msr.vmx_proc_ctls.n.disallowed0;
         /* Program which event cause VM-exits and which features we want to use. */
-        val |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_HLT_EXIT
-               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TSC_OFFSETTING
-               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT
-               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT
-               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT
-               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT
-               | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT;     /* don't execute mwait or else we'll idle inside
+        val |=   VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT
+               | VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING
+               | VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT
+               | VMX_VMCS_CTRL_PROC_EXEC_UNCOND_IO_EXIT
+               | VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT
+               | VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT
+               | VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT;     /* don't execute mwait or else we'll idle inside
                                                                       the guest (host thinks the cpu load is high) */
 
         /* Without nested paging we should intercept invlpg and cr3 mov instructions. */
         if (!pVM->hm.s.fNestedPaging)
         {
-            val |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT
-                   | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT
-                   | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
+            val |=   VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT
+                   | VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT
+                   | VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT;
         }
 
         /*
-         * VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT might cause a vmlaunch
+         * VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT might cause a vmlaunch
          * failure with an invalid control fields error. (combined with some other exit reasons)
          */
-        if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
+        if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
         {
             /* CR8 reads from the APIC shadow page; writes cause an exit is they lower the TPR below the threshold */
-            val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW;
+            val |= VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW;
             Assert(pVM->hm.s.vmx.pbApicAccess);
         }
         else
             /* Exit on CR8 reads & writes in case the TPR shadow feature isn't present. */
-            val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR8_LOAD_EXIT;
+            val |= VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT | VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT;
 
-        if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
+        if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
         {
             Assert(pVCpu->hm.s.vmx.HCPhysMsrBitmap);
-            val |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS;
+            val |= VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS;
         }
 
         /* We will use the secondary control if it's present. */
@@ -674,13 +674,13 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         val &= pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1;
         pVCpu->hm.s.vmx.u32ProcCtls = val;
 
-        rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, val);
+        rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC, val);
         AssertRC(rc);
 
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
         {
             /*
-             * VMX_VMCS_CTRL_PROC_EXEC_CONTROLS2
+             * VMX_VMCS_CTRL_PROC_EXEC2
              * Set required bits to one and zero according to the MSR capabilities.
              */
             val  = pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.disallowed0;
@@ -705,7 +705,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             /** @todo make sure they don't conflict with the above requirements. */
             val &= pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1;
             pVCpu->hm.s.vmx.u32ProcCtls2 = val;
-            rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS2, val);
+            rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC2, val);
             AssertRC(rc);
         }
 
@@ -748,7 +748,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         /*
          * Set the MSR bitmap address.
          */
-        if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
+        if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
         {
             Assert(pVCpu->hm.s.vmx.HCPhysMsrBitmap);
 
@@ -793,7 +793,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         rc = VMXWriteVmcs(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, 0);
         AssertRC(rc);
 
-        if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
+        if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
         {
             Assert(pVM->hm.s.vmx.hMemObjApicAccess);
             /* Optional */
@@ -1132,11 +1132,11 @@ static int hmR0VmxCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
         {
             if (!(pCtx->eflags.u32 & X86_EFL_IF))
             {
-                if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT))
+                if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT))
                 {
                     LogFlow(("Enable irq window exit!\n"));
-                    pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT;
-                    rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+                    pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT;
+                    rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
                     AssertRC(rc);
                 }
                 /* else nothing to do but wait */
@@ -1780,12 +1780,12 @@ VMMR0DECL(int) VMXR0SetupTscOffsetAndPreemption(PVM pVM, PVMCPU pVCpu)
         uint64_t u64CurTSC = ASMReadTSC();
         if (u64CurTSC + pVCpu->hm.s.vmx.u64TSCOffset > TMCpuTickGetLastSeen(pVCpu))
         {
-            /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
+            /* Note: VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT takes precedence over TSC_OFFSET, applies to RDTSCP too. */
             rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, pVCpu->hm.s.vmx.u64TSCOffset);
             AssertRC(rc);
 
-            pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
-            rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+            pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
+            rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
             AssertRC(rc);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
         }
@@ -1796,16 +1796,16 @@ VMMR0DECL(int) VMXR0SetupTscOffsetAndPreemption(PVM pVM, PVMCPU pVCpu)
                      pVCpu->hm.s.vmx.u64TSCOffset, u64CurTSC + pVCpu->hm.s.vmx.u64TSCOffset,
                      TMCpuTickGetLastSeen(pVCpu), TMCpuTickGetLastSeen(pVCpu) - u64CurTSC - pVCpu->hm.s.vmx.u64TSCOffset,
                      TMCpuTickGet(pVCpu)));
-            pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
-            rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+            pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
+            rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
             AssertRC(rc);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTscInterceptOverFlow);
         }
     }
     else
     {
-        pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
-        rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+        pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT;
+        rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
         AssertRC(rc);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
@@ -1830,7 +1830,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestState, x);
 
     /*
-     * VMX_VMCS_CTRL_ENTRY_CONTROLS
+     * VMX_VMCS_CTRL_ENTRY
      * Set required bits to one and zero according to the MSR capabilities.
      */
     val  = pVM->hm.s.vmx.msr.vmx_entry.n.disallowed0;
@@ -1839,21 +1839,21 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * Load guest debug controls (DR7 & IA32_DEBUGCTL_MSR).
      * Forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs
      */
-    val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_LOAD_DEBUG;
+    val |= VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG;
 
     if (CPUMIsGuestInLongModeEx(pCtx))
-        val |= VMX_VMCS_CTRL_ENTRY_CONTROLS_IA32E_MODE_GUEST;
+        val |= VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST;
     /* else Must be zero when AMD64 is not available. */
 
     /*
      * Mask away the bits that the CPU doesn't support.
      */
     val &= pVM->hm.s.vmx.msr.vmx_entry.n.allowed1;
-    rc = VMXWriteVmcs(VMX_VMCS32_CTRL_ENTRY_CONTROLS, val);
+    rc = VMXWriteVmcs(VMX_VMCS32_CTRL_ENTRY, val);
     AssertRC(rc);
 
     /*
-     * VMX_VMCS_CTRL_EXIT_CONTROLS
+     * VMX_VMCS_CTRL_EXIT
      * Set required bits to one and zero according to the MSR capabilities.
      */
     val  = pVM->hm.s.vmx.msr.vmx_exit.n.disallowed0;
@@ -1862,24 +1862,24 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * Save debug controls (DR7 & IA32_DEBUGCTL_MSR)
      * Forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs
      */
-    val |= VMX_VMCS_CTRL_EXIT_CONTROLS_SAVE_DEBUG;
+    val |= VMX_VMCS_CTRL_EXIT_SAVE_DEBUG;
 
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (VMX_IS_64BIT_HOST_MODE())
-        val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE;
+        val |= VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE;
     /* else Must be zero when AMD64 is not available. */
 #elif HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
     if (CPUMIsGuestInLongModeEx(pCtx))
-        val |= VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE;      /* our switcher goes to long mode */
+        val |= VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE;      /* our switcher goes to long mode */
     else
-        Assert(!(val & VMX_VMCS_CTRL_EXIT_CONTROLS_HOST_ADDR_SPACE_SIZE));
+        Assert(!(val & VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE));
 #endif
     val &= pVM->hm.s.vmx.msr.vmx_exit.n.allowed1;
 
     /*
      * Don't acknowledge external interrupts on VM-exit.
      */
-    rc = VMXWriteVmcs(VMX_VMCS32_CTRL_EXIT_CONTROLS, val);
+    rc = VMXWriteVmcs(VMX_VMCS32_CTRL_EXIT, val);
     AssertRC(rc);
 
     /*
@@ -2078,16 +2078,16 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             if (CPUMIsGuestInPagedProtectedModeEx(pCtx))
             {
                 /* Disable CR3 read/write monitoring as we don't need it for EPT. */
-                pVCpu->hm.s.vmx.u32ProcCtls &=  ~(  VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT
-                                                    | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT);
+                pVCpu->hm.s.vmx.u32ProcCtls &=  ~(  VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT
+                                                    | VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT);
             }
             else
             {
                 /* Reenable CR3 read/write monitoring as our identity mapped page table is active. */
-                pVCpu->hm.s.vmx.u32ProcCtls |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT
-                                                 | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
+                pVCpu->hm.s.vmx.u32ProcCtls |=   VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT
+                                                 | VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT;
             }
-            rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+            rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
             AssertRC(rc);
         }
         else
@@ -2200,11 +2200,11 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 #if 0
     /* Enable single stepping if requested and CPU supports it. */
-    if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG)
+    if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG)
         if (DBGFIsStepping(pVCpu))
         {
-            pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG;
-            rc = VMXWriteVmcs(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+            pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG;
+            rc = VMXWriteVmcs(VMX_VMCS_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
             AssertRC(rc);
         }
 #endif
@@ -2300,8 +2300,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
 
             /* Disable DRx move intercepts. */
-            pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT;
-            rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+            pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT;
+            rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
             AssertRC(rc);
 
             /* Save the host and load the guest debug state. */
@@ -2950,63 +2950,63 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         RTCCUINTREG val2;
 
-        rc2 = VMXReadVmcs(VMX_VMCS32_CTRL_PIN_EXEC_CONTROLS, &val2);
+        rc2 = VMXReadVmcs(VMX_VMCS32_CTRL_PIN_EXEC, &val2);
         AssertRC(rc2);
-        Log2(("VMX_VMCS_CTRL_PIN_EXEC_CONTROLS = %08x\n",  val2));
+        Log2(("VMX_VMCS_CTRL_PIN_EXEC = %08x\n",  val2));
 
         /* allowed zero */
         if ((val2 & pVM->hm.s.vmx.msr.vmx_pin_ctls.n.disallowed0) != pVM->hm.s.vmx.msr.vmx_pin_ctls.n.disallowed0)
-            Log(("Invalid VMX_VMCS_CTRL_PIN_EXEC_CONTROLS: zero\n"));
+            Log(("Invalid VMX_VMCS_CTRL_PIN_EXEC: zero\n"));
 
         /* allowed one */
         if ((val2 & ~pVM->hm.s.vmx.msr.vmx_pin_ctls.n.allowed1) != 0)
-            Log(("Invalid VMX_VMCS_CTRL_PIN_EXEC_CONTROLS: one\n"));
+            Log(("Invalid VMX_VMCS_CTRL_PIN_EXEC: one\n"));
 
-        rc2 = VMXReadVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, &val2);
+        rc2 = VMXReadVmcs(VMX_VMCS32_CTRL_PROC_EXEC, &val2);
         AssertRC(rc2);
-        Log2(("VMX_VMCS_CTRL_PROC_EXEC_CONTROLS = %08x\n",  val2));
+        Log2(("VMX_VMCS_CTRL_PROC_EXEC = %08x\n",  val2));
 
         /*
          * Must be set according to the MSR, but can be cleared if nested paging is used.
          */
         if (pVM->hm.s.fNestedPaging)
         {
-            val2 |=   VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INVLPG_EXIT
-                    | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT
-                    | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
+            val2 |=   VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT
+                    | VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT
+                    | VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT;
         }
 
         /* allowed zero */
         if ((val2 & pVM->hm.s.vmx.msr.vmx_proc_ctls.n.disallowed0) != pVM->hm.s.vmx.msr.vmx_proc_ctls.n.disallowed0)
-            Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC_CONTROLS: zero\n"));
+            Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC: zero\n"));
 
         /* allowed one */
         if ((val2 & ~pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1) != 0)
-            Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC_CONTROLS: one\n"));
+            Log(("Invalid VMX_VMCS_CTRL_PROC_EXEC: one\n"));
 
-        rc2 = VMXReadVmcs(VMX_VMCS32_CTRL_ENTRY_CONTROLS, &val2);
+        rc2 = VMXReadVmcs(VMX_VMCS32_CTRL_ENTRY, &val2);
         AssertRC(rc2);
-        Log2(("VMX_VMCS_CTRL_ENTRY_CONTROLS = %08x\n",  val2));
+        Log2(("VMX_VMCS_CTRL_ENTRY = %08x\n",  val2));
 
         /* allowed zero */
         if ((val2 & pVM->hm.s.vmx.msr.vmx_entry.n.disallowed0) != pVM->hm.s.vmx.msr.vmx_entry.n.disallowed0)
-            Log(("Invalid VMX_VMCS_CTRL_ENTRY_CONTROLS: zero\n"));
+            Log(("Invalid VMX_VMCS_CTRL_ENTRY: zero\n"));
 
         /* allowed one */
         if ((val2 & ~pVM->hm.s.vmx.msr.vmx_entry.n.allowed1) != 0)
-            Log(("Invalid VMX_VMCS_CTRL_ENTRY_CONTROLS: one\n"));
+            Log(("Invalid VMX_VMCS_CTRL_ENTRY: one\n"));
 
-        rc2 = VMXReadVmcs(VMX_VMCS32_CTRL_EXIT_CONTROLS, &val2);
+        rc2 = VMXReadVmcs(VMX_VMCS32_CTRL_EXIT, &val2);
         AssertRC(rc2);
-        Log2(("VMX_VMCS_CTRL_EXIT_CONTROLS = %08x\n",  val2));
+        Log2(("VMX_VMCS_CTRL_EXIT = %08x\n",  val2));
 
         /* allowed zero */
         if ((val2 & pVM->hm.s.vmx.msr.vmx_exit.n.disallowed0) != pVM->hm.s.vmx.msr.vmx_exit.n.disallowed0)
-            Log(("Invalid VMX_VMCS_CTRL_EXIT_CONTROLS: zero\n"));
+            Log(("Invalid VMX_VMCS_CTRL_EXIT: zero\n"));
 
         /* allowed one */
         if ((val2 & ~pVM->hm.s.vmx.msr.vmx_exit.n.allowed1) != 0)
-            Log(("Invalid VMX_VMCS_CTRL_EXIT_CONTROLS: one\n"));
+            Log(("Invalid VMX_VMCS_CTRL_EXIT: one\n"));
     }
     fWasInLongMode = CPUMIsGuestInLongModeEx(pCtx);
 #endif /* VBOX_STRICT */
@@ -3346,7 +3346,7 @@ ResumeExecution:
      * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
      */
     if (    (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
-        && !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
+        && !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
     {
         pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
         uint64_t u64HostTscAux = 0;
@@ -3365,7 +3365,7 @@ ResumeExecution:
     ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);
 
     /* Possibly the last TSC value seen by the guest (too high) (only when we're in TSC offset mode). */
-    if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
+    if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
     {
 #ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /* Restore host's TSC_AUX. */
@@ -4257,8 +4257,8 @@ ResumeExecution:
         /* Clear VM-exit on IF=1 change. */
         LogFlow(("VMX_EXIT_INT_WINDOW %RGv pending=%d IF=%d\n", (RTGCPTR)pCtx->rip,
                  VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)), pCtx->eflags.Bits.u1IF));
-        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_INT_WINDOW_EXIT;
-        rc2 = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT;
+        rc2 = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
         AssertRC(rc2);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIntWindow);
         goto ResumeExecution;   /* we check for pending guest interrupts there */
@@ -4441,7 +4441,7 @@ ResumeExecution:
                     case 8:
                         /* CR8 contains the APIC TPR */
                         Assert(!(pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1
-                                 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW));
+                                 & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW));
                         break;
 
                     default:
@@ -4462,7 +4462,7 @@ ResumeExecution:
 
                 /* CR8 reads only cause an exit when the TPR shadow feature isn't present. */
                 Assert(   VMX_EXIT_QUALIFICATION_CRX_REGISTER(exitQualification) != 8
-                       || !(pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW));
+                       || !(pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW));
 
                 rc = EMInterpretCRxRead(pVM, pVCpu, CPUMCTX2CORE(pCtx),
                                         VMX_EXIT_QUALIFICATION_CRX_GENREG(exitQualification),
@@ -4510,8 +4510,8 @@ ResumeExecution:
             &&  !CPUMIsHyperDebugStateActive(pVCpu))
         {
             /* Disable DRx move intercepts. */
-            pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT;
-            rc2 = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+            pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT;
+            rc2 = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
             AssertRC(rc2);
 
             /* Save the host and load the guest debug state. */
@@ -4539,7 +4539,7 @@ ResumeExecution:
             goto ResumeExecution;
         }
 
-        /** @todo clear VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT after the first
+        /** @todo clear VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT after the first
          *        time and restore DRx registers afterwards */
         if (VMX_EXIT_QUALIFICATION_DRX_DIRECTION(exitQualification) == VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE)
         {
@@ -4879,8 +4879,8 @@ ResumeExecution:
 
     case VMX_EXIT_MTF:                  /* 37 Exit due to Monitor Trap Flag. */
         LogFlow(("VMX_EXIT_MTF at %RGv\n", (RTGCPTR)pCtx->rip));
-        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG;
-        rc2 = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG;
+        rc2 = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
         AssertRC(rc2);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMtf);
 #if 0
@@ -5102,7 +5102,7 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (CPUMIsHyperDebugStateActive(pVCpu))
     {
         CPUMR0LoadHostDebugState(pVM, pVCpu);
-        Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT);
+        Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT);
     }
     else
 #endif
@@ -5115,15 +5115,15 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         CPUMR0SaveGuestDebugState(pVM, pVCpu, pCtx, true /* save DR6 */);
 
         /* Enable DRx move intercepts again. */
-        pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT;
-        int rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
+        pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT;
+        int rc = VMXWriteVmcs(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
         AssertRC(rc);
 
         /* Resync the debug registers the next time. */
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
     }
     else
-        Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT);
+        Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT);
 
     /*
      * Clear VMCS, marking it inactive, clearing implementation-specific data and writing
@@ -5312,14 +5312,14 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc
 
                 VMXReadVmcs(VMX_VMCS_GUEST_RIP, &val);
                 Log(("Old eip %RGv new %RGv\n", (RTGCPTR)pCtx->rip, (RTGCPTR)val));
-                VMXReadVmcs(VMX_VMCS32_CTRL_PIN_EXEC_CONTROLS,   &val);
-                Log(("VMX_VMCS_CTRL_PIN_EXEC_CONTROLS   %08x\n", val));
-                VMXReadVmcs(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS,   &val);
-                Log(("VMX_VMCS_CTRL_PROC_EXEC_CONTROLS  %08x\n", val));
-                VMXReadVmcs(VMX_VMCS32_CTRL_ENTRY_CONTROLS,       &val);
-                Log(("VMX_VMCS_CTRL_ENTRY_CONTROLS      %08x\n", val));
-                VMXReadVmcs(VMX_VMCS32_CTRL_EXIT_CONTROLS,        &val);
-                Log(("VMX_VMCS_CTRL_EXIT_CONTROLS       %08x\n", val));
+                VMXReadVmcs(VMX_VMCS32_CTRL_PIN_EXEC,   &val);
+                Log(("VMX_VMCS_CTRL_PIN_EXEC   %08x\n", val));
+                VMXReadVmcs(VMX_VMCS32_CTRL_PROC_EXEC,   &val);
+                Log(("VMX_VMCS_CTRL_PROC_EXEC  %08x\n", val));
+                VMXReadVmcs(VMX_VMCS32_CTRL_ENTRY,       &val);
+                Log(("VMX_VMCS_CTRL_ENTRY      %08x\n", val));
+                VMXReadVmcs(VMX_VMCS32_CTRL_EXIT,        &val);
+                Log(("VMX_VMCS_CTRL_EXIT       %08x\n", val));
 
                 VMXReadVmcs(VMX_VMCS_HOST_CR0,  &val);
                 Log(("VMX_VMCS_HOST_CR0 %08x\n", val));
