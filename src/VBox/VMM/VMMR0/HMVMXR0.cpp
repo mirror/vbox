@@ -2063,7 +2063,7 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
     /* For the darwin 32-bit hybrid kernel, we need the 64-bit CR3 as it uses 64-bit paging. */
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
-        uint64_t uRegCR3 = hmR0Get64bitCR3();
+        uint64_t uRegCR3 = HMR0Get64bitCR3();
         rc = VMXWriteVmcs64(VMX_VMCS_HOST_CR3, uRegCR3);
     }
     else
@@ -2167,7 +2167,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     {
         X86XDTR64 Gdtr64;
         X86XDTR64 Idtr64;
-        hmR0Get64bitGdtrAndIdtr(&Gdtr64, &Idtr64);
+        HMR0Get64bitGdtrAndIdtr(&Gdtr64, &Idtr64);
         rc = VMXWriteVmcs64(VMX_VMCS_HOST_GDTR_BASE, Gdtr64.uAddr);     AssertRCReturn(rc, rc);
         rc = VMXWriteVmcs64(VMX_VMCS_HOST_IDTR_BASE, Idtr64.uAddr);     AssertRCReturn(rc, rc);
 
@@ -3803,7 +3803,7 @@ DECLINLINE(int) hmR0VmxRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * Refer MSDN docs. "Configuring Programs for 64-bit / x64 Software Conventions / Register Usage" for details.
      */
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    return hmR0VMXStartVMWrapXMM(pVCpu->hm.s.fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hm.s.vmx.pfnStartVM);
+    return HMR0VMXStartVMWrapXMM(pVCpu->hm.s.fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hm.s.vmx.pfnStartVM);
 #else
     return pVCpu->hm.s.vmx.pfnStartVM(pVCpu->hm.s.fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu);
 #endif
