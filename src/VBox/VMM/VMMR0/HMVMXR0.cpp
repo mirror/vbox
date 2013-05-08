@@ -2751,6 +2751,10 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                                                | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_STORE_EXIT;
             }
 
+            /* If we have unrestricted guest execution, we never have to intercept CR3 reads. */
+            if (pVM->hm.s.vmx.fUnrestrictedGuest)
+                pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_CR3_LOAD_EXIT;
+
             rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC_CONTROLS, pVCpu->hm.s.vmx.u32ProcCtls);
             AssertRCReturn(rc, rc);
         }
@@ -5115,8 +5119,9 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR4);
 
         PVM pVM = pVCpu->CTX_SUFF(pVM);
-        if (   pVM->hm.s.fNestedPaging
-            && CPUMIsGuestPagingEnabledEx(pMixedCtx))
+        if (   pVM->hm.s.vmx.fUnrestrictedGuest
+            || (   pVM->hm.s.fNestedPaging
+                && CPUMIsGuestPagingEnabledEx(pMixedCtx)))
         {
             RTGCUINTREG uVal = 0;
             rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_CR3, &uVal);
