@@ -805,11 +805,19 @@ RTR3DECL(int) RTTcpServerDestroy(PRTTCPSERVER pServer)
 
 RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock)
 {
+    return RTTcpClientConnectEx(pszAddress, uPort, pSock, NULL);
+}
+
+
+RTR3DECL(int) RTTcpClientConnectEx(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock,
+                                   PRTTCPCLIENTCONNECTCANCEL volatile *ppCancelCookie)
+{
     /*
      * Validate input.
      */
     AssertReturn(uPort > 0, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszAddress, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(ppCancelCookie, VERR_INVALID_POINTER);
 
     /*
      * Resolve the address.
@@ -828,7 +836,25 @@ RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCK
     {
         RTSocketSetInheritance(Sock, false /*fInheritable*/);
 
-        rc = rtSocketConnect(Sock, &Addr);
+        if (!ppCancelCookie)
+            rc = rtSocketConnect(Sock, &Addr);
+        else
+        {
+            RTSocketRetain(Sock);
+            if (ASMAtomicCmpXchgPtr(ppCancelCookie, (PRTTCPCLIENTCONNECTCANCEL)Sock, NULL))
+            {
+                rc = rtSocketConnect(Sock, &Addr);
+                if (ASMAtomicCmpXchgPtr(ppCancelCookie, NULL, (PRTTCPCLIENTCONNECTCANCEL)Sock))
+                    RTSocketRelease(Sock);
+                else
+                    rc = VERR_CANCELLED;
+            }
+            else
+            {
+                RTSocketRelease(Sock);
+                rc = VERR_CANCELLED;
+            }
+        }
         if (RT_SUCCESS(rc))
         {
             *pSock = Sock;
@@ -837,7 +863,25 @@ RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCK
 
         rtTcpClose(Sock, "RTTcpClientConnect", false /*fTryGracefulShutdown*/);
     }
+    if (ppCancelCookie)
+        *ppCancelCookie = NULL;
     return rc;
+}
+
+
+RTR3DECL(int) RTTcpClientCancelConnect(PRTTCPCLIENTCONNECTCANCEL volatile *ppCancelCookie)
+{
+    AssertPtrReturn(ppCancelCookie, VERR_INVALID_POINTER);
+
+    AssertCompile(NIL_RTSOCKET == NULL);
+    RTSOCKET hSock = (RTSOCKET)ASMAtomicXchgPtr((void * volatile *)ppCancelCookie, (void *)(uintptr_t)0xdead9999);
+    if (hSock != NIL_RTSOCKET)
+    {
+        int rc = rtTcpClose(hSock, "RTTcpClientCancelConnect", false /*fTryGracefulShutdown*/);
+        AssertRCReturn(rc, rc);
+    }
+
+    return VINF_SUCCESS;
 }
 
 
