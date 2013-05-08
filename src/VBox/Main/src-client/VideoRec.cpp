@@ -511,7 +511,7 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
     }
     pStrm->pu8YuvBuf = pStrm->VpxRawImage.planes[0];
 
-    pCtx->fEnabled = true;
+    pStrm->fEnabled = true;
     return VINF_SUCCESS;
 }
 
@@ -536,23 +536,26 @@ void VideoRecContextClose(PVIDEORECCONTEXT pCtx)
     for (unsigned uScreen = 0; uScreen < pCtx->cScreens; uScreen++)
     {
         PVIDEORECSTREAM pStrm = &pCtx->Strm[uScreen];
-        if (pStrm->Ebml.file != NIL_RTFILE)
+        if (pStrm->fEnabled)
         {
-            int rc = Ebml_WriteWebMFileFooter(&pStrm->Ebml, 0);
-            AssertRC(rc);
-            RTFileClose(pStrm->Ebml.file);
-            pStrm->Ebml.file = NIL_RTFILE;
+            if (pStrm->Ebml.file != NIL_RTFILE)
+            {
+                int rc = Ebml_WriteWebMFileFooter(&pStrm->Ebml, 0);
+                AssertRC(rc);
+                RTFileClose(pStrm->Ebml.file);
+                pStrm->Ebml.file = NIL_RTFILE;
+            }
+            if (pStrm->Ebml.cue_list)
+            {
+                RTMemFree(pStrm->Ebml.cue_list);
+                pStrm->Ebml.cue_list = NULL;
+            }
+            vpx_img_free(&pStrm->VpxRawImage);
+            vpx_codec_err_t rcv = vpx_codec_destroy(&pStrm->VpxCodec);
+            Assert(rcv == VPX_CODEC_OK);
+            RTMemFree(pStrm->pu8RgbBuf);
+            pStrm->pu8RgbBuf = NULL;
         }
-        if (pStrm->Ebml.cue_list)
-        {
-            RTMemFree(pStrm->Ebml.cue_list);
-            pStrm->Ebml.cue_list = NULL;
-        }
-        vpx_img_free(&pStrm->VpxRawImage);
-        vpx_codec_err_t rcv = vpx_codec_destroy(&pStrm->VpxCodec);
-        Assert(rcv == VPX_CODEC_OK);
-        RTMemFree(pStrm->pu8RgbBuf);
-        pStrm->pu8RgbBuf = NULL;
     }
 
     ASMAtomicWriteU32(&pCtx->uState, VIDREC_UNINITIALIZED);
