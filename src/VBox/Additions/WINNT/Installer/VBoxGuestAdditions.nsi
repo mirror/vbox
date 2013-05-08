@@ -445,7 +445,7 @@ usage:
                     /with_autologon$\tInstalls auto-logon support$\r$\n \
                     /with_d3d$\tInstalls D3D support$\r$\n \
                     /with_vboxmmr$\tInstalls multimedia redirection (MMR) support$\r$\n \
-                    /with_wddm\$\tInstalls the WDDM instead of the XPDM graphics driver$\r$\n \
+                    /with_wddm$\tInstalls the WDDM instead of the XPDM graphics driver$\r$\n \
                     /xres=X$\t$\tSets the guest's display resolution (width in pixels)$\r$\n \
                     /yres=Y$\t$\tSets the guest's display resolution (height in pixels)$\r$\n \
                     $\r$\n \
@@ -1242,6 +1242,9 @@ Function .onInit
     !insertmacro SelectSection ${SEC03}
   ${EndIf}
 !endif
+  ${If} $g_bWithWDDM == "true" ; D3D / WDDM support
+    !insertmacro SelectSection ${SEC03}
+  ${EndIf}
   ; On Windows 8 we always select the 3D section and
   ; disable it so that it cannot be deselected again
   ${If} $g_strWinVersion == "8"

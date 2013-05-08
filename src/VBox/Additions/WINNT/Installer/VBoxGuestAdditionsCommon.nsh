@@ -544,13 +544,13 @@ Function ${un}CheckForWDDMCapability
   ${OrIf} $g_strWinVersion == "7"
   ${OrIf} $g_strWinVersion == "8"
     StrCpy $g_bCapWDDM "true"
-    ${LogVerbose}  "OS is WDDM driver capable"
+    ${LogVerbose} "OS is WDDM driver capable"
   ${EndIf}
   ; If we're on Windows 8 we *have* to use the WDDM driver, so select it
   ; by default
   ${If} $g_strWinVersion == "8"
     StrCpy $g_bWithWDDM "true"
-    ${LogVerbose}  "OS needs WDDM driver by default"
+    ${LogVerbose} "OS needs WDDM driver by default"
   ${EndIf}
 !endif
 
