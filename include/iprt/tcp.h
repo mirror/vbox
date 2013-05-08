@@ -170,6 +170,40 @@ RTR3DECL(int) RTTcpServerShutdown(PRTTCPSERVER pServer);
  */
 RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock);
 
+/** Opaque pointer used by RTTcpClientConnectEx and RTTcpClientCancelConnect. */
+typedef struct RTTCPCLIENTCONNECTCANCEL *PRTTCPCLIENTCONNECTCANCEL;
+
+/**
+ * Connect (as a client) to a TCP Server, extended version.
+ *
+ * @returns iprt status code.
+ * @param   pszAddress      The address to connect to.
+ * @param   uPort           The port to connect to.
+ * @param   pSock           Where to store the handle to the established connection.
+ * @param   ppCancelCookie  Where to store information for canceling the
+ *                          operation (from a different thread). Optional.
+ *
+ *                          The pointer _must_ be initialized to NULL before a
+ *                          series of connection attempts begins, i.e. at a time
+ *                          where there will be no RTTcpClientCancelConnect
+ *                          calls racing access.  RTTcpClientCancelConnect will
+ *                          set it to a special non-NULL value that causes the
+ *                          current or/and next connect call to fail.
+ *
+ * @sa      RTTcpClientCancelConnect
+ */
+RTR3DECL(int) RTTcpClientConnectEx(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock,
+                                   PRTTCPCLIENTCONNECTCANCEL volatile *ppCancelCookie);
+
+/**
+ * Cancels a RTTcpClientConnectEx call on a different thread.
+ *
+ * @returns iprt status code.
+ * @param   ppCancelCookie  The address of the cookie pointer shared with the
+ *                          connect call.
+ */
+RTR3DECL(int) RTTcpClientCancelConnect(PRTTCPCLIENTCONNECTCANCEL volatile *ppCancelCookie);
+
 /**
  * Close a socket returned by RTTcpClientConnect().
  *
