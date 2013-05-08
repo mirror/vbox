@@ -77,10 +77,6 @@ typedef struct VIDEORECSTREAM
     vpx_image_t         VpxRawImage;
     /* true if video recording is enabled */
     bool                fEnabled;
-    /* worker thread */
-    RTTHREAD            Thread;
-    /* see VIDREC_xxx */
-    uint32_t            u32State;
     /* true if the RGB buffer is filled */
     bool                fRgbFilled;
     /* pixel format of the current frame */
@@ -102,7 +98,7 @@ typedef struct VIDEORECCONTEXT
     /* worker thread */
     RTTHREAD            Thread;
     /* see VIDREC_xxx */
-    uint32_t            u32State;
+    uint32_t            uState;
     /* number of stream contexts */
     uint32_t            cScreens;
     /* video recording stream contexts */
@@ -382,7 +378,7 @@ inline bool colorConvWriteRGB24(unsigned aWidth, unsigned aHeight,
  *
  * RGB/YUV conversion and encoding.
  */
-DECLCALLBACK(int) videoRecThread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) videoRecThread(RTTHREAD Thread, void *pvUser)
 {
     PVIDEORECCONTEXT pCtx = (PVIDEORECCONTEXT)pvUser;
     for (;;)
@@ -390,7 +386,7 @@ DECLCALLBACK(int) videoRecThread(RTTHREAD ThreadSelf, void *pvUser)
         int rc = RTSemEventWait(pCtx->WaitEvent, RT_INDEFINITE_WAIT);
         AssertRCBreak(rc);
 
-        if (ASMAtomicReadU32(&pCtx->u32State) == VIDREC_TERMINATING)
+        if (ASMAtomicReadU32(&pCtx->uState) == VIDREC_TERMINATING)
             break;
         for (unsigned uScreen = 0; uScreen < pCtx->cScreens; uScreen++)
         {
@@ -402,13 +398,19 @@ DECLCALLBACK(int) videoRecThread(RTTHREAD ThreadSelf, void *pvUser)
                 if (RT_SUCCESS(rc))
                     rc = videoRecEncodeAndWrite(pStrm);
                 if (RT_FAILURE(rc))
-                    LogRel(("Error %Rrc encoding video frame\n", rc));
+                {
+                    static unsigned cErrors = 100;
+                    if (cErrors > 0)
+                    {
+                        LogRel(("Error %Rrc encoding / writing video frame\n", rc));
+                        cErrors--;
+                    }
+                }
             }
         }
     }
 
-    ASMAtomicWriteU32(&pCtx->u32State, VIDREC_TERMINATED);
-    RTThreadUserSignal(ThreadSelf);
+    ASMAtomicWriteU32(&pCtx->uState, VIDREC_TERMINATED);
     return VINF_SUCCESS;
 }
 
@@ -428,14 +430,15 @@ int VideoRecContextCreate(PVIDEORECCONTEXT *ppCtx, uint32_t cScreens)
     pCtx->cScreens = cScreens;
     for (unsigned uScreen = 0; uScreen < cScreens; uScreen++)
         pCtx->Strm[uScreen].Ebml.last_pts_ms = -1;
-    
+
     int rc = RTSemEventCreate(&pCtx->WaitEvent);
     AssertRCReturn(rc, rc);
 
     rc = RTThreadCreate(&pCtx->Thread, videoRecThread, (void*)pCtx, 0,
-                        RTTHREADTYPE_MAIN_WORKER, 0, "VideoRec");
+                        RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE, "VideoRec");
     AssertRCReturn(rc, rc);
 
+    ASMAtomicWriteU32(&pCtx->uState, VIDREC_INITIALIZED);
     return VINF_SUCCESS;
 }
 
@@ -465,7 +468,7 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
                         RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
     {
-        LogFlow(("Failed to open the output File\n"));
+        LogFlow(("Failed to open the video capture output File (%Rrc)\n", rc));
         return rc;
     }
 
@@ -473,7 +476,7 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
     if (rcv != VPX_CODEC_OK)
     {
         LogFlow(("Failed to configure codec\n", vpx_codec_err_to_string(rcv)));
-        return rc;
+        return VERR_INVALID_PARAMETER;
     }
 
     /* target bitrate in kilobits per second */
@@ -489,7 +492,7 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
     pStrm->VpxConfig.g_threads = 0;
     pStrm->uDelay = 1000 / uFps;
 
-    struct vpx_rational arg_framerate = {30, 1};
+    struct vpx_rational arg_framerate = { 30, 1 };
     rc = Ebml_WriteWebMFileHeader(&pStrm->Ebml, &pStrm->VpxConfig, &arg_framerate);
     AssertRCReturn(rc, rc);
 
@@ -497,11 +500,9 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
     rcv = vpx_codec_enc_init(&pStrm->VpxCodec, DEFAULTCODEC, &pStrm->VpxConfig, 0);
     if (rcv != VPX_CODEC_OK)
     {
-        LogFlow(("Failed to initialize encoder %s", vpx_codec_err_to_string(rcv)));
-        return VERR_GENERAL_FAILURE;
+        LogFlow(("Failed to initialize VP8 encoder %s", vpx_codec_err_to_string(rcv)));
+        return VERR_INVALID_PARAMETER;
     }
-
-    ASMAtomicWriteU32(&pStrm->u32State, VIDREC_INITIALIZED);
 
     if (!vpx_img_alloc(&pStrm->VpxRawImage, VPX_IMG_FMT_I420, uWidth, uHeight, 1))
     {
@@ -521,16 +522,16 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
  */
 void VideoRecContextClose(PVIDEORECCONTEXT pCtx)
 {
-    if (ASMAtomicReadU32(&pCtx->u32State) == VIDREC_UNINITIALIZED)
+    if (!pCtx)
         return;
 
-    if (pCtx->fEnabled)
-    {
-        ASMAtomicWriteU32(&pCtx->u32State, VIDREC_TERMINATING);
-        RTSemEventSignal(pCtx->WaitEvent);
-        RTThreadUserWait(pCtx->Thread, 10000);
-        RTSemEventDestroy(pCtx->WaitEvent);
-    }
+    if (ASMAtomicReadU32(&pCtx->uState) != VIDREC_INITIALIZED)
+        return;
+
+    ASMAtomicWriteU32(&pCtx->uState, VIDREC_TERMINATING);
+    RTSemEventSignal(pCtx->WaitEvent);
+    RTThreadWait(pCtx->Thread, 10000, NULL);
+    RTSemEventDestroy(pCtx->WaitEvent);
 
     for (unsigned uScreen = 0; uScreen < pCtx->cScreens; uScreen++)
     {
@@ -548,10 +549,13 @@ void VideoRecContextClose(PVIDEORECCONTEXT pCtx)
             pStrm->Ebml.cue_list = NULL;
         }
         vpx_img_free(&pStrm->VpxRawImage);
-        vpx_codec_destroy(&pStrm->VpxCodec);
+        vpx_codec_err_t rcv = vpx_codec_destroy(&pStrm->VpxCodec);
+        Assert(rcv == VPX_CODEC_OK);
         RTMemFree(pStrm->pu8RgbBuf);
         pStrm->pu8RgbBuf = NULL;
     }
+
+    ASMAtomicWriteU32(&pCtx->uState, VIDREC_UNINITIALIZED);
 }
 
 /**
@@ -681,15 +685,17 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
     AssertReturn(uSourceWidth, VERR_INVALID_PARAMETER);
     AssertReturn(uSourceHeight, VERR_INVALID_PARAMETER);
     AssertReturn(uScreen < pCtx->cScreens, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uState == VIDREC_INITIALIZED, VERR_INVALID_STATE);
 
     PVIDEORECSTREAM pStrm = &pCtx->Strm[uScreen];
 
     if (u64TimeStamp < pStrm->u64LastTimeStamp + pStrm->uDelay)
-        return VINF_TRY_AGAIN;
-    pStrm->u64LastTimeStamp = u64TimeStamp;
+        return VINF_TRY_AGAIN; /* respect maximum frames per second */
 
     if (ASMAtomicReadBool(&pStrm->fRgbFilled))
-        return VERR_TRY_AGAIN;
+        return VERR_TRY_AGAIN; /* previous frame not yet encoded */
+
+    pStrm->u64LastTimeStamp = u64TimeStamp;
 
     int xDiff = ((int)pStrm->uTargetWidth - (int)uSourceWidth) / 2;
     uint32_t w = uSourceWidth;
