@@ -59,10 +59,26 @@
 
 #define LSILOGIC_RTGCPHYS_FROM_U32(Hi, Lo)         ( (RTGCPHYS)RT_MAKE_U64(Lo, Hi) )
 
+/** Upper number a buffer is freed if it was too big before. */
+#define LSILOGIC_MAX_ALLOC_TOO_MUCH 20
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+
+/**
+ * I/O buffer copy worker.
+ *
+ * @returns nothing.
+ * @param   pDevIns     Device instance data.
+ * @param   GCPhysIoBuf Guest physical address of the I/O buffer.
+ * @param   pvBuf       R3 buffer pointer.
+ * @param   cbCopy      How much to copy.
+ */
+typedef DECLCALLBACK(void) FNLSILOGICIOBUFCOPY(PPDMDEVINS pDevIns, RTGCPHYS GCPhysIoBuf,
+                                               void *pvBuf, size_t cbCopy);
+/** Pointer to a I/O buffer copy worker. */
+typedef FNLSILOGICIOBUFCOPY *PFNLSILOGICIOBUFCOPY;
 
 /**
  * Reply data.
@@ -120,7 +136,7 @@ typedef struct LSILOGICDEVICE
 typedef LSILOGICDEVICE *PLSILOGICDEVICE;
 
 /** Pointer to a task state. */
-typedef struct LSILOGICTASKSTATE *PLSILOGICTASKSTATE;
+typedef struct LSILOGICREQ *PLSILOGICREQ;
 
 /**
  * Device instance data for the emulated SCSI controller.
@@ -293,48 +309,20 @@ typedef struct LSILOGICSCSI
     /** Alignment padding. */
     bool                            afPAdding2[HC_ARCH_BITS == 32 ? 2 : 6];
     /** List of tasks which can be redone. */
-    R3PTRTYPE(volatile PLSILOGICTASKSTATE) pTasksRedoHead;
+    R3PTRTYPE(volatile PLSILOGICREQ) pTasksRedoHead;
 
 } LSILOGISCSI;
 /** Pointer to the device instance data of the LsiLogic emulation. */
 typedef LSILOGICSCSI *PLSILOGICSCSI;
 
 /**
- * Scatter gather list entry data.
- */
-typedef struct LSILOGICTASKSTATESGENTRY
-{
-    /** Flag whether the buffer in the list is from the guest or an
-     *  allocated temporary buffer because the segments in the guest
-     *  are not sector aligned.
-     */
-    bool     fGuestMemory;
-    /** Flag whether the buffer contains data or is the destination for the transfer. */
-    bool     fBufferContainsData;
-    /** Pointer to the start of the buffer. */
-    void    *pvBuf;
-    /** Size of the buffer. */
-    uint32_t cbBuf;
-    /** Flag dependent data. */
-    union
-    {
-        /** Data to handle direct mappings of guest buffers. */
-        PGMPAGEMAPLOCK  PageLock;
-        /** The segment in the guest which is not sector aligned. */
-        RTGCPHYS        GCPhysAddrBufferUnaligned;
-    } u;
-} LSILOGICTASKSTATESGENTRY;
-/** Pointer to a scatter/gather list entry. */
-typedef LSILOGICTASKSTATESGENTRY *PLSILOGICTASKSTATESGENTRY;
-
-/**
  * Task state object which holds all necessary data while
  * processing the request from the guest.
  */
-typedef struct LSILOGICTASKSTATE
+typedef struct LSILOGICREQ
 {
     /** Next in the redo list. */
-    PLSILOGICTASKSTATE         pRedoNext;
+    PLSILOGICREQ               pRedoNext;
     /** Target device. */
     PLSILOGICDEVICE            pTargetDevice;
     /** The message request from the guest. */
@@ -346,31 +334,23 @@ typedef struct LSILOGICTASKSTATE
     /** Address of the message request frame in guests memory.
      *  Used to read the S/G entries in the second step. */
     RTGCPHYS                   GCPhysMessageFrameAddr;
-    /** Number of scatter gather list entries. */
-    uint32_t                   cSGListEntries;
-    /** How many entries would fit into the sg list. */
-    uint32_t                   cSGListSize;
-    /** How many times the list was too big. */
-    uint32_t                   cSGListTooBig;
-    /** Pointer to the first entry of the scatter gather list. */
-    PRTSGSEG                   pSGListHead;
-    /** How many entries would fit into the sg info list. */
-    uint32_t                   cSGInfoSize;
-    /** Number of entries for the information entries. */
-    uint32_t                   cSGInfoEntries;
-    /** How many times the list was too big. */
-    uint32_t                   cSGInfoTooBig;
-    /** Pointer to the first mapping information entry. */
-    PLSILOGICTASKSTATESGENTRY  paSGEntries;
-    /** Size of the temporary buffer for unaligned guest segments. */
-    uint32_t                   cbBufferUnaligned;
-    /** Pointer to the temporary buffer. */
-    void                      *pvBufferUnaligned;
+    /** Physical start address of the S/G list. */
+    RTGCPHYS                   GCPhysSgStart;
+    /** Chain offset */
+    uint32_t                   cChainOffset;
+    /** Segment describing the I/O buffer. */
+    RTSGSEG                    SegIoBuf;
+    /** Additional memory allocation for this task. */
+    void                      *pvAlloc;
+    /** Siize of the allocation. */
+    size_t                     cbAlloc;
+    /** Number of times we had too much memory allocated for the request. */
+    unsigned                   cAllocTooMuch;
     /** Pointer to the sense buffer. */
     uint8_t                    abSenseBuffer[18];
     /** Flag whether the request was issued from the BIOS. */
     bool                       fBIOS;
-} LSILOGICTASKSTATE;
+} LSILOGICREQ;
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -468,9 +448,7 @@ DECLINLINE(void) lsilogicSetIOCFaultCode(PLSILOGICSCSI pThis, uint16_t uIOCFault
         pThis->u16IOCFaultCode = uIOCFaultCode;
     }
     else
-    {
         Log(("%s: We are already in FAULT state\n"));
-    }
 }
 
 #ifdef IN_RING3
@@ -596,40 +574,6 @@ static void lsilogicR3FinishContextReply(PLSILOGICSCSI pThis, uint32_t u32Messag
     lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR);
 
     PDMCritSectLeave(&pThis->ReplyPostQueueCritSect);
-}
-
-static void lsilogicR3TaskStateClear(PLSILOGICTASKSTATE pTaskState)
-{
-    RTMemFree(pTaskState->pSGListHead);
-    RTMemFree(pTaskState->paSGEntries);
-    if (pTaskState->pvBufferUnaligned)
-        RTMemPageFree(pTaskState->pvBufferUnaligned, pTaskState->cbBufferUnaligned);
-    pTaskState->cSGListSize = 0;
-    pTaskState->cSGInfoSize = 0;
-    pTaskState->cSGInfoEntries = 0;
-    pTaskState->cSGListTooBig  = 0;
-    pTaskState->pSGListHead = NULL;
-    pTaskState->paSGEntries = NULL;
-    pTaskState->pvBufferUnaligned = NULL;
-    pTaskState->cbBufferUnaligned = 0;
-}
-
-/**
- * @callback_method_impl{FNMEMCACHECTOR}
- */
-static DECLCALLBACK(int) lsilogicR3TaskStateCtor(RTMEMCACHE hMemCache, void *pvObj, void *pvUser)
-{
-    memset(pvObj, 0, sizeof(LSILOGICTASKSTATE));
-    return VINF_SUCCESS;
-}
-
-/**
- * @callback_method_impl{FNMEMCACHEDTOR}
- */
-static DECLCALLBACK(void) lsilogicR3TaskStateDtor(RTMEMCACHE hMemCache, void *pvObj, void *pvUser)
-{
-    PLSILOGICTASKSTATE pTaskState = (PLSILOGICTASKSTATE)pvObj;
-    lsilogicR3TaskStateClear(pTaskState);
 }
 
 #endif /* IN_RING3 */
@@ -1453,211 +1397,6 @@ PDMBOTHCBDECL(int) lsilogicDiagnosticRead(PPDMDEVINS pDevIns, void *pvUser,
 
 #ifdef IN_RING3
 
-/**
- * Copies a contiguous buffer into the scatter gather list provided by the guest.
- *
- * @returns nothing
- * @param   pTaskState    Pointer to the task state which contains the SGL.
- * @param   pvBuf         Pointer to the buffer to copy.
- * @param   cbCopy        Number of bytes to copy.
- */
-static void lsilogicR3ScatterGatherListCopyFromBuffer(PLSILOGICTASKSTATE pTaskState, void *pvBuf, size_t cbCopy)
-{
-    unsigned cSGEntry = 0;
-    PRTSGSEG pSGEntry = &pTaskState->pSGListHead[cSGEntry];
-    uint8_t *pu8Buf = (uint8_t *)pvBuf;
-
-    while (cSGEntry < pTaskState->cSGListEntries)
-    {
-        size_t cbToCopy = (cbCopy < pSGEntry->cbSeg) ? cbCopy : pSGEntry->cbSeg;
-
-        memcpy(pSGEntry->pvSeg, pu8Buf, cbToCopy);
-
-        cbCopy -= cbToCopy;
-        /* We finished. */
-        if (!cbCopy)
-            break;
-
-        /* Advance the buffer. */
-        pu8Buf += cbToCopy;
-
-        /* Go to the next entry in the list. */
-        pSGEntry++;
-        cSGEntry++;
-    }
-}
-
-/**
- * Copy a temporary buffer into a part of the guest scatter gather list
- * described by the given descriptor entry.
- *
- * @returns nothing.
- * @param   pDevIns    Pointer to the device instance data.
- * @param   pSGInfo    Pointer to the segment info structure which describes the guest segments
- *                     to write to which are unaligned.
- */
-static void lsilogicR3CopyFromBufferIntoSGList(PPDMDEVINS pDevIns, PLSILOGICTASKSTATESGENTRY pSGInfo)
-{
-    RTGCPHYS GCPhysBuffer = pSGInfo->u.GCPhysAddrBufferUnaligned;
-
-    AssertMsg(!pSGInfo->fGuestMemory, ("This is not possible\n"));
-
-    /* Copy into SG entry. */
-    PDMDevHlpPCIPhysWrite(pDevIns, GCPhysBuffer, pSGInfo->pvBuf, pSGInfo->cbBuf);
-
-}
-
-/**
- * Copy a part of the guest scatter gather list into a temporary buffer.
- *
- * @returns nothing.
- * @param   pDevIns    Pointer to the device instance data.
- * @param   pSGInfo    Pointer to the segment info structure which describes the guest segments
- *                     to read from which are unaligned.
- */
-static void lsilogicR3CopyFromSGListIntoBuffer(PPDMDEVINS pDevIns, PLSILOGICTASKSTATESGENTRY pSGInfo)
-{
-    RTGCPHYS GCPhysBuffer = pSGInfo->u.GCPhysAddrBufferUnaligned;
-
-    AssertMsg(!pSGInfo->fGuestMemory, ("This is not possible\n"));
-
-    /* Copy into temporary buffer. */
-    PDMDevHlpPhysRead(pDevIns, GCPhysBuffer, pSGInfo->pvBuf, pSGInfo->cbBuf);
-}
-
-static int lsilogicR3ScatterGatherListAllocate(PLSILOGICTASKSTATE pTaskState, uint32_t cSGList, uint32_t cSGInfo, uint32_t cbUnaligned)
-{
-    if (pTaskState->cSGListSize < cSGList)
-    {
-        /* The entries are not allocated yet or the number is too small. */
-        if (pTaskState->cSGListSize)
-            RTMemFree(pTaskState->pSGListHead);
-
-        /* Allocate R3 scatter gather list. */
-        pTaskState->pSGListHead = (PRTSGSEG)RTMemAllocZ(cSGList * sizeof(RTSGSEG));
-        if (!pTaskState->pSGListHead)
-            return VERR_NO_MEMORY;
-
-        /* Reset usage statistics. */
-        pTaskState->cSGListSize     = cSGList;
-        pTaskState->cSGListEntries  = cSGList;
-        pTaskState->cSGListTooBig = 0;
-    }
-    else if (pTaskState->cSGListSize > cSGList)
-    {
-        /*
-         * The list is too big. Increment counter.
-         * So that the destroying function can free
-         * the list if it is too big too many times
-         * in a row.
-         */
-        pTaskState->cSGListEntries = cSGList;
-        pTaskState->cSGListTooBig++;
-    }
-    else
-    {
-        /*
-         * Needed entries matches current size.
-         * Reset counter.
-         */
-        pTaskState->cSGListEntries = cSGList;
-        pTaskState->cSGListTooBig  = 0;
-    }
-
-    if (pTaskState->cSGInfoSize < cSGInfo)
-    {
-        /* The entries are not allocated yet or the number is too small. */
-        if (pTaskState->cSGInfoSize)
-            RTMemFree(pTaskState->paSGEntries);
-
-        pTaskState->paSGEntries = (PLSILOGICTASKSTATESGENTRY)RTMemAllocZ(cSGInfo * sizeof(LSILOGICTASKSTATESGENTRY));
-        if (!pTaskState->paSGEntries)
-            return VERR_NO_MEMORY;
-
-        /* Reset usage statistics. */
-        pTaskState->cSGInfoSize = cSGInfo;
-        pTaskState->cSGInfoEntries  = cSGInfo;
-        pTaskState->cSGInfoTooBig = 0;
-    }
-    else if (pTaskState->cSGInfoSize > cSGInfo)
-    {
-        /*
-         * The list is too big. Increment counter.
-         * So that the destroying function can free
-         * the list if it is too big too many times
-         * in a row.
-         */
-        pTaskState->cSGInfoEntries = cSGInfo;
-        pTaskState->cSGInfoTooBig++;
-    }
-    else
-    {
-        /*
-         * Needed entries matches current size.
-         * Reset counter.
-         */
-        pTaskState->cSGInfoEntries  = cSGInfo;
-        pTaskState->cSGInfoTooBig = 0;
-    }
-
-
-    if (pTaskState->cbBufferUnaligned < cbUnaligned)
-    {
-        if (pTaskState->pvBufferUnaligned)
-            RTMemPageFree(pTaskState->pvBufferUnaligned, pTaskState->cbBufferUnaligned);
-
-        Log(("%s: Allocating buffer for unaligned segments cbUnaligned=%u\n", __FUNCTION__, cbUnaligned));
-
-        pTaskState->pvBufferUnaligned = RTMemPageAlloc(cbUnaligned);
-        if (!pTaskState->pvBufferUnaligned)
-            return VERR_NO_MEMORY;
-
-        pTaskState->cbBufferUnaligned = cbUnaligned;
-    }
-
-    /* Make debugging easier. */
-# ifdef LOG_ENABLED
-    memset(pTaskState->pSGListHead, 0, pTaskState->cSGListSize * sizeof(RTSGSEG));
-    memset(pTaskState->paSGEntries, 0, pTaskState->cSGInfoSize * sizeof(LSILOGICTASKSTATESGENTRY));
-    if (pTaskState->pvBufferUnaligned)
-        memset(pTaskState->pvBufferUnaligned, 0, pTaskState->cbBufferUnaligned);
-# endif
-    return VINF_SUCCESS;
-}
-
-/**
- * Destroy a scatter gather list.
- *
- * @returns nothing.
- * @param   pThis       Pointer to the LsiLogic device state.
- * @param   pTaskState  Pointer to the task state.
- */
-static void lsilogicR3ScatterGatherListDestroy(PLSILOGICSCSI pThis, PLSILOGICTASKSTATE pTaskState)
-{
-    PPDMDEVINS                pDevIns     = pThis->CTX_SUFF(pDevIns);
-    PLSILOGICTASKSTATESGENTRY pSGInfoCurr = pTaskState->paSGEntries;
-
-    for (unsigned i = 0; i < pTaskState->cSGInfoEntries; i++)
-    {
-        if (pSGInfoCurr->fGuestMemory)
-        {
-            /* Release the lock. */
-            PDMDevHlpPhysReleasePageMappingLock(pDevIns, &pSGInfoCurr->u.PageLock);
-        }
-        else if (!pSGInfoCurr->fBufferContainsData)
-        {
-            /* Copy the data into the guest segments now. */
-            lsilogicR3CopyFromBufferIntoSGList(pThis->CTX_SUFF(pDevIns), pSGInfoCurr);
-        }
-
-        pSGInfoCurr++;
-    }
-
-    /* Free allocated memory if the list was too big too many times. */
-    if (pTaskState->cSGListTooBig >= LSILOGIC_NR_OF_ALLOWED_BIGGER_LISTS)
-        lsilogicR3TaskStateClear(pTaskState);
-}
-
 # ifdef LOG_ENABLED
 /**
  * Dump an SG entry.
@@ -1715,264 +1454,224 @@ static void lsilogicDumpSGEntry(PMptSGEntryUnion pSGEntry)
 }
 # endif /* LOG_ENABLED */
 
-/**
- * Create scatter gather list descriptors.
- *
- * @returns VBox status code.
- * @param   pThis           Pointer to the LsiLogic device state.
- * @param   pTaskState      Pointer to the task state.
- * @param   GCPhysSGLStart  Guest physical address of the first SG entry.
- * @param   uChainOffset    Offset in bytes from the beginning of the SGL segment to the chain element.
- * @thread  EMT
- */
-static int lsilogicR3ScatterGatherListCreate(PLSILOGICSCSI pThis, PLSILOGICTASKSTATE pTaskState,
-                                             RTGCPHYS GCPhysSGLStart, uint32_t uChainOffset)
+static void lsilogicSgBufWalker(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq, size_t cbCopy,
+                                PFNLSILOGICIOBUFCOPY pfnIoBufCopy)
 {
-    int                        rc           = VINF_SUCCESS;
-    PPDMDEVINS                 pDevIns      = pThis->CTX_SUFF(pDevIns);
-    PVM                        pVM          = PDMDevHlpGetVM(pDevIns);
-    bool                       fUnaligned;     /* Flag whether the current buffer is unaligned. */
-    uint32_t                   cbUnaligned;    /* Size of the unaligned buffers. */
-    uint32_t                   cSGEntriesR3 = 0;
-    uint32_t                   cSGInfo      = 0;
-    uint32_t                   cbSegment    = 0;
-    PLSILOGICTASKSTATESGENTRY  pSGInfoCurr  = NULL;
-    uint8_t                   *pu8BufferUnalignedPos = NULL;
-    uint8_t                   *pbBufferUnalignedSGInfoPos = NULL;
-    uint32_t                   cbUnalignedComplete = 0;
-    bool                       fDoMapping = false;
-    bool                       fEndOfList;
-    RTGCPHYS                   GCPhysSGEntryNext;
-    RTGCPHYS                   GCPhysSegmentStart;
-    uint32_t                   uChainOffsetNext;
+    bool     fEndOfList = false;
+    RTGCPHYS GCPhysSgEntryNext = pLsiReq->GCPhysSgStart;
+    RTGCPHYS GCPhysSegmentStart = pLsiReq->GCPhysSgStart;
+    uint32_t cChainOffsetNext = pLsiReq->cChainOffset;
+    uint8_t *pbBuf = (uint8_t *)pLsiReq->SegIoBuf.pvSeg;
 
-    /*
-     * Two passes - one to count needed scatter gather list entries and needed unaligned
-     * buffers and one to actually map the SG list into R3.
-     */
-    for (int i = 0; i < 2; i++)
+    /* Go through the list until we reach the end. */
+    while (   !fEndOfList
+           && cbCopy)
     {
-        fUnaligned      = false;
-        cbUnaligned     = 0;
-        fEndOfList      = false;
+        bool fEndOfSegment = false;
 
-        GCPhysSGEntryNext  = GCPhysSGLStart;
-        uChainOffsetNext   = uChainOffset;
-        GCPhysSegmentStart = GCPhysSGLStart;
-
-        if (fDoMapping)
+        while (   !fEndOfSegment
+               && cbCopy)
         {
-            Log(("%s: cSGInfo=%u\n", __FUNCTION__, cSGInfo));
+            MptSGEntryUnion SGEntry;
 
-            /* The number of needed SG entries in R3 is known. Allocate needed memory. */
-            rc = lsilogicR3ScatterGatherListAllocate(pTaskState, cSGInfo, cSGInfo, cbUnalignedComplete);
-            AssertMsgRC(rc, ("Failed to allocate scatter gather array rc=%Rrc\n", rc));
+            Log(("%s: Reading SG entry from %RGp\n", __FUNCTION__, GCPhysSgEntryNext));
 
-            /* We are now able to map the pages into R3. */
-            pSGInfoCurr = pTaskState->paSGEntries;
-            /* Initialize first segment to remove the need for additional if checks later in the code. */
-            pSGInfoCurr->fGuestMemory= false;
-            pu8BufferUnalignedPos = (uint8_t *)pTaskState->pvBufferUnaligned;
-            pbBufferUnalignedSGInfoPos = pu8BufferUnalignedPos;
-        }
-
-        /* Go through the list until we reach the end. */
-        while (!fEndOfList)
-        {
-            bool fEndOfSegment = false;
-
-            while (!fEndOfSegment)
-            {
-                MptSGEntryUnion SGEntry;
-
-                Log(("%s: Reading SG entry from %RGp\n", __FUNCTION__, GCPhysSGEntryNext));
-
-                /* Read the entry. */
-                PDMDevHlpPhysRead(pDevIns, GCPhysSGEntryNext, &SGEntry, sizeof(MptSGEntryUnion));
+            /* Read the entry. */
+            PDMDevHlpPhysRead(pDevIns, GCPhysSgEntryNext, &SGEntry, sizeof(MptSGEntryUnion));
 
 # ifdef LOG_ENABLED
-                lsilogicDumpSGEntry(&SGEntry);
+            lsilogicDumpSGEntry(&SGEntry);
 # endif
 
-                AssertMsg(SGEntry.Simple32.u2ElementType == MPTSGENTRYTYPE_SIMPLE, ("Invalid SG entry type\n"));
+            AssertMsg(SGEntry.Simple32.u2ElementType == MPTSGENTRYTYPE_SIMPLE, ("Invalid SG entry type\n"));
 
-                /* Check if this is a zero element. */
-                if (   !SGEntry.Simple32.u24Length
-                    && SGEntry.Simple32.fEndOfList
-                    && SGEntry.Simple32.fEndOfBuffer)
-                {
-                    pTaskState->cSGListEntries = 0;
-                    pTaskState->cSGInfoEntries = 0;
-                    return VINF_SUCCESS;
-                }
+            /* Check if this is a zero element and abort. */
+            if (   !SGEntry.Simple32.u24Length
+                && SGEntry.Simple32.fEndOfList
+                && SGEntry.Simple32.fEndOfBuffer)
+                return;
 
-                uint32_t cbDataToTransfer     = SGEntry.Simple32.u24Length;
-                bool     fBufferContainsData  = !!SGEntry.Simple32.fBufferContainsData;
-                RTGCPHYS GCPhysAddrDataBuffer = SGEntry.Simple32.u32DataBufferAddressLow;
+            uint32_t cbCopyThis           = SGEntry.Simple32.u24Length;
+            RTGCPHYS GCPhysAddrDataBuffer = SGEntry.Simple32.u32DataBufferAddressLow;
 
-                if (SGEntry.Simple32.f64BitAddress)
-                {
-                    GCPhysAddrDataBuffer |= ((uint64_t)SGEntry.Simple64.u32DataBufferAddressHigh) << 32;
-                    GCPhysSGEntryNext += sizeof(MptSGEntrySimple64);
-                }
-                else
-                    GCPhysSGEntryNext += sizeof(MptSGEntrySimple32);
-
-                if (fDoMapping)
-                {
-                    pSGInfoCurr->fGuestMemory = false;
-                    pSGInfoCurr->fBufferContainsData = fBufferContainsData;
-                    pSGInfoCurr->cbBuf = cbDataToTransfer;
-                    pSGInfoCurr->pvBuf = pbBufferUnalignedSGInfoPos;
-                    pbBufferUnalignedSGInfoPos += cbDataToTransfer;
-                    pSGInfoCurr->u.GCPhysAddrBufferUnaligned = GCPhysAddrDataBuffer;
-                    if (fBufferContainsData)
-                        lsilogicR3CopyFromSGListIntoBuffer(pDevIns, pSGInfoCurr);
-                    pSGInfoCurr++;
-                }
-                else
-                {
-                    cbUnalignedComplete += cbDataToTransfer;
-                    cSGInfo++;
-                }
-
-                /* Check if we reached the end of the list. */
-                if (SGEntry.Simple32.fEndOfList)
-                {
-                    /* We finished. */
-                    fEndOfSegment = true;
-                    fEndOfList = true;
-                }
-                else if (SGEntry.Simple32.fLastElement)
-                {
-                    fEndOfSegment = true;
-                }
-            } /* while (!fEndOfSegment) */
-
-            /* Get next chain element. */
-            if (uChainOffsetNext)
+            if (SGEntry.Simple32.f64BitAddress)
             {
-                MptSGEntryChain SGEntryChain;
-
-                PDMDevHlpPhysRead(pDevIns, GCPhysSegmentStart + uChainOffsetNext, &SGEntryChain, sizeof(MptSGEntryChain));
-
-                AssertMsg(SGEntryChain.u2ElementType == MPTSGENTRYTYPE_CHAIN, ("Invalid SG entry type\n"));
-
-               /* Set the next address now. */
-                GCPhysSGEntryNext = SGEntryChain.u32SegmentAddressLow;
-                if (SGEntryChain.f64BitAddress)
-                    GCPhysSGEntryNext |= ((uint64_t)SGEntryChain.u32SegmentAddressHigh) << 32;
-
-                GCPhysSegmentStart = GCPhysSGEntryNext;
-                uChainOffsetNext   = SGEntryChain.u8NextChainOffset * sizeof(uint32_t);
-            }
-
-        } /* while (!fEndOfList) */
-
-        fDoMapping = true;
-        if (fUnaligned)
-            cbUnalignedComplete += cbUnaligned;
-    }
-
-    uint32_t    cSGEntries;
-    PRTSGSEG    pSGEntryCurr = pTaskState->pSGListHead;
-    pSGInfoCurr              = pTaskState->paSGEntries;
-
-    /* Initialize first entry. */
-    pSGEntryCurr->pvSeg = pSGInfoCurr->pvBuf;
-    pSGEntryCurr->cbSeg = pSGInfoCurr->cbBuf;
-    pSGInfoCurr++;
-    cSGEntries = 1;
-
-    /* Construct the scatter gather list. */
-    for (unsigned i = 0; i < (pTaskState->cSGInfoEntries-1); i++)
-    {
-        if (pSGEntryCurr->cbSeg % 512 != 0)
-        {
-            AssertMsg((uint8_t *)pSGEntryCurr->pvSeg + pSGEntryCurr->cbSeg == pSGInfoCurr->pvBuf,
-                      ("Buffer ist not sector aligned but the buffer addresses are not adjacent\n"));
-
-            pSGEntryCurr->cbSeg += pSGInfoCurr->cbBuf;
-        }
-        else
-        {
-            if (((uint8_t *)pSGEntryCurr->pvSeg + pSGEntryCurr->cbSeg) == pSGInfoCurr->pvBuf)
-            {
-                pSGEntryCurr->cbSeg += pSGInfoCurr->cbBuf;
+                GCPhysAddrDataBuffer |= ((uint64_t)SGEntry.Simple64.u32DataBufferAddressHigh) << 32;
+                GCPhysSgEntryNext += sizeof(MptSGEntrySimple64);
             }
             else
+                GCPhysSgEntryNext += sizeof(MptSGEntrySimple32);
+
+
+            pfnIoBufCopy(pDevIns, GCPhysAddrDataBuffer, pbBuf, cbCopyThis);
+            pbBuf      += cbCopyThis;
+            cbCopyThis -= cbCopyThis;
+
+            /* Check if we reached the end of the list. */
+            if (SGEntry.Simple32.fEndOfList)
             {
-                pSGEntryCurr++;
-                cSGEntries++;
-                pSGEntryCurr->pvSeg = pSGInfoCurr->pvBuf;
-                pSGEntryCurr->cbSeg = pSGInfoCurr->cbBuf;
+                /* We finished. */
+                fEndOfSegment = true;
+                fEndOfList = true;
             }
+            else if (SGEntry.Simple32.fLastElement)
+                fEndOfSegment = true;
+        } /* while (!fEndOfSegment) */
+
+        /* Get next chain element. */
+        if (cChainOffsetNext)
+        {
+            MptSGEntryChain SGEntryChain;
+
+            PDMDevHlpPhysRead(pDevIns, GCPhysSegmentStart + cChainOffsetNext, &SGEntryChain, sizeof(MptSGEntryChain));
+
+            AssertMsg(SGEntryChain.u2ElementType == MPTSGENTRYTYPE_CHAIN, ("Invalid SG entry type\n"));
+
+           /* Set the next address now. */
+            GCPhysSgEntryNext = SGEntryChain.u32SegmentAddressLow;
+            if (SGEntryChain.f64BitAddress)
+                GCPhysSgEntryNext |= ((uint64_t)SGEntryChain.u32SegmentAddressHigh) << 32;
+
+            GCPhysSegmentStart = GCPhysSgEntryNext;
+            cChainOffsetNext   = SGEntryChain.u8NextChainOffset * sizeof(uint32_t);
         }
-
-        pSGInfoCurr++;
-    }
-
-    pTaskState->cSGListEntries = cSGEntries;
-
-    return rc;
+    } /* while (!fEndOfList) */
 }
 
-/*
- * Disabled because the sense buffer provided by the LsiLogic driver for Windows XP
- * crosses page boundaries.
- */
-# if 0
+static DECLCALLBACK(void) lsilogicCopyFromGuest(PPDMDEVINS pDevIns, RTGCPHYS GCPhysIoBuf,
+                                                void *pvBuf, size_t cbCopy)
+{
+    PDMDevHlpPhysRead(pDevIns, GCPhysIoBuf, pvBuf, cbCopy);
+}
+
+static DECLCALLBACK(void) lsilogicCopyToGuest(PPDMDEVINS pDevIns, RTGCPHYS GCPhysIoBuf,
+                                              void *pvBuf, size_t cbCopy)
+{
+    PDMDevHlpPCIPhysWrite(pDevIns, GCPhysIoBuf, pvBuf, cbCopy);
+}
+
 /**
- * Free the sense buffer.
+ * Copy from a guest S/G buffer to the I/O buffer.
  *
  * @returns nothing.
- * @param   pTaskState   Pointer to the task state.
+ * @param   pDevIns      Device instance data.
+ * @param   pLsiReq      Request data.
+ * @param   cbCopy       How much to copy over.
  */
-static void lsilogicFreeGCSenseBuffer(PLSILOGICSCSI pThis, PLSILOGICTASKSTATE pTaskState)
+DECLINLINE(void) lsilogicCopyFromSgBuf(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq, size_t cbCopy)
 {
-    PVM pVM = PDMDevHlpGetVM(pThis->CTX_SUFF(pDevIns));
-
-    PGMPhysReleasePageMappingLock(pVM, &pTaskState->PageLockSense);
-    pTaskState->pbSenseBuffer = NULL;
+    lsilogicSgBufWalker(pDevIns, pLsiReq, cbCopy, lsilogicCopyFromGuest);
 }
 
 /**
- * Map the sense buffer into R3.
+ * Copy from an I/O buffer to the guest S/G buffer.
+ *
+ * @returns nothing.
+ * @param   pDevIns      Device instance data.
+ * @param   pLsiReq      Request data.
+ * @param   cbCopy       How much to copy over.
+ */
+DECLINLINE(void) lsilogicCopyToSgBuf(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq, size_t cbCopy)
+{
+    lsilogicSgBufWalker(pDevIns, pLsiReq, cbCopy, lsilogicCopyToGuest);
+}
+
+/**
+ * Allocates memory for the given request using already allocated memory if possible.
+ *
+ * @returns Pointer to the memory or NULL on failure
+ * @param   pLsiReq     The request to allocate memory for.
+ * @param   cb          The amount of memory to allocate.
+ */
+static void *lsilogicReqMemAlloc(PLSILOGICREQ pLsiReq, size_t cb)
+{
+    if (pLsiReq->cbAlloc > cb)
+        pLsiReq->cAllocTooMuch++;
+    else if (pLsiReq->cbAlloc < cb)
+    {
+        if (pLsiReq->cbAlloc)
+            RTMemPageFree(pLsiReq->pvAlloc, pLsiReq->cbAlloc);
+
+        pLsiReq->cbAlloc = RT_ALIGN_Z(cb, _4K);
+        pLsiReq->pvAlloc = RTMemPageAlloc(pLsiReq->cbAlloc);
+        pLsiReq->cAllocTooMuch = 0;
+        if (RT_UNLIKELY(!pLsiReq->pvAlloc))
+            pLsiReq->cbAlloc = 0;
+    }
+
+    return pLsiReq->pvAlloc;
+}
+
+/**
+ * Frees memory allocated for the given request.
+ *
+ * @returns nothing.
+ * @param   pLsiReq     The request.
+ */
+static void lsilogicReqMemFree(PLSILOGICREQ pLsiReq)
+{
+    if (pLsiReq->cAllocTooMuch >= LSILOGIC_MAX_ALLOC_TOO_MUCH)
+    {
+        RTMemPageFree(pLsiReq->pvAlloc, pLsiReq->cbAlloc);
+        pLsiReq->cbAlloc = 0;
+        pLsiReq->cAllocTooMuch = 0;
+    }
+}
+
+/**
+ * Allocate I/O memory and copies the guest buffer for writes.
  *
  * @returns VBox status code.
- * @param   pTaskState    Pointer to the task state.
- * @note Current assumption is that the sense buffer is not scattered and does not cross a page boundary.
+ * @param   pDevIns     The device instance.
+ * @param   pLsiReq     The request state.
+ * @param   cbTransfer  Amount of bytes to allocate.
  */
-static int lsilogicR3MapGCSenseBufferIntoR3(PLSILOGICSCSI pThis, PLSILOGICTASKSTATE pTaskState)
+static int lsilogicIoBufAllocate(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq,
+                                 size_t cbTransfer)
 {
-    int rc = VINF_SUCCESS;
-    PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
-    RTGCPHYS GCPhysAddrSenseBuffer;
+    uint8_t uTxDir = MPT_SCSIIO_REQUEST_CONTROL_TXDIR_GET(pLsiReq->GuestRequest.SCSIIO.u32Control);
 
-    GCPhysAddrSenseBuffer = pTaskState->GuestRequest.SCSIIO.u32SenseBufferLowAddress;
-    GCPhysAddrSenseBuffer |= ((uint64_t)pThis->u32SenseBufferHighAddr << 32);
+    AssertMsg(   uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_WRITE
+              || uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_READ,
+              ("Allocating I/O memory for a non I/O request is not allowed\n"));
 
-# ifdef RT_STRICT
-    uint32_t cbSenseBuffer = pTaskState->GuestRequest.SCSIIO.u8SenseBufferLength;
-# endif
-    RTGCPHYS GCPhysAddrSenseBufferBase = PAGE_ADDRESS(GCPhysAddrSenseBuffer);
+    pLsiReq->SegIoBuf.pvSeg = lsilogicReqMemAlloc(pLsiReq, cbTransfer);
+    if (!pLsiReq->SegIoBuf.pvSeg)
+        return VERR_NO_MEMORY;
 
-    AssertMsg(GCPhysAddrSenseBuffer >= GCPhysAddrSenseBufferBase,
-              ("Impossible GCPhysAddrSenseBuffer < GCPhysAddrSenseBufferBase\n"));
+    pLsiReq->SegIoBuf.cbSeg = cbTransfer;
+    if (uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_WRITE)
+        lsilogicCopyFromSgBuf(pDevIns, pLsiReq, cbTransfer);
 
-    /* Sanity checks for the assumption. */
-    AssertMsg(((GCPhysAddrSenseBuffer + cbSenseBuffer) <= (GCPhysAddrSenseBufferBase + PAGE_SIZE)),
-              ("Sense buffer crosses page boundary\n"));
-
-    rc = PDMDevHlpPhysGCPhys2CCPtr(pDevIns, GCPhysAddrSenseBufferBase, (void **)&pTaskState->pbSenseBuffer, &pTaskState->PageLockSense);
-    AssertMsgRC(rc, ("Mapping sense buffer failed rc=%Rrc\n", rc));
-
-    /* Correct start address of the sense buffer. */
-    pTaskState->pbSenseBuffer += (GCPhysAddrSenseBuffer - GCPhysAddrSenseBufferBase);
-
-    return rc;
+    return VINF_SUCCESS;
 }
-# endif
+
+/**
+ * Frees the I/O memory of the given request and updates the guest buffer if necessary.
+ *
+ * @returns nothing.
+ * @param   pDevIns      The device instance.
+ * @param   pLsiReq      The request state.
+ * @param   fCopyToGuest Flag whether to update the guest buffer if necessary.
+ *                       Nothing is copied if false even if the request was a read.
+ */
+static void lsilogicIoBufFree(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq,
+                              bool fCopyToGuest)
+{
+    uint8_t uTxDir = MPT_SCSIIO_REQUEST_CONTROL_TXDIR_GET(pLsiReq->GuestRequest.SCSIIO.u32Control);
+
+    AssertMsg(   uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_WRITE
+              || uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_READ,
+              ("Allocating I/O memory for a non I/O request is not allowed\n"));
+
+    if (   uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_READ
+        && fCopyToGuest)
+        lsilogicCopyToSgBuf(pDevIns, pLsiReq, pLsiReq->SegIoBuf.cbSeg);
+
+    lsilogicReqMemFree(pLsiReq);
+    pLsiReq->SegIoBuf.pvSeg = NULL;
+    pLsiReq->SegIoBuf.cbSeg = 0;
+}
 
 # ifdef LOG_ENABLED
 static void lsilogicR3DumpSCSIIORequest(PMptSCSIIORequest pSCSIIORequest)
@@ -2059,92 +1758,88 @@ static void lsilogicR3RedoSetWarning(PLSILOGICSCSI pThis, int rc)
  *
  * @returns VBox status code.
  * @param   pThis       Pointer to the LsiLogic device state.
- * @param   pTaskState  Pointer to the task state data.
+ * @param   pLsiReq  Pointer to the task state data.
  */
-static int lsilogicR3ProcessSCSIIORequest(PLSILOGICSCSI pThis, PLSILOGICTASKSTATE pTaskState)
+static int lsilogicR3ProcessSCSIIORequest(PLSILOGICSCSI pThis, PLSILOGICREQ pLsiReq)
 {
     int rc = VINF_SUCCESS;
 
 # ifdef LOG_ENABLED
-    lsilogicR3DumpSCSIIORequest(&pTaskState->GuestRequest.SCSIIO);
+    lsilogicR3DumpSCSIIORequest(&pLsiReq->GuestRequest.SCSIIO);
 # endif
 
-    pTaskState->fBIOS = false;
+    pLsiReq->fBIOS = false;
+    pLsiReq->GCPhysSgStart = pLsiReq->GCPhysMessageFrameAddr + sizeof(MptSCSIIORequest);
+    pLsiReq->cChainOffset  = pLsiReq->GuestRequest.SCSIIO.u8ChainOffset;
+    if (pLsiReq->cChainOffset)
+        pLsiReq->cChainOffset = pLsiReq->cChainOffset * sizeof(uint32_t) - sizeof(MptSCSIIORequest);
 
-    if (RT_LIKELY(   (pTaskState->GuestRequest.SCSIIO.u8TargetID < pThis->cDeviceStates)
-                  && (pTaskState->GuestRequest.SCSIIO.u8Bus == 0)))
+    if (RT_LIKELY(   (pLsiReq->GuestRequest.SCSIIO.u8TargetID < pThis->cDeviceStates)
+                  && (pLsiReq->GuestRequest.SCSIIO.u8Bus == 0)))
     {
         PLSILOGICDEVICE pTargetDevice;
-        pTargetDevice = &pThis->paDeviceStates[pTaskState->GuestRequest.SCSIIO.u8TargetID];
+        pTargetDevice = &pThis->paDeviceStates[pLsiReq->GuestRequest.SCSIIO.u8TargetID];
 
         if (pTargetDevice->pDrvBase)
         {
 
-            if (pTaskState->GuestRequest.SCSIIO.u32DataLength)
+            if (pLsiReq->GuestRequest.SCSIIO.u32DataLength)
             {
-                uint32_t uChainOffset;
 
-                /* Create Scatter gather list. */
-                uChainOffset = pTaskState->GuestRequest.SCSIIO.u8ChainOffset;
-
-                if (uChainOffset)
-                    uChainOffset = uChainOffset * sizeof(uint32_t) - sizeof(MptSCSIIORequest);
-
-                rc = lsilogicR3ScatterGatherListCreate(pThis, pTaskState,
-                                                       pTaskState->GCPhysMessageFrameAddr + sizeof(MptSCSIIORequest),
-                                                       uChainOffset);
-                AssertRC(rc);
+                rc = lsilogicIoBufAllocate(pThis->CTX_SUFF(pDevIns), pLsiReq,
+                                                           pLsiReq->GuestRequest.SCSIIO.u32DataLength);
+                AssertRC(rc); /** @todo: Insufficient resources error. */
             }
-            else
-                pTaskState->cSGListEntries = 0;
-
-# if 0
-            /* Map sense buffer. */
-            rc = lsilogicR3MapGCSenseBufferIntoR3(pThis, pTaskState);
-            AssertRC(rc);
-# endif
 
             /* Setup the SCSI request. */
-            pTaskState->pTargetDevice                        = pTargetDevice;
-            pTaskState->PDMScsiRequest.uLogicalUnit          = pTaskState->GuestRequest.SCSIIO.au8LUN[1];
+            pLsiReq->pTargetDevice                        = pTargetDevice;
+            pLsiReq->PDMScsiRequest.uLogicalUnit          = pLsiReq->GuestRequest.SCSIIO.au8LUN[1];
 
-            uint8_t uDataDirection = MPT_SCSIIO_REQUEST_CONTROL_TXDIR_GET(pTaskState->GuestRequest.SCSIIO.u32Control);
+            uint8_t uDataDirection = MPT_SCSIIO_REQUEST_CONTROL_TXDIR_GET(pLsiReq->GuestRequest.SCSIIO.u32Control);
 
             if (uDataDirection == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_NONE)
-                pTaskState->PDMScsiRequest.uDataDirection    = PDMSCSIREQUESTTXDIR_NONE;
+                pLsiReq->PDMScsiRequest.uDataDirection    = PDMSCSIREQUESTTXDIR_NONE;
             else if (uDataDirection == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_WRITE)
-                pTaskState->PDMScsiRequest.uDataDirection    = PDMSCSIREQUESTTXDIR_TO_DEVICE;
+                pLsiReq->PDMScsiRequest.uDataDirection    = PDMSCSIREQUESTTXDIR_TO_DEVICE;
             else if (uDataDirection == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_READ)
-                pTaskState->PDMScsiRequest.uDataDirection    = PDMSCSIREQUESTTXDIR_FROM_DEVICE;
+                pLsiReq->PDMScsiRequest.uDataDirection    = PDMSCSIREQUESTTXDIR_FROM_DEVICE;
 
-            pTaskState->PDMScsiRequest.cbCDB                 = pTaskState->GuestRequest.SCSIIO.u8CDBLength;
-            pTaskState->PDMScsiRequest.pbCDB                 = pTaskState->GuestRequest.SCSIIO.au8CDB;
-            pTaskState->PDMScsiRequest.cbScatterGather       = pTaskState->GuestRequest.SCSIIO.u32DataLength;
-            pTaskState->PDMScsiRequest.cScatterGatherEntries = pTaskState->cSGListEntries;
-            pTaskState->PDMScsiRequest.paScatterGatherHead   = pTaskState->pSGListHead;
-            pTaskState->PDMScsiRequest.cbSenseBuffer         = sizeof(pTaskState->abSenseBuffer);
-            memset(pTaskState->abSenseBuffer, 0, pTaskState->PDMScsiRequest.cbSenseBuffer);
-            pTaskState->PDMScsiRequest.pbSenseBuffer         = pTaskState->abSenseBuffer;
-            pTaskState->PDMScsiRequest.pvUser                = pTaskState;
+            pLsiReq->PDMScsiRequest.cbCDB                 = pLsiReq->GuestRequest.SCSIIO.u8CDBLength;
+            pLsiReq->PDMScsiRequest.pbCDB                 = pLsiReq->GuestRequest.SCSIIO.au8CDB;
+            pLsiReq->PDMScsiRequest.cbScatterGather       = pLsiReq->GuestRequest.SCSIIO.u32DataLength;
+            if (pLsiReq->PDMScsiRequest.cbScatterGather)
+            {
+                pLsiReq->PDMScsiRequest.cScatterGatherEntries = 1;
+                pLsiReq->PDMScsiRequest.paScatterGatherHead   = &pLsiReq->SegIoBuf;
+            }
+            else
+            {
+                pLsiReq->PDMScsiRequest.cScatterGatherEntries = 0;
+                pLsiReq->PDMScsiRequest.paScatterGatherHead   = NULL;
+            }
+            pLsiReq->PDMScsiRequest.cbSenseBuffer         = sizeof(pLsiReq->abSenseBuffer);
+            memset(pLsiReq->abSenseBuffer, 0, pLsiReq->PDMScsiRequest.cbSenseBuffer);
+            pLsiReq->PDMScsiRequest.pbSenseBuffer         = pLsiReq->abSenseBuffer;
+            pLsiReq->PDMScsiRequest.pvUser                = pLsiReq;
 
             ASMAtomicIncU32(&pTargetDevice->cOutstandingRequests);
-            rc = pTargetDevice->pDrvSCSIConnector->pfnSCSIRequestSend(pTargetDevice->pDrvSCSIConnector, &pTaskState->PDMScsiRequest);
+            rc = pTargetDevice->pDrvSCSIConnector->pfnSCSIRequestSend(pTargetDevice->pDrvSCSIConnector, &pLsiReq->PDMScsiRequest);
             AssertMsgRC(rc, ("Sending request to SCSI layer failed rc=%Rrc\n", rc));
             return VINF_SUCCESS;
         }
         else
         {
             /* Device is not present report SCSI selection timeout. */
-            pTaskState->IOCReply.SCSIIOError.u16IOCStatus = MPT_SCSI_IO_ERROR_IOCSTATUS_DEVICE_NOT_THERE;
+            pLsiReq->IOCReply.SCSIIOError.u16IOCStatus = MPT_SCSI_IO_ERROR_IOCSTATUS_DEVICE_NOT_THERE;
         }
     }
     else
     {
         /* Report out of bounds target ID or bus. */
-        if (pTaskState->GuestRequest.SCSIIO.u8Bus != 0)
-            pTaskState->IOCReply.SCSIIOError.u16IOCStatus = MPT_SCSI_IO_ERROR_IOCSTATUS_INVALID_BUS;
+        if (pLsiReq->GuestRequest.SCSIIO.u8Bus != 0)
+            pLsiReq->IOCReply.SCSIIOError.u16IOCStatus = MPT_SCSI_IO_ERROR_IOCSTATUS_INVALID_BUS;
         else
-            pTaskState->IOCReply.SCSIIOError.u16IOCStatus = MPT_SCSI_IO_ERROR_IOCSTATUS_INVALID_TARGETID;
+            pLsiReq->IOCReply.SCSIIOError.u16IOCStatus = MPT_SCSI_IO_ERROR_IOCSTATUS_INVALID_TARGETID;
     }
 
     static int g_cLogged = 0;
@@ -2152,32 +1847,32 @@ static int lsilogicR3ProcessSCSIIORequest(PLSILOGICSCSI pThis, PLSILOGICTASKSTAT
     if (g_cLogged++ < MAX_REL_LOG_ERRORS)
     {
         LogRel(("LsiLogic#%d: %d/%d (Bus/Target) doesn't exist\n", pThis->CTX_SUFF(pDevIns)->iInstance,
-                pTaskState->GuestRequest.SCSIIO.u8TargetID, pTaskState->GuestRequest.SCSIIO.u8Bus));
+                pLsiReq->GuestRequest.SCSIIO.u8TargetID, pLsiReq->GuestRequest.SCSIIO.u8Bus));
         /* Log the CDB too  */
         LogRel(("LsiLogic#%d: Guest issued CDB {%#x",
-                pThis->CTX_SUFF(pDevIns)->iInstance, pTaskState->GuestRequest.SCSIIO.au8CDB[0]));
-        for (unsigned i = 1; i < pTaskState->GuestRequest.SCSIIO.u8CDBLength; i++)
-            LogRel((", %#x", pTaskState->GuestRequest.SCSIIO.au8CDB[i]));
+                pThis->CTX_SUFF(pDevIns)->iInstance, pLsiReq->GuestRequest.SCSIIO.au8CDB[0]));
+        for (unsigned i = 1; i < pLsiReq->GuestRequest.SCSIIO.u8CDBLength; i++)
+            LogRel((", %#x", pLsiReq->GuestRequest.SCSIIO.au8CDB[i]));
         LogRel(("}\n"));
     }
 
     /* The rest is equal to both errors. */
-    pTaskState->IOCReply.SCSIIOError.u8TargetID          = pTaskState->GuestRequest.SCSIIO.u8TargetID;
-    pTaskState->IOCReply.SCSIIOError.u8Bus               = pTaskState->GuestRequest.SCSIIO.u8Bus;
-    pTaskState->IOCReply.SCSIIOError.u8MessageLength     = sizeof(MptSCSIIOErrorReply) / 4;
-    pTaskState->IOCReply.SCSIIOError.u8Function          = pTaskState->GuestRequest.SCSIIO.u8Function;
-    pTaskState->IOCReply.SCSIIOError.u8CDBLength         = pTaskState->GuestRequest.SCSIIO.u8CDBLength;
-    pTaskState->IOCReply.SCSIIOError.u8SenseBufferLength = pTaskState->GuestRequest.SCSIIO.u8SenseBufferLength;
-    pTaskState->IOCReply.SCSIIOError.u32MessageContext   = pTaskState->GuestRequest.SCSIIO.u32MessageContext;
-    pTaskState->IOCReply.SCSIIOError.u8SCSIStatus        = SCSI_STATUS_OK;
-    pTaskState->IOCReply.SCSIIOError.u8SCSIState         = MPT_SCSI_IO_ERROR_SCSI_STATE_TERMINATED;
-    pTaskState->IOCReply.SCSIIOError.u32IOCLogInfo       = 0;
-    pTaskState->IOCReply.SCSIIOError.u32TransferCount    = 0;
-    pTaskState->IOCReply.SCSIIOError.u32SenseCount       = 0;
-    pTaskState->IOCReply.SCSIIOError.u32ResponseInfo     = 0;
+    pLsiReq->IOCReply.SCSIIOError.u8TargetID          = pLsiReq->GuestRequest.SCSIIO.u8TargetID;
+    pLsiReq->IOCReply.SCSIIOError.u8Bus               = pLsiReq->GuestRequest.SCSIIO.u8Bus;
+    pLsiReq->IOCReply.SCSIIOError.u8MessageLength     = sizeof(MptSCSIIOErrorReply) / 4;
+    pLsiReq->IOCReply.SCSIIOError.u8Function          = pLsiReq->GuestRequest.SCSIIO.u8Function;
+    pLsiReq->IOCReply.SCSIIOError.u8CDBLength         = pLsiReq->GuestRequest.SCSIIO.u8CDBLength;
+    pLsiReq->IOCReply.SCSIIOError.u8SenseBufferLength = pLsiReq->GuestRequest.SCSIIO.u8SenseBufferLength;
+    pLsiReq->IOCReply.SCSIIOError.u32MessageContext   = pLsiReq->GuestRequest.SCSIIO.u32MessageContext;
+    pLsiReq->IOCReply.SCSIIOError.u8SCSIStatus        = SCSI_STATUS_OK;
+    pLsiReq->IOCReply.SCSIIOError.u8SCSIState         = MPT_SCSI_IO_ERROR_SCSI_STATE_TERMINATED;
+    pLsiReq->IOCReply.SCSIIOError.u32IOCLogInfo       = 0;
+    pLsiReq->IOCReply.SCSIIOError.u32TransferCount    = 0;
+    pLsiReq->IOCReply.SCSIIOError.u32SenseCount       = 0;
+    pLsiReq->IOCReply.SCSIIOError.u32ResponseInfo     = 0;
 
-    lsilogicFinishAddressReply(pThis, &pTaskState->IOCReply, false);
-    RTMemCacheFree(pThis->hTaskCache, pTaskState);
+    lsilogicFinishAddressReply(pThis, &pLsiReq->IOCReply, false);
+    RTMemCacheFree(pThis->hTaskCache, pLsiReq);
 
     return rc;
 }
@@ -2189,22 +1884,22 @@ static int lsilogicR3ProcessSCSIIORequest(PLSILOGICSCSI pThis, PLSILOGICTASKSTAT
 static DECLCALLBACK(int) lsilogicR3DeviceSCSIRequestCompleted(PPDMISCSIPORT pInterface, PPDMSCSIREQUEST pSCSIRequest,
                                                               int rcCompletion, bool fRedo, int rcReq)
 {
-    PLSILOGICTASKSTATE pTaskState      = (PLSILOGICTASKSTATE)pSCSIRequest->pvUser;
-    PLSILOGICDEVICE    pLsiLogicDevice = pTaskState->pTargetDevice;
+    PLSILOGICREQ pLsiReq      = (PLSILOGICREQ)pSCSIRequest->pvUser;
+    PLSILOGICDEVICE    pLsiLogicDevice = pLsiReq->pTargetDevice;
     PLSILOGICSCSI      pThis       = pLsiLogicDevice->CTX_SUFF(pLsiLogic);
 
     /* If the task failed but it is possible to redo it again after a suspend
      * add it to the list. */
     if (fRedo)
     {
-        if (!pTaskState->fBIOS && pTaskState->PDMScsiRequest.cbScatterGather)
-            lsilogicR3ScatterGatherListDestroy(pThis, pTaskState);
+        if (!pLsiReq->fBIOS && pLsiReq->PDMScsiRequest.cbScatterGather)
+            lsilogicIoBufFree(pThis->CTX_SUFF(pDevIns), pLsiReq, false /* fCopyToGuest */);
 
         /* Add to the list. */
         do
         {
-            pTaskState->pRedoNext = ASMAtomicReadPtrT(&pThis->pTasksRedoHead, PLSILOGICTASKSTATE);
-        } while (!ASMAtomicCmpXchgPtr(&pThis->pTasksRedoHead, pTaskState, pTaskState->pRedoNext));
+            pLsiReq->pRedoNext = ASMAtomicReadPtrT(&pThis->pTasksRedoHead, PLSILOGICREQ);
+        } while (!ASMAtomicCmpXchgPtr(&pThis->pTasksRedoHead, pLsiReq, pLsiReq->pRedoNext));
 
         /* Suspend the VM if not done already. */
         if (!ASMAtomicXchgBool(&pThis->fRedo, true))
@@ -2212,59 +1907,56 @@ static DECLCALLBACK(int) lsilogicR3DeviceSCSIRequestCompleted(PPDMISCSIPORT pInt
     }
     else
     {
-        if (RT_UNLIKELY(pTaskState->fBIOS))
+        if (RT_UNLIKELY(pLsiReq->fBIOS))
         {
             int rc = vboxscsiRequestFinished(&pThis->VBoxSCSI, pSCSIRequest, rcCompletion);
             AssertMsgRC(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc));
         }
         else
         {
-# if 0
-            lsilogicFreeGCSenseBuffer(pThis, pTaskState);
-# else
             RTGCPHYS GCPhysAddrSenseBuffer;
 
-            GCPhysAddrSenseBuffer = pTaskState->GuestRequest.SCSIIO.u32SenseBufferLowAddress;
+            GCPhysAddrSenseBuffer = pLsiReq->GuestRequest.SCSIIO.u32SenseBufferLowAddress;
             GCPhysAddrSenseBuffer |= ((uint64_t)pThis->u32SenseBufferHighAddr << 32);
 
             /* Copy the sense buffer over. */
-            PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhysAddrSenseBuffer, pTaskState->abSenseBuffer,
-                                  RT_UNLIKELY(  pTaskState->GuestRequest.SCSIIO.u8SenseBufferLength
-                                              < pTaskState->PDMScsiRequest.cbSenseBuffer)
-                                  ? pTaskState->GuestRequest.SCSIIO.u8SenseBufferLength
-                                  : pTaskState->PDMScsiRequest.cbSenseBuffer);
-# endif
-            if (pTaskState->PDMScsiRequest.cbScatterGather)
-                lsilogicR3ScatterGatherListDestroy(pThis, pTaskState);
+            PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhysAddrSenseBuffer, pLsiReq->abSenseBuffer,
+                                  RT_UNLIKELY(  pLsiReq->GuestRequest.SCSIIO.u8SenseBufferLength
+                                              < pLsiReq->PDMScsiRequest.cbSenseBuffer)
+                                  ? pLsiReq->GuestRequest.SCSIIO.u8SenseBufferLength
+                                  : pLsiReq->PDMScsiRequest.cbSenseBuffer);
+
+            if (pLsiReq->PDMScsiRequest.cbScatterGather)
+                lsilogicIoBufFree(pThis->CTX_SUFF(pDevIns), pLsiReq, true /* fCopyToGuest */);
 
 
             if (RT_LIKELY(rcCompletion == SCSI_STATUS_OK))
-                lsilogicR3FinishContextReply(pThis, pTaskState->GuestRequest.SCSIIO.u32MessageContext);
+                lsilogicR3FinishContextReply(pThis, pLsiReq->GuestRequest.SCSIIO.u32MessageContext);
             else
             {
                 /* The SCSI target encountered an error during processing post a reply. */
-                memset(&pTaskState->IOCReply, 0, sizeof(MptReplyUnion));
-                pTaskState->IOCReply.SCSIIOError.u8TargetID          = pTaskState->GuestRequest.SCSIIO.u8TargetID;
-                pTaskState->IOCReply.SCSIIOError.u8Bus               = pTaskState->GuestRequest.SCSIIO.u8Bus;
-                pTaskState->IOCReply.SCSIIOError.u8MessageLength     = 8;
-                pTaskState->IOCReply.SCSIIOError.u8Function          = pTaskState->GuestRequest.SCSIIO.u8Function;
-                pTaskState->IOCReply.SCSIIOError.u8CDBLength         = pTaskState->GuestRequest.SCSIIO.u8CDBLength;
-                pTaskState->IOCReply.SCSIIOError.u8SenseBufferLength = pTaskState->GuestRequest.SCSIIO.u8SenseBufferLength;
-                pTaskState->IOCReply.SCSIIOError.u8MessageFlags      = pTaskState->GuestRequest.SCSIIO.u8MessageFlags;
-                pTaskState->IOCReply.SCSIIOError.u32MessageContext   = pTaskState->GuestRequest.SCSIIO.u32MessageContext;
-                pTaskState->IOCReply.SCSIIOError.u8SCSIStatus        = rcCompletion;
-                pTaskState->IOCReply.SCSIIOError.u8SCSIState         = MPT_SCSI_IO_ERROR_SCSI_STATE_AUTOSENSE_VALID;
-                pTaskState->IOCReply.SCSIIOError.u16IOCStatus        = 0;
-                pTaskState->IOCReply.SCSIIOError.u32IOCLogInfo       = 0;
-                pTaskState->IOCReply.SCSIIOError.u32TransferCount    = 0;
-                pTaskState->IOCReply.SCSIIOError.u32SenseCount       = sizeof(pTaskState->abSenseBuffer);
-                pTaskState->IOCReply.SCSIIOError.u32ResponseInfo     = 0;
+                memset(&pLsiReq->IOCReply, 0, sizeof(MptReplyUnion));
+                pLsiReq->IOCReply.SCSIIOError.u8TargetID          = pLsiReq->GuestRequest.SCSIIO.u8TargetID;
+                pLsiReq->IOCReply.SCSIIOError.u8Bus               = pLsiReq->GuestRequest.SCSIIO.u8Bus;
+                pLsiReq->IOCReply.SCSIIOError.u8MessageLength     = 8;
+                pLsiReq->IOCReply.SCSIIOError.u8Function          = pLsiReq->GuestRequest.SCSIIO.u8Function;
+                pLsiReq->IOCReply.SCSIIOError.u8CDBLength         = pLsiReq->GuestRequest.SCSIIO.u8CDBLength;
+                pLsiReq->IOCReply.SCSIIOError.u8SenseBufferLength = pLsiReq->GuestRequest.SCSIIO.u8SenseBufferLength;
+                pLsiReq->IOCReply.SCSIIOError.u8MessageFlags      = pLsiReq->GuestRequest.SCSIIO.u8MessageFlags;
+                pLsiReq->IOCReply.SCSIIOError.u32MessageContext   = pLsiReq->GuestRequest.SCSIIO.u32MessageContext;
+                pLsiReq->IOCReply.SCSIIOError.u8SCSIStatus        = rcCompletion;
+                pLsiReq->IOCReply.SCSIIOError.u8SCSIState         = MPT_SCSI_IO_ERROR_SCSI_STATE_AUTOSENSE_VALID;
+                pLsiReq->IOCReply.SCSIIOError.u16IOCStatus        = 0;
+                pLsiReq->IOCReply.SCSIIOError.u32IOCLogInfo       = 0;
+                pLsiReq->IOCReply.SCSIIOError.u32TransferCount    = 0;
+                pLsiReq->IOCReply.SCSIIOError.u32SenseCount       = sizeof(pLsiReq->abSenseBuffer);
+                pLsiReq->IOCReply.SCSIIOError.u32ResponseInfo     = 0;
 
-                lsilogicFinishAddressReply(pThis, &pTaskState->IOCReply, true);
+                lsilogicFinishAddressReply(pThis, &pLsiReq->IOCReply, true);
             }
         }
 
-        RTMemCacheFree(pThis->hTaskCache, pTaskState);
+        RTMemCacheFree(pThis->hTaskCache, pLsiReq);
     }
 
     ASMAtomicDecU32(&pLsiLogicDevice->cOutstandingRequests);
@@ -3642,21 +3334,21 @@ static DECLCALLBACK(bool) lsilogicR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PPDM
         RTGCPHYS  GCPhysMessageFrameAddr = LSILOGIC_RTGCPHYS_FROM_U32(pThis->u32HostMFAHighAddr,
                                                                       (u32RequestMessageFrameDesc & ~0x07));
 
-        PLSILOGICTASKSTATE pTaskState;
+        PLSILOGICREQ pLsiReq;
 
         /* Get new task state. */
-        rc = RTMemCacheAllocEx(pThis->hTaskCache, (void **)&pTaskState);
+        rc = RTMemCacheAllocEx(pThis->hTaskCache, (void **)&pLsiReq);
         AssertRC(rc);
 
-        pTaskState->GCPhysMessageFrameAddr = GCPhysMessageFrameAddr;
+        pLsiReq->GCPhysMessageFrameAddr = GCPhysMessageFrameAddr;
 
         /* Read the message header from the guest first. */
-        PDMDevHlpPhysRead(pDevIns, GCPhysMessageFrameAddr, &pTaskState->GuestRequest, sizeof(MptMessageHdr));
+        PDMDevHlpPhysRead(pDevIns, GCPhysMessageFrameAddr, &pLsiReq->GuestRequest, sizeof(MptMessageHdr));
 
         /* Determine the size of the request. */
         uint32_t cbRequest = 0;
 
-        switch (pTaskState->GuestRequest.Header.u8Function)
+        switch (pLsiReq->GuestRequest.Header.u8Function)
         {
             case MPT_MESSAGE_HDR_FUNCTION_SCSI_IO_REQUEST:
                 cbRequest = sizeof(MptSCSIIORequest);
@@ -3693,27 +3385,27 @@ static DECLCALLBACK(bool) lsilogicR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PPDM
                 cbRequest = sizeof(MptFWUploadRequest);
                 break;
             default:
-                AssertMsgFailed(("Unknown function issued %u\n", pTaskState->GuestRequest.Header.u8Function));
+                AssertMsgFailed(("Unknown function issued %u\n", pLsiReq->GuestRequest.Header.u8Function));
                 lsilogicSetIOCFaultCode(pThis, LSILOGIC_IOCSTATUS_INVALID_FUNCTION);
         }
 
         if (cbRequest != 0)
         {
             /* Read the complete message frame from guest memory now. */
-            PDMDevHlpPhysRead(pDevIns, GCPhysMessageFrameAddr, &pTaskState->GuestRequest, cbRequest);
+            PDMDevHlpPhysRead(pDevIns, GCPhysMessageFrameAddr, &pLsiReq->GuestRequest, cbRequest);
 
             /* Handle SCSI I/O requests now. */
-            if (pTaskState->GuestRequest.Header.u8Function == MPT_MESSAGE_HDR_FUNCTION_SCSI_IO_REQUEST)
+            if (pLsiReq->GuestRequest.Header.u8Function == MPT_MESSAGE_HDR_FUNCTION_SCSI_IO_REQUEST)
             {
-               rc = lsilogicR3ProcessSCSIIORequest(pThis, pTaskState);
+               rc = lsilogicR3ProcessSCSIIORequest(pThis, pLsiReq);
                AssertRC(rc);
             }
             else
             {
                 MptReplyUnion Reply;
-                rc = lsilogicR3ProcessMessageRequest(pThis, &pTaskState->GuestRequest.Header, &Reply);
+                rc = lsilogicR3ProcessMessageRequest(pThis, &pLsiReq->GuestRequest.Header, &Reply);
                 AssertRC(rc);
-                RTMemCacheFree(pThis->hTaskCache, pTaskState);
+                RTMemCacheFree(pThis->hTaskCache, pLsiReq);
             }
 
             pThis->uRequestQueueNextAddressRead++;
@@ -3779,36 +3471,36 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortRead(PPDMDEVINS pDevIns, void *pvUse
 static int lsilogicR3PrepareBiosScsiRequest(PLSILOGICSCSI pThis)
 {
     int rc;
-    PLSILOGICTASKSTATE pTaskState;
+    PLSILOGICREQ pLsiReq;
     uint32_t           uTargetDevice;
 
-    rc = RTMemCacheAllocEx(pThis->hTaskCache, (void **)&pTaskState);
+    rc = RTMemCacheAllocEx(pThis->hTaskCache, (void **)&pLsiReq);
     AssertMsgRCReturn(rc, ("Getting task from cache failed rc=%Rrc\n", rc), rc);
 
-    pTaskState->fBIOS = true;
+    pLsiReq->fBIOS = true;
 
-    rc = vboxscsiSetupRequest(&pThis->VBoxSCSI, &pTaskState->PDMScsiRequest, &uTargetDevice);
+    rc = vboxscsiSetupRequest(&pThis->VBoxSCSI, &pLsiReq->PDMScsiRequest, &uTargetDevice);
     AssertMsgRCReturn(rc, ("Setting up SCSI request failed rc=%Rrc\n", rc), rc);
 
-    pTaskState->PDMScsiRequest.pvUser = pTaskState;
+    pLsiReq->PDMScsiRequest.pvUser = pLsiReq;
 
     if (uTargetDevice < pThis->cDeviceStates)
     {
-        pTaskState->pTargetDevice = &pThis->paDeviceStates[uTargetDevice];
+        pLsiReq->pTargetDevice = &pThis->paDeviceStates[uTargetDevice];
 
-        if (pTaskState->pTargetDevice->pDrvBase)
+        if (pLsiReq->pTargetDevice->pDrvBase)
         {
-            ASMAtomicIncU32(&pTaskState->pTargetDevice->cOutstandingRequests);
+            ASMAtomicIncU32(&pLsiReq->pTargetDevice->cOutstandingRequests);
 
-            rc = pTaskState->pTargetDevice->pDrvSCSIConnector->pfnSCSIRequestSend(pTaskState->pTargetDevice->pDrvSCSIConnector,
-                                                                                  &pTaskState->PDMScsiRequest);
+            rc = pLsiReq->pTargetDevice->pDrvSCSIConnector->pfnSCSIRequestSend(pLsiReq->pTargetDevice->pDrvSCSIConnector,
+                                                                                  &pLsiReq->PDMScsiRequest);
             AssertMsgRCReturn(rc, ("Sending request to SCSI layer failed rc=%Rrc\n", rc), rc);
             return VINF_SUCCESS;
         }
     }
 
     /* Device is not present. */
-    AssertMsg(pTaskState->PDMScsiRequest.pbCDB[0] == SCSI_INQUIRY,
+    AssertMsg(pLsiReq->PDMScsiRequest.pbCDB[0] == SCSI_INQUIRY,
                 ("Device is not present but command is not inquiry\n"));
 
     SCSIINQUIRYDATA ScsiInquiryData;
@@ -3819,10 +3511,10 @@ static int lsilogicR3PrepareBiosScsiRequest(PLSILOGICSCSI pThis)
 
     memcpy(pThis->VBoxSCSI.pbBuf, &ScsiInquiryData, 5);
 
-    rc = vboxscsiRequestFinished(&pThis->VBoxSCSI, &pTaskState->PDMScsiRequest, SCSI_STATUS_OK);
+    rc = vboxscsiRequestFinished(&pThis->VBoxSCSI, &pLsiReq->PDMScsiRequest, SCSI_STATUS_OK);
     AssertMsgRCReturn(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc), rc);
 
-    RTMemCacheFree(pThis->hTaskCache, pTaskState);
+    RTMemCacheFree(pThis->hTaskCache, pLsiReq);
     return rc;
 }
 
@@ -4823,19 +4515,19 @@ static void lsilogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
              * Guest execution is suspended at this point so there is no race between us and
              * lsilogicRegisterWrite.
              */
-            PLSILOGICTASKSTATE pTaskState = pThis->pTasksRedoHead;
+            PLSILOGICREQ pLsiReq = pThis->pTasksRedoHead;
 
             pThis->pTasksRedoHead = NULL;
 
-            while (pTaskState)
+            while (pLsiReq)
             {
-                PLSILOGICTASKSTATE pFree;
+                PLSILOGICREQ pFree;
 
-                if (!pTaskState->fBIOS)
+                if (!pLsiReq->fBIOS)
                 {
                     /* Write only the lower 32bit part of the address. */
                     ASMAtomicWriteU32(&pThis->CTX_SUFF(pRequestQueueBase)[pThis->uRequestQueueNextEntryFreeWrite],
-                                      pTaskState->GCPhysMessageFrameAddr & UINT32_C(0xffffffff));
+                                      pLsiReq->GCPhysMessageFrameAddr & UINT32_C(0xffffffff));
 
                     pThis->uRequestQueueNextEntryFreeWrite++;
                     pThis->uRequestQueueNextEntryFreeWrite %= pThis->cRequestQueueEntries;
@@ -4844,12 +4536,12 @@ static void lsilogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
                 }
                 else
                 {
-                    AssertMsg(!pTaskState->pRedoNext, ("Only one BIOS task can be active!\n"));
-                    vboxscsiSetRequestRedo(&pThis->VBoxSCSI, &pTaskState->PDMScsiRequest);
+                    AssertMsg(!pLsiReq->pRedoNext, ("Only one BIOS task can be active!\n"));
+                    vboxscsiSetRequestRedo(&pThis->VBoxSCSI, &pLsiReq->PDMScsiRequest);
                 }
 
-                pFree = pTaskState;
-                pTaskState = pTaskState->pRedoNext;
+                pFree = pLsiReq;
+                pLsiReq = pLsiReq->pRedoNext;
 
                 RTMemCacheFree(pThis->hTaskCache, pFree);
             }
@@ -5265,8 +4957,8 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Allocate task cache.
      */
-    rc = RTMemCacheCreate(&pThis->hTaskCache, sizeof(LSILOGICTASKSTATE), 0, UINT32_MAX,
-                          lsilogicR3TaskStateCtor, lsilogicR3TaskStateDtor, NULL, 0);
+    rc = RTMemCacheCreate(&pThis->hTaskCache, sizeof(LSILOGICREQ), 0, UINT32_MAX,
+                          NULL, NULL, NULL, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Cannot create task cache"));
 
