@@ -511,6 +511,7 @@ int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFil
     }
     pStrm->pu8YuvBuf = pStrm->VpxRawImage.planes[0];
 
+    pCtx->fEnabled = true;
     pStrm->fEnabled = true;
     return VINF_SUCCESS;
 }
