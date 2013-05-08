@@ -5123,8 +5123,13 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             if (pMixedCtx->cr3 != uVal)
             {
                 CPUMSetGuestCR3(pVCpu, uVal);
-                /* Set the force flag to inform PGM about it when necessary. It is cleared by PGMUpdateCR3().*/
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
+                if (VMMRZCallRing3IsEnabled(pVCpu))
+                    PGMUpdateCR3(pVCpu, uVal);
+                else
+                {
+                    /* Set the force flag to inform PGM about it when necessary. It is cleared by PGMUpdateCR3().*/
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3);
+                }
             }
 
             /* If the guest is in PAE mode, sync back the PDPE's into the guest state. */
@@ -5134,13 +5139,40 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, &pVCpu->hm.s.aPdpes[1].u);        AssertRCReturn(rc, rc);
                 rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, &pVCpu->hm.s.aPdpes[2].u);        AssertRCReturn(rc, rc);
                 rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, &pVCpu->hm.s.aPdpes[3].u);        AssertRCReturn(rc, rc);
-                /* Set the force flag to inform PGM about it when necessary. It is cleared by PGMGstUpdatePaePdpes(). */
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES);
+
+                if (VMMRZCallRing3IsEnabled(pVCpu))
+                    PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
+                else
+                {
+                    /* Set the force flag to inform PGM about it when necessary. It is cleared by PGMGstUpdatePaePdpes(). */
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES);
+                }
             }
         }
 
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_CR3;
     }
+
+    /*
+     * Consider this scenario: VM-exit -> VMMRZCallRing3Enable() -> do stuff that causes a longjmp -> hmR0VmxCallRing3Callback()
+     * -> VMMRZCallRing3Disable() -> hmR0VmxSaveGuestState() -> Set VMCPU_FF_HM_UPDATE_CR3 pending -> return from the longjmp
+     * -> continue with VM-exit handling -> hmR0VmxSaveGuestControlRegs() and here we are.
+     *
+     * The longjmp exit path can't check these CR3 force-flags and call code that takes a lock again.
+     * We cover for it here.
+     */
+    if (VMMRZCallRing3IsEnabled(pVCpu))
+    {
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
+            PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
+
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
+            PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
+
+        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
+    }
+
     return rc;
 }
 
@@ -5388,8 +5420,12 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (pVCpu->hm.s.vmx.fUpdatedGuestState == HMVMX_UPDATED_GUEST_ALL)
         return VINF_SUCCESS;
 
-    VMMRZCallRing3Disable(pVCpu);
-    Assert(VMMR0IsLogFlushDisabled(pVCpu));
+    /* Though we can longjmp to ring-3 due to log-flushes here and get recalled again on the ring-3 callback path,
+       there is no real need to. */
+    if (VMMRZCallRing3IsEnabled(pVCpu))
+        VMMR0LogFlushDisable(pVCpu);
+    else
+        Assert(VMMR0IsLogFlushDisabled(pVCpu));
     LogFunc(("\n"));
 
     int rc = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
@@ -5428,7 +5464,9 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     AssertMsg(pVCpu->hm.s.vmx.fUpdatedGuestState == HMVMX_UPDATED_GUEST_ALL,
               ("Missed guest state bits while saving state; residue %RX32\n", pVCpu->hm.s.vmx.fUpdatedGuestState));
 
-    VMMRZCallRing3Enable(pVCpu);
+    if (VMMRZCallRing3IsEnabled(pVCpu))
+        VMMR0LogFlushEnable(pVCpu);
+
     return rc;
 }
 
@@ -5473,11 +5511,13 @@ static int hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             rc = PGMUpdateCR3(pVCpu, pMixedCtx->cr3);
             Assert(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3);
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
         }
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
         {
             rc = PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
             AssertRC(rc);
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
         }
 
         /* Pending PGM C3 sync. */
@@ -6761,8 +6801,9 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
 #endif
         /*
          * If the TPR was raised by the guest, it wouldn't cause a VM-exit immediately. Instead we sync the TPR lazily whenever
-         * we eventually get a VM-exit for any reason. This maybe expensive as PDMApicSetTPR() can longjmp to ring-3; also why
-         * we do it outside of hmR0VmxSaveGuestState() which must never cause longjmps.
+         * we eventually get a VM-exit for any reason. This maybe expensive as PDMApicSetTPR() can longjmp to ring-3 and which is
+         * why it's done here as it's easier and no less efficient to deal with it here than making hmR0VmxSaveGuestState()
+         * cope with longjmps safely (see VMCPU_FF_HM_UPDATE_CR3 handling).
          */
         if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
             && pVmxTransient->u8GuestTpr != pVCpu->hm.s.vmx.pbVirtApic[0x80])
