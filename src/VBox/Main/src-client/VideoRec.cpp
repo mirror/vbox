@@ -36,8 +36,8 @@
 /** Default VPX codec to use */
 #define DEFAULTCODEC (vpx_codec_vp8_cx())
 
-static int videoRecEncodeAndWrite(PVIDEORECCONTEXT pVideoRecCtx);
-static int videoRecRGBToYUV(PVIDEORECCONTEXT pVideoRecCtx);
+static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStrm);
+static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm);
 
 /* encoding */
 enum
@@ -51,10 +51,10 @@ enum
     VIDREC_TERMINATED = 3
 };
 
-typedef struct VIDEORECCONTEXT
+typedef struct VIDEORECSTREAM
 {
     /* container context */
-    EbmlGlobal          ebml;
+    EbmlGlobal          Ebml;
     /* VPX codec context */
     vpx_codec_ctx_t     VpxCodec;
     /* VPX configuration */
@@ -75,8 +75,6 @@ typedef struct VIDEORECCONTEXT
     uint8_t             *pu8YuvBuf;
     /* VPX image context */
     vpx_image_t         VpxRawImage;
-    /* semaphore */
-    RTSEMEVENT          WaitEvent;
     /* true if video recording is enabled */
     bool                fEnabled;
     /* worker thread */
@@ -93,6 +91,22 @@ typedef struct VIDEORECCONTEXT
     uint64_t            u64LastTimeStamp;
     /* time stamp of the current frame */
     uint64_t            u64TimeStamp;
+} VIDEORECSTREAM;
+
+typedef struct VIDEORECCONTEXT
+{
+    /* semaphore */
+    RTSEMEVENT          WaitEvent;
+    /* true if video recording is enabled */
+    bool                fEnabled;
+    /* worker thread */
+    RTTHREAD            Thread;
+    /* see VIDREC_xxx */
+    uint32_t            u32State;
+    /* number of stream contexts */
+    uint32_t            cScreens;
+    /* video recording stream contexts */
+    VIDEORECSTREAM      Strm[1];
 } VIDEORECCONTEXT;
 
 
@@ -364,49 +378,64 @@ inline bool colorConvWriteRGB24(unsigned aWidth, unsigned aHeight,
 }
 
 /**
- * VideoRec utility function to create video recording context.
+ * Worker thread for all streams.
  *
- * @returns IPRT status code.
- * @param   ppVideoRecCtx video recording context
+ * RGB/YUV conversion and encoding.
  */
-int VideoRecContextCreate(PVIDEORECCONTEXT *ppVideoRecCtx)
+DECLCALLBACK(int) videoRecThread(RTTHREAD ThreadSelf, void *pvUser)
 {
-    PVIDEORECCONTEXT pVideoRecCtx = (PVIDEORECCONTEXT)RTMemAllocZ(sizeof(VIDEORECCONTEXT));
-    *ppVideoRecCtx = pVideoRecCtx;
-    AssertReturn(pVideoRecCtx, VERR_NO_MEMORY);
+    PVIDEORECCONTEXT pCtx = (PVIDEORECCONTEXT)pvUser;
+    for (;;)
+    {
+        int rc = RTSemEventWait(pCtx->WaitEvent, RT_INDEFINITE_WAIT);
+        AssertRCBreak(rc);
 
-    pVideoRecCtx->ebml.last_pts_ms = -1;
+        if (ASMAtomicReadU32(&pCtx->u32State) == VIDREC_TERMINATING)
+            break;
+        for (unsigned uScreen = 0; uScreen < pCtx->cScreens; uScreen++)
+        {
+            PVIDEORECSTREAM pStrm = &pCtx->Strm[uScreen];
+            if (ASMAtomicReadBool(&pStrm->fRgbFilled))
+            {
+                rc = videoRecRGBToYUV(pStrm);
+                ASMAtomicWriteBool(&pStrm->fRgbFilled, false);
+                if (RT_SUCCESS(rc))
+                    rc = videoRecEncodeAndWrite(pStrm);
+                if (RT_FAILURE(rc))
+                    LogRel(("Error %Rrc encoding video frame\n", rc));
+            }
+        }
+    }
+
+    ASMAtomicWriteU32(&pCtx->u32State, VIDREC_TERMINATED);
+    RTThreadUserSignal(ThreadSelf);
     return VINF_SUCCESS;
 }
 
 /**
- * Worker thread.
+ * VideoRec utility function to create video recording context.
  *
- * RGB/YUV conversion and encoding.
+ * @returns IPRT status code.
+ * @param   ppCtx            Video recording context
+ * @param   cScreens         Number of screens.
  */
-DECLCALLBACK(int) VideoRecThread(RTTHREAD ThreadSelf, void *pvUser)
+int VideoRecContextCreate(PVIDEORECCONTEXT *ppCtx, uint32_t cScreens)
 {
-    PVIDEORECCONTEXT pVideoRecCtx = (PVIDEORECCONTEXT)pvUser;
-    for (;;)
-    {
-        int rc = RTSemEventWait(pVideoRecCtx->WaitEvent, RT_INDEFINITE_WAIT);
-        AssertRCBreak(rc);
+    PVIDEORECCONTEXT pCtx = (PVIDEORECCONTEXT)RTMemAllocZ(RT_OFFSETOF(VIDEORECCONTEXT, Strm[cScreens]));
+    *ppCtx = pCtx;
+    AssertPtrReturn(pCtx, VERR_NO_MEMORY);
 
-        if (ASMAtomicReadU32(&pVideoRecCtx->u32State) == VIDREC_TERMINATING)
-            break;
-        else if (ASMAtomicReadBool(&pVideoRecCtx->fRgbFilled))
-        {
-            rc = videoRecRGBToYUV(pVideoRecCtx);
-            ASMAtomicWriteBool(&pVideoRecCtx->fRgbFilled, false);
-            if (RT_SUCCESS(rc))
-                rc = videoRecEncodeAndWrite(pVideoRecCtx);
-           if (RT_FAILURE(rc))
-                LogRel(("Error %Rrc encoding video frame\n", rc));
-        }
-    }
+    pCtx->cScreens = cScreens;
+    for (unsigned uScreen = 0; uScreen < cScreens; uScreen++)
+        pCtx->Strm[uScreen].Ebml.last_pts_ms = -1;
+    
+    int rc = RTSemEventCreate(&pCtx->WaitEvent);
+    AssertRCReturn(rc, rc);
 
-    ASMAtomicWriteU32(&pVideoRecCtx->u32State, VIDREC_TERMINATED);
-    RTThreadUserSignal(ThreadSelf);
+    rc = RTThreadCreate(&pCtx->Thread, videoRecThread, (void*)pCtx, 0,
+                        RTTHREADTYPE_MAIN_WORKER, 0, "VideoRec");
+    AssertRCReturn(rc, rc);
+
     return VINF_SUCCESS;
 }
 
@@ -414,20 +443,25 @@ DECLCALLBACK(int) VideoRecThread(RTTHREAD ThreadSelf, void *pvUser)
  * VideoRec utility function to initialize video recording context.
  *
  * @returns IPRT status code.
- * @param   pVideoRecCtx        Pointer to video recording context to initialize Framebuffer width.
+ * @param   pCtx                Pointer to video recording context to initialize Framebuffer width.
+ * @param   uScreeen            Screen number.
  * @param   strFile             File to save the recorded data
  * @param   uTargetWidth        Width of the target image in the video recoriding file (movie)
  * @param   uTargetHeight       Height of the target image in video recording file.
  */
-int VideoRecContextInit(PVIDEORECCONTEXT pVideoRecCtx, const char *pszFile,
-                        uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFps)
+int VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFile,
+                     uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFps)
 {
-    pVideoRecCtx->uTargetWidth  = uWidth;
-    pVideoRecCtx->uTargetHeight = uHeight;
-    pVideoRecCtx->pu8RgbBuf = (uint8_t *)RTMemAllocZ(uWidth * uHeight * 4);
-    AssertReturn(pVideoRecCtx->pu8RgbBuf, VERR_NO_MEMORY);
+    AssertPtrReturn(pCtx, VERR_INVALID_PARAMETER);
+    AssertReturn(uScreen < pCtx->cScreens, VERR_INVALID_PARAMETER);
 
-    int rc = RTFileOpen(&pVideoRecCtx->ebml.file, pszFile,
+    PVIDEORECSTREAM pStrm = &pCtx->Strm[uScreen];
+    pStrm->uTargetWidth  = uWidth;
+    pStrm->uTargetHeight = uHeight;
+    pStrm->pu8RgbBuf = (uint8_t *)RTMemAllocZ(uWidth * uHeight * 4);
+    AssertReturn(pStrm->pu8RgbBuf, VERR_NO_MEMORY);
+
+    int rc = RTFileOpen(&pStrm->Ebml.file, pszFile,
                         RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
     {
@@ -435,7 +469,7 @@ int VideoRecContextInit(PVIDEORECCONTEXT pVideoRecCtx, const char *pszFile,
         return rc;
     }
 
-    vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pVideoRecCtx->VpxConfig, 0);
+    vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pStrm->VpxConfig, 0);
     if (rcv != VPX_CODEC_OK)
     {
         LogFlow(("Failed to configure codec\n", vpx_codec_err_to_string(rcv)));
@@ -443,84 +477,80 @@ int VideoRecContextInit(PVIDEORECCONTEXT pVideoRecCtx, const char *pszFile,
     }
 
     /* target bitrate in kilobits per second */
-    pVideoRecCtx->VpxConfig.rc_target_bitrate = uRate;
+    pStrm->VpxConfig.rc_target_bitrate = uRate;
     /* frame width */
-    pVideoRecCtx->VpxConfig.g_w = uWidth;
+    pStrm->VpxConfig.g_w = uWidth;
     /* frame height */
-    pVideoRecCtx->VpxConfig.g_h = uHeight;
+    pStrm->VpxConfig.g_h = uHeight;
     /* 1ms per frame */
-    pVideoRecCtx->VpxConfig.g_timebase.num = 1;
-    pVideoRecCtx->VpxConfig.g_timebase.den = 1000;
+    pStrm->VpxConfig.g_timebase.num = 1;
+    pStrm->VpxConfig.g_timebase.den = 1000;
     /* disable multithreading */
-    pVideoRecCtx->VpxConfig.g_threads = 0;
-    pVideoRecCtx->uDelay = 1000 / uFps;
+    pStrm->VpxConfig.g_threads = 0;
+    pStrm->uDelay = 1000 / uFps;
 
     struct vpx_rational arg_framerate = {30, 1};
-    rc = Ebml_WriteWebMFileHeader(&pVideoRecCtx->ebml, &pVideoRecCtx->VpxConfig, &arg_framerate);
+    rc = Ebml_WriteWebMFileHeader(&pStrm->Ebml, &pStrm->VpxConfig, &arg_framerate);
     AssertRCReturn(rc, rc);
 
     /* Initialize codec */
-    rcv = vpx_codec_enc_init(&pVideoRecCtx->VpxCodec, DEFAULTCODEC,
-                             &pVideoRecCtx->VpxConfig, 0);
+    rcv = vpx_codec_enc_init(&pStrm->VpxCodec, DEFAULTCODEC, &pStrm->VpxConfig, 0);
     if (rcv != VPX_CODEC_OK)
     {
         LogFlow(("Failed to initialize encoder %s", vpx_codec_err_to_string(rcv)));
         return VERR_GENERAL_FAILURE;
     }
 
-    ASMAtomicWriteU32(&pVideoRecCtx->u32State, VIDREC_INITIALIZED);
+    ASMAtomicWriteU32(&pStrm->u32State, VIDREC_INITIALIZED);
 
-    if (!vpx_img_alloc(&pVideoRecCtx->VpxRawImage, VPX_IMG_FMT_I420, uWidth, uHeight, 1))
+    if (!vpx_img_alloc(&pStrm->VpxRawImage, VPX_IMG_FMT_I420, uWidth, uHeight, 1))
     {
         LogFlow(("Failed to allocate image %dx%d", uWidth, uHeight));
         return VERR_NO_MEMORY;
     }
-    pVideoRecCtx->pu8YuvBuf = pVideoRecCtx->VpxRawImage.planes[0];
+    pStrm->pu8YuvBuf = pStrm->VpxRawImage.planes[0];
 
-    rc = RTSemEventCreate(&pVideoRecCtx->WaitEvent);
-    AssertRCReturn(rc, rc);
-
-    rc = RTThreadCreate(&pVideoRecCtx->Thread, VideoRecThread,
-                        (void*)pVideoRecCtx, 0,
-                        RTTHREADTYPE_MAIN_WORKER, 0, "VideoRec");
-    AssertRCReturn(rc, rc);
-
-    pVideoRecCtx->fEnabled = true;
+    pCtx->fEnabled = true;
     return VINF_SUCCESS;
 }
 
 /**
  * VideoRec utility function to close the video recording context.
  *
- * @param   pVideoRecCtx   Pointer to video recording context.
+ * @param   pCtx   Pointer to video recording context.
  */
-void VideoRecContextClose(PVIDEORECCONTEXT pVideoRecCtx)
+void VideoRecContextClose(PVIDEORECCONTEXT pCtx)
 {
-    if (ASMAtomicReadU32(&pVideoRecCtx->u32State) == VIDREC_UNINITIALIZED)
+    if (ASMAtomicReadU32(&pCtx->u32State) == VIDREC_UNINITIALIZED)
         return;
 
-    if (pVideoRecCtx->ebml.file != NIL_RTFILE)
+    if (pCtx->fEnabled)
     {
-        int rc = Ebml_WriteWebMFileFooter(&pVideoRecCtx->ebml, 0);
-        AssertRC(rc);
-        RTFileClose(pVideoRecCtx->ebml.file);
-        pVideoRecCtx->ebml.file = NIL_RTFILE;
+        ASMAtomicWriteU32(&pCtx->u32State, VIDREC_TERMINATING);
+        RTSemEventSignal(pCtx->WaitEvent);
+        RTThreadUserWait(pCtx->Thread, 10000);
+        RTSemEventDestroy(pCtx->WaitEvent);
     }
-    if (pVideoRecCtx->ebml.cue_list)
+
+    for (unsigned uScreen = 0; uScreen < pCtx->cScreens; uScreen++)
     {
-        RTMemFree(pVideoRecCtx->ebml.cue_list);
-        pVideoRecCtx->ebml.cue_list = NULL;
-    }
-    if (pVideoRecCtx->fEnabled)
-    {
-        ASMAtomicWriteU32(&pVideoRecCtx->u32State, VIDREC_TERMINATING);
-        RTSemEventSignal(pVideoRecCtx->WaitEvent);
-        RTThreadUserWait(pVideoRecCtx->Thread, 10000);
-        RTSemEventDestroy(pVideoRecCtx->WaitEvent);
-        vpx_img_free(&pVideoRecCtx->VpxRawImage);
-        vpx_codec_destroy(&pVideoRecCtx->VpxCodec);
-        RTMemFree(pVideoRecCtx->pu8RgbBuf);
-        pVideoRecCtx->pu8RgbBuf = NULL;
+        PVIDEORECSTREAM pStrm = &pCtx->Strm[uScreen];
+        if (pStrm->Ebml.file != NIL_RTFILE)
+        {
+            int rc = Ebml_WriteWebMFileFooter(&pStrm->Ebml, 0);
+            AssertRC(rc);
+            RTFileClose(pStrm->Ebml.file);
+            pStrm->Ebml.file = NIL_RTFILE;
+        }
+        if (pStrm->Ebml.cue_list)
+        {
+            RTMemFree(pStrm->Ebml.cue_list);
+            pStrm->Ebml.cue_list = NULL;
+        }
+        vpx_img_free(&pStrm->VpxRawImage);
+        vpx_codec_destroy(&pStrm->VpxCodec);
+        RTMemFree(pStrm->pu8RgbBuf);
+        pStrm->pu8RgbBuf = NULL;
     }
 }
 
@@ -528,14 +558,14 @@ void VideoRecContextClose(PVIDEORECCONTEXT pVideoRecCtx)
  * VideoRec utility function to check if recording is enabled.
  *
  * @returns true if recording is enabled
- * @param   pVideoRecCtx   Pointer to video recording context.
+ * @param   pCtx   Pointer to video recording context.
  */
-bool VideoRecIsEnabled(PVIDEORECCONTEXT pVideoRecCtx)
+bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
 {
-    if (!pVideoRecCtx)
+    if (!pCtx)
         return false;
 
-    return pVideoRecCtx->fEnabled;
+    return pCtx->fEnabled;
 }
 
 /**
@@ -543,16 +573,16 @@ bool VideoRecIsEnabled(PVIDEORECCONTEXT pVideoRecCtx)
  * image to target file.
  *
  * @returns IPRT status code.
- * @param   pVideoRecCtx  Pointer to video recording context.
+ * @param   pCtx  Pointer to video recording context.
  * @param   uSourceWidth      Width of the source image.
  * @param   uSourceHeight     Height of the source image.
  */
-static int videoRecEncodeAndWrite(PVIDEORECCONTEXT pVideoRecCtx)
+static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStrm)
 {
     /* presentation time stamp */
-    vpx_codec_pts_t pts = pVideoRecCtx->u64TimeStamp;
-    vpx_codec_err_t rcv = vpx_codec_encode(&pVideoRecCtx->VpxCodec,
-                                           &pVideoRecCtx->VpxRawImage,
+    vpx_codec_pts_t pts = pStrm->u64TimeStamp;
+    vpx_codec_err_t rcv = vpx_codec_encode(&pStrm->VpxCodec,
+                                           &pStrm->VpxRawImage,
                                            pts /* time stamp */,
                                            10  /* how long to show this frame */,
                                            0   /* flags */,
@@ -567,13 +597,13 @@ static int videoRecEncodeAndWrite(PVIDEORECCONTEXT pVideoRecCtx)
     int rc = VERR_NO_DATA;
     for (;;)
     {
-        const vpx_codec_cx_pkt_t *pkt = vpx_codec_get_cx_data(&pVideoRecCtx->VpxCodec, &iter);
+        const vpx_codec_cx_pkt_t *pkt = vpx_codec_get_cx_data(&pStrm->VpxCodec, &iter);
         if (!pkt)
             break;
         switch (pkt->kind)
         {
             case VPX_CODEC_CX_FRAME_PKT:
-                rc = Ebml_WriteWebMBlock(&pVideoRecCtx->ebml, &pVideoRecCtx->VpxConfig, pkt);
+                rc = Ebml_WriteWebMBlock(&pStrm->Ebml, &pStrm->VpxConfig, pkt);
                 break;
             default:
                 LogFlow(("Unexpected CODEC Packet.\n"));
@@ -581,7 +611,7 @@ static int videoRecEncodeAndWrite(PVIDEORECCONTEXT pVideoRecCtx)
         }
     }
 
-    pVideoRecCtx->cFrame++;
+    pStrm->cFrame++;
     return rc;
 }
 
@@ -589,34 +619,34 @@ static int videoRecEncodeAndWrite(PVIDEORECCONTEXT pVideoRecCtx)
  * VideoRec utility function to convert RGB to YUV.
  *
  * @returns IPRT status code.
- * @param   pVideoRecCtx      Pointer to video recording context.
+ * @param   pCtx      Pointer to video recording context.
  */
-static int videoRecRGBToYUV(PVIDEORECCONTEXT pVideoRecCtx)
+static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm)
 {
-    switch (pVideoRecCtx->u32PixelFormat)
+    switch (pStrm->u32PixelFormat)
     {
         case VPX_IMG_FMT_RGB32:
             LogFlow(("32 bit\n"));
-            if (!colorConvWriteYUV420p<ColorConvBGRA32Iter>(pVideoRecCtx->uTargetWidth,
-                                                            pVideoRecCtx->uTargetHeight,
-                                                            pVideoRecCtx->pu8YuvBuf,
-                                                            pVideoRecCtx->pu8RgbBuf))
+            if (!colorConvWriteYUV420p<ColorConvBGRA32Iter>(pStrm->uTargetWidth,
+                                                            pStrm->uTargetHeight,
+                                                            pStrm->pu8YuvBuf,
+                                                            pStrm->pu8RgbBuf))
                 return VERR_GENERAL_FAILURE;
             break;
         case VPX_IMG_FMT_RGB24:
             LogFlow(("24 bit\n"));
-            if (!colorConvWriteYUV420p<ColorConvBGR24Iter>(pVideoRecCtx->uTargetWidth,
-                                                           pVideoRecCtx->uTargetHeight,
-                                                           pVideoRecCtx->pu8YuvBuf,
-                                                           pVideoRecCtx->pu8RgbBuf))
+            if (!colorConvWriteYUV420p<ColorConvBGR24Iter>(pStrm->uTargetWidth,
+                                                           pStrm->uTargetHeight,
+                                                           pStrm->pu8YuvBuf,
+                                                           pStrm->pu8RgbBuf))
                 return VERR_GENERAL_FAILURE;
             break;
         case VPX_IMG_FMT_RGB565:
             LogFlow(("565 bit\n"));
-            if (!colorConvWriteYUV420p<ColorConvBGR565Iter>(pVideoRecCtx->uTargetWidth,
-                                                            pVideoRecCtx->uTargetHeight,
-                                                            pVideoRecCtx->pu8YuvBuf,
-                                                            pVideoRecCtx->pu8RgbBuf))
+            if (!colorConvWriteYUV420p<ColorConvBGR565Iter>(pStrm->uTargetWidth,
+                                                            pStrm->uTargetHeight,
+                                                            pStrm->pu8YuvBuf,
+                                                            pStrm->pu8RgbBuf))
                 return VERR_GENERAL_FAILURE;
             break;
         default:
@@ -630,7 +660,8 @@ static int videoRecRGBToYUV(PVIDEORECCONTEXT pVideoRecCtx)
  * intermediate RGB buffer.
  *
  * @returns IPRT status code.
- * @param   pVideoRecCtx       Pointer to video recording context.
+ * @param   pCtx               Pointer to the video recording context.
+ * @param   uScreen            Screen number.
  * @param   x                  Starting x coordinate of the source buffer (Framebuffer).
  * @param   y                  Starting y coordinate of the source buffer (Framebuffer).
  * @param   uPixelFormat       Pixel Format.
@@ -641,7 +672,7 @@ static int videoRecRGBToYUV(PVIDEORECCONTEXT pVideoRecCtx)
  * @param   pu8BufAddr         Pointer to source image(framebuffer).
  * @param   u64TimeStamp       Time stamp (milliseconds).
  */
-int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pVideoRecCtx, uint32_t x, uint32_t y,
+int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, uint32_t y,
                          uint32_t uPixelFormat, uint32_t uBitsPerPixel, uint32_t uBytesPerLine,
                          uint32_t uSourceWidth, uint32_t uSourceHeight, uint8_t *pu8BufAddr,
                          uint64_t u64TimeStamp)
@@ -649,15 +680,18 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pVideoRecCtx, uint32_t x, uint32_t y,
     AssertPtrReturn(pu8BufAddr, VERR_INVALID_PARAMETER);
     AssertReturn(uSourceWidth, VERR_INVALID_PARAMETER);
     AssertReturn(uSourceHeight, VERR_INVALID_PARAMETER);
+    AssertReturn(uScreen < pCtx->cScreens, VERR_INVALID_PARAMETER);
 
-    if (u64TimeStamp < pVideoRecCtx->u64LastTimeStamp + pVideoRecCtx->uDelay)
+    PVIDEORECSTREAM pStrm = &pCtx->Strm[uScreen];
+
+    if (u64TimeStamp < pStrm->u64LastTimeStamp + pStrm->uDelay)
         return VINF_TRY_AGAIN;
-    pVideoRecCtx->u64LastTimeStamp = u64TimeStamp;
+    pStrm->u64LastTimeStamp = u64TimeStamp;
 
-    if (ASMAtomicReadBool(&pVideoRecCtx->fRgbFilled))
+    if (ASMAtomicReadBool(&pStrm->fRgbFilled))
         return VERR_TRY_AGAIN;
 
-    int xDiff = ((int)pVideoRecCtx->uTargetWidth - (int)uSourceWidth) / 2;
+    int xDiff = ((int)pStrm->uTargetWidth - (int)uSourceWidth) / 2;
     uint32_t w = uSourceWidth;
     if ((int)w + xDiff + (int)x <= 0)  /* nothing visible */
         return VERR_INVALID_PARAMETER;
@@ -673,7 +707,7 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pVideoRecCtx, uint32_t x, uint32_t y,
         destX = x + xDiff;
 
     uint32_t h = uSourceHeight;
-    int yDiff = ((int)pVideoRecCtx->uTargetHeight - (int)uSourceHeight) / 2;
+    int yDiff = ((int)pStrm->uTargetHeight - (int)uSourceHeight) / 2;
     if ((int)h + yDiff + (int)y <= 0)  /* nothing visible */
         return VERR_INVALID_PARAMETER;
 
@@ -687,15 +721,15 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pVideoRecCtx, uint32_t x, uint32_t y,
     else
         destY = y + yDiff;
 
-    if (   destX > pVideoRecCtx->uTargetWidth
-        || destY > pVideoRecCtx->uTargetHeight)
+    if (   destX > pStrm->uTargetWidth
+        || destY > pStrm->uTargetHeight)
         return VERR_INVALID_PARAMETER;  /* nothing visible */
 
-    if (destX + w > pVideoRecCtx->uTargetWidth)
-        w = pVideoRecCtx->uTargetWidth - destX;
+    if (destX + w > pStrm->uTargetWidth)
+        w = pStrm->uTargetWidth - destX;
 
-    if (destY + h > pVideoRecCtx->uTargetHeight)
-        h = pVideoRecCtx->uTargetHeight - destY;
+    if (destY + h > pStrm->uTargetHeight)
+        h = pStrm->uTargetHeight - destY;
 
     /* Calculate bytes per pixel */
     uint32_t bpp = 1;
@@ -704,15 +738,15 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pVideoRecCtx, uint32_t x, uint32_t y,
         switch (uBitsPerPixel)
         {
             case 32:
-                pVideoRecCtx->u32PixelFormat = VPX_IMG_FMT_RGB32;
+                pStrm->u32PixelFormat = VPX_IMG_FMT_RGB32;
                 bpp = 4;
                 break;
             case 24:
-                pVideoRecCtx->u32PixelFormat = VPX_IMG_FMT_RGB24;
+                pStrm->u32PixelFormat = VPX_IMG_FMT_RGB24;
                 bpp = 3;
                 break;
             case 16:
-                pVideoRecCtx->u32PixelFormat = VPX_IMG_FMT_RGB565;
+                pStrm->u32PixelFormat = VPX_IMG_FMT_RGB565;
                 bpp = 2;
                 break;
             default:
@@ -725,33 +759,31 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pVideoRecCtx, uint32_t x, uint32_t y,
 
     /* One of the dimensions of the current frame is smaller than before so
      * clear the entire buffer to prevent artifacts from the previous frame */
-    if (   uSourceWidth  < pVideoRecCtx->uLastSourceWidth
-        || uSourceHeight < pVideoRecCtx->uLastSourceHeight)
-    {
-        memset(pVideoRecCtx->pu8RgbBuf, 0,
-               pVideoRecCtx->uTargetWidth * pVideoRecCtx->uTargetHeight * 4);
-    }
-    pVideoRecCtx->uLastSourceWidth  = uSourceWidth;
-    pVideoRecCtx->uLastSourceHeight = uSourceHeight;
+    if (   uSourceWidth  < pStrm->uLastSourceWidth
+        || uSourceHeight < pStrm->uLastSourceHeight)
+        memset(pStrm->pu8RgbBuf, 0, pStrm->uTargetWidth * pStrm->uTargetHeight * 4);
+
+    pStrm->uLastSourceWidth  = uSourceWidth;
+    pStrm->uLastSourceHeight = uSourceHeight;
 
     /* Calculate start offset in source and destination buffers */
     uint32_t offSrc = y * uBytesPerLine + x * bpp;
-    uint32_t offDst = (destY * pVideoRecCtx->uTargetWidth + destX) * bpp;
+    uint32_t offDst = (destY * pStrm->uTargetWidth + destX) * bpp;
     /* do the copy */
     for (unsigned int i = 0; i < h; i++)
     {
         /* Overflow check */
         Assert(offSrc + w * bpp <= uSourceHeight * uBytesPerLine);
-        Assert(offDst + w * bpp <= pVideoRecCtx->uTargetHeight * pVideoRecCtx->uTargetWidth * bpp);
-        memcpy(pVideoRecCtx->pu8RgbBuf + offDst, pu8BufAddr + offSrc, w * bpp);
+        Assert(offDst + w * bpp <= pStrm->uTargetHeight * pStrm->uTargetWidth * bpp);
+        memcpy(pStrm->pu8RgbBuf + offDst, pu8BufAddr + offSrc, w * bpp);
         offSrc += uBytesPerLine;
-        offDst += pVideoRecCtx->uTargetWidth * bpp;
+        offDst += pStrm->uTargetWidth * bpp;
     }
 
-    pVideoRecCtx->u64TimeStamp = u64TimeStamp;
+    pStrm->u64TimeStamp = u64TimeStamp;
 
-    ASMAtomicWriteBool(&pVideoRecCtx->fRgbFilled, true);
-    RTSemEventSignal(pVideoRecCtx->WaitEvent);
+    ASMAtomicWriteBool(&pStrm->fRgbFilled, true);
+    RTSemEventSignal(pCtx->WaitEvent);
 
     return VINF_SUCCESS;
 }

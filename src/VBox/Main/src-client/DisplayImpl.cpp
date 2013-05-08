@@ -3290,30 +3290,35 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
 #ifdef VBOX_WITH_VPX
     if (VideoRecIsEnabled(pDisplay->mpVideoRecCtx))
     {
-        DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
-
-        if (   !pFBInfo->pFramebuffer.isNull()
-            && !pFBInfo->fDisabled
-            && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
+        uint64_t u64Now = RTTimeProgramMilliTS();
+        for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
         {
-            uint64_t u64Now = RTTimeProgramMilliTS();
-            int rc;
-            if (   pFBInfo->fVBVAEnabled
-                && pFBInfo->pu8FramebufferVRAM)
+            DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
+
+            if (   !pFBInfo->pFramebuffer.isNull()
+                && !pFBInfo->fDisabled
+                && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
             {
-                rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, 0, 0,
-                                          FramebufferPixelFormat_FOURCC_RGB,
-                                          pFBInfo->u16BitsPerPixel,
-                                          pFBInfo->u32LineSize, pFBInfo->w, pFBInfo->h,
-                                          pFBInfo->pu8FramebufferVRAM, u64Now);
-            }
-            else
-            {
-                rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, 0, 0,
-                                          FramebufferPixelFormat_FOURCC_RGB,
-                                          pDrv->IConnector.cBits,
-                                          pDrv->IConnector.cbScanline, pDrv->IConnector.cx,
-                                          pDrv->IConnector.cy, pDrv->IConnector.pu8Data, u64Now);
+                int rc;
+                if (   pFBInfo->fVBVAEnabled
+                    && pFBInfo->pu8FramebufferVRAM)
+                {
+                    rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
+                                              FramebufferPixelFormat_FOURCC_RGB,
+                                              pFBInfo->u16BitsPerPixel,
+                                              pFBInfo->u32LineSize, pFBInfo->w, pFBInfo->h,
+                                              pFBInfo->pu8FramebufferVRAM, u64Now);
+                }
+                else
+                {
+                    rc = VideoRecCopyToIntBuf(pDisplay->mpVideoRecCtx, uScreenId, 0, 0,
+                                              FramebufferPixelFormat_FOURCC_RGB,
+                                              pDrv->IConnector.cBits,
+                                              pDrv->IConnector.cbScanline, pDrv->IConnector.cx,
+                                              pDrv->IConnector.cy, pDrv->IConnector.pu8Data, u64Now);
+                }
+                if (rc == VERR_TRY_AGAIN)
+                    break;
             }
         }
     }
@@ -4344,7 +4349,7 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
 #endif
 
 #ifdef VBOX_WITH_VPX
-    rc = VideoRecContextCreate(&pDisplay->mpVideoRecCtx);
+    rc = VideoRecContextCreate(&pDisplay->mpVideoRecCtx, pDisplay->mcMonitors);
     if (RT_FAILURE(rc))
     {
         LogFlow(("Failed to create video recording context (%Rrc)!\n", rc));
@@ -4371,13 +4376,21 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         BSTR strFile;
         hrc = pMachine->COMGETTER(VideoCaptureFile)(&strFile);
         AssertComRCReturnRC(hrc);
-        rc = VideoRecContextInit(pDisplay->mpVideoRecCtx, com::Utf8Str(strFile).c_str(),
-                                 ulWidth, ulHeight, ulRate, ulFps);
-        if (RT_SUCCESS(rc))
-            LogRel(("WebM/VP8 video recording with %ux%u @ %u kbps, %u fps to '%s' enabled!\n",
-                   ulWidth, ulHeight, ulRate, ulFps, com::Utf8Str(strFile).c_str()));
-        else
-            LogRel(("Failed to initialize video recording context (%Rrc)!\n", rc));
+        for (unsigned uScreen = 0; uScreen < pDisplay->mcMonitors; uScreen++)
+        {
+            char *pszName = NULL;
+            rc = RTStrAPrintf(&pszName, "%s-%u", com::Utf8Str(strFile).c_str(), uScreen);
+            if (RT_SUCCESS(rc))
+                rc = VideoRecStrmInit(pDisplay->mpVideoRecCtx, uScreen,
+                                      pszName, ulWidth, ulHeight, ulRate, ulFps);
+            if (RT_SUCCESS(rc))
+                LogRel(("WebM/VP8 video recording screen #%u with %ux%u @ %u kbps, %u fps to '%s' enabled!\n",
+                            uScreen, ulWidth, ulHeight, ulRate, ulFps, com::Utf8Str(strFile).c_str()));
+            else
+                LogRel(("Failed to initialize video recording context #%u (%Rrc)!\n", uScreen, rc));
+            if (pszName)
+                RTStrFree(pszName);
+        }
     }
 #endif
 
