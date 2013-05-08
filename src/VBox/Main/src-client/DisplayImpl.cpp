@@ -4391,7 +4391,7 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             if (RT_SUCCESS(rc))
             {
                 if (pDisplay->mcMonitors > 1)
-                    rc = RTStrAPrintf(&pszName, "%s-%u%s", pszAbsPath, uScreen, pszExt);
+                    rc = RTStrAPrintf(&pszName, "%s-%u%s", pszAbsPath, uScreen+1, pszExt);
                 else
                     rc = RTStrAPrintf(&pszName, "%s%s", pszAbsPath, pszExt);
             }
