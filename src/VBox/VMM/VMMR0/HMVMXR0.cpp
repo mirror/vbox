@@ -5129,7 +5129,10 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             {
                 CPUMSetGuestCR3(pVCpu, uVal);
                 if (VMMRZCallRing3IsEnabled(pVCpu))
+                {
                     PGMUpdateCR3(pVCpu, uVal);
+                    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+                }
                 else
                 {
                     /* Set the force flag to inform PGM about it when necessary. It is cleared by PGMUpdateCR3().*/
@@ -5146,7 +5149,10 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, &pVCpu->hm.s.aPdpes[3].u);        AssertRCReturn(rc, rc);
 
                 if (VMMRZCallRing3IsEnabled(pVCpu))
+                {
                     PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
+                    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+                }
                 else
                 {
                     /* Set the force flag to inform PGM about it when necessary. It is cleared by PGMGstUpdatePaePdpes(). */
