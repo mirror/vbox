@@ -2940,11 +2940,11 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                     LogRel(("HM: Cpu%d ProcCtls2     %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ProcCtls2));
                     LogRel(("HM: Cpu%d EntryCtls     %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32EntryCtls));
                     LogRel(("HM: Cpu%d ExitCtls      %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ExitCtls));
-                    LogRel(("HM: Cpu%d MSRBitmapPhys %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
+                    LogRel(("HM: Cpu%d MSRBitmapPhys %#RHp\n",  i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-                    LogRel(("HM: Cpu%d GuestMSRPhys  %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysGuestMsr));
-                    LogRel(("HM: Cpu%d HostMsrPhys   %RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysHostMsr));
-                    LogRel(("HM: Cpu%d cGuestMSRs    %u\n",   i, pVM->aCpus[i].hm.s.vmx.cGuestMsrs));
+                    LogRel(("HM: Cpu%d GuestMSRPhys  %#RHp\n",  i, pVM->aCpus[i].hm.s.vmx.HCPhysGuestMsr));
+                    LogRel(("HM: Cpu%d HostMsrPhys   %#RHp\n",  i, pVM->aCpus[i].hm.s.vmx.HCPhysHostMsr));
+                    LogRel(("HM: Cpu%d cGuestMSRs    %u\n",     i, pVM->aCpus[i].hm.s.vmx.cGuestMsrs));
 #endif
                 }
                 /** @todo Log VM-entry event injection control fields

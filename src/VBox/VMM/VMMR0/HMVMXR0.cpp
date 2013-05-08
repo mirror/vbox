@@ -2921,7 +2921,6 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                     rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE1_FULL, pVCpu->hm.s.aPdpes[1].u);     AssertRCReturn(rc, rc);
                     rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, pVCpu->hm.s.aPdpes[2].u);     AssertRCReturn(rc, rc);
                     rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, pVCpu->hm.s.aPdpes[3].u);     AssertRCReturn(rc, rc);
-                    AssertRCReturn(rc, rc);
                 }
 
                 /* The guest's view of its CR3 is unblemished with Nested Paging when the guest is using paging or we
@@ -3147,11 +3146,11 @@ static int hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     /* Update the processor-based VM-execution controls regarding intercepting MOV DRx instructions. */
     if (fInterceptMovDRx)
-        pVCpu->hm.s.vmx.u32ProcCtls   |= VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT;
+        pVCpu->hm.s.vmx.u32ProcCtls |= VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT;
     else
-        pVCpu->hm.s.vmx.u32ProcCtls   &= ~VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT;
+        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT;
 
-    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP,   pVCpu->hm.s.vmx.u32XcptBitmap);
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
     AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
     AssertRCReturn(rc, rc);
@@ -5268,20 +5267,13 @@ static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Guest segment registers. */
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_SEGMENT_REGS))
     {
-        int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
-        AssertRCReturn(rc, rc);
-        rc = VMXLOCAL_READ_SEG(CS, cs);
-        AssertRCReturn(rc, rc);
-        rc = VMXLOCAL_READ_SEG(SS, ss);
-        AssertRCReturn(rc, rc);
-        rc = VMXLOCAL_READ_SEG(DS, ds);
-        AssertRCReturn(rc, rc);
-        rc = VMXLOCAL_READ_SEG(ES, es);
-        AssertRCReturn(rc, rc);
-        rc = VMXLOCAL_READ_SEG(FS, fs);
-        AssertRCReturn(rc, rc);
-        rc = VMXLOCAL_READ_SEG(GS, gs);
-        AssertRCReturn(rc, rc);
+        int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);   AssertRCReturn(rc, rc);
+        rc = VMXLOCAL_READ_SEG(CS, cs);                   AssertRCReturn(rc, rc);
+        rc = VMXLOCAL_READ_SEG(SS, ss);                   AssertRCReturn(rc, rc);
+        rc = VMXLOCAL_READ_SEG(DS, ds);                   AssertRCReturn(rc, rc);
+        rc = VMXLOCAL_READ_SEG(ES, es);                   AssertRCReturn(rc, rc);
+        rc = VMXLOCAL_READ_SEG(FS, fs);                   AssertRCReturn(rc, rc);
+        rc = VMXLOCAL_READ_SEG(GS, gs);                   AssertRCReturn(rc, rc);
 
         /* Restore segment attributes for real-on-v86 mode hack. */
         if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
