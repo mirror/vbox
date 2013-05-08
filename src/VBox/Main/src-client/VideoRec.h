@@ -22,7 +22,7 @@ struct VIDEORECCONTEXT;
 typedef struct VIDEORECCONTEXT *PVIDEORECCONTEXT;
 
 int  VideoRecContextCreate(PVIDEORECCONTEXT *ppVideoRecContext);
-int  VideoRecContextInit(PVIDEORECCONTEXT pVideoRecContext, com::Bstr mFileName,
+int  VideoRecContextInit(PVIDEORECCONTEXT pVideoRecContext, const char *pszFile,
                          uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFps);
 void VideoRecContextClose(PVIDEORECCONTEXT pVideoRecContext);
 bool VideoRecIsEnabled(PVIDEORECCONTEXT pVideoRecContext);

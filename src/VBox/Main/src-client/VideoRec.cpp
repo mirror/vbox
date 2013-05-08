@@ -39,15 +39,6 @@
 static int videoRecEncodeAndWrite(PVIDEORECCONTEXT pVideoRecCtx);
 static int videoRecRGBToYUV(PVIDEORECCONTEXT pVideoRecCtx);
 
-/* RGB buffer */
-enum
-{
-    /* RGB buffer empty */
-    VIDREC_RGB_EMPTY = 0,
-    /* RGB buffer filled */
-    VIDREC_RGB_FILLED
-};
-
 /* encoding */
 enum
 {
@@ -96,8 +87,9 @@ typedef struct VIDEORECCONTEXT
     bool                fRgbFilled;
     /* pixel format of the current frame */
     uint32_t            u32PixelFormat;
-    /* maximum number of frames per second */
+    /* minimal delay between two frames */
     uint32_t            uDelay;
+    /* time stamp of the last frame we encoded */
     uint64_t            u64LastTimeStamp;
     /* time stamp of the current frame */
     uint64_t            u64TimeStamp;
@@ -427,7 +419,7 @@ DECLCALLBACK(int) VideoRecThread(RTTHREAD ThreadSelf, void *pvUser)
  * @param   uTargetWidth        Width of the target image in the video recoriding file (movie)
  * @param   uTargetHeight       Height of the target image in video recording file.
  */
-int VideoRecContextInit(PVIDEORECCONTEXT pVideoRecCtx, com::Bstr strFile,
+int VideoRecContextInit(PVIDEORECCONTEXT pVideoRecCtx, const char *pszFile,
                         uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFps)
 {
     pVideoRecCtx->uTargetWidth  = uWidth;
@@ -435,20 +427,19 @@ int VideoRecContextInit(PVIDEORECCONTEXT pVideoRecCtx, com::Bstr strFile,
     pVideoRecCtx->pu8RgbBuf = (uint8_t *)RTMemAllocZ(uWidth * uHeight * 4);
     AssertReturn(pVideoRecCtx->pu8RgbBuf, VERR_NO_MEMORY);
 
-    int rc = RTFileOpen(&pVideoRecCtx->ebml.file,
-                        com::Utf8Str(strFile).c_str(),
+    int rc = RTFileOpen(&pVideoRecCtx->ebml.file, pszFile,
                         RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
     {
-        LogFlow(("Failed to open the output File \n"));
-        return VERR_GENERAL_FAILURE;
+        LogFlow(("Failed to open the output File\n"));
+        return rc;
     }
 
     vpx_codec_err_t rcv = vpx_codec_enc_config_default(DEFAULTCODEC, &pVideoRecCtx->VpxConfig, 0);
     if (rcv != VPX_CODEC_OK)
     {
-        LogFlow(("Failed to configure codec \n", vpx_codec_err_to_string(rcv)));
-        return VERR_GENERAL_FAILURE;
+        LogFlow(("Failed to configure codec\n", vpx_codec_err_to_string(rcv)));
+        return rc;
     }
 
     /* target bitrate in kilobits per second */
@@ -486,13 +477,13 @@ int VideoRecContextInit(PVIDEORECCONTEXT pVideoRecCtx, com::Bstr strFile,
     }
     pVideoRecCtx->pu8YuvBuf = pVideoRecCtx->VpxRawImage.planes[0];
 
-    int vrc = RTSemEventCreate(&pVideoRecCtx->WaitEvent);
-    AssertRCReturn(vrc, vrc);
+    rc = RTSemEventCreate(&pVideoRecCtx->WaitEvent);
+    AssertRCReturn(rc, rc);
 
-    vrc = RTThreadCreate(&pVideoRecCtx->Thread, VideoRecThread,
-                         (void*)pVideoRecCtx, 0,
-                         RTTHREADTYPE_MAIN_WORKER, 0, "VideoRec");
-    AssertRCReturn(vrc, vrc);
+    rc = RTThreadCreate(&pVideoRecCtx->Thread, VideoRecThread,
+                        (void*)pVideoRecCtx, 0,
+                        RTTHREADTYPE_MAIN_WORKER, 0, "VideoRec");
+    AssertRCReturn(rc, rc);
 
     pVideoRecCtx->fEnabled = true;
     return VINF_SUCCESS;
@@ -541,7 +532,9 @@ void VideoRecContextClose(PVIDEORECCONTEXT pVideoRecCtx)
  */
 bool VideoRecIsEnabled(PVIDEORECCONTEXT pVideoRecCtx)
 {
-    AssertPtr(pVideoRecCtx);
+    if (!pVideoRecCtx)
+        return false;
+
     return pVideoRecCtx->fEnabled;
 }
 
