@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2012 Oracle Corporation
+; Copyright (C) 2006-2013 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -970,9 +970,9 @@ ENDPROC SVMR0InvlpgA
 ; * @param  pGdtr        Where to store the 64-bit GDTR.
 ; * @param  pIdtr        Where to store the 64-bit IDTR.
 ; */
-;DECLASM(void) hmR0Get64bitGdtrAndIdtr(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
+;DECLASM(void) HMR0Get64bitGdtrAndIdtr(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
 ALIGNCODE(16)
-BEGINPROC hmR0Get64bitGdtrAndIdtr
+BEGINPROC HMR0Get64bitGdtrAndIdtr
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .the_end:
@@ -990,16 +990,16 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-ENDPROC   hmR0Get64bitGdtrAndIdtr
+ENDPROC   HMR0Get64bitGdtrAndIdtr
 
 
 ;/**
 ; * Gets 64-bit CR3 on darwin.
 ; * @returns CR3
 ; */
-;DECLASM(uint64_t) hmR0Get64bitCR3(void);
+;DECLASM(uint64_t) HMR0Get64bitCR3(void);
 ALIGNCODE(16)
-BEGINPROC hmR0Get64bitCR3
+BEGINPROC HMR0Get64bitCR3
     db      0xea                        ; jmp far .sixtyfourbit_mode
     dd      .sixtyfourbit_mode, NAME(SUPR0Abs64bitKernelCS)
 .the_end:
@@ -1015,7 +1015,7 @@ BITS 64
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
-ENDPROC   hmR0Get64bitCR3
+ENDPROC   HMR0Get64bitCR3
 
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
@@ -1025,7 +1025,7 @@ ENDPROC   hmR0Get64bitCR3
 ; Wrapper around vmx.pfnStartVM that preserves host XMM registers and
 ; load the guest ones when necessary.
 ;
-; @cproto       DECLASM(int) hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
+; @cproto       DECLASM(int) HMR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
 ;
 ; @returns      eax
 ;
@@ -1036,11 +1036,11 @@ ENDPROC   hmR0Get64bitCR3
 ; @param        pVCpu           msc:[rbp+30h]
 ; @param        pfnStartVM      msc:[rbp+38h]
 ;
-; @remarks      This is essentially the same code as hmR0SVMRunWrapXMM, only the parameters differ a little bit.
+; @remarks      This is essentially the same code as HMR0SVMRunWrapXMM, only the parameters differ a little bit.
 ;
 ; ASSUMING 64-bit and windows for now.
 ALIGNCODE(16)
-BEGINPROC hmR0VMXStartVMWrapXMM
+BEGINPROC HMR0VMXStartVMWrapXMM
         push    xBP
         mov     xBP, xSP
         sub     xSP, 0a0h + 040h        ; Don't bother optimizing the frame size.
@@ -1147,13 +1147,13 @@ ALIGNCODE(8)
         movdqa  xmm15, [rsp + 040h + 090h]
         leave
         ret
-ENDPROC   hmR0VMXStartVMWrapXMM
+ENDPROC   HMR0VMXStartVMWrapXMM
 
 ;;
 ; Wrapper around svm.pfnVMRun that preserves host XMM registers and
 ; load the guest ones when necessary.
 ;
-; @cproto       DECLASM(int) hmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
+; @cproto       DECLASM(int) HMR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
 ;
 ; @returns      eax
 ;
@@ -1164,11 +1164,11 @@ ENDPROC   hmR0VMXStartVMWrapXMM
 ; @param        pVCpu           msc:[rbp+30h]
 ; @param        pfnVMRun        msc:[rbp+38h]
 ;
-; @remarks      This is essentially the same code as hmR0VMXStartVMWrapXMM, only the parameters differ a little bit.
+; @remarks      This is essentially the same code as HMR0VMXStartVMWrapXMM, only the parameters differ a little bit.
 ;
 ; ASSUMING 64-bit and windows for now.
 ALIGNCODE(16)
-BEGINPROC hmR0SVMRunWrapXMM
+BEGINPROC HMR0SVMRunWrapXMM
         push    xBP
         mov     xBP, xSP
         sub     xSP, 0a0h + 040h        ; Don't bother optimizing the frame size.
@@ -1275,7 +1275,7 @@ ALIGNCODE(8)
         movdqa  xmm15, [rsp + 040h + 090h]
         leave
         ret
-ENDPROC   hmR0SVMRunWrapXMM
+ENDPROC   HMR0SVMRunWrapXMM
 
 %endif ; VBOX_WITH_KERNEL_USING_XMM
 

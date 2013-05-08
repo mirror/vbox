@@ -1325,7 +1325,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
         if (VMX_IS_64BIT_HOST_MODE())
         {
-            cr3 = hmR0Get64bitCR3();
+            cr3 = HMR0Get64bitCR3();
             rc |= VMXWriteVmcs64(VMX_VMCS_HOST_CR3,     cr3);
         }
         else
@@ -1390,7 +1390,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         if (VMX_IS_64BIT_HOST_MODE())
         {
             X86XDTR64 gdtr64, idtr64;
-            hmR0Get64bitGdtrAndIdtr(&gdtr64, &idtr64);
+            HMR0Get64bitGdtrAndIdtr(&gdtr64, &idtr64);
             rc  = VMXWriteVmcs64(VMX_VMCS_HOST_GDTR_BASE, gdtr64.uAddr);
             rc |= VMXWriteVmcs64(VMX_VMCS_HOST_IDTR_BASE, idtr64.uAddr);
             AssertRC(rc);
@@ -3357,7 +3357,7 @@ ResumeExecution:
 #endif
 
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    rc = hmR0VMXStartVMWrapXMM(pVCpu->hm.s.fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hm.s.vmx.pfnStartVM);
+    rc = HMR0VMXStartVMWrapXMM(pVCpu->hm.s.fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hm.s.vmx.pfnStartVM);
 #else
     rc = pVCpu->hm.s.vmx.pfnStartVM(pVCpu->hm.s.fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu);
 #endif

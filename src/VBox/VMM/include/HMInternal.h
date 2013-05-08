@@ -928,8 +928,8 @@ VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *psz
 #endif
 
 # ifdef VBOX_WITH_KERNEL_USING_XMM
-DECLASM(int)   hmR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
-DECLASM(int)   hmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
+DECLASM(int) HMR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
+DECLASM(int) HMR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
 # endif
 
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
@@ -938,13 +938,13 @@ DECLASM(int)   hmR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCP
  * @param  pGdtr        Where to store the 64-bit GDTR.
  * @param  pIdtr        Where to store the 64-bit IDTR.
  */
-DECLASM(void) hmR0Get64bitGdtrAndIdtr(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
+DECLASM(void) HMR0Get64bitGdtrAndIdtr(PX86XDTR64 pGdtr, PX86XDTR64 pIdtr);
 
 /**
  * Gets 64-bit CR3 on darwin.
  * @returns CR3
  */
-DECLASM(uint64_t) hmR0Get64bitCR3(void);
+DECLASM(uint64_t) HMR0Get64bitCR3(void);
 # endif
 
 #endif /* IN_RING0 */
