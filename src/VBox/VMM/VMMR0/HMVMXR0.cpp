@@ -5151,7 +5151,7 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 if (VMMRZCallRing3IsEnabled(pVCpu))
                 {
                     PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
-                    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+                    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
                 }
                 else
                 {
