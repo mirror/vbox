@@ -21,13 +21,16 @@
 struct VIDEORECCONTEXT;
 typedef struct VIDEORECCONTEXT *PVIDEORECCONTEXT;
 
-int  VideoRecContextCreate(PVIDEORECCONTEXT *ppVideoRecContext);
-int  VideoRecContextInit(PVIDEORECCONTEXT pVideoRecContext, const char *pszFile,
-                         uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFps);
-void VideoRecContextClose(PVIDEORECCONTEXT pVideoRecContext);
-bool VideoRecIsEnabled(PVIDEORECCONTEXT pVideoRecContext);
-int  VideoRecCopyToIntBuf(PVIDEORECCONTEXT pVideoRecContext, uint32_t x,
-                          uint32_t y, uint32_t uPixelFormat, uint32_t uBitsPerPixel,
+struct VIDEORECSTREAM;
+typedef struct VIDEORECSTREAM *PVIDEORECSTREAM;
+
+int  VideoRecContextCreate(PVIDEORECCONTEXT *ppCtx, uint32_t cScreens);
+int  VideoRecStrmInit(PVIDEORECCONTEXT pCtx, uint32_t uScreen, const char *pszFile,
+                      uint32_t uWidth, uint32_t uHeight, uint32_t uRate, uint32_t uFps);
+void VideoRecContextClose(PVIDEORECCONTEXT pCtx);
+bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx);
+int  VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen,
+                          uint32_t x, uint32_t y, uint32_t uPixelFormat, uint32_t uBitsPerPixel,
                           uint32_t uBytesPerLine, uint32_t uGuestHeight, uint32_t uGuestWidth,
                           uint8_t *pu8BufferAddress, uint64_t u64TimeStamp);
 
