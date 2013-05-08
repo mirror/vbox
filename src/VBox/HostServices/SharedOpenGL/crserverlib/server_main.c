@@ -2604,9 +2604,11 @@ static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *da
     {
         crServerVBoxCompositionDisableEnter(pMI);
 
+        pMI->fHasParentWindow = !!cr_server.screen[pMI->screenId].winID;
+
         renderspuReparentWindow(pMI->spuWindow);
 
-        if (pMI->bVisible && (pMI->fPresentMode & CR_SERVER_REDIR_F_DISPLAY))
+        if (pMI->bVisible && (pMI->fPresentMode & CR_SERVER_REDIR_F_DISPLAY) && pMI->fHasParentWindow)
             crVBoxServerNotifyEvent(pMI->screenId);
 
         crServerVBoxCompositionDisableLeave(pMI, GL_FALSE);

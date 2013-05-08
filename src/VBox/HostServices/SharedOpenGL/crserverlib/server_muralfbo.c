@@ -193,7 +193,7 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
         renderspuReparentWindow(mural->spuWindow);
         renderspuSetWindowId(cr_server.screen[0].winID);
 
-        if (mural->bVisible && (mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY))
+        if (mural->bVisible && (mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY) && mural->fHasParentWindow)
             crVBoxServerNotifyEvent(mural->screenId);
     }
 
@@ -350,7 +350,7 @@ static void crServerEnableDisplayMuralFBO(CRMuralInfo *mural, GLboolean fEnable)
     {
         if (!(mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY))
         {
-            if  (mural->bVisible)
+            if  (mural->bVisible && mural->fHasParentWindow)
             {
                 cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, GL_TRUE);
                 crVBoxServerNotifyEvent(mural->screenId);
