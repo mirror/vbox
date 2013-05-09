@@ -206,6 +206,8 @@ typedef struct ATADevState
     /** Media type if known. */
     volatile uint32_t MediaTrackType;
 
+    uint32_t    Aligmnent0; /**< Padding to 8-byte boundary. */
+
     /** The status LED state for this drive. */
     PDMLED Led;
 
