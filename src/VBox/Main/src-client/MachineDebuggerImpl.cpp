@@ -672,6 +672,32 @@ STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExVPIDEnabled) (BOOL *aEnabled)
     return S_OK;
 }
 
+/**
+ * Returns the current unrestricted execution setting.
+ *
+ * @returns COM status code
+ * @param   aEnabled address of result variable
+ */
+STDMETHODIMP MachineDebugger::COMGETTER(HWVirtExUXEnabled) (BOOL *aEnabled)
+{
+    CheckComArgOutPointerValid(aEnabled);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
+        return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    Console::SafeVMPtrQuiet ptrVM(mParent);
+
+    if (ptrVM.isOk())
+        *aEnabled = HMR3IsUXActive(ptrVM.rawUVM());
+    else
+        *aEnabled = false;
+
+    return S_OK;
+}
+
 STDMETHODIMP MachineDebugger::COMGETTER(OSName)(BSTR *a_pbstrName)
 {
     LogFlowThisFunc(("\n"));

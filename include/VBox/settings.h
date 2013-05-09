@@ -796,6 +796,7 @@ struct Hardware
                         fNestedPaging,
                         fLargePages,
                         fVPID,
+                        fUnrestrictedExecution,
                         fHardwareVirtForce,
                         fSyntheticCpu,
                         fPAE;

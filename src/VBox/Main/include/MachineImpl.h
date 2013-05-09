@@ -268,6 +268,7 @@ public:
         BOOL                mHWVirtExNestedPagingEnabled;
         BOOL                mHWVirtExLargePagesEnabled;
         BOOL                mHWVirtExVPIDEnabled;
+        BOOL                mHWVirtExUXEnabled;
         BOOL                mHWVirtExForceEnabled;
         BOOL                mAccelerate2DVideoEnabled;
         BOOL                mPAEEnabled;

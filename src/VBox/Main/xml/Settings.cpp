@@ -1732,6 +1732,7 @@ Hardware::Hardware()
           fHardwareVirtExclusive(HWVIRTEXCLUSIVEDEFAULT),
           fNestedPaging(true),
           fVPID(true),
+          fUnrestrictedExecution(true),
           fHardwareVirtForce(false),
           fSyntheticCpu(false),
           fPAE(false),
@@ -1802,6 +1803,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fNestedPaging             == h.fNestedPaging)
                   && (fLargePages               == h.fLargePages)
                   && (fVPID                     == h.fVPID)
+                  && (fUnrestrictedExecution    == h.fUnrestrictedExecution)
                   && (fHardwareVirtForce        == h.fHardwareVirtForce)
                   && (fSyntheticCpu             == h.fSyntheticCpu)
                   && (fPAE                      == h.fPAE)
@@ -2534,6 +2536,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmCPUChild->getAttributeValue("enabled", hw.fLargePages);
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExVPID")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fVPID);
+            if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExUX")))
+                pelmCPUChild->getAttributeValue("enabled", hw.fUnrestrictedExecution);
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtForce")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fHardwareVirtForce);
 
@@ -3732,6 +3736,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
     pelmCPU->createChild("HardwareVirtExNestedPaging")->setAttribute("enabled", hw.fNestedPaging);
     pelmCPU->createChild("HardwareVirtExVPID")->setAttribute("enabled", hw.fVPID);
+    pelmCPU->createChild("HardwareVirtExUX")->setAttribute("enabled", hw.fUnrestrictedExecution);
     pelmCPU->createChild("PAE")->setAttribute("enabled", hw.fPAE);
     if (m->sv >= SettingsVersion_v1_14 && hw.enmLongMode != Hardware::LongMode_Legacy)
         pelmCPU->createChild("LongMode")->setAttribute("enabled", hw.enmLongMode == Hardware::LongMode_Enabled);

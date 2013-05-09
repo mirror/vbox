@@ -949,7 +949,7 @@
 
   <enum
     name="HWVirtExPropertyType"
-    uuid="ce81dfdd-d2b8-4a90-bbea-40ee8b7ffcee"
+    uuid="39463ecd-b4b8-401f-b168-76cfa87e11f0"
     >
     <desc>
       Hardware virtualization property type. This enumeration represents possible values
@@ -982,12 +982,17 @@
         Whether Nested Paging is enabled. If this extension is not available, it will not be used.
       </desc>
     </const>
-    <const name="LargePages"            value="5">
+    <const name="UnrestrictedExecution" value="5">
       <desc>
-        Whether large page allocation is enabled; requires nested paging and a 64 bits host.
+        Whether VT-x unrestricted execution is enabled. If this feature is not available, it will not be used.
       </desc>
     </const>
-    <const name="Force"                 value="6">
+    <const name="LargePages"            value="6">
+      <desc>
+        Whether large page allocation is enabled; requires nested paging and a 64-bit host.
+      </desc>
+    </const>
+    <const name="Force"                 value="7">
       <desc>
         Whether the VM should fail to start if hardware virtualization (VT-x/AMD-V) cannot be used. If
         not set, there will be an automatic fallback to software virtualization.
@@ -4196,7 +4201,7 @@
     <attribute name="pageFusionEnabled" type="boolean">
       <desc>
         This setting determines whether VirtualBox allows page
-        fusion for this machine (64 bits host only).
+        fusion for this machine (64-bit hosts only).
       </desc>
     </attribute>
 
@@ -14802,7 +14807,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="takeScreenShotToArray">
       <desc>
         Takes a guest screen shot of the requested size and returns it as
-        an array of bytes in uncompressed 32-bit RGBA format.
+        an array of bytes in uncompressed 32-bpp RGBA format.
         A pixel consists of 4 bytes in order: R, G, B, 0xFF.
 
         This API is slow, but could be the only option to get guest screenshot
@@ -15452,7 +15457,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="a80bb82c-37c5-4155-a524-9c1d0a1689ba"
+    uuid="1eeeb3c2-0089-4448-878e-414aee00e03b"
     wsmap="managed"
     >
     <method name="dumpGuestCore">
@@ -15850,6 +15855,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Flag indicating whether the VM is currently making use of the VPID
         VT-x extension.
+      </desc>
+    </attribute>
+
+    <attribute name="HWVirtExUXEnabled" type="boolean" readonly="yes">
+      <desc>
+        Flag indicating whether the VM is currently making use of the
+        unrestricted execution feature of VT-x.
       </desc>
     </attribute>
 
@@ -19642,9 +19654,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The @a shape buffer contains a 1-bpp (bits per pixel) AND mask
         followed by a 32-bpp XOR (color) mask.
 
-        For pointers without alpha channel the XOR mask pixels are 32
-        bit values: (lsb)BGR0(msb). For pointers with alpha channel
-        the XOR mask consists of (lsb)BGRA(msb) 32 bit values.
+        For pointers without alpha channel the XOR mask pixels are
+        32-bit values: (lsb)BGR0(msb). For pointers with alpha channel
+        the XOR mask consists of (lsb)BGRA(msb) 32-bit values.
 
         An AND mask is used for pointers with alpha channel, so if the
         callback does not support alpha, the pointer could be

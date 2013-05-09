@@ -185,6 +185,7 @@ VMMR0_INT_DECL(void)            HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR 
 VMMR3DECL(bool)                 HMR3IsEnabled(PUVM pUVM);
 VMMR3DECL(bool)                 HMR3IsNestedPagingActive(PUVM pUVM);
 VMMR3DECL(bool)                 HMR3IsVpidActive(PUVM pVUM);
+VMMR3DECL(bool)                 HMR3IsUXActive(PUVM pVUM);
 
 VMMR3_INT_DECL(bool)            HMR3IsEventPending(PVMCPU pVCpu);
 VMMR3_INT_DECL(int)             HMR3Init(PVM pVM);
