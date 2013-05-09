@@ -2491,8 +2491,8 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             AssertRCReturn(rc, rc);
 
             /*
-             * If there are external interrupts pending but masked by the TPR value, apply the threshold so that if the guest
-             * lowers the TPR, it would cause a VM-exit and we can deliver the interrupt.
+             * If there are external interrupts pending but masked by the TPR value, instruct VT-x to cause a VM-exit when
+             * the guest lowers its TPR below the highest-priority pending interrupt and we can deliver the interrupt.
              * If there are no external interrupts pending, set threshold to 0 to not cause a VM-exit. We will eventually deliver
              * the interrupt when we VM-exit for other reasons.
              */
