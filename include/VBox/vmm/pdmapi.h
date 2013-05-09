@@ -49,7 +49,7 @@ VMM_INT_DECL(int)       PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
 VMMDECL(int)            PDMApicSetBase(PVMCPU pVCpu, uint64_t u64Base);
 VMMDECL(int)            PDMApicGetBase(PVMCPU pVCpu, uint64_t *pu64Base);
 VMMDECL(int)            PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR);
-VMMDECL(int)            PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending);
+VMMDECL(int)            PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending, uint8_t *pu8PendingIrq);
 VMM_INT_DECL(int)       PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
 VMM_INT_DECL(int)       PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value);
 VMM_INT_DECL(int)       PDMVmmDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);

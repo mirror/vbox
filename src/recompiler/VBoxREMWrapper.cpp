@@ -740,6 +740,7 @@ static const REMPARMDESC g_aArgsPDMApicGetTPR[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *),          NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *),          NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *),          NULL }
 };
 static const REMPARMDESC g_aArgsPDMApicSetBase[] =

@@ -1214,7 +1214,7 @@ static bool apic_update_irq(APICDeviceInfo *pDev, APICState *pApic)
 }
 
 /* Check if the APIC has a pending interrupt/if a TPR change would active one. */
-PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns, VMCPUID idCpu)
+PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t *pu8PendingIrq)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     if (!pDev)
@@ -1238,6 +1238,11 @@ PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns, VMCPUID idCpu)
     if (ppr && (irrv & 0xf0) <= (ppr & 0xf0))
         return false;
 
+    if (pu8PendingIrq)
+    {
+        Assert(irrv >= 0 && irrv <= UINT8_MAX);
+        *pu8PendingIrq = (uint8_t)irrv;
+    }
     return true;
 }
 

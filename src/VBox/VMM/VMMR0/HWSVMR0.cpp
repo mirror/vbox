@@ -1401,7 +1401,7 @@ ResumeExecution:
     {
         /* TPR caching in CR8 */
         bool fPending;
-        rc2 = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
+        rc2 = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending, NULL /* pu8PendingIrq */);
         AssertRC(rc2);
 
         if (pVM->hm.s.fTPRPatchingActive)
@@ -2866,7 +2866,7 @@ static int hmR0SvmEmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             case HMTPRINSTR_READ:
                 /* TPR caching in CR8 */
-                rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPending);
+                rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPending, NULL /* pu8PendingIrq */);
                 AssertRC(rc);
 
                 rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pPatch->uDstOperand, u8Tpr);
