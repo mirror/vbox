@@ -490,7 +490,7 @@ typedef enum
 } VMX_FLUSH_EPT;
 /** @} */
 
-/** @name MSR load/store elements
+/** @name MSR autoload/store elements
  * @{
  */
 #pragma pack(1)
@@ -509,7 +509,7 @@ typedef const VMXMSR *PCVMXMSR;
 /** @} */
 
 
-/** @name VT-x capability qword
+/** @name VMX-capability qword
  * @{
  */
 #pragma pack(1)
@@ -528,7 +528,7 @@ typedef union
 #pragma pack()
 /** @} */
 
-/** @name VMX Basic Exit Reasons.
+/** @name VMX EFLAGS reserved bits.
  * @{
  */
 /** And-mask for setting reserved bits to zero */
