@@ -26,6 +26,7 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
+#include <iprt/list.h>
 #ifdef IN_RING3
 # include <iprt/memcache.h>
 # include <iprt/mem.h>
@@ -44,7 +45,10 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The current saved state version. */
-#define LSILOGIC_SAVED_STATE_VERSION                4
+#define LSILOGIC_SAVED_STATE_VERSION                5
+/** The saved state version used by VirtualBox before the diagnostic
+ * memory access was implemented. */
+#define LSILOGIC_SAVED_STATE_VERSION_PRE_DIAG_MEM   4
 /** The saved state version used by VirtualBox before the doorbell status flag
  * was changed from bool to a 32bit enum. */
 #define LSILOGIC_SAVED_STATE_VERSION_BOOL_DOORBELL  3
@@ -96,6 +100,23 @@ typedef struct LSILOGICSCSIREPLY
 } LSILOGICSCSIREPLY;
 /** Pointer to reply data. */
 typedef LSILOGICSCSIREPLY *PLSILOGICSCSIREPLY;
+
+/**
+ * Memory region of the IOC.
+ */
+typedef struct LSILOGICMEMREGN
+{
+    /** List node. */
+    RTLISTNODE    NodeList;
+    /** 32bit address the region starts to describe. */
+    uint32_t      u32AddrStart;
+    /** 32bit address the region ends (inclusive). */
+    uint32_t      u32AddrEnd;
+    /** Data for this region - variable. */
+    uint32_t      au32Data[1];
+} LSILOGICMEMREGN;
+/** Pointer to a memory region. */
+typedef LSILOGICMEMREGN *PLSILOGICMEMREGN;
 
 /**
  * State of a device attached to the buslogic host adapter.
@@ -169,6 +190,8 @@ typedef struct LSILOGICSCSI
     bool                 fNotificationSend;
     /** Flag whether the guest enabled event notification from the IOC. */
     bool                 fEventNotificationEnabled;
+    /** Flag whether the diagnostic address and RW registers are enabled. */
+    bool                 fDiagRegsEnabled;
 
     /** Queue to send tasks to R3. - R3 ptr */
     R3PTRTYPE(PPDMQUEUE) pNotificationQueueR3;
@@ -307,10 +330,21 @@ typedef struct LSILOGICSCSI
     /** Flag whether we have tasks which need to be processed again- */
     bool volatile                  fRedo;
     /** Alignment padding. */
-    bool                            afPAdding2[HC_ARCH_BITS == 32 ? 2 : 6];
+    bool                             afPadding2[HC_ARCH_BITS == 32 ? 2 : 6];
     /** List of tasks which can be redone. */
     R3PTRTYPE(volatile PLSILOGICREQ) pTasksRedoHead;
 
+    /** Current address to read from or write to in the diagnostic memory region. */
+    uint32_t                         u32DiagMemAddr;
+
+    uint32_t                         u32Padding3;
+
+    union
+    {
+        /** List of memory regions - PLSILOGICMEMREGN. */
+        RTLISTANCHOR                 ListMemRegns;
+        uint8_t                      u8Padding[2 * sizeof(RTUINTPTR)];
+    };
 } LSILOGISCSI;
 /** Pointer to the device instance data of the LsiLogic emulation. */
 typedef LSILOGICSCSI *PLSILOGICSCSI;
@@ -451,6 +485,42 @@ DECLINLINE(void) lsilogicSetIOCFaultCode(PLSILOGICSCSI pThis, uint16_t uIOCFault
         Log(("%s: We are already in FAULT state\n"));
 }
 
+/**
+ * Returns the number of frames in the reply free queue.
+ *
+ * @returns Number of frames in the reply free queue.
+ * @param   pThis    Pointer to the LsiLogic device state.
+ */
+DECLINLINE(uint32_t) lsilogicReplyFreeQueueGetFrameCount(PLSILOGICSCSI pThis)
+{
+    uint32_t cReplyFrames = 0;
+
+    if (pThis->uReplyFreeQueueNextAddressRead <= pThis->uReplyFreeQueueNextEntryFreeWrite)
+        cReplyFrames = pThis->uReplyFreeQueueNextEntryFreeWrite - pThis->uReplyFreeQueueNextAddressRead;
+    else
+        cReplyFrames = pThis->cReplyQueueEntries - pThis->uReplyFreeQueueNextAddressRead + pThis->uReplyFreeQueueNextEntryFreeWrite;
+
+    return cReplyFrames;
+}
+
+/**
+ * Returns the number of free entries in the reply post queue.
+ *
+ * @returns Number of frames in the reply free queue.
+ * @param   pThis    Pointer to the LsiLogic device state.
+ */
+DECLINLINE(uint32_t) lsilogicReplyPostQueueGetFrameCount(PLSILOGICSCSI pThis)
+{
+    uint32_t cReplyFrames = 0;
+
+    if (pThis->uReplyPostQueueNextAddressRead <= pThis->uReplyPostQueueNextEntryFreeWrite)
+        cReplyFrames = pThis->cReplyQueueEntries - pThis->uReplyPostQueueNextEntryFreeWrite + pThis->uReplyPostQueueNextAddressRead;
+    else
+        cReplyFrames = pThis->uReplyPostQueueNextEntryFreeWrite - pThis->uReplyPostQueueNextAddressRead;
+
+    return cReplyFrames;
+}
+
 #ifdef IN_RING3
 
 /**
@@ -480,14 +550,16 @@ static int lsilogicR3HardReset(PLSILOGICSCSI pThis)
     pThis->uRequestQueueNextAddressRead      = 0;
 
     /* Disable diagnostic access. */
-    pThis->iDiagnosticAccess = 0;
+    pThis->iDiagnosticAccess  = 0;
+    pThis->fDiagnosticEnabled = false;
+    pThis->fDiagRegsEnabled   = false;
 
     /* Set default values. */
-    pThis->cMaxDevices   = pThis->cDeviceStates;
-    pThis->cMaxBuses     = 1;
-    pThis->cbReplyFrame  = 128; /* @todo Figure out where it is needed. */
-    pThis->u16NextHandle = 1;
-    /** @todo: Put stuff to reset here. */
+    pThis->cMaxDevices    = pThis->cDeviceStates;
+    pThis->cMaxBuses      = 1;
+    pThis->cbReplyFrame   = 128; /* @todo Figure out where it is needed. */
+    pThis->u16NextHandle  = 1;
+    pThis->u32DiagMemAddr = 0;
 
     lsilogicR3ConfigurationPagesFree(pThis);
     lsilogicR3InitializeConfigurationPages(pThis);
@@ -554,16 +626,14 @@ static void lsilogicR3FinishContextReply(PLSILOGICSCSI pThis, uint32_t u32Messag
     rc = PDMCritSectEnter(&pThis->ReplyPostQueueCritSect, VINF_SUCCESS);
     AssertRC(rc);
 
-# if 0
     /* Check for a entry in the queue. */
-    if (RT_UNLIKELY(pThis->uReplyPostQueueNextAddressRead != pThis->uReplyPostQueueNextEntryFreeWrite))
+    if (!lsilogicReplyPostQueueGetFrameCount(pThis))
     {
         /* Set error code. */
         lsilogicSetIOCFaultCode(pThis, LSILOGIC_IOCSTATUS_INSUFFICIENT_RESOURCES);
         PDMCritSectLeave(&pThis->ReplyPostQueueCritSect);
         return;
     }
-# endif
 
     /* We have a context reply. */
     ASMAtomicWriteU32(&pThis->CTX_SUFF(pReplyPostQueueBase)[pThis->uReplyPostQueueNextEntryFreeWrite], u32MessageContext);
@@ -614,16 +684,14 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
         rc = PDMCritSectEnter(&pThis->ReplyFreeQueueCritSect, VINF_SUCCESS);
         AssertRC(rc);
 
-#if 0
         /* Check for a free reply frame. */
-        if (RT_UNLIKELY(pThis->uReplyFreeQueueNextAddressRead != pThis->uReplyFreeQueueNextEntryFreeWrite))
+        if (!lsilogicReplyFreeQueueGetFrameCount(pThis))
         {
             /* Set error code. */
             lsilogicSetIOCFaultCode(pThis, LSILOGIC_IOCSTATUS_INSUFFICIENT_RESOURCES);
             PDMCritSectLeave(&pThis->ReplyFreeQueueCritSect);
             return;
         }
-#endif
 
         uint32_t u32ReplyFrameAddressLow = pThis->CTX_SUFF(pReplyFreeQueueBase)[pThis->uReplyFreeQueueNextAddressRead];
 
@@ -643,16 +711,14 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
         rc = PDMCritSectEnter(&pThis->ReplyPostQueueCritSect, VINF_SUCCESS);
         AssertRC(rc);
 
-#if 0
         /* Check for a entry in the queue. */
-        if (RT_UNLIKELY(pThis->uReplyPostQueueNextAddressRead != pThis->uReplyPostQueueNextEntryFreeWrite))
+        if (!lsilogicReplyPostQueueGetFrameCount(pThis))
         {
             /* Set error code. */
             lsilogicSetIOCFaultCode(pThis, LSILOGIC_IOCSTATUS_INSUFFICIENT_RESOURCES);
             PDMCritSectLeave(&pThis->ReplyPostQueueCritSect);
             return;
         }
-#endif
 
         /* We have a address reply. Set the 31th bit to indicate that. */
         ASMAtomicWriteU32(&pThis->CTX_SUFF(pReplyPostQueueBase)[pThis->uReplyPostQueueNextEntryFreeWrite],
@@ -676,25 +742,228 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
     }
 }
 
+#ifdef IN_RING3
+
 /**
- * Returns the number of frames in the reply free queue.
+ * Tries to find a memory region which covers the given address.
  *
- * @returns Number of frames in the reply free queue.
- * @param   pThis    Pointer to the LsiLogic device state.
+ * @returns Pointer to memory region or NULL if not found.
+ * @param   pThis           Pointer to the LsiLogic device state.
+ * @param   u32Addr         The 32bit address to search for.
  */
-DECLINLINE(uint32_t) lsilogicReplyFreeQueueGetFrameCount(PLSILOGICSCSI pThis)
+static PLSILOGICMEMREGN lsilogicR3MemRegionFindByAddr(PLSILOGICSCSI pThis, uint32_t u32Addr)
 {
-    uint32_t cReplyFrames = 0;
+    PLSILOGICMEMREGN pIt;
+    PLSILOGICMEMREGN pRegion = NULL;
 
-    if (pThis->uReplyFreeQueueNextAddressRead <= pThis->uReplyFreeQueueNextEntryFreeWrite)
-        cReplyFrames = pThis->uReplyFreeQueueNextEntryFreeWrite - pThis->uReplyFreeQueueNextAddressRead;
-    else
-        cReplyFrames = pThis->cReplyQueueEntries - pThis->uReplyFreeQueueNextAddressRead + pThis->uReplyFreeQueueNextEntryFreeWrite;
+    RTListForEach(&pThis->ListMemRegns, pIt, LSILOGICMEMREGN, NodeList)
+    {
+        if (   u32Addr >= pIt->u32AddrStart
+            && u32Addr <= pIt->u32AddrEnd)
+        {
+            pRegion = pIt;
+            break;
+        }
+    }
 
-    return cReplyFrames;
+    return pRegion;
 }
 
-#ifdef IN_RING3
+/**
+ * Frees all allocated memory regions.
+ *
+ * @returns nothing.
+ * @param   pThis           Pointer to the LsiLogic device state.
+ */
+static void lsilogicR3MemRegionsFree(PLSILOGICSCSI pThis)
+{
+    PLSILOGICMEMREGN pIt;
+    PLSILOGICMEMREGN pItNext;
+
+    RTListForEachSafe(&pThis->ListMemRegns, pIt, pItNext, LSILOGICMEMREGN, NodeList)
+    {
+        RTListNodeRemove(&pIt->NodeList);
+        RTMemFree(pIt);
+    }
+}
+
+/**
+ * Inserts a given memory region into the list.
+ *
+ * @returns nothing.
+ * @param   pThis           Pointer to the LsiLogic device state.
+ * @param   pRegion         The region to insert.
+ */
+static void lsilogicR3MemRegionInsert(PLSILOGICSCSI pThis, PLSILOGICMEMREGN pRegion)
+{
+    PLSILOGICMEMREGN pIt;
+    bool fInserted = false;
+
+    /* Insert at the right position. */
+    RTListForEach(&pThis->ListMemRegns, pIt, LSILOGICMEMREGN, NodeList)
+    {
+        if (pRegion->u32AddrEnd < pIt->u32AddrStart)
+        {
+            RTListNodeInsertBefore(&pIt->NodeList, &pRegion->NodeList);
+            fInserted = true;
+            break;
+        }
+    }
+    if (!fInserted)
+        RTListAppend(&pThis->ListMemRegns, &pRegion->NodeList);
+}
+
+/**
+ * Count number of memory regions.
+ *
+ * @returns Number of memory regions.
+ * @param   pThis           Pointer to the LsiLogic device state.
+ */
+static uint32_t lsilogicR3MemRegionsCount(PLSILOGICSCSI pThis)
+{
+    uint32_t cRegions = 0;
+    PLSILOGICMEMREGN pIt;
+
+    RTListForEach(&pThis->ListMemRegns, pIt, LSILOGICMEMREGN, NodeList)
+    {
+        cRegions++;
+    }
+
+    return cRegions;
+}
+
+/**
+ * Handles a write to the diagnostic data register.
+ *
+ * @returns nothing.
+ * @param   pThis           Pointer to the LsiLogic device state.
+ * @param   u32Data         Data to write.
+ */
+static void lsilogicR3DiagRegDataWrite(PLSILOGICSCSI pThis, uint32_t u32Data)
+{
+    PLSILOGICMEMREGN pRegion = lsilogicR3MemRegionFindByAddr(pThis, pThis->u32DiagMemAddr);
+
+    if (pRegion)
+    {
+        uint32_t offRegion = pThis->u32DiagMemAddr - pRegion->u32AddrStart;
+
+        AssertMsg(   offRegion % 4 == 0
+                  && pThis->u32DiagMemAddr <= pRegion->u32AddrEnd,
+                  ("Region offset not on a word boundary or crosses memory region\n"));
+
+        offRegion /= 4;
+        pRegion->au32Data[offRegion] = u32Data;
+    }
+    else
+    {
+        PLSILOGICMEMREGN pIt;
+
+        pRegion = NULL;
+
+        /* Create new region, first check whether we can extend another region. */
+        RTListForEach(&pThis->ListMemRegns, pIt, LSILOGICMEMREGN, NodeList)
+        {
+            if (pThis->u32DiagMemAddr == pIt->u32AddrEnd + sizeof(uint32_t))
+            {
+                pRegion = pIt;
+                break;
+            }
+        }
+
+        if (pRegion)
+        {
+            /* Reallocate. */
+            RTListNodeRemove(&pRegion->NodeList);
+
+            uint32_t cRegionSizeOld = (pRegion->u32AddrEnd - pRegion->u32AddrStart) / 4 + 1;
+            uint32_t cRegionSizeNew = cRegionSizeOld + 512;
+            PLSILOGICMEMREGN pRegionNew = (PLSILOGICMEMREGN)RTMemRealloc(pRegion, RT_OFFSETOF(LSILOGICMEMREGN, au32Data[cRegionSizeNew]));
+
+            if (pRegionNew)
+            {
+                pRegion = pRegionNew;
+                memset(&pRegion->au32Data[cRegionSizeOld], 0, 512 * sizeof(uint32_t));
+                pRegion->au32Data[cRegionSizeOld] = u32Data;
+                pRegion->u32AddrEnd = pRegion->u32AddrStart + (cRegionSizeNew - 1) * sizeof(uint32_t);
+            }
+            /* else: Silently fail, there is nothing we can do here and the guest might work nevertheless. */
+
+            lsilogicR3MemRegionInsert(pThis, pRegion);
+        }
+        else
+        {
+            /* Create completely new. */
+            pRegion = (PLSILOGICMEMREGN)RTMemAllocZ(RT_OFFSETOF(LSILOGICMEMREGN, au32Data[512]));
+            if (pRegion)
+            {
+                pRegion->u32AddrStart = pThis->u32DiagMemAddr;
+                pRegion->u32AddrEnd   = pRegion->u32AddrStart + (512 - 1) * sizeof(uint32_t);
+                pRegion->au32Data[0]  = u32Data;
+
+                lsilogicR3MemRegionInsert(pThis, pRegion);
+            }
+            /* else: Silently fail, there is nothing we can do here and the guest might work nevertheless. */
+        }
+
+    }
+
+    /* Memory access is always 32bit big. */
+    pThis->u32DiagMemAddr += sizeof(uint32_t);
+}
+
+/**
+ * Handles a read from the diagnostic data register.
+ *
+ * @returns nothing.
+ * @param   pThis           Pointer to the LsiLogic device state.
+ * @param   pu32Data        Where to store the data.
+ */
+static void lsilogicR3DiagRegDataRead(PLSILOGICSCSI pThis, uint32_t *pu32Data)
+{
+    PLSILOGICMEMREGN pRegion = lsilogicR3MemRegionFindByAddr(pThis, pThis->u32DiagMemAddr);
+
+    if (pRegion)
+    {
+        uint32_t offRegion = pThis->u32DiagMemAddr - pRegion->u32AddrStart;
+
+        AssertMsg(   offRegion % 4 == 0
+                  && pThis->u32DiagMemAddr <= pRegion->u32AddrEnd,
+                  ("Region offset not on a word boundary or crosses memory region\n"));
+
+        offRegion /= 4;
+        *pu32Data = pRegion->au32Data[offRegion];
+    }
+    else /* No region, default value 0. */
+        *pu32Data = 0;
+
+    /* Memory access is always 32bit big. */
+    pThis->u32DiagMemAddr += sizeof(uint32_t);
+}
+
+/**
+ * Handles a write to the diagnostic memory address register.
+ *
+ * @returns nothing.
+ * @param   pThis           Pointer to the LsiLogic device state.
+ * @param   u32Addr         Address to write.
+ */
+static void lsilogicR3DiagRegAddressWrite(PLSILOGICSCSI pThis, uint32_t u32Addr)
+{
+    pThis->u32DiagMemAddr = u32Addr & ~UINT32_C(0x3); /* 32bit alignment. */
+}
+
+/**
+ * Handles a read from the diagnostic memory address register.
+ *
+ * @returns nothing.
+ * @param   pThis           Pointer to the LsiLogic device state.
+ * @param   pu32Addr        Where to store the current address.
+ */
+static void lsilogicR3DiagRegAddressRead(PLSILOGICSCSI pThis, uint32_t *pu32Addr)
+{
+    *pu32Addr = pThis->u32DiagMemAddr;
+}
+
 /**
  * Processes a given Request from the guest
  *
@@ -785,7 +1054,6 @@ static int lsilogicR3ProcessMessageRequest(PLSILOGICSCSI pThis, PMptMessageHdr p
             pReply->IOCFacts.u8Flags              = 0;      /* Bit 0 is set if the guest must upload the FW prior to using the controller. Obviously not needed here. */
             pReply->IOCFacts.u16ReplyQueueDepth   = pThis->cReplyQueueEntries - 1; /* One entry is always free. */
             pReply->IOCFacts.u16RequestFrameSize  = 128;    /* @todo Figure out where it is needed. */
-            pReply->IOCFacts.u16ProductID         = 0xcafe; /* Our own product ID :) */
             pReply->IOCFacts.u32CurrentHostMFAHighAddr = pThis->u32HostMFAHighAddr;
             pReply->IOCFacts.u16GlobalCredits     = pThis->cRequestQueueEntries - 1; /* One entry is always free. */
 
@@ -794,8 +1062,35 @@ static int lsilogicR3ProcessMessageRequest(PLSILOGICSCSI pThis, PMptMessageHdr p
             pReply->IOCFacts.u16CurReplyFrameSize = pThis->cbReplyFrame;
             pReply->IOCFacts.u8MaxDevices         = pThis->cMaxDevices;
             pReply->IOCFacts.u8MaxBuses           = pThis->cMaxBuses;
-            pReply->IOCFacts.u32FwImageSize       = 0; /* No image needed. */
-            pReply->IOCFacts.u32FWVersion         = 0;
+
+            /* Check for a valid firmware image in the IOC memory which was downlaoded by tzhe guest earlier. */
+            PLSILOGICMEMREGN pRegion = lsilogicR3MemRegionFindByAddr(pThis, LSILOGIC_FWIMGHDR_LOAD_ADDRESS);
+
+            if (pRegion)
+            {
+                uint32_t offImgHdr = (LSILOGIC_FWIMGHDR_LOAD_ADDRESS - pRegion->u32AddrStart) / 4;
+                PFwImageHdr pFwImgHdr = (PFwImageHdr)&pRegion->au32Data[offImgHdr];
+
+                /* Check for the signature. */
+                /** @todo: Checksum validation. */
+                if (   pFwImgHdr->u32Signature1 == LSILOGIC_FWIMGHDR_SIGNATURE1
+                    && pFwImgHdr->u32Signature2 == LSILOGIC_FWIMGHDR_SIGNATURE2
+                    && pFwImgHdr->u32Signature3 == LSILOGIC_FWIMGHDR_SIGNATURE3)
+                {
+                    LogFlowFunc(("IOC Facts: Found valid firmware image header in memory, using version (%#x), size (%d) and product ID (%#x) from there\n",
+                                 pFwImgHdr->u32FwVersion, pFwImgHdr->u32ImageSize, pFwImgHdr->u16ProductId));
+
+                    pReply->IOCFacts.u16ProductID         = pFwImgHdr->u16ProductId;
+                    pReply->IOCFacts.u32FwImageSize       = pFwImgHdr->u32ImageSize;
+                    pReply->IOCFacts.u32FWVersion         = pFwImgHdr->u32FwVersion;
+                }
+            }
+            else
+            {
+                pReply->IOCFacts.u16ProductID         = 0xcafe; /* Our own product ID :) */
+                pReply->IOCFacts.u32FwImageSize       = 0; /* No image needed. */
+                pReply->IOCFacts.u32FWVersion         = 0;
+            }
             break;
         }
         case MPT_MESSAGE_HDR_FUNCTION_PORT_FACTS:
@@ -902,6 +1197,7 @@ static int lsilogicR3ProcessMessageRequest(PLSILOGICSCSI pThis, PMptMessageHdr p
             //PMptFWDownloadRequest pFWDownloadReq = (PMptFWDownloadRequest)pMessageHdr;
 
             pReply->FWDownload.u8MessageLength    = 5;
+            LogFlowFunc(("FW Download request issued\n"));
             break;
         }
         case MPT_MESSAGE_HDR_FUNCTION_SCSI_IO_REQUEST: /* Should be handled already. */
@@ -916,6 +1212,7 @@ static int lsilogicR3ProcessMessageRequest(PLSILOGICSCSI pThis, PMptMessageHdr p
     lsilogicFinishAddressReply(pThis, pReply, fForceReplyPostFifo);
     return rc;
 }
+
 #endif /* IN_RING3 */
 
 /**
@@ -1108,6 +1405,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
                 /* Any value will cause a reset and disabling access. */
                 pThis->fDiagnosticEnabled = false;
                 pThis->iDiagnosticAccess  = 0;
+                pThis->fDiagRegsEnabled   = false;
             }
             else if ((u32 & 0xf) == g_lsilogicDiagnosticAccess[pThis->iDiagnosticAccess])
             {
@@ -1130,15 +1428,42 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
         }
         case LSILOGIC_REG_HOST_DIAGNOSTIC:
         {
-#ifndef IN_RING3
-            return VINF_IOM_R3_IOPORT_WRITE;
-#else
-            if (u32 & LSILOGIC_REG_HOST_DIAGNOSTIC_RESET_ADAPTER)
+            if (pThis->fDiagnosticEnabled)
             {
-                lsilogicR3HardReset(pThis);
+#ifndef IN_RING3
+                return VINF_IOM_R3_MMIO_WRITE;
+#else
+                if (u32 & LSILOGIC_REG_HOST_DIAGNOSTIC_RESET_ADAPTER)
+                    lsilogicR3HardReset(pThis);
+                else if (u32 & LSILOGIC_REG_HOST_DIAGNOSTIC_DIAG_RW_ENABLE)
+                    pThis->fDiagRegsEnabled = true;
+#endif
             }
             break;
+        }
+        case LSILOGIC_REG_DIAG_RW_DATA:
+        {
+            if (pThis->fDiagRegsEnabled)
+            {
+#ifndef IN_RING3
+                return VINF_IOM_R3_MMIO_WRITE;
+#else
+                lsilogicR3DiagRegDataWrite(pThis, u32);
 #endif
+            }
+            break;
+        }
+        case LSILOGIC_REG_DIAG_RW_ADDRESS:
+        {
+            if (pThis->fDiagRegsEnabled)
+            {
+#ifndef IN_RING3
+                return VINF_IOM_R3_MMIO_WRITE;
+#else
+                lsilogicR3DiagRegAddressWrite(pThis, u32);
+#endif
+            }
+            break;
         }
         default: /* Ignore. */
         {
@@ -1265,14 +1590,34 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
         case LSILOGIC_REG_HOST_DIAGNOSTIC:
         {
             if (pThis->fDiagnosticEnabled)
-                u32 = LSILOGIC_REG_HOST_DIAGNOSTIC_DRWE;
-            else
-                u32 = 0;
+                u32 |= LSILOGIC_REG_HOST_DIAGNOSTIC_DRWE;
+            if (pThis->fDiagRegsEnabled)
+                u32 |= LSILOGIC_REG_HOST_DIAGNOSTIC_DIAG_RW_ENABLE;
             break;
         }
-        case LSILOGIC_REG_TEST_BASE_ADDRESS: /* The spec doesn't say anything about these registers, so we just ignore them */
         case LSILOGIC_REG_DIAG_RW_DATA:
+        {
+            if (pThis->fDiagRegsEnabled)
+            {
+#ifndef IN_RING3
+                return VINF_IOM_R3_MMIO_READ;
+#else
+                lsilogicR3DiagRegDataRead(pThis, &u32);
+#endif
+            }
+        }
         case LSILOGIC_REG_DIAG_RW_ADDRESS:
+        {
+            if (pThis->fDiagRegsEnabled)
+            {
+#ifndef IN_RING3
+                return VINF_IOM_R3_MMIO_READ;
+#else
+                lsilogicR3DiagRegAddressRead(pThis, &u32);
+#endif
+            }
+        }
+        case LSILOGIC_REG_TEST_BASE_ADDRESS: /* The spec doesn't say anything about these registers, so we just ignore them */
         default: /* Ignore. */
         {
             /** @todo LSILOGIC_REG_DIAG_* should return all F's when accessed by MMIO. We
@@ -1350,11 +1695,7 @@ PDMBOTHCBDECL(int) lsilogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
     }
 
     if (!(offReg & 3))
-    {
         rc = lsilogicRegisterWrite(pThis, offReg, u32);
-        if (rc == VINF_IOM_R3_MMIO_WRITE)
-            rc = VINF_IOM_R3_IOPORT_WRITE;
-    }
     else
     {
         Log(("lsilogicIOPortWrite: Ignoring misaligned write - offReg=%#x u32=%#x cb=%#x\n", offReg, u32, cb));
@@ -1454,6 +1795,15 @@ static void lsilogicDumpSGEntry(PMptSGEntryUnion pSGEntry)
 }
 # endif /* LOG_ENABLED */
 
+/**
+ * Walks the guest S/G buffer calling the given copy worker for every buffer.
+ *
+ * @returns nothing.
+ * @param   pDevIns      Device instance data.
+ * @param   pLsiReq      LSI request state.
+ * @param   cbCopy       How much bytes to copy.
+ * @param   pfnIoBufCopy Copy worker to call.
+ */
 static void lsilogicSgBufWalker(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq, size_t cbCopy,
                                 PFNLSILOGICIOBUFCOPY pfnIoBufCopy)
 {
@@ -1504,8 +1854,8 @@ static void lsilogicSgBufWalker(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq, size_t
 
 
             pfnIoBufCopy(pDevIns, GCPhysAddrDataBuffer, pbBuf, cbCopyThis);
-            pbBuf      += cbCopyThis;
-            cbCopyThis -= cbCopyThis;
+            pbBuf  += cbCopyThis;
+            cbCopy -= cbCopyThis;
 
             /* Check if we reached the end of the list. */
             if (SGEntry.Simple32.fEndOfList)
@@ -1632,7 +1982,8 @@ static int lsilogicIoBufAllocate(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq,
     uint8_t uTxDir = MPT_SCSIIO_REQUEST_CONTROL_TXDIR_GET(pLsiReq->GuestRequest.SCSIIO.u32Control);
 
     AssertMsg(   uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_WRITE
-              || uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_READ,
+              || uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_READ
+              || uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_NONE,
               ("Allocating I/O memory for a non I/O request is not allowed\n"));
 
     pLsiReq->SegIoBuf.pvSeg = lsilogicReqMemAlloc(pLsiReq, cbTransfer);
@@ -1640,7 +1991,8 @@ static int lsilogicIoBufAllocate(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq,
         return VERR_NO_MEMORY;
 
     pLsiReq->SegIoBuf.cbSeg = cbTransfer;
-    if (uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_WRITE)
+    if (   uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_WRITE
+        || uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_NONE)
         lsilogicCopyFromSgBuf(pDevIns, pLsiReq, cbTransfer);
 
     return VINF_SUCCESS;
@@ -1661,10 +2013,12 @@ static void lsilogicIoBufFree(PPDMDEVINS pDevIns, PLSILOGICREQ pLsiReq,
     uint8_t uTxDir = MPT_SCSIIO_REQUEST_CONTROL_TXDIR_GET(pLsiReq->GuestRequest.SCSIIO.u32Control);
 
     AssertMsg(   uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_WRITE
-              || uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_READ,
+              || uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_READ
+              || uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_NONE,
               ("Allocating I/O memory for a non I/O request is not allowed\n"));
 
-    if (   uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_READ
+    if (   (   uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_READ
+            || uTxDir == MPT_SCSIIO_REQUEST_CONTROL_TXDIR_NONE)
         && fCopyToGuest)
         lsilogicCopyToSgBuf(pDevIns, pLsiReq, pLsiReq->SegIoBuf.cbSeg);
 
@@ -1952,7 +2306,7 @@ static DECLCALLBACK(int) lsilogicR3DeviceSCSIRequestCompleted(PPDMISCSIPORT pInt
                 pLsiReq->IOCReply.SCSIIOError.u32SenseCount       = sizeof(pLsiReq->abSenseBuffer);
                 pLsiReq->IOCReply.SCSIIOError.u32ResponseInfo     = 0;
 
-                lsilogicFinishAddressReply(pThis, &pLsiReq->IOCReply, true);
+                lsilogicFinishAddressReply(pThis, &pLsiReq->IOCReply, false);
             }
         }
 
@@ -3957,6 +4311,18 @@ static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     SSMR3PutU16   (pSSM, pThis->u16NextHandle);
 
+    /* Save diagnostic memory register and data regions. */
+    SSMR3PutU32   (pSSM, pThis->u32DiagMemAddr);
+    SSMR3PutU32   (pSSM, lsilogicR3MemRegionsCount(pThis));
+
+    PLSILOGICMEMREGN pIt = NULL;
+    RTListForEach(&pThis->ListMemRegns, pIt, LSILOGICMEMREGN, NodeList)
+    {
+        SSMR3PutU32(pSSM, pIt->u32AddrStart);
+        SSMR3PutU32(pSSM, pIt->u32AddrEnd);
+        SSMR3PutMem(pSSM, &pIt->au32Data[0], (pIt->u32AddrEnd - pIt->u32AddrStart + 1) * sizeof(uint32_t));
+    }
+
     PMptConfigurationPagesSupported pPages = pThis->pConfigurationPages;
 
     SSMR3PutMem   (pSSM, &pPages->ManufacturingPage0, sizeof(MptConfigurationPageManufacturing0));
@@ -4077,6 +4443,8 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     int             rc;
 
     if (    uVersion != LSILOGIC_SAVED_STATE_VERSION
+        &&  uVersion != LSILOGIC_SAVED_STATE_VERSION_PRE_DIAG_MEM
+        &&  uVersion != LSILOGIC_SAVED_STATE_VERSION_BOOL_DOORBELL
         &&  uVersion != LSILOGIC_SAVED_STATE_VERSION_PRE_SAS
         &&  uVersion != LSILOGIC_SAVED_STATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -4243,6 +4611,43 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
             SSMR3GetU32(pSSM, (uint32_t *)&pThis->pRequestQueueBaseR3[i]);
 
         SSMR3GetU16(pSSM, &pThis->u16NextHandle);
+
+        if (uVersion > LSILOGIC_SAVED_STATE_VERSION_PRE_DIAG_MEM)
+        {
+            uint32_t cMemRegions = 0;
+
+            /* Save diagnostic memory register and data regions. */
+            SSMR3GetU32   (pSSM, &pThis->u32DiagMemAddr);
+            SSMR3GetU32   (pSSM, &cMemRegions);
+
+            while (cMemRegions)
+            {
+                uint32_t u32AddrStart = 0;
+                uint32_t u32AddrEnd = 0;
+                uint32_t cRegion = 0;
+                PLSILOGICMEMREGN pRegion = NULL;
+
+                SSMR3GetU32(pSSM, &u32AddrStart);
+                SSMR3GetU32(pSSM, &u32AddrEnd);
+
+                cRegion = u32AddrEnd - u32AddrStart + 1;
+                pRegion = (PLSILOGICMEMREGN)RTMemAllocZ(RT_OFFSETOF(LSILOGICMEMREGN, au32Data[cRegion]));
+                if (pRegion)
+                {
+                    pRegion->u32AddrStart = u32AddrStart;
+                    pRegion->u32AddrEnd = u32AddrEnd;
+                    SSMR3GetMem(pSSM, &pRegion->au32Data[0], cRegion * sizeof(uint32_t));
+                    lsilogicR3MemRegionInsert(pThis, pRegion);
+                }
+                else
+                {
+                    /* Leave a log message but continue. */
+                    LogRel(("LsiLogic: Out of memory while restoring the state, might not work as expected\n"));
+                    SSMR3Skip(pSSM, cRegion * sizeof(uint32_t));
+                }
+                cMemRegions--;
+            }
+        }
 
         /* Configuration pages */
         SSMR3GetMem(pSSM, &pPages->ManufacturingPage0, sizeof(MptConfigurationPageManufacturing0));
@@ -4736,6 +5141,7 @@ static DECLCALLBACK(int) lsilogicR3Destruct(PPDMDEVINS pDevIns)
     }
 
     lsilogicR3ConfigurationPagesFree(pThis);
+    lsilogicR3MemRegionsFree(pThis);
 
     return VINF_SUCCESS;
 }
@@ -4753,6 +5159,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      * Initialize enought of the state to make the destructure not trip up.
      */
     pThis->hTaskCache = NIL_RTMEMCACHE;
+    RTListInit(&pThis->ListMemRegns);
 
     /*
      * Validate and read configuration.

@@ -1562,6 +1562,7 @@ int main()
     GEN_CHECK_OFF(LSILOGICSCSI, fDiagnosticEnabled);
     GEN_CHECK_OFF(LSILOGICSCSI, fNotificationSend);
     GEN_CHECK_OFF(LSILOGICSCSI, fEventNotificationEnabled);
+    GEN_CHECK_OFF(LSILOGICSCSI, fDiagRegsEnabled);
     GEN_CHECK_OFF(LSILOGICSCSI, pNotificationQueueR3);
     GEN_CHECK_OFF(LSILOGICSCSI, pNotificationQueueR0);
     GEN_CHECK_OFF(LSILOGICSCSI, pNotificationQueueRC);
@@ -1615,6 +1616,8 @@ int main()
     GEN_CHECK_OFF(LSILOGICSCSI, fSignalIdle);
     GEN_CHECK_OFF(LSILOGICSCSI, fRedo);
     GEN_CHECK_OFF(LSILOGICSCSI, pTasksRedoHead);
+    GEN_CHECK_OFF(LSILOGICSCSI, u32DiagMemAddr);
+    GEN_CHECK_OFF(LSILOGICSCSI, ListMemRegns);
 #endif /* VBOX_WITH_LSILOGIC */
 
     GEN_CHECK_SIZE(HPET);
