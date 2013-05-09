@@ -278,7 +278,8 @@ VMM_INT_DECL(int) PDMApicHasPendingIrq(PVMCPU pVCpu, bool *pfPending)
     {
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnSetTPR));
         pdmLock(pVM);
-        *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu);
+        *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu,
+                                                                NULL /* pu8PendingIrq */);
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -315,10 +316,12 @@ VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pu8TPR          Where to store the TRP.
  * @param   pfPending       Pending interrupt state (out).
+ * @param   pu8PendingIrq   Where to store the highest-priority pending IRQ
+ *                          (optional, can be NULL) (out).
  *
  * @remarks No-long-jump zone!!!
  */
-VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending)
+VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending, uint8_t *pu8PendingIrq)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
@@ -331,7 +334,10 @@ VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending)
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR));
         *pu8TPR = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu);
         if (pfPending)
-            *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu);
+        {
+            *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu,
+                                                                    pu8PendingIrq);
+        }
         return VINF_SUCCESS;
     }
     *pu8TPR = 0;

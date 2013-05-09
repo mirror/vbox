@@ -2486,7 +2486,7 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
             bool    fPendingIntr = false;
             uint8_t u8GuestTpr   = 0;
-            rc = PDMApicGetTPR(pVCpu, &u8GuestTpr, &fPendingIntr);
+            rc = PDMApicGetTPR(pVCpu, &u8GuestTpr, &fPendingIntr, NULL /* pu8PendingIntr */);
             AssertRCReturn(rc, rc);
 
             /*

@@ -1076,10 +1076,12 @@ typedef struct PDMAPICREG
      * @returns Pending interrupt yes/no
      * @param   pDevIns         Device instance of the APIC.
      * @param   idCpu           The VCPU Id.
+     * @param   pu8PendingIrq   Where to store the highest priority pending IRQ
+     *                          (optional, can be NULL).
      * @remarks Unlike the other callbacks, the PDM lock may not always be entered
      *          prior to calling this method.
      */
-    DECLR3CALLBACKMEMBER(bool, pfnHasPendingIrqR3,(PPDMDEVINS pDevIns, VMCPUID idCpu));
+    DECLR3CALLBACKMEMBER(bool, pfnHasPendingIrqR3,(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t *pu8PendingIrq));
 
     /**
      * Set the APIC base.
