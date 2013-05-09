@@ -182,6 +182,7 @@ Machine::HWData::HWData()
     mHWVirtExLargePagesEnabled = false;
 #endif
     mHWVirtExVPIDEnabled = true;
+    mHWVirtExUXEnabled = true;
     mHWVirtExForceEnabled = false;
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
     mHWVirtExExclusive = false;
@@ -2428,6 +2429,10 @@ STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
             *aVal = mHWData->mHWVirtExNestedPagingEnabled;
             break;
 
+        case HWVirtExPropertyType_UnrestrictedExecution:
+            *aVal = mHWData->mHWVirtExUXEnabled;
+            break;
+
         case HWVirtExPropertyType_LargePages:
             *aVal = mHWData->mHWVirtExLargePagesEnabled;
 #if defined(DEBUG_bird) && defined(RT_OS_LINUX) /* This feature is deadly here */
@@ -2481,6 +2486,12 @@ STDMETHODIMP Machine::SetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
             mHWData->mHWVirtExNestedPagingEnabled = !!aVal;
             break;
 
+        case HWVirtExPropertyType_UnrestrictedExecution:
+            setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mHWVirtExUXEnabled = !!aVal;
+            break;
+    
         case HWVirtExPropertyType_LargePages:
             setModified(IsModified_MachineData);
             mHWData.backup();
@@ -8722,6 +8733,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mHWVirtExNestedPagingEnabled = data.fNestedPaging;
         mHWData->mHWVirtExLargePagesEnabled   = data.fLargePages;
         mHWData->mHWVirtExVPIDEnabled         = data.fVPID;
+        mHWData->mHWVirtExUXEnabled           = data.fUnrestrictedExecution;
         mHWData->mHWVirtExForceEnabled        = data.fHardwareVirtForce;
         mHWData->mPAEEnabled                  = data.fPAE;
         mHWData->mSyntheticCpu                = data.fSyntheticCpu;
@@ -9956,6 +9968,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.fNestedPaging          = !!mHWData->mHWVirtExNestedPagingEnabled;
         data.fLargePages            = !!mHWData->mHWVirtExLargePagesEnabled;
         data.fVPID                  = !!mHWData->mHWVirtExVPIDEnabled;
+        data.fUnrestrictedExecution = !!mHWData->mHWVirtExUXEnabled;
         data.fHardwareVirtForce     = !!mHWData->mHWVirtExForceEnabled;
         data.fPAE                   = !!mHWData->mPAEEnabled;
         data.enmLongMode            = mHWData->mLongMode;

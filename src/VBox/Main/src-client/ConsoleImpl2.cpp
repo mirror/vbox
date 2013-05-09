@@ -997,6 +997,11 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &fEnableVPID);       H();
         InsertConfigInteger(pHM, "EnableVPID", fEnableVPID);
 
+        /* Unrestricted execution aka UX (VT-x) */
+        BOOL fEnableUX = false;
+        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, &fEnableUX); H();
+        InsertConfigInteger(pHM, "EnableUX", fEnableUX);
+
         /*
          * MM values.
          */

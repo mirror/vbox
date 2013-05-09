@@ -72,6 +72,7 @@ public:
     STDMETHOD(COMGETTER(HWVirtExEnabled))(BOOL *a_pfEnabled);
     STDMETHOD(COMGETTER(HWVirtExNestedPagingEnabled))(BOOL *a_pfEnabled);
     STDMETHOD(COMGETTER(HWVirtExVPIDEnabled))(BOOL *a_pfEnabled);
+    STDMETHOD(COMGETTER(HWVirtExUXEnabled))(BOOL *a_pfEnabled);
     STDMETHOD(COMGETTER(PAEEnabled))(BOOL *a_pfEnabled);
     STDMETHOD(COMGETTER(OSName))(BSTR *a_pbstrName);
     STDMETHOD(COMGETTER(OSVersion))(BSTR *a_pbstrVersion);

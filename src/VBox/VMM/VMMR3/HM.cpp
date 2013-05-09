@@ -399,9 +399,9 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCfgHM, "EnableNestedPaging", &pVM->hm.s.fAllowNestedPaging, false);
     AssertRCReturn(rc, rc);
 
-    /** @cfgm{/HM/EnableUnrestrictedExec, bool, true}
+    /** @cfgm{/HM/EnableUX, bool, true}
      * Enables the VT-x unrestricted execution feature. */
-    rc = CFGMR3QueryBoolDef(pCfgHM, "EnableUnrestrictedExec", &pVM->hm.s.vmx.fAllowUnrestricted, true);
+    rc = CFGMR3QueryBoolDef(pCfgHM, "EnableUX", &pVM->hm.s.vmx.fAllowUnrestricted, true);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{/HM/EnableLargePages, bool, false}
@@ -2816,6 +2816,22 @@ VMMR3DECL(bool) HMR3IsVpidActive(PUVM pUVM)
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     return pVM->hm.s.vmx.fVpid;
+}
+
+
+/**
+ * Checks if we are currently using VT-x unrestricted execution,
+ * aka UX. 
+ *
+ * @returns true if UX is being used, otherwise false.
+ * @param   pUVM        The user mode VM handle.
+ */
+VMMR3DECL(bool) HMR3IsUXActive(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    return pVM->hm.s.vmx.fUnrestrictedGuest;
 }
 
 

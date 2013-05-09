@@ -64,6 +64,7 @@ enum
     MODIFYVM_NESTEDPAGING,
     MODIFYVM_LARGEPAGES,
     MODIFYVM_VTXVPID,
+    MODIFYVM_VTXUX,
     MODIFYVM_CPUS,
     MODIFYVM_CPUHOTPLUG,
     MODIFYVM_PLUGCPU,
@@ -221,6 +222,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--nestedpaging",             MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--largepages",               MODIFYVM_LARGEPAGES,                RTGETOPT_REQ_BOOL_ONOFF },
     { "--vtxvpid",                  MODIFYVM_VTXVPID,                   RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vtxux",                    MODIFYVM_VTXUX,                     RTGETOPT_REQ_BOOL_ONOFF },
     { "--cpuidset",                 MODIFYVM_SETCPUID,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX},
     { "--cpuidremove",              MODIFYVM_DELCPUID,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX},
     { "--cpuidremoveall",           MODIFYVM_DELALLCPUID,               RTGETOPT_REQ_NOTHING},
@@ -605,6 +607,12 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
+            case MODIFYVM_VTXUX:
+            {
+                CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, ValueUnion.f));
+                break;
+            }
+    
             case MODIFYVM_CPUS:
             {
                 CHECK_ERROR(machine, COMSETTER(CPUCount)(ValueUnion.u32));
