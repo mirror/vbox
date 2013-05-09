@@ -104,6 +104,9 @@ typedef struct RTLDRMODELF
      * The virtual addresses in this array is the 0 based assignments we've given the image.
      * Not valid if the image is DONE. */
     Elf_Shdr               *paShdrs;
+    /** Unmodified section headers (allocated after paShdrs, so no need to free).
+     * Not valid if the image is DONE. */
+    Elf_Shdr const         *paOrgShdrs;
     /** The size of the loaded image. */
     size_t                  cbImage;
 
@@ -730,18 +733,145 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumDbgInfo)(PRTLDRMODINTERNAL pMod, cons
                                                     PFNRTLDRENUMDBG pfnCallback, void *pvUser)
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
-    NOREF(pvBits);
 
-    return VERR_NOT_IMPLEMENTED; NOREF(pModElf); NOREF(pfnCallback); NOREF(pvUser);
+    /*
+     * Map the image bits if not already done and setup pointer into it.
+     */
+    int rc = RTLDRELF_NAME(MapBits)(pModElf, true);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Do the enumeration.
+     */
+    const Elf_Shdr *paShdrs = pModElf->paOrgShdrs;
+    for (unsigned iShdr = 0; iShdr < pModElf->Ehdr.e_shnum; iShdr++)
+    {
+        /* Debug sections are expected to be PROGBITS and not allocated. */
+        if (paShdrs[iShdr].sh_type != SHT_PROGBITS)
+            continue;
+        if (paShdrs[iShdr].sh_flags & SHF_ALLOC)
+            continue;
+
+        const char *pszSectName = ELF_STR(pModElf, paShdrs[iShdr].sh_name);
+        if (   !strncmp(pszSectName, RT_STR_TUPLE(".debug_"))
+            || !strcmp(pszSectName, ".WATCOM_references") )
+        {
+            int rc = pfnCallback(pMod, iShdr - 1, RTLDRDBGINFOTYPE_DWARF, 0, 0, pszSectName,
+                                 paShdrs[iShdr].sh_offset,
+                                 paShdrs[iShdr].sh_addr,
+                                 paShdrs[iShdr].sh_size,
+                                 NULL, pvUser);
+            if (rc != VINF_SUCCESS)
+                return rc;
+        }
+        else if (!strcmp(pszSectName, ".gnu_debuglink"))
+        {
+            if ((paShdrs[iShdr].sh_size & 3) || paShdrs[iShdr].sh_size < 8)
+                return VERR_BAD_EXE_FORMAT;
+            const char     *pszExtFile = (const char *)((uintptr_t)pModElf->pvBits + paShdrs[iShdr].sh_offset);
+            if (!RTStrEnd(pszExtFile, paShdrs[iShdr].sh_size))
+                return VERR_BAD_EXE_FORMAT;
+
+            uint32_t uCrc32  = *(uint32_t *)((uintptr_t)pszExtFile + paShdrs[iShdr].sh_size - sizeof(uint32_t));
+            char    szCrc32[16];
+            RTStrPrintf(szCrc32, sizeof(szCrc32), "%#010x", uCrc32);
+
+            int rc = pfnCallback(pMod, iShdr - 1, RTLDRDBGINFOTYPE_DWARF, 0, 0, szCrc32,
+                                 paShdrs[iShdr].sh_offset,
+                                 paShdrs[iShdr].sh_addr,
+                                 paShdrs[iShdr].sh_size,
+                                 pszExtFile, pvUser);
+            if (rc != VINF_SUCCESS)
+                return rc;
+        }
+    }
+
+    return VINF_SUCCESS;
 }
 
+
+/**
+ * Helper that locates the first allocated section.
+ *
+ * @returns Pointer to the section header if found, NULL if none.
+ * @param   pShdr   The section header to start searching at.
+ * @param   cLeft   The number of section headers left to search. Can be 0.
+ */
+static const Elf_Shdr *RTLDRELF_NAME(GetFirstAllocatedSection)(const Elf_Shdr *pShdr, unsigned cLeft)
+{
+    while (cLeft-- > 0)
+    {
+        if (pShdr->sh_flags & SHF_ALLOC)
+            return pShdr;
+        pShdr++;
+    }
+    return NULL;
+}
 
 /** @copydoc RTLDROPS::pfnEnumSegments. */
 static DECLCALLBACK(int) RTLDRELF_NAME(EnumSegments)(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
 
-    return VERR_NOT_IMPLEMENTED; NOREF(pModElf); NOREF(pfnCallback); NOREF(pvUser);
+    /*
+     * Map the image bits if not already done and setup pointer into it.
+     */
+    int rc = RTLDRELF_NAME(MapBits)(pModElf, true);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Do the enumeration.
+     */
+    const Elf_Shdr *paShdrs    = pModElf->paShdrs;
+    const Elf_Shdr *paOrgShdrs = pModElf->paOrgShdrs;
+    for (unsigned iShdr = 1; iShdr < pModElf->Ehdr.e_shnum; iShdr++)
+    {
+        RTLDRSEG Seg;
+        Seg.pchName     = ELF_STR(pModElf, paShdrs[iShdr].sh_name);
+        Seg.cchName     = (uint32_t)strlen(Seg.pchName);
+        Seg.SelFlat     = 0;
+        Seg.Sel16bit    = 0;
+        Seg.fFlags      = 0;
+        Seg.fProt       = RTMEM_PROT_READ;
+        if (paShdrs[iShdr].sh_flags & SHF_WRITE)
+            Seg.fProt  |= RTMEM_PROT_WRITE;
+        if (paShdrs[iShdr].sh_flags & SHF_EXECINSTR)
+            Seg.fProt  |= RTMEM_PROT_EXEC;
+        Seg.cb          = paShdrs[iShdr].sh_size;
+        Seg.Alignment   = paShdrs[iShdr].sh_addralign;
+        if (paShdrs[iShdr].sh_flags & SHF_ALLOC)
+        {
+            Seg.LinkAddress = paOrgShdrs[iShdr].sh_addr;
+            Seg.RVA         = paShdrs[iShdr].sh_addr;
+            const Elf_Shdr *pShdr2 = RTLDRELF_NAME(GetFirstAllocatedSection)(&paShdrs[iShdr + 1],
+                                                                             pModElf->Ehdr.e_shnum - iShdr - 1);
+            Seg.cbMapped    = pShdr2 ? pShdr2->sh_addr - paShdrs[iShdr].sh_addr : paShdrs[iShdr].sh_size;
+        }
+        else
+        {
+            Seg.LinkAddress = NIL_RTLDRADDR;
+            Seg.RVA         = NIL_RTLDRADDR;
+            Seg.cbMapped    = NIL_RTLDRADDR;
+        }
+        if (paShdrs[iShdr].sh_type != SHT_NOBITS)
+        {
+            Seg.offFile     = paShdrs[iShdr].sh_offset;
+            Seg.cbFile      = paShdrs[iShdr].sh_size;
+        }
+        else
+        {
+            Seg.offFile     = -1;
+            Seg.cbFile      = 0;
+        }
+
+        int rc = pfnCallback(pMod, &Seg, pvUser);
+        if (rc != VINF_SUCCESS)
+            return rc;
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -751,7 +881,34 @@ static DECLCALLBACK(int) RTLDRELF_NAME(LinkAddressToSegOffset)(PRTLDRMODINTERNAL
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
 
-    return VERR_NOT_IMPLEMENTED; NOREF(pModElf); NOREF(LinkAddress); NOREF(piSeg); NOREF(poffSeg);
+    const Elf_Shdr *pShdrEnd = NULL;
+    unsigned        cLeft    = pModElf->Ehdr.e_shnum - 1;
+    const Elf_Shdr *pShdr    = &pModElf->paOrgShdrs[cLeft];
+    while (cLeft-- > 0)
+    {
+        pShdr--;
+        if (pShdr->sh_flags & SHF_ALLOC)
+        {
+            RTLDRADDR offSeg = LinkAddress - pShdr->sh_addr;
+            if (offSeg < pShdr->sh_size)
+            {
+                *poffSeg = offSeg;
+                *piSeg   = cLeft;
+                return VINF_SUCCESS;
+            }
+            if (offSeg == pShdr->sh_size)
+                pShdrEnd = pShdr;
+        }
+    }
+
+    if (pShdrEnd)
+    {
+        *poffSeg = pShdrEnd->sh_size;
+        *piSeg   = pShdrEnd - pModElf->paOrgShdrs - 1;
+        return VINF_SUCCESS;
+    }
+
+    return VERR_LDR_INVALID_LINK_ADDRESS;
 }
 
 
@@ -759,8 +916,12 @@ static DECLCALLBACK(int) RTLDRELF_NAME(LinkAddressToSegOffset)(PRTLDRMODINTERNAL
 static DECLCALLBACK(int) RTLDRELF_NAME(LinkAddressToRva)(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva)
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
-
-    return VERR_NOT_IMPLEMENTED; NOREF(pModElf); NOREF(LinkAddress); NOREF(pRva);
+    uint32_t     iSeg;
+    RTLDRADDR    offSeg;
+    int rc = RTLDRELF_NAME(LinkAddressToSegOffset)(pMod, LinkAddress, &iSeg, &offSeg);
+    if (RT_SUCCESS(rc))
+        *pRva = pModElf->paShdrs[iSeg].sh_addr + offSeg;
+    return rc;
 }
 
 
@@ -769,8 +930,24 @@ static DECLCALLBACK(int) RTLDRELF_NAME(SegOffsetToRva)(PRTLDRMODINTERNAL pMod, u
                                                        PRTLDRADDR pRva)
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
+    if (iSeg >= pModElf->Ehdr.e_shnum - 1U)
+        return VERR_LDR_INVALID_SEG_OFFSET;
 
-    return VERR_NOT_IMPLEMENTED; NOREF(pModElf); NOREF(iSeg); NOREF(offSeg); NOREF(pRva);
+    iSeg++; /* skip section 0 */
+    if (offSeg > pModElf->paShdrs[iSeg].sh_size)
+    {
+        const Elf_Shdr *pShdr2 = RTLDRELF_NAME(GetFirstAllocatedSection)(&pModElf->paShdrs[iSeg + 1],
+                                                                         pModElf->Ehdr.e_shnum - iSeg - 1);
+        if (   !pShdr2
+            || offSeg > (pShdr2->sh_addr - pModElf->paShdrs[iSeg].sh_addr))
+            return VERR_LDR_INVALID_SEG_OFFSET;
+    }
+
+    if (!(pModElf->paShdrs[iSeg].sh_flags & SHF_ALLOC))
+        return VERR_LDR_INVALID_SEG_OFFSET;
+
+    *pRva = pModElf->paShdrs[iSeg].sh_addr;
+    return VINF_SUCCESS;
 }
 
 
@@ -780,7 +957,27 @@ static DECLCALLBACK(int) RTLDRELF_NAME(RvaToSegOffset)(PRTLDRMODINTERNAL pMod, R
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
 
-    return VERR_NOT_IMPLEMENTED; NOREF(pModElf); NOREF(Rva); NOREF(piSeg); NOREF(poffSeg);
+    Elf_Addr        PrevAddr = 0;
+    unsigned        cLeft    = pModElf->Ehdr.e_shnum - 1;
+    const Elf_Shdr *pShdr    = &pModElf->paShdrs[cLeft];
+    while (cLeft-- > 0)
+    {
+        pShdr--;
+        if (pShdr->sh_flags & SHF_ALLOC)
+        {
+            Elf_Addr    cbSeg  = PrevAddr ? PrevAddr - pShdr->sh_addr : pShdr->sh_size;
+            RTLDRADDR   offSeg = Rva - pShdr->sh_addr;
+            if (offSeg <= cbSeg)
+            {
+                *poffSeg = offSeg;
+                *piSeg   = cLeft;
+                return VINF_SUCCESS;
+            }
+            PrevAddr = pShdr->sh_addr;
+        }
+    }
+
+    return VERR_LDR_INVALID_RVA;
 }
 
 
@@ -1016,6 +1213,24 @@ static int RTLDRELF_NAME(ValidateSectionHeader)(PRTLDRMODELF pModElf, unsigned i
           pShdr->sh_offset, pShdr->sh_size, pShdr->sh_link, pShdr->sh_info, pShdr->sh_addralign,
           pShdr->sh_entsize));
 
+    if (iShdr == 0)
+    {
+        if (   pShdr->sh_name       != 0
+            || pShdr->sh_type       != SHT_NULL
+            || pShdr->sh_flags      != 0
+            || pShdr->sh_addr       != 0
+            || pShdr->sh_size       != 0
+            || pShdr->sh_offset     != 0
+            || pShdr->sh_link       != SHN_UNDEF
+            || pShdr->sh_addralign  != 0
+            || pShdr->sh_entsize    != 0 )
+        {
+            Log(("RTLdrELF: %s: Bad #0 section: %.*Rhxs\n", pszLogName, sizeof(*pShdr), pShdr ));
+            return VERR_BAD_EXE_FORMAT;
+        }
+        return VINF_SUCCESS;
+    }
+
     if (pShdr->sh_link >= pModElf->Ehdr.e_shnum)
     {
         Log(("RTLdrELF: %s: Shdr #%d: sh_link (%d) is beyond the end of the section table (%d)!\n",
@@ -1036,6 +1251,7 @@ static int RTLDRELF_NAME(ValidateSectionHeader)(PRTLDRMODELF pModElf, unsigned i
             break;
 
         case SHT_NULL:
+            break;
         case SHT_PROGBITS:
         case SHT_SYMTAB:
         case SHT_STRTAB:
@@ -1137,16 +1353,20 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
     if (RT_SUCCESS(rc))
     {
         /*
-         * Read the section headers.
+         * Read the section headers, keeping a prestine copy for the module
+         * introspection methods.
          */
-        Elf_Shdr *paShdrs = (Elf_Shdr *)RTMemAlloc(pModElf->Ehdr.e_shnum * sizeof(Elf_Shdr));
+        size_t const cbShdrs = pModElf->Ehdr.e_shnum * sizeof(Elf_Shdr);
+        Elf_Shdr *paShdrs = (Elf_Shdr *)RTMemAlloc(cbShdrs * 2);
         if (paShdrs)
         {
             pModElf->paShdrs = paShdrs;
-            rc = pReader->pfnRead(pReader, paShdrs, pModElf->Ehdr.e_shnum * sizeof(Elf_Shdr),
-                                  pModElf->Ehdr.e_shoff);
+            rc = pReader->pfnRead(pReader, paShdrs, cbShdrs, pModElf->Ehdr.e_shoff);
             if (RT_SUCCESS(rc))
             {
+                memcpy(&paShdrs[pModElf->Ehdr.e_shnum], paShdrs, cbShdrs);
+                pModElf->paOrgShdrs = &paShdrs[pModElf->Ehdr.e_shnum];
+
                 /*
                  * Validate the section headers, allocate memory for the sections (determine the image size),
                  * and find relevant sections.
@@ -1186,6 +1406,13 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
                         pModElf->cbStr  = (unsigned)paShdrs[pModElf->iStrSh].sh_size;
                         AssertReturn(pModElf->cbStr == paShdrs[pModElf->iStrSh].sh_size, VERR_IMAGE_TOO_BIG);
                     }
+                    else if (paShdrs[i].sh_type == SHT_STRTAB)
+                    {
+                        pModElf->iStrSh = i;
+                        pModElf->cbStr  = (unsigned)paShdrs[i].sh_size;
+                        AssertReturn(pModElf->cbStr == paShdrs[i].sh_size, VERR_IMAGE_TOO_BIG);
+                    }
+
                 } /* for each section header */
 
                 Log2(("RTLdrElf: iSymSh=%u cSyms=%u iStrSh=%u cbStr=%u rc=%Rrc cbImage=%#zx\n",

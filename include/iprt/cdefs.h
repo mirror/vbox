@@ -1093,6 +1093,14 @@
 #define RT_STR_TUPLE(a_szConst)  a_szConst, (sizeof(a_szConst) - 1)
 
 
+/**
+ * Macro for using in switch statements that turns constants into strings.
+ *
+ * @param   a_Const     The constant (not string).
+ */
+#define RT_CASE_RET_STR(a_Const)     case a_Const: return #a_Const
+
+
 /** @def RT_BIT
  * Convert a bit number into an integer bitmask (unsigned).
  * @param   bit     The bit number.

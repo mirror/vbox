@@ -1479,6 +1479,16 @@ RT_C_DECLS_END
 #define VERR_DWARF_UNKNOWN_FORM                 (-677)
 /** Encountered an unexpected attribute form. */
 #define VERR_DWARF_UNEXPECTED_FORM              (-678)
+/** Unfinished code. */
+#define VERR_DWARF_TODO                         (-679)
+/** Unknown location opcode. */
+#define VERR_DWARF_UNKNOWN_LOC_OPCODE           (-680)
+/** Expression stack overflow. */
+#define VERR_DWARF_STACK_OVERFLOW               (-681)
+/** Expression stack underflow. */
+#define VERR_DWARF_STACK_UNDERFLOW              (-682)
+/** Internal processing error in the DWARF code. */
+#define VERR_DWARF_IPE                          (-683)
 /** @} */
 
 /** @name Request Packet Status Codes.
