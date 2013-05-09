@@ -4505,9 +4505,12 @@ static uint32_t ataStatusRead(PATACONTROLLER pCtl, uint32_t addr)
     ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
     uint32_t val;
 
-    if ((!pCtl->aIfs[0].pDrvBlock && !pCtl->aIfs[1].pDrvBlock) ||
-            (pCtl->iSelectedIf == 1 && !s->pDrvBlock))
-        val = 0;
+    //@todo: The handler should not be even registered if there
+    // is no device on an IDE channel.
+    if (!pCtl->aIfs[0].pDrvBlock && !pCtl->aIfs[1].pDrvBlock)
+        val = 0xff;
+    else if (pCtl->iSelectedIf == 1 && !s->pDrvBlock)
+        val = 0;    /* Device 1 selected, Device 0 responding for it. */
     else
         val = s->uATARegStatus;
     Log2(("%s: addr=%#x val=%#04x\n", __FUNCTION__, addr, val));
