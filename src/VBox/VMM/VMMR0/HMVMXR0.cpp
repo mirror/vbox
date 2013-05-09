@@ -2484,9 +2484,10 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             Assert(pVCpu->hm.s.vmx.HCPhysVirtApic);
 
-            bool    fPendingIntr = false;
-            uint8_t u8GuestTpr   = 0;
-            rc = PDMApicGetTPR(pVCpu, &u8GuestTpr, &fPendingIntr, NULL /* pu8PendingIntr */);
+            bool    fPendingIntr  = false;
+            uint8_t u8Tpr         = 0;
+            uint8_t u8PendingIntr = 0;
+            rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPendingIntr, &u8PendingIntr);
             AssertRCReturn(rc, rc);
 
             /*
@@ -2495,9 +2496,16 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
              * If there are no external interrupts pending, set threshold to 0 to not cause a VM-exit. We will eventually deliver
              * the interrupt when we VM-exit for other reasons.
              */
-            pVCpu->hm.s.vmx.pbVirtApic[0x80] = u8GuestTpr;       /* Offset 0x80 is TPR in the APIC MMIO range. */
-            /* Bits 3-0 of the TPR threshold field correspond to bits 7-4 of the TPR (which is the Task-Priority Class). */
-            uint32_t u32TprThreshold = fPendingIntr ? (u8GuestTpr >> 4) : 0;
+            pVCpu->hm.s.vmx.pbVirtApic[0x80] = u8Tpr;            /* Offset 0x80 is TPR in the APIC MMIO range. */
+            uint32_t u32TprThreshold = 0;
+            if (fPendingIntr)
+            {
+                /* Bits 3-0 of the TPR threshold field correspond to bits 7-4 of the TPR (which is the Task-Priority Class). */
+                const uint8_t u8PendingPriority = (u8PendingIntr >> 4);
+                const uint8_t u8TprPriority     = (u8Tpr >> 4) & 7;
+                if (u8PendingPriority <= u8TprPriority)
+                    u32TprThreshold = u8PendingPriority;
+            }
             Assert(!(u32TprThreshold & 0xfffffff0));             /* Bits 31:4 MBZ. */
 
             rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
@@ -2507,7 +2515,7 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             if (pVCpu->CTX_SUFF(pVM)->hm.s.fTPRPatchingActive)
             {
                 Assert(!CPUMIsGuestInLongModeEx(pMixedCtx));     /* EFER always up-to-date. */
-                pMixedCtx->msrLSTAR = u8GuestTpr;
+                pMixedCtx->msrLSTAR = u8Tpr;
                 if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
                 {
                     /* If there are interrupts pending, intercept CR8 writes, otherwise don't intercept CR8 reads or writes. */
