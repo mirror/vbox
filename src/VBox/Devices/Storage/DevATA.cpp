@@ -178,6 +178,8 @@ typedef struct ATADevState
     uint32_t cbTotalTransfer;
     /** Elementary ATA/ATAPI transfer size, shared PIO/DMA. */
     uint32_t cbElementaryTransfer;
+    /** Maximum ATAPI elementary transfer size, PIO only. */
+    uint32_t cbPIOTransferLimit;
     /** Current read/write buffer position, shared PIO/DMA. */
     uint32_t iIOBufferCur;
     /** First element beyond end of valid buffer content, shared PIO/DMA. */
@@ -1008,7 +1010,7 @@ static void ataPIOTransferLimitATAPI(ATADevState *s)
 {
     uint32_t cbLimit, cbTransfer;
 
-    cbLimit = s->uATARegLCyl | (s->uATARegHCyl << 8);
+    cbLimit = s->cbPIOTransferLimit;
     /* Use maximum transfer size if the guest requested 0. Avoids a hang. */
     if (cbLimit == 0)
         cbLimit = 0xfffe;
@@ -1734,6 +1736,7 @@ static void atapiCmdBT(ATADevState *s)
 {
     s->fATAPITransfer = true;
     s->cbElementaryTransfer = s->cbTotalTransfer;
+    s->cbPIOTransferLimit = s->uATARegLCyl | (s->uATARegHCyl << 8);
     if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE)
         atapiCmdOK(s);
 }
@@ -6658,6 +6661,12 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             SSMR3GetBool(pSSM, &pThis->aCts[i].aIfs[j].fATAPITransfer);
             SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].cbTotalTransfer);
             SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].cbElementaryTransfer);
+            /* NB: cbPIOTransferLimit could be saved/restored but it's sufficient
+             * to re-calculate it here, with a tiny risk that it could be
+             * unnecessarily low for the current transfer only. Could be changed
+             * when changing the saved state in the future.
+             */
+            pThis->aCts[i].aIfs[j].cbPIOTransferLimit = (pThis->aCts[i].aIfs[j].uATARegHCyl << 8) | pThis->aCts[i].aIfs[j].uATARegLCyl;
             SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].iIOBufferCur);
             SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].iIOBufferEnd);
             SSMR3GetU32(pSSM, &pThis->aCts[i].aIfs[j].iIOBufferPIODataStart);
