@@ -371,25 +371,27 @@ static int vboxGreeterCheckCreds(PVBOXGREETERCTX pCtx)
     {
         /** @todo Domain handling needed?  */
         char *pszUsername; /* User name only is kept local. */
-        rc = VbglR3CredentialsRetrieve(&pszUsername, &pCtx->pszPassword, NULL /* pszDomain */);
+        char *pszDomain = NULL;
+        rc = VbglR3CredentialsRetrieve(&pszUsername, &pCtx->pszPassword, &pszDomain);
         if (RT_FAILURE(rc))
         {
             vboxGreeterError("vboxGreeterCheckCreds: could not retrieve credentials! rc=%Rrc. Aborting\n", rc);
         }
         else
         {
-            vboxGreeterLog("vboxGreeterCheckCreds: credentials retrieved: user=%s, password=%s\n",
+            vboxGreeterLog("vboxGreeterCheckCreds: credentials retrieved: user=%s, password=%s, domain=%s\n",
                            pszUsername,
 #ifdef DEBUG
-                           pCtx->pszPassword);
+                           pCtx->pszPassword,
 #else
-                           "XXX");
+                           "XXX",
 #endif
+                           pszDomain);
             /* Trigger LightDM authentication with the user name just retrieved. */
             lightdm_greeter_authenticate(pCtx->pGreeter, pszUsername); /* Must be the real user name from host! */
 
-            /* Securely wipe the user name again. */
-            VbglR3CredentialsDestroy(pszUsername, NULL /* pszPassword */, NULL /* pszDomain */,
+            /* Securely wipe the user name + domain again. */
+            VbglR3CredentialsDestroy(pszUsername, NULL /* pszPassword */, pszDomain,
                                      3 /* Three wipe passes */);
         }
     }
@@ -1483,10 +1485,10 @@ int main(int argc, char **argv)
 
     VbglR3Term();
 
-    RTEXITCODE rcExit = RT_SUCCESS(rc) 
+    RTEXITCODE rcExit = RT_SUCCESS(rc)
                       ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 
-    vboxGreeterLog("terminated with exit code %ld (rc=%Rrc)\n", 
+    vboxGreeterLog("terminated with exit code %ld (rc=%Rrc)\n",
                    rcExit, rc);
 
     vboxGreeterLogDestroy();
