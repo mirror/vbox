@@ -394,6 +394,23 @@ typedef RTDWARFABBREV *PRTDWARFABBREV;
 /** Pointer to a const abbreviation cache entry. */
 typedef RTDWARFABBREV const *PCRTDWARFABBREV;
 
+/**
+ * Structure for gathering segment info.
+ */
+typedef struct RTDBGDWARFSEG
+{
+    /** The highest offset in the segment. */
+    uint64_t            offHighest;
+    /** Calculated base address. */
+    uint64_t            uBaseAddr;
+    /** Estimated The segment size. */
+    uint64_t            cbSegment;
+    /** Segment number (RTLDRSEG::Sel16bit). */
+    RTSEL               uSegment;
+} RTDBGDWARFSEG;
+/** Pointer to segment info. */
+typedef RTDBGDWARFSEG *PRTDBGDWARFSEG;
+
 
 /**
  * The instance data of the DWARF reader.
@@ -431,6 +448,23 @@ typedef struct RTDBGMODDWARF
 
     /** The list of compilation units (RTDWARFDIE).   */
     RTLISTANCHOR            CompileUnitList;
+
+    /** This is set to -1 if we're doing everything in one pass.
+     * Otherwise it's 1 or 2:
+     *      - In pass 1, we collect segment info.
+     *      - In pass 2, we add debug info to the container.
+     * The two pass parsing is necessary for watcom generated symbol files as
+     * these contains no information about the code and data segments in the
+     * image.  So we have to figure out some approximate stuff based on the
+     * segments and offsets we encounter in the debug info. */
+    int8_t                  iWatcomPass;
+    /** Segment index hint. */
+    uint16_t                iSegHint;
+    /** The number of segments in paSegs.
+     * (During segment copying, this is abused to count useful segments.) */
+    uint32_t                cSegs;
+    /** Pointer to segments if iWatcomPass isn't -1. */
+    PRTDBGDWARFSEG          paSegs;
 } RTDBGMODDWARF;
 /** Pointer to instance data of the DWARF reader. */
 typedef RTDBGMODDWARF *PRTDBGMODDWARF;
@@ -486,6 +520,7 @@ typedef struct RTDWARFLINESTATE
         bool            fEpilogueBegin;
         uint32_t        uIsa;
         uint32_t        uDiscriminator;
+        RTSEL           uSegment;
     } Regs;
     /** @} */
 
@@ -813,6 +848,41 @@ static const RTDWARFDIEDESC g_SubProgramDesc = DIE_DESC_INIT(RTDWARFDIESUBPROGRA
 
 
 /**
+ * DW_TAG_label.
+ */
+typedef struct RTDWARFDIELABEL
+{
+    /** The DIE core structure. */
+    RTDWARFDIE          Core;
+    /** The name. */
+    const char         *pszName;
+    /** The address of the first instruction. */
+    RTDWARFADDR         Address;
+    /** Segment number (watcom). */
+    RTSEL               uSegment;
+    /** Externally visible? */
+    bool                fExternal;
+} RTDWARFDIELABEL;
+/** Pointer to a DW_TAG_label DIE.  */
+typedef RTDWARFDIELABEL *PRTDWARFDIELABEL;
+/** Pointer to a const DW_TAG_label DIE.  */
+typedef RTDWARFDIELABEL const *PCRTDWARFDIELABEL;
+
+
+/** RTDWARFDIESUBPROGRAM attributes. */
+static const RTDWARFATTRDESC g_aLabelAttrs[] =
+{
+    ATTR_ENTRY(DW_AT_name,              RTDWARFDIELABEL, pszName,               ATTR_INIT_ZERO, rtDwarfDecode_String),
+    ATTR_ENTRY(DW_AT_low_pc,            RTDWARFDIELABEL, Address,               ATTR_INIT_ZERO, rtDwarfDecode_Address),
+    ATTR_ENTRY(DW_AT_segment,           RTDWARFDIELABEL, uSegment,              ATTR_INIT_ZERO, rtDwarfDecode_SegmentLoc),
+    ATTR_ENTRY(DW_AT_external,          RTDWARFDIELABEL, fExternal,             ATTR_INIT_ZERO, rtDwarfDecode_Bool)
+};
+
+/** RTDWARFDIESUBPROGRAM description. */
+static const RTDWARFDIEDESC g_LabelDesc = DIE_DESC_INIT(RTDWARFDIELABEL, g_aLabelAttrs);
+
+
+/**
  * Tag names and descriptors.
  */
 static const struct RTDWARFTAGDESC
@@ -838,7 +908,7 @@ static const struct RTDWARFTAGDESC
     TAGDESC_EMPTY(),
     TAGDESC_CORE(TAG_imported_declaration),     /* 0x08 */
     TAGDESC_EMPTY(),
-    TAGDESC_CORE(TAG_label),
+    TAGDESC(TAG_label, &g_LabelDesc),
     TAGDESC_CORE(TAG_lexical_block),
     TAGDESC_EMPTY(),                            /* 0x0c */
     TAGDESC_CORE(TAG_member),
@@ -1079,23 +1149,40 @@ static const char *rtDwarfLog_FormName(uint32_t uForm)
 
 
 /** @callback_method_impl{FNRTLDRENUMSEGS} */
-static DECLCALLBACK(int) rtDbgModHlpAddSegmentCallback(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser)
+static DECLCALLBACK(int) rtDbgModDwarfScanSegmentsCallback(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser)
 {
-    PRTDBGMODINT pMod = (PRTDBGMODINT)pvUser;
+    PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pvUser;
     Log(("Segment %.*s: LinkAddress=%#llx RVA=%#llx cb=%#llx\n",
          pSeg->cchName, pSeg->pchName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
     NOREF(hLdrMod);
 
+    /* Count relevant segments. */
+    if (pSeg->RVA != NIL_RTLDRADDR)
+        pThis->cSegs++;
+
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNRTLDRENUMSEGS} */
+static DECLCALLBACK(int) rtDbgModDwarfAddSegmentsCallback(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser)
+{
+    PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pvUser;
+    Log(("Segment %.*s: LinkAddress=%#llx RVA=%#llx cb=%#llx\n",
+         pSeg->cchName, pSeg->pchName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
+    NOREF(hLdrMod);
+    AssertReturn(!pSeg->pchName[pSeg->cchName], VERR_DWARF_IPE);
+
     /* If the segment doesn't have a mapping, just add a dummy so the indexing
        works out correctly (same as for the image). */
     if (pSeg->RVA == NIL_RTLDRADDR)
-        return pMod->pDbgVt->pfnSegmentAdd(pMod, 0, 0, pSeg->pchName, pSeg->cchName, 0 /*fFlags*/, NULL);
+        return RTDbgModSegmentAdd(pThis->hCnt, 0, 0, pSeg->pchName, 0 /*fFlags*/, NULL);
 
     RTLDRADDR cb = RT_MAX(pSeg->cb, pSeg->cbMapped);
 #if 1
-    return pMod->pDbgVt->pfnSegmentAdd(pMod, pSeg->RVA, cb, pSeg->pchName, pSeg->cchName, 0 /*fFlags*/, NULL);
+    return RTDbgModSegmentAdd(pThis->hCnt, pSeg->RVA, cb, pSeg->pchName, 0 /*fFlags*/, NULL);
 #else
-    return pMod->pDbgVt->pfnSegmentAdd(pMod, pSeg->LinkAddress, cb, pSeg->pchName, pSeg->cchName, 0 /*fFlags*/, NULL);
+    return RTDbgModSegmentAdd(pThis->hCnt, pSeg->LinkAddress, cb, pSeg->pchName, 0 /*fFlags*/, NULL);
 #endif
 }
 
@@ -1104,15 +1191,159 @@ static DECLCALLBACK(int) rtDbgModHlpAddSegmentCallback(RTLDRMOD hLdrMod, PCRTLDR
  * Calls pfnSegmentAdd for each segment in the executable image.
  *
  * @returns IPRT status code.
+ * @param   pThis               The DWARF instance.
  * @param   pMod                The debug module.
  */
-DECLHIDDEN(int) rtDbgModHlpAddSegmentsFromImage(PRTDBGMODINT pMod)
+static int rtDbgModDwarfAddSegmentsFromImage(PRTDBGMODDWARF pThis, PRTDBGMODINT pMod)
 {
     AssertReturn(pMod->pImgVt, VERR_INTERNAL_ERROR_2);
-    return pMod->pImgVt->pfnEnumSegments(pMod, rtDbgModHlpAddSegmentCallback, pMod);
+    Assert(!pThis->cSegs);
+    int rc = pMod->pImgVt->pfnEnumSegments(pMod, rtDbgModDwarfScanSegmentsCallback, pThis);
+    if (RT_SUCCESS(rc))
+    {
+        if (pThis->cSegs == 0)
+            pThis->iWatcomPass = 1;
+        else
+        {
+            pThis->cSegs = 0;
+            pThis->iWatcomPass = -1;
+            rc = pMod->pImgVt->pfnEnumSegments(pMod, rtDbgModDwarfAddSegmentsCallback, pThis);
+        }
+    }
+
+    return rc;
 }
 
 
+/**
+ * Looks up a segment.
+ *
+ * @returns Pointer to the segment on success, NULL if not found.
+ * @param   pThis               The DWARF instance.
+ * @param   uSeg                The segment number / selector.
+ */
+static PRTDBGDWARFSEG rtDbgModDwarfFindSegment(PRTDBGMODDWARF pThis, RTSEL uSeg)
+{
+    uint32_t        cSegs  = pThis->cSegs;
+    uint32_t        iSeg   = pThis->iSegHint;
+    PRTDBGDWARFSEG  paSegs = pThis->paSegs;
+    if (   iSeg < cSegs
+        && paSegs[iSeg].uSegment == uSeg)
+        return &paSegs[iSeg];
+
+    for (iSeg = 0; iSeg < cSegs; iSeg++)
+        if (uSeg == paSegs[iSeg].uSegment)
+        {
+            pThis->iSegHint = iSeg;
+            return &paSegs[iSeg];
+        }
+
+    AssertFailed();
+    return NULL;
+}
+
+
+/**
+ * Record a segment:offset during pass 1.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The DWARF instance.
+ * @param   uSeg                The segment number / selector.
+ * @param   offSeg              The segment offset.
+ */
+static int rtDbgModDwarfRecordSegOffset(PRTDBGMODDWARF pThis, RTSEL uSeg, uint64_t offSeg)
+{
+    /* Look up the segment. */
+    uint32_t        cSegs  = pThis->cSegs;
+    uint32_t        iSeg   = pThis->iSegHint;
+    PRTDBGDWARFSEG  paSegs = pThis->paSegs;
+    if (   iSeg >= cSegs
+        || paSegs[iSeg].uSegment != uSeg)
+    {
+        for (iSeg = 0; iSeg < cSegs; iSeg++)
+            if (uSeg <= paSegs[iSeg].uSegment)
+                break;
+        if (   iSeg >= cSegs
+            || paSegs[iSeg].uSegment != uSeg)
+        {
+            /* Add */
+            void *pvNew = RTMemRealloc(paSegs, (pThis->cSegs + 1) * sizeof(paSegs[0]));
+            if (!pvNew)
+                return VERR_NO_MEMORY;
+            pThis->paSegs = paSegs = (PRTDBGDWARFSEG)pvNew;
+            if (iSeg != cSegs)
+                memmove(&paSegs[iSeg + 1], &paSegs[iSeg], (cSegs - iSeg) * sizeof(paSegs[0]));
+            paSegs[iSeg].offHighest = offSeg;
+            paSegs[iSeg].uBaseAddr  = 0;
+            paSegs[iSeg].cbSegment  = 0;
+            paSegs[iSeg].uSegment   = uSeg;
+            pThis->cSegs++;
+        }
+
+        pThis->iSegHint = iSeg;
+    }
+
+    /* Increase it's range? */
+    if (paSegs[iSeg].offHighest < offSeg)
+    {
+        Log3(("rtDbgModDwarfRecordSegOffset: iSeg=%d uSeg=%#06x offSeg=%#llx\n", iSeg, uSeg, offSeg));
+        paSegs[iSeg].offHighest = offSeg;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Calls pfnSegmentAdd for each segment in the executable image.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The DWARF instance.
+ */
+static int rtDbgModDwarfAddSegmentsFromPass1(PRTDBGMODDWARF pThis)
+{
+    AssertReturn(pThis->cSegs, VERR_DWARF_BAD_INFO);
+    uint32_t const  cSegs   = pThis->cSegs;
+    PRTDBGDWARFSEG  paSegs  = pThis->paSegs;
+
+    /*
+     * Are the segments assigned more or less in numerical order?
+     */
+    if (   paSegs[0].uSegment < 16U
+        && paSegs[cSegs - 1].uSegment - paSegs[0].uSegment + 1U <= cSegs + 16U)
+    {
+        /** @todo heuristics, plase. */
+        AssertFailedReturn(VERR_DWARF_TODO);
+
+    }
+    /*
+     * Assume DOS segmentation.
+     */
+    else
+    {
+        for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+            paSegs[iSeg].uBaseAddr = (uint32_t)paSegs[iSeg].uSegment << 16;
+        for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+            paSegs[iSeg].cbSegment = paSegs[iSeg].offHighest;
+    }
+
+    /*
+     * Add them.
+     */
+    for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+    {
+        Log3(("rtDbgModDwarfAddSegmentsFromPass1: Seg#%u: %#010llx LB %#llx uSegment=%#x\n",
+              iSeg, paSegs[iSeg].uBaseAddr, paSegs[iSeg].cbSegment, paSegs[iSeg].uSegment));
+        char szName[32];
+        RTStrPrintf(szName, sizeof(szName), "seg-%#04xh", paSegs[iSeg].uSegment);
+        int rc = RTDbgModSegmentAdd(pThis->hCnt, paSegs[iSeg].uBaseAddr, paSegs[iSeg].cbSegment,
+                                    szName, 0 /*fFlags*/, NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -1198,13 +1429,25 @@ static int rtDbgModDwarfStringToUtf8(PRTDBGMODDWARF pThis, char **ppsz)
  *
  * @returns IPRT status code.
  * @param   pThis           The DWARF instance.
+ * @param   uSegment        The segment, 0 if not applicable.
  * @param   LinkAddress     The address to convert..
  * @param   piSeg           The segment index.
  * @param   poffSeg         Where to return the segment offset.
  */
-static int rtDbgModDwarfLinkAddressToSegOffset(PRTDBGMODDWARF pThis, uint64_t LinkAddress,
+static int rtDbgModDwarfLinkAddressToSegOffset(PRTDBGMODDWARF pThis, RTSEL uSegment, uint64_t LinkAddress,
                                                PRTDBGSEGIDX piSeg, PRTLDRADDR poffSeg)
 {
+    if (pThis->paSegs)
+    {
+        PRTDBGDWARFSEG pSeg = rtDbgModDwarfFindSegment(pThis, uSegment);
+        if (pSeg)
+        {
+            *piSeg   = pSeg - pThis->paSegs;
+            *poffSeg = LinkAddress;
+            return VINF_SUCCESS;
+        }
+    }
+
     return pThis->pMod->pImgVt->pfnLinkAddressToSegOffset(pThis->pMod, LinkAddress, piSeg, poffSeg);
 }
 
@@ -2053,22 +2296,30 @@ static int rtDwarfLine_DefineFileName(PRTDWARFLINESTATE pLnState, const char *ps
  */
 static int rtDwarfLine_AddLine(PRTDWARFLINESTATE pLnState, uint32_t offOpCode)
 {
-    const char *pszFile = pLnState->Regs.iFile < pLnState->cFileNames
-                        ? pLnState->papszFileNames[pLnState->Regs.iFile]
-                        : "<bad file name index>";
-    NOREF(offOpCode);
-
-    RTDBGSEGIDX iSeg;
-    RTUINTPTR   offSeg;
-    int rc = rtDbgModDwarfLinkAddressToSegOffset(pLnState->pDwarfMod, pLnState->Regs.uAddress, &iSeg, &offSeg);
-    if (RT_SUCCESS(rc))
+    PRTDBGMODDWARF  pThis = pLnState->pDwarfMod;
+    int             rc;
+    if (pThis->iWatcomPass == 1)
+        rc = rtDbgModDwarfRecordSegOffset(pThis, pLnState->Regs.uSegment, pLnState->Regs.uAddress + 1);
+    else
     {
-        Log2(("rtDwarfLine_AddLine: %x:%08llx (%#llx) %s(%d) [offOpCode=%08x]\n", iSeg, offSeg, pLnState->Regs.uAddress, pszFile, pLnState->Regs.uLine, offOpCode));
-        rc = RTDbgModLineAdd(pLnState->pDwarfMod->hCnt, pszFile, pLnState->Regs.uLine, iSeg, offSeg, NULL);
+        const char *pszFile = pLnState->Regs.iFile < pLnState->cFileNames
+                            ? pLnState->papszFileNames[pLnState->Regs.iFile]
+                            : "<bad file name index>";
+        NOREF(offOpCode);
 
-        /* Ignore address conflicts for now. */
-        if (rc == VERR_DBG_ADDRESS_CONFLICT)
-            rc = VINF_SUCCESS;
+        RTDBGSEGIDX iSeg;
+        RTUINTPTR   offSeg;
+        rc = rtDbgModDwarfLinkAddressToSegOffset(pLnState->pDwarfMod, pLnState->Regs.uSegment, pLnState->Regs.uAddress,
+                                                 &iSeg, &offSeg);
+        if (RT_SUCCESS(rc))
+        {
+            Log2(("rtDwarfLine_AddLine: %x:%08llx (%#llx) %s(%d) [offOpCode=%08x]\n", iSeg, offSeg, pLnState->Regs.uAddress, pszFile, pLnState->Regs.uLine, offOpCode));
+            rc = RTDbgModLineAdd(pLnState->pDwarfMod->hCnt, pszFile, pLnState->Regs.uLine, iSeg, offSeg, NULL);
+
+            /* Ignore address conflicts for now. */
+            if (rc == VERR_DBG_ADDRESS_CONFLICT)
+                rc = VINF_SUCCESS;
+        }
     }
 
     pLnState->Regs.fBasicBlock    = false;
@@ -2098,6 +2349,7 @@ static void rtDwarfLine_ResetState(PRTDWARFLINESTATE pLnState)
     pLnState->Regs.fEpilogueBegin   = false;
     pLnState->Regs.uIsa             = 0;
     pLnState->Regs.uDiscriminator   = 0;
+    pLnState->Regs.uSegment         = 0;
 }
 
 
@@ -2296,8 +2548,8 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                             {
                                 uint64_t uSeg = rtDwarfCursor_GetVarSizedU(pCursor, cbInstr - 1, UINT64_MAX);
                                 Log2(("%08x: DW_LNE_set_segment: %#llx, cbInstr=%#x - Watcom Extension\n", offOpCode, uSeg, cbInstr));
-                                NOREF(uSeg);
-                                /** @todo make use of this? */
+                                pLnState->Regs.uSegment = (RTSEL)uSeg;
+                                AssertStmt(pLnState->Regs.uSegment == uSeg, rc = VERR_DWARF_BAD_INFO);
                             }
                             break;
 
@@ -3360,9 +3612,13 @@ static DECLCALLBACK(int) rtDwarfDecode_SegmentLoc(PRTDWARFDIE pDie, uint8_t *pbM
         if (RT_SUCCESS(rc))
         {
             if (LocSt.iTop >= 0)
+            {
                 *(uint16_t *)pbMember = LocSt.auStack[LocSt.iTop];
-            else
-                rc = VERR_DWARF_STACK_UNDERFLOW;
+                Log4(("          %-20s  %#06llx  [%s]\n", rtDwarfLog_AttrName(pDesc->uAttr),
+                      LocSt.auStack[LocSt.iTop],  rtDwarfLog_FormName(uForm)));
+                return VINF_SUCCESS;
+            }
+            rc = VERR_DWARF_STACK_UNDERFLOW;
         }
     }
     return rc;
@@ -3404,21 +3660,52 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
                     if (   pSubProgram->pszName
                         && pSubProgram->PcRange.cAttrs == 2)
                     {
-                        RTDBGSEGIDX iSeg;
-                        RTUINTPTR   offSeg;
-                        rc = rtDbgModDwarfLinkAddressToSegOffset(pThis, pSubProgram->PcRange.uLowAddress,
-                                                                 &iSeg, &offSeg);
-                        if (RT_SUCCESS(rc))
-                            rc = RTDbgModSymbolAdd(pThis->hCnt, pSubProgram->pszName, iSeg, offSeg,
-                                                   pSubProgram->PcRange.uHighAddress - pSubProgram->PcRange.uLowAddress,
-                                                   0 /*fFlags*/, NULL /*piOrdinal*/);
+                        if (pThis->iWatcomPass == 1)
+                            rc = rtDbgModDwarfRecordSegOffset(pThis, pSubProgram->uSegment, pSubProgram->PcRange.uHighAddress);
                         else
-                            Log5(("rtDbgModDwarfLinkAddressToSegOffset failed: %Rrc\n", rc));
+                        {
+                            RTDBGSEGIDX iSeg;
+                            RTUINTPTR   offSeg;
+                            rc = rtDbgModDwarfLinkAddressToSegOffset(pThis, pSubProgram->uSegment,
+                                                                     pSubProgram->PcRange.uLowAddress,
+                                                                     &iSeg, &offSeg);
+                            if (RT_SUCCESS(rc))
+                                rc = RTDbgModSymbolAdd(pThis->hCnt, pSubProgram->pszName, iSeg, offSeg,
+                                                       pSubProgram->PcRange.uHighAddress - pSubProgram->PcRange.uLowAddress,
+                                                       0 /*fFlags*/, NULL /*piOrdinal*/);
+                            else
+                                Log5(("rtDbgModDwarfLinkAddressToSegOffset failed: %Rrc\n", rc));
+                        }
                     }
                 }
             }
             else
                 Log5(("subprogram %s (%s) external\n", pSubProgram->pszName, pSubProgram->pszLinkageName));
+            break;
+        }
+
+        case DW_TAG_label:
+        {
+            PCRTDWARFDIELABEL pLabel = (PCRTDWARFDIELABEL)pDie;
+            if (pLabel->fExternal)
+            {
+                Log5(("label %s %#x:%#llx\n", pLabel->pszName, pLabel->uSegment, pLabel->Address.uAddress));
+                if (pThis->iWatcomPass == 1)
+                    rc = rtDbgModDwarfRecordSegOffset(pThis, pLabel->uSegment, pLabel->Address.uAddress);
+                else
+                {
+                    RTDBGSEGIDX iSeg;
+                    RTUINTPTR   offSeg;
+                    rc = rtDbgModDwarfLinkAddressToSegOffset(pThis, pLabel->uSegment, pLabel->Address.uAddress,
+                                                             &iSeg, &offSeg);
+                    if (RT_SUCCESS(rc))
+                        rc = RTDbgModSymbolAdd(pThis->hCnt, pLabel->pszName, iSeg, offSeg, 0 /*cb*/,
+                                               0 /*fFlags*/, NULL /*piOrdinal*/);
+                    else
+                        Log5(("rtDbgModDwarfLinkAddressToSegOffset failed: %Rrc\n", rc));
+                }
+
+            }
             break;
         }
 
@@ -3661,7 +3948,7 @@ static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie, PCRTDWAR
         rc = pCursor->rc;
 
     /*
-     * Snoope up symbols on the way out.
+     * Snoop up symbols on the way out.
      */
     if (RT_SUCCESS(rc))
     {
@@ -3854,14 +4141,15 @@ static int rtDwarfInfo_LoadAll(PRTDBGMODDWARF pThis)
 {
     RTDWARFCURSOR Cursor;
     int rc = rtDwarfCursor_Init(&Cursor, pThis, krtDbgModDwarfSect_info);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (RT_SUCCESS(rc))
+    {
+        while (   !rtDwarfCursor_IsAtEnd(&Cursor)
+               && RT_SUCCESS(rc))
+            rc = rtDwarfInfo_LoadUnit(pThis, &Cursor, false /* fKeepDies */);
 
-    while (   !rtDwarfCursor_IsAtEnd(&Cursor)
-           && RT_SUCCESS(rc))
-        rc = rtDwarfInfo_LoadUnit(pThis, &Cursor, false /* fKeepDies */);
-
-    return rtDwarfCursor_Delete(&Cursor, rc);
+        rc = rtDwarfCursor_Delete(&Cursor, rc);
+    }
+    return rc;
 }
 
 
@@ -4122,11 +4410,20 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod)
             {
                 pMod->pvDbgPriv = pThis;
 
-                rc = rtDbgModHlpAddSegmentsFromImage(pMod);
+                rc = rtDbgModDwarfAddSegmentsFromImage(pThis, pMod);
                 if (RT_SUCCESS(rc))
                     rc = rtDwarfInfo_LoadAll(pThis);
                 if (RT_SUCCESS(rc))
                     rc = rtDwarfLine_ExplodeAll(pThis);
+                if (RT_SUCCESS(rc) && pThis->iWatcomPass == 1)
+                {
+                    rc = rtDbgModDwarfAddSegmentsFromPass1(pThis);
+                    pThis->iWatcomPass = 2;
+                    if (RT_SUCCESS(rc))
+                        rc = rtDwarfInfo_LoadAll(pThis);
+                    if (RT_SUCCESS(rc))
+                        rc = rtDwarfLine_ExplodeAll(pThis);
+                }
                 if (RT_SUCCESS(rc))
                 {
                     /*
