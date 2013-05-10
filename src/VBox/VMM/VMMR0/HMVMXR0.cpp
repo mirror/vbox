@@ -7797,7 +7797,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
 
         /* Update MSRs that are part of the VMCS when MSR-bitmaps are not supported. */
-        if (RT_UNLIKELY(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)))
+        if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS))
         {
             switch (pMixedCtx->ecx)
             {
