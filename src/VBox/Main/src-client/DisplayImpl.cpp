@@ -4407,6 +4407,8 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             RTStrFree(pszAbsPath);
         }
     }
+    else
+        pDisplay->mpVideoRecCtx = NULL;
 #endif
 
     return VINF_SUCCESS;
