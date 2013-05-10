@@ -307,7 +307,7 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
     IMAGE_DOS_HEADER const *pMzHdr = (IMAGE_DOS_HEADER const *)pbBuf;
     typedef union NTHDRSU
     {
-        IMAGE_NT_HEADERS64  vX_32;
+        IMAGE_NT_HEADERS32  vX_32;
         IMAGE_NT_HEADERS64  vX_64;
     } NTHDRS;
     NTHDRS const   *pHdrs;
@@ -360,14 +360,14 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
         Log(("DigWinNt: %s: Invalid OH.Magic: %#x\n", pszName, WINNT_UNION(pThis, pHdrs, OptionalHeader.Magic)));
         return;
     }
-    if (WINNT_UNION(pThis, pHdrs, OptionalHeader.SizeOfImage) != cbImage)
+    if (RT_ALIGN(WINNT_UNION(pThis, pHdrs, OptionalHeader.SizeOfImage), _4K) != RT_ALIGN(cbImage, _4K))
     {
         Log(("DigWinNt: %s: Invalid OH.SizeOfImage: %#x, expected %#x\n", pszName, WINNT_UNION(pThis, pHdrs, OptionalHeader.SizeOfImage), cbImage));
         return;
     }
     if (WINNT_UNION(pThis, pHdrs, OptionalHeader.NumberOfRvaAndSizes) != IMAGE_NUMBEROF_DIRECTORY_ENTRIES)
     {
-        Log(("DigWinNt: %s: Invalid OH.SizeOfImage: %#x\n", pszName, WINNT_UNION(pThis, pHdrs, OptionalHeader.NumberOfRvaAndSizes)));
+        Log(("DigWinNt: %s: Invalid OH.NumberOfRvaAndSizes: %#x\n", pszName, WINNT_UNION(pThis, pHdrs, OptionalHeader.NumberOfRvaAndSizes)));
         return;
     }
 
@@ -657,7 +657,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
     } u;
 
     /*
-     * Look for the MISYSPTE section name that seems to be a part of all kernels.
+     * Look for the PAGELK section name that seems to be a part of all kernels.
      * Then try find the module table entry for it.  Since it's the first entry
      * in the PsLoadedModuleList we can easily validate the list head and report
      * success.
@@ -675,7 +675,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
              KernelAddr.FlatPtr += PAGE_SIZE)
         {
             int rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, UINT32_C(0xffff0000) - KernelAddr.FlatPtr,
-                                   1, "MISYSPTE", sizeof("MISYSPTE") - 1, &KernelAddr);
+                                   1, "PAGELK\0", sizeof("PAGELK\0"), &KernelAddr);
             if (RT_FAILURE(rc))
                 break;
             DBGFR3AddrSub(&KernelAddr, KernelAddr.FlatPtr & PAGE_OFFSET_MASK);
