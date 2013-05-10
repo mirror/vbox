@@ -123,6 +123,11 @@ typedef struct RTLDRMODELF
     unsigned                cbStr;
     /** Pointer to string table within RTLDRMODELF::pvBits. */
     const char             *pStr;
+
+    /** Size of the section header string table. */
+    unsigned                cbShStr;
+    /** Pointer to section header string table within RTLDRMODELF::pvBits. */
+    const char             *pShStr;
 } RTLDRMODELF, *PRTLDRMODELF;
 
 
@@ -147,6 +152,7 @@ static int RTLDRELF_NAME(MapBits)(PRTLDRMODELF pModElf, bool fNeedsBits)
             pModElf->paSyms = (const Elf_Sym *)(pu8 + pModElf->paShdrs[pModElf->iSymSh].sh_offset);
         if (pModElf->iStrSh != ~0U)
             pModElf->pStr   =    (const char *)(pu8 + pModElf->paShdrs[pModElf->iStrSh].sh_offset);
+        pModElf->pShStr     =    (const char *)(pu8 + pModElf->paShdrs[pModElf->Ehdr.e_shstrndx].sh_offset);
     }
     return rc;
 }
@@ -643,8 +649,8 @@ static DECLCALLBACK(int) RTLDRELF_NAME(Relocate)(PRTLDRMODINTERNAL pMod, void *p
          * Relocate the section.
          */
         Log2(("rtldrELF: %s: Relocation records for #%d [%s] (sh_info=%d sh_link=%d) found in #%d [%s] (sh_info=%d sh_link=%d)\n",
-              pszLogName, (int)pShdrRel->sh_info, ELF_STR(pModElf, pShdr->sh_name), (int)pShdr->sh_info, (int)pShdr->sh_link,
-              iShdr, ELF_STR(pModElf, pShdrRel->sh_name), (int)pShdrRel->sh_info, (int)pShdrRel->sh_link));
+              pszLogName, (int)pShdrRel->sh_info, ELF_SH_STR(pModElf, pShdr->sh_name), (int)pShdr->sh_info, (int)pShdr->sh_link,
+              iShdr, ELF_SH_STR(pModElf, pShdrRel->sh_name), (int)pShdrRel->sh_info, (int)pShdrRel->sh_link));
 
         /** @todo Make RelocateSection a function pointer so we can select the one corresponding to the machine when opening the image. */
         rc = RTLDRELF_NAME(RelocateSection)(pModElf, BaseAddr, pfnGetImport, pvUser,
@@ -753,7 +759,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumDbgInfo)(PRTLDRMODINTERNAL pMod, cons
         if (paShdrs[iShdr].sh_flags & SHF_ALLOC)
             continue;
 
-        const char *pszSectName = ELF_STR(pModElf, paShdrs[iShdr].sh_name);
+        const char *pszSectName = ELF_SH_STR(pModElf, paShdrs[iShdr].sh_name);
         if (   !strncmp(pszSectName, RT_STR_TUPLE(".debug_"))
             || !strcmp(pszSectName, ".WATCOM_references") )
         {
@@ -829,7 +835,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumSegments)(PRTLDRMODINTERNAL pMod, PFN
     for (unsigned iShdr = 1; iShdr < pModElf->Ehdr.e_shnum; iShdr++)
     {
         RTLDRSEG Seg;
-        Seg.pchName     = ELF_STR(pModElf, paShdrs[iShdr].sh_name);
+        Seg.pchName     = ELF_SH_STR(pModElf, paShdrs[iShdr].sh_name);
         Seg.cchName     = (uint32_t)strlen(Seg.pchName);
         Seg.SelFlat     = 0;
         Seg.Sel16bit    = 0;
@@ -1146,6 +1152,13 @@ static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *p
         return VERR_BAD_EXE_FORMAT;
     }
 
+    if (pEhdr->e_shstrndx == 0 || pEhdr->e_shstrndx > pEhdr->e_shnum)
+    {
+        Log(("RTLdrELF: %s: The section headers string table is out of bounds! e_shstrndx=" FMT_ELF_HALF " e_shnum=" FMT_ELF_HALF "\n",
+             pszLogName, pEhdr->e_shstrndx, pEhdr->e_shnum));
+        return VERR_BAD_EXE_FORMAT;
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -1229,6 +1242,13 @@ static int RTLDRELF_NAME(ValidateSectionHeader)(PRTLDRMODELF pModElf, unsigned i
             return VERR_BAD_EXE_FORMAT;
         }
         return VINF_SUCCESS;
+    }
+
+    if (pShdr->sh_name >= pModElf->cbShStr)
+    {
+        Log(("RTLdrELF: %s: Shdr #%d: sh_name (%d) is beyond the end of the section header string table (%d)!\n",
+             pszLogName, iShdr, pShdr->sh_name, pModElf->cbShStr)); NOREF(pszLogName);
+        return VERR_BAD_EXE_FORMAT;
     }
 
     if (pShdr->sh_link >= pModElf->Ehdr.e_shnum)
@@ -1329,11 +1349,13 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
     //pModElf->paShdrs        = NULL;
     //pModElf->paSyms         = NULL;
     pModElf->iSymSh         = ~0U;
-    pModElf->cSyms          = 0;
+    //pModElf->cSyms          = 0;
     pModElf->iStrSh         = ~0U;
-    pModElf->cbStr          = 0;
-    pModElf->cbImage        = 0;
+    //pModElf->cbStr          = 0;
+    //pModElf->cbImage        = 0;
     //pModElf->pStr           = NULL;
+    //pModElf->cbShStr        = 0;
+    //pModElf->pShStr         = NULL;
 
     /*
      * Read and validate the ELF header and match up the CPU architecture.
@@ -1366,6 +1388,8 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
             {
                 memcpy(&paShdrs[pModElf->Ehdr.e_shnum], paShdrs, cbShdrs);
                 pModElf->paOrgShdrs = &paShdrs[pModElf->Ehdr.e_shnum];
+
+                pModElf->cbShStr = paShdrs[pModElf->Ehdr.e_shstrndx].sh_size;
 
                 /*
                  * Validate the section headers, allocate memory for the sections (determine the image size),
@@ -1406,26 +1430,28 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
                         pModElf->cbStr  = (unsigned)paShdrs[pModElf->iStrSh].sh_size;
                         AssertReturn(pModElf->cbStr == paShdrs[pModElf->iStrSh].sh_size, VERR_IMAGE_TOO_BIG);
                     }
-                    else if (paShdrs[i].sh_type == SHT_STRTAB && pModElf->iStrSh == ~0U)
+
+                    /* Special checks for the section string table. */
+                    if (i == pModElf->Ehdr.e_shstrndx)
                     {
-                        pModElf->iStrSh = i;
-                        pModElf->cbStr  = (unsigned)paShdrs[i].sh_size;
-                        AssertReturn(pModElf->cbStr == paShdrs[i].sh_size, VERR_IMAGE_TOO_BIG);
+                        if (paShdrs[i].sh_type != SHT_STRTAB)
+                        {
+                            Log(("RTLdrElf: Section header string table is not a SHT_STRTAB: %#x\n", paShdrs[i].sh_type));
+                            rc = VERR_BAD_EXE_FORMAT;
+                            break;
+                        }
+                        if (paShdrs[i].sh_size == 0)
+                        {
+                            Log(("RTLdrElf: Section header string table is empty\n"));
+                            rc = VERR_BAD_EXE_FORMAT;
+                            break;
+                        }
                     }
 
                 } /* for each section header */
 
                 Log2(("RTLdrElf: iSymSh=%u cSyms=%u iStrSh=%u cbStr=%u rc=%Rrc cbImage=%#zx\n",
                       pModElf->iSymSh, pModElf->cSyms, pModElf->iStrSh, pModElf->cbStr, rc, pModElf->cbImage));
-#if 0
-                /*
-                 * Are the section headers fine?
-                 * We require there to be symbol & string tables (at least for the time being).
-                 */
-                if (    pModElf->iSymSh == ~0U
-                    ||  pModElf->iStrSh == ~0U)
-                    rc = VERR_LDRELF_NO_SYMBOL_OR_NO_STRING_TABS;
-#endif
                 if (RT_SUCCESS(rc))
                 {
                     pModElf->Core.pOps      = &RTLDRELF_MID(s_rtldrElf,Ops);
