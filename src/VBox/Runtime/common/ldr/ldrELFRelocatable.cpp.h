@@ -1406,7 +1406,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
                         pModElf->cbStr  = (unsigned)paShdrs[pModElf->iStrSh].sh_size;
                         AssertReturn(pModElf->cbStr == paShdrs[pModElf->iStrSh].sh_size, VERR_IMAGE_TOO_BIG);
                     }
-                    else if (paShdrs[i].sh_type == SHT_STRTAB)
+                    else if (paShdrs[i].sh_type == SHT_STRTAB && pModElf->iStrSh == ~0U)
                     {
                         pModElf->iStrSh = i;
                         pModElf->cbStr  = (unsigned)paShdrs[i].sh_size;
