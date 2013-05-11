@@ -33,7 +33,7 @@
 #include <iprt/cpp/utils.h>
 
 #include <VBox/vmm/pdmdrv.h>
-#ifdef DEBUG /* for VM_ASSERT_EMT(). */
+#if defined(DEBUG) || defined(VBOX_STRICT) /* for VM_ASSERT_EMT(). */
 # include <VBox/vmm/vm.h>
 #endif
 
