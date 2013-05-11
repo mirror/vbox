@@ -36,6 +36,8 @@
 #define RTAIOMGRFILE_MAGIC              UINT32_C(0x19240823)
 /** Magic number for RTDBGMODINT::u32Magic. (Charles Lloyd) */
 #define RTDBGAS_MAGIC                   UINT32_C(0x19380315)
+/** Magic number for RTDBGCFGINT::u32Magic. (McCoy Tyner) */
+#define RTDBGCFG_MAGIC                  UINT32_C(0x19381211)
 /** Magic number for RTDBGMODINT::u32Magic. (Keith Jarrett) */
 #define RTDBGMOD_MAGIC                  UINT32_C(0x19450508)
 /** Magic number for RTDBGMODVTIMG::u32Magic. (Jack DeJohnette) */

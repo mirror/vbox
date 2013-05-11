@@ -4147,7 +4147,7 @@ VMMR3_INT_DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags
     if (pVM->patm.s.fOutOfMemory == true)
         return VERR_PATCHING_REFUSED;
 
-#if 0 /* DONT COMMIT ENABLED! */
+#if 1 /* DONT COMMIT ENABLED! */
     /* Blacklisted NT4SP1 areas - debugging why we sometimes crash early on, */
     if (  0
         //|| (pInstrGC - 0x80010000U) < 0x10000U // NT4SP1 HAL

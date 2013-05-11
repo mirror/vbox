@@ -190,7 +190,7 @@ int main(int argc, char **argv)
                 uint64_t u64Address = ValueUnion.u64;
 
                 RTDBGMOD hMod;
-                rc = RTDbgModCreateFromImage(&hMod, pszModule, NULL, 0 /*fFlags*/);
+                rc = RTDbgModCreateFromImage(&hMod, pszModule, NULL, NIL_RTDBGCFG);
                 if (RT_FAILURE(rc))
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDbgModCreateFromImage(,%s,,) -> %Rrc", pszModule, rc);
 
