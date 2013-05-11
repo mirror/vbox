@@ -363,16 +363,7 @@ RTDECL(int) RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR cb
 RT_EXPORT_SYMBOL(RTDbgModCreate);
 
 
-RTDECL(int) RTDbgModCreateDeferred(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName,
-                                   RTUINTPTR cb, uint32_t fFlags)
-{
-    NOREF(phDbgMod); NOREF(pszFilename); NOREF(pszName); NOREF(cb); NOREF(fFlags);
-    return VERR_NOT_IMPLEMENTED;
-}
-RT_EXPORT_SYMBOL(RTDbgModCreateDeferred);
-
-
-RTDECL(int) RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t fFlags)
+RTDECL(int) RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTDBGCFG hDbgCfg)
 {
     /*
      * Input validation and lazy initialization.
@@ -382,7 +373,6 @@ RTDECL(int) RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename,
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pszName, VERR_INVALID_POINTER);
-    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
 
     int rc = rtDbgModLazyInit();
     if (RT_FAILURE(rc))
@@ -504,8 +494,9 @@ RTDECL(int) RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename,
 RT_EXPORT_SYMBOL(RTDbgModCreateFromImage);
 
 
+
 RTDECL(int) RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName,
-                                  RTUINTPTR uSubtrahend, uint32_t fFlags)
+                                  RTUINTPTR uSubtrahend, RTDBGCFG hDbgCfg)
 {
     /*
      * Input validation and lazy initialization.
@@ -515,7 +506,6 @@ RTDECL(int) RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, c
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pszName, VERR_INVALID_POINTER);
-    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
     AssertReturn(uSubtrahend == 0, VERR_NOT_IMPLEMENTED); /** @todo implement uSubtrahend. */
 
     int rc = rtDbgModLazyInit();

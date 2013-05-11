@@ -138,11 +138,57 @@ typedef FNDBGFR3ASSEARCHOPEN *PFNDBGFR3ASSEARCHOPEN;
  */
 int dbgfR3AsInit(PUVM pUVM)
 {
+    Assert(pUVM->pVM);
+
     /*
      * Create the semaphore.
      */
     int rc = RTSemRWCreate(&pUVM->dbgf.s.hAsDbLock);
     AssertRCReturn(rc, rc);
+
+    /*
+     * Create the debugging config instance and set it up.
+     */
+    rc = RTDbgCfgCreate(&pUVM->dbgf.s.hDbgCfg, NULL);
+    AssertRCReturn(rc, rc);
+
+    static struct
+    {
+        RTDBGCFGPROP    enmProp;
+        const char     *pszEnvName;
+        const char     *pszCfgName;
+    } const s_aProps[] =
+    {
+        { RTDBGCFGPROP_FLAGS,               "VBOXDBG_FLAGS",            "Flags"             },
+        { RTDBGCFGPROP_PATH,                "VBOXDBG_PATH",             "Path"              },
+        { RTDBGCFGPROP_SUFFIXES,            "VBOXDBG_SUFFIXES",         "Suffixes"          },
+        { RTDBGCFGPROP_SRC_PATH,            "VBOXDBG_SRC_PATH",         "SrcPath"           },
+    };
+    PCFGMNODE pCfgDbgf = CFGMR3GetChild(CFGMR3GetRootU(pUVM), "/DBGF");
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aProps); i++)
+    {
+        const char *pszEnvValue = RTEnvGet(s_aProps[i].pszEnvName);
+        if (pszEnvValue)
+        {
+            rc = RTDbgCfgChangeString(pUVM->dbgf.s.hDbgCfg, s_aProps[i].enmProp, RTDBGCFGOP_PREPEND, pszEnvValue);
+            if (RT_FAILURE(rc))
+                return VMR3SetError(pUVM, rc, RT_SRC_POS,
+                                    "DBGF Config Error: %s=%s -> %Rrc", s_aProps[i].pszEnvName, pszEnvValue, rc);
+        }
+
+        char *pszCfgValue;
+        int rc = CFGMR3QueryStringAllocDef(pCfgDbgf, s_aProps[i].pszCfgName, &pszCfgValue, NULL);
+        if (RT_FAILURE(rc))
+            return VMR3SetError(pUVM, rc, RT_SRC_POS,
+                                "DBGF Config Error: Querying /DBGF/%s -> %Rrc", s_aProps[i].pszCfgName, rc);
+        if (pszCfgValue)
+        {
+            rc = RTDbgCfgChangeString(pUVM->dbgf.s.hDbgCfg, s_aProps[i].enmProp, RTDBGCFGOP_PREPEND, pszCfgValue);
+            if (RT_FAILURE(rc))
+                return VMR3SetError(pUVM, rc, RT_SRC_POS,
+                                    "DBGF Config Error: /DBGF/%s=%s -> %Rrc", s_aProps[i].pszCfgName, pszCfgValue, rc);
+        }
+    }
 
     /*
      * Create the standard address spaces.
@@ -418,7 +464,7 @@ static DECLCALLBACK(int) dbgfR3AsLazyPopulateR0Callback(PVM pVM, const char *psz
     if (!fRC)
     {
         RTDBGMOD hDbgMod;
-        int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszName, 0 /*fFlags*/);
+        int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszName, pVM->pUVM->dbgf.s.hDbgCfg);
         if (RT_SUCCESS(rc))
         {
             rc = RTDbgAsModuleLink((RTDBGAS)pvArg, hDbgMod, ImageBase, 0 /*fFlags*/);
@@ -739,20 +785,6 @@ static int dbgfR3AsSearchCfgPath(PUVM pUVM, const char *pszFilename, const char 
 
 
 /**
- * Callback function used by DBGFR3AsLoadImage.
- *
- * @returns VBox status code.
- * @param   pszFilename     The filename under evaluation.
- * @param   pvUser          Use arguments (DBGFR3ASLOADOPENDATA).
- */
-static DECLCALLBACK(int) dbgfR3AsLoadImageOpen(const char *pszFilename, void *pvUser)
-{
-    DBGFR3ASLOADOPENDATA *pData = (DBGFR3ASLOADOPENDATA *)pvUser;
-    return RTDbgModCreateFromImage(&pData->hMod, pszFilename, pData->pszModName, pData->fFlags);
-}
-
-
-/**
  * Load symbols from an executable module into the specified address space.
  *
  * If an module exist at the specified address it will be replaced by this
@@ -784,44 +816,17 @@ VMMR3DECL(int) DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilen
     if (hRealAS == NIL_RTDBGAS)
         return VERR_INVALID_HANDLE;
 
-    /*
-     * Do the work.
-     */
-    DBGFR3ASLOADOPENDATA Data;
-    Data.pszModName = pszModName;
-    Data.uSubtrahend = 0;
-    Data.fFlags = 0;
-    Data.hMod = NIL_RTDBGMOD;
-    int rc = dbgfR3AsSearchCfgPath(pUVM, pszFilename, "ImagePath", dbgfR3AsLoadImageOpen, &Data);
-    if (RT_FAILURE(rc))
-        rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_IMAGE_PATH", dbgfR3AsLoadImageOpen, &Data);
-    if (RT_FAILURE(rc))
-        rc = dbgfR3AsSearchCfgPath(pUVM, pszFilename, "Path", dbgfR3AsLoadImageOpen, &Data);
-    if (RT_FAILURE(rc))
-        rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_PATH", dbgfR3AsLoadImageOpen, &Data);
+    RTDBGMOD hDbgMod;
+    int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszModName, pUVM->dbgf.s.hDbgCfg);
     if (RT_SUCCESS(rc))
     {
-        rc = DBGFR3AsLinkModule(pUVM, hRealAS, Data.hMod, pModAddress, iModSeg, 0);
+        rc = DBGFR3AsLinkModule(pUVM, hRealAS, hDbgMod, pModAddress, iModSeg, 0);
         if (RT_FAILURE(rc))
-            RTDbgModRelease(Data.hMod);
+            RTDbgModRelease(hDbgMod);
     }
 
     RTDbgAsRelease(hRealAS);
     return rc;
-}
-
-
-/**
- * Callback function used by DBGFR3AsLoadMap.
- *
- * @returns VBox status code.
- * @param   pszFilename     The filename under evaluation.
- * @param   pvUser          Use arguments (DBGFR3ASLOADOPENDATA).
- */
-static DECLCALLBACK(int) dbgfR3AsLoadMapOpen(const char *pszFilename, void *pvUser)
-{
-    DBGFR3ASLOADOPENDATA *pData = (DBGFR3ASLOADOPENDATA *)pvUser;
-    return RTDbgModCreateFromMap(&pData->hMod, pszFilename, pData->pszModName, pData->uSubtrahend, pData->fFlags);
 }
 
 
@@ -861,26 +866,13 @@ VMMR3DECL(int) DBGFR3AsLoadMap(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilenam
     if (hRealAS == NIL_RTDBGAS)
         return VERR_INVALID_HANDLE;
 
-    /*
-     * Do the work.
-     */
-    DBGFR3ASLOADOPENDATA Data;
-    Data.pszModName = pszModName;
-    Data.uSubtrahend = uSubtrahend;
-    Data.fFlags = 0;
-    Data.hMod = NIL_RTDBGMOD;
-    int rc = dbgfR3AsSearchCfgPath(pUVM, pszFilename, "MapPath", dbgfR3AsLoadMapOpen, &Data);
-    if (RT_FAILURE(rc))
-        rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_MAP_PATH", dbgfR3AsLoadMapOpen, &Data);
-    if (RT_FAILURE(rc))
-        rc = dbgfR3AsSearchCfgPath(pUVM, pszFilename, "Path", dbgfR3AsLoadMapOpen, &Data);
-    if (RT_FAILURE(rc))
-        rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_PATH", dbgfR3AsLoadMapOpen, &Data);
+    RTDBGMOD hDbgMod;
+    int rc = RTDbgModCreateFromMap(&hDbgMod, pszFilename, pszModName, uSubtrahend, pUVM->dbgf.s.hDbgCfg);
     if (RT_SUCCESS(rc))
     {
-        rc = DBGFR3AsLinkModule(pUVM, hRealAS, Data.hMod, pModAddress, iModSeg, 0);
+        rc = DBGFR3AsLinkModule(pUVM, hRealAS, hDbgMod, pModAddress, iModSeg, 0);
         if (RT_FAILURE(rc))
-            RTDbgModRelease(Data.hMod);
+            RTDbgModRelease(hDbgMod);
     }
 
     RTDbgAsRelease(hRealAS);

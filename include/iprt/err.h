@@ -1489,6 +1489,10 @@ RT_C_DECLS_END
 #define VERR_DWARF_STACK_UNDERFLOW              (-682)
 /** Internal processing error in the DWARF code. */
 #define VERR_DWARF_IPE                          (-683)
+/** Invalid configuration property value. */
+#define VERR_DBG_CFG_INVALID_VALUE              (-684)
+/** Not an integer property. */
+#define VERR_DBG_CFG_NOT_UINT_PROP              (-685)
 /** @} */
 
 /** @name Request Packet Status Codes.

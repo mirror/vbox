@@ -24,6 +24,7 @@
 #include <iprt/critsect.h>
 #include <iprt/string.h>
 #include <iprt/avl.h>
+#include <iprt/dbg.h>
 #include <VBox/vmm/dbgf.h>
 
 
@@ -306,6 +307,8 @@ typedef struct DBGFUSERPERVM
     bool volatile               afAsAliasPopuplated[DBGF_AS_COUNT];
     /** Alignment padding. */
     bool                        afAlignment1[2];
+    /** Debug configuration. */
+    R3PTRTYPE(RTDBGCFG)         hDbgCfg;
 
     /** The register database lock. */
     RTSEMRW                     hRegDbLock;

@@ -61,6 +61,7 @@ typedef RTDBGSEGIDX const  *PCRTDBGSEGIDX;
 #define RTDBGSEGIDX_SPECIAL_FIRST   (RTDBGSEGIDX_LAST + 1U)
 
 
+
 /** @name RTDBGSYMADDR_FLAGS_XXX
  * Flags used when looking up a symbol by address.
  * @{ */
@@ -210,6 +211,195 @@ RTDECL(PRTDBGLINE)      RTDbgLineDup(PCRTDBGLINE pLine);
  * @param   pLine           The line number to free. NULL is ignored.
  */
 RTDECL(void)            RTDbgLineFree(PRTDBGLINE pLine);
+
+
+/** @defgroup grp_rt_dbgcfg     RTDbgCfg - Debugging Configuration
+ *
+ * The settings used when loading and processing debug info is kept in a
+ * RTDBGCFG instance since it's generally shared for a whole debugging session
+ * and anyhow would be a major pain to pass as individual parameters to each
+ * call.  The debugging config API not only keeps the settings information but
+ * also provide APIs for making use of it, and in some cases, like for instance
+ * symbol severs, retriving and maintaining it.
+ *
+ * @todo Work in progress - APIs are still missing, adding when needed.
+ *
+ * @{
+ */
+
+/** Debugging configuration handle.  */
+typedef struct RTDBGCFGINT *RTDBGCFG;
+/** Pointer to a debugging configuration handle. */
+typedef RTDBGCFG           *PRTDBGCFG;
+/** NIL debug configuration handle. */
+#define NIL_RTDBGCFG        ((RTDBGCFG)0)
+
+/** @name RTDBGCFG_FLAGS_XXX - Debugging configuration flags.
+ * @{ */
+/** Use deferred loading. */
+#define RTDBGCFG_FLAGS_DEFERRED                     RT_BIT_64(0)
+/** Don't use the symbol server (http). */
+#define RTDBGCFG_FLAGS_NO_SYM_SRV                   RT_BIT_64(1)
+/** Don't use system search paths.
+ * On windows this means not using _NT_ALT_SYMBOL_PATH, _NT_SYMBOL_PATH,
+ * _NT_SOURCE_PATH, and _NT_EXECUTABLE_PATH.
+ * On other systems the effect has yet to be determined. */
+#define RTDBGCFG_FLAGS_NO_SYSTEM_PATHS              RT_BIT_64(2)
+/** Don't search the debug and image paths recursively. */
+#define RTDBGCFG_FLAGS_NO_RECURSIV_SEARCH           RT_BIT_64(3)
+/** Don't search the source paths recursively. */
+#define RTDBGCFG_FLAGS_NO_RECURSIV_SRC_SEARCH       RT_BIT_64(4)
+/** @} */
+
+/**
+ * Debugging configuration properties.
+ *
+ * The search paths are using the DOS convention of semicolon as separator
+ * character.  The the special 'srv' + asterisk syntax known from the windows
+ * debugger search paths are also supported to some extent, as is 'cache' +
+ * asterisk.
+ */
+typedef enum RTDBGCFGPROP
+{
+    /** The customary invalid 0 value. */
+    RTDBGCFGPROP_INVALID = 0,
+    /** RTDBGCFG_FLAGS_XXX.
+     * Env: _FLAGS
+     * The environment variable can be specified as a unsigned value or one or more
+     * mnemonics separated by spaces. */
+    RTDBGCFGPROP_FLAGS,
+    /** List of paths to search for symbol files and images.
+     * Env: _PATH  */
+    RTDBGCFGPROP_PATH,
+    /** List of symbol file suffixes (semicolon separated).
+     * Env: _SUFFIXES  */
+    RTDBGCFGPROP_SUFFIXES,
+    /** List of paths to search for source files.
+     * Env: _SRC_PATH   */
+    RTDBGCFGPROP_SRC_PATH,
+    /** End of valid values. */
+    RTDBGCFGPROP_END,
+    /** The customary 32-bit type hack. */
+    RTDBGCFGPROP_32BIT_HACK = 0x7fffffff
+} RTDBGCFGPROP;
+
+/**
+ * Configuration property change operation.
+ */
+typedef enum RTDBGCFGOP
+{
+    /** Customary invalid 0 value. */
+    RTDBGCFGOP_INVALID = 0,
+    /** Replace the current value with the given one. */
+    RTDBGCFGOP_SET,
+    /** Append the given value to the existing one.  For integer values this is
+     *  considered a bitwise OR operation.  */
+    RTDBGCFGOP_APPEND,
+    /** Prepend the given value to the existing one.  For integer values this is
+     *  considered a bitwise OR operation.  */
+    RTDBGCFGOP_PREPEND,
+    /** Removes the value from the existing one.  For interger values the value is
+     * complemented and ANDed with the existing one, clearing all the specified
+     * flags/bits. */
+    RTDBGCFGOP_REMOVE,
+    /** End of valid values. */
+    RTDBGCFGOP_END,
+    /** Customary 32-bit type hack. */
+    RTDBGCFGOP_32BIT_HACK = 0x7fffffff
+} RTDBGCFGOP;
+
+
+
+/**
+ * Initializes a debugging configuration.
+ *
+ * @returns IPRT status code.
+ * @param   phDbgCfg            Where to return the configuration handle.
+ * @param   pszEnvVarPrefix     The environment variable prefix.  If NULL, the
+ *                              environment is not consulted.
+ *
+ * @sa  RTDbgCfgChangeString, RTDbgCfgChangeUInt.
+ */
+RTDECL(int) RTDbgCfgCreate(PRTDBGCFG phDbgCfg, const char *pszEnvVarPrefix);
+
+/**
+ * Retains a new reference to a debugging config.
+ *
+ * @returns New reference count.
+ *          UINT32_MAX is returned if the handle is invalid (asserted).
+ * @param   hDbgCfg             The config handle.
+ */
+RTDECL(uint32_t) RTDbgCfgRetain(RTDBGCFG hDbgCfg);
+
+/**
+ * Releases a references to a debugging config.
+ *
+ * @returns New reference count, if 0 the config was freed.  UINT32_MAX is
+ *          returned if the handle is invalid (asserted).
+ * @param   hDbgCfg             The config handle.
+ */
+RTDECL(uint32_t) RTDbgCfgRelease(RTDBGCFG hDbgCfg);
+
+/**
+ * Changes a property value by string.
+ *
+ * For string values the string is used more or less as given.  For integer
+ * values and flags, it can contains both values (ORed together) or property
+ * specific mnemonics (ORed / ~ANDed).
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_DBG_CFG_INVALID_VALUE
+ * @param   hDbgCfg             The debugging configuration handle.
+ * @param   enmProp             The property to change.
+ * @param   enmOp               How to change the property.
+ * @param   pszValue            The property value to apply.
+ */
+RTDECL(int) RTDbgCfgChangeString(RTDBGCFG hDbgCfg, RTDBGCFGPROP enmProp, RTDBGCFGOP enmOp, const char *pszValue);
+
+/**
+ * Changes a property value by unsigned integer (64-bit).
+ *
+ * This can only be applied to integer and flag properties.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_DBG_CFG_NOT_UINT_PROP
+ * @param   hDbgCfg             The debugging configuration handle.
+ * @param   enmProp             The property to change.
+ * @param   enmOp               How to change the property.
+ * @param   uValue              The property value to apply.
+ */
+RTDECL(int) RTDbgCfgChangeUInt(RTDBGCFG hDbgCfg, RTDBGCFGPROP enmProp, RTDBGCFGOP enmOp, uint64_t uValue);
+
+/**
+ * Query a property value as string.
+ *
+ * Integer and flags properties are returned as a list of mnemonics if possible,
+ * otherwise as simple hex values.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_BUFFER_OVERFLOW if there isn't sufficient buffer space. Nothing
+ *          is written.
+ * @param   hDbgCfg             The debugging configuration handle.
+ * @param   enmProp             The property to change.
+ * @param   pszValue            The output buffer.
+ * @param   cbValue             The size of the output buffer.
+ */
+RTDECL(int) RTDbgCfgQueryString(RTDBGCFG hDbgCfg, RTDBGCFGPROP enmProp, char *pszValue, size_t cbValue);
+
+/**
+ * Query a property value as unsigned integer (64-bit).
+ *
+ * Only integer and flags properties can be queried this way.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_DBG_CFG_NOT_UINT_PROP
+ * @param   hDbgCfg             The debugging configuration handle.
+ * @param   enmProp             The property to change.
+ * @param   puValue             Where to return the value.
+ */
+RTDECL(int) RTDbgCfgQueryUInt(RTDBGCFG hDbgCfg, RTDBGCFGPROP enmProp, uint64_t *puValue);
+
+/** @} */
 
 
 /** @defgroup grp_rt_dbgas      RTDbgAs - Debug Address Space
@@ -672,9 +862,18 @@ RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDis
  */
 RTDECL(int)         RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR cbSeg, uint32_t fFlags);
 
-RTDECL(int)         RTDbgModCreateDeferred(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTUINTPTR cb, uint32_t fFlags);
-RTDECL(int)         RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t fFlags);
-RTDECL(int)         RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTUINTPTR uSubtrahend, uint32_t fFlags);
+RTDECL(int)         RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName,
+                                            RTDBGCFG hDbgCfg);
+RTDECL(int)         RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTUINTPTR uSubtrahend,
+                                          RTDBGCFG hDbgCfg);
+RTDECL(int)         RTDbgModCreateFromExe(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t cbImage,
+                                          uint32_t uTimeDateStamp, RTDBGCFG pDbgCfg);
+RTDECL(int)         RTDbgModCreateFromDbg(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t cbImage,
+                                          uint32_t uTimeDateStamp, RTDBGCFG pDbgCfg);
+RTDECL(int)         RTDbgModCreateFromPdb(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t cbImage,
+                                          PCRTUUID pUuid, uint32_t Age, RTDBGCFG pDbgCfg);
+RTDECL(int)         RTDbgModCreateFromDwo(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t cbImage,
+                                          uint32_t uCrc32, RTDBGCFG pDbgCfg);
 
 
 /**

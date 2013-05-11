@@ -372,7 +372,6 @@
 # define RTDbgLineDup                                   RT_MANGLER(RTDbgLineDup)
 # define RTDbgLineFree                                  RT_MANGLER(RTDbgLineFree)
 # define RTDbgModCreate                                 RT_MANGLER(RTDbgModCreate)
-# define RTDbgModCreateDeferred                         RT_MANGLER(RTDbgModCreateDeferred)
 # define RTDbgModCreateFromImage                        RT_MANGLER(RTDbgModCreateFromImage)
 # define RTDbgModCreateFromMap                          RT_MANGLER(RTDbgModCreateFromMap)
 # define RTDbgModGetTag                                 RT_MANGLER(RTDbgModGetTag)
