@@ -177,7 +177,7 @@ int dbgfR3AsInit(PUVM pUVM)
         }
 
         char *pszCfgValue;
-        int rc = CFGMR3QueryStringAllocDef(pCfgDbgf, s_aProps[i].pszCfgName, &pszCfgValue, NULL);
+        rc = CFGMR3QueryStringAllocDef(pCfgDbgf, s_aProps[i].pszCfgName, &pszCfgValue, NULL);
         if (RT_FAILURE(rc))
             return VMR3SetError(pUVM, rc, RT_SRC_POS,
                                 "DBGF Config Error: Querying /DBGF/%s -> %Rrc", s_aProps[i].pszCfgName, rc);
