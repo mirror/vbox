@@ -403,6 +403,7 @@
 # define RTDbgSymbolAlloc                               RT_MANGLER(RTDbgSymbolAlloc)
 # define RTDbgSymbolDup                                 RT_MANGLER(RTDbgSymbolDup)
 # define RTDbgSymbolFree                                RT_MANGLER(RTDbgSymbolFree)
+# define RTDbgCfgChangeString                           RT_MANGLER(RTDbgCfgChangeString)
 # define RTDirClose                                     RT_MANGLER(RTDirClose)
 # define RTDirCreate                                    RT_MANGLER(RTDirCreate)
 # define RTDirCreateFullPath                            RT_MANGLER(RTDirCreateFullPath)
