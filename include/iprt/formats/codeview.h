@@ -33,7 +33,7 @@
 
 /** @defgroup grp_rt_fmt_codeview  Microsoft CodeView Debug Information
  * @{
-
+ */
 /**
  * PDB v2.0 in image debug info.
  * The URL is constructed from the timestamp and age?
