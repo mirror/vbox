@@ -180,28 +180,31 @@
 
 
 /* debug dir */
-#define  IMAGE_DEBUG_TYPE_UNKNOWN  0x0
-#define  IMAGE_DEBUG_TYPE_COFF  0x1
-#define  IMAGE_DEBUG_TYPE_CODEVIEW  0x2
-#define  IMAGE_DEBUG_TYPE_FPO  0x3
-#define  IMAGE_DEBUG_TYPE_MISC  0x4
-#define  IMAGE_DEBUG_TYPE_EXCEPTION  0x5
-#define  IMAGE_DEBUG_TYPE_FIXUP  0x6
-#define  IMAGE_DEBUG_TYPE_OMAP_TO_SRC  0x7
-#define  IMAGE_DEBUG_TYPE_OMAP_FROM_SRC  0x8
-#define  IMAGE_DEBUG_TYPE_BORLAND  0x9
-#define  IMAGE_DEBUG_TYPE_RESERVED10  0x10
+#define  IMAGE_DEBUG_TYPE_UNKNOWN           UINT32_C(0x0)
+#define  IMAGE_DEBUG_TYPE_COFF              UINT32_C(0x1)
+#define  IMAGE_DEBUG_TYPE_CODEVIEW          UINT32_C(0x2)
+#define  IMAGE_DEBUG_TYPE_FPO               UINT32_C(0x3)
+#define  IMAGE_DEBUG_TYPE_MISC              UINT32_C(0x4)
+#define  IMAGE_DEBUG_TYPE_EXCEPTION         UINT32_C(0x5)
+#define  IMAGE_DEBUG_TYPE_FIXUP             UINT32_C(0x6)
+#define  IMAGE_DEBUG_TYPE_OMAP_TO_SRC       UINT32_C(0x7)
+#define  IMAGE_DEBUG_TYPE_OMAP_FROM_SRC     UINT32_C(0x8)
+#define  IMAGE_DEBUG_TYPE_BORLAND           UINT32_C(0x9)
+#define  IMAGE_DEBUG_TYPE_RESERVED10        UINT32_C(0x10)
+
+#define  IMAGE_DEBUG_MISC_EXENAME           UINT32_C(1)
 
 /* security directory */
-#define  WIN_CERT_REVISION_1_0  UINT16_C(0x0100)
-#define  WIN_CERT_REVISION_2_0  UINT16_C(0x0200)
+#define  WIN_CERT_REVISION_1_0              UINT16_C(0x0100)
+#define  WIN_CERT_REVISION_2_0              UINT16_C(0x0200)
 
-#define  WIN_CERT_TYPE_X509  UINT16_C(1)
-#define  WIN_CERT_TYPE_PKCS_SIGNED_DATA  UINT16_C(2)
-#define  WIN_CERT_TYPE_RESERVED_1  UINT16_C(3)
-#define  WIN_CERT_TYPE_TS_STACK_SIGNED  UINT16_C(4)
-#define  WIN_CERT_TYPE_EFI_PKCS115 UINT16_C(0x0ef0)
-#define  WIN_CERT_TYPE_EFI_GUID UINT16_C(0x0ef1)
+#define  WIN_CERT_TYPE_X509                 UINT16_C(1)
+#define  WIN_CERT_TYPE_PKCS_SIGNED_DATA     UINT16_C(2)
+#define  WIN_CERT_TYPE_RESERVED_1           UINT16_C(3)
+#define  WIN_CERT_TYPE_TS_STACK_SIGNED      UINT16_C(4)
+#define  WIN_CERT_TYPE_EFI_PKCS115          UINT16_C(0x0ef0)
+#define  WIN_CERT_TYPE_EFI_GUID             UINT16_C(0x0ef1)
+
 
 
 /*******************************************************************************
@@ -218,6 +221,7 @@ typedef struct _IMAGE_FILE_HEADER
     uint16_t  Characteristics;
 } IMAGE_FILE_HEADER;
 typedef IMAGE_FILE_HEADER *PIMAGE_FILE_HEADER;
+typedef IMAGE_FILE_HEADER const *PCIMAGE_FILE_HEADER;
 
 
 typedef struct _IMAGE_DATA_DIRECTORY
@@ -226,13 +230,14 @@ typedef struct _IMAGE_DATA_DIRECTORY
     uint32_t  Size;
 } IMAGE_DATA_DIRECTORY;
 typedef IMAGE_DATA_DIRECTORY *PIMAGE_DATA_DIRECTORY;
+typedef IMAGE_DATA_DIRECTORY const *PCIMAGE_DATA_DIRECTORY;
 
 
 typedef struct _IMAGE_OPTIONAL_HEADER32
 {
     uint16_t  Magic;
-    uint8_t  MajorLinkerVersion;
-    uint8_t  MinorLinkerVersion;
+    uint8_t   MajorLinkerVersion;
+    uint8_t   MinorLinkerVersion;
     uint32_t  SizeOfCode;
     uint32_t  SizeOfInitializedData;
     uint32_t  SizeOfUninitializedData;
@@ -263,12 +268,13 @@ typedef struct _IMAGE_OPTIONAL_HEADER32
     IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
 } IMAGE_OPTIONAL_HEADER32;
 typedef IMAGE_OPTIONAL_HEADER32 *PIMAGE_OPTIONAL_HEADER32;
+typedef IMAGE_OPTIONAL_HEADER32 const *PCIMAGE_OPTIONAL_HEADER32;
 
 typedef struct _IMAGE_OPTIONAL_HEADER64
 {
     uint16_t  Magic;
-    uint8_t  MajorLinkerVersion;
-    uint8_t  MinorLinkerVersion;
+    uint8_t   MajorLinkerVersion;
+    uint8_t   MinorLinkerVersion;
     uint32_t  SizeOfCode;
     uint32_t  SizeOfInitializedData;
     uint32_t  SizeOfUninitializedData;
@@ -298,6 +304,7 @@ typedef struct _IMAGE_OPTIONAL_HEADER64
     IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
 } IMAGE_OPTIONAL_HEADER64;
 typedef IMAGE_OPTIONAL_HEADER64 *PIMAGE_OPTIONAL_HEADER64;
+typedef IMAGE_OPTIONAL_HEADER64 const *PCIMAGE_OPTIONAL_HEADER64;
 
 
 typedef struct _IMAGE_NT_HEADERS
@@ -307,6 +314,7 @@ typedef struct _IMAGE_NT_HEADERS
     IMAGE_OPTIONAL_HEADER32 OptionalHeader;
 } IMAGE_NT_HEADERS32;
 typedef IMAGE_NT_HEADERS32 *PIMAGE_NT_HEADERS32;
+typedef IMAGE_NT_HEADERS32 const *PCIMAGE_NT_HEADERS32;
 
 typedef struct _IMAGE_NT_HEADERS64
 {
@@ -315,6 +323,7 @@ typedef struct _IMAGE_NT_HEADERS64
     IMAGE_OPTIONAL_HEADER64 OptionalHeader;
 } IMAGE_NT_HEADERS64;
 typedef IMAGE_NT_HEADERS64 *PIMAGE_NT_HEADERS64;
+typedef IMAGE_NT_HEADERS64 const *PCIMAGE_NT_HEADERS64;
 
 
 typedef struct _IMAGE_SECTION_HEADER
@@ -335,6 +344,7 @@ typedef struct _IMAGE_SECTION_HEADER
     uint32_t  Characteristics;
 } IMAGE_SECTION_HEADER;
 typedef IMAGE_SECTION_HEADER *PIMAGE_SECTION_HEADER;
+typedef IMAGE_SECTION_HEADER const *PCIMAGE_SECTION_HEADER;
 
 
 typedef struct _IMAGE_BASE_RELOCATION
@@ -343,6 +353,7 @@ typedef struct _IMAGE_BASE_RELOCATION
     uint32_t  SizeOfBlock;
 } IMAGE_BASE_RELOCATION;
 typedef IMAGE_BASE_RELOCATION *PIMAGE_BASE_RELOCATION;
+typedef IMAGE_BASE_RELOCATION const *PCIMAGE_BASE_RELOCATION;
 
 
 typedef struct _IMAGE_EXPORT_DIRECTORY
@@ -374,14 +385,16 @@ typedef struct _IMAGE_IMPORT_DESCRIPTOR
     uint32_t  FirstThunk;
 } IMAGE_IMPORT_DESCRIPTOR;
 typedef IMAGE_IMPORT_DESCRIPTOR *PIMAGE_IMPORT_DESCRIPTOR;
+typedef IMAGE_IMPORT_DESCRIPTOR const *PCIMAGE_IMPORT_DESCRIPTOR;
 
 
 typedef struct _IMAGE_IMPORT_BY_NAME
 {
     uint16_t  Hint;
-    uint8_t  Name[1];
+    uint8_t   Name[1];
 } IMAGE_IMPORT_BY_NAME;
 typedef IMAGE_IMPORT_BY_NAME *PIMAGE_IMPORT_BY_NAME;
+typedef IMAGE_IMPORT_BY_NAME const *PCIMAGE_IMPORT_BY_NAME;
 
 
 /* The image_thunk_data32/64 structures are not very helpful except for getting RSI. keep them around till all the code has been converted. */
@@ -396,6 +409,7 @@ typedef struct _IMAGE_THUNK_DATA64
     } u1;
 } IMAGE_THUNK_DATA64;
 typedef IMAGE_THUNK_DATA64 *PIMAGE_THUNK_DATA64;
+typedef IMAGE_THUNK_DATA64 const *PCIMAGE_THUNK_DATA64;
 
 typedef struct _IMAGE_THUNK_DATA32
 {
@@ -408,6 +422,7 @@ typedef struct _IMAGE_THUNK_DATA32
     } u1;
 } IMAGE_THUNK_DATA32;
 typedef IMAGE_THUNK_DATA32 *PIMAGE_THUNK_DATA32;
+typedef IMAGE_THUNK_DATA32 const *PCIMAGE_THUNK_DATA32;
 
 
 typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY32
@@ -433,7 +448,8 @@ typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY32
     uint32_t  SEHandlerTable;
     uint32_t  SEHandlerCount;
 } IMAGE_LOAD_CONFIG_DIRECTORY32;
-typedef IMAGE_LOAD_CONFIG_DIRECTORY32 PIMAGE_LOAD_CONFIG_DIRECTORY32;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32 *PIMAGE_LOAD_CONFIG_DIRECTORY32;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY32 const *PCIMAGE_LOAD_CONFIG_DIRECTORY32;
 
 typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY64
 {
@@ -459,6 +475,7 @@ typedef struct _IMAGE_LOAD_CONFIG_DIRECTORY64
     uint64_t  SEHandlerCount;
 } IMAGE_LOAD_CONFIG_DIRECTORY64;
 typedef IMAGE_LOAD_CONFIG_DIRECTORY64 *PIMAGE_LOAD_CONFIG_DIRECTORY64;
+typedef IMAGE_LOAD_CONFIG_DIRECTORY64 const *PCIMAGE_LOAD_CONFIG_DIRECTORY64;
 
 
 typedef struct _IMAGE_DEBUG_DIRECTORY
@@ -473,6 +490,18 @@ typedef struct _IMAGE_DEBUG_DIRECTORY
     uint32_t  PointerToRawData;
 } IMAGE_DEBUG_DIRECTORY;
 typedef IMAGE_DEBUG_DIRECTORY *PIMAGE_DEBUG_DIRECTORY;
+typedef IMAGE_DEBUG_DIRECTORY const *PCIMAGE_DEBUG_DIRECTORY;
+
+typedef struct _IMAGE_DEBUG_MISC
+{
+    uint32_t   DataType;
+    uint32_t   Length;
+    uint8_t    Unicode;
+    uint8_t    Reserved[3];
+    uint8_t    Data[1];
+} IMAGE_DEBUG_MISC;
+typedef IMAGE_DEBUG_MISC *PIMAGE_DEBUG_MISC;
+typedef IMAGE_DEBUG_MISC const *PCIMAGE_DEBUG_MISC;
 
 
 typedef struct WIN_CERTIFICATE
@@ -483,6 +512,7 @@ typedef struct WIN_CERTIFICATE
     uint8_t     bCertificate[8];
 } WIN_CERTIFICATE;
 typedef WIN_CERTIFICATE *PWIN_CERTIFICATE;
+typedef WIN_CERTIFICATE const *PCWIN_CERTIFICATE;
 
 #pragma pack()
 

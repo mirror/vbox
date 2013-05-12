@@ -1493,6 +1493,14 @@ RT_C_DECLS_END
 #define VERR_DBG_CFG_INVALID_VALUE              (-684)
 /** Not an integer property. */
 #define VERR_DBG_CFG_NOT_UINT_PROP              (-685)
+/** Deferred loading of information failed. */
+#define VERR_DBG_DEFERRED_LOAD_FAILED           (-686)
+/** Unfinished debug info reader code. */
+#define VERR_DBG_TODO                           (-687)
+/** Found file, but it didn't match the search criteria. */
+#define VERR_DBG_FILE_MISMATCH                  (-688)
+/** Internal processing error in the debug module reader code. */
+#define VERR_DBG_MOD_IPE                        (-689)
 /** @} */
 
 /** @name Request Packet Status Codes.

@@ -759,38 +759,41 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumDbgInfo)(PRTLDRMODINTERNAL pMod, cons
         if (paShdrs[iShdr].sh_flags & SHF_ALLOC)
             continue;
 
+        RTLDRDBGINFO DbgInfo;
         const char *pszSectName = ELF_SH_STR(pModElf, paShdrs[iShdr].sh_name);
         if (   !strncmp(pszSectName, RT_STR_TUPLE(".debug_"))
             || !strcmp(pszSectName, ".WATCOM_references") )
         {
-            rc = pfnCallback(pMod, iShdr - 1, RTLDRDBGINFOTYPE_DWARF, 0, 0, pszSectName,
-                             paShdrs[iShdr].sh_offset,
-                             paShdrs[iShdr].sh_addr,
-                             paShdrs[iShdr].sh_size,
-                             NULL, pvUser);
-            if (rc != VINF_SUCCESS)
-                return rc;
+            RT_ZERO(DbgInfo.u);
+            DbgInfo.enmType         = RTLDRDBGINFOTYPE_DWARF;
+            DbgInfo.offFile         = paShdrs[iShdr].sh_offset;
+            DbgInfo.cb              = paShdrs[iShdr].sh_size;
+            DbgInfo.u.Dwarf.pszSection = pszSectName;
         }
         else if (!strcmp(pszSectName, ".gnu_debuglink"))
         {
             if ((paShdrs[iShdr].sh_size & 3) || paShdrs[iShdr].sh_size < 8)
                 return VERR_BAD_EXE_FORMAT;
-            const char     *pszExtFile = (const char *)((uintptr_t)pModElf->pvBits + paShdrs[iShdr].sh_offset);
-            if (!RTStrEnd(pszExtFile, paShdrs[iShdr].sh_size))
+
+            RT_ZERO(DbgInfo.u);
+            DbgInfo.enmType         = RTLDRDBGINFOTYPE_DWARF_DWO;
+            DbgInfo.pszExtFile      = (const char *)((uintptr_t)pModElf->pvBits + paShdrs[iShdr].sh_offset);
+            if (!RTStrEnd(DbgInfo.pszExtFile, paShdrs[iShdr].sh_size))
                 return VERR_BAD_EXE_FORMAT;
-
-            uint32_t uCrc32  = *(uint32_t *)((uintptr_t)pszExtFile + paShdrs[iShdr].sh_size - sizeof(uint32_t));
-            char    szCrc32[16];
-            RTStrPrintf(szCrc32, sizeof(szCrc32), "%#010x", uCrc32);
-
-            rc = pfnCallback(pMod, iShdr - 1, RTLDRDBGINFOTYPE_DWARF, 0, 0, szCrc32,
-                             paShdrs[iShdr].sh_offset,
-                             paShdrs[iShdr].sh_addr,
-                             paShdrs[iShdr].sh_size,
-                             pszExtFile, pvUser);
-            if (rc != VINF_SUCCESS)
-                return rc;
+            DbgInfo.u.Dwo.uCrc32    = *(uint32_t *)((uintptr_t)DbgInfo.pszExtFile + paShdrs[iShdr].sh_size - sizeof(uint32_t));
+            DbgInfo.offFile         = -1;
+            DbgInfo.cb              = 0;
         }
+        else
+            continue;
+
+        DbgInfo.LinkAddress         = NIL_RTLDRADDR;
+        DbgInfo.iDbgInfo            = iShdr - 1;
+
+        rc = pfnCallback(pMod, &DbgInfo, pvUser);
+        if (rc != VINF_SUCCESS)
+            return rc;
+
     }
 
     return VINF_SUCCESS;

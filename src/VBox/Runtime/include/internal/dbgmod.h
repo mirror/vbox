@@ -443,6 +443,64 @@ typedef RTDBGMODVTDBG const *PCRTDBGMODVTDBG;
 
 
 /**
+ * Deferred loading callback.
+ *
+ * @returns IPRT status code. On success the necessary method tables should be
+ *          installed in @a pMod.
+ * @param   pMod            Pointer to the debug module structure.
+ * @param   pDeferred       The deferred load data.
+ */
+typedef DECLCALLBACK(int) FNRTDBGMODDEFERRED(PRTDBGMODINT pMod, struct RTDBGMODDEFERRED *pDeferred);
+/** Pointer to a deferred loading callback. */
+typedef FNRTDBGMODDEFERRED *PFNRTDBGMODDEFERRED;
+
+
+/**
+ * Structure pointed to by pvDbgPriv and/or pvImgPriv when
+ * g_rtDbgModVtDbgDeferred and/or g_rtDbgModVtImgDeferred are being used.
+ */
+typedef struct RTDBGMODDEFERRED
+{
+    /** The image size.
+     * Deferred loading is almost pointless without knowing the module size, as
+     * it cannot be mapped (correctly) without it. */
+    RTUINTPTR           cbImage;
+    /** Reference counter. */
+    uint32_t volatile   cRefs;
+    /** The configuration instance (referenced), can be NIL. */
+    RTDBGCFG            hDbgCfg;
+    /** Performs deferred loading of the module. */
+    PFNRTDBGMODDEFERRED pfnDeferred;
+    /** Callback specific data.  */
+    union
+    {
+        struct
+        {
+            /** The time/date stamp of the executable image and codeview file. */
+            uint32_t    uTimestamp;
+        }   PeImage,
+            OldCodeView;
+
+        struct
+        {
+            /** The PDB uuid. */
+            RTUUID      Uuid;
+            /** The PDB age. */
+            uint32_t    uAge;
+        }   NewCodeview;
+
+        struct
+        {
+            /** The CRC-32 value found in the .gnu_debuglink section. */
+            uint32_t    uCrc32;
+        }   GnuDebugLink;
+    } u;
+} RTDBGMODDEFERRED;
+/** Pointer to the deferred loading data. */
+typedef RTDBGMODDEFERRED *PRTDBGMODDEFERRED;
+
+
+/**
  * Debug module structure.
  */
 typedef struct RTDBGMODINT
@@ -454,15 +512,26 @@ typedef struct RTDBGMODINT
     uint32_t volatile   cRefs;
     /** The module tag. */
     uint64_t            uTag;
+
+    /** When set, the loading of the image and debug info (including locating any
+     * external files), will not have taken place yet.  */
+    uint32_t            fDeferred : 1;
+    /** Set if deferred loading failed. */
+    uint32_t            fDeferredFailed : 1;
+    /** Set if the debug info is based on image exports and segments. */
+    uint32_t            fExports : 1;
+    /** Alignment padding. */
+    uint32_t            fPadding1 : 29;
+#if ARCH_BITS == 64
+    uint32_t            u32Padding2;
+#endif
+
     /** The module name (short). */
     char const         *pszName;
     /** The module filename. Can be NULL. */
     char const         *pszImgFile;
     /** The debug info file (if external). Can be NULL. */
     char const         *pszDbgFile;
-
-    /** Critical section serializing access to the module. */
-    RTCRITSECT          CritSect;
 
     /** The method table for the executable image interpreter. */
     PCRTDBGMODVTIMG     pImgVt;
@@ -474,6 +543,8 @@ typedef struct RTDBGMODINT
     /** Pointer to the private data of the debug info interpreter. */
     void               *pvDbgPriv;
 
+    /** Critical section serializing access to the module. */
+    RTCRITSECT          CritSect;
 } RTDBGMODINT;
 /** Pointer to an debug module structure.  */
 typedef RTDBGMODINT *PRTDBGMODINT;
@@ -482,9 +553,14 @@ typedef RTDBGMODINT *PRTDBGMODINT;
 extern DECLHIDDEN(RTSTRCACHE)           g_hDbgModStrCache;
 extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgDwarf;
 extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgNm;
+extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgDeferred;
 extern DECLHIDDEN(RTDBGMODVTIMG const)  g_rtDbgModVtImgLdr;
+extern DECLHIDDEN(RTDBGMODVTIMG const)  g_rtDbgModVtImgDeferred;
 
-int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cbSeg);
+DECLHIDDEN(int) rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cbSeg);
+DECLHIDDEN(int) rtDbgModCreateForExports(PRTDBGMODINT pDbgMod);
+DECLHIDDEN(int) rtDbgModDeferredCreate(PRTDBGMODINT pDbgMod, PFNRTDBGMODDEFERRED pfnDeferred, RTUINTPTR cbImage,
+                                       RTDBGCFG hDbgCfg, PRTDBGMODDEFERRED *ppDeferred);
 
 /** @} */
 
