@@ -128,6 +128,10 @@ HRESULT Display::FinalConstruct()
     mu32UpdateVBVAFlags = 0;
 #endif
 
+#ifdef VBOX_WITH_VPX
+    mpVideoRecCtx = NULL;
+#endif
+
     return BaseFinalConstruct();
 }
 
@@ -4407,8 +4411,6 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             RTStrFree(pszAbsPath);
         }
     }
-    else
-        pDisplay->mpVideoRecCtx = NULL;
 #endif
 
     return VINF_SUCCESS;
