@@ -290,6 +290,19 @@ void dbgfR3AsRelocate(PUVM pUVM, RTGCUINTPTR offDelta)
 
 
 /**
+ * Gets the IPRT debugging configuration handle (no refs retained).
+ *
+ * @returns Config handle or NIL_RTDBGCFG.
+ * @param   pUVM        The user mode VM handle.
+ */
+VMMR3DECL(RTDBGCFG)     DBGFR3AsGetConfig(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, NIL_RTDBGCFG);
+    return pUVM->dbgf.s.hDbgCfg;
+}
+
+
+/**
  * Adds the address space to the database.
  *
  * @returns VBox status code.

@@ -656,6 +656,8 @@ typedef const DBGFLINE *PCDBGFLINE;
 
 /** @} */
 
+VMMR3DECL(RTDBGCFG)     DBGFR3AsGetConfig(PUVM pUVM);
+
 VMMR3DECL(int)          DBGFR3AsAdd(PUVM pUVM, RTDBGAS hDbgAs, RTPROCESS ProcId);
 VMMR3DECL(int)          DBGFR3AsDelete(PUVM pUVM, RTDBGAS hDbgAs);
 VMMR3DECL(int)          DBGFR3AsSetAlias(PUVM pUVM, RTDBGAS hAlias, RTDBGAS hAliasFor);
