@@ -4307,40 +4307,37 @@ static DECLCALLBACK(int) rtDbgModDwarf_Close(PRTDBGMODINT pMod)
 
 
 /** @callback_method_impl{FNRTLDRENUMDBG} */
-static DECLCALLBACK(int) rtDbgModDwarfEnumCallback(RTLDRMOD hLdrMod, uint32_t iDbgInfo, RTLDRDBGINFOTYPE enmType,
-                                                   uint16_t iMajorVer, uint16_t iMinorVer, const char *pszPartNm,
-                                                   RTFOFF offFile, RTLDRADDR LinkAddress, RTLDRADDR cb,
-                                                   const char *pszExtFile, void *pvUser)
+static DECLCALLBACK(int) rtDbgModDwarfEnumCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pDbgInfo, void *pvUser)
 {
-    NOREF(hLdrMod); NOREF(iDbgInfo); NOREF(iMajorVer); NOREF(iMinorVer); NOREF(LinkAddress);
-
     /*
      * Skip stuff we can't handle.
      */
-    if (   enmType != RTLDRDBGINFOTYPE_DWARF
-        || !pszPartNm
-        || pszExtFile)
+    if (pDbgInfo->enmType != RTLDRDBGINFOTYPE_DWARF)
         return VINF_SUCCESS;
+    const char *pszSection = pDbgInfo->u.Dwarf.pszSection;
+    if (!pszSection || !*pszSection)
+        return VINF_SUCCESS;
+    Assert(!pDbgInfo->pszExtFile);
 
     /*
      * Must have a part name starting with debug_ and possibly prefixed by dots
      * or underscores.
      */
-    if (!strncmp(pszPartNm, RT_STR_TUPLE(".debug_")))       /* ELF */
-        pszPartNm += sizeof(".debug_") - 1;
-    else if (!strncmp(pszPartNm, RT_STR_TUPLE("__debug_"))) /* Mach-O */
-        pszPartNm += sizeof("__debug_") - 1;
-    else if (!strcmp(pszPartNm, ".WATCOM_references"))
+    if (!strncmp(pszSection, RT_STR_TUPLE(".debug_")))       /* ELF */
+        pszSection += sizeof(".debug_") - 1;
+    else if (!strncmp(pszSection, RT_STR_TUPLE("__debug_"))) /* Mach-O */
+        pszSection += sizeof("__debug_") - 1;
+    else if (!strcmp(pszSection, ".WATCOM_references"))
         return VINF_SUCCESS; /* Ignore special watcom section for now.*/
     else
-        AssertMsgFailedReturn(("%s\n", pszPartNm), VINF_SUCCESS /*ignore*/);
+        AssertMsgFailedReturn(("%s\n", pszSection), VINF_SUCCESS /*ignore*/);
 
     /*
      * Figure out which part we're talking about.
      */
     krtDbgModDwarfSect enmSect;
     if (0) { /* dummy */ }
-#define ELSE_IF_STRCMP_SET(a_Name) else if (!strcmp(pszPartNm, #a_Name))  enmSect = krtDbgModDwarfSect_ ## a_Name
+#define ELSE_IF_STRCMP_SET(a_Name) else if (!strcmp(pszSection, #a_Name))  enmSect = krtDbgModDwarfSect_ ## a_Name
     ELSE_IF_STRCMP_SET(abbrev);
     ELSE_IF_STRCMP_SET(aranges);
     ELSE_IF_STRCMP_SET(frame);
@@ -4357,7 +4354,7 @@ static DECLCALLBACK(int) rtDbgModDwarfEnumCallback(RTLDRMOD hLdrMod, uint32_t iD
 #undef ELSE_IF_STRCMP_SET
     else
     {
-        AssertMsgFailed(("%s\n", pszPartNm));
+        AssertMsgFailed(("%s\n", pszSection));
         return VINF_SUCCESS;
     }
 
@@ -4365,13 +4362,13 @@ static DECLCALLBACK(int) rtDbgModDwarfEnumCallback(RTLDRMOD hLdrMod, uint32_t iD
      * Record the section.
      */
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pvUser;
-    AssertMsgReturn(!pThis->aSections[enmSect].fPresent, ("duplicate %s\n", pszPartNm), VINF_SUCCESS /*ignore*/);
+    AssertMsgReturn(!pThis->aSections[enmSect].fPresent, ("duplicate %s\n", pszSection), VINF_SUCCESS /*ignore*/);
 
     pThis->aSections[enmSect].fPresent  = true;
-    pThis->aSections[enmSect].offFile   = offFile;
+    pThis->aSections[enmSect].offFile   = pDbgInfo->offFile;
     pThis->aSections[enmSect].pv        = NULL;
-    pThis->aSections[enmSect].cb        = (size_t)cb;
-    if (pThis->aSections[enmSect].cb != cb)
+    pThis->aSections[enmSect].cb        = (size_t)pDbgInfo->cb;
+    if (pThis->aSections[enmSect].cb != pDbgInfo->cb)
         pThis->aSections[enmSect].cb    = ~(size_t)0;
 
     return VINF_SUCCESS;

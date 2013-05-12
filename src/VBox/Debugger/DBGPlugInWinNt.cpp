@@ -360,9 +360,10 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
         Log(("DigWinNt: %s: Invalid OH.Magic: %#x\n", pszName, WINNT_UNION(pThis, pHdrs, OptionalHeader.Magic)));
         return;
     }
-    if (RT_ALIGN(WINNT_UNION(pThis, pHdrs, OptionalHeader.SizeOfImage), _4K) != RT_ALIGN(cbImage, _4K))
+    uint32_t cbImageFromHdr = WINNT_UNION(pThis, pHdrs, OptionalHeader.SizeOfImage);
+    if (RT_ALIGN(cbImageFromHdr, _4K) != RT_ALIGN(cbImage, _4K))
     {
-        Log(("DigWinNt: %s: Invalid OH.SizeOfImage: %#x, expected %#x\n", pszName, WINNT_UNION(pThis, pHdrs, OptionalHeader.SizeOfImage), cbImage));
+        Log(("DigWinNt: %s: Invalid OH.SizeOfImage: %#x, expected %#x\n", pszName, cbImageFromHdr, cbImage));
         return;
     }
     if (WINNT_UNION(pThis, pHdrs, OptionalHeader.NumberOfRvaAndSizes) != IMAGE_NUMBEROF_DIRECTORY_ENTRIES)
@@ -385,25 +386,32 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
         cbDebugDir   = pDir->Size;
     }
 
-    /* dig into the section table... */
-
     /*
      * Create the module.
      */
+    bool     fPeImageMod = true;
     RTDBGMOD hMod;
-    int rc = RTDbgModCreate(&hMod, pszName, cbImage, 0 /*fFlags*/);
+    int rc = RTDbgModCreateFromPeImage(&hMod, pszName, NULL, cbImageFromHdr, TimeDateStamp, DBGFR3AsGetConfig(pUVM));
     if (RT_FAILURE(rc))
-        return;
+    {
+        rc = RTDbgModCreate(&hMod, pszName, cbImage, 0);
+        if (RT_FAILURE(rc))
+            return;
+        fPeImageMod = false;
+    }
     rc = RTDbgModSetTag(hMod, DIG_WINNT_MOD_TAG); AssertRC(rc);
 
-    /* temp hack: */
-    rc = RTDbgModSymbolAdd(hMod, "start", 0 /*iSeg*/, 0, cbImage, 0 /*fFlags*/, NULL); AssertRC(rc);
-
-    /* add sections? */
+    if (fPeImageMod)
+    {
+        rc = RTDbgModSymbolAdd(hMod, "Headers", 0 /*iSeg*/, 0, cbImage, 0 /*fFlags*/, NULL);
+        AssertRC(rc);
+        /** @todo add sections? */
+    }
 
     /*
      * Dig out debug info if possible.  What we're after is the CODEVIEW part.
      */
+    /** @todo do we really need this? */
     if (uRvaDebugDir != 0)
     {
         DBGFADDRESS Addr = *pImageAddr;

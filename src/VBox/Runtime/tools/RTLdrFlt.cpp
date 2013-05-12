@@ -129,19 +129,32 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDBgAsCreate -> %Rrc", rc);
 
+    /*
+     * Create a debugging configuration instance to work with so that we can
+     * make use of (i.e. test) path searching and such.
+     */
+    RTDBGCFG hDbgCfg;
+    rc = RTDbgCfgCreate(&hDbgCfg, "IPRT");
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDbgCfgCreate -> %Rrc", rc);
 
     /*
      * Parse arguments.
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--input",   'i', RTGETOPT_REQ_STRING },
-        { "--verbose", 'v', RTGETOPT_REQ_NOTHING },
+        { "--input",        'i', RTGETOPT_REQ_STRING },
+        { "--pe-image",     'p', RTGETOPT_REQ_NOTHING },
+        { "--verbose",      'v', RTGETOPT_REQ_NOTHING },
     };
 
     PRTSTREAM       pInput          = g_pStdIn;
     PRTSTREAM       pOutput         = g_pStdOut;
     unsigned        cVerbosityLevel = 0;
+    enum {
+        kOpenMethod_FromImage,
+        kOpenMethod_FromPeImage,
+    }               enmOpenMethod   = kOpenMethod_FromImage;
 
     RTGETOPTUNION   ValueUnion;
     RTGETOPTSTATE   GetState;
@@ -156,6 +169,10 @@ int main(int argc, char **argv)
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to open '%s' for reading: %Rrc", ValueUnion.psz, rc);
                 break;
 
+            case 'p':
+                enmOpenMethod = kOpenMethod_FromPeImage;
+                break;
+
             case 'v':
                 cVerbosityLevel++;
                 break;
@@ -166,6 +183,8 @@ int main(int argc, char **argv)
                          "Options:\n"
                          "  -i,--input=file\n"
                          "      Specify a input file instead of standard input.\n"
+                         "  --pe-image\n"
+                         "      Use RTDbgModCreateFromPeImage to open the file."
                          "  -v, --verbose\n"
                          "      Display the address space before doing the filtering.\n"
                          "  -h, -?, --help\n"
@@ -190,7 +209,10 @@ int main(int argc, char **argv)
                 uint64_t u64Address = ValueUnion.u64;
 
                 RTDBGMOD hMod;
-                rc = RTDbgModCreateFromImage(&hMod, pszModule, NULL, NIL_RTDBGCFG);
+                if (enmOpenMethod == kOpenMethod_FromImage)
+                    rc = RTDbgModCreateFromImage(&hMod, pszModule, NULL, hDbgCfg);
+                else
+                    rc = RTDbgModCreateFromPeImage(&hMod, pszModule, NULL, 0, 0, hDbgCfg);
                 if (RT_FAILURE(rc))
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDbgModCreateFromImage(,%s,,) -> %Rrc", pszModule, rc);
 

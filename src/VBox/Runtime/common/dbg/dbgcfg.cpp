@@ -123,6 +123,7 @@ typedef struct RTDBGCFGU64MNEMONIC
 typedef RTDBGCFGU64MNEMONIC const *PCRTDBGCFGU64MNEMONIC;
 
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -157,6 +158,45 @@ static const RTDBGCFGU64MNEMONIC g_aDbgCfgFlags[] =
 
 
 
+RTDECL(int) RTDbgCfgOpenPeImage(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t cbImage, uint32_t uTimestamp,
+                                PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+{
+    int rc = pfnCallback(hDbgCfg, pszFilename, pvUser1, pvUser2);
+    if (rc == VINF_CALLBACK_RETURN || rc == VERR_CALLBACK_RETURN)
+        return rc;
+
+    return rc;
+}
+
+RTDECL(int) RTDbgCfgOpenPdb70(RTDBGCFG hDbgCfg, const char *pszFilename, PCRTUUID pUuid, uint32_t uAge,
+                              PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+{
+    int rc = pfnCallback(hDbgCfg, pszFilename, pvUser1, pvUser2);
+    if (rc == VINF_CALLBACK_RETURN || rc == VERR_CALLBACK_RETURN)
+        return rc;
+
+    return rc;
+}
+
+RTDECL(int) RTDbgCfgOpenPdb20(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t cbImage, uint32_t uTimestamp, uint32_t uAge,
+                              PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+RTDECL(int) RTDbgCfgOpenDbg(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t cbImage, uint32_t uTimestamp,
+                            PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+RTDECL(int) RTDbgCfgOpenDwo(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t uCrc32,
+                            PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
 
 
 
@@ -694,7 +734,9 @@ RTDECL(int) RTDbgCfgCreate(PRTDBGCFG phDbgCfg, const char *pszEnvVarPrefix)
                         break;
                 }
                 else if (rc != VERR_ENV_VAR_NOT_FOUND)
-                        break;
+                    break;
+                else
+                    rc = VINF_SUCCESS;
             }
             RTMemTmpFree(pszEnvVar);
         }

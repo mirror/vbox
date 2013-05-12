@@ -358,8 +358,16 @@ typedef enum RTLDRDBGINFOTYPE
     RTLDRDBGINFOTYPE_STABS,
     /** Debug With Arbitrary Record Format (DWARF). */
     RTLDRDBGINFOTYPE_DWARF,
+    /** Debug With Arbitrary Record Format (DWARF), in external file (DWO). */
+    RTLDRDBGINFOTYPE_DWARF_DWO,
     /** Microsoft Codeview debug info. */
     RTLDRDBGINFOTYPE_CODEVIEW,
+    /** Microsoft Codeview debug info, in external v2.0+ program database (PDB). */
+    RTLDRDBGINFOTYPE_CODEVIEW_PDB20,
+    /** Microsoft Codeview debug info, in external v7.0+ program database (PDB). */
+    RTLDRDBGINFOTYPE_CODEVIEW_PDB70,
+    /** Microsoft Codeview debug info, in external file (DBG). */
+    RTLDRDBGINFOTYPE_CODEVIEW_DBG,
     /** Watcom debug info. */
     RTLDRDBGINFOTYPE_WATCOM,
     /** IBM High Level Language debug info.. */
@@ -370,6 +378,96 @@ typedef enum RTLDRDBGINFOTYPE
     RTLDRDBGINFOTYPE_32BIT_HACK = 0x7fffffff
 } RTLDRDBGINFOTYPE;
 
+
+/**
+ * Debug info details for the enumeration callback.
+ */
+typedef struct RTLDRDBGINFO
+{
+    /** The kind of debug info. */
+    RTLDRDBGINFOTYPE    enmType;
+    /** The debug info ordinal number / id. */
+    uint32_t            iDbgInfo;
+    /** The file offset *if* this type has one specific location in the executable
+     * image file. This is -1 if there isn't any specific file location. */
+    RTFOFF              offFile;
+    /** The link address of the debug info if it's loadable. NIL_RTLDRADDR if not
+     * loadable*/
+    RTLDRADDR           LinkAddress;
+    /** The size of the debug information. -1 is used if this isn't applicable.*/
+    RTLDRADDR           cb;
+    /** This is set if the debug information is found in an external file.  NULL
+     * if no external file involved.
+     * @note Putting it outside the union to allow lazy callback implementation. */
+    const char         *pszExtFile;
+    /** Type (enmType) specific information. */
+    union
+    {
+        /** RTLDRDBGINFOTYPE_DWARF */
+        struct
+        {
+            /** The section name. */
+            const char *pszSection;
+        } Dwarf;
+
+        /** RTLDRDBGINFOTYPE_DWARF_DWO */
+        struct
+        {
+            /** The CRC32 of the external file. */
+            uint32_t    uCrc32;
+        } Dwo;
+
+        /** RTLDRDBGINFOTYPE_CODEVIEW_PDB20, RTLDRDBGINFOTYPE_CODEVIEW_DBG */
+        struct
+        {
+            /** The PE image size. */
+            uint32_t    cbImage;
+            /** The timestamp. */
+            uint32_t    uTimestamp;
+            /** The major version from the entry. */
+            uint32_t    uMajorVer;
+            /** The minor version from the entry. */
+            uint32_t    uMinorVer;
+        } Cv;
+
+        /** RTLDRDBGINFOTYPE_CODEVIEW_DBG */
+        struct
+        {
+            /** The PE image size. */
+            uint32_t    cbImage;
+            /** The timestamp. */
+            uint32_t    uTimestamp;
+        } Dbg;
+
+        /** RTLDRDBGINFOTYPE_CODEVIEW_PDB20*/
+        struct
+        {
+            /** The PE image size. */
+            uint32_t    cbImage;
+            /** The timestamp. */
+            uint32_t    uTimestamp;
+            /** The PDB age. */
+            uint32_t    uAge;
+        } Pdb20;
+
+        /** RTLDRDBGINFOTYPE_CODEVIEW_PDB70 */
+        struct
+        {
+            /** The PE image size. */
+            uint32_t    cbImage;
+            /** The PDB age. */
+            uint32_t    uAge;
+            /** The UUID. */
+            RTUUID      Uuid;
+        } Pdb70;
+    } u;
+} RTLDRDBGINFO;
+/** Pointer to debug info details. */
+typedef RTLDRDBGINFO *PRTLDRDBGINFO;
+/** Pointer to read only debug info details. */
+typedef RTLDRDBGINFO const *PCRTLDRDBGINFO;
+
+
 /**
  * Debug info enumerator callback.
  *
@@ -377,30 +475,10 @@ typedef enum RTLDRDBGINFOTYPE
  *          will cause RTLdrEnumDbgInfo to immediately return with that status.
  *
  * @param   hLdrMod         The module handle.
- * @param   iDbgInfo        The debug info ordinal number / id.
- * @param   enmType         The debug info type.
- * @param   iMajorVer       The major version number of the debug info format.
- *                          -1 if unknow - implies invalid iMinorVer.
- * @param   iMinorVer       The minor version number of the debug info format.
- *                          -1 when iMajorVer is -1.
- * @param   pszPartNm       The name of the debug info part, NULL if not
- *                          applicable.
- * @param   offFile         The file offset *if* this type has one specific
- *                          location in the executable image file. This is -1
- *                          if there isn't any specific file location.
- * @param   LinkAddress     The link address of the debug info if it's
- *                          loadable. NIL_RTLDRADDR if not loadable.
- * @param   cb              The size of the debug information. -1 is used if
- *                          this isn't applicable.
- * @param   pszExtFile      This points to the name of an external file
- *                          containing the debug info.  This is NULL if there
- *                          isn't any external file.
+ * @param   pDbgInfo        Pointer to a read only structure with the details.
  * @param   pvUser          The user parameter specified to RTLdrEnumDbgInfo.
  */
-typedef DECLCALLBACK(int) FNRTLDRENUMDBG(RTLDRMOD hLdrMod, uint32_t iDbgInfo, RTLDRDBGINFOTYPE enmType,
-                                         uint16_t iMajorVer, uint16_t iMinorVer, const char *pszPartNm,
-                                         RTFOFF offFile, RTLDRADDR LinkAddress, RTLDRADDR cb,
-                                         const char *pszExtFile, void *pvUser);
+typedef DECLCALLBACK(int) FNRTLDRENUMDBG(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pDbgInfo, void *pvUser);
 /** Pointer to a debug info enumerator callback. */
 typedef FNRTLDRENUMDBG *PFNRTLDRENUMDBG;
 

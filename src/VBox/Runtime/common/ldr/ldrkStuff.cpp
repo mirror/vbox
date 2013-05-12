@@ -598,23 +598,44 @@ static int rtkldrEnumDbgInfoWrapper(PKLDRMOD pMod, KU32 iDbgInfo, KLDRDBGINFOTYP
     PRTLDRMODKLDRARGS pArgs = (PRTLDRMODKLDRARGS)pvUser;
     NOREF(pMod);
 
-    RTLDRDBGINFOTYPE enmMyType;
+    RTLDRDBGINFO DbgInfo;
+    RT_ZERO(DbgInfo.u);
+    DbgInfo.iDbgInfo        = iDbgInfo;
+    DbgInfo.offFile         = offFile;
+    DbgInfo.LinkAddress     = LinkAddress;
+    DbgInfo.cb              = cb;
+    DbgInfo.pszExtFile      = pszExtFile;
+
     switch (enmType)
     {
-        case KLDRDBGINFOTYPE_UNKNOWN:   enmMyType = RTLDRDBGINFOTYPE_UNKNOWN;  break;
-        case KLDRDBGINFOTYPE_STABS:     enmMyType = RTLDRDBGINFOTYPE_STABS;    break;
-        case KLDRDBGINFOTYPE_DWARF:     enmMyType = RTLDRDBGINFOTYPE_DWARF;    break;
-        case KLDRDBGINFOTYPE_CODEVIEW:  enmMyType = RTLDRDBGINFOTYPE_CODEVIEW; break;
-        case KLDRDBGINFOTYPE_WATCOM:    enmMyType = RTLDRDBGINFOTYPE_WATCOM;   break;
-        case KLDRDBGINFOTYPE_HLL:       enmMyType = RTLDRDBGINFOTYPE_HLL;      break;
+        case KLDRDBGINFOTYPE_UNKNOWN:
+            DbgInfo.enmType = RTLDRDBGINFOTYPE_UNKNOWN;
+            break;
+        case KLDRDBGINFOTYPE_STABS:
+            DbgInfo.enmType = RTLDRDBGINFOTYPE_STABS;
+            break;
+        case KLDRDBGINFOTYPE_DWARF:
+            DbgInfo.enmType = RTLDRDBGINFOTYPE_DWARF;
+            if (pszExtFile)
+                DbgInfo.enmType = RTLDRDBGINFOTYPE_DWARF_DWO;
+            break;
+        case KLDRDBGINFOTYPE_CODEVIEW:
+            DbgInfo.enmType = RTLDRDBGINFOTYPE_CODEVIEW;
+            /* Should make some more effort here... Assume the IPRT loader will kick in before we get here! */
+            break;
+        case KLDRDBGINFOTYPE_WATCOM:
+            DbgInfo.enmType = RTLDRDBGINFOTYPE_WATCOM;
+            break;
+        case KLDRDBGINFOTYPE_HLL:
+            DbgInfo.enmType = RTLDRDBGINFOTYPE_HLL;
+            break;
         default:
             AssertFailed();
-            enmMyType = RTLDRDBGINFOTYPE_UNKNOWN;
+            DbgInfo.enmType = RTLDRDBGINFOTYPE_UNKNOWN;
             break;
     }
 
-    int rc = pArgs->u.pfnEnumDbgInfo(&pArgs->pMod->Core, iDbgInfo, enmMyType, iMajorVer, iMinorVer, pszPartNm,
-                                     offFile, LinkAddress, cb, pszExtFile, pArgs->pvUser);
+    int rc = pArgs->u.pfnEnumDbgInfo(&pArgs->pMod->Core, &DbgInfo, pArgs->pvUser);
     if (RT_FAILURE(rc))
         return rc; /* don't bother converting. */
     return 0;

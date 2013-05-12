@@ -35,8 +35,10 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/err.h>
+#include <iprt/formats/codeview.h>
 #include "internal/ldrPE.h"
 #include "internal/ldr.h"
 
@@ -69,6 +71,8 @@ typedef struct RTLDRMODPE
     void                   *pvBits;
     /** The offset of the NT headers. */
     RTFOFF                  offNtHdrs;
+    /** The offset of the first byte after the section table. */
+    RTFOFF                  offEndOfHdrs;
 
     /** The machine type (IMAGE_FILE_HEADER::Machine). */
     uint16_t                u16Machine;
@@ -93,6 +97,8 @@ typedef struct RTLDRMODPE
     IMAGE_DATA_DIRECTORY    RelocDir;
     /** The export data directory entry. */
     IMAGE_DATA_DIRECTORY    ExportDir;
+    /** The debug directory entry. */
+    IMAGE_DATA_DIRECTORY    DebugDir;
 } RTLDRMODPE, *PRTLDRMODPE;
 
 /**
@@ -751,9 +757,9 @@ static DECLCALLBACK(int) rtldrPEEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFl
                 AssertMsgFailed(("Forwarders are not supported!\n"));
                 continue;
             }
-            else
-                /* Get plain export address */
-                Value = PE_RVA2TYPE(BaseAddress, uRVAExport, RTUINTPTR);
+
+            /* Get plain export address */
+            Value = PE_RVA2TYPE(BaseAddress, uRVAExport, RTUINTPTR);
 
             /*
              * Call back.
@@ -772,8 +778,150 @@ static DECLCALLBACK(int) rtldrPEEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFl
 static DECLCALLBACK(int) rtldrPE_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void *pvBits,
                                              PFNRTLDRENUMDBG pfnCallback, void *pvUser)
 {
-    NOREF(pMod); NOREF(pvBits); NOREF(pfnCallback); NOREF(pvUser);
-    return VINF_NOT_SUPPORTED;
+    PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
+    int rc;
+
+    /*
+     * Debug info directory empty?
+     */
+    if (   !pModPe->DebugDir.VirtualAddress
+        || !pModPe->DebugDir.Size)
+        return VINF_SUCCESS;
+
+    /*
+     * No bits supplied? Do we need to read the bits?
+     */
+    if (!pvBits)
+    {
+        if (!pModPe->pvBits)
+        {
+            rc = rtldrPEReadBits(pModPe);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+        pvBits = pModPe->pvBits;
+    }
+
+    /*
+     * Enumerate the debug directory.
+     */
+    PCIMAGE_DEBUG_DIRECTORY paDbgDir = PE_RVA2TYPE(pvBits, pModPe->DebugDir.VirtualAddress, PCIMAGE_DEBUG_DIRECTORY);
+    int                     rcRet    = VINF_SUCCESS;
+    uint32_t const          cEntries = pModPe->DebugDir.Size / sizeof(paDbgDir[0]);
+    for (uint32_t i = 0; i < cEntries; i++)
+    {
+        if (paDbgDir[i].PointerToRawData < pModPe->offEndOfHdrs)
+            continue;
+        if (paDbgDir[i].SizeOfData < 4)
+            continue;
+
+        char         szPath[RTPATH_MAX];
+        RTLDRDBGINFO DbgInfo;
+        RT_ZERO(DbgInfo.u);
+        DbgInfo.iDbgInfo    = i;
+        DbgInfo.offFile     = paDbgDir[i].PointerToRawData;
+        DbgInfo.LinkAddress =    paDbgDir[i].AddressOfRawData < pModPe->cbImage
+                              && paDbgDir[i].AddressOfRawData >= pModPe->offEndOfHdrs
+                            ? paDbgDir[i].AddressOfRawData : NIL_RTLDRADDR;
+        DbgInfo.cb          = paDbgDir[i].SizeOfData;
+        DbgInfo.pszExtFile  = NULL;
+
+        switch (paDbgDir[i].Type)
+        {
+            case IMAGE_DEBUG_TYPE_CODEVIEW:
+                DbgInfo.enmType = RTLDRDBGINFOTYPE_CODEVIEW;
+                DbgInfo.u.Cv.uMajorVer  = paDbgDir[i].MajorVersion;
+                DbgInfo.u.Cv.uMinorVer  = paDbgDir[i].MinorVersion;
+                DbgInfo.u.Cv.uTimestamp = paDbgDir[i].TimeDateStamp;
+                if (   paDbgDir[i].SizeOfData < sizeof(szPath)
+                    && paDbgDir[i].SizeOfData > 16
+                    && DbgInfo.LinkAddress != NIL_RTLDRADDR)
+                {
+                    PCCVPDB20INFO pCv20 = PE_RVA2TYPE(pvBits, DbgInfo.LinkAddress, PCCVPDB20INFO);
+                    if (   pCv20->u32Magic   == CVPDB20INFO_MAGIC
+                        && pCv20->offDbgInfo == 0
+                        && paDbgDir[i].SizeOfData > RT_OFFSETOF(CVPDB20INFO, szPdbFilename) )
+                    {
+                        DbgInfo.enmType             = RTLDRDBGINFOTYPE_CODEVIEW_PDB20;
+                        DbgInfo.u.Pdb20.cbImage     = pModPe->cbImage;
+                        DbgInfo.u.Pdb20.uTimestamp  = pCv20->uTimestamp;
+                        DbgInfo.u.Pdb20.uAge        = pCv20->uAge;
+                        DbgInfo.pszExtFile          = (const char *)&pCv20->szPdbFilename[0];
+                    }
+                    else if (   pCv20->u32Magic == CVPDB70INFO_MAGIC
+                             && paDbgDir[i].SizeOfData > RT_OFFSETOF(CVPDB70INFO, szPdbFilename) )
+                    {
+                        PCCVPDB70INFO pCv70 = (PCCVPDB70INFO)pCv20;
+                        DbgInfo.enmType             = RTLDRDBGINFOTYPE_CODEVIEW_PDB70;
+                        DbgInfo.u.Pdb70.cbImage     = pModPe->cbImage;
+                        DbgInfo.u.Pdb70.Uuid        = pCv70->PdbUuid;
+                        DbgInfo.u.Pdb70.uAge        = pCv70->uAge;
+                        DbgInfo.pszExtFile          = (const char *)&pCv70->szPdbFilename[0];
+                    }
+                }
+                break;
+
+            case IMAGE_DEBUG_TYPE_MISC:
+                if (   paDbgDir[i].SizeOfData < sizeof(szPath)
+                    && paDbgDir[i].SizeOfData > RT_OFFSETOF(IMAGE_DEBUG_MISC, Data)
+                    && DbgInfo.LinkAddress != NIL_RTLDRADDR)
+                {
+                    PCIMAGE_DEBUG_MISC pMisc = PE_RVA2TYPE(pvBits, DbgInfo.LinkAddress, PCIMAGE_DEBUG_MISC);
+                    if (   pMisc->DataType == IMAGE_DEBUG_MISC_EXENAME
+                        && pMisc->Length   == paDbgDir[i].SizeOfData)
+                    {
+                        if (!pMisc->Unicode)
+                            DbgInfo.pszExtFile      = (const char *)&pMisc->Data[0];
+                        else
+                        {
+                            char *pszPath = szPath;
+                            rc = RTUtf16ToUtf8Ex((PCRTUTF16)&pMisc->Data[0],
+                                                 (pMisc->Length - RT_OFFSETOF(IMAGE_DEBUG_MISC, Data)) / sizeof(RTUTF16),
+                                                 &pszPath, sizeof(szPath), NULL);
+                            if (RT_FAILURE(rc))
+                            {
+                                rcRet = rc;
+                                continue;
+                            }
+                            DbgInfo.pszExtFile      = szPath;
+                        }
+                        DbgInfo.enmType             = RTLDRDBGINFOTYPE_CODEVIEW_DBG;
+                        DbgInfo.u.Dbg.cbImage       = pModPe->cbImage;
+                        DbgInfo.u.Dbg.uTimestamp    = paDbgDir[i].TimeDateStamp;
+                    }
+                }
+                break;
+
+            default:
+                DbgInfo.enmType = RTLDRDBGINFOTYPE_UNKNOWN;
+                break;
+        }
+
+        /* Fix (hack) the file name encoding.  We don't have Windows-1252 handy,
+           so we'll be using Latin-1 as a reasonable approximation.
+           (I don't think we know exactly which encoding this is anyway, as
+           it's probably the current ANSI/Windows code page for the process
+           generating the image anyways.) */
+        if (DbgInfo.pszExtFile && DbgInfo.pszExtFile != szPath)
+        {
+            char *pszPath = szPath;
+            rc = RTLatin1ToUtf8Ex(DbgInfo.pszExtFile,
+                                  paDbgDir[i].SizeOfData - ((uintptr_t)DbgInfo.pszExtFile - (uintptr_t)pvBits),
+                                  &pszPath, sizeof(szPath), NULL);
+            if (RT_FAILURE(rc))
+            {
+                rcRet = rc;
+                continue;
+            }
+        }
+        if (DbgInfo.pszExtFile)
+            RTPathChangeToUnixSlashes(szPath, true /*fForce*/);
+
+        rc = pfnCallback(pMod, &DbgInfo, pvUser);
+        if (rc != VINF_SUCCESS)
+            return rc;
+    }
+    return rcRet;
 }
 
 
@@ -1605,7 +1753,8 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
     PIMAGE_SECTION_HEADER paSections = (PIMAGE_SECTION_HEADER)RTMemAlloc(cbSections);
     if (!paSections)
         return VERR_NO_MEMORY;
-    rc = pReader->pfnRead(pReader, paSections, cbSections, offNtHdrs + 4 + sizeof(IMAGE_FILE_HEADER) + FileHdr.SizeOfOptionalHeader);
+    rc = pReader->pfnRead(pReader, paSections, cbSections,
+                          offNtHdrs + 4 + sizeof(IMAGE_FILE_HEADER) + FileHdr.SizeOfOptionalHeader);
     if (RT_SUCCESS(rc))
     {
         rc = rtldrPEValidateSectionHeaders(paSections, FileHdr.NumberOfSections, pszLogName,
@@ -1627,6 +1776,7 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
                 pModPe->pReader       = pReader;
                 pModPe->pvBits        = NULL;
                 pModPe->offNtHdrs     = offNtHdrs;
+                pModPe->offEndOfHdrs  = offNtHdrs + 4 + sizeof(IMAGE_FILE_HEADER) + FileHdr.SizeOfOptionalHeader + cbSections;
                 pModPe->u16Machine    = FileHdr.Machine;
                 pModPe->fFile         = FileHdr.Characteristics;
                 pModPe->cSections     = FileHdr.NumberOfSections;
@@ -1638,6 +1788,7 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
                 pModPe->ImportDir     = OptHdr.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
                 pModPe->RelocDir      = OptHdr.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
                 pModPe->ExportDir     = OptHdr.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+                pModPe->DebugDir      = OptHdr.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
 
                 /*
                  * Perform validation of some selected data directories which requires

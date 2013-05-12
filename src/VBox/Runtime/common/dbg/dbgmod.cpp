@@ -28,6 +28,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP RTLOGGROUP_DBG
 #include <iprt/dbg.h>
 #include "internal/iprt.h"
 
@@ -36,6 +37,7 @@
 #include <iprt/avl.h>
 #include <iprt/err.h>
 #include <iprt/initterm.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/once.h>
 #include <iprt/param.h>
@@ -483,8 +485,12 @@ RTDECL(int) RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename,
                 }
                 RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszName);
             }
+            else
+                rc = VERR_NO_STR_MEMORY;
             RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszImgFile);
         }
+        else
+            rc = VERR_NO_STR_MEMORY;
         RTCritSectDelete(&pDbgMod->CritSect);
     }
 
@@ -562,8 +568,12 @@ RTDECL(int) RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, c
                 }
                 RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszName);
             }
+            else
+                rc = VERR_NO_STR_MEMORY;
             RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszDbgFile);
         }
+        else
+            rc = VERR_NO_STR_MEMORY;
         RTCritSectDelete(&pDbgMod->CritSect);
     }
 
@@ -571,6 +581,388 @@ RTDECL(int) RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, c
     return rc;
 }
 RT_EXPORT_SYMBOL(RTDbgModCreateFromMap);
+
+
+
+
+/*
+ *
+ *  P E   I M A G E
+ *  P E   I M A G E
+ *  P E   I M A G E
+ *
+ */
+
+
+/**
+ * Opens debug information for an image.
+ *
+ * @returns IPRT status code
+ * @param   pDbgMod             The debug module structure.
+ *
+ * @note    This will generally not look for debug info stored in external
+ *          files.  rtDbgModFromPeImageExtDbgInfoCallback can help with that.
+ */
+static int rtDbgModOpenDebugInfoInsideImage(PRTDBGMODINT pDbgMod)
+{
+    AssertReturn(!pDbgMod->pDbgVt, VERR_DBG_MOD_IPE);
+    AssertReturn(pDbgMod->pImgVt, VERR_DBG_MOD_IPE);
+
+    int rc = RTSemRWRequestRead(g_hDbgModRWSem, RT_INDEFINITE_WAIT);
+    if (RT_SUCCESS(rc))
+    {
+        for (PRTDBGMODREGDBG pDbg = g_pDbgHead; pDbg; pDbg = pDbg->pNext)
+        {
+            pDbgMod->pDbgVt    = pDbg->pVt;
+            pDbgMod->pvDbgPriv = NULL;
+            rc = pDbg->pVt->pfnTryOpen(pDbgMod);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * That's it!
+                 */
+                ASMAtomicIncU32(&pDbg->cUsers);
+                RTSemRWReleaseRead(g_hDbgModRWSem);
+                return VINF_SUCCESS;
+            }
+            pDbgMod->pDbgVt    = NULL;
+            Assert(pDbgMod->pvDbgPriv == NULL);
+        }
+        RTSemRWReleaseRead(g_hDbgModRWSem);
+    }
+
+    return VERR_DBG_NO_MATCHING_INTERPRETER;
+}
+
+
+/** @callback_method_impl{FNRTDBGCFGOPEN} */
+static DECLCALLBACK(int) rtDbgModExtDbgInfoOpenCallback(RTDBGCFG hDbgCfg, const char *pszFilename, void *pvUser1, void *pvUser2)
+{
+    PRTDBGMODINT        pDbgMod   = (PRTDBGMODINT)pvUser1;
+    PCRTLDRDBGINFO      pDbgInfo  = (PCRTLDRDBGINFO)pvUser2;
+    NOREF(pDbgInfo); /** @todo consider a more direct search for a interpreter. */
+
+    Assert(!pDbgMod->pDbgVt);
+    Assert(!pDbgMod->pvDbgPriv);
+    Assert(!pDbgMod->pszDbgFile);
+
+    /*
+     * Set the debug file name and try possible interpreters.
+     */
+    pDbgMod->pszDbgFile = RTStrCacheEnter(g_hDbgModStrCache, pszFilename);
+
+    int rc = RTSemRWRequestRead(g_hDbgModRWSem, RT_INDEFINITE_WAIT);
+    if (RT_SUCCESS(rc))
+    {
+        for (PRTDBGMODREGDBG pDbg = g_pDbgHead; pDbg; pDbg = pDbg->pNext)
+        {
+            pDbgMod->pDbgVt    = pDbg->pVt;
+            pDbgMod->pvDbgPriv = NULL;
+            rc = pDbg->pVt->pfnTryOpen(pDbgMod);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Got it!
+                 */
+                ASMAtomicIncU32(&pDbg->cUsers);
+                RTSemRWReleaseRead(g_hDbgModRWSem);
+                return VINF_CALLBACK_RETURN;
+            }
+            pDbgMod->pDbgVt    = NULL;
+            Assert(pDbgMod->pvDbgPriv == NULL);
+        }
+    }
+
+    /* No joy. */
+    RTSemRWReleaseRead(g_hDbgModRWSem);
+    RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszDbgFile);
+    pDbgMod->pszDbgFile = NULL;
+    return rc;
+}
+
+
+/**
+ * Argument package used by rtDbgModOpenDebugInfoExternalToImage.
+ */
+typedef struct RTDBGMODOPENDIETI
+{
+    PRTDBGMODINT    pDbgMod;
+    RTDBGCFG        hDbgCfg;
+} RTDBGMODOPENDIETI;
+
+
+/** @callback_method_impl{FNRTLDRENUMDBG} */
+static DECLCALLBACK(int)
+rtDbgModOpenDebugInfoExternalToImageCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pDbgInfo, void *pvUser)
+{
+    if (!pDbgInfo->pszExtFile)
+        return VINF_SUCCESS;
+
+    int rc;
+    RTDBGMODOPENDIETI *pArgs = (RTDBGMODOPENDIETI *)pvUser;
+    switch (pDbgInfo->enmType)
+    {
+        case RTLDRDBGINFOTYPE_CODEVIEW_PDB70:
+            rc = RTDbgCfgOpenPdb70(pArgs->hDbgCfg, pDbgInfo->pszExtFile,
+                                   &pDbgInfo->u.Pdb70.Uuid,
+                                   pDbgInfo->u.Pdb70.uAge,
+                                   rtDbgModExtDbgInfoOpenCallback, pArgs->pDbgMod, (void *)pDbgInfo);
+            break;
+
+        case RTLDRDBGINFOTYPE_CODEVIEW_PDB20:
+            rc = RTDbgCfgOpenPdb20(pArgs->hDbgCfg, pDbgInfo->pszExtFile,
+                                   pDbgInfo->u.Pdb20.cbImage,
+                                   pDbgInfo->u.Pdb20.uTimestamp,
+                                   pDbgInfo->u.Pdb20.uAge,
+                                   rtDbgModExtDbgInfoOpenCallback, pArgs->pDbgMod, (void *)pDbgInfo);
+            break;
+
+        case RTLDRDBGINFOTYPE_CODEVIEW_DBG:
+            rc = RTDbgCfgOpenDbg(pArgs->hDbgCfg, pDbgInfo->pszExtFile,
+                                 pDbgInfo->u.Dbg.cbImage,
+                                 pDbgInfo->u.Dbg.uTimestamp,
+                                 rtDbgModExtDbgInfoOpenCallback, pArgs->pDbgMod, (void *)pDbgInfo);
+            break;
+
+        case RTLDRDBGINFOTYPE_DWARF_DWO:
+            rc = RTDbgCfgOpenDwo(pArgs->hDbgCfg, pDbgInfo->pszExtFile,
+                                 pDbgInfo->u.Dwo.uCrc32,
+                                 rtDbgModExtDbgInfoOpenCallback, pArgs->pDbgMod, (void *)pDbgInfo);
+            break;
+
+        default:
+            Log(("rtDbgModOpenDebugInfoExternalToImageCallback: Don't know how to handle enmType=%d and pszFileExt=%s\n",
+                 pDbgInfo->enmType, pDbgInfo->pszExtFile));
+            return VERR_DBG_TODO;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        LogFlow(("RTDbgMod: Successfully opened external debug info '%s' for '%s'\n",
+                 pArgs->pDbgMod->pszDbgFile, pArgs->pDbgMod->pszImgFile));
+        return VINF_CALLBACK_RETURN;
+    }
+    Log(("rtDbgModOpenDebugInfoExternalToImageCallback: '%s' (enmType=%d) for '%s'  -> %Rrc\n",
+         pDbgInfo->pszExtFile, pDbgInfo->enmType, pArgs->pDbgMod->pszImgFile, rc));
+    return rc;
+}
+
+
+/**
+ * Opens debug info listed in the image that is stored in a separate file.
+ *
+ * @returns IPRT status code
+ * @param   pDbgMod             The debug module.
+ * @param   hDbgCfg             The debug config.  Can be NIL.
+ */
+static int rtDbgModOpenDebugInfoExternalToImage(PRTDBGMODINT pDbgMod, RTDBGCFG hDbgCfg)
+{
+    RTDBGMODOPENDIETI Args;
+    Args.pDbgMod = pDbgMod;
+    Args.hDbgCfg = hDbgCfg;
+    int rc = pDbgMod->pImgVt->pfnEnumDbgInfo(pDbgMod, rtDbgModOpenDebugInfoExternalToImageCallback, &Args);
+    if (RT_SUCCESS(rc) && pDbgMod->pDbgVt)
+        return VINF_SUCCESS;
+    return VERR_NOT_FOUND;
+}
+
+
+
+/** @callback_method_impl{FNRTDBGCFGOPEN} */
+static DECLCALLBACK(int) rtDbgModFromPeImageOpenCallback(RTDBGCFG hDbgCfg, const char *pszFilename, void *pvUser1, void *pvUser2)
+{
+    PRTDBGMODINT        pDbgMod   = (PRTDBGMODINT)pvUser1;
+    PRTDBGMODDEFERRED   pDeferred = (PRTDBGMODDEFERRED)pvUser2;
+    LogFlow(("rtDbgModFromPeImageOpenCallback: %s\n", pszFilename));
+
+    Assert(pDbgMod->pImgVt == NULL);
+    Assert(pDbgMod->pvImgPriv == NULL);
+    Assert(pDbgMod->pDbgVt == NULL);
+    Assert(pDbgMod->pvDbgPriv == NULL);
+
+    /*
+     * Find an image reader which groks the file.
+     */
+    int rc = RTSemRWRequestRead(g_hDbgModRWSem, RT_INDEFINITE_WAIT);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VERR_DBG_NO_MATCHING_INTERPRETER;
+        PRTDBGMODREGIMG pImg;
+        for (pImg = g_pImgHead; pImg; pImg = pImg->pNext)
+        {
+            pDbgMod->pImgVt    = pImg->pVt;
+            pDbgMod->pvImgPriv = NULL;
+            rc = pImg->pVt->pfnTryOpen(pDbgMod);
+            if (RT_SUCCESS(rc))
+                break;
+            pDbgMod->pImgVt    = NULL;
+            Assert(pDbgMod->pvImgPriv == NULL);
+        }
+    }
+    RTSemRWReleaseRead(g_hDbgModRWSem);
+    if (RT_FAILURE(rc))
+    {
+        LogFlow(("rtDbgModFromPeImageOpenCallback: Failed %Rrc - %s\n", rc, pszFilename));
+        return rc;
+    }
+
+    /*
+     * Check the deferred info.
+     */
+    RTUINTPTR cbImage = pDbgMod->pImgVt->pfnImageSize(pDbgMod);
+    if (   pDeferred->cbImage == 0
+        || pDeferred->cbImage == cbImage)
+    {
+        uint32_t uTimestamp = pDeferred->u.PeImage.uTimestamp; /** @todo add method for getting the timestamp. */
+        if (   pDeferred->u.PeImage.uTimestamp == 0
+            || pDeferred->u.PeImage.uTimestamp == uTimestamp)
+        {
+            Log(("RTDbgMod: Found matching PE image '%s'\n", pszFilename));
+
+            /*
+             * We found the executable image we need, now go find any debug
+             * info associated with it.  For PE images, this is generally
+             * found in an external file, so we do a sweep for that first.
+             */
+            rc = rtDbgModOpenDebugInfoExternalToImage(pDbgMod, pDeferred->hDbgCfg);
+            if (RT_SUCCESS(rc))
+                return VINF_CALLBACK_RETURN;
+
+            /*
+             * Try open debug info inside the module, falling back on exports.
+             */
+            rc = rtDbgModOpenDebugInfoInsideImage(pDbgMod);
+            if (RT_SUCCESS(rc))
+                return VINF_CALLBACK_RETURN;
+            /** @todo search for external files that could contain more useful info, like
+             *        .map files?? No? */
+            rc = rtDbgModCreateForExports(pDbgMod);
+            if (RT_SUCCESS(rc))
+                return VINF_CALLBACK_RETURN;
+
+            /* Something bad happened, just give up. */
+            Log(("rtDbgModFromPeImageOpenCallback: rtDbgModCreateForExports failed: %Rrc\n", rc));
+        }
+        else
+        {
+            LogFlow(("rtDbgModFromPeImageOpenCallback: uTimestamp mismatch (found %#x, expected %#x) - %s\n",
+                     uTimestamp, pDeferred->u.PeImage.uTimestamp, pszFilename));
+            rc = VERR_DBG_FILE_MISMATCH;
+        }
+    }
+    else
+    {
+        LogFlow(("rtDbgModFromPeImageOpenCallback: cbImage mismatch (found %#x, expected %#x) - %s\n",
+                 cbImage, pDeferred->cbImage, pszFilename));
+        rc = VERR_DBG_FILE_MISMATCH;
+    }
+
+    pDbgMod->pImgVt->pfnClose(pDbgMod);
+    pDbgMod->pImgVt    = NULL;
+    pDbgMod->pvImgPriv = NULL;
+
+    return rc;
+}
+
+
+/** @callback_method_impl{FNRTDBGMODDEFERRED}  */
+static DECLCALLBACK(int) rtDbgModFromPeImageDeferredCallback(PRTDBGMODINT pDbgMod, PRTDBGMODDEFERRED pDeferred)
+{
+    int rc;
+
+    Assert(pDbgMod->pszImgFile);
+    if (pDeferred->hDbgCfg != NIL_RTDBGCFG)
+        rc = RTDbgCfgOpenPeImage(pDeferred->hDbgCfg, pDbgMod->pszImgFile,
+                                 pDeferred->cbImage, pDeferred->u.PeImage.uTimestamp,
+                                 rtDbgModFromPeImageOpenCallback, pDbgMod, pDeferred);
+    else
+        rc = rtDbgModFromPeImageOpenCallback(NIL_RTDBGCFG, pDbgMod->pszImgFile, pDbgMod, pDeferred);
+
+    return rc;
+}
+
+
+RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t cbImage,
+                                      uint32_t uTimestamp, RTDBGCFG hDbgCfg)
+{
+    /*
+     * Input validation and lazy initialization.
+     */
+    AssertPtrReturn(phDbgMod, VERR_INVALID_POINTER);
+    *phDbgMod = NIL_RTDBGMOD;
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
+    if (!pszName)
+        pszName = RTPathFilename(pszFilename);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+
+    int rc = rtDbgModLazyInit();
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint64_t fDbgCfg = 0;
+    if (hDbgCfg)
+    {
+        rc = RTDbgCfgQueryUInt(hDbgCfg, RTDBGCFGPROP_FLAGS, &fDbgCfg);
+        AssertRCReturn(rc, rc);
+    }
+
+    /*
+     * Allocate a new module instance.
+     */
+    PRTDBGMODINT pDbgMod = (PRTDBGMODINT)RTMemAllocZ(sizeof(*pDbgMod));
+    if (!pDbgMod)
+        return VERR_NO_MEMORY;
+    pDbgMod->u32Magic = RTDBGMOD_MAGIC;
+    pDbgMod->cRefs = 1;
+    rc = RTCritSectInit(&pDbgMod->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        pDbgMod->pszName = RTStrCacheEnter(g_hDbgModStrCache, pszName);
+        if (pDbgMod->pszName)
+        {
+            pDbgMod->pszImgFile = RTStrCacheEnter(g_hDbgModStrCache, pszFilename);
+            if (pDbgMod->pszImgFile)
+            {
+                /*
+                 * Do it now or procrastinate?
+                 */
+                if (!(fDbgCfg & RTDBGCFG_FLAGS_DEFERRED) || !cbImage)
+                {
+                    RTDBGMODDEFERRED Deferred;
+                    Deferred.cbImage = cbImage;
+                    Deferred.hDbgCfg = hDbgCfg;
+                    Deferred.u.PeImage.uTimestamp = uTimestamp;
+                    rc = rtDbgModFromPeImageDeferredCallback(pDbgMod, &Deferred);
+                }
+                else
+                {
+                    PRTDBGMODDEFERRED pDeferred;
+                    rc = rtDbgModDeferredCreate(pDbgMod, rtDbgModFromPeImageDeferredCallback, cbImage, hDbgCfg, &pDeferred);
+                    if (RT_SUCCESS(rc))
+                        pDeferred->u.PeImage.uTimestamp = uTimestamp;
+                }
+                if (RT_SUCCESS(rc))
+                {
+                    *phDbgMod = pDbgMod;
+                    return VINF_SUCCESS;
+                }
+
+                /* bail out */
+                RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszName);
+            }
+            else
+                rc = VERR_NO_STR_MEMORY;
+            RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszImgFile);
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+        RTCritSectDelete(&pDbgMod->CritSect);
+    }
+
+    RTMemFree(pDbgMod);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTDbgModCreateFromImage);
 
 
 /**

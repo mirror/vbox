@@ -280,6 +280,8 @@ RuntimeR3_SOURCES       = \
 	common/dbg/dbgcfg.cpp \
 	common/dbg/dbgmod.cpp \
 	common/dbg/dbgmodcontainer.cpp \
+	common/dbg/dbgmoddeferred.cpp \
+	common/dbg/dbgmodexports.cpp \
 	common/dbg/dbgmoddwarf.cpp \
 	common/dbg/dbgmodldr.cpp \
 	common/dbg/dbgmodnm.cpp \
