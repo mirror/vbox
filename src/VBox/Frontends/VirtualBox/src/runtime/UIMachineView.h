@@ -254,7 +254,6 @@ protected:
     friend class UIFrameBuffer;
     friend class UIFrameBufferQImage;
     friend class UIFrameBufferQuartz2D;
-    friend class UIFrameBufferQGL;
     template<class, class, class> friend class VBoxOverlayFrameBuffer;
 };
 

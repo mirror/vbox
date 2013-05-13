@@ -34,7 +34,6 @@
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "UIFrameBuffer.h"
-#include "UIFrameBufferQGL.h"
 #include "UIFrameBufferQImage.h"
 #include "UIFrameBufferQuartz2D.h"
 #include "UIFrameBufferSDL.h"
@@ -89,7 +88,7 @@ class UIViewport: public QWidget
 {
 public:
 
-    UIViewport(QWidget *pParent) : QWidget(pParent)
+    UIViewport(QWidget *pParent = 0) : QWidget(pParent)
     {
         /* No need for background drawing: */
         setAttribute(Qt::WA_OpaquePaintEvent);
@@ -300,20 +299,7 @@ UIMachineView::~UIMachineView()
 void UIMachineView::prepareViewport()
 {
     /* Prepare viewport: */
-#ifdef VBOX_GUI_USE_QGLFB
-    QWidget *pViewport = 0;
-    switch (vboxGlobal().vmRenderMode())
-    {
-        case QGLMode:
-            pViewport = new VBoxGLWidget(session().GetConsole(), this, NULL);
-            break;
-        default:
-            pViewport = new UIViewport(this);
-    }
-#else /* VBOX_GUI_USE_QGLFB */
-    UIViewport *pViewport = new UIViewport(this);
-#endif /* !VBOX_GUI_USE_QGLFB */
-    setViewport(pViewport);
+    setViewport(new UIViewport);
 }
 
 void UIMachineView::prepareFrameBuffer()
@@ -348,14 +334,7 @@ void UIMachineView::prepareFrameBuffer()
             break;
         }
 #endif /* VBOX_GUI_USE_QIMAGE */
-#ifdef VBOX_GUI_USE_QGLFB
-        case QGLMode:
-            m_pFrameBuffer = new UIFrameBufferQGL(this);
-            break;
-//        case QGLOverlayMode:
-//            m_pFrameBuffer = new UIQGLOverlayFrameBuffer(this);
-//            break;
-#endif /* VBOX_GUI_USE_QGLFB */
+
 #ifdef VBOX_GUI_USE_SDL
         case SDLMode:
         {
@@ -393,6 +372,7 @@ void UIMachineView::prepareFrameBuffer()
             break;
         }
 #endif /* VBOX_GUI_USE_SDL */
+
 #ifdef VBOX_GUI_USE_QUARTZ2D
         case Quartz2DMode:
         {

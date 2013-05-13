@@ -62,9 +62,6 @@ namespace UIDefs
         , QImageMode
         , SDLMode
         , Quartz2DMode
-#ifdef VBOX_GUI_USE_QGLFB
-        , QGLMode
-#endif /* VBOX_GUI_USE_QGLFB */
     };
 
     /* Additional Qt event types: */
