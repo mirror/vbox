@@ -497,7 +497,7 @@ typedef struct VMCSCACHE
         uint32_t    aField[VMCSCACHE_MAX_ENTRY];
         uint64_t    aFieldVal[VMCSCACHE_MAX_ENTRY];
     } Read;
-#ifdef DEBUG
+#ifdef VBOX_STRICT
     struct
     {
         RTHCPHYS    HCPhysCpuPage;
