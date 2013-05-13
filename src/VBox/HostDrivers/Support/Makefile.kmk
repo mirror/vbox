@@ -70,19 +70,13 @@ endif # !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_TESTSUITE
 #
 # The Ring-3 Support Library (this is linked into the IPRT dll, VBoxRT).
 #
-ifneq ($(filter l4%,$(KBUILD_TARGET) $(BUILD_TARGET_SUB)),)
- # L4 has trouble with -pedantic. It also make trouble when inlining is not enabled.
- SUPR3_TEMPLATE     = VBOXR3NP
-else
- SUPR3_TEMPLATE     = VBOXR3
-endif
+SUPR3_TEMPLATE     = VBOXR3NP
 SUPR3_DEFS          = \
 	IN_SUP_R3 IN_RT_R3 \
 	$(if $(VBOX_WITH_SUPSVC),VBOX_WITH_SUPSVC) \
 	$(if $(VBOX_WITH_MAIN),VBOX_WITH_MAIN,) \
 	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,)
 SUPR3_INCS         := $(PATH_SUB_CURRENT)
-SUPR3_INCS.l4       = $(L4_INCDIR)
 SUPR3_SOURCES       = \
 	SUPLib.cpp \
 	SUPLibSem.cpp \
