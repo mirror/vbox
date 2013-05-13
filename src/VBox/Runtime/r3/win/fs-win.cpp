@@ -319,6 +319,9 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
         pProperties->fReadOnly        = !!(dwFlags & FILE_READ_ONLY_VOLUME);
         pProperties->fSupportsUnicode = !!(dwFlags & FILE_UNICODE_ON_DISK);
         pProperties->fCaseSensitive   = false;    /* win32 is case preserving only */
+        /** @todo r=bird: What about FILE_CASE_SENSITIVE_SEARCH ?  Is this set for NTFS
+         *        as well perchance?  If so, better mention it instead of just setting
+         *        fCaseSensitive to false. */
         pProperties->fRemote          = false;    /* no idea yet */
     }
     else

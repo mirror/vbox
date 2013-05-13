@@ -730,3 +730,66 @@ RTDECL(int) RTDirFlushParent(const char *pszChild)
     return rc;
 }
 
+
+RTDECL(int) RTDirQueryUnknownTypeEx(const char *pszComposedName, RTDIRENTRYTYPE *penmType, PRTFSOBJINFO pObjInfo)
+{
+    int rc = RTPathQueryInfoEx(pszComposedName, pObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
+        *penmType = RTDIRENTRYTYPE_DIRECTORY;
+    else if (RTFS_IS_FILE(pObjInfo->Attr.fMode))
+        *penmType = RTDIRENTRYTYPE_FILE;
+    else if (RTFS_IS_SYMLINK(pObjInfo->Attr.fMode))
+        *penmType = RTDIRENTRYTYPE_SYMLINK;
+    else if (RTFS_IS_FIFO(pObjInfo->Attr.fMode))
+        *penmType = RTDIRENTRYTYPE_FIFO;
+    else if (RTFS_IS_DEV_CHAR(pObjInfo->Attr.fMode))
+        *penmType = RTDIRENTRYTYPE_DEV_CHAR;
+    else if (RTFS_IS_DEV_BLOCK(pObjInfo->Attr.fMode))
+        *penmType = RTDIRENTRYTYPE_DEV_BLOCK;
+    else if (RTFS_IS_SOCKET(pObjInfo->Attr.fMode))
+        *penmType = RTDIRENTRYTYPE_SOCKET;
+    else if (RTFS_IS_WHITEOUT(pObjInfo->Attr.fMode))
+        *penmType = RTDIRENTRYTYPE_WHITEOUT;
+    else
+        *penmType = RTDIRENTRYTYPE_UNKNOWN;
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTDirQueryUnknownType(const char *pszComposedName, RTDIRENTRYTYPE *penmType)
+{
+    if (*penmType != RTDIRENTRYTYPE_UNKNOWN)
+        return VINF_SUCCESS;
+
+    RTFSOBJINFO ObjInfo;
+    return RTDirQueryUnknownTypeEx(pszComposedName, penmType, &ObjInfo);
+}
+
+
+RTDECL(bool) RTDirEntryIsStdDotLink(PRTDIRENTRY pDirEntry)
+{
+    if (pDirEntry->szName[0] != '.')
+        return false;
+    if (pDirEntry->cbName == 1)
+        return true;
+    if (pDirEntry->cbName != 2)
+        return false;
+    return pDirEntry->szName[1] == '.';
+}
+
+
+RTDECL(bool) RTDirEntryExIsStdDotLink(PCRTDIRENTRYEX pDirEntryEx)
+{
+    if (pDirEntryEx->szName[0] != '.')
+        return false;
+    if (pDirEntryEx->cbName == 1)
+        return true;
+    if (pDirEntryEx->cbName != 2)
+        return false;
+    return pDirEntryEx->szName[1] == '.';
+}
+
