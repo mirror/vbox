@@ -1152,10 +1152,11 @@ static void rtldrPEConvert32BitLoadConfigTo64Bit(PIMAGE_LOAD_CONFIG_DIRECTORY64 
  *
  * @returns iprt status code.
  * @param   pFileHdr    Pointer to the file header that needs validating.
+ * @param   fFlags      Valid RTLDR_O_XXX combination.
  * @param   pszLogName  The log name to  prefix the errors with.
  * @param   penmArch    Where to store the CPU architecture.
  */
-int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, const char *pszLogName, PRTLDRARCH penmArch)
+static int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, uint32_t fFlags, const char *pszLogName, PRTLDRARCH penmArch)
 {
     size_t cbOptionalHeader;
     switch (pFileHdr->Machine)
@@ -1182,7 +1183,8 @@ int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, const char *pszLogNam
         return VERR_BAD_EXE_FORMAT;
     }
     /* This restriction needs to be implemented elsewhere. */
-    if (pFileHdr->Characteristics & IMAGE_FILE_RELOCS_STRIPPED)
+    if (   (pFileHdr->Characteristics & IMAGE_FILE_RELOCS_STRIPPED)
+        && !(fFlags & RTLDR_O_FOR_DEBUG))
     {
         Log(("rtldrPEOpen: %s: IMAGE_FILE_RELOCS_STRIPPED\n", pszLogName));
         return VERR_BAD_EXE_FORMAT;
@@ -1711,8 +1713,6 @@ int rtldrPEValidateDirectories(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64
  */
 int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offNtHdrs, PRTLDRMOD phLdrMod)
 {
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
-
     /*
      * Read and validate the file header.
      */
@@ -1722,7 +1722,7 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
         return rc;
     RTLDRARCH enmArchImage;
     const char *pszLogName = pReader->pfnLogName(pReader);
-    rc = rtldrPEValidateFileHeader(&FileHdr, pszLogName, &enmArchImage);
+    rc = rtldrPEValidateFileHeader(&FileHdr, fFlags, pszLogName, &enmArchImage);
     if (RT_FAILURE(rc))
         return rc;
 
