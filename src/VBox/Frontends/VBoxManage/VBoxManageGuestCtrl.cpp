@@ -1516,6 +1516,9 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
                     vrc = VINF_SUCCESS;
                 break;
             }
+            /** @todo r=bird: This ain't gonna work on most UNIX file systems because
+             *        enmType is RTDIRENTRYTYPE_UNKNOWN.  This is clearly documented in
+             *        RTDIRENTRY::enmType. For trunk, RTDirQueryUnknownType can be used. */
             switch (DirEntry.enmType)
             {
                 case RTDIRENTRYTYPE_DIRECTORY:
