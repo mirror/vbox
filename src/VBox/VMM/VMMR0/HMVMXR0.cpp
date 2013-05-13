@@ -2505,6 +2505,8 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 const uint8_t u8TprPriority     = (u8Tpr >> 4) & 7;
                 if (u8PendingPriority <= u8TprPriority)
                     u32TprThreshold = u8PendingPriority;
+                else
+                    u32TprThreshold = u8TprPriority;             /* Required for Vista 64-bit guest, see @bugref{6398}. */
             }
             Assert(!(u32TprThreshold & 0xfffffff0));             /* Bits 31:4 MBZ. */
 
