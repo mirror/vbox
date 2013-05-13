@@ -83,11 +83,11 @@ endif
 VirtualBox_DEFS           =
 VirtualBox_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
 VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QUARTZ2D VBOX_GUI_USE_QIMAGE
-VirtualBox_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox_DEFS.linux     = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox_DEFS.openbsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox_DEFS.solaris   = VBOX_GUI_USE_QIMAGE #VBOX_GUI_USE_SDL
+VirtualBox_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE
+VirtualBox_DEFS.linux     = VBOX_GUI_USE_QIMAGE
+VirtualBox_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE
+VirtualBox_DEFS.openbsd   = VBOX_GUI_USE_QIMAGE
+VirtualBox_DEFS.solaris   = VBOX_GUI_USE_QIMAGE
 VirtualBox_DEFS.win       = VBOX_GUI_USE_QIMAGE UNICODE QT_DLL
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
@@ -537,7 +537,6 @@ VirtualBox_SOURCES = \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIFrameBufferQImage.cpp \
-	src/runtime/UIFrameBufferSDL.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIKeyboardHandler.cpp \
 	src/runtime/UIMachine.cpp \
