@@ -3163,8 +3163,8 @@ static int hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
     AssertRCReturn(rc, rc);
 
-    /* The guest's view of its DR7 is unblemished. */
-    rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_DR7, pMixedCtx->dr[7]);
+    /* The guest's view of its DR7 is unblemished. Use 32-bit write as upper 32-bits MBZ as asserted above. */
+    rc = VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, (uint32_t)pMixedCtx->dr[7]);
     AssertRCReturn(rc, rc);
 
     pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_DEBUG;
@@ -4035,7 +4035,6 @@ static bool hmR0VmxIsValidWriteField(uint32_t idxField)
     {
         case VMX_VMCS_GUEST_RIP:
         case VMX_VMCS_GUEST_RSP:
-        case VMX_VMCS_GUEST_DR7:
         case VMX_VMCS_GUEST_SYSENTER_EIP:
         case VMX_VMCS_GUEST_SYSENTER_ESP:
         case VMX_VMCS_GUEST_GDTR_BASE:
@@ -4265,7 +4264,6 @@ static int hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu)
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_TR_BASE);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_GDTR_BASE);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_IDTR_BASE);
-    VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_DR7);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_RSP);
     VMXLOCAL_INIT_READ_CACHE_FIELD(pCache, VMX_VMCS_GUEST_RIP);
 #if 0
@@ -4382,7 +4380,6 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
         case VMX_VMCS_GUEST_TR_BASE:
         case VMX_VMCS_GUEST_GDTR_BASE:
         case VMX_VMCS_GUEST_IDTR_BASE:
-        case VMX_VMCS_GUEST_DR7:
         case VMX_VMCS_GUEST_RSP:
         case VMX_VMCS_GUEST_RIP:
         case VMX_VMCS_GUEST_SYSENTER_ESP:
@@ -5383,9 +5380,10 @@ static int hmR0VmxSaveGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_DEBUG))
     {
-        RTGCUINTREG uVal;
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_DR7, &uVal);          AssertRCReturn(rc, rc);
-        pMixedCtx->dr[7] = uVal;
+        /* Upper 32-bits are always zero. See Intel spec. 2.7.3 "Loading and Storing Debug Registers". */
+        uint32_t u32Val;
+        rc = VMXReadVmcs32(VMX_VMCS_GUEST_DR7, &u32Val);        AssertRCReturn(rc, rc);
+        pMixedCtx->dr[7] = u32Val;
 
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_DEBUG;
     }
@@ -6619,7 +6617,7 @@ DECLINLINE(int) hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
      * state (interrupt shadow) in the VMCS. This -can- potentially be reworked to be done before disabling
      * interrupts and handle returning to ring-3 afterwards, but requires very careful state restoration.
      */
-    /** @todo Rework event evaluation and injection to be complete separate. */
+    /** @todo Rework event evaluation and injection to be completely separate. */
     if (TRPMHasTrap(pVCpu))
         hmR0VmxTRPMTrapToPendingEvent(pVCpu);
 
@@ -8614,11 +8612,11 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         pMixedCtx->dr[7] &= ~X86_DR7_GD;
 
         /* Paranoia. */
-        pMixedCtx->dr[7] &= 0xffffffff;                                              /* upper 32 bits reserved */
+        pMixedCtx->dr[7] &= UINT32_C(0xffffffff);                                    /* upper 32 bits MBZ. */
         pMixedCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
         pMixedCtx->dr[7] |= 0x400;                                                   /* must be one */
 
-        rc |= VMXWriteVmcsGstN(VMX_VMCS_GUEST_DR7, pMixedCtx->dr[7]);
+        rc |= VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, (uint32_t)pMixedCtx->dr[7]);
         AssertRCReturn(rc,rc);
 
         int rc2 = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
