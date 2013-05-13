@@ -64,9 +64,6 @@ UIMachineViewNormal::~UIMachineViewNormal()
 
 void UIMachineViewNormal::sltAdditionsStateChanged()
 {
-    /* Check if we should restrict minimum size: */
-    maybeRestrictMinimumSize();
-
     /* Resend the last resize hint if there was a fullscreen or
      * seamless transition previously.  If we were not in graphical
      * mode initially after the transition this happens when we
@@ -204,8 +201,6 @@ void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)
     {
         m_bIsGuestAutoresizeEnabled = fEnabled;
 
-        maybeRestrictMinimumSize();
-
         if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
             sltPerformGuestResize();
     }
@@ -244,7 +239,7 @@ void UIMachineViewNormal::normalizeGeometry(bool bAdjustPosition)
             /* Get just a simple available rectangle */
             availableGeo = dwt->availableGeometry(pTopLevelWidget->pos());
 
-        frameGeo = VBoxGlobal::normalizeGeometry(frameGeo, availableGeo, vboxGlobal().vmRenderMode() != SDLMode /* can resize? */);
+        frameGeo = VBoxGlobal::normalizeGeometry(frameGeo, availableGeo);
     }
 
 #if 0
@@ -283,20 +278,5 @@ QSize UIMachineViewNormal::calculateMaxGuestSize() const
      * central widget shouldn't be bigger than the window, but we bound it for
      * sanity (or insanity) reasons. */
     return maximumSize - (windowSize - centralWidgetSize.boundedTo(windowSize));
-}
-
-void UIMachineViewNormal::maybeRestrictMinimumSize()
-{
-    /* Sets the minimum size restriction depending on the auto-resize feature state and the current rendering mode.
-     * Currently, the restriction is set only in SDL mode and only when the auto-resize feature is inactive.
-     * We need to do that because we cannot correctly draw in a scrolled window in SDL mode.
-     * In all other modes, or when auto-resize is in force, this function does nothing. */
-    if (vboxGlobal().vmRenderMode() == SDLMode)
-    {
-        if (!uisession()->isGuestSupportsGraphics() || !m_bIsGuestAutoresizeEnabled)
-            setMinimumSize(sizeHint());
-        else
-            setMinimumSize(0, 0);
-    }
 }
 

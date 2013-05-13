@@ -68,7 +68,6 @@ private:
     void normalizeGeometry(bool /* fAdjustPosition */) {}
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
-    void maybeRestrictMinimumSize() {}
     void updateSliders();
 
     /* Private members: */

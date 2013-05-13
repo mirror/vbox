@@ -79,7 +79,6 @@ private:
     void normalizeGeometry(bool fAdjustPosition);
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
-    void maybeRestrictMinimumSize();
 
     /* Private members: */
     bool m_bIsGuestAutoresizeEnabled : 1;

@@ -62,9 +62,6 @@ UIMachineViewFullscreen::~UIMachineViewFullscreen()
 
 void UIMachineViewFullscreen::sltAdditionsStateChanged()
 {
-    /* Check if we should restrict minimum size: */
-    maybeRestrictMinimumSize();
-
     /* Check if we should resize guest to fullscreen */
     if ((int)frameBuffer()->width() != workingArea().size().width() ||
         (int)frameBuffer()->height() != workingArea().size().height())
@@ -149,8 +146,6 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
     {
         m_bIsGuestAutoresizeEnabled = fEnabled;
 
-        maybeRestrictMinimumSize();
-
         if (uisession()->isGuestSupportsGraphics())
             sltPerformGuestResize();
     }
@@ -172,20 +167,5 @@ QRect UIMachineViewFullscreen::workingArea() const
 QSize UIMachineViewFullscreen::calculateMaxGuestSize() const
 {
     return workingArea().size();
-}
-
-void UIMachineViewFullscreen::maybeRestrictMinimumSize()
-{
-    /* Sets the minimum size restriction depending on the auto-resize feature state and the current rendering mode.
-     * Currently, the restriction is set only in SDL mode and only when the auto-resize feature is inactive.
-     * We need to do that because we cannot correctly draw in a scrolled window in SDL mode.
-     * In all other modes, or when auto-resize is in force, this function does nothing. */
-    if (vboxGlobal().vmRenderMode() == SDLMode)
-    {
-        if (!uisession()->isGuestSupportsGraphics() || !m_bIsGuestAutoresizeEnabled)
-            setMinimumSize(sizeHint());
-        else
-            setMinimumSize(0, 0);
-    }
 }
 

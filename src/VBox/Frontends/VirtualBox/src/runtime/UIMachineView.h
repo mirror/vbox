@@ -169,7 +169,6 @@ protected:
     /** Calculate how big the guest desktop can be while still fitting on one
      * host screen. */
     virtual QSize calculateMaxGuestSize() const = 0;
-    virtual void maybeRestrictMinimumSize() = 0;
     virtual void updateSliders();
     QPoint viewportToContents(const QPoint &vp) const;
     void scrollBy(int dx, int dy);

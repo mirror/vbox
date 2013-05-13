@@ -36,7 +36,6 @@
 #include "UIFrameBuffer.h"
 #include "UIFrameBufferQImage.h"
 #include "UIFrameBufferQuartz2D.h"
-#include "UIFrameBufferSDL.h"
 #include "VBoxFBOverlay.h"
 #include "UISession.h"
 #include "UIKeyboardHandler.h"
@@ -333,44 +332,6 @@ void UIMachineView::prepareFrameBuffer()
         }
 #endif /* VBOX_GUI_USE_QIMAGE */
 
-#ifdef VBOX_GUI_USE_SDL
-        case SDLMode:
-        {
-            /* Indicate that we are doing all drawing stuff ourself: */
-            // TODO_NEW_CORE
-            viewport()->setAttribute(Qt::WA_PaintOnScreen);
-# ifdef Q_WS_X11
-            /* This is somehow necessary to prevent strange X11 warnings on i386 and segfaults on x86_64: */
-            XFlush(QX11Info::display());
-# endif /* Q_WS_X11 */
-            UIFrameBuffer* pFrameBuffer = uisession()->frameBuffer(screenId());
-            if (pFrameBuffer)
-                pFrameBuffer->setView(this);
-            else
-            {
-# if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
-                if (m_fAccelerate2DVideo)
-                {
-                    /** these two additional template args is a workaround to
-                     * this [VBox|UI] duplication
-                     * @todo: they are to be removed once VBox stuff is gone */
-                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent>(this, &session(), (uint32_t)screenId());
-                }
-                else
-                    pFrameBuffer = new UIFrameBufferSDL(this);
-# else /* VBOX_WITH_VIDEOHWACCEL */
-                pFrameBuffer = new UIFrameBufferSDL(this);
-# endif /* !VBOX_WITH_VIDEOHWACCEL */
-                uisession()->setFrameBuffer(screenId(), pFrameBuffer);
-            }
-            m_pFrameBuffer = pFrameBuffer;
-            /* Disable scrollbars because we cannot correctly draw in a scrolled window using SDL: */
-            horizontalScrollBar()->setEnabled(false);
-            verticalScrollBar()->setEnabled(false);
-            break;
-        }
-#endif /* VBOX_GUI_USE_SDL */
-
 #ifdef VBOX_GUI_USE_QUARTZ2D
         case Quartz2DMode:
         {
@@ -400,6 +361,7 @@ void UIMachineView::prepareFrameBuffer()
             break;
         }
 #endif /* VBOX_GUI_USE_QUARTZ2D */
+
         default:
             AssertReleaseMsgFailed(("Render mode must be valid: %d\n", vboxGlobal().vmRenderMode()));
             LogRel(("Invalid render mode: %d\n", vboxGlobal().vmRenderMode()));
@@ -535,16 +497,13 @@ void UIMachineView::cleanupFrameBuffer()
         if (   0
 #ifdef VBOX_GUI_USE_QIMAGE
             || vboxGlobal().vmRenderMode() == QImageMode
-#endif
-#ifdef VBOX_GUI_USE_SDL
-            || vboxGlobal().vmRenderMode() == SDLMode
-#endif
+#endif /* VBOX_GUI_USE_QIMAGE */
 #ifdef VBOX_GUI_USE_QUARTZ2D
             || vboxGlobal().vmRenderMode() == Quartz2DMode
-#endif
+#endif /* VBOX_GUI_USE_QUARTZ2D */
 #ifdef VBOX_WITH_VIDEOHWACCEL
             || m_fAccelerate2DVideo
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
            )
         {
             Assert(m_pFrameBuffer == uisession()->frameBuffer(screenId()));
@@ -907,9 +866,6 @@ bool UIMachineView::guestResizeEvent(QEvent *pEvent,
 
         /* Perform machine-view resize: */
         resize(pResizeEvent->width(), pResizeEvent->height());
-
-        /* May be we have to restrict minimum size? */
-        maybeRestrictMinimumSize();
 
         /* Let our toplevel widget calculate its sizeHint properly: */
         QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
