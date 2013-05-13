@@ -483,6 +483,7 @@ void STATE_APIENTRY crStateDrawBuffer (GLenum mode)
     switch (mode) 
     {
         case GL_NONE:
+            break;
         case GL_FRONT_LEFT:
         case GL_FRONT_RIGHT:
         case GL_BACK_LEFT:
@@ -548,6 +549,7 @@ void STATE_APIENTRY crStateReadBuffer (GLenum mode)
     switch (mode) 
     {
         case GL_NONE:
+            break;
         case GL_FRONT_LEFT:
         case GL_FRONT_RIGHT:
         case GL_BACK_LEFT:

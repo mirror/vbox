@@ -28,6 +28,7 @@ typedef struct {
 	CRbitvalue enableSprite[CR_MAX_BITARRAY];
 	CRbitvalue coordReplacement[CR_MAX_TEXTURE_UNITS][CR_MAX_BITARRAY];
 #endif
+	CRbitvalue spriteCoordOrigin[CR_MAX_BITARRAY];
 	CRbitvalue dirty[CR_MAX_BITARRAY];
 } CRPointBits;
 
@@ -43,6 +44,8 @@ typedef struct {
 	GLboolean pointSprite;
 	GLboolean coordReplacement[CR_MAX_TEXTURE_UNITS];
 #endif
+    GLfloat spriteCoordOrigin;
+    GLfloat reserved; /* added to make sure alignment of sttructures following CRPointState in CRContext does not change */
 } CRPointState;
 
 DECLEXPORT(void) crStatePointInit (CRContext *ctx);

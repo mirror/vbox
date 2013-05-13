@@ -7,6 +7,7 @@
 :minSize:minSize:PointParameterfARB,GL_POINT_SIZE_MIN_ARB
 :maxSize:maxSize:PointParameterfARB,GL_POINT_SIZE_MAX_ARB
 :fadeThresholdSize:fadeThresholdSize:PointParameterfARB,GL_POINT_FADE_THRESHOLD_SIZE_ARB
+:spriteCoordOrigin:spriteCoordOrigin:PointParameterfARB,GL_POINT_SPRITE_COORD_ORIGIN
 #:distanceAttenuation:distanceAttenuation:PointParameterfvARB,GL_POINT_DISTANCE_ATTENUATION_ARB
 -:distanceAttenuation:*if (from->distanceAttenuation[0] != to->distanceAttenuation[0] || from->distanceAttenuation[1] != to->distanceAttenuation[1] || from->distanceAttenuation[2] != to->distanceAttenuation[2]) {
 -:distanceAttenuation:*	diff_api.PointParameterfvARB (GL_POINT_DISTANCE_ATTENUATION_ARB, to->distanceAttenuation);

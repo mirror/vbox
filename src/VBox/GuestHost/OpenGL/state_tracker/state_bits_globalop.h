@@ -230,6 +230,9 @@ for (i=0; i<CR_MAX_TEXTURE_UNITS; ++i)
     _CRSTATE_BITS_OP_SIZEOF(point.coordReplacement[i]);
 }
 #endif
+#if CRSTATE_BITS_OP_VERSION >= SHCROGL_SSM_VERSION_WITH_SPRITE_COORD_ORIGIN
+_CRSTATE_BITS_OP_SIZEOF(point.spriteCoordOrigin);
+#endif
 
 _CRSTATE_BITS_OP_SIZEOF(polygon.dirty);
 _CRSTATE_BITS_OP_SIZEOF(polygon.enable);
