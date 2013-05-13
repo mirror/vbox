@@ -58,7 +58,6 @@ namespace UIDefs
     enum RenderMode
     {
           InvalidRenderMode
-        , TimerMode
         , QImageMode
         , SDLMode
         , Quartz2DMode
