@@ -50,14 +50,13 @@
 # define VMX_VMCS_GUEST_TR_BASE_CACHE_IDX                                     7
 # define VMX_VMCS_GUEST_GDTR_BASE_CACHE_IDX                                   8
 # define VMX_VMCS_GUEST_IDTR_BASE_CACHE_IDX                                   9
-# define VMX_VMCS_GUEST_DR7_CACHE_IDX                                         10
-# define VMX_VMCS_GUEST_RSP_CACHE_IDX                                         11
-# define VMX_VMCS_GUEST_RIP_CACHE_IDX                                         12
-# define VMX_VMCS_GUEST_SYSENTER_ESP_CACHE_IDX                                13
-# define VMX_VMCS_GUEST_SYSENTER_EIP_CACHE_IDX                                14
-# define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX                             15
+# define VMX_VMCS_GUEST_RSP_CACHE_IDX                                         10
+# define VMX_VMCS_GUEST_RIP_CACHE_IDX                                         11
+# define VMX_VMCS_GUEST_SYSENTER_ESP_CACHE_IDX                                12
+# define VMX_VMCS_GUEST_SYSENTER_EIP_CACHE_IDX                                13
+# define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX                             14
 # define VMX_VMCS_MAX_CACHE_IDX                                               (VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX + 1)
-# define VMX_VMCS_GUEST_CR3_CACHE_IDX                                         16
+# define VMX_VMCS_GUEST_CR3_CACHE_IDX                                         15
 # define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                                 (VMX_VMCS_GUEST_CR3_CACHE_IDX + 1)
 #else /* VBOX_WITH_OLD_VTX_CODE */
 # define VMX_VMCS_GUEST_RIP_CACHE_IDX                                        0
