@@ -586,7 +586,7 @@ static const VHDXMETADATAITEMPROPS s_aVhdxMetadataItemProps[] =
     {VHDX_METADATA_TBL_ENTRY_ITEM_VDISK_SIZE,     false,   true,     true,        VHDXMETADATAITEM_VDISK_SIZE},
     {VHDX_METADATA_TBL_ENTRY_ITEM_PAGE83_DATA,    false,   true,     true,        VHDXMETADATAITEM_PAGE83_DATA},
     {VHDX_METADATA_TBL_ENTRY_ITEM_LOG_SECT_SIZE,  false,   true,     true,        VHDXMETADATAITEM_LOGICAL_SECTOR_SIZE},
-    {VHDX_METADATA_TBL_ENTRY_ITEM_PHYS_SECT_SIZE, false,   true,     false,       VHDXMETADATAITEM_PHYSICAL_SECTOR_SIZE},
+    {VHDX_METADATA_TBL_ENTRY_ITEM_PHYS_SECT_SIZE, false,   true,     true,        VHDXMETADATAITEM_PHYSICAL_SECTOR_SIZE},
     {VHDX_METADATA_TBL_ENTRY_ITEM_PARENT_LOCATOR, false,   false,    true,        VHDXMETADATAITEM_PARENT_LOCATOR}
 };
 
@@ -1177,6 +1177,12 @@ static int vhdxLoadBatRegion(PVHDXIMAGE pImage, uint64_t offRegion,
                     if (   i != 0
                         && (i % uChunkRatio) == 0)
                     {
+/**
+ * Disabled the verification because there are images out there with the sector bitmap
+ * marked as present. The entry is never accessed and the image is readonly anyway,
+ * so no harm done.
+ */
+#if 0
                         /* Sector bitmap block. */
                         if (   VHDX_BAT_ENTRY_GET_STATE(paBatEntries[i].u64BatEntry)
                             != VHDX_BAT_ENTRY_SB_BLOCK_NOT_PRESENT)
@@ -1186,6 +1192,7 @@ static int vhdxLoadBatRegion(PVHDXIMAGE pImage, uint64_t offRegion,
                                            i, pImage->pszFilename);
                             break;
                         }
+#endif
                     }
                     else
                     {
@@ -1419,6 +1426,12 @@ static int vhdxLoadMetadataRegion(PVHDXIMAGE pImage, uint64_t offRegion,
                     if (!RTUuidCompareStr(&MetadataTblEntry.UuidItem,
                                           s_aVhdxMetadataItemProps[idxProp].pszItemUuid))
                     {
+                        /*
+                         * Check for specification violations and bail out, except
+                         * for the required flag of the physical sector size metadata item.
+                         * Early images had the required flag not set opposed to the specification.
+                         * We don't want to brerak those images.
+                         */
                         if (   !!(MetadataTblEntry.u32Flags & VHDX_METADATA_TBL_ENTRY_FLAGS_IS_USER)
                             != s_aVhdxMetadataItemProps[idxProp].fIsUser)
                             rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
@@ -1429,8 +1442,9 @@ static int vhdxLoadMetadataRegion(PVHDXIMAGE pImage, uint64_t offRegion,
                             rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
                                            "VHDX: Virtual disk flag of metadata item does not meet expectations \'%s\'",
                                            pImage->pszFilename);
-                        else if (   !!(MetadataTblEntry.u32Flags & VHDX_METADATA_TBL_ENTRY_FLAGS_IS_REQUIRED)
-                                 != s_aVhdxMetadataItemProps[idxProp].fIsRequired)
+                        else if (      !!(MetadataTblEntry.u32Flags & VHDX_METADATA_TBL_ENTRY_FLAGS_IS_REQUIRED)
+                                    != s_aVhdxMetadataItemProps[idxProp].fIsRequired
+                                 && (s_aVhdxMetadataItemProps[idxProp].enmMetadataItem != VHDXMETADATAITEM_PHYSICAL_SECTOR_SIZE))
                             rc = vdIfError(pImage->pIfError, VERR_VD_GEN_INVALID_HEADER, RT_SRC_POS,
                                            "VHDX: Required flag of metadata item does not meet expectations \'%s\'",
                                            pImage->pszFilename);
