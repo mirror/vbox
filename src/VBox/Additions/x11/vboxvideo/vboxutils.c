@@ -489,8 +489,8 @@ void vboxAddModes(ScrnInfoPtr pScrn, uint32_t cxInit, uint32_t cyInit)
     }
     /* And finally any modes specified by the user.  We assume here that
      * the mode names reflect the mode sizes. */
-    for (unsigned i = 0;    pScrn->display->modes != NULL
-                         && pScrn->display->modes[i] != NULL; i++)
+    unsigned i;
+    for (i = 0; pScrn->display->modes && pScrn->display->modes[i]; i++)
     {
         if (sscanf(pScrn->display->modes[i], "%ux%u", &cx, &cy) == 2)
         {
