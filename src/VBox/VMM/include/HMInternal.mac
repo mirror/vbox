@@ -51,7 +51,7 @@ struc VMCSCACHE
     .Read.uAlignment          resd    1
     .Read.aField              resd    VMCSCACHE_MAX_ENTRY
     .Read.aFieldVal           resq    VMCSCACHE_MAX_ENTRY
-%ifdef DEBUG
+%ifdef VBOX_STRICT
     .TestIn.HCPhysCpuPage     resq    1
     .TestIn.HCPhysVmcs        resq    1
     .TestIn.pCache            resq    1
