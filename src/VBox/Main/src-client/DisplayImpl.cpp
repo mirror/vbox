@@ -127,7 +127,6 @@ HRESULT Display::FinalConstruct()
 #ifdef VBOX_WITH_HGSMI
     mu32UpdateVBVAFlags = 0;
 #endif
-
 #ifdef VBOX_WITH_VPX
     mpVideoRecCtx = NULL;
 #endif
@@ -530,10 +529,6 @@ void Display::uninit()
     mpDrv = NULL;
     mpVMMDev = NULL;
     mfVMMDevInited = true;
-
-#ifdef VBOX_WITH_VPX
-    VideoRecContextClose(mpVideoRecCtx);
-#endif
 }
 
 /**
@@ -4245,6 +4240,9 @@ DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
     if (pThis->pDisplay)
     {
         AutoWriteLock displayLock(pThis->pDisplay COMMA_LOCKVAL_SRC_POS);
+#ifdef VBOX_WITH_VPX
+        VideoRecContextClose(pThis->pDisplay->mpVideoRecCtx);
+#endif
 #ifdef VBOX_WITH_CRHGSMI
         pThis->pDisplay->destructCrHgsmiData();
 #endif
