@@ -153,7 +153,7 @@ int main(int argc, char **argv)
     unsigned        cVerbosityLevel = 0;
     enum {
         kOpenMethod_FromImage,
-        kOpenMethod_FromPeImage,
+        kOpenMethod_FromPeImage
     }               enmOpenMethod   = kOpenMethod_FromImage;
 
     RTGETOPTUNION   ValueUnion;
