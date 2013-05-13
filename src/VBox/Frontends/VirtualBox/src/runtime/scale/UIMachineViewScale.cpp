@@ -205,35 +205,10 @@ bool UIMachineViewScale::eventFilter(QObject *pWatched, QEvent *pEvent)
         {
             case QEvent::Resize:
             {
-                /* Perform the actually resize */
+                /* Perform the actual resize: */
                 sltPerformGuestScale();
                 break;
             }
-            default:
-                break;
-        }
-    }
-    else if (pWatched != 0 && pWatched == machineWindow())
-    {
-        switch (pEvent->type())
-        {
-#if defined (Q_WS_WIN32)
-# if defined (VBOX_GUI_USE_DDRAW)
-            case QEvent::Move:
-            {
-                /* Notification from our parent that it has moved. We need this in order
-                 * to possibly adjust the direct screen blitting: */
-                if (frameBuffer())
-                    frameBuffer()->moveEvent(static_cast<QMoveEvent*>(pEvent));
-                break;
-            }
-# else
-            case 0: /* Fixes compiler warning, fall through. */
-# endif /* defined (VBOX_GUI_USE_DDRAW) */
-
-#else
-            case 0: /* Fixes compiler warning, fall through. */
-#endif /* defined (Q_WS_WIN32) */
             default:
                 break;
         }
