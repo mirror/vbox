@@ -546,7 +546,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         RTPrintf("Firmware:        %s\n", pszFirmwareType);
 
     SHOW_ULONG_PROP(       machine, CPUCount,                   "cpus",                 "Number of CPUs", "");
-    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_Synthetic, &f), "synthcpu", "Synthetic Cpu");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_PAE, &f), "pae", "PAE");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_LongMode, &f), "longmode", "Long Mode");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_Synthetic, &f), "synthcpu", "Synthetic CPU");
 
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("CPUID overrides: ");
@@ -666,7 +668,6 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
 
     SHOW_BOOLEAN_PROP(biosSettings, ACPIEnabled,                "acpi",                 "ACPI");
     SHOW_BOOLEAN_PROP(biosSettings, IOAPICEnabled,              "ioapic",               "IOAPIC");
-    SHOW_BOOLEAN_METHOD(machine, GetCPUProperty(CPUPropertyType_PAE, &f), "pae",        "PAE");
     SHOW_LONG64_PROP(biosSettings,  TimeOffset,                 "biossystemtimeoffset", "Time offset",  "ms");
     SHOW_BOOLEAN_PROP_EX(machine,   RTCUseUTC,                  "rtcuseutc",            "RTC",          "UTC", "local time");
     SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_Enabled,   &f),   "hwvirtex",     "Hardw. virt.ext");

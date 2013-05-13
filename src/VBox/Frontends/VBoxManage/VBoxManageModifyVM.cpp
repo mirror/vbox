@@ -58,6 +58,7 @@ enum
     MODIFYVM_ACPI,
     MODIFYVM_IOAPIC,
     MODIFYVM_PAE,
+    MODIFYVM_LONGMODE,
     MODIFYVM_SYNTHCPU,
     MODIFYVM_HWVIRTEX,
     MODIFYVM_HWVIRTEXEXCLUSIVE,
@@ -216,6 +217,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--acpi",                     MODIFYVM_ACPI,                      RTGETOPT_REQ_BOOL_ONOFF },
     { "--ioapic",                   MODIFYVM_IOAPIC,                    RTGETOPT_REQ_BOOL_ONOFF },
     { "--pae",                      MODIFYVM_PAE,                       RTGETOPT_REQ_BOOL_ONOFF },
+    { "--longmode",                 MODIFYVM_LONGMODE,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--synthcpu",                 MODIFYVM_SYNTHCPU,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--hwvirtex",                 MODIFYVM_HWVIRTEX,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--hwvirtexexcl",             MODIFYVM_HWVIRTEXEXCLUSIVE,         RTGETOPT_REQ_BOOL_ONOFF },
@@ -541,6 +543,12 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
+            case MODIFYVM_LONGMODE:
+            {
+                CHECK_ERROR(machine, SetCPUProperty(CPUPropertyType_LongMode, ValueUnion.f));
+                break;
+            }
+
             case MODIFYVM_SYNTHCPU:
             {
                 CHECK_ERROR(machine, SetCPUProperty(CPUPropertyType_Synthetic, ValueUnion.f));
@@ -612,7 +620,7 @@ int handleModifyVM(HandlerArg *a)
                 CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, ValueUnion.f));
                 break;
             }
-    
+
             case MODIFYVM_CPUS:
             {
                 CHECK_ERROR(machine, COMSETTER(CPUCount)(ValueUnion.u32));
