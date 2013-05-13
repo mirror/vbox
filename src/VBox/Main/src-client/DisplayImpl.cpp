@@ -4242,6 +4242,7 @@ DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
         AutoWriteLock displayLock(pThis->pDisplay COMMA_LOCKVAL_SRC_POS);
 #ifdef VBOX_WITH_VPX
         VideoRecContextClose(pThis->pDisplay->mpVideoRecCtx);
+        pThis->pDisplay->mpVideoRecCtx = NULL;
 #endif
 #ifdef VBOX_WITH_CRHGSMI
         pThis->pDisplay->destructCrHgsmiData();
