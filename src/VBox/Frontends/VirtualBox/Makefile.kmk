@@ -92,10 +92,6 @@ VirtualBox_DEFS.win       = VBOX_GUI_USE_QIMAGE UNICODE QT_DLL
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_DEFS.darwin += VBOX_WITH_ICHAT_THEATER
 endif
-ifneq ($(KBUILD_TYPE),release)
- # non-release builds has some extra features.
- VirtualBox_DEFS.win     += VBOX_GUI_USE_DDRAW
-endif
 VirtualBox_DEFS          += \
 	$(if $(VBOX_WITH_ADDITIONS_AUTOUPDATE_UI),VBOX_WITH_ADDITIONS_AUTOUPDATE_UI) \
 	$(if $(VBOX_WITH_UPDATE_REQUEST),VBOX_WITH_UPDATE_REQUEST) \
@@ -681,8 +677,6 @@ VirtualBox_SOURCES = \
 	src/wizards/firstrun/UIWizardFirstRun.cpp \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp
 
-VirtualBox_SOURCES.win += \
-	src/runtime/UIFrameBufferDirectDraw.cpp
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIAbstractDockIconPreview.cpp \
 	src/platform/darwin/UICocoaDockIconPreview.mm \

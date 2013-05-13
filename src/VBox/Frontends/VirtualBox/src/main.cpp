@@ -230,11 +230,6 @@ static void showHelp()
         mode += "|";
     mode += "image";
 #endif
-#ifdef VBOX_GUI_USE_DDRAW
-    if (!mode.isEmpty())
-        mode += "|";
-    mode += "ddraw";
-#endif
 #ifdef VBOX_GUI_USE_QUARTZ2D
     if (!mode.isEmpty())
         mode += "|";

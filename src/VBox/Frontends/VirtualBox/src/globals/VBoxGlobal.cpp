@@ -218,10 +218,6 @@ static RenderMode vboxGetRenderMode (const char *aModeStr)
         else if (::strcmp (aModeStr, "sdl") == 0)
             mode = SDLMode;
 #endif
-#if defined (VBOX_GUI_USE_DDRAW)
-        else if (::strcmp (aModeStr, "ddraw") == 0)
-            mode = DDRAWMode;
-#endif
 #if defined (VBOX_GUI_USE_QUARTZ2D)
         else if (::strcmp (aModeStr, "quartz2d") == 0)
             mode = Quartz2DMode;
