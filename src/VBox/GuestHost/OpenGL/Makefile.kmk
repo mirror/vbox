@@ -473,8 +473,10 @@ VBoxOGLcrstate_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/state_isenabled.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
 ifneq ($(KBUILD_TARGET),win)
+ ifeq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
 state_tracker/state_lists.c_CFLAGS += $(VBOX_GCC_Wno-pointer-sign)
 VBoxOGLcrstate_CFLAGS +=
+ endif
 endif
 ifdef VBOX_WITH_CRHGSMI
 VBoxOGLcrstate_DEFS.win    += VBOX_WITH_CRHGSMI
