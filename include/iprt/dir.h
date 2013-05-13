@@ -420,15 +420,16 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
  * @param   pszComposedName The path to the directory entry. The caller must
  *                          compose this, it's NOT sufficient to pass
  *                          RTDIRENTRY::szName!
- * @param   fFollowSymLinks Whether to follow symbolic links or not.
+ * @param   fFollowSymlinks Whether to follow symbolic links or not.
  * @param   penmType        Pointer to the RTDIRENTRY::enmType member.  If this
- *                          is not RTDIRENTRYTYPE_UNKNOWN, the function will
- *                          return immediately without doing anything.  If it
- *                          is, it will use RTPathQueryInfo to try figure out
- *                          the correct value.  On failure, this will be
- *                          unchanged.
+ *                          is not RTDIRENTRYTYPE_UNKNOWN and, if
+ *                          @a fFollowSymlinks is false, not
+ *                          RTDIRENTRYTYPE_SYMLINK, the function will return
+ *                          immediately without doing anything.  Otherwise it
+ *                          will use RTPathQueryInfo to try figure out the
+ *                          correct value.  On failure, this will be unchanged.
  */
-RTDECL(int) RTDirQueryUnknownType(const char *pszComposedName, bool fFollowSymLinks, RTDIRENTRYTYPE *penmType);
+RTDECL(int) RTDirQueryUnknownType(const char *pszComposedName, bool fFollowSymlinks, RTDIRENTRYTYPE *penmType);
 
 /**
  * Resolves RTDIRENTRYTYPE_UNKNOWN values returned by RTDirRead, extended
@@ -438,12 +439,12 @@ RTDECL(int) RTDirQueryUnknownType(const char *pszComposedName, bool fFollowSymLi
  * @param   pszComposedName The path to the directory entry. The caller must
  *                          compose this, it's NOT sufficient to pass
  *                          RTDIRENTRY::szName!
- * @param   fFollowSymLinks Whether to follow symbolic links or not.
+ * @param   fFollowSymlinks Whether to follow symbolic links or not.
  * @param   penmType        Pointer to the RTDIRENTRY::enmType member or
  *                          similar.  Will NOT be checked on input.
  * @param   pObjInfo        The object info buffer to use with RTPathQueryInfo.
  */
-RTDECL(int) RTDirQueryUnknownTypeEx(const char *pszComposedName, bool fFollowSymLinks, RTDIRENTRYTYPE *penmType, PRTFSOBJINFO pObjInfo);
+RTDECL(int) RTDirQueryUnknownTypeEx(const char *pszComposedName, bool fFollowSymlinks, RTDIRENTRYTYPE *penmType, PRTFSOBJINFO pObjInfo);
 
 /**
  * Checks if the directory entry returned by RTDirRead is '.', '..' or similar.
