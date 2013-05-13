@@ -176,7 +176,11 @@ static int vdScriptInterpreterError(PVDSCRIPTINTERPCTX pThis, int rc, RT_SRC_POS
 DECLINLINE(void) vdScriptInterpreterPopValue(PVDSCRIPTINTERPCTX pThis, PVDSCRIPTARG pVal)
 {
     PVDSCRIPTARG pValStack = (PVDSCRIPTARG)vdScriptStackGetUsed(&pThis->StackValues);
-    AssertPtrReturnVoid(pValStack);
+    if (!pValStack)
+    {
+        RT_ZERO(*pVal);
+        AssertPtrReturnVoid(pValStack);
+    }
 
     *pVal = *pValStack;
     vdScriptStackPop(&pThis->StackValues);
