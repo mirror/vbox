@@ -330,29 +330,84 @@
  *  #endif
  * @endcode
  */
+
+/*
+ * Set RT_OPSYS_XXX according to RT_OS_XXX.
+ *
+ * Search:  #define RT_OPSYS_([A-Z0-9]+) .*
+ * Replace: # elif defined(RT_OS_\1)\n#  define RT_OPSYS RT_OPSYS_\1
+ */
 #ifndef RT_OPSYS
-# if defined(__APPLE__)             || defined(RT_OS_DARWIN)
+# if defined(RT_OS_UNKNOWN)
+#  define RT_OPSYS RT_OPSYS_UNKNOWN
+# elif defined(RT_OS_AGNOSTIC)
+#  define RT_OPSYS RT_OPSYS_AGNOSTIC
+# elif defined(RT_OS_DARWIN)
+#  define RT_OPSYS RT_OPSYS_DARWIN
+# elif defined(RT_OS_DRAGONFLY)
+#  define RT_OPSYS RT_OPSYS_DRAGONFLY
+# elif defined(RT_OS_DOS)
+#  define RT_OPSYS RT_OPSYS_DOS
+# elif defined(RT_OS_FREEBSD)
+#  define RT_OPSYS RT_OPSYS_FREEBSD
+# elif defined(RT_OS_HAIKU)
+#  define RT_OPSYS RT_OPSYS_HAIKU
+# elif defined(RT_OS_LINUX)
+#  define RT_OPSYS RT_OPSYS_LINUX
+# elif defined(RT_OS_L4)
+#  define RT_OPSYS RT_OPSYS_L4
+# elif defined(RT_OS_MINIX)
+#  define RT_OPSYS RT_OPSYS_MINIX
+# elif defined(RT_OS_NETBSD)
+#  define RT_OPSYS RT_OPSYS_NETBSD
+# elif defined(RT_OS_NETWARE)
+#  define RT_OPSYS RT_OPSYS_NETWARE
+# elif defined(RT_OS_NT)
+#  define RT_OPSYS RT_OPSYS_NT
+# elif defined(RT_OS_OPENBSD)
+#  define RT_OPSYS RT_OPSYS_OPENBSD
+# elif defined(RT_OS_OS2)
+#  define RT_OPSYS RT_OPSYS_OS2
+# elif defined(RT_OS_PLAN9)
+#  define RT_OPSYS RT_OPSYS_PLAN9
+# elif defined(RT_OS_QNX)
+#  define RT_OPSYS RT_OPSYS_QNX
+# elif defined(RT_OS_SOLARIS)
+#  define RT_OPSYS RT_OPSYS_SOLARIS
+# elif defined(RT_OS_UEFI)
+#  define RT_OPSYS RT_OPSYS_UEFI
+# elif defined(RT_OS_WINDOWS)
+#  define RT_OPSYS RT_OPSYS_WINDOWS
+# endif
+#endif
+
+/*
+ * Guess RT_OPSYS based on compiler predefined macros.
+ */
+#ifndef RT_OPSYS
+# if defined(__APPLE__)
 #  define RT_OPSYS      RT_OPSYS_DARWIN
-# elif defined(__DragonFly__)       || defined(RT_OS_DRAGONFLY)
+# elif defined(__DragonFly__)
 #  define RT_OPSYS      RT_OPSYS_DRAGONFLY
-# elif defined(__FreeBSD__) /*??*/  || defined(RT_OS_FREEBSD)
+# elif defined(__FreeBSD__) /*??*/
 #  define RT_OPSYS      RT_OPSYS_FREEBSD
-# elif defined(__gnu_linux__)       || defined(RT_OS_LINUX)
+# elif defined(__gnu_linux__)
 #  define RT_OPSYS      RT_OPSYS_LINUX
-# elif defined(__NetBSD__) /*??*/   || defined(RT_OS_NETBSD)
+# elif defined(__NetBSD__) /*??*/
 #  define RT_OPSYS      RT_OPSYS_NETBSD
-# elif defined(__OpenBSD__) /*??*/  || defined(RT_OS_OPENBSD)
+# elif defined(__OpenBSD__) /*??*/
 #  define RT_OPSYS      RT_OPSYS_OPENBSD
-# elif defined(__OS2__)             || defined(RT_OS_OS2)
+# elif defined(__OS2__)
 #  define RT_OPSYS      RT_OPSYS_OS2
-# elif defined(__sun__) || defined(__SunOS__) || defined(__sun) || defined(__SunOS) || defined(RT_OS_SOLARIS)
+# elif defined(__sun__) || defined(__SunOS__) || defined(__sun) || defined(__SunOS)
 #  define RT_OPSYS      RT_OPSYS_SOLARIS
-# elif defined(_WIN32) || defined(_WIN64) || defined(RT_OS_WINDOWS)
+# elif defined(_WIN32) || defined(_WIN64)
 #  define RT_OPSYS      RT_OPSYS_WINDOWS
 # else
 #  error "Port Me"
 # endif
 #endif
+
 #if RT_OPSYS < RT_OPSYS_UNKNOWN || RT_OPSYS >= RT_OPSYS_MAX
 # error "Invalid RT_OPSYS value."
 #endif
