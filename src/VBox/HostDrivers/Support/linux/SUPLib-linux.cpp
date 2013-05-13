@@ -30,6 +30,7 @@
 #define LOG_GROUP LOG_GROUP_SUP
 #ifdef IN_SUP_HARDENED_R3
 # undef DEBUG /* Warning: disables RT_STRICT */
+# undef RT_STRICT
 # define LOG_DISABLED
   /** @todo RTLOGREL_DISABLED */
 # include <iprt/log.h>
