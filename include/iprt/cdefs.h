@@ -31,16 +31,6 @@
  * @{
  */
 
-/*
- * Include sys/cdefs.h if present, if not define the stuff we need.
- */
-#ifdef HAVE_SYS_CDEFS_H
-# if defined(RT_ARCH_LINUX) && defined(__KERNEL__)
-#  error "oops"
-# endif
-# include <sys/cdefs.h>
-#else
-
 /** @def RT_C_DECLS_BEGIN
  * Used to start a block of function declarations which are shared
  * between C and C++ program.
@@ -51,14 +41,12 @@
  * between C and C++ program.
  */
 
-# if defined(__cplusplus)
-#  define RT_C_DECLS_BEGIN extern "C" {
-#  define RT_C_DECLS_END   }
-# else
-#  define RT_C_DECLS_BEGIN
-#  define RT_C_DECLS_END
-# endif
-
+#if defined(__cplusplus)
+# define RT_C_DECLS_BEGIN extern "C" {
+# define RT_C_DECLS_END   }
+#else
+# define RT_C_DECLS_BEGIN
+# define RT_C_DECLS_END
 #endif
 
 
@@ -281,6 +269,266 @@
 #  define GC_ARCH_BITS 32
 # endif
 #endif
+
+
+
+/** @name RT_OPSYS_XXX - Operative System Identifiers.
+ * These are the value that the RT_OPSYS \#define can take. @{
+ */
+/** Unknown OS. */
+#define RT_OPSYS_UNKNOWN    0
+/** OS Agnostic. */
+#define RT_OPSYS_AGNOSTIC   1
+/** Darwin - aka Mac OS X. */
+#define RT_OPSYS_DARWIN     2
+/** DragonFly BSD. */
+#define RT_OPSYS_DRAGONFLY  3
+/** DOS. */
+#define RT_OPSYS_DOS        4
+/** FreeBSD. */
+#define RT_OPSYS_FREEBSD    5
+/** Haiku. */
+#define RT_OPSYS_HAIKU      6
+/** Linux. */
+#define RT_OPSYS_LINUX      7
+/** L4. */
+#define RT_OPSYS_L4         8
+/** Minix. */
+#define RT_OPSYS_MINIX      9
+/** NetBSD. */
+#define RT_OPSYS_NETBSD     11
+/** Netware. */
+#define RT_OPSYS_NETWARE    12
+/** NT (native). */
+#define RT_OPSYS_NT         13
+/** OpenBSD. */
+#define RT_OPSYS_OPENBSD    14
+/** OS/2. */
+#define RT_OPSYS_OS2        15
+/** Plan 9. */
+#define RT_OPSYS_PLAN9      16
+/** QNX. */
+#define RT_OPSYS_QNX        17
+/** Solaris. */
+#define RT_OPSYS_SOLARIS    18
+/** UEFI. */
+#define RT_OPSYS_UEFI       19
+/** Windows. */
+#define RT_OPSYS_WINDOWS    20
+/** The max RT_OPSYS_XXX value (exclusive). */
+#define RT_OPSYS_MAX        21
+/** @} */
+
+/** @def RT_OPSYS
+ * Indicates which OS we're targetting. It's a \#define with is
+ * assigned one of the RT_OPSYS_XXX defines above.
+ *
+ * So to test if we're on FreeBSD do the following:
+ * @code
+ *  #if RT_OPSYS == RT_OPSYS_FREEBSD
+ *  some_funky_freebsd_specific_stuff();
+ *  #endif
+ * @endcode
+ */
+#ifndef RT_OPSYS
+# if defined(__APPLE__)             || defined(RT_OS_DARWIN)
+#  define RT_OPSYS      RT_OPSYS_DARWIN
+# elif defined(__DragonFly__)       || defined(RT_OS_DRAGONFLY)
+#  define RT_OPSYS      RT_OPSYS_DRAGONFLY
+# elif defined(__FreeBSD__) /*??*/  || defined(RT_OS_FREEBSD)
+#  define RT_OPSYS      RT_OPSYS_FREEBSD
+# elif defined(__gnu_linux__)       || defined(RT_OS_LINUX)
+#  define RT_OPSYS      RT_OPSYS_LINUX
+# elif defined(__NetBSD__) /*??*/   || defined(RT_OS_NETBSD)
+#  define RT_OPSYS      RT_OPSYS_NETBSD
+# elif defined(__OpenBSD__) /*??*/  || defined(RT_OS_OPENBSD)
+#  define RT_OPSYS      RT_OPSYS_OPENBSD
+# elif defined(__OS2__)             || defined(RT_OS_OS2)
+#  define RT_OPSYS      RT_OPSYS_OS2
+# elif defined(__sun__) || defined(__SunOS__) || defined(__sun) || defined(__SunOS) || defined(RT_OS_SOLARIS)
+#  define RT_OPSYS      RT_OPSYS_SOLARIS
+# elif defined(_WIN32) || defined(_WIN64) || defined(RT_OS_WINDOWS)
+#  define RT_OPSYS      RT_OPSYS_WINDOWS
+# else
+#  error "Port Me"
+# endif
+#endif
+#if RT_OPSYS < RT_OPSYS_UNKNOWN || RT_OPSYS >= RT_OPSYS_MAX
+# error "Invalid RT_OPSYS value."
+#endif
+
+/*
+ * Do some consistency checks.
+ *
+ * Search:  #define RT_OPSYS_([A-Z0-9]+) .*
+ * Replace: #if defined(RT_OS_\1) && RT_OPSYS != RT_OPSYS_\1\n# error RT_OPSYS vs RT_OS_\1\n#endif
+ */
+#if defined(RT_OS_UNKNOWN) && RT_OPSYS != RT_OPSYS_UNKNOWN
+# error RT_OPSYS vs RT_OS_UNKNOWN
+#endif
+#if defined(RT_OS_AGNOSTIC) && RT_OPSYS != RT_OPSYS_AGNOSTIC
+# error RT_OPSYS vs RT_OS_AGNOSTIC
+#endif
+#if defined(RT_OS_DARWIN) && RT_OPSYS != RT_OPSYS_DARWIN
+# error RT_OPSYS vs RT_OS_DARWIN
+#endif
+#if defined(RT_OS_DRAGONFLY) && RT_OPSYS != RT_OPSYS_DRAGONFLY
+# error RT_OPSYS vs RT_OS_DRAGONFLY
+#endif
+#if defined(RT_OS_DOS) && RT_OPSYS != RT_OPSYS_DOS
+# error RT_OPSYS vs RT_OS_DOS
+#endif
+#if defined(RT_OS_FREEBSD) && RT_OPSYS != RT_OPSYS_FREEBSD
+# error RT_OPSYS vs RT_OS_FREEBSD
+#endif
+#if defined(RT_OS_HAIKU) && RT_OPSYS != RT_OPSYS_HAIKU
+# error RT_OPSYS vs RT_OS_HAIKU
+#endif
+#if defined(RT_OS_LINUX) && RT_OPSYS != RT_OPSYS_LINUX
+# error RT_OPSYS vs RT_OS_LINUX
+#endif
+#if defined(RT_OS_L4) && RT_OPSYS != RT_OPSYS_L4
+# error RT_OPSYS vs RT_OS_L4
+#endif
+#if defined(RT_OS_MINIX) && RT_OPSYS != RT_OPSYS_MINIX
+# error RT_OPSYS vs RT_OS_MINIX
+#endif
+#if defined(RT_OS_NETBSD) && RT_OPSYS != RT_OPSYS_NETBSD
+# error RT_OPSYS vs RT_OS_NETBSD
+#endif
+#if defined(RT_OS_NETWARE) && RT_OPSYS != RT_OPSYS_NETWARE
+# error RT_OPSYS vs RT_OS_NETWARE
+#endif
+#if defined(RT_OS_NT) && RT_OPSYS != RT_OPSYS_NT
+# error RT_OPSYS vs RT_OS_NT
+#endif
+#if defined(RT_OS_OPENBSD) && RT_OPSYS != RT_OPSYS_OPENBSD
+# error RT_OPSYS vs RT_OS_OPENBSD
+#endif
+#if defined(RT_OS_OS2) && RT_OPSYS != RT_OPSYS_OS2
+# error RT_OPSYS vs RT_OS_OS2
+#endif
+#if defined(RT_OS_PLAN9) && RT_OPSYS != RT_OPSYS_PLAN9
+# error RT_OPSYS vs RT_OS_PLAN9
+#endif
+#if defined(RT_OS_QNX) && RT_OPSYS != RT_OPSYS_QNX
+# error RT_OPSYS vs RT_OS_QNX
+#endif
+#if defined(RT_OS_SOLARIS) && RT_OPSYS != RT_OPSYS_SOLARIS
+# error RT_OPSYS vs RT_OS_SOLARIS
+#endif
+#if defined(RT_OS_UEFI) && RT_OPSYS != RT_OPSYS_UEFI
+# error RT_OPSYS vs RT_OS_UEFI
+#endif
+#if defined(RT_OS_WINDOWS) && RT_OPSYS != RT_OPSYS_WINDOWS
+# error RT_OPSYS vs RT_OS_WINDOWS
+#endif
+
+/*
+ * Make sure the RT_OS_XXX macro is defined.
+ *
+ * Search:  #define RT_OPSYS_([A-Z0-9]+) .*
+ * Replace: #elif RT_OPSYS == RT_OPSYS_\1\n# ifndef RT_OS_\1\n#  define RT_OS_\1\n# endif
+ */
+#if RT_OPSYS == RT_OPSYS_UNKNOWN
+# ifndef RT_OS_UNKNOWN
+#  define RT_OS_UNKNOWN
+# endif
+#elif RT_OPSYS == RT_OPSYS_AGNOSTIC
+# ifndef RT_OS_AGNOSTIC
+#  define RT_OS_AGNOSTIC
+# endif
+#elif RT_OPSYS == RT_OPSYS_DARWIN
+# ifndef RT_OS_DARWIN
+#  define RT_OS_DARWIN
+# endif
+#elif RT_OPSYS == RT_OPSYS_DRAGONFLY
+# ifndef RT_OS_DRAGONFLY
+#  define RT_OS_DRAGONFLY
+# endif
+#elif RT_OPSYS == RT_OPSYS_DOS
+# ifndef RT_OS_DOS
+#  define RT_OS_DOS
+# endif
+#elif RT_OPSYS == RT_OPSYS_FREEBSD
+# ifndef RT_OS_FREEBSD
+#  define RT_OS_FREEBSD
+# endif
+#elif RT_OPSYS == RT_OPSYS_HAIKU
+# ifndef RT_OS_HAIKU
+#  define RT_OS_HAIKU
+# endif
+#elif RT_OPSYS == RT_OPSYS_LINUX
+# ifndef RT_OS_LINUX
+#  define RT_OS_LINUX
+# endif
+#elif RT_OPSYS == RT_OPSYS_L4
+# ifndef RT_OS_L4
+#  define RT_OS_L4
+# endif
+#elif RT_OPSYS == RT_OPSYS_MINIX
+# ifndef RT_OS_MINIX
+#  define RT_OS_MINIX
+# endif
+#elif RT_OPSYS == RT_OPSYS_NETBSD
+# ifndef RT_OS_NETBSD
+#  define RT_OS_NETBSD
+# endif
+#elif RT_OPSYS == RT_OPSYS_NETWARE
+# ifndef RT_OS_NETWARE
+#  define RT_OS_NETWARE
+# endif
+#elif RT_OPSYS == RT_OPSYS_NT
+# ifndef RT_OS_NT
+#  define RT_OS_NT
+# endif
+#elif RT_OPSYS == RT_OPSYS_OPENBSD
+# ifndef RT_OS_OPENBSD
+#  define RT_OS_OPENBSD
+# endif
+#elif RT_OPSYS == RT_OPSYS_OS2
+# ifndef RT_OS_OS2
+#  define RT_OS_OS2
+# endif
+#elif RT_OPSYS == RT_OPSYS_PLAN9
+# ifndef RT_OS_PLAN9
+#  define RT_OS_PLAN9
+# endif
+#elif RT_OPSYS == RT_OPSYS_QNX
+# ifndef RT_OS_QNX
+#  define RT_OS_QNX
+# endif
+#elif RT_OPSYS == RT_OPSYS_SOLARIS
+# ifndef RT_OS_SOLARIS
+#  define RT_OS_SOLARIS
+# endif
+#elif RT_OPSYS == RT_OPSYS_UEFI
+# ifndef RT_OS_UEFI
+#  define RT_OS_UEFI
+# endif
+#elif RT_OPSYS == RT_OPSYS_WINDOWS
+# ifndef RT_OS_WINDOWS
+#  define RT_OS_WINDOWS
+# endif
+#else
+# error "Bad RT_OPSYS value."
+#endif
+
+
+/**
+ * Checks whether the given OpSys uses DOS-style paths or not.
+ *
+ * By DOS-style paths we include drive lettering and UNC paths.
+ *
+ * @returns true / false
+ * @param   a_OpSys     The RT_OPSYS_XXX value to check, will be reference
+ *                      multiple times.
+ */
+#define RT_OPSYS_USES_DOS_PATHS(a_OpSys) \
+    (   (a_OpSys) == RT_OPSYS_WINDOWS \
+     || (a_OpSys) == RT_OPSYS_OS2 \
+     || (a_OpSys) == RT_OPSYS_DOS )
+
 
 
 /** @def CTXTYPE
