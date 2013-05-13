@@ -40,6 +40,9 @@ void crStatePointInit (CRContext *ctx)
 	}
 #endif
 
+	p->spriteCoordOrigin = (GLfloat)GL_UPPER_LEFT;
+	RESET(pb->spriteCoordOrigin, ctx->bitid);
+
 	RESET(pb->dirty, ctx->bitid);
 
 	/*
@@ -167,6 +170,17 @@ void STATE_APIENTRY crStatePointParameterfvARB(GLenum pname, const GLfloat *para
 			return;
 		}
 		break;
+	case GL_POINT_SPRITE_COORD_ORIGIN:
+	{
+	    GLenum enmVal = (GLenum)params[0];
+        if (enmVal != GL_LOWER_LEFT && enmVal != GL_UPPER_LEFT) {
+            crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glPointParameterfvARB invalid GL_POINT_SPRITE_COORD_ORIGIN value: %f", params[0]);
+            return;
+        }
+        p->spriteCoordOrigin = params[0];
+        DIRTY(pb->spriteCoordOrigin, g->neg_bitid);
+	    break;
+	}
 	default:
 		crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glPointParameterfvARB invalid enum: %f", pname);
 		return;

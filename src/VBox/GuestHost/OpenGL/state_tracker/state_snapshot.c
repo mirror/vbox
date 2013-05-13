@@ -151,6 +151,14 @@ static int32_t crStateLoadTextureUnit_v_BEFORE_CTXUSAGE_BITS(CRTextureUnit *t, P
     return rc;
 }
 
+static int crStateLoadStencilPoint_v_37(CRPointState *pPoint, PSSMHANDLE pSSM)
+{
+    int rc = VINF_SUCCESS;
+    SHCROGL_GET_STRUCT_HEAD(pPoint, CRPointState, spriteCoordOrigin);
+    pPoint->spriteCoordOrigin = (GLfloat)GL_UPPER_LEFT;
+    return rc;
+}
+
 static int32_t crStateLoadStencilState_v_33(CRStencilState *s, PSSMHANDLE pSSM)
 {
     CRStencilState_v_33 stencilV33;
@@ -1711,6 +1719,8 @@ static void crStateFindSharedCB(unsigned long key, void *data1, void *data2)
 
 int32_t crStateSaveGlobals(PSSMHANDLE pSSM)
 {
+    /* don't need that for now */
+#if 0
     CRStateBits *pBits;
     int rc;
 
@@ -1724,6 +1734,7 @@ int32_t crStateSaveGlobals(PSSMHANDLE pSSM)
         AssertRCReturn(rc, rc);
 #include "state_bits_globalop.h"
 #undef CRSTATE_BITS_OP
+#endif
     return VINF_SUCCESS;
 }
 
@@ -1753,9 +1764,17 @@ int32_t crStateLoadGlobals(PSSMHANDLE pSSM, uint32_t u32Version)
 #undef CRSTATE_BITS_OP_STENCIL_FUNC_V_33
 #undef CRSTATE_BITS_OP_STENCIL_OP_V_33
         }
+        else if (u32Version < SHCROGL_SSM_VERSION_WITH_SPRITE_COORD_ORIGIN)
+        {
+#define CRSTATE_BITS_OP_VERSION (SHCROGL_SSM_VERSION_WITH_SPRITE_COORD_ORIGIN - 1)
+#include "state_bits_globalop.h"
+#undef CRSTATE_BITS_OP_VERSION
+        }
         else
         {
-#include "state_bits_globalop.h"
+            /* we do not put dirty bits to state anymore,
+             * nop */
+//#include "state_bits_globalop.h"
         }
 #undef CRSTATE_BITS_OP
         /* always dirty all bits */
@@ -1852,7 +1871,10 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
             rc = crStateLoadAttribState_v_BEFORE_CTXUSAGE_BITS(&pTmpContext->attrib, pSSM);
             AssertRCReturn(rc, rc);
             SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, attrib, buffer);
-            SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, stencil);
+            SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, point);
+            rc = crStateLoadStencilPoint_v_37(&pTmpContext->point, pSSM);
+            AssertRCReturn(rc, rc);
+            SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, polygon, stencil);
             rc = crStateLoadStencilState_v_33(&pTmpContext->stencil, pSSM);
             AssertRCReturn(rc, rc);
             SHCROGL_CUT_FOR_OLD_TYPE_TO_ENSURE_ALIGNMENT(CRContext, stencil, CRStencilState_v_33, sizeof (void*));
@@ -1867,7 +1889,10 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
             rc = crStateLoadAttribState_v_33(&pTmpContext->attrib, pSSM);
             AssertRCReturn(rc, rc);
             SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, attrib, buffer);
-            SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, stencil);
+            SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, point);
+            rc = crStateLoadStencilPoint_v_37(&pTmpContext->point, pSSM);
+            AssertRCReturn(rc, rc);
+            SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, polygon, stencil);
             rc = crStateLoadStencilState_v_33(&pTmpContext->stencil, pSSM);
             AssertRCReturn(rc, rc);
             SHCROGL_CUT_FOR_OLD_TYPE_TO_ENSURE_ALIGNMENT(CRContext, stencil, CRStencilState_v_33, sizeof (void*));
@@ -1883,11 +1908,20 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
         rc = crStateLoadAttribState_v_33(&pTmpContext->attrib, pSSM);
         AssertRCReturn(rc, rc);
         SHCROGL_CUT_FIELD_ALIGNMENT(CRContext, attrib, buffer);
-        SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, stencil);
+        SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, buffer, point);
+        rc = crStateLoadStencilPoint_v_37(&pTmpContext->point, pSSM);
+        AssertRCReturn(rc, rc);
+        SHCROGL_GET_STRUCT_PART(pTmpContext, CRContext, polygon, stencil);
         rc = crStateLoadStencilState_v_33(&pTmpContext->stencil, pSSM);
         AssertRCReturn(rc, rc);
         SHCROGL_CUT_FOR_OLD_TYPE_TO_ENSURE_ALIGNMENT(CRContext, stencil, CRStencilState_v_33, sizeof (void*));
         SHCROGL_GET_STRUCT_TAIL(pTmpContext, CRContext, texture);
+    }
+    else if (u32Version < SHCROGL_SSM_VERSION_WITH_SPRITE_COORD_ORIGIN)
+    {
+        SHCROGL_GET_STRUCT_HEAD(pTmpContext, CRContext, point);
+        crStateLoadStencilPoint_v_37(&pTmpContext->point, pSSM);
+        SHCROGL_GET_STRUCT_TAIL(pTmpContext, CRContext, polygon);
     }
     else
     {

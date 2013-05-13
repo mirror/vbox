@@ -30,7 +30,11 @@
  * this is why we switched to glReadDrawPixels(GL_DEPTH_STENCIL) in one run */
 #define SHCROGL_SSM_VERSION_WITH_SINGLE_DEPTH_STENCIL               36
 #define SHCROGL_SSM_VERSION_WITH_PRESENT_STATE                      37
-#define SHCROGL_SSM_VERSION                                         37
+/* older state did not have glPointParameter ( GL_POINT_SPRITE_COORD_ORIGIN ) implementation */
+#define SHCROGL_SSM_VERSION_WITH_SPRITE_COORD_ORIGIN                38
+/* dirty bits are not needed for now, remove */
+#define SHCROGL_SSM_VERSION_WITHOUT_DIRTY_BITS                      38
+#define SHCROGL_SSM_VERSION                                         38
 
 /* These define the Chromium release number.
  * Alpha Release = 0.1.0, Beta Release = 0.2.0

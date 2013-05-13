@@ -80,6 +80,7 @@ GLfloat   GL_POINT_SIZE               g->point.pointSize
 GLfloat   GL_POINT_SIZE_MIN_ARB	      g->point.minSize
 GLfloat   GL_POINT_SIZE_MAX_ARB       g->point.maxSize
 GLfloat   GL_POINT_FADE_THRESHOLD_SIZE_ARB g->point.fadeThresholdSize
+GLfloat   GL_POINT_SPRITE_COORD_ORIGIN g->point.spriteCoordOrigin
 GLfloat   GL_POINT_DISTANCE_ATTENUATION_ARB g->point.distanceAttenuation[0] g->point.distanceAttenuation[1] g->point.distanceAttenuation[2]
 GLboolean GL_NORMALIZE                g->transform.normalize
 
