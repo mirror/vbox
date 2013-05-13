@@ -378,10 +378,6 @@ NS_METHOD nsAppFileLocationProvider::GetProductDirectory(nsILocalFile **aLocalFi
         rv = directoryService->Get(NS_WIN_WINDOWS_DIR, NS_GET_IID(nsILocalFile), getter_AddRefs(localDir));
     }
     if (NS_FAILED(rv)) return rv;
-#elif defined(L4ENV)
-  /* Major hack attack, should sort out the environment stuff!!! */
-    rv = NS_NewNativeLocalFile(nsDependentCString("."), PR_TRUE, getter_AddRefs(localDir));
-    if (NS_FAILED(rv)) return rv;
 #elif defined(XP_UNIX)
     rv = NS_NewNativeLocalFile(nsDependentCString(PR_GetEnv("HOME")), PR_TRUE, getter_AddRefs(localDir));
     if (NS_FAILED(rv)) return rv;

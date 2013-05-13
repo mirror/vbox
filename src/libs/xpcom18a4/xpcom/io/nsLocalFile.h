@@ -74,9 +74,6 @@
 #include "nsLocalFileOSX.h"
 #elif defined(XP_MAC)
 #include "nsLocalFileMac.h"
-#elif defined(L4ENV)
-  /* Major hack attack!!! */
-#include "nsLocalFileL4.h"
 #elif defined(XP_UNIX) || defined(XP_BEOS)
 #include "nsLocalFileUnix.h"
 #elif defined(XP_OS2)

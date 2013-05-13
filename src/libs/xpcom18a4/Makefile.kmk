@@ -200,7 +200,6 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_iprt_atomic.h \
 	nsprpub/pr/include/md/_darwin.h \
 	nsprpub/pr/include/md/_freebsd.h \
-	nsprpub/pr/include/md/_l4v2.h \
 	nsprpub/pr/include/md/_linux.h \
 	nsprpub/pr/include/md/_macos.h \
 	nsprpub/pr/include/md/_netbsd.h \
@@ -222,7 +221,6 @@ NSPRPUB-MD-HEADERS_SOURCES = \
 	nsprpub/pr/include/md/_os2.cfg \
 	nsprpub/pr/include/md/_solaris32.cfg \
 	nsprpub/pr/include/md/_solaris64.cfg \
-	nsprpub/pr/include/md/_l4v2.cfg
 
 NSPRPUB-OBS-HEADERS_INST = $(INST_SDK)bindings/xpcom/include/nsprpub/obsolete/
 NSPRPUB-OBS-HEADERS_IFFLAGS = -m 644
@@ -528,15 +526,6 @@ VBox-xpcom-nspr_DEFS.linux = \
 	HAVE_CVAR_BUILT_ON_SEM \
 	_PR_PTHREADS
 # _BSD_SOURCE is here to keep the Glibc header files happy and make them include the right things
-# FIXME: L4 should be defined by _linux.cfg
-VBox-xpcom-nspr_DEFS.l4 = \
-	L4=1 \
-	_REENTRANT=1 \
-	_LARGEFILE64_SOURCE=1 \
-	_POSIX_SOURCE=1 \
-	_BSD_SOURCE=1 \
-	HAVE_FCNTL_FILE_LOCKING=1 \
-	HAVE_CVAR_BUILT_ON_SEM
 VBox-xpcom-nspr_DEFS.netbsd = \
 	_PR_PTHREADS
 VBox-xpcom-nspr_DEFS.openbsd = \
@@ -629,30 +618,6 @@ VBox-xpcom-nspr_SOURCES.darwin = nsprpub/pr/src/md/unix/darwin.c
 VBox-xpcom-nspr_SOURCES.darwin.x86 = nsprpub/pr/src/md/unix/os_Darwin_x86.s
 
 VBox-xpcom-nspr_SOURCES.freebsd = nsprpub/pr/src/md/unix/freebsd.c
-
-VBox-xpcom-nspr_SOURCES.l4 = \
-	nsprpub/pr/src/io/prfile.c /* why not for Linux? */ \
-	nsprpub/pr/src/io/prio.c   /*  ""   ""  ""   ""  */ \
-	nsprpub/pr/src/io/prsocket.c \
-	nsprpub/pr/src/md/unix/unix.c \
-	nsprpub/pr/src/md/unix/unix_errors.c \
-	nsprpub/pr/src/md/unix/uxpoll.c \
-	nsprpub/pr/src/md/unix/uxproces.c \
-	nsprpub/pr/src/md/unix/uxrng.c \
-	nsprpub/pr/src/md/unix/uxshm.c \
-	nsprpub/pr/src/md/unix/uxwrap.c \
-	nsprpub/pr/src/md/unix/l4env.c \
-	nsprpub/pr/src/threads/prcthr.c \
-	nsprpub/pr/src/threads/prmon.c \
-	nsprpub/pr/src/threads/combined/prucpu.c \
-	nsprpub/pr/src/threads/combined/prucv.c \
-	nsprpub/pr/src/threads/combined/prulock.c \
-	nsprpub/pr/src/threads/combined/prustack.c \
-	nsprpub/pr/src/threads/combined/pruthr.c
-#   nsprpub/pr/src/md/l4env/prnetdb.c \
-#   nsprpub/pr/src/md/l4env/threads.c
-VBox-xpcom-nspr_SOURCES.l4.x86 = nsprpub/pr/src/md/unix/os_Linux_x86.s
-VBox-xpcom-nspr_SOURCES.l4.amd64 = nsprpub/pr/src/md/unix/os_Linux_x86_64.s
 
 VBox-xpcom-nspr_SOURCES.linux = nsprpub/pr/src/md/unix/linux.c
 VBox-xpcom-nspr_SOURCES.linux.x86 = nsprpub/pr/src/md/unix/os_Linux_x86.s
@@ -818,8 +783,6 @@ VBox-xpcom-io_SOURCES.darwin.x86 = \
 	xpcom/io/nsLocalFileOSX.cpp \
 	xpcom/MoreFiles/FSCopyObject.c \
 	xpcom/MoreFiles/MoreFilesX.c
-VBox-xpcom-io_SOURCES.l4 = \
-	xpcom/io/nsLocalFileL4.cpp
 if1of ($(KBUILD_TARGET) $(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd linux netbsd openbsd solaris darwin.amd64)
 VBox-xpcom-io_SOURCES += \
 	xpcom/io/nsLocalFileUnix.cpp
@@ -872,7 +835,6 @@ VBox-xpcom-xptcall_TEMPLATE = XPCOM
 VBox-xpcom-xptcall_INSTTYPE = none
 VBox-xpcom-xptcall_DEFS                = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTC_API
 VBox-xpcom-xptcall_DEFS.darwin         = KEEP_STACK_16_BYTE_ALIGNED
-VBox-xpcom-xptcall_DEFS.l4             = L4
 VBox-xpcom-xptcall_DEFS.os2            = MOZ_NEED_LEADING_UNDERSCORE
 VBox-xpcom-xptcall_INCS.os2            = xpcom/reflect/xptcall/src/md/unix
 VBox-xpcom-xptcall_SOURCES             = xpcom/reflect/xptcall/src/xptcall.cpp
@@ -1001,7 +963,7 @@ VBoxXPCOM_LIBS = \
 VBoxXPCOM_LIBS.linux = \
 	pthread dl
 
-ifeq ($(filter-out freebsd l4 linux netbsd openbsd,$(KBUILD_TARGET)),) # gnu ld.
+ifeq ($(filter-out freebsd linux netbsd openbsd,$(KBUILD_TARGET)),) # gnu ld.
 VBoxXPCOM_LDFLAGS = -Wl,--whole-archive \
 	$(VBox-xpcom-typelib_1_TARGET) \
 	$(VBox-xpcom-string_1_TARGET) \
@@ -1033,8 +995,6 @@ VBoxXPCOM_LDFLAGS.solaris += -Wl,-z,allextract \
 	$(VBoxXPCOMGlue_s_1_TARGET) \
 	-Wl,-z,defaultextract
 
-#VBoxXPCOM_LIBS.l4 = $(L4_LIBDIR)/libxpcomstubs.a $(L4_LIBDIR)/../libuc_c++.a \
-#    $(VBOX_PATH_L4_GCC3_INSTALL)/libsupc++.a $(VBOX_PATH_L4_GCC3_INSTALL)/libgcc_eh.a
 # EF heap
 #VBoxXPCOM_LIBS += $(LIB_RUNTIME_EF)
 #VBoxXPCOM_LDFLAGS = -Wl,--whole-archive $(VBoxXPCOM_LIBS) -Wl,--no-whole-archive $(LIB_RUNTIME)

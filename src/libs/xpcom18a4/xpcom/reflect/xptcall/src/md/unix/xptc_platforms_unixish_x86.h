@@ -67,8 +67,7 @@
 *
 */
 
-#if defined(LINUX) || defined(L4)
-/* I am assuming that since we are using the Linux compiler for L4, the same will hold true... */
+#if defined(LINUX)
 
 #if (__GNUC__ == 2) && (__GNUC_MINOR__ <= 7)
 /* Old gcc 2.7.x.x.  What does gcc 2.8.x do?? */
