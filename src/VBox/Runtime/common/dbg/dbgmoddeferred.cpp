@@ -1,4 +1,4 @@
-﻿/* $Id$ */
+/* $Id$ */
 /** @file
  * IPRT - Debug Module Deferred Loading Stub.
  */
