@@ -882,23 +882,6 @@ ifeq ($(KBUILD_TARGET),haiku)
 endif
 
 
-ifeq ($(KBUILD_TARGET),l4)
- VBOX_WITH_VBOXDRV=
- VBOX_WITH_ADDITION_DRIVERS=
- VBOX_WITH_VRDP=
- VBOX_WITH_HEADLESS=
- VBOX_WITH_VBOXSDL=
- VBOX_WITH_QTGUI=
- VBOX_WITH_MAIN=
- VBOX_WITH_DOCS=
- VBOX_WITH_ISCSI=
- VBOX_WITH_INIP=
- VBOX_WITH_INTERNAL_NETWORKING=
- VBOX_WITH_PDM_ASYNC_COMPLETION=
- VBOX_WITH_KCHMVIEWER=
- VBOX_WITH_HARDENING=
-endif
-
 ifeq ($(KBUILD_TARGET),os2)
  VBOX_WITH_WEBSERVICES=
  VBOX_WITH_INSTALLER=
@@ -1195,7 +1178,7 @@ endif
 #
 # Image and object format config.
 #
-if1of ($(KBUILD_TARGET), freebsd haiku linux l4 netbsd openbsd solaris)
+if1of ($(KBUILD_TARGET), freebsd haiku linux netbsd openbsd solaris)
  VBOX_LDR_FMT = elf
 endif
 ifeq ($(KBUILD_TARGET),darwin)
@@ -1378,53 +1361,6 @@ TOOL.win.amd64 = $(VBOX_VCC_TOOL_STEM)AMD64
 ASTOOL = $(VBOX_ASTOOL)
 
 #
-# L4-specific settings.
-#
-ifdef L4_DIR
- ifeq ($(KBUILD_TARGET),l4)
-  L4_API  ?= l4v2
-  L4_ARCH ?= $(KBUILD_TARGET_ARCH)
-  ifeq ($(L4_ARCH),x86)
-   L4_CPU ?= 586
-   L4LINUX26_INCDIR := $(L4LINUX26_DIR)/include \
-		       $(L4LINUX26_DIR)/include/asm-l4/i386-arch
-  else ifeq ($(L4_ARCH),amd64)
-   L4_CPU ?= k8
-   L4LINUX26_INCDIR := $(L4LINUX26_DIR)/include
-   # no red zone for L4 because of IPC bindings
-   CFLAGS.l4   = -mno-red-zone
-   CXXFLAGS.l4 = -mno-red-zone
-  else
-   $(error VBox: L4_ARCH=$(L4_ARCH))
-  endif
-  L4_OBJ := $(L4_DIR)/build-$(L4_ARCH)-$(L4_CPU)-$(L4_API)
-  # support split Linux kernels (make O=<build directory>)
-  kernelsrc := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(L4LINUX26_DIR)/Makefile)
-  ifneq ($(kernelsrc),)
-   kernelpath := $(realpath $(kernelsrc))
-    L4LINUX26_INCDIR += $(L4LINUX26_DIR)/include2 $(kernelpath)/include
-  endif
-  L4_INCDIR := \
-    $(L4_OBJ)/include/uclibc++ \
-    $(L4_OBJ)/include/$(L4_ARCH)/uclibc \
-    $(L4_OBJ)/include/uclibc \
-    $(L4LINUX26_INCDIR) \
-    $(L4_OBJ)/include/$(L4_ARCH)/$(L4_API) \
-    $(L4_OBJ)/include/$(L4_API) \
-    $(L4_OBJ)/include/$(L4_ARCH) \
-    $(L4_OBJ)/include \
-    $(L4_DIR)/tool/dice/include
-  L4_LIBDIR := \
-   $(L4_DIR)/build-$(L4_ARCH)-$(L4_CPU)-$(L4_API)/lib/$(L4_ARCH)_$(L4_CPU)/$(L4_API)
- endif # KBUILD_TARGET == l4
-endif # L4_DIR
-
-# Produce debugging information that the Fiasco kernel debugger can read.
-ifeq ($(KBUILD_TARGET).$(KBUILD_TYPE),l4.debug)
- DEBUG_L4 = -gstabs+
-endif
-
-#
 # Setup the global defines and includes.
 #
 # Note! The __SOMETHING__ #defines are deprecated as they violate the C/C++ specs.
@@ -1440,7 +1376,6 @@ DEFS.amd64   = RT_ARCH_AMD64 __AMD64__
 DEFS.darwin  = RT_OS_DARWIN __DARWIN__
 DEFS.freebsd = RT_OS_FREEBSD __FREEBSD__
 DEFS.haiku   = RT_OS_HAIKU
-DEFS.l4      = RT_OS_L4 __L4__ __L4ENV__ L4API_l4v2 ARCH_$(KBUILD_TARGET_ARCH) __NO_CTYPE _FILE_OFFSET_BITS=64
 DEFS.linux   = RT_OS_LINUX _FILE_OFFSET_BITS=64
 DEFS.netbsd  = RT_OS_NETBSD
 DEFS.openbsd = RT_OS_OPENBSD
@@ -1635,7 +1570,7 @@ ARCH_BITS_DEFS += $(VBOX_GC_ARCH_BITS_DEFS)
 #
 # Add the output dir(s) to the dynamic loader search path.
 #
-if1of ($(KBUILD_HOST), freebsd linux l4 netbsd openbsd solaris)
+if1of ($(KBUILD_HOST), freebsd linux netbsd openbsd solaris)
  export LD_LIBRARY_PATH:=$(PATH_STAGE_BIN):$(PATH_STAGE_LIB):$(LD_LIBRARY_PATH)
 endif
 ifeq ($(KBUILD_HOST),haiku)
@@ -1665,16 +1600,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREM.dylib
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.dylib
  LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.dylib
-endif
-ifeq ($(KBUILD_TARGET),l4)
- LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.s.so
- LIB_RUNTIME_EF  = #$(PATH_STAGE_LIB)/RuntimeEFCPP.a
- LIB_KPROFILE    = $(PATH_STAGE_BIN)/kPrf2.s.so
- LIB_VMM         = $(PATH_STAGE_BIN)/VBoxVMM.s.so
- LIB_VMMGC       = $(PATH_STAGE_BIN)/VMMGC.gc
- LIB_REM         = $(PATH_STAGE_LIB)/VBoxREM.s.so
- LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.s.so
- LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.s.so
 endif
 if1of ($(KBUILD_TARGET), freebsd haiku linux netbsd openbsd solaris)
  LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.so
@@ -2272,7 +2197,6 @@ $(PATH_OUT)/GCCConfig.kmk: \
 # gcc version < 3.4 has a bug in handling __attribute__((regparm(3))).
 # See http://osdir.com/ml/gcc.prs/2002-08/msg00223.html and probably http://gcc.gnu.org/bugzilla/show_bug.cgi?id=20004
 	$(QUIET)$(APPEND) '$@' 'VBOX_GCC_BUGGY_REGPARM         ?= $$(int-lt $$(VBOX_GCC_VERSION_CC),30400)'
-ifneq ($(KBUILD_TARGET),l4)
 # Set default attribute for ELF and MACH-O symbols to ``hidden'' to reduce the number
 # of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CC),)'
@@ -2280,8 +2204,7 @@ ifneq ($(KBUILD_TARGET),l4)
 	$(QUIET)$(APPEND) '$@' '  VBOX_GCC_fvisibility-hidden  ?= $(call VBOX_GCC_CHECK_CC,-fvisibility=hidden -DVBOX_HAVE_VISIBILITY_HIDDEN -DRT_USE_VISIBILITY_DEFAULT,)'
 	$(QUIET)$(APPEND) '$@' ' endif'
 	$(QUIET)$(APPEND) '$@' 'endif'
-endif
-ifn1of ($(KBUILD_TARGET),haiku l4)
+ifn1of ($(KBUILD_TARGET),haiku)
 # Set default attribute for inline functions to ``hidden'' to reduce the number
 # of relocation entries and PLT indirections in shared libraries. Don't allow for gcc version < 4.
 	$(QUIET)$(APPEND) '$@' 'ifneq ($$(VBOX_GCC_VERSION_CXX),)'
@@ -3474,10 +3397,6 @@ TEMPLATE_VBOXR3EXE_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXR3EXE_CXXFLAGS.amd64      = -m64
 TEMPLATE_VBOXR3EXE_CXXFLAGS.sparc32    = -m32
 TEMPLATE_VBOXR3EXE_CXXFLAGS.sparc64    = -m64
-# L4 currently can't handle exception handling.
-TEMPLATE_VBOXR3EXE_CXXFLAGS.l4         = -fno-exceptions -nostdinc \
-	$(addprefix -I,$(VBOX_PATH_GCC_INCS) $(L4_INCDIR) $(FILE_TOOL_GPP3_INCDIR)) \
-	$(DEBUG_L4)
 TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile   = -finstrument-functions
 TEMPLATE_VBOXR3EXE_CFLAGS              = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_OPT) $(VBOX_GCC_FP) -fno-strict-aliasing $(VBOX_GCC_fvisibility-hidden)
 TEMPLATE_VBOXR3EXE_CFLAGS.x86          = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.x86)
@@ -3486,8 +3405,6 @@ TEMPLATE_VBOXR3EXE_CFLAGS.sparc32      = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.sparc32)
 TEMPLATE_VBOXR3EXE_CFLAGS.sparc64      = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.sparc64)
 TEMPLATE_VBOXR3EXE_CFLAGS.debug        = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.debug)
 TEMPLATE_VBOXR3EXE_CFLAGS.kprofile     = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile)
-TEMPLATE_VBOXR3EXE_CFLAGS.l4           = -nostdinc \
-	$(addprefix -I,$(VBOX_PATH_GCC_INCS) $(L4_INCDIR)) $(DEBUG_L4)
 TEMPLATE_VBOXR3EXE_OBJCFLAGS           = $(TEMPLATE_VBOXR3EXE_CFLAGS)
 TEMPLATE_VBOXR3EXE_OBJCFLAGS.x86       = $(TEMPLATE_VBOXR3EXE_CFLAGS.x86)
 TEMPLATE_VBOXR3EXE_OBJCFLAGS.amd64     = $(TEMPLATE_VBOXR3EXE_CFLAGS.amd64)
@@ -3498,28 +3415,15 @@ TEMPLATE_VBOXR3EXE_OBJCXXFLAGS.x86     = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.x86)
 TEMPLATE_VBOXR3EXE_OBJCXXFLAGS.amd64   = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.amd64)
 TEMPLATE_VBOXR3EXE_OBJCXXFLAGS.debug   = $(TEMPLATE_VBOXR3EXE_CXXFLAGS.debug)
 TEMPLATE_VBOXR3EXE_OBJCXXFLAGS.kprofile= $(TEMPLATE_VBOXR3EXE_CXXFLAGS.kprofile)
-TEMPLATE_VBOXR3EXE_DEFS.l4             = L4_THREAD_SAFE
 TEMPLATE_VBOXR3EXE_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXR3EXE_LDFLAGS.amd64       = -m64
 TEMPLATE_VBOXR3EXE_LDFLAGS.sparc32     = -m32
 TEMPLATE_VBOXR3EXE_LDFLAGS.sparc64     = -m64
-TEMPLATE_VBOXR3EXE_LDFLAGS.l4          = \
-	$(L4_LIBDIR)/../crt0.o \
-	-T$(L4_LIBDIR)/../main_dyn.ld -nostdlib \
-	-Wl,--export-dynamic,--dynamic-linker=libld-l4.s.so \
-	-Wl,--rpath-link,$(L4_LIBDIR)
 TEMPLATE_VBOXR3EXE_LDFLAGS.linux       = -Wl,-z,noexecstack $(VBOX_LD_as_needed)
 TEMPLATE_VBOXR3EXE_LDFLAGS.solaris     = -Wl,-z,ignore # same as VBOX_LD_as_needed
 
  ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXR3EXE_LIBS                = pthread m rt dl
- else ifeq ($(KBUILD_TARGET),l4)
-TEMPLATE_VBOXR3EXE_LIBS                = \
-	$(L4_LIBDIR)/libvboxserver.s.so \
-	$(L4_LIBDIR)/libuc++.0.s.so \
-	supc++ gcc_eh gcc \
-	$(L4_LIBDIR)/libdl.s.so \
-	$(L4_LIBDIR)/libuc.0.s.so
  else ifeq ($(KBUILD_TARGET),os2)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3OMF
 TEMPLATE_VBOXR3EXE_LIBS                = socket iconv
@@ -3583,8 +3487,6 @@ endif
 #				       -
 TEMPLATE_VBOXR3                        = VBox Ring 3 SO/DLLs
 TEMPLATE_VBOXR3_EXTENDS                = VBOXR3EXE
-TEMPLATE_VBOXR3_LDFLAGS.l4             = $(L4_LIBDIR)/../crt0.s.o -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
-TEMPLATE_VBOXR3_DEFS.l4                = $(TEMPLATE_VBOXR3EXE_DEFS.l4) __PIC__
 TEMPLATE_VBOXR3_DEFS.darwin            = $(TEMPLATE_VBOXR3EXE_DEFS.darwin) PIC
 TEMPLATE_VBOXR3_LDFLAGS.darwin         = $(TEMPLATE_VBOXR3EXE_LDFLAGS.darwin) \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
@@ -3802,7 +3704,6 @@ TEMPLATE_VBOXR3AUTOTST  = VBox Ring 3 Testcase Exe
 TEMPLATE_VBOXR3AUTOTST_EXTENDS = $(if-expr "$(KBUILD_TARGET)" == "win",VBoxR3Static,VBOXR3EXE)
 TEMPLATE_VBOXR3AUTOTST_INST    = $(INST_TESTCASE)
 TEMPLATE_VBOXR3AUTOTST_LIBS    = $(TEMPLATE_$(TEMPLATE_VBOXR3AUTOTST_EXTENDS)_LIBS)
-TEMPLATE_VBOXR3AUTOTST_LIBS.l4 = $(LIB_RUNTIME) $(TEMPLATE_$(TEMPLATE_VBOXR3AUTOTST_EXTENDS)_LIBS.l4)
 if "$(KBUILD_TARGET)" == "win" && defined(VBOX_SIGNING_MODE)
  TEMPLATE_VBOXR3AUTOTST_POST_CMDS = $(NO_SUCH_VARIABLE)
 endif
@@ -4026,9 +3927,6 @@ TEMPLATE_VBOXMAINEXE_LDFLAGS.amd64       = -m64
  ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXMAINEXE_LIBS                = pthread m rt $(LIB_RUNTIME) dl
 TEMPLATE_VBOXMAINEXE_LDFLAGS.linux       = $(VBOX_LD_as_needed)
- else ifeq ($(KBUILD_TARGET),l4)
-TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
-# no libs as yet in l4 target - must be added later
  else ifeq ($(KBUILD_TARGET),os2)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3OMF
 TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME)
@@ -4732,34 +4630,6 @@ else
 	$(PATH_DEVTOOLS)/win.x86/bin/mc.exe\
 	) Sorry_Cannot_find_mc_in_the_PSDK)
 endif
-
-
-#
-# Template for building Linux host tools (only for KBUILD_TARGET=l4).
-#
-TEMPLATE_VBOXLNXHOSTR3EXE                   = Template for building linux host programs when targeting L4.
-TEMPLATE_VBOXLNXHOSTR3EXE_INST              = $(INST_BIN)
-TEMPLATE_VBOXLNXHOSTR3EXE_BLD_TRG           = linux
-TEMPLATE_VBOXLNXHOSTR3EXE_TOOL              = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXLNXHOSTR3EXE_ASTOOL            = YASM
-TEMPLATE_VBOXLNXHOSTR3EXE_ASFLAGS           = $(VBOX_ASFLAGS)
-TEMPLATE_VBOXLNXHOSTR3EXE_DLLSUFF           = .so
-TEMPLATE_VBOXLNXHOSTR3EXE_DEFS              = IN_RING3 $(ARCH_BITS_DEFS)
-TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS          = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_fno-stack-protector)
-TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.debug    = -fno-inline
-TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.release  = -O2 -fno-omit-frame-pointer -fno-strict-aliasing
-TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.profile  = $(TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.release)
-TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.kprofile = $(TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.release)
-TEMPLATE_VBOXLNXHOSTR3EXE_CFLAGS.release    = $(TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.release)
-TEMPLATE_VBOXLNXHOSTR3EXE_CFLAGS.debug      = $(TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.debug)
-TEMPLATE_VBOXLNXHOSTR3EXE_CFLAGS.profile    = $(TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.profile)
-TEMPLATE_VBOXLNXHOSTR3EXE_CFLAGS.kprofile   = $(TEMPLATE_VBOXLNXHOSTR3EXE_CXXFLAGS.kprofile)
-TEMPLATE_VBOXLNXHOSTR3EXE_CFLAGS            = -g $(VBOX_GCC_pipe) $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC_fno-stack-protector)
-TEMPLATE_VBOXLNXHOSTR3EXE_LIBS              = pthread m rt dl
-
-TEMPLATE_VBOXLNXHOSTR3LIB                   = Template for linux host libraries.
-TEMPLATE_VBOXLNXHOSTR3LIB_EXTENDS           = VBOXLNXHOSTR3EXE
-TEMPLATE_VBOXLNXHOSTR3LIB_INST              = $(INST_LIB)
 
 
 #
