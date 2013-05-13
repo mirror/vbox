@@ -703,7 +703,6 @@ RTDECL(int) RTDbgCfgCreate(PRTDBGCFG phDbgCfg, const char *pszEnvVarPrefix)
         {
             RTDBGCFGPROP    enmProp;
             const char     *pszVar;
-            void           *pvAttr;
         } const s_aProps[] =
         {
             { RTDBGCFGPROP_FLAGS,       "FLAGS"    },
