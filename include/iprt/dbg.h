@@ -405,8 +405,8 @@ RTDECL(int) RTDbgCfgQueryUInt(RTDBGCFG hDbgCfg, RTDBGCFGPROP enmProp, uint64_t *
  *
  * @returns On statuses other than VINF_CALLBACK_RETURN and
  *          VERR_CALLBACK_RETURN the search will continue till the end of the
- *          list.  The first error status code will be returned to the API
- *          caller.
+ *          list.  These status codes will not necessarily be propagated to the
+ *          caller in any consistent manner.
  * @retval  VINF_CALLBACK_RETURN if successuflly opened the file and it's time
  *          to return
  * @retval  VERR_CALLBACK_RETURN if we shouldn't stop searching.
