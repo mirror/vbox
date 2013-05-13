@@ -34,9 +34,6 @@
 # include <mach/mach_error.h>
 # define USE_MEDIA_POLLING
 
-#elif defined(RT_OS_L4)
-/* nothing (yet). */
-
 #elif defined RT_OS_LINUX
 # include <sys/ioctl.h>
 # include <linux/version.h>
@@ -437,10 +434,6 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
         /* sense information set */
         rc = VERR_DEV_IO_ERROR;
 
-#elif defined(RT_OS_L4)
-    /* Not really ported to L4 yet. */
-    rc = VERR_INTERNAL_ERROR;
-
 #elif defined(RT_OS_LINUX)
     int direction;
     struct cdrom_generic_command cgc;
@@ -777,7 +770,6 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
                 return VERR_NO_MEMORY;
 #endif
 
-#ifndef RT_OS_L4 /* Passthrough is not supported on L4 yet */
             bool fPassthrough;
             rc = CFGMR3QueryBool(pCfg, "Passthrough", &fPassthrough);
             if (RT_SUCCESS(rc) && fPassthrough)
@@ -785,16 +777,15 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
                 pThis->IBlock.pfnSendCmd = drvHostDvdSendCmd;
                 /* Passthrough requires opening the device in R/W mode. */
                 pThis->fReadOnlyConfig = false;
-# ifdef VBOX_WITH_SUID_WRAPPER  /* Solaris setuid for Passthrough mode. */
+#ifdef VBOX_WITH_SUID_WRAPPER  /* Solaris setuid for Passthrough mode. */
                 rc = solarisCheckUserAuth();
                 if (RT_FAILURE(rc))
                 {
                     Log(("DVD: solarisCheckUserAuth failed. Permission denied!\n"));
                     return rc;
                 }
-# endif /* VBOX_WITH_SUID_WRAPPER */
+#endif /* VBOX_WITH_SUID_WRAPPER */
             }
-#endif /* !RT_OS_L4 */
 
             pThis->IMount.pfnUnmount = drvHostDvdUnmount;
             pThis->pfnDoLock         = drvHostDvdDoLock;

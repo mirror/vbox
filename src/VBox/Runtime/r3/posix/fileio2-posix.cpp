@@ -46,11 +46,6 @@
 #if defined(RT_OS_OS2) && (!defined(__INNOTEK_LIBC__) || __INNOTEK_LIBC__ < 0x006)
 # include <io.h>
 #endif
-#ifdef RT_OS_L4
-/* This is currently ifdef'ed out in the relevant L4 header file */
-/* Same as `utimes', but takes an open file descriptor instead of a name.  */
-extern int futimes(int __fd, __const struct timeval __tvp[2]) __THROW;
-#endif
 
 #ifdef RT_OS_SOLARIS
 # define futimes(filedes, timeval)   futimesat(filedes, NULL, timeval)

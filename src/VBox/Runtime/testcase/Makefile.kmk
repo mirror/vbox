@@ -149,8 +149,6 @@ PROGRAMS.linux += \
 	tstRTInlineAsmPIC3
 PROGRAMS.solaris += \
 	tstRTCoreDump
-PROGRAMS.l4 += \
-	tstIoCtl
 PROGRAMS.darwin += \
 	tstDarwinSched \
 	tstRTDarwinMachKernel
@@ -294,9 +292,6 @@ tstRTHeapOffset_SOURCES = tstRTHeapOffset.cpp
 
 tstRTHeapSimple_TEMPLATE = VBOXR3TSTEXE
 tstRTHeapSimple_SOURCES = tstRTHeapSimple.cpp
-
-tstIoCtl_TEMPLATE = VBOXR3TSTEXE
-tstIoCtl_SOURCES = tstIoCtl.cpp
 
 tstRTInlineAsm_TEMPLATE = VBOXR3TSTEXE
 tstRTInlineAsm_SOURCES = tstRTInlineAsm.cpp

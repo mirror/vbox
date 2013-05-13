@@ -101,9 +101,6 @@ static const char * const *rtEnvDefault(void)
 {
 #ifdef RT_OS_DARWIN
     return *(_NSGetEnviron());
-#elif defined(RT_OS_L4)
-    /* So far, our L4 libraries do not include environment support. */
-    return NULL;
 #else
     return environ;
 #endif

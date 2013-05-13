@@ -348,7 +348,7 @@ endif
 # Install staged binaries on platforms where we can't cross
 # compile things.
 #
-ifn1of ($(KBUILD_TARGET), l4 linux win)
+ifn1of ($(KBUILD_TARGET), linux win)
  VBOX_PATH_STAGED ?= .
 
  # Additions.
@@ -480,7 +480,6 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/HostDrivers/Support \
 	src/VBox/HostDrivers/Support/darwin \
 	src/VBox/HostDrivers/Support/freebsd \
-	src/VBox/HostDrivers/Support/l4 \
 	src/VBox/HostDrivers/Support/linux \
 	src/VBox/HostDrivers/Support/os2 \
 	src/VBox/HostDrivers/Support/solaris \

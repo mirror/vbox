@@ -94,7 +94,6 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
   LIBRARIES.win.x86 += RuntimeGuestR0NT4
  endif # VBOX_WITH_ADDITIONS
  LIBRARIES.win.x86 += RuntimeR3VccTricks
- LIBRARIES.l4 += RuntimeR3L4 RuntimeLnxHostR3
  DLLS += VBoxRT
 endif
 
@@ -244,8 +243,6 @@ ifdef IPRT_WITH_KSTUFF
  RuntimeR3_INCS        += \
 	$(PATH_ROOT)/src/libs/kStuff/kStuff/include
 endif
-RuntimeR3_INCS.l4       = \
-	$(L4_INCDIR)
 
 # RuntimeR3_INCS.solaris  = \
 #    /usr/include
@@ -1022,74 +1019,6 @@ RuntimeR3_SOURCES.haiku = \
 
 
 #
-# L4 RuntimeR3 subtarget since L4 headers won't work with VBOXR3.
-#
-RuntimeR3L4_TEMPLATE      = VBOXR3NP
-RuntimeR3L4_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF LDR_WITH_PE
-ifneq ($(KBUILD_TARGET_ARCH),amd64)
-RuntimeR3L4_DEFS         += __PIC__
-endif
-RuntimeR3L4_INCS          = \
-	include \
-	$(L4_INCDIR)
-
-RuntimeR3L4_SOURCES = \
-	generic/cdrom-generic.cpp \
-	generic/errvars-generic.cpp \
-	generic/fs-stubs-generic.cpp \
-	generic/pathhost-generic.cpp \
-	generic/RTDirQueryInfo-generic.cpp \
-	generic/RTDirSetTimes-generic.cpp \
-	generic/RTFileMove-generic.cpp \
-	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTProcDaemonize-generic.cpp \
-	generic/RTSystemQueryOSInfo-generic.cpp \
-	generic/RTSystemQueryDmiString-generic.cpp \
-	generic/RTSystemShutdown-generic.cpp \
-	generic/RTThreadGetAffinity-stub-generic.cpp \
-	generic/RTThreadSetAffinity-stub-generic.cpp \
-	generic/RTThreadSetAffinityToCpu-generic.cpp \
-	generic/RTTimeLocalNow-generic.cpp \
-	generic/RTUuidCreate-generic.cpp \
-	generic/mppresent-generic.cpp \
-	generic/sched-generic.cpp \
-	generic/RTSemEventWait-generic.cpp \
-	generic/RTSemEventMultiWait-generic.cpp \
-	generic/RTSemMutexRequest-generic.cpp \
-	generic/RTSemMutexRequestDebug-generic.cpp \
-	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
-	generic/utf16locale-generic.cpp \
-	generic/uuid-generic.cpp \
-	generic/RTProcIsRunningByName-generic.cpp \
-	generic/RTThreadGetNativeState-generic.cpp \
-	l4/l4-errno.cpp \
-	l4/rtProcInitExePath-l4.cpp \
-	l4/process-l4env.cpp \
-	l4/sems-l4env.cpp \
-	l4/thread-l4env.cpp \
-	l4/timer-l4env.cpp \
-	l4/utf8-l4env.cpp \
-	r3/posix/RTFileQueryFsSizes-posix.cpp \
-	r3/posix/RTMemProtect-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
-	r3/posix/RTPathUserHome-posix.cpp \
-	r3/posix/RTTimeNow-posix.cpp \
-	r3/posix/RTTimeSet-posix.cpp \
-	r3/posix/dir-posix.cpp \
-	r3/posix/env-posix.cpp \
-	r3/posix/fileio-posix.cpp \
-	r3/posix/fileio2-posix.cpp \
-	r3/posix/filelock-posix.cpp \
-	r3/posix/ldrNative-posix.cpp \
-	r3/posix/path-posix.cpp \
-	r3/posix/path2-posix.cpp \
-	r3/posix/RTPathUserDocuments-posix.cpp \
-	r3/posix/rand-posix.cpp \
-	r3/posix/time-posix.cpp \
-	r3/posix/timelocal-posix.cpp
-
-
-#
 # RuntimeBldProg - Static Runtime for build programs.
 #
 # Note! This is a bit of hacky since kBuild doesn't support building libraries
@@ -1104,7 +1033,7 @@ RuntimeBldProg_BLD_TRG_CPU      := $(KBUILD_HOST_CPU)
 
 #
 # RuntimeGuestR3 - Guest Additions Runtime (static/exe).
-# (The KBUILD_HOST inheritance here is for l4 cross building the linux
+# (The KBUILD_HOST inheritance here is for cross building the linux
 # additions, while .x86 is for cross building x86 while targeting amd64.)
 #
 RuntimeGuestR3_TEMPLATE                 := VBoxGuestR3Lib
@@ -1299,22 +1228,6 @@ RuntimeGuestR3Mini_SOURCES += \
 
 
 #
-# RuntimeLnxHostR3 Linux host program runtime
-# (Only used when building L4.)
-#
-RuntimeLnxHostR3_TEMPLATE     := VBOXLNXHOSTR3LIB
-RuntimeLnxHostR3_DEFS         := IN_RT_R3 IN_SUP_R3 RT_WITH_VBOX RT_NO_GIP
-RuntimeLnxHostR3_SOURCES      := \
-	$(RuntimeR3_SOURCES.linux.$(KBUILD_TARGET_ARCH)) \
-	$(RuntimeR3_SOURCES.linux) \
-	$(RuntimeR3_SOURCES)
-RuntimeLnxHostR3_INCS         := \
-	$(RuntimeR3_INCS.linux.$(KBUILD_TARGET_ARCH)) \
-	$(RuntimeR3_INCS.linux) \
-	$(RuntimeR3_INCS)
-
-
-#
 # VBoxRT - Shared Object / DLL version.
 #
 VBoxRT_TEMPLATE                = VBoxR3DllNoPic
@@ -1405,17 +1318,6 @@ VBoxRT_LIBS.win                = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/wbemuuid.lib
 VBoxRT_LDFLAGS.darwin          = -framework IOKit -framework CoreFoundation -framework CoreServices -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
 VBoxRT_LDFLAGS.win             = /MANIFEST
-VBoxRT_LDFLAGS.l4              = \
-	-Wl,-whole-archive \
-	$(PATH_STAGE_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB) \
-	-Wl,-no-whole-archive
-ifeq ($(KBUILD_TARGET),l4)
-VBoxRT_LIBS                   += \
-	$(L4_LIBDIR)/libl4sys.a \
-	$(L4_LIBDIR)/libl4sys.p.a
-endif
-VBoxRT_LIBS.l4                 = \
-	$(PATH_STAGE_LIB)/RuntimeR3L4$(VBOX_SUFF_LIB)
 
 if1of ($(DLLS), VBoxRT)
 $$(VBoxRT_0_OUTDIR)/VBoxRT.def: \
@@ -2220,7 +2122,7 @@ define def_errmsgwin_deps
  $(lib)_common/err/errmsgxpcom.cpp_INCS = $(IPRT_OUT_DIR)
  $(lib)_common/err/errmsgxpcom.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgvboxcomdata.h
 endef
-$(foreach lib,RuntimeR3 RuntimeBldProg VBoxRT RuntimeLnxHostR3,$(eval $(def_errmsgwin_deps)))
+$(foreach lib,RuntimeR3 RuntimeBldProg VBoxRT,$(eval $(def_errmsgwin_deps)))
 
 
 #
@@ -2333,7 +2235,6 @@ IPRT_DOXYFILE_INPUT_DIRS = \
 		$(dir) \
 		$(dir)/darwin \
 		$(dir)/haiku \
-		$(dir)/l4 \
 		$(dir)/linux \
 		$(dir)/nt \
 		$(dir)/os2 \
