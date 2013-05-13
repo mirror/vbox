@@ -96,10 +96,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
  	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/Newdev.lib
  endif
- ifeq ($(KBUILD_TARGET),l4)
-  VBoxDDU_LIBS           += \
- 	$(L4_LIBDIR)/libl4sys.p.a
- endif
  VBoxDDU_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDDU.dylib
  ifdef VBOX_WITH_USB
   ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
@@ -108,17 +104,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  VBoxDDU_LDFLAGS.linux    = -Wl,--no-undefined
- VBoxDDU_LDFLAGS.l4       = -Wl,--no-undefined
-
- #
- # VBoxDDULnxHostR3 (Only needed for l4, currently for executing vditool on L4Linux.)
- #
- ifeq ($(KBUILD_TARGET),l4)
-  LIBRARIES                += VBoxDDULnxHostR3
-  VBoxDDULnxHostR3_TEMPLATE = VBOXLNXHOSTR3LIB
-  VBoxDDULnxHostR3_DEFS     = IN_VBOXDDU
-  VBoxDDULnxHostR3_SOURCES  = $(VBoxDDU_SOURCES)
- endif
 
  #
  # VBoxDD (shared object)
@@ -211,7 +196,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	-framework Carbon \
  	-framework DiskArbitration
  VBoxDD_LDFLAGS.linux    = -Wl,--no-undefined
- VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
  # --- Tracing bits. ---
 
@@ -286,11 +270,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(if $(VBOX_WITH_LINUX_COMPILER_H),VBOX_WITH_LINUX_COMPILER_H,) \
  	$(if $(VBOX_USB_WITH_SYSFS),VBOX_USB_WITH_SYSFS,)
   VBoxDD_SOURCES.linux  += \
- 	USB/USBProxyDevice.cpp \
- 	USB/linux/USBProxyDevice-linux.cpp
-
-  VBoxDD_DEFS.l4        += VUSB_HAVE_USBPROXY_DEVICE
-  VBoxDD_SOURCES.l4     += \
  	USB/USBProxyDevice.cpp \
  	USB/linux/USBProxyDevice-linux.cpp
 
@@ -598,13 +577,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Network/DrvTAP.cpp
  endif # freebsd
 
- ifeq ($(KBUILD_TARGET),l4)
-  $(error L4 is busted. Fix when needed.)
-  #VBoxDD_SOURCES      = filter needed
-  VBoxDD_SOURCES.l4    += \
-  	Audio/ossaudio.c
- endif # l4
-
  VBoxDD_SOURCES.linux  += \
  	Network/DrvTAP.cpp \
  	Audio/ossaudio.c \
@@ -658,10 +630,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_LIBS           += \
  	$(VBoxDDU_1_STAGE_TARGET) \
  	$(VBoxDD2_1_STAGE_TARGET)
- endif
- ifeq ($(KBUILD_TARGET),l4)
-  VBoxDD_LIBS           += \
- 	$(L4_LIBDIR)/libl4sys.p.a
  endif
 
  ifdef VBOX_WITH_NETFLT
@@ -882,14 +850,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(if $(VBOX_WITH_PXE_ROM),$(if $(VBOX_WITHOUT_IPXE),$(PATH_STAGE_LIB)/NetBiosBin$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/iPxeBiosBin$(VBOX_SUFF_LIB)),) \
  	$(LIB_VMM) \
  	$(LIB_RUNTIME)
- ifeq ($(KBUILD_TARGET),l4)
- VBoxDD2_LIBS           += \
- 	$(L4_LIBDIR)/libl4sys.p.a
- endif
  VBoxDD2_LIBS.darwin    += $(LIB_REM)
  VBoxDD2_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD2.dylib
  VBoxDD2_LDFLAGS.linux   = -Wl,--no-undefined
- VBoxDD2_LDFLAGS.l4      = -Wl,--no-undefined
 
  ifdef VBOX_WITH_PXE_ROM
   VBoxDD2_DEFS          += VBOX_WITH_PXE_ROM

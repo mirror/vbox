@@ -49,11 +49,6 @@
 #include "internal/process.h"
 #include "internal/fs.h"
 
-#ifdef RT_OS_L4
-# include <l4/vboxserver/vboxserver.h>
-#endif
-
-
 
 
 RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, size_t cchRealPath)

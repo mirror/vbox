@@ -63,10 +63,6 @@
 #include <errno.h>
 #include <unistd.h>
 
-#ifdef RT_OS_L4
-# include <l4/vboxserver/file.h>
-#endif
-
 #include "VBoxDD.h"
 
 

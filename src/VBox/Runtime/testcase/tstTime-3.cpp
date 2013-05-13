@@ -30,8 +30,6 @@
 #ifdef RT_OS_WINDOWS
 # include <Windows.h>
 
-#elif defined RT_OS_L4
-
 #else /* posix */
 # include <sys/time.h>
 #endif
@@ -50,10 +48,6 @@ DECLINLINE(uint64_t) OSNanoTS(void)
     uint64_t u64; /* manual say larger integer, should be safe to assume it's the same. */
     GetSystemTimeAsFileTime((LPFILETIME)&u64);
     return u64 * 100;
-
-#elif defined RT_OS_L4
-    /** @todo fix a different timesource on l4. */
-    return RTTimeNanoTS();
 
 #else /* posix */
 
