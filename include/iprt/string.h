@@ -2412,6 +2412,31 @@ RTDECL(char *) RTStrToLower(char *psz);
 RTDECL(char *) RTStrToUpper(char *psz);
 
 /**
+ * Checks if the string is case foldable, i.e. whether it would change if
+ * subject to RTStrToLower or RTStrToUpper.
+ *
+ * @returns true / false
+ * @param   psz     The string in question.
+ */
+RTDECL(bool) RTStrIsCaseFoldable(const char *psz);
+
+/**
+ * Checks if the string is upper cased (no lower case chars in it).
+ *
+ * @returns true / false
+ * @param   psz     The string in question.
+ */
+RTDECL(bool) RTStrIsUpperCased(const char *psz);
+
+/**
+ * Checks if the string is lower cased (no upper case chars in it).
+ *
+ * @returns true / false
+ * @param   psz     The string in question.
+ */
+RTDECL(bool) RTStrIsLowerCased(const char *psz);
+
+/**
  * Find the length of a zero-terminated byte string, given
  * a max string length.
  *

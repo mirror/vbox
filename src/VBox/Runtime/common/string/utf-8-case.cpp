@@ -338,3 +338,83 @@ RTDECL(char *) RTStrToUpper(char *psz)
 }
 RT_EXPORT_SYMBOL(RTStrToUpper);
 
+
+RTDECL(bool) RTStrIsCaseFoldable(const char *psz)
+{
+    /*
+     * Loop the code points in the string, checking them one by one until we
+     * find something that can be folded.
+     */
+    RTUNICP uc;
+    do
+    {
+        int rc = RTStrGetCpEx(&psz, &uc);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTUniCpIsFoldable(uc))
+                return true;
+        }
+        else
+        {
+            /* bad encoding, just skip it quietly (uc == RTUNICP_INVALID (!= 0)). */
+            AssertRC(rc);
+        }
+    } while (uc != 0);
+
+    return false;
+}
+RT_EXPORT_SYMBOL(RTStrIsCaseFoldable);
+
+
+RTDECL(bool) RTStrIsUpperCased(const char *psz)
+{
+    /*
+     * Check that there are no lower case chars in the string.
+     */
+    RTUNICP uc;
+    do
+    {
+        int rc = RTStrGetCpEx(&psz, &uc);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTUniCpIsLower(uc))
+                return false;
+        }
+        else
+        {
+            /* bad encoding, just skip it quietly (uc == RTUNICP_INVALID (!= 0)). */
+            AssertRC(rc);
+        }
+    } while (uc != 0);
+
+    return true;
+}
+RT_EXPORT_SYMBOL(RTStrIsUpperCased);
+
+
+RTDECL(bool) RTStrIsLowerCased(const char *psz)
+{
+    /*
+     * Check that there are no lower case chars in the string.
+     */
+    RTUNICP uc;
+    do
+    {
+        int rc = RTStrGetCpEx(&psz, &uc);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTUniCpIsUpper(uc))
+                return false;
+        }
+        else
+        {
+            /* bad encoding, just skip it quietly (uc == RTUNICP_INVALID (!= 0)). */
+            AssertRC(rc);
+        }
+    } while (uc != 0);
+
+    return true;
+}
+RT_EXPORT_SYMBOL(RTStrIsLowerCased);
+
+
