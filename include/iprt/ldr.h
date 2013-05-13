@@ -151,12 +151,21 @@ typedef enum RTLDRARCH
 /** Pointer to a RTLDRARCH. */
 typedef RTLDRARCH *PRTLDRARCH;
 
+/** @name RTLDR_O_XXX - RTLdrOpen flags.
+ * @{ */
+/** Open for debugging or introspection reasons.
+ * This will skip a few of the stricter validations when loading images. */
+#define RTLDR_O_FOR_DEBUG       RT_BIT_32(0)
+/** Mask of valid flags. */
+#define RTLDR_O_VALID_MASK      UINT32_C(0x00000001)
+/** @} */
+
 /**
  * Open a binary image file, extended version.
  *
  * @returns iprt status code.
  * @param   pszFilename Image filename.
- * @param   fFlags      Reserved, MBZ.
+ * @param   fFlags      Valid RTLDR_O_XXX combination.
  * @param   enmArch     CPU architecture specifier for the image to be loaded.
  * @param   phLdrMod    Where to store the handle to the loader module.
  */
@@ -166,9 +175,9 @@ RTDECL(int) RTLdrOpen(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArc
  * Opens a binary image file using kLdr.
  *
  * @returns iprt status code.
- * @param   pszFilename     Image filename.
- * @param   phLdrMod        Where to store the handle to the loaded module.
- * @param   fFlags      Reserved, MBZ.
+ * @param   pszFilename Image filename.
+ * @param   phLdrMod    Where to store the handle to the loaded module.
+ * @param   fFlags      Valid RTLDR_O_XXX combination.
  * @param   enmArch     CPU architecture specifier for the image to be loaded.
  * @remark  Primarily for testing the loader.
  */
