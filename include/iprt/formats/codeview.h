@@ -1,4 +1,4 @@
-﻿/** @file
+/** @file
  * IPRT - Microsoft CodeView Debug Information.
  */
 
