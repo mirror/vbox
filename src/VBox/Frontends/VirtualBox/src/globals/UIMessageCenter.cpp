@@ -2415,7 +2415,19 @@ QString UIMessageCenter::formatRC(HRESULT rc)
 /* static */
 QString UIMessageCenter::formatErrorInfo(const CProgress &progress)
 {
-    return !progress.isOk() ? formatErrorInfo(static_cast<COMBaseWithEI>(progress)) : formatErrorInfo(progress.GetErrorInfo());
+    /* Check for API errors first: */
+    if (!progress.isOk())
+        return formatErrorInfo(static_cast<COMBaseWithEI>(progress));
+
+    /* For progress errors otherwise: */
+    CVirtualBoxErrorInfo errorInfo = progress.GetErrorInfo();
+    /* Handle valid error-info first: */
+    if (!errorInfo.isNull())
+        return formatErrorInfo(errorInfo);
+    /* Handle NULL error-info otherwise: */
+    return tr("Progress result-code: %1")
+             .arg(QString::number(progress.GetResultCode(), 16 /* hex */))
+             .prepend("<!--EOM-->") /* move to details instead of mesasage body */;
 }
 
 /* static */
