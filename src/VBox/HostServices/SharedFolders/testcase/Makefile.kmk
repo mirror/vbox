@@ -54,12 +54,7 @@ tstShflCase_LIBS     = $(LIB_RUNTIME)
 # HGCM service testcase.
 #
 
-# As there are differences between the Windows build of the service and others,
-# we do an additional build with RT_OS_WINDOWS defined on non-Windows targets.
-PROGRAMS += \
-    tstSharedFolderService \
-    $(if $(eq $(KBUILD_TARGET),win),,tstSharedFolderService-win)
-
+PROGRAMS += tstSharedFolderService \
 tstSharedFolderService_TEMPLATE = VBOXR3TSTEXE
 tstSharedFolderService_DEFS     = VBOX_WITH_HGCM UNITTEST
 tstSharedFolderService_INCS     = ..
@@ -73,6 +68,12 @@ tstSharedFolderService_LDFLAGS.darwin = \
 	-framework Carbon
 tstSharedFolderService_LIBS     = $(LIB_RUNTIME)
 
+if 0 # Cannot define two RT_OS_XXX macros!
+# As there are differences between the Windows build of the service and others,
+# we do an additional build with RT_OS_WINDOWS defined on non-Windows targets.
+PROGRAMS += \
+    tstSharedFolderService \
+    $(if $(eq $(KBUILD_TARGET),win),,tstSharedFolderService-win)
 tstSharedFolderService-win_TEMPLATE = $(tstSharedFolderService_TEMPLATE)
 tstSharedFolderService-win_DEFS     = \
     $(tstSharedFolderService_DEFS) \
@@ -82,6 +83,7 @@ tstSharedFolderService-win_SOURCES  = $(tstSharedFolderService_SOURCES)
 tstSharedFolderService-win_LDFLAGS.darwin = \
     $(tstSharedFolderService_LDFLAGS.darwin)
 tstSharedFolderService-win_LIBS     = $(tstSharedFolderService_LIBS)
+endif
 
 endif # VBOX_WITH_TESTCASES
 
