@@ -70,7 +70,6 @@ private:
     void normalizeGeometry(bool /* fAdjustPosition */) {}
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
-    void maybeRestrictMinimumSize() {}
 
     /* Private variables: */
     QRegion m_lastVisibleRegion;

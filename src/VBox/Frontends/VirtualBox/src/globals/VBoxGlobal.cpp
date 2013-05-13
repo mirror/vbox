@@ -199,8 +199,6 @@ static RenderMode vboxGetRenderMode (const char *aModeStr)
     mode = Quartz2DMode;
 #elif (defined (Q_WS_WIN32) || defined (Q_WS_PM) || defined (Q_WS_X11)) && defined (VBOX_GUI_USE_QIMAGE)
     mode = QImageMode;
-#elif defined (Q_WS_X11) && defined (VBOX_GUI_USE_SDL)
-    mode = SDLMode;
 #elif defined (VBOX_GUI_USE_QIMAGE)
     mode = QImageMode;
 #else
@@ -210,18 +208,14 @@ static RenderMode vboxGetRenderMode (const char *aModeStr)
     if (aModeStr)
     {
         if (0) ;
-#if defined (VBOX_GUI_USE_QIMAGE)
+#ifdef VBOX_GUI_USE_QIMAGE
         else if (::strcmp (aModeStr, "image") == 0)
             mode = QImageMode;
-#endif
-#if defined (VBOX_GUI_USE_SDL)
-        else if (::strcmp (aModeStr, "sdl") == 0)
-            mode = SDLMode;
-#endif
-#if defined (VBOX_GUI_USE_QUARTZ2D)
+#endif /* VBOX_GUI_USE_QIMAGE */
+#ifdef VBOX_GUI_USE_QUARTZ2D
         else if (::strcmp (aModeStr, "quartz2d") == 0)
             mode = Quartz2DMode;
-#endif
+#endif /* VBOX_GUI_USE_QUARTZ2D */
     }
 
     return mode;

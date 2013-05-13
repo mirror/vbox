@@ -59,7 +59,6 @@ namespace UIDefs
     {
           InvalidRenderMode
         , QImageMode
-        , SDLMode
         , Quartz2DMode
     };
 

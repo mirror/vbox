@@ -774,46 +774,20 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
     }
     else /* !uisession()->isMouseCaptured() */
     {
-#if 0 // TODO: Move that to fullscreen event-handler:
-        if (vboxGlobal().vmRenderMode() != SDLMode)
-        {
-            /* try to automatically scroll the guest canvas if the
-             * mouse is on the screen border */
-            /// @todo (r=dmik) better use a timer for autoscroll
-            QRect scrGeo = QApplication::desktop()->screenGeometry (this);
-            int iDx = 0, iDy = 0;
-            if (scrGeo.width() < contentsWidth())
-            {
-                if (scrGeo.left() == globalPos.x()) iDx = -1;
-                if (scrGeo.right() == globalPos.x()) iDx = +1;
-            }
-            if (scrGeo.height() < contentsHeight())
-            {
-                if (scrGeo.top() == globalPos.y()) iDy = -1;
-                if (scrGeo.bottom() == globalPos.y()) iDy = +1;
-            }
-            if (iDx || iDy)
-                scrollBy(iDx, iDy);
-        }
-#endif
-
         if (uisession()->isMouseSupportsAbsolute() && uisession()->isMouseIntegrated())
         {
             int iCw = m_views[uScreenId]->contentsWidth(), iCh = m_views[uScreenId]->contentsHeight();
             int iVw = m_views[uScreenId]->visibleWidth(), iVh = m_views[uScreenId]->visibleHeight();
 
-            if (vboxGlobal().vmRenderMode() != SDLMode)
-            {
-                /* Try to automatically scroll the guest canvas if the
-                 * mouse goes outside its visible part: */
-                int iDx = 0;
-                if (relativePos.x() > iVw) iDx = relativePos.x() - iVw;
-                else if (relativePos.x() < 0) iDx = relativePos.x();
-                int iDy = 0;
-                if (relativePos.y() > iVh) iDy = relativePos.y() - iVh;
-                else if (relativePos.y() < 0) iDy = relativePos.y();
-                if (iDx != 0 || iDy != 0) m_views[uScreenId]->scrollBy(iDx, iDy);
-            }
+            /* Try to automatically scroll the guest canvas if the
+             * mouse goes outside its visible part: */
+            int iDx = 0;
+            if (relativePos.x() > iVw) iDx = relativePos.x() - iVw;
+            else if (relativePos.x() < 0) iDx = relativePos.x();
+            int iDy = 0;
+            if (relativePos.y() > iVh) iDy = relativePos.y() - iVh;
+            else if (relativePos.y() < 0) iDy = relativePos.y();
+            if (iDx != 0 || iDy != 0) m_views[uScreenId]->scrollBy(iDx, iDy);
 
             /* Get mouse-pointer location: */
             QPoint cpnt = m_views[uScreenId]->viewportToContents(relativePos);
