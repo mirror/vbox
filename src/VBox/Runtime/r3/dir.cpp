@@ -731,11 +731,11 @@ RTDECL(int) RTDirFlushParent(const char *pszChild)
 }
 
 
-RTDECL(int) RTDirQueryUnknownTypeEx(const char *pszComposedName, bool fFollowSymLinks,
+RTDECL(int) RTDirQueryUnknownTypeEx(const char *pszComposedName, bool fFollowSymlinks,
                                     RTDIRENTRYTYPE *penmType, PRTFSOBJINFO pObjInfo)
 {
     int rc = RTPathQueryInfoEx(pszComposedName, pObjInfo, RTFSOBJATTRADD_NOTHING,
-                               fFollowSymLinks ? RTPATH_F_FOLLOW_LINK : RTPATH_F_ON_LINK);
+                               fFollowSymlinks ? RTPATH_F_FOLLOW_LINK : RTPATH_F_ON_LINK);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -762,13 +762,15 @@ RTDECL(int) RTDirQueryUnknownTypeEx(const char *pszComposedName, bool fFollowSym
 }
 
 
-RTDECL(int) RTDirQueryUnknownType(const char *pszComposedName, bool fFollowSymLinks, RTDIRENTRYTYPE *penmType)
+RTDECL(int) RTDirQueryUnknownType(const char *pszComposedName, bool fFollowSymlinks, RTDIRENTRYTYPE *penmType)
 {
-    if (*penmType != RTDIRENTRYTYPE_UNKNOWN)
+    if (   *penmType != RTDIRENTRYTYPE_UNKNOWN
+        && (   !fFollowSymlinks
+            || *penmType != RTDIRENTRYTYPE_SYMLINK))
         return VINF_SUCCESS;
 
     RTFSOBJINFO ObjInfo;
-    return RTDirQueryUnknownTypeEx(pszComposedName, fFollowSymLinks, penmType, &ObjInfo);
+    return RTDirQueryUnknownTypeEx(pszComposedName, fFollowSymlinks, penmType, &ObjInfo);
 }
 
 
