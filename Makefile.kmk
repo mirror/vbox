@@ -763,7 +763,6 @@ VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
 	--exclude=doc/Devices/ \
 	--exclude=doc/tg/ \
 	--exclude=doc/vp/ \
-	--exclude=doc/L4VM/ \
 	--exclude=tinderclient.log \
 	--exclude=tools/FetchDir/ \
 	--exclude=webtools/ \
@@ -1561,7 +1560,6 @@ snapshot-puel:
 	    -i!$(ZIPROOT)/tools/linux.amd64/bin/* \
 	    -x!$(ZIPROOT)/doc/Devices \
 	    -x!$(ZIPROOT)/doc/\*pdf \
-	    -x!$(ZIPROOT)/doc/L4VM \
 	    -x!$(ZIPROOT)/doc/VMM \
 	    -x!$(ZIPROOT)/doc/licenses_old \
 	    -x!$(ZIPROOT)/doc/manual/de_DE \
