@@ -54,7 +54,7 @@ tstShflCase_LIBS     = $(LIB_RUNTIME)
 # HGCM service testcase.
 #
 
-PROGRAMS += tstSharedFolderService \
+PROGRAMS += tstSharedFolderService
 tstSharedFolderService_TEMPLATE = VBOXR3TSTEXE
 tstSharedFolderService_DEFS     = VBOX_WITH_HGCM UNITTEST
 tstSharedFolderService_INCS     = ..
