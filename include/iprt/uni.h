@@ -46,8 +46,8 @@
 RT_C_DECLS_BEGIN
 
 
-
 #ifndef RTUNI_USE_WCTYPE
+
 /**
  * A unicode flags range.
  * @internal
@@ -157,6 +157,20 @@ DECLINLINE(bool) RTUniCpIsUpper(RTUNICP CodePoint)
 DECLINLINE(bool) RTUniCpIsLower(RTUNICP CodePoint)
 {
     return (rtUniCpFlags(CodePoint) & RTUNI_LOWER) != 0;
+}
+
+
+/**
+ * Checks if a unicode code point is case foldable.
+ *
+ * @returns true if it is.
+ * @returns false if it isn't.
+ * @param   CodePoint       The code point.
+ */
+DECLINLINE(bool) RTUniCpIsFoldable(RTUNICP CodePoint)
+{
+    /* Right enough. */
+    return (rtUniCpFlags(CodePoint) & (RTUNI_LOWER | RTUNI_UPPER)) != 0;
 }
 
 
@@ -299,6 +313,20 @@ DECLINLINE(bool) RTUniCpIsUpper(RTUNICP CodePoint)
 DECLINLINE(bool) RTUniCpIsLower(RTUNICP CodePoint)
 {
     return !!iswlower(CodePoint);
+}
+
+
+/**
+ * Checks if a unicode code point is case foldable.
+ *
+ * @returns true if it is.
+ * @returns false if it isn't.
+ * @param   CodePoint       The code point.
+ */
+DECLINLINE(bool) RTUniCpIsFoldable(RTUNICP CodePoint)
+{
+    /* Right enough. */
+    return iswupper(CodePoint) || iswlower(CodePoint);
 }
 
 
