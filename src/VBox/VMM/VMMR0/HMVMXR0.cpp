@@ -182,11 +182,7 @@ typedef struct VMXTRANSIENT
     /** The VM-exit interruption error code. */
     uint32_t        uExitIntrErrorCode;
     /** The VM-exit exit qualification. */
-    RTGCUINTPTR     uExitQualification;
-#if GC_ARCH_BITS == 32
-    /** Alignment. */
-    uint32_t        u32Alignment1;
-#endif
+    uint64_t        uExitQualification;
 
     /** The VM-exit interruption-information field. */
     uint32_t        uExitIntrInfo;
@@ -3909,11 +3905,10 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 Log(("VMX_VMCS64_CTRL_EPTP_FULL               %#RX64\n", u64Val));
 
                 /* Guest bits. */
-                RTGCUINTREG uGCReg;
-                rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &uGCReg);        AssertRC(rc);
-                Log(("Old Guest Rip %#RGv New %#RGv\n", (RTGCPTR)pCtx->rip, (RTGCPTR)uGCReg));
-                rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &uGCReg);        AssertRC(rc);
-                Log(("Old Guest Rsp %#RGv New %#RGv\n", (RTGCPTR)pCtx->rsp, (RTGCPTR)uGCReg));
+                rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &u64Val);        AssertRC(rc);
+                Log(("Old Guest Rip %#RX64 New %#RX64\n", pCtx->rip, u64Val));
+                rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &u64Val);        AssertRC(rc);
+                Log(("Old Guest Rsp %#RX64 New %#RX64\n", pCtx->rsp, u64Val));
                 rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32Val);       AssertRC(rc);
                 Log(("Old Guest Rflags %#RX32 New %#RX32\n", pCtx->eflags.u32, u32Val));
                 rc = VMXReadVmcs32(VMX_VMCS16_GUEST_FIELD_VPID, &u32Val); AssertRC(rc);
@@ -4665,14 +4660,14 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             if (   hmR0VmxIsContributoryXcpt(uIdtVector)
                 && uExitVector == X86_XCPT_PF)
             {
-                Log(("IDT: Contributory #PF uCR2=%#RGv\n", pMixedCtx->cr2));
+                Log(("IDT: Contributory #PF uCR2=%#RX64\n", pMixedCtx->cr2));
             }
 #endif
             if (   uExitVector == X86_XCPT_PF
                 && uIdtVector == X86_XCPT_PF)
             {
                 pVmxTransient->fVectoringPF = true;
-                Log(("IDT: Vectoring #PF uCR2=%#RGv\n", pMixedCtx->cr2));
+                Log(("IDT: Vectoring #PF uCR2=%#RX64\n", pMixedCtx->cr2));
             }
             else if (   (pVCpu->hm.s.vmx.u32XcptBitmap & HMVMX_CONTRIBUTORY_XCPT_MASK)
                      && hmR0VmxIsContributoryXcpt(uExitVector)
@@ -4819,7 +4814,7 @@ static int hmR0VmxSaveGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RIP))
     {
-        RTGCUINTREG uVal = 0;
+        uint64_t uVal = 0;
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &uVal);
         AssertRCReturn(rc, rc);
 
@@ -4846,7 +4841,7 @@ static int hmR0VmxSaveGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RSP))
     {
-        RTGCUINTREG uVal = 0;
+        uint64_t uVal = 0;
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &uVal);
         AssertRCReturn(rc, rc);
 
@@ -4981,7 +4976,7 @@ static int hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR;
     }
 
-    RTGCUINTREG uGCVal = 0;
+    uint64_t uGCVal = 0;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR))
     {
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_SYSENTER_EIP, &uGCVal);    AssertRCReturn(rc, rc);
@@ -5015,7 +5010,7 @@ static int hmR0VmxSaveGuestFSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_FS_BASE_MSR))
     {
-        RTGCUINTREG uVal = 0;
+        uint64_t uVal = 0;
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_FS_BASE, &uVal);   AssertRCReturn(rc, rc);
         pMixedCtx->fs.u64Base = uVal;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_FS_BASE_MSR;
@@ -5041,7 +5036,7 @@ static int hmR0VmxSaveGuestGSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_GS_BASE_MSR))
     {
-        RTGCUINTREG uVal = 0;
+        uint64_t uVal = 0;
         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_GS_BASE, &uVal);   AssertRCReturn(rc, rc);
         pMixedCtx->gs.u64Base = uVal;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_GS_BASE_MSR;
@@ -5129,7 +5124,7 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             || (   pVM->hm.s.fNestedPaging
                 && CPUMIsGuestPagingEnabledEx(pMixedCtx)))
         {
-            RTGCUINTREG uVal = 0;
+            uint64_t uVal = 0;
             rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_CR3, &uVal);
             if (pMixedCtx->cr3 != uVal)
             {
@@ -5223,10 +5218,10 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
     AssertRCReturn(rc, rc);
     pSelReg->u32Limit = u32Val;
 
-    RTGCUINTREG uGCVal = 0;
-    rc = VMXReadVmcsGstNByIdxVal(idxBase, &uGCVal);
+    uint64_t u64Val = 0;
+    rc = VMXReadVmcsGstNByIdxVal(idxBase, &u64Val);
     AssertRCReturn(rc, rc);
-    pSelReg->u64Base = uGCVal;
+    pSelReg->u64Base = u64Val;
 
     rc = VMXReadVmcs32(idxAccess, &u32Val);
     AssertRCReturn(rc, rc);
@@ -5324,13 +5319,13 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     }
 
     /* Guest GDTR. */
-    RTGCUINTREG uGCVal = 0;
-    uint32_t    u32Val = 0;
+    uint64_t u64Val = 0;
+    uint32_t u32Val = 0;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_GDTR))
     {
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE, &uGCVal);        AssertRCReturn(rc, rc);
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE, &u64Val);        AssertRCReturn(rc, rc);
         rc = VMXReadVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, &u32Val);       AssertRCReturn(rc, rc);
-        pMixedCtx->gdtr.pGdt  = uGCVal;
+        pMixedCtx->gdtr.pGdt  = u64Val;
         pMixedCtx->gdtr.cbGdt = u32Val;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_GDTR;
     }
@@ -5338,9 +5333,9 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Guest IDTR. */
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_IDTR))
     {
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE, &uGCVal);        AssertRCReturn(rc, rc);
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE, &u64Val);        AssertRCReturn(rc, rc);
         rc = VMXReadVmcs32(VMX_VMCS32_GUEST_IDTR_LIMIT, &u32Val);       AssertRCReturn(rc, rc);
-        pMixedCtx->idtr.pIdt  = uGCVal;
+        pMixedCtx->idtr.pIdt  = u64Val;
         pMixedCtx->idtr.cbIdt = u32Val;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_IDTR;
     }
@@ -6347,7 +6342,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
     {
         pMixedCtx->cr2 = GCPtrFaultAddress;
     }
-    Log(("Injecting u32IntrInfo=%#x u32ErrCode=%#x cbInstr=%#x uCR2=%#RGv\n", u32IntrInfo, u32ErrCode, cbInstr, pMixedCtx->cr2));
+    Log(("Injecting u32IntrInfo=%#x u32ErrCode=%#x cbInstr=%#x uCR2=%#RX64\n", u32IntrInfo, u32ErrCode, cbInstr, pMixedCtx->cr2));
 
     AssertRCReturn(rc, rc);
     return rc;
@@ -7371,7 +7366,7 @@ HMVMX_EXIT_DECL hmR0VmxExitInvlpg(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
     else
     {
-        AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0VmxExitInvlpg: EMInterpretInvlpg %#RGv failed with %Rrc\n",
+        AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0VmxExitInvlpg: EMInterpretInvlpg %#RX64 failed with %Rrc\n",
                                               pVmxTransient->uExitQualification, rc));
     }
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvlpg);
@@ -7920,7 +7915,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
             switch (VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification))
             {
                 case 0: /* CR0 */
-                    Log(("CRX CR0 write rc=%d CR0=%#RGv\n", rc, pMixedCtx->cr0));
+                    Log(("CRX CR0 write rc=%d CR0=%#RX64\n", rc, pMixedCtx->cr0));
                     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
                     break;
                 case 2: /* C2 **/
@@ -7928,11 +7923,11 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                     break;
                 case 3: /* CR3 */
                     Assert(!pVM->hm.s.fNestedPaging || !CPUMIsGuestPagingEnabledEx(pMixedCtx));
-                    Log(("CRX CR3 write rc=%d CR3=%#RGv\n", rc, pMixedCtx->cr3));
+                    Log(("CRX CR3 write rc=%d CR3=%#RX64\n", rc, pMixedCtx->cr3));
                     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR3;
                     break;
                 case 4: /* CR4 */
-                    Log(("CRX CR4 write rc=%d CR4=%#RGv\n", rc, pMixedCtx->cr4));
+                    Log(("CRX CR4 write rc=%d CR4=%#RX64\n", rc, pMixedCtx->cr4));
                     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR4;
                     break;
                 case 8: /* CR8 */
@@ -8033,7 +8028,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     rc    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);    /* SELM checks in EMInterpretDisasCurrent(). */
     /* EFER also required for longmode checks in EMInterpretDisasCurrent(), but it's always up-to-date. */
     AssertRCReturn(rc, rc);
-    Log(("CS:RIP=%04x:%#RGv\n", pMixedCtx->cs.Sel, pMixedCtx->rip));
+    Log(("CS:RIP=%04x:%#RX64\n", pMixedCtx->cs.Sel, pMixedCtx->rip));
 
     /* Refer Intel spec. 27-5. "Exit Qualifications for I/O Instructions" for the format. */
     uint32_t uIOPort   = VMX_EXIT_QUALIFICATION_IO_PORT(pVmxTransient->uExitQualification);
@@ -8299,7 +8294,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
             GCPhys &= PAGE_BASE_GC_MASK;
             GCPhys += VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification);
             PVM pVM = pVCpu->CTX_SUFF(pVM);
-            Log(("ApicAccess uAccessType=%#x GCPhys=%RGp Off=%#x\n", uAccessType, GCPhys,
+            Log(("ApicAccess uAccessType=%#x GCPhys=%#RGv Off=%#x\n", uAccessType, GCPhys,
                  VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(pVmxTransient->uExitQualification)));
 
             VBOXSTRICTRC rc2 = IOMMMIOPhysHandler(pVM, pVCpu,
@@ -8446,7 +8441,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     VBOXSTRICTRC rc2 = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, PGMMODE_EPT, CPUMCTX2CORE(pMixedCtx), GCPhys, UINT32_MAX);
     rc = VBOXSTRICTRC_VAL(rc2);
-    Log(("EPT misconfig at %#RGv RIP=%#RGv rc=%d\n", GCPhys, pMixedCtx->rip, rc));
+    Log(("EPT misconfig at %#RGv RIP=%#RX64 rc=%d\n", GCPhys, pMixedCtx->rip, rc));
     if (   rc == VINF_SUCCESS
         || rc == VERR_PAGE_TABLE_NOT_PRESENT
         || rc == VERR_PAGE_NOT_PRESENT)
@@ -8489,7 +8484,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
     AssertRCReturn(rc, rc);
 
     /* Intel spec. Table 27-7 "Exit Qualifications for EPT violations". */
-    AssertMsg(((pVmxTransient->uExitQualification >> 7) & 3) != 2, ("%#RGv", pVmxTransient->uExitQualification));
+    AssertMsg(((pVmxTransient->uExitQualification >> 7) & 3) != 2, ("%#RX64", pVmxTransient->uExitQualification));
 
     RTGCUINT uErrorCode = 0;
     if (pVmxTransient->uExitQualification & VMX_EXIT_QUALIFICATION_EPT_INSTR_FETCH)
@@ -8501,7 +8496,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
 
     TRPMAssertXcptPF(pVCpu, GCPhys, uErrorCode);
 
-    Log(("EPT violation %#x at %#RGv ErrorCode %#x CS:EIP=%04x:%#RX64\n", (uint32_t)pVmxTransient->uExitQualification, GCPhys,
+    Log(("EPT violation %#x at %#RX64 ErrorCode %#x CS:EIP=%04x:%#RX64\n", pVmxTransient->uExitQualification, GCPhys,
          uErrorCode, pMixedCtx->cs.Sel, pMixedCtx->rip));
 
     /* Handle the pagefault trap for the nested shadow table. */
@@ -8692,7 +8687,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         rc |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
         rc |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
         AssertRCReturn(rc, rc);
-        Log(("#GP Gst: RIP %#RX64 ErrorCode=%#x CR0=%#RGv CPL=%u\n", pMixedCtx->rip, pVmxTransient->uExitIntrErrorCode,
+        Log(("#GP Gst: RIP %#RX64 ErrorCode=%#x CR0=%#RX64 CPL=%u\n", pMixedCtx->rip, pVmxTransient->uExitIntrErrorCode,
              pMixedCtx->cr0, CPUMGetGuestCPL(pVCpu)));
         hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
                                pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode, 0 /* GCPtrFaultAddress */);
@@ -8777,7 +8772,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                     rc = VERR_EM_INTERPRETER;
                     break;
                 }
-                Log(("POPF %x -> %#RGv mask=%x RIP=%#RX64\n", uEflags.u, pMixedCtx->rsp, uMask, pMixedCtx->rip));
+                Log(("POPF %x -> %#RX64 mask=%x RIP=%#RX64\n", uEflags.u, pMixedCtx->rsp, uMask, pMixedCtx->rip));
                 pMixedCtx->eflags.u32 =   (pMixedCtx->eflags.u32 & ~(X86_EFL_POPF_BITS & uMask))
                                         | (uEflags.u32 & X86_EFL_POPF_BITS & uMask);
                 /* The RF bit is always cleared by POPF; see Intel Instruction reference for POPF. */
@@ -9003,7 +8998,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
-    Log(("#PF: cr2=%#RGv cs:rip=%#04x:%#RGv uErrCode %#RX32 cr3=%#RGv\n", pVmxTransient->uExitQualification, pMixedCtx->cs.Sel,
+    Log(("#PF: cr2=%#RX64 cs:rip=%#04x:%#RX64 uErrCode %#RX32 cr3=%#RX64\n", pVmxTransient->uExitQualification, pMixedCtx->cs.Sel,
          pMixedCtx->rip, pVmxTransient->uExitIntrErrorCode, pMixedCtx->cr3));
 
     TRPMAssertXcptPF(pVCpu, pVmxTransient->uExitQualification, (RTGCUINT)pVmxTransient->uExitIntrErrorCode);
