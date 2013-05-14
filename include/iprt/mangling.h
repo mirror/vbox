@@ -380,6 +380,7 @@
 # define RTDbgCfgOpenPdb70                              RT_MANGLER(RTDbgCfgOpenPdb70)
 # define RTDbgCfgOpenPdb20                              RT_MANGLER(RTDbgCfgOpenPdb20)
 # define RTDbgCfgOpenPeImage                            RT_MANGLER(RTDbgCfgOpenPeImage)
+# define RTDbgCfgSetLogCallback                         RT_MANGLER(RTDbgCfgSetLogCallback)
 # define RTDbgLineAlloc                                 RT_MANGLER(RTDbgLineAlloc)
 # define RTDbgLineDup                                   RT_MANGLER(RTDbgLineDup)
 # define RTDbgLineFree                                  RT_MANGLER(RTDbgLineFree)
