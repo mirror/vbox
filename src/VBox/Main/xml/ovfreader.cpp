@@ -744,6 +744,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                 // do some analysis
                 switch (i.resourceType)
                 {
+                    case ResourceType_CDDrive: // 15
                     case ResourceType_HardDisk: // 17
                     {
                         /*  <Item>
@@ -760,12 +761,11 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         // this is how the connection is specified in OVF
                         ControllersMap::const_iterator it = vsys.mapControllers.find(i.ulParent);
                         if (it == vsys.mapControllers.end())
-                            throw OVFLogicError(N_("Error reading \"%s\": Hard disk item with instance ID %d specifies invalid parent %d, line %d"),
+                            throw OVFLogicError(N_("Error reading \"%s\": Disk item with instance ID %d specifies invalid parent %d, line %d"),
                                                 m_strPath.c_str(),
                                                 i.ulInstanceID,
                                                 i.ulParent,
                                                 i.ulLineNumber);
-                        //const HardDiskController &hdc = it->second;
 
                         VirtualDisk vd;
                         vd.idController = i.ulParent;
@@ -778,15 +778,18 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                             vd.strDiskId = i.strHostResource.substr(10);
                         else if (i.strHostResource.startsWith("/disk/"))
                             vd.strDiskId = i.strHostResource.substr(6);
+                        else
+                            vd.strDiskId = i.strElementName;//assign default name using value from the field
+                                                            //<rasd:ElementName>element name</rasd:ElementName>
 
-                        if (    !(vd.strDiskId.length())
-                             || (m_mapDisks.find(vd.strDiskId) == m_mapDisks.end())
-                           )
-                            throw OVFLogicError(N_("Error reading \"%s\": Hard disk item with instance ID %d specifies invalid host resource \"%s\", line %d"),
-                                                m_strPath.c_str(),
-                                                i.ulInstanceID,
-                                                i.strHostResource.c_str(),
-                                                i.ulLineNumber);
+                      if ((!(vd.strDiskId.length())
+                          || (m_mapDisks.find(vd.strDiskId) == m_mapDisks.end()))
+                          )
+                          throw OVFLogicError(N_("Error reading \"%s\": Disk item with instance ID %d specifies invalid host resource \"%s\", line %d"),
+                                              m_strPath.c_str(),
+                                              i.ulInstanceID,
+                                              i.strHostResource.c_str(),
+                                              i.ulLineNumber);
 
                         vsys.mapVirtualDisks[vd.strDiskId] = vd;
                         break;
