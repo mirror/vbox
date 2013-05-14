@@ -96,6 +96,14 @@ RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDst
 RTR3DECL(int) RTHttpAbort(RTHTTP hHttp);
 
 /**
+ * Tells the HTTP interface to use the system proxy configuration.
+ *
+ * @returns iprt status code.
+ * @param   hHttp           HTTP interface handle.
+ */
+RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp);
+
+/**
  * Specify proxy settings.
  *
  * @returns iprt status code.

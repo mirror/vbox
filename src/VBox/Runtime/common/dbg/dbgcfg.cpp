@@ -47,6 +47,7 @@
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
+#include <iprt/process.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
@@ -146,6 +147,8 @@ typedef RTDBGCFGU64MNEMONIC const *PCRTDBGCFGU64MNEMONIC;
  * @{ */
 /** The operative system mask.  The values are RT_OPSYS_XXX. */
 #define RTDBGCFG_O_OPSYS_MASK           UINT32_C(0x000000ff)
+/** The files may be compressed MS styled. */
+#define RTDBGCFG_O_MAYBE_COMPRESSED_MS  RT_BIT_32(26)
 /** Whether to make a recursive search. */
 #define RTDBGCFG_O_RECURSIVE            RT_BIT_32(27)
 /** We're looking for a separate debug file. */
@@ -283,12 +286,23 @@ static bool rtDbgCfgIsXxxxAndFixCaseWorker(char *pszPath, size_t offLastComp, co
         return false;
 
     /*
+     * Try some simple case folding games.
+     */
+    RTStrToLower(&pszPath[offLastComp]);
+    if (RTFileExists(pszPath))
+        return true;
+
+    RTStrToUpper(&pszPath[offLastComp]);
+    if (RTFileExists(pszPath))
+        return true;
+
+    /*
      * Open the directory and check each entry in it.
      */
     pszPath[offLastComp] = '\0';
     PRTDIR pDir;
     int rc = RTDirOpen(&pDir, pszPath);
-    if (RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
         return false;
 
     for (;;)
@@ -370,6 +384,8 @@ static bool rtDbgCfgIsDirAndFixCase(char *pszPath, const char *pszSubDir, bool f
      */
     if (fCaseInsensitive)
         return rtDbgCfgIsXxxxAndFixCaseWorker(pszPath, cchPath, pszSubDir, RTDIRENTRYTYPE_DIRECTORY);
+
+    pszPath[cchPath] = '\0';
     return false;
 }
 
@@ -386,12 +402,19 @@ static bool rtDbgCfgIsDirAndFixCase(char *pszPath, const char *pszSubDir, bool f
  *                              directory.  RTPATH_MAX in size.
  * @param   pszFilename         The file name to append.
  * @param   fCaseInsensitive    Whether case insensitive searching is required.
+ * @param   fMsCompressed       Whether to look for the MS compressed file name
+ *                              variant.
+ * @param   pfProbablyCompressed    This is set to true if a MS compressed
+ *                                  filename variant is returned.  Optional.
  */
-static bool rtDbgCfgIsFileAndFixCase(char *pszPath, const char *pszFilename, bool fCaseInsensitive)
+static bool rtDbgCfgIsFileAndFixCase(char *pszPath, const char *pszFilename, bool fCaseInsensitive,
+                                     bool fMsCompressed, bool *pfProbablyCompressed)
 {
     /* Save the length of the input path so we can restore it in the case
        insensitive branch further down. */
     size_t cchPath = strlen(pszPath);
+    if (pfProbablyCompressed)
+        *pfProbablyCompressed = false;
 
     /*
      * Append the filename and check if we got a hit.
@@ -404,10 +427,43 @@ static bool rtDbgCfgIsFileAndFixCase(char *pszPath, const char *pszFilename, boo
         return true;
 
     /*
-     * Do case insensitive lookup if requested.
+     * Do case insensitive file lookup if requested.
      */
     if (fCaseInsensitive)
-        return rtDbgCfgIsXxxxAndFixCaseWorker(pszPath, cchPath, pszFilename, RTDIRENTRYTYPE_FILE);
+    {
+        if (rtDbgCfgIsXxxxAndFixCaseWorker(pszPath, cchPath, pszFilename, RTDIRENTRYTYPE_FILE))
+            return true;
+    }
+
+    /*
+     * Look for MS compressed file if requested.
+     */
+    if (   fMsCompressed
+        && (unsigned char)pszFilename[strlen(pszFilename) - 1] < 0x7f)
+    {
+        pszPath[cchPath] = '\0';
+        rc = RTPathAppend(pszPath, RTPATH_MAX, pszFilename);
+        AssertRCReturn(rc, rc);
+        pszPath[strlen(pszPath) - 1] = '_';
+
+        if (pfProbablyCompressed)
+            *pfProbablyCompressed = true;
+
+        if (RTFileExists(pszPath))
+            return true;
+
+        if (fCaseInsensitive)
+        {
+            /* Note! Ugly hack here, the pszName parameter points into pszPath! */
+            if (rtDbgCfgIsXxxxAndFixCaseWorker(pszPath, cchPath, RTPathFilename(pszPath), RTDIRENTRYTYPE_FILE))
+                return true;
+        }
+
+        if (pfProbablyCompressed)
+            *pfProbablyCompressed = false;
+    }
+
+    pszPath[cchPath] = '\0';
     return false;
 }
 
@@ -433,7 +489,7 @@ static int rtDbgCfgTryOpenDir(PRTDBGCFGINT pThis, char *pszPath, PRTPATHSPLIT pS
              systems that mounted there have compatible settings. Faster
              that way. */
     bool const fCaseInsensitive = (fFlags & RTDBGCFG_O_CASE_INSENSITIVE)
-                               && rtDbgCfgIsFsCaseInsensitive(pszPath);
+                               && !rtDbgCfgIsFsCaseInsensitive(pszPath);
 
     size_t const cchPath = strlen(pszPath);
 
@@ -451,14 +507,14 @@ static int rtDbgCfgTryOpenDir(PRTDBGCFGINT pThis, char *pszPath, PRTPATHSPLIT pS
 
         if (RT_SUCCESS(rc2))
         {
-            if (rtDbgCfgIsFileAndFixCase(pszPath, pSplitFn->apszComps[pSplitFn->cComps - 1], fCaseInsensitive))
+            if (rtDbgCfgIsFileAndFixCase(pszPath, pSplitFn->apszComps[pSplitFn->cComps - 1], fCaseInsensitive, false, NULL))
             {
                 rtDbgCfgLog1(pThis, "Trying '%s'...\n", pszPath);
                 rc2 = pfnCallback(pThis, pszPath, pvUser1, pvUser2);
                 if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
                 {
                     if (rc2 == VINF_CALLBACK_RETURN)
-                        rtDbgCfgLog1(pThis, "Found '%s'.", pszPath);
+                        rtDbgCfgLog1(pThis, "Found '%s'.\n", pszPath);
                     else
                         rtDbgCfgLog1(pThis, "Error opening '%s'.\n", pszPath);
                     return rc2;
@@ -482,6 +538,97 @@ static int rtDbgCfgTryOpenDir(PRTDBGCFGINT pThis, char *pszPath, PRTPATHSPLIT pS
     return rcRet;
 }
 
+static int rtDbgCfgUnpackMsCacheFile(PRTDBGCFGINT pThis, char *pszPath, const char *pszFilename)
+{
+    rtDbgCfgLog2(pThis, "Unpacking '%s'...\n", pszPath);
+
+    /*
+     * Duplicate the source file path, just for simplicity and restore the
+     * final character in the orignal.  We cheerfully ignorining any
+     * possibility of multibyte UTF-8 sequences just like the caller did when
+     * setting it to '_'.
+     */
+    char *pszSrcArchive = RTStrDup(pszPath);
+    if (!pszSrcArchive)
+        return VERR_NO_STR_MEMORY;
+
+    pszPath[strlen(pszPath) - 1] = RT_C_TO_LOWER(pszFilename[strlen(pszFilename) - 1]);
+
+
+    /*
+     * Figuring out the argument list for the platform specific unpack util.
+     */
+#ifdef RT_OS_WINDOWS
+    const char *papszArgs[] =
+    {
+        "expand.exe",
+        pszSrcArchive,
+        pszPath,
+        NULL
+    };
+
+#else
+    char szExtractDir[RTPATH_MAX];
+    strcpy(szExtractDir, pszPath);
+    RTPathStripFilename(szExtractDir);
+
+    const char *papszArgs[] =
+    {
+        "cabextract",
+        "-L",                   /* Lower case extracted files. */
+        "-d", szExtractDir,     /* Extraction path */
+        pszSrcArchive,
+        NULL
+    };
+#endif
+
+    /*
+     * Do the unpacking.
+     */
+    RTPROCESS hChild;
+    int rc = RTProcCreate(papszArgs[0], papszArgs, RTENV_DEFAULT,
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+                          RTPROC_FLAGS_NO_WINDOW | RTPROC_FLAGS_HIDDEN | RTPROC_FLAGS_SEARCH_PATH,
+#else
+                          RTPROC_FLAGS_SEARCH_PATH,
+#endif
+                          &hChild);
+    if (RT_SUCCESS(rc))
+    {
+        RTPROCSTATUS ProcStatus;
+        rc = RTProcWait(hChild, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus);
+        if (RT_SUCCESS(rc))
+        {
+            if (   ProcStatus.enmReason == RTPROCEXITREASON_NORMAL
+                && ProcStatus.iStatus   == 0)
+            {
+                if (RTPathExists(pszPath))
+                {
+                    rtDbgCfgLog1(pThis, "Successfully unpacked '%s' to '%s'.\n", pszSrcArchive, pszPath);
+                    rc = VINF_SUCCESS;
+                }
+                else
+                {
+                    rtDbgCfgLog1(pThis, "Successfully ran unpacker on '%s', but '%s' is missing!\n", pszSrcArchive, pszPath);
+                    rc = VERR_ZIP_ERROR;
+                }
+            }
+            else
+            {
+                rtDbgCfgLog2(pThis, "Unpacking '%s' failed: iStatus=%d enmReason=%d\n",
+                             pszSrcArchive, ProcStatus.iStatus, ProcStatus.enmReason);
+                rc = VERR_ZIP_CORRUPTED;
+            }
+        }
+        else
+            rtDbgCfgLog1(pThis, "Error waiting for process: %Rrc\n", rc);
+
+    }
+    else
+        rtDbgCfgLog1(pThis, "Error starting unpack process '%s': %Rrc\n", papszArgs[0], rc);
+
+    return rc;
+}
 
 static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
                                       char *pszPath, const char *pszCacheSubDir, PRTPATHSPLIT pSplitFn,
@@ -494,10 +641,20 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
     /*
      * Create the path.
      */
+    size_t cchTmp = strlen(pszPath);
+
+    int rc = RTDirCreateFullPath(pszPath, 0766);
+    if (!RTDirExists(pszPath))
+    {
+        Log(("Error creating cache dir '%s': %Rrc\n", pszPath, rc));
+        return rc;
+    }
+
     const char *pszFilename = pSplitFn->apszComps[pSplitFn->cComps - 1];
-    int rc = RTPathAppend(pszPath, RTPATH_MAX, pszFilename);
+    rc = RTPathAppend(pszPath, RTPATH_MAX, pszFilename);
     if (RT_FAILURE(rc))
         return rc;
+    RTStrToLower(&pszPath[cchTmp]);
     if (!RTDirExists(pszPath))
     {
         rc = RTDirCreate(pszPath, 0766, 0);
@@ -520,6 +677,8 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
     }
 
     /* Prepare the destination file name while we're here. */
+    cchTmp = strlen(pszPath);
+    RTStrToLower(&pszPath[cchTmp]);
     rc = RTPathAppend(pszPath, RTPATH_MAX, pszFilename);
     if (RT_FAILURE(rc))
         return rc;
@@ -531,11 +690,12 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
     rc = RTHttpCreate(&hHttp);
     if (RT_FAILURE(rc))
         return rc;
+    RTHttpUseSystemProxySettings(hHttp);
 
     static const char * const s_apszHeaders[] =
     {
         "User-Agent: Microsoft-Symbol-Server/6.6.0999.9",
-        "Cache-Control: no-cache",
+        "Pragma: no-cache",
     };
 
     rc = RTHttpSetHeaders(hHttp, RT_ELEMENTS(s_apszHeaders), s_apszHeaders);
@@ -544,13 +704,51 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
         char szUrl[_2K];
         RTStrPrintf(szUrl, sizeof(szUrl), "%s/%s/%s/%s", pszServer, pszFilename, pszCacheSubDir, pszFilename);
 
-        /** @todo Use some temporary file name and rename it after the operation. */
+        /** @todo Use some temporary file name and rename it after the operation
+         *        since not all systems support read-deny file sharing
+         *        settings. */
+        rtDbgCfgLog2(pThis, "Downloading '%s' to '%s'...\n", szUrl, pszPath);
         rc = RTHttpGetFile(hHttp, szUrl, pszPath);
         if (RT_FAILURE(rc))
+        {
             RTFileDelete(pszPath);
+            rtDbgCfgLog1(pThis, "%Rrc on URL '%s'\n", rc, pszPath);
+        }
+        if (rc == VERR_HTTP_NOT_FOUND)
+        {
+            /* Try the compressed version of the file. */
+            pszPath[strlen(pszPath) - 1] = '_';
+            szUrl[strlen(szUrl)     - 1] = '_';
+            rtDbgCfgLog2(pThis, "Downloading '%s' to '%s'...\n", szUrl, pszPath);
+            rc = RTHttpGetFile(hHttp, szUrl, pszPath);
+            if (RT_SUCCESS(rc))
+                rc = rtDbgCfgUnpackMsCacheFile(pThis, pszPath, pszFilename);
+            else
+            {
+                rtDbgCfgLog1(pThis, "%Rrc on URL '%s'\n", rc, pszPath);
+                RTFileDelete(pszPath);
+            }
+        }
     }
 
     RTHttpDestroy(hHttp);
+
+    /*
+     * If we succeeded, give it a try.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        Assert(RTFileExists(pszPath));
+        rtDbgCfgLog1(pThis, "Trying '%s'...\n", pszPath);
+        rc = pfnCallback(pThis, pszPath, pvUser1, pvUser2);
+        if (rc == VINF_CALLBACK_RETURN)
+            rtDbgCfgLog1(pThis, "Found '%s'.\n", pszPath);
+        else if (rc == VERR_CALLBACK_RETURN)
+            rtDbgCfgLog1(pThis, "Error opening '%s'.\n", pszPath);
+        else
+            rtDbgCfgLog1(pThis, "Error %Rrc opening '%s'.\n", rc, pszPath);
+    }
+
     return rc;
 
 #else  /* !IPRT_WITH_HTTP */
@@ -587,21 +785,30 @@ static int rtDbgCfgTryOpenCache(PRTDBGCFGINT pThis, char *pszPath, const char *p
      * Carefully construct the cache path with case insensitivity in mind.
      */
     bool const fCaseInsensitive = (fFlags & RTDBGCFG_O_CASE_INSENSITIVE)
-                               && rtDbgCfgIsFsCaseInsensitive(pszPath);
+                               && !rtDbgCfgIsFsCaseInsensitive(pszPath);
+    const char *pszFilename = pSplitFn->apszComps[pSplitFn->cComps - 1];
 
-    if (!rtDbgCfgIsDirAndFixCase(pszPath, pSplitFn->apszComps[pSplitFn->cComps - 1], fCaseInsensitive))
+    if (!rtDbgCfgIsDirAndFixCase(pszPath, pszFilename, fCaseInsensitive))
         return VWRN_NOT_FOUND;
 
     if (!rtDbgCfgIsDirAndFixCase(pszPath, pszCacheSubDir, fCaseInsensitive))
         return VWRN_NOT_FOUND;
 
-    if (!rtDbgCfgIsFileAndFixCase(pszPath, pSplitFn->apszComps[pSplitFn->cComps - 1], fCaseInsensitive))
+    bool fProbablyCompressed = false;
+    if (!rtDbgCfgIsFileAndFixCase(pszPath, pszFilename, fCaseInsensitive,
+                                  RT_BOOL(fFlags & RTDBGCFG_O_MAYBE_COMPRESSED_MS), &fProbablyCompressed))
         return VWRN_NOT_FOUND;
+    if (fProbablyCompressed)
+    {
+        int rc = rtDbgCfgUnpackMsCacheFile(pThis, pszPath, pszFilename);
+        if (RT_FAILURE(rc))
+            return VWRN_NOT_FOUND;
+    }
 
     rtDbgCfgLog1(pThis, "Trying '%s'...\n", pszPath);
     int rc2 = pfnCallback(pThis, pszPath, pvUser1, pvUser2);
     if (rc2 == VINF_CALLBACK_RETURN)
-        rtDbgCfgLog1(pThis, "Found '%s'.", pszPath);
+        rtDbgCfgLog1(pThis, "Found '%s'.\n", pszPath);
     else if (rc2 == VERR_CALLBACK_RETURN)
         rtDbgCfgLog1(pThis, "Error opening '%s'.\n", pszPath);
     else
@@ -618,6 +825,7 @@ static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHS
 
     const char *pchCache = NULL;
     size_t      cchCache = 0;
+    int         rcCache  = VWRN_NOT_FOUND;
 
     PRTDBGCFGSTR pCur;
     RTListForEach(pList, pCur, RTDBGCFGSTR, ListEntry)
@@ -667,19 +875,22 @@ static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHS
             {
                 memcpy(pszPath, pchCache, cchCache);
                 pszPath[cchCache] = '\0';
-                rc2 = rtDbgCfgTryOpenCache(pThis, pszPath, pszCacheSubDir, pSplitFn, fFlags,
-                                           pfnCallback, pvUser1, pvUser2);
+                rcCache = rc2 = rtDbgCfgTryOpenCache(pThis, pszPath, pszCacheSubDir, pSplitFn, fFlags,
+                                                     pfnCallback, pvUser1, pvUser2);
                 if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
                     return rc2;
             }
 
             /* Try downloading the file. */
-            memcpy(pszPath, pchCache, cchCache);
-            pszPath[cchCache] = '\0';
-            rc2 = rtDbgCfgTryDownloadAndOpen(pThis, pszServer, pszPath, pszCacheSubDir, pSplitFn, fFlags,
-                                             pfnCallback, pvUser1, pvUser2);
-            if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
-                return rc2;
+            if (rcCache == VWRN_NOT_FOUND)
+            {
+                memcpy(pszPath, pchCache, cchCache);
+                pszPath[cchCache] = '\0';
+                rc2 = rtDbgCfgTryDownloadAndOpen(pThis, pszServer, pszPath, pszCacheSubDir, pSplitFn, fFlags,
+                                                 pfnCallback, pvUser1, pvUser2);
+                if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
+                    return rc2;
+            }
         }
         else if (!strncmp(pszDir, RT_STR_TUPLE("cache*")))
         {
@@ -695,8 +906,8 @@ static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHS
 
             memcpy(pszPath, pchCache, cchCache);
             pszPath[cchCache] = '\0';
-            rc2 = rtDbgCfgTryOpenCache(pThis, pszPath, pszCacheSubDir, pSplitFn, fFlags,
-                                       pfnCallback, pvUser1, pvUser2);
+            rcCache = rc2 = rtDbgCfgTryOpenCache(pThis, pszPath, pszCacheSubDir, pSplitFn, fFlags,
+                                                 pfnCallback, pvUser1, pvUser2);
             if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
                 return rc2;
         }
@@ -733,6 +944,10 @@ static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHS
                 return rc2;
             }
         }
+
+        /* Propagate errors. */
+        if (RT_FAILURE(rc2) && RT_SUCCESS_NP(rcRet))
+            rcRet = rc2;
     }
 
     return rcRet;
@@ -785,7 +1000,7 @@ static int rtDbgCfgOpenWithSubDir(RTDBGCFG hDbgCfg, const char *pszFilename, con
     if (fDosPath)
         fFlags |= RTDBGCFG_O_CASE_INSENSITIVE;
 
-    rtDbgCfgLog2(pThis, "Looking for '%s' w/ cache subdir '%s' and %#x flags\n", pszFilename, pszCacheSubDir, fFlags);
+    rtDbgCfgLog2(pThis, "Looking for '%s' w/ cache subdir '%s' and %#x flags...\n", pszFilename, pszCacheSubDir, fFlags);
 
     PRTPATHSPLIT pSplitFn;
     rc2 = RTPathSplitA(pszFilename, &pSplitFn, fDosPath ? RTPATH_STR_F_STYLE_DOS : RTPATH_STR_F_STYLE_UNIX);
@@ -874,10 +1089,10 @@ RTDECL(int) RTDbgCfgOpenPeImage(RTDBGCFG hDbgCfg, const char *pszFilename, uint3
                                 PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     char szSubDir[32];
-    RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%X", uTimestamp, cbImage);
+    RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%x", uTimestamp, cbImage);
     return rtDbgCfgOpenWithSubDir(hDbgCfg, pszFilename, szSubDir,
                                   RT_OPSYS_WINDOWS /* approx */ | RTDBGCFG_O_SYMSRV | RTDBGCFG_O_CASE_INSENSITIVE
-                                  | RTDBGCFG_O_EXECUTABLE_IMAGE,
+                                  | RTDBGCFG_O_MAYBE_COMPRESSED_MS | RTDBGCFG_O_EXECUTABLE_IMAGE,
                                   pfnCallback, pvUser1, pvUser2);
 }
 
@@ -899,8 +1114,6 @@ RTDECL(int) RTDbgCfgOpenPdb70(RTDBGCFG hDbgCfg, const char *pszFilename, PCRTUUI
         char ch;
         while ((ch = *pszSrc++))
             if (ch != '-')
-                *pszDst++ = ch;
-            else if (RT_C_IS_LOWER(ch))
                 *pszDst++ = RT_C_TO_UPPER(ch);
 
         RTStrPrintf(pszDst, &szSubDir[sizeof(szSubDir)] - pszDst, "%X", uAge);
@@ -908,7 +1121,7 @@ RTDECL(int) RTDbgCfgOpenPdb70(RTDBGCFG hDbgCfg, const char *pszFilename, PCRTUUI
 
     return rtDbgCfgOpenWithSubDir(hDbgCfg, pszFilename, szSubDir,
                                   RT_OPSYS_WINDOWS /* approx */ | RTDBGCFG_O_SYMSRV | RTDBGCFG_O_CASE_INSENSITIVE
-                                  | RTDBGCFG_O_EXT_DEBUG_FILE,
+                                  | RTDBGCFG_O_MAYBE_COMPRESSED_MS | RTDBGCFG_O_EXT_DEBUG_FILE,
                                   pfnCallback, pvUser1, pvUser2);
 }
 
@@ -918,10 +1131,10 @@ RTDECL(int) RTDbgCfgOpenPdb20(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_
 {
     /** @todo test this! */
     char szSubDir[32];
-    RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%X", uTimestamp, uAge);
+    RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%x", uTimestamp, uAge);
     return rtDbgCfgOpenWithSubDir(hDbgCfg, pszFilename, szSubDir,
                                   RT_OPSYS_WINDOWS /* approx */ | RTDBGCFG_O_SYMSRV | RTDBGCFG_O_CASE_INSENSITIVE
-                                  | RTDBGCFG_O_EXT_DEBUG_FILE,
+                                  | RTDBGCFG_O_MAYBE_COMPRESSED_MS | RTDBGCFG_O_EXT_DEBUG_FILE,
                                   pfnCallback, pvUser1, pvUser2);
 }
 
@@ -930,10 +1143,10 @@ RTDECL(int) RTDbgCfgOpenDbg(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t 
                             PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     char szSubDir[32];
-    RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%X", uTimestamp, cbImage);
+    RTStrPrintf(szSubDir, sizeof(szSubDir), "%08X%x", uTimestamp, cbImage);
     return rtDbgCfgOpenWithSubDir(hDbgCfg, pszFilename, szSubDir,
                                   RT_OPSYS_WINDOWS /* approx */ | RTDBGCFG_O_SYMSRV | RTDBGCFG_O_CASE_INSENSITIVE
-                                  | RTDBGCFG_O_EXT_DEBUG_FILE,
+                                  | RTDBGCFG_O_MAYBE_COMPRESSED_MS | RTDBGCFG_O_EXT_DEBUG_FILE,
                                   pfnCallback, pvUser1, pvUser2);
 }
 

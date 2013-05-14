@@ -29,7 +29,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/http.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
+#include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
@@ -169,6 +172,41 @@ RTR3DECL(int) RTHttpAbort(RTHTTP hHttp)
     pHttpInt->fAbort = true;
 
     return VINF_SUCCESS;
+}
+
+RTR3DECL(int) RTHttpUseSystemProxySettings(RTHTTP hHttp)
+{
+    PRTHTTPINTERNAL pHttpInt = hHttp;
+    RTHTTP_VALID_RETURN(pHttpInt);
+
+    /*
+     * Very limited right now, just enought to make it work for ourselves.
+     */
+    char szProxy[_1K];
+    int rc = RTEnvGetEx(RTENV_DEFAULT, "http_proxy", szProxy, sizeof(szProxy), NULL);
+    if (RT_SUCCESS(rc))
+    {
+        int rcCurl;
+        if (!strncmp(szProxy, RT_STR_TUPLE("http://")))
+        {
+            rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROXY, &szProxy[sizeof("http://") - 1]);
+            if (CURL_FAILED(rcCurl))
+                return VERR_INVALID_PARAMETER;
+            rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROXYPORT, 80);
+            if (CURL_FAILED(rcCurl))
+                return VERR_INVALID_PARAMETER;
+        }
+        else
+        {
+            rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROXY, &szProxy[sizeof("http://") - 1]);
+            if (CURL_FAILED(rcCurl))
+                return VERR_INVALID_PARAMETER;
+        }
+    }
+    else if (rc == VERR_ENV_VAR_NOT_FOUND)
+        rc = VINF_SUCCESS;
+
+    return rc;
 }
 
 RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort,
