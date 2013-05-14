@@ -656,7 +656,8 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
             uScreenId, pvVRAM, w, h, bpp, cbLine, flags));
 
     /* If there is no framebuffer, this call is not interesting. */
-    if (uScreenId >= mcMonitors)
+    if (   uScreenId >= mcMonitors
+        || maFramebuffers[uScreenId].pFramebuffer.isNull())
     {
         return VINF_SUCCESS;
     }
@@ -667,11 +668,6 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
     mLastWidth = w;
     mLastHeight = h;
     mLastFlags = flags;
-
-    if (maFramebuffers[uScreenId].pFramebuffer.isNull())
-    {
-        return VINF_SUCCESS;
-    }
 
     ULONG pixelFormat;
 
