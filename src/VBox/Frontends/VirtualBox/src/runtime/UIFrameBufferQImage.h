@@ -47,11 +47,6 @@ public:
     void resizeEvent(UIResizeEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
 
-protected:
-
-    /* Callback: Guest paint-event stuff: */
-    STDMETHOD(NotifyUpdate) (ULONG uX, ULONG uY, ULONG uW, ULONG uH);
-
 private:
 
     /* Helper: Fallback stuff: */

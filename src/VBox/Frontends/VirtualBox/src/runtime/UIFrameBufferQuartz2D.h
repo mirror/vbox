@@ -37,7 +37,6 @@ public:
     UIFrameBufferQuartz2D(UIMachineView *pMachineView);
     virtual ~UIFrameBufferQuartz2D();
 
-    STDMETHOD(NotifyUpdate)(ULONG uX, ULONG uY, ULONG uW, ULONG uH);
     STDMETHOD(SetVisibleRegion)(BYTE *pRectangles, ULONG uCount);
 
     uchar* address() { return m_pDataAddress; }
