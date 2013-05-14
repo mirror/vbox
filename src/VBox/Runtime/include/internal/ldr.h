@@ -402,6 +402,8 @@ typedef struct RTLDRMODINTERNAL
     RTLDRSTATE              eState;
     /** Loader ops. */
     PCRTLDROPS              pOps;
+    /** Pointer to the reader instance. This is NULL for native image. */
+    PRTLDRREADER            pReader;
 } RTLDRMODINTERNAL;
 
 
@@ -454,6 +456,8 @@ int rtldrkLdrOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTL
 /*int rtldrLXOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offLX, PRTLDRMOD phLdrMod);
 int rtldrMachoOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offSomething, PRTLDRMOD phLdrMod);*/
 
+
+DECLHIDDEN(int) rtLdrReadAt(RTLDRMOD hLdrMod, void *pvBuf, RTFOFF off, size_t cb);
 
 RT_C_DECLS_END
 

@@ -40,6 +40,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include "internal/dbgmod.h"
+#include "internal/ldr.h"
 #include "internal/magics.h"
 
 
@@ -53,8 +54,6 @@ typedef struct RTDBGMODLDR
 {
     /** The loader handle. */
     RTLDRMOD        hLdrMod;
-    /** File handle for the image. */
-    RTFILE          hFile;
 } RTDBGMODLDR;
 /** Pointer to instance data NM map reader. */
 typedef RTDBGMODLDR *PRTDBGMODLDR;
@@ -79,7 +78,7 @@ static DECLCALLBACK(int) rtDbgModLdr_MapPart(PRTDBGMODINT pMod, RTFOFF off, size
     if (!pvMap)
         return VERR_NO_MEMORY;
 
-    int rc = RTFileReadAt(pThis->hFile, off, pvMap, cb, NULL);
+    int rc = rtLdrReadAt(pThis->hLdrMod, pvMap, off, cb);
     if (RT_SUCCESS(rc))
         *ppvMap = pvMap;
     else
@@ -133,9 +132,6 @@ static DECLCALLBACK(int) rtDbgModLdr_Close(PRTDBGMODINT pMod)
     int rc = RTLdrClose(pThis->hLdrMod); AssertRC(rc);
     pThis->hLdrMod = NIL_RTLDRMOD;
 
-    rc = RTFileClose(pThis->hFile); AssertRC(rc);
-    pThis->hFile = NIL_RTFILE;
-
     RTMemFree(pThis);
 
     return VINF_SUCCESS;
@@ -145,28 +141,13 @@ static DECLCALLBACK(int) rtDbgModLdr_Close(PRTDBGMODINT pMod)
 /** @interface_method_impl{RTDBGMODVTIMG,pfnTryOpen} */
 static DECLCALLBACK(int) rtDbgModLdr_TryOpen(PRTDBGMODINT pMod)
 {
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pMod->pszImgFile, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN);
+    RTLDRMOD hLdrMod;
+    int rc = RTLdrOpen(pMod->pszImgFile, RTLDR_O_FOR_DEBUG, RTLDRARCH_WHATEVER, &hLdrMod);
     if (RT_SUCCESS(rc))
     {
-        RTLDRMOD hLdrMod;
-        rc = RTLdrOpen(pMod->pszImgFile, RTLDR_O_FOR_DEBUG, RTLDRARCH_WHATEVER, &hLdrMod);
-        if (RT_SUCCESS(rc))
-        {
-            PRTDBGMODLDR pThis = (PRTDBGMODLDR)RTMemAllocZ(sizeof(RTDBGMODLDR));
-            if (pThis)
-            {
-                pThis->hLdrMod  = hLdrMod;
-                pThis->hFile    = hFile;
-                pMod->pvImgPriv = pThis;
-                return VINF_SUCCESS;
-            }
-
-            rc = VERR_NO_MEMORY;
+        rc = rtDbgModLdrOpenFromHandle(pMod, hLdrMod);
+        if (RT_FAILURE(rc))
             RTLdrClose(hLdrMod);
-        }
-
-        RTFileClose(hFile);
     }
     return rc;
 }
@@ -189,4 +170,23 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
 
     /*.u32EndMagic = */                 RTDBGMODVTIMG_MAGIC
 };
+
+
+/**
+ * Open PE-image trick.
+ *
+ * @returns IPRT status code
+ * @param   pDbgMod             The debug module instance.
+ * @param   hLdrMod             The module to open a image debug backend for.
+ */
+DECLHIDDEN(int) rtDbgModLdrOpenFromHandle(PRTDBGMODINT pDbgMod, RTLDRMOD hLdrMod)
+{
+    PRTDBGMODLDR pThis = (PRTDBGMODLDR)RTMemAllocZ(sizeof(RTDBGMODLDR));
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    pThis->hLdrMod     = hLdrMod;
+    pDbgMod->pvImgPriv = pThis;
+    return VINF_SUCCESS;
+}
 

@@ -64,8 +64,6 @@ typedef struct RTLDRMODPE
 {
     /** Core module structure. */
     RTLDRMODINTERNAL        Core;
-    /** Pointer to the reader instance. */
-    PRTLDRREADER            pReader;
     /** Pointer to internal copy of image bits.
      * @todo the reader should take care of this. */
     void                   *pvBits;
@@ -159,7 +157,7 @@ static int rtldrPEGetBitsNoImportsNorFixups(PRTLDRMODPE pModPe, void *pvBits)
     /*
      * Both these checks are related to pfnDone().
      */
-    PRTLDRREADER pReader = pModPe->pReader;
+    PRTLDRREADER pReader = pModPe->Core.pReader;
     if (!pReader)
     {
         AssertMsgFailed(("You've called done!\n"));
@@ -1100,12 +1098,6 @@ static DECLCALLBACK(int) rtldrPEDone(PRTLDRMODINTERNAL pMod)
         RTMemFree(pModPe->pvBits);
         pModPe->pvBits = NULL;
     }
-    if (pModPe->pReader)
-    {
-        int rc = pModPe->pReader->pfnDestroy(pModPe->pReader);
-        AssertRC(rc);
-        pModPe->pReader = NULL;
-    }
     return VINF_SUCCESS;
 }
 
@@ -1123,11 +1115,11 @@ static DECLCALLBACK(int) rtldrPEClose(PRTLDRMODINTERNAL pMod)
         RTMemFree(pModPe->pvBits);
         pModPe->pvBits = NULL;
     }
-    if (pModPe->pReader)
+    if (pModPe->Core.pReader)
     {
-        int rc = pModPe->pReader->pfnDestroy(pModPe->pReader);
+        int rc = pModPe->Core.pReader->pfnDestroy(pModPe->Core.pReader);
         AssertRC(rc);
-        pModPe->pReader = NULL;
+        pModPe->Core.pReader = NULL;
     }
     return VINF_SUCCESS;
 }
@@ -1617,7 +1609,7 @@ int rtldrPEValidateSectionHeaders(const IMAGE_SECTION_HEADER *paSections, unsign
 static int rtldrPEReadRVA(PRTLDRMODPE pModPe, void *pvBuf, uint32_t cb, uint32_t RVA)
 {
     const IMAGE_SECTION_HEADER *pSH = pModPe->paSections;
-    PRTLDRREADER                pReader = pModPe->pReader;
+    PRTLDRREADER                pReader = pModPe->Core.pReader;
     uint32_t                    cbRead;
     int                         rc;
 
@@ -1697,7 +1689,7 @@ static int rtldrPEReadRVA(PRTLDRMODPE pModPe, void *pvBuf, uint32_t cb, uint32_t
  */
 int rtldrPEValidateDirectories(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64 *pOptHdr)
 {
-    const char *pszLogName = pModPe->pReader->pfnLogName(pModPe->pReader); NOREF(pszLogName);
+    const char *pszLogName = pModPe->Core.pReader->pfnLogName(pModPe->Core.pReader); NOREF(pszLogName);
     union /* combine stuff we're reading to help reduce stack usage. */
     {
         IMAGE_LOAD_CONFIG_DIRECTORY64   Cfg64;
@@ -1771,7 +1763,7 @@ int rtldrPEValidateDirectories(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64
         PWIN_CERTIFICATE pFirst = (PWIN_CERTIFICATE)RTMemTmpAlloc(Dir.Size);
         if (!pFirst)
             return VERR_NO_TMP_MEMORY;
-        int rc = pModPe->pReader->pfnRead(pModPe->pReader, pFirst, Dir.Size, Dir.VirtualAddress);
+        int rc = pModPe->Core.pReader->pfnRead(pModPe->Core.pReader, pFirst, Dir.Size, Dir.VirtualAddress);
         if (RT_SUCCESS(rc))
         {
             uint32_t         off  = 0;
@@ -1896,7 +1888,7 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
                     pModPe->Core.pOps = &s_rtldrPE64Ops.Core;
                 else
                     pModPe->Core.pOps = &s_rtldrPE32Ops.Core;
-                pModPe->pReader       = pReader;
+                pModPe->Core.pReader  = pReader;
                 pModPe->pvBits        = NULL;
                 pModPe->offNtHdrs     = offNtHdrs;
                 pModPe->offEndOfHdrs  = offNtHdrs + 4 + sizeof(IMAGE_FILE_HEADER) + FileHdr.SizeOfOptionalHeader + cbSections;

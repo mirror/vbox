@@ -926,8 +926,8 @@ RTDECL(int)         RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszF
                                             RTDBGCFG hDbgCfg);
 RTDECL(int)         RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTUINTPTR uSubtrahend,
                                           RTDBGCFG hDbgCfg);
-RTDECL(int)         RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t cbImage,
-                                              uint32_t uTimeDateStamp, RTDBGCFG hDbgCfg);
+RTDECL(int)         RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTLDRMOD hLdrMod,
+                                              uint32_t cbImage, uint32_t uTimeDateStamp, RTDBGCFG hDbgCfg);
 RTDECL(int)         RTDbgModCreateFromDbg(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t cbImage,
                                           uint32_t uTimeDateStamp, RTDBGCFG hDbgCfg);
 RTDECL(int)         RTDbgModCreateFromPdb(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t cbImage,

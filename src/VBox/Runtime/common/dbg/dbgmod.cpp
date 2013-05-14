@@ -884,19 +884,24 @@ static DECLCALLBACK(int) rtDbgModFromPeImageDeferredCallback(PRTDBGMODINT pDbgMo
     int rc;
 
     Assert(pDbgMod->pszImgFile);
-    if (pDeferred->hDbgCfg != NIL_RTDBGCFG)
+    if (!pDbgMod->pImgVt)
         rc = RTDbgCfgOpenPeImage(pDeferred->hDbgCfg, pDbgMod->pszImgFile,
                                  pDeferred->cbImage, pDeferred->u.PeImage.uTimestamp,
                                  rtDbgModFromPeImageOpenCallback, pDbgMod, pDeferred);
     else
-        rc = rtDbgModFromPeImageOpenCallback(NIL_RTDBGCFG, pDbgMod->pszImgFile, pDbgMod, pDeferred);
-
+    {
+        rc = rtDbgModOpenDebugInfoExternalToImage(pDbgMod, pDeferred->hDbgCfg);
+        if (RT_FAILURE(rc))
+            rc = rtDbgModOpenDebugInfoInsideImage(pDbgMod);
+        if (RT_FAILURE(rc))
+            rc = rtDbgModCreateForExports(pDbgMod);
+    }
     return rc;
 }
 
 
-RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, uint32_t cbImage,
-                                      uint32_t uTimestamp, RTDBGCFG hDbgCfg)
+RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTLDRMOD hLdrMod,
+                                      uint32_t cbImage, uint32_t uTimestamp, RTDBGCFG hDbgCfg)
 {
     /*
      * Input validation and lazy initialization.
@@ -908,6 +913,7 @@ RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilenam
     if (!pszName)
         pszName = RTPathFilename(pszFilename);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertReturn(hLdrMod == NIL_RTLDRMOD || RTLdrSize(hLdrMod) != ~(size_t)0, VERR_INVALID_HANDLE);
 
     int rc = rtDbgModLazyInit();
     if (RT_FAILURE(rc))
@@ -938,30 +944,50 @@ RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilenam
             if (pDbgMod->pszImgFile)
             {
                 /*
-                 * Do it now or procrastinate?
+                 * If we have a loader module, we must instantiate the loader
+                 * side of things regardless of the deferred setting.
                  */
-                if (!(fDbgCfg & RTDBGCFG_FLAGS_DEFERRED) || !cbImage)
+                if (hLdrMod != NIL_RTLDRMOD)
                 {
-                    RTDBGMODDEFERRED Deferred;
-                    Deferred.cbImage = cbImage;
-                    Deferred.hDbgCfg = hDbgCfg;
-                    Deferred.u.PeImage.uTimestamp = uTimestamp;
-                    rc = rtDbgModFromPeImageDeferredCallback(pDbgMod, &Deferred);
-                }
-                else
-                {
-                    PRTDBGMODDEFERRED pDeferred;
-                    rc = rtDbgModDeferredCreate(pDbgMod, rtDbgModFromPeImageDeferredCallback, cbImage, hDbgCfg, &pDeferred);
-                    if (RT_SUCCESS(rc))
-                        pDeferred->u.PeImage.uTimestamp = uTimestamp;
+                    if (!cbImage)
+                        cbImage = (uint32_t)RTLdrSize(hLdrMod);
+                    pDbgMod->pImgVt = &g_rtDbgModVtImgLdr;
+
+                    rc = rtDbgModLdrOpenFromHandle(pDbgMod, hLdrMod);
                 }
                 if (RT_SUCCESS(rc))
                 {
-                    *phDbgMod = pDbgMod;
-                    return VINF_SUCCESS;
-                }
+                    /*
+                     * Do it now or procrastinate?
+                     */
+                    if (!(fDbgCfg & RTDBGCFG_FLAGS_DEFERRED) || !cbImage)
+                    {
+                        RTDBGMODDEFERRED Deferred;
+                        Deferred.cbImage = cbImage;
+                        Deferred.hDbgCfg = hDbgCfg;
+                        Deferred.u.PeImage.uTimestamp = uTimestamp;
+                        rc = rtDbgModFromPeImageDeferredCallback(pDbgMod, &Deferred);
+                    }
+                    else
+                    {
+                        PRTDBGMODDEFERRED pDeferred;
+                        rc = rtDbgModDeferredCreate(pDbgMod, rtDbgModFromPeImageDeferredCallback, cbImage, hDbgCfg, &pDeferred);
+                        if (RT_SUCCESS(rc))
+                            pDeferred->u.PeImage.uTimestamp = uTimestamp;
+                    }
+                    if (RT_SUCCESS(rc))
+                    {
+                        *phDbgMod = pDbgMod;
+                        return VINF_SUCCESS;
+                    }
 
-                /* bail out */
+                    /* Failed, bail out. */
+                    if (hLdrMod != NIL_RTLDRMOD)
+                    {
+                        Assert(pDbgMod->pImgVt);
+                        pDbgMod->pImgVt->pfnClose(pDbgMod);
+                    }
+                }
                 RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszName);
             }
             else
