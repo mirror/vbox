@@ -48,15 +48,6 @@ UIFrameBufferQImage::UIFrameBufferQImage(UIMachineView *pMachineView)
     resizeEvent(&event);
 }
 
-STDMETHODIMP UIFrameBufferQImage::NotifyUpdate(ULONG uX, ULONG uY, ULONG uW, ULONG uH)
-{
-    /* QWidget::update() is not thread safe and seems never will be,
-     * So we have to post an async event to perform update operation.
-     * Later the event will be replaced by the corresponding signal stuff: */
-    QApplication::postEvent(m_pMachineView, new UIRepaintEvent(uX, uY, uW, uH));
-    return S_OK;
-}
-
 void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
 {
     /* On mode switch the enqueued paint event may still come

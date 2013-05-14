@@ -171,6 +171,8 @@ public:
                               ULONG uWidth, ULONG uHeight,
                               BOOL *pbFinished);
 
+    STDMETHOD(NotifyUpdate) (ULONG uX, ULONG uY, ULONG uW, ULONG uH);
+
     STDMETHOD(VideoModeSupported) (ULONG uWidth, ULONG uHeight, ULONG uBPP,
                                    BOOL *pbSupported);
 
