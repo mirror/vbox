@@ -74,6 +74,17 @@ RTR3DECL(void) RTHttpDestroy(RTHTTP hHttp);
 RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse);
 
 /**
+ * Perform a simple blocking HTTP request, writing the output to a file.
+ *
+ * @returns iprt status code.
+ *
+ * @param   hHttp           HTTP interface handle.
+ * @param   pszUrl          URL.
+ * @param   pszDstFile      The destination file name.
+ */
+RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDstFile);
+
+/**
  * Abort a pending HTTP request. A blocking RTHttpGet() call will return with
  * VERR_HTTP_ABORTED. It may take some time (current cURL implementation needs
  * up to 1 second) before the request is aborted.
@@ -107,7 +118,7 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxyUrl, uint32_t uP
  * @param    cHeaders      number of custom headers.
  * @param    pcszHeaders   array of headers in form "foo: bar".
  */
-RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, uint32_t cHeaders, const char *pcszHeaders[]);
+RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const *papszHeaders);
 
 /**
  * Set a custom certification authority file, containing root certificates.
@@ -118,7 +129,6 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, uint32_t cHeaders, const char *pcsz
  * @param    pcszCAFile    File name containing root certificates.
  */
 RTR3DECL(int) RTHttpSetCAFile(RTHTTP hHttp, const char *pcszCAFile);
-/** @} */
 
 
 /**
@@ -141,6 +151,9 @@ RTR3DECL(int) RTHttpSetCAFile(RTHTTP hHttp, const char *pcszCAFile);
 RTR3DECL(int) RTHttpCertDigest(RTHTTP hHttp, char *pcszCert, size_t cbCert,
                                uint8_t **pabSha1, size_t *pcbSha1,
                                uint8_t **pabSha512, size_t *pcbSha512);
+
+
+/** @} */
 
 RT_C_DECLS_END
 

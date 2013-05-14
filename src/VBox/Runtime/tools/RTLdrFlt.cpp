@@ -134,7 +134,7 @@ int main(int argc, char **argv)
      * make use of (i.e. test) path searching and such.
      */
     RTDBGCFG hDbgCfg;
-    rc = RTDbgCfgCreate(&hDbgCfg, "IPRT");
+    rc = RTDbgCfgCreate(&hDbgCfg, "IPRT", true /*fNativePaths*/);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDbgCfgCreate -> %Rrc", rc);
 

@@ -317,10 +317,12 @@ typedef enum RTDBGCFGOP
  * @param   phDbgCfg            Where to return the configuration handle.
  * @param   pszEnvVarPrefix     The environment variable prefix.  If NULL, the
  *                              environment is not consulted.
+ * @param   fNativePaths        Whether to pick up native paths from the
+ *                              environment.
  *
  * @sa  RTDbgCfgChangeString, RTDbgCfgChangeUInt.
  */
-RTDECL(int) RTDbgCfgCreate(PRTDBGCFG phDbgCfg, const char *pszEnvVarPrefix);
+RTDECL(int) RTDbgCfgCreate(PRTDBGCFG phDbgCfg, const char *pszEnvVarPrefix, bool fNativePaths);
 
 /**
  * Retains a new reference to a debugging config.

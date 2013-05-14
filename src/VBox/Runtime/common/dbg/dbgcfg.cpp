@@ -40,6 +40,7 @@
 #include <iprt/err.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
+#include <iprt/http.h>
 #include <iprt/list.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
@@ -487,8 +488,67 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
     if (pThis->fFlags & RTDBGCFG_FLAGS_NO_SYM_SRV)
         return VWRN_NOT_FOUND;
 
+    /*
+     * Create the path.
+     */
+    const char *pszFilename = pSplitFn->apszComps[pSplitFn->cComps - 1];
+    int rc = RTPathAppend(pszPath, RTPATH_MAX, pszFilename);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (!RTDirExists(pszPath))
+    {
+        rc = RTDirCreate(pszPath, 0766, 0);
+        if (RT_FAILURE(rc))
+        {
+            Log(("RTDirCreate(%s) -> %Rrc\n", pszPath, rc));
+        }
+    }
 
-    return VERR_NOT_IMPLEMENTED;
+    rc = RTPathAppend(pszPath, RTPATH_MAX, pszCacheSubDir);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (!RTDirExists(pszPath))
+    {
+        rc = RTDirCreate(pszPath, 0766, 0);
+        if (RT_FAILURE(rc))
+        {
+            Log(("RTDirCreate(%s) -> %Rrc\n", pszPath, rc));
+        }
+    }
+
+    /* Prepare the destination file name while we're here. */
+    rc = RTPathAppend(pszPath, RTPATH_MAX, pszFilename);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Download the file.
+     */
+    RTHTTP hHttp;
+    rc = RTHttpCreate(&hHttp);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    static const char * const s_apszHeaders[] =
+    {
+        "User-Agent: Microsoft-Symbol-Server/6.6.0999.9",
+        "Cache-Control: no-cache",
+    };
+
+    rc = RTHttpSetHeaders(hHttp, RT_ELEMENTS(s_apszHeaders), s_apszHeaders);
+    if (RT_SUCCESS(rc))
+    {
+        char szUrl[_2K];
+        RTStrPrintf(szUrl, sizeof(szUrl), "%s/%s/%s/%s", pszServer, pszFilename, pszCacheSubDir, pszFilename);
+
+        /** @todo Use some temporary file name and rename it after the operation. */
+        rc = RTHttpGetFile(hHttp, szUrl, pszPath);
+        if (RT_FAILURE(rc))
+            RTFileDelete(pszPath);
+    }
+
+    RTHttpDestroy(hHttp);
+    return rc;
 }
 
 
@@ -1333,7 +1393,7 @@ RTDECL(uint32_t) RTDbgCfgRelease(RTDBGCFG hDbgCfg)
 }
 
 
-RTDECL(int) RTDbgCfgCreate(PRTDBGCFG phDbgCfg, const char *pszEnvVarPrefix)
+RTDECL(int) RTDbgCfgCreate(PRTDBGCFG phDbgCfg, const char *pszEnvVarPrefix, bool fNativePaths)
 {
     /*
      * Validate input.
@@ -1373,51 +1433,56 @@ RTDECL(int) RTDbgCfgCreate(PRTDBGCFG phDbgCfg, const char *pszEnvVarPrefix)
     /*
      * Read configurtion from the environment if requested to do so.
      */
-    if (pszEnvVarPrefix)
+    if (pszEnvVarPrefix || fNativePaths)
     {
-        static struct
-        {
-            RTDBGCFGPROP    enmProp;
-            const char     *pszVar;
-        } const s_aProps[] =
-        {
-            { RTDBGCFGPROP_FLAGS,       "FLAGS"    },
-            { RTDBGCFGPROP_PATH,        "PATH"     },
-            { RTDBGCFGPROP_SUFFIXES,    "SUFFIXES" },
-            { RTDBGCFGPROP_SRC_PATH,    "SRC_PATH" },
-        };
         const size_t cbEnvVar = 256;
         const size_t cbEnvVal = 65536 - cbEnvVar;
         char        *pszEnvVar = (char *)RTMemTmpAlloc(cbEnvVar + cbEnvVal);
         if (pszEnvVar)
         {
             char *pszEnvVal = pszEnvVar + cbEnvVar;
-            for (unsigned i = 0; i < RT_ELEMENTS(s_aProps); i++)
-            {
-                size_t cchEnvVar = RTStrPrintf(pszEnvVar, cbEnvVar, "%s_%s", pszEnvVarPrefix, s_aProps[i].pszVar);
-                if (cchEnvVar >= cbEnvVar - 1)
-                {
-                    rc = VERR_BUFFER_OVERFLOW;
-                    break;
-                }
 
-                rc = RTEnvGetEx(RTENV_DEFAULT, pszEnvVar, pszEnvVal, cbEnvVal, NULL);
-                if (RT_SUCCESS(rc))
+            if (pszEnvVarPrefix)
+            {
+                static struct
                 {
-                    rc = RTDbgCfgChangeString(pThis, s_aProps[i].enmProp, RTDBGCFGOP_SET, pszEnvVal);
-                    if (RT_FAILURE(rc))
+                    RTDBGCFGPROP    enmProp;
+                    const char     *pszVar;
+                } const s_aProps[] =
+                {
+                    { RTDBGCFGPROP_FLAGS,       "FLAGS"    },
+                    { RTDBGCFGPROP_PATH,        "PATH"     },
+                    { RTDBGCFGPROP_SUFFIXES,    "SUFFIXES" },
+                    { RTDBGCFGPROP_SRC_PATH,    "SRC_PATH" },
+                };
+
+                for (unsigned i = 0; i < RT_ELEMENTS(s_aProps); i++)
+                {
+                    size_t cchEnvVar = RTStrPrintf(pszEnvVar, cbEnvVar, "%s_%s", pszEnvVarPrefix, s_aProps[i].pszVar);
+                    if (cchEnvVar >= cbEnvVar - 1)
+                    {
+                        rc = VERR_BUFFER_OVERFLOW;
                         break;
+                    }
+
+                    rc = RTEnvGetEx(RTENV_DEFAULT, pszEnvVar, pszEnvVal, cbEnvVal, NULL);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTDbgCfgChangeString(pThis, s_aProps[i].enmProp, RTDBGCFGOP_SET, pszEnvVal);
+                        if (RT_FAILURE(rc))
+                            break;
+                    }
+                    else if (rc != VERR_ENV_VAR_NOT_FOUND)
+                        break;
+                    else
+                        rc = VINF_SUCCESS;
                 }
-                else if (rc != VERR_ENV_VAR_NOT_FOUND)
-                    break;
-                else
-                    rc = VINF_SUCCESS;
             }
 
             /*
              * Pick up system specific search paths.
              */
-            if (RT_SUCCESS(rc))
+            if (RT_SUCCESS(rc) && fNativePaths)
             {
                 struct
                 {
