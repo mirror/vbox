@@ -443,7 +443,7 @@ static bool rtDbgCfgIsFileAndFixCase(char *pszPath, const char *pszFilename, boo
     {
         pszPath[cchPath] = '\0';
         rc = RTPathAppend(pszPath, RTPATH_MAX, pszFilename);
-        AssertRCReturn(rc, rc);
+        AssertRCReturn(rc, false);
         pszPath[strlen(pszPath) - 1] = '_';
 
         if (pfProbablyCompressed)
