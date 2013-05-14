@@ -627,6 +627,7 @@
 # define RTLdrLoadAppPriv                               RT_MANGLER(RTLdrLoadAppPriv)
 # define RTLdrLoadEx                                    RT_MANGLER(RTLdrLoadEx)
 # define RTLdrOpen                                      RT_MANGLER(RTLdrOpen)
+# define RTLdrOpenInMemory                              RT_MANGLER(RTLdrOpenInMemory)
 # define RTLdrOpenkLdr                                  RT_MANGLER(RTLdrOpenkLdr)
 # define RTLdrRelocate                                  RT_MANGLER(RTLdrRelocate)
 # define RTLdrRvaToSegOffset                            RT_MANGLER(RTLdrRvaToSegOffset)
