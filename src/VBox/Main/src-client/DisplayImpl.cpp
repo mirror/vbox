@@ -148,10 +148,10 @@ void Display::FinalRelease()
         memset (&mVBVALock, 0, sizeof (mVBVALock));
     }
     
-    if (RTCritSectIsInitialized (&mSaveSeamlessRectLock))
+    if (RTCritSectIsInitialized(&mSaveSeamlessRectLock))
     {
-        RTCritSectDelete (&mSaveSeamlessRectLock);
-        memset (&mSaveSeamlessRectLock, 0, sizeof (mSaveSeamlessRectLock));
+        RTCritSectDelete(&mSaveSeamlessRectLock);
+        memset(&mSaveSeamlessRectLock, 0, sizeof (mSaveSeamlessRectLock));
     }
     BaseFinalRelease();
 }
@@ -481,6 +481,9 @@ HRESULT Display::init(Console *aParent)
         maFramebuffers[ul].u32ResizeStatus = ResizeStatus_Void;
 
         maFramebuffers[ul].fDefaultFormat = false;
+
+        maFramebuffers[ul].mcSavedVisibleRegion = 0;
+        maFramebuffers[ul].mpSavedVisibleRegion = NULL;
 
         memset (&maFramebuffers[ul].dirtyRect, 0 , sizeof (maFramebuffers[ul].dirtyRect));
         memset (&maFramebuffers[ul].pendingResize, 0 , sizeof (maFramebuffers[ul].pendingResize));
@@ -834,11 +837,13 @@ void Display::handleResizeCompletedEMT (void)
         /* Handle the case if there are some saved visible region that needs to be 
          * applied after the resize of the framebuffer is completed 
          */
-        if (pFBInfo->mcSavedVisibleRegion)
+        SaveSeamlessRectLock();
+        PRTRECT pSavedSeamlessRgn = pFBInfo->mpSavedVisibleRegion;
+        uint32_t ucSavedSeamlessRgn = pFBInfo->mcSavedVisibleRegion;
+        SaveSeamlessRectUnLock();
+        if (pSavedSeamlessRgn && ucSavedSeamlessRgn)
         {
-            handleSetVisibleRegion(pFBInfo->mcSavedVisibleRegion,
-                                   pFBInfo->mpSavedVisibleRegion);
-
+            handleSetVisibleRegion(ucSavedSeamlessRgn, pSavedSeamlessRgn);
             SaveSeamlessRectLock();
             if (pFBInfo->mpSavedVisibleRegion)
                 RTMemFree(pFBInfo->mpSavedVisibleRegion);
@@ -1127,12 +1132,17 @@ int Display::handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
                 if(pFBInfo->mpSavedVisibleRegion)
                     RTMemFree(pFBInfo->mpSavedVisibleRegion);
                 
-                pFBInfo->mpSavedVisibleRegion = (RTRECT *)RTMemTmpAlloc(  RT_MAX(cRect, 1)
-                                                                        * sizeof (RTRECT));
+                pFBInfo->mpSavedVisibleRegion = (RTRECT *)RTMemAlloc( RT_MAX(cRect, 1)
+                                                                     * sizeof (RTRECT));
                 if (pFBInfo->mpSavedVisibleRegion)
                 {
                     memcpy(pFBInfo->mpSavedVisibleRegion, pRect, cRect * sizeof(RTRECT));
                     pFBInfo->mcSavedVisibleRegion = cRect;
+                }
+                else
+                {
+                    /* memory allocation failed */
+                    pFBInfo->mcSavedVisibleRegion = 0;
                 }
                 SaveSeamlessRectUnLock();
                 continue;
