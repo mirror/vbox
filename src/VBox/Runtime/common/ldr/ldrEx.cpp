@@ -165,15 +165,6 @@ int rtldrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch
 }
 
 
-/**
- * Gets the size of the loaded image.
- * This is only supported for modules which has been opened using RTLdrOpen() and RTLdrOpenBits().
- *
- * @returns image size (in bytes).
- * @returns ~(size_t)0 on if not opened by RTLdrOpen().
- * @param   hLdrMod     Handle to the loader module.
- * @remark  Not supported for RTLdrLoad() images.
- */
 RTDECL(size_t) RTLdrSize(RTLDRMOD hLdrMod)
 {
     LogFlow(("RTLdrSize: hLdrMod=%RTldrm\n", hLdrMod));

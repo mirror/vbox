@@ -183,45 +183,60 @@ RTDECL(int) RTLdrOpen(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArc
  */
 RTDECL(int) RTLdrOpenkLdr(const char *pszFilename, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod);
 
-/**
- * What to expect and do with the bits passed to RTLdrOpenBits().
- */
-typedef enum RTLDROPENBITS
-{
-    /** The usual invalid 0 entry. */
-    RTLDROPENBITS_INVALID = 0,
-    /** The bits are readonly and will never be changed. */
-    RTLDROPENBITS_READONLY,
-    /** The bits are going to be changed and the loader will have to duplicate them
-     * when opening the image. */
-    RTLDROPENBITS_WRITABLE,
-    /** The bits are both the source and destination for the loader operation.
-     * This means that the loader may have to duplicate them prior to changing them. */
-    RTLDROPENBITS_SRC_AND_DST,
-    /** The end of the valid enums. This entry marks the
-     * first invalid entry.. */
-    RTLDROPENBITS_END,
-    RTLDROPENBITS_32BIT_HACK = 0x7fffffff
-} RTLDROPENBITS;
 
 /**
- * Open a binary image from in-memory bits.
+ * Called to read @a cb bytes at @a off into @a pvBuf.
  *
- * @returns iprt status code.
- * @param   pvBits      The start of the raw-image.
- * @param   cbBits      The size of the raw-image.
- * @param   enmBits     What to expect from the pvBits.
- * @param   pszLogName  What to call the raw-image when logging.
- *                      For RTLdrLoad and RTLdrOpen the filename is used for this.
- * @param   phLdrMod    Where to store the handle to the loader module.
+ * @returns IPRT status code
+ * @param   pvBuf       The output buffer.
+ * @param   cb          The number of bytes to read.
+ * @param   off         Where to start reading.
+ * @param   pvUser      The user parameter.
  */
-RTDECL(int) RTLdrOpenBits(const void *pvBits, size_t cbBits, RTLDROPENBITS enmBits, const char *pszLogName, PRTLDRMOD phLdrMod);
+typedef DECLCALLBACK(int) FNRTLDRRDRMEMREAD(void *pvBuf, size_t cb, size_t off, void *pvUser);
+/** Pointer to a RTLdrOpenInMemory reader callback. */
+typedef FNRTLDRRDRMEMREAD *PFNRTLDRRDRMEMREAD;
+
+/**
+ * Called to when the module is unloaded (or done loading) to release resources
+ * associated with it (@a pvUser).
+ *
+ * @returns IPRT status code
+ * @param   pvUser      The user parameter.
+ */
+typedef DECLCALLBACK(void) FNRTLDRRDRMEMDTOR(void *pvUser);
+/** Pointer to a RTLdrOpenInMemory destructor callback. */
+typedef FNRTLDRRDRMEMDTOR *PFNRTLDRRDRMEMDTOR;
+
+/**
+ * Open a in-memory image or an image with a custom reader callback.
+ *
+ * @returns IPRT status code.
+ * @param   pszName     The image name.
+ * @param   fFlags      Valid RTLDR_O_XXX combination.
+ * @param   enmArch     CPU architecture specifier for the image to be loaded.
+ * @param   cbImage     The size of the image (fake file).
+ * @param   pfnRead     The read function.  If NULL is passed in, a default
+ *                      reader function is provided that assumes @a pvUser
+ *                      points to the raw image bits, at least @a cbImage of
+ *                      valid memory.
+ * @param   pfnDtor     The destructor function.  If NULL is passed, a default
+ *                      destructor will be provided that passes @a pvUser to
+ *                      RTMemFree.
+ * @param   pvUser      The user argument or, if any of the callbacks are NULL,
+ *                      a pointer to a memory block.
+ * @param   phLdrMod    Where to return the module handle.
+ */
+RTDECL(int) RTLdrOpenInMemory(const char *pszName, uint32_t fFlags, RTLDRARCH enmArch, size_t cbImage,
+                              PFNRTLDRRDRMEMREAD pfnRead, PFNRTLDRRDRMEMDTOR pfnDtor, void *pvUser,
+                              PRTLDRMOD phLdrMod);
+
 
 /**
  * Closes a loader module handle.
  *
  * The handle can be obtained using any of the RTLdrLoad(), RTLdrOpen()
- * and RTLdrOpenBits() functions.
+ * and RTLdrOpenInMemory() functions.
  *
  * @returns iprt status code.
  * @param   hLdrMod         The loader module handle.
@@ -261,12 +276,13 @@ RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTLDRADDR Bas
 
 /**
  * Gets the size of the loaded image.
- * This is only supported for modules which has been opened using RTLdrOpen() and RTLdrOpenBits().
+ *
+ * This is not necessarily available for images that has been loaded using
+ * RTLdrLoad().
  *
  * @returns image size (in bytes).
- * @returns ~(size_t)0 on if not opened by RTLdrOpen().
+ * @returns ~(size_t)0 on if not available.
  * @param   hLdrMod     Handle to the loader module.
- * @remark  Not supported for RTLdrLoad() images.
  */
 RTDECL(size_t) RTLdrSize(RTLDRMOD hLdrMod);
 
