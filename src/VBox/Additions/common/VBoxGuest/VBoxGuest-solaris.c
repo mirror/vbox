@@ -696,6 +696,8 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
          * which are not really failures that require logging.
          */
         Log((DEVICE_NAME "::IOCtl: VBoxGuestCommonIOCtl failed. Cmd=%#x rc=%d\n", Cmd, rc));
+        if (rc == VERR_PERMISSION_DENIED)   /* RTErrConvertToErrno() below will ring-0 debug assert if we don't do this. */
+            rc = VERR_ACCESS_DENIED;
         rc = RTErrConvertToErrno(rc);
     }
     *pVal = rc;
