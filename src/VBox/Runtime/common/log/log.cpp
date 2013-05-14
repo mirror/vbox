@@ -3258,7 +3258,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 #define CCH_PREFIX_16   CCH_PREFIX_15 + 17
 
 #define CCH_PREFIX      ( CCH_PREFIX_16 )
-                AssertCompile(CCH_PREFIX < 256);
+                { AssertCompile(CCH_PREFIX < 256); }
 
                 /*
                  * Done, figure what we've used and advance the buffer and free size.
