@@ -401,6 +401,30 @@ RTDECL(int) RTDbgCfgQueryString(RTDBGCFG hDbgCfg, RTDBGCFGPROP enmProp, char *ps
  */
 RTDECL(int) RTDbgCfgQueryUInt(RTDBGCFG hDbgCfg, RTDBGCFGPROP enmProp, uint64_t *puValue);
 
+/**
+ * Log callback.
+ *
+ * @param   hDbgCfg         The debug config instance.
+ * @param   iLevel          The message level.
+ * @param   pszMsg          The message.
+ * @param   pvUser          User argument.
+ */
+typedef DECLCALLBACK(void) FNRTDBGCFGLOG(RTDBGCFG hDbgCfg, uint32_t iLevel, const char *pszMsg, void *pvUser);
+/** Pointer to a log callback. */
+typedef FNRTDBGCFGLOG *PFNRTDBGCFGLOG;
+
+/**
+ * Sets the log callback for the configuration.
+ *
+ * This will fail if there is already a log callback present, unless pfnCallback
+ * is NULL.
+ *
+ * @returns IPRT status code.
+ * @param   hDbgCfg             The debugging configuration handle.
+ * @param   pfnCallback         The callback function.  NULL to unset.
+ * @param   pvUser              The user argument.
+ */
+RTDECL(int) RTDbgCfgSetLogCallback(RTDBGCFG hDbgCfg, PFNRTDBGCFGLOG pfnCallback, void *pvUser);
 
 /**
  * Callback used by the RTDbgCfgOpen function to try out a file that was found.
@@ -433,6 +457,8 @@ RTDECL(int) RTDbgCfgOpenDbg(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t 
                             PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
 RTDECL(int) RTDbgCfgOpenDwo(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t uCrc32,
                             PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
+
+
 /** @} */
 
 
