@@ -330,35 +330,16 @@ void UIMachineWindowSeamless::setMask(const QRegion &constRegion)
 # endif /* This code is disabled for a long time already, need analisys... */
     UIMachineWindow::setMask(region);
 #elif defined (Q_WS_MAC)
-# if defined (VBOX_GUI_USE_QUARTZ2D)
+# ifdef VBOX_GUI_USE_QUARTZ2D
     if (vboxGlobal().vmRenderMode() == Quartz2DMode)
     {
         /* If we are using the Quartz2D backend we have to trigger a repaint only.
          * All the magic clipping stuff is done in the paint engine. */
         ::darwinWindowInvalidateShape(m_pMachineView->viewport());
     }
-# endif /* VBOX_GUI_USE_QUARTZ2D */
-# if 0 /* This code is disabled for a long time already, need analisys... */
-    /* This is necessary to avoid the flicker by an mask update.
-     * See http://lists.apple.com/archives/Carbon-development/2001/Apr/msg01651.html for the hint.
-     * There *must* be a better solution. */
-    // if (!region.isEmpty())
-    //     region |= QRect(0, 0, 1, 1);
-    // /* Save the current region for later processing in the darwin event handler. */
-    // mCurrRegion = region;
-    // /* We repaint the screen before the ReshapeCustomWindow command. Unfortunately
-    //  * this command flushes a copy of the backbuffer to the screen after the new
-    //  * mask is set. This leads into a misplaced drawing of the content. Currently
-    //  * no alternative to this and also this is not 100% perfect. */
-    // repaint();
-    // qApp->processEvents();
-    // /* Now force the reshaping of the window. This is definitely necessary. */
-    // ReshapeCustomWindow(reinterpret_cast<WindowPtr>(winId()));
-    // UIMachineWindow::setMask(region);
-    // HIWindowInvalidateShadow(::darwinToWindowRef(mConsole->viewport()));
-# else /* This code is disabled for a long time already, need analisys... */
+# else /* VBOX_GUI_USE_QUARTZ2D */
     UIMachineWindow::setMask(constRegion);
-# endif /* This code is disabled for a long time already, need analisys... */
+# endif /* !VBOX_GUI_USE_QUARTZ2D */
 #else /* !Q_WS_MAC */
     UIMachineWindow::setMask(region);
 #endif
