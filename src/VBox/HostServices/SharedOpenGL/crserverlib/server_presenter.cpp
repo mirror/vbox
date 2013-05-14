@@ -363,7 +363,6 @@ void* CrHlpGetTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLuint idPB
         crStateGetTextureObjectAndImage(pCurCtx, pTexture->target, 0, &pTObj, &pTImg);
 
         GLuint uid = pTObj->hwid;
-        CRASSERT(uid);
         cr_server.head_spu->dispatch_table.BindTexture(pTexture->target, uid);
     }
     else
