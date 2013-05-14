@@ -941,8 +941,8 @@ static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDREN
     SegInfo.fFlags      = 0;
     SegInfo.fProt       = RTMEM_PROT_READ;
     SegInfo.Alignment   = 1;
-    SegInfo.LinkAddress = 0;
-    SegInfo.RVA         = SegInfo.LinkAddress;
+    SegInfo.LinkAddress = pModPe->uImageBase;
+    SegInfo.RVA         = 0;
     SegInfo.offFile     = 0;
     SegInfo.cb          = pModPe->cbHeaders;
     SegInfo.cbFile      = pModPe->cbHeaders;
@@ -980,8 +980,8 @@ static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDREN
         }
         else
         {
-            SegInfo.LinkAddress = pSh->VirtualAddress;
-            SegInfo.RVA         = SegInfo.LinkAddress;
+            SegInfo.LinkAddress = pSh->VirtualAddress + pModPe->uImageBase ;
+            SegInfo.RVA         = pSh->VirtualAddress;
             SegInfo.cbMapped    = RT_ALIGN(SegInfo.cb, SegInfo.Alignment);
             if (i + 1 < pModPe->cSections && !(pSh[1].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
                 SegInfo.cbMapped = pSh[1].VirtualAddress - pSh->VirtualAddress;
@@ -1011,7 +1011,7 @@ static DECLCALLBACK(int) rtldrPE_LinkAddressToSegOffset(PRTLDRMODINTERNAL pMod, 
 {
     PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
 
-    /* Note! LinkAddress == RVA */
+    LinkAddress -= pModPe->uImageBase;
 
     /* Special header segment. */
     if (LinkAddress < pModPe->paSections[0].VirtualAddress)
@@ -1050,9 +1050,11 @@ static DECLCALLBACK(int) rtldrPE_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTLDRA
 {
     PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
 
+    LinkAddress -= pModPe->uImageBase;
     if (LinkAddress > pModPe->cbImage)
         return VERR_LDR_INVALID_LINK_ADDRESS;
     *pRva = LinkAddress;
+
     return VINF_SUCCESS;
 }
 
@@ -1081,7 +1083,8 @@ static DECLCALLBACK(int) rtldrPE_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t
 static DECLCALLBACK(int) rtldrPE_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR Rva,
                                                 uint32_t *piSeg, PRTLDRADDR poffSeg)
 {
-    int rc = rtldrPE_LinkAddressToSegOffset(pMod, Rva, piSeg, poffSeg);
+    PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
+    int rc = rtldrPE_LinkAddressToSegOffset(pMod, Rva + pModPe->uImageBase, piSeg, poffSeg);
     if (RT_FAILURE(rc))
         rc = VERR_LDR_INVALID_RVA;
     return rc;

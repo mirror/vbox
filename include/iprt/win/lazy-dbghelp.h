@@ -46,7 +46,7 @@ static int rtLdrLazyLoadDbgHelp(const char *pszFile, PRTLDRMOD phMod)
 #ifdef RT_ARCH_X86
         rc = RTPathAppend(szPath, sizeof(szPath), "Debugging Tools for Windows (x86)\\dbghelp.dll");
 #else
-        rc = RTPathAppend(szPath, sizeof(szPath), "Debugging Tools for Windows (amd64)\\dbghelp.dll");
+        rc = RTPathAppend(szPath, sizeof(szPath), "Debugging Tools for Windows (x64)\\dbghelp.dll");
 #endif
         if (RTPathExists(szPath))
         {
@@ -59,7 +59,7 @@ static int rtLdrLazyLoadDbgHelp(const char *pszFile, PRTLDRMOD phMod)
     return RTLdrLoad(pszFile, phMod);
 }
 
-RTLDRLAZY_MODULE(dbghelp, "dbghelp.dll");
+RTLDRLAZY_MODULE_EX(dbghelp, "dbghelp.dll", rtLdrLazyLoadDbgHelp);
 
 RTLDRLAZY_FUNC(dbghelp, BOOL, WINAPI, SymInitialize, (HANDLE a1, PCWSTR a2, BOOL a3), (a1, a2, a3), FALSE);
 #undef SymInitialize

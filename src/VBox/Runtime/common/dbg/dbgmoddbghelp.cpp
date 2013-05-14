@@ -344,10 +344,14 @@ static int rtDbgModDbgHelpCopySymbols(PRTDBGMODINT pMod, RTDBGMOD hCnt, HANDLE h
  *                       the container.} */
 static DECLCALLBACK(int) rtDbgModDbgHelpAddSegmentsCallback(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser)
 {
-    RTDBGMOD hCnt = (RTDBGMOD)pvUser;
+    RTDBGMODBGHELPARGS *pArgs = (RTDBGMODBGHELPARGS *)pvUser;
 
     Log(("Segment %.*s: LinkAddress=%#llx RVA=%#llx cb=%#llx\n",
          pSeg->cchName, pSeg->pchName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
+
+    if (!pSeg->RVA)
+        pArgs->uModAddr = pSeg->LinkAddress;
+
     NOREF(hLdrMod);
     char *pszName = (char *)pSeg->pchName;
     if (pszName[pSeg->cchName])
@@ -358,7 +362,7 @@ static DECLCALLBACK(int) rtDbgModDbgHelpAddSegmentsCallback(RTLDRMOD hLdrMod, PC
     }
 
     RTLDRADDR cb = RT_MAX(pSeg->cb, pSeg->cbMapped);
-    return RTDbgModSegmentAdd(hCnt, pSeg->RVA, cb, pszName, 0 /*fFlags*/, NULL);
+    return RTDbgModSegmentAdd(pArgs->hCnt, pSeg->RVA, cb, pszName, 0 /*fFlags*/, NULL);
 }
 
 
@@ -374,59 +378,67 @@ static DECLCALLBACK(int) rtDbgModDbgHelp_TryOpen(PRTDBGMODINT pMod)
         return VERR_DBG_NO_MATCHING_INTERPRETER;
 
     /*
-     * Try load the module into an empty address space.
+     * Create a container for copying the information into.  We do this early
+     * so we can determine the image base address.
      */
-    static uint32_t volatile s_uFakeHandle = 0x3940000;
-    HANDLE hFake;
-    do
-        hFake = (HANDLE)(uintptr_t)ASMAtomicIncU32(&s_uFakeHandle);
-    while (hFake == NULL || hFake == INVALID_HANDLE_VALUE);
-
-    int rc;
-    if (SymInitialize(hFake, NULL /*SearchPath*/, FALSE /*fInvalidProcess*/))
+    RTDBGMOD hCnt;
+    int rc = RTDbgModCreate(&hCnt, pMod->pszName, 0 /*cbSeg*/, 0 /*fFlags*/);
+    if (RT_SUCCESS(rc))
     {
-        SymSetOptions(SYMOPT_LOAD_LINES | SymGetOptions());
-
-        PRTUTF16 pwszDbgFile;
-        rc = RTStrToUtf16(pMod->pszDbgFile, &pwszDbgFile);
+        RTDBGMODBGHELPARGS Args;
+        RT_ZERO(Args);
+        Args.hCnt = hCnt;
+        rc = pMod->pImgVt->pfnEnumSegments(pMod, rtDbgModDbgHelpAddSegmentsCallback, &Args);
         if (RT_SUCCESS(rc))
         {
-            uint64_t uModAddr = SymLoadModuleExW(hFake, NULL /*hFile*/, pwszDbgFile, NULL /*pszModName*/,
-                                                 0 /*uLoadAddr*/, 0 /*cbImage*/, NULL /*pModData*/, 0 /*fFlags*/);
-            if (uModAddr != 0)
+            uint32_t cbImage    = pMod->pImgVt->pfnImageSize(pMod);
+            uint64_t uImageBase = Args.uModAddr ? Args.uModAddr : 0x4000000;
+
+            /*
+             * Try load the module into an empty address space.
+             */
+            static uint32_t volatile s_uFakeHandle = 0x3940000;
+            HANDLE hFake;
+            do
+                hFake = (HANDLE)(uintptr_t)ASMAtomicIncU32(&s_uFakeHandle);
+            while (hFake == NULL || hFake == INVALID_HANDLE_VALUE);
+
+            if (SymInitialize(hFake, NULL /*SearchPath*/, FALSE /*fInvalidProcess*/))
             {
-                /*
-                 * Create a container for copying the information into.
-                 */
-                RTDBGMOD hCnt;
-                rc = RTDbgModCreate(&hCnt, pMod->pszName, 0 /*cbSeg*/, 0 /*fFlags*/);
+                SymSetOptions(SYMOPT_LOAD_LINES | SymGetOptions());
+
+                PRTUTF16 pwszDbgFile;
+                rc = RTStrToUtf16(pMod->pszDbgFile, &pwszDbgFile);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = pMod->pImgVt->pfnEnumSegments(pMod, rtDbgModDbgHelpAddSegmentsCallback, hCnt);
-                    if (RT_SUCCESS(rc))
-                        rc = rtDbgModDbgHelpCopySymbols(pMod, hCnt, hFake, uModAddr);
-                    if (RT_SUCCESS(rc))
-                        rc = rtDbgModDbgHelpCopyLineNumbers(pMod, hCnt, hFake, uModAddr);
-                    if (RT_SUCCESS(rc))
+                    uint64_t uModAddr = SymLoadModuleExW(hFake, NULL /*hFile*/, pwszDbgFile, NULL /*pszModName*/,
+                                                         uImageBase, cbImage, NULL /*pModData*/, 0 /*fFlags*/);
+                    if (uModAddr != 0)
                     {
-                        pMod->pvDbgPriv = hCnt;
-                        pMod->pDbgVt    = &g_rtDbgModVtDbgDbgHelp;
-                        hCnt = NIL_RTDBGMOD;
+                        rc = rtDbgModDbgHelpCopySymbols(pMod, hCnt, hFake, uModAddr);
+                        if (RT_SUCCESS(rc))
+                            rc = rtDbgModDbgHelpCopyLineNumbers(pMod, hCnt, hFake, uModAddr);
+                        if (RT_SUCCESS(rc))
+                        {
+                            pMod->pvDbgPriv = hCnt;
+                            pMod->pDbgVt    = &g_rtDbgModVtDbgDbgHelp;
+                            hCnt = NIL_RTDBGMOD;
+                        }
+
+                        SymUnloadModule64(hFake, uModAddr);
                     }
-                    RTDbgModRelease(hCnt);
+                    else
+                        rc = RTErrConvertFromWin32(GetLastError());
+                    RTUtf16Free(pwszDbgFile);
                 }
 
-                SymUnloadModule64(hFake, uModAddr);
+                BOOL fRc2 = SymCleanup(hFake); Assert(fRc2); NOREF(fRc2);
             }
             else
                 rc = RTErrConvertFromWin32(GetLastError());
-            RTUtf16Free(pwszDbgFile);
         }
-
-        BOOL fRc2 = SymCleanup(hFake); Assert(fRc2); NOREF(fRc2);
+        RTDbgModRelease(hCnt);
     }
-    else
-        rc = RTErrConvertFromWin32(GetLastError());
     return rc;
 }
 

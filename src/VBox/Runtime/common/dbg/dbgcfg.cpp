@@ -1159,9 +1159,9 @@ RTDECL(int) RTDbgCfgSetLogCallback(RTDBGCFG hDbgCfg, PFNRTDBGCFGLOG pfnCallback,
     int rc = RTCritSectRwEnterExcl(&pThis->CritSect);
     if (RT_SUCCESS(rc))
     {
-        if (   pThis->pfnLogCallback != NULL
-            && (   pfnCallback == NULL
-                || pfnCallback == pThis->pfnLogCallback) )
+        if (   pThis->pfnLogCallback == NULL
+            || pfnCallback == NULL
+            || pfnCallback == pThis->pfnLogCallback)
         {
             pThis->pfnLogCallback = NULL;
             pThis->pvLogUser      = NULL;
