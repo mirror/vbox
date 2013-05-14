@@ -195,11 +195,9 @@ static RenderMode vboxGetRenderMode (const char *aModeStr)
 {
     RenderMode mode = InvalidRenderMode;
 
-#if defined (Q_WS_MAC) && defined (VBOX_GUI_USE_QUARTZ2D)
+#if defined(Q_WS_MAC) && defined(VBOX_GUI_USE_QUARTZ2D)
     mode = Quartz2DMode;
-#elif (defined (Q_WS_WIN32) || defined (Q_WS_PM) || defined (Q_WS_X11)) && defined (VBOX_GUI_USE_QIMAGE)
-    mode = QImageMode;
-#elif defined (VBOX_GUI_USE_QIMAGE)
+#elif defined(VBOX_GUI_USE_QIMAGE)
     mode = QImageMode;
 #else
 # error "Cannot determine the default render mode!"
@@ -209,11 +207,11 @@ static RenderMode vboxGetRenderMode (const char *aModeStr)
     {
         if (0) ;
 #ifdef VBOX_GUI_USE_QIMAGE
-        else if (::strcmp (aModeStr, "image") == 0)
+        else if (::strcmp(aModeStr, "image") == 0)
             mode = QImageMode;
 #endif /* VBOX_GUI_USE_QIMAGE */
 #ifdef VBOX_GUI_USE_QUARTZ2D
-        else if (::strcmp (aModeStr, "quartz2d") == 0)
+        else if (::strcmp(aModeStr, "quartz2d") == 0)
             mode = Quartz2DMode;
 #endif /* VBOX_GUI_USE_QUARTZ2D */
     }

@@ -187,9 +187,6 @@ protected:
     /** Return a string consisting of @a base with a suffix for the active
      * virtual monitor.  Used for storing monitor-specific extra data. */
     QString makeExtraDataKeyPerMonitor(QString base) const;
-    /** Returns the current rendering mode.
-     * @note contains special case logic for scale mode. */
-    RenderMode getRenderMode() const;
 
     /* Cross-platforms event processors: */
     bool event(QEvent *pEvent);
@@ -252,7 +249,9 @@ protected:
     friend class UIMachineLogic;
     friend class UIFrameBuffer;
     friend class UIFrameBufferQImage;
+#ifdef VBOX_GUI_USE_QUARTZ2D
     friend class UIFrameBufferQuartz2D;
+#endif /* VBOX_GUI_USE_QUARTZ2D */
     template<class, class, class> friend class VBoxOverlayFrameBuffer;
 };
 

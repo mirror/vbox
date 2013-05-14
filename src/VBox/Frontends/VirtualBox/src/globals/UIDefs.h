@@ -59,7 +59,9 @@ namespace UIDefs
     {
           InvalidRenderMode
         , QImageMode
+#ifdef VBOX_GUI_USE_QUARTZ2D
         , Quartz2DMode
+#endif /* VBOX_GUI_USE_QUARTZ2D */
     };
 
     /* Additional Qt event types: */

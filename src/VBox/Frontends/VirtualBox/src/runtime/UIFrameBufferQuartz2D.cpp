@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#if defined (VBOX_GUI_USE_QUARTZ2D)
+#ifdef VBOX_GUI_USE_QUARTZ2D
 
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include "precomp.h"
@@ -507,5 +507,5 @@ void UIFrameBufferQuartz2D::setView(UIMachineView *pView)
 }
 #endif
 
-#endif /* defined (VBOX_GUI_USE_QUARTZ2D) */
+#endif /* VBOX_GUI_USE_QUARTZ2D */
 

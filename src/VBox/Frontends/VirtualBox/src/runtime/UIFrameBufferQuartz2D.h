@@ -16,12 +16,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef VBOX_GUI_USE_QUARTZ2D
+
 #ifndef ___UIFrameBufferQuartz2D_h___
 #define ___UIFrameBufferQuartz2D_h___
 
 #include <QtGlobal>
-
-#if defined (Q_WS_MAC) && defined (VBOX_GUI_USE_QUARTZ2D)
 
 #include "UIFrameBuffer.h"
 
@@ -90,7 +90,8 @@ private:
     RegionRects * volatile mRegionUnused;
 
 };
-#endif /* Q_WS_MAC && VBOX_GUI_USE_QUARTZ2D */
 
-#endif // !___UIFrameBufferQuartz2D_h___
+#endif /* !___UIFrameBufferQuartz2D_h___ */
+
+#endif /* VBOX_GUI_USE_QUARTZ2D */
 
