@@ -3801,7 +3801,7 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArg)
         if (RT_FAILURE(rc))
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3AsSymbolByName(,,%s,)\n", pArg->u.pszString);
 
-        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%Rptr %s\n", Symbol.Value, Symbol.szName);
+        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%RTptr %s\n", Symbol.Value, Symbol.szName);
     }
     else
     {

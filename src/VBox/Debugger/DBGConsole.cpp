@@ -1049,7 +1049,6 @@ DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "VBoxDbg> ");
         if (RT_SUCCESS(rc))
         {
-
             /*
              * Set debug config log callback.
              */
@@ -1083,7 +1082,6 @@ DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
                 RTDbgCfgRelease(hDbgCfg);
             }
         }
-
     }
     else
         pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\nDBGCCreate error: %Rrc\n", rc);
