@@ -117,7 +117,7 @@ static struct qinit g_vbmsSolRInit =
     NULL                 /* module statistics structure */
 };
 
-/* 
+/*
  * winit: write queue structure for handling messages coming from above.  Above
  * means user space applications: either Guest Additions user space tools or
  * applications reading pointer input.  Messages from the last most likely pass
@@ -511,7 +511,7 @@ int vbmsSolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
 
 
 /**
- * Notification callback, called when the VBoxGuest mouse pointer is moved. 
+ * Notification callback, called when the VBoxGuest mouse pointer is moved.
  * We send a VUID event up to user space.  We may send a miscalculated event
  * if a resolution change is half-way through, but that is pretty much to be
  * expected, so we won't worry about it.
@@ -1091,7 +1091,7 @@ static int vbmsSolDispatchIOCtl(PVBMSSTATE pState, mblk_t *pMBlk)
         case VUIOC:
         {
             unsigned i;
-            
+
             for (i = 0; i < RT_ELEMENTS(g_aVUIDIOCtlDescriptions); ++i)
                 if (g_aVUIDIOCtlDescriptions[i].iCmd == iCmd)
                 {
@@ -1273,7 +1273,7 @@ int vbmsSolHandleTransparentIOCtl(PVBMSSTATE pState, mblk_t *pMBlk,
     }
     return err;
 }
-                 
+
 /**
  * Helper for vbmsSolHandleIOCtl.  This rather complicated-looking
  * code is basically the standard boilerplate for handling any streams IOCtl.
@@ -1287,7 +1287,7 @@ static int vbmsSolHandleIStrIOCtl(PVBMSSTATE pState, mblk_t *pMBlk,
     void *pvData = NULL;
     int err, rc = 0;
     size_t cbData = 0;
-    
+
     LogFlowFunc(("iCmd=0x%x, cbBuffer=%u, b_cont=%p\n",
                  (unsigned)iCmd, cbBuffer, (void *)pMBlk->b_cont));
     if (cbBuffer && !pMBlk->b_cont)
