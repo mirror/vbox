@@ -263,20 +263,24 @@ RTDECL(int) RTLdrOpenInMemory(const char *pszName, uint32_t fFlags, RTLDRARCH en
 {
     LogFlow(("RTLdrOpenInMemory: pszName=%p:{%s} fFlags=%#x enmArch=%d cbImage=%#zu pfnRead=%p pfnDtor=%p pvUser=%p phLdrMod=%p\n",
              pszName, pszName, fFlags, enmArch, cbImage, pfnRead, pfnDtor, pvUser, phLdrMod));
-    AssertMsgReturn(!(fFlags & ~RTLDR_O_VALID_MASK), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(enmArch > RTLDRARCH_INVALID && enmArch < RTLDRARCH_END, ("%d\n", enmArch), VERR_INVALID_PARAMETER);
+
     if (!pfnRead || !pfnDtor)
         AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
-    if (!pfnRead)
-        pfnRead = rtldrRdrMemDefaultReader;
-    else
-        AssertPtrReturn(pfnRead, VERR_INVALID_POINTER);
     if (!pfnDtor)
         pfnDtor = rtldrRdrMemDefaultDtor;
     else
         AssertPtrReturn(pfnRead, VERR_INVALID_POINTER);
-    AssertReturn(cbImage > 0, VERR_INVALID_PARAMETER);
 
+    /* The rest of the validations will call the destructor. */
+    AssertMsgReturnStmt(!(fFlags & ~RTLDR_O_VALID_MASK), ("%#x\n", fFlags),
+                        pfnDtor(pvUser), VERR_INVALID_PARAMETER);
+    AssertMsgReturnStmt(enmArch > RTLDRARCH_INVALID && enmArch < RTLDRARCH_END, ("%d\n", enmArch),
+                        pfnDtor(pvUser), VERR_INVALID_PARAMETER);
+    if (!pfnRead)
+        pfnRead = rtldrRdrMemDefaultReader;
+    else
+        AssertReturnStmt(RT_VALID_PTR(pfnRead), pfnDtor(pvUser), VERR_INVALID_POINTER);
+    AssertReturnStmt(cbImage > 0, pfnDtor(pvUser), VERR_INVALID_PARAMETER);
 
     /*
      * Resolve RTLDRARCH_HOST.
@@ -303,9 +307,13 @@ RTDECL(int) RTLdrOpenInMemory(const char *pszName, uint32_t fFlags, RTLDRARCH en
             LogFlow(("RTLdrOpen: return %Rrc *phLdrMod\n", rc, *phLdrMod));
             return rc;
         }
+
         pReader->pfnDestroy(pReader);
     }
+    else
+        pfnDtor(pvUser),
     *phLdrMod = NIL_RTLDRMOD;
+
     LogFlow(("RTLdrOpen: return %Rrc\n", rc));
     return rc;
 }

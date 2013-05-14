@@ -226,11 +226,15 @@ typedef FNRTLDRRDRMEMDTOR *PFNRTLDRRDRMEMDTOR;
  * @param   pvUser      The user argument or, if any of the callbacks are NULL,
  *                      a pointer to a memory block.
  * @param   phLdrMod    Where to return the module handle.
+ *
+ * @remarks With the exception of invalid @a pfnDtor and/or @a pvUser
+ *          parameters, the pfnDtor methods (or the default one if NULL) will
+ *          always be invoked.  The destruction of pvUser is entirely in the
+ *          hands of this method once it's called.
  */
 RTDECL(int) RTLdrOpenInMemory(const char *pszName, uint32_t fFlags, RTLDRARCH enmArch, size_t cbImage,
                               PFNRTLDRRDRMEMREAD pfnRead, PFNRTLDRRDRMEMDTOR pfnDtor, void *pvUser,
                               PRTLDRMOD phLdrMod);
-
 
 /**
  * Closes a loader module handle.

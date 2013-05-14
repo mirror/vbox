@@ -130,6 +130,7 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
         pMod->Core.u32Magic = RTLDRMOD_MAGIC;
         pMod->Core.eState   = LDR_STATE_LOADED;
         pMod->Core.pOps     = &s_rtldrNativeOps;
+        pMod->Core.pReader  = NULL;
         pMod->hNative       = ~(uintptr_t)0;
 
         /*

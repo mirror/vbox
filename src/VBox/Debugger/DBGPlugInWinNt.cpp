@@ -24,9 +24,10 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
-#include <iprt/string.h>
+#include <iprt/ldr.h>
 #include <iprt/mem.h>
 #include <iprt/stream.h>
+#include <iprt/string.h>
 
 #include "../Runtime/include/internal/ldrMZ.h"  /* ugly */
 #include "../Runtime/include/internal/ldrPE.h"  /* ugly */
@@ -238,6 +239,36 @@ typedef struct DBGDIGGERWINNT
 typedef DBGDIGGERWINNT *PDBGDIGGERWINNT;
 
 
+/**
+ * The WinNT digger's loader reader instance data.
+ */
+typedef struct DBGDIGGERWINNTRDR
+{
+    /** The VM handle (referenced). */
+    PUVM                pUVM;
+    /** The image base. */
+    DBGFADDRESS         ImageAddr;
+    /** The image size. */
+    uint32_t            cbImage;
+    /** Number of entries in the aMappings table. */
+    uint32_t            cMappings;
+    /** Mapping hint. */
+    uint32_t            iHint;
+    /** Mapping file offset to memory offsets, ordered by file offset. */
+    struct
+    {
+        /** The file offset. */
+        uint32_t        offFile;
+        /** The size of this mapping. */
+        uint32_t        cbMem;
+        /** The offset to the memory from the start of the image.  */
+        uint32_t        offMem;
+    } aMappings[1];
+} DBGDIGGERWINNTRDR;
+/** Pointer a WinNT loader reader instance data. */
+typedef DBGDIGGERWINNTRDR *PDBGDIGGERWINNTRDR;
+
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -271,6 +302,82 @@ static const RTUTF16 g_wszKernelNames[][WINNT_KERNEL_BASE_NAME_LEN + 1] =
 {
     { 'n', 't', 'o', 's', 'k', 'r', 'n', 'l', '.', 'e', 'x', 'e' }
 };
+
+
+
+/** @callback_method_impl{PFNRTLDRRDRMEMREAD} */
+static DECLCALLBACK(int) dbgDiggerWinNtRdr_Read(void *pvBuf, size_t cb, size_t off, void *pvUser)
+{
+    PDBGDIGGERWINNTRDR pThis = (PDBGDIGGERWINNTRDR)pvUser;
+
+    uint32_t i = pThis->iHint;
+    if (pThis->aMappings[i].offFile > off)
+    {
+        i = pThis->cMappings;
+        while (i-- > 0)
+            if (off >= pThis->aMappings[i].offFile)
+                break;
+        pThis->iHint = i;
+    }
+
+    while (cb > 0)
+    {
+        uint32_t offNextMap =  i + 1 < pThis->cMappings ? pThis->aMappings[i + 1].offFile : pThis->cbImage;
+        uint32_t offMap     = (uint32_t)off - pThis->aMappings[i].offFile;
+
+        /* Read file bits backed by memory. */
+        if (off < pThis->aMappings[i].cbMem)
+        {
+            uint32_t cbToRead = pThis->aMappings[i].cbMem - offMap;
+            if (cbToRead > cb)
+                cbToRead = (uint32_t)cb;
+
+            DBGFADDRESS Addr = pThis->ImageAddr;
+            DBGFR3AddrAdd(&Addr, pThis->aMappings[i].offMem + offMap);
+
+            int rc = DBGFR3MemRead(pThis->pUVM, 0 /*idCpu*/, &Addr, pvBuf, cbToRead);
+            if (RT_FAILURE(rc))
+                return rc;
+            if (cbToRead == cb)
+                break;
+
+            off  += cbToRead;
+            cb   -= cbToRead;
+            pvBuf = (char *)pvBuf + cbToRead;
+        }
+
+        /* Mind the gap. */
+        if (offNextMap > off)
+        {
+            uint32_t cbZero = offNextMap - (uint32_t)off;
+            if (cbZero > cb)
+            {
+                RT_BZERO(pvBuf, cb);
+                break;
+            }
+
+            RT_BZERO(pvBuf, cbZero);
+            off  += cbZero;
+            cb   -= cbZero;
+            pvBuf = (char *)pvBuf + cbZero;
+        }
+
+        pThis->iHint = ++i;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{PFNRTLDRRDRMEMDTOR} */
+static DECLCALLBACK(void) dbgDiggerWinNtRdr_Dtor(void *pvUser)
+{
+    PDBGDIGGERWINNTRDR pThis = (PDBGDIGGERWINNTRDR)pvUser;
+
+    VMR3ReleaseUVM(pThis->pUVM);
+    pThis->pUVM = NULL;
+    RTMemFree(pvUser);
+}
 
 
 /**
@@ -389,25 +496,56 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
     /*
      * Create the module.
      */
-    bool     fPeImageMod = true;
     RTDBGMOD hMod;
-    int rc = RTDbgModCreateFromPeImage(&hMod, pszName, NULL, cbImageFromHdr, TimeDateStamp, DBGFR3AsGetConfig(pUVM));
+    int rc = RTDbgModCreateFromPeImage(&hMod, pszName, NULL, NIL_RTLDRMOD,
+                                       cbImageFromHdr, TimeDateStamp, DBGFR3AsGetConfig(pUVM));
     if (RT_FAILURE(rc))
     {
-        rc = RTDbgModCreate(&hMod, pszName, cbImage, 0);
-        if (RT_FAILURE(rc))
+        /*
+         * Probably didn't find the image any where, try fake an image
+         * from guest memory.
+         */
+        uint32_t            cMappings = WINNT_UNION(pThis, pHdrs, FileHeader.NumberOfSections) + 3;
+        PDBGDIGGERWINNTRDR  pRdr = (PDBGDIGGERWINNTRDR)RTMemAlloc(RT_OFFSETOF(DBGDIGGERWINNTRDR, aMappings[cMappings]));
+        if (!pRdr)
             return;
-        fPeImageMod = false;
+
+        VMR3RetainUVM(pUVM);
+        pRdr->pUVM          = pUVM;
+        pRdr->ImageAddr     = *pImageAddr;
+        pRdr->cbImage       = cbImageFromHdr;
+        pRdr->cMappings     = 1;
+        pRdr->iHint         = 0;
+        pRdr->aMappings[0].offFile = 0;
+        pRdr->aMappings[0].offMem  =  0;
+        pRdr->aMappings[0].cbMem   = cbImageFromHdr;
+
+        RTLDRMOD hLdrMod;
+        rc = RTLdrOpenInMemory(pszName, RTLDR_O_FOR_DEBUG, RTLDRARCH_WHATEVER, pRdr->cbImage,
+                               dbgDiggerWinNtRdr_Read, dbgDiggerWinNtRdr_Dtor, pRdr,
+                               &hLdrMod);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTDbgModCreateFromPeImage(&hMod, pszName, NULL, hLdrMod,
+                                           cbImageFromHdr, TimeDateStamp, DBGFR3AsGetConfig(pUVM));
+            if (RT_FAILURE(rc))
+                RTLdrClose(hLdrMod);
+        }
+        if (RT_FAILURE(rc))
+        {
+            /*
+             * Final fallback is a container module.
+             */
+            rc = RTDbgModCreate(&hMod, pszName, cbImage, 0);
+            if (RT_FAILURE(rc))
+                return;
+
+            rc = RTDbgModSymbolAdd(hMod, "Headers", 0 /*iSeg*/, 0, cbImage, 0 /*fFlags*/, NULL); AssertRC(rc);
+        }
     }
     rc = RTDbgModSetTag(hMod, DIG_WINNT_MOD_TAG); AssertRC(rc);
 
-    if (fPeImageMod)
-    {
-        rc = RTDbgModSymbolAdd(hMod, "Headers", 0 /*iSeg*/, 0, cbImage, 0 /*fFlags*/, NULL);
-        AssertRC(rc);
-        /** @todo add sections? */
-    }
-
+#if 0
     /*
      * Dig out debug info if possible.  What we're after is the CODEVIEW part.
      */
@@ -433,6 +571,7 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
                 }
         }
     }
+#endif
 
     /*
      * Link the module.

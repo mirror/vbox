@@ -566,6 +566,8 @@ DECLHIDDEN(int) rtDbgModCreateForExports(PRTDBGMODINT pDbgMod);
 DECLHIDDEN(int) rtDbgModDeferredCreate(PRTDBGMODINT pDbgMod, PFNRTDBGMODDEFERRED pfnDeferred, RTUINTPTR cbImage,
                                        RTDBGCFG hDbgCfg, PRTDBGMODDEFERRED *ppDeferred);
 
+DECLHIDDEN(int) rtDbgModLdrOpenFromHandle(PRTDBGMODINT pDbgMod, RTLDRMOD hLdrMod);
+
 /** @} */
 
 RT_C_DECLS_END

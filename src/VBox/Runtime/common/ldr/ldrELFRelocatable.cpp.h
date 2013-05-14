@@ -92,8 +92,6 @@ typedef struct RTLDRMODELF
 {
     /** Core module structure. */
     RTLDRMODINTERNAL        Core;
-    /** Pointer to the reader instance. */
-    PRTLDRREADER            pReader;
     /** Pointer to readonly mapping of the image bits.
      * This mapping is provided by the pReader. */
     const void             *pvBits;
@@ -144,7 +142,7 @@ static int RTLDRELF_NAME(MapBits)(PRTLDRMODELF pModElf, bool fNeedsBits)
     NOREF(fNeedsBits);
     if (pModElf->pvBits)
         return VINF_SUCCESS;
-    int rc = pModElf->pReader->pfnMap(pModElf->pReader, &pModElf->pvBits);
+    int rc = pModElf->Core.pReader->pfnMap(pModElf->Core.pReader, &pModElf->pvBits);
     if (RT_SUCCESS(rc))
     {
         const uint8_t *pu8 = (const uint8_t *)pModElf->pvBits;
@@ -422,12 +420,6 @@ static DECLCALLBACK(int) RTLDRELF_NAME(Close)(PRTLDRMODINTERNAL pMod)
         pModElf->paShdrs = NULL;
     }
 
-    if (pModElf->pReader)
-    {
-        pModElf->pReader->pfnDestroy(pModElf->pReader);
-        pModElf->pReader = NULL;
-    }
-
     pModElf->pvBits = NULL;
 
     return VINF_SUCCESS;
@@ -533,10 +525,10 @@ static DECLCALLBACK(int) RTLDRELF_NAME(GetBits)(PRTLDRMODINTERNAL pMod, void *pv
         case ET_REL:
             break;
         case ET_EXEC:
-            Log(("RTLdrELF: %s: Executable images are not supported yet!\n", pModElf->pReader->pfnLogName(pModElf->pReader)));
+            Log(("RTLdrELF: %s: Executable images are not supported yet!\n", pModElf->Core.pReader->pfnLogName(pModElf->Core.pReader)));
             return VERR_LDRELF_EXEC;
         case ET_DYN:
-            Log(("RTLdrELF: %s: Dynamic images are not supported yet!\n", pModElf->pReader->pfnLogName(pModElf->pReader)));
+            Log(("RTLdrELF: %s: Dynamic images are not supported yet!\n", pModElf->Core.pReader->pfnLogName(pModElf->Core.pReader)));
             return VERR_LDRELF_DYN;
         default: AssertFailedReturn(VERR_BAD_EXE_FORMAT);
     }
@@ -559,12 +551,12 @@ static DECLCALLBACK(int) RTLDRELF_NAME(GetBits)(PRTLDRMODINTERNAL pMod, void *pv
                 case SHT_PROGBITS:
                 default:
                 {
-                    int rc = pModElf->pReader->pfnRead(pModElf->pReader, (uint8_t *)pvBits + paShdrs[iShdr].sh_addr,
-                                                       (size_t)paShdrs[iShdr].sh_size, paShdrs[iShdr].sh_offset);
+                    int rc = pModElf->Core.pReader->pfnRead(pModElf->Core.pReader, (uint8_t *)pvBits + paShdrs[iShdr].sh_addr,
+                                                            (size_t)paShdrs[iShdr].sh_size, paShdrs[iShdr].sh_offset);
                     if (RT_FAILURE(rc))
                     {
                         Log(("RTLdrELF: %s: Read error when reading " FMT_ELF_SIZE " bytes at " FMT_ELF_OFF ", iShdr=%d\n",
-                             pModElf->pReader->pfnLogName(pModElf->pReader),
+                             pModElf->Core.pReader->pfnLogName(pModElf->Core.pReader),
                              paShdrs[iShdr].sh_size, paShdrs[iShdr].sh_offset, iShdr));
                         return rc;
                     }
@@ -586,7 +578,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(Relocate)(PRTLDRMODINTERNAL pMod, void *p
 {
     PRTLDRMODELF    pModElf = (PRTLDRMODELF)pMod;
 #ifdef LOG_ENABLED
-    const char     *pszLogName = pModElf->pReader->pfnLogName(pModElf->pReader);
+    const char     *pszLogName = pModElf->Core.pReader->pfnLogName(pModElf->Core.pReader);
 #endif
     NOREF(OldBaseAddress);
 
@@ -1169,7 +1161,6 @@ static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *p
  * Gets the section header name.
  *
  * @returns pszName.
- * @param   pReader         The loader reader instance.
  * @param   pEhdr           The elf header.
  * @param   offName         The offset of the section header name.
  * @param   pszName         Where to store the name.
@@ -1178,13 +1169,13 @@ static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *p
 const char *RTLDRELF_NAME(GetSHdrName)(PRTLDRMODELF pModElf, Elf_Word offName, char *pszName, size_t cbName)
 {
     RTFOFF off = pModElf->paShdrs[pModElf->Ehdr.e_shstrndx].sh_offset + offName;
-    int rc = pModElf->pReader->pfnRead(pModElf->pReader, pszName, cbName - 1, off);
+    int rc = pModElf->Core.pReader->pfnRead(pModElf->Core.pReader, pszName, cbName - 1, off);
     if (RT_FAILURE(rc))
     {
         /* read by for byte. */
         for (unsigned i = 0; i < cbName; i++, off++)
         {
-            rc = pModElf->pReader->pfnRead(pModElf->pReader, pszName + i, 1, off);
+            rc = pModElf->Core.pReader->pfnRead(pModElf->Core.pReader, pszName + i, 1, off);
             if (RT_FAILURE(rc))
             {
                 pszName[i] = '\0';
@@ -1346,7 +1337,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
 
     pModElf->Core.u32Magic  = RTLDRMOD_MAGIC;
     pModElf->Core.eState    = LDR_STATE_INVALID;
-    pModElf->pReader        = pReader;
+    pModElf->Core.pReader   = pReader;
     //pModElf->pvBits         = NULL;
     //pModElf->Ehdr           = {0};
     //pModElf->paShdrs        = NULL;
