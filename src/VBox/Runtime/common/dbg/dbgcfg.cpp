@@ -40,7 +40,9 @@
 #include <iprt/err.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
-#include <iprt/http.h>
+#ifdef  IPRT_WITH_HTTP
+# include <iprt/http.h>
+#endif
 #include <iprt/list.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
@@ -485,6 +487,7 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
                                       char *pszPath, const char *pszCacheSubDir, PRTPATHSPLIT pSplitFn,
                                       uint32_t fFlags, PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
+#ifdef IPRT_WITH_HTTP
     if (pThis->fFlags & RTDBGCFG_FLAGS_NO_SYM_SRV)
         return VWRN_NOT_FOUND;
 
@@ -549,6 +552,10 @@ static int rtDbgCfgTryDownloadAndOpen(PRTDBGCFGINT pThis, const char *pszServer,
 
     RTHttpDestroy(hHttp);
     return rc;
+
+#else  /* !IPRT_WITH_HTTP */
+    return VWRN_NOT_FOUND;
+#endif /* !IPRT_WITH_HTTP */
 }
 
 

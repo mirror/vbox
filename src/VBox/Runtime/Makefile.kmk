@@ -1245,6 +1245,9 @@ VBoxRT_DEFS                   := $(filter-out RT_NO_GIP,$(RuntimeR3_DEFS)) IN_SU
 ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  VBoxRT_DEFS                  += RT_NO_GIP
 endif
+ifdef VBOX_WITH_LIBCURL
+ VBoxRT_DEFS                  += IPRT_WITH_HTTP
+endif
 VBoxRT_DEFS.$(KBUILD_TYPE)    := $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                := \
 	VBox/VBoxRTDeps.cpp \
