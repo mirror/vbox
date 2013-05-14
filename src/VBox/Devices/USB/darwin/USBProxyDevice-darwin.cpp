@@ -321,7 +321,7 @@ static int usbProxyDarwinRemoveSourceRefFromAllRunLoops(PRTLISTANCHOR pHead,
 {
     AssertPtrReturn(pHead, VERR_INVALID_PARAMETER);
    
-    while (RTListIsEmpty(pHead)) 
+    while (!RTListIsEmpty(pHead)) 
     {
         PRUNLOOPREFLIST pNode = RTListGetFirst(pHead, RUNLOOPREFLIST, List);
         /* XXX: Should Release Reference? */
