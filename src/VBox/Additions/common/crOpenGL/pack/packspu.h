@@ -82,7 +82,8 @@ extern PackSPU pack_spu;
 extern CRmutex _PackMutex;
 extern CRtsd _PackTSD;
 #define GET_THREAD_VAL()  (crGetTSD(&_PackTSD))
-#define GET_THREAD_VAL_ID(_id) (&(pack_spu.thread[(_id) - THREAD_OFFSET_MAGIC]))
+#define GET_THREAD_IDX(_id) ((_id) - THREAD_OFFSET_MAGIC)
+#define GET_THREAD_VAL_ID(_id) (&(pack_spu.thread[GET_THREAD_IDX(_id)]))
 #else
 #define GET_THREAD_VAL()  (&(pack_spu.thread[0]))
 #endif

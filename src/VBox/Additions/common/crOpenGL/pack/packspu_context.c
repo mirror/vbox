@@ -150,7 +150,16 @@ packspu_VBoxConDestroy(GLint con)
 
     crPackDeleteContext(thread->packer);
 
+    if (thread->buffer.pack)
+    {
+        crNetFree(thread->netServer.conn, thread->buffer.pack);
+        thread->buffer.pack = NULL;
+    }
+
     crNetFreeConnection(thread->netServer.conn);
+
+    if (thread->netServer.name)
+        crFree(thread->netServer.name);
 
     pack_spu.numThreads--;
     /*note can't shift the array here, because other threads have TLS references to array elements*/
