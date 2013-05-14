@@ -161,7 +161,7 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
 
     NOREF(uScreenId);
     *pbFinished = FALSE;
-    lock();  /* See comment in setView(). */
+    lock(); /* See comment in setView(). */
     if (m_pMachineView)
         QApplication::postEvent(m_pMachineView,
                                 new UIResizeEvent(uPixelFormat, pVRAM,
@@ -182,7 +182,11 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uW, ULONG uH)
     /* QWidget::update() is NOT thread safe and seems never will be,
      * So we have to post an async event to perform update operation.
      * Later the event will be replaced by the corresponding signal stuff: */
-    QApplication::postEvent(m_pMachineView, new UIRepaintEvent(uX, uY, uW, uH));
+    lock(); /* See comment in setView(). */
+    if (m_pMachineView)
+        QApplication::postEvent(m_pMachineView, new UIRepaintEvent(uX, uY, uW, uH));
+    unlock();
+
     return S_OK;
 }
 
@@ -207,7 +211,7 @@ STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULON
         return E_POINTER;
     *pbSupported = TRUE;
 
-    lock();  /* See comment in setView(). */
+    lock(); /* See comment in setView(). */
     QSize screen;
     if (m_pMachineView)
         screen = m_pMachineView->maxGuestSize();
@@ -258,7 +262,7 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
         reg += rect;
         ++ rects;
     }
-    lock();  /* See comment in setView(). */
+    lock(); /* See comment in setView(). */
     if (m_pMachineView)
         QApplication::postEvent(m_pMachineView, new UISetRegionEvent(reg));
     unlock();
