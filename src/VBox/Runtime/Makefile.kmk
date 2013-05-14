@@ -543,6 +543,7 @@ RuntimeR3_SOURCES += \
 endif
 
 RuntimeR3_SOURCES.win = \
+	common/dbg/dbgmoddbghelp.cpp \
 	generic/cdrom-generic.cpp \
 	generic/RTDirExists-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \

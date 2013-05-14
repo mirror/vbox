@@ -1501,6 +1501,8 @@ RT_C_DECLS_END
 #define VERR_DBG_FILE_MISMATCH                  (-688)
 /** Internal processing error in the debug module reader code. */
 #define VERR_DBG_MOD_IPE                        (-689)
+/** The symbol size was adjusted while adding it. */
+#define VINF_DBG_ADJUSTED_SYM_SIZE              (-690)
 /** @} */
 
 /** @name Request Packet Status Codes.

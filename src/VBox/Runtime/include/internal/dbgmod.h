@@ -553,7 +553,11 @@ typedef RTDBGMODINT *PRTDBGMODINT;
 extern DECLHIDDEN(RTSTRCACHE)           g_hDbgModStrCache;
 extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgDwarf;
 extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgNm;
+#ifdef RT_OS_WINDOWS
+extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgDbgHelp;
+#endif
 extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgDeferred;
+
 extern DECLHIDDEN(RTDBGMODVTIMG const)  g_rtDbgModVtImgLdr;
 extern DECLHIDDEN(RTDBGMODVTIMG const)  g_rtDbgModVtImgDeferred;
 

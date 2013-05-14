@@ -65,6 +65,10 @@ RTLDRLAZY_FUNC(dbghelp, BOOL, WINAPI, SymInitialize, (HANDLE a1, PCWSTR a2, BOOL
 #undef SymInitialize
 #define SymInitialize RTLDRLAZY_FUNC_NAME(dbghelp, SymInitialize)
 
+RTLDRLAZY_FUNC(dbghelp, BOOL, WINAPI, SymCleanup, (HANDLE a1), (a1), FALSE);
+#undef SymCleanup
+#define SymCleanup RTLDRLAZY_FUNC_NAME(dbghelp, SymCleanup)
+
 RTLDRLAZY_FUNC(dbghelp, DWORD, WINAPI, SymGetOptions, (VOID), (), 0);
 #undef SymGetOptions
 #define SymGetOptions RTLDRLAZY_FUNC_NAME(dbghelp, SymGetOptions)
@@ -84,15 +88,33 @@ RTLDRLAZY_FUNC(dbghelp, DWORD64, WINAPI, SymLoadModuleEx,
 #undef SymLoadModuleEx
 #define SymLoadModuleEx RTLDRLAZY_FUNC_NAME(dbghelp, SymLoadModuleEx)
 
+RTLDRLAZY_FUNC(dbghelp, DWORD64, WINAPI, SymLoadModuleExW,
+               (HANDLE a1, HANDLE a2, PCWSTR a3, PCWSTR a4, DWORD64 a5, DWORD a6, PMODLOAD_DATA a7, DWORD a8),
+               (a1, a2, a3, a4, a5, a6, a7, a8), 0);
+#undef SymLoadModuleExW
+#define SymLoadModuleExW RTLDRLAZY_FUNC_NAME(dbghelp, SymLoadModuleExW)
+
+RTLDRLAZY_FUNC(dbghelp, DWORD64, WINAPI, SymUnloadModule64, (HANDLE a1, DWORD64 a2), (a1, a2), 0);
+#undef SymUnloadModule64
+#define SymUnloadModule64 RTLDRLAZY_FUNC_NAME(dbghelp, SymUnloadModule64)
+
 RTLDRLAZY_FUNC(dbghelp, BOOL, WINAPI, SymEnumSymbols,
                (HANDLE a1, DWORD a2, PCSTR a3, PSYM_ENUMERATESYMBOLS_CALLBACK a4, PVOID a5),
                (a1, a2, a3, a4, a5), FALSE);
 #undef SymEnumSymbols
 #define SymEnumSymbols RTLDRLAZY_FUNC_NAME(dbghelp, SymEnumSymbols)
 
+RTLDRLAZY_FUNC(dbghelp, BOOL, WINAPI, SymEnumLinesW,
+               (HANDLE a1, ULONG64 a2, PCWSTR a3, PCWSTR a4, PSYM_ENUMLINES_CALLBACKW a5, PVOID a6),
+               (a1, a2, a3, a4, a5, a6), FALSE);
+#undef SymEnumLinesW
+#define SymEnumLinesW RTLDRLAZY_FUNC_NAME(dbghelp, SymEnumLinesW)
+
 RTLDRLAZY_FUNC(dbghelp, BOOL, WINAPI, SymGetModuleInfo64, (HANDLE a1, DWORD64 a2, PIMAGEHLP_MODULE64 a3), (a1, a2, a3), FALSE);
 #undef SymGetModuleInfo64
 #define SymGetModuleInfo64 RTLDRLAZY_FUNC_NAME(dbghelp, SymGetModuleInfo64)
+
+
 
 
 #endif
