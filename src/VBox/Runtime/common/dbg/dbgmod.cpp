@@ -784,6 +784,15 @@ static DECLCALLBACK(int) rtDbgModFromPeImageOpenCallback(RTDBGCFG hDbgCfg, const
     Assert(pDbgMod->pvDbgPriv == NULL);
 
     /*
+     * Replace the image file name while probing it.
+     */
+    const char *pszNewImgFile = RTStrCacheEnter(g_hDbgModStrCache, pszFilename);
+    if (!pszNewImgFile)
+        return VERR_NO_STR_MEMORY;
+    const char *pszOldImgFile = pDbgMod->pszImgFile;
+    pDbgMod->pszImgFile = pszNewImgFile;
+
+    /*
      * Find an image reader which groks the file.
      */
     int rc = RTSemRWRequestRead(g_hDbgModRWSem, RT_INDEFINITE_WAIT);
@@ -801,69 +810,70 @@ static DECLCALLBACK(int) rtDbgModFromPeImageOpenCallback(RTDBGCFG hDbgCfg, const
             pDbgMod->pImgVt    = NULL;
             Assert(pDbgMod->pvImgPriv == NULL);
         }
-    }
-    RTSemRWReleaseRead(g_hDbgModRWSem);
-    if (RT_FAILURE(rc))
-    {
-        LogFlow(("rtDbgModFromPeImageOpenCallback: Failed %Rrc - %s\n", rc, pszFilename));
-        return rc;
-    }
-
-    /*
-     * Check the deferred info.
-     */
-    RTUINTPTR cbImage = pDbgMod->pImgVt->pfnImageSize(pDbgMod);
-    if (   pDeferred->cbImage == 0
-        || pDeferred->cbImage == cbImage)
-    {
-        uint32_t uTimestamp = pDeferred->u.PeImage.uTimestamp; /** @todo add method for getting the timestamp. */
-        if (   pDeferred->u.PeImage.uTimestamp == 0
-            || pDeferred->u.PeImage.uTimestamp == uTimestamp)
+        RTSemRWReleaseRead(g_hDbgModRWSem);
+        if (RT_SUCCESS(rc))
         {
-            Log(("RTDbgMod: Found matching PE image '%s'\n", pszFilename));
-
             /*
-             * We found the executable image we need, now go find any debug
-             * info associated with it.  For PE images, this is generally
-             * found in an external file, so we do a sweep for that first.
+             * Check the deferred info.
              */
-            rc = rtDbgModOpenDebugInfoExternalToImage(pDbgMod, pDeferred->hDbgCfg);
-            if (RT_SUCCESS(rc))
-                return VINF_CALLBACK_RETURN;
+            RTUINTPTR cbImage = pDbgMod->pImgVt->pfnImageSize(pDbgMod);
+            if (   pDeferred->cbImage == 0
+                || pDeferred->cbImage == cbImage)
+            {
+                uint32_t uTimestamp = pDeferred->u.PeImage.uTimestamp; /** @todo add method for getting the timestamp. */
+                if (   pDeferred->u.PeImage.uTimestamp == 0
+                    || pDeferred->u.PeImage.uTimestamp == uTimestamp)
+                {
+                    Log(("RTDbgMod: Found matching PE image '%s'\n", pszFilename));
 
-            /*
-             * Try open debug info inside the module, falling back on exports.
-             */
-            rc = rtDbgModOpenDebugInfoInsideImage(pDbgMod);
-            if (RT_SUCCESS(rc))
-                return VINF_CALLBACK_RETURN;
-            /** @todo search for external files that could contain more useful info, like
-             *        .map files?? No? */
-            rc = rtDbgModCreateForExports(pDbgMod);
-            if (RT_SUCCESS(rc))
-                return VINF_CALLBACK_RETURN;
+                    /*
+                     * We found the executable image we need, now go find any
+                     * debug info associated with it.  For PE images, this is
+                     * generally found in an external file, so we do a sweep
+                     * for that first.
+                     *
+                     * Then try open debug inside the module, and finally
+                     * falling back on exports.
+                     */
+                    rc = rtDbgModOpenDebugInfoExternalToImage(pDbgMod, pDeferred->hDbgCfg);
+                    if (RT_FAILURE(rc))
+                        rc = rtDbgModOpenDebugInfoInsideImage(pDbgMod);
+                    if (RT_FAILURE(rc))
+                        rc = rtDbgModCreateForExports(pDbgMod);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTStrCacheRelease(g_hDbgModStrCache, pszOldImgFile);
+                        return VINF_CALLBACK_RETURN;
+                    }
 
-            /* Something bad happened, just give up. */
-            Log(("rtDbgModFromPeImageOpenCallback: rtDbgModCreateForExports failed: %Rrc\n", rc));
+                    /* Something bad happened, just give up. */
+                    Log(("rtDbgModFromPeImageOpenCallback: rtDbgModCreateForExports failed: %Rrc\n", rc));
+                }
+                else
+                {
+                    LogFlow(("rtDbgModFromPeImageOpenCallback: uTimestamp mismatch (found %#x, expected %#x) - %s\n",
+                             uTimestamp, pDeferred->u.PeImage.uTimestamp, pszFilename));
+                    rc = VERR_DBG_FILE_MISMATCH;
+                }
+            }
+            else
+            {
+                LogFlow(("rtDbgModFromPeImageOpenCallback: cbImage mismatch (found %#x, expected %#x) - %s\n",
+                         cbImage, pDeferred->cbImage, pszFilename));
+                rc = VERR_DBG_FILE_MISMATCH;
+            }
+
+            pDbgMod->pImgVt->pfnClose(pDbgMod);
+            pDbgMod->pImgVt    = NULL;
+            pDbgMod->pvImgPriv = NULL;
         }
         else
-        {
-            LogFlow(("rtDbgModFromPeImageOpenCallback: uTimestamp mismatch (found %#x, expected %#x) - %s\n",
-                     uTimestamp, pDeferred->u.PeImage.uTimestamp, pszFilename));
-            rc = VERR_DBG_FILE_MISMATCH;
-        }
-    }
-    else
-    {
-        LogFlow(("rtDbgModFromPeImageOpenCallback: cbImage mismatch (found %#x, expected %#x) - %s\n",
-                 cbImage, pDeferred->cbImage, pszFilename));
-        rc = VERR_DBG_FILE_MISMATCH;
+            LogFlow(("rtDbgModFromPeImageOpenCallback: Failed %Rrc - %s\n", rc, pszFilename));
     }
 
-    pDbgMod->pImgVt->pfnClose(pDbgMod);
-    pDbgMod->pImgVt    = NULL;
-    pDbgMod->pvImgPriv = NULL;
-
+    /* Restore image name. */
+    pDbgMod->pszImgFile = pszOldImgFile;
+    RTStrCacheRelease(g_hDbgModStrCache, pszNewImgFile);
     return rc;
 }
 

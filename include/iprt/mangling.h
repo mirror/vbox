@@ -598,6 +598,7 @@
 # define RTHeapSimpleRelocate                           RT_MANGLER(RTHeapSimpleRelocate)
 # define RTHeapSimpleSize                               RT_MANGLER(RTHeapSimpleSize)
 # define RTHttpGetFile                                  RT_MANGLER(RTHttpGetFile)
+# define RTHttpUseSystemProxySettings                   RT_MANGLER(RTHttpUseSystemProxySettings)
 # define RTIsoFsClose                                   RT_MANGLER(RTIsoFsClose)
 # define RTIsoFsExtractFile                             RT_MANGLER(RTIsoFsExtractFile)
 # define RTIsoFsGetFileInfo                             RT_MANGLER(RTIsoFsGetFileInfo)
