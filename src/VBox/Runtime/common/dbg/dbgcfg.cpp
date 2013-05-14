@@ -76,18 +76,6 @@ typedef RTDBGCFGSTR *PRTDBGCFGSTR;
 
 
 /**
- * Log callback.
- *
- * @param   hDbgCfg         The debug config instance.
- * @param   iLevel          The message level.
- * @param   pszMsg          The message.
- * @param   pvUser          User argument.
- */
-typedef DECLCALLBACK(int) FNRTDBGCFGLOG(RTDBGCFG hDbgCfg, uint32_t iLevel, const char *pszMsg, void *pvUser);
-/** Pointer to a log callback. */
-typedef FNRTDBGCFGLOG *PFNRTDBGCFGLOG;
-
-/**
  * Configuration instance.
  */
 typedef struct RTDBGCFGINT
@@ -1162,6 +1150,33 @@ RTDECL(int) RTDbgCfgOpenDwo(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t 
 }
 
 
+RTDECL(int) RTDbgCfgSetLogCallback(RTDBGCFG hDbgCfg, PFNRTDBGCFGLOG pfnCallback, void *pvUser)
+{
+    PRTDBGCFGINT pThis = hDbgCfg;
+    RTDBGCFG_VALID_RETURN_RC(pThis, VERR_INVALID_HANDLE);
+    AssertPtrNullReturn(pfnCallback, VERR_INVALID_POINTER);
+
+    int rc = RTCritSectRwEnterExcl(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        if (   pThis->pfnLogCallback != NULL
+            && (   pfnCallback == NULL
+                || pfnCallback == pThis->pfnLogCallback) )
+        {
+            pThis->pfnLogCallback = NULL;
+            pThis->pvLogUser      = NULL;
+            ASMCompilerBarrier(); /* paranoia */
+            pThis->pvLogUser      = pvUser;
+            pThis->pfnLogCallback = pfnCallback;
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_ACCESS_DENIED;
+        RTCritSectRwLeaveExcl(&pThis->CritSect);
+    }
+
+    return rc;
+}
 
 
 /**

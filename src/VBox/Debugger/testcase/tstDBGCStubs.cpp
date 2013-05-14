@@ -133,6 +133,10 @@ VMMR3DECL(int) DBGFR3ModuleLoad(PUVM pUVM, const char *pszFilename, RTGCUINTPTR 
 {
     return VERR_INTERNAL_ERROR;
 }
+VMMR3DECL(RTDBGCFG) DBGFR3AsGetConfig(PUVM pUVM)
+{
+    return NIL_RTDBGCFG;
+}
 VMMR3DECL(int) DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hAS, const char *pszFilename, const char *pszModName, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags)
 {
     return VERR_INTERNAL_ERROR;

@@ -785,6 +785,15 @@ static int dbgcProcessLog(PDBGC pDbgc)
     return 0;
 }
 
+/** @callback_method_impl{FNRTDBGCFGLOG} */
+static DECLCALLBACK(void) dbgcDbgCfgLogCallback(RTDBGCFG hDbgCfg, uint32_t iLevel, const char *pszMsg, void *pvUser)
+{
+    /** @todo Add symbol noise setting.  */
+    NOREF(hDbgCfg); NOREF(iLevel);
+    PDBGC pDbgc = (PDBGC)pvUser;
+    pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "%s", pszMsg);
+}
+
 
 /**
  * Run the debugger console.
@@ -1038,15 +1047,47 @@ DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
         if (pVM)
             dbgcPlugInAutoLoad(pDbgc);
         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "VBoxDbg> ");
+        if (RT_SUCCESS(rc))
+        {
+
+            /*
+             * Set debug config log callback.
+             */
+            RTDBGCFG    hDbgCfg = DBGFR3AsGetConfig(pUVM);
+            if (   hDbgCfg != NIL_RTDBGCFG
+                && RTDbgCfgRetain(hDbgCfg) != UINT32_MAX)
+            {
+                int rc2 = RTDbgCfgSetLogCallback(hDbgCfg, dbgcDbgCfgLogCallback, pDbgc);
+                if (RT_FAILURE(rc2))
+                {
+                    hDbgCfg = NIL_RTDBGCFG;
+                    RTDbgCfgRelease(hDbgCfg);
+                }
+            }
+            else
+                hDbgCfg = NIL_RTDBGCFG;
+
+
+            /*
+             * Run the debugger main loop.
+             */
+            rc = dbgcRun(pDbgc);
+
+
+            /*
+             * Remove debug config log callback.
+             */
+            if (hDbgCfg != NIL_RTDBGCFG)
+            {
+                RTDbgCfgSetLogCallback(hDbgCfg, NULL, NULL);
+                RTDbgCfgRelease(hDbgCfg);
+            }
+        }
+
     }
     else
         pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "\nDBGCCreate error: %Rrc\n", rc);
 
-    /*
-     * Run the debugger main loop.
-     */
-    if (RT_SUCCESS(rc))
-        rc = dbgcRun(pDbgc);
 
     /*
      * Cleanup console debugger session.
