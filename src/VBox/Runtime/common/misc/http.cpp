@@ -203,7 +203,7 @@ RTR3DECL(int) RTHttpSetProxy(RTHTTP hHttp, const char *pcszProxy, uint32_t uPort
     return VINF_SUCCESS;
 }
 
-RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, uint32_t cHeaders, const char *pcszHeaders[])
+RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, size_t cHeaders, const char * const *papszHeaders)
 {
     PRTHTTPINTERNAL pHttpInt = hHttp;
     RTHTTP_VALID_RETURN(pHttpInt);
@@ -217,8 +217,8 @@ RTR3DECL(int) RTHttpSetHeaders(RTHTTP hHttp, uint32_t cHeaders, const char *pcsz
     }
 
     struct curl_slist *pHeaders = NULL;
-    for (unsigned i = 0; i < cHeaders; i++)
-        pHeaders = curl_slist_append(pHeaders, pcszHeaders[i]);
+    for (size_t i = 0; i < cHeaders; i++)
+        pHeaders = curl_slist_append(pHeaders, papszHeaders[i]);
 
     pHttpInt->pHeaders = pHeaders;
     int rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_HTTPHEADER, pHeaders);
@@ -304,51 +304,16 @@ RTR3DECL(int) RTHttpSetCAFile(RTHTTP hHttp, const char *pcszCAFile)
     return VINF_SUCCESS;
 }
 
-RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
+
+/**
+ * Figures out the IPRT status code for a GET.
+ *
+ * @returns IPRT status code.
+ * @param   pHttpInt            HTTP instance.
+ * @param   rcCurl              What curl returned.
+ */
+static int rtHttpGetCalcStatus(PRTHTTPINTERNAL pHttpInt, int rcCurl)
 {
-    PRTHTTPINTERNAL pHttpInt = hHttp;
-    RTHTTP_VALID_RETURN(pHttpInt);
-
-    pHttpInt->fAbort = false;
-
-    int rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_URL, pcszUrl);
-    if (CURL_FAILED(rcCurl))
-        return VERR_INVALID_PARAMETER;
-
-#if 0
-    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_VERBOSE, 1);
-    if (CURL_FAILED(rcCurl))
-        return VERR_INVALID_PARAMETER;
-#endif
-
-    const char *pcszCAFile = "/etc/ssl/certs/ca-certificates.crt";
-    if (pHttpInt->pcszCAFile)
-        pcszCAFile = pHttpInt->pcszCAFile;
-    if (RTFileExists(pcszCAFile))
-    {
-        rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_CAINFO, pcszCAFile);
-        if (CURL_FAILED(rcCurl))
-            return VERR_INTERNAL_ERROR;
-    }
-
-    RTHTTPMEMCHUNK chunk = { NULL, 0 };
-    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_WRITEFUNCTION, &rtHttpWriteData);
-    if (CURL_FAILED(rcCurl))
-        return VERR_INTERNAL_ERROR;
-    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_WRITEDATA, (void*)&chunk);
-    if (CURL_FAILED(rcCurl))
-        return VERR_INTERNAL_ERROR;
-    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSFUNCTION, &rtHttpProgress);
-    if (CURL_FAILED(rcCurl))
-        return VERR_INTERNAL_ERROR;
-    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSDATA, (void*)pHttpInt);
-    if (CURL_FAILED(rcCurl))
-        return VERR_INTERNAL_ERROR;
-    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_NOPROGRESS, (long)0);
-    if (CURL_FAILED(rcCurl))
-        return VERR_INTERNAL_ERROR;
-
-    rcCurl = curl_easy_perform(pHttpInt->pCurl);
     int rc = VERR_INTERNAL_ERROR;
     if (rcCurl == CURLE_OK)
     {
@@ -407,7 +372,141 @@ RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
         }
     }
 
+    return rc;
+}
+
+RTR3DECL(int) RTHttpGet(RTHTTP hHttp, const char *pcszUrl, char **ppszResponse)
+{
+    PRTHTTPINTERNAL pHttpInt = hHttp;
+    RTHTTP_VALID_RETURN(pHttpInt);
+
+    pHttpInt->fAbort = false;
+
+    int rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_URL, pcszUrl);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INVALID_PARAMETER;
+
+#if 0
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_VERBOSE, 1);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INVALID_PARAMETER;
+#endif
+
+    const char *pcszCAFile = "/etc/ssl/certs/ca-certificates.crt";
+    if (pHttpInt->pcszCAFile)
+        pcszCAFile = pHttpInt->pcszCAFile;
+    if (RTFileExists(pcszCAFile))
+    {
+        rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_CAINFO, pcszCAFile);
+        if (CURL_FAILED(rcCurl))
+            return VERR_INTERNAL_ERROR;
+    }
+
+    RTHTTPMEMCHUNK chunk = { NULL, 0 };
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_WRITEFUNCTION, &rtHttpWriteData);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INTERNAL_ERROR;
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_WRITEDATA, (void*)&chunk);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INTERNAL_ERROR;
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSFUNCTION, &rtHttpProgress);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INTERNAL_ERROR;
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSDATA, (void*)pHttpInt);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INTERNAL_ERROR;
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_NOPROGRESS, (long)0);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INTERNAL_ERROR;
+
+    rcCurl = curl_easy_perform(pHttpInt->pCurl);
+    int rc = rtHttpGetCalcStatus(pHttpInt, rcCurl);
     *ppszResponse = chunk.pszMem;
 
     return rc;
 }
+
+
+static size_t rtHttpWriteDataToFile(void *pvBuf, size_t cb, size_t n, void *pvUser)
+{
+    size_t cbAll = cb * n;
+    RTFILE hFile = (RTFILE)(intptr_t)pvUser;
+
+    size_t cbWritten = 0;
+    int rc = RTFileWrite(hFile, pvBuf, cbAll, &cbWritten);
+    if (RT_SUCCESS(rc))
+        return cbWritten;
+    return 0;
+}
+
+
+RTR3DECL(int) RTHttpGetFile(RTHTTP hHttp, const char *pszUrl, const char *pszDstFile)
+{
+    PRTHTTPINTERNAL pHttpInt = hHttp;
+    RTHTTP_VALID_RETURN(pHttpInt);
+
+    /*
+     * Set up the request.
+     */
+    pHttpInt->fAbort = false;
+
+    int rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_URL, pszUrl);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INVALID_PARAMETER;
+
+#if 0
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_VERBOSE, 1);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INVALID_PARAMETER;
+#endif
+
+    const char *pcszCAFile = "/etc/ssl/certs/ca-certificates.crt";
+    if (pHttpInt->pcszCAFile)
+        pcszCAFile = pHttpInt->pcszCAFile;
+    if (RTFileExists(pcszCAFile))
+    {
+        rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_CAINFO, pcszCAFile);
+        if (CURL_FAILED(rcCurl))
+            return VERR_INTERNAL_ERROR;
+    }
+
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_WRITEFUNCTION, &rtHttpWriteDataToFile);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INTERNAL_ERROR;
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSFUNCTION, &rtHttpProgress);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INTERNAL_ERROR;
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_PROGRESSDATA, (void*)pHttpInt);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INTERNAL_ERROR;
+    rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_NOPROGRESS, (long)0);
+    if (CURL_FAILED(rcCurl))
+        return VERR_INTERNAL_ERROR;
+
+    /*
+     * Open the output file.
+     */
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pszDstFile, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_READWRITE);
+    if (RT_SUCCESS(rc))
+    {
+        rcCurl = curl_easy_setopt(pHttpInt->pCurl, CURLOPT_WRITEDATA, (void *)(uintptr_t)hFile);
+        if (!CURL_FAILED(rcCurl))
+        {
+            /*
+             * Perform the request.
+             */
+            rcCurl = curl_easy_perform(pHttpInt->pCurl);
+            rc = rtHttpGetCalcStatus(pHttpInt, rcCurl);
+        }
+        else
+            rc = VERR_INTERNAL_ERROR;
+
+        int rc2 = RTFileClose(hFile);
+        if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+

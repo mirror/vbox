@@ -149,7 +149,7 @@ int dbgfR3AsInit(PUVM pUVM)
     /*
      * Create the debugging config instance and set it up.
      */
-    rc = RTDbgCfgCreate(&pUVM->dbgf.s.hDbgCfg, NULL);
+    rc = RTDbgCfgCreate(&pUVM->dbgf.s.hDbgCfg, NULL, true /*fNativePaths*/);
     AssertRCReturn(rc, rc);
 
     static struct
