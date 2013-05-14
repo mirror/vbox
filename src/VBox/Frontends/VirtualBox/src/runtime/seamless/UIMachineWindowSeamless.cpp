@@ -356,6 +356,8 @@ void UIMachineWindowSeamless::setMask(const QRegion &constRegion)
     // ReshapeCustomWindow(reinterpret_cast<WindowPtr>(winId()));
     // UIMachineWindow::setMask(region);
     // HIWindowInvalidateShadow(::darwinToWindowRef(mConsole->viewport()));
+# else /* This code is disabled for a long time already, need analisys... */
+    UIMachineWindow::setMask(constRegion);
 # endif /* This code is disabled for a long time already, need analisys... */
 #else /* !Q_WS_MAC */
     UIMachineWindow::setMask(region);
