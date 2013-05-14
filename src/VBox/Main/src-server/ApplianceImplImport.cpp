@@ -599,26 +599,39 @@ STDMETHODIMP Appliance::Interpret()
                 {
                     const ovf::VirtualDisk &hd = itVD->second;
                     /* Get the associated disk image */
-                    const ovf::DiskImage &di = m->pReader->m_mapDisks[hd.strDiskId];
+                    ovf::DiskImage di;
+                    std::map<RTCString, ovf::DiskImage>::iterator foundDisk;
+
+                    foundDisk = m->pReader->m_mapDisks.find(hd.strDiskId);
+                    if (foundDisk == m->pReader->m_mapDisks.end())
+                        continue;
+                    else
+                    {
+                        di = foundDisk->second;
+                    }
 
                     // @todo:
                     //  - figure out all possible vmdk formats we also support
                     //  - figure out if there is a url specifier for vhd already
                     //  - we need a url specifier for the vdi format
-                    if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
-                        || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized", Utf8Str::CaseInsensitive)
-                        || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
-                        || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
-                       )
+                    if (!di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", 
+                                                Utf8Str::CaseInsensitive)
+                        || !di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized",
+                                Utf8Str::CaseInsensitive)
+                        || !di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed",
+                                Utf8Str::CaseInsensitive)
+                        || !di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed",
+                                Utf8Str::CaseInsensitive)
+                    )
                     {
                         /* If the href is empty use the VM name as filename */
                         Utf8Str strFilename = di.strHref;
                         if (!strFilename.length())
-                            strFilename = Utf8StrFmt("%s.vmdk", nameVBox.c_str());
+                            //strFilename = Utf8StrFmt("%s.vmdk", nameVBox.c_str());
+                            strFilename = Utf8StrFmt("%s.vmdk", hd.strDiskId.c_str());
 
-                        Utf8Str strTargetPath = Utf8Str(strMachineFolder)
-                            .append(RTPATH_DELIMITER)
-                            .append(di.strHref);
+                        Utf8Str strTargetPath = Utf8Str(strMachineFolder);
+                        strTargetPath.append(RTPATH_DELIMITER).append(di.strHref);
                         searchUniqueDiskImageFilePath(strTargetPath);
 
                         /* find the description for the hard disk controller
@@ -640,6 +653,42 @@ STDMETHODIMP Appliance::Interpret()
                                            strTargetPath,
                                            di.ulSuggestedSizeMB,
                                            strExtraConfig);
+                    }//url specifier for ISO
+                    else if (!di.strFormat.compare("http://www.ecma-international.org/publications/standards/Ecma-119.htm",
+                            Utf8Str::CaseInsensitive))
+                    {
+                        /* If the href is empty use the VM name as filename */
+                        Utf8Str strFilename = di.strHref;
+                        if (!strFilename.length())
+                            strFilename = Utf8StrFmt("%s.iso", hd.strDiskId.c_str());
+
+                        Utf8Str strTargetPath = Utf8Str(strMachineFolder)
+                            .append(RTPATH_DELIMITER)
+                            .append(di.strHref);
+                        searchUniqueDiskImageFilePath(strTargetPath);
+
+                        /* find the description for the hard disk controller
+                         * that has the same ID as hd.idController */
+                        const VirtualSystemDescriptionEntry *pController;
+                        if (!(pController = pNewDesc->findControllerFromID(hd.idController)))
+                            throw setError(E_FAIL,
+                                           tr("Cannot find disk controller with OVF instance ID %RI32 to which disk \"%s\" sh     ould be attached"),
+                                           hd.idController,
+                                           di.strHref.c_str());
+
+                        /* controller to attach to, and the bus within that controller */
+                        Utf8StrFmt strExtraConfig("controller=%RI16;channel=%RI16",
+                                                  pController->ulIndex,
+                                                  hd.ulAddressOnParent);
+                        pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
+                                           hd.strDiskId,
+                                           di.strHref,
+                                           strTargetPath,
+                                           di.ulSuggestedSizeMB,
+                                           strExtraConfig);
+                    }//url specifier for VHD
+                    else if (!di.strFormat.compare("http://go.microsoft.com/fwlink/?LinkId=137171", Utf8Str::CaseInsensitive))
+                    {
                     }
                     else
                         throw setError(VBOX_E_FILE_ERROR,
@@ -1986,6 +2035,10 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
     /* Get the system properties. */
     SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
 
+    const Utf8Str &strSourceOVF = di.strHref;
+    /* Construct source file path */
+    Utf8StrFmt strSrcFilePath("%s%c%s", stack.strSourceDir.c_str(), RTPATH_DELIMITER, strSourceOVF.c_str());
+
     /* First of all check if the path is an UUID. If so, the user like to
      * import the disk into an existing path. This is useful for iSCSI for
      * example. */
@@ -2033,73 +2086,113 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
 
         /* Create an IMedium object. */
         pTargetHD.createObject();
-        rc = pTargetHD->init(mVirtualBox,
-                             strTrgFormat,
-                             strTargetPath,
-                             Guid::Empty /* media registry: none yet */);
-        if (FAILED(rc)) throw rc;
 
-        /* Now create an empty hard disk. */
-        rc = mVirtualBox->CreateHardDisk(NULL,
-                                         Bstr(strTargetPath).raw(),
-                                         ComPtr<IMedium>(pTargetHD).asOutParam());
-        if (FAILED(rc)) throw rc;
+        /*CD/DVD case*/
+        if (strTrgFormat.compare("RAW", Utf8Str::CaseInsensitive) == 0)
+        {
+            /* copy ISO image to the destination folder*/
+            vrc = RTFileCopy(strSrcFilePath.c_str(), strTargetPath.c_str());
+
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Could not copy image %s to the destination folder '%s'"),
+                               strSrcFilePath.c_str(),
+                               strTargetPath.c_str());
+
+            void *pvTmpBuf = 0;
+            size_t cbSize = 0;
+
+            /* Read the ISO file into a memory buffer */
+            vrc = ShaReadBuf(strSrcFilePath.c_str(), &pvTmpBuf, &cbSize, pCallbacks, pStorage);
+            if ( RT_FAILURE(vrc) || !pvTmpBuf)
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Could not read ISO file '%s' (%Rrc)"),
+                               RTPathFilename(strSrcFilePath.c_str()), vrc);
+
+            /* Advance to the next operation. */
+            stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"),
+                                            RTPathFilename(strSrcFilePath.c_str())).raw(),
+                                            di.ulSuggestedSizeMB);//operation's weight, as set up with the IProgress origi
+        }
+        else/* HDD case*/
+        {
+            rc = pTargetHD->init(mVirtualBox,
+                                 strTrgFormat,
+                                 strTargetPath,
+                                 Guid::Empty /* media registry: none yet */);
+            if (FAILED(rc)) throw rc;
+
+            /* Now create an empty hard disk. */
+            rc = mVirtualBox->CreateHardDisk(Bstr(strTrgFormat).raw(),
+                                             Bstr(strTargetPath).raw(),
+                                             ComPtr<IMedium>(pTargetHD).asOutParam());
+            if (FAILED(rc)) throw rc;
+
+            /* If strHref is empty we have to create a new file. */
+            if (strSourceOVF.isEmpty())
+            {
+                com::SafeArray<MediumVariant_T>  mediumVariant;
+                mediumVariant.push_back(MediumVariant_Standard);
+                /* Create a dynamic growing disk image with the given capacity. */
+                rc = pTargetHD->CreateBaseStorage(di.iCapacity / _1M, ComSafeArrayAsInParam(mediumVariant), ComPtr<IProgress>(pProgress).asOutParam());
+                if (FAILED(rc)) throw rc;
+
+                /* Advance to the next operation. */
+                stack.pProgress->SetNextOperation(BstrFmt(tr("Creating disk image '%s'"), strTargetPath.c_str()).raw(),
+                                                  di.ulSuggestedSizeMB);     // operation's weight, as set up with the IProgress originally
+            }
+            else
+            {
+                /* We need a proper source format description */
+                ComObjPtr<MediumFormat> srcFormat;
+                /* Which format to use? */
+                Utf8Str strSrcFormat = "VDI";
+
+                if ( !di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse",
+                        Utf8Str::CaseInsensitive)
+                    || !di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized",
+                            Utf8Str::CaseInsensitive)
+                    || !di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed",
+                            Utf8Str::CaseInsensitive)
+                    || !di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed",
+                            Utf8Str::CaseInsensitive)
+                   )
+                {
+                    strSrcFormat = "VMDK";
+                }
+                else if (!di.strFormat.compare("http://go.microsoft.com/fwlink/?LinkId=137171",
+                                     Utf8Str::CaseInsensitive))
+                {
+                    strSrcFormat = "VHD";
+                }
+
+                srcFormat = pSysProps->mediumFormat(strSrcFormat);
+                if (srcFormat.isNull())
+                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                   tr("Could not find a valid medium format for the source disk '%s'"),
+                                   RTPathFilename(strSrcFilePath.c_str()));
+
+                /* Clone the source disk image */
+                ComObjPtr<Medium> nullParent;
+                rc = pTargetHD->importFile(strSrcFilePath.c_str(),
+                                           srcFormat,
+                                           MediumVariant_Standard,
+                                           pCallbacks, pStorage,
+                                           nullParent,
+                                           pProgress);
+                if (FAILED(rc)) throw rc;
+
+                /* Advance to the next operation. */
+                stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), RTPathFilename(strSrcFilePath.c_str())).raw(),
+                                                  di.ulSuggestedSizeMB);// operation's weight, as set up with the IProgress originally);
+            }
+
+            /* Now wait for the background disk operation to complete; this throws
+             * HRESULTs on error. */
+            ComPtr<IProgress> pp(pProgress);
+            waitForAsyncProgress(stack.pProgress, pp);
+        }
     }
-
-    const Utf8Str &strSourceOVF = di.strHref;
-    /* Construct source file path */
-    Utf8StrFmt strSrcFilePath("%s%c%s", stack.strSourceDir.c_str(), RTPATH_DELIMITER, strSourceOVF.c_str());
-
-    /* If strHref is empty we have to create a new file. */
-    if (strSourceOVF.isEmpty())
-    {
-        com::SafeArray<MediumVariant_T>  mediumVariant;
-        mediumVariant.push_back(MediumVariant_Standard);
-        /* Create a dynamic growing disk image with the given capacity. */
-        rc = pTargetHD->CreateBaseStorage(di.iCapacity / _1M, ComSafeArrayAsInParam(mediumVariant), ComPtr<IProgress>(pProgress).asOutParam());
-        if (FAILED(rc)) throw rc;
-
-        /* Advance to the next operation. */
-        stack.pProgress->SetNextOperation(BstrFmt(tr("Creating disk image '%s'"), strTargetPath.c_str()).raw(),
-                                          di.ulSuggestedSizeMB);     // operation's weight, as set up with the IProgress originally
-    }
-    else
-    {
-        /* We need a proper source format description */
-        ComObjPtr<MediumFormat> srcFormat;
-        /* Which format to use? */
-        Utf8Str strSrcFormat = "VDI";
-        if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
-            || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized", Utf8Str::CaseInsensitive)
-            || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
-            || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
-           )
-            strSrcFormat = "VMDK";
-        srcFormat = pSysProps->mediumFormat(strSrcFormat);
-        if (srcFormat.isNull())
-            throw setError(VBOX_E_NOT_SUPPORTED,
-                           tr("Could not find a valid medium format for the source disk '%s'"),
-                           RTPathFilename(strSrcFilePath.c_str()));
-
-        /* Clone the source disk image */
-        ComObjPtr<Medium> nullParent;
-        rc = pTargetHD->importFile(strSrcFilePath.c_str(),
-                                   srcFormat,
-                                   MediumVariant_Standard,
-                                   pCallbacks, pStorage,
-                                   nullParent,
-                                   pProgress);
-        if (FAILED(rc)) throw rc;
-
-        /* Advance to the next operation. */
-        stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), RTPathFilename(strSrcFilePath.c_str())).raw(),
-                                          di.ulSuggestedSizeMB);     // operation's weight, as set up with the IProgress originally);
-    }
-
-    /* Now wait for the background disk operation to complete; this throws
-     * HRESULTs on error. */
-    ComPtr<IProgress> pp(pProgress);
-    waitForAsyncProgress(stack.pProgress, pp);
 
     /* Add the newly create disk path + a corresponding digest the our list for
      * later manifest verification. */
@@ -2503,54 +2596,6 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 stack.llHardDiskAttachments.push_back(mhda);
             }
 
-            // CD-ROMs next
-            for (std::list<VirtualSystemDescriptionEntry*>::const_iterator jt = vsdeCDROM.begin();
-                 jt != vsdeCDROM.end();
-                 ++jt)
-            {
-                // for now always attach to secondary master on IDE controller;
-                // there seems to be no useful information in OVF where else to
-                // attach it (@todo test with latest versions of OVF software)
-
-                // find the IDE controller
-                const ovf::HardDiskController *pController = NULL;
-                for (ovf::ControllersMap::const_iterator kt = vsysThis.mapControllers.begin();
-                     kt != vsysThis.mapControllers.end();
-                     ++kt)
-                {
-                    if (kt->second.system == ovf::HardDiskController::IDE)
-                    {
-                        pController = &kt->second;
-                        break;
-                    }
-                }
-
-                if (!pController)
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("OVF wants a CD-ROM drive but cannot find IDE controller, which is required in this version of VirtualBox"));
-
-                // this is for rollback later
-                MyHardDiskAttachment mhda;
-                mhda.pMachine = pNewMachine;
-
-                convertDiskAttachmentValues(*pController,
-                                            2,     // interpreted as secondary master
-                                            mhda.controllerType,        // Bstr
-                                            mhda.lControllerPort,
-                                            mhda.lDevice);
-
-                Log(("Attaching CD-ROM to port %d on device %d\n", mhda.lControllerPort, mhda.lDevice));
-
-                rc = sMachine->AttachDevice(mhda.controllerType.raw(),
-                                            mhda.lControllerPort,
-                                            mhda.lDevice,
-                                            DeviceType_DVD,
-                                            NULL);
-                if (FAILED(rc)) throw rc;
-
-                stack.llHardDiskAttachments.push_back(mhda);
-            } // end for (itHD = avsdeHDs.begin();
-
             rc = sMachine->SaveSettings();
             if (FAILED(rc)) throw rc;
 
@@ -2605,6 +2650,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 const ovf::VirtualDisk &ovfVdisk = itVirtualDisk->second;
 
                 ComObjPtr<Medium> pTargetHD;
+
                 importOneDiskImage(ovfDiskImage,
                                    vsdeHD->strVboxCurrent,
                                    pTargetHD,
@@ -2632,12 +2678,39 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 Log(("Attaching disk %s to port %d on device %d\n", vsdeHD->strVboxCurrent.c_str(), mhda.lControllerPort, mhda.lDevice));
 
-                rc = sMachine->AttachDevice(mhda.controllerType.raw(),    // wstring name
-                                            mhda.lControllerPort,          // long controllerPort
-                                            mhda.lDevice,           // long device
-                                            DeviceType_HardDisk,    // DeviceType_T type
-                                            pTargetHD);
-                if (FAILED(rc)) throw rc;
+                int ifISO = 0;
+                ifISO = ovfDiskImage.strFormat.compare("http://www.ecma-international.org/publications/standards/Ecma-119.htm",
+                                                       Utf8Str::CaseInsensitive);
+                if ( ifISO != 0)
+                {
+                    rc = sMachine->AttachDevice(mhda.controllerType.raw(),    // wstring name
+                                                mhda.lControllerPort,          // long controllerPort
+                                                mhda.lDevice,           // long device
+                                                DeviceType_HardDisk,    // DeviceType_T type
+                                                pTargetHD);
+
+                    if (FAILED(rc)) throw rc;
+                }
+                else
+                {
+                    ComPtr<IMedium> dvdImage(pTargetHD);
+
+                    rc = mVirtualBox->OpenMedium(Bstr(vsdeHD->strVboxCurrent).raw(),
+                                                 DeviceType_DVD,
+                                                 AccessMode_ReadWrite,
+                                                 false,
+                                                 dvdImage.asOutParam());
+
+                    if (FAILED(rc)) throw rc;
+
+                    rc = sMachine->AttachDevice(mhda.controllerType.raw(),    // wstring name
+                                                mhda.lControllerPort,          // long controllerPort
+                                                mhda.lDevice,           // long device
+                                                DeviceType_DVD,    // DeviceType_T type
+                                                dvdImage);
+                    if (FAILED(rc)) throw rc;
+
+                }
 
                 stack.llHardDiskAttachments.push_back(mhda);
 
@@ -2952,11 +3025,34 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                                        pCallbacks,
                                        pStorage);
 
-                    // ... and replace the old UUID in the machine config with the one of
-                    // the imported disk that was just created
                     Bstr hdId;
-                    rc = pTargetHD->COMGETTER(Id)(hdId.asOutParam());
-                    if (FAILED(rc)) throw rc;
+                    int ifISO = 0;
+                    ifISO = di.strFormat.compare("http://www.ecma-international.org/publications/standards/Ecma-119.htm",
+                                                           Utf8Str::CaseInsensitive);
+                    if ( ifISO == 0)
+                    {
+                        ComPtr<IMedium> dvdImage(pTargetHD);
+
+                        rc = mVirtualBox->OpenMedium(Bstr(vsdeTargetHD->strVboxCurrent).raw(),
+                                                     DeviceType_DVD,
+                                                     AccessMode_ReadWrite,
+                                                     false,
+                                                     dvdImage.asOutParam());
+
+                        if (FAILED(rc)) throw rc;
+
+                        // ... and replace the old UUID in the machine config with the one of
+                        // the imported disk that was just created
+                        rc = dvdImage->COMGETTER(Id)(hdId.asOutParam());
+                        if (FAILED(rc)) throw rc;
+                    }
+                    else
+                    {
+                        // ... and replace the old UUID in the machine config with the one of
+                        // the imported disk that was just created
+                        rc = pTargetHD->COMGETTER(Id)(hdId.asOutParam());
+                        if (FAILED(rc)) throw rc;
+                    }
 
                     d.uuid = hdId;
 
