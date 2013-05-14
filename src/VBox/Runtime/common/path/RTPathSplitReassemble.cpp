@@ -53,16 +53,14 @@ RTDECL(int) RTPathSplitReassemble(PRTPATHSPLIT pSplit, uint32_t fFlags, char *ps
     char chSlash;
     switch (fFlags & RTPATH_STR_F_STYLE_MASK)
     {
-#if PATH_STYLE == RTPATH_STR_F_STYLE_DOS
         case RTPATH_STR_F_STYLE_HOST:
-#endif
+            chSlash = RTPATH_SLASH;
+            break;
+
         case RTPATH_STR_F_STYLE_DOS:
             chSlash = '\\';
             break;
 
-#if PATH_STYLE == RTPATH_STR_F_STYLE_UNIX
-        case RTPATH_STR_F_STYLE_HOST:
-#endif
         case RTPATH_STR_F_STYLE_UNIX:
             chSlash = '/';
             break;
