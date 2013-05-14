@@ -4031,6 +4031,46 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                     /* the simplest case: restore the whole attachment
                      * and return, nothing else to do */
                     mMediaData->mAttachments.push_back(pAttachTemp);
+
+                    /* Reattach the medium to the VM. */
+                    if (fHotplug || fSilent)
+                    {
+                        mediumLock.release();
+                        treeLock.release();
+                        alock.release();
+
+                        MediumLockList *pMediumLockList(new MediumLockList());
+
+                        rc = medium->createMediumLockList(true /* fFailIfInaccessible */,
+                                                          true /* fMediumLockWrite */,
+                                                          NULL,
+                                                          *pMediumLockList);
+                        alock.acquire();
+                        if (FAILED(rc))
+                            delete pMediumLockList;
+                        else
+                        {
+                            mData->mSession.mLockedMedia.Unlock();
+                            alock.release();
+                            rc = mData->mSession.mLockedMedia.Insert(pAttachTemp, pMediumLockList);
+                            mData->mSession.mLockedMedia.Lock();
+                            alock.acquire();
+                        }
+                        alock.release();
+
+                        if (SUCCEEDED(rc))
+                        {
+                            rc = onStorageDeviceChange(pAttachTemp, FALSE /* aRemove */, fSilent);
+                            /* Remove lock list in case of error. */
+                            if (FAILED(rc))
+                            {
+                                mData->mSession.mLockedMedia.Unlock();
+                                mData->mSession.mLockedMedia.Remove(pAttachTemp);
+                                mData->mSession.mLockedMedia.Lock();
+                            }
+                        }
+                    }
+
                     return S_OK;
                 }
 
@@ -4090,6 +4130,46 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                             /* the simplest case: restore the whole attachment
                              * and return, nothing else to do */
                             mMediaData->mAttachments.push_back(*it);
+
+                            /* Reattach the medium to the VM. */
+                            if (fHotplug || fSilent)
+                            {
+                                mediumLock.release();
+                                treeLock.release();
+                                alock.release();
+
+                                MediumLockList *pMediumLockList(new MediumLockList());
+
+                                rc = medium->createMediumLockList(true /* fFailIfInaccessible */,
+                                                                  true /* fMediumLockWrite */,
+                                                                  NULL,
+                                                                  *pMediumLockList);
+                                alock.acquire();
+                                if (FAILED(rc))
+                                    delete pMediumLockList;
+                                else
+                                {
+                                    mData->mSession.mLockedMedia.Unlock();
+                                    alock.release();
+                                    rc = mData->mSession.mLockedMedia.Insert(pAttachTemp, pMediumLockList);
+                                    mData->mSession.mLockedMedia.Lock();
+                                    alock.acquire();
+                                }
+                                alock.release();
+
+                                if (SUCCEEDED(rc))
+                                {
+                                    rc = onStorageDeviceChange(pAttachTemp, FALSE /* aRemove */, fSilent);
+                                    /* Remove lock list in case of error. */
+                                    if (FAILED(rc))
+                                    {
+                                        mData->mSession.mLockedMedia.Unlock();
+                                        mData->mSession.mLockedMedia.Remove(pAttachTemp);
+                                        mData->mSession.mLockedMedia.Lock();
+                                    }
+                                }
+                            }
+
                             return S_OK;
                         }
                         else if (    foundIt == oldAtts.end()
