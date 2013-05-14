@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,59 +23,66 @@
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Local includes */
+/* Qt includes: */
+# include <QPainter>
+# include <QApplication>
+
+/* GUI includes: */
 # include "UIFrameBufferQImage.h"
 # include "UIMachineView.h"
 # include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 # include "UISession.h"
 
-/* Global includes */
-# include <QPainter>
-# include <QApplication>
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/** @class UIFrameBufferQImage
- *
- *  The UIFrameBufferQImage class is a class that implements the IFrameBuffer
- *  interface and uses QImage as the direct storage for VM display data. QImage
- *  is then converted to QPixmap and blitted to the console view widget.
- */
 UIFrameBufferQImage::UIFrameBufferQImage(UIMachineView *pMachineView)
     : UIFrameBuffer(pMachineView)
 {
-    /* Initialize the framebuffer the first time */
+    /* Initialize the framebuffer: */
     UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, 640, 480);
     resizeEvent(&event);
 }
 
-/** @note This method is called on EMT from under this object's lock */
 STDMETHODIMP UIFrameBufferQImage::NotifyUpdate(ULONG uX, ULONG uY, ULONG uW, ULONG uH)
 {
-    /* We're not on the GUI thread and update() isn't thread safe in
-     * Qt 4.3.x on the Win, Qt 3.3.x on the Mac (4.2.x is),
-     * on Linux (didn't check Qt 4.x there) and probably on other
-     * non-DOS platforms, so post the event instead. */
+    /* QWidget::update() is not thread safe and seems never will be,
+     * So we have to post an async event to perform update operation.
+     * Later the event will be replaced by the corresponding signal stuff: */
     QApplication::postEvent(m_pMachineView, new UIRepaintEvent(uX, uY, uW, uH));
-
     return S_OK;
 }
 
 void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
 {
-    /* on mode switch the paint event may come while the view is null (before the new view gets set)
-     * this is seen on Windows hosts with 3D enabled,
-     * ignore paint events in that case */
+    /* On mode switch the enqueued paint event may still come
+     * while the view is already null (before the new view gets set),
+     * ignore paint event in that case. */
     if (!m_pMachineView)
         return;
-    /* If the machine is NOT in 'running' state,
-     * the link between framebuffer and video memory
-     * is broken, we should go fallback now... */
-    if (m_bUsesGuestVRAM &&
-        !m_pMachineView->uisession()->isRunning() &&
-        /* Online snapshotting: */
-        m_pMachineView->uisession()->machineState() != KMachineState_Saving)
+
+    /* If the machine is NOT in 'running', 'paused' or 'saving' state,
+     * the link between the framebuffer and the video memory is broken.
+     * We should go fallback in that case.
+     * We should acquire actual machine-state to exclude
+     * situations when the state was changed already but
+     * GUI didn't received event about that or didn't processed it yet. */
+    KMachineState machineState = m_pMachineView->uisession()->session().GetMachine().GetState();
+    if (   m_bUsesGuestVRAM
+        /* running */
+        && machineState != KMachineState_Running
+        && machineState != KMachineState_Teleporting
+        && machineState != KMachineState_LiveSnapshotting
+        /* paused */
+        && machineState != KMachineState_Paused
+        && machineState != KMachineState_TeleportingPausedVM
+        /* saving */
+        && machineState != KMachineState_Saving
+        )
         goFallback();
 
     /* Scaled image by default is empty: */
@@ -92,9 +99,8 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
     /* Choose required image: */
     QImage *pSourceImage = scaledImage.isNull() ? &m_img : &scaledImage;
 
-    /* Apply image-size restriction: */
+    /* Get clipping rectangle: */
     const QRect &r = pEvent->rect().intersected(pSourceImage->rect());
-    /* Some outdated rectangle during processing UIResizeEvent */
     if (r.isEmpty())
         return;
 
@@ -102,10 +108,11 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
     LogFlowFunc (("%dx%d-%dx%d (img=%dx%d)\n", r.x(), r.y(), r.width(), r.height(), img.width(), img.height()));
 #endif
 
+    /* Create painter: */
     QPainter painter(m_pMachineView->viewport());
     if ((ulong)r.width() < m_width * 2 / 3)
     {
-        /* This method is faster for narrow updates */
+        /* This method is faster for narrow updates: */
         m_PM = QPixmap::fromImage(pSourceImage->copy(r.x() + m_pMachineView->contentsX(),
                                                      r.y() + m_pMachineView->contentsY(),
                                                      r.width(), r.height()));
@@ -113,7 +120,7 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
     }
     else
     {
-        /* This method is faster for wide updates */
+        /* This method is faster for wide updates: */
         m_PM = QPixmap::fromImage(QImage(pSourceImage->scanLine(r.y() + m_pMachineView->contentsY()),
                                          pSourceImage->width(), r.height(), pSourceImage->bytesPerLine(),
                                          QImage::Format_RGB32));
@@ -130,20 +137,20 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
                   pEvent->width(), pEvent->height()));
 #endif
 
+    /* Remember new width/height: */
     m_width = pEvent->width();
     m_height = pEvent->height();
 
+    /* Check if we support the pixel format and can use the guest VRAM directly: */
     bool bRemind = false;
     bool bFallback = false;
     ulong bitsPerLine = pEvent->bytesPerLine() * 8;
-
-    /* check if we support the pixel format and can use the guest VRAM directly */
     if (pEvent->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB)
     {
         QImage::Format format;
         switch (pEvent->bitsPerPixel())
         {
-            /* 32-, 8- and 1-bpp are the only depths supported by QImage */
+            /* 32-, 8- and 1-bpp are the only depths supported by QImage: */
             case 32:
                 format = QImage::Format_RGB32;
                 break;
@@ -156,7 +163,7 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
                 bRemind = true;
                 break;
             default:
-                format = QImage::Format_Invalid; /* set it to something so gcc keeps quiet. */
+                format = QImage::Format_Invalid;
                 bRemind = true;
                 bFallback = true;
                 break;
@@ -165,46 +172,47 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
         if (!bFallback)
         {
             /* QImage only supports 32-bit aligned scan lines... */
-            Assert ((pEvent->bytesPerLine() & 3) == 0);
+            Assert((pEvent->bytesPerLine() & 3) == 0);
             bFallback = ((pEvent->bytesPerLine() & 3) != 0);
         }
         if (!bFallback)
         {
             /* ...and the scan lines ought to be a whole number of pixels. */
-            Assert ((bitsPerLine & (pEvent->bitsPerPixel() - 1)) == 0);
+            Assert((bitsPerLine & (pEvent->bitsPerPixel() - 1)) == 0);
             bFallback = ((bitsPerLine & (pEvent->bitsPerPixel() - 1)) != 0);
         }
         if (!bFallback)
         {
-            Assert (bitsPerLine / pEvent->bitsPerPixel() >= m_width);
-            bFallback = RT_BOOL (bitsPerLine / pEvent->bitsPerPixel() < m_width);
+            /* Make sure constraints are also passed: */
+            Assert(bitsPerLine / pEvent->bitsPerPixel() >= m_width);
+            bFallback = RT_BOOL(bitsPerLine / pEvent->bitsPerPixel() < m_width);
         }
         if (!bFallback)
         {
-            m_img = QImage ((uchar *) pEvent->VRAM(), m_width, m_height, bitsPerLine / 8, format);
+            /* Finally compose image using VRAM directly: */
+            m_img = QImage((uchar *)pEvent->VRAM(), m_width, m_height, bitsPerLine / 8, format);
             m_uPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
             m_bUsesGuestVRAM = true;
         }
     }
     else
-    {
         bFallback = true;
-    }
 
+    /* Fallback if requested: */
     if (bFallback)
-    {
         goFallback();
-    }
 
+    /* Remind if requested: */
     if (bRemind)
         msgCenter().remindAboutWrongColorDepth(pEvent->bitsPerPixel(), 32);
 }
 
 void UIFrameBufferQImage::goFallback()
 {
-    /* We don't support either the pixel format or the color depth;
-     * or the machine is in the state which breaks link between
-     * the framebuffer and the actual video-memory: */
+    /* We calling for fallback when we:
+     * 1. don't support either the pixel format or the color depth;
+     * 2. or the machine is in the state which breaks link between
+     *    the framebuffer and the actual video-memory: */
     m_img = QImage(m_width, m_height, QImage::Format_RGB32);
     m_img.fill(0);
     m_uPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
