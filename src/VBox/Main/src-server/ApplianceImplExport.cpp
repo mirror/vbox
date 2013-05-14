@@ -323,9 +323,8 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
             Utf8Str strLocation;
             LONG64  llSize = 0;
 
-            if (    deviceType == DeviceType_HardDisk
-                 && pMedium
-               )
+            if (deviceType == DeviceType_HardDisk
+                 && pMedium)
             {
                 Bstr bstrLocation;
                 rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
@@ -357,7 +356,39 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
                 rc = pBaseMedium->COMGETTER(Size)(&llSize);
                 if (FAILED(rc)) throw rc;
             }
+            else if (deviceType == DeviceType_DVD
+                      && pMedium)
+            {
+                Bstr bstrLocation;
+                rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
+                if (FAILED(rc)) throw rc;
+                strLocation = bstrLocation;
 
+                // find the source's base medium for two things:
+                // 1) we'll use its name to determine the name of the target disk, which is readable,
+                //    as opposed to the UUID filename of a differencing image, if pMedium is one
+                // 2) we need the size of the base image so we can give it to addEntry(), and later
+                //    on export, the progress will be based on that (and not the diff image)
+                ComPtr<IMedium> pBaseMedium;
+                rc = pMedium->COMGETTER(Base)(pBaseMedium.asOutParam());
+                        // returns pMedium if there are no diff images
+                if (FAILED(rc)) throw rc;
+
+                Bstr bstrBaseName;
+                rc = pBaseMedium->COMGETTER(Name)(bstrBaseName.asOutParam());
+                if (FAILED(rc)) throw rc;
+
+                Utf8Str strTargetName = Utf8Str(locInfo.strPath).stripPath().stripExt();
+                strTargetVmdkName = Utf8StrFmt("%s-disk%d.iso", strTargetName.c_str(), ++pAppliance->m->cDisks);
+
+                // force reading state, or else size will be returned as 0
+                MediumState_T ms;
+                rc = pBaseMedium->RefreshState(&ms);
+                if (FAILED(rc)) throw rc;
+
+                rc = pBaseMedium->COMGETTER(Size)(&llSize);
+                if (FAILED(rc)) throw rc;
+            }
             // and how this translates to the virtual system
             int32_t lControllerVsys = 0;
             LONG lChannelVsys;
@@ -434,10 +465,10 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
 
                 case DeviceType_DVD:
                     pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM,
-                                       strEmpty,   // disk ID
-                                       strEmpty,   // OVF value
-                                       strEmpty, // vbox value
-                                       1,           // ulSize
+                                       strTargetVmdkName,   // disk ID
+                                       strTargetVmdkName,   // OVF value
+                                       strLocation, // vbox value
+                                       (uint32_t)(llSize / _1M),// ulSize
                                        strExtra);
                 break;
 
@@ -804,16 +835,42 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
         const Utf8Str &strSrcFilePath = pDiskEntry->strVboxCurrent;
         Bstr bstrSrcFilePath(strSrcFilePath);
 
+        //skip empty Medium. There are no information to add into section <References> or <DiskSection>
+        if (strSrcFilePath.isEmpty())
+            continue;
+
         // Do NOT check here whether the file exists. FindMedium will figure
         // that out, and filesystem-based tests are simply wrong in the
         // general case (think of iSCSI).
 
         // We need some info from the source disks
         ComPtr<IMedium> pSourceDisk;
+        //DeviceType_T deviceType = DeviceType_HardDisk;// by default
 
         Log(("Finding source disk \"%ls\"\n", bstrSrcFilePath.raw()));
-        HRESULT rc = mVirtualBox->OpenMedium(bstrSrcFilePath.raw(), DeviceType_HardDisk, AccessMode_ReadWrite, FALSE /* fForceNewUuid */,  pSourceDisk.asOutParam());
-        if (FAILED(rc)) throw rc;
+
+        HRESULT rc;
+
+        if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
+        {
+            rc = mVirtualBox->OpenMedium(bstrSrcFilePath.raw(),
+                                                 DeviceType_HardDisk,
+                                                 AccessMode_ReadWrite,
+                                                 FALSE /* fForceNewUuid */,
+                                                 pSourceDisk.asOutParam());
+            if (FAILED(rc))
+                throw rc;
+        }
+        else if (pDiskEntry->type == VirtualSystemDescriptionType_CDROM)//may be, this is CD/DVD
+        {
+            rc = mVirtualBox->OpenMedium(bstrSrcFilePath.raw(),
+                                         DeviceType_DVD,
+                                         AccessMode_ReadOnly,
+                                         FALSE,
+                                         pSourceDisk.asOutParam());
+            if (FAILED(rc))
+                throw rc;
+        }
 
         Bstr uuidSource;
         rc = pSourceDisk->COMGETTER(Id)(uuidSource.asOutParam());
@@ -829,7 +886,7 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
         strTargetFilePath.append(strTargetFileNameOnly);
 
         // We are always exporting to VMDK stream optimized for now
-        Bstr bstrSrcFormat = L"VMDK";
+        //Bstr bstrSrcFormat = L"VMDK";//not used
 
         diskList.push_back(strTargetFilePath);
 
@@ -861,12 +918,22 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
         pelmDisk->setAttribute("ovf:capacity", Utf8StrFmt("%RI64", cbCapacity).c_str());
         pelmDisk->setAttribute("ovf:diskId", strDiskID);
         pelmDisk->setAttribute("ovf:fileRef", strFileRef);
-        pelmDisk->setAttribute("ovf:format",
-                               (enFormat == ovf::OVFVersion_0_9)
-                               ?  "http://www.vmware.com/specifications/vmdk.html#sparse"      // must be sparse or ovftool chokes
-                               :  "http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized"
-                               // correct string as communicated to us by VMware (public bug #6612)
-                              );
+
+        if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)//deviceType == DeviceType_HardDisk
+        {
+            pelmDisk->setAttribute("ovf:format",
+                                   (enFormat == ovf::OVFVersion_0_9)
+                                   ?  "http://www.vmware.com/specifications/vmdk.html#sparse"      // must be sparse or ovftool ch
+                                   :  "http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized"
+                                   // correct string as communicated to us by VMware (public bug #6612)
+                                  );
+        }
+        else //pDiskEntry->type == VirtualSystemDescriptionType_CDROM, deviceType == DeviceType_DVD
+        {
+            pelmDisk->setAttribute("ovf:format",
+                                   "http://www.ecma-international.org/publications/standards/Ecma-119.htm"
+                                  );
+        }
 
         // add the UUID of the newly target image to the OVF disk element, but in the
         // vbox: namespace since it's not part of the standard
@@ -1378,12 +1445,30 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                 break;
 
                 case VirtualSystemDescriptionType_CDROM:
+                    /*  <Item>
+                            <rasd:Caption>cdrom1</rasd:Caption>
+                            <rasd:InstanceId>8</rasd:InstanceId>
+                            <rasd:ResourceType>15</rasd:ResourceType>
+                            <rasd:HostResource>/disk/cdrom1</rasd:HostResource>
+                            <rasd:Parent>4</rasd:Parent>
+                            <rasd:AddressOnParent>0</rasd:AddressOnParent>
+                        </Item> */
                     if (uLoop == 2)
                     {
+                        //uint32_t cDisks = stack.mapDisks.size();
+                        Utf8Str strDiskID = Utf8StrFmt("iso%RI32", ++cDVDs);
+
                         strDescription = "CD-ROM Drive";
-                        strCaption = Utf8StrFmt("cdrom%RI32", ++cDVDs);     // OVFTool starts with 1
+                        strCaption = Utf8StrFmt("cdrom%RI32", cDVDs);     // OVFTool starts with 1
                         type = ovf::ResourceType_CDDrive; // 15
                         lAutomaticAllocation = 1;
+
+                        //skip empty Medium. There are no information to add into section <References> or <DiskSection>
+                        if (desc.strVboxCurrent.isNotEmpty())
+                        {
+                            // the following references the "<Disks>" XML block
+                            strHostResource = Utf8StrFmt("/disk/%s", strDiskID.c_str());
+                        }
 
                         // controller=<index>;channel=<c>
                         size_t pos1 = desc.strExtraConfigCurrent.find("controller=");
@@ -1413,6 +1498,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                             throw setError(VBOX_E_NOT_SUPPORTED,
                                             tr("Missing or bad extra config string in DVD drive medium: \"%s\""), desc.strExtraConfigCurrent.c_str());
 
+                        stack.mapDisks[strDiskID] = &desc;
                         // there is no DVD drive map to update because it is
                         // handled completely with this entry.
                     }
@@ -1579,7 +1665,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
         // write the machine config to the vbox:Machine element
         pConfig->buildMachineXML(*pelmVBoxMachine,
                                    settings::MachineConfigFile::BuildMachineXML_WriteVboxVersionAttribute
-                                 | settings::MachineConfigFile::BuildMachineXML_SkipRemovableMedia
+                                 /*| settings::MachineConfigFile::BuildMachineXML_SkipRemovableMedia*/
                                  | settings::MachineConfigFile::BuildMachineXML_SuppressSavedState,
                                         // but not BuildMachineXML_IncludeSnapshots nor BuildMachineXML_MediaRegistry
                                  pllElementsWithUuidAttributes);
@@ -1788,12 +1874,16 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
         }
 
         // We need a proper format description
+        ComObjPtr<MediumFormat> formatTemp;
+
         ComObjPtr<MediumFormat> format;
         // Scope for the AutoReadLock
         {
             SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
             AutoReadLock propsLock(pSysProps COMMA_LOCKVAL_SRC_POS);
             // We are always exporting to VMDK stream optimized for now
+            formatTemp = pSysProps->mediumFormatFromExtension("iso");
+
             format = pSysProps->mediumFormat("VMDK");
             if (format.isNull())
                 throw setError(VBOX_E_NOT_SUPPORTED,
@@ -1811,6 +1901,10 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             // source path: where the VBox image is
             const Utf8Str &strSrcFilePath = pDiskEntry->strVboxCurrent;
 
+            //skip empty Medium. In common, It's may be empty CD/DVD
+            if (strSrcFilePath.isEmpty())
+                continue;
+
             // Do NOT check here whether the file exists. findHardDisk will
             // figure that out, and filesystem-based tests are simply wrong
             // in the general case (think of iSCSI).
@@ -1819,8 +1913,21 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             ComObjPtr<Medium> pSourceDisk;
 
             Log(("Finding source disk \"%s\"\n", strSrcFilePath.c_str()));
-            rc = mVirtualBox->findHardDiskByLocation(strSrcFilePath, true, &pSourceDisk);
-            if (FAILED(rc)) throw rc;
+
+            if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
+            {
+                rc = mVirtualBox->findHardDiskByLocation(strSrcFilePath, true, &pSourceDisk);
+                if (FAILED(rc)) throw rc;
+            }
+            else//may be CD or DVD
+            {
+                rc = mVirtualBox->findDVDOrFloppyImage(DeviceType_DVD,
+                                                       NULL,
+                                                       strSrcFilePath,
+                                                       true,
+                                                       &pSourceDisk);
+                if (FAILED(rc)) throw rc;
+            }
 
             Bstr uuidSource;
             rc = pSourceDisk->COMGETTER(Id)(uuidSource.asOutParam());
@@ -1849,8 +1956,27 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                                                    pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally
 
                 // create a flat copy of the source disk image
-                rc = pSourceDisk->exportFile(strTargetFilePath.c_str(), format, MediumVariant_VmdkStreamOptimized, pIfIo, pStorage, pProgress2);
-                if (FAILED(rc)) throw rc;
+                if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
+                {
+                    rc = pSourceDisk->exportFile(strTargetFilePath.c_str(), 
+                                                 format, 
+                                                 MediumVariant_VmdkStreamOptimized, 
+                                                 pIfIo,
+                                                 pStorage, 
+                                                 pProgress2);
+                    if (FAILED(rc)) throw rc;
+                }
+                else
+                {
+                    //copy/clone CD/DVD image
+                    rc = pSourceDisk->exportFile(strTargetFilePath.c_str(),
+                                                 formatTemp,
+                                                 MediumVariant_Standard, 
+                                                 pIfIo,
+                                                 pStorage, 
+                                                 pProgress2);
+                    if (FAILED(rc)) throw rc;
+                }
 
                 ComPtr<IProgress> pProgress3(pProgress2);
                 // now wait for the background disk operation to complete; this throws HRESULTs on error
