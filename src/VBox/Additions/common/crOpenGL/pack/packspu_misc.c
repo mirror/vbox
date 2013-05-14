@@ -615,8 +615,17 @@ void PACKSPU_APIENTRY packspu_VBoxDetachThread()
                         crPackSetContext(NULL);
                         CR_UNLOCK_PACKER_CONTEXT(thread->packer);
                         crPackDeleteContext(pack_spu.thread[i].packer);
+
+                        if (pack_spu.thread[i].buffer.pack)
+                        {
+                            crNetFree(pack_spu.thread[i].netServer.conn, pack_spu.thread[i].buffer.pack);
+                            pack_spu.thread[i].buffer.pack = NULL;
+                        }
                     }
                     crNetFreeConnection(pack_spu.thread[i].netServer.conn);
+
+                    if (pack_spu.thread[i].netServer.name)
+                        crFree(pack_spu.thread[i].netServer.name);
 
                     pack_spu.numThreads--;
                     /*note can't shift the array here, because other threads have TLS references to array elements*/
