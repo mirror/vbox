@@ -928,8 +928,80 @@ static DECLCALLBACK(int) rtldrPE_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void 
 /** @copydoc RTLDROPS::pfnEnumSegments. */
 static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
 {
-    NOREF(pMod); NOREF(pfnCallback); NOREF(pvUser);
-    return VINF_NOT_SUPPORTED;
+    PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
+    RTLDRSEG    SegInfo;
+
+    /*
+     * The first section is a fake one covering the headers.
+     */
+    SegInfo.pchName     = "NtHdrs";
+    SegInfo.cchName     = 6;
+    SegInfo.SelFlat     = 0;
+    SegInfo.Sel16bit    = 0;
+    SegInfo.fFlags      = 0;
+    SegInfo.fProt       = RTMEM_PROT_READ;
+    SegInfo.Alignment   = 1;
+    SegInfo.LinkAddress = 0;
+    SegInfo.RVA         = SegInfo.LinkAddress;
+    SegInfo.offFile     = 0;
+    SegInfo.cb          = pModPe->cbHeaders;
+    SegInfo.cbFile      = pModPe->cbHeaders;
+    SegInfo.cbMapped    = pModPe->cbHeaders;
+    if ((pModPe->paSections[0].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
+        SegInfo.cbMapped = pModPe->paSections[0].VirtualAddress;
+    int rc = pfnCallback(pMod, &SegInfo, pvUser);
+
+    /*
+     * Then all the normal sections.
+     */
+    PCIMAGE_SECTION_HEADER pSh = pModPe->paSections;
+    for (uint32_t i = 0; i < pModPe->cSections && rc == VINF_SUCCESS; i++, pSh++)
+    {
+        SegInfo.pchName         = (const char *)&pSh->Name[0];
+        SegInfo.cchName         = (uint32_t)RTStrNLen(SegInfo.pchName, sizeof(pSh->Name));
+        SegInfo.SelFlat         = 0;
+        SegInfo.Sel16bit        = 0;
+        SegInfo.fFlags          = 0;
+        SegInfo.fProt           = RTMEM_PROT_NONE;
+        if (pSh->Characteristics & IMAGE_SCN_MEM_READ)
+            SegInfo.fProt       |= RTMEM_PROT_READ;
+        if (pSh->Characteristics & IMAGE_SCN_MEM_WRITE)
+            SegInfo.fProt       |= RTMEM_PROT_WRITE;
+        if (pSh->Characteristics & IMAGE_SCN_MEM_EXECUTE)
+            SegInfo.fProt       |= RTMEM_PROT_EXEC;
+        SegInfo.Alignment       = (pSh->Characteristics & IMAGE_SCN_ALIGN_MASK) >> IMAGE_SCN_ALIGN_SHIFT;
+        if (SegInfo.Alignment > 0)
+            SegInfo.Alignment   = RT_BIT_64(SegInfo.Alignment - 1);
+        if (pSh->Characteristics & IMAGE_SCN_TYPE_NOLOAD)
+        {
+            SegInfo.LinkAddress = NIL_RTLDRADDR;
+            SegInfo.RVA         = NIL_RTLDRADDR;
+            SegInfo.cbMapped    = pSh->Misc.VirtualSize;
+        }
+        else
+        {
+            SegInfo.LinkAddress = pSh->VirtualAddress;
+            SegInfo.RVA         = SegInfo.LinkAddress;
+            SegInfo.cbMapped    = RT_ALIGN(SegInfo.cb, SegInfo.Alignment);
+            if (i + 1 < pModPe->cSections && !(pSh[1].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
+                SegInfo.cbMapped = pSh[1].VirtualAddress - pSh->VirtualAddress;
+        }
+        SegInfo.cb              = pSh->Misc.VirtualSize;
+        if (pSh->PointerToRawData == 0 || pSh->SizeOfRawData == 0)
+        {
+            SegInfo.offFile     = -1;
+            SegInfo.cbFile      = 0;
+        }
+        else
+        {
+            SegInfo.offFile     = pSh->PointerToRawData;
+            SegInfo.cbFile      = pSh->SizeOfRawData;
+        }
+
+        rc = pfnCallback(pMod, &SegInfo, pvUser);
+    }
+
+    return rc;
 }
 
 
@@ -937,16 +1009,51 @@ static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDREN
 static DECLCALLBACK(int) rtldrPE_LinkAddressToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress,
                                                         uint32_t *piSeg, PRTLDRADDR poffSeg)
 {
-    NOREF(pMod); NOREF(LinkAddress); NOREF(piSeg); NOREF(poffSeg);
-    return VERR_NOT_IMPLEMENTED;
+    PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
+
+    /* Note! LinkAddress == RVA */
+
+    /* Special header segment. */
+    if (LinkAddress < pModPe->paSections[0].VirtualAddress)
+    {
+        *piSeg   = 0;
+        *poffSeg = LinkAddress;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Search the normal sections. (Could do this in binary fashion, they're
+     * sorted, but too much bother right now.)
+     */
+    if (LinkAddress > pModPe->cbImage)
+        return VERR_LDR_INVALID_LINK_ADDRESS;
+    uint32_t                i       = pModPe->cSections;
+    PCIMAGE_SECTION_HEADER  paShs   = pModPe->paSections;
+    while (i-- > 0)
+        if (!(paShs[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD))
+        {
+            uint32_t uAddr = paShs[i].VirtualAddress;
+            if (LinkAddress >= uAddr)
+            {
+                *poffSeg = LinkAddress - uAddr;
+                *piSeg   = i + 1;
+                return VINF_SUCCESS;
+            }
+        }
+
+    return VERR_LDR_INVALID_LINK_ADDRESS;
 }
 
 
 /** @copydoc RTLDROPS::pfnLinkAddressToRva. */
 static DECLCALLBACK(int) rtldrPE_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva)
 {
-    NOREF(pMod); NOREF(LinkAddress); NOREF(pRva);
-    return VERR_NOT_IMPLEMENTED;
+    PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
+
+    if (LinkAddress > pModPe->cbImage)
+        return VERR_LDR_INVALID_LINK_ADDRESS;
+    *pRva = LinkAddress;
+    return VINF_SUCCESS;
 }
 
 
@@ -954,8 +1061,19 @@ static DECLCALLBACK(int) rtldrPE_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTLDRA
 static DECLCALLBACK(int) rtldrPE_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t iSeg, RTLDRADDR offSeg,
                                                 PRTLDRADDR pRva)
 {
-    NOREF(pMod); NOREF(iSeg); NOREF(offSeg); NOREF(pRva);
-    return VERR_NOT_IMPLEMENTED;
+    PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
+
+    if (iSeg > pModPe->cSections)
+        return VERR_LDR_INVALID_SEG_OFFSET;
+
+    /** @todo should validate offSeg here... too lazy right now. */
+    if (iSeg == 0)
+        *pRva = offSeg;
+    else if (pModPe->paSections[iSeg].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
+        return VERR_LDR_INVALID_SEG_OFFSET;
+    else
+        *pRva = offSeg + pModPe->paSections[iSeg].VirtualAddress;
+    return VINF_SUCCESS;
 }
 
 
@@ -963,8 +1081,10 @@ static DECLCALLBACK(int) rtldrPE_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t
 static DECLCALLBACK(int) rtldrPE_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR Rva,
                                                 uint32_t *piSeg, PRTLDRADDR poffSeg)
 {
-    NOREF(pMod); NOREF(Rva); NOREF(piSeg); NOREF(poffSeg);
-    return VERR_NOT_IMPLEMENTED;
+    int rc = rtldrPE_LinkAddressToSegOffset(pMod, Rva, piSeg, poffSeg);
+    if (RT_FAILURE(rc))
+        rc = VERR_LDR_INVALID_RVA;
+    return rc;
 }
 
 
