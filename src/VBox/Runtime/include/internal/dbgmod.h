@@ -528,6 +528,8 @@ typedef struct RTDBGMODINT
 
     /** The module name (short). */
     char const         *pszName;
+    /** The image file specified by the user.  Can be NULL. */
+    char const         *pszImgFileSpecified;
     /** The module filename. Can be NULL. */
     char const         *pszImgFile;
     /** The debug info file (if external). Can be NULL. */

@@ -87,6 +87,35 @@ RTDECL(const char *) RTStrCacheEnter(RTSTRCACHE hStrCache, const char *psz);
 
 
 /**
+ * Enters a string into the cache in lower cased form.
+ *
+ * @returns Pointer to a read-only lower cased copy of the string.
+ *
+ * @param   hStrCache           Handle to the string cache.
+ * @param   pchString           Pointer to a string. This does not need to be
+ *                              zero terminated, but must not contain any zero
+ *                              characters.
+ * @param   cchString           The number of characters (bytes) to enter.
+ *
+ * @remarks It is implementation dependent whether the returned string pointer
+ *          differs when entering the same string twice.
+ */
+RTDECL(const char *) RTStrCacheEnterLowerN(RTSTRCACHE hStrCache, const char *pchString, size_t cchString);
+
+/**
+ * Enters a string into the cache in lower cased form.
+ *
+ * @returns Pointer to a read-only lower cased copy of the string.
+ *
+ * @param   hStrCache           Handle to the string cache.
+ * @param   psz                 Pointer to a zero terminated string.
+ *
+ * @remarks See RTStrCacheEnterN.
+ */
+RTDECL(const char *) RTStrCacheEnterLower(RTSTRCACHE hStrCache, const char *psz);
+
+
+/**
  * Retains a reference to a string.
  *
  * @returns The new reference count. UINT32_MAX is returned if the string

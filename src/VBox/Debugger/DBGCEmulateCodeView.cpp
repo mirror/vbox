@@ -341,7 +341,9 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "kg",         0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Callstack - guest." },
     { "kh",         0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Callstack - hypervisor." },
     { "lm",         0,        ~0U,      &g_aArgListMods[0], RT_ELEMENTS(g_aArgListMods),    0,       dbgcCmdListModules, "[module [..]]",        "List modules." },
+    { "lmv",        0,        ~0U,      &g_aArgListMods[0], RT_ELEMENTS(g_aArgListMods),    0,       dbgcCmdListModules, "[module [..]]",        "List modules, verbose." },
     { "lmo",        0,        ~0U,      &g_aArgListMods[0], RT_ELEMENTS(g_aArgListMods),    0,       dbgcCmdListModules, "[module [..]]",        "List modules and their segments." },
+    { "lmov",       0,        ~0U,      &g_aArgListMods[0], RT_ELEMENTS(g_aArgListMods),    0,       dbgcCmdListModules, "[module [..]]",        "List modules and their segments, verbose." },
     { "ln",         0,        ~0U,      &g_aArgListNear[0], RT_ELEMENTS(g_aArgListNear),    0,       dbgcCmdListNear,    "[addr/sym [..]]",      "List symbols near to the address. Default address is CS:EIP." },
     { "ls",         0,        1,        &g_aArgListSource[0],RT_ELEMENTS(g_aArgListSource), 0,       dbgcCmdListSource,  "[addr]",               "Source." },
     { "m",          1,        1,        &g_aArgMemoryInfo[0],RT_ELEMENTS(g_aArgMemoryInfo), 0,       dbgcCmdMemoryInfo,  "<addr>",               "Display information about that piece of memory." },
@@ -3891,6 +3893,7 @@ static bool dbgcCmdListModuleMatch(const char *pszName, PCDBGCVAR paArgs, unsign
 static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     bool const  fMappings   = pCmd->pszCmd[2] == 'o';
+    bool const  fVerbose    = pCmd->pszCmd[strlen(pCmd->pszCmd) - 1] == 'v';
     PDBGC       pDbgc       = DBGC_CMDHLP2DBGC(pCmdHlp);
 
     /*
@@ -3904,8 +3907,11 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
         RTDBGMOD hMod = RTDbgAsModuleByIndex(hAs, iMod);
         if (hMod != NIL_RTDBGMOD)
         {
-            uint32_t const      cSegs   = RTDbgModSegmentCount(hMod);
-            const char * const  pszName = RTDbgModName(hMod);
+            uint32_t const      cSegs            = RTDbgModSegmentCount(hMod);
+            const char * const  pszName          = RTDbgModName(hMod);
+            const char * const  pszImgFile       = RTDbgModImageFile(hMod);
+            const char * const  pszImgFileUsed   = RTDbgModImageFileUsed(hMod);
+            const char * const  pszDbgFile       = RTDbgModDebugFile(hMod);
             if (    cArgs == 0
                 ||  dbgcCmdListModuleMatch(pszName, paArgs, cArgs))
             {
@@ -3925,7 +3931,14 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                             &&  (   !fFull
                                  ||  aMappings[iMap].iSeg == NIL_RTDBGSEGIDX))
                             uMin = aMappings[iMap].Address;
-                    DBGCCmdHlpPrintf(pCmdHlp, "%RGv %04x %s\n", (RTGCUINTPTR)uMin, cSegs, pszName);
+                    if (!fVerbose || !pszImgFile)
+                        DBGCCmdHlpPrintf(pCmdHlp, "%RGv %04x %s\n", (RTGCUINTPTR)uMin, cSegs, pszName);
+                    else
+                        DBGCCmdHlpPrintf(pCmdHlp, "%RGv %04x %-12s  %s\n", (RTGCUINTPTR)uMin, cSegs, pszName, pszImgFile);
+                    if (fVerbose && pszImgFileUsed)
+                        DBGCCmdHlpPrintf(pCmdHlp, "    Local image: %s\n", pszImgFileUsed);
+                    if (fVerbose && pszDbgFile)
+                        DBGCCmdHlpPrintf(pCmdHlp, "    Debug file:  %s\n", pszDbgFile);
 
                     if (fMappings)
                     {
