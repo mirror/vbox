@@ -70,11 +70,15 @@ DECLINLINE(int) VMXReadCachedVmcsEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
 #  define VMXReadVmcs                                    VMXReadVmcsField
 #else /* !VBOX_WITH_OLD_VTX_CODE */
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-#  define VMXReadVmcsHstN(idxField, pVal)                 HMVMX_IS_64BIT_HOST_MODE() ?                     \
-                                                            VMXReadVmcs64(idxField, pVal)                  \
-                                                          : VMXReadVmcs32(idxField, (uint32_t *)pVal)
-#  define VMXReadVmcsGstN                                 VMXReadVmcsHstN
-#  define VMXReadVmcsGstNByIdxVal                         VMXReadVmcsHstN
+#  define VMXReadVmcsHstN(idxField, p64Val)               HMVMX_IS_64BIT_HOST_MODE() ?                     \
+                                                            VMXReadVmcs64(idxField, p64Val)                \
+                                                          : (*p64Val &= UINT64_C(0xffffffff),              \
+                                                             VMXReadVmcs32(idxField, (uint32_t *)p64Val))
+#  define VMXReadVmcsGstN(idxField, p64Val)               (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests) ? \
+                                                            VMXReadVmcs64(idxField, p64Val)                \
+                                                          : (*p64Val &= UINT64_C(0xffffffff),              \
+                                                             VMXReadVmcs32(idxField, (uint32_t *)p64Val))
+#  define VMXReadVmcsGstNByIdxVal                         VMXReadVmcsGstN
 # elif HC_ARCH_BITS == 32
 #  define VMXReadVmcsHstN                                 VMXReadVmcs32
 #  define VMXReadVmcsGstN(idxField, pVal)                 VMXReadCachedVmcsEx(pVCpu, idxField##_CACHE_IDX, pVal)
