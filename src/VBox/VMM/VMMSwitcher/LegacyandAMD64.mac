@@ -587,12 +587,12 @@ BEGINPROC VMXRCStartVM64
     push    rbp
     mov     rbp, rsp
 
-    ; Make sure VT-x instructions are allowed
+    ; Make sure VT-x instructions are allowed.
     mov     rax, cr4
     or      rax, X86_CR4_VMXE
     mov     cr4, rax
 
-    ;/* Enter VMX Root Mode */
+    ; Enter VMX Root Mode.
     vmxon   [rbp + 8 + 8]
     jnc     .vmxon_success
     mov     rax, VERR_VMX_INVALID_VMXON_PTR
@@ -620,11 +620,11 @@ BEGINPROC VMXRCStartVM64
     ; Save the VMCS pointer on the stack
     push    qword [rbp + 16 + 8];
 
-    ;/* Save segment registers */
+    ; Save segment registers.
     MYPUSHSEGS rax
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    ; Flush the VMCS write cache first (before any other vmreads/vmwrites!)
+    ; Flush the VMCS write cache first (before any other vmreads/vmwrites!).
     mov     rbx, [rbp + 24 + 8]                             ; pCache
 
  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
@@ -661,11 +661,11 @@ ALIGN(16)
  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     qword [rbx + VMCSCACHE.uPos], 3
  %endif
-    ; Save the pCache pointer
+    ; Save the pCache pointer.
     push    rbx
 %endif
 
-    ; Save the host state that's relevant in the temporary 64 bits mode
+    ; Save the host state that's relevant in the temporary 64-bit mode.
     mov     rdx, cr0
     mov     eax, VMX_VMCS_HOST_CR0
     vmwrite rax, rdx
@@ -696,28 +696,26 @@ ALIGN(16)
     mov     qword [rbx + VMCSCACHE.uPos], 4
 %endif
 
-    ; hopefully we can ignore TR (we restore it anyway on the way back to 32 bits mode)
+    ; Hopefully we can ignore TR (we restore it anyway on the way back to 32-bit mode).
 
-    ;/* First we have to save some final CPU context registers. */
+    ; First we have to save some final CPU context registers.
     lea     rdx, [.vmlaunch64_done wrt rip]
-    mov     rax, VMX_VMCS_HOST_RIP  ;/* return address (too difficult to continue after VMLAUNCH?) */
+    mov     rax, VMX_VMCS_HOST_RIP  ; Return address (too difficult to continue after VMLAUNCH?).
     vmwrite rax, rdx
-    ;/* Note: assumes success... */
+    ; Note: assumes success!
 
-    ;/* Manual save and restore:
-    ; * - General purpose registers except RIP, RSP
-    ; *
-    ; * Trashed:
-    ; * - CR2 (we don't care)
-    ; * - LDTR (reset to 0)
-    ; * - DRx (presumably not changed at all)
-    ; * - DR7 (reset to 0x400)
-    ; * - EFLAGS (reset to RT_BIT(1); not relevant)
-    ; *
-    ; */
+    ; Manual save and restore:
+    ;  - General purpose registers except RIP, RSP
+    ; 
+    ; Trashed:
+    ;  - CR2 (we don't care)
+    ;  - LDTR (reset to 0)
+    ;  - DRx (presumably not changed at all)
+    ;  - DR7 (reset to 0x400)
+    ;  - EFLAGS (reset to RT_BIT(1); not relevant)
 
 %ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    ; Load the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
+    ; Load the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs.
     LOADGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
     LOADGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
     LOADGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
@@ -736,7 +734,7 @@ ALIGN(16)
     ; Save the pCtx pointer
     push    rsi
 
-    ; Restore CR2
+    ; Load CR2 if necessary (may be expensive as writing CR2 is a synchronizing instruction).
     mov     rbx, qword [rsi + CPUMCTX.cr2]
     mov     rdx, cr2
     cmp     rdx, rbx
@@ -746,10 +744,10 @@ ALIGN(16)
 .skipcr2write64:
     mov     eax, VMX_VMCS_HOST_RSP
     vmwrite rax, rsp
-    ;/* Note: assumes success... */
-    ;/* Don't mess with ESP anymore!! */
+    ; Note: assumes success!
+    ; Don't mess with ESP anymore!!!
 
-    ;/* Restore Guest's general purpose registers. */
+    ; Save Guest's general purpose registers.
     mov     rax, qword [rsi + CPUMCTX.eax]
     mov     rbx, qword [rsi + CPUMCTX.ebx]
     mov     rcx, qword [rsi + CPUMCTX.ecx]
@@ -764,12 +762,12 @@ ALIGN(16)
     mov     r14, qword [rsi + CPUMCTX.r14]
     mov     r15, qword [rsi + CPUMCTX.r15]
 
-    ;/* Restore rdi & rsi. */
+    ; Save rdi & rsi.
     mov     rdi, qword [rsi + CPUMCTX.edi]
     mov     rsi, qword [rsi + CPUMCTX.esi]
 
     vmlaunch
-    jmp     .vmlaunch64_done;      ;/* here if vmlaunch detected a failure. */
+    jmp     .vmlaunch64_done;      ; Here if vmlaunch detected a failure.
 
 ALIGNCODE(16)
 .vmlaunch64_done:
@@ -798,7 +796,7 @@ ALIGNCODE(16)
     mov     qword [rdi + CPUMCTX.cr2], rax
 %endif
 
-    pop     rax                                 ; the guest edi we pushed above
+    pop     rax         ; The guest edi we pushed above
     mov     qword [rdi + CPUMCTX.edi], rax
 
     pop     rsi         ; pCtx (needed in rsi by the macros below)
@@ -816,7 +814,7 @@ ALIGNCODE(16)
 %endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    pop     rdi         ; saved pCache
+    pop     rdi         ; Saved pCache
 
  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     dword [rdi + VMCSCACHE.uPos], 7
@@ -829,7 +827,7 @@ ALIGNCODE(16)
  %endif
 
     mov     ecx, [rdi + VMCSCACHE.Read.cValidEntries]
-    cmp     ecx, 0  ; can't happen
+    cmp     ecx, 0  ; Can't happen
     je      .no_cached_reads
     jmp     .cached_read
 
@@ -843,7 +841,7 @@ ALIGN(16)
 .no_cached_reads:
 
  %ifdef VBOX_WITH_OLD_VTX_CODE
-    ; Save CR2 for EPT
+    ; Restore CR2 into VMCS-cache field (for EPT).
     mov     rax, cr2
     mov     [rdi + VMCSCACHE.cr2], rax
  %endif
@@ -852,7 +850,7 @@ ALIGN(16)
  %endif
 %endif
 
-    ; Restore segment registers
+    ; Restore segment registers.
     MYPOPSEGS rax
 
     mov     eax, VINF_SUCCESS
@@ -869,12 +867,12 @@ ALIGN(16)
  %endif
 %endif
 
-    ; Write back the data and disable the VMCS
-    vmclear qword [rsp]  ;Pushed pVMCS
+    ; Write back the data and disable the VMCS.
+    vmclear qword [rsp]  ; Pushed pVMCS
     add     rsp, 8
 
 .vmstart64_vmxoff_end:
-    ; Disable VMX root mode
+    ; Disable VMX root mode.
     vmxoff
 .vmstart64_vmxon_failed:
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -910,7 +908,7 @@ ALIGN(16)
  %endif
 %endif
 
-    ; Restore segment registers
+    ; Restore segment registers.
     MYPOPSEGS rax
 
     ; Restore all general purpose host registers.
@@ -932,7 +930,7 @@ ALIGN(16)
  %endif
 %endif
 
-    ; Restore segment registers
+    ; Restore segment registers.
     MYPOPSEGS rax
 
     ; Restore all general purpose host registers.
@@ -954,29 +952,28 @@ BEGINPROC SVMRCVMRun64
     mov     rbp, rsp
     pushf
 
-    ;/* Manual save and restore:
-    ; * - General purpose registers except RIP, RSP, RAX
-    ; *
-    ; * Trashed:
-    ; * - CR2 (we don't care)
-    ; * - LDTR (reset to 0)
-    ; * - DRx (presumably not changed at all)
-    ; * - DR7 (reset to 0x400)
-    ; */
+    ; Manual save and restore:
+    ;  - General purpose registers except RIP, RSP, RAX
+    ; 
+    ; Trashed:
+    ;  - CR2 (we don't care)
+    ;  - LDTR (reset to 0)
+    ;  - DRx (presumably not changed at all)
+    ;  - DR7 (reset to 0x400)
 
-    ;/* Save the Guest CPU context pointer. */
-    push    rsi                     ; push for saving the state at the end
+    ; Save the Guest CPU context pointer.
+    push    rsi                             ; Push for saving the state at the end
 
-    ; save host fs, gs, sysenter msr etc
+    ; Save host fs, gs, sysenter msr etc
     mov     rax, [rbp + 8 + 8]              ; pVMCBHostPhys (64 bits physical address)
-    push    rax                             ; save for the vmload after vmrun
+    push    rax                             ; Save for the vmload after vmrun
     vmsave
 
-    ; setup eax for VMLOAD
+    ; Setup eax for VMLOAD
     mov     rax, [rbp + 8 + 8 + RTHCPHYS_CB]   ; pVMCBPhys (64 bits physical address)
 
-    ;/* Restore Guest's general purpose registers. */
-    ;/* RAX is loaded from the VMCB by VMRUN */
+    ; Restore Guest's general purpose registers.
+    ; rax is loaded from the VMCB by VMRUN.
     mov     rbx, qword [rsi + CPUMCTX.ebx]
     mov     rcx, qword [rsi + CPUMCTX.ecx]
     mov     rdx, qword [rsi + CPUMCTX.edx]
@@ -992,22 +989,22 @@ BEGINPROC SVMRCVMRun64
     mov     r15, qword [rsi + CPUMCTX.r15]
     mov     rsi, qword [rsi + CPUMCTX.esi]
 
-    ; Clear the global interrupt flag & execute sti to make sure external interrupts cause a world switch
+    ; Clear the global interrupt flag & execute sti to make sure external interrupts cause a world switch.
     clgi
     sti
 
-    ; load guest fs, gs, sysenter msr etc
+    ; Load guest fs, gs, sysenter msr etc
     vmload
-    ; run the VM
+    ; Run the VM
     vmrun
 
-    ;/* RAX is in the VMCB already; we can use it here. */
+    ; rax is in the VMCB already; we can use it here.
 
-    ; save guest fs, gs, sysenter msr etc
+    ; Save guest fs, gs, sysenter msr etc.
     vmsave
 
-    ; load host fs, gs, sysenter msr etc
-    pop     rax                     ; pushed above
+    ; Load host fs, gs, sysenter msr etc.
+    pop     rax                     ; Pushed above
     vmload
 
     ; Set the global interrupt flag again, but execute cli to make sure IF=0.
