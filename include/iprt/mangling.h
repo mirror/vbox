@@ -956,6 +956,7 @@
 # define RTPathExistsEx                                 RT_MANGLER(RTPathExistsEx)
 # define RTPathExt                                      RT_MANGLER(RTPathExt)
 # define RTPathFilename                                 RT_MANGLER(RTPathFilename)
+# define RTPathFilenameEx                               RT_MANGLER(RTPathFilenameEx)
 # define RTPathGetCurrent                               RT_MANGLER(RTPathGetCurrent)
 # define RTPathGetMode                                  RT_MANGLER(RTPathGetMode)
 # define RTPathHasExt                                   RT_MANGLER(RTPathHasExt)
