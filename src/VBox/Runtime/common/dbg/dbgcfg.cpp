@@ -863,6 +863,8 @@ static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHS
             {
                 memcpy(pszPath, pchCache, cchCache);
                 pszPath[cchCache] = '\0';
+                RTPathChangeToUnixSlashes(pszPath, false);
+
                 rcCache = rc2 = rtDbgCfgTryOpenCache(pThis, pszPath, pszCacheSubDir, pSplitFn, fFlags,
                                                      pfnCallback, pvUser1, pvUser2);
                 if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
@@ -874,6 +876,8 @@ static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHS
             {
                 memcpy(pszPath, pchCache, cchCache);
                 pszPath[cchCache] = '\0';
+                RTPathChangeToUnixSlashes(pszPath, false);
+
                 rc2 = rtDbgCfgTryDownloadAndOpen(pThis, pszServer, pszPath, pszCacheSubDir, pSplitFn, fFlags,
                                                  pfnCallback, pvUser1, pvUser2);
                 if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
@@ -894,6 +898,8 @@ static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHS
 
             memcpy(pszPath, pchCache, cchCache);
             pszPath[cchCache] = '\0';
+            RTPathChangeToUnixSlashes(pszPath, false);
+
             rcCache = rc2 = rtDbgCfgTryOpenCache(pThis, pszPath, pszCacheSubDir, pSplitFn, fFlags,
                                                  pfnCallback, pvUser1, pvUser2);
             if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
@@ -922,6 +928,7 @@ static int rtDbgCfgTryOpenList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHS
             /* Copy the path into the buffer and do the searching. */
             memcpy(pszPath, pszDir, cchDir);
             pszPath[cchDir] = '\0';
+            RTPathChangeToUnixSlashes(pszPath, false);
 
             rc2 = rtDbgCfgTryOpenDir(pThis, pszPath, pSplitFn, fFlagsDir, pfnCallback, pvUser1, pvUser2);
             if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
@@ -1003,7 +1010,17 @@ static int rtDbgCfgOpenWithSubDir(RTDBGCFG hDbgCfg, const char *pszFilename, con
     {
         rc2 = RTPathSplitReassemble(pSplitFn, RTPATH_STR_F_STYLE_HOST, szPath, sizeof(szPath));
         if (RT_SUCCESS(rc2) && RTFileExists(szPath))
+        {
+            RTPathChangeToUnixSlashes(szPath, false);
+            rtDbgCfgLog1(pThis, "Trying '%s'...\n", szPath);
             rc2 = pfnCallback(pThis, pszFilename, pvUser1, pvUser2);
+            if (rc2 == VINF_CALLBACK_RETURN)
+                rtDbgCfgLog1(pThis, "Found '%s'.\n", szPath);
+            else if (rc2 == VERR_CALLBACK_RETURN)
+                rtDbgCfgLog1(pThis, "Error opening '%s'.\n", szPath);
+            else
+                rtDbgCfgLog1(pThis, "Error %Rrc opening '%s'.\n", rc2, szPath);
+        }
     }
     if (   rc2 != VINF_CALLBACK_RETURN
         && rc2 != VERR_CALLBACK_RETURN)
@@ -1015,6 +1032,8 @@ static int rtDbgCfgOpenWithSubDir(RTDBGCFG hDbgCfg, const char *pszFilename, con
         rc2 = RTPathGetCurrent(szPath, sizeof(szPath));
         if (RT_FAILURE(rc2))
             strcpy(szPath, ".");
+        RTPathChangeToUnixSlashes(szPath, false);
+
         rc2 = rtDbgCfgTryOpenDir(pThis, szPath, pSplitFn, fFlags, pfnCallback, pvUser1, pvUser2);
         if (RT_FAILURE(rc2) && RT_SUCCESS_NP(rcRet))
             rcRet = rc2;

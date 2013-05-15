@@ -326,15 +326,15 @@ static DECLCALLBACK(int) dbgDiggerWinNtRdr_Read(void *pvBuf, size_t cb, size_t o
             if (RT_FAILURE(rc))
                 return rc;
 
-            /* Patch it? */
+            /* Apply SizeOfImage patch? */
             if (   pThis->offSizeOfImage != UINT32_MAX
                 && offFile            < pThis->offSizeOfImage + 4
                 && offFile + cbToRead > pThis->offSizeOfImage)
             {
                 uint32_t SizeOfImage = pThis->cbCorrectImageSize;
+                uint32_t cbPatch     = sizeof(SizeOfImage);
                 int32_t  offPatch    = pThis->offSizeOfImage - offFile;
                 uint8_t *pbPatch     = (uint8_t *)pvBuf + offPatch;
-                uint32_t cbPatch     = sizeof(uint32_t);
                 if (offFile + cbToRead < pThis->offSizeOfImage + cbPatch)
                     cbPatch = offFile + cbToRead - pThis->offSizeOfImage;
                 while (cbPatch-- > 0)
@@ -396,10 +396,23 @@ static DECLCALLBACK(void) dbgDiggerWinNtRdr_Dtor(void *pvUser)
  * @returns true / false.
  * @param   paShs               Pointer to the section headers.
  * @param   cShs                Number of headers.
- * @param   cbImage             The image size.
+ * @param   cbImage             The image size reported by NT.
+ * @param   uRvaRsrc            The RVA of the resource directory. UINT32_MAX if
+ *                              no resource directory.
+ * @param   cbSectAlign         The section alignment specified in the header.
+ * @param   pcbImageCorrect     The corrected image size.  This is derived from
+ *                              cbImage and virtual range of the section tables.
+ *
+ *                              The problem is that NT may choose to drop the
+ *                              last pages in images it loads early, starting at
+ *                              the resource directory.  These images will have
+ *                              a page aligned cbImage.
  */
-static bool dbgDiggerWinNtIsSectionHeaderOk(PCIMAGE_SECTION_HEADER paShs, uint32_t cShs, uint32_t cbImage)
+static bool dbgDiggerWinNtCheckSectHdrsAndImgSize(PCIMAGE_SECTION_HEADER paShs, uint32_t cShs, uint32_t cbImage,
+                                                  uint32_t uRvaRsrc, uint32_t cbSectAlign, uint32_t *pcbImageCorrect)
 {
+    *pcbImageCorrect = cbImage;
+
     for (uint32_t i = 0; i < cShs; i++)
     {
         if (!paShs[i].Name[0])
@@ -410,19 +423,41 @@ static bool dbgDiggerWinNtIsSectionHeaderOk(PCIMAGE_SECTION_HEADER paShs, uint32
 
         if (paShs[i].Characteristics & IMAGE_SCN_TYPE_NOLOAD)
             continue;
-        if (paShs[i].VirtualAddress >= cbImage)
+
+        /* Check that sizes are within the same range and that both sizes and
+           addresses are within reasonable limits. */
+        if (   RT_ALIGN(paShs[i].Misc.VirtualSize, _64K) > RT_ALIGN(paShs[i].SizeOfRawData, _64K)
+            || paShs[i].Misc.VirtualSize >= _1G
+            || paShs[i].SizeOfRawData    >= _1G)
         {
-            Log(("DigWinNt: Section header #%u has a virtual address beyond the image: %#x cbImage=%#x\n",
-                 i, paShs[i].VirtualAddress, cbImage));
+            Log(("DigWinNt: Section header #%u has a VirtualSize=%#x and SizeOfRawData=%#x, that's too much data!\n",
+                 i, paShs[i].Misc.VirtualSize, paShs[i].SizeOfRawData));
             return false;
         }
-        if (paShs[i].Misc.VirtualSize >= cbImage) /* we don't check too strictly here becuase NT4 SP1 ntfs.sys. */
+        uint32_t uRvaEnd = paShs[i].VirtualAddress + paShs[i].Misc.VirtualSize;
+        if (uRvaEnd >= _1G || uRvaEnd < paShs[i].VirtualAddress)
         {
-            Log(("DigWinNt: Section header #%u has a end beyond the image: VirtualAddress=%#x VirtualSize=%#x cbImage=%#x\n",
-                 i, paShs[i].VirtualAddress, paShs[i].Misc.VirtualSize, cbImage));
+            Log(("DigWinNt: Section header #%u has a VirtualSize=%#x and VirtualAddr=%#x, %#x in total, that's too much!\n",
+                 i, paShs[i].Misc.VirtualSize, paShs[i].VirtualAddress, uRvaEnd));
+            return false;
+        }
+
+        /* Check for images chopped off around '.rsrc'. */
+        if (    cbImage < uRvaEnd
+            &&  uRvaEnd >= uRvaRsrc)
+            cbImage = RT_ALIGN(uRvaEnd, cbSectAlign);
+
+        /* Check that the section is within the image. */
+        if (uRvaEnd > cbImage)
+        {
+            Log(("DigWinNt: Section header #%u has a virtual address range beyond the image: %#x TO %#x cbImage=%#x\n",
+                 i, paShs[i].VirtualAddress, uRvaEnd, cbImage));
             return false;
         }
     }
+
+    Assert(*pcbImageCorrect == cbImage || !(*pcbImageCorrect & 0xfff));
+    *pcbImageCorrect = cbImage;
     return true;
 }
 
@@ -454,6 +489,9 @@ static int dbgDiggerWinNtCreateLdrMod(PDBGDIGGERWINNT pThis, PUVM pUVM, const ch
      * Use the section table to construct a more accurate view of the file/
      * image if it's in the buffer (it should be).
      */
+    uint32_t uRvaRsrc = UINT32_MAX;
+    if (WINNT_UNION(pThis, pHdrs, OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE]).Size > 0)
+        uRvaRsrc = WINNT_UNION(pThis, pHdrs, OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE]).VirtualAddress;
     uint32_t offShs = offHdrs
                     + (  pThis->f32Bit
                        ? pHdrs->vX_32.FileHeader.SizeOfOptionalHeader + RT_OFFSETOF(IMAGE_NT_HEADERS32, OptionalHeader)
@@ -461,7 +499,9 @@ static int dbgDiggerWinNtCreateLdrMod(PDBGDIGGERWINNT pThis, PUVM pUVM, const ch
     uint32_t cbShs  = cShs * sizeof(IMAGE_SECTION_HEADER);
     PCIMAGE_SECTION_HEADER paShs = (PCIMAGE_SECTION_HEADER)(pbBuf + offShs);
     if (   offShs + cbShs <= RT_MIN(cbImage, cbBuf)
-        && dbgDiggerWinNtIsSectionHeaderOk(paShs, cShs, cbImage))
+        && dbgDiggerWinNtCheckSectHdrsAndImgSize(paShs, cShs, cbImage, uRvaRsrc,
+                                                 WINNT_UNION(pThis, pHdrs, OptionalHeader.SectionAlignment),
+                                                 &pRdr->cbCorrectImageSize))
     {
         pRdr->cMappings = 0;
 
@@ -511,6 +551,15 @@ static int dbgDiggerWinNtCreateLdrMod(PDBGDIGGERWINNT pThis, PUVM pUVM, const ch
         pRdr->aMappings[0].offFile = 0;
         pRdr->aMappings[0].offMem  = 0;
         pRdr->aMappings[0].cbMem   = pRdr->cbImage;
+    }
+
+    /* Enable the SizeOfImage patching if necessary. */
+    if (pRdr->cbCorrectImageSize != cbImage)
+    {
+        Log(("DigWinNT: The image is really %#x bytes long, not %#x as mapped by NT!\n", pRdr->cbCorrectImageSize, cbImage));
+        pRdr->offSizeOfImage = pThis->f32Bit
+                             ? offHdrs + RT_OFFSETOF(IMAGE_NT_HEADERS32, OptionalHeader.SizeOfImage)
+                             : offHdrs + RT_OFFSETOF(IMAGE_NT_HEADERS64, OptionalHeader.SizeOfImage);
     }
 
     /*
@@ -628,7 +677,6 @@ static void dbgDiggerWinNtProcessImage(PDBGDIGGERWINNT pThis, PUVM pUVM, const c
         Log(("DigWinNt: %s: Invalid OH.NumberOfRvaAndSizes: %#x\n", pszName, WINNT_UNION(pThis, pHdrs, OptionalHeader.NumberOfRvaAndSizes)));
         return;
     }
-
 
     /*
      * Create the module using the in memory image first, falling back

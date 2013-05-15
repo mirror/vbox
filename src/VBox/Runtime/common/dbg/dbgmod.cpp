@@ -970,7 +970,7 @@ RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilenam
     rc = RTCritSectInit(&pDbgMod->CritSect);
     if (RT_SUCCESS(rc))
     {
-        pDbgMod->pszName = RTStrCacheEnter(g_hDbgModStrCache, pszName);
+        pDbgMod->pszName = RTStrCacheEnterLower(g_hDbgModStrCache, pszName);
         if (pDbgMod->pszName)
         {
             pDbgMod->pszImgFile = RTStrCacheEnter(g_hDbgModStrCache, pszFilename);

@@ -213,6 +213,12 @@ static BOOL CALLBACK rtDbgModDbgHelpCopyLineNumberCallback(PSRCCODEINFOW pLineIn
 {
     RTDBGMODBGHELPARGS *pArgs  = (RTDBGMODBGHELPARGS *)pvUser;
 
+    if (pLineInfo->Address < pArgs->uModAddr)
+    {
+        Log((" %#018x %05u  %s  [SKIPPED - INVALID ADDRESS!]\n", pLineInfo->Address, pLineInfo->LineNumber));
+        return TRUE;
+    }
+
     /*
      * To save having to call RTUtf16ToUtf8 every time, we keep a copy of the
      * previous file name both as UTF-8 and UTF-16.
@@ -303,6 +309,11 @@ static int rtDbgModDbgHelpCopyLineNumbers(PRTDBGMODINT pMod, RTDBGMOD hCnt, HAND
 static BOOL CALLBACK rtDbgModDbgHelpCopySymbolsCallback(PSYMBOL_INFO pSymInfo, ULONG cbSymbol, PVOID pvUser)
 {
     RTDBGMODBGHELPARGS *pArgs = (RTDBGMODBGHELPARGS *)pvUser;
+    if (pSymInfo->Address < pArgs->uModAddr) /* NT4 SP1 ntfs.dbg */
+    {
+        Log(("  %#018x LB %#07x  %s  [SKIPPED - INVALID ADDRESS!]\n", pSymInfo->Address, cbSymbol, pSymInfo->Name));
+        return TRUE;
+    }
 
     int rc = RTDbgModSymbolAdd(pArgs->hCnt, pSymInfo->Name, RTDBGSEGIDX_RVA,
                                pSymInfo->Address - pArgs->uModAddr, cbSymbol, 0, NULL);
