@@ -264,7 +264,7 @@ RTDECL(int) RTLdrOpenInMemory(const char *pszName, uint32_t fFlags, RTLDRARCH en
                               PFNRTLDRRDRMEMREAD pfnRead, PFNRTLDRRDRMEMDTOR pfnDtor, void *pvUser,
                               PRTLDRMOD phLdrMod)
 {
-    LogFlow(("RTLdrOpenInMemory: pszName=%p:{%s} fFlags=%#x enmArch=%d cbImage=%#zu pfnRead=%p pfnDtor=%p pvUser=%p phLdrMod=%p\n",
+    LogFlow(("RTLdrOpenInMemory: pszName=%p:{%s} fFlags=%#x enmArch=%d cbImage=%#zx pfnRead=%p pfnDtor=%p pvUser=%p phLdrMod=%p\n",
              pszName, pszName, fFlags, enmArch, cbImage, pfnRead, pfnDtor, pvUser, phLdrMod));
 
     if (!pfnRead || !pfnDtor)

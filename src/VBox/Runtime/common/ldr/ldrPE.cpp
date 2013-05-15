@@ -1574,7 +1574,7 @@ static int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, uint32_t fFlag
  * @param   offNtHdrs   The offset of the NT headers from the start of the file.
  * @param   pFileHdr    Pointer to the file header (valid).
  * @param   cbRawImage  The raw image size.
- * @param   fFlags      Loader flags.
+ * @param   fFlags      Loader flags, RTLDR_O_XXX.
  */
 static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr, const char *pszLogName, RTFOFF offNtHdrs,
                                          const IMAGE_FILE_HEADER *pFileHdr, RTFOFF cbRawImage, uint32_t fFlags)
@@ -1726,7 +1726,9 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
                 return VERR_BAD_EXE_FORMAT;
         }
-        if (pDir->VirtualAddress >= cb)
+        if (   pDir->VirtualAddress >= cb
+            && (   !(fFlags & RTLDR_O_FOR_DEBUG) /* Happens with signed drivers like VBoxGuest.sys. :-) */
+                || i != IMAGE_DIRECTORY_ENTRY_SECURITY) )
         {
             Log(("rtldrPEOpen: %s: dir no. %d VirtualAddress=%#x is invalid (limit %#x)!!!\n",
                  pszLogName, i, pDir->VirtualAddress, cb));
@@ -1752,9 +1754,10 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
  * @param   pszLogName  The log name to  prefix the errors with.
  * @param   pOptHdr     Pointer to the optional header (valid).
  * @param   cbRawImage  The raw image size.
+ * @param   fFlags      Loader flags, RTLDR_O_XXX.
  */
-int rtldrPEValidateSectionHeaders(const IMAGE_SECTION_HEADER *paSections, unsigned cSections, const char *pszLogName,
-                                  const IMAGE_OPTIONAL_HEADER64 *pOptHdr, RTFOFF cbRawImage)
+static int rtldrPEValidateSectionHeaders(const IMAGE_SECTION_HEADER *paSections, unsigned cSections, const char *pszLogName,
+                                         const IMAGE_OPTIONAL_HEADER64 *pOptHdr, RTFOFF cbRawImage, uint32_t fFlags)
 {
     const uint32_t              cbImage  = pOptHdr->SizeOfImage;
     const IMAGE_SECTION_HEADER *pSH      = &paSections[0];
@@ -1773,7 +1776,10 @@ int rtldrPEValidateSectionHeaders(const IMAGE_SECTION_HEADER *paSections, unsign
               pSH->PointerToRawData, pSH->SizeOfRawData,
               pSH->PointerToRelocations, pSH->NumberOfRelocations,
               pSH->PointerToLinenumbers, pSH->NumberOfLinenumbers));
-        if (pSH->Characteristics & (IMAGE_SCN_MEM_16BIT | IMAGE_SCN_MEM_FARDATA | IMAGE_SCN_MEM_PURGEABLE | IMAGE_SCN_MEM_PRELOAD))
+
+        AssertCompile(IMAGE_SCN_MEM_16BIT == IMAGE_SCN_MEM_PURGEABLE);
+        if (  (  pSH->Characteristics & (IMAGE_SCN_MEM_PURGEABLE | IMAGE_SCN_MEM_PRELOAD | IMAGE_SCN_MEM_FARDATA) )
+            && !(fFlags & RTLDR_O_FOR_DEBUG)) /* purgable/16-bit seen on w2ksp0 hal.dll, ignore the bunch. */
         {
             Log(("rtldrPEOpen: %s: Unsupported section flag(s) %#x section #%d '%.*s'!!!\n",
                  pszLogName, pSH->Characteristics, iSH, sizeof(pSH->Name), pSH->Name));
@@ -2067,7 +2073,7 @@ int rtldrPEValidateDirectories(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64
  *
  * @returns iprt status code.
  * @param   pReader     The loader reader instance which will provide the raw image bits.
- * @param   fFlags      Reserved, MBZ.
+ * @param   fFlags      Loader flags, RTLDR_O_XXX.
  * @param   enmArch     Architecture specifier.
  * @param   offNtHdrs   The offset of the NT headers (where you find "PE\0\0").
  * @param   phLdrMod    Where to store the handle.
@@ -2119,7 +2125,7 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
     if (RT_SUCCESS(rc))
     {
         rc = rtldrPEValidateSectionHeaders(paSections, FileHdr.NumberOfSections, pszLogName,
-                                           &OptHdr, pReader->pfnSize(pReader));
+                                           &OptHdr, pReader->pfnSize(pReader), fFlags);
         if (RT_SUCCESS(rc))
         {
             /*
