@@ -423,7 +423,7 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
       <sect3 id="autologon_unix_lightdm">
         <title>VirtualBox Greeter pour Ubuntu / LightDM</title>
 
-        <para>À partir de la version 4.2.6, VirtualBox est fourni avec son
+        <para>À partir de la version 4.2.12, VirtualBox est fourni avec son
         propre module greeter, qui s'appelle vbox-greeter et qu'on peut utiliser
         avec LightDM 1.0.1 ou supérieur. LightDM est le gestionnaire d'affichage
         par défaut depuis Ubuntu 10.11 et on peut donc l'utiliser également
@@ -469,12 +469,16 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
 
         <note><para>vbox-greeter est indépendant de la session graphique choisie
         par l'utilisateur (comme Gnome, KDE, Unity etc). Néanmoins, il exige
-        FLTK 1.3pour afficher son interface utilisateur.</para></note>
+        FLTK 1.3pour afficher sa propre interface utilisateur.</para></note>
 
-        <para>Outre les valeurs de la propriété invité du module 
-        pam_vbox indiquées ci-dessus, vbox-greeter comprend les propriétés
-        invité suivantes pour une personnalisation accrue de son interface
-        utilisateur, qui se trouvent dans
+        <para>De noubreuses propriétés invité peuvent être utilisées pour
+        personnaliser davantage l'identification de l'utilisateur. Pour identifier
+        automatiquement les utilisateurs, s'appliquent les mêmes propriétés
+        qu'avec pam_vbox, voir <xref linkend="autologon_unix" />.</para>
+
+        <para>Outre les propriétés invité indiquées ci-dessus, vbox-greter
+        permet davantage de personnalisation de son interface
+        utilisateur. Ces propriétés invité spéciales se trouvent toutes dans
         <computeroutput>/VirtualBox/GuestAdd/Greeter/</computeroutput> :</para>
 
         <orderedlist>
@@ -543,8 +547,8 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
         pam_vbox.</para></note>
       </sect3>
 
-     </sect2>
-   </sect1>
+    </sect2>
+  </sect1>
 
   <sect1>
     <title>Configuration avancées pour les invités Windows</title>
@@ -838,14 +842,17 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     srochaine étape est de sélectionner la carte PCI et de l'attacher à l'invité.
     Pour visualiser la liste des périphériques PCI disponibles, utilisez
     la commande <computeroutput>lspci</computeroutput>. La sortie ressemblera à
-    ceci <screen>
-        01:00.0 VGA compatible controller: ATI Technologies Inc Cedar PRO [Radeon HD 5450]
-        01:00.1 Audio device: ATI Technologies Inc Manhattan HDMI Audio [Mobility Radeon HD 5000 Series]
-        02:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8111/8168B PCI Express Gigabit Ethernet controller (rev 03)
-        03:00.0 SATA controller: JMicron Technology Corp. JMB362/JMB363 Serial ATA Controller (rev 03)
-        03:00.1 IDE interface: JMicron Technology Corp. JMB362/JMB363 Serial ATA Controller (rev 03)
-        06:00.0 VGA compatible controller: nVidia Corporation G86 [GeForce 8500 GT] (rev a1)
-      </screen> La première colonne est une adresse PCI (au format
+    ceci :</para>
+   
+    <screen>01:00.0 VGA compatible controller: ATI Technologies Inc Cedar PRO [Radeon HD 5450]
+01:00.1 Audio device: ATI Technologies Inc Manhattan HDMI Audio [Mobility Radeon HD 5000 Series]
+02:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8111/8168B PCI Express Gigabit
+        Ethernet controller (rev 03)
+03:00.0 SATA controller: JMicron Technology Corp. JMB362/JMB363 Serial ATA Controller (rev 03)
+03:00.1 IDE interface: JMicron Technology Corp. JMB362/JMB363 Serial ATA Controller (rev 03)
+06:00.0 VGA compatible controller: nVidia Corporation G86 [GeForce 8500 GT] (rev a1)</screen>
+
+      <para>La première colonne est une adresse PCI (au format
     <computeroutput>bus:device.function</computeroutput>). Cette adresse pourrait
     être utilisée pour identifier les périphériques pour aller plus loin. Par
     exemple, pour attacher un contrôleur réseau PCI du système listé ci-dessus,
@@ -1367,7 +1374,7 @@ VBoxManage setextradata "nom VM"
       réseau NAT</title>
 
       <para>Pour un amorçage réseau en mode NAT, VirtualBox utilise par défaut
-      le serveur TFTP inclu, qui se trouve à l'adresse 10.0.2.3. Ce comportement
+      le serveur TFTP inclu, qui se trouve à l'adresse 10.0.2.4. Ce comportement
       par défaut devrait très bien fonctionner pour les scénari de démarrage
       à distance courants. Cependant, il est possible de modifier l'IP du serveur
       d'amorçage et l'emplacement de l'image de démarrage avec les commandes
