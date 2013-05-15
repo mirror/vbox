@@ -1000,6 +1000,22 @@ RTDECL(const char *) RTDbgModImageFile(RTDBGMOD hDbgMod);
 RTDECL(const char *) RTDbgModImageFileUsed(RTDBGMOD hDbgMod);
 
 /**
+ * Checks if the loading of the debug info has been postponed.
+ *
+ * @returns true if postponed, false if not or invalid handle.
+ * @param   hDbgMod         The module handle.
+ */
+RTDECL(bool)        RTDbgModIsDeferred(RTDBGMOD hDbgMod);
+
+/**
+ * Checks if the debug info is exports only.
+ *
+ * @returns true if exports only, false if not or invalid handle.
+ * @param   hDbgMod         The module handle.
+ */
+RTDECL(bool)        RTDbgModIsExports(RTDBGMOD hDbgMod);
+
+/**
  * Converts an image relative address to a segment:offset address.
  *
  * @returns Segment index on success.
