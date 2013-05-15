@@ -30,46 +30,71 @@
 *******************************************************************************/
 #include "internal/iprt.h"
 #include <iprt/path.h>
-#include <iprt/string.h>
+
+#include <iprt/assert.h>
 
 
 
-/**
- * Finds the filename in a path.
- *
- * @returns Pointer to filename within pszPath.
- * @returns NULL if no filename (i.e. empty string or ends with a slash).
- * @param   pszPath     Path to find filename in.
- */
 RTDECL(char *) RTPathFilename(const char *pszPath)
+{
+    return RTPathFilenameEx(pszPath, RTPATH_STYLE);
+}
+RT_EXPORT_SYMBOL(RTPathFilename);
+
+
+RTDECL(char *) RTPathFilenameEx(const char *pszPath, uint32_t fFlags)
 {
     const char *psz = pszPath;
     const char *pszName = pszPath;
 
-    for (;; psz++)
+    Assert(RTPATH_STR_F_IS_VALID(fFlags, 0 /*no extra flags*/));
+    fFlags &= RTPATH_STR_F_STYLE_MASK;
+    if (fFlags == RTPATH_STR_F_STYLE_HOST)
+        fFlags = RTPATH_STYLE;
+    if (fFlags == RTPATH_STR_F_STYLE_DOS)
     {
-        switch (*psz)
+        for (;; psz++)
         {
-            /* handle separators. */
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-            case ':':
-                pszName = psz + 1;
-                break;
+            switch (*psz)
+            {
+                /* handle separators. */
+                case ':':
+                case '\\':
+                case '/':
+                    pszName = psz + 1;
+                    break;
 
-            case '\\':
-#endif
-            case '/':
-                pszName = psz + 1;
-                break;
+                /* the end */
+                case '\0':
+                    if (*pszName)
+                        return (char *)(void *)pszName;
+                    return NULL;
+            }
+        }
+    }
+    else
+    {
+        Assert(fFlags == RTPATH_STR_F_STYLE_UNIX);
+        for (;; psz++)
+        {
+            switch (*psz)
+            {
+                /* handle separators. */
+                case '/':
+                    pszName = psz + 1;
+                    break;
 
-            /* the end */
-            case '\0':
-                if (*pszName)
-                    return (char *)(void *)pszName;
-                return NULL;
+                /* the end */
+                case '\0':
+                    if (*pszName)
+                        return (char *)(void *)pszName;
+                    return NULL;
+            }
         }
     }
 
     /* not reached */
 }
+RT_EXPORT_SYMBOL(RTPathFilenameEx);
+
 

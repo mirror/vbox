@@ -385,6 +385,17 @@ RTDECL(size_t) RTPathParseSimple(const char *pszPath, size_t *pcchDir, ssize_t *
 RTDECL(char *) RTPathFilename(const char *pszPath);
 
 /**
+ * Finds the filename in a path, extended version.
+ *
+ * @returns Pointer to filename within pszPath.
+ * @returns NULL if no filename (i.e. empty string or ends with a slash).
+ * @param   pszPath     Path to find filename in.
+ * @param   fFlags      RTPATH_STR_F_STYLE_XXX. Other RTPATH_STR_F_XXX flags
+ *                      will be ignored.
+ */
+RTDECL(char *) RTPathFilenameEx(const char *pszPath, uint32_t fFlags);
+
+/**
  * Finds the extension part of in a path.
  *
  * @returns Pointer to extension within pszPath.
