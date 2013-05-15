@@ -5288,6 +5288,7 @@ else
 	/usr/lib/jvm/java-7-openjdk-i386 \
 	/usr/lib/jvm/java-7-openjdk-amd64 \
 	/usr/lib/jvm/default-java \
+	/usr/lib/jvm/java \
 	\
 	/usr/lib/jvm/sun-jdk-1.6 \
 	) /usr/lib/jvm/java-6-sun)
