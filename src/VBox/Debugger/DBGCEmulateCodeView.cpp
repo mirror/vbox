@@ -3907,11 +3907,13 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
         RTDBGMOD hMod = RTDbgAsModuleByIndex(hAs, iMod);
         if (hMod != NIL_RTDBGMOD)
         {
-            uint32_t const      cSegs            = RTDbgModSegmentCount(hMod);
-            const char * const  pszName          = RTDbgModName(hMod);
-            const char * const  pszImgFile       = RTDbgModImageFile(hMod);
-            const char * const  pszImgFileUsed   = RTDbgModImageFileUsed(hMod);
-            const char * const  pszDbgFile       = RTDbgModDebugFile(hMod);
+            bool const          fDeferred       = RTDbgModIsDeferred(hMod);
+            bool const          fExports        = RTDbgModIsExports(hMod);
+            uint32_t const      cSegs           = fDeferred ? 1 : RTDbgModSegmentCount(hMod);
+            const char * const  pszName         = RTDbgModName(hMod);
+            const char * const  pszImgFile      = RTDbgModImageFile(hMod);
+            const char * const  pszImgFileUsed  = RTDbgModImageFileUsed(hMod);
+            const char * const  pszDbgFile      = RTDbgModDebugFile(hMod);
             if (    cArgs == 0
                 ||  dbgcCmdListModuleMatch(pszName, paArgs, cArgs))
             {
@@ -3932,9 +3934,11 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                                  ||  aMappings[iMap].iSeg == NIL_RTDBGSEGIDX))
                             uMin = aMappings[iMap].Address;
                     if (!fVerbose || !pszImgFile)
-                        DBGCCmdHlpPrintf(pCmdHlp, "%RGv %04x %s\n", (RTGCUINTPTR)uMin, cSegs, pszName);
+                        DBGCCmdHlpPrintf(pCmdHlp, "%RGv %04x %s%s\n", (RTGCUINTPTR)uMin, cSegs, pszName,
+                                         fExports ? " (exports)" : fDeferred ? " (deferred)" : "");
                     else
-                        DBGCCmdHlpPrintf(pCmdHlp, "%RGv %04x %-12s  %s\n", (RTGCUINTPTR)uMin, cSegs, pszName, pszImgFile);
+                        DBGCCmdHlpPrintf(pCmdHlp, "%RGv %04x %-12s  %s%s\n", (RTGCUINTPTR)uMin, cSegs, pszName, pszImgFile,
+                                         fExports ? "  (exports)" : fDeferred ? "  (deferred)" : "");
                     if (fVerbose && pszImgFileUsed)
                         DBGCCmdHlpPrintf(pCmdHlp, "    Local image: %s\n", pszImgFileUsed);
                     if (fVerbose && pszDbgFile)

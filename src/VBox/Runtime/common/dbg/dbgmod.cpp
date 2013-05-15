@@ -1144,6 +1144,22 @@ RTDECL(const char *) RTDbgModImageFileUsed(RTDBGMOD hDbgMod)
 RT_EXPORT_SYMBOL(RTDbgModImageFileUsed);
 
 
+RTDECL(bool) RTDbgModIsDeferred(RTDBGMOD hDbgMod)
+{
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, false);
+    return pDbgMod->fDeferred;
+}
+
+
+RTDECL(bool) RTDbgModIsExports(RTDBGMOD hDbgMod)
+{
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, false);
+    return pDbgMod->fExports;
+}
+
+
 RTDECL(RTDBGSEGIDX) RTDbgModRvaToSegOff(RTDBGMOD hDbgMod, RTUINTPTR uRva, PRTUINTPTR poffSeg)
 {
     PRTDBGMODINT pDbgMod = hDbgMod;

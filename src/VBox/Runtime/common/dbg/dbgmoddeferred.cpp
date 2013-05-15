@@ -107,6 +107,8 @@ static int rtDbgModDeferredDoIt(PRTDBGMODINT pMod, bool fForcedRetry)
             pMod->fDeferredFailed = false;
 
             rtDbgModDeferredReleaseInstanceData(pThis);
+            if (fImgVt && fDbgVt)
+                rtDbgModDeferredReleaseInstanceData(pThis);
         }
         else
         {
@@ -115,14 +117,16 @@ static int rtDbgModDeferredDoIt(PRTDBGMODINT pMod, bool fForcedRetry)
 
             if (fDbgVt)
             {
-                pMod->pvDbgPriv = pThis;
+                Assert(!pMod->pDbgVt);
                 pMod->pDbgVt    = &g_rtDbgModVtDbgDeferred;
+                pMod->pvDbgPriv = pThis;
             }
 
             if (fImgVt)
             {
-                pMod->pvImgPriv = pThis;
+                Assert(!pMod->pImgVt);
                 pMod->pImgVt    = &g_rtDbgModVtImgDeferred;
+                pMod->pvImgPriv = pThis;
             }
         }
     }
@@ -543,25 +547,27 @@ DECLHIDDEN(int) rtDbgModDeferredCreate(PRTDBGMODINT pDbgMod, PFNRTDBGMODDEFERRED
                                        RTDBGCFG hDbgCfg, PRTDBGMODDEFERRED *ppDeferred)
 {
     AssertReturn(!pDbgMod->pDbgVt, VERR_DBG_MOD_IPE);
-    AssertReturn(!pDbgMod->pImgVt, VERR_DBG_MOD_IPE);
 
     PRTDBGMODDEFERRED pDeferred = (PRTDBGMODDEFERRED)RTMemAllocZ(sizeof(*pDeferred));
     if (!pDeferred)
         return VERR_NO_MEMORY;
 
     pDeferred->cbImage     = cbImage;
-    pDeferred->cRefs       = 2;
+    pDeferred->cRefs       = 1 + (pDbgMod->pImgVt == NULL);
     if (hDbgCfg != NIL_RTDBGCFG)
         RTDbgCfgRetain(hDbgCfg);
     pDeferred->hDbgCfg     = hDbgCfg;
     pDeferred->pfnDeferred = pfnDeferred;
 
-    pDbgMod->pImgVt              = &g_rtDbgModVtImgDeferred;
-    pDbgMod->pvImgPriv           = pDeferred;
-    pDbgMod->pDbgVt              = &g_rtDbgModVtDbgDeferred;
-    pDbgMod->pvDbgPriv           = pDeferred;
-    pDbgMod->fDeferred           = true;
-    pDbgMod->fDeferredFailed     = false;
+    pDbgMod->pDbgVt             = &g_rtDbgModVtDbgDeferred;
+    pDbgMod->pvDbgPriv          = pDeferred;
+    if (!pDbgMod->pImgVt)
+    {
+        pDbgMod->pImgVt         = &g_rtDbgModVtImgDeferred;
+        pDbgMod->pvImgPriv      = pDeferred;
+    }
+    pDbgMod->fDeferred          = true;
+    pDbgMod->fDeferredFailed    = false;
 
     if (ppDeferred)
         *ppDeferred = pDeferred;
