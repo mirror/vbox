@@ -214,15 +214,15 @@
 *******************************************************************************/
 typedef struct _IMAGE_FILE_HEADER
 {
-    uint16_t  Machine;
-    uint16_t  NumberOfSections;
-    uint32_t  TimeDateStamp;
-    uint32_t  PointerToSymbolTable;
-    uint32_t  NumberOfSymbols;
-    uint16_t  SizeOfOptionalHeader;
-    uint16_t  Characteristics;
-} IMAGE_FILE_HEADER;
-AssertCompileSize(IMAGE_FILE_HEADER, 2+2+4+4+4+2+2);
+    uint16_t  Machine;                      /**< 0x00 */
+    uint16_t  NumberOfSections;             /**< 0x02 */
+    uint32_t  TimeDateStamp;                /**< 0x04  */
+    uint32_t  PointerToSymbolTable;         /**< 0x08  */
+    uint32_t  NumberOfSymbols;              /**< 0x0c  */
+    uint16_t  SizeOfOptionalHeader;         /**< 0x10  */
+    uint16_t  Characteristics;              /**< 0x12 */
+} IMAGE_FILE_HEADER;                        /* size: 0x14 */
+AssertCompileSize(IMAGE_FILE_HEADER, 0x14);
 typedef IMAGE_FILE_HEADER *PIMAGE_FILE_HEADER;
 typedef IMAGE_FILE_HEADER const *PCIMAGE_FILE_HEADER;
 
@@ -238,84 +238,86 @@ typedef IMAGE_DATA_DIRECTORY const *PCIMAGE_DATA_DIRECTORY;
 
 typedef struct _IMAGE_OPTIONAL_HEADER32
 {
-    uint16_t  Magic;
-    uint8_t   MajorLinkerVersion;
-    uint8_t   MinorLinkerVersion;
-    uint32_t  SizeOfCode;
-    uint32_t  SizeOfInitializedData;
-    uint32_t  SizeOfUninitializedData;
-    uint32_t  AddressOfEntryPoint;
-    uint32_t  BaseOfCode;
-    uint32_t  BaseOfData;
-    uint32_t  ImageBase;
-    uint32_t  SectionAlignment;
-    uint32_t  FileAlignment;
-    uint16_t  MajorOperatingSystemVersion;
-    uint16_t  MinorOperatingSystemVersion;
-    uint16_t  MajorImageVersion;
-    uint16_t  MinorImageVersion;
-    uint16_t  MajorSubsystemVersion;
-    uint16_t  MinorSubsystemVersion;
-    uint32_t  Win32VersionValue;
-    uint32_t  SizeOfImage;
-    uint32_t  SizeOfHeaders;
-    uint32_t  CheckSum;
-    uint16_t  Subsystem;
-    uint16_t  DllCharacteristics;
-    uint32_t  SizeOfStackReserve;
-    uint32_t  SizeOfStackCommit;
-    uint32_t  SizeOfHeapReserve;
-    uint32_t  SizeOfHeapCommit;
-    uint32_t  LoaderFlags;
-    uint32_t  NumberOfRvaAndSizes;
-    IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
-} IMAGE_OPTIONAL_HEADER32;
+    uint16_t  Magic;                        /**< 0x00 */
+    uint8_t   MajorLinkerVersion;           /**< 0x02 */
+    uint8_t   MinorLinkerVersion;           /**< 0x03 */
+    uint32_t  SizeOfCode;                   /**< 0x04 */
+    uint32_t  SizeOfInitializedData;        /**< 0x08 */
+    uint32_t  SizeOfUninitializedData;      /**< 0x0c */
+    uint32_t  AddressOfEntryPoint;          /**< 0x10 */
+    uint32_t  BaseOfCode;                   /**< 0x14 */
+    uint32_t  BaseOfData;                   /**< 0x18 */
+    uint32_t  ImageBase;                    /**< 0x1c */
+    uint32_t  SectionAlignment;             /**< 0x20 */
+    uint32_t  FileAlignment;                /**< 0x24 */
+    uint16_t  MajorOperatingSystemVersion;  /**< 0x28 */
+    uint16_t  MinorOperatingSystemVersion;  /**< 0x2a */
+    uint16_t  MajorImageVersion;            /**< 0x2c */
+    uint16_t  MinorImageVersion;            /**< 0x2e */
+    uint16_t  MajorSubsystemVersion;        /**< 0x30 */
+    uint16_t  MinorSubsystemVersion;        /**< 0x32 */
+    uint32_t  Win32VersionValue;            /**< 0x34 */
+    uint32_t  SizeOfImage;                  /**< 0x38 */
+    uint32_t  SizeOfHeaders;                /**< 0x3c */
+    uint32_t  CheckSum;                     /**< 0x40 */
+    uint16_t  Subsystem;                    /**< 0x44 */
+    uint16_t  DllCharacteristics;           /**< 0x46 */
+    uint32_t  SizeOfStackReserve;           /**< 0x48 */
+    uint32_t  SizeOfStackCommit;            /**< 0x4c */
+    uint32_t  SizeOfHeapReserve;            /**< 0x50 */
+    uint32_t  SizeOfHeapCommit;             /**< 0x54 */
+    uint32_t  LoaderFlags;                  /**< 0x58 */
+    uint32_t  NumberOfRvaAndSizes;          /**< 0x5c */
+    IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES]; /**< 0x60; 0x10*8 = 0x80 */
+} IMAGE_OPTIONAL_HEADER32;                  /* size: 0xe0 */
+AssertCompileSize(IMAGE_OPTIONAL_HEADER32, 0xe0);
 typedef IMAGE_OPTIONAL_HEADER32 *PIMAGE_OPTIONAL_HEADER32;
 typedef IMAGE_OPTIONAL_HEADER32 const *PCIMAGE_OPTIONAL_HEADER32;
 
 typedef struct _IMAGE_OPTIONAL_HEADER64
 {
-    uint16_t  Magic;
-    uint8_t   MajorLinkerVersion;
-    uint8_t   MinorLinkerVersion;
-    uint32_t  SizeOfCode;
-    uint32_t  SizeOfInitializedData;
-    uint32_t  SizeOfUninitializedData;
-    uint32_t  AddressOfEntryPoint;
-    uint32_t  BaseOfCode;
-    uint64_t  ImageBase;
-    uint32_t  SectionAlignment;
-    uint32_t  FileAlignment;
-    uint16_t  MajorOperatingSystemVersion;
-    uint16_t  MinorOperatingSystemVersion;
-    uint16_t  MajorImageVersion;
-    uint16_t  MinorImageVersion;
-    uint16_t  MajorSubsystemVersion;
-    uint16_t  MinorSubsystemVersion;
-    uint32_t  Win32VersionValue;
-    uint32_t  SizeOfImage;
-    uint32_t  SizeOfHeaders;
-    uint32_t  CheckSum;
-    uint16_t  Subsystem;
-    uint16_t  DllCharacteristics;
-    uint64_t  SizeOfStackReserve;
-    uint64_t  SizeOfStackCommit;
-    uint64_t  SizeOfHeapReserve;
-    uint64_t  SizeOfHeapCommit;
-    uint32_t  LoaderFlags;
-    uint32_t  NumberOfRvaAndSizes;
-    IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
-} IMAGE_OPTIONAL_HEADER64;
+    uint16_t  Magic;                        /**< 0x00 */
+    uint8_t   MajorLinkerVersion;           /**< 0x02 */
+    uint8_t   MinorLinkerVersion;           /**< 0x03 */
+    uint32_t  SizeOfCode;                   /**< 0x04 */
+    uint32_t  SizeOfInitializedData;        /**< 0x08 */
+    uint32_t  SizeOfUninitializedData;      /**< 0x0c */
+    uint32_t  AddressOfEntryPoint;          /**< 0x10 */
+    uint32_t  BaseOfCode;                   /**< 0x14 */
+    uint64_t  ImageBase;                    /**< 0x18 */
+    uint32_t  SectionAlignment;             /**< 0x20 */
+    uint32_t  FileAlignment;                /**< 0x24 */
+    uint16_t  MajorOperatingSystemVersion;  /**< 0x28 */
+    uint16_t  MinorOperatingSystemVersion;  /**< 0x2a */
+    uint16_t  MajorImageVersion;            /**< 0x2c */
+    uint16_t  MinorImageVersion;            /**< 0x2e */
+    uint16_t  MajorSubsystemVersion;        /**< 0x30 */
+    uint16_t  MinorSubsystemVersion;        /**< 0x32 */
+    uint32_t  Win32VersionValue;            /**< 0x34 */
+    uint32_t  SizeOfImage;                  /**< 0x38 */
+    uint32_t  SizeOfHeaders;                /**< 0x3c */
+    uint32_t  CheckSum;                     /**< 0x40 */
+    uint16_t  Subsystem;                    /**< 0x44 */
+    uint16_t  DllCharacteristics;           /**< 0x46 */
+    uint64_t  SizeOfStackReserve;           /**< 0x48 */
+    uint64_t  SizeOfStackCommit;            /**< 0x50 */
+    uint64_t  SizeOfHeapReserve;            /**< 0x58 */
+    uint64_t  SizeOfHeapCommit;             /**< 0x60 */
+    uint32_t  LoaderFlags;                  /**< 0x68 */
+    uint32_t  NumberOfRvaAndSizes;          /**< 0x6c */
+    IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES]; /**< 0x70; 0x10*8 = 0x80 */
+} IMAGE_OPTIONAL_HEADER64;                  /* size: 0xf0 */
 typedef IMAGE_OPTIONAL_HEADER64 *PIMAGE_OPTIONAL_HEADER64;
 typedef IMAGE_OPTIONAL_HEADER64 const *PCIMAGE_OPTIONAL_HEADER64;
 
 
 typedef struct _IMAGE_NT_HEADERS
 {
-    uint32_t  Signature;
-    IMAGE_FILE_HEADER FileHeader;
-    IMAGE_OPTIONAL_HEADER32 OptionalHeader;
-} IMAGE_NT_HEADERS32;
+    uint32_t  Signature;                    /**< 0x00 */
+    IMAGE_FILE_HEADER FileHeader;           /**< 0x04 */
+    IMAGE_OPTIONAL_HEADER32 OptionalHeader; /**< 0x18 */
+} IMAGE_NT_HEADERS32;                       /* size:  0xf8 */
+AssertCompileSize(IMAGE_NT_HEADERS32, 0xf8);
 AssertCompileMemberOffset(IMAGE_NT_HEADERS32, FileHeader, 4);
 AssertCompileMemberOffset(IMAGE_NT_HEADERS32, OptionalHeader, 24);
 typedef IMAGE_NT_HEADERS32 *PIMAGE_NT_HEADERS32;
@@ -323,10 +325,11 @@ typedef IMAGE_NT_HEADERS32 const *PCIMAGE_NT_HEADERS32;
 
 typedef struct _IMAGE_NT_HEADERS64
 {
-    uint32_t  Signature;
-    IMAGE_FILE_HEADER FileHeader;
-    IMAGE_OPTIONAL_HEADER64 OptionalHeader;
-} IMAGE_NT_HEADERS64;
+    uint32_t  Signature;                    /**< 0x00 */
+    IMAGE_FILE_HEADER FileHeader;           /**< 0x04 */
+    IMAGE_OPTIONAL_HEADER64 OptionalHeader; /**< 0x18 */
+} IMAGE_NT_HEADERS64;                       /**< 0x108 */
+AssertCompileSize(IMAGE_NT_HEADERS64, 0x108);
 AssertCompileMemberOffset(IMAGE_NT_HEADERS64, FileHeader, 4);
 AssertCompileMemberOffset(IMAGE_NT_HEADERS64, OptionalHeader, 24);
 typedef IMAGE_NT_HEADERS64 *PIMAGE_NT_HEADERS64;
