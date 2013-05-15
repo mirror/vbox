@@ -317,7 +317,11 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_ChangeL
 	$(QUIET)$(SED) -e '1,/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->/!d' \
 	               -e 's/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->//' \
 	               --output $@ $@.tmp
-	$(QUIET)$(SED) -e 's/<?xml version=\"1.0\" encoding=\"UTF-8\"?>//g' --append $@ $(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml
+	var=`$(SED) -n '/!--\$$VIRTUALBOX_CHANGELOG_IMPL-->/p' $<`; \
+	               test -n "$${var}" && \
+	               $(SED) -e 's/<?xml version=\"1.0\" encoding=\"UTF-8\"?>//g' \
+	                       --append $@ $(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml; \
+                       true
 	$(QUIET)$(SED) -e '/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->/,$$!d' \
 	               -e 's/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->//' --append $@ $@.tmp
 
