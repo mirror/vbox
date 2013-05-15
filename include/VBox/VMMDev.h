@@ -287,8 +287,7 @@ AssertCompileSize(VMMDevReqMouseStatus, 24+12);
  * cursor itself, the guest installs a hardware mouse driver. Don't ask the
  * guest to switch to a software cursor then. */
 #define VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR                RT_BIT(2)
-/** The host does NOT provide support for drawing the cursor itself.
- * This is for instance the case for the L4 console. */
+/** The host does NOT provide support for drawing the cursor itself. */
 #define VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER                  RT_BIT(3)
 /** The guest can read VMMDev events to find out about pointer movement */
 #define VMMDEV_MOUSE_NEW_PROTOCOL                           RT_BIT(4)
