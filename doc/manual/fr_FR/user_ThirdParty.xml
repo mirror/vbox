@@ -343,6 +343,85 @@
         </para>
       </listitem>
 
+      <listitem>
+        <para>VirtualBox contient des morceaux de liblightdm-gobject soumis à la
+        licence dans <xref linkend="licLGPL" xrefstyle="template: %n" /> et</para>
+
+        <para>Copyright (C) 2010-2013 Canonical Ltd.; Copyright (C) 2010-2011 Robert Ancell.</para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contient des morceaux de glib soumis à la
+          licence dans <xref linkend="licLGPL" xrefstyle="template: %n" /> et</para>
+
+        <para>Copyright (C) 1995-2011 L'équipe de Glib</para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contient des morceaux de PCRE soumis à la
+          licence dans <xref linkend="licPcre" xrefstyle="template :%n" /> et</para>
+        <para>Copyright (c) 1997-2012 University of Cambridge;
+          Copyright(c) 2009-2012 Zoltan Herczeg;
+          Copyright (c) 2007-2012, Google Inc.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contient des morceaux de libffi soumis à la
+          licence dans <xref linkend="licLibffi" xrefstyle="template :%n" /> et</para>
+        <para>
+          Copyright (c) 1996-2012  Anthony Green, Red Hat, Inc et autres.
+          Voir les fichiers du source pour les détails.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contient des morceaux de FLTK soumis aux
+          licences dans <xref linkend="licFltk" xrefstyle="template :%n" /> ainsi que
+          dans <xref linkend="licLGPL" xrefstyle="template :%n"/> et  </para>
+        <para>
+          Copyright (C) 1991-2012  L'équipe FLTK
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contient des morceaux d'Expat soumis à la
+          licence dans <xref linkend="licExpat" xrefstyle="template :%n" /> et</para>
+        <para>
+          Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
+          et Clark Cooper; Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 
+          Responsables d'Expat.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contient des morceaux de Fontconfig soumis à la
+          licence dans <xref linkend="licFontconfig" xrefstyle="template :%n" />
+          et</para>
+        <para>
+          Copyright (C) 2001, 2003 Keith Packard
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox contient des morceaux de Freetype soumis à la
+          licence dans <xref linkend="licFreetype" xrefstyle="template :%n" />
+          et</para>
+        <para>
+          Copyright 2012 Le projet FreeType (www.freetype.org). Tous droits
+          réservés.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VirtualBox peut contenir du code du SDK  WebM VP8 Codec soumis à la
+        licence dans <xref linkend="licVPX" xrefstyle="template :%n" />
+          et </para>
+        <para>
+          Copyright (c) 2010, The WebM Project authors. Tous droits réservés.
+        </para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
