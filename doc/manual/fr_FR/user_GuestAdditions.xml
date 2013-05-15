@@ -1181,12 +1181,15 @@ $</screen>
 
             <screen>iocharset CHARSET</screen>
 
-            <para>pour définir l'encodage utilisé pour les opérations d'E/S
-            (utf8 par défaut) et</para>
+            <para>pour définir l'encodage utilisé pour les opérations d'E/S.
+            Remarquez que sur les invités Linux, si vous ne spécifiez pas l'option
+            "iocharset", le pilote des suppléments invité essaiera d'utiliser
+            l'encodage spécifié par l'option  CONFIG_NLS_DEFAULT du noyau.
+            Si cette option n'est pas définie, UTF-8 sera utilisé. En outre,</para>
 
             <screen>convertcp CHARSET</screen>
 
-            <para>pour définir l'encodage utilisé pour le nom du dossier partagé
+            <para>est disponible pour définir l'encodage utilisé pour le nom du dossier partagé
             (utf8 par défaut) et</para>
 
             <para>Les options de montage génériques (documentées dans la page de
