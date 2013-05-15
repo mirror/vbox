@@ -833,25 +833,22 @@ void Display::handleResizeCompletedEMT (void)
                 pFBInfo->pFramebuffer->NotifyUpdate(0, 0, pFBInfo->w, pFBInfo->h);
         }
         LogRelFlow(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
-        
+
         /* Handle the case if there are some saved visible region that needs to be 
          * applied after the resize of the framebuffer is completed 
          */
         SaveSeamlessRectLock();
-        PRTRECT pSavedSeamlessRgn = pFBInfo->mpSavedVisibleRegion;
-        uint32_t ucSavedSeamlessRgn = pFBInfo->mcSavedVisibleRegion;
+        PRTRECT pSavedVisibleRegion = pFBInfo->mpSavedVisibleRegion;
+        uint32_t cSavedVisibleRegion = pFBInfo->mcSavedVisibleRegion;
+        pFBInfo->mpSavedVisibleRegion = NULL;
+        pFBInfo->mcSavedVisibleRegion = 0;
         SaveSeamlessRectUnLock();
-        if (pSavedSeamlessRgn && ucSavedSeamlessRgn)
-        {
-            handleSetVisibleRegion(ucSavedSeamlessRgn, pSavedSeamlessRgn);
-            SaveSeamlessRectLock();
-            if (pFBInfo->mpSavedVisibleRegion)
-                RTMemFree(pFBInfo->mpSavedVisibleRegion);
-            pFBInfo->mpSavedVisibleRegion = NULL;
-            pFBInfo->mcSavedVisibleRegion = 0;
-            SaveSeamlessRectUnLock();
-        }
 
+        if (pSavedVisibleRegion)
+        {
+            handleSetVisibleRegion(cSavedVisibleRegion, pSavedVisibleRegion);
+            RTMemFree(pSavedVisibleRegion);
+        }
 
 #ifdef DEBUG_sunlover
         if (!g_stam)
@@ -1129,9 +1126,8 @@ int Display::handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
                  * guest desktop.
                  */
                 SaveSeamlessRectLock();
-                if(pFBInfo->mpSavedVisibleRegion)
-                    RTMemFree(pFBInfo->mpSavedVisibleRegion);
-                
+                RTMemFree(pFBInfo->mpSavedVisibleRegion);
+
                 pFBInfo->mpSavedVisibleRegion = (RTRECT *)RTMemAlloc( RT_MAX(cRect, 1)
                                                                      * sizeof (RTRECT));
                 if (pFBInfo->mpSavedVisibleRegion)
@@ -1141,7 +1137,6 @@ int Display::handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
                 }
                 else
                 {
-                    /* memory allocation failed */
                     pFBInfo->mcSavedVisibleRegion = 0;
                 }
                 SaveSeamlessRectUnLock();
