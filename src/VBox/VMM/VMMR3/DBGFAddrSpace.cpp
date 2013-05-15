@@ -147,9 +147,13 @@ int dbgfR3AsInit(PUVM pUVM)
     AssertRCReturn(rc, rc);
 
     /*
-     * Create the debugging config instance and set it up.
+     * Create the debugging config instance and set it up, defaulting to
+     * deferred loading in order to keep things fast.
      */
     rc = RTDbgCfgCreate(&pUVM->dbgf.s.hDbgCfg, NULL, true /*fNativePaths*/);
+    AssertRCReturn(rc, rc);
+    rc = RTDbgCfgChangeUInt(pUVM->dbgf.s.hDbgCfg, RTDBGCFGPROP_FLAGS, RTDBGCFGOP_PREPEND,
+                            RTDBGCFG_FLAGS_DEFERRED);
     AssertRCReturn(rc, rc);
 
     static struct
