@@ -262,6 +262,10 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
       cet environnement. Virtuellement, toutes les distributions Linux/Unix modernes
       s'appuient sur PAM.</para>
 
+      <para>Pour des identifications automatiques sur des distributions Ubuntu
+      (ou dérivées d'Ubuntu), qui utilisent le gestionnaire d'affichage
+      LightDM, merci de voir <xref linkend="autologon_unix_lightdm" />.</para>
+
       <para>Le module <computeroutput>pam_vbox.so</computeroutput> lui-même
       <emphasis role="bold">ne fait pas</emphasis> de vérification effective des
       autorisations passées à l'OS invité&#xA0;; il s'appuie plutôt sur d'autres
@@ -415,8 +419,132 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
           Consultez le fichier syslog adéquat pour plus d'informations et utilisez
           l'option <computeroutput>debug</computeroutput>.</para>
         </note></para>
-    </sect2>
-  </sect1>
+
+      <sect3 id="autologon_unix_lightdm">
+        <title>VirtualBox Greeter pour Ubuntu / LightDM</title>
+
+        <para>À partir de la version 4.2.6, VirtualBox est fourni avec son
+        propre module greeter, qui s'appelle vbox-greeter et qu'on peut utiliser
+        avec LightDM 1.0.1 ou supérieur. LightDM est le gestionnaire d'affichage
+        par défaut depuis Ubuntu 10.11 et on peut donc l'utiliser également
+        pour des identifications automatiques sur l'invité.</para>
+
+        <para>vbox-greeter n'a pas besoin du module pam_vbox décrit ci-dessus
+        pour fonctionner -- il est fourni avec son propre mécanisme d'authentification
+        fourni par LightDM. Cependant, pour offrir le maximum de flexibilité,
+        vous pouvez utiliser les deux modules ensemble sur le même invité.</para>
+
+        <para>Comme pour le module pam_vbox, vbox-greeter est fourni avec
+        les suppléments invité mais il n'est pas installé et/ou activé par défaut
+        sur l'OS invité. Pour installer vbox-greeter automatiquement pendant
+        l'installation des suppléments invité, utilisez le paramètre
+        <computeroutput>--with-autologon</computeroutput> au lancement du fichier
+        VBoxLinuxAdditions.run :<screen>
+        # ./VBoxLinuxAdditions.run -- --with-autologon</screen></para>
+
+        <para>Pour une installation manuelle ou différée, le fichier
+        <computeroutput>vbox-greeter.desktop</computeroutput> doit être copié
+        de <computeroutput>/opt/VBoxGuestAdditions-&lt;version&gt;/shared/VBoxGuestAdditions/</computeroutput>
+        dans le répertoire <computeroutput>xgreeters</computeroutput>, 
+        généralement <computeroutput>/usr/share/xgreeters/</computeroutput>.
+        Merci de vous reporter à la documentation de votre OS invité pour le
+        bon répertoire de LightDM greeter.</para>
+
+        <para>Le module vbox-greeter lui-même a été installé par l'installeur
+        des suppléments invité de VirtualBox et il se trouve dans
+        <computeroutput>/usr/sbin/</computeroutput>. Pour activer vbox-greeter
+        en tant que module greeter standard, le fichier
+        <computeroutput>/etc/lightdm/lightdm.conf</computeroutput> doit être
+        modifié :</para>
+
+        <para><screen>
+        [SeatDefaults]
+        greeter-session=vbox-greeter</screen></para>
+
+        <note><para>Il faut complètement relancer le serveur LightDM afin que
+        vbox-greeter soit utilisé comme greeter par défaut. En tant qu'administrateur,
+        exécutez un
+        <computeroutput>service lightdm --full-restart</computeroutput> sur
+        Ubuntu, ou redémarrez tout simplement l'invité.</para></note>
+
+        <note><para>vbox-greeter est indépendant de la session graphique choisie
+        par l'utilisateur (comme Gnome, KDE, Unity etc). Néanmoins, il exige
+        FLTK 1.3pour afficher son interface utilisateur.</para></note>
+
+        <para>Outre les valeurs de la propriété invité du module 
+        pam_vbox indiquées ci-dessus, vbox-greeter comprend les propriétés
+        invité suivantes pour une personnalisation accrue de son interface
+        utilisateur, qui se trouvent dans
+        <computeroutput>/VirtualBox/GuestAdd/Greeter/</computeroutput> :</para>
+
+        <orderedlist>
+          <listitem>
+            <para><computeroutput>HideRestart</computeroutput> : Réglez-le sur
+            "1" si vbox-greeter doit masquer le bouton de redémarrage de l'invité.
+            Vous devez définir cette propriété en lecture seule pour l'invité
+            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>HideShutdown</computeroutput> : Réglez-la
+            à "1" si vbox-greeter doit masquer le bouton d'extinction de
+            l'invité. Vous devez définir cette propriété en lecture seule pour l'invité
+            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>BannerPath</computeroutput> : Chemin vers
+            un fichier .PNG à utiliser comme bannière en haut. La taille de
+            l'image doit être de 460 x 90 pixels, quelle rue soit la profondeur
+            de bit. Vous devez définir cette propriété en lecture seule pour l'invité
+            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>UseTheming</computeroutput> : Définissez-la
+            à "1" pour activer les options de thème suivantes.
+            Vous devez définir cette propriété en lecture seule pour l'invité
+            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>Theme/BackgroundColor</computeroutput> :
+            Couleur RRGGBB hexadécimale du fond. Vous devez définir cette 
+            propriété en lecture seule pour l'invité
+            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>Theme/LogonDialog/HeaderColor</computeroutput> :
+            Couleur d'avant RRGGBB hexadécimale pour le texte d'en-tête.
+            Vous devez définir cette propriété en lecture seule pour l'invité
+            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>Theme/LogonDialog/BackgroundColor</computeroutput>:
+            Couleur en RRGGBB hexadécimale du fond de la boîte de dialogue 
+            d'identification.
+            Vous devez définir cette propriété en lecture seule pour l'invité
+            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>Theme/LogonDialog/ButtonColor</computeroutput> :
+            Couleur de fond RRGGBB hexadécimale du bouton de la boîte de dialogue
+            d'identification. Vous devez définir cette propriété en lecture 
+            seule pour l'invité
+            (<computeroutput>RDONLYGUEST</computeroutput>).</para>
+          </listitem>
+        </orderedlist>
+
+        <note><para>Les mêmes restrictions des propriétés invité ci-dessus
+        s'appliquent comme celles indiquées dans la section 
+        pam_vbox.</para></note>
+      </sect3>
+
+     </sect2>
+   </sect1>
 
   <sect1>
     <title>Configuration avancées pour les invités Windows</title>
@@ -1239,7 +1367,7 @@ VBoxManage setextradata "nom VM"
       réseau NAT</title>
 
       <para>Pour un amorçage réseau en mode NAT, VirtualBox utilise par défaut
-      le serveur TFTP inclu, qui se trouve à l'adresse 10.0.2.4. Ce comportement
+      le serveur TFTP inclu, qui se trouve à l'adresse 10.0.2.3. Ce comportement
       par défaut devrait très bien fonctionner pour les scénari de démarrage
       à distance courants. Cependant, il est possible de modifier l'IP du serveur
       d'amorçage et l'emplacement de l'image de démarrage avec les commandes

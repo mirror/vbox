@@ -720,6 +720,14 @@ Statistics update:  disabled
               les valeurs disponibles dans le gestionnaire de périphériques de
               l'invité.</para>
             </listitem>
+
+          <listitem>
+            <para><computeroutput>--defaultfrontend
+            default|&lt;nom&gt;</computeroutput>&#xA0;: Ceci vous permet de
+            spécifier l'interface par défaut qui sera utilisée au démarrage de
+            cette VM&#xA0; voir 
+            <xref linkend="vboxmanage-startvm" /> pour des détails.</para>
+          </listitem>
         </itemizedlist></para>
     </sect2>
 
@@ -928,8 +936,7 @@ Statistics update:  disabled
     </sect2>
 
     <sect2 id="vboxmanage-modifyvm-other">
-      <title>Options du port série, du son, du presse-papier, du bureau distant
-      et de l'USB</title>
+      <title>Options du port série, du son, du presse-papier et de l'USB</title>
 
       <para>Les autres paramètres matériels suivants sont disponibles avec
       <computeroutput>VBoxManage modifyvm</computeroutput>&#xA0;:<itemizedlist>
@@ -1025,7 +1032,7 @@ Statistics update:  disabled
         </itemizedlist></para>
     </sect2>
 
-    <sect2>
+    <sect2 id="vboxmanage-modifyvm-vrde">
       <title>Paramètres de la machine distante</title>
 
       <para>Les paramètres suivants concernant le comportement de la machine 
@@ -1058,6 +1065,22 @@ Statistics update:  disabled
             &gt;</computeroutput>&#xA0;: L'adresse IP de l'interface réseau de 
             l'hôte que sondera le serveur VRDE. Si vous la spécifiez, leserveur
             n'acceptra les connexions que sur l'interface de l'hôte spécifiée.</para>
+            <para>On peut utiliser ce paramètre pour indiquer si le serveur
+            VRDP devrait accepter des donnexions IPv4, IPv6 ou les deux :
+            <itemizedlist>
+              <listitem>
+                <para>IPv4 seulement : <computeroutput>--vrdeaddress "0.0.0.0"
+                </computeroutput></para>
+              </listitem>
+              <listitem>
+                <para>IPv6 seulement : <computeroutput>--vrdeaddress "::"
+                </computeroutput></para>
+              </listitem>
+              <listitem>
+                <para>IPv6 et IPv4 (par défaut) : <computeroutput>--vrdeaddress ""
+                </computeroutput></para>
+              </listitem>
+            </itemizedlist></para>
           </listitem>
 
           <listitem>
@@ -1070,7 +1093,7 @@ Statistics update:  disabled
           <listitem>
             <para><computeroutput>--vrdemulticon on|off</computeroutput>&#xA0;: Ceci
             active la multiconnexions au même serveur VRDE si le serveur supporte
-            cette fonction&#xA0;; voir <xref lang=""
+            cette fonction ; voir <xref lang=""
             linkend="vrde-multiconnection" />.</para>
           </listitem>
 
@@ -1354,25 +1377,16 @@ Virtual system 0:
     <para>Cette commande démarre une machine virtuelle qui est en état "Éteinte"
     ou "Sauvegardée".</para>
 
-    <note>
-      <para>Elle n'est offerte que pour des raisons de rétro-compatibilité. Nous
-      vous recommandons de démarrer les machines virtuelles directement via les
-      interfaces choisies car vous pourriez sans cela manquer des messages d'erreur
-      et des informations d'état importantes que peut afficher
-      VirtualBox en console. C'est surtout important pour les autres interfaces que
-      <computeroutput>VirtualBox</computeroutput>, notre interface graphique, car
-      ils ne peuvent pas afficher des messages d'erreur dans une fenêtre popup.
-      Voir<xref linkend="vboxheadless" /> pour plus d'informations.</para>
-    </note>
-
     <para>Le paramètre facultatif <computeroutput>--type</computeroutput> 
-    détermine si la machine sera démarrée dans une fenêtre (mode graphique,
-    qui est celui par défaut) ou la sortie devrait passer par 
+    détermine si la machine sera démarrée dans une fenêtre ou si la sortie devrait passer par 
     <computeroutput>VBoxHeadless</computeroutput>, en activant ou pas VRDE&#xA0;;
     voir <xref linkend="vboxheadless" /> pour plus d'informations. La liste
-    des types peut changer, il n'est pas garanti que tous les types sont
+    des types peut changer et il n'est pas garanti que tous les types sont
     acceptés par la variante d'un produit.</para>
 
+    <para>La valeur par défaut, globale ou individuelle à une VM, du type
+    d'interface d'une VM sera utilisée si vous ne spécifiez pas explicitement
+    le type. Si aucune n'est définie, c'est la variante GUI qui sera démarrée.</para>
     <para>Les valeurs suivantes sont autorisées&#xA0;:</para>
 
     <glosslist>
@@ -1392,7 +1406,24 @@ Virtual system 0:
           <para>Démarre une VM sans fenêtre pour un affichage distant.</para>
         </glossdef>
       </glossentry>
+
+      <glossentry>
+        <glossterm>sdl</glossterm>
+
+        <glossdef>
+          <para>Démarre une VM avec une GUI minimale et limitée dans ses
+          fonctionnalités.</para>
+        </glossdef>
+      </glossentry>
     </glosslist>
+
+    <note>
+      <para>Si vous rencontrez des problèmes en démarrant des machines virtuelles
+      avec certaines interfaces et s'il n'y a pas d'informations d'erreur
+      convaincantes, essayez de démarrer les machines virtuelles en lançant
+      directement leur interface respective, car cela peut donner des informations
+      supplémentaires sur l'erreur.</para>
+    </note>
   </sect1>
 
   <sect1 id="vboxmanage-controlvm">
@@ -2495,8 +2526,7 @@ Value: 2006.01.01</screen>
         </glossentry>
 
         <glossentry>
-          <glossterm>vrdelibrary</glossterm>
-
+          <glossterm>vrdeextpack</glossterm>
           <glossdef>
             <para>Ceci spécifie la bibliothèque qui implémente l'extension Bureau
             distant de VirtualBox.</para>
@@ -2504,11 +2534,29 @@ Value: 2006.01.01</screen>
         </glossentry>
 
         <glossentry>
-          <glossterm>hwvirtexenabled</glossterm>
+          <glossterm>loghistorycount</glossterm>
 
           <glossdef>
-            <para>Ceci sélectionne l'activation du support de la virtualisation
-            matérielle par défaut.</para>
+            <para>Ceci sélectionne le nombre de journaux de VMs (anciens)
+            conservés.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>autostartdbpath</glossterm>
+
+          <glossdef>
+            <para>Ceci sélectionne le chemin vers la base de données autostart.
+            Voir <xref linkend="autostart" />.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>defaultfrontend</glossterm>
+
+          <glossdef>
+            <para>Ceci sélectionne l'interface globale des VMs. Voir
+            <xref linkend="vboxmanage-startvm" />.</para>
           </glossdef>
         </glossentry>
       </glosslist></para>

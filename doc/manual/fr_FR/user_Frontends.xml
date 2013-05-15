@@ -8,7 +8,7 @@
     <title id="vrde">Affichage distant (VRDP support)</title>
 
     <para>VirtualBox peut afficher les machines virtuelles à distance, ce qui
-    signifie qu'une machine virtuelle peut s'exécuter sur une machine même si
+    signifie qu'une machine virtuelle peut s'exécuter sur un ordinateur même si
     la machine sera affichée sur un deuxième ordinateur, et la machine sera
     contrôlée également à partir de là, comme si la machine virtuelle fonctionnait
     sur ce deuxième ordinateur.</para>
@@ -28,10 +28,8 @@
     (non libre)) de VirtualBox avant 4.0.</para>
 
     <para>VRDP est une extension rétro-compatible au Remote
-    Desktop Protocol (RDP) de Microsoft. En général, le rafraîchissement vidéo et
-    du son sont envoyés de la machine distante au client, tandis que les événements
-    clavier et souris sont renvoyés. Il s'en suit que vous utilisez n'importe quel
-    client RDP standard pour contrôler la VM distante.</para>
+    Desktop Protocol (RDP) de Microsoft. Dès lors, vous pouvez utiliser n'importe
+    quel client RDP standard pour contrôler la VM distante.</para>
 
     <para>Même quand l'extension est installée, le serveur VRDP est désactivé par
     défaut. On peut l'activer facilement pour chaque VM, soit dans le gestionnaire
@@ -42,6 +40,37 @@
     <para>Si vous utilisez <computeroutput>VBoxHeadless</computeroutput> (décrit
     plus loin en détails), le support VRDP sera automatiquement activé puisque
     VBoxHeadless n'a aucun autre moyen de sortie.</para>
+
+    <para>Par défaut, le serveur VRDP utilise  le port TCP
+    <computeroutput>3389</computeroutput>. Vous devrez modifier le port par
+    défaut si vous exécutez plus d'un serveur VRDP, vu que le port ne peut être
+    utilisé que par un serveur à la fois. Il se pourrait aussi que vous deviez
+    le modifier sur les hôtes Windows car le port par défaut pourrait être
+    déjà utilisé par le serveur RDP
+    intégré à Windows lui-même. Les ports 5000 à 5050 sont le plus souvent
+    inusités et pourraient être un bon choix.</para>
+
+    <para>Vous pouvez modifier le port soit dans les paramètres "Affichage" d5
+    l'interface graphique, soit via l'option <computeroutput>--vrdeport</computeroutput>
+    de la commande <computeroutput>VBoxManage modifyvm</computeroutput>. Vous
+    pouvez indiquer une liste séparée par des virgules de ports ou de plages de
+    ports. Utilisez un tiret entre deux numéros de ports pour indiquer une plage.
+    Le serveur VRDP s'appuiera sur <emphasis role="bold">un</emphasis> des
+    ports disponibles au sein de la liste spécifiée. Par exemple, <computeroutput>VBoxManage modifyvm "nom
+    VM" --vrdeport 5000,5010-5012</computeroutput> configurera le
+    serveur pour s'appuyer sur un des ports parmi le 5000, 5010, 5011 ou 5012.
+    Voir <xref
+    linkend="vboxmanage-modifyvm-vrde" /> pour des détails.</para>
+
+    <para>Vous pouvez savoir le port utilisé au final par une VM en fonction
+    avec la commande <computeroutput>VBoxManage showvminfo</computeroutput>,
+    vous pouvez aussi le voir dans l'interface graphique sous l'onglet "En cours
+    d'exécution" de la "Boîte de dialogue d'informations sur la session", accessible
+    depuis le menu "Machine" de la fenêtre de la VM.</para>
+
+    <para>Le support d'IPv6 a été implémenté dans VirtualBox 4.3. Si l'OS hôte
+    supporte l'IPv6, le serveur VRDP écoutera automatiquement les connexions IPv6
+    en plus de celles IPv4.</para>
 
     <sect2 id="rdp-viewers">
       <title>Visualiseurs RDP tiers classiques</title>
@@ -54,34 +83,6 @@
       l'adresse du serveur auquel se connecter, ainsi que le 
       <emphasis role="bold">numéro du port</emphasis> qu'utilise le serveur RDP.</para>
 
-      <para>Par défaut, VRDP utilise le port TCP
-      <computeroutput>3389</computeroutput>. Vous devrez changer de port par
-      défaut si vous exécutez plus d'un serveur VRDP car le port ne peut être
-      utilisé que par un serveur en même temps&#xA0;; il se peut aussi que vous
-      deviez le modifier sur les hôtes Windows car le port par défaut pourrait
-      être déjà utilisé par le serveur RDP construit dans Windows lui-même.
-      Les ports 5000 à 5050 ne sont généralement pas utilisés il pourraient être
-      un bon choix.</para>
-
-      <para>On peut changer le port soit dans les paramètres '"Affichage" de
-      l'interface graphique, soit avec l'option
-      <computeroutput>--vrdeport</computeroutput> de la commande
-      <computeroutput>VBoxManage modifyvm</computeroutput>. Vous pouvez spécifier
-      une liste séparée par des virgules de ports ou de plages de ports. Utilisez
-      un tiret entre deux numéros de ports pour spécifier une plage. Le serveur
-      VRDP sondera <emphasis role="bold">un</emphasis> des ports disponibles de
-      la liste spécifiée. Par exemple, <computeroutput>VBoxManage modifyvm "nom VM"
-      --vrdeport 5000,5010-5012</computeroutput> configurera le serveur pour sonder
-      un des ports entrele 5000, 5010, 5011 ou le 5012. Voir <xref
-      linkend="vboxmanage-modifyvm" /> pour des détails.</para>
-
-      <para>Vous pouvez rechercher le port utilisé au final par une VM en 
-      fonction soit avec la commande
-      <computeroutput>VBoxManage showvminfo</computeroutput>, soit dans
-      l'interface graphique de l'onglet "En cours d'exécution" de la  "boîte de
-      dialogue d'snformations session", accessible par le menu "Machine" de la
-      fenâtre de la VM.</para>
-
       <para>Voici des exemples de visualiseurs RDP les plus courants&#xA0;:<itemizedlist>
           <listitem>
             <para>Sur Windows, vous pouvez utiliser le Microsoft Terminal Services
@@ -90,12 +91,18 @@
             (appuyez sur la touche Windows et "R") en tapant "mstsc". Vous pouvez
             également le trouver dans "Démarrer" -&gt; "Tous les Programmes" -&gt; "Accessoires"
             -&gt; "Connexion bureau distant". Si vous utilisez la boîte de dialogue
-            "Exécuter", vous pouvez y entrer des options directement&#xA0;:<screen>mstsc 1.2.3.4[:3389]</screen></para>
+            "Exécuter", vous pouvez y entrer des options directement&#xA0;:<screen>mstsc 1.2.3.4:3389</screen></para>
 
-            <para>Remplacez "1.2.3.4" par l'adresse IP de l'hôte et 3389 par un
+            <para>Remplacez <computeroutput>1.2.3.4</computeroutput> par l'adresse IP de l'hôte et 
+            <computeroutput>3389</computeroutput> par un
             autre port si nécessaire.</para>
 
             <note>
+              <para>Il faut entourer les adresses IPv6 de crochets pour spécifier
+              un port. Par exemple, <computeroutput>mstsc [fe80::1:2:3:4]:3389</computeroutput></para>
+            </note>
+            
+            <note>  
               <para>Lors d'une connexion à localhost pour tester la connexion, les
               adresses <computeroutput>localhost</computeroutput> et
               <computeroutput>127.0.0.1</computeroutput> pourraient ne pas
@@ -115,8 +122,8 @@
 
             <para>Avec rdesktop, utilisez une ligne telle que celle-ci&#xA0;:<screen>rdesktop -a 16 -N 1.2.3.4:3389</screen></para>
 
-            <para>Comme indiqué pour le visualiseur Microsoft ci-dessus, remplacez "1.2.3.4"
-            par l'adresse IP de l'hôte et 3389 par un autre port si nécessaire.
+            <para>Comme indiqué pour le visualiseur Microsoft ci-dessus, remplacez <computeroutput>1.2.3.4</computeroutput>
+            par l'adresse IP de l'hôte et <computeroutput>3389</computeroutput> par un autre port si nécessaire.
             L'option <computeroutput>-a 16</computeroutput> demande que la résolution
             soit de 16 bits par pixel, ce qui est recommandé.
             (Pour de meilleures performances, après l'installation du système
@@ -129,10 +136,10 @@
           <listitem>
             <para>Si vous lancez le bureau KDE, vous pourriez préférer
             <computeroutput>krdc</computeroutput>, le visualiseur RDP de KDE.
-            La ligne de commande ressemblerait à ceci&#xA0;:<screen>krdc rdp://1.2.3.4[:3389]</screen></para>
+            La ligne de commande ressemblerait à ceci&#xA0;:<screen>krdc rdp://1.2.3.4:3389</screen></para>
 
-            <para>De nouveau, remplacez "1.2.3.4" par l'adresse IP de l'hôte et
-            3389 par un port différent si nécessaire. Le champ "rdp://" est
+            <para>De nouveau, remplacez <computeroutput>1.2.3.4</computeroutput>
+            par l'adresse IP de l'hôte et <computeroutput>3389</computeroutput> par un port différent si nécessaire. Le champ "rdp://" est
             requis avec krdc pour qu'il passe en mode RDP.</para>
           </listitem>
 

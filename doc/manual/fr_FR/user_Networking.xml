@@ -855,7 +855,7 @@ VBoxManage modifyvm "nom VM" --nicbandwidthgroup2 Limit</screen></para>
       augmentant drastiquement les tailles des paquets croisés entre VM/boddary
       hôte.</para>
     <note><para>Ni les pilotes <emphasis>virtio</emphasis>, ni ceux
-    <emphasis>Intel PRO/1000</emphasis> de Windows XP ne supportent la segmentation
+    <emphasis>Intel PRO/1000</emphasis> de Windows XP supportent la segmentation
         offloading. Donc, les invités Windows XP n'atteignent jamais les mêmes
         vitesses de transmission que les autres types d'invités. Reportez-vous
         à la base MS Knowledge article 842264 pour des information s supplémentaires.</para>
