@@ -3957,17 +3957,54 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                                 }
 
                         /* print */
-                        for (uint32_t iMap = 0; iMap < cMappings; iMap++)
-                            if (aMappings[iMap].iSeg != NIL_RTDBGSEGIDX)
-                                DBGCCmdHlpPrintf(pCmdHlp, "    %RGv %RGv #%02x %s\n",
-                                                 (RTGCUINTPTR)aMappings[iMap].Address,
-                                                 (RTGCUINTPTR)RTDbgModSegmentSize(hMod, aMappings[iMap].iSeg),
-                                                 aMappings[iMap].iSeg,
-                                                 /** @todo RTDbgModSegmentName(hMod, aMappings[iMap].iSeg)*/ "noname");
-                            else
-                                DBGCCmdHlpPrintf(pCmdHlp, "    %RGv %RGv <everything>\n",
-                                                 (RTGCUINTPTR)aMappings[iMap].Address,
-                                                 (RTGCUINTPTR)RTDbgModImageSize(hMod));
+                        if (   cMappings == 1
+                            && aMappings[0].iSeg == NIL_RTDBGSEGIDX
+                            && !fDeferred)
+                        {
+                            for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+                            {
+                                RTDBGSEGMENT SegInfo;
+                                rc = RTDbgModSegmentByIndex(hMod, iSeg, &SegInfo);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    if (SegInfo.uRva != RTUINTPTR_MAX)
+                                        DBGCCmdHlpPrintf(pCmdHlp, "    %RGv %RGv #%02x %s\n",
+                                                         (RTGCUINTPTR)(aMappings[0].Address + SegInfo.uRva),
+                                                         (RTGCUINTPTR)SegInfo.cb, iSeg, SegInfo.szName);
+                                    else
+                                        DBGCCmdHlpPrintf(pCmdHlp, "    %*s %RGv #%02x %s\n",
+                                                         sizeof(RTGCUINTPTR)*2, "noload",
+                                                         (RTGCUINTPTR)SegInfo.cb, iSeg, SegInfo.szName);
+                                }
+                                else
+                                    DBGCCmdHlpPrintf(pCmdHlp, "    Error query segment #%u: %Rrc\n", iSeg, rc);
+                            }
+                        }
+                        else
+                        {
+                            for (uint32_t iMap = 0; iMap < cMappings; iMap++)
+                                if (aMappings[iMap].iSeg == NIL_RTDBGSEGIDX)
+                                    DBGCCmdHlpPrintf(pCmdHlp, "    %RGv %RGv <everything>\n",
+                                                     (RTGCUINTPTR)aMappings[iMap].Address,
+                                                     (RTGCUINTPTR)RTDbgModImageSize(hMod));
+                                else if (!fDeferred)
+                                {
+                                    RTDBGSEGMENT SegInfo;
+                                    rc = RTDbgModSegmentByIndex(hMod, aMappings[iMap].iSeg, &SegInfo);
+                                    if (RT_FAILURE(rc))
+                                    {
+                                        RT_ZERO(SegInfo);
+                                        strcpy(SegInfo.szName, "error");
+                                    }
+                                    DBGCCmdHlpPrintf(pCmdHlp, "    %RGv %RGv #%02x %s\n",
+                                                     (RTGCUINTPTR)aMappings[iMap].Address,
+                                                     (RTGCUINTPTR)SegInfo.cb,
+                                                     aMappings[iMap].iSeg, SegInfo.szName);
+                                }
+                                else
+                                    DBGCCmdHlpPrintf(pCmdHlp, "    %RGv #%02x\n",
+                                                     (RTGCUINTPTR)aMappings[iMap].Address, aMappings[iMap].iSeg);
+                        }
                     }
                 }
                 else
