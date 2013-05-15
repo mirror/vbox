@@ -125,7 +125,7 @@ public:
      * Forwarders to VRDP server library.
      */
     void SendUpdate (unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate) const;
-    void SendResize (void) const;
+    void SendResize (void);
     void SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h) const;
 
     void SendAudioSamples (void *pvSamples, uint32_t cSamples, VRDEAUDIOFORMAT format) const;
@@ -163,6 +163,8 @@ private:
 
     HVRDESERVER mhServer;
     int mServerInterfaceVersion;
+
+    int32_t volatile mcInResize; /* Do not Stop the server if this is not 0. */
 
     static int loadVRDPLibrary (const char *pszLibraryName);
 
