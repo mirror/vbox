@@ -84,7 +84,7 @@ RTDECL(const char *) RTStrCacheEnterLowerN(RTSTRCACHE hStrCache, const char *pch
     Assert(!RTStrEnd(pchString, cchString));
 
     char *pszRet = (char *)RTMemPoolDupEx((RTMEMPOOL)hStrCache, pchString, cchString, 1);
-    if (!pszRet)
+    if (pszRet)
         RTStrToLower(pszRet);
     return pszRet;
 }
