@@ -28,17 +28,77 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP RTLOGGROUP_DBG
 #include <iprt/dbg.h>
 #include "internal/iprt.h"
 
+#include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/string.h>
 #include "internal/dbgmod.h"
 
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+typedef struct RTDBGMODEXPORTARGS
+{
+    PRTDBGMODINT    pDbgMod;
+    RTLDRADDR       uImageBase;
+} RTDBGMODEXPORTARGS;
+/** Pointer to an argument package. */
+typedef RTDBGMODEXPORTARGS *PRTDBGMODEXPORTARGS;
 
 
+/** @callback_method_impl{FNRTLDRENUMSYMS,
+ *  Copies the symbols over into the container.} */
+static DECLCALLBACK(int) rtDbgModExportsAddSymbolCallback(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol,
+                                                          RTLDRADDR Value, void *pvUser)
+{
+    PRTDBGMODEXPORTARGS pArgs = (PRTDBGMODEXPORTARGS)pvUser;
+    NOREF(hLdrMod);
+
+    if (Value >= pArgs->uImageBase)
+    {
+        int rc = RTDbgModSymbolAdd(pArgs->pDbgMod, pszSymbol, RTDBGSEGIDX_RVA, Value - pArgs->uImageBase,
+                                   0 /*cb*/, 0 /* fFlags */, NULL /*piOrdinal*/);
+        Log(("Symbol #%05u %#018x %s [%Rrc]\n", uSymbol, Value, pszSymbol, rc)); NOREF(rc);
+    }
+    else
+        Log(("Symbol #%05u %#018x %s [SKIPPED - INVALID ADDRESS]\n", uSymbol, Value, pszSymbol));
+    return VINF_SUCCESS;
+}
+
+
+/** @callback_method_impl{FNRTLDRENUMSEGS,
+ *  Copies the segments over into the container.} */
+static DECLCALLBACK(int) rtDbgModExportsAddSegmentsCallback(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser)
+{
+    PRTDBGMODEXPORTARGS pArgs = (PRTDBGMODEXPORTARGS)pvUser;
+    Log(("Segment %.*s: LinkAddress=%#llx RVA=%#llx cb=%#llx\n",
+         pSeg->cchName, pSeg->pchName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
+    NOREF(hLdrMod);
+
+    /* Find the best base address for the module. */
+    if (    pSeg->LinkAddress != NIL_RTLDRADDR
+        &&  (   !pArgs->uImageBase
+             || pArgs->uImageBase > pSeg->LinkAddress))
+        pArgs->uImageBase = pSeg->LinkAddress;
+
+    /* Make sure the name is terminated before we add it. */
+    char *pszName = (char *)pSeg->pchName;
+    if (pszName[pSeg->cchName])
+    {
+        pszName = (char *)alloca(pSeg->cchName + 1);
+        memcpy(pszName, pSeg->pchName, pSeg->cchName);
+        pszName[pSeg->cchName] = '\0';
+    }
+
+    RTLDRADDR cb = RT_MAX(pSeg->cb, pSeg->cbMapped);
+    return RTDbgModSegmentAdd(pArgs->pDbgMod, pSeg->RVA, cb, pszName, 0 /*fFlags*/, NULL);
+}
 
 
 /**
@@ -61,20 +121,34 @@ DECLHIDDEN(int) rtDbgModCreateForExports(PRTDBGMODINT pDbgMod)
     /*
      * We simply use a container type for this work.
      */
-    /// @todo later int rc = rtDbgModContainerCreate(pDbgMod, 0);
-    int rc = rtDbgModContainerCreate(pDbgMod, cbImage);
+    int rc = rtDbgModContainerCreate(pDbgMod, 0);
     if (RT_FAILURE(rc))
         return rc;
+    pDbgMod->fExports = true;
 
     /*
-     * Copy the segments.
+     * Copy the segments and symbols.
      */
+    RTDBGMODEXPORTARGS Args;
+    Args.pDbgMod    = pDbgMod;
+    Args.uImageBase = 0;
+    rc = pDbgMod->pImgVt->pfnEnumSegments(pDbgMod, rtDbgModExportsAddSegmentsCallback, &Args);
+    if (RT_SUCCESS(rc))
+    {
+        rc = pDbgMod->pImgVt->pfnEnumSymbols(pDbgMod, RTLDR_ENUM_SYMBOL_FLAGS_ALL | RTLDR_ENUM_SYMBOL_FLAGS_NO_FWD,
+                                             Args.uImageBase ? Args.uImageBase : 0x10000,
+                                             rtDbgModExportsAddSymbolCallback, &Args);
+        if (RT_FAILURE(rc))
+            Log(("rtDbgModCreateForExports: Error during symbol enum: %Rrc\n", rc));
+    }
+    else
+        Log(("rtDbgModCreateForExports: Error during segment enum: %Rrc\n", rc));
 
-    /*
-     * Copy the symbols.
-     */
-
-
-    return VINF_SUCCESS;
+    /* This won't fail. */
+    if (RT_SUCCESS(rc))
+        rc = VINF_SUCCESS;
+    else
+        rc = -rc; /* Change it into a warning. */
+    return rc;
 }
 

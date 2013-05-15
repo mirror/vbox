@@ -477,6 +477,17 @@ static DECLCALLBACK(int) rtDbgModDeferredImg_LinkAddressToSegOffset(PRTDBGMODINT
 }
 
 
+/** @interface_method_impl{RTDBGMODVTIMG,pfnEnumSymbols} */
+static DECLCALLBACK(int) rtDbgModDeferredImg_EnumSymbols(PRTDBGMODINT pMod, uint32_t fFlags, RTLDRADDR BaseAddress,
+                                                         PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
+{
+    int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
+    if (RT_SUCCESS(rc))
+        rc = pMod->pImgVt->pfnEnumSymbols(pMod, fFlags, BaseAddress, pfnCallback, pvUser);
+    return rc;
+}
+
+
 /** @interface_method_impl{RTDBGMODVTIMG,pfnEnumSegments} */
 static DECLCALLBACK(int) rtDbgModDeferredImg_EnumSegments(PRTDBGMODINT pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
 {
@@ -522,6 +533,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgDeferred =
     /*.pfnClose = */                    rtDbgModDeferredImg_Close,
     /*.pfnEnumDbgInfo = */              rtDbgModDeferredImg_EnumDbgInfo,
     /*.pfnEnumSegments = */             rtDbgModDeferredImg_EnumSegments,
+    /*.pfnEnumSymbols = */              rtDbgModDeferredImg_EnumSymbols,
     /*.pfnGetLoadedSize = */            rtDbgModDeferredImg_ImageSize,
     /*.pfnLinkAddressToSegOffset = */   rtDbgModDeferredImg_LinkAddressToSegOffset,
     /*.pfnMapPart = */                  rtDbgModDeferredImg_MapPart,
