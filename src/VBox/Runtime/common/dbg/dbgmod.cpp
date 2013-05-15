@@ -339,7 +339,7 @@ RTDECL(int) RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR cb
     if (RT_SUCCESS(rc))
     {
         pDbgMod->pszImgFileSpecified = RTStrCacheEnter(g_hDbgModStrCache, pszName);
-        pDbgMod->pszName             = RTStrCacheEnterLower(g_hDbgModStrCache, RTPathFilename(pszName));
+        pDbgMod->pszName = RTStrCacheEnterLower(g_hDbgModStrCache, RTPathFilenameEx(pszName, RTPATH_STR_F_STYLE_DOS));
         if (pDbgMod->pszName)
         {
             rc = rtDbgModContainerCreate(pDbgMod, cbSeg);
@@ -376,7 +376,7 @@ RTDECL(int) RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename,
         return rc;
 
     if (!pszName)
-        pszName = RTPathFilename(pszFilename);
+        pszName = RTPathFilenameEx(pszFilename, RTPATH_STR_F_STYLE_DOS);
 
     /*
      * Allocate a new module instance.
@@ -518,7 +518,7 @@ RTDECL(int) RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, c
         return rc;
 
     if (!pszName)
-        pszName = RTPathFilename(pszFilename);
+        pszName = RTPathFilenameEx(pszFilename, RTPATH_STR_F_STYLE_DOS);
 
     /*
      * Allocate a new module instance.
@@ -944,7 +944,7 @@ RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilenam
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
     AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
     if (!pszName)
-        pszName = RTPathFilename(pszFilename);
+        pszName = RTPathFilenameEx(pszFilename, RTPATH_STR_F_STYLE_DOS);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertReturn(hLdrMod == NIL_RTLDRMOD || RTLdrSize(hLdrMod) != ~(size_t)0, VERR_INVALID_HANDLE);
 
