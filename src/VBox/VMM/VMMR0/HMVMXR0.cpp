@@ -3848,10 +3848,10 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
             AssertRC(rc);
 
 #ifdef VBOX_STRICT
-                Log(("uExitReason        %#x (VmxTransient %#x)\n", pVCpu->hm.s.vmx.lasterror.u32ExitReason,
-                                                                    pVmxTransient->uExitReason));
-                Log(("Exit Qualification %#x\n", pVmxTransient->uExitQualification));
-                Log(("InstrError         %#x\n", pVCpu->hm.s.vmx.lasterror.u32InstrError));
+                Log(("uExitReason        %#RX32 (VmxTransient %#RX16)\n", pVCpu->hm.s.vmx.lasterror.u32ExitReason,
+                     pVmxTransient->uExitReason));
+                Log(("Exit Qualification %#RX64\n", pVmxTransient->uExitQualification));
+                Log(("InstrError         %#RX32\n", pVCpu->hm.s.vmx.lasterror.u32InstrError));
                 if (pVCpu->hm.s.vmx.lasterror.u32InstrError <= HMVMX_INSTR_ERROR_MAX)
                     Log(("InstrError Desc.  \"%s\"\n", g_apszVmxInstrErrors[pVCpu->hm.s.vmx.lasterror.u32InstrError]));
                 else
@@ -4814,11 +4814,11 @@ static int hmR0VmxSaveGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RIP))
     {
-        uint64_t uVal = 0;
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &uVal);
+        uint64_t u64Val = 0;
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RIP, &u64Val);
         AssertRCReturn(rc, rc);
 
-        pMixedCtx->rip = uVal;
+        pMixedCtx->rip = u64Val;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RIP;
     }
     return rc;
@@ -4841,11 +4841,11 @@ static int hmR0VmxSaveGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RSP))
     {
-        uint64_t uVal = 0;
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &uVal);
+        uint64_t u64Val = 0;
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_RSP, &u64Val);
         AssertRCReturn(rc, rc);
 
-        pMixedCtx->rsp = uVal;
+        pMixedCtx->rsp = u64Val;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RSP;
     }
     return rc;
@@ -4976,17 +4976,17 @@ static int hmR0VmxSaveGuestSysenterMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_SYSENTER_CS_MSR;
     }
 
-    uint64_t uGCVal = 0;
+    uint64_t u64Val = 0;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR))
     {
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_SYSENTER_EIP, &uGCVal);    AssertRCReturn(rc, rc);
-        pMixedCtx->SysEnter.eip = uGCVal;
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_SYSENTER_EIP, &u64Val);    AssertRCReturn(rc, rc);
+        pMixedCtx->SysEnter.eip = u64Val;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_SYSENTER_EIP_MSR;
     }
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR))
     {
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_SYSENTER_ESP, &uGCVal);    AssertRCReturn(rc, rc);
-        pMixedCtx->SysEnter.esp = uGCVal;
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_SYSENTER_ESP, &u64Val);    AssertRCReturn(rc, rc);
+        pMixedCtx->SysEnter.esp = u64Val;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_SYSENTER_ESP_MSR;
     }
     return rc;
@@ -5010,9 +5010,9 @@ static int hmR0VmxSaveGuestFSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_FS_BASE_MSR))
     {
-        uint64_t uVal = 0;
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_FS_BASE, &uVal);   AssertRCReturn(rc, rc);
-        pMixedCtx->fs.u64Base = uVal;
+        uint64_t u64Val = 0;
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_FS_BASE, &u64Val);   AssertRCReturn(rc, rc);
+        pMixedCtx->fs.u64Base = u64Val;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_FS_BASE_MSR;
     }
     return rc;
@@ -5036,9 +5036,9 @@ static int hmR0VmxSaveGuestGSBaseMsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_GS_BASE_MSR))
     {
-        uint64_t uVal = 0;
-        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_GS_BASE, &uVal);   AssertRCReturn(rc, rc);
-        pMixedCtx->gs.u64Base = uVal;
+        uint64_t u64Val = 0;
+        rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_GS_BASE, &u64Val);   AssertRCReturn(rc, rc);
+        pMixedCtx->gs.u64Base = u64Val;
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_GS_BASE_MSR;
     }
     return rc;
@@ -5124,14 +5124,14 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             || (   pVM->hm.s.fNestedPaging
                 && CPUMIsGuestPagingEnabledEx(pMixedCtx)))
         {
-            uint64_t uVal = 0;
-            rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_CR3, &uVal);
-            if (pMixedCtx->cr3 != uVal)
+            uint64_t u64Val = 0;
+            rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_CR3, &u64Val);
+            if (pMixedCtx->cr3 != u64Val)
             {
-                CPUMSetGuestCR3(pVCpu, uVal);
+                CPUMSetGuestCR3(pVCpu, u64Val);
                 if (VMMRZCallRing3IsEnabled(pVCpu))
                 {
-                    PGMUpdateCR3(pVCpu, uVal);
+                    PGMUpdateCR3(pVCpu, u64Val);
                     Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
                 }
                 else
