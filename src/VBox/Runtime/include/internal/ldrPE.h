@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,8 +28,9 @@
 #define ___internal_ldrPE_h
 
 #include <iprt/types.h>
+#include <iprt/assert.h>
 
-#pragma pack(4)
+#pragma pack(4) /** @todo Necessary? */
 
 
 /*******************************************************************************
@@ -221,6 +222,7 @@ typedef struct _IMAGE_FILE_HEADER
     uint16_t  SizeOfOptionalHeader;
     uint16_t  Characteristics;
 } IMAGE_FILE_HEADER;
+AssertCompileSize(IMAGE_FILE_HEADER, 2+2+4+4+4+2+2);
 typedef IMAGE_FILE_HEADER *PIMAGE_FILE_HEADER;
 typedef IMAGE_FILE_HEADER const *PCIMAGE_FILE_HEADER;
 
@@ -314,6 +316,8 @@ typedef struct _IMAGE_NT_HEADERS
     IMAGE_FILE_HEADER FileHeader;
     IMAGE_OPTIONAL_HEADER32 OptionalHeader;
 } IMAGE_NT_HEADERS32;
+AssertCompileMemberOffset(IMAGE_NT_HEADERS32, FileHeader, 4);
+AssertCompileMemberOffset(IMAGE_NT_HEADERS32, OptionalHeader, 24);
 typedef IMAGE_NT_HEADERS32 *PIMAGE_NT_HEADERS32;
 typedef IMAGE_NT_HEADERS32 const *PCIMAGE_NT_HEADERS32;
 
@@ -323,6 +327,8 @@ typedef struct _IMAGE_NT_HEADERS64
     IMAGE_FILE_HEADER FileHeader;
     IMAGE_OPTIONAL_HEADER64 OptionalHeader;
 } IMAGE_NT_HEADERS64;
+AssertCompileMemberOffset(IMAGE_NT_HEADERS64, FileHeader, 4);
+AssertCompileMemberOffset(IMAGE_NT_HEADERS64, OptionalHeader, 24);
 typedef IMAGE_NT_HEADERS64 *PIMAGE_NT_HEADERS64;
 typedef IMAGE_NT_HEADERS64 const *PCIMAGE_NT_HEADERS64;
 
