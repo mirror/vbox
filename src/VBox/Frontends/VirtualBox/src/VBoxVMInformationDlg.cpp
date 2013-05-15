@@ -485,6 +485,9 @@ void VBoxVMInformationDlg::refreshStatistics()
         QString nested = debugger.GetHWVirtExNestedPagingEnabled() ?
             VBoxGlobal::tr ("Enabled", "details report (Nested Paging)") :
             VBoxGlobal::tr ("Disabled", "details report (Nested Paging)");
+        QString unrestricted = debugger.GetHWVirtExUXEnabled() ?
+            VBoxGlobal::tr ("Enabled", "details report (Unrestricted Execution)") :
+            VBoxGlobal::tr ("Disabled", "details report (Unrestricted Execution)");
 
         CGuest guest = console.GetGuest();
         QString addVersionStr = guest.GetAdditionsVersion();
@@ -509,7 +512,7 @@ void VBoxVMInformationDlg::refreshStatistics()
 
         /* Searching for longest string */
         QStringList valuesList;
-        valuesList << resolution << virtualization << nested << addVersionStr << osType << vrdeInfo;
+        valuesList << resolution << virtualization << nested << unrestricted << addVersionStr << osType << vrdeInfo;
         int maxLength = 0;
         foreach (const QString &value, valuesList)
             maxLength = maxLength < fontMetrics().width (value) ?
@@ -521,6 +524,7 @@ void VBoxVMInformationDlg::refreshStatistics()
         result += formatValue (tr ("Drag'n'Drop Mode"), dragAndDropMode, maxLength);
         result += formatValue (VBoxGlobal::tr ("VT-x/AMD-V", "details report"), virtualization, maxLength);
         result += formatValue (VBoxGlobal::tr ("Nested Paging", "details report"), nested, maxLength);
+        result += formatValue (VBoxGlobal::tr ("Unrestricted Execution", "details report"), unrestricted, maxLength);
         result += formatValue (tr ("Guest Additions"), addVersionStr, maxLength);
         result += formatValue (tr ("Guest OS Type"), osType, maxLength);
         result += formatValue (VBoxGlobal::tr ("Remote Desktop Server Port", "details report (VRDE Server)"), vrdeInfo, maxLength);
