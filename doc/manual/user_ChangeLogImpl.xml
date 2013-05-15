@@ -9,6 +9,11 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: major rewrite of the VT-x code including many bug fixes and
+        performance improvements (for example bug #9659)</para>
+      </listitem>
+
+      <listitem>
         <para>VRDP: support for IPv6</para>
       </listitem>
 
