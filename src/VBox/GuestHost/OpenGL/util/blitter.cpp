@@ -99,6 +99,11 @@ int CrBltMuralSetCurrent(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural)
     }
     else
     {
+        if (CrBltIsEntered(pBlitter))
+        {
+            crWarning("can not set null mural for entered bleater");
+            return VERR_INVALID_STATE;
+        }
         if (!pBlitter->CurrentMural.Base.id)
             return VINF_SUCCESS;
         pBlitter->CurrentMural.Base.id = 0;
@@ -116,10 +121,7 @@ int CrBltMuralSetCurrent(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural)
 
     pBlitter->pDispatch->Flush();
 
-    if (pMural)
-        pBlitter->pDispatch->MakeCurrent(pMural->Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
-    else
-        pBlitter->pDispatch->MakeCurrent(0, 0, 0);
+    pBlitter->pDispatch->MakeCurrent(pMural->Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
 
     return VINF_SUCCESS;
 }
@@ -554,7 +556,8 @@ int CrBltEnter(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, 
 
     if (pBlitter->CurrentMural.Base.id) /* <- pBlitter->CurrentMural.Base.id can be null if the blitter is in a "no-context" mode (see comments to BltInit for detail)*/
     {
-        pBlitter->pDispatch->Flush();
+        if (pRestoreCtxInfo)
+            pBlitter->pDispatch->Flush();
         pBlitter->pDispatch->MakeCurrent(pBlitter->CurrentMural.Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);
     }
     else
