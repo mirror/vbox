@@ -505,6 +505,18 @@
         <para>Ceci installe automatiquement les bons fichiers et les bons pilotes
         pour la plateforme correspondante (32 ou 64 bits).</para>
 
+        <note><para>Par défaut, sur une installation sans efforts sur un invité
+        Windows 7 ou 8, un pilote graphique XPDM va s'installer. Ce pilote
+        graphique ne supporte pas Windows Aero / Direct3D de l'invité - il faut
+        donc installer à la place le pilote graphique expérimental WDDM. Pour
+        sélectionner ce pilote par défaut, ajoutez le paramètre 
+        <computeroutput>/with_wddm</computeroutput> de la ligne de commande quand
+        vous appelez l'installeur des suppléments invité Windows.</para></note>
+
+        <note><para>Pour que Windows Aero fonctionne correctement sur un invité,
+        la taille de la mémoire graphique de l'invité doit être configurée pour
+        être d'au moins 128 Mo.</para></note>
+
         <para>Pour plus d'options concernant les installations d'invité sans efforts,
         consultez l'aide en ligne de commande en utilisant l commande&#xA0;:</para>
 

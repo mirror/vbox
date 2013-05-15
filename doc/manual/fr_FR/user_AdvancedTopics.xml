@@ -266,6 +266,10 @@ HKEY_CLASSES_ROOT\CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}\InprocServer32</s
       (ou dérivées d'Ubuntu), qui utilisent le gestionnaire d'affichage
       LightDM, merci de voir <xref linkend="autologon_unix_lightdm" />.</para>
 
+      <para>Pour des identifications automatiques sur des distributions Ubuntu
+      (ou dérivées d'Ubuntu), qui utilisent le gestionnaire d'affichage
+      LightDM, merci de voir <xref linkend="autologon_unix_lightdm" />.</para>
+
       <para>Le module <computeroutput>pam_vbox.so</computeroutput> lui-même
       <emphasis role="bold">ne fait pas</emphasis> de vérification effective des
       autorisations passées à l'OS invité&#xA0;; il s'appuie plutôt sur d'autres

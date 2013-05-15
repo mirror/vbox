@@ -557,16 +557,22 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
+            <para><computeroutput>--pae on|off</computeroutput>&#xA0;: Ceci active/désactive
+            la PAE (voir <xref
+            linkend="settings-processor" />).</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--longmode on|off</computeroutput> : Ceci
+            active/désactive le mode long (voir <xref
+            linkend="settings-processor" />).</para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--synthcpu on|off</computeroutput>&#xA0;: Ce
             paramètre détermine si VirtualBox présente ou non un processeur
             synthétique à l'invité pour permettre une migration en direct entre
             les systèmes hôtes qui diffèrent de manière significative.</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>--pae on|off</computeroutput>&#xA0;: Ceci active/désactive
-            la PAE (voir <xref
-            linkend="settings-processor" />).</para>
           </listitem>
 
           <listitem>
@@ -723,7 +729,7 @@ Statistics update:  disabled
 
           <listitem>
             <para><computeroutput>--defaultfrontend
-            default|&lt;nom&gt;</computeroutput>&#xA0;: Ceci vous permet de
+            default|&lt;nom&gt;</computeroutput>&nbsp;: Ceci vous permet de
             spécifier l'interface par défaut qui sera utilisée au démarrage de
             cette VM&#xA0; voir 
             <xref linkend="vboxmanage-startvm" /> pour des détails.</para>

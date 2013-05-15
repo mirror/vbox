@@ -72,6 +72,37 @@
     supporte l'IPv6, le serveur VRDP écoutera automatiquement les connexions IPv6
     en plus de celles IPv4.</para>
 
+    <para>Par défaut, le serveur VRDP utilise  le port TCP
+    <computeroutput>3389</computeroutput>. Vous devrez modifier le port par
+    défaut si vous exécutez plus d'un serveur VRDP, vu que le port ne peut être
+    utilisé que par un serveur à la fois. Il se pourrait aussi que vous deviez
+    le modifier sur les hôtes Windows car le port par défaut pourrait être
+    déjà utilisé par le serveur RDP
+    intégré à Windows lui-même. Les ports 5000 à 5050 sont le plus souvent
+    inusités et pourraient être un bon choix.</para>
+
+    <para>Vous pouvez modifier le port soit dans les paramètres "Affichage" d5
+    l'interface graphique, soit via l'option <computeroutput>--vrdeport</computeroutput>
+    de la commande <computeroutput>VBoxManage modifyvm</computeroutput>. Vous
+    pouvez indiquer une liste séparée par des virgules de ports ou de plages de
+    ports. Utilisez un tiret entre deux numéros de ports pour indiquer une plage.
+    Le serveur VRDP s'appuiera sur <emphasis role="bold">un</emphasis> des
+    ports disponibles au sein de la liste spécifiée. Par exemple, <computeroutput>VBoxManage modifyvm "nom
+    VM" --vrdeport 5000,5010-5012</computeroutput> configurera le
+    serveur pour s'appuyer sur un des ports parmi le 5000, 5010, 5011 ou 5012.
+    Voir <xref
+    linkend="vboxmanage-modifyvm-vrde" /> pour des détails.</para>
+
+    <para>Vous pouvez savoir le port utilisé au final par une VM en fonction
+    avec la commande <computeroutput>VBoxManage showvminfo</computeroutput>,
+    vous pouvez aussi le voir dans l'interface graphique sous l'onglet "En cours
+    d'exécution" de la "Boîte de dialogue d'informations sur la session", accessible
+    depuis le menu "Machine" de la fenêtre de la VM.</para>
+
+    <para>Le support d'IPv6 a été implémenté dans VirtualBox 4.3. Si l'OS hôte
+    supporte l'IPv6, le serveur VRDP écoutera automatiquement les connexions IPv6
+    en plus de celles IPv4.</para>
+
     <sect2 id="rdp-viewers">
       <title>Visualiseurs RDP tiers classiques</title>
 
