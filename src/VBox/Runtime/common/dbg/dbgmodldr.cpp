@@ -108,6 +108,15 @@ static DECLCALLBACK(int) rtDbgModLdr_LinkAddressToSegOffset(PRTDBGMODINT pMod, R
 
 
 /** @interface_method_impl{RTDBGMODVTIMG,pfnEnumSegments} */
+static DECLCALLBACK(int) rtDbgModLdr_EnumSymbols(PRTDBGMODINT pMod, uint32_t fFlags, RTLDRADDR BaseAddress,
+                                                 PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
+{
+    PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    return RTLdrEnumSymbols(pThis->hLdrMod, fFlags, NULL /*pvBits*/, BaseAddress, pfnCallback, pvUser);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTIMG,pfnEnumSegments} */
 static DECLCALLBACK(int) rtDbgModLdr_EnumSegments(PRTDBGMODINT pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
@@ -163,6 +172,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
     /*.pfnClose = */                    rtDbgModLdr_Close,
     /*.pfnEnumDbgInfo = */              rtDbgModLdr_EnumDbgInfo,
     /*.pfnEnumSegments = */             rtDbgModLdr_EnumSegments,
+    /*.pfnEnumSymbols = */              rtDbgModLdr_EnumSymbols,
     /*.pfnGetLoadedSize = */            rtDbgModLdr_GetLoadedSize,
     /*.pfnLinkAddressToSegOffset = */   rtDbgModLdr_LinkAddressToSegOffset,
     /*.pfnMapPart = */                  rtDbgModLdr_MapPart,
