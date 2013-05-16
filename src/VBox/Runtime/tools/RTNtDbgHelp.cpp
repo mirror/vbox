@@ -244,33 +244,46 @@ static RTEXITCODE dumpAll(void)
     {
         RTPrintf("*** %#018x - %s ***\n", pMod->uModAddr, pMod->szFullName);
 
-        IMAGEHLP_MODULE64 ModInfo;
-        RT_ZERO(ModInfo);
-        ModInfo.SizeOfStruct = sizeof(ModInfo);
-        if (SymGetModuleInfo64(g_hFake, pMod->uModAddr, &ModInfo))
+        static const int8_t s_acbVariations[]  = { 0, -4, -8, -12, -16, -20, -24, -28, -32, 4, 8, 12, 16, 20, 24, 28, 32 };
+        unsigned            iVariation = 0;
+        union
         {
-            RTPrintf("    BaseOfImage     = %#018llx\n", ModInfo.BaseOfImage);
-            RTPrintf("    ImageSize       = %#010x\n", ModInfo.ImageSize);
-            RTPrintf("    TimeDateStamp   = %#010x\n", ModInfo.TimeDateStamp);
-            RTPrintf("    CheckSum        = %#010x\n", ModInfo.CheckSum);
-            RTPrintf("    NumSyms         = %#010x (%u)\n", ModInfo.NumSyms, ModInfo.NumSyms);
-            RTPrintf("    SymType         = %s\n", symTypeName(ModInfo.SymType));
-            RTPrintf("    ModuleName      = %.32s\n", ModInfo.ModuleName);
-            RTPrintf("    ImageName       = %.256s\n", ModInfo.ImageName);
-            RTPrintf("    LoadedImageName = %.256s\n", ModInfo.LoadedImageName);
-            RTPrintf("    LoadedPdbName   = %.256s\n", ModInfo.LoadedPdbName);
-            RTPrintf("    CVSig           = %#010x\n", ModInfo.CVSig);
+            IMAGEHLP_MODULE64   ModInfo;
+            uint8_t             abPadding[sizeof(IMAGEHLP_MODULE64) + 64];
+        } u;
+
+        BOOL fRc;
+        do
+        {
+            RT_ZERO(u.ModInfo);
+            u.ModInfo.SizeOfStruct = sizeof(u.ModInfo) + s_acbVariations[iVariation++];
+            fRc = SymGetModuleInfo64(g_hFake, pMod->uModAddr, &u.ModInfo);
+        } while (!fRc && GetLastError() == ERROR_INVALID_PARAMETER && iVariation < RT_ELEMENTS(s_acbVariations));
+
+        if (fRc)
+        {
+            RTPrintf("    BaseOfImage     = %#018llx\n", u.ModInfo.BaseOfImage);
+            RTPrintf("    ImageSize       = %#010x\n", u.ModInfo.ImageSize);
+            RTPrintf("    TimeDateStamp   = %#010x\n", u.ModInfo.TimeDateStamp);
+            RTPrintf("    CheckSum        = %#010x\n", u.ModInfo.CheckSum);
+            RTPrintf("    NumSyms         = %#010x (%u)\n", u.ModInfo.NumSyms, u.ModInfo.NumSyms);
+            RTPrintf("    SymType         = %s\n", symTypeName(u.ModInfo.SymType));
+            RTPrintf("    ModuleName      = %.32s\n", u.ModInfo.ModuleName);
+            RTPrintf("    ImageName       = %.256s\n", u.ModInfo.ImageName);
+            RTPrintf("    LoadedImageName = %.256s\n", u.ModInfo.LoadedImageName);
+            RTPrintf("    LoadedPdbName   = %.256s\n", u.ModInfo.LoadedPdbName);
+            RTPrintf("    CVSig           = %#010x\n", u.ModInfo.CVSig);
             /** @todo CVData. */
-            RTPrintf("    PdbSig          = %#010x\n", ModInfo.PdbSig);
-            RTPrintf("    PdbSig70        = %RTuuid\n", &ModInfo.PdbSig70);
-            RTPrintf("    PdbAge          = %#010x\n", ModInfo.PdbAge);
-            RTPrintf("    PdbUnmatched    = %RTbool\n", ModInfo.PdbUnmatched);
-            RTPrintf("    DbgUnmatched    = %RTbool\n", ModInfo.DbgUnmatched);
-            RTPrintf("    LineNumbers     = %RTbool\n", ModInfo.LineNumbers);
-            RTPrintf("    GlobalSymbols   = %RTbool\n", ModInfo.GlobalSymbols);
-            RTPrintf("    TypeInfo        = %RTbool\n", ModInfo.TypeInfo);
-            RTPrintf("    SourceIndexed   = %RTbool\n", ModInfo.SourceIndexed);
-            RTPrintf("    Publics         = %RTbool\n", ModInfo.Publics);
+            RTPrintf("    PdbSig          = %#010x\n", u.ModInfo.PdbSig);
+            RTPrintf("    PdbSig70        = %RTuuid\n", &u.ModInfo.PdbSig70);
+            RTPrintf("    PdbAge          = %#010x\n", u.ModInfo.PdbAge);
+            RTPrintf("    PdbUnmatched    = %RTbool\n", u.ModInfo.PdbUnmatched);
+            RTPrintf("    DbgUnmatched    = %RTbool\n", u.ModInfo.DbgUnmatched);
+            RTPrintf("    LineNumbers     = %RTbool\n", u.ModInfo.LineNumbers);
+            RTPrintf("    GlobalSymbols   = %RTbool\n", u.ModInfo.GlobalSymbols);
+            RTPrintf("    TypeInfo        = %RTbool\n", u.ModInfo.TypeInfo);
+            RTPrintf("    SourceIndexed   = %RTbool\n", u.ModInfo.SourceIndexed);
+            RTPrintf("    Publics         = %RTbool\n", u.ModInfo.Publics);
         }
         else
             rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "SymGetModuleInfo64 failed: %u\n", GetLastError());
@@ -349,7 +362,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'h':
-                RTPrintf("usage: %s [-v|--verbose] [-q|--quiet] [-a <addr>] [-l <file>] [-d] [...]\n"
+                RTPrintf("usage: %s [-v|--verbose] [-q|--quiet] [--set-debug-info] [-a <addr>] [-l <file>] [-d] [...]\n"
                          "   or: %s [-V|--version]\n"
                          "   or: %s [-h|--help]\n",
                          argv[0], argv[0], argv[0]);

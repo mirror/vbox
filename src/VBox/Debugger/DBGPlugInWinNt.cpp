@@ -81,24 +81,24 @@ typedef struct NTMTE64
     {
         uint64_t    Flink;
         uint64_t    Blink;
-    }               InLoadOrderLinks,
-                    InMemoryOrderModuleList,
-                    InInitializationOrderModuleList;
-    uint64_t        DllBase;
-    uint64_t        EntryPoint;
-    uint32_t        SizeOfImage;
-    uint32_t        Alignment;
+    }               InLoadOrderLinks,                  /**< 0x00 */
+                    InMemoryOrderModuleList,           /**< 0x10 */
+                    InInitializationOrderModuleList;   /**< 0x20 */
+    uint64_t        DllBase;                           /**< 0x30 */
+    uint64_t        EntryPoint;                        /**< 0x38 */
+    uint32_t        SizeOfImage;                       /**< 0x40 */
+    uint32_t        Alignment;                         /**< 0x44 */
     struct
     {
-        uint16_t    Length;
-        uint16_t    MaximumLength;
-        uint32_t    Alignment;
-        uint64_t    Buffer;
-    }               FullDllName,
-                    BaseDllName;
-    uint32_t        Flags;
-    uint16_t        LoadCount;
-    uint16_t        TlsIndex;
+        uint16_t    Length;                            /**< 0x48,0x58 */
+        uint16_t    MaximumLength;                     /**< 0x4a,0x5a */
+        uint32_t    Alignment;                         /**< 0x4c,0x5c */
+        uint64_t    Buffer;                            /**< 0x50,0x60 */
+    }               FullDllName,                       /**< 0x48 */
+                    BaseDllName;                       /**< 0x58 */
+    uint32_t        Flags;                             /**< 0x68 */
+    uint16_t        LoadCount;                         /**< 0x6c */
+    uint16_t        TlsIndex;                          /**< 0x6e */
     /* ... there is more ... */
 } NTMTE64;
 typedef NTMTE64 *PNTMTE64;
@@ -260,7 +260,7 @@ typedef DBGDIGGERWINNTRDR *PDBGDIGGERWINNTRDR;
 /** Validates a 32-bit Windows NT kernel address */
 #define WINNT32_VALID_ADDRESS(Addr)         ((Addr) >         UINT32_C(0x80000000) && (Addr) <         UINT32_C(0xfffff000))
 /** Validates a 64-bit Windows NT kernel address */
-#define WINNT64_VALID_ADDRESS(Addr)         ((Addr) > UINT64_C(0xffffffff80000000) && (Addr) < UINT64_C(0xfffffffffffff000))
+ #define WINNT64_VALID_ADDRESS(Addr)         ((Addr) > UINT64_C(0xffff800000000000) && (Addr) < UINT64_C(0xfffffffffffff000))
 /** Validates a kernel address. */
 #define WINNT_VALID_ADDRESS(pThis, Addr)    ((pThis)->f32Bit ? WINNT32_VALID_ADDRESS(Addr) : WINNT64_VALID_ADDRESS(Addr))
 /** Versioned and bitness wrapper. */
@@ -938,37 +938,41 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
         RTUTF16             wsz[8192/2];
     } u;
 
+    union
+    {
+        NTMTE32 v32;
+        NTMTE64 v64;
+    } uMte, uMte2, uMte3;
+
     /*
      * Look for the PAGELK section name that seems to be a part of all kernels.
      * Then try find the module table entry for it.  Since it's the first entry
      * in the PsLoadedModuleList we can easily validate the list head and report
      * success.
      */
-    CPUMMODE enmMode = DBGFR3CpuGetMode(pUVM, 0 /*idCpu*/);
-    if (enmMode == CPUMMODE_LONG)
+    CPUMMODE        enmMode = DBGFR3CpuGetMode(pUVM, 0 /*idCpu*/);
+    uint64_t const  uStart  = enmMode == CPUMMODE_LONG ? UINT64_C(0xfffff80000000000) : UINT32_C(0x80001000);
+    uint64_t const  uEnd    = enmMode == CPUMMODE_LONG ? UINT64_C(0xffffffffffff0000) : UINT32_C(0xffff0000);
+    DBGFADDRESS     KernelAddr;
+    for (DBGFR3AddrFromFlat(pUVM, &KernelAddr, uStart);
+         KernelAddr.FlatPtr < uEnd;
+         KernelAddr.FlatPtr += PAGE_SIZE)
     {
-        /** @todo when 32-bit is working, add support for 64-bit windows nt. */
-    }
-    else
-    {
-        DBGFADDRESS KernelAddr;
-        for (DBGFR3AddrFromFlat(pUVM, &KernelAddr, UINT32_C(0x80001000));
-             KernelAddr.FlatPtr < UINT32_C(0xffff0000);
-             KernelAddr.FlatPtr += PAGE_SIZE)
-        {
-            int rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, UINT32_C(0xffff0000) - KernelAddr.FlatPtr,
-                                   1, "PAGELK\0", sizeof("PAGELK\0"), &KernelAddr);
-            if (RT_FAILURE(rc))
-                break;
-            DBGFR3AddrSub(&KernelAddr, KernelAddr.FlatPtr & PAGE_OFFSET_MASK);
+        int rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, uEnd - KernelAddr.FlatPtr,
+                               1, "PAGELK\0", sizeof("PAGELK\0"), &KernelAddr);
+        if (RT_FAILURE(rc))
+            break;
+        DBGFR3AddrSub(&KernelAddr, KernelAddr.FlatPtr & PAGE_OFFSET_MASK);
 
-            /* MZ + PE header. */
-            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &KernelAddr, &u, sizeof(u));
-            if (    RT_SUCCESS(rc)
-                &&  u.MzHdr.e_magic == IMAGE_DOS_SIGNATURE
-                &&  !(u.MzHdr.e_lfanew & 0x7)
-                &&  u.MzHdr.e_lfanew >= 0x080
-                &&  u.MzHdr.e_lfanew <= 0x400) /* W8 is at 0x288*/
+        /* MZ + PE header. */
+        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &KernelAddr, &u, sizeof(u));
+        if (    RT_SUCCESS(rc)
+            &&  u.MzHdr.e_magic == IMAGE_DOS_SIGNATURE
+            &&  !(u.MzHdr.e_lfanew & 0x7)
+            &&  u.MzHdr.e_lfanew >= 0x080
+            &&  u.MzHdr.e_lfanew <= 0x400) /* W8 is at 0x288*/
+        {
+            if (enmMode != CPUMMODE_LONG)
             {
                 IMAGE_NT_HEADERS32 const *pHdrs = (IMAGE_NT_HEADERS32 const *)&u.au8[u.MzHdr.e_lfanew];
                 if (    pHdrs->Signature                            == IMAGE_NT_SIGNATURE
@@ -978,58 +982,55 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                     &&  (pHdrs->FileHeader.Characteristics & (IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_DLL)) == IMAGE_FILE_EXECUTABLE_IMAGE
                     &&  pHdrs->OptionalHeader.Magic                 == IMAGE_NT_OPTIONAL_HDR32_MAGIC
                     &&  pHdrs->OptionalHeader.NumberOfRvaAndSizes   == IMAGE_NUMBEROF_DIRECTORY_ENTRIES
-                    /** @todo need more ntoskrnl signs? */
                     )
                 {
                     /* Find the MTE. */
-                    NTMTE32 Mte;
-                    RT_ZERO(Mte);
-                    Mte.DllBase     = KernelAddr.FlatPtr;
-                    Mte.EntryPoint  = KernelAddr.FlatPtr + pHdrs->OptionalHeader.AddressOfEntryPoint;
-                    Mte.SizeOfImage = pHdrs->OptionalHeader.SizeOfImage;
+                    RT_ZERO(uMte);
+                    uMte.v32.DllBase     = KernelAddr.FlatPtr;
+                    uMte.v32.EntryPoint  = KernelAddr.FlatPtr + pHdrs->OptionalHeader.AddressOfEntryPoint;
+                    uMte.v32.SizeOfImage = pHdrs->OptionalHeader.SizeOfImage;
                     DBGFADDRESS HitAddr;
-                    rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, UINT32_MAX - KernelAddr.FlatPtr,
-                                       4 /*align*/, &Mte.DllBase, 3 * sizeof(uint32_t), &HitAddr);
+                    rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &KernelAddr, uEnd - KernelAddr.FlatPtr,
+                                       4 /*align*/, &uMte.v32.DllBase, 3 * sizeof(uint32_t), &HitAddr);
                     while (RT_SUCCESS(rc))
                     {
                         /* check the name. */
-                        NTMTE32 Mte2;
                         DBGFADDRESS MteAddr = HitAddr;
                         rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrSub(&MteAddr, RT_OFFSETOF(NTMTE32, DllBase)),
-                                           &Mte2, sizeof(Mte2));
+                                           &uMte2.v32, sizeof(uMte2.v32));
                         if (    RT_SUCCESS(rc)
-                            &&  Mte2.DllBase     == Mte.DllBase
-                            &&  Mte2.EntryPoint  == Mte.EntryPoint
-                            &&  Mte2.SizeOfImage == Mte.SizeOfImage
-                            &&  WINNT32_VALID_ADDRESS(Mte2.InLoadOrderLinks.Flink)
-                            &&  Mte2.InLoadOrderLinks.Blink > KernelAddr.FlatPtr    /* list head inside ntoskrnl */
-                            &&  Mte2.InLoadOrderLinks.Blink < KernelAddr.FlatPtr + Mte.SizeOfImage
-                            &&  WINNT32_VALID_ADDRESS(Mte2.BaseDllName.Buffer)
-                            &&  WINNT32_VALID_ADDRESS(Mte2.FullDllName.Buffer)
-                            &&  Mte2.BaseDllName.Length <= Mte2.BaseDllName.MaximumLength
-                            &&  Mte2.BaseDllName.Length == WINNT_KERNEL_BASE_NAME_LEN * 2
-                            &&  Mte2.FullDllName.Length <= Mte2.FullDllName.MaximumLength
-                            &&  Mte2.FullDllName.Length <= 256
+                            &&  uMte2.v32.DllBase     == uMte.v32.DllBase
+                            &&  uMte2.v32.EntryPoint  == uMte.v32.EntryPoint
+                            &&  uMte2.v32.SizeOfImage == uMte.v32.SizeOfImage
+                            &&  WINNT32_VALID_ADDRESS(uMte2.v32.InLoadOrderLinks.Flink)
+                            &&  uMte2.v32.InLoadOrderLinks.Blink > KernelAddr.FlatPtr    /* list head inside ntoskrnl */
+                            &&  uMte2.v32.InLoadOrderLinks.Blink < KernelAddr.FlatPtr + uMte.v32.SizeOfImage
+                            &&  WINNT32_VALID_ADDRESS(uMte2.v32.BaseDllName.Buffer)
+                            &&  WINNT32_VALID_ADDRESS(uMte2.v32.FullDllName.Buffer)
+                            &&  uMte2.v32.BaseDllName.Length <= uMte2.v32.BaseDllName.MaximumLength
+                            &&  uMte2.v32.BaseDllName.Length == WINNT_KERNEL_BASE_NAME_LEN * 2
+                            &&  uMte2.v32.FullDllName.Length <= uMte2.v32.FullDllName.MaximumLength
+                            &&  uMte2.v32.FullDllName.Length <= 256
                            )
                         {
-                            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, Mte2.BaseDllName.Buffer),
-                                               u.wsz, Mte2.BaseDllName.Length);
-                            u.wsz[Mte2.BaseDllName.Length / 2] = '\0';
+                            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, uMte2.v32.BaseDllName.Buffer),
+                                               u.wsz, uMte2.v32.BaseDllName.Length);
+                            u.wsz[uMte2.v32.BaseDllName.Length / 2] = '\0';
                             if (    RT_SUCCESS(rc)
                                 &&  (   !RTUtf16ICmp(u.wsz, g_wszKernelNames[0])
                                   /* || !RTUtf16ICmp(u.wsz, g_wszKernelNames[1]) */
                                     )
                                )
                             {
-                                NTMTE32 Mte3;
-                                rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, Mte2.InLoadOrderLinks.Blink),
-                                                   &Mte3, RT_SIZEOFMEMB(NTMTE32, InLoadOrderLinks));
+                                rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                                   DBGFR3AddrFromFlat(pUVM, &Addr, uMte2.v32.InLoadOrderLinks.Blink),
+                                                   &uMte3.v32, RT_SIZEOFMEMB(NTMTE32, InLoadOrderLinks));
                                 if (   RT_SUCCESS(rc)
-                                    && Mte3.InLoadOrderLinks.Flink == MteAddr.FlatPtr
-                                    && WINNT32_VALID_ADDRESS(Mte3.InLoadOrderLinks.Blink) )
+                                    && uMte3.v32.InLoadOrderLinks.Flink == MteAddr.FlatPtr
+                                    && WINNT32_VALID_ADDRESS(uMte3.v32.InLoadOrderLinks.Blink) )
                                 {
                                     Log(("DigWinNt: MteAddr=%RGv KernelAddr=%RGv SizeOfImage=%x &PsLoadedModuleList=%RGv (32-bit)\n",
-                                         MteAddr.FlatPtr, KernelAddr.FlatPtr, Mte2.SizeOfImage, Addr.FlatPtr));
+                                         MteAddr.FlatPtr, KernelAddr.FlatPtr, uMte2.v32.SizeOfImage, Addr.FlatPtr));
                                     pThis->KernelAddr               = KernelAddr;
                                     pThis->KernelMteAddr            = MteAddr;
                                     pThis->PsLoadedModuleListAddr   = Addr;
@@ -1041,9 +1042,90 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
 
                         /* next */
                         DBGFR3AddrAdd(&HitAddr, 4);
-                        if (HitAddr.FlatPtr <= UINT32_C(0xfffff000))
-                            rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &HitAddr, UINT32_MAX - HitAddr.FlatPtr,
-                                               4 /*align*/, &Mte.DllBase, 3 * sizeof(uint32_t), &HitAddr);
+                        if (HitAddr.FlatPtr < uEnd)
+                            rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &HitAddr, uEnd - HitAddr.FlatPtr,
+                                               4 /*align*/, &uMte.v32.DllBase, 3 * sizeof(uint32_t), &HitAddr);
+                        else
+                            rc = VERR_DBGF_MEM_NOT_FOUND;
+                    }
+                }
+            }
+            else
+            {
+                IMAGE_NT_HEADERS64 const *pHdrs = (IMAGE_NT_HEADERS64 const *)&u.au8[u.MzHdr.e_lfanew];
+                if (    pHdrs->Signature                            == IMAGE_NT_SIGNATURE
+                    &&  pHdrs->FileHeader.Machine                   == IMAGE_FILE_MACHINE_AMD64
+                    &&  pHdrs->FileHeader.SizeOfOptionalHeader      == sizeof(pHdrs->OptionalHeader)
+                    &&  pHdrs->FileHeader.NumberOfSections          >= 10 /* the kernel has lots */
+                    &&  (pHdrs->FileHeader.Characteristics & (IMAGE_FILE_EXECUTABLE_IMAGE | IMAGE_FILE_DLL)) == IMAGE_FILE_EXECUTABLE_IMAGE
+                    &&  pHdrs->OptionalHeader.Magic                 == IMAGE_NT_OPTIONAL_HDR64_MAGIC
+                    &&  pHdrs->OptionalHeader.NumberOfRvaAndSizes   == IMAGE_NUMBEROF_DIRECTORY_ENTRIES
+                    )
+                {
+                    /* Find the MTE. */
+                    RT_ZERO(uMte.v64);
+                    uMte.v64.DllBase     = KernelAddr.FlatPtr;
+                    uMte.v64.EntryPoint  = KernelAddr.FlatPtr + pHdrs->OptionalHeader.AddressOfEntryPoint;
+                    uMte.v64.SizeOfImage = pHdrs->OptionalHeader.SizeOfImage;
+                    DBGFADDRESS ScanAddr;
+                    DBGFADDRESS HitAddr;
+                    rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/,
+                                       DBGFR3AddrFromFlat(pUVM, &ScanAddr, uStart),
+                                       uEnd - uStart,
+                                       4 /*align*/, &uMte.v64.DllBase, 5 * sizeof(uint32_t), &HitAddr);
+                    while (RT_SUCCESS(rc))
+                    {
+                        /* check the name. */
+                        DBGFADDRESS MteAddr = HitAddr;
+                        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrSub(&MteAddr, RT_OFFSETOF(NTMTE64, DllBase)),
+                                           &uMte2.v64, sizeof(uMte2.v64));
+                        if (    RT_SUCCESS(rc)
+                            &&  uMte2.v64.DllBase     == uMte.v64.DllBase
+                            &&  uMte2.v64.EntryPoint  == uMte.v64.EntryPoint
+                            &&  uMte2.v64.SizeOfImage == uMte.v64.SizeOfImage
+                            &&  WINNT64_VALID_ADDRESS(uMte2.v64.InLoadOrderLinks.Flink)
+                            &&  WINNT64_VALID_ADDRESS(uMte2.v64.BaseDllName.Buffer)
+                            &&  WINNT64_VALID_ADDRESS(uMte2.v64.FullDllName.Buffer)
+                            )
+                        {
+                            rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, uMte2.v64.BaseDllName.Buffer),
+                                               u.wsz, uMte2.v64.BaseDllName.Length);
+                            u.wsz[uMte2.v64.BaseDllName.Length / 2] = '\0';
+                            if (    RT_SUCCESS(rc)
+                                &&  (   !RTUtf16ICmp(u.wsz, g_wszKernelNames[0])
+                                  /* || !RTUtf16ICmp(u.wsz, g_wszKernelNames[1]) */
+                                    )
+                               )
+                            {
+                                rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/,
+                                                   DBGFR3AddrFromFlat(pUVM, &Addr, uMte2.v64.InLoadOrderLinks.Blink),
+                                                   &uMte3.v64, RT_SIZEOFMEMB(NTMTE64, InLoadOrderLinks));
+                                if (   RT_SUCCESS(rc)
+                                    && uMte3.v64.InLoadOrderLinks.Flink == MteAddr.FlatPtr
+                                    && WINNT64_VALID_ADDRESS(uMte3.v64.InLoadOrderLinks.Blink) )
+                                {
+                                    Log(("DigWinNt: MteAddr=%RGv KernelAddr=%RGv SizeOfImage=%x &PsLoadedModuleList=%RGv (32-bit)\n",
+                                         MteAddr.FlatPtr, KernelAddr.FlatPtr, uMte2.v64.SizeOfImage, Addr.FlatPtr));
+                                    pThis->KernelAddr               = KernelAddr;
+                                    pThis->KernelMteAddr            = MteAddr;
+                                    pThis->PsLoadedModuleListAddr   = Addr;
+                                    pThis->f32Bit                   = false;
+                                    return true;
+                                }
+                            }
+                            else if (RT_SUCCESS(rc))
+                            {
+                                Log2(("DigWinNt: Wrong module: MteAddr=%RGv ImageAddr=%RGv SizeOfImage=%#x '%ls'\n",
+                                      MteAddr.FlatPtr, KernelAddr.FlatPtr, uMte2.v64.SizeOfImage, u.wsz));
+                                break; /* Not NT kernel */
+                            }
+                        }
+
+                        /* next */
+                        DBGFR3AddrAdd(&HitAddr, 4);
+                        if (HitAddr.FlatPtr < uEnd)
+                            rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &HitAddr, uEnd - HitAddr.FlatPtr,
+                                               4 /*align*/, &uMte.v64.DllBase, 3 * sizeof(uint32_t), &HitAddr);
                         else
                             rc = VERR_DBGF_MEM_NOT_FOUND;
                     }

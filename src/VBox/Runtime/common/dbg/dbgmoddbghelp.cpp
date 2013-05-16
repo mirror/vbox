@@ -314,7 +314,14 @@ static BOOL CALLBACK rtDbgModDbgHelpCopySymbolsCallback(PSYMBOL_INFO pSymInfo, U
         Log(("  %#018x LB %#07x  %s  [SKIPPED - INVALID ADDRESS!]\n", pSymInfo->Address, cbSymbol, pSymInfo->Name));
         return TRUE;
     }
+    if (pSymInfo->NameLen >= RTDBG_SYMBOL_NAME_LENGTH)
+    {
+        Log(("  %#018x LB %#07x  %s  [SKIPPED - TOO LONG (%u > %u)!]\n", pSymInfo->Address, cbSymbol, pSymInfo->Name,
+             pSymInfo->NameLen, RTDBG_SYMBOL_NAME_LENGTH));
+        return TRUE;
+    }
 
+    /* ASSUMES the symbol name is ASCII. */
     int rc = RTDbgModSymbolAdd(pArgs->hCnt, pSymInfo->Name, RTDBGSEGIDX_RVA,
                                pSymInfo->Address - pArgs->uModAddr, cbSymbol, 0, NULL);
     Log(("  %#018x LB %#07x  %s  [%Rrc]\n", pSymInfo->Address, cbSymbol, pSymInfo->Name, rc));
@@ -414,6 +421,7 @@ static DECLCALLBACK(int) rtDbgModDbgHelp_TryOpen(PRTDBGMODINT pMod)
                 hFake = (HANDLE)(uintptr_t)ASMAtomicIncU32(&s_uFakeHandle);
             while (hFake == NULL || hFake == INVALID_HANDLE_VALUE);
 
+            LogFlow(("rtDbgModDbgHelp_TryOpen: \n"));
             if (SymInitialize(hFake, NULL /*SearchPath*/, FALSE /*fInvalidProcess*/))
             {
                 SymSetOptions(SYMOPT_LOAD_LINES | SymGetOptions());
@@ -434,19 +442,30 @@ static DECLCALLBACK(int) rtDbgModDbgHelp_TryOpen(PRTDBGMODINT pMod)
                             pMod->pvDbgPriv = hCnt;
                             pMod->pDbgVt    = &g_rtDbgModVtDbgDbgHelp;
                             hCnt = NIL_RTDBGMOD;
+                            LogFlow(("rtDbgModDbgHelp_TryOpen: Successfully loaded '%s' at %#llx\n",
+                                     pMod->pszDbgFile, (uint64_t)uImageBase));
                         }
 
                         SymUnloadModule64(hFake, uModAddr);
                     }
                     else
+                    {
                         rc = RTErrConvertFromWin32(GetLastError());
+                        LogFlow(("rtDbgModDbgHelp_TryOpen: Error loading the module '%s' at %#llx: %Rrc (%u)\n",
+                                 pMod->pszDbgFile, (uint64_t)uImageBase, rc, GetLastError()));
+                    }
                     RTUtf16Free(pwszDbgFile);
                 }
+                else
+                    LogFlow(("rtDbgModDbgHelp_TryOpen: Unicode version issue: %Rrc\n", rc));
 
                 BOOL fRc2 = SymCleanup(hFake); Assert(fRc2); NOREF(fRc2);
             }
             else
+            {
                 rc = RTErrConvertFromWin32(GetLastError());
+                LogFlow(("rtDbgModDbgHelp_TryOpen: SymInitialize failed: %Rrc (%u)\n", rc, GetLastError()));
+            }
         }
         RTDbgModRelease(hCnt);
     }
