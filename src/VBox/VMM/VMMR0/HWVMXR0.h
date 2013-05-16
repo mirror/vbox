@@ -74,10 +74,9 @@ DECLINLINE(int) VMXReadCachedVmcsEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
                                                             VMXReadVmcs64(idxField, p64Val)                 \
                                                           : (*(p64Val) &= UINT64_C(0xffffffff),             \
                                                              VMXReadVmcs32(idxField, (uint32_t *)(p64Val)))
-#  define VMXReadVmcsGstN(idxField, p64Val)               (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests) ?  \
-                                                            VMXReadVmcs64(idxField, p64Val)                 \
-                                                          : (*(p64Val) &= UINT64_C(0xffffffff),             \
-                                                             VMXReadVmcs32(idxField, (uint32_t *)(p64Val)))
+/* Don't use fAllow64BitGuests for VMXReadVmcsGstN() even though it looks right, as it can be forced to 'true'.
+   HMVMX_IS_64BIT_HOST_MODE() is what we need. */
+#  define VMXReadVmcsGstN                                 VMXReadVmcsHstN
 #  define VMXReadVmcsGstNByIdxVal                         VMXReadVmcsGstN
 # elif HC_ARCH_BITS == 32
 #  define VMXReadVmcsHstN                                 VMXReadVmcs32
