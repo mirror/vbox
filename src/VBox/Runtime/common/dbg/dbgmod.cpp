@@ -1160,6 +1160,34 @@ RTDECL(bool) RTDbgModIsExports(RTDBGMOD hDbgMod)
 }
 
 
+RTDECL(int) RTDbgModRemoveAll(RTDBGMOD hDbgMod, bool fLeaveSegments)
+{
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
+
+    RTDBGMOD_LOCK(pDbgMod);
+
+    /* Only possible on container modules. */
+    int rc = VINF_SUCCESS;
+    if (pDbgMod->pDbgVt != &g_rtDbgModVtDbgContainer)
+    {
+        if (fLeaveSegments)
+        {
+            rc = rtDbgModContainer_LineRemoveAll(pDbgMod);
+            if (RT_SUCCESS(rc))
+                rc = rtDbgModContainer_SymbolRemoveAll(pDbgMod);
+        }
+        else
+            rc = rtDbgModContainer_RemoveAll(pDbgMod);
+    }
+    else
+        rc = VERR_ACCESS_DENIED;
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return rc;
+}
+
+
 RTDECL(RTDBGSEGIDX) RTDbgModRvaToSegOff(RTDBGMOD hDbgMod, RTUINTPTR uRva, PRTUINTPTR poffSeg)
 {
     PRTDBGMODINT pDbgMod = hDbgMod;

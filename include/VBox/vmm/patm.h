@@ -209,6 +209,8 @@ VMMR3_INT_DECL(int)             PATMR3RemovePatch(PVM pVM, RTRCPTR pInstrGC);
 VMMR3_INT_DECL(int)             PATMR3DetectConflict(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflictGC);
 VMMR3_INT_DECL(bool)            PATMR3HasBeenPatched(PVM pVM, RTRCPTR pInstrGC);
 
+VMMR3_INT_DECL(void)            PATMR3DbgPopulateAddrSpace(PVM pVM, RTDBGAS hDbgAs);
+
 /** @} */
 #endif
 
