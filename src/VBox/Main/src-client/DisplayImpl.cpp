@@ -133,6 +133,8 @@ HRESULT Display::FinalConstruct()
 #endif
 #ifdef VBOX_WITH_VPX
     mpVideoRecCtx = NULL;
+    for (unsigned i = 0; i < RT_ELEMENTS(maVideoRecEnabled); i++)
+        maVideoRecEnabled[i] = true;
 #endif
 
     return BaseFinalConstruct();
@@ -2671,8 +2673,34 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray(ULONG aScreenId, ULONG width, ULO
     return rc;
 }
 
+STDMETHODIMP Display::EnableVideoCapture(ComSafeArrayIn(BOOL, aScreens))
+{
+#ifdef VBOX_WITH_VPX
+    com::SafeArray<LONG> Screens(ComSafeArrayInArg(aScreens));
+    for (unsigned i = 0; i < Screens.size(); i++)
+        if (Screens[i])
+            maVideoRecEnabled[i] = true;
+    return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
+}
 
-int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, ULONG x, ULONG y, ULONG width, ULONG height)
+STDMETHODIMP Display::DisableVideoCapture(ComSafeArrayIn(BOOL, aScreens))
+{
+#ifdef VBOX_WITH_VPX
+    com::SafeArray<LONG> Screens(ComSafeArrayInArg(aScreens));
+    for (unsigned i = 0; i < Screens.size(); i++)
+        if (Screens[i])
+            maVideoRecEnabled[i] = false;
+    return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
+}
+
+int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address,
+                             ULONG x, ULONG y, ULONG width, ULONG height)
 {
     int rc = VINF_SUCCESS;
     pDisplay->vbvaLock();
@@ -2776,8 +2804,8 @@ int Display::drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address, 
     return rc;
 }
 
-STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULONG y,
-                                    ULONG width, ULONG height)
+STDMETHODIMP Display::DrawToScreen(ULONG aScreenId, BYTE *address,
+                                   ULONG x, ULONG y, ULONG width, ULONG height)
 {
     /// @todo (r=dmik) this function may take too long to complete if the VM
     //  is doing something like saving state right now. Which, in case if it
@@ -3363,6 +3391,9 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         uint64_t u64Now = RTTimeProgramMilliTS();
         for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
         {
+            if (!pDisplay->maVideoRecEnabled[uScreenId])
+                continue;
+
             DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
 
             if (   !pFBInfo->pFramebuffer.isNull()
@@ -4434,8 +4465,13 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             LogFlow(("Failed to create video recording context (%Rrc)!\n", rc));
             return E_FAIL;
         }
+        com::SafeArray<BOOL> screens;
+        int hrc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens));
+        AssertComRCReturnRC(hrc);
+        for (unsigned i = 0; i < RT_ELEMENTS(pDisplay->maVideoRecEnabled); i++)
+            pDisplay->maVideoRecEnabled[i] = i < screens.size() && screens[i];
         ULONG ulWidth;
-        int hrc = pMachine->COMGETTER(VideoCaptureWidth)(&ulWidth);
+        hrc = pMachine->COMGETTER(VideoCaptureWidth)(&ulWidth);
         AssertComRCReturnRC(hrc);
         ULONG ulHeight;
         hrc = pMachine->COMGETTER(VideoCaptureHeight)(&ulHeight);

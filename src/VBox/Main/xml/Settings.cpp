@@ -1752,6 +1752,7 @@ Hardware::Hardware()
           ulVideoCaptureRate(512),
           ulVideoCaptureFps(25),
           fVideoCaptureEnabled(false),
+          u64VideoCaptureScreens(UINT64_C(0xffffffffffffffff)),
           strVideoCaptureFile("Test.webm"),
           firmwareType(FirmwareType_BIOS),
           pointingHIDType(PointingHIDType_PS2Mouse),
@@ -1822,6 +1823,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fAccelerate3D             == h.fAccelerate3D)
                   && (fAccelerate2DVideo        == h.fAccelerate2DVideo)
                   && (fVideoCaptureEnabled      == h.fVideoCaptureEnabled)
+                  && (u64VideoCaptureScreens    == h.u64VideoCaptureScreens)
                   && (strVideoCaptureFile       == h.strVideoCaptureFile)
                   && (ulVideoCaptureHorzRes     == h.ulVideoCaptureHorzRes)
                   && (ulVideoCaptureVertRes     == h.ulVideoCaptureVertRes)
@@ -2723,12 +2725,13 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("VideoCapture"))
         {
-            pelmHwChild->getAttributeValue("enabled", hw.fVideoCaptureEnabled);
-            pelmHwChild->getAttributeValue("file",    hw.strVideoCaptureFile);
-            pelmHwChild->getAttributeValue("horzRes", hw.ulVideoCaptureHorzRes);
-            pelmHwChild->getAttributeValue("vertRes", hw.ulVideoCaptureVertRes);
-            pelmHwChild->getAttributeValue("rate",    hw.ulVideoCaptureRate);
-            pelmHwChild->getAttributeValue("fps",     hw.ulVideoCaptureFps);
+            pelmHwChild->getAttributeValue("enabled",   hw.fVideoCaptureEnabled);
+            pelmHwChild->getAttributeValue("screens",   hw.u64VideoCaptureScreens);
+            pelmHwChild->getAttributeValue("file",      hw.strVideoCaptureFile);
+            pelmHwChild->getAttributeValue("horzRes",   hw.ulVideoCaptureHorzRes);
+            pelmHwChild->getAttributeValue("vertRes",   hw.ulVideoCaptureVertRes);
+            pelmHwChild->getAttributeValue("rate",      hw.ulVideoCaptureRate);
+            pelmHwChild->getAttributeValue("fps",       hw.ulVideoCaptureFps);
         }
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
         {
@@ -3910,12 +3913,13 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
     if (m->sv >= SettingsVersion_v1_12)
     {
-        pelmVideoCapture->setAttribute("enabled", hw.fVideoCaptureEnabled);
-        pelmVideoCapture->setAttribute("file",    hw.strVideoCaptureFile);
-        pelmVideoCapture->setAttribute("horzRes", hw.ulVideoCaptureHorzRes);
-        pelmVideoCapture->setAttribute("vertRes", hw.ulVideoCaptureVertRes);
-        pelmVideoCapture->setAttribute("rate",    hw.ulVideoCaptureRate);
-        pelmVideoCapture->setAttribute("fps",     hw.ulVideoCaptureFps);
+        pelmVideoCapture->setAttribute("enabled",   hw.fVideoCaptureEnabled);
+        pelmVideoCapture->setAttribute("screens",   hw.u64VideoCaptureScreens);
+        pelmVideoCapture->setAttribute("file",      hw.strVideoCaptureFile);
+        pelmVideoCapture->setAttribute("horzRes",   hw.ulVideoCaptureHorzRes);
+        pelmVideoCapture->setAttribute("vertRes",   hw.ulVideoCaptureVertRes);
+        pelmVideoCapture->setAttribute("rate",      hw.ulVideoCaptureRate);
+        pelmVideoCapture->setAttribute("fps",       hw.ulVideoCaptureFps);
     }
 
     xml::ElementNode *pelmVRDE = pelmHardware->createChild("RemoteDisplay");

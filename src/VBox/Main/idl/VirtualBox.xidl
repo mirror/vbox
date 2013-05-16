@@ -3979,7 +3979,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="55bf39d3-ac8f-4a77-90d8-1e2c726170ce"
+    uuid="258f4e55-40f6-4804-a162-60c302a34d99"
     wsmap="managed"
     >
     <desc>
@@ -4239,6 +4239,12 @@
       <desc>
         This setting determines whether VirtualBox uses video recording to
         record VM session.</desc>
+    </attribute>
+
+    <attribute name="VideoCaptureScreens" type="boolean" safearray="yes">
+      <desc>
+        This setting determines for which screens video recording is
+        enabled.</desc>
     </attribute>
 
     <attribute name="VideoCaptureFile" type="wstring" default="Test.webm">
@@ -6271,7 +6277,7 @@
       <param name="description" type="IVirtualSystemDescription" dir="return">
         <desc>VirtualSystemDescription object which is created for this machine.</desc>
       </param>
-    </method >
+    </method>
 
     <method name="findSnapshot">
       <desc>
@@ -14668,7 +14674,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="b83ee395-8679-40ca-8d60-1a0cbe724930"
+    uuid="0598a3df-3dc0-43c7-a79c-237fb5bb633d"
     wsmap="managed"
     >
     <desc>
@@ -14873,6 +14879,28 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="screenData" type="octet" dir="return" safearray="yes">
         <desc>
           Array with resulting screen data.
+        </desc>
+      </param>
+    </method>
+
+    <method name="enableVideoCapture">
+      <desc>
+        Start/continue video capture.
+      </desc>
+      <param name="screens" type="boolean" safearray="yes" dir="in">
+        <desc>
+          The screens to start/continue capturing.
+        </desc>
+      </param>
+    </method>
+
+    <method name="disableVideoCapture">
+      <desc>
+        Stop video capture.
+      </desc>
+      <param name="screens" type="boolean" safearray="yes" dir="in">
+        <desc>
+          The screens to stop capturing.
         </desc>
       </param>
     </method>

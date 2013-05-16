@@ -2627,7 +2627,18 @@ public class Helper {
 
         List<Long> ret = new ArrayList<Long>(vals.length);
         for (long v : vals) {
-                ret.add(v);
+            ret.add(v);
+        }
+        return ret;
+    }
+
+    public static List<Boolean> wrap(boolean[] vals) {
+        if (vals==null)
+            return null;
+
+        List<Boolean> ret = new ArrayList<Boolean>(vals.length);
+        for (boolean v: vals) {
+        ret.add(v);
         }
         return ret;
     }
@@ -2780,7 +2791,8 @@ public class Helper {
     }
 
     @SuppressWarnings( "unchecked")
-    public static <T> T[] unwrap(Class<T> wrapperClass, List<T> thisPtrs) {
+    public static <T> T[] unwrap(Class<T> wrapperClass, List<T> thisPtrs)
+    {
         if (thisPtrs==null)
             return null;
         if (thisPtrs.size() == 0)
@@ -2796,18 +2808,19 @@ public class Helper {
 
     public static Object queryInterface(Object obj, String uuid)
     {
-         try {
-            /* Kind of ugly, but does the job of casting */
-            org.mozilla.xpcom.Mozilla moz = org.mozilla.xpcom.Mozilla.getInstance();
-            long xpobj = moz.wrapJavaObject(obj, uuid);
-            return moz.wrapXPCOMObject(xpobj, uuid);
-         } catch (Exception e) {
-             return null;
-         }
+        try {
+           /* Kind of ugly, but does the job of casting */
+           org.mozilla.xpcom.Mozilla moz = org.mozilla.xpcom.Mozilla.getInstance();
+           long xpobj = moz.wrapJavaObject(obj, uuid);
+           return moz.wrapXPCOMObject(xpobj, uuid);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @SuppressWarnings("unchecked")
-    public static <T1 extends IUnknown,T2> T2[] unwrap2(Class<T1> wrapperClass1, Class<T2> wrapperClass2, List<T1> thisPtrs) {
+    public static <T1 extends IUnknown,T2> T2[] unwrap2(Class<T1> wrapperClass1, Class<T2> wrapperClass2, List<T1> thisPtrs)
+    {
         if (thisPtrs==null)  return null;
 
         T2 ret[] = (T2[])Array.newInstance(wrapperClass2, thisPtrs.size());
