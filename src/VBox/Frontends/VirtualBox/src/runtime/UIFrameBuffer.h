@@ -213,7 +213,7 @@ public:
 
     /* API: Event-delegate stuff: */
     virtual void moveEvent(QMoveEvent* /*pEvent*/) {}
-    virtual void resizeEvent(UIResizeEvent *pEvent);
+    virtual void resizeEvent(UIResizeEvent *pEvent) = 0;
     virtual void paintEvent(QPaintEvent *pEvent) = 0;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL

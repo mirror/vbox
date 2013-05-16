@@ -291,12 +291,6 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, BYTE *pReserved)
     }
 }
 
-void UIFrameBuffer::resizeEvent(UIResizeEvent *pEvent)
-{
-    m_width = pEvent->width();
-    m_height = pEvent->height();
-}
-
 #ifdef VBOX_WITH_VIDEOHWACCEL
 void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
 {
