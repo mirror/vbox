@@ -986,7 +986,7 @@ static DECLCALLBACK(int) dbgcCmdDetect(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
     char szName[64];
     int rc = DBGFR3OSDetect(pUVM, szName, sizeof(szName));
     if (RT_FAILURE(rc))
-        return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Executing DBGFR3OSDetect().");
+        return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Executing DBGFR3OSDetect().\n");
     if (rc == VINF_SUCCESS)
     {
         rc = DBGCCmdHlpPrintf(pCmdHlp, "Guest OS: %s\n", szName);
