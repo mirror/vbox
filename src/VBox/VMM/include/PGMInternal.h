@@ -2698,6 +2698,48 @@ typedef PGMPTWALKGST32BIT *PPGMPTWALKGST32BIT;
 /** Pointer to a const 32-bit guest page table walk. */
 typedef PGMPTWALKGST32BIT const *PCPGMPTWALKGST32BIT;
 
+/**
+ * Which part of PGMPTWALKGST that is valid.
+ */
+typedef enum PGMPTWALKGSTTYPE
+{
+    /** Customary invalid 0 value. */
+    PGMPTWALKGSTTYPE_INVALID = 0,
+    /**  PGMPTWALKGST::u.Amd64 is valid. */
+    PGMPTWALKGSTTYPE_AMD64,
+    /**  PGMPTWALKGST::u.Pae is valid. */
+    PGMPTWALKGSTTYPE_PAE,
+    /**  PGMPTWALKGST::u.Legacy is valid. */
+    PGMPTWALKGSTTYPE_32BIT,
+    /** Customary 32-bit type hack. */
+    PGMPTWALKGSTTYPE_32BIT_HACK = 0x7fff0000
+} PGMPTWALKGSTTYPE;
+
+/**
+ * Combined guest page table walk result.
+ */
+typedef struct PGMPTWALKGST
+{
+    union
+    {
+        /** The page walker core - always valid. */
+        PGMPTWALKCORE       Core;
+        /** The page walker for AMD64. */
+        PGMPTWALKGSTAMD64   Amd64;
+        /** The page walker for PAE (32-bit). */
+        PGMPTWALKGSTPAE     Pae;
+        /** The page walker for 32-bit paging (called legacy due to C naming
+         * convension). */
+        PGMPTWALKGST32BIT   Legacy;
+    } u;
+    /** Indicates which part of the union is valid. */
+    PGMPTWALKGSTTYPE        enmType;
+} PGMPTWALKGST;
+/** Pointer to a combined guest page table walk result. */
+typedef PGMPTWALKGST *PPGMPTWALKGST;
+/** Pointer to a read-only combined guest page table walk result. */
+typedef PGMPTWALKGST const *PCPGMPTWALKGST;
+
 
 /** @name Paging mode macros
  * @{
@@ -4034,6 +4076,7 @@ int             pgmGstLazyMap32BitPD(PVMCPU pVCpu, PX86PD *ppPd);
 int             pgmGstLazyMapPaePDPT(PVMCPU pVCpu, PX86PDPT *ppPdpt);
 int             pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd);
 int             pgmGstLazyMapPml4(PVMCPU pVCpu, PX86PML4 *ppPml4);
+int             pgmGstPtWalk(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPTWALKGST pWalk);
 
 # if defined(VBOX_STRICT) && HC_ARCH_BITS == 64 && defined(IN_RING3)
 FNDBGCCMD       pgmR3CmdCheckDuplicatePages;
