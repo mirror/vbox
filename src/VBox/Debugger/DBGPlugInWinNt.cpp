@@ -426,7 +426,7 @@ static bool dbgDiggerWinNtCheckSectHdrsAndImgSize(PCIMAGE_SECTION_HEADER paShs, 
 
         /* Check that sizes are within the same range and that both sizes and
            addresses are within reasonable limits. */
-        if (   RT_ALIGN(paShs[i].Misc.VirtualSize, _64K) > RT_ALIGN(paShs[i].SizeOfRawData, _64K)
+        if (   RT_ALIGN(paShs[i].Misc.VirtualSize, _64K) < RT_ALIGN(paShs[i].SizeOfRawData, _64K)
             || paShs[i].Misc.VirtualSize >= _1G
             || paShs[i].SizeOfRawData    >= _1G)
         {
@@ -968,7 +968,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                 &&  u.MzHdr.e_magic == IMAGE_DOS_SIGNATURE
                 &&  !(u.MzHdr.e_lfanew & 0x7)
                 &&  u.MzHdr.e_lfanew >= 0x080
-                &&  u.MzHdr.e_lfanew <= 0x200)
+                &&  u.MzHdr.e_lfanew <= 0x400) /* W8 is at 0x288*/
             {
                 IMAGE_NT_HEADERS32 const *pHdrs = (IMAGE_NT_HEADERS32 const *)&u.au8[u.MzHdr.e_lfanew];
                 if (    pHdrs->Signature                            == IMAGE_NT_SIGNATURE
