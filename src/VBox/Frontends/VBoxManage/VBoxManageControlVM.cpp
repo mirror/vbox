@@ -1300,10 +1300,10 @@ int handleControlVM(HandlerArg *a)
                 break;
             }
             int vrc;
-            uint32_t displayIdx = 0;
+            uint32_t iScreen = 0;
             if (a->argc == 4)
             {
-                vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &displayIdx);
+                vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &iScreen);
                 if (vrc != VINF_SUCCESS)
                 {
                     errorArgument("Error parsing display number '%s'", a->argv[3]);
@@ -1320,9 +1320,9 @@ int handleControlVM(HandlerArg *a)
                 break;
             }
             ULONG width, height, bpp;
-            CHECK_ERROR_BREAK(pDisplay, GetScreenResolution(displayIdx, &width, &height, &bpp));
+            CHECK_ERROR_BREAK(pDisplay, GetScreenResolution(iScreen, &width, &height, &bpp));
             com::SafeArray<BYTE> saScreenshot;
-            CHECK_ERROR_BREAK(pDisplay, TakeScreenShotPNGToArray(displayIdx, width, height, ComSafeArrayAsOutParam(saScreenshot)));
+            CHECK_ERROR_BREAK(pDisplay, TakeScreenShotPNGToArray(iScreen, width, height, ComSafeArrayAsOutParam(saScreenshot)));
             RTFILE pngFile = NIL_RTFILE;
             vrc = RTFileOpen(&pngFile, a->argv[2], RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_TRUNCATE | RTFILE_O_DENY_ALL);
             if (RT_FAILURE(vrc))
@@ -1338,6 +1338,58 @@ int handleControlVM(HandlerArg *a)
                 rc = E_FAIL;
             }
             RTFileClose(pngFile);
+        }
+        else if (   !strcmp(a->argv[1], "enablevideocapture")
+                 || !strcmp(a->argv[1], "disablevideocapture"))
+        {
+            ULONG cMonitors = 64;
+            CHECK_ERROR_BREAK(machine, COMGETTER(MonitorCount)(&cMonitors));
+            com::SafeArray<BOOL> saScreenIds(cMonitors);
+            if (a->argc < 3)
+            {
+                /* default: handle all screens */
+                for (unsigned i = 0; i < cMonitors; i++)
+                    saScreenIds[i] = true;
+            }
+            else
+            {
+                /* handle selected screens */
+                for (unsigned i = 0; i < cMonitors; i++)
+                    saScreenIds[i] = false;
+                for (int i = 2; SUCCEEDED(rc) && i < a->argc; i++)
+                {
+                    uint32_t iScreen;
+                    int vrc = RTStrToUInt32Ex(a->argv[i], NULL, 0, &iScreen);
+                    RTPrintf("i = %d => %d => %Rrc\n", i, iScreen, vrc);
+                    if (vrc != VINF_SUCCESS)
+                    {
+                        errorArgument("Error parsing display number '%s'", a->argv[i]);
+                        rc = E_FAIL;
+                        break;
+                    }
+                    if (iScreen >= cMonitors)
+                    {
+                        errorArgument("Invalid screen ID specified '%u'", iScreen);
+                        rc = E_FAIL;
+                        break;
+                    }
+                    saScreenIds[iScreen] = true;
+                }
+            }
+            for (unsigned i = 0; i < cMonitors; i++)
+                RTPrintf("  %d\n", saScreenIds[i]);
+            ComPtr<IDisplay> pDisplay;
+            CHECK_ERROR_BREAK(console, COMGETTER(Display)(pDisplay.asOutParam()));
+            if (!pDisplay)
+            {
+                RTMsgError("Guest not running");
+                rc = E_FAIL;
+                break;
+            }
+            if (!strcmp(a->argv[1], "enablevideocapture"))
+                CHECK_ERROR_BREAK(pDisplay, EnableVideoCapture(ComSafeArrayAsInParam(saScreenIds)));
+            else
+                CHECK_ERROR_BREAK(pDisplay, DisableVideoCapture(ComSafeArrayAsInParam(saScreenIds)));
         }
         else
         {

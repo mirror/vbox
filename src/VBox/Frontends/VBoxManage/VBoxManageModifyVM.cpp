@@ -195,6 +195,7 @@ enum
 #endif
 #ifdef VBOX_WITH_VPX
     MODIFYVM_VCP,
+    MODIFYVM_VCP_SCREENS,
     MODIFYVM_VCP_FILENAME,
     MODIFYVM_VCP_WIDTH,
     MODIFYVM_VCP_HEIGHT,
@@ -343,6 +344,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_VPX
     { "--vcpenabled",               MODIFYVM_VCP,                       RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vcpscreens",               MODIFYVM_VCP_SCREENS,               RTGETOPT_REQ_STRING },
     { "--vcpfile",                  MODIFYVM_VCP_FILENAME,              RTGETOPT_REQ_STRING },
     { "--vcpwidth",                 MODIFYVM_VCP_WIDTH,                 RTGETOPT_REQ_UINT32 },
     { "--vcpheight",                MODIFYVM_VCP_HEIGHT,                RTGETOPT_REQ_UINT32 },
@@ -408,6 +410,30 @@ void parseGroups(const char *pcszGroups, com::SafeArray<BSTR> *pGroups)
             pcszGroups = NULL;
         }
     }
+}
+
+int parseScreens(const char *pcszScreens, com::SafeArray<BOOL> *pScreens)
+{
+    while (pcszScreens && *pcszScreens)
+    {
+        char *pszNext;
+        uint32_t iScreen;
+        int rc = RTStrToUInt32Ex(pcszScreens, &pszNext, 0, &iScreen);
+        if (RT_FAILURE(rc))
+            return 1;
+        if (iScreen >= pScreens->size())
+            return 1;
+        if (pszNext && *pszNext)
+        {
+            pszNext = RTStrStripL(pszNext);
+            if (*pszNext != ',')
+                return 1;
+            pszNext++;
+        }
+        (*pScreens)[iScreen] = true;
+        pcszScreens = pszNext;
+    }
+    return 0;
 }
 
 int handleModifyVM(HandlerArg *a)
@@ -2446,6 +2472,20 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_VCP:
             {
                 CHECK_ERROR(machine, COMSETTER(VideoCaptureEnabled)(ValueUnion.f));
+                break;
+            }
+            case MODIFYVM_VCP_SCREENS:
+            {
+                ULONG cMonitors = 64;
+                CHECK_ERROR(machine, COMGETTER(MonitorCount)(&cMonitors));
+                com::SafeArray<BOOL> screens(cMonitors);
+                if (parseScreens(ValueUnion.psz, &screens))
+                {
+                    errorArgument("Invalid list of screens specified\n");
+                    rc = E_FAIL;
+                    break;
+                }
+                CHECK_ERROR(machine, COMSETTER(VideoCaptureScreens)(ComSafeArrayAsInParam(screens)));
                 break;
             }
             case MODIFYVM_VCP_FILENAME:

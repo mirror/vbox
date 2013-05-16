@@ -172,6 +172,8 @@ Machine::HWData::HWData()
     mVideoCaptureRate = 512;
     mVideoCaptureFps = 25;
     mVideoCaptureEnabled = false;
+    for (unsigned i = 0; i < RT_ELEMENTS(maVideoCaptureScreens); i++)
+        maVideoCaptureScreens[i] = true;
 
     mHWVirtExEnabled = true;
     mHWVirtExNestedPagingEnabled = true;
@@ -1722,6 +1724,26 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureEnabled)(BOOL fEnabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     mHWData->mVideoCaptureEnabled = fEnabled;
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(VideoCaptureScreens)(ComSafeArrayOut(BOOL, aScreens))
+{
+    CheckComArgOutSafeArrayPointerValid(aScreens);
+
+    SafeArray<BOOL> screens(mHWData->mMonitorCount);
+    for (unsigned i = 0; i < screens.size(); i++)
+        screens[i] = mHWData->maVideoCaptureScreens[i];
+    screens.detachTo(ComSafeArrayOutArg(aScreens));
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(VideoCaptureScreens)(ComSafeArrayIn(BOOL, aScreens))
+{
+    SafeArray<BOOL> screens(ComSafeArrayInArg(aScreens));
+    AssertReturn(screens.size() <= RT_ELEMENTS(mHWData->maVideoCaptureScreens), E_INVALIDARG);
+    for (unsigned i = 0; i < screens.size(); i++)
+        mHWData->maVideoCaptureScreens[i] = RT_BOOL(screens[i]);
     return S_OK;
 }
 
@@ -8901,6 +8923,9 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mVideoCaptureWidth = data.ulVideoCaptureHorzRes;
         mHWData->mVideoCaptureHeight = data.ulVideoCaptureVertRes;
         mHWData->mVideoCaptureEnabled = data.fVideoCaptureEnabled;
+        for (unsigned i = 0; i < RT_ELEMENTS(mHWData->maVideoCaptureScreens); i++)
+            mHWData->maVideoCaptureScreens[i] = ASMBitTest(&data.u64VideoCaptureScreens, i);
+        AssertCompile(RT_ELEMENTS(mHWData->maVideoCaptureScreens) == sizeof(data.u64VideoCaptureScreens) * 8);
         mHWData->mVideoCaptureRate = data.ulVideoCaptureRate;
         mHWData->mVideoCaptureFps = data.ulVideoCaptureFps;
         mHWData->mVideoCaptureFile = data.strVideoCaptureFile;
@@ -10123,6 +10148,13 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.ulVideoCaptureRate = mHWData->mVideoCaptureRate;
         data.ulVideoCaptureFps = mHWData->mVideoCaptureFps;
         data.fVideoCaptureEnabled  = !!mHWData->mVideoCaptureEnabled;
+        for (unsigned i = 0; i < sizeof(data.u64VideoCaptureScreens) * 8; i++)
+        {
+            if (mHWData->maVideoCaptureScreens)
+                ASMBitSet(&data.fVideoCaptureEnabled, i);
+            else
+                ASMBitClear(&data.fVideoCaptureEnabled, i);
+        }
         data.strVideoCaptureFile = mHWData->mVideoCaptureFile;
 
         /* VRDEServer settings (optional) */

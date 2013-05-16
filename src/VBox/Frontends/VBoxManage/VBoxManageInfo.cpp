@@ -2305,6 +2305,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         /* Video capture */
         BOOL bActive = FALSE;
         CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureEnabled)(&bActive), rc);
+        com::SafeArray<BOOL> screens;
+        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens)), rc);
         ULONG Width;
         CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureWidth)(&Width), rc);
         ULONG Height;
@@ -2318,6 +2320,15 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
         {
             RTPrintf("VideoCaptureEnabled=\"%s\"\n", bActive ? "on" : "off");
+            RTPrintf("VideoCaptureScreens=");
+            bool fComma = false;
+            for (unsigned i = 0; i < screens.size(); i++)
+                if (screens[i])
+                {
+                    RTPrintf("%s%u", fComma ? "," : "", i);
+                    fComma = true;
+                }
+            RTPrintf("\n");
             RTPrintf("VideoCaptureWidth=%u\n", (unsigned)Width);
             RTPrintf("VideoCaptureFile=\"%ls\"\n", File.raw());
             RTPrintf("VideoCaptureHeight=%u\n", (unsigned)Height);
@@ -2327,9 +2338,18 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         else
         {
             RTPrintf("Video capturing:    %s\n", bActive ? "active" : "not active");
+            RTPrintf("Capture screens:    ");
+            bool fComma = false;
+            for (unsigned i = 0; i < screens.size(); i++)
+                if (screens[i])
+                {
+                    RTPrintf("%s%u", fComma ? "," : "", i);
+                    fComma = true;
+                }
+            RTPrintf("\n");
             RTPrintf("Capture file:       %ls\n", File.raw());
             RTPrintf("Capture dimensions: %ux%u\n", Width, Height);
-            RTPrintf("Capture rate:       %ukbps\n", Rate);
+            RTPrintf("Capture rate:       %u kbps\n", Rate);
             RTPrintf("Capture FPS:        %u\n", Fps);
             RTPrintf("\n");
         }
