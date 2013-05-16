@@ -2842,7 +2842,7 @@ static void gen_enter(DisasContext *s, int esp_addend, int level)
                                    tcg_const_i32(s->dflag),
                                    cpu_T[1]);
         }
-        gen_op_mov_reg_T1(OT_WORD + s->ss32, R_EBP);
+        gen_op_mov_reg_T1(ot, R_EBP);
         tcg_gen_addi_tl(cpu_T[1], cpu_T[1], -esp_addend + (-opsize * level));
         gen_op_mov_reg_T1(OT_WORD + s->ss32, R_ESP);
     }
