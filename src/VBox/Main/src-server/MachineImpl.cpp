@@ -10150,10 +10150,10 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.fVideoCaptureEnabled  = !!mHWData->mVideoCaptureEnabled;
         for (unsigned i = 0; i < sizeof(data.u64VideoCaptureScreens) * 8; i++)
         {
-            if (mHWData->maVideoCaptureScreens)
-                ASMBitSet(&data.fVideoCaptureEnabled, i);
+            if (mHWData->maVideoCaptureScreens[i])
+                ASMBitSet(&data.u64VideoCaptureScreens, i);
             else
-                ASMBitClear(&data.fVideoCaptureEnabled, i);
+                ASMBitClear(&data.u64VideoCaptureScreens, i);
         }
         data.strVideoCaptureFile = mHWData->mVideoCaptureFile;
 
