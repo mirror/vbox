@@ -1704,6 +1704,12 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
                     Log(("rtldrPEOpen: %s: Security directory is misaligned: %#x\n", pszLogName, i, pDir->VirtualAddress));
                     return VERR_LDRPE_CERT_MALFORMED;
                 }
+                /* When using the in-memory reader with a debugger, we may get
+                   into trouble here since we might not have access to the whole
+                   physical file.  So skip the tests below. Makes VBoxGuest.sys
+                   load and check out just fine, for instance. */
+                if (fFlags & RTLDR_O_FOR_DEBUG)
+                    continue;
                 break;
 
             case IMAGE_DIRECTORY_ENTRY_GLOBALPTR:     // 8   /* (MIPS GP) */
@@ -1726,9 +1732,7 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
                      pszLogName, i, pDir->VirtualAddress, pDir->Size));
                 return VERR_BAD_EXE_FORMAT;
         }
-        if (   pDir->VirtualAddress >= cb
-            && (   !(fFlags & RTLDR_O_FOR_DEBUG) /* Happens with signed drivers like VBoxGuest.sys. :-) */
-                || i != IMAGE_DIRECTORY_ENTRY_SECURITY) )
+        if (pDir->VirtualAddress >= cb)
         {
             Log(("rtldrPEOpen: %s: dir no. %d VirtualAddress=%#x is invalid (limit %#x)!!!\n",
                  pszLogName, i, pDir->VirtualAddress, cb));
@@ -1938,8 +1942,9 @@ static int rtldrPEReadRVA(PRTLDRMODPE pModPe, void *pvBuf, uint32_t cb, uint32_t
  * @returns iprt status code.
  * @param   pModPe      The PE module instance.
  * @param   pOptHdr     Pointer to the optional header (valid).
+ * @param   fFlags      Loader flags, RTLDR_O_XXX.
  */
-int rtldrPEValidateDirectories(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64 *pOptHdr)
+static int rtldrPEValidateDirectories(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64 *pOptHdr, uint32_t fFlags)
 {
     const char *pszLogName = pModPe->Core.pReader->pfnLogName(pModPe->Core.pReader); NOREF(pszLogName);
     union /* combine stuff we're reading to help reduce stack usage. */
@@ -2007,10 +2012,11 @@ int rtldrPEValidateDirectories(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64
     }
 
     /*
-     * If the image is signed, take a look at the signature.
+     * If the image is signed and we're not doing this for debug purposes,
+     * take a look at the signature.
      */
     Dir = pOptHdr->DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY];
-    if (Dir.Size)
+    if (Dir.Size && !(fFlags & RTLDR_O_FOR_DEBUG))
     {
         PWIN_CERTIFICATE pFirst = (PWIN_CERTIFICATE)RTMemTmpAlloc(Dir.Size);
         if (!pFirst)
@@ -2162,7 +2168,7 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
                  * Perform validation of some selected data directories which requires
                  * inspection of the actual data.
                  */
-                rc = rtldrPEValidateDirectories(pModPe, &OptHdr);
+                rc = rtldrPEValidateDirectories(pModPe, &OptHdr, fFlags);
                 if (RT_SUCCESS(rc))
                 {
                     *phLdrMod = &pModPe->Core;
