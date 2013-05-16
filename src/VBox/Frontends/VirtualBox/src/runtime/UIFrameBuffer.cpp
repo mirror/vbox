@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -289,6 +289,12 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, BYTE *pReserved)
         default:
             return E_INVALIDARG;
     }
+}
+
+void UIFrameBuffer::resizeEvent(UIResizeEvent *pEvent)
+{
+    m_width = pEvent->width();
+    m_height = pEvent->height();
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
