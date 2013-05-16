@@ -536,6 +536,8 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf("Minimum video RAM size:          %u Megabytes\n", ulValue);
     systemProperties->COMGETTER(MaxGuestVRAM)(&ulValue);
     RTPrintf("Maximum video RAM size:          %u Megabytes\n", ulValue);
+    systemProperties->COMGETTER(MaxGuestMonitors)(&ulValue);
+    RTPrintf("Maximum guest monitor count:     %u\n", ulValue);
     systemProperties->COMGETTER(MinGuestCPUCount)(&ulValue);
     RTPrintf("Minimum guest CPU count:         %u\n", ulValue);
     systemProperties->COMGETTER(MaxGuestCPUCount)(&ulValue);
@@ -592,8 +594,20 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf("Maximum Floppy Port count:       %u\n", ulValue);
     systemProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_Floppy, &ulValue);
     RTPrintf("Maximum Devices per Floppy Port: %u\n", ulValue);
+#if 0
+    systemProperties->GetFreeDiskSpaceWarning(&i64Value);
+    RTPrintf("Free disk space warning at:      %u Bytes\n", i64Value);
+    systemProperties->GetFreeDiskSpacePercentWarning(&ulValue);
+    RTPrintf("Free disk space warning at:      %u %%\n", ulValue);
+    systemProperties->GetFreeDiskSpaceError(&i64Value);
+    RTPrintf("Free disk space error at:        %u Bytes\n", i64Value);
+    systemProperties->GetFreeDiskSpacePercentError(&ulValue);
+    RTPrintf("Free disk space error at:        %u %%\n", ulValue);
+#endif
     systemProperties->COMGETTER(DefaultMachineFolder)(str.asOutParam());
     RTPrintf("Default machine folder:          %ls\n", str.raw());
+    systemProperties->GetDefaultHardDiskFormat(str.asOutParam());
+    RTPrintf("Default hard disk format:        %ls\n", str.raw());
     systemProperties->COMGETTER(VRDEAuthLibrary)(str.asOutParam());
     RTPrintf("VRDE auth library:               %ls\n", str.raw());
     systemProperties->COMGETTER(WebServiceAuthLibrary)(str.asOutParam());
@@ -602,6 +616,8 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf("Remote desktop ExtPack:          %ls\n", str.raw());
     systemProperties->COMGETTER(LogHistoryCount)(&ulValue);
     RTPrintf("Log history count:               %u\n", ulValue);
+    systemProperties->COMGETTER(DefaultFrontend)(str.asOutParam());
+    RTPrintf("Default frontend:                %ls\n", str.raw());
     systemProperties->COMGETTER(AutostartDatabasePath)(str.asOutParam());
     RTPrintf("Autostart database path:         %ls\n", str.raw());
     systemProperties->COMGETTER(DefaultAdditionsISO)(str.asOutParam());
