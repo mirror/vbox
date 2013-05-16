@@ -892,6 +892,140 @@ static DECLCALLBACK(int) rtldrPEGetSymbolEx(PRTLDRMODINTERNAL pMod, const void *
 }
 
 
+/**
+ * Slow version of rtldrPEEnumSymbols that'll work without all of the image
+ * being accessible.
+ *
+ * This is mainly for use in debuggers and similar.
+ */
+static int rtldrPEEnumSymbolsSlow(PRTLDRMODPE pThis, unsigned fFlags, RTUINTPTR BaseAddress,
+                                  PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
+{
+    /*
+     * We enumerates by ordinal, which means using a slow linear search for
+     * getting any name
+     */
+    PCIMAGE_EXPORT_DIRECTORY pExpDir = NULL;
+    int rc = rtldrPEReadPartByRva(pThis, NULL, pThis->ExportDir.VirtualAddress, pThis->ExportDir.Size,
+                                  (void const **)&pExpDir);
+    if (RT_FAILURE(rc))
+        return rc;
+    uint32_t const cOrdinals = RT_MAX(pExpDir->NumberOfNames, pExpDir->NumberOfFunctions);
+
+    uint32_t const *paAddress  = NULL;
+    rc = rtldrPEReadPartByRva(pThis, NULL, pExpDir->AddressOfFunctions, cOrdinals * sizeof(uint32_t),
+                              (void const **)&paAddress);
+    uint32_t const *paRVANames = NULL;
+    if (RT_SUCCESS(rc) && pExpDir->NumberOfNames)
+        rc = rtldrPEReadPartByRva(pThis, NULL, pExpDir->AddressOfNames, pExpDir->NumberOfNames * sizeof(uint32_t),
+                                  (void const **)&paRVANames);
+    uint16_t const *paOrdinals = NULL;
+    if (RT_SUCCESS(rc) && pExpDir->NumberOfNames)
+        rc = rtldrPEReadPartByRva(pThis, NULL, pExpDir->AddressOfNameOrdinals, pExpDir->NumberOfNames * sizeof(uint16_t),
+                                  (void const **)&paOrdinals);
+    if (RT_SUCCESS(rc))
+    {
+        uintptr_t   uNamePrev = 0;
+        for (uint32_t uOrdinal = 0; uOrdinal < cOrdinals; uOrdinal++)
+        {
+            if (paAddress[uOrdinal] /* needed? */)
+            {
+                /*
+                 * Look for name.
+                 */
+                uint32_t    uRvaName = UINT32_MAX;
+                /* Search from previous + 1 to the end.  */
+                unsigned    uName = uNamePrev + 1;
+                while (uName < pExpDir->NumberOfNames)
+                {
+                    if (paOrdinals[uName] == uOrdinal)
+                    {
+                        uRvaName = paRVANames[uName];
+                        uNamePrev = uName;
+                        break;
+                    }
+                    uName++;
+                }
+                if (uRvaName == UINT32_MAX)
+                {
+                    /* Search from start to the previous. */
+                    uName = 0;
+                    for (uName = 0 ; uName <= uNamePrev; uName++)
+                    {
+                        if (paOrdinals[uName] == uOrdinal)
+                        {
+                            uRvaName = paRVANames[uName];
+                            uNamePrev = uName;
+                            break;
+                        }
+                    }
+                }
+
+                /*
+                 * Get address.
+                 */
+                uintptr_t   uRVAExport = paAddress[uOrdinal];
+                RTUINTPTR Value;
+                if (  uRVAExport - (uintptr_t)pThis->ExportDir.VirtualAddress
+                    < pThis->ExportDir.Size)
+                {
+                    if (!(fFlags & RTLDR_ENUM_SYMBOL_FLAGS_NO_FWD))
+                    {
+                        /* Resolve forwarder. */
+                        AssertMsgFailed(("Forwarders are not supported!\n"));
+                    }
+                    continue;
+                }
+
+                /* Get plain export address */
+                Value = PE_RVA2TYPE(BaseAddress, uRVAExport, RTUINTPTR);
+
+                /* Read in the name if found one. */
+                char szAltName[32];
+                const char *pszName = NULL;
+                if (uRvaName != UINT32_MAX)
+                {
+                    size_t cbName = 0x1000 - (uRvaName & 0xfff);
+                    if (cbName < 10 || cbName > 512)
+                        cbName = 128;
+                    rc = rtldrPEReadPartByRva(pThis, NULL, uRvaName, cbName, (void const **)&pszName);
+                    while (RT_SUCCESS(rc) && RTStrNLen(pszName, cbName) == cbName)
+                    {
+                        rtldrPEFreePart(pThis, NULL, pszName);
+                        pszName = NULL;
+                        if (cbName >= _4K)
+                            break;
+                        cbName += 128;
+                        rc = rtldrPEReadPartByRva(pThis, NULL, uRvaName, cbName, (void const **)&pszName);
+                    }
+                }
+                if (!pszName)
+                {
+                    RTStrPrintf(szAltName, sizeof(szAltName), "Ordinal%#x", uOrdinal);
+                    pszName = szAltName;
+                }
+
+                /*
+                 * Call back.
+                 */
+                rc = pfnCallback(&pThis->Core, pszName, uOrdinal + pExpDir->Base, Value, pvUser);
+                if (pszName != szAltName && pszName)
+                    rtldrPEFreePart(pThis, NULL, pszName);
+                if (rc)
+                    break;
+            }
+        }
+    }
+
+    rtldrPEFreePart(pThis, NULL, paOrdinals);
+    rtldrPEFreePart(pThis, NULL, paRVANames);
+    rtldrPEFreePart(pThis, NULL, paAddress);
+    rtldrPEFreePart(pThis, NULL, pExpDir);
+    return rc;
+
+}
+
+
 /** @copydoc RTLDROPS::pfnEnumSymbols */
 static DECLCALLBACK(int) rtldrPEEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFlags, const void *pvBits, RTUINTPTR BaseAddress,
                                             PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
@@ -915,7 +1049,7 @@ static DECLCALLBACK(int) rtldrPEEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFl
         {
             int rc = rtldrPEReadBits(pModPe);
             if (RT_FAILURE(rc))
-                return rc;
+                return rtldrPEEnumSymbolsSlow(pModPe, fFlags, BaseAddress, pfnCallback, pvUser);
         }
         pvBits = pModPe->pvBits;
     }
