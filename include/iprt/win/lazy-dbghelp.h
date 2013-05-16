@@ -99,7 +99,7 @@ RTLDRLAZY_FUNC(dbghelp, DWORD64, WINAPI, SymUnloadModule64, (HANDLE a1, DWORD64 
 #define SymUnloadModule64 RTLDRLAZY_FUNC_NAME(dbghelp, SymUnloadModule64)
 
 RTLDRLAZY_FUNC(dbghelp, BOOL, WINAPI, SymEnumSymbols,
-               (HANDLE a1, DWORD a2, PCSTR a3, PSYM_ENUMERATESYMBOLS_CALLBACK a4, PVOID a5),
+               (HANDLE a1, ULONG64 a2, PCSTR a3, PSYM_ENUMERATESYMBOLS_CALLBACK a4, PVOID a5),
                (a1, a2, a3, a4, a5), FALSE);
 #undef SymEnumSymbols
 #define SymEnumSymbols RTLDRLAZY_FUNC_NAME(dbghelp, SymEnumSymbols)
