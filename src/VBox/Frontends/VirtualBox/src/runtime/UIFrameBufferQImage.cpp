@@ -48,77 +48,6 @@ UIFrameBufferQImage::UIFrameBufferQImage(UIMachineView *pMachineView)
     resizeEvent(&event);
 }
 
-void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
-{
-    /* On mode switch the enqueued paint event may still come
-     * while the view is already null (before the new view gets set),
-     * ignore paint event in that case. */
-    if (!m_pMachineView)
-        return;
-
-    /* If the machine is NOT in 'running', 'paused' or 'saving' state,
-     * the link between the framebuffer and the video memory is broken.
-     * We should go fallback in that case.
-     * We should acquire actual machine-state to exclude
-     * situations when the state was changed already but
-     * GUI didn't received event about that or didn't processed it yet. */
-    KMachineState machineState = m_pMachineView->uisession()->session().GetMachine().GetState();
-    if (   m_bUsesGuestVRAM
-        /* running */
-        && machineState != KMachineState_Running
-        && machineState != KMachineState_Teleporting
-        && machineState != KMachineState_LiveSnapshotting
-        /* paused */
-        && machineState != KMachineState_Paused
-        && machineState != KMachineState_TeleportingPausedVM
-        /* saving */
-        && machineState != KMachineState_Saving
-        )
-        goFallback();
-
-    /* Scaled image by default is empty: */
-    QImage scaledImage;
-    /* If scaled-factor is set and current image is NOT null: */
-    if (m_scaledSize.isValid() && !m_img.isNull())
-    {
-        /* We are doing a deep copy of image to make sure it will not be
-         * detached during scale process, otherwise we can get a frozen frame-buffer. */
-        scaledImage = m_img.copy();
-        /* Scale image to scaled-factor: */
-        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-    }
-    /* Choose required image: */
-    QImage *pSourceImage = scaledImage.isNull() ? &m_img : &scaledImage;
-
-    /* Get clipping rectangle: */
-    const QRect &r = pEvent->rect().intersected(pSourceImage->rect());
-    if (r.isEmpty())
-        return;
-
-#if 0
-    LogFlowFunc (("%dx%d-%dx%d (img=%dx%d)\n", r.x(), r.y(), r.width(), r.height(), img.width(), img.height()));
-#endif
-
-    /* Create painter: */
-    QPainter painter(m_pMachineView->viewport());
-    if ((ulong)r.width() < m_width * 2 / 3)
-    {
-        /* This method is faster for narrow updates: */
-        m_PM = QPixmap::fromImage(pSourceImage->copy(r.x() + m_pMachineView->contentsX(),
-                                                     r.y() + m_pMachineView->contentsY(),
-                                                     r.width(), r.height()));
-        painter.drawPixmap(r.x(), r.y(), m_PM);
-    }
-    else
-    {
-        /* This method is faster for wide updates: */
-        m_PM = QPixmap::fromImage(QImage(pSourceImage->scanLine(r.y() + m_pMachineView->contentsY()),
-                                         pSourceImage->width(), r.height(), pSourceImage->bytesPerLine(),
-                                         QImage::Format_RGB32));
-        painter.drawPixmap(r.x(), r.y(), m_PM, r.x() + m_pMachineView->contentsX(), 0, 0, 0);
-    }
-}
-
 void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
 {
 #if 0
@@ -196,6 +125,77 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
     /* Remind if requested: */
     if (bRemind)
         msgCenter().remindAboutWrongColorDepth(pEvent->bitsPerPixel(), 32);
+}
+
+void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
+{
+    /* On mode switch the enqueued paint event may still come
+     * while the view is already null (before the new view gets set),
+     * ignore paint event in that case. */
+    if (!m_pMachineView)
+        return;
+
+    /* If the machine is NOT in 'running', 'paused' or 'saving' state,
+     * the link between the framebuffer and the video memory is broken.
+     * We should go fallback in that case.
+     * We should acquire actual machine-state to exclude
+     * situations when the state was changed already but
+     * GUI didn't received event about that or didn't processed it yet. */
+    KMachineState machineState = m_pMachineView->uisession()->session().GetMachine().GetState();
+    if (   m_bUsesGuestVRAM
+        /* running */
+        && machineState != KMachineState_Running
+        && machineState != KMachineState_Teleporting
+        && machineState != KMachineState_LiveSnapshotting
+        /* paused */
+        && machineState != KMachineState_Paused
+        && machineState != KMachineState_TeleportingPausedVM
+        /* saving */
+        && machineState != KMachineState_Saving
+        )
+        goFallback();
+
+    /* Scaled image by default is empty: */
+    QImage scaledImage;
+    /* If scaled-factor is set and current image is NOT null: */
+    if (m_scaledSize.isValid() && !m_img.isNull())
+    {
+        /* We are doing a deep copy of image to make sure it will not be
+         * detached during scale process, otherwise we can get a frozen frame-buffer. */
+        scaledImage = m_img.copy();
+        /* Scale image to scaled-factor: */
+        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    }
+    /* Choose required image: */
+    QImage *pSourceImage = scaledImage.isNull() ? &m_img : &scaledImage;
+
+    /* Get clipping rectangle: */
+    const QRect &r = pEvent->rect().intersected(pSourceImage->rect());
+    if (r.isEmpty())
+        return;
+
+#if 0
+    LogFlowFunc (("%dx%d-%dx%d (img=%dx%d)\n", r.x(), r.y(), r.width(), r.height(), img.width(), img.height()));
+#endif
+
+    /* Create painter: */
+    QPainter painter(m_pMachineView->viewport());
+    if ((ulong)r.width() < m_width * 2 / 3)
+    {
+        /* This method is faster for narrow updates: */
+        m_PM = QPixmap::fromImage(pSourceImage->copy(r.x() + m_pMachineView->contentsX(),
+                                                     r.y() + m_pMachineView->contentsY(),
+                                                     r.width(), r.height()));
+        painter.drawPixmap(r.x(), r.y(), m_PM);
+    }
+    else
+    {
+        /* This method is faster for wide updates: */
+        m_PM = QPixmap::fromImage(QImage(pSourceImage->scanLine(r.y() + m_pMachineView->contentsY()),
+                                         pSourceImage->width(), r.height(), pSourceImage->bytesPerLine(),
+                                         QImage::Format_RGB32));
+        painter.drawPixmap(r.x(), r.y(), m_PM, r.x() + m_pMachineView->contentsX(), 0, 0, 0);
+    }
 }
 
 void UIFrameBufferQImage::goFallback()

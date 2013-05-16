@@ -146,6 +146,69 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *aRectangles, ULONG aC
     return S_OK;
 }
 
+void UIFrameBufferQuartz2D::resizeEvent(UIResizeEvent *aEvent)
+{
+#if 0
+    printf ("fmt=%lu, vram=%X, bpp=%lu, bpl=%lu, width=%lu, height=%lu\n",
+           aEvent->pixelFormat(), (unsigned int)aEvent->VRAM(),
+           aEvent->bitsPerPixel(), aEvent->bytesPerLine(),
+           aEvent->width(), aEvent->height());
+#endif
+    /* Clean out old stuff */
+    clean(m_width == aEvent->width()
+            && m_height == aEvent->height());
+
+    m_width = aEvent->width();
+    m_height = aEvent->height();
+
+    bool remind = false;
+
+    /* We need a color space in any case */
+    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
+    /* Check if we support the pixel format/colordepth and can use the guest VRAM directly.
+     * Mac OS X supports 16 bit also but not in the 565 mode. So we could use
+     * 32 bit only. */
+    if (   aEvent->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB
+        && aEvent->bitsPerPixel() == 32)
+    {
+        m_fUsesGuestVRAM = true;
+//        printf ("VRAM\n");
+        /* Create the image copy of the framebuffer */
+        CGDataProviderRef dp = CGDataProviderCreateWithData(NULL, aEvent->VRAM(), aEvent->bytesPerLine() * m_height, NULL);
+        m_image = CGImageCreate(m_width, m_height, 8, aEvent->bitsPerPixel(), aEvent->bytesPerLine(), cs,
+                                kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little, dp, 0, false,
+                                kCGRenderingIntentDefault);
+        m_pDataAddress = aEvent->VRAM();
+        CGDataProviderRelease (dp);
+    }
+    else
+    {
+        m_fUsesGuestVRAM = false;
+        remind = true;
+//        printf ("No VRAM\n");
+        /* Create the memory we need for our image copy
+         * Read somewhere that an alignment of 16 is
+         * best for optimal performance. So why not. */
+//        int bitmapBytesPerRow = RT_ALIGN (m_width * 4, 16);
+        int bitmapBytesPerRow = m_width * 4;
+        int bitmapByteCount = (bitmapBytesPerRow * m_height);
+        m_pBitmapData = RTMemAllocZ(bitmapByteCount);
+        CGDataProviderRef dp = CGDataProviderCreateWithData(NULL, m_pBitmapData, bitmapByteCount, NULL);
+        m_image = CGImageCreate(m_width, m_height, 8, 32, bitmapBytesPerRow, cs,
+                                kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little, dp, 0, false,
+                                kCGRenderingIntentDefault);
+        m_pDataAddress = static_cast<uchar*>(m_pBitmapData);
+        CGDataProviderRelease(dp);
+    }
+    CGColorSpaceRelease(cs);
+#ifdef VBOX_WITH_ICHAT_THEATER
+    setImageRef(m_image);
+#endif
+
+//    if (remind)
+//        msgCenter().remindAboutWrongColorDepth(aEvent->bitsPerPixel(), 32);
+}
+
 void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
 {
     /* If the machine is NOT in 'running' state,
@@ -397,69 +460,6 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
             CGImageRelease(subImage);
         }
     }
-}
-
-void UIFrameBufferQuartz2D::resizeEvent(UIResizeEvent *aEvent)
-{
-#if 0
-    printf ("fmt=%lu, vram=%X, bpp=%lu, bpl=%lu, width=%lu, height=%lu\n",
-           aEvent->pixelFormat(), (unsigned int)aEvent->VRAM(),
-           aEvent->bitsPerPixel(), aEvent->bytesPerLine(),
-           aEvent->width(), aEvent->height());
-#endif
-    /* Clean out old stuff */
-    clean(m_width == aEvent->width()
-            && m_height == aEvent->height());
-
-    m_width = aEvent->width();
-    m_height = aEvent->height();
-
-    bool remind = false;
-
-    /* We need a color space in any case */
-    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
-    /* Check if we support the pixel format/colordepth and can use the guest VRAM directly.
-     * Mac OS X supports 16 bit also but not in the 565 mode. So we could use
-     * 32 bit only. */
-    if (   aEvent->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB
-        && aEvent->bitsPerPixel() == 32)
-    {
-        m_fUsesGuestVRAM = true;
-//        printf ("VRAM\n");
-        /* Create the image copy of the framebuffer */
-        CGDataProviderRef dp = CGDataProviderCreateWithData(NULL, aEvent->VRAM(), aEvent->bytesPerLine() * m_height, NULL);
-        m_image = CGImageCreate(m_width, m_height, 8, aEvent->bitsPerPixel(), aEvent->bytesPerLine(), cs,
-                                kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little, dp, 0, false,
-                                kCGRenderingIntentDefault);
-        m_pDataAddress = aEvent->VRAM();
-        CGDataProviderRelease (dp);
-    }
-    else
-    {
-        m_fUsesGuestVRAM = false;
-        remind = true;
-//        printf ("No VRAM\n");
-        /* Create the memory we need for our image copy
-         * Read somewhere that an alignment of 16 is
-         * best for optimal performance. So why not. */
-//        int bitmapBytesPerRow = RT_ALIGN (m_width * 4, 16);
-        int bitmapBytesPerRow = m_width * 4;
-        int bitmapByteCount = (bitmapBytesPerRow * m_height);
-        m_pBitmapData = RTMemAllocZ(bitmapByteCount);
-        CGDataProviderRef dp = CGDataProviderCreateWithData(NULL, m_pBitmapData, bitmapByteCount, NULL);
-        m_image = CGImageCreate(m_width, m_height, 8, 32, bitmapBytesPerRow, cs,
-                                kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little, dp, 0, false,
-                                kCGRenderingIntentDefault);
-        m_pDataAddress = static_cast<uchar*>(m_pBitmapData);
-        CGDataProviderRelease(dp);
-    }
-    CGColorSpaceRelease(cs);
-#ifdef VBOX_WITH_ICHAT_THEATER
-    setImageRef(m_image);
-#endif
-
-//    if (remind)
-//        msgCenter().remindAboutWrongColorDepth(aEvent->bitsPerPixel(), 32);
 }
 
 void UIFrameBufferQuartz2D::clean(bool fPreserveRegions)

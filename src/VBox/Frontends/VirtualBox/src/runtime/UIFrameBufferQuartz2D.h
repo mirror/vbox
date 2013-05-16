@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,8 +47,8 @@ public:
 
     const CGImageRef imageRef() const { return m_image; }
 
-    void paintEvent(QPaintEvent *pEvent);
     void resizeEvent(UIResizeEvent *pEvent);
+    void paintEvent(QPaintEvent *pEvent);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void setView(UIMachineView *pView);
