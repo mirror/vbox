@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -211,27 +211,10 @@ public:
     virtual ulong bitsPerPixel() = 0;
     virtual ulong bytesPerLine() = 0;
 
-    /**
-     *  Called on the GUI thread (from VBoxConsoleView) when some part of the
-     *  VM display viewport needs to be repainted on the host screen.
-     */
+    /* API: Event-delegate stuff: */
+    virtual void moveEvent(QMoveEvent* /*pEvent*/) {}
+    virtual void resizeEvent(UIResizeEvent *pEvent);
     virtual void paintEvent(QPaintEvent *pEvent) = 0;
-
-    /**
-     *  Called on the GUI thread (from VBoxConsoleView) after it gets a
-     *  UIResizeEvent posted from the RequestResize() method implementation.
-     */
-    virtual void resizeEvent(UIResizeEvent *pEvent)
-    {
-        m_width = pEvent->width();
-        m_height = pEvent->height();
-    }
-
-    /**
-     *  Called on the GUI thread (from VBoxConsoleView) when the VM console
-     *  window is moved.
-     */
-    virtual void moveEvent(QMoveEvent * /* pEvent */) {}
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* this method is called from the GUI thread
