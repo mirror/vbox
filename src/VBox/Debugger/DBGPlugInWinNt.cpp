@@ -745,7 +745,8 @@ static DECLCALLBACK(int)  dbgDiggerWinNtQueryVersion(PUVM pUVM, void *pvData, ch
         case kNtProductType_Server:     pszNtProductType = "-Server";       break;
         default:                        pszNtProductType = "";              break;
     }
-    RTStrPrintf(pszVersion, cchVersion, "%u.%u%s", pThis->NtMajorVersion, pThis->NtMinorVersion, pszNtProductType);
+    RTStrPrintf(pszVersion, cchVersion, "%u.%u-%s%s", pThis->NtMajorVersion, pThis->NtMinorVersion,
+                pThis->f32Bit ? "x86" : "AMD64", pszNtProductType);
     return VINF_SUCCESS;
 }
 
@@ -1003,14 +1004,10 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                             &&  uMte2.v32.EntryPoint  == uMte.v32.EntryPoint
                             &&  uMte2.v32.SizeOfImage == uMte.v32.SizeOfImage
                             &&  WINNT32_VALID_ADDRESS(uMte2.v32.InLoadOrderLinks.Flink)
-                            &&  uMte2.v32.InLoadOrderLinks.Blink > KernelAddr.FlatPtr    /* list head inside ntoskrnl */
-                            &&  uMte2.v32.InLoadOrderLinks.Blink < KernelAddr.FlatPtr + uMte.v32.SizeOfImage
                             &&  WINNT32_VALID_ADDRESS(uMte2.v32.BaseDllName.Buffer)
                             &&  WINNT32_VALID_ADDRESS(uMte2.v32.FullDllName.Buffer)
-                            &&  uMte2.v32.BaseDllName.Length <= uMte2.v32.BaseDllName.MaximumLength
-                            &&  uMte2.v32.BaseDllName.Length == WINNT_KERNEL_BASE_NAME_LEN * 2
-                            &&  uMte2.v32.FullDllName.Length <= uMte2.v32.FullDllName.MaximumLength
-                            &&  uMte2.v32.FullDllName.Length <= 256
+                            &&  uMte2.v32.BaseDllName.Length <= 128
+                            &&  uMte2.v32.FullDllName.Length <= 260
                            )
                         {
                             rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, uMte2.v32.BaseDllName.Buffer),
@@ -1037,6 +1034,12 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                                     pThis->f32Bit                   = true;
                                     return true;
                                 }
+                            }
+                            else if (RT_SUCCESS(rc))
+                            {
+                                Log2(("DigWinNt: Wrong module: MteAddr=%RGv ImageAddr=%RGv SizeOfImage=%#x '%ls'\n",
+                                      MteAddr.FlatPtr, KernelAddr.FlatPtr, uMte2.v32.SizeOfImage, u.wsz));
+                                break; /* Not NT kernel */
                             }
                         }
 
@@ -1069,10 +1072,8 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                     uMte.v64.SizeOfImage = pHdrs->OptionalHeader.SizeOfImage;
                     DBGFADDRESS ScanAddr;
                     DBGFADDRESS HitAddr;
-                    rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/,
-                                       DBGFR3AddrFromFlat(pUVM, &ScanAddr, uStart),
-                                       uEnd - uStart,
-                                       4 /*align*/, &uMte.v64.DllBase, 5 * sizeof(uint32_t), &HitAddr);
+                    rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &ScanAddr, uStart),
+                                       uEnd - uStart, 8 /*align*/, &uMte.v64.DllBase, 5 * sizeof(uint32_t), &HitAddr);
                     while (RT_SUCCESS(rc))
                     {
                         /* check the name. */
@@ -1086,6 +1087,8 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                             &&  WINNT64_VALID_ADDRESS(uMte2.v64.InLoadOrderLinks.Flink)
                             &&  WINNT64_VALID_ADDRESS(uMte2.v64.BaseDllName.Buffer)
                             &&  WINNT64_VALID_ADDRESS(uMte2.v64.FullDllName.Buffer)
+                            &&  uMte2.v64.BaseDllName.Length <= 128
+                            &&  uMte2.v64.FullDllName.Length <= 260
                             )
                         {
                             rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, uMte2.v64.BaseDllName.Buffer),
@@ -1122,10 +1125,10 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
                         }
 
                         /* next */
-                        DBGFR3AddrAdd(&HitAddr, 4);
+                        DBGFR3AddrAdd(&HitAddr, 8);
                         if (HitAddr.FlatPtr < uEnd)
                             rc = DBGFR3MemScan(pUVM, 0 /*idCpu*/, &HitAddr, uEnd - HitAddr.FlatPtr,
-                                               4 /*align*/, &uMte.v64.DllBase, 3 * sizeof(uint32_t), &HitAddr);
+                                               8 /*align*/, &uMte.v64.DllBase, 3 * sizeof(uint32_t), &HitAddr);
                         else
                             rc = VERR_DBGF_MEM_NOT_FOUND;
                     }
