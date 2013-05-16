@@ -775,11 +775,15 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
         cbRange -= Adj;
     }
 
+    /* Only paged protected mode or long mode here, use the physical scan for
+       the other modes. */
+    PGMMODE enmMode   = PGMGetGuestMode(pVCpu);
+    AssertReturn(PGMMODE_WITH_PAGING(enmMode), VERR_PGM_NOT_USED_IN_MODE);
+
     /*
      * Search the memory - ignore MMIO, zero and not-present pages.
      */
     const bool      fAllZero  = ASMMemIsAll8(pabNeedle, cbNeedle, 0) == NULL;
-    PGMMODE         enmMode   = PGMGetGuestMode(pVCpu);
     RTGCPTR         GCPtrMask = PGMMODE_IS_LONG_MODE(enmMode) ? UINT64_MAX : UINT32_MAX;
     uint8_t         abPrev[MAX_NEEDLE_SIZE];
     size_t          cbPrev    = 0;
@@ -794,11 +798,11 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
     GCPtr &= ~(RTGCPTR)PAGE_OFFSET_MASK;
     for (;; offPage = 0)
     {
-        RTGCPHYS GCPhys;
-        int rc = PGMPhysGCPtr2GCPhys(pVCpu, GCPtr, &GCPhys);
-        if (RT_SUCCESS(rc))
+        PGMPTWALKGST Walk;
+        int rc = pgmGstPtWalk(pVCpu, GCPtr, &Walk);
+        if (RT_SUCCESS(rc) && Walk.u.Core.fSucceeded)
         {
-            PPGMPAGE pPage = pgmPhysGetPage(pVM, GCPhys);
+            PPGMPAGE pPage = pgmPhysGetPage(pVM, Walk.u.Core.GCPhys);
             if (    pPage
                 &&  (   !PGM_PAGE_IS_ZERO(pPage)
                      || fAllZero)
@@ -808,7 +812,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
             {
                 void const *pvPage;
                 PGMPAGEMAPLOCK Lock;
-                rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys, &pvPage, &Lock);
+                rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, Walk.u.Core.GCPhys, &pvPage, &Lock);
                 if (RT_SUCCESS(rc))
                 {
                     int32_t offHit = offPage;
@@ -838,13 +842,70 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
                 cbPrev = 0;
         }
         else
+        {
+            Assert(Walk.enmType != PGMPTWALKGSTTYPE_INVALID);
+            Assert(!Walk.u.Core.fSucceeded);
             cbPrev = 0; /* ignore error. */
+
+            /*
+             * Try skip as much as possible. No need to figure out that a PDE
+             * is not present 512 times!
+             */
+            uint64_t cPagesCanSkip;
+            switch (Walk.u.Core.uLevel)
+            {
+                case 1:
+                    /* page level, use cIncPages */
+                    cPagesCanSkip = 1;
+                    break;
+                case 2:
+                    if (Walk.enmType == PGMPTWALKGSTTYPE_32BIT)
+                    {
+                        cPagesCanSkip = X86_PG_ENTRIES     - ((GCPtr >> X86_PT_SHIFT)     & X86_PT_MASK);
+                        Assert(!((GCPtr + ((RTGCPTR)cPagesCanSkip << X86_PT_PAE_SHIFT)) & (RT_BIT_64(X86_PD_SHIFT) - 1)));
+                    }
+                    else
+                    {
+                        cPagesCanSkip = X86_PG_PAE_ENTRIES - ((GCPtr >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK);
+                        Assert(!((GCPtr + ((RTGCPTR)cPagesCanSkip << X86_PT_PAE_SHIFT)) & (RT_BIT_64(X86_PD_PAE_SHIFT) - 1)));
+                    }
+                    break;
+                case 3:
+                    cPagesCanSkip = (X86_PG_PAE_ENTRIES - ((GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK)) * X86_PG_PAE_ENTRIES
+                                  - ((GCPtr >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK);
+                    Assert(!((GCPtr + ((RTGCPTR)cPagesCanSkip << X86_PT_PAE_SHIFT)) & (RT_BIT_64(X86_PDPT_SHIFT) - 1)));
+                    break;
+                case 4:
+                    cPagesCanSkip =   (X86_PG_PAE_ENTRIES  - ((GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64))
+                                    * X86_PG_PAE_ENTRIES * X86_PG_PAE_ENTRIES
+                                  - ((((GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK)) * X86_PG_PAE_ENTRIES)
+                                  - ((  GCPtr >> X86_PT_PAE_SHIFT) & X86_PT_PAE_MASK);
+                    Assert(!((GCPtr + ((RTGCPTR)cPagesCanSkip << X86_PT_PAE_SHIFT)) & (RT_BIT_64(X86_PML4_SHIFT) - 1)));
+                    break;
+                case 8:
+                    /* The CR3 value is bad, forget the whole search. */
+                    cPagesCanSkip = cPages;
+                    break;
+                default:
+                    AssertMsgFailed(("%d\n", Walk.u.Core.uLevel));
+                    cPagesCanSkip = 0;
+                    break;
+            }
+            if (cPages <= cPagesCanSkip)
+                break;
+            if (cPagesCanSkip >= cIncPages)
+            {
+                cPages -= cPagesCanSkip;
+                GCPtr += (RTGCPTR)cPagesCanSkip << X86_PT_PAE_SHIFT;
+                continue;
+            }
+        }
 
         /* advance to the next page. */
         if (cPages <= cIncPages)
             break;
         cPages -= cIncPages;
-        GCPtr += (RTGCPTR)cIncPages << PAGE_SHIFT;
+        GCPtr += (RTGCPTR)cIncPages << X86_PT_PAE_SHIFT;
     }
     return VERR_DBGF_MEM_NOT_FOUND;
 }
