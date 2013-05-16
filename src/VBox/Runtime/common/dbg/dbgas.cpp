@@ -396,6 +396,26 @@ RTDECL(uint32_t) RTDbgAsRelease(RTDBGAS hDbgAs)
 RT_EXPORT_SYMBOL(RTDbgAsRelease);
 
 
+RTDECL(int) RTDbgAsLockExcl(RTDBGAS hDbgAs)
+{
+    PRTDBGASINT pDbgAs = hDbgAs;
+    RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
+    RTDBGAS_LOCK_WRITE(pDbgAs);
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTDbgAsLockExcl);
+
+
+RTDECL(int) RTDbgAsUnlockExcl(RTDBGAS hDbgAs)
+{
+    PRTDBGASINT pDbgAs = hDbgAs;
+    RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
+    RTDBGAS_UNLOCK_WRITE(pDbgAs);
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTDbgAsUnlockExcl);
+
+
 /**
  * Gets the name of an address space.
  *

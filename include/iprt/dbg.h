@@ -533,6 +533,22 @@ RTDECL(uint32_t) RTDbgAsRetain(RTDBGAS hDbgAs);
 RTDECL(uint32_t) RTDbgAsRelease(RTDBGAS hDbgAs);
 
 /**
+ * Locks the address space for exclusive access.
+ *
+ * @returns IRPT status code
+ * @param   hDbgAs          The address space handle.
+ */
+RTDECL(int) RTDbgAsLockExcl(RTDBGAS hDbgAs);
+
+/**
+ * Counters the actions of one RTDbgAsUnlockExcl call.
+ *
+ * @returns IRPT status code
+ * @param   hDbgAs          The address space handle.
+ */
+RTDECL(int) RTDbgAsUnlockExcl(RTDBGAS hDbgAs);
+
+/**
  * Gets the name of an address space.
  *
  * @returns read only address space name.
@@ -842,7 +858,7 @@ RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSY
  *                          number and address.
  * @param   pLine           Where to return the line number information.
  */
-RTDECL(int) RTDbgAs(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE pLine);
+RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE pLine);
 
 /**
  * Adds a line number to a module in the address space.
@@ -960,6 +976,18 @@ RTDECL(uint32_t)    RTDbgModRetain(RTDBGMOD hDbgMod);
  * @remarks Will not take any locks.
  */
 RTDECL(uint32_t)    RTDbgModRelease(RTDBGMOD hDbgMod);
+
+/**
+ * Removes all content from the debug module (container), optionally only
+ * leaving segments and image size intact.
+ *
+ * This is only possible on container modules, i.e. created by RTDbgModCreate().
+ *
+ * @returns IPRT status code.
+ * @param   hDbgMod         The module handle.
+ * @param   fLeaveSegments  Whether to leave segments (and image size) as is.
+ */
+RTDECL(int)         RTDbgModRemoveAll(RTDBGMOD hDbgMod, bool fLeaveSegments);
 
 /**
  * Gets the module name.

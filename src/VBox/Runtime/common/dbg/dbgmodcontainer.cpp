@@ -612,6 +612,18 @@ static DECLCALLBACK(RTDBGSEGIDX) rtDbgModContainer_RvaToSegOff(PRTDBGMODINT pMod
 }
 
 
+/** Destroy a line number node. */
+static DECLCALLBACK(int)  rtDbgModContainer_DestroyTreeLineNode(PAVLU32NODECORE pNode, void *pvUser)
+{
+    PRTDBGMODCTNLINE pLine = RT_FROM_MEMBER(pNode, RTDBGMODCTNLINE, OrdinalCore);
+    RTStrCacheRelease(g_hDbgModStrCache, pLine->pszFile);
+    pLine->pszFile = NULL;
+    RTMemFree(pLine);
+    NOREF(pvUser);
+    return 0;
+}
+
+
 /** Destroy a symbol node. */
 static DECLCALLBACK(int)  rtDbgModContainer_DestroyTreeNode(PAVLRUINTPTRNODECORE pNode, void *pvUser)
 {
@@ -642,6 +654,8 @@ static DECLCALLBACK(int) rtDbgModContainer_Close(PRTDBGMODINT pMod)
     RTAvlrUIntPtrDestroy(&pThis->AbsAddrTree, rtDbgModContainer_DestroyTreeNode, NULL);
     pThis->Names = NULL;
 
+    RTAvlU32Destroy(&pThis->LineOrdinalTree, rtDbgModContainer_DestroyTreeLineNode, NULL);
+
     RTMemFree(pThis->paSegs);
     pThis->paSegs = NULL;
 
@@ -661,7 +675,7 @@ static DECLCALLBACK(int) rtDbgModContainer_TryOpen(PRTDBGMODINT pMod)
 
 
 /** Virtual function table for the debug info container. */
-static RTDBGMODVTDBG const g_rtDbgModVtDbgContainer =
+DECL_HIDDEN_CONST(RTDBGMODVTDBG) const g_rtDbgModVtDbgContainer =
 {
     /*.u32Magic = */            RTDBGMODVTDBG_MAGIC,
     /*.fSupports = */           0, /* (Don't call my TryOpen, please.) */
@@ -690,6 +704,80 @@ static RTDBGMODVTDBG const g_rtDbgModVtDbgContainer =
     /*.u32EndMagic = */         RTDBGMODVTDBG_MAGIC
 };
 
+
+
+/**
+ * Special container operation for removing all symbols.
+ *
+ * @returns IPRT status code.
+ * @param   pMod        The module instance.
+ */
+DECLHIDDEN(int) rtDbgModContainer_SymbolRemoveAll(PRTDBGMODINT pMod)
+{
+    PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
+
+    for (uint32_t iSeg = 0; iSeg < pThis->cSegs; iSeg++)
+    {
+        RTAvlrUIntPtrDestroy(&pThis->paSegs[iSeg].SymAddrTree, rtDbgModContainer_DestroyTreeNode, NULL);
+        Assert(pThis->paSegs[iSeg].SymAddrTree == NULL);
+    }
+
+    RTAvlrUIntPtrDestroy(&pThis->AbsAddrTree, rtDbgModContainer_DestroyTreeNode, NULL);
+    Assert(pThis->AbsAddrTree == NULL);
+
+    pThis->Names = NULL;
+    pThis->iNextSymbolOrdinal = 0;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Special container operation for removing all line numbers.
+ *
+ * @returns IPRT status code.
+ * @param   pMod        The module instance.
+ */
+DECLHIDDEN(int) rtDbgModContainer_LineRemoveAll(PRTDBGMODINT pMod)
+{
+    PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
+
+    for (uint32_t iSeg = 0; iSeg < pThis->cSegs; iSeg++)
+        pThis->paSegs[iSeg].LineAddrTree = NULL;
+
+    RTAvlU32Destroy(&pThis->LineOrdinalTree, rtDbgModContainer_DestroyTreeLineNode, NULL);
+    Assert(pThis->LineOrdinalTree == NULL);
+
+    pThis->iNextLineOrdinal = 0;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Special container operation for removing everything.
+ *
+ * @returns IPRT status code.
+ * @param   pMod        The module instance.
+ */
+DECLHIDDEN(int) rtDbgModContainer_RemoveAll(PRTDBGMODINT pMod)
+{
+    PRTDBGMODCTN pThis = (PRTDBGMODCTN)pMod->pvDbgPriv;
+
+    rtDbgModContainer_LineRemoveAll(pMod);
+    rtDbgModContainer_SymbolRemoveAll(pMod);
+
+    for (uint32_t iSeg = 0; iSeg < pThis->cSegs; iSeg++)
+    {
+        RTStrCacheRelease(g_hDbgModStrCache, pThis->paSegs[iSeg].pszName);
+        pThis->paSegs[iSeg].pszName = NULL;
+    }
+
+    pThis->cSegs = 0;
+    pThis->cb = 0;
+
+    return VINF_SUCCESS;
+}
 
 
 /**
