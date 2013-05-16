@@ -660,8 +660,9 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
                 PPGMPAGE pPage = &pRam->aPages[iPage];
                 if (    (   !PGM_PAGE_IS_ZERO(pPage)
                          || fAllZero)
-                    &&  !PGM_PAGE_IS_BALLOONED(pPage)
-                    &&  !PGM_PAGE_IS_MMIO(pPage))
+                        &&  !PGM_PAGE_IS_MMIO(pPage)
+                        &&  !PGM_PAGE_IS_BALLOONED(pPage)
+                        &&  PGM_PAGE_GET_STATE(pPage) != PGMPAGETYPE_MMIO2_ALIAS_MMIO)
                 {
                     void const     *pvPage;
                     PGMPAGEMAPLOCK  Lock;
@@ -801,8 +802,9 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
             if (    pPage
                 &&  (   !PGM_PAGE_IS_ZERO(pPage)
                      || fAllZero)
+                &&  !PGM_PAGE_IS_MMIO(pPage)
                 &&  !PGM_PAGE_IS_BALLOONED(pPage)
-                &&  !PGM_PAGE_IS_MMIO(pPage))
+                &&  PGM_PAGE_GET_STATE(pPage) != PGMPAGETYPE_MMIO2_ALIAS_MMIO)
             {
                 void const *pvPage;
                 PGMPAGEMAPLOCK Lock;
