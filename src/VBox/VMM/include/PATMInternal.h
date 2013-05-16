@@ -426,11 +426,13 @@ typedef struct PATM
     /** Delta to the new relocated HMA area.
      * Used only during PATMR3Relocate(). */
     int32_t                     deltaReloc;
-    /* GC PATM state pointer - HC pointer. */
+    /** GC PATM state pointer - HC pointer. */
     R3PTRTYPE(PPATMGCSTATE)     pGCStateHC;
-    /* GC PATM state pointer - GC pointer. */
+    /** GC PATM state pointer - RC pointer. */
     RCPTRTYPE(PPATMGCSTATE)     pGCStateGC;
-    /** PATM stack page for call instruction execution. (2 parts: one for our private stack and one to store the original return address */
+    /** PATM stack page for call instruction execution.
+     * 2 parts: one for our private stack and one to store the original return
+     * address. */
     RCPTRTYPE(RTRCPTR *)        pGCStackGC;
     /** HC pointer of the PATM stack page. */
     R3PTRTYPE(RTRCPTR *)        pGCStackHC;
@@ -486,6 +488,9 @@ typedef struct PATM
         uint32_t                Alignment0; /**< Align the structure size on a 8-byte boundary. */
 #endif
     } savedstate;
+
+    /** Debug module for the patch memory. */
+    RTDBGMOD                    hDbgModPatchMem;
 
     STAMCOUNTER                 StatNrOpcodeRead;
     STAMCOUNTER                 StatDisabled;
@@ -646,5 +651,11 @@ DECLINLINE(RTRCPTR) PATMResolveBranch(PDISCPUSTATE pCpu, RTRCPTR pBranchInstrGC)
 int patmr3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, PPATMP2GLOOKUPREC pCacheRec);
 int patmr3DisasmCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, PFN_PATMR3ANALYSE pfnPATMR3Analyse, PPATMP2GLOOKUPREC pCacheRec);
 #endif
+
+
+void patmR3DbgInit(PVM pVM);
+void patmR3DbgTerm(PVM pVM);
+void patmR3DbgReset(PVM pVM);
+//void patmR3DbgNewPatch(PVM pVM, );
 
 #endif

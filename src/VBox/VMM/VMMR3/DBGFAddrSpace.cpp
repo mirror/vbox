@@ -38,8 +38,12 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/hm.h>
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/mm.h>
+#ifdef VBOX_WITH_RAW_MODE
+# include <VBox/vmm/patm.h>
+#endif
 #include "DBGFInternal.h"
 #include <VBox/vmm/uvm.h>
 #include <VBox/vmm/vm.h>
@@ -50,6 +54,7 @@
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/env.h>
+#include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
 
@@ -288,8 +293,71 @@ void dbgfR3AsTerm(PUVM pUVM)
  */
 void dbgfR3AsRelocate(PUVM pUVM, RTGCUINTPTR offDelta)
 {
-    /** @todo */
-    NOREF(pUVM); NOREF(offDelta);
+    /*
+     * We will relocate the raw-mode context modules by offDelta if they have
+     * been injected into the the DBGF_AS_RC map.
+     */
+    if (   pUVM->dbgf.s.afAsAliasPopuplated[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_RC)]
+        && offDelta != 0)
+    {
+        RTDBGAS hAs = pUVM->dbgf.s.ahAsAliases[DBGF_AS_ALIAS_2_INDEX(DBGF_AS_RC)];
+
+        /* Take a snapshot of the modules as we might have overlapping
+           addresses between the previous and new mapping. */
+        RTDbgAsLockExcl(hAs);
+        uint32_t cModules = RTDbgAsModuleCount(hAs);
+        if (cModules > 0 && cModules < _4K)
+        {
+            struct DBGFASRELOCENTRY
+            {
+                RTDBGMOD    hDbgMod;
+                RTRCPTR     uOldAddr;
+            } *paEntries = (struct DBGFASRELOCENTRY *)RTMemTmpAllocZ(sizeof(paEntries[0]) * cModules);
+            if (paEntries)
+            {
+                /* Snapshot. */
+                for (uint32_t i = 0; i < cModules; i++)
+                {
+                    paEntries[i].hDbgMod = RTDbgAsModuleByIndex(hAs, i);
+                    AssertLogRelMsg(paEntries[i].hDbgMod != NIL_RTDBGMOD, ("iModule=%#x\n", i));
+
+                    RTDBGASMAPINFO  aMappings[1] = { { 0, 0 } };
+                    uint32_t        cMappings = 1;
+                    int rc = RTDbgAsModuleQueryMapByIndex(hAs, i, &aMappings[0], &cMappings, 0 /*fFlags*/);
+                    if (RT_SUCCESS(rc) && cMappings == 1 && aMappings[0].iSeg == NIL_RTDBGSEGIDX)
+                        paEntries[i].uOldAddr = (RTRCPTR)aMappings[0].Address;
+                    else
+                        AssertLogRelMsgFailed(("iModule=%#x rc=%Rrc cMappings=%#x.\n", i, rc, cMappings));
+                }
+
+                /* Unlink them. */
+                for (uint32_t i = 0; i < cModules; i++)
+                {
+                    int rc = RTDbgAsModuleUnlink(hAs, paEntries[i].hDbgMod);
+                    AssertLogRelMsg(RT_SUCCESS(rc), ("iModule=%#x rc=%Rrc hDbgMod=%p\n", i, rc, paEntries[i].hDbgMod));
+                }
+
+                /* Link them at the new locations. */
+                for (uint32_t i = 0; i < cModules; i++)
+                {
+                    RTRCPTR uNewAddr = paEntries[i].uOldAddr + offDelta;
+                    int rc = RTDbgAsModuleLink(hAs, paEntries[i].hDbgMod, uNewAddr,
+                                               RTDBGASLINK_FLAGS_REPLACE);
+                    AssertLogRelMsg(RT_SUCCESS(rc),
+                                    ("iModule=%#x rc=%Rrc hDbgMod=%p %RRv -> %RRv\n", i, rc, paEntries[i].hDbgMod,
+                                     paEntries[i].uOldAddr, uNewAddr));
+                    RTDbgModRelease(paEntries[i].hDbgMod);
+                }
+
+                RTMemTmpFree(paEntries);
+            }
+            else
+                AssertLogRelMsgFailed(("No memory for %#x modules.\n", cModules));
+        }
+        else
+            AssertLogRelMsgFailed(("cModules=%#x\n", cModules));
+        RTDbgAsUnlockExcl(hAs);
+    }
 }
 
 
@@ -498,6 +566,34 @@ static DECLCALLBACK(int) dbgfR3AsLazyPopulateR0Callback(PVM pVM, const char *psz
 
 
 /**
+ * @callback_method_impl{FNPDMR3ENUM}
+ */
+static DECLCALLBACK(int) dbgfR3AsLazyPopulateRCCallback(PVM pVM, const char *pszFilename, const char *pszName,
+                                                        RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg)
+{
+    NOREF(pVM); NOREF(cbImage);
+
+    /* Only raw-mode modules. */
+    if (fRC)
+    {
+        RTDBGMOD hDbgMod;
+        int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszName, pVM->pUVM->dbgf.s.hDbgCfg);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTDbgAsModuleLink((RTDBGAS)pvArg, hDbgMod, ImageBase, 0 /*fFlags*/);
+            if (RT_FAILURE(rc))
+                LogRel(("DBGF: Failed to link module \"%s\" into DBGF_AS_RC at %RTptr: %Rrc\n",
+                        pszName, ImageBase, rc));
+        }
+        else
+            LogRel(("DBGF: RTDbgModCreateFromImage failed with rc=%Rrc for module \"%s\" (%s)\n",
+                    rc, pszName, pszFilename));
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Lazily populates the specified address space.
  *
  * @param   pUVM        The user mode VM handle.
@@ -509,10 +605,17 @@ static void dbgfR3AsLazyPopulate(PUVM pUVM, RTDBGAS hAlias)
     uintptr_t iAlias = DBGF_AS_ALIAS_2_INDEX(hAlias);
     if (!pUVM->dbgf.s.afAsAliasPopuplated[iAlias])
     {
-        RTDBGAS hAs = pUVM->dbgf.s.ahAsAliases[iAlias];
+        RTDBGAS hDbgAs = pUVM->dbgf.s.ahAsAliases[iAlias];
         if (hAlias == DBGF_AS_R0 && pUVM->pVM)
-            PDMR3LdrEnumModules(pUVM->pVM, dbgfR3AsLazyPopulateR0Callback, hAs);
-        /** @todo what do we do about DBGF_AS_RC?  */
+            PDMR3LdrEnumModules(pUVM->pVM, dbgfR3AsLazyPopulateR0Callback, hDbgAs);
+        else if (hAlias == DBGF_AS_RC && pUVM->pVM && !HMIsEnabled(pUVM->pVM))
+        {
+            LogRel(("DBGF: Lazy init of RC address space\n"));
+            PDMR3LdrEnumModules(pUVM->pVM, dbgfR3AsLazyPopulateRCCallback, hDbgAs);
+#ifdef VBOX_WITH_RAW_MODE
+            PATMR3DbgPopulateAddrSpace(pUVM->pVM, hDbgAs);
+#endif
+        }
 
         pUVM->dbgf.s.afAsAliasPopuplated[iAlias] = true;
     }
