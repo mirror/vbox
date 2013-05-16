@@ -177,6 +177,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/PATMGuest.cpp \
 	VMMR3/PATMA.asm \
 	VMMR3/PATMSSM.cpp \
+	VMMR3/PATMR3Dbg.cpp \
        ,) \
 	VMMAll/CPUMAllRegs.cpp \
 	VMMAll/CPUMStack.cpp \

@@ -69,7 +69,8 @@ extern "C" uint32_t g_fVMXIs64bitHost;
 #define HMVMX_FLUSH_TAGGED_TLB_VPID              2
 #define HMVMX_FLUSH_TAGGED_TLB_NONE              3
 
-/** Updated-guest-state flags. */
+/** @name Updated-guest-state flags.
+ * @{  */
 #define HMVMX_UPDATED_GUEST_RIP                   RT_BIT(0)
 #define HMVMX_UPDATED_GUEST_RSP                   RT_BIT(1)
 #define HMVMX_UPDATED_GUEST_RFLAGS                RT_BIT(2)
@@ -110,6 +111,7 @@ extern "C" uint32_t g_fVMXIs64bitHost;
                                                    | HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS  \
                                                    | HMVMX_UPDATED_GUEST_ACTIVITY_STATE        \
                                                    | HMVMX_UPDATED_GUEST_APIC_STATE)
+/** @} */
 
 /**
  * Flags to skip redundant reads of some common VMCS fields that are not part of
