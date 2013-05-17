@@ -304,7 +304,7 @@ void dbgfR3AsRelocate(PUVM pUVM, RTGCUINTPTR offDelta)
 
         /* Take a snapshot of the modules as we might have overlapping
            addresses between the previous and new mapping. */
-        RTDbgAsLockExcl(hAs);
+//        RTDbgAsLockExcl(hAs);
         uint32_t cModules = RTDbgAsModuleCount(hAs);
         if (cModules > 0 && cModules < _4K)
         {
@@ -356,7 +356,7 @@ void dbgfR3AsRelocate(PUVM pUVM, RTGCUINTPTR offDelta)
         }
         else
             AssertLogRelMsgFailed(("cModules=%#x\n", cModules));
-        RTDbgAsUnlockExcl(hAs);
+//        RTDbgAsUnlockExcl(hAs);
     }
 }
 
@@ -613,7 +613,7 @@ static void dbgfR3AsLazyPopulate(PUVM pUVM, RTDBGAS hAlias)
             LogRel(("DBGF: Lazy init of RC address space\n"));
             PDMR3LdrEnumModules(pUVM->pVM, dbgfR3AsLazyPopulateRCCallback, hDbgAs);
 #ifdef VBOX_WITH_RAW_MODE
-            PATMR3DbgPopulateAddrSpace(pUVM->pVM, hDbgAs);
+//            PATMR3DbgPopulateAddrSpace(pUVM->pVM, hDbgAs);
 #endif
         }
 

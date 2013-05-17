@@ -426,7 +426,7 @@ static int patmReinit(PVM pVM)
     pVM->patm.s.fOutOfMemory = false;
 
     pVM->patm.s.pfnHelperCallGC = 0;
-    patmR3DbgReset(pVM);
+//    patmR3DbgReset(pVM);
 
     /* Generate all global functions to be used by future patches. */
     /* We generate a fake patch in order to use the existing code for relocation. */
@@ -525,7 +525,7 @@ VMMR3_INT_DECL(int) PATMR3Term(PVM pVM)
     if (HMIsEnabled(pVM))
         return VINF_SUCCESS;
 
-    patmR3DbgTerm(pVM);
+//    patmR3DbgTerm(pVM);
 
     /* Memory was all allocated from the two MM heaps and requires no freeing. */
     return VINF_SUCCESS;
