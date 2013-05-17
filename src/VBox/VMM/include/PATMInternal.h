@@ -656,6 +656,6 @@ int patmr3DisasmCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uin
 void patmR3DbgInit(PVM pVM);
 void patmR3DbgTerm(PVM pVM);
 void patmR3DbgReset(PVM pVM);
-//void patmR3DbgNewPatch(PVM pVM, );
+void patmR3DbgAddPatch(PVM pVM, PPATMPATCHREC pPatchRec);
 
 #endif

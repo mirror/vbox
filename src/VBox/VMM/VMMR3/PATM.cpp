@@ -181,6 +181,8 @@ VMMR3_INT_DECL(int) PATMR3Init(PVM pVM)
     pVM->patm.s.pGCStackHC  = (RTRCPTR *)(pVM->patm.s.pPatchMemHC + PATCH_MEMORY_SIZE + PAGE_SIZE);
     pVM->patm.s.pGCStackGC  = MMHyperR3ToRC(pVM, pVM->patm.s.pGCStackHC);
 
+    patmR3DbgInit(pVM);
+
     /*
      * Hypervisor memory for GC status data (read/write)
      *
@@ -2999,6 +3001,8 @@ static int patmR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) pIns
 
     }
 
+    patmR3DbgAddPatch(pVM, pPatchRec);
+
     PATM_LOG_RAW_PATCH_INSTR(pVM, pPatch, patmGetInstructionString(pPatch->opcode, pPatch->flags));
 
     patmEmptyTree(pVM, &pPatch->pTempInfo->IllegalInstrTree);
@@ -3149,6 +3153,7 @@ static int patmIdtHandler(PVM pVM, RTRCPTR pInstrGC, uint32_t uOpSize, PPATMPATC
             pPatchRec->CoreOffset.Key = pPatch->pPatchBlockOffset;
             fInserted = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, &pPatchRec->CoreOffset);
             AssertMsg(fInserted, ("RTAvlULInsert failed for %x\n", pPatchRec->CoreOffset.Key));
+            patmR3DbgAddPatch(pVM, pPatchRec);
 
             pPatch->uState = PATCH_ENABLED;
 
@@ -3223,6 +3228,7 @@ static int patmInstallTrapTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pP
     pPatchRec->CoreOffset.Key = pPatch->pPatchBlockOffset;
     fInserted = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTreeByPatchAddr, &pPatchRec->CoreOffset);
     AssertMsg(fInserted, ("RTAvlULInsert failed for %x\n", pPatchRec->CoreOffset.Key));
+    patmR3DbgAddPatch(pVM, pPatchRec);
 
     pPatch->uState = PATCH_ENABLED;
     return VINF_SUCCESS;
@@ -3351,6 +3357,8 @@ static int patmDuplicateFunction(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatch
         Log(("PATMR3PatchCli: patmr3SetBranchTargets failed with %d\n", rc));
         goto failure;
     }
+
+    patmR3DbgAddPatch(pVM, pPatchRec);
 
 #ifdef LOG_ENABLED
     Log(("Patch code ----------------------------------------------------------\n"));
@@ -3502,6 +3510,7 @@ static int patmCreateTrampoline(PVM pVM, RTRCPTR pInstrGC, PPATMPATCHREC pPatchR
         rc = VERR_PATCHING_REFUSED;
         goto failure;
     }
+    patmR3DbgAddPatch(pVM, pPatchRec);
 
     /* size of patch block */
     pPatch->cbPatchBlockSize = pPatch->uCurPatchOffset;
@@ -4585,6 +4594,9 @@ VMMR3_INT_DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags
 #endif
         }
 #endif
+
+        /* Add debug symbol. */
+        patmR3DbgAddPatch(pVM, pPatchRec);
     }
     /* Free leftover lock if any. */
     if (cacheRec.Lock.pvMap)
