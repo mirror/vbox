@@ -745,6 +745,14 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                 switch (i.resourceType)
                 {
                     case ResourceType_CDDrive: // 15
+                        /*  <Item ovf:required="false">
+                                <rasd:Caption>cdrom1</rasd:Caption>
+                                <rasd:InstanceId>7</rasd:InstanceId>
+                                <rasd:ResourceType>15</rasd:ResourceType>
+                                <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
+                                <rasd:Parent>5</rasd:Parent>
+                                <rasd:AddressOnParent>0</rasd:AddressOnParent>
+                            </Item> */
                     case ResourceType_HardDisk: // 17
                     {
                         /*  <Item>
@@ -778,13 +786,10 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                             vd.strDiskId = i.strHostResource.substr(10);
                         else if (i.strHostResource.startsWith("/disk/"))
                             vd.strDiskId = i.strHostResource.substr(6);
-                        else
-                            vd.strDiskId = i.strElementName;//assign default name using value from the field
-                                                            //<rasd:ElementName>element name</rasd:ElementName>
 
-                      if ((!(vd.strDiskId.length())
-                          || (m_mapDisks.find(vd.strDiskId) == m_mapDisks.end()))
-                          )
+                        //the error may be missed for CD, because CD can be empty
+                        if ((vd.strDiskId.isEmpty() || (m_mapDisks.find(vd.strDiskId) == m_mapDisks.end()))
+                             && i.resourceType == ResourceType_HardDisk)
                           throw OVFLogicError(N_("Error reading \"%s\": Disk item with instance ID %d specifies invalid host resource \"%s\", line %d"),
                                               m_strPath.c_str(),
                                               i.ulInstanceID,
