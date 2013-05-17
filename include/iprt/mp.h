@@ -116,6 +116,10 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet);
  */
 RTDECL(RTCPUID) RTMpGetCount(void);
 
+/**
+ * Get the count of phyiscal CPU cores present in the system.
+ */
+RTDECL(RTCPUID) RTMpGetCoreCount(void);
 
 /**
  * Gets set of the CPUs present that are currently online.
