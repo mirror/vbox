@@ -81,5 +81,15 @@ mount.vboxsf_SOURCES     = \
 	mount.vboxsf.c \
 	vbsfmount.c
 
+# 32-bit version for the 64-bit Linux Additions
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
+ ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
+  PROGRAMS += mount.vboxsf_32
+  mount.vboxsf_32_EXTENDS  = mount.vboxsf
+  mount.vboxsf_32_TEMPLATE = NewVBoxGuestR3Exe_X86
+  mount.vboxsf_32_NAME     = mount.vboxsf
+ endif
+endif
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
