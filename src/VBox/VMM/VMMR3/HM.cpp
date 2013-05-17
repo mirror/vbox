@@ -1259,15 +1259,15 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     if (pVM->hm.s.fNestedPaging)
     {
         LogRel(("HM: Nested paging enabled!\n"));
-        LogRel(("HM: EPT root page                 = %RHp\n", PGMGetHyperCR3(VMMGetCpu(pVM))));
+            LogRel(("HM:    EPT root page              = %RHp\n", PGMGetHyperCR3(VMMGetCpu(pVM))));
         if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_SINGLE_CONTEXT)
-            LogRel(("HM: EPT flush type                = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
+            LogRel(("HM:    EPT flush type             = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
         else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_ALL_CONTEXTS)
-            LogRel(("HM: EPT flush type                = VMX_FLUSH_EPT_ALL_CONTEXTS\n"));
+            LogRel(("HM:    EPT flush type             = VMX_FLUSH_EPT_ALL_CONTEXTS\n"));
         else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_NOT_SUPPORTED)
-            LogRel(("HM: EPT flush type                = VMX_FLUSH_EPT_NOT_SUPPORTED\n"));
+            LogRel(("HM:    EPT flush type             = VMX_FLUSH_EPT_NOT_SUPPORTED\n"));
         else
-            LogRel(("HM: EPT flush type                = %d\n", pVM->hm.s.vmx.enmFlushEpt));
+            LogRel(("HM:    EPT flush type             = %d\n", pVM->hm.s.vmx.enmFlushEpt));
 
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
             LogRel(("HM: Unrestricted guest execution enabled!\n"));
@@ -1288,15 +1288,15 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     {
         LogRel(("HM: VPID enabled!\n"));
         if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_INDIV_ADDR)
-            LogRel(("HM: VPID flush type               = VMX_FLUSH_VPID_INDIV_ADDR\n"));
+            LogRel(("HM:    VPID flush type            = VMX_FLUSH_VPID_INDIV_ADDR\n"));
         else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_SINGLE_CONTEXT)
-            LogRel(("HM: VPID flush type               = VMX_FLUSH_VPID_SINGLE_CONTEXT\n"));
+            LogRel(("HM:    VPID flush type            = VMX_FLUSH_VPID_SINGLE_CONTEXT\n"));
         else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_ALL_CONTEXTS)
-            LogRel(("HM: VPID flush type               = VMX_FLUSH_VPID_ALL_CONTEXTS\n"));
+            LogRel(("HM:    VPID flush type            = VMX_FLUSH_VPID_ALL_CONTEXTS\n"));
         else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS)
-            LogRel(("HM: VPID flush type               = VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS\n"));
+            LogRel(("HM:    VPID flush type            = VMX_FLUSH_VPID_SINGLE_CONTEXT_RETAIN_GLOBALS\n"));
         else
-            LogRel(("HM: VPID flush type               = %d\n", pVM->hm.s.vmx.enmFlushVpid));
+            LogRel(("HM:    VPID flush type            = %d\n", pVM->hm.s.vmx.enmFlushVpid));
     }
     else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_NOT_SUPPORTED)
         LogRel(("HM: Ignoring VPID capabilities of CPU.\n"));
@@ -2821,7 +2821,7 @@ VMMR3DECL(bool) HMR3IsVpidActive(PUVM pUVM)
 
 /**
  * Checks if we are currently using VT-x unrestricted execution,
- * aka UX. 
+ * aka UX.
  *
  * @returns true if UX is being used, otherwise false.
  * @param   pUVM        The user mode VM handle.
