@@ -433,6 +433,8 @@ typedef struct RTDBGMODDWARF
         void const         *pv;
         /** Set if present. */
         bool                fPresent;
+        /** The debug info ordinal number in the image file. */
+        uint32_t            iDbgInfo;
     } aSections[krtDbgModDwarfSect_End];
 
     /** The offset into the abbreviation section of the current cache. */
@@ -749,7 +751,7 @@ typedef struct RTDWARFDIECOMPILEUNIT
     /** The address range of the code belonging to this unit. */
     RTDWARFADDRRANGE    PcRange;
     /** The language name. */
-    uint8_t             uLanguage;
+    uint16_t            uLanguage;
     /** The identifier case. */
     uint8_t             uIdentifierCase;
     /** String are UTF-8 encoded.  If not set, the encoding is
@@ -1178,12 +1180,9 @@ static DECLCALLBACK(int) rtDbgModDwarfAddSegmentsCallback(RTLDRMOD hLdrMod, PCRT
     if (pSeg->RVA == NIL_RTLDRADDR)
         return RTDbgModSegmentAdd(pThis->hCnt, 0, 0, pSeg->pchName, 0 /*fFlags*/, NULL);
 
+    /* The link address is 0 for all segments in a relocatable ELF image. */
     RTLDRADDR cb = RT_MAX(pSeg->cb, pSeg->cbMapped);
-#if 1
     return RTDbgModSegmentAdd(pThis->hCnt, pSeg->RVA, cb, pSeg->pchName, 0 /*fFlags*/, NULL);
-#else
-    return RTDbgModSegmentAdd(pThis->hCnt, pSeg->LinkAddress, cb, pSeg->pchName, 0 /*fFlags*/, NULL);
-#endif
 }
 
 
@@ -1382,7 +1381,10 @@ static int rtDbgModDwarfLoadSection(PRTDBGMODDWARF pThis, krtDbgModDwarfSect enm
     /*
      * Do the job.
      */
-    return pThis->pMod->pImgVt->pfnMapPart(pThis->pMod, pThis->aSections[enmSect].offFile, pThis->aSections[enmSect].cb,
+    return pThis->pMod->pImgVt->pfnMapPart(pThis->pMod,
+                                           pThis->aSections[enmSect].iDbgInfo,
+                                           pThis->aSections[enmSect].offFile,
+                                           pThis->aSections[enmSect].cb,
                                            &pThis->aSections[enmSect].pv);
 }
 
@@ -1448,7 +1450,8 @@ static int rtDbgModDwarfLinkAddressToSegOffset(PRTDBGMODDWARF pThis, RTSEL uSegm
         }
     }
 
-    return pThis->pMod->pImgVt->pfnLinkAddressToSegOffset(pThis->pMod, LinkAddress, piSeg, poffSeg);
+    return pThis->pMod->pImgVt->pfnRvaToSegOffset(pThis->pMod, LinkAddress, piSeg, poffSeg);
+    //return pThis->pMod->pImgVt->pfnLinkAddressToSegOffset(pThis->pMod, LinkAddress, piSeg, poffSeg);
 }
 
 
@@ -2010,6 +2013,7 @@ static uint32_t rtDwarfCursor_CalcSectOffsetU32(PRTDWARFCURSOR pCursor)
     uint32_t offRet = (uint32_t)off;
     if (offRet != off)
     {
+        AssertFailed();
         pCursor->rc = VERR_OUT_OF_RANGE;
         offRet = UINT32_MAX;
     }
@@ -2310,7 +2314,7 @@ static int rtDwarfLine_AddLine(PRTDWARFLINESTATE pLnState, uint32_t offOpCode)
         RTDBGSEGIDX iSeg;
         RTUINTPTR   offSeg;
         rc = rtDbgModDwarfLinkAddressToSegOffset(pLnState->pDwarfMod, pLnState->Regs.uSegment, pLnState->Regs.uAddress,
-                                                 &iSeg, &offSeg);
+                                                 &iSeg, &offSeg); AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
             Log2(("rtDwarfLine_AddLine: %x:%08llx (%#llx) %s(%d) [offOpCode=%08x]\n", iSeg, offSeg, pLnState->Regs.uAddress, pszFile, pLnState->Regs.uLine, offOpCode));
@@ -3133,7 +3137,7 @@ static DECLCALLBACK(int) rtDwarfDecode_Ranges(PRTDWARFDIE pDie, uint8_t *pbMembe
                                               uint32_t uForm, PRTDWARFCURSOR pCursor)
 {
     AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(RTDWARFADDRRANGE), VERR_INTERNAL_ERROR_3);
-    AssertReturn(pDesc->uAttr == DW_AT_low_pc || pDesc->uAttr == DW_AT_high_pc, VERR_INTERNAL_ERROR_3);
+    AssertReturn(pDesc->uAttr == DW_AT_ranges, VERR_INTERNAL_ERROR_3);
     NOREF(pDie);
 
     /* Decode it. */
@@ -3279,7 +3283,7 @@ static DECLCALLBACK(int) rtDwarfDecode_SectOff(PRTDWARFDIE pDie, uint8_t *pbMemb
     {
         /* Watcom generates offset past the end of the section, increasing the
            offset by one for each compile unit. So, just fudge it. */
-        Log(("rtDwarfDecode_SectOff: bad off=%#llx, attr %#x (%s), enmSect=%d cb=%#llx; Assuming watcom.\n", off,
+        Log(("rtDwarfDecode_SectOff: bad off=%#llx, attr %#x (%s), enmSect=%d cb=%#llx; Assuming watcom/gcc.\n", off,
              pDesc->uAttr, rtDwarfLog_AttrName(pDesc->uAttr), enmSect, cbSect));
         off = cbSect;
     }
@@ -3345,25 +3349,37 @@ static DECLCALLBACK(int) rtDwarfDecode_UnsignedInt(PRTDWARFDIE pDie, uint8_t *pb
         case 1:
             *pbMember = (uint8_t)u64Val;
             if (*pbMember != u64Val)
+            {
+                AssertFailed();
                 return VERR_OUT_OF_RANGE;
+            }
             break;
 
         case 2:
             *(uint16_t *)pbMember = (uint16_t)u64Val;
             if (*(uint16_t *)pbMember != u64Val)
+            {
+                AssertFailed();
                 return VERR_OUT_OF_RANGE;
+            }
             break;
 
         case 4:
             *(uint32_t *)pbMember = (uint32_t)u64Val;
             if (*(uint32_t *)pbMember != u64Val)
+            {
+                AssertFailed();
                 return VERR_OUT_OF_RANGE;
+            }
             break;
 
         case 8:
             *(uint64_t *)pbMember = (uint64_t)u64Val;
             if (*(uint64_t *)pbMember != u64Val)
+            {
+                AssertFailed();
                 return VERR_OUT_OF_RANGE;
+            }
             break;
 
         default:
@@ -3669,10 +3685,14 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
                             rc = rtDbgModDwarfLinkAddressToSegOffset(pThis, pSubProgram->uSegment,
                                                                      pSubProgram->PcRange.uLowAddress,
                                                                      &iSeg, &offSeg);
+                            AssertRC(rc);
                             if (RT_SUCCESS(rc))
+                            {
                                 rc = RTDbgModSymbolAdd(pThis->hCnt, pSubProgram->pszName, iSeg, offSeg,
                                                        pSubProgram->PcRange.uHighAddress - pSubProgram->PcRange.uLowAddress,
                                                        0 /*fFlags*/, NULL /*piOrdinal*/);
+                                AssertRC(rc);
+                            }
                             else
                                 Log5(("rtDbgModDwarfLinkAddressToSegOffset failed: %Rrc\n", rc));
                         }
@@ -3698,9 +3718,13 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
                     RTUINTPTR   offSeg;
                     rc = rtDbgModDwarfLinkAddressToSegOffset(pThis, pLabel->uSegment, pLabel->Address.uAddress,
                                                              &iSeg, &offSeg);
+                    AssertRC(rc);
                     if (RT_SUCCESS(rc))
+                    {
                         rc = RTDbgModSymbolAdd(pThis->hCnt, pLabel->pszName, iSeg, offSeg, 0 /*cb*/,
                                                0 /*fFlags*/, NULL /*piOrdinal*/);
+                        AssertRC(rc);
+                    }
                     else
                         Log5(("rtDbgModDwarfLinkAddressToSegOffset failed: %Rrc\n", rc));
                 }
@@ -4368,6 +4392,7 @@ static DECLCALLBACK(int) rtDbgModDwarfEnumCallback(RTLDRMOD hLdrMod, PCRTLDRDBGI
     pThis->aSections[enmSect].offFile   = pDbgInfo->offFile;
     pThis->aSections[enmSect].pv        = NULL;
     pThis->aSections[enmSect].cb        = (size_t)pDbgInfo->cb;
+    pThis->aSections[enmSect].iDbgInfo  = pDbgInfo->iDbgInfo;
     if (pThis->aSections[enmSect].cb != pDbgInfo->cb)
         pThis->aSections[enmSect].cb    = ~(size_t)0;
 

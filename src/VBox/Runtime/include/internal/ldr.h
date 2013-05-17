@@ -296,12 +296,30 @@ typedef struct RTLDROPS
      * @returns IPRT status code.
      *
      * @param   pMod            Pointer to the loader module structure.
-     * @param   iSeg            The segment index.
-     * @param   offSeg          The segment offset.
-     * @param   pRva            Where to return the RVA.
+     * @param   Rva             The RVA to convert.
+     * @param   piSeg           Where to return the segment index.
+     * @param   poffSeg         Where to return the segment offset.
      * @remark  This is an optional entry point that can be NULL.
      */
     DECLCALLBACKMEMBER(int, pfnRvaToSegOffset)(PRTLDRMODINTERNAL pMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg);
+
+    /**
+     * Reads a debug info part (section) from the image.
+     *
+     * This is primarily needed for getting DWARF sections in ELF image with fixups
+     * applied and won't be required by most other loader backends.
+     *
+     * @returns IPRT status code.
+     *
+     * @param   pvBuf           The buffer to read into.
+     * @param   iDbgInfo        The debug info ordinal number if the request
+     *                          corresponds exactly to a debug info part from
+     *                          pfnEnumDbgInfo.  Otherwise, pass UINT32_MAX.
+     * @param   off             The offset into the image file.
+     * @param   cb              The number of bytes to read.
+     * @param   pMod            Pointer to the loader module structure.
+     */
+    DECLCALLBACKMEMBER(int, pfnReadDbgInfo)(PRTLDRMODINTERNAL pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void *pvBuf);
 
     /** Dummy entry to make sure we've initialized it all. */
     RTUINT uDummy;
@@ -457,7 +475,7 @@ int rtldrkLdrOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTL
 int rtldrMachoOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offSomething, PRTLDRMOD phLdrMod);*/
 
 
-DECLHIDDEN(int) rtLdrReadAt(RTLDRMOD hLdrMod, void *pvBuf, RTFOFF off, size_t cb);
+DECLHIDDEN(int) rtLdrReadAt(RTLDRMOD hLdrMod, void *pvBuf, uint32_t iDbgInfo, RTFOFF off, size_t cb);
 
 RT_C_DECLS_END
 

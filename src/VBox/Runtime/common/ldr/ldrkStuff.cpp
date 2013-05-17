@@ -827,6 +827,7 @@ static const RTLDROPS g_rtkldrOps =
     rtkldr_LinkAddressToRva,
     rtkldr_SegOffsetToRva,
     rtkldr_RvaToSegOffset,
+    NULL,
     42
 };
 

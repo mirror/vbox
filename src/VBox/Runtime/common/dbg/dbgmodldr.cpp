@@ -70,7 +70,7 @@ static DECLCALLBACK(int) rtDbgModLdr_UnmapPart(PRTDBGMODINT pMod, size_t cb, voi
 
 
 /** @interface_method_impl{RTDBGMODVTIMG,pfnMapPart} */
-static DECLCALLBACK(int) rtDbgModLdr_MapPart(PRTDBGMODINT pMod, RTFOFF off, size_t cb, void const **ppvMap)
+static DECLCALLBACK(int) rtDbgModLdr_MapPart(PRTDBGMODINT pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void const **ppvMap)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
 
@@ -78,7 +78,7 @@ static DECLCALLBACK(int) rtDbgModLdr_MapPart(PRTDBGMODINT pMod, RTFOFF off, size
     if (!pvMap)
         return VERR_NO_MEMORY;
 
-    int rc = rtLdrReadAt(pThis->hLdrMod, pvMap, off, cb);
+    int rc = rtLdrReadAt(pThis->hLdrMod, pvMap, iDbgInfo, off, cb);
     if (RT_SUCCESS(rc))
         *ppvMap = pvMap;
     else
@@ -95,6 +95,15 @@ static DECLCALLBACK(RTUINTPTR) rtDbgModLdr_GetLoadedSize(PRTDBGMODINT pMod)
 {
     PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
     return RTLdrSize(pThis->hLdrMod);
+}
+
+
+/** @interface_method_impl{RTDBGMODVTIMG,pfnRvaToSegOffset} */
+static DECLCALLBACK(int) rtDbgModLdr_RvaToSegOffset(PRTDBGMODINT pMod, RTLDRADDR uRva,
+                                                    PRTDBGSEGIDX piSeg, PRTLDRADDR poffSeg)
+{
+    PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    return RTLdrRvaToSegOffset(pThis->hLdrMod, uRva, piSeg, poffSeg);
 }
 
 
@@ -175,6 +184,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
     /*.pfnEnumSymbols = */              rtDbgModLdr_EnumSymbols,
     /*.pfnGetLoadedSize = */            rtDbgModLdr_GetLoadedSize,
     /*.pfnLinkAddressToSegOffset = */   rtDbgModLdr_LinkAddressToSegOffset,
+    /*.pfnRvaToSegOffset= */            rtDbgModLdr_RvaToSegOffset,
     /*.pfnMapPart = */                  rtDbgModLdr_MapPart,
     /*.pfnUnmapPart = */                rtDbgModLdr_UnmapPart,
 

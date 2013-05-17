@@ -155,16 +155,33 @@ typedef struct RTDBGMODVTIMG
                                                        PRTDBGSEGIDX piSeg, PRTLDRADDR poffSeg);
 
     /**
+     * Converts an image relative virtual address to a segment:offset.
+     *
+     * @returns IPRT status code.
+     *
+     * @param   pMod            Pointer to the loader module structure.
+     * @param   Rva             The RVA to convert.
+     * @param   piSeg           The segment index.
+     * @param   poffSeg         Where to return the segment offset.
+     */
+    DECLCALLBACKMEMBER(int, pfnRvaToSegOffset)(PRTDBGMODINT pMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg);
+
+    /**
      * Creates a read-only mapping of a part of the image file.
      *
      * @returns IPRT status code and *ppvMap set on success.
      *
      * @param   pMod            Pointer to the module structure.
+     * @param   iDbgInfo        The debug info ordinal number if the request
+     *                          corresponds exactly to a debug info part from
+     *                          pfnEnumDbgInfo.  Otherwise, pass UINT32_MAX.
      * @param   off             The offset into the image file.
      * @param   cb              The number of bytes to map.
      * @param   ppvMap          Where to return the mapping address on success.
+     *
+     * @remarks Fixups will only be applied if @a iDbgInfo is specified.
      */
-    DECLCALLBACKMEMBER(int, pfnMapPart)(PRTDBGMODINT pMod, RTFOFF off, size_t cb, void const **ppvMap);
+    DECLCALLBACKMEMBER(int, pfnMapPart)(PRTDBGMODINT pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void const **ppvMap);
 
     /**
      * Unmaps memory previously mapped by pfnMapPart.

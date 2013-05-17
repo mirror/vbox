@@ -758,6 +758,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumDbgInfo)(PRTLDRMODINTERNAL pMod, cons
         {
             RT_ZERO(DbgInfo.u);
             DbgInfo.enmType         = RTLDRDBGINFOTYPE_DWARF;
+            DbgInfo.pszExtFile      = NULL;
             DbgInfo.offFile         = paShdrs[iShdr].sh_offset;
             DbgInfo.cb              = paShdrs[iShdr].sh_size;
             DbgInfo.u.Dwarf.pszSection = pszSectName;
@@ -887,7 +888,6 @@ static DECLCALLBACK(int) RTLDRELF_NAME(LinkAddressToSegOffset)(PRTLDRMODINTERNAL
     const Elf_Shdr *pShdr    = &pModElf->paOrgShdrs[cLeft];
     while (cLeft-- > 0)
     {
-        pShdr--;
         if (pShdr->sh_flags & SHF_ALLOC)
         {
             RTLDRADDR offSeg = LinkAddress - pShdr->sh_addr;
@@ -900,6 +900,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(LinkAddressToSegOffset)(PRTLDRMODINTERNAL
             if (offSeg == pShdr->sh_size)
                 pShdrEnd = pShdr;
         }
+        pShdr--;
     }
 
     if (pShdrEnd)
@@ -921,7 +922,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(LinkAddressToRva)(PRTLDRMODINTERNAL pMod,
     RTLDRADDR    offSeg;
     int rc = RTLDRELF_NAME(LinkAddressToSegOffset)(pMod, LinkAddress, &iSeg, &offSeg);
     if (RT_SUCCESS(rc))
-        *pRva = pModElf->paShdrs[iSeg].sh_addr + offSeg;
+        *pRva = pModElf->paShdrs[iSeg + 1].sh_addr + offSeg;
     return rc;
 }
 
@@ -963,7 +964,6 @@ static DECLCALLBACK(int) RTLDRELF_NAME(RvaToSegOffset)(PRTLDRMODINTERNAL pMod, R
     const Elf_Shdr *pShdr    = &pModElf->paShdrs[cLeft];
     while (cLeft-- > 0)
     {
-        pShdr--;
         if (pShdr->sh_flags & SHF_ALLOC)
         {
             Elf_Addr    cbSeg  = PrevAddr ? PrevAddr - pShdr->sh_addr : pShdr->sh_size;
@@ -976,9 +976,107 @@ static DECLCALLBACK(int) RTLDRELF_NAME(RvaToSegOffset)(PRTLDRMODINTERNAL pMod, R
             }
             PrevAddr = pShdr->sh_addr;
         }
+        pShdr--;
     }
 
     return VERR_LDR_INVALID_RVA;
+}
+
+
+/** @callback_method_impl{FNRTLDRIMPORT, Stub used by ReadDbgInfo.} */
+static DECLCALLBACK(int) RTLDRELF_NAME(GetImportStubCallback)(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol,
+                                                              unsigned uSymbol, PRTLDRADDR pValue, void *pvUser)
+{
+    return VERR_SYMBOL_NOT_FOUND;
+}
+
+
+/** @copydoc RTLDROPS::pfnRvaToSegOffset. */
+static DECLCALLBACK(int) RTLDRELF_NAME(ReadDbgInfo)(PRTLDRMODINTERNAL pMod, uint32_t iDbgInfo, RTFOFF off,
+                                                    size_t cb, void *pvBuf)
+{
+    PRTLDRMODELF pThis = (PRTLDRMODELF)pMod;
+
+    /*
+     * Input validation.
+     */
+    AssertReturn(iDbgInfo < pThis->Ehdr.e_shnum && iDbgInfo + 1 < pThis->Ehdr.e_shnum, VERR_INVALID_PARAMETER);
+    iDbgInfo++;
+    AssertReturn(!(pThis->paShdrs[iDbgInfo].sh_flags & SHF_ALLOC), VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->paShdrs[iDbgInfo].sh_type   == SHT_PROGBITS, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->paShdrs[iDbgInfo].sh_offset == (uint64_t)off, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->paShdrs[iDbgInfo].sh_size   == cb, VERR_INVALID_PARAMETER);
+    RTFOFF cbRawImage = pThis->Core.pReader->pfnSize(pThis->Core.pReader);
+    AssertReturn(cbRawImage >= 0, VERR_INVALID_PARAMETER);
+    AssertReturn(off >= 0 && cb <= (uint64_t)cbRawImage && off + cb <= (uint64_t)cbRawImage, VERR_INVALID_PARAMETER);
+
+    /*
+     * Read it from the file and look for fixup sections.
+     */
+    int rc;
+    if (pThis->pvBits)
+        memcpy(pvBuf, (const uint8_t *)pThis->pvBits + (size_t)off, cb);
+    else
+    {
+        rc = pThis->Core.pReader->pfnRead(pThis->Core.pReader, pvBuf, cb, off);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    uint32_t iRelocs = iDbgInfo + 1;
+    if (   iRelocs >= pThis->Ehdr.e_shnum
+        || pThis->paShdrs[iRelocs].sh_info != iDbgInfo
+        || (   pThis->paShdrs[iRelocs].sh_type != SHT_REL
+            && pThis->paShdrs[iRelocs].sh_type != SHT_RELA) )
+    {
+        iRelocs = 0;
+        while (   iRelocs < pThis->Ehdr.e_shnum
+               && (   pThis->paShdrs[iRelocs].sh_info != iDbgInfo
+                   || pThis->paShdrs[iRelocs].sh_type != SHT_REL
+                   || pThis->paShdrs[iRelocs].sh_type != SHT_RELA))
+            iRelocs++;
+    }
+    if (   iRelocs < pThis->Ehdr.e_shnum
+        && pThis->paShdrs[iRelocs].sh_size > 0)
+    {
+        /*
+         * Load the relocations.
+         */
+        uint8_t       *pbRelocsBuf = NULL;
+        const uint8_t *pbRelocs;
+        if (pThis->pvBits)
+            pbRelocs = (const uint8_t *)pThis->pvBits + pThis->paShdrs[iRelocs].sh_offset;
+        else
+        {
+            pbRelocs = pbRelocsBuf = (uint8_t *)RTMemTmpAlloc(pThis->paShdrs[iRelocs].sh_size);
+            if (!pbRelocsBuf)
+                return VERR_NO_TMP_MEMORY;
+            rc = pThis->Core.pReader->pfnRead(pThis->Core.pReader, pbRelocsBuf,
+                                              pThis->paShdrs[iRelocs].sh_size,
+                                              pThis->paShdrs[iRelocs].sh_offset);
+            if (RT_FAILURE(rc))
+            {
+                RTMemTmpFree(pbRelocsBuf);
+                return rc;
+            }
+        }
+
+        /*
+         * Apply the relocations.
+         */
+        rc = RTLDRELF_NAME(RelocateSection)(pThis, 0 /*BaseAddress*/,
+                                            RTLDRELF_NAME(GetImportStubCallback), NULL /*pvUser*/,
+                                            pThis->paShdrs[iDbgInfo].sh_addr,
+                                            pThis->paShdrs[iDbgInfo].sh_size,
+                                            (const uint8_t *)pvBuf,
+                                            (uint8_t *)pvBuf,
+                                            pbRelocs,
+                                            pThis->paShdrs[iRelocs].sh_size);
+        RTMemTmpFree(pbRelocsBuf);
+    }
+    else
+        rc = VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -1008,6 +1106,7 @@ static RTLDROPS RTLDRELF_MID(s_rtldrElf,Ops) =
     RTLDRELF_NAME(LinkAddressToRva),
     RTLDRELF_NAME(SegOffsetToRva),
     RTLDRELF_NAME(RvaToSegOffset),
+    RTLDRELF_NAME(ReadDbgInfo),
     42
 };
 
@@ -1326,7 +1425,6 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
 {
     const char *pszLogName = pReader->pfnLogName(pReader);
     RTFOFF      cbRawImage = pReader->pfnSize(pReader);
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
     /*
      * Create the loader module instance.
