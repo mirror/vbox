@@ -32,8 +32,8 @@
 #include <internal/iprt.h>
 
 
-RTDECL(RTCPUID) RTMpGetCount(void)
+RTDECL(RTCPUID) RTMpGetCoreCount(void)
 {
-    return RTGetCoreCount();
+    return RTMpGetCount();
 }
 RT_EXPORT_SYMBOL(RTMpGetCoreCount);
