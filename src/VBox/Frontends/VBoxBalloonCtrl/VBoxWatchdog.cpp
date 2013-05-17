@@ -296,7 +296,7 @@ static void signalHandler(int iSignal)
     NOREF(iSignal);
     ASMAtomicWriteBool(&g_fCanceled, true);
 
-    if (!g_pEventQ)
+    if (g_pEventQ)
     {
         int rc = g_pEventQ->interruptEventQueueProcessing();
         if (RT_FAILURE(rc))
@@ -751,7 +751,7 @@ static RTEXITCODE watchdogMain(HandlerArg *a)
              * Process pending events, then wait for new ones. Note, this
              * processes NULL events signalling event loop termination.
              */
-            g_pEventQ->processEventQueue(500 / 10);
+            g_pEventQ->processEventQueue(50);
 
             if (g_fCanceled)
             {
