@@ -42,6 +42,29 @@ ifndef VBOX_ONLY_ADDITIONS
  LIBRARIES += VBoxOGLhostcrpacker VBoxOGLhostspuload VBoxOGLhostcrstate
 endif
 
+VBOX_OGL_X86_COMMON_DLLS = \
+    VBoxOGLcrutil-x86 \
+    VBoxOGLerrorspu-x86
+VBOX_OGL_X86_COMMON_LIBS = \
+    VBoxOGLcrpacker-x86 \
+    VBoxOGLspuload-x86 \
+    VBoxOGLcrstate-x86
+if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
+ DLLS.win.amd64 += $(VBOX_OGL_X86_COMMON_DLLS)
+endif
+if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
+ LIBRARIES.win.amd64 += $(VBOX_OGL_X86_COMMON_LIBS)
+endif
+# 32-bit version for the 64-bit Linux Additions
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
+ ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
+  LIBRARIES += $(VBOX_OGL_X86_COMMON_LIBS)
+  DLLS += $(VBOX_OGL_X86_COMMON_DLLS)
+  $(foreach i,$(VBOX_OGL_X86_COMMON_DLLS),$(eval $(i)_INST = $(INST_ADDITIONS)/32/))
+  $(foreach i,$(VBOX_OGL_X86_COMMON_DLLS),$(eval $(i)_NAME = $(subst -x86,,$(i))))
+ endif
+endif
+
 #
 # VBoxOGLcrutil
 #
@@ -112,11 +135,9 @@ VBoxOGLcrutil_CLEAN = \
 VBoxOGLcrutil_pixel.c_CFLAGS.win.x86     += -Od
 VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
 
-if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
 #
 # VBoxOGLcrutil-x86 - x86 VBoxOGLcrutil version built for amd64 build
 #
-DLLS.win.amd64 += VBoxOGLcrutil-x86
 VBoxOGLcrutil-x86_TEMPLATE      = VBOXCROGLR3GUESTDLL
 VBoxOGLcrutil-x86_EXTENDS = VBoxOGLcrutil
 VBoxOGLcrutil-x86_BLD_TRG_ARCH = x86
@@ -138,7 +159,6 @@ endif
 # vc7 hangs during compilation of this file when optimizations are enabled.
 VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
 VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
-endif
 
 #
 # VBoxOGLhostcrutil
@@ -267,16 +287,13 @@ ifdef VBOX_WITH_WDDM
 VBoxOGLcrpacker_DEFS.win   += VBOX_WITH_WDDM
 endif
 
-if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
 #
 # VBoxOGLcrpacker-x86 - x86 VBoxOGLcrpacker version built for amd64 build
 #
-LIBRARIES.win.amd64 += VBoxOGLcrpacker-x86
 VBoxOGLcrpacker-x86_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLcrpacker-x86_EXTENDS = VBoxOGLcrpacker
 VBoxOGLcrpacker-x86_BLD_TRG_ARCH = x86
 VBoxOGLcrpacker-x86_DEFS = $(VBoxOGLcrpacker_DEFS) VBOX_WDDM_WOW64
-endif
 
 #
 # VBoxOGLhostcrpacker
@@ -351,16 +368,13 @@ ifdef VBOX_WITH_WDDM
 VBoxOGLspuload_DEFS.win   += VBOX_WITH_WDDM
 endif
 
-if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
 #
 # VBoxOGLspuload-x86 - x86 VBoxOGLspuload version built for amd64 build
 #
-LIBRARIES.win.amd64 += VBoxOGLspuload-x86
 VBoxOGLspuload-x86_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLspuload-x86_EXTENDS = VBoxOGLspuload
 VBoxOGLspuload-x86_BLD_TRG_ARCH = x86
 VBoxOGLspuload-x86_DEFS = $(VBoxOGLspuload_DEFS) VBOX_WDDM_WOW64
-endif
 
 
 #
@@ -485,16 +499,13 @@ ifdef VBOX_WITH_WDDM
 VBoxOGLcrstate_DEFS.win   += VBOX_WITH_WDDM
 endif
 
-if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
 #
 # VBoxOGLcrstate-x86 - x86 VBoxOGLcrstate version built for amd64 build
 #
-LIBRARIES.win.amd64 += VBoxOGLcrstate-x86
 VBoxOGLcrstate-x86_TEMPLATE = VBOXCROGLR3GUESTLIB
 VBoxOGLcrstate-x86_EXTENDS = VBoxOGLcrstate
 VBoxOGLcrstate-x86_BLD_TRG_ARCH = x86
 VBoxOGLcrstate-x86_DEFS = $(VBoxOGLcrstate_DEFS) VBOX_WDDM_WOW64
-endif
 
 
 #
@@ -610,18 +621,15 @@ VBoxOGLerrorspu_DEFS.win   += VBOX_WITH_WDDM
 endif
 
 
-if defined(VBOX_WITH_WDDM) && defined(VBOX_WITH_CROGL_ADDITIONS)
 #
 # VBoxOGLerrorspu-x86 - x86 VBoxOGLerrorspu version built for amd64 build
 #
-DLLS.win.amd64 += VBoxOGLerrorspu-x86
 VBoxOGLerrorspu-x86_TEMPLATE = VBOXCROGLR3GUESTDLL
 VBoxOGLerrorspu-x86_EXTENDS = VBoxOGLerrorspu
 VBoxOGLerrorspu-x86_BLD_TRG_ARCH = x86
 VBoxOGLerrorspu-x86_LIBS = \
 	$(VBOX_LIB_OGL_CRUTIL_X86)
 VBoxOGLerrorspu-x86_DEFS = $(VBoxOGLerrorspu_DEFS) VBOX_WDDM_WOW64
-endif
 
 #
 # VBoxOGLhosterrorspu

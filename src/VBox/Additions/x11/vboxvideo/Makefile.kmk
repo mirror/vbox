@@ -332,6 +332,20 @@ vboxvideo_drv_114_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_114_SOURCES := $(vboxvideo_drv_15_SOURCES)
 
 
+# 32-bit modules for the 64-bit Linux Additions
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
+ ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
+  SYSMODS += vboxvideo_drv_32
+  vboxvideo_drv_32_EXTENDS  = vboxvideo_drv
+  vboxvideo_drv_32_TEMPLATE = VBOXGUESTR3XF86MOD_X86
+  vboxvideo_drv_32_NAME     = vboxvideo_drv
+  $(foreach i,$(filter vboxvideo_drv_%,$(DLLS)),$(eval DLLS += $(i)_32))
+  $(foreach i,$(filter vboxvideo_drv_%_32,$(DLLS)),$(eval $(i)_EXTENDS = $(subst _32,,$(i))))
+  $(foreach i,$(filter vboxvideo_drv_%_32,$(DLLS)),$(eval $(i)_TEMPLATE = VBOXGUESTR3XORGMOD_X86))
+  $(foreach i,$(filter vboxvideo_drv_%_32,$(DLLS)),$(eval $(i)_NAME = $(subst _32,,$(i))))
+ endif
+endif
+
 ifdef VBOX_USE_SYSTEM_XORG_HEADERS
  # Build using local X.Org headers.  We assume X.Org Server 1.7 or later.
  DLLS    := $(filter-out vboxvideo_drv_%,$(DLLS)) vboxvideo_drv_system
@@ -349,7 +363,6 @@ ifdef VBOX_USE_SYSTEM_XORG_HEADERS
         /usr/include/pixman-1
  vboxvideo_drv_system_SOURCES := $(vboxvideo_drv_15_SOURCES)
 endif
-
 
 # Check the undefined symbols in the X.Org modules against lists of allowed
 # symbols.  Not very elegant, but it will catch problems early.

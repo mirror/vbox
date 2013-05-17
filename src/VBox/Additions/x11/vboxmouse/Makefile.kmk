@@ -238,6 +238,19 @@ vboxmouse_drv_112_SOURCES = \
 
 endif # neq ($(KBUILD_TARGET),linux)
 
+# 32-bit modules for the 64-bit Linux Additions
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
+ ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
+  SYSMODS += vboxmouse_drv_32
+  vboxmouse_drv_32_EXTENDS  = vboxmouse_drv
+  vboxmouse_drv_32_TEMPLATE = VBOXGUESTR3XF86MOD_X86
+  vboxmouse_drv_32_NAME     = vboxmouse_drv
+  $(foreach i,$(filter vboxmouse_drv_%,$(DLLS)),$(eval DLLS += $(i)_32))
+  $(foreach i,$(filter vboxmouse_drv_%_32,$(DLLS)),$(eval $(i)_EXTENDS = $(subst _32,,$(i))))
+  $(foreach i,$(filter vboxmouse_drv_%_32,$(DLLS)),$(eval $(i)_TEMPLATE = VBOXGUESTR3XORGMOD_X86))
+  $(foreach i,$(filter vboxmouse_drv_%_32,$(DLLS)),$(eval $(i)_NAME = $(subst _32,,$(i))))
+ endif
+endif
 
 ifdef VBOX_USE_SYSTEM_XORG_HEADERS
  # As vboxmouse_drv is not needed at all for X.Org Server 1.7 and later do not

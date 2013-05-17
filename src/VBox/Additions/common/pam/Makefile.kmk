@@ -32,4 +32,19 @@ pam_vbox_LIBS = \
 	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED)
 
+# 32-bit version for the 64-bit Linux Additions
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
+ ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
+  DLLS += pam_vbox_32
+  pam_vbox_32_EXTENDS  = pam_vbox
+  pam_vbox_32_TEMPLATE = VBOXGUESTR3DLL_X86
+  pam_vbox_32_NAME     = pam_vbox
+  pam_vbox_32_LIBS = \
+        pam \
+        $(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
+        $(VBOX_LIB_VBGL_R3_SHARED_X86) \
+        $(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86)
+ endif
+endif
+
 include $(FILE_KBUILD_SUB_FOOTER)
