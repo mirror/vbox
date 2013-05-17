@@ -3112,7 +3112,11 @@ static int hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             Assert(fInterceptDB == false);
         }
         else
+        {
             fInterceptDB = true;
+            pMixedCtx->eflags.u32 |= X86_EFL_TF;
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RFLAGS;
+        }
     }
 
     if (CPUMGetHyperDR7(pVCpu) & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
@@ -6533,6 +6537,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     rc = hmR0VmxLoadGuestApicState(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestApicState! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
+    /* Must be done after hmR0VmxLoadGuestDebugRegs() as it may update eflags.TF for debugging purposes. */
     rc = hmR0VmxLoadGuestRipRspRflags(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestGprs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
