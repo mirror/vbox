@@ -3286,20 +3286,37 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     CPUMCPUID   Guest;
     unsigned    cStdMax = pVM->cpum.s.aGuestCpuIdStd[0].eax;
 
+    uint32_t    cStdHstMax;
+    uint32_t    dummy;
+    ASMCpuId_Idx_ECX(0, 0, &cStdHstMax, &dummy, &dummy, &dummy);
+
+    unsigned    cStdLstMax = RT_MAX(RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd), cStdHstMax);
+
     pHlp->pfnPrintf(pHlp,
                     "         RAW Standard CPUIDs\n"
                     "     Function  eax      ebx      ecx      edx\n");
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd); i++)
+    for (unsigned i = 0; i <= cStdLstMax ; i++)
     {
-        Guest = pVM->cpum.s.aGuestCpuIdStd[i];
-        ASMCpuId_Idx_ECX(i, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+        if (i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
+        {
+            Guest = pVM->cpum.s.aGuestCpuIdStd[i];
+            ASMCpuId_Idx_ECX(i, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
-        pHlp->pfnPrintf(pHlp,
-                        "Gst: %08x  %08x %08x %08x %08x%s\n"
-                        "Hst:           %08x %08x %08x %08x\n",
-                        i, Guest.eax, Guest.ebx, Guest.ecx, Guest.edx,
-                        i <= cStdMax ? "" : "*",
-                        Host.eax, Host.ebx, Host.ecx, Host.edx);
+            pHlp->pfnPrintf(pHlp,
+                            "Gst: %08x  %08x %08x %08x %08x%s\n"
+                            "Hst:           %08x %08x %08x %08x\n",
+                            i, Guest.eax, Guest.ebx, Guest.ecx, Guest.edx,
+                            i <= cStdMax ? "" : "*",
+                            Host.eax, Host.ebx, Host.ecx, Host.edx);
+        }
+        else
+        {
+            ASMCpuId_Idx_ECX(i, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+
+            pHlp->pfnPrintf(pHlp,
+                            "Hst: %08x  %08x %08x %08x %08x\n",
+                            i, Host.eax, Host.ebx, Host.ecx, Host.edx);
+        }
     }
 
     /*
