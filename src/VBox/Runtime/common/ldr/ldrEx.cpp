@@ -546,15 +546,26 @@ RT_EXPORT_SYMBOL(RTLdrRvaToSegOffset);
  * @param   hLdrMod             The loader handle which executable we wish to
  *                              read from.
  * @param   pvBuf               The output buffer.
+ * @param   iDbgInfo            The debug info ordinal number if the request
+ *                              corresponds exactly to a debug info part from
+ *                              pfnEnumDbgInfo.  Otherwise, pass UINT32_MAX.
  * @param   off                 Where in the executable file to start reading.
  * @param   cb                  The number of bytes to read.
+ *
+ * @remarks Fixups will only be applied if @a iDbgInfo is specified.
  */
-DECLHIDDEN(int) rtLdrReadAt(RTLDRMOD hLdrMod, void *pvBuf, RTFOFF off, size_t cb)
+DECLHIDDEN(int) rtLdrReadAt(RTLDRMOD hLdrMod, void *pvBuf, uint32_t iDbgInfo, RTFOFF off, size_t cb)
 {
     AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), VERR_INVALID_HANDLE);
     PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
-    AssertReturn(pMod->pReader, VERR_INVALID_HANDLE);
 
+    if (iDbgInfo != UINT32_MAX)
+    {
+        AssertReturn(pMod->pOps->pfnReadDbgInfo, VERR_NOT_SUPPORTED);
+        return pMod->pOps->pfnReadDbgInfo(pMod, iDbgInfo, off, cb, pvBuf);
+    }
+
+    AssertReturn(pMod->pReader, VERR_NOT_SUPPORTED);
     return pMod->pReader->pfnRead(pMod->pReader, pvBuf, cb, off);
 }
 

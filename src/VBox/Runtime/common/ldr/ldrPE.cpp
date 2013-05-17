@@ -1526,6 +1526,7 @@ static const RTLDROPSPE s_rtldrPE32Ops =
         rtldrPE_LinkAddressToRva,
         rtldrPE_SegOffsetToRva,
         rtldrPE_RvaToSegOffset,
+        NULL,
         42
     },
     rtldrPEResolveImports32,
@@ -1555,6 +1556,7 @@ static const RTLDROPSPE s_rtldrPE64Ops =
         rtldrPE_LinkAddressToRva,
         rtldrPE_SegOffsetToRva,
         rtldrPE_RvaToSegOffset,
+        NULL,
         42
     },
     rtldrPEResolveImports64,

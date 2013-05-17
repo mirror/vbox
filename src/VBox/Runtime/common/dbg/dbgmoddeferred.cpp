@@ -450,11 +450,11 @@ static DECLCALLBACK(int) rtDbgModDeferredImg_UnmapPart(PRTDBGMODINT pMod, size_t
 
 
 /** @interface_method_impl{RTDBGMODVTIMG,pfnMapPart} */
-static DECLCALLBACK(int) rtDbgModDeferredImg_MapPart(PRTDBGMODINT pMod, RTFOFF off, size_t cb, void const **ppvMap)
+static DECLCALLBACK(int) rtDbgModDeferredImg_MapPart(PRTDBGMODINT pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void const **ppvMap)
 {
     int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
     if (RT_SUCCESS(rc))
-        rc = pMod->pImgVt->pfnMapPart(pMod, off, cb, ppvMap);
+        rc = pMod->pImgVt->pfnMapPart(pMod, iDbgInfo, off, cb, ppvMap);
     return rc;
 }
 
@@ -464,6 +464,17 @@ static DECLCALLBACK(RTUINTPTR) rtDbgModDeferredImg_ImageSize(PRTDBGMODINT pMod)
 {
     PRTDBGMODDEFERRED pThis = (PRTDBGMODDEFERRED)pMod->pvImgPriv;
     return pThis->cbImage;
+}
+
+
+/** @interface_method_impl{RTDBGMODVTIMG,pfnRvaToSegOffset} */
+static DECLCALLBACK(int) rtDbgModDeferredImg_RvaToSegOffset(PRTDBGMODINT pMod, RTLDRADDR uRva,
+                                                            PRTDBGSEGIDX piSeg, PRTLDRADDR poffSeg)
+{
+    int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
+    if (RT_SUCCESS(rc))
+        rc = pMod->pImgVt->pfnRvaToSegOffset(pMod, uRva, piSeg, poffSeg);
+    return rc;
 }
 
 
@@ -537,6 +548,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgDeferred =
     /*.pfnEnumSymbols = */              rtDbgModDeferredImg_EnumSymbols,
     /*.pfnGetLoadedSize = */            rtDbgModDeferredImg_ImageSize,
     /*.pfnLinkAddressToSegOffset = */   rtDbgModDeferredImg_LinkAddressToSegOffset,
+    /*.pfnRvaToSegOffset = */           rtDbgModDeferredImg_RvaToSegOffset,
     /*.pfnMapPart = */                  rtDbgModDeferredImg_MapPart,
     /*.pfnUnmapPart = */                rtDbgModDeferredImg_UnmapPart,
 

@@ -487,7 +487,16 @@ static DECLCALLBACK(int) rtDbgModContainer_SegmentAdd(PRTDBGMODINT pMod, RTUINTP
         RTUINTPTR uCurRvaLast = uCurRva + RT_MAX(pThis->paSegs[iSeg].cb, 1) - 1;
         if (   uRva      <= uCurRvaLast
             && uRvaLast  >= uCurRva
-            && (cb != 0 || pThis->paSegs[iSeg].cb != 0)) /* HACK ALERT! Allow empty segments to share space (bios/watcom). */
+            && (   /* HACK ALERT! Allow empty segments to share space (bios/watcom, elf). */
+                   (cb != 0 && pThis->paSegs[iSeg].cb != 0)
+                || (   cb == 0
+                    && uRva != uCurRva
+                    && uRva != uCurRvaLast)
+                || (    pThis->paSegs[iSeg].cb == 0
+                    && uCurRva != uRva
+                    && uCurRva != uRvaLast)
+               )
+           )
             AssertMsgFailedReturn(("uRva=%RTptr uRvaLast=%RTptr (cb=%RTptr) \"%s\";\n"
                                    "uRva=%RTptr uRvaLast=%RTptr (cb=%RTptr) \"%s\" iSeg=%#x\n",
                                    uRva, uRvaLast, cb, pszName,
@@ -599,7 +608,7 @@ static DECLCALLBACK(RTDBGSEGIDX) rtDbgModContainer_RvaToSegOff(PRTDBGMODINT pMod
             }
             else
             {
-                /* between iSeg and iLast. */
+                /* between iSeg and iLast. paSeg[iSeg].cb == 0 ends up here too. */
                 if (iSeg == iLast)
                     break;
                 iFirst = iSeg + 1;
