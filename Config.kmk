@@ -4699,8 +4699,7 @@ TEMPLATE_NewVBoxGuestR3Exe_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(TEMPLATE_VBOXGUESTR3EXE_LIBS) \
-	crypt  # $(VBOX_LIB_IPRT_GUEST_R3) depends on this.
+	$(TEMPLATE_VBOXGUESTR3EXE_LIBS)
 
 #
 # Template for building normal 32-bit R3 programs for the guest additions.
@@ -4712,8 +4711,7 @@ TEMPLATE_NewVBoxGuestR3Exe_X86_LIBS         = \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
 	$(VBOX_LIB_VBGL_R3_X86) \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
-	$(TEMPLATE_VBOXGUESTR3EXE_LIBS) \
-	crypt
+	$(TEMPLATE_VBOXGUESTR3EXE_LIBS)
 TEMPLATE_NewVBoxGuestR3Exe_X86_INST         = $(INST_ADDITIONS)/32/
 
 #
