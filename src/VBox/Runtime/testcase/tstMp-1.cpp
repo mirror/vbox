@@ -59,6 +59,16 @@ int main()
         cCpus = 1;
     }
 
+    RTCPUID cCoreCpus = RTMpGetCoreCount();
+    if (cCoreCpus > 0)
+        RTPrintf("tstMp-1: RTMpGetCoreCount -> %d\n", (int)cCoreCpus);
+    else
+    {
+        RTPrintf("tstMp-1: FAILURE: RTMpGetCoreCount -> %d\n", (int)cCoreCpus);
+        g_cErrors++;
+        cCoreCpus = 1;
+    }
+
     RTCPUSET Set;
     PRTCPUSET pSet = RTMpGetSet(&Set);
     if (pSet == &Set)

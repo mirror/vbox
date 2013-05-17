@@ -550,6 +550,7 @@ RuntimeR3_SOURCES.win = \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileExists-generic.cpp \
+	generic/RTMpGetCoreCount-generic.cpp \
 	generic/RTMpGetCurFrequency-generic.cpp \
 	generic/RTMpGetMaxFrequency-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
@@ -713,6 +714,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
+	generic/RTMpGetCoreCount-generic.cpp \
 	generic/RTMpGetCurFrequency-generic.cpp \
 	generic/RTMpGetMaxFrequency-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
@@ -772,6 +774,7 @@ RuntimeR3_SOURCES.darwin = \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
+	generic/RTMpGetCoreCount-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
@@ -844,6 +847,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	generic/RTMpCpuId-generic.cpp \
+	generic/RTMpGetCoreCount-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
@@ -904,6 +908,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
+	generic/RTMpGetCoreCount-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
@@ -980,6 +985,7 @@ RuntimeR3_SOURCES.haiku = \
 	generic/uuid-generic.cpp\
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
+	generic/RTMpGetCoreCount-generic.cpp \
 	r3/haiku/rtProcInitExePath-haiku.cpp \
 	r3/haiku/time-haiku.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
