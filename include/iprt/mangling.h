@@ -893,6 +893,7 @@
 # define RTMpGetPresentCount                            RT_MANGLER(RTMpGetPresentCount)
 # define RTMpGetPresentSet                              RT_MANGLER(RTMpGetPresentSet)
 # define RTMpGetSet                                     RT_MANGLER(RTMpGetSet)
+# define RTMpGetCoreCount                               RT_MANGLER(RTMpGetCoreCount)
 # define RTMpIsCpuOnline                                RT_MANGLER(RTMpIsCpuOnline)
 # define RTMpIsCpuPossible                              RT_MANGLER(RTMpIsCpuPossible) /* r0drv */
 # define RTMpIsCpuPresent                               RT_MANGLER(RTMpIsCpuPresent)
