@@ -236,10 +236,11 @@ int dbgcSymbolGet(PDBGC pDbgc, const char *pszSymbol, DBGCVARTYPE enmType, PDBGC
         "sp;"          "ss;"
         "ip;"
     ;
-    size_t const cchSymbol = strlen(pszSymbol);
-    if (    (cchSymbol == 2 && strstr(s_szTwoLetterRegisters,   pszSymbol))
-        ||  (cchSymbol == 3 && strstr(s_szThreeLetterRegisters, pszSymbol))
-        ||  (cchSymbol == 6 && strstr(s_szSixLetterRegisters,   pszSymbol)))
+    const char  *pszRegSym = *pszSymbol == '.' ? pszSymbol + 1 : pszSymbol;
+    size_t const cchRegSym = strlen(pszRegSym);
+    if (    (cchRegSym == 2 && strstr(s_szTwoLetterRegisters,   pszRegSym))
+        ||  (cchRegSym == 3 && strstr(s_szThreeLetterRegisters, pszRegSym))
+        ||  (cchRegSym == 6 && strstr(s_szSixLetterRegisters,   pszRegSym)))
     {
         if (!strchr(pszSymbol, ';'))
         {
