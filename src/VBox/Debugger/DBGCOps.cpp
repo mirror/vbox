@@ -455,13 +455,22 @@ DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat,
     LogFlow(("dbgcOpRegister: %s\n", pArg->u.pszString));
     AssertReturn(pArg->enmType == DBGCVAR_TYPE_SYMBOL, VERR_DBGC_PARSE_BUG);
 
+    /* Detect references to hypervisor registers. */
+    const char *pszReg = pArg->u.pszString;
+    VMCPUID idCpu = pDbgc->idCpu;
+    if (pszReg[0] == '.')
+    {
+        pszReg++;
+        idCpu |= DBGFREG_HYPER_VMCPUID;
+    }
+
     /*
      * If the desired result is a symbol, pass the argument along unmodified.
      * This is a great help for "r @eax" and such, since it will be translated to "r eax".
      */
     if (enmCat == DBGCVAR_CAT_SYMBOL)
     {
-        int rc = DBGFR3RegNmValidate(pDbgc->pUVM, pDbgc->idCpu, pArg->u.pszString);
+        int rc = DBGFR3RegNmValidate(pDbgc->pUVM, idCpu, pszReg);
         if (RT_SUCCESS(rc))
             DBGCVAR_INIT_STRING(pResult, pArg->u.pszString);
         return rc;
@@ -472,7 +481,7 @@ DECLCALLBACK(int) dbgcOpRegister(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat,
      */
     DBGFREGVALTYPE  enmType;
     DBGFREGVAL      Value;
-    int rc = DBGFR3RegNmQuery(pDbgc->pUVM, pDbgc->idCpu, pArg->u.pszString, &Value, &enmType);
+    int rc = DBGFR3RegNmQuery(pDbgc->pUVM, idCpu, pszReg, &Value, &enmType);
     if (RT_SUCCESS(rc))
     {
         switch (enmType)

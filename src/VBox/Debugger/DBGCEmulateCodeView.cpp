@@ -688,7 +688,8 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PUVM pUVM, void *pvUser, PC
     RTDBGSYMBOL Sym;
     RTINTPTR    off;
     DBGFADDRESS Addr;
-    int rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, DBGFR3AddrFromFlat(pDbgc->pUVM, &Addr, pBp->GCPtr), &off, &Sym, NULL);
+    int rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, DBGFR3AddrFromFlat(pDbgc->pUVM, &Addr, pBp->GCPtr),
+                                  RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, &off, &Sym, NULL);
     if (RT_SUCCESS(rc))
     {
         if (!off)
@@ -696,7 +697,7 @@ static DECLCALLBACK(int) dbgcEnumBreakpointsCallback(PUVM pUVM, void *pvUser, PC
         else if (off > 0)
             DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%s+%RGv", Sym.szName, off);
         else
-            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%s+%RGv", Sym.szName, -off);
+            DBGCCmdHlpPrintf(&pDbgc->CmdHlp, "%s-%RGv", Sym.szName, -off);
     }
 
     /*
@@ -857,6 +858,47 @@ static DECLCALLBACK(int) dbgcCmdBrkREM(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
 
 
 /**
+ * Helps the unassmble ('u') command display symbols it starts at and passes.
+ *
+ * @param   pUVM            The user mode VM handle.
+ * @param   pCmdHlp         The command helpers for printing via.
+ * @param   hDbgAs          The address space to look up addresses in.
+ * @param   pAddress        The current address.
+ * @param   pcbCallAgain    Where to return the distance to the next check (in
+ *                          instruction bytes).
+ */
+static void dbgcCmdUnassambleHelpListNear(PUVM pUVM, PDBGCCMDHLP pCmdHlp, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress,
+                                         PRTUINTPTR pcbCallAgain)
+{
+    RTDBGSYMBOL Symbol;
+    RTGCINTPTR  offDispSym;
+    int rc = DBGFR3AsSymbolByAddr(pUVM, hDbgAs, pAddress, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, &offDispSym, &Symbol, NULL);
+    if (RT_FAILURE(rc) || offDispSym > _1G)
+        rc = DBGFR3AsSymbolByAddr(pUVM, hDbgAs, pAddress, RTDBGSYMADDR_FLAGS_GREATER_OR_EQUAL, &offDispSym, &Symbol, NULL);
+    if (RT_SUCCESS(rc) && offDispSym < _1G)
+    {
+        if (!offDispSym)
+        {
+            DBGCCmdHlpPrintf(pCmdHlp, "%s:\n", Symbol.szName);
+            *pcbCallAgain = Symbol.cb;
+        }
+        else if (offDispSym > 0)
+        {
+            DBGCCmdHlpPrintf(pCmdHlp, "%s+%#llx:\n", Symbol.szName, (uint64_t)offDispSym);
+            *pcbCallAgain = Symbol.cb > (RTGCUINTPTR)offDispSym ? Symbol.cb - (RTGCUINTPTR)offDispSym : 1;
+        }
+        else
+        {
+            DBGCCmdHlpPrintf(pCmdHlp, "%s-%#llx:\n", Symbol.szName, (uint64_t)-offDispSym);
+            *pcbCallAgain = (RTGCUINTPTR)-offDispSym + Symbol.cb;
+        }
+    }
+    else
+        *pcbCallAgain = UINT32_MAX;
+}
+
+
+/**
  * @interface_method_impl{FNDBCCMD, The 'u' command.}
  */
 static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
@@ -887,6 +929,8 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         case 'v':   fFlags |= DBGF_DISAS_FLAGS_16BIT_REAL_MODE; break;
     }
 
+    /** @todo should use DBGFADDRESS for everything */
+
     /*
      * Find address.
      */
@@ -912,7 +956,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             if (pDbgc->fRegCtxGuest)
                 fFlags |= DBGF_DISAS_FLAGS_CURRENT_GUEST;
             else
-                fFlags |= DBGF_DISAS_FLAGS_CURRENT_HYPER;
+                fFlags |= DBGF_DISAS_FLAGS_CURRENT_HYPER | DBGF_DISAS_FLAGS_HYPER;
         }
         pDbgc->DisasmPos.enmRangeType = DBGCVAR_RANGE_NONE;
     }
@@ -947,6 +991,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     /*
      * Convert physical and host addresses to guest addresses.
      */
+    RTDBGAS hDbgAs = pDbgc->hDbgAs;
     int rc;
     switch (pDbgc->DisasmPos.enmType)
     {
@@ -954,6 +999,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         case DBGCVAR_TYPE_GC_FAR:
             break;
         case DBGCVAR_TYPE_GC_PHYS:
+            hDbgAs = DBGF_AS_PHYS;
         case DBGCVAR_TYPE_HC_FLAT:
         case DBGCVAR_TYPE_HC_PHYS:
         {
@@ -967,15 +1013,20 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         default: AssertFailed(); break;
     }
 
-    /*
-     * Print address.
-     * todo: Change to list near.
-     */
-#if 0
-    rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%DV:\n", &pDbgc->DisasmPos);
+    DBGFADDRESS CurAddr;
+    rc = DBGCCmdHlpVarToDbgfAddr(pCmdHlp, &pDbgc->DisasmPos, &CurAddr);
     if (RT_FAILURE(rc))
-        return rc;
-#endif
+        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpVarToDbgfAddr failed on '%Dv'", &pDbgc->DisasmPos);
+
+    if (CurAddr.fFlags & DBGFADDRESS_FLAGS_HMA)
+        fFlags |= DBGF_DISAS_FLAGS_HYPER; /* This crap is due to not using DBGFADDRESS as DBGFR3Disas* input. */
+
+    /*
+     * Figure out where we are and display it.  Also calculate when we need to
+     * check for a new symbol if possible.
+     */
+    RTGCUINTPTR cbCheckSymbol;
+    dbgcCmdUnassambleHelpListNear(pUVM, pCmdHlp, hDbgAs, &CurAddr, &cbCheckSymbol);
 
     /*
      * Do the disassembling.
@@ -1007,9 +1058,9 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         else
         {
             /* bitch. */
-            rc = DBGCCmdHlpPrintf(pCmdHlp, "Failed to disassemble instruction, skipping one byte.\n");
-            if (RT_FAILURE(rc))
-                return rc;
+            int rc2 = DBGCCmdHlpPrintf(pCmdHlp, "Failed to disassemble instruction, skipping one byte.\n");
+            if (RT_FAILURE(rc2))
+                return rc2;
             if (cTries-- > 0)
                 return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "Too many disassembly failures. Giving up");
             cbInstr = 1;
@@ -1028,6 +1079,18 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         if (iRangeLeft <= 0)
             break;
         fFlags &= ~(DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_CURRENT_HYPER);
+
+        /* Print next symbol? */
+        if (cbCheckSymbol <= cbInstr)
+        {
+            rc = DBGCCmdHlpVarToDbgfAddr(pCmdHlp, &pDbgc->DisasmPos, &CurAddr);
+            if (RT_SUCCESS(rc))
+                dbgcCmdUnassambleHelpListNear(pUVM, pCmdHlp, hDbgAs, &CurAddr, &cbCheckSymbol);
+            else
+                cbCheckSymbol = UINT32_MAX;
+        }
+        else
+            cbCheckSymbol -= cbInstr;
     }
 
     NOREF(pCmd);
@@ -3817,7 +3880,8 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArg)
 
         RTINTPTR    offDisp;
         DBGFADDRESS Addr;
-        rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, DBGFR3AddrFromFlat(pDbgc->pUVM, &Addr, AddrVar.u.GCFlat), &offDisp, &Symbol, NULL);
+        rc = DBGFR3AsSymbolByAddr(pUVM, pDbgc->hDbgAs, DBGFR3AddrFromFlat(pDbgc->pUVM, &Addr, AddrVar.u.GCFlat),
+                                  RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, &offDisp, &Symbol, NULL);
         if (RT_FAILURE(rc))
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3ASymbolByAddr(,,%RGv,,)\n", AddrVar.u.GCFlat);
 
@@ -3842,15 +3906,17 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArg)
  */
 static DECLCALLBACK(int) dbgcCmdListNear(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
     if (!cArgs)
     {
         /*
          * Current cs:eip symbol.
          */
         DBGCVAR AddrVar;
-        int rc = DBGCCmdHlpEval(pCmdHlp, &AddrVar, "%%(cs:eip)");
+        const char *pszFmtExpr = pDbgc->fRegCtxGuest ? "%%(cs:eip)" : "%%(.cs:.eip)";
+        int rc = DBGCCmdHlpEval(pCmdHlp, &AddrVar, pszFmtExpr);
         if (RT_FAILURE(rc))
-            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%%(cs:eip)\n");
+            return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "%s\n", pszFmtExpr + 1);
         return dbgcDoListNear(pCmdHlp, pUVM, &AddrVar);
     }
 
