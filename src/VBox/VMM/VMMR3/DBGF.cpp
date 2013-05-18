@@ -962,11 +962,17 @@ VMMR3DECL(int) DBGFR3Detach(PUVM pUVM)
     int rc;
 
     /*
-     * Check if attached.
+     * Validate input. The UVM handle shall be valid, the VM handle might be
+     * in the processes of being destroyed already, so deal quietly with that.
      */
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    if (!VM_IS_VALID_EXT(pVM))
+        return VERR_INVALID_VM_HANDLE;
+
+    /*
+     * Check if attached.
+     */
     AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
 
     /*
