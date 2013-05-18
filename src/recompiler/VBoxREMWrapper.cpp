@@ -640,6 +640,7 @@ static const REMPARMDESC g_aArgsDBGFR3AsSymbolByAddr[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PUVM),               NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(RTDBGAS),            NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGFADDRESS),      NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
     { REMPARMDESC_FLAGS_GCPTR,      sizeof(PRTGCINTPTR),        NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PRTDBGSYMBOL),       NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PRTDBGMOD),          NULL }

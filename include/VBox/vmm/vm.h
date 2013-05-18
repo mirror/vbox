@@ -757,15 +757,21 @@ typedef struct VMCPU
                         ("state %s, expected %s\n", VMGetStateName((pVM)->enmVMState), VMGetStateName(_enmState)), \
                         (rc))
 
+/** @def VM_IS_VALID_EXT
+ * Asserts a the VM handle is valid for external access, i.e. not being destroy
+ * or terminated. */
+#define VM_IS_VALID_EXT(pVM) \
+        (    RT_VALID_ALIGNED_PTR(pVM, PAGE_SIZE) \
+         &&  (   (unsigned)(pVM)->enmVMState < (unsigned)VMSTATE_DESTROYING \
+              || (   (unsigned)(pVM)->enmVMState == (unsigned)VMSTATE_DESTROYING \
+                  && VM_IS_EMT(pVM))) )
+
 /** @def VM_ASSERT_VALID_EXT_RETURN
  * Asserts a the VM handle is valid for external access, i.e. not being
  * destroy or terminated.
  */
 #define VM_ASSERT_VALID_EXT_RETURN(pVM, rc) \
-        AssertMsgReturn(    RT_VALID_ALIGNED_PTR(pVM, PAGE_SIZE) \
-                        &&  (   (unsigned)(pVM)->enmVMState < (unsigned)VMSTATE_DESTROYING \
-                             || (   (unsigned)(pVM)->enmVMState == (unsigned)VMSTATE_DESTROYING \
-                                 && VM_IS_EMT(pVM))), \
+        AssertMsgReturn(VM_IS_VALID_EXT(pVM), \
                         ("pVM=%p state %s\n", (pVM), RT_VALID_ALIGNED_PTR(pVM, PAGE_SIZE) \
                          ? VMGetStateName(pVM->enmVMState) : ""), \
                         (rc))

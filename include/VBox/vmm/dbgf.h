@@ -670,8 +670,10 @@ VMMR3DECL(int)          DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hDbgAs, const char 
 VMMR3DECL(int)          DBGFR3AsLoadMap(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, RTGCUINTPTR uSubtrahend, uint32_t fFlags);
 VMMR3DECL(int)          DBGFR3AsLinkModule(PUVM pUVM, RTDBGAS hDbgAs, RTDBGMOD hMod, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags);
 
-VMMR3DECL(int)          DBGFR3AsSymbolByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, PRTGCINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod);
-VMMR3DECL(PRTDBGSYMBOL) DBGFR3AsSymbolByAddrA(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, PRTGCINTPTR poffDisp, PRTDBGMOD phMod);
+VMMR3DECL(int)          DBGFR3AsSymbolByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, uint32_t fFlags,
+                                             PRTGCINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod);
+VMMR3DECL(PRTDBGSYMBOL) DBGFR3AsSymbolByAddrA(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, uint32_t Flags,
+                                              PRTGCINTPTR poffDisp, PRTDBGMOD phMod);
 VMMR3DECL(int)          DBGFR3AsSymbolByName(PUVM pUVM, RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod);
 
 /* The following are soon to be obsoleted: */
@@ -881,6 +883,8 @@ VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 #define DBGF_DISAS_FLAGS_NO_BYTES           RT_BIT(4)
 /** No address in the output. */
 #define DBGF_DISAS_FLAGS_NO_ADDRESS         RT_BIT(5)
+/** Probably a hypervisor instruction. */
+#define DBGF_DISAS_FLAGS_HYPER              RT_BIT(6)
 /** Disassemble in the default mode of the specific context. */
 #define DBGF_DISAS_FLAGS_DEFAULT_MODE       UINT32_C(0x00000000)
 /** Disassemble in 16-bit mode. */

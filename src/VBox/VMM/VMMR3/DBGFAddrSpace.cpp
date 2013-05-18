@@ -1087,6 +1087,7 @@ static void dbgfR3AsSymbolConvert(PRTDBGSYMBOL pSymbol, PCDBGFSYMBOL pDbgfSym)
  * @param   pUVM            The user mode VM handle.
  * @param   hDbgAs          The address space handle.
  * @param   pAddress        The address to lookup.
+ * @param   fFlags          One of the RTDBGSYMADDR_FLAGS_XXX flags.
  * @param   poffDisp        Where to return the distance between the returned
  *                          symbol and pAddress. Optional.
  * @param   pSymbol         Where to return the symbol information. The returned
@@ -1094,7 +1095,7 @@ static void dbgfR3AsSymbolConvert(PRTDBGSYMBOL pSymbol, PCDBGFSYMBOL pDbgfSym)
  *                          far as space allows.
  * @param   phMod           Where to return the module handle. Optional.
  */
-VMMR3DECL(int) DBGFR3AsSymbolByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress,
+VMMR3DECL(int) DBGFR3AsSymbolByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, uint32_t fFlags,
                                     PRTGCINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod)
 {
     /*
@@ -1102,9 +1103,9 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAd
      */
     if (hDbgAs == DBGF_AS_RC_AND_GC_GLOBAL)
     {
-        int rc = DBGFR3AsSymbolByAddr(pUVM, DBGF_AS_RC, pAddress, poffDisp, pSymbol, phMod);
+        int rc = DBGFR3AsSymbolByAddr(pUVM, DBGF_AS_RC, pAddress, fFlags, poffDisp, pSymbol, phMod);
         if (RT_FAILURE(rc))
-            rc = DBGFR3AsSymbolByAddr(pUVM, DBGF_AS_GLOBAL, pAddress, poffDisp, pSymbol, phMod);
+            rc = DBGFR3AsSymbolByAddr(pUVM, DBGF_AS_GLOBAL, pAddress, fFlags, poffDisp, pSymbol, phMod);
         return rc;
     }
 
@@ -1128,7 +1129,7 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAd
      * Do the lookup.
      */
     RTDBGMOD hMod;
-    int rc = RTDbgAsSymbolByAddr(hRealAS, pAddress->FlatPtr, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, poffDisp, pSymbol, &hMod);
+    int rc = RTDbgAsSymbolByAddr(hRealAS, pAddress->FlatPtr, fFlags, poffDisp, pSymbol, &hMod);
     if (RT_SUCCESS(rc))
     {
         dbgfR3AsSymbolJoinNames(pSymbol, hMod);
@@ -1187,13 +1188,15 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAd
  * @param   pUVM            The user mode VM handle.
  * @param   hDbgAs          See DBGFR3AsSymbolByAddr.
  * @param   pAddress        See DBGFR3AsSymbolByAddr.
+ * @param   fFlags          See DBGFR3AsSymbolByAddr.
  * @param   poffDisp        See DBGFR3AsSymbolByAddr.
  * @param   phMod           See DBGFR3AsSymbolByAddr.
  */
-VMMR3DECL(PRTDBGSYMBOL) DBGFR3AsSymbolByAddrA(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, PRTGCINTPTR poffDisp, PRTDBGMOD phMod)
+VMMR3DECL(PRTDBGSYMBOL) DBGFR3AsSymbolByAddrA(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, uint32_t fFlags,
+                                              PRTGCINTPTR poffDisp, PRTDBGMOD phMod)
 {
     RTDBGSYMBOL SymInfo;
-    int rc = DBGFR3AsSymbolByAddr(pUVM, hDbgAs, pAddress, poffDisp, &SymInfo, phMod);
+    int rc = DBGFR3AsSymbolByAddr(pUVM, hDbgAs, pAddress, fFlags, poffDisp, &SymInfo, phMod);
     if (RT_SUCCESS(rc))
         return RTDbgSymbolDup(&SymInfo);
     return NULL;

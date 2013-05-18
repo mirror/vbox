@@ -2403,9 +2403,14 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     Log2(("EMR3ExecuteVM: enmr3Debug -> %Rrc (state %d)\n", rc, pVCpu->em.s.enmState));
                     if (rc != VINF_SUCCESS)
                     {
-                        /* switch to guru meditation mode */
-                        pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
-                        VMMR3FatalDump(pVM, pVCpu, rc);
+                        if (rc == VINF_EM_OFF || rc == VINF_EM_TERMINATE)
+                            pVCpu->em.s.enmState = EMSTATE_TERMINATING;
+                        else
+                        {
+                            /* switch to guru meditation mode */
+                            pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
+                            VMMR3FatalDump(pVM, pVCpu, rc);
+                        }
                         Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(enmOldState)));
                         return rc;
                     }

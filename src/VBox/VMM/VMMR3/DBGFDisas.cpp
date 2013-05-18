@@ -300,7 +300,8 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Se
     {
         rc = DBGFR3AddrFromSelInfoOff(pState->pVM->pUVM, &Addr, pSelInfo, uAddress);
         if (RT_SUCCESS(rc))
-            rc = DBGFR3AsSymbolByAddr(pState->pVM->pUVM, pState->hAs, &Addr, &off, &Sym, NULL /*phMod*/);
+            rc = DBGFR3AsSymbolByAddr(pState->pVM->pUVM, pState->hAs, &Addr, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL,
+                                      &off, &Sym, NULL /*phMod*/);
     }
     else
         rc = VERR_SYMBOL_NOT_FOUND; /** @todo implement this */
@@ -358,6 +359,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     }
     else if (fFlags & DBGF_DISAS_FLAGS_CURRENT_HYPER)
     {
+        fFlags    |= DBGF_DISAS_FLAGS_HYPER;
         pCtxCore   = CPUMGetHyperCtxCore(pVCpu);
         Sel        = pCtxCore->cs.Sel;
         GCPtr      = pCtxCore->rip;
@@ -448,7 +450,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
             SelInfo.u.Raw.Gen.u4Type        = X86_SEL_TYPE_EO;
         }
     }
-    else if (   !(fFlags & DBGF_DISAS_FLAGS_CURRENT_HYPER)
+    else if (   !(fFlags & DBGF_DISAS_FLAGS_HYPER)
              && (   (pCtxCore && pCtxCore->eflags.Bits.u1VM)
                  || enmMode == PGMMODE_REAL
                  || (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_16BIT_REAL_MODE
@@ -473,7 +475,10 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     }
     else
     {
-        rc = SELMR3GetSelectorInfo(pVM, pVCpu, Sel, &SelInfo);
+        if (!(fFlags & DBGF_DISAS_FLAGS_HYPER))
+            rc = SELMR3GetSelectorInfo(pVM, pVCpu, Sel, &SelInfo);
+        else
+            rc = SELMR3GetShadowSelectorInfo(pVM, Sel, &SelInfo);
         if (RT_FAILURE(rc))
         {
             RTStrPrintf(pszOutput, cbOutput, "Sel=%04x -> %Rrc\n", Sel, rc);

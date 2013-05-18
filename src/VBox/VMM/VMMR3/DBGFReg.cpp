@@ -1292,7 +1292,13 @@ VMMR3DECL(int) DBGFR3RegNmValidate(PUVM pUVM, VMCPUID idDefCpu, const char *pszR
     /*
      * Resolve the register.
      */
-    bool const fGuestRegs = !(idDefCpu & DBGFREG_HYPER_VMCPUID) && idDefCpu != VMCPUID_ANY;
+    bool fGuestRegs = true;
+    if ((idDefCpu & DBGFREG_HYPER_VMCPUID) && idDefCpu != VMCPUID_ANY)
+    {
+        fGuestRegs = false;
+        idDefCpu &= ~DBGFREG_HYPER_VMCPUID;
+    }
+
     PCDBGFREGLOOKUP pLookupRec = dbgfR3RegResolve(pUVM, idDefCpu, pszReg, fGuestRegs);
     if (!pLookupRec)
         return VERR_DBGF_REGISTER_NOT_FOUND;
@@ -1447,7 +1453,12 @@ static int dbgfR3RegNmQueryWorker(PUVM pUVM, VMCPUID idDefCpu, const char *pszRe
     /*
      * Resolve the register and call the getter on the relevant CPU.
      */
-    bool const fGuestRegs = !(idDefCpu & DBGFREG_HYPER_VMCPUID) && idDefCpu != VMCPUID_ANY;
+    bool fGuestRegs = true;
+    if ((idDefCpu & DBGFREG_HYPER_VMCPUID) && idDefCpu != VMCPUID_ANY)
+    {
+        fGuestRegs = false;
+        idDefCpu &= ~DBGFREG_HYPER_VMCPUID;
+    }
     PCDBGFREGLOOKUP pLookupRec = dbgfR3RegResolve(pUVM, idDefCpu, pszReg, fGuestRegs);
     if (pLookupRec)
     {
