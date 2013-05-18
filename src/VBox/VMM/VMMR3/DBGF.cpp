@@ -973,7 +973,8 @@ VMMR3DECL(int) DBGFR3Detach(PUVM pUVM)
     /*
      * Check if attached.
      */
-    AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
+    if (!pVM->dbgf.s.fAttached)
+        return VERR_DBGF_NOT_ATTACHED;
 
     /*
      * Try send the detach command.
@@ -1115,7 +1116,8 @@ VMMR3DECL(int) DBGFR3QueryWaitable(PUVM pUVM)
         return VERR_INVALID_VM_HANDLE;
     if (pVM->enmVMState >= VMSTATE_DESTROYING)
         return VERR_INVALID_VM_HANDLE;
-    AssertReturn(pVM->dbgf.s.fAttached, VERR_DBGF_NOT_ATTACHED);
+    if (!pVM->dbgf.s.fAttached)
+        return VERR_DBGF_NOT_ATTACHED;
 
     if (!RTSemPongShouldWait(&pVM->dbgf.s.PingPong))
         return VERR_SEM_OUT_OF_TURN;

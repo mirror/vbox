@@ -210,6 +210,8 @@ VMMR3_INT_DECL(int)             PATMR3DetectConflict(PVM pVM, RTRCPTR pInstrGC, 
 VMMR3_INT_DECL(bool)            PATMR3HasBeenPatched(PVM pVM, RTRCPTR pInstrGC);
 
 VMMR3_INT_DECL(void)            PATMR3DbgPopulateAddrSpace(PVM pVM, RTDBGAS hDbgAs);
+VMMR3_INT_DECL(void)            PATMR3DbgAnnotatePatchedInstruction(PVM pVM, RTRCPTR RCPtr, uint8_t cbInstr,
+                                                                    char *pszBuf, size_t cbBuf);
 
 /** @} */
 #endif
