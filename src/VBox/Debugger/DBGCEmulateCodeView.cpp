@@ -918,7 +918,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     /*
      * Check the desired mode.
      */
-    unsigned fFlags = DBGF_DISAS_FLAGS_NO_ADDRESS;
+    unsigned fFlags = DBGF_DISAS_FLAGS_NO_ADDRESS | DBGF_DISAS_FLAGS_UNPATCHED_BYTES | DBGF_DISAS_FLAGS_ANNOTATE_PATCHED;
     switch (pCmd->pszCmd[1])
     {
         default: AssertFailed();

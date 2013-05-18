@@ -885,6 +885,10 @@ VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 #define DBGF_DISAS_FLAGS_NO_ADDRESS         RT_BIT(5)
 /** Probably a hypervisor instruction. */
 #define DBGF_DISAS_FLAGS_HYPER              RT_BIT(6)
+/** Disassemble original unpatched bytes (PATM). */
+#define DBGF_DISAS_FLAGS_UNPATCHED_BYTES    RT_BIT(7)
+/** Annotate patched instructions. */
+#define DBGF_DISAS_FLAGS_ANNOTATE_PATCHED   RT_BIT(8)
 /** Disassemble in the default mode of the specific context. */
 #define DBGF_DISAS_FLAGS_DEFAULT_MODE       UINT32_C(0x00000000)
 /** Disassemble in 16-bit mode. */
@@ -898,7 +902,7 @@ VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 /** The disassembly mode mask. */
 #define DBGF_DISAS_FLAGS_MODE_MASK          UINT32_C(0x70000000)
 /** Mask containing the valid flags. */
-#define DBGF_DISAS_FLAGS_VALID_MASK         UINT32_C(0x7000007f)
+#define DBGF_DISAS_FLAGS_VALID_MASK         UINT32_C(0x700001ff)
 /** @} */
 
 /** Special flat selector. */

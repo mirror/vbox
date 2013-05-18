@@ -3779,7 +3779,8 @@ static int patmPatchMMIOInstr(PVM pVM, RTRCPTR pInstrGC, DISCPUSTATE *pCpu, PPAT
         goto failure;
 
     /* Add relocation record for cached data access. */
-    if (patmPatchAddReloc32(pVM, pPatch, &pPB[pCpu->cbInstr - sizeof(RTRCPTR)], FIXUP_ABSOLUTE, pPatch->pPrivInstrGC, pVM->patm.s.mmio.pCachedData) != VINF_SUCCESS)
+    if (patmPatchAddReloc32(pVM, pPatch, &pPB[pCpu->cbInstr - sizeof(RTRCPTR)], FIXUP_ABSOLUTE, pPatch->pPrivInstrGC,
+                            pVM->patm.s.mmio.pCachedData) != VINF_SUCCESS)
     {
         Log(("Relocation failed for cached mmio address!!\n"));
         return VERR_PATCHING_REFUSED;
@@ -3793,7 +3794,8 @@ static int patmPatchMMIOInstr(PVM pVM, RTRCPTR pInstrGC, DISCPUSTATE *pCpu, PPAT
     pPatch->cbPatchJump = pPatch->cbPrivInstr;  /* bit of a misnomer in this case; size of replacement instruction. */
 
     /* Replace address with that of the cached item. */
-    rc = PGMPhysSimpleDirtyWriteGCPtr(VMMGetCpu0(pVM), pInstrGC + pCpu->cbInstr - sizeof(RTRCPTR), &pVM->patm.s.mmio.pCachedData, sizeof(RTRCPTR));
+    rc = PGMPhysSimpleDirtyWriteGCPtr(VMMGetCpu0(pVM), pInstrGC + pCpu->cbInstr - sizeof(RTRCPTR),
+                                      &pVM->patm.s.mmio.pCachedData, sizeof(RTRCPTR));
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {

@@ -25,6 +25,9 @@
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
+#ifdef VBOX_WITH_RAW_MODE
+# include <VBox/vmm/patm.h>
+#endif
 #include "DBGFInternal.h"
 #include <VBox/dis.h>
 #include <VBox/err.h>
@@ -56,7 +59,7 @@ typedef struct
     /** Pointer to the VMCPU. */
     PVMCPU          pVCpu;
     /** The address space for resolving symbol. */
-    RTDBGAS         hAs;
+    RTDBGAS         hDbgAs;
     /** Pointer to the first byte in the segment. */
     RTGCUINTPTR     GCPtrSegBase;
     /** Pointer to the byte after the end of the segment. (might have wrapped!) */
@@ -77,6 +80,10 @@ typedef struct
     bool            fLocked;
     /** 64 bits mode or not. */
     bool            f64Bits;
+    /** Read original unpatched bytes from the patch manager. */
+    bool            fUnpatchedBytes;
+    /** Set when fUnpatchedBytes is active and we encounter patched bytes. */
+    bool            fPatchedInstr;
 } DBGFDISASSTATE, *PDBGFDISASSTATE;
 
 
@@ -108,13 +115,17 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
     pState->enmMode         = enmMode;
     pState->GCPtrPage       = 0;
     pState->pvPageR3        = NULL;
-    pState->hAs             = pSelInfo->fFlags & DBGFSELINFO_FLAGS_HYPER /** @todo Deal more explicitly with RC in DBGFR3Disas*. */
+    pState->hDbgAs          = !HMIsEnabled(pVM)
                             ? DBGF_AS_RC_AND_GC_GLOBAL
                             : DBGF_AS_GLOBAL;
     pState->pVM             = pVM;
     pState->pVCpu           = pVCpu;
     pState->fLocked         = false;
     pState->f64Bits         = enmMode >= PGMMODE_AMD64 && pSelInfo->u.Raw.Gen.u1Long;
+#ifdef VBOX_WITH_RAW_MODE
+    pState->fUnpatchedBytes = RT_BOOL(fFlags & DBGF_DISAS_FLAGS_UNPATCHED_BYTES);
+    pState->fPatchedInstr   = false;
+#endif
 
     DISCPUMODE enmCpuMode;
     switch (fFlags & DBGF_DISAS_FLAGS_MODE_MASK)
@@ -266,6 +277,34 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
         if (cb > cbMaxRead)
             cb = cbMaxRead;
 
+#ifdef VBOX_WITH_RAW_MODE
+        /*
+         * Read original bytes from PATM if asked to do so.
+         */
+        if (pState->fUnpatchedBytes)
+        {
+            size_t cbRead = cb;
+            int rc = PATMR3ReadOrgInstr(pState->pVM, GCPtr, &pDis->abInstr[offInstr], cbRead, &cbRead);
+            if (RT_SUCCESS(rc))
+            {
+                pState->fPatchedInstr = true;
+                if (cbRead >= cbMinRead)
+                {
+                    pDis->cbCachedInstr = offInstr + (uint8_t)cbRead;
+                    return rc;
+                }
+
+                cbMinRead -= (uint8_t)cbRead;
+                cbMaxRead -= (uint8_t)cbRead;
+                cb        -= (uint8_t)cbRead;
+                offInstr  += (uint8_t)cbRead;
+                GCPtr     += cbRead;
+                if (!cb)
+                    continue;
+            }
+        }
+#endif /* VBOX_WITH_RAW_MODE */
+
         /*
          * Read and advance,
          */
@@ -300,7 +339,7 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Se
     {
         rc = DBGFR3AddrFromSelInfoOff(pState->pVM->pUVM, &Addr, pSelInfo, uAddress);
         if (RT_SUCCESS(rc))
-            rc = DBGFR3AsSymbolByAddr(pState->pVM->pUVM, pState->hAs, &Addr, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL,
+            rc = DBGFR3AsSymbolByAddr(pState->pVM->pUVM, pState->hDbgAs, &Addr, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL,
                                       &off, &Sym, NULL /*phMod*/);
     }
     else
@@ -506,28 +545,39 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
                     fFlags & DBGF_DISAS_FLAGS_NO_SYMBOLS ? NULL : dbgfR3DisasGetSymbol,
                     &SelInfo);
 
+#ifdef VBOX_WITH_RAW_MODE
+    /*
+     * Patched instruction annotations.
+     */
+    char szPatchAnnotations[256];
+    szPatchAnnotations[0] = '\0';
+    if (fFlags & DBGF_DISAS_FLAGS_ANNOTATE_PATCHED)
+        PATMR3DbgAnnotatePatchedInstruction(pVM, GCPtr, State.Cpu.cbInstr, szPatchAnnotations, sizeof(szPatchAnnotations));
+#endif
+
     /*
      * Print it to the user specified buffer.
      */
+    size_t cch;
     if (fFlags & DBGF_DISAS_FLAGS_NO_BYTES)
     {
         if (fFlags & DBGF_DISAS_FLAGS_NO_ADDRESS)
-            RTStrPrintf(pszOutput, cbOutput, "%s", szBuf);
+            cch = RTStrPrintf(pszOutput, cbOutput, "%s", szBuf);
         else if (fRealModeAddress)
-            RTStrPrintf(pszOutput, cbOutput, "%04x:%04x  %s", Sel, (unsigned)GCPtr, szBuf);
+            cch = RTStrPrintf(pszOutput, cbOutput, "%04x:%04x  %s", Sel, (unsigned)GCPtr, szBuf);
         else if (Sel == DBGF_SEL_FLAT)
         {
             if (enmMode >= PGMMODE_AMD64)
-                RTStrPrintf(pszOutput, cbOutput, "%RGv  %s", GCPtr, szBuf);
+                cch = RTStrPrintf(pszOutput, cbOutput, "%RGv  %s", GCPtr, szBuf);
             else
-                RTStrPrintf(pszOutput, cbOutput, "%08RX32  %s", (uint32_t)GCPtr, szBuf);
+                cch = RTStrPrintf(pszOutput, cbOutput, "%08RX32  %s", (uint32_t)GCPtr, szBuf);
         }
         else
         {
             if (enmMode >= PGMMODE_AMD64)
-                RTStrPrintf(pszOutput, cbOutput, "%04x:%RGv  %s", Sel, GCPtr, szBuf);
+                cch = RTStrPrintf(pszOutput, cbOutput, "%04x:%RGv  %s", Sel, GCPtr, szBuf);
             else
-                RTStrPrintf(pszOutput, cbOutput, "%04x:%08RX32  %s", Sel, (uint32_t)GCPtr, szBuf);
+                cch = RTStrPrintf(pszOutput, cbOutput, "%04x:%08RX32  %s", Sel, (uint32_t)GCPtr, szBuf);
         }
     }
     else
@@ -535,41 +585,46 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
         uint32_t        cbInstr  = State.Cpu.cbInstr;
         uint8_t const  *pabInstr = State.Cpu.abInstr;
         if (fFlags & DBGF_DISAS_FLAGS_NO_ADDRESS)
-            RTStrPrintf(pszOutput, cbOutput, "%.*Rhxs%*s %s",
-                        cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
-                        szBuf);
+            cch = RTStrPrintf(pszOutput, cbOutput, "%.*Rhxs%*s %s",
+                              cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
+                              szBuf);
         else if (fRealModeAddress)
-            RTStrPrintf(pszOutput, cbOutput, "%04x:%04x %.*Rhxs%*s %s",
-                        Sel, (unsigned)GCPtr,
-                        cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
-                        szBuf);
+            cch = RTStrPrintf(pszOutput, cbOutput, "%04x:%04x %.*Rhxs%*s %s",
+                              Sel, (unsigned)GCPtr,
+                              cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
+                              szBuf);
         else if (Sel == DBGF_SEL_FLAT)
         {
             if (enmMode >= PGMMODE_AMD64)
-                RTStrPrintf(pszOutput, cbOutput, "%RGv %.*Rhxs%*s %s",
-                            GCPtr,
-                            cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
-                            szBuf);
+                cch = RTStrPrintf(pszOutput, cbOutput, "%RGv %.*Rhxs%*s %s",
+                                  GCPtr,
+                                  cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
+                                  szBuf);
             else
-                RTStrPrintf(pszOutput, cbOutput, "%08RX32 %.*Rhxs%*s %s",
-                            (uint32_t)GCPtr,
-                            cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
-                            szBuf);
+                cch = RTStrPrintf(pszOutput, cbOutput, "%08RX32 %.*Rhxs%*s %s",
+                                  (uint32_t)GCPtr,
+                                  cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
+                                  szBuf);
         }
         else
         {
             if (enmMode >= PGMMODE_AMD64)
-                RTStrPrintf(pszOutput, cbOutput, "%04x:%RGv %.*Rhxs%*s %s",
-                            Sel, GCPtr,
-                            cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
-                            szBuf);
+                cch = RTStrPrintf(pszOutput, cbOutput, "%04x:%RGv %.*Rhxs%*s %s",
+                                  Sel, GCPtr,
+                                  cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
+                                  szBuf);
             else
-                RTStrPrintf(pszOutput, cbOutput, "%04x:%08RX32 %.*Rhxs%*s %s",
-                            Sel, (uint32_t)GCPtr,
-                            cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
-                            szBuf);
+                cch = RTStrPrintf(pszOutput, cbOutput, "%04x:%08RX32 %.*Rhxs%*s %s",
+                                  Sel, (uint32_t)GCPtr,
+                                  cbInstr, pabInstr, cbInstr < 8 ? (8 - cbInstr) * 3 : 0, "",
+                                  szBuf);
         }
     }
+
+#ifdef VBOX_WITH_RAW_MODE
+    if (szPatchAnnotations[0] && cch + 1 < cbOutput)
+        RTStrPrintf(pszOutput + cch, cbOutput - cch, "  ; %s", szPatchAnnotations);
+#endif
 
     if (pcbInstr)
         *pcbInstr = State.Cpu.cbInstr;
