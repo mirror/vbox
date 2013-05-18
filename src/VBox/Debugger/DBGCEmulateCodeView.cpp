@@ -1148,7 +1148,7 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         {
             int rc = DBGCCmdHlpEval(pCmdHlp, &pDbgc->SourcePos, "%%(%Dv)", &pDbgc->SourcePos);
             if (RT_FAILURE(rc))
-                return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid address or address type. (rc=%d)\n", rc);
+                return DBGCCmdHlpPrintf(pCmdHlp, "error: Invalid address or address type. (rc=%d)\n", rc);
             break;
         }
         default: AssertFailed(); break;
@@ -1166,16 +1166,16 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
 
         case DBGCVAR_RANGE_ELEMENTS:
             if (pDbgc->SourcePos.u64Range > 2048)
-                return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Too many lines requested. Max is 2048 lines.\n");
+                return DBGCCmdHlpPrintf(pCmdHlp, "error: Too many lines requested. Max is 2048 lines.\n");
             break;
 
         case DBGCVAR_RANGE_BYTES:
             if (pDbgc->SourcePos.u64Range > 65536)
-                return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The requested range is too big. Max is 64KB.\n");
+                return DBGCCmdHlpPrintf(pCmdHlp, "error: The requested range is too big. Max is 64KB.\n");
             break;
 
         default:
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "internal error: Unknown range type %d.\n", pDbgc->SourcePos.enmRangeType);
+            return DBGCCmdHlpPrintf(pCmdHlp, "internal error: Unknown range type %d.\n", pDbgc->SourcePos.enmRangeType);
     }
 
     /*
@@ -1207,7 +1207,7 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                 fFirst = true;
             if (fFirst)
             {
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "[%s @ %d]\n", Line.szFilename, Line.uLineNo);
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "[%s @ %d]\n", Line.szFilename, Line.uLineNo);
                 if (RT_FAILURE(rc))
                     return rc;
             }
@@ -1242,13 +1242,13 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                         if (cBefore-- <= 0)
                             break;
 
-                        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "         %4d: %s\n", Line.uLineNo - cBefore - 1, szLine);
+                        rc = DBGCCmdHlpPrintf(pCmdHlp, "         %4d: %s\n", Line.uLineNo - cBefore - 1, szLine);
                         szLine[0] = '\0';
                         fgets(szLine, sizeof(szLine), phFile);
                         cLines++;
                     }
                     /* print the actual line */
-                    rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%08llx %4d: %s\n", Line.Address, Line.uLineNo, szLine);
+                    rc = DBGCCmdHlpPrintf(pCmdHlp, "%08llx %4d: %s\n", Line.Address, Line.uLineNo, szLine);
                 }
                 fclose(phFile);
                 if (RT_FAILURE(rc))
@@ -1256,7 +1256,7 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                 fFirst = false;
             }
             else
-                return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Warning: couldn't open source file '%s'\n", Line.szFilename);
+                return DBGCCmdHlpPrintf(pCmdHlp, "Warning: couldn't open source file '%s'\n", Line.szFilename);
 
             LinePrev = Line;
         }
@@ -1545,7 +1545,7 @@ static DECLCALLBACK(int) dbgcCmdRegTerse(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 
     PDBGC   pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
     pDbgc->fRegTerse = !pDbgc->fRegTerse;
-    return pCmdHlp->pfnPrintf(pCmdHlp, NULL, pDbgc->fRegTerse ? "info: Terse register info.\n" : "info: Verbose register info.\n");
+    return DBGCCmdHlpPrintf(pCmdHlp, pDbgc->fRegTerse ? "info: Terse register info.\n" : "info: Verbose register info.\n");
 }
 
 
@@ -1583,7 +1583,7 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
                               || (!pCmd->pszCmd[1] && pDbgc->fRegCtxGuest);
     rc = DBGFR3StackWalkBegin(pUVM, pDbgc->idCpu, fGuest ? DBGFCODETYPE_GUEST : DBGFCODETYPE_HYPER, &pFirstFrame);
     if (RT_FAILURE(rc))
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Failed to begin stack walk, rc=%Rrc\n", rc);
+        return DBGCCmdHlpPrintf(pCmdHlp, "Failed to begin stack walk, rc=%Rrc\n", rc);
 
     /*
      * Print header.
@@ -1599,7 +1599,7 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
         {
             if (fCurBitFlags != fBitFlags)
                 pCmdHlp->pfnPrintf(pCmdHlp,  NULL, "SS:BP     Ret SS:BP Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP / Symbol [line]\n");
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04RX16:%04RX16 %04RX16:%04RX16 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "%04RX16:%04RX16 %04RX16:%04RX16 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
                                     pFrame->AddrFrame.Sel,
                                     (uint16_t)pFrame->AddrFrame.off,
                                     pFrame->AddrReturnFrame.Sel,
@@ -1615,7 +1615,7 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
         {
             if (fCurBitFlags != fBitFlags)
                 pCmdHlp->pfnPrintf(pCmdHlp,  NULL, "EBP      Ret EBP  Ret CS:EIP    Arg0     Arg1     Arg2     Arg3     CS:EIP / Symbol [line]\n");
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%08RX32 %08RX32 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "%08RX32 %08RX32 %04RX32:%08RX32 %08RX32 %08RX32 %08RX32 %08RX32",
                                     (uint32_t)pFrame->AddrFrame.off,
                                     (uint32_t)pFrame->AddrReturnFrame.off,
                                     (uint32_t)pFrame->AddrReturnPC.Sel,
@@ -1629,7 +1629,7 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
         {
             if (fCurBitFlags != fBitFlags)
                 pCmdHlp->pfnPrintf(pCmdHlp,  NULL, "RBP              Ret SS:RBP            Ret RIP          CS:RIP / Symbol [line]\n");
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%016RX64 %04RX16:%016RX64 %016RX64",
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "%016RX64 %04RX16:%016RX64 %016RX64",
                                     (uint64_t)pFrame->AddrFrame.off,
                                     pFrame->AddrReturnFrame.Sel,
                                     (uint64_t)pFrame->AddrReturnFrame.off,
@@ -1649,16 +1649,16 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM 
         {
             RTGCINTPTR offDisp = pFrame->AddrPC.FlatPtr - pFrame->pSymPC->Value; /** @todo this isn't 100% correct for segmented stuff. */
             if (offDisp > 0)
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " %s+%llx", pFrame->pSymPC->szName, (int64_t)offDisp);
+                rc = DBGCCmdHlpPrintf(pCmdHlp, " %s+%llx", pFrame->pSymPC->szName, (int64_t)offDisp);
             else if (offDisp < 0)
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " %s-%llx", pFrame->pSymPC->szName, -(int64_t)offDisp);
+                rc = DBGCCmdHlpPrintf(pCmdHlp, " %s-%llx", pFrame->pSymPC->szName, -(int64_t)offDisp);
             else
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " %s", pFrame->pSymPC->szName);
+                rc = DBGCCmdHlpPrintf(pCmdHlp, " %s", pFrame->pSymPC->szName);
         }
         if (RT_SUCCESS(rc) && pFrame->pLinePC)
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " [%s @ 0i%d]", pFrame->pLinePC->szFilename, pFrame->pLinePC->uLineNo);
+            rc = DBGCCmdHlpPrintf(pCmdHlp, " [%s @ 0i%d]", pFrame->pLinePC->szFilename, pFrame->pLinePC->uLineNo);
         if (RT_SUCCESS(rc))
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\n");
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
         if (RT_FAILURE(rc))
             break;
 
@@ -1706,7 +1706,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
         uint32_t u32Base = X86DESC_BASE(pDesc);
         uint32_t cbLimit = X86DESC_LIMIT_G(pDesc);
 
-        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d L=%d%s\n",
+        rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d L=%d%s\n",
                                 iEntry, s_apszTypes[pDesc->Gen.u4Type], u32Base, cbLimit,
                                 pDesc->Gen.u2Dpl, pszPresent, pszAccessed, pszGranularity, pszBig,
                                 pDesc->Gen.u1Available, pDesc->Gen.u1Long, pszHyper);
@@ -1745,7 +1745,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
             case X86_SEL_TYPE_SYS_286_INT_GATE:
             case X86_SEL_TYPE_SYS_286_TRAP_GATE:
             case X86_SEL_TYPE_SYS_TASK_GATE:
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s %.8Rhxs   DPL=%d %s%s\n",
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s %.8Rhxs   DPL=%d %s%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], pDesc,
                                         pDesc->Gen.u2Dpl, pszPresent, pszHyper);
                 break;
@@ -1761,7 +1761,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                 uint64_t u32Base = X86DESC64_BASE(pDesc);
                 uint32_t cbLimit = X86DESC_LIMIT_G(pDesc);
 
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Bas=%016RX64 Lim=%08x DPL=%d %s %s %s %sAVL=%d R=%d%s\n",
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Bas=%016RX64 Lim=%08x DPL=%d %s %s %s %sAVL=%d R=%d%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], u32Base, cbLimit,
                                         pDesc->Gen.u2Dpl, pszPresent, pszBusy, pszLong, pszBig,
                                         pDesc->Gen.u1Available, pDesc->Gen.u1Long | (pDesc->Gen.u1DefBig << 1),
@@ -1779,7 +1779,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                 uint64_t off =    pDesc->au16[0]
                                 | ((uint64_t)pDesc->au16[3] << 16)
                                 | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s %s=%d%s\n",
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s %s=%d%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
                                         pDesc->Gen.u2Dpl, pszPresent, pszCountOf, cParams, pszHyper);
                 if (pfDblEntry)
@@ -1794,7 +1794,7 @@ static int dbgcCmdDumpDTWorker64(PDBGCCMDHLP pCmdHlp, PCX86DESC64 pDesc, unsigne
                 uint64_t off =    pDesc->au16[0]
                                 | ((uint64_t)pDesc->au16[3] << 16)
                                 | ((uint64_t)pDesc->Gen.u32BaseHigh3 << 32);
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s%s\n",
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%016RX64     DPL=%d %s%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
                                         pDesc->Gen.u2Dpl, pszPresent, pszHyper);
                 if (pfDblEntry)
@@ -1857,7 +1857,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
         if (pDesc->Gen.u1Granularity)
             cbLimit <<= PAGE_SHIFT;
 
-        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d L=%d%s\n",
+        rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d L=%d%s\n",
                                 iEntry, s_apszTypes[pDesc->Gen.u4Type], u32Base, cbLimit,
                                 pDesc->Gen.u2Dpl, pszPresent, pszAccessed, pszGranularity, pszBig,
                                 pDesc->Gen.u1Available, pDesc->Gen.u1Long, pszHyper);
@@ -1890,7 +1890,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
             case X86_SEL_TYPE_SYS_UNDEFINED2:
             case X86_SEL_TYPE_SYS_UNDEFINED4:
             case X86_SEL_TYPE_SYS_UNDEFINED3:
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s %.8Rhxs   DPL=%d %s%s\n",
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s %.8Rhxs   DPL=%d %s%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], pDesc,
                                         pDesc->Gen.u2Dpl, pszPresent, pszHyper);
                 break;
@@ -1911,7 +1911,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
                 if (pDesc->Gen.u1Granularity)
                     cbLimit <<= PAGE_SHIFT;
 
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d R=%d%s\n",
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Bas=%08x Lim=%08x DPL=%d %s %s %s %s AVL=%d R=%d%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], u32Base, cbLimit,
                                         pDesc->Gen.u2Dpl, pszPresent, pszBusy, pszGranularity, pszBig,
                                         pDesc->Gen.u1Available, pDesc->Gen.u1Long | (pDesc->Gen.u1DefBig << 1),
@@ -1921,7 +1921,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
 
             case X86_SEL_TYPE_SYS_TASK_GATE:
             {
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s TSS=%04x                  DPL=%d %s%s\n",
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s TSS=%04x                  DPL=%d %s%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], pDesc->au16[1],
                                         pDesc->Gen.u2Dpl, pszPresent, pszHyper);
                 break;
@@ -1934,7 +1934,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
                 const char *pszCountOf = pDesc->Gen.u4Type & RT_BIT(3) ? "DC" : "WC";
                 RTSEL sel = pDesc->au16[1];
                 uint32_t off = pDesc->au16[0] | ((uint32_t)pDesc->au16[3] << 16);
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%08x     DPL=%d %s %s=%d%s\n",
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%08x     DPL=%d %s %s=%d%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
                                         pDesc->Gen.u2Dpl, pszPresent, pszCountOf, cParams, pszHyper);
                 break;
@@ -1947,7 +1947,7 @@ static int dbgcCmdDumpDTWorker32(PDBGCCMDHLP pCmdHlp, PCX86DESC pDesc, unsigned 
             {
                 RTSEL sel = pDesc->au16[1];
                 uint32_t off = pDesc->au16[0] | ((uint32_t)pDesc->au16[3] << 16);
-                rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %s Sel:Off=%04x:%08x     DPL=%d %s%s\n",
+                rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %s Sel:Off=%04x:%08x     DPL=%d %s%s\n",
                                         iEntry, s_apszTypes[pDesc->Gen.u4Type], sel, off,
                                         pDesc->Gen.u2Dpl, pszPresent, pszHyper);
                 break;
@@ -2037,7 +2037,7 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
                 if (RT_SUCCESS(rc))
                 {
                     if (SelInfo.fFlags & DBGFSELINFO_FLAGS_REAL_MODE)
-                        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x RealM   Bas=%04x     Lim=%04x\n",
+                        rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x RealM   Bas=%04x     Lim=%04x\n",
                                                 Sel, (unsigned)SelInfo.GCPtrBase, (unsigned)SelInfo.cbLimit);
                     else if (   fAll
                              || fSingle
@@ -2056,7 +2056,7 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
                 }
                 else
                 {
-                    rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %Rrc\n", Sel, rc);
+                    rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %Rrc\n", Sel, rc);
                     if (!fAll)
                         return rc;
                 }
@@ -2068,7 +2068,7 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM
             }
         }
         else
-            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: %llx is out of bounds\n", u64);
+            DBGCCmdHlpPrintf(pCmdHlp, "error: %llx is out of bounds\n", u64);
     }
 
     return VINF_SUCCESS;
@@ -2101,7 +2101,7 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
         case CPUMMODE_PROTECTED:    cbEntry = sizeof(X86DESC); break;
         case CPUMMODE_LONG:         cbEntry = sizeof(X86DESC64); break;
         default:
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid CPU mode %d.\n", enmMode);
+            return DBGCCmdHlpPrintf(pCmdHlp, "error: Invalid CPU mode %d.\n", enmMode);
     }
 
     bool fAll = pCmd->pszCmd[2] == 'a';
@@ -2143,7 +2143,7 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
                 } u;
                 if (iInt * cbEntry  + (cbEntry - 1) > cbLimit)
                 {
-                    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x not within the IDT\n", (unsigned)iInt);
+                    DBGCCmdHlpPrintf(pCmdHlp, "%04x not within the IDT\n", (unsigned)iInt);
                     if (!fAll && !fSingle)
                         return VINF_SUCCESS;
                 }
@@ -2161,7 +2161,7 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
                 switch (enmMode)
                 {
                     case CPUMMODE_REAL:
-                        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%04x %RTfp16\n", (unsigned)iInt, u.Real);
+                        rc = DBGCCmdHlpPrintf(pCmdHlp, "%04x %RTfp16\n", (unsigned)iInt, u.Real);
                         /** @todo resolve 16:16 IDTE to a symbol */
                         break;
                     case CPUMMODE_PROTECTED:
@@ -2182,7 +2182,7 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
             }
         }
         else
-            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: %llx is out of bounds (max 256)\n", paArgs[i].u.u64Number);
+            DBGCCmdHlpPrintf(pCmdHlp, "error: %llx is out of bounds (max 256)\n", paArgs[i].u.u64Number);
     }
 
     return VINF_SUCCESS;
@@ -2249,18 +2249,18 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
 
         case DBGCVAR_RANGE_ELEMENTS:
             if (pDbgc->DumpPos.u64Range > 2048)
-                return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Too many elements requested. Max is 2048 elements.\n");
+                return DBGCCmdHlpPrintf(pCmdHlp, "error: Too many elements requested. Max is 2048 elements.\n");
             pDbgc->DumpPos.enmRangeType = DBGCVAR_RANGE_BYTES;
             pDbgc->DumpPos.u64Range     = (cbElement ? cbElement : 1) * pDbgc->DumpPos.u64Range;
             break;
 
         case DBGCVAR_RANGE_BYTES:
             if (pDbgc->DumpPos.u64Range > 65536)
-                return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The requested range is too big. Max is 64KB.\n");
+                return DBGCCmdHlpPrintf(pCmdHlp, "error: The requested range is too big. Max is 64KB.\n");
             break;
 
         default:
-            return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "internal error: Unknown range type %d.\n", pDbgc->DumpPos.enmRangeType);
+            return DBGCCmdHlpPrintf(pCmdHlp, "internal error: Unknown range type %d.\n", pDbgc->DumpPos.enmRangeType);
     }
 
     pDbgc->pLastPos = &pDbgc->DumpPos;
@@ -2283,7 +2283,7 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
         if (RT_FAILURE(rc))
         {
             if (u8Prev && u8Prev != '\n')
-                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\n");
+                DBGCCmdHlpPrintf(pCmdHlp, "\n");
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Reading memory at %DV.\n", &pDbgc->DumpPos);
         }
 
@@ -2293,7 +2293,7 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
         memset(&achBuffer[cb], 0, sizeof(achBuffer) - cb);
         if (!fAscii)
         {
-            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%DV:", &pDbgc->DumpPos);
+            DBGCCmdHlpPrintf(pCmdHlp, "%DV:", &pDbgc->DumpPos);
             unsigned i;
             for (i = 0; i < cb; i += cbElement)
             {
@@ -2302,10 +2302,10 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
                     pszSpace = "-";
                 switch (cbElement)
                 {
-                    case 1: pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%s%02x",    pszSpace, *(uint8_t *)&achBuffer[i]); break;
-                    case 2: pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%s%04x",    pszSpace, *(uint16_t *)&achBuffer[i]); break;
-                    case 4: pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%s%08x",    pszSpace, *(uint32_t *)&achBuffer[i]); break;
-                    case 8: pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%s%016llx", pszSpace, *(uint64_t *)&achBuffer[i]); break;
+                    case 1: DBGCCmdHlpPrintf(pCmdHlp, "%s%02x",    pszSpace, *(uint8_t *)&achBuffer[i]); break;
+                    case 2: DBGCCmdHlpPrintf(pCmdHlp, "%s%04x",    pszSpace, *(uint16_t *)&achBuffer[i]); break;
+                    case 4: DBGCCmdHlpPrintf(pCmdHlp, "%s%08x",    pszSpace, *(uint32_t *)&achBuffer[i]); break;
+                    case 8: DBGCCmdHlpPrintf(pCmdHlp, "%s%016llx", pszSpace, *(uint64_t *)&achBuffer[i]); break;
                 }
             }
 
@@ -2313,18 +2313,18 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
             if (pDbgc->cbDumpElement == 1)
             {
                 while (i++ < sizeof(achBuffer))
-                    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "   ");
-                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "  ");
+                    DBGCCmdHlpPrintf(pCmdHlp, "   ");
+                DBGCCmdHlpPrintf(pCmdHlp, "  ");
                 for (i = 0; i < cb; i += cbElement)
                 {
                     uint8_t u8 = *(uint8_t *)&achBuffer[i];
                     if (RT_C_IS_PRINT(u8) && u8 < 127 && u8 >= 32)
-                        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%c", u8);
+                        DBGCCmdHlpPrintf(pCmdHlp, "%c", u8);
                     else
-                        pCmdHlp->pfnPrintf(pCmdHlp, NULL, ".");
+                        DBGCCmdHlpPrintf(pCmdHlp, ".");
                 }
             }
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\n");
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
         }
         else
         {
@@ -2333,7 +2333,7 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
              * Only printables + '\t' and '\n' are printed.
              */
             if (!u8Prev)
-                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%DV:\n", &pDbgc->DumpPos);
+                DBGCCmdHlpPrintf(pCmdHlp, "%DV:\n", &pDbgc->DumpPos);
             uint8_t u8 = '\0';
             unsigned i;
             for (i = 0; i < cb; i++)
@@ -2344,16 +2344,16 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
                     && (    (RT_C_IS_PRINT(u8) && u8 >= 32)
                         ||  u8 == '\t'
                         ||  u8 == '\n'))
-                    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%c", u8);
+                    DBGCCmdHlpPrintf(pCmdHlp, "%c", u8);
                 else if (!u8)
                     break;
                 else
-                    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\\x%x", u8);
+                    DBGCCmdHlpPrintf(pCmdHlp, "\\x%x", u8);
             }
             if (u8 == '\0')
                 cb = cbLeft = i + 1;
             if (cbLeft - cb <= 0 && u8Prev != '\n')
-                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\n");
+                DBGCCmdHlpPrintf(pCmdHlp, "\n");
         }
 
         /*
@@ -3705,7 +3705,7 @@ static int dbgcCmdWorkerSearchMemResume(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PDBGCVAR
      */
     if (!pDbgc->cbSearch)
     {
-        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Error: No previous search\n");
+        DBGCCmdHlpPrintf(pCmdHlp, "Error: No previous search\n");
         return VERR_DBGC_COMMAND_FAILED;
     }
 
@@ -3816,7 +3816,7 @@ static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
     /* check that the parser did what it's supposed to do. */
     //if (    cArgs <= 2
     //    &&  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
-    //    return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "parser error\n");
+    //    return DBGCCmdHlpPrintf(pCmdHlp, "parser error\n");
 
     /*
      * Repeat previous search?
@@ -3866,7 +3866,7 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArg)
         if (RT_FAILURE(rc))
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3AsSymbolByName(,,%s,)\n", pArg->u.pszString);
 
-        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%RTptr %s\n", Symbol.Value, Symbol.szName);
+        rc = DBGCCmdHlpPrintf(pCmdHlp, "%RTptr %s\n", Symbol.Value, Symbol.szName);
     }
     else
     {
@@ -3886,15 +3886,15 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArg)
             return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3ASymbolByAddr(,,%RGv,,)\n", AddrVar.u.GCFlat);
 
         if (!offDisp)
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%DV %s", &AddrVar, Symbol.szName);
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "%DV %s", &AddrVar, Symbol.szName);
         else if (offDisp > 0)
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%DV %s + %RGv", &AddrVar, Symbol.szName, offDisp);
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "%DV %s + %RGv", &AddrVar, Symbol.szName, offDisp);
         else
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "%DV %s - %RGv", &AddrVar, Symbol.szName, -offDisp);
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "%DV %s - %RGv", &AddrVar, Symbol.szName, -offDisp);
         if ((RTGCINTPTR)Symbol.cb > -offDisp)
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " LB %RGv\n", Symbol.cb + offDisp);
+            rc = DBGCCmdHlpPrintf(pCmdHlp, " LB %RGv\n", Symbol.cb + offDisp);
         else
-            rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "\n");
+            rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
     }
 
     return rc;
