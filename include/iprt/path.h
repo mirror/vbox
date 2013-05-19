@@ -772,6 +772,20 @@ RTDECL(void) RTPathSplitFree(PRTPATHSPLIT pSplit);
 RTDECL(int) RTPathSplitReassemble(PRTPATHSPLIT pSplit, uint32_t fFlags, char *pszDstPath, size_t cbDstPath);
 
 /**
+ * Checks if the two paths leads to the file system object.
+ *
+ * If the objects exist, we'll query attributes for them.  If that's not
+ * conclusive (some OSes) or one of them doesn't exist, we'll use a combination
+ * of RTPathAbs and RTPathCompare to determine the result.
+ *
+ * @returns true, false, or VERR_FILENAME_TOO_LONG.
+ * @param   pszPath1            The first path.
+ * @param   pszPath2            The seoncd path.
+ */
+RTDECL(int) RTPathIsSame(const char *pszPath1, const char *pszPath2);
+
+
+/**
  * Compares two paths.
  *
  * The comparison takes platform-dependent details into account,
