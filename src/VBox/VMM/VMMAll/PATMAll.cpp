@@ -49,25 +49,29 @@
  */
 VMM_INT_DECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
 {
-    bool fPatchCode = PATMIsPatchGCAddr(pVM, pCtxCore->eip);
     Assert(!HMIsEnabled(pVM));
 
     /*
      * Currently we don't bother to check whether PATM is enabled or not.
      * For all cases where it isn't, IOPL will be safe and IF will be set.
      */
-    register uint32_t efl = pCtxCore->eflags.u32;
+    uint32_t efl = pCtxCore->eflags.u32;
     CTXSUFF(pVM->patm.s.pGCState)->uVMFlags = efl & PATM_VIRTUAL_FLAGS_MASK;
-    AssertMsg((efl & X86_EFL_IF) || PATMShouldUseRawMode(pVM, (RTRCPTR)pCtxCore->eip), ("X86_EFL_IF is clear and PATM is disabled! (eip=%RRv eflags=%08x fPATM=%d pPATMGC=%RRv-%RRv\n", pCtxCore->eip, pCtxCore->eflags.u32, PATMIsEnabled(pVM), pVM->patm.s.pPatchMemGC, pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem));
 
-    AssertReleaseMsg(CTXSUFF(pVM->patm.s.pGCState)->fPIF || fPatchCode, ("fPIF=%d eip=%RRv\n", CTXSUFF(pVM->patm.s.pGCState)->fPIF, pCtxCore->eip));
+    AssertMsg((efl & X86_EFL_IF) || PATMShouldUseRawMode(pVM, (RTRCPTR)pCtxCore->eip),
+              ("X86_EFL_IF is clear and PATM is disabled! (eip=%RRv eflags=%08x fPATM=%d pPATMGC=%RRv-%RRv\n",
+               pCtxCore->eip, pCtxCore->eflags.u32, PATMIsEnabled(pVM), pVM->patm.s.pPatchMemGC,
+               pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem));
+
+    AssertReleaseMsg(CTXSUFF(pVM->patm.s.pGCState)->fPIF || PATMIsPatchGCAddr(pVM, pCtxCore->eip),
+                     ("fPIF=%d eip=%RRv\n", pVM->patm.s.CTXSUFF(pGCState)->fPIF, pCtxCore->eip));
 
     efl &= ~PATM_VIRTUAL_FLAGS_MASK;
     efl |= X86_EFL_IF;
     pCtxCore->eflags.u32 = efl;
 
 #ifdef IN_RING3
-#ifdef PATM_EMULATE_SYSENTER
+# ifdef PATM_EMULATE_SYSENTER
     PCPUMCTX pCtx;
 
     /* Check if the sysenter handler has changed. */
@@ -102,7 +106,7 @@ VMM_INT_DECL(void) PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore)
         pVM->patm.s.pfnSysEnterPatchGC = 0;
         pVM->patm.s.pfnSysEnterGC = 0;
     }
-#endif
+# endif /* PATM_EMULATE_SYSENTER */
 #endif
 }
 
@@ -123,10 +127,11 @@ VMM_INT_DECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
 {
     Assert(!HMIsEnabled(pVM));
     bool fPatchCode = PATMIsPatchGCAddr(pVM, pCtxCore->eip);
+
     /*
      * We will only be called if PATMRawEnter was previously called.
      */
-    register uint32_t efl = pCtxCore->eflags.u32;
+    uint32_t efl = pCtxCore->eflags.u32;
     efl = (efl & ~PATM_VIRTUAL_FLAGS_MASK) | (CTXSUFF(pVM->patm.s.pGCState)->uVMFlags & PATM_VIRTUAL_FLAGS_MASK);
     pCtxCore->eflags.u32 = efl;
     CTXSUFF(pVM->patm.s.pGCState)->uVMFlags = X86_EFL_IF;
@@ -135,12 +140,11 @@ VMM_INT_DECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
     AssertReleaseMsg(CTXSUFF(pVM->patm.s.pGCState)->fPIF || fPatchCode || RT_FAILURE(rawRC), ("fPIF=%d eip=%RRv rc=%Rrc\n", CTXSUFF(pVM->patm.s.pGCState)->fPIF, pCtxCore->eip, rawRC));
 
 #ifdef IN_RING3
-    if (    (efl & X86_EFL_IF)
-        &&  fPatchCode
-       )
+    if (   (efl & X86_EFL_IF)
+        && fPatchCode)
     {
-        if (    rawRC < VINF_PATM_LEAVE_RC_FIRST
-            ||  rawRC > VINF_PATM_LEAVE_RC_LAST)
+        if (   rawRC < VINF_PATM_LEAVE_RC_FIRST
+            || rawRC > VINF_PATM_LEAVE_RC_LAST)
         {
             /*
              * Golden rules:
@@ -181,9 +185,13 @@ VMM_INT_DECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
             }
         }
     }
-#else /* !IN_RING3 */
-    AssertMsgFailed(("!IN_RING3"));
-#endif  /* !IN_RING3 */
+#else  /* !IN_RING3 */
+    /*
+     * When leaving raw-mode state while IN_RC, it's generally for interpreting
+     * a single original guest instruction.
+     */
+    AssertMsg(!fPatchCode, ("eip=%RRv\n", pCtxCore->eip));
+#endif /* !IN_RING3 */
 
     if (!fPatchCode)
     {

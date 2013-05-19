@@ -1,6 +1,9 @@
 /* $Id$ */
 /** @file
  * DBGF - Debugger Facility, Symbol Management.
+ *
+ * This is obsolete code that's only sticking around till we've moved the linux map
+ * file reader into IPRT.
  */
 
 /*
@@ -19,14 +22,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_DBGF
-#if defined(RT_OS_WINDOWS) && 0 //defined(DEBUG_bird) // enabled this is you want to debug win32 guests, the hypervisor of EFI.
-# include <Windows.h>
-# define _IMAGEHLP64
-# include <DbgHelp.h>
-# define HAVE_DBGHELP /* if doing guest stuff, this can be nice. */
-#endif
-/** @todo Only use DBGHELP for reading modules since it doesn't do all we want (relocations), or is way to slow in some cases (add symbol)! */
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/hm.h>
@@ -42,29 +37,16 @@
 #include <iprt/ctype.h>
 #include <iprt/env.h>
 #include <iprt/param.h>
-#ifndef HAVE_DBGHELP
-# include <iprt/avl.h>
-# include <iprt/string.h>
-#endif
+#include <iprt/avl.h>
+#include <iprt/string.h>
 
 #include <stdio.h> /* for fopen(). */ /** @todo use iprt/stream.h! */
 #include <stdlib.h>
 
 
 /*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-#ifdef HAVE_DBGHELP
-static DECLCALLBACK(int) dbgfR3EnumModules(PVM pVM, const char *pszFilename, const char *pszName,
-                                           RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg);
-static int win32Error(PVM pVM);
-#endif
-
-
-/*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-#ifndef HAVE_DBGHELP
 /* later */
 typedef struct DBGFMOD *PDBGFMOD;
 
@@ -95,15 +77,12 @@ typedef struct DBGFSYMSPACE
     PDBGFSYM                pSym;
 } DBGFSYMSPACE, *PDBGFSYMSPACE;
 
-#endif
 
 
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#ifndef HAVE_DBGHELP
-
 /**
  * Initializes the symbol tree.
  */
@@ -219,8 +198,6 @@ static PDBGFSYM dbgfR3SymbolGetName(PVM pVM, const char *pszSymbol)
     return NULL;
 }
 
-#endif
-
 
 /**
  * Strips all kind of spaces from head and tail of a string.
@@ -255,13 +232,11 @@ int dbgfR3SymInit(PVM pVM)
     pVM->dbgf.s.pSymbolSpace = (PRTSTRSPACE)MMR3HeapAllocZ(pVM, MM_TAG_DBGF_SYMBOL, sizeof(*pVM->dbgf.s.pSymbolSpace));
     AssertReturn(pVM->dbgf.s.pSymbolSpace, VERR_NO_MEMORY);
 
-#ifndef HAVE_DBGHELP
     /* modules & lines later */
     rc = dbgfR3SymbolInit(pVM);
     if (RT_FAILURE(rc))
         return rc;
     pVM->dbgf.s.fSymInited = true;
-#endif
 
     /** @todo symbol search path setup. */
 
@@ -403,53 +378,8 @@ int dbgfR3SymLazyInit(PVM pVM)
 {
     if (pVM->dbgf.s.fSymInited)
         return VINF_SUCCESS;
-#ifdef HAVE_DBGHELP
-    if (SymInitialize(pVM, NULL, FALSE))
-    {
-        pVM->dbgf.s.fSymInited = true;
-        SymSetOptions(SYMOPT_LOAD_LINES | SYMOPT_AUTO_PUBLICS | SYMOPT_ALLOW_ABSOLUTE_SYMBOLS);
-
-        /*
-         * Enumerate all modules loaded by PDM and add them to the symbol database.
-         */
-        PDMR3LdrEnumModules(pVM, dbgfR3EnumModules, NULL);
-        return VINF_SUCCESS;
-    }
-    return win32Error(pVM);
-#else
-    return VINF_SUCCESS;
-#endif
-}
-
-
-#ifdef HAVE_DBGHELP
-/**
- * Module enumeration callback function.
- *
- * @returns VBox status.
- *          Failure will stop the search and return the return code.
- *          Warnings will be ignored and not returned.
- * @param   pVM             Pointer to the VM.
- * @param   pszFilename     Module filename.
- * @param   pszName         Module name. (short and unique)
- * @param   ImageBase       Address where to executable image is loaded.
- * @param   cbImage         Size of the executable image.
- * @param   fRC             Set if guest context, clear if host context.
- * @param   pvArg           User argument.
- */
-static DECLCALLBACK(int) dbgfR3EnumModules(PVM pVM, const char *pszFilename, const char *pszName,
-                                           RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg)
-{
-    DWORD64 LoadedImageBase = SymLoadModule64(pVM, NULL, (char *)(void *)pszFilename,
-                                                (char *)(void *)pszName, ImageBase, (DWORD)cbImage);
-    if (!LoadedImageBase)
-        Log(("SymLoadModule64(,,%s,,) -> lasterr=%d\n", pszFilename, GetLastError()));
-    else
-        Log(("Loaded debuginfo for %s - %s %llx\n", pszName, pszFilename, LoadedImageBase));
-
     return VINF_SUCCESS;
 }
-#endif
 
 
 /**
@@ -460,16 +390,9 @@ static DECLCALLBACK(int) dbgfR3EnumModules(PVM pVM, const char *pszFilename, con
  */
 int dbgfR3SymTerm(PVM pVM)
 {
-#ifdef HAVE_DBGHELP
-    if (pVM->dbgf.s.fSymInited)
-        SymCleanup(pVM);
-    pVM->dbgf.s.fSymInited = false;
-    return VINF_SUCCESS;
-#else
     pVM->dbgf.s.SymbolTree = 0; /* MM cleans up allocations */
     pVM->dbgf.s.fSymInited = false;
     return VINF_SUCCESS;
-#endif
 }
 
 
@@ -738,21 +661,7 @@ VMMR3DECL(int) DBGFR3ModuleLoad(PUVM pUVM, const char *pszFilename, RTGCUINTPTR 
              */
             if (pszName)
             {
-                #ifdef HAVE_DBGHELP
-                /** @todo arg! checkout the inserting of modules and then loading them again.... Or just the module representation.... */
-                DWORD64 ImageBase = SymLoadModule64(pVM, NULL, (char *)(void *)szFoundFile, (char *)(void *)pszName, ModuleAddress, cbImage);
-                if (!ImageBase)
-                    ImageBase = SymLoadModule64(pVM, NULL, (char *)(void *)pszName, (char *)(void *)pszName, ModuleAddress, cbImage);
-                if (ImageBase)
-                {
-                    AssertMsg(ModuleAddress == 0 || ModuleAddress == ImageBase, ("ModuleAddres=%RGv ImageBase=%llx\n", ModuleAddress, ImageBase));
-                    ModuleAddress = ImageBase;
-                }
-                else
-                    rc = win32Error(pVM);
-                #else
                 rc = VERR_NOT_IMPLEMENTED;
-                #endif
             }
             if (RT_SUCCESS(rc))
             {
@@ -774,10 +683,6 @@ VMMR3DECL(int) DBGFR3ModuleLoad(PUVM pUVM, const char *pszFilename, RTGCUINTPTR 
                     case SYMFILETYPE_PDB:
                     case SYMFILETYPE_DBG:
                     case SYMFILETYPE_MZ:
-                #ifdef HAVE_DBGHELP
-                        /* done it all above! */
-                        break;
-                #endif
                     case SYMFILETYPE_LD_MAP:
                     case SYMFILETYPE_MS_MAP:
                     case SYMFILETYPE_OBJDUMP:
@@ -798,38 +703,6 @@ VMMR3DECL(int) DBGFR3ModuleLoad(PUVM pUVM, const char *pszFilename, RTGCUINTPTR 
         fclose(pFile);
     }
     return rc;
-}
-
-
-/**
- * Interface used by PDMR3LdrRelocate for telling us that a GC module has been relocated.
- *
- * @param   pVM             Pointer to the VM.
- * @param   OldImageBase    The old image base.
- * @param   NewImageBase    The new image base.
- * @param   cbImage         The image size.
- * @param   pszFilename     The image filename.
- * @param   pszName         The module name.
- */
-VMMR3_INT_DECL(void) DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINTPTR NewImageBase, RTGCUINTPTR cbImage,
-                                          const char *pszFilename, const char *pszName)
-{
-#ifdef HAVE_DBGHELP
-    if (pVM->dbgf.s.fSymInited)
-    {
-        if (!SymUnloadModule64(pVM, OldImageBase))
-            Log(("SymUnloadModule64(,%RGv) failed, lasterr=%d\n", OldImageBase, GetLastError()));
-
-        DWORD ImageSize = (DWORD)cbImage; Assert(ImageSize == cbImage);
-        DWORD64 LoadedImageBase = SymLoadModule64(pVM, NULL, (char *)(void *)pszFilename, (char *)(void *)pszName, NewImageBase, ImageSize);
-        if (!LoadedImageBase)
-            Log(("SymLoadModule64(,,%s,,) -> lasterr=%d (relocate)\n", pszFilename, GetLastError()));
-        else
-            Log(("Reloaded debuginfo for %s - %s %llx\n", pszName, pszFilename, LoadedImageBase));
-    }
-#else
-    NOREF(pVM); NOREF(OldImageBase); NOREF(NewImageBase); NOREF(cbImage); NOREF(pszFilename); NOREF(pszName);
-#endif
 }
 
 
@@ -865,14 +738,8 @@ VMMR3_INT_DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINT
             return rc;
     }
 
-#ifdef HAVE_DBGHELP
-    if (SymAddSymbol(pVM, ModuleAddress, (char *)(void *)pszSymbol, SymbolAddress, cbSymbol, 0))
-        return VINF_SUCCESS;
-    return win32Error(pVM);
-#else
     NOREF(ModuleAddress); /** @todo module lookup. */
     return dbgfR3SymbolInsert(pVM, pszSymbol, SymbolAddress, cbSymbol, NULL);
-#endif
 }
 
 
@@ -900,24 +767,6 @@ VMMR3_INT_DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR
     /*
      * Look it up.
      */
-#ifdef HAVE_DBGHELP
-    char                achBuffer[sizeof(IMAGEHLP_SYMBOL64) + DBGF_SYMBOL_NAME_LENGTH * sizeof(TCHAR) + sizeof(ULONG64)];
-    PIMAGEHLP_SYMBOL64  pSym = (PIMAGEHLP_SYMBOL64)&achBuffer[0];
-    pSym->SizeOfStruct      = sizeof(IMAGEHLP_SYMBOL64);
-    pSym->MaxNameLength     = DBGF_SYMBOL_NAME_LENGTH;
-
-    if (SymGetSymFromAddr64(pVM, Address, (PDWORD64)poffDisplacement, pSym))
-    {
-        pSymbol->Value  = (RTGCUINTPTR)pSym->Address;
-        pSymbol->cb     = pSym->Size;
-        pSymbol->fFlags = pSym->Flags;
-        strcpy(pSymbol->szName, pSym->Name);
-        return VINF_SUCCESS;
-    }
-    //return win32Error(pVM);
-
-#else
-
     PDBGFSYM pSym = dbgfR3SymbolGetAddr(pVM, Address);
     if (pSym)
     {
@@ -930,8 +779,6 @@ VMMR3_INT_DECL(int) DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR
             *poffDisplacement = Address - pSymbol->Value;
         return VINF_SUCCESS;
     }
-
-#endif
 
     /*
      * Try PDM.
@@ -989,23 +836,6 @@ VMMR3_INT_DECL(int) DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMB
     /*
      * Look it up.
      */
-#ifdef HAVE_DBGHELP
-    char            achBuffer[sizeof(IMAGEHLP_SYMBOL64) + DBGF_SYMBOL_NAME_LENGTH * sizeof(TCHAR) + sizeof(ULONG64)];
-    PIMAGEHLP_SYMBOL64 pSym = (PIMAGEHLP_SYMBOL64)&achBuffer[0];
-    pSym->SizeOfStruct      = sizeof(IMAGEHLP_SYMBOL64);
-    pSym->MaxNameLength     = DBGF_SYMBOL_NAME_LENGTH;
-
-    if (SymGetSymFromName64(pVM, (char *)(void *)pszSymbol, pSym))
-    {
-        pSymbol->Value  = (RTGCUINTPTR)pSym->Address;
-        pSymbol->cb     = pSym->Size;
-        pSymbol->fFlags = pSym->Flags;
-        strcpy(pSymbol->szName, pSym->Name);
-        return VINF_SUCCESS;
-    }
-    return win32Error(pVM);
-#else
-
     PDBGFSYM pSym = dbgfR3SymbolGetName(pVM, pszSymbol);
     if (pSym)
     {
@@ -1018,123 +848,5 @@ VMMR3_INT_DECL(int) DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMB
     }
 
     return VERR_SYMBOL_NOT_FOUND;
-#endif
 }
-
-
-/**
- * Find line by address (nearest).
- *
- * @returns VBox status.
- * @param   pUVM                The user mode VM handle.
- * @param   Address             Address.
- * @param   poffDisplacement    Where to store the line displacement from Address.
- * @param   pLine               Where to store the line info.
- */
-VMMR3DECL(int) DBGFR3LineByAddr(PUVM pUVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFLINE pLine)
-{
-    /*
-     * Lazy init.
-     */
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
-    PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    if (!pVM->dbgf.s.fSymInited)
-    {
-        int rc = dbgfR3SymLazyInit(pVM);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    /*
-     * Look it up.
-     */
-#ifdef HAVE_DBGHELP
-    IMAGEHLP_LINE64     Line = {0};
-    DWORD               off = 0;
-    Line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
-    if (SymGetLineFromAddr64(pVM, Address, &off, &Line))
-    {
-        if (poffDisplacement)
-            *poffDisplacement = (long)off;
-        pLine->Address      = (RTGCUINTPTR)Line.Address;
-        pLine->uLineNo      = Line.LineNumber;
-        pLine->szFilename[0] = '\0';
-        strncat(pLine->szFilename, Line.FileName, sizeof(pLine->szFilename));
-        return VINF_SUCCESS;
-    }
-    return win32Error(pVM);
-#else
-    NOREF(pVM); NOREF(Address); NOREF(poffDisplacement); NOREF(pLine);
-    return VERR_NOT_IMPLEMENTED;
-#endif
-}
-
-
-/**
- * Duplicates a line.
- *
- * @returns VBox status code.
- * @param   pUVM            The user mode VM handle.
- * @param   pLine           The line to duplicate.
- */
-static PDBGFLINE dbgfR3LineDup(PUVM pUVM, PCDBGFLINE pLine)
-{
-    size_t cb = strlen(pLine->szFilename) + RT_OFFSETOF(DBGFLINE, szFilename[1]);
-    PDBGFLINE pDup = (PDBGFLINE)MMR3HeapAllocU(pUVM, MM_TAG_DBGF_LINE_DUP, cb);
-    if (pDup)
-        memcpy(pDup, pLine, cb);
-    return pDup;
-}
-
-
-/**
- * Find line by address (nearest), allocate return buffer.
- *
- * @returns Pointer to the line. Must be freed using DBGFR3LineFree().
- * @returns NULL if the line was not found or if we're out of memory.
- * @param   pUVM                The user mode VM handle.
- * @param   Address             Address.
- * @param   poffDisplacement    Where to store the line displacement from Address.
- */
-VMMR3DECL(PDBGFLINE) DBGFR3LineByAddrAlloc(PUVM pUVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement)
-{
-    DBGFLINE Line;
-    int rc = DBGFR3LineByAddr(pUVM, Address, poffDisplacement, &Line);
-    if (RT_FAILURE(rc))
-        return NULL;
-    return dbgfR3LineDup(pUVM, &Line);
-}
-
-
-/**
- * Frees a line returned by DBGFR3LineByAddressAlloc().
- *
- * @param   pLine           Pointer to the line.
- */
-VMMR3_INT_DECL(void) DBGFR3LineFree(PDBGFLINE pLine)
-{
-    if (pLine)
-        MMR3HeapFree(pLine);
-}
-
-
-#ifdef HAVE_DBGHELP
-
-//static BOOL CALLBACK win32EnumModulesCallback(PSTR ModuleName, DWORD64 BaseOfDll, PVOID UserContext)
-//{
-//    Log(("dbg: module: %08llx %s\n", ModuleName, BaseOfDll));
-//    return TRUE;
-//}
-
-static int win32Error(PVM pVM)
-{
-    int rc = GetLastError();
-    Log(("Lasterror=%d\n", rc));
-
-    //SymEnumerateModules64(pVM, win32EnumModulesCallback, NULL);
-
-    return VERR_GENERAL_FAILURE;
-}
-#endif
 

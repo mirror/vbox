@@ -3695,7 +3695,7 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
                                 rc = RTDbgModSymbolAdd(pThis->hCnt, pSubProgram->pszName, iSeg, offSeg,
                                                        pSubProgram->PcRange.uHighAddress - pSubProgram->PcRange.uLowAddress,
                                                        0 /*fFlags*/, NULL /*piOrdinal*/);
-                                AssertRC(rc);
+                                AssertMsg(RT_SUCCESS(rc) || rc == VERR_DBG_DUPLICATE_SYMBOL, ("%Rrc\n", rc));
                             }
                             else
                                 Log5(("rtDbgModDwarfLinkAddressToSegOffset failed: %Rrc\n", rc));

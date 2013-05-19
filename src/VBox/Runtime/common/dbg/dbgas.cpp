@@ -1695,20 +1695,7 @@ RTDECL(int) RTDbgAsLineAdd(RTDBGAS hDbgAs, const char *pszFile, uint32_t uLineNo
 RT_EXPORT_SYMBOL(RTDbgAsLineAdd);
 
 
-/**
- * Query a line number by address.
- *
- * @returns IPRT status code. See RTDbgModSymbolAddrA for more specific ones.
- * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
- * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
- *
- * @param   hDbgAs          The address space handle.
- * @param   Addr            The address which closest symbol is requested.
- * @param   poffDisp        Where to return the distance between the line
- *                          number and address.
- * @param   pLine           Where to return the line number information.
- */
-RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE pLine)
+RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE pLine, PRTDBGMOD phMod)
 {
     /*
      * Validate input and resolve the address.
@@ -1728,28 +1715,21 @@ RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp
      */
     int rc = RTDbgModLineByAddr(hMod, iSeg, offSeg, poffDisp, pLine);
     if (RT_SUCCESS(rc))
+    {
         rtDbgAsAdjustLineAddress(pLine, hMod, MapAddr, iSeg);
-    RTDbgModRelease(hMod);
+        if (phMod)
+            *phMod = hMod;
+        else
+            RTDbgModRelease(hMod);
+    }
+    else
+        RTDbgModRelease(hMod);
     return rc;
 }
 RT_EXPORT_SYMBOL(RTDbgAsLineByAddr);
 
 
-/**
- * Query a line number by address.
- *
- * @returns IPRT status code. See RTDbgModSymbolAddrA for more specific ones.
- * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
- * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
- *
- * @param   hDbgAs          The address space handle.
- * @param   Addr            The address which closest symbol is requested.
- * @param   poffDisp        Where to return the distance between the line
- *                          number and address.
- * @param   ppLine          Where to return the pointer to the allocated line
- *                          number info. Always set. Free with RTDbgLineFree.
- */
-RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE *ppLine)
+RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE *ppLine, PRTDBGMOD phMod)
 {
     /*
      * Validate input and resolve the address.
@@ -1769,8 +1749,15 @@ RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDis
      */
     int rc = RTDbgModLineByAddrA(hMod, iSeg, offSeg, poffDisp, ppLine);
     if (RT_SUCCESS(rc))
+    {
         rtDbgAsAdjustLineAddress(*ppLine, hMod, MapAddr, iSeg);
-    RTDbgModRelease(hMod);
+        if (phMod)
+            *phMod = hMod;
+        else
+            RTDbgModRelease(hMod);
+    }
+    else
+        RTDbgModRelease(hMod);
     return rc;
 }
 RT_EXPORT_SYMBOL(RTDbgAsLineByAddrA);

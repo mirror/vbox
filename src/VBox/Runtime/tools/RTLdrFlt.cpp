@@ -387,7 +387,7 @@ int main(int argc, char **argv)
                      */
                     RTDBGLINE   Line;
                     RTINTPTR    offLine;
-                    rc = RTDbgAsLineByAddr(hDbgAs, u64Address, &offLine, &Line);
+                    rc = RTDbgAsLineByAddr(hDbgAs, u64Address, &offLine, &Line, NULL);
                     if (RT_SUCCESS(rc))
                         RTStrmPrintf(pOutput, " %Rbn(%u)", Line.szFilename, Line.uLineNo);
 
