@@ -281,6 +281,7 @@ DECLINLINE(void) selmLoadHiddenSRegFromShadowDesc(PCPUMSELREG pSReg, PCX86DESC p
     pSReg->u32Limit       = X86DESC_LIMIT_G(pShwDesc);
     pSReg->u64Base        = X86DESC_BASE(pShwDesc);
     pSReg->ValidSel       = pSReg->Sel;
+/** @todo VBOX_WITH_RAW_RING1 */
     if (pSReg->Attr.n.u1Available)
         pSReg->ValidSel  &= ~(RTSEL)1;
     pSReg->fFlags         = CPUMSELREG_FLAGS_VALID;
@@ -302,6 +303,7 @@ DECLINLINE(void) selmLoadHiddenSRegFromGuestDesc(PVMCPU pVCpu, PCPUMSELREG pSReg
     pSReg->u32Limit       = X86DESC_LIMIT_G(pGstDesc);
     pSReg->u64Base        = X86DESC_BASE(pGstDesc);
     pSReg->ValidSel       = pSReg->Sel;
+/** @todo VBOX_WITH_RAW_RING1 */
     if ((pSReg->ValidSel & 1) && CPUMIsGuestInRawMode(pVCpu))
         pSReg->ValidSel  &= ~(RTSEL)1;
     pSReg->fFlags         = CPUMSELREG_FLAGS_VALID;
