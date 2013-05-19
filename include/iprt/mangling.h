@@ -967,6 +967,7 @@
 # define RTPathGetMode                                  RT_MANGLER(RTPathGetMode)
 # define RTPathHasExt                                   RT_MANGLER(RTPathHasExt)
 # define RTPathHasPath                                  RT_MANGLER(RTPathHasPath)
+# define RTPathIsSame                                   RT_MANGLER(RTPathIsSame)
 # define RTPathJoin                                     RT_MANGLER(RTPathJoin)
 # define RTPathJoinA                                    RT_MANGLER(RTPathJoinA)
 # define RTPathJoinEx                                   RT_MANGLER(RTPathJoinEx)
