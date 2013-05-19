@@ -59,6 +59,15 @@ typedef struct RTDBGMODLDR
 typedef RTDBGMODLDR *PRTDBGMODLDR;
 
 
+
+/** @interface_method_impl{RTDBGMODVTIMG,pfnGetFormat} */
+static DECLCALLBACK(RTLDRFMT) rtDbgModLdr_GetFormat(PRTDBGMODINT pMod)
+{
+    PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    return RTLdrGetFormat(pThis->hLdrMod);
+}
+
+
 /** @interface_method_impl{RTDBGMODVTIMG,pfnUnmapPart} */
 static DECLCALLBACK(int) rtDbgModLdr_UnmapPart(PRTDBGMODINT pMod, size_t cb, void const **ppvMap)
 {
@@ -157,10 +166,10 @@ static DECLCALLBACK(int) rtDbgModLdr_Close(PRTDBGMODINT pMod)
 
 
 /** @interface_method_impl{RTDBGMODVTIMG,pfnTryOpen} */
-static DECLCALLBACK(int) rtDbgModLdr_TryOpen(PRTDBGMODINT pMod)
+static DECLCALLBACK(int) rtDbgModLdr_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch)
 {
     RTLDRMOD hLdrMod;
-    int rc = RTLdrOpen(pMod->pszImgFile, RTLDR_O_FOR_DEBUG, RTLDRARCH_WHATEVER, &hLdrMod);
+    int rc = RTLdrOpen(pMod->pszImgFile, RTLDR_O_FOR_DEBUG, enmArch, &hLdrMod);
     if (RT_SUCCESS(rc))
     {
         rc = rtDbgModLdrOpenFromHandle(pMod, hLdrMod);
@@ -187,6 +196,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
     /*.pfnRvaToSegOffset= */            rtDbgModLdr_RvaToSegOffset,
     /*.pfnMapPart = */                  rtDbgModLdr_MapPart,
     /*.pfnUnmapPart = */                rtDbgModLdr_UnmapPart,
+    /*.pfnGetFormat = */                rtDbgModLdr_GetFormat,
 
     /*.u32EndMagic = */                 RTDBGMODVTIMG_MAGIC
 };

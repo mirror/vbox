@@ -881,6 +881,46 @@ int rtldrkLdrOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTL
             pNewMod->Core.eState   = LDR_STATE_OPENED;
             pNewMod->Core.pOps     = &g_rtkldrOps;
             pNewMod->Core.pReader  = pReader;
+            switch (pMod->enmFmt)
+            {
+                case KLDRFMT_NATIVE:    pNewMod->Core.enmFormat = RTLDRFMT_NATIVE; break;
+                case KLDRFMT_AOUT:      pNewMod->Core.enmFormat = RTLDRFMT_AOUT; break;
+                case KLDRFMT_ELF:       pNewMod->Core.enmFormat = RTLDRFMT_ELF; break;
+                case KLDRFMT_LX:        pNewMod->Core.enmFormat = RTLDRFMT_LX; break;
+                case KLDRFMT_MACHO:     pNewMod->Core.enmFormat = RTLDRFMT_MACHO; break;
+                case KLDRFMT_PE:        pNewMod->Core.enmFormat = RTLDRFMT_PE; break;
+                default:
+                    AssertMsgFailed(("%d\n", pMod->enmFmt));
+                    pNewMod->Core.enmFormat = RTLDRFMT_NATIVE;
+                    break;
+            }
+            switch (pMod->enmType)
+            {
+                case KLDRTYPE_OBJECT:                       pNewMod->Core.enmType = RTLDRTYPE_OBJECT; break;
+                case KLDRTYPE_EXECUTABLE_FIXED:             pNewMod->Core.enmType = RTLDRTYPE_EXECUTABLE_FIXED; break;
+                case KLDRTYPE_EXECUTABLE_RELOCATABLE:       pNewMod->Core.enmType = RTLDRTYPE_EXECUTABLE_RELOCATABLE; break;
+                case KLDRTYPE_EXECUTABLE_PIC:               pNewMod->Core.enmType = RTLDRTYPE_EXECUTABLE_PIC; break;
+                case KLDRTYPE_SHARED_LIBRARY_FIXED:         pNewMod->Core.enmType = RTLDRTYPE_SHARED_LIBRARY_FIXED; break;
+                case KLDRTYPE_SHARED_LIBRARY_RELOCATABLE:   pNewMod->Core.enmType = RTLDRTYPE_SHARED_LIBRARY_RELOCATABLE; break;
+                case KLDRTYPE_SHARED_LIBRARY_PIC:           pNewMod->Core.enmType = RTLDRTYPE_SHARED_LIBRARY_PIC; break;
+                case KLDRTYPE_FORWARDER_DLL:                pNewMod->Core.enmType = RTLDRTYPE_FORWARDER_DLL; break;
+                case KLDRTYPE_CORE:                         pNewMod->Core.enmType = RTLDRTYPE_CORE; break;
+                case KLDRTYPE_DEBUG_INFO:                   pNewMod->Core.enmType = RTLDRTYPE_DEBUG_INFO; break;
+                default:
+                    AssertMsgFailed(("%d\n", pMod->enmType));
+                    pNewMod->Core.enmType = RTLDRTYPE_OBJECT;
+                    break;
+            }
+            switch (pMod->enmEndian)
+            {
+                case KLDRENDIAN_LITTLE:     pNewMod->Core.enmEndian = RTLDRENDIAN_LITTLE; break;
+                case KLDRENDIAN_BIG:        pNewMod->Core.enmEndian = RTLDRENDIAN_BIG; break;
+                case KLDRENDIAN_NA:         pNewMod->Core.enmEndian = RTLDRENDIAN_NA; break;
+                default:
+                    AssertMsgFailed(("%d\n", pMod->enmEndian));
+                    pNewMod->Core.enmEndian = RTLDRENDIAN_NA;
+                    break;
+            }
             pNewMod->pMod          = pMod;
             *phLdrMod = &pNewMod->Core;
 

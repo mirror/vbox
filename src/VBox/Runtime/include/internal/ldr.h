@@ -422,6 +422,12 @@ typedef struct RTLDRMODINTERNAL
     PCRTLDROPS              pOps;
     /** Pointer to the reader instance. This is NULL for native image. */
     PRTLDRREADER            pReader;
+    /** Image format.  */
+    RTLDRFMT                enmFormat;
+    /** Image type.  */
+    RTLDRTYPE               enmType;
+    /** Image endianness.  */
+    RTLDRENDIAN             enmEndian;
 } RTLDRMODINTERNAL;
 
 

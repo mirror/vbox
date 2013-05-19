@@ -439,6 +439,19 @@ DECL_HIDDEN_CONST(RTDBGMODVTDBG) const g_rtDbgModVtDbgDeferred =
  */
 
 
+/** @interface_method_impl{RTDBGMODVTIMG,pfnGetFormat} */
+static DECLCALLBACK(RTLDRFMT) rtDbgModDeferredImg_GetFormat(PRTDBGMODINT pMod)
+{
+    RTLDRFMT enmFmt;
+    int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
+    if (RT_SUCCESS(rc))
+        enmFmt = pMod->pImgVt->pfnGetFormat(pMod);
+    else
+        enmFmt = RTLDRFMT_INVALID;
+    return enmFmt;
+}
+
+
 /** @interface_method_impl{RTDBGMODVTIMG,pfnUnmapPart} */
 static DECLCALLBACK(int) rtDbgModDeferredImg_UnmapPart(PRTDBGMODINT pMod, size_t cb, void const **ppvMap)
 {
@@ -529,8 +542,9 @@ static DECLCALLBACK(int) rtDbgModDeferredImg_Close(PRTDBGMODINT pMod)
 
 
 /** @interface_method_impl{RTDBGMODVTIMG,pfnTryOpen} */
-static DECLCALLBACK(int) rtDbgModDeferredImg_TryOpen(PRTDBGMODINT pMod)
+static DECLCALLBACK(int) rtDbgModDeferredImg_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch)
 {
+    NOREF(enmArch);
     return rtDbgModDeferredDoIt(pMod, true /*fForceRetry*/);
 }
 
@@ -551,6 +565,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgDeferred =
     /*.pfnRvaToSegOffset = */           rtDbgModDeferredImg_RvaToSegOffset,
     /*.pfnMapPart = */                  rtDbgModDeferredImg_MapPart,
     /*.pfnUnmapPart = */                rtDbgModDeferredImg_UnmapPart,
+    /*.pfnGetFormat = */                rtDbgModDeferredImg_GetFormat,
 
     /*.u32EndMagic = */                 RTDBGMODVTIMG_MAGIC
 };

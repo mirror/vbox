@@ -122,6 +122,8 @@ DECLHIDDEN(RTSTRCACHE)  g_hDbgModStrCache = NIL_RTSTRCACHE;
 
 
 
+
+
 /**
  * Cleanup debug info interpreter globals.
  *
@@ -360,146 +362,6 @@ RTDECL(int) RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR cb
 RT_EXPORT_SYMBOL(RTDbgModCreate);
 
 
-RTDECL(int) RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTDBGCFG hDbgCfg)
-{
-    /*
-     * Input validation and lazy initialization.
-     */
-    AssertPtrReturn(phDbgMod, VERR_INVALID_POINTER);
-    *phDbgMod = NIL_RTDBGMOD;
-    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
-    AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
-    AssertPtrNullReturn(pszName, VERR_INVALID_POINTER);
-
-    int rc = rtDbgModLazyInit();
-    if (RT_FAILURE(rc))
-        return rc;
-
-    if (!pszName)
-        pszName = RTPathFilenameEx(pszFilename, RTPATH_STR_F_STYLE_DOS);
-
-    /*
-     * Allocate a new module instance.
-     */
-    PRTDBGMODINT pDbgMod = (PRTDBGMODINT)RTMemAllocZ(sizeof(*pDbgMod));
-    if (!pDbgMod)
-        return VERR_NO_MEMORY;
-    pDbgMod->u32Magic = RTDBGMOD_MAGIC;
-    pDbgMod->cRefs = 1;
-    rc = RTCritSectInit(&pDbgMod->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        pDbgMod->pszName = RTStrCacheEnterLower(g_hDbgModStrCache, pszName);
-        if (pDbgMod->pszName)
-        {
-            pDbgMod->pszImgFile = RTStrCacheEnter(g_hDbgModStrCache, pszFilename);
-            if (pDbgMod->pszImgFile)
-            {
-                RTStrCacheRetain(pDbgMod->pszImgFile);
-                pDbgMod->pszImgFileSpecified = pDbgMod->pszImgFile;
-
-                /*
-                 * Find an image reader which groks the file.
-                 */
-                rc = RTSemRWRequestRead(g_hDbgModRWSem, RT_INDEFINITE_WAIT);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = VERR_DBG_NO_MATCHING_INTERPRETER;
-                    PRTDBGMODREGIMG pImg;
-                    for (pImg = g_pImgHead; pImg; pImg = pImg->pNext)
-                    {
-                        pDbgMod->pImgVt    = pImg->pVt;
-                        pDbgMod->pvImgPriv = NULL;
-                        rc = pImg->pVt->pfnTryOpen(pDbgMod);
-                        if (RT_SUCCESS(rc))
-                        {
-                            /*
-                             * Find a debug info interpreter.
-                             */
-                            rc = VERR_DBG_NO_MATCHING_INTERPRETER;
-                            for (PRTDBGMODREGDBG pDbg = g_pDbgHead; pDbg; pDbg = pDbg->pNext)
-                            {
-                                pDbgMod->pDbgVt = pDbg->pVt;
-                                pDbgMod->pvDbgPriv = NULL;
-                                rc = pDbg->pVt->pfnTryOpen(pDbgMod);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    /*
-                                     * That's it!
-                                     */
-                                    ASMAtomicIncU32(&pDbg->cUsers);
-                                    ASMAtomicIncU32(&pImg->cUsers);
-                                    RTSemRWReleaseRead(g_hDbgModRWSem);
-
-                                    *phDbgMod = pDbgMod;
-                                    return rc;
-                                }
-                            }
-
-                            /*
-                             * Image detected, but found no debug info we were
-                             * able to understand.
-                             */
-                            /** @todo Fall back on exported symbols! */
-                            pDbgMod->pImgVt->pfnClose(pDbgMod);
-                            break;
-                        }
-                    }
-
-                    /*
-                     * Could it be a file containing raw debug info?
-                     */
-                    if (!pImg)
-                    {
-                        pDbgMod->pImgVt     = NULL;
-                        pDbgMod->pvImgPriv  = NULL;
-                        pDbgMod->pszDbgFile = pDbgMod->pszImgFile;
-                        pDbgMod->pszImgFile = NULL;
-
-                        for (PRTDBGMODREGDBG pDbg = g_pDbgHead; pDbg; pDbg = pDbg->pNext)
-                        {
-                            pDbgMod->pDbgVt = pDbg->pVt;
-                            pDbgMod->pvDbgPriv = NULL;
-                            rc = pDbg->pVt->pfnTryOpen(pDbgMod);
-                            if (RT_SUCCESS(rc))
-                            {
-                                /*
-                                 * That's it!
-                                 */
-                                ASMAtomicIncU32(&pDbg->cUsers);
-                                RTSemRWReleaseRead(g_hDbgModRWSem);
-
-                                *phDbgMod = pDbgMod;
-                                return rc;
-                            }
-                        }
-
-                        pDbgMod->pszImgFile = pDbgMod->pszDbgFile;
-                        pDbgMod->pszDbgFile = NULL;
-                    }
-
-                    /* bail out */
-                    RTSemRWReleaseRead(g_hDbgModRWSem);
-                }
-                RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszImgFileSpecified);
-                RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszImgFile);
-            }
-            else
-                rc = VERR_NO_STR_MEMORY;
-            RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszName);
-        }
-        else
-            rc = VERR_NO_STR_MEMORY;
-        RTCritSectDelete(&pDbgMod->CritSect);
-    }
-
-    RTMemFree(pDbgMod);
-    return rc;
-}
-RT_EXPORT_SYMBOL(RTDbgModCreateFromImage);
-
-
-
 RTDECL(int) RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName,
                                   RTUINTPTR uSubtrahend, RTDBGCFG hDbgCfg)
 {
@@ -583,12 +445,11 @@ RT_EXPORT_SYMBOL(RTDbgModCreateFromMap);
 
 
 
-
 /*
  *
- *  P E   I M A G E
- *  P E   I M A G E
- *  P E   I M A G E
+ *  E x e c u t a b l e   I m a g e   F i l e s
+ *  E x e c u t a b l e   I m a g e   F i l e s
+ *  E x e c u t a b l e   I m a g e   F i l e s
  *
  */
 
@@ -803,6 +664,259 @@ static int rtDbgModOpenDebugInfoExternalToImage(PRTDBGMODINT pDbgMod, RTDBGCFG h
 }
 
 
+/** @callback_method_impl{FNRTDBGCFGOPEN} */
+static DECLCALLBACK(int) rtDbgModExtDbgInfoOpenCallback2(RTDBGCFG hDbgCfg, const char *pszFilename, void *pvUser1, void *pvUser2)
+{
+    PRTDBGMODINT        pDbgMod   = (PRTDBGMODINT)pvUser1;
+    NOREF(pvUser2); /** @todo image matching string or smth. */
+
+    Assert(!pDbgMod->pDbgVt);
+    Assert(!pDbgMod->pvDbgPriv);
+    Assert(!pDbgMod->pszDbgFile);
+
+    /*
+     * Set the debug file name and try possible interpreters.
+     */
+    pDbgMod->pszDbgFile = RTStrCacheEnter(g_hDbgModStrCache, pszFilename);
+
+    int rc = RTSemRWRequestRead(g_hDbgModRWSem, RT_INDEFINITE_WAIT);
+    if (RT_SUCCESS(rc))
+    {
+        for (PRTDBGMODREGDBG pDbg = g_pDbgHead; pDbg; pDbg = pDbg->pNext)
+        {
+            pDbgMod->pDbgVt    = pDbg->pVt;
+            pDbgMod->pvDbgPriv = NULL;
+            rc = pDbg->pVt->pfnTryOpen(pDbgMod);
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Got it!
+                 */
+                ASMAtomicIncU32(&pDbg->cUsers);
+                RTSemRWReleaseRead(g_hDbgModRWSem);
+                return VINF_CALLBACK_RETURN;
+            }
+            pDbgMod->pDbgVt    = NULL;
+            Assert(pDbgMod->pvDbgPriv == NULL);
+        }
+    }
+
+    /* No joy. */
+    RTSemRWReleaseRead(g_hDbgModRWSem);
+    RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszDbgFile);
+    pDbgMod->pszDbgFile = NULL;
+    return rc;
+}
+
+
+/**
+ * Opens external debug info that is not listed in the image.
+ *
+ * @returns IPRT status code
+ * @param   pDbgMod             The debug module.
+ * @param   hDbgCfg             The debug config.  Can be NIL.
+ */
+static int rtDbgModOpenDebugInfoExternalToImage2(PRTDBGMODINT pDbgMod, RTDBGCFG hDbgCfg)
+{
+    int rc;
+    Assert(!pDbgMod->pDbgVt);
+    Assert(pDbgMod->pImgVt);
+
+    /*
+     * Figure out what to search for based on the image format.
+     */
+    const char *pszzExts = NULL;
+    RTLDRFMT    enmFmt = pDbgMod->pImgVt->pfnGetFormat(pDbgMod);
+    switch (enmFmt)
+    {
+        case RTLDRFMT_MACHO:
+        {
+            rc = RTDbgCfgOpenDsymBundle(hDbgCfg, pDbgMod->pszImgFile, NULL /**@todo pUuid*/,
+                                        rtDbgModExtDbgInfoOpenCallback2, pDbgMod, NULL /*pvUser2*/);
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+            break;
+        }
+
+#if 0 /* Will be links in the image if these apply. .map readers for PE or ELF we don't have. */
+        case RTLDRFMT_ELF:
+            pszzExts = ".debug\0.dwo\0";
+            break;
+        case RTLDRFMT_PE:
+            pszzExts = ".map\0";
+            break;
+#endif
+#if 0 /* Haven't implemented .sym or .map file readers for OS/2 yet. */
+        case RTLDRFMT_LX:
+            pszzExts = ".sym\0.map\0";
+            break;
+#endif
+        default:
+            break;
+    }
+
+    NOREF(pszzExts);
+#if 0 /* Later */
+    if (pszzExts)
+    {
+
+    }
+#endif
+
+    LogFlow(("rtDbgModOpenDebugInfoExternalToImage2: rc=%Rrc\n", rc));
+    return VERR_NOT_FOUND;
+}
+
+
+RTDECL(int) RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName,
+                                    RTLDRARCH enmArch, RTDBGCFG hDbgCfg)
+{
+    /*
+     * Input validation and lazy initialization.
+     */
+    AssertPtrReturn(phDbgMod, VERR_INVALID_POINTER);
+    *phDbgMod = NIL_RTDBGMOD;
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pszName, VERR_INVALID_POINTER);
+    AssertReturn(enmArch > RTLDRARCH_INVALID && enmArch < RTLDRARCH_END, VERR_INVALID_PARAMETER);
+
+    int rc = rtDbgModLazyInit();
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (!pszName)
+        pszName = RTPathFilenameEx(pszFilename, RTPATH_STR_F_STYLE_DOS);
+
+    /*
+     * Allocate a new module instance.
+     */
+    PRTDBGMODINT pDbgMod = (PRTDBGMODINT)RTMemAllocZ(sizeof(*pDbgMod));
+    if (!pDbgMod)
+        return VERR_NO_MEMORY;
+    pDbgMod->u32Magic = RTDBGMOD_MAGIC;
+    pDbgMod->cRefs = 1;
+    rc = RTCritSectInit(&pDbgMod->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        pDbgMod->pszName = RTStrCacheEnterLower(g_hDbgModStrCache, pszName);
+        if (pDbgMod->pszName)
+        {
+            pDbgMod->pszImgFile = RTStrCacheEnter(g_hDbgModStrCache, pszFilename);
+            if (pDbgMod->pszImgFile)
+            {
+                RTStrCacheRetain(pDbgMod->pszImgFile);
+                pDbgMod->pszImgFileSpecified = pDbgMod->pszImgFile;
+
+                /*
+                 * Find an image reader which groks the file.
+                 */
+                rc = RTSemRWRequestRead(g_hDbgModRWSem, RT_INDEFINITE_WAIT);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = VERR_DBG_NO_MATCHING_INTERPRETER;
+                    PRTDBGMODREGIMG pImg;
+                    for (pImg = g_pImgHead; pImg; pImg = pImg->pNext)
+                    {
+                        pDbgMod->pImgVt    = pImg->pVt;
+                        pDbgMod->pvImgPriv = NULL;
+                        /** @todo need to specify some arch stuff here. */
+                        rc = pImg->pVt->pfnTryOpen(pDbgMod, enmArch);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /*
+                             * Image detected, but found no debug info we were
+                             * able to understand.
+                             */
+                            /** @todo some generic way of matching image and debug info, flexible signature
+                             *        of some kind. Apple uses UUIDs, microsoft uses a UUID+age or a
+                             *        size+timestamp, and GNU a CRC32 (last time I checked). */
+                            rc = rtDbgModOpenDebugInfoExternalToImage(pDbgMod, hDbgCfg);
+                            if (RT_FAILURE(rc))
+                                rc = rtDbgModOpenDebugInfoInsideImage(pDbgMod);
+                            if (RT_FAILURE(rc))
+                                rc = rtDbgModOpenDebugInfoExternalToImage2(pDbgMod, hDbgCfg);
+                            if (RT_FAILURE(rc))
+                                rc = rtDbgModCreateForExports(pDbgMod);
+                            if (RT_SUCCESS(rc))
+                            {
+                                *phDbgMod = pDbgMod;
+                                return VINF_SUCCESS;
+                            }
+
+                            /* Failed, close up the shop. */
+                            pDbgMod->pImgVt->pfnClose(pDbgMod);
+                            pDbgMod->pImgVt = NULL;
+                            pDbgMod->pvImgPriv = NULL;
+                            break;
+                        }
+                    }
+
+                    /*
+                     * Could it be a file containing raw debug info?
+                     */
+                    if (!pImg)
+                    {
+                        pDbgMod->pImgVt     = NULL;
+                        pDbgMod->pvImgPriv  = NULL;
+                        pDbgMod->pszDbgFile = pDbgMod->pszImgFile;
+                        pDbgMod->pszImgFile = NULL;
+
+                        for (PRTDBGMODREGDBG pDbg = g_pDbgHead; pDbg; pDbg = pDbg->pNext)
+                        {
+                            pDbgMod->pDbgVt = pDbg->pVt;
+                            pDbgMod->pvDbgPriv = NULL;
+                            rc = pDbg->pVt->pfnTryOpen(pDbgMod);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /*
+                                 * That's it!
+                                 */
+                                ASMAtomicIncU32(&pDbg->cUsers);
+                                RTSemRWReleaseRead(g_hDbgModRWSem);
+
+                                *phDbgMod = pDbgMod;
+                                return rc;
+                            }
+                        }
+
+                        pDbgMod->pszImgFile = pDbgMod->pszDbgFile;
+                        pDbgMod->pszDbgFile = NULL;
+                    }
+
+                    /* bail out */
+                    RTSemRWReleaseRead(g_hDbgModRWSem);
+                }
+                RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszImgFileSpecified);
+                RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszImgFile);
+            }
+            else
+                rc = VERR_NO_STR_MEMORY;
+            RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszName);
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+        RTCritSectDelete(&pDbgMod->CritSect);
+    }
+
+    RTMemFree(pDbgMod);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTDbgModCreateFromImage);
+
+
+
+
+
+/*
+ *
+ *  P E   I M A G E
+ *  P E   I M A G E
+ *  P E   I M A G E
+ *
+ */
+
+
 
 /** @callback_method_impl{FNRTDBGCFGOPEN} */
 static DECLCALLBACK(int) rtDbgModFromPeImageOpenCallback(RTDBGCFG hDbgCfg, const char *pszFilename, void *pvUser1, void *pvUser2)
@@ -837,7 +951,7 @@ static DECLCALLBACK(int) rtDbgModFromPeImageOpenCallback(RTDBGCFG hDbgCfg, const
         {
             pDbgMod->pImgVt    = pImg->pVt;
             pDbgMod->pvImgPriv = NULL;
-            rc = pImg->pVt->pfnTryOpen(pDbgMod);
+            rc = pImg->pVt->pfnTryOpen(pDbgMod, RTLDRARCH_WHATEVER);
             if (RT_SUCCESS(rc))
                 break;
             pDbgMod->pImgVt    = NULL;
@@ -1039,7 +1153,7 @@ RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilenam
     RTMemFree(pDbgMod);
     return rc;
 }
-RT_EXPORT_SYMBOL(RTDbgModCreateFromImage);
+RT_EXPORT_SYMBOL(RTDbgModCreateFromPeImage);
 
 
 /**

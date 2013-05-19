@@ -29,6 +29,7 @@
 
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
+#include <iprt/ldr.h>
 
 RT_C_DECLS_BEGIN
 
@@ -457,6 +458,9 @@ RTDECL(int) RTDbgCfgOpenDbg(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t 
                             PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
 RTDECL(int) RTDbgCfgOpenDwo(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t uCrc32,
                             PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
+
+RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszFilename, PCRTUUID pUuid,
+                                   PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
 
 
 /** @} */
@@ -939,7 +943,7 @@ RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDis
 RTDECL(int)         RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR cbSeg, uint32_t fFlags);
 
 RTDECL(int)         RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName,
-                                            RTDBGCFG hDbgCfg);
+                                            RTLDRARCH enmArch, RTDBGCFG hDbgCfg);
 RTDECL(int)         RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTUINTPTR uSubtrahend,
                                           RTDBGCFG hDbgCfg);
 RTDECL(int)         RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName, RTLDRMOD hLdrMod,
