@@ -676,17 +676,16 @@ VMMR3DECL(PRTDBGSYMBOL) DBGFR3AsSymbolByAddrA(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFA
                                               PRTGCINTPTR poffDisp, PRTDBGMOD phMod);
 VMMR3DECL(int)          DBGFR3AsSymbolByName(PUVM pUVM, RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod);
 
+VMMR3DECL(int)          DBGFR3AsLineByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress,
+                                           PRTGCINTPTR poffDisp, PRTDBGLINE pLine, PRTDBGMOD phMod);
+VMMR3DECL(PRTDBGLINE)   DBGFR3AsLineByAddrA(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress,
+                                            PRTGCINTPTR poffDisp, PRTDBGMOD phMod);
+
 /* The following are soon to be obsoleted: */
 VMMR3DECL(int)          DBGFR3ModuleLoad(PUVM pUVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName, RTGCUINTPTR ModuleAddress, unsigned cbImage);
-VMMR3_INT_DECL(void)    DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINTPTR NewImageBase, RTGCUINTPTR cbImage,
-                                             const char *pszFilename, const char *pszName);
 VMMR3_INT_DECL(int)     DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol, const char *pszSymbol);
 VMMR3_INT_DECL(int)     DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFSYMBOL pSymbol);
 VMMR3_INT_DECL(int)     DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL pSymbol);
-
-VMMR3DECL(int)          DBGFR3LineByAddr(PUVM pUVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFLINE pLine);
-VMMR3DECL(PDBGFLINE)    DBGFR3LineByAddrAlloc(PUVM pUVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement);
-VMMR3_INT_DECL(void)    DBGFR3LineFree(PDBGFLINE pLine);
 
 #endif /* IN_RING3 */
 
@@ -779,7 +778,7 @@ typedef struct DBGFSTACKFRAME
     /** Pointer to the symbol nearest the program counter (PC). NULL if not found. */
     PRTDBGSYMBOL    pSymPC;
     /** Pointer to the linnumber nearest the program counter (PC). NULL if not found. */
-    PDBGFLINE       pLinePC;
+    PRTDBGLINE      pLinePC;
 
     /** The return frame address.
      * The off member is [e|r]bp and the Sel member is ss. */
@@ -796,7 +795,7 @@ typedef struct DBGFSTACKFRAME
     /** Pointer to the symbol nearest the return PC. NULL if not found. */
     PRTDBGSYMBOL    pSymReturnPC;
     /** Pointer to the linnumber nearest the return PC. NULL if not found. */
-    PDBGFLINE       pLineReturnPC;
+    PRTDBGLINE      pLineReturnPC;
 
     /** 32-bytes of stack arguments. */
     union

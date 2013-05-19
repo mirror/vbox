@@ -8490,6 +8490,10 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
     PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
     AssertReturn(CPUMCTX2CORE(pCtx) == pCtxCore, VERR_IEM_IPE_3);
 
+#ifdef IN_RC
+    CPUMRawLeave(pVCpu, pCtxCore, VINF_SUCCESS);
+#endif
+
     iemInitDecoder(pIemCpu, true);
     uint32_t const cbOldWritten = pIemCpu->cbWritten;
 
@@ -8500,6 +8504,10 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
         if (pcbWritten)
             *pcbWritten = pIemCpu->cbWritten - cbOldWritten;
     }
+
+#ifdef IN_RC
+    CPUMRawEnter(pVCpu, pCtxCore);
+#endif
     return rcStrict;
 }
 
@@ -8510,6 +8518,10 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPC(PVMCPU pVCpu, PCP
     PIEMCPU  pIemCpu = &pVCpu->iem.s;
     PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
     AssertReturn(CPUMCTX2CORE(pCtx) == pCtxCore, VERR_IEM_IPE_3);
+
+#ifdef IN_RC
+    CPUMRawLeave(pVCpu, pCtxCore, VINF_SUCCESS);
+#endif
 
     VBOXSTRICTRC rcStrict;
     if (   cbOpcodeBytes
@@ -8524,6 +8536,10 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPC(PVMCPU pVCpu, PCP
         rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, true);
     if (rcStrict == VINF_SUCCESS)
         rcStrict = iemExecOneInner(pVCpu, pIemCpu, false);
+
+#ifdef IN_RC
+    CPUMRawEnter(pVCpu, pCtxCore);
+#endif
     return rcStrict;
 }
 

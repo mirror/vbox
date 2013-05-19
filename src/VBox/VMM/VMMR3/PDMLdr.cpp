@@ -215,8 +215,6 @@ VMMR3_INT_DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
                 int rc = RTLdrRelocate(pCur->hLdrMod, pCur->pvBits, pCur->ImageBase, pCur->OldImageBase,
                                        pdmR3GetImportRC, &Args);
                 AssertFatalMsgRC(rc, ("RTLdrRelocate failed, rc=%d\n", rc));
-                DBGFR3ModuleRelocate(pUVM->pVM, pCur->OldImageBase, pCur->ImageBase, RTLdrSize(pCur->hLdrMod),
-                                     pCur->szFilename, pCur->szName);
             }
         }
     }

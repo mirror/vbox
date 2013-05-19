@@ -1271,3 +1271,51 @@ VMMR3DECL(int) DBGFR3AsSymbolByName(PUVM pUVM, RTDBGAS hDbgAs, const char *pszSy
     return rc;
 }
 
+
+VMMR3DECL(int)          DBGFR3AsLineByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress,
+                                           PRTGCINTPTR poffDisp, PRTDBGLINE pLine, PRTDBGMOD phMod)
+{
+    /*
+     * Implement the special address space aliases the lazy way.
+     */
+    if (hDbgAs == DBGF_AS_RC_AND_GC_GLOBAL)
+    {
+        int rc = DBGFR3AsLineByAddr(pUVM, DBGF_AS_RC, pAddress, poffDisp, pLine, phMod);
+        if (RT_FAILURE(rc))
+            rc = DBGFR3AsLineByAddr(pUVM, DBGF_AS_GLOBAL, pAddress, poffDisp, pLine, phMod);
+        return rc;
+    }
+
+    /*
+     * Input validation.
+     */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(DBGFR3AddrIsValid(pUVM, pAddress), VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(poffDisp, VERR_INVALID_POINTER);
+    AssertPtrReturn(pLine, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(phMod, VERR_INVALID_POINTER);
+    if (poffDisp)
+        *poffDisp = 0;
+    if (phMod)
+        *phMod = NIL_RTDBGMOD;
+    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pUVM, hDbgAs);
+    if (hRealAS == NIL_RTDBGAS)
+        return VERR_INVALID_HANDLE;
+
+    /*
+     * Do the lookup.
+     */
+    return RTDbgAsLineByAddr(hRealAS, pAddress->FlatPtr, poffDisp, pLine, phMod);
+}
+
+
+VMMR3DECL(PRTDBGLINE)   DBGFR3AsLineByAddrA(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress,
+                                            PRTGCINTPTR poffDisp, PRTDBGMOD phMod)
+{
+    RTDBGLINE Line;
+    int rc = DBGFR3AsLineByAddr(pUVM, hDbgAs, pAddress, poffDisp, &Line, phMod);
+    if (RT_SUCCESS(rc))
+        return RTDbgLineDup(&Line);
+    return NULL;
+}
+

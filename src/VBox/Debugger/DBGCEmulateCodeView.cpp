@@ -1182,7 +1182,7 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
      * Do the disassembling.
      */
     bool        fFirst = 1;
-    DBGFLINE    LinePrev = { 0, 0, "" };
+    RTDBGLINE   LinePrev = { 0, 0, 0, 0, 0, "" };
     int         iRangeLeft = (int)pDbgc->SourcePos.u64Range;
     if (iRangeLeft == 0)                /* kludge for 'r'. */
         iRangeLeft = -1;
@@ -1191,9 +1191,13 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         /*
          * Get line info.
          */
-        DBGFLINE    Line;
+        RTDBGLINE   Line;
         RTGCINTPTR  off;
-        int rc = DBGFR3LineByAddr(pUVM, pDbgc->SourcePos.u.GCFlat, &off, &Line);
+        DBGFADDRESS SourcePosAddr;
+        int rc = DBGCCmdHlpVarToDbgfAddr(pCmdHlp, &pDbgc->SourcePos, &SourcePosAddr);
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpVarToDbgfAddr(,%Dv)", &pDbgc->SourcePos);
+        rc = DBGFR3AsLineByAddr(pUVM, pDbgc->hDbgAs, &SourcePosAddr, &off, &Line, NULL);
         if (RT_FAILURE(rc))
             return VINF_SUCCESS;
 

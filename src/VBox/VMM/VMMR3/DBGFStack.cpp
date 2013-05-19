@@ -157,8 +157,8 @@ static int dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAM
         if (DBGFADDRESS_IS_VALID(&pFrame->AddrPC))
         {
             pFrame->pSymPC  = DBGFR3AsSymbolByAddrA(pUVM, hAs, &pFrame->AddrPC, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL,
-                                                    NULL /*offDisp*/, NULL /*phMod*/);
-            pFrame->pLinePC = DBGFR3LineByAddrAlloc(pUVM, pFrame->AddrPC.FlatPtr, NULL);
+                                                    NULL /*poffDisp*/, NULL /*phMod*/);
+            pFrame->pLinePC = DBGFR3AsLineByAddrA(pUVM, hAs, &pFrame->AddrPC, NULL /*poffDisp*/, NULL /*phMod*/);
         }
     }
     else /* 2nd and subsequent steps */
@@ -254,8 +254,8 @@ static int dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAM
     }
 
     pFrame->pSymReturnPC  = DBGFR3AsSymbolByAddrA(pUVM, hAs, &pFrame->AddrReturnPC, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL,
-                                                  NULL /*offDisp*/, NULL /*phMod*/);
-    pFrame->pLineReturnPC = DBGFR3LineByAddrAlloc(pUVM, pFrame->AddrReturnPC.FlatPtr, NULL);
+                                                  NULL /*poffDisp*/, NULL /*phMod*/);
+    pFrame->pLineReturnPC = DBGFR3AsLineByAddrA(pUVM, hAs, &pFrame->AddrPC, NULL /*poffDisp*/, NULL /*phMod*/);
 
     /*
      * Frame bitness flag.
@@ -583,8 +583,8 @@ VMMR3DECL(void) DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame)
 
         RTDbgSymbolFree(pCur->pSymPC);
         RTDbgSymbolFree(pCur->pSymReturnPC);
-        DBGFR3LineFree(pCur->pLinePC);
-        DBGFR3LineFree(pCur->pLineReturnPC);
+        RTDbgLineFree(pCur->pLinePC);
+        RTDbgLineFree(pCur->pLineReturnPC);
 
         pCur->pNextInternal = NULL;
         pCur->pFirstInternal = NULL;

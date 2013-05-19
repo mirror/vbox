@@ -850,24 +850,9 @@ RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYM
 RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL *ppSymbol, PRTDBGMOD phMod);
 
 /**
- * Query a line number by address.
- *
- * @returns IPRT status code. See RTDbgModSymbolAddrA for more specific ones.
- * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
- * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
- *
- * @param   hDbgAs          The address space handle.
- * @param   Addr            The address which closest symbol is requested.
- * @param   poffDisp        Where to return the distance between the line
- *                          number and address.
- * @param   pLine           Where to return the line number information.
- */
-RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE pLine);
-
-/**
  * Adds a line number to a module in the address space.
  *
- * @returns IPRT status code. See RTDbgModSymbolAdd for more specific ones.
+ * @returns IPRT status code. See RTDbgModLineAdd for more specific ones.
  * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
  * @retval  VERR_NOT_FOUND if no module was found at the specified address.
  * @retval  VERR_NOT_SUPPORTED if the module interpret doesn't support adding
@@ -883,11 +868,10 @@ RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp
  */
 RTDECL(int) RTDbgAsLineAdd(RTDBGAS hDbgAs, const char *pszFile, uint32_t uLineNo, RTUINTPTR Addr, uint32_t *piOrdinal);
 
-
 /**
  * Query a line number by address.
  *
- * @returns IPRT status code. See RTDbgModSymbolAddrA for more specific ones.
+ * @returns IPRT status code. See RTDbgModLineAddrA for more specific ones.
  * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
  * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
  *
@@ -896,13 +880,14 @@ RTDECL(int) RTDbgAsLineAdd(RTDBGAS hDbgAs, const char *pszFile, uint32_t uLineNo
  * @param   poffDisp        Where to return the distance between the line
  *                          number and address.
  * @param   pLine           Where to return the line number information.
+ * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE pLine);
+RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE pLine, PRTDBGMOD phMod);
 
 /**
  * Query a line number by address.
  *
- * @returns IPRT status code. See RTDbgModSymbolAddrA for more specific ones.
+ * @returns IPRT status code. See RTDbgModLineAddrA for more specific ones.
  * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
  * @retval  VERR_NOT_FOUND if the address couldn't be mapped to a module.
  *
@@ -912,8 +897,9 @@ RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp
  *                          number and address.
  * @param   ppLine          Where to return the pointer to the allocated line
  *                          number info. Always set. Free with RTDbgLineFree.
+ * @param   phMod           Where to return the module handle. Optional.
  */
-RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE *ppLine);
+RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp, PRTDBGLINE *ppLine, PRTDBGMOD phMod);
 
 /** @todo Missing some bits here. */
 
