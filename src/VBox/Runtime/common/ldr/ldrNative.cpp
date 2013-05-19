@@ -139,6 +139,13 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
 #else
         pMod->Core.enmEndian    = RTLDRENDIAN_LITTLE;
 #endif
+#ifdef RT_ARCH_AMD64
+        pMod->Core.enmArch      = RTLDRARCH_AMD64;
+#elif defined(RT_ARCH_X86)
+        pMod->Core.enmArch      = RTLDRARCH_X86_32;
+#else
+        pMod->Core.enmArch      = RTLDRARCH_HOST;
+#endif
         pMod->hNative           = ~(uintptr_t)0;
 
         /*

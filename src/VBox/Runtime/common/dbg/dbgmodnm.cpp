@@ -477,8 +477,10 @@ static int rtDbgModNmScanFile(PRTDBGMODNM pThis, PRTSTREAM pStrm, bool fAddSymbo
 
 
 /** @interface_method_impl{RTDBGMODVTDBG,pfnTryOpen} */
-static DECLCALLBACK(int) rtDbgModNm_TryOpen(PRTDBGMODINT pMod)
+static DECLCALLBACK(int) rtDbgModNm_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch)
 {
+    NOREF(enmArch);
+
     /*
      * Fend off images.
      */

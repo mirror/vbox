@@ -40,6 +40,7 @@
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/strcache.h>
 #include "internal/dbgmod.h"
 
 
@@ -419,8 +420,12 @@ typedef struct RTDBGMODDWARF
 {
     /** The debug container containing doing the real work. */
     RTDBGMOD                hCnt;
-    /** Pointer to back to the debug info module (no reference ofc). */
-    PRTDBGMODINT            pMod;
+    /** The image module (no reference). */
+    PRTDBGMODINT            pImgMod;
+    /** The debug info module (no reference). */
+    PRTDBGMODINT            pDbgInfoMod;
+    /** Nested image module (with reference ofc). */
+    PRTDBGMODINT            pNestedMod;
 
     /** DWARF debug info sections. */
     struct
@@ -1191,13 +1196,12 @@ static DECLCALLBACK(int) rtDbgModDwarfAddSegmentsCallback(RTLDRMOD hLdrMod, PCRT
  *
  * @returns IPRT status code.
  * @param   pThis               The DWARF instance.
- * @param   pMod                The debug module.
  */
-static int rtDbgModDwarfAddSegmentsFromImage(PRTDBGMODDWARF pThis, PRTDBGMODINT pMod)
+static int rtDbgModDwarfAddSegmentsFromImage(PRTDBGMODDWARF pThis)
 {
-    AssertReturn(pMod->pImgVt, VERR_INTERNAL_ERROR_2);
+    AssertReturn(pThis->pImgMod && pThis->pImgMod->pImgVt, VERR_INTERNAL_ERROR_2);
     Assert(!pThis->cSegs);
-    int rc = pMod->pImgVt->pfnEnumSegments(pMod, rtDbgModDwarfScanSegmentsCallback, pThis);
+    int rc = pThis->pImgMod->pImgVt->pfnEnumSegments(pThis->pImgMod, rtDbgModDwarfScanSegmentsCallback, pThis);
     if (RT_SUCCESS(rc))
     {
         if (pThis->cSegs == 0)
@@ -1206,7 +1210,7 @@ static int rtDbgModDwarfAddSegmentsFromImage(PRTDBGMODDWARF pThis, PRTDBGMODINT 
         {
             pThis->cSegs = 0;
             pThis->iWatcomPass = -1;
-            rc = pMod->pImgVt->pfnEnumSegments(pMod, rtDbgModDwarfAddSegmentsCallback, pThis);
+            rc = pThis->pImgMod->pImgVt->pfnEnumSegments(pThis->pImgMod, rtDbgModDwarfAddSegmentsCallback, pThis);
         }
     }
 
@@ -1381,11 +1385,11 @@ static int rtDbgModDwarfLoadSection(PRTDBGMODDWARF pThis, krtDbgModDwarfSect enm
     /*
      * Do the job.
      */
-    return pThis->pMod->pImgVt->pfnMapPart(pThis->pMod,
-                                           pThis->aSections[enmSect].iDbgInfo,
-                                           pThis->aSections[enmSect].offFile,
-                                           pThis->aSections[enmSect].cb,
-                                           &pThis->aSections[enmSect].pv);
+    return pThis->pDbgInfoMod->pImgVt->pfnMapPart(pThis->pDbgInfoMod,
+                                                  pThis->aSections[enmSect].iDbgInfo,
+                                                  pThis->aSections[enmSect].offFile,
+                                                  pThis->aSections[enmSect].cb,
+                                                  &pThis->aSections[enmSect].pv);
 }
 
 
@@ -1402,7 +1406,7 @@ static int rtDbgModDwarfUnloadSection(PRTDBGMODDWARF pThis, krtDbgModDwarfSect e
     if (!pThis->aSections[enmSect].pv)
         return VINF_SUCCESS;
 
-    int rc = pThis->pMod->pImgVt->pfnUnmapPart(pThis->pMod, pThis->aSections[enmSect].cb, &pThis->aSections[enmSect].pv);
+    int rc = pThis->pDbgInfoMod->pImgVt->pfnUnmapPart(pThis->pDbgInfoMod, pThis->aSections[enmSect].cb, &pThis->aSections[enmSect].pv);
     AssertRC(rc);
     return rc;
 }
@@ -1450,8 +1454,8 @@ static int rtDbgModDwarfLinkAddressToSegOffset(PRTDBGMODDWARF pThis, RTSEL uSegm
         }
     }
 
-    return pThis->pMod->pImgVt->pfnRvaToSegOffset(pThis->pMod, LinkAddress, piSeg, poffSeg);
-    //return pThis->pMod->pImgVt->pfnLinkAddressToSegOffset(pThis->pMod, LinkAddress, piSeg, poffSeg);
+    return pThis->pImgMod->pImgVt->pfnRvaToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
+    //return pThis->pImgMod->pImgVt->pfnLinkAddressToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
 }
 
 
@@ -4300,7 +4304,7 @@ static DECLCALLBACK(RTUINTPTR) rtDbgModDwarf_ImageSize(PRTDBGMODINT pMod)
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pMod->pvDbgPriv;
     RTUINTPTR cb1 = RTDbgModImageSize(pThis->hCnt);
-    RTUINTPTR cb2 = pMod->pImgVt->pfnImageSize(pMod);
+    RTUINTPTR cb2 = pThis->pImgMod->pImgVt->pfnImageSize(pMod);
     return RT_MAX(cb1, cb2);
 }
 
@@ -4320,10 +4324,18 @@ static DECLCALLBACK(int) rtDbgModDwarf_Close(PRTDBGMODINT pMod)
 
     for (unsigned iSect = 0; iSect < RT_ELEMENTS(pThis->aSections); iSect++)
         if (pThis->aSections[iSect].pv)
-            pThis->pMod->pImgVt->pfnUnmapPart(pThis->pMod, pThis->aSections[iSect].cb, &pThis->aSections[iSect].pv);
+            pThis->pDbgInfoMod->pImgVt->pfnUnmapPart(pThis->pDbgInfoMod, pThis->aSections[iSect].cb, &pThis->aSections[iSect].pv);
 
     RTDbgModRelease(pThis->hCnt);
     RTMemFree(pThis->paCachedAbbrevs);
+    if (pThis->pNestedMod)
+    {
+        pThis->pNestedMod->pImgVt->pfnClose(pThis->pNestedMod);
+        RTStrCacheRelease(g_hDbgModStrCache, pThis->pNestedMod->pszName);
+        RTStrCacheRelease(g_hDbgModStrCache, pThis->pNestedMod->pszDbgFile);
+        RTMemFree(pThis->pNestedMod);
+        pThis->pNestedMod = NULL;
+    }
     RTMemFree(pThis);
 
     return VINF_SUCCESS;
@@ -4400,8 +4412,52 @@ static DECLCALLBACK(int) rtDbgModDwarfEnumCallback(RTLDRMOD hLdrMod, PCRTLDRDBGI
 }
 
 
+static int rtDbgModDwarfTryOpenDbgFile(PRTDBGMODINT pDbgMod, PRTDBGMODDWARF pThis, RTLDRARCH enmArch)
+{
+    if (   !pDbgMod->pszDbgFile
+        || RTPathIsSame(pDbgMod->pszDbgFile, pDbgMod->pszImgFile) == true /* returns VERR too */)
+        return VERR_DBG_NO_MATCHING_INTERPRETER;
+
+    /*
+     * Only open the image.
+     */
+    PRTDBGMODINT pDbgInfoMod = (PRTDBGMODINT)RTMemAllocZ(sizeof(*pDbgInfoMod));
+    if (!pDbgInfoMod)
+        return VERR_NO_MEMORY;
+
+    int rc;
+    pDbgInfoMod->u32Magic     = RTDBGMOD_MAGIC;
+    pDbgInfoMod->cRefs        = 1;
+    if (RTStrCacheRetain(pDbgMod->pszDbgFile) != UINT32_MAX)
+    {
+        pDbgInfoMod->pszImgFile = pDbgMod->pszDbgFile;
+        if (RTStrCacheRetain(pDbgMod->pszName) != UINT32_MAX)
+        {
+            pDbgInfoMod->pszName = pDbgMod->pszName;
+            pDbgInfoMod->pImgVt  = &g_rtDbgModVtImgLdr;
+            rc = pDbgInfoMod->pImgVt->pfnTryOpen(pDbgInfoMod, enmArch);
+            if (RT_SUCCESS(rc))
+            {
+                pThis->pDbgInfoMod = pDbgInfoMod;
+                pThis->pNestedMod  = pDbgInfoMod;
+                return VINF_SUCCESS;
+            }
+
+            RTStrCacheRelease(g_hDbgModStrCache, pDbgInfoMod->pszName);
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+        RTStrCacheRelease(g_hDbgModStrCache,  pDbgInfoMod->pszImgFile);
+    }
+    else
+        rc = VERR_NO_STR_MEMORY;
+    RTMemFree(pDbgInfoMod);
+    return rc;
+}
+
+
 /** @interface_method_impl{RTDBGMODVTDBG,pfnTryOpen} */
-static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod)
+static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch)
 {
     /*
      * DWARF is only supported when part of an image.
@@ -4410,15 +4466,28 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod)
         return VERR_DBG_NO_MATCHING_INTERPRETER;
 
     /*
-     * Enumerate the debug info in the module, looking for DWARF bits.
+     * Create the module instance data.
      */
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)RTMemAllocZ(sizeof(*pThis));
     if (!pThis)
         return VERR_NO_MEMORY;
-    pThis->pMod = pMod;
+    pThis->pDbgInfoMod = pMod;
+    pThis->pImgMod     = pMod;
     RTListInit(&pThis->CompileUnitList);
 
-    int rc = pMod->pImgVt->pfnEnumDbgInfo(pMod, rtDbgModDwarfEnumCallback, pThis);
+
+    /*
+     * If the debug file name is set, let's see if it's an ELF image with DWARF
+     * inside it. In that case we'll have to deal with two image modules, one
+     * for segments and address translation and one for the debug information.
+     */
+    if (pMod->pszDbgFile != NULL)
+        rtDbgModDwarfTryOpenDbgFile(pMod, pThis, enmArch);
+
+    /*
+     * Enumerate the debug info in the module, looking for DWARF bits.
+     */
+    int rc = pThis->pDbgInfoMod->pImgVt->pfnEnumDbgInfo(pThis->pDbgInfoMod, rtDbgModDwarfEnumCallback, pThis);
     if (RT_SUCCESS(rc))
     {
         if (pThis->aSections[krtDbgModDwarfSect_info].fPresent)
@@ -4432,7 +4501,7 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod)
             {
                 pMod->pvDbgPriv = pThis;
 
-                rc = rtDbgModDwarfAddSegmentsFromImage(pThis, pMod);
+                rc = rtDbgModDwarfAddSegmentsFromImage(pThis);
                 if (RT_SUCCESS(rc))
                     rc = rtDwarfInfo_LoadAll(pThis);
                 if (RT_SUCCESS(rc))
@@ -4456,8 +4525,8 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod)
 
                     for (unsigned iSect = 0; iSect < RT_ELEMENTS(pThis->aSections); iSect++)
                         if (pThis->aSections[iSect].pv)
-                            pThis->pMod->pImgVt->pfnUnmapPart(pThis->pMod, pThis->aSections[iSect].cb,
-                                                              &pThis->aSections[iSect].pv);
+                            pThis->pDbgInfoMod->pImgVt->pfnUnmapPart(pThis->pDbgInfoMod, pThis->aSections[iSect].cb,
+                                                                     &pThis->aSections[iSect].pv);
 
 
                     return VINF_SUCCESS;

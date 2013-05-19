@@ -617,8 +617,13 @@ static int rtkldrEnumDbgInfoWrapper(PKLDRMOD pMod, KU32 iDbgInfo, KLDRDBGINFOTYP
             break;
         case KLDRDBGINFOTYPE_DWARF:
             DbgInfo.enmType = RTLDRDBGINFOTYPE_DWARF;
-            if (pszExtFile)
+            if (!pszExtFile)
+                DbgInfo.u.Dwarf.pszSection = pszPartNm;
+            else
+            {
                 DbgInfo.enmType = RTLDRDBGINFOTYPE_DWARF_DWO;
+                DbgInfo.u.Dwo.uCrc32 = 0;
+            }
             break;
         case KLDRDBGINFOTYPE_CODEVIEW:
             DbgInfo.enmType = RTLDRDBGINFOTYPE_CODEVIEW;
@@ -919,6 +924,15 @@ int rtldrkLdrOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTL
                 default:
                     AssertMsgFailed(("%d\n", pMod->enmEndian));
                     pNewMod->Core.enmEndian = RTLDRENDIAN_NA;
+                    break;
+            }
+            switch (pMod->enmArch)
+            {
+                case KCPUARCH_X86_32:       pNewMod->Core.enmArch   = RTLDRARCH_X86_32; break;
+                case KCPUARCH_AMD64:        pNewMod->Core.enmArch   = RTLDRARCH_AMD64; break;
+                default:
+                    AssertMsgFailed(("%d\n", pMod->enmArch));
+                    pNewMod->Core.enmArch = RTLDRARCH_WHATEVER;
                     break;
             }
             pNewMod->pMod          = pMod;

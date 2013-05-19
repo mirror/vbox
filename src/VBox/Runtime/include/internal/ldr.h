@@ -428,6 +428,8 @@ typedef struct RTLDRMODINTERNAL
     RTLDRTYPE               enmType;
     /** Image endianness.  */
     RTLDRENDIAN             enmEndian;
+    /** Image target architecture.  */
+    RTLDRARCH               enmArch;
 } RTLDRMODINTERNAL;
 
 

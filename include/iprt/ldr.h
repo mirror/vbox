@@ -768,6 +768,15 @@ RTDECL(RTLDRTYPE) RTLdrGetType(RTLDRMOD hLdrMod);
  */
 RTDECL(RTLDRENDIAN) RTLdrGetEndian(RTLDRMOD hLdrMod);
 
+/**
+ * Gets the image endian-ness.
+ *
+ * @returns Valid image architecture value on success.
+ *          RTLDRARCH_INVALID on invalid handle or other errors.
+ * @param   hLdrMod         The module handle.
+ */
+RTDECL(RTLDRARCH) RTLdrGetArch(RTLDRMOD hLdrMod);
+
 
 RT_C_DECLS_END
 
