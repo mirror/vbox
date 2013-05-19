@@ -1136,43 +1136,6 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAd
         if (!phMod)
             RTDbgModRelease(hMod);
     }
-    /* Temporary conversions. */
-    else if (hDbgAs == DBGF_AS_GLOBAL)
-    {
-        DBGFSYMBOL DbgfSym;
-        rc = DBGFR3SymbolByAddr(pUVM->pVM, pAddress->FlatPtr, poffDisp, &DbgfSym);
-        if (RT_SUCCESS(rc))
-            dbgfR3AsSymbolConvert(pSymbol, &DbgfSym);
-    }
-    else if (hDbgAs == DBGF_AS_R0)
-    {
-        RTR0PTR     R0PtrMod;
-        char        szNearSym[260];
-        RTR0PTR     R0PtrNearSym;
-        RTR0PTR     R0PtrNearSym2;
-        VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
-        rc = PDMR3LdrQueryR0ModFromPC(pUVM->pVM, pAddress->FlatPtr,
-                                      pSymbol->szName, sizeof(pSymbol->szName) / 2, &R0PtrMod,
-                                      &szNearSym[0],   sizeof(szNearSym),           &R0PtrNearSym,
-                                      NULL,            0,                           &R0PtrNearSym2);
-        if (RT_SUCCESS(rc))
-        {
-            pSymbol->offSeg     = pSymbol->Value = R0PtrNearSym;
-            pSymbol->cb         = R0PtrNearSym2 > R0PtrNearSym ? R0PtrNearSym2 - R0PtrNearSym : 0;
-            pSymbol->iSeg       = 0;
-            pSymbol->fFlags     = 0;
-            pSymbol->iOrdinal   = UINT32_MAX;
-            size_t offName = strlen(pSymbol->szName);
-            pSymbol->szName[offName++] = '!';
-            size_t cchNearSym = strlen(szNearSym);
-            if (cchNearSym + offName >= sizeof(pSymbol->szName))
-                cchNearSym = sizeof(pSymbol->szName) - offName - 1;
-            strncpy(&pSymbol->szName[offName], szNearSym, cchNearSym);
-            pSymbol->szName[offName + cchNearSym] = '\0';
-            if (poffDisp)
-                *poffDisp = pAddress->FlatPtr - pSymbol->Value;
-        }
-    }
 
     return rc;
 }
@@ -1258,14 +1221,6 @@ VMMR3DECL(int) DBGFR3AsSymbolByName(PUVM pUVM, RTDBGAS hDbgAs, const char *pszSy
         dbgfR3AsSymbolJoinNames(pSymbol, hMod);
         if (!phMod)
             RTDbgModRelease(hMod);
-    }
-    /* Temporary conversion. */
-    else if (hDbgAs == DBGF_AS_GLOBAL)
-    {
-        DBGFSYMBOL DbgfSym;
-        rc = DBGFR3SymbolByName(pUVM->pVM, pszSymbol, &DbgfSym);
-        if (RT_SUCCESS(rc))
-            dbgfR3AsSymbolConvert(pSymbol, &DbgfSym);
     }
 
     return rc;

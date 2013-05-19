@@ -233,17 +233,6 @@ typedef struct DBGF
      * Not all commands take data. */
     DBGFCMDDATA                 VMMCmdData;
 
-    /** Range tree containing the loaded symbols of the a VM.
-     * This tree will never have blind spots. */
-    R3PTRTYPE(AVLRGCPTRTREE)    SymbolTree;
-    /** Symbol name space. */
-    R3PTRTYPE(PRTSTRSPACE)      pSymbolSpace;
-    /** Indicates whether DBGFSym.cpp is initialized or not.
-     * This part is initialized in a lazy manner for performance reasons. */
-    bool                        fSymInited;
-    /** Alignment padding. */
-    uint32_t                    uAlignment0;
-
     /** The number of hardware breakpoints. */
     uint32_t                    cHwBreakpoints;
     /** The number of active breakpoints. */
@@ -357,8 +346,6 @@ int  dbgfR3InfoTerm(PUVM pUVM);
 void dbgfR3OSTerm(PUVM pUVM);
 int  dbgfR3RegInit(PUVM pUVM);
 void dbgfR3RegTerm(PUVM pUVM);
-int  dbgfR3SymInit(PVM pVM);
-int  dbgfR3SymTerm(PVM pVM);
 int  dbgfR3TraceInit(PVM pVM);
 void dbgfR3TraceRelocate(PVM pVM);
 void dbgfR3TraceTerm(PVM pVM);
