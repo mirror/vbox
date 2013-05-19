@@ -125,10 +125,6 @@ VMMR3DECL(int) DBGFR3LogModifyGroups(PUVM pUVM, const char *pszGroupSettings)
 {
     return VERR_INTERNAL_ERROR;
 }
-VMMR3DECL(int) DBGFR3ModuleLoad(PUVM pUVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName, RTGCUINTPTR ModuleAddress, unsigned cbImage)
-{
-    return VERR_INTERNAL_ERROR;
-}
 VMMR3DECL(RTDBGCFG) DBGFR3AsGetConfig(PUVM pUVM)
 {
     return NIL_RTDBGCFG;

@@ -148,8 +148,6 @@ VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
     if (RT_SUCCESS(rc))
         rc = dbgfR3AsInit(pUVM);
     if (RT_SUCCESS(rc))
-        rc = dbgfR3SymInit(pVM);
-    if (RT_SUCCESS(rc))
         rc = dbgfR3BpInit(pVM);
     return rc;
 }

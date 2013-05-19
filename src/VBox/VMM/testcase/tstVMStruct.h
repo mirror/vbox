@@ -220,9 +220,6 @@
     GEN_CHECK_OFF(DBGF, VMMCmdData);
     //GEN_CHECK_OFF(DBGF, pInfoFirst);
     //GEN_CHECK_OFF(DBGF, InfoCritSect);
-    GEN_CHECK_OFF(DBGF, SymbolTree);
-    GEN_CHECK_OFF(DBGF, pSymbolSpace);
-    GEN_CHECK_OFF(DBGF, fSymInited);
     GEN_CHECK_OFF(DBGF, cHwBreakpoints);
     GEN_CHECK_OFF(DBGF, cBreakpoints);
     GEN_CHECK_OFF(DBGF, aHwBreakpoints);

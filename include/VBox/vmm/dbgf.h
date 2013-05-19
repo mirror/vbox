@@ -681,12 +681,6 @@ VMMR3DECL(int)          DBGFR3AsLineByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDR
 VMMR3DECL(PRTDBGLINE)   DBGFR3AsLineByAddrA(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress,
                                             PRTGCINTPTR poffDisp, PRTDBGMOD phMod);
 
-/* The following are soon to be obsoleted: */
-VMMR3DECL(int)          DBGFR3ModuleLoad(PUVM pUVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName, RTGCUINTPTR ModuleAddress, unsigned cbImage);
-VMMR3_INT_DECL(int)     DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol, const char *pszSymbol);
-VMMR3_INT_DECL(int)     DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFSYMBOL pSymbol);
-VMMR3_INT_DECL(int)     DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL pSymbol);
-
 #endif /* IN_RING3 */
 
 #ifdef IN_RING3 /* The stack API only works in ring-3. */

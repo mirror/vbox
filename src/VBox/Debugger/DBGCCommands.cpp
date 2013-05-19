@@ -60,7 +60,6 @@ static FNDBGCCMD dbgcCmdFormat;
 static FNDBGCCMD dbgcCmdLoadImage;
 static FNDBGCCMD dbgcCmdLoadMap;
 static FNDBGCCMD dbgcCmdLoadSeg;
-static FNDBGCCMD dbgcCmdLoadSyms;
 static FNDBGCCMD dbgcCmdSet;
 static FNDBGCCMD dbgcCmdUnset;
 static FNDBGCCMD dbgcCmdLoadVars;
@@ -157,18 +156,6 @@ static const DBGCVARDESC    g_aArgLoadSeg[] =
 };
 
 
-/** loadsyms arguments. */
-static const DBGCVARDESC    g_aArgLoadSyms[] =
-{
-    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "path",         "Filename string." },
-    {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "delta",        "Delta to add to the loaded symbols. (optional)" },
-    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "module name",  "Module name. (optional)" },
-    {  0,           1,          DBGCVAR_CAT_POINTER,    DBGCVD_FLAGS_DEP_PREV,          "module address", "Module address. (optional)" },
-    {  0,           1,          DBGCVAR_CAT_NUMBER,     0,                              "module size",  "The module size. (optional)" },
-};
-
-
 /** log arguments. */
 static const DBGCVARDESC    g_aArgLog[] =
 {
@@ -249,7 +236,6 @@ const DBGCCMD    g_aDbgcCmds[] =
     { "loadseg",    3,        4,        &g_aArgLoadSeg[0],   RT_ELEMENTS(g_aArgLoadSeg),   0, dbgcCmdLoadSeg,   "<filename> <address> <seg> [name]",
                                                                                                                                        "Loads the symbols of a segment in the executable image at the specified address. "
                                                                                                                                        /*"Optionally giving the module a name other than the file name stem."*/ },
-    { "loadsyms",   1,        5,        &g_aArgLoadSyms[0],  RT_ELEMENTS(g_aArgLoadSyms),  0, dbgcCmdLoadSyms,  "<filename> [delta] [module] [module address]", "Loads symbols from a text file. Optionally giving a delta and a module." },
     { "loadvars",   1,        1,        &g_aArgFilename[0],  RT_ELEMENTS(g_aArgFilename),  0, dbgcCmdLoadVars,  "<filename>",           "Load variables from file. One per line, same as the args to the set command." },
     { "log",        1,        1,        &g_aArgLog[0],       RT_ELEMENTS(g_aArgLog),       0, dbgcCmdLog,       "<group string>",       "Modifies the logging group settings (VBOX_LOG)" },
     { "logdest",    1,        1,        &g_aArgLogDest[0],   RT_ELEMENTS(g_aArgLogDest),   0, dbgcCmdLogDest,   "<dest string>",        "Modifies the logging destination (VBOX_LOG_DEST)." },
@@ -1380,87 +1366,6 @@ static DECLCALLBACK(int) dbgcCmdLoadSeg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
     if (RT_FAILURE(rc))
         return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3ModuleLoadImage(,,'%s','%s',%Dv,)\n",
                                    pszFilename, pszModName, &paArgs[1]);
-
-    NOREF(pCmd);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @interface_method_impl{FNDBCCMD, The 'loadsyms' command.}
- */
-static DECLCALLBACK(int) dbgcCmdLoadSyms(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
-{
-    /*
-     * Validate the parsing and make sense of the input.
-     * This is a mess as usual because we don't trust the parser yet.
-     */
-    if (    cArgs < 1
-        ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING)
-    {
-        AssertMsgFailed(("Parse error, first argument required to be string!\n"));
-        return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
-    }
-    DBGCVAR     AddrVar;
-    RTGCUINTPTR Delta = 0;
-    const char *pszModule = NULL;
-    RTGCUINTPTR ModuleAddress = 0;
-    unsigned    cbModule = 0;
-    if (cArgs > 1)
-    {
-        unsigned iArg = 1;
-        if (paArgs[iArg].enmType == DBGCVAR_TYPE_NUMBER)
-        {
-            Delta = (RTGCUINTPTR)paArgs[iArg].u.u64Number;
-            iArg++;
-        }
-        if (iArg < cArgs)
-        {
-            if (paArgs[iArg].enmType != DBGCVAR_TYPE_STRING)
-            {
-                AssertMsgFailed(("Parse error, module argument required to be string!\n"));
-                return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
-            }
-            pszModule = paArgs[iArg].u.pszString;
-            iArg++;
-            if (iArg < cArgs)
-            {
-                if (!DBGCVAR_ISPOINTER(paArgs[iArg].enmType))
-                {
-                    AssertMsgFailed(("Parse error, module argument required to be GC pointer!\n"));
-                    return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
-                }
-                int rc = DBGCCmdHlpEval(pCmdHlp, &AddrVar, "%%(%Dv)", &paArgs[iArg]);
-                if (RT_FAILURE(rc))
-                    return DBGCCmdHlpVBoxError(pCmdHlp, rc, "Module address cast %%(%Dv) failed.", &paArgs[iArg]);
-                ModuleAddress = paArgs[iArg].u.GCFlat;
-                iArg++;
-                if (iArg < cArgs)
-                {
-                    if (paArgs[iArg].enmType != DBGCVAR_TYPE_NUMBER)
-                    {
-                        AssertMsgFailed(("Parse error, module argument required to be an integer!\n"));
-                        return VERR_DBGC_PARSE_INCORRECT_ARG_TYPE;
-                    }
-                    cbModule = (unsigned)paArgs[iArg].u.u64Number;
-                    iArg++;
-                    if (iArg < cArgs)
-                    {
-                        AssertMsgFailed(("Parse error, too many arguments!\n"));
-                        return VERR_DBGC_PARSE_TOO_MANY_ARGUMENTS;
-                    }
-                }
-            }
-        }
-    }
-
-    /*
-     * Call the debug info manager about this loading...
-     */
-    int rc = DBGFR3ModuleLoad(pUVM, paArgs[0].u.pszString, Delta, pszModule, ModuleAddress, cbModule);
-    if (RT_FAILURE(rc))
-        return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGInfoSymbolLoad(, '%s', %RGv, '%s', %RGv, 0)\n",
-                                   paArgs[0].u.pszString, Delta, pszModule, ModuleAddress);
 
     NOREF(pCmd);
     return VINF_SUCCESS;
