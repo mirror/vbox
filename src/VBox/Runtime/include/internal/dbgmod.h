@@ -197,12 +197,21 @@ typedef struct RTDBGMODVTIMG
     DECLCALLBACKMEMBER(int, pfnUnmapPart)(PRTDBGMODINT pMod, size_t cb, void const **ppvMap);
 
     /**
-     * Gets the loader format.
+     * Gets the image format.
      *
-     * @returns Valid loader format on success, RTLDRFMT_INVALID if not supported.
+     * @returns Valid image format on success, RTLDRFMT_INVALID if not supported.
      * @param   pMod            Pointer to the module structure.
      */
     DECLCALLBACKMEMBER(RTLDRFMT, pfnGetFormat)(PRTDBGMODINT pMod);
+
+    /**
+     * Gets the image architecture.
+     *
+     * @returns Valid image architecutre on success, RTLDRARCH_WHATEVER if not
+     *          supported.
+     * @param   pMod            Pointer to the module structure.
+     */
+    DECLCALLBACKMEMBER(RTLDRARCH, pfnGetArch)(PRTDBGMODINT pMod);
 
     /** For catching initialization errors (RTDBGMODVTIMG_MAGIC). */
     uint32_t    u32EndMagic;
@@ -243,8 +252,9 @@ typedef struct RTDBGMODVTDBG
      *
      *                      Upon successful return the method is expected to
      *                      initialize pDbgOps and pvDbgPriv.
+     * @param   enmArch     The desired architecture.
      */
-    DECLCALLBACKMEMBER(int, pfnTryOpen)(PRTDBGMODINT pMod);
+    DECLCALLBACKMEMBER(int, pfnTryOpen)(PRTDBGMODINT pMod, RTLDRARCH enmArch);
 
     /**
      * Close the interpreter, freeing all associated resources.

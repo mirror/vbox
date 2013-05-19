@@ -120,6 +120,15 @@ RTDECL(RTLDRENDIAN) RTLdrGetEndian(RTLDRMOD hLdrMod)
 RT_EXPORT_SYMBOL(RTLdrGetEndian);
 
 
+RTDECL(RTLDRARCH) RTLdrGetArch(RTLDRMOD hLdrMod)
+{
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), RTLDRARCH_INVALID);
+    PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+    return pMod->enmArch;
+}
+RT_EXPORT_SYMBOL(RTLdrGetArch);
+
+
 RTDECL(int) RTLdrClose(RTLDRMOD hLdrMod)
 {
     LogFlow(("RTLdrClose: hLdrMod=%RTldrm\n", hLdrMod));

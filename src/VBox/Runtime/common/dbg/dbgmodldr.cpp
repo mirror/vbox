@@ -60,6 +60,14 @@ typedef RTDBGMODLDR *PRTDBGMODLDR;
 
 
 
+/** @interface_method_impl{RTDBGMODVTIMG,pfnGetArch} */
+static DECLCALLBACK(RTLDRARCH) rtDbgModLdr_GetArch(PRTDBGMODINT pMod)
+{
+    PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    return RTLdrGetArch(pThis->hLdrMod);
+}
+
+
 /** @interface_method_impl{RTDBGMODVTIMG,pfnGetFormat} */
 static DECLCALLBACK(RTLDRFMT) rtDbgModLdr_GetFormat(PRTDBGMODINT pMod)
 {
@@ -197,6 +205,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
     /*.pfnMapPart = */                  rtDbgModLdr_MapPart,
     /*.pfnUnmapPart = */                rtDbgModLdr_UnmapPart,
     /*.pfnGetFormat = */                rtDbgModLdr_GetFormat,
+    /*.pfnGetArch = */                  rtDbgModLdr_GetArch,
 
     /*.u32EndMagic = */                 RTDBGMODVTIMG_MAGIC
 };

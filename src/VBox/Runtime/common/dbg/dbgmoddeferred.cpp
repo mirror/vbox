@@ -390,8 +390,9 @@ static DECLCALLBACK(int) rtDbgModDeferredDbg_Close(PRTDBGMODINT pMod)
 
 
 /** @interface_method_impl{RTDBGMODVTDBG,pfnTryOpen} */
-static DECLCALLBACK(int) rtDbgModDeferredDbg_TryOpen(PRTDBGMODINT pMod)
+static DECLCALLBACK(int) rtDbgModDeferredDbg_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch)
 {
+    NOREF(enmArch);
     return rtDbgModDeferredDoIt(pMod, true /*fForceRetry*/);
 }
 
@@ -437,6 +438,19 @@ DECL_HIDDEN_CONST(RTDBGMODVTDBG) const g_rtDbgModVtDbgDeferred =
  * I m a g e   M e t h o d s
  *
  */
+
+
+/** @interface_method_impl{RTDBGMODVTIMG,pfnGetArch} */
+static DECLCALLBACK(RTLDRARCH) rtDbgModDeferredImg_GetArch(PRTDBGMODINT pMod)
+{
+    RTLDRARCH enmArch;
+    int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
+    if (RT_SUCCESS(rc))
+        enmArch = pMod->pImgVt->pfnGetArch(pMod);
+    else
+        enmArch = RTLDRARCH_WHATEVER;
+    return enmArch;
+}
 
 
 /** @interface_method_impl{RTDBGMODVTIMG,pfnGetFormat} */
@@ -566,6 +580,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgDeferred =
     /*.pfnMapPart = */                  rtDbgModDeferredImg_MapPart,
     /*.pfnUnmapPart = */                rtDbgModDeferredImg_UnmapPart,
     /*.pfnGetFormat = */                rtDbgModDeferredImg_GetFormat,
+    /*.pfnGetArch = */                  rtDbgModDeferredImg_GetArch,
 
     /*.u32EndMagic = */                 RTDBGMODVTIMG_MAGIC
 };

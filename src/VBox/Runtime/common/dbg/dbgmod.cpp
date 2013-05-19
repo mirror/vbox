@@ -412,7 +412,7 @@ RTDECL(int) RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, c
                         {
                             pDbgMod->pDbgVt = pCur->pVt;
                             pDbgMod->pvDbgPriv = NULL;
-                            rc = pCur->pVt->pfnTryOpen(pDbgMod);
+                            rc = pCur->pVt->pfnTryOpen(pDbgMod, RTLDRARCH_WHATEVER);
                             if (RT_SUCCESS(rc))
                             {
                                 ASMAtomicIncU32(&pCur->cUsers);
@@ -475,7 +475,7 @@ static int rtDbgModOpenDebugInfoInsideImage(PRTDBGMODINT pDbgMod)
         {
             pDbgMod->pDbgVt    = pDbg->pVt;
             pDbgMod->pvDbgPriv = NULL;
-            rc = pDbg->pVt->pfnTryOpen(pDbgMod);
+            rc = pDbg->pVt->pfnTryOpen(pDbgMod, pDbgMod->pImgVt->pfnGetArch(pDbgMod));
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -505,6 +505,7 @@ static DECLCALLBACK(int) rtDbgModExtDbgInfoOpenCallback(RTDBGCFG hDbgCfg, const 
     Assert(!pDbgMod->pDbgVt);
     Assert(!pDbgMod->pvDbgPriv);
     Assert(!pDbgMod->pszDbgFile);
+    Assert(pDbgMod->pImgVt);
 
     /*
      * Set the debug file name and try possible interpreters.
@@ -518,7 +519,7 @@ static DECLCALLBACK(int) rtDbgModExtDbgInfoOpenCallback(RTDBGCFG hDbgCfg, const 
         {
             pDbgMod->pDbgVt    = pDbg->pVt;
             pDbgMod->pvDbgPriv = NULL;
-            rc = pDbg->pVt->pfnTryOpen(pDbgMod);
+            rc = pDbg->pVt->pfnTryOpen(pDbgMod, pDbgMod->pImgVt->pfnGetArch(pDbgMod));
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -673,6 +674,7 @@ static DECLCALLBACK(int) rtDbgModExtDbgInfoOpenCallback2(RTDBGCFG hDbgCfg, const
     Assert(!pDbgMod->pDbgVt);
     Assert(!pDbgMod->pvDbgPriv);
     Assert(!pDbgMod->pszDbgFile);
+    Assert(pDbgMod->pImgVt);
 
     /*
      * Set the debug file name and try possible interpreters.
@@ -686,7 +688,7 @@ static DECLCALLBACK(int) rtDbgModExtDbgInfoOpenCallback2(RTDBGCFG hDbgCfg, const
         {
             pDbgMod->pDbgVt    = pDbg->pVt;
             pDbgMod->pvDbgPriv = NULL;
-            rc = pDbg->pVt->pfnTryOpen(pDbgMod);
+            rc = pDbg->pVt->pfnTryOpen(pDbgMod, pDbgMod->pImgVt->pfnGetArch(pDbgMod));
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -866,7 +868,7 @@ RTDECL(int) RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename,
                         {
                             pDbgMod->pDbgVt = pDbg->pVt;
                             pDbgMod->pvDbgPriv = NULL;
-                            rc = pDbg->pVt->pfnTryOpen(pDbgMod);
+                            rc = pDbg->pVt->pfnTryOpen(pDbgMod, enmArch);
                             if (RT_SUCCESS(rc))
                             {
                                 /*

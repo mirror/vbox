@@ -1439,6 +1439,11 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
     pModElf->Core.enmFormat = RTLDRFMT_ELF;
     pModElf->Core.enmType   = RTLDRTYPE_OBJECT;
     pModElf->Core.enmEndian = RTLDRENDIAN_LITTLE;
+#if ELF_MODE == 32
+    pModElf->Core.enmArch   = RTLDRARCH_X86_32;
+#else
+    pModElf->Core.enmArch   = RTLDRARCH_AMD64;
+#endif
     //pModElf->pvBits         = NULL;
     //pModElf->Ehdr           = {0};
     //pModElf->paShdrs        = NULL;
