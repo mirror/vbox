@@ -4415,7 +4415,7 @@ static DECLCALLBACK(int) rtDbgModDwarfEnumCallback(RTLDRMOD hLdrMod, PCRTLDRDBGI
 static int rtDbgModDwarfTryOpenDbgFile(PRTDBGMODINT pDbgMod, PRTDBGMODDWARF pThis, RTLDRARCH enmArch)
 {
     if (   !pDbgMod->pszDbgFile
-        || RTPathIsSame(pDbgMod->pszDbgFile, pDbgMod->pszImgFile) == true /* returns VERR too */)
+        || RTPathIsSame(pDbgMod->pszDbgFile, pDbgMod->pszImgFile) == (int)true /* returns VERR too */)
         return VERR_DBG_NO_MATCHING_INTERPRETER;
 
     /*
