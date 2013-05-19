@@ -549,7 +549,7 @@ static DECLCALLBACK(int) dbgfR3AsLazyPopulateR0Callback(PVM pVM, const char *psz
     if (!fRC)
     {
         RTDBGMOD hDbgMod;
-        int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszName, pVM->pUVM->dbgf.s.hDbgCfg);
+        int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszName, RTLDRARCH_HOST, pVM->pUVM->dbgf.s.hDbgCfg);
         if (RT_SUCCESS(rc))
         {
             rc = RTDbgAsModuleLink((RTDBGAS)pvArg, hDbgMod, ImageBase, 0 /*fFlags*/);
@@ -577,7 +577,7 @@ static DECLCALLBACK(int) dbgfR3AsLazyPopulateRCCallback(PVM pVM, const char *psz
     if (fRC)
     {
         RTDBGMOD hDbgMod;
-        int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszName, pVM->pUVM->dbgf.s.hDbgCfg);
+        int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszName, RTLDRARCH_X86_32, pVM->pUVM->dbgf.s.hDbgCfg);
         if (RT_SUCCESS(rc))
         {
             rc = RTDbgAsModuleLink((RTDBGAS)pvArg, hDbgMod, ImageBase, 0 /*fFlags*/);
@@ -937,7 +937,7 @@ VMMR3DECL(int) DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilen
         return VERR_INVALID_HANDLE;
 
     RTDBGMOD hDbgMod;
-    int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszModName, pUVM->dbgf.s.hDbgCfg);
+    int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszModName, RTLDRARCH_WHATEVER, pUVM->dbgf.s.hDbgCfg);
     if (RT_SUCCESS(rc))
     {
         rc = DBGFR3AsLinkModule(pUVM, hRealAS, hDbgMod, pModAddress, iModSeg, 0);

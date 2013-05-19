@@ -2283,6 +2283,15 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
                 else
                     pModPe->Core.pOps = &s_rtldrPE32Ops.Core;
                 pModPe->Core.pReader  = pReader;
+                pModPe->Core.enmFormat= RTLDRFMT_PE;
+                pModPe->Core.enmType  = FileHdr.Characteristics & IMAGE_FILE_DLL
+                                      ? FileHdr.Characteristics & IMAGE_FILE_RELOCS_STRIPPED
+                                        ? RTLDRTYPE_EXECUTABLE_FIXED
+                                        : RTLDRTYPE_EXECUTABLE_RELOCATABLE
+                                      : FileHdr.Characteristics & IMAGE_FILE_RELOCS_STRIPPED
+                                        ? RTLDRTYPE_SHARED_LIBRARY_FIXED
+                                        : RTLDRTYPE_SHARED_LIBRARY_RELOCATABLE;
+                pModPe->Core.enmEndian= RTLDRENDIAN_LITTLE;
                 pModPe->pvBits        = NULL;
                 pModPe->offNtHdrs     = offNtHdrs;
                 pModPe->offEndOfHdrs  = offNtHdrs + 4 + sizeof(IMAGE_FILE_HEADER) + FileHdr.SizeOfOptionalHeader + cbSections;

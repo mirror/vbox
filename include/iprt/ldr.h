@@ -51,6 +51,87 @@ typedef RTLDRADDR const    *PCRTLDRADDR;
 
 
 /**
+ * Loader module format.
+ */
+typedef enum RTLDRFMT
+{
+    /** The usual invalid 0 format. */
+    RTLDRFMT_INVALID = 0,
+    /** The native OS loader. */
+    RTLDRFMT_NATIVE,
+    /** The AOUT loader. */
+    RTLDRFMT_AOUT,
+    /** The ELF loader. */
+    RTLDRFMT_ELF,
+    /** The LX loader. */
+    RTLDRFMT_LX,
+    /** The Mach-O loader. */
+    RTLDRFMT_MACHO,
+    /** The PE loader. */
+    RTLDRFMT_PE,
+    /** The end of the valid format values (exclusive). */
+    RTLDRFMT_END,
+    /** Hack to blow the type up to 32-bit. */
+    RTLDRFMT_32BIT_HACK = 0x7fffffff
+} RTLDRFMT;
+
+
+/**
+ * Loader module type.
+ */
+typedef enum RTLDRTYPE
+{
+    /** The usual invalid 0 type. */
+    RTLDRTYPE_INVALID = 0,
+    /** Object file. */
+    RTLDRTYPE_OBJECT,
+    /** Executable module, fixed load address. */
+    RTLDRTYPE_EXECUTABLE_FIXED,
+    /** Executable module, relocatable, non-fixed load address. */
+    RTLDRTYPE_EXECUTABLE_RELOCATABLE,
+    /** Executable module, position independent code, non-fixed load address. */
+    RTLDRTYPE_EXECUTABLE_PIC,
+    /** Shared library, fixed load address.
+     * Typically a system library. */
+    RTLDRTYPE_SHARED_LIBRARY_FIXED,
+    /** Shared library, relocatable, non-fixed load address. */
+    RTLDRTYPE_SHARED_LIBRARY_RELOCATABLE,
+    /** Shared library, position independent code, non-fixed load address. */
+    RTLDRTYPE_SHARED_LIBRARY_PIC,
+    /** DLL that contains no code or data only imports and exports. (Chiefly OS/2.) */
+    RTLDRTYPE_FORWARDER_DLL,
+    /** Core or dump. */
+    RTLDRTYPE_CORE,
+    /** Debug module (debug info with empty code & data segments). */
+    RTLDRTYPE_DEBUG_INFO,
+    /** The end of the valid types values (exclusive). */
+    RTLDRTYPE_END,
+    /** Hack to blow the type up to 32-bit. */
+    RTLDRTYPE_32BIT_HACK = 0x7fffffff
+} RTLDRTYPE;
+
+
+/**
+ * Loader endian indicator.
+ */
+typedef enum RTLDRENDIAN
+{
+    /** The usual invalid endian. */
+    RTLDRENDIAN_INVALID,
+    /** Little endian. */
+    RTLDRENDIAN_LITTLE,
+    /** Bit endian. */
+    RTLDRENDIAN_BIG,
+    /** Endianness doesn't have a meaning in the context. */
+    RTLDRENDIAN_NA,
+    /** The end of the valid endian values (exclusive). */
+    RTLDRENDIAN_END,
+    /** Hack to blow the type up to 32-bit. */
+    RTLDRENDIAN_32BIT_HACK = 0x7fffffff
+} RTLDRENDIAN;
+
+
+/**
  * Gets the default file suffix for DLL/SO/DYLIB/whatever.
  *
  * @returns The stuff (readonly).
@@ -659,6 +740,34 @@ RTDECL(int) RTLdrSegOffsetToRva(RTLDRMOD hLdrMod, uint32_t iSeg, RTLDRADDR offSe
  * @param   pRva            Where to return the RVA.
  */
 RTDECL(int) RTLdrRvaToSegOffset(RTLDRMOD hLdrMod, RTLDRADDR Rva, uint32_t *piSeg, PRTLDRADDR poffSeg);
+
+/**
+ * Gets the image format.
+ *
+ * @returns Valid image format on success. RTLDRFMT_INVALID on invalid handle or
+ *          other errors.
+ * @param   hLdrMod         The module handle.
+ */
+RTDECL(RTLDRFMT) RTLdrGetFormat(RTLDRMOD hLdrMod);
+
+/**
+ * Gets the image type.
+ *
+ * @returns Valid image type value on success. RTLDRTYPE_INVALID on
+ *          invalid handle or other errors.
+ * @param   hLdrMod         The module handle.
+ */
+RTDECL(RTLDRTYPE) RTLdrGetType(RTLDRMOD hLdrMod);
+
+/**
+ * Gets the image endian-ness.
+ *
+ * @returns Valid image endian value on success. RTLDRENDIAN_INVALID on invalid
+ *          handle or other errors.
+ * @param   hLdrMod         The module handle.
+ */
+RTDECL(RTLDRENDIAN) RTLdrGetEndian(RTLDRMOD hLdrMod);
+
 
 RT_C_DECLS_END
 
