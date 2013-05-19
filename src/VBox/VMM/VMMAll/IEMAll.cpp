@@ -770,7 +770,14 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu, bool fBypassHandlers)
     pIemCpu->iNextMapping       = 0;
     pIemCpu->rcPassUp           = VINF_SUCCESS;
     pIemCpu->fBypassHandlers    = fBypassHandlers;
-
+#ifdef IN_RC
+    pIemCpu->fInPatchCode       = pIemCpu->uCpl == 0
+                               && pCtx->cs.u64Base == 0
+                               && pCtx->cs.u32Limit == UINT32_MAX
+                               && PATMIsPatchGCAddr(IEMCPU_TO_VM(pIemCpu), pCtx->eip);
+    if (!pIemCpu->fInPatchCode)
+        CPUMRawLeave(pVCpu, CPUMCTX2CORE(pCtx), VINF_SUCCESS);
+#endif
 }
 
 
@@ -817,8 +824,7 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu, bool fBypa
 #if defined(IN_RC) && defined(VBOX_WITH_RAW_MODE)
     /* Allow interpretation of patch manager code blocks since they can for
        instance throw #PFs for perfectly good reasons. */
-    if (   (pCtx->cs.Sel & X86_SEL_RPL) == 1
-        && PATMIsPatchGCAddr(IEMCPU_TO_VM(pIemCpu), GCPtrPC))
+    if (pIemCpu->fInPatchCode)
     {
         uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
         if (cbToTryRead > cbLeftOnPage)
@@ -8371,6 +8377,25 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
 }
 
 
+#ifdef IN_RC
+/**
+ * Re-enters raw-mode or ensure we return to ring-3.
+ *
+ * @returns rcStrict, maybe modified.
+ * @param   pIemCpu     The IEM CPU structure.
+ * @param   pVCpu       The cross context virtual CPU structure of the caller.
+ * @param   pCtx        The current CPU context.
+ * @param   rcStrict    The status code returne by the interpreter.
+ */
+DECLINLINE(VBOXSTRICTRC) iemRCRawMaybeReenter(PIEMCPU pIemCpu, PVMCPU pVCpu, PCPUMCTX pCtx, VBOXSTRICTRC rcStrict)
+{
+    if (!pIemCpu->fInPatchCode)
+        CPUMRawEnter(pVCpu, CPUMCTX2CORE(pCtx));
+    return rcStrict;
+}
+#endif
+
+
 /**
  * Execute one instruction.
  *
@@ -8431,6 +8456,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
      */
     iemExecVerificationModeCheck(pIemCpu);
 #endif
+#ifdef IN_RC
+    rcStrict = iemRCRawMaybeReenter(pIemCpu, pVCpu, pCtx, rcStrict);
+#endif
     if (rcStrict != VINF_SUCCESS)
         LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",
                  pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->rsp, pCtx->eflags.u, VBOXSTRICTRC_VAL(rcStrict)));
@@ -8444,9 +8472,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, ui
     PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
     AssertReturn(CPUMCTX2CORE(pCtx) == pCtxCore, VERR_IEM_IPE_3);
 
-    iemInitDecoder(pIemCpu, false);
     uint32_t const cbOldWritten = pIemCpu->cbWritten;
-
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, false);
     if (rcStrict == VINF_SUCCESS)
     {
@@ -8454,6 +8480,10 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, ui
         if (pcbWritten)
             *pcbWritten = pIemCpu->cbWritten - cbOldWritten;
     }
+
+#ifdef IN_RC
+    rcStrict = iemRCRawMaybeReenter(pIemCpu, pVCpu, pCtx, rcStrict);
+#endif
     return rcStrict;
 }
 
@@ -8480,6 +8510,10 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneWithPrefetchedByPC(PVMCPU pVCpu, PCPUMCTXC
     {
         rcStrict = iemExecOneInner(pVCpu, pIemCpu, true);
     }
+
+#ifdef IN_RC
+    rcStrict = iemRCRawMaybeReenter(pIemCpu, pVCpu, pCtx, rcStrict);
+#endif
     return rcStrict;
 }
 
@@ -8490,13 +8524,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
     PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
     AssertReturn(CPUMCTX2CORE(pCtx) == pCtxCore, VERR_IEM_IPE_3);
 
-#ifdef IN_RC
-    CPUMRawLeave(pVCpu, pCtxCore, VINF_SUCCESS);
-#endif
-
-    iemInitDecoder(pIemCpu, true);
     uint32_t const cbOldWritten = pIemCpu->cbWritten;
-
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, true);
     if (rcStrict == VINF_SUCCESS)
     {
@@ -8506,7 +8534,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassEx(PVMCPU pVCpu, PCPUMCTXCORE pCtxCo
     }
 
 #ifdef IN_RC
-    CPUMRawEnter(pVCpu, pCtxCore);
+    rcStrict = iemRCRawMaybeReenter(pIemCpu, pVCpu, pCtx, rcStrict);
 #endif
     return rcStrict;
 }
@@ -8518,10 +8546,6 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPC(PVMCPU pVCpu, PCP
     PIEMCPU  pIemCpu = &pVCpu->iem.s;
     PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
     AssertReturn(CPUMCTX2CORE(pCtx) == pCtxCore, VERR_IEM_IPE_3);
-
-#ifdef IN_RC
-    CPUMRawLeave(pVCpu, pCtxCore, VINF_SUCCESS);
-#endif
 
     VBOXSTRICTRC rcStrict;
     if (   cbOpcodeBytes
@@ -8538,7 +8562,7 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPC(PVMCPU pVCpu, PCP
         rcStrict = iemExecOneInner(pVCpu, pIemCpu, false);
 
 #ifdef IN_RC
-    CPUMRawEnter(pVCpu, pCtxCore);
+    rcStrict = iemRCRawMaybeReenter(pIemCpu, pVCpu, pCtx, rcStrict);
 #endif
     return rcStrict;
 }

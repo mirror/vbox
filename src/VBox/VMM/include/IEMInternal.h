@@ -213,8 +213,10 @@ typedef struct IEMCPU
 
     /** Whether to bypass access handlers or not. */
     bool                    fBypassHandlers;
+    /** Indicates that we're interpreting patch code - RC only! */
+    bool                    fInPatchCode;
     /** Explicit alignment padding. */
-    bool                    afAlignment0[3];
+    bool                    afAlignment0[2];
 
     /** The flags of the current exception / interrupt. */
     uint32_t                fCurXcpt;
