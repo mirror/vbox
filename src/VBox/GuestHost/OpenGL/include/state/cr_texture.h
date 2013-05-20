@@ -242,6 +242,8 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateTextureHWIDtoID(GLuint hwid);
 DECLEXPORT(GLuint) STATE_APIENTRY crStateGetTextureHWID(GLuint id);
 DECLEXPORT(GLuint) STATE_APIENTRY crStateGetTextureObjHWID(CRTextureObj *tobj);
 
+void crStateRegTextures(GLsizei n, GLuint *names);
+
 #ifdef __cplusplus
 }
 #endif
