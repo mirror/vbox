@@ -403,11 +403,11 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLuint redir)
         {
             if (!crStateGetCurrent()->framebufferobject.drawFB)
             {
-                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, mural->aidFBOs[mural->iCurDrawBuffer]);
+                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, CR_SERVER_FBO_FOR_IDX(mural, mural->iCurDrawBuffer));
             }
             if (!crStateGetCurrent()->framebufferobject.readFB)
             {
-                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, mural->aidFBOs[mural->iCurReadBuffer]);
+                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, CR_SERVER_FBO_FOR_IDX(mural, mural->iCurReadBuffer));
             }
 
             crStateGetCurrent()->buffer.width = 0;
@@ -674,8 +674,8 @@ static void crServerVBoxCompositionPresentPerform(CRMuralInfo *mural)
 
     if (currentMural)
     {
-        idDrawFBO = currentMural->aidFBOs[currentMural->iCurDrawBuffer];
-        idReadFBO = currentMural->aidFBOs[currentMural->iCurReadBuffer];
+        idDrawFBO = CR_SERVER_FBO_FOR_IDX(currentMural, currentMural->iCurDrawBuffer);
+        idReadFBO = CR_SERVER_FBO_FOR_IDX(currentMural, currentMural->iCurReadBuffer);
     }
     else
     {
@@ -987,13 +987,21 @@ GLboolean crServerIsRedirectedToFBO()
            && (cr_server.curClient->currentMural->fPresentMode & CR_SERVER_REDIR_F_FBO);
 }
 
-GLuint crServerMuralFBOIdxFromBufferName(CRMuralInfo *mural, GLenum buffer)
+GLint crServerMuralFBOIdxFromBufferName(CRMuralInfo *mural, GLenum buffer)
 {
     if (buffer == GL_FRONT
             || buffer == GL_FRONT_LEFT
             || buffer == GL_FRONT_RIGHT)
         return CR_SERVER_FBO_FB_IDX(mural);
-    return CR_SERVER_FBO_BB_IDX(mural);
+    if (buffer == GL_BACK
+            || buffer == GL_BACK_LEFT
+            || buffer == GL_BACK_RIGHT)
+        return CR_SERVER_FBO_BB_IDX(mural);
+    if (buffer == GL_NONE)
+        return -1;
+
+    crWarning("crServerMuralFBOIdxFromBufferName: invalid buffer passed 0x%x", buffer);
+    return -2;
 }
 
 void crServerMuralFBOSwapBuffers(CRMuralInfo *mural)
@@ -1002,17 +1010,19 @@ void crServerMuralFBOSwapBuffers(CRMuralInfo *mural)
     GLuint iOldCurDrawBuffer = mural->iCurDrawBuffer;
     GLuint iOldCurReadBuffer = mural->iCurReadBuffer;
     mural->iBbBuffer = ((mural->iBbBuffer + 1) % (mural->cBuffers));
-    mural->iCurDrawBuffer = ((mural->iCurDrawBuffer + 1) % (mural->cBuffers));
-    mural->iCurReadBuffer = ((mural->iCurReadBuffer + 1) % (mural->cBuffers));
-    Assert(iOldCurDrawBuffer != mural->iCurDrawBuffer || mural->cBuffers == 1);
-    Assert(iOldCurReadBuffer != mural->iCurReadBuffer || mural->cBuffers == 1);
+    if (mural->iCurDrawBuffer >= 0)
+        mural->iCurDrawBuffer = ((mural->iCurDrawBuffer + 1) % (mural->cBuffers));
+    if (mural->iCurReadBuffer >= 0)
+        mural->iCurReadBuffer = ((mural->iCurReadBuffer + 1) % (mural->cBuffers));
+    Assert(iOldCurDrawBuffer != mural->iCurDrawBuffer || mural->cBuffers == 1 || mural->iCurDrawBuffer < 0);
+    Assert(iOldCurReadBuffer != mural->iCurReadBuffer || mural->cBuffers == 1 || mural->iCurReadBuffer < 0);
     if (!ctx->framebufferobject.drawFB && iOldCurDrawBuffer != mural->iCurDrawBuffer)
     {
-        cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, mural->aidFBOs[mural->iCurDrawBuffer]);
+        cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, CR_SERVER_FBO_FOR_IDX(mural, mural->iCurDrawBuffer));
     }
     if (!ctx->framebufferobject.readFB && iOldCurReadBuffer != mural->iCurReadBuffer)
     {
-        cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, mural->aidFBOs[mural->iCurReadBuffer]);
+        cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, CR_SERVER_FBO_FOR_IDX(mural, mural->iCurReadBuffer));
     }
     Assert(mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
     CrVrScrCompositorEntryTexNameUpdate(&mural->CEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);

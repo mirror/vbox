@@ -254,9 +254,9 @@ int crStateAcquireFBImage(CRContext *to, CRFBData *data)
         diff_api.ReadBuffer(to->framebufferobject.readFB->readbuffer);
 
     }
-    else if (data->idFBO)
+    else if (data->idOverrrideFBO)
     {
-        diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, data->idFBO);
+        diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, data->idOverrrideFBO);
         diff_api.ReadBuffer(GL_COLOR_ATTACHMENT0);
     }
     else
@@ -392,9 +392,9 @@ void crStateApplyFBImage(CRContext *to, CRFBData *data)
             diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, to->framebufferobject.drawFB->hwid);
             diff_api.DrawBuffer(to->framebufferobject.drawFB->drawbuffer[0]);
         }
-        else if (data->idFBO)
+        else if (data->idOverrrideFBO)
         {
-            diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, data->idFBO);
+            diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, data->idOverrrideFBO);
             diff_api.DrawBuffer(GL_COLOR_ATTACHMENT0);
         }
         else

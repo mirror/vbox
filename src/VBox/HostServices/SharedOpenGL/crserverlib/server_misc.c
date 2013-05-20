@@ -812,8 +812,8 @@ int crServerVBoxBlitterBlitCurrentCtx(GLint srcX0, GLint srcY0, GLint srcX1, GLi
 
     CrBltMuralSetCurrent(pBlitter, &BltInfo);
 
-    idDrawFBO = mural->aidFBOs[mural->iCurDrawBuffer];
-    idReadFBO = mural->aidFBOs[mural->iCurReadBuffer];
+    idDrawFBO = CR_SERVER_FBO_FOR_IDX(mural, mural->iCurDrawBuffer);
+    idReadFBO = CR_SERVER_FBO_FOR_IDX(mural, mural->iCurReadBuffer);
 
     crStateSwitchPrepare(NULL, ctx, idDrawFBO, idReadFBO);
 
@@ -1139,33 +1139,62 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDrawBuffer( GLenum mode )
         if (crServerIsRedirectedToFBO()
                 && cr_server.curClient->currentMural->aidFBOs[0])
         {
-            GLuint iBufferNeeded;
+            CRMuralInfo *mural = cr_server.curClient->currentMural;
+            GLint iBufferNeeded = -1;
             switch (mode)
             {
                 case GL_BACK:
                 case GL_BACK_LEFT:
                 case GL_BACK_RIGHT:
                     mode = GL_COLOR_ATTACHMENT0;
-                    iBufferNeeded = CR_SERVER_FBO_BB_IDX(cr_server.curClient->currentMural);
+                    iBufferNeeded = CR_SERVER_FBO_BB_IDX(mural);
                     break;
                 case GL_FRONT:
                 case GL_FRONT_LEFT:
                 case GL_FRONT_RIGHT:
                     mode = GL_COLOR_ATTACHMENT0;
-                    iBufferNeeded = CR_SERVER_FBO_FB_IDX(cr_server.curClient->currentMural);
+                    iBufferNeeded = CR_SERVER_FBO_FB_IDX(mural);
+                    break;
+                case GL_NONE:
+                    crDebug("DrawBuffer: GL_NONE");
+                    break;
+                case GL_AUX0:
+                    crDebug("DrawBuffer: GL_AUX0");
+                    break;
+                case GL_AUX1:
+                    crDebug("DrawBuffer: GL_AUX1");
+                    break;
+                case GL_AUX2:
+                    crDebug("DrawBuffer: GL_AUX2");
+                    break;
+                case GL_AUX3:
+                    crDebug("DrawBuffer: GL_AUX3");
+                    break;
+                case GL_LEFT:
+                    crWarning("DrawBuffer: GL_LEFT not supported properly");
+                    mode = GL_COLOR_ATTACHMENT0;
+                    iBufferNeeded = CR_SERVER_FBO_BB_IDX(mural);
+                    break;
+                case GL_RIGHT:
+                    crWarning("DrawBuffer: GL_RIGHT not supported properly");
+                    mode = GL_COLOR_ATTACHMENT0;
+                    iBufferNeeded = CR_SERVER_FBO_BB_IDX(mural);
+                    break;
+                case GL_FRONT_AND_BACK:
+                    crWarning("DrawBuffer: GL_FRONT_AND_BACK not supported properly");
+                    mode = GL_COLOR_ATTACHMENT0;
+                    iBufferNeeded = CR_SERVER_FBO_BB_IDX(mural);
                     break;
                 default:
-                    crWarning("unexpected mode! 0x%x", mode);
-                    iBufferNeeded = CR_SERVER_FBO_BB_IDX(cr_server.curClient->currentMural);
+                    crWarning("DrawBuffer: unexpected mode! 0x%x", mode);
+                    iBufferNeeded = mural->iCurDrawBuffer;
                     break;
             }
 
-            Assert(cr_server.curClient->currentMural->aidFBOs[cr_server.curClient->currentMural->iCurDrawBuffer]);
-            if (iBufferNeeded != cr_server.curClient->currentMural->iCurDrawBuffer)
+            if (iBufferNeeded != mural->iCurDrawBuffer)
             {
-                cr_server.curClient->currentMural->iCurDrawBuffer = iBufferNeeded;
-                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER,
-                        cr_server.curClient->currentMural->aidFBOs[iBufferNeeded]);
+                mural->iCurDrawBuffer = iBufferNeeded;
+                cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, CR_SERVER_FBO_FOR_IDX(mural, iBufferNeeded));
             }
         }
     }
@@ -1181,33 +1210,63 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchReadBuffer( GLenum mode )
             && cr_server.curClient->currentMural->aidFBOs[0]
             && !crStateGetCurrent()->framebufferobject.readFB)
     {
-        GLuint iBufferNeeded;
+        CRMuralInfo *mural = cr_server.curClient->currentMural;
+        GLint iBufferNeeded = -1;
         switch (mode)
         {
             case GL_BACK:
             case GL_BACK_LEFT:
             case GL_BACK_RIGHT:
                 mode = GL_COLOR_ATTACHMENT0;
-                iBufferNeeded = CR_SERVER_FBO_BB_IDX(cr_server.curClient->currentMural);
+                iBufferNeeded = CR_SERVER_FBO_BB_IDX(mural);
                 break;
             case GL_FRONT:
             case GL_FRONT_LEFT:
             case GL_FRONT_RIGHT:
                 mode = GL_COLOR_ATTACHMENT0;
-                iBufferNeeded = CR_SERVER_FBO_FB_IDX(cr_server.curClient->currentMural);
+                iBufferNeeded = CR_SERVER_FBO_FB_IDX(mural);
+                break;
+            case GL_NONE:
+                crDebug("ReadBuffer: GL_NONE");
+                break;
+            case GL_AUX0:
+                crDebug("ReadBuffer: GL_AUX0");
+                break;
+            case GL_AUX1:
+                crDebug("ReadBuffer: GL_AUX1");
+                break;
+            case GL_AUX2:
+                crDebug("ReadBuffer: GL_AUX2");
+                break;
+            case GL_AUX3:
+                crDebug("ReadBuffer: GL_AUX3");
+                break;
+            case GL_LEFT:
+                crWarning("ReadBuffer: GL_LEFT not supported properly");
+                mode = GL_COLOR_ATTACHMENT0;
+                iBufferNeeded = CR_SERVER_FBO_BB_IDX(mural);
+                break;
+            case GL_RIGHT:
+                crWarning("ReadBuffer: GL_RIGHT not supported properly");
+                mode = GL_COLOR_ATTACHMENT0;
+                iBufferNeeded = CR_SERVER_FBO_BB_IDX(mural);
+                break;
+            case GL_FRONT_AND_BACK:
+                crWarning("ReadBuffer: GL_FRONT_AND_BACK not supported properly");
+                mode = GL_COLOR_ATTACHMENT0;
+                iBufferNeeded = CR_SERVER_FBO_BB_IDX(mural);
                 break;
             default:
-                crWarning("unexpected mode! 0x%x", mode);
-                iBufferNeeded = CR_SERVER_FBO_BB_IDX(cr_server.curClient->currentMural);
+                crWarning("ReadBuffer: unexpected mode! 0x%x", mode);
+                iBufferNeeded = mural->iCurDrawBuffer;
                 break;
         }
 
-        Assert(cr_server.curClient->currentMural->aidFBOs[cr_server.curClient->currentMural->iCurReadBuffer]);
-        if (iBufferNeeded != cr_server.curClient->currentMural->iCurReadBuffer)
+        Assert(CR_SERVER_FBO_FOR_IDX(mural, mural->iCurReadBuffer));
+        if (iBufferNeeded != mural->iCurReadBuffer)
         {
-            cr_server.curClient->currentMural->iCurReadBuffer = iBufferNeeded;
-            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER,
-                    cr_server.curClient->currentMural->aidFBOs[iBufferNeeded]);
+            mural->iCurReadBuffer = iBufferNeeded;
+            cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, CR_SERVER_FBO_FOR_IDX(mural, iBufferNeeded));
         }
     }
     cr_server.head_spu->dispatch_table.ReadBuffer( mode );
