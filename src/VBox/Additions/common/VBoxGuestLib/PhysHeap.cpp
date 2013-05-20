@@ -100,7 +100,7 @@ struct _VBGLPHYSHEAPCHUNK
     uint32_t cbSize;
 
     /* Physical address of the chunk */
-    RTCCPHYS physAddr;
+    uint32_t physAddr;
 
     /* Number of allocated blocks in the chunk */
     int32_t cAllocatedBlocks;
@@ -318,9 +318,11 @@ static VBGLPHYSHEAPBLOCK *vbglPhysHeapChunkAlloc (uint32_t cbSize)
         return NULL;
     }
 
+    AssertRelease(physAddr < _4G && physAddr + cbSize <= _4G);
+
     pChunk->u32Signature     = VBGL_PH_CHUNKSIGNATURE;
     pChunk->cbSize           = cbSize;
-    pChunk->physAddr         = physAddr;
+    pChunk->physAddr         = (uint32_t)physAddr;
     pChunk->cAllocatedBlocks = 0;
     pChunk->pNext            = g_vbgldata.pChunkHead;
     pChunk->pPrev            = NULL;
@@ -493,9 +495,9 @@ DECLVBGL(void *) VbglPhysHeapAlloc (uint32_t cbSize)
     return vbglPhysHeapBlock2Data (pBlock);
 }
 
-DECLVBGL(RTCCPHYS) VbglPhysHeapGetPhysAddr (void *p)
+DECLVBGL(uint32_t) VbglPhysHeapGetPhysAddr (void *p)
 {
-    RTCCPHYS physAddr = 0;
+    uint32_t physAddr = 0;
     VBGLPHYSHEAPBLOCK *pBlock = vbglPhysHeapData2Block (p);
 
     if (pBlock)
@@ -504,7 +506,7 @@ DECLVBGL(RTCCPHYS) VbglPhysHeapGetPhysAddr (void *p)
                          ("pBlock = %p, pBlock->fu32Flags = %08X\n", pBlock, pBlock->fu32Flags));
 
         if (pBlock->fu32Flags & VBGL_PH_BF_ALLOCATED)
-            physAddr = pBlock->pChunk->physAddr + ((char *)p - (char *)pBlock->pChunk);
+            physAddr = pBlock->pChunk->physAddr + (uint32_t)((uintptr_t)p - (uintptr_t)pBlock->pChunk);
     }
 
     return physAddr;

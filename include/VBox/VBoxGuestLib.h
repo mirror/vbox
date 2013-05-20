@@ -383,9 +383,9 @@ DECLVBGL(void *) VbglPhysHeapAlloc (uint32_t cbSize);
  *
  *
  * @param p    Virtual address of memory block.
- * @return Physical memory block.
+ * @return Physical address of the memory block.
  */
-DECLVBGL(RTCCPHYS) VbglPhysHeapGetPhysAddr (void *p);
+DECLVBGL(uint32_t) VbglPhysHeapGetPhysAddr (void *p);
 
 /**
  * Free a memory block.
