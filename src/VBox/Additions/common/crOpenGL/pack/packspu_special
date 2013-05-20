@@ -125,3 +125,4 @@ GenRenderbuffersEXT
 GenBuffersARB
 DeleteBuffersARB
 StringMarkerGREMEDY
+GenTextures

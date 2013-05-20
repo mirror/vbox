@@ -635,6 +635,12 @@ void crStateRegNames(CRContext *g, CRHashTable *table, GLsizei n, GLuint *names)
     }
 }
 
+void crStateRegTextures(GLsizei n, GLuint *names)
+{
+    CRContext *g = GetCurrentContext();
+    crStateRegNames(g, g->shared->textureTable, n, names);
+}
+
 void crStateGenNames(CRContext *g, CRHashTable *table, GLsizei n, GLuint *names)
 {
     GLint start;
@@ -781,8 +787,11 @@ void STATE_APIENTRY crStateDeleteTextures(GLsizei n, const GLuint *textures)
     {
         GLuint name = textures[i];
         CRTextureObj *tObj;
+        if (!name)
+            continue;
+
         GET_TOBJ(tObj, g, name);
-        if (name && tObj)
+        if (tObj)
         {
             GLuint j;
 
@@ -804,6 +813,12 @@ void STATE_APIENTRY crStateDeleteTextures(GLsizei n, const GLuint *textures)
             /* on the host side, ogl texture object is deleted by a separate cr_server.head_spu->dispatch_table.DeleteTextures(n, newTextures);
              * in crServerDispatchDeleteTextures, we just delete a state object here, which crStateDeleteTextureObject does */
             crHashtableDelete(g->shared->textureTable, name, (CRHashtableCallback)crStateDeleteTextureObject);
+        }
+        else
+        {
+            /* call crHashtableDelete in any way, to ensure the allocated key is freed */
+            Assert(crHashtableIsKeyUsed(g->shared->textureTable, name));
+            crHashtableDelete(g->shared->textureTable, name, NULL);
         }
     }
 
@@ -895,6 +910,7 @@ DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used)
     if (!tobj)
     {
 #ifdef IN_GUEST
+        Assert(crHashtableIsKeyUsed(g->shared->textureTable, texture));
         if (used)
         {
             tobj = crStateTextureAllocate_t(g, texture);
@@ -996,6 +1012,7 @@ void STATE_APIENTRY crStateBindTexture(GLenum target, GLuint texture)
     GET_TOBJ(tobj, g, texture);
     if (!tobj)
     {
+        Assert(crHashtableIsKeyUsed(g->shared->textureTable, texture));
         tobj = crStateTextureAllocate_t(g, texture);
     }
 
@@ -3302,7 +3319,9 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateTextureHWIDtoID(GLuint hwid)
 DECLEXPORT(GLuint) STATE_APIENTRY crStateGetTextureHWID(GLuint id)
 {
     CRContext *g = GetCurrentContext();
-    CRTextureObj *tobj = GET_TOBJ(tobj, g, id);
+    CRTextureObj *tobj;
+
+    GET_TOBJ(tobj, g, id);
 
 #ifdef DEBUG_misha
     if (id)
