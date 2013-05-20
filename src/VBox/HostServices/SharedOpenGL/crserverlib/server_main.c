@@ -1089,7 +1089,19 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
     if (!width || !height)
         return VINF_SUCCESS;
 
-    pData->idFBO = pMural && (pMural->fPresentMode & CR_SERVER_REDIR_F_FBO) ? pMural->aidColorTexs[fWrite ? pMural->iCurDrawBuffer : pMural->iCurReadBuffer] : 0;
+    if (pMural)
+    {
+        if (fWrite)
+        {
+            if (!pContext->framebufferobject.drawFB)
+                pData->idOverrrideFBO = CR_SERVER_FBO_FOR_IDX(pMural, pMural->iCurDrawBuffer);
+        }
+        else
+        {
+            if (!pContext->framebufferobject.readFB)
+                pData->idOverrrideFBO = CR_SERVER_FBO_FOR_IDX(pMural, pMural->iCurReadBuffer);
+        }
+    }
     pData->cElements = 0;
 
     pEl = &pData->aElements[pData->cElements];

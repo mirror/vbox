@@ -127,8 +127,8 @@ int CrDpPresentEntry(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
 
     if (pMural)
     {
-        idDrawFBO = pMural->aidFBOs[pMural->iCurDrawBuffer];
-        idReadFBO = pMural->aidFBOs[pMural->iCurReadBuffer];
+        idDrawFBO = CR_SERVER_FBO_FOR_IDX(pMural, pMural->iCurDrawBuffer);
+        idReadFBO = CR_SERVER_FBO_FOR_IDX(pMural, pMural->iCurReadBuffer);
     }
 
     crStateSwitchPrepare(NULL, pCtx, idDrawFBO, idReadFBO);

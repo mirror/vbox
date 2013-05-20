@@ -173,7 +173,7 @@ void crServerRedirMuralFBO(CRMuralInfo *mural, GLuint redir);
 void crServerDeleteMuralFBO(CRMuralInfo *mural);
 void crServerPresentFBO(CRMuralInfo *mural);
 GLboolean crServerIsRedirectedToFBO();
-GLuint crServerMuralFBOIdxFromBufferName(CRMuralInfo *mural, GLenum buffer);
+GLint crServerMuralFBOIdxFromBufferName(CRMuralInfo *mural, GLenum buffer);
 void crServerMuralFBOSwapBuffers(CRMuralInfo *mural);
 
 void crServerVBoxCompositionDisableEnter(CRMuralInfo *mural);
@@ -189,6 +189,13 @@ DECLINLINE(GLboolean) crServerVBoxCompositionPresentNeeded(CRMuralInfo *mural)
 
 #define CR_SERVER_FBO_BB_IDX(_mural) ((_mural)->iBbBuffer)
 #define CR_SERVER_FBO_FB_IDX(_mural) (((_mural)->iBbBuffer + 1) % ((_mural)->cBuffers))
+/* returns a valid index to be used for negative _idx, i.e. for GL_NONE cases */
+//#define CR_SERVER_FBO_ADJUST_IDX(_mural, _idx) ((_idx) >= 0 ? (_idx) : CR_SERVER_FBO_BB_IDX(_mural))
+/* just a helper that uses CR_SERVER_FBO_ADJUST_IDX for getting mural's FBO id for buffer index*/
+//#define CR_SERVER_FBO_FOR_IDX(_mural, _idx) ((_mural)->aidFBOs[CR_SERVER_FBO_ADJUST_IDX((_mural), (_idx))])
+//#define CR_SERVER_FBO_TEX_FOR_IDX(_mural, _idx) ((_mural)->aidColorTexs[CR_SERVER_FBO_ADJUST_IDX((_mural), (_idx))])
+#define CR_SERVER_FBO_FOR_IDX(_mural, _idx) ((_idx) >= 0 ? (_mural)->aidFBOs[(_idx)] : 0)
+#define CR_SERVER_FBO_TEX_FOR_IDX(_mural, _idx) ((_idx) >= 0 ? (_mural)->aidColorTexs[(_idx)] : 0)
 
 int32_t crVBoxServerInternalClientRead(CRClient *pClient, uint8_t *pBuffer, uint32_t *pcbBuffer);
 
@@ -354,8 +361,8 @@ DECLINLINE(void) cr_serverCtxSwitchPrepare(CR_SERVER_CTX_SWITCH *pData, CRContex
 
     if (pCurrentMural)
     {
-        idDrawFBO = pCurrentMural->aidFBOs[pCurrentMural->iCurDrawBuffer];
-        idReadFBO = pCurrentMural->aidFBOs[pCurrentMural->iCurReadBuffer];
+        idDrawFBO = CR_SERVER_FBO_FOR_IDX(pCurrentMural, pCurrentMural->iCurDrawBuffer);
+        idReadFBO = CR_SERVER_FBO_FOR_IDX(pCurrentMural, pCurrentMural->iCurReadBuffer);
     }
     else
     {

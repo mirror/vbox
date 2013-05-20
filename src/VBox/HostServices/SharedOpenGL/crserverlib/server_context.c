@@ -296,8 +296,8 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
     oldCtx = crStateGetCurrent();
     if (oldMural && (oldMural->fPresentMode & CR_SERVER_REDIR_F_FBO) && crServerSupportRedirMuralFBO())
     {
-        idDrawFBO = oldMural->aidFBOs[oldMural->iCurDrawBuffer];
-        idReadFBO = oldMural->aidFBOs[oldMural->iCurReadBuffer];
+        idDrawFBO = CR_SERVER_FBO_FOR_IDX(oldMural, oldMural->iCurDrawBuffer);
+        idReadFBO = CR_SERVER_FBO_FOR_IDX(oldMural, oldMural->iCurReadBuffer);
     }
     else
     {
@@ -392,8 +392,8 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
             mural->iCurReadBuffer = id;
         }
 
-        idDrawFBO = mural->aidFBOs[mural->iCurDrawBuffer];
-        idReadFBO = mural->aidFBOs[mural->iCurReadBuffer];
+        idDrawFBO = CR_SERVER_FBO_FOR_IDX(mural, mural->iCurDrawBuffer);
+        idReadFBO = CR_SERVER_FBO_FOR_IDX(mural, mural->iCurReadBuffer);
     }
     else
     {

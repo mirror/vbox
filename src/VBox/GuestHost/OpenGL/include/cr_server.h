@@ -235,8 +235,8 @@ typedef struct {
     /* to avoid saved state breakage we need to keep RT_OFFSETOF(CRMuralInfo, CreateInfo) intact
      * this is why we place some FBO stuff to the tail
      * @todo: once we need to increment a saved state version, we could refactor this structure */
-    GLuint iCurDrawBuffer;
-    GLuint iCurReadBuffer;
+    GLint iCurDrawBuffer;
+    GLint iCurReadBuffer;
 
     GLuint idDepthStencilRB;
     GLuint fboWidth, fboHeight;
