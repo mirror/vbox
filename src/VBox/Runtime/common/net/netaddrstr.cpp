@@ -1,6 +1,10 @@
 /* $Id$ */
 /** @file
  * IPRT - Network Address String Handling.
+ *
+ * @remarks Don't add new functionality to this file, it goes into netaddrstr2.cpp
+ *          or some other suitable file (legal reasons + code not up to oracle
+ *          quality standards and requires rewrite from scratch).
  */
 
 /*
@@ -202,7 +206,8 @@
  * This function should NOT be used directly. If you do, note
  * that no security checks are done at the moment. This can change.
  *
- * @returns iprt sstatus code.
+ * @returns iprt sstatus code, yeah, right... This function most certainly DOES
+ *          NOT RETURN ANY IPRT STATUS CODES.  It's also a unreadable mess.
  * @param pszAddress       The strin that holds the IPv6 address
  * @param addressLength    The length of pszAddress
  * @param pszAddressOut    Returns a plain, full blown IPv6 address
@@ -1147,7 +1152,7 @@ static int rtNetIpv6CheckAddrStr(const char *psz, char *pszResultAddress, size_t
 {
     int rc;
     int rc2;
-    int returnValue;
+    int returnValue = VERR_NOT_SUPPORTED; /* gcc want's this initialized, I understand its confusion. */
 
     char *p = NULL, *pl = NULL;
 
