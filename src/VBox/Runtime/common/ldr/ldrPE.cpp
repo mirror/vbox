@@ -239,7 +239,7 @@ static int rtldrPEReadPartByRva(PRTLDRMODPE pThis, const void *pvBits, uint32_t 
             }
             else
             {
-                offFile  = -1;
+                offFile  = UINT32_MAX;
                 cbToRead = 0;
             }
         }

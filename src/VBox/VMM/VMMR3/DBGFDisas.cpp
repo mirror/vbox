@@ -324,37 +324,70 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(PDISCPUSTATE pDis, uint8_t offInst
 /**
  * @copydoc FNDISGETSYMBOL
  */
-static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Sel, RTUINTPTR uAddress, char *pszBuf, size_t cchBuf, RTINTPTR *poff, void *pvUser)
+static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Sel, RTUINTPTR uAddress,
+                                              char *pszBuf, size_t cchBuf, RTINTPTR *poff, void *pvUser)
 {
     PDBGFDISASSTATE pState   = (PDBGFDISASSTATE)pCpu;
     PCDBGFSELINFO   pSelInfo = (PCDBGFSELINFO)pvUser;
-    DBGFADDRESS     Addr;
-    RTDBGSYMBOL     Sym;
-    RTGCINTPTR      off;
-    int             rc;
 
+    /*
+     * Address conversion
+     */
+    DBGFADDRESS     Addr;
+    int             rc;
+    /* Start with CS. */
     if (   DIS_FMT_SEL_IS_REG(u32Sel)
         ?  DIS_FMT_SEL_GET_REG(u32Sel) == DISSELREG_CS
         :  pSelInfo->Sel == DIS_FMT_SEL_GET_VALUE(u32Sel))
-    {
         rc = DBGFR3AddrFromSelInfoOff(pState->pVM->pUVM, &Addr, pSelInfo, uAddress);
-        if (RT_SUCCESS(rc))
-            rc = DBGFR3AsSymbolByAddr(pState->pVM->pUVM, pState->hDbgAs, &Addr, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL,
-                                      &off, &Sym, NULL /*phMod*/);
+    /* In long mode everything but FS and GS is easy. */
+    else if (   pState->Cpu.uCpuMode == DISCPUMODE_64BIT
+             && DIS_FMT_SEL_IS_REG(u32Sel)
+             && DIS_FMT_SEL_GET_REG(u32Sel) != DISSELREG_GS
+             && DIS_FMT_SEL_GET_REG(u32Sel) != DISSELREG_FS)
+    {
+        DBGFR3AddrFromFlat(pState->pVM->pUVM, &Addr, uAddress);
+        rc = VINF_SUCCESS;
+    }
+    /* Here's a quick hack to catch patch manager SS relative access. */
+    else if (   DIS_FMT_SEL_IS_REG(u32Sel)
+             && DIS_FMT_SEL_GET_REG(u32Sel) == DISSELREG_SS
+             && pSelInfo->GCPtrBase == 0
+             && pSelInfo->cbLimit   >= UINT32_MAX
+             && PATMIsPatchGCAddr(pState->pVM, pState->Cpu.uInstrAddr))
+    {
+        DBGFR3AddrFromFlat(pState->pVM->pUVM, &Addr, uAddress);
+        rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_SYMBOL_NOT_FOUND; /** @todo implement this */
-    if (RT_SUCCESS(rc))
     {
-        size_t cchName = strlen(Sym.szName);
-        if (cchName >= cchBuf)
-            cchName = cchBuf - 1;
-        memcpy(pszBuf, Sym.szName, cchName);
-        pszBuf[cchName] = '\0';
-
-        *poff = off;
+        /** @todo implement a generic solution here. */
+        rc = VERR_SYMBOL_NOT_FOUND;
     }
 
+    /*
+     * If we got an address, try resolve it into a symbol.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        RTDBGSYMBOL     Sym;
+        RTGCINTPTR      off;
+        rc = DBGFR3AsSymbolByAddr(pState->pVM->pUVM, pState->hDbgAs, &Addr, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL,
+                                  &off, &Sym, NULL /*phMod*/);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Return the symbol and offset.
+             */
+            size_t cchName = strlen(Sym.szName);
+            if (cchName >= cchBuf)
+                cchName = cchBuf - 1;
+            memcpy(pszBuf, Sym.szName, cchName);
+            pszBuf[cchName] = '\0';
+
+            *poff = off;
+        }
+    }
     return rc;
 }
 
