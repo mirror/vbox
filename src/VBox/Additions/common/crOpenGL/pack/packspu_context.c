@@ -423,7 +423,7 @@ void PACKSPU_APIENTRY packspu_MakeCurrent( GLint window, GLint nativeWindow, GLi
         }
         else
         {
-            if (!newCtx->fAutoFlush)
+            if (newCtx->fAutoFlush)
             {
                 if (newCtx->currentThread && newCtx->currentThread != thread)
                 {
