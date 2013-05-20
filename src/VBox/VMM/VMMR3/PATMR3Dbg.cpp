@@ -238,12 +238,15 @@ static DECLCALLBACK(int) patmR3DbgAddPatchCallback(PAVLOU32NODECORE pNode, void 
 static void patmR3DbgAddPatches(PVM pVM, RTDBGMOD hDbgMod)
 {
     /*
-     * Global functions.
+     * Global functions and a start marker.
      */
     ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pfnHelperCallGC, PATMLookupAndCallRecord.size, "PATMLookupAndCall");
     ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pfnHelperRetGC,  PATMRetFunctionRecord.size,   "PATMRetFunction");
     ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pfnHelperJumpGC, PATMLookupAndJumpRecord.size, "PATMLookupAndJump");
     ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pfnHelperIretGC, PATMIretFunctionRecord.size,  "PATMIretFunction");
+
+    ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pPatchMemGC, 0,  "PatchMemStart");
+    ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pGCStackGC, PATM_STACK_TOTAL_SIZE, "PATMStack");
 
     /*
      * The patches.
@@ -296,9 +299,23 @@ VMMR3_INT_DECL(void) PATMR3DbgPopulateAddrSpace(PVM pVM, RTDBGAS hDbgAs)
     }
 
     /*
-     * Add a fake debug module for the patches.
+     * Add something for the stats so we get some kind of symbols for
+     * references to them while disassembling patches.
      */
-    rc = RTDbgModCreate(&hDbgMod, "patches", pVM->patm.s.cbPatchMem, 0 /*fFlags*/);
+    rc = RTDbgModCreate(&hDbgMod, "patmstats", PATM_STAT_MEMSIZE, 0 /*fFlags*/);
+    if (RT_SUCCESS(rc))
+    {
+        ADD_FUNC(hDbgMod, pVM->patm.s.pStatsGC, pVM->patm.s.pStatsGC, PATM_STAT_MEMSIZE, "PATMMemStatsStart");
+
+        rc = RTDbgAsModuleLink(hDbgAs, hDbgMod, pVM->patm.s.pStatsGC, 0 /*fFlags/*/);
+        AssertLogRelRC(rc);
+        RTDbgModRelease(hDbgMod);
+    }
+
+    /*
+     * Add a fake debug module for the patches and stack.
+     */
+    rc = RTDbgModCreate(&hDbgMod, "patches", pVM->patm.s.cbPatchMem + PATM_STACK_TOTAL_SIZE + PAGE_SIZE, 0 /*fFlags*/);
     if (RT_SUCCESS(rc))
     {
         pVM->patm.s.hDbgModPatchMem = hDbgMod;

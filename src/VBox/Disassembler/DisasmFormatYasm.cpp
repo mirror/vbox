@@ -340,6 +340,36 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
 #define PUT_NUM_S32(num) PUT_NUM_SIGN(10, "0%08xh", num, int32_t, uint32_t)
 #define PUT_NUM_S64(num) PUT_NUM_SIGN(18, "0%016RX64h", num, int64_t, uint64_t)
 
+#define PUT_SYMBOL_TWO(a_rcSym, a_szStart, a_chEnd) \
+        do { \
+            if (RT_SUCCESS(a_rcSym)) \
+            { \
+                PUT_SZ(a_szStart); \
+                PUT_PSZ(szSymbol); \
+                if (off != 0) \
+                { \
+                    if ((int8_t)off == off) \
+                        PUT_NUM_S8(off); \
+                    else if ((int16_t)off == off) \
+                        PUT_NUM_S16(off); \
+                    else if ((int32_t)off == off) \
+                        PUT_NUM_S32(off); \
+                    else \
+                        PUT_NUM_S64(off); \
+                } \
+                PUT_C(a_chEnd); \
+            } \
+        } while (0)
+
+#define PUT_SYMBOL(a_uSeg, a_uAddr, a_szStart, a_chEnd) \
+        do { \
+            if (pfnGetSymbol) \
+            { \
+                int rcSym = pfnGetSymbol(pDis, a_uSeg, a_uAddr, szSymbol, sizeof(szSymbol), &off, pvUser); \
+                PUT_SYMBOL_TWO(rcSym, a_szStart, a_chEnd); \
+            } \
+        } while (0)
+
 
     /*
      * The address?
@@ -735,9 +765,9 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                         else
                             Assert(!(fUse & DISUSE_SCALE));
 
+                        int64_t off2 = 0;
                         if (fUse & (DISUSE_DISPLACEMENT8 | DISUSE_DISPLACEMENT16 | DISUSE_DISPLACEMENT32 | DISUSE_DISPLACEMENT64 | DISUSE_RIPDISPLACEMENT32))
                         {
-                            int64_t off2;
                             if (fUse & DISUSE_DISPLACEMENT8)
                                 off2 = pParam->uDisp.i8;
                             else if (fUse & DISUSE_DISPLACEMENT16)
@@ -774,7 +804,19 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                         }
 
                         if (DISUSE_IS_EFFECTIVE_ADDR(fUse))
+                        {
+                            if (pfnGetSymbol && !fBase && !(fUse & DISUSE_INDEX) && off2 != 0)
+                                PUT_SYMBOL((pDis->fPrefix & DISPREFIX_SEG)
+                                           ? DIS_FMT_SEL_FROM_REG(pDis->idxSegPrefix)
+                                           : DIS_FMT_SEL_FROM_REG(DISSELREG_DS),
+                                           pDis->uAddrMode == DISCPUMODE_64BIT
+                                           ? (uint64_t)off2
+                                           : pDis->uAddrMode == DISCPUMODE_32BIT
+                                           ? (uint32_t)off2
+                                           : (uint16_t)off2,
+                                           " (=", ')');
                             PUT_C(']');
+                        }
                         break;
                     }
 
@@ -839,6 +881,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                                         PUT_SZ_STRICT("strict dword ", "dword ");
                                 }
                                 PUT_NUM_32(pParam->uValue);
+                                if (pDis->uCpuMode == DISCPUMODE_32BIT)
+                                    PUT_SYMBOL(DIS_FMT_SEL_FROM_REG(DISSELREG_CS), pParam->uValue, " (=", ')');
                                 break;
 
                             case DISUSE_IMMEDIATE32_SX8:
@@ -907,7 +951,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                             if (fPrefix)
                                 PUT_SZ("near ");
                             offDisplacement = (int32_t)pParam->uValue;
-                            Assert(pParam->fUse & (DISUSE_IMMEDIATE32_REL|DISUSE_IMMEDIATE64_REL));
+                            Assert(pParam->fUse & (DISUSE_IMMEDIATE32_REL | DISUSE_IMMEDIATE64_REL));
                             Assert(*pszFmt == 'v'); pszFmt++;
 
                             if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
@@ -924,30 +968,13 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                         else
                             PUT_NUM_64(uTrgAddr);
 
-                        if (pfnGetSymbol)
-                        {
-                            int rc = pfnGetSymbol(pDis, DIS_FMT_SEL_FROM_REG(DISSELREG_CS), uTrgAddr, szSymbol, sizeof(szSymbol), &off, pvUser);
-                            if (RT_SUCCESS(rc))
-                            {
-                                PUT_SZ(" [");
-                                PUT_PSZ(szSymbol);
-                                if (off != 0)
-                                {
-                                    if ((int8_t)off == off)
-                                        PUT_NUM_S8(off);
-                                    else if ((int16_t)off == off)
-                                        PUT_NUM_S16(off);
-                                    else if ((int32_t)off == off)
-                                        PUT_NUM_S32(off);
-                                    else
-                                        PUT_NUM_S64(off);
-                                }
-                                PUT_C(']');
-                            }
-                        }
-
                         if (fFlags & DIS_FMT_FLAGS_RELATIVE_BRANCH)
+                        {
+                            PUT_SYMBOL(DIS_FMT_SEL_FROM_REG(DISSELREG_CS), uTrgAddr, " = ", ' ');
                             PUT_C(')');
+                        }
+                        else
+                            PUT_SYMBOL(DIS_FMT_SEL_FROM_REG(DISSELREG_CS), uTrgAddr, " (", ')');
                         break;
                     }
 
@@ -994,23 +1021,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                                 break;
                         }
 
-                        if (RT_SUCCESS(rc))
-                        {
-                            PUT_SZ(" [");
-                            PUT_PSZ(szSymbol);
-                            if (off != 0)
-                            {
-                                if ((int8_t)off == off)
-                                    PUT_NUM_S8(off);
-                                else if ((int16_t)off == off)
-                                    PUT_NUM_S16(off);
-                                else if ((int32_t)off == off)
-                                    PUT_NUM_S32(off);
-                                else
-                                    PUT_NUM_S64(off);
-                            }
-                            PUT_C(']');
-                        }
+                        PUT_SYMBOL_TWO(rc, " [", ']');
                         break;
                     }
 
@@ -1059,23 +1070,7 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                         }
                         PUT_C(']');
 
-                        if (RT_SUCCESS(rc))
-                        {
-                            PUT_SZ(" (");
-                            PUT_PSZ(szSymbol);
-                            if (off != 0)
-                            {
-                                if ((int8_t)off == off)
-                                    PUT_NUM_S8(off);
-                                else if ((int16_t)off == off)
-                                    PUT_NUM_S16(off);
-                                else if ((int32_t)off == off)
-                                    PUT_NUM_S32(off);
-                                else
-                                    PUT_NUM_S64(off);
-                            }
-                            PUT_C(')');
-                        }
+                        PUT_SYMBOL_TWO(rc, " (", ')');
                         break;
                     }
 
