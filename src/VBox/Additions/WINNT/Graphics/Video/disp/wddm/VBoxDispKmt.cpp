@@ -194,10 +194,6 @@ static HRESULT vboxDispKmtOpenAdapterViaHdc(PVBOXDISPKMT_CALLBACKS pCallbacks, P
 
     Assert(OpenAdapterData.hDc);
     NTSTATUS Status = pCallbacks->pfnD3DKMTOpenAdapterFromHdc(&OpenAdapterData);
-#ifdef DEBUG_misha
-    /* may fail with xpdm driver */
-    Assert(NT_SUCCESS(Status));
-#endif
     if (NT_SUCCESS(Status))
     {
         pAdapter->hAdapter = OpenAdapterData.hAdapter;
