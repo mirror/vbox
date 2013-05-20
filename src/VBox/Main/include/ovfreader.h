@@ -168,6 +168,10 @@ enum OVFVersion_T
     OVFVersion_2_0
 };
 
+const char* const OVF09_URI_string = "http://www.vmware.com/schema/ovf/1/envelope";
+const char* const OVF10_URI_string = "http://schemas.dmtf.org/ovf/envelope/1";
+const char* const OVF20_URI_string = "http://schemas.dmtf.org/ovf/envelope/2";
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Envelope data
@@ -175,32 +179,30 @@ enum OVFVersion_T
 ////////////////////////////////////////////////////////////////////////////////
 struct EnvelopeData
 {
-    RTCString version;//OVF standard version, it is used internally only by VirtualBox 
+    OVFVersion_T version;//OVF standard version, it is used internally only by VirtualBox 
     RTCString lang;//language
 
     OVFVersion_T getOVFVersion() const
     {
-        if (version == "0.9")
-            return OVFVersion_0_9;
-        else if (version == "1.0")
-            return OVFVersion_1_0;
-        else if (version == "2.0")
-            return OVFVersion_2_0;
-        else
-            return OVFVersion_unknown;
+            return version;
     }
 
 
     RTCString getStringOVFVersion() const
     {
-        if (version == "0.9")
+        if (version == OVFVersion_0_9)
             return "0.9";
-        else if (version == "1.0")
+        else if (version == OVFVersion_1_0)
             return "1.0";
-        else if (version == "2.0")
+        else if (version == OVFVersion_2_0)
             return "2.0";
         else
             return "";
+    }
+
+    void setOVFVersion(OVFVersion_T v)
+    {
+        version = v;
     }
 };
 
@@ -344,14 +346,15 @@ typedef std::map<uint32_t, HardDiskController> ControllersMap;
 
 struct VirtualDisk
 {
-    uint32_t            idController;           // SCSI (or IDE) controller this disk is connected to;
-                                                // this must match HardDiskController.idController and
-                                                // points into VirtualSystem.mapControllers
-    uint32_t            ulAddressOnParent;      // parsed strAddressOnParent of hardware item; will be 0 or 1 for IDE
-                                                // and possibly higher for disks attached to SCSI controllers (untested)
-    RTCString    strDiskId;              // if the hard disk has an ovf:/disk/<id> reference,
-                                                // this receives the <id> component; points to one of the
-                                                // references in Appliance::Data.mapDisks
+    uint32_t    idController;// SCSI (or IDE) controller this disk is connected to;
+                             // this must match HardDiskController.idController and
+                             // points into VirtualSystem.mapControllers
+    uint32_t    ulAddressOnParent;// parsed strAddressOnParent of hardware item; will be 0 or 1 for IDE
+                                  // and possibly higher for disks attached to SCSI controllers (untested)
+    RTCString   strDiskId;// if the hard disk has an ovf:/disk/<id> reference,
+                          // this receives the <id> component; points to one of the
+                          // references in Appliance::Data.mapDisks
+    bool        fEmpty;//true - empty disk, e.g. the component <rasd:HostResource>...</rasd:HostResource> is absent.
 };
 
 typedef std::map<RTCString, VirtualDisk> VirtualDisksMap;

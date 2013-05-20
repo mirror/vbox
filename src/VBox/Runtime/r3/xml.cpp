@@ -529,6 +529,16 @@ const char* Node::getPrefix() const
 }
 
 /**
+ * Returns the XML namespace URI, which is the attribute name. For other node types it probably 
+ * returns NULL. 
+ * @return
+ */
+const char* Node::getNamespaceURI() const
+{
+    return m_pcszNamespaceHref;
+}
+
+/**
  * Variant of nameEquals that checks the namespace as well.
  * @param pcszNamespace
  * @param pcsz

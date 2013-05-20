@@ -686,9 +686,6 @@ STDMETHODIMP Appliance::Interpret()
                                            strTargetPath,
                                            di.ulSuggestedSizeMB,
                                            strExtraConfig);
-                    }//url specifier for VHD
-                    else if (!di.strFormat.compare("http://go.microsoft.com/fwlink/?LinkId=137171", Utf8Str::CaseInsensitive))
-                    {
                     }
                     else
                         throw setError(VBOX_E_FILE_ERROR,
