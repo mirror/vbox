@@ -66,24 +66,42 @@ void OVFReader::parse()
     const xml::ElementNode *pRootElem = m_doc.getRootElement();
     const xml::AttributeNode *pTypeAttr;
     const char *pcszTypeAttr = "";
+    RTCString pcszNamespaceURI;
 
-    if (    !pRootElem
-         || strcmp(pRootElem->getName(), "Envelope")
-       )
+    if (!pRootElem || strcmp(pRootElem->getName(), "Envelope"))
         throw OVFLogicError(N_("Root element in OVF file must be \"Envelope\"."));
 
-    if ((pTypeAttr = pRootElem->findAttribute("version")))
+    pcszNamespaceURI = pRootElem->getNamespaceURI();
+    if(pcszNamespaceURI.isEmpty())
     {
-        pcszTypeAttr = pTypeAttr->getValue();
-        m_envelopeData.version = pcszTypeAttr;
+        throw OVFLogicError(N_("Error reading namespace URI in 'Envelope' element, line %d"), pRootElem->getLineNumber());
+    }
+
+    if (strncmp(ovf::OVF20_URI_string, pcszNamespaceURI.c_str(), pcszNamespaceURI.length()) == 0)
+    {
+        m_envelopeData.setOVFVersion(ovf::OVFVersion_2_0);
+    }
+    else if (strncmp(OVF10_URI_string, pcszNamespaceURI.c_str(), pcszNamespaceURI.length()) == 0)
+    {
+        m_envelopeData.setOVFVersion(ovf::OVFVersion_1_0);
     }
     else
     {
+        m_envelopeData.setOVFVersion(ovf::OVFVersion_0_9);
+    }
+
+//    if ((pTypeAttr = pRootElem->findAttribute("version")))
+//    {
+//        pcszTypeAttr = pTypeAttr->getValue();
+//        m_envelopeData.version = pcszTypeAttr;
+//    }
+//    else
+//    {
 //        throw OVFLogicError(N_("Error reading \"%s\": missing or invalid attribute '%s' in 'Envelope' element, line %d"),
-//                            m_strPath.c_str(),
+//                           m_strPath.c_str(),
 //                            "version",
 //                            pRootElem->getLineNumber());
-    }
+//    }
 
     if ((pTypeAttr = pRootElem->findAttribute("xml:lang")))
     {
