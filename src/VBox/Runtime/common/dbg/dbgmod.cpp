@@ -756,6 +756,7 @@ static int rtDbgModOpenDebugInfoExternalToImage2(PRTDBGMODINT pDbgMod, RTDBGCFG 
             break;
 #endif
         default:
+            rc = VERR_NOT_IMPLEMENTED;
             break;
     }
 
