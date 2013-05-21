@@ -221,7 +221,7 @@ typedef struct RTSTRCACHECHUNK
     /** Pointer to the next chunk. */
     struct RTSTRCACHECHUNK     *pNext;
 } RTSTRCACHECHUNK;
-AssertCompileSize(RTSTRCACHECHUNK, 16);
+AssertCompile(sizeof(RTSTRCACHECHUNK) <= sizeof(RTSTRCACHEENTRY));
 /** Pointer to the chunk tracking structure. */
 typedef RTSTRCACHECHUNK *PRTSTRCACHECHUNK;
 
