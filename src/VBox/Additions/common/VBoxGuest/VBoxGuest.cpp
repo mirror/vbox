@@ -70,7 +70,7 @@ static void testSetMouseStatus(void);
 #endif
 static int VBoxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fFeatures);
 
-static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask);
+static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask, VBOXGUESTCAPSACQUIRE_FLAGS enmFlags);
 
 #define VBOXGUEST_ACQUIRE_STYLE_EVENTS (VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
 
@@ -1049,7 +1049,7 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
     Log(("VBoxGuestCloseSession: pSession=%p proc=%RTproc (%d) r0proc=%p\n",
          pSession, pSession->Process, (int)pSession->Process, (uintptr_t)pSession->R0Process)); /** @todo %RTr0proc */
 
-    VBoxGuestCommonGuestCapsAcquire(pDevExt, pSession, 0, UINT32_MAX);
+    VBoxGuestCommonGuestCapsAcquire(pDevExt, pSession, 0, UINT32_MAX, VBOXGUESTCAPSACQUIRE_FLAGS_NONE);
 
     VBoxGuestCommonIOCtl_CancelAllWaitEvents(pDevExt, pSession);
 
@@ -2539,18 +2539,33 @@ static void VBoxGuestCommonCheckEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
 #endif
 }
 
-static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask)
+static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask, VBOXGUESTCAPSACQUIRE_FLAGS enmFlags)
 {
     uint32_t fSetCaps = 0;
+
+    if (!VBoxGuestCommonGuestCapsValidateValues(fOrMask))
+    {
+        LogRel(("invalid fOrMask 0x%x\n", fOrMask));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    if (enmFlags != VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE
+            && enmFlags != VBOXGUESTCAPSACQUIRE_FLAGS_NONE)
+    {
+        LogRel(("invalid enmFlags %d\n", enmFlags));
+        return VERR_INVALID_PARAMETER;
+    }
     if (!VBoxGuestCommonGuestCapsModeSet(pDevExt, fOrMask, true, &fSetCaps))
     {
-        Assert(0);
         LogRel(("calling caps acquire for set caps %d\n", fOrMask));
         return VERR_INVALID_STATE;
     }
 
-    if (!VBoxGuestCommonGuestCapsValidateValues(fOrMask))
-        return VERR_INVALID_PARAMETER;
+    if (enmFlags & VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE)
+    {
+        Log(("Configured Acquire caps: 0x%x\n", fOrMask));
+        return VINF_SUCCESS;
+    }
 
     /* the fNotMask no need to have all values valid,
      * invalid ones will simply be ignored */
@@ -2629,7 +2644,7 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
 
 static int VBoxGuestCommonIOCTL_GuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, VBoxGuestCapsAquire *pAcquire)
 {
-    int rc = VBoxGuestCommonGuestCapsAcquire(pDevExt, pSession, pAcquire->u32OrMask, pAcquire->u32NotMask);
+    int rc = VBoxGuestCommonGuestCapsAcquire(pDevExt, pSession, pAcquire->u32OrMask, pAcquire->u32NotMask, pAcquire->enmFlags);
     if (!RT_SUCCESS(rc))
         LogRel(("VBoxGuestCommonGuestCapsAcquire: failed rc %d\n", rc));
     pAcquire->rc = rc;

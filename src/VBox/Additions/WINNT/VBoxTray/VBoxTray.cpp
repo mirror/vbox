@@ -126,6 +126,7 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 static int vboxTrayGlMsgTaskbarCreated(WPARAM lParam, LPARAM wParam);
 /*static int vboxTrayGlMsgShowBalloonMsg(WPARAM lParam, LPARAM wParam);*/
 
+static int VBoxAcquireGuestCaps(uint32_t fOr, uint32_t fNot, bool fCfg);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -844,6 +845,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
                 Assert(vboxDtIsInputDesktop());
             }
 
+            rc = VBoxAcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_SEAMLESS | VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, true);
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("VBoxAcquireGuestCaps cfg failed rc %d, ignoring..\n", rc));
+            }
+
             rc = vboxTraySetupSeamless();
             if (RT_SUCCESS(rc))
             {
@@ -1425,10 +1432,11 @@ static BOOL vboxDtIsInputDesktop()
 /* we need to perform Acquire/Release using the file handled we use for rewuesting events from VBoxGuest
  * otherwise Acquisition mechanism will treat us as different client and will not propagate necessary requests
  * */
-static int VBoxAcquireGuestCaps(uint32_t fOr, uint32_t fNot)
+static int VBoxAcquireGuestCaps(uint32_t fOr, uint32_t fNot, bool fCfg)
 {
     DWORD cbReturned = 0;
     VBoxGuestCapsAquire Info;
+    Info.enmFlags = fCfg ? VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE : VBOXGUESTCAPSACQUIRE_FLAGS_NONE;
     Info.rc = VERR_NOT_IMPLEMENTED;
     Info.u32OrMask = fOr;
     Info.u32NotMask = fNot;
@@ -1570,7 +1578,7 @@ static int VBoxCapsInit()
 static int VBoxCapsReleaseAll()
 {
     VBOXCAPS *pConsole = &gVBoxCaps;
-    int rc = VBoxAcquireGuestCaps(0, VMMDEV_GUEST_SUPPORTS_SEAMLESS | VMMDEV_GUEST_SUPPORTS_GRAPHICS);
+    int rc = VBoxAcquireGuestCaps(0, VMMDEV_GUEST_SUPPORTS_SEAMLESS | VMMDEV_GUEST_SUPPORTS_GRAPHICS, false);
     if (!RT_SUCCESS(rc))
     {
         WARN(("VBoxTray: vboxCapsEntryReleaseAll VBoxAcquireGuestCaps failed rc %d\n", rc));
@@ -1626,7 +1634,7 @@ static BOOL VBoxCapsCheckTimer(WPARAM wParam)
         if (pCap->enmAcState != VBOXCAPS_ENTRY_ACSTATE_ACQUIRING)
             continue;
 
-        int rc = VBoxAcquireGuestCaps(pCap->fCap, 0);
+        int rc = VBoxAcquireGuestCaps(pCap->fCap, 0, false);
         if (RT_SUCCESS(rc))
         {
             vboxCapsEntryAcStateSet(&pConsole->aCaps[i], VBOXCAPS_ENTRY_ACSTATE_ACQUIRED);
@@ -1661,7 +1669,7 @@ static int VBoxCapsEntryRelease(uint32_t iCap)
 
     if (pCap->enmAcState == VBOXCAPS_ENTRY_ACSTATE_ACQUIRED)
     {
-        int rc = VBoxAcquireGuestCaps(0, pCap->fCap);
+        int rc = VBoxAcquireGuestCaps(0, pCap->fCap, false);
         AssertRC(rc);
     }
 
@@ -1682,7 +1690,7 @@ static int VBoxCapsEntryAcquire(uint32_t iCap)
     }
 
     vboxCapsEntryAcStateSet(pCap, VBOXCAPS_ENTRY_ACSTATE_ACQUIRING);
-    int rc = VBoxAcquireGuestCaps(pCap->fCap, 0);
+    int rc = VBoxAcquireGuestCaps(pCap->fCap, 0, false);
     if (RT_SUCCESS(rc))
     {
         vboxCapsEntryAcStateSet(pCap, VBOXCAPS_ENTRY_ACSTATE_ACQUIRED);
