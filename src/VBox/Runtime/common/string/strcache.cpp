@@ -65,23 +65,33 @@
  *
  * Using a 1KB as a reasonable limit here.
  */
-#define RTSTRCACHE_HEAP_THRESHOLD_BIT       10
+#ifdef RTSTRCACHE_WITH_MERGED_ALLOCATOR
+# define RTSTRCACHE_HEAP_THRESHOLD_BIT      10
+#else
+# define RTSTRCACHE_HEAP_THRESHOLD_BIT      9
+#endif
 /** The RTSTRCACHE_HEAP_THRESHOLD_BIT as a byte limit. */
 #define RTSTRCACHE_HEAP_THRESHOLD           RT_BIT_32(RTSTRCACHE_HEAP_THRESHOLD_BIT)
 
+#ifdef RTSTRCACHE_WITH_MERGED_ALLOCATOR
 /**
  * The RTSTRCACHEENTRY size threshold at which we start using the merge free
  * list for allocations, expressed as a power of two.
  */
-#define RTSTRCACHE_MERGED_THRESHOLD_BIT     6
-
+# define RTSTRCACHE_MERGED_THRESHOLD_BIT    6
 
 /** The number of bytes (power of two) that the merged allocation lists should
  * be grown by.  Must be much greater than RTSTRCACHE_MERGED_THRESHOLD. */
 #define RTSTRCACHE_MERGED_GROW_SIZE         _32K
+#endif
+
 /** The number of bytes (power of two) that the fixed allocation lists should
  * be grown by. */
 #define RTSTRCACHE_FIXED_GROW_SIZE          _32K
+
+/** The number of fixed sized lists. */
+#define RTSTRCACHE_NUM_OF_FIXED_SIZES       10
+
 
 /** Validates a string cache handle, translating RTSTRCACHE_DEFAULT when found,
  * and returns rc if not valid. */
@@ -172,6 +182,7 @@ AssertCompileMembersAtSameOffset(RTSTRCACHEENTRY, szString, RTSTRCACHEFREE, pNex
 /** Pointer to a free string cache entry. */
 typedef RTSTRCACHEFREE *PRTSTRCACHEFREE;
 
+#ifdef RTSTRCACHE_WITH_MERGED_ALLOCATOR
 
 /**
  * A free string cache entry with merging.
@@ -201,12 +212,13 @@ typedef RTSTRCACHEFREEMERGE *PRTSTRCACHEFREEMERGE;
 /** RTSTRCACHEFREEMERGE::uMarker value indicating that it's the real free chunk
  *  header.  Must be something that's invalid UTF-8 for both little and big
  *  endian system. */
-#define RTSTRCACHEFREEMERGE_MAIN    UINT32_C(0xfffffff1)
+# define RTSTRCACHEFREEMERGE_MAIN   UINT32_C(0xfffffff1)
 /** RTSTRCACHEFREEMERGE::uMarker value indicating that it's part of a larger
  * chunk of free memory.  Must be something that's invalid UTF-8 for both little
  * and big endian system. */
-#define RTSTRCACHEFREEMERGE_PART    UINT32_C(0xfffffff2)
+# define RTSTRCACHEFREEMERGE_PART   UINT32_C(0xfffffff2)
 
+#endif /* RTSTRCACHE_WITH_MERGED_ALLOCATOR */
 
 /**
  * Tracking structure chunk of memory used by the 16 byte or 32 byte
@@ -241,10 +253,12 @@ typedef struct RTSTRCACHEINT
     uint32_t                cHashTab;
     /** Pointer to the hash table. */
     PRTSTRCACHEENTRY       *papHashTab;
-    /** Free list for allocations of size: 64+, 16, and 32. */
-    PRTSTRCACHEFREE         apFreeLists[2];
+    /** Free list for allocations of the sizes defined by g_acbFixedLists. */
+    PRTSTRCACHEFREE         apFreeLists[RTSTRCACHE_NUM_OF_FIXED_SIZES];
+#ifdef RTSTRCACHE_WITH_MERGED_ALLOCATOR
     /** Free lists based on */
     RTLISTANCHOR            aMergedFreeLists[RTSTRCACHE_HEAP_THRESHOLD_BIT - RTSTRCACHE_MERGED_THRESHOLD_BIT + 1];
+#endif
     /** List of allocated memory chunks. */
     PRTSTRCACHECHUNK        pChunkList;
     /** List of big cache entries. */
@@ -260,6 +274,12 @@ typedef RTSTRCACHEINT *PRTSTRCACHEINT;
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/** The entry sizes of the fixed lists (RTSTRCACHEINT::apFreeLists). */
+static const uint32_t g_acbFixedLists[RTSTRCACHE_NUM_OF_FIXED_SIZES] =
+{
+    16, 32, 64, 128, 192, 256, 320, 384, 448, 512
+};
+
 /** Init once for the default string cache. */
 static RTONCE       g_rtStrCacheOnce     = RTONCE_INITIALIZER;
 /** The default string cache. */
@@ -288,8 +308,10 @@ RTDECL(int) RTStrCacheCreate(PRTSTRCACHE phStrCache, const char *pszName)
             if (RT_SUCCESS(rc))
             {
                 RTListInit(&pThis->BigEntryList);
+#ifdef RTSTRCACHE_WITH_MERGED_ALLOCATOR
                 for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aMergedFreeLists); i++)
                     RTListInit(&pThis->aMergedFreeLists[i]);
+#endif
                 pThis->cRefs    = 1;
                 pThis->u32Magic = RTSTRCACHE_MAGIC;
 
@@ -347,6 +369,23 @@ RTDECL(int) RTStrCacheDestroy(RTSTRCACHE hStrCache)
 RT_EXPORT_SYMBOL(RTStrCacheDestroy);
 
 
+
+/**
+ * Selects the fixed free list index for a given minimum entry size.
+ *
+ * @returns Free list index.
+ * @param   cbMin               Minimum entry size.
+ */
+DECLINLINE(uint32_t) rtStrCacheSelectFixedList(uint32_t cbMin)
+{
+    Assert(cbMin <= g_acbFixedLists[RT_ELEMENTS(g_acbFixedLists) - 1]);
+    unsigned i = 0;
+    while (cbMin > g_acbFixedLists[i])
+        i++;
+    return i;
+}
+
+
 #ifdef RT_STRICT
 # define RTSTRCACHE_CHECK(a_pThis)  do { rtStrCacheCheck(pThis); } while (0)
 /**
@@ -354,6 +393,7 @@ RT_EXPORT_SYMBOL(RTStrCacheDestroy);
  */
 static void rtStrCacheCheck(PRTSTRCACHEINT pThis)
 {
+# ifdef RTSTRCACHE_WITH_MERGED_ALLOCATOR
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aMergedFreeLists); i++)
     {
         PRTSTRCACHEFREEMERGE pFree;
@@ -364,33 +404,11 @@ static void rtStrCacheCheck(PRTSTRCACHEINT pThis)
             Assert(RT_ALIGN_32(pFree->cbFree, sizeof(*pFree)) == pFree->cbFree);
         }
     }
+# endif
 }
 #else
 # define RTSTRCACHE_CHECK(a_pThis)  do { } while (0)
 #endif
-
-
-/**
- * Link/Relink into the free right list.
- *
- * @param   pThis               The string cache instance.
- * @param   pFree               The free string entry.
- */
-static void rtStrCacheRelinkMerged(PRTSTRCACHEINT pThis, PRTSTRCACHEFREEMERGE pFree)
-{
-    Assert(pFree->uMarker == RTSTRCACHEFREEMERGE_MAIN);
-    Assert(pFree->cbFree > 0);
-    Assert(RT_ALIGN_32(pFree->cbFree, sizeof(*pFree)) == pFree->cbFree);
-
-    if (!RTListIsEmpty(&pFree->ListEntry))
-        RTListNodeRemove(&pFree->ListEntry);
-
-    uint32_t iList = (ASMBitLastSetU32(pFree->cbFree) - 1) - RTSTRCACHE_MERGED_THRESHOLD_BIT;
-    if (iList >= RT_ELEMENTS(pThis->aMergedFreeLists))
-        iList = RT_ELEMENTS(pThis->aMergedFreeLists) - 1;
-
-    RTListPrepend(&pThis->aMergedFreeLists[iList], &pFree->ListEntry);
-}
 
 
 /**
@@ -463,41 +481,28 @@ static int rtStrCacheGrowHashTab(PRTSTRCACHEINT pThis)
     return VINF_SUCCESS;
 }
 
+#ifdef RTSTRCACHE_WITH_MERGED_ALLOCATOR
 
 /**
- * Allocate a cache entry from the heap.
+ * Link/Relink into the free right list.
  *
- * @returns Pointer to the cache entry on success, NULL on allocation error.
  * @param   pThis               The string cache instance.
- * @param   uHash               The full hash of the string.
- * @param   pchString           The string.
- * @param   cchString           The string length.
+ * @param   pFree               The free string entry.
  */
-static PRTSTRCACHEENTRY rtStrCacheAllocHeapEntry(PRTSTRCACHEINT pThis, uint32_t uHash,
-                                                 const char *pchString, uint32_t cchString)
+static void rtStrCacheRelinkMerged(PRTSTRCACHEINT pThis, PRTSTRCACHEFREEMERGE pFree)
 {
-    /*
-     * Allocate a heap block for storing the string. We do some size aligning
-     * here to encourage the heap to give us optimal alignment.
-     */
-    size_t              cbEntry   = RT_UOFFSETOF(RTSTRCACHEBIGENTRY, Core.szString[cchString + 1]);
-    PRTSTRCACHEBIGENTRY pBigEntry = (PRTSTRCACHEBIGENTRY)RTMemAlloc(RT_ALIGN_Z(cbEntry, 64));
-    if (!pBigEntry)
-        return NULL;
+    Assert(pFree->uMarker == RTSTRCACHEFREEMERGE_MAIN);
+    Assert(pFree->cbFree > 0);
+    Assert(RT_ALIGN_32(pFree->cbFree, sizeof(*pFree)) == pFree->cbFree);
 
-    /*
-     * Initialize the block.
-     */
-    RTListAppend(&pThis->BigEntryList, &pBigEntry->ListEntry);
-    pBigEntry->cchString        = cchString;
-    pBigEntry->uHash            = uHash;
-    pBigEntry->Core.cRefs       = 1;
-    pBigEntry->Core.uHash       = (uint16_t)uHash;
-    pBigEntry->Core.cchString   = RTSTRCACHEENTRY_BIG_LEN;
-    memcpy(pBigEntry->Core.szString, pchString, cchString);
-    pBigEntry->Core.szString[cchString] = '\0';
+    if (!RTListIsEmpty(&pFree->ListEntry))
+        RTListNodeRemove(&pFree->ListEntry);
 
-    return &pBigEntry->Core;
+    uint32_t iList = (ASMBitLastSetU32(pFree->cbFree) - 1) - RTSTRCACHE_MERGED_THRESHOLD_BIT;
+    if (iList >= RT_ELEMENTS(pThis->aMergedFreeLists))
+        iList = RT_ELEMENTS(pThis->aMergedFreeLists) - 1;
+
+    RTListPrepend(&pThis->aMergedFreeLists[iList], &pFree->ListEntry);
 }
 
 
@@ -614,6 +619,44 @@ static PRTSTRCACHEENTRY rtStrCacheAllocMergedEntry(PRTSTRCACHEINT pThis, uint32_
     return pEntry;
 }
 
+#endif /* RTSTRCACHE_WITH_MERGED_ALLOCATOR */
+
+/**
+ * Allocate a cache entry from the heap.
+ *
+ * @returns Pointer to the cache entry on success, NULL on allocation error.
+ * @param   pThis               The string cache instance.
+ * @param   uHash               The full hash of the string.
+ * @param   pchString           The string.
+ * @param   cchString           The string length.
+ */
+static PRTSTRCACHEENTRY rtStrCacheAllocHeapEntry(PRTSTRCACHEINT pThis, uint32_t uHash,
+                                                 const char *pchString, uint32_t cchString)
+{
+    /*
+     * Allocate a heap block for storing the string. We do some size aligning
+     * here to encourage the heap to give us optimal alignment.
+     */
+    size_t              cbEntry   = RT_UOFFSETOF(RTSTRCACHEBIGENTRY, Core.szString[cchString + 1]);
+    PRTSTRCACHEBIGENTRY pBigEntry = (PRTSTRCACHEBIGENTRY)RTMemAlloc(RT_ALIGN_Z(cbEntry, 64));
+    if (!pBigEntry)
+        return NULL;
+
+    /*
+     * Initialize the block.
+     */
+    RTListAppend(&pThis->BigEntryList, &pBigEntry->ListEntry);
+    pBigEntry->cchString        = cchString;
+    pBigEntry->uHash            = uHash;
+    pBigEntry->Core.cRefs       = 1;
+    pBigEntry->Core.uHash       = (uint16_t)uHash;
+    pBigEntry->Core.cchString   = RTSTRCACHEENTRY_BIG_LEN;
+    memcpy(pBigEntry->Core.szString, pchString, cchString);
+    pBigEntry->Core.szString[cchString] = '\0';
+
+    return &pBigEntry->Core;
+}
+
 
 /**
  * Allocate a cache entry from a fixed size free list.
@@ -643,13 +686,13 @@ static PRTSTRCACHEENTRY rtStrCacheAllocFixedEntry(PRTSTRCACHEINT pThis, uint32_t
         pThis->pChunkList = pChunk;
 
         PRTSTRCACHEFREE pPrev   = NULL;
-        size_t const    cbEntry = 1 << (iFreeList + 4);
-        uint32_t        cLeft   = PAGE_SIZE / cbEntry - 1;
+        uint32_t const  cbEntry = g_acbFixedLists[iFreeList];
+        uint32_t        cLeft   = RTSTRCACHE_FIXED_GROW_SIZE / cbEntry - 1;
         pFree = (PRTSTRCACHEFREE)((uintptr_t)pChunk + cbEntry);
 
         Assert(sizeof(*pChunk) <= cbEntry);
         Assert(sizeof(*pFree)  <= cbEntry);
-        Assert(cbEntry < PAGE_SIZE / 16);
+        Assert(cbEntry < RTSTRCACHE_FIXED_GROW_SIZE / 16);
 
         while (cLeft-- > 0)
         {
@@ -761,13 +804,13 @@ RTDECL(const char *) RTStrCacheEnterN(RTSTRCACHE hStrCache, const char *pchStrin
     uint32_t const uHash    = sdbmN(pchString, cchString, &cchString);
     uint32_t const uHashLen = RT_MAKE_U32(uHash, cchString);
     AssertReturn(cchString < _1G, NULL);
-
+    uint32_t const cchString32 = (uint32_t)cchString;
 
     RTCritSectEnter(&pThis->CritSect);
     RTSTRCACHE_CHECK(pThis);
 
     uint32_t iFreeHashTabEntry;
-    PRTSTRCACHEENTRY pEntry = rtStrCacheLookUp(pThis, uHashLen, cchString, pchString, &iFreeHashTabEntry);
+    PRTSTRCACHEENTRY pEntry = rtStrCacheLookUp(pThis, uHashLen, cchString32, pchString, &iFreeHashTabEntry);
     if (pEntry)
     {
         uint32_t cRefs = ASMAtomicIncU32(&pEntry->cRefs);
@@ -778,16 +821,16 @@ RTDECL(const char *) RTStrCacheEnterN(RTSTRCACHE hStrCache, const char *pchStrin
         /*
          * Allocate a new entry.
          */
-        uint32_t cbEntry = cchString + 1U + RT_UOFFSETOF(RTSTRCACHEENTRY, szString);
-        if (cbEntry >= RTSTRCACHE_MERGED_THRESHOLD_BIT)
-        {
-            if (cbEntry <= RTSTRCACHE_HEAP_THRESHOLD)
-                pEntry = rtStrCacheAllocMergedEntry(pThis, uHash, pchString, cchString, cbEntry);
-            else
-                pEntry = rtStrCacheAllocHeapEntry(pThis, uHash, pchString, cchString);
-        }
+        uint32_t cbEntry = cchString32 + 1U + RT_UOFFSETOF(RTSTRCACHEENTRY, szString);
+        if (cbEntry >= RTSTRCACHE_HEAP_THRESHOLD)
+            pEntry = rtStrCacheAllocHeapEntry(pThis, uHash, pchString, cchString32);
+#ifdef RTSTRCACHE_WITH_MERGED_ALLOCATOR
+        else if (cbEntry >= RTSTRCACHE_MERGED_THRESHOLD_BIT)
+            pEntry = rtStrCacheAllocMergedEntry(pThis, uHash, pchString, cchString32, cbEntry);
+#endif
         else
-            pEntry = rtStrCacheAllocFixedEntry(pThis, uHash, pchString, cchString, cbEntry > 16);
+            pEntry = rtStrCacheAllocFixedEntry(pThis, uHash, pchString, cchString32,
+                                               rtStrCacheSelectFixedList(cbEntry));
         if (!pEntry)
         {
             RTSTRCACHE_CHECK(pThis);
@@ -940,12 +983,14 @@ static uint32_t rtStrCacheFreeEntry(PRTSTRCACHEINT pThis, PRTSTRCACHEENTRY pStr)
     if (pStr->cchString != RTSTRCACHEENTRY_BIG_LEN)
     {
         uint32_t const cbMin = pStr->cchString + 1U + RT_UOFFSETOF(RTSTRCACHEENTRY, szString);
-        if (cbMin <= 32)
+#ifdef RTSTRCACHE_WITH_MERGED_ALLOCATOR
+        if (cbMin <= RTSTRCACHE_MAX_FIXED)
+#endif
         {
             /*
              * No merging, just add it to the list.
              */
-            uint32_t const iFreeList = cbMin > 16;
+            uint32_t const iFreeList = rtStrCacheSelectFixedList(cbMin);
             ASMCompilerBarrier();
             PRTSTRCACHEFREE pFreeStr = (PRTSTRCACHEFREE)pStr;
             pFreeStr->cbFree   = cbMin;
@@ -953,6 +998,7 @@ static uint32_t rtStrCacheFreeEntry(PRTSTRCACHEINT pThis, PRTSTRCACHEENTRY pStr)
             pFreeStr->pNext    = pThis->apFreeLists[iFreeList];
             pThis->apFreeLists[iFreeList] = pFreeStr;
         }
+#ifdef RTSTRCACHE_WITH_MERGED_ALLOCATOR
         else
         {
             /*
@@ -1031,6 +1077,7 @@ static uint32_t rtStrCacheFreeEntry(PRTSTRCACHEINT pThis, PRTSTRCACHEENTRY pStr)
              */
             rtStrCacheRelinkMerged(pThis, pMain);
         }
+#endif /* RTSTRCACHE_WITH_MERGED_ALLOCATOR */
         RTSTRCACHE_CHECK(pThis);
         RTCritSectLeave(&pThis->CritSect);
     }
