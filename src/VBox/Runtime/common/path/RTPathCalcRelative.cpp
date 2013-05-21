@@ -86,8 +86,6 @@ RTDECL(int) RTPathCalcRelative(char *pszPathDst, size_t cbPathDst,
     pszPathTo++; /* Skip path separator. */
 
     /* Paths point to the first non equal component now. */
-
-    /* Count the number of remaining path components of the from path. */
     char aszPathTmp[RTPATH_MAX + 1];
     unsigned offPathTmp = 0;
 
