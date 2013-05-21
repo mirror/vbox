@@ -325,6 +325,8 @@ static DECLCALLBACK(void) rtFsExtDestroy(void *pvThis)
 
 static DECLCALLBACK(int) rtFsExtOpenRoot(void *pvThis, PRTVFSDIR phVfsDir)
 {
+    NOREF(pvThis);
+    NOREF(phVfsDir);
     return VERR_NOT_IMPLEMENTED;
 }
 
