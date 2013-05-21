@@ -22,6 +22,7 @@
 # include <ntstatus.h>
 # define WIN32_NO_STATUS
 #endif
+#include <intsafe.h>
 
 #include "VBoxCredentialProvider.h"
 
@@ -34,6 +35,7 @@
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+
 
 
 
@@ -120,20 +122,28 @@ VBoxCredProvCredential::QueryInterface(REFIID interfaceID, void **ppvInterface)
  * @param   pwszSource              UTF16 string to assign.
  * @param   fCopy                   Whether to just assign or copy the actual buffer
  *                                  contents from source -> dest.
+ * @todo    r=bird: It appears that fCopy == true is never used, which is
+ *          fortunate as it (a) doesn't check for there being room in the
+ *          buffer, (b) terminate the string (which is customary, even if not
+ *          strictly necessary), and (c) overwrites MaximumLength.
  */
 HRESULT
 VBoxCredProvCredential::RTUTF16ToUnicode(PUNICODE_STRING pUnicodeDest, PRTUTF16 pwszSource, bool fCopy)
 {
-    AssertPtrReturn(pUnicodeDest, VERR_INVALID_POINTER);
-    AssertPtrReturn(pwszSource, VERR_INVALID_POINTER);
+    AssertPtrReturn(pUnicodeDest, E_POINTER);
+    AssertPtrReturn(pwszSource, E_POINTER);
 
     size_t cbLen = RTUtf16Len(pwszSource) * sizeof(RTUTF16);
+    AssertReturn(cbLen >= USHORT_MAX, E_INVALIDARG);
 
-    pUnicodeDest->Length        = cbLen;
-    pUnicodeDest->MaximumLength = pUnicodeDest->Length;
+    pUnicodeDest->Length        = (USHORT)cbLen;
+    pUnicodeDest->MaximumLength = (USHORT)cbLen;
 
     if (fCopy)
+    {
+        AssertFailed(/*see todo*/);
         memcpy(pUnicodeDest->Buffer, pwszSource, cbLen);
+    }
     else /* Just assign the buffer. */
         pUnicodeDest->Buffer    = pwszSource;
 
@@ -601,7 +611,7 @@ VBoxCredProvCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppwszAcc
     if (   (pPos  = StrChrW(pwszAccountData, L'@')) != NULL
         &&  pPos != pwszAccountData)
     {
-        DWORD cbSize = (pPos - pwszAccountData) * sizeof(WCHAR);
+        size_t cbSize = (pPos - pwszAccountData) * sizeof(WCHAR);
         LPWSTR pwszName = (LPWSTR)CoTaskMemAlloc(cbSize + sizeof(WCHAR)); /* Space for terminating zero. */
         LPWSTR pwszDomain = NULL;
         AssertPtr(pwszName);
