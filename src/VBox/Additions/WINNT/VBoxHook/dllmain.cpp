@@ -1,7 +1,9 @@
+/* $Id$ */
 /** @file
- *
  * VBoxHook -- Global windows hook dll
- *
+ */
+
+/*
  * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -12,7 +14,9 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#include <windows.h>
+
+
+#include <Windows.h>
 
 
 /**
@@ -25,26 +29,22 @@
  */
 BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 {
-    BOOL    bStatus = TRUE;
-
     switch (fdwReason)
     {
-    case DLL_PROCESS_ATTACH:
-        return TRUE;
+        case DLL_PROCESS_ATTACH:
+            return TRUE;
 
-    case DLL_PROCESS_DETACH:
-        return TRUE;
+        case DLL_PROCESS_DETACH:
+            return TRUE;
 
-    case DLL_THREAD_ATTACH:
-        break;
+        case DLL_THREAD_ATTACH:
+            return TRUE;
 
-    case DLL_THREAD_DETACH:
-        return TRUE;
+        case DLL_THREAD_DETACH:
+            return TRUE;
 
-    default:
-        break;
+        default:
+            return TRUE;
     }
-
-    return bStatus;
 }
 

@@ -1,7 +1,9 @@
+/* $Id$ */
 /** @file
- *
- * VBoxHook -- Global windows hook dll
- *
+ * VBoxHook -- Global windows hook dll.
+ */
+
+/*
  * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -12,8 +14,8 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#ifndef __VBoxHook_h__
-#define __VBoxHook_h__
+#ifndef ___winnt_include_VBoxHook_h
+#define ___winnt_include_VBoxHook_h
 
 /* custom messages as we must install the hook from the main thread */
 #define WM_VBOX_SEAMLESS_ENABLE                     0x2001
@@ -33,4 +35,5 @@ BOOL VBoxHookRemoveActiveDesktopTracker();
 BOOL VBoxHookInstallWindowTracker(HMODULE hDll);
 BOOL VBoxHookRemoveWindowTracker();
 
-#endif /* __VBoxHook_h__ */
+#endif
+
