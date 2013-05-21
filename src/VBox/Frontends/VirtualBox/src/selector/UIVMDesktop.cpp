@@ -248,7 +248,9 @@ UIVMDesktop::UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *
         else
             pSpace->setFixedSize(10, 1);
         pToolBar->addWidget(pSpace);
+#ifdef Q_WS_MAC
         pToolBar->updateLayout();
+#endif /* Q_WS_MAC */
     }
     else
 #else /* USE_TOOLBAR */
