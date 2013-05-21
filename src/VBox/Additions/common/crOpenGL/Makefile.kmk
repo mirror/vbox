@@ -48,7 +48,7 @@ VBOX_OGL_X86_GUEST_DLLS = \
      VBoxOGLfeedbackspu-x86
 
 ifdef VBOX_WITH_WDDM
- DLLS.win.amd64 += VBOX_OGL_X86_GUEST_DLLS
+ DLLS.win.amd64 += $(VBOX_OGL_X86_GUEST_DLLS)
 endif
 
 # 32-bit version for the 64-bit Linux Additions
