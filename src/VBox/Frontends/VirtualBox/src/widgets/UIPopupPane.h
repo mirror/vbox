@@ -27,19 +27,8 @@
 #include "QIMessageBox.h"
 
 /* Forward declaration: */
-class QStateMachine;
 class UIPopupPaneTextPane;
 class UIPopupPaneButtonPane;
-
-/* UIAnimationFramework namespace: */
-namespace UIAnimationFramework
-{
-    /* API: Animation stuff: */
-    QStateMachine* installPropertyAnimation(QWidget *pTarget, const char *pszPropertyName,
-                                            const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
-                                            const char *pSignalForward, const char *pSignalBackward,
-                                            bool fReversive = false, int iAnimationDuration = 300);
-}
 
 /* Popup-pane prototype class: */
 class UIPopupPane : public QWidget

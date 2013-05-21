@@ -25,57 +25,16 @@
 #include <QKeyEvent>
 #include <QPainter>
 #include <QStateMachine>
-#include <QPropertyAnimation>
-#include <QSignalTransition>
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIPopupPane.h"
 #include "UIIconPool.h"
 #include "QIToolButton.h"
+#include "UIAnimationFramework.h"
 
 /* Other VBox includes: */
 #include <VBox/sup.h>
-
-
-QStateMachine* UIAnimationFramework::installPropertyAnimation(QWidget *pTarget, const char *pszPropertyName,
-                                                              const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
-                                                              const char *pSignalForward, const char *pSignalBackward,
-                                                              bool fReversive /*= false*/, int iAnimationDuration /*= 300*/)
-{
-    /* State-machine: */
-    QStateMachine *pStateMachine = new QStateMachine(pTarget);
-    /* State-machine 'start' state: */
-    QState *pStateStart = new QState(pStateMachine);
-    /* State-machine 'final' state: */
-    QState *pStateFinal = new QState(pStateMachine);
-
-    /* State-machine 'forward' animation: */
-    QPropertyAnimation *pForwardAnimation = new QPropertyAnimation(pTarget, pszPropertyName, pStateMachine);
-    pForwardAnimation->setEasingCurve(QEasingCurve(QEasingCurve::InOutCubic));
-    pForwardAnimation->setDuration(iAnimationDuration);
-    pForwardAnimation->setStartValue(pTarget->property(pszValuePropertyNameStart));
-    pForwardAnimation->setEndValue(pTarget->property(pszValuePropertyNameFinal));
-    /* State-machine 'backward' animation: */
-    QPropertyAnimation *pBackwardAnimation = new QPropertyAnimation(pTarget, pszPropertyName, pStateMachine);
-    pBackwardAnimation->setEasingCurve(QEasingCurve(QEasingCurve::InOutCubic));
-    pBackwardAnimation->setDuration(iAnimationDuration);
-    pBackwardAnimation->setStartValue(pTarget->property(pszValuePropertyNameFinal));
-    pBackwardAnimation->setEndValue(pTarget->property(pszValuePropertyNameStart));
-
-    /* State-machine state transitions: */
-    QSignalTransition *pDefaultToHovered = pStateStart->addTransition(pTarget, pSignalForward, pStateFinal);
-    pDefaultToHovered->addAnimation(pForwardAnimation);
-    QSignalTransition *pHoveredToDefault = pStateFinal->addTransition(pTarget, pSignalBackward, pStateStart);
-    pHoveredToDefault->addAnimation(pBackwardAnimation);
-
-    /* Initial state is 'start': */
-    pStateMachine->setInitialState(!fReversive ? pStateStart : pStateFinal);
-    /* Start hover-machine: */
-    pStateMachine->start();
-    /* Return machine: */
-    return pStateMachine;
-}
 
 
 /* Popup-pane text-pane prototype class: */

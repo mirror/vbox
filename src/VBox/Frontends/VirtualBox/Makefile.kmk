@@ -508,6 +508,7 @@ VirtualBox_SOURCES = \
 	src/globals/UIDefs.cpp \
 	src/globals/COMDefs.cpp \
 	src/globals/UIActionPool.cpp \
+	src/globals/UIAnimationFramework.cpp \
 	src/globals/UIExtraDataEventHandler.cpp \
 	src/globals/UIIconPool.cpp \
 	src/globals/UIImageTools.cpp \
