@@ -1485,9 +1485,15 @@ DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, DISPLAY_DEVIC
         dwStatus = gCtx.pfnSetDisplayConfig(numPathArrayElements, pPathInfoArray, numModeInfoArrayElements, pModeInfoArray,(SDC_APPLY | SDC_SAVE_TO_DATABASE| SDC_ALLOW_CHANGES | SDC_USE_SUPPLIED_DISPLAY_CONFIG));
         if (dwStatus != ERROR_SUCCESS)
         {
-            LogRel(("VBoxTray:(WDDM) Failed to resize the monitor."));
+            LogRel(("VBoxTray:(WDDM) Failed to resize the monitor.\n"));
             free(pPathInfoArray);
             free(pModeInfoArray);
+
+            if (dwStatus == ERROR_GEN_FAILURE)
+            {
+                LogRel(("VBoxTray:(WDDM) going to retry\n"));
+                return ERROR_RETRY; /* <- to make sure we retry */
+            }
             return dwStatus;
         }
     }
