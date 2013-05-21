@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,35 +19,34 @@
 #ifndef ___UIToolBar_h___
 #define ___UIToolBar_h___
 
-/* Global includes */
+/* Qt includes: */
 #include <QToolBar>
 
-/* Global forward declarations */
+/* Forward declarations: */
 class QMainWindow;
 
-/**
- *  The UIToolBar class is a simple QToolBar reimplementation to disable
- *  its built-in context menu and add some default behavior we need.
- */
+/* UI tool-bar prototype class: */
 class UIToolBar : public QToolBar
 {
 public:
 
-    UIToolBar(QWidget *pParent);
+    /* Constructor: */
+    UIToolBar(QWidget *pParent = 0);
+
+    /* API: Text-label stuff: */
+    void setUsesTextLabel(bool fEnable);
 
 #ifdef Q_WS_MAC
+    /* API: Mac toolbar stuff: */
     void setMacToolbar();
     void setShowToolBarButton(bool fShow);
-#endif /* Q_WS_MAC */
-
     void updateLayout();
-    void setUsesTextLabel(bool fEnable);
+#endif /* Q_WS_MAC */
 
 private:
 
-    /* Private member vars */
+    /* Variables: */
     QMainWindow *m_pMainWindow;
 };
 
-#endif // !___UIToolBar_h___
-
+#endif /* !___UIToolBar_h___ */
