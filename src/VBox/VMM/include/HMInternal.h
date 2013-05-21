@@ -602,9 +602,9 @@ typedef struct HMCPU
 #endif
 
         /** Current CR0 mask. */
-        uint64_t                    cr0_mask;
+        uint32_t                    u32CR0Mask;
         /** Current CR4 mask. */
-        uint64_t                    cr4_mask;
+        uint32_t                    u32CR4Mask;
         /** Current exception bitmap. */
         uint32_t                    u32XcptBitmap;
         /** The updated-guest-state mask. */

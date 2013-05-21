@@ -369,8 +369,8 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVCpu->hm.s.vmx.HCPhysVmcs = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.vmx.hMemObjVmcs, 0);
         ASMMemZeroPage(pVCpu->hm.s.vmx.pvVmcs);
 
-        pVCpu->hm.s.vmx.cr0_mask = 0;
-        pVCpu->hm.s.vmx.cr4_mask = 0;
+        pVCpu->hm.s.vmx.u32CR0Mask = 0;
+        pVCpu->hm.s.vmx.u32CR4Mask = 0;
 
         /* Allocate one page for the virtual APIC page for TPR caching. */
         rc = RTR0MemObjAllocCont(&pVCpu->hm.s.vmx.hMemObjVirtApic, PAGE_SIZE, false /* fExecutable */);
@@ -2118,7 +2118,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (CPUMIsGuestFPUStateActive(pVCpu) == false)
             val |= X86_CR0_TS | X86_CR0_ET | X86_CR0_MP;
 
-        pVCpu->hm.s.vmx.cr0_mask = val;
+        pVCpu->hm.s.vmx.u32CR0Mask = val;
 
         rc |= VMXWriteVmcs(VMX_VMCS_CTRL_CR0_MASK, val);
         Log2(("Guest CR0-mask %08x\n", val));
@@ -2191,7 +2191,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
               | X86_CR4_PGE
               | X86_CR4_PSE
               | X86_CR4_VMXE;
-        pVCpu->hm.s.vmx.cr4_mask = val;
+        pVCpu->hm.s.vmx.u32CR4Mask = val;
 
         rc |= VMXWriteVmcs(VMX_VMCS_CTRL_CR4_MASK, val);
         Log2(("Guest CR4-mask %08x\n", val));
@@ -2466,12 +2466,12 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* Control registers. */
     VMXReadCachedVmcs(VMX_VMCS_CTRL_CR0_READ_SHADOW,     &valShadow);
     VMXReadCachedVmcs(VMX_VMCS_GUEST_CR0,                &val);
-    val = (valShadow & pVCpu->hm.s.vmx.cr0_mask) | (val & ~pVCpu->hm.s.vmx.cr0_mask);
+    val = (valShadow & pVCpu->hm.s.vmx.u32CR0Mask) | (val & ~pVCpu->hm.s.vmx.u32CR0Mask);
     CPUMSetGuestCR0(pVCpu, val);
 
     VMXReadCachedVmcs(VMX_VMCS_CTRL_CR4_READ_SHADOW,     &valShadow);
     VMXReadCachedVmcs(VMX_VMCS_GUEST_CR4,                &val);
-    val = (valShadow & pVCpu->hm.s.vmx.cr4_mask) | (val & ~pVCpu->hm.s.vmx.cr4_mask);
+    val = (valShadow & pVCpu->hm.s.vmx.u32CR4Mask) | (val & ~pVCpu->hm.s.vmx.u32CR4Mask);
     CPUMSetGuestCR4(pVCpu, val);
 
     /*

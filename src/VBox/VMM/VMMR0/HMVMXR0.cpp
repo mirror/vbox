@@ -2131,8 +2131,8 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     Assert(!(uSelFS & X86_SEL_RPL)); Assert(!(uSelFS & X86_SEL_LDT));
     Assert(!(uSelGS & X86_SEL_RPL)); Assert(!(uSelGS & X86_SEL_LDT));
     Assert(!(uSelTR & X86_SEL_RPL)); Assert(!(uSelTR & X86_SEL_LDT));
-    Assert(uSelCS != 0);
-    Assert(uSelTR != 0);
+    Assert(uSelCS);
+    Assert(uSelTR);
 
     /* Assertion is right but we would not have updated u32ExitCtls yet. */
 #if 0
@@ -2879,7 +2879,7 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
             u32CR0Mask &= ~(X86_CR0_TS | X86_CR0_MP);
 
         /* Write the CR0 mask into the VMCS and update the VCPU's copy of the current CR0 mask. */
-        pVCpu->hm.s.vmx.cr0_mask = u32CR0Mask;
+        pVCpu->hm.s.vmx.u32CR0Mask = u32CR0Mask;
         rc = VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, u32CR0Mask);
         AssertRCReturn(rc, rc);
 
@@ -3060,7 +3060,7 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                     | X86_CR4_PGE
                     | X86_CR4_PSE
                     | X86_CR4_VMXE;
-        pVCpu->hm.s.vmx.cr4_mask = u32CR4Mask;
+        pVCpu->hm.s.vmx.u32CR4Mask = u32CR4Mask;
         rc = VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, u32CR4Mask);
         AssertRCReturn(rc, rc);
 
@@ -4774,7 +4774,7 @@ static int hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc     = VMXReadVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, &uShadow);
         AssertRCReturn(rc, rc);
 
-        uVal = (uShadow & pVCpu->hm.s.vmx.cr0_mask) | (uVal & ~pVCpu->hm.s.vmx.cr0_mask);
+        uVal = (uShadow & pVCpu->hm.s.vmx.u32CR0Mask) | (uVal & ~pVCpu->hm.s.vmx.u32CR0Mask);
         CPUMSetGuestCR0(pVCpu, uVal);
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_CR0;
     }
@@ -4805,7 +4805,7 @@ static int hmR0VmxSaveGuestCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc = VMXReadVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, &uShadow);
         AssertRCReturn(rc, rc);
 
-        uVal = (uShadow & pVCpu->hm.s.vmx.cr4_mask) | (uVal & ~pVCpu->hm.s.vmx.cr4_mask);
+        uVal = (uShadow & pVCpu->hm.s.vmx.u32CR4Mask) | (uVal & ~pVCpu->hm.s.vmx.u32CR4Mask);
         CPUMSetGuestCR4(pVCpu, uVal);
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_CR4;
     }
