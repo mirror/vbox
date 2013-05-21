@@ -379,6 +379,17 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 /** IOCTL to for setting the mouse driver callback. (kernel only) */
 #define VBOXGUEST_IOCTL_SET_MOUSE_NOTIFY_CALLBACK   VBOXGUEST_IOCTL_CODE(31, sizeof(VBoxGuestMouseSetNotifyCallback))
 
+typedef enum VBOXGUESTCAPSACQUIRE_FLAGS
+{
+    VBOXGUESTCAPSACQUIRE_FLAGS_NONE = 0,
+    /* configures VBoxGuest to use the specified caps in Acquire mode, w/o making any caps acquisition/release.
+     * so far it is only possible to set acquire mode for caps, but not clear it,
+     * so u32NotMask is ignored for this request */
+    VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE,
+    /* to ensure enum is 32bit*/
+    VBOXGUESTCAPSACQUIRE_FLAGS_32bit = 0x7fffffff,
+} VBOXGUESTCAPSACQUIRE_FLAGS;
+
 typedef struct VBoxGuestCapsAquire
 {
     /* result status
@@ -388,6 +399,8 @@ typedef struct VBoxGuestCapsAquire
      * VER_INVALID_PARAMETER - invalid Caps are specified with either u32OrMask or u32NotMask. No modifications are done on failure.
      */
     int32_t rc;
+    /* Acquire command */
+    VBOXGUESTCAPSACQUIRE_FLAGS enmFlags;
     /* caps to acquire, OR-ed VMMDEV_GUEST_SUPPORTS_XXX flags */
     uint32_t u32OrMask;
     /* caps to release, OR-ed VMMDEV_GUEST_SUPPORTS_XXX flags */
