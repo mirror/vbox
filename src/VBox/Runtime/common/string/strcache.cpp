@@ -721,10 +721,22 @@ static PRTSTRCACHEENTRY rtStrCacheLookUp(PRTSTRCACHEINT pThis, uint32_t uHashLen
         {
             /* Compare. */
             if (   pEntry->uHash     == (uint16_t)uHashLen
-                && pEntry->cchString == cchStringFirst
-                && !memcmp(pEntry->szString, pchString, cchString)
-                && pEntry->szString[cchString] == '\0')
-                return pEntry;
+                && pEntry->cchString == cchStringFirst)
+            {
+                if (pEntry->cchString != RTSTRCACHEENTRY_BIG_LEN)
+                {
+                    if (   !memcmp(pEntry->szString, pchString, cchString)
+                        && pEntry->szString[cchString] == '\0')
+                        return pEntry;
+                }
+                else
+                {
+                    PRTSTRCACHEBIGENTRY pBigEntry = RT_FROM_MEMBER(pEntry, RTSTRCACHEBIGENTRY, Core);
+                    if (   pBigEntry->cchString == cchString
+                        && !memcmp(pBigEntry->Core.szString, pchString, cchString))
+                        return &pBigEntry->Core;
+                }
+            }
         }
         /* Record the first NIL index for insertion in case we don't get a hit. */
         else if (*piFreeHashTabEntry == UINT32_MAX)
