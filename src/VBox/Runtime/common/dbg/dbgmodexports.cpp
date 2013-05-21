@@ -96,6 +96,10 @@ static DECLCALLBACK(int) rtDbgModExportsAddSegmentsCallback(RTLDRMOD hLdrMod, PC
         pszName[pSeg->cchName] = '\0';
     }
 
+    /* Add dummy segments for segments that doesn't get mapped. */
+    if (pSeg->LinkAddress == NIL_RTLDRADDR)
+        return RTDbgModSegmentAdd(pArgs->pDbgMod, 0, 0, pszName, 0 /*fFlags*/, NULL);
+
     RTLDRADDR cb = RT_MAX(pSeg->cb, pSeg->cbMapped);
     return RTDbgModSegmentAdd(pArgs->pDbgMod, pSeg->RVA, cb, pszName, 0 /*fFlags*/, NULL);
 }

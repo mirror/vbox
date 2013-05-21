@@ -87,8 +87,8 @@ static void tst1(RTSTRCACHE hStrCache)
         RTTESTI_CHECK(RTStrCacheRetain(psz) == 4);
         RTTESTI_CHECK(RTStrCacheRetain(psz) == 5);
         RTTESTI_CHECK(RTStrCacheRetain(psz) == 6);
-        RTTESTI_CHECK(RTStrCacheRelease(NIL_RTSTRCACHE, psz) == 5);
-        RTTESTI_CHECK(RTStrCacheRelease(NIL_RTSTRCACHE, psz) == 4);
+        RTTESTI_CHECK(RTStrCacheRelease(hStrCache, psz) == 5);
+        RTTESTI_CHECK(RTStrCacheRelease(hStrCache, psz) == 4);
         RTTESTI_CHECK_MSG_RETV((pv2 = ASMMemIsAll8(psz, i, 'a')) == NULL && !psz[i], ("i=%#x psz=%p off=%#x\n", i, psz, (uintptr_t)pv2 - (uintptr_t)psz));
 
         for (uint32_t cRefs = 3;; cRefs--)
@@ -106,6 +106,28 @@ static void tst1(RTSTRCACHE hStrCache)
                 RTTESTI_CHECK_MSG_RETV((pv2 = ASMMemIsAll8(psz, i, 'a')) == NULL && !psz[i], ("i=%#x psz=%p off=%#x cRefs=%d\n", i, psz, (uintptr_t)pv2 - (uintptr_t)psz, cRefs));
             }
         }
+    }
+
+    /* Lots of allocations. */
+    memset(szTest, 'b', sizeof(szTest));
+    memset(szTest2, 'e', sizeof(szTest));
+    const char *pszTest1Rets[4096 + 16];
+    const char *pszTest2Rets[4096 + 16];
+    for (uint32_t i = 1; i < RT_ELEMENTS(pszTest1Rets); i++)
+    {
+        RTTESTI_CHECK(pszTest1Rets[i] = RTStrCacheEnterN(hStrCache, szTest, i));
+        RTTESTI_CHECK(strlen(pszTest1Rets[i]) == i);
+        RTTESTI_CHECK(pszTest2Rets[i] = RTStrCacheEnterN(hStrCache, szTest2, i));
+        RTTESTI_CHECK(strlen(pszTest2Rets[i]) == i);
+    }
+
+    for (uint32_t i = 1; i < RT_ELEMENTS(pszTest1Rets); i++)
+    {
+        uint32_t cRefs;
+        RTTESTI_CHECK(strlen(pszTest1Rets[i]) == i);
+        RTTESTI_CHECK_MSG((cRefs = RTStrCacheRelease(hStrCache, pszTest1Rets[i])) == 0, ("cRefs=%#x i=%#x\n", cRefs, i));
+        RTTESTI_CHECK(strlen(pszTest2Rets[i]) == i);
+        RTTESTI_CHECK_MSG((cRefs = RTStrCacheRelease(hStrCache, pszTest2Rets[i])) == 0, ("cRefs=%#x i=%#x\n", cRefs, i));
     }
 }
 

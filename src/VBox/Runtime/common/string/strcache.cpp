@@ -75,6 +75,14 @@
  */
 #define RTSTRCACHE_MERGED_THRESHOLD_BIT     6
 
+
+/** The number of bytes (power of two) that the merged allocation lists should
+ * be grown by.  Must be much greater than RTSTRCACHE_MERGED_THRESHOLD. */
+#define RTSTRCACHE_MERGED_GROW_SIZE         _32K
+/** The number of bytes (power of two) that the fixed allocation lists should
+ * be grown by. */
+#define RTSTRCACHE_FIXED_GROW_SIZE          _32K
+
 /** Validates a string cache handle, translating RTSTRCACHE_DEFAULT when found,
  * and returns rc if not valid. */
 #define RTSTRCACHE_VALID_RETURN_RC(pStrCache, rc) \
@@ -555,7 +563,7 @@ static PRTSTRCACHEENTRY rtStrCacheAllocMergedEntry(PRTSTRCACHEINT pThis, uint32_
          * Allocate a new block. (We could search the list below in some
          * cases, but it's too much effort to write and execute).
          */
-        size_t const     cbChunk = RTSTRCACHE_HEAP_THRESHOLD * 16;   AssertReturn(cbChunk > cbEntry * 2, NULL);
+        size_t const     cbChunk = RTSTRCACHE_MERGED_GROW_SIZE; AssertReturn(cbChunk > cbEntry * 2, NULL);
         PRTSTRCACHECHUNK pChunk  = (PRTSTRCACHECHUNK)RTMemPageAlloc(cbChunk);
         if (!pChunk)
             return NULL;
@@ -627,7 +635,7 @@ static PRTSTRCACHEENTRY rtStrCacheAllocFixedEntry(PRTSTRCACHEINT pThis, uint32_t
     PRTSTRCACHEFREE pFree = pThis->apFreeLists[iFreeList];
     if (!pFree)
     {
-        PRTSTRCACHECHUNK pChunk = (PRTSTRCACHECHUNK)RTMemPageAlloc(PAGE_SIZE);
+        PRTSTRCACHECHUNK pChunk = (PRTSTRCACHECHUNK)RTMemPageAlloc(RTSTRCACHE_FIXED_GROW_SIZE);
         if (!pChunk)
             return NULL;
         pChunk->cb = PAGE_SIZE;
@@ -761,7 +769,7 @@ RTDECL(const char *) RTStrCacheEnterN(RTSTRCACHE hStrCache, const char *pchStrin
         uint32_t cbEntry = cchString + 1U + RT_UOFFSETOF(RTSTRCACHEENTRY, szString);
         if (cbEntry >= RTSTRCACHE_MERGED_THRESHOLD_BIT)
         {
-            if (cbEntry < RTSTRCACHE_HEAP_THRESHOLD * 2)
+            if (cbEntry <= RTSTRCACHE_HEAP_THRESHOLD)
                 pEntry = rtStrCacheAllocMergedEntry(pThis, uHash, pchString, cchString, cbEntry);
             else
                 pEntry = rtStrCacheAllocHeapEntry(pThis, uHash, pchString, cchString);
