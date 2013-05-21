@@ -681,7 +681,7 @@ static PRTSTRCACHEENTRY rtStrCacheAllocFixedEntry(PRTSTRCACHEINT pThis, uint32_t
         PRTSTRCACHECHUNK pChunk = (PRTSTRCACHECHUNK)RTMemPageAlloc(RTSTRCACHE_FIXED_GROW_SIZE);
         if (!pChunk)
             return NULL;
-        pChunk->cb = PAGE_SIZE;
+        pChunk->cb = RTSTRCACHE_FIXED_GROW_SIZE;
         pChunk->pNext = pThis->pChunkList;
         pThis->pChunkList = pChunk;
 
