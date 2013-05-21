@@ -1,5 +1,5 @@
 /** @file
- * IPRT - Generic Work Queue with concurrent access.
+ * IPRT - Generic Work Queue with concurrent atomic access.
  */
 
 /*
@@ -23,13 +23,13 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___iprt_workqueue_h
-#define ___iprt_workqueue_h
+#ifndef ___iprt_queueatomic_h
+#define ___iprt_queueatomic_h
 
 #include <iprt/types.h>
 #include <iprt/asm.h>
 
-/** @defgroup grp_rt_list    RTWorkQueue - Generic Work Queue
+/** @defgroup grp_rt_list    RTQueueAtomic - Generic Work Queue
  * @ingroup grp_rt
  *
  * Implementation of a lockless work queue for threaded environments.
@@ -41,33 +41,33 @@ RT_C_DECLS_BEGIN
 /**
  * A work item
  */
-typedef struct RTWORKITEM
+typedef struct RTQUEUEATOMICITEM
 {
     /** Pointer to the next work item in the list. */
-    struct RTWORKITEM * volatile pNext;
-} RTWORKITEM;
+    struct RTQUEUEATOMICITEM * volatile pNext;
+} RTQUEUEATOMICITEM;
 /** Pointer to a work item. */
-typedef RTWORKITEM *PRTWORKITEM;
+typedef RTQUEUEATOMICITEM *PRTQUEUEATOMICITEM;
 /** Pointer to a work item pointer. */
-typedef PRTWORKITEM *PPRTWORKITEM;
+typedef PRTQUEUEATOMICITEM *PPRTQUEUEATOMICITEM;
 
 /**
  * Work queue.
  */
-typedef struct RTWORKQUEUE
+typedef struct RTQUEUEATOMIC
 {
     /* Head of the work queue. */
-    volatile PRTWORKITEM        pHead;
-} RTWORKQUEUE;
+    volatile PRTQUEUEATOMICITEM        pHead;
+} RTQUEUEATOMIC;
 /** Pointer to a work queue. */
-typedef RTWORKQUEUE *PRTWORKQUEUE;
+typedef RTQUEUEATOMIC *PRTQUEUEATOMIC;
 
 /**
  * Initialize a work queue.
  *
  * @param   pWorkQueue          Pointer to an unitialised work queue.
  */
-DECLINLINE(void) RTWorkQueueInit(PRTWORKQUEUE pWorkQueue)
+DECLINLINE(void) RTQueueAtomicInit(PRTQUEUEATOMIC pWorkQueue)
 {
     ASMAtomicWriteNullPtr(&pWorkQueue->pHead);
 }
@@ -78,10 +78,10 @@ DECLINLINE(void) RTWorkQueueInit(PRTWORKQUEUE pWorkQueue)
  * @param   pWorkQueue          The work queue to insert into.
  * @param   pItem               The item to insert.
  */
-DECLINLINE(void) RTWorkQueueInsert(PRTWORKQUEUE pWorkQueue, PRTWORKITEM pItem)
+DECLINLINE(void) RTQueueAtomicInsert(PRTQUEUEATOMIC pWorkQueue, PRTQUEUEATOMICITEM pItem)
 {
-    PRTWORKITEM pNext = ASMAtomicUoReadPtrT(&pWorkQueue->pHead, PRTWORKITEM);
-    PRTWORKITEM pHeadOld;
+    PRTQUEUEATOMICITEM pNext = ASMAtomicUoReadPtrT(&pWorkQueue->pHead, PRTQUEUEATOMICITEM);
+    PRTQUEUEATOMICITEM pHeadOld;
     pItem->pNext = pNext;
     while (!ASMAtomicCmpXchgExPtr(&pWorkQueue->pHead, pItem, pNext, &pHeadOld))
     {
@@ -98,16 +98,16 @@ DECLINLINE(void) RTWorkQueueInsert(PRTWORKQUEUE pWorkQueue, PRTWORKITEM pItem)
  * @returns Pointer to the first item.
  * @param   pWorkQueue          The work queue.
  */
-DECLINLINE(PRTWORKITEM) RTWorkQueueRemoveAll(PRTWORKQUEUE pWorkQueue)
+DECLINLINE(PRTQUEUEATOMICITEM) RTQueueAtomicRemoveAll(PRTQUEUEATOMIC pWorkQueue)
 {
-    PRTWORKITEM pHead = ASMAtomicXchgPtrT(&pWorkQueue->pHead, NULL, PRTWORKITEM);
+    PRTQUEUEATOMICITEM pHead = ASMAtomicXchgPtrT(&pWorkQueue->pHead, NULL, PRTQUEUEATOMICITEM);
 
     /* Reverse it. */
-    PRTWORKITEM pCur = pHead;
+    PRTQUEUEATOMICITEM pCur = pHead;
     pHead = NULL;
     while (pCur)
     {
-        PRTWORKITEM pInsert = pCur;
+        PRTQUEUEATOMICITEM pInsert = pCur;
         pCur = pCur->pNext;
         pInsert->pNext = pHead;
         pHead = pInsert;

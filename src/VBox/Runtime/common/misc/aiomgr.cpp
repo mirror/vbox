@@ -35,7 +35,9 @@
 #include <iprt/file.h>
 #include <iprt/thread.h>
 #include <iprt/assert.h>
-#include <iprt/workqueue.h>
+#include <iprt/critsect.h>
+#include <iprt/semaphore.h>
+#include <iprt/queueatomic.h>
 
 #include "internal/magics.h"
 
@@ -88,7 +90,6 @@ typedef struct RTAIOMGRINT
     uint32_t                      iFreeEntry;
     /** Size of the array. */
     unsigned                      cReqEntries;
-#if 0
     /** Critical section protecting the blocking event handling. */
     RTCRITSECT                    CritSectBlockingEvent;
     /** Event semaphore for blocking external events.
@@ -108,7 +109,6 @@ typedef struct RTAIOMGRINT
         /** The file to be closed */
         volatile PRTAIOMGRFILEINT pFileClose;
     } BlockingEventData;
-#endif
 } RTAIOMGRINT;
 /** Pointer to an internal async I/O manager instance. */
 typedef RTAIOMGRINT *PRTAIOMGRINT;
@@ -127,7 +127,7 @@ typedef struct RTAIOMGRFILEINT
     /** async I/O manager this file belongs to. */
     PRTAIOMGRINT                  pAioMgr;
     /** Work queue for new requests. */
-    RTWORKQUEUE                   WorkQueueReqs;
+    RTQUEUEATOMIC                 QueueReqs;
     /** Data for exclusive use by the assigned async I/O manager. */
     struct
     {
