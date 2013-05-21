@@ -387,7 +387,7 @@ typedef enum VBOXGUESTCAPSACQUIRE_FLAGS
      * so u32NotMask is ignored for this request */
     VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE,
     /* to ensure enum is 32bit*/
-    VBOXGUESTCAPSACQUIRE_FLAGS_32bit = 0x7fffffff,
+    VBOXGUESTCAPSACQUIRE_FLAGS_32bit = 0x7fffffff
 } VBOXGUESTCAPSACQUIRE_FLAGS;
 
 typedef struct VBoxGuestCapsAquire
