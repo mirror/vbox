@@ -1675,8 +1675,8 @@ VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
     /* On first entry we'll sync everything. */
     pVCpu->hm.s.fContextUseFlags = HM_CHANGED_ALL;
 
-    pVCpu->hm.s.vmx.cr0_mask = 0;
-    pVCpu->hm.s.vmx.cr4_mask = 0;
+    pVCpu->hm.s.vmx.u32CR0Mask = 0;
+    pVCpu->hm.s.vmx.u32CR4Mask = 0;
 
     pVCpu->hm.s.fActive        = false;
     pVCpu->hm.s.Event.fPending = false;
