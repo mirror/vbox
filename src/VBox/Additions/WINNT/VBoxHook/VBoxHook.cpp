@@ -1,7 +1,9 @@
+/* $Id$ */
 /** @file
- *
  * VBoxHook -- Global windows hook dll
- *
+ */
+
+/*
  * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -12,6 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #include <Windows.h>
 #include <VBoxHook.h>
 #include <VBox/VBoxGuestLib.h>
@@ -27,16 +30,16 @@ static HANDLE   hWinNotifyEvent = 0;
 static HANDLE   hDesktopNotifyEvent = 0;
 
 #ifdef DEBUG
-void WriteLog(char *String, ...);
-#define dprintf(a) do { WriteLog a; } while (0)
+static void WriteLog(const char *pszFormat, ...);
+# define dprintf(a) do { WriteLog a; } while (0)
 #else
-#define dprintf(a) do {} while (0)
-#endif /* DEBUG */
+# define dprintf(a) do {} while (0)
+#endif /* !DEBUG */
 
 
 static void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
-                                 LONG idObject, LONG idChild,
-                                 DWORD dwEventThread, DWORD dwmsEventTime)
+                                        LONG idObject, LONG idChild,
+                                        DWORD dwEventThread, DWORD dwmsEventTime)
 {
     DWORD dwStyle;
     if (    idObject != OBJID_WINDOW
@@ -89,8 +92,8 @@ static void CALLBACK VBoxHandleWinEvent(HWINEVENTHOOK hook, DWORD event, HWND hw
 }
 
 static void CALLBACK VBoxHandleDesktopEvent(HWINEVENTHOOK hook, DWORD event, HWND hwnd,
-                                 LONG idObject, LONG idChild,
-                                 DWORD dwEventThread, DWORD dwmsEventTime)
+                                            LONG idObject, LONG idChild,
+                                            DWORD dwEventThread, DWORD dwmsEventTime)
 {
     if (!hDesktopNotifyEvent)
     {
@@ -108,10 +111,10 @@ BOOL VBoxHookInstallActiveDesktopTracker(HMODULE hDll)
 
     CoInitialize(NULL);
     hDesktopEventHook = SetWinEventHook(EVENT_SYSTEM_DESKTOPSWITCH, EVENT_SYSTEM_DESKTOPSWITCH,
-                                    hDll,
-                                    VBoxHandleDesktopEvent,
-                                    0, 0,
-                                    0);
+                                        hDll,
+                                        VBoxHandleDesktopEvent,
+                                        0, 0,
+                                        0);
 
     return !!hDesktopEventHook;
 
@@ -128,7 +131,7 @@ BOOL VBoxHookRemoveActiveDesktopTracker()
     return TRUE;
 }
 
-/* Install the global message hook */
+/** Install the global message hook */
 BOOL VBoxHookInstallWindowTracker(HMODULE hDll)
 {
     if (hWinEventHook[0] || hWinEventHook[1])
@@ -136,20 +139,20 @@ BOOL VBoxHookInstallWindowTracker(HMODULE hDll)
 
     CoInitialize(NULL);
     hWinEventHook[0] = SetWinEventHook(EVENT_OBJECT_LOCATIONCHANGE, EVENT_OBJECT_LOCATIONCHANGE,
-                                    hDll,
-                                    VBoxHandleWinEvent,
-                                    0, 0,
-                                    WINEVENT_INCONTEXT | WINEVENT_SKIPOWNPROCESS);
+                                       hDll,
+                                       VBoxHandleWinEvent,
+                                       0, 0,
+                                       WINEVENT_INCONTEXT | WINEVENT_SKIPOWNPROCESS);
 
     hWinEventHook[1] = SetWinEventHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_HIDE,
-                                    hDll,
-                                    VBoxHandleWinEvent,
-                                    0, 0,
-                                    WINEVENT_INCONTEXT | WINEVENT_SKIPOWNPROCESS);
+                                       hDll,
+                                       VBoxHandleWinEvent,
+                                       0, 0,
+                                       WINEVENT_INCONTEXT | WINEVENT_SKIPOWNPROCESS);
     return !!hWinEventHook[0];
 }
 
-/* Remove the global message hook */
+/** Remove the global message hook */
 BOOL VBoxHookRemoveWindowTracker()
 {
     if (hWinEventHook[0] && hWinEventHook[1])
@@ -164,49 +167,60 @@ BOOL VBoxHookRemoveWindowTracker()
 
 
 #ifdef DEBUG
-#include <VBox/VBoxGuest.h>
-#include <VBox/VMMDev.h>
+# include <VBox/VBoxGuest.h>
+# include <VBox/VMMDev.h>
 
-static char LogBuffer[1024];
-static HANDLE gVBoxDriver = INVALID_HANDLE_VALUE;
-
-VBGLR3DECL(int) VbglR3GRPerform(VMMDevRequestHeader *pReq)
+/**
+ * dprintf worker using VBoxGuest.sys and VMMDevReq_LogString.
+ */
+static void WriteLog(const char *pszFormat, ...)
 {
-    DWORD cbReturned;
-    DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(pReq->size), pReq, pReq->size,
-                    pReq, pReq->size, &cbReturned, NULL);
-    return VINF_SUCCESS;
-}
+    /*
+     * Open VBox guest driver once.
+     */
+    static HANDLE s_hVBoxGuest = INVALID_HANDLE_VALUE;
+    HANDLE hVBoxGuest = s_hVBoxGuest;
+    if (hVBoxGuest == INVALID_HANDLE_VALUE)
+    {
+        hVBoxGuest = CreateFile(VBOXGUEST_DEVICE_NAME,
+                                GENERIC_READ | GENERIC_WRITE,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                NULL,
+                                OPEN_EXISTING,
+                                FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+                                NULL);
+        if (hVBoxGuest == INVALID_HANDLE_VALUE)
+            return;
+        s_hVBoxGuest = hVBoxGuest;
+    }
 
-void WriteLog(char *pszStr, ...)
-{
-    VMMDevReqLogString *pReq = (VMMDevReqLogString *)LogBuffer;
-    int rc;
+    /*
+     * We're apparently afraid of using stack here, so we use a static buffer
+     * instead and pray we won't be here at the same time on two threads...
+     */
+    static union
+    {
+        VMMDevReqLogString Req;
+        uint8_t abBuf[1024];
+    } s_uBuf;
 
-    /* open VBox guest driver */
-    if (gVBoxDriver == INVALID_HANDLE_VALUE)
-        gVBoxDriver = CreateFile(VBOXGUEST_DEVICE_NAME,
-                             GENERIC_READ | GENERIC_WRITE,
-                             FILE_SHARE_READ | FILE_SHARE_WRITE,
-                             NULL,
-                             OPEN_EXISTING,
-                             FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
-                             NULL);
-
-    if (gVBoxDriver == INVALID_HANDLE_VALUE)
-        return;
+    vmmdevInitRequest(&s_uBuf.Req.header, VMMDevReq_LogString);
 
     va_list va;
+    va_start(va, pszFormat);
+    size_t cch = vsprintf(s_uBuf.Req.szString, pszFormat, va);
+    va_end(va);
 
-    va_start(va, pszStr);
+    s_uBuf.Req.header.size += (uint32_t)cch;
+    if (s_uBuf.Req.header.size > sizeof(s_uBuf))
+        __debugbreak();
 
-    vmmdevInitRequest(&pReq->header, VMMDevReq_LogString);
-    vsprintf(pReq->szString, pszStr, va);
-    pReq->header.size += strlen(pReq->szString);
-    rc = VbglR3GRPerform(&pReq->header);
-
-    va_end (va);
-    return;
+    DWORD cbReturned;
+    DeviceIoControl(hVBoxGuest, VBOXGUEST_IOCTL_VMMREQUEST(s_uBuf.Req.size),
+                    &s_uBuf.Req, s_uBuf.Req.header.size,
+                    &s_uBuf.Req, s_uBuf.Req.header.size,
+                    &cbReturned, NULL);
 }
 
-#endif
+#endif /* DEBUG */
+
