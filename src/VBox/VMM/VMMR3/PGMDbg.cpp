@@ -661,7 +661,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
                 if (   (   !PGM_PAGE_IS_ZERO(pPage)
                         || fAllZero)
                     && !PGM_PAGE_IS_MMIO(pPage)
-                    && PGM_PAGE_GET_STATE(pPage) != PGMPAGETYPE_MMIO2_ALIAS_MMIO
+                    && PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO2_ALIAS_MMIO
                     && !PGM_PAGE_IS_BALLOONED(pPage))
                 {
                     void const     *pvPage;
