@@ -97,13 +97,6 @@ void UIMachineWindowSeamless::prepareVisualState()
     /* This might be required to correctly mask: */
     centralWidget()->setAutoFillBackground(false);
 
-#ifdef Q_WS_WIN
-    /* Get corresponding screen: */
-    int iScreen = qobject_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
-    /* Prepare previous region: */
-    m_prevRegion = vboxGlobal().availableGeometry(iScreen);
-#endif /* Q_WS_WIN */
-
 #ifdef Q_WS_MAC
     /* Please note: All the stuff below has to be done after the window has
      * switched to fullscreen. Qt changes the winId on the fullscreen
@@ -279,15 +272,12 @@ bool UIMachineWindowSeamless::event(QEvent *pEvent)
 }
 #endif /* Q_WS_MAC */
 
-void UIMachineWindowSeamless::setMask(const QRegion &constRegion)
+void UIMachineWindowSeamless::setMask(const QRegion &incomingRegion)
 {
-    /* Could be unused under Mac: */
-    Q_UNUSED(constRegion);
+    /* Copy region: */
+    QRegion region(incomingRegion);
 
 #ifndef Q_WS_MAC
-    /* Copy mask: */
-    QRegion region = constRegion;
-
     /* Shift region if left spacer width is NOT zero or top spacer height is NOT zero: */
     if (m_pLeftSpacer->geometry().width() || m_pTopSpacer->geometry().height())
         region.translate(m_pLeftSpacer->geometry().width(), m_pTopSpacer->geometry().height());
@@ -303,45 +293,34 @@ void UIMachineWindowSeamless::setMask(const QRegion &constRegion)
     }
 #endif /* !Q_WS_MAC */
 
-#if defined (Q_WS_WIN)
-# if 0 /* This code is disabled for a long time already, need analisys... */
-    QRegion difference = m_prevRegion.subtract(region);
-
-    /* Region offset calculation */
-    int fleft = 0, ftop = 0;
-
-    /* Visible region calculation */
-    HRGN newReg = CreateRectRgn(0, 0, 0, 0);
-    CombineRgn(newReg, region.handle(), 0, RGN_COPY);
-    OffsetRgn(newReg, fleft, ftop);
-
-    /* Invisible region calculation */
-    HRGN diffReg = CreateRectRgn(0, 0, 0, 0);
-    CombineRgn(diffReg, difference.handle(), 0, RGN_COPY);
-    OffsetRgn(diffReg, fleft, ftop);
-
-    /* Set the current visible region and clean the previous */
-    SetWindowRgn(winId(), newReg, FALSE);
-    RedrawWindow(0, 0, diffReg, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-    if (machineView())
-        RedrawWindow(machineView()->viewport()->winId(), 0, 0, RDW_INVALIDATE);
-
-    m_prevRegion = region;
-# endif /* This code is disabled for a long time already, need analisys... */
-    UIMachineWindow::setMask(region);
-#elif defined (Q_WS_MAC)
-# ifdef VBOX_GUI_USE_QUARTZ2D
+#ifdef VBOX_GUI_USE_QUARTZ2D
     if (vboxGlobal().vmRenderMode() == Quartz2DMode)
     {
         /* If we are using the Quartz2D backend we have to trigger a repaint only.
          * All the magic clipping stuff is done in the paint engine. */
         ::darwinWindowInvalidateShape(m_pMachineView->viewport());
     }
-# else /* VBOX_GUI_USE_QUARTZ2D */
-    UIMachineWindow::setMask(constRegion);
-# endif /* !VBOX_GUI_USE_QUARTZ2D */
-#else /* !Q_WS_MAC */
-    UIMachineWindow::setMask(region);
-#endif
+#else /* VBOX_GUI_USE_QUARTZ2D */
+    /* Seamless-window for empty region should be empty too,
+     * but native API wrapped by the QWidget::setMask() doesn't allow this.
+     * Instead, we have a full painted screen of seamless-geometry size visible.
+     * Moreover, we can't just hide the empty seamless-window as 'hiding'
+     * 1. will collide with the multi-screen layout behavior and
+     * 2. will cause a task-bar flicker on moving window from one screen to another.
+     * As a temporary though quite a dirty workaround we have to make sure
+     * region have at least one pixel. */
+    if (region.isEmpty())
+        region += QRect(0, 0, 1, 1);
+    /* Make sure region had changed: */
+    if (m_previousRegion != region)
+    {
+        /* Remember new region: */
+        m_previousRegion = region;
+        /* Assign new region: */
+        UIMachineWindow::setMask(m_previousRegion);
+        /* Update viewport contents: */
+        m_pMachineView->viewport()->update();
+    }
+#endif /* !VBOX_GUI_USE_QUARTZ2D */
 }
 

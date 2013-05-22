@@ -95,9 +95,7 @@ private:
 #endif /* !Q_WS_MAC */
 
     /* Variables: */
-#ifdef Q_WS_WIN
-    QRegion m_prevRegion;
-#endif /* Q_WS_WIN */
+    QRegion m_previousRegion;
 
     /* Factory support: */
     friend class UIMachineWindow;

@@ -83,15 +83,10 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
     {
         case SetRegionEventType:
         {
-            /* Get region-update event: */
+            /* Apply new seamless-region: */
             UISetRegionEvent *pSetRegionEvent = static_cast<UISetRegionEvent*>(pEvent);
-
-            /* Apply new region: */
-            if (pSetRegionEvent->region() != m_lastVisibleRegion)
-            {
-                m_lastVisibleRegion = pSetRegionEvent->region();
-                machineWindow()->setMask(m_lastVisibleRegion);
-            }
+            m_lastVisibleRegion = pSetRegionEvent->region();
+            machineWindow()->setMask(m_lastVisibleRegion);
             return true;
         }
 
