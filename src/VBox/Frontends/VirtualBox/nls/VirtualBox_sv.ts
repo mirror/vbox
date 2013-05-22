@@ -12796,7 +12796,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxMiniToolBar</name>
+    <name>UIMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
         <translation>Visa alltid verktygsraden</translation>

@@ -12290,7 +12290,7 @@ para ligar ao encaixe actualmente destacado.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxMiniToolBar</name>
+    <name>UIMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
         <translation>Mostrar sempre na barra de ferramentas</translation>

@@ -15048,24 +15048,24 @@ USB フィルターを追加または除去するにはコンテキストメニ�
     </message>
 </context>
 <context>
-    <name>VBoxMiniToolBar</name>
+    <name>UIMiniToolBar</name>
     <message>
-        <location filename="../src/widgets/VBoxMiniToolBar.cpp" line="72"/>
+        <location filename="../src/widgets/UIMiniToolBar.cpp" line="72"/>
         <source>Always show the toolbar</source>
         <translation>常にツールバーを表示する</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxMiniToolBar.cpp" line="99"/>
+        <location filename="../src/widgets/UIMiniToolBar.cpp" line="99"/>
         <source>Minimize Window</source>
         <translation>ウィンドウを最小化</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxMiniToolBar.cpp" line="106"/>
+        <location filename="../src/widgets/UIMiniToolBar.cpp" line="106"/>
         <source>Exit Full Screen or Seamless Mode</source>
         <translation>フルスクリーンモードまたはシームレスモードを終了する</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxMiniToolBar.cpp" line="113"/>
+        <location filename="../src/widgets/UIMiniToolBar.cpp" line="113"/>
         <source>Close VM</source>
         <translation>仮想マシンを閉じる</translation>
     </message>

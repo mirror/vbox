@@ -23,7 +23,7 @@
 #include "UIMachineWindow.h"
 
 /* Forward declarations: */
-class VBoxMiniToolBar;
+class UIMiniToolBar;
 
 /* Fullscreen machine-window implementation: */
 class UIMachineWindowFullscreen : public UIMachineWindow
@@ -67,7 +67,7 @@ private:
 
     /* Widgets: */
     QMenu *m_pMainMenu;
-    VBoxMiniToolBar *m_pMiniToolBar;
+    UIMiniToolBar *m_pMiniToolBar;
 
     /* Factory support: */
     friend class UIMachineWindow;

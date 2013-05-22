@@ -224,7 +224,7 @@
 //#include "VBoxMediaComboBox.h"
 #include "VBoxMediaManagerDlg.h"
 //#include "VBoxMedium.h"               /* Expensive? Or what? */
-#include "VBoxMiniToolBar.h"
+#include "UIMiniToolBar.h"
 #include "VBoxNewHDWzd.h"
 #include "VBoxNewVMWzd.h"
 #include "VBoxOSTypeSelectorButton.h"

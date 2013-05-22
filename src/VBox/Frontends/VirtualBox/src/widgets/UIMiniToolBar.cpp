@@ -2,7 +2,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxMiniToolBar class declaration & implementation. This is the toolbar shown on fullscreen mode.
+ * UIMiniToolBar class declaration & implementation. This is the toolbar shown on fullscreen mode.
  */
 
 /*
@@ -20,7 +20,7 @@
 /* Local includes */
 #include "UIIconPool.h"
 #include "VBoxGlobal.h"
-#include "VBoxMiniToolBar.h"
+#include "UIMiniToolBar.h"
 
 /* Global includes */
 #include <QCursor>
@@ -36,7 +36,7 @@
 #include <QToolButton>
 
 /* Mini-toolbar constructor */
-VBoxMiniToolBar::VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fActive, bool fAutoHide)
+UIMiniToolBar::UIMiniToolBar(QWidget *pParent, Alignment alignment, bool fActive, bool fAutoHide)
     : UIToolBar(pParent)
     , m_pAutoHideAction(0)
     , m_pDisplayLabel(0)
@@ -122,7 +122,7 @@ VBoxMiniToolBar::VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fAc
 }
 
 /* Appends passed menus into internal menu-list */
-VBoxMiniToolBar& VBoxMiniToolBar::operator<<(QList<QMenu*> menus)
+UIMiniToolBar& UIMiniToolBar::operator<<(QList<QMenu*> menus)
 {
     for (int i = 0; i < menus.size(); ++i)
     {
@@ -140,13 +140,13 @@ VBoxMiniToolBar& VBoxMiniToolBar::operator<<(QList<QMenu*> menus)
 }
 
 /* Seamless mode setter */
-void VBoxMiniToolBar::setSeamlessMode(bool fSeamless)
+void UIMiniToolBar::setSeamlessMode(bool fSeamless)
 {
     m_fSeamless = fSeamless;
 }
 
 /* Update the display text, usually the VM Name */
-void VBoxMiniToolBar::setDisplayText(const QString &strText)
+void UIMiniToolBar::setDisplayText(const QString &strText)
 {
     /* If text was really changed: */
     if (m_pDisplayLabel->text() != strText)
@@ -164,12 +164,12 @@ void VBoxMiniToolBar::setDisplayText(const QString &strText)
 }
 
 /* Is auto-hide feature enabled? */
-bool VBoxMiniToolBar::isAutoHide() const
+bool UIMiniToolBar::isAutoHide() const
 {
     return m_fAutoHide;
 }
 
-void VBoxMiniToolBar::updateDisplay(bool fShow, bool fSetHideFlag)
+void UIMiniToolBar::updateDisplay(bool fShow, bool fSetHideFlag)
 {
     m_iAutoHideCounter = 0;
 
@@ -221,7 +221,7 @@ void VBoxMiniToolBar::updateDisplay(bool fShow, bool fSetHideFlag)
 }
 
 /* Parent widget event-filter */
-bool VBoxMiniToolBar::eventFilter(QObject *pObject, QEvent *pEvent)
+bool UIMiniToolBar::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* If parent widget was resized: */
     if (pObject == parent() && pEvent->type() == QEvent::Resize)
@@ -235,7 +235,7 @@ bool VBoxMiniToolBar::eventFilter(QObject *pObject, QEvent *pEvent)
 }
 
 /* Mouse-move event processor */
-void VBoxMiniToolBar::mouseMoveEvent(QMouseEvent *pEvent)
+void UIMiniToolBar::mouseMoveEvent(QMouseEvent *pEvent)
 {
     /* Activate sliding animation on mouse move: */
     if (!m_fHideAfterSlide)
@@ -249,7 +249,7 @@ void VBoxMiniToolBar::mouseMoveEvent(QMouseEvent *pEvent)
 
 /* Timer event processor
  * Handles auto hide feature of the toolbar */
-void VBoxMiniToolBar::timerEvent(QTimerEvent *pEvent)
+void UIMiniToolBar::timerEvent(QTimerEvent *pEvent)
 {
     if (pEvent->timerId() == m_scrollTimer.timerId())
     {
@@ -323,7 +323,7 @@ void VBoxMiniToolBar::timerEvent(QTimerEvent *pEvent)
 }
 
 /* Show event processor */
-void VBoxMiniToolBar::showEvent(QShowEvent *pEvent)
+void UIMiniToolBar::showEvent(QShowEvent *pEvent)
 {
     if (!m_fPolished)
     {
@@ -345,7 +345,7 @@ void VBoxMiniToolBar::showEvent(QShowEvent *pEvent)
 }
 
 /* Show event processor */
-void VBoxMiniToolBar::paintEvent(QPaintEvent *pEvent)
+void UIMiniToolBar::paintEvent(QPaintEvent *pEvent)
 {
     /* Paint background */
     QPainter painter;
@@ -357,14 +357,14 @@ void VBoxMiniToolBar::paintEvent(QPaintEvent *pEvent)
 }
 
 /* Toggle push-pin */
-void VBoxMiniToolBar::togglePushpin(bool fOn)
+void UIMiniToolBar::togglePushpin(bool fOn)
 {
     m_fAutoHide = !fOn;
     updateDisplay(!m_fAutoHide, false);
 }
 
 /* Initialize mini-toolbar */
-void VBoxMiniToolBar::initialize()
+void UIMiniToolBar::initialize()
 {
     /* Resize to sizehint: */
     resize(sizeHint());
@@ -374,7 +374,7 @@ void VBoxMiniToolBar::initialize()
 }
 
 /* Move mini-toolbar to the base location */
-void VBoxMiniToolBar::moveToBase()
+void UIMiniToolBar::moveToBase()
 {
     QRect screen = m_fSeamless ? vboxGlobal().availableGeometry(QApplication::desktop()->screenNumber(window())) :
                                  QApplication::desktop()->screenGeometry(window());
@@ -401,7 +401,7 @@ void VBoxMiniToolBar::moveToBase()
 }
 
 /* Enable/disable mouse-tracking for required widgets */
-void VBoxMiniToolBar::setMouseTrackingEnabled(bool fEnabled)
+void UIMiniToolBar::setMouseTrackingEnabled(bool fEnabled)
 {
     setMouseTracking(fEnabled);
     if (m_pDisplayLabel)
