@@ -69,7 +69,7 @@ int main()
         if (Delta > 100000000ULL /* 100 ms */ )
         {
             cErrors++;
-            RTPrintf("tstTime-4: Delta=%llu!\n", Delta);
+            RTPrintf("tstTime-4: Delta=%llu (GipPrevTS=%llu, SysPrevTS=%llu)!\n", Delta, GipPrevTS, SysPrevTS);
         }
 
     } while (SysPrevTS - SysStartTS < 2000000000 /* 2s */);
