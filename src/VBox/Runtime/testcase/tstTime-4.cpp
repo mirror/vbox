@@ -66,7 +66,7 @@ int main()
         }
         uint64_t Delta = GipPrevTS > SysPrevTS ? GipPrevTS - SysPrevTS :
                                                  SysPrevTS - GipPrevTS;
-        if (Delta > 100000000 /* 100 ms */ )
+        if (Delta > 100000000ULL /* 100 ms */ )
         {
             cErrors++;
             RTPrintf("tstTime-4: Delta=%llu!\n", Delta);
