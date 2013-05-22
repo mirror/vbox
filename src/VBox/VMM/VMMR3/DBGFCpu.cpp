@@ -99,7 +99,7 @@ VMMR3DECL(bool) DBGFR3CpuIsIn64BitCode(PUVM pUVM, VMCPUID idCpu)
     VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, false);
     AssertReturn(idCpu < pUVM->pVM->cCpus, false);
 
-    CPUMMODE fIn64BitCode;
+    bool fIn64BitCode;
     int rc = VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3CpuIn64BitCode, 3, pUVM->pVM, idCpu, &fIn64BitCode);
     if (RT_FAILURE(rc))
         return false;
