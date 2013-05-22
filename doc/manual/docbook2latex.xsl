@@ -316,7 +316,7 @@
         <xsl:text>}</xsl:text>
       </xsl:when>
     </xsl:choose>
-    <xsl:variable name="refid" select="(@id) | (../@id)" />
+    <xsl:variable name="refid" select="../@id" />
     <xsl:if test="$refid">
       <xsl:value-of select="concat('&#x0a;\label{', $refid, '}')" />
     </xsl:if>

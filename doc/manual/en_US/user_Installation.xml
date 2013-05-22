@@ -228,8 +228,8 @@
     </sect2>
   </sect1>
 
-  <sect1>
-    <title id="install-linux-host">Installing on Linux hosts</title>
+  <sect1 id="install-linux-host">
+    <title>Installing on Linux hosts</title>
 
     <sect2>
       <title>Prerequisites</title>
@@ -625,8 +625,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
         installation options provided by VirtualBox.</para>
       </sect3>
 
-      <sect3>
-        <title id="linux_install_opts">Automatic installation options</title>
+      <sect3 id="linux_install_opts">
+        <title>Automatic installation options</title>
 
         <para>To configure the installation process of our .deb and .rpm
         packages, you can create a response file named
@@ -692,8 +692,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
     </sect2>
   </sect1>
 
-  <sect1>
-    <title id="install-solaris-host">Installing on Solaris hosts</title>
+  <sect1 id="install-solaris-host">
+    <title>Installing on Solaris hosts</title>
 
     <para>For the specific versions of Solaris that we support as host
     operating systems, please refer to <xref
@@ -701,7 +701,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
 
     <para>If you have a previously installed instance of VirtualBox on your
     Solaris host, please uninstall it first before installing a new instance.
-    Refer to <xref linkend="uninstallsolhost" /> for uninstall
+    Refer to <xref linkend="uninstall-solaris-host" /> for uninstall
     instructions.</para>
 
     <sect2>
@@ -729,7 +729,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
         the current zone and not into any other zone, use
         <computeroutput>pkgadd -G</computeroutput>. For more information refer
         to the <computeroutput>pkgadd</computeroutput> manual; see also <xref
-        linkend="solariszones" />.</para>
+        linkend="solaris-zones" />.</para>
       </note>
 
       <para>The installer will then prompt you to enter the package you wish
@@ -785,8 +785,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
       the terminal.</para>
     </sect2>
 
-    <sect2>
-      <title id="uninstallsolhost">Uninstallation</title>
+    <sect2 id="uninstall-solaris-host">
+      <title>Uninstallation</title>
 
       <para>Uninstallation of VirtualBox on Solaris requires root permissions.
       To perform the uninstallation, start a root terminal session and
@@ -822,9 +822,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
       <screen>pkgrm -n -a /opt/VirtualBox/autoresponse SUNWvbox</screen>
     </sect2>
 
-    <sect2>
-      <title id="solariszones">Configuring a zone for running
-      VirtualBox</title>
+    <sect2 id="solaris-zones">
+      <title>Configuring a zone for running VirtualBox</title>
 
       <para>Starting with VirtualBox 1.6 it is possible to run VirtualBox from
       within Solaris zones. For an introduction of Solaris zones, please refer

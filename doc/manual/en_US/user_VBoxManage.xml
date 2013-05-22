@@ -413,8 +413,8 @@ Statistics update:  disabled
       </orderedlist></para>
   </sect1>
 
-  <sect1>
-    <title id="vboxmanage-createvm">VBoxManage createvm</title>
+  <sect1 id="vboxmanage-createvm">
+    <title>VBoxManage createvm</title>
 
     <para>This command creates a new XML virtual machine definition
     file.</para>
@@ -1666,8 +1666,8 @@ Virtual system 0:
     become unregistered in any case.</para>
   </sect1>
 
-  <sect1>
-    <title id="vboxmanage-storageattach">VBoxManage storageattach</title>
+  <sect1 id="vboxmanage-storageattach">
+    <title>VBoxManage storageattach</title>
 
     <para>This command attaches/modifies/removes a storage medium connected to
     a storage controller that was previously added with the
@@ -3370,8 +3370,8 @@ Value: 2006.01.01</screen>
       </itemizedlist></para>
   </sect1>
 
-  <sect1>
-    <title id="metrics">VBoxManage metrics</title>
+  <sect1 id="metrics">
+    <title>VBoxManage metrics</title>
 
     <para>This command supports monitoring the usage of system resources.
     Resources are represented by various metrics associated with the host

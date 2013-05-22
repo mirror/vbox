@@ -4,8 +4,8 @@
 <chapter>
   <title>Remote virtual machines</title>
 
-  <sect1>
-    <title id="vrde">Remote display (VRDP support)</title>
+  <sect1 id="vrde">
+    <title>Remote display (VRDP support)</title>
 
     <para>VirtualBox can display virtual machines remotely, meaning that a
     virtual machine can execute on one computer even though the machine will be

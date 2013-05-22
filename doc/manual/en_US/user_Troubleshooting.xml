@@ -154,8 +154,8 @@
       format and can be easily analyzed with Wireshark.</para>
     </sect2>
 
-    <sect2>
-      <title id="ts_debugger">The built-in VM debugger</title>
+    <sect2 id="ts_debugger">
+      <title>The built-in VM debugger</title>
 
       <para>VirtualBox includes a built-in VM debugger, which advanced users
       may find useful. This debugger allows for examining and, to some extent,
