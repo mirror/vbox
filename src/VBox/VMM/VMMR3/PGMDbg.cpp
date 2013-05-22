@@ -658,11 +658,11 @@ VMMR3_INT_DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRa
             for (;; offPage = 0)
             {
                 PPGMPAGE pPage = &pRam->aPages[iPage];
-                if (    (   !PGM_PAGE_IS_ZERO(pPage)
-                         || fAllZero)
-                        &&  !PGM_PAGE_IS_MMIO(pPage)
-                        &&  !PGM_PAGE_IS_BALLOONED(pPage)
-                        &&  PGM_PAGE_GET_STATE(pPage) != PGMPAGETYPE_MMIO2_ALIAS_MMIO)
+                if (   (   !PGM_PAGE_IS_ZERO(pPage)
+                        || fAllZero)
+                    && !PGM_PAGE_IS_MMIO(pPage)
+                    && PGM_PAGE_GET_STATE(pPage) != PGMPAGETYPE_MMIO2_ALIAS_MMIO
+                    && !PGM_PAGE_IS_BALLOONED(pPage))
                 {
                     void const     *pvPage;
                     PGMPAGEMAPLOCK  Lock;
@@ -803,12 +803,12 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
         if (RT_SUCCESS(rc) && Walk.u.Core.fSucceeded)
         {
             PPGMPAGE pPage = pgmPhysGetPage(pVM, Walk.u.Core.GCPhys);
-            if (    pPage
-                &&  (   !PGM_PAGE_IS_ZERO(pPage)
-                     || fAllZero)
-                &&  !PGM_PAGE_IS_MMIO(pPage)
-                &&  !PGM_PAGE_IS_BALLOONED(pPage)
-                &&  PGM_PAGE_GET_STATE(pPage) != PGMPAGETYPE_MMIO2_ALIAS_MMIO)
+            if (   pPage
+                && (   !PGM_PAGE_IS_ZERO(pPage)
+                    || fAllZero)
+                && !PGM_PAGE_IS_MMIO(pPage)
+                && PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO2_ALIAS_MMIO
+                && !PGM_PAGE_IS_BALLOONED(pPage))
             {
                 void const *pvPage;
                 PGMPAGEMAPLOCK Lock;
