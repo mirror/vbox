@@ -144,6 +144,17 @@ RTDECL(uint32_t) RTStrCacheRelease(RTSTRCACHE hStrCache, const char *psz);
  */
 RTDECL(size_t) RTStrCacheLength(const char *psz);
 
+/**
+ * Indicates whether this a real string cache or a cheap place holder.
+ *
+ * A real string cache will return the same address when a string is added
+ * multiple times.
+ *
+ * @returns true / false.
+ */
+RTDECL(bool) RTStrCacheIsRealImpl(void);
+
+
 RT_C_DECLS_END
 
 #endif

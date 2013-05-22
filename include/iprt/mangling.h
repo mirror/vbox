@@ -1320,6 +1320,7 @@
 # define RTStrCacheEnterLower                           RT_MANGLER(RTStrCacheEnterLower)
 # define RTStrCacheEnterLowerN                          RT_MANGLER(RTStrCacheEnterLowerN)
 # define RTStrCacheEnterN                               RT_MANGLER(RTStrCacheEnterN)
+# define RTStrCacheIsRealImpl                           RT_MANGLER(RTStrCacheIsRealImpl)
 # define RTStrCacheLength                               RT_MANGLER(RTStrCacheLength)
 # define RTStrCacheRelease                              RT_MANGLER(RTStrCacheRelease)
 # define RTStrCacheRetain                               RT_MANGLER(RTStrCacheRetain)
