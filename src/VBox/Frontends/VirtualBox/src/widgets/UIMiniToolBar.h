@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxMiniToolBar class declaration & implementation. This is the toolbar shown on fullscreen mode.
+ * UIMiniToolBar class declaration & implementation. This is the toolbar shown on fullscreen mode.
  */
 
 /*
@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxMiniToolBar_h__
-#define __VBoxMiniToolBar_h__
+#ifndef __UIMiniToolBar_h__
+#define __UIMiniToolBar_h__
 
 /* Global includes */
 #include <QBasicTimer>
@@ -30,10 +30,10 @@ class QLabel;
 class QMenu;
 
 /**
- *  The VBoxMiniToolBar class is a toolbar shown inside full screen mode or seamless mode.
+ *  The UIMiniToolBar class is a toolbar shown inside full screen mode or seamless mode.
  *  It supports auto hiding and animated sliding up/down.
  */
-class VBoxMiniToolBar : public UIToolBar
+class UIMiniToolBar : public UIToolBar
 {
     Q_OBJECT;
 
@@ -45,9 +45,9 @@ public:
         AlignBottom
     };
 
-    VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fActive, bool fAutoHide);
+    UIMiniToolBar(QWidget *pParent, Alignment alignment, bool fActive, bool fAutoHide);
 
-    VBoxMiniToolBar& operator<<(QList<QMenu*> menus);
+    UIMiniToolBar& operator<<(QList<QMenu*> menus);
 
     void setSeamlessMode(bool fSeamless);
     void setDisplayText(const QString &strText);
@@ -126,5 +126,5 @@ private:
     int m_iAutoHideTotalCounter;
 };
 
-#endif // __VBoxMiniToolBar_h__
+#endif // __UIMiniToolBar_h__
 

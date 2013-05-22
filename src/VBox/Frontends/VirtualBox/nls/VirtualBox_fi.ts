@@ -11681,7 +11681,7 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxMiniToolBar</name>
+    <name>UIMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
         <translation type="unfinished"></translation>

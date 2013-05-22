@@ -23,7 +23,7 @@
 #include "UIMachineWindow.h"
 
 /* Forward declarations: */
-class VBoxMiniToolBar;
+class UIMiniToolBar;
 
 /* Seamless machine-window implementation: */
 class UIMachineWindowSeamless : public UIMachineWindow
@@ -91,7 +91,7 @@ private:
     /* Widgets: */
     QMenu *m_pMainMenu;
 #ifndef Q_WS_MAC
-    VBoxMiniToolBar *m_pMiniToolBar;
+    UIMiniToolBar *m_pMiniToolBar;
 #endif /* !Q_WS_MAC */
 
     /* Variables: */

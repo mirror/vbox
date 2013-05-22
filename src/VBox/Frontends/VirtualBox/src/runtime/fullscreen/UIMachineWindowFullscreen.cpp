@@ -27,7 +27,7 @@
 
 /* GUI includes: */
 #include "UIDefs.h"
-#include "VBoxMiniToolBar.h"
+#include "UIMiniToolBar.h"
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicFullscreen.h"
@@ -102,9 +102,9 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
     bool fIsAtTop = m.GetExtraData(GUI_MiniToolBarAlignment) == "top";
     /* Get the mini-toolbar auto-hide feature availability: */
     bool fIsAutoHide = m.GetExtraData(GUI_MiniToolBarAutoHide) != "off";
-    m_pMiniToolBar = new VBoxMiniToolBar(centralWidget(),
-                                         fIsAtTop ? VBoxMiniToolBar::AlignTop : VBoxMiniToolBar::AlignBottom,
-                                         true, fIsAutoHide);
+    m_pMiniToolBar = new UIMiniToolBar(centralWidget(),
+                                       fIsAtTop ? UIMiniToolBar::AlignTop : UIMiniToolBar::AlignBottom,
+                                       true, fIsAutoHide);
     m_pMiniToolBar->updateDisplay(true, true);
     QList<QMenu*> menus;
     QList<QAction*> actions = uisession()->newMenu()->actions();

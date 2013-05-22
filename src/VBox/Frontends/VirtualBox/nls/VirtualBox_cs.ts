@@ -13332,7 +13332,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxMiniToolBar</name>
+    <name>UIMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
         <translation>Vždy zobrazovat nástrojovou lištu</translation>

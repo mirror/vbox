@@ -12689,7 +12689,7 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
     </message>
 </context>
 <context>
-    <name>VBoxMiniToolBar</name>
+    <name>UIMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
         <translation>Arată mereu minibara</translation>
