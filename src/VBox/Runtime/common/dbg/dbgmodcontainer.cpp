@@ -34,6 +34,10 @@
 #include <iprt/avl.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
+#define RTDBGMODCNT_WITH_MEM_CACHE
+#ifdef RTDBGMODCNT_WITH_MEM_CACHE
+# include <iprt/memcache.h>
+#endif
 #include <iprt/string.h>
 #include <iprt/strcache.h>
 #include "internal/dbgmod.h"
@@ -134,6 +138,12 @@ typedef struct RTDBGMODCTN
     uint32_t                    iNextSymbolOrdinal;
     /** The next line number ordinal. */
     uint32_t                    iNextLineOrdinal;
+#ifdef RTDBGMODCNT_WITH_MEM_CACHE
+    /** Line number allocator.
+     * Using a cache is a bit overkill since we normally won't free them, but
+     * it's a construct that exists and does the job relatively efficiently. */
+    RTMEMCACHE                  hLineNumAllocator;
+#endif
 } RTDBGMODCTN;
 /** Pointer to instance data for the debug info container. */
 typedef RTDBGMODCTN *PRTDBGMODCTN;
@@ -250,7 +260,11 @@ static DECLCALLBACK(int) rtDbgModContainer_LineAdd(PRTDBGMODINT pMod, const char
     /*
      * Create a new entry.
      */
+#ifdef RTDBGMODCNT_WITH_MEM_CACHE
+    PRTDBGMODCTNLINE pLine = (PRTDBGMODCTNLINE)RTMemCacheAlloc(pThis->hLineNumAllocator);
+#else
     PRTDBGMODCTNLINE pLine = (PRTDBGMODCTNLINE)RTMemAllocZ(sizeof(*pLine));
+#endif
     if (!pLine)
         return VERR_NO_MEMORY;
     pLine->AddrCore.Key     = off;
@@ -624,11 +638,15 @@ static DECLCALLBACK(RTDBGSEGIDX) rtDbgModContainer_RvaToSegOff(PRTDBGMODINT pMod
 /** Destroy a line number node. */
 static DECLCALLBACK(int)  rtDbgModContainer_DestroyTreeLineNode(PAVLU32NODECORE pNode, void *pvUser)
 {
+    PRTDBGMODCTN     pThis = (PRTDBGMODCTN)pvUser;
     PRTDBGMODCTNLINE pLine = RT_FROM_MEMBER(pNode, RTDBGMODCTNLINE, OrdinalCore);
     RTStrCacheRelease(g_hDbgModStrCache, pLine->pszFile);
     pLine->pszFile = NULL;
-    RTMemFree(pLine);
-    NOREF(pvUser);
+#ifdef RTDBGMODCNT_WITH_MEM_CACHE
+    RTMemCacheFree(pThis->hLineNumAllocator, pLine);
+#else
+    RTMemFree(pLine); NOREF(pThis);
+#endif    
     return 0;
 }
 
@@ -663,7 +681,12 @@ static DECLCALLBACK(int) rtDbgModContainer_Close(PRTDBGMODINT pMod)
     RTAvlrUIntPtrDestroy(&pThis->AbsAddrTree, rtDbgModContainer_DestroyTreeNode, NULL);
     pThis->Names = NULL;
 
-    RTAvlU32Destroy(&pThis->LineOrdinalTree, rtDbgModContainer_DestroyTreeLineNode, NULL);
+#ifdef RTDBGMODCNT_WITH_MEM_CACHE
+    RTMemCacheDestroy(pThis->hLineNumAllocator);
+    pThis->hLineNumAllocator = NIL_RTMEMCACHE;
+#else
+    RTAvlU32Destroy(&pThis->LineOrdinalTree, rtDbgModContainer_DestroyTreeLineNode, pThis);
+#endif
 
     RTMemFree(pThis->paSegs);
     pThis->paSegs = NULL;
@@ -754,7 +777,7 @@ DECLHIDDEN(int) rtDbgModContainer_LineRemoveAll(PRTDBGMODINT pMod)
     for (uint32_t iSeg = 0; iSeg < pThis->cSegs; iSeg++)
         pThis->paSegs[iSeg].LineAddrTree = NULL;
 
-    RTAvlU32Destroy(&pThis->LineOrdinalTree, rtDbgModContainer_DestroyTreeLineNode, NULL);
+    RTAvlU32Destroy(&pThis->LineOrdinalTree, rtDbgModContainer_DestroyTreeLineNode, pThis);
     Assert(pThis->LineOrdinalTree == NULL);
 
     pThis->iNextLineOrdinal = 0;
@@ -816,21 +839,30 @@ int rtDbgModContainerCreate(PRTDBGMODINT pMod, RTUINTPTR cbSeg)
     pMod->pDbgVt = &g_rtDbgModVtDbgContainer;
     pMod->pvDbgPriv = pThis;
 
-    /*
-     * Add the initial segment.
-     */
-    if (cbSeg)
+#ifdef RTDBGMODCNT_WITH_MEM_CACHE
+    int rc = RTMemCacheCreate(&pThis->hLineNumAllocator, sizeof(RTDBGMODCTNLINE), sizeof(void *), UINT32_MAX,
+                              NULL /*pfnCtor*/, NULL /*pfnDtor*/, NULL /*pvUser*/, 0 /*fFlags*/);
+#else
+    int rc = VINF_SUCCESS;
+#endif
+    if (RT_SUCCESS(rc))
     {
-        int rc = rtDbgModContainer_SegmentAdd(pMod, 0, cbSeg, "default", sizeof("default") - 1, 0, NULL);
-        if (RT_FAILURE(rc))
-        {
-            RTMemFree(pThis);
-            pMod->pDbgVt = NULL;
-            pMod->pvDbgPriv = NULL;
+        /*
+         * Add the initial segment.
+         */
+        if (cbSeg)
+            rc = rtDbgModContainer_SegmentAdd(pMod, 0, cbSeg, "default", sizeof("default") - 1, 0, NULL);
+        if (RT_SUCCESS(rc))
             return rc;
-        }
+
+#ifdef RTDBGMODCNT_WITH_MEM_CACHE
+        RTMemCacheDestroy(pThis->hLineNumAllocator);
+#endif
     }
 
-    return VINF_SUCCESS;
+    RTMemFree(pThis);
+    pMod->pDbgVt = NULL;
+    pMod->pvDbgPriv = NULL;
+    return rc;
 }
 

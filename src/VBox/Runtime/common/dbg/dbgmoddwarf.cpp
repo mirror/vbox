@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,6 +38,10 @@
 #include <iprt/list.h>
 #include <iprt/log.h>
 #include <iprt/mem.h>
+#define RTDBGMODDWARF_WITH_MEM_CACHE
+#ifdef RTDBGMODDWARF_WITH_MEM_CACHE
+# include <iprt/memcache.h>
+#endif
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/strcache.h>
@@ -472,6 +476,14 @@ typedef struct RTDBGMODDWARF
     uint32_t                cSegs;
     /** Pointer to segments if iWatcomPass isn't -1. */
     PRTDBGDWARFSEG          paSegs;
+#ifdef RTDBGMODDWARF_WITH_MEM_CACHE
+    /** DIE allocators.  */
+    struct
+    {
+        RTMEMCACHE          hMemCache;
+        uint32_t            cbMax;
+    } aDieAllocators[2];
+#endif
 } RTDBGMODDWARF;
 /** Pointer to instance data of the DWARF reader. */
 typedef RTDBGMODDWARF *PRTDBGMODDWARF;
@@ -645,7 +657,11 @@ typedef struct RTDWARFDIE
     uint8_t             cDecodedAttrs;
     /** The number of unknown or otherwise unhandled attributes. */
     uint8_t             cUnhandledAttrs;
-    /** The date tag, indicating which union structure to use. */
+#ifdef RTDBGMODDWARF_WITH_MEM_CACHE
+    /** The allocator index. */
+    uint8_t             iAllocator;
+#endif
+    /** The die tag, indicating which union structure to use. */
     uint16_t            uTag;
     /** Offset of the abbreviation specification (within debug_abbrev). */
     uint32_t            offSpec;
@@ -3803,9 +3819,19 @@ static PRTDWARFDIE rtDwarfInfo_NewDie(PRTDBGMODDWARF pThis, PCRTDWARFDIEDESC pDi
 {
     NOREF(pThis);
     Assert(pDieDesc->cbDie >= sizeof(RTDWARFDIE));
+#ifdef RTDBGMODDWARF_WITH_MEM_CACHE
+    uint32_t iAllocator = pDieDesc->cbDie > pThis->aDieAllocators[0].cbMax;
+    Assert(pDieDesc->cbDie <= pThis->aDieAllocators[iAllocator].cbMax);
+    PRTDWARFDIE pDie = (PRTDWARFDIE)RTMemCacheAlloc(pThis->aDieAllocators[iAllocator].hMemCache);
+#else
     PRTDWARFDIE pDie = (PRTDWARFDIE)RTMemAllocZ(pDieDesc->cbDie);
+#endif
     if (pDie)
     {
+#ifdef RTDBGMODDWARF_WITH_MEM_CACHE
+        RT_BZERO(pDie, pDieDesc->cbDie);
+        pDie->iAllocator   = iAllocator;
+#endif
         rtDwarfInfo_InitDie(pDie, pDieDesc);
 
         pDie->uTag         = pAbbrev->uTag;
@@ -4104,7 +4130,11 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, bo
                 RTListForEachSafe(&pParentDie->ChildList, pChild, pNextChild, RTDWARFDIE, SiblingNode)
                 {
                     RTListNodeRemove(&pChild->SiblingNode);
+#ifdef RTDBGMODDWARF_WITH_MEM_CACHE
+                    RTMemCacheFree(pThis->aDieAllocators[pChild->iAllocator].hMemCache, pChild);
+#else
                     RTMemFree(pChild);
+#endif
                 }
             }
         }
@@ -4336,6 +4366,16 @@ static DECLCALLBACK(int) rtDbgModDwarf_Close(PRTDBGMODINT pMod)
         RTMemFree(pThis->pNestedMod);
         pThis->pNestedMod = NULL;
     }
+
+#ifdef RTDBGMODDWARF_WITH_MEM_CACHE
+    uint32_t i = RT_ELEMENTS(pThis->aDieAllocators);
+    while (i-- > 0)
+    {
+        RTMemCacheDestroy(pThis->aDieAllocators[i].hMemCache);
+        pThis->aDieAllocators[i].hMemCache = NIL_RTMEMCACHE;
+    }
+#endif
+
     RTMemFree(pThis);
 
     return VINF_SUCCESS;
@@ -4475,6 +4515,28 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmA
     pThis->pImgMod     = pMod;
     RTListInit(&pThis->CompileUnitList);
 
+#ifdef RTDBGMODDWARF_WITH_MEM_CACHE
+    AssertCompile(RT_ELEMENTS(pThis->aDieAllocators) == 2);
+    pThis->aDieAllocators[0].cbMax = sizeof(RTDWARFDIE);
+    pThis->aDieAllocators[1].cbMax = sizeof(RTDWARFDIECOMPILEUNIT);
+    for (uint32_t i = 0; i < RT_ELEMENTS(g_aTagDescs); i++)
+        if (g_aTagDescs[i].pDesc && g_aTagDescs[i].pDesc->cbDie > pThis->aDieAllocators[1].cbMax)
+            pThis->aDieAllocators[1].cbMax = g_aTagDescs[i].pDesc->cbDie;
+    pThis->aDieAllocators[1].cbMax = RT_ALIGN_32(pThis->aDieAllocators[1].cbMax, sizeof(uint64_t));
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aDieAllocators); i++)
+    {
+        int rc = RTMemCacheCreate(&pThis->aDieAllocators[i].hMemCache, pThis->aDieAllocators[i].cbMax, sizeof(uint64_t),
+                                  UINT32_MAX, NULL /*pfnCtor*/, NULL /*pfnDtor*/, NULL /*pvUser*/, 0 /*fFlags*/);
+        if (RT_FAILURE(rc))
+        {
+            while (i-- > 0)
+                RTMemCacheDestroy(pThis->aDieAllocators[i].hMemCache);
+            RTMemFree(pThis);
+            return rc;
+        }
+    }
+#endif
 
     /*
      * If the debug file name is set, let's see if it's an ELF image with DWARF
@@ -4528,7 +4590,7 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmA
                             pThis->pDbgInfoMod->pImgVt->pfnUnmapPart(pThis->pDbgInfoMod, pThis->aSections[iSect].cb,
                                                                      &pThis->aSections[iSect].pv);
 
-
+                    /** @todo Kill pThis->CompileUnitList and the alloc caches. */
                     return VINF_SUCCESS;
                 }
 
@@ -4540,7 +4602,18 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmA
         else
             rc = VERR_DBG_NO_MATCHING_INTERPRETER;
     }
+
     RTMemFree(pThis->paCachedAbbrevs);
+
+#ifdef RTDBGMODDWARF_WITH_MEM_CACHE
+    uint32_t i = RT_ELEMENTS(pThis->aDieAllocators);
+    while (i-- > 0)
+    {
+        RTMemCacheDestroy(pThis->aDieAllocators[i].hMemCache);
+        pThis->aDieAllocators[i].hMemCache = NIL_RTMEMCACHE;
+    }
+#endif
+
     RTMemFree(pThis);
 
     return rc;
