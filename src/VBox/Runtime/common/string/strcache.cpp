@@ -1138,3 +1138,10 @@ RTDECL(size_t) RTStrCacheLength(const char *psz)
 }
 RT_EXPORT_SYMBOL(RTStrCacheLength);
 
+
+RTDECL(bool) RTStrCacheIsRealImpl(void)
+{
+    return true;
+}
+RT_EXPORT_SYMBOL(RTStrCacheIsRealImpl);
+

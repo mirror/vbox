@@ -121,6 +121,19 @@ static void tst1(RTSTRCACHE hStrCache)
         RTTESTI_CHECK(strlen(pszTest2Rets[i]) == i);
     }
 
+    if (RTStrCacheIsRealImpl())
+    {
+        for (uint32_t i = 1; i < RT_ELEMENTS(pszTest1Rets); i++)
+        {
+            uint32_t cRefs;
+            const char *psz1, *psz2;
+            RTTESTI_CHECK((psz1 = RTStrCacheEnterN(hStrCache, szTest,  i)) == pszTest1Rets[i]);
+            RTTESTI_CHECK((psz2 = RTStrCacheEnterN(hStrCache, szTest2, i)) == pszTest2Rets[i]);
+            RTTESTI_CHECK_MSG((cRefs = RTStrCacheRelease(hStrCache, psz1)) == 1, ("cRefs=%#x i=%#x\n", cRefs, i));
+            RTTESTI_CHECK_MSG((cRefs = RTStrCacheRelease(hStrCache, psz2)) == 1, ("cRefs=%#x i=%#x\n", cRefs, i));
+        }
+    }
+
     for (uint32_t i = 1; i < RT_ELEMENTS(pszTest1Rets); i++)
     {
         uint32_t cRefs;
