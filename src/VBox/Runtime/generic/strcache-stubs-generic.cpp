@@ -130,3 +130,12 @@ RTDECL(bool) RTStrCacheIsRealImpl(void)
 }
 RT_EXPORT_SYMBOL(RTStrCacheIsRealImpl);
 
+
+RTDECL(uint32_t) RTStrCacheGetStats(RTSTRCACHE hStrCache, size_t *pcbStrings, size_t *pcbChunks, size_t *pcbBigEntries,
+                                    uint32_t *pcHashCollisions, uint32_t *pcHashCollisions2, uint32_t *pcHashInserts,
+                                    uint32_t *pcRehashes)
+{
+    return UINT32_MAX;
+}
+RT_EXPORT_SYMBOL(RTStrCacheGetStats);
+
