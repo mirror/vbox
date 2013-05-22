@@ -30,12 +30,108 @@
 #include <iprt/strcache.h>
 
 #include <iprt/asm.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/initterm.h>
+#include <iprt/mem.h>
+#include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
 #include <iprt/thread.h>
-#include <iprt/rand.h>
+#include <iprt/time.h>
+
+
+static void tstShowStats(RTSTRCACHE hStrCache)
+{
+    size_t   cbStrings;
+    size_t   cbChunks;
+    size_t   cbBigEntries;
+    uint32_t cHashCollisions;
+    uint32_t cHashCollisions2;
+    uint32_t cHashInserts;
+    uint32_t cRehashes;
+    uint32_t cStrings = RTStrCacheGetStats(hStrCache, &cbStrings, &cbChunks, &cbBigEntries,
+                                           &cHashCollisions, &cHashCollisions2, &cHashInserts, &cRehashes);
+    if (cbStrings == UINT32_MAX)
+    {
+        RTTESTI_CHECK(!RTStrCacheIsRealImpl());
+        return;
+    }
+
+    RTTestIValue("Strings", cStrings, RTTESTUNIT_OCCURRENCES);
+    RTTestIValue("Memory overhead", (uint64_t)(cbChunks + cbBigEntries - cbStrings) * 100 / cbStrings, RTTESTUNIT_PCT);
+    if (cHashInserts > 0)
+    {
+        RTTestIValue("Collisions", (uint64_t)cHashCollisions * 100 / cHashInserts, RTTESTUNIT_PCT);
+        RTTestIValue("Collisions2", (uint64_t)cHashCollisions2 * 100 / cHashInserts, RTTESTUNIT_PCT);
+    }
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "cHashInserts=%u cHashCollisions=%u cHashCollisions2=%u cRehashes=%u\n",
+                  cHashInserts, cHashCollisions, cHashCollisions2, cRehashes);
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "cbChunks=%zu cbBigEntries=%zu cbStrings=%zu\n", cbChunks, cbBigEntries, cbStrings);
+}
+
+
+/**
+ * Check hash and memory performance.
+ */
+static void tst2(void)
+{
+    RTTestISub("Hash performance");
+
+    /*
+     * Generate test strings using a specific pseudo random generator.
+     */
+    size_t cbStrings = 0;
+    char  *apszTests[8192];
+    RTRAND hRand;
+    RTTESTI_CHECK_RC_RETV(RTRandAdvCreateParkMiller(&hRand), VINF_SUCCESS);
+    for (uint32_t i = 0; i < 8192; i++)
+    {
+        char szBuf[8192];
+        uint32_t cch = RTRandAdvU32Ex(hRand, 3, sizeof(szBuf) - 1);
+        RTRandAdvBytes(hRand, szBuf, cch);
+        szBuf[cch] = '\0';
+        for (uint32_t off = 0; off < cch; off++)
+        {
+            uint8_t b = szBuf[off];
+            b &= 0x7f;
+            if (!b || b == 0x7f)
+                b = ' ';
+            else if (RTLocCIsCntrl(b) && b != '\n' && b != '\r' && b != '\t')
+                b += 0x30;
+            szBuf[off] = b;
+        }
+        apszTests[i] = (char *)RTMemDup(szBuf, cch + 1);
+        RTTESTI_CHECK_RETV(apszTests[i] != NULL);
+        cbStrings += cch + 1;
+    }
+    RTRandAdvDestroy(hRand);
+    RTTestIValue("Average string", cbStrings / RT_ELEMENTS(apszTests), RTTESTUNIT_BYTES);
+
+    /*
+     * Test new insertion first time around.
+     */
+    RTSTRCACHE hStrCache;
+    RTTESTI_CHECK_RC_RETV(RTStrCacheCreate(&hStrCache, "hash performance"), VINF_SUCCESS);
+
+    uint64_t nsTsStart = RTTimeNanoTS();
+    for (uint32_t i = 0; i < RT_ELEMENTS(apszTests); i++)
+        RTTESTI_CHECK_RETV(RTStrCacheEnter(hStrCache, apszTests[i]) != NULL);
+    uint64_t cNsElapsed = RTTimeNanoTS() - nsTsStart;
+    RTTestIValue("First insert", cNsElapsed / RT_ELEMENTS(apszTests), RTTESTUNIT_NS_PER_CALL);
+
+    /*
+     * Insert existing strings.
+     */
+    nsTsStart = RTTimeNanoTS();
+    for (uint32_t i = 0; i < 8192; i++)
+        RTTESTI_CHECK(RTStrCacheEnter(hStrCache, apszTests[i]) != NULL);
+    cNsElapsed = RTTimeNanoTS() - nsTsStart;
+    RTTestIValue("Duplicate insert", cNsElapsed / RT_ELEMENTS(apszTests), RTTESTUNIT_NS_PER_CALL);
+
+    tstShowStats(hStrCache);
+    RTTESTI_CHECK_RC(RTStrCacheDestroy(hStrCache), VINF_SUCCESS);
+}
 
 
 /**
@@ -174,6 +270,11 @@ int main()
         tst1(hStrCache);
         RTTESTI_CHECK_RC(rc = RTStrCacheDestroy(hStrCache), VINF_SUCCESS);
     }
+
+    /*
+     * Cache performance on relatively real world examples.
+     */
+    tst2();
 
     /*
      * Summary.

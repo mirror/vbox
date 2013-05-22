@@ -129,8 +129,7 @@ RTDECL(uint32_t) RTStrCacheRetain(const char *psz);
  * @returns The new reference count.
  *          UINT32_MAX is returned if the string pointer is invalid.
  *
- * @param   hStrCache           Handle to the string cache. Passing NIL is ok,
- *                              but this may come a performance hit.
+ * @param   hStrCache           Handle to the string cache.
  * @param   psz                 Pointer to a cached string.
  */
 RTDECL(uint32_t) RTStrCacheRelease(RTSTRCACHE hStrCache, const char *psz);
@@ -143,6 +142,34 @@ RTDECL(uint32_t) RTStrCacheRelease(RTSTRCACHE hStrCache, const char *psz);
  * @param   psz             Pointer to a cached string.
  */
 RTDECL(size_t) RTStrCacheLength(const char *psz);
+
+
+/**
+ * Gets cache statistics.
+ *
+ * All parameters, except @a hStrCache, are optional and can be NULL.
+ *
+ * @returns Number of strings, UINT32_MAX on failure (or not supported).
+ * @param   hStrCache           Handle to the string cache.
+ * @param   pcbStrings          The number of string bytes (including
+ *                              terminators) .
+ * @param   pcbChunks           Amount of memory we've allocated for the
+ *                              internal allocator.
+ * @param   pcbBigEntries       Amount of memory we've allocated off the heap
+ *                              for really long strings that doesn't fit in the
+ *                              internal allocator.
+ * @param   pcHashCollisions    Number of hash table insert collisions.
+ * @param   pcHashCollisions2   Number of hash table secondary insert
+ *                              collisions.
+ * @param   pcHashInserts       Number of hash table inserts.
+ * @param   pcRehashes          The number of rehashes.
+ *
+ * @remarks This is not a stable interface as it needs to reflect the cache
+ *          implementation.
+ */
+RTDECL(uint32_t) RTStrCacheGetStats(RTSTRCACHE hStrCache, size_t *pcbStrings, size_t *pcbChunks, size_t *pcbBigEntries,
+                                    uint32_t *pcHashCollisions, uint32_t *pcHashCollisions2, uint32_t *pcHashInserts,
+                                    uint32_t *pcRehashes);
 
 /**
  * Indicates whether this a real string cache or a cheap place holder.

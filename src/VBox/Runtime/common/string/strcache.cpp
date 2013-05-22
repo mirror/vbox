@@ -59,6 +59,11 @@
  * the length part. */
 #define RTSTRCACHE_COLLISION_INCR(uHashLen) ( ((uHashLen >> 8) | 1) )
 
+/** The initial hash table size. Must be power of two. */
+#define RTSTRCACHE_INITIAL_HASH_SIZE        512
+/** The hash table growth factor. */
+#define RTSTRCACHE_HASH_GROW_FACTOR         4
+
 /**
  * The RTSTRCACHEENTRY size threshold at which we stop using our own allocator
  * and switch to the application heap, expressed as a power of two.
@@ -72,6 +77,8 @@
 #endif
 /** The RTSTRCACHE_HEAP_THRESHOLD_BIT as a byte limit. */
 #define RTSTRCACHE_HEAP_THRESHOLD           RT_BIT_32(RTSTRCACHE_HEAP_THRESHOLD_BIT)
+/** Big (heap) entry size alignment. */
+#define RTSTRCACHE_HEAP_ENTRY_SIZE_ALIGN    16
 
 #ifdef RTSTRCACHE_WITH_MERGED_ALLOCATOR
 /**
@@ -82,7 +89,7 @@
 
 /** The number of bytes (power of two) that the merged allocation lists should
  * be grown by.  Must be much greater than RTSTRCACHE_MERGED_THRESHOLD. */
-#define RTSTRCACHE_MERGED_GROW_SIZE         _32K
+# define RTSTRCACHE_MERGED_GROW_SIZE        _32K
 #endif
 
 /** The number of bytes (power of two) that the fixed allocation lists should
@@ -90,7 +97,7 @@
 #define RTSTRCACHE_FIXED_GROW_SIZE          _32K
 
 /** The number of fixed sized lists. */
-#define RTSTRCACHE_NUM_OF_FIXED_SIZES       10
+#define RTSTRCACHE_NUM_OF_FIXED_SIZES       12
 
 
 /** Validates a string cache handle, translating RTSTRCACHE_DEFAULT when found,
@@ -263,6 +270,25 @@ typedef struct RTSTRCACHEINT
     PRTSTRCACHECHUNK        pChunkList;
     /** List of big cache entries. */
     RTLISTANCHOR            BigEntryList;
+
+    /** @name Statistics
+     * @{ */
+    /** The total size of all chunks. */
+    size_t                  cbChunks;
+    /** The total length of all the strings, terminators included. */
+    size_t                  cbStrings;
+    /** The total size of all the big entries. */
+    size_t                  cbBigEntries;
+    /** Hash collisions. */
+    size_t                  cHashCollisions;
+    /** Secondary hash collisions. */
+    size_t                  cHashCollisions2;
+    /** The number of inserts to compare cHashCollisions to. */
+    size_t                  cHashInserts;
+    /** The number of rehashes. */
+    uint32_t                cRehashes;
+    /** @} */
+
     /** Critical section protecting the cache structures. */
     RTCRITSECT              CritSect;
 } RTSTRCACHEINT;
@@ -277,7 +303,7 @@ typedef RTSTRCACHEINT *PRTSTRCACHEINT;
 /** The entry sizes of the fixed lists (RTSTRCACHEINT::apFreeLists). */
 static const uint32_t g_acbFixedLists[RTSTRCACHE_NUM_OF_FIXED_SIZES] =
 {
-    16, 32, 64, 128, 192, 256, 320, 384, 448, 512
+    16, 32, 48, 64, 96, 128, 192, 256, 320, 384, 448, 512
 };
 
 /** Init once for the default string cache. */
@@ -300,7 +326,7 @@ RTDECL(int) RTStrCacheCreate(PRTSTRCACHE phStrCache, const char *pszName)
     PRTSTRCACHEINT pThis = (PRTSTRCACHEINT)RTMemAllocZ(sizeof(*pThis));
     if (pThis)
     {
-        pThis->cHashTab   = 512;
+        pThis->cHashTab   = RTSTRCACHE_INITIAL_HASH_SIZE;
         pThis->papHashTab = (PRTSTRCACHEENTRY*)RTMemAllocZ(sizeof(pThis->papHashTab[0]) * pThis->cHashTab);
         if (pThis->papHashTab)
         {
@@ -367,7 +393,6 @@ RTDECL(int) RTStrCacheDestroy(RTSTRCACHE hStrCache)
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTStrCacheDestroy);
-
 
 
 /**
@@ -446,7 +471,7 @@ static int rtStrCacheGrowHashTab(PRTSTRCACHEINT pThis)
     /*
      * Allocate a new hash table two times the size of the old one.
      */
-    uint32_t            cNew   = pThis->cHashTab * 2;
+    uint32_t            cNew   = pThis->cHashTab * RTSTRCACHE_HASH_GROW_FACTOR;
     PRTSTRCACHEENTRY   *papNew = (PRTSTRCACHEENTRY  *)RTMemAllocZ(sizeof(papNew[0]) * cNew);
     if (papNew == NULL)
         return VERR_NO_MEMORY;
@@ -459,6 +484,7 @@ static int rtStrCacheGrowHashTab(PRTSTRCACHEINT pThis)
 
     pThis->papHashTab = papNew;
     pThis->cHashTab   = cNew;
+    pThis->cRehashes++;
 
     while (iOld-- > 0)
     {
@@ -575,6 +601,7 @@ static PRTSTRCACHEENTRY rtStrCacheAllocMergedEntry(PRTSTRCACHEINT pThis, uint32_
         pChunk->cb    = cbChunk;
         pChunk->pNext = pThis->pChunkList;
         pThis->pChunkList = pChunk;
+        pThis->cbChunks  += cbChunk;
         AssertCompile(sizeof(*pChunk) <= sizeof(*pFree));
 
         /*
@@ -638,7 +665,7 @@ static PRTSTRCACHEENTRY rtStrCacheAllocHeapEntry(PRTSTRCACHEINT pThis, uint32_t 
      * here to encourage the heap to give us optimal alignment.
      */
     size_t              cbEntry   = RT_UOFFSETOF(RTSTRCACHEBIGENTRY, Core.szString[cchString + 1]);
-    PRTSTRCACHEBIGENTRY pBigEntry = (PRTSTRCACHEBIGENTRY)RTMemAlloc(RT_ALIGN_Z(cbEntry, 64));
+    PRTSTRCACHEBIGENTRY pBigEntry = (PRTSTRCACHEBIGENTRY)RTMemAlloc(RT_ALIGN_Z(cbEntry, RTSTRCACHE_HEAP_ENTRY_SIZE_ALIGN));
     if (!pBigEntry)
         return NULL;
 
@@ -646,6 +673,7 @@ static PRTSTRCACHEENTRY rtStrCacheAllocHeapEntry(PRTSTRCACHEINT pThis, uint32_t 
      * Initialize the block.
      */
     RTListAppend(&pThis->BigEntryList, &pBigEntry->ListEntry);
+    pThis->cbBigEntries        += cbEntry;
     pBigEntry->cchString        = cchString;
     pBigEntry->uHash            = uHash;
     pBigEntry->Core.cRefs       = 1;
@@ -684,6 +712,7 @@ static PRTSTRCACHEENTRY rtStrCacheAllocFixedEntry(PRTSTRCACHEINT pThis, uint32_t
         pChunk->cb = RTSTRCACHE_FIXED_GROW_SIZE;
         pChunk->pNext = pThis->pChunkList;
         pThis->pChunkList = pChunk;
+        pThis->cbChunks  += RTSTRCACHE_FIXED_GROW_SIZE;
 
         PRTSTRCACHEFREE pPrev   = NULL;
         uint32_t const  cbEntry = g_acbFixedLists[iFreeList];
@@ -739,11 +768,13 @@ static PRTSTRCACHEENTRY rtStrCacheAllocFixedEntry(PRTSTRCACHEINT pThis, uint32_t
  * @param   piFreeHashTabEntry  Where to store the index insertion index if NULL
  *                              is returned (same as what
  *                              rtStrCacheFindEmptyHashTabEntry would return).
+ * @param   pcCollisions        Where to return a collision counter.
  */
 static PRTSTRCACHEENTRY rtStrCacheLookUp(PRTSTRCACHEINT pThis, uint32_t uHashLen, uint32_t cchString, const char *pchString,
-                                         uint32_t *piFreeHashTabEntry)
+                                         uint32_t *piFreeHashTabEntry, uint32_t *pcCollisions)
 {
     *piFreeHashTabEntry = UINT32_MAX;
+    *pcCollisions = 0;
 
     uint16_t cchStringFirst = RT_UOFFSETOF(RTSTRCACHEENTRY, szString[cchString + 1]) < RTSTRCACHE_HEAP_THRESHOLD
                             ? (uint16_t)cchString : RTSTRCACHEENTRY_BIG_LEN;
@@ -780,6 +811,9 @@ static PRTSTRCACHEENTRY rtStrCacheLookUp(PRTSTRCACHEINT pThis, uint32_t uHashLen
                         return &pBigEntry->Core;
                 }
             }
+
+            if (*piFreeHashTabEntry == UINT32_MAX)
+                *pcCollisions += 1;
         }
         /* Record the first NIL index for insertion in case we don't get a hit. */
         else if (*piFreeHashTabEntry == UINT32_MAX)
@@ -809,8 +843,9 @@ RTDECL(const char *) RTStrCacheEnterN(RTSTRCACHE hStrCache, const char *pchStrin
     RTCritSectEnter(&pThis->CritSect);
     RTSTRCACHE_CHECK(pThis);
 
+    uint32_t cCollisions;
     uint32_t iFreeHashTabEntry;
-    PRTSTRCACHEENTRY pEntry = rtStrCacheLookUp(pThis, uHashLen, cchString32, pchString, &iFreeHashTabEntry);
+    PRTSTRCACHEENTRY pEntry = rtStrCacheLookUp(pThis, uHashLen, cchString32, pchString, &iFreeHashTabEntry, &cCollisions);
     if (pEntry)
     {
         uint32_t cRefs = ASMAtomicIncU32(&pEntry->cRefs);
@@ -850,6 +885,10 @@ RTDECL(const char *) RTStrCacheEnterN(RTSTRCACHE hStrCache, const char *pchStrin
             {
                 pThis->papHashTab[iFreeHashTabEntry] = pEntry;
                 pThis->cStrings++;
+                pThis->cHashInserts++;
+                pThis->cHashCollisions += cCollisions > 0;
+                pThis->cHashCollisions2 += cCollisions > 1;
+                pThis->cbStrings += cchString32 + 1;
                 RTStrCacheRelease(hStrCache, pEntry->szString);
 
                 RTSTRCACHE_CHECK(pThis);
@@ -860,6 +899,10 @@ RTDECL(const char *) RTStrCacheEnterN(RTSTRCACHE hStrCache, const char *pchStrin
 
         pThis->papHashTab[iFreeHashTabEntry] = pEntry;
         pThis->cStrings++;
+        pThis->cHashInserts++;
+        pThis->cHashCollisions += cCollisions > 0;
+        pThis->cHashCollisions2 += cCollisions > 1;
+        pThis->cbStrings += cchString32 + 1;
         Assert(pThis->cStrings < pThis->cHashTab && pThis->cStrings > 0);
     }
 
@@ -948,11 +991,11 @@ static uint32_t rtStrCacheFreeEntry(PRTSTRCACHEINT pThis, PRTSTRCACHEENTRY pStr)
     RTSTRCACHE_CHECK(pThis);
 
     /* Remove it from the hash table. */
-    uint32_t uHashLen = RT_MAKE_U32(pStr->uHash,
-                                    pStr->cchString == RTSTRCACHEENTRY_BIG_LEN
-                                    ? RT_FROM_MEMBER(pStr, RTSTRCACHEBIGENTRY, Core)->cchString
-                                    : pStr->cchString);
-    uint32_t iHash    = uHashLen % pThis->cHashTab;
+    uint32_t cchString = pStr->cchString == RTSTRCACHEENTRY_BIG_LEN
+                       ? RT_FROM_MEMBER(pStr, RTSTRCACHEBIGENTRY, Core)->cchString
+                       : pStr->cchString;
+    uint32_t uHashLen  = RT_MAKE_U32(pStr->uHash, cchString);
+    uint32_t iHash     = uHashLen % pThis->cHashTab;
     if (pThis->papHashTab[iHash] == pStr)
         pThis->papHashTab[iHash] = PRTSTRCACHEENTRY_NIL;
     else
@@ -977,6 +1020,7 @@ static uint32_t rtStrCacheFreeEntry(PRTSTRCACHEINT pThis, PRTSTRCACHEENTRY pStr)
     }
 
     pThis->cStrings--;
+    pThis->cbStrings -= cchString;
     Assert(pThis->cStrings < pThis->cHashTab);
 
     /* Free it. */
@@ -1086,6 +1130,8 @@ static uint32_t rtStrCacheFreeEntry(PRTSTRCACHEINT pThis, PRTSTRCACHEENTRY pStr)
         /* Big string. */
         PRTSTRCACHEBIGENTRY pBigStr = RT_FROM_MEMBER(pStr, RTSTRCACHEBIGENTRY, Core);
         RTListNodeRemove(&pBigStr->ListEntry);
+        pThis->cbBigEntries -= RT_ALIGN_32(RT_UOFFSETOF(RTSTRCACHEBIGENTRY, Core.szString[cchString + 1]),
+                                           RTSTRCACHE_HEAP_ENTRY_SIZE_ALIGN);
 
         RTSTRCACHE_CHECK(pThis);
         RTCritSectLeave(&pThis->CritSect);
@@ -1144,4 +1190,35 @@ RTDECL(bool) RTStrCacheIsRealImpl(void)
     return true;
 }
 RT_EXPORT_SYMBOL(RTStrCacheIsRealImpl);
+
+
+RTDECL(uint32_t) RTStrCacheGetStats(RTSTRCACHE hStrCache, size_t *pcbStrings, size_t *pcbChunks, size_t *pcbBigEntries,
+                                    uint32_t *pcHashCollisions, uint32_t *pcHashCollisions2, uint32_t *pcHashInserts,
+                                    uint32_t *pcRehashes)
+{
+    PRTSTRCACHEINT pThis = hStrCache;
+    RTSTRCACHE_VALID_RETURN_RC(pThis, UINT32_MAX);
+
+    RTCritSectEnter(&pThis->CritSect);
+
+    if (pcbStrings)
+        *pcbStrings         = pThis->cbStrings;
+    if (pcbChunks)
+        *pcbChunks          = pThis->cbChunks;
+    if (pcbBigEntries)
+        *pcbBigEntries      = pThis->cbBigEntries;
+    if (pcHashCollisions)
+        *pcHashCollisions   = pThis->cHashCollisions;
+    if (pcHashCollisions2)
+        *pcHashCollisions2  = pThis->cHashCollisions2;
+    if (pcHashInserts)
+        *pcHashInserts      = pThis->cHashInserts;
+    if (pcRehashes)
+        *pcRehashes         = pThis->cRehashes;
+    uint32_t cStrings       = pThis->cStrings;
+
+    RTCritSectLeave(&pThis->CritSect);
+    return cStrings;
+}
+RT_EXPORT_SYMBOL(RTStrCacheRelease);
 
