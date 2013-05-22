@@ -64,11 +64,12 @@ int main()
             cErrors++;
             RTPrintf("tstTime-4: Bad Gip time!\n");
         }
-        int64_t Delta = GipPrevTS - SysPrevTS;
-        if (Delta > 0 ? Delta > 100000000 /* 100 ms */ : Delta < -100000000 /* -100 ms */)
+        uint64_t Delta = GipPrevTS > SysPrevTS ? GipPrevTS - SysPrevTS :
+                                                 SysPrevTS - GipPrevTS;
+        if (Delta > 100000000 /* 100 ms */ )
         {
             cErrors++;
-            RTPrintf("tstTime-4: Delta=%lld!\n", Delta);
+            RTPrintf("tstTime-4: Delta=%llu!\n", Delta);
         }
 
     } while (SysPrevTS - SysStartTS < 2000000000 /* 2s */);
