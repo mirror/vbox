@@ -423,6 +423,7 @@ VMM_INT_DECL(bool)          DBGFIsStepping(PVMCPU pVCpu);
 #ifdef IN_RING3 /* The CPU mode API only works in ring-3. */
 VMMR3DECL(CPUMMODE)         DBGFR3CpuGetMode(PUVM pUVM, VMCPUID idCpu);
 VMMR3DECL(VMCPUID)          DBGFR3CpuGetCount(PUVM pUVM);
+VMMR3DECL(bool)             DBGFR3CpuIsIn64BitCode(PUVM pUVM, VMCPUID idCpu);
 #endif
 
 

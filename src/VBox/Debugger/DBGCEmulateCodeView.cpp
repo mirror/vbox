@@ -1393,7 +1393,8 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
 
 
 /**
- * @interface_method_impl{FNDBCCMD, The 'rg', 'rg64' and 'rg32' commands.}
+ * @interface_method_impl{FNDBCCMD,
+ * The 'rg', 'rg64' and 'rg32' commands, worker for 'r'.}
  */
 static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
@@ -1404,8 +1405,8 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
     {
         PDBGC       pDbgc      = DBGC_CMDHLP2DBGC(pCmdHlp);
         bool const  f64BitMode = !strcmp(pCmd->pszCmd, "rg64")
-                              || (   !strcmp(pCmd->pszCmd, "rg32")
-                                  && CPUMIsGuestIn64BitCode(VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu)));
+                              || (   strcmp(pCmd->pszCmd, "rg32") != 0
+                                  && DBGFR3CpuIsIn64BitCode(pUVM, pDbgc->idCpu));
         char        szDisAndRegs[8192];
         int         rc;
 

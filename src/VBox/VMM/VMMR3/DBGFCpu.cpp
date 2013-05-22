@@ -70,6 +70,44 @@ VMMR3DECL(CPUMMODE) DBGFR3CpuGetMode(PUVM pUVM, VMCPUID idCpu)
 
 
 /**
+ * Wrapper around CPUMIsGuestIn64BitCode.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pVM             Pointer to the VM.
+ * @param   idCpu           The current CPU ID.
+ * @param   pfIn64BitCode   Where to return the result.
+ */
+static DECLCALLBACK(int) dbgfR3CpuIn64BitCode(PVM pVM, VMCPUID idCpu, bool *pfIn64BitCode)
+{
+    Assert(idCpu == VMMGetCpuId(pVM));
+    PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+    *pfIn64BitCode = CPUMIsGuestIn64BitCode(pVCpu);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks if the given CPU is executing 64-bit code or not.
+ *
+ * @returns true / false accordingly.
+ * @param   pUVM        The user mode VM handle.
+ * @param   idCpu       The target CPU ID.
+ */
+VMMR3DECL(bool) DBGFR3CpuIsIn64BitCode(PUVM pUVM, VMCPUID idCpu)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, false);
+    AssertReturn(idCpu < pUVM->pVM->cCpus, false);
+
+    CPUMMODE fIn64BitCode;
+    int rc = VMR3ReqPriorityCallWaitU(pUVM, idCpu, (PFNRT)dbgfR3CpuIn64BitCode, 3, pUVM->pVM, idCpu, &fIn64BitCode);
+    if (RT_FAILURE(rc))
+        return false;
+    return fIn64BitCode;
+}
+
+
+/**
  * Get the number of CPUs (or threads if you insist).
  *
  * @returns The number of CPUs

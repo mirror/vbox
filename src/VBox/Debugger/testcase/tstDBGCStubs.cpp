@@ -302,6 +302,10 @@ VMMR3DECL(VMCPUID) DBGFR3CpuGetCount(PUVM pUVM)
 {
     return 1;
 }
+VMMR3DECL(bool) DBGFR3CpuIsIn64BitCode(PUVM pUVM, VMCPUID idCpu)
+{
+    return false;
+}
 
 VMMR3DECL(int) DBGFR3CoreWrite(PUVM pUVM, const char *pszFilename, bool fReplaceFile)
 {
