@@ -3320,7 +3320,6 @@ ResumeExecution:
      */
 
     /* All done! Let's start VM execution. */
-    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
     Assert(idCpuCheck == RTMpCpuId());
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
@@ -3356,6 +3355,7 @@ ResumeExecution:
     }
 #endif
 
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 #ifdef VBOX_WITH_KERNEL_USING_XMM
     rc = HMR0VMXStartVMWrapXMM(pVCpu->hm.s.fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hm.s.vmx.pfnStartVM);
 #else
