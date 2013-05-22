@@ -405,8 +405,8 @@
     </sect2>
   </sect1>
 
-  <sect1>
-    <title id="network_bridged">Bridged networking</title>
+  <sect1 id="network_bridged">
+    <title>Bridged networking</title>
 
     <para>With bridged networking, VirtualBox uses a device driver on your
     <emphasis>host</emphasis> system that filters data from your physical

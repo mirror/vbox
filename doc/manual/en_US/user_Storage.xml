@@ -886,8 +886,8 @@ VBoxManage storageattach "VM name" --controller "SATA" --port 1 --device 0 --typ
     root permissions due to security measures enforced by the host.</para>
   </sect1>
 
-  <sect1>
-    <title id="storage-iscsi">iSCSI servers</title>
+  <sect1 id="storage-iscsi">
+    <title>iSCSI servers</title>
 
     <para>iSCSI stands for "Internet SCSI" and is a standard that allows for
     using the SCSI protocol over Internet (TCP/IP) connections. Especially

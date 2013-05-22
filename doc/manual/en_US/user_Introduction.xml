@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
 "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<chapter>
-  <title id="Introduction">First steps</title>
+<chapter id="Introduction">
+  <title>First steps</title>
 
   <para>Welcome to $VBOX_PRODUCT!</para>
 
@@ -104,8 +104,8 @@
     </itemizedlist>
   </sect1>
 
-  <sect1>
-    <title id="virtintro">Some terminology</title>
+  <sect1 id="virtintro">
+    <title>Some terminology</title>
 
     <para>When dealing with virtualization (and also for understanding the
     following chapters of this documentation), it helps to acquaint oneself
@@ -389,8 +389,8 @@
     </itemizedlist>
   </sect1>
 
-  <sect1>
-    <title id="hostossupport">Supported host operating systems</title>
+  <sect1 id="hostossupport">
+    <title>Supported host operating systems</title>
 
     <para>Currently, VirtualBox runs on the following host operating
     systems:</para>
@@ -917,9 +917,8 @@
       able to install your operating system.</para>
     </sect2>
 
-    <sect2>
-      <title id="keyb_mouse_normal">Capturing and releasing keyboard and
-      mouse</title>
+    <sect2 id="keyb_mouse_normal">
+      <title>Capturing and releasing keyboard and mouse</title>
 
       <para>As of version 3.2, VirtualBox provides a virtual USB tablet device
       to new virtual machines through which mouse events are communicated to
@@ -1011,8 +1010,8 @@
       linkend="guestadditions" />.</para>
     </sect2>
 
-    <sect2>
-      <title id="specialcharacters">Typing special characters</title>
+    <sect2 id="specialcharacters">
+      <title>Typing special characters</title>
 
       <para>Operating systems expect certain key combinations to initiate
       certain procedures. Some of these key combinations may be difficult to
@@ -1494,8 +1493,8 @@
     </sect2>
   </sect1>
 
-  <sect1>
-    <title id="configbasics">Virtual machine configuration</title>
+  <sect1 id="configbasics">
+    <title>Virtual machine configuration</title>
 
     <para>When you select a virtual machine from the list in the Manager
     window, you will see a summary of that machine's settings on the
