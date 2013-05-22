@@ -3896,8 +3896,8 @@ static int dbgcDoListNear(PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR pArg)
             rc = DBGCCmdHlpPrintf(pCmdHlp, "%DV %s + %RGv", &AddrVar, Symbol.szName, offDisp);
         else
             rc = DBGCCmdHlpPrintf(pCmdHlp, "%DV %s - %RGv", &AddrVar, Symbol.szName, -offDisp);
-        if ((RTGCINTPTR)Symbol.cb > -offDisp)
-            rc = DBGCCmdHlpPrintf(pCmdHlp, " LB %RGv\n", Symbol.cb + offDisp);
+        if (Symbol.cb > 0)
+            rc = DBGCCmdHlpPrintf(pCmdHlp, " (LB %RGv)\n", Symbol.cb);
         else
             rc = DBGCCmdHlpPrintf(pCmdHlp, "\n");
     }
