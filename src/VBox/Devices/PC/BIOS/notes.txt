@@ -58,6 +58,15 @@
 - Windows 98 is one of the few APM 1.2 users; Windows 95 uses APM 1.1, while
   newer systems prefer ACPI.
 
+- QNX4 calls 16-bit protected-mode PCI BIOS in an environment where ESP is
+  16-bit but SS is a 32-bit stack segment. In such environments, using the
+  ENTER/LEAVE sequence is fatal if the high word of EBP is non-zero (which
+  it will be with QNX 4.25). LEAVE propagates the high word of EBP into ESP
+  with fatal consequences.
+
+- Plan 9 also runs 16-bit code with a 32-bit stack segment, except Plan 9
+  thinks it counts as real mode. Same ENTER/LEAVE problem as above.
+
 
  Notes on BIOS implementation
  ----------------------------
@@ -96,6 +105,9 @@
   real mode APM (which supports most functions) is implemented in C and
   protected-mode APM is written in assembler for both 16-bit and 32-bit calls,
   with a small 32->16 thunk.
+
+- The -of switch can be used to avoid generating ENTER/LEAVE instructions.
+  This appears to be an undocumented and perhaps unintentional side effect.
 
 
  Code size notes (code as of 7/6/2011):
