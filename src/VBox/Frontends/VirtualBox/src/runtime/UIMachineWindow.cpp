@@ -401,6 +401,9 @@ void UIMachineWindow::prepareMachineView()
 
     /* Add machine-view into main-layout: */
     m_pMainLayout->addWidget(m_pMachineView, 1, 1, viewAlignment(visualStateType));
+
+    /* Install focus-proxy: */
+    setFocusProxy(m_pMachineView);
 }
 
 void UIMachineWindow::prepareHandlers()

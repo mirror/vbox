@@ -102,19 +102,20 @@ void UIMachineWindowFullscreen::prepareMiniToolbar()
     bool fIsAtTop = m.GetExtraData(GUI_MiniToolBarAlignment) == "top";
     /* Get the mini-toolbar auto-hide feature availability: */
     bool fIsAutoHide = m.GetExtraData(GUI_MiniToolBarAutoHide) != "off";
-    m_pMiniToolBar = new UIMiniToolBar(centralWidget(),
-                                       fIsAtTop ? UIMiniToolBar::AlignTop : UIMiniToolBar::AlignBottom,
-                                       true, fIsAutoHide);
-    m_pMiniToolBar->updateDisplay(true, true);
+    /* Create mini-toolbar: */
+    m_pMiniToolBar = new UIRuntimeMiniToolBar(this,
+                                              fIsAtTop ? Qt::AlignTop : Qt::AlignBottom,
+                                              IntegrationMode_Embedded,
+                                              fIsAutoHide);
     QList<QMenu*> menus;
     QList<QAction*> actions = uisession()->newMenu()->actions();
     for (int i=0; i < actions.size(); ++i)
         menus << actions.at(i)->menu();
-    *m_pMiniToolBar << menus;
-    connect(m_pMiniToolBar, SIGNAL(minimizeAction()), this, SLOT(showMinimized()));
-    connect(m_pMiniToolBar, SIGNAL(exitAction()),
+    m_pMiniToolBar->addMenus(menus);
+    connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), this, SLOT(showMinimized()));
+    connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
             gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen), SLOT(trigger()));
-    connect(m_pMiniToolBar, SIGNAL(closeAction()),
+    connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
             gActionPool->action(UIActionIndexRuntime_Simple_Close), SLOT(trigger()));
 }
 
@@ -125,7 +126,7 @@ void UIMachineWindowFullscreen::cleanupMiniToolbar()
         return;
 
     /* Save mini-toolbar settings: */
-    machine().SetExtraData(GUI_MiniToolBarAutoHide, m_pMiniToolBar->isAutoHide() ? QString() : "off");
+    machine().SetExtraData(GUI_MiniToolBarAutoHide, m_pMiniToolBar->autoHide() ? QString() : "off");
     /* Delete mini-toolbar: */
     delete m_pMiniToolBar;
     m_pMiniToolBar = 0;
@@ -160,6 +161,9 @@ void UIMachineWindowFullscreen::placeOnScreen()
     move(workingArea.topLeft());
     /* Resize to the appropriate size: */
     resize(workingArea.size());
+    /* Move mini-toolbar into appropriate place: */
+    if (m_pMiniToolBar)
+        m_pMiniToolBar->adjustGeometry();
     /* Process pending move & resize events: */
     qApp->processEvents();
 }
@@ -231,7 +235,7 @@ void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)
                 strSnapshotName = " (" + snapshot.GetName() + ")";
             }
             /* Update mini-toolbar text: */
-            m_pMiniToolBar->setDisplayText(m.GetName() + strSnapshotName);
+            m_pMiniToolBar->setText(m.GetName() + strSnapshotName);
         }
     }
 }

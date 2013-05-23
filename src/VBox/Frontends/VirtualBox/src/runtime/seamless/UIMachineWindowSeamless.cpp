@@ -72,14 +72,6 @@ void UIMachineWindowSeamless::sltPopupMainMenu()
     }
 }
 
-#ifndef Q_WS_MAC
-void UIMachineWindowSeamless::sltUpdateMiniToolBarMask()
-{
-    if (m_pMiniToolBar && machineView())
-        setMask(qobject_cast<UIMachineViewSeamless*>(machineView())->lastVisibleRegion());
-}
-#endif /* !Q_WS_MAC */
-
 void UIMachineWindowSeamless::prepareMenu()
 {
     /* Call to base-class: */
@@ -126,22 +118,22 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
     bool fIsAtTop = m.GetExtraData(GUI_MiniToolBarAlignment) == "top";
     /* Get the mini-toolbar auto-hide feature availability: */
     bool fIsAutoHide = m.GetExtraData(GUI_MiniToolBarAutoHide) != "off";
-    m_pMiniToolBar = new UIMiniToolBar(centralWidget(),
-                                       fIsAtTop ? UIMiniToolBar::AlignTop : UIMiniToolBar::AlignBottom,
-                                       true, fIsAutoHide);
-    m_pMiniToolBar->setSeamlessMode(true);
-    m_pMiniToolBar->updateDisplay(true, true);
+    /* Create mini-toolbar: */
+    m_pMiniToolBar = new UIRuntimeMiniToolBar(this,
+                                              fIsAtTop ? Qt::AlignTop : Qt::AlignBottom,
+                                              IntegrationMode_External,
+                                              fIsAutoHide);
+    m_pMiniToolBar->show();
     QList<QMenu*> menus;
     QList<QAction*> actions = uisession()->newMenu()->actions();
     for (int i=0; i < actions.size(); ++i)
         menus << actions.at(i)->menu();
-    *m_pMiniToolBar << menus;
-    connect(m_pMiniToolBar, SIGNAL(minimizeAction()), this, SLOT(showMinimized()));
-    connect(m_pMiniToolBar, SIGNAL(exitAction()),
+    m_pMiniToolBar->addMenus(menus);
+    connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()), this, SLOT(showMinimized()));
+    connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
             gActionPool->action(UIActionIndexRuntime_Toggle_Seamless), SLOT(trigger()));
-    connect(m_pMiniToolBar, SIGNAL(closeAction()),
+    connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
             gActionPool->action(UIActionIndexRuntime_Simple_Close), SLOT(trigger()));
-    connect(m_pMiniToolBar, SIGNAL(geometryUpdated()), this, SLOT(sltUpdateMiniToolBarMask()));
 }
 #endif /* !Q_WS_MAC */
 
@@ -153,7 +145,7 @@ void UIMachineWindowSeamless::cleanupMiniToolbar()
         return;
 
     /* Save mini-toolbar settings: */
-    machine().SetExtraData(GUI_MiniToolBarAutoHide, m_pMiniToolBar->isAutoHide() ? QString() : "off");
+    machine().SetExtraData(GUI_MiniToolBarAutoHide, m_pMiniToolBar->autoHide() ? QString() : "off");
     /* Delete mini-toolbar: */
     delete m_pMiniToolBar;
     m_pMiniToolBar = 0;
@@ -191,6 +183,11 @@ void UIMachineWindowSeamless::placeOnScreen()
     move(workingArea.topLeft());
     /* Resize to the appropriate size: */
     resize(workingArea.size());
+#ifndef Q_WS_MAC
+    /* Move mini-toolbar into appropriate place: */
+    if (m_pMiniToolBar)
+        m_pMiniToolBar->adjustGeometry();
+#endif /* !Q_WS_MAC */
     /* Process pending move & resize events: */
     qApp->processEvents();
 }
@@ -248,7 +245,7 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
                 strSnapshotName = " (" + snapshot.GetName() + ")";
             }
             /* Update mini-toolbar text: */
-            m_pMiniToolBar->setDisplayText(m.GetName() + strSnapshotName);
+            m_pMiniToolBar->setText(m.GetName() + strSnapshotName);
         }
     }
 }
@@ -281,16 +278,6 @@ void UIMachineWindowSeamless::setMask(const QRegion &incomingRegion)
     /* Shift region if left spacer width is NOT zero or top spacer height is NOT zero: */
     if (m_pLeftSpacer->geometry().width() || m_pTopSpacer->geometry().height())
         region.translate(m_pLeftSpacer->geometry().width(), m_pTopSpacer->geometry().height());
-
-    /* Take into account mini tool-bar region: */
-    if (m_pMiniToolBar)
-    {
-        /* Move mini-toolbar region to mini-toolbar position: */
-        QRegion toolBarRegion(m_pMiniToolBar->rect());
-        toolBarRegion.translate(QPoint(m_pMiniToolBar->x(), m_pMiniToolBar->y()));
-        /* Include mini-toolbar region into common one: */
-        region += toolBarRegion;
-    }
 #endif /* !Q_WS_MAC */
 
 #ifdef VBOX_GUI_USE_QUARTZ2D
