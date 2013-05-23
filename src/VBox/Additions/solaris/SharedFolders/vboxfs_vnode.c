@@ -185,16 +185,21 @@ sfnode_clear_dir_list(sfnode_t *node)
  * same host file in the host in light of the possibility of host side renames.
  */
 static void
-sfnode_open(sfnode_t *node)
+sfnode_open(sfnode_t *node, int flag)
 {
 	int error;
 	sfp_file_t *fp;
 
 	if (node->sf_file != NULL)
 		return;
-	error = sfprov_open(node->sf_sffs->sf_handle, node->sf_path, &fp);
+	error = sfprov_open(node->sf_sffs->sf_handle, node->sf_path, &fp, flag);
 	if (error == 0)
+	{
 		node->sf_file = fp;
+		node->sf_flag = flag;
+	}
+	else
+		node->sf_flag = ~0;
 }
 
 /*
@@ -255,6 +260,7 @@ sfnode_make(
 	node->sf_type = type;
 	node->sf_is_stale = 0;	/* never stale at creation */
 	node->sf_file = fp;
+	node->sf_flag = ~0;
 	node->sf_vnode = NULL;	/* do this before any sfnode_get_vnode() */
 	node->sf_children = 0;
 	node->sf_parent = parent;
@@ -698,7 +704,7 @@ sffs_readdir(
 	cred_t		*cred,
 	int		*eofp,
 	caller_context_t *ct,
-	int		flags)
+	int		flag)
 {
 	sfnode_t *dir = VN2SFN(vp);
 	sfnode_t *node;
@@ -733,7 +739,7 @@ sffs_readdir(
 
 	if (dir->sf_dir_list == NULL) {
 		error = sfprov_readdir(dir->sf_sffs->sf_handle, dir->sf_path,
-		    &dir->sf_dir_list);
+		    &dir->sf_dir_list, flag);
 		if (error != 0)
 			goto done;
 	}
@@ -1031,10 +1037,11 @@ sffs_read(
 		return (0);
 
 	mutex_enter(&sffs_lock);
-	sfnode_open(node);
 	if (node->sf_file == NULL) {
-		mutex_exit(&sffs_lock);
-		return (EINVAL);
+		ASSERT(node->sf_flag != ~0);
+		sfnode_open(node, node->sf_flag);
+		if (node->sf_file == NULL)
+			return (EBADF);
 	}
 
 	do {
@@ -1082,10 +1089,11 @@ sffs_write(
 	 * multiple FAPPEND writes from intermixing
 	 */
 	mutex_enter(&sffs_lock);
-	sfnode_open(node);
 	if (node->sf_file == NULL) {
-		mutex_exit(&sffs_lock);
-		return (EINVAL);
+		ASSERT(node->sf_flag != ~0);
+		sfnode_open(node, node->sf_flag);
+		if (node->sf_file == NULL)
+			return (EBADF);
 	}
 
 	sfnode_invalidate_stat_cache(node);
@@ -1304,16 +1312,11 @@ sffs_create(
 		 */
 		if (vp->v_type == VREG && (vap->va_mask & AT_SIZE) &&
 		    vap->va_size == 0) {
-			sfnode_open(node);
-			if (node->sf_path == NULL)
-				error = ENOENT;
-			else
-				error = sfprov_trunc(node->sf_sffs->sf_handle,
-				    node->sf_path);
-			if (error) {
+			sfnode_open(node, flag | FTRUNC);
+			if (node->sf_path == NULL) {
 				mutex_exit(&sffs_lock);
 				VN_RELE(vp);
-				return (error);
+				return (ENOENT);
 			}
 		}
 		mutex_exit(&sffs_lock);
@@ -2218,7 +2221,7 @@ sffs_inactive(vnode_t *vp, cred_t *cr, caller_context_t *ct)
 }
 
 /*
- * All the work for this is really done in lookup.
+ * All the work for this is really done in sffs_lookup().
  */
 /*ARGSUSED*/
 static int
@@ -2230,10 +2233,9 @@ sffs_open(vnode_t **vpp, int flag, cred_t *cr, caller_context_t *ct)
 	mutex_enter(&sffs_lock);
 
 	node = VN2SFN(*vpp);
-	sfnode_open(node);
+	sfnode_open(node, flag);
 	if (node->sf_file == NULL)
 		error = EINVAL;
-
 	mutex_exit(&sffs_lock);
 
 	return (error);

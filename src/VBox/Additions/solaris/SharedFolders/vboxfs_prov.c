@@ -40,6 +40,7 @@
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
 #include <sys/dirent.h>
+#include <sys/file.h>
 #include "vboxfs_prov.h"
 #ifdef u
 #undef u
@@ -356,7 +357,7 @@ sfprov_create(
 }
 
 int
-sfprov_open(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
+sfprov_diropen(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 {
 	int rc;
 	SHFLCREATEPARMS parms;
@@ -364,40 +365,34 @@ sfprov_open(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 	int size;
 	sfp_file_t *newfp;
 
-	/*
-	 * First we attempt to open it read/write. If that fails we
-	 * try read only.
-	 */
 	bzero(&parms, sizeof(parms));
 	str = sfprov_string(path, &size);
 	parms.Handle = SHFL_HANDLE_NIL;
 	parms.Info.cbObject = 0;
-	parms.CreateFlags = SHFL_CF_ACT_FAIL_IF_NEW | SHFL_CF_ACCESS_READWRITE;
+	parms.CreateFlags =   SHFL_CF_DIRECTORY
+						| SHFL_CF_ACCESS_READ
+						| SHFL_CF_ACT_OPEN_IF_EXISTS
+						| SHFL_CF_ACT_FAIL_IF_NEW;
+
+	/*
+	 * Open the host directory.
+	 */
 	rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
-	if (RT_FAILURE(rc) && rc != VERR_ACCESS_DENIED) {
+
+	/*
+	 * Our VBoxFS interface here isn't very clear regarding failure and informational status.
+	 * Check the file-handle as well as the return code to make sure the operation succeeded.
+	 */
+	if (RT_FAILURE(rc)) {
 		kmem_free(str, size);
 		return (sfprov_vbox2errno(rc));
 	}
+
 	if (parms.Handle == SHFL_HANDLE_NIL) {
-		if (parms.Result == SHFL_PATH_NOT_FOUND ||
-		    parms.Result == SHFL_FILE_NOT_FOUND) {
-			kmem_free(str, size);
-			return (ENOENT);
-		}
-		parms.CreateFlags =
-		    SHFL_CF_ACT_FAIL_IF_NEW | SHFL_CF_ACCESS_READ;
-		rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
-		if (RT_FAILURE(rc)) {
-			kmem_free(str, size);
-			return (sfprov_vbox2errno(rc));
-		}
-		if (parms.Handle == SHFL_HANDLE_NIL) {
-			kmem_free(str, size);
-			return (ENOENT);
-		}
-	}
-	else
 		kmem_free(str, size);
+		return (ENOENT);
+	}
+
 	newfp = kmem_alloc(sizeof(sfp_file_t), KM_SLEEP);
 	newfp->handle = parms.Handle;
 	newfp->map = mnt->map;
@@ -406,28 +401,62 @@ sfprov_open(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 }
 
 int
-sfprov_trunc(sfp_mount_t *mnt, char *path)
+sfprov_open(sfp_mount_t *mnt, char *path, sfp_file_t **fp, int flag)
 {
 	int rc;
 	SHFLCREATEPARMS parms;
 	SHFLSTRING *str;
 	int size;
+	sfp_file_t *newfp;
+
+	bzero(&parms, sizeof(parms));
+	str = sfprov_string(path, &size);
+	parms.Handle = SHFL_HANDLE_NIL;
+	parms.Info.cbObject = 0;
 
 	/*
-	 * open it read/write.
+	 * Translate file modes.
 	 */
-	str = sfprov_string(path, &size);
-	parms.Handle = 0;
-	parms.Info.cbObject = 0;
-	parms.CreateFlags = SHFL_CF_ACT_FAIL_IF_NEW | SHFL_CF_ACCESS_READWRITE |
-	    SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
-	rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
-	kmem_free(str, size);
-
-	if (RT_FAILURE(rc)) {
-		return (EINVAL);
+	if (flag & FCREAT) {
+		parms.CreateFlags |= SHFL_CF_ACT_CREATE_IF_NEW;
+		if (!(flag & FTRUNC))
+			parms.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
 	}
-	(void)vboxCallClose(&vbox_client, &mnt->map, parms.Handle);
+	else
+		parms.CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
+
+	if (flag & FTRUNC)
+		parms.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS | SHFL_CF_ACCESS_WRITE;
+	if (flag & FWRITE)
+		parms.CreateFlags |= SHFL_CF_ACCESS_WRITE;
+	if (flag & FREAD)
+		parms.CreateFlags |= SHFL_CF_ACCESS_READ;
+    if (flag & FAPPEND)
+		parms.CreateFlags |= SHFL_CF_ACCESS_APPEND;
+
+	/*
+	 * Open/create the host file.
+	 */
+	rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
+
+	/*
+	 * Our VBoxFS interface here isn't very clear regarding failure and informational status.
+	 * Check the file-handle as well as the return code to make sure the operation succeeded.
+	 */
+	if (RT_FAILURE(rc)) {
+		kmem_free(str, size);
+		return (sfprov_vbox2errno(rc));
+	}
+
+	if (parms.Handle == SHFL_HANDLE_NIL) {
+		kmem_free(str, size);
+		return (ENOENT);
+	}
+
+	newfp = kmem_alloc(sizeof(sfp_file_t), KM_SLEEP);
+	newfp->handle = parms.Handle;
+	newfp->map = mnt->map;
+	*fp = newfp;
 	return (0);
 }
 
@@ -889,7 +918,8 @@ int
 sfprov_readdir(
 	sfp_mount_t *mnt,
 	char *path,
-	sffs_dirents_t **dirents)
+	sffs_dirents_t **dirents,
+	int flag)
 {
 	int error;
 	char *cp;
@@ -910,7 +940,7 @@ sfprov_readdir(
 
 	*dirents = NULL;
 
-	error = sfprov_open(mnt, path, &fp);
+	error = sfprov_diropen(mnt, path, &fp);
 	if (error != 0)
 		return (ENOENT);
 
