@@ -43,13 +43,13 @@ typedef struct VDIOBACKENDREQ
     uint64_t        off;
     /** Size of the transfer. */
     size_t          cbTransfer;
-    /** Number of segments in the array. */
-    unsigned        cSegs;
     /** Completion handler to call. */
     PFNVDIOCOMPLETE pfnComplete;
     /** Opaque user data. */
     void           *pvUser;
-    /** Segment array - variable in size */
+    /** S/G buffer. */
+    RTSGBUF         SgBuf;
+    /** Segment array - variable size. */
     RTSGSEG         aSegs[1];
 } VDIOBACKENDREQ, *PVDIOBACKENDREQ;
 
@@ -142,14 +142,18 @@ int VDIoBackendMemDestroy(PVDIOBACKENDMEM pIoBackend)
 }
 
 int VDIoBackendMemTransfer(PVDIOBACKENDMEM pIoBackend, PVDMEMDISK pMemDisk,
-                           VDIOTXDIR enmTxDir, uint64_t off, size_t cbTransfer, PCRTSGSEG paSegs,
-                           unsigned cSegs, PFNVDIOCOMPLETE pfnComplete, void *pvUser)
+                           VDIOTXDIR enmTxDir, uint64_t off, size_t cbTransfer,
+                           PRTSGBUF pSgBuf, PFNVDIOCOMPLETE pfnComplete, void *pvUser)
 {
     PVDIOBACKENDREQ pReq = NULL;
     PPVDIOBACKENDREQ ppReq = NULL;
     size_t cbData;
+    unsigned cSegs = 0;
 
     LogFlowFunc(("Queuing request\n"));
+
+    if (enmTxDir != VDIOTXDIR_FLUSH)
+        RTSgBufSegArrayCreate(pSgBuf, NULL, &cSegs, cbTransfer);
 
     pReq = (PVDIOBACKENDREQ)RTMemAlloc(RT_OFFSETOF(VDIOBACKENDREQ, aSegs[cSegs]));
     if (!pReq)
@@ -167,13 +171,12 @@ int VDIoBackendMemTransfer(PVDIOBACKENDMEM pIoBackend, PVDMEMDISK pMemDisk,
     pReq->cbTransfer  = cbTransfer;
     pReq->off         = off;
     pReq->pMemDisk    = pMemDisk;
-    pReq->cSegs       = cSegs;
     pReq->pfnComplete = pfnComplete;
     pReq->pvUser      = pvUser;
-    for (unsigned i = 0; i < cSegs; i++)
+    if (enmTxDir != VDIOTXDIR_FLUSH)
     {
-        pReq->aSegs[i].pvSeg = paSegs[i].pvSeg;
-        pReq->aSegs[i].cbSeg = paSegs[i].cbSeg;
+        RTSgBufSegArrayCreate(pSgBuf, &pReq->aSegs[0], &cSegs, cbTransfer);
+        RTSgBufInit(&pReq->SgBuf, pReq->aSegs, cSegs);
     }
 
     *ppReq = pReq;
@@ -225,16 +228,12 @@ static int vdIoBackendMemThread(RTTHREAD hThread, void *pvUser)
             {
                 case VDIOTXDIR_READ:
                 {
-                    RTSGBUF SgBuf;
-                    RTSgBufInit(&SgBuf, pReq->aSegs, pReq->cSegs);
-                    rcReq = VDMemDiskRead(pReq->pMemDisk, pReq->off, pReq->cbTransfer, &SgBuf);
+                    rcReq = VDMemDiskRead(pReq->pMemDisk, pReq->off, pReq->cbTransfer, &pReq->SgBuf);
                     break;
                 }
                 case VDIOTXDIR_WRITE:
                 {
-                    RTSGBUF SgBuf;
-                    RTSgBufInit(&SgBuf, pReq->aSegs, pReq->cSegs);
-                    rcReq = VDMemDiskWrite(pReq->pMemDisk, pReq->off, pReq->cbTransfer, &SgBuf);
+                    rcReq = VDMemDiskWrite(pReq->pMemDisk, pReq->off, pReq->cbTransfer, &pReq->SgBuf);
                     break;
                 }
                 case VDIOTXDIR_FLUSH:

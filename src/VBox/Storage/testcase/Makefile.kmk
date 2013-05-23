@@ -52,6 +52,7 @@ ifdef VBOX_WITH_TESTCASES
 
   tstVDIo_TEMPLATE = VBOXR3TSTEXE
   tstVDIo_SOURCES  = tstVDIo.cpp \
+  	VDIoBackend.cpp \
   	VDIoBackendMem.cpp \
   	VDMemDisk.cpp \
   	VDIoRnd.cpp \
