@@ -179,6 +179,9 @@ int scsi_read_sectors(bio_dsk_t __far *bios_dsk)
     io_base   = bios_dsk->scsidev[device_id].io_base;
     target_id = bios_dsk->scsidev[device_id].target_id;
 
+    DBG_SCSI("%s: reading %u sectors, device %d, target %d\n", __func__,
+             count, device_id, bios_dsk->scsidev[device_id].target_id);
+
     rc = scsi_cmd_data_in(io_base, target_id, (void __far *)&cdb, 10, 
                           bios_dsk->drqp.buffer, (count * 512L));
 
@@ -187,6 +190,7 @@ int scsi_read_sectors(bio_dsk_t __far *bios_dsk)
         bios_dsk->drqp.trsfsectors = count;
         bios_dsk->drqp.trsfbytes   = count * 512L;
     }
+    DBG_SCSI("%s: transferred %u sectors\n", __func__, bios_dsk->drqp.nsect);
 
     return rc;
 }
@@ -223,6 +227,9 @@ int scsi_write_sectors(bio_dsk_t __far *bios_dsk)
     io_base   = bios_dsk->scsidev[device_id].io_base;
     target_id = bios_dsk->scsidev[device_id].target_id;
 
+    DBG_SCSI("%s: writing %u sectors, device %d, target %d\n", __func__,
+             count, device_id, bios_dsk->scsidev[device_id].target_id);
+
     rc = scsi_cmd_data_out(io_base, target_id, (void __far *)&cdb, 10,
                            bios_dsk->drqp.buffer, (count * 512L));
 
@@ -231,6 +238,7 @@ int scsi_write_sectors(bio_dsk_t __far *bios_dsk)
         bios_dsk->drqp.trsfsectors = count;
         bios_dsk->drqp.trsfbytes   = (count * 512L);
     }
+    DBG_SCSI("%s: transferred %u sectors\n", __func__, bios_dsk->drqp.nsect);
 
     return rc;
 }
