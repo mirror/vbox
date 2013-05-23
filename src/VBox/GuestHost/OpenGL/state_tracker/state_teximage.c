@@ -245,7 +245,7 @@ crStateGetTextureObjectAndImage(CRContext *g, GLenum texTarget, GLint level,
             return;
         default:
              /* fall-through */
-             ;
+            ;
     }
 
 #ifdef CR_NV_texture_rectangle 
@@ -308,6 +308,7 @@ crStateGetTextureObjectAndImage(CRContext *g, GLenum texTarget, GLint level,
     }
 #endif
 
+    crWarning("unexpected texTarget 0x%x", texTarget);
     *obj = NULL;
     *img = NULL;
 }
@@ -971,6 +972,13 @@ crStateTexSubImage1D(GLenum target, GLint level, GLint xoffset,
         return; /* GL error state already set */
     }
 
+#ifdef DEBUG_misha
+    CRASSERT(tl->bytes);
+    CRASSERT(tl->height);
+    CRASSERT(tl->width);
+    CRASSERT(tl->depth);
+#endif
+
 #ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     xoffset += tl->border;
 
@@ -1023,6 +1031,13 @@ crStateTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
     crStateGetTextureObjectAndImage(g, target, level, &tobj, &tl);
     CRASSERT(tobj);
     CRASSERT(tl);
+
+#ifdef DEBUG_misha
+    CRASSERT(tl->bytes);
+    CRASSERT(tl->height);
+    CRASSERT(tl->width);
+    CRASSERT(tl->depth);
+#endif
 
 #ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     xoffset += tl->border;
@@ -1108,6 +1123,14 @@ crStateTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
                                                         width, height, depth)) {
         return; /* GL error state already set */
     }
+
+#ifdef DEBUG_misha
+    CRASSERT(target == GL_TEXTURE_3D);
+    CRASSERT(tl->bytes);
+    CRASSERT(tl->height);
+    CRASSERT(tl->width);
+    CRASSERT(tl->depth);
+#endif
 
 #ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     xoffset += tl->border;
@@ -1416,6 +1439,14 @@ crStateCompressedTexSubImage1DARB(GLenum target, GLint level, GLint xoffset,
         return; /* GL error state already set */
     }
 
+#ifdef DEBUG_misha
+    CRASSERT(target == GL_TEXTURE_1D);
+    CRASSERT(tl->bytes);
+    CRASSERT(tl->height);
+    CRASSERT(tl->width);
+    CRASSERT(tl->depth);
+#endif
+
 #ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     xoffset += tl->border;
 
@@ -1456,10 +1487,18 @@ crStateCompressedTexSubImage2DARB(GLenum target, GLint level, GLint xoffset,
     CRStateBits *sb = GetCurrentBits();
     CRTextureBits *tb = &(sb->texture);
     CRTextureUnit *unit = t->unit + t->curTextureUnit;
-    CRTextureObj *tobj = unit->currentTexture1D;
+    CRTextureObj *tobj = unit->currentTexture2D;
     CRTextureLevel *tl = tobj->level[0] + level;
 
     FLUSH();
+
+#ifdef DEBUG_misha
+    CRASSERT(target == GL_TEXTURE_2D);
+    CRASSERT(tl->bytes);
+    CRASSERT(tl->height);
+    CRASSERT(tl->width);
+    CRASSERT(tl->depth);
+#endif
 
     if (ErrorCheckTexSubImage(2, target, level, xoffset, yoffset, 0,
                                                         width, height, 1)) {
@@ -1510,10 +1549,18 @@ crStateCompressedTexSubImage3DARB(GLenum target, GLint level, GLint xoffset,
     CRStateBits *sb = GetCurrentBits();
     CRTextureBits *tb = &(sb->texture);
     CRTextureUnit *unit = t->unit + t->curTextureUnit;
-    CRTextureObj *tobj = unit->currentTexture1D;
+    CRTextureObj *tobj = unit->currentTexture3D;
     CRTextureLevel *tl = tobj->level[0] + level;
 
     FLUSH();
+
+#ifdef DEBUG_misha
+    CRASSERT(target == GL_TEXTURE_3D);
+    CRASSERT(tl->bytes);
+    CRASSERT(tl->height);
+    CRASSERT(tl->width);
+    CRASSERT(tl->depth);
+#endif
 
     if (ErrorCheckTexSubImage(3, target, level, xoffset, yoffset, zoffset,
                                                         width, height, depth)) {
@@ -1580,6 +1627,13 @@ crStateGetCompressedTexImageARB(GLenum target, GLint level, GLvoid * img)
         return;
     }
 
+#ifdef DEBUG_misha
+    CRASSERT(tl->bytes);
+    CRASSERT(tl->height);
+    CRASSERT(tl->width);
+    CRASSERT(tl->depth);
+#endif
+
 #ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     crMemcpy(img, tl->img, tl->bytes);
 #else
@@ -1615,6 +1669,13 @@ crStateGetTexImage(GLenum target, GLint level, GLenum format,
         crWarning("glGetTexImage cannot decompress a compressed texture!");
         return;
     }
+
+#ifdef DEBUG_misha
+    CRASSERT(tl->bytes);
+    CRASSERT(tl->height);
+    CRASSERT(tl->width);
+    CRASSERT(tl->depth);
+#endif
 
     switch (format)
     {
