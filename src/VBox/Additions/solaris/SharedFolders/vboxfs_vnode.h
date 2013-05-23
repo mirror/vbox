@@ -52,7 +52,7 @@ typedef struct sfnode {
 	uint64_t	sf_ino;		/* assigned unique ID number */
 	vnode_t		*sf_vnode;	/* vnode if active */
 	sfp_file_t	*sf_file;	/* non NULL if open */
-    int			sf_flag;    /* last opened file-mode. */
+	int			sf_flag;    /* last opened file-mode. */
 	struct sfnode	*sf_parent;	/* parent sfnode of this one */
 	uint16_t	sf_children;	/* number of children sfnodes */
 	uint8_t		sf_type;	/* VDIR or VREG */
