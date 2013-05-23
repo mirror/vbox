@@ -14,7 +14,11 @@
 #include <windows.h>
 #include <d3d9types.h>
 #include <d3d9caps.h>
+#include <d3d9.h>
 #include <stdio.h>
+
+#define MAX(_v1, _v2) ((_v1) > (_v2) ? (_v1) : (_v2))
+#define MIN(_v1, _v2) ((_v1) < (_v2) ? (_v1) : (_v2))
 
 #define MISSING_FLAGS(_dw1, _dw2) ((_dw2) & ((_dw1) ^ (_dw2)))
 
@@ -496,6 +500,14 @@ static void printXxxCaps(const char* pszPrefix, const char* pszSeparator, DWORD 
 
 static void diffCaps(D3DCAPS9 *pCaps1, D3DCAPS9 *pCaps2)
 {
+    if (!memcmp(pCaps1, pCaps2, sizeof (D3DCAPS9)))
+    {
+        Log(("caps are identical!\n"));
+        return;
+    }
+
+    Log(("caps differ, doing detailed diff..\n"));
+
     if (pCaps1->DeviceType != pCaps2->DeviceType)
     {
         printDeviceType("pCaps->DeviceType = ", pCaps2->DeviceType, ";\n");
@@ -560,9 +572,9 @@ static void diffCaps(D3DCAPS9 *pCaps1, D3DCAPS9 *pCaps2)
     DUMP_DIFF_VAL(MaxVertexIndex, "%d");
     DUMP_DIFF_VAL(MaxStreams, "%d");
     DUMP_DIFF_VAL(MaxStreamStride, "%d");
-    DUMP_DIFF_VAL(VertexShaderVersion, "%d");
+    DUMP_DIFF_VAL(VertexShaderVersion, "0x%x");
     DUMP_DIFF_VAL(MaxVertexShaderConst, "%d");
-    DUMP_DIFF_VAL(PixelShaderVersion, "%d");
+    DUMP_DIFF_VAL(PixelShaderVersion, "0x%x");
     DUMP_DIFF_VAL(PixelShader1xMaxValue, "%f");
 
     /* D3D9 */
@@ -605,64 +617,411 @@ static void diffCaps(D3DCAPS9 *pCaps1, D3DCAPS9 *pCaps2)
 }
 
 static DWORD g_aCaps1[] = {
-        0x00000001, 0x00000000, 0x00000000, 0xe00a0000,
-        0x00000320, 0x80000001, 0x00000003, 0x0059aff1,
-        0x000e6ff2, 0x077363b1, 0x000000ff, 0x00003fff,
-        0x000023ff, 0x000000ff, 0x00084208, 0x0007eccd,
-        0x07030700, 0x07030700, 0x03030300, 0x0000003f,
-        0x0000003f, 0x0000001f, 0x00002000, 0x00002000,
-        0x00000800, 0x00008000, 0x00002000, 0x00000010,
-        0x3f800000, 0xc6000000, 0xc6000000, 0x46000000,
-        0x46000000, 0x00000000, 0x000001ff, 0x00100008,
-        0x03feffff, 0x00000008, 0x00000008, 0x0000003b,
-        0x00000008, 0x00000006, 0x00000001, 0x00000000,
-        0x427c0000, 0x000fffff, 0x000fffff, 0x00000010,
-        0x00000400, 0xfffe0200, 0x00000100, 0xffff0200,
-        0x41000000, 0x00000051, 0x00000000, 0x00000000,
-        0x00000000, 0x00000000, 0x00000001, 0x0000030f,
-        0x00000001, 0x03000300, 0x00000000, 0x00000018,
-        0x00000020, 0x00000001, 0x00000000, 0x00000018,
-        0x00000020, 0x00000000, 0x00000060, 0x01000100,
-        0x0000ffff, 0x00000200, 0x00000000, 0x00000000
+          0x00000001, 0x00000000, 0x00000000, 0x60020000,
+          0x00000320, 0x80000001, 0x00000003, 0x0059aff0,
+          0x000a0ff2, 0x07322191, 0x000000ff, 0x00003fff,
+          0x000023ff, 0x000000ff, 0x00084208, 0x0007ec85,
+          0x07030700, 0x07030700, 0x03030300, 0x0000001f,
+          0x0000001f, 0x0000001f, 0x00001000, 0x00001000,
+          0x00000100, 0x00008000, 0x00001000, 0x00000010,
+          0x3f800000, 0x00000000, 0x00000000, 0x00000000,
+          0x00000000, 0x00000000, 0x000001ff, 0x00100008,
+          0x03feffff, 0x00000008, 0x00000008, 0x0000003b,
+          0x00000008, 0x00000006, 0x00000001, 0x00000000,
+          0x437f0000, 0x000fffff, 0x000fffff, 0x00000010,
+          0x00000400, 0xfffe0200, 0x00000080, 0xffff0200,
+          0x41000000, 0x00000051, 0x00000000, 0x00000000,
+          0x00000000, 0x00000000, 0x00000001, 0x0000000f,
+          0x00000001, 0x03000300, 0x00000000, 0x00000000,
+          0x0000001f, 0x00000001, 0x00000000, 0x00000000,
+          0x00000100, 0x00000000, 0x00000060, 0x00000000,
+          0x0000ffff, 0x00000200, 0x00000000, 0x00000000
 };
 
 
 static DWORD g_aCaps2[] = {
-        0x00000001, 0x00000000, 0x00020000, 0xe00a0000,
-        0x00000320, 0x80000001, 0x00000003, 0x0059aff1,
-        0x000e6ff2, 0x077263b1, 0x000000ff, 0x00003fff,
-        0x000023ff, 0x000000ff, 0x00084208, 0x0007eccd,
-        0x07030700, 0x07030700, 0x03030300, 0x0000003f,
-        0x0000003f, 0x0000001f, 0x00002000, 0x00002000,
-        0x00002000, 0x00008000, 0x00002000, 0x00000010,
-        0x3f800000, 0xc6000000, 0xc6000000, 0x46000000,
-        0x46000000, 0x00000000, 0x000001ff, 0x00100008,
-        0x03feffff, 0x00000008, 0x00000008, 0x0000003b,
-        0x00000008, 0x00000008, 0x00000001, 0x00000000,
-        0x46000000, 0x000fffff, 0x000fffff, 0x00000010,
-        0x00000400, 0xfffe0300, 0x00000100, 0xffff0300,
-        0x41000000, 0x00000051, 0x00000000, 0x00000000,
-        0x00000000, 0x00000000, 0x00000001, 0x0000030f,
-        0x00000001, 0x03000300, 0x00000001, 0x00000018,
-        0x00000020, 0x00000004, 0x0000001f, 0x00000018,
-        0x00000020, 0x00000004, 0x00000200, 0x01000100,
-        0x0000ffff, 0x0000ffff, 0x00008000, 0x00008000
+          0x00000001, 0x00000000, 0x00000000, 0x60020000,
+          0x00000320, 0x80000001, 0x00000003, 0x0019aff0,
+          0x000a0ff2, 0x07322191, 0x000000ff, 0x00003fff,
+          0x000023ff, 0x000000ff, 0x00084208, 0x0001ec85,
+          0x07030700, 0x07030700, 0x03030300, 0x0000001f,
+          0x0000001f, 0x0000001f, 0x00001000, 0x00001000,
+          0x00000100, 0x00008000, 0x00001000, 0x00000010,
+          0x3f800000, 0x00000000, 0x00000000, 0x00000000,
+          0x00000000, 0x00000000, 0x000001ff, 0x00100008,
+          0x03feffff, 0x00000008, 0x00000008, 0x0000003b,
+          0x00000008, 0x00000006, 0x00000001, 0x00000000,
+          0x437f0000, 0x000fffff, 0x000fffff, 0x00000010,
+          0x00000400, 0xfffe0200, 0x00000080, 0xffff0200,
+          0x41000000, 0x00000051, 0x00000000, 0x00000000,
+          0x00000000, 0x00000000, 0x00000001, 0x0000000f,
+          0x00000001, 0x03000300, 0x00000000, 0x00000000,
+          0x0000001f, 0x00000001, 0x00000000, 0x00000000,
+          0x00000100, 0x00000000, 0x00000060, 0x00000000,
+          0x0000ffff, 0x00000200, 0x00000000, 0x00000000
 };
+
+
+/* ogl stuff */
+static const char * strNext(const char * pcszStr)
+{
+    pcszStr = strchr(pcszStr, ' ');
+    if (!pcszStr)
+        return NULL;
+
+    do
+    {
+        ++pcszStr;
+        if (*pcszStr == '\0')
+            return NULL;
+        else if (*pcszStr != ' ')
+            return pcszStr;
+    } while (1);
+
+    Log(("WARNING: should NOT be here!\n"));
+    return NULL;
+}
+
+static int strLength(const char * pcszStr, char sep)
+{
+    if (sep == '\0')
+        return (int)strlen(pcszStr);
+    const char * pcszNext = strchr(pcszStr, sep);
+    if (pcszNext)
+        return (int)(pcszNext - pcszStr);
+    return (int)strlen(pcszStr);
+}
+
+static int strCmp(const char * pcszStr1, const char * pcszStr2, char sep)
+{
+    if (sep == '\0')
+        return strcmp(pcszStr1, pcszStr2);
+
+    int cStr1 = strLength(pcszStr1, sep);
+    int cStr2 = strLength(pcszStr2, sep);
+    int iCmp = strncmp(pcszStr1, pcszStr2, MIN(cStr1, cStr2));
+    if (iCmp)
+        return iCmp;
+    return cStr1 - cStr2;
+}
+
+static char * strDupCur(const char * pcszStr, char sep)
+{
+    int cStr = strLength(pcszStr, sep);
+    char * newStr = (char *)malloc(cStr+1);
+    if (!newStr)
+    {
+        Log(("malloc failed!\n"));
+        return NULL;
+    }
+    memcpy(newStr, pcszStr, cStr);
+    newStr[cStr] = '\0';
+    return newStr;
+}
+
+static char * strDupTotal(const char * pcszStr)
+{
+    int cStr = (int)strlen(pcszStr);
+    char * newStr = (char *)malloc(cStr+1+1);
+    if (!newStr)
+    {
+        Log(("malloc failed!\n"));
+        return NULL;
+    }
+    memcpy(newStr, pcszStr, cStr);
+    newStr[cStr] = '\0';
+    newStr[cStr+1] = '\0';
+    return newStr;
+}
+
+static char * strDupSort(const char * pcszStr)
+{
+    int cStr = (int)strlen(pcszStr);
+    char * pNewStr = (char *)malloc(cStr+1+1+1);
+    if (!pNewStr)
+    {
+        Log(("malloc failed!\n"));
+        return NULL;
+    }
+    char *pCurNew = pNewStr;
+    const char *pPrevCmp = NULL;
+    const char * pCmp = "\001";
+    const char * pCur;
+    int cLength, cPrevLength;
+
+    do
+    {
+        cLength = 0;
+        for (pCur = pcszStr; pCur; pCur = strNext(pCur))
+        {
+            int cCur = strLength(pCur, ' ');
+            int cCmp = strLength(pCmp, ' ');
+            int iCmp = strncmp(pCur, pCmp, MIN(cCur, cCmp));
+            if (!iCmp)
+                iCmp = cCur - cCmp;
+            if (iCmp > 0)
+            {
+                if (!cLength)
+                {
+                    pCmp = pCur;
+                    cLength = cCur;
+                }
+            }
+            else if (iCmp < 0)
+            {
+                if (cLength)
+                {
+                    if (pPrevCmp)
+                    {
+                        int iCmp = strncmp(pCur, pPrevCmp, MIN(cCur, cPrevLength));
+                        if (!iCmp)
+                            iCmp = cCur - cPrevLength;
+                        if (iCmp > 0)
+                        {
+                            pCmp = pCur;
+                            cLength = cCur;
+                        }
+                    }
+                    else
+                    {
+                        pCmp = pCur;
+                        cLength = cCur;
+                    }
+                }
+            }
+        }
+
+        if (!cLength)
+            break;
+
+        pPrevCmp = pCmp;
+        cPrevLength = cLength;
+        memcpy(pCurNew, pCmp, cLength);
+        pCurNew += cLength;
+        *pCurNew = ' ';
+        ++pCurNew;
+    } while (1);
+
+    *pCurNew = '\0';
+    ++pCurNew;
+
+    return pNewStr;
+}
+
+
+#define DUMP_DIFF_STR_ADDED(_pStr) do { \
+        char * pszCopy = strDupCur(_pStr, ' '); \
+        Log(("+ %s\n", pszCopy)); \
+        if (pszCopy) free(pszCopy); \
+    } while (0)
+
+#define DUMP_DIFF_STR_REMOVED(_pStr) do { \
+        char * pszCopy = strDupCur(_pStr, ' '); \
+        Log(("- %s\n", pszCopy)); \
+        if (pszCopy) free(pszCopy); \
+    } while (0)
+
+#define DIFF_STR_ADDED(_ppStr) do { \
+        DUMP_DIFF_STR_ADDED(*(_ppStr)); \
+        *(_ppStr) = strNext(*(_ppStr)); \
+    } while (0)
+
+#define DIFF_STR_REMOVED(_ppStr) do { \
+        DUMP_DIFF_STR_REMOVED(*(_ppStr)); \
+        *(_ppStr) = strNext(*(_ppStr)); \
+    } while (0)
+
+#define DIFF_STR_MATCHED(_ppStr1, _ppStr2) do { \
+        *(_ppStr1) = strNext(*(_ppStr1)); \
+        *(_ppStr2) = strNext(*(_ppStr2)); \
+    } while (0)
+
+static void diffStrOrderedLists(const char * pcszStr1, const char * pcszStr2)
+{
+    while (pcszStr1 || pcszStr2)
+    {
+        if (pcszStr1 && pcszStr2)
+        {
+            int iCmp = strCmp(pcszStr1, pcszStr2, ' ');
+//            int cStr1 = strLength(pcszStr1, ' ');
+//            int cStr2 = strLength(pcszStr2, ' ');
+//            int iCmp = strncmp(pcszStr1, pcszStr2, MAX(cStr1, cStr2));
+            if (iCmp > 0)
+                DIFF_STR_ADDED(&pcszStr2);
+            else if (iCmp < 0)
+                DIFF_STR_REMOVED(&pcszStr1);
+            else
+                DIFF_STR_MATCHED(&pcszStr1, &pcszStr2);
+        }
+        else if (pcszStr1)
+            DIFF_STR_REMOVED(&pcszStr1);
+        else
+            DIFF_STR_ADDED(&pcszStr2);
+    }
+}
+
+static void diffGlExts(const char * pcszExts1, const char * pcszExts2)
+{
+    pcszExts1 = strDupSort(pcszExts1);
+    pcszExts2 = strDupSort(pcszExts2);
+
+    if (!strcmp(pcszExts1, pcszExts2))
+    {
+        Log(("GL Exts identical!\n"));
+        Log(("%s\n", pcszExts1));
+        return;
+    }
+
+    Log(("%s\n", pcszExts1));
+
+    Log(("Diffing GL Exts..\n"));
+    diffStrOrderedLists(pcszExts1, pcszExts2);
+}
+
+static char *g_GlExts1 =
+        "GL_ARB_multisample GL_EXT_abgr GL_EXT_bgra GL_EXT_blend_color GL_EXT_blend_logic_op GL_EXT_blend_minmax GL_EXT_blend_subtract GL_EXT_copy_texture "
+        "GL_EXT_polygon_offset GL_EXT_subtexture GL_EXT_texture_object GL_EXT_vertex_array GL_EXT_compiled_vertex_array GL_EXT_texture GL_EXT_texture3D "
+        "GL_IBM_rasterpos_clip GL_ARB_point_parameters GL_EXT_draw_range_elements GL_EXT_packed_pixels GL_EXT_point_parameters GL_EXT_rescale_normal "
+        "GL_EXT_separate_specular_color GL_EXT_texture_edge_clamp GL_SGIS_generate_mipmap GL_SGIS_texture_border_clamp GL_SGIS_texture_edge_clamp "
+        "GL_SGIS_texture_lod GL_ARB_framebuffer_sRGB GL_ARB_multitexture GL_EXT_framebuffer_sRGB GL_IBM_multimode_draw_arrays GL_IBM_texture_mirrored_repeat "
+        "GL_ARB_texture_cube_map GL_ARB_texture_env_add GL_ARB_transpose_matrix GL_EXT_blend_func_separate GL_EXT_fog_coord GL_EXT_multi_draw_arrays "
+        "GL_EXT_secondary_color GL_EXT_texture_env_add GL_EXT_texture_filter_anisotropic GL_EXT_texture_lod_bias GL_INGR_blend_func_separate GL_NV_blend_square "
+        "GL_NV_light_max_exponent GL_NV_texgen_reflection GL_NV_texture_env_combine4 GL_SUN_multi_draw_arrays GL_ARB_texture_border_clamp GL_ARB_texture_compression GL_EXT_framebuffer_object "
+        "GL_EXT_texture_env_dot3 GL_MESA_window_pos GL_NV_packed_depth_stencil GL_NV_texture_rectangle GL_ARB_depth_texture GL_ARB_occlusion_query GL_ARB_shadow GL_ARB_texture_env_combine "
+        "GL_ARB_texture_env_crossbar GL_ARB_texture_env_dot3 GL_ARB_texture_mirrored_repeat GL_ARB_window_pos GL_EXT_stencil_two_side GL_EXT_texture_cube_map GL_NV_depth_clamp GL_APPLE_packed_pixels "
+        "GL_APPLE_vertex_array_object GL_ARB_draw_buffers GL_ARB_fragment_program GL_ARB_fragment_shader GL_ARB_shader_objects GL_ARB_vertex_program GL_ARB_vertex_shader GL_ATI_draw_buffers GL_ATI_texture_env_combine3 "
+        "GL_EXT_shadow_funcs GL_EXT_stencil_wrap GL_MESA_pack_invert GL_NV_primitive_restart GL_ARB_depth_clamp GL_ARB_fragment_program_shadow GL_ARB_half_float_pixel GL_ARB_occlusion_query2 GL_ARB_point_sprite "
+        "GL_ARB_shading_language_100 GL_ARB_sync GL_ARB_texture_non_power_of_two GL_ARB_vertex_buffer_object GL_ATI_blend_equation_separate GL_EXT_blend_equation_separate GL_OES_read_format GL_ARB_color_buffer_float "
+        "GL_ARB_pixel_buffer_object GL_ARB_texture_compression_rgtc GL_ARB_texture_rectangle GL_EXT_packed_float GL_EXT_pixel_buffer_object GL_EXT_texture_compression_rgtc GL_EXT_texture_mirror_clamp GL_EXT_texture_rectangle "
+        "GL_EXT_texture_sRGB GL_EXT_texture_shared_exponent GL_ARB_framebuffer_object GL_EXT_framebuffer_blit GL_EXT_framebuffer_multisample GL_EXT_packed_depth_stencil GL_ARB_vertex_array_object GL_ATI_separate_stencil "
+        "GL_ATI_texture_mirror_once GL_EXT_draw_buffers2 GL_EXT_draw_instanced GL_EXT_gpu_program_parameters GL_EXT_texture_env_combine GL_EXT_texture_sRGB_decode GL_EXT_timer_query GL_OES_EGL_image GL_ARB_copy_buffer "
+        "GL_ARB_draw_instanced GL_ARB_half_float_vertex GL_ARB_instanced_arrays GL_ARB_map_buffer_range GL_ARB_texture_rg GL_ARB_texture_swizzle GL_ARB_vertex_array_bgra GL_EXT_separate_shader_objects GL_EXT_texture_swizzle "
+        "GL_EXT_vertex_array_bgra GL_NV_conditional_render GL_ARB_ES2_compatibility GL_ARB_draw_elements_base_vertex GL_ARB_explicit_attrib_location GL_ARB_fragment_coord_conventions GL_ARB_provoking_vertex "
+        "GL_ARB_sampler_objects GL_ARB_shader_texture_lod GL_EXT_provoking_vertex GL_EXT_texture_snorm GL_MESA_texture_signed_rgba GL_NV_texture_barrier GL_ARB_robustness"
+        ;
+static char *g_GlExts2 = "GL_ARB_blend_func_extended GL_ARB_color_buffer_float GL_ARB_compatibility GL_ARB_copy_buffer GL_ARB_depth_buffer_float GL_ARB_depth_clamp GL_ARB_depth_texture GL_ARB_draw_buffers "
+        "GL_ARB_draw_elements_base_vertex GL_ARB_draw_instanced GL_ARB_ES2_compatibility GL_ARB_explicit_attrib_location GL_ARB_fragment_coord_conventions GL_ARB_fragment_program GL_ARB_fragment_program_shadow "
+        "GL_ARB_fragment_shader GL_ARB_framebuffer_object GL_ARB_framebuffer_sRGB GL_ARB_geometry_shader4 GL_ARB_get_program_binary GL_ARB_half_float_pixel GL_ARB_half_float_vertex GL_ARB_imaging GL_ARB_instanced_arrays "
+        "GL_ARB_map_buffer_range GL_ARB_multisample GL_ARB_multitexture GL_ARB_occlusion_query GL_ARB_occlusion_query2 GL_ARB_pixel_buffer_object GL_ARB_point_parameters GL_ARB_point_sprite GL_ARB_provoking_vertex "
+        "GL_ARB_robustness GL_ARB_sampler_objects GL_ARB_seamless_cube_map GL_ARB_separate_shader_objects GL_ARB_shader_bit_encoding GL_ARB_shader_objects GL_ARB_shading_language_100 GL_ARB_shading_language_include "
+        "GL_ARB_shadow GL_ARB_sync GL_ARB_texture_border_clamp GL_ARB_texture_buffer_object GL_ARB_texture_compression GL_ARB_texture_compression_rgtc GL_ARB_texture_cube_map GL_ARB_texture_env_add GL_ARB_texture_env_combine "
+        "GL_ARB_texture_env_crossbar GL_ARB_texture_env_dot3 GL_ARB_texture_float GL_ARB_texture_mirrored_repeat GL_ARB_texture_multisample GL_ARB_texture_non_power_of_two GL_ARB_texture_rectangle GL_ARB_texture_rg "
+        "GL_ARB_texture_rgb10_a2ui GL_ARB_texture_swizzle GL_ARB_timer_query GL_ARB_transpose_matrix GL_ARB_uniform_buffer_object GL_ARB_vertex_array_bgra GL_ARB_vertex_array_object GL_ARB_vertex_buffer_object GL_ARB_vertex_program "
+        "GL_ARB_vertex_shader GL_ARB_vertex_type_2_10_10_10_rev GL_ARB_viewport_array GL_ARB_window_pos GL_ATI_draw_buffers GL_ATI_texture_float GL_ATI_texture_mirror_once GL_S3_s3tc GL_EXT_texture_env_add GL_EXT_abgr GL_EXT_bgra "
+        "GL_EXT_bindable_uniform GL_EXT_blend_color GL_EXT_blend_equation_separate GL_EXT_blend_func_separate GL_EXT_blend_minmax GL_EXT_blend_subtract GL_EXT_compiled_vertex_array GL_EXT_Cg_shader GL_EXT_depth_bounds_test "
+        "GL_EXT_direct_state_access GL_EXT_draw_buffers2 GL_EXT_draw_instanced GL_EXT_draw_range_elements GL_EXT_fog_coord GL_EXT_framebuffer_blit GL_EXT_framebuffer_multisample GL_EXTX_framebuffer_mixed_formats "
+        "GL_EXT_framebuffer_object GL_EXT_framebuffer_sRGB GL_EXT_geometry_shader4 GL_EXT_gpu_program_parameters GL_EXT_gpu_shader4 GL_EXT_multi_draw_arrays GL_EXT_packed_depth_stencil GL_EXT_packed_float GL_EXT_packed_pixels "
+        "GL_EXT_pixel_buffer_object GL_EXT_point_parameters GL_EXT_provoking_vertex GL_EXT_rescale_normal GL_EXT_secondary_color GL_EXT_separate_shader_objects GL_EXT_separate_specular_color GL_EXT_shadow_funcs "
+        "GL_EXT_stencil_two_side GL_EXT_stencil_wrap GL_EXT_texture3D GL_EXT_texture_array GL_EXT_texture_buffer_object GL_EXT_texture_compression_dxt1 GL_EXT_texture_compression_latc GL_EXT_texture_compression_rgtc "
+        "GL_EXT_texture_compression_s3tc GL_EXT_texture_cube_map GL_EXT_texture_edge_clamp GL_EXT_texture_env_combine GL_EXT_texture_env_dot3 GL_EXT_texture_filter_anisotropic GL_EXT_texture_format_BGRA8888 GL_EXT_texture_integer "
+        "GL_EXT_texture_lod GL_EXT_texture_lod_bias GL_EXT_texture_mirror_clamp GL_EXT_texture_object GL_EXT_texture_shared_exponent GL_EXT_texture_sRGB GL_EXT_texture_swizzle GL_EXT_texture_type_2_10_10_10_REV GL_EXT_timer_query "
+        "GL_EXT_vertex_array GL_EXT_vertex_array_bgra GL_EXT_x11_sync_object GL_EXT_import_sync_object GL_IBM_rasterpos_clip GL_IBM_texture_mirrored_repeat GL_KTX_buffer_region GL_NV_alpha_test GL_NV_blend_minmax GL_NV_blend_square "
+        "GL_NV_complex_primitives GL_NV_conditional_render GL_NV_copy_depth_to_color GL_NV_copy_image GL_NV_depth_buffer_float GL_NV_depth_clamp GL_NV_explicit_multisample GL_NV_fbo_color_attachments "
+        "GL_NV_fence GL_NV_float_buffer GL_NV_fog_distance GL_NV_fragdepth GL_NV_fragment_program GL_NV_fragment_program_option GL_NV_fragment_program2 GL_NV_framebuffer_multisample_coverage GL_NV_geometry_shader4 "
+        "GL_NV_gpu_program4 GL_NV_half_float GL_NV_light_max_exponent GL_NV_multisample_coverage GL_NV_multisample_filter_hint GL_NV_occlusion_query GL_NV_packed_depth_stencil GL_NV_parameter_buffer_object "
+        "GL_NV_parameter_buffer_object2 GL_NV_path_rendering GL_NV_pixel_data_range GL_NV_point_sprite GL_NV_primitive_restart GL_NV_register_combiners GL_NV_register_combiners2 GL_NV_shader_buffer_load GL_NV_texgen_reflection "
+        "GL_NV_texture_barrier GL_NV_texture_compression_vtc GL_NV_texture_env_combine4 GL_NV_texture_expand_normal GL_NV_texture_lod_clamp GL_NV_texture_multisample GL_NV_texture_rectangle GL_NV_texture_shader GL_NV_texture_shader2 "
+        "GL_NV_texture_shader3 GL_NV_transform_feedback GL_NV_vdpau_interop GL_NV_vertex_array_range GL_NV_vertex_array_range2 GL_NV_vertex_buffer_unified_memory GL_NV_vertex_program GL_NV_vertex_program1_1 GL_NV_vertex_program2 "
+        "GL_NV_vertex_program2_option GL_NV_vertex_program3 GL_NVX_conditional_render GL_NVX_gpu_memory_info GL_OES_depth24 GL_OES_depth32 GL_OES_depth_texture GL_OES_element_index_uint GL_OES_fbo_render_mipmap "
+        "GL_OES_get_program_binary GL_OES_mapbuffer GL_OES_packed_depth_stencil GL_OES_rgb8_rgba8 GL_OES_standard_derivatives GL_OES_texture_3D GL_OES_texture_float GL_OES_texture_float_linear GL_OES_texture_half_float "
+        "GL_OES_texture_half_float_linear GL_OES_texture_npot GL_OES_vertex_array_object GL_OES_vertex_half_float GL_SGIS_generate_mipmap GL_SGIS_texture_lod GL_SGIX_depth_texture GL_SGIX_shadow GL_SUN_slice_accum";
+
+typedef enum
+{
+    D3DCAPSSOURCE_TYPE_UNDEFINED = 0,
+    D3DCAPSSOURCE_TYPE_EMBEDDED1,
+    D3DCAPSSOURCE_TYPE_EMBEDDED2,
+    D3DCAPSSOURCE_TYPE_NULL,
+    D3DCAPSSOURCE_TYPE_LOCAL,
+    D3DCAPSSOURCE_TYPE_FILE
+} D3DCAPSSOURCE_TYPE;
+
+static D3DCAPS9* selectCaps(D3DCAPS9 *pLocalStorage, D3DCAPS9 *pLocalEmbedded1, D3DCAPS9 *pLocalEmbedded2, D3DCAPSSOURCE_TYPE enmCapsType)
+{
+    switch (enmCapsType)
+    {
+        case D3DCAPSSOURCE_TYPE_EMBEDDED1:
+            return pLocalEmbedded1;
+        case D3DCAPSSOURCE_TYPE_EMBEDDED2:
+            return pLocalEmbedded2;
+        case D3DCAPSSOURCE_TYPE_NULL:
+            memset (pLocalStorage, 0, sizeof (*pLocalStorage));
+            return pLocalStorage;
+        case D3DCAPSSOURCE_TYPE_LOCAL:
+        {
+            LPDIRECT3D9EX pD3D = NULL;
+            HRESULT hr = Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3D);
+            if (FAILED(hr))
+            {
+                Log(("Direct3DCreate9Ex failed hr 0x%x\n", hr));
+                return NULL;
+            }
+
+            memset (pLocalStorage, 0, sizeof (*pLocalStorage));
+
+            hr = pD3D->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, pLocalStorage);
+
+            pD3D->Release();
+
+            if (FAILED(hr))
+            {
+                Log(("GetDeviceCaps failed hr 0x%x\n", hr));
+                return NULL;
+            }
+
+            return pLocalStorage;
+        }
+        case D3DCAPSSOURCE_TYPE_FILE:
+        {
+            Log(("Loading caps from file not implemented yet!"));
+            return NULL;
+        }
+        default:
+        {
+            Log(("Unsupported type %d", enmCapsType));
+            return NULL;
+        }
+    }
+
+    Log(("Should not be here!"));
+    return NULL;
+}
 
 int main()
 {
+    diffGlExts(g_GlExts1, g_GlExts2);
+
     if (sizeof (g_aCaps1) != sizeof (D3DCAPS9))
     {
-        Log(("incorrect caps 1 size (%d), expected(%d)", sizeof (g_aCaps1), sizeof (D3DCAPS9)));
+        Log(("incorrect caps 1 size (%d), expected(%d)\n", sizeof (g_aCaps1), sizeof (D3DCAPS9)));
         return 1;
     }
 
     if (sizeof (g_aCaps2) != sizeof (D3DCAPS9))
     {
-        Log(("incorrect caps 2 size (%d), expected(%d)", sizeof (g_aCaps2), sizeof (D3DCAPS9)));
+        Log(("incorrect caps 2 size (%d), expected(%d)\n", sizeof (g_aCaps2), sizeof (D3DCAPS9)));
         return 1;
     }
 
-    diffCaps((D3DCAPS9*)g_aCaps1, (D3DCAPS9*)g_aCaps2);
+    D3DCAPS9 Caps1, Caps2;
+    D3DCAPS9 *pCaps1, *pCaps2;
+    D3DCAPSSOURCE_TYPE enmCaps1 = D3DCAPSSOURCE_TYPE_EMBEDDED2;
+    D3DCAPSSOURCE_TYPE enmCaps2 = D3DCAPSSOURCE_TYPE_EMBEDDED1;
+
+    pCaps1 = selectCaps(&Caps1, (D3DCAPS9*)g_aCaps1, (D3DCAPS9*)g_aCaps2, enmCaps1);
+    if (!pCaps1)
+    {
+        Log(("Failed to select Caps1"));
+        return 1;
+    }
+
+    pCaps2 = selectCaps(&Caps2, (D3DCAPS9*)g_aCaps1, (D3DCAPS9*)g_aCaps2, enmCaps2);
+    if (!pCaps2)
+    {
+        Log(("Failed to select Caps2"));
+        return 1;
+    }
+
+    diffCaps((D3DCAPS9*)g_aCaps2, (D3DCAPS9*)g_aCaps1);
     return 0;
 }
