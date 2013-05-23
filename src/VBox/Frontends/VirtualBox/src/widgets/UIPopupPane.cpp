@@ -33,9 +33,6 @@
 #include "QIToolButton.h"
 #include "UIAnimationFramework.h"
 
-/* Other VBox includes: */
-#include <VBox/sup.h>
-
 
 /* Popup-pane text-pane prototype class: */
 class UIPopupPaneTextPane : public QIWithRetranslateUI<QWidget>
@@ -114,7 +111,7 @@ private:
 
     /* Variables: Focus stuff: */
     bool m_fFocused;
-    QObject *m_pAnimation;
+    UIAnimation *m_pAnimation;
 };
 
 
@@ -307,8 +304,8 @@ void UIPopupPane::sltButtonClicked(int iButtonID)
 void UIPopupPane::prepare()
 {
     /* Install 'hover' animation for 'opacity' property: */
-    UIAnimationFramework::installPropertyAnimation(this, "opacity", "defaultOpacity", "hoveredOpacity",
-                                                   SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
+    UIAnimation::installPropertyAnimation(this, "opacity", "defaultOpacity", "hoveredOpacity",
+                                          SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
     /* Prepare content: */
     prepareContent();
 }
@@ -588,6 +585,9 @@ void UIPopupPaneTextPane::prepare()
     connect(parent(), SIGNAL(sigFocusLeave()), this, SLOT(sltFocusLeave()));
     /* Prepare content: */
     prepareContent();
+    /* Install geometry animation for 'minimumSizeHint' property: */
+    m_pAnimation = UIAnimation::installPropertyAnimation(this, "minimumSizeHint", "collapsedSizeHint", "expandedSizeHint",
+                                                         SIGNAL(sigFocusEnter()), SIGNAL(sigFocusLeave()));
 }
 
 void UIPopupPaneTextPane::prepareContent()
@@ -657,11 +657,8 @@ void UIPopupPaneTextPane::updateSizeHint()
     /* Update current size-hint: */
     m_minimumSizeHint = m_fFocused ? m_expandedSizeHint : m_collapsedSizeHint;
 
-    /* And reinstall size-hint animation: */
-    delete m_pAnimation;
-    m_pAnimation = UIAnimationFramework::installPropertyAnimation(this, "minimumSizeHint", "collapsedSizeHint", "expandedSizeHint",
-                                                                  SIGNAL(sigFocusEnter()), SIGNAL(sigFocusLeave()),
-                                                                  m_fFocused);
+    /* Update animation: */
+    m_pAnimation->update();
 }
 
 

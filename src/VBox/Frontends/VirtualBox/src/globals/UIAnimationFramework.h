@@ -19,17 +19,55 @@
 #ifndef __UIAnimationFramework_h__
 #define __UIAnimationFramework_h__
 
+/* Qt includes: */
+#include <QObject>
+
 /* Forward declaration: */
 class QStateMachine;
+class QPropertyAnimation;
 
-/* UIAnimationFramework namespace: */
-namespace UIAnimationFramework
+/* UIAnimation factory: */
+class UIAnimation : public QObject
 {
-    /* API: Animation stuff: */
-    QStateMachine* installPropertyAnimation(QWidget *pTarget, const char *pszPropertyName,
-                                            const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
-                                            const char *pSignalForward, const char *pSignalBackward,
-                                            bool fReversive = false, int iAnimationDuration = 300);
-}
+    Q_OBJECT;
+
+public:
+
+    /* API: Factory stuff: */
+    static UIAnimation* installPropertyAnimation(QWidget *pTarget, const char *pszPropertyName,
+                                                 const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
+                                                 const char *pszSignalForward, const char *pszSignalReverse,
+                                                 bool fReverse = false, int iAnimationDuration = 300);
+
+    /* API: Update stuff: */
+    void update();
+
+protected:
+
+    /* Constructor: */
+    UIAnimation(QWidget *pParent, const char *pszPropertyName,
+                const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
+                const char *pszSignalForward, const char *pszSignalReverse,
+                bool fReverse, int iAnimationDuration);
+
+private:
+
+    /* Helper: Prepare stuff: */
+    void prepare();
+
+    /* Variables: General stuff: */
+    const char *m_pszPropertyName;
+    const char *m_pszValuePropertyNameStart;
+    const char *m_pszValuePropertyNameFinal;
+    const char *m_pszSignalForward;
+    const char *m_pszSignalReverse;
+    bool m_fReverse;
+    int m_iAnimationDuration;
+
+    /* Variables: Animation-machine stuff: */
+    QStateMachine *m_pAnimationMachine;
+    QPropertyAnimation *m_pForwardAnimation;
+    QPropertyAnimation *m_pReverseAnimation;
+};
 
 #endif /* __UIAnimationFramework_h__ */
