@@ -565,6 +565,7 @@
 # define RTFileUnlock                                   RT_MANGLER(RTFileUnlock)
 # define RTFileWrite                                    RT_MANGLER(RTFileWrite)
 # define RTFileWriteAt                                  RT_MANGLER(RTFileWriteAt)
+# define RTFileSgReadAt                                 RT_MANGLER(RTFileSgReadAt)
 # define RTFilesystemVfsFromFile                        RT_MANGLER(RTFilesystemVfsFromFile)
 # define RTFsQueryProperties                            RT_MANGLER(RTFsQueryProperties)
 # define RTFsQuerySerial                                RT_MANGLER(RTFsQuerySerial)
