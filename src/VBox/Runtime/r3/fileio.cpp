@@ -221,7 +221,7 @@ RTR3DECL(int)  RTFileReadAt(RTFILE File, RTFOFF off, void *pvBuf, size_t cbToRea
  */
 RTR3DECL(int)  RTFileSgReadAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cbToRead, size_t *pcbRead)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     size_t cbRead = 0;
 
     while (cbToRead)
@@ -284,7 +284,7 @@ RTR3DECL(int)  RTFileWriteAt(RTFILE File, RTFOFF off, const void *pvBuf, size_t 
  */
 RTR3DECL(int)  RTFileSgWriteAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cbToWrite, size_t *pcbWritten)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
     size_t cbWritten = 0;
 
     while (cbToWrite)
