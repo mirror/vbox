@@ -1,11 +1,11 @@
 /** $Id$ */
 /** @file
  *
- * VBox HDD container test utility, async I/O memory backend
+ * VBox HDD container test utility, async I/O backend
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,17 +15,22 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#ifndef __VDIoBackendMem_h__
-#define __VDIoBackendMem_h__
+#ifndef __VDIoBackend_h__
+#define __VDIoBackend_h__
 
 #include <iprt/sg.h>
 
 #include "VDDefs.h"
 
-/** Memory backend handle. */
-typedef struct VDIOBACKENDMEM *PVDIOBACKENDMEM;
-/** Pointer to a memory backend handle. */
-typedef PVDIOBACKENDMEM *PPVDIOBACKENDMEM;
+/** I/O backend handle. */
+typedef struct VDIOBACKEND *PVDIOBACKEND;
+/** Pointer to a I/O backend handle. */
+typedef PVDIOBACKEND *PPVDIOBACKEND;
+
+/** Storage handle. */
+typedef struct VDIOSTORAGE *PVDIOSTORAGE;
+/** Pointer to a storage handle. */
+typedef PVDIOSTORAGE *PPVDIOSTORAGE;
 
 /**
  * Completion handler.
@@ -45,34 +50,41 @@ typedef FNVDIOCOMPLETE *PFNVDIOCOMPLETE;
  *
  * @param ppIoBackend    Where to store the handle on success.
  */
-int VDIoBackendMemCreate(PPVDIOBACKENDMEM ppIoBackend);
+int VDIoBackendCreate(PPVDIOBACKEND ppIoBackend);
 
 /**
  * Destroys a memory I/O backend.
  *
- * @returns IPRT status code.
+ * @returns nothing.
  *
  * @param pIoBackend     The backend to destroy.
  */
-int VDIoBackendMemDestroy(PVDIOBACKENDMEM pIoBackend);
+void VDIoBackendDestroy(PVDIOBACKEND pIoBackend);
+
+int VDIoBackendStorageCreate(PVDIOBACKEND pIoBackend, const char *pszBackend,
+                             const char *pszName, PFNVDIOCOMPLETE pfnComplete,
+                             PPVDIOSTORAGE ppIoStorage);
+
+void VDIoBackendStorageDestroy(PVDIOSTORAGE pIoStorage);
+
+int VDIoBackendStorageSetSize(PVDIOSTORAGE pIoStorage, uint64_t cbSize);
+
+int VDIoBackendStorageGetSize(PVDIOSTORAGE pIoStorage, uint64_t *pcbSize);
 
 /**
  * Enqueues a new I/O request.
  *
  * @returns IPRT status code.
  *
- * @param pIoBackend     The backend which should handle the
- *                       transfer.
- * @param pMemDisk       The memory disk the request is for.
+ * @param pIoStorage     Storage handle.
  * @param enmTxDir       The transfer direction.
  * @param off            Start offset of the transfer.
  * @param cbTransfer     Size of the transfer.
  * @param pSgBuf         S/G buffer to use.
- * @param pfnComplete    Completion handler to call.
  * @param pvUser         Opaque user data.
+ * @param fSync          Flag whether to wait for the operation to complete.
  */
-int VDIoBackendMemTransfer(PVDIOBACKENDMEM pIoBackend, PVDMEMDISK pMemDisk,
-                           VDIOTXDIR enmTxDir, uint64_t off, size_t cbTransfer,
-                           PRTSGBUF pSgBuf, PFNVDIOCOMPLETE pfnComplete, void *pvUser);
+int VDIoBackendTransfer(PVDIOSTORAGE pIoStorage, VDIOTXDIR enmTxDir, uint64_t off,
+                        size_t cbTransfer, PRTSGBUF pSgBuf, void *pvUser, bool fSync);
 
 #endif /* __VDIoBackendMem_h__ */

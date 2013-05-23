@@ -34,7 +34,7 @@
 #include <iprt/critsect.h>
 
 #include "VDMemDisk.h"
-#include "VDIoBackendMem.h"
+#include "VDIoBackend.h"
 #include "VDIoRnd.h"
 
 #include "VDScript.h"
@@ -48,8 +48,8 @@ typedef struct VDFILE
     RTLISTNODE     Node;
     /** Name of the file. */
     char          *pszName;
-    /** Memory file baking the file. */
-    PVDMEMDISK     pMemDisk;
+    /** Storage backing the file. */
+    PVDIOSTORAGE   pIoStorage;
     /** Flag whether the file is read locked. */
     bool           fReadLock;
     /** Flag whether the file is write locked. */
@@ -126,8 +126,8 @@ typedef struct VDTESTGLOB
     RTLISTNODE       ListFiles;
     /** Head of the pattern list. */
     RTLISTNODE       ListPatterns;
-    /** Memory I/O backend. */
-    PVDIOBACKENDMEM  pIoBackend;
+    /** I/O backend, common data. */
+    PVDIOBACKEND     pIoBackend;
     /** Error interface. */
     VDINTERFACEERROR VDIfError;
     /** Pointer to the per disk interface list. */
@@ -138,6 +138,8 @@ typedef struct VDTESTGLOB
     PVDINTERFACE     pInterfacesImages;
     /** I/O RNG handle. */
     PVDIORND         pIoRnd;
+    /** Current storage backend to use. */
+    char            *pszIoBackend;
 } VDTESTGLOB, *PVDTESTGLOB;
 
 /**
@@ -241,6 +243,7 @@ static DECLCALLBACK(int) vdScriptHandlerPrintMsg(PVDSCRIPTARG paScriptArgs, void
 static DECLCALLBACK(int) vdScriptHandlerShowStatistics(PVDSCRIPTARG paScriptArgs, void *pvUser);
 static DECLCALLBACK(int) vdScriptHandlerResetStatistics(PVDSCRIPTARG paScriptArgs, void *pvUser);
 static DECLCALLBACK(int) vdScriptHandlerResize(PVDSCRIPTARG paScriptArgs, void *pvUser);
+static DECLCALLBACK(int) vdScriptHandlerSetFileBackend(PVDSCRIPTARG paScriptArgs, void *pvUser);
 
 /* create action */
 const VDSCRIPTTYPE g_aArgCreate[] =
@@ -441,6 +444,11 @@ const VDSCRIPTTYPE g_aArgResize[] =
     VDSCRIPTTYPE_UINT64  /* size */
 };
 
+/* Set file backend. */
+const VDSCRIPTTYPE g_aArgSetFileBackend[] =
+{
+    VDSCRIPTTYPE_STRING /* new file backend */
+};
 
 const VDSCRIPTCALLBACK g_aScriptActions[] =
 {
@@ -471,6 +479,7 @@ const VDSCRIPTCALLBACK g_aScriptActions[] =
     {"showstatistics",             VDSCRIPTTYPE_VOID, g_aArgShowStatistics,              RT_ELEMENTS(g_aArgShowStatistics),             vdScriptHandlerShowStatistics},
     {"resetstatistics",            VDSCRIPTTYPE_VOID, g_aArgResetStatistics,             RT_ELEMENTS(g_aArgResetStatistics),            vdScriptHandlerResetStatistics},
     {"resize",                     VDSCRIPTTYPE_VOID, g_aArgResize,                      RT_ELEMENTS(g_aArgResize),                     vdScriptHandlerResize},
+    {"setfilebackend",             VDSCRIPTTYPE_VOID, g_aArgSetFileBackend,              RT_ELEMENTS(g_aArgSetFileBackend),             vdScriptHandlerSetFileBackend},
 };
 
 const unsigned g_cScriptActions = RT_ELEMENTS(g_aScriptActions);
@@ -522,6 +531,7 @@ static DECLCALLBACK(int) vdScriptHandlerCreate(PVDSCRIPTARG paScriptArgs, void *
     bool fBase = false;
     bool fDynamic = true;
     bool fIgnoreFlush = false;
+    PVDIOBACKEND pIoBackend = NULL;
 
     pcszDisk = paScriptArgs[0].psz;
     if (!RTStrICmp(paScriptArgs[1].psz, "base"))
@@ -1706,7 +1716,8 @@ static DECLCALLBACK(int) vdScriptHandlerDumpFile(PVDSCRIPTARG paScriptArgs, void
     if (fFound)
     {
         RTPrintf("Dumping memory file %s to %s, this might take some time\n", pcszFile, pcszPathToDump);
-        rc = VDMemDiskWriteToFile(pIt->pMemDisk, pcszPathToDump);
+        //rc = VDMemDiskWriteToFile(pIt->pIo, pcszPathToDump);
+        rc = VERR_NOT_IMPLEMENTED;
     }
     else
         rc = VERR_FILE_NOT_FOUND;
@@ -1993,6 +2004,20 @@ static DECLCALLBACK(int) vdScriptHandlerResize(PVDSCRIPTARG paScriptArgs, void *
     return rc;
 }
 
+static DECLCALLBACK(int) vdScriptHandlerSetFileBackend(PVDSCRIPTARG paScriptArgs, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+    PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
+    const char *pcszBackend = paScriptArgs[0].psz;
+
+    RTStrFree(pGlob->pszIoBackend);
+    pGlob->pszIoBackend = RTStrDup(pcszBackend);
+    if (!pGlob->pszIoBackend)
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
 static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
                                          uint32_t fOpen,
                                          PFNVDCOMPLETED pfnCompleted,
@@ -2027,7 +2052,7 @@ static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
     {
         /* If the file exists delete the memory disk. */
         if (fFound)
-            rc = VDMemDiskSetSize(pIt->pMemDisk, 0);
+            rc = VDIoBackendStorageSetSize(pIt->pIoStorage, 0);
         else
         {
             /* Create completey new. */
@@ -2038,7 +2063,8 @@ static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
 
                 if (pIt->pszName)
                 {
-                    rc = VDMemDiskCreate(&pIt->pMemDisk, 0);
+                    rc = VDIoBackendStorageCreate(pGlob->pIoBackend, pGlob->pszIoBackend,
+                                                  pszLocation, pfnCompleted, &pIt->pIoStorage);
                 }
                 else
                     rc = VERR_NO_MEMORY;
@@ -2049,11 +2075,11 @@ static DECLCALLBACK(int) tstVDIoFileOpen(void *pvUser, const char *pszLocation,
                         RTStrFree(pIt->pszName);
                     RTMemFree(pIt);
                 }
+                else
+                    RTListAppend(&pGlob->ListFiles, &pIt->Node);
             }
             else
                 rc = VERR_NO_MEMORY;
-
-            RTListAppend(&pGlob->ListFiles, &pIt->Node);
         }
     }
     else if ((fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN)
@@ -2117,7 +2143,7 @@ static DECLCALLBACK(int) tstVDIoFileDelete(void *pvUser, const char *pcszFilenam
     if (fFound)
     {
         RTListNodeRemove(&pIt->Node);
-        VDMemDiskDestroy(pIt->pMemDisk);
+        VDIoBackendStorageDestroy(pIt->pIoStorage);
         RTStrFree(pIt->pszName);
         RTMemFree(pIt);
     }
@@ -2181,14 +2207,14 @@ static DECLCALLBACK(int) tstVDIoFileGetSize(void *pvUser, void *pStorage, uint64
 {
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
 
-    return VDMemDiskGetSize(pIoStorage->pFile->pMemDisk, pcbSize);
+    return VDIoBackendStorageGetSize(pIoStorage->pFile->pIoStorage, pcbSize);
 }
 
 static DECLCALLBACK(int) tstVDIoFileSetSize(void *pvUser, void *pStorage, uint64_t cbSize)
 {
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
 
-    return VDMemDiskSetSize(pIoStorage->pFile->pMemDisk, cbSize);
+    return VDIoBackendStorageSetSize(pIoStorage->pFile->pIoStorage, cbSize);
 }
 
 static DECLCALLBACK(int) tstVDIoFileWriteSync(void *pvUser, void *pStorage, uint64_t uOffset,
@@ -2203,7 +2229,8 @@ static DECLCALLBACK(int) tstVDIoFileWriteSync(void *pvUser, void *pStorage, uint
     Seg.pvSeg = (void *)pvBuffer;
     Seg.cbSeg = cbBuffer;
     RTSgBufInit(&SgBuf, &Seg, 1);
-    rc = VDMemDiskWrite(pIoStorage->pFile->pMemDisk, uOffset, cbBuffer, &SgBuf);
+    rc = VDIoBackendTransfer(pIoStorage->pFile->pIoStorage, VDIOTXDIR_WRITE, uOffset,
+                             cbBuffer, &SgBuf, NULL, true /* fSync */);
     if (RT_SUCCESS(rc))
     {
         pIoStorage->pFile->cWrites++;
@@ -2226,7 +2253,8 @@ static DECLCALLBACK(int) tstVDIoFileReadSync(void *pvUser, void *pStorage, uint6
     Seg.pvSeg = pvBuffer;
     Seg.cbSeg = cbBuffer;
     RTSgBufInit(&SgBuf, &Seg, 1);
-    rc = VDMemDiskRead(pIoStorage->pFile->pMemDisk, uOffset, cbBuffer, &SgBuf);
+    rc = VDIoBackendTransfer(pIoStorage->pFile->pIoStorage, VDIOTXDIR_READ, uOffset,
+                             cbBuffer, &SgBuf, NULL, true /* fSync */);
     if (RT_SUCCESS(rc))
     {
         pIoStorage->pFile->cReads++;
@@ -2240,8 +2268,10 @@ static DECLCALLBACK(int) tstVDIoFileReadSync(void *pvUser, void *pStorage, uint6
 static DECLCALLBACK(int) tstVDIoFileFlushSync(void *pvUser, void *pStorage)
 {
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
+    int rc = VDIoBackendTransfer(pIoStorage->pFile->pIoStorage, VDIOTXDIR_FLUSH, 0,
+                                 0, NULL, NULL, true /* fSync */);
     pIoStorage->pFile->cFlushes++;
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static DECLCALLBACK(int) tstVDIoFileReadAsync(void *pvUser, void *pStorage, uint64_t uOffset,
@@ -2252,9 +2282,11 @@ static DECLCALLBACK(int) tstVDIoFileReadAsync(void *pvUser, void *pStorage, uint
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
+    RTSGBUF SgBuf;
 
-    rc = VDIoBackendMemTransfer(pGlob->pIoBackend, pIoStorage->pFile->pMemDisk, VDIOTXDIR_READ, uOffset,
-                                cbRead, paSegments, cSegments, pIoStorage->pfnComplete, pvCompletion);
+    RTSgBufInit(&SgBuf, paSegments, cSegments);
+    rc = VDIoBackendTransfer(pIoStorage->pFile->pIoStorage, VDIOTXDIR_READ, uOffset,
+                             cbRead, &SgBuf, pvCompletion, false /* fSync */);
     if (RT_SUCCESS(rc))
     {
         pIoStorage->pFile->cAsyncReads++;
@@ -2272,9 +2304,11 @@ static DECLCALLBACK(int) tstVDIoFileWriteAsync(void *pvUser, void *pStorage, uin
     int rc = VINF_SUCCESS;
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
+    RTSGBUF SgBuf;
 
-    rc = VDIoBackendMemTransfer(pGlob->pIoBackend, pIoStorage->pFile->pMemDisk, VDIOTXDIR_WRITE, uOffset,
-                                cbWrite, paSegments, cSegments, pIoStorage->pfnComplete, pvCompletion);
+    RTSgBufInit(&SgBuf, paSegments, cSegments);
+    rc = VDIoBackendTransfer(pIoStorage->pFile->pIoStorage, VDIOTXDIR_WRITE, uOffset,
+                             cbWrite, &SgBuf, pvCompletion, false /* fSync */);
     if (RT_SUCCESS(rc))
     {
         pIoStorage->pFile->cAsyncWrites++;
@@ -2291,8 +2325,8 @@ static DECLCALLBACK(int) tstVDIoFileFlushAsync(void *pvUser, void *pStorage, voi
     PVDTESTGLOB pGlob = (PVDTESTGLOB)pvUser;
     PVDSTORAGE pIoStorage = (PVDSTORAGE)pStorage;
 
-    rc = VDIoBackendMemTransfer(pGlob->pIoBackend, pIoStorage->pFile->pMemDisk, VDIOTXDIR_FLUSH, 0,
-                                0, NULL, 0, pIoStorage->pfnComplete, pvCompletion);
+    rc = VDIoBackendTransfer(pIoStorage->pFile->pIoStorage, VDIOTXDIR_FLUSH, 0,
+                             0, NULL, pvCompletion, false /* fSync */);
     if (RT_SUCCESS(rc))
     {
         pIoStorage->pFile->cAsyncFlushes++;
@@ -2630,6 +2664,12 @@ static void tstVDIoScriptRun(const char *pcszFilename)
     RTListInit(&GlobTest.ListFiles);
     RTListInit(&GlobTest.ListDisks);
     RTListInit(&GlobTest.ListPatterns);
+    GlobTest.pszIoBackend = RTStrDup("memory");
+    if (!GlobTest.pszIoBackend)
+    {
+        RTPrintf("Out of memory allocating I/O backend string\n");
+        return;
+    }
 
     rc = RTFileReadAll(pcszFilename, &pvFile, &cbFile);
     if (RT_SUCCESS(rc))
@@ -2666,7 +2706,7 @@ static void tstVDIoScriptRun(const char *pcszFilename)
         AssertRC(rc);
 
         /* Init I/O backend. */
-        rc = VDIoBackendMemCreate(&GlobTest.pIoBackend);
+        rc = VDIoBackendCreate(&GlobTest.pIoBackend);
         if (RT_SUCCESS(rc))
         {
             VDSCRIPTCTX hScriptCtx = NULL;
@@ -2685,13 +2725,15 @@ static void tstVDIoScriptRun(const char *pcszFilename)
                     rc = VDScriptCtxCallFn(hScriptCtx, "main", NULL, 0);
                 VDScriptCtxDestroy(hScriptCtx);
             }
-            VDIoBackendMemDestroy(GlobTest.pIoBackend);
+            VDIoBackendDestroy(GlobTest.pIoBackend);
         }
         else
             RTPrintf("Creating the I/O backend failed rc=%Rrc\n");
     }
     else
         RTPrintf("Opening script failed rc=%Rrc\n", rc);
+
+    RTStrFree(GlobTest.pszIoBackend);
 }
 
 /**
