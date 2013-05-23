@@ -83,7 +83,7 @@ void insb_discard(unsigned nbytes, unsigned port);
 
 
 int scsi_cmd_data_in(uint16_t io_base, uint8_t target_id, uint8_t __far *aCDB,
-                     uint8_t cbCDB, uint8_t __far *buffer, uint32_t cbBuffer)
+                     uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
 {
     /* Check that the adapter is ready. */
     uint8_t     status, sizes;
@@ -94,12 +94,12 @@ int scsi_cmd_data_in(uint16_t io_base, uint8_t target_id, uint8_t __far *aCDB,
     while (status & VBSCSI_BUSY);
 
     
-    sizes = ((cbBuffer >> 12) & 0xF0) | cbCDB;
+    sizes = ((length >> 12) & 0xF0) | cbCDB;
     outb(io_base + VBSCSI_REGISTER_COMMAND, target_id);                 /* Write the target ID. */
     outb(io_base + VBSCSI_REGISTER_COMMAND, SCSI_TXDIR_FROM_DEVICE);    /* Write the transfer direction. */
     outb(io_base + VBSCSI_REGISTER_COMMAND, sizes);                     /* Write CDB size and top bufsize bits. */
-    outb(io_base + VBSCSI_REGISTER_COMMAND, cbBuffer);                  /* Write the buffer size. */
-    outb(io_base + VBSCSI_REGISTER_COMMAND, (cbBuffer >> 8));    
+    outb(io_base + VBSCSI_REGISTER_COMMAND, length);                    /* Write the buffer size. */
+    outb(io_base + VBSCSI_REGISTER_COMMAND, (length >> 8));    
     for (i = 0; i < cbCDB; i++)                                         /* Write the CDB. */
         outb(io_base + VBSCSI_REGISTER_COMMAND, aCDB[i]);
 
@@ -108,14 +108,24 @@ int scsi_cmd_data_in(uint16_t io_base, uint8_t target_id, uint8_t __far *aCDB,
         status = inb(io_base + VBSCSI_REGISTER_STATUS);
     while (status & VBSCSI_BUSY);
 
-    /* Get the read data. */
-    rep_insb(buffer, cbBuffer, io_base + VBSCSI_REGISTER_DATA_IN);
+    /* Read in the data. The transfer length may be exactly 64K or more,
+     * which needs a bit of care when we're using 16-bit 'rep ins'.
+     */
+    while (length > 32768) {
+        DBG_SCSI("%s: reading 32K to %X:%X\n", __func__, FP_SEG(buffer), FP_OFF(buffer));
+        rep_insb(buffer, 32768, io_base + VBSCSI_REGISTER_DATA_IN);
+        length -= 32768;
+        buffer = (FP_SEG(buffer) + (32768 >> 4)) :> FP_OFF(buffer);
+    }
+
+    DBG_SCSI("%s: reading %ld bytes to %X:%X\n", __func__, length, FP_SEG(buffer), FP_OFF(buffer));
+    rep_insb(buffer, length, io_base + VBSCSI_REGISTER_DATA_IN);
 
     return 0;
 }
 
 int scsi_cmd_data_out(uint16_t io_base, uint8_t target_id, uint8_t __far *aCDB,
-                      uint8_t cbCDB, uint8_t __far *buffer, uint32_t cbBuffer)
+                      uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
 {
     /* Check that the adapter is ready. */
     uint8_t     status, sizes;
@@ -126,17 +136,27 @@ int scsi_cmd_data_out(uint16_t io_base, uint8_t target_id, uint8_t __far *aCDB,
     while (status & VBSCSI_BUSY);
 
     
-    sizes = ((cbBuffer >> 12) & 0xF0) | cbCDB;
+    sizes = ((length >> 12) & 0xF0) | cbCDB;
     outb(io_base + VBSCSI_REGISTER_COMMAND, target_id);                 /* Write the target ID. */
     outb(io_base + VBSCSI_REGISTER_COMMAND, SCSI_TXDIR_TO_DEVICE);      /* Write the transfer direction. */
     outb(io_base + VBSCSI_REGISTER_COMMAND, sizes);                     /* Write CDB size and top bufsize bits. */
-    outb(io_base + VBSCSI_REGISTER_COMMAND, cbBuffer);                  /* Write the buffer size. */
-    outb(io_base + VBSCSI_REGISTER_COMMAND, (cbBuffer >> 8));
+    outb(io_base + VBSCSI_REGISTER_COMMAND, length);                    /* Write the buffer size. */
+    outb(io_base + VBSCSI_REGISTER_COMMAND, (length >> 8));
     for (i = 0; i < cbCDB; i++)                                         /* Write the CDB. */
         outb(io_base + VBSCSI_REGISTER_COMMAND, aCDB[i]);
 
-    /* Write data to I/O port. */
-    rep_outsb(buffer, cbBuffer, io_base+VBSCSI_REGISTER_DATA_IN);
+    /* Write out the data. The transfer length may be exactly 64K or more,
+     * which needs a bit of care when we're using 16-bit 'rep outs'.
+     */
+    while (length > 32768) {
+        DBG_SCSI("%s: writing 32K from %X:%X\n", __func__, FP_SEG(buffer), FP_OFF(buffer));
+        rep_outsb(buffer, 32768, io_base + VBSCSI_REGISTER_DATA_IN);
+        length -= 32768;
+        buffer = (FP_SEG(buffer) + (32768 >> 4)) :> FP_OFF(buffer);
+    }
+
+    DBG_SCSI("%s: writing %ld bytes from %X:%X\n", __func__, length, FP_SEG(buffer), FP_OFF(buffer));
+    rep_outsb(buffer, length, io_base + VBSCSI_REGISTER_DATA_IN);
 
     /* Now wait for the command to complete. */
     do
