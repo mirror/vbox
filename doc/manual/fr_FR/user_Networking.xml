@@ -409,8 +409,8 @@
     </sect2>
   </sect1>
 
-  <sect1>
-    <title id="network_bridged">Réseau Bridged</title>
+  <sect1 id="network_bridged">
+    <title>Réseau Bridged</title>
 
     <para>Avec le réseau bridgé, VirtualBox utilise un pilote de périphérique 
     sur votre système <emphasis>hôte</emphasis> qui filtre les données de votre

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
 "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<chapter>
-  <title id="guestadditions">Les suppléments invité</title>
+<chapter id="guestadditions">
+  <title>Les suppléments invité</title>
 
   <para>Le chapitre précédent traitait de la manière de commencer avec VirtualBox
   et d'installer des systèmes d'exploitation dans une machine virtuelle. Pour une

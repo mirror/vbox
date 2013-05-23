@@ -19,8 +19,8 @@
   donner au système hôte, à d'autres invités ou à des ordinateurs un accès
   Internet au système hôte.</para>
 
-  <sect1>
-    <title id="guestossupport">Systèmes d'exploitation invités supportés</title>
+  <sect1 id="guestossupport">
+    <title>Systèmes d'exploitation invités supportés</title>
 
     <para>Comme VirtualBox est conçu pour offrir un environnement de virtualisation
     générique pour les systèmes x86, il peut exécuter des systèmes d'exploitation
