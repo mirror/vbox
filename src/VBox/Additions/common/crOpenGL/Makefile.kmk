@@ -258,14 +258,18 @@ VBoxOGL-x86_DEFS = $(VBoxOGL_DEFS) VBOX_WDDM_WOW64
 $(VBOX_PATH_CROGL_GENFILES)/NULLfuncs.c: $(PATH_SUB_CURRENT)/NULLfuncs.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
 $(VBOX_PATH_CROGL_GENFILES)/tsfuncs.c: $(PATH_SUB_CURRENT)/tsfuncs.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 
+
 ifeq ($(KBUILD_TARGET),win)
+ # Windows
 $(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/windows_getprocaddress.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
  ifeq ($(KBUILD_TARGET_ARCH),amd64)
 $(VBOX_PATH_CROGL_GENFILES)/cropengl.def: $(PATH_SUB_CURRENT)/defs64.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
@@ -275,15 +279,18 @@ $(VBOX_PATH_CROGL_GENFILES)/cropengl.def: $(PATH_SUB_CURRENT)/defs.py $(VBOX_CRO
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
  endif
+
 $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
 $(VBOX_PATH_CROGL_GENFILES)/windows_exports.asm: \
 		$(PATH_SUB_CURRENT)/windows_i386_exports.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
  ifdef VBOX_WITH_WDDM
   ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
 $(VBOX_PATH_CROGL_GENFILES)/cropengl-x86.def: $(PATH_SUB_CURRENT)/defs.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
@@ -291,71 +298,85 @@ $(VBOX_PATH_CROGL_GENFILES)/cropengl-x86.def: $(PATH_SUB_CURRENT)/defs.py $(VBOX
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
   endif #ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),win.amd64)
  endif #ifdef VBOX_WITH_WDDM
-else if1of ($(KBUILD_TARGET), linux solaris freebsd)
+
+
+else if1of ($(KBUILD_TARGET), freebsd linux solaris)
+ # FreeBSD, Linux, Solaris
 $(VBOX_PATH_CROGL_GENFILES)/getprocaddress.c: $(PATH_SUB_CURRENT)/getprocaddress.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
-if !defined(VBoxOGL_DRI) && !defined(VBoxOGL_FAKEDRI)
- ifeq ($(KBUILD_TARGET),solaris)
+
+ if !defined(VBoxOGL_DRI) && !defined(VBoxOGL_FAKEDRI)
+  ifeq ($(KBUILD_TARGET),solaris)
 $(VBOX_PATH_CROGL_GENFILES)/solaris_exports.c: \
 		$(PATH_SUB_CURRENT)/SunOS_exports.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
- else  ifeq ($(KBUILD_TARGET),freebsd)
+
+  else ifeq ($(KBUILD_TARGET),freebsd)
 $(VBOX_PATH_CROGL_GENFILES)/freebsd_exports.c: \
 		$(PATH_SUB_CURRENT)/FreeBSD_exports.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
- else
+
+  else
 $(VBOX_PATH_CROGL_GENFILES)/linux_exports.asm: \
 		$(PATH_SUB_CURRENT)/Linux_i386_exports.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
- endif
-else ifdef VBoxOGL_DRI
+  endif
+
+ else ifdef VBoxOGL_DRI
 $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
 $(VBOX_PATH_CROGL_GENFILES)/DD_gl.h: $(PATH_SUB_CURRENT)/DD_glh.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
 $(VBOX_PATH_CROGL_GENFILES)/DD_gl.c: $(PATH_SUB_CURRENT)/DD_glc.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
- ifeq ($(KBUILD_TARGET),solaris)
+
+  ifeq ($(KBUILD_TARGET),solaris)
 $(VBOX_PATH_CROGL_GENFILES)/solaris_exports_dri.asm: \
 		$(PATH_SUB_CURRENT)/SunOS_i386_exports_dri.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
- else ifeq ($(KBUILD_TARGET),freebsd)
+
+  else ifeq ($(KBUILD_TARGET),freebsd)
 $(VBOX_PATH_CROGL_GENFILES)/freebsd_exports_dri.asm: \
 		$(PATH_SUB_CURRENT)/FreeBSD_i386_exports_dri.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
- else
+
+  else
 $(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm: \
 		$(PATH_SUB_CURRENT)/Linux_i386_exports_dri.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
- endif
-else ifdef VBoxOGL_FAKEDRI
+  endif
+
+ else ifdef VBoxOGL_FAKEDRI
 $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h: $(PATH_SUB_CURRENT)/cr_gl.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
- ifndef VBOX_OGL_GLX_USE_CSTUBS
-  ifeq ($(KBUILD_TARGET),solaris)
+
+  ifndef VBOX_OGL_GLX_USE_CSTUBS
+   ifeq ($(KBUILD_TARGET),solaris)
 $(VBOX_PATH_CROGL_GENFILES)/solaris_exports_dri.asm: \
 		$(PATH_SUB_CURRENT)/SunOS_i386_exports_dri.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
@@ -365,7 +386,8 @@ $(VBOX_PATH_CROGL_GENFILES)/solaris_exports_dri.asm: \
 $(VBOX_PATH_CROGL_GENFILES)/solaris_glxapi_exports.asm: $(PATH_SUB_CURRENT)/SunOS_i386_glxapi_exports.py | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $<
-  else
+
+   else
 $(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm: \
 		$(PATH_SUB_CURRENT)/Linux_i386_exports_dri.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
@@ -375,15 +397,17 @@ $(VBOX_PATH_CROGL_GENFILES)/linux_exports_dri.asm: \
 $(VBOX_PATH_CROGL_GENFILES)/linux_glxapi_exports.asm: $(PATH_SUB_CURRENT)/Linux_i386_glxapi_exports.py | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $<
-  endif
- else
-  ifeq ($(KBUILD_TARGET),solaris)
+   endif
+
+  else
+   ifeq ($(KBUILD_TARGET),solaris)
 $(VBOX_PATH_CROGL_GENFILES)/solaris_exports.c: \
 		$(PATH_SUB_CURRENT)/SunOS_exports.py \
 		$(VBOX_CROGL_API_FILES) $(PATH_SUB_CURRENT)/entrypoints.py \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
   else
 $(VBOX_PATH_CROGL_GENFILES)/linux_exports.c: \
 		$(PATH_SUB_CURRENT)/Linux_exports.py \
@@ -391,9 +415,10 @@ $(VBOX_PATH_CROGL_GENFILES)/linux_exports.c: \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
-  endif
- endif # VBOX_OGL_GLX_USE_CSTUBS
-endif
+   endif
+
+  endif # VBOX_OGL_GLX_USE_CSTUBS
+ endif
 endif
 
 #
