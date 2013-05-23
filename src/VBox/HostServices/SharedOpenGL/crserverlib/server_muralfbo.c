@@ -989,19 +989,29 @@ GLboolean crServerIsRedirectedToFBO()
 
 GLint crServerMuralFBOIdxFromBufferName(CRMuralInfo *mural, GLenum buffer)
 {
-    if (buffer == GL_FRONT
-            || buffer == GL_FRONT_LEFT
-            || buffer == GL_FRONT_RIGHT)
-        return CR_SERVER_FBO_FB_IDX(mural);
-    if (buffer == GL_BACK
-            || buffer == GL_BACK_LEFT
-            || buffer == GL_BACK_RIGHT)
-        return CR_SERVER_FBO_BB_IDX(mural);
-    if (buffer == GL_NONE)
-        return -1;
-
-    crWarning("crServerMuralFBOIdxFromBufferName: invalid buffer passed 0x%x", buffer);
-    return -2;
+    switch (buffer)
+    {
+        case GL_FRONT:
+        case GL_FRONT_LEFT:
+        case GL_FRONT_RIGHT:
+            return CR_SERVER_FBO_FB_IDX(mural);
+        case GL_BACK:
+        case GL_BACK_LEFT:
+        case GL_BACK_RIGHT:
+            return CR_SERVER_FBO_BB_IDX(mural);
+        case GL_NONE:
+        case GL_AUX0:
+        case GL_AUX1:
+        case GL_AUX2:
+        case GL_AUX3:
+        case GL_LEFT:
+        case GL_RIGHT:
+        case GL_FRONT_AND_BACK:
+            return -1;
+        default:
+            crWarning("crServerMuralFBOIdxFromBufferName: invalid buffer passed 0x%x", buffer);
+            return -2;
+    }
 }
 
 void crServerMuralFBOSwapBuffers(CRMuralInfo *mural)
