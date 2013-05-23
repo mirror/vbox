@@ -38,8 +38,17 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
     /*
      * Note! The time source we use here must be exactly the same as in
      *       the ring-3 code!
+     *
+     * Using interrupt time is the simplest and requires the least calculation.
+     * It is also accounting for suspended time. Unfortuantely, there is no
+     * ring-3 for reading it... but that won't stop us.
+     *
+     * Using the tick count is problematic in ring-3 on older windows version
+     * as we can only get the 32-bit tick value, i.e. we'll roll over sooner or
+     * later.
      */
-#if 0
+#if 1
+    /* Interrupt time. (NT4 doesn't have an API for it.) */
 # ifndef IPRT_TARGET_NT4
     ULONGLONG InterruptTime = KeQueryInterruptTime();
     return (uint64_t)InterruptTime * 100; /* The value is in 100ns, convert to ns units. */
@@ -54,6 +63,7 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
     return (uint64_t)InterruptTime.QuadPart * 100;
 # endif
 #else
+    /* Tick Count (NT4 SP1 has these APIs, haven't got SP0 to check). */
     LARGE_INTEGER Tick;
     KeQueryTickCount(&Tick);
     return (uint64_t)Tick.QuadPart * KeQueryTimeIncrement() * 100;
