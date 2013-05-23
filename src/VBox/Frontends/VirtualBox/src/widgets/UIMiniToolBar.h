@@ -1,11 +1,12 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMiniToolBar class declaration & implementation. This is the toolbar shown on fullscreen mode.
+ * UIMiniToolBar class declaration.
+ * This is the toolbar shown in fullscreen/seamless modes.
  */
 
 /*
- * Copyright (C) 2009-2011 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,111 +20,197 @@
 #ifndef __UIMiniToolBar_h__
 #define __UIMiniToolBar_h__
 
-/* Global includes */
-#include <QBasicTimer>
+/* Qt includes: */
+#include <QMainWindow>
 
-/* Local includes */
+/* GUI includes: */
 #include "UIToolBar.h"
 
-/* Global forwards */
+/* Forward declarations: */
+class QTimer;
 class QLabel;
 class QMenu;
+class QMdiArea;
+class UIMiniToolBar;
+class QMdiSubWindow;
+class UIAnimation;
 
-/**
- *  The UIMiniToolBar class is a toolbar shown inside full screen mode or seamless mode.
- *  It supports auto hiding and animated sliding up/down.
- */
+/* IntegrationMode enum: */
+enum IntegrationMode
+{
+    IntegrationMode_Embedded,
+    IntegrationMode_External
+};
+
+/* Runtime mini-toolbar frameless-window prototype: */
+class UIRuntimeMiniToolBar : public QWidget
+{
+    Q_OBJECT;
+    Q_PROPERTY(QPoint toolbarPosition READ toolbarPosition WRITE setToolbarPosition);
+    Q_PROPERTY(QPoint hiddenToolbarPosition READ hiddenToolbarPosition);
+    Q_PROPERTY(QPoint shownToolbarPosition READ shownToolbarPosition);
+
+signals:
+
+    /* Notifiers: Action stuff: */
+    void sigMinimizeAction();
+    void sigExitAction();
+    void sigCloseAction();
+
+    /* Notifiers: Hover stuff: */
+    void sigHoverEnter();
+    void sigHoverLeave();
+
+public:
+
+    /* Constructor/destructor: */
+    UIRuntimeMiniToolBar(QWidget *pParent,
+                         Qt::Alignment alignment,
+                         IntegrationMode integrationMode,
+                         bool fAutoHide = true);
+    ~UIRuntimeMiniToolBar();
+
+    /* API: Alignment stuff: */
+    void setAlignment(Qt::Alignment alignment);
+
+    /* API: Integration mode stuff: */
+    void setIntegrationMode(IntegrationMode integrationMode);
+
+    /* API: Auto-hide stuff: */
+    bool autoHide() const { return m_fAutoHide; }
+    void setAutoHide(bool fAutoHide, bool fPropagateToChild = true);
+
+    /* API: Text stuff: */
+    void setText(const QString &strText);
+
+    /* API: Menu stuff: */
+    void addMenus(const QList<QMenu*> &menus);
+
+    /* API: Geometry stuff: */
+    void adjustGeometry();
+
+private slots:
+
+    /* Handlers: Toolbar stuff: */
+    void sltHandleToolbarResize();
+    void sltAutoHideToggled();
+    void sltHoverEnter();
+    void sltHoverLeave();
+
+private:
+
+    /* Helpers: Prepare/cleanup stuff: */
+    void prepare();
+    void cleanup();
+
+    /* Handlers: Event-processing stuff: */
+    void enterEvent(QEvent *pEvent);
+    void leaveEvent(QEvent *pEvent);
+
+    /* Helper: Hover stuff: */
+    void updateAutoHideAnimationBounds();
+    void simulateToolbarAutoHiding();
+
+    /* Property: Hover stuff: */
+    void setToolbarPosition(QPoint point);
+    QPoint toolbarPosition() const;
+    QPoint hiddenToolbarPosition() const { return m_hiddenToolbarPosition; }
+    QPoint shownToolbarPosition() const { return m_shownToolbarPosition; }
+
+    /* Helper: Integration stuff: */
+    void integrate();
+
+    /* Variables: General stuff: */
+    Qt::Alignment m_alignment;
+    IntegrationMode m_integrationMode;
+    bool m_fAutoHide;
+
+    /* Variables: Contents stuff: */
+    QMdiArea *m_pMdiArea;
+    UIMiniToolBar *m_pToolbar;
+    QMdiSubWindow *m_pEmbeddedToolbar;
+
+    /* Variables: Hover stuff: */
+    bool m_fHovered;
+    QTimer *m_pHoverEnterTimer;
+    QTimer *m_pHoverLeaveTimer;
+    QPoint m_hiddenToolbarPosition;
+    QPoint m_shownToolbarPosition;
+    UIAnimation *m_pAnimation;
+};
+
+/* Mini-toolbar widget prototype: */
 class UIMiniToolBar : public UIToolBar
 {
     Q_OBJECT;
 
-public:
-
-    enum Alignment
-    {
-        AlignTop,
-        AlignBottom
-    };
-
-    UIMiniToolBar(QWidget *pParent, Alignment alignment, bool fActive, bool fAutoHide);
-
-    UIMiniToolBar& operator<<(QList<QMenu*> menus);
-
-    void setSeamlessMode(bool fSeamless);
-    void setDisplayText(const QString &strText);
-
-    bool isAutoHide() const;
-
-    void updateDisplay(bool fShow, bool fSetHideFlag);
-
 signals:
 
-    void minimizeAction();
-    void exitAction();
-    void closeAction();
-    void geometryUpdated();
+    /* Notifier: Resize stuff: */
+    void sigResized();
+
+    /* Notifiers: Action stuff: */
+    void sigAutoHideToggled();
+    void sigMinimizeAction();
+    void sigExitAction();
+    void sigCloseAction();
+
+public:
+
+    /* Constructor: */
+    UIMiniToolBar();
+
+    /* API: Alignment stuff: */
+    void setAlignment(Qt::Alignment alignment);
+
+    /* API: Integration mode stuff: */
+    void setIntegrationMode(IntegrationMode integrationMode);
+
+    /* API: Auto-hide stuff: */
+    bool autoHide() const;
+    void setAutoHide(bool fAutoHide);
+
+    /* API: Text stuff: */
+    void setText(const QString &strText);
+
+    /* API: Menu aggregator: */
+    void addMenus(const QList<QMenu*> &menus);
 
 protected:
 
-    bool eventFilter(QObject *pObj, QEvent *pEvent);
-    void mouseMoveEvent(QMouseEvent *pEvent);
-    void timerEvent(QTimerEvent *pEvent);
-    void showEvent(QShowEvent *pEvent);
-    void paintEvent(QPaintEvent *pEvent);
-
-private slots:
-
-    void togglePushpin(bool fOn);
+    /* Handlers: Event-processing stuff: */
+    virtual void showEvent(QShowEvent *pEvent);
+    virtual void polishEvent(QShowEvent *pEvent);
+    virtual void resizeEvent(QResizeEvent *pEvent);
+    virtual void paintEvent(QPaintEvent *pEvent);
 
 private:
 
-    void initialize();
-    void moveToBase();
-    void setMouseTrackingEnabled(bool fEnabled);
+    /* Helper: Prepare stuff: */
+    void prepare();
 
+    /* Helper: Shape stuff: */
+    void rebuildShape();
+
+    /* Variables: General stuff: */
+    bool m_fPolished;
+    Qt::Alignment m_alignment;
+    IntegrationMode m_integrationMode;
+    QPainterPath m_shape;
+
+    /* Variables: Contents stuff: */
     QAction *m_pAutoHideAction;
-    QLabel *m_pDisplayLabel;
+    QLabel *m_pLabel;
     QAction *m_pMinimizeAction;
     QAction *m_pRestoreAction;
     QAction *m_pCloseAction;
 
-    QBasicTimer m_scrollTimer;
-    QBasicTimer m_autoScrollTimer;
+    /* Variables: Menu stuff: */
+    QAction *m_pMenuInsertPosition;
 
-    bool m_fActive;
-    bool m_fPolished;
-    bool m_fSeamless;
-    bool m_fAutoHide;
-    bool m_fSlideToScreen;
-    bool m_fHideAfterSlide;
-
-    int m_iAutoHideCounter;
-    int m_iPositionX;
-    int m_iPositionY;
-
-    /* Lists of used spacers */
-    QList<QWidget*> m_Spacings;
-    QList<QWidget*> m_LabelMargins;
-
-    /* Menu insert position */
-    QAction *m_pInsertPosition;
-
-    /* Tool-bar alignment */
-    Alignment m_alignment;
-
-    /* Whether to animate showing/hiding the toolbar */
-    bool m_fAnimated;
-
-    /* Interval (in milli seconds) for scrolling the toolbar, default is 20 msec */
-    int m_iScrollDelay;
-
-    /* The wait time while the cursor is not over the window after this amount of time (in msec),
-     * the toolbar will auto hide if autohide is on. The default is 100msec. */
-    int m_iAutoScrollDelay;
-
-    /* Number of total steps before hiding. If it is 10 then wait 10 (steps) * 100ms (m_iAutoScrollDelay) = 1000ms delay.
-     * The default is 10. */
-    int m_iAutoHideTotalCounter;
+    /* Variables: Spacers stuff: */
+    QList<QWidget*> m_spacings;
+    QList<QWidget*> m_margins;
 };
 
 #endif // __UIMiniToolBar_h__

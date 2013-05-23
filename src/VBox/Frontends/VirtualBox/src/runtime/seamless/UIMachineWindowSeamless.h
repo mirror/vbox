@@ -23,7 +23,7 @@
 #include "UIMachineWindow.h"
 
 /* Forward declarations: */
-class UIMiniToolBar;
+class UIRuntimeMiniToolBar;
 
 /* Seamless machine-window implementation: */
 class UIMachineWindowSeamless : public UIMachineWindow
@@ -47,13 +47,6 @@ private slots:
 
     /* Popup main menu: */
     void sltPopupMainMenu();
-
-#ifndef RT_OS_DARWIN
-    /* Current Qt on MAC has something broken in moc generation,
-     * so we have to use RT_OS_DARWIN instead of Q_WS_MAC here. */
-    /* Update mini tool-bar mask: */
-    void sltUpdateMiniToolBarMask();
-#endif /* !RT_OS_DARWIN */
 
 private:
 
@@ -91,7 +84,7 @@ private:
     /* Widgets: */
     QMenu *m_pMainMenu;
 #ifndef Q_WS_MAC
-    UIMiniToolBar *m_pMiniToolBar;
+    UIRuntimeMiniToolBar *m_pMiniToolBar;
 #endif /* !Q_WS_MAC */
 
     /* Variables: */

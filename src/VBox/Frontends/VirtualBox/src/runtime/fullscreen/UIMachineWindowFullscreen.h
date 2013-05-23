@@ -23,7 +23,7 @@
 #include "UIMachineWindow.h"
 
 /* Forward declarations: */
-class UIMiniToolBar;
+class UIRuntimeMiniToolBar;
 
 /* Fullscreen machine-window implementation: */
 class UIMachineWindowFullscreen : public UIMachineWindow
@@ -67,7 +67,7 @@ private:
 
     /* Widgets: */
     QMenu *m_pMainMenu;
-    UIMiniToolBar *m_pMiniToolBar;
+    UIRuntimeMiniToolBar *m_pMiniToolBar;
 
     /* Factory support: */
     friend class UIMachineWindow;
