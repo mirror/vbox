@@ -42,11 +42,11 @@
 /*
  * Note! The selected time source be the exact same one as we use in kernel land!
  */
-#define USE_TICK_COUNT
+//#define USE_TICK_COUNT
 //#define USE_PERFORMANCE_COUNTER
 //# define USE_FILE_TIME
 //#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
-//# define USE_INTERRUPT_TIME
+# define USE_INTERRUPT_TIME
 //#else
 //# define USE_TICK_COUNT
 //#endif
@@ -108,6 +108,7 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
     return u64 * 100;
 
 #elif defined USE_INTERRUPT_TIME
+# if 0 /* ASSUME 0x7ffe0000 is set in stone */
     /*
      * This is exactly what we want, but we have to obtain it by non-official
      * means.
@@ -120,14 +121,16 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
          * exports this too, windbg knows it too... */
         s_pUserSharedData = (PMY_KUSER_SHARED_DATA)(uintptr_t)0x7ffe0000;
     }
+# endif
+    PMY_KUSER_SHARED_DATA pUserSharedData = (PMY_KUSER_SHARED_DATA)(uintptr_t)0x7ffe0000;
 
     /* use interrupt time */
     LARGE_INTEGER Time;
     do
     {
-        Time.HighPart = s_pUserSharedData->InterruptTime.High1Time;
-        Time.LowPart  = s_pUserSharedData->InterruptTime.LowPart;
-    } while (s_pUserSharedData->InterruptTime.High2Time != Time.HighPart);
+        Time.HighPart = pUserSharedData->InterruptTime.High1Time;
+        Time.LowPart  = pUserSharedData->InterruptTime.LowPart;
+    } while (pUserSharedData->InterruptTime.High2Time != Time.HighPart);
 
     return (uint64_t)Time.QuadPart * 100;
 
