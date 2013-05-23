@@ -56,6 +56,7 @@ if1of ($(KBUILD_TARGET), linux)
  SYSMODS += vboxvideo_drv
 endif   # target linux
 vboxvideo_drv_TEMPLATE = VBOXGUESTR3XF86MOD
+vboxvideo_drv_CFLAGS += -Wno-shadow # Avoid MBs of warnings in X11 and OpenGL headers (solaris mostly).
 vboxvideo_drv_DEFS.linux = linux
 vboxvideo_drv_DEFS.x86 = __i386__
 # This one has to be defined when building server code on systems where
@@ -133,7 +134,6 @@ vboxvideo_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_70_DEFS = $(vboxvideo_70_DEFS) XORG_VERSION_CURRENT=700000000
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
  vboxvideo_drv_70_CFLAGS += -D_XPG6 # Until we have moved the C++ bits into a library
- vboxvideo_drv_70_CFLAGS += -Wno-shadow # Try avoid MBs of warnings...
 endif
 vboxvideo_drv_70_INCS = \
 	$(VBOX_PATH_X11_XORG_7_0) \
