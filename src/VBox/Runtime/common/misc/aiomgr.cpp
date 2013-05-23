@@ -122,6 +122,8 @@ typedef struct RTAIOMGRFILEINT
     volatile uint32_t             cRefs;
     /** Flags. */
     uint32_t                      fFlags;
+    /** Opaque user data passed on creation. */
+    void                         *pvUser;
     /** File handle. */
     RTFILE                        hFile;
     /** async I/O manager this file belongs to. */
@@ -475,7 +477,7 @@ static void rtAioMgrFileAddReqsToWaitingList(PRTAIOMGRFILEINT pFile, PRTAIOMGRRE
         PRTAIOMGRREQ pReqCur = pReqsHead;
 
         pReqsHead = (PRTAIOMGRREQ)pReqsHead->WorkItem.pNext;
-        pReqsHead->WorkItem.pNext = NULL;
+        pReqCur->WorkItem.pNext = NULL;
         RTListAppend(&pFile->AioMgr.ListWaitingReqs, &pReqCur->NodeWaitingList);
     }
 }
@@ -1002,6 +1004,8 @@ static void rtAioMgrDestroy(PRTAIOMGRINT pThis)
     pThis->hAioCtx       = NIL_RTFILEAIOCTX;
     pThis->hMemCacheReqs = NIL_RTMEMCACHE;
     pThis->u32Magic      = ~RTAIOMGR_MAGIC;
+    RTCritSectDelete(&pThis->CritSectBlockingEvent);
+    RTSemEventDestroy(pThis->hEventSemBlock);
     RTMemFree(pThis);
 }
 
@@ -1024,6 +1028,7 @@ static void rtAioMgrFileQueueReq(PRTAIOMGRFILEINT pThis, PRTAIOMGRREQ pReq)
 static void rtAioMgrFileDestroy(PRTAIOMGRFILEINT pThis)
 {
     pThis->u32Magic = ~RTAIOMGRFILE_MAGIC;
+    rtAioMgrCloseFile(pThis->pAioMgr, pThis);
     RTAioMgrRelease(pThis->pAioMgr);
     RTMemFree(pThis);
 }
@@ -1121,28 +1126,43 @@ RTDECL(int) RTAioMgrCreate(PRTAIOMGR phAioMgr, uint32_t cReqsMax)
     {
         pThis->u32Magic = RTAIOMGR_MAGIC;
         pThis->cRefs    = 1;
+        pThis->enmBlockingEvent = RTAIOMGREVENT_NO_EVENT;
         RTListInit(&pThis->ListFiles);
-        rc = RTMemCacheCreate(&pThis->hMemCacheReqs, sizeof(RTAIOMGRREQ),
-                              0, UINT32_MAX, rtAioMgrReqCtor, rtAioMgrReqDtor, NULL, 0);
+        rc = RTCritSectInit(&pThis->CritSectBlockingEvent);
         if (RT_SUCCESS(rc))
         {
-            rc = RTFileAioCtxCreate(&pThis->hAioCtx, cReqsMax == UINT32_MAX
-                                                     ? RTFILEAIO_UNLIMITED_REQS
-                                                     : cReqsMax,
-                                    RTFILEAIOCTX_FLAGS_WAIT_WITHOUT_PENDING_REQUESTS);
+            rc = RTSemEventCreate(&pThis->hEventSemBlock);
             if (RT_SUCCESS(rc))
             {
-                rc = RTThreadCreateF(&pThis->hThread, rtAioMgrWorker, pThis, 0, RTTHREADTYPE_IO,
-                                     RTTHREADFLAGS_WAITABLE, "AioMgr-%p", pThis);
-                if (RT_FAILURE(rc))
+                rc = RTMemCacheCreate(&pThis->hMemCacheReqs, sizeof(RTAIOMGRREQ),
+                                      0, UINT32_MAX, rtAioMgrReqCtor, rtAioMgrReqDtor, NULL, 0);
+                if (RT_SUCCESS(rc))
                 {
-                    rc = RTFileAioCtxDestroy(pThis->hAioCtx);
-                    AssertRC(rc);
+                    rc = RTFileAioCtxCreate(&pThis->hAioCtx, cReqsMax == UINT32_MAX
+                                                             ? RTFILEAIO_UNLIMITED_REQS
+                                                             : cReqsMax,
+                                            RTFILEAIOCTX_FLAGS_WAIT_WITHOUT_PENDING_REQUESTS);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTThreadCreateF(&pThis->hThread, rtAioMgrWorker, pThis, 0, RTTHREADTYPE_IO,
+                                             RTTHREADFLAGS_WAITABLE, "AioMgr-%u", cReqsMax);
+                        if (RT_FAILURE(rc))
+                        {
+                            rc = RTFileAioCtxDestroy(pThis->hAioCtx);
+                            AssertRC(rc);
+                        }
+                    }
+
+                    if (RT_FAILURE(rc))
+                        RTMemCacheDestroy(pThis->hMemCacheReqs);
                 }
+
+                if (RT_FAILURE(rc))
+                    RTSemEventDestroy(pThis->hEventSemBlock);
             }
 
             if (RT_FAILURE(rc))
-                RTMemCacheDestroy(pThis->hMemCacheReqs);
+                RTCritSectDelete(&pThis->CritSectBlockingEvent);
         }
 
         if (RT_FAILURE(rc))
@@ -1185,7 +1205,7 @@ RTDECL(uint32_t) RTAioMgrRelease(RTAIOMGR hAioMgr)
 }
 
 RTDECL(int) RTAioMgrFileCreate(RTAIOMGR hAioMgr, RTFILE hFile, PFNRTAIOMGRREQCOMPLETE pfnReqComplete,
-                               PRTAIOMGRFILE phAioMgrFile)
+                               void *pvUser, PRTAIOMGRFILE phAioMgrFile)
 {
     int rc = VINF_SUCCESS;
     PRTAIOMGRFILEINT pThis;
@@ -1202,12 +1222,16 @@ RTDECL(int) RTAioMgrFileCreate(RTAIOMGR hAioMgr, RTFILE hFile, PFNRTAIOMGRREQCOM
         pThis->cRefs    = 1;
         pThis->hFile    = hFile;
         pThis->pAioMgr  = hAioMgr;
+        pThis->pvUser   = pvUser;
         pThis->pfnReqCompleted = pfnReqComplete;
         RTQueueAtomicInit(&pThis->QueueReqs);
+        RTListInit(&pThis->AioMgr.ListWaitingReqs);
         RTAioMgrRetain(hAioMgr);
         rc = RTFileAioCtxAssociateWithFile(pThis->pAioMgr->hAioCtx, hFile);
         if (RT_FAILURE(rc))
             rtAioMgrFileDestroy(pThis);
+        else
+            rtAioMgrAddFile(pThis->pAioMgr, pThis);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -1243,6 +1267,14 @@ RTDECL(uint32_t) RTAioMgrFileRelease(RTAIOMGRFILE hAioMgrFile)
     if (cRefs == 0)
         rtAioMgrFileDestroy(pThis);
     return cRefs;
+}
+
+RTDECL(void *) RTAioMgrFileGetUser(RTAIOMGRFILE hAioMgrFile)
+{
+    PRTAIOMGRFILEINT pThis = hAioMgrFile;
+
+    AssertPtrReturn(pThis, NULL);
+    return pThis->pvUser;
 }
 
 RTDECL(int) RTAioMgrFileRead(RTAIOMGRFILE hAioMgrFile, RTFOFF off,

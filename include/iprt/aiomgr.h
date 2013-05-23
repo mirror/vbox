@@ -80,12 +80,13 @@ RTDECL(uint32_t) RTAioMgrRelease(RTAIOMGR hAioMgr);
  *                            file completed.
  * @param   phAioMgrFile      Where to store the newly created async I/O manager
  *                            handle on success.
+ * @param   pvUser            Opaque user data for this file handle.
  *
  * @note This function increases the reference count of the given async I/O manager
  *       by 1.
  */
 RTDECL(int) RTAioMgrFileCreate(RTAIOMGR hAioMgr, RTFILE hFile, PFNRTAIOMGRREQCOMPLETE pfnReqComplete,
-                               PRTAIOMGRFILE phAioMgrFile);
+                               void *pvUser, PRTAIOMGRFILE phAioMgrFile);
 
 /**
  * Retain a async I/O manager file handle.
@@ -102,6 +103,14 @@ RTDECL(uint32_t) RTAioMgrFileRetain(RTAIOMGRFILE hAioMgrFile);
  * @param   hAioMgrFile       The file handle to release.
  */
 RTDECL(uint32_t) RTAioMgrFileRelease(RTAIOMGRFILE hAioMgrFile);
+
+/**
+ * Return opaque user data passed on creation.
+ *
+ * @returns Opaque user data or NULL if the handle is invalid.
+ * @param   hAioMgrFile       The file handle.
+ */
+RTDECL(void *) RTAioMgrFileGetUser(RTAIOMGRFILE hAioMgrFile);
 
 /**
  * Initiate a read request from the given file handle.
