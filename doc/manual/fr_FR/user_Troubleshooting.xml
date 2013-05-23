@@ -163,8 +163,8 @@
         avec Wireshark.</para>
     </sect2>
 
-    <sect2>
-      <title id="ts_debugger">Le débogueur de VM intégré</title>
+    <sect2 id="ts_debugger">
+      <title>Le débogueur de VM intégré</title>
 
       <para>VirtualBox inclut un débogueur de VM intégré, qui peut servir aux
       utilisateurs avancés. Ce débogueur permet d'examiner et, dans une certaine

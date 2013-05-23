@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
 "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
-<chapter>
-  <title id="Introduction">Premiers pas</title>
+<chapter id="Introduction">
+  <title>Premiers pas</title>
 
   <para>Bienvenue à $VBOX_PRODUCT!</para>
 
@@ -113,8 +113,8 @@
     </itemizedlist>
   </sect1>
 
-  <sect1>
-    <title id="virtintro">Un peu de terminologie</title>
+  <sect1 id="virtintro">
+    <title>Un peu de terminologie</title>
 
     <para>Quand on parle de virtualisation (mais aussi pour comprendre les
     chapitres suivants de cette documentation), acquérir un peu de terminologie
@@ -417,8 +417,8 @@
     </itemizedlist>
   </sect1>
 
-  <sect1>
-    <title id="hostossupport">Systèmes d'exploitation hôtes supportés</title>
+  <sect1 id="hostossupport">
+    <title>Systèmes d'exploitation hôtes supportés</title>
 
     <para>Actuellement, VirtualBox fonctionne sur les systèmes d'exploitation 
     hôtes suivants&#xA0;:</para>
@@ -959,8 +959,8 @@ x            </itemizedlist>Vraisemblablement, si vous utilisez VirtualBox pour
       pourrez installer votre système d'exploitation.</para>
     </sect2>
 
-    <sect2>
-      <title id="keyb_mouse_normal">Capturer et rendre le clavier et la souris</title>
+    <sect2 id="keyb_mouse_normal">
+      <title>Capturer et rendre le clavier et la souris</title>
 
       <para>À partir de la version 3.2, VirtualBox offre aux nouvelles machines
       virtuelles une tablette USB virtuelle à travers laquelle les événements
@@ -1053,8 +1053,8 @@ x            </itemizedlist>Vraisemblablement, si vous utilisez VirtualBox pour
       linkend="guestadditions" />.</para>
     </sect2>
 
-    <sect2>
-      <title id="specialcharacters">Taper des caractères spéciaux</title>
+    <sect2 id="specialcharacters">
+      <title>Taper des caractères spéciaux</title>
 
       <para>Les systèmes d'exploitation prévoient certaines combinaisons de touches
       pour lancer certaines procédures. Certaines de ces combinaisons de touches
@@ -1551,8 +1551,8 @@ x            </itemizedlist>Vraisemblablement, si vous utilisez VirtualBox pour
     </sect2>
   </sect1>
 
-  <sect1>
-    <title id="configbasics">Configuration d'une machine virtuelle</title>
+  <sect1 id="configbasics">
+    <title>Configuration d'une machine virtuelle</title>
 
     <para>Quand vous sélectionnez une machine virtuelle dans la liste dans la
     fenêtre du gestionnaire, vous verrez à droite un résumé des paramètres de

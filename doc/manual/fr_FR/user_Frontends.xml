@@ -4,8 +4,8 @@
 <chapter>
   <title>Machines virtuelles distantes</title>
 
-  <sect1>
-    <title id="vrde">Affichage distant (VRDP support)</title>
+  <sect1 id="vrde">
+    <title>Affichage distant (VRDP support)</title>
 
     <para>VirtualBox peut afficher les machines virtuelles à distance, ce qui
     signifie qu'une machine virtuelle peut s'exécuter sur un ordinateur même si

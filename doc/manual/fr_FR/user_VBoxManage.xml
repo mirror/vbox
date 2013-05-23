@@ -418,8 +418,8 @@ Statistics update:  disabled
       </orderedlist></para>
   </sect1>
 
-  <sect1>
-    <title id="vboxmanage-createvm">VBoxManage createvm</title>
+  <sect1 id="vboxmanage-createvm">
+    <title>VBoxManage createvm</title>
 
     <para>Cette commande crée un nouveau fichier de définition de machine virtuelle 
     XML.</para>
@@ -1684,8 +1684,8 @@ Virtual system 0:
     ne sera pas enregistrée.</para>
   </sect1>
 
-  <sect1>
-    <title id="vboxmanage-storageattach">VBoxManage storageattach</title>
+  <sect1 id="vboxmanage-storageattach">
+    <title>VBoxManage storageattach</title>
 
     <para>Cette commande attache/modifie/supprime un média de stockage connecté
     à un contrôleur de stockage précédemment ajouté avec la commande
@@ -3412,8 +3412,8 @@ Value: 2006.01.01</screen>
       </itemizedlist></para>
   </sect1>
 
-  <sect1>
-    <title id="metrics">VBoxManage metrics</title>
+  <sect1 id="metrics">
+    <title>VBoxManage metrics</title>
 
     <para>Cette commande supporte la surveillance de l'utilisation des ressources
     système. Les ressources sont représentées par différentes métriques associées

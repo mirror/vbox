@@ -933,8 +933,8 @@ VBoxManage storageattach "nom VM" --controller "SATA" --port 1 --device 0 --type
     l'hôte.</para>
   </sect1>
 
-  <sect1>
-    <title id="storage-iscsi">Serveurs iSCSI</title>
+  <sect1 id="storage-iscsi">
+    <title>Serveurs iSCSI</title>
 
     <para>iSCSI signifie "Internet SCSI" et c'est un standard qui permet d'utiliser
     le protocole SCSI à travers des des connexions Internet. (TCP/IP). En

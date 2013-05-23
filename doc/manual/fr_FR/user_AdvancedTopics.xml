@@ -128,8 +128,8 @@ VBoxManage controlvm "Windows 2000" savestate</screen></para>
     </sect2>
   </sect1>
 
-  <sect1>
-    <title id="autologon">Identifications automatiques dans l'invité</title>
+  <sect1 id="autologon">
+    <title>Identifications automatiques dans l'invité</title>
 
     <para>VirtualBox fournit des modules invité supplémentaires pour Windows, Linux
     et Solaris pour activer l'identification automatique dans l'invité.</para>
@@ -1177,8 +1177,8 @@ VBoxManage setextradata "nom VM"
      port), spécifiez le port du disque dur SATA désiré.</para>
     </sect2>
 
-    <sect2>
-      <title id="iscsi-intnet">Accès à des cibles iSCSI via le réseau interne</title>
+    <sect2 id="iscsi-intnet">
+      <title>Accès à des cibles iSCSI via le réseau interne</title>
 
       <para>En fonctionnalité expérimentale, VirtualBox permet d'accéder à une
       cible iSCSI d'une machine virtuelle en fonction configurée pour utiliser
