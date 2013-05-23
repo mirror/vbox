@@ -1998,6 +1998,36 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             Log(("Bus transfer rate: %02X\n", pBusLogic->aCommandBuffer[0]));
             break;
         }
+        case BUSLOGICCOMMAND_WRITE_BUSMASTER_CHIP_FIFO:
+        {
+            RTGCPHYS GCPhysFifoBuf;
+            Addr24   addr;
+
+            pBusLogic->cbReplyParametersLeft = 0;
+            addr.hi  = pBusLogic->aCommandBuffer[0];
+            addr.mid = pBusLogic->aCommandBuffer[1];
+            addr.lo  = pBusLogic->aCommandBuffer[2];
+            GCPhysFifoBuf = (RTGCPHYS)ADDR_TO_U32(addr);
+            Log(("Write busmaster FIFO at: %04X\n", ADDR_TO_U32(addr)));
+            PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysFifoBuf,
+                              &pBusLogic->LocalRam.u8View[64], 64);
+            break;
+        }
+        case BUSLOGICCOMMAND_READ_BUSMASTER_CHIP_FIFO:
+        {
+            RTGCPHYS GCPhysFifoBuf;
+            Addr24   addr;
+
+            pBusLogic->cbReplyParametersLeft = 0;
+            addr.hi  = pBusLogic->aCommandBuffer[0];
+            addr.mid = pBusLogic->aCommandBuffer[1];
+            addr.lo  = pBusLogic->aCommandBuffer[2];
+            GCPhysFifoBuf = (RTGCPHYS)ADDR_TO_U32(addr);
+            Log(("Read busmaster FIFO at: %04X\n", ADDR_TO_U32(addr)));
+            PDMDevHlpPCIPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysFifoBuf,
+                                  &pBusLogic->LocalRam.u8View[64], 64);
+            break;
+        }
         default:
             AssertMsgFailed(("Invalid command %#x\n", pBusLogic->uOperationCode));
         case BUSLOGICCOMMAND_EXT_BIOS_INFO:
@@ -2220,6 +2250,10 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                     case BUSLOGICCOMMAND_FETCH_HOST_ADAPTER_LOCAL_RAM:
                         pBusLogic->cbCommandParametersLeft = 2;
                         break;
+                    case BUSLOGICCOMMAND_READ_BUSMASTER_CHIP_FIFO:
+                    case BUSLOGICCOMMAND_WRITE_BUSMASTER_CHIP_FIFO:
+                        pBusLogic->cbCommandParametersLeft = 3;
+                        break; 
                     case BUSLOGICCOMMAND_INITIALIZE_MAILBOX:
                         pBusLogic->cbCommandParametersLeft = sizeof(RequestInitMbx);
                         break;
