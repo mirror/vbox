@@ -1146,6 +1146,7 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/misc/buildconfig.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
+	common/misc/sg.cpp \
 	common/path/rtPathVolumeSpecLen.cpp \
 	common/path/RTPathAbsDup.cpp \
 	common/path/RTPathAbsEx.cpp \
