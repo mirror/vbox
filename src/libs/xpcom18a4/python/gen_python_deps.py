@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 """
-Copyright (C) 2009-2012 Oracle Corporation
+Copyright (C) 2009-2013 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -30,23 +30,21 @@ def checkPair(p, v,dllpre,dllsuff, bitness_magic):
     if bitness_magic == 1:
         lib64 = os.path.join(p, "lib", "64", dllpre+"python"+v+dllsuff)
     elif bitness_magic == 2:
-	lib64 = os.path.join(p, "lib/x86_64-linux-gnu", dllpre+"python"+v+dllsuff)
-	if not os.path.isfile(lib64):
+        lib64 = os.path.join(p, "lib/x86_64-linux-gnu", dllpre+"python"+v+dllsuff)
+        if not os.path.isfile(lib64):
             lib64 = os.path.join(p, "lib64", dllpre+"python"+v+dllsuff)
             if not os.path.isfile(lib64):
                 lib64 = lib
     else:
         lib64 = None
-    return [os.path.join(p, "include", "python"+v),
-            lib,
-            lib64]
+    return [os.path.join(p, "include", "python"+v), lib, lib64]
 
 def print_vars(vers, known, sep, bitness_magic):
     print "VBOX_PYTHON%s_INC=%s%s" %(vers, known[0], sep)
     if bitness_magic > 0:
-       print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[2], sep)
+        print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[2], sep)
     else:
-       print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[1], sep)
+        print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[1], sep)
 
 
 def main(argv):
