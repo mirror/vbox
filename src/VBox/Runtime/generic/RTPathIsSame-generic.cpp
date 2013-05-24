@@ -75,11 +75,11 @@ RTDECL(int) RTPathIsSame(const char *pszPath1, const char *pszPath2)
      * too long.
      */
     char szPath1[RTPATH_MAX];
-    rc = RTPathAbs(szPath1, szPath1, sizeof(szPath1));
+    rc = RTPathAbs(pszPath1, szPath1, sizeof(szPath1));
     AssertRCReturn(rc, VERR_FILENAME_TOO_LONG);
 
     char szPath2[RTPATH_MAX];
-    rc = RTPathAbs(szPath2, szPath2, sizeof(szPath2)); AssertRC(rc);
+    rc = RTPathAbs(pszPath2, szPath2, sizeof(szPath2)); AssertRC(rc);
     AssertRCReturn(rc, VERR_FILENAME_TOO_LONG);
 
     if (RTPathCompare(szPath1, szPath2) == 0)
