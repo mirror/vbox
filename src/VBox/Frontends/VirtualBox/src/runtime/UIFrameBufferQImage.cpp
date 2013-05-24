@@ -33,6 +33,10 @@
 # include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 # include "UISession.h"
+# include "UIMachineLogic.h"
+# ifdef Q_WS_X11
+#  include "UIMachineWindow.h"
+# endif /* Q_WS_X11 */
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -50,12 +54,10 @@ UIFrameBufferQImage::UIFrameBufferQImage(UIMachineView *pMachineView)
 
 void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
 {
-#if 0
-    LogFlowFunc (("fmt=%d, vram=%p, bpp=%d, bpl=%d, width=%d, height=%d\n",
-                  pEvent->pixelFormat(), pEvent->VRAM(),
-                  pEvent->bitsPerPixel(), pEvent->bytesPerLine(),
-                  pEvent->width(), pEvent->height()));
-#endif
+    /* Invalidate visible-region if necessary: */
+    if (m_width != pEvent->width() ||
+        m_height != pEvent->height())
+        m_visibleRegion = QRegion();
 
     /* Remember new width/height: */
     m_width = pEvent->width();
@@ -155,47 +157,149 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
         )
         goFallback();
 
-    /* Scaled image by default is empty: */
-    QImage scaledImage;
-    /* If scaled-factor is set and current image is NOT null: */
-    if (m_scaledSize.isValid() && !m_img.isNull())
+    /* Depending on visual-state type: */
+    switch (m_pMachineView->machineLogic()->visualStateType())
     {
-        /* We are doing a deep copy of image to make sure it will not be
-         * detached during scale process, otherwise we can get a frozen frame-buffer. */
-        scaledImage = m_img.copy();
-        /* Scale image to scaled-factor: */
-        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        case UIVisualStateType_Seamless:
+            paintSeamless(pEvent);
+            break;
+        case UIVisualStateType_Scale:
+            paintScale(pEvent);
+            break;
+        default:
+            paintDefault(pEvent);
+            break;
     }
-    /* Choose required image: */
-    QImage *pSourceImage = scaledImage.isNull() ? &m_img : &scaledImage;
+}
 
-    /* Get clipping rectangle: */
-    const QRect &r = pEvent->rect().intersected(pSourceImage->rect());
-    if (r.isEmpty())
+void UIFrameBufferQImage::applyVisibleRegionEvent(UISetRegionEvent *pEvent)
+{
+    /* Make sure visible-region changed: */
+    if (m_visibleRegion == pEvent->region())
         return;
 
-#if 0
-    LogFlowFunc (("%dx%d-%dx%d (img=%dx%d)\n", r.x(), r.y(), r.width(), r.height(), img.width(), img.height()));
-#endif
+    /* Compose viewport region to update: */
+    QRegion toUpdate = pEvent->region() + m_visibleRegion;
+    /* Remember new visible-region: */
+    m_visibleRegion = pEvent->region();
+    /* Update viewport region finally: */
+    m_pMachineView->viewport()->update(toUpdate);
+#ifdef Q_WS_X11
+    /* Qt 4.8.3 under X11 has Qt::WA_TranslucentBackground window attribute broken,
+     * so we are still have to use old one known Xshape extension wrapped by the widget setMask API: */
+    m_pMachineView->machineWindow()->setMask(m_visibleRegion);
+#endif /* Q_WS_X11 */
+}
+
+void UIFrameBufferQImage::paintDefault(QPaintEvent *pEvent)
+{
+    /* Get rectangle to paint: */
+    QRect paintRect = pEvent->rect().intersected(m_img.rect());
+    if (paintRect.isEmpty())
+        return;
 
     /* Create painter: */
     QPainter painter(m_pMachineView->viewport());
-    if ((ulong)r.width() < m_width * 2 / 3)
-    {
-        /* This method is faster for narrow updates: */
-        m_PM = QPixmap::fromImage(pSourceImage->copy(r.x() + m_pMachineView->contentsX(),
-                                                     r.y() + m_pMachineView->contentsY(),
-                                                     r.width(), r.height()));
-        painter.drawPixmap(r.x(), r.y(), m_PM);
-    }
+
+    /* Draw image rectangle depending on rectangle width: */
+    if ((ulong)paintRect.width() < m_width * 2 / 3)
+        drawImageRectNarrow(painter, m_img,
+                            paintRect, m_pMachineView->contentsX(), m_pMachineView->contentsY());
     else
+        drawImageRectWide(painter, m_img,
+                          paintRect, m_pMachineView->contentsX(), m_pMachineView->contentsY());
+}
+
+void UIFrameBufferQImage::paintSeamless(QPaintEvent *pEvent)
+{
+    /* Get rectangle to paint: */
+    QRect paintRect = pEvent->rect().intersected(m_img.rect());
+    if (paintRect.isEmpty())
+        return;
+
+    /* Create painter: */
+    QPainter painter(m_pMachineView->viewport());
+
+    /* Clear paint rectangle first: */
+    painter.setCompositionMode(QPainter::CompositionMode_Clear);
+    painter.eraseRect(paintRect);
+    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
+    /* Repaint all the rectangles of visible-region: */
+    QRegion visiblePaintRegion = m_visibleRegion & paintRect;
+    foreach (const QRect &rect, visiblePaintRegion.rects())
     {
-        /* This method is faster for wide updates: */
-        m_PM = QPixmap::fromImage(QImage(pSourceImage->scanLine(r.y() + m_pMachineView->contentsY()),
-                                         pSourceImage->width(), r.height(), pSourceImage->bytesPerLine(),
-                                         QImage::Format_RGB32));
-        painter.drawPixmap(r.x(), r.y(), m_PM, r.x() + m_pMachineView->contentsX(), 0, 0, 0);
+#ifdef Q_WS_WIN
+        /* Replace translucent background with black one,
+         * that is necessary for window with Qt::WA_TranslucentBackground: */
+        painter.setCompositionMode(QPainter::CompositionMode_Source);
+        painter.fillRect(rect, QColor(Qt::black));
+        painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
+#endif /* Q_WS_WIN */
+
+        /* Draw image rectangle depending on rectangle width: */
+        if ((ulong)rect.width() < m_width * 2 / 3)
+            drawImageRectNarrow(painter, m_img,
+                                rect, m_pMachineView->contentsX(), m_pMachineView->contentsY());
+        else
+            drawImageRectWide(painter, m_img,
+                              rect, m_pMachineView->contentsX(), m_pMachineView->contentsY());
     }
+}
+
+void UIFrameBufferQImage::paintScale(QPaintEvent *pEvent)
+{
+    /* Scaled image is NULL by default: */
+    QImage scaledImage;
+    /* But if scaled-factor is set and current image is NOT null: */
+    if (m_scaledSize.isValid() && !m_img.isNull())
+    {
+        /* We are doing a deep copy of the image to make sure it will not be
+         * detached during scale process, otherwise we can get a frozen frame-buffer. */
+        scaledImage = m_img.copy();
+        /* And scaling the image to predefined scaled-factor: */
+        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    }
+    /* Finally we are choosing image to paint from: */
+    QImage &sourceImage = scaledImage.isNull() ? m_img : scaledImage;
+
+    /* Get rectangle to paint: */
+    QRect paintRect = pEvent->rect().intersected(sourceImage.rect());
+    if (paintRect.isEmpty())
+        return;
+
+    /* Create painter: */
+    QPainter painter(m_pMachineView->viewport());
+
+    /* Draw image rectangle depending on rectangle width: */
+    if ((ulong)paintRect.width() < m_width * 2 / 3)
+        drawImageRectNarrow(painter, sourceImage,
+                            paintRect, m_pMachineView->contentsX(), m_pMachineView->contentsY());
+    else
+        drawImageRectWide(painter, sourceImage,
+                          paintRect, m_pMachineView->contentsX(), m_pMachineView->contentsY());
+}
+
+/* static */
+void UIFrameBufferQImage::drawImageRectNarrow(QPainter &painter, const QImage &image,
+                                              const QRect &rect, int iContentsShiftX, int iContentsShiftY)
+{
+    /* This method is faster for narrow updates: */
+    QPixmap pm = QPixmap::fromImage(image.copy(rect.x() + iContentsShiftX,
+                                               rect.y() + iContentsShiftY,
+                                               rect.width(), rect.height()));
+    painter.drawPixmap(rect.x(), rect.y(), pm);
+}
+
+/* static */
+void UIFrameBufferQImage::drawImageRectWide(QPainter &painter, const QImage &image,
+                                            const QRect &rect, int iContentsShiftX, int /*iContentsShiftY*/)
+{
+    /* This method is faster for wide updates: */
+    QPixmap pm = QPixmap::fromImage(QImage(image.scanLine(rect.y() + iContentsShiftX),
+                                           image.width(), rect.height(), image.bytesPerLine(),
+                                           QImage::Format_RGB32));
+    painter.drawPixmap(rect.x(), rect.y(), pm, rect.x() + iContentsShiftX, 0, 0, 0);
 }
 
 void UIFrameBufferQImage::goFallback()

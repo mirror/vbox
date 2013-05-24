@@ -215,6 +215,7 @@ public:
     virtual void moveEvent(QMoveEvent* /*pEvent*/) {}
     virtual void resizeEvent(UIResizeEvent *pEvent) = 0;
     virtual void paintEvent(QPaintEvent *pEvent) = 0;
+    virtual void applyVisibleRegionEvent(UISetRegionEvent *pEvent) = 0;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* this method is called from the GUI thread
@@ -235,6 +236,7 @@ protected:
     RTCRITSECT m_critSect;
     ulong m_width;
     ulong m_height;
+    QRegion m_visibleRegion;
     QSize m_scaledSize;
     int64_t m_WinId;
     bool m_fIsDeleted;
