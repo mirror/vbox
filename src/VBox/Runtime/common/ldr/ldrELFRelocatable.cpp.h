@@ -98,7 +98,7 @@ typedef struct RTLDRMODELF
 
     /** The ELF header. */
     Elf_Ehdr                Ehdr;
-    /** Pointer to our copy of the section headers.
+    /** Pointer to our copy of the section headers with sh_addr as RVAs.
      * The virtual addresses in this array is the 0 based assignments we've given the image.
      * Not valid if the image is DONE. */
     Elf_Shdr               *paShdrs;
@@ -107,6 +107,9 @@ typedef struct RTLDRMODELF
     Elf_Shdr const         *paOrgShdrs;
     /** The size of the loaded image. */
     size_t                  cbImage;
+
+    /** The image base address if it's an EXEC or DYN image. */
+    Elf_Addr                LinkAddress;
 
     /** The symbol section index. */
     unsigned                iSymSh;
@@ -155,6 +158,238 @@ static int RTLDRELF_NAME(MapBits)(PRTLDRMODELF pModElf, bool fNeedsBits)
     return rc;
 }
 
+
+/*
+ *
+ * EXEC & DYN.
+ * EXEC & DYN.
+ * EXEC & DYN.
+ * EXEC & DYN.
+ * EXEC & DYN.
+ *
+ */
+
+
+/**
+ * Applies the fixups for a section in an executable image.
+ *
+ * @returns iprt status code.
+ * @param   pModElf         The ELF loader module instance data.
+ * @param   BaseAddr        The base address which the module is being fixedup to.
+ * @param   pfnGetImport    The callback function to use to resolve imports (aka unresolved externals).
+ * @param   pvUser          User argument to pass to the callback.
+ * @param   SecAddr         The section address. This is the address the relocations are relative to.
+ * @param   cbSec           The section size. The relocations must be inside this.
+ * @param   pu8SecBaseR     Where we read section bits from.
+ * @param   pu8SecBaseW     Where we write section bits to.
+ * @param   pvRelocs        Pointer to where we read the relocations from.
+ * @param   cbRelocs        Size of the relocations.
+ */
+static int RTLDRELF_NAME(RelocateSectionExecDyn)(PRTLDRMODELF pModElf, Elf_Addr BaseAddr,
+                                                 PFNRTLDRIMPORT pfnGetImport, void *pvUser,
+                                                 const Elf_Addr SecAddr, Elf_Size cbSec,
+                                                 const uint8_t *pu8SecBaseR, uint8_t *pu8SecBaseW,
+                                                 const void *pvRelocs, Elf_Size cbRelocs)
+{
+#if ELF_MODE != 32
+    NOREF(pu8SecBaseR);
+#endif
+
+    /*
+     * Iterate the relocations.
+     * The relocations are stored in an array of Elf32_Rel records and covers the entire relocation section.
+     */
+    const Elf_Addr    offDelta = BaseAddr - pModElf->LinkAddress;
+    const Elf_Reloc  *paRels   = (const Elf_Reloc *)pvRelocs;
+    const unsigned    iRelMax   = (unsigned)(cbRelocs / sizeof(paRels[0]));
+    AssertMsgReturn(iRelMax == cbRelocs / sizeof(paRels[0]), (FMT_ELF_SIZE "\n", cbRelocs / sizeof(paRels[0])),
+                    VERR_IMAGE_TOO_BIG);
+    for (unsigned iRel = 0; iRel < iRelMax; iRel++)
+    {
+        /*
+         * Skip R_XXX_NONE entries early to avoid confusion in the symbol
+         * getter code.
+         */
+#if   ELF_MODE == 32
+        if (ELF_R_TYPE(paRels[iRel].r_info) == R_386_NONE)
+            continue;
+#elif ELF_MODE == 64
+        if (ELF_R_TYPE(paRels[iRel].r_info) == R_X86_64_NONE)
+            continue;
+#endif
+
+        /*
+         * Validate and find the symbol, resolve undefined ones.
+         */
+        Elf_Size iSym = ELF_R_SYM(paRels[iRel].r_info);
+        if (iSym >= pModElf->cSyms)
+        {
+            AssertMsgFailed(("iSym=%d is an invalid symbol index!\n", iSym));
+            return VERR_LDRELF_INVALID_SYMBOL_INDEX;
+        }
+        const Elf_Sym *pSym = &pModElf->paSyms[iSym];
+        if (pSym->st_name >= pModElf->cbStr)
+        {
+            AssertMsgFailed(("iSym=%d st_name=%d str sh_size=%d\n", iSym, pSym->st_name, pModElf->cbStr));
+            return VERR_LDRELF_INVALID_SYMBOL_NAME_OFFSET;
+        }
+
+        Elf_Addr SymValue = 0;
+        if (pSym->st_shndx == SHN_UNDEF)
+        {
+            /* Try to resolve the symbol. */
+            const char *pszName = ELF_STR(pModElf, pSym->st_name);
+            RTUINTPTR   ExtValue;
+            int rc = pfnGetImport(&pModElf->Core, "", pszName, ~0, &ExtValue, pvUser);
+            AssertMsgRCReturn(rc, ("Failed to resolve '%s' rc=%Rrc\n", pszName, rc), rc);
+            SymValue = (Elf_Addr)ExtValue;
+            AssertMsgReturn((RTUINTPTR)SymValue == ExtValue, ("Symbol value overflowed! '%s'\n", pszName),
+                            VERR_SYMBOL_VALUE_TOO_BIG);
+            Log2(("rtldrELF: #%-3d - UNDEF " FMT_ELF_ADDR " '%s'\n", iSym, SymValue, pszName));
+        }
+        else
+        {
+            AssertReturn(pSym->st_shndx < pModElf->cSyms || pSym->st_shndx == SHN_ABS, ("%#x\n", pSym->st_shndx));
+#if   ELF_MODE == 64
+            SymValue = pSym->st_value;
+#endif
+        }
+
+#if   ELF_MODE == 64
+        /* Calc the value. */
+        Elf_Addr Value;
+        if (pSym->st_shndx < pModElf->cSyms)
+            Value = SymValue + offDelta;
+        else
+            Value = SymValue + paRels[iRel].r_addend;
+#endif
+
+        /*
+         * Apply the fixup.
+         */
+        AssertMsgReturn(paRels[iRel].r_offset < cbSec, (FMT_ELF_ADDR " " FMT_ELF_SIZE "\n", paRels[iRel].r_offset, cbSec), VERR_LDRELF_INVALID_RELOCATION_OFFSET);
+#if   ELF_MODE == 32
+        const Elf_Addr *pAddrR = (const Elf_Addr *)(pu8SecBaseR + paRels[iRel].r_offset);    /* Where to read the addend. */
+#endif
+        Elf_Addr       *pAddrW =       (Elf_Addr *)(pu8SecBaseW + paRels[iRel].r_offset);    /* Where to write the fixup. */
+        switch (ELF_R_TYPE(paRels[iRel].r_info))
+        {
+#if   ELF_MODE == 32
+            /*
+             * Absolute addressing.
+             */
+            case R_386_32:
+            {
+                Elf_Addr Value;
+                if (pSym->st_shndx < pModElf->Ehdr.e_shnum)
+                    Value = *pAddrR + offDelta;         /* Simplified. */
+                else if (pSym->st_shndx == SHN_ABS)
+                    continue;                           /* Internal fixup, no need to apply it. */
+                else if (pSym->st_shndx == SHN_UNDEF)
+                    Value = SymValue + *pAddrR;
+                else
+                    AssertFailedReturn(VERR_LDR_GENERAL_FAILURE); /** @todo SHN_COMMON */
+                *(uint32_t *)pAddrW = Value;
+                Log4((FMT_ELF_ADDR": R_386_32   Value=" FMT_ELF_ADDR "\n", SecAddr + paRels[iRel].r_offset + BaseAddr, Value));
+                break;
+            }
+
+            /*
+             * PC relative addressing.
+             */
+            case R_386_PC32:
+            {
+                Elf_Addr Value;
+                if (pSym->st_shndx < pModElf->Ehdr.e_shnum)
+                    continue;                           /* Internal fixup, no need to apply it. */
+                else if (pSym->st_shndx == SHN_ABS)
+                    Value = *pAddrR + offDelta;         /* Simplified. */
+                else if (pSym->st_shndx == SHN_UNDEF)
+                {
+                    const Elf_Addr SourceAddr = SecAddr + paRels[iRel].r_offset + BaseAddr; /* Where the source really is. */
+                    Value = SymValue + *(uint32_t *)pAddrR - SourceAddr;
+                    *(uint32_t *)pAddrW = Value;
+                }
+                else
+                    AssertFailedReturn(VERR_LDR_GENERAL_FAILURE); /** @todo SHN_COMMON */
+                Log4((FMT_ELF_ADDR": R_386_PC32 Value=" FMT_ELF_ADDR "\n", SecAddr + paRels[iRel].r_offset + BaseAddr, Value));
+                break;
+            }
+
+#elif ELF_MODE == 64
+
+            /*
+             * Absolute addressing
+             */
+            case R_X86_64_64:
+            {
+                *(uint64_t *)pAddrW = Value;
+                Log4((FMT_ELF_ADDR": R_X86_64_64   Value=" FMT_ELF_ADDR " SymValue=" FMT_ELF_ADDR "\n",
+                      SecAddr + paRels[iRel].r_offset + BaseAddr, Value, SymValue));
+                break;
+            }
+
+            /*
+             * Truncated 32-bit value (zero-extendedable to the 64-bit value).
+             */
+            case R_X86_64_32:
+            {
+                *(uint32_t *)pAddrW = (uint32_t)Value;
+                Log4((FMT_ELF_ADDR": R_X86_64_32   Value=" FMT_ELF_ADDR " SymValue=" FMT_ELF_ADDR "\n",
+                      SecAddr + paRels[iRel].r_offset + BaseAddr, Value, SymValue));
+                AssertMsgReturn((Elf_Addr)*(uint32_t *)pAddrW == SymValue, ("Value=" FMT_ELF_ADDR "\n", SymValue),
+                                VERR_SYMBOL_VALUE_TOO_BIG);
+                break;
+            }
+
+            /*
+             * Truncated 32-bit value (sign-extendedable to the 64-bit value).
+             */
+            case R_X86_64_32S:
+            {
+                *(int32_t *)pAddrW = (int32_t)Value;
+                Log4((FMT_ELF_ADDR": R_X86_64_32S  Value=" FMT_ELF_ADDR " SymValue=" FMT_ELF_ADDR "\n",
+                      SecAddr + paRels[iRel].r_offset + BaseAddr, Value, SymValue));
+                AssertMsgReturn((Elf_Addr)*(int32_t *)pAddrW == Value, ("Value=" FMT_ELF_ADDR "\n", Value), VERR_SYMBOL_VALUE_TOO_BIG); /** @todo check the sign-extending here. */
+                break;
+            }
+
+            /*
+             * PC relative addressing.
+             */
+            case R_X86_64_PC32:
+            {
+                const Elf_Addr SourceAddr = SecAddr + paRels[iRel].r_offset + BaseAddr; /* Where the source really is. */
+                Value -= SourceAddr;
+                *(int32_t *)pAddrW = (int32_t)Value;
+                Log4((FMT_ELF_ADDR": R_X86_64_PC32 Value=" FMT_ELF_ADDR " SymValue=" FMT_ELF_ADDR "\n",
+                      SourceAddr, Value, SymValue));
+                AssertMsgReturn((Elf_Addr)*(int32_t *)pAddrW == Value, ("Value=" FMT_ELF_ADDR "\n", Value), VERR_SYMBOL_VALUE_TOO_BIG); /** @todo check the sign-extending here. */
+                break;
+            }
+#endif
+
+            default:
+                AssertMsgFailed(("Unknown relocation type: %d (iRel=%d iRelMax=%d)\n",
+                                 ELF_R_TYPE(paRels[iRel].r_info), iRel, iRelMax));
+                return VERR_LDRELF_RELOCATION_NOT_SUPPORTED;
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+
+/*
+ *
+ * REL
+ * REL
+ * REL
+ * REL
+ * REL
+ *
+ */
 
 /**
  * Get the symbol and symbol value.
@@ -285,6 +520,19 @@ static int RTLDRELF_NAME(RelocateSection)(PRTLDRMODELF pModElf, Elf_Addr BaseAdd
     AssertMsgReturn(iRelMax == cbRelocs / sizeof(paRels[0]), (FMT_ELF_SIZE "\n", cbRelocs / sizeof(paRels[0])), VERR_IMAGE_TOO_BIG);
     for (unsigned iRel = 0; iRel < iRelMax; iRel++)
     {
+        /*
+         * Skip R_XXX_NONE entries early to avoid confusion in the symbol
+         * getter code.
+         */
+#if   ELF_MODE == 32
+        if (ELF_R_TYPE(paRels[iRel].r_info) == R_386_NONE)
+            continue;
+#elif ELF_MODE == 64
+        if (ELF_R_TYPE(paRels[iRel].r_info) == R_X86_64_NONE)
+            continue;
+#endif
+
+
         /*
          * Get the symbol.
          */
@@ -475,8 +723,13 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumSymbols)(PRTLDRMODINTERNAL pMod, unsi
                 /* absolute symbols are not subject to any relocation. */
                 Value = paSyms[iSym].st_value;
             else if (paSyms[iSym].st_shndx < pModElf->Ehdr.e_shnum)
-                /* relative to the section. */
-                Value = BaseAddr + paSyms[iSym].st_value + pModElf->paShdrs[paSyms[iSym].st_shndx].sh_addr;
+            {
+                if (pModElf->Ehdr.e_type == ET_REL)
+                    /* relative to the section. */
+                    Value = BaseAddr + paSyms[iSym].st_value + pModElf->paShdrs[paSyms[iSym].st_shndx].sh_addr;
+                else /* Fixed up for link address. */
+                    Value = BaseAddr + paSyms[iSym].st_value - pModElf->LinkAddress;
+            }
             else
             {
                 AssertMsgFailed(("Arg! paSyms[%u].st_shndx=" FMT_ELF_HALF "\n", iSym, paSyms[iSym].st_shndx));
@@ -645,13 +898,22 @@ static DECLCALLBACK(int) RTLDRELF_NAME(Relocate)(PRTLDRMODINTERNAL pMod, void *p
               iShdr, ELF_SH_STR(pModElf, pShdrRel->sh_name), (int)pShdrRel->sh_info, (int)pShdrRel->sh_link));
 
         /** @todo Make RelocateSection a function pointer so we can select the one corresponding to the machine when opening the image. */
-        rc = RTLDRELF_NAME(RelocateSection)(pModElf, BaseAddr, pfnGetImport, pvUser,
-                                            pShdr->sh_addr,
-                                            pShdr->sh_size,
-                                            (const uint8_t *)pModElf->pvBits + pShdr->sh_offset,
-                                            (uint8_t *)pvBits + pShdr->sh_addr,
-                                            (const uint8_t *)pModElf->pvBits + pShdrRel->sh_offset,
-                                            pShdrRel->sh_size);
+        if (pModElf->Ehdr.e_type == ET_REL)
+            rc = RTLDRELF_NAME(RelocateSection)(pModElf, BaseAddr, pfnGetImport, pvUser,
+                                                pShdr->sh_addr,
+                                                pShdr->sh_size,
+                                                (const uint8_t *)pModElf->pvBits + pShdr->sh_offset,
+                                                (uint8_t *)pvBits + pShdr->sh_addr,
+                                                (const uint8_t *)pModElf->pvBits + pShdrRel->sh_offset,
+                                                pShdrRel->sh_size);
+        else
+            rc = RTLDRELF_NAME(RelocateSectionExecDyn)(pModElf, BaseAddr, pfnGetImport, pvUser,
+                                                       pShdr->sh_addr,
+                                                       pShdr->sh_size,
+                                                       (const uint8_t *)pModElf->pvBits + pShdr->sh_offset,
+                                                       (uint8_t *)pvBits + pShdr->sh_addr,
+                                                       (const uint8_t *)pModElf->pvBits + pShdrRel->sh_offset,
+                                                       pShdrRel->sh_size);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -702,8 +964,13 @@ static DECLCALLBACK(int) RTLDRELF_NAME(GetSymbolEx)(PRTLDRMODINTERNAL pMod, cons
                         /* absolute symbols are not subject to any relocation. */
                         Value = paSyms[iSym].st_value;
                     else if (paSyms[iSym].st_shndx < pModElf->Ehdr.e_shnum)
-                        /* relative to the section. */
-                        Value = BaseAddr + paSyms[iSym].st_value + pModElf->paShdrs[paSyms[iSym].st_shndx].sh_addr;
+                    {
+                        if (pModElf->Ehdr.e_type == ET_REL)
+                            /* relative to the section. */
+                            Value = BaseAddr + paSyms[iSym].st_value + pModElf->paShdrs[paSyms[iSym].st_shndx].sh_addr;
+                        else /* Fixed up for link address. */
+                            Value = BaseAddr + paSyms[iSym].st_value - pModElf->LinkAddress;
+                    }
                     else
                     {
                         AssertMsgFailed(("Arg. paSyms[iSym].st_shndx=%d\n", paSyms[iSym].st_shndx));
@@ -997,6 +1264,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(ReadDbgInfo)(PRTLDRMODINTERNAL pMod, uint
                                                     size_t cb, void *pvBuf)
 {
     PRTLDRMODELF pThis = (PRTLDRMODELF)pMod;
+    LogFlow(("%s: iDbgInfo=%#x off=%RTfoff cb=%#zu\n", __FUNCTION__, iDbgInfo, off, cb));
 
     /*
      * Input validation.
@@ -1065,14 +1333,25 @@ static DECLCALLBACK(int) RTLDRELF_NAME(ReadDbgInfo)(PRTLDRMODINTERNAL pMod, uint
         /*
          * Apply the relocations.
          */
-        rc = RTLDRELF_NAME(RelocateSection)(pThis, 0 /*BaseAddress*/,
-                                            RTLDRELF_NAME(GetImportStubCallback), NULL /*pvUser*/,
-                                            pThis->paShdrs[iDbgInfo].sh_addr,
-                                            pThis->paShdrs[iDbgInfo].sh_size,
-                                            (const uint8_t *)pvBuf,
-                                            (uint8_t *)pvBuf,
-                                            pbRelocs,
-                                            pThis->paShdrs[iRelocs].sh_size);
+        if (pThis->Ehdr.e_type == ET_REL)
+            rc = RTLDRELF_NAME(RelocateSection)(pThis, pThis->LinkAddress,
+                                                RTLDRELF_NAME(GetImportStubCallback), NULL /*pvUser*/,
+                                                pThis->paShdrs[iDbgInfo].sh_addr,
+                                                pThis->paShdrs[iDbgInfo].sh_size,
+                                                (const uint8_t *)pvBuf,
+                                                (uint8_t *)pvBuf,
+                                                pbRelocs,
+                                                pThis->paShdrs[iRelocs].sh_size);
+        else
+            rc = RTLDRELF_NAME(RelocateSectionExecDyn)(pThis, pThis->LinkAddress,
+                                                       RTLDRELF_NAME(GetImportStubCallback), NULL /*pvUser*/,
+                                                       pThis->paShdrs[iDbgInfo].sh_addr,
+                                                       pThis->paShdrs[iDbgInfo].sh_size,
+                                                       (const uint8_t *)pvBuf,
+                                                       (uint8_t *)pvBuf,
+                                                       pbRelocs,
+                                                       pThis->paShdrs[iRelocs].sh_size);
+
         RTMemTmpFree(pbRelocsBuf);
     }
     else
@@ -1454,6 +1733,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
     pModElf->iStrSh         = ~0U;
     //pModElf->cbStr          = 0;
     //pModElf->cbImage        = 0;
+    //pModElf->LinkAddress    = 0;
     //pModElf->pStr           = NULL;
     //pModElf->cbShStr        = 0;
     //pModElf->pShStr         = NULL;
@@ -1493,27 +1773,13 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
                 pModElf->cbShStr = paShdrs[pModElf->Ehdr.e_shstrndx].sh_size;
 
                 /*
-                 * Validate the section headers, allocate memory for the sections (determine the image size),
-                 * and find relevant sections.
+                 * Validate the section headers and find relevant sections.
                  */
                 for (unsigned i = 0; i < pModElf->Ehdr.e_shnum; i++)
                 {
                     rc = RTLDRELF_NAME(ValidateSectionHeader)(pModElf, i, pszLogName, cbRawImage);
                     if (RT_FAILURE(rc))
                         break;
-
-                    /* Allocate memory addresses for the section. */
-                    if (paShdrs[i].sh_flags & SHF_ALLOC)
-                    {
-                        paShdrs[i].sh_addr = paShdrs[i].sh_addralign
-                            ? RT_ALIGN_T(pModElf->cbImage, paShdrs[i].sh_addralign, Elf_Addr)
-                            : (Elf_Addr)pModElf->cbImage;
-                        pModElf->cbImage = (size_t)paShdrs[i].sh_addr + (size_t)paShdrs[i].sh_size;
-                        AssertMsgReturn(pModElf->cbImage == paShdrs[i].sh_addr + paShdrs[i].sh_size,
-                                        (FMT_ELF_ADDR "\n", paShdrs[i].sh_addr + paShdrs[i].sh_size),
-                                        VERR_IMAGE_TOO_BIG);
-                        Log2(("RTLdrElf: %s: Assigned " FMT_ELF_ADDR " to section #%d\n", pszLogName, paShdrs[i].sh_addr, i));
-                    }
 
                     /* We're looking for symbol tables. */
                     if (paShdrs[i].sh_type == SHT_SYMTAB)
@@ -1551,8 +1817,48 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
 
                 } /* for each section header */
 
-                Log2(("RTLdrElf: iSymSh=%u cSyms=%u iStrSh=%u cbStr=%u rc=%Rrc cbImage=%#zx\n",
-                      pModElf->iSymSh, pModElf->cSyms, pModElf->iStrSh, pModElf->cbStr, rc, pModElf->cbImage));
+                /*
+                 * Calculate the image base address if the image isn't relocatable.
+                 */
+                if (RT_SUCCESS(rc) && pModElf->Ehdr.e_type != ET_REL)
+                {
+                    pModElf->LinkAddress = ~(Elf_Addr)0;
+                    for (unsigned i = 0; i < pModElf->Ehdr.e_shnum; i++)
+                        if (   (paShdrs[i].sh_flags & SHF_ALLOC)
+                            && paShdrs[i].sh_addr < pModElf->LinkAddress)
+                            pModElf->LinkAddress = paShdrs[i].sh_addr;
+                    if (pModElf->LinkAddress == ~(Elf_Addr)0)
+                    {
+                        AssertFailed();
+                        rc = VERR_LDR_GENERAL_FAILURE;
+                    }
+                }
+
+                /*
+                 * Perform allocations / RVA calculations, determine the image size.
+                 */
+                if (RT_SUCCESS(rc))
+                    for (unsigned i = 0; i < pModElf->Ehdr.e_shnum; i++)
+                        if (paShdrs[i].sh_flags & SHF_ALLOC)
+                        {
+                            if (pModElf->Ehdr.e_type == ET_REL)
+                                paShdrs[i].sh_addr = paShdrs[i].sh_addralign
+                                                   ? RT_ALIGN_T(pModElf->cbImage, paShdrs[i].sh_addralign, Elf_Addr)
+                                                   : (Elf_Addr)pModElf->cbImage;
+                            else
+                                paShdrs[i].sh_addr -= pModElf->LinkAddress;
+                            Elf_Addr EndAddr = paShdrs[i].sh_addr + paShdrs[i].sh_size;
+                            if (pModElf->cbImage < EndAddr)
+                            {
+                                pModElf->cbImage = (size_t)EndAddr;
+                                AssertMsgReturn(pModElf->cbImage == EndAddr, (FMT_ELF_ADDR "\n", EndAddr), VERR_IMAGE_TOO_BIG);
+                            }
+                            Log2(("RTLdrElf: %s: Assigned " FMT_ELF_ADDR " to section #%d\n", pszLogName, paShdrs[i].sh_addr, i));
+                        }
+
+                Log2(("RTLdrElf: iSymSh=%u cSyms=%u iStrSh=%u cbStr=%u rc=%Rrc cbImage=%#zx LinkAddress=" FMT_ELF_ADDR "\n",
+                      pModElf->iSymSh, pModElf->cSyms, pModElf->iStrSh, pModElf->cbStr, rc,
+                      pModElf->cbImage, pModElf->LinkAddress));
                 if (RT_SUCCESS(rc))
                 {
                     pModElf->Core.pOps      = &RTLDRELF_MID(s_rtldrElf,Ops);
