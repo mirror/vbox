@@ -21,9 +21,6 @@
 #include <QDesktopWidget>
 #include <QMenu>
 #include <QTimer>
-#ifdef Q_WS_MAC
-# include <QMenuBar>
-#endif /* Q_WS_MAC */
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
@@ -86,17 +83,23 @@ void UIMachineWindowSeamless::prepareVisualState()
     /* Call to base-class: */
     UIMachineWindow::prepareVisualState();
 
+    /* Make sure we have no background
+     * until the first one paint-event: */
+    setAttribute(Qt::WA_NoSystemBackground);
+
 #ifdef Q_WS_WIN
-    /* Enable translucent background for Win host,
-     * Mac host has it native, Qt 4.8.3 under x11 host has is broken: */
+    /* Using Qt API to enable translucent background for the Win host.
+     * - Under Mac host Qt doesn't allows to disable window-shadows
+     *   until version 4.8, but minimum supported version is 4.7.1 for now.
+     * - Under x11 host Qt 4.8.3 has it broken wih KDE 4.9 for now: */
     setAttribute(Qt::WA_TranslucentBackground);
 #endif /* Q_WS_WIN */
 
 #ifdef Q_WS_MAC
-    /* Please note: All the stuff below has to be done after the window has
-     * switched to fullscreen. Qt changes the winId on the fullscreen
-     * switch and make this stuff useless with the old winId. So please be
-     * careful on rearrangement of the method calls. */
+    /* Using native API to enable translucent background for the Mac host.
+     * - We also want to disable window-shadows which is possible
+     *   using Qt::WA_MacNoShadow only since Qt 4.8,
+     *   while minimum supported version is 4.7.1 for now: */
     ::darwinSetShowsWindowTransparent(this, true);
 #endif /* Q_WS_MAC */
 
@@ -158,7 +161,7 @@ void UIMachineWindowSeamless::cleanupMiniToolbar()
 void UIMachineWindowSeamless::cleanupVisualState()
 {
 #ifndef Q_WS_MAC
-    /* Cleeanup mini-toolbar: */
+    /* Cleanup mini-toolbar: */
     cleanupMiniToolbar();
 #endif /* !Q_WS_MAC */
 
@@ -206,17 +209,11 @@ void UIMachineWindowSeamless::showInNecessaryMode()
             /* Is this guest screen has own host screen? */
             if (pSeamlessLogic->hasHostScreenForGuestScreen(m_uScreenId))
             {
-                /* Show manually maximized window: */
+                /* Make sure the window is maximized and placed on valid screen: */
                 placeOnScreen();
 
-                /* Show normal window: */
+                /* Show in normal mode: */
                 show();
-
-#ifdef Q_WS_MAC
-                /* Make sure it is really on the right place (especially on the Mac): */
-                QRect r = vboxGlobal().availableGeometry(qobject_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId));
-                move(r.topLeft());
-#endif /* Q_WS_MAC */
 
                 /* Return early: */
                 return;
@@ -253,24 +250,6 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
     }
 }
 #endif /* !Q_WS_MAC */
-
-#ifdef Q_WS_MAC
-bool UIMachineWindowSeamless::event(QEvent *pEvent)
-{
-    switch (pEvent->type())
-    {
-        case QEvent::Paint:
-        {
-            /* Clear the background */
-            CGContextClearRect(::darwinToCGContextRef(this), ::darwinToCGRect(frameGeometry()));
-            break;
-        }
-        default:
-            break;
-    }
-    return UIMachineWindow::event(pEvent);
-}
-#endif /* Q_WS_MAC */
 
 #ifdef Q_WS_WIN
 void UIMachineWindowSeamless::showEvent(QShowEvent*)

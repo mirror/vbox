@@ -21,9 +21,6 @@
 #include <QDesktopWidget>
 #include <QMenu>
 #include <QTimer>
-#ifdef Q_WS_MAC
-# include <QMenuBar>
-#endif /* Q_WS_MAC */
 
 /* GUI includes: */
 #include "UIDefs.h"
@@ -179,8 +176,7 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
             /* Is this guest screen has own host screen? */
             if (pFullscreenLogic->hasHostScreenForGuestScreen(m_uScreenId))
             {
-                /* Make sure the window is placed on valid screen
-                 * before we are show fullscreen window: */
+                /* Make sure the window is maximized and placed on valid screen: */
                 placeOnScreen();
 
 #ifdef Q_WS_WIN
@@ -192,19 +188,13 @@ void UIMachineWindowFullscreen::showInNecessaryMode()
                     setWindowState(windowState() | Qt::WindowActive);
 #endif /* Q_WS_WIN */
 
-                /* Show window fullscreen: */
+                /* Show in fullscreen mode: */
                 showFullScreen();
 
                 /* Make sure the window is placed on valid screen again
                  * after window is shown & window's decorations applied.
-                 * That is required due to X11 Window Geometry Rules. */
+                 * That is required (still?) due to X11 Window Geometry Rules. */
                 placeOnScreen();
-
-#ifdef Q_WS_MAC
-                /* Make sure it is really on the right place (especially on the Mac): */
-                QRect r = QApplication::desktop()->screenGeometry(qobject_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId));
-                move(r.topLeft());
-#endif /* Q_WS_MAC */
 
                 /* Return early: */
                 return;

@@ -73,11 +73,6 @@ private:
     void updateAppearanceOf(int iElement);
 #endif /* !Q_WS_MAC */
 
-#ifdef Q_WS_MAC
-    /* Event handlers: */
-    bool event(QEvent *pEvent);
-#endif /* Q_WS_MAC */
-
 #ifdef Q_WS_WIN
     /* Handler: Translucency stuff: */
     void showEvent(QShowEvent *pEvent);
