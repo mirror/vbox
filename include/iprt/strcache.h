@@ -129,7 +129,7 @@ RTDECL(uint32_t) RTStrCacheRetain(const char *psz);
  * @returns The new reference count.
  *          UINT32_MAX is returned if the string pointer is invalid.
  *
- * @param   hStrCache           Handle to the string cache.
+ * @param   hStrCache           Handle to the string cache. NIL is NOT allowed.
  * @param   psz                 Pointer to a cached string.
  */
 RTDECL(uint32_t) RTStrCacheRelease(RTSTRCACHE hStrCache, const char *psz);
