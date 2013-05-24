@@ -66,6 +66,10 @@
 /** Upper number a buffer is freed if it was too big before. */
 #define LSILOGIC_MAX_ALLOC_TOO_MUCH 20
 
+/** Maximum size of the memory regions (prevents teh guest from DOSing the host by
+ * allocating loadds of memory). */
+#define LSILOGIC_MEMORY_REGIONS_MAX (_1M)
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -336,8 +340,12 @@ typedef struct LSILOGICSCSI
 
     /** Current address to read from or write to in the diagnostic memory region. */
     uint32_t                         u32DiagMemAddr;
+    /** Current size of the memory regions. */
+    uint32_t                         cbMemRegns;
 
+#if HC_ARCH_BITS ==32
     uint32_t                         u32Padding3;
+#endif
 
     union
     {
@@ -785,6 +793,7 @@ static void lsilogicR3MemRegionsFree(PLSILOGICSCSI pThis)
         RTListNodeRemove(&pIt->NodeList);
         RTMemFree(pIt);
     }
+    pThis->cbMemRegns = 0;
 }
 
 /**
@@ -877,32 +886,41 @@ static void lsilogicR3DiagRegDataWrite(PLSILOGICSCSI pThis, uint32_t u32Data)
 
             uint32_t cRegionSizeOld = (pRegion->u32AddrEnd - pRegion->u32AddrStart) / 4 + 1;
             uint32_t cRegionSizeNew = cRegionSizeOld + 512;
-            PLSILOGICMEMREGN pRegionNew = (PLSILOGICMEMREGN)RTMemRealloc(pRegion, RT_OFFSETOF(LSILOGICMEMREGN, au32Data[cRegionSizeNew]));
 
-            if (pRegionNew)
+            if (pThis->cbMemRegns + 512 * sizeof(uint32_t) < LSILOGIC_MEMORY_REGIONS_MAX)
             {
-                pRegion = pRegionNew;
-                memset(&pRegion->au32Data[cRegionSizeOld], 0, 512 * sizeof(uint32_t));
-                pRegion->au32Data[cRegionSizeOld] = u32Data;
-                pRegion->u32AddrEnd = pRegion->u32AddrStart + (cRegionSizeNew - 1) * sizeof(uint32_t);
-            }
-            /* else: Silently fail, there is nothing we can do here and the guest might work nevertheless. */
+                PLSILOGICMEMREGN pRegionNew = (PLSILOGICMEMREGN)RTMemRealloc(pRegion, RT_OFFSETOF(LSILOGICMEMREGN, au32Data[cRegionSizeNew]));
 
-            lsilogicR3MemRegionInsert(pThis, pRegion);
-        }
-        else
-        {
-            /* Create completely new. */
-            pRegion = (PLSILOGICMEMREGN)RTMemAllocZ(RT_OFFSETOF(LSILOGICMEMREGN, au32Data[512]));
-            if (pRegion)
-            {
-                pRegion->u32AddrStart = pThis->u32DiagMemAddr;
-                pRegion->u32AddrEnd   = pRegion->u32AddrStart + (512 - 1) * sizeof(uint32_t);
-                pRegion->au32Data[0]  = u32Data;
+                if (pRegionNew)
+                {
+                    pRegion = pRegionNew;
+                    memset(&pRegion->au32Data[cRegionSizeOld], 0, 512 * sizeof(uint32_t));
+                    pRegion->au32Data[cRegionSizeOld] = u32Data;
+                    pRegion->u32AddrEnd = pRegion->u32AddrStart + (cRegionSizeNew - 1) * sizeof(uint32_t);
+                    pThis->cbMemRegns += 512 * sizeof(uint32_t);
+                }
+                /* else: Silently fail, there is nothing we can do here and the guest might work nevertheless. */
 
                 lsilogicR3MemRegionInsert(pThis, pRegion);
             }
-            /* else: Silently fail, there is nothing we can do here and the guest might work nevertheless. */
+        }
+        else
+        {
+            if (pThis->cbMemRegns + 512 * sizeof(uint32_t) < LSILOGIC_MEMORY_REGIONS_MAX)
+            {
+                /* Create completely new. */
+                pRegion = (PLSILOGICMEMREGN)RTMemAllocZ(RT_OFFSETOF(LSILOGICMEMREGN, au32Data[512]));
+                if (pRegion)
+                {
+                    pRegion->u32AddrStart = pThis->u32DiagMemAddr;
+                    pRegion->u32AddrEnd   = pRegion->u32AddrStart + (512 - 1) * sizeof(uint32_t);
+                    pRegion->au32Data[0]  = u32Data;
+                    pThis->cbMemRegns += 512 * sizeof(uint32_t);
+
+                    lsilogicR3MemRegionInsert(pThis, pRegion);
+                }
+                /* else: Silently fail, there is nothing we can do here and the guest might work nevertheless. */
+            }
         }
 
     }
@@ -4638,6 +4656,7 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
                     pRegion->u32AddrEnd = u32AddrEnd;
                     SSMR3GetMem(pSSM, &pRegion->au32Data[0], cRegion * sizeof(uint32_t));
                     lsilogicR3MemRegionInsert(pThis, pRegion);
+                    pThis->cbMemRegns += cRegion * sizeof(uint32_t);
                 }
                 else
                 {
