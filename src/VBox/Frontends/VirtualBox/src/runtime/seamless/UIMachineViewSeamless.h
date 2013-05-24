@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,11 +25,6 @@
 class UIMachineViewSeamless : public UIMachineView
 {
     Q_OBJECT;
-
-public:
-
-    /* Public getters: */
-    QRegion lastVisibleRegion() const { return m_lastVisibleRegion; }
 
 protected:
 
@@ -70,9 +65,6 @@ private:
     void normalizeGeometry(bool /* fAdjustPosition */) {}
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
-
-    /* Private variables: */
-    QRegion m_lastVisibleRegion;
 
     /* Friend classes: */
     friend class UIMachineView;

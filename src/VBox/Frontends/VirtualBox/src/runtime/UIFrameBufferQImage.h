@@ -46,14 +46,25 @@ public:
     /* API: Event-delegate stuff: */
     void resizeEvent(UIResizeEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
+    void applyVisibleRegionEvent(UISetRegionEvent *pEvent);
 
 private:
+
+    /* Helpers: Visual-mode paint stuff: */
+    void paintDefault(QPaintEvent *pEvent);
+    void paintSeamless(QPaintEvent *pEvent);
+    void paintScale(QPaintEvent *pEvent);
+
+    /* Static helpers: Drawing stuff: */
+    static void drawImageRectNarrow(QPainter &painter, const QImage &image,
+                                    const QRect &rect, int iContentsShiftX, int iContentsShiftY);
+    static void drawImageRectWide(QPainter &painter, const QImage &image,
+                                  const QRect &rect, int iContentsShiftX, int iContentsShiftY);
 
     /* Helper: Fallback stuff: */
     void goFallback();
 
     /* Variables: */
-    QPixmap m_PM;
     QImage m_img;
     ulong m_uPixelFormat;
     bool m_bUsesGuestVRAM;

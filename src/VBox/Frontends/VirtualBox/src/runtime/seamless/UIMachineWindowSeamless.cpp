@@ -86,8 +86,11 @@ void UIMachineWindowSeamless::prepareVisualState()
     /* Call to base-class: */
     UIMachineWindow::prepareVisualState();
 
-    /* This might be required to correctly mask: */
-    centralWidget()->setAutoFillBackground(false);
+#ifdef Q_WS_WIN
+    /* Enable translucent background for Win host,
+     * Mac host has it native, Qt 4.8.3 under x11 host has is broken: */
+    setAttribute(Qt::WA_TranslucentBackground);
+#endif /* Q_WS_WIN */
 
 #ifdef Q_WS_MAC
     /* Please note: All the stuff below has to be done after the window has
@@ -269,45 +272,50 @@ bool UIMachineWindowSeamless::event(QEvent *pEvent)
 }
 #endif /* Q_WS_MAC */
 
-void UIMachineWindowSeamless::setMask(const QRegion &incomingRegion)
+#ifdef Q_WS_WIN
+void UIMachineWindowSeamless::showEvent(QShowEvent*)
 {
-    /* Copy region: */
-    QRegion region(incomingRegion);
+    /* Following workaround allows to fix the next Qt BUG:
+     * https://bugreports.qt-project.org/browse/QTBUG-17548
+     * https://bugreports.qt-project.org/browse/QTBUG-30974
+     * Widgets with Qt::WA_TranslucentBackground attribute
+     * stops repainting after minimizing/restoring, we have to call for single update. */
+    QApplication::postEvent(this, new QEvent(QEvent::UpdateRequest), Qt::LowEventPriority);
+}
+#endif /* Q_WS_WIN */
 
-#ifndef Q_WS_MAC
+#ifdef Q_WS_X11
+void UIMachineWindowSeamless::setMask(const QRegion &region)
+{
+    /* Prepare mask-region: */
+    QRegion maskRegion(region);
+
     /* Shift region if left spacer width is NOT zero or top spacer height is NOT zero: */
     if (m_pLeftSpacer->geometry().width() || m_pTopSpacer->geometry().height())
-        region.translate(m_pLeftSpacer->geometry().width(), m_pTopSpacer->geometry().height());
-#endif /* !Q_WS_MAC */
+        maskRegion.translate(m_pLeftSpacer->geometry().width(), m_pTopSpacer->geometry().height());
 
-#ifdef VBOX_GUI_USE_QUARTZ2D
-    if (vboxGlobal().vmRenderMode() == Quartz2DMode)
-    {
-        /* If we are using the Quartz2D backend we have to trigger a repaint only.
-         * All the magic clipping stuff is done in the paint engine. */
-        ::darwinWindowInvalidateShape(m_pMachineView->viewport());
-    }
-#else /* VBOX_GUI_USE_QUARTZ2D */
     /* Seamless-window for empty region should be empty too,
-     * but native API wrapped by the QWidget::setMask() doesn't allow this.
+     * but the QWidget::setMask() wrapper doesn't allow this.
      * Instead, we have a full painted screen of seamless-geometry size visible.
      * Moreover, we can't just hide the empty seamless-window as 'hiding'
      * 1. will collide with the multi-screen layout behavior and
      * 2. will cause a task-bar flicker on moving window from one screen to another.
-     * As a temporary though quite a dirty workaround we have to make sure
+     * As a *temporary* though quite a dirty workaround we have to make sure
      * region have at least one pixel. */
-    if (region.isEmpty())
-        region += QRect(0, 0, 1, 1);
-    /* Make sure region had changed: */
-    if (m_previousRegion != region)
+    if (maskRegion.isEmpty())
+        maskRegion += QRect(0, 0, 1, 1);
+    /* Make sure mask-region had changed: */
+    if (m_maskRegion != maskRegion)
     {
-        /* Remember new region: */
-        m_previousRegion = region;
-        /* Assign new region: */
-        UIMachineWindow::setMask(m_previousRegion);
-        /* Update viewport contents: */
-        m_pMachineView->viewport()->update();
+        /* Compose viewport region to update: */
+        QRegion toUpdate = m_maskRegion + maskRegion;
+        /* Remember new mask-region: */
+        m_maskRegion = maskRegion;
+        /* Assign new mask-region: */
+        UIMachineWindow::setMask(m_maskRegion);
+        /* Update viewport region finally: */
+        m_pMachineView->viewport()->update(toUpdate);
     }
-#endif /* !VBOX_GUI_USE_QUARTZ2D */
 }
+#endif /* Q_WS_X11 */
 

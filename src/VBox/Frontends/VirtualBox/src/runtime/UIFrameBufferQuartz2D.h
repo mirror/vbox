@@ -49,6 +49,7 @@ public:
 
     void resizeEvent(UIResizeEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
+    void applyVisibleRegionEvent(UISetRegionEvent *pEvent);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void setView(UIMachineView *pView);

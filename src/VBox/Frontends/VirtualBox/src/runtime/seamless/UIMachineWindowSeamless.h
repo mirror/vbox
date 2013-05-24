@@ -78,8 +78,15 @@ private:
     bool event(QEvent *pEvent);
 #endif /* Q_WS_MAC */
 
-    /* Helpers: */
+#ifdef Q_WS_WIN
+    /* Handler: Translucency stuff: */
+    void showEvent(QShowEvent *pEvent);
+#endif /* Q_WS_WIN */
+
+#ifdef Q_WS_X11
+    /* Helper: Masking stuff: */
     void setMask(const QRegion &region);
+#endif /* Q_WS_X11 */
 
     /* Widgets: */
     QMenu *m_pMainMenu;
@@ -87,8 +94,10 @@ private:
     UIRuntimeMiniToolBar *m_pMiniToolBar;
 #endif /* !Q_WS_MAC */
 
-    /* Variables: */
-    QRegion m_previousRegion;
+#ifdef Q_WS_X11
+    /* Variable: Masking stuff: */
+    QRegion m_maskRegion;
+#endif /* Q_WS_X11 */
 
     /* Factory support: */
     friend class UIMachineWindow;
