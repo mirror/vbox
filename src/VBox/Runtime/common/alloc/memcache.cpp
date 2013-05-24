@@ -122,6 +122,8 @@ typedef struct RTMEMCACHEINT
     bool                        fUseFreeList;
     /** Head of the page list. */
     PRTMEMCACHEPAGE             pPageHead;
+    /** Poiner to the insertion point in the page list. */
+    PRTMEMCACHEPAGE volatile   *ppPageNext;
     /** Constructor callback. */
     PFNMEMCACHECTOR             pfnCtor;
     /** Destructor callback. */
@@ -209,6 +211,7 @@ RTDECL(int) RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbA
                            && !pfnCtor
                            && !pfnDtor;
     pThis->pPageHead        = NULL;
+    pThis->ppPageNext       = &pThis->pPageHead;
     pThis->pfnCtor          = pfnCtor;
     pThis->pfnDtor          = pfnDtor;
     pThis->pvUser           = pvUser;
@@ -244,7 +247,8 @@ RTDECL(int) RTMemCacheDestroy(RTMEMCACHE hMemCache)
         return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTMEMCACHE_MAGIC, VERR_INVALID_HANDLE);
-#ifdef RT_STRICT
+
+#if 0 /*def RT_STRICT - don't require eveything to be freed. Caches are very convenient for lazy cleanup. */
     uint32_t cFree = pThis->cFree;
     for (PRTMEMCACHEFREEOBJ pFree = pThis->pFreeTop; pFree && cFree < pThis->cTotal + 5; pFree = pFree->pNext)
         cFree++;
@@ -332,16 +336,9 @@ static int rtMemCacheGrow(RTMEMCACHEINT *pThis)
             /* Make it the hint. */
             ASMAtomicWritePtr(&pThis->pPageHint, pPage);
 
-            /* Link the page. */
-            PRTMEMCACHEPAGE pPrevPage = pThis->pPageHead;
-            if (!pPrevPage)
-                ASMAtomicWritePtr(&pThis->pPageHead, pPage);
-            else
-            {
-                while (pPrevPage->pNext)
-                    pPrevPage = pPrevPage->pNext;
-                ASMAtomicWritePtr(&pPrevPage->pNext, pPage);
-            }
+            /* Link the page in at the end of the list. */
+            ASMAtomicWritePtr(pThis->ppPageNext, pPage);
+            pThis->ppPageNext = &pPage->pNext;
 
             /* Add it to the page counts. */
             ASMAtomicAddS32(&pThis->cFree, cObjects);
