@@ -295,7 +295,11 @@ static DECLCALLBACK(int) rtDbgModContainer_LineAdd(PRTDBGMODINT pMod, const char
     }
     else
         rc = VERR_NO_MEMORY;
+#ifdef RTDBGMODCNT_WITH_MEM_CACHE
+    RTMemCacheFree(pThis->hLineNumAllocator, pLine);
+#else
     RTMemFree(pLine);
+#endif
     return rc;
 }
 
