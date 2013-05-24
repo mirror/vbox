@@ -2344,6 +2344,8 @@ static int rtDwarfLine_AddLine(PRTDWARFLINESTATE pLnState, uint32_t offOpCode)
             if (rc == VERR_DBG_ADDRESS_CONFLICT)
                 rc = VINF_SUCCESS;
         }
+        else
+            rc = VINF_SUCCESS; /* ignore failure */
     }
 
     pLnState->Regs.fBasicBlock    = false;
