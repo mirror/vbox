@@ -1470,8 +1470,8 @@ static int rtDbgModDwarfLinkAddressToSegOffset(PRTDBGMODDWARF pThis, RTSEL uSegm
         }
     }
 
-    return pThis->pImgMod->pImgVt->pfnRvaToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
-    //return pThis->pImgMod->pImgVt->pfnLinkAddressToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
+    //return pThis->pImgMod->pImgVt->pfnRvaToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
+    return pThis->pImgMod->pImgVt->pfnLinkAddressToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
 }
 
 
@@ -2334,7 +2334,7 @@ static int rtDwarfLine_AddLine(PRTDWARFLINESTATE pLnState, uint32_t offOpCode)
         RTDBGSEGIDX iSeg;
         RTUINTPTR   offSeg;
         rc = rtDbgModDwarfLinkAddressToSegOffset(pLnState->pDwarfMod, pLnState->Regs.uSegment, pLnState->Regs.uAddress,
-                                                 &iSeg, &offSeg); AssertRC(rc);
+                                                 &iSeg, &offSeg); /*AssertRC(rc);*/
         if (RT_SUCCESS(rc))
         {
             Log2(("rtDwarfLine_AddLine: %x:%08llx (%#llx) %s(%d) [offOpCode=%08x]\n", iSeg, offSeg, pLnState->Regs.uAddress, pszFile, pLnState->Regs.uLine, offOpCode));
@@ -3705,7 +3705,6 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
                             rc = rtDbgModDwarfLinkAddressToSegOffset(pThis, pSubProgram->uSegment,
                                                                      pSubProgram->PcRange.uLowAddress,
                                                                      &iSeg, &offSeg);
-                            AssertRC(rc);
                             if (RT_SUCCESS(rc))
                             {
                                 rc = RTDbgModSymbolAdd(pThis->hCnt, pSubProgram->pszName, iSeg, offSeg,
@@ -3713,8 +3712,17 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
                                                        0 /*fFlags*/, NULL /*piOrdinal*/);
                                 AssertMsg(RT_SUCCESS(rc) || rc == VERR_DBG_DUPLICATE_SYMBOL, ("%Rrc\n", rc));
                             }
+                            else if (   pSubProgram->PcRange.uLowAddress  == 0 /* see with vmlinux */
+                                     && pSubProgram->PcRange.uHighAddress == 0)
+                            {
+                                Log5(("rtDbgModDwarfLinkAddressToSegOffset: Ignoring empty range.\n"));
+                                rc = VINF_SUCCESS; /* ignore */
+                            }
                             else
+                            {
+                                AssertRC(rc);
                                 Log5(("rtDbgModDwarfLinkAddressToSegOffset failed: %Rrc\n", rc));
+                            }
                         }
                     }
                 }
@@ -3845,6 +3853,47 @@ static PRTDWARFDIE rtDwarfInfo_NewDie(PRTDBGMODDWARF pThis, PCRTDWARFDIEDESC pDi
 
     }
     return pDie;
+}
+
+
+/**
+ * Free all children of a DIE.
+ *
+ * @param   pThis               The DWARF instance.
+ * @param   pParent             The parent DIE.
+ */
+static void rtDwarfInfo_FreeChildren(PRTDBGMODDWARF pThis, PRTDWARFDIE pParentDie)
+{
+    PRTDWARFDIE pChild, pNextChild;
+    RTListForEachSafe(&pParentDie->ChildList, pChild, pNextChild, RTDWARFDIE, SiblingNode)
+    {
+        if (!RTListIsEmpty(&pChild->ChildList))
+            rtDwarfInfo_FreeChildren(pThis, pChild);
+        RTListNodeRemove(&pChild->SiblingNode);
+#ifdef RTDBGMODDWARF_WITH_MEM_CACHE
+        RTMemCacheFree(pThis->aDieAllocators[pChild->iAllocator].hMemCache, pChild);
+#else
+        RTMemFree(pChild);
+#endif
+    }
+}
+
+
+/**
+ * Free a DIE an all its children.
+ *
+ * @param   pThis               The DWARF instance.
+ * @param   pDie                The DIE to free.
+ */
+static void rtDwarfInfo_FreeDie(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
+{
+    rtDwarfInfo_FreeChildren(pThis, pDie);
+    RTListNodeRemove(&pDie->SiblingNode);
+#ifdef RTDBGMODDWARF_WITH_MEM_CACHE
+    RTMemCacheFree(pThis->aDieAllocators[pDie->iAllocator].hMemCache, pDie);
+#else
+    RTMemFree(pChild);
+#endif
 }
 
 
@@ -4122,21 +4171,8 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, bo
                 break;
             }
             cDepth--;
-
-            /* Unlink and free child DIEs if told to do so. */
             if (!fKeepDies && pParentDie->pParent)
-            {
-                PRTDWARFDIE pChild, pNextChild;
-                RTListForEachSafe(&pParentDie->ChildList, pChild, pNextChild, RTDWARFDIE, SiblingNode)
-                {
-                    RTListNodeRemove(&pChild->SiblingNode);
-#ifdef RTDBGMODDWARF_WITH_MEM_CACHE
-                    RTMemCacheFree(pThis->aDieAllocators[pChild->iAllocator].hMemCache, pChild);
-#else
-                    RTMemFree(pChild);
-#endif
-                }
-            }
+                rtDwarfInfo_FreeChildren(pThis, pParentDie);
         }
         else
         {
@@ -4180,8 +4216,16 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, bo
             rc = rtDwarfInfo_ParseDie(pThis, pNewDie, pDieDesc, pCursor, pAbbrev);
             if (RT_FAILURE(rc))
                 return rc;
+
+            if (!fKeepDies && !pAbbrev->fChildren)
+                rtDwarfInfo_FreeDie(pThis, pNewDie);
         }
     } /* while more DIEs */
+
+
+    /* Unlink and free child DIEs if told to do so. */
+    if (!fKeepDies)
+        rtDwarfInfo_FreeChildren(pThis, &pUnit->Core);
 
     return RT_SUCCESS(rc) ? pCursor->rc : rc;
 }
