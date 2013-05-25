@@ -466,6 +466,16 @@ static DECLCALLBACK(RTLDRFMT) rtDbgModDeferredImg_GetFormat(PRTDBGMODINT pMod)
 }
 
 
+/** @interface_method_impl{RTDBGMODVTIMG,pfnReadAt} */
+static DECLCALLBACK(int) rtDbgModDeferredImg_ReadAt(PRTDBGMODINT pMod, uint32_t iDbgInfoHint, RTFOFF off, void *pvBuf, size_t cb)
+{
+    int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
+    if (RT_SUCCESS(rc))
+        rc = pMod->pImgVt->pfnReadAt(pMod, iDbgInfoHint, off, pvBuf, cb);
+    return rc;
+}
+
+
 /** @interface_method_impl{RTDBGMODVTIMG,pfnUnmapPart} */
 static DECLCALLBACK(int) rtDbgModDeferredImg_UnmapPart(PRTDBGMODINT pMod, size_t cb, void const **ppvMap)
 {
@@ -579,6 +589,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgDeferred =
     /*.pfnRvaToSegOffset = */           rtDbgModDeferredImg_RvaToSegOffset,
     /*.pfnMapPart = */                  rtDbgModDeferredImg_MapPart,
     /*.pfnUnmapPart = */                rtDbgModDeferredImg_UnmapPart,
+    /*.pfnReadAt = */                   rtDbgModDeferredImg_ReadAt,
     /*.pfnGetFormat = */                rtDbgModDeferredImg_GetFormat,
     /*.pfnGetArch = */                  rtDbgModDeferredImg_GetArch,
 

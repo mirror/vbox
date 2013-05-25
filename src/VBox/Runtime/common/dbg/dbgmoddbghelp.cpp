@@ -365,22 +365,16 @@ static DECLCALLBACK(int) rtDbgModDbgHelpAddSegmentsCallback(RTLDRMOD hLdrMod, PC
     RTDBGMODBGHELPARGS *pArgs = (RTDBGMODBGHELPARGS *)pvUser;
 
     Log(("Segment %.*s: LinkAddress=%#llx RVA=%#llx cb=%#llx\n",
-         pSeg->cchName, pSeg->pchName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
+         pSeg->cchName, pSeg->pszName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
+
+    Assert(pSeg->cchName > 0);
+    Assert(!pSeg->pszName[pSeg->cchName]);
 
     if (!pSeg->RVA)
         pArgs->uModAddr = pSeg->LinkAddress;
 
-    NOREF(hLdrMod);
-    char *pszName = (char *)pSeg->pchName;
-    if (pszName[pSeg->cchName])
-    {
-        pszName = (char *)alloca(pSeg->cchName + 1);
-        memcpy(pszName, pSeg->pchName, pSeg->cchName);
-        pszName[pSeg->cchName] = '\0';
-    }
-
     RTLDRADDR cb = RT_MAX(pSeg->cb, pSeg->cbMapped);
-    return RTDbgModSegmentAdd(pArgs->hCnt, pSeg->RVA, cb, pszName, 0 /*fFlags*/, NULL);
+    return RTDbgModSegmentAdd(pArgs->hCnt, pSeg->RVA, cb, pSeg->pszName, 0 /*fFlags*/, NULL);
 }
 
 

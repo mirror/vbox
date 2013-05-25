@@ -208,6 +208,10 @@
 #define  WIN_CERT_TYPE_EFI_GUID             UINT16_C(0x0ef1)
 
 
+/* For .DBG files. */
+#define IMAGE_SEPARATE_DEBUG_SIGNATURE  UINT16_C(0x4944)
+
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -525,6 +529,28 @@ typedef struct WIN_CERTIFICATE
 } WIN_CERTIFICATE;
 typedef WIN_CERTIFICATE *PWIN_CERTIFICATE;
 typedef WIN_CERTIFICATE const *PCWIN_CERTIFICATE;
+
+
+/** The header of a .DBG file (NT4). */
+typedef struct _IMAGE_SEPARATE_DEBUG_HEADER
+{
+    uint16_t    Signature;              /**< 0x00 */
+    uint16_t    Flags;                  /**< 0x02 */
+    uint16_t    Machine;                /**< 0x04 */
+    uint16_t    Characteristics;        /**< 0x06 */
+    uint32_t    TimeDateStamp;          /**< 0x08 */
+    uint32_t    CheckSum;               /**< 0x0c */
+    uint32_t    ImageBase;              /**< 0x10 */
+    uint32_t    SizeOfImage;            /**< 0x14 */
+    uint32_t    NumberOfSections;       /**< 0x18 */
+    uint32_t    ExportedNamesSize;      /**< 0x1c */
+    uint32_t    DebugDirectorySize;     /**< 0x20 */
+    uint32_t    SectionAlignment;       /**< 0x24 */
+    uint32_t    Reserved[2];            /**< 0x28 */
+} IMAGE_SEPARATE_DEBUG_HEADER;          /* size: 0x30 */
+typedef IMAGE_SEPARATE_DEBUG_HEADER *PIMAGE_SEPARATE_DEBUG_HEADER;
+typedef IMAGE_SEPARATE_DEBUG_HEADER const *PCIMAGE_SEPARATE_DEBUG_HEADER;
+
 
 #pragma pack()
 

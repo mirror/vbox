@@ -76,6 +76,14 @@ static DECLCALLBACK(RTLDRFMT) rtDbgModLdr_GetFormat(PRTDBGMODINT pMod)
 }
 
 
+/** @interface_method_impl{RTDBGMODVTIMG,pfnReadAt} */
+static DECLCALLBACK(int) rtDbgModLdr_ReadAt(PRTDBGMODINT pMod, uint32_t iDbgInfoHint, RTFOFF off, void *pvBuf, size_t cb)
+{
+    PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    return rtLdrReadAt(pThis->hLdrMod, pvBuf, UINT32_MAX /** @todo iDbgInfo*/, off, cb);
+}
+
+
 /** @interface_method_impl{RTDBGMODVTIMG,pfnUnmapPart} */
 static DECLCALLBACK(int) rtDbgModLdr_UnmapPart(PRTDBGMODINT pMod, size_t cb, void const **ppvMap)
 {
@@ -204,6 +212,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
     /*.pfnRvaToSegOffset= */            rtDbgModLdr_RvaToSegOffset,
     /*.pfnMapPart = */                  rtDbgModLdr_MapPart,
     /*.pfnUnmapPart = */                rtDbgModLdr_UnmapPart,
+    /*.pfnReadAt = */                   rtDbgModLdr_ReadAt,
     /*.pfnGetFormat = */                rtDbgModLdr_GetFormat,
     /*.pfnGetArch = */                  rtDbgModLdr_GetArch,
 

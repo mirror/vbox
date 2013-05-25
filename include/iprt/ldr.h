@@ -614,8 +614,8 @@ RTDECL(int) RTLdrEnumDbgInfo(RTLDRMOD hLdrMod, const void *pvBits, PFNRTLDRENUMD
  */
 typedef struct RTLDRSEG
 {
-    /** The segment name. (Might not be zero terminated!) */
-    const char     *pchName;
+    /** The segment name.  Always set to something. */
+    const char     *pszName;
     /** The length of the segment name. */
     uint32_t        cchName;
     /** The flat selector to use for the segment (i.e. data/code).
