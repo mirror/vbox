@@ -672,13 +672,29 @@ static DECLCALLBACK(int) rtkldr_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDRENU
     PRTLDRMODKLDR   pThis      = (PRTLDRMODKLDR)pMod;
     uint32_t const  cSegments  = pThis->pMod->cSegments;
     PCKLDRSEG       paSegments = &pThis->pMod->aSegments[0];
+    char            szName[128];
 
     for (uint32_t iSeg = 0; iSeg < cSegments; iSeg++)
     {
         RTLDRSEG Seg;
 
-        Seg.pchName     = paSegments[iSeg].pchName;
-        Seg.cchName     = paSegments[iSeg].cchName;
+        if (!paSegments[iSeg].cchName)
+        {
+            Seg.pszName = szName;
+            Seg.cchName = (uint32_t)RTStrPrintf(szName, sizeof(szName), "Seg%02u", iSeg);
+        }
+        else if (paSegments[iSeg].pchName[paSegments[iSeg].cchName])
+        {
+            AssertReturn(paSegments[iSeg].cchName < sizeof(szName), VERR_INTERNAL_ERROR_3);
+            RTStrCopyEx(szName, sizeof(szName), paSegments[iSeg].pchName, paSegments[iSeg].cchName);
+            Seg.pszName = szName;
+            Seg.cchName = paSegments[iSeg].cchName;
+        }
+        else
+        {
+            Seg.pszName = paSegments[iSeg].pchName;
+            Seg.cchName = paSegments[iSeg].cchName;
+        }
         Seg.SelFlat     = paSegments[iSeg].SelFlat;
         Seg.Sel16bit    = paSegments[iSeg].Sel16bit;
         Seg.fFlags      = paSegments[iSeg].fFlags;

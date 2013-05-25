@@ -197,6 +197,20 @@ typedef struct RTDBGMODVTIMG
     DECLCALLBACKMEMBER(int, pfnUnmapPart)(PRTDBGMODINT pMod, size_t cb, void const **ppvMap);
 
     /**
+     * Reads data from the image file.
+     *
+     * @returns IPRT status code, *ppvMap set to NULL on success.
+     *
+     * @param   pMod            Pointer to the module structure.
+     * @param   iDbgInfoHint    The debug info ordinal number hint, pass UINT32_MAX
+     *                          if not know or sure.
+     * @param   off             The offset into the image file.
+     * @param   pvBuf           The buffer to read into.
+     * @param   cb              The number of bytes to read.
+     */
+    DECLCALLBACKMEMBER(int, pfnReadAt)(PRTDBGMODINT pMod, uint32_t iDbgInfoHint, RTFOFF off, void *pvBuf, size_t cb);
+
+    /**
      * Gets the image format.
      *
      * @returns Valid image format on success, RTLDRFMT_INVALID if not supported.
@@ -603,6 +617,7 @@ typedef RTDBGMODINT *PRTDBGMODINT;
 
 
 extern DECLHIDDEN(RTSTRCACHE)           g_hDbgModStrCache;
+extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgCodeView;
 extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgDwarf;
 extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgNm;
 #ifdef RT_OS_WINDOWS

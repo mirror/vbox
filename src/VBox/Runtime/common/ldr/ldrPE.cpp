@@ -1311,7 +1311,7 @@ static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDREN
     /*
      * The first section is a fake one covering the headers.
      */
-    SegInfo.pchName     = "NtHdrs";
+    SegInfo.pszName     = "NtHdrs";
     SegInfo.cchName     = 6;
     SegInfo.SelFlat     = 0;
     SegInfo.Sel16bit    = 0;
@@ -1334,8 +1334,20 @@ static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDREN
     PCIMAGE_SECTION_HEADER pSh = pModPe->paSections;
     for (uint32_t i = 0; i < pModPe->cSections && rc == VINF_SUCCESS; i++, pSh++)
     {
-        SegInfo.pchName         = (const char *)&pSh->Name[0];
-        SegInfo.cchName         = (uint32_t)RTStrNLen(SegInfo.pchName, sizeof(pSh->Name));
+        char szName[32];
+        SegInfo.pszName         = (const char *)&pSh->Name[0];
+        SegInfo.cchName         = (uint32_t)RTStrNLen(SegInfo.pszName, sizeof(pSh->Name));
+        if (SegInfo.cchName >= sizeof(pSh->Name))
+        {
+            memcpy(szName, &pSh->Name[0], sizeof(pSh->Name));
+            szName[sizeof(sizeof(pSh->Name))] = '\0';
+            SegInfo.pszName = szName;
+        }
+        else if (SegInfo.cchName == 0)
+        {
+            SegInfo.pszName = szName;
+            SegInfo.cchName = (uint32_t)RTStrPrintf(szName, sizeof(szName), "UnamedSect%02u", i);
+        }
         SegInfo.SelFlat         = 0;
         SegInfo.Sel16bit        = 0;
         SegInfo.fFlags          = 0;

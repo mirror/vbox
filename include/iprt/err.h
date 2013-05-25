@@ -1503,6 +1503,12 @@ RT_C_DECLS_END
 #define VERR_DBG_MOD_IPE                        (-689)
 /** The symbol size was adjusted while adding it. */
 #define VINF_DBG_ADJUSTED_SYM_SIZE              690
+/** Unable to parse the CodeView debug information. */
+#define VERR_CV_BAD_FORMAT                      (-691)
+/** Unfinished CodeView debug information feature. */
+#define VERR_CV_TODO                            (-692)
+/** Internal processing error the CodeView debug information reader. */
+#define VERR_CV_IPE                             (-693)
 /** @} */
 
 /** @name Request Packet Status Codes.

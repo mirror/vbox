@@ -1176,7 +1176,7 @@ static DECLCALLBACK(int) rtDbgModDwarfScanSegmentsCallback(RTLDRMOD hLdrMod, PCR
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pvUser;
     Log(("Segment %.*s: LinkAddress=%#llx RVA=%#llx cb=%#llx\n",
-         pSeg->cchName, pSeg->pchName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
+         pSeg->cchName, pSeg->pszName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
     NOREF(hLdrMod);
 
     /* Count relevant segments. */
@@ -1192,18 +1192,19 @@ static DECLCALLBACK(int) rtDbgModDwarfAddSegmentsCallback(RTLDRMOD hLdrMod, PCRT
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pvUser;
     Log(("Segment %.*s: LinkAddress=%#llx RVA=%#llx cb=%#llx\n",
-         pSeg->cchName, pSeg->pchName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
+         pSeg->cchName, pSeg->pszName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
     NOREF(hLdrMod);
-    AssertReturn(!pSeg->pchName[pSeg->cchName], VERR_DWARF_IPE);
+    Assert(pSeg->cchName > 0);
+    Assert(!pSeg->pszName[pSeg->cchName]);
 
     /* If the segment doesn't have a mapping, just add a dummy so the indexing
        works out correctly (same as for the image). */
     if (pSeg->RVA == NIL_RTLDRADDR)
-        return RTDbgModSegmentAdd(pThis->hCnt, 0, 0, pSeg->pchName, 0 /*fFlags*/, NULL);
+        return RTDbgModSegmentAdd(pThis->hCnt, 0, 0, pSeg->pszName, 0 /*fFlags*/, NULL);
 
     /* The link address is 0 for all segments in a relocatable ELF image. */
     RTLDRADDR cb = RT_MAX(pSeg->cb, pSeg->cbMapped);
-    return RTDbgModSegmentAdd(pThis->hCnt, pSeg->RVA, cb, pSeg->pchName, 0 /*fFlags*/, NULL);
+    return RTDbgModSegmentAdd(pThis->hCnt, pSeg->RVA, cb, pSeg->pszName, 0 /*fFlags*/, NULL);
 }
 
 

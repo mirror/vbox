@@ -1094,13 +1094,19 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumSegments)(PRTLDRMODINTERNAL pMod, PFN
     /*
      * Do the enumeration.
      */
+    char            szName[32];
     const Elf_Shdr *paShdrs    = pModElf->paShdrs;
     const Elf_Shdr *paOrgShdrs = pModElf->paOrgShdrs;
     for (unsigned iShdr = 1; iShdr < pModElf->Ehdr.e_shnum; iShdr++)
     {
         RTLDRSEG Seg;
-        Seg.pchName     = ELF_SH_STR(pModElf, paShdrs[iShdr].sh_name);
-        Seg.cchName     = (uint32_t)strlen(Seg.pchName);
+        Seg.pszName     = ELF_SH_STR(pModElf, paShdrs[iShdr].sh_name);
+        Seg.cchName     = (uint32_t)strlen(Seg.pszName);
+        if (Seg.cchName == 0)
+        {
+            Seg.pszName = szName;
+            Seg.cchName = (uint32_t)RTStrPrintf(szName, sizeof(szName), "UnamedSect%02u", iShdr);
+        }
         Seg.SelFlat     = 0;
         Seg.Sel16bit    = 0;
         Seg.fFlags      = 0;

@@ -78,7 +78,7 @@ static DECLCALLBACK(int) rtDbgModExportsAddSegmentsCallback(RTLDRMOD hLdrMod, PC
 {
     PRTDBGMODEXPORTARGS pArgs = (PRTDBGMODEXPORTARGS)pvUser;
     Log(("Segment %.*s: LinkAddress=%#llx RVA=%#llx cb=%#llx\n",
-         pSeg->cchName, pSeg->pchName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
+         pSeg->cchName, pSeg->pszName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
     NOREF(hLdrMod);
 
     /* Find the best base address for the module. */
@@ -87,21 +87,12 @@ static DECLCALLBACK(int) rtDbgModExportsAddSegmentsCallback(RTLDRMOD hLdrMod, PC
              || pArgs->uImageBase > pSeg->LinkAddress))
         pArgs->uImageBase = pSeg->LinkAddress;
 
-    /* Make sure the name is terminated before we add it. */
-    char *pszName = (char *)pSeg->pchName;
-    if (pszName[pSeg->cchName])
-    {
-        pszName = (char *)alloca(pSeg->cchName + 1);
-        memcpy(pszName, pSeg->pchName, pSeg->cchName);
-        pszName[pSeg->cchName] = '\0';
-    }
-
     /* Add dummy segments for segments that doesn't get mapped. */
     if (pSeg->LinkAddress == NIL_RTLDRADDR)
-        return RTDbgModSegmentAdd(pArgs->pDbgMod, 0, 0, pszName, 0 /*fFlags*/, NULL);
+        return RTDbgModSegmentAdd(pArgs->pDbgMod, 0, 0, pSeg->pszName, 0 /*fFlags*/, NULL);
 
     RTLDRADDR cb = RT_MAX(pSeg->cb, pSeg->cbMapped);
-    return RTDbgModSegmentAdd(pArgs->pDbgMod, pSeg->RVA, cb, pszName, 0 /*fFlags*/, NULL);
+    return RTDbgModSegmentAdd(pArgs->pDbgMod, pSeg->RVA, cb, pSeg->pszName, 0 /*fFlags*/, NULL);
 }
 
 
