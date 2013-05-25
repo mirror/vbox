@@ -51,7 +51,9 @@ static DECLCALLBACK(void) vboxUsbLog(VBOXDRVCFG_LOG_SEVERITY enmSeverity, char *
 
 static DECLCALLBACK(void) vboxUsbPanic(void * pvPanic)
 {
+#ifndef DEBUG_bird
     AssertFailed();
+#endif
 }
 
 int usblibOsCreateService(void);
