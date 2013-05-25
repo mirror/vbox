@@ -21,8 +21,10 @@
 #define LOG_GROUP LOG_GROUP_DEV_LSILOGICSCSI
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmqueue.h>
+#include <VBox/vmm/pdmthread.h>
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/scsi.h>
+#include <VBox/sup.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
@@ -330,11 +332,13 @@ typedef struct LSILOGICSCSI
 
     /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
      * a port is entering the idle state. */
-    bool volatile                  fSignalIdle;
+    bool volatile                    fSignalIdle;
     /** Flag whether we have tasks which need to be processed again- */
-    bool volatile                  fRedo;
+    bool volatile                    fRedo;
+    /** Flag whether the worker thread is sleeping. */
+    volatile bool                    fWrkThreadSleeping;
     /** Alignment padding. */
-    bool                             afPadding2[HC_ARCH_BITS == 32 ? 2 : 6];
+    bool                             afPadding2[HC_ARCH_BITS == 32 ? 1 : 5];
     /** List of tasks which can be redone. */
     R3PTRTYPE(volatile PLSILOGICREQ) pTasksRedoHead;
 
@@ -353,6 +357,14 @@ typedef struct LSILOGICSCSI
         RTLISTANCHOR                 ListMemRegns;
         uint8_t                      u8Padding[2 * sizeof(RTUINTPTR)];
     };
+
+    /** The support driver session handle. */
+    R3R0PTRTYPE(PSUPDRVSESSION)      pSupDrvSession;
+    /** Worker thread. */
+    R3PTRTYPE(PPDMTHREAD)            pThreadWrk;
+    /** The event semaphore the processing thread waits on. */
+    SUPSEMEVENT                      hEvtProcess;
+
 } LSILOGISCSI;
 /** Pointer to the device instance data of the LsiLogic emulation. */
 typedef LSILOGICSCSI *PLSILOGICSCSI;
@@ -1273,10 +1285,16 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
             /* Send notification to R3 if there is not one send already. */
             if (!ASMAtomicXchgBool(&pThis->fNotificationSend, true))
             {
+#ifdef IN_RC
                 PPDMQUEUEITEMCORE pNotificationItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotificationQueue));
                 AssertPtr(pNotificationItem);
 
                 PDMQueueInsert(pThis->CTX_SUFF(pNotificationQueue), pNotificationItem);
+#else
+                LogFlowFunc(("Signal event semaphore\n"));
+                int rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+                AssertRC(rc);
+#endif
             }
             break;
         }
@@ -3692,98 +3710,8 @@ static DECLCALLBACK(bool) lsilogicR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PPDM
 
     LogFlowFunc(("pDevIns=%#p pItem=%#p\n", pDevIns, pItem));
 
-    /* Reset notification event. */
-    ASMAtomicXchgBool(&pThis->fNotificationSend, false);
-
-    /* Only process request which arrived before we received the notification. */
-    uint32_t uRequestQueueNextEntryWrite = ASMAtomicReadU32(&pThis->uRequestQueueNextEntryFreeWrite);
-
-    /* Go through the messages now and process them. */
-    while (   RT_LIKELY(pThis->enmState == LSILOGICSTATE_OPERATIONAL)
-           && (pThis->uRequestQueueNextAddressRead != uRequestQueueNextEntryWrite))
-    {
-        uint32_t  u32RequestMessageFrameDesc = pThis->CTX_SUFF(pRequestQueueBase)[pThis->uRequestQueueNextAddressRead];
-        RTGCPHYS  GCPhysMessageFrameAddr = LSILOGIC_RTGCPHYS_FROM_U32(pThis->u32HostMFAHighAddr,
-                                                                      (u32RequestMessageFrameDesc & ~0x07));
-
-        PLSILOGICREQ pLsiReq;
-
-        /* Get new task state. */
-        rc = RTMemCacheAllocEx(pThis->hTaskCache, (void **)&pLsiReq);
-        AssertRC(rc);
-
-        pLsiReq->GCPhysMessageFrameAddr = GCPhysMessageFrameAddr;
-
-        /* Read the message header from the guest first. */
-        PDMDevHlpPhysRead(pDevIns, GCPhysMessageFrameAddr, &pLsiReq->GuestRequest, sizeof(MptMessageHdr));
-
-        /* Determine the size of the request. */
-        uint32_t cbRequest = 0;
-
-        switch (pLsiReq->GuestRequest.Header.u8Function)
-        {
-            case MPT_MESSAGE_HDR_FUNCTION_SCSI_IO_REQUEST:
-                cbRequest = sizeof(MptSCSIIORequest);
-                break;
-            case MPT_MESSAGE_HDR_FUNCTION_SCSI_TASK_MGMT:
-                cbRequest = sizeof(MptSCSITaskManagementRequest);
-                break;
-            case MPT_MESSAGE_HDR_FUNCTION_IOC_INIT:
-                cbRequest = sizeof(MptIOCInitRequest);
-                break;
-            case MPT_MESSAGE_HDR_FUNCTION_IOC_FACTS:
-                cbRequest = sizeof(MptIOCFactsRequest);
-                break;
-            case MPT_MESSAGE_HDR_FUNCTION_CONFIG:
-                cbRequest = sizeof(MptConfigurationRequest);
-                break;
-            case MPT_MESSAGE_HDR_FUNCTION_PORT_FACTS:
-                cbRequest = sizeof(MptPortFactsRequest);
-                break;
-            case MPT_MESSAGE_HDR_FUNCTION_PORT_ENABLE:
-                cbRequest = sizeof(MptPortEnableRequest);
-                break;
-            case MPT_MESSAGE_HDR_FUNCTION_EVENT_NOTIFICATION:
-                cbRequest = sizeof(MptEventNotificationRequest);
-                break;
-            case MPT_MESSAGE_HDR_FUNCTION_EVENT_ACK:
-                AssertMsgFailed(("todo\n"));
-                //cbRequest = sizeof(MptEventAckRequest);
-                break;
-            case MPT_MESSAGE_HDR_FUNCTION_FW_DOWNLOAD:
-                cbRequest = sizeof(MptFWDownloadRequest);
-                break;
-            case MPT_MESSAGE_HDR_FUNCTION_FW_UPLOAD:
-                cbRequest = sizeof(MptFWUploadRequest);
-                break;
-            default:
-                AssertMsgFailed(("Unknown function issued %u\n", pLsiReq->GuestRequest.Header.u8Function));
-                lsilogicSetIOCFaultCode(pThis, LSILOGIC_IOCSTATUS_INVALID_FUNCTION);
-        }
-
-        if (cbRequest != 0)
-        {
-            /* Read the complete message frame from guest memory now. */
-            PDMDevHlpPhysRead(pDevIns, GCPhysMessageFrameAddr, &pLsiReq->GuestRequest, cbRequest);
-
-            /* Handle SCSI I/O requests now. */
-            if (pLsiReq->GuestRequest.Header.u8Function == MPT_MESSAGE_HDR_FUNCTION_SCSI_IO_REQUEST)
-            {
-               rc = lsilogicR3ProcessSCSIIORequest(pThis, pLsiReq);
-               AssertRC(rc);
-            }
-            else
-            {
-                MptReplyUnion Reply;
-                rc = lsilogicR3ProcessMessageRequest(pThis, &pLsiReq->GuestRequest.Header, &Reply);
-                AssertRC(rc);
-                RTMemCacheFree(pThis->hTaskCache, pLsiReq);
-            }
-
-            pThis->uRequestQueueNextAddressRead++;
-            pThis->uRequestQueueNextAddressRead %= pThis->cRequestQueueEntries;
-        }
-    }
+    rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+    AssertRC(rc);
 
     return true;
 }
@@ -4222,6 +4150,144 @@ static void lsilogicR3QueuesFree(PLSILOGICSCSI pThis)
     pThis->pReplyPostQueueBaseR3 = NULL;
     pThis->pRequestQueueBaseR3   = NULL;
 }
+
+
+/* The worker thread. */
+static DECLCALLBACK(int) lsilogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    PLSILOGICSCSI pThis = (PLSILOGICSCSI)pThread->pvUser;
+    int rc = VINF_SUCCESS;
+
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    {
+        bool fNotificationSend;
+
+        ASMAtomicWriteBool(&pThis->fWrkThreadSleeping, true);
+        fNotificationSend = ASMAtomicXchgBool(&pThis->fNotificationSend, false);
+        if (!fNotificationSend)
+        {
+            Assert(ASMAtomicReadBool(&pThis->fWrkThreadSleeping));
+            rc = SUPSemEventWaitNoResume(pThis->pSupDrvSession, pThis->hEvtProcess, RT_INDEFINITE_WAIT);
+            AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
+            if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
+                break;
+            LogFlowFunc(("Woken up with rc=%Rrc\n", rc));
+            fNotificationSend = ASMAtomicXchgBool(&pThis->fNotificationSend, false);
+        }
+
+        ASMAtomicWriteBool(&pThis->fWrkThreadSleeping, false);
+
+        /* Only process request which arrived before we received the notification. */
+        uint32_t uRequestQueueNextEntryWrite = ASMAtomicReadU32(&pThis->uRequestQueueNextEntryFreeWrite);
+
+        /* Go through the messages now and process them. */
+        while (   RT_LIKELY(pThis->enmState == LSILOGICSTATE_OPERATIONAL)
+               && (pThis->uRequestQueueNextAddressRead != uRequestQueueNextEntryWrite))
+        {
+            uint32_t  u32RequestMessageFrameDesc = pThis->CTX_SUFF(pRequestQueueBase)[pThis->uRequestQueueNextAddressRead];
+            RTGCPHYS  GCPhysMessageFrameAddr = LSILOGIC_RTGCPHYS_FROM_U32(pThis->u32HostMFAHighAddr,
+                                                                          (u32RequestMessageFrameDesc & ~0x07));
+
+            PLSILOGICREQ pLsiReq;
+
+            /* Get new task state. */
+            rc = RTMemCacheAllocEx(pThis->hTaskCache, (void **)&pLsiReq);
+            AssertRC(rc);
+
+            pLsiReq->GCPhysMessageFrameAddr = GCPhysMessageFrameAddr;
+
+            /* Read the message header from the guest first. */
+            PDMDevHlpPhysRead(pDevIns, GCPhysMessageFrameAddr, &pLsiReq->GuestRequest, sizeof(MptMessageHdr));
+
+            /* Determine the size of the request. */
+            uint32_t cbRequest = 0;
+
+            switch (pLsiReq->GuestRequest.Header.u8Function)
+            {
+                case MPT_MESSAGE_HDR_FUNCTION_SCSI_IO_REQUEST:
+                    cbRequest = sizeof(MptSCSIIORequest);
+                    break;
+                case MPT_MESSAGE_HDR_FUNCTION_SCSI_TASK_MGMT:
+                    cbRequest = sizeof(MptSCSITaskManagementRequest);
+                    break;
+                case MPT_MESSAGE_HDR_FUNCTION_IOC_INIT:
+                    cbRequest = sizeof(MptIOCInitRequest);
+                    break;
+                case MPT_MESSAGE_HDR_FUNCTION_IOC_FACTS:
+                    cbRequest = sizeof(MptIOCFactsRequest);
+                    break;
+                case MPT_MESSAGE_HDR_FUNCTION_CONFIG:
+                    cbRequest = sizeof(MptConfigurationRequest);
+                    break;
+                case MPT_MESSAGE_HDR_FUNCTION_PORT_FACTS:
+                    cbRequest = sizeof(MptPortFactsRequest);
+                    break;
+                case MPT_MESSAGE_HDR_FUNCTION_PORT_ENABLE:
+                    cbRequest = sizeof(MptPortEnableRequest);
+                    break;
+                case MPT_MESSAGE_HDR_FUNCTION_EVENT_NOTIFICATION:
+                    cbRequest = sizeof(MptEventNotificationRequest);
+                    break;
+                case MPT_MESSAGE_HDR_FUNCTION_EVENT_ACK:
+                    AssertMsgFailed(("todo\n"));
+                    //cbRequest = sizeof(MptEventAckRequest);
+                    break;
+                case MPT_MESSAGE_HDR_FUNCTION_FW_DOWNLOAD:
+                    cbRequest = sizeof(MptFWDownloadRequest);
+                    break;
+                case MPT_MESSAGE_HDR_FUNCTION_FW_UPLOAD:
+                    cbRequest = sizeof(MptFWUploadRequest);
+                    break;
+                default:
+                    AssertMsgFailed(("Unknown function issued %u\n", pLsiReq->GuestRequest.Header.u8Function));
+                    lsilogicSetIOCFaultCode(pThis, LSILOGIC_IOCSTATUS_INVALID_FUNCTION);
+            }
+
+            if (cbRequest != 0)
+            {
+                /* Read the complete message frame from guest memory now. */
+                PDMDevHlpPhysRead(pDevIns, GCPhysMessageFrameAddr, &pLsiReq->GuestRequest, cbRequest);
+
+                /* Handle SCSI I/O requests now. */
+                if (pLsiReq->GuestRequest.Header.u8Function == MPT_MESSAGE_HDR_FUNCTION_SCSI_IO_REQUEST)
+                {
+                   rc = lsilogicR3ProcessSCSIIORequest(pThis, pLsiReq);
+                   AssertRC(rc);
+                }
+                else
+                {
+                    MptReplyUnion Reply;
+                    rc = lsilogicR3ProcessMessageRequest(pThis, &pLsiReq->GuestRequest.Header, &Reply);
+                    AssertRC(rc);
+                    RTMemCacheFree(pThis->hTaskCache, pLsiReq);
+                }
+
+                pThis->uRequestQueueNextAddressRead++;
+                pThis->uRequestQueueNextAddressRead %= pThis->cRequestQueueEntries;
+            }
+        } /* While request frames available. */
+    } /* While running */
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Unblock the worker thread so it can respond to a state change.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The pcnet device instance.
+ * @param   pThread     The send thread.
+ */
+static DECLCALLBACK(int) lsilogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    return SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+}
+
 
 /**
  * Kicks the controller to process pending tasks after the VM was resumed
@@ -5159,6 +5225,12 @@ static DECLCALLBACK(int) lsilogicR3Destruct(PPDMDEVINS pDevIns)
         pThis->hTaskCache = NIL_RTMEMCACHE;
     }
 
+    if (pThis->hEvtProcess != NIL_SUPSEMEVENT)
+    {
+        SUPSemEventClose(pThis->pSupDrvSession, pThis->hEvtProcess);
+        pThis->hEvtProcess = NIL_SUPSEMEVENT;
+    }
+
     lsilogicR3ConfigurationPagesFree(pThis);
     lsilogicR3MemRegionsFree(pThis);
 
@@ -5177,7 +5249,8 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Initialize enought of the state to make the destructure not trip up.
      */
-    pThis->hTaskCache = NIL_RTMEMCACHE;
+    pThis->hTaskCache  = NIL_RTMEMCACHE;
+    pThis->hEvtProcess = NIL_SUPSEMEVENT;
     RTListInit(&pThis->ListMemRegns);
 
     /*
@@ -5295,6 +5368,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pThis->pSupDrvSession = PDMDevHlpGetSupDrvSession(pDevIns);
     pThis->IBase.pfnQueryInterface = lsilogicR3StatusQueryInterface;
     pThis->ILeds.pfnQueryStatusLed = lsilogicR3StatusQueryStatusLed;
 
@@ -5394,6 +5468,20 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         pThis->cDeviceStates = pThis->cPorts * LSILOGICSCSI_PCI_SAS_DEVICES_PER_PORT_MAX;
     else
         AssertMsgFailed(("Invalid controller type: %d\n", pThis->enmCtrlType));
+
+    /*
+     * Create event semaphore and worker thread.
+     */
+    rc = PDMDevHlpThreadCreate(pDevIns, &pThis->pThreadWrk, pThis, lsilogicR3Worker,
+                               lsilogicR3WorkerWakeUp, 0, RTTHREADTYPE_IO, szDevTag);
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("LsiLogic: Failed to create worker thread %s"), szDevTag);
+
+    rc = SUPSemEventCreate(pThis->pSupDrvSession, &pThis->hEvtProcess);
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("LsiLogic: Failed to create SUP event semaphore"));
 
     /*
      * Allocate device states.
