@@ -279,12 +279,12 @@ static DECLCALLBACK(int) rtDbgModInitOnce(void *pvUser)
         rc = rtDbgModDebugInterpreterRegister(&g_rtDbgModVtDbgNm);
         if (RT_SUCCESS(rc))
             rc = rtDbgModDebugInterpreterRegister(&g_rtDbgModVtDbgDwarf);
+        if (RT_SUCCESS(rc))
+            rc = rtDbgModDebugInterpreterRegister(&g_rtDbgModVtDbgCodeView);
 #ifdef RT_OS_WINDOWS
         if (RT_SUCCESS(rc))
             rc = rtDbgModDebugInterpreterRegister(&g_rtDbgModVtDbgDbgHelp);
 #endif
-        if (RT_SUCCESS(rc))
-            rc = rtDbgModDebugInterpreterRegister(&g_rtDbgModVtDbgCodeView);
         if (RT_SUCCESS(rc))
             rc = rtDbgModImageInterpreterRegister(&g_rtDbgModVtImgLdr);
         if (RT_SUCCESS(rc))
