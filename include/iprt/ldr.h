@@ -480,6 +480,8 @@ typedef enum RTLDRDBGINFOTYPE
     RTLDRDBGINFOTYPE_CODEVIEW_PDB70,
     /** Microsoft Codeview debug info, in external file (DBG). */
     RTLDRDBGINFOTYPE_CODEVIEW_DBG,
+    /** Microsoft COFF debug info. */
+    RTLDRDBGINFOTYPE_COFF,
     /** Watcom debug info. */
     RTLDRDBGINFOTYPE_WATCOM,
     /** IBM High Level Language debug info.. */
@@ -529,7 +531,7 @@ typedef struct RTLDRDBGINFO
             uint32_t    uCrc32;
         } Dwo;
 
-        /** RTLDRDBGINFOTYPE_CODEVIEW_PDB20, RTLDRDBGINFOTYPE_CODEVIEW_DBG */
+        /** RTLDRDBGINFOTYPE_CODEVIEW, RTLDRDBGINFOTYPE_COFF  */
         struct
         {
             /** The PE image size. */
@@ -540,7 +542,7 @@ typedef struct RTLDRDBGINFO
             uint32_t    uMajorVer;
             /** The minor version from the entry. */
             uint32_t    uMinorVer;
-        } Cv;
+        } Cv, Coff;
 
         /** RTLDRDBGINFOTYPE_CODEVIEW_DBG */
         struct

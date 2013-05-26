@@ -1185,6 +1185,7 @@ static DECLCALLBACK(int) rtldrPE_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void 
         {
             case IMAGE_DEBUG_TYPE_CODEVIEW:
                 DbgInfo.enmType = RTLDRDBGINFOTYPE_CODEVIEW;
+                DbgInfo.u.Cv.cbImage    = pModPe->cbImage;
                 DbgInfo.u.Cv.uMajorVer  = paDbgDir[i].MajorVersion;
                 DbgInfo.u.Cv.uMinorVer  = paDbgDir[i].MinorVersion;
                 DbgInfo.u.Cv.uTimestamp = paDbgDir[i].TimeDateStamp;
@@ -1261,6 +1262,14 @@ static DECLCALLBACK(int) rtldrPE_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void 
                     else
                         rcRet = rc; /* continue without a filename. */
                 }
+                break;
+
+            case IMAGE_DEBUG_TYPE_COFF:
+                DbgInfo.enmType = RTLDRDBGINFOTYPE_COFF;
+                DbgInfo.u.Coff.cbImage    = pModPe->cbImage;
+                DbgInfo.u.Coff.uMajorVer  = paDbgDir[i].MajorVersion;
+                DbgInfo.u.Coff.uMinorVer  = paDbgDir[i].MinorVersion;
+                DbgInfo.u.Coff.uTimestamp = paDbgDir[i].TimeDateStamp;
                 break;
 
             default:
