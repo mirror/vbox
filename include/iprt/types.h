@@ -735,15 +735,27 @@ typedef const struct RTTIMESPEC *PCRTTIMESPEC;
 typedef union RTPTRUNION
 {
     /** Pointer into the void... */
-    void               *pv;
+    void                   *pv;
+    /** Pointer to char value. */
+    char                   *pch;
+    /** Pointer to char value. */
+    unsigned char          *puch;
+    /** Pointer to a int value. */
+    int                    *pi;
+    /** Pointer to a unsigned int value. */
+    unsigned int           *pu;
+    /** Pointer to a long value. */
+    long                   *pl;
+    /** Pointer to a long value. */
+    unsigned long          *pul;
     /** Pointer to a 8-bit unsigned value. */
-    uint8_t            *pu8;
+    uint8_t                *pu8;
     /** Pointer to a 16-bit unsigned value. */
-    uint16_t           *pu16;
+    uint16_t               *pu16;
     /** Pointer to a 32-bit unsigned value. */
-    uint32_t           *pu32;
+    uint32_t               *pu32;
     /** Pointer to a 64-bit unsigned value. */
-    uint64_t           *pu64;
+    uint64_t               *pu64;
 } RTPTRUNION;
 /** Pointer to a pointer union. */
 typedef RTPTRUNION *PRTPTRUNION;
@@ -754,15 +766,27 @@ typedef RTPTRUNION *PRTPTRUNION;
 typedef union RTCPTRUNION
 {
     /** Pointer into the void... */
-    void const         *pv;
+    void const             *pv;
+    /** Pointer to char value. */
+    char const             *pch;
+    /** Pointer to char value. */
+    unsigned char const    *puch;
+    /** Pointer to a int value. */
+    int const              *pi;
+    /** Pointer to a unsigned int value. */
+    unsigned int const     *pu;
+    /** Pointer to a long value. */
+    long const             *pl;
+    /** Pointer to a long value. */
+    unsigned long const    *pul;
     /** Pointer to a 8-bit unsigned value. */
-    uint8_t const      *pu8;
+    uint8_t const          *pu8;
     /** Pointer to a 16-bit unsigned value. */
-    uint16_t const     *pu16;
+    uint16_t const         *pu16;
     /** Pointer to a 32-bit unsigned value. */
-    uint32_t const     *pu32;
+    uint32_t const         *pu32;
     /** Pointer to a 64-bit unsigned value. */
-    uint64_t const     *pu64;
+    uint64_t const         *pu64;
 } RTCPTRUNION;
 /** Pointer to a const pointer union. */
 typedef RTCPTRUNION *PRTCPTRUNION;
@@ -773,15 +797,27 @@ typedef RTCPTRUNION *PRTCPTRUNION;
 typedef union RTVPTRUNION
 {
     /** Pointer into the void... */
-    void volatile      *pv;
+    void volatile          *pv;
+    /** Pointer to char value. */
+    char volatile          *pch;
+    /** Pointer to char value. */
+    unsigned char volatile *puch;
+    /** Pointer to a int value. */
+    int volatile           *pi;
+    /** Pointer to a unsigned int value. */
+    unsigned int volatile  *pu;
+    /** Pointer to a long value. */
+    long volatile          *pl;
+    /** Pointer to a long value. */
+    unsigned long volatile *pul;
     /** Pointer to a 8-bit unsigned value. */
-    uint8_t volatile   *pu8;
+    uint8_t volatile       *pu8;
     /** Pointer to a 16-bit unsigned value. */
-    uint16_t volatile  *pu16;
+    uint16_t volatile      *pu16;
     /** Pointer to a 32-bit unsigned value. */
-    uint32_t volatile  *pu32;
+    uint32_t volatile      *pu32;
     /** Pointer to a 64-bit unsigned value. */
-    uint64_t volatile  *pu64;
+    uint64_t volatile      *pu64;
 } RTVPTRUNION;
 /** Pointer to a const pointer union. */
 typedef RTVPTRUNION *PRTVPTRUNION;
@@ -792,15 +828,27 @@ typedef RTVPTRUNION *PRTVPTRUNION;
 typedef union RTCVPTRUNION
 {
     /** Pointer into the void... */
-    void const volatile        *pv;
+    void const volatile            *pv;
+    /** Pointer to char value. */
+    char const volatile            *pch;
+    /** Pointer to char value. */
+    unsigned char const volatile   *puch;
+    /** Pointer to a int value. */
+    int const volatile             *pi;
+    /** Pointer to a unsigned int value. */
+    unsigned int const volatile    *pu;
+    /** Pointer to a long value. */
+    long const volatile            *pl;
+    /** Pointer to a long value. */
+    unsigned long const volatile   *pul;
     /** Pointer to a 8-bit unsigned value. */
-    uint8_t const volatile     *pu8;
+    uint8_t const volatile         *pu8;
     /** Pointer to a 16-bit unsigned value. */
-    uint16_t const volatile    *pu16;
+    uint16_t const volatile        *pu16;
     /** Pointer to a 32-bit unsigned value. */
-    uint32_t const volatile    *pu32;
+    uint32_t const volatile        *pu32;
     /** Pointer to a 64-bit unsigned value. */
-    uint64_t const volatile    *pu64;
+    uint64_t const volatile        *pu64;
 } RTCVPTRUNION;
 /** Pointer to a const pointer union. */
 typedef RTCVPTRUNION *PRTCVPTRUNION;
