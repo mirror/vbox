@@ -681,6 +681,8 @@ typedef struct HMCPU
         /** Previous guest paging mode (as seen by HMR3PagingModeChanged). */
         PGMMODE                     enmPrevGuestMode;
 #else
+        uint32_t                    fRestoreHostFlags;
+        VMXRESTOREHOST              RestoreHost;
         /** Set if guest was executing in real mode (extra checks). */
         bool                        fWasInRealMode;
 #endif

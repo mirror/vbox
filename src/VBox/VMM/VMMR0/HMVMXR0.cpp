@@ -2090,8 +2090,6 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
 DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 {
     int rc = VERR_INTERNAL_ERROR_5;
-    RTSEL uSelCS = 0;
-    RTSEL uSelSS = 0;
     RTSEL uSelDS = 0;
     RTSEL uSelES = 0;
     RTSEL uSelFS = 0;
@@ -2099,8 +2097,21 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     RTSEL uSelTR = 0;
 
     /*
-     * Host Selector registers.
+     * Host DS, ES, FS and GS segment registers.
      */
+#if HC_ARCH_BITS == 64
+    pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
+    uSelDS = ASMGetDS();
+    uSelES = ASMGetES();
+    uSelFS = ASMGetFS();
+    uSelGS = ASMGetGS();
+#endif
+
+    /*
+     * Host CS and SS segment registers.
+     */
+    RTSEL uSelCS;
+    RTSEL uSelSS;
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
@@ -2118,12 +2129,43 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     uSelSS = ASMGetSS();
 #endif
 
-    /* Note: VT-x is picky about the RPL of the selectors here; we'll restore them manually. */
+    /*
+     * Host TR segment register.
+     */
     uSelTR = ASMGetTR();
 
+#if HC_ARCH_BITS == 64
+    /*
+     * Determine if the host segment registers are suitable for VT-x. Otherwise use zero to gain VM-entry and restore them
+     * before we get preempted. See Intel spec. 26.2.3 "Checks on Host Segment and Descriptor-Table Registers".
+     */
+    if (uSelDS & (X86_SEL_RPL | X86_SEL_LDT))
+    {
+        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_DS;
+        pVCpu->hm.s.vmx.RestoreHost.uHostSelDS = uSelDS;
+        uSelDS = 0;
+    }
+    if (uSelES & (X86_SEL_RPL | X86_SEL_LDT))
+    {
+        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_ES;
+        pVCpu->hm.s.vmx.RestoreHost.uHostSelES = uSelES;
+        uSelES = 0;
+    }
+    if (uSelFS & (X86_SEL_RPL | X86_SEL_LDT))
+    {
+        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_FS;
+        pVCpu->hm.s.vmx.RestoreHost.uHostSelFS = uSelFS;
+        uSelFS = 0;
+    }
+    if (uSelGS & (X86_SEL_RPL | X86_SEL_LDT))
+    {
+        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_GS;
+        pVCpu->hm.s.vmx.RestoreHost.uHostSelGS = uSelGS;
+        uSelGS = 0;
+    }
+#endif
+
     /* Verification based on Intel spec. 26.2.3 "Checks on Host Segment and Descriptor-Table Registers"  */
-    /** @todo Verify if we have any platform that actually run with DS or ES with
-     *        RPL != 0 in kernel space. */
     Assert(!(uSelCS & X86_SEL_RPL)); Assert(!(uSelCS & X86_SEL_LDT));
     Assert(!(uSelSS & X86_SEL_RPL)); Assert(!(uSelSS & X86_SEL_LDT));
     Assert(!(uSelDS & X86_SEL_RPL)); Assert(!(uSelDS & X86_SEL_LDT));
@@ -2143,8 +2185,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     /* Write these host selector fields into the host-state area in the VMCS. */
     rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_CS, uSelCS);      AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_SS, uSelSS);      AssertRCReturn(rc, rc);
-    /* Avoid the VMWRITEs as we set the following segments to 0 and the VMCS fields are already  0 (since g_HvmR0 is static) */
-#if 0
+#if HC_ARCH_BITS == 64
     rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_DS, uSelDS);      AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_ES, uSelES);      AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs32(VMX_VMCS16_HOST_FIELD_FS, uSelFS);      AssertRCReturn(rc, rc);
@@ -2155,10 +2196,6 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     /*
      * Host GDTR and IDTR.
      */
-    /** @todo Despite VT-x -not- restoring the limits on GDTR and IDTR it should
-     *        be safe to -not- save and restore GDTR and IDTR in the assembly
-     *        code and just do it here and don't care if the limits are zapped on
-     *        VM-exit. */
     RTGDTR Gdtr;
     RT_ZERO(Gdtr);
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
@@ -2181,6 +2218,31 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         ASMGetIDTR(&Idtr);
         rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_GDTR_BASE, Gdtr.pGdt);      AssertRCReturn(rc, rc);
         rc = VMXWriteVmcsHstN(VMX_VMCS_HOST_IDTR_BASE, Idtr.pIdt);      AssertRCReturn(rc, rc);
+
+#if HC_ARCH_BITS == 64
+        /*
+         * Determine if we need to manually need to restore the GDTR and IDTR limits as VT-x zaps them to the
+         * maximum limit (0xffff) on every VM-exit.
+         */
+        if (Gdtr.cbGdt != 0xffff)
+        {
+            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_GDTR;
+            AssertCompile(sizeof(Gdtr) == sizeof(X86XDTR64));
+            memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostGdtr, &Gdtr, sizeof(X86XDTR64));
+        }
+
+        /*
+         * IDT limit is practically 0xfff. Therefore if the host has the limit as 0xfff, VT-x bloating the limit to 0xffff
+         * is not a problem as it's not possible to get at them anyway. See Intel spec. 6.14.1 "64-Bit Mode IDT" and
+         * Intel spec. 6.2 "Exception and Interrupt Vectors".
+         */
+        if (Idtr.cbIdt < 0x0fff)
+        {
+            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_IDTR;
+            AssertCompile(sizeof(Idtr) == sizeof(X86XDTR64));
+            memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostIdtr, &Idtr, sizeof(X86XDTR64));
+        }
+#endif
     }
 
     /*
@@ -2189,7 +2251,7 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
      */
     if ((uSelTR & X86_SEL_MASK) > Gdtr.cbGdt)
     {
-        AssertMsgFailed(("hmR0VmxSaveHostSegmentRegs: TR selector exceeds limit.TR=%RTsel Gdtr.cbGdt=%#x\n", uSelTR, Gdtr.cbGdt));
+        AssertMsgFailed(("hmR0VmxSaveHostSegmentRegs: TR selector exceeds limit. TR=%RTsel cbGdt=%#x\n", uSelTR, Gdtr.cbGdt));
         return VERR_VMX_INVALID_HOST_STATE;
     }
 
@@ -2216,18 +2278,22 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 
     /*
      * Host FS base and GS base.
-     * For 32-bit hosts the base is handled by the assembly code where we push/pop FS and GS which                                                                .
-     * would take care of the bases. In 64-bit, the MSRs come into play.
      */
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
         uint64_t u64FSBase = ASMRdMsr(MSR_K8_FS_BASE);
         uint64_t u64GSBase = ASMRdMsr(MSR_K8_GS_BASE);
-        rc = VMXWriteVmcs64(VMX_VMCS_HOST_FS_BASE, u64FSBase);
-        AssertRCReturn(rc, rc);
-        rc = VMXWriteVmcs64(VMX_VMCS_HOST_GS_BASE, u64GSBase);
-        AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs64(VMX_VMCS_HOST_FS_BASE, u64FSBase);          AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs64(VMX_VMCS_HOST_GS_BASE, u64GSBase);          AssertRCReturn(rc, rc);
+
+# if HC_ARCH_BITS == 64
+        /* Store the base if we have to restore FS or GS manually as we need to restore the base as well. */
+        if (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_SEL_FS)
+            pVCpu->hm.s.vmx.RestoreHost.uHostFSBase = u64FSBase;
+        if (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_SEL_GS)
+            pVCpu->hm.s.vmx.RestoreHost.uHostGSBase = u64GSBase;
+# endif
     }
 #endif
     return rc;
@@ -5774,6 +5840,9 @@ static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int
         Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT);
     }
 
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit1, x);
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitIO, y1);
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
@@ -6424,6 +6493,14 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /** @todo this will change with preemption hooks where we only VMCLEAR when
      *        we are actually going to be preempted, not all the time like we
      *        currently do. */
+
+    /* Restore host-state bits that VT-x only restores partially. */
+    if (pVCpu->hm.s.vmx.fRestoreHostFlags)
+    {
+        VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
+        pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
+    }
+
     /*
      * Sync the current VMCS (writes back internal data back into the VMCS region in memory)
      * and mark the VMCS launch-state as "clear".
@@ -6739,9 +6816,9 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
     }
 #endif
 
-    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
     TMNotifyStartOfExecution(pVCpu);                            /* Finally, notify TM to resume its clocks as we're about
                                                                     to start executing. */
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 }
 
 
