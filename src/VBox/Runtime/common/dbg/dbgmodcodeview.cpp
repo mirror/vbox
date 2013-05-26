@@ -1542,7 +1542,7 @@ static int rtDbgModCvProcessCoffSymbolTable(PRTDBGMODCV pThis,
                 case IMAGE_SYM_CLASS_STATIC:
                     if (   Sym.NumberOfAuxSymbols == 1
                         && (   iLineSect == 1
-                            || Sym.SectionNumber == iLineSect) )
+                            || Sym.SectionNumber == (int32_t)iLineSect) )
                     {
                         memcpy(&Aux, &paSymbols[iSymbol + 1], sizeof(Aux));
                         if (iLineSect == 1)
@@ -1553,7 +1553,7 @@ static int rtDbgModCvProcessCoffSymbolTable(PRTDBGMODCV pThis,
                                   RT_MAKE_U32(Aux.Section.Number, Aux.Section.HighNumber),
                                   Aux.Section.Selection,
                                   Aux.Section.bReserved));
-                        if (   Sym.SectionNumber == iLineSect
+                        if (   Sym.SectionNumber == (int32_t)iLineSect
                             && Aux.Section.NumberOfLinenumbers > 0)
                         {
                             uint32_t cLinesToAdd = RT_MIN(Aux.Section.NumberOfLinenumbers, cLines - iLine);
@@ -2320,7 +2320,6 @@ static int rtDbgModCvProbeFile(PRTDBGMODINT pDbgMod, const char *pszFilename, RT
         PRTDBGMODCV pThis = (PRTDBGMODCV)pDbgMod->pvDbgPriv;
         if (pThis)
         {
-            PRTDBGMODCV pThis = (PRTDBGMODCV)pDbgMod->pvDbgPriv;
             pThis->cbImage = DbgHdr.SizeOfImage;
             if (pDbgMod->pImgVt)
                 rc = VINF_SUCCESS;
