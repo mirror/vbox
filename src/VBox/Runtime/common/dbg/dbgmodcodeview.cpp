@@ -434,7 +434,7 @@ typedef enum RTCVSYMTYPE
      * @{ */
     kCvSymType_ProcRef,
     kCvSymType_DataRef,
-    kCvSymType_Align,
+    kCvSymType_Align
     /** @} */
 } RTCVSYMTYPE;
 typedef RTCVSYMTYPE *PRTCVSYMTYPE;
@@ -476,6 +476,8 @@ typedef struct RTDBGMODCV
     /** Using a container for managing the debug info. */
     RTDBGMOD        hCnt;
 
+    /** @name Codeview details
+     * @{ */
     /** The code view magic (used as format indicator). */
     uint32_t        u32CvMagic;
     /** The file type. */
@@ -486,6 +488,7 @@ typedef struct RTDBGMODCV
     uint32_t        cbDbgInfo;
     /** The offset of the subsection directory (relative to offBase). */
     uint32_t        offDir;
+    /** @}  */
 
     /** The file handle (if external).  */
     RTFILE          hFile;
@@ -912,7 +915,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
     RTDBGMODCV_CHECK_NOMSG_RET_BF(pHdr->cSegs >= pHdr->cLogSegs);
 
     Log2(("Logical segment descriptors: %u\n", pHdr->cLogSegs));
-    for (uint16_t i = 0; i < pHdr->cSegs; i++)
+    for (i = 0; i < pHdr->cSegs; i++)
     {
         if (i == pHdr->cLogSegs)
             Log2(("Group/Physical descriptors: %u\n", pHdr->cSegs - pHdr->cLogSegs));
@@ -978,7 +981,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
     uint64_t    cbGroup0  = 0;
     if (!fNoGroups)
     {
-        for (uint16_t i = 0; i < pHdr->cSegs; i++)
+        for (i = 0; i < pHdr->cSegs; i++)
             if (   !(paDescs[i].fFlags & (RTCVSEGMAPDESC_F_GROUP | RTCVSEGMAPDESC_F_ABS))
                 && paDescs[i].iGroup == 0)
             {
@@ -1006,7 +1009,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
             iSeg++;
         }
 
-        for (uint32_t i = 0; RT_SUCCESS(rc) && i < pHdr->cSegs; i++)
+        for (i = 0; RT_SUCCESS(rc) && i < pHdr->cSegs; i++)
             if ((paDescs[i].fFlags & RTCVSEGMAPDESC_F_GROUP) || fNoGroups)
             {
                 char szName[16];
@@ -1037,7 +1040,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
     /* Pass one: Fixate the group segment indexes. */
     uint16_t iSeg0 = enmImgFmt == RTLDRFMT_PE || pThis->enmType == RTCVFILETYPE_DBG ? 1 : 0;
     uint16_t iSeg = iSeg0 + cbGroup0 > 0;
-    for (uint16_t i = 0; i < pHdr->cSegs; i++)
+    for (i = 0; i < pHdr->cSegs; i++)
         if (paDescs[i].fFlags & RTCVSEGMAPDESC_F_ABS)
             paDescs[i].iGroup = (uint16_t)RTDBGSEGIDX_ABS;
         else if ((paDescs[i].fFlags & RTCVSEGMAPDESC_F_GROUP) || fNoGroups)
@@ -1045,7 +1048,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
 
     /* Pass two: Resolve group references in to segment indexes. */
     Log2(("Mapped segments (both kinds):\n"));
-    for (uint16_t i = 0; i < pHdr->cSegs; i++)
+    for (i = 0; i < pHdr->cSegs; i++)
     {
         if (!fNoGroups && !(paDescs[i].fFlags & (RTCVSEGMAPDESC_F_GROUP | RTCVSEGMAPDESC_F_ABS)))
             paDescs[i].iGroup = paDescs[i].iGroup == 0 ? iSeg0 : paDescs[paDescs[i].iGroup].iGroup;
