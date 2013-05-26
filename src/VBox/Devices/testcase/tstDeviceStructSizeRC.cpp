@@ -96,6 +96,8 @@
 #endif
 #undef LOG_GROUP
 #include "../PC/DevHPET.cpp"
+#undef LOG_GROUP
+#include "../Audio/DevIchHda.cpp"
 
 /* we don't use iprt here because we're pretending to be in GC! */
 #include <stdio.h>
@@ -1651,6 +1653,34 @@ int main()
     GEN_CHECK_OFF(HPETTIMER, u64Fsb);
     GEN_CHECK_OFF(HPETTIMER, u64Period);
     GEN_CHECK_OFF(HPETTIMER, u8Wrap);
+
+    GEN_CHECK_SIZE(HDASTATE);
+    GEN_CHECK_OFF(HDASTATE, PciDev);
+    GEN_CHECK_OFF(HDASTATE, pDevInsR3);
+    GEN_CHECK_OFF(HDASTATE, pDevInsR0);
+    GEN_CHECK_OFF(HDASTATE, pDevInsRC);
+    GEN_CHECK_OFF(HDASTATE, pDrvBase);
+    GEN_CHECK_OFF(HDASTATE, IBase);
+    GEN_CHECK_OFF(HDASTATE, MMIOBaseAddr);
+    GEN_CHECK_OFF(HDASTATE, au32Regs[0]);
+    GEN_CHECK_OFF(HDASTATE, au32Regs[HDA_NREGS]);
+    GEN_CHECK_OFF(HDASTATE, StInBdle);
+    GEN_CHECK_OFF(HDASTATE, StOutBdle);
+    GEN_CHECK_OFF(HDASTATE, StMicBdle);
+    GEN_CHECK_OFF(HDASTATE, u64CORBBase);
+    GEN_CHECK_OFF(HDASTATE, u64RIRBBase);
+    GEN_CHECK_OFF(HDASTATE, u64DPBase);
+    GEN_CHECK_OFF(HDASTATE, pu32CorbBuf);
+    GEN_CHECK_OFF(HDASTATE, cbCorbBuf);
+    GEN_CHECK_OFF(HDASTATE, pu64RirbBuf);
+    GEN_CHECK_OFF(HDASTATE, cbRirbBuf);
+    GEN_CHECK_OFF(HDASTATE, fInReset);
+    GEN_CHECK_OFF(HDASTATE, fCviIoc);
+    GEN_CHECK_OFF(HDASTATE, fR0Enabled);
+    GEN_CHECK_OFF(HDASTATE, fRCEnabled);
+    GEN_CHECK_OFF(HDASTATE, pCodec);
+    GEN_CHECK_OFF(HDASTATE, u8Counter);
+    GEN_CHECK_OFF(HDASTATE, u64BaseTS);
 
     return (0);
 }

@@ -97,6 +97,9 @@
 # include "../Bus/DevPciRaw.cpp"
 #endif
 
+#undef LOG_GROUP
+#include "../Audio/DevIchHda.cpp"
+
 #include <stdio.h>
 
 
