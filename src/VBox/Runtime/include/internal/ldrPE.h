@@ -836,7 +836,6 @@ typedef union _IMAGE_AUX_SYMBOL_EX
         uint8_t     rgbReserved[16];
     } CRC;
 } IMAGE_AUX_SYMBOL_EX;
-#pragma pack()
 AssertCompileSize(IMAGE_AUX_SYMBOL_EX, IMAGE_SIZE_OF_SYMBOL_EX);
 typedef IMAGE_AUX_SYMBOL_EX *PIMAGE_AUX_SYMBOL_EX;
 typedef IMAGE_AUX_SYMBOL_EX const *PCIMAGE_AUX_SYMBOL_EX;
