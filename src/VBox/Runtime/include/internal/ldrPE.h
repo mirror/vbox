@@ -209,8 +209,83 @@
 
 
 /* For .DBG files. */
-#define IMAGE_SEPARATE_DEBUG_SIGNATURE  UINT16_C(0x4944)
+#define  IMAGE_SEPARATE_DEBUG_SIGNATURE     UINT16_C(0x4944)
 
+#define  IMAGE_SIZE_OF_SYMBOL               18
+#define  IMAGE_SIZE_OF_SYMBOL_EX            20
+
+#define  IMAGE_SYM_UNDEFINED                INT16_C(0)
+#define  IMAGE_SYM_ABSOLUTE                 INT16_C(-1)
+#define  IMAGE_SYM_DEBUG                    INT16_C(-2)
+
+#define  IMAGE_SYM_CLASS_END_OF_FUNCTION    UINT8_C(0xff) /* -1 */
+#define  IMAGE_SYM_CLASS_NULL               UINT8_C(0)
+#define  IMAGE_SYM_CLASS_AUTOMATIC          UINT8_C(1)
+#define  IMAGE_SYM_CLASS_EXTERNAL           UINT8_C(2)
+#define  IMAGE_SYM_CLASS_STATIC             UINT8_C(3)
+#define  IMAGE_SYM_CLASS_REGISTER           UINT8_C(4)
+#define  IMAGE_SYM_CLASS_EXTERNAL_DEF       UINT8_C(5)
+#define  IMAGE_SYM_CLASS_LABEL              UINT8_C(6)
+#define  IMAGE_SYM_CLASS_UNDEFINED_LABEL    UINT8_C(7)
+#define  IMAGE_SYM_CLASS_MEMBER_OF_STRUCT   UINT8_C(8)
+#define  IMAGE_SYM_CLASS_ARGUMENT           UINT8_C(9)
+#define  IMAGE_SYM_CLASS_STRUCT_TAG         UINT8_C(10)
+#define  IMAGE_SYM_CLASS_MEMBER_OF_UNION    UINT8_C(11)
+#define  IMAGE_SYM_CLASS_UNION_TAG          UINT8_C(12)
+#define  IMAGE_SYM_CLASS_TYPE_DEFINITION    UINT8_C(13)
+#define  IMAGE_SYM_CLASS_UNDEFINED_STATIC   UINT8_C(14)
+#define  IMAGE_SYM_CLASS_ENUM_TAG           UINT8_C(15)
+#define  IMAGE_SYM_CLASS_MEMBER_OF_ENUM     UINT8_C(16)
+#define  IMAGE_SYM_CLASS_REGISTER_PARAM     UINT8_C(17)
+#define  IMAGE_SYM_CLASS_BIT_FIELD          UINT8_C(18)
+#define  IMAGE_SYM_CLASS_FAR_EXTERNAL       UINT8_C(68)
+#define  IMAGE_SYM_CLASS_BLOCK              UINT8_C(100)
+#define  IMAGE_SYM_CLASS_FUNCTION           UINT8_C(101)
+#define  IMAGE_SYM_CLASS_END_OF_STRUCT      UINT8_C(102)
+#define  IMAGE_SYM_CLASS_FILE               UINT8_C(103)
+#define  IMAGE_SYM_CLASS_SECTION            UINT8_C(104)
+#define  IMAGE_SYM_CLASS_WEAK_EXTERNAL      UINT8_C(105)
+#define  IMAGE_SYM_CLASS_CLR_TOKEN          UINT8_C(107)
+
+
+#define  IMAGE_SYM_TYPE_NULL                UINT16_C(0x0000)
+#define  IMAGE_SYM_TYPE_VOID                UINT16_C(0x0001)
+#define  IMAGE_SYM_TYPE_CHAR                UINT16_C(0x0002)
+#define  IMAGE_SYM_TYPE_SHORT               UINT16_C(0x0003)
+#define  IMAGE_SYM_TYPE_INT                 UINT16_C(0x0004)
+#define  IMAGE_SYM_TYPE_LONG                UINT16_C(0x0005)
+#define  IMAGE_SYM_TYPE_FLOAT               UINT16_C(0x0006)
+#define  IMAGE_SYM_TYPE_DOUBLE              UINT16_C(0x0007)
+#define  IMAGE_SYM_TYPE_STRUCT              UINT16_C(0x0008)
+#define  IMAGE_SYM_TYPE_UNION               UINT16_C(0x0009)
+#define  IMAGE_SYM_TYPE_ENUM                UINT16_C(0x000a)
+#define  IMAGE_SYM_TYPE_MOE                 UINT16_C(0x000b)
+#define  IMAGE_SYM_TYPE_BYTE                UINT16_C(0x000c)
+#define  IMAGE_SYM_TYPE_WORD                UINT16_C(0x000d)
+#define  IMAGE_SYM_TYPE_UINT                UINT16_C(0x000e)
+#define  IMAGE_SYM_TYPE_DWORD               UINT16_C(0x000f)
+#define  IMAGE_SYM_TYPE_PCODE               UINT16_C(0x8000)
+
+#define  IMAGE_SYM_DTYPE_NULL               UINT16_C(0x0)
+#define  IMAGE_SYM_DTYPE_POINTER            UINT16_C(0x1)
+#define  IMAGE_SYM_DTYPE_FUNCTION           UINT16_C(0x2)
+#define  IMAGE_SYM_DTYPE_ARRAY              UINT16_C(0x3)
+
+
+#define N_BTMASK                            UINT16_C(0x000f)
+#define N_TMASK                             UINT16_C(0x0030)
+#define N_TMASK1                            UINT16_C(0x00c0)
+#define N_TMASK2                            UINT16_C(0x00f0)
+#define N_BTSHFT                            4
+#define N_TSHIFT                            2
+
+#define BTYPE(a_Type)                       ( (a_Type) & N_BTMASK )
+#define ISPTR(a_Type)                       ( ((a_Type) & N_TMASK) == (IMAGE_SYM_DTYPE_POINTER  << N_BTSHFT) )
+#define ISFCN(a_Type)                       ( ((a_Type) & N_TMASK) == (IMAGE_SYM_DTYPE_FUNCTION << N_BTSHFT) )
+#define ISARY(a_Type)                       ( ((a_Type) & N_TMASK) == (IMAGE_SYM_DTYPE_ARRAY    << N_BTSHFT) )
+#define ISTAG(a_StorageClass)               (    (a_StorageClass) == IMAGE_SYM_CLASS_STRUCT_TAG \
+                                              || (a_StorageClass) == IMAGE_SYM_CLASS_UNION_TAG \
+                                              || (a_StorageClass) == IMAGE_SYM_CLASS_ENUM_TAG )
 
 
 /*******************************************************************************
@@ -531,6 +606,23 @@ typedef WIN_CERTIFICATE *PWIN_CERTIFICATE;
 typedef WIN_CERTIFICATE const *PCWIN_CERTIFICATE;
 
 
+
+
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+/* WARNING! NO MORE PRAGMA PACK 4 from here on. Assert size of all new types. */
+#pragma pack()
+
+
+
+
+
 /** The header of a .DBG file (NT4). */
 typedef struct _IMAGE_SEPARATE_DEBUG_HEADER
 {
@@ -548,11 +640,207 @@ typedef struct _IMAGE_SEPARATE_DEBUG_HEADER
     uint32_t    SectionAlignment;       /**< 0x24 */
     uint32_t    Reserved[2];            /**< 0x28 */
 } IMAGE_SEPARATE_DEBUG_HEADER;          /* size: 0x30 */
+AssertCompileSize(IMAGE_SEPARATE_DEBUG_HEADER, 0x30);
 typedef IMAGE_SEPARATE_DEBUG_HEADER *PIMAGE_SEPARATE_DEBUG_HEADER;
 typedef IMAGE_SEPARATE_DEBUG_HEADER const *PCIMAGE_SEPARATE_DEBUG_HEADER;
 
 
+typedef struct _IMAGE_COFF_SYMBOLS_HEADER
+{
+    uint32_t    NumberOfSymbols;
+    uint32_t    LvaToFirstSymbol;
+    uint32_t    NumberOfLinenumbers;
+    uint32_t    LvaToFirstLinenumber;
+    uint32_t    RvaToFirstByteOfCode;
+    uint32_t    RvaToLastByteOfCode;
+    uint32_t    RvaToFirstByteOfData;
+    uint32_t    RvaToLastByteOfData;
+} IMAGE_COFF_SYMBOLS_HEADER;
+AssertCompileSize(IMAGE_COFF_SYMBOLS_HEADER, 0x20);
+typedef IMAGE_COFF_SYMBOLS_HEADER *PIMAGE_COFF_SYMBOLS_HEADER;
+typedef IMAGE_COFF_SYMBOLS_HEADER const *PCIMAGE_COFF_SYMBOLS_HEADER;
+
+
+#pragma pack(2)
+typedef struct _IMAGE_LINENUMBER
+{
+    union
+    {
+        uint32_t    VirtualAddress;
+        uint32_t    SymbolTableIndex;
+    } Type;
+    uint16_t    Linenumber;
+} IMAGE_LINENUMBER;
 #pragma pack()
+AssertCompileSize(IMAGE_LINENUMBER, 6);
+typedef IMAGE_LINENUMBER *PIMAGE_LINENUMBER;
+typedef IMAGE_LINENUMBER const *PCIMAGE_LINENUMBER;
+
+
+#pragma pack(2)
+typedef struct _IMAGE_SYMBOL
+{
+    union
+    {
+        uint8_t         ShortName[8];
+        struct
+        {
+            uint32_t    Short;
+            uint32_t    Long;
+        } Name;
+        uint32_t        LongName[2];
+    } N;
+
+    uint32_t    Value;
+    int16_t     SectionNumber;
+    uint16_t    Type;
+    uint8_t     StorageClass;
+    uint8_t     NumberOfAuxSymbols;
+} IMAGE_SYMBOL;
+#pragma pack()
+AssertCompileSize(IMAGE_SYMBOL, IMAGE_SIZE_OF_SYMBOL);
+typedef IMAGE_SYMBOL *PIMAGE_SYMBOL;
+typedef IMAGE_SYMBOL const *PCIMAGE_SYMBOL;
+
+
+#pragma pack(2)
+typedef struct IMAGE_AUX_SYMBOL_TOKEN_DEF
+{
+    uint8_t     bAuxType;
+    uint8_t     bReserved;
+    uint32_t    SymbolTableIndex;
+    uint8_t     rgbReserved[12];
+} IMAGE_AUX_SYMBOL_TOKEN_DEF;
+#pragma pack()
+AssertCompileSize(IMAGE_AUX_SYMBOL_TOKEN_DEF, IMAGE_SIZE_OF_SYMBOL);
+typedef IMAGE_AUX_SYMBOL_TOKEN_DEF *PIMAGE_AUX_SYMBOL_TOKEN_DEF;
+typedef IMAGE_AUX_SYMBOL_TOKEN_DEF const *PCIMAGE_AUX_SYMBOL_TOKEN_DEF;
+
+
+#pragma pack(1)
+typedef union _IMAGE_AUX_SYMBOL
+{
+    struct
+    {
+        uint32_t    TagIndex;
+        union
+        {
+            struct
+            {
+                uint16_t    Linenumber;
+                uint16_t    Size;
+            } LnSz;
+        } Misc;
+        union
+        {
+            struct
+            {
+                uint32_t    PointerToLinenumber;
+                uint32_t    PointerToNextFunction;
+            } Function;
+            struct
+            {
+                uint16_t    Dimension[4];
+            } Array;
+        } FcnAry;
+        uint16_t    TvIndex;
+    } Sym;
+
+    struct
+    {
+        uint8_t     Name[IMAGE_SIZE_OF_SYMBOL];
+    } File;
+
+    struct
+    {
+        uint32_t    Length;
+        uint16_t    NumberOfRelocations;
+        uint16_t    NumberOfLinenumbers;
+        uint32_t    CheckSum;
+        uint16_t    Number;
+        uint8_t     Selection;
+        uint8_t     bReserved;
+        uint16_t    HighNumber;
+    } Section;
+
+    IMAGE_AUX_SYMBOL_TOKEN_DEF TokenDef;
+    struct
+    {
+        uint32_t    crc;
+        uint8_t     rgbReserved[14];
+    } CRC;
+} IMAGE_AUX_SYMBOL;
+#pragma pack()
+AssertCompileSize(IMAGE_AUX_SYMBOL, IMAGE_SIZE_OF_SYMBOL);
+typedef IMAGE_AUX_SYMBOL *PIMAGE_AUX_SYMBOL;
+typedef IMAGE_AUX_SYMBOL const *PCIMAGE_AUX_SYMBOL;
+
+
+
+typedef struct _IMAGE_SYMBOL_EX
+{
+    union
+    {
+        uint8_t         ShortName[8];
+        struct
+        {
+            uint32_t    Short;
+            uint32_t    Long;
+        } Name;
+        uint32_t        LongName[2];
+    } N;
+
+    uint32_t    Value;
+    int32_t     SectionNumber;          /* The difference from IMAGE_SYMBOL */
+    uint16_t    Type;
+    uint8_t     StorageClass;
+    uint8_t     NumberOfAuxSymbols;
+} IMAGE_SYMBOL_EX;
+AssertCompileSize(IMAGE_SYMBOL_EX, IMAGE_SIZE_OF_SYMBOL_EX);
+typedef IMAGE_SYMBOL_EX *PIMAGE_SYMBOL_EX;
+typedef IMAGE_SYMBOL_EX const *PCIMAGE_SYMBOL_EX;
+
+
+typedef union _IMAGE_AUX_SYMBOL_EX
+{
+    struct
+    {
+        uint32_t    WeakDefaultSymIndex;
+        uint32_t    WeakSearchType;
+        uint8_t     rgbReserved[12];
+    } Sym;
+
+    struct
+    {
+        uint8_t     Name[IMAGE_SIZE_OF_SYMBOL_EX];
+    } File;
+
+    struct
+    {
+        uint32_t    Length;
+        uint16_t    NumberOfRelocations;
+        uint16_t    NumberOfLinenumbers;
+        uint32_t    CheckSum;
+        uint16_t    Number;
+        uint8_t     Selection;
+        uint8_t     bReserved;
+        uint16_t    HighNumber;
+        uint8_t     rgbReserved[2];
+    } Section;
+
+    IMAGE_AUX_SYMBOL_TOKEN_DEF TokenDef;
+
+    struct
+    {
+        uint32_t    crc;
+        uint8_t     rgbReserved[16];
+    } CRC;
+} IMAGE_AUX_SYMBOL_EX;
+#pragma pack()
+AssertCompileSize(IMAGE_AUX_SYMBOL_EX, IMAGE_SIZE_OF_SYMBOL_EX);
+typedef IMAGE_AUX_SYMBOL_EX *PIMAGE_AUX_SYMBOL_EX;
+typedef IMAGE_AUX_SYMBOL_EX const *PCIMAGE_AUX_SYMBOL_EX;
+
 
 #endif
 

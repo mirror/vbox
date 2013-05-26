@@ -1,6 +1,6 @@
 /* $Id: dbgmoddeferred.cpp 85864 2013-05-19 16:58:01Z bird $ */
 /** @file
- * IPRT - Debug Module Reader For Microsoft CodeView.
+ * IPRT - Debug Module Reader For Microsoft CodeView and COFF.
  *
  * Based on the following documentation (plus guess work and googling):
  *
@@ -480,8 +480,6 @@ typedef struct RTDBGMODCV
      * @{ */
     /** The code view magic (used as format indicator). */
     uint32_t        u32CvMagic;
-    /** The file type. */
-    RTCVFILETYPE    enmType;
     /** The offset of the CV debug info in the file. */
     uint32_t        offBase;
     /** The size of the CV debug info. */
@@ -490,6 +488,18 @@ typedef struct RTDBGMODCV
     uint32_t        offDir;
     /** @}  */
 
+    /** @name COFF details.
+     * @{ */
+    /** Offset of the COFF header. */
+    uint32_t        offCoffDbgInfo;
+    /** The size of the COFF debug info. */
+    uint32_t        cbCoffDbgInfo;
+    /** The COFF debug info header. */
+    IMAGE_COFF_SYMBOLS_HEADER CoffHdr;
+    /** @} */
+
+    /** The file type. */
+    RTCVFILETYPE    enmType;
     /** The file handle (if external).  */
     RTFILE          hFile;
     /** Pointer to the module (no reference retained). */
@@ -501,7 +511,7 @@ typedef struct RTDBGMODCV
     /** Indicates that we've loaded segments intot he container already. */
     bool            fHaveLoadedSegments;
 
-    /** @name Parsing state.
+    /** @name Codeview Parsing state.
      * @{ */
     /** Number of directory entries. */
     uint32_t        cDirEnts;
@@ -574,6 +584,16 @@ typedef FNDBGMODCVSUBSECTCALLBACK *PFNDBGMODCVSUBSECTCALLBACK;
 
 
 
+/**
+ * Reads CodeView information.
+ *
+ * @returns IPRT status.
+ * @param   pThis               The CodeView reader instance.
+ * @param   off                 The offset to start reading at, relative to the
+ *                              CodeView base header.
+ * @param   pvBuf               The buffer to read into.
+ * @param   cb                  How many bytes to read.
+ */
 static int rtDbgModCvReadAt(PRTDBGMODCV pThis, uint32_t off, void *pvBuf, size_t cb)
 {
     int rc;
@@ -585,6 +605,16 @@ static int rtDbgModCvReadAt(PRTDBGMODCV pThis, uint32_t off, void *pvBuf, size_t
 }
 
 
+/**
+ * Reads CodeView information into an allocated buffer.
+ *
+ * @returns IPRT status.
+ * @param   pThis               The CodeView reader instance.
+ * @param   off                 The offset to start reading at, relative to the
+ *                              CodeView base header.
+ * @param   ppvBuf              Where to return the allocated buffer on success.
+ * @param   cb                  How many bytes to read.
+ */
 static int rtDbgModCvReadAtAlloc(PRTDBGMODCV pThis, uint32_t off, void **ppvBuf, size_t cb)
 {
     int   rc;
@@ -1231,7 +1261,7 @@ static int rtDbgModCvLoadDirectory(PRTDBGMODCV pThis)
 }
 
 
-static int rtDbgModCvLoadInfo(PRTDBGMODCV pThis)
+static int rtDbgModCvLoadCodeViewInfo(PRTDBGMODCV pThis)
 {
     /*
      * Load the directory, the segment map (if any) and then scan for segments
@@ -1321,6 +1351,329 @@ static int rtDbgModCvLoadInfo(PRTDBGMODCV pThis)
 
     return rc;
 }
+
+
+/*
+ *
+ * COFF Debug Info Parsing.
+ * COFF Debug Info Parsing.
+ * COFF Debug Info Parsing.
+ *
+ */
+
+static const char *rtDbgModCvGetCoffStorageClassName(uint8_t bStorageClass)
+{
+    switch (bStorageClass)
+    {
+        case IMAGE_SYM_CLASS_END_OF_FUNCTION:   return "END_OF_FUNCTION";
+        case IMAGE_SYM_CLASS_NULL:              return "NULL";
+        case IMAGE_SYM_CLASS_AUTOMATIC:         return "AUTOMATIC";
+        case IMAGE_SYM_CLASS_EXTERNAL:          return "EXTERNAL";
+        case IMAGE_SYM_CLASS_STATIC:            return "STATIC";
+        case IMAGE_SYM_CLASS_REGISTER:          return "REGISTER";
+        case IMAGE_SYM_CLASS_EXTERNAL_DEF:      return "EXTERNAL_DEF";
+        case IMAGE_SYM_CLASS_LABEL:             return "LABEL";
+        case IMAGE_SYM_CLASS_UNDEFINED_LABEL:   return "UNDEFINED_LABEL";
+        case IMAGE_SYM_CLASS_MEMBER_OF_STRUCT:  return "MEMBER_OF_STRUCT";
+        case IMAGE_SYM_CLASS_ARGUMENT:          return "ARGUMENT";
+        case IMAGE_SYM_CLASS_STRUCT_TAG:        return "STRUCT_TAG";
+        case IMAGE_SYM_CLASS_MEMBER_OF_UNION:   return "MEMBER_OF_UNION";
+        case IMAGE_SYM_CLASS_UNION_TAG:         return "UNION_TAG";
+        case IMAGE_SYM_CLASS_TYPE_DEFINITION:   return "TYPE_DEFINITION";
+        case IMAGE_SYM_CLASS_UNDEFINED_STATIC:  return "UNDEFINED_STATIC";
+        case IMAGE_SYM_CLASS_ENUM_TAG:          return "ENUM_TAG";
+        case IMAGE_SYM_CLASS_MEMBER_OF_ENUM:    return "MEMBER_OF_ENUM";
+        case IMAGE_SYM_CLASS_REGISTER_PARAM:    return "REGISTER_PARAM";
+        case IMAGE_SYM_CLASS_BIT_FIELD:         return "BIT_FIELD";
+        case IMAGE_SYM_CLASS_FAR_EXTERNAL:      return "FAR_EXTERNAL";
+        case IMAGE_SYM_CLASS_BLOCK:             return "BLOCK";
+        case IMAGE_SYM_CLASS_FUNCTION:          return "FUNCTION";
+        case IMAGE_SYM_CLASS_END_OF_STRUCT:     return "END_OF_STRUCT";
+        case IMAGE_SYM_CLASS_FILE:              return "FILE";
+        case IMAGE_SYM_CLASS_SECTION:           return "SECTION";
+        case IMAGE_SYM_CLASS_WEAK_EXTERNAL:     return "WEAK_EXTERNAL";
+        case IMAGE_SYM_CLASS_CLR_TOKEN:         return "CLR_TOKEN";
+    }
+
+    static char s_szName[32];
+    RTStrPrintf(s_szName, sizeof(s_szName), "Unknown%#04x", bStorageClass);
+    return s_szName;
+}
+
+
+/**
+ * Adds a chunk of COFF line numbers.
+ *
+ * @param   pThis               The COFF/CodeView reader instance.
+ * @param   pszFile             The source file name.
+ * @param   iSection            The section number.
+ * @param   paLines             Pointer to the first line number table entry.
+ * @param   cLines              The number of line number table entries to add.
+ */
+static void rtDbgModCvAddCoffLineNumbers(PRTDBGMODCV pThis, const char *pszFile, uint32_t iSection,
+                                         PCIMAGE_LINENUMBER paLines, uint32_t cLines)
+{
+    Log4(("Adding %u line numbers in section #%u  for %s\n", cLines, iSection, pszFile));
+    PCIMAGE_LINENUMBER pCur = paLines;
+    while (cLines-- > 0)
+    {
+        if (pCur->Linenumber)
+        {
+            int rc = RTDbgModLineAdd(pThis->hCnt, pszFile, pCur->Linenumber, RTDBGSEGIDX_RVA, pCur->Type.VirtualAddress, NULL);
+            Log4(("    %#010x: %u  [%Rrc]\n", pCur->Type.VirtualAddress, pCur->Linenumber, rc));
+        }
+        pCur++;
+    }
+}
+
+
+/**
+ * Adds a COFF symbol.
+ *
+ * @returns IPRT status (ignored)
+ * @param   pThis               The COFF/CodeView reader instance.
+ * @param   idxSeg              IPRT RVA or ABS segment index indicator.
+ * @param   uValue              The symbol value.
+ * @param   pszName             The symbol name.
+ */
+static int rtDbgModCvAddCoffSymbol(PRTDBGMODCV pThis, uint32_t idxSeg, uint32_t uValue, const char *pszName)
+{
+    int rc = RTDbgModSymbolAdd(pThis->hCnt, pszName, idxSeg, uValue, 0, 0 /*fFlags*/, NULL);
+    Log(("Symbol: %s:%08x %s [%Rrc]\n", idxSeg == RTDBGSEGIDX_RVA ? "rva" : "abs", uValue, pszName, rc));
+    if (rc == VERR_DBG_ADDRESS_CONFLICT || rc == VERR_DBG_DUPLICATE_SYMBOL)
+        rc = VINF_SUCCESS;
+    return rc;
+}
+
+
+/**
+ * Processes the COFF symbol table.
+ *
+ * @returns IPRT status code
+ * @param   pThis               The COFF/CodeView reader instance.
+ * @param   paSymbols           Pointer to the symbol table.
+ * @param   cSymbols            The number of entries in the symbol table.
+ * @param   paLines             Pointer to the line number table.
+ * @param   cLines              The number of entires in the line number table.
+ * @param   pszzStrTab          Pointer to the string table.
+ * @param   cbStrTab            Size of the string table.
+ */
+static int rtDbgModCvProcessCoffSymbolTable(PRTDBGMODCV pThis,
+                                            PCIMAGE_SYMBOL      paSymbols,  uint32_t cSymbols,
+                                            PCIMAGE_LINENUMBER  paLines,    uint32_t cLines,
+                                            const char         *pszzStrTab, uint32_t cbStrTab)
+{
+    Log3(("Processing COFF symbol table with %#x symbols\n", cSymbols));
+
+    /*
+     * Making some bold assumption that the line numbers for the section in
+     * the file are allocated sequentially, we do multiple passes until we've
+     * gathered them all.
+     */
+    int      rc        = VINF_SUCCESS;
+    uint32_t cSections = 1;
+    uint32_t iLineSect = 1;
+    uint32_t iLine     = 0;
+    do
+    {
+        /*
+         * Process the symbols.
+         */
+        char        szShort[9];
+        char        szFile[RTPATH_MAX];
+        uint32_t    iSymbol  = 0;
+        szFile[0] = '\0';
+        szShort[8] = '\0'; /* avoid having to terminate it all the time. */
+
+        while (iSymbol < cSymbols && RT_SUCCESS(rc))
+        {
+            /* Copy the symbol in and hope it works around the misalignment
+               issues everywhere. */
+            IMAGE_SYMBOL Sym;
+            memcpy(&Sym, &paSymbols[iSymbol], sizeof(Sym));
+            RTDBGMODCV_CHECK_NOMSG_RET_BF(Sym.NumberOfAuxSymbols < cSymbols);
+
+            /* Calc a zero terminated symbol name. */
+            const char  *pszName;
+            if (Sym.N.Name.Short)
+                pszName = (const char *)memcpy(szShort, &Sym.N, 8);
+            else
+            {
+                RTDBGMODCV_CHECK_NOMSG_RET_BF(Sym.N.Name.Long < cbStrTab);
+                pszName = pszzStrTab + Sym.N.Name.Long;
+            }
+
+            /* Only log stuff and count sections the in the first pass.*/
+            if (iLineSect == 1)
+            {
+                Log3(("%04x: s=%#06x v=%#010x t=%#06x a=%#04x c=%#04x (%s) name='%s'\n",
+                      iSymbol, Sym.SectionNumber, Sym.Value, Sym.Type, Sym.NumberOfAuxSymbols,
+                      Sym.StorageClass, rtDbgModCvGetCoffStorageClassName(Sym.StorageClass), pszName));
+                if ((int16_t)cSections <= Sym.SectionNumber && Sym.SectionNumber > 0)
+                    cSections = Sym.SectionNumber + 1;
+            }
+
+            /*
+             * Use storage class to pick what we need (which isn't much because,
+             * MS only provides a very restricted set of symbols).
+             */
+            IMAGE_AUX_SYMBOL Aux;
+            switch (Sym.StorageClass)
+            {
+                case IMAGE_SYM_CLASS_NULL:
+                    /* a NOP */
+                    break;
+
+                case IMAGE_SYM_CLASS_FILE:
+                {
+                    /* Change the current file name (for line numbers). Pretend
+                       ANSI and ISO-8859-1 are similar enough for out purposes... */
+                    RTDBGMODCV_CHECK_NOMSG_RET_BF(Sym.NumberOfAuxSymbols > 0);
+                    const char *pszFile = (const char *)&paSymbols[iSymbol + 1];
+                    char *pszDst = szFile;
+                    rc = RTLatin1ToUtf8Ex(pszFile, Sym.NumberOfAuxSymbols * sizeof(IMAGE_SYMBOL), &pszDst, sizeof(szFile), NULL);
+                    if (RT_FAILURE(rc))
+                        Log(("Error converting COFF filename: %Rrc\n", rc));
+                    else if (iLineSect == 1)
+                        Log3(("    filename='%s'\n", szFile));
+                    break;
+                }
+
+                case IMAGE_SYM_CLASS_STATIC:
+                    if (   Sym.NumberOfAuxSymbols == 1
+                        && (   iLineSect == 1
+                            || Sym.SectionNumber == iLineSect) )
+                    {
+                        memcpy(&Aux, &paSymbols[iSymbol + 1], sizeof(Aux));
+                        if (iLineSect == 1)
+                            Log3(("    section: cb=%#010x #relocs=%#06x #lines=%#06x csum=%#x num=%#x sel=%x rvd=%u\n",
+                                  Aux.Section.Length, Aux.Section.NumberOfRelocations,
+                                  Aux.Section.NumberOfLinenumbers,
+                                  Aux.Section.CheckSum,
+                                  RT_MAKE_U32(Aux.Section.Number, Aux.Section.HighNumber),
+                                  Aux.Section.Selection,
+                                  Aux.Section.bReserved));
+                        if (   Sym.SectionNumber == iLineSect
+                            && Aux.Section.NumberOfLinenumbers > 0)
+                        {
+                            uint32_t cLinesToAdd = RT_MIN(Aux.Section.NumberOfLinenumbers, cLines - iLine);
+                            if (iLine < cLines && szFile[0])
+                                rtDbgModCvAddCoffLineNumbers(pThis, szFile, iLineSect, &paLines[iLine], cLinesToAdd);
+                            iLine += cLinesToAdd;
+                        }
+                    }
+                    /* Not so sure about the quality here, but might be useful. */
+                    else if (   iLineSect == 1
+                             && Sym.NumberOfAuxSymbols == 0
+                             && Sym.SectionNumber != IMAGE_SYM_UNDEFINED
+                             && Sym.SectionNumber != IMAGE_SYM_ABSOLUTE
+                             && Sym.SectionNumber != IMAGE_SYM_DEBUG
+                             && Sym.Value > 0
+                             && *pszName)
+                        rtDbgModCvAddCoffSymbol(pThis, RTDBGSEGIDX_RVA, Sym.Value, pszName);
+                    break;
+
+                case IMAGE_SYM_CLASS_EXTERNAL:
+                    /* Add functions (first pass only). */
+                    if (   iLineSect == 1
+                        && (ISFCN(Sym.Type) || Sym.Type == 0)
+                        && Sym.NumberOfAuxSymbols == 0
+                        && *pszName )
+                    {
+                        if (Sym.SectionNumber == IMAGE_SYM_ABSOLUTE)
+                            rtDbgModCvAddCoffSymbol(pThis, RTDBGSEGIDX_ABS, Sym.Value, pszName);
+                        else if (   Sym.SectionNumber != IMAGE_SYM_UNDEFINED
+                                 && Sym.SectionNumber != IMAGE_SYM_DEBUG)
+                            rtDbgModCvAddCoffSymbol(pThis, RTDBGSEGIDX_RVA, Sym.Value, pszName);
+                    }
+                    break;
+
+                case IMAGE_SYM_CLASS_FUNCTION:
+                    /* Not sure this is really used. */
+                    break;
+
+                case IMAGE_SYM_CLASS_END_OF_FUNCTION:
+                case IMAGE_SYM_CLASS_AUTOMATIC:
+                case IMAGE_SYM_CLASS_REGISTER:
+                case IMAGE_SYM_CLASS_EXTERNAL_DEF:
+                case IMAGE_SYM_CLASS_LABEL:
+                case IMAGE_SYM_CLASS_UNDEFINED_LABEL:
+                case IMAGE_SYM_CLASS_MEMBER_OF_STRUCT:
+                case IMAGE_SYM_CLASS_ARGUMENT:
+                case IMAGE_SYM_CLASS_STRUCT_TAG:
+                case IMAGE_SYM_CLASS_MEMBER_OF_UNION:
+                case IMAGE_SYM_CLASS_UNION_TAG:
+                case IMAGE_SYM_CLASS_TYPE_DEFINITION:
+                case IMAGE_SYM_CLASS_UNDEFINED_STATIC:
+                case IMAGE_SYM_CLASS_ENUM_TAG:
+                case IMAGE_SYM_CLASS_MEMBER_OF_ENUM:
+                case IMAGE_SYM_CLASS_REGISTER_PARAM:
+                case IMAGE_SYM_CLASS_BIT_FIELD:
+                case IMAGE_SYM_CLASS_FAR_EXTERNAL:
+                case IMAGE_SYM_CLASS_BLOCK:
+                case IMAGE_SYM_CLASS_END_OF_STRUCT:
+                case IMAGE_SYM_CLASS_SECTION:
+                case IMAGE_SYM_CLASS_WEAK_EXTERNAL:
+                case IMAGE_SYM_CLASS_CLR_TOKEN:
+                    /* Not used by MS, I think. */
+                    break;
+
+                default:
+                    Log(("RTDbgCv: Unexpected COFF storage class %#x (%u)\n", Sym.StorageClass, Sym.StorageClass));
+                    break;
+            }
+
+            /* next symbol */
+            iSymbol += 1 + Sym.NumberOfAuxSymbols;
+        }
+
+        /* Next section with line numbers. */
+        iLineSect++;
+    } while (iLine < cLines && iLineSect < cSections && RT_SUCCESS(rc));
+
+    return rc;
+}
+
+
+static int rtDbgModCvLoadCoffInfo(PRTDBGMODCV pThis)
+{
+    /*
+     * Read the whole section into memory.
+     * Note! Cannot use rtDbgModCvReadAt or rtDbgModCvReadAtAlloc here.
+     */
+    int rc;
+    uint8_t *pbDbgSect = (uint8_t *)RTMemAlloc(pThis->cbCoffDbgInfo);
+    if (pbDbgSect)
+    {
+        if (pThis->hFile == NIL_RTFILE)
+            rc = pThis->pMod->pImgVt->pfnReadAt(pThis->pMod, UINT32_MAX, pThis->offCoffDbgInfo, pbDbgSect, pThis->cbCoffDbgInfo);
+        else
+            rc = RTFileReadAt(pThis->hFile, pThis->offCoffDbgInfo, pbDbgSect, pThis->cbCoffDbgInfo, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            /* The string table follows after the symbol table. */
+            const char *pszzStrTab = (const char *)(  pbDbgSect
+                                                    + pThis->CoffHdr.LvaToFirstSymbol
+                                                    + pThis->CoffHdr.NumberOfSymbols * sizeof(IMAGE_SYMBOL));
+            uint32_t    cbStrTab = (uint32_t)((uintptr_t)(pbDbgSect + pThis->cbCoffDbgInfo) - (uintptr_t)pszzStrTab);
+            /** @todo The symbol table starts with a size. Read it and checking. Also verify
+             *        that the symtab ends with a terminator character. */
+
+            rc = rtDbgModCvProcessCoffSymbolTable(pThis,
+                                                  (PCIMAGE_SYMBOL)(pbDbgSect + pThis->CoffHdr.LvaToFirstSymbol),
+                                                  pThis->CoffHdr.NumberOfSymbols,
+                                                  (PCIMAGE_LINENUMBER)(pbDbgSect + pThis->CoffHdr.LvaToFirstLinenumber),
+                                                  pThis->CoffHdr.NumberOfLinenumbers,
+                                                  pszzStrTab, cbStrTab);
+        }
+        RTMemFree(pbDbgSect);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
+}
+
+
 
 
 
@@ -1622,7 +1975,53 @@ static int rtDbgModCvAddSegmentsFromDbg(PRTDBGMODCV pThis, PCIMAGE_SEPARATE_DEBU
 
 
 /**
- * Common part of the probing.
+ * Instantiates the CV/COFF reader.
+ *
+ * @returns IPRT status code
+ * @param   pDbgMod             The debug module instance.
+ * @param   enmFileType         The type of input file.
+ * @param   hFile               The file handle, NIL_RTFILE of image.
+ * @param   ppThis              Where to return the reader instance.
+ */
+static int rtDbgModCvCreateInstance(PRTDBGMODINT pDbgMod, RTCVFILETYPE enmFileType, RTFILE hFile, PRTDBGMODCV *ppThis)
+{
+    /*
+     * Do we already have an instance?  Happens if we find multiple debug
+     * formats we support.
+     */
+    PRTDBGMODCV pThis = (PRTDBGMODCV)pDbgMod->pvDbgPriv;
+    if (pThis)
+    {
+        Assert(pThis->enmType == enmFileType);
+        Assert(pThis->hFile == hFile);
+        Assert(pThis->pMod == pDbgMod);
+        *ppThis = pThis;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Create a new instance.
+     */
+    pThis = (PRTDBGMODCV)RTMemAllocZ(sizeof(RTDBGMODCV));
+    if (!pThis)
+        return VERR_NO_MEMORY;
+    int rc = RTDbgModCreate(&pThis->hCnt, pDbgMod->pszName, 0 /*cbSeg*/, 0 /*fFlags*/);
+    if (RT_SUCCESS(rc))
+    {
+        pDbgMod->pvDbgPriv = pThis;
+        pThis->enmType    = enmFileType;
+        pThis->hFile      = hFile;
+        pThis->pMod       = pDbgMod;
+        *ppThis = pThis;
+        return VINF_SUCCESS;
+    }
+    RTMemFree(pThis);
+    return rc;
+}
+
+
+/**
+ * Common part of the COFF probing.
  *
  * @returns status code.
  * @param   pDbgMod             The debug module instance.  On success pvDbgPriv
@@ -1631,6 +2030,97 @@ static int rtDbgModCvAddSegmentsFromDbg(PRTDBGMODCV pThis, PCIMAGE_SEPARATE_DEBU
  * @param   off                 The offset where to expect CV debug info.
  * @param   cb                  The number of bytes of debug info.
  * @param   enmArch             The desired image architecture.
+ * @param   pszFilename         The path to the file (for logging).
+ */
+static int rtDbgModCvProbeCoff(PRTDBGMODINT pDbgMod, RTCVFILETYPE enmFileType, RTFILE hFile,
+                               uint32_t off, uint32_t cb, const char *pszFilename)
+{
+    /*
+     * Check that there is sufficient data for a header, then read it.
+     */
+    if (cb < sizeof(IMAGE_COFF_SYMBOLS_HEADER))
+    {
+        Log(("RTDbgModCv: Not enough room for COFF header.\n"));
+        return VERR_BAD_EXE_FORMAT;
+    }
+    if (cb >= UINT32_C(128) * _1M)
+    {
+        Log(("RTDbgModCv: COFF debug information is to large (%'u bytes), max is 128MB\n", cb));
+        return VERR_BAD_EXE_FORMAT;
+    }
+
+    int rc;
+    IMAGE_COFF_SYMBOLS_HEADER Hdr;
+    if (hFile == NIL_RTFILE)
+        rc = pDbgMod->pImgVt->pfnReadAt(pDbgMod, UINT32_MAX, off, &Hdr, sizeof(Hdr));
+    else
+        rc = RTFileReadAt(hFile, off, &Hdr, sizeof(Hdr), NULL);
+    if (RT_FAILURE(rc))
+    {
+        Log(("RTDbgModCv: Error reading COFF header: %Rrc\n", rc));
+        return rc;
+    }
+
+    Log2(("RTDbgModCv: Found COFF debug info header at %#x (LB %#x) in %s\n", off, cb, pszFilename));
+    Log2(("    NumberOfSymbols      = %#010x\n", Hdr.NumberOfSymbols));
+    Log2(("    LvaToFirstSymbol     = %#010x\n", Hdr.LvaToFirstSymbol));
+    Log2(("    NumberOfLinenumbers  = %#010x\n", Hdr.NumberOfLinenumbers));
+    Log2(("    LvaToFirstLinenumber = %#010x\n", Hdr.LvaToFirstLinenumber));
+    Log2(("    RvaToFirstByteOfCode = %#010x\n", Hdr.RvaToFirstByteOfCode));
+    Log2(("    RvaToLastByteOfCode  = %#010x\n", Hdr.RvaToLastByteOfCode));
+    Log2(("    RvaToFirstByteOfData = %#010x\n", Hdr.RvaToFirstByteOfData));
+    Log2(("    RvaToLastByteOfData  = %#010x\n", Hdr.RvaToLastByteOfData));
+
+    /*
+     * Validate the COFF header.
+     */
+    if (   (uint64_t)Hdr.LvaToFirstSymbol + (uint64_t)Hdr.NumberOfSymbols * sizeof(IMAGE_SYMBOL) > cb
+        || (Hdr.LvaToFirstSymbol < sizeof(Hdr) && Hdr.NumberOfSymbols > 0))
+    {
+        Log(("RTDbgModCv: Bad COFF symbol count or/and offset: LvaToFirstSymbol=%#x, NumberOfSymbols=%#x cbCoff=%#x\n",
+             Hdr.LvaToFirstSymbol, Hdr.NumberOfSymbols, cb));
+        return VERR_BAD_EXE_FORMAT;
+    }
+    if (   (uint64_t)Hdr.LvaToFirstLinenumber + (uint64_t)Hdr.NumberOfLinenumbers * sizeof(IMAGE_LINENUMBER) > cb
+        || (Hdr.LvaToFirstLinenumber < sizeof(Hdr) && Hdr.NumberOfLinenumbers > 0))
+    {
+        Log(("RTDbgModCv: Bad COFF symbol count or/and offset: LvaToFirstSymbol=%#x, NumberOfSymbols=%#x cbCoff=%#x\n",
+             Hdr.LvaToFirstSymbol, Hdr.NumberOfSymbols, cb));
+        return VERR_BAD_EXE_FORMAT;
+    }
+    if (Hdr.NumberOfSymbols < 2)
+    {
+        Log(("RTDbgModCv: The COFF symbol table is too short to be of any worth... (%u syms)\n", Hdr.NumberOfSymbols));
+        return VERR_NO_DATA;
+    }
+
+    /*
+     * What we care about looks fine, use it.
+     */
+    PRTDBGMODCV pThis;
+    rc = rtDbgModCvCreateInstance(pDbgMod, enmFileType, hFile, &pThis);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->offCoffDbgInfo = off;
+        pThis->cbCoffDbgInfo  = cb;
+        pThis->CoffHdr        = Hdr;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Common part of the CodeView probing.
+ *
+ * @returns status code.
+ * @param   pDbgMod             The debug module instance.  On success pvDbgPriv
+ *                              will point to a valid RTDBGMODCV.
+ * @param   pCvHdr              The CodeView base header.
+ * @param   enmFileType         The kind of file this is we're probing.
+ * @param   hFile               The file with debug info in it.
+ * @param   off                 The offset where to expect CV debug info.
+ * @param   cb                  The number of bytes of debug info.
  * @param   pszFilename         The path to the file (for logging).
  */
 static int rtDbgModCvProbeCommon(PRTDBGMODINT pDbgMod, PRTCVHDR pCvHdr, RTCVFILETYPE enmFileType, RTFILE hFile,
@@ -1650,36 +2140,25 @@ static int rtDbgModCvProbeCommon(PRTDBGMODINT pDbgMod, PRTCVHDR pCvHdr, RTCVFILE
     {
         /* We're assuming it's a base header, so the offset must be within
            the area defined by the debug info we got from the loader. */
-        if (pCvHdr->off < cb)
+        if (pCvHdr->off < cb && pCvHdr->off >= sizeof(*pCvHdr))
         {
             Log(("RTDbgModCv: Found %c%c%c%c at %#RTfoff - size %#x, directory at %#x. file type %d\n",
                  RT_BYTE1(pCvHdr->u32Magic), RT_BYTE2(pCvHdr->u32Magic), RT_BYTE3(pCvHdr->u32Magic), RT_BYTE4(pCvHdr->u32Magic),
                  off, cb, pCvHdr->off, enmFileType));
 
             /*
-             * Create a module instance.
+             * Create a module instance, if not already done.
              */
-            PRTDBGMODCV pThis = (PRTDBGMODCV)RTMemAllocZ(sizeof(RTDBGMODCV));
-            if (pThis)
+            PRTDBGMODCV pThis;
+            rc = rtDbgModCvCreateInstance(pDbgMod, enmFileType, hFile, &pThis);
+            if (RT_SUCCESS(rc))
             {
-                rc = RTDbgModCreate(&pThis->hCnt, pDbgMod->pszName, 0 /*cbSeg*/, 0 /*fFlags*/);
-                if (RT_SUCCESS(rc))
-                {
-                    pDbgMod->pvDbgPriv = pThis;
-                    pThis->u32CvMagic = pCvHdr->u32Magic;
-                    pThis->enmType    = enmFileType;
-                    pThis->offBase    = off;
-                    pThis->cbDbgInfo  = cb;
-                    pThis->offDir     = pCvHdr->off;
-                    pThis->hFile      = hFile;
-                    pThis->pMod       = pDbgMod;
-                    return VINF_CALLBACK_RETURN;
-                }
-
-                RTMemFree(pThis);
+                pThis->u32CvMagic = pCvHdr->u32Magic;
+                pThis->offBase    = off;
+                pThis->cbDbgInfo  = cb;
+                pThis->offDir     = pCvHdr->off;
+                return VINF_SUCCESS;
             }
-            else
-                rc = VERR_NO_MEMORY;
         }
     }
 
@@ -1699,15 +2178,21 @@ static DECLCALLBACK(int) rtDbgModCvEnumCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO
         return VINF_SUCCESS;
 
     /* We only handle the codeview sections. */
-    if (pDbgInfo->enmType != RTLDRDBGINFOTYPE_CODEVIEW)
-        return VINF_SUCCESS;
+    if (pDbgInfo->enmType == RTLDRDBGINFOTYPE_CODEVIEW)
+    {
+        /* Read the specified header and check if we like it. */
+        RTCVHDR CvHdr;
+        int rc = pDbgMod->pImgVt->pfnReadAt(pDbgMod, pDbgInfo->iDbgInfo, pDbgInfo->offFile, &CvHdr, sizeof(CvHdr));
+        if (RT_SUCCESS(rc))
+            rc = rtDbgModCvProbeCommon(pDbgMod, &CvHdr, RTCVFILETYPE_IMAGE, NIL_RTFILE, pDbgInfo->offFile, pDbgInfo->cb,
+                                       pDbgMod->pImgVt->pfnGetArch(pDbgMod), pDbgMod->pszImgFile);
+    }
+    else if (pDbgInfo->enmType == RTLDRDBGINFOTYPE_COFF)
+    {
+        /* Join paths with the DBG code. */
+        rtDbgModCvProbeCoff(pDbgMod, RTCVFILETYPE_IMAGE, NIL_RTFILE, pDbgInfo->offFile, pDbgInfo->cb, pDbgMod->pszImgFile);
+    }
 
-    /* Read the specified header and check if we like it. */
-    RTCVHDR CvHdr;
-    int rc = pDbgMod->pImgVt->pfnReadAt(pDbgMod, pDbgInfo->iDbgInfo, pDbgInfo->offFile, &CvHdr, sizeof(CvHdr));
-    if (RT_SUCCESS(rc))
-        rc = rtDbgModCvProbeCommon(pDbgMod, &CvHdr, RTCVFILETYPE_IMAGE, NIL_RTFILE, pDbgInfo->offFile, pDbgInfo->cb,
-                                   pDbgMod->pImgVt->pfnGetArch(pDbgMod), pDbgMod->pszImgFile);
     return VINF_SUCCESS;
 }
 
@@ -1814,26 +2299,32 @@ static int rtDbgModCvProbeFile(PRTDBGMODINT pDbgMod, const char *pszFilename, RT
             if (RT_FAILURE(rc))
                 break;
             if (DbgDir.Type == IMAGE_DEBUG_TYPE_CODEVIEW)
-            {
                 rc = rtDbgModCvProbeFile2(pDbgMod, RTCVFILETYPE_DBG, hFile,
                                           DbgDir.PointerToRawData, DbgDir.SizeOfData,
                                           enmArch, pszFilename);
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * Add section headers and such if necessary.
-                     */
-                    PRTDBGMODCV pThis = (PRTDBGMODCV)pDbgMod->pvDbgPriv;
-                    pThis->cbImage = DbgHdr.SizeOfImage;
-                    if (!pDbgMod->pImgVt)
-                    {
-                        rc = rtDbgModCvAddSegmentsFromDbg(pThis, &DbgHdr, pszFilename);
-                        if (RT_FAILURE(rc))
-                            rtDbgModCv_Close(pDbgMod);
-                    }
-                    return rc;
-                }
+            else if (DbgDir.Type == IMAGE_DEBUG_TYPE_COFF)
+                rc = rtDbgModCvProbeCoff(pDbgMod, RTCVFILETYPE_DBG, hFile,
+                                         DbgDir.PointerToRawData, DbgDir.SizeOfData, pszFilename);
+        }
+
+        /*
+         * If we get down here with an instance, it prooves that we've found
+         * something, regardless of any errors.  Add the sections and such.
+         */
+        PRTDBGMODCV pThis = (PRTDBGMODCV)pDbgMod->pvDbgPriv;
+        if (pThis)
+        {
+            PRTDBGMODCV pThis = (PRTDBGMODCV)pDbgMod->pvDbgPriv;
+            pThis->cbImage = DbgHdr.SizeOfImage;
+            if (pDbgMod->pImgVt)
+                rc = VINF_SUCCESS;
+            else
+            {
+                rc = rtDbgModCvAddSegmentsFromDbg(pThis, &DbgHdr, pszFilename);
+                if (RT_FAILURE(rc))
+                    rtDbgModCv_Close(pDbgMod);
             }
+            return rc;
         }
 
         /* Failed to find CV or smth, look at the end of the file just to be sure... */
@@ -1889,6 +2380,7 @@ static DECLCALLBACK(int) rtDbgModCv_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch
     PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
     if (!pThis)
         return RT_SUCCESS_NP(rc) ? VERR_DBG_NO_MATCHING_INTERPRETER : rc;
+    Assert(pThis->offBase || pThis->offCoffDbgInfo);
 
     /*
      * Load the debug info.
@@ -1898,8 +2390,10 @@ static DECLCALLBACK(int) rtDbgModCv_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch
         rc = pMod->pImgVt->pfnEnumSegments(pMod, rtDbgModCvAddSegmentsCallback, pThis);
         pThis->fHaveLoadedSegments = true;
     }
-    if (RT_SUCCESS(rc))
-        rc = rtDbgModCvLoadInfo(pThis);
+    if (RT_SUCCESS(rc) && pThis->offBase)
+        rc = rtDbgModCvLoadCodeViewInfo(pThis);
+    if (RT_SUCCESS(rc) && pThis->offCoffDbgInfo)
+        rc = rtDbgModCvLoadCoffInfo(pThis);
     if (RT_SUCCESS(rc))
     {
         Log(("RTDbgCv: Successfully loaded debug info\n"));
