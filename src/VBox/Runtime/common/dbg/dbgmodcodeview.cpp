@@ -1635,6 +1635,12 @@ static int rtDbgModCvProcessCoffSymbolTable(PRTDBGMODCV pThis,
 }
 
 
+/**
+ * Loads COFF debug information into the container.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The COFF/CodeView debug reader instance.
+ */
 static int rtDbgModCvLoadCoffInfo(PRTDBGMODCV pThis)
 {
     /*
