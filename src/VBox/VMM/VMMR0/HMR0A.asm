@@ -60,6 +60,12 @@
  %endif
 %endif
 
+%ifndef VBOX_WITH_OLD_VTX_CODE
+ %ifdef RT_ARCH_AMD64
+  %define VBOX_SKIP_RESTORE_SEG
+ %endif
+%endif
+
 ;; The offset of the XMM registers in X86FXSTATE.
 ; Use define because I'm too lazy to convert the struct.
 %define XMM_OFF_IN_X86FXSTATE   160
@@ -154,6 +160,13 @@
  %endmacro
 %endif
 
+%ifdef VBOX_SKIP_RESTORE_SEG
+%macro MYPUSHSEGS64 2
+%endmacro
+
+%macro MYPOPSEGS64 2
+%endmacro
+%else ; !VBOX_SKIP_RESTORE_SEG
 ; trashes, rax, rdx & rcx
 %macro MYPUSHSEGS64 2
  %ifndef HM_64_BIT_USE_NULL_SEL
@@ -217,6 +230,7 @@
    mov     es, %2
  %endif
 %endmacro
+%endif ; VBOX_SKIP_RESTORE_SEG
 
 %macro MYPUSHAD32 0
   pushad
@@ -269,6 +283,88 @@ GLOBALNAME g_fVMXIs64bitHost
 
 
 BEGINCODE
+
+
+;/**
+; * Restores host-state fields.
+; *
+; * @returns VBox status code
+; * @param   u32RestoreHostFlags  x86: [ebp + 08h]  msc: rcx  gcc: rdi   u32RestoreHost - RestoreHost flags.
+; * @param   pRestoreHost         x86: [ebp + 0ch]  msc: rdx  gcc: rsi   pRestoreHost - Pointer to the RestoreHost struct.
+; */
+ALIGNCODE(16)
+BEGINPROC VMXRestoreHostState
+%ifdef RT_ARCH_AMD64
+ %ifndef ASM_CALL64_GCC
+    ; On msc R10, R11 are scratch, RDI and RSI are not. So we must save and restore them!
+    mov		r10, rdi
+    mov		r11, rsi
+    ; Switch to common register usage (i.e. gcc's in this function)
+    mov         rdi, rcx
+    mov         rsi, rdx
+ %endif
+
+    test        edi, VMX_RESTORE_HOST_GDTR
+    jz          near .test_idtr
+    lgdt        [rsi + 18h]                ; pRestoreHost->HostGdtr
+
+.test_idtr:
+    test        edi, VMX_RESTORE_HOST_IDTR
+    jz          near .test_ds
+    lidt        [rsi + 22h]                ; pRestoreHost->HostIdtr
+
+.test_ds:
+    test        edi, VMX_RESTORE_HOST_SEL_DS
+    jz          near .test_es
+    mov         ax, word [rsi]      	   ; pRestoreHost->uHostSelDS
+    mov         ds, ax              
+
+.test_es:
+    test        edi, VMX_RESTORE_HOST_SEL_ES
+    jz          near .test_fs
+    mov         ax, word [rsi + 2]         ; pRestoreHost->uHostSelES
+    mov         es, ax 
+
+.test_fs:
+    ; We're only restoring the selector. The base is valid and restored by VT-x. If we get an interrupt in between FS & GS
+    ; below, we are fine as the base is what is relevant in 64-bit mode. We need to disable interrupts only during
+    ; writing of the selector as that zaps (trashes) the upper-part of the base until we wrmsr the full 64-bit base.
+
+    test        edi, VMX_RESTORE_HOST_SEL_FS
+    jz          near .test_gs
+    mov         ax, word [rsi + 4]        ; pRestoreHost->uHostSelFS
+    cli                                   ; Disable interrupts as mov fs, ax will zap the upper part of the base
+    mov         fs, ax
+    mov         eax, dword [rsi + 8]      ; pRestoreHost->uHostFSBase - Lo
+    mov         edx, dword [rsi + 0Ch]    ; pRestoreHost->uHostFSBase - Hi
+    mov         ecx, MSR_K8_FS_BASE
+    wrmsr
+    sti                                   ; Re-enable interrupts as fsbase is consistent now
+
+.test_gs:
+    test        edi, VMX_RESTORE_HOST_SEL_GS
+    jz          near .restore_success
+    mov         ax, word [rsi + 6]        ; pRestoreHost->uHostSelGS
+    cli                                   ; Disable interrupts as mov gs, ax will zap the upper part of the base
+    mov         gs, ax
+    mov         eax, dword [rsi + 10h]    ; pRestoreHost->uHostGSBase - Lo
+    mov         edx, dword [rsi + 14h]    ; pRestoreHost->uHostGSBase - Hi
+    mov         ecx, MSR_K8_GS_BASE
+    wrmsr
+    sti                                   ; Re-enable interrupts as gsbase is consistent now
+
+.restore_success:
+    mov         eax, VINF_SUCCESS
+ %ifndef ASM_CALL64_GCC
+    ; Restore RDI and RSI on MSC.
+    mov		rdi, r10
+    mov		rsi, r11
+ %endif
+%else  ; RT_ARCH_X86
+    mov         eax, VERR_NOT_IMPLEMENTED
+%endif
+    ret
+ENDPROC VMXRestoreHostState
 
 
 ;/**

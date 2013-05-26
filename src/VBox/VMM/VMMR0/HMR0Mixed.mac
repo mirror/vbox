@@ -17,6 +17,11 @@
 ; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 ;
 
+%ifndef VBOX_WITH_OLD_VTX_CODE
+ %ifdef RT_ARCH_AMD64
+  %define VMX_SKIP_GDTR_IDTR
+ %endif
+%endif
 
 ;/**
 ; * Prepares for and executes VMLAUNCH/VMRESUME (32 bits guest mode)
@@ -115,11 +120,13 @@ ALIGN(16)
     push    xAX
 
     ; VT-x only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
+%ifdef VMX_SKIP_GDTR_IDTR
     sub     xSP, xS*2
     sgdt    [xSP]
 
     sub     xSP, xS*2
     sidt    [xSP]
+%endif
 
 %ifdef VBOX_WITH_DR6_EXPERIMENT
     ; Load DR6 - experiment, not safe!
@@ -172,10 +179,12 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     jz      near .vmxstart_start_failed
 
     ; Restore base and limit of the IDTR & GDTR.
+%ifdef VMX_SKIP_GDTR_IDTR
     lidt    [xSP]
     add     xSP, xS*2
     lgdt    [xSP]
     add     xSP, xS*2
+%endif
 
     push    xDI
     mov     xDI, [xSP + xS * 3]         ; pCtx (*3 to skip the saved LDTR + TR).
@@ -262,10 +271,12 @@ ALIGN(16)
 
 .vmxstart_invalid_vmcs_ptr:
     ; Restore base and limit of the IDTR & GDTR
+%ifdef VMX_SKIP_GDTR_IDTR
     lidt    [xSP]
     add     xSP, xS*2
     lgdt    [xSP]
     add     xSP, xS*2
+%endif
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
@@ -299,10 +310,12 @@ ALIGN(16)
 
 .vmxstart_start_failed:
     ; Restore base and limit of the IDTR & GDTR.
+%ifdef VMX_SKIP_GDTR_IDTR
     lidt    [xSP]
     add     xSP, xS*2
     lgdt    [xSP]
     add     xSP, xS*2
+%endif
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
@@ -436,11 +449,13 @@ ALIGN(16)
     push    xAX
 
     ; VT-x only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
+%ifdef VMX_SKIP_GDTR_IDTR
     sub     xSP, xS*2
     sgdt    [xSP]
 
     sub     xSP, xS*2
     sidt    [xSP]
+%endif
 
 %ifdef VBOX_WITH_DR6_EXPERIMENT
     ; Load DR6 - experiment, not safe!
@@ -501,10 +516,12 @@ ALIGNCODE(16)
     jz      near .vmxstart64_start_failed
 
     ; Restore base and limit of the IDTR & GDTR
+%ifdef VMX_SKIP_GDTR_IDTR
     lidt    [xSP]
     add     xSP, xS*2
     lgdt    [xSP]
     add     xSP, xS*2
+%endif
 
     push    xDI
     mov     xDI, [xSP + xS * 3]         ; pCtx (*3 to skip the saved LDTR + TR)
@@ -608,10 +625,12 @@ ALIGN(16)
 
 .vmxstart64_invalid_vmcs_ptr:
     ; Restore base and limit of the IDTR & GDTR.
+%ifdef VMX_SKIP_GDTR_IDTR
     lidt    [xSP]
     add     xSP, xS*2
     lgdt    [xSP]
     add     xSP, xS*2
+%endif
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
@@ -658,10 +677,12 @@ ALIGN(16)
 
 .vmxstart64_start_failed:
     ; Restore base and limit of the IDTR & GDTR.
+%ifdef VMX_SKIP_GDTR_IDTR
     lidt    [xSP]
     add     xSP, xS*2
     lgdt    [xSP]
     add     xSP, xS*2
+%endif
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).

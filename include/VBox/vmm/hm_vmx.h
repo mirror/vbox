@@ -36,93 +36,135 @@
  * @{
  */
 
+/** @name Host-state restoration flags.
+ * @{
+ */
+/* If you change these values don't forget to update the assembly defines as well! */
+#define VMX_RESTORE_HOST_SEL_DS               RT_BIT(0)
+#define VMX_RESTORE_HOST_SEL_ES               RT_BIT(1)
+#define VMX_RESTORE_HOST_SEL_FS               RT_BIT(2)
+#define VMX_RESTORE_HOST_SEL_GS               RT_BIT(3)
+#define VMX_RESTORE_HOST_GDTR                 RT_BIT(4)
+#define VMX_RESTORE_HOST_IDTR                 RT_BIT(5)
+#define VMX_RESTORE_HOST_LDTR                 RT_BIT(6)
+/** @} */
+
+/**
+ * Host-state restoration structure.
+ * This holds host-state fields that require manual restoration. The layout is
+ * critical as it's used from assembly code.
+ */
+#pragma pack(1)
+typedef struct VMXRESTOREHOST
+{
+    RTSEL       uHostSelDS;     /* 0x00 */
+    RTSEL       uHostSelES;     /* 0x02 */
+    RTSEL       uHostSelFS;     /* 0x04 */
+    RTSEL       uHostSelGS;     /* 0x06 */
+    uint64_t    uHostFSBase;    /* 0x08 */
+    uint64_t    uHostGSBase;    /* 0x10 */
+    X86XDTR64   HostGdtr;       /* 0x18 */
+    X86XDTR64   HostIdtr;       /* 0x22 */
+} VMXRESTOREHOST;
+#pragma pack()
+/** Pointer to VMXRESTOREHOST. */
+typedef VMXRESTOREHOST *PVMXRESTOREHOST;
+AssertCompileSize(X86XDTR64, 10);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelES, 2);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelFS, 4);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelGS, 6);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase, 8);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostGSBase, 16);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr, 24);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr, 34);
+AssertCompileSize(VMXRESTOREHOST, 44);
+
 /** @name VMX VMCS-Read cache indices.
  * @{
  */
 #ifndef VBOX_WITH_OLD_VTX_CODE
-# define VMX_VMCS_GUEST_ES_BASE_CACHE_IDX                                     0
-# define VMX_VMCS_GUEST_CS_BASE_CACHE_IDX                                     1
-# define VMX_VMCS_GUEST_SS_BASE_CACHE_IDX                                     2
-# define VMX_VMCS_GUEST_DS_BASE_CACHE_IDX                                     3
-# define VMX_VMCS_GUEST_FS_BASE_CACHE_IDX                                     4
-# define VMX_VMCS_GUEST_GS_BASE_CACHE_IDX                                     5
-# define VMX_VMCS_GUEST_LDTR_BASE_CACHE_IDX                                   6
-# define VMX_VMCS_GUEST_TR_BASE_CACHE_IDX                                     7
-# define VMX_VMCS_GUEST_GDTR_BASE_CACHE_IDX                                   8
-# define VMX_VMCS_GUEST_IDTR_BASE_CACHE_IDX                                   9
-# define VMX_VMCS_GUEST_RSP_CACHE_IDX                                         10
-# define VMX_VMCS_GUEST_RIP_CACHE_IDX                                         11
-# define VMX_VMCS_GUEST_SYSENTER_ESP_CACHE_IDX                                12
-# define VMX_VMCS_GUEST_SYSENTER_EIP_CACHE_IDX                                13
-# define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX                             14
-# define VMX_VMCS_MAX_CACHE_IDX                                               (VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX + 1)
-# define VMX_VMCS_GUEST_CR3_CACHE_IDX                                         15
-# define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                                 (VMX_VMCS_GUEST_CR3_CACHE_IDX + 1)
+# define VMX_VMCS_GUEST_ES_BASE_CACHE_IDX                       0
+# define VMX_VMCS_GUEST_CS_BASE_CACHE_IDX                       1
+# define VMX_VMCS_GUEST_SS_BASE_CACHE_IDX                       2
+# define VMX_VMCS_GUEST_DS_BASE_CACHE_IDX                       3
+# define VMX_VMCS_GUEST_FS_BASE_CACHE_IDX                       4
+# define VMX_VMCS_GUEST_GS_BASE_CACHE_IDX                       5
+# define VMX_VMCS_GUEST_LDTR_BASE_CACHE_IDX                     6
+# define VMX_VMCS_GUEST_TR_BASE_CACHE_IDX                       7
+# define VMX_VMCS_GUEST_GDTR_BASE_CACHE_IDX                     8
+# define VMX_VMCS_GUEST_IDTR_BASE_CACHE_IDX                     9
+# define VMX_VMCS_GUEST_RSP_CACHE_IDX                           10
+# define VMX_VMCS_GUEST_RIP_CACHE_IDX                           11
+# define VMX_VMCS_GUEST_SYSENTER_ESP_CACHE_IDX                  12
+# define VMX_VMCS_GUEST_SYSENTER_EIP_CACHE_IDX                  13
+# define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX               14
+# define VMX_VMCS_MAX_CACHE_IDX                                 (VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX + 1)
+# define VMX_VMCS_GUEST_CR3_CACHE_IDX                           15
+# define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                   (VMX_VMCS_GUEST_CR3_CACHE_IDX + 1)
 #else /* VBOX_WITH_OLD_VTX_CODE */
-# define VMX_VMCS_GUEST_RIP_CACHE_IDX                                        0
-# define VMX_VMCS_GUEST_RSP_CACHE_IDX                                        1
-# define VMX_VMCS_GUEST_RFLAGS_CACHE_IDX                                     2
-# define VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE_CACHE_IDX                   3
-# define VMX_VMCS_CTRL_CR0_READ_SHADOW_CACHE_IDX                             4
-# define VMX_VMCS_GUEST_CR0_CACHE_IDX                                        5
-# define VMX_VMCS_CTRL_CR4_READ_SHADOW_CACHE_IDX                             6
-# define VMX_VMCS_GUEST_CR4_CACHE_IDX                                        7
-# define VMX_VMCS_GUEST_DR7_CACHE_IDX                                        8
-# define VMX_VMCS32_GUEST_SYSENTER_CS_CACHE_IDX                              9
-# define VMX_VMCS_GUEST_SYSENTER_EIP_CACHE_IDX                               10
-# define VMX_VMCS_GUEST_SYSENTER_ESP_CACHE_IDX                               11
-# define VMX_VMCS32_GUEST_GDTR_LIMIT_CACHE_IDX                               12
-# define VMX_VMCS_GUEST_GDTR_BASE_CACHE_IDX                                  13
-# define VMX_VMCS32_GUEST_IDTR_LIMIT_CACHE_IDX                               14
-# define VMX_VMCS_GUEST_IDTR_BASE_CACHE_IDX                                  15
-# define VMX_VMCS16_GUEST_FIELD_CS_CACHE_IDX                                 16
-# define VMX_VMCS32_GUEST_CS_LIMIT_CACHE_IDX                                 17
-# define VMX_VMCS_GUEST_CS_BASE_CACHE_IDX                                    18
-# define VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS_CACHE_IDX                         19
-# define VMX_VMCS16_GUEST_FIELD_DS_CACHE_IDX                                 20
-# define VMX_VMCS32_GUEST_DS_LIMIT_CACHE_IDX                                 21
-# define VMX_VMCS_GUEST_DS_BASE_CACHE_IDX                                    22
-# define VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS_CACHE_IDX                         23
-# define VMX_VMCS16_GUEST_FIELD_ES_CACHE_IDX                                 24
-# define VMX_VMCS32_GUEST_ES_LIMIT_CACHE_IDX                                 25
-# define VMX_VMCS_GUEST_ES_BASE_CACHE_IDX                                    26
-# define VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS_CACHE_IDX                         27
-# define VMX_VMCS16_GUEST_FIELD_FS_CACHE_IDX                                 28
-# define VMX_VMCS32_GUEST_FS_LIMIT_CACHE_IDX                                 29
-# define VMX_VMCS_GUEST_FS_BASE_CACHE_IDX                                    30
-# define VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS_CACHE_IDX                         31
-# define VMX_VMCS16_GUEST_FIELD_GS_CACHE_IDX                                 32
-# define VMX_VMCS32_GUEST_GS_LIMIT_CACHE_IDX                                 33
-# define VMX_VMCS_GUEST_GS_BASE_CACHE_IDX                                    34
-# define VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS_CACHE_IDX                         35
-# define VMX_VMCS16_GUEST_FIELD_SS_CACHE_IDX                                 36
-# define VMX_VMCS32_GUEST_SS_LIMIT_CACHE_IDX                                 37
-# define VMX_VMCS_GUEST_SS_BASE_CACHE_IDX                                    38
-# define VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS_CACHE_IDX                         39
-# define VMX_VMCS16_GUEST_FIELD_TR_CACHE_IDX                                 40
-# define VMX_VMCS32_GUEST_TR_LIMIT_CACHE_IDX                                 41
-# define VMX_VMCS_GUEST_TR_BASE_CACHE_IDX                                    42
-# define VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS_CACHE_IDX                         43
-# define VMX_VMCS16_GUEST_FIELD_LDTR_CACHE_IDX                               44
-# define VMX_VMCS32_GUEST_LDTR_LIMIT_CACHE_IDX                               45
-# define VMX_VMCS_GUEST_LDTR_BASE_CACHE_IDX                                  46
-# define VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS_CACHE_IDX                       47
-# define VMX_VMCS32_RO_EXIT_REASON_CACHE_IDX                                 48
-# define VMX_VMCS32_RO_VM_INSTR_ERROR_CACHE_IDX                              49
-# define VMX_VMCS32_RO_EXIT_INSTR_LENGTH_CACHE_IDX                           50
-# define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE_CACHE_IDX                51
-# define VMX_VMCS32_RO_EXIT_INSTR_INFO_CACHE_IDX                             52
-# define VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO_CACHE_IDX                      53
-# define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX                            54
-# define VMX_VMCS32_RO_IDT_INFO_CACHE_IDX                                    55
-# define VMX_VMCS32_RO_IDT_ERROR_CODE_CACHE_IDX                              56
-# define VMX_VMCS_MAX_CACHE_IDX                                              (VMX_VMCS32_RO_IDT_ERROR_CODE_CACHE_IDX + 1)
-# define VMX_VMCS_GUEST_CR3_CACHE_IDX                                        57
-# define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL_CACHE_IDX                      58
-# define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                                (VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL_CACHE_IDX + 1)
+# define VMX_VMCS_GUEST_RIP_CACHE_IDX                           0
+# define VMX_VMCS_GUEST_RSP_CACHE_IDX                           1
+# define VMX_VMCS_GUEST_RFLAGS_CACHE_IDX                        2
+# define VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE_CACHE_IDX      3
+# define VMX_VMCS_CTRL_CR0_READ_SHADOW_CACHE_IDX                4
+# define VMX_VMCS_GUEST_CR0_CACHE_IDX                           5
+# define VMX_VMCS_CTRL_CR4_READ_SHADOW_CACHE_IDX                6
+# define VMX_VMCS_GUEST_CR4_CACHE_IDX                           7
+# define VMX_VMCS_GUEST_DR7_CACHE_IDX                           8
+# define VMX_VMCS32_GUEST_SYSENTER_CS_CACHE_IDX                 9
+# define VMX_VMCS_GUEST_SYSENTER_EIP_CACHE_IDX                  10
+# define VMX_VMCS_GUEST_SYSENTER_ESP_CACHE_IDX                  11
+# define VMX_VMCS32_GUEST_GDTR_LIMIT_CACHE_IDX                  12
+# define VMX_VMCS_GUEST_GDTR_BASE_CACHE_IDX                     13
+# define VMX_VMCS32_GUEST_IDTR_LIMIT_CACHE_IDX                  14
+# define VMX_VMCS_GUEST_IDTR_BASE_CACHE_IDX                     15
+# define VMX_VMCS16_GUEST_FIELD_CS_CACHE_IDX                    16
+# define VMX_VMCS32_GUEST_CS_LIMIT_CACHE_IDX                    17
+# define VMX_VMCS_GUEST_CS_BASE_CACHE_IDX                       18
+# define VMX_VMCS32_GUEST_CS_ACCESS_RIGHTS_CACHE_IDX            19
+# define VMX_VMCS16_GUEST_FIELD_DS_CACHE_IDX                    20
+# define VMX_VMCS32_GUEST_DS_LIMIT_CACHE_IDX                    21
+# define VMX_VMCS_GUEST_DS_BASE_CACHE_IDX                       22
+# define VMX_VMCS32_GUEST_DS_ACCESS_RIGHTS_CACHE_IDX            23
+# define VMX_VMCS16_GUEST_FIELD_ES_CACHE_IDX                    24
+# define VMX_VMCS32_GUEST_ES_LIMIT_CACHE_IDX                    25
+# define VMX_VMCS_GUEST_ES_BASE_CACHE_IDX                       26
+# define VMX_VMCS32_GUEST_ES_ACCESS_RIGHTS_CACHE_IDX            27
+# define VMX_VMCS16_GUEST_FIELD_FS_CACHE_IDX                    28
+# define VMX_VMCS32_GUEST_FS_LIMIT_CACHE_IDX                    29
+# define VMX_VMCS_GUEST_FS_BASE_CACHE_IDX                       30
+# define VMX_VMCS32_GUEST_FS_ACCESS_RIGHTS_CACHE_IDX            31
+# define VMX_VMCS16_GUEST_FIELD_GS_CACHE_IDX                    32
+# define VMX_VMCS32_GUEST_GS_LIMIT_CACHE_IDX                    33
+# define VMX_VMCS_GUEST_GS_BASE_CACHE_IDX                       34
+# define VMX_VMCS32_GUEST_GS_ACCESS_RIGHTS_CACHE_IDX            35
+# define VMX_VMCS16_GUEST_FIELD_SS_CACHE_IDX                    36
+# define VMX_VMCS32_GUEST_SS_LIMIT_CACHE_IDX                    37
+# define VMX_VMCS_GUEST_SS_BASE_CACHE_IDX                       38
+# define VMX_VMCS32_GUEST_SS_ACCESS_RIGHTS_CACHE_IDX            39
+# define VMX_VMCS16_GUEST_FIELD_TR_CACHE_IDX                    40
+# define VMX_VMCS32_GUEST_TR_LIMIT_CACHE_IDX                    41
+# define VMX_VMCS_GUEST_TR_BASE_CACHE_IDX                       42
+# define VMX_VMCS32_GUEST_TR_ACCESS_RIGHTS_CACHE_IDX            43
+# define VMX_VMCS16_GUEST_FIELD_LDTR_CACHE_IDX                  44
+# define VMX_VMCS32_GUEST_LDTR_LIMIT_CACHE_IDX                  45
+# define VMX_VMCS_GUEST_LDTR_BASE_CACHE_IDX                     46
+# define VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS_CACHE_IDX          47
+# define VMX_VMCS32_RO_EXIT_REASON_CACHE_IDX                    48
+# define VMX_VMCS32_RO_VM_INSTR_ERROR_CACHE_IDX                 49
+# define VMX_VMCS32_RO_EXIT_INSTR_LENGTH_CACHE_IDX              50
+# define VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE_CACHE_IDX   51
+# define VMX_VMCS32_RO_EXIT_INSTR_INFO_CACHE_IDX                52
+# define VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO_CACHE_IDX         53
+# define VMX_VMCS_RO_EXIT_QUALIFICATION_CACHE_IDX               54
+# define VMX_VMCS32_RO_IDT_INFO_CACHE_IDX                       55
+# define VMX_VMCS32_RO_IDT_ERROR_CODE_CACHE_IDX                 56
+# define VMX_VMCS_MAX_CACHE_IDX                                 (VMX_VMCS32_RO_IDT_ERROR_CODE_CACHE_IDX + 1)
+# define VMX_VMCS_GUEST_CR3_CACHE_IDX                           57
+# define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL_CACHE_IDX         58
+# define VMX_VMCS_MAX_NESTED_PAGING_CACHE_IDX                   (VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL_CACHE_IDX + 1)
 #endif  /* VBOX_WITH_OLD_VTX_CODE */
 /** @} */
-
 
 /** @name VMX EPT paging structures
  * @{
@@ -1474,6 +1516,17 @@ typedef union
  * @ingroup grp_vmx
  * @{
  */
+
+/**
+ * Restores some host-state fields that need not be done on every VM-exit.
+ *
+ * @returns VBox status code.
+ * @param   fRestoreHostFlags   Flags of which host registers needs to be
+ *                              restored.
+ * @param   pRestoreHost        Pointer to the host-restore structure.
+ */
+DECLASM(int) VMXRestoreHostState(uint32_t fRestoreHostFlags, PVMXRESTOREHOST pRestoreHost);
+
 
 /**
  * Executes VMXON

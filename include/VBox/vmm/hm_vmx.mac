@@ -151,3 +151,11 @@
 %define VMX_VMCS_HOST_RSP                                       06C14h
 %define VMX_VMCS_HOST_RIP                                       06C16h
 
+%define VMX_RESTORE_HOST_SEL_DS                			1h	;RT_BIT(0)
+%define VMX_RESTORE_HOST_SEL_ES                			2h	;RT_BIT(1)
+%define VMX_RESTORE_HOST_SEL_FS                			4h	;RT_BIT(2)
+%define VMX_RESTORE_HOST_SEL_GS                			8h	;RT_BIT(3)
+%define VMX_RESTORE_HOST_GDTR                  			10h	;RT_BIT(4)
+%define VMX_RESTORE_HOST_IDTR                  			20h	;RT_BIT(5)
+%define VMX_RESTORE_HOST_LDTR                  			40h	;RT_BIT(6)
+
