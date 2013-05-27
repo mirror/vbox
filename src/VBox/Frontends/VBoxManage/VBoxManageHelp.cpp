@@ -415,6 +415,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                                    [--vendor <vendor name>]\n"
                      "                                    [--vendorurl <vendor url>]\n"
                      "                                    [--version <version info>]\n"
+                     "                                    [--description <description info>]\n"
                      "                                    [--eula <license text>]\n"
                      "                                    [--eulafile <filename>]\n"
                      "\n", SEP);

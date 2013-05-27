@@ -994,10 +994,9 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     /*xml::ElementNode *pelmVirtualSystemInfo =*/ pelmVirtualSystem->createChild("Info")->addContent("A virtual machine");
 
     std::list<VirtualSystemDescriptionEntry*> llName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
-    if (llName.size() != 1)
-        throw setError(VBOX_E_NOT_SUPPORTED,
-                        tr("Missing VM name"));
-    Utf8Str &strVMName = llName.front()->strVboxCurrent;
+    if (!llName.size())
+        throw setError(VBOX_E_NOT_SUPPORTED, tr("Missing VM name"));
+    Utf8Str &strVMName = llName.back()->strVboxCurrent;
     pelmVirtualSystem->setAttribute("ovf:id", strVMName);
 
     // product info
@@ -1006,11 +1005,11 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     std::list<VirtualSystemDescriptionEntry*> llVendor = vsdescThis->findByType(VirtualSystemDescriptionType_Vendor);
     std::list<VirtualSystemDescriptionEntry*> llVendorUrl = vsdescThis->findByType(VirtualSystemDescriptionType_VendorUrl);
     std::list<VirtualSystemDescriptionEntry*> llVersion = vsdescThis->findByType(VirtualSystemDescriptionType_Version);
-    bool fProduct = llProduct.size() && !llProduct.front()->strVboxCurrent.isEmpty();
-    bool fProductUrl = llProductUrl.size() && !llProductUrl.front()->strVboxCurrent.isEmpty();
-    bool fVendor = llVendor.size() && !llVendor.front()->strVboxCurrent.isEmpty();
-    bool fVendorUrl = llVendorUrl.size() && !llVendorUrl.front()->strVboxCurrent.isEmpty();
-    bool fVersion = llVersion.size() && !llVersion.front()->strVboxCurrent.isEmpty();
+    bool fProduct = llProduct.size() && !llProduct.back()->strVboxCurrent.isEmpty();
+    bool fProductUrl = llProductUrl.size() && !llProductUrl.back()->strVboxCurrent.isEmpty();
+    bool fVendor = llVendor.size() && !llVendor.back()->strVboxCurrent.isEmpty();
+    bool fVendorUrl = llVendorUrl.size() && !llVendorUrl.back()->strVboxCurrent.isEmpty();
+    bool fVersion = llVersion.size() && !llVersion.back()->strVboxCurrent.isEmpty();
     if (fProduct ||
         fProductUrl ||
         fVersion ||
@@ -1037,21 +1036,21 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
 
         pelmAnnotationSection->createChild("Info")->addContent("Meta-information about the installed software");
         if (fProduct)
-            pelmAnnotationSection->createChild("Product")->addContent(llProduct.front()->strVboxCurrent);
+            pelmAnnotationSection->createChild("Product")->addContent(llProduct.back()->strVboxCurrent);
         if (fVendor)
-            pelmAnnotationSection->createChild("Vendor")->addContent(llVendor.front()->strVboxCurrent);
+            pelmAnnotationSection->createChild("Vendor")->addContent(llVendor.back()->strVboxCurrent);
         if (fVersion)
-            pelmAnnotationSection->createChild("Version")->addContent(llVersion.front()->strVboxCurrent);
+            pelmAnnotationSection->createChild("Version")->addContent(llVersion.back()->strVboxCurrent);
         if (fProductUrl)
-            pelmAnnotationSection->createChild("ProductUrl")->addContent(llProductUrl.front()->strVboxCurrent);
+            pelmAnnotationSection->createChild("ProductUrl")->addContent(llProductUrl.back()->strVboxCurrent);
         if (fVendorUrl)
-            pelmAnnotationSection->createChild("VendorUrl")->addContent(llVendorUrl.front()->strVboxCurrent);
+            pelmAnnotationSection->createChild("VendorUrl")->addContent(llVendorUrl.back()->strVboxCurrent);
     }
 
     // description
     std::list<VirtualSystemDescriptionEntry*> llDescription = vsdescThis->findByType(VirtualSystemDescriptionType_Description);
     if (llDescription.size() &&
-        !llDescription.front()->strVboxCurrent.isEmpty())
+        !llDescription.back()->strVboxCurrent.isEmpty())
     {
         /*  <Section ovf:required="false" xsi:type="ovf:AnnotationSection_Type">
                 <Info>A human-readable annotation</Info>
@@ -1068,13 +1067,13 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
             pelmAnnotationSection = pelmVirtualSystem->createChild("AnnotationSection");
 
         pelmAnnotationSection->createChild("Info")->addContent("A human-readable annotation");
-        pelmAnnotationSection->createChild("Annotation")->addContent(llDescription.front()->strVboxCurrent);
+        pelmAnnotationSection->createChild("Annotation")->addContent(llDescription.back()->strVboxCurrent);
     }
 
     // license
     std::list<VirtualSystemDescriptionEntry*> llLicense = vsdescThis->findByType(VirtualSystemDescriptionType_License);
     if (llLicense.size() &&
-        !llLicense.front()->strVboxCurrent.isEmpty())
+        !llLicense.back()->strVboxCurrent.isEmpty())
     {
         /* <EulaSection>
             <Info ovf:msgid="6">License agreement for the Virtual System.</Info>
@@ -1090,19 +1089,18 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
             pelmEulaSection = pelmVirtualSystem->createChild("EulaSection");
 
         pelmEulaSection->createChild("Info")->addContent("License agreement for the virtual system");
-        pelmEulaSection->createChild("License")->addContent(llLicense.front()->strVboxCurrent);
+        pelmEulaSection->createChild("License")->addContent(llLicense.back()->strVboxCurrent);
     }
 
     // operating system
     std::list<VirtualSystemDescriptionEntry*> llOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
-    if (llOS.size() != 1)
-        throw setError(VBOX_E_NOT_SUPPORTED,
-                        tr("Missing OS type"));
+    if (!llOS.size())
+        throw setError(VBOX_E_NOT_SUPPORTED, tr("Missing OS type"));
     /*  <OperatingSystemSection ovf:id="82">
             <Info>Guest Operating System</Info>
             <Description>Linux 2.6.x</Description>
         </OperatingSystemSection> */
-    VirtualSystemDescriptionEntry *pvsdeOS = llOS.front();
+    VirtualSystemDescriptionEntry *pvsdeOS = llOS.back();
     xml::ElementNode *pelmOperatingSystemSection;
     if (enFormat == ovf::OVFVersion_0_9)
     {
@@ -1958,11 +1956,11 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                 // create a flat copy of the source disk image
                 if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
                 {
-                    rc = pSourceDisk->exportFile(strTargetFilePath.c_str(), 
-                                                 format, 
-                                                 MediumVariant_VmdkStreamOptimized, 
+                    rc = pSourceDisk->exportFile(strTargetFilePath.c_str(),
+                                                 format,
+                                                 MediumVariant_VmdkStreamOptimized,
                                                  pIfIo,
-                                                 pStorage, 
+                                                 pStorage,
                                                  pProgress2);
                     if (FAILED(rc)) throw rc;
                 }
@@ -1971,9 +1969,9 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                     //copy/clone CD/DVD image
                     rc = pSourceDisk->exportFile(strTargetFilePath.c_str(),
                                                  formatTemp,
-                                                 MediumVariant_Standard, 
+                                                 MediumVariant_Standard,
                                                  pIfIo,
-                                                 pStorage, 
+                                                 pStorage,
                                                  pProgress2);
                     if (FAILED(rc)) throw rc;
                 }
