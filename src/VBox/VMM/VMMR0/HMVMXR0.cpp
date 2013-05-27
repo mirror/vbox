@@ -2322,18 +2322,44 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
 
     if (u32HostExtFeatures & (X86_CPUID_EXT_FEATURE_EDX_NX | X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
     {
+        uint64_t u64HostEfer = ASMRdMsr(MSR_K6_EFER);
+
+#if HC_ARCH_BITS == 64
+        /* Paranoia. 64-bit code requires these bits to be set always. */
+        Assert(u64HostEfer & (MSR_K6_EFER_LMA | MSR_K6_EFER_LME) == (MSR_K6_EFER_LMA | MSR_K6_EFER_LME));
+        /* All our supported 64-bit host platforms must have NXE bit set. Otherwise we can change the below code to save EFER. */
+        Assert(u64HostEfer & (MSR_K6_EFER_NXE));
+
+        /* The SCE bit is only applicable in 64-bit mode. Save EFER if it doesn't match what the guest has.
+           See Intel spec. 30.10.4.3 "Handling the SYSCALL and SYSRET Instructions". */
+        if (CPUMIsGuestInLongMode(pVCpu))
+        {
+            uint64_t u64GuestEfer;
+            rc = CPUMQueryGuestMsr(pVCpu, MSR_K6_EFER, &u64GuestEfer);
+            AssertRC(rc);
+
+            if ((u64HostEfer & MSR_K6_EFER_SCE) != (u64GuestEfer & MSR_K6_EFER_SCE))
+            {
+                pHostMsr->u32IndexMSR = MSR_K6_EFER;
+                pHostMsr->u32Reserved = 0;
+                pHostMsr->u64Value    = u64HostEfer;
+                pHostMsr++; cHostMsrs++;
+            }
+        }
+#else  /* HC_ARCH_BITS != 64 */
         pHostMsr->u32IndexMSR = MSR_K6_EFER;
         pHostMsr->u32Reserved = 0;
 # if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (CPUMIsGuestInLongMode(pVCpu))
         {
             /* Must match the EFER value in our 64 bits switcher. */
-            pHostMsr->u64Value = ASMRdMsr(MSR_K6_EFER) | MSR_K6_EFER_LME | MSR_K6_EFER_SCE | MSR_K6_EFER_NXE;
+            pHostMsr->u64Value = u64HostEfer | MSR_K6_EFER_LME | MSR_K6_EFER_SCE | MSR_K6_EFER_NXE;
         }
         else
 # endif
-            pHostMsr->u64Value = ASMRdMsr(MSR_K6_EFER);
+            pHostMsr->u64Value = u64HostEfer;
         pHostMsr++; cHostMsrs++;
+#endif  /* HC_ARCH_BITS == 64 */
     }
 
 # if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -2486,7 +2512,10 @@ DECLINLINE(int) hmR0VmxLoadGuestExitCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         /* Save debug controls (DR7 & IA32_DEBUGCTL_MSR). The first VT-x CPUs only supported the 1-setting of this bit. */
         val |= VMX_VMCS_CTRL_EXIT_SAVE_DEBUG;
 
-        /* Set the host long mode active (EFER.LMA) bit (which Intel calls "Host address-space size") if necessary. */
+        /*
+         * Set the host long mode active (EFER.LMA) bit (which Intel calls "Host address-space size") if necessary.
+         * On VM-exit, VT-x sets both the host EFER.LMA and EFER.LME bit to this value. See assertion in hmR0VmxSaveHostMsrs().
+         */
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (HMVMX_IS_64BIT_HOST_MODE())
             val |= VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE;
@@ -3718,7 +3747,11 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             /** @todo support save IA32_EFER, i.e.
              *        VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR, in which case the
-             *        guest EFER need not be part of the VM-entry MSR-load area. */
+             *        guest EFER need not be part of the VM-entry MSR-load area. Also
+             *        allow the guest to read EFER without causing a VM-exit when
+             *        possible. */
+            /* Do -not- load guest EFER as we don't save/restore the host EFER always. See hmr0VmxSaveHostMsrs() */
+#if 0
             pGuestMsr->u32IndexMSR = MSR_K6_EFER;
             pGuestMsr->u32Reserved = 0;
             pGuestMsr->u64Value    = pMixedCtx->msrEFER;
@@ -3726,6 +3759,7 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             if (!CPUMIsGuestInLongModeEx(pMixedCtx))
                 pGuestMsr->u64Value &= ~(MSR_K6_EFER_LMA | MSR_K6_EFER_LME);
             pGuestMsr++; cGuestMsrs++;
+#endif
             if (fSupportsLongMode)
             {
                 pGuestMsr->u32IndexMSR = MSR_K8_LSTAR;
