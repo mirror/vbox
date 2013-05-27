@@ -1965,7 +1965,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
      * Without UnrestrictedGuest, pRealModeTSS and pNonPagingModeEPTPageTable *must* always be allocated.
      * We no longer support the highly unlikely case of UnrestrictedGuest without pRealModeTSS. See hmR3InitFinalizeR0().
      */
-    /* -XXX- change hmR3InitFinalizeR0() to fail if pRealModeTSS alloc fails. */
+    /* -XXX- change hmR3InitFinalizeR0Intel() to fail if pRealModeTSS alloc fails. */
     if (   !pVM->hm.s.vmx.fUnrestrictedGuest
         &&  (   !pVM->hm.s.vmx.pNonPagingModeEPTPageTable
              || !pVM->hm.s.vmx.pRealModeTSS))
