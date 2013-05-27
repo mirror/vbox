@@ -1,4 +1,4 @@
-/* $Id: dbgmoddeferred.cpp 85864 2013-05-19 16:58:01Z bird $ */
+/* $Id$ */
 /** @file
  * IPRT - Debug Module Reader For Microsoft CodeView and COFF.
  *
