@@ -2452,6 +2452,9 @@ for option in $*; do
     --disable-devmapper)
       WITH_DEVMAPPER=0
       ;;
+    --disable-libvpx)
+      WITH_LIBVPX=0
+      ;;
     --build-debug|-d)
       BUILD_TYPE=debug
       ;;
