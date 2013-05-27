@@ -206,7 +206,7 @@ static int rtDbgModDeferredDbgSymInfo_Start(PRTDBGMODDEFERRED pThis, PRTDBGSYMBO
     pSymInfo->iSeg      = 0;
     pSymInfo->fFlags    = 0;
     pSymInfo->iOrdinal  = 0;
-    memcpy(pSymInfo->szName, RT_STR_TUPLE("DeferredStart"));
+    strcpy(pSymInfo->szName, "DeferredStart");
     return VINF_SUCCESS;
 }
 
@@ -226,7 +226,7 @@ static int rtDbgModDeferredDbgSymInfo_Last(PRTDBGMODDEFERRED pThis, PRTDBGSYMBOL
     pSymInfo->iSeg      = 0;
     pSymInfo->fFlags    = 0;
     pSymInfo->iOrdinal  = 1;
-    memcpy(pSymInfo->szName, RT_STR_TUPLE("DeferredLast"));
+    strcpy(pSymInfo->szName, "DeferredLast");
     return VINF_SUCCESS;
 }
 
