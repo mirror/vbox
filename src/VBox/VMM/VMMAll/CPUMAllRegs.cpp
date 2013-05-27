@@ -1970,6 +1970,12 @@ VMMDECL(bool) CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
                 return !!(pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_EXT_FEATURE_EDX_NX);
         }
 
+        case CPUMCPUIDFEATURE_SYSCALL:
+        {
+            if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
+                return !!(pVM->cpum.s.aGuestCpuIdExt[1].edx & X86_CPUID_EXT_FEATURE_EDX_SYSCALL);
+        }
+
         case CPUMCPUIDFEATURE_RDTSCP:
         {
             if (pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001)
