@@ -263,6 +263,7 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
         ++ rects;
     }
     lock(); /* See comment in setView(). */
+    m_syncVisibleRegion = reg;
     if (m_pMachineView)
         QApplication::postEvent(m_pMachineView, new UISetRegionEvent(reg));
     unlock();
