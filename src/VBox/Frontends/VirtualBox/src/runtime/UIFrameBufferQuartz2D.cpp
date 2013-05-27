@@ -464,14 +464,14 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
 
 void UIFrameBufferQuartz2D::applyVisibleRegionEvent(UISetRegionEvent *pEvent)
 {
-    /* Make sure visible-region changed: */
-    if (m_visibleRegion == pEvent->region())
+    /* Make sure async visible-region changed: */
+    if (m_asyncVisibleRegion == pEvent->region())
         return;
 
-    /* Remember new visible-region: */
-    m_visibleRegion = pEvent->region();
-    /* Invalidate whole the viewport: */
+    /* We are handling the fact of async visible-region change
+     * to invalidate whole the viewport area! */
     ::darwinWindowInvalidateShape(m_pMachineView->viewport());
+    m_asyncVisibleRegion = pEvent->region();
 }
 
 void UIFrameBufferQuartz2D::clean(bool fPreserveRegions)

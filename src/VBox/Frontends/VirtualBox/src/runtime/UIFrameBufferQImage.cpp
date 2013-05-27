@@ -55,9 +55,14 @@ UIFrameBufferQImage::UIFrameBufferQImage(UIMachineView *pMachineView)
 void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
 {
     /* Invalidate visible-region if necessary: */
-    if (m_width != pEvent->width() ||
-        m_height != pEvent->height())
-        m_visibleRegion = QRegion();
+    if (m_pMachineView->machineLogic()->visualStateType() == UIVisualStateType_Seamless &&
+        (m_width != pEvent->width() || m_height != pEvent->height()))
+    {
+        lock();
+        m_syncVisibleRegion = QRegion();
+        m_asyncVisibleRegion = QRegion();
+        unlock();
+    }
 
     /* Remember new width/height: */
     m_width = pEvent->width();
@@ -174,20 +179,20 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
 
 void UIFrameBufferQImage::applyVisibleRegionEvent(UISetRegionEvent *pEvent)
 {
-    /* Make sure visible-region changed: */
-    if (m_visibleRegion == pEvent->region())
+    /* Make sure async visible-region changed: */
+    if (m_asyncVisibleRegion == pEvent->region())
         return;
 
-    /* Compose viewport region to update: */
-    QRegion toUpdate = pEvent->region() + m_visibleRegion;
-    /* Remember new visible-region: */
-    m_visibleRegion = pEvent->region();
-    /* Update viewport region finally: */
-    m_pMachineView->viewport()->update(toUpdate);
+    /* We are accounting async visible-regions one-by-one
+     * to keep corresponding viewport area always updated! */
+    m_pMachineView->viewport()->update(pEvent->region() + m_asyncVisibleRegion);
+    m_asyncVisibleRegion = pEvent->region();
+
 #ifdef Q_WS_X11
     /* Qt 4.8.3 under X11 has Qt::WA_TranslucentBackground window attribute broken,
-     * so we are still have to use old one known Xshape extension wrapped by the widget setMask API: */
-    m_pMachineView->machineWindow()->setMask(m_visibleRegion);
+     * so we are also have to use async visible-region to apply to [Q]Widget [set]Mask
+     * which internally wraps old one known (approved) Xshape extension: */
+    m_pMachineView->machineWindow()->setMask(m_asyncVisibleRegion);
 #endif /* Q_WS_X11 */
 }
 
@@ -225,8 +230,12 @@ void UIFrameBufferQImage::paintSeamless(QPaintEvent *pEvent)
     painter.eraseRect(paintRect);
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
+    /* Manually clip paint rectangle using visible-region: */
+    lock();
+    QRegion visiblePaintRegion = m_syncVisibleRegion & paintRect;
+    unlock();
+
     /* Repaint all the rectangles of visible-region: */
-    QRegion visiblePaintRegion = m_visibleRegion & paintRect;
     foreach (const QRect &rect, visiblePaintRegion.rects())
     {
 #ifdef Q_WS_WIN

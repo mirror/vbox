@@ -236,10 +236,22 @@ protected:
     RTCRITSECT m_critSect;
     ulong m_width;
     ulong m_height;
-    QRegion m_visibleRegion;
     QSize m_scaledSize;
     int64_t m_WinId;
     bool m_fIsDeleted;
+
+    /* To avoid a seamless flicker,
+     * which caused by the latency between the
+     * initial visible-region arriving from EMT thread
+     * and actual visible-region application on GUI thread
+     * it was decided to use two visible-region instances:
+     * 1. 'Sync-one' which being updated synchronously by locking EMT thread,
+     *               and used for immediate manual clipping of the painting operations.
+     * 2. 'Async-one' which updated asynchronously by posting async-event from EMT to GUI thread,
+                      which is used to update viewport parts for visible-region changes,
+                      because NotifyUpdate doesn't take into account these changes. */
+    QRegion m_syncVisibleRegion;
+    QRegion m_asyncVisibleRegion;
 
 #if defined (Q_OS_WIN32)
 private:
