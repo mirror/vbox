@@ -7152,7 +7152,8 @@ HMVMX_EXIT_DECL hmR0VmxExitExtInt(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 {
     VMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitExtInt);
-#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+    /* 32-bit Windows hosts (4 cores) has trouble with this; causes higher interrupt latency. */
+#if HC_ARCH_BITS == 64 && defined(VBOX_WITH_VMMR0_DISABLE_PREEMPTION)
     Assert(ASMIntAreEnabled());
     return VINF_SUCCESS;
 #else
