@@ -1276,6 +1276,16 @@ static void clipGrabX11CB(CLIPBACKEND *pCtx, uint32_t u32Formats)
         /* Grab the middle-button paste selection too. */
         XtOwnSelection(pCtx->widget, clipGetAtom(pCtx->widget, "PRIMARY"),
                        CurrentTime, clipXtConvertSelectionProc, NULL, 0);
+#ifndef TESTCASE
+        /* Xt suppresses these if we already own the clipboard, so send them
+         * ourselves. */
+        XSetSelectionOwner(XtDisplay(pCtx->widget),
+                           clipGetAtom(pCtx->widget, "CLIPBOARD"),
+                           XtWindow(pCtx->widget), CurrentTime);
+        XSetSelectionOwner(XtDisplay(pCtx->widget),
+                           clipGetAtom(pCtx->widget, "PRIMARY"),
+                           XtWindow(pCtx->widget), CurrentTime);
+#endif
     }
 }
 
