@@ -145,13 +145,9 @@ int main()
      * Init.
      */
     RTTEST hTest;
-    int rc;
-    if (    RT_FAILURE(rc = RTR3InitExeNoArguments(0))
-        ||  RT_FAILURE(rc = RTTestCreate("tstVMMR0CallHost-1", &hTest)))
-    {
-        RTStrmPrintf(g_pStdErr, "tstVMMR0CallHost-1: Fatal error during init: %Rrc\n", rc);
-        return 1;
-    }
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstVMMR0CallHost-1", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
     RTTestBanner(hTest);
 
     g_Jmp.pvSavedStack = (RTR0PTR)RTTestGuardedAllocTail(hTest, VMM_STACK_SIZE);

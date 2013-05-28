@@ -193,16 +193,10 @@ int main(int argc, char **argv)
     /*
      * Init runtime and the test environment.
      */
-    int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
-    if (RT_FAILURE(rc))
-        return RTMsgInitFailure(rc);
     RTTEST hTest;
-    rc = RTTestCreate("tstVMM", &hTest);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("tstVMM: RTTestCreate failed: %Rrc\n", rc);
-        return 1;
-    }
+    RTEXITCODE rcExit = RTTestInitExAndCreate(argc, &argv, RTR3INIT_FLAGS_SUPLIB, "tstVMM", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
 
     /*
      * Parse arguments.
@@ -260,7 +254,7 @@ int main(int argc, char **argv)
     RTPrintf(TESTCASE ": Initializing...\n");
     PVM pVM;
     PUVM pUVM;
-    rc = VMR3Create(g_cCpus, NULL, NULL, NULL, tstVMMConfigConstructor, NULL, &pVM, &pUVM);
+    int rc = VMR3Create(g_cCpus, NULL, NULL, NULL, tstVMMConfigConstructor, NULL, &pVM, &pUVM);
     if (RT_SUCCESS(rc))
     {
         PDMR3LdrEnumModules(pVM, tstVMMLdrEnum, NULL);
