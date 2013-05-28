@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,6 +21,9 @@
 #include <VBox/VMMDev.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmifs.h>
+#ifndef VBOX_WITHOUT_TESTING_FEATURES
+# include <iprt/test.h>
+#endif
 
 #define VMMDEV_WITH_ALT_TIMESYNC
 
@@ -347,6 +350,10 @@ typedef struct VMMDevState
             char        szName[1024 - 8 - 4];
         } Value;
     } TestingData;
+    /** The XML output file name (can be a named pipe, doesn't matter to us). */
+    R3PTRTYPE(char *)       pszTestingXmlOutput;
+    /** Testing instance for dealing with the output. */
+    RTTEST                  hTestingTest;
 #endif /* !VBOX_WITHOUT_TESTING_FEATURES */
 } VMMDevState;
 typedef VMMDevState VMMDEV;

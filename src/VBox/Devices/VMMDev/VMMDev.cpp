@@ -3565,7 +3565,7 @@ static DECLCALLBACK(void) vmmdevRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 /**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
-static DECLCALLBACK(int) vmmdevDestroy(PPDMDEVINS pDevIns)
+static DECLCALLBACK(int) vmmdevDestruct(PPDMDEVINS pDevIns)
 {
     PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
@@ -3579,6 +3579,13 @@ static DECLCALLBACK(int) vmmdevDestroy(PPDMDEVINS pDevIns)
         RTMemFree(pThis->pCredentials);
         pThis->pCredentials = NULL;
     }
+
+#ifndef VBOX_WITHOUT_TESTING_FEATURES
+    /*
+     * Clean up the testing device.
+     */
+    vmmdevTestingTerminate(pDevIns);
+#endif
 
     return VINF_SUCCESS;
 }
@@ -3671,7 +3678,8 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "GuestCoreDumpEnabled|"
                                   "GuestCoreDumpDir|"
                                   "GuestCoreDumpCount|"
-                                  "TestingEnabled"
+                                  "TestingEnabled|"
+                                  "TestintXmlOutputFile"
                                   ,
                                   "");
 
@@ -3729,6 +3737,9 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"TestingEnabled\" as a boolean"));
+    rc = CFGMR3QueryStringAllocDef(pCfg, "TestintXmlOutputFile", &pThis->pszTestingXmlOutput, NULL);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed querying \"TestintXmlOutputFile\" as a string"));
     /** @todo image-to-load-filename? */
 #endif
 
@@ -3912,7 +3923,7 @@ extern "C" const PDMDEVREG g_DeviceVMMDev =
     /* pfnConstruct */
     vmmdevConstruct,
     /* pfnDestruct */
-    NULL,
+    vmmdevDestruct,
     /* pfnRelocate */
     vmmdevRelocate,
     /* pfnMemSetup */
