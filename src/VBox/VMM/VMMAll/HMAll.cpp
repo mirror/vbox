@@ -33,6 +33,7 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 #include <iprt/x86.h>
+#include <iprt/asm-amd64-x86.h>
 
 
 
@@ -368,5 +369,59 @@ VMM_INT_DECL(bool) HMHasPendingIrq(PVM pVM)
 VMM_INT_DECL(PX86PDPE) HMGetPaePdpes(PVMCPU pVCpu)
 {
     return &pVCpu->hm.s.aPdpes[0];
+}
+
+
+/**
+ * Checks if the current AMD CPU is subject to erratum 170 "In SVM mode,
+ * incorrect code bytes may be fetched after a world-switch".
+ *
+ * @param   pu32Family      Where to store the CPU family (can be NULL).
+ * @param   pu32Model       Where to store the CPU model (can be NULL).
+ * @param   pu32Stepping    Where to store the CPU stepping (can be NULL).
+ * @returns true if the erratum applies, false otherwise.
+ */
+VMM_INT_DECL(int) HMAmdIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping)
+{
+    /*
+     * Erratum 170 which requires a forced TLB flush for each world switch:
+     * See AMD spec. "Revision Guide for AMD NPT Family 0Fh Processors".
+     *
+     * All BH-G1/2 and DH-G1/2 models include a fix:
+     * Athlon X2:   0x6b 1/2
+     *              0x68 1/2
+     * Athlon 64:   0x7f 1
+     *              0x6f 2
+     * Sempron:     0x7f 1/2
+     *              0x6f 2
+     *              0x6c 2
+     *              0x7c 2
+     * Turion 64:   0x68 2
+     */
+    uint32_t u32Dummy;
+    uint32_t u32Version, u32Family, u32Model, u32Stepping, u32BaseFamily;
+    ASMCpuId(1, &u32Version, &u32Dummy, &u32Dummy, &u32Dummy);
+    u32BaseFamily = (u32Version >> 8) & 0xf;
+    u32Family     = u32BaseFamily + (u32BaseFamily == 0xf ? ((u32Version >> 20) & 0x7f) : 0);
+    u32Model      = ((u32Version >> 4) & 0xf);
+    u32Model      = u32Model | ((u32BaseFamily == 0xf ? (u32Version >> 16) & 0x0f : 0) << 4);
+    u32Stepping   = u32Version & 0xf;
+
+    bool fErratumApplies = false;
+    if (   u32Family == 0xf
+        && !((u32Model == 0x68 || u32Model == 0x6b || u32Model == 0x7f) && u32Stepping >= 1)
+        && !((u32Model == 0x6f || u32Model == 0x6c || u32Model == 0x7c) && u32Stepping >= 2))
+    {
+        fErratumApplies = true;
+    }
+
+    if (pu32Family)
+        *pu32Family   = u32Family;
+    if (pu32Model)
+        *pu32Model    = u32Model;
+    if (pu32Stepping)
+        *pu32Stepping = u32Stepping;
+
+    return fErratumApplies;
 }
 

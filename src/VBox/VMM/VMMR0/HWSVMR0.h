@@ -37,93 +37,18 @@ RT_C_DECLS_BEGIN
 
 #ifdef IN_RING0
 
-/**
- * Enters the AMD-V session
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCpu        Pointer to the CPU info struct.
- */
-VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu);
-
-/**
- * Leaves the AMD-V session
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest CPU context.
- */
-VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-
-VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS HCPhysCpuPage, bool fEnabledBySystem);
-
-/**
- * Deactivates AMD-V on the current CPU
- *
- * @returns VBox status code.
- * @param   pCpu            Pointer to the CPU info struct.
- * @param   pvPageCpu       Pointer to the global CPU page.
- * @param   pPageCpuPhys    Physical address of the global CPU page.
- */
-VMMR0DECL(int) SVMR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
-
-/**
- * Does Ring-0 per VM AMD-V init.
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- */
-VMMR0DECL(int) SVMR0InitVM(PVM pVM);
-
-/**
- * Does Ring-0 per VM AMD-V termination.
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- */
-VMMR0DECL(int) SVMR0TermVM(PVM pVM);
-
-/**
- * Sets up AMD-V for the specified VM
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- */
-VMMR0DECL(int) SVMR0SetupVM(PVM pVM);
-
-
-/**
- * Runs guest code in an AMD-V VM.
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest CPU context.
- */
-VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-
-
-/**
- * Save the host state.
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- */
-VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu);
-
-/**
- * Loads the guest state.
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest CPU context.
- */
-VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-
+VMMR0DECL(int)  SVMR0GlobalInit(void);
+VMMR0DECL(void) SVMR0GlobalTerm(void);
+VMMR0DECL(int)  SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu);
+VMMR0DECL(int)  SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int)  SVMR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS HCPhysCpuPage, bool fEnabledBySystem);
+VMMR0DECL(int)  SVMR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+VMMR0DECL(int)  SVMR0InitVM(PVM pVM);
+VMMR0DECL(int)  SVMR0TermVM(PVM pVM);
+VMMR0DECL(int)  SVMR0SetupVM(PVM pVM);
+VMMR0DECL(int)  SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int)  SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu);
+VMMR0DECL(int)  SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(int)   SVMR0VMSwitcherRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
