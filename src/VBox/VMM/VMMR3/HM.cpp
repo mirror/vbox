@@ -1358,36 +1358,11 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
 {
     Log(("pVM->hm.s.svm.fSupported = %d\n", pVM->hm.s.svm.fSupported));
 
-    /* Erratum 170 which requires a forced TLB flush for each world switch:
-     * See http://www.amd.com/us-en/assets/content_type/white_papers_and_tech_docs/33610.pdf
-     *
-     * All BH-G1/2 and DH-G1/2 models include a fix:
-     * Athlon X2:   0x6b 1/2
-     *              0x68 1/2
-     * Athlon 64:   0x7f 1
-     *              0x6f 2
-     * Sempron:     0x7f 1/2
-     *              0x6f 2
-     *              0x6c 2
-     *              0x7c 2
-     * Turion 64:   0x68 2
-     *
-     */
-    uint32_t u32Dummy;
-    uint32_t u32Version, u32Family, u32Model, u32Stepping, u32BaseFamily;
-    ASMCpuId(1, &u32Version, &u32Dummy, &u32Dummy, &u32Dummy);
-    u32BaseFamily= (u32Version >> 8) & 0xf;
-    u32Family    = u32BaseFamily + (u32BaseFamily == 0xf ? ((u32Version >> 20) & 0x7f) : 0);
-    u32Model     = ((u32Version >> 4) & 0xf);
-    u32Model     = u32Model | ((u32BaseFamily == 0xf ? (u32Version >> 16) & 0x0f : 0) << 4);
-    u32Stepping  = u32Version & 0xf;
-    if (    u32Family == 0xf
-        &&  !((u32Model == 0x68 || u32Model == 0x6b || u32Model == 0x7f) &&  u32Stepping >= 1)
-        &&  !((u32Model == 0x6f || u32Model == 0x6c || u32Model == 0x7c) &&  u32Stepping >= 2))
-    {
-        LogRel(("HM: AMD cpu with erratum 170 family %x model %x stepping %x\n", u32Family, u32Model, u32Stepping));
-    }
-
+    uint32_t u32Family;
+    uint32_t u32Model;
+    uint32_t u32Stepping;
+    if (HMAmdIsSubjectToErratum170(&u32Family, &u32Model, &u32Stepping))
+        LogRel(("HM: AMD Cpu with erratum 170 family %#x model %#x stepping %#x\n", u32Family, u32Model, u32Stepping));
     LogRel(("HM: cpuid 0x80000001.u32AMDFeatureECX = %RX32\n", pVM->hm.s.cpuid.u32AMDFeatureECX));
     LogRel(("HM: cpuid 0x80000001.u32AMDFeatureEDX = %RX32\n", pVM->hm.s.cpuid.u32AMDFeatureEDX));
     LogRel(("HM: AMD HWCR MSR                      = %RX64\n", pVM->hm.s.svm.msrHwcr));

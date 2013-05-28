@@ -549,13 +549,16 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
 
 /**
  * AMD-specific initialization code.
+ *
+ * @returns VBox status code.
  */
-static void hmR0InitAmd(uint32_t u32FeaturesEDX, uint32_t uMaxExtLeaf)
+static int hmR0InitAmd(uint32_t u32FeaturesEDX, uint32_t uMaxExtLeaf)
 {
     /*
      * Read all SVM MSRs if SVM is available. (same goes for RDMSR/WRMSR)
      * We also assume all SVM-enabled CPUs support fxsave/fxrstor.
      */
+    int rc;
     if (   (g_HvmR0.cpuid.u32AMDFeatureECX & X86_CPUID_AMD_FEATURE_ECX_SVM)
         && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
         && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
@@ -563,6 +566,17 @@ static void hmR0InitAmd(uint32_t u32FeaturesEDX, uint32_t uMaxExtLeaf)
         && uMaxExtLeaf >= 0x8000000a
        )
     {
+        /* Call the global AMD-V initialization routine. */
+        rc = SVMR0GlobalInit();
+        if (RT_FAILURE(rc))
+        {
+            g_HvmR0.lLastError = rc;
+            return rc;
+        }
+
+        /*
+         * Install the AMD-V methods.
+         */
         g_HvmR0.pfnEnterSession     = SVMR0Enter;
         g_HvmR0.pfnLeaveSession     = SVMR0Leave;
         g_HvmR0.pfnSaveHostState    = SVMR0SaveHostState;
@@ -584,7 +598,7 @@ static void hmR0InitAmd(uint32_t u32FeaturesEDX, uint32_t uMaxExtLeaf)
          */
         HMR0FIRSTRC FirstRc;
         hmR0FirstRcInit(&FirstRc);
-        int rc = RTMpOnAll(hmR0InitAmdCpu, &FirstRc, NULL);
+        rc = RTMpOnAll(hmR0InitAmdCpu, &FirstRc, NULL);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
             rc = hmR0FirstRcGetStatus(&FirstRc);
@@ -602,7 +616,11 @@ static void hmR0InitAmd(uint32_t u32FeaturesEDX, uint32_t uMaxExtLeaf)
             g_HvmR0.lLastError = rc;
     }
     else
-        g_HvmR0.lLastError = VERR_SVM_NO_SVM;
+    {
+        rc = VERR_SVM_NO_SVM;
+        g_HvmR0.lLastError = rc;
+    }
+    return rc;
 }
 
 
@@ -678,7 +696,11 @@ VMMR0_INT_DECL(int) HMR0Init(void)
                     return rc;
             }
             else if (ASMIsAmdCpuEx(u32VendorEBX, u32VendorECX, u32VendorEDX))
-                hmR0InitAmd(u32FeaturesEDX, uMaxExtLeaf);
+            {
+                rc = hmR0InitAmd(u32FeaturesEDX, uMaxExtLeaf);
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
             else
                 g_HvmR0.lLastError = VERR_HM_UNKNOWN_CPU;
         }
@@ -771,12 +793,14 @@ VMMR0_INT_DECL(int) HMR0Term(void)
         }
     }
 
-    /** @todo This needs cleaning up. There's no matching hmR0TermIntel() and all
-     *        the VT-x/AMD-V specific bits should move into their respective
-     *        modules. */
+    /** @todo This needs cleaning up. There's no matching
+     *        hmR0TermIntel()/hmR0TermAmd() and all the VT-x/AMD-V specific bits
+     *        should move into their respective modules. */
     /* Finally, call global VT-x/AMD-V termination. */
     if (g_HvmR0.vmx.fSupported)
         VMXR0GlobalTerm();
+    else if (g_HvmR0.svm.fSupported)
+        SVMR0GlobalTerm();
 
     return rc;
 }
@@ -824,8 +848,8 @@ static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *p
 
 
 /**
- * Worker function used by hmR0PowerCallback  and HMR0Init to initalize
- * VT-x / AMD-V on a CPU.
+ * Worker function used by hmR0PowerCallback() and HMR0Init() to initalize AMD-V
+ * on a CPU.
  *
  * @param   idCpu       The identifier for the CPU the function is called on.
  * @param   pvUser1     Pointer to the first RC structure.

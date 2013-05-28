@@ -141,6 +141,7 @@ VMMDECL(bool)                   HMIsEnabledNotMacro(PVM pVM);
 VMM_INT_DECL(int)               HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
 VMM_INT_DECL(bool)              HMHasPendingIrq(PVM pVM);
 VMM_INT_DECL(PX86PDPE)          HMGetPaePdpes(PVMCPU pVCpu);
+VMM_INT_DECL(int)               HMAmdIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping);
 
 #ifndef IN_RC
 VMM_INT_DECL(int)               HMFlushTLB(PVMCPU pVCpu);
