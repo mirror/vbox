@@ -68,7 +68,6 @@ namespace UIDefs
     enum UIEventType
     {
           ResizeEventType = QEvent::User + 101
-        , RepaintEventType
         , SetRegionEventType
         , ModifierKeyChangeEventType
         , MediaEnumEventType

@@ -295,6 +295,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/medium/UIMediumManager.h \
 	src/runtime/UIActionPoolRuntime.h \
 	src/runtime/UIConsoleEventHandler.h \
+	src/runtime/UIFrameBuffer.h \
 	src/runtime/UIIndicatorsPool.h \
 	src/runtime/UIKeyboardHandler.h \
 	src/runtime/UIMachine.h \
