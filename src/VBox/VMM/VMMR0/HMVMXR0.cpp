@@ -2324,12 +2324,18 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     {
         uint64_t u64HostEfer = ASMRdMsr(MSR_K6_EFER);
 
-#if HC_ARCH_BITS == 64
+# if HC_ARCH_BITS == 64
         /* Paranoia. 64-bit code requires these bits to be set always. */
         Assert((u64HostEfer & (MSR_K6_EFER_LMA | MSR_K6_EFER_LME)) == (MSR_K6_EFER_LMA | MSR_K6_EFER_LME));
+
+        /*
+         * We currently do not save/restore host EFER, we just make sure it doesn't get modified by VT-x operation.
+         * All guest accesses (read, write) on EFER cause VM-exits. If we are to conditionally load the guest EFER for
+         * some reason (e.g. allow transparent reads) we would activate the code below.
+         */
+#  if 0
         /* All our supported 64-bit host platforms must have NXE bit set. Otherwise we can change the below code to save EFER. */
         Assert(u64HostEfer & (MSR_K6_EFER_NXE));
-
         /* The SCE bit is only applicable in 64-bit mode. Save EFER if it doesn't match what the guest has.
            See Intel spec. 30.10.4.3 "Handling the SYSCALL and SYSRET Instructions". */
         if (CPUMIsGuestInLongMode(pVCpu))
@@ -2346,7 +2352,8 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
                 pHostMsr++; cHostMsrs++;
             }
         }
-#else  /* HC_ARCH_BITS != 64 */
+#  endif
+# else  /* HC_ARCH_BITS != 64 */
         pHostMsr->u32IndexMSR = MSR_K6_EFER;
         pHostMsr->u32Reserved = 0;
 # if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -2356,10 +2363,10 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
             pHostMsr->u64Value = u64HostEfer | MSR_K6_EFER_LME | MSR_K6_EFER_SCE | MSR_K6_EFER_NXE;
         }
         else
-# endif
+#  endif
             pHostMsr->u64Value = u64HostEfer;
         pHostMsr++; cHostMsrs++;
-#endif  /* HC_ARCH_BITS == 64 */
+# endif  /* HC_ARCH_BITS == 64 */
     }
 
 # if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -2399,7 +2406,7 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
      */
     rc = VMXWriteVmcs32(VMX_VMCS32_HOST_SYSENTER_CS,        ASMRdMsr_Low(MSR_IA32_SYSENTER_CS));
     AssertRCReturn(rc, rc);
-# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
         rc = VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_ESP,     ASMRdMsr(MSR_IA32_SYSENTER_ESP));
@@ -2412,15 +2419,15 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
         AssertRCReturn(rc, rc);
         rc = VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_EIP,     ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
     }
-# elif HC_ARCH_BITS == 32
+#elif HC_ARCH_BITS == 32
     rc = VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_ESP,         ASMRdMsr_Low(MSR_IA32_SYSENTER_ESP));
     AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs32(VMX_VMCS_HOST_SYSENTER_EIP,         ASMRdMsr_Low(MSR_IA32_SYSENTER_EIP));
-# else
+#else
     rc = VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_ESP,         ASMRdMsr(MSR_IA32_SYSENTER_ESP));
     AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs64(VMX_VMCS_HOST_SYSENTER_EIP,         ASMRdMsr(MSR_IA32_SYSENTER_EIP));
-# endif
+#endif
     AssertRCReturn(rc, rc);
 
     /** @todo IA32_PERF_GLOBALCTRL, IA32_PAT, IA32_EFER, also see
@@ -3741,44 +3748,27 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         uint32_t cGuestMsrs = 0;
 
         /* See Intel spec. 4.1.4 "Enumeration of Paging Features by CPUID". */
-        const bool fSupportsNX       = CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
-        const bool fSupportsLongMode = CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
-        if (fSupportsNX || fSupportsLongMode)
+        /** @todo r=ramshankar: Optimize this further to do lazy restoration and only
+         *        when the guest really is in 64-bit mode. */
+        bool fSupportsLongMode = CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
+        if (fSupportsLongMode)
         {
-            /** @todo support save IA32_EFER, i.e.
-             *        VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR, in which case the
-             *        guest EFER need not be part of the VM-entry MSR-load area. Also
-             *        allow the guest to read EFER without causing a VM-exit when
-             *        possible. */
-            /* Do -not- load guest EFER as we don't save/restore the host EFER always. See hmr0VmxSaveHostMsrs() */
-#if 0
-            pGuestMsr->u32IndexMSR = MSR_K6_EFER;
+            pGuestMsr->u32IndexMSR = MSR_K8_LSTAR;
             pGuestMsr->u32Reserved = 0;
-            pGuestMsr->u64Value    = pMixedCtx->msrEFER;
-            /* VT-x will complain if only MSR_K6_EFER_LME is set. See Intel spec. 26.4 "Loading MSRs" for details. */
-            if (!CPUMIsGuestInLongModeEx(pMixedCtx))
-                pGuestMsr->u64Value &= ~(MSR_K6_EFER_LMA | MSR_K6_EFER_LME);
+            pGuestMsr->u64Value    = pMixedCtx->msrLSTAR;           /* 64 bits mode syscall rip */
             pGuestMsr++; cGuestMsrs++;
-#endif
-            if (fSupportsLongMode)
-            {
-                pGuestMsr->u32IndexMSR = MSR_K8_LSTAR;
-                pGuestMsr->u32Reserved = 0;
-                pGuestMsr->u64Value    = pMixedCtx->msrLSTAR;           /* 64 bits mode syscall rip */
-                pGuestMsr++; cGuestMsrs++;
-                pGuestMsr->u32IndexMSR = MSR_K6_STAR;
-                pGuestMsr->u32Reserved = 0;
-                pGuestMsr->u64Value    = pMixedCtx->msrSTAR;            /* legacy syscall eip, cs & ss */
-                pGuestMsr++; cGuestMsrs++;
-                pGuestMsr->u32IndexMSR = MSR_K8_SF_MASK;
-                pGuestMsr->u32Reserved = 0;
-                pGuestMsr->u64Value    = pMixedCtx->msrSFMASK;          /* syscall flag mask */
-                pGuestMsr++; cGuestMsrs++;
-                pGuestMsr->u32IndexMSR = MSR_K8_KERNEL_GS_BASE;
-                pGuestMsr->u32Reserved = 0;
-                pGuestMsr->u64Value    = pMixedCtx->msrKERNELGSBASE;    /* swapgs exchange value */
-                pGuestMsr++; cGuestMsrs++;
-            }
+            pGuestMsr->u32IndexMSR = MSR_K6_STAR;
+            pGuestMsr->u32Reserved = 0;
+            pGuestMsr->u64Value    = pMixedCtx->msrSTAR;            /* legacy syscall eip, cs & ss */
+            pGuestMsr++; cGuestMsrs++;
+            pGuestMsr->u32IndexMSR = MSR_K8_SF_MASK;
+            pGuestMsr->u32Reserved = 0;
+            pGuestMsr->u64Value    = pMixedCtx->msrSFMASK;          /* syscall flag mask */
+            pGuestMsr++; cGuestMsrs++;
+            pGuestMsr->u32IndexMSR = MSR_K8_KERNEL_GS_BASE;
+            pGuestMsr->u32Reserved = 0;
+            pGuestMsr->u64Value    = pMixedCtx->msrKERNELGSBASE;    /* swapgs exchange value */
+            pGuestMsr++; cGuestMsrs++;
         }
 
         /*
@@ -6531,7 +6521,15 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* Restore host-state bits that VT-x only restores partially. */
     if (pVCpu->hm.s.vmx.fRestoreHostFlags)
     {
+#ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+        /** @todo r=ramshankar: This is broken when
+         *        VBOX_WITH_VMMR0_DISABLE_PREEMPTION is not defined. As
+         *        VMXRestoreHostState() may unconditionally enables interrupts. */
+#error "VMM: Fix Me! Make VMXRestoreHostState() function to skip cli/sti."
+#else
+        Assert(ASMIntAreEnabled());
         VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
+#endif
         pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
     }
 
