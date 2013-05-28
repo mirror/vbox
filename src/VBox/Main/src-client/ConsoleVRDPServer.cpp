@@ -1803,7 +1803,7 @@ typedef struct H3DORInstance
         else
         {
             int rc = p->fFallback?
-                        rc = VERR_NOT_SUPPORTED: /* Try to go out of fallback mode. */
+                        VERR_NOT_SUPPORTED: /* Try to go out of fallback mode. */
                         p->pThis->m_interfaceImage.VRDEImageGeometrySet(p->hImageBitmap, &rect);
             if (RT_SUCCESS(rc))
             {
