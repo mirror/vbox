@@ -35,6 +35,7 @@ fcntl
 fflush
 flock
 fprintf
+__fprintf_chk
 fputs
 free
 fstat
