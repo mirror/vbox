@@ -1722,14 +1722,17 @@ typedef struct H3DORInstance
     uint32_t w;
     uint32_t h;
     bool fCreated;
+    bool fFallback;
 } H3DORInstance;
+
+#define H3DORLOG Log
 
 /* static */ DECLCALLBACK(void) ConsoleVRDPServer::H3DORBegin(const void *pvContext, void **ppvInstance,
                                                               const char *pszFormat)
 {
-    LogFlowFunc(("ctx %p\n", pvContext));
+    H3DORLOG(("H3DORBegin: ctx %p [%s]\n", pvContext, pszFormat));
 
-    H3DORInstance *p = (H3DORInstance *)RTMemAlloc(sizeof (H3DORInstance));
+    H3DORInstance *p = (H3DORInstance *)RTMemAlloc(sizeof(H3DORInstance));
 
     if (p)
     {
@@ -1740,6 +1743,7 @@ typedef struct H3DORInstance
         p->w = 0;
         p->h = 0;
         p->fCreated = false;
+        p->fFallback = false;
 
         /* Host 3D service passes the actual format of data in this redirect instance.
          * That is what will be in the H3DORFrame's parameters pvData and cbData.
@@ -1755,14 +1759,16 @@ typedef struct H3DORInstance
         }
     }
 
-    /* Caller check this for NULL. */
+    H3DORLOG(("H3DORBegin: ins %p\n", p));
+
+    /* Caller checks this for NULL. */
     *ppvInstance = p;
 }
 
 /* static */ DECLCALLBACK(void) ConsoleVRDPServer::H3DORGeometry(void *pvInstance,
                                                                  int32_t x, int32_t y, uint32_t w, uint32_t h)
 {
-    LogFlowFunc(("ins %p %d,%d %dx%d\n", pvInstance, x, y, w, h));
+    H3DORLOG(("H3DORGeometry: ins %p %d,%d %dx%d\n", pvInstance, x, y, w, h));
 
     H3DORInstance *p = (H3DORInstance *)pvInstance;
     Assert(p);
@@ -1791,12 +1797,14 @@ typedef struct H3DORInstance
             && p->w == w
             && p->h == h)
         {
-            LogFlowFunc(("geometry not changed\n"));
+            H3DORLOG(("H3DORGeometry: geometry not changed\n"));
             /* Do nothing. Continue using the existing handle. */
         }
         else
         {
-            int rc = p->pThis->m_interfaceImage.VRDEImageGeometrySet(p->hImageBitmap, &rect);
+            int rc = p->fFallback?
+                        rc = VERR_NOT_SUPPORTED: /* Try to go out of fallback mode. */
+                        p->pThis->m_interfaceImage.VRDEImageGeometrySet(p->hImageBitmap, &rect);
             if (RT_SUCCESS(rc))
             {
                 p->x = x;
@@ -1825,6 +1833,7 @@ typedef struct H3DORInstance
                                    * the clipping must be done here in ConsoleVRDPServer
                                    */
         uint32_t fu32CompletionFlags = 0;
+        p->fFallback = false;
         int rc = p->pThis->m_interfaceImage.VRDEImageHandleCreate(p->pThis->mhServer,
                                                                   &p->hImageBitmap,
                                                                   p,
@@ -1839,7 +1848,9 @@ typedef struct H3DORInstance
         if (RT_FAILURE(rc))
         {
             /* No support for a 3D + WINDOW. Try bitmap updates. */
+            H3DORLOG(("H3DORGeometry: Fallback to bitmaps\n"));
             fu32CompletionFlags = 0;
+            p->fFallback = true;
             rc = p->pThis->m_interfaceImage.VRDEImageHandleCreate(p->pThis->mhServer,
                                                                   &p->hImageBitmap,
                                                                   p,
@@ -1851,6 +1862,8 @@ typedef struct H3DORInstance
                                                                   0,
                                                                   &fu32CompletionFlags);
         }
+
+        H3DORLOG(("H3DORGeometry: Image handle create %Rrc, flags 0x%RX32\n", rc, fu32CompletionFlags));
 
         if (RT_SUCCESS(rc))
         {
@@ -1871,12 +1884,14 @@ typedef struct H3DORInstance
             p->h = 0;
         }
     }
+
+    H3DORLOG(("H3DORGeometry: ins %p completed\n", pvInstance));
 }
 
 /* static */ DECLCALLBACK(void) ConsoleVRDPServer::H3DORVisibleRegion(void *pvInstance,
                                                                       uint32_t cRects, const RTRECT *paRects)
 {
-    LogFlowFunc(("ins %p %d\n", pvInstance, cRects));
+    H3DORLOG(("H3DORVisibleRegion: ins %p %d\n", pvInstance, cRects));
 
     H3DORInstance *p = (H3DORInstance *)pvInstance;
     Assert(p);
@@ -1900,12 +1915,14 @@ typedef struct H3DORInstance
                                                        cRects,
                                                        paRects);
     }
+
+    H3DORLOG(("H3DORVisibleRegion: ins %p completed\n", pvInstance));
 }
 
 /* static */ DECLCALLBACK(void) ConsoleVRDPServer::H3DORFrame(void *pvInstance,
                                                               void *pvData, uint32_t cbData)
 {
-    LogFlowFunc(("ins %p %p %d\n", pvInstance, pvData, cbData));
+    H3DORLOG(("H3DORFrame: ins %p %p %d\n", pvInstance, pvData, cbData));
 
     H3DORInstance *p = (H3DORInstance *)pvInstance;
     Assert(p);
@@ -1928,11 +1945,13 @@ typedef struct H3DORInstance
                                                 p->h,
                                                 &image,
                                                 sizeof(VRDEIMAGEBITMAP));
+
+    H3DORLOG(("H3DORFrame: ins %p completed\n", pvInstance));
 }
 
 /* static */ DECLCALLBACK(void) ConsoleVRDPServer::H3DOREnd(void *pvInstance)
 {
-    LogFlowFunc(("ins %p\n", pvInstance));
+    H3DORLOG(("H3DOREnd: ins %p\n", pvInstance));
 
     H3DORInstance *p = (H3DORInstance *)pvInstance;
     Assert(p);
@@ -1941,12 +1960,16 @@ typedef struct H3DORInstance
     p->pThis->m_interfaceImage.VRDEImageHandleClose(p->hImageBitmap);
 
     RTMemFree(p);
+
+    H3DORLOG(("H3DOREnd: ins %p completed\n", pvInstance));
 }
 
 /* static */ DECLCALLBACK(int) ConsoleVRDPServer::H3DORContextProperty(const void *pvContext, uint32_t index,
                                                                        void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut)
 {
     int rc = VINF_SUCCESS;
+
+    H3DORLOG(("H3DORContextProperty: index %d\n", index));
 
     if (index == H3DOR_PROP_FORMATS)
     {
@@ -1968,6 +1991,7 @@ typedef struct H3DORInstance
         rc = VERR_NOT_SUPPORTED;
     }
 
+    H3DORLOG(("H3DORContextProperty: %Rrc\n", rc));
     return rc;
 }
 
@@ -2047,8 +2071,8 @@ void ConsoleVRDPServer::remote3DRedirect(void)
                                                                      void *pvData,
                                                                      uint32_t cbData)
 {
-    LogFlowFunc(("pvContext %p, pvUser %p, hVideo %p, u32Id %u, pvData %p, cbData %d\n",
-                 pvContext, pvUser, hVideo, u32Id, pvData, cbData));
+    H3DORLOG(("H3DOR: VRDEImageCbNotify: pvContext %p, pvUser %p, hVideo %p, u32Id %u, pvData %p, cbData %d\n",
+              pvContext, pvUser, hVideo, u32Id, pvData, cbData));
 
     ConsoleVRDPServer *pServer = static_cast<ConsoleVRDPServer*>(pvContext);
     H3DORInstance *p = (H3DORInstance *)pvUser;
@@ -2065,8 +2089,8 @@ void ConsoleVRDPServer::remote3DRedirect(void)
         }
 
         uint32_t u32StreamId = *(uint32_t *)pvData;
-        LogFlowFunc(("VRDE_IMAGE_NOTIFY_HANDLE_CREATE u32StreamId %d\n",
-                     u32StreamId));
+        H3DORLOG(("H3DOR: VRDE_IMAGE_NOTIFY_HANDLE_CREATE u32StreamId %d\n",
+                  u32StreamId));
 
         if (u32StreamId != 0)
         {
@@ -2080,6 +2104,8 @@ void ConsoleVRDPServer::remote3DRedirect(void)
 
     return VINF_SUCCESS;
 }
+
+#undef H3DORLOG
 
 /* static */ DECLCALLBACK(int) ConsoleVRDPServer::VRDESCardCbNotify(void *pvContext,
                                                                     uint32_t u32Id,
