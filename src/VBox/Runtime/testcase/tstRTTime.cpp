@@ -40,14 +40,10 @@ int main()
     /*
      * Init.
      */
-    int rc = RTR3InitExeNoArguments(RTR3INIT_FLAGS_SUPLIB);
-    if (RT_FAILURE(rc))
-        return RTMsgInitFailure(rc);
-
     RTTEST hTest;
-    rc = RTTestCreate("tstRTTime", &hTest);
-    if (RT_FAILURE(rc))
-        return RTEXITCODE_FAILURE;
+    RTEXITCODE rcExit = RTTestInitExAndCreate(0, NULL, RTR3INIT_FLAGS_SUPLIB, "tstRTTime", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
     RTTestBanner(hTest);
 
     /*

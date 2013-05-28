@@ -39,7 +39,7 @@ RT_C_DECLS_BEGIN
  */
 
 /** A test handle. */
-typedef struct RTTESTINT *RTTEST;
+typedef R3PTRTYPE(struct RTTESTINT *) RTTEST;
 /** A pointer to a test handle. */
 typedef RTTEST *PRTTEST;
 /** A const pointer to a test handle. */
@@ -79,6 +79,65 @@ typedef enum RTTESTLVL
  */
 RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest);
 
+/** @name RTTEST_C_XXX - Flags for RTTestCreateEx.
+ * @{ */
+/** Whether to check the IPRT_TEST_XXX variables when constructing the
+ * instance.  The following environment variables get checks:
+ *
+ *      - IPRT_TEST_MAX_LEVEL:      String value indicating which level.
+ *        The env. var. is applied if the program specified the default level
+ *        (by passing RTTESTLVL_INVALID).
+ *
+ *      - IPRT_TEST_PIPE:           The native pipe/fifo handle to write XML
+ *        results to.
+ *        The env. var. is applied if iNativeTestPipe is -1.
+ *
+ *      - IPRT_TEST_FILE:           Path to file/named-pipe/fifo/whatever to
+ *        write XML results to.
+ *        The env. var. is applied if the program specified a NULL path, it is
+ *        not applied if the program hands us an empty string.
+ *
+ *      - IPRT_TEST_OMIT_TOP_TEST:  If present, this makes the XML output omit
+ *        the top level test element.
+ *        The env. var is applied when present.
+ *
+ */
+#define RTTEST_C_USE_ENV                RT_BIT(0)
+/** Whether to omit the top test in the XML. */
+#define RTTEST_C_XML_OMIT_TOP_TEST      RT_BIT(1)
+/** Whether to delay the top test XML element until testing commences. */
+#define RTTEST_C_XML_DELAY_TOP_TEST     RT_BIT(2)
+/** Whether to try install the test instance in the test TLS slot.  Setting
+ * this flag is incompatible with using the RTTestIXxxx variant of the API. */
+#define RTTEST_C_NO_TLS                 RT_BIT(3)
+/** Mask containing the valid bits. */
+#define RTTEST_C_VALID_MASK             UINT32_C(0x0000000f)
+/** @} */
+
+
+/**
+ * Creates a test instance.
+ *
+ * @returns IPRT status code.
+ * @param   pszTest         The test name.
+ * @param   pszXmlFile      The XML output file/pipe/whatever.
+ * @param   fFlags          Flags, see RTTEST_C_XXX.
+ * @param   enmMaxLevel     The max message level.  Use RTTESTLVL_INVALID for
+ *                          the default output level or one from the
+ *                          environment.  If specified, the environment variable
+ *                          will not be able to override it.
+ * @param   iNativeTestPipe Native handle to a test pipe. -1 if not interested.
+ * @param   pszXmlFile      The XML output file name. If NULL the environment
+ *                          may be used.  To selectively avoid that, pass an
+ *                          empty string.
+ * @param   phTest          Where to store the test instance handle.
+ *
+ * @note    At the moment, we don't fail if @a pszXmlFile or @a iNativeTestPipe
+ *          fails to open.  This may change later.
+ */
+RTR3DECL(int) RTTestCreateEx(const char *pszTest, uint32_t fFlags, RTTESTLVL enmMaxLevel,
+                             RTHCINTPTR iNativeTestPipe, const char *pszXmlFile, PRTTEST phTest);
+
 /**
  * Initializes IPRT and creates a test instance.
  *
@@ -103,6 +162,21 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest);
 RTR3DECL(RTEXITCODE) RTTestInitAndCreate(const char *pszTest, PRTTEST phTest);
 
 /**
+ * Variant of RTTestInitAndCreate that includes IPRT init flags and argument
+ * vectors.
+ *
+ * @returns RTEXITCODE_SUCCESS on success.  On failure an error message is
+ *          printed and a suitable exit code is return.
+ *
+ * @param   cArgs       Pointer to the argument count.
+ * @param   ppapszArgs  Pointer to the argument vector pointer.
+ * @param   fRtInit     Flags, see RTR3INIT_XXX.
+ * @param   pszTest     The test name.
+ * @param   phTest      Where to store the test instance handle.
+ */
+RTR3DECL(RTEXITCODE) RTTestInitExAndCreate(int cArgs, char ***papszArgs, uint32_t fRtInit, const char *pszTest, PRTTEST phTest);
+
+/**
  * Destroys a test instance previously created by RTTestCreate.
  *
  * @returns IPRT status code.
@@ -119,6 +193,18 @@ RTR3DECL(int) RTTestDestroy(RTTEST hTest);
  * @param   phOldTest       Where to store the old test handle. Optional.
  */
 RTR3DECL(int) RTTestSetDefault(RTTEST hNewDefaultTest, PRTTEST phOldTest);
+
+/**
+ * Changes the test case name.
+ *
+ * @returns IRPT status code.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszName     The new test case name.  Empty string is not accepted,
+ *                      nor are strings longer than 127 chars.  Keep it short
+ *                      but descriptive.
+ */
+RTR3DECL(int) RTTestChangeName(RTTEST hTest, const char *pszName);
 
 /**
  * Allocate a block of guarded memory.
@@ -295,7 +381,7 @@ RTR3DECL(int) RTTestSubV(RTTEST hTest, const char *pszSubTestFmt, va_list va);
 /**
  * Completes a sub-test.
  *
- * @returns Number of chars printed.
+ * @returns Number of chars printed, negative numbers are IPRT error codes.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
  */
@@ -307,7 +393,7 @@ RTR3DECL(int) RTTestSubDone(RTTEST hTest);
  * This does not conclude the sub-test, it could be used to report the passing
  * of a sub-sub-to-the-power-of-N-test.
  *
- * @returns IPRT status code.
+ * @returns Number of chars printed, negative numbers are IPRT error codes.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
  * @param   pszFormat   The message. No trailing newline.
@@ -321,13 +407,38 @@ RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va);
  * This does not conclude the sub-test, it could be used to report the passing
  * of a sub-sub-to-the-power-of-N-test.
  *
- * @returns IPRT status code.
+ * @returns Number of chars printed, negative numbers are IPRT error codes.
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
  * @param   pszFormat   The message. No trailing newline.
  * @param   ...         The arguments.
  */
 RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...);
+
+/**
+ * Marks the current test as 'SKIPPED' and optionally displays a message
+ * explaining why.
+ *
+ * @returns Number of chars printed, negative numbers are IPRT error codes.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszFormat   The message. No trailing newline.  Can be NULL or empty.
+ * @param   ...         The arguments.
+ */
+RTR3DECL(int) RTTestSkipped(RTTEST hTest, const char *pszFormat, ...);
+
+/**
+ * Marks the current test as 'SKIPPED' and optionally displays a message
+ * explaining why.
+ *
+ * @returns Number of chars printed, negative numbers are IPRT error codes.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszFormat   The message. No trailing newline.  Can be NULL or empty.
+ * @param   va          The arguments.
+ */
+RTR3DECL(int) RTTestSkippedV(RTTEST hTest, const char *pszFormat, va_list va);
+
 
 /**
  * Value units.
@@ -448,6 +559,15 @@ RTR3DECL(int) RTTestErrorInc(RTTEST hTest);
  *                      associated with the calling thread.
  */
 RTR3DECL(uint32_t) RTTestErrorCount(RTTEST hTest);
+
+/**
+ * Get the error count of the current sub test.
+ *
+ * @returns The error counter, UINT32_MAX if no valid test handle.
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ */
+RTR3DECL(uint32_t) RTTestSubErrorCount(RTTEST hTest);
 
 /**
  * Increments the error counter and prints a failure message.
