@@ -192,6 +192,12 @@ struct _CLIPBACKEND
     void (*fixesSelectInput)(Display *, Window, Atom, unsigned long);
     /** The first XFixes event number */
     int fixesEventBase;
+    /** The Xt Intrinsics can only handle one outstanding clipboard operation
+     * at a time, so we keep track of whether one is in process. */
+    bool fBusy;
+    /** We can't handle a clipboard update event while we are busy, so remember
+     * it for later. */
+    bool fUpdateNeeded;
 };
 
 /** The number of simultaneous instances we support.  For all normal purposes
@@ -474,6 +480,8 @@ static void clipUpdateX11Targets(CLIPBACKEND *pCtx, Atom *pTargets,
     clipReportFormatsToVBox(pCtx);
 }
 
+static void clipQueryX11CBFormats(CLIPBACKEND *pCtx);
+
 /**
  * Notify the VBox clipboard about available data formats, based on the
  * "targets" information obtained from the X11 clipboard.
@@ -488,23 +496,39 @@ static void clipConvertX11Targets(Widget, XtPointer pClientData,
             reinterpret_cast<CLIPBACKEND *>(pClientData);
     LogRel2(("clipConvertX11Targets: pValue=%p, *pcLen=%u, *atomType=%d, XT_CONVERT_FAIL=%d\n",
              pValue, *pcLen, *atomType, XT_CONVERT_FAIL));
-    if (   (*atomType == XT_CONVERT_FAIL)  /* timeout */
-        || (pValue == NULL))               /* No data available */
+    pCtx->fBusy = false;
+    if (pCtx->fUpdateNeeded)
     {
-        clipReportEmptyX11CB(pCtx);
-        return;
+        /* We may already be out of date. */
+        pCtx->fUpdateNeeded = false;
+        clipQueryX11CBFormats(pCtx);
     }
-    clipUpdateX11Targets(pCtx, (Atom *)pValue, *pcLen);
+    else
+    {
+        if (   (*atomType == XT_CONVERT_FAIL)  /* timeout */
+               || (pValue == NULL))               /* No data available */
+        {
+            clipReportEmptyX11CB(pCtx);
+            return;
+        }
+        clipUpdateX11Targets(pCtx, (Atom *)pValue, *pcLen);
+    }
     XtFree(reinterpret_cast<char *>(pValue));
 }
 
 /**
  * Callback to notify us when the contents of the X11 clipboard change.
  */
-void clipQueryX11CBFormats(CLIPBACKEND *pCtx)
+static void clipQueryX11CBFormats(CLIPBACKEND *pCtx)
 {
     LogRel2 (("%s: requesting the targets that the X11 clipboard offers\n",
            __PRETTY_FUNCTION__));
+    if (pCtx->fBusy)
+    {
+        pCtx->fUpdateNeeded = true;
+        return;
+    }
+    pCtx->fBusy = true;
     XtGetSelectionValue(pCtx->widget,
                         clipGetAtom(pCtx->widget, "CLIPBOARD"),
                         clipGetAtom(pCtx->widget, "TARGETS"),
@@ -1592,6 +1616,9 @@ static void clipConvertX11CB(Widget widget, XtPointer pClientData,
     void *pvDest = NULL;
     uint32_t cbDest = 0;
 
+    pCtx->fBusy = false;
+    if (pCtx->fUpdateNeeded)
+        clipQueryX11CBFormats(pCtx);
     if (pvSrc == NULL)
         /* The clipboard selection may have changed before we could get it. */
         rc = VERR_NO_DATA;
@@ -1672,11 +1699,16 @@ static void vboxClipboardReadX11Worker(XtPointer pUserData,
     LogRelFlowFunc (("pReq->mFormat = %02X\n", pReq->mFormat));
 
     int rc = VINF_SUCCESS;
-    /*
-     * VBox wants to read data in the given format.
-     */
-    if (pReq->mFormat == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    bool fBusy = pCtx->fBusy;
+    pCtx->fBusy = true;
+    if (fBusy)
+        /* If the clipboard is busy just fend off the request. */
+        rc = VERR_TRY_AGAIN;
+    else if (pReq->mFormat == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
     {
+        /*
+         * VBox wants to read data in the given format.
+         */
         pReq->mTextFormat = pCtx->X11TextFormat;
         if (pReq->mTextFormat == INVALID)
             /* VBox thinks we have data and we don't */
