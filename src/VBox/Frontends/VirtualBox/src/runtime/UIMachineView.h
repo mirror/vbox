@@ -91,6 +91,9 @@ protected slots:
     /* Slot to perform guest resize: */
     void sltPerformGuestResize(const QSize &aSize = QSize());
 
+    /* Handler: Frame-buffer NotifyUpdate stuff: */
+    virtual void sltHandleNotifyUpdate(int iX, int iY, int iW, int iH);
+
     /* Watch dog for desktop resizes: */
     void sltDesktopResized();
 

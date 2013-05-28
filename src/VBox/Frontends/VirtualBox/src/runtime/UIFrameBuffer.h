@@ -66,26 +66,6 @@ private:
 };
 
 /**
- *  Frame buffer repaint event.
- */
-class UIRepaintEvent : public QEvent
-{
-public:
-
-    UIRepaintEvent(int iX, int iY, int iW, int iH)
-        : QEvent((QEvent::Type)RepaintEventType)
-        , m_iX(iX), m_iY(iY), m_iW(iW), m_iH(iH) {}
-    int x() { return m_iX; }
-    int y() { return m_iY; }
-    int width() { return m_iW; }
-    int height() { return m_iH; }
-
-private:
-
-    int m_iX, m_iY, m_iW, m_iH;
-};
-
-/**
  *  Frame buffer set region event.
  */
 class UISetRegionEvent : public QEvent
@@ -123,8 +103,15 @@ private:
  *
  *  See IFramebuffer documentation for more info.
  */
-class UIFrameBuffer : VBOX_SCRIPTABLE_IMPL(IFramebuffer)
+class UIFrameBuffer : public QObject, VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 {
+    Q_OBJECT;
+
+signals:
+
+    /* Notifiers: EMT<->GUI interthread stuff: */
+    void sigNotifyUpdate(int iX, int iY, int iW, int iH);
+
 public:
 
     UIFrameBuffer(UIMachineView *aView);

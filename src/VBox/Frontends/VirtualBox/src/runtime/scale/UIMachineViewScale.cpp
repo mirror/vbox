@@ -136,6 +136,25 @@ void UIMachineViewScale::sltPerformGuestScale()
     updateSliders();
 }
 
+void UIMachineViewScale::sltHandleNotifyUpdate(int iX, int iY, int iW, int iH)
+{
+    /* Initialize variables for scale mode: */
+    QSize scaledSize = frameBuffer()->scaledSize();
+    double xRatio = (double)scaledSize.width() / frameBuffer()->width();
+    double yRatio = (double)scaledSize.height() / frameBuffer()->height();
+    AssertMsg(contentsX() == 0, ("This can't be, else notify Dsen!\n"));
+    AssertMsg(contentsY() == 0, ("This can't be, else notify Dsen!\n"));
+
+    /* Update corresponding viewport part,
+     * But make sure we update always a bigger rectangle than requested to
+     * catch all rounding errors. (use 1 time the ratio factor and
+     * round down on top/left, but round up for the width/height) */
+    viewport()->update((int)(iX * xRatio) - ((int)xRatio) - 1,
+                       (int)(iY * yRatio) - ((int)yRatio) - 1,
+                       (int)(iW * xRatio) + ((int)xRatio + 2) * 2,
+                       (int)(iH * yRatio) + ((int)yRatio + 2) * 2);
+}
+
 bool UIMachineViewScale::event(QEvent *pEvent)
 {
     switch (pEvent->type())
@@ -171,27 +190,7 @@ bool UIMachineViewScale::event(QEvent *pEvent)
             return true;
         }
 
-        case RepaintEventType:
-        {
-            UIRepaintEvent *pPaintEvent = static_cast<UIRepaintEvent*>(pEvent);
-            QSize scaledSize = frameBuffer()->scaledSize();
-            double xRatio = (double)scaledSize.width() / frameBuffer()->width();
-            double yRatio = (double)scaledSize.height() / frameBuffer()->height();
-            AssertMsg(contentsX() == 0, ("This can't be, else notify Dsen!\n"));
-            AssertMsg(contentsY() == 0, ("This can't be, else notify Dsen!\n"));
-
-            /* Make sure we update always a bigger rectangle than requested to
-             * catch all rounding errors. (use 1 time the ratio factor and
-             * round down on top/left, but round up for the width/height) */
-            viewport()->update((int)(pPaintEvent->x() * xRatio) - ((int)xRatio) - 1,
-                               (int)(pPaintEvent->y() * yRatio) - ((int)yRatio) - 1,
-                               (int)(pPaintEvent->width() * xRatio) + ((int)xRatio + 2) * 2,
-                               (int)(pPaintEvent->height() * yRatio) + ((int)yRatio + 2) * 2);
-            pEvent->accept();
-            return true;
-        }
-
-        default:
+         default:
             break;
     }
     return UIMachineView::event(pEvent);

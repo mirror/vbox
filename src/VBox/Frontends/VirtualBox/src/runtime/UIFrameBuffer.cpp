@@ -46,8 +46,17 @@ UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
     , m_iRefCnt(0)
 #endif
 {
+    /* Assign mahine-view: */
     AssertMsg(m_pMachineView, ("UIMachineView must not be null\n"));
     m_WinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
+
+    /* Connect NotifyUpdate handler: */
+    if (m_pMachineView)
+        connect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
+                m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)),
+                Qt::QueuedConnection);
+
+    /* Initialize critical-section: */
     int rc = RTCritSectInit(&m_critSect);
     AssertRC(rc);
 }
@@ -176,17 +185,20 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
     return S_OK;
 }
 
-/* This method is called on EMT from under this object's lock! */
 STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uW, ULONG uH)
 {
+    /* See comment in setView(): */
+    lock();
+
     /* QWidget::update() is NOT thread safe and seems never will be,
-     * So we have to post an async event to perform update operation.
-     * Later the event will be replaced by the corresponding signal stuff: */
-    lock(); /* See comment in setView(). */
+     * So we have to notify the machine-view with the async signal to perform update operation. */
     if (m_pMachineView)
-        QApplication::postEvent(m_pMachineView, new UIRepaintEvent(uX, uY, uW, uH));
+        emit sigNotifyUpdate(uX, uY, uW, uH);
+
+    /* Unlock thread finally: */
     unlock();
 
+    /* Confirm NotifyUpdate: */
     return S_OK;
 }
 
@@ -308,7 +320,22 @@ void UIFrameBuffer::setView(UIMachineView * pView)
      * understand the original author's wise synchronisation logic
      * so I will do it anyway. */
     lock();
+
+    /* Disconnect NotifyUpdate handler: */
+    if (m_pMachineView)
+        disconnect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
+                   m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)));
+
+    /* Reassign machine-view: */
     m_pMachineView = pView;
     m_WinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
+
+    /* Connect NotifyUpdate handler: */
+    if (m_pMachineView)
+        connect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
+                m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)),
+                Qt::QueuedConnection);
+
+    /* Unlock thread finally: */
     unlock();
 }

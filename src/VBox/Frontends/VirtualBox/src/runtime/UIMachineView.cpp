@@ -204,6 +204,12 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     machine.SetExtraData(strKey, isFullscreenOrSeamless() ? "true" : "");
 }
 
+void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iW, int iH)
+{
+    /* Update corresponding viewport part: */
+    viewport()->update(iX - contentsX(), iY - contentsY(), iW, iH);
+}
+
 void UIMachineView::sltDesktopResized()
 {
     setMaxGuestSize();
@@ -915,14 +921,6 @@ bool UIMachineView::event(QEvent *pEvent)
 {
     switch (pEvent->type())
     {
-        case RepaintEventType:
-        {
-            UIRepaintEvent *pPaintEvent = static_cast<UIRepaintEvent*>(pEvent);
-            viewport()->update(pPaintEvent->x() - contentsX(), pPaintEvent->y() - contentsY(),
-                                pPaintEvent->width(), pPaintEvent->height());
-            return true;
-        }
-
 #ifdef Q_WS_MAC
         /* Event posted OnShowWindow: */
         case ShowWindowEventType:
