@@ -346,7 +346,7 @@ void UIRuntimeMiniToolBar::updateAutoHideAnimationBounds()
     switch (m_alignment)
     {
         case Qt::AlignTop:
-            m_hiddenToolbarPosition = m_shownToolbarPosition - QPoint(0, m_pEmbeddedToolbar->height() + 3);
+            m_hiddenToolbarPosition = m_shownToolbarPosition - QPoint(0, m_pEmbeddedToolbar->height() - 3);
             break;
         case Qt::AlignBottom:
             m_hiddenToolbarPosition = m_shownToolbarPosition + QPoint(0, m_pEmbeddedToolbar->height() - 3);
