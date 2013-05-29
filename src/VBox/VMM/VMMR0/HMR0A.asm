@@ -297,8 +297,8 @@ BEGINPROC VMXRestoreHostState
 %ifdef RT_ARCH_AMD64
  %ifndef ASM_CALL64_GCC
     ; On msc R10, R11 are scratch, RDI and RSI are not. So we must save and restore them!
-    mov		r10, rdi
-    mov		r11, rsi
+    mov         r10, rdi
+    mov         r11, rsi
     ; Switch to common register usage (i.e. gcc's in this function)
     mov         rdi, rcx
     mov         rsi, rdx
@@ -306,24 +306,24 @@ BEGINPROC VMXRestoreHostState
 
     test        edi, VMX_RESTORE_HOST_GDTR
     jz          near .test_idtr
-    lgdt        [rsi + 18h]                ; pRestoreHost->HostGdtr
+    lgdt        [rsi + VMXRESTOREHOST.HostGdtr]
 
 .test_idtr:
     test        edi, VMX_RESTORE_HOST_IDTR
     jz          near .test_ds
-    lidt        [rsi + 22h]                ; pRestoreHost->HostIdtr
+    lidt        [rsi + VMXRESTOREHOST.HostIdtr]
 
 .test_ds:
     test        edi, VMX_RESTORE_HOST_SEL_DS
     jz          near .test_es
-    mov         ax, word [rsi]      	   ; pRestoreHost->uHostSelDS
-    mov         ds, ax              
+    mov         ax, word [rsi + VMXRESTOREHOST.uHostSelDS]
+    mov         ds, ax
 
 .test_es:
     test        edi, VMX_RESTORE_HOST_SEL_ES
     jz          near .test_fs
-    mov         ax, word [rsi + 2]         ; pRestoreHost->uHostSelES
-    mov         es, ax 
+    mov         ax, word [rsi + VMXRESTOREHOST.uHostSelES]
+    mov         es, ax
 
 .test_fs:
     ; We're only restoring the selector. The base is valid and restored by VT-x. If we get an interrupt in between FS & GS
@@ -332,11 +332,11 @@ BEGINPROC VMXRestoreHostState
 
     test        edi, VMX_RESTORE_HOST_SEL_FS
     jz          near .test_gs
-    mov         ax, word [rsi + 4]        ; pRestoreHost->uHostSelFS
+    mov         ax, word [rsi + VMXRESTOREHOST.uHostSelFS]
     cli                                   ; Disable interrupts as mov fs, ax will zap the upper part of the base
     mov         fs, ax
-    mov         eax, dword [rsi + 8]      ; pRestoreHost->uHostFSBase - Lo
-    mov         edx, dword [rsi + 0Ch]    ; pRestoreHost->uHostFSBase - Hi
+    mov         eax, dword [rsi + VMXRESTOREHOST.uHostFSBase]         ; uHostFSBase - Lo
+    mov         edx, dword [rsi + VMXRESTOREHOST.uHostFSBase + 4h]    ; uHostFSBase - Hi
     mov         ecx, MSR_K8_FS_BASE
     wrmsr
     sti                                   ; Re-enable interrupts as fsbase is consistent now
@@ -344,11 +344,11 @@ BEGINPROC VMXRestoreHostState
 .test_gs:
     test        edi, VMX_RESTORE_HOST_SEL_GS
     jz          near .restore_success
-    mov         ax, word [rsi + 6]        ; pRestoreHost->uHostSelGS
+    mov         ax, word [rsi + VMXRESTOREHOST.uHostSelGS]
     cli                                   ; Disable interrupts as mov gs, ax will zap the upper part of the base
     mov         gs, ax
-    mov         eax, dword [rsi + 10h]    ; pRestoreHost->uHostGSBase - Lo
-    mov         edx, dword [rsi + 14h]    ; pRestoreHost->uHostGSBase - Hi
+    mov         eax, dword [rsi + VMXRESTOREHOST.uHostGSBase]         ; uHostGSBase - Lo
+    mov         edx, dword [rsi + VMXRESTOREHOST.uHostGSBase + 4h]    ; uHostGSBase - Hi
     mov         ecx, MSR_K8_GS_BASE
     wrmsr
     sti                                   ; Re-enable interrupts as gsbase is consistent now
@@ -357,8 +357,8 @@ BEGINPROC VMXRestoreHostState
     mov         eax, VINF_SUCCESS
  %ifndef ASM_CALL64_GCC
     ; Restore RDI and RSI on MSC.
-    mov		rdi, r10
-    mov		rsi, r11
+    mov         rdi, r10
+    mov         rsi, r11
  %endif
 %else  ; RT_ARCH_X86
     mov         eax, VERR_NOT_IMPLEMENTED

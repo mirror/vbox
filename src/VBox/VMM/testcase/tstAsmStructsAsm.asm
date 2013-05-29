@@ -28,6 +28,7 @@ BITS 64
 %include "VMMInternal.mac"
 %include "VBox/vmm/cpum.mac"
 %include "VBox/vmm/vm.mac"
+%include "VBox/vmm/hm_vmx.mac"
 %include "VBox/sup.mac"
 %include "VMMSwitcher.mac"
 %ifdef DO_GLOBALS
