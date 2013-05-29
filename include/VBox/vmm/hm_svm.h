@@ -456,7 +456,6 @@ typedef SVMGDTR SVMIDTR;
 /**
  * SVM Event injection structure (EVENTINJ and EXITINTINFO).
  */
-#pragma pack(1)
 typedef union
 {
     struct
@@ -468,15 +467,13 @@ typedef union
         uint32_t    u1Valid             : 1;
         uint32_t    u32ErrorCode        : 32;
     } n;
-    uint64_t    au64[1];
+    uint64_t    u;
 } SVMEVENT;
-#pragma pack()
 
 
 /**
  * SVM Interrupt control structure (Virtual Interrupt Control).
  */
-#pragma pack(1)
 typedef union
 {
     struct
@@ -493,15 +490,12 @@ typedef union
         uint32_t    u8VIrqVector        : 8;
         uint32_t    u24Reserved         : 24;
     } n;
-    uint64_t    au64[1];
+    uint64_t    u;
 } SVMINTCTRL;
-#pragma pack()
-
 
 /**
  * SVM TLB control structure.
  */
-#pragma pack(1)
 typedef union
 {
     struct
@@ -510,15 +504,12 @@ typedef union
         uint32_t    u8TLBFlush          : 8;
         uint32_t    u24Reserved         : 24;
     } n;
-    uint64_t    au64[1];
+    uint64_t    u;
 } SVMTLBCTRL;
-#pragma pack()
-
 
 /**
  * SVM IOIO exit structure (EXITINFO1 for IOIO intercepts).
  */
-#pragma pack(1)
 typedef union
 {
     struct
@@ -536,28 +527,24 @@ typedef union
         uint32_t    u6Reserved          : 6;
         uint32_t    u16Port             : 16;
     } n;
-    uint32_t    au32[1];
+    uint32_t    u;
 } SVMIOIOEXIT;
-#pragma pack()
 
 /**
  * SVM nested paging structure.
  */
-#pragma pack(1)
 typedef union
 {
     struct
     {
         uint32_t    u1NestedPaging      : 1;             /**< enabled/disabled */
     } n;
-    uint64_t    au64[1];
+    uint64_t    u;
 } SVMNPCTRL;
-#pragma pack()
 
 /**
  * SVM AVIC.
  */
-#pragma pack(1)
 typedef union
 {
     struct
@@ -568,12 +555,10 @@ typedef union
     } n;
     uint64_t    u;
 } SVMAVIC;
-#pragma pack()
 
 /**
  * SVM AVIC PHYSICAL_TABLE pointer.
  */
-#pragma pack(1)
 typedef union
 {
     struct
@@ -585,7 +570,6 @@ typedef union
     } n;
     uint64_t    u;
 } SVMAVICPHYS;
-#pragma pack()
 
 /**
  * SVM VM Control Block. (VMCB)
