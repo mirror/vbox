@@ -562,11 +562,11 @@ typedef union
 {
     struct
     {
-        uint32_t    u12Reserved1        : 12;
+        uint64_t    u12Reserved1        : 12;
         uint64_t    u40Addr             : 40;
-        uint32_t    u12Reserved2        : 12;
+        uint64_t    u12Reserved2        : 12;
     } n;
-    uint64_t    au64[1];
+    uint64_t    u;
 } SVMAVIC;
 #pragma pack()
 
@@ -578,12 +578,12 @@ typedef union
 {
     struct
     {
-        uint32_t    u8LastGuestCoreId   : 8;
-        uint32_t    u4Reserved          : 4;
+        uint64_t    u8LastGuestCoreId   : 8;
+        uint64_t    u4Reserved          : 4;
         uint64_t    u40Addr             : 40;
-        uint32_t    u12Reserved         : 12;
+        uint64_t    u12Reserved         : 12;
     } n;
-    uint64_t    au64[1];
+    uint64_t    u;
 } SVMAVICPHYS;
 #pragma pack()
 
@@ -789,6 +789,8 @@ AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved9,         0x648);
 AssertCompileMemberOffset(SVMVMCB, guest.u64GPAT,             0x668);
 AssertCompileMemberOffset(SVMVMCB, guest.u64LASTEXCPTO,       0x690);
 AssertCompileMemberOffset(SVMVMCB, u8Reserved10,              0x698);
+AssertCompileSize(SVMAVIC, 0x8);
+AssertCompileSize(SVMAVICPHYS, 0x8);
 AssertCompileSize(SVMVMCB, 0x1000);
 
 #ifdef IN_RING0
