@@ -19,6 +19,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 
+#ifdef DEBUG_ramshankar
+# define HMSVM_ALWAYS_TRAP_ALL_XCPTS
+# define HMSVM_ALWAYS_TRAP_PF
+#endif
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -210,7 +214,7 @@ DECLINLINE(void) hmR0SvmFreeStructs(PVM pVM)
  */
 VMMR0DECL(int) SVMR0InitVM(PVM pVM)
 {
-    int rc;
+    int rc = VERR_INTERNAL_ERROR_5;
 
     /* Check for an AMD CPU erratum which requires us to flush the TLB before every world-switch. */
     uint32_t u32Family;
@@ -240,7 +244,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
             goto failure_cleanup;
 
         pVCpu->hm.s.svm.pvVmcbHost     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVmcbHost);
-        pVCpu->hm.s.svm.HCPhysVmcbHost = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVmcbHost, 0);
+        pVCpu->hm.s.svm.HCPhysVmcbHost = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVmcbHost, 0 /* iPage */);
         Assert(pVCpu->hm.s.svm.HCPhysVmcbHost < _4G);
         ASMMemZeroPage(pVCpu->hm.s.svm.pvVmcbHost);
 
@@ -250,7 +254,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
             goto failure_cleanup;
 
         pVCpu->hm.s.svm.pvVmcb     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVmcb);
-        pVCpu->hm.s.svm.HCPhysVmcb = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVmcb, 0);
+        pVCpu->hm.s.svm.HCPhysVmcb = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVmcb, 0 /* iPage */);
         Assert(pVCpu->hm.s.svm.HCPhysVmcb < _4G);
         ASMMemZeroPage(pVCpu->hm.s.svm.pvVmcb);
 
@@ -260,7 +264,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
             failure_cleanup;
 
         pVCpu->hm.s.svm.pvMsrBitmap     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjMsrBitmap);
-        pVCpu->hm.s.svm.HCPhysMsrBitmap = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjMsrBitmap, 0);
+        pVCpu->hm.s.svm.HCPhysMsrBitmap = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjMsrBitmap, 0 /* iPage */);
         /* Set all bits to intercept all MSR accesses. */
         ASMMemFill32(pVCpu->hm.s.svm.pvMsrBitmap, 2 << PAGE_SHIFT, 0xffffffff);
     }
@@ -286,4 +290,46 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
 }
 
 
+/**
+ * Sets up AMD-V for the specified VM.
+ * This function is only called once per-VM during initalization.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ */
+VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
+{
+    int rc = VINF_SUCCESS;
+
+    AssertReturn(pVM, VERR_INVALID_PARAMETER);
+    Assert(pVM->hm.s.svm.fSupported);
+
+    for (uint32_t i = 0; i < pVM->cCpus; i++)
+    {
+        PVMCPU   pVCpu = &pVM->aCpus[i];
+        PSVMVMCB pVmcb = (PSVMVMCB)pVM->aCpus[i].hm.s.svm.pvVmcb;
+
+        AssertMsgReturn(pVmcb, ("Invalid pVmcb\n"), VERR_SVM_INVALID_PVMCB);
+
+        /* Intercept traps. */
+#ifdef HMSVM_ALWAYS_TRAP_PF
+        pVmcb->ctrl.u32InterceptException |=   RT_BIT(X86_XCPT_PF);
+#endif
+#ifdef HMSVM_ALWAYS_TRAP_ALL_XCPTS
+        pVmcb->ctrl.u32InterceptException |=   RT_BIT(X86_XCPT_BP)
+                                             | RT_BIT(X86_XCPT_DB)
+                                             | RT_BIT(X86_XCPT_DE)
+                                             | RT_BIT(X86_XCPT_UD)
+                                             | RT_BIT(X86_XCPT_NP)
+                                             | RT_BIT(X86_XCPT_SS)
+                                             | RT_BIT(X86_XCPT_GP)
+                                             | RT_BIT(X86_XCPT_MF)
+                                             | RT_BIT(X86_XCPT_PF);
+#endif
+
+        /* -XXX- todo. */
+    }
+
+    return rc;
+}
 
