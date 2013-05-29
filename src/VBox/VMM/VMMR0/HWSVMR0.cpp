@@ -523,15 +523,15 @@ static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bo
 DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, SVMEVENT *pEvent)
 {
 #ifdef VBOX_STRICT
-    Log(("SVM: Set pending event: intInfo=%016llx\n", pEvent->au64[0]));
+    Log(("SVM: Set pending event: intInfo=%016llx\n", pEvent->u));
 #endif
 
     /* If there's an event pending already, we're in trouble... */
     Assert(!pVCpu->hm.s.Event.fPending);
 
     /* Set pending event state. */
-    pVCpu->hm.s.Event.u64IntrInfo  = pEvent->au64[0];
-    pVCpu->hm.s.Event.fPending = true;
+    pVCpu->hm.s.Event.u64IntrInfo = pEvent->u;
+    pVCpu->hm.s.Event.fPending    = true;
 }
 
 /**
@@ -552,7 +552,7 @@ DECLINLINE(void) hmR0SvmInjectEvent(PVMCPU pVCpu, PSVMVMCB pVmcb, CPUMCTX *pCtx,
     if (pEvent->n.u8Vector == 0xE)
     {
         Log(("SVM: Inject int %d at %RGv error code=%02x CR2=%RGv intInfo=%08x\n", pEvent->n.u8Vector,
-             (RTGCPTR)pCtx->rip, pEvent->n.u32ErrorCode, (RTGCPTR)pCtx->cr2, pEvent->au64[0]));
+             (RTGCPTR)pCtx->rip, pEvent->n.u32ErrorCode, (RTGCPTR)pCtx->cr2, pEvent->u));
     }
     else if (pEvent->n.u8Vector < 0x20)
         Log(("SVM: Inject int %d at %RGv error code=%08x\n", pEvent->n.u8Vector, (RTGCPTR)pCtx->rip, pEvent->n.u32ErrorCode));
@@ -565,7 +565,7 @@ DECLINLINE(void) hmR0SvmInjectEvent(PVMCPU pVCpu, PSVMVMCB pVmcb, CPUMCTX *pCtx,
 #endif
 
     /* Set event injection state. */
-    pVmcb->ctrl.EventInject.au64[0] = pEvent->au64[0];
+    pVmcb->ctrl.EventInject.u = pEvent->u;
 }
 
 
@@ -593,7 +593,7 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, PSVMVMCB pVmcb, C
         Log(("Reinjecting event %08x %08x at %RGv\n", pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.u32ErrCode,
              (RTGCPTR)pCtx->rip));
         STAM_COUNTER_INC(&pVCpu->hm.s.StatIntReinject);
-        Event.au64[0] = pVCpu->hm.s.Event.u64IntrInfo;
+        Event.u = pVCpu->hm.s.Event.u64IntrInfo;
         hmR0SvmInjectEvent(pVCpu, pVmcb, pCtx, &Event);
 
         pVCpu->hm.s.Event.fPending = false;
@@ -687,7 +687,7 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, PSVMVMCB pVmcb, C
         SVMEVENT   Event;
         RTGCUINT    u32ErrorCode;
 
-        Event.au64[0] = 0;
+        Event.u = 0;
 
         /* If a new event is pending, then dispatch it now. */
         rc = TRPMQueryTrapAll(pVCpu, &u8Vector, &enmType, &u32ErrorCode, NULL, NULL);
@@ -1597,7 +1597,7 @@ ResumeExecution:
         Log(("ctrl.ExitIntInfo.u19Reserved      %x\n",      pVmcb->ctrl.ExitIntInfo.n.u19Reserved));
         Log(("ctrl.ExitIntInfo.u1Valid          %x\n",      pVmcb->ctrl.ExitIntInfo.n.u1Valid));
         Log(("ctrl.ExitIntInfo.u32ErrorCode     %x\n",      pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode));
-        Log(("ctrl.NestedPaging                 %RX64\n",   pVmcb->ctrl.NestedPaging.au64));
+        Log(("ctrl.NestedPaging                 %RX64\n",   pVmcb->ctrl.NestedPaging.u));
         Log(("ctrl.EventInject.u8Vector         %x\n",      pVmcb->ctrl.EventInject.n.u8Vector));
         Log(("ctrl.EventInject.u3Type           %x\n",      pVmcb->ctrl.EventInject.n.u3Type));
         Log(("ctrl.EventInject.u1ErrorCodeValid %x\n",      pVmcb->ctrl.EventInject.n.u1ErrorCodeValid));
@@ -1789,7 +1789,7 @@ ResumeExecution:
     pCtx->dr[7] = pVmcb->guest.u64DR7;
 
     /* Check if an injected event was interrupted prematurely. */
-    pVCpu->hm.s.Event.u64IntrInfo = pVmcb->ctrl.ExitIntInfo.au64[0];
+    pVCpu->hm.s.Event.u64IntrInfo = pVmcb->ctrl.ExitIntInfo.u;
     if (    pVmcb->ctrl.ExitIntInfo.n.u1Valid
             /* we don't care about 'int xx' as the instruction will be restarted. */
         &&  pVmcb->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT)
@@ -1798,7 +1798,7 @@ ResumeExecution:
 
 #ifdef LOG_ENABLED
         SVMEVENT Event;
-        Event.au64[0] = pVCpu->hm.s.Event.u64IntrInfo;
+        Event.u = pVCpu->hm.s.Event.u64IntrInfo;
 
         if (    exitCode == SVM_EXIT_EXCEPTION_E
             &&  Event.n.u8Vector == 0xE)
@@ -1847,11 +1847,11 @@ ResumeExecution:
 #ifdef DBGFTRACE_ENABLED /** @todo DTrace */
     RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "vmexit %08x at %04:%08RX64 %RX64 %RX64 %RX64",
                       exitCode, pCtx->cs.Sel, pCtx->rip,
-                      pVmcb->ctrl.u64ExitInfo1, pVmcb->ctrl.u64ExitInfo2, pVmcb->ctrl.ExitIntInfo.au64[0]);
+                      pVmcb->ctrl.u64ExitInfo1, pVmcb->ctrl.u64ExitInfo2, pVmcb->ctrl.ExitIntInfo.u);
 #endif
 #if ARCH_BITS == 64 /* for the time being */
     VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, exitCode, pVmcb->ctrl.u64ExitInfo1, pVmcb->ctrl.u64ExitInfo2,
-                            pVmcb->ctrl.ExitIntInfo.au64[0], UINT64_MAX);
+                            pVmcb->ctrl.ExitIntInfo.u, UINT64_MAX);
 #endif
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
 
@@ -1887,7 +1887,7 @@ ResumeExecution:
                 Log(("Trap %x (debug) at %016RX64\n", vector, pCtx->rip));
 
                 /* Reinject the exception. */
-                Event.au64[0]    = 0;
+                Event.u          = 0;
                 Event.n.u3Type   = SVM_EVENT_EXCEPTION; /* trap or fault */
                 Event.n.u1Valid  = 1;
                 Event.n.u8Vector = X86_XCPT_DB;
@@ -1921,7 +1921,7 @@ ResumeExecution:
             Log(("Forward #NM fault to the guest\n"));
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNM);
 
-            Event.au64[0]    = 0;
+            Event.u          = 0;
             Event.n.u3Type   = SVM_EVENT_EXCEPTION;
             Event.n.u1Valid  = 1;
             Event.n.u8Vector = X86_XCPT_NM;
@@ -1948,7 +1948,7 @@ ResumeExecution:
                 /* Now we must update CR2. */
                 pCtx->cr2 = uFaultAddress;
 
-                Event.au64[0]               = 0;
+                Event.u                     = 0;
                 Event.n.u3Type              = SVM_EVENT_EXCEPTION;
                 Event.n.u1Valid             = 1;
                 Event.n.u8Vector            = X86_XCPT_PF;
@@ -2022,7 +2022,7 @@ ResumeExecution:
                 /* Now we must update CR2. */
                 pCtx->cr2 = uFaultAddress;
 
-                Event.au64[0]               = 0;
+                Event.u                     = 0;
                 Event.n.u3Type              = SVM_EVENT_EXCEPTION;
                 Event.n.u1Valid             = 1;
                 Event.n.u8Vector            = X86_XCPT_PF;
@@ -2053,7 +2053,7 @@ ResumeExecution:
             }
             Log(("Trap %x at %RGv\n", vector, (RTGCPTR)pCtx->rip));
 
-            Event.au64[0]    = 0;
+            Event.u          = 0;
             Event.n.u3Type   = SVM_EVENT_EXCEPTION;
             Event.n.u1Valid  = 1;
             Event.n.u8Vector = X86_XCPT_MF;
@@ -2070,7 +2070,7 @@ ResumeExecution:
         case X86_XCPT_SS:   /* Stack segment exception. */
         case X86_XCPT_NP:   /* Segment not present exception. */
         {
-            Event.au64[0]    = 0;
+            Event.u          = 0;
             Event.n.u3Type   = SVM_EVENT_EXCEPTION;
             Event.n.u1Valid  = 1;
             Event.n.u8Vector = vector;
@@ -2448,8 +2448,8 @@ ResumeExecution:
     {
         SVMIOIOEXIT   IoExitInfo;
 
-        IoExitInfo.au32[0] = pVmcb->ctrl.u64ExitInfo1;
-        unsigned uIdx      = (IoExitInfo.au32[0] >> 4) & 0x7;
+        IoExitInfo.u       = (uint32_t)pVmcb->ctrl.u64ExitInfo1;
+        unsigned uIdx      = (IoExitInfo.u >> 4) & 0x7;
         uint32_t uIOSize   = g_aIOSize[uIdx];
         uint32_t uAndVal   = g_aIOOpAnd[uIdx];
         if (RT_UNLIKELY(!uIOSize))
@@ -2577,7 +2577,7 @@ ResumeExecution:
                             /* Inject the exception. */
                             Log(("Inject IO debug trap at %RGv\n", (RTGCPTR)pCtx->rip));
 
-                            Event.au64[0]    = 0;
+                            Event.u          = 0;
                             Event.n.u3Type   = SVM_EVENT_EXCEPTION; /* trap or fault */
                             Event.n.u1Valid  = 1;
                             Event.n.u8Vector = X86_XCPT_DB;
@@ -2677,7 +2677,7 @@ ResumeExecution:
         /* Unsupported instructions. */
         SVMEVENT Event;
 
-        Event.au64[0]    = 0;
+        Event.u          = 0;
         Event.n.u3Type   = SVM_EVENT_EXCEPTION;
         Event.n.u1Valid  = 1;
         Event.n.u8Vector = X86_XCPT_UD;
@@ -2735,7 +2735,7 @@ ResumeExecution:
             &&  pVCpu->hm.s.Event.fPending)
         {
             SVMEVENT Event;
-            Event.au64[0] = pVCpu->hm.s.Event.u64IntrInfo;
+            Event.u = pVCpu->hm.s.Event.u64IntrInfo;
 
             /* Caused by an injected interrupt. */
             pVCpu->hm.s.Event.fPending = false;
