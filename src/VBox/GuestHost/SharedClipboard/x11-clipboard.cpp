@@ -61,7 +61,6 @@ enum CLIPFORMAT
     INVALID = 0,
     TARGETS,
     TEXT,  /* Treat this as Utf8, but it may really be ascii */
-    CTEXT,
     UTF8,
     BMP
 };
@@ -88,7 +87,6 @@ static struct _CLIPFORMATTABLE
     { "STRING", TEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
     { "TEXT", TEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
     { "text/plain", TEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
-    { "COMPOUND_TEXT", CTEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
     { "image/bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP },
     { "image/x-bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP },
     { "image/x-MS-bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP },
@@ -340,7 +338,7 @@ static void clipReportEmptyX11CB(CLIPBACKEND *pCtx)
 /**
  * Go through an array of X11 clipboard targets to see if they contain a text
  * format we can support, and if so choose the ones we prefer (e.g. we like
- * Utf8 better than compound text).
+ * Utf8 better than plain text).
  * @param  pCtx      the clipboard backend context structure
  * @param  pTargets  the list of targets
  * @param  cTargets  the size of the list in @a pTargets
@@ -375,17 +373,15 @@ static CLIPX11FORMAT clipGetTextFormatFromTargets(CLIPBACKEND *pCtx,
 static bool clipTestTextFormatConversion(CLIPBACKEND *pCtx)
 {
     bool success = true;
-    Atom targets[3];
+    Atom targets[2];
     CLIPX11FORMAT x11Format;
-    targets[0] = clipGetAtom(NULL, "COMPOUND_TEXT");
-    targets[1] = clipGetAtom(NULL, "text/plain");
-    targets[2] = clipGetAtom(NULL, "TARGETS");
+    targets[0] = clipGetAtom(NULL, "text/plain");
+    targets[1] = clipGetAtom(NULL, "TARGETS");
     x11Format = clipGetTextFormatFromTargets(pCtx, targets, 3);
-    if (clipRealFormatForX11Format(x11Format) != CTEXT)
+    if (clipRealFormatForX11Format(x11Format) != TEXT)
         success = false;
     targets[0] = clipGetAtom(NULL, "UTF8_STRING");
     targets[1] = clipGetAtom(NULL, "text/plain");
-    targets[2] = clipGetAtom(NULL, "COMPOUND_TEXT");
     x11Format = clipGetTextFormatFromTargets(pCtx, targets, 3);
     if (clipRealFormatForX11Format(x11Format) != UTF8)
         success = false;
@@ -430,7 +426,7 @@ static CLIPX11FORMAT clipGetBitmapFormatFromTargets(CLIPBACKEND *pCtx,
 /**
  * Go through an array of X11 clipboard targets to see if we can support any
  * of them and if relevant to choose the ones we prefer (e.g. we like Utf8
- * better than compound text).
+ * better than plain text).
  * @param  pCtx      the clipboard backend context structure
  * @param  pTargets  the list of targets
  * @param  cTargets  the size of the list in @a pTargets
@@ -1079,75 +1075,6 @@ static int clipWinTxtToUtf8ForX11CB(Display *pDisplay, PRTUTF16 pwszSrc,
 }
 
 /**
- * Satisfy a request from X11 to convert the clipboard text to
- * COMPOUND_TEXT.  We return null-terminated text, but can cope with non-null-
- * terminated input.
- *
- * @returns iprt status code
- * @param  pDisplay        an X11 display structure, needed for conversions
- *                         performed by Xlib
- * @param  pv              the text to be converted (UCS-2 with Windows EOLs)
- * @param  cb              the length of the text in @cb in bytes
- * @param  atomTypeReturn  where to store the atom for the type of the data
- *                         we are returning
- * @param  pValReturn      where to store the pointer to the data we are
- *                         returning.  This should be to memory allocated by
- *                         XtMalloc, which will be freed by the Xt toolkit
- *                         later.
- * @param  pcLenReturn     where to store the length of the data we are
- *                         returning
- * @param  piFormatReturn  where to store the bit width (8, 16, 32) of the
- *                         data we are returning
- */
-static int clipWinTxtToCTextForX11CB(Display *pDisplay, PRTUTF16 pwszSrc,
-                                     size_t cbSrc, Atom *atomTypeReturn,
-                                     XtPointer *pValReturn,
-                                     unsigned long *pcLenReturn,
-                                         int *piFormatReturn)
-{
-    char *pszTmp = NULL, *pszTmp2 = NULL;
-    size_t cbTmp = 0, cbActual = 0;
-    XTextProperty property;
-    int rc = VINF_SUCCESS, xrc = 0;
-
-    LogRelFlowFunc(("pwszSrc=%.*ls, cbSrc=%u\n", cbSrc / 2, pwszSrc, cbSrc));
-    AssertPtrReturn(pDisplay, false);
-    AssertPtrReturn(pwszSrc, false);
-    rc = clipWinTxtBufSizeForUtf8(pwszSrc, cbSrc / 2, &cbTmp);
-    if (RT_SUCCESS(rc))
-    {
-        pszTmp = (char *)RTMemAlloc(cbTmp);
-        if (!pszTmp)
-            rc = VERR_NO_MEMORY;
-    }
-    if (RT_SUCCESS(rc))
-        rc = clipWinTxtToUtf8(pwszSrc, cbSrc, pszTmp, cbTmp + 1,
-                              &cbActual);
-    /* Convert the Utf8 text to the current encoding (usually a noop). */
-    if (RT_SUCCESS(rc))
-        rc = RTStrUtf8ToCurrentCP(&pszTmp2, pszTmp);
-    /* And finally (!) convert the resulting text to compound text. */
-    if (RT_SUCCESS(rc))
-        xrc = XmbTextListToTextProperty(pDisplay, &pszTmp2, 1,
-                                        XCompoundTextStyle, &property);
-    if (RT_SUCCESS(rc) && xrc < 0)
-        rc = (  xrc == XNoMemory           ? VERR_NO_MEMORY
-              : xrc == XLocaleNotSupported ? VERR_NOT_SUPPORTED
-              : xrc == XConverterNotFound  ? VERR_NOT_SUPPORTED
-              :                              VERR_UNRESOLVED_ERROR);
-    RTMemFree(pszTmp);
-    RTStrFree(pszTmp2);
-    *atomTypeReturn = property.encoding;
-    *pValReturn = reinterpret_cast<XtPointer>(property.value);
-    *pcLenReturn = property.nitems + 1;
-    *piFormatReturn = property.format;
-    LogRelFlowFunc(("returning %Rrc\n", rc));
-    if (RT_SUCCESS(rc))
-        LogRelFlowFunc (("converted string is %s\n", property.value));
-    return rc;
-}
-
-/**
  * Does this atom correspond to one of the two selection types we support?
  * @param  widget   a valid Xt widget
  * @param  selType  the atom in question
@@ -1170,7 +1097,7 @@ static void clipTrimTrailingNul(XtPointer pText, unsigned long *pcText,
 {
     AssertPtrReturnVoid(pText);
     AssertPtrReturnVoid(pcText);
-    AssertReturnVoid((format == UTF8) || (format == CTEXT) || (format == TEXT));
+    AssertReturnVoid((format == UTF8) || (format == TEXT));
     if (((char *)pText)[*pcText - 1] == '\0')
        --(*pcText);
 }
@@ -1185,7 +1112,7 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
     CLIPX11FORMAT x11Format = clipFindX11FormatByAtom(pCtx->widget,
                                                       *atomTarget);
     CLIPFORMAT format = clipRealFormatForX11Format(x11Format);
-    if (   ((format == UTF8) || (format == CTEXT) || (format == TEXT))
+    if (   ((format == UTF8) || (format == TEXT))
         && (pCtx->vboxFormats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT))
     {
         void *pv = NULL;
@@ -1200,11 +1127,6 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
                                           (PRTUTF16)pv, cb, atomTarget,
                                           atomTypeReturn, pValReturn,
                                           pcLenReturn, piFormatReturn);
-        else if (RT_SUCCESS(rc) && (format == CTEXT))
-            rc = clipWinTxtToCTextForX11CB(XtDisplay(pCtx->widget),
-                                           (PRTUTF16)pv, cb,
-                                           atomTypeReturn, pValReturn,
-                                           pcLenReturn, piFormatReturn);
         if (RT_SUCCESS(rc))
             clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, format);
         RTMemFree(pv);
@@ -1441,77 +1363,6 @@ static int clipUtf8ToWinTxt(const char *pcSrc, unsigned cbSrc,
 }
 
 /**
- * Convert COMPOUND TEXT with CR end-of-lines into Utf-16 as Windows expects
- * it and return the result in a RTMemAlloc allocated buffer.
- * @returns  IPRT status code
- * @param  widget     An Xt widget, necessary because we use Xt/Xlib for the
- *                    conversion
- * @param  pcSrc      The source text
- * @param  cbSrc      The size of the source in bytes, not counting the
- *                    terminating zero
- * @param  ppwszDest  Where to store the buffer address
- * @param  pcbDest    On success, where to store the number of bytes written.
- *                    Undefined otherwise.  Optional
- */
-static int clipCTextToWinTxt(Widget widget, unsigned char *pcSrc,
-                             unsigned cbSrc, PRTUTF16 *ppwszDest,
-                             uint32_t *pcbDest)
-{
-    LogRelFlowFunc(("widget=%p, pcSrc=%p, cbSrc=%u, ppwszDest=%p\n", widget,
-                 pcSrc, cbSrc, ppwszDest));
-    AssertReturn(widget, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcSrc, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppwszDest, VERR_INVALID_POINTER);
-    if (pcbDest)
-        *pcbDest = 0;
-
-    /* Special case as X*TextProperty* can't seem to handle empty strings. */
-    if (cbSrc == 0)
-    {
-        *ppwszDest = (PRTUTF16) RTMemAlloc(2);
-        if (!*ppwszDest)
-            return VERR_NO_MEMORY;
-        **ppwszDest = 0;
-        if (pcbDest)
-            *pcbDest = 2;
-        return VINF_SUCCESS;
-    }
-
-    if (pcbDest)
-        *pcbDest = 0;
-    /* Intermediate conversion to Utf8 */
-    int rc = VINF_SUCCESS;
-    XTextProperty property;
-    char **ppcTmp = NULL, *pszTmp = NULL;
-    int cProps;
-
-    property.value = pcSrc;
-    property.encoding = clipGetAtom(widget, "COMPOUND_TEXT");
-    property.format = 8;
-    property.nitems = cbSrc;
-    int xrc = XmbTextPropertyToTextList(XtDisplay(widget), &property,
-                                        &ppcTmp, &cProps);
-    if (xrc < 0)
-        rc = (  xrc == XNoMemory           ? VERR_NO_MEMORY
-              : xrc == XLocaleNotSupported ? VERR_NOT_SUPPORTED
-              : xrc == XConverterNotFound  ? VERR_NOT_SUPPORTED
-              :                              VERR_UNRESOLVED_ERROR);
-    /* Convert the text returned to UTF8 */
-    if (RT_SUCCESS(rc))
-        rc = RTStrCurrentCPToUtf8(&pszTmp, *ppcTmp);
-    /* Now convert the UTF8 to UTF16 */
-    if (RT_SUCCESS(rc))
-        rc = clipUtf8ToWinTxt(pszTmp, strlen(pszTmp), ppwszDest, pcbDest);
-    if (ppcTmp != NULL)
-        XFreeStringList(ppcTmp);
-    RTStrFree(pszTmp);
-    LogRelFlowFunc(("Returning %Rrc\n", rc));
-    if (pcbDest)
-        LogRelFlowFunc(("*pcbDest=%u\n", *pcbDest));
-    return rc;
-}
-
-/**
  * Convert Latin-1 text with CR end-of-lines into Utf-16 as Windows expects
  * it and return the result in a RTMemAlloc allocated buffer.
  * @returns  IPRT status code
@@ -1629,10 +1480,6 @@ static void clipConvertX11CB(Widget widget, XtPointer pClientData,
         /* In which format is the clipboard data? */
         switch (clipRealFormatForX11Format(pReq->mTextFormat))
         {
-            case CTEXT:
-                rc = clipCTextToWinTxt(widget, (unsigned char *)pvSrc, cbSrc,
-                                       (PRTUTF16 *) &pvDest, &cbDest);
-                break;
             case UTF8:
             case TEXT:
             {
@@ -1871,79 +1718,6 @@ int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx,
 
 Display *XtDisplay(Widget w)
 { return (Display *) 0xffff; }
-
-int XmbTextListToTextProperty(Display *display, char **list, int count,
-                              XICCEncodingStyle style,
-                              XTextProperty *text_prop_return)
-{
-    /* We don't fully reimplement this API for obvious reasons. */
-    AssertReturn(count == 1, XLocaleNotSupported);
-    AssertReturn(style == XCompoundTextStyle, XLocaleNotSupported);
-    /* We simplify the conversion by only accepting ASCII. */
-    for (unsigned i = 0; (*list)[i] != 0; ++i)
-        AssertReturn(((*list)[i] & 0x80) == 0, XLocaleNotSupported);
-    text_prop_return->value =
-            (unsigned char*)RTMemDup(*list, strlen(*list) + 1);
-    text_prop_return->encoding = clipGetAtom(NULL, "COMPOUND_TEXT");
-    text_prop_return->format = 8;
-    text_prop_return->nitems = strlen(*list);
-    return 0;
-}
-
-int Xutf8TextListToTextProperty(Display *display, char **list, int count,
-                                XICCEncodingStyle style,
-                                XTextProperty *text_prop_return)
-{
-    return XmbTextListToTextProperty(display, list, count, style,
-                                     text_prop_return);
-}
-
-int XmbTextPropertyToTextList(Display *display,
-                              const XTextProperty *text_prop,
-                              char ***list_return, int *count_return)
-{
-    int rc = 0;
-    if (text_prop->nitems == 0)
-    {
-        *list_return = NULL;
-        *count_return = 0;
-        return 0;
-    }
-    /* Only accept simple ASCII properties */
-    for (unsigned i = 0; i < text_prop->nitems; ++i)
-        AssertReturn(!(text_prop->value[i] & 0x80), XConverterNotFound);
-    char **ppList = (char **)RTMemAlloc(sizeof(char *));
-    char *pValue = (char *)RTMemAlloc(text_prop->nitems + 1);
-    if (pValue)
-    {
-        memcpy(pValue, text_prop->value, text_prop->nitems);
-        pValue[text_prop->nitems] = 0;
-    }
-    if (ppList)
-        *ppList = pValue;
-    if (!ppList || !pValue)
-    {
-        RTMemFree(ppList);
-        RTMemFree(pValue);
-        rc = XNoMemory;
-    }
-    else
-    {
-        /* NULL-terminate the string */
-        pValue[text_prop->nitems] = '\0';
-        *count_return = 1;
-        *list_return = ppList;
-    }
-    return rc;
-}
-
-int Xutf8TextPropertyToTextList(Display *display,
-                                const XTextProperty *text_prop,
-                                char ***list_return, int *count_return)
-{
-    return XmbTextPropertyToTextList(display, text_prop, list_return,
-                                     count_return);
-}
 
 void XtAppSetExitFlag(XtAppContext app_context) {}
 
@@ -2489,33 +2263,6 @@ int main()
                            "hello world", sizeof("hello world") - 1, 8);
     testStringFromX11(hTest, pCtx, "hello world", VINF_SUCCESS);
 
-    /*** COMPOUND TEXT from X11 ***/
-    RTTestSub(hTest, "reading compound text from X11");
-    /* Simple test */
-    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello world",
-                           sizeof("hello world"), 8);
-    testStringFromX11(hTest, pCtx, "hello world", VINF_SUCCESS);
-    /* With an embedded carriage return */
-    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello\nworld",
-                           sizeof("hello\nworld"), 8);
-    testStringFromX11(hTest, pCtx, "hello\r\nworld", VINF_SUCCESS);
-    /* With an embedded CRLF */
-    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello\r\nworld",
-                           sizeof("hello\r\nworld"), 8);
-    testStringFromX11(hTest, pCtx, "hello\r\r\nworld", VINF_SUCCESS);
-    /* With an embedded LFCR */
-    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello\n\rworld",
-                           sizeof("hello\n\rworld"), 8);
-    testStringFromX11(hTest, pCtx, "hello\r\n\rworld", VINF_SUCCESS);
-    /* An empty string */
-    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "",
-                           sizeof(""), 8);
-    testStringFromX11(hTest, pCtx, "", VINF_SUCCESS);
-    /* A non-zero-terminated string */
-    clipSetSelectionValues("COMPOUND_TEXT", XA_STRING,
-                           "hello world", sizeof("hello world") - 1, 8);
-    testStringFromX11(hTest, pCtx, "hello world", VINF_SUCCESS);
-
     /*** Latin1 from X11 ***/
     RTTestSub(hTest, "reading Latin1 from X11");
     /* Simple test */
@@ -2645,38 +2392,6 @@ int main()
                      sizeof("hello world") * 2 - 2);
     testStringFromVBox(hTest, pCtx, "TEXT", clipGetAtom(NULL, "TEXT"),
                        "hello world");
-
-    /*** COMPOUND TEXT from VBox ***/
-    RTTestSub(hTest, "reading COMPOUND TEXT from VBox");
-    /* Simple test */
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world",
-                     sizeof("hello world") * 2);
-    testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
-                       clipGetAtom(NULL, "COMPOUND_TEXT"), "hello world");
-    /* With an embedded carriage return */
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\nworld",
-                     sizeof("hello\r\nworld") * 2);
-    testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
-                       clipGetAtom(NULL, "COMPOUND_TEXT"), "hello\nworld");
-    /* With an embedded CRCRLF */
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\r\nworld",
-                     sizeof("hello\r\r\nworld") * 2);
-    testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
-                       clipGetAtom(NULL, "COMPOUND_TEXT"), "hello\r\nworld");
-    /* With an embedded CRLFCR */
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\n\rworld",
-                     sizeof("hello\r\n\rworld") * 2);
-    testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
-                       clipGetAtom(NULL, "COMPOUND_TEXT"), "hello\n\rworld");
-    /* An empty string */
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "", 2);
-    testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
-                       clipGetAtom(NULL, "COMPOUND_TEXT"), "");
-    /* A non-zero-terminated string */
-    clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world",
-                     sizeof("hello world") * 2 - 2);
-    testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
-                       clipGetAtom(NULL, "COMPOUND_TEXT"), "hello world");
 
     /*** Timeout from VBox ***/
     RTTestSub(hTest, "reading from VBox with timeout");
