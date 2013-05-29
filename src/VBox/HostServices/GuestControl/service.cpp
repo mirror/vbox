@@ -1084,8 +1084,8 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
                 /* Keep going. */
             }
 
-            while (pCurCmd->Release());
-
+            while (pCurCmd->Release())
+                ;
             delete pCurCmd;
             pCurCmd = NULL;
 
