@@ -1583,7 +1583,7 @@ ResumeExecution:
         Log(("ctrl.IntCtrl.u1IgnoreTPR          %x\n",      pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR));
         Log(("ctrl.IntCtrl.u3Reserved           %x\n",      pVmcb->ctrl.IntCtrl.n.u3Reserved));
         Log(("ctrl.IntCtrl.u1VIrqMasking        %x\n",      pVmcb->ctrl.IntCtrl.n.u1VIrqMasking));
-        Log(("ctrl.IntCtrl.u7Reserved2          %x\n",      pVmcb->ctrl.IntCtrl.n.u7Reserved2));
+        Log(("ctrl.IntCtrl.u6Reserved           %x\n",      pVmcb->ctrl.IntCtrl.n.u6Reserved));
         Log(("ctrl.IntCtrl.u8VIrqVector         %x\n",      pVmcb->ctrl.IntCtrl.n.u8VIrqVector));
         Log(("ctrl.IntCtrl.u24Reserved          %x\n",      pVmcb->ctrl.IntCtrl.n.u24Reserved));
 

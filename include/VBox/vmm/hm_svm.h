@@ -454,7 +454,7 @@ typedef struct
 typedef SVMGDTR SVMIDTR;
 
 /**
- * SVM Event injection structure.
+ * SVM Event injection structure (EVENTINJ and EXITINTINFO).
  */
 #pragma pack(1)
 typedef union
@@ -474,7 +474,7 @@ typedef union
 
 
 /**
- * SVM Interrupt control structure.
+ * SVM Interrupt control structure (Virtual Interrupt Control).
  */
 #pragma pack(1)
 typedef union
@@ -488,7 +488,8 @@ typedef union
         uint32_t    u1IgnoreTPR         : 1;
         uint32_t    u3Reserved          : 3;
         uint32_t    u1VIrqMasking       : 1;
-        uint32_t    u7Reserved2         : 7;
+        uint32_t    u6Reserved          : 6;
+        uint32_t    u1AvicEnable        : 1;
         uint32_t    u8VIrqVector        : 8;
         uint32_t    u24Reserved         : 24;
     } n;
@@ -515,7 +516,7 @@ typedef union
 
 
 /**
- * SVM IOIO exit structure.
+ * SVM IOIO exit structure (EXITINFO1 for IOIO intercepts).
  */
 #pragma pack(1)
 typedef union
@@ -547,10 +548,43 @@ typedef union
 {
     struct
     {
-        uint32_t    u1NestedPaging : 1;             /**< enabled/disabled */
+        uint32_t    u1NestedPaging      : 1;             /**< enabled/disabled */
     } n;
     uint64_t    au64[1];
 } SVMNPCTRL;
+#pragma pack()
+
+/**
+ * SVM AVIC.
+ */
+#pragma pack(1)
+typedef union
+{
+    struct
+    {
+        uint32_t    u12Reserved1        : 12;
+        uint64_t    u40Addr             : 40;
+        uint32_t    u12Reserved2        : 12;
+    } n;
+    uint64_t    au64[1];
+} SVMAVIC;
+#pragma pack()
+
+/**
+ * SVM AVIC PHYSICAL_TABLE pointer.
+ */
+#pragma pack(1)
+typedef union
+{
+    struct
+    {
+        uint32_t    u8LastGuestCoreId   : 8;
+        uint32_t    u4Reserved          : 4;
+        uint64_t    u40Addr             : 40;
+        uint32_t    u12Reserved         : 12;
+    } n;
+    uint64_t    au64[1];
+} SVMAVICPHYS;
 #pragma pack()
 
 /**
@@ -577,7 +611,9 @@ typedef struct SVMVMCB
         /** Offset 0x0C - Intercept control field 2. */
         uint32_t    u32InterceptCtrl2;
         /** Offset 0x14-0x3F - Reserved. */
-        uint8_t     u8Reserved[0x3e - 0x14];
+        uint8_t     u8Reserved[0x3c - 0x14];
+        /** Offset 0x3c - PAUSE filter threshold.  */
+        uint16_t    u16PauseFilterThreshold;
         /** Offset 0x3e - PAUSE intercept filter count. */
         uint16_t    u16PauseFilterCount;
         /** Offset 0x40 - Physical address of IOPM. */
@@ -602,8 +638,10 @@ typedef struct SVMVMCB
         SVMEVENT    ExitIntInfo;
         /** Offset 0x90 - Nested Paging. */
         SVMNPCTRL   NestedPaging;
-        /** Offset 0x98-0xA7 - Reserved. */
-        uint8_t     u8Reserved2[0xA8-0x98];
+        /** Offset 0x98 - AVIC APIC BAR.  */
+        SVMAVIC     AvicBar;
+        /** Offset 0xA0-0xA7 - Reserved. */
+        uint8_t     u8Reserved2[0xA8-0xA0];
         /** Offset 0xA8 - Event injection. */
         SVMEVENT    EventInject;
         /** Offset 0xB0 - Host CR3 for nested paging. */
@@ -611,17 +649,25 @@ typedef struct SVMVMCB
         /** Offset 0xB8 - LBR Virtualization. */
         uint64_t    u64LBRVirt;
         /** Offset 0xC0 - VMCB Clean Bits. */
-        uint64_t    u64VMCBCleanBits;
+        uint64_t    u64VmcbCleanBits;
         /** Offset 0xC8 - Next sequential instruction pointer. */
         uint64_t    u64NextRIP;
         /** Offset 0xD0 - Number of bytes fetched. */
         uint8_t     cbInstrFetched;
         /** Offset 0xD1 - Number of bytes fetched. */
         uint8_t     abInstr[15];
+        /** Offset 0xE0 - AVIC APIC_BACKING_PAGE pointer. */
+        SVMAVIC     AvicBackingPagePtr;
+        /** Offset 0xE8-0xEF - Reserved. */
+        uint8_t     u8Reserved3[0xF0 - 0xE8];
+        /** Offset 0xF0 - AVIC LOGICAL_TABLE pointer. */
+        SVMAVIC     AvicLogicalTablePtr;
+        /** Offset 0xF8 - AVIC PHYSICAL_TABLE pointer. */
+        SVMAVICPHYS AvicPhysicalTablePtr;
     } ctrl;
 
-    /** Offset 0xC0-0x3FF - Reserved. */
-    uint8_t     u8Reserved3[0x400-0xE0];
+    /** Offset 0x100-0x3FF - Reserved. */
+    uint8_t     u8Reserved3[0x400-0x100];
 
     /** State Save Area. Starts at offset 0x400. */
     struct
@@ -718,28 +764,31 @@ typedef struct SVMVMCB
 #pragma pack()
 /** Pointer to the SVMVMCB structure. */
 typedef SVMVMCB *PSVMVMCB;
-AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptRdCRx,   0x000);
-AssertCompileMemberOffset(SVMVMCB, ctrl.u16PauseFilterCount, 0x03e);
-AssertCompileMemberOffset(SVMVMCB, ctrl.TLBCtrl,             0x058);
-AssertCompileMemberOffset(SVMVMCB, ctrl.ExitIntInfo,         0x088);
-AssertCompileMemberOffset(SVMVMCB, ctrl.EventInject,         0x0A8);
-AssertCompileMemberOffset(SVMVMCB, ctrl.abInstr,             0x0D1);
-AssertCompileMemberOffset(SVMVMCB, guest,                    0x400);
-AssertCompileMemberOffset(SVMVMCB, guest.ES,                 0x400);
-AssertCompileMemberOffset(SVMVMCB, guest.TR,                 0x490);
-AssertCompileMemberOffset(SVMVMCB, guest.u64EFER,            0x4D0);
-AssertCompileMemberOffset(SVMVMCB, guest.u64CR4,             0x548);
-AssertCompileMemberOffset(SVMVMCB, guest.u64RIP,             0x578);
-AssertCompileMemberOffset(SVMVMCB, guest.u64RSP,             0x5D8);
-AssertCompileMemberOffset(SVMVMCB, guest.u64CR2,             0x640);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved4,        0x4A0);
-AssertCompileMemberOffset(SVMVMCB, guest.u8CPL,              0x4CB);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved6,        0x4D8);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved7,        0x580);
-AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved9,        0x648);
-AssertCompileMemberOffset(SVMVMCB, guest.u64GPAT,            0x668);
-AssertCompileMemberOffset(SVMVMCB, guest.u64LASTEXCPTO,      0x690);
-AssertCompileMemberOffset(SVMVMCB, u8Reserved10,             0x698);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptRdCRx,    0x000);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u16PauseFilterCount,  0x03e);
+AssertCompileMemberOffset(SVMVMCB, ctrl.TLBCtrl,              0x058);
+AssertCompileMemberOffset(SVMVMCB, ctrl.ExitIntInfo,          0x088);
+AssertCompileMemberOffset(SVMVMCB, ctrl.EventInject,          0x0A8);
+AssertCompileMemberOffset(SVMVMCB, ctrl.abInstr,              0x0D1);
+AssertCompileMemberOffset(SVMVMCB, ctrl.AvicBackingPagePtr,   0x0E0);
+AssertCompileMemberOffset(SVMVMCB, ctrl.AvicLogicalTablePtr,  0x0F0);
+AssertCompileMemberOffset(SVMVMCB, ctrl.AvicPhysicalTablePtr, 0x0F8);
+AssertCompileMemberOffset(SVMVMCB, guest,                     0x400);
+AssertCompileMemberOffset(SVMVMCB, guest.ES,                  0x400);
+AssertCompileMemberOffset(SVMVMCB, guest.TR,                  0x490);
+AssertCompileMemberOffset(SVMVMCB, guest.u64EFER,             0x4D0);
+AssertCompileMemberOffset(SVMVMCB, guest.u64CR4,              0x548);
+AssertCompileMemberOffset(SVMVMCB, guest.u64RIP,              0x578);
+AssertCompileMemberOffset(SVMVMCB, guest.u64RSP,              0x5D8);
+AssertCompileMemberOffset(SVMVMCB, guest.u64CR2,              0x640);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved4,         0x4A0);
+AssertCompileMemberOffset(SVMVMCB, guest.u8CPL,               0x4CB);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved6,         0x4D8);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved7,         0x580);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved9,         0x648);
+AssertCompileMemberOffset(SVMVMCB, guest.u64GPAT,             0x668);
+AssertCompileMemberOffset(SVMVMCB, guest.u64LASTEXCPTO,       0x690);
+AssertCompileMemberOffset(SVMVMCB, u8Reserved10,              0x698);
 AssertCompileSize(SVMVMCB, 0x1000);
 
 #ifdef IN_RING0
