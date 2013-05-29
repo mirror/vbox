@@ -5782,8 +5782,7 @@ HRESULT Machine::getGuestPropertyFromService(IN_BSTR aName,
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     Utf8Str strName(aName);
-    HWData::GuestPropertyMap::const_iterator it =
-        mHWData->mGuestProperties.find(strName);
+    HWData::GuestPropertyMap::const_iterator it = mHWData->mGuestProperties.find(strName);
 
     if (it != mHWData->mGuestProperties.end())
     {
@@ -5874,8 +5873,6 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = S_OK;
-    HWData::GuestProperty property;
-    property.mFlags = NILFLAG;
 
     rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
@@ -5895,7 +5892,6 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
         HWData::GuestPropertyMap::iterator it = mHWData->mGuestProperties.find(utf8Name);
         if (it == mHWData->mGuestProperties.end())
         {
-            /* only create the new property if this is really desired */
             if (!fDelete)
             {
                 setModified(IsModified_MachineData);
@@ -5903,10 +5899,9 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
 
                 RTTIMESPEC time;
                 HWData::GuestProperty prop;
-                prop.strValue = aValue;
+                prop.strValue   = aValue;
                 prop.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
-                prop.mFlags = fFlags;
-
+                prop.mFlags     = fFlags;
                 mHWData->mGuestProperties[Utf8Str(aName)] = prop;
             }
         }
@@ -5931,10 +5926,9 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
                 if (!fDelete)
                 {
                     RTTIMESPEC time;
-                    it->second.strValue = aValue;
+                    it->second.strValue   = aValue;
                     it->second.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
-                    if (aFlags != NULL)
-                        it->second.mFlags = fFlags;
+                    it->second.mFlags     = fFlags;
                 }
                 else
                     mHWData->mGuestProperties.erase(it);
@@ -13277,20 +13271,20 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
             if (!fDelete)
             {
                 it->second.strValue   = aValue;
-                it->second.mFlags     = fFlags;
                 it->second.mTimestamp = aTimestamp;
+                it->second.mFlags     = fFlags;
             }
             else
                 mHWData->mGuestProperties.erase(it);
-            
+
             mData->mGuestPropertiesModified = TRUE;
         }
         else if (!fDelete)
         {
             HWData::GuestProperty prop;
-            prop.strValue = aValue;
+            prop.strValue   = aValue;
             prop.mTimestamp = aTimestamp;
-            prop.mFlags = fFlags;
+            prop.mFlags     = fFlags;
 
             mHWData->mGuestProperties[utf8Name] = prop;
             mData->mGuestPropertiesModified = TRUE;
