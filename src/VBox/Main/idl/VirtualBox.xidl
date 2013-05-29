@@ -1026,10 +1026,16 @@
       Used with <link to="IMachine::lockMachine" />.
     </desc>
     <const name="Write" value="2">
-      <desc>Lock the machine for writing.</desc>
+      <desc>Lock the machine for writing. This requests an exclusive lock, i.e.
+        there cannot be any other API client holding any type of lock for this
+        VM concurrently. Remember that a VM process counts as an API client
+        which implicitly holds the equivalent of a shared lock during the
+        entire VM runtime.</desc>
     </const>
     <const name="Shared" value="1">
-      <desc>Request only a shared read lock for remote-controlling the machine.</desc>
+      <desc>Request only a shared lock for remote-controlling the machine.
+        Such a lock allows changing certain VM settings which can be safely
+        modified for a running VM.</desc>
     </const>
     <const name="VM" value="3">
       <desc>Lock the machine for writing, and create objects necessary for
