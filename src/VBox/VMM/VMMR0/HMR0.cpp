@@ -617,8 +617,8 @@ static int hmR0InitAmd(uint32_t u32FeaturesEDX, uint32_t uMaxExtLeaf)
     }
     else
     {
-        rc = VERR_SVM_NO_SVM;
-        g_HvmR0.lLastError = rc;
+        rc = VINF_SUCCESS;              /* Don't fail if AMD-V is not supported. See @bugref{6785}. */
+        g_HvmR0.lLastError = VERR_SVM_NO_SVM;
     }
     return rc;
 }
