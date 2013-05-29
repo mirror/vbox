@@ -1215,7 +1215,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
      * Force a TLB flush for the first world-switch if the current CPU differs from the one we ran on last.
      * This can happen both for start & resume due to long jumps back to ring-3.
      * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB
-     * or the host Cpu is online after a suspend/resume, so we cannot reuse the current ASID anymore.
+     * or the host CPU is online after a suspend/resume, so we cannot reuse the current ASID anymore.
      */
     bool fNewASID = false;
     if (   pVCpu->hm.s.idLastCpu != pCpu->idCpu
@@ -1243,9 +1243,9 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
             ++pCpu->uCurrentAsid;
             if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
             {
-                pCpu->uCurrentAsid = 1;       /* start at 1; host uses 0 */
-                pCpu->cTlbFlushes++;
-                pCpu->fFlushAsidBeforeUse = true;
+                pCpu->uCurrentAsid = 1;            /* Wraparound to 1; host uses 0. */
+                pCpu->cTlbFlushes++;               /* All VCPUs that run on this host CPU must use a new VPID. */
+                pCpu->fFlushAsidBeforeUse = true;  /* All VCPUs that run on this host CPU must flush their new VPID before use. */
             }
 
             pVCpu->hm.s.uCurrentAsid = pCpu->uCurrentAsid;
@@ -1423,9 +1423,9 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu)
         ++pCpu->uCurrentAsid;
         if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
         {
-            pCpu->uCurrentAsid        = 1;       /* start at 1; host uses 0 */
-            pCpu->fFlushAsidBeforeUse = true;
-            pCpu->cTlbFlushes++;
+            pCpu->uCurrentAsid        = 1;       /* Wraparound to 1; host uses 0 */
+            pCpu->cTlbFlushes++;                 /* All VCPUs that run on this host CPU must use a new VPID. */
+            pCpu->fFlushAsidBeforeUse = true;    /* All VCPUs that run on this host CPU must flush their new VPID before use. */
         }
 
         pVCpu->hm.s.fForceTLBFlush = false;
