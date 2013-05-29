@@ -175,20 +175,20 @@ DECLINLINE(void) hmR0SvmFreeStructs(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        if (pVCpu->hm.s.svm.hMemObjVMCBHost != NIL_RTR0MEMOBJ)
+        if (pVCpu->hm.s.svm.hMemObjVmcbHost != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjVMCBHost, false);
-            pVCpu->hm.s.svm.pvVMCBHost      = 0;
-            pVCpu->hm.s.svm.HCPhysVMCBHost  = 0;
-            pVCpu->hm.s.svm.hMemObjVMCBHost = NIL_RTR0MEMOBJ;
+            RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjVmcbHost, false);
+            pVCpu->hm.s.svm.pvVmcbHost      = 0;
+            pVCpu->hm.s.svm.HCPhysVmcbHost  = 0;
+            pVCpu->hm.s.svm.hMemObjVmcbHost = NIL_RTR0MEMOBJ;
         }
 
-        if (pVCpu->hm.s.svm.hMemObjVMCB != NIL_RTR0MEMOBJ)
+        if (pVCpu->hm.s.svm.hMemObjVmcb != NIL_RTR0MEMOBJ)
         {
-            RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjVMCB, false);
-            pVCpu->hm.s.svm.pvVMCB      = 0;
-            pVCpu->hm.s.svm.HCPhysVMCB  = 0;
-            pVCpu->hm.s.svm.hMemObjVMCB = NIL_RTR0MEMOBJ;
+            RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjVmcb, false);
+            pVCpu->hm.s.svm.pvVmcb      = 0;
+            pVCpu->hm.s.svm.HCPhysVmcb  = 0;
+            pVCpu->hm.s.svm.hMemObjVmcb = NIL_RTR0MEMOBJ;
         }
 
         if (pVCpu->hm.s.svm.hMemObjMsrBitmap != NIL_RTR0MEMOBJ)
@@ -226,8 +226,8 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
     for (uint32_t i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-        pVCpu->hm.s.svm.hMemObjVMCBHost  = NIL_RTR0MEMOBJ;
-        pVCpu->hm.s.svm.hMemObjVMCB      = NIL_RTR0MEMOBJ;
+        pVCpu->hm.s.svm.hMemObjVmcbHost  = NIL_RTR0MEMOBJ;
+        pVCpu->hm.s.svm.hMemObjVmcb      = NIL_RTR0MEMOBJ;
         pVCpu->hm.s.svm.hMemObjMsrBitmap = NIL_RTR0MEMOBJ;
     }
 
@@ -235,24 +235,24 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
     for (uint32_t i = 0; i < pVM->cCpus; i++)
     {
         /* Allocate one page for the host context */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjVMCBHost, 1 << PAGE_SHIFT, false /* fExecutable */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjVmcbHost, 1 << PAGE_SHIFT, false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 
-        pVCpu->hm.s.svm.pvVMCBHost     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVMCBHost);
-        pVCpu->hm.s.svm.HCPhysVMCBHost = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVMCBHost, 0);
-        Assert(pVCpu->hm.s.svm.HCPhysVMCBHost < _4G);
-        ASMMemZeroPage(pVCpu->hm.s.svm.pvVMCBHost);
+        pVCpu->hm.s.svm.pvVmcbHost     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVmcbHost);
+        pVCpu->hm.s.svm.HCPhysVmcbHost = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVmcbHost, 0);
+        Assert(pVCpu->hm.s.svm.HCPhysVmcbHost < _4G);
+        ASMMemZeroPage(pVCpu->hm.s.svm.pvVmcbHost);
 
         /* Allocate one page for the VM control block (VMCB). */
-        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjVMCB, 1 << PAGE_SHIFT, false /* fExecutable */);
+        rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjVmcb, 1 << PAGE_SHIFT, false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 
-        pVCpu->hm.s.svm.pvVMCB     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVMCB);
-        pVCpu->hm.s.svm.HCPhysVMCB = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVMCB, 0);
-        Assert(pVCpu->hm.s.svm.HCPhysVMCB < _4G);
-        ASMMemZeroPage(pVCpu->hm.s.svm.pvVMCB);
+        pVCpu->hm.s.svm.pvVmcb     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVmcb);
+        pVCpu->hm.s.svm.HCPhysVmcb = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVmcb, 0);
+        Assert(pVCpu->hm.s.svm.HCPhysVmcb < _4G);
+        ASMMemZeroPage(pVCpu->hm.s.svm.pvVmcb);
 
         /* Allocate 8 KB for the MSR bitmap (doesn't seem to be a way to convince SVM not to use it) */
         rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjMsrBitmap, 2 << PAGE_SHIFT, false /* fExecutable */);
@@ -284,5 +284,6 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
     hmR0SvmFreeVMStructs(pVM);
     return VINF_SUCCESS;
 }
+
 
 

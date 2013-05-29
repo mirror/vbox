@@ -531,7 +531,7 @@ typedef DECLCALLBACK(int) FNHMVMXSTARTVM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSC
 typedef R0PTRTYPE(FNHMVMXSTARTVM *) PFNHMVMXSTARTVM;
 
 /** SVM VMRun function. */
-typedef DECLCALLBACK(int) FNHMSVMVMRUN(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
+typedef DECLCALLBACK(int) FNHMSVMVMRUN(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
 /** Pointer to a SVM VMRun function. */
 typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
 
@@ -693,18 +693,18 @@ typedef struct HMCPU
     struct
     {
         /** R0 memory object for the host VM control block (VMCB). */
-        RTR0MEMOBJ                  hMemObjVMCBHost;
+        RTR0MEMOBJ                  hMemObjVmcbHost;
         /** Physical address of the host VM control block (VMCB). */
-        RTHCPHYS                    HCPhysVMCBHost;
+        RTHCPHYS                    HCPhysVmcbHost;
         /** Virtual address of the host VM control block (VMCB). */
-        R0PTRTYPE(void *)           pvVMCBHost;
+        R0PTRTYPE(void *)           pvVmcbHost;
 
         /** R0 memory object for the VM control block (VMCB). */
-        RTR0MEMOBJ                  hMemObjVMCB;
+        RTR0MEMOBJ                  hMemObjVmcb;
         /** Physical address of the VM control block (VMCB). */
-        RTHCPHYS                    HCPhysVMCB;
+        RTHCPHYS                    HCPhysVmcb;
         /** Virtual address of the VM control block (VMCB). */
-        R0PTRTYPE(void *)           pvVMCB;
+        R0PTRTYPE(void *)           pvVmcb;
 
         /** Ring 0 handlers for VT-x. */
         PFNHMSVMVMRUN               pfnVMRun;
@@ -933,7 +933,7 @@ VMMR0DECL(void) HMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *psz
 
 # ifdef VBOX_WITH_KERNEL_USING_XMM
 DECLASM(int) HMR0VMXStartVMWrapXMM(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
-DECLASM(int) HMR0SVMRunWrapXMM(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
+DECLASM(int) HMR0SVMRunWrapXMM(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu, PFNHMSVMVMRUN pfnVMRun);
 # endif
 
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL

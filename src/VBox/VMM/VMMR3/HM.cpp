@@ -330,23 +330,6 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
     AssertCompileMemberAlignment(VM, hm.s, 32);
     AssertCompile(sizeof(pVM->hm.s) <= sizeof(pVM->hm.padding));
 
-    /* Some structure checks. */
-    AssertCompileMemberOffset(SVM_VMCB, ctrl.EventInject,    0xA8);
-    AssertCompileMemberOffset(SVM_VMCB, ctrl.ExitIntInfo,    0x88);
-    AssertCompileMemberOffset(SVM_VMCB, ctrl.TLBCtrl,        0x58);
-
-    AssertCompileMemberOffset(SVM_VMCB, guest,              0x400);
-    AssertCompileMemberOffset(SVM_VMCB, guest.TR,           0x490);
-    AssertCompileMemberOffset(SVM_VMCB, guest.u8CPL,        0x4CB);
-    AssertCompileMemberOffset(SVM_VMCB, guest.u64EFER,      0x4D0);
-    AssertCompileMemberOffset(SVM_VMCB, guest.u64CR4,       0x548);
-    AssertCompileMemberOffset(SVM_VMCB, guest.u64RIP,       0x578);
-    AssertCompileMemberOffset(SVM_VMCB, guest.u64RSP,       0x5D8);
-    AssertCompileMemberOffset(SVM_VMCB, guest.u64CR2,       0x640);
-    AssertCompileMemberOffset(SVM_VMCB, guest.u64GPAT,      0x668);
-    AssertCompileMemberOffset(SVM_VMCB, guest.u64LASTEXCPTO,0x690);
-    AssertCompileSize(SVM_VMCB, 0x1000);
-
     /*
      * Register the saved state data unit.
      */

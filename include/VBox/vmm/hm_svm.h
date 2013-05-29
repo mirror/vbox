@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -268,7 +268,7 @@
 /** @} */
 
 
-/** @name SVM_VMCB.u64ExitInfo2
+/** @name SVMVMCB.u64ExitInfo2
  * @{
  */
 /** Set to 1 if the task switch was caused by an IRET; else cleared to 0. */
@@ -281,7 +281,7 @@
 #define SVM_EXIT2_TASK_SWITCH_EFLAGS_RF             RT_BIT_64(48)
 /** @} */
 
-/** @name SVM_VMCB.ctrl.u32InterceptCtrl1
+/** @name SVMVMCB.ctrl.u32InterceptCtrl1
  * @{
  */
 /** 0 Intercept INTR (physical maskable interrupt). */
@@ -351,7 +351,7 @@
 /** @} */
 
 
-/** @name SVM_VMCB.ctrl.u32InterceptCtrl2
+/** @name SVMVMCB.ctrl.u32InterceptCtrl2
  * @{
  */
 /** 0 Intercept VMRUN instruction. */
@@ -384,20 +384,20 @@
 #define SVM_CTRL2_INTERCEPT_XSETBV            RT_BIT(13)
 /** @} */
 
-/** @name SVM_VMCB.ctrl.u64NestedPaging
+/** @name SVMVMCB.ctrl.u64NestedPaging
  * @{
  */
 #define SVM_NESTED_PAGING_ENABLE                RT_BIT(0)
 /** @} */
 
-/** @name SVM_VMCB.ctrl.u64IntShadow
+/** @name SVMVMCB.ctrl.u64IntShadow
  * @{
  */
 #define SVM_INTERRUPT_SHADOW_ACTIVE             RT_BIT(0)
 /** @} */
 
 
-/** @name SVM_INTCTRL.u3Type
+/** @name SVMINTCTRL.u3Type
  * @{
  */
 /** External or virtual interrupt. */
@@ -411,7 +411,7 @@
 /** @} */
 
 
-/** @name SVM_VMCB.ctrl.TLBCtrl.n.u8TLBFlush
+/** @name SVMVMCB.ctrl.TLBCtrl.n.u8TLBFlush
  * @{
  */
 /** Flush nothing. */
@@ -469,7 +469,7 @@ typedef union
         uint32_t    u32ErrorCode        : 32;
     } n;
     uint64_t    au64[1];
-} SVM_EVENT;
+} SVMEVENT;
 #pragma pack()
 
 
@@ -493,7 +493,7 @@ typedef union
         uint32_t    u24Reserved         : 24;
     } n;
     uint64_t    au64[1];
-} SVM_INTCTRL;
+} SVMINTCTRL;
 #pragma pack()
 
 
@@ -510,7 +510,7 @@ typedef union
         uint32_t    u24Reserved         : 24;
     } n;
     uint64_t    au64[1];
-} SVM_TLBCTRL;
+} SVMTLBCTRL;
 #pragma pack()
 
 
@@ -536,7 +536,7 @@ typedef union
         uint32_t    u16Port             : 16;
     } n;
     uint32_t    au32[1];
-} SVM_IOIO_EXIT;
+} SVMIOIOEXIT;
 #pragma pack()
 
 /**
@@ -550,14 +550,14 @@ typedef union
         uint32_t    u1NestedPaging : 1;             /**< enabled/disabled */
     } n;
     uint64_t    au64[1];
-} SVM_NPCTRL;
+} SVMNPCTRL;
 #pragma pack()
 
 /**
  * SVM VM Control Block. (VMCB)
  */
 #pragma pack(1)
-typedef struct _SVM_VMCB
+typedef struct SVMVMCB
 {
     /** Control Area. */
     struct
@@ -587,9 +587,9 @@ typedef struct _SVM_VMCB
         /** Offset 0x50 - TSC Offset. */
         uint64_t    u64TSCOffset;
         /** Offset 0x58 - TLB control field. */
-        SVM_TLBCTRL TLBCtrl;
+        SVMTLBCTRL  TLBCtrl;
         /** Offset 0x60 - Interrupt control field. */
-        SVM_INTCTRL IntCtrl;
+        SVMINTCTRL  IntCtrl;
         /** Offset 0x68 - Interrupt shadow. */
         uint64_t    u64IntShadow;
         /** Offset 0x70 - Exit code. */
@@ -599,13 +599,13 @@ typedef struct _SVM_VMCB
         /** Offset 0x80 - Exit info 2. */
         uint64_t    u64ExitInfo2;
         /** Offset 0x88 - Exit Interrupt info. */
-        SVM_EVENT   ExitIntInfo;
+        SVMEVENT    ExitIntInfo;
         /** Offset 0x90 - Nested Paging. */
-        SVM_NPCTRL  NestedPaging;
+        SVMNPCTRL   NestedPaging;
         /** Offset 0x98-0xA7 - Reserved. */
         uint8_t     u8Reserved2[0xA8-0x98];
         /** Offset 0xA8 - Event injection. */
-        SVM_EVENT   EventInject;
+        SVMEVENT    EventInject;
         /** Offset 0xB0 - Host CR3 for nested paging. */
         uint64_t    u64NestedPagingCR3;
         /** Offset 0xB8 - LBR Virtualization. */
@@ -714,25 +714,33 @@ typedef struct _SVM_VMCB
 
     /** Offset 0x698-0xFFF- Reserved. */
     uint8_t     u8Reserved10[0x1000-0x698];
-} SVM_VMCB;
+} SVMVMCB;
 #pragma pack()
-AssertCompileSize(SVM_VMCB, 0x1000);
-AssertCompileMemberOffset(SVM_VMCB, ctrl.u16InterceptRdCRx, 0x000);
-AssertCompileMemberOffset(SVM_VMCB, ctrl.u16PauseFilterCount,0x03e);
-AssertCompileMemberOffset(SVM_VMCB, ctrl.TLBCtrl,           0x058);
-AssertCompileMemberOffset(SVM_VMCB, ctrl.ExitIntInfo,       0x088);
-AssertCompileMemberOffset(SVM_VMCB, ctrl.EventInject,       0x0A8);
-AssertCompileMemberOffset(SVM_VMCB, ctrl.abInstr,           0x0D1);
-AssertCompileMemberOffset(SVM_VMCB, guest,                  0x400);
-AssertCompileMemberOffset(SVM_VMCB, guest.ES,               0x400);
-AssertCompileMemberOffset(SVM_VMCB, guest.u8Reserved4,      0x4A0);
-AssertCompileMemberOffset(SVM_VMCB, guest.u8CPL,            0x4CB);
-AssertCompileMemberOffset(SVM_VMCB, guest.u8Reserved6,      0x4D8);
-AssertCompileMemberOffset(SVM_VMCB, guest.u8Reserved7,      0x580);
-AssertCompileMemberOffset(SVM_VMCB, guest.u8Reserved9,      0x648);
-AssertCompileMemberOffset(SVM_VMCB, guest.u64GPAT,          0x668);
-AssertCompileMemberOffset(SVM_VMCB, guest.u64LASTEXCPTO,    0x690);
-AssertCompileMemberOffset(SVM_VMCB, u8Reserved10,           0x698);
+/** Pointer to the SVMVMCB structure. */
+typedef SVMVMCB *PSVMVMCB;
+AssertCompileMemberOffset(SVMVMCB, ctrl.u16InterceptRdCRx,   0x000);
+AssertCompileMemberOffset(SVMVMCB, ctrl.u16PauseFilterCount, 0x03e);
+AssertCompileMemberOffset(SVMVMCB, ctrl.TLBCtrl,             0x058);
+AssertCompileMemberOffset(SVMVMCB, ctrl.ExitIntInfo,         0x088);
+AssertCompileMemberOffset(SVMVMCB, ctrl.EventInject,         0x0A8);
+AssertCompileMemberOffset(SVMVMCB, ctrl.abInstr,             0x0D1);
+AssertCompileMemberOffset(SVMVMCB, guest,                    0x400);
+AssertCompileMemberOffset(SVMVMCB, guest.ES,                 0x400);
+AssertCompileMemberOffset(SVMVMCB, guest.TR,                 0x490);
+AssertCompileMemberOffset(SVMVMCB, guest.u64EFER,            0x4D0);
+AssertCompileMemberOffset(SVMVMCB, guest.u64CR4,             0x548);
+AssertCompileMemberOffset(SVMVMCB, guest.u64RIP,             0x578);
+AssertCompileMemberOffset(SVMVMCB, guest.u64RSP,             0x5D8);
+AssertCompileMemberOffset(SVMVMCB, guest.u64CR2,             0x640);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved4,        0x4A0);
+AssertCompileMemberOffset(SVMVMCB, guest.u8CPL,              0x4CB);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved6,        0x4D8);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved7,        0x580);
+AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved9,        0x648);
+AssertCompileMemberOffset(SVMVMCB, guest.u64GPAT,            0x668);
+AssertCompileMemberOffset(SVMVMCB, guest.u64LASTEXCPTO,      0x690);
+AssertCompileMemberOffset(SVMVMCB, u8Reserved10,             0x698);
+AssertCompileSize(SVMVMCB, 0x1000);
 
 #ifdef IN_RING0
 VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
@@ -740,5 +748,5 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
 
 /** @} */
 
-#endif
+#endif /* ___VBox_vmm_svm_h */
 
