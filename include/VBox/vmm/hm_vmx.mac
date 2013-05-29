@@ -159,3 +159,14 @@
 %define VMX_RESTORE_HOST_IDTR                  			20h	;RT_BIT(5)
 %define VMX_RESTORE_HOST_LDTR                  			40h	;RT_BIT(6)
 
+struc VMXRESTOREHOST
+    .uHostSelDS         resw    1
+    .uHostSelES         resw    1
+    .uHostSelFS         resw    1
+    .uHostSelGS         resw    1
+    .uHostFSBase        resq    1
+    .uHostGSBase        resq    1
+    .HostGdtr           resb    10
+    .HostIdtr           resb    10
+endstruc
+
