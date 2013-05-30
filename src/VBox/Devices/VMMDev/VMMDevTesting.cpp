@@ -236,22 +236,30 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                             {
                                 case VMMDEV_TESTING_CMD_INIT:
                                     VMMDEV_TESTING_OUTPUT(("testing: INIT '%s'\n", pThis->TestingData.String.sz));
-                                    RTTestChangeName(pThis->hTestingTest, pThis->TestingData.String.sz);
-                                    RTTestBanner(pThis->hTestingTest);
+                                    if (pThis->hTestingTest != NIL_RTTEST)
+                                    {
+                                        RTTestChangeName(pThis->hTestingTest, pThis->TestingData.String.sz);
+                                        RTTestBanner(pThis->hTestingTest);
+                                    }
                                     break;
                                 case VMMDEV_TESTING_CMD_SUB_NEW:
                                     VMMDEV_TESTING_OUTPUT(("testing: SUB_NEW  '%s'\n", pThis->TestingData.String.sz));
-                                    RTTestSub(pThis->hTestingTest, pThis->TestingData.String.sz);
+                                    if (pThis->hTestingTest != NIL_RTTEST)
+                                        RTTestSub(pThis->hTestingTest, pThis->TestingData.String.sz);
                                     break;
                                 case VMMDEV_TESTING_CMD_FAILED:
-                                    RTTestFailed(pThis->hTestingTest, "%s", pThis->TestingData.String.sz);
+                                    if (pThis->hTestingTest != NIL_RTTEST)
+                                        RTTestFailed(pThis->hTestingTest, "%s", pThis->TestingData.String.sz);
                                     VMMDEV_TESTING_OUTPUT(("testing: FAILED '%s'\n", pThis->TestingData.String.sz));
                                     break;
                                 case VMMDEV_TESTING_CMD_SKIPPED:
-                                    if (off)
-                                        RTTestSkipped(pThis->hTestingTest, "%s", pThis->TestingData.String.sz);
-                                    else
-                                        RTTestSkipped(pThis->hTestingTest, NULL);
+                                    if (pThis->hTestingTest != NIL_RTTEST)
+                                    {
+                                        if (off)
+                                            RTTestSkipped(pThis->hTestingTest, "%s", pThis->TestingData.String.sz);
+                                        else
+                                            RTTestSkipped(pThis->hTestingTest, NULL);
+                                    }
                                     VMMDEV_TESTING_OUTPUT(("testing: SKIPPED '%s'\n", pThis->TestingData.String.sz));
                                     break;
                             }
@@ -272,16 +280,24 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                         pThis->TestingData.Error.c = u32;
                         if (uCmd == VMMDEV_TESTING_CMD_TERM)
                         {
-                            while (RTTestErrorCount(pThis->hTestingTest) < u32)
-                                RTTestErrorInc(pThis->hTestingTest); /* A bit stupid, but does the trick. */
-                            RTTestSubDone(pThis->hTestingTest);
+                            if (pThis->hTestingTest != NIL_RTTEST)
+                            {
+                                while (RTTestErrorCount(pThis->hTestingTest) < u32)
+                                    RTTestErrorInc(pThis->hTestingTest); /* A bit stupid, but does the trick. */
+                                RTTestSubDone(pThis->hTestingTest);
+                                RTTestSummaryAndDestroy(pThis->hTestingTest);
+                                pThis->hTestingTest = NIL_RTTEST;
+                            }
                             VMMDEV_TESTING_OUTPUT(("testing: TERM - %u errors\n", u32));
                         }
                         else
                         {
-                            while (RTTestSubErrorCount(pThis->hTestingTest) < u32)
-                                RTTestErrorInc(pThis->hTestingTest); /* A bit stupid, but does the trick. */
-                            RTTestSubDone(pThis->hTestingTest);
+                            if (pThis->hTestingTest != NIL_RTTEST)
+                            {
+                                while (RTTestSubErrorCount(pThis->hTestingTest) < u32)
+                                    RTTestErrorInc(pThis->hTestingTest); /* A bit stupid, but does the trick. */
+                                RTTestSubDone(pThis->hTestingTest);
+                            }
                             VMMDEV_TESTING_OUTPUT(("testing: SUB_DONE - %u errors\n", u32));
                         }
                         return VINF_SUCCESS;
@@ -325,8 +341,9 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                                 VMMDEV_TESTING_OUTPUT(("Invalid log value unit %#x\n", pThis->TestingData.Value.u32Unit));
                                 enmUnit = RTTESTUNIT_NONE;
                             }
-                            RTTestValue(pThis->hTestingTest, pThis->TestingData.Value.szName,
-                                        pThis->TestingData.Value.u64Value.u, enmUnit);
+                            if (pThis->hTestingTest != NIL_RTTEST)
+                                RTTestValue(pThis->hTestingTest, pThis->TestingData.Value.szName,
+                                            pThis->TestingData.Value.u64Value.u, enmUnit);
 
                             VMMDEV_TESTING_OUTPUT(("testing: VALUE '%s'%*s: %'9llu (%#llx) [%u]\n",
                                                    pThis->TestingData.Value.szName,
