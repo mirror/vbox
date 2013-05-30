@@ -877,7 +877,6 @@ void HostRamUsage::collect()
         mTotal->put(total);
         mUsed->put(used);
         mAvailable->put(available);
-
     }
 }
 
@@ -903,7 +902,6 @@ void HostFilesystemUsage::collect()
         mTotal->put(total);
         mUsed->put(used);
         mAvailable->put(available);
-
     }
 }
 
