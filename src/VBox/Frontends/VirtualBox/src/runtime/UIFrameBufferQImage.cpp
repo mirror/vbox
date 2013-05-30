@@ -302,10 +302,10 @@ void UIFrameBufferQImage::drawImageRectNarrow(QPainter &painter, const QImage &i
 
 /* static */
 void UIFrameBufferQImage::drawImageRectWide(QPainter &painter, const QImage &image,
-                                            const QRect &rect, int iContentsShiftX, int /*iContentsShiftY*/)
+                                            const QRect &rect, int iContentsShiftX, int iContentsShiftY)
 {
     /* This method is faster for wide updates: */
-    QPixmap pm = QPixmap::fromImage(QImage(image.scanLine(rect.y() + iContentsShiftX),
+    QPixmap pm = QPixmap::fromImage(QImage(image.scanLine(rect.y() + iContentsShiftY),
                                            image.width(), rect.height(), image.bytesPerLine(),
                                            QImage::Format_RGB32));
     painter.drawPixmap(rect.x(), rect.y(), pm, rect.x() + iContentsShiftX, 0, 0, 0);
