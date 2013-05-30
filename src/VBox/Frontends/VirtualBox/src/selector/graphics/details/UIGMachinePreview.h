@@ -72,8 +72,8 @@ public:
 
 private slots:
 
-    /* Handler: Global-event listener: */
-    void sltMachineStateChange(QString strId, KMachineState state);
+    /* Handler: Global-event listener stuff: */
+    void sltMachineStateChange(QString strId);
 
     /* Handler: Preview recreator: */
     void sltRecreatePreview();
@@ -104,7 +104,6 @@ private:
     /* Variables: */
     CSession m_session;
     CMachine m_machine;
-    KMachineState m_machineState;
     QTimer *m_pUpdateTimer;
     QMenu *m_pUpdateTimerMenu;
     QHash<UpdateInterval, QAction*> m_actions;

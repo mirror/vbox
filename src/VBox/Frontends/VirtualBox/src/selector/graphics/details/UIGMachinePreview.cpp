@@ -48,7 +48,6 @@ UpdateIntervalMap UIGMachinePreview::m_intervals = CreateUpdateIntervalMap();
 
 UIGMachinePreview::UIGMachinePreview(QIGraphicsWidget *pParent)
     : QIWithRetranslateUI4<QIGraphicsWidget>(pParent)
-    , m_machineState(KMachineState_Null)
     , m_pUpdateTimer(new QTimer(this))
     , m_pUpdateTimerMenu(0)
     , m_iMargin(0)
@@ -91,7 +90,7 @@ UIGMachinePreview::UIGMachinePreview(QIGraphicsWidget *pParent)
     /* Setup connections: */
     connect(m_pUpdateTimer, SIGNAL(timeout()), this, SLOT(sltRecreatePreview()));
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
-            this, SLOT(sltMachineStateChange(QString, KMachineState)));
+            this, SLOT(sltMachineStateChange(QString)));
 
     /* Retranslate the UI */
     retranslateUi();
@@ -122,14 +121,14 @@ CMachine UIGMachinePreview::machine() const
     return m_machine;
 }
 
-void UIGMachinePreview::sltMachineStateChange(QString strId, KMachineState state)
+void UIGMachinePreview::sltMachineStateChange(QString strId)
 {
-    if (!m_machine.isNull() && m_machine.GetId() == strId)
-    {
-        /* Cache the machine state: */
-        m_machineState = state;
-        restart();
-    }
+    /* Make sure its the event for our machine: */
+    if (m_machine.isNull() || m_machine.GetId() != strId)
+        return;
+
+    /* Restart the preview: */
+    restart();
 }
 
 void UIGMachinePreview::sltRecreatePreview()
@@ -138,18 +137,19 @@ void UIGMachinePreview::sltRecreatePreview()
     if (!isVisible())
         return;
 
-    /* Remove preview if any: */
+    /* Cleanup preview first: */
     if (m_pPreviewImg)
     {
         delete m_pPreviewImg;
         m_pPreviewImg = 0;
     }
 
-    /* We are not creating preview for inaccessible VMs: */
-    if (m_machineState == KMachineState_Null)
-        return;
+    /* Fetch the latest machine-state: */
+    KMachineState machineState = m_machine.isNull() ? KMachineState_Null : m_machine.GetState();
 
-    if (!m_machine.isNull() && m_vRect.width() > 0 && m_vRect.height() > 0)
+    /* We are creating preview only for assigned and accessible VMs: */
+    if (!m_machine.isNull() && machineState != KMachineState_Null &&
+        m_vRect.width() > 0 && m_vRect.height() > 0)
     {
         QImage image(size().toSize(), QImage::Format_ARGB32);
         image.fill(Qt::transparent);
@@ -160,21 +160,21 @@ void UIGMachinePreview::sltRecreatePreview()
         if (m_pUpdateTimer->interval() > 0)
         {
             /* Use the image which may be included in the save state. */
-            if (m_machineState == KMachineState_Saved || m_machineState == KMachineState_Restoring)
+            if (machineState == KMachineState_Saved || machineState == KMachineState_Restoring)
             {
                 ULONG width = 0, height = 0;
                 QVector<BYTE> screenData = m_machine.ReadSavedScreenshotPNGToArray(0, width, height);
                 if (screenData.size() != 0)
                 {
                     QImage shot = QImage::fromData(screenData.data(), screenData.size(), "PNG")
-                            .scaled(m_vRect.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+                                  .scaled(m_vRect.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
                     dimImage(shot);
                     painter.drawImage(m_vRect.x(), m_vRect.y(), shot);
                     fDone = true;
                 }
             }
             /* Use the current VM output. */
-            else if (m_machineState == KMachineState_Running || m_machineState == KMachineState_Paused)
+            else if (machineState == KMachineState_Running || machineState == KMachineState_Paused)
             {
                 if (m_session.GetState() == KSessionState_Locked)
                 {
@@ -209,7 +209,7 @@ void UIGMachinePreview::sltRecreatePreview()
 
                                 QImage shot = QImage((uchar*)d, m_vRect.width(), m_vRect.height(), QImage::Format_RGB32);
 
-                                if (m_machineState == KMachineState_Paused)
+                                if (machineState == KMachineState_Paused)
                                     dimImage(shot);
                                 painter.drawImage(m_vRect.x(), m_vRect.y(), shot);
                                 fDone = true;
@@ -219,9 +219,12 @@ void UIGMachinePreview::sltRecreatePreview()
                 }
             }
         }
+
         if (fDone)
             m_pPreviewImg = new QImage(image);
     }
+
+    /* Redraw preview in any case! */
     update();
 }
 
@@ -377,15 +380,16 @@ void UIGMachinePreview::recalculatePreviewRectangle()
 
 void UIGMachinePreview::restart()
 {
+    /* Fetch the latest machine-state: */
+    KMachineState machineState = m_machine.isNull() ? KMachineState_Null : m_machine.GetState();
+
     /* Reopen session if necessary: */
     if (m_session.GetState() == KSessionState_Locked)
         m_session.UnlockMachine();
     if (!m_machine.isNull())
     {
-        /* Fetch the latest machine state: */
-        m_machineState = m_machine.GetState();
         /* Lock the session for the current machine: */
-        if (m_machineState == KMachineState_Running || m_machineState == KMachineState_Paused)
+        if (machineState == KMachineState_Running || machineState == KMachineState_Paused)
             m_machine.LockMachine(m_session, KLockType_Shared);
     }
 
@@ -395,7 +399,7 @@ void UIGMachinePreview::restart()
     /* Start the timer if necessary: */
     if (!m_machine.isNull())
     {
-        if (m_pUpdateTimer->interval() > 0 && m_machineState == KMachineState_Running)
+        if (m_pUpdateTimer->interval() > 0 && machineState == KMachineState_Running)
             m_pUpdateTimer->start();
     }
 }
