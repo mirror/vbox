@@ -88,6 +88,8 @@ private:
     PFNGST  mpfnGetSystemTimes;
     PFNNQSI mpfnNtQuerySystemInformation;
     HMODULE mhNtDll;
+
+    ULONG totalRAM;
 };
 
 CollectorHAL *createHAL()
@@ -118,6 +120,13 @@ CollectorWin::CollectorWin() : CollectorHAL(), mhNtDll(0)
             mpfnNtQuerySystemInformation = 0;
         }
     }
+
+    uint64_t cb;
+    int rc = RTSystemQueryTotalRam(&cb);
+    if (RT_FAILURE(rc))
+        totalRAM = 0;
+    else
+        totalRAM = (ULONG)(cb / 1024);
 }
 
 CollectorWin::~CollectorWin()
@@ -302,16 +311,12 @@ int CollectorWin::getHostCpuMHz(ULONG *mhz)
 int CollectorWin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
     uint64_t cb;
-    int rc = RTSystemQueryTotalRam(&cb);
+    rc = RTSystemQueryAvailableRam(&cb);
     if (RT_SUCCESS(rc))
     {
-        *total = (ULONG)(cb / 1024);
-        rc = RTSystemQueryAvailableRam(&cb);
-        if (RT_SUCCESS(rc))
-        {
-            *available = (ULONG)(cb / 1024);
-            *used = *total - *available;
-        }
+        *total = totalRAM;
+        *available = (ULONG)(cb / 1024);
+        *used = *total - *available;
     }
     return rc;
 }
