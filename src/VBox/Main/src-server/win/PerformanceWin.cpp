@@ -311,7 +311,7 @@ int CollectorWin::getHostCpuMHz(ULONG *mhz)
 int CollectorWin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
     uint64_t cb;
-    rc = RTSystemQueryAvailableRam(&cb);
+    int rc = RTSystemQueryAvailableRam(&cb);
     if (RT_SUCCESS(rc))
     {
         *total = totalRAM;
