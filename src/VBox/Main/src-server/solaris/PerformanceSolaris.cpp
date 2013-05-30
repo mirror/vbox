@@ -35,6 +35,8 @@
 #include <iprt/alloc.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/system.h>
+
 #include "Logging.h"
 #include "Performance.h"
 
@@ -84,9 +86,9 @@ private:
     uint64_t wrapCorrection(uint32_t cur, uint64_t prev, const char *name);
     uint64_t wrapDetection(uint64_t cur, uint64_t prev, const char *name);
 
-    kstat_ctl_t *mKC;
-    kstat_t     *mSysPages;
-    kstat_t     *mZFSCache;
+    kstat_ctl_t      *mKC;
+    kstat_t          *mSysPages;
+    kstat_t          *mZFSCache;
 
     void             *mZfsSo;
     libzfs_handle_t  *mZfsLib;
@@ -102,6 +104,8 @@ private:
 
     FsMap             mFsMap;
     uint32_t          mCpus;
+
+    ULONG             totalRAM;
 };
 
 CollectorHAL *createHAL()
@@ -150,8 +154,14 @@ CollectorSolaris::CollectorSolaris()
         mZpoolGetConfig = (PFNZPOOLGETCONFIG)dlsym(mZfsSo, "zpool_get_config");
         mZpoolVdevName  =  (PFNZPOOLVDEVNAME)dlsym(mZfsSo, "zpool_vdev_name");
 
-        if (mZfsInit && mZfsOpen && mZfsClose && mZfsPropGetInt
-            && mZpoolOpen && mZpoolClose && mZpoolGetConfig && mZpoolVdevName)
+        if (   mZfsInit
+            && mZfsOpen
+            && mZfsClose
+            && mZfsPropGetInt
+            && mZpoolOpen
+            && mZpoolClose
+            && mZpoolGetConfig
+            && mZpoolVdevName)
             mZfsLib = mZfsInit();
         else
             LogRel(("Incompatible libzfs? libzfs_init=%p zfs_open=%p zfs_close=%p zfs_prop_get_int=%p\n",
@@ -160,6 +170,13 @@ CollectorSolaris::CollectorSolaris()
 
     updateFilesystemMap();
     /* Notice that mCpus member will be initialized by HostCpuLoadRaw::init() */
+
+    uint64_t cb;
+    int rc = RTSystemQueryTotalRam(&cb);
+    if (RT_FAILURE(rc))
+        totalRAM = 0;
+    else
+        totalRAM = (ULONG)(cb / 1024);
 }
 
 CollectorSolaris::~CollectorSolaris()
@@ -264,62 +281,15 @@ int CollectorSolaris::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, ui
 
 int CollectorSolaris::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
-    int rc = VINF_SUCCESS;
-
-    kstat_named_t *kn;
-
-    if (mKC == 0 || mSysPages == 0)
-        return VERR_INTERNAL_ERROR;
-
-    if (kstat_read(mKC, mSysPages, 0) == -1)
-    {
-        Log(("kstat_read(sys_pages) -> %d\n", errno));
-        return VERR_INTERNAL_ERROR;
-    }
-    if ((kn = (kstat_named_t *)kstat_data_lookup(mSysPages, (char *)"freemem")) == 0)
-    {
-        Log(("kstat_data_lookup(freemem) -> %d\n", errno));
-        return VERR_INTERNAL_ERROR;
-    }
-    *available = kn->value.ul * (PAGE_SIZE/1024);
-
-    if (kstat_read(mKC, mZFSCache, 0) != -1)
-    {
-        if (mZFSCache)
+        uint64_t cb;
+        int rc = RTSystemQueryAvailableRam(&cb);
+        if (RT_SUCCESS(rc))
         {
-            if ((kn = (kstat_named_t *)kstat_data_lookup(mZFSCache, (char *)"size")))
-            {
-                ulong_t ulSize = kn->value.ul;
-
-                if ((kn = (kstat_named_t *)kstat_data_lookup(mZFSCache, (char *)"c_min")))
-                {
-                    /*
-                     * Account for ZFS minimum arc cache size limit.
-                     * "c_min" is the target minimum size of the ZFS cache, and not the hard limit. It's possible
-                     * for "size" to shrink below "c_min" (e.g: during boot & high memory consumption).
-                     */
-                    ulong_t ulMin = kn->value.ul;
-                    *available += ulSize > ulMin ? (ulSize - ulMin) / 1024 : 0;
-                }
-                else
-                    Log(("kstat_data_lookup(c_min) ->%d\n", errno));
-            }
-            else
-                Log(("kstat_data_lookup(size) -> %d\n", errno));
+            *total = totalRAM;
+            *available = cb / 1024;
+            *used = *total - *available;
         }
-        else
-            Log(("mZFSCache missing.\n"));
-    }
-
-    if ((kn = (kstat_named_t *)kstat_data_lookup(mSysPages, (char *)"physmem")) == 0)
-    {
-        Log(("kstat_data_lookup(physmem) -> %d\n", errno));
-        return VERR_INTERNAL_ERROR;
-    }
-    *total = kn->value.ul * (PAGE_SIZE/1024);
-    *used = *total - *available;
-
-    return rc;
+        return rc;
 }
 
 int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
