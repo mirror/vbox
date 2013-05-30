@@ -279,7 +279,8 @@ RTR3DECL(int) RTTestCreateEx(const char *pszTest, uint32_t fFlags, RTTESTLVL enm
              * Associate it with our TLS entry unless there is already
              * an instance there.
              */
-            if ((fFlags & RTTEST_C_NO_TLS) && !RTTlsGet(g_iTestTls))
+            if (   !(fFlags & RTTEST_C_NO_TLS)
+                && !RTTlsGet(g_iTestTls))
                 rc = RTTlsSet(g_iTestTls, pTest);
             if (RT_SUCCESS(rc))
             {
