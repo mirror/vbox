@@ -1045,7 +1045,7 @@ STDMETHODIMP Host::COMGETTER(MemorySize)(ULONG *aSize)
     int rc = RTSystemQueryTotalRam(&cb);
     if (RT_FAILURE(rc))
         return E_FAIL;
-    *aSize = cb / _1M;
+    *aSize = (ULONG)(cb / _1M);
     return S_OK;
 }
 
@@ -1064,7 +1064,7 @@ STDMETHODIMP Host::COMGETTER(MemoryAvailable)(ULONG *aAvailable)
     int rc = RTSystemQueryAvailableRam(&cb);
     if (RT_FAILURE(rc))
         return E_FAIL;
-    *aAvailable = cb / _1M;
+    *aAvailable = (ULONG)(cb / _1M);
     return S_OK;
 }
 
