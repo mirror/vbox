@@ -46,7 +46,7 @@ void QIDialog::setVisible(bool fVisible)
         m_pEventLoop->exit();
 }
 
-int QIDialog::exec(bool fShow /* = true */)
+int QIDialog::exec(bool fShow /* = true */, bool fApplicationModal /*= false*/)
 {
     /* Reset the result-code: */
     setResult(QDialog::Rejected);
@@ -58,8 +58,8 @@ int QIDialog::exec(bool fShow /* = true */)
 
     /* Which is the current window-modality? */
     Qt::WindowModality oldModality = windowModality();
-    /* For the exec() time, set this attribute to 'window-modal': */
-    setWindowModality(Qt::WindowModal);
+    /* For the exec() time, set this attribute to 'window-modal' or 'application-modal': */
+    setWindowModality(!fApplicationModal ? Qt::WindowModal : Qt::ApplicationModal);
 
     /* Show ourself if requested: */
     if (fShow)

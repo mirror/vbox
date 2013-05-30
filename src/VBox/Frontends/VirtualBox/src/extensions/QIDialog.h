@@ -43,7 +43,7 @@ public:
 public slots:
 
     /* API: Exec stuff: */
-    int exec(bool fShow = true);
+    int exec(bool fShow = true, bool fApplicationModal = false);
 
 protected:
 
