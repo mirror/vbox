@@ -774,12 +774,9 @@ static void rtTestXmlStart(PRTTESTINT pTest, const char *pszTest)
     {
         rtTestXmlOutput(pTest, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
         pTest->eXmlState = RTTESTINT::kXmlPos_ElementEnd;
-        if (!(pTest->fFlags & RTTEST_C_XML_DELAY_TOP_TEST))
-        {
-            pTest->fXmlTopTestDone = true;
-            if (!pTest->fXmlOmitTopTest)
-                rtTestXmlElemStart(pTest, "Test", "name=%RMas", pszTest);
-        }
+        pTest->fXmlTopTestDone = !(pTest->fFlags & RTTEST_C_XML_DELAY_TOP_TEST) || pTest->fXmlOmitTopTest;
+        if (pTest->fXmlTopTestDone && !pTest->fXmlOmitTopTest)
+            rtTestXmlElemStart(pTest, "Test", "name=%RMas", pszTest);
     }
 }
 
@@ -938,7 +935,7 @@ static void rtTestXmlEnd(PRTTESTINT pTest)
          * final timestamp and some certainty that the XML is valid.
          */
         size_t i = pTest->cXmlElements;
-        AssertReturnVoid(i > 0 || pTest->fXmlOmitTopTest);
+        AssertReturnVoid(i > 0 || pTest->fXmlOmitTopTest || !pTest->fXmlTopTestDone);
         while (i-- > 1)
         {
             const char *pszTag = pTest->apszXmlElements[pTest->cXmlElements];
