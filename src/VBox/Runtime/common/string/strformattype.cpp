@@ -466,9 +466,9 @@ DECLHIDDEN(size_t) rtstrFormatType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, 
     {
         rtstrFormatTypeReadUnlock();
 
-        cch  = pfnOutput(pvArgOutput, "<missing:%R[", sizeof("<missing:%R[") - 1);
+        cch  = pfnOutput(pvArgOutput, RT_STR_TUPLE("<missing:%R["));
         cch += pfnOutput(pvArgOutput, pszType, pszTypeEnd - pszType);
-        cch += pfnOutput(pvArgOutput, "]>", sizeof("]>") - 1);
+        cch += pfnOutput(pvArgOutput, RT_STR_TUPLE("]>"));
     }
 
     return cch;

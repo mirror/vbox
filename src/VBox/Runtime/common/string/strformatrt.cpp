@@ -558,7 +558,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                         const char *pszLastSep;
                         const char *psz = pszLastSep = va_arg(*pArgs, const char *);
                         if (!VALID_PTR(psz))
-                            return pfnOutput(pvArgOutput, "<null>", sizeof("<null>") - 1);
+                            return pfnOutput(pvArgOutput, RT_STR_TUPLE("<null>"));
 
                         while ((ch = *psz) != '\0')
                         {
@@ -602,7 +602,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                         const char *pszStart;
                         const char *psz = pszStart = va_arg(*pArgs, const char *);
                         if (!VALID_PTR(psz))
-                            return pfnOutput(pvArgOutput, "<null>", sizeof("<null>") - 1);
+                            return pfnOutput(pvArgOutput, RT_STR_TUPLE("<null>"));
 
                         while ((ch = *psz) != '\0' && ch != '(')
                         {
@@ -707,7 +707,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                             }
                         }
                         else
-                            return pfnOutput(pvArgOutput, "<null>", sizeof("<null>") - 1);
+                            return pfnOutput(pvArgOutput, RT_STR_TUPLE("<null>"));
                         break;
                     }
 
@@ -903,7 +903,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                  * If it's a pointer, we'll check if it's valid before going on.
                  */
                 if ((s_aTypes[i].fFlags & RTST_FLAGS_POINTER) && !VALID_PTR(u.pv))
-                    return pfnOutput(pvArgOutput, "<null>", sizeof("<null>") - 1);
+                    return pfnOutput(pvArgOutput, RT_STR_TUPLE("<null>"));
 
                 /*
                  * Format the output.

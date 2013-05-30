@@ -544,7 +544,7 @@ GVMMR0DECL(int) GVMMR0SetConfig(PSUPDRVSESSION pSession, const char *pszName, ui
     /*
      * String switch time!
      */
-    if (strncmp(pszName, "/GVMM/", sizeof("/GVMM/") - 1))
+    if (strncmp(pszName, RT_STR_TUPLE("/GVMM/")))
         return VERR_CFGM_VALUE_NOT_FOUND; /* borrow status codes from CFGM... */
     int rc = VINF_SUCCESS;
     pszName += sizeof("/GVMM/") - 1;
@@ -612,7 +612,7 @@ GVMMR0DECL(int) GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, 
     /*
      * String switch time!
      */
-    if (strncmp(pszName, "/GVMM/", sizeof("/GVMM/") - 1))
+    if (strncmp(pszName, RT_STR_TUPLE("/GVMM/")))
         return VERR_CFGM_VALUE_NOT_FOUND; /* borrow status codes from CFGM... */
     int rc = VINF_SUCCESS;
     pszName += sizeof("/GVMM/") - 1;

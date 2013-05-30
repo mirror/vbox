@@ -476,7 +476,7 @@ static int usbProxyLinuxFindActiveConfigUsbfs(PUSBPROXYDEV pProxyDev, const char
                         continue;
 
                     /* Skip ahead to 'Bus' and compare */
-                    psz = RTStrStripL(psz + 2); Assert(!strncmp(psz, "Bus=", 4));
+                    psz = RTStrStripL(psz + 2); Assert(!strncmp(psz, RT_STR_TUPLE("Bus=")));
                     psz = RTStrStripL(psz + 4);
                     char *pszNext;
                     uint32_t u;
@@ -624,7 +624,7 @@ static int usbProxyLinuxOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, voi
      * Are we using sysfs or usbfs?
      */
 #ifdef VBOX_USB_WITH_SYSFS
-    fUsingSysfs = strncmp(pszAddress, "sysfs:", sizeof("sysfs:") - 1) == 0;
+    fUsingSysfs = strncmp(pszAddress, RT_STR_TUPLE("sysfs:")) == 0;
     if (fUsingSysfs)
     {
         pszDevNode = strstr(pszAddress, "//device:");
@@ -948,7 +948,7 @@ static int usb_reset_logical_reconnect(PUSBPROXYDEV pDev)
                 /* If it is a serial number string, skip past
                  * "SerialNumber="
                  */
-                if ( strncmp(psz, "SerialNumber=", sizeof("SerialNumber=") - 1) )
+                if (strncmp(psz, RT_STR_TUPLE("SerialNumber=")))
                     break;
 
                 Log2(("usb_reset_logical_reconnect: %s\n", buf));

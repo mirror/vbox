@@ -197,7 +197,7 @@ VMMR3_INT_DECL(int) FTMR3Term(PVM pVM)
 
 static int ftmR3TcpWriteACK(PVM pVM)
 {
-    int rc = RTTcpWrite(pVM->ftm.s.hSocket, "ACK\n", sizeof("ACK\n") - 1);
+    int rc = RTTcpWrite(pVM->ftm.s.hSocket, RT_STR_TUPLE("ACK\n"));
     if (RT_FAILURE(rc))
     {
         LogRel(("FTSync: RTTcpWrite(,ACK,) -> %Rrc\n", rc));
@@ -285,7 +285,7 @@ static int ftmR3TcpReadACK(PVM pVM, const char *pszWhich, const char *pszNAckMsg
     if (!strcmp(szMsg, "ACK"))
         return VINF_SUCCESS;
 
-    if (!strncmp(szMsg, "NACK=", sizeof("NACK=") - 1))
+    if (!strncmp(szMsg, RT_STR_TUPLE("NACK=")))
     {
         char *pszMsgText = strchr(szMsg, ';');
         if (pszMsgText)
@@ -333,7 +333,7 @@ static int ftmR3TcpReadACK(PVM pVM, const char *pszWhich, const char *pszNAckMsg
  */
 static int ftmR3TcpSubmitCommand(PVM pVM, const char *pszCommand, bool fWaitForAck = true)
 {
-    int rc = RTTcpSgWriteL(pVM->ftm.s.hSocket, 2, pszCommand, strlen(pszCommand), "\n", sizeof("\n") - 1);
+    int rc = RTTcpSgWriteL(pVM->ftm.s.hSocket, 2, pszCommand, strlen(pszCommand), RT_STR_TUPLE("\n"));
     if (RT_FAILURE(rc))
         return rc;
     if (!fWaitForAck)

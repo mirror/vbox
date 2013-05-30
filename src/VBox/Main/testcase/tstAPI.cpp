@@ -1157,7 +1157,7 @@ int main(int argc, char *argv[])
     RTPrintf("\n");
 #endif
 
-#if 0
+#if 1
     do {
         // Get host
         ComPtr<IHost> host;

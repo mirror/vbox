@@ -41,14 +41,14 @@ static PRTLOGGER dbgfR3LogResolvedLogger(const char **ppsz)
 {
     PRTLOGGER   pLogger;
     const char *psz = *ppsz;
-    if (!strncmp(psz, "release:", sizeof("release:") - 1))
+    if (!strncmp(psz, RT_STR_TUPLE("release:")))
     {
         *ppsz += sizeof("release:") - 1;
         pLogger = RTLogRelDefaultInstance();
     }
     else
     {
-        if (!strncmp(psz, "debug:", sizeof("debug:") - 1))
+        if (!strncmp(psz, RT_STR_TUPLE("debug:")))
             *ppsz += sizeof("debug:") - 1;
         pLogger = RTLogDefaultInstance();
     }
