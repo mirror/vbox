@@ -104,7 +104,6 @@ private:
 
     FsMap             mFsMap;
     uint32_t          mCpus;
-
     ULONG             totalRAM;
 };
 
@@ -281,15 +280,16 @@ int CollectorSolaris::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, ui
 
 int CollectorSolaris::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
-        uint64_t cb;
-        int rc = RTSystemQueryAvailableRam(&cb);
-        if (RT_SUCCESS(rc))
-        {
-            *total = totalRAM;
-            *available = cb / 1024;
-            *used = *total - *available;
-        }
-        return rc;
+    AssertReturn(totalRAM, VERR_INTERNAL_ERROR);
+    uint64_t cb;
+    int rc = RTSystemQueryAvailableRam(&cb);
+    if (RT_SUCCESS(rc))
+    {
+        *total = totalRAM;
+        *available = cb / 1024;
+        *used = *total - *available;
+    }
+    return rc;
 }
 
 int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, ULONG *used)

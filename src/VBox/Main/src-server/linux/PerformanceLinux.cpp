@@ -29,6 +29,7 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 #include <iprt/mp.h>
 
 #include <map>
@@ -79,6 +80,7 @@ private:
     uint64_t     mUser, mKernel, mIdle;
     uint64_t     mSingleUser, mSingleKernel, mSingleIdle;
     uint32_t     mHZ;
+    ULONG        totalRAM;
 };
 
 CollectorHAL *createHAL()
@@ -99,6 +101,13 @@ CollectorLinux::CollectorLinux()
     else
         mHZ = hz;
     LogFlowThisFunc(("mHZ=%u\n", mHZ));
+
+    uint64_t cb;
+    int rc = RTSystemQueryTotalRam(&cb);
+    if (RT_FAILURE(rc))
+        totalRAM = 0;
+    else
+        totalRAM = (ULONG)(cb / 1024);
 }
 
 int CollectorLinux::preCollect(const CollectorHints& hints, uint64_t /* iTick */)
@@ -201,28 +210,15 @@ int CollectorLinux::getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint
 
 int CollectorLinux::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
-    int rc = VINF_SUCCESS;
-    ULONG buffers, cached;
-    FILE *f = fopen("/proc/meminfo", "r");
-
-    if (f)
+    AssertReturn(totalRAM, VERR_INTERNAL_ERROR);
+    uint64_t cb;
+    int rc = RTSystemQueryAvailableRam(&cb);
+    if (RT_SUCCESS(rc))
     {
-        int processed = fscanf(f, "MemTotal: %u kB\n", total);
-        processed    += fscanf(f, "MemFree: %u kB\n", available);
-        processed    += fscanf(f, "Buffers: %u kB\n", &buffers);
-        processed    += fscanf(f, "Cached: %u kB\n", &cached);
-        if (processed == 4)
-        {
-            *available += buffers + cached;
-            *used       = *total - *available;
-        }
-        else
-            rc = VERR_FILE_IO_ERROR;
-        fclose(f);
+        *total = totalRAM;
+        *available = cb / 1024;
+        *used = *total - *available;
     }
-    else
-        rc = VERR_ACCESS_DENIED;
-
     return rc;
 }
 

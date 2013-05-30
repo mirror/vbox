@@ -65,7 +65,7 @@ public:
     virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
     virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 private:
-    ULONG totalRAM;
+    ULONG    totalRAM;
     uint32_t nCpus;
 };
 
@@ -115,6 +115,7 @@ int CollectorDarwin::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_
 
 int CollectorDarwin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
+    AssertReturn(totalRAM, VERR_INTERNAL_ERROR);
     uint64_t cb;
     int rc = RTSystemQueryAvailableRam(&cb);
     if (RT_SUCCESS(rc))
