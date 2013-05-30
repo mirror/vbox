@@ -48,6 +48,7 @@
 namespace pm {
 
     typedef libzfs_handle_t *(*PFNZFSINIT)(void);
+    typedef void (*PFNZFSFINI)(libzfs_handle_t *);
     typedef zfs_handle_t *(*PFNZFSOPEN)(libzfs_handle_t *, const char *, int);
     typedef void (*PFNZFSCLOSE)(zfs_handle_t *);
     typedef uint64_t (*PFNZFSPROPGETINT)(zfs_handle_t *, zfs_prop_t);
@@ -90,6 +91,7 @@ private:
     void             *mZfsSo;
     libzfs_handle_t  *mZfsLib;
     PFNZFSINIT        mZfsInit;
+    PFNZFSFINI        mZfsFini;
     PFNZFSOPEN        mZfsOpen;
     PFNZFSCLOSE       mZfsClose;
     PFNZFSPROPGETINT  mZfsPropGetInt;
@@ -139,6 +141,7 @@ CollectorSolaris::CollectorSolaris()
     if (mZfsSo)
     {
         mZfsInit        =        (PFNZFSINIT)dlsym(mZfsSo, "libzfs_init");
+        mZfsFini        =        (PFNZFSFINI)dlsym(mZfsSo, "libzfs_fini");
         mZfsOpen        =        (PFNZFSOPEN)dlsym(mZfsSo, "zfs_open");
         mZfsClose       =       (PFNZFSCLOSE)dlsym(mZfsSo, "zfs_close");
         mZfsPropGetInt  =  (PFNZFSPROPGETINT)dlsym(mZfsSo, "zfs_prop_get_int");
@@ -163,6 +166,9 @@ CollectorSolaris::~CollectorSolaris()
 {
     if (mKC)
         kstat_close(mKC);
+    /* Not calling libzfs_fini() causes file descriptor leaks (#6788). */
+    if (mZfsFini && mZfsLib)
+        mZfsFini(mZfsLib);
     if (mZfsSo)
         dlclose(mZfsSo);
 }
