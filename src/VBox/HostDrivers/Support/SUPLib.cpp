@@ -1672,7 +1672,7 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
      */
     /** @todo is this actually used??? */
     /* skip the 64-bit ELF import prefix first. */
-    if (!strncmp(pszSymbol, "SUPR0$", sizeof("SUPR0$") - 1))
+    if (!strncmp(pszSymbol, RT_STR_TUPLE("SUPR0$")))
         pszSymbol += sizeof("SUPR0$") - 1;
 
     /*

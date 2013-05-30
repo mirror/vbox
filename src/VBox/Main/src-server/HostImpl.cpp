@@ -2277,7 +2277,7 @@ static int solarisWalkDeviceNodeForDVD(di_node_t Node, void *pvArg)
                             {
                                 char *pszSlice = solarisGetSliceFromPath(pszDevLinkPath);
                                 if (   pszSlice && !strcmp(pszSlice, "s2")
-                                    && !strncmp(pszDevLinkPath, "/dev/rdsk", sizeof("/dev/rdsk") - 1))   /* We want only raw disks */
+                                    && !strncmp(pszDevLinkPath, RT_STR_TUPLE("/dev/rdsk")))   /* We want only raw disks */
                                 {
                                     /*
                                      * We've got a fully qualified DVD drive. Add it to the list.
@@ -2729,9 +2729,9 @@ void Host::parseMountTable(char *mountTable, std::list< ComObjPtr<Medium> > &lis
             {
                 // skip devices we are not interested in
                 if ((*mountName && mountName[0] == '/') &&                      // skip 'fake' devices (like -hosts, proc, fd, swap)
-                    (*mountFSType && (strncmp(mountFSType, "devfs", 5) != 0 &&  // skip devfs (i.e. /devices)
-                                      strncmp(mountFSType, "dev", 3) != 0 &&    // skip dev (i.e. /dev)
-                                      strncmp(mountFSType, "lofs", 4) != 0)))   // skip loop-back file-system (lofs)
+                    (*mountFSType && (strncmp(mountFSType, RT_STR_TUPLE("devfs")) != 0 &&  // skip devfs (i.e. /devices)
+                                      strncmp(mountFSType, RT_STR_TUPLE("dev")) != 0 &&    // skip dev (i.e. /dev)
+                                      strncmp(mountFSType, RT_STR_TUPLE("lofs")) != 0)))   // skip loop-back file-system (lofs)
                 {
                     char *rawDevName = getfullrawname((char *)mountName);
                     if (validateDevice(rawDevName, true))

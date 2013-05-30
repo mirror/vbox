@@ -1087,7 +1087,7 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
             char *pszMarker = strstr(Entry.szName, "-_-");
             if (   pszMarker
                 && (   !strcmp(pszMarker, "-_-uninst")
-                    || !strncmp(pszMarker, "-_-inst", sizeof("-_-inst") - 1)))
+                    || !strncmp(pszMarker, RT_STR_TUPLE("-_-inst"))))
                 fCandidate = VBoxExtPackIsValidMangledName(Entry.szName, pszMarker - &Entry.szName[0]);
             if (fCandidate)
             {

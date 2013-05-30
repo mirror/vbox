@@ -93,9 +93,9 @@ static DECLCALLBACK(size_t) vmmFormatTypeVmCpuSet(PFNRTSTROUTPUT pfnOutput, void
         cCpus = 0;
     }
     if (cCpus == 0)
-        return pfnOutput(pvArgOutput, "<empty>", sizeof("<empty>") - 1);
+        return pfnOutput(pvArgOutput, RT_STR_TUPLE("<empty>"));
     if (cCpus == RT_ELEMENTS(pSet->au32Bitmap) * 32)
-        return pfnOutput(pvArgOutput, "<full>", sizeof("<full>") - 1);
+        return pfnOutput(pvArgOutput, RT_STR_TUPLE("<full>"));
 
     /*
      * Print cpus that are present: {1,2,7,9 ... }

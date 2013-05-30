@@ -297,10 +297,10 @@ static int getSmcDeviceKey(IMachine *pMachine, BSTR *aKey, bool *pfGetKeyFromRea
         char szProdName[256];
         szProdName[0] = '\0';
         RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_NAME, szProdName, sizeof(szProdName));
-        if (   (   !strncmp(szProdName, "Mac", 3)
-                || !strncmp(szProdName, "iMac", 4)
-                || !strncmp(szProdName, "iMac", 4)
-                || !strncmp(szProdName, "Xserve", 6)
+        if (   (   !strncmp(szProdName, RT_STR_TUPLE("Mac"))
+                || !strncmp(szProdName, RT_STR_TUPLE("iMac"))
+                || !strncmp(szProdName, RT_STR_TUPLE("iMac"))
+                || !strncmp(szProdName, RT_STR_TUPLE("Xserve"))
                )
             && !strchr(szProdName, ' ')                             /* no spaces */
             && RT_C_IS_DIGIT(szProdName[strlen(szProdName) - 1])    /* version number */
@@ -2932,15 +2932,15 @@ int Console::configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachi
                 uint64_t u64Value;
 
                 /* check for type prefix first. */
-                if (!strncmp(strCFGMValueUtf8.c_str(), "string:", sizeof("string:") - 1))
+                if (!strncmp(strCFGMValueUtf8.c_str(), RT_STR_TUPLE("string:")))
                     InsertConfigString(pNode, pszCFGMValueName, strCFGMValueUtf8.c_str() + sizeof("string:") - 1);
-                else if (!strncmp(strCFGMValueUtf8.c_str(), "integer:", sizeof("integer:") - 1))
+                else if (!strncmp(strCFGMValueUtf8.c_str(), RT_STR_TUPLE("integer:")))
                 {
                     rc = RTStrToUInt64Full(strCFGMValueUtf8.c_str() + sizeof("integer:") - 1, 0, &u64Value);
                     if (RT_SUCCESS(rc))
                         rc = CFGMR3InsertInteger(pNode, pszCFGMValueName, u64Value);
                 }
-                else if (!strncmp(strCFGMValueUtf8.c_str(), "bytes:", sizeof("bytes:") - 1))
+                else if (!strncmp(strCFGMValueUtf8.c_str(), RT_STR_TUPLE("bytes:")))
                 {
                     char const *pszBase64 = strCFGMValueUtf8.c_str() + sizeof("bytes:") - 1;
                     ssize_t cbValue = RTBase64DecodedSize(pszBase64, NULL);
@@ -4348,7 +4348,7 @@ int Console::configNetwork(const char *pszDevice,
                  * This works and performs better than bridging a physical
                  * interface via the current FreeBSD vboxnetflt implementation.
                  */
-                if (!strncmp(pszBridgedIfName, "tap", sizeof "tap" - 1)) {
+                if (!strncmp(pszBridgedIfName, RT_STR_TUPLE("tap"))) {
                     hrc = attachToTapInterface(aNetworkAdapter);
                     if (FAILED(hrc))
                     {

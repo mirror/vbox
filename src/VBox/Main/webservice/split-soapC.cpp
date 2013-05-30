@@ -139,9 +139,9 @@ int main(int argc, char *argv[])
             cbWritten += cbLine;
 
             /* process nesting depth information */
-            if (!strncmp(pLine, "#if", 3))
+            if (!strncmp(pLine, RT_STR_TUPLE("#if")))
                 cIfNesting++;
-            else if (!strncmp(pLine, "#endif", 6))
+            else if (!strncmp(pLine, RT_STR_TUPLE("#endif")))
             {
                 cIfNesting--;
                 if (!cBraceNesting && !cIfNesting)
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
             }
 
             /* look for static variables used for enum conversion. */
-            if (!strncmp(pLine, "static const struct soap_code_map", sizeof("static const struct soap_code_map") - 1))
+            if (!strncmp(pLine, RT_STR_TUPLE("static const struct soap_code_map")))
                 cLinesSinceStaticMap = 0;
             else
                 cLinesSinceStaticMap++;

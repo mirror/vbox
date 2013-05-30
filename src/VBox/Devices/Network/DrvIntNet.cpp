@@ -1660,7 +1660,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /* Temporary hack: attach to a network with the name 'if=en0' and you're hitting the wire. */
     if (    !OpenReq.szTrunk[0]
         &&   OpenReq.enmTrunkType == kIntNetTrunkType_None
-        &&  !strncmp(pThis->szNetwork, "if=en", sizeof("if=en") - 1)
+        &&  !strncmp(pThis->szNetwork, RT_STR_TUPLE("if=en"))
         &&  RT_C_IS_DIGIT(pThis->szNetwork[sizeof("if=en") - 1])
         &&  !pThis->szNetwork[sizeof("if=en")])
     {
@@ -1670,7 +1670,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /* Temporary hack: attach to a network with the name 'wif=en0' and you're on the air. */
     if (    !OpenReq.szTrunk[0]
         &&   OpenReq.enmTrunkType == kIntNetTrunkType_None
-        &&  !strncmp(pThis->szNetwork, "wif=en", sizeof("wif=en") - 1)
+        &&  !strncmp(pThis->szNetwork, RT_STR_TUPLE("wif=en"))
         &&  RT_C_IS_DIGIT(pThis->szNetwork[sizeof("wif=en") - 1])
         &&  !pThis->szNetwork[sizeof("wif=en")])
     {

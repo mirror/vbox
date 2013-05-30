@@ -82,7 +82,7 @@ static uint32_t rtMpLinuxGetFrequency(RTCPUID idCpu)
     while (fgets(sz, sizeof(sz), pFile))
     {
         char *psz;
-        if (   !strncmp(sz, "processor", 9)
+        if (   !strncmp(sz, RT_STR_TUPLE("processor"))
             && (sz[10] == ' ' || sz[10] == '\t' || sz[10] == ':')
             && (psz = strchr(sz, ':')))
         {
@@ -93,7 +93,7 @@ static uint32_t rtMpLinuxGetFrequency(RTCPUID idCpu)
                 idCpuFound = iCpu;
         }
         else if (   idCpu == idCpuFound
-                 && !strncmp(sz, "cpu MHz", 7)
+                 && !strncmp(sz, RT_STR_TUPLE("cpu MHz"))
                  && (sz[10] == ' ' || sz[10] == '\t' || sz[10] == ':')
                  && (psz = strchr(sz, ':')))
         {

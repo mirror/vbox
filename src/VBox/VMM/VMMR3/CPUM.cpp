@@ -3025,17 +3025,17 @@ static void cpumR3InfoParseArg(const char *pszArgs, CPUMDUMPTYPE *penmType, cons
     }
     else
     {
-        if (!strncmp(pszArgs, "verbose", sizeof("verbose") - 1))
+        if (!strncmp(pszArgs, RT_STR_TUPLE("verbose")))
         {
             pszArgs += 7;
             *penmType = CPUMDUMPTYPE_VERBOSE;
         }
-        else if (!strncmp(pszArgs, "terse", sizeof("terse") - 1))
+        else if (!strncmp(pszArgs, RT_STR_TUPLE("terse")))
         {
             pszArgs += 5;
             *penmType = CPUMDUMPTYPE_TERSE;
         }
-        else if (!strncmp(pszArgs, "default", sizeof("default") - 1))
+        else if (!strncmp(pszArgs, RT_STR_TUPLE("default")))
         {
             pszArgs += 7;
             *penmType = CPUMDUMPTYPE_DEFAULT;

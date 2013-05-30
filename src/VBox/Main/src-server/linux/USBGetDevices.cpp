@@ -357,11 +357,11 @@ static int usbReadSpeed(const char *pszValue, USBDEVICESPEED *pSpd, char **ppszN
 {
     pszValue = RTStrStripL(pszValue);
     /* verified with Linux 2.4.0 ... Linux 2.6.25 */
-    if (!strncmp(pszValue, "1.5", 3))
+    if (!strncmp(pszValue, RT_STR_TUPLE("1.5")))
         *pSpd = USBDEVICESPEED_LOW;
-    else if (!strncmp(pszValue, "12 ", 3))
+    else if (!strncmp(pszValue, RT_STR_TUPLE("12 ")))
         *pSpd = USBDEVICESPEED_FULL;
-    else if (!strncmp(pszValue, "480", 3))
+    else if (!strncmp(pszValue, RT_STR_TUPLE("480")))
         *pSpd = USBDEVICESPEED_HIGH;
     else
         *pSpd = USBDEVICESPEED_UNKNOWN;
@@ -1122,7 +1122,7 @@ static int usbGetPortFromSysfsPath(const char *pszPath, uint8_t *pu8Port)
     if (!pchDash && !pchDot)
     {
         /* No -/. so it must be a root hub. Check that it's usb<something>. */
-        if (strncmp(pszLastComp, "usb", sizeof("usb") - 1) != 0)
+        if (strncmp(pszLastComp, RT_STR_TUPLE("usb")) != 0)
         {
             Log(("usbGetPortFromSysfsPath(%s): failed [2]\n", pszPath));
             return VERR_INVALID_PARAMETER;
