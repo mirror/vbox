@@ -133,6 +133,18 @@ static CLIPX11FORMAT clipFindX11FormatByAtom(CLIPBACKEND *pCtx, Atom atomFormat)
     return NIL_CLIPX11FORMAT;
 }
 
+/** Lookup the X11 format matching a given X11 atom text.
+ * @returns the format on success, NIL_CLIPX11FORMAT on failure
+ * @param   widget a valid Xt widget
+ */
+static CLIPX11FORMAT clipFindX11FormatByAtomText(CLIPBACKEND *pCtx, const char *pcsz)
+{
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aFormats); ++i)
+        if (!strcmp(g_aFormats[i].pcszAtom, pcsz))
+            return i;
+    return NIL_CLIPX11FORMAT;
+}
+
 /**
  * Enumerates supported X11 clipboard formats corresponding to a given VBox
  * format.
@@ -337,7 +349,7 @@ static void clipReportEmptyX11CB(CLIPBACKEND *pCtx)
  * @param  cTargets  the size of the list in @a pTargets
  */
 static CLIPX11FORMAT clipGetTextFormatFromTargets(CLIPBACKEND *pCtx,
-                                                  Atom *pTargets,
+                                                  CLIPX11FORMAT *pTargets,
                                                   size_t cTargets)
 {
     CLIPX11FORMAT bestTextFormat = NIL_CLIPX11FORMAT;
@@ -346,7 +358,7 @@ static CLIPX11FORMAT clipGetTextFormatFromTargets(CLIPBACKEND *pCtx,
     AssertReturn(VALID_PTR(pTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
     for (unsigned i = 0; i < cTargets; ++i)
     {
-        CLIPX11FORMAT format = clipFindX11FormatByAtom(pCtx, pTargets[i]);
+        CLIPX11FORMAT format = pTargets[i];
         if (format != NIL_CLIPX11FORMAT)
         {
             if (   (clipVBoxFormatForX11Format(format)
@@ -365,16 +377,16 @@ static CLIPX11FORMAT clipGetTextFormatFromTargets(CLIPBACKEND *pCtx,
 static bool clipTestTextFormatConversion(CLIPBACKEND *pCtx)
 {
     bool success = true;
-    Atom targets[2];
+    CLIPX11FORMAT targets[2];
     CLIPX11FORMAT x11Format;
-    targets[0] = clipGetAtom(pCtx, "text/plain");
-    targets[1] = clipGetAtom(pCtx, "TARGETS");
-    x11Format = clipGetTextFormatFromTargets(pCtx, targets, 3);
+    targets[0] = clipFindX11FormatByAtomText(pCtx, "text/plain");
+    targets[1] = clipFindX11FormatByAtomText(pCtx, "image/bmp");
+    x11Format = clipGetTextFormatFromTargets(pCtx, targets, 2);
     if (clipRealFormatForX11Format(x11Format) != TEXT)
         success = false;
-    targets[0] = clipGetAtom(pCtx, "UTF8_STRING");
-    targets[1] = clipGetAtom(pCtx, "text/plain");
-    x11Format = clipGetTextFormatFromTargets(pCtx, targets, 3);
+    targets[0] = clipFindX11FormatByAtomText(pCtx, "UTF8_STRING");
+    targets[1] = clipFindX11FormatByAtomText(pCtx, "text/plain");
+    x11Format = clipGetTextFormatFromTargets(pCtx, targets, 2);
     if (clipRealFormatForX11Format(x11Format) != UTF8)
         success = false;
     return success;
@@ -390,7 +402,7 @@ static bool clipTestTextFormatConversion(CLIPBACKEND *pCtx)
  * @param  cTargets  the size of the list in @a pTargets
  */
 static CLIPX11FORMAT clipGetBitmapFormatFromTargets(CLIPBACKEND *pCtx,
-                                                    Atom *pTargets,
+                                                    CLIPX11FORMAT *pTargets,
                                                     size_t cTargets)
 {
     CLIPX11FORMAT bestBitmapFormat = NIL_CLIPX11FORMAT;
@@ -399,7 +411,7 @@ static CLIPX11FORMAT clipGetBitmapFormatFromTargets(CLIPBACKEND *pCtx,
     AssertReturn(VALID_PTR(pTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
     for (unsigned i = 0; i < cTargets; ++i)
     {
-        CLIPX11FORMAT format = clipFindX11FormatByAtom(pCtx, pTargets[i]);
+        CLIPX11FORMAT format = pTargets[i];
         if (format != NIL_CLIPX11FORMAT)
         {
             if (   (clipVBoxFormatForX11Format(format)
@@ -422,8 +434,8 @@ static CLIPX11FORMAT clipGetBitmapFormatFromTargets(CLIPBACKEND *pCtx,
  * @param  pTargets  the list of targets
  * @param  cTargets  the size of the list in @a pTargets
  */
-static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
-                                      size_t cTargets)
+static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx,
+                                      CLIPX11FORMAT *pTargets, size_t cTargets)
 {
     AssertPtrReturnVoid(pCtx);
     AssertPtrReturnVoid(pTargets);
@@ -433,16 +445,6 @@ static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
     if (pCtx->X11TextFormat != bestTextFormat)
     {
         pCtx->X11TextFormat = bestTextFormat;
-#if defined(DEBUG) && !defined(TESTCASE)
-        for (unsigned i = 0; i < cTargets; ++i)
-            if (pTargets[i])
-            {
-                char *pszName = XGetAtomName(XtDisplay(pCtx->widget),
-                                                   pTargets[i]);
-                LogRel2(("%s: found target %s\n", __PRETTY_FUNCTION__, pszName));
-                XFree(pszName);
-            }
-#endif
     }
     pCtx->X11BitmapFormat = INVALID;  /* not yet supported */
     bestBitmapFormat = clipGetBitmapFormatFromTargets(pCtx, pTargets, cTargets);
@@ -459,7 +461,7 @@ static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
  * @param  pTargets  the array of atoms describing the targets supported
  * @param  cTargets  the size of the array @a pTargets
  */
-static void clipUpdateX11Targets(CLIPBACKEND *pCtx, Atom *pTargets,
+static void clipUpdateX11Targets(CLIPBACKEND *pCtx, CLIPX11FORMAT *pTargets,
                                  size_t cTargets)
 {
     LogRel2 (("%s: called\n", __PRETTY_FUNCTION__));
@@ -474,7 +476,7 @@ static void clipQueryX11CBFormats(CLIPBACKEND *pCtx);
  * "targets" information obtained from the X11 clipboard.
  * @note  callback for XtGetSelectionValue
  */
-static void clipConvertX11Targets(Widget, XtPointer pClientData,
+static void clipConvertX11Targets(Widget widget, XtPointer pClientData,
                                   Atom * /* selection */, Atom *atomType,
                                   XtPointer pValue, long unsigned int *pcLen,
                                   int *piFormat)
@@ -483,6 +485,39 @@ static void clipConvertX11Targets(Widget, XtPointer pClientData,
             reinterpret_cast<CLIPBACKEND *>(pClientData);
     LogRel2(("clipConvertX11Targets: pValue=%p, *pcLen=%u, *atomType=%d, XT_CONVERT_FAIL=%d\n",
              pValue, *pcLen, *atomType, XT_CONVERT_FAIL));
+    CLIPX11FORMAT *pFormats = NULL;
+    if (*pcLen)
+    {
+        pFormats = (CLIPX11FORMAT *)RTMemAllocZ(*pcLen * sizeof(CLIPX11FORMAT));
+        if (!pFormats)
+        {
+            XtFree((char *)pValue);
+            return;
+        }
+    }
+    if (pValue)
+    {
+        Atom *pAtoms = (Atom *)pValue;
+        unsigned i, j;
+#if defined(DEBUG) && !defined(TESTCASE)
+        for (i = 0; i < *pcLen; ++i)
+            if (pAtoms[i])
+            {
+                char *pszName = XGetAtomName(XtDisplay(widget), pAtoms[i]);
+                LogRel2(("%s: found target %s\n", __PRETTY_FUNCTION__,
+                         pszName));
+                XFree(pszName);
+            }
+#endif
+        for (i = 0; i < *pcLen; ++i)
+            for (j = 0; j < RT_ELEMENTS(g_aFormats); ++j)
+            {
+                Atom target = XInternAtom(XtDisplay(widget),
+                                          g_aFormats[j].pcszAtom, False);
+                if (*(pAtoms + i) == target)
+                    pFormats[i] = j;
+            }
+    }
     pCtx->fBusy = false;
     if (pCtx->fUpdateNeeded)
     {
@@ -496,10 +531,12 @@ static void clipConvertX11Targets(Widget, XtPointer pClientData,
                || (pValue == NULL))               /* No data available */
         {
             clipReportEmptyX11CB(pCtx);
+            RTMemFree(pFormats);
             return;
         }
-        clipUpdateX11Targets(pCtx, (Atom *)pValue, *pcLen);
+        clipUpdateX11Targets(pCtx, pFormats, *pcLen);
     }
+    RTMemFree(pFormats);
     XtFree(reinterpret_cast<char *>(pValue));
 }
 
@@ -1916,7 +1953,14 @@ static void clipSetSelectionValues(const char *pcszTarget, Atom type,
 
 static void clipSendTargetUpdate(CLIPBACKEND *pCtx)
 {
-    clipUpdateX11Targets(pCtx, g_selTarget, RT_ELEMENTS(g_selTarget));
+    CLIPX11FORMAT selTarget[RT_ELEMENTS(g_selTarget)];
+    unsigned i, j;
+    RT_ZERO(selTarget);
+    for (i = 0; i < RT_ELEMENTS(g_selTarget); ++i)
+        for (j = 0; j < RT_ELEMENTS(g_aFormats); ++j)
+            if (XInternAtom(NULL, g_aFormats[j].pcszAtom, 0) == g_selTarget[i])
+                selTarget[i] = j;
+    clipUpdateX11Targets(pCtx, selTarget, RT_ELEMENTS(selTarget));
 }
 
 /* Configure if and how the X11 TARGETS clipboard target will fail */
