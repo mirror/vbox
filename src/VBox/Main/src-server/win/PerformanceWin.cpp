@@ -89,7 +89,7 @@ private:
     PFNNQSI mpfnNtQuerySystemInformation;
     HMODULE mhNtDll;
 
-    ULONG totalRAM;
+    ULONG   totalRAM;
 };
 
 CollectorHAL *createHAL()
@@ -310,6 +310,7 @@ int CollectorWin::getHostCpuMHz(ULONG *mhz)
 
 int CollectorWin::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available)
 {
+    AssertReturn(totalRAM, VERR_INTERNAL_ERROR);
     uint64_t cb;
     int rc = RTSystemQueryAvailableRam(&cb);
     if (RT_SUCCESS(rc))
