@@ -492,6 +492,11 @@ typedef struct PATM
     /** Debug module for the patch memory. */
     RTDBGMOD                    hDbgModPatchMem;
 
+#if HC_ARCH_BITS == 32
+    /** Align statistics on a 8 byte boundary. */
+    uint32_t                    u32Alignment1;
+#endif
+
     STAMCOUNTER                 StatNrOpcodeRead;
     STAMCOUNTER                 StatDisabled;
     STAMCOUNTER                 StatUnusable;
