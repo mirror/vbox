@@ -15,6 +15,7 @@
 #include "cr_vreg.h"
 #include "cr_blitter.h"
 #include "spu_dispatch_table.h"
+#include "cr_dump.h"
 
 #include "state/cr_currentpointers.h"
 
@@ -528,6 +529,16 @@ typedef struct {
     uint32_t              NotifyEventMap[(CR_MAX_GUEST_MONITORS + 31)/32];
     uint32_t              cDisableEvent;
     PFNCRSERVERNOTIFYEVENT pfnNotifyEventCB;
+
+    SPUDispatchTable TmpCtxDispatch;
+
+#ifdef VBOX_WITH_CRSERVER_DUMPER
+    CR_RECORDER Recorder;
+    CR_BLITTER RecorderBlitter;
+    CR_DBGPRINT_DUMPER DbgPrintDumper;
+    CR_HTML_DUMPER HtmlDumper;
+    CR_DUMPER *pDumper;
+#endif
 
     /* @todo: should we use just one blitter?
      * we use two currently because the drawable attribs can differ*/

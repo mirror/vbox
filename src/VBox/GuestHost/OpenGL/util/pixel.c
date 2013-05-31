@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <iprt/string.h>
+
 #if defined(WINDOWS)
 # include <float.h>
 # define isnan(x) _isnan(x)
@@ -1840,4 +1842,20 @@ void crDumpNamedTGA(const char* fname, GLint w, GLint h, GLvoid *data)
     fwrite(data, w*h*4, 1, out);
 
     fclose(out);
+}
+
+void crDumpNamedTGAV(const char* fname, GLint w, GLint h, GLvoid *data, va_list va)
+{
+    char szName[4096];
+    RTStrPrintfV(szName, sizeof(szName), fname, va);
+    crDumpNamedTGA(szName, w, h, data);
+}
+
+void crDumpNamedTGAF(const char* fname, GLint w, GLint h, GLvoid *data, ...)
+{
+    va_list va;
+    int rc;
+    va_start(va, fname);
+    crDumpNamedTGAV(fname, w, h, data, va);
+    va_end(va);
 }

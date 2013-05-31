@@ -87,6 +87,7 @@ void CrBltTerm(PCR_BLITTER pBlitter)
 {
     if (pBlitter->Flags.CtxCreated)
         pBlitter->pDispatch->DestroyContext(pBlitter->CtxInfo.Base.id);
+    memset(pBlitter, 0, sizeof (pBlitter));
 }
 
 int CrBltMuralSetCurrent(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural)
@@ -514,7 +515,11 @@ static int crBltInitOnMakeCurent(PCR_BLITTER pBlitter)
 
 void CrBltLeave(PCR_BLITTER pBlitter)
 {
-    Assert(CrBltIsEntered(pBlitter));
+    if (!CrBltIsEntered(pBlitter))
+    {
+        crWarning("CrBltLeave: blitter not entered");
+        return;
+    }
 
     if (pBlitter->Flags.SupportsFBO)
     {
@@ -609,17 +614,29 @@ void CrBltCheckUpdateViewport(PCR_BLITTER pBlitter)
     crBltCheckSetupViewport(pBlitter, &DstSize, false);
 }
 
-void CrBltBlitTexMural(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
+void CrBltBlitTexMural(PCR_BLITTER pBlitter, bool fBb, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags)
 {
+    if (!CrBltIsEntered(pBlitter))
+    {
+        crWarning("CrBltBlitTexMural: blitter not entered");
+        return;
+    }
+
     RTRECTSIZE DstSize = {pBlitter->CurrentMural.width, pBlitter->CurrentMural.height};
 
     pBlitter->pDispatch->BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
 
-    crBltBlitTexBuf(pBlitter, pSrc, paSrcRects, GL_BACK, &DstSize, paDstRects, cRects, fFlags);
+    crBltBlitTexBuf(pBlitter, pSrc, paSrcRects, fBb ? GL_BACK : GL_FRONT, &DstSize, paDstRects, cRects, fFlags);
 }
 
 void CrBltBlitTexTex(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *pSrcRect, const VBOXVR_TEXTURE *pDst, const RTRECT *pDstRect, uint32_t cRects, uint32_t fFlags)
 {
+    if (!CrBltIsEntered(pBlitter))
+    {
+        crWarning("CrBltBlitTexTex: blitter not entered");
+        return;
+    }
+
     RTRECTSIZE DstSize = {(uint32_t)pDst->width, (uint32_t)pDst->height};
 
     pBlitter->pDispatch->BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, pBlitter->idFBO);
@@ -638,8 +655,117 @@ void CrBltBlitTexTex(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTR
 
 void CrBltPresent(PCR_BLITTER pBlitter)
 {
+    if (!CrBltIsEntered(pBlitter))
+    {
+        crWarning("CrBltPresent: blitter not entered");
+        return;
+    }
+
     if (pBlitter->CtxInfo.Base.visualBits & CR_DOUBLE_BIT)
         pBlitter->pDispatch->SwapBuffers(pBlitter->CurrentMural.Base.id, 0);
     else
         pBlitter->pDispatch->Flush();
 }
+
+static int crBltImgCreateForTex(const VBOXVR_TEXTURE *pSrc, CR_BLITTER_IMG *pDst, GLenum enmFormat)
+{
+    memset(pDst, 0, sizeof (*pDst));
+    if (enmFormat != GL_RGBA
+            && enmFormat != GL_BGRA)
+    {
+        crWarning("unsupported format 0x%x", enmFormat);
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    uint32_t bpp = 32;
+
+    uint32_t pitch = ((bpp * pSrc->width) + 7) >> 3;
+    uint32_t cbData = pitch * pSrc->height;
+    pDst->pvData = RTMemAllocZ(cbData);
+    if (!pDst->pvData)
+    {
+        crWarning("RTMemAlloc failed");
+        return VERR_NO_MEMORY;
+    }
+
+#ifdef DEBUG_misha
+    {
+        char *pTmp = (char*)pDst->pvData;
+        for (uint32_t i = 0; i < cbData; ++i)
+        {
+            pTmp[i] = (char)((1 << i) % 255);
+        }
+    }
+#endif
+
+    pDst->cbData = cbData;
+    pDst->enmFormat = enmFormat;
+    pDst->width = pSrc->width;
+    pDst->height = pSrc->height;
+    pDst->bpp = bpp;
+    pDst->pitch = pitch;
+    return VINF_SUCCESS;
+}
+
+VBOXBLITTERDECL(int) CrBltImgGetTex(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, GLenum enmFormat, CR_BLITTER_IMG *pDst)
+{
+    if (!CrBltIsEntered(pBlitter))
+    {
+        crWarning("CrBltImgGetTex: blitter not entered");
+        return VERR_INVALID_STATE;
+    }
+
+    int rc = crBltImgCreateForTex(pSrc, pDst, enmFormat);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("crBltImgCreateForTex failed, rc %d", rc);
+        return rc;
+    }
+    pBlitter->pDispatch->BindTexture(pSrc->target, pSrc->hwid);
+
+#ifdef DEBUG_misha
+    {
+        GLint width = 0, height = 0, depth = 0;
+        pBlitter->pDispatch->GetTexLevelParameteriv(pSrc->target, 0, GL_TEXTURE_WIDTH, &width);
+        pBlitter->pDispatch->GetTexLevelParameteriv(pSrc->target, 0, GL_TEXTURE_HEIGHT, &height);
+        pBlitter->pDispatch->GetTexLevelParameteriv(pSrc->target, 0, GL_TEXTURE_DEPTH, &depth);
+
+        Assert(width == pSrc->width);
+        Assert(height == pSrc->height);
+//        Assert(depth == pSrc->depth);
+    }
+#endif
+
+    pBlitter->pDispatch->GetTexImage(pSrc->target, 0, enmFormat, GL_UNSIGNED_BYTE, pDst->pvData);
+
+    pBlitter->pDispatch->BindTexture(pSrc->target, 0);
+    return VINF_SUCCESS;
+}
+
+VBOXBLITTERDECL(int) CrBltImgGetMural(PCR_BLITTER pBlitter, bool fBb, CR_BLITTER_IMG *pDst)
+{
+    if (!CrBltIsEntered(pBlitter))
+    {
+        crWarning("CrBltImgGetMural: blitter not entered");
+        return VERR_INVALID_STATE;
+    }
+
+    crWarning("NOT IMPLEMENTED");
+    return VERR_NOT_IMPLEMENTED;
+}
+
+VBOXBLITTERDECL(void) CrBltImgFree(PCR_BLITTER pBlitter, CR_BLITTER_IMG *pDst)
+{
+    if (!CrBltIsEntered(pBlitter))
+    {
+        crWarning("CrBltImgFree: blitter not entered");
+        return;
+    }
+
+    if (pDst->pvData)
+    {
+        RTMemFree(pDst->pvData);
+        pDst->pvData = NULL;
+    }
+}
+

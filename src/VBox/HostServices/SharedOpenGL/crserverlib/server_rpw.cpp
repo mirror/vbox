@@ -367,7 +367,7 @@ int crServerRpwInit(CR_SERVER_RPW *pWorker)
                          * (i.e. we need to switch offscreen rendering off before doing make current) */
                         CR_SERVER_CTX_SWITCH CtxSwitch;
 
-                        cr_serverCtxSwitchPrepare(&CtxSwitch, NULL);
+                        crServerCtxSwitchPrepare(&CtxSwitch, NULL);
 
                         cr_server.head_spu->dispatch_table.Flush();
 
@@ -382,7 +382,7 @@ int crServerRpwInit(CR_SERVER_RPW *pWorker)
                         else
                             cr_server.head_spu->dispatch_table.MakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, CR_RENDER_DEFAULT_CONTEXT_ID);
 
-                        cr_serverCtxSwitchPostprocess(&CtxSwitch);
+                        crServerCtxSwitchPostprocess(&CtxSwitch);
 
                         rc = RTThreadCreate(&pWorker->hThread, crServerRpwWorkerThread, pWorker, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "CrServerDw");
                         if (RT_SUCCESS(rc))

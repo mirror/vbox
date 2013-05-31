@@ -151,6 +151,13 @@ endif
 ifdef VBOX_WITH_CRHGSMI
 VBoxOGLcrserverlib_DEFS += ifdef VBOX_WITH_CRHGSMI
 endif
+ifdef VBOX_WITH_CRDUMPER
+VBoxOGLcrserverlib_DEFS        += VBOX_WITH_CRDUMPER
+endif
+ifdef VBOX_WITH_CRSERVER_DUMPER
+VBoxOGLcrserverlib_DEFS        += VBOX_WITH_CRSERVER_DUMPER
+endif
+
 
 #
 # Generate files for VBoxOGLcrserverlib

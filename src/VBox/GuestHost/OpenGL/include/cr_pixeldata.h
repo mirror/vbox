@@ -43,6 +43,8 @@ DECLEXPORT(void) crBitmapCopy( GLsizei width, GLsizei height, GLubyte *dstPtr,
 									 const GLubyte *srcPtr, const CRPixelPackState *srcPacking );
 
 DECLEXPORT(void) crDumpNamedTGA(const char *fname, GLint w, GLint h, GLvoid *data);
+DECLEXPORT(void) crDumpNamedTGAV(const char* fname, GLint w, GLint h, GLvoid *data, va_list va);
+DECLEXPORT(void) crDumpNamedTGAF(const char* fname, GLint w, GLint h, GLvoid *data, ...);
 DECLEXPORT(void) crDumpTGA(GLint w, GLint h, GLvoid *data);
 #ifdef __cplusplus
 }
