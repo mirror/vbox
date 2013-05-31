@@ -238,7 +238,10 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
         }
     }
 
-    strType = Global::OSTypeId(VBOXOSTYPE_Unknown);
+    if (c == ovf::CIMOSType_CIMOS_Other_64)
+        strType = Global::OSTypeId(VBOXOSTYPE_Unknown_x64);
+    else
+        strType = Global::OSTypeId(VBOXOSTYPE_Unknown);
 }
 
 /**
