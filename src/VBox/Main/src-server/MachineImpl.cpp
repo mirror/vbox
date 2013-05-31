@@ -1289,8 +1289,8 @@ STDMETHODIMP Machine::COMSETTER(ChipsetType)(ChipsetType_T aChipsetType)
         // Resize network adapter array, to be finalized on commit/rollback.
         // We must not throw away entries yet, otherwise settings are lost
         // without a way to roll back.
-        uint32_t newCount = Global::getMaxNetworkAdapters(aChipsetType);
-        uint32_t oldCount = mNetworkAdapters.size();
+        size_t newCount = Global::getMaxNetworkAdapters(aChipsetType);
+        size_t oldCount = mNetworkAdapters.size();
         if (newCount > oldCount)
         {
             mNetworkAdapters.resize(newCount);
@@ -9978,8 +9978,6 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
  */
 void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
 {
-    Utf8Str aStr;
-
     // deep copy extradata
     config.mapExtraDataItems = mData->pMachineConfigFile->mapExtraDataItems;
 
@@ -9992,22 +9990,21 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
     com::SafeArray<BYTE> iconByte;
     COMGETTER(Icon)(ComSafeArrayAsOutParam(iconByte));
     ssize_t cbData = iconByte.size();
-    if (cbData == 0)
-        throw setError(E_FAIL,
-                       tr("Icon Data length is zero. '%d'"),
-                       cbData);
-    ssize_t cchOut = RTBase64EncodedLength(cbData);
-    aStr.reserve(cchOut+1);
-    HRESULT rc = RTBase64Encode(iconByte.raw(), cbData,
-                                aStr.mutableRaw(), aStr.capacity(),
-                                NULL);
-    if (FAILED(rc))
-        throw setError(E_FAIL,
-                       tr("Failure to Encode Icon Data. '%s' (%d)"),
-                       aStr.mutableRaw(),
-                       rc);
-    aStr.jolt();
-    config.machineUserData.ovIcon = aStr.c_str();
+    if (cbData > 0)
+    {
+        ssize_t cchOut = RTBase64EncodedLength(cbData);
+        Utf8Str strIconData;
+        strIconData.reserve(cchOut+1);
+        int vrc = RTBase64Encode(iconByte.raw(), cbData,
+                                 strIconData.mutableRaw(), strIconData.capacity(),
+                                 NULL);
+        if (RT_FAILURE(vrc))
+            throw setError(E_FAIL, tr("Failure to Encode Icon Data. '%s' (%Rrc)"), strIconData.mutableRaw(), vrc);
+        strIconData.jolt();
+        config.machineUserData.ovIcon = strIconData;
+    }
+    else
+        config.machineUserData.ovIcon.setNull();
 
     if (    mData->mMachineState == MachineState_Saved
          || mData->mMachineState == MachineState_Restoring
@@ -10039,7 +10036,7 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
     config.fAborted = (mData->mMachineState == MachineState_Aborted);
     /// @todo Live Migration:        config.fTeleported = (mData->mMachineState == MachineState_Teleported);
 
-    rc = saveHardware(config.hardwareMachine, &config.debugging, &config.autostart);
+    HRESULT rc = saveHardware(config.hardwareMachine, &config.debugging, &config.autostart);
     if (FAILED(rc)) throw rc;
 
     rc = saveStorageControllers(config.storageMachine);

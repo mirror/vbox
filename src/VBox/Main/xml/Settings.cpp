@@ -4848,7 +4848,8 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         elmMachine.setAttribute("nameSync", machineUserData.fNameSync);
     if (machineUserData.strDescription.length())
         elmMachine.createChild("Description")->addContent(machineUserData.strDescription);
-    elmMachine.setAttribute("Icon", machineUserData.ovIcon);
+    if (machineUserData.ovIcon.length())
+        elmMachine.setAttribute("Icon", machineUserData.ovIcon);
     elmMachine.setAttribute("OSType", machineUserData.strOsType);
     if (    strStateFile.length()
          && !(fl & BuildMachineXML_SuppressSavedState)
@@ -5050,7 +5051,8 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         // setting, explicit long mode setting.
         if (   !hardwareMachine.strDefaultFrontend.isEmpty()
             || hardwareMachine.graphicsControllerType != GraphicsControllerType_VBoxVGA
-            || hardwareMachine.enmLongMode != Hardware::LongMode_Legacy)
+            || hardwareMachine.enmLongMode != Hardware::LongMode_Legacy
+            || machineUserData.ovIcon.length() > 0)
             m->sv = SettingsVersion_v1_14;
     }
 
