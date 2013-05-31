@@ -226,7 +226,7 @@ static int fd_seek(fdrive_t *drv, uint8_t head, uint8_t track, uint8_t sect,
                        drv->max_track, drv->last_sect);
         return 2;
     }
-    if (sect > drv->last_sect) {
+    if (sect > drv->last_sect || sect < 1) {
         FLOPPY_DPRINTF("try to read %d %02x %02x (max=%d %d %02x %02x)\n",
                        head, track, sect, 1,
                        (drv->flags & FDISK_DBL_SIDES) == 0 ? 0 : 1,
