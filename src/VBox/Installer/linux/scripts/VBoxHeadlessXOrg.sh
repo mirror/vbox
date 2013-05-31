@@ -151,37 +151,42 @@ HEADLESS_X_ORG_LOG_FOLDER="/var/log/${SERVICE_NAME}"
 HEADLESS_X_ORG_LOG_FILE="${SERVICE_NAME}.log"
 HEADLESS_X_ORG_RUN_FOLDER="/var/run/${SERVICE_NAME}"
 HEADLESS_X_ORG_USERS=""
-HEADLESS_X_ORG_FIRST_DISPLAY=10
+HEADLESS_X_ORG_FIRST_DISPLAY=40
 X_AUTH_FILE="${HEADLESS_X_ORG_RUN_FOLDER}/xauth"
 
 default_wait_for_prerequisites()
 {
-    udevadm settle  # Fails if no udevadm.
+    udevadm settle || udevsettle # Fails if no udevadm.
 }
 HEADLESS_X_ORG_WAIT_FOR_PREREQUISITES="default_wait_for_prerequisites"
 
 default_pre_command()
 {
-  # Create and duplicate the authority file.
+  # Create new authority file.
   echo > "${X_AUTH_FILE}"
-  key="$(dd if=/dev/urandom count=1 bs=16 2>/dev/null | od -An -x)"
-  xauth -f "${X_AUTH_FILE}" add :0 . "${key}"
-  for i in ${HEADLESS_X_ORG_USERS}; do
-    cp "${X_AUTH_FILE}" "${X_AUTH_FILE}.${i}"
-    chown "${i}" "${X_AUTH_FILE}.${i}"
-  done
   # Create the xorg.conf files.
   mkdir -p "${HEADLESS_X_ORG_CONFIGURATION_FOLDER}" || return 1
   display="${HEADLESS_X_ORG_FIRST_DISPLAY}"
   for i in /sys/bus/pci/devices/*; do
     read class < "${i}/class"
-    case ${class} in *03????)
+    case "${class}" in *03????)
       address="${i##*/}"
       address="${address%%:*}${address#*:}"
       address="PCI:${address%%.*}:${address#*.}"
-      cat > "${HEADLESS_X_ORG_CONFIGURATION_FOLDER}/xorg.conf.${display}" << EOF
+      read vendor < "${i}/vendor"
+      case "${vendor}" in *10de|*10DE)  # NVIDIA
+        cat > "${HEADLESS_X_ORG_CONFIGURATION_FOLDER}/xorg.conf.${display}" << EOF
+Section "Module"
+    Load       "glx"
+EndSection
+Section "Device"
+    Identifier "Device${display}"
+    Driver     "nvidia"
+    Option     "UseDisplayDevice" "none"
+EndSection
 Section "Screen"
     Identifier "Screen${display}"
+    Device     "Device${display}"
 EndSection
 Section "ServerLayout"
     Identifier "Layout${display}"
@@ -193,8 +198,17 @@ Section "ServerLayout"
     Option     "IsolateDevice"      "${address}"
 EndSection
 EOF
-    display=`expr ${display} + 1`
+      esac
+      # Add key to the authority file.
+      key="$(dd if=/dev/urandom count=1 bs=16 2>/dev/null | od -An -x)"
+      xauth -f "${X_AUTH_FILE}" add :${display} . "${key}"
+      display=`expr ${display} + 1`
     esac
+  done
+  # Duplicate the authority file.
+  for i in ${HEADLESS_X_ORG_USERS}; do
+    cp "${X_AUTH_FILE}" "${X_AUTH_FILE}.${i}"
+    chown "${i}" "${X_AUTH_FILE}.${i}"
   done
 }
 HEADLESS_X_ORG_SERVER_PRE_COMMAND="default_pre_command"
