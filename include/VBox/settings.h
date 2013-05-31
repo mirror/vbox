@@ -154,7 +154,7 @@ struct MediaRegistry
 };
 
 /**
- * 
+ *
  */
  struct NATRule
  {
@@ -293,7 +293,7 @@ typedef std::list<DHCPServer> DHCPServersList;
 
 
 /**
- * Nat Networking settings (NAT service). 
+ * Nat Networking settings (NAT service).
  */
 struct NATNetwork
 {
@@ -315,7 +315,7 @@ struct NATNetwork
         return    strNetworkName == n.strNetworkName
                && strNetwork == n.strNetwork;
     }
-     
+
 };
 typedef std::list<NATNetwork> NATNetworksList;
 
@@ -1095,7 +1095,8 @@ struct MachineUserData
                && (uFaultToleranceInterval    == c.uFaultToleranceInterval)
                && (strFaultToleranceAddress   == c.strFaultToleranceAddress)
                && (strFaultTolerancePassword  == c.strFaultTolerancePassword)
-               && (fRTCUseUTC                 == c.fRTCUseUTC);
+               && (fRTCUseUTC                 == c.fRTCUseUTC)
+               && (ovIcon                     == c.ovIcon);
     }
 
     com::Utf8Str            strName;
@@ -1115,6 +1116,7 @@ struct MachineUserData
     com::Utf8Str            strFaultTolerancePassword;
     uint32_t                uFaultToleranceInterval;
     bool                    fRTCUseUTC;
+    com::Utf8Str            ovIcon;
 };
 
 /**
