@@ -698,11 +698,11 @@ const QRect VBoxGlobal::availableGeometry(int iScreen) const
  *  Returns the list of few guest OS types, queried from
  *  IVirtualBox corresponding to every family id.
  */
-QList <CGuestOSType> VBoxGlobal::vmGuestOSFamilyList() const
+QList<CGuestOSType> VBoxGlobal::vmGuestOSFamilyList() const
 {
-    QList <CGuestOSType> result;
-    for (int i = 0 ; i < mFamilyIDs.size(); ++ i)
-        result << mTypes [i][0];
+    QList<CGuestOSType> result;
+    for (int i = 0; i < mFamilyIDs.size(); ++i)
+        result << mTypes[i][0];
     return result;
 }
 
@@ -710,21 +710,21 @@ QList <CGuestOSType> VBoxGlobal::vmGuestOSFamilyList() const
  *  Returns the list of all guest OS types, queried from
  *  IVirtualBox corresponding to passed family id.
  */
-QList <CGuestOSType> VBoxGlobal::vmGuestOSTypeList (const QString &aFamilyId) const
+QList<CGuestOSType> VBoxGlobal::vmGuestOSTypeList(const QString &aFamilyId) const
 {
-    AssertMsg (mFamilyIDs.contains (aFamilyId), ("Family ID incorrect: '%s'.", aFamilyId.toLatin1().constData()));
-    return mFamilyIDs.contains (aFamilyId) ?
-           mTypes [mFamilyIDs.indexOf (aFamilyId)] : QList <CGuestOSType>();
+    AssertMsg(mFamilyIDs.contains(aFamilyId), ("Family ID incorrect: '%s'.", aFamilyId.toLatin1().constData()));
+    return mFamilyIDs.contains(aFamilyId) ?
+           mTypes[mFamilyIDs.indexOf(aFamilyId)] : QList<CGuestOSType>();
 }
 
 /**
  *  Returns the icon corresponding to the given guest OS type id.
  */
-QPixmap VBoxGlobal::vmGuestOSTypeIcon (const QString &aTypeId) const
+QPixmap VBoxGlobal::vmGuestOSTypeIcon(const QString &aTypeId) const
 {
     static const QPixmap none;
-    QPixmap *p = mOsTypeIcons.value (aTypeId);
-    AssertMsg (p, ("Icon for type '%s' must be defined.", aTypeId.toLatin1().constData()));
+    QPixmap *p = mOsTypeIcons.value(aTypeId);
+    AssertMsg(p, ("Icon for type '%s' must be defined.", aTypeId.toLatin1().constData()));
     return p ? *p : none;
 }
 
@@ -733,7 +733,7 @@ QPixmap VBoxGlobal::vmGuestOSTypeIcon (const QString &aTypeId) const
  *  containing OS types related to OS family determined by family id attribute.
  *  If the index is invalid a null object is returned.
  */
-CGuestOSType VBoxGlobal::vmGuestOSType (const QString &aTypeId,
+CGuestOSType VBoxGlobal::vmGuestOSType(const QString &aTypeId,
              const QString &aFamilyId /* = QString::null */) const
 {
     QList <CGuestOSType> list;
@@ -4029,41 +4029,35 @@ void VBoxGlobal::prepare()
     /* Initialize guest OS Type list. */
     CGuestOSTypeVector coll = mVBox.GetGuestOSTypes();
     int osTypeCount = coll.size();
-    AssertMsg (osTypeCount > 0, ("Number of OS types must not be zero"));
+    AssertMsg(osTypeCount > 0, ("Number of OS types must not be zero"));
     if (osTypeCount > 0)
     {
-        /* Here we assume the 'Other' type is always the first, so we
-         * remember it and will append it to the list when finished. */
-        CGuestOSType otherType = coll[0];
-        QString otherFamilyId (otherType.GetFamilyId());
-
-        /* Fill the lists with all the available OS Types except
-         * the 'Other' type, which will be appended. */
-        for (int i = 1; i < coll.size(); ++i)
+        /* Here we ASSUME the 'Other' types are always the first, so we
+         * remember it and will append it to the list when finished.
+         * We do a two pass, first adding the specific types, then the two
+         * 'Other' types. */
+        for (int j = 0; j < 2; j++)
         {
-            CGuestOSType os = coll[i];
-            QString familyId (os.GetFamilyId());
-            if (!mFamilyIDs.contains (familyId))
+            int cMax = j == 0 ? coll.size() : RT_MIN(2, coll.size());
+            for (int i = j == 0 ? 2 : 0; i < cMax; ++i)
             {
-                mFamilyIDs << familyId;
-                mTypes << QList <CGuestOSType> ();
+                CGuestOSType os = coll[i];
+                QString familyId(os.GetFamilyId());
+                if (!mFamilyIDs.contains(familyId))
+                {
+                    mFamilyIDs << familyId;
+                    mTypes << QList<CGuestOSType>();
+                }
+                mTypes[mFamilyIDs.indexOf(familyId)].append(os);
             }
-            mTypes [mFamilyIDs.indexOf (familyId)].append (os);
         }
-
-        /* Append the 'Other' OS Type to the end of list. */
-        if (!mFamilyIDs.contains (otherFamilyId))
-        {
-            mFamilyIDs << otherFamilyId;
-            mTypes << QList <CGuestOSType> ();
-        }
-        mTypes [mFamilyIDs.indexOf (otherFamilyId)].append (otherType);
     }
 
     /* Fill in OS type icon dictionary. */
-    static const char *kOSTypeIcons [][2] =
+    static const char * const s_kOSTypeIcons[][2] =
     {
         {"Other",           ":/os_other.png"},
+        {"Other_64",        ":/os_other.png"}, /// @todo os_other_64.png.
         {"DOS",             ":/os_dos.png"},
         {"Netware",         ":/os_netware.png"},
         {"L4",              ":/os_l4.png"},
@@ -4087,6 +4081,7 @@ void VBoxGlobal::prepare()
         {"Windows8_64",     ":/os_win8_64.png"},
         {"Windows2012_64",  ":/os_win2k12_64.png"},
         {"WindowsNT",       ":/os_win_other.png"},
+        {"WindowsNT_64",    ":/os_win_other.png"}, /// @todo os_win_other_64.png
         {"OS2Warp3",        ":/os_os2warp3.png"},
         {"OS2Warp4",        ":/os_os2warp4.png"},
         {"OS2Warp45",       ":/os_os2warp45.png"},
@@ -4120,6 +4115,7 @@ void VBoxGlobal::prepare()
         {"Oracle",          ":/os_oracle.png"},
         {"Oracle_64",       ":/os_oracle_64.png"},
         {"Linux",           ":/os_linux_other.png"},
+        {"Linux_64",        ":/os_linux_other.png"}, /// @todo os_linux_other_64.png
         {"FreeBSD",         ":/os_freebsd.png"},
         {"FreeBSD_64",      ":/os_freebsd_64.png"},
         {"OpenBSD",         ":/os_openbsd.png"},
@@ -4136,10 +4132,9 @@ void VBoxGlobal::prepare()
         {"MacOS_64",        ":/os_macosx_64.png"},
         {"JRockitVE",       ":/os_jrockitve.png"},
     };
-    for (uint n = 0; n < SIZEOF_ARRAY (kOSTypeIcons); ++ n)
+    for (uint n = 0; n < SIZEOF_ARRAY(s_kOSTypeIcons); ++ n)
     {
-        mOsTypeIcons.insert (kOSTypeIcons [n][0],
-            new QPixmap (kOSTypeIcons [n][1]));
+        mOsTypeIcons.insert(s_kOSTypeIcons[n][0], new QPixmap(s_kOSTypeIcons[n][1]));
     }
 
     /* online/offline snapshot icons */
