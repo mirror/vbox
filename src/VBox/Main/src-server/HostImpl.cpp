@@ -371,7 +371,7 @@ HRESULT Host::init(VirtualBox *aParent)
             else
             {
                 LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
-                m->fVTSupported = m->fNestedPagingSupported = true;
+                m->fVTSupported = m->fNestedPagingSupported = false;
             }
         }
         else
