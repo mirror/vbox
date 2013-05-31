@@ -73,6 +73,7 @@
 #include <iprt/cpp/xml.h>               /* xml::XmlFileWriter::s_psz*Suff. */
 #include <iprt/sha.h>
 #include <iprt/string.h>
+#include <iprt/base64.h>
 
 #include <VBox/com/array.h>
 #include <VBox/com/list.h>
@@ -7305,6 +7306,42 @@ STDMETHODIMP Machine::COMSETTER(DefaultFrontend)(IN_BSTR aDefaultFrontend)
     return hrc;
 }
 
+STDMETHODIMP Machine::COMGETTER(Icon)(ComSafeArrayOut(BYTE, aIcon))
+{
+    CheckComArgSafeArrayNotNull(aIcon);
+    CheckComArgOutSafeArrayPointerValid(aIcon);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        com::SafeArray<BYTE> icon(mUserData->mIcon.size());
+        memcpy(icon.raw(), &mUserData->mIcon[0], mUserData->mIcon.size());
+        icon.detachTo(ComSafeArrayOutArg(aIcon));
+    }
+    return hrc;
+}
+
+STDMETHODIMP Machine::COMSETTER(Icon)(ComSafeArrayIn(BYTE, aIcon))
+{
+    CheckComArgSafeArrayNotNull(aIcon);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = checkStateDependency(MutableOrSavedStateDep);
+        if (SUCCEEDED(hrc))
+        {
+            setModified(IsModified_MachineData);
+            mUserData.backup();
+            com::SafeArray<BYTE> icon(ComSafeArrayInArg(aIcon));
+            mUserData->mIcon.clear();
+            memcpy(&mUserData->mIcon[0], icon.raw(), mUserData->mIcon.size());
+         }
+    }
+    return hrc;
+}
 
 STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayIn(CloneOptions_T, options), IProgress **pProgress)
 {
@@ -8612,11 +8649,29 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
                                              const Guid *puuidRegistry)
 {
     // copy name, description, OS type, teleporter, UTC etc.
+    #define DECODE_STR_MAX _1M
     mUserData->s = config.machineUserData;
+
+    // Decode the Icon overide data from config userdata and set onto Machine.
+    const char* pszStr = config.machineUserData.ovIcon.c_str();
+    ssize_t cbOut = RTBase64DecodedSize(pszStr, NULL);
+    if (cbOut > DECODE_STR_MAX)
+        return setError(E_FAIL,
+                        tr("Icon Data too long.'%d' > '%d'"),
+                        cbOut,
+                        DECODE_STR_MAX);
+    com::SafeArray<BYTE> iconByte(cbOut);
+    HRESULT rc = RTBase64Decode(pszStr, iconByte.raw(), cbOut, NULL, NULL);
+    if (FAILED(rc))
+        return setError(E_FAIL,
+                        tr("Failure to Decode Icon Data. '%s' (%d)"),
+                        pszStr,
+                        rc);
+    COMSETTER(Icon)(ComSafeArrayAsInParam(iconByte));
 
     // look up the object by Id to check it is valid
     ComPtr<IGuestOSType> guestOSType;
-    HRESULT rc = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(),
+    rc = mParent->GetGuestOSType(Bstr(mUserData->s.strOsType).raw(),
                                          guestOSType.asOutParam());
     if (FAILED(rc)) return rc;
 
@@ -9923,6 +9978,8 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
  */
 void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
 {
+    Utf8Str aStr;
+
     // deep copy extradata
     config.mapExtraDataItems = mData->pMachineConfigFile->mapExtraDataItems;
 
@@ -9930,6 +9987,27 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
 
     // copy name, description, OS type, teleport, UTC etc.
     config.machineUserData = mUserData->s;
+
+    // Encode the Icon Override data from Machine and store on config userdata.
+    com::SafeArray<BYTE> iconByte;
+    COMGETTER(Icon)(ComSafeArrayAsOutParam(iconByte));
+    ssize_t cbData = iconByte.size();
+    if (cbData == 0)
+        throw setError(E_FAIL,
+                       tr("Icon Data length is zero. '%d'"),
+                       cbData);
+    ssize_t cchOut = RTBase64EncodedLength(cbData);
+    aStr.reserve(cchOut+1);
+    HRESULT rc = RTBase64Encode(iconByte.raw(), cbData,
+                                aStr.mutableRaw(), aStr.capacity(),
+                                NULL);
+    if (FAILED(rc))
+        throw setError(E_FAIL,
+                       tr("Failure to Encode Icon Data. '%s' (%d)"),
+                       aStr.mutableRaw(),
+                       rc);
+    aStr.jolt();
+    config.machineUserData.ovIcon = aStr.c_str();
 
     if (    mData->mMachineState == MachineState_Saved
          || mData->mMachineState == MachineState_Restoring
@@ -9961,7 +10039,7 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
     config.fAborted = (mData->mMachineState == MachineState_Aborted);
     /// @todo Live Migration:        config.fTeleported = (mData->mMachineState == MachineState_Teleported);
 
-    HRESULT rc = saveHardware(config.hardwareMachine, &config.debugging, &config.autostart);
+    rc = saveHardware(config.hardwareMachine, &config.debugging, &config.autostart);
     if (FAILED(rc)) throw rc;
 
     rc = saveStorageControllers(config.storageMachine);
