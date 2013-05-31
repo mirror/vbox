@@ -25,6 +25,7 @@
 #include <netinet/in.h>
 #include <net/if.h>
 #include <errno.h>
+#include <unistd.h>
 
 #if defined(RT_OS_SOLARIS)
 # include <sys/sockio.h>
@@ -388,5 +389,6 @@ int NetIfGetState(const char *pcszIfName, NETIFSTATUS *penmState)
     }
     else
         *penmState = (Req.ifr_flags & IFF_UP) ? NETIF_S_UP : NETIF_S_DOWN;
+    close(sock);
     return VINF_SUCCESS;
 }

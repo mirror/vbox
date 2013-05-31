@@ -294,10 +294,12 @@ int NetIfGetLinkSpeed(const char *pcszIfName, uint32_t *puMbits)
         if (ioctl(sock, SIOCGIFFLAGS, &Req) >= 0)
             if (Req.ifr_flags & IFF_UP)
             {
+                close(sock);
                 *puMbits = getInterfaceSpeed(pcszIfName);
                 return VINF_SUCCESS;
             }
     }
+    close(sock);
     *puMbits = 0;
     return VWRN_NOT_FOUND;
 }
