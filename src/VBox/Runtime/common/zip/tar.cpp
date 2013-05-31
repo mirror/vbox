@@ -332,12 +332,14 @@ DECLINLINE(int) rtTarCreateHeaderRecord(PRTTARRECORD pRecord, const char *pszSrc
     /** @todo check for field overflows. */
     /* Fill the header record */
 //    RT_ZERO(pRecord); - done by the caller.
-    RTStrPrintf(pRecord->h.name,  sizeof(pRecord->h.name),  "%s",       pszSrcName);
-    RTStrPrintf(pRecord->h.mode,  sizeof(pRecord->h.mode),  "%0.7o",    fmode);
-    RTStrPrintf(pRecord->h.uid,   sizeof(pRecord->h.uid),   "%0.7o",    uid);
-    RTStrPrintf(pRecord->h.gid,   sizeof(pRecord->h.gid),   "%0.7o",    gid);
+    size_t cb = RTStrPrintf(pRecord->h.name,  sizeof(pRecord->h.name),  "%s", pszSrcName);
+    if (cb < strlen(pszSrcName))
+        return VERR_BUFFER_OVERFLOW;
+    RTStrPrintf(pRecord->h.mode,  sizeof(pRecord->h.mode),  "%0.7o", fmode);
+    RTStrPrintf(pRecord->h.uid,   sizeof(pRecord->h.uid),   "%0.7o", uid);
+    RTStrPrintf(pRecord->h.gid,   sizeof(pRecord->h.gid),   "%0.7o", gid);
     rtTarSizeToRec(pRecord, cbSize);
-    RTStrPrintf(pRecord->h.mtime, sizeof(pRecord->h.mtime), "%0.11llo",   mtime);
+    RTStrPrintf(pRecord->h.mtime, sizeof(pRecord->h.mtime), "%0.11llo", mtime);
     RTStrPrintf(pRecord->h.magic, sizeof(pRecord->h.magic), "ustar  ");
     RTStrPrintf(pRecord->h.uname, sizeof(pRecord->h.uname), "someone");
     RTStrPrintf(pRecord->h.gname, sizeof(pRecord->h.gname), "someone");
