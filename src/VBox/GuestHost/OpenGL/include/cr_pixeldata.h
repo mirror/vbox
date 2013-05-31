@@ -11,6 +11,7 @@
 #include "state/cr_client.h"
 
 #include <iprt/cdefs.h>
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {
