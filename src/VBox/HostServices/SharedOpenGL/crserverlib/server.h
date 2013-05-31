@@ -350,7 +350,7 @@ typedef struct CR_SERVER_CTX_SWITCH
     CRContext *pOldCtx;
 } CR_SERVER_CTX_SWITCH;
 
-DECLINLINE(void) cr_serverCtxSwitchPrepare(CR_SERVER_CTX_SWITCH *pData, CRContext *pNewCtx)
+DECLINLINE(void) crServerCtxSwitchPrepare(CR_SERVER_CTX_SWITCH *pData, CRContext *pNewCtx)
 {
     CRMuralInfo *pCurrentMural = cr_server.currentMural;
     CRContextInfo *pCurCtxInfo = cr_server.currentCtxInfo;
@@ -378,10 +378,57 @@ DECLINLINE(void) cr_serverCtxSwitchPrepare(CR_SERVER_CTX_SWITCH *pData, CRContex
     pData->pOldCtx = pCurCtx;
 }
 
-DECLINLINE(void) cr_serverCtxSwitchPostprocess(CR_SERVER_CTX_SWITCH *pData)
+DECLINLINE(void) crServerCtxSwitchPostprocess(CR_SERVER_CTX_SWITCH *pData)
 {
     crStateSwitchPostprocess(pData->pOldCtx, pData->pNewCtx, pData->idDrawFBO, pData->idReadFBO);
 }
+
+void crServerInitTmpCtxDispatch();
+
+#ifdef VBOX_WITH_CRSERVER_DUMPER
+void crServerDumpCheckTerm();
+int crServerDumpCheckInit();
+void crServerDumpBuffer();
+void crServerDumpTextures();
+
+#define CR_SERVER_DUMP_F_DRAW_BUFF_ENTER 0x01
+#define CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE  0x02
+#define CR_SERVER_DUMP_F_DRAW_TEX_ENTER  0x10
+#define CR_SERVER_DUMP_F_DRAW_TEX_LEAVE   0x20
+
+extern int g_CrDbgDumpDraw;
+bool crServerDumpFilter(int event);
+
+#define CR_SERVER_DUMP_IF_ANY(_ev) ((g_CrDbgDumpDraw & (_ev)) && crServerDumpFilter((_ev)))
+
+#define CR_SERVER_DUMP_DRAW_ENTER() do { \
+            if (!CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_ENTER | CR_SERVER_DUMP_F_DRAW_TEX_ENTER)) break; \
+            crServerDumpCheckInit(); \
+            crDmpStrF(cr_server.Recorder.pDumper, "==> %s\n", __FUNCTION__); \
+            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_ENTER)) { \
+                crServerDumpBuffer(); \
+            } \
+            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_TEX_ENTER)) { \
+                crServerDumpTextures(); \
+            } \
+        } while (0)
+
+#define CR_SERVER_DUMP_DRAW_LEAVE() do { \
+            if (!CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE | CR_SERVER_DUMP_F_DRAW_TEX_LEAVE)) break; \
+            crServerDumpCheckInit(); \
+            crDmpStrF(cr_server.Recorder.pDumper, "<== %s\n", __FUNCTION__); \
+            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE)) { \
+                crServerDumpBuffer(); \
+            } \
+            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_TEX_LEAVE)) { \
+                crServerDumpTextures(); \
+            } \
+        } while (0)
+#else /* if !defined VBOX_WITH_CRSERVER_DUMPER */
+#define CR_SERVER_DUMP_DRAW_ENTER() do {} while (0)
+#define CR_SERVER_DUMP_DRAW_LEAVE() do {} while (0)
+#endif /* !VBOX_WITH_CRSERVER_DUMPER */
+
 RT_C_DECLS_END
 
 #endif /* CR_SERVER_H */

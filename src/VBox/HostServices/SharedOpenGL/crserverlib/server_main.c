@@ -379,6 +379,7 @@ crServerInit(int argc, char *argv[])
     crMemset(&cr_server.Blitter, 0, sizeof (cr_server.Blitter));
 
     crServerInitDispatch();
+    crServerInitTmpCtxDispatch();
     crStateDiffAPI( &(cr_server.head_spu->dispatch_table) );
 
     crUnpackSetReturnPointer( &(cr_server.return_ptr) );
@@ -486,6 +487,7 @@ GLboolean crVBoxServerInit(void)
         return GL_FALSE;
 
     crServerInitDispatch();
+    crServerInitTmpCtxDispatch();
     crStateDiffAPI( &(cr_server.head_spu->dispatch_table) );
 
     /*Check for PBO support*/

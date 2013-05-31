@@ -1291,3 +1291,188 @@ GLenum SERVER_DISPATCH_APIENTRY crServerDispatchGetError( void )
     crServerReturnValue( &retval, sizeof(retval) );
     return retval; /* WILL PROBABLY BE IGNORED */
 }
+
+void SERVER_DISPATCH_APIENTRY
+crServerMakeTmpCtxCurrent( GLint window, GLint nativeWindow, GLint context )
+{
+    CRContext *pCtx = crStateGetCurrent();
+    CRContext *pCurCtx = NULL;
+    GLuint idDrawFBO = 0, idReadFBO = 0;
+    int fDoPrePostProcess = 0;
+
+    if (pCtx)
+    {
+        GLint curSrvSpuCtx = cr_server.currentCtxInfo && cr_server.currentCtxInfo->SpuContext > 0 ? cr_server.currentCtxInfo->SpuContext : cr_server.MainContextInfo.SpuContext;
+        bool fSwitchToTmpCtx = (curSrvSpuCtx != context);
+        CRMuralInfo *pCurrentMural = cr_server.currentMural;
+        CRContextInfo *pCurCtxInfo = cr_server.currentCtxInfo;
+        pCurCtx = pCurCtxInfo ? pCurCtxInfo->pContext : NULL;
+
+        CRASSERT(pCurCtx == pCtx);
+
+        if (pCurrentMural)
+        {
+            idDrawFBO = CR_SERVER_FBO_FOR_IDX(pCurrentMural, pCurrentMural->iCurDrawBuffer);
+            idReadFBO = CR_SERVER_FBO_FOR_IDX(pCurrentMural, pCurrentMural->iCurReadBuffer);
+        }
+        else
+        {
+            idDrawFBO = 0;
+            idReadFBO = 0;
+        }
+
+        fDoPrePostProcess = fSwitchToTmpCtx ? 1 : -1;
+    }
+    else
+    {
+        /* this is a GUI thread, so no need to do anything here */
+    }
+
+    if (fDoPrePostProcess > 0)
+        crStateSwitchPrepare(NULL, pCurCtx, idDrawFBO, idReadFBO);
+
+    cr_server.head_spu->dispatch_table.MakeCurrent( window, nativeWindow, context);
+
+    if (fDoPrePostProcess < 0)
+        crStateSwitchPostprocess(pCurCtx, NULL, idDrawFBO, idReadFBO);
+}
+
+void crServerInitTmpCtxDispatch()
+{
+    crSPUInitDispatchTable(&cr_server.TmpCtxDispatch);
+    crSPUCopyDispatchTable(&cr_server.TmpCtxDispatch, &cr_server.head_spu->dispatch_table);
+    cr_server.TmpCtxDispatch.MakeCurrent = crServerMakeTmpCtxCurrent;
+}
+
+/* dump stuff */
+#ifdef VBOX_WITH_CRSERVER_DUMPER
+
+/* first four bits are buffer dump config
+ * second four bits are texture dump config
+ * config flags:
+ * 1 - blit on enter
+ * 2 - blit on exit
+ *
+ *
+ * Example:
+ *
+ * 0x03 - dump buffer on enter and exit
+ * 0x22 - dump texture and buffer on exit */
+int g_CrDbgDumpDraw = 0; //CR_SERVER_DUMP_F_DRAW_BUFF_ENTER | CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE;
+
+void crServerDumpCheckTerm()
+{
+    if (!CrBltIsInitialized(&cr_server.RecorderBlitter))
+        return;
+
+    CrBltTerm(&cr_server.RecorderBlitter);
+}
+
+int crServerDumpCheckInit()
+{
+    int rc;
+    CR_BLITTER_WINDOW BltWin;
+    CR_BLITTER_CONTEXT BltCtx;
+    CRMuralInfo *pBlitterMural;
+
+    if (CrBltIsInitialized(&cr_server.RecorderBlitter))
+        return VINF_SUCCESS;
+
+    pBlitterMural = crServerGetDummyMural(cr_server.MainContextInfo.CreateInfo.visualBits);
+    if (!pBlitterMural)
+    {
+        crWarning("crServerGetDummyMural failed");
+        return VERR_GENERAL_FAILURE;
+    }
+
+    crServerVBoxBlitterWinInit(&BltWin, pBlitterMural);
+    crServerVBoxBlitterCtxInit(&BltCtx, &cr_server.MainContextInfo);
+
+    rc = CrBltInit(&cr_server.RecorderBlitter, &BltCtx, true, true, &cr_server.TmpCtxDispatch);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("CrBltInit failed rc %d", rc);
+        return rc;
+    }
+
+    rc = CrBltMuralSetCurrent(&cr_server.RecorderBlitter, &BltWin);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("CrBltMuralSetCurrent failed rc %d", rc);
+        return rc;
+    }
+
+#if 0
+    crDmpDbgPrintInit(&cr_server.DbgPrintDumper);
+    cr_server.pDumper = &cr_server.DbgPrintDumper.Base;
+#else
+    crDmpHtmlInit(&cr_server.HtmlDumper, "S:\\projects\\virtualbox\\3d\\dumps\\1", "index.html");
+    cr_server.pDumper = &cr_server.HtmlDumper.Base;
+#endif
+
+    crRecInit(&cr_server.Recorder, &cr_server.RecorderBlitter, &cr_server.TmpCtxDispatch, cr_server.pDumper);
+    return VINF_SUCCESS;
+}
+
+void crServerDumpBuffer()
+{
+    CRContextInfo *pCtxInfo = cr_server.currentCtxInfo;
+    CR_BLITTER_WINDOW BltWin;
+    CR_BLITTER_CONTEXT BltCtx;
+    CRContext *ctx = crStateGetCurrent();
+    GLint idx = crServerMuralFBOIdxFromBufferName(cr_server.currentMural, pCtxInfo->pContext->buffer.drawBuffer);
+    GLint idFBO;
+    GLint idTex;
+    VBOXVR_TEXTURE RedirTex;
+    int rc = crServerDumpCheckInit();
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("crServerDumpCheckInit failed, rc %d", rc);
+        return;
+    }
+
+    if (idx < 0)
+    {
+        crWarning("neg idx, unsupported");
+        return;
+    }
+
+    idFBO = CR_SERVER_FBO_FOR_IDX(cr_server.currentMural, idx);
+    idTex = CR_SERVER_FBO_TEX_FOR_IDX(cr_server.currentMural, idx);
+
+    crServerVBoxBlitterWinInit(&BltWin, cr_server.currentMural);
+    crServerVBoxBlitterCtxInit(&BltCtx, pCtxInfo);
+
+    RedirTex.width = cr_server.currentMural->fboWidth;
+    RedirTex.height = cr_server.currentMural->fboHeight;
+    RedirTex.target = GL_TEXTURE_2D;
+    RedirTex.hwid = idTex;
+
+    crRecDumpBuffer(&cr_server.Recorder, ctx, &BltCtx, &BltWin, idFBO, idTex ? &RedirTex : NULL);
+}
+
+void crServerDumpTextures()
+{
+    CRContextInfo *pCtxInfo = cr_server.currentCtxInfo;
+    CR_BLITTER_WINDOW BltWin;
+    CR_BLITTER_CONTEXT BltCtx;
+    CRContext *ctx = crStateGetCurrent();
+    int rc = crServerDumpCheckInit();
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("crServerDumpCheckInit failed, rc %d", rc);
+        return;
+    }
+
+    crServerVBoxBlitterWinInit(&BltWin, cr_server.currentMural);
+    crServerVBoxBlitterCtxInit(&BltCtx, pCtxInfo);
+
+    crRecDumpTextures(&cr_server.Recorder, ctx, &BltCtx, &BltWin);
+}
+
+bool crServerDumpFilter(int event)
+{
+    return true;
+}
+#endif
+/* */

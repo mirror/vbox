@@ -913,7 +913,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
 
         crServerRpwEntryDrawSettingsToTex(&mural->RpwEntry, &DstTex);
 
-        cr_serverCtxSwitchPrepare(&CtxSwitch, NULL);
+        crServerCtxSwitchPrepare(&CtxSwitch, NULL);
 
         crServerVBoxBlitterWinInit(&CurrentBltInfo, pCurrentMural);
         crServerVBoxBlitterWinInit(&BlitterBltInfo, pBlitterMural);
@@ -932,7 +932,7 @@ void crServerPresentFBO(CRMuralInfo *mural)
             crWarning("CrBltEnter failed rc %d", rc);
         }
 
-        cr_serverCtxSwitchPostprocess(&CtxSwitch);
+        crServerCtxSwitchPostprocess(&CtxSwitch);
 
 #if 1
         if (RT_SUCCESS(rc))

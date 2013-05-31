@@ -464,7 +464,6 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
     /* NOTE: we can do it even if mural->fPresentMode == CR_SERVER_REDIR_F_NONE to make sure the compositor data is always up to date */
     /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
     /* CrVrScrCompositorLock(&mural->Compositor); */
-#if 0
     if (!mural->bReceivedRects)
     {
         rc = CrVrScrCompositorEntryRemove(&mural->Compositor, &mural->CEntry);
@@ -488,7 +487,6 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
         }
     }
     else
-#endif
     {
         rc = CrVrScrCompositorEntryTexUpdate(&mural->Compositor, &mural->CEntry, &Tex);
         if (!RT_SUCCESS(rc))

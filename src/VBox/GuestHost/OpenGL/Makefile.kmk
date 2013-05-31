@@ -106,6 +106,7 @@ VBoxOGLcrutil_SOURCES       = \
 	util/url.c \
 	util/warp.c \
 	util/vreg.cpp \
+	util/dump.cpp \
 	util/blitter.cpp \
 	util/vboxhgcm.c \
 	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
@@ -134,6 +135,9 @@ VBoxOGLcrutil_CLEAN = \
 # vc7 hangs during compilation of this file when optimizations are enabled.
 VBoxOGLcrutil_pixel.c_CFLAGS.win.x86     += -Od
 VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
+ifdef VBOX_WITH_CRDUMPER
+VBoxOGLcrutil_DEFS        += VBOX_WITH_CRDUMPER
+endif
 
 #
 # VBoxOGLcrutil-x86 - x86 VBoxOGLcrutil version built for amd64 build
@@ -174,6 +178,9 @@ VBoxOGLhostcrutil_LIBS.win =  \
     $(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
     $(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib
 VBoxOGLhostcrutil_LIBS     = $(LIB_RUNTIME)
+ifdef VBOX_WITH_CRDUMPER
+VBoxOGLhostcrutil_DEFS    += VBOX_WITH_CRDUMPER
+endif
 ifdef VBOX_WITH_CRHGSMI
 VBoxOGLhostcrutil_DEFS    += VBOX_WITH_CRHGSMI
 endif

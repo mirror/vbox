@@ -81,6 +81,16 @@ typedef struct CR_BLITTER_WINDOW
     GLuint width, height;
 } CR_BLITTER_WINDOW, *PCR_BLITTER_WINDOW;
 
+typedef struct CR_BLITTER_IMG
+{
+    void *pvData;
+    GLuint cbData;
+    GLenum enmFormat;
+    GLuint width, height;
+    GLuint bpp;
+    GLuint pitch;
+} CR_BLITTER_IMG, *PCR_BLITTER_IMG;
+
 typedef struct CR_BLITTER
 {
     GLuint idFBO;
@@ -142,8 +152,12 @@ VBOXBLITTERDECL(void) CrBltCheckUpdateViewport(PCR_BLITTER pBlitter);
 
 VBOXBLITTERDECL(void) CrBltLeave(PCR_BLITTER pBlitter);
 VBOXBLITTERDECL(int) CrBltEnter(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, const CR_BLITTER_WINDOW *pRestoreMural);
-VBOXBLITTERDECL(void) CrBltBlitTexMural(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags);
+VBOXBLITTERDECL(void) CrBltBlitTexMural(PCR_BLITTER pBlitter, bool fBb, const VBOXVR_TEXTURE *pSrc, const RTRECT *paSrcRects, const RTRECT *paDstRects, uint32_t cRects, uint32_t fFlags);
 VBOXBLITTERDECL(void) CrBltBlitTexTex(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, const RTRECT *pSrcRect, const VBOXVR_TEXTURE *pDst, const RTRECT *pDstRect, uint32_t cRects, uint32_t fFlags);
+VBOXBLITTERDECL(int) CrBltImgGetTex(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, GLenum enmFormat, CR_BLITTER_IMG *pDst);
+
+VBOXBLITTERDECL(int) CrBltImgGetMural(PCR_BLITTER pBlitter, bool fBb, CR_BLITTER_IMG *pDst);
+VBOXBLITTERDECL(void) CrBltImgFree(PCR_BLITTER pBlitter, CR_BLITTER_IMG *pDst);
 VBOXBLITTERDECL(void) CrBltPresent(PCR_BLITTER pBlitter);
 /* */
 
