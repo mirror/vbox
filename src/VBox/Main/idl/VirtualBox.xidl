@@ -3985,7 +3985,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="258f4e55-40f6-4804-a162-60c302a34d99"
+    uuid="f6258810-a760-11e2-9e96-0800200c9a66"
     wsmap="managed"
     >
     <desc>
@@ -4026,6 +4026,10 @@
 
     <attribute name="parent" type="IVirtualBox" readonly="yes">
       <desc>Associated parent object.</desc>
+    </attribute>
+
+    <attribute name="icon" type="octet" safearray="yes">
+      <desc>Overriden VM Icon details.</desc>
     </attribute>
 
     <attribute name="accessible" type="boolean" readonly="yes">

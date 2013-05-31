@@ -3620,6 +3620,7 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
 
         Utf8Str str;
         elmMachine.getAttributeValue("Description", machineUserData.strDescription);
+        elmMachine.getAttributeValue("Icon", machineUserData.ovIcon);
 
         elmMachine.getAttributeValue("OSType", machineUserData.strOsType);
         if (m->sv < SettingsVersion_v1_5)
@@ -4847,6 +4848,7 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         elmMachine.setAttribute("nameSync", machineUserData.fNameSync);
     if (machineUserData.strDescription.length())
         elmMachine.createChild("Description")->addContent(machineUserData.strDescription);
+    elmMachine.setAttribute("Icon", machineUserData.ovIcon);
     elmMachine.setAttribute("OSType", machineUserData.strOsType);
     if (    strStateFile.length()
          && !(fl & BuildMachineXML_SuppressSavedState)

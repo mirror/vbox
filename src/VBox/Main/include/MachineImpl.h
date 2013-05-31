@@ -222,6 +222,8 @@ public:
     struct UserData
     {
         settings::MachineUserData s;
+        typedef  std::vector<uint8_t> IconBlob;
+        IconBlob mIcon;
     };
 
     /**
@@ -522,6 +524,8 @@ public:
     STDMETHOD(COMSETTER(AutostopType))(AutostopType_T enmAutostopType);
     STDMETHOD(COMGETTER(DefaultFrontend))(BSTR *aDefaultFrontend);
     STDMETHOD(COMSETTER(DefaultFrontend))(IN_BSTR aDefaultFrontend);
+    STDMETHOD(COMGETTER(Icon))(ComSafeArrayOut(BYTE, aIcon));
+    STDMETHOD(COMSETTER(Icon))(ComSafeArrayIn(BYTE, aIcon));
 
     // IMachine methods
     STDMETHOD(LockMachine)(ISession *aSession, LockType_T lockType);
