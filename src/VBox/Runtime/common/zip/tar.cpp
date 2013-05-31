@@ -85,6 +85,7 @@ typedef union RTTARRECORD
 } RTTARRECORD;
 AssertCompileSize(RTTARRECORD, 512);
 AssertCompileMemberOffset(RTTARRECORD, h.size, 100+8*3);
+AssertCompileMemberSize(RTTARRECORD, h.name, RTTAR_NAME_MAX+1);
 /** Pointer to a tar file header. */
 typedef RTTARRECORD *PRTTARRECORD;
 
