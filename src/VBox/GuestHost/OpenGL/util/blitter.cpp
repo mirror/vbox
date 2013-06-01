@@ -87,7 +87,7 @@ void CrBltTerm(PCR_BLITTER pBlitter)
 {
     if (pBlitter->Flags.CtxCreated)
         pBlitter->pDispatch->DestroyContext(pBlitter->CtxInfo.Base.id);
-    memset(pBlitter, 0, sizeof (pBlitter));
+    memset(pBlitter, 0, sizeof (*pBlitter));
 }
 
 int CrBltMuralSetCurrent(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural)
