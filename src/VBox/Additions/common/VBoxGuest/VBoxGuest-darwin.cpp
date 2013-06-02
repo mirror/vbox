@@ -53,9 +53,9 @@
 #include <IOKit/IOService.h>
 #include <IOKit/IOUserClient.h>
 #include <IOKit/pwr_mgt/RootDomain.h>
-#include <IOkit/pci/IOPCIDevice.h>
-#include <IOkit/IOBufferMemoryDescriptor.h>
-#include <IOkit/IOFilterInterruptEventSource.h>
+#include <IOKit/pci/IOPCIDevice.h>
+#include <IOKit/IOBufferMemoryDescriptor.h>
+#include <IOKit/IOFilterInterruptEventSource.h>
 #include "VBoxGuestInternal.h"
 
 
