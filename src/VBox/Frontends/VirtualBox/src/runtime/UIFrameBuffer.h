@@ -117,11 +117,11 @@ public:
     UIFrameBuffer(UIMachineView *aView);
     virtual ~UIFrameBuffer();
 
-    void setDeleted(bool fIsDeleted) { m_fIsDeleted = fIsDeleted; }
+    void setScheduledToDelete(bool fIsScheduledToDelete) { m_fIsScheduledToDelete = fIsScheduledToDelete; }
 
     NS_DECL_ISUPPORTS
 
-#if defined (Q_OS_WIN32)
+#ifdef Q_OS_WIN
     STDMETHOD_(ULONG, AddRef)()
     {
         return ::InterlockedIncrement(&m_iRefCnt);
@@ -134,7 +134,7 @@ public:
             delete this;
         return cnt;
     }
-#endif
+#endif /* Q_OS_WIN */
 
     VBOX_SCRIPTABLE_DISPATCH_IMPL(IFramebuffer)
 
@@ -158,7 +158,7 @@ public:
                               ULONG uWidth, ULONG uHeight,
                               BOOL *pbFinished);
 
-    STDMETHOD(NotifyUpdate) (ULONG uX, ULONG uY, ULONG uW, ULONG uH);
+    STDMETHOD(NotifyUpdate) (ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight);
 
     STDMETHOD(VideoModeSupported) (ULONG uWidth, ULONG uHeight, ULONG uBPP,
                                    BOOL *pbSupported);
@@ -213,7 +213,7 @@ public:
     virtual void viewportResized(QResizeEvent * /* pEvent */) {}
 
     virtual void viewportScrolled(int /* iX */, int /* iY */) {}
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
     virtual void setView(UIMachineView * pView);
 
@@ -225,7 +225,7 @@ protected:
     ulong m_height;
     QSize m_scaledSize;
     int64_t m_WinId;
-    bool m_fIsDeleted;
+    bool m_fIsScheduledToDelete;
 
     /* To avoid a seamless flicker,
      * which caused by the latency between the
@@ -240,11 +240,11 @@ protected:
     QRegion m_syncVisibleRegion;
     QRegion m_asyncVisibleRegion;
 
-#if defined (Q_OS_WIN32)
 private:
 
+#ifdef Q_OS_WIN
     long m_iRefCnt;
-#endif
+#endif /* Q_OS_WIN */
 };
 
 #endif // !___UIFrameBuffer_h___
