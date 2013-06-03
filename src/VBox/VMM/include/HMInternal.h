@@ -297,9 +297,6 @@ typedef struct HM
     bool                        fTPRPatchingActive;
     bool                        u8Alignment[7];
 
-    /** And mask for copying register contents. */
-    uint64_t                    u64RegisterMask;
-
     /** Maximum ASID allowed. */
     uint32_t                    uMaxAsid;
 
