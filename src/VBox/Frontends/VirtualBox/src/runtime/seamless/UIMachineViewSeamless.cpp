@@ -58,9 +58,6 @@ UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
 {
     /* Prepare seamless view: */
     prepareSeamless();
-
-    /* Initialization: */
-    sltAdditionsStateChanged();
 }
 
 UIMachineViewSeamless::~UIMachineViewSeamless()
@@ -70,11 +67,6 @@ UIMachineViewSeamless::~UIMachineViewSeamless()
 
     /* Cleanup frame buffer: */
     cleanupFrameBuffer();
-}
-
-void UIMachineViewSeamless::sltAdditionsStateChanged()
-{
-    // TODO: Exit seamless if additions doesn't support it!
 }
 
 bool UIMachineViewSeamless::event(QEvent *pEvent)
@@ -139,15 +131,6 @@ void UIMachineViewSeamless::prepareFilters()
 {
     /* Base class filters: */
     UIMachineView::prepareFilters();
-}
-
-void UIMachineViewSeamless::prepareConsoleConnections()
-{
-    /* Base class connections: */
-    UIMachineView::prepareConsoleConnections();
-
-    /* Guest additions state-change updater: */
-    connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
 }
 
 void UIMachineViewSeamless::prepareSeamless()
