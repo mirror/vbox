@@ -24,14 +24,38 @@
 # define HMSVM_ALWAYS_TRAP_PF
 #endif
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+
+/**
+ * MSR-bitmap read permissions.
+ */
+typedef enum SVMMSREXITREAD
+{
+    /** Reading this MSR causes a VM-exit. */
+    SVMMSREXIT_INTERCEPT_READ = 0xb,
+    /** Reading this MSR does not cause a VM-exit. */
+    SVMMSREXIT_PASSTHRU_READ
+} VMXMSREXITREAD;
+
+/**
+ * MSR-bitmap write permissions.
+ */
+typedef enum SVMMSREXITWRITE
+{
+    /** Writing to this MSR causes a VM-exit. */
+    SVMMSREXIT_INTERCEPT_WRITE = 0xd,
+    /** Writing to this MSR does not cause a VM-exit. */
+    SVMMSREXIT_PASSTHRU_WRITE
+} VMXMSREXITWRITE;
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite);
 
 
 /*******************************************************************************
@@ -304,14 +328,14 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     Assert(pVM->hm.s.svm.fSupported);
 
-    for (uint32_t i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU   pVCpu = &pVM->aCpus[i];
         PSVMVMCB pVmcb = (PSVMVMCB)pVM->aCpus[i].hm.s.svm.pvVmcb;
 
         AssertMsgReturn(pVmcb, ("Invalid pVmcb\n"), VERR_SVM_INVALID_PVMCB);
 
-        /* Intercept traps. */
+        /* Trap exceptions unconditionally (debug purposes). */
 #ifdef HMSVM_ALWAYS_TRAP_PF
         pVmcb->ctrl.u32InterceptException |=   RT_BIT(X86_XCPT_PF);
 #endif
@@ -319,17 +343,165 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         pVmcb->ctrl.u32InterceptException |=   RT_BIT(X86_XCPT_BP)
                                              | RT_BIT(X86_XCPT_DB)
                                              | RT_BIT(X86_XCPT_DE)
+                                             | RT_BIT(X86_XCPT_NM)
                                              | RT_BIT(X86_XCPT_UD)
                                              | RT_BIT(X86_XCPT_NP)
                                              | RT_BIT(X86_XCPT_SS)
                                              | RT_BIT(X86_XCPT_GP)
-                                             | RT_BIT(X86_XCPT_MF)
-                                             | RT_BIT(X86_XCPT_PF);
+                                             | RT_BIT(X86_XCPT_PF)
+                                             | RT_BIT(X86_XCPT_MF);
 #endif
 
-        /* -XXX- todo. */
+        /* Set up unconditional intercepts and conditions. */
+        pVmcb->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR          /* External interrupt causes a VM-exit. */
+                                        | SVM_CTRL1_INTERCEPT_VINTR         /* When guest enabled interrupts cause a VM-exit. */
+                                        | SVM_CTRL1_INTERCEPT_NMI           /* Non-Maskable Interrupts causes a VM-exit. */
+                                        | SVM_CTRL1_INTERCEPT_SMI           /* System Management Interrupt cause a VM-exit. */
+                                        | SVM_CTRL1_INTERCEPT_INIT          /* INIT signal causes a VM-exit. */
+                                        | SVM_CTRL1_INTERCEPT_RDPMC         /* RDPMC causes a VM-exit. */
+                                        | SVM_CTRL1_INTERCEPT_CPUID         /* CPUID causes a VM-exit. */
+                                        | SVM_CTRL1_INTERCEPT_RSM           /* RSM causes a VM-exit. */
+                                        | SVM_CTRL1_INTERCEPT_HLT           /* HLT causes a VM-exit. */
+                                        | SVM_CTRL1_INTERCEPT_INOUT_BITMAP  /* Use the IOPM to cause IOIO VM-exits. */
+                                        | SVM_CTRL1_INTERCEPT_MSR_SHADOW    /* MSR access not covered by MSRPM causes a VM-exit.*/
+                                        | SVM_CTRL1_INTERCEPT_INVLPGA       /* INVLPGA causes a VM-exit. */
+                                        | SVM_CTRL1_INTERCEPT_SHUTDOWN      /* Shutdown events causes a VM-exit. */
+                                        | SVM_CTRL1_INTERCEPT_FERR_FREEZE;  /* Intercept "freezing" during legacy FPU handling. */
+
+        pVmcb->ctrl.u32InterceptCtrl2 =   SVM_CTRL2_INTERCEPT_VMRUN         /* VMRUN causes a VM-exit. */
+                                        | SVM_CTRL2_INTERCEPT_VMMCALL       /* VMMCALL causes a VM-exit. */
+                                        | SVM_CTRL2_INTERCEPT_VMLOAD        /* VMLOAD causes a VM-exit. */
+                                        | SVM_CTRL2_INTERCEPT_VMSAVE        /* VMSAVE causes a VM-exit. */
+                                        | SVM_CTRL2_INTERCEPT_STGI          /* STGI causes a VM-exit. */
+                                        | SVM_CTRL2_INTERCEPT_CLGI          /* CLGI causes a VM-exit. */
+                                        | SVM_CTRL2_INTERCEPT_SKINIT        /* SKINIT causes a VM-exit. */
+                                        | SVM_CTRL2_INTERCEPT_WBINVD        /* WBINVD causes a VM-exit. */
+                                        | SVM_CTRL2_INTERCEPT_MONITOR       /* MONITOR causes a VM-exit. */
+                                        | SVM_CTRL2_INTERCEPT_MWAIT_UNCOND; /* MWAIT causes a VM-exit. */
+
+        /* CR0, CR4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
+        pVmcb->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(4);
+
+        /* CR0, CR4 writes must be intercepted for obvious reasons. */
+        pVmcb->ctrl.u16InterceptWrCRx = RT_BIT(0) | RT_BIT(4);
+
+        /* Intercept all DRx reads and writes by default. Changed later on. */
+        pVmcb->ctrl.u16InterceptRdDRx = 0xffff;
+        pVmcb->ctrl.u16InterceptWrDRx = 0xffff;
+
+        /* Virtualize masking of INTR interrupts. (reads/writes from/to CR8 go to the V_TPR register) */
+        pVmcb->ctrl.IntCtrl.n.u1VIrqMasking = 1;
+
+        /* Ignore the priority in the TPR; just deliver it to the guest when we tell it to. */
+        pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR   = 1;
+
+        /* Set IO and MSR bitmap permission bitmap physical addresses. */
+        pVmcb->ctrl.u64IOPMPhysAddr  = g_HCPhysIOBitmap;
+        pVmcb->ctrl.u64MSRPMPhysAddr = pVCpu->hm.s.svm.HCPhysMsrBitmap;
+
+        /* No LBR virtualization. */
+        pVmcb->ctrl.u64LBRVirt = 0;
+
+        /* The ASID must start at 1; the host uses 0. */
+        pVmcb->ctrl.TLBCtrl.n.u32ASID = 1;
+
+        /*
+         * Setup the PAT MSR (applicable for Nested Paging only).
+         * The default value should be 0x0007040600070406ULL, but we want to treat all guest memory as WB,
+         * so choose type 6 for all PAT slots.
+         */
+        pVmcb->guest.u64GPAT = UINT64_C(0x0006060606060606);
+
+        /* Without Nested Paging, we need additionally intercepts. */
+        if (!pVM->hm.s.fNestedPaging)
+        {
+            /* CR3 reads/writes must be intercepted; our shadow values differ from the guest values. */
+            pVmcb->ctrl.u16InterceptRdCRx |= RT_BIT(3);
+            pVmcb->ctrl.u16InterceptWrCRx |= RT_BIT(3);
+
+            /* Intercept INVLPG and task switches (may change CR3, EFLAGS, LDT). */
+            pVmcb->ctrl.u32InterceptCtrl1 |=   SVM_CTRL1_INTERCEPT_INVLPG
+                                             | SVM_CTRL1_INTERCEPT_TASK_SWITCH;
+
+            /* Page faults must be intercepted to implement shadow paging. */
+            pVmcb->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_PF);
+        }
+
+        /*
+         * The following MSRs are saved/restored automatically during the world-switch.
+         * Don't intercept guest read/write accesses to these MSRs.
+         */
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_CSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K6_STAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_SF_MASK, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_FS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_IA32_SYSENTER_CS, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_IA32_SYSENTER_ESP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMSRPermission(pVCpu, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
     }
 
     return rc;
+}
+
+
+/**
+ * Sets the permission bits for the specified MSR.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   uMsr       The MSR.
+ * @param   fRead       Whether reading is allowed.
+ * @param   fWrite      Whether writing is allowed.
+ */
+static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, uint32_t uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite)
+{
+    unsigned ulBit;
+    uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
+
+    /*
+     * Layout:
+     * Byte offset       MSR range
+     * 0x000  - 0x7ff    0x00000000 - 0x00001fff
+     * 0x800  - 0xfff    0xc0000000 - 0xc0001fff
+     * 0x1000 - 0x17ff   0xc0010000 - 0xc0011fff
+     * 0x1800 - 0x1fff           Reserved
+     */
+    if (uMsr <= 0x00001FFF)
+    {
+        /* Pentium-compatible MSRs */
+        ulBit    = uMsr * 2;
+    }
+    else if (   uMsr >= 0xC0000000
+             && uMsr <= 0xC0001FFF)
+    {
+        /* AMD Sixth Generation x86 Processor MSRs and SYSCALL */
+        ulBit = (uMsr - 0xC0000000) * 2;
+        pbMsrBitmap += 0x800;
+    }
+    else if (   uMsr >= 0xC0010000
+             && uMsr <= 0xC0011FFF)
+    {
+        /* AMD Seventh and Eighth Generation Processor MSRs */
+        ulBit = (uMsr - 0xC0001000) * 2;
+        pbMsrBitmap += 0x1000;
+    }
+    else
+    {
+        AssertFailed();
+        return;
+    }
+
+    Assert(ulBit < 0x3fff /* 16 * 1024 - 1 */);
+    if (enmRead == SVMMSREXIT_INTERCEPT_READ)
+        ASMBitSet(pbMsrBitmap, ulBit);
+    else
+        ASMBitClear(pbMsrBitmap, ulBit);
+
+    if (enmWrite == SVMMSREXIT_INTERCEPT_WRITE)
+        ASMBitSet(pbMsrBitmap, ulBit + 1);
+    else
+        ASMBitClear(pbMsrBitmap, ulBit + 1);
 }
 
