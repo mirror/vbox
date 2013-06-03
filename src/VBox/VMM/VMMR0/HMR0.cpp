@@ -1429,7 +1429,7 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
     /* Always load the guest's debug state on-demand. */
     CPUMDeactivateGuestDebugState(pVCpu);
 
-    /* Always reload the host context and the guest's CR0 register (for the FPU bits). */
+    /* Always reload the host context and the guest's CR0 register for the FPU bits (#NM, #MF, CR0.NE, CR0.TS, CR0.MP). */
     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0 | HM_CHANGED_HOST_CONTEXT;
 
     /* Setup the register and mask according to the current execution mode. */
@@ -1507,7 +1507,6 @@ VMMR0_INT_DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
         Log2(("CPUMR0SaveGuestFPU\n"));
         CPUMR0SaveGuestFPU(pVM, pVCpu, pCtx);
 
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0; /** @todo r=bird: Why HM_CHANGED_GUEST_CR0?? */
         Assert(!CPUMIsGuestFPUStateActive(pVCpu));
     }
 
