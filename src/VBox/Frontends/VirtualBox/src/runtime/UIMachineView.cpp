@@ -204,10 +204,68 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     machine.SetExtraData(strKey, isFullscreenOrSeamless() ? "true" : "");
 }
 
-void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iW, int iH)
+bool UIMachineView::guestResizeEvent(QEvent *pEvent,
+                                     bool fFullscreenOrSeamless)
+{
+    /* Some situations require framebuffer resize events to be ignored at all,
+     * leaving machine-window, machine-view and framebuffer sizes preserved: */
+    if (uisession()->isGuestResizeIgnored())
+        return true;
+
+    /* Get guest resize-event: */
+    UIResizeEvent *pResizeEvent = static_cast<UIResizeEvent*>(pEvent);
+
+    /** If only the pitch has changed (or nothing at all!) we only update the
+     * framebuffer and don't touch the window.  This prevents unwanted resizes
+     * when entering or exiting fullscreen on X.Org guests and when
+     * re-attaching the framebuffer on a view switch. */
+    bool fResize =    pResizeEvent->width() != frameBuffer()->width()
+                   || pResizeEvent->height() != frameBuffer()->height();
+
+    /* Perform framebuffer resize if parent window is visible: */
+    if (uisession()->isScreenVisible(m_uScreenId))
+        frameBuffer()->resizeEvent(pResizeEvent);
+
+    if (fResize && uisession()->isScreenVisible(m_uScreenId))
+    {
+        /* Reapply maximum size restriction for machine-view: */
+        setMaximumSize(sizeHint());
+
+        /* Disable the resize hint override hack: */
+        m_sizeHintOverride = QSize(-1, -1);
+
+        /* Perform machine-view resize: */
+        resize(pResizeEvent->width(), pResizeEvent->height());
+
+        /* Let our toplevel widget calculate its sizeHint properly: */
+        QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
+
+#ifdef Q_WS_MAC
+        machineLogic()->updateDockIconSize(screenId(), pResizeEvent->width(), pResizeEvent->height());
+#endif /* Q_WS_MAC */
+
+        /* Update machine-view sliders: */
+        updateSliders();
+
+        /* Normalize machine-window geometry: */
+        if (!fFullscreenOrSeamless)
+            normalizeGeometry(true /* Adjust Position? */);
+    }
+
+    /* Report to the VM thread that we finished resizing: */
+    session().GetConsole().GetDisplay().ResizeCompleted(screenId());
+
+    /* Emit a signal about guest was resized: */
+    emit resizeHintDone();
+
+    pEvent->accept();
+    return true;
+}
+
+void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight)
 {
     /* Update corresponding viewport part: */
-    viewport()->update(iX - contentsX(), iY - contentsY(), iW, iH);
+    viewport()->update(iX - contentsX(), iY - contentsY(), iWidth, iHeight);
 }
 
 void UIMachineView::sltDesktopResized()
@@ -841,64 +899,6 @@ CGImageRef UIMachineView::frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer)
     return ir;
 }
 #endif /* Q_WS_MAC */
-
-bool UIMachineView::guestResizeEvent(QEvent *pEvent,
-                                     bool fFullscreenOrSeamless)
-{
-    /* Some situations require framebuffer resize events to be ignored at all,
-     * leaving machine-window, machine-view and framebuffer sizes preserved: */
-    if (uisession()->isGuestResizeIgnored())
-        return true;
-
-    /* Get guest resize-event: */
-    UIResizeEvent *pResizeEvent = static_cast<UIResizeEvent*>(pEvent);
-
-    /** If only the pitch has changed (or nothing at all!) we only update the
-     * framebuffer and don't touch the window.  This prevents unwanted resizes
-     * when entering or exiting fullscreen on X.Org guests and when
-     * re-attaching the framebuffer on a view switch. */
-    bool fResize =    pResizeEvent->width() != frameBuffer()->width()
-                   || pResizeEvent->height() != frameBuffer()->height();
-
-    /* Perform framebuffer resize if parent window is visible: */
-    if (uisession()->isScreenVisible(m_uScreenId))
-        frameBuffer()->resizeEvent(pResizeEvent);
-
-    if (fResize && uisession()->isScreenVisible(m_uScreenId))
-    {
-        /* Reapply maximum size restriction for machine-view: */
-        setMaximumSize(sizeHint());
-
-        /* Disable the resize hint override hack: */
-        m_sizeHintOverride = QSize(-1, -1);
-
-        /* Perform machine-view resize: */
-        resize(pResizeEvent->width(), pResizeEvent->height());
-
-        /* Let our toplevel widget calculate its sizeHint properly: */
-        QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
-
-#ifdef Q_WS_MAC
-        machineLogic()->updateDockIconSize(screenId(), pResizeEvent->width(), pResizeEvent->height());
-#endif /* Q_WS_MAC */
-
-        /* Update machine-view sliders: */
-        updateSliders();
-
-        /* Normalize machine-window geometry: */
-        if (!fFullscreenOrSeamless)
-            normalizeGeometry(true /* Adjust Position? */);
-    }
-
-    /* Report to the VM thread that we finished resizing: */
-    session().GetConsole().GetDisplay().ResizeCompleted(screenId());
-
-    /* Emit a signal about guest was resized: */
-    emit resizeHintDone();
-
-    pEvent->accept();
-    return true;
-}
 
 UIVisualStateType UIMachineView::visualStateType() const
 {
