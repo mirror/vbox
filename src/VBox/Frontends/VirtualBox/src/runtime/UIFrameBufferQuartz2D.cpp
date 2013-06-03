@@ -145,7 +145,7 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *pRectangles, ULONG aC
 
     /* Send async signal to update asynchronous visible-region: */
     if (m_pMachineView)
-        emit sigSetVisibleRegion(region);
+        emit sigSetVisibleRegion(reg);
 
     /* Confirm SetVisibleRegion: */
     return S_OK;
