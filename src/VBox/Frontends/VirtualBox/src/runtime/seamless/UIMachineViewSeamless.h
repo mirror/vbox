@@ -38,11 +38,6 @@ protected:
     /* Seamless machine-view destructor: */
     virtual ~UIMachineViewSeamless();
 
-private slots:
-
-    /* Console callback handlers: */
-    void sltAdditionsStateChanged();
-
 private:
 
     /* Event handlers: */
@@ -52,12 +47,10 @@ private:
     /* Prepare helpers: */
     void prepareCommon();
     void prepareFilters();
-    void prepareConsoleConnections();
     void prepareSeamless();
 
     /* Cleanup helpers: */
     void cleanupSeamless();
-    //void cleanupConsoleConnections() {}
     //void cleanupFilters() {}
     //void cleanupCommon() {}
 
