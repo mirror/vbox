@@ -66,23 +66,6 @@ private:
 };
 
 /**
- *  Frame buffer set region event.
- */
-class UISetRegionEvent : public QEvent
-{
-public:
-
-    UISetRegionEvent(const QRegion &region)
-        : QEvent((QEvent::Type)SetRegionEventType)
-        , m_region(region) {}
-    QRegion region() { return m_region; }
-
-private:
-
-    QRegion m_region;
-};
-
-/**
  *  Common IFramebuffer implementation for all methods used by GUI to maintain
  *  the VM display video memory.
  *
@@ -114,6 +97,7 @@ signals:
                           int iBitsPerPixel, int iBytesPerLine,
                           int iWidth, int iHeight);
     void sigNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
+    void sigSetVisibleRegion(QRegion region);
 
 public:
 
@@ -205,7 +189,7 @@ public:
     virtual void moveEvent(QMoveEvent* /*pEvent*/) {}
     virtual void resizeEvent(UIResizeEvent *pEvent) = 0;
     virtual void paintEvent(QPaintEvent *pEvent) = 0;
-    virtual void applyVisibleRegionEvent(UISetRegionEvent *pEvent) = 0;
+    virtual void applyVisibleRegion(const QRegion &region) = 0;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* this method is called from the GUI thread

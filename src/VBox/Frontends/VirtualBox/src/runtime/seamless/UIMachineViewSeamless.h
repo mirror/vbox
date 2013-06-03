@@ -38,10 +38,14 @@ protected:
     /* Seamless machine-view destructor: */
     virtual ~UIMachineViewSeamless();
 
+private slots:
+
+    /* Handler: Frame-buffer SetVisibleRegion stuff: */
+    virtual void sltHandleSetVisibleRegion(QRegion region);
+
 private:
 
     /* Event handlers: */
-    bool event(QEvent *pEvent);
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
     /* Prepare helpers: */

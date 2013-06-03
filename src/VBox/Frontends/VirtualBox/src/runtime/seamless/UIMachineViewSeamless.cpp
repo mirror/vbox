@@ -69,21 +69,10 @@ UIMachineViewSeamless::~UIMachineViewSeamless()
     cleanupFrameBuffer();
 }
 
-bool UIMachineViewSeamless::event(QEvent *pEvent)
+void UIMachineViewSeamless::sltHandleSetVisibleRegion(QRegion region)
 {
-    switch (pEvent->type())
-    {
-        case SetRegionEventType:
-        {
-            /* Apply new seamless-region: */
-            m_pFrameBuffer->applyVisibleRegionEvent(static_cast<UISetRegionEvent*>(pEvent));
-            return true;
-        }
-
-        default:
-            break;
-    }
-    return UIMachineView::event(pEvent);
+    /* Apply new seamless-region: */
+    m_pFrameBuffer->applyVisibleRegion(region);
 }
 
 bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)

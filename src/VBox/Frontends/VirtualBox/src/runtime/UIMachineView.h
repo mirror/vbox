@@ -92,12 +92,15 @@ protected slots:
     void sltPerformGuestResize(const QSize &aSize = QSize());
 
     /* Handler: Frame-buffer RequestResize stuff: */
-    void sltHandleRequestResize(int iPixelFormat, uchar *pVRAM,
+    virtual void sltHandleRequestResize(int iPixelFormat, uchar *pVRAM,
                                 int iBitsPerPixel, int iBytesPerLine,
                                 int iWidth, int iHeight);
 
     /* Handler: Frame-buffer NotifyUpdate stuff: */
-    void sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
+    virtual void sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
+
+    /* Handler: Frame-buffer SetVisibleRegion stuff: */
+    virtual void sltHandleSetVisibleRegion(QRegion region);
 
     /* Watch dog for desktop resizes: */
     void sltDesktopResized();

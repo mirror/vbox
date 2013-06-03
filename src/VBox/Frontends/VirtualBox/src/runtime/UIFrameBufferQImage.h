@@ -46,7 +46,7 @@ public:
     /* API: Event-delegate stuff: */
     void resizeEvent(UIResizeEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
-    void applyVisibleRegionEvent(UISetRegionEvent *pEvent);
+    void applyVisibleRegion(const QRegion &region);
 
 private:
 
