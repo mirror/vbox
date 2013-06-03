@@ -529,7 +529,7 @@ void UIMachineView::cleanupFrameBuffer()
         else
         {
             /* Warn framebuffer about its no more necessary: */
-            m_pFrameBuffer->setDeleted(true);
+            m_pFrameBuffer->setScheduledToDelete(true);
             /* Detach framebuffer from Display: */
             CDisplay display = session().GetConsole().GetDisplay();
             display.SetFramebuffer(m_uScreenId, CFramebuffer(NULL));

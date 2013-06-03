@@ -956,7 +956,7 @@ void UISession::cleanupFramebuffers()
         if (pFb)
         {
             /* Warn framebuffer about its no more necessary: */
-            pFb->setDeleted(true);
+            pFb->setScheduledToDelete(true);
             /* Detach framebuffer from Display: */
             CDisplay display = session().GetConsole().GetDisplay();
             display.SetFramebuffer(i, CFramebuffer(NULL));

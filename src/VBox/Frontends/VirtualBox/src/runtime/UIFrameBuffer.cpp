@@ -41,10 +41,10 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI (UIFrameBuffer, IFramebuffer)
 UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
     : m_pMachineView(pMachineView)
     , m_width(0), m_height(0)
-    , m_fIsDeleted(false)
-#if defined (Q_OS_WIN32)
+    , m_fIsScheduledToDelete(false)
+#ifdef Q_OS_WIN
     , m_iRefCnt(0)
-#endif
+#endif /* Q_OS_WIN */
 {
     /* Assign mahine-view: */
     AssertMsg(m_pMachineView, ("UIMachineView must not be null\n"));
@@ -63,7 +63,13 @@ UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
 
 UIFrameBuffer::~UIFrameBuffer()
 {
+    /* Deinitialize critical-section: */
     RTCritSectDelete(&m_critSect);
+
+    /* Disconnect NotifyUpdate handler: */
+    if (m_pMachineView)
+        disconnect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
+                   m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)));
 }
 
 STDMETHODIMP UIFrameBuffer::COMGETTER(Address) (BYTE **ppAddress)
@@ -165,35 +171,53 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
                                           ULONG uWidth, ULONG uHeight,
                                           BOOL *pbFinished)
 {
-    if (m_fIsDeleted)
+    /* Make sure frame-buffer is not yet scheduled for removal: */
+    if (m_fIsScheduledToDelete)
         return E_FAIL;
 
+    /* Currently screen ID is not used: */
     NOREF(uScreenId);
+
+    /* Mark request as not-yet-finished: */
     *pbFinished = FALSE;
-    lock(); /* See comment in setView(). */
+
+    /* See comment in setView(): */
+    lock();
+
+    /* Widget resize is NOT thread safe and never will be,
+     * We have to notify the machine-view with the async event to perform resize operation,
+     * later it will be replaced with signal stuff. */
     if (m_pMachineView)
         QApplication::postEvent(m_pMachineView,
                                 new UIResizeEvent(uPixelFormat, pVRAM,
                                                   uBitsPerPixel, uBytesPerLine,
                                                   uWidth, uHeight));
     else
-        /* Report to the VM thread that we finished resizing and rely on the
+        /* Mark request as finished.
+         * It is required to report to the VM thread that we finished resizing and rely on the
          * synchronisation when the new view is attached. */
         *pbFinished = TRUE;
+
+    /* Unlock thread finally: */
     unlock();
 
+    /* Confirm RequestResize: */
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uW, ULONG uH)
+STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
 {
+    /* Make sure frame-buffer is not yet scheduled for removal: */
+    if (m_fIsScheduledToDelete)
+        return E_FAIL;
+
     /* See comment in setView(): */
     lock();
 
     /* QWidget::update() is NOT thread safe and seems never will be,
      * So we have to notify the machine-view with the async signal to perform update operation. */
     if (m_pMachineView)
-        emit sigNotifyUpdate(uX, uY, uW, uH);
+        emit sigNotifyUpdate(uX, uY, uWidth, uHeight);
 
     /* Unlock thread finally: */
     unlock();
@@ -345,3 +369,4 @@ void UIFrameBuffer::setView(UIMachineView * pView)
     /* Unlock thread finally: */
     unlock();
 }
+
