@@ -1693,7 +1693,9 @@ void crPixelCopy3D( GLsizei width, GLsizei height, GLsizei depth,
 
     /*@todo this should be implemented properly*/
 
+#ifndef DEBUG_misha
     crWarning( "crPixelCopy3D:  simply crMemcpy'ing from srcPtr to dstPtr" );
+#endif
     if (dstFormat != srcFormat)
         crWarning( "crPixelCopy3D: formats don't match!" );
     if (dstType != srcType)
@@ -1844,18 +1846,18 @@ void crDumpNamedTGA(const char* fname, GLint w, GLint h, GLvoid *data)
     fclose(out);
 }
 
-void crDumpNamedTGAV(const char* fname, GLint w, GLint h, GLvoid *data, va_list va)
+void crDumpNamedTGAV(GLint w, GLint h, GLvoid *data, const char* fname, va_list va)
 {
     char szName[4096];
     RTStrPrintfV(szName, sizeof(szName), fname, va);
     crDumpNamedTGA(szName, w, h, data);
 }
 
-void crDumpNamedTGAF(const char* fname, GLint w, GLint h, GLvoid *data, ...)
+void crDumpNamedTGAF(GLint w, GLint h, GLvoid *data, const char* fname, ...)
 {
     va_list va;
     int rc;
     va_start(va, fname);
-    crDumpNamedTGAV(fname, w, h, data, va);
+    crDumpNamedTGAV(w, h, data, fname, va);
     va_end(va);
 }
