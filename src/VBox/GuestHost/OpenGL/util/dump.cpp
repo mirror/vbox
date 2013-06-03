@@ -31,6 +31,8 @@
 
 #include <stdio.h>
 
+#ifdef VBOX_WITH_CRDUMPER
+
 /* dump stuff */
 #pragma pack(1)
 typedef struct VBOX_BITMAPFILEHEADER {
@@ -139,8 +141,6 @@ void* crDmpHashtableSearchByHwid(CRHashTable *pHash, GLuint hwid, PFNCRDUMPGETHW
     return Data.pvObj;
 }
 
-
-#ifdef VBOX_WITH_CRDUMPER
 #if 0
 typedef struct CR_SERVER_DUMP_FIND_TEX
 {
