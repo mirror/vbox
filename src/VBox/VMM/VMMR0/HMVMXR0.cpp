@@ -1505,7 +1505,7 @@ DECLINLINE(void) hmR0VmxFlushTaggedTlb(PVMCPU pVCpu)
 static int hmR0VmxSetupTaggedTlb(PVM pVM)
 {
     /*
-     * Determine optimal flush type for nested paging.
+     * Determine optimal flush type for Nested Paging.
      * We cannot ignore EPT if no suitable flush-types is supported by the CPU as we've already setup unrestricted
      * guest execution (see hmR3InitFinalizeR0()).
      */
@@ -1660,7 +1660,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
         return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
 
-    /* Without nested paging, INVLPG (also affects INVPCID) and MOV CR3 instructions should cause VM-exits. */
+    /* Without Nested Paging, INVLPG (also affects INVPCID) and MOV CR3 instructions should cause VM-exits. */
     if (!pVM->hm.s.fNestedPaging)
     {
         Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);                      /* Paranoia. */
@@ -1881,7 +1881,7 @@ static int hmR0VmxInitXcptBitmap(PVM pVM, PVMCPU pVCpu)
 
     uint32_t u32XcptBitmap = 0;
 
-    /* Without nested paging, #PF must cause a VM-exit so we can sync our shadow page tables. */
+    /* Without Nested Paging, #PF must cause a VM-exit so we can sync our shadow page tables. */
     if (!pVM->hm.s.fNestedPaging)
         u32XcptBitmap |= RT_BIT(X86_XCPT_PF);
 
