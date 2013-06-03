@@ -69,21 +69,6 @@ void UIMachineViewFullscreen::sltAdditionsStateChanged()
             sltPerformGuestResize(workingArea().size());
 }
 
-bool UIMachineViewFullscreen::event(QEvent *pEvent)
-{
-    switch (pEvent->type())
-    {
-        case ResizeEventType:
-        {
-            return guestResizeEvent(pEvent, true);
-        }
-
-        default:
-            break;
-    }
-    return UIMachineView::event(pEvent);
-}
-
 bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
     if (pWatched != 0 && pWatched == machineWindow())

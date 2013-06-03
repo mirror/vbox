@@ -88,11 +88,6 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
             return true;
         }
 
-        case ResizeEventType:
-        {
-            return guestResizeEvent(pEvent, true);
-        }
-
         default:
             break;
     }

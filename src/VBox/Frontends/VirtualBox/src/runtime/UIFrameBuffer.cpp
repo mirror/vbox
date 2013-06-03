@@ -50,11 +50,9 @@ UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
     AssertMsg(m_pMachineView, ("UIMachineView must not be null\n"));
     m_WinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
-    /* Connect NotifyUpdate handler: */
+    /* Connect handlers: */
     if (m_pMachineView)
-        connect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
-                m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)),
-                Qt::QueuedConnection);
+        prepareConnections();
 
     /* Initialize critical-section: */
     int rc = RTCritSectInit(&m_critSect);
@@ -66,10 +64,9 @@ UIFrameBuffer::~UIFrameBuffer()
     /* Deinitialize critical-section: */
     RTCritSectDelete(&m_critSect);
 
-    /* Disconnect NotifyUpdate handler: */
+    /* Disconnect handlers: */
     if (m_pMachineView)
-        disconnect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
-                   m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)));
+        cleanupConnections();
 }
 
 STDMETHODIMP UIFrameBuffer::COMGETTER(Address) (BYTE **ppAddress)
@@ -185,13 +182,9 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
     lock();
 
     /* Widget resize is NOT thread safe and never will be,
-     * We have to notify the machine-view with the async event to perform resize operation,
-     * later it will be replaced with signal stuff. */
+     * We have to notify the machine-view with the async signal to perform resize operation. */
     if (m_pMachineView)
-        QApplication::postEvent(m_pMachineView,
-                                new UIResizeEvent(uPixelFormat, pVRAM,
-                                                  uBitsPerPixel, uBytesPerLine,
-                                                  uWidth, uHeight));
+        emit sigRequestResize(uPixelFormat, pVRAM, uBitsPerPixel, uBytesPerLine, uWidth, uHeight);
     else
         /* Mark request as finished.
          * It is required to report to the VM thread that we finished resizing and rely on the
@@ -351,22 +344,37 @@ void UIFrameBuffer::setView(UIMachineView * pView)
      * so I will do it anyway. */
     lock();
 
-    /* Disconnect NotifyUpdate handler: */
+    /* Disconnect handlers: */
     if (m_pMachineView)
-        disconnect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
-                   m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)));
+        cleanupConnections();
 
     /* Reassign machine-view: */
     m_pMachineView = pView;
     m_WinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
-    /* Connect NotifyUpdate handler: */
+    /* Connect handlers: */
     if (m_pMachineView)
-        connect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
-                m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)),
-                Qt::QueuedConnection);
+        prepareConnections();
 
     /* Unlock thread finally: */
     unlock();
+}
+
+void UIFrameBuffer::prepareConnections()
+{
+    connect(this, SIGNAL(sigRequestResize(int, uchar*, int, int, int, int)),
+            m_pMachineView, SLOT(sltHandleRequestResize(int, uchar*, int, int, int, int)),
+            Qt::QueuedConnection);
+    connect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
+            m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)),
+            Qt::QueuedConnection);
+}
+
+void UIFrameBuffer::cleanupConnections()
+{
+    disconnect(this, SIGNAL(sigRequestResize(int, uchar*, int, int, int, int)),
+               m_pMachineView, SLOT(sltHandleRequestResize(int, uchar*, int, int, int, int)));
+    disconnect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
+               m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)));
 }
 
