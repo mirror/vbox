@@ -31,13 +31,13 @@
 
 RT_C_DECLS_BEGIN
 
-DECLEXPORT(void) crDmpDumpImgDmlBreak(struct CR_DUMPER * pDumper, const char*pszEntryDesc, CR_BLITTER_IMG *pImg);
+DECLEXPORT(void) crDmpDumpImgDmlBreak(struct CR_DUMPER * pDumper, CR_BLITTER_IMG *pImg, const char*pszEntryDesc);
 
 DECLEXPORT(void) crDmpDumpStrDbgPrint(struct CR_DUMPER * pDumper, const char*pszStr);
 
 struct CR_DUMPER;
 
-typedef DECLCALLBACKPTR(void, PFNCRDUMPIMG)(struct CR_DUMPER * pDumper, const char*pszEntryDesc, CR_BLITTER_IMG *pImg);
+typedef DECLCALLBACKPTR(void, PFNCRDUMPIMG)(struct CR_DUMPER * pDumper, CR_BLITTER_IMG *pImg, const char*pszEntryDesc);
 typedef DECLCALLBACKPTR(void, PFNCRDUMPSTR)(struct CR_DUMPER * pDumper, const char*pszStr);
 
 typedef struct CR_DUMPER
@@ -46,8 +46,8 @@ typedef struct CR_DUMPER
     PFNCRDUMPSTR pfnDumpStr;
 } CR_DUMPER;
 
-#define crDmpImg(_pDumper, _pDesc, _pImg) do { \
-            (_pDumper)->pfnDumpImg((_pDumper), (_pDesc), (_pImg)); \
+#define crDmpImg(_pDumper, _pImg, _pDesc) do { \
+            (_pDumper)->pfnDumpImg((_pDumper), (_pImg), (_pDesc)); \
         } while (0)
 
 #define crDmpStr(_pDumper, _pDesc) do { \
@@ -66,6 +66,21 @@ DECLINLINE(void) crDmpStrF(CR_DUMPER *pDumper, const char *pszStr, ...)
     va_list pArgList;
     va_start(pArgList, pszStr);
     crDmpStrV(pDumper, pszStr, pArgList);
+    va_end(pArgList);
+}
+
+DECLINLINE(void) crDmpImgV(CR_DUMPER *pDumper, CR_BLITTER_IMG *pImg, const char *pszStr, va_list pArgList)
+{
+    char szBuffer[4096] = {0};
+    RTStrPrintfV(szBuffer, sizeof (szBuffer), pszStr, pArgList);
+    crDmpImg(pDumper, pImg, szBuffer);
+}
+
+DECLINLINE(void) crDmpImgF(CR_DUMPER *pDumper, CR_BLITTER_IMG *pImg, const char *pszStr, ...)
+{
+    va_list pArgList;
+    va_start(pArgList, pszStr);
+    crDmpImgV(pDumper, pImg, pszStr, pArgList);
     va_end(pArgList);
 }
 
@@ -107,6 +122,13 @@ DECLINLINE(void) crRecInit(CR_RECORDER *pRec, CR_BLITTER *pBlitter, SPUDispatchT
 
 VBOXDUMPDECL(void) crRecDumpBuffer(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, GLint idRedirFBO, VBOXVR_TEXTURE *pRedirTex);
 VBOXDUMPDECL(void) crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin);
+VBOXDUMPDECL(void) crRecDumpShader(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
+VBOXDUMPDECL(void) crRecDumpProgram(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
+VBOXDUMPDECL(void) crRecDumpCurrentProgram(CR_RECORDER *pRec, CRContext *ctx);
+
+
+typedef DECLCALLBACKPTR(GLuint, PFNCRDUMPGETHWID)(void *pvObj);
+void* crDmpHashtableSearchByHwid(CRHashTable *pHash, GLuint hwid, PFNCRDUMPGETHWID pfnGetHwid, unsigned long *pKey);
 
 RT_C_DECLS_END
 

@@ -721,6 +721,8 @@ extern void APIENTRY glZPixCR(GLsizei width, GLsizei height, GLenum format,
 #define GL_RCUSAGE_TEXTURE_CLEAR_CR   0x8B2A
 /*configures host to create windows initially hidden*/
 #define GL_HOST_WND_CREATED_HIDDEN    0x8B2B
+/* guest requests host whether e debug break is needed*/
+#define GL_DBG_CHECK_BREAK_CR         0x8B2C
 
 /**********************************************************************/
 /*****                Chromium-specific API                       *****/

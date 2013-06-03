@@ -385,48 +385,89 @@ DECLINLINE(void) crServerCtxSwitchPostprocess(CR_SERVER_CTX_SWITCH *pData)
 
 void crServerInitTmpCtxDispatch();
 
+//#define VBOX_WITH_CRSERVER_DUMPER
 #ifdef VBOX_WITH_CRSERVER_DUMPER
 void crServerDumpCheckTerm();
 int crServerDumpCheckInit();
-void crServerDumpBuffer();
+void crServerDumpBuffer(int idx);
 void crServerDumpTextures();
+void crServerDumpShader(GLint id);
+void crServerDumpProgram(GLint id);
+void crServerDumpCurrentProgram();
+void crServerDumpFramesCheck();
 
-#define CR_SERVER_DUMP_F_DRAW_BUFF_ENTER 0x01
-#define CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE  0x02
-#define CR_SERVER_DUMP_F_DRAW_TEX_ENTER  0x10
-#define CR_SERVER_DUMP_F_DRAW_TEX_LEAVE   0x20
+extern unsigned long g_CrDbgDumpDraw;
+extern unsigned long g_CrDbgDumpDrawFramesSettings;
+extern unsigned long g_CrDbgDumpDrawFramesAppliedSettings;
+extern unsigned long g_CrDbgDumpDrawFramesCount;
+bool crServerDumpFilter(unsigned long event);
 
-extern int g_CrDbgDumpDraw;
-bool crServerDumpFilter(int event);
+#define CR_SERVER_DUMP_F_DRAW_BUFF_ENTER        0x00000001
+#define CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE        0x00000002
+#define CR_SERVER_DUMP_F_DRAW_TEX_ENTER         0x00000010
+#define CR_SERVER_DUMP_F_DRAW_TEX_LEAVE         0x00000020
+#define CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER     0x00000100
+#define CR_SERVER_DUMP_F_DRAW_PROGRAM_LEAVE     0x00000200
+
+#define CR_SERVER_DUMP_F_DRAW_ALL (CR_SERVER_DUMP_F_DRAW_BUFF_ENTER | CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE \
+        | CR_SERVER_DUMP_F_DRAW_TEX_ENTER | CR_SERVER_DUMP_F_DRAW_TEX_LEAVE \
+        | CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER | CR_SERVER_DUMP_F_DRAW_PROGRAM_LEAVE)
+
+#define CR_SERVER_DUMP_F_COMPILE_SHADER         0x00001000
+#define CR_SERVER_DUMP_F_LINK_PROGRAM           0x00002000
+#define CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER      0x00010000
+#define CR_SERVER_DUMP_F_SWAPBUFFERS_LEAVE      0x00020000
 
 #define CR_SERVER_DUMP_IF_ANY(_ev) ((g_CrDbgDumpDraw & (_ev)) && crServerDumpFilter((_ev)))
 
 #define CR_SERVER_DUMP_DRAW_ENTER() do { \
-            if (!CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_ENTER | CR_SERVER_DUMP_F_DRAW_TEX_ENTER)) break; \
+            if (!CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_ENTER | CR_SERVER_DUMP_F_DRAW_TEX_ENTER | CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER)) break; \
             crServerDumpCheckInit(); \
-            crDmpStrF(cr_server.Recorder.pDumper, "==> %s\n", __FUNCTION__); \
-            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_ENTER)) { \
-                crServerDumpBuffer(); \
-            } \
-            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_TEX_ENTER)) { \
-                crServerDumpTextures(); \
-            } \
+            crDmpStrF(cr_server.Recorder.pDumper, "==> %s", __FUNCTION__); \
+            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER)) { crServerDumpCurrentProgram(); } \
+            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_TEX_ENTER)) { crServerDumpTextures(); } \
+            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_ENTER)) { crServerDumpBuffer(-1); } \
+            crDmpStrF(cr_server.Recorder.pDumper, "=================="); \
         } while (0)
 
 #define CR_SERVER_DUMP_DRAW_LEAVE() do { \
-            if (!CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE | CR_SERVER_DUMP_F_DRAW_TEX_LEAVE)) break; \
+            if (!CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE | CR_SERVER_DUMP_F_DRAW_TEX_LEAVE | CR_SERVER_DUMP_F_DRAW_PROGRAM_LEAVE)) break; \
             crServerDumpCheckInit(); \
-            crDmpStrF(cr_server.Recorder.pDumper, "<== %s\n", __FUNCTION__); \
-            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE)) { \
-                crServerDumpBuffer(); \
-            } \
-            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_TEX_LEAVE)) { \
-                crServerDumpTextures(); \
-            } \
+            crDmpStrF(cr_server.Recorder.pDumper, "<== %s", __FUNCTION__); \
+            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE)) { crServerDumpBuffer(-1); } \
+            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_TEX_LEAVE)) { crServerDumpTextures(); } \
+            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_PROGRAM_LEAVE)) { crServerDumpCurrentProgram(); } \
+            crDmpStrF(cr_server.Recorder.pDumper, "=================="); \
         } while (0)
+
+#define CR_SERVER_DUMP_COMPILE_SHADER(_id) do { \
+            if (!CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_COMPILE_SHADER)) break; \
+            crServerDumpCheckInit(); \
+            crServerDumpShader((_id)); \
+        } while (0)
+
+#define CR_SERVER_DUMP_LINK_PROGRAM(_id) do { \
+            if (!CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_LINK_PROGRAM)) break; \
+            crServerDumpCheckInit(); \
+            crServerDumpProgram((_id)); \
+        } while (0)
+
+#define CR_SERVER_DUMP_SWAPBUFFERS_ENTER() do { \
+            if (!g_CrDbgDumpDrawFramesCount && !CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER)) break; \
+            crServerDumpCheckInit(); \
+            crDmpStrF(cr_server.Recorder.pDumper, "== %s", __FUNCTION__); \
+            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER)) { crServerDumpBuffer(CR_SERVER_FBO_BB_IDX(cr_server.currentMural)); } \
+            if (g_CrDbgDumpDrawFramesCount) { crServerDumpFramesCheck(); } \
+        } while (0)
+
+#define CR_SERVER_DUMP_SWAPBUFFERS_LEAVE() do {} while (0)
 #else /* if !defined VBOX_WITH_CRSERVER_DUMPER */
 #define CR_SERVER_DUMP_DRAW_ENTER() do {} while (0)
 #define CR_SERVER_DUMP_DRAW_LEAVE() do {} while (0)
+#define CR_SERVER_DUMP_COMPILE_SHADER(_id) do {} while (0)
+#define CR_SERVER_DUMP_LINK_PROGRAM(_id) do {} while (0)
+#define CR_SERVER_DUMP_SWAPBUFFERS_ENTER() do {} while (0)
+#define CR_SERVER_DUMP_SWAPBUFFERS_LEAVE() do {} while (0)
 #endif /* !VBOX_WITH_CRSERVER_DUMPER */
 
 RT_C_DECLS_END

@@ -540,6 +540,9 @@ typedef struct {
     CR_DUMPER *pDumper;
 #endif
 
+    int RcToGuest;
+    int RcToGuestOnce;
+
     /* @todo: should we use just one blitter?
      * we use two currently because the drawable attribs can differ*/
     CR_DISPLAY_ENTRY_MAP  PresentTexturepMap;

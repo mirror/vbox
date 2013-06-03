@@ -49,7 +49,40 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetChromiumParametervCR(GLenum tar
     CRASSERT(bytes >= 0);
     CRASSERT(bytes < 4096);
 
-    cr_server.head_spu->dispatch_table.GetChromiumParametervCR( target, index, type, count, local_storage );
+    switch (target)
+    {
+        case GL_DBG_CHECK_BREAK_CR:
+        {
+            if (bytes > 0)
+            {
+                GLubyte *pbRc = local_storage;
+                GLuint *puRc = (GLuint *)(bytes >=4 ? local_storage : NULL);
+                int rc;
+                memset(local_storage, 0, bytes);
+                if (cr_server.RcToGuestOnce)
+                {
+                    rc = cr_server.RcToGuestOnce;
+                    cr_server.RcToGuestOnce = 0;
+                }
+                else
+                {
+                    rc = cr_server.RcToGuest;
+                }
+                if (puRc)
+                    *puRc = rc;
+                else
+                    *pbRc = !!rc;
+            }
+            else
+            {
+                crWarning("zero bytes for GL_DBG_CHECK_BREAK_CR");
+            }
+            break;
+        }
+        default:
+            cr_server.head_spu->dispatch_table.GetChromiumParametervCR( target, index, type, count, local_storage );
+            break;
+    }
 
     crServerReturnValue( local_storage, bytes );
 }
@@ -1358,7 +1391,18 @@ void crServerInitTmpCtxDispatch()
  *
  * 0x03 - dump buffer on enter and exit
  * 0x22 - dump texture and buffer on exit */
-int g_CrDbgDumpDraw = 0; //CR_SERVER_DUMP_F_DRAW_BUFF_ENTER | CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE;
+
+unsigned long g_CrDbgDumpDraw = CR_SERVER_DUMP_F_COMPILE_SHADER | CR_SERVER_DUMP_F_LINK_PROGRAM; //CR_SERVER_DUMP_F_DRAW_BUFF_ENTER | CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE;
+unsigned long g_CrDbgDumpDrawFramesSettings = CR_SERVER_DUMP_F_DRAW_BUFF_ENTER
+        | CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE
+        | CR_SERVER_DUMP_F_DRAW_TEX_ENTER
+        | CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER
+        | CR_SERVER_DUMP_F_COMPILE_SHADER
+        | CR_SERVER_DUMP_F_LINK_PROGRAM
+        | CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER;
+unsigned long g_CrDbgDumpDrawFramesAppliedSettings = 0;
+unsigned long g_CrDbgDumpDrawFramesSavedInitSettings = 0;
+unsigned long g_CrDbgDumpDrawFramesCount = 0;
 
 void crServerDumpCheckTerm()
 {
@@ -1414,17 +1458,35 @@ int crServerDumpCheckInit()
     return VINF_SUCCESS;
 }
 
-void crServerDumpBuffer()
+void crServerDumpShader(GLint id)
+{
+    CRContext *ctx = crStateGetCurrent();
+    crRecDumpShader(&cr_server.Recorder, ctx, id, 0);
+}
+
+void crServerDumpProgram(GLint id)
+{
+    CRContext *ctx = crStateGetCurrent();
+    crRecDumpProgram(&cr_server.Recorder, ctx, id, 0);
+}
+
+void crServerDumpCurrentProgram()
+{
+    CRContext *ctx = crStateGetCurrent();
+    crRecDumpCurrentProgram(&cr_server.Recorder, ctx);
+}
+
+void crServerDumpBuffer(int idx)
 {
     CRContextInfo *pCtxInfo = cr_server.currentCtxInfo;
     CR_BLITTER_WINDOW BltWin;
     CR_BLITTER_CONTEXT BltCtx;
     CRContext *ctx = crStateGetCurrent();
-    GLint idx = crServerMuralFBOIdxFromBufferName(cr_server.currentMural, pCtxInfo->pContext->buffer.drawBuffer);
     GLint idFBO;
     GLint idTex;
     VBOXVR_TEXTURE RedirTex;
     int rc = crServerDumpCheckInit();
+    idx = idx >= 0 ? idx : crServerMuralFBOIdxFromBufferName(cr_server.currentMural, pCtxInfo->pContext->buffer.drawBuffer);
     if (!RT_SUCCESS(rc))
     {
         crWarning("crServerDumpCheckInit failed, rc %d", rc);
@@ -1470,9 +1532,45 @@ void crServerDumpTextures()
     crRecDumpTextures(&cr_server.Recorder, ctx, &BltCtx, &BltWin);
 }
 
-bool crServerDumpFilter(int event)
+bool crServerDumpFilter(unsigned long event)
 {
+    CRContext *ctx = crStateGetCurrent();
+    if ((event & CR_SERVER_DUMP_F_DRAW_ALL)
+            && (!ctx->glsl.activeProgram || ctx->glsl.activeProgram->id != 21))
+        return false;
     return true;
+}
+
+void crServerDumpFramesCheck()
+{
+    if (!g_CrDbgDumpDrawFramesCount)
+        return;
+
+    if (!g_CrDbgDumpDrawFramesAppliedSettings)
+    {
+        if (!g_CrDbgDumpDrawFramesSettings)
+        {
+            crWarning("g_CrDbgDumpDrawFramesSettings is NULL, bump will not be started");
+            g_CrDbgDumpDrawFramesCount = 0;
+            return;
+        }
+
+        g_CrDbgDumpDrawFramesSavedInitSettings = g_CrDbgDumpDraw;
+        g_CrDbgDumpDrawFramesAppliedSettings = g_CrDbgDumpDrawFramesSettings;
+        g_CrDbgDumpDraw = g_CrDbgDumpDrawFramesSettings;
+        g_CrDbgDumpDrawFramesSettings = 0;
+        crDmpStrF(cr_server.Recorder.pDumper, "***Starting draw dump for %d frames, settings(0x%x)", g_CrDbgDumpDrawFramesCount, g_CrDbgDumpDraw);
+        return;
+    }
+
+    --g_CrDbgDumpDrawFramesCount;
+
+    if (!g_CrDbgDumpDrawFramesCount)
+    {
+        crDmpStrF(cr_server.Recorder.pDumper, "***Stop draw dump");
+        g_CrDbgDumpDraw = g_CrDbgDumpDrawFramesSavedInitSettings;
+        g_CrDbgDumpDrawFramesAppliedSettings = 0;
+    }
 }
 #endif
 /* */
