@@ -1747,6 +1747,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "DmiBoardVersion\0"
                               "DmiChassisAssetTag\0"
                               "DmiChassisSerial\0"
+                              "DmiChassisType\0"
                               "DmiChassisVendor\0"
                               "DmiChassisVersion\0"
                               "DmiProcManufacturer\0"

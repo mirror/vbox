@@ -954,6 +954,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "DmiBoardVersion\0"
                               "DmiChassisAssetTag\0"
                               "DmiChassisSerial\0"
+                              "DmiChassisType\0"
                               "DmiChassisVendor\0"
                               "DmiChassisVersion\0"
                               "DmiProcManufacturer\0"
