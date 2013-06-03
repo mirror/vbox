@@ -433,6 +433,8 @@ crServerDispatchSwapBuffers( GLint window, GLint flags )
             || (ctx->buffer.drawBuffer != GL_FRONT && ctx->buffer.drawBuffer != GL_FRONT_LEFT))
         mural->bFbDraw = GL_FALSE;
 
+    CR_SERVER_DUMP_SWAPBUFFERS_ENTER();
+
     if (crServerIsRedirectedToFBO())
     {
         crServerMuralFBOSwapBuffers(mural);
@@ -444,6 +446,8 @@ crServerDispatchSwapBuffers( GLint window, GLint flags )
         if (crServerVBoxCompositionPresentNeeded(mural))
             mural->fDataPresented = GL_TRUE;
     }
+
+    CR_SERVER_DUMP_SWAPBUFFERS_LEAVE();
 }
 
 void SERVER_DISPATCH_APIENTRY

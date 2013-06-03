@@ -104,6 +104,42 @@ void crDmpImgBmp(CR_BLITTER_IMG *pImg, const char *pszFilename)
     fclose (f);
 }
 
+typedef struct CRDUMPGETHWID_DATA
+{
+    GLuint hwid;
+    PFNCRDUMPGETHWID pfnGetHwid;
+    unsigned long Key;
+    void* pvObj;
+} CRDUMPGETHWID_DATA;
+
+static void crDmpHashtableSearchByHwidCB(unsigned long key, void *pData1, void *pData2)
+{
+    CRDUMPGETHWID_DATA *pData = (CRDUMPGETHWID_DATA*)pData2;
+    if (pData->pvObj)
+        return;
+
+    if (pData->hwid == pData->pfnGetHwid(pData1))
+    {
+        pData->Key = key;
+        pData->pvObj = pData1;
+    }
+}
+
+void* crDmpHashtableSearchByHwid(CRHashTable *pHash, GLuint hwid, PFNCRDUMPGETHWID pfnGetHwid, unsigned long *pKey)
+{
+    CRDUMPGETHWID_DATA Data = {0};
+    Data.hwid = hwid;
+    Data.pfnGetHwid = pfnGetHwid;
+    crHashtableWalk(pHash, crDmpHashtableSearchByHwidCB, &Data);
+
+    Assert(Data.pvObj);
+
+    if (pKey)
+        *pKey = Data.Key;
+    return Data.pvObj;
+}
+
+
 #ifdef VBOX_WITH_CRDUMPER
 #if 0
 typedef struct CR_SERVER_DUMP_FIND_TEX
@@ -112,14 +148,21 @@ typedef struct CR_SERVER_DUMP_FIND_TEX
     CRTextureObj *pTobj
 } CR_SERVER_DUMP_FIND_TEX;
 
-void crServerDumpFindTexCb(unsigned long key, void *data1, void *data2)
+void crServerDumpFindTexCb(unsigned long key, void *pData1, void *pData2)
 {
-    CR_SERVER_DUMP_FIND_TEX *pTex = (CR_SERVER_DUMP_FIND_TEX*)data2;
-    CRTextureObj *pTobj = (CRTextureObj *)data1;
+    CR_SERVER_DUMP_FIND_TEX *pTex = (CR_SERVER_DUMP_FIND_TEX*)pData2;
+    CRTextureObj *pTobj = (CRTextureObj *)pData1;
     if (pTobj->hwid == pTex->hwid)
         pTex->pTobj = pTobj;
 }
 #endif
+
+#define CR_DUMP_MAKE_CASE(_val) case _val: return #_val
+#define CR_DUMP_MAKE_CASE_UNKNOWN(_val, _str, _pDumper) default: { \
+    crWarning("%s %d", (_str), _val); \
+    crDmpStrF((_pDumper), "WARNING: %s %d", (_str), _val); \
+    return (_str); \
+}
 
 void crRecDumpBuffer(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, GLint idRedirFBO, VBOXVR_TEXTURE *pRedirTex)
 {
@@ -246,7 +289,7 @@ void crRecDumpBuffer(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCur
     rc = CrBltImgGetTex(pRec->pBlitter, &Tex, GL_BGRA, &Img);
     if (RT_SUCCESS(rc))
     {
-        crDmpImg(pRec->pDumper, "buffer_data", &Img);
+        crDmpImg(pRec->pDumper, &Img, "buffer_data");
         CrBltImgFree(pRec->pBlitter, &Img);
     }
     else
@@ -255,6 +298,205 @@ void crRecDumpBuffer(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCur
     }
 
     CrBltLeave(pRec->pBlitter);
+}
+
+static const char *crRecDumpShaderTypeString(GLenum enmType, CR_DUMPER *pDumper)
+{
+    switch (enmType)
+    {
+        CR_DUMP_MAKE_CASE(GL_VERTEX_SHADER_ARB);
+        CR_DUMP_MAKE_CASE(GL_FRAGMENT_SHADER_ARB);
+        CR_DUMP_MAKE_CASE(GL_GEOMETRY_SHADER_ARB);
+        CR_DUMP_MAKE_CASE_UNKNOWN(enmType, "Unknown Shader Type", pDumper);
+    }
+}
+
+static char *crRecDumpGetLine(char **ppszStr, uint32_t *pcbStr)
+{
+    char *pszStr, *pNewLine;
+    const uint32_t cbStr = *pcbStr;
+
+    if (!cbStr)
+    {
+        /* zero-length string */
+        return NULL;
+    }
+
+    if ((*ppszStr)[cbStr-1] != '\0')
+    {
+        crWarning("string should be null-rerminated, forcing it!");
+        (*ppszStr)[cbStr-1] = '\0';
+    }
+    pszStr = *ppszStr;
+    if (!*pszStr)
+    {
+        *pcbStr = 0;
+        return NULL;
+    }
+
+    if (!(pNewLine = strstr(pszStr, "\n")))
+    {
+        /* the string contains a single line! */
+        *ppszStr += strlen(pszStr);
+        *pcbStr = 0;
+        return pszStr;
+    }
+
+    *pNewLine = '\0';
+    *pcbStr = cbStr - (((uintptr_t)pNewLine) - ((uintptr_t)pszStr)) - 1;
+    Assert((*pcbStr) >= 0);
+    Assert((*pcbStr) < cbStr);
+    *ppszStr = pNewLine + 1;
+
+    return pszStr;
+}
+
+static void crRecDumpStrByLine(CR_DUMPER *pDumper, char *pszStr, uint32_t cbStr)
+{
+    char *pszCurLine;
+    while ((pszCurLine = crRecDumpGetLine(&pszStr, &cbStr)) != NULL)
+    {
+        crDmpStrF(pDumper, "%s", pszCurLine);
+    }
+}
+
+static DECLCALLBACK(GLuint) crDmpGetHwidShaderCB(void *pvObj)
+{
+    return ((CRGLSLShader*)pvObj)->hwid;
+}
+
+static DECLCALLBACK(GLuint) crDmpGetHwidProgramCB(void *pvObj)
+{
+    return ((CRGLSLProgram*)pvObj)->hwid;
+}
+
+void crRecDumpShader(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid)
+{
+    GLint length = 0;
+    GLint type = 0;
+    GLint compileStatus = 0;
+    CRGLSLShader *pShad;
+
+    if (!id)
+    {
+        unsigned long tstKey = 0;
+        Assert(hwid);
+        pShad = (CRGLSLShader *)crDmpHashtableSearchByHwid(ctx->glsl.shaders, hwid, crDmpGetHwidShaderCB, &tstKey);
+        Assert(pShad);
+        if (!pShad)
+            return;
+        id = pShad->id;
+        Assert(tstKey == id);
+    }
+    else
+    {
+        pShad = (CRGLSLShader *)crHashtableSearch(ctx->glsl.shaders, id);
+        Assert(pShad);
+        if (!pShad)
+            return;
+    }
+
+    if (!hwid)
+        hwid = pShad->hwid;
+
+    Assert(pShad->hwid == hwid);
+    Assert(pShad->id == id);
+
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_SUBTYPE_ARB, &type);
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_COMPILE_STATUS_ARB, &compileStatus);
+    crDmpStrF(pRec->pDumper, "SHADER ctx(%d) id(%d) hwid(%d) type(%s) status(%d):", ctx->id, id, hwid, crRecDumpShaderTypeString(type, pRec->pDumper), compileStatus);
+
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_SHADER_SOURCE_LENGTH_ARB, &length);
+
+    char *pszSource = (char*)crCalloc(length + 1);
+    if (!pszSource)
+    {
+        crWarning("crCalloc failed");
+        crDmpStrF(pRec->pDumper, "WARNING: crCalloc failed");
+        return;
+    }
+
+    pRec->pDispatch->GetShaderSource(hwid, length, NULL, pszSource);
+    crRecDumpStrByLine(pRec->pDumper, pszSource, length);
+
+    crFree(pszSource);
+
+    crDmpStr(pRec->pDumper, "===END SHADER====");
+}
+
+void crRecDumpProgram(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid)
+{
+    GLint cShaders = 0, linkStatus = 0;
+    char *source = NULL;
+    CRGLSLProgram *pProg;
+
+    if (!id)
+    {
+        unsigned long tstKey = 0;
+        Assert(hwid);
+        pProg = (CRGLSLProgram*)crDmpHashtableSearchByHwid(ctx->glsl.programs, hwid, crDmpGetHwidProgramCB, &tstKey);
+        Assert(pProg);
+        if (!pProg)
+            return;
+        id = pProg->id;
+        Assert(tstKey == id);
+    }
+    else
+    {
+        pProg = (CRGLSLProgram *) crHashtableSearch(ctx->glsl.programs, id);
+        Assert(pProg);
+        if (!pProg)
+            return;
+    }
+
+    if (!hwid)
+        hwid = pProg->hwid;
+
+    Assert(pProg->hwid == hwid);
+    Assert(pProg->id == id);
+
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_ATTACHED_OBJECTS_ARB, &cShaders);
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_LINK_STATUS_ARB, &linkStatus);
+
+    crDmpStrF(pRec->pDumper, "PROGRAM ctx(%d) id(%d) hwid(%d) status(%d) shaders(%d):", ctx->id, id, hwid, linkStatus, cShaders);
+
+    GLhandleARB *pShaders = (GLhandleARB*)crCalloc(cShaders * sizeof (*pShaders));
+    if (!pShaders)
+    {
+        crWarning("crCalloc failed");
+        crDmpStrF(pRec->pDumper, "WARNING: crCalloc failed");
+        return;
+    }
+
+    pRec->pDispatch->GetAttachedObjectsARB(hwid, cShaders, NULL, pShaders);
+    for (GLint i = 0; i < cShaders; ++i)
+    {
+        crRecDumpShader(pRec, ctx, 0, pShaders[i]);
+    }
+
+    crFree(pShaders);
+
+    crDmpStr(pRec->pDumper, "===END PROGRAM====");
+}
+
+VBOXDUMPDECL(void) crRecDumpCurrentProgram(CR_RECORDER *pRec, CRContext *ctx)
+{
+    GLint curProgram = 0;
+    pRec->pDispatch->GetIntegerv(GL_CURRENT_PROGRAM, &curProgram);
+    if (curProgram)
+    {
+        Assert(ctx->glsl.activeProgram);
+        if (!ctx->glsl.activeProgram)
+            crWarning("no active program state with active hw program");
+        else
+            Assert(ctx->glsl.activeProgram->hwid == curProgram);
+        crRecDumpProgram(pRec, ctx, 0, curProgram);
+    }
+    else
+    {
+        Assert(!ctx->glsl.activeProgram);
+        crDmpStrF(pRec->pDumper, "--no active program");
+    }
 }
 
 void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin)
@@ -292,6 +534,9 @@ void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pC
         GLboolean enabledRect;
         CRTextureUnit *tu = &ctx->texture.unit[i];
 
+        if (i > 1)
+            break;
+
         if (curTexUnit != i + GL_TEXTURE0)
         {
             pRec->pDispatch->ActiveTextureARB(i + GL_TEXTURE0);
@@ -315,7 +560,7 @@ void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pC
             crWarning("GL_TEXTURE_1D: unsupported");
         }
 
-        if (enabled2D)
+//        if (enabled2D)
         {
             GLint hwTex = 0;
             CR_BLITTER_IMG Img = {0};
@@ -350,7 +595,7 @@ void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pC
                     rc = CrBltImgGetTex(pRec->pBlitter, &Tex, GL_BGRA, &Img);
                     if (RT_SUCCESS(rc))
                     {
-                        crDmpImg(pRec->pDumper, "TEXTURE_2D data", &Img);
+                        crDmpImgF(pRec->pDumper, &Img, "ctx(%d), Unit %d: TEXTURE_2D id(%d) hwid(%d)", ctx, i, pTobj->id, pTobj->hwid);
                         CrBltImgFree(pRec->pBlitter, &Img);
                     }
                     else
@@ -364,13 +609,13 @@ void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pC
                     crWarning("CrBltEnter failed, rc %d", rc);
                 }
             }
-            else
-            {
-                Assert(!pTobj || pTobj->hwid == 0);
-                crWarning("no TEXTURE_2D bound!");
-            }
+//            else
+//            {
+//                Assert(!pTobj || pTobj->hwid == 0);
+//                crWarning("no TEXTURE_2D bound!");
+//            }
         }
-
+#if 0
         if (enabled3D)
         {
             crWarning("GL_TEXTURE_3D: unsupported");
@@ -381,9 +626,8 @@ void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pC
             crWarning("GL_TEXTURE_CUBE_MAP_ARB: unsupported");
         }
 
-        if (enabledRect)
+//        if (enabledRect)
         {
-
             GLint hwTex = 0;
             CR_BLITTER_IMG Img = {0};
             VBOXVR_TEXTURE Tex;
@@ -417,7 +661,7 @@ void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pC
                     rc = CrBltImgGetTex(pRec->pBlitter, &Tex, GL_BGRA, &Img);
                     if (RT_SUCCESS(rc))
                     {
-                        crDmpImg(pRec->pDumper, "TEXTURE_RECTANGLE data", &Img);
+                        crDmpImgF(pRec->pDumper, &Img, "Unit %d: TEXTURE_RECTANGLE data", i);
                         CrBltImgFree(pRec->pBlitter, &Img);
                     }
                     else
@@ -431,12 +675,13 @@ void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pC
                     crWarning("CrBltEnter failed, rc %d", rc);
                 }
             }
-            else
-            {
-                Assert(!pTobj || pTobj->hwid == 0);
-                crWarning("no TEXTURE_2D bound!");
-            }
+//            else
+//            {
+//                Assert(!pTobj || pTobj->hwid == 0);
+//                crWarning("no TEXTURE_RECTANGLE bound!");
+//            }
         }
+#endif
     }
 
     if (curTexUnit != restoreTexUnit)
@@ -469,7 +714,7 @@ void crDmpPrintDumpDmlCmd(const char* pszDesc, const void *pvData, uint32_t widt
     crDmpPrintDmlCmd(pszDesc, Cmd);
 }
 
-DECLCALLBACK(void) crDmpDumpImgDmlBreak(struct CR_DUMPER * pDumper, const char*pszEntryDesc, CR_BLITTER_IMG *pImg)
+DECLCALLBACK(void) crDmpDumpImgDmlBreak(struct CR_DUMPER * pDumper, CR_BLITTER_IMG *pImg, const char*pszEntryDesc)
 {
     crDmpPrintDumpDmlCmd(pszEntryDesc, pImg->pvData, pImg->width, pImg->height, pImg->bpp, pImg->pitch);
     RT_BREAKPOINT();
@@ -483,34 +728,39 @@ DECLCALLBACK(void) crDmpDumpStrDbgPrint(struct CR_DUMPER * pDumper, const char*p
 static void crDmpHtmlDumpStrExact(struct CR_HTML_DUMPER * pDumper, const char *pszStr)
 {
     fprintf(pDumper->pFile, "%s", pszStr);
+    fflush(pDumper->pFile);
 }
 
 static DECLCALLBACK(void) crDmpHtmlDumpStr(struct CR_DUMPER * pDumper, const char*pszStr)
 {
     CR_HTML_DUMPER * pHtmlDumper = (CR_HTML_DUMPER*)pDumper;
-    fprintf(pHtmlDumper->pFile, "<pre>%s</pre><br>", pszStr);
+    fprintf(pHtmlDumper->pFile, "<pre>%s</pre>\n", pszStr);
+    fflush(pHtmlDumper->pFile);
 }
 
-static DECLCALLBACK(void) crDmpHtmlDumpImg(struct CR_DUMPER * pDumper, const char*pszEntryDesc, CR_BLITTER_IMG *pImg)
+static DECLCALLBACK(void) crDmpHtmlDumpImg(struct CR_DUMPER * pDumper, CR_BLITTER_IMG *pImg, const char*pszEntryDesc)
 {
     CR_HTML_DUMPER * pHtmlDumper = (CR_HTML_DUMPER*)pDumper;
     char szBuffer[4096] = {0};
     size_t cbWritten = RTStrPrintf(szBuffer, sizeof(szBuffer), "%s/", pHtmlDumper->pszDir);
     char *pszFileName = szBuffer + cbWritten;
-    RTStrPrintf(pszFileName, sizeof(szBuffer) - cbWritten, "img%d.tga", ++pHtmlDumper->cImg);
+    RTStrPrintf(pszFileName, sizeof(szBuffer) - cbWritten, "img%d.bmp", ++pHtmlDumper->cImg);
     crDmpImgBmp(pImg, szBuffer);
-    fprintf(pHtmlDumper->pFile, "<a href=\"%s\"><pre>%s</pre><img src=\"%s\" alt=\"%s\" width=\"150\" height=\"100\" /></a><br>",
+    fprintf(pHtmlDumper->pFile, "<a href=\"%s\"><pre>%s</pre><img src=\"%s\" alt=\"%s\" width=\"150\" height=\"100\" /></a><br>\n",
             pszFileName, pszEntryDesc, pszFileName, pszEntryDesc);
+    fflush(pHtmlDumper->pFile);
 }
 
 static void crDmpHtmlPrintHeader(struct CR_HTML_DUMPER * pDumper)
 {
-    fprintf(pDumper->pFile, "<html><body>");
+    fprintf(pDumper->pFile, "<html><body>\n");
+    fflush(pDumper->pFile);
 }
 
 static void crDmpHtmlPrintFooter(struct CR_HTML_DUMPER * pDumper)
 {
-    fprintf(pDumper->pFile, "</body></html>");
+    fprintf(pDumper->pFile, "</body></html>\n");
+    fflush(pDumper->pFile);
 }
 
 DECLEXPORT(int) crDmpHtmlInit(struct CR_HTML_DUMPER * pDumper, const char *pszDir, const char *pszFile)
