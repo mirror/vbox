@@ -155,47 +155,6 @@ void UIMachineViewScale::sltHandleNotifyUpdate(int iX, int iY, int iW, int iH)
                        (int)(iH * yRatio) + ((int)yRatio + 2) * 2);
 }
 
-bool UIMachineViewScale::event(QEvent *pEvent)
-{
-    switch (pEvent->type())
-    {
-        case ResizeEventType:
-        {
-            /* Some situations require framebuffer resize events to be ignored at all,
-             * leaving machine-window, machine-view and framebuffer sizes preserved: */
-            if (uisession()->isGuestResizeIgnored())
-                return true;
-
-            /* Get guest resize-event: */
-            UIResizeEvent *pResizeEvent = static_cast<UIResizeEvent*>(pEvent);
-
-            /* Perform framebuffer resize: */
-            frameBuffer()->setScaledSize(size());
-            frameBuffer()->resizeEvent(pResizeEvent);
-
-            /* Let our toplevel widget calculate its sizeHint properly: */
-            QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
-
-#ifdef Q_WS_MAC
-            machineLogic()->updateDockIconSize(screenId(), pResizeEvent->width(), pResizeEvent->height());
-#endif /* Q_WS_MAC */
-
-            /* Report to the VM thread that we finished resizing: */
-            session().GetConsole().GetDisplay().ResizeCompleted(screenId());
-
-            /* Emit a signal about guest was resized: */
-            emit resizeHintDone();
-
-            pEvent->accept();
-            return true;
-        }
-
-         default:
-            break;
-    }
-    return UIMachineView::event(pEvent);
-}
-
 bool UIMachineViewScale::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
     if (pWatched != 0 && pWatched == viewport())

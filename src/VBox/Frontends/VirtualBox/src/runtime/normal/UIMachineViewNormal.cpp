@@ -71,21 +71,6 @@ void UIMachineViewNormal::sltAdditionsStateChanged()
     maybeResendResizeHint();
 }
 
-bool UIMachineViewNormal::event(QEvent *pEvent)
-{
-    switch (pEvent->type())
-    {
-        case ResizeEventType:
-        {
-            return guestResizeEvent(pEvent, false);
-        }
-
-        default:
-            break;
-    }
-    return UIMachineView::event(pEvent);
-}
-
 bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
     if (pWatched != 0 && pWatched == machineWindow())

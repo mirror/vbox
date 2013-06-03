@@ -110,7 +110,10 @@ class UIFrameBuffer : public QObject, VBOX_SCRIPTABLE_IMPL(IFramebuffer)
 signals:
 
     /* Notifiers: EMT<->GUI interthread stuff: */
-    void sigNotifyUpdate(int iX, int iY, int iW, int iH);
+    void sigRequestResize(int iPixelFormat, uchar *pVRAM,
+                          int iBitsPerPixel, int iBytesPerLine,
+                          int iWidth, int iHeight);
+    void sigNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
 
 public:
 
@@ -241,6 +244,10 @@ protected:
     QRegion m_asyncVisibleRegion;
 
 private:
+
+    /* Helpers: Prepare/cleanup stuff: */
+    void prepareConnections();
+    void cleanupConnections();
 
 #ifdef Q_OS_WIN
     long m_iRefCnt;

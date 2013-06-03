@@ -91,6 +91,11 @@ protected slots:
     /* Slot to perform guest resize: */
     void sltPerformGuestResize(const QSize &aSize = QSize());
 
+    /* Handler: Frame-buffer RequestResize stuff: */
+    void sltHandleRequestResize(int iPixelFormat, uchar *pVRAM,
+                                int iBitsPerPixel, int iBytesPerLine,
+                                int iWidth, int iHeight);
+
     /* Handler: Frame-buffer NotifyUpdate stuff: */
     void sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
 
@@ -182,7 +187,6 @@ protected:
     CGImageRef vmContentImage();
     CGImageRef frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer);
 #endif /* Q_WS_MAC */
-    bool guestResizeEvent(QEvent *pEvent, bool fFullscreen);
     /** What view mode (normal, fullscreen etc.) are we in? */
     UIVisualStateType visualStateType() const;
     /** Is this a fullscreen-type view? */
