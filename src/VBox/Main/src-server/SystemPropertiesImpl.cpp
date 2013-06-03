@@ -90,6 +90,7 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
     unconst(mParent) = aParent;
 
     setDefaultMachineFolder(Utf8Str::Empty);
+    setLoggingLevel(Utf8Str::Empty);
     setDefaultHardDiskFormat(Utf8Str::Empty);
 
     setVRDEAuthLibrary(Utf8Str::Empty);
@@ -615,6 +616,39 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder)(IN_BSTR aDefaultM
     return rc;
 }
 
+STDMETHODIMP SystemProperties::COMGETTER(LoggingLevel)(BSTR *aLoggingLevel)
+{
+    CheckComArgOutPointerValid(aLoggingLevel);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    m->strLoggingLevel.cloneTo(aLoggingLevel);
+
+    return S_OK;
+}
+
+
+STDMETHODIMP SystemProperties::COMSETTER(LoggingLevel)(IN_BSTR aLoggingLevel)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = setLoggingLevel(aLoggingLevel);
+    alock.release();
+
+    if (SUCCEEDED(rc))
+    {
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+        rc = mParent->saveSettings();
+    }
+
+    return rc;
+}
+
 STDMETHODIMP SystemProperties::COMGETTER(MediumFormats)(ComSafeArrayOut(IMediumFormat *, aMediumFormats))
 {
     CheckComArgOutSafeArrayPointerValid(aMediumFormats);
@@ -1040,6 +1074,9 @@ HRESULT SystemProperties::loadSettings(const settings::SystemProperties &data)
     rc = setDefaultMachineFolder(data.strDefaultMachineFolder);
     if (FAILED(rc)) return rc;
 
+    rc = setLoggingLevel(data.strLoggingLevel);
+    if (FAILED(rc)) return rc;
+
     rc = setDefaultHardDiskFormat(data.strDefaultHardDiskFormat);
     if (FAILED(rc)) return rc;
 
@@ -1205,6 +1242,12 @@ HRESULT SystemProperties::setDefaultMachineFolder(const Utf8Str &strPath)
 
     m->strDefaultMachineFolder = path;
 
+    return S_OK;
+}
+
+HRESULT SystemProperties::setLoggingLevel(const Utf8Str &aLoggingLevel)
+{
+    m->strLoggingLevel = aLoggingLevel;
     return S_OK;
 }
 

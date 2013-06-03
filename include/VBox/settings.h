@@ -266,6 +266,7 @@ struct SystemProperties
     com::Utf8Str            strAutostartDatabasePath;
     com::Utf8Str            strDefaultAdditionsISO;
     com::Utf8Str            strDefaultFrontend;
+    com::Utf8Str            strLoggingLevel;
     uint32_t                ulLogHistoryCount;
 };
 

@@ -1386,6 +1386,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                     if (pelmGlobalChild->nameEquals("SystemProperties"))
                     {
                         pelmGlobalChild->getAttributeValue("defaultMachineFolder", systemProperties.strDefaultMachineFolder);
+                        pelmGlobalChild->getAttributeValue("LoggingLevel", systemProperties.strLoggingLevel);
                         pelmGlobalChild->getAttributeValue("defaultHardDiskFormat", systemProperties.strDefaultHardDiskFormat);
                         if (!pelmGlobalChild->getAttributeValue("VRDEAuthLibrary", systemProperties.strVRDEAuthLibrary))
                             // pre-1.11 used @remoteDisplayAuthLibrary instead
@@ -1531,6 +1532,8 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     xml::ElementNode *pelmSysProps = pelmGlobal->createChild("SystemProperties");
     if (systemProperties.strDefaultMachineFolder.length())
         pelmSysProps->setAttribute("defaultMachineFolder", systemProperties.strDefaultMachineFolder);
+    if (systemProperties.strLoggingLevel.length())
+        pelmSysProps->setAttribute("LoggingLevel", systemProperties.strLoggingLevel);
     if (systemProperties.strDefaultHardDiskFormat.length())
         pelmSysProps->setAttribute("defaultHardDiskFormat", systemProperties.strDefaultHardDiskFormat);
     if (systemProperties.strVRDEAuthLibrary.length())

@@ -8474,7 +8474,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="413ea94c-efd9-491e-81fc-5df0c4d864bb"
+    uuid="55699910-cc50-11e2-8b8b-0800200c9a66"
     wsmap="managed"
     >
     <desc>
@@ -8564,6 +8564,12 @@
           <link to="IVirtualBox::createMachine"/>,
           <link to="IVirtualBox::openMachine"/>
         </see>
+      </desc>
+    </attribute>
+
+    <attribute name="loggingLevel" type="wstring">
+      <desc>
+        Specifies the logging level in current use by VirtualBox. 
       </desc>
     </attribute>
 
