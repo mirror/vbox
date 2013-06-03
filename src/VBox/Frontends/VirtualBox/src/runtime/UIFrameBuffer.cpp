@@ -162,7 +162,6 @@ STDMETHODIMP UIFrameBuffer::Unlock()
     return S_OK;
 }
 
-/* This method is called on EMT from under this object's lock! */
 STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
                                           BYTE *pVRAM, ULONG uBitsPerPixel, ULONG uBytesPerLine,
                                           ULONG uWidth, ULONG uHeight,
@@ -219,17 +218,6 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
     return S_OK;
 }
 
-/**
- * Returns whether we like the given video mode.
- * @note We always like a mode smaller than the current framebuffer
- *       size.
- *
- * @returns COM status code
- * @param   width     video mode width in pixels
- * @param   height    video mode height in pixels
- * @param   bpp       video mode bit depth in bits per pixel
- * @param   supported pointer to result variable
- */
 STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULONG uBPP, BOOL *pbSupported)
 {
     NOREF(uBPP);
@@ -280,29 +268,44 @@ STDMETHODIMP UIFrameBuffer::GetVisibleRegion(BYTE *pRectangles, ULONG uCount, UL
 
 STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
 {
-    PRTRECT rects = (PRTRECT)pRectangles;
+    /* Make sure frame-buffer is not yet scheduled for removal: */
+    if (m_fIsScheduledToDelete)
+        return E_FAIL;
 
+    /* Make sure rectangles were passed: */
+    PRTRECT rects = (PRTRECT)pRectangles;
     if (!rects)
         return E_POINTER;
 
-    QRegion reg;
-    for (ULONG ind = 0; ind < uCount; ++ ind)
+    /* Compose region: */
+    QRegion region;
+    for (ULONG ind = 0; ind < uCount; ++ind)
     {
+        /* Get current rectangle: */
         QRect rect;
         rect.setLeft(rects->xLeft);
         rect.setTop(rects->yTop);
-        /* QRect are inclusive */
+        /* Which is inclusive: */
         rect.setRight(rects->xRight - 1);
         rect.setBottom(rects->yBottom - 1);
-        reg += rect;
-        ++ rects;
+        /* Append region: */
+        region += rect;
+        ++rects;
     }
-    lock(); /* See comment in setView(). */
-    m_syncVisibleRegion = reg;
+
+    /* See comment in setView(): */
+    lock();
+
+    /* We are directly updating synchronous visible-region: */
+    m_syncVisibleRegion = region;
+    /* And send async signal to update asynchronous one: */
     if (m_pMachineView)
-        QApplication::postEvent(m_pMachineView, new UISetRegionEvent(reg));
+        emit sigSetVisibleRegion(region);
+
+    /* Unlock thread finally: */
     unlock();
 
+    /* Confirm SetVisibleRegion: */
     return S_OK;
 }
 
@@ -368,6 +371,9 @@ void UIFrameBuffer::prepareConnections()
     connect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
             m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)),
             Qt::QueuedConnection);
+    connect(this, SIGNAL(sigSetVisibleRegion(QRegion)),
+            m_pMachineView, SLOT(sltHandleSetVisibleRegion(QRegion)),
+            Qt::QueuedConnection);
 }
 
 void UIFrameBuffer::cleanupConnections()
@@ -376,5 +382,7 @@ void UIFrameBuffer::cleanupConnections()
                m_pMachineView, SLOT(sltHandleRequestResize(int, uchar*, int, int, int, int)));
     disconnect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
                m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)));
+    disconnect(this, SIGNAL(sigSetVisibleRegion(QRegion)),
+               m_pMachineView, SLOT(sltHandleSetVisibleRegion(QRegion)));
 }
 

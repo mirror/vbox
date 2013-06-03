@@ -72,10 +72,14 @@ UIFrameBufferQuartz2D::~UIFrameBufferQuartz2D()
     clean(false);
 }
 
-STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
+STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *pRectangles, ULONG aCount)
 {
-    PRTRECT rects = (PRTRECT)aRectangles;
+    /* Make sure frame-buffer is not yet scheduled for removal: */
+    if (m_fIsScheduledToDelete)
+        return E_FAIL;
 
+    /* Make sure rectangles were passed: */
+    PRTRECT rects = (PRTRECT)pRectangles;
     if (!rects)
         return E_POINTER;
 
@@ -102,47 +106,48 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *aRectangles, ULONG aC
     }
     rgnRcts->used = 0;
 
+    /* Compose region: */
     QRegion reg;
-//    printf ("Region rects follow...\n");
-    QRect vmScreenRect (0, 0, width(), height());
+    QRect vmScreenRect(0, 0, width(), height());
     for (ULONG ind = 0; ind < aCount; ++ ind)
     {
+        /* Get current rectangle: */
         QRect rect;
         rect.setLeft(rects->xLeft);
         rect.setTop(rects->yTop);
-        /* QRect are inclusive */
+        /* Which is inclusive: */
         rect.setRight(rects->xRight - 1);
         rect.setBottom(rects->yBottom - 1);
 
         /* The rect should intersect with the vm screen. */
         rect = vmScreenRect.intersect(rect);
-        ++ rects;
-        /* Make sure only valid rects are distributed */
-        /* todo: Test if the other framebuffer implementation have the same
-         * problem with invalid rects (In Linux/Windows) */
+        ++rects;
+        /* Make sure only valid rects are distributed: */
         if (rect.isValid() &&
            rect.width() > 0 && rect.height() > 0)
             reg += rect;
         else
             continue;
 
+        /* That is some *magic* added by Knut in r27807: */
         CGRect *cgRct = &rgnRcts->rcts[rgnRcts->used];
         cgRct->origin.x = rect.x();
         cgRct->origin.y = height() - rect.y() - rect.height();
         cgRct->size.width = rect.width();
         cgRct->size.height = rect.height();
-//        printf ("Region rect[%d - %d]: %d %d %d %d\n", rgnRcts->used, aCount, rect.x(), rect.y(), rect.height(), rect.width());
         rgnRcts->used++;
     }
-//    printf ("..................................\n");
 
     RegionRects *pOld = ASMAtomicXchgPtrT(&mRegion, rgnRcts, RegionRects *);
     if (    pOld
         &&  !ASMAtomicCmpXchgPtr(&mRegionUnused, pOld, NULL))
         RTMemFree(pOld);
 
-    QApplication::postEvent(m_pMachineView, new UISetRegionEvent (reg));
+    /* Send async signal to update asynchronous visible-region: */
+    if (m_pMachineView)
+        emit sigSetVisibleRegion(region);
 
+    /* Confirm SetVisibleRegion: */
     return S_OK;
 }
 
@@ -462,16 +467,16 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
     }
 }
 
-void UIFrameBufferQuartz2D::applyVisibleRegionEvent(UISetRegionEvent *pEvent)
+void UIFrameBufferQuartz2D::applyVisibleRegion(const QRegion &region)
 {
     /* Make sure async visible-region changed: */
-    if (m_asyncVisibleRegion == pEvent->region())
+    if (m_asyncVisibleRegion == region)
         return;
 
     /* We are handling the fact of async visible-region change
      * to invalidate whole the viewport area! */
     ::darwinWindowInvalidateShape(m_pMachineView->viewport());
-    m_asyncVisibleRegion = pEvent->region();
+    m_asyncVisibleRegion = region;
 }
 
 void UIFrameBufferQuartz2D::clean(bool fPreserveRegions)

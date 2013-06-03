@@ -284,6 +284,12 @@ void UIMachineView::sltHandleNotifyUpdate(int iX, int iY, int iWidth, int iHeigh
     viewport()->update(iX - contentsX(), iY - contentsY(), iWidth, iHeight);
 }
 
+void UIMachineView::sltHandleSetVisibleRegion(QRegion region)
+{
+    /* Used only in seamless-mode. */
+    Q_UNUSED(region);
+}
+
 void UIMachineView::sltDesktopResized()
 {
     setMaxGuestSize();
