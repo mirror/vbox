@@ -1040,7 +1040,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
  */
 VMMR0_INT_DECL(int) HMR0EnableAllCpus(PVM pVM)
 {
-    /* Make sure we don't touch hm after we've disabled hm in
+    /* Make sure we don't touch HM after we've disabled HM in
        preparation of a suspend. */
     if (ASMAtomicReadBool(&g_HvmR0.fSuspended))
         return VERR_HM_SUSPEND_PENDING;
@@ -1225,7 +1225,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     SUPR0Printf("HMR0InitVM: %p\n", pVM);
 #endif
 
-    /* Make sure we don't touch hm after we've disabled hm in preparation of a suspend. */
+    /* Make sure we don't touch HM after we've disabled HM in preparation of a suspend. */
     if (ASMAtomicReadBool(&g_HvmR0.fSuspended))
         return VERR_HM_SUSPEND_PENDING;
 
@@ -1319,7 +1319,7 @@ VMMR0_INT_DECL(int) HMR0TermVM(PVM pVM)
     Log(("HMR0TermVM: %p\n", pVM));
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
-    /* Make sure we don't touch hm after we've disabled hm in preparation
+    /* Make sure we don't touch HM after we've disabled HM in preparation
        of a suspend. */
     /** @todo r=bird: This cannot be right, the termination functions are
      *        just freeing memory and resetting pVM/pVCpu members...
@@ -1357,10 +1357,9 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
     Log(("HMR0SetupVM: %p\n", pVM));
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
-    /* Make sure we don't touch hm after we've disabled hm in
+    /* Make sure we don't touch HM after we've disabled HM in
        preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
-
 
     /*
      * Call the hardware specific setup VM method.  This requires the CPU to be
@@ -1429,7 +1428,8 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
     /* Always load the guest's debug state on-demand. */
     CPUMDeactivateGuestDebugState(pVCpu);
 
-    /* Always reload the host context and the guest's CR0 register for the FPU bits (#NM, #MF, CR0.NE, CR0.TS, CR0.MP). */
+    /* Always reload the host context and the guest's CR0 register for the FPU
+       bits (#NM, #MF, CR0.NE, CR0.TS, CR0.MP). */
     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0 | HM_CHANGED_HOST_CONTEXT;
 
     /* Enable VT-x or AMD-V if local init is required, or enable if it's a

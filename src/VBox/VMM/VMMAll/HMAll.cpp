@@ -102,7 +102,7 @@ VMM_INT_DECL(int) HMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt)
 }
 
 /**
- * Flushes the guest TLB
+ * Flushes the guest TLB.
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
@@ -229,7 +229,7 @@ VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
         else
         {
             hmQueueInvlPage(pVCpu, GCPtr);
-            hmPokeCpuForTlbFlush(pVCpu, false /*fAccountFlushStat*/);
+            hmPokeCpuForTlbFlush(pVCpu, false /* fAccountFlushStat */);
         }
     }
 
@@ -238,7 +238,7 @@ VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
 
 
 /**
- * Flush the TLBs of all VCPUs
+ * Flush the TLBs of all VCPUs.
  *
  * @returns VBox status code.
  * @param   pVM       Pointer to the VM.
@@ -262,7 +262,7 @@ VMM_INT_DECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
         {
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
             if (idThisCpu != idCpu)
-                hmPokeCpuForTlbFlush(pVCpu, true /*fAccountFlushStat*/);
+                hmPokeCpuForTlbFlush(pVCpu, true /* fAccountFlushStat */);
         }
     }
 
