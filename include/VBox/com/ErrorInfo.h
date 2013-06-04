@@ -339,6 +339,8 @@ public:
         return mCalleeName;
     }
 
+    HRESULT getVirtualBoxErrorInfo(ComPtr<IVirtualBoxErrorInfo> &pVirtualBoxErrorInfo);
+
     /**
      *  Resets all collected error information. #isBasicAvailable() and
      *  #isFullAvailable will return @c true after this method is called.
