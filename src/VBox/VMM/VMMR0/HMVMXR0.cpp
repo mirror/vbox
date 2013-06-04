@@ -6654,6 +6654,10 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     rc = hmR0VmxSetupVMRunHandler(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
+    /* Clear the currently unused reserved bits. */
+    pVCpu->hm.s.fContextUseFlags &= ~(  HM_CHANGED_VMX_RESERVED1
+                                      | HM_CHANGED_VMX_RESERVED2);
+
     AssertMsg(!pVCpu->hm.s.fContextUseFlags,
              ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p fContextUseFlags=%#RX32\n",
               pVM, pVCpu, pVCpu->hm.s.fContextUseFlags));

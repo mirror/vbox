@@ -120,37 +120,49 @@ RT_C_DECLS_BEGIN
 # define HM_CHANGED_GUEST_SYSENTER_CS_MSR        RT_BIT(12)
 # define HM_CHANGED_GUEST_SYSENTER_EIP_MSR       RT_BIT(13)
 # define HM_CHANGED_GUEST_SYSENTER_ESP_MSR       RT_BIT(14)
+/* VT-x specific state. */
 # define HM_CHANGED_VMX_GUEST_AUTO_MSRS          RT_BIT(15)
 # define HM_CHANGED_VMX_GUEST_ACTIVITY_STATE     RT_BIT(16)
 # define HM_CHANGED_VMX_GUEST_APIC_STATE         RT_BIT(17)
 # define HM_CHANGED_VMX_ENTRY_CTLS               RT_BIT(18)
 # define HM_CHANGED_VMX_EXIT_CTLS                RT_BIT(19)
+# define HM_CHANGED_VMX_RESERVED1                RT_BIT(20)
+# define HM_CHANGED_VMX_RESERVED2                RT_BIT(21)
+/* AMD-V specific state. */
+# define HM_CHANGED_SVM_INTERCEPT_VECTORS        RT_BIT(15)
+# define HM_CHANGED_SVM_IOPM_MSRPM_BITMAPS       RT_BIT(16)
+# define HM_CHANGED_SVM_GUEST_ASID               RT_BIT(17)
+# define HM_CHANGED_SVM_GUEST_TPR                RT_BIT(18)
+# define HM_CHANGED_SVM_GUEST_NP                 RT_BIT(19)
+# define HM_CHANGED_SVM_LBR                      RT_BIT(20)
+# define HM_CHANGED_SVM_AVIC                     RT_BIT(21)
 
-# define HM_CHANGED_HOST_CONTEXT                 RT_BIT(20)
-
-# define HM_CHANGED_ALL_GUEST   (  HM_CHANGED_GUEST_RIP                \
-                                 | HM_CHANGED_GUEST_RSP                \
-                                 | HM_CHANGED_GUEST_RFLAGS             \
-                                 | HM_CHANGED_GUEST_CR0                \
-                                 | HM_CHANGED_GUEST_CR3                \
-                                 | HM_CHANGED_GUEST_CR4                \
-                                 | HM_CHANGED_GUEST_GDTR               \
-                                 | HM_CHANGED_GUEST_IDTR               \
-                                 | HM_CHANGED_GUEST_LDTR               \
-                                 | HM_CHANGED_GUEST_TR                 \
-                                 | HM_CHANGED_GUEST_SEGMENT_REGS       \
-                                 | HM_CHANGED_GUEST_DEBUG              \
-                                 | HM_CHANGED_GUEST_SYSENTER_CS_MSR    \
-                                 | HM_CHANGED_GUEST_SYSENTER_EIP_MSR   \
-                                 | HM_CHANGED_GUEST_SYSENTER_ESP_MSR   \
-                                 | HM_CHANGED_VMX_GUEST_AUTO_MSRS      \
-                                 | HM_CHANGED_VMX_GUEST_ACTIVITY_STATE \
-                                 | HM_CHANGED_VMX_GUEST_APIC_STATE     \
-                                 | HM_CHANGED_VMX_ENTRY_CTLS           \
-                                 | HM_CHANGED_VMX_EXIT_CTLS)
+# define HM_CHANGED_HOST_CONTEXT                 RT_BIT(22)
+# define HM_CHANGED_ALL_GUEST                   (  HM_CHANGED_GUEST_RIP                \
+                                                 | HM_CHANGED_GUEST_RSP                \
+                                                 | HM_CHANGED_GUEST_RFLAGS             \
+                                                 | HM_CHANGED_GUEST_CR0                \
+                                                 | HM_CHANGED_GUEST_CR3                \
+                                                 | HM_CHANGED_GUEST_CR4                \
+                                                 | HM_CHANGED_GUEST_GDTR               \
+                                                 | HM_CHANGED_GUEST_IDTR               \
+                                                 | HM_CHANGED_GUEST_LDTR               \
+                                                 | HM_CHANGED_GUEST_TR                 \
+                                                 | HM_CHANGED_GUEST_SEGMENT_REGS       \
+                                                 | HM_CHANGED_GUEST_DEBUG              \
+                                                 | HM_CHANGED_GUEST_SYSENTER_CS_MSR    \
+                                                 | HM_CHANGED_GUEST_SYSENTER_EIP_MSR   \
+                                                 | HM_CHANGED_GUEST_SYSENTER_ESP_MSR   \
+                                                 | HM_CHANGED_VMX_GUEST_AUTO_MSRS      \
+                                                 | HM_CHANGED_VMX_GUEST_ACTIVITY_STATE \
+                                                 | HM_CHANGED_VMX_GUEST_APIC_STATE     \
+                                                 | HM_CHANGED_VMX_ENTRY_CTLS           \
+                                                 | HM_CHANGED_VMX_EXIT_CTLS            \
+                                                 | HM_CHANGED_VMX_RESERVED1            \
+                                                 | HM_CHANGED_VMX_RESERVED2)
 #endif
 
-#define HM_CHANGED_ALL                      (HM_CHANGED_ALL_GUEST | HM_CHANGED_HOST_CONTEXT)
+#define HM_CHANGED_ALL                          (HM_CHANGED_ALL_GUEST | HM_CHANGED_HOST_CONTEXT)
 /** @} */
 
 /** Maximum number of page flushes we are willing to remember before considering a full TLB flush. */
@@ -395,6 +407,7 @@ typedef struct HM
             uint64_t                vmx_cr4_fixed0;
             uint64_t                vmx_cr4_fixed1;
             uint64_t                vmx_vmcs_enum;
+            uint64_t                vmx_vmfunc;
             uint64_t                vmx_ept_vpid_caps;
         } msr;
 
