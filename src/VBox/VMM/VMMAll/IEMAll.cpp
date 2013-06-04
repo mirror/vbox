@@ -757,8 +757,16 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu, bool fBypassHandlers)
     pIemCpu->enmCpuMode         = enmMode;
     pIemCpu->enmDefAddrMode     = enmMode;  /** @todo check if this is correct... */
     pIemCpu->enmEffAddrMode     = enmMode;
-    pIemCpu->enmDefOpSize       = enmMode;  /** @todo check if this is correct... */
-    pIemCpu->enmEffOpSize       = enmMode;
+    if (enmMode != IEMMODE_64BIT)
+    {
+        pIemCpu->enmDefOpSize   = enmMode;  /** @todo check if this is correct... */
+        pIemCpu->enmEffOpSize   = enmMode;
+    }
+    else
+    {
+        pIemCpu->enmDefOpSize   = IEMMODE_32BIT;
+        pIemCpu->enmEffOpSize   = IEMMODE_32BIT;
+    }
     pIemCpu->fPrefixes          = 0;
     pIemCpu->uRexReg            = 0;
     pIemCpu->uRexB              = 0;
@@ -7347,7 +7355,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                         uint8_t bSib; IEM_OPCODE_GET_NEXT_U8(&bSib);
 
                         /* Get the index and scale it. */
-                        switch (((bSib & X86_SIB_INDEX_SHIFT) >> X86_SIB_INDEX_SMASK) | pIemCpu->uRexIndex)
+                        switch (((bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK) | pIemCpu->uRexIndex)
                         {
                             case  0: u64EffAddr = pCtx->rax; break;
                             case  1: u64EffAddr = pCtx->rcx; break;
@@ -7539,6 +7547,9 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
 #endif
 #if 0 /* NT4SP1 - frstor [ecx] */
             || (pOrgCtx->cs.Sel == 8 && pOrgCtx->rip == 0x8013d11f)
+#endif
+#if 0 /* xxxxxx - All long mode code. */
+            || (pOrgCtx->msrEFER & MSR_K6_EFER_LMA)
 #endif
            )
        )
