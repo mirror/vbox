@@ -2140,7 +2140,7 @@ static int crVBoxServerLoadFBImage(PSSMHANDLE pSSM, uint32_t version,
         if (version > SHCROGL_SSM_VERSION_WITH_BUGGY_FB_IMAGE_DATA)
         {
             CRASSERT(cr_server.currentCtxInfo == pContextInfo);
-            CRASSERT(cr_server.currentMural = pMural);
+            CRASSERT(cr_server.currentMural == pMural);
             storedWidth = pMural->width;
             storedHeight = pMural->height;
         }
