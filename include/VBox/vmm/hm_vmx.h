@@ -804,7 +804,6 @@ typedef union
  */
 /** Highest field index. */
 #define MSR_IA32_VMX_VMCS_ENUM_HIGHEST_INDEX(a)                 (((a) >> 1) & 0x1FF)
-
 /** @} */
 
 
@@ -1126,6 +1125,15 @@ typedef union
  *  saved on every VM exit. */
 #define VMX_VMCS_CTRL_EXIT_SAVE_VMX_PREEMPT_TIMER      RT_BIT(22)
 /** @} */
+
+
+/** @name VMX_VMCS_CTRL_VMFUNC
+ * @{
+ */
+/** EPTP-switching function changes the value of the EPTP to one chosen from the EPTP list. */
+#define VMX_VMCS_CTRL_VMFUNC_EPTP_SWITCHING            RT_BIT_64(0)
+/** @} */
+
 
 /**  @name VMCS field encoding - 32 Bits read-only fields
  * @{

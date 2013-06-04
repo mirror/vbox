@@ -283,6 +283,14 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
             LogRel(("HM:    " #featflag " *must* be set\n")); \
     } while (0)
 
+#define HMVMX_REPORT_ALLOWED_FEATURE(allowed1, featflag) \
+    do { \
+        if ((allowed1) & (featflag)) \
+            LogRel(("HM:    " #featflag "\n")); \
+        else \
+            LogRel(("HM:    " #featflag " not supported\n")); \
+    } while (0)
+
 #define HMVMX_REPORT_CAPABILITY(msrcaps, cap) \
     do { \
         if ((msrcaps) & (cap)) \
@@ -1098,16 +1106,24 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     LogRel(("HM:    MSR_IA32_VMX_MISC_VMWRITE_VMEXIT_INFO    = %x\n", MSR_IA32_VMX_MISC_VMWRITE_VMEXIT_INFO(pVM->hm.s.vmx.msr.vmx_misc)));
     LogRel(("HM:    MSR_IA32_VMX_MISC_MSEG_ID                = %x\n", MSR_IA32_VMX_MISC_MSEG_ID(pVM->hm.s.vmx.msr.vmx_misc)));
 
+    /* Paranoia */
+    AssertRelease(MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc) >= 512);
+
     LogRel(("HM: MSR_IA32_VMX_CR0_FIXED0       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr0_fixed0));
     LogRel(("HM: MSR_IA32_VMX_CR0_FIXED1       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr0_fixed1));
     LogRel(("HM: MSR_IA32_VMX_CR4_FIXED0       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr4_fixed0));
     LogRel(("HM: MSR_IA32_VMX_CR4_FIXED1       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr4_fixed1));
     LogRel(("HM: MSR_IA32_VMX_VMCS_ENUM        = %RX64\n", pVM->hm.s.vmx.msr.vmx_vmcs_enum));
+    LogRel(("HM:    MSR_IA32_VMX_VMCS_ENUM_HIGHEST_INDEX     = %x\n", MSR_IA32_VMX_VMCS_ENUM_HIGHEST_INDEX(pVM->hm.s.vmx.msr.vmx_vmcs_enum)));
+
+    val = pVM->hm.s.vmx.msr.vmx_vmfunc;
+    if (val)
+    {
+        LogRel(("HM: MSR_A32_VMX_VMFUNC            = %RX64\n", val));
+        HMVMX_REPORT_ALLOWED_FEATURE(val, VMX_VMCS_CTRL_VMFUNC_EPTP_SWITCHING);
+    }
 
     LogRel(("HM: APIC-access page physaddr     = %RHp\n", pVM->hm.s.vmx.HCPhysApicAccess));
-
-    /* Paranoia */
-    AssertRelease(MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc) >= 512);
 
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
