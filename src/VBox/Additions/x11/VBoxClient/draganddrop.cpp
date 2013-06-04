@@ -80,7 +80,7 @@
 # include <iprt/stream.h>
 # define DO(s) RTPrintf s
 #else
-# define DO(s) do {} while(0)
+# define DO(s) do {} while (0)
 //# define DO(s) Log s
 #endif
 
@@ -594,7 +594,7 @@ int DragInstance::init(uint32_t u32ScreenId)
         Atom ver = VBOX_XDND_VERSION;
         XChangeProperty(m_pDisplay, m_proxyWin, xAtom(XA_XdndAware), XA_ATOM, 32, PropModeReplace,
                         reinterpret_cast<unsigned char*>(&ver), 1);
-    } while(0);
+    } while (0);
 
     m_state = Initialized;
 
@@ -1136,7 +1136,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t action)
                 break;
             }
         }
-    } while(tries--);
+    } while (tries--);
     if (clme)
     {
         /* Make some paranoid checks. */
@@ -1502,6 +1502,8 @@ RTCList<RTCString> toStringList(void *pvData, uint32_t cData)
     return strList;
 }
 
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+
 bool DragAndDropService::waitForXMsg(XEvent &ecm, int type, uint32_t uiMaxMS /* = 100 */)
 {
     const uint64_t uiStart = RTTimeProgramMilliTS();
@@ -1529,10 +1531,12 @@ bool DragAndDropService::waitForXMsg(XEvent &ecm, int type, uint32_t uiMaxMS /* 
 //        if (RT_FAILURE(rc))
 //            return false;
     }
-    while(RTTimeProgramMilliTS() - uiStart < uiMaxMS);
+    while (RTTimeProgramMilliTS() - uiStart < uiMaxMS);
 
     return false;
 }
+
+#endif
 
 void DragAndDropService::clearEventQueue()
 {
@@ -1573,7 +1577,7 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
             DnDEvent e;
             RT_ZERO(e);
             if (m_eventQueue.isEmpty())
-                rc = RTSemEventWait(m_hEventSem, 50);
+                rc = RTSemEventWait(m_hEventSem, RT_INDEFINITE_WAIT);
             if (!m_eventQueue.isEmpty())
             {
                 e = m_eventQueue.first();
@@ -1664,8 +1668,8 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
                     }
                 }
             }
-        } while(!ASMAtomicReadBool(&m_fSrvStopping));
-    } while(0);
+        } while (!ASMAtomicReadBool(&m_fSrvStopping));
+    } while (0);
 
     LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
@@ -1698,7 +1702,7 @@ int DragAndDropService::x11DragAndDropInit()
         rc = RTThreadCreate(&m_hX11Thread, x11EventThread, this,
                             0, RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
                             "X11-NOTIFY");
-    } while(0);
+    } while (0);
 
     /* Cleanup on failure */
     if (RT_FAILURE(rc))
@@ -1711,7 +1715,8 @@ int DragAndDropService::x11DragAndDropTerm()
 {
     /* Mark that we are stopping. */
     ASMAtomicWriteBool(&m_fSrvStopping, true);
-
+    RTSemEventSignal(m_hEventSem);
+  
     if (m_pDisplay)
     {
         /* Send a x11 client messages to the x11 event loop. */
@@ -1726,11 +1731,11 @@ int DragAndDropService::x11DragAndDropTerm()
         if (RT_UNLIKELY(xrc == 0))
                 DO(("DnD_TERM: error sending xevent\n"));
     }
+    
+    /* We cannot signal the m_hHGCMThread as it is most likely waiting in vbglR3DoIOCtl() */
     /* Wait for our event threads to stop. */
-//    if (m_hX11Thread)
-//        RTThreadWait(m_hX11Thread, RT_INDEFINITE_WAIT, 0);
-//    if (m_hHGCMThread)
-//        RTThreadWait(m_hHGCMThread, RT_INDEFINITE_WAIT, 0);
+    if (m_hX11Thread)
+        RTThreadWait(m_hX11Thread, RT_INDEFINITE_WAIT, NULL);
     /* Cleanup */
     /* todo: This doesn't work. The semaphore was interrupted by the user
      * signal. It is not possible to destroy a semaphore while it is in interrupted state.
@@ -1748,7 +1753,7 @@ int DragAndDropService::x11DragAndDropTerm()
 int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
 {
     AssertPtrReturn(pvUser, VERR_INVALID_PARAMETER);
-    DragAndDropService *pSrv = static_cast<DragAndDropService*>(pvUser);
+    DragAndDropService *pThis = static_cast<DragAndDropService*>(pvUser);
     DnDEvent e;
     do
     {
@@ -1758,12 +1763,12 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
         int rc = VbglR3DnDProcessNextMessage(&e.hgcm);
         if (RT_SUCCESS(rc))
         {
-            pSrv->m_eventQueue.append(e);
-            rc = RTSemEventSignal(pSrv->m_hEventSem);
+            pThis->m_eventQueue.append(e);
+            rc = RTSemEventSignal(pThis->m_hEventSem);
             if (RT_FAILURE(rc))
                 return rc;
         }
-    } while(!ASMAtomicReadBool(&pSrv->m_fSrvStopping));
+    } while (!ASMAtomicReadBool(&pThis->m_fSrvStopping));
 
     return VINF_SUCCESS;
 }
@@ -1772,7 +1777,7 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
 int DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
 {
     AssertPtrReturn(pvUser, VERR_INVALID_PARAMETER);
-    DragAndDropService *pSrv = static_cast<DragAndDropService*>(pvUser);
+    DragAndDropService *pThis = static_cast<DragAndDropService*>(pvUser);
     DnDEvent e;
     do
     {
@@ -1781,29 +1786,30 @@ int DragAndDropService::x11EventThread(RTTHREAD hThread, void *pvUser)
          * blocks any other calls we made to X11. So instead check for new
          * events and if there are not any new one, sleep for a certain amount
          * of time. */
-        if (XEventsQueued(pSrv->m_pDisplay, QueuedAfterFlush) > 0)
+        if (XEventsQueued(pThis->m_pDisplay, QueuedAfterFlush) > 0)
         {
             RT_ZERO(e);
             e.type = DnDEvent::X11_Type;
-            XNextEvent(pSrv->m_pDisplay, &e.x11);
+            XNextEvent(pThis->m_pDisplay, &e.x11);
+#if 0
+            /* We never detect the stop event here for some reason */
             /* Check for a stop message. */
-//            if (   e.x11.type == ClientMessage
-//                && e.x11.xclient.message_type == xAtom(XA_dndstop))
-//            {
-//                break;
-//            }
-//            if (isDnDRespondEvent(pSrv->m_pDisplay, &e.x11, 0))
+            if (   e.x11.type == ClientMessage
+                && e.x11.xclient.message_type == xAtom(XA_dndstop))
+                break;
+#endif
+//            if (isDnDRespondEvent(pThis->m_pDisplay, &e.x11, 0))
             {
                 /* Appending makes a copy of the event structure. */
-                pSrv->m_eventQueue.append(e);
-                int rc = RTSemEventSignal(pSrv->m_hEventSem);
+                pThis->m_eventQueue.append(e);
+                int rc = RTSemEventSignal(pThis->m_hEventSem);
                 if (RT_FAILURE(rc))
                     return rc;
             }
         }
         else
             RTThreadSleep(25);
-    } while(!ASMAtomicReadBool(&pSrv->m_fSrvStopping));
+    } while (!ASMAtomicReadBool(&pThis->m_fSrvStopping));
 
     return VINF_SUCCESS;
 }
