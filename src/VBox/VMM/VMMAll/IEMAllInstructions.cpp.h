@@ -6809,7 +6809,7 @@ FNIEMOP_DEF(iemOp_popa)
 /** Opcode 0x62. */
 FNIEMOP_STUB(iemOp_bound_Gv_Ma);
 /** Opcode 0x63. */
-FNIEMOP_STUB(iemOp_arpl_Ew_Gw);
+FNIEMOP_STUB(iemOp_arpl_Ew_Gw); /** @todo up next. */
 
 
 /** Opcode 0x64. */
@@ -10272,7 +10272,7 @@ FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iReg)
         }
         case IEMMODE_64BIT:
         {
-            uint64_t u64Imm; IEM_OPCODE_GET_NEXT_U64(&u64Imm);
+            uint64_t u64Imm; IEM_OPCODE_GET_NEXT_U64(&u64Imm); /* 64-bit immediate! */
             IEMOP_HLP_NO_LOCK_PREFIX();
 
             IEM_MC_BEGIN(0, 1);
@@ -10651,7 +10651,7 @@ FNIEMOP_DEF(iemOp_Grp11_Ev_Iz)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(0, 0);
-                uint64_t u64Imm; IEM_OPCODE_GET_NEXT_U64(&u64Imm);
+                uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm);
                 IEM_MC_STORE_GREG_U64((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u64Imm);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
@@ -10689,7 +10689,7 @@ FNIEMOP_DEF(iemOp_Grp11_Ev_Iz)
                 IEM_MC_BEGIN(0, 1);
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
-                uint64_t u64Imm; IEM_OPCODE_GET_NEXT_U64(&u64Imm);
+                uint64_t u64Imm; IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64Imm);
                 IEM_MC_STORE_MEM_U64(pIemCpu->iEffSeg, GCPtrEffDst, u64Imm);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();

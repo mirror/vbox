@@ -7391,6 +7391,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                             case  9: u64EffAddr += pCtx->r9;  break;
                             case 10: u64EffAddr += pCtx->r10; break;
                             case 11: u64EffAddr += pCtx->r11; break;
+                            case 12: u64EffAddr += pCtx->r12; break;
                             case 14: u64EffAddr += pCtx->r14; break;
                             case 15: u64EffAddr += pCtx->r15; break;
                             /* complicated encodings */
@@ -7413,6 +7414,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                                     u64EffAddr += (int32_t)u32Disp;
                                 }
                                 break;
+                            IEM_NOT_REACHED_DEFAULT_CASE_RET();
                         }
                         break;
                     }
@@ -7550,6 +7552,12 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
 #endif
 #if 0 /* xxxxxx - All long mode code. */
             || (pOrgCtx->msrEFER & MSR_K6_EFER_LMA)
+#endif
+#if 0 /* rep movsq linux 3.7 64-bit boot. */
+            || (pOrgCtx->rip == 0x0000000000100241)
+#endif
+#if 0 /* linux 3.7 64-bit boot - '000000000215e240'. */
+            || (pOrgCtx->rip == 0x000000000215e240)
 #endif
            )
        )
