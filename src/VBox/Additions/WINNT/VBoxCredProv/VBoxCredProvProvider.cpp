@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,7 +18,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <new> /* For bad_alloc. */
+
 #include <credentialprovider.h>
+
 #include <iprt/err.h>
 #include <VBox/VBoxGuestLib.h>
 
@@ -235,22 +238,35 @@ VBoxCredProvProvider::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARIO enmUsa
 
             if (!m_pPoller)
             {
-                /** @todo try catch please. */
-                m_pPoller = new VBoxCredProvPoller();
-                AssertPtr(m_pPoller);
-                int rc = m_pPoller->Initialize(this);
-                if (RT_FAILURE(rc))
-                    VBoxCredProvVerbose(0, "VBoxCredProv::SetUsageScenario: Error initializing poller thread, rc=%Rrc\n", rc);
+                try
+                {
+                    m_pPoller = new VBoxCredProvPoller();
+                    AssertPtr(m_pPoller);
+                    int rc = m_pPoller->Initialize(this);
+                    if (RT_FAILURE(rc))
+                        VBoxCredProvVerbose(0, "VBoxCredProv::SetUsageScenario: Error initializing poller thread, rc=%Rrc\n", rc);
+                }
+                catch (std::bad_alloc &ex)
+                {
+                    NOREF(ex);
+                    hr = E_OUTOFMEMORY;
+                }
             }
 
-            if (!m_pCred)
+            if (   SUCCEEDED(hr)
+                && !m_pCred)
             {
-                /** @todo try catch please. */
-                m_pCred = new VBoxCredProvCredential();
-                if (m_pCred)
+                try
+                {
+                    m_pCred = new VBoxCredProvCredential();
+                    AssertPtr(m_pPoller);
                     hr = m_pCred->Initialize(m_enmUsageScenario);
-                else
+                }
+                catch (std::bad_alloc &ex)
+                {
+                    NOREF(ex);
                     hr = E_OUTOFMEMORY;
+                }
             }
             else
             {
@@ -523,15 +539,18 @@ VBoxCredProvProviderCreate(REFIID interfaceID, void **ppvInterface)
 {
     HRESULT hr;
 
-    /** @todo try-catch. */
-    VBoxCredProvProvider *pProvider = new VBoxCredProvProvider();
-    if (pProvider)
+    try
     {
+        VBoxCredProvProvider *pProvider = new VBoxCredProvProvider();
+        AssertPtr(pProvider);
         hr = pProvider->QueryInterface(interfaceID, ppvInterface);
         pProvider->Release();
     }
-    else
+    catch (std::bad_alloc &ex)
+    {
+        NOREF(ex);
         hr = E_OUTOFMEMORY;
+    }
 
     return hr;
 }
