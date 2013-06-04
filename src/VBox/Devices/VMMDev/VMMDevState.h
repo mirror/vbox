@@ -315,8 +315,10 @@ typedef struct VMMDevState
     bool                fRZEnabled;
     /** Set if testing is enabled. */
     bool                fTestingEnabled;
+    /** Set if testing the MMIO testing range is enabled. */
+    bool                fTestingMMIO;
     /** Alignment padding. */
-    bool                afPadding9[HC_ARCH_BITS == 32 ? 2 : 6];
+    bool                afPadding9[HC_ARCH_BITS == 32 ? 1 : 5];
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
     /** The high timestamp value. */
     uint32_t            u32TestingHighTimestamp;

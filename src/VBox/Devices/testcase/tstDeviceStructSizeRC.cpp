@@ -1480,6 +1480,7 @@ int main()
     GEN_CHECK_OFF(VMMDEV, StatMemBalloonChunks);
     GEN_CHECK_OFF(VMMDEV, fRZEnabled);
     GEN_CHECK_OFF(VMMDEV, fTestingEnabled);
+    GEN_CHECK_OFF(VMMDEV, fTestingMMIO);
     GEN_CHECK_OFF(VMMDEV, u32TestingHighTimestamp);
     GEN_CHECK_OFF(VMMDEV, u32TestingCmd);
     GEN_CHECK_OFF(VMMDEV, offTestingData);
