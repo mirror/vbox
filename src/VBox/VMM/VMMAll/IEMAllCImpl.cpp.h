@@ -604,11 +604,19 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
                 break;
             }
             case IEMMODE_32BIT:
-            case IEMMODE_64BIT:
                 rcStrict = iemMemStackPopU32(pIemCpu, &fEflNew);
                 if (rcStrict != VINF_SUCCESS)
                     return rcStrict;
                 break;
+            case IEMMODE_64BIT:
+            {
+                uint64_t u64Value;
+                rcStrict = iemMemStackPopU64(pIemCpu, &u64Value);
+                if (rcStrict != VINF_SUCCESS)
+                    return rcStrict;
+                fEflNew = u64Value;  /** @todo testcase: Check exactly what happens if high bits are set. */
+                break;
+            }
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
 
@@ -3255,9 +3263,9 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             {
                 uint64_t NewEFER = pCtx->msrEFER;
                 if (uNewCrX & X86_CR0_PG)
-                    NewEFER |= MSR_K6_EFER_LME;
+                    NewEFER |= MSR_K6_EFER_LMA;
                 else
-                    NewEFER &= ~MSR_K6_EFER_LME;
+                    NewEFER &= ~MSR_K6_EFER_LMA;
 
                 if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
                     CPUMSetGuestEFER(pVCpu, NewEFER);
@@ -3805,7 +3813,17 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
     uValue.s.Lo = pCtx->eax;
     uValue.s.Hi = pCtx->edx;
 
-    int rc = CPUMSetGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, uValue.u);
+    int rc;
+    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+        rc = CPUMSetGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, uValue.u);
+    else
+    {
+        CPUMCTX CtxTmp = *pCtx;
+        rc = CPUMSetGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, uValue.u);
+        PCPUMCTX pCtx2 = CPUMQueryGuestCtxPtr(IEMCPU_TO_VMCPU(pIemCpu));
+        *pCtx = *pCtx2;
+        *pCtx2 = CtxTmp;
+    }
     if (rc != VINF_SUCCESS)
     {
         Log(("IEM: wrmsr(%#x,%#x`%08x) -> GP(0)\n", pCtx->ecx, uValue.s.Hi, uValue.s.Lo));
