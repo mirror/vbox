@@ -1327,7 +1327,7 @@ static NTSTATUS vboxUsbRtUrbSend(PVBOXUSBDEV_EXT pDevExt, PIRP pIrp, PUSBSUP_URB
                 pUrb->UrbIsochronousTransfer.UrbLink = 0;
 
                 Assert(pUrbInfo->numIsoPkts == pUrb->UrbIsochronousTransfer.NumberOfPackets);
-                for (ULONG i = 0; i = pUrbInfo->numIsoPkts; ++i)
+                for (ULONG i = 0; i < pUrbInfo->numIsoPkts; ++i)
                 {
                     pUrb->UrbIsochronousTransfer.IsoPacket[i].Offset = pUrbInfo->aIsoPkts[i].off;
                     pUrb->UrbIsochronousTransfer.IsoPacket[i].Length = pUrbInfo->aIsoPkts[i].cb;
