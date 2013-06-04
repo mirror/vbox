@@ -2080,7 +2080,7 @@ static BOOL vboxNetCfgWinAdjustHostOnlyNetworkInterfacePriority(IN INetCfg *pNc,
                 }
                 else
                 {
-                    if (hr = S_FALSE) /* No more binding paths? */
+                    if (hr == S_FALSE) /* No more binding paths? */
                         hr = S_OK;
                     else
                         NonStandardLogFlow(("Next bind path failed, hr (0x%x)\n", hr));
