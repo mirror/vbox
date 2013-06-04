@@ -1079,21 +1079,30 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
 
     LogRel(("HM: MSR_IA32_VMX_MISC             = %RX64\n", pVM->hm.s.vmx.msr.vmx_misc));
     if (MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(pVM->hm.s.vmx.msr.vmx_misc) == pVM->hm.s.vmx.cPreemptTimerShift)
-        LogRel(("HM:    MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT = %x\n", MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(pVM->hm.s.vmx.msr.vmx_misc)));
+    {
+        LogRel(("HM:    MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT        = %x\n",
+                MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(pVM->hm.s.vmx.msr.vmx_misc)));
+    }
     else
-        LogRel(("HM:    MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT = %x - erratum detected, using %x instead\n",
+    {
+        LogRel(("HM:    MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT        = %x - erratum detected, using %x instead\n",
                 MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(pVM->hm.s.vmx.msr.vmx_misc), pVM->hm.s.vmx.cPreemptTimerShift));
+    }
 
-    LogRel(("HM:    MSR_IA32_VMX_MISC_ACTIVITY_STATES = %x\n", MSR_IA32_VMX_MISC_ACTIVITY_STATES(pVM->hm.s.vmx.msr.vmx_misc)));
-    LogRel(("HM:    MSR_IA32_VMX_MISC_CR3_TARGET      = %x\n", MSR_IA32_VMX_MISC_CR3_TARGET(pVM->hm.s.vmx.msr.vmx_misc)));
-    LogRel(("HM:    MSR_IA32_VMX_MISC_MAX_MSR         = %x\n", MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc)));
-    LogRel(("HM:    MSR_IA32_VMX_MISC_MSEG_ID         = %x\n", MSR_IA32_VMX_MISC_MSEG_ID(pVM->hm.s.vmx.msr.vmx_misc)));
+    LogRel(("HM:    MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT   = %x\n", MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT(pVM->hm.s.vmx.msr.vmx_misc)));
+    LogRel(("HM:    MSR_IA32_VMX_MISC_ACTIVITY_STATES        = %x\n", MSR_IA32_VMX_MISC_ACTIVITY_STATES(pVM->hm.s.vmx.msr.vmx_misc)));
+    LogRel(("HM:    MSR_IA32_VMX_MISC_CR3_TARGET             = %x\n", MSR_IA32_VMX_MISC_CR3_TARGET(pVM->hm.s.vmx.msr.vmx_misc)));
+    LogRel(("HM:    MSR_IA32_VMX_MISC_MAX_MSR                = %x\n", MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.msr.vmx_misc)));
+    LogRel(("HM:    MSR_IA32_VMX_MISC_RDMSR_SMBASE_MSR_SMM   = %x\n", MSR_IA32_VMX_MISC_RDMSR_SMBASE_MSR_SMM(pVM->hm.s.vmx.msr.vmx_misc)));
+    LogRel(("HM:    MSR_IA32_VMX_MISC_SMM_MONITOR_CTL_B2     = %x\n", MSR_IA32_VMX_MISC_SMM_MONITOR_CTL_B2(pVM->hm.s.vmx.msr.vmx_misc)));
+    LogRel(("HM:    MSR_IA32_VMX_MISC_VMWRITE_VMEXIT_INFO    = %x\n", MSR_IA32_VMX_MISC_VMWRITE_VMEXIT_INFO(pVM->hm.s.vmx.msr.vmx_misc)));
+    LogRel(("HM:    MSR_IA32_VMX_MISC_MSEG_ID                = %x\n", MSR_IA32_VMX_MISC_MSEG_ID(pVM->hm.s.vmx.msr.vmx_misc)));
 
-    LogRel(("HM:    MSR_IA32_VMX_CR0_FIXED0           = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr0_fixed0));
-    LogRel(("HM:    MSR_IA32_VMX_CR0_FIXED1           = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr0_fixed1));
-    LogRel(("HM:    MSR_IA32_VMX_CR4_FIXED0           = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr4_fixed0));
-    LogRel(("HM:    MSR_IA32_VMX_CR4_FIXED1           = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr4_fixed1));
-    LogRel(("HM:    MSR_IA32_VMX_VMCS_ENUM            = %RX64\n", pVM->hm.s.vmx.msr.vmx_vmcs_enum));
+    LogRel(("HM: MSR_IA32_VMX_CR0_FIXED0       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr0_fixed0));
+    LogRel(("HM: MSR_IA32_VMX_CR0_FIXED1       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr0_fixed1));
+    LogRel(("HM: MSR_IA32_VMX_CR4_FIXED0       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr4_fixed0));
+    LogRel(("HM: MSR_IA32_VMX_CR4_FIXED1       = %RX64\n", pVM->hm.s.vmx.msr.vmx_cr4_fixed1));
+    LogRel(("HM: MSR_IA32_VMX_VMCS_ENUM        = %RX64\n", pVM->hm.s.vmx.msr.vmx_vmcs_enum));
 
     LogRel(("HM: APIC-access page physaddr     = %RHp\n", pVM->hm.s.vmx.HCPhysApicAccess));
 
@@ -1244,7 +1253,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     if (pVM->hm.s.fNestedPaging)
     {
         LogRel(("HM: Nested paging enabled!\n"));
-            LogRel(("HM:    EPT root page              = %RHp\n", PGMGetHyperCR3(VMMGetCpu(pVM))));
+        LogRel(("HM:    EPT root page physaddr     = %RHp\n", PGMGetHyperCR3(VMMGetCpu(pVM))));
         if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_SINGLE_CONTEXT)
             LogRel(("HM:    EPT flush type             = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
         else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_ALL_CONTEXTS)

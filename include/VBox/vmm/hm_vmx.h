@@ -780,12 +780,20 @@ typedef union
  */
 /** Relationship between the preemption timer and tsc; count down every time bit x of the tsc changes. */
 #define MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(a)                    ((a) & 0x1f)
+/** Whether VM-exit stores EFER.LMA into the "IA32e mode guest" field. */
+#define MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT(a)               (((a) >> 5) & 1)
 /** Activity states supported by the implementation. */
 #define MSR_IA32_VMX_MISC_ACTIVITY_STATES(a)                    (((a) >> 6) & 0x7)
 /** Number of CR3 target values supported by the processor. (0-256) */
 #define MSR_IA32_VMX_MISC_CR3_TARGET(a)                         (((a) >> 16) & 0x1FF)
 /** Maximum nr of MSRs in the VMCS. (N+1)*512. */
 #define MSR_IA32_VMX_MISC_MAX_MSR(a)                            (((((a) >> 25) & 0x7) + 1) * 512)
+/** Whether RDMSR can be used to read IA32_SMBASE_MSR in SMM. */
+#define MSR_IA32_VMX_MISC_RDMSR_SMBASE_MSR_SMM(a)               (((a) >> 15) & 1)
+/** Whether bit 2 of IA32_SMM_MONITOR_CTL can be set to 1. */
+#define MSR_IA32_VMX_MISC_SMM_MONITOR_CTL_B2(a)                 (((a) >> 28) & 1)
+/** Whether VMWRITE can be used to write VM-exit information fields. */
+#define MSR_IA32_VMX_MISC_VMWRITE_VMEXIT_INFO(a)                (((a) >> 29) & 1)
 /** MSEG revision identifier used by the processor. */
 #define MSR_IA32_VMX_MISC_MSEG_ID(a)                            ((a) >> 32)
 /** @} */
