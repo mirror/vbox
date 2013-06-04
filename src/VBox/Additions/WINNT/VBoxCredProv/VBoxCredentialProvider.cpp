@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +20,7 @@
 *******************************************************************************/
 #include <windows.h>
 #include <initguid.h>
+#include <new> /* For bad_alloc. */
 
 #ifdef VBOX_WITH_SENS
 # include <eventsys.h>
@@ -199,84 +200,98 @@ static HRESULT VBoxCredentialProviderRegisterSENS(void)
         return hr;
     }
 
-    g_pISensLogon = new VBoxCredProvSensLogon();
-    if (!g_pISensLogon)
+    try
     {
-        VBoxCredProvVerbose(0, "VBoxCredentialProviderRegisterSENS: Could not create interface instance; out of memory\n");
-        return ERROR_OUTOFMEMORY;
+        g_pISensLogon = new VBoxCredProvSensLogon();
+        AssertPtr(g_pISensLogon);
+    }
+    catch (std::bad_alloc &ex)
+    {
+        NOREF(ex);
+        hr = E_OUTOFMEMORY;
     }
 
-    IEventSubscription *pIEventSubscription;
-    int i;
-    for (i = 0; i < RT_ELEMENTS(g_aSENSEvents); i++)
+    if (SUCCEEDED(hr))
     {
-        VBoxCredProvVerbose(0, "VBoxCredProv: Registering \"%s\" (%s) ...\n",
-                            g_aSENSEvents[i].pszMethod, g_aSENSEvents[i].pszSubscriptionName);
-
-        hr = CoCreateInstance(CLSID_CEventSubscription, 0, CLSCTX_SERVER, IID_IEventSubscription, (LPVOID*)&pIEventSubscription);
-        if (FAILED(hr))
-            continue;
-
-        hr = pIEventSubscription->put_EventClassID(L"{d5978630-5b9f-11d1-8dd2-00aa004abd5e}" /* SENSGUID_EVENTCLASS_LOGON */);
-        if (FAILED(hr))
-            break;
-
-        hr = pIEventSubscription->put_SubscriberInterface((IUnknown*)g_pISensLogon);
-        if (FAILED(hr))
-            break;
-
-        PRTUTF16 pwszTemp;
-        int rc = RTStrToUtf16(g_aSENSEvents[i].pszMethod, &pwszTemp);
-        if (RT_SUCCESS(rc))
+        IEventSubscription *pIEventSubscription;
+        int i;
+        for (i = 0; i < RT_ELEMENTS(g_aSENSEvents); i++)
         {
-            hr = pIEventSubscription->put_MethodName(pwszTemp);
-            RTUtf16Free(pwszTemp);
+            VBoxCredProvVerbose(0, "VBoxCredProv: Registering \"%s\" (%s) ...\n",
+                                g_aSENSEvents[i].pszMethod, g_aSENSEvents[i].pszSubscriptionName);
+
+            hr = CoCreateInstance(CLSID_CEventSubscription, 0, CLSCTX_SERVER, IID_IEventSubscription, (LPVOID*)&pIEventSubscription);
+            if (FAILED(hr))
+                continue;
+
+            hr = pIEventSubscription->put_EventClassID(L"{d5978630-5b9f-11d1-8dd2-00aa004abd5e}" /* SENSGUID_EVENTCLASS_LOGON */);
+            if (FAILED(hr))
+                break;
+
+            hr = pIEventSubscription->put_SubscriberInterface((IUnknown*)g_pISensLogon);
+            if (FAILED(hr))
+                break;
+
+            PRTUTF16 pwszTemp;
+            int rc = RTStrToUtf16(g_aSENSEvents[i].pszMethod, &pwszTemp);
+            if (RT_SUCCESS(rc))
+            {
+                hr = pIEventSubscription->put_MethodName(pwszTemp);
+                RTUtf16Free(pwszTemp);
+            }
+            else
+                hr = ERROR_OUTOFMEMORY;
+            if (FAILED(hr))
+                break;
+
+            rc = RTStrToUtf16(g_aSENSEvents[i].pszSubscriptionName, &pwszTemp);
+            if (RT_SUCCESS(rc))
+            {
+                hr = pIEventSubscription->put_SubscriptionName(pwszTemp);
+                RTUtf16Free(pwszTemp);
+            }
+            else
+                hr = ERROR_OUTOFMEMORY;
+            if (FAILED(hr))
+                break;
+
+            rc = RTStrToUtf16(g_aSENSEvents[i].pszSubscriptionUUID, &pwszTemp);
+            if (RT_SUCCESS(rc))
+            {
+                hr = pIEventSubscription->put_SubscriptionID(pwszTemp);
+                RTUtf16Free(pwszTemp);
+            }
+            else
+                hr = ERROR_OUTOFMEMORY;
+            if (FAILED(hr))
+                break;
+
+            hr = pIEventSubscription->put_PerUser(TRUE);
+            if (FAILED(hr))
+                break;
+
+            hr = g_pIEventSystem->Store(PROGID_EventSubscription, (IUnknown*)pIEventSubscription);
+            if (FAILED(hr))
+                break;
+
+            pIEventSubscription->Release();
+            pIEventSubscription = NULL;
         }
-        else
-            hr = ERROR_OUTOFMEMORY;
-        if (FAILED(hr))
-            break;
 
-        rc = RTStrToUtf16(g_aSENSEvents[i].pszSubscriptionName, &pwszTemp);
-        if (RT_SUCCESS(rc))
-        {
-            hr = pIEventSubscription->put_SubscriptionName(pwszTemp);
-            RTUtf16Free(pwszTemp);
-        }
-        else
-            hr = ERROR_OUTOFMEMORY;
         if (FAILED(hr))
-            break;
+            VBoxCredProvVerbose(0, "VBoxCredentialProviderRegisterSENS: Could not register \"%s\" (%s), hr=%Rhrc\n",
+                                g_aSENSEvents[i].pszMethod, g_aSENSEvents[i].pszSubscriptionName, hr);
 
-        rc = RTStrToUtf16(g_aSENSEvents[i].pszSubscriptionUUID, &pwszTemp);
-        if (RT_SUCCESS(rc))
-        {
-            hr = pIEventSubscription->put_SubscriptionID(pwszTemp);
-            RTUtf16Free(pwszTemp);
-        }
-        else
-            hr = ERROR_OUTOFMEMORY;
-        if (FAILED(hr))
-            break;
-
-        hr = pIEventSubscription->put_PerUser(TRUE);
-        if (FAILED(hr))
-            break;
-
-        hr = g_pIEventSystem->Store(PROGID_EventSubscription, (IUnknown*)pIEventSubscription);
-        if (FAILED(hr))
-            break;
-
-        pIEventSubscription->Release();
-        pIEventSubscription = NULL;
+        if (pIEventSubscription != NULL)
+            pIEventSubscription->Release();
     }
 
     if (FAILED(hr))
-        VBoxCredProvVerbose(0, "VBoxCredentialProviderRegisterSENS: Could not register \"%s\" (%s), hr=%Rhrc\n",
-                            g_aSENSEvents[i].pszMethod, g_aSENSEvents[i].pszSubscriptionName, hr);
-
-    if (pIEventSubscription != NULL)
-		pIEventSubscription->Release();
+    {
+        VBoxCredProvVerbose(0, "VBoxCredentialProviderRegisterSENS: Error registering SENS provider, hr=%Rhrc\n", hr);
+        if (g_pIEventSystem)
+            g_pIEventSystem->Release();
+    }
 
     return hr;
 }
@@ -452,9 +467,10 @@ HRESULT VBoxCredentialProviderCreate(REFCLSID classID, REFIID interfaceID,
     HRESULT hr;
     if (classID == CLSID_VBoxCredProvider)
     {
-        VBoxCredProvFactory* pFactory = new VBoxCredProvFactory();
-        if (pFactory)
+        try
         {
+            VBoxCredProvFactory* pFactory = new VBoxCredProvFactory();
+            AssertPtr(pFactory);
             hr = pFactory->QueryInterface(interfaceID,
                                           ppvInterface);
             pFactory->Release();
@@ -467,8 +483,11 @@ HRESULT VBoxCredentialProviderCreate(REFCLSID classID, REFIID interfaceID,
             }
 #endif
         }
-        else
+        catch (std::bad_alloc &ex)
+        {
+            NOREF(ex);
             hr = E_OUTOFMEMORY;
+        }
     }
     else
         hr = CLASS_E_CLASSNOTAVAILABLE;
