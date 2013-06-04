@@ -3679,6 +3679,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "GuestCoreDumpDir|"
                                   "GuestCoreDumpCount|"
                                   "TestingEnabled|"
+                                  "TestingMMIO|"
                                   "TestintXmlOutputFile"
                                   ,
                                   "");
@@ -3737,9 +3738,14 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"TestingEnabled\" as a boolean"));
+    rc = CFGMR3QueryBoolDef(pCfg, "TestingMMIO", &pThis->fTestingMMIO, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed querying \"TestingMMIO\" as a boolean"));
     rc = CFGMR3QueryStringAllocDef(pCfg, "TestintXmlOutputFile", &pThis->pszTestingXmlOutput, NULL);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed querying \"TestintXmlOutputFile\" as a string"));
+
     /** @todo image-to-load-filename? */
 #endif
 

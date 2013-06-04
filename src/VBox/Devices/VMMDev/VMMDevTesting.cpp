@@ -494,25 +494,30 @@ void vmmdevTestingTerminate(PPDMDEVINS pDevIns)
 int vmmdevTestingInitialize(PPDMDEVINS pDevIns)
 {
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+    int          rc;
+
     if (!pThis->fTestingEnabled)
         return VINF_SUCCESS;
 
-    /*
-     * Register a chunk of MMIO memory that we'll use for various
-     * tests interfaces.
-     */
-    int rc = PDMDevHlpMMIORegister(pDevIns, VMMDEV_TESTING_MMIO_BASE, VMMDEV_TESTING_MMIO_SIZE, NULL /*pvUser*/,
+    if (pThis->fTestingMMIO)
+    {
+        /*
+         * Register a chunk of MMIO memory that we'll use for various
+         * tests interfaces.  Optional, needs to be explicitly enabled.
+         */
+        rc = PDMDevHlpMMIORegister(pDevIns, VMMDEV_TESTING_MMIO_BASE, VMMDEV_TESTING_MMIO_SIZE, NULL /*pvUser*/,
                                    IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
                                    vmmdevTestingMmioWrite, vmmdevTestingMmioRead, "VMMDev Testing");
-    AssertRCReturn(rc, rc);
-    if (pThis->fRZEnabled)
-    {
-        rc = PDMDevHlpMMIORegisterR0(pDevIns, VMMDEV_TESTING_MMIO_BASE, VMMDEV_TESTING_MMIO_SIZE, NIL_RTR0PTR /*pvUser*/,
-                                     "vmmdevTestingMmioWrite", "vmmdevTestingMmioRead");
         AssertRCReturn(rc, rc);
-        rc = PDMDevHlpMMIORegisterRC(pDevIns, VMMDEV_TESTING_MMIO_BASE, VMMDEV_TESTING_MMIO_SIZE, NIL_RTRCPTR /*pvUser*/,
-                                     "vmmdevTestingMmioWrite", "vmmdevTestingMmioRead");
-        AssertRCReturn(rc, rc);
+        if (pThis->fRZEnabled)
+        {
+            rc = PDMDevHlpMMIORegisterR0(pDevIns, VMMDEV_TESTING_MMIO_BASE, VMMDEV_TESTING_MMIO_SIZE, NIL_RTR0PTR /*pvUser*/,
+                                         "vmmdevTestingMmioWrite", "vmmdevTestingMmioRead");
+            AssertRCReturn(rc, rc);
+            rc = PDMDevHlpMMIORegisterRC(pDevIns, VMMDEV_TESTING_MMIO_BASE, VMMDEV_TESTING_MMIO_SIZE, NIL_RTRCPTR /*pvUser*/,
+                                         "vmmdevTestingMmioWrite", "vmmdevTestingMmioRead");
+            AssertRCReturn(rc, rc);
+        }
     }
 
 
