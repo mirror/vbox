@@ -1139,8 +1139,8 @@ struct E1kState_st
     uint8_t     iTxDCurrent;
     /** TX: Will this frame be sent as GSO. */
     bool        fGSO;
-    /** TX: False will force segmentation in e1000 instead of sending frames as GSO. */
-    bool        fGSOEnabled;
+    /** Alignment padding. */
+    bool        fReserved;
     /** TX: Number of bytes in next packet. */
     uint32_t    cbTxAlloc;
 
@@ -1159,6 +1159,8 @@ struct E1kState_st
     uint8_t     aTxPacketFallback[E1K_MAX_TX_PKT_SIZE];
     /** TX: Number of bytes assembled in TX packet buffer. */
     uint16_t    u16TxPktLen;
+    /** TX: False will force segmentation in e1000 instead of sending frames as GSO. */
+    bool        fGSOEnabled;
     /** TX: IP checksum has to be inserted if true. */
     bool        fIPcsum;
     /** TX: TCP/UDP checksum has to be inserted if true. */
@@ -1689,15 +1691,38 @@ DECLINLINE(void) e1kPacketDump(PE1KSTATE pThis, const uint8_t *cpPacket, size_t 
 #ifdef DEBUG
     if (RT_LIKELY(e1kCsEnter(pThis, VERR_SEM_BUSY) == VINF_SUCCESS))
     {
-        E1kLog(("%s --- %s packet #%d: ---\n",
-                pThis->szPrf, cszText, ++pThis->u32PktNo));
+        Log4(("%s --- %s packet #%d: %RTmac => %RTmac (%d bytes) ---\n",
+                pThis->szPrf, cszText, ++pThis->u32PktNo, cpPacket+6, cpPacket, cb));
+        if (ntohs(*(uint16_t*)(cpPacket+12)) == 0x86DD)
+        {
+            Log4(("%s --- IPv6: %RTnaipv6 => %RTnaipv6\n",
+                  pThis->szPrf, cpPacket+14+8, cpPacket+14+24));
+            if (*(cpPacket+14+6) == 0x6)
+                Log4(("%s --- TCP: seq=%x ack=%x\n", pThis->szPrf,
+                      ntohl(*(uint32_t*)(cpPacket+14+40+4)), ntohl(*(uint32_t*)(cpPacket+14+40+8))));
+        }
+        else if (ntohs(*(uint16_t*)(cpPacket+12)) == 0x800)
+        {
+            Log4(("%s --- IPv4:: %RTnaipv4 => %RTnaipv4\n",
+                  pThis->szPrf, cpPacket+14+12, cpPacket+14+16));
+            if (*(cpPacket+14+6) == 0x6)
+                Log4(("%s --- TCP: seq=%x ack=%x\n", pThis->szPrf,
+                      ntohl(*(uint32_t*)(cpPacket+14+20+4)), ntohl(*(uint32_t*)(cpPacket+14+20+8))));
+        }
         E1kLog3(("%.*Rhxd\n", cb, cpPacket));
         e1kCsLeave(pThis);
     }
 #else
     if (RT_LIKELY(e1kCsEnter(pThis, VERR_SEM_BUSY) == VINF_SUCCESS))
     {
-        E1kLogRel(("E1000: %s packet #%d, seq=%x ack=%x\n", cszText, pThis->u32PktNo++, ntohl(*(uint32_t*)(cpPacket+0x26)), ntohl(*(uint32_t*)(cpPacket+0x2A))));
+        if (ntohs(*(uint16_t*)(cpPacket+12)) == 0x86DD)
+            E1kLogRel(("E1000: %s packet #%d, %RTmac => %RTmac, %RTnaipv6 => %RTnaipv6, seq=%x ack=%x\n",
+                       cszText, ++pThis->u32PktNo, cpPacket+6, cpPacket, cpPacket+14+8, cpPacket+14+24,
+                       ntohl(*(uint32_t*)(cpPacket+14+40+4)), ntohl(*(uint32_t*)(cpPacket+14+40+8))));
+        else
+            E1kLogRel(("E1000: %s packet #%d, %RTmac => %RTmac, %RTnaipv4 => %RTnaipv4, seq=%x ack=%x\n",
+                       cszText, ++pThis->u32PktNo, cpPacket+6, cpPacket, cpPacket+14+12, cpPacket+14+16,
+                       ntohl(*(uint32_t*)(cpPacket+14+20+4)), ntohl(*(uint32_t*)(cpPacket+14+20+8))));
         e1kCsLeave(pThis);
     }
 #endif
@@ -2426,14 +2451,19 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
              * is not defined.
              */
         }
-#ifndef E1K_WITH_RXD_CACHE
-        else
-        {
-#endif /* !E1K_WITH_RXD_CACHE */
+#ifdef E1K_WITH_RXD_CACHE
         /* Write back the descriptor. */
         pDesc->status.fDD = true;
         e1kRxDPut(pThis, pDesc);
-#ifndef E1K_WITH_RXD_CACHE
+#else /* !E1K_WITH_RXD_CACHE */
+        else
+        {
+            /* Write back the descriptor. */
+            pDesc->status.fDD = true;
+            PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns),
+                                  e1kDescAddr(RDBAH, RDBAL, RDH),
+                                  pDesc, sizeof(E1KRXDESC));
+            e1kAdvanceRDH(pThis);
         }
 #endif /* !E1K_WITH_RXD_CACHE */
     }
@@ -5244,7 +5274,7 @@ static int e1kRegWriteTDT(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
     /* Ignore TDT writes when the link is down. */
     if (TDH != TDT && (STATUS & STATUS_LU))
     {
-        E1kLogRel(("E1000: TDT write: %d descriptors to process\n", e1kGetTxLen(pThis)));
+        Log5(("E1000: TDT write: TDH=%08x, TDT=%08x, %d descriptors to process\n", TDH, TDT, e1kGetTxLen(pThis)));
         E1kLog(("%s e1kRegWriteTDT: %d descriptors to process\n",
                  pThis->szPrf, e1kGetTxLen(pThis)));
 
@@ -5639,6 +5669,8 @@ static int e1kRegReadUnaligned(PE1KSTATE pThis, uint32_t offReg, void *pv, uint3
             //e1kCsLeave(pThis);
             E1kLog2(("%s At %08X read  %s          from %s (%s)\n",
                     pThis->szPrf, offReg, e1kU32toHex(u32, mask, buf), g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
+            Log6(("%s At %08X read  %s          from %s (%s) [UNALIGNED]\n",
+                  pThis->szPrf, offReg, e1kU32toHex(u32, mask, buf), g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
             /* Shift back the result. */
             u32 >>= shift;
         }
@@ -5693,8 +5725,8 @@ static int e1kRegReadAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t *pu32
             //pThis->iStatIntLostOne = 0;
             rc = g_aE1kRegMap[idxReg].pfnRead(pThis, offReg & 0xFFFFFFFC, idxReg, pu32);
             //e1kCsLeave(pThis);
-            E1kLog2(("%s At %08X read  ffffffff          from %s (%s)\n",
-                    pThis->szPrf, offReg, g_aE1kRegMap[idxReg].abbrev, g_aE1kRegMap[idxReg].name));
+            Log6(("%s At %08X read  %08X          from %s (%s)\n",
+                  pThis->szPrf, offReg, *pu32, g_aE1kRegMap[idxReg].abbrev, g_aE1kRegMap[idxReg].name));
             if (IOM_SUCCESS(rc))
                 STAM_COUNTER_INC(&pThis->aStatRegReads[idxReg]);
         }
@@ -5730,7 +5762,7 @@ static int e1kRegWriteAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t u32V
              * Write it. Pass the mask so the handler knows what has to be written.
              * Mask out irrelevant bits.
              */
-            E1kLog2(("%s At %08X write          %08X  to  %s (%s)\n",
+            Log6(("%s At %08X write          %08X  to  %s (%s)\n",
                      pThis->szPrf, offReg, u32Value, g_aE1kRegMap[index].abbrev, g_aE1kRegMap[index].name));
             //rc = e1kCsEnter(pThis, VERR_SEM_BUSY, RT_SRC_POS);
             //if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -6925,6 +6957,7 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
             pHlp->pfnPrintf(pHlp, ">>> ");
         pHlp->pfnPrintf(pHlp, "%RGp: %R[e1krxd]\n", e1kDescAddr(RDBAH, RDBAL, i), &desc);
     }
+#ifdef E1K_WITH_RXD_CACHE
     pHlp->pfnPrintf(pHlp, "\n-- Receive Descriptors in Cache (at %d (RDH %d)/ fetched %d / max %d) --\n",
                     pThis->iRxDCurrent, RDH, pThis->nRxDFetched, E1K_RXD_CACHE_SIZE);
     if (rdh > pThis->iRxDCurrent)
@@ -6939,6 +6972,7 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
                         e1kDescAddr(RDBAH, RDBAL, rdh++ % cDescs),
                         &pThis->aRxDescriptors[i]);
     }
+#endif /* E1K_WITH_RXD_CACHE */
 
     cDescs = TDLEN / sizeof(E1KTXDESC);
     uint32_t tdh = TDH;
@@ -6952,6 +6986,7 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
             pHlp->pfnPrintf(pHlp, ">>> ");
         pHlp->pfnPrintf(pHlp, "%RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, i), &desc);
     }
+#ifdef E1K_WITH_TXD_CACHE
     pHlp->pfnPrintf(pHlp, "\n-- Transmit Descriptors in Cache (at %d (TDH %d)/ fetched %d / max %d) --\n",
                     pThis->iTxDCurrent, TDH, pThis->nTxDFetched, E1K_TXD_CACHE_SIZE);
     if (tdh > pThis->iTxDCurrent)
@@ -6966,6 +7001,7 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
                         e1kDescAddr(TDBAH, TDBAL, tdh++ % cDescs),
                         &pThis->aTxDescriptors[i]);
     }
+#endif /* E1K_WITH_TXD_CACHE */
 
 
 #ifdef E1K_INT_STATS
@@ -7395,7 +7431,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'AdapterType'"));
     Assert(pThis->eChip <= E1K_CHIP_82545EM);
-    rc = CFGMR3QueryBoolDef(pCfg, "RCEnabled", &pThis->fRCEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fRCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'GCEnabled'"));
@@ -7425,10 +7461,12 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     else if (pThis->cMsLinkUpDelay == 0)
         LogRel(("%s WARNING! Link up delay is disabled!\n", pThis->szPrf));
 
-    E1kLog(("%s Chip=%s LinkUpDelay=%ums EthernetCRC=%s GSO=%s\n", pThis->szPrf,
+    E1kLog(("%s Chip=%s LinkUpDelay=%ums EthernetCRC=%s GSO=%s R0=%s GC=%s\n", pThis->szPrf,
             g_Chips[pThis->eChip].pcszName, pThis->cMsLinkUpDelay,
             pThis->fEthernetCRC ? "on" : "off",
-            pThis->fGSOEnabled ? "enabled" : "disabled"));
+            pThis->fGSOEnabled ? "enabled" : "disabled",
+            pThis->fR0Enabled ? "enabled" : "disabled",
+            pThis->fRCEnabled ? "enabled" : "disabled"));
 
     /* Initialize the EEPROM. */
     pThis->eeprom.init(pThis->macConfigured);
