@@ -28,6 +28,10 @@ VBOX_ROOT_CONFIG_KMK_INCLUDED = 1
 # Build with umask 022 (requires kBuild r2556 to work, harmless on earlier).
 $(set-umask 022)
 
+# Add our own directories to the search paths.
+KBUILD_TOOL_PATHS = $(KBUILD_DEVTOOLS)/kBuildTools/
+
+
 # Modify the build types.
 KBUILD_BLD_TYPES = release profile debug kprofile
 
@@ -4667,10 +4671,10 @@ else # the gcc guys
  TEMPLATE_VBOXGUESTR3EXE_LDFLAGS.linux = $(filter-out $(VBOX_GCC_ORIGIN_OPT),$(TEMPLATE_VBOXR3EXE_LDFLAGS.linux))
  ifneq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
   ifeq ($(KBUILD_TARGET_ARCH),x86)
-   TEMPLATE_VBOXGUESTR3EXE_TOOL          := XGCCX86REDHATLINUX
+   TEMPLATE_VBOXGUESTR3EXE_TOOL         := VBoxXGccX86RedHatLinux
   else ifeq ($(KBUILD_TARGET_ARCH),amd64)
-   TEMPLATE_VBOXGUESTR3EXE_TOOL          := XGCCAMD64LINUXGNU
-   TEMPLATE_VBOXGUESTR3EXE_TOOL.x86      := XGCCX86REDHATLINUX
+   TEMPLATE_VBOXGUESTR3EXE_TOOL         := VBoxXGccAmd64LinuxGnu
+   TEMPLATE_VBOXGUESTR3EXE_TOOL.x86     := VBoxXGccX86RedHatLinux
   endif
   TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS      := $(filter-out $(VBOX_GCC_pipe) $(VBOX_GCC_Wextra) $(VBOX_GCC_Wno-missing-field-initializers) $(VBOX_GCC_fdiagnostics-show-option) $(VBOX_GCC_Wno-delete-non-virtual-dtor) $(VBOX_GCC_Wno-variadic-macros) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden),$(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS)) -pipe
   TEMPLATE_VBOXGUESTR3EXE_CFLAGS        := $(TEMPLATE_VBOXGUESTR3EXE_CXXFLAGS)
