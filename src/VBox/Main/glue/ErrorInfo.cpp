@@ -43,6 +43,16 @@ namespace com
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+HRESULT ErrorInfo::getVirtualBoxErrorInfo(ComPtr<IVirtualBoxErrorInfo> &pVirtualBoxErrorInfo)
+{
+    HRESULT rc = S_OK;
+    if (mErrorInfo)
+        rc = mErrorInfo.queryInterfaceTo(pVirtualBoxErrorInfo.asOutParam());
+    else
+        pVirtualBoxErrorInfo.setNull();
+    return rc;
+}
+
 void ErrorInfo::copyFrom(const ErrorInfo &x)
 {
     mIsBasicAvailable = x.mIsBasicAvailable;
