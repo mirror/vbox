@@ -23,68 +23,6 @@
 #include "VirtualBoxBase.h"
 #include <VBox/settings.h>
 
-class ATL_NO_VTABLE PCIAddress :
-    public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IPCIAddress)
-{
-public:
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(PCIAddress, IPCIAddress)
-
-    DECLARE_NOT_AGGREGATABLE(PCIAddress)
-
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    BEGIN_COM_MAP(PCIAddress)
-        VBOX_DEFAULT_INTERFACE_ENTRIES(IPCIAddress)
-    END_COM_MAP()
-
-    PCIAddress() { }
-    ~PCIAddress() { }
-
-    // public initializer/uninitializer for internal purposes only
-    HRESULT init(LONG aAddess);
-    void uninit();
-
-    HRESULT FinalConstruct();
-    void FinalRelease();
-
-    // IPCIAddress properties
-    STDMETHOD(COMGETTER(Bus))(SHORT *aBus)
-    {
-        *aBus = mBus;
-        return S_OK;
-    }
-    STDMETHOD(COMSETTER(Bus))(SHORT aBus)
-    {
-        mBus = aBus;
-        return S_OK;
-    }
-    STDMETHOD(COMGETTER(Device))(SHORT *aDevice)
-    {
-        *aDevice = mDevice;
-        return S_OK;
-    }
-    STDMETHOD(COMSETTER(Device))(SHORT aDevice)
-    {
-        mDevice = aDevice;
-        return S_OK;
-    }
-
-    STDMETHOD(COMGETTER(DevFunction))(SHORT *aDevFunction)
-    {
-        *aDevFunction = mFn;
-        return S_OK;
-    }
-    STDMETHOD(COMSETTER(DevFunction))(SHORT aDevFunction)
-    {
-        mFn = aDevFunction;
-        return S_OK;
-    }
-
-private:
-    SHORT mBus, mDevice, mFn;
-};
-
 class ATL_NO_VTABLE PCIDeviceAttachment :
     public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IPCIDeviceAttachment)
