@@ -146,7 +146,7 @@ static int force_async_tsc = 0;
 /** The user device name. */
 #define DEVICE_NAME_USR     "vboxdrvu"
 
-#if defined(RT_ARCH_AMD64) && !defined(CONFIG_DEBUG_SET_MODULE_RONX)
+#if defined(RT_ARCH_AMD64) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 /**
  * Memory for the executable memory heap (in IPRT).
  */
