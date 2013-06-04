@@ -109,6 +109,8 @@ private:
     PRTUTF16                              m_apwszCredentials[VBOXCREDPROV_NUM_FIELDS];
     /** Pointer to event handler. */
     ICredentialProviderCredentialEvents  *m_pEvents;
+    /** Flag indicating whether credentials already were retrieved. */
+    bool                                  m_fHaveCreds;
 };
 #endif /* !___VBOX_CREDPROV_CREDENTIAL_H___ */
 

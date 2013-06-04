@@ -42,7 +42,8 @@
 VBoxCredProvCredential::VBoxCredProvCredential(void) :
     m_enmUsageScenario(CPUS_INVALID),
     m_cRefs(1),
-    m_pEvents(NULL)
+    m_pEvents(NULL),
+    m_fHaveCreds(false)
 {
     VBoxCredProvVerbose(0, "VBoxCredProvCredential: Created\n");
     VBoxCredentialProviderAcquire();
@@ -346,6 +347,18 @@ VBoxCredProvCredential::RetrieveCredentials(void)
                                     m_apwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
                                     m_apwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]);
             }
+        }
+
+        m_fHaveCreds = true;
+    }
+    else
+    {
+        /* If credentials already were retrieved by a former call, don't try to retrieve new ones
+         * and just report back the already retrieved ones. */
+        if (m_fHaveCreds)
+        {
+            VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Credentials already retrieved\n");
+            rc = VINF_SUCCESS;
         }
     }
 
