@@ -1076,10 +1076,8 @@ static int buslogicR3HwReset(PBUSLOGIC pBusLogic, bool fResetIO)
 {
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
 
-    /* Reset registers to default value. */
+    /* Reset registers to default values. */
     pBusLogic->regStatus = BUSLOGIC_REGISTER_STATUS_HOST_ADAPTER_READY | BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED;
-    pBusLogic->regInterrupt = 0;
-    pBusLogic->uPendingIntr = 0;
     pBusLogic->regGeometry = BUSLOGIC_REGISTER_GEOMETRY_EXTENTED_TRANSLATION_ENABLED;
     pBusLogic->uOperationCode = 0xff; /* No command executing. */
     pBusLogic->iParameter = 0;
@@ -1087,6 +1085,10 @@ static int buslogicR3HwReset(PBUSLOGIC pBusLogic, bool fResetIO)
     pBusLogic->fIRQEnabled = true;
     pBusLogic->uMailboxOutgoingPositionCurrent = 0;
     pBusLogic->uMailboxIncomingPositionCurrent = 0;
+
+    /* Clear any active/pending interrupts. */
+    pBusLogic->uPendingIntr = 0;
+    buslogicClearInterrupt(pBusLogic);
 
     /* Guest-initiated HBA reset does not affect ISA port I/O. */
     if (fResetIO)
