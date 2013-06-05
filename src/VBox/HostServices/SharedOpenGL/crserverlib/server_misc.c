@@ -1325,28 +1325,6 @@ GLenum SERVER_DISPATCH_APIENTRY crServerDispatchGetError( void )
     return retval; /* WILL PROBABLY BE IGNORED */
 }
 
-GLvoid SERVER_DISPATCH_APIENTRY crServerDispatchDrawArrays(GLenum mode, GLint first, GLsizei count)
-{
-    GLenum status = cr_server.head_spu->dispatch_table.CheckFramebufferStatusEXT(GL_DRAW_FRAMEBUFFER_EXT);
-    Assert(GL_FRAMEBUFFER_COMPLETE == status);
-    while ((status = cr_server.head_spu->dispatch_table.GetError()) != GL_NO_ERROR) {/*Assert(0);*/}
-    CR_SERVER_DUMP_DRAW_ENTER();
-    cr_server.head_spu->dispatch_table.DrawArrays(mode, first, count);
-    CR_SERVER_DUMP_DRAW_LEAVE();
-    while ((status = cr_server.head_spu->dispatch_table.GetError()) != GL_NO_ERROR) {Assert(0);}
-}
-
-GLvoid SERVER_DISPATCH_APIENTRY crServerDispatchDrawElements(GLenum mode,  GLsizei count,  GLenum type,  const GLvoid * indices)
-{
-    GLenum status = cr_server.head_spu->dispatch_table.CheckFramebufferStatusEXT(GL_DRAW_FRAMEBUFFER_EXT);
-    Assert(GL_FRAMEBUFFER_COMPLETE == status);
-    while ((status = cr_server.head_spu->dispatch_table.GetError()) != GL_NO_ERROR) {/*Assert(0);*/}
-    CR_SERVER_DUMP_DRAW_ENTER();
-    cr_server.head_spu->dispatch_table.DrawElements(mode, count, type, indices);
-    CR_SERVER_DUMP_DRAW_LEAVE();
-    while ((status = cr_server.head_spu->dispatch_table.GetError()) != GL_NO_ERROR) {Assert(0);}
-}
-
 void SERVER_DISPATCH_APIENTRY
 crServerMakeTmpCtxCurrent( GLint window, GLint nativeWindow, GLint context )
 {
