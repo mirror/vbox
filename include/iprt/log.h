@@ -705,6 +705,22 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
     do { Log((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log(a); } while (0)
 #endif
 
+/** @def Log4Func
+ * Level 4 logging inside C/C++ functions.
+ *
+ * Prepends the given log message with the function name followed by a
+ * semicolon and space.
+ *
+ * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
+ */
+#ifdef LOG_USE_C99
+# define Log4Func(a) \
+    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define Log4Func(a) \
+    do { Log((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log(a); } while (0)
+#endif
+
 /** @def LogThisFunc
  * The same as LogFunc but for class functions (methods): the resulting log
  * line is additionally prepended with a hex value of |this| pointer.
