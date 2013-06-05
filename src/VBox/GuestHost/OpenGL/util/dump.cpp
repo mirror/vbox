@@ -164,6 +164,112 @@ void crServerDumpFindTexCb(unsigned long key, void *pData1, void *pData2)
     return (_str); \
 }
 
+VBOXDUMPDECL(size_t) crDmpFormatRawArrayf(char *pString, size_t cbString, const float *pVal, uint32_t cVal)
+{
+    if (cbString < 2)
+    {
+        crWarning("too few buffer size");
+        return 0;
+    }
+
+    const size_t cbInitString = cbString;
+    *pString++ = '{';
+    --cbString;
+    size_t cbWritten;
+    for (uint32_t i = 0; i < cVal; ++i)
+    {
+        cbWritten = sprintf_s(pString, cbString,
+                (i != cVal - 1) ? "%f, " : "%f", *pVal);
+        Assert(cbString >= cbWritten);
+        pString += cbWritten;
+        cbString -= cbWritten;
+    }
+
+    if (!cbString)
+    {
+        crWarning("too few buffer size");
+        return 0;
+    }
+    *pString++ = '}';
+    --cbString;
+
+    if (!cbString)
+    {
+        crWarning("too few buffer size");
+        return 0;
+    }
+    *pString++ = '\0';
+
+    return cbInitString - cbString;
+}
+
+VBOXDUMPDECL(size_t) crDmpFormatMatrixArrayf(char *pString, size_t cbString, const float *pVal, uint32_t cX, uint32_t cY)
+{
+    if (cbString < 2)
+    {
+        crWarning("too few buffer size");
+        return 0;
+    }
+
+    const size_t cbInitString = cbString;
+    *pString++ = '{';
+    --cbString;
+    size_t cbWritten;
+    for (uint32_t i = 0; i < cY; ++i)
+    {
+        cbWritten = crDmpFormatRawArrayf(pString, cbString, pVal, cX);
+        Assert(cbString >= cbWritten);
+        pString += cbWritten;
+        cbString -= cbWritten;
+        if (i != cY - 1)
+        {
+            if (cbString < 3)
+            {
+                crWarning("too few buffer size");
+                return 0;
+            }
+            *pString++ = ',';
+            --cbString;
+            *pString++ = '\n';
+            --cbString;
+        }
+    }
+    if (!cbString)
+    {
+        crWarning("too few buffer size");
+        return 0;
+    }
+    *pString++ = '}';
+    --cbString;
+
+    if (!cbString)
+    {
+        crWarning("too few buffer size");
+        return 0;
+    }
+    *pString++ = '\0';
+
+    return cbInitString - cbString;
+}
+
+VBOXDUMPDECL(size_t) crDmpFormatArrayf(char *pString, size_t cbString, const float *pVal, uint32_t cVal)
+{
+    switch(cVal)
+    {
+        case 1:
+            return sprintf_s(pString, cbString, "%f", *pVal);
+        case 16:
+            return crDmpFormatMatrixArrayf(pString, cbString, pVal, 4, 4);
+        case 9:
+            return crDmpFormatMatrixArrayf(pString, cbString, pVal, 3, 3);
+        case 0:
+            crWarning("value array is empty");
+            return 0;
+        default:
+            return crDmpFormatRawArrayf(pString, cbString, pVal, cVal);
+    }
+}
+
 void crRecDumpBuffer(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, GLint idRedirFBO, VBOXVR_TEXTURE *pRedirTex)
 {
     GLenum texTarget = 0;
@@ -173,8 +279,6 @@ void crRecDumpBuffer(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCur
     CR_BLITTER_IMG Img = {0};
     VBOXVR_TEXTURE Tex;
     int rc;
-
-    Assert(0);
 
     pRec->pDispatch->GetIntegerv(GL_DRAW_BUFFER, &hwDrawBuf);
     pRec->pDispatch->GetIntegerv(GL_FRAMEBUFFER_BINDING, &hwBuf);
@@ -308,6 +412,43 @@ static const char *crRecDumpShaderTypeString(GLenum enmType, CR_DUMPER *pDumper)
         CR_DUMP_MAKE_CASE(GL_FRAGMENT_SHADER_ARB);
         CR_DUMP_MAKE_CASE(GL_GEOMETRY_SHADER_ARB);
         CR_DUMP_MAKE_CASE_UNKNOWN(enmType, "Unknown Shader Type", pDumper);
+    }
+}
+
+static const char *crRecDumpVarTypeString(GLenum enmType, CR_DUMPER *pDumper)
+{
+    switch (enmType)
+    {
+        CR_DUMP_MAKE_CASE(GL_FLOAT);
+        CR_DUMP_MAKE_CASE(GL_FLOAT_VEC2);
+        CR_DUMP_MAKE_CASE(GL_FLOAT_VEC3);
+        CR_DUMP_MAKE_CASE(GL_FLOAT_VEC4);
+        CR_DUMP_MAKE_CASE(GL_INT);
+        CR_DUMP_MAKE_CASE(GL_INT_VEC2);
+        CR_DUMP_MAKE_CASE(GL_INT_VEC3);
+        CR_DUMP_MAKE_CASE(GL_INT_VEC4);
+        CR_DUMP_MAKE_CASE(GL_BOOL);
+        CR_DUMP_MAKE_CASE(GL_BOOL_VEC2);
+        CR_DUMP_MAKE_CASE(GL_BOOL_VEC3);
+        CR_DUMP_MAKE_CASE(GL_BOOL_VEC4);
+        CR_DUMP_MAKE_CASE(GL_FLOAT_MAT2);
+        CR_DUMP_MAKE_CASE(GL_FLOAT_MAT3);
+        CR_DUMP_MAKE_CASE(GL_FLOAT_MAT4);
+        CR_DUMP_MAKE_CASE(GL_SAMPLER_1D);
+        CR_DUMP_MAKE_CASE(GL_SAMPLER_2D);
+        CR_DUMP_MAKE_CASE(GL_SAMPLER_3D);
+        CR_DUMP_MAKE_CASE(GL_SAMPLER_CUBE);
+        CR_DUMP_MAKE_CASE(GL_SAMPLER_1D_SHADOW);
+        CR_DUMP_MAKE_CASE(GL_SAMPLER_2D_SHADOW);
+        CR_DUMP_MAKE_CASE(GL_SAMPLER_2D_RECT_ARB);
+        CR_DUMP_MAKE_CASE(GL_SAMPLER_2D_RECT_SHADOW_ARB);
+        CR_DUMP_MAKE_CASE(GL_FLOAT_MAT2x3);
+        CR_DUMP_MAKE_CASE(GL_FLOAT_MAT2x4);
+        CR_DUMP_MAKE_CASE(GL_FLOAT_MAT3x2);
+        CR_DUMP_MAKE_CASE(GL_FLOAT_MAT3x4);
+        CR_DUMP_MAKE_CASE(GL_FLOAT_MAT4x2);
+        CR_DUMP_MAKE_CASE(GL_FLOAT_MAT4x3);
+        CR_DUMP_MAKE_CASE_UNKNOWN(enmType, "Unknown Variable Type", pDumper);
     }
 }
 
@@ -499,6 +640,186 @@ VBOXDUMPDECL(void) crRecDumpCurrentProgram(CR_RECORDER *pRec, CRContext *ctx)
     }
 }
 
+void crRecDumpProgramUniforms(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid)
+{
+    CRGLSLProgram *pProg;
+
+    if (!id)
+    {
+        unsigned long tstKey = 0;
+        Assert(hwid);
+        pProg = (CRGLSLProgram*)crDmpHashtableSearchByHwid(ctx->glsl.programs, hwid, crDmpGetHwidProgramCB, &tstKey);
+        Assert(pProg);
+        if (!pProg)
+            return;
+        id = pProg->id;
+        Assert(tstKey == id);
+    }
+    else
+    {
+        pProg = (CRGLSLProgram *) crHashtableSearch(ctx->glsl.programs, id);
+        Assert(pProg);
+        if (!pProg)
+            return;
+    }
+
+    if (!hwid)
+        hwid = pProg->hwid;
+
+    Assert(pProg->hwid == hwid);
+    Assert(pProg->id == id);
+
+    GLint maxUniformLen = 0, activeUniforms = 0, i, j, uniformsCount = 0;
+    GLenum type;
+    GLint size, location;
+    GLchar *pszName = NULL;
+    pRec->pDispatch->GetProgramiv(hwid, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformLen);
+    pRec->pDispatch->GetProgramiv(hwid, GL_ACTIVE_UNIFORMS, &activeUniforms);
+
+    if (!maxUniformLen)
+    {
+        if (activeUniforms)
+        {
+            crWarning("activeUniforms (%d), while maxUniformLen is zero", activeUniforms);
+            activeUniforms = 0;
+        }
+    }
+
+    if (activeUniforms>0)
+    {
+        pszName = (GLchar *) crAlloc((maxUniformLen+8)*sizeof(GLchar));
+
+        if (!pszName)
+        {
+            crWarning("crRecDumpProgramUniforms: out of memory");
+            return;
+        }
+    }
+
+    for (i=0; i<activeUniforms; ++i)
+    {
+        pRec->pDispatch->GetActiveUniform(hwid, i, maxUniformLen, NULL, &size, &type, pszName);
+        uniformsCount += size;
+    }
+    Assert(uniformsCount>=activeUniforms);
+
+    if (activeUniforms>0)
+    {
+        GLfloat fdata[16];
+        GLint idata[16];
+        char *pIndexStr=NULL;
+
+        for (i=0; i<activeUniforms; ++i)
+        {
+            bool fPrintBraketsWithName = false;
+            pRec->pDispatch->GetActiveUniform(hwid, i, maxUniformLen, NULL, &size, &type, pszName);
+
+            if (size>1)
+            {
+                pIndexStr = crStrchr(pszName, '[');
+                if (!pIndexStr)
+                {
+                    pIndexStr = pszName+crStrlen(pszName);
+                    fPrintBraketsWithName = true;
+                }
+            }
+
+            if (fPrintBraketsWithName)
+            {
+                crDmpStrF(pRec->pDumper, "%s %s[%d];", crRecDumpVarTypeString(type, pRec->pDumper), pszName, size);
+                Assert(size > 1);
+            }
+            else
+                crDmpStrF(pRec->pDumper, "%s %s;", crRecDumpVarTypeString(type, pRec->pDumper), pszName);
+
+            GLint uniformTypeSize = crStateGetUniformSize(type);
+            Assert(uniformTypeSize >= 1);
+
+            for (j=0; j<size; ++j)
+            {
+                if (size>1)
+                {
+                    sprintf(pIndexStr, "[%i]", j);
+                }
+                location = pRec->pDispatch->GetUniformLocation(hwid, pszName);
+
+                if (crStateIsIntUniform(type))
+                {
+                    pRec->pDispatch->GetUniformiv(hwid, location, &idata[0]);
+                    switch (uniformTypeSize)
+                    {
+                        case 1:
+                            crDmpStrF(pRec->pDumper, "%s = %d;", pszName, idata[0]);
+                            break;
+                        case 2:
+                            crDmpStrF(pRec->pDumper, "%s = {%d, %d};", pszName, idata[0], idata[1]);
+                            break;
+                        case 3:
+                            crDmpStrF(pRec->pDumper, "%s = {%d, %d, %d};", pszName, idata[0], idata[1], idata[2]);
+                            break;
+                        case 4:
+                            crDmpStrF(pRec->pDumper, "%s = {%d, %d, %d, %d};", pszName, idata[0], idata[1], idata[2], idata[3]);
+                            break;
+                        default:
+                            for (GLint k = 0; k < uniformTypeSize; ++k)
+                            {
+                                crDmpStrF(pRec->pDumper, "%s[%d] = %d;", pszName, k, idata[k]);
+                            }
+                            break;
+                    }
+                }
+                else
+                {
+                    pRec->pDispatch->GetUniformfv(hwid, location, &fdata[0]);
+                    switch (uniformTypeSize)
+                    {
+                        case 1:
+                            crDmpStrF(pRec->pDumper, "%s = %f;", pszName, fdata[0]);
+                            break;
+                        case 2:
+                            crDmpStrF(pRec->pDumper, "%s = {%f, %f};", pszName, fdata[0], fdata[1]);
+                            break;
+                        case 3:
+                            crDmpStrF(pRec->pDumper, "%s = {%f, %f, %f};", pszName, fdata[0], fdata[1], fdata[2]);
+                            break;
+                        case 4:
+                            crDmpStrF(pRec->pDumper, "%s = {%f, %f, %f, %f};", pszName, fdata[0], fdata[1], fdata[2], fdata[3]);
+                            break;
+                        default:
+                            for (GLint k = 0; k < uniformTypeSize; ++k)
+                            {
+                                crDmpStrF(pRec->pDumper, "%s[%d] = %f;", pszName, k, fdata[k]);
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+
+        crFree(pszName);
+    }
+}
+
+VBOXDUMPDECL(void) crRecDumpCurrentProgramUniforms(CR_RECORDER *pRec, CRContext *ctx)
+{
+    GLint curProgram = 0;
+    pRec->pDispatch->GetIntegerv(GL_CURRENT_PROGRAM, &curProgram);
+    if (curProgram)
+    {
+        Assert(ctx->glsl.activeProgram);
+        if (!ctx->glsl.activeProgram)
+            crWarning("no active program state with active hw program");
+        else
+            Assert(ctx->glsl.activeProgram->hwid == curProgram);
+        crRecDumpProgramUniforms(pRec, ctx, 0, curProgram);
+    }
+    else
+    {
+        Assert(!ctx->glsl.activeProgram);
+        crDmpStrF(pRec->pDumper, "--no active program");
+    }
+}
+
 void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin)
 {
     GLint maxUnits = 0;
@@ -507,8 +828,6 @@ void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pC
     GLint curProgram = 0;
     int rc;
     int i;
-
-    Assert(0);
 
     pRec->pDispatch->GetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxUnits);
     maxUnits = RT_MIN(CR_MAX_TEXTURE_UNITS, maxUnits);

@@ -113,6 +113,9 @@ VBoxOGLcrutil_SOURCES       = \
 VBoxOGLcrutil_SOURCES.win.x86 = \
 	util/util.def \
 	util/util.rc
+ifdef VBOX_WITH_CRDUMPER
+VBoxOGLcrutil_SOURCES += $(VBOX_PATH_CROGL_GENFILES)/dump_gen.cpp
+endif
 VBoxOGLcrutil_LIBS.win = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib
@@ -137,6 +140,9 @@ VBoxOGLcrutil_pixel.c_CFLAGS.win.x86     += -Od
 VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
 ifdef VBOX_WITH_CRDUMPER
 VBoxOGLcrutil_DEFS        += VBOX_WITH_CRDUMPER
+VBoxOGLcrutil_LIBS        += \
+    $(PATH_STAGE_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB) \
+    $(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB)
 endif
 
 #
@@ -160,6 +166,13 @@ ifdef VBOX_WITH_WDDM
 VBoxOGLcrutil-x86_INCS.win    += $(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm
 VBoxOGLcrutil-x86_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB)
 endif
+ifdef VBOX_WITH_CRDUMPER
+# VBOX_WITH_CRDUMPER is inheritted from VBoxOGLcrutil_DEFS
+#VBoxOGLcrutil-x86_DEFS        += VBOX_WITH_CRDUMPER
+VBoxOGLcrutil-x86_LIBS        += \
+    $(PATH_STAGE_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB) \
+    $(PATH_STAGE_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB)
+endif
 # vc7 hangs during compilation of this file when optimizations are enabled.
 VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
 VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
@@ -180,6 +193,9 @@ VBoxOGLhostcrutil_LIBS.win =  \
 VBoxOGLhostcrutil_LIBS     = $(LIB_RUNTIME)
 ifdef VBOX_WITH_CRDUMPER
 VBoxOGLhostcrutil_DEFS    += VBOX_WITH_CRDUMPER
+VBoxOGLhostcrutil_LIBS        += \
+    $(PATH_STAGE_LIB)/VBoxOGLhostcrstate$(VBOX_SUFF_LIB) \
+    $(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB)
 endif
 ifdef VBOX_WITH_CRHGSMI
 VBoxOGLhostcrutil_DEFS    += VBOX_WITH_CRHGSMI
@@ -195,6 +211,12 @@ endif
 $(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c: $(PATH_SUB_CURRENT)/util/debug_opcodes.py $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
+
+ifdef VBOX_WITH_CRDUMPER
+$(VBOX_PATH_CROGL_GENFILES)/dump_gen.cpp: $(PATH_SUB_CURRENT)/util/dump_gen.py $(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/get_sizes.py $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_isenabled.txt state_extensions_isenabled.txt) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+	$(call MSG_GENERATE,python,$@,$<)
+	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
+endif
 
 #
 # VBoxOGLcrpacker

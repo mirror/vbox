@@ -346,7 +346,9 @@ crStateCreateContextId(int i, const CRLimitsState *limits,
 static void
 crStateFreeContext(CRContext *ctx)
 {
+#ifndef DEBUG_misha
     CRASSERT(g_pAvailableContexts[ctx->id] == ctx);
+#endif
     if (g_pAvailableContexts[ctx->id] == ctx)
     {
         g_pAvailableContexts[ctx->id] = NULL;
@@ -355,7 +357,9 @@ crStateFreeContext(CRContext *ctx)
     }
     else
     {
+#ifndef DEBUG_misha
         crWarning("freeing context 0x%x, id(%d) not being in the context list", ctx, ctx->id);
+#endif
     }
 
     crStateClientDestroy( ctx );
@@ -405,7 +409,11 @@ void crStateInit(void)
         crStateClientInitBits( &(__currentBits->client) );
         crStateLightingInitBits( &(__currentBits->lighting) );
     } else
+    {
+#ifndef DEBUG_misha
         crWarning("State tracker is being re-initialized..\n");
+#endif
+    }
 
     for (i=0;i<CR_MAX_CONTEXTS;i++)
         g_pAvailableContexts[i] = NULL;
