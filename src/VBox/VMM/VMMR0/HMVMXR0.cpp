@@ -5539,7 +5539,7 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         VMMR0LogFlushDisable(pVCpu);
     else
         Assert(VMMR0IsLogFlushDisabled(pVCpu));
-    LogFunc(("\n"));
+    Log4Func(("\n"));
 
     int rc = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestRipRspRflags failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
@@ -7139,7 +7139,7 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                 Assert(ASMIntAreEnabled());                                  \
                 Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));             \
                 VMX_ASSERT_PREEMPT_CPUID_VAR();                              \
-                LogFunc(("vcpu[%u] vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", \
+                Log4Func(("vcpu[%u] vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\n", \
                         (unsigned)pVCpu->idCpu));                            \
                 Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));             \
                 if (VMMR0IsLogFlushDisabled(pVCpu))                          \
@@ -7148,7 +7148,7 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
             } while (0)
 # define VMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS() \
             do {                                 \
-                LogFunc(("\n"));                 \
+                Log4Func(("\n"));                \
             } while(0)
 #else   /* Release builds */
 # define VMX_VALIDATE_EXIT_HANDLER_PARAMS() do { HMVMX_STOP_EXIT_DISPATCH_PROF(); } while(0)
