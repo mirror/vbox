@@ -246,7 +246,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
     uint32_t u32Stepping;
     if (HMAmdIsSubjectToErratum170(&u32Family, &u32Model, &u32Stepping))
     {
-        Log(("SVMR0InitVM: AMD cpu with erratum 170 family %#x model %#x stepping %#x\n", u32Family, u32Model, u32Stepping));
+        Log4(("SVMR0InitVM: AMD cpu with erratum 170 family %#x model %#x stepping %#x\n", u32Family, u32Model, u32Stepping));
         pVM->hm.s.svm.fAlwaysFlushTLB = true;
     }
 
@@ -504,4 +504,211 @@ static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, uint32_t uMsr, SVMMSREXITREAD 
     else
         ASMBitClear(pbMsrBitmap, ulBit + 1);
 }
+
+
+/**
+ * Flushes the appropriate tagged-TLB entries.
+ *
+ * @param    pVM        Pointer to the VM.
+ * @param    pVCpu      Pointer to the VMCPU.
+ */
+static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
+{
+    PVM pVM              = pVCpu->CTX_SUFF(pVM);
+    PSVMVMCB pVmcb       = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
+
+    /*
+     * Force a TLB flush for the first world switch if the current CPU differs from the one we ran on last.
+     * This can happen both for start & resume due to long jumps back to ring-3.
+     * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB,
+     * so we cannot reuse the ASIDs without flushing.
+     */
+    bool fNewAsid = false;
+    if (   pVCpu->hm.s.idLastCpu   != pCpu->idCpu
+        || pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
+    {
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
+        pVCpu->hm.s.fForceTLBFlush = true;
+        fNewAsid = true;
+    }
+
+    /* Set TLB flush state as checked until we return from the world switch. */
+    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);
+
+    /* Check for explicit TLB shootdowns. */
+    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
+    {
+        pVCpu->hm.s.fForceTLBFlush = true;
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
+    }
+
+    pVCpu->hm.s.idLastCpu = pCpu->idCpu;
+    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_NOTHING;
+
+    if (pVM->hm.s.svm.fAlwaysFlushTLB)
+    {
+        /*
+         * This is the AMD erratum 170. We need to flush the entire TLB for each world switch. Sad.
+         */
+        pCpu->uCurrentAsid               = 1;
+        pVCpu->hm.s.uCurrentAsid         = 1;
+        pVCpu->hm.s.cTlbFlushes          = pCpu->cTlbFlushes;
+        pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+    }
+    else if (pVCpu->hm.s.fForceTLBFlush)
+    {
+        if (fNewAsid)
+        {
+            ++pCpu->uCurrentAsid;
+            bool fHitASIDLimit = false;
+            if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
+            {
+                pCpu->uCurrentAsid        = 1;      /* Wraparound at 1; host uses 0 */
+                pCpu->cTlbFlushes++;                /* All VCPUs that run on this host CPU must use a new VPID. */
+                fHitASIDLimit             = true;
+
+                if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+                {
+                    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
+                    pCpu->fFlushAsidBeforeUse = true;
+                }
+                else
+                {
+                    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+                    pCpu->fFlushAsidBeforeUse = false;
+                }
+            }
+
+            if (   !fHitASIDLimit
+                && pCpu->fFlushAsidBeforeUse)
+            {
+                if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+                    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
+                else
+                {
+                    pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+                    pCpu->fFlushAsidBeforeUse = false;
+                }
+            }
+
+            pVCpu->hm.s.uCurrentAsid = pCpu->uCurrentAsid;
+            pVCpu->hm.s.cTlbFlushes  = pCpu->cTlbFlushes;
+        }
+        else
+        {
+            if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID)
+                pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_SINGLE_CONTEXT;
+            else
+                pVmcb->ctrl.TLBCtrl.n.u8TLBFlush = SVM_TLB_FLUSH_ENTIRE;
+        }
+
+        pVCpu->hm.s.fForceTLBFlush = false;
+    }
+    else
+    {
+        /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
+         *        not be executed. See hmQueueInvlPage() where it is commented
+         *        out. Support individual entry flushing someday. */
+        if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
+        {
+            /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
+            for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
+                SVMR0InvlpgA(pVCpu->hm.s.TlbShootdown.aPages[i], pVmcb->ctrl.TLBCtrl.n.u32ASID);
+        }
+    }
+
+    pVCpu->hm.s.TlbShootdown.cPages = 0;
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
+
+    /* Update VMCB with the ASID. */
+    pVmcb->ctrl.TLBCtrl.n.u32ASID = pVCpu->hm.s.uCurrentAsid;
+
+    AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
+              ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
+    AssertMsg(pCpu->uCurrentAsid >= 1 && pCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
+              ("cpu%d uCurrentAsid = %x\n", pCpu->idCpu, pCpu->uCurrentAsid));
+    AssertMsg(pVCpu->hm.s.uCurrentAsid >= 1 && pVCpu->hm.s.uCurrentAsid < pVM->hm.s.uMaxAsid,
+              ("cpu%d VM uCurrentAsid = %x\n", pCpu->idCpu, pVCpu->hm.s.uCurrentAsid));
+
+#ifdef VBOX_WITH_STATISTICS
+    if (pVmcb->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_NOTHING)
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch);
+    else if (   pVmcb->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_SINGLE_CONTEXT
+             || pVmcb->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_SINGLE_CONTEXT_RETAIN_GLOBALS)
+    {
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushAsid);
+    }
+    else
+        Assert(pVmcb->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_ENTIRE)
+#endif
+}
+
+
+
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+/**
+ * Prepares for and executes VMRUN (64-bit guests on a 32-bit host).
+ *
+ * @returns VBox status code.
+ * @param   HCPhysVmcbHost  Physical address of host VMCB.
+ * @param   HCPhysVmcb      Physical address of the VMCB.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pVM             Pointer to the VM.
+ * @param   pVCpu           Pointer to the VMCPU.
+ */
+DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS HCPhysVmcbHost, RTHCPHYS HCPhysVmcb, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
+{
+    uint32_t aParam[4];
+    aParam[0] = (uint32_t)(HCPhysVmcbHost);             /* Param 1: HCPhysVmcbHost - Lo. */
+    aParam[1] = (uint32_t)(HCPhysVmcbHost >> 32);       /* Param 1: HCPhysVmcbHost - Hi. */
+    aParam[2] = (uint32_t)(HCPhysVmcb);                 /* Param 2: HCPhysVmcb - Lo. */
+    aParam[3] = (uint32_t)(HCPhysVmcb >> 32);           /* Param 2: HCPhysVmcb - Hi. */
+
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_SVMRCVMRun64, 4, &aParam[0]);
+}
+
+
+/**
+ * Executes the specified VMRUN handler in 64-bit mode.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   enmOp       The operation to perform.
+ * @param   cbParam     Number of parameters.
+ * @param   paParam     Array of 32-bit parameters.
+ */
+VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, HM64ON32OP enmOp, uint32_t cbParam,
+                                         uint32_t *paParam)
+{
+    AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
+    Assert(enmOp > HM64ON32OP_INVALID && enmOp < HM64ON32OP_END);
+
+    /* Disable interrupts. */
+    RTHCUINTREG uOldEFlags = ASMIntDisableFlags();
+
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+    RTCPUID idHostCpu = RTMpCpuId();
+    CPUMR0SetLApic(pVM, idHostCpu);
+#endif
+
+    CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVCpu));
+    CPUMSetHyperEIP(pVCpu, enmOp);
+    for (int i = (int)cbParam - 1; i >= 0; i--)
+        CPUMPushHyper(pVCpu, paParam[i]);
+
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatWorldSwitch3264, z);
+    /* Call the switcher. */
+    int rc = pVM->hm.s.pfnHost32ToGuest64R0(pVM, RT_OFFSETOF(VM, aCpus[pVCpu->idCpu].cpum) - RT_OFFSETOF(VM, cpum));
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatWorldSwitch3264, z);
+
+    /* Restore interrupts. */
+    ASMSetFlags(uOldEFlags);
+    return rc;
+}
+
+#endif /* HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) */
 
