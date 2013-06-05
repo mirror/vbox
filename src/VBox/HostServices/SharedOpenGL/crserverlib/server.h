@@ -394,13 +394,61 @@ void crServerDumpTextures();
 void crServerDumpShader(GLint id);
 void crServerDumpProgram(GLint id);
 void crServerDumpCurrentProgram();
+void crServerDumpCurrentProgramUniforms();
 void crServerDumpFramesCheck();
+void crServerDumpState();
 
+extern unsigned long g_CrDbgDumpEnabled;
 extern unsigned long g_CrDbgDumpDraw;
 extern unsigned long g_CrDbgDumpDrawFramesSettings;
 extern unsigned long g_CrDbgDumpDrawFramesAppliedSettings;
 extern unsigned long g_CrDbgDumpDrawFramesCount;
-bool crServerDumpFilter(unsigned long event);
+
+bool crServerDumpFilterDmp(unsigned long event, CR_DUMPER *pDumper);
+bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
+
+//#define CR_SERVER_DUMP_MASK_OP                  0x0000fffc
+//#define CR_SERVER_DUMP_OFF_OP                   2
+//
+//#define CR_SERVER_DUMP_MASK_DIR                 0x00000003
+//#define CR_SERVER_DUMP_OFF_DIR                  0
+//
+//#define CR_SERVER_DUMP_MASK_DMP                 0xffff0000
+//#define CR_SERVER_DUMP_OFF_DMP                  16
+//
+//#define CR_SERVER_DUMP_MAKE_OP(_v)              (1 << ((_v) + CR_SERVER_DUMP_OFF_OP))
+//#define CR_SERVER_DUMP_MAKE_DIR(_v)             (1 << ((_v) + CR_SERVER_DUMP_OFF_DIR))
+//#define CR_SERVER_DUMP_MAKE_DMP(_v)             (1 << ((_v) + CR_SERVER_DUMP_OFF_DMP))
+//
+//#define CR_SERVER_DUMP_GET_OP(_v)               ((_v) & CR_SERVER_DUMP_MASK_OP)
+//#define CR_SERVER_DUMP_GET_DMP(_v)              ((_v) & CR_SERVER_DUMP_MASK_DMP)
+//#define CR_SERVER_DUMP_GET_DIR(_v)              ((_v) & CR_SERVER_DUMP_MASK_DIR)
+//
+//#define CR_SERVER_DUMP_ISANY_OP(_v1, _v2)       (!!(CR_SERVER_DUMP_GET_OP(_v1) & CR_SERVER_DUMP_GET_OP(_v2)))
+//#define CR_SERVER_DUMP_ISANY_DIR(_v1, _v2)      (!!(CR_SERVER_DUMP_GET_DIR(_v1) & CR_SERVER_DUMP_GET_DIR(_v2)))
+//#define CR_SERVER_DUMP_ISANY_DMP(_v1, _v2)      (!!(CR_SERVER_DUMP_GET_DMP(_v1) & CR_SERVER_DUMP_GET_DMP(_v2)))
+//
+//#define CR_SERVER_DUMP_ISANY_OP(_v1, _v2)       ((CR_SERVER_DUMP_GET_OP(_v1) & CR_SERVER_DUMP_GET_OP(_v2)) == CR_SERVER_DUMP_GET_OP(_v2))
+//#define CR_SERVER_DUMP_ISANY_DIR(_v1, _v2)      ((CR_SERVER_DUMP_GET_DIR(_v1) & CR_SERVER_DUMP_GET_DIR(_v2)) == CR_SERVER_DUMP_GET_DIR(_v2))
+//#define CR_SERVER_DUMP_ISANY_DMP(_v1, _v2)      ((CR_SERVER_DUMP_GET_DMP(_v1) & CR_SERVER_DUMP_GET_DMP(_v2)) == CR_SERVER_DUMP_GET_DMP(_v2))
+//
+//#define CR_SERVER_DUMP_F_DIR_ENTER              CR_SERVER_DUMP_MAKE_DIR(0)
+//#define CR_SERVER_DUMP_F_DIR_LEAVE              CR_SERVER_DUMP_MAKE_DIR(1)
+//
+//#define CR_SERVER_DUMP_F_OP_DRAW                CR_SERVER_DUMP_MAKE_OP(0)
+//#define CR_SERVER_DUMP_F_OP_SWAPBUFFERS         CR_SERVER_DUMP_MAKE_OP(1)
+//#define CR_SERVER_DUMP_F_OP_LINK_PROGRAM        CR_SERVER_DUMP_MAKE_OP(2)
+//#define CR_SERVER_DUMP_F_OP_COMPILE_PROGRAM     CR_SERVER_DUMP_MAKE_OP(3)
+//
+//#define CR_SERVER_DUMP_F_DMP_BUFF               CR_SERVER_DUMP_MAKE_DMP(0)
+//#define CR_SERVER_DUMP_F_DMP_TEX                CR_SERVER_DUMP_MAKE_DMP(0)
+//#define CR_SERVER_DUMP_F_DMP_PROGRAM            CR_SERVER_DUMP_MAKE_DMP(0)
+//#define CR_SERVER_DUMP_F_DMP_PROGRAM_UNIFORMS   CR_SERVER_DUMP_MAKE_DMP(0)
+//#define CR_SERVER_DUMP_F_DMP_STATE              CR_SERVER_DUMP_MAKE_DMP(0)
+//
+//#define CR_SERVER_DUMP_GET_OP(_v)               ((_v) & CR_SERVER_DUMP_MASK_OP)
+//#define CR_SERVER_DUMP_GET_DMP(_v)               ((_v) & CR_SERVER_DUMP_MASK_DMP)
+//#define CR_SERVER_DUMP_GET_DIR(_v)               ((_v) & CR_SERVER_DUMP_MASK_DIR)
 
 #define CR_SERVER_DUMP_F_DRAW_BUFF_ENTER        0x00000001
 #define CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE        0x00000002
@@ -408,59 +456,86 @@ bool crServerDumpFilter(unsigned long event);
 #define CR_SERVER_DUMP_F_DRAW_TEX_LEAVE         0x00000020
 #define CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER     0x00000100
 #define CR_SERVER_DUMP_F_DRAW_PROGRAM_LEAVE     0x00000200
+#define CR_SERVER_DUMP_F_DRAW_PROGRAM_UNIFORMS_ENTER     0x00000400
+#define CR_SERVER_DUMP_F_DRAW_PROGRAM_UNIFORMS_LEAVE     0x00000800
+#define CR_SERVER_DUMP_F_DRAW_STATE_ENTER                0x00000004
+#define CR_SERVER_DUMP_F_DRAW_STATE_LEAVE                0x00000008
 
-#define CR_SERVER_DUMP_F_DRAW_ALL (CR_SERVER_DUMP_F_DRAW_BUFF_ENTER | CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE \
-        | CR_SERVER_DUMP_F_DRAW_TEX_ENTER | CR_SERVER_DUMP_F_DRAW_TEX_LEAVE \
-        | CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER | CR_SERVER_DUMP_F_DRAW_PROGRAM_LEAVE)
+#define CR_SERVER_DUMP_F_DRAW_ENTER_ALL (CR_SERVER_DUMP_F_DRAW_BUFF_ENTER \
+        | CR_SERVER_DUMP_F_DRAW_TEX_ENTER \
+        | CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER \
+        | CR_SERVER_DUMP_F_DRAW_PROGRAM_UNIFORMS_ENTER \
+        | CR_SERVER_DUMP_F_DRAW_STATE_ENTER)
+
+#define CR_SERVER_DUMP_F_DRAW_LEAVE_ALL (CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE \
+        | CR_SERVER_DUMP_F_DRAW_TEX_LEAVE \
+        | CR_SERVER_DUMP_F_DRAW_PROGRAM_LEAVE \
+        | CR_SERVER_DUMP_F_DRAW_PROGRAM_UNIFORMS_LEAVE \
+        | CR_SERVER_DUMP_F_DRAW_STATE_LEAVE)
+
+#define CR_SERVER_DUMP_F_DRAW_ALL (CR_SERVER_DUMP_F_DRAW_ENTER_ALL | CR_SERVER_DUMP_F_DRAW_LEAVE_ALL)
 
 #define CR_SERVER_DUMP_F_COMPILE_SHADER         0x00001000
 #define CR_SERVER_DUMP_F_LINK_PROGRAM           0x00002000
 #define CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER      0x00010000
 #define CR_SERVER_DUMP_F_SWAPBUFFERS_LEAVE      0x00020000
 
-#define CR_SERVER_DUMP_IF_ANY(_ev) ((g_CrDbgDumpDraw & (_ev)) && crServerDumpFilter((_ev)))
+#define CR_SERVER_DUMP_DEFAULT_FILTER_OP(_ev) ((((_ev) & g_CrDbgDumpDraw) != 0) \
+        || ((_ev) == CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER && g_CrDbgDumpDrawFramesCount))
+
+#define CR_SERVER_DUMP_DEFAULT_FILTER_DMP(_ev) (((_ev) & g_CrDbgDumpDraw) != 0)
+
+#define CR_SERVER_DUMP_FILTER_OP(_ev, _pDumper) (g_CrDbgDumpEnabled && crServerDumpFilterOp((_ev), (_pDumper)))
+#define CR_SERVER_DUMP_FILTER_DMP(_ev, _pDumper) (crServerDumpFilterDmp((_ev), (_pDumper)))
 
 #define CR_SERVER_DUMP_DRAW_ENTER() do { \
-            if (!CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_ENTER | CR_SERVER_DUMP_F_DRAW_TEX_ENTER | CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER)) break; \
+            if (!CR_SERVER_DUMP_FILTER_OP(CR_SERVER_DUMP_F_DRAW_ENTER_ALL, cr_server.Recorder.pDumper)) break; \
             crServerDumpCheckInit(); \
             crDmpStrF(cr_server.Recorder.pDumper, "==> %s", __FUNCTION__); \
-            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER)) { crServerDumpCurrentProgram(); } \
-            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_TEX_ENTER)) { crServerDumpTextures(); } \
-            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_ENTER)) { crServerDumpBuffer(-1); } \
+            if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_STATE_ENTER, cr_server.Recorder.pDumper)) { crServerDumpState(); } \
+            if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER, cr_server.Recorder.pDumper)) { crServerDumpCurrentProgram(); } \
+            if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_PROGRAM_UNIFORMS_ENTER, cr_server.Recorder.pDumper)) { crServerDumpCurrentProgramUniforms(); } \
+            if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_TEX_ENTER, cr_server.Recorder.pDumper)) { crServerDumpTextures(); } \
+            if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_BUFF_ENTER, cr_server.Recorder.pDumper)) { crServerDumpBuffer(-1); } \
             crDmpStrF(cr_server.Recorder.pDumper, "=================="); \
         } while (0)
 
 #define CR_SERVER_DUMP_DRAW_LEAVE() do { \
-            if (!CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE | CR_SERVER_DUMP_F_DRAW_TEX_LEAVE | CR_SERVER_DUMP_F_DRAW_PROGRAM_LEAVE)) break; \
+            if (!CR_SERVER_DUMP_FILTER_OP(CR_SERVER_DUMP_F_DRAW_LEAVE_ALL, cr_server.Recorder.pDumper)) break; \
             crServerDumpCheckInit(); \
             crDmpStrF(cr_server.Recorder.pDumper, "<== %s", __FUNCTION__); \
-            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE)) { crServerDumpBuffer(-1); } \
-            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_TEX_LEAVE)) { crServerDumpTextures(); } \
-            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_DRAW_PROGRAM_LEAVE)) { crServerDumpCurrentProgram(); } \
+            if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE, cr_server.Recorder.pDumper)) { crServerDumpBuffer(-1); } \
+            if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_TEX_LEAVE, cr_server.Recorder.pDumper)) { crServerDumpTextures(); } \
+            if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_PROGRAM_UNIFORMS_LEAVE, cr_server.Recorder.pDumper)) { crServerDumpCurrentProgramUniforms(); } \
+            if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_PROGRAM_LEAVE, cr_server.Recorder.pDumper)) { crServerDumpCurrentProgram(); } \
+            if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_STATE_LEAVE, cr_server.Recorder.pDumper)) { crServerDumpState(); } \
             crDmpStrF(cr_server.Recorder.pDumper, "=================="); \
         } while (0)
 
 #define CR_SERVER_DUMP_COMPILE_SHADER(_id) do { \
-            if (!CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_COMPILE_SHADER)) break; \
+            if (!CR_SERVER_DUMP_FILTER_OP(CR_SERVER_DUMP_F_COMPILE_SHADER, cr_server.Recorder.pDumper)) break; \
             crServerDumpCheckInit(); \
             crServerDumpShader((_id)); \
         } while (0)
 
 #define CR_SERVER_DUMP_LINK_PROGRAM(_id) do { \
-            if (!CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_LINK_PROGRAM)) break; \
+            if (!CR_SERVER_DUMP_FILTER_OP(CR_SERVER_DUMP_F_LINK_PROGRAM, cr_server.Recorder.pDumper)) break; \
             crServerDumpCheckInit(); \
             crServerDumpProgram((_id)); \
         } while (0)
 
 #define CR_SERVER_DUMP_SWAPBUFFERS_ENTER() do { \
-            if (!g_CrDbgDumpDrawFramesCount && !CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER)) break; \
+            if (!CR_SERVER_DUMP_FILTER_OP(CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER, cr_server.Recorder.pDumper)) break; \
             crServerDumpCheckInit(); \
             crDmpStrF(cr_server.Recorder.pDumper, "== %s", __FUNCTION__); \
-            if (CR_SERVER_DUMP_IF_ANY(CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER)) { crServerDumpBuffer(CR_SERVER_FBO_BB_IDX(cr_server.currentMural)); } \
+            if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER, cr_server.Recorder.pDumper)) { crServerDumpBuffer(CR_SERVER_FBO_BB_IDX(cr_server.currentMural)); } \
             if (g_CrDbgDumpDrawFramesCount) { crServerDumpFramesCheck(); } \
         } while (0)
 
-#define CR_SERVER_DUMP_SWAPBUFFERS_LEAVE() do {} while (0)
+#define CR_SERVER_DUMP_SWAPBUFFERS_LEAVE() do { \
+            if (!CR_SERVER_DUMP_FILTER_OP(CR_SERVER_DUMP_F_SWAPBUFFERS_LEAVE, cr_server.Recorder.pDumper)) break; \
+            crServerDumpCheckInit(); \
+        } while (0)
 #else /* if !defined VBOX_WITH_CRSERVER_DUMPER */
 #define CR_SERVER_DUMP_DRAW_ENTER() do {} while (0)
 #define CR_SERVER_DUMP_DRAW_LEAVE() do {} while (0)

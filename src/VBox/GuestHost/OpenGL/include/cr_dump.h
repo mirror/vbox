@@ -57,7 +57,7 @@ typedef struct CR_DUMPER
 DECLINLINE(void) crDmpStrV(CR_DUMPER *pDumper, const char *pszStr, va_list pArgList)
 {
     char szBuffer[4096] = {0};
-    RTStrPrintfV(szBuffer, sizeof (szBuffer), pszStr, pArgList);
+    vsprintf_s(szBuffer, sizeof (szBuffer), pszStr, pArgList);
     crDmpStr(pDumper, szBuffer);
 }
 
@@ -72,7 +72,7 @@ DECLINLINE(void) crDmpStrF(CR_DUMPER *pDumper, const char *pszStr, ...)
 DECLINLINE(void) crDmpImgV(CR_DUMPER *pDumper, CR_BLITTER_IMG *pImg, const char *pszStr, va_list pArgList)
 {
     char szBuffer[4096] = {0};
-    RTStrPrintfV(szBuffer, sizeof (szBuffer), pszStr, pArgList);
+    vsprintf_s(szBuffer, sizeof (szBuffer), pszStr, pArgList);
     crDmpImg(pDumper, pImg, szBuffer);
 }
 
@@ -83,6 +83,10 @@ DECLINLINE(void) crDmpImgF(CR_DUMPER *pDumper, CR_BLITTER_IMG *pImg, const char 
     crDmpImgV(pDumper, pImg, pszStr, pArgList);
     va_end(pArgList);
 }
+
+VBOXDUMPDECL(size_t) crDmpFormatArrayf(char *pString, size_t cbString, const float *pVal, uint32_t cVal);
+VBOXDUMPDECL(size_t) crDmpFormatRawArrayf(char *pString, size_t cbString, const float *pVal, uint32_t cVal);
+VBOXDUMPDECL(size_t) crDmpFormatMatrixArrayf(char *pString, size_t cbString, const float *pVal, uint32_t cX, uint32_t cY);
 
 typedef struct CR_DBGPRINT_DUMPER
 {
@@ -125,6 +129,10 @@ VBOXDUMPDECL(void) crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITT
 VBOXDUMPDECL(void) crRecDumpShader(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
 VBOXDUMPDECL(void) crRecDumpProgram(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
 VBOXDUMPDECL(void) crRecDumpCurrentProgram(CR_RECORDER *pRec, CRContext *ctx);
+VBOXDUMPDECL(void) crRecDumpProgramUniforms(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
+VBOXDUMPDECL(void) crRecDumpCurrentProgramUniforms(CR_RECORDER *pRec, CRContext *ctx);
+VBOXDUMPDECL(void) crRecDumpGlGetState(CR_RECORDER *pRec, CRContext *ctx);
+VBOXDUMPDECL(void) crRecDumpGlEnableState(CR_RECORDER *pRec, CRContext *ctx);
 
 typedef DECLCALLBACKPTR(GLuint, PFNCRDUMPGETHWID)(void *pvObj);
 void* crDmpHashtableSearchByHwid(CRHashTable *pHash, GLuint hwid, PFNCRDUMPGETHWID pfnGetHwid, unsigned long *pKey);
