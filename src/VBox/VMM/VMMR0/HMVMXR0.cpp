@@ -676,11 +676,12 @@ static int hmR0VmxLeaveRootMode(void)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /* If we're for some reason not in VMX root mode, then don't leave it. */
-    if (ASMGetCR4() & X86_CR4_VMXE)
+    RTCCUINTREG uHostCR4 = ASMGetCR4();
+    if (uHostCR4 & X86_CR4_VMXE)
     {
-        /* Exit VMX root mode and clear the VMX bit in CR4 */
+        /* Exit VMX root mode and clear the VMX bit in CR4. */
         VMXDisable();
-        ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
+        ASMSetCR4(uHostCR4 & ~X86_CR4_VMXE);
         return VINF_SUCCESS;
     }
 
@@ -927,7 +928,7 @@ VMMR0DECL(void) VMXR0GlobalTerm()
  * @param   HCPhysCpuPage   Physical address of the VMXON region (can be 0 if
  *                          @a fEnabledByHost is true).
  * @param   fEnabledByHost  Set if SUPR0EnableVTx() or similar was used to
- *                          enable VT-x/AMD-V on the host.
+ *                          enable VT-x on the host.
  */
 VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost)
 {
@@ -970,6 +971,9 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
  * @param   pCpu            Pointer to the global CPU info struct.
  * @param   pvCpuPage       Pointer to the VMXON region.
  * @param   HCPhysCpuPage   Physical address of the VMXON region.
+ *
+ * @remarks This function should never be called when SUPR0EnableVTx() or
+ *          similar was used to enable VT-x on the host.
  */
 VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
@@ -977,6 +981,7 @@ VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS H
     NOREF(pvCpuPage);
     NOREF(HCPhysCpuPage);
 
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     return hmR0VmxLeaveRootMode();
 }
 
