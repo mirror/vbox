@@ -2,7 +2,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
- Copyright (C) 2008-2012 Oracle Corporation
+ Copyright (C) 2008-2013 Oracle Corporation
 
  This file is part of VirtualBox Open Source Edition (OSE), as
  available from http://www.virtualbox.org. This file is free software;
@@ -30,21 +30,9 @@
        <string>&amp;Video</string>
       </attribute>
       <layout class="QVBoxLayout" name="mLtVideoPage">
-       <property name="spacing">
-        <number>0</number>
-       </property>
        <item>
-        <widget class="QWidget" name="mWtVideo" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
+        <widget class="QWidget" name="mWtVideo">
          <layout class="QGridLayout" name="mLtVideoItems">
-          <property name="margin">
-           <number>0</number>
-          </property>
           <item row="0" column="0">
            <widget class="QLabel" name="mLbMemory">
             <property name="text">
@@ -109,9 +97,6 @@
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
                </widget>
               </item>
              </layout>
@@ -122,6 +107,12 @@
            <layout class="QHBoxLayout" name="mLtMemorySize">
             <item>
              <widget class="QILineEdit" name="mLeMemory">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="whatsThis">
                <string>Controls the amount of video memory provided to the virtual machine.</string>
               </property>
@@ -206,9 +197,6 @@
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
                </widget>
               </item>
              </layout>
@@ -217,9 +205,6 @@
           </item>
           <item row="2" column="2">
            <layout class="QHBoxLayout" name="mLtMonitorsSize">
-            <property name="spacing">
-             <number>4</number>
-            </property>
             <item>
              <widget class="QILineEdit" name="mLeMonitors">
               <property name="sizePolicy">
@@ -303,21 +288,9 @@
        <string>&amp;Remote Display</string>
       </attribute>
       <layout class="QVBoxLayout" name="mLtVRDPPage">
-       <property name="spacing">
-        <number>0</number>
-       </property>
        <item>
-        <widget class="QWidget" name="mWtVRDP" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
+        <widget class="QWidget" name="mWtVRDP">
          <layout class="QVBoxLayout" name="mLtVRDPItems">
-          <property name="margin">
-           <number>0</number>
-          </property>
           <item>
            <widget class="QCheckBox" name="mCbVRDE">
             <property name="whatsThis">
@@ -327,22 +300,13 @@
              <string>&amp;Enable Server</string>
             </property>
             <property name="checked">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QWidget" name="mWtVRDPServer" native="true">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
+           <widget class="QWidget" name="mWtVRDPServer">
             <layout class="QGridLayout" name="mLtVRDPServerItems">
-             <property name="margin">
-              <number>0</number>
-             </property>
              <item row="1" column="0" rowspan="3">
               <spacer name="mSpHor3">
                <property name="orientation">
@@ -354,7 +318,7 @@
                <property name="sizeHint" stdset="0">
                 <size>
                  <width>20</width>
-                 <height>20</height>
+                 <height>0</height>
                 </size>
                </property>
               </spacer>
@@ -394,12 +358,6 @@
              </item>
              <item row="2" column="2">
               <widget class="QComboBox" name="mCbVRDEMethod">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
                <property name="whatsThis">
                 <string>Defines the VRDP authentication method.</string>
                </property>
@@ -464,7 +422,7 @@
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>20</width>
+           <width>0</width>
            <height>0</height>
           </size>
          </property>
@@ -500,16 +458,6 @@
    <signal>toggled(bool)</signal>
    <receiver>mWtVRDPServer</receiver>
    <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>80</x>
-     <y>20</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>159</x>
-     <y>88</y>
-    </hint>
-   </hints>
   </connection>
  </connections>
 </ui>
