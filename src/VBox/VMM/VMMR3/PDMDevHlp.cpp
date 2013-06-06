@@ -2034,7 +2034,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_DMASchedule(PPDMDEVINS pDevIns)
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_DMASchedule: caller='%s'/%d: VM_FF_PDM_DMA %d -> 1\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, VM_FF_ISSET(pVM, VM_FF_PDM_DMA)));
+             pDevIns->pReg->szName, pDevIns->iInstance, VM_FF_IS_SET(pVM, VM_FF_PDM_DMA)));
 
     AssertMsg(pVM->pdm.s.pDmac, ("Configuration error: No DMAC controller available. This could be related to init order too!\n"));
     VM_FF_SET(pVM, VM_FF_PDM_DMA);
@@ -3216,7 +3216,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMReset(PPDMDEVINS pDevIns)
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
     LogFlow(("pdmR3DevHlp_VMReset: caller='%s'/%d: VM_FF_RESET %d -> 1\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, VM_FF_ISSET(pVM, VM_FF_RESET)));
+             pDevIns->pReg->szName, pDevIns->iInstance, VM_FF_IS_SET(pVM, VM_FF_RESET)));
 
     /*
      * We postpone this operation because we're likely to be inside a I/O instruction

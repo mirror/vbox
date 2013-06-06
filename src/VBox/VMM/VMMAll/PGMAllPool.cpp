@@ -423,7 +423,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
                 }
 #if 0 /* useful when running PGMAssertCR3(), a bit too troublesome for general use (TLBs). */
                 if (    uShw.pPD->a[iShw].n.u1Present
-                    &&  !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
+                    &&  !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
                 {
                     LogFlow(("pgmPoolMonitorChainChanging: iShw=%#x: %RX32 -> freeing it!\n", iShw, uShw.pPD->a[iShw].u));
 # ifdef IN_RC       /* TLB load - we're pushing things a bit... */
@@ -1070,7 +1070,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 #ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
     if (pPage->fDirty)
     {
-        Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH));
+        Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH));
         pgmUnlock(pVM);
         return VINF_SUCCESS;    /* SMP guest case where we were blocking on the pgm lock while the same page was being marked dirty. */
     }
@@ -2494,7 +2494,7 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
          * the heap size should suffice. */
         AssertFatalMsgRC(rc, ("PGMHandlerPhysicalRegisterEx %RGp failed with %Rrc\n", GCPhysPage, rc));
         PVMCPU pVCpu = VMMGetCpu(pVM);
-        AssertFatalMsg(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL) || VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3), ("fSyncFlags=%x syncff=%d\n", pVCpu->pgm.s.fSyncFlags, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3)));
+        AssertFatalMsg(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL) || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3), ("fSyncFlags=%x syncff=%d\n", pVCpu->pgm.s.fSyncFlags, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3)));
     }
     pPage->fMonitored = true;
     return rc;
@@ -2591,7 +2591,7 @@ static int pgmPoolMonitorFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
         rc = PGMHandlerPhysicalDeregister(pVM, pPage->GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK);
         AssertFatalRC(rc);
         PVMCPU pVCpu = VMMGetCpu(pVM);
-        AssertFatalMsg(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL) || VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3),
+        AssertFatalMsg(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL) || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3),
                   ("%#x %#x\n", pVCpu->pgm.s.fSyncFlags, pVM->fGlobalForcedActions));
     }
     pPage->fMonitored = false;

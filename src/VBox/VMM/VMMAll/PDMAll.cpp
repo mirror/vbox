@@ -51,7 +51,7 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
     /*
      * The local APIC has a higher priority than the PIC.
      */
-    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC))
     {
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
@@ -71,7 +71,7 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
     /*
      * Check the PIC.
      */
-    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC))
     {
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
         Assert(pVM->pdm.s.Pic.CTX_SUFF(pDevIns));

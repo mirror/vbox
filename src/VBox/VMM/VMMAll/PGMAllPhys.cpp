@@ -487,7 +487,7 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
 #endif
         {
             Log(("PGM: cHandyPages=%u out of %u -> allocate more; VM_FF_PGM_NO_MEMORY=%RTbool\n",
-                 pVM->pgm.s.cHandyPages, RT_ELEMENTS(pVM->pgm.s.aHandyPages), VM_FF_ISSET(pVM, VM_FF_PGM_NO_MEMORY) ));
+                 pVM->pgm.s.cHandyPages, RT_ELEMENTS(pVM->pgm.s.aHandyPages), VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY) ));
 #ifdef IN_RING3
             int rc = PGMR3PhysAllocateHandyPages(pVM);
 #else
@@ -503,8 +503,8 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
                     LogRel(("PGM: no more handy pages!\n"));
                     return VERR_EM_NO_MEMORY;
                 }
-                Assert(VM_FF_ISSET(pVM, VM_FF_PGM_NEED_HANDY_PAGES));
-                Assert(VM_FF_ISSET(pVM, VM_FF_PGM_NO_MEMORY));
+                Assert(VM_FF_IS_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES));
+                Assert(VM_FF_IS_SET(pVM, VM_FF_PGM_NO_MEMORY));
 #ifdef IN_RING3
 # ifdef VBOX_WITH_REM
                  REMR3NotifyFF(pVM);

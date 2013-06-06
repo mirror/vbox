@@ -1983,7 +1983,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
         else
         {
             AssertMsg(rc == VINF_PGM_SYNC_CR3, ("%Rrc\n", rc));
-            Assert(VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_PGM_SYNC_CR3));
+            Assert(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_PGM_SYNC_CR3));
             pVCpu->pgm.s.GCPhysCR3 = GCPhysOldCR3;
             pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_MAP_CR3;
             if (pgmMapAreMappingsFloating(pVM))
@@ -2133,7 +2133,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
     if (!(cr4 & X86_CR4_PGE))
         fGlobal = true;
     LogFlow(("PGMSyncCR3: cr0=%RX64 cr3=%RX64 cr4=%RX64 fGlobal=%d[%d,%d]\n", cr0, cr3, cr4, fGlobal,
-             VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3), VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)));
+             VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3), VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)));
 
     /*
      * Check if we need to finish an aborted MapCR3 call (see PGMFlushTLB).

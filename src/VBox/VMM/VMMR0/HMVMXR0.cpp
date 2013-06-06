@@ -1254,7 +1254,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
     /*
      * Check for explicit TLB shootdowns.
      */
-    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
+    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
     {
         pVCpu->hm.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
@@ -1369,7 +1369,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu)
     }
 
     /* Check for explicit TLB shootdown flushes. */
-    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
+    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
     {
         pVCpu->hm.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
@@ -1435,7 +1435,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu)
     }
 
     /* Check for explicit TLB shootdown flushes. */
-    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
+    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
     {
         /*
          * If we ever support VPID flush combinations other than ALL or SINGLE-context (see hmR0VmxSetupTaggedTlb())

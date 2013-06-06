@@ -1387,7 +1387,7 @@ VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
      * GDT sync
      */
     int rc;
-    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_GDT))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT))
     {
         rc = selmR3UpdateShadowGdt(pVM, pVCpu);
         if (RT_FAILURE(rc))
@@ -1398,7 +1398,7 @@ VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
     /*
      * TSS sync
      */
-    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_TSS))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS))
     {
         rc = SELMR3SyncTSS(pVM, pVCpu);
         if (RT_FAILURE(rc))
@@ -1409,7 +1409,7 @@ VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
     /*
      * LDT sync
      */
-    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_LDT))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT))
     {
         rc = selmR3UpdateShadowLdt(pVM, pVCpu);
         if (RT_FAILURE(rc))
@@ -1541,7 +1541,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
     AssertReturnStmt(!HMIsEnabled(pVM), VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_SELM_SYNC_TSS), VINF_SUCCESS);
 
     STAM_PROFILE_START(&pVM->selm.s.StatTSSSync, a);
-    Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_TSS));
+    Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS));
 
     /*
      * Get TR and extract and store the basic info.
@@ -1914,7 +1914,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 #if defined(VBOX_STRICT) && defined(SELM_TRACK_GUEST_TSS_CHANGES)
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
-    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_SELM_SYNC_TSS))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS))
         return true;
 
     /*

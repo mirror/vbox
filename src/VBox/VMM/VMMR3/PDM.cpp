@@ -796,12 +796,12 @@ static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
-        SSMR3PutU32(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
-        SSMR3PutU32(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
-        SSMR3PutU32(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
-        SSMR3PutU32(pSSM, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_SMI));
+        SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
+        SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
+        SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
+        SSMR3PutU32(pSSM, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI));
     }
-    SSMR3PutU32(pSSM, VM_FF_ISSET(pVM, VM_FF_PDM_DMA));
+    SSMR3PutU32(pSSM, VM_FF_IS_SET(pVM, VM_FF_PDM_DMA));
 
     pdmR3SaveBoth(pVM, pSSM);
     return VINF_SUCCESS;
@@ -820,15 +820,15 @@ static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
 {
     LogFlow(("pdmR3LoadPrep: %s%s\n",
-             VM_FF_ISSET(pVM, VM_FF_PDM_QUEUES)     ? " VM_FF_PDM_QUEUES" : "",
-             VM_FF_ISSET(pVM, VM_FF_PDM_DMA)        ? " VM_FF_PDM_DMA" : ""));
+             VM_FF_IS_SET(pVM, VM_FF_PDM_QUEUES)     ? " VM_FF_PDM_QUEUES" : "",
+             VM_FF_IS_SET(pVM, VM_FF_PDM_DMA)        ? " VM_FF_PDM_DMA" : ""));
 #ifdef LOG_ENABLED
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
         LogFlow(("pdmR3LoadPrep: VCPU %u %s%s\n", idCpu,
-                VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC) ? " VMCPU_FF_INTERRUPT_APIC" : "",
-                VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC)  ? " VMCPU_FF_INTERRUPT_PIC" : ""));
+                VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC) ? " VMCPU_FF_INTERRUPT_APIC" : "",
+                VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC)  ? " VMCPU_FF_INTERRUPT_PIC" : ""));
     }
 #endif
     NOREF(pSSM);
@@ -837,7 +837,7 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
      * In case there is work pending that will raise an interrupt,
      * start a DMA transfer, or release a lock. (unlikely)
      */
-    if (VM_FF_ISSET(pVM, VM_FF_PDM_QUEUES))
+    if (VM_FF_IS_SET(pVM, VM_FF_PDM_QUEUES))
         PDMR3QueueFlushAll(pVM);
 
     /* Clear the FFs. */
@@ -899,7 +899,7 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
                 AssertMsgFailed(("fInterruptPending=%#x (APIC)\n", fInterruptPending));
                 return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
             }
-            AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
+            AssertRelease(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
             if (fInterruptPending)
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
 
@@ -913,7 +913,7 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
                 AssertMsgFailed(("fInterruptPending=%#x (PIC)\n", fInterruptPending));
                 return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
             }
-            AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
+            AssertRelease(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
             if (fInterruptPending)
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
 
@@ -929,7 +929,7 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
                     AssertMsgFailed(("fInterruptPending=%#x (NMI)\n", fInterruptPending));
                     return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
                 }
-                AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
+                AssertRelease(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
                 if (fInterruptPending)
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
 
@@ -943,7 +943,7 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
                     AssertMsgFailed(("fInterruptPending=%#x (SMI)\n", fInterruptPending));
                     return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
                 }
-                AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_SMI));
+                AssertRelease(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI));
                 if (fInterruptPending)
                     VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
             }
@@ -961,7 +961,7 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
         }
         if (fDMAPending)
             VM_FF_SET(pVM, VM_FF_PDM_DMA);
-        Log(("pdmR3LoadExec: VM_FF_PDM_DMA=%RTbool\n", VM_FF_ISSET(pVM, VM_FF_PDM_DMA)));
+        Log(("pdmR3LoadExec: VM_FF_PDM_DMA=%RTbool\n", VM_FF_IS_SET(pVM, VM_FF_PDM_DMA)));
     }
 
     /*
@@ -2326,7 +2326,7 @@ VMMR3DECL(void) PDMR3DmaRun(PVM pVM)
     if (VMMGetCpuId(pVM) != 0)
         return;
 
-    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_PDM_DMA))
+    if (VM_FF_TEST_AND_CLEAR(pVM, VM_FF_PDM_DMA))
     {
         if (pVM->pdm.s.pDmac)
         {

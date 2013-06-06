@@ -90,8 +90,8 @@ static int emR3HmStep(PVM pVM, PVMCPU pVCpu)
     /*
      * Check vital forced actions, but ignore pending interrupts and timers.
      */
-    if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
-        ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+    if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
+        ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
     {
         rc = emR3HmForcedActions(pVM, pVCpu, pCtx);
         if (rc != VINF_SUCCESS)
@@ -397,15 +397,15 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Sync page directory.
      */
-    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
     {
         Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
-        int rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+        int rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
         if (RT_FAILURE(rc))
             return rc;
 
 #ifdef VBOX_WITH_RAW_MODE
-        Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
+        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
 #endif
 
         /* Prefetch pages for EIP and ESP. */
@@ -420,13 +420,13 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 AssertLogRelMsgReturn(RT_FAILURE(rc), ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_INFO_STATUS);
                 return rc;
             }
-            rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+            rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
             if (RT_FAILURE(rc))
                 return rc;
         }
         /** @todo maybe prefetch the supervisor stack page as well */
 #ifdef VBOX_WITH_RAW_MODE
-        Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
+        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
 #endif
     }
 
@@ -447,7 +447,7 @@ static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * since we ran FFs. The allocate handy pages must for instance always be followed by
      * this check.
      */
-    if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+    if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
         return VINF_EM_NO_MEMORY;
 
     return VINF_SUCCESS;
@@ -502,8 +502,8 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #ifdef VBOX_WITH_RAW_MODE
         Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT));
 #endif
-        if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
-            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+        if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
+            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3HmForcedActions(pVM, pVCpu, pCtx);
             if (rc != VINF_SUCCESS)
@@ -564,8 +564,8 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Deal with high priority post execution FFs before doing anything else.
          */
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
-        if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
-            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
+        if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
+            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
             rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
 
         /*
@@ -584,8 +584,8 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
         TMTimerPollVoid(pVM, pVCpu);
 #endif
-        if (    VM_FF_ISPENDING(pVM, VM_FF_ALL_MASK)
-            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_MASK))
+        if (    VM_FF_IS_PENDING(pVM, VM_FF_ALL_MASK)
+            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_MASK))
         {
             rc = emR3ForcedActions(pVM, pVCpu, rc);
             VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);

@@ -64,7 +64,7 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
     PVMCPU pVCpu = &pVM->aCpus[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
 
     LogFlow(("pdmR3PicHlp_SetInterruptFF: caller='%s'/%d: VMCPU_FF_INTERRUPT_PIC %d -> 1\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
+             pDevIns->pReg->szName, pDevIns->iInstance, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
 
     VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
 #ifdef VBOX_WITH_REM
@@ -92,7 +92,7 @@ static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
     }
 
     LogFlow(("pdmR3PicHlp_ClearInterruptFF: caller='%s'/%d: VMCPU_FF_INTERRUPT_PIC %d -> 0\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
+             pDevIns->pReg->szName, pDevIns->iInstance, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
 
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
 #ifdef VBOX_WITH_REM
@@ -188,7 +188,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
     AssertReturnVoid(idCpu < pVM->cCpus);
 
     LogFlow(("pdmR3ApicHlp_SetInterruptFF: caller='%s'/%d: VMCPU_FF_INTERRUPT_APIC(%d) %d -> 1\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, idCpu, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));
+             pDevIns->pReg->szName, pDevIns->iInstance, idCpu, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));
 
     switch (enmType)
     {
@@ -225,7 +225,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMA
     AssertReturnVoid(idCpu < pVM->cCpus);
 
     LogFlow(("pdmR3ApicHlp_ClearInterruptFF: caller='%s'/%d: VMCPU_FF_INTERRUPT_APIC(%d) %d -> 0\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, idCpu, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));
+             pDevIns->pReg->szName, pDevIns->iInstance, idCpu, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));
 
     /* Note: NMI/SMI can't be cleared. */
     switch (enmType)

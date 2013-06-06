@@ -559,7 +559,7 @@ DECLINLINE(void) hmR0SvmInjectEvent(PVMCPU pVCpu, PSVMVMCB pVmcb, CPUMCTX *pCtx,
     else
     {
         Log(("INJ-EI: %x at %RGv\n", pEvent->n.u8Vector, (RTGCPTR)pCtx->rip));
-        Assert(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
         Assert(pCtx->eflags.u32 & X86_EFL_IF);
     }
 #endif
@@ -605,7 +605,7 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, PSVMVMCB pVmcb, C
      */
     if (!TRPMHasTrap(pVCpu))
     {
-        if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI))
+        if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI))
         {
             SVMEVENT Event;
 
@@ -624,14 +624,14 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, PSVMVMCB pVmcb, C
         /*
          * When external interrupts are pending, we should exit the VM when IF is set.
          */
-        if (VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
+        if (VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
         {
             if (  !(pCtx->eflags.u32 & X86_EFL_IF)
-                || VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+                || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
             {
                 if (!pVmcb->ctrl.IntCtrl.n.u1VIrqValid)
                 {
-                    if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+                    if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
                         LogFlow(("Enable irq window exit!\n"));
                     else
                     {
@@ -660,7 +660,7 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, PSVMVMCB pVmcb, C
                 else
                 {
                     /* Can only happen in rare cases where a pending interrupt is cleared behind our back */
-                    Assert(!VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)));
+                    Assert(!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)));
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
                     /* Just continue */
                 }
@@ -678,7 +678,7 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, PSVMVMCB pVmcb, C
 #endif
 
     if (   (pCtx->eflags.u32 & X86_EFL_IF)
-        && (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        && (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
         && TRPMHasTrap(pVCpu)
        )
     {
@@ -884,7 +884,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         else
         {
             pVmcb->guest.u64CR3             = PGMGetHyperCR3(pVCpu);
-            Assert(pVmcb->guest.u64CR3 || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
+            Assert(pVmcb->guest.u64CR3 || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
         }
     }
 
@@ -1104,7 +1104,7 @@ static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
     /*
      * Check for TLB shootdown flushes.
      */
-    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
+    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
         pVCpu->hm.s.fForceTLBFlush = true;
 
     pVCpu->hm.s.idLastCpu = pCpu->idCpu;
@@ -1174,7 +1174,7 @@ static void hmR0SvmSetupTLB(PVM pVM, PVMCPU pVCpu)
         /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
          *        not be executed. See hmQueueInvlPage() where it is commented
          *        out. Support individual entry flushing someday. */
-        if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
         {
             /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
@@ -1265,7 +1265,7 @@ ResumeExecution:
     /*
      * Check for IRQ inhibition due to instruction fusing (sti, mov ss).
      */
-    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     {
         Log(("VM_FF_INHIBIT_INTERRUPTS at %RGv successor %RGv\n", (RTGCPTR)pCtx->rip, EMGetInhibitInterruptsPC(pVCpu)));
         if (pCtx->rip != EMGetInhibitInterruptsPC(pVCpu))
@@ -1303,17 +1303,17 @@ ResumeExecution:
     /*
      * Check for pending actions that force us to go back to ring-3.
      */
-    if (    VM_FF_ISPENDING(pVM, VM_FF_HM_TO_R3_MASK | VM_FF_REQUEST | VM_FF_PGM_POOL_FLUSH_PENDING | VM_FF_PDM_DMA)
-        ||  VMCPU_FF_ISPENDING(pVCpu,
+    if (    VM_FF_IS_PENDING(pVM, VM_FF_HM_TO_R3_MASK | VM_FF_REQUEST | VM_FF_PGM_POOL_FLUSH_PENDING | VM_FF_PDM_DMA)
+        ||  VMCPU_FF_IS_PENDING(pVCpu,
                                  VMCPU_FF_HM_TO_R3_MASK
                                | VMCPU_FF_PGM_SYNC_CR3
                                | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                                | VMCPU_FF_REQUEST))
     {
         /* Check if a sync operation is pending. */
-        if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
         {
-            rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+            rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
             AssertRC(VBOXSTRICTRC_VAL(rc));
             if (rc != VINF_SUCCESS)
             {
@@ -1327,32 +1327,32 @@ ResumeExecution:
         if (!DBGFIsStepping(pVCpu))
 #endif
         {
-            if (    VM_FF_ISPENDING(pVM, VM_FF_HM_TO_R3_MASK)
-                ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+            if (    VM_FF_IS_PENDING(pVM, VM_FF_HM_TO_R3_MASK)
+                ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
             {
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
-                rc = RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
+                rc = RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
                 goto end;
             }
         }
 
         /* Pending request packets might contain actions that need immediate attention, such as pending hardware interrupts. */
-        if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
-            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
+        if (    VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
+            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
         {
             rc = VINF_EM_PENDING_REQUEST;
             goto end;
         }
 
         /* Check if a pgm pool flush is in progress. */
-        if (VM_FF_ISPENDING(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
+        if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
         {
             rc = VINF_PGM_POOL_FLUSH_PENDING;
             goto end;
         }
 
         /* Check if DMA work is pending (2nd+ run). */
-        if (VM_FF_ISPENDING(pVM, VM_FF_PDM_DMA) && cResume > 1)
+        if (VM_FF_IS_PENDING(pVM, VM_FF_PDM_DMA) && cResume > 1)
         {
             rc = VINF_EM_RAW_TO_R3;
             goto end;
@@ -1454,7 +1454,7 @@ ResumeExecution:
         LogFlow(("Force TLB flush due to rescheduling to a different cpu (%d vs %d)\n", pVCpu->hm.s.idLastCpu, pCpu->idCpu));
     else if (pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
         LogFlow(("Force TLB flush due to changed TLB flush count (%x vs %x)\n", pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
-    else if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
+    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH))
         LogFlow(("Manual TLB flush\n"));
 #endif
 
@@ -3050,7 +3050,7 @@ static int hmR0SvmInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
  */
 VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
 {
-    bool fFlushPending = pVM->hm.s.svm.fAlwaysFlushTLB | VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH);
+    bool fFlushPending = pVM->hm.s.svm.fAlwaysFlushTLB | VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
 
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)

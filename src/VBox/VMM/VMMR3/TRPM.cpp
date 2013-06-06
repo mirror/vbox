@@ -870,7 +870,7 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
     }
     SSMR3PutBool(pSSM,      HMIsEnabled(pVM));
     PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies 1 VCPU */
-    SSMR3PutUInt(pSSM,      VM_WHEN_RAW_MODE(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT), 0));
+    SSMR3PutUInt(pSSM,      VM_WHEN_RAW_MODE(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT), 0));
     SSMR3PutMem(pSSM,       &pTrpm->au32IdtPatched[0], sizeof(pTrpm->au32IdtPatched));
     SSMR3PutU32(pSSM, ~0);              /* separator. */
 
@@ -1493,7 +1493,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
 #ifdef VBOX_WITH_RAW_MODE
     Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
 #endif
-    Assert(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+    Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
 
     /* Currently only useful for external hardware interrupts. */
     Assert(enmEvent == TRPM_HARDWARE_INT);
@@ -1542,7 +1542,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
                     rc = TRPMForwardTrap(pVCpu, CPUMCTX2CORE(pCtx), u8Interrupt, 0, TRPM_TRAP_NO_ERRORCODE, enmEvent, -1);
                     if (rc == VINF_SUCCESS /* Don't use RT_SUCCESS */)
                     {
-                        Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
+                        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
 
                         STAM_COUNTER_INC(&pVM->trpm.s.paStatForwardedIRQR3[u8Interrupt]);
                         return VINF_EM_RESCHEDULE_RAW;

@@ -240,8 +240,8 @@ VMMR3_INT_DECL(void) DBGFR3PowerOff(PVM pVM)
                     /* Wait for new command, processing pending priority requests
                        first.  The request processing is a bit crazy, but
                        unfortunately required by plugin unloading. */
-                    if (   VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
-                        || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
+                    if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
+                        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
                     {
                         LogFlow(("DBGFR3PowerOff: Processes priority requests...\n"));
                         rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY, true /*fPriorityOnly*/);
@@ -352,7 +352,7 @@ VMMR3_INT_DECL(int) DBGFR3VMMForcedAction(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 
-    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_DBGF))
+    if (VM_FF_TEST_AND_CLEAR(pVM, VM_FF_DBGF))
     {
         PVMCPU pVCpu = VMMGetCpu(pVM);
 
@@ -675,8 +675,8 @@ static int dbgfR3VMMWait(PVM pVM)
         for (;;)
         {
             int rc;
-            if (    !VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_REQUEST)
-                &&  !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
+            if (    !VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_REQUEST)
+                &&  !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
             {
                 rc = RTSemPingWait(&pVM->dbgf.s.PingPong, cPollHack);
                 if (RT_SUCCESS(rc))
@@ -688,13 +688,13 @@ static int dbgfR3VMMWait(PVM pVM)
                 }
             }
 
-            if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+            if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
             {
                 rc = VMMR3EmtRendezvousFF(pVM, pVCpu);
                 cPollHack = 1;
             }
-            else if (   VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
-                     || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
+            else if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
+                     || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
             {
                 LogFlow(("dbgfR3VMMWait: Processes requests...\n"));
                 rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY, false /*fPriorityOnly*/);
