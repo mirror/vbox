@@ -223,7 +223,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalFlushIfAlmostFull(PVM pVM, PVMCPU pVCpu)
         if (++cFree >= 48)
             return;
     }
-    AssertRelease(VM_FF_ISSET(pVM, VM_FF_REM_HANDLER_NOTIFY));
+    AssertRelease(VM_FF_IS_SET(pVM, VM_FF_REM_HANDLER_NOTIFY));
     AssertRelease(pVM->rem.s.idxPendingList != UINT32_MAX);
 
     /* Ok, we gotta flush them. */

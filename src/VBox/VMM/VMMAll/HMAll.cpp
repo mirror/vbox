@@ -63,7 +63,7 @@ VMMDECL(bool) HMIsEnabledNotMacro(PVM pVM)
 static void hmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
 {
     /* Nothing to do if a TLB flush is already pending */
-    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH))
         return;
 #if 1
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
@@ -221,7 +221,7 @@ VMM_INT_DECL(int) HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
 
         /* Nothing to do if a TLB flush is already pending; the VCPU should
            have already been poked if it were active. */
-        if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH))
             continue;
 
         if (pVCpu->idCpu == idCurCpu)
@@ -258,7 +258,7 @@ VMM_INT_DECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
 
         /* Nothing to do if a TLB flush is already pending; the VCPU should
            have already been poked if it were active. */
-        if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
+        if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH))
         {
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
             if (idThisCpu != idCpu)

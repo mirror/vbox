@@ -3683,7 +3683,7 @@ int pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu)
 {
     pVCpu->pgm.s.enmShadowMode = PGMMODE_INVALID;
     int rc = PGMR3ChangeMode(pVM, pVCpu, PGMGetGuestMode(pVCpu));
-    Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+    Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
     AssertRCReturn(rc, rc);
     AssertRCSuccessReturn(rc, VERR_IPE_UNEXPECTED_INFO_STATUS);
 

@@ -1340,7 +1340,7 @@ VMMR3_INT_DECL(int) VMMR3HmRunGC(PVM pVM, PVMCPU pVCpu)
         } while (rc == VINF_EM_RAW_INTERRUPT_HYPER);
 
 #if 0 /* todo triggers too often */
-        Assert(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TO_R3));
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TO_R3));
 #endif
 
 #ifdef LOG_ENABLED
@@ -1763,7 +1763,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
 
             while (!ASMAtomicCmpXchgU32(&pVM->vmm.s.u32RendezvousLock, 0x77778888, 0))
             {
-                if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+                if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
                 {
                     rc = VMMR3EmtRendezvousFF(pVM, pVCpu);
                     if (    rc != VINF_SUCCESS
@@ -1775,7 +1775,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
                 ASMNopPause();
             }
         }
-        Assert(!VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS));
+        Assert(!VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS));
         Assert(!pVCpu->vmm.s.fInRendezvous);
         pVCpu->vmm.s.fInRendezvous = true;
 
@@ -2119,7 +2119,7 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
      * We must also check for pending critsect exits or else we can deadlock
      * when entering other critsects here.
      */
-    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
         PDMCritSectBothFF(pVCpu);
 
     switch (pVCpu->vmm.s.enmCallRing3Operation)

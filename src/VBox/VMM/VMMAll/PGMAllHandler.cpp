@@ -242,7 +242,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
         Log(("pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs: flushing guest TLBs; rc=%d\n", rc));
     }
     else
-        Log(("pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs: doesn't flush guest TLBs. rc=%Rrc; sync flags=%x VMCPU_FF_PGM_SYNC_CR3=%d\n", rc, VMMGetCpu(pVM)->pgm.s.fSyncFlags, VMCPU_FF_ISSET(VMMGetCpu(pVM), VMCPU_FF_PGM_SYNC_CR3)));
+        Log(("pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs: doesn't flush guest TLBs. rc=%Rrc; sync flags=%x VMCPU_FF_PGM_SYNC_CR3=%d\n", rc, VMMGetCpu(pVM)->pgm.s.fSyncFlags, VMCPU_FF_IS_SET(VMMGetCpu(pVM), VMCPU_FF_PGM_SYNC_CR3)));
 
     return rc;
 }

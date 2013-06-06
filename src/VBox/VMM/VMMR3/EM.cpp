@@ -1029,7 +1029,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatREMTotal, a);
 
 #if defined(VBOX_STRICT) && defined(DEBUG_bird)
-    AssertMsg(   VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
+    AssertMsg(   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
               || !MMHyperIsInsideArea(pVM, CPUMGetGuestEIP(pVCpu)),  /** @todo @bugref{1419} - get flat address. */
               ("cs:eip=%RX16:%RX32\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
 #endif
@@ -1077,8 +1077,8 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
              * We might have missed the raising of VMREQ, TIMER and some other
              * important FFs while we were busy switching the state. So, check again.
              */
-            if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_RESET)
-                ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_REQUEST))
+            if (    VM_FF_IS_PENDING(pVM, VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_RESET)
+                ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_REQUEST))
             {
                 LogFlow(("emR3RemExecute: Skipping run, because FF is set. %#x\n", pVM->fGlobalForcedActions));
                 goto l_REMDoForcedActions;
@@ -1112,8 +1112,8 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Deal with high priority post execution FFs before doing anything
          * else.  Sync back the state and leave the lock to be on the safe side.
          */
-        if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
-            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
+        if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
+            ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
         {
 #ifdef VBOX_WITH_REM
             fInREMState = emR3RemExecuteSyncBack(pVM, pVCpu);
@@ -1150,8 +1150,8 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         TMTimerPollVoid(pVM, pVCpu);
 #endif
         AssertCompile(VMCPU_FF_ALL_REM_MASK & VMCPU_FF_TIMER);
-        if (    VM_FF_ISPENDING(pVM, VM_FF_ALL_REM_MASK)
-            ||  VMCPU_FF_ISPENDING(pVCpu,
+        if (    VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
+            ||  VMCPU_FF_IS_PENDING(pVCpu,
                                      VMCPU_FF_ALL_REM_MASK
                                    & VM_WHEN_RAW_MODE(~(VMCPU_FF_CSAM_PENDING_ACTION | VMCPU_FF_CSAM_SCAN_PAGE), UINT32_MAX)) )
         {
@@ -1447,20 +1447,20 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 {
     VBOXVMM_EM_FF_HIGH(pVCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions, rc);
 
-    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
         PDMCritSectBothFF(pVCpu);
 
     /* Update CR3 (Nested Paging case for HM). */
-    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
     {
         int rc2 = PGMUpdateCR3(pVCpu, CPUMGetGuestCR3(pVCpu));
         if (RT_FAILURE(rc2))
             return rc2;
-        Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
     }
 
     /* Update PAE PDPEs. This must be done *after* PGMUpdateCR3() and used only by the Nested Paging case for HM. */
-    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
     {
         if (CPUMIsGuestInPAEMode(pVCpu))
         {
@@ -1470,18 +1470,18 @@ int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             int rc2 = PGMGstUpdatePaePdpes(pVCpu, pPdpes);
             if (RT_FAILURE(rc2))
                 return rc2;
-            Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
+            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
         }
         else
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES);
     }
 
 #ifdef VBOX_WITH_RAW_MODE
-    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
         CSAMR3DoPendingAction(pVM, pVCpu);
 #endif
 
-    if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+    if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
     {
         if (    rc > VINF_EM_NO_MEMORY
             &&  rc <= VINF_EM_LAST)
@@ -1531,13 +1531,13 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
     /*
      * Post execution chunk first.
      */
-    if (    VM_FF_ISPENDING(pVM, VM_FF_NORMAL_PRIORITY_POST_MASK)
-        ||  (VMCPU_FF_NORMAL_PRIORITY_POST_MASK && VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_NORMAL_PRIORITY_POST_MASK)) )
+    if (    VM_FF_IS_PENDING(pVM, VM_FF_NORMAL_PRIORITY_POST_MASK)
+        ||  (VMCPU_FF_NORMAL_PRIORITY_POST_MASK && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_NORMAL_PRIORITY_POST_MASK)) )
     {
         /*
          * EMT Rendezvous (must be serviced before termination).
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+        if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
         {
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
             UPDATE_RC();
@@ -1557,7 +1557,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * State change request (cleared by vmR3SetStateLocked).
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_CHECK_VM_STATE))
+        if (VM_FF_IS_PENDING(pVM, VM_FF_CHECK_VM_STATE))
         {
             VMSTATE enmState = VMR3GetState(pVM);
             switch (enmState)
@@ -1581,7 +1581,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Debugger Facility polling.
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_DBGF))
+        if (VM_FF_IS_PENDING(pVM, VM_FF_DBGF))
         {
             rc2 = DBGFR3VMMForcedAction(pVM);
             UPDATE_RC();
@@ -1590,7 +1590,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Postponed reset request.
          */
-        if (VM_FF_TESTANDCLEAR(pVM, VM_FF_RESET))
+        if (VM_FF_TEST_AND_CLEAR(pVM, VM_FF_RESET))
         {
             rc2 = VMR3Reset(pVM->pUVM);
             UPDATE_RC();
@@ -1600,8 +1600,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * CSAM page scanning.
          */
-        if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)
-            &&  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE))
+        if (    !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)
+            &&  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_CSAM_SCAN_PAGE))
         {
             PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 
@@ -1616,7 +1616,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * Out of memory? Putting this after CSAM as it may in theory cause us to run out of memory.
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
         {
             rc2 = PGMR3PhysAllocateHandyPages(pVM);
             UPDATE_RC();
@@ -1650,7 +1650,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * EMT Rendezvous (make sure they are handled before the requests).
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+        if (VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
         {
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
             UPDATE_RC();
@@ -1718,13 +1718,13 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
      * Normal priority then. (per-VCPU)
      * (Executed in no particular order.)
      */
-    if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)
-        &&  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_NORMAL_PRIORITY_MASK))
+    if (    !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)
+        &&  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_NORMAL_PRIORITY_MASK))
     {
         /*
          * Requests from other threads.
          */
-        if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
         {
             rc2 = VMR3ReqProcessU(pVM->pUVM, pVCpu->idCpu, false /*fPriorityOnly*/);
             if (rc2 == VINF_EM_OFF || rc2 == VINF_EM_TERMINATE || rc2 == VINF_EM_RESET)
@@ -1755,14 +1755,14 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
      * High priority pre execution chunk last.
      * (Executed in ascending priority order.)
      */
-    if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_MASK)
-        ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_MASK))
+    if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_MASK)
+        ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_MASK))
     {
         /*
          * Timers before interrupts.
          */
-        if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER)
-            &&  !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TIMER)
+            &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
             TMR3TimerQueuesDo(pVM);
 
         /*
@@ -1777,8 +1777,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          *       unlikely, but such timing sensitive problem are not as rare as
          *       you might think.
          */
-        if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-            &&  !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+            &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
         {
             if (CPUMGetGuestRIP(pVCpu) != EMGetInhibitInterruptsPC(pVCpu))
             {
@@ -1793,8 +1793,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          * Interrupts.
          */
         bool fWakeupPending = false;
-        if (    !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)
-            &&  !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+        if (    !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)
+            &&  !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
             &&  (!rc || rc >= VINF_EM_RESCHEDULE_HM)
             &&  !TRPMHasTrap(pVCpu) /* an interrupt could already be scheduled for dispatching in the recompiler. */
 #ifdef VBOX_WITH_RAW_MODE
@@ -1805,7 +1805,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             &&  !HMR3IsEventPending(pVCpu))
         {
             Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
-            if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+            if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
             {
                 /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
                 /** @todo this really isn't nice, should properly handle this */
@@ -1849,7 +1849,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          * EMT Rendezvous (must be serviced before termination).
          */
         if (   !fWakeupPending /* don't miss the wakeup from EMSTATE_HALTED! */
-            && VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+            && VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS))
         {
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
             UPDATE_RC();
@@ -1869,7 +1869,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          * State change request (cleared by vmR3SetStateLocked).
          */
         if (   !fWakeupPending /* don't miss the wakeup from EMSTATE_HALTED! */
-            && VM_FF_ISPENDING(pVM, VM_FF_CHECK_VM_STATE))
+            && VM_FF_IS_PENDING(pVM, VM_FF_CHECK_VM_STATE))
         {
             VMSTATE enmState = VMR3GetState(pVM);
             switch (enmState)
@@ -1896,7 +1896,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          * at the end rather than the start. Also, VM_FF_TERMINATE has higher priority
          * than us since we can terminate without allocating more memory.
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
         {
             rc2 = PGMR3PhysAllocateHandyPages(pVM);
             UPDATE_RC();
@@ -1907,14 +1907,14 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         /*
          * If the virtual sync clock is still stopped, make TM restart it.
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
+        if (VM_FF_IS_PENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
             TMR3VirtualSyncFF(pVM, pVCpu);
 
 #ifdef DEBUG
         /*
          * Debug, pause the VM.
          */
-        if (VM_FF_ISPENDING(pVM, VM_FF_DEBUG_SUSPEND))
+        if (VM_FF_IS_PENDING(pVM, VM_FF_DEBUG_SUSPEND))
         {
             VM_FF_CLEAR(pVM, VM_FF_DEBUG_SUSPEND);
             Log(("emR3ForcedActions: returns VINF_EM_SUSPEND\n"));
@@ -2039,8 +2039,8 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 && RT_SUCCESS(rc)
                 && rc != VINF_EM_TERMINATE
                 && rc != VINF_EM_OFF
-                && (   VM_FF_ISPENDING(pVM, VM_FF_ALL_REM_MASK)
-                    || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_REM_MASK)))
+                && (   VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
+                    || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_REM_MASK)))
             {
                 rc = emR3ForcedActions(pVM, pVCpu, rc);
                 VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);
@@ -2358,7 +2358,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     {
                         rc = VMR3WaitHalted(pVM, pVCpu, false /*fIgnoreInterrupts*/);
                         if (   rc == VINF_SUCCESS
-                            && VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+                            && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
                         {
                             Log(("EMR3ExecuteVM: Triggering reschedule on pending IRQ after MWAIT\n"));
                             rc = VINF_EM_RESCHEDULE;

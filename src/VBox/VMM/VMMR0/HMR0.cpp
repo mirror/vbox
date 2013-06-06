@@ -1566,7 +1566,7 @@ VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
 {
 #ifdef VBOX_STRICT
     PHMGLOBLCPUINFO pCpu = &g_HvmR0.aCpuInfo[RTMpCpuId()];
-    Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
+    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
     Assert(pCpu->fConfigured);
     AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
     Assert(ASMAtomicReadBool(&pCpu->fInUse) == true);

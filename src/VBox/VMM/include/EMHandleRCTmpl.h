@@ -130,7 +130,7 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          * do here is to execute the pending forced actions.
          */
         case VINF_PGM_SYNC_CR3:
-            AssertMsg(VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL),
+            AssertMsg(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL),
                       ("VINF_PGM_SYNC_CR3 and no VMCPU_FF_PGM_SYNC_CR3*!\n"));
             rc = VINF_SUCCESS;
             break;
@@ -288,7 +288,7 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
          * Conflict in GDT, resync and continue.
          */
         case VINF_SELM_SYNC_GDT:
-            AssertMsg(VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_TSS),
+            AssertMsg(VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_TSS),
                       ("VINF_SELM_SYNC_GDT without VMCPU_FF_SELM_SYNC_GDT/LDT/TSS!\n"));
             rc = VINF_SUCCESS;
             break;

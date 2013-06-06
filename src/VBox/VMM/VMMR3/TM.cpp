@@ -1891,17 +1891,17 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
 
     AssertCompile(TMCLOCK_MAX == 4);
 #ifdef DEBUG_Sander /* very annoying, keep it private. */
-    if (VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER))
+    if (VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER))
         Log(("tmR3TimerCallback: timer event still pending!!\n"));
 #endif
-    if (    !VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER)
+    if (    !VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)
         &&  (   pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].offSchedule /** @todo FIXME - reconsider offSchedule as a reason for running the timer queues. */
             ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].offSchedule
             ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_REAL].offSchedule
             ||  pVM->tm.s.paTimerQueuesR3[TMCLOCK_TSC].offSchedule
             ||  tmR3AnyExpiredTimers(pVM)
             )
-        && !VMCPU_FF_ISSET(pVCpuDst, VMCPU_FF_TIMER)
+        && !VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)
         && !pVM->tm.s.fRunningQueues
        )
     {

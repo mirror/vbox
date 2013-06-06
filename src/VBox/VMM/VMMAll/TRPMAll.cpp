@@ -493,7 +493,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
     eflags.u32 = CPUMRawGetEFlags(pVCpu);
 
     /* VMCPU_FF_INHIBIT_INTERRUPTS should be cleared upfront or don't call this function at all for dispatching hardware interrupts. */
-    Assert(enmType != TRPM_HARDWARE_INT || !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+    Assert(enmType != TRPM_HARDWARE_INT || !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
 
     /*
      * If it's a real guest trap and the guest's page fault handler is marked as safe for GC execution, then we call it directly.
@@ -516,7 +516,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
         int         rc;
 
         Assert(PATMAreInterruptsEnabledByCtxCore(pVM, pRegFrame));
-        Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
+        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
 
         if (GCPtrIDT && iGate * sizeof(VBOXIDTE) >= cbIDT)
             goto failure;

@@ -1148,7 +1148,7 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
 #else
         pVM->rem.s.Env.interrupt_request = CPU_INTERRUPT_SINGLE_INSTR;
 #endif
-        if (   VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+        if (   VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
             || pVM->rem.s.u32PendingInterrupt != REM_NO_PENDING_IRQ)
             pVM->rem.s.Env.interrupt_request |= CPU_INTERRUPT_HARD;
         RTLogPrintf("remR3RunLoggingStep: interrupt_request=%#x halted=%d exception_index=%#x\n", rc,
@@ -1174,8 +1174,8 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
              * The normal exit.
              */
             case EXCP_SINGLE_INSTR:
-                if (   !VM_FF_ISPENDING(pVM, VM_FF_ALL_REM_MASK)
-                    && !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_REM_MASK))
+                if (   !VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
+                    && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_REM_MASK))
                     continue;
                 RTLogPrintf("remR3RunLoggingStep: rc=VINF_SUCCESS w/ FFs (%#x/%#x)\n",
                             pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions);
@@ -1207,8 +1207,8 @@ static int remR3RunLoggingStep(PVM pVM, PVMCPU pVCpu)
 #ifdef REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
                 if (rc == VINF_EM_DBG_STEPPED)
                 {
-                    if (   !VM_FF_ISPENDING(pVM, VM_FF_ALL_REM_MASK)
-                        && !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_REM_MASK))
+                    if (   !VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
+                        && !VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_REM_MASK))
                         continue;
 
                     RTLogPrintf("remR3RunLoggingStep: rc=VINF_SUCCESS w/ FFs (%#x/%#x)\n",
@@ -2272,7 +2272,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 
     /* Update the inhibit IRQ mask. */
     pVM->rem.s.Env.hflags &= ~HF_INHIBIT_IRQ_MASK;
-    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     {
         RTGCPTR InhibitPC = EMGetInhibitInterruptsPC(pVCpu);
         if (InhibitPC == pCtx->rip)
@@ -2535,7 +2535,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
      */
     pVM->rem.s.Env.interrupt_request &= ~(CPU_INTERRUPT_HARD | CPU_INTERRUPT_EXITTB | CPU_INTERRUPT_TIMER);
     if (    pVM->rem.s.u32PendingInterrupt != REM_NO_PENDING_IRQ
-        ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+        ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
         pVM->rem.s.Env.interrupt_request |= CPU_INTERRUPT_HARD;
 
     /*
@@ -2762,7 +2762,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         EMSetInhibitInterruptsPC(pVCpu, pCtx->rip);
         VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
     }
-    else if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     {
         Log(("Clearing VMCPU_FF_INHIBIT_INTERRUPTS at %RGv - successor %RGv (REM#2)\n", (RTGCPTR)pCtx->rip, EMGetInhibitInterruptsPC(pVCpu)));
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
@@ -3061,7 +3061,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
     VM_ASSERT_EMT(pVM);
 
     /** @todo this isn't ensuring correct replay order. */
-    if (VM_FF_TESTANDCLEAR(pVM, VM_FF_REM_HANDLER_NOTIFY))
+    if (VM_FF_TEST_AND_CLEAR(pVM, VM_FF_REM_HANDLER_NOTIFY))
     {
         uint32_t    idxNext;
         uint32_t    idxRevHead;
@@ -4517,7 +4517,7 @@ int cpu_get_pic_interrupt(CPUX86State *env)
              u8Interrupt, rc, env->segs[R_CS].selector, (uint64_t)env->eip, (uint64_t)env->eflags));
     if (RT_SUCCESS(rc))
     {
-        if (VMCPU_FF_ISPENDING(env->pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+        if (VMCPU_FF_IS_PENDING(env->pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
             env->interrupt_request |= CPU_INTERRUPT_HARD;
         return u8Interrupt;
     }

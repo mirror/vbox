@@ -8328,7 +8328,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
        mov ss, Gr has just completed successfully. */
     if (   fExecuteInhibit
         && rcStrict == VINF_SUCCESS
-        && VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+        && VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
         && EMGetInhibitInterruptsPC(pVCpu) == pIemCpu->CTX_SUFF(pCtx)->rip )
     {
         rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, pIemCpu->fBypassHandlers);

@@ -232,7 +232,7 @@ VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
             ==                            (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0)) )
     {
         pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
-        return !!VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC));
+        return !!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC));
     }
 
     return false;
@@ -2770,7 +2770,7 @@ static int emInterpretMov(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
             return VERR_EM_INTERPRETER;
         }
         AssertRCReturn(rc, rc);
-    }    
+    }
 #endif
     else
     { /* read fault */

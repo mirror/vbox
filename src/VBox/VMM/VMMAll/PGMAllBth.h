@@ -973,7 +973,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                     AssertMsg(rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("%Rrc\n", rc));
                     return rc;
                 }
-                if (RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)))
+                if (RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)))
                     return VINF_EM_NO_MEMORY;
             }
 
@@ -1304,14 +1304,14 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
      * This doesn't make sense in GC/R0 so we'll skip it entirely there.
      */
 #  ifdef PGM_SKIP_GLOBAL_PAGEDIRS_ON_NONGLOBAL_FLUSH
-    if (    VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3)
-        || (   VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
+    if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3)
+        || (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL)
             && fIsBigPage
             && PdeSrc.b.u1Global
            )
        )
 #  else
-    if (VM_FF_ISPENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL) )
+    if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_SYNC_CR3 | VM_FF_PGM_SYNC_CR3_NON_GLOBAL) )
 #  endif
     {
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InvalidatePageSkipped));
@@ -2020,7 +2020,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
                     if (    cPages > 1
                         &&  !(uErr & X86_TRAP_PF_P)
-                        &&  !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+                        &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
                     {
                         /*
                          * This code path is currently only taken when the caller is PGMTrap0eHandler
@@ -2292,7 +2292,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
     if (    cPages > 1
         &&  !(uErr & X86_TRAP_PF_P)
-        &&  !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+        &&  !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
     {
         /*
          * This code path is currently only taken when the caller is PGMTrap0eHandler
@@ -2320,7 +2320,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                       SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                       SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
 
-                if (RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)))
+                if (RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)))
                     break;
             }
             else
@@ -2979,7 +2979,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
             PPGMRAMRANGE    pRam   = pgmPhysGetRangeAtOrAbove(pVM, GCPhys);
             unsigned        iPTDst = 0;
             while (     iPTDst < RT_ELEMENTS(pPTDst->a)
-                   &&   !VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+                   &&   !VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
             {
                 if (pRam && GCPhys >= pRam->GCPhys)
                 {
@@ -3014,7 +3014,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                         {
                             rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
                             AssertRCReturn(rc, rc);
-                            if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
+                            if (VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY))
                                 break;
                         }
 # endif
@@ -3287,7 +3287,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
                   SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                   SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
 
-            if (RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)))
+            if (RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)))
                 break;
         }
     }
@@ -3670,7 +3670,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
     PVM pVM = pVCpu->CTX_SUFF(pVM); NOREF(pVM);
     NOREF(cr0); NOREF(cr3); NOREF(cr4); NOREF(fGlobal);
 
-    LogFlow(("SyncCR3 FF=%d fGlobal=%d\n", !!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3), fGlobal));
+    LogFlow(("SyncCR3 FF=%d fGlobal=%d\n", !!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3), fGlobal));
 
 #if PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT
 
@@ -4702,7 +4702,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
      * make sure we check for conflicts in the new CR3 root.
      */
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
-    Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL) || VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+    Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL) || VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
 #   endif
     rc = pgmMapActivateCR3(pVM, pNewShwPageCR3);
     AssertRCReturn(rc, rc);

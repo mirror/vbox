@@ -99,7 +99,7 @@ VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
     if (!pQueue->pTimer)
     {
         PVM pVM = pQueue->CTX_SUFF(pVM);
-        Log2(("PDMQueueInsert: VM_FF_PDM_QUEUES %d -> 1\n", VM_FF_ISSET(pVM, VM_FF_PDM_QUEUES)));
+        Log2(("PDMQueueInsert: VM_FF_PDM_QUEUES %d -> 1\n", VM_FF_IS_SET(pVM, VM_FF_PDM_QUEUES)));
         VM_FF_SET(pVM, VM_FF_PDM_QUEUES);
         ASMAtomicBitSet(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT);
 #ifdef IN_RING3

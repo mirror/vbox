@@ -180,7 +180,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
         {
             TMTimerPollVoid(pVM, pVCpu);
             Log2(("TMTimerPoll at %08RX32 - VM_FF_TM_VIRTUAL_SYNC=%d VM_FF_TM_VIRTUAL_SYNC=%d\n", pRegFrame->eip,
-                  VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC), VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER)));
+                  VM_FF_IS_PENDING(pVM, VM_FF_TM_VIRTUAL_SYNC), VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TIMER)));
         }
     }
     else
@@ -188,7 +188,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
 #endif
 
     /* Clear pending inhibit interrupt state if required. (necessary for dispatching interrupts later on) */
-    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
     {
         Log2(("VM_FF_INHIBIT_INTERRUPTS at %08RX32 successor %RGv\n", pRegFrame->eip, EMGetInhibitInterruptsPC(pVCpu)));
         if (pRegFrame->eip != EMGetInhibitInterruptsPC(pVCpu))
@@ -207,8 +207,8 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
      * Or pending (A)PIC interrupt? Windows XP will crash if we delay APIC interrupts.
      */
     if (    rc == VINF_SUCCESS
-        &&  (   VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC | VM_FF_REQUEST | VM_FF_PGM_NO_MEMORY | VM_FF_PDM_DMA)
-             || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_TO_R3 | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+        &&  (   VM_FF_IS_PENDING(pVM, VM_FF_TM_VIRTUAL_SYNC | VM_FF_REQUEST | VM_FF_PGM_NO_MEMORY | VM_FF_PDM_DMA)
+             || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_TO_R3 | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
                                           | VMCPU_FF_REQUEST | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
                                           | VMCPU_FF_PDM_CRITSECT
                                           | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_TSS
@@ -217,34 +217,34 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
        )
     {
         /* The out of memory condition naturally outranks the others. */
-        if (RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)))
+        if (RT_UNLIKELY(VM_FF_IS_PENDING(pVM, VM_FF_PGM_NO_MEMORY)))
             rc = VINF_EM_NO_MEMORY;
         /* Pending Ring-3 action. */
-        else if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TO_R3 | VMCPU_FF_PDM_CRITSECT))
+        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TO_R3 | VMCPU_FF_PDM_CRITSECT))
         {
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
             rc = VINF_EM_RAW_TO_R3;
         }
         /* Pending timer action. */
-        else if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER))
+        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TIMER))
             rc = VINF_EM_RAW_TIMER_PENDING;
         /* The Virtual Sync clock has stopped. */
-        else if (VM_FF_ISPENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
+        else if (VM_FF_IS_PENDING(pVM, VM_FF_TM_VIRTUAL_SYNC))
             rc = VINF_EM_RAW_TO_R3;
         /* DMA work pending? */
-        else if (VM_FF_ISPENDING(pVM, VM_FF_PDM_DMA))
+        else if (VM_FF_IS_PENDING(pVM, VM_FF_PDM_DMA))
             rc = VINF_EM_RAW_TO_R3;
         /* Pending request packets might contain actions that need immediate
            attention, such as pending hardware interrupts. */
-        else if (   VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
-                 || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
+        else if (   VM_FF_IS_PENDING(pVM, VM_FF_REQUEST)
+                 || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_REQUEST))
             rc = VINF_EM_PENDING_REQUEST;
         /* Pending GDT/LDT/TSS sync. */
-        else if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_TSS))
+        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_SELM_SYNC_TSS))
             rc = VINF_SELM_SYNC_GDT;
         /* Pending interrupt: dispatch it. */
-        else if (    VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
-                 && !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+        else if (    VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
+                 && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
                  &&  PATMAreInterruptsEnabledByCtxCore(pVM, pRegFrame)
            )
         {
@@ -269,12 +269,12 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
         /*
          * Try sync CR3?
          */
-        else if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+        else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
         {
 #if 1
             PGMRZDynMapReleaseAutoSet(pVCpu);
             PGMRZDynMapStartAutoSet(pVCpu);
-            rc = PGMSyncCR3(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR3(pVCpu), CPUMGetGuestCR4(pVCpu), VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+            rc = PGMSyncCR3(pVCpu, CPUMGetGuestCR0(pVCpu), CPUMGetGuestCR3(pVCpu), CPUMGetGuestCR4(pVCpu), VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
 #else
             rc = VINF_PGM_SYNC_CR3;
 #endif

@@ -537,7 +537,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);
 
     /* Check for explicit TLB shootdowns. */
-    if (VMCPU_FF_TESTANDCLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
+    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
     {
         pVCpu->hm.s.fForceTLBFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
@@ -610,7 +610,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
         /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
          *        not be executed. See hmQueueInvlPage() where it is commented
          *        out. Support individual entry flushing someday. */
-        if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
         {
             /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
