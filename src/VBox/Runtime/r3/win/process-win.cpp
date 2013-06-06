@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -50,6 +50,7 @@
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/ldr.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/once.h>
 #include <iprt/path.h>
@@ -293,7 +294,8 @@ static int rtProcWinMapErrorCodes(DWORD dwError)
         case ERROR_PASSWORD_EXPIRED:
         case ERROR_ACCOUNT_RESTRICTION: /* See: http://support.microsoft.com/kb/303846/ */
         case ERROR_PASSWORD_RESTRICTION:
-            rc = VERR_AUTHENTICATION_FAILURE;
+        case ERROR_ACCOUNT_DISABLED:    /* See: http://support.microsoft.com/kb/263936 */
+            rc = VERR_ACCOUNT_RESTRICTED;
             break;
 
         case ERROR_FILE_CORRUPT:
@@ -601,7 +603,13 @@ static int rtProcWinUserLogon(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16
                           LOGON32_PROVIDER_DEFAULT,
                           phToken);
     if (!fRc)
-        return rtProcWinMapErrorCodes(GetLastError());
+    {
+        DWORD dwErr = GetLastError();
+        int rc = rtProcWinMapErrorCodes(dwErr);
+        if (rc == VERR_UNRESOLVED_ERROR)
+            LogRelFunc(("dwErr=%u (%#x), rc=%Rrc\n", dwErr, dwErr, rc));
+        return rc;
+    }
     return VINF_SUCCESS;
 }
 
@@ -950,7 +958,11 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
 
     if (   RT_SUCCESS(rc)
         && dwErr != NO_ERROR)
+    {
         rc = rtProcWinMapErrorCodes(dwErr);
+        if (rc == VERR_UNRESOLVED_ERROR)
+            LogRelFunc(("dwErr=%u (%#x), rc=%Rrc\n", dwErr, dwErr, rc));
+    }
     return rc;
 }
 
@@ -991,7 +1003,13 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                                                       pStartupInfo,
                                                       pProcInfo);
                 if (!fRc)
-                    rc = rtProcWinMapErrorCodes(GetLastError());
+                {
+                    DWORD dwErr = GetLastError();
+                    rc = rtProcWinMapErrorCodes(dwErr);
+                    if (rc == VERR_UNRESOLVED_ERROR)
+                        LogRelFunc(("pfnCreateProcessWithLogonW (%p) failed: dwErr=%u (%#x), rc=%Rrc\n",
+                                    pfnCreateProcessWithLogonW, dwErr, dwErr, rc));
+                }
                 rtProcWinDestroyEnv(pwszzBlock);
             }
         }
