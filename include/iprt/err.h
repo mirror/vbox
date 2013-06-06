@@ -879,6 +879,10 @@ RT_C_DECLS_END
 #define VERR_NOT_AVAILABLE                  (-22403)
 /** The RTPROC_FLAGS_DETACHED flag isn't supported. */
 #define VERR_PROC_DETACH_NOT_SUPPORTED      (-22404)
+/** An account is restricted in a certain way. */
+#define VERR_ACCOUNT_RESTRICTED             (-22405)
+/** An account is restricted in a certain way. */
+#define VINF_ACCOUNT_RESTRICTED             22405
 /** @} */
 
 
