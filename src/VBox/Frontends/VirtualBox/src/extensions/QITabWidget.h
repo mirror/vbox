@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VirtualBox Qt extensions: QITabWidget class implementation
+ * VirtualBox Qt extensions: QITabWidget class declaration/implementation
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,17 +19,19 @@
 #ifndef __QITabWidget_h__
 #define __QITabWidget_h__
 
-/* Qt includes */
+/* Qt includes: */
 #include <QTabWidget>
 
+/* QTabWidget reimplementation with MacOS X bug-fix. */
 class QITabWidget: public QTabWidget
 {
     Q_OBJECT;
 
 public:
 
+    /* Constructor: */
     QITabWidget(QWidget *pParent = 0)
-      :QTabWidget(pParent)
+        :QTabWidget(pParent)
     {
 #ifdef Q_WS_MAC
         /* I don't know why, but for some languages there is ElideRight the
