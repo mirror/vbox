@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,49 +32,49 @@ struct UIDataSettingsMachineDisplay
     /* Default constructor: */
     UIDataSettingsMachineDisplay()
         : m_iCurrentVRAM(0)
-        , m_cMonitorCount(0)
+        , m_cGuestScreenCount(0)
         , m_f3dAccelerationEnabled(false)
 #ifdef VBOX_WITH_VIDEOHWACCEL
         , m_f2dAccelerationEnabled(false)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-        , m_fVRDEServerSupported(false)
-        , m_fVRDEServerEnabled(false)
-        , m_strVRDEPort(QString())
-        , m_VRDEAuthType(KAuthType_Null)
-        , m_uVRDETimeout(0)
-        , m_fMultipleConnectionsAllowed(false) {}
+        , m_fRemoteDisplayServerSupported(false)
+        , m_fRemoteDisplayServerEnabled(false)
+        , m_strRemoteDisplayPort(QString())
+        , m_remoteDisplayAuthType(KAuthType_Null)
+        , m_uRemoteDisplayTimeout(0)
+        , m_fRemoteDisplayMultiConnAllowed(false) {}
     /* Functions: */
     bool equal(const UIDataSettingsMachineDisplay &other) const
     {
         return (m_iCurrentVRAM == other.m_iCurrentVRAM) &&
-               (m_cMonitorCount == other.m_cMonitorCount) &&
+               (m_cGuestScreenCount == other.m_cGuestScreenCount) &&
                (m_f3dAccelerationEnabled == other.m_f3dAccelerationEnabled) &&
 #ifdef VBOX_WITH_VIDEOHWACCEL
                (m_f2dAccelerationEnabled == other.m_f2dAccelerationEnabled) &&
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-               (m_fVRDEServerSupported == other.m_fVRDEServerSupported) &&
-               (m_fVRDEServerEnabled == other.m_fVRDEServerEnabled) &&
-               (m_strVRDEPort == other.m_strVRDEPort) &&
-               (m_VRDEAuthType == other.m_VRDEAuthType) &&
-               (m_uVRDETimeout == other.m_uVRDETimeout) &&
-               (m_fMultipleConnectionsAllowed == other.m_fMultipleConnectionsAllowed);
+               (m_fRemoteDisplayServerSupported == other.m_fRemoteDisplayServerSupported) &&
+               (m_fRemoteDisplayServerEnabled == other.m_fRemoteDisplayServerEnabled) &&
+               (m_strRemoteDisplayPort == other.m_strRemoteDisplayPort) &&
+               (m_remoteDisplayAuthType == other.m_remoteDisplayAuthType) &&
+               (m_uRemoteDisplayTimeout == other.m_uRemoteDisplayTimeout) &&
+               (m_fRemoteDisplayMultiConnAllowed == other.m_fRemoteDisplayMultiConnAllowed);
     }
     /* Operators: */
     bool operator==(const UIDataSettingsMachineDisplay &other) const { return equal(other); }
     bool operator!=(const UIDataSettingsMachineDisplay &other) const { return !equal(other); }
     /* Variables: */
     int m_iCurrentVRAM;
-    int m_cMonitorCount;
+    int m_cGuestScreenCount;
     bool m_f3dAccelerationEnabled;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_f2dAccelerationEnabled;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-    bool m_fVRDEServerSupported;
-    bool m_fVRDEServerEnabled;
-    QString m_strVRDEPort;
-    KAuthType m_VRDEAuthType;
-    ulong m_uVRDETimeout;
-    bool m_fMultipleConnectionsAllowed;
+    bool m_fRemoteDisplayServerSupported;
+    bool m_fRemoteDisplayServerEnabled;
+    QString m_strRemoteDisplayPort;
+    KAuthType m_remoteDisplayAuthType;
+    ulong m_uRemoteDisplayTimeout;
+    bool m_fRemoteDisplayMultiConnAllowed;
 };
 typedef UISettingsCache<UIDataSettingsMachineDisplay> UICacheSettingsMachineDisplay;
 
@@ -113,19 +113,19 @@ protected:
     /* Page changed: */
     bool changed() const { return m_cache.wasChanged(); }
 
-    void setValidator (QIWidgetValidator *aVal);
-    bool revalidate (QString &aWarning, QString &aTitle);
+    void setValidator(QIWidgetValidator *pValidator);
+    bool revalidate(QString &strWarning, QString &strTitle);
 
-    void setOrderAfter (QWidget *aWidget);
+    void setOrderAfter(QWidget *pWidget);
 
     void retranslateUi();
 
 private slots:
 
-    void valueChangedVRAM (int aVal);
-    void textChangedVRAM (const QString &aText);
-    void valueChangedMonitors (int aVal);
-    void textChangedMonitors (const QString &aText);
+    void sltValueChangedVRAM(int iValue);
+    void sltTextChangedVRAM(const QString &strText);
+    void sltValueChangedScreens(int iValue);
+    void sltTextChangedScreens(const QString &strText);
 
 private:
 
@@ -134,19 +134,19 @@ private:
 
     void polishPage();
 
-    QIWidgetValidator *mValidator;
+    QIWidgetValidator *m_pValidator;
 
     /* Guest OS type id: */
     CGuestOSType m_guestOSType;
     /* System minimum lower limit of VRAM (MiB). */
-    int m_minVRAM;
+    int m_iMinVRAM;
     /* System maximum limit of VRAM (MiB). */
-    int m_maxVRAM;
+    int m_iMaxVRAM;
     /* Upper limit of VRAM in MiB for this dialog. This value is lower than
      * m_maxVRAM to save careless users from setting useless big values. */
-    int m_maxVRAMVisible;
+    int m_iMaxVRAMVisible;
     /* Initial VRAM value when the dialog is opened. */
-    int m_initialVRAM;
+    int m_iInitialVRAM;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Specifies whether the guest OS supports 2D video-acceleration: */
     bool m_f2DVideoAccelerationSupported;

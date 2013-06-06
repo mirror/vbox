@@ -22,19 +22,19 @@
     <height>300</height>
    </rect>
   </property>
-  <layout class="QVBoxLayout" name="mLtMain">
+  <layout class="QVBoxLayout" name="m_pLayoutMain">
    <item>
-    <widget class="QITabWidget" name="mTwDisplay">
-     <widget class="QWidget" name="mTabVideo">
+    <widget class="QITabWidget" name="m_pTabWidget">
+     <widget class="QWidget" name="m_pTabVideo">
       <attribute name="title">
        <string>&amp;Video</string>
       </attribute>
-      <layout class="QVBoxLayout" name="mLtVideoPage">
+      <layout class="QVBoxLayout" name="m_pLayoutTabVideo">
        <item>
-        <widget class="QWidget" name="mWtVideo">
-         <layout class="QGridLayout" name="mLtVideoItems">
+        <widget class="QWidget" name="m_pContainerVideo">
+         <layout class="QGridLayout" name="m_pLayoutContainerVideo">
           <item row="0" column="0">
-           <widget class="QLabel" name="mLbMemory">
+           <widget class="QLabel" name="m_pLabelMemory">
             <property name="text">
              <string>Video &amp;Memory:</string>
             </property>
@@ -42,17 +42,17 @@
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
             <property name="buddy">
-             <cstring>mLeMemory</cstring>
+             <cstring>m_pEditorMemory</cstring>
             </property>
            </widget>
           </item>
           <item row="0" column="1" rowspan="2">
-           <layout class="QVBoxLayout" name="mLtMemorySlider">
+           <layout class="QVBoxLayout" name="m_pLayoutSliderMemory">
             <property name="spacing">
              <number>0</number>
             </property>
             <item>
-             <widget class="QIAdvancedSlider" name="mSlMemory">
+             <widget class="QIAdvancedSlider" name="m_pSliderMemory">
               <property name="whatsThis">
                <string>Controls the amount of video memory provided to the virtual machine.</string>
               </property>
@@ -65,9 +65,9 @@
              </widget>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="mLtMemoryLegend">
+             <layout class="QHBoxLayout" name="m_pLayoutLegendMemory">
               <item>
-               <widget class="QLabel" name="mLbMemoryMin">
+               <widget class="QLabel" name="m_pLabelMemoryMin">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -77,7 +77,7 @@
                </widget>
               </item>
               <item>
-               <spacer name="mSpHor1">
+               <spacer name="m_pSpacerLegendMemory">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
@@ -90,7 +90,7 @@
                </spacer>
               </item>
               <item>
-               <widget class="QLabel" name="mLbMemoryMax">
+               <widget class="QLabel" name="m_pLabelMemoryMax">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -104,9 +104,9 @@
            </layout>
           </item>
           <item row="0" column="2">
-           <layout class="QHBoxLayout" name="mLtMemorySize">
+           <layout class="QHBoxLayout" name="m_pLayoutEditorMemory">
             <item>
-             <widget class="QILineEdit" name="mLeMemory">
+             <widget class="QILineEdit" name="m_pEditorMemory">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -119,7 +119,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="mLbMemoryUnit">
+             <widget class="QLabel" name="m_pLabelMemoryUnit">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -134,7 +134,7 @@
            </layout>
           </item>
           <item row="2" column="0">
-           <widget class="QLabel" name="mLbMonitors">
+           <widget class="QLabel" name="m_pLabelScreens">
             <property name="text">
              <string>Mo&amp;nitor Count:</string>
             </property>
@@ -142,17 +142,17 @@
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
             <property name="buddy">
-             <cstring>mLeMonitors</cstring>
+             <cstring>m_pEditorScreens</cstring>
             </property>
            </widget>
           </item>
           <item row="2" column="1" rowspan="2">
-           <layout class="QVBoxLayout" name="mLtMonitorsSlider">
+           <layout class="QVBoxLayout" name="m_pLayoutSliderScreens">
             <property name="spacing">
              <number>0</number>
             </property>
             <item>
-             <widget class="QIAdvancedSlider" name="mSlMonitors">
+             <widget class="QIAdvancedSlider" name="m_pSliderScreeens">
               <property name="whatsThis">
                <string>Controls the amount of virtual monitors provided to the virtual machine.</string>
               </property>
@@ -165,9 +165,9 @@
              </widget>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="mLtMonitorsLegend">
+             <layout class="QHBoxLayout" name="m_pLayoutLegendScreens">
               <item>
-               <widget class="QLabel" name="mLbMonitorsMin">
+               <widget class="QLabel" name="m_pLabelScreensMin">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -177,7 +177,7 @@
                </widget>
               </item>
               <item>
-               <spacer name="mSpHor2">
+               <spacer name="m_pSpacerLegendScreens">
                 <property name="orientation">
                  <enum>Qt::Horizontal</enum>
                 </property>
@@ -190,7 +190,7 @@
                </spacer>
               </item>
               <item>
-               <widget class="QLabel" name="mLbMonitorsMax">
+               <widget class="QLabel" name="m_pLabelScreensMax">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -204,9 +204,9 @@
            </layout>
           </item>
           <item row="2" column="2">
-           <layout class="QHBoxLayout" name="mLtMonitorsSize">
+           <layout class="QHBoxLayout" name="m_pLayoutEditorScreens">
             <item>
-             <widget class="QILineEdit" name="mLeMonitors">
+             <widget class="QILineEdit" name="m_pEditorScreens">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -219,12 +219,12 @@
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="mLbMonitorsUnit"/>
+             <widget class="QLabel" name="m_pLabelScreensUnit"/>
             </item>
            </layout>
           </item>
           <item row="4" column="0">
-           <widget class="QLabel" name="mLbOptions">
+           <widget class="QLabel" name="m_pLabelVideoOptions">
             <property name="text">
              <string>Extended Features:</string>
             </property>
@@ -269,7 +269,7 @@
         </widget>
        </item>
        <item>
-        <spacer name="mSpVer1">
+        <spacer name="m_pStretchVideo">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
@@ -283,16 +283,16 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="mTabVRDP">
+     <widget class="QWidget" name="m_pTabRemoteDisplay">
       <attribute name="title">
        <string>&amp;Remote Display</string>
       </attribute>
-      <layout class="QVBoxLayout" name="mLtVRDPPage">
+      <layout class="QVBoxLayout" name="m_pLayoutTabRemoteDisplay">
        <item>
-        <widget class="QWidget" name="mWtVRDP">
-         <layout class="QGridLayout" name="mLtVRDPItems">
+        <widget class="QWidget" name="m_pContainerRemoteDisplay">
+         <layout class="QGridLayout" name="m_pLayoutContainerRemoteDisplay">
           <item row="0" column="0" colspan="2">
-           <widget class="QCheckBox" name="mCbVRDE">
+           <widget class="QCheckBox" name="m_pCheckboxRemoteDisplay">
             <property name="whatsThis">
              <string>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</string>
             </property>
@@ -305,7 +305,7 @@
            </widget>
           </item>
           <item row="1" column="0">
-           <spacer name="mSpHor3">
+           <spacer name="m_pSpacerContainerRemoteDisplay">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -321,10 +321,10 @@
            </spacer>
           </item>
           <item row="1" column="1">
-           <widget class="QWidget" name="mWtVRDPServer">
-            <layout class="QGridLayout" name="mLtVRDPServerItems">
+           <widget class="QWidget" name="m_pContainerRemoteDisplayOptions">
+            <layout class="QGridLayout" name="m_pLayoutContainerRemoteDisplayServer">
              <item row="0" column="0">
-              <widget class="QLabel" name="mLbVRDPPort">
+              <widget class="QLabel" name="m_pLabelRemoteDisplayPort">
                <property name="text">
                 <string>Server &amp;Port:</string>
                </property>
@@ -332,19 +332,19 @@
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
                <property name="buddy">
-                <cstring>mLeVRDEPort</cstring>
+                <cstring>m_pEditorRemoteDisplayPort</cstring>
                </property>
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QLineEdit" name="mLeVRDEPort">
+              <widget class="QLineEdit" name="m_pEditorRemoteDisplayPort">
                <property name="whatsThis">
                 <string>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</string>
                </property>
               </widget>
              </item>
              <item row="1" column="0">
-              <widget class="QLabel" name="mLbVRDPMethod">
+              <widget class="QLabel" name="m_pLabelRemoteDisplayAuthMethod">
                <property name="text">
                 <string>Authentication &amp;Method:</string>
                </property>
@@ -352,19 +352,19 @@
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
                <property name="buddy">
-                <cstring>mCbVRDEMethod</cstring>
+                <cstring>m_pComboRemoteDisplayAuthMethod</cstring>
                </property>
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QComboBox" name="mCbVRDEMethod">
+              <widget class="QComboBox" name="m_pComboRemoteDisplayAuthMethod">
                <property name="whatsThis">
                 <string>Defines the VRDP authentication method.</string>
                </property>
               </widget>
              </item>
              <item row="2" column="0">
-              <widget class="QLabel" name="mLbVRDPTimeout">
+              <widget class="QLabel" name="m_pLabelRemoteDisplayTimeout">
                <property name="text">
                 <string>Authentication &amp;Timeout:</string>
                </property>
@@ -372,19 +372,19 @@
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
                <property name="buddy">
-                <cstring>mLeVRDETimeout</cstring>
+                <cstring>m_pEditorRemoteDisplayTimeout</cstring>
                </property>
               </widget>
              </item>
              <item row="2" column="1">
-              <widget class="QLineEdit" name="mLeVRDETimeout">
+              <widget class="QLineEdit" name="m_pEditorRemoteDisplayTimeout">
                <property name="whatsThis">
                 <string>Specifies the timeout for guest authentication, in milliseconds.</string>
                </property>
               </widget>
              </item>
              <item row="3" column="0">
-              <widget class="QLabel" name="mLbOptions2">
+              <widget class="QLabel" name="m_pLabelRemoteDisplayOptions">
                <property name="text">
                 <string>Extended Features:</string>
                </property>
@@ -394,7 +394,7 @@
               </widget>
              </item>
              <item row="3" column="1">
-              <widget class="QCheckBox" name="mCbMultipleConn">
+              <widget class="QCheckBox" name="m_pCheckboxMultipleConn">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                  <horstretch>0</horstretch>
@@ -416,7 +416,7 @@
         </widget>
        </item>
        <item>
-        <spacer name="mSpVer2">
+        <spacer name="m_pStretchRemoteDisplay">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
@@ -454,9 +454,9 @@
  <resources/>
  <connections>
   <connection>
-   <sender>mCbVRDE</sender>
+   <sender>m_pCheckboxRemoteDisplay</sender>
    <signal>toggled(bool)</signal>
-   <receiver>mWtVRDPServer</receiver>
+   <receiver>m_pContainerRemoteDisplayOptions</receiver>
    <slot>setEnabled(bool)</slot>
   </connection>
  </connections>
