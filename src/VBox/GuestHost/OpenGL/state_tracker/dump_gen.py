@@ -11,7 +11,7 @@ extensions_line_re = re.compile(r'^(\S+)\s+(GL_\S+)\s(\S+)\s+(.*)\s*$')
 params = {}
 extended_params = {}
 
-input = open( sys.argv[2]+"/../state_tracker/state_isenabled.txt", 'r' )
+input = open( sys.argv[2]+"/state_isenabled.txt", 'r' )
 for line in input.readlines():
     match = line_re.match( line )
     if match:
@@ -20,7 +20,7 @@ for line in input.readlines():
         fields = string.split( match.group(3) )
         params[pname] = ( type, fields )
 
-input = open( sys.argv[2]+"/../state_tracker/state_extensions_isenabled.txt", 'r' )
+input = open( sys.argv[2]+"/state_extensions_isenabled.txt", 'r' )
 for line in input.readlines():
     match = extensions_line_re.match( line )
     if match:
@@ -55,6 +55,19 @@ print """#include "cr_blitter.h"
 
 from get_sizes import *;
 
+getprops = apiutil.ParamProps("GetDoublev")
+enableprops = apiutil.ParamProps("Enable")
+
+#print "//missing get props:"
+#for prop in getprops:
+#    try:
+#        tmp = num_get_values[prop]
+#    except KeyError:
+#        try:
+#            keyvalues = extensions_num_get_values[prop]
+#        except KeyError:
+#            print "//%s" % prop
+#
 print """
 static void crRecDumpPrintVal(CR_DUMPER *pDumper, struct nv_struct *pDesc, float *pfData)
 {
@@ -100,6 +113,16 @@ for pname in keys:
     print "\tcrDmpStrF(pRec->pDumper, \"%s = %%d;\", fEnabled);" % pname
     print '#endif /* CR_%s */' % ext
 
+#print "//missing enable props:"
+#for prop in enableprops:
+#    try:
+#        keyvalues = params[prop]
+#    except KeyError:
+#        try:
+#            keyvalues = extended_params[prop]
+#        except KeyError:
+#            print "//%s" % prop
+#
 print """
 }
 #endif

@@ -106,16 +106,12 @@ VBoxOGLcrutil_SOURCES       = \
 	util/url.c \
 	util/warp.c \
 	util/vreg.cpp \
-	util/dump.cpp \
 	util/blitter.cpp \
 	util/vboxhgcm.c \
 	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
 VBoxOGLcrutil_SOURCES.win.x86 = \
 	util/util.def \
 	util/util.rc
-ifdef VBOX_WITH_CRDUMPER
-VBoxOGLcrutil_SOURCES += $(VBOX_PATH_CROGL_GENFILES)/dump_gen.cpp
-endif
 VBoxOGLcrutil_LIBS.win = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib
@@ -138,12 +134,6 @@ VBoxOGLcrutil_CLEAN = \
 # vc7 hangs during compilation of this file when optimizations are enabled.
 VBoxOGLcrutil_pixel.c_CFLAGS.win.x86     += -Od
 VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
-ifdef VBOX_WITH_CRDUMPER
-VBoxOGLcrutil_DEFS        += VBOX_WITH_CRDUMPER
-VBoxOGLcrutil_LIBS        += \
-    $(PATH_STAGE_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB) \
-    $(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB)
-endif
 
 #
 # VBoxOGLcrutil-x86 - x86 VBoxOGLcrutil version built for amd64 build
@@ -166,13 +156,6 @@ ifdef VBOX_WITH_WDDM
 VBoxOGLcrutil-x86_INCS.win    += $(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm
 VBoxOGLcrutil-x86_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB)
 endif
-ifdef VBOX_WITH_CRDUMPER
-# VBOX_WITH_CRDUMPER is inheritted from VBoxOGLcrutil_DEFS
-#VBoxOGLcrutil-x86_DEFS        += VBOX_WITH_CRDUMPER
-VBoxOGLcrutil-x86_LIBS        += \
-    $(PATH_STAGE_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB) \
-    $(PATH_STAGE_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB)
-endif
 # vc7 hangs during compilation of this file when optimizations are enabled.
 VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
 VBoxOGLcrutil-x86_pixel.c_CFLAGS += -Od
@@ -191,12 +174,6 @@ VBoxOGLhostcrutil_LIBS.win =  \
     $(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
     $(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib
 VBoxOGLhostcrutil_LIBS     = $(LIB_RUNTIME)
-ifdef VBOX_WITH_CRDUMPER
-VBoxOGLhostcrutil_DEFS    += VBOX_WITH_CRDUMPER
-VBoxOGLhostcrutil_LIBS        += \
-    $(PATH_STAGE_LIB)/VBoxOGLhostcrstate$(VBOX_SUFF_LIB) \
-    $(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB)
-endif
 ifdef VBOX_WITH_CRHGSMI
 VBoxOGLhostcrutil_DEFS    += VBOX_WITH_CRHGSMI
 endif
@@ -213,7 +190,7 @@ $(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c: $(PATH_SUB_CURRENT)/util/debug_opco
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 
 ifdef VBOX_WITH_CRDUMPER
-$(VBOX_PATH_CROGL_GENFILES)/dump_gen.cpp: $(PATH_SUB_CURRENT)/util/dump_gen.py $(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/get_sizes.py $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_isenabled.txt state_extensions_isenabled.txt) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+$(VBOX_PATH_CROGL_GENFILES)/dump_gen.cpp: $(PATH_SUB_CURRENT)/state_tracker/dump_gen.py $(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/get_sizes.py $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_isenabled.txt state_extensions_isenabled.txt) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 endif
@@ -500,6 +477,11 @@ VBoxOGLcrstate_SOURCES = \
 	$(VBOX_PATH_CROGL_GENFILES)/state_viewport_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_get.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_isenabled.c
+ifdef VBOX_WITH_CRDUMPER
+VBoxOGLcrstate_SOURCES += state_tracker/dump.cpp \
+	$(VBOX_PATH_CROGL_GENFILES)/dump_gen.cpp
+endif
+	
 VBoxOGLcrstate_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/state_buffer_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_current_gen.c \
@@ -515,6 +497,10 @@ VBoxOGLcrstate_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/state_get.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_isenabled.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
+ifdef VBOX_WITH_CRDUMPER
+VBoxOGLcrstate_CLEAN += $(VBOX_PATH_CROGL_GENFILES)/dump_gen.cpp
+endif
+	
 ifneq ($(KBUILD_TARGET),win)
  ifeq ($(VBOX_WITH_COMPATIBLE_LINUX_GUEST_PACKAGE),)
 state_tracker/state_lists.c_CFLAGS += $(VBOX_GCC_Wno-pointer-sign)
@@ -526,6 +512,12 @@ VBoxOGLcrstate_DEFS.win    += VBOX_WITH_CRHGSMI
 endif
 ifdef VBOX_WITH_WDDM
 VBoxOGLcrstate_DEFS.win   += VBOX_WITH_WDDM
+endif
+ifdef VBOX_WITH_CRDUMPER
+VBoxOGLcrstate_DEFS        += VBOX_WITH_CRDUMPER
+#VBoxOGLcrutil_LIBS        += \
+    $(PATH_STAGE_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB) \
+    $(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB)
 endif
 
 #
