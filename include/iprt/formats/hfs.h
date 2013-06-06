@@ -99,6 +99,39 @@
 #define kHFSFirstUserCatalogNodeID     UINT32_C(0x00000010)
 /** @} */
 
+/** @name Catalog record types.
+ * @{ */
+#define kHFSFolderRecord                UINT16_C(0x0100)
+#define kHFSFileRecord                  UINT16_C(0x0200)
+#define kHFSFolderThreadRecord          UINT16_C(0x0300)
+#define kHFSFileThreadRecord            UINT16_C(0x0400)
+#define kHFSPlusFolderRecord            UINT16_C(0x0001)
+#define kHFSPlusFileRecord              UINT16_C(0x0002)
+#define kHFSPlusFolderThreadRecord      UINT16_C(0x0003)
+#define kHFSPlusFileThreadRecord        UINT16_C(0x0004)
+/** @} */
+
+/** @name File record bits and masks.
+ * @{ */
+#define kHFSFileLockedBit               0
+#define kHFSThreadExistsBit             1
+#define kHFSHasAttributesBit            2
+#define kHFSHasSecurityBit              3
+#define kHFSHasFolderCountBit           4
+#define kHFSHasLinkChainBit             5
+#define kHFSHasChildLinkBit             6
+#define kHFSHasDateAddedBit             7
+
+#define kHFSFileLockedMask              RT_BIT(kHFSFileLockedBit)
+#define kHFSThreadExistsMask            RT_BIT(kHFSThreadExistsBit)
+#define kHFSHasAttributesMask           RT_BIT(kHFSHasAttributesBit)
+#define kHFSHasSecurityMask             RT_BIT(kHFSHasSecurityBit)
+#define kHFSHasFolderCountMask          RT_BIT(kHFSHasFolderCountBit)
+#define kHFSHasLinkChainMask            RT_BIT(kHFSHasLinkChainBit)
+#define kHFSHasChildLinkMask            RT_BIT(kHFSHasChildLinkBit)
+#define kHFSHasDateAddedMask            RT_BIT(kHFSHasDateAddedBit)
+/** @} */
+
 /** @name Key and node lengths.
  * @{ */
 #define kHFSPlusAttrKeyMaximumLength    ( sizeof(HFSPlusAttrKey) - sizeof(uint16_t) )
