@@ -246,6 +246,7 @@ typedef enum VMXMSREXITWRITE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+static void               hmR0VmxFlushEpt(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush);
 static void               hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTGCPTR GCPtr);
 static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntrInfo, uint32_t cbInstr,
                                                  uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, uint32_t *puIntrState);
@@ -943,19 +944,28 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
     }
 
     /*
-     * Flush all VPIDs (in case we or any other hypervisor have been using VPIDs) so that
+     * Flush all EPTP tagged-TLB entries (in case any other hypervisor have been using EPTPs) so that
      * we can avoid an explicit flush while using new VPIDs. We would still need to flush
      * each time while reusing a VPID after hitting the MaxASID limit once.
      */
     if (   pVM
-        && pVM->hm.s.vmx.fVpid
-        && (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS))
+        && pVM->hm.s.fNestedPaging)
     {
-        hmR0VmxFlushVpid(pVM, NULL /* pvCpu */, VMX_FLUSH_VPID_ALL_CONTEXTS, 0 /* GCPtr */);
+        /* We require ALL_CONTEXT flush-type to be available on the CPU. See hmR0VmxSetupTaggedTlb(). */
+        Assert(pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS);
+        hmR0VmxFlushEpt(pVM, NULL /* pVCpu */, VMX_FLUSH_EPT_ALL_CONTEXTS);
         pCpu->fFlushAsidBeforeUse = false;
     }
     else
+    {
+        /** @todo This is still not perfect. If on host resume (pVM is NULL or a VM
+         *        without NestedPaging triggered this function) we still have the risk
+         *        of potentially running with stale TLB-entries from other hypervisors
+         *        when later we use a VM with NestedPaging. To fix this properly we will
+         *        have to pass '&g_HvmR0' (see HMR0.cpp) to this function and read
+         *        'vmx_ept_vpid_caps' from it. Sigh. */
         pCpu->fFlushAsidBeforeUse = true;
+    }
 
     /* Ensure each VCPU scheduled on this CPU gets a new VPID on resume. See @bugref{6255}. */
     ++pCpu->cTlbFlushes;
@@ -1038,7 +1048,8 @@ static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, VMXMSREXITREAD 
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVCpu       Pointer to the VMCPU (can be NULL depending on @a
+ *                      enmFlush).
  * @param   enmFlush    Type of flush.
  */
 static void hmR0VmxFlushEpt(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
@@ -1046,15 +1057,24 @@ static void hmR0VmxFlushEpt(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
     AssertPtr(pVM);
     Assert(pVM->hm.s.fNestedPaging);
 
-    LogFlowFunc(("pVM=%p pVCpu=%p enmFlush=%d\n", pVM, pVCpu, enmFlush));
-
     uint64_t descriptor[2];
-    descriptor[0] = pVCpu->hm.s.vmx.HCPhysEPTP;
+    if (enmFlush == VMX_FLUSH_EPT_ALL_CONTEXTS)
+        descriptor[0] = 0;
+    else
+    {
+        Assert(pVCpu);
+        descriptor[0] = pVCpu->hm.s.vmx.HCPhysEPTP;
+    }
     descriptor[1] = 0;                           /* MBZ. Intel spec. 33.3 "VMX Instructions" */
 
     int rc = VMXR0InvEPT(enmFlush, &descriptor[0]);
-    AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvEPT %#x %RGv failed with %Rrc\n", enmFlush, pVCpu->hm.s.vmx.HCPhysEPTP, rc));
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushNestedPaging);
+    AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvEPT %#x %RGv failed with %Rrc\n", enmFlush, pVCpu ? pVCpu->hm.s.vmx.HCPhysEPTP : 0,
+                                   rc));
+    if (   RT_SUCCESS(rc)
+        && pVCpu)
+    {
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushNestedPaging);
+    }
 }
 
 
