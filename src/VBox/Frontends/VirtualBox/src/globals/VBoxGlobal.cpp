@@ -33,6 +33,8 @@
 #include <QDir>
 #include <QLocale>
 #include <QNetworkProxy>
+#include <QSpinBox>
+#include <QStyleOptionSpinBox>
 
 #ifdef Q_WS_WIN
 # include <QEventLoop>
@@ -3727,6 +3729,31 @@ void VBoxGlobal::checkForWrongUSBMounted()
     msgCenter().warnAboutWrongUSBMounted();
 }
 #endif /* RT_OS_LINUX */
+
+/* static */
+void VBoxGlobal::setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCount)
+{
+    /* Load options: */
+    QStyleOptionSpinBox option;
+    option.initFrom(pSpinBox);
+
+    /* Acquire edit-field rectangle: */
+    QRect rect = pSpinBox->style()->subControlRect(QStyle::CC_SpinBox,
+                                                   &option,
+                                                   QStyle::SC_SpinBoxEditField,
+                                                   pSpinBox);
+
+    /* Calculate minimum-width magic: */
+    int iSpinBoxWidth = pSpinBox->width();
+    int iSpinBoxEditFieldWidth = rect.width();
+    int iSpinBoxDelta = qMax(0, iSpinBoxWidth - iSpinBoxEditFieldWidth);
+    QFontMetrics metrics(pSpinBox->font(), pSpinBox);
+    QString strDummy(cCount, '0');
+    int iTextWidth = metrics.width(strDummy);
+
+    /* Tune spin-box minimum-width: */
+    pSpinBox->setMinimumWidth(iTextWidth + iSpinBoxDelta);
+}
 
 // Public slots
 ////////////////////////////////////////////////////////////////////////////////
