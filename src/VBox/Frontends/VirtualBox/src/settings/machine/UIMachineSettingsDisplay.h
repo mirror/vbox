@@ -105,6 +105,9 @@ public:
 
 protected:
 
+    /* API: Cache stuff: */
+    bool changed() const { return m_cache.wasChanged(); }
+
     /* Load data to cache from corresponding external object(s),
      * this task COULD be performed in other than GUI thread: */
     void loadToCacheFrom(QVariant &data);
@@ -119,9 +122,6 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    /* API: Cache stuff: */
-    bool changed() const { return m_cache.wasChanged(); }
-
     /* API: Validation stuff: */
     void setValidator(QIWidgetValidator *pValidator);
     bool revalidate(QString &strWarning, QString &strTitle);
@@ -131,6 +131,9 @@ protected:
 
     /* Helper: Translate stuff: */
     void retranslateUi();
+
+    /* Helper: Polish stuff: */
+    void polishPage();
 
 private slots:
 
@@ -142,12 +145,15 @@ private slots:
 
 private:
 
+    /* Helpers: Prepare stuff: */
+    void prepare();
+    void prepareVideoTab();
+    void prepareRemoteDisplayTab();
+
     /* Helpers: Video stuff: */
     void checkVRAMRequirements();
     bool shouldWeWarnAboutLowVideoMemory();
-
-    /* Helper: Polish stuff: */
-    void polishPage();
+    static int calcPageStep(int iMax);
 
     /* Validation stuff: */
     QIWidgetValidator *m_pValidator;
