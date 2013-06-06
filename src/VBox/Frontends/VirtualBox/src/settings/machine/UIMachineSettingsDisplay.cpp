@@ -194,16 +194,16 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
 
-    /* Check if display data was changed: */
-    if (m_cache.wasChanged())
+    /* Make sure machine is in valid mode & display data was changed: */
+    if (isMachineInValidMode() && m_cache.wasChanged())
     {
         /* Get display data from cache: */
         const UIDataSettingsMachineDisplay &displayData = m_cache.data();
 
-        /* Store Video data: */
+        /* Make sure machine is 'offline': */
         if (isMachineOffline())
         {
-            /* Video tab: */
+            /* Store Video data: */
             m_machine.SetVRAMSize(displayData.m_iCurrentVRAM);
             m_machine.SetMonitorCount(displayData.m_cGuestScreenCount);
             m_machine.SetAccelerate3DEnabled(displayData.m_f3dAccelerationEnabled);
@@ -217,17 +217,13 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
         if (!remoteDisplayServer.isNull())
         {
             /* Store Remote Display data: */
-            if (isMachineInValidMode())
-            {
-                remoteDisplayServer.SetEnabled(displayData.m_fRemoteDisplayServerEnabled);
-                remoteDisplayServer.SetVRDEProperty("TCP/Ports", displayData.m_strRemoteDisplayPort);
-                remoteDisplayServer.SetAuthType(displayData.m_remoteDisplayAuthType);
-                remoteDisplayServer.SetAuthTimeout(displayData.m_uRemoteDisplayTimeout);
-            }
+            remoteDisplayServer.SetEnabled(displayData.m_fRemoteDisplayServerEnabled);
+            remoteDisplayServer.SetVRDEProperty("TCP/Ports", displayData.m_strRemoteDisplayPort);
+            remoteDisplayServer.SetAuthType(displayData.m_remoteDisplayAuthType);
+            remoteDisplayServer.SetAuthTimeout(displayData.m_uRemoteDisplayTimeout);
+            /* Make sure machine is 'offline' or 'saved': */
             if (isMachineOffline() || isMachineSaved())
-            {
                 remoteDisplayServer.SetAllowMultiConnection(displayData.m_fRemoteDisplayMultiConnAllowed);
-            }
         }
     }
 
