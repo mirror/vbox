@@ -22,6 +22,11 @@
 #define DNODESTRUCTNAME fsw_hfs_dnode
 
 #include "fsw_core.h"
+
+#define IN_RING0
+#if !defined(ARCH_BITS) || !defined(HC_ARCH_BITS)
+# error "please add right bitness"
+#endif
 #include "iprt/formats/hfs.h"
 #include "iprt/asm.h"           /* endian conversion */
 
