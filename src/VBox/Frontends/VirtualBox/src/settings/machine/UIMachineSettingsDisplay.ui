@@ -275,7 +275,7 @@
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>20</width>
+           <width>0</width>
            <height>0</height>
           </size>
          </property>
@@ -290,8 +290,8 @@
       <layout class="QVBoxLayout" name="mLtVRDPPage">
        <item>
         <widget class="QWidget" name="mWtVRDP">
-         <layout class="QVBoxLayout" name="mLtVRDPItems">
-          <item>
+         <layout class="QGridLayout" name="mLtVRDPItems">
+          <item row="0" column="0" colspan="2">
            <widget class="QCheckBox" name="mCbVRDE">
             <property name="whatsThis">
              <string>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</string>
@@ -304,26 +304,26 @@
             </property>
            </widget>
           </item>
-          <item>
+          <item row="1" column="0">
+           <spacer name="mSpHor3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="1">
            <widget class="QWidget" name="mWtVRDPServer">
             <layout class="QGridLayout" name="mLtVRDPServerItems">
-             <item row="1" column="0" rowspan="3">
-              <spacer name="mSpHor3">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>0</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item row="1" column="1">
+             <item row="0" column="0">
               <widget class="QLabel" name="mLbVRDPPort">
                <property name="text">
                 <string>Server &amp;Port:</string>
@@ -336,14 +336,14 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="2">
+             <item row="0" column="1">
               <widget class="QLineEdit" name="mLeVRDEPort">
                <property name="whatsThis">
                 <string>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="1">
+             <item row="1" column="0">
               <widget class="QLabel" name="mLbVRDPMethod">
                <property name="text">
                 <string>Authentication &amp;Method:</string>
@@ -356,14 +356,14 @@
                </property>
               </widget>
              </item>
-             <item row="2" column="2">
+             <item row="1" column="1">
               <widget class="QComboBox" name="mCbVRDEMethod">
                <property name="whatsThis">
                 <string>Defines the VRDP authentication method.</string>
                </property>
               </widget>
              </item>
-             <item row="3" column="1">
+             <item row="2" column="0">
               <widget class="QLabel" name="mLbVRDPTimeout">
                <property name="text">
                 <string>Authentication &amp;Timeout:</string>
@@ -376,14 +376,14 @@
                </property>
               </widget>
              </item>
-             <item row="3" column="2">
+             <item row="2" column="1">
               <widget class="QLineEdit" name="mLeVRDETimeout">
                <property name="whatsThis">
                 <string>Specifies the timeout for guest authentication, in milliseconds.</string>
                </property>
               </widget>
              </item>
-             <item row="4" column="1">
+             <item row="3" column="0">
               <widget class="QLabel" name="mLbOptions2">
                <property name="text">
                 <string>Extended Features:</string>
@@ -393,7 +393,7 @@
                </property>
               </widget>
              </item>
-             <item row="4" column="2">
+             <item row="3" column="1">
               <widget class="QCheckBox" name="mCbMultipleConn">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">

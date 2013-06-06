@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -523,32 +523,15 @@ void UIMachineSettingsDisplay::polishPage()
     const UIDataSettingsMachineDisplay &displayData = m_cache.base();
 
     /* Video tab: */
-    mLbMemory->setEnabled(isMachineOffline());
-    mLbMemoryMin->setEnabled(isMachineOffline());
-    mLbMemoryMax->setEnabled(isMachineOffline());
-    mLbMemoryUnit->setEnabled(isMachineOffline());
-    mSlMemory->setEnabled(isMachineOffline());
-    mLeMemory->setEnabled(isMachineOffline());
-    mLbMonitors->setEnabled(isMachineOffline());
-    mLbMonitorsMin->setEnabled(isMachineOffline());
-    mLbMonitorsMax->setEnabled(isMachineOffline());
-    mLbMonitorsUnit->setEnabled(isMachineOffline());
-    mSlMonitors->setEnabled(isMachineOffline());
-    mLeMonitors->setEnabled(isMachineOffline());
-    mLbOptions->setEnabled(isMachineOffline());
-    mCb3D->setEnabled(isMachineOffline());
+    mWtVideo->setEnabled(isMachineOffline());
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    mCb2DVideo->setEnabled(isMachineOffline() && VBoxGlobal::isAcceleration2DVideoAvailable());
+    mCb2DVideo->setEnabled(VBoxGlobal::isAcceleration2DVideoAvailable());
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+
     /* VRDE tab: */
     mTwDisplay->setTabEnabled(1, displayData.m_fVRDEServerSupported);
-    mCbVRDE->setEnabled(isMachineInValidMode());
-    mLbVRDPPort->setEnabled(isMachineInValidMode());
-    mLeVRDEPort->setEnabled(isMachineInValidMode());
-    mLbVRDPMethod->setEnabled(isMachineInValidMode());
-    mCbVRDEMethod->setEnabled(isMachineInValidMode());
-    mLbVRDPTimeout->setEnabled(isMachineInValidMode());
-    mLeVRDETimeout->setEnabled(isMachineInValidMode());
+    mWtVRDP->setEnabled(isMachineInValidMode());
+    mWtVRDPServer->setEnabled(mCbVRDE->isChecked());
     mLbOptions2->setEnabled(isMachineOffline() || isMachineSaved());
     mCbMultipleConn->setEnabled(isMachineOffline() || isMachineSaved());
 }
