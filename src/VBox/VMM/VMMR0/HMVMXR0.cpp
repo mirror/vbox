@@ -1159,7 +1159,7 @@ VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
     /*
      * We cannot flush a page by guest-physical address. invvpid takes only a linear address while invept only flushes
      * by EPT not individual addresses. We update the force flag here and flush before the next VM-entry in hmR0VmxFlushTLB*().
-     * This function might be called in a loop.
+     * This function might be called in a loop. This should cause a flush-by-EPT if EPT is in use. See @bugref{6568}.
      */
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpgPhys);
@@ -1223,7 +1223,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
      * or the host CPU is online after a suspend/resume, so we cannot reuse the current ASID anymore.
      */
     bool fNewASID = false;
-    if (   pVCpu->hm.s.idLastCpu != pCpu->idCpu
+    if (   pVCpu->hm.s.idLastCpu   != pCpu->idCpu
         || pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
     {
         pVCpu->hm.s.fForceTLBFlush = true;
@@ -1259,10 +1259,14 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
         }
         else
         {
-            if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT)
-                hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_SINGLE_CONTEXT, 0 /* GCPtr */);
-            else
-                hmR0VmxFlushEpt(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
+            /*
+             * Changes to the EPT paging structure by VMM requires flushing by EPT as the CPU creates
+             * guest-physical (only EPT-tagged) mappings while traversing the EPT tables when EPT is in use.
+             * Flushing by VPID will only flush linear (only VPID-tagged) and combined (EPT+VPID tagged) mappings
+             * but not guest-physical mappings.
+             * See Intel spec. 28.3.2 "Creating and Using Cached Translation Information". See @bugref{6568}.
+             */
+            hmR0VmxFlushEpt(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         }
 
         pVCpu->hm.s.cTlbFlushes    = pCpu->cTlbFlushes;
@@ -1337,7 +1341,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu)
      * This can happen both for start & resume due to long jumps back to ring-3.
      * A change in the TLB flush count implies the host CPU is online after a suspend/resume.
      */
-    if (   pVCpu->hm.s.idLastCpu != pCpu->idCpu
+    if (   pVCpu->hm.s.idLastCpu   != pCpu->idCpu
         || pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
     {
         pVCpu->hm.s.fForceTLBFlush = true;
@@ -1403,7 +1407,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu)
      * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB
      * or the host CPU is online after a suspend/resume, so we cannot reuse the current ASID anymore.
      */
-    if (   pVCpu->hm.s.idLastCpu != pCpu->idCpu
+    if (   pVCpu->hm.s.idLastCpu   != pCpu->idCpu
         || pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
     {
         pVCpu->hm.s.fForceTLBFlush = true;
@@ -8173,6 +8177,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     rc    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);    /* SELM checks in EMInterpretDisasCurrent(). */
     /* EFER also required for longmode checks in EMInterpretDisasCurrent(), but it's always up-to-date. */
     AssertRCReturn(rc, rc);
+
     Log4(("CS:RIP=%04x:%#RX64\n", pMixedCtx->cs.Sel, pMixedCtx->rip));
 
     /* Refer Intel spec. 27-5. "Exit Qualifications for I/O Instructions" for the format. */
@@ -8195,8 +8200,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         /* INS/OUTS - I/O String instruction. */
         PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
         /** @todo for now manually disassemble later optimize by getting the fields from
-         *        the VMCS. */
-        /** @todo VMX_VMCS_RO_EXIT_GUEST_LINEAR_ADDR contains the flat pointer
+         *        the VMCS. VMX_VMCS_RO_EXIT_GUEST_LINEAR_ADDR contains the flat pointer
          *        operand of the instruction. VMX_VMCS32_RO_EXIT_INSTR_INFO contains
          *        segment prefix info. */
         rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
@@ -8346,6 +8350,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
         if (VMX_IDT_VECTORING_INFO_VALID(pVmxTransient->uIdtVectoringInfo))
         {
             uint32_t uIntType = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
+
             /* Software interrupts and exceptions will be regenerated when the recompiler restarts the instruction. */
             if (   uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_INT
                 && uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT
@@ -8369,10 +8374,12 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
                 {
                     pVCpu->hm.s.Event.GCPtrFaultAddress = pMixedCtx->cr2;
                 }
+
                 Log4(("Pending event on TaskSwitch uIntType=%#x uVector=%#x\n", uIntType, uVector));
             }
         }
     }
+
     /** @todo Emulate task switch someday, currently just going back to ring-3 for
      *        emulation. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitTaskSwitch);
@@ -8863,13 +8870,16 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         switch (pDis->pCurInstr->uOpcode)
         {
             case OP_CLI:
+            {
                 pMixedCtx->eflags.Bits.u1IF = 0;
                 pMixedCtx->rip += pDis->cbInstr;
                 pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS;
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCli);
                 break;
+            }
 
             case OP_STI:
+            {
                 pMixedCtx->eflags.Bits.u1IF = 1;
                 pMixedCtx->rip += pDis->cbInstr;
                 EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
@@ -8877,13 +8887,16 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS;
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitSti);
                 break;
+            }
 
             case OP_HLT:
+            {
                 rc = VINF_EM_HALT;
                 pMixedCtx->rip += pDis->cbInstr;
                 pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHlt);
                 break;
+            }
 
             case OP_POPF:
             {
