@@ -112,6 +112,15 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
         displayData.m_fRemoteDisplayMultiConnAllowed = remoteDisplayServer.GetAllowMultiConnection();
     }
 
+    /* Cache Video Capture data: */
+    displayData.m_fVideoCaptureEnabled = m_machine.GetVideoCaptureEnabled();
+    displayData.m_strVideoCaptureFolder = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
+    displayData.m_strVideoCaptureFilePath = m_machine.GetVideoCaptureFile();
+    displayData.m_iVideoCaptureFrameWidth = m_machine.GetVideoCaptureWidth();
+    displayData.m_iVideoCaptureFrameHeight = m_machine.GetVideoCaptureHeight();
+    displayData.m_iVideoCaptureFrameRate = m_machine.GetVideoCaptureFps();
+    displayData.m_iVideoCaptureBitRate = m_machine.GetVideoCaptureRate();
+
     /* Initialize other variables: */
     m_iInitialVRAM = RT_MIN(displayData.m_iCurrentVRAM, m_iMaxVRAM);
 
@@ -149,6 +158,15 @@ void UIMachineSettingsDisplay::getFromCache()
         m_pCheckboxMultipleConn->setChecked(displayData.m_fRemoteDisplayMultiConnAllowed);
     }
 
+    /* Load Video Capture data to page: */
+    m_pCheckboxVideoCapture->setChecked(displayData.m_fVideoCaptureEnabled);
+    m_pEditorVideoCapturePath->setHomeDir(displayData.m_strVideoCaptureFolder);
+    m_pEditorVideoCapturePath->setPath(displayData.m_strVideoCaptureFilePath);
+    m_pEditorVideoCaptureWidth->setValue(displayData.m_iVideoCaptureFrameWidth);
+    m_pEditorVideoCaptureHeight->setValue(displayData.m_iVideoCaptureFrameHeight);
+    m_pEditorVideoCaptureFrameRate->setValue(displayData.m_iVideoCaptureFrameRate);
+    m_pEditorVideoCaptureBitRate->setValue(displayData.m_iVideoCaptureBitRate);
+
     /* Polish page finally: */
     polishPage();
 
@@ -182,6 +200,14 @@ void UIMachineSettingsDisplay::putToCache()
         displayData.m_uRemoteDisplayTimeout = m_pEditorRemoteDisplayTimeout->text().toULong();
         displayData.m_fRemoteDisplayMultiConnAllowed = m_pCheckboxMultipleConn->isChecked();
     }
+
+    /* Gather Video Capture data from page: */
+    displayData.m_fVideoCaptureEnabled = m_pCheckboxVideoCapture->isChecked();
+    displayData.m_strVideoCaptureFilePath = m_pEditorVideoCapturePath->path();
+    displayData.m_iVideoCaptureFrameWidth = m_pEditorVideoCaptureWidth->value();
+    displayData.m_iVideoCaptureFrameHeight = m_pEditorVideoCaptureHeight->value();
+    displayData.m_iVideoCaptureFrameRate = m_pEditorVideoCaptureFrameRate->value();
+    displayData.m_iVideoCaptureBitRate = m_pEditorVideoCaptureBitRate->value();
 
     /* Cache display data: */
     m_cache.cacheCurrentData(displayData);
@@ -224,6 +250,20 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
             /* Make sure machine is 'offline' or 'saved': */
             if (isMachineOffline() || isMachineSaved())
                 remoteDisplayServer.SetAllowMultiConnection(displayData.m_fRemoteDisplayMultiConnAllowed);
+        }
+
+        /* Store Video Capture data: */
+        m_machine.SetVideoCaptureEnabled(displayData.m_fVideoCaptureEnabled);
+        /* Make sure machine is 'offline': */
+        if (isMachineOffline()) // TODO: Ask about isMachineSaved()
+        {
+            m_machine.SetVideoCaptureFile(displayData.m_strVideoCaptureFilePath);
+            m_machine.SetVideoCaptureWidth(displayData.m_iVideoCaptureFrameWidth);
+            m_machine.SetVideoCaptureHeight(displayData.m_iVideoCaptureFrameHeight);
+            m_machine.SetVideoCaptureFps(displayData.m_iVideoCaptureFrameRate);
+            m_machine.SetVideoCaptureRate(displayData.m_iVideoCaptureBitRate);
+            QVector<BOOL> screens(m_machine.GetMonitorCount(), true);
+            m_machine.SetVideoCaptureScreens(screens);
         }
     }
 
@@ -339,6 +379,17 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorRemoteDisplayPort, m_pComboRemoteDisplayAuthMethod);
     setTabOrder(m_pComboRemoteDisplayAuthMethod, m_pEditorRemoteDisplayTimeout);
     setTabOrder(m_pEditorRemoteDisplayTimeout, m_pCheckboxMultipleConn);
+
+    /* Video Capture tab-order: */
+    setTabOrder(m_pCheckboxMultipleConn, m_pCheckboxVideoCapture);
+    setTabOrder(m_pCheckboxVideoCapture, m_pEditorVideoCapturePath);
+    setTabOrder(m_pEditorVideoCapturePath, m_pComboVideoCaptureSize);
+    setTabOrder(m_pComboVideoCaptureSize, m_pEditorVideoCaptureWidth);
+    setTabOrder(m_pEditorVideoCaptureWidth, m_pEditorVideoCaptureHeight);
+    setTabOrder(m_pEditorVideoCaptureHeight, m_pComboVideoCaptureFrameRate);
+    setTabOrder(m_pComboVideoCaptureFrameRate, m_pEditorVideoCaptureFrameRate);
+    setTabOrder(m_pEditorVideoCaptureFrameRate, m_pComboVideoCaptureBitRate);
+    setTabOrder(m_pComboVideoCaptureBitRate, m_pEditorVideoCaptureBitRate);
 }
 
 void UIMachineSettingsDisplay::retranslateUi()
@@ -357,6 +408,11 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pComboRemoteDisplayAuthMethod->setItemText(0, gpConverter->toString(KAuthType_Null));
     m_pComboRemoteDisplayAuthMethod->setItemText(1, gpConverter->toString(KAuthType_External));
     m_pComboRemoteDisplayAuthMethod->setItemText(2, gpConverter->toString(KAuthType_Guest));
+
+    /* Video Capture stuff: */
+    m_pComboVideoCaptureSize->setItemText(0, tr("User Defined"));
+    m_pComboVideoCaptureFrameRate->setItemText(0, tr("User Defined"));
+    m_pComboVideoCaptureBitRate->setItemText(0, tr("User Defined"));
 }
 
 void UIMachineSettingsDisplay::polishPage()
@@ -376,6 +432,10 @@ void UIMachineSettingsDisplay::polishPage()
     m_pContainerRemoteDisplayOptions->setEnabled(m_pCheckboxRemoteDisplay->isChecked());
     m_pLabelRemoteDisplayOptions->setEnabled(isMachineOffline() || isMachineSaved());
     m_pCheckboxMultipleConn->setEnabled(isMachineOffline() || isMachineSaved());
+
+    /* Video Capture tab: */
+    m_pContainerVideoCapture->setEnabled(isMachineOffline()); // TODO: Ask about isMachineSaved()
+    m_pContainerVideoCaptureOptions->setEnabled(m_pCheckboxVideoCapture->isChecked());
 }
 
 void UIMachineSettingsDisplay::sltValueChangedVRAM(int iValue)
@@ -399,6 +459,70 @@ void UIMachineSettingsDisplay::sltTextChangedScreens(const QString &strText)
     m_pSliderScreeens->setValue(strText.toInt());
 }
 
+void UIMachineSettingsDisplay::sltHandleVideoCaptureSizeChange(int iCurrentIndex)
+{
+    /* Get the proposed size: */
+    QSize videoCaptureSize = m_pComboVideoCaptureSize->itemData(iCurrentIndex).toSize();
+
+    /* Make sure its valid: */
+    if (!videoCaptureSize.isValid())
+        return;
+
+    /* Apply proposed size: */
+    m_pEditorVideoCaptureWidth->setValue(videoCaptureSize.width());
+    m_pEditorVideoCaptureHeight->setValue(videoCaptureSize.height());
+}
+
+void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameRateChange(int iCurrentIndex)
+{
+    /* Get the proposed frame-rate: */
+    int iVideoCaptureFrameRate = m_pComboVideoCaptureFrameRate->itemData(iCurrentIndex).toInt();
+
+    /* Make sure its valid: */
+    if (iVideoCaptureFrameRate == 0)
+        return;
+
+    /* Apply proposed frame-rate: */
+    m_pEditorVideoCaptureFrameRate->setValue(iVideoCaptureFrameRate);
+}
+
+void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateChange(int iCurrentIndex)
+{
+    /* Get the proposed bit-rate: */
+    int iVideoCaptureBitRate = m_pComboVideoCaptureBitRate->itemData(iCurrentIndex).toInt();
+
+    /* Make sure its valid: */
+    if (iVideoCaptureBitRate == 0)
+        return;
+
+    /* Apply proposed frame-rate: */
+    m_pEditorVideoCaptureBitRate->setValue(iVideoCaptureBitRate);
+}
+
+void UIMachineSettingsDisplay::sltHandleVideoCaptureWidthChange()
+{
+    /* Look for preset: */
+    lookForCorrespondingSizePreset();
+}
+
+void UIMachineSettingsDisplay::sltHandleVideoCaptureHeightChange()
+{
+    /* Look for preset: */
+    lookForCorrespondingSizePreset();
+}
+
+void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameRateChange()
+{
+    /* Look for preset: */
+    lookForCorrespondingFrameRatePreset();
+}
+
+void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateChange()
+{
+    /* Look for preset: */
+    lookForCorrespondingBitRatePreset();
+}
+
 void UIMachineSettingsDisplay::prepare()
 {
     /* Apply UI decorations: */
@@ -407,6 +531,7 @@ void UIMachineSettingsDisplay::prepare()
     /* Prepare tabs: */
     prepareVideoTab();
     prepareRemoteDisplayTab();
+    prepareVideoCaptureTab();
 
     /* Translate finally: */
     retranslateUi();
@@ -480,6 +605,76 @@ void UIMachineSettingsDisplay::prepareRemoteDisplayTab()
     m_pComboRemoteDisplayAuthMethod->insertItem(2, ""); /* KAuthType_Guest */
 }
 
+void UIMachineSettingsDisplay::prepareVideoCaptureTab()
+{
+    /* Prepare filepath selector: */
+    m_pEditorVideoCapturePath->setMode(VBoxFilePathSelectorWidget::Mode_File_Save);
+
+    /* Prepare frame-size combo-box: */
+    m_pComboVideoCaptureSize->addItem(""); /* User Defined */
+    m_pComboVideoCaptureSize->addItem("320 x 200 (16:10)",   QVariant(QSize(320, 200)));
+    m_pComboVideoCaptureSize->addItem("640 x 480 (4:3)",     QVariant(QSize(640, 480)));
+    m_pComboVideoCaptureSize->addItem("720 x 480 (3:2)",     QVariant(QSize(720, 480)));
+    m_pComboVideoCaptureSize->addItem("800 x 600 (4:3)",     QVariant(QSize(800, 600)));
+    m_pComboVideoCaptureSize->addItem("1024 x 768 (4:3)",    QVariant(QSize(1024, 768)));
+    m_pComboVideoCaptureSize->addItem("1280 x 720 (16:9)",   QVariant(QSize(1280, 720)));
+    m_pComboVideoCaptureSize->addItem("1280 x 800 (16:10)",  QVariant(QSize(1280, 800)));
+    m_pComboVideoCaptureSize->addItem("1366 x 768 (16:9)",   QVariant(QSize(1366, 768)));
+    m_pComboVideoCaptureSize->addItem("1440 x 900 (16:10)",  QVariant(QSize(1440, 900)));
+    m_pComboVideoCaptureSize->addItem("1600 x 900 (16:9)",   QVariant(QSize(1600, 900)));
+    m_pComboVideoCaptureSize->addItem("1680 x 1050 (16:10)", QVariant(QSize(1680, 1050)));
+    m_pComboVideoCaptureSize->addItem("1920 x 1080 (16:9)",  QVariant(QSize(1920, 1080)));
+    m_pComboVideoCaptureSize->addItem("1920 x 1200 (16:10)", QVariant(QSize(1920, 1200)));
+    connect(m_pComboVideoCaptureSize, SIGNAL(currentIndexChanged(int)), this, SLOT(sltHandleVideoCaptureSizeChange(int)));
+
+    /* Prepare frame-width/height spin-boxes: */
+    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureWidth, 5);
+    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureHeight, 5);
+    m_pEditorVideoCaptureWidth->setMinimum(16);
+    m_pEditorVideoCaptureWidth->setMaximum(1920);
+    m_pEditorVideoCaptureHeight->setMinimum(16);
+    m_pEditorVideoCaptureHeight->setMaximum(1200);
+    connect(m_pEditorVideoCaptureWidth, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureWidthChange()));
+    connect(m_pEditorVideoCaptureHeight, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureHeightChange()));
+
+    /* Prepare frame-rate combo-box: */
+    m_pComboVideoCaptureFrameRate->addItem(""); /* User Defined */
+    m_pComboVideoCaptureFrameRate->addItem("1",  QVariant(1));
+    m_pComboVideoCaptureFrameRate->addItem("2",  QVariant(2));
+    m_pComboVideoCaptureFrameRate->addItem("5",  QVariant(5));
+    m_pComboVideoCaptureFrameRate->addItem("10", QVariant(10));
+    m_pComboVideoCaptureFrameRate->addItem("15", QVariant(15));
+    m_pComboVideoCaptureFrameRate->addItem("20", QVariant(20));
+    m_pComboVideoCaptureFrameRate->addItem("25", QVariant(25));
+    m_pComboVideoCaptureFrameRate->addItem("30", QVariant(30));
+    connect(m_pComboVideoCaptureFrameRate, SIGNAL(currentIndexChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateChange(int)));
+
+    /* Prepare frame-rate spin-box: */
+    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureFrameRate, 3);
+    m_pEditorVideoCaptureFrameRate->setMinimum(1);
+    m_pEditorVideoCaptureFrameRate->setMaximum(30);
+    connect(m_pEditorVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateChange()));
+
+    /* Prepare bit-rate combo-box: */
+    m_pComboVideoCaptureBitRate->addItem(""); /* User Defined */
+    m_pComboVideoCaptureBitRate->addItem("32",   QVariant(32));
+    m_pComboVideoCaptureBitRate->addItem("64",   QVariant(64));
+    m_pComboVideoCaptureBitRate->addItem("128",  QVariant(128));
+    m_pComboVideoCaptureBitRate->addItem("160",  QVariant(160));
+    m_pComboVideoCaptureBitRate->addItem("256",  QVariant(256));
+    m_pComboVideoCaptureBitRate->addItem("320",  QVariant(320));
+    m_pComboVideoCaptureBitRate->addItem("512",  QVariant(512));
+    m_pComboVideoCaptureBitRate->addItem("1024", QVariant(1024));
+    m_pComboVideoCaptureBitRate->addItem("2048", QVariant(2048));
+    connect(m_pComboVideoCaptureBitRate, SIGNAL(currentIndexChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateChange(int)));
+
+    /* Prepare bit-rate spin-box: */
+    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureBitRate, 5);
+    m_pEditorVideoCaptureBitRate->setMinimum(32);
+    m_pEditorVideoCaptureBitRate->setMaximum(2048);
+    connect(m_pEditorVideoCaptureBitRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateChange()));
+}
+
 void UIMachineSettingsDisplay::checkVRAMRequirements()
 {
     /* Make sure guest OS type is set: */
@@ -551,4 +746,36 @@ int UIMachineSettingsDisplay::calcPageStep(int iMax)
     return (int)p2;
 }
 
+void UIMachineSettingsDisplay::lookForCorrespondingSizePreset()
+{
+    /* Look for video-capture size preset: */
+    lookForCorrespondingPreset(m_pComboVideoCaptureSize,
+                               QSize(m_pEditorVideoCaptureWidth->value(),
+                                     m_pEditorVideoCaptureHeight->value()));
+}
+
+void UIMachineSettingsDisplay::lookForCorrespondingFrameRatePreset()
+{
+    /* Look for video-capture frame-rate preset: */
+    lookForCorrespondingPreset(m_pComboVideoCaptureFrameRate,
+                               m_pEditorVideoCaptureFrameRate->value());
+}
+
+void UIMachineSettingsDisplay::lookForCorrespondingBitRatePreset()
+{
+    /* Look for video-capture bit-rate preset: */
+    lookForCorrespondingPreset(m_pComboVideoCaptureBitRate,
+                               m_pEditorVideoCaptureBitRate->value());
+}
+
+/* static */
+void UIMachineSettingsDisplay::lookForCorrespondingPreset(QComboBox *pWhere, const QVariant &whichData)
+{
+    /* Use passed iterator to look for corresponding preset of passed combo-box: */
+    int iLookupResult = pWhere->findData(whichData);
+    if (iLookupResult != -1 && pWhere->currentIndex() != iLookupResult)
+        pWhere->setCurrentIndex(iLookupResult);
+    else if (iLookupResult == -1 && pWhere->currentIndex() != 0)
+        pWhere->setCurrentIndex(0);
+}
 

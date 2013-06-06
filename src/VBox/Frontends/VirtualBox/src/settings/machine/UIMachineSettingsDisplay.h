@@ -43,6 +43,13 @@ struct UIDataSettingsMachineDisplay
         , m_remoteDisplayAuthType(KAuthType_Null)
         , m_uRemoteDisplayTimeout(0)
         , m_fRemoteDisplayMultiConnAllowed(false)
+        , m_fVideoCaptureEnabled(false)
+        , m_strVideoCaptureFolder(QString())
+        , m_strVideoCaptureFilePath(QString())
+        , m_iVideoCaptureFrameWidth(0)
+        , m_iVideoCaptureFrameHeight(0)
+        , m_iVideoCaptureFrameRate(0)
+        , m_iVideoCaptureBitRate(0)
     {}
 
     /* Functions: */
@@ -59,7 +66,13 @@ struct UIDataSettingsMachineDisplay
                (m_strRemoteDisplayPort == other.m_strRemoteDisplayPort) &&
                (m_remoteDisplayAuthType == other.m_remoteDisplayAuthType) &&
                (m_uRemoteDisplayTimeout == other.m_uRemoteDisplayTimeout) &&
-               (m_fRemoteDisplayMultiConnAllowed == other.m_fRemoteDisplayMultiConnAllowed);
+               (m_fRemoteDisplayMultiConnAllowed == other.m_fRemoteDisplayMultiConnAllowed) &&
+               (m_fVideoCaptureEnabled == other.m_fVideoCaptureEnabled) &&
+               (m_strVideoCaptureFilePath == other.m_strVideoCaptureFilePath) &&
+               (m_iVideoCaptureFrameWidth == other.m_iVideoCaptureFrameWidth) &&
+               (m_iVideoCaptureFrameHeight == other.m_iVideoCaptureFrameHeight) &&
+               (m_iVideoCaptureFrameRate == other.m_iVideoCaptureFrameRate) &&
+               (m_iVideoCaptureBitRate == other.m_iVideoCaptureBitRate);
     }
 
     /* Operators: */
@@ -81,6 +94,15 @@ struct UIDataSettingsMachineDisplay
     KAuthType m_remoteDisplayAuthType;
     ulong m_uRemoteDisplayTimeout;
     bool m_fRemoteDisplayMultiConnAllowed;
+
+    /* Variables: Video Capture stuff: */
+    bool m_fVideoCaptureEnabled;
+    QString m_strVideoCaptureFolder;
+    QString m_strVideoCaptureFilePath;
+    int m_iVideoCaptureFrameWidth;
+    int m_iVideoCaptureFrameHeight;
+    int m_iVideoCaptureFrameRate;
+    int m_iVideoCaptureBitRate;
 };
 typedef UISettingsCache<UIDataSettingsMachineDisplay> UICacheSettingsMachineDisplay;
 
@@ -143,17 +165,33 @@ private slots:
     void sltValueChangedScreens(int iValue);
     void sltTextChangedScreens(const QString &strText);
 
+    /* Handlers: Video Capture stuff: */
+    void sltHandleVideoCaptureSizeChange(int iCurrentIndex);
+    void sltHandleVideoCaptureFrameRateChange(int iCurrentIndex);
+    void sltHandleVideoCaptureBitRateChange(int iCurrentIndex);
+    void sltHandleVideoCaptureWidthChange();
+    void sltHandleVideoCaptureHeightChange();
+    void sltHandleVideoCaptureFrameRateChange();
+    void sltHandleVideoCaptureBitRateChange();
+
 private:
 
     /* Helpers: Prepare stuff: */
     void prepare();
     void prepareVideoTab();
     void prepareRemoteDisplayTab();
+    void prepareVideoCaptureTab();
 
     /* Helpers: Video stuff: */
     void checkVRAMRequirements();
     bool shouldWeWarnAboutLowVideoMemory();
     static int calcPageStep(int iMax);
+
+    /* Helpers: Video Capture stuff: */
+    void lookForCorrespondingSizePreset();
+    void lookForCorrespondingFrameRatePreset();
+    void lookForCorrespondingBitRatePreset();
+    static void lookForCorrespondingPreset(QComboBox *pWhere, const QVariant &whichData);
 
     /* Validation stuff: */
     QIWidgetValidator *m_pValidator;

@@ -50,6 +50,7 @@ class UIMachine;
 class CMachine;
 class CMedium;
 class CUSBDevice;
+class QSpinBox;
 
 // VBoxGlobal class
 ////////////////////////////////////////////////////////////////////////////////
@@ -383,6 +384,12 @@ public:
 #ifdef RT_OS_LINUX
     static void checkForWrongUSBMounted();
 #endif /* RT_OS_LINUX */
+
+    /* Shame on Qt it hasn't stuff for tuning
+     * widget size suitable for reflecting content of desired size.
+     * For example QLineEdit, QSpinBox and similar widgets should have a methods
+     * to strict the minimum width to reflect at least [n] symbols. */
+    static void setMinimumWidthAccordingSymbolCount(QSpinBox *pSpinBox, int cCount);
 
 signals:
 
