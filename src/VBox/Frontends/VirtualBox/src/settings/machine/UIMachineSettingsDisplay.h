@@ -29,7 +29,7 @@
 /* Machine settings / Display page / Data: */
 struct UIDataSettingsMachineDisplay
 {
-    /* Default constructor: */
+    /* Constructor: */
     UIDataSettingsMachineDisplay()
         : m_iCurrentVRAM(0)
         , m_cGuestScreenCount(0)
@@ -42,7 +42,9 @@ struct UIDataSettingsMachineDisplay
         , m_strRemoteDisplayPort(QString())
         , m_remoteDisplayAuthType(KAuthType_Null)
         , m_uRemoteDisplayTimeout(0)
-        , m_fRemoteDisplayMultiConnAllowed(false) {}
+        , m_fRemoteDisplayMultiConnAllowed(false)
+    {}
+
     /* Functions: */
     bool equal(const UIDataSettingsMachineDisplay &other) const
     {
@@ -59,16 +61,20 @@ struct UIDataSettingsMachineDisplay
                (m_uRemoteDisplayTimeout == other.m_uRemoteDisplayTimeout) &&
                (m_fRemoteDisplayMultiConnAllowed == other.m_fRemoteDisplayMultiConnAllowed);
     }
+
     /* Operators: */
     bool operator==(const UIDataSettingsMachineDisplay &other) const { return equal(other); }
     bool operator!=(const UIDataSettingsMachineDisplay &other) const { return !equal(other); }
-    /* Variables: */
+
+    /* Variables: Video stuff: */
     int m_iCurrentVRAM;
     int m_cGuestScreenCount;
     bool m_f3dAccelerationEnabled;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_f2dAccelerationEnabled;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+
+    /* Variables: Remote Display stuff: */
     bool m_fRemoteDisplayServerSupported;
     bool m_fRemoteDisplayServerEnabled;
     QString m_strRemoteDisplayPort;
@@ -80,16 +86,19 @@ typedef UISettingsCache<UIDataSettingsMachineDisplay> UICacheSettingsMachineDisp
 
 /* Machine settings / Display page: */
 class UIMachineSettingsDisplay : public UISettingsPageMachine,
-                              public Ui::UIMachineSettingsDisplay
+                                 public Ui::UIMachineSettingsDisplay
 {
     Q_OBJECT;
 
 public:
 
+    /* Constructor: */
     UIMachineSettingsDisplay();
 
+    /* API: Guest OS type stuff: */
     void setGuestOSType(CGuestOSType guestOSType);
 
+    /* API: 2D video acceleration stuff: */
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool isAcceleration2DVideoSelected() const;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
@@ -110,18 +119,22 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    /* Page changed: */
+    /* API: Cache stuff: */
     bool changed() const { return m_cache.wasChanged(); }
 
+    /* API: Validation stuff: */
     void setValidator(QIWidgetValidator *pValidator);
     bool revalidate(QString &strWarning, QString &strTitle);
 
+    /* API: Focus-order stuff: */
     void setOrderAfter(QWidget *pWidget);
 
+    /* Helper: Translate stuff: */
     void retranslateUi();
 
 private slots:
 
+    /* Handlers: Video stuff: */
     void sltValueChangedVRAM(int iValue);
     void sltTextChangedVRAM(const QString &strText);
     void sltValueChangedScreens(int iValue);
@@ -129,13 +142,15 @@ private slots:
 
 private:
 
+    /* Helpers: Video stuff: */
     void checkVRAMRequirements();
     bool shouldWeWarnAboutLowVideoMemory();
 
+    /* Helper: Polish stuff: */
     void polishPage();
 
+    /* Validation stuff: */
     QIWidgetValidator *m_pValidator;
-
     /* Guest OS type id: */
     CGuestOSType m_guestOSType;
     /* System minimum lower limit of VRAM (MiB). */
