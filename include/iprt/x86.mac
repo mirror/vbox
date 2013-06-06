@@ -332,6 +332,7 @@
 %define MSR_IA32_VMX_CR4_FIXED0             0x488
 %define MSR_IA32_VMX_CR4_FIXED1             0x489
 %define MSR_IA32_VMX_VMCS_ENUM              0x48A
+%define MSR_IA32_VMX_VMFUNC                 0x491
 %define MSR_IA32_VMX_PROCBASED_CTLS2        0x48B
 %define MSR_IA32_VMX_EPT_VPID_CAP           0x48C
 %define MSR_IA32_DS_AREA                    0x600
