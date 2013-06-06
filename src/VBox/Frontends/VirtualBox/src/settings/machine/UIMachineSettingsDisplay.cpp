@@ -63,67 +63,68 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     , m_fWddmModeSupported(false)
 #endif /* VBOX_WITH_CRHGSMI */
 {
-    /* Apply UI decorations */
-    Ui::UIMachineSettingsDisplay::setupUi (this);
+    /* Apply UI decorations: */
+    Ui::UIMachineSettingsDisplay::setupUi(this);
 
-    /* Setup constants */
+    /* Prepare variables: */
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     m_iMinVRAM = sys.GetMinGuestVRAM();
     m_iMaxVRAM = sys.GetMaxGuestVRAM();
     m_iMaxVRAMVisible = m_iMaxVRAM;
-    const uint cMinGuestScreens = 1;
 #if (QT_VERSION >= 0x040600)
     const uint cHostScreens = QApplication::desktop()->screenCount();
 #else /* (QT_VERSION >= 0x040600) */
     const uint cHostScreens = QApplication::desktop()->numScreens();
 #endif /* !(QT_VERSION >= 0x040600) */
+    const uint cMinGuestScreens = 1;
     const uint cMaxGuestScreens = sys.GetMaxGuestMonitors();
 
-    /* Setup validators */
-    m_pEditorMemory->setValidator (new QIntValidator (m_iMinVRAM, m_iMaxVRAMVisible, this));
-    m_pEditorScreens->setValidator (new QIntValidator (cMinGuestScreens, cMaxGuestScreens, this));
-    m_pEditorRemoteDisplayPort->setValidator (new QRegExpValidator (QRegExp("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
-    m_pEditorRemoteDisplayTimeout->setValidator (new QIntValidator (this));
+    /* Setup validators: */
+    m_pEditorMemory->setValidator(new QIntValidator(m_iMinVRAM, m_iMaxVRAMVisible, this));
+    m_pEditorScreens->setValidator(new QIntValidator(cMinGuestScreens, cMaxGuestScreens, this));
+    m_pEditorRemoteDisplayPort->setValidator(new QRegExpValidator(QRegExp("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
+    m_pEditorRemoteDisplayTimeout->setValidator(new QIntValidator(this));
 
-    /* Setup connections */
-    connect (m_pSliderMemory, SIGNAL (valueChanged (int)), this, SLOT (sltValueChangedVRAM (int)));
-    connect (m_pEditorMemory, SIGNAL (textChanged (const QString&)), this, SLOT (sltTextChangedVRAM (const QString&)));
-    connect (m_pSliderScreeens, SIGNAL (valueChanged (int)), this, SLOT (sltValueChangedScreens (int)));
-    connect (m_pEditorScreens, SIGNAL (textChanged (const QString&)), this, SLOT (sltTextChangedScreens (const QString&)));
+    /* Setup connections: */
+    connect(m_pSliderMemory, SIGNAL(valueChanged(int)), this, SLOT(sltValueChangedVRAM(int)));
+    connect(m_pEditorMemory, SIGNAL(textChanged(const QString&)), this, SLOT(sltTextChangedVRAM(const QString&)));
+    connect(m_pSliderScreeens, SIGNAL(valueChanged(int)), this, SLOT(sltValueChangedScreens(int)));
+    connect(m_pEditorScreens, SIGNAL(textChanged(const QString&)), this, SLOT(sltTextChangedScreens(const QString&)));
 
-    /* Setup initial values */
-    m_pSliderMemory->setPageStep (calcPageStep (m_iMaxVRAMVisible));
-    m_pSliderMemory->setSingleStep (m_pSliderMemory->pageStep() / 4);
-    m_pSliderMemory->setTickInterval (m_pSliderMemory->pageStep());
-    m_pSliderScreeens->setPageStep (1);
-    m_pSliderScreeens->setSingleStep (1);
-    m_pSliderScreeens->setTickInterval (1);
-    /* Setup the scale so that ticks are at page step boundaries */
-    m_pSliderMemory->setMinimum ((m_iMinVRAM / m_pSliderMemory->pageStep()) * m_pSliderMemory->pageStep());
-    m_pSliderMemory->setMaximum (m_iMaxVRAMVisible);
-    m_pSliderMemory->setSnappingEnabled (true);
-    m_pSliderMemory->setErrorHint (0, 1);
-    m_pSliderScreeens->setMinimum (cMinGuestScreens);
-    m_pSliderScreeens->setMaximum (cMaxGuestScreens);
-    m_pSliderScreeens->setErrorHint (0, cMinGuestScreens);
-    m_pSliderScreeens->setOptimalHint (cMinGuestScreens, cHostScreens);
-    m_pSliderScreeens->setWarningHint (cHostScreens, cMaxGuestScreens);
-    /* Limit min/max. size of QLineEdit */
-    m_pEditorMemory->setFixedWidthByText (QString().fill ('8', 4));
-    m_pEditorScreens->setFixedWidthByText (QString().fill ('8', 4));
-    /* Ensure value and validation is updated */
-    sltValueChangedVRAM (m_pSliderMemory->value());
-    sltValueChangedScreens (m_pSliderScreeens->value());
-    /* Setup VRDE widget */
-    m_pComboRemoteDisplayAuthMethod->insertItem (0, ""); /* KAuthType_Null */
-    m_pComboRemoteDisplayAuthMethod->insertItem (1, ""); /* KAuthType_External */
-    m_pComboRemoteDisplayAuthMethod->insertItem (2, ""); /* KAuthType_Guest */
-
+    /* Setup widgets: */
+    m_pSliderMemory->setPageStep(calcPageStep(m_iMaxVRAMVisible));
+    m_pSliderMemory->setSingleStep(m_pSliderMemory->pageStep() / 4);
+    m_pSliderMemory->setTickInterval(m_pSliderMemory->pageStep());
+    m_pSliderScreeens->setPageStep(1);
+    m_pSliderScreeens->setSingleStep(1);
+    m_pSliderScreeens->setTickInterval(1);
+    /* Setup the scale so that ticks are at page step boundaries: */
+    m_pSliderMemory->setMinimum((m_iMinVRAM / m_pSliderMemory->pageStep()) * m_pSliderMemory->pageStep());
+    m_pSliderMemory->setMaximum(m_iMaxVRAMVisible);
+    m_pSliderMemory->setSnappingEnabled(true);
+    m_pSliderMemory->setErrorHint(0, 1);
+    m_pSliderScreeens->setMinimum(cMinGuestScreens);
+    m_pSliderScreeens->setMaximum(cMaxGuestScreens);
+    m_pSliderScreeens->setErrorHint(0, cMinGuestScreens);
+    m_pSliderScreeens->setOptimalHint(cMinGuestScreens, cHostScreens);
+    m_pSliderScreeens->setWarningHint(cHostScreens, cMaxGuestScreens);
+    /* Limit min/max. size of QLineEdit: */
+    m_pEditorMemory->setFixedWidthByText(QString().fill('8', 4));
+    m_pEditorScreens->setFixedWidthByText(QString().fill('8', 4));
+    /* Ensure value and validation is updated: */
+    sltValueChangedVRAM(m_pSliderMemory->value());
+    sltValueChangedScreens(m_pSliderScreeens->value());
 #ifndef VBOX_WITH_VIDEOHWACCEL
-    mCb2DVideo->setVisible (false);
+    /* Hide check-box if not supported: */
+    mCb2DVideo->setVisible(false);
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-    /* Applying language settings */
+    /* Prepare auth-method combo: */
+    m_pComboRemoteDisplayAuthMethod->insertItem(0, ""); /* KAuthType_Null */
+    m_pComboRemoteDisplayAuthMethod->insertItem(1, ""); /* KAuthType_External */
+    m_pComboRemoteDisplayAuthMethod->insertItem(2, ""); /* KAuthType_Guest */
+
+    /* Translate finally: */
     retranslateUi();
 }
 
@@ -171,18 +172,20 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     /* Prepare display data: */
     UIDataSettingsMachineDisplay displayData;
 
-    /* Gather display data: */
+    /* Cache Video data: */
     displayData.m_iCurrentVRAM = m_machine.GetVRAMSize();
     displayData.m_cGuestScreenCount = m_machine.GetMonitorCount();
     displayData.m_f3dAccelerationEnabled = m_machine.GetAccelerate3DEnabled();
 #ifdef VBOX_WITH_VIDEOHWACCEL
     displayData.m_f2dAccelerationEnabled = m_machine.GetAccelerate2DVideoEnabled();
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-    /* Check if VRDE server is valid: */
+
+    /* Check if Remote Display server is valid: */
     CVRDEServer remoteDisplayServer = m_machine.GetVRDEServer();
     displayData.m_fRemoteDisplayServerSupported = !remoteDisplayServer.isNull();
     if (!remoteDisplayServer.isNull())
     {
+        /* Cache Remote Display data: */
         displayData.m_fRemoteDisplayServerEnabled = remoteDisplayServer.GetEnabled();
         displayData.m_strRemoteDisplayPort = remoteDisplayServer.GetVRDEProperty("TCP/Ports");
         displayData.m_remoteDisplayAuthType = remoteDisplayServer.GetAuthType();
@@ -207,7 +210,7 @@ void UIMachineSettingsDisplay::getFromCache()
     /* Get display data from cache: */
     const UIDataSettingsMachineDisplay &displayData = m_cache.base();
 
-    /* Load display data to page: */
+    /* Load Video data to page: */
     m_pSliderScreeens->setValue(displayData.m_cGuestScreenCount);
     mCb3D->setChecked(displayData.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -215,8 +218,11 @@ void UIMachineSettingsDisplay::getFromCache()
 #endif /* VBOX_WITH_VIDEOHWACCEL */
     checkVRAMRequirements();
     m_pSliderMemory->setValue(displayData.m_iCurrentVRAM);
+
+    /* If Remote Display server is supported: */
     if (displayData.m_fRemoteDisplayServerSupported)
     {
+        /* Load Remote Display data to page: */
         m_pCheckboxRemoteDisplay->setChecked(displayData.m_fRemoteDisplayServerEnabled);
         m_pEditorRemoteDisplayPort->setText(displayData.m_strRemoteDisplayPort);
         m_pComboRemoteDisplayAuthMethod->setCurrentIndex(m_pComboRemoteDisplayAuthMethod->findText(gpConverter->toString(displayData.m_remoteDisplayAuthType)));
@@ -239,15 +245,18 @@ void UIMachineSettingsDisplay::putToCache()
     /* Prepare audio data: */
     UIDataSettingsMachineDisplay displayData = m_cache.base();
 
-    /* Gather display data: */
+    /* Gather Video data from page: */
     displayData.m_iCurrentVRAM = m_pSliderMemory->value();
     displayData.m_cGuestScreenCount = m_pSliderScreeens->value();
     displayData.m_f3dAccelerationEnabled = mCb3D->isChecked();
 #ifdef VBOX_WITH_VIDEOHWACCEL
     displayData.m_f2dAccelerationEnabled = mCb2DVideo->isChecked();
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+
+    /* If Remote Display server is supported: */
     if (displayData.m_fRemoteDisplayServerSupported)
     {
+        /* Gather Remote Display data from page: */
         displayData.m_fRemoteDisplayServerEnabled = m_pCheckboxRemoteDisplay->isChecked();
         displayData.m_strRemoteDisplayPort = m_pEditorRemoteDisplayPort->text();
         displayData.m_remoteDisplayAuthType = gpConverter->fromString<KAuthType>(m_pComboRemoteDisplayAuthMethod->currentText());
@@ -272,7 +281,7 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
         /* Get display data from cache: */
         const UIDataSettingsMachineDisplay &displayData = m_cache.data();
 
-        /* Store display data: */
+        /* Store Video data: */
         if (isMachineOffline())
         {
             /* Video tab: */
@@ -283,11 +292,12 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
             m_machine.SetAccelerate2DVideoEnabled(displayData.m_f2dAccelerationEnabled);
 #endif /* VBOX_WITH_VIDEOHWACCEL */
         }
-        /* Check if VRDE server still valid: */
+
+        /* Check if Remote Display server still valid: */
         CVRDEServer remoteDisplayServer = m_machine.GetVRDEServer();
         if (!remoteDisplayServer.isNull())
         {
-            /* Store VRDE data: */
+            /* Store Remote Display data: */
             if (isMachineInValidMode())
             {
                 remoteDisplayServer.SetEnabled(displayData.m_fRemoteDisplayServerEnabled);
@@ -309,18 +319,13 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
 void UIMachineSettingsDisplay::setValidator(QIWidgetValidator *pValidator)
 {
     m_pValidator = pValidator;
-    connect (mCb3D, SIGNAL (stateChanged (int)),
-             m_pValidator, SLOT (revalidate()));
+    connect(mCb3D, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    connect (mCb2DVideo, SIGNAL (stateChanged (int)),
-             m_pValidator, SLOT (revalidate()));
+    connect(mCb2DVideo, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-    connect (m_pCheckboxRemoteDisplay, SIGNAL (toggled (bool)),
-             m_pValidator, SLOT (revalidate()));
-    connect (m_pEditorRemoteDisplayPort, SIGNAL (textChanged (const QString&)),
-             m_pValidator, SLOT (revalidate()));
-    connect (m_pEditorRemoteDisplayTimeout, SIGNAL (textChanged (const QString&)),
-             m_pValidator, SLOT (revalidate()));
+    connect(m_pCheckboxRemoteDisplay, SIGNAL(toggled(bool)), m_pValidator, SLOT(revalidate()));
+    connect(m_pEditorRemoteDisplayPort, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
+    connect(m_pEditorRemoteDisplayTimeout, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
 }
 
 bool UIMachineSettingsDisplay::revalidate(QString &strWarning, QString& /* strTitle */)
@@ -398,71 +403,71 @@ bool UIMachineSettingsDisplay::revalidate(QString &strWarning, QString& /* strTi
     return true;
 }
 
-void UIMachineSettingsDisplay::setOrderAfter (QWidget *pWidget)
+void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
 {
     /* Video tab-order */
-    setTabOrder (pWidget, m_pTabWidget->focusProxy());
-    setTabOrder (m_pTabWidget->focusProxy(), m_pSliderMemory);
-    setTabOrder (m_pSliderMemory, m_pEditorMemory);
-    setTabOrder (m_pEditorMemory, m_pSliderScreeens);
-    setTabOrder (m_pSliderScreeens, m_pEditorScreens);
-    setTabOrder (m_pEditorScreens, mCb3D);
+    setTabOrder(pWidget, m_pTabWidget->focusProxy());
+    setTabOrder(m_pTabWidget->focusProxy(), m_pSliderMemory);
+    setTabOrder(m_pSliderMemory, m_pEditorMemory);
+    setTabOrder(m_pEditorMemory, m_pSliderScreeens);
+    setTabOrder(m_pSliderScreeens, m_pEditorScreens);
+    setTabOrder(m_pEditorScreens, mCb3D);
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    setTabOrder (mCb3D, mCb2DVideo);
-    setTabOrder (mCb2DVideo, m_pCheckboxRemoteDisplay);
+    setTabOrder(mCb3D, mCb2DVideo);
+    setTabOrder(mCb2DVideo, m_pCheckboxRemoteDisplay);
 #else /* VBOX_WITH_VIDEOHWACCEL */
-    setTabOrder (mCb3D, m_pCheckboxRemoteDisplay);
+    setTabOrder(mCb3D, m_pCheckboxRemoteDisplay);
 #endif /* !VBOX_WITH_VIDEOHWACCEL */
 
-    /* Remote display tab-order */
-    setTabOrder (m_pCheckboxRemoteDisplay, m_pEditorRemoteDisplayPort);
-    setTabOrder (m_pEditorRemoteDisplayPort, m_pComboRemoteDisplayAuthMethod);
-    setTabOrder (m_pComboRemoteDisplayAuthMethod, m_pEditorRemoteDisplayTimeout);
-    setTabOrder (m_pEditorRemoteDisplayTimeout, m_pCheckboxMultipleConn);
+    /* Remote Display tab-order: */
+    setTabOrder(m_pCheckboxRemoteDisplay, m_pEditorRemoteDisplayPort);
+    setTabOrder(m_pEditorRemoteDisplayPort, m_pComboRemoteDisplayAuthMethod);
+    setTabOrder(m_pComboRemoteDisplayAuthMethod, m_pEditorRemoteDisplayTimeout);
+    setTabOrder(m_pEditorRemoteDisplayTimeout, m_pCheckboxMultipleConn);
 }
 
 void UIMachineSettingsDisplay::retranslateUi()
 {
     /* Translate uic generated strings */
-    Ui::UIMachineSettingsDisplay::retranslateUi (this);
+    Ui::UIMachineSettingsDisplay::retranslateUi(this);
 
+    /* Video stuff: */
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
-    m_pLabelMemoryMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (m_iMinVRAM));
-    m_pLabelMemoryMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (m_iMaxVRAMVisible));
-    m_pLabelScreensMin->setText (tr ("<qt>%1</qt>").arg (1));
-    m_pLabelScreensMax->setText (tr ("<qt>%1</qt>").arg (sys.GetMaxGuestMonitors()));
+    m_pLabelMemoryMin->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_iMinVRAM));
+    m_pLabelMemoryMin->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_iMaxVRAMVisible));
+    m_pLabelScreensMin->setText(tr("<qt>%1</qt>").arg(1));
+    m_pLabelScreensMax->setText(tr("<qt>%1</qt>").arg(sys.GetMaxGuestMonitors()));
 
-    m_pComboRemoteDisplayAuthMethod->setItemText (0,
-        gpConverter->toString (KAuthType_Null));
-    m_pComboRemoteDisplayAuthMethod->setItemText (1,
-        gpConverter->toString (KAuthType_External));
-    m_pComboRemoteDisplayAuthMethod->setItemText (2,
-        gpConverter->toString (KAuthType_Guest));
+    /* Remote Display stuff: */
+    m_pComboRemoteDisplayAuthMethod->setItemText(0, gpConverter->toString(KAuthType_Null));
+    m_pComboRemoteDisplayAuthMethod->setItemText(1, gpConverter->toString(KAuthType_External));
+    m_pComboRemoteDisplayAuthMethod->setItemText(2, gpConverter->toString(KAuthType_Guest));
 }
 
-void UIMachineSettingsDisplay::sltValueChangedVRAM (int iValue)
+void UIMachineSettingsDisplay::sltValueChangedVRAM(int iValue)
 {
-    m_pEditorMemory->setText (QString::number (iValue));
+    m_pEditorMemory->setText(QString::number(iValue));
 }
 
-void UIMachineSettingsDisplay::sltTextChangedVRAM (const QString &strText)
+void UIMachineSettingsDisplay::sltTextChangedVRAM(const QString &strText)
 {
-    m_pSliderMemory->setValue (strText.toInt());
+    m_pSliderMemory->setValue(strText.toInt());
 }
 
-void UIMachineSettingsDisplay::sltValueChangedScreens (int iValue)
+void UIMachineSettingsDisplay::sltValueChangedScreens(int iValue)
 {
-    m_pEditorScreens->setText (QString::number (iValue));
+    m_pEditorScreens->setText(QString::number(iValue));
     checkVRAMRequirements();
 }
 
-void UIMachineSettingsDisplay::sltTextChangedScreens (const QString &strText)
+void UIMachineSettingsDisplay::sltTextChangedScreens(const QString &strText)
 {
-    m_pSliderScreeens->setValue (strText.toInt());
+    m_pSliderScreeens->setValue(strText.toInt());
 }
 
 void UIMachineSettingsDisplay::checkVRAMRequirements()
 {
+    /* Make sure guest OS type is set: */
     if (m_guestOSType.isNull())
         return;
 
