@@ -544,7 +544,7 @@ int emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          */
         STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatHmEntry, a);
 
-        if (RT_LIKELY(EMR3IsExecutionAllowed(pVM, pVCpu)))
+        if (RT_LIKELY(emR3IsExecutionAllowed(pVM, pVCpu)))
         {
             STAM_PROFILE_START(&pVCpu->em.s.StatHmExec, x);
             rc = VMMR3HmRunGC(pVM, pVCpu);

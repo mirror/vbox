@@ -1447,7 +1447,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Execute the code.
          */
         STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWEntry, b);
-        if (RT_LIKELY(EMR3IsExecutionAllowed(pVM, pVCpu)))
+        if (RT_LIKELY(emR3IsExecutionAllowed(pVM, pVCpu)))
         {
             STAM_PROFILE_START(&pVCpu->em.s.StatRAWExec, c);
             VBOXVMM_EM_RAW_RUN_PRE(pVCpu, pCtx);

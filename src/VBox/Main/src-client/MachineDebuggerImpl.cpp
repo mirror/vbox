@@ -81,6 +81,8 @@ HRESULT MachineDebugger::init (Console *aParent)
 
     unconst(mParent) = aParent;
 
+    for (unsigned i = 0; i < RT_ELEMENTS(maiQueuedEmExecPolicyParams); i++)
+        maiQueuedEmExecPolicyParams[i] = UINT8_MAX;
     mSingleStepQueued = ~0;
     mRecompileUserQueued = ~0;
     mRecompileSupervisorQueued = ~0;
@@ -167,6 +169,68 @@ STDMETHODIMP MachineDebugger::COMSETTER(SingleStep)(BOOL a_fEnable)
 }
 
 /**
+ * Internal worker for getting an EM executable policy setting.
+ *
+ * @returns COM status code.
+ * @param   enmPolicy           Which EM policy.
+ * @param   pfEnforced          Where to return the policy setting.
+ */
+HRESULT MachineDebugger::getEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL *pfEnforced)
+{
+    CheckComArgOutPointerValid(pfEnforced);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (queueSettings())
+            *pfEnforced = maiQueuedEmExecPolicyParams[enmPolicy] == 1;
+        else
+        {
+            bool fEnforced = false;
+            Console::SafeVMPtrQuiet ptrVM(mParent);
+            hrc = ptrVM.rc();
+            if (SUCCEEDED(hrc))
+                EMR3QueryExecutionPolicy(ptrVM.rawUVM(), enmPolicy, &fEnforced);
+            *pfEnforced = fEnforced;
+        }
+    }
+    return hrc;
+}
+
+/**
+ * Internal worker for setting an EM executable policy.
+ *
+ * @returns COM status code.
+ * @param   enmPolicy           Which policy to change.
+ * @param   fEnforce            Whether to enforce the policy or not.
+ */
+HRESULT MachineDebugger::setEmExecPolicyProperty(EMEXECPOLICY enmPolicy, BOOL fEnforce)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (queueSettings())
+            maiQueuedEmExecPolicyParams[enmPolicy] = fEnforce ? 1 : 0;
+        else
+        {
+            Console::SafeVMPtrQuiet ptrVM(mParent);
+            hrc = ptrVM.rc();
+            if (SUCCEEDED(hrc))
+            {
+                int vrc = EMR3SetExecutionPolicy(ptrVM.rawUVM(), enmPolicy, fEnforce != FALSE);
+                if (RT_FAILURE(vrc))
+                    hrc = setError(VBOX_E_VM_ERROR, tr("EMR3SetExecutionPolicy failed with %Rrc"), vrc);
+            }
+        }
+    }
+    return hrc;
+}
+
+/**
  * Returns the current recompile user mode code flag.
  *
  * @returns COM status code
@@ -174,21 +238,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(SingleStep)(BOOL a_fEnable)
  */
 STDMETHODIMP MachineDebugger::COMGETTER(RecompileUser) (BOOL *aEnabled)
 {
-    CheckComArgOutPointerValid(aEnabled);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    Console::SafeVMPtrQuiet ptrVM(mParent);
-
-    if (ptrVM.isOk())
-        *aEnabled = !EMR3IsRawRing3Enabled(ptrVM.rawUVM());
-    else
-        *aEnabled = false;
-
-    return S_OK;
+    return getEmExecPolicyProperty(EMEXECPOLICY_RECOMPILE_RING3, aEnabled);
 }
 
 /**
@@ -200,27 +250,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(RecompileUser) (BOOL *aEnabled)
 STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser)(BOOL aEnable)
 {
     LogFlowThisFunc(("enable=%d\n", aEnable));
-
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-        if (queueSettings())
-            mRecompileUserQueued = aEnable; // queue the request
-        else
-        {
-            Console::SafeVMPtr ptrVM(mParent);
-            hrc = ptrVM.rc();
-            if (SUCCEEDED(hrc))
-            {
-                int vrc = EMR3SetExecutionPolicy(ptrVM.rawUVM(), EMEXECPOLICY_RECOMPILE_RING3, RT_BOOL(aEnable));
-                if (RT_FAILURE(vrc))
-                    hrc = setError(VBOX_E_VM_ERROR, tr("EMR3SetExecutionPolicy failed with %Rrc"), vrc);
-            }
-        }
-    }
-    return hrc;
+    return setEmExecPolicyProperty(EMEXECPOLICY_RECOMPILE_RING3, aEnable);
 }
 
 /**
@@ -231,21 +261,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser)(BOOL aEnable)
  */
 STDMETHODIMP MachineDebugger::COMGETTER(RecompileSupervisor) (BOOL *aEnabled)
 {
-    CheckComArgOutPointerValid(aEnabled);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    Console::SafeVMPtrQuiet ptrVM(mParent);
-
-    if (ptrVM.isOk())
-        *aEnabled = !EMR3IsRawRing0Enabled(ptrVM.rawUVM());
-    else
-        *aEnabled = false;
-
-    return S_OK;
+    return getEmExecPolicyProperty(EMEXECPOLICY_RECOMPILE_RING0, aEnabled);
 }
 
 /**
@@ -257,27 +273,30 @@ STDMETHODIMP MachineDebugger::COMGETTER(RecompileSupervisor) (BOOL *aEnabled)
 STDMETHODIMP MachineDebugger::COMSETTER(RecompileSupervisor)(BOOL aEnable)
 {
     LogFlowThisFunc(("enable=%d\n", aEnable));
+    return setEmExecPolicyProperty(EMEXECPOLICY_RECOMPILE_RING0, aEnable);
+}
 
-    AutoCaller autoCaller(this);
-    HRESULT hrc = autoCaller.rc();
-    if (SUCCEEDED(hrc))
-    {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-        if (queueSettings())
-            mRecompileSupervisorQueued = aEnable; // queue the request
-        else
-        {
-            Console::SafeVMPtr ptrVM(mParent);
-            hrc = ptrVM.rc();
-            if (SUCCEEDED(hrc))
-            {
-                int vrc = EMR3SetExecutionPolicy(ptrVM.rawUVM(), EMEXECPOLICY_RECOMPILE_RING0, RT_BOOL(aEnable));
-                if (RT_FAILURE(vrc))
-                    hrc = setError(VBOX_E_VM_ERROR, tr("EMR3SetExecutionPolicy failed with %Rrc"), vrc);
-            }
-        }
-    }
-    return hrc;
+/**
+ * Returns the current execute-all-in-IEM setting.
+ *
+ * @returns COM status code
+ * @param   aEnabled    Address of result variable.
+ */
+STDMETHODIMP MachineDebugger::COMGETTER(ExecuteAllInIEM) (BOOL *aEnabled)
+{
+    return getEmExecPolicyProperty(EMEXECPOLICY_IEM_ALL, aEnabled);
+}
+
+/**
+ * Changes the execute-all-in-IEM setting.
+ *
+ * @returns COM status code
+ * @param   aEnable     New setting.
+ */
+STDMETHODIMP MachineDebugger::COMSETTER(ExecuteAllInIEM)(BOOL aEnable)
+{
+    LogFlowThisFunc(("enable=%d\n", aEnable));
+    return setEmExecPolicyProperty(EMEXECPOLICY_IEM_ALL, aEnable);
 }
 
 /**
@@ -1514,16 +1533,12 @@ void MachineDebugger::flushQueuedSettings()
         COMSETTER(SingleStep)(mSingleStepQueued);
         mSingleStepQueued = ~0;
     }
-    if (mRecompileUserQueued != ~0)
-    {
-        COMSETTER(RecompileUser)(mRecompileUserQueued);
-        mRecompileUserQueued = ~0;
-    }
-    if (mRecompileSupervisorQueued != ~0)
-    {
-        COMSETTER(RecompileSupervisor)(mRecompileSupervisorQueued);
-        mRecompileSupervisorQueued = ~0;
-    }
+    for (unsigned i = 0; i < EMEXECPOLICY_END; i++)
+        if (maiQueuedEmExecPolicyParams[i] != UINT8_MAX)
+        {
+            setEmExecPolicyProperty((EMEXECPOLICY)i, RT_BOOL(maiQueuedEmExecPolicyParams[i]));
+            maiQueuedEmExecPolicyParams[i] = UINT8_MAX;
+        }
     if (mPatmEnabledQueued != ~0)
     {
         COMSETTER(PATMEnabled)(mPatmEnabledQueued);

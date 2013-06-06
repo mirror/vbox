@@ -41,13 +41,12 @@
 #include <VBox/vmm/csam.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/trpm.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
-#else
-# include <VBox/vmm/iem.h>
 #endif
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/mm.h>
@@ -117,20 +116,30 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
      * Init the structure.
      */
     pVM->em.s.offVM = RT_OFFSETOF(VM, em.s);
+    PCFGMNODE pCfgRoot = CFGMR3GetRoot(pVM);
+    PCFGMNODE pCfgEM = CFGMR3GetChild(pCfgRoot, "EM");
+
     bool fEnabled;
-    int rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RawR3Enabled", &fEnabled);
-    pVM->fRecompileUser       = RT_SUCCESS(rc) ? !fEnabled : false;
-    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RawR0Enabled", &fEnabled);
-    pVM->fRecompileSupervisor = RT_SUCCESS(rc) ? !fEnabled : false;
-    Log(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool\n", pVM->fRecompileUser, pVM->fRecompileSupervisor));
+    int rc = CFGMR3QueryBoolDef(pCfgRoot, "RawR3Enabled", &fEnabled, true);
+    AssertLogRelRCReturn(rc, rc);
+    pVM->fRecompileUser       = !fEnabled;
+
+    rc = CFGMR3QueryBoolDef(pCfgRoot, "RawR0Enabled", &fEnabled, true);
+    AssertLogRelRCReturn(rc, rc);
+    pVM->fRecompileSupervisor = !fEnabled;
 
 #ifdef VBOX_WITH_RAW_RING1
-    rc = CFGMR3QueryBool(CFGMR3GetRoot(pVM), "RawR1Enabled", &fEnabled);
-    pVM->fRawRing1Enabled = RT_SUCCESS(rc) ? fEnabled : false;
-    Log(("EMR3Init: fRawRing1Enabled=%RTbool\n", pVM->fRawRing1Enabled));
+    rc = CFGMR3QueryBoolDef(pCfgRoot, "RawR1Enabled", &pVM->fRawRing1Enabled, false);
+    AssertLogRelRCReturn(rc, rc);
 #else
-    pVM->fRawRing1Enabled = false;      /* disabled by default. */
+    pVM->fRawRing1Enabled = false;      /* Disabled by default. */
 #endif
+
+    rc = CFGMR3QueryBoolDef(pCfgEM, "IemExecutesAll", &pVM->em.s.fIemExecutesAll, false);
+    AssertLogRelRCReturn(rc, rc);
+
+    Log(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fRawRing1Enabled=%RTbool fIemExecutesAll=%RTbool\n",
+         pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->fRawRing1Enabled, pVM->em.s.fIemExecutesAll));
 
 #ifdef VBOX_WITH_REM
     /*
@@ -427,6 +436,7 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         EM_REG_PROFILE_ADV(&pVCpu->em.s.StatTotal,         "/PROF/CPU%d/EM/Total",             "Profiling EMR3ExecuteVM.");
     }
 
+    emR3InitDbg(pVM);
     return VINF_SUCCESS;
 }
 
@@ -558,9 +568,8 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     /*
      * Validate version.
      */
-    if (    uVersion != EM_SAVED_STATE_VERSION
-        &&  uVersion != EM_SAVED_STATE_VERSION_PRE_MWAIT
-        &&  uVersion != EM_SAVED_STATE_VERSION_PRE_SMP)
+    if (    uVersion > EM_SAVED_STATE_VERSION
+        ||  uVersion < EM_SAVED_STATE_VERSION_PRE_SMP)
     {
         AssertMsgFailed(("emR3Load: Invalid version uVersion=%d (current %d)!\n", uVersion, EM_SAVED_STATE_VERSION));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -640,18 +649,22 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
             case EMEXECPOLICY_RECOMPILE_RING3:
                 pVM->fRecompileUser = pArgs->fEnforce;
                 break;
+            case EMEXECPOLICY_IEM_ALL:
+                pVM->em.s.fIemExecutesAll = pArgs->fEnforce;
+                break;
             default:
                 AssertFailedReturn(VERR_INVALID_PARAMETER);
         }
-        Log(("emR3SetExecutionPolicy: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool\n",
-              pVM->fRecompileUser, pVM->fRecompileSupervisor));
+        Log(("emR3SetExecutionPolicy: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fIemExecutesAll=%RTbool\n",
+              pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->em.s.fIemExecutesAll));
     }
 
     /*
-     * Force rescheduling if in RAW, HM or REM.
+     * Force rescheduling if in RAW, HM, IEM, or REM.
      */
     return    pVCpu->em.s.enmState == EMSTATE_RAW
            || pVCpu->em.s.enmState == EMSTATE_HM
+           || pVCpu->em.s.enmState == EMSTATE_IEM
            || pVCpu->em.s.enmState == EMSTATE_REM
          ? VINF_EM_RESCHEDULE
          : VINF_SUCCESS;
@@ -659,7 +672,7 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
 
 
 /**
- * Changes a the execution scheduling policy.
+ * Changes an execution scheduling policy parameter.
  *
  * This is used to enable or disable raw-mode / hardware-virtualization
  * execution of user and supervisor code.
@@ -684,32 +697,38 @@ VMMR3DECL(int) EMR3SetExecutionPolicy(PUVM pUVM, EMEXECPOLICY enmPolicy, bool fE
 
 
 /**
- * Checks if raw ring-3 execute mode is enabled.
+ * Queries an execution scheduling policy parameter.
  *
- * @returns true if enabled, false if disabled.
+ * @returns VBox status code
  * @param   pUVM            The user mode VM handle.
+ * @param   enmPolicy       The scheduling policy to query.
+ * @param   pfEnforced      Where to return the current value.
  */
-VMMR3DECL(bool) EMR3IsRawRing3Enabled(PUVM pUVM)
+VMMR3DECL(int) EMR3QueryExecutionPolicy(PUVM pUVM, EMEXECPOLICY enmPolicy, bool *pfEnforced)
 {
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    AssertReturn(enmPolicy > EMEXECPOLICY_INVALID && enmPolicy < EMEXECPOLICY_END, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfEnforced, VERR_INVALID_POINTER);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
-    return EMIsRawRing3Enabled(pVM);
-}
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
+    /* No need to bother EMTs with a query. */
+    switch (enmPolicy)
+    {
+        case EMEXECPOLICY_RECOMPILE_RING0:
+            *pfEnforced = pVM->fRecompileSupervisor;
+            break;
+        case EMEXECPOLICY_RECOMPILE_RING3:
+            *pfEnforced = pVM->fRecompileUser;
+            break;
+        case EMEXECPOLICY_IEM_ALL:
+            *pfEnforced = pVM->em.s.fIemExecutesAll;
+            break;
+        default:
+            AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+    }
 
-/**
- * Checks if raw ring-0 execute mode is enabled.
- *
- * @returns true if enabled, false if disabled.
- * @param   pUVM            The user mode VM handle.
- */
-VMMR3DECL(bool) EMR3IsRawRing0Enabled(PUVM pUVM)
-{
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
-    PVM pVM = pUVM->pVM;
-    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
-    return EMIsRawRing0Enabled(pVM);
+    return VINF_SUCCESS;
 }
 
 
@@ -743,7 +762,8 @@ static const char *emR3GetStateName(EMSTATE enmState)
     {
         case EMSTATE_NONE:              return "EMSTATE_NONE";
         case EMSTATE_RAW:               return "EMSTATE_RAW";
-        case EMSTATE_HM:             return "EMSTATE_HM";
+        case EMSTATE_HM:                return "EMSTATE_HM";
+        case EMSTATE_IEM:               return "EMSTATE_IEM";
         case EMSTATE_REM:               return "EMSTATE_REM";
         case EMSTATE_HALTED:            return "EMSTATE_HALTED";
         case EMSTATE_WAIT_SIPI:         return "EMSTATE_WAIT_SIPI";
@@ -943,6 +963,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
     } /* debug for ever */
 }
 
+
 /**
  * Steps recompiled code.
  *
@@ -1089,7 +1110,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Execute REM.
          */
-        if (RT_LIKELY(EMR3IsExecutionAllowed(pVM, pVCpu)))
+        if (RT_LIKELY(emR3IsExecutionAllowed(pVM, pVCpu)))
         {
             STAM_PROFILE_START(&pVCpu->em.s.StatREMExec, c);
 #ifdef VBOX_WITH_REM
@@ -1239,6 +1260,12 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      */
     if (pVCpu->em.s.enmState == EMSTATE_WAIT_SIPI)
         return EMSTATE_WAIT_SIPI;
+
+    /*
+     * Execute everything in IEM?
+     */
+    if (pVM->em.s.fIemExecutesAll)
+        return EMSTATE_IEM;
 
     /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
     /* !!! THIS MUST BE IN SYNC WITH remR3CanExecuteRaw !!! */
@@ -1941,9 +1968,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
  * @returns true if allowed, false otherwise
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
- *
  */
-VMMR3_INT_DECL(bool) EMR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
+bool emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
 {
     uint64_t u64UserTime, u64KernelTime;
 
@@ -2338,6 +2364,14 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     rc = emR3RemExecute(pVM, pVCpu, &fFFDone);
 #endif
                     Log2(("EMR3ExecuteVM: emR3RemExecute -> %Rrc\n", rc));
+                    break;
+
+                /*
+                 * Execute in the interpreter.
+                 */
+                case EMSTATE_IEM:
+                    rc = VBOXSTRICTRC_TODO(IEMExecLots(pVCpu));
+                    fFFDone = false;
                     break;
 
                 /*
