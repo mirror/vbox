@@ -38,7 +38,8 @@ RT_C_DECLS_BEGIN
  */
 
 /** The saved state version. */
-#define EM_SAVED_STATE_VERSION                          4
+#define EM_SAVED_STATE_VERSION                          5
+#define EM_SAVED_STATE_VERSION_PRE_IEM                  4
 #define EM_SAVED_STATE_VERSION_PRE_MWAIT                3
 #define EM_SAVED_STATE_VERSION_PRE_SMP                  2
 
@@ -307,6 +308,11 @@ typedef struct EM
      * See EM2VM(). */
     RTUINT                  offVM;
 
+    /** Whether IEM executes everything. */
+    bool                    fIemExecutesAll;
+    /** Alignment padding. */
+    bool                    afPadding[7];
+
     /** Id of the VCPU that last executed code in the recompiler. */
     VMCPUID                 idLastRemCpu;
 
@@ -442,6 +448,7 @@ typedef EMCPU *PEMCPU;
 
 /** @} */
 
+int     emR3InitDbg(PVM pVM);
 
 int     emR3HmExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
 int     emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
@@ -454,6 +461,7 @@ int     emR3RawUpdateForceFlag(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc);
 int     emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu);
 int     emR3RawStep(PVM pVM, PVMCPU pVCpu);
 int     emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations);
+bool    emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu);
 
 RT_C_DECLS_END
 

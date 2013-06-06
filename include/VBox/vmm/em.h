@@ -52,8 +52,8 @@ typedef enum EMSTATE
     EMSTATE_RAW,
     /** Hardware accelerated raw-mode execution. */
     EMSTATE_HM,
-    /** Value reserved for future use (used to be PARAV). */
-    EMSTATE_RESERVED,
+    /** Executing in IEM. */
+    EMSTATE_IEM,
     /** Recompiled mode execution. */
     EMSTATE_REM,
     /** Execution is halted. (waiting for interrupt) */
@@ -251,14 +251,15 @@ typedef enum EMEXECPOLICY
     EMEXECPOLICY_RECOMPILE_RING0,
     /** Whether to recompile ring-3 code or execute it in raw/hm. */
     EMEXECPOLICY_RECOMPILE_RING3,
+    /** Whether to only use IEM for execution. */
+    EMEXECPOLICY_IEM_ALL,
     /** End of valid value (not included). */
     EMEXECPOLICY_END,
     /** The customary 32-bit type blowup. */
     EMEXECPOLICY_32BIT_HACK = 0x7fffffff
 } EMEXECPOLICY;
 VMMR3DECL(int)                  EMR3SetExecutionPolicy(PUVM pUVM, EMEXECPOLICY enmPolicy, bool fEnforce);
-VMMR3DECL(bool)                 EMR3IsRawRing3Enabled(PUVM pUVM);
-VMMR3DECL(bool)                 EMR3IsRawRing0Enabled(PUVM pUVM);
+VMMR3DECL(int)                  EMR3QueryExecutionPolicy(PUVM pUVM, EMEXECPOLICY enmPolicy, bool *pfEnforced);
 
 VMMR3_INT_DECL(int)             EMR3Init(PVM pVM);
 VMMR3_INT_DECL(void)            EMR3Relocate(PVM pVM);
@@ -270,7 +271,6 @@ VMMR3_INT_DECL(int)             EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(int)             EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(int)             EMR3NotifyResume(PVM pVM);
 VMMR3_INT_DECL(int)             EMR3NotifySuspend(PVM pVM);
-VMMR3_INT_DECL(bool)            EMR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu);
 /** @} */
 #endif /* IN_RING3 */
 

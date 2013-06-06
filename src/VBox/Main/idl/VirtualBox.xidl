@@ -15501,7 +15501,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="1eeeb3c2-0089-4448-878e-414aee00e03b"
+    uuid="5e4534dc-21b8-4f6b-8a08-eef50e1a0aa1"
     wsmap="managed"
     >
     <method name="dumpGuestCore">
@@ -15843,6 +15843,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="recompileSupervisor" type="boolean">
       <desc>Switch for forcing code recompilation for supervisor mode code.</desc>
+    </attribute>
+
+    <attribute name="executeAllInIEM" type="boolean">
+      <desc>
+        Whether to execute all the code in the instruction interpreter. This
+        is mainly for testing the interpreter and not an execution mode
+        intended for general consumption.
+      </desc>
     </attribute>
 
     <attribute name="PATMEnabled" type="boolean">
