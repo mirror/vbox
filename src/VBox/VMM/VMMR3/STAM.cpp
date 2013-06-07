@@ -609,6 +609,7 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
     /*
      * Check if exists.
      */
+#if 0
     PSTAMDESC   pPrev = pUVM->stam.s.pHint;
     PSTAMDESC   pCur  = pPrev ? pPrev->pNext : NULL;
     if (!pCur || strcmp(pCur->pszName, pszName) > 0)
@@ -616,6 +617,10 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
         pPrev = NULL;
         pCur  = pUVM->stam.s.pHead;
     }
+#else
+    PSTAMDESC   pPrev = NULL;
+    PSTAMDESC   pCur  = pUVM->stam.s.pHint;
+#endif
     while (pCur)
     {
         int iDiff = strcmp(pCur->pszName, pszName);
