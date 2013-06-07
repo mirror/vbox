@@ -864,7 +864,7 @@ static PSTAMDESC stamR3LookupFindDesc(PSTAMLOOKUP pRoot, const char *pszName)
     while (*pszName++ == '/')
     {
         const char *pszEnd = strchr(pszName, '/');
-        uint32_t    cch    = pszEnd ? pszEnd - pszName : strlen(pszName);
+        uint32_t    cch    = pszEnd ? pszEnd - pszName : (uint32_t)strlen(pszName);
         PSTAMLOOKUP pChild = stamR3LookupFindChild(pRoot, pszName, cch, NULL);
         if (!pChild)
             break;
@@ -1031,7 +1031,7 @@ static PSTAMDESC stamR3LookupFindPatternDescRange(PSTAMLOOKUP pRoot, PRTLISTANCH
            && pRoot->cChildren    > 0)
     {
         const char *pszEnd = strchr(pszPat, '/');
-        uint32_t    cch    = pszEnd ? pszEnd - pszPat : strlen(pszPat);
+        uint32_t    cch    = pszEnd ? pszEnd - pszPat : (uint32_t)strlen(pszPat);
         if (!cch)
             break;
 
