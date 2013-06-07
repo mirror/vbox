@@ -75,7 +75,7 @@ RT_C_DECLS_BEGIN
 #define MASK_EXITREASON_STAT       0xff
 #define MASK_INJECT_IRQ_STAT       0xff
 
-/** @name Changed flags
+/** @name HM changed flags.
  * These flags are used to keep track of which important registers that
  * have been changed since last they were reset.
  * @{
@@ -702,26 +702,26 @@ typedef struct HMCPU
 
     struct
     {
-        /** R0 memory object for the host VM control block (VMCB). */
+        /** R0 memory object for the host VMCB which holds additional host-state. */
         RTR0MEMOBJ                  hMemObjVmcbHost;
-        /** Physical address of the host VM control block (VMCB). */
+        /** Physical address of the host VMCB which holds additional host-state. */
         RTHCPHYS                    HCPhysVmcbHost;
-        /** Virtual address of the host VM control block (VMCB). */
+        /** Virtual address of the host VMCB which holds additional host-state. */
         R0PTRTYPE(void *)           pvVmcbHost;
 
-        /** R0 memory object for the VM control block (VMCB). */
+        /** R0 memory object for the guest VMCB. */
         RTR0MEMOBJ                  hMemObjVmcb;
-        /** Physical address of the VM control block (VMCB). */
+        /** Physical address of the guest VMCB. */
         RTHCPHYS                    HCPhysVmcb;
-        /** Virtual address of the VM control block (VMCB). */
+        /** Virtual address of the guest VMCB. */
         R0PTRTYPE(void *)           pvVmcb;
 
         /** Ring 0 handlers for VT-x. */
         PFNHMSVMVMRUN               pfnVMRun;
 
-        /** R0 memory object for the MSR bitmap (8kb). */
+        /** R0 memory object for the MSR bitmap (8 KB). */
         RTR0MEMOBJ                  hMemObjMsrBitmap;
-        /** Physical address of the MSR bitmap (8kb). */
+        /** Physical address of the MSR bitmap (8 KB). */
         RTHCPHYS                    HCPhysMsrBitmap;
         /** Virtual address of the MSR bitmap. */
         R0PTRTYPE(void *)           pvMsrBitmap;
