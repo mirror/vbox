@@ -52,15 +52,15 @@
 #ifdef VBOX
 
 /* Redefine logging group to IPC */
-#ifdef LOG_GROUP
-#undef LOG_GROUP
-#endif
-#define LOG_GROUP LOG_GROUP_IPC
+# ifdef LOG_GROUP
+#  undef LOG_GROUP
+# endif
+# define LOG_GROUP LOG_GROUP_IPC
 
 /* Ensure log macros are enabled */
-#ifndef LOG_ENABLED
-#define LOG_ENABLED
-#endif
+# ifndef LOG_ENABLED
+#  define LOG_ENABLED
+# endif
 
 #include <VBox/log.h>
 
@@ -68,17 +68,18 @@ extern NS_HIDDEN_(void) IPC_InitLog(const char *prefix);
 extern NS_HIDDEN_(void) IPC_Log(const char *fmt, ...);
 extern NS_HIDDEN_(void) IPC_LogBinary(const PRUint8 *data, PRUint32 len);
 
-#define IPC_LOG(_args)         \
-    PR_BEGIN_MACRO             \
-        IPC_Log _args;         \
+# define IPC_LOG(_args) \
+    PR_BEGIN_MACRO \
+        if (IPC_LOG_ENABLED()) \
+            IPC_Log _args; \
     PR_END_MACRO
 
 /* IPC_Log() internally uses LogFlow() so use LogIsFlowEnabled() below */
-#define IPC_LOG_ENABLED() (LogIsFlowEnabled())
+# define IPC_LOG_ENABLED() (LogIsFlowEnabled())
 
-#define LOG(args)     IPC_LOG(args)
+# define LOG(args)     IPC_LOG(args)
 
-#else // VBOX
+#else  /* !VBOX */
 
 extern PRBool ipcLogEnabled;
 extern NS_HIDDEN_(void) IPC_InitLog(const char *prefix);
@@ -95,7 +96,7 @@ extern NS_HIDDEN_(void) IPC_LogBinary(const PRUint8 *data, PRUint32 len);
     
 #define LOG(args)     IPC_LOG(args)
 
-#endif // VBOX
+#endif /* !VBOX */
 
 #else // IPC_LOGGING
 
