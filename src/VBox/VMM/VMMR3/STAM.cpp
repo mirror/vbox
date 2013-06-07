@@ -747,7 +747,8 @@ static PSTAMLOOKUP stamR3LookupFindChild(PSTAMLOOKUP pParent, const char *pchNam
             int iDiff = stamR3LookupCmp(pParent->papChildren[iChild], pchName, cchName);
             if (!iDiff)
             {
-                *piChild = iChild;
+                if (piChild)
+                    *piChild = iChild;
                 return pParent->papChildren[iChild];
             }
 
@@ -757,7 +758,8 @@ static PSTAMLOOKUP stamR3LookupFindChild(PSTAMLOOKUP pParent, const char *pchNam
                 iFirst = iChild + 1;
                 if (iFirst >= iEnd)
                 {
-                    *piChild = iChild;
+                    if (piChild)
+                        *piChild = iChild;
                     break;
                 }
             }
@@ -765,7 +767,8 @@ static PSTAMLOOKUP stamR3LookupFindChild(PSTAMLOOKUP pParent, const char *pchNam
             {
                 if (iChild == iFirst)
                 {
-                    *piChild = iChild ? iChild - 1 : 0;
+                    if (piChild)
+                        *piChild = iChild ? iChild - 1 : 0;
                     break;
                 }
                 iEnd = iChild;
@@ -785,21 +788,23 @@ static PSTAMLOOKUP stamR3LookupFindChild(PSTAMLOOKUP pParent, const char *pchNam
         int iDiff = stamR3LookupCmp(pParent->papChildren[iChild], pchName, cchName);
         if (iDiff <= 0)
         {
-            *piChild = iChild;
+            if (piChild)
+                *piChild = iChild;
             return !iDiff ? pParent->papChildren[iChild] : NULL;
         }
     }
-    *piChild = 0;
+    if (piChild)
+        *piChild = 0;
     return NULL;
 }
 
 
 /**
- * Find the next sample description node.
+ * Find the next sample descriptor node.
  *
- * This is for use with insertion in the big list.
+ * This is for use with insertion in the big list and pattern range lookups.
  *
- * @returns Pointer to the next sample description. NULL if not found (i.e.
+ * @returns Pointer to the next sample descriptor. NULL if not found (i.e.
  *          we're at the end of the list).
  * @param   pLookup             The current node.
  */
@@ -834,13 +839,229 @@ static PSTAMDESC stamR3LookupFindNextWithDesc(PSTAMLOOKUP pLookup)
         }
         else
         {
-            /* One level up, resuming after the current. */
+            /*
+             * One level up, resuming after the current.
+             */
             iCur = pCur->iParent + 1;
             pCur = pCur->pParent;
             if (!pCur)
                 return NULL;
         }
     }
+}
+
+
+/**
+ * Look up a sample descriptor by name.
+ *
+ * @returns Pointer to a sample descriptor.
+ * @param   pRoot               The root node.
+ * @param   pszName             The name to lookup.
+ */
+static PSTAMDESC stamR3LookupFindDesc(PSTAMLOOKUP pRoot, const char *pszName)
+{
+    Assert(!pRoot->pParent);
+    while (*pszName++ == '/')
+    {
+        const char *pszEnd = strchr(pszName, '/');
+        uint32_t    cch    = pszEnd ? pszEnd - pszName : strlen(pszName);
+        PSTAMLOOKUP pChild = stamR3LookupFindChild(pRoot, pszName, cch, NULL);
+        if (!pChild)
+            break;
+        if (!pszEnd)
+            return pChild->pDesc;
+        pszName = pszEnd;
+        pRoot   = pChild;
+    }
+
+    return NULL;
+}
+
+
+/**
+ * Finds the first sample descriptor for a given lookup range.
+ *
+ * This is for pattern range lookups.
+ *
+ * @returns Pointer to the first descriptor.
+ * @param   pFirst              The first node in the range.
+ * @param   pLast               The last node in the range.
+ */
+static PSTAMDESC stamR3LookupFindFirstDescForRange(PSTAMLOOKUP pFirst, PSTAMLOOKUP pLast)
+{
+    if (pFirst->pDesc)
+        return pFirst->pDesc;
+
+    PSTAMLOOKUP pCur = pFirst;
+    uint32_t    iCur = 0;
+    for (;;)
+    {
+        uint32_t cChildren = pCur->cChildren;
+        if (iCur < pCur->cChildren)
+        {
+            /*
+             * Check all children.
+             */
+            PSTAMLOOKUP *papChildren = pCur->papChildren;
+            do
+            {
+                PSTAMLOOKUP pChild = pCur->papChildren[iCur];
+                if (pChild->pDesc)
+                    return pChild->pDesc;
+                if (pChild->cChildren > 0)
+                {
+                    /* One level down. */
+                    iCur = 0;
+                    pCur = pChild;
+                    break;
+                }
+                if (pChild == pLast)
+                    return NULL;
+            } while (++iCur < cChildren);
+        }
+        else
+        {
+            /*
+             * One level up, checking current and its 'older' sibilings.
+             */
+            if (pCur == pLast)
+                return NULL;
+            iCur = pCur->iParent + 1;
+            pCur = pCur->pParent;
+            if (!pCur)
+                break;
+        }
+    }
+
+    return NULL;
+}
+
+
+/**
+ * Finds the first sample descriptor for a given lookup range.
+ *
+ * This is for pattern range lookups.
+ *
+ * @returns Pointer to the first descriptor.
+ * @param   pFirst              The first node in the range.
+ * @param   pLast               The last node in the range.
+ */
+static PSTAMDESC stamR3LookupFindLastDescForRange(PSTAMLOOKUP pFirst, PSTAMLOOKUP pLast)
+{
+    PSTAMLOOKUP pCur = pLast;
+    uint32_t    iCur = pCur->cChildren - 1;
+    for (;;)
+    {
+        if (iCur < pCur->cChildren)
+        {
+            /*
+             * Check children backwards, depth first.
+             */
+            PSTAMLOOKUP *papChildren = pCur->papChildren;
+            do
+            {
+                PSTAMLOOKUP pChild = pCur->papChildren[iCur];
+                if (pChild->cChildren > 0)
+                {
+                    /* One level down. */
+                    iCur = pChild->cChildren - 1;
+                    pCur = pChild;
+                    break;
+                }
+
+                if (pChild->pDesc)
+                    return pChild->pDesc;
+                if (pChild == pFirst)
+                    return NULL;
+            } while (iCur-- > 0); /* (underflow handled above) */
+        }
+        else
+        {
+            /*
+             * One level up, checking current and its 'older' sibilings.
+             */
+            if (pCur->pDesc)
+                return pCur->pDesc;
+            if (pCur == pFirst)
+                return NULL;
+            iCur = pCur->iParent - 1; /* (underflow handled above) */
+            pCur = pCur->pParent;
+            if (!pCur)
+                break;
+        }
+    }
+
+    return NULL;
+}
+
+
+/**
+ * Look up the first and last descriptors for a (single) pattern expression.
+ *
+ * This is used to optimize pattern enumerations and doesn't have to return 100%
+ * accurate results if that costs too much.
+ *
+ * @returns Pointer to the first descriptor in the range.
+ * @param   pRoot               The root node.
+ * @param   pList               The descriptor list anchor.
+ * @param   pszPat              The name patter to lookup.
+ * @param   ppLastDesc          Where to store the address of the last
+ *                              descriptor (approximate).
+ */
+static PSTAMDESC stamR3LookupFindPatternDescRange(PSTAMLOOKUP pRoot, PRTLISTANCHOR pList, const char *pszPat,
+                                                  PSTAMDESC *ppLastDesc)
+{
+    Assert(!pRoot->pParent);
+
+    /*
+     * If there is an early enough wildcard, the whole list needs to be searched.
+     */
+    if (   pszPat[0] == '*' || pszPat[0] == '?'
+        || pszPat[1] == '*' || pszPat[1] == '?')
+    {
+        *ppLastDesc = RTListGetLast(pList, STAMDESC, ListEntry);
+        return RTListGetFirst(pList, STAMDESC, ListEntry);
+    }
+
+    /*
+     * All statistics starts with a slash.
+     */
+    while (   *pszPat++ == '/'
+           && pRoot->cDescsInTree > 0
+           && pRoot->cChildren    > 0)
+    {
+        const char *pszEnd = strchr(pszPat, '/');
+        uint32_t    cch    = pszEnd ? pszEnd - pszPat : strlen(pszPat);
+        if (!cch)
+            break;
+
+        const char *pszPat1 = (const char *)memchr(pszPat, '*', cch);
+        const char *pszPat2 = (const char *)memchr(pszPat, '?', cch);
+        if (pszPat1 || pszPat2)
+        {
+            /* We've narrowed it down to a sub-tree now. */
+            PSTAMLOOKUP pFirst = pRoot->papChildren[0];
+            PSTAMLOOKUP pLast  = pRoot->papChildren[pRoot->cChildren - 1];
+            /** @todo narrow the range further if both pszPat1/2 != pszPat. */
+
+            *ppLastDesc = stamR3LookupFindLastDescForRange(pFirst, pLast);
+            return stamR3LookupFindFirstDescForRange(pFirst, pLast);
+        }
+
+        PSTAMLOOKUP pChild = stamR3LookupFindChild(pRoot, pszPat, cch, NULL);
+        if (!pChild)
+            break;
+
+        /* Advance */
+        if (!pszEnd)
+            return *ppLastDesc = pChild->pDesc;
+        pszPat = pszEnd;
+        pRoot  = pChild;
+    }
+
+    /* No match. */
+    *ppLastDesc = NULL;
+    return NULL;
 }
 
 
@@ -2035,6 +2256,19 @@ static int stamR3EnumOne(PSTAMDESC pDesc, void *pvArg)
 
 
 /**
+ * Checks if the string contains a pattern expression or not.
+ *
+ * @returns true / false.
+ * @param   pszPat              The potential pattern.
+ */
+static bool stamR3IsPattern(const char *pszPat)
+{
+    return strchr(pszPat, '*') != NULL
+        || strchr(pszPat, '?') != NULL;
+}
+
+
+/**
  * Match a name against an array of patterns.
  *
  * @returns true if it matches, false if it doesn't match.
@@ -2132,9 +2366,10 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0,
                        int (*pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg)
 {
     int rc = VINF_SUCCESS;
+    PSTAMDESC pCur;
 
     /*
-     * All
+     * All.
      */
     if (!pszPat || !*pszPat || !strcmp(pszPat, "*"))
     {
@@ -2142,7 +2377,6 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0,
             stamR3Ring0StatsUpdateU(pUVM, "*");
 
         STAM_LOCK_RD(pUVM);
-        PSTAMDESC pCur;
         RTListForEach(&pUVM->stam.s.List, pCur, STAMDESC, ListEntry)
         {
             rc = pfnCallback(pCur, pvArg);
@@ -2161,10 +2395,38 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0,
             stamR3Ring0StatsUpdateU(pUVM, pszPat);
 
         STAM_LOCK_RD(pUVM);
-        /** @todo This needs to be optimized since the GUI is using this path for the VM info dialog.
-         * Note that it's doing exact matching. Organizing the samples in a tree would speed up thing
-         * no end (at least for debug and profile builds). */
-        PSTAMDESC pCur;
+#ifdef STAM_WITH_LOOKUP_TREE
+        if (!stamR3IsPattern(pszPat))
+        {
+            pCur = stamR3LookupFindDesc(pUVM->stam.s.pRoot, pszPat);
+            if (pCur)
+                rc = pfnCallback(pCur, pvArg);
+        }
+        else
+        {
+            PSTAMDESC pLast;
+            pCur = stamR3LookupFindPatternDescRange(pUVM->stam.s.pRoot, &pUVM->stam.s.List, pszPat, &pLast);
+            if (pCur)
+            {
+                for (;;)
+                {
+                    if (RTStrSimplePatternMatch(pszPat, pCur->pszName))
+                    {
+                        rc = pfnCallback(pCur, pvArg);
+                        if (rc)
+                            break;
+                    }
+                    if (pCur == pLast)
+                        break;
+                    pCur = RTListNodeGetNext(&pCur->ListEntry, STAMDESC, ListEntry);
+                }
+                Assert(pLast);
+            }
+            else
+                Assert(!pLast);
+
+        }
+#else
         RTListForEach(&pUVM->stam.s.List, pCur, STAMDESC, ListEntry)
         {
             if (RTStrSimplePatternMatch(pszPat, pCur->pszName))
@@ -2174,6 +2436,7 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0,
                     break;
             }
         }
+#endif
         STAM_UNLOCK_RD(pUVM);
     }
 
@@ -2199,7 +2462,6 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0,
 
         STAM_LOCK_RD(pUVM);
         unsigned iExpression = 0;
-        PSTAMDESC pCur;
         RTListForEach(&pUVM->stam.s.List, pCur, STAMDESC, ListEntry)
         {
             if (stamR3MultiMatch(papszExpressions, cExpressions, &iExpression, pCur->pszName))
