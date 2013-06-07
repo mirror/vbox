@@ -37,6 +37,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchShaderSource(GLuint shader, GLsize
     err = cr_server.head_spu->dispatch_table.GetError();
     CRASSERT(err == GL_NO_ERROR);
 #endif
+    CR_SERVER_DUMP_SHADER_SOURCE(shader);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchCompileShader(GLuint shader)

@@ -72,7 +72,7 @@ print """
 static void crRecDumpPrintVal(CR_DUMPER *pDumper, struct nv_struct *pDesc, float *pfData)
 {
     char aBuf[4096];
-    crDmpFormatArrayf(aBuf, sizeof (aBuf), pfData, pDesc->num_values);
+    crDmpFormatArray(aBuf, sizeof (aBuf), "%f", sizeof (float), pfData, pDesc->num_values);
     crDmpStrF(pDumper, "%s = %s;", pDesc->pszName, aBuf);
 }
 

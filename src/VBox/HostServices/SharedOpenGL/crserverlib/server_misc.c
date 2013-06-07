@@ -1397,10 +1397,11 @@ unsigned long g_CrDbgDumpDraw = CR_SERVER_DUMP_F_COMPILE_SHADER
         | CR_SERVER_DUMP_F_LINK_PROGRAM
         | CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE
         | CR_SERVER_DUMP_F_DRAW_PROGRAM_UNIFORMS_ENTER
-        | CR_SERVER_DUMP_F_DRAW_TEX_ENTER
+        | CR_SERVER_DUMP_F_DRAW_TEX_LEAVE
         | CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER
         | CR_SERVER_DUMP_F_DRAW_STATE_ENTER
         | CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER
+        | CR_SERVER_DUMP_F_DRAWEL
         ; //CR_SERVER_DUMP_F_DRAW_BUFF_ENTER | CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE;
 unsigned long g_CrDbgDumpDrawFramesSettings = CR_SERVER_DUMP_F_DRAW_BUFF_ENTER
         | CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE
@@ -1494,9 +1495,23 @@ void crServerDumpCurrentProgramUniforms()
 void crServerDumpState()
 {
     CRContext *ctx = crStateGetCurrent();
-    Assert(0);
     crRecDumpGlGetState(&cr_server.Recorder, ctx);
     crRecDumpGlEnableState(&cr_server.Recorder, ctx);
+}
+
+void crServerDumpDrawel(const char*pszFormat, ...)
+{
+    CRContext *ctx = crStateGetCurrent();
+    va_list pArgList;
+    va_start(pArgList, pszFormat);
+    crRecDumpVertAttrV(&cr_server.Recorder, ctx, pszFormat, pArgList);
+    va_end(pArgList);
+}
+
+void crServerDumpDrawelv(GLuint idx, const char*pszElFormat, uint32_t cbEl, const void *pvVal, uint32_t cVal)
+{
+    CRContext *ctx = crStateGetCurrent();
+    crRecDumpVertAttrv(&cr_server.Recorder, ctx, idx, pszElFormat, cbEl, pvVal, cVal);
 }
 
 void crServerDumpBuffer(int idx)
@@ -1555,62 +1570,8 @@ void crServerDumpTextures()
     crRecDumpTextures(&cr_server.Recorder, ctx, &BltCtx, &BltWin);
 }
 
-static uint32_t g_VDbgCDraws = 0;
-static uint32_t g_VDbgCFrames = 0;
-static uint32_t g_VDbgDoFrameDump = 0;
-static uint32_t g_VDbgInitFrameDump = 0;
-
-
 bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper)
 {
-    CRContext *ctx = crStateGetCurrent();
-    if (event & CR_SERVER_DUMP_F_DRAW_ALL)
-    {
-        if(!ctx->glsl.activeProgram || ctx->glsl.activeProgram->id != 21)
-            return false;
-
-        if (event & CR_SERVER_DUMP_F_DRAW_ENTER_ALL)
-        {
-            ++g_VDbgCDraws;
-//            crDmpStrF(cr_server.Recorder.pDumper, "DRAW(%d:%d)", g_VDbgCFrames, g_VDbgCDraws);
-        }
-
-        if (!g_VDbgDoFrameDump)
-            return false;
-
-#define CR_SERVER_DUMP_MARKER_ENTER_STR "VBox.Cr.DrawEnter"
-#define CR_SERVER_DUMP_MARKER_LEAVE_STR "VBox.Cr.DrawLeave"
-
-        if (0)//(g_VDbgCFrames == 53 && g_VDbgCDraws == 13)
-        {
-            if (event & CR_SERVER_DUMP_F_DRAW_ENTER_ALL)
-                cr_server.head_spu->dispatch_table.StringMarkerGREMEDY(sizeof (CR_SERVER_DUMP_MARKER_ENTER_STR), CR_SERVER_DUMP_MARKER_ENTER_STR);
-            else
-                cr_server.head_spu->dispatch_table.StringMarkerGREMEDY(sizeof (CR_SERVER_DUMP_MARKER_LEAVE_STR), CR_SERVER_DUMP_MARKER_LEAVE_STR);
-        }
-    }
-    else if (event & CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER)
-    {
-        bool fSkip = true;
-        ++g_VDbgCFrames;
-//        crDmpStrF(cr_server.Recorder.pDumper, "FRAME(%d)", g_VDbgCFrames);
-        g_VDbgCDraws = 0;
-        if (g_VDbgDoFrameDump)
-        {
-            g_VDbgDoFrameDump = 0;
-            fSkip = false;
-        }
-
-        if (g_VDbgInitFrameDump)
-        {
-            g_VDbgDoFrameDump = 1;
-            g_VDbgInitFrameDump = 0;
-        }
-
-        if (fSkip)
-            return false;
-    }
-
     return CR_SERVER_DUMP_DEFAULT_FILTER_OP(event);
 }
 
