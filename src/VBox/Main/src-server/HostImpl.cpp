@@ -209,8 +209,8 @@ struct Host::Data
 
     /** @}  */
 
-    /* 3D hardware acceleration supported? */
-    BOOL                    f3DAccelerationSupported;
+    /** 3D hardware acceleration supported? Tristate, -1 meaning not probed. */
+    int                     f3DAccelerationSupported;
 
     HostPowerService        *pHostPowerService;
 };
@@ -378,12 +378,12 @@ HRESULT Host::init(VirtualBox *aParent)
             m->fRecheckVTSupported = true; /* Try again later when the driver is loaded. */
     }
 
-    /* Test for 3D hardware acceleration support */
-    m->f3DAccelerationSupported = false;
-
 #ifdef VBOX_WITH_CROGL
-    m->f3DAccelerationSupported = VBoxOglIs3DAccelerationSupported();
-#endif /* VBOX_WITH_CROGL */
+    /* Test for 3D hardware acceleration support later when (if ever) need. */
+    m->f3DAccelerationSupported = -1;
+#else
+    m->f3DAccelerationSupported = false;
+#endif
 
 #if defined (RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
     /* Extract the list of configured host-only interfaces */
@@ -1144,17 +1144,33 @@ STDMETHODIMP Host::COMGETTER(Acceleration3DAvailable)(BOOL *aSupported)
 {
     CheckComArgOutPointerValid(aSupported);
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (m->f3DAccelerationSupported != -1)
+            *aSupported = m->f3DAccelerationSupported;
+        else
+        {
+            alock.release();
+#ifdef VBOX_WITH_CROGL
+            bool fSupported = VBoxOglIs3DAccelerationSupported();
+#else
+            bool fSupported = false; /* shoudn't get here, but just in case. */
+#endif
+            AutoWriteLock alock2(this COMMA_LOCKVAL_SRC_POS);
+            m->f3DAccelerationSupported = fSupported;
+            alock2.release();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aSupported = m->f3DAccelerationSupported;
+            *aSupported = fSupported;
+        }
+    }
 
 #ifdef DEBUG_misha
     AssertMsgFailed(("should not be here any more!\n"));
 #endif
 
-    return S_OK;
+    return hrc;
 }
 
 STDMETHODIMP Host::CreateHostOnlyNetworkInterface(IHostNetworkInterface **aHostNetworkInterface,
