@@ -28,9 +28,46 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+/** @name Segment attribute conversion between CPU and AMD-V VMCB format.
+ *
+ * The CPU format of the segment attribute is described in X86DESCATTRBITS
+ * which is 16-bits (i.e. includes 4 bits of the segment limit).
+ *
+ * The AMD-V VMCB format the segment attribute is compact 12-bits (strictly
+ * only the attribute bits and nothing else). Upper 4-bits are unused.
+ *
+ * @{ */
+#define HMSVM_CPU_2_VMCB_SEG_ATTR(a)       (a & 0xff) | ((a & 0xf000) >> 4)
+#define HMSVM_VMCB_2_CPU_SEG_ATTR(a)       (a & 0xff) | ((a & 0x0f00) << 4)
+/** @} */
+
+/** @name Macros for loading, storing segment registers to/from the VMCB.
+ *  @{ */
+#define HMSVM_LOAD_SEG_REG(REG, reg) \
+    do \
+    { \
+        Assert(pCtx->reg.fFlags & CPUMSELREG_FLAGS_VALID); \
+        Assert(pCtx->reg.ValidSel == pCtx->reg.Sel); \
+        pVmcb->guest.REG.u16Sel     = pCtx->reg.Sel; \
+        pVmcb->guest.REG.u32Limit   = pCtx->reg.u32Limit; \
+        pVmcb->guest.REG.u64Base    = pCtx->reg.u64Base; \
+        pVmcb->guest.REG.u16Attr    = HMSVM_CPU_2_VMCB_SEG_ATTR(pCtx->reg.Attr.u); \
+    } while (0)
+
+#define HMSVM_SAVE_SEG_REG(REG, reg) \
+    do \
+    { \
+        pCtx->reg.Sel       = pVmcb->guest.REG.u16Sel; \
+        pCtx->reg.ValidSel  = pVmcb->guest.REG.u16Sel; \
+        pCtx->reg.fFlags    = CPUMSELREG_FLAGS_VALID; \
+        pCtx->reg.u32Limit  = pVmcb->guest.REG.u32Limit; \
+        pCtx->reg.u64Base   = pVmcb->guest.REG.u64Base; \
+        pCtx->reg.Attr.u    = HMSVM_VMCB_2_CPU_SEG_ATTR(pVmcb->guest.REG.u16Attr); \
+    } while (0)
+/** @}  */
 
 /**
- * MSR-bitmap read permissions.
+ * MSRPM (MSR permission bitmap) read permissions (for guest RDMSR).
  */
 typedef enum SVMMSREXITREAD
 {
@@ -41,7 +78,7 @@ typedef enum SVMMSREXITREAD
 } VMXMSREXITREAD;
 
 /**
- * MSR-bitmap write permissions.
+ * MSRPM (MSR permission bitmap) write permissions (for guest WRMSR).
  */
 typedef enum SVMMSREXITWRITE
 {
@@ -55,7 +92,7 @@ typedef enum SVMMSREXITWRITE
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite);
+static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite);
 
 
 /*******************************************************************************
@@ -202,21 +239,22 @@ DECLINLINE(void) hmR0SvmFreeStructs(PVM pVM)
     for (uint32_t i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
+        AssertPtr(pVCpu);
 
         if (pVCpu->hm.s.svm.hMemObjVmcbHost != NIL_RTR0MEMOBJ)
         {
             RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjVmcbHost, false);
-            pVCpu->hm.s.svm.pvVmcbHost      = 0;
-            pVCpu->hm.s.svm.HCPhysVmcbHost  = 0;
-            pVCpu->hm.s.svm.hMemObjVmcbHost = NIL_RTR0MEMOBJ;
+            pVCpu->hm.s.svm.pvVmcbHost       = 0;
+            pVCpu->hm.s.svm.HCPhysVmcbHost   = 0;
+            pVCpu->hm.s.svm.hMemObjVmcbHost  = NIL_RTR0MEMOBJ;
         }
 
         if (pVCpu->hm.s.svm.hMemObjVmcb != NIL_RTR0MEMOBJ)
         {
             RTR0MemObjFree(pVCpu->hm.s.svm.hMemObjVmcb, false);
-            pVCpu->hm.s.svm.pvVmcb      = 0;
-            pVCpu->hm.s.svm.HCPhysVmcb  = 0;
-            pVCpu->hm.s.svm.hMemObjVmcb = NIL_RTR0MEMOBJ;
+            pVCpu->hm.s.svm.pvVmcb           = 0;
+            pVCpu->hm.s.svm.HCPhysVmcb       = 0;
+            pVCpu->hm.s.svm.hMemObjVmcb      = NIL_RTR0MEMOBJ;
         }
 
         if (pVCpu->hm.s.svm.hMemObjMsrBitmap != NIL_RTR0MEMOBJ)
@@ -240,7 +278,9 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
 {
     int rc = VERR_INTERNAL_ERROR_5;
 
-    /* Check for an AMD CPU erratum which requires us to flush the TLB before every world-switch. */
+    /*
+     * Check for an AMD CPU erratum which requires us to flush the TLB before every world-switch.
+     */
     uint32_t u32Family;
     uint32_t u32Model;
     uint32_t u32Stepping;
@@ -250,8 +290,10 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         pVM->hm.s.svm.fAlwaysFlushTLB = true;
     }
 
-    /* Initialize the memory objects up-front so we can cleanup on allocation failures properly. */
-    for (uint32_t i = 0; i < pVM->cCpus; i++)
+    /*
+     * Initialize the R0 memory objects up-front so we can properly cleanup on allocation failures.
+     */
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         pVCpu->hm.s.svm.hMemObjVmcbHost  = NIL_RTR0MEMOBJ;
@@ -259,10 +301,12 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         pVCpu->hm.s.svm.hMemObjMsrBitmap = NIL_RTR0MEMOBJ;
     }
 
-    /* Allocate a VMCB for each VCPU. */
-    for (uint32_t i = 0; i < pVM->cCpus; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        /* Allocate one page for the host context */
+        /*
+         * Allocate one page for the host-context VM control block (VMCB). This is used for additional host-state (such as
+         * FS, GS, Kernel GS Base, etc.) apart from the host-state save area specified in MSR_K8_VM_HSAVE_PA.
+         */
         rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjVmcbHost, 1 << PAGE_SHIFT, false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
@@ -272,24 +316,29 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         Assert(pVCpu->hm.s.svm.HCPhysVmcbHost < _4G);
         ASMMemZeroPage(pVCpu->hm.s.svm.pvVmcbHost);
 
-        /* Allocate one page for the VM control block (VMCB). */
+        /*
+         * Allocate one page for the guest-state VMCB.
+         */
         rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjVmcb, 1 << PAGE_SHIFT, false /* fExecutable */);
         if (RT_FAILURE(rc))
             goto failure_cleanup;
 
-        pVCpu->hm.s.svm.pvVmcb     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVmcb);
-        pVCpu->hm.s.svm.HCPhysVmcb = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVmcb, 0 /* iPage */);
+        pVCpu->hm.s.svm.pvVmcb          = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjVmcb);
+        pVCpu->hm.s.svm.HCPhysVmcb      = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjVmcb, 0 /* iPage */);
         Assert(pVCpu->hm.s.svm.HCPhysVmcb < _4G);
         ASMMemZeroPage(pVCpu->hm.s.svm.pvVmcb);
 
-        /* Allocate 8 KB for the MSR bitmap (doesn't seem to be a way to convince SVM not to use it) */
+        /*
+         * Allocate two pages (8 KB) for the MSR permission bitmap. There doesn't seem to be a way to convince
+         * SVM to not require one.
+         */
         rc = RTR0MemObjAllocCont(&pVCpu->hm.s.svm.hMemObjMsrBitmap, 2 << PAGE_SHIFT, false /* fExecutable */);
         if (RT_FAILURE(rc))
             failure_cleanup;
 
         pVCpu->hm.s.svm.pvMsrBitmap     = RTR0MemObjAddress(pVCpu->hm.s.svm.hMemObjMsrBitmap);
         pVCpu->hm.s.svm.HCPhysMsrBitmap = RTR0MemObjGetPagePhysAddr(pVCpu->hm.s.svm.hMemObjMsrBitmap, 0 /* iPage */);
-        /* Set all bits to intercept all MSR accesses. */
+        /* Set all bits to intercept all MSR accesses (changed later on). */
         ASMMemFill32(pVCpu->hm.s.svm.pvMsrBitmap, 2 << PAGE_SHIFT, 0xffffffff);
     }
 
@@ -315,6 +364,65 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
 
 
 /**
+ * Sets the permission bits for the specified MSR in the MSRPM.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   uMsr       The MSR.
+ * @param   fRead       Whether reading is allowed.
+ * @param   fWrite      Whether writing is allowed.
+ */
+static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite)
+{
+    unsigned ulBit;
+    uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
+
+    /*
+     * Layout:
+     * Byte offset       MSR range
+     * 0x000  - 0x7ff    0x00000000 - 0x00001fff
+     * 0x800  - 0xfff    0xc0000000 - 0xc0001fff
+     * 0x1000 - 0x17ff   0xc0010000 - 0xc0011fff
+     * 0x1800 - 0x1fff           Reserved
+     */
+    if (uMsr <= 0x00001FFF)
+    {
+        /* Pentium-compatible MSRs */
+        ulBit    = uMsr * 2;
+    }
+    else if (   uMsr >= 0xC0000000
+             && uMsr <= 0xC0001FFF)
+    {
+        /* AMD Sixth Generation x86 Processor MSRs and SYSCALL */
+        ulBit = (uMsr - 0xC0000000) * 2;
+        pbMsrBitmap += 0x800;
+    }
+    else if (   uMsr >= 0xC0010000
+             && uMsr <= 0xC0011FFF)
+    {
+        /* AMD Seventh and Eighth Generation Processor MSRs */
+        ulBit = (uMsr - 0xC0001000) * 2;
+        pbMsrBitmap += 0x1000;
+    }
+    else
+    {
+        AssertFailed();
+        return;
+    }
+
+    Assert(ulBit < 0x3fff /* 16 * 1024 - 1 */);
+    if (enmRead == SVMMSREXIT_INTERCEPT_READ)
+        ASMBitSet(pbMsrBitmap, ulBit);
+    else
+        ASMBitClear(pbMsrBitmap, ulBit);
+
+    if (enmWrite == SVMMSREXIT_INTERCEPT_WRITE)
+        ASMBitSet(pbMsrBitmap, ulBit + 1);
+    else
+        ASMBitClear(pbMsrBitmap, ulBit + 1);
+}
+
+
+/**
  * Sets up AMD-V for the specified VM.
  * This function is only called once per-VM during initalization.
  *
@@ -331,7 +439,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU   pVCpu = &pVM->aCpus[i];
-        PSVMVMCB pVmcb = (PSVMVMCB)pVM->aCpus[i].hm.s.svm.pvVmcb;
+        PSVMVMCB pVmcb = (PSVMVMCB)pVM->aCpus[i].hm.s.svm.pvVmcbGuest;
 
         AssertMsgReturn(pVmcb, ("Invalid pVmcb\n"), VERR_SVM_INVALID_PVMCB);
 
@@ -431,78 +539,19 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
          * The following MSRs are saved/restored automatically during the world-switch.
          * Don't intercept guest read/write accesses to these MSRs.
          */
-        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_CSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMSRPermission(pVCpu, MSR_K6_STAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_SF_MASK, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_FS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMSRPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMSRPermission(pVCpu, MSR_IA32_SYSENTER_CS, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMSRPermission(pVCpu, MSR_IA32_SYSENTER_ESP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMSRPermission(pVCpu, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_CSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K6_STAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_SF_MASK, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_FS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_CS, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_ESP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
     }
 
     return rc;
-}
-
-
-/**
- * Sets the permission bits for the specified MSR.
- *
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   uMsr       The MSR.
- * @param   fRead       Whether reading is allowed.
- * @param   fWrite      Whether writing is allowed.
- */
-static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, uint32_t uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite)
-{
-    unsigned ulBit;
-    uint8_t *pbMsrBitmap = (uint8_t *)pVCpu->hm.s.svm.pvMsrBitmap;
-
-    /*
-     * Layout:
-     * Byte offset       MSR range
-     * 0x000  - 0x7ff    0x00000000 - 0x00001fff
-     * 0x800  - 0xfff    0xc0000000 - 0xc0001fff
-     * 0x1000 - 0x17ff   0xc0010000 - 0xc0011fff
-     * 0x1800 - 0x1fff           Reserved
-     */
-    if (uMsr <= 0x00001FFF)
-    {
-        /* Pentium-compatible MSRs */
-        ulBit    = uMsr * 2;
-    }
-    else if (   uMsr >= 0xC0000000
-             && uMsr <= 0xC0001FFF)
-    {
-        /* AMD Sixth Generation x86 Processor MSRs and SYSCALL */
-        ulBit = (uMsr - 0xC0000000) * 2;
-        pbMsrBitmap += 0x800;
-    }
-    else if (   uMsr >= 0xC0010000
-             && uMsr <= 0xC0011FFF)
-    {
-        /* AMD Seventh and Eighth Generation Processor MSRs */
-        ulBit = (uMsr - 0xC0001000) * 2;
-        pbMsrBitmap += 0x1000;
-    }
-    else
-    {
-        AssertFailed();
-        return;
-    }
-
-    Assert(ulBit < 0x3fff /* 16 * 1024 - 1 */);
-    if (enmRead == SVMMSREXIT_INTERCEPT_READ)
-        ASMBitSet(pbMsrBitmap, ulBit);
-    else
-        ASMBitClear(pbMsrBitmap, ulBit);
-
-    if (enmWrite == SVMMSREXIT_INTERCEPT_WRITE)
-        ASMBitSet(pbMsrBitmap, ulBit + 1);
-    else
-        ASMBitClear(pbMsrBitmap, ulBit + 1);
 }
 
 
@@ -515,7 +564,7 @@ static void hmR0SvmSetMSRPermission(PVMCPU pVCpu, uint32_t uMsr, SVMMSREXITREAD 
 static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
 {
     PVM pVM              = pVCpu->CTX_SUFF(pVM);
-    PSVMVMCB pVmcb       = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PSVMVMCB pVmcb       = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcbGuest;
     PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
 
     /*
@@ -646,7 +695,13 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
 }
 
 
-
+/** @name 64-bit guest on 32-bit host OS helper functions.
+ *
+ * The host CPU is still 64-bit capable but the host OS is running in 32-bit
+ * mode (code segment, paging). These wrappers/helpers perform the necessary
+ * bits for the 32->64 switcher.
+ *
+ * @{ */
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 /**
  * Prepares for and executes VMRUN (64-bit guests on a 32-bit host).
@@ -711,4 +766,108 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 }
 
 #endif /* HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) */
+/** @} */
+
+
+/**
+ * Saves the host state.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
+{
+    NOREF(pVM);
+    NOREF(pVCpu);
+    /* Nothing to do here. AMD-V does this for us automatically during the world-switch. */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Loads the guest segment registers into the VMCB.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ */
+static int hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    /* Guest Segment registers: CS, SS, DS, ES, FS, GS. */
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_SEGMENT_REGS)
+    {
+        HMSVM_LOAD_SEG_REG(CS, cs);
+        HMSVM_LOAD_SEG_REG(SS, cs);
+        HMSVM_LOAD_SEG_REG(DS, cs);
+        HMSVM_LOAD_SEG_REG(ES, cs);
+        HMSVM_LOAD_SEG_REG(FS, cs);
+        HMSVM_LOAD_SEG_REG(GS, cs);
+
+        pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_SEGMENT_REGS;
+    }
+
+    /* Guest TR. */
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_TR)
+    {
+        HMSVM_LOAD_SEG_REG(TR, tr);
+        pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_TR;
+    }
+
+    /* Guest LDTR. */
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_LDTR)
+    {
+        HMSVM_LOAD_SEG_REG(LDTR, ldtr);
+        pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_LDTR;
+    }
+
+    /* Guest GDTR. */
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_GDTR)
+    {
+        pVmcb->guest.GDTR.u32Limit = pCtx->gdtr.cbGdt;
+        pVmcb->guest.GDTR.u64Base  = pCtx->gdtr.pGdt;
+        pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_GDTR;
+    }
+
+    /* Guest IDTR. */
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_IDTR)
+    {
+        pVmcb->guest.IDTR.u32Limit = pCtx->idtr.cbIdt;
+        pVmcb->guest.IDTR.u64Base  = pCtx->idtr.pIdt;
+        pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_IDTR;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Loads the guest state.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ */
+VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    AssertPtr(pVM);
+    AssertPtr(pVCpu);
+    AssertPtr(pMixedCtx);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    AssertMsgReturn(pVmcb, ("Invalid pVmcb\n"), VERR_SVM_INVALID_PVMCB);
+
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestState, x);
+
+    int rc = hmR0SvmLoadGuestSegmentRegs(pVCpu, pCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestSegmentRegs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+
+    rc
+    /* -XXX- todo */
+
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
+
+}
 
