@@ -4292,6 +4292,8 @@ void VBoxGlobal::prepare()
             mRecompileUser = true;
         else if (!::strcmp(arg, "--recompile-all"))
             mDisablePatm = mDisableCsam = mRecompileSupervisor = mRecompileUser = true;
+        else if (!::strcmp(arg, "--execute-all-in-iem"))
+            mDisablePatm = mDisableCsam = mExecuteAllInIem = true;
         else if (!::strcmp(arg, "--warp-pct"))
         {
             if (++i < argc)

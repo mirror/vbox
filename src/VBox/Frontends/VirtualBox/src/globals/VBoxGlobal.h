@@ -126,6 +126,7 @@ public:
     bool isCsamDisabled() const { return mDisableCsam; }
     bool isSupervisorCodeExecedRecompiled() const { return mRecompileSupervisor; }
     bool isUserCodeExecedRecompiled()       const { return mRecompileUser; }
+    bool areWeToExecuteAllInIem()           const { return mExecuteAllInIem; }
     bool isDefaultWarpPct() const { return mWarpPct == 100; }
     uint32_t getWarpPct()       const { return mWarpPct; }
 
@@ -482,6 +483,8 @@ private:
     bool mRecompileSupervisor;
     /** The --recompile-user option. */
     bool mRecompileUser;
+    /** The --execute-all-in-iem option. */
+    bool mExecuteAllInIem;
     /** The --warp-factor option value. */
     uint32_t mWarpPct;
 
