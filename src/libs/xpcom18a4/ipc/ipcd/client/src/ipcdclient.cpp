@@ -1309,6 +1309,7 @@ PlaceOnPendingQ(const nsID &target, ipcTargetData *td, ipcMessage *msg)
   td->pendingQ.Append(msg);
 
 #ifdef IPC_LOGGING
+  if (IPC_LOG_ENABLED())
   {
     char *targetStr = target.ToString();
     LOG(("placed message on pending queue for target %s and notifying all...\n", targetStr));
