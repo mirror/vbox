@@ -199,7 +199,7 @@ int Guest::staticEnumStatsCallback(const char *pszName, STAMTYPE enmType, void *
                                           STAMVISIBILITY enmVisiblity, const char *pszDesc, void *pvUser)
 {
     PSTAMCOUNTER pCnt = (PSTAMCOUNTER)pvSample;
-    char *pszEnd = strrchr((char*)pszName, '/');
+    const char *pszEnd = strrchr(pszName, '/');
     if (pszEnd)
     {
         bool    fRx;
@@ -297,6 +297,7 @@ void Guest::updateStats(uint64_t iTick)
         uint64_t uRxPrev = mNetStatRx;
         uint64_t uTxPrev = mNetStatTx;
         mNetStatRx = mNetStatTx = 0;
+        /** @todo This can be really expensive as well as horribly wrong! */
         rc = STAMR3Enum(ptrVM.rawUVM(), "*/ReceiveBytes|*/TransmitBytes", staticEnumStatsCallback, this);
         AssertRC(rc);
 
