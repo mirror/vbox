@@ -837,11 +837,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 Log(("Forcing X86_CR0_NE!!!\n"));
 
                 /* Also catch floating point exceptions as we need to report them to the guest in a different way. */
-                if (!pVCpu->hm.s.fFPUOldStyleOverride)
-                {
-                    pVmcb->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_MF);
-                    pVCpu->hm.s.fFPUOldStyleOverride = true;
-                }
+                pVmcb->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_MF);
             }
             val |= X86_CR0_NE;  /* always turn on the native mechanism to report FPU errors (old style uses interrupts) */
         }
