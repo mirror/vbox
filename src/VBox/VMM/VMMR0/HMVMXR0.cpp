@@ -70,7 +70,7 @@ extern "C" uint32_t g_fVMXIs64bitHost;
 #define HMVMX_FLUSH_TAGGED_TLB_NONE              3
 
 /** @name Updated-guest-state flags.
- * @{  */
+ * @{ */
 #define HMVMX_UPDATED_GUEST_RIP                   RT_BIT(0)
 #define HMVMX_UPDATED_GUEST_RSP                   RT_BIT(1)
 #define HMVMX_UPDATED_GUEST_RFLAGS                RT_BIT(2)
@@ -959,7 +959,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
     else
     {
         /** @todo This is still not perfect. If on host resume (pVM is NULL or a VM
-         *        without NestedPaging triggered this function) we still have the risk
+         *        without Nested Paging triggered this function) we still have the risk
          *        of potentially running with stale TLB-entries from other hypervisors
          *        when later we use a VM with NestedPaging. To fix this properly we will
          *        have to pass '&g_HvmR0' (see HMR0.cpp) to this function and read
