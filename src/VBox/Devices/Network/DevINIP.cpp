@@ -55,6 +55,9 @@ RT_C_DECLS_END
 
 #include "VBoxDD.h"
 
+#ifdef VBOX_WITH_NEW_LWIP
+# include "VBoxLwipCore.h"
+#endif
 
 /*******************************************************************************
 *   Macros and Defines                                                         *
@@ -141,14 +144,17 @@ static const PFNRT g_pDevINILinkHack[] =
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+#ifndef VBOX_WITH_NEW_LWIP
 static DECLCALLBACK(void) devINIPARPTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer);
 static DECLCALLBACK(void) devINIPTCPFastTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer);
 static DECLCALLBACK(void) devINIPTCPSlowTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer);
+#endif
 static DECLCALLBACK(err_t) devINIPOutput(struct netif *netif, struct pbuf *p, struct ip_addr *ipaddr);
 static DECLCALLBACK(err_t) devINIPOutputRaw(struct netif *netif, struct pbuf *p);
 static DECLCALLBACK(err_t) devINIPInterface(struct netif *netif);
 
 
+#ifndef VBOX_WITH_NEW_LWIP
 /**
  * ARP cache timeout handling for lwIP.
  *
@@ -193,6 +199,7 @@ static DECLCALLBACK(void) devINIPTCPSlowTimer(PPDMDEVINS pDevIns, PTMTIMER pTime
     TMTimerSetMillies(pThis->TCPSlowTimer, TCP_SLOW_INTERVAL);
     LogFlow(("%s: return\n", __FUNCTION__));
 }
+#endif /* VBOX_WITH_NEW_LWIP */
 
 /**
  * Output a TCP/IP packet on the interface. Uses the generic lwIP ARP
@@ -313,18 +320,21 @@ static DECLCALLBACK(err_t) devINIPInterface(struct netif *netif)
     netif_create_ip6_linklocal_address(netif, 0);
     netif_ip6_addr_set_state(netif, 0, IP6_ADDR_VALID);
     netif->output_ip6 = ethip6_output;
-#if LWIP_IPV6_AUTOCONFIG
+# if LWIP_IPV6_AUTOCONFIG
     netif->ip6_autoconfig_enabled=1;
-#endif
+# endif
     LogFunc(("netif: ipv6:%RTnaipv6\n", &netif->ip6_addr[0].addr[0]));
     netif->output = lwip_etharp_output;
-#else
-    netif->output = devINIPOutput;
-#endif
-    netif->linkoutput = devINIPOutputRaw;
 
     lwip_etharp_init();
+#else
+    netif->output = devINIPOutput;
+    
+    lwip_etharp_init();
     TMTimerSetMillies(g_pDevINIPData->ARPTimer, ARP_TMR_INTERVAL);
+ #endif
+    netif->linkoutput = devINIPOutputRaw;
+
     LogFlow(("%s: success\n", __FUNCTION__));
     return ERR_OK;
 }
@@ -465,7 +475,7 @@ static DECLCALLBACK(void) devINIPNetworkDown_XmitPending(PPDMINETWORKDOWN pInter
     NOREF(pInterface);
 }
 
-
+#ifndef VBOX_WITH_NEW_LWIP
 /**
  * Signals the end of lwIP TCPIP initialization.
  *
@@ -474,12 +484,10 @@ static DECLCALLBACK(void) devINIPNetworkDown_XmitPending(PPDMINETWORKDOWN pInter
 static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
 {
     sys_sem_t *sem = (sys_sem_t *)arg;
-#ifndef VBOX_WITH_NEW_LWIP
+
     lwip_sys_sem_signal(*sem);
-#else
-    lwip_sys_sem_signal(sem);
-#endif
 }
+#endif
 
 
 /**
@@ -725,11 +733,12 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Initialize lwIP.
      */
+#ifndef VBOX_WITH_NEW_LWIP
     lwip_stats_init();
     lwip_sys_init();
-#if MEM_LIBC_MALLOC == 0
+# if MEM_LIBC_MALLOC == 0
     lwip_mem_init();
-#endif
+# endif
     lwip_memp_init();
     lwip_pbuf_init();
     lwip_netif_init();
@@ -744,20 +753,14 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 TMTIMER_FLAGS_NO_CRIT_SECT, "lwIP slow TCP", &pThis->TCPSlowTimer);
     AssertRCReturn(rc, rc);
     TMTimerSetMillies(pThis->TCPFastTimer, TCP_SLOW_INTERVAL);
-#ifndef VBOX_WITH_NEW_LWIP
+
     pThis->LWIPTcpInitSem = lwip_sys_sem_new(0);
     {
         lwip_tcpip_init(devINIPTcpipInitDone, &pThis->LWIPTcpInitSem);
         lwip_sys_sem_wait(pThis->LWIPTcpInitSem);
     }
-#else
-    errRc = lwip_sys_sem_new(&pThis->LWIPTcpInitSem, 0);
-    /* VERR_INTERNAL_ERROR perhaps should be replaced with right error code */
-    AssertReturn(errRc == ERR_OK, VERR_INTERNAL_ERROR);
-    {
-        lwip_tcpip_init(devINIPTcpipInitDone, &pThis->LWIPTcpInitSem);
-        lwip_sys_sem_wait(&pThis->LWIPTcpInitSem, 0);
-    }
+#else /* VBOX_WITH_NEW_LWIP */
+    vboxLwipCoreInitialize();
 #endif
 
     /*

@@ -74,8 +74,7 @@ VBoxNetLwipNAT_INCS += ../../Devices/Network \
 VBoxNetLwipNAT_DEFS += ${LWIP_DEFS} 
 VBoxNetLwipNAT_SOURCES += VBoxNetLwipNAT.cpp	\
 	../NetLib/VBoxNetBaseService.cpp \
-	../NetLib/VBoxNetPortForwardString.cpp \
-	../../Devices/Network/VBoxLwipCore.cpp
+	../NetLib/VBoxNetPortForwardString.cpp
 VBoxNetLwipNAT_LIBS = \
 	$(LIB_RUNTIME)
 VBoxNetLwipNAT_LDFLAGS.win = /SUBSYSTEM:windows
