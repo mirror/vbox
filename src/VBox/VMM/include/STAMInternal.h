@@ -104,6 +104,8 @@ typedef struct STAMUSERPERVM
 {
     /** Pointer to the first sample. */
     R3PTRTYPE(PSTAMDESC)    pHead;
+    /** Lookup hint (pPrev value). */
+    R3PTRTYPE(PSTAMDESC)    pHint;
     /** RW Lock for the list. */
 #ifndef USE_PDMCRITSECTRW
     RTSEMRW                 RWSem;
