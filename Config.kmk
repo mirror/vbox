@@ -767,9 +767,6 @@ endif
 # archive. When building .deb/.rpms, don't strip the symbols as they are required for
 # the debug packages containing symbols for gdb located in /usr/lib/debug.
 VBOX_DO_STRIP := $(if $(filter release profile,$(KBUILD_TYPE)),1,)
-# Strip R0/GC modules (current requirement for our loader)
-# TODO: This shouldn't be a requirement any longer. FIXME XXX
-VBOX_DO_STRIP_MODULES = 1
 
 
 #
@@ -2867,10 +2864,9 @@ ifdef VBOX_WITH_RAW_MODE
   ifeq ($(KBUILD_TARGET),solaris)
    TEMPLATE_VBoxRc_LDFLAGS           = -r
   else
-   TEMPLATE_VBoxRc_LDFLAGS           = -nostdlib -Bsymbolic
-   # "temporarily", must fix the loader.
-   TEMPLATE_VBoxRc_LDFLAGS          += $(if $(VBOX_DO_STRIP_MODULES),-S,)
-   TEMPLATE_VBoxRc_LDFLAGS.release   = $(if $(VBOX_DO_STRIP_MODULES),-S,)
+   TEMPLATE_VBoxRc_LDFLAGS           = -nostdlib -Bsymbolic -g
+   ## @todo WTF doesn't the globals work? Debug info is supposed to be split everywhere. GRR
+   TEMPLATE_VBoxRc_LD_DEBUG          = split
   endif
   ifn1of ($(KBUILD_TARGET), solaris freebsd)
    TEMPLATE_VBoxRc_LIBS               = \
@@ -3004,10 +3000,9 @@ ifeq ($(KBUILD_TARGET),solaris)
   TEMPLATE_VBoxR0_CXXFLAGS.amd64 += -Wa,-xmodel=kernel
  endif
 else
- TEMPLATE_VBoxR0_LDFLAGS            = -nostdlib -Bsymbolic
- # temporarily, must fix the loader.
- TEMPLATE_VBoxR0_LDFLAGS           += $(if $(VBOX_DO_STRIP_MODULES),-S,)
- TEMPLATE_VBoxR0_LDFLAGS.release    = $(if $(VBOX_DO_STRIP_MODULES),-S,)
+ TEMPLATE_VBoxR0_LDFLAGS            = -nostdlib -Bsymbolic -g
+ ## @todo WTF doesn't the globals work? Debug info is supposed to be split everywhere. GRR
+ TEMPLATE_VBoxR0_LD_DEBUG           = split
 endif
 ifn1of ($(KBUILD_TARGET),solaris freebsd)
  TEMPLATE_VBoxR0_LIBS               = \
