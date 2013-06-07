@@ -48,10 +48,10 @@
 #include "plstr.h"
 
 #ifdef VBOX
-#if defined(__OS2__) && defined(PAGE_SIZE)
-#undef PAGE_SIZE
-#endif
-#include <iprt/initterm.h> // for RTR3InitDll
+# if defined(__OS2__) && defined(PAGE_SIZE)
+#  undef PAGE_SIZE
+# endif
+# include <iprt/initterm.h> // for RTR3InitDll
 #else // !VBOX
 PRBool ipcLogEnabled = PR_FALSE;
 #endif // !VBOX
