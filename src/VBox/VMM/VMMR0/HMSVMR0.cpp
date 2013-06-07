@@ -791,6 +791,8 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @remarks No-long-jump zone!!!
  */
 static int hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -842,12 +844,76 @@ static int hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
+ * Loads the guest MSRs into the VMCB.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    /* Guest Sysenter MSRs. */
+    pVmcb->guest.u64SysEnterCS  = pCtx->SysEnter.cs;
+    pVmcb->guest.u64SysEnterEIP = pCtx->SysEnter.eip;
+    pVmcb->guest.u64SysEnterESP = pCtx->SysEnter.esp;
+
+    /* Guest EFER MSR. */
+    /* AMD-V requires guest EFER.SVME to be set. Weird.
+       See AMD spec. 15.5.1 "Basic Operation" | "Canonicalization and Consistency Checks". */
+    pVmcb->guest.u64EFER = pCtx->msrEFER | MSR_K6_EFER_SVME;
+
+    /* If the guest isn't in 64-bit mode, clear MSR_K6_LME bit from guest EFER otherwise AMD-V expects amd64 shadow paging. */
+    if (!CPUMIsGuestInLongModeEx(pCtx))
+        pVmcb->guest.u64EFER &= ~MSR_K6_EFER_LME;
+}
+
+
+/**
+ * Sets up the appropriate function to run guest code.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
+ *                      out-of-sync. Make sure to update the required fields
+ *                      before using them.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static int hmR0SvmSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    if (CPUMIsGuestInLongModeEx(pCtx))
+    {
+#ifndef VBOX_ENABLE_64_BITS_GUESTS
+        return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+#endif
+        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);    /* Guaranteed by hmR3InitFinalizeR0(). */
+#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+        /* 32-bit host. We need to switch to 64-bit before running the 64-bit guest. */
+        pVCpu->hm.s.svm.pfnVMRun = SVMR0VMSwitcherRun64;
+#else
+        /* 64-bit host or hybrid host. */
+        pVCpu->hm.s.svm.pfnVMRun = SVMR0VMRun64;
+#endif
+    }
+    else
+    {
+        /* Guest is not in long mode, use the 32-bit handler. */
+        pVCpu->hm.s.svm.pfnVMRun = SVMR0VMRun;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Loads the guest state.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @remarks No-long-jump zone!!!
  */
 VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -861,11 +927,32 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestState, x);
 
-    int rc = hmR0SvmLoadGuestSegmentRegs(pVCpu, pCtx);
+    int rc = hmR0SvmLoadGuestControlRegs(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestControlRegs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+
+    rc = hmR0SvmLoadGuestSegmentRegs(pVCpu, pCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestSegmentRegs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-    rc
-    /* -XXX- todo */
+    hmR0SvmLoadGuestMsrs(pVCpu, pCtx);
+
+    /* Guest RIP, RSP, RFLAGS, CPL. */
+    pVmcb->guest.u64RIP    = pCtx->rip;
+    pVmcb->guest.u64RSP    = pCtx->rsp;
+    pVmcb->guest.u64RFlags = pCtx->eflags.u32;
+    pVmcb->guest.u8CPL     = pCtx->ss.Attr.n.u2Dpl;
+
+    /* Guest RAX (VMRUN uses RAX as an implicit parameter). */
+    pVmcb->guest.u64RAX    = pCtx->rax;
+
+    rc = hmR0SvmSetupVMRunHandler(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0SvmSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+
+
+    /* Clear any unused and reserved bits. */
+    pVCpu->hm.s.fContextUseFlags &= ~(  HM_CHANGED_GUEST_SYSENTER_CS_MSR
+                                      | HM_CHANGED_GUEST_SYSENTER_EIP_MSR
+                                      | HM_CHANGED_GUEST_SYSENTER_ESP_MSR);
+
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
 
