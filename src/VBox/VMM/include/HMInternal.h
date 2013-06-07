@@ -551,8 +551,6 @@ typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
  */
 typedef struct HMCPU
 {
-    /** Old style FPU reporting trap mask override performed (optimization) */
-    bool                        fFPUOldStyleOverride;
     /** Set if we don't have to flush the TLB on VM entry. */
     bool                        fResumeVM;
     /** Set if we need to flush the TLB during the world switch. */
@@ -561,7 +559,7 @@ typedef struct HMCPU
     bool                        fActive;
     /** Set when the TLB has been checked until we return from the world switch. */
     volatile bool               fCheckedTLBFlush;
-    uint8_t                     u8Alignment[3];
+    uint8_t                     u8Alignment[4];
 
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;

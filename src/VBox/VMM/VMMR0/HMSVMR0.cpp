@@ -775,6 +775,8 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
+ *
+ * @remarks No-long-jump zone!!!
  */
 VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 {
@@ -785,6 +787,177 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 }
 
 
+DECLINLINE(void) hmR0VmxSvmAddXcptIntercept(uint32_t u32Xcpt)
+{
+    if (!(pVmcb->ctrl.u32InterceptException & u32Xcpt)
+    {
+        pVmcb->ctrl.u32InterceptException |= u32Xcpt;
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_INTERCEPT_VECTORS;
+    }
+}
+
+DECLINLINE(void) hmR0VmxSvmRemoveXcptIntercept(uint32_t u32Xcpt)
+{
+    if (pVmcb->ctrl.u32InterceptException & u32Xcpt)
+    {
+        pVmcb->ctrl.u32InterceptException &= ~u32Xcpt;
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_INTERCEPT_VECTORS;
+    }
+}
+
+
+/**
+ * Loads the guest control registers (CR0, CR2, CR3, CR4) into the VMCB.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer the guest-CPU context.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    /*
+     * Guest CR0.
+     */
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR0)
+    {
+        uint64_t u64GuestCR0 = pCtx->cr0;
+
+        /* Always enable caching. */
+        u64GuestCR0 &= ~(X86_CR0_CD | X86_CR0_NW);
+
+        /*
+         * With Nested Paging, the guest is allowed to run with paging disabled; guest-physical to host-physical translations
+         * will remain active through the Nested CR3. AMD supports paged real-mode, See AMD spec. 15.19 "Paged Real Mode".
+         */
+        if (!pVM->hm.s.fNestedPaging)
+        {
+            u64GuestCR0 |= X86_CR0_PG;  /* When Nested Paging is not available use shadow page tables. */
+            u64GuestCR0 |= X86_CR0_WP;  /* Guest CPL 0 writes to its read-only pages should cause a #PF VM-exit. */
+        }
+
+        /*
+         * Guest FPU bits.
+         */
+        bool fInterceptNM = false;
+        bool fInterceptMF = false;
+        u64GuestCR0 |= X86_CR0_NE;         /* Use internal x87 FPU exceptions handling rather than external interrupts. */
+        if (CPUMIsGuestFPUStateActive(pVCpu))
+        {
+            /* Catch floating point exceptions if we need to report them to the guest in a different way. */
+            if (!(u64GuestCR0 & X86_CR0_NE))
+            {
+                Log4(("hmR0SvmLoadGuestControlRegs: Intercepting Guest CR0.MP Old-style FPU handling!!!\n"));
+                pVmcb->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_MF);
+                fInterceptMF = true;
+            }
+        }
+        else
+        {
+            fInterceptNM = true;           /* Guest FPU inactive, VM-exit on #NM for lazy FPU loading. */
+            u32GuestCR0 |=  X86_CR0_TS     /* Guest can task switch quickly and do lazy FPU syncing. */
+                          | X86_CR0_MP;    /* FWAIT/WAIT should not ignore CR0.TS and should generate #NM. */
+        }
+
+        /*
+         * Update the exception intercept bitmap.
+         */
+        if (fInterceptNM)
+            hmR0VmxSvmAddXcptIntercept(RT_BIT(X86_XCPT_NM));
+        else
+            hmR0VmxSvmRemoveXcptIntercept(RT_BIT(X86_XCPT_NM));
+
+        if (fInterceptMF)
+            hmR0VmxSvmAddXcptIntercept(RT_BIT(X86_XCPT_MF));
+        else
+            hmR0VmxSvmRemoveXcptIntercept(RT_BIT(X86_XCPT_MF));
+
+        pVmcb->guest.u64CR0 = u64GuestCR0;
+        pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR0;
+    }
+
+    /*
+     * Guest CR2.
+     */
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR2)
+    {
+        pVmcb->guest.u64CR2 = pCtx->cr2;
+        pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR2;
+    }
+
+    /*
+     * Guest CR3.
+     */
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR3)
+    {
+        if (pVM->hm.s.fNestedPaging)
+        {
+            PGMMODE enmShwPagingMode;
+#if HC_ARCH_BITS == 32
+            if (CPUMIsGuestInLongModeEx(pCtx))
+                enmShwPagingMode = PGMMODE_AMD64_NX;
+            else
+#endif
+                enmShwPagingMode = PGMGetHostMode(pVM);
+
+            pVmcb->ctrl.u64NestedPagingCR3  = PGMGetNestedCR3(pVCpu, enmShwPagingMode);
+            Assert(pVmcb->ctrl.u64NestedPagingCR3);
+            pVmcb->guest.u64CR3 = pCtx->cr3;
+        }
+        else
+            pVmcb->guest.u64CR3 = PGMGetHyperCR3(pVCpu);
+
+        pVCpu->hm.s.fContextUseFlags &= HM_CHANGED_GUEST_CR3;
+    }
+
+    /*
+     * Guest CR4.
+     */
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR4)
+    {
+        uint64_t u64GuestCR4 = pCtx->cr4;
+        if (!pVM->hm.s.fNestedPaging)
+        {
+            switch (pVCpu->hm.s.enmShadowMode)
+            {
+                case PGMMODE_REAL:
+                case PGMMODE_PROTECTED:     /* Protected mode, no paging. */
+                    AssertFailed();
+                    return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+
+                case PGMMODE_32_BIT:        /* 32-bit paging. */
+                    u64GuestCR4 &= ~X86_CR4_PAE;
+                    break;
+
+                case PGMMODE_PAE:           /* PAE paging. */
+                case PGMMODE_PAE_NX:        /* PAE paging with NX enabled. */
+                    /** Must use PAE paging as we could use physical memory > 4 GB */
+                    u64GuestCR4 |= X86_CR4_PAE;
+                    break;
+
+                case PGMMODE_AMD64:         /* 64-bit AMD paging (long mode). */
+                case PGMMODE_AMD64_NX:      /* 64-bit AMD paging (long mode) with NX enabled. */
+#ifdef VBOX_ENABLE_64_BITS_GUESTS
+                    break;
+#else
+                    AssertFailed();
+                    return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+#endif
+
+                default:                    /* shut up gcc */
+                    AssertFailed();
+                    return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+            }
+        }
+
+        pVmcb->guest.u64CR4 = u64GuestCR4;
+        pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR4;
+    }
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Loads the guest segment registers into the VMCB.
  *
@@ -794,7 +967,7 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
+static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /* Guest Segment registers: CS, SS, DS, ES, FS, GS. */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_SEGMENT_REGS)
@@ -838,8 +1011,6 @@ static int hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         pVmcb->guest.IDTR.u64Base  = pCtx->idtr.pIdt;
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_IDTR;
     }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -863,9 +1034,25 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pCtx)
        See AMD spec. 15.5.1 "Basic Operation" | "Canonicalization and Consistency Checks". */
     pVmcb->guest.u64EFER = pCtx->msrEFER | MSR_K6_EFER_SVME;
 
-    /* If the guest isn't in 64-bit mode, clear MSR_K6_LME bit from guest EFER otherwise AMD-V expects amd64 shadow paging. */
-    if (!CPUMIsGuestInLongModeEx(pCtx))
+    /* 64-bit MSRs. */
+    if (CPUMIsGuestInLongModeEx(pCtx))
+    {
+        pVmcb->guest.FS.u64Base      = pCtx->fs.u64Base;
+        pVmcb->guest.GS.u64Base      = pCtx->gs.u64Base;
+    }
+    else
+    {
+        /* If the guest isn't in 64-bit mode, clear MSR_K6_LME bit from guest EFER otherwise AMD-V expects amd64 shadow paging. */
         pVmcb->guest.u64EFER &= ~MSR_K6_EFER_LME;
+    }
+
+    /** @todo The following are used in 64-bit only (SYSCALL/SYSRET) but they might
+     *        be writable in 32-bit mode. Clarify with AMD spec. */
+    pVmcb->guest.u64STAR         = pCtx->msrSTAR;
+    pVmcb->guest.u64LSTAR        = pCtx->msrLSTAR;
+    pVmcb->guest.u64CSTAR        = pCtx->msrCSTAR;
+    pVmcb->guest.u64SFMASK       = pCtx->msrSFMASK;
+    pVmcb->guest.u64KernelGSBase = pCtx->msrKERNELGSBASE;
 }
 
 
@@ -930,9 +1117,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     int rc = hmR0SvmLoadGuestControlRegs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestControlRegs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-    rc = hmR0SvmLoadGuestSegmentRegs(pVCpu, pCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestSegmentRegs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
-
+    hmR0SvmLoadGuestSegmentRegs(pVCpu, pCtx);
     hmR0SvmLoadGuestMsrs(pVCpu, pCtx);
 
     /* Guest RIP, RSP, RFLAGS, CPL. */
@@ -947,14 +1132,17 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     rc = hmR0SvmSetupVMRunHandler(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-
     /* Clear any unused and reserved bits. */
     pVCpu->hm.s.fContextUseFlags &= ~(  HM_CHANGED_GUEST_SYSENTER_CS_MSR
                                       | HM_CHANGED_GUEST_SYSENTER_EIP_MSR
                                       | HM_CHANGED_GUEST_SYSENTER_ESP_MSR);
 
+    AssertMsg(!pVCpu->hm.s.fContextUseFlags,
+             ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p fContextUseFlags=%#RX32\n",
+              pVM, pVCpu, pVCpu->hm.s.fContextUseFlags));
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
 
+    return rc;
 }
 
