@@ -588,13 +588,12 @@ static DECLCALLBACK(int) devINIPDestruct(PPDMDEVINS pDevIns)
     {
         netif_set_down(&pThis->IntNetIF);
         netif_remove(&pThis->IntNetIF);
-        tcpip_terminate();
 #ifndef VBOX_WITH_NEW_LWIP
+        tcpip_terminate();
         lwip_sys_sem_wait(pThis->LWIPTcpInitSem);
         lwip_sys_sem_free(pThis->LWIPTcpInitSem);
 #else
-        lwip_sys_sem_wait(&pThis->LWIPTcpInitSem, 0);
-        lwip_sys_sem_free(&pThis->LWIPTcpInitSem);
+        vboxLwipCoreFinalize();
 #endif
     }
 
