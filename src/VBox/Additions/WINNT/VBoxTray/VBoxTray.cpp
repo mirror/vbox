@@ -1436,6 +1436,7 @@ static int VBoxAcquireGuestCaps(uint32_t fOr, uint32_t fNot, bool fCfg)
 {
     DWORD cbReturned = 0;
     VBoxGuestCapsAquire Info;
+    Log(("VBoxTray: VBoxAcquireGuestCaps or(0x%x), not(0x%x), cfx(%d)\n", fOr, fNot, fCfg));
     Info.enmFlags = fCfg ? VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE : VBOXGUESTCAPSACQUIRE_FLAGS_NONE;
     Info.rc = VERR_NOT_IMPLEMENTED;
     Info.u32OrMask = fOr;
@@ -1443,14 +1444,14 @@ static int VBoxAcquireGuestCaps(uint32_t fOr, uint32_t fNot, bool fCfg)
     if (!DeviceIoControl(ghVBoxDriver, VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE, &Info, sizeof(Info), &Info, sizeof(Info), &cbReturned, NULL))
     {
         DWORD LastErr = GetLastError();
-        WARN(("DeviceIoControl VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed LastErr %d\n", LastErr));
+        WARN(("VBoxTray: DeviceIoControl VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed LastErr %d\n", LastErr));
         return RTErrConvertFromWin32(LastErr);
     }
 
     int rc = Info.rc;
     if (!RT_SUCCESS(rc))
     {
-        WARN(("VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed rc %d\n", rc));
+        WARN(("VBoxTray: VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE failed rc %d\n", rc));
         return rc;
     }
 
@@ -1495,12 +1496,14 @@ static DECLCALLBACK(void) vboxCapsOnEnableSeamles(struct VBOXCAPS *pConsole, str
 {
     if (fEnabled)
     {
+        Log(("VBoxTray: vboxCapsOnEnableSeamles: ENABLED\n"));
         Assert(pCap->enmAcState == VBOXCAPS_ENTRY_ACSTATE_ACQUIRED);
         Assert(pCap->enmFuncState == VBOXCAPS_ENTRY_FUNCSTATE_STARTED);
         VBoxSeamlessInstallHook();
     }
     else
     {
+        Log(("VBoxTray: vboxCapsOnEnableSeamles: DISABLED\n"));
         Assert(pCap->enmAcState != VBOXCAPS_ENTRY_ACSTATE_ACQUIRED || pCap->enmFuncState != VBOXCAPS_ENTRY_FUNCSTATE_STARTED);
         VBoxSeamlessRemoveHook();
     }
@@ -1509,6 +1512,10 @@ static DECLCALLBACK(void) vboxCapsOnEnableSeamles(struct VBOXCAPS *pConsole, str
 static void vboxCapsEntryAcStateSet(VBOXCAPS_ENTRY *pCap, VBOXCAPS_ENTRY_ACSTATE enmAcState)
 {
     VBOXCAPS *pConsole = &gVBoxCaps;
+
+    Log(("VBoxTray: vboxCapsEntryAcStateSet: new state enmAcState(%d); pCap: fCap(%d), iCap(%d), enmFuncState(%d), enmAcState(%d)\n",
+            enmAcState, pCap->fCap, pCap->iCap, pCap->enmFuncState, pCap->enmAcState));
+
     if (pCap->enmAcState == enmAcState)
         return;
 
@@ -1533,6 +1540,10 @@ static void vboxCapsEntryAcStateSet(VBOXCAPS_ENTRY *pCap, VBOXCAPS_ENTRY_ACSTATE
 static void vboxCapsEntryFuncStateSet(VBOXCAPS_ENTRY *pCap, VBOXCAPS_ENTRY_FUNCSTATE enmFuncState)
 {
     VBOXCAPS *pConsole = &gVBoxCaps;
+
+    Log(("VBoxTray: vboxCapsEntryFuncStateSet: new state enmAcState(%d); pCap: fCap(%d), iCap(%d), enmFuncState(%d), enmAcState(%d)\n",
+            enmFuncState, pCap->fCap, pCap->iCap, pCap->enmFuncState, pCap->enmAcState));
+
     if (pCap->enmFuncState == enmFuncState)
         return;
 
@@ -1578,6 +1589,7 @@ static int VBoxCapsInit()
 static int VBoxCapsReleaseAll()
 {
     VBOXCAPS *pConsole = &gVBoxCaps;
+    Log(("VBoxTray: VBoxCapsReleaseAll\n"));
     int rc = VBoxAcquireGuestCaps(0, VMMDEV_GUEST_SUPPORTS_SEAMLESS | VMMDEV_GUEST_SUPPORTS_GRAPHICS, false);
     if (!RT_SUCCESS(rc))
     {
@@ -1587,6 +1599,7 @@ static int VBoxCapsReleaseAll()
 
     if (pConsole->idTimer)
     {
+        Log(("VBoxTray: killing console timer\n"));
         KillTimer(ghwndToolWindow, pConsole->idTimer);
         pConsole->idTimer = 0;
     }
@@ -1663,7 +1676,7 @@ static int VBoxCapsEntryRelease(uint32_t iCap)
     VBOXCAPS_ENTRY *pCap = &pConsole->aCaps[iCap];
     if (pCap->enmAcState == VBOXCAPS_ENTRY_ACSTATE_RELEASED)
     {
-        WARN(("invalid cap[%d] state[%d] on release\n", iCap, pCap->enmAcState));
+        WARN(("VBoxTray: invalid cap[%d] state[%d] on release\n", iCap, pCap->enmAcState));
         return VERR_INVALID_STATE;
     }
 
@@ -1683,9 +1696,10 @@ static int VBoxCapsEntryAcquire(uint32_t iCap)
     VBOXCAPS *pConsole = &gVBoxCaps;
     Assert(VBoxConsoleIsAllowed());
     VBOXCAPS_ENTRY *pCap = &pConsole->aCaps[iCap];
+    Log(("VBoxTray: VBoxCapsEntryAcquire %d\n", iCap));
     if (pCap->enmAcState != VBOXCAPS_ENTRY_ACSTATE_RELEASED)
     {
-        WARN(("invalid cap[%d] state[%d] on acquire\n", iCap, pCap->enmAcState));
+        WARN(("VBoxTray: invalid cap[%d] state[%d] on acquire\n", iCap, pCap->enmAcState));
         return VERR_INVALID_STATE;
     }
 
@@ -1724,10 +1738,18 @@ static int VBoxCapsEntryAcquire(uint32_t iCap)
 static int VBoxCapsAcquireAllSupported()
 {
     VBOXCAPS *pConsole = &gVBoxCaps;
+    Log(("VBoxTray: VBoxCapsAcquireAllSupported\n"));
     for (int i = 0; i < RT_ELEMENTS(pConsole->aCaps); ++i)
     {
         if (pConsole->aCaps[i].enmFuncState >= VBOXCAPS_ENTRY_FUNCSTATE_SUPPORTED)
+        {
+            Log(("VBoxTray: VBoxCapsAcquireAllSupported acquiring cap %d, state %d\n", i, pConsole->aCaps[i].enmFuncState));
             VBoxCapsEntryAcquire(i);
+        }
+        else
+        {
+            WARN(("VBoxTray: VBoxCapsAcquireAllSupported: WARN: cap %d not supported, state %d\n", i, pConsole->aCaps[i].enmFuncState));
+        }
     }
     return VINF_SUCCESS;
 }
