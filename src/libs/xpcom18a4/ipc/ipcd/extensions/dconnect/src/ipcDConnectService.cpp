@@ -1580,7 +1580,7 @@ DConnectStub::AddRefIPC()
   // DConnectInstance::CreateStub
 
   nsrefcnt count = AddRef();
-  mRefCntLevels.Push((void *) count);
+  mRefCntLevels.Push((void *)(uintptr_t) count);
   return count;
 }
 
@@ -2238,10 +2238,13 @@ ipcDConnectService::DeserializeException(ipcMessageReader &reader,
 DConnectStub::~DConnectStub()
 {
 #ifdef IPC_LOGGING
-  const char *name = NULL;
-  mIInfo->GetNameShared(&name);
-  LOG(("{%p} DConnectStub::<dtor>(): peer=%d instance=0x%Lx {%s}\n",
-       this, mPeerID, mInstance, name));
+  if (IPC_LOG_ENABLED())
+  {
+    const char *name = NULL;
+    mIInfo->GetNameShared(&name);
+    LOG(("{%p} DConnectStub::<dtor>(): peer=%d instance=0x%Lx {%s}\n",
+         this, mPeerID, mInstance, name));
+  }
 #endif
 
   // release the cached nsISupports instance if it's not the same object
@@ -2279,10 +2282,13 @@ DConnectStub::Release()
 
 
     #ifdef IPC_LOGGING
-    const char *name;
-    mIInfo->GetNameShared(&name);
-    LOG(("{%p} DConnectStub::Release(): peer=%d instance=0x%Lx {%s}, new count=%d\n",
-        this, mPeerID, mInstance, name, count));
+    if (IPC_LOG_ENABLED())
+    {
+      const char *name;
+      mIInfo->GetNameShared(&name);
+      LOG(("{%p} DConnectStub::Release(): peer=%d instance=0x%Lx {%s}, new count=%d\n",
+          this, mPeerID, mInstance, name, count));
+    }
     #endif
 
     // mRefCntLevels may already be empty here (due to the "stabilize" trick below)
@@ -2437,6 +2443,7 @@ DConnectStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
   // else, we need to query the peer object by making an IPC call
 
 #ifdef IPC_LOGGING
+  if (IPC_LOG_ENABLED())
   {
     const char *name;
     mIInfo->GetNameShared(&name);
@@ -2523,13 +2530,16 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   PRUint8 i, paramCount = aInfo->GetParamCount();
 
 #ifdef IPC_LOGGING
-  const char *name;
-  nsCOMPtr<nsIInterfaceInfo> iinfo;
-  GetInterfaceInfo(getter_AddRefs(iinfo));
-  iinfo->GetNameShared(&name);
-  LOG(("  instance=0x%Lx {%s}\n", mInstance, name));
-  LOG(("  name=%s\n", aInfo->GetName()));
-  LOG(("  param-count=%u\n", (PRUint32) paramCount));
+  if (IPC_LOG_ENABLED())
+  {
+    const char *name;
+    nsCOMPtr<nsIInterfaceInfo> iinfo;
+    GetInterfaceInfo(getter_AddRefs(iinfo));
+    iinfo->GetNameShared(&name);
+    LOG(("  instance=0x%Lx {%s}\n", mInstance, name));
+    LOG(("  name=%s\n", aInfo->GetName()));
+    LOG(("  param-count=%u\n", (PRUint32) paramCount));
+  }
 #endif
 
 
@@ -3012,10 +3022,13 @@ EnumerateInstanceMapAndDelete (const DConnectInstanceKey::Key &aKey,
   // disregarding the reference counter
 
 #ifdef IPC_LOGGING
-  const char *name;
-  aData->InterfaceInfo()->GetNameShared(&name);
-  LOG(("ipcDConnectService: WARNING: deleting unreleased "
-       "instance=%p iface=%p {%s}\n", aData, aData->RealInstance(), name));
+  if (IPC_LOG_ENABLED())
+  {
+    const char *name;
+    aData->InterfaceInfo()->GetNameShared(&name);
+    LOG(("ipcDConnectService: WARNING: deleting unreleased "
+         "instance=%p iface=%p {%s}\n", aData, aData->RealInstance(), name));
+  }
 #endif
 
   delete aData;
@@ -3257,10 +3270,13 @@ nsresult
 ipcDConnectService::StoreInstance(DConnectInstance *wrapper)
 {
 #ifdef IPC_LOGGING
-  const char *name;
-  wrapper->InterfaceInfo()->GetNameShared(&name);
-  LOG(("ipcDConnectService::StoreInstance(): instance=%p iface=%p {%s}\n",
-       wrapper, wrapper->RealInstance(), name));
+  if (IPC_LOG_ENABLED())
+  {
+    const char *name;
+    wrapper->InterfaceInfo()->GetNameShared(&name);
+    LOG(("ipcDConnectService::StoreInstance(): instance=%p iface=%p {%s}\n",
+         wrapper, wrapper->RealInstance(), name));
+  }
 #endif
 
   nsresult rv = mInstanceSet.Put(wrapper);
@@ -3282,10 +3298,13 @@ ipcDConnectService::DeleteInstance(DConnectInstance *wrapper,
     PR_Lock(mLock);
 
 #ifdef IPC_LOGGING
-  const char *name;
-  wrapper->InterfaceInfo()->GetNameShared(&name);
-  LOG(("ipcDConnectService::DeleteInstance(): instance=%p iface=%p {%s}\n",
-       wrapper, wrapper->RealInstance(), name));
+  if (IPC_LOG_ENABLED())
+  {
+    const char *name;
+    wrapper->InterfaceInfo()->GetNameShared(&name);
+    LOG(("ipcDConnectService::DeleteInstance(): instance=%p iface=%p {%s}\n",
+         wrapper, wrapper->RealInstance(), name));
+  }
 #endif
 
   mInstances.Remove(wrapper->GetKey());
@@ -3324,12 +3343,15 @@ nsresult
 ipcDConnectService::StoreStub(DConnectStub *stub)
 {
 #ifdef IPC_LOGGING
-  const char *name;
-  nsCOMPtr<nsIInterfaceInfo> iinfo;
-  stub->GetInterfaceInfo(getter_AddRefs(iinfo));
-  iinfo->GetNameShared(&name);
-  LOG(("ipcDConnectService::StoreStub(): stub=%p instance=0x%Lx {%s}\n",
-       stub, stub->Instance(), name));
+  if (IPC_LOG_ENABLED())
+  {
+    const char *name;
+    nsCOMPtr<nsIInterfaceInfo> iinfo;
+    stub->GetInterfaceInfo(getter_AddRefs(iinfo));
+    iinfo->GetNameShared(&name);
+    LOG(("ipcDConnectService::StoreStub(): stub=%p instance=0x%Lx {%s}\n",
+         stub, stub->Instance(), name));
+  }
 #endif
 
   return mStubs.Put(stub->GetKey(), stub)
@@ -3340,12 +3362,15 @@ void
 ipcDConnectService::DeleteStub(DConnectStub *stub)
 {
 #ifdef IPC_LOGGING
-  const char *name;
-  nsCOMPtr<nsIInterfaceInfo> iinfo;
-  stub->GetInterfaceInfo(getter_AddRefs(iinfo));
-  iinfo->GetNameShared(&name);
-  LOG(("ipcDConnectService::DeleteStub(): stub=%p instance=0x%Lx {%s}\n",
-       stub, stub->Instance(), name));
+  if (IPC_LOG_ENABLED())
+  {
+    const char *name;
+    nsCOMPtr<nsIInterfaceInfo> iinfo;
+    stub->GetInterfaceInfo(getter_AddRefs(iinfo));
+    iinfo->GetNameShared(&name);
+    LOG(("ipcDConnectService::DeleteStub(): stub=%p instance=0x%Lx {%s}\n",
+         stub, stub->Instance(), name));
+  }
 #endif
 
   // this method is intended to be called only from DConnectStub::Release().
