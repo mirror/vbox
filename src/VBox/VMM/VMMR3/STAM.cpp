@@ -1164,18 +1164,18 @@ static void stamR3LookupMaybeFree(PSTAMLOOKUP pLookup)
 static void stamR3LookupDestroyTree(PSTAMLOOKUP pRoot)
 {
     Assert(pRoot); Assert(!pRoot->pParent);
-    PSTAMLOOKUP pLookup = pRoot;
+    PSTAMLOOKUP pCur = pRoot;
     for (;;)
     {
-        uint32_t i = pLookup->cChildren;
+        uint32_t i = pCur->cChildren;
         if (i > 0)
         {
             /*
              * Push child (with leaf optimization).
              */
-            PSTAMLOOKUP pChild = pLookup->papChildren[--i];
+            PSTAMLOOKUP pChild = pCur->papChildren[--i];
             if (pChild->cChildren != 0)
-                pLookup = pChild;
+                pCur = pChild;
             else
             {
                 /* free leaves. */
@@ -1187,18 +1187,19 @@ static void stamR3LookupDestroyTree(PSTAMLOOKUP pRoot)
                         pChild->papChildren = NULL;
                     }
                     RTMemFree(pChild);
+                    pCur->papChildren[i] = NULL;
 
                     /* next */
                     if (i == 0)
                     {
-                        pLookup->papChildren = 0;
+                        pCur->cChildren = 0;
                         break;
                     }
-                    pChild = pLookup->papChildren[--i];
+                    pChild = pCur->papChildren[--i];
                     if (pChild->cChildren != 0)
                     {
-                        pLookup->cChildren = i + 1;
-                        pLookup = pChild;
+                        pCur->cChildren = i + 1;
+                        pCur = pChild;
                         break;
                     }
                 }
@@ -1209,17 +1210,19 @@ static void stamR3LookupDestroyTree(PSTAMLOOKUP pRoot)
             /*
              * Pop and free current.
              */
-            Assert(!pLookup->pDesc);
+            Assert(!pCur->pDesc);
 
-            PSTAMLOOKUP pParent = pLookup->pParent;
-            RTMemFree(pLookup->papChildren);
-            pLookup->papChildren = NULL;
-            RTMemFree(pLookup);
+            PSTAMLOOKUP pParent = pCur->pParent;
+            Assert(pCur->iParent == (pParent ? pParent->cChildren - 1 : UINT16_MAX));
 
-            pLookup = pParent;
-            if (!pLookup)
+            RTMemFree(pCur->papChildren);
+            pCur->papChildren = NULL;
+            RTMemFree(pCur);
+
+            pCur = pParent;
+            if (!pCur)
                 break;
-            pLookup->cChildren--;
+            pCur->papChildren[--pCur->cChildren] = NULL;
         }
     }
 }
