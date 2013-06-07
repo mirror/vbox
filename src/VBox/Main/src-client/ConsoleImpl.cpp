@@ -7063,7 +7063,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
      * something like Stopping, so most Console methods will return an error
      * to the caller.
      */
-    if (mpUVM != NULL)
+    if (pUVM != NULL)
         VMR3ReleaseUVM(pUVM);
     else
         mVMDestroying = false;
