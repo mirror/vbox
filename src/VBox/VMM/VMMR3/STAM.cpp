@@ -275,10 +275,8 @@ VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
     /*
      * Initialize the read/write lock.
      */
-#ifndef USE_PDMCRITSECTRW
     rc = RTSemRWCreate(&pUVM->stam.s.RWSem);
     AssertRCReturn(rc, rc);
-#endif
 
     /*
      * Register the ring-0 statistics (GVMM/GMM).
@@ -321,11 +319,9 @@ VMMR3DECL(void) STAMR3TermUVM(PUVM pUVM)
     }
     pUVM->stam.s.pHead = NULL;
 
-#ifndef USE_PDMCRITSECTRW
     Assert(pUVM->stam.s.RWSem != NIL_RTSEMRW);
     RTSemRWDestroy(pUVM->stam.s.RWSem);
     pUVM->stam.s.RWSem = NIL_RTSEMRW;
-#endif
 }
 
 

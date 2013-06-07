@@ -23,11 +23,7 @@
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/gvmm.h>
 #include <VBox/vmm/gmm.h>
-#ifndef USE_PDMCRITSECTRW
-# include <iprt/semaphore.h>
-#else
-# include <VBox/vmm/pdmcritsectrw.h>
-#endif
+#include <iprt/semaphore.h>
 
 
 
@@ -107,11 +103,9 @@ typedef struct STAMUSERPERVM
     /** Lookup hint (pPrev value). */
     R3PTRTYPE(PSTAMDESC)    pHint;
     /** RW Lock for the list. */
-#ifndef USE_PDMCRITSECTRW
     RTSEMRW                 RWSem;
-#else
-    PDMCRITSECTRW           CritSectRw;
-#endif
+    /** Alignment padding. */
+    RTR3PTR                 Alignment;
 
     /** The copy of the GVMM statistics. */
     GVMMSTATS               GVMMStats;
@@ -129,47 +123,16 @@ AssertCompileMemberAlignment(STAMUSERPERVM, GMMStats, 8);
 typedef STAMUSERPERVM *PSTAMUSERPERVM;
 
 
-#ifndef USE_PDMCRITSECTRW
 /** Locks the sample descriptors for reading. */
-# define STAM_LOCK_RD(pUVM)     do { int rcSem = RTSemRWRequestRead(pUVM->stam.s.RWSem, RT_INDEFINITE_WAIT);  AssertRC(rcSem); } while (0)
+#define STAM_LOCK_RD(pUVM)      do { int rcSem = RTSemRWRequestRead(pUVM->stam.s.RWSem, RT_INDEFINITE_WAIT);  AssertRC(rcSem); } while (0)
 /** Locks the sample descriptors for writing. */
-# define STAM_LOCK_WR(pUVM)     do { int rcSem = RTSemRWRequestWrite(pUVM->stam.s.RWSem, RT_INDEFINITE_WAIT); AssertRC(rcSem); } while (0)
+#define STAM_LOCK_WR(pUVM)      do { int rcSem = RTSemRWRequestWrite(pUVM->stam.s.RWSem, RT_INDEFINITE_WAIT); AssertRC(rcSem); } while (0)
 /** UnLocks the sample descriptors after reading. */
-# define STAM_UNLOCK_RD(pUVM)   do { int rcSem = RTSemRWReleaseRead(pUVM->stam.s.RWSem);  AssertRC(rcSem); } while (0)
+#define STAM_UNLOCK_RD(pUVM)    do { int rcSem = RTSemRWReleaseRead(pUVM->stam.s.RWSem);  AssertRC(rcSem); } while (0)
 /** UnLocks the sample descriptors after writing. */
-# define STAM_UNLOCK_WR(pUVM)   do { int rcSem = RTSemRWReleaseWrite(pUVM->stam.s.RWSem); AssertRC(rcSem); } while (0)
+#define STAM_UNLOCK_WR(pUVM)    do { int rcSem = RTSemRWReleaseWrite(pUVM->stam.s.RWSem); AssertRC(rcSem); } while (0)
 /** Lazy initialization */
-# define STAM_LAZY_INIT(pUVM)   do { } while (0)
-#else
-/** Locks the sample descriptors for reading. */
-# define STAM_LOCK_RD(pUVM) \
-    if (PDMCritSectRwIsInitialized(&pUVM->stam.s.CritSectRw)) \
-    {   int rcSem = PDMCritSectRwEnterShared(&pUVM->stam.s.CritSectRw, VINF_SUCCESS); AssertRC(rcSem); } else do { } while (0)
-/** Locks the sample descriptors for writing. */
-# define STAM_LOCK_WR(pUVM) \
-    if (PDMCritSectRwIsInitialized(&pUVM->stam.s.CritSectRw)) \
-    {   int rcSem = PDMCritSectRwEnterExcl(&pUVM->stam.s.CritSectRw, VINF_SUCCESS); AssertRC(rcSem); } else do { } while (0)
-/** UnLocks the sample descriptors after reading. */
-# define STAM_UNLOCK_RD(pUVM) \
-    if (PDMCritSectRwIsInitialized(&pUVM->stam.s.CritSectRw)) \
-    {   int rcSem = PDMCritSectRwLeaveShared(&pUVM->stam.s.CritSectRw); AssertRC(rcSem); } else do { } while (0)
-/** UnLocks the sample descriptors after writing. */
-# define STAM_UNLOCK_WR(pUVM) \
-    if (PDMCritSectRwIsInitialized(&pUVM->stam.s.CritSectRw)) \
-    {   int rcSem = PDMCritSectRwLeaveExcl(&pUVM->stam.s.CritSectRw); AssertRC(rcSem); } else do { } while (0)
-/** Lazy initialization. */
-# define STAM_LAZY_INIT(pUVM) \
-    if (!PDMCritSectRwIsInitialized(&pUVM->stam.s.CritSectRw) && (pUVM)->pVM) \
-    { \
-        static bool volatile s_fInProgress = false; \
-        if (!s_fInProgress) \
-        { \
-            s_fInProgress = true; \
-            int rcSem = PDMR3CritSectRwInit(pUVM->pVM, &pUVM->stam.s.CritSectRw, RT_SRC_POS, "stam-rw"); \
-            AssertRC(rcSem); Assert(PDMCritSectRwIsInitialized(&pUVM->stam.s.CritSectRw) || RT_FAILURE(rcSem)); \
-        } \
-    } else do { } while (0)
-#endif
+#define STAM_LAZY_INIT(pUVM)    do { } while (0)
 
 /** @} */
 
