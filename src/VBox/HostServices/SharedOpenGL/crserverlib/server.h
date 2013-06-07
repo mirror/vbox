@@ -575,9 +575,9 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
 #define CR_SERVER_DUMP_LINK_PROGRAM(_id) do {} while (0)
 #define CR_SERVER_DUMP_SWAPBUFFERS_ENTER() do {} while (0)
 #define CR_SERVER_DUMP_SWAPBUFFERS_LEAVE() do {} while (0)
-#define CR_SERVER_DUMP_SHADER_SOURCE() do {} while (0)
+#define CR_SERVER_DUMP_SHADER_SOURCE(_id) do {} while (0)
 #define CR_SERVER_DUMP_DRAWEL_F(_msg) do {} while (0)
-#define CR_SERVER_DUMP_DRAWEL_V(_pszElFormat, _cbEl, _pvVal, _cVal) do {} while (0)
+#define CR_SERVER_DUMP_DRAWEL_V(_index, _pszElFormat, _cbEl, _pvVal, _cVal) do {} while (0)
 #endif /* !VBOX_WITH_CRSERVER_DUMPER */
 
 RT_C_DECLS_END
