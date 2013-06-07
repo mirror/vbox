@@ -164,7 +164,40 @@ void crServerDumpFindTexCb(unsigned long key, void *pData1, void *pData2)
     return (_str); \
 }
 
-VBOXDUMPDECL(size_t) crDmpFormatRawArrayf(char *pString, size_t cbString, const float *pVal, uint32_t cVal)
+DECLINLINE(size_t) crDmpFormatVal(char *pString, size_t cbString, const char *pszElFormat, uint32_t cbVal, const void *pvVal)
+{
+    if (pszElFormat[0] != '%' || pszElFormat[1] == '\0')
+    {
+        crWarning("invalid format %s", pszElFormat);
+        return 0;
+    }
+    switch (cbVal)
+    {
+        case 8:
+            return sprintf_s(pString, cbString, pszElFormat, *((double*)pvVal));
+        case 4:
+        {
+            /* we do not care only about type specifiers, all the rest is not accepted */
+            switch (pszElFormat[1])
+            {
+                case 'f':
+                    /* float would be promoted to double */
+                    return sprintf_s(pString, cbString, pszElFormat, *((float*)pvVal));
+                default:
+                    return sprintf_s(pString, cbString, pszElFormat, *((uint32_t*)pvVal));
+            }
+        }
+        case 2:
+            return sprintf_s(pString, cbString, pszElFormat, *((uint16_t*)pvVal));
+        case 1:
+            return sprintf_s(pString, cbString, pszElFormat, *((uint8_t*)pvVal));
+        default:
+            crWarning("unsupported size %d", cbVal);
+            return 0;
+    }
+}
+
+VBOXDUMPDECL(size_t) crDmpFormatRawArray(char *pString, size_t cbString, const char *pszElFormat, uint32_t cbEl, const void *pvVal, uint32_t cVal)
 {
     if (cbString < 2)
     {
@@ -176,13 +209,21 @@ VBOXDUMPDECL(size_t) crDmpFormatRawArrayf(char *pString, size_t cbString, const 
     *pString++ = '{';
     --cbString;
     size_t cbWritten;
+    const uint8_t *pu8Val = (const uint8_t *)pvVal;
     for (uint32_t i = 0; i < cVal; ++i)
     {
-        cbWritten = sprintf_s(pString, cbString,
-                (i != cVal - 1) ? "%f, " : "%f", *pVal);
+        cbWritten = crDmpFormatVal(pString, cbString, pszElFormat, cbEl, (const void *)pu8Val);
+        pu8Val += cbEl;
         Assert(cbString >= cbWritten);
         pString += cbWritten;
         cbString -= cbWritten;
+        if (i != cVal - 1)
+        {
+            cbWritten = sprintf_s(pString, cbString, ", ");
+            Assert(cbString >= cbWritten);
+            pString += cbWritten;
+            cbString -= cbWritten;
+        }
     }
 
     if (!cbString)
@@ -203,7 +244,7 @@ VBOXDUMPDECL(size_t) crDmpFormatRawArrayf(char *pString, size_t cbString, const 
     return cbInitString - cbString;
 }
 
-VBOXDUMPDECL(size_t) crDmpFormatMatrixArrayf(char *pString, size_t cbString, const float *pVal, uint32_t cX, uint32_t cY)
+VBOXDUMPDECL(size_t) crDmpFormatMatrixArray(char *pString, size_t cbString, const char *pszElFormat, uint32_t cbEl, const void *pvVal, uint32_t cX, uint32_t cY)
 {
     if (cbString < 2)
     {
@@ -215,9 +256,11 @@ VBOXDUMPDECL(size_t) crDmpFormatMatrixArrayf(char *pString, size_t cbString, con
     *pString++ = '{';
     --cbString;
     size_t cbWritten;
+    const uint8_t *pu8Val = (const uint8_t *)pvVal;
     for (uint32_t i = 0; i < cY; ++i)
     {
-        cbWritten = crDmpFormatRawArrayf(pString, cbString, pVal, cX);
+        cbWritten = crDmpFormatRawArray(pString, cbString, pszElFormat, cbEl, (const void *)pu8Val, cX);
+        pu8Val += (cbEl * cX);
         Assert(cbString >= cbWritten);
         pString += cbWritten;
         cbString -= cbWritten;
@@ -252,22 +295,42 @@ VBOXDUMPDECL(size_t) crDmpFormatMatrixArrayf(char *pString, size_t cbString, con
     return cbInitString - cbString;
 }
 
-VBOXDUMPDECL(size_t) crDmpFormatArrayf(char *pString, size_t cbString, const float *pVal, uint32_t cVal)
+VBOXDUMPDECL(size_t) crDmpFormatArray(char *pString, size_t cbString, const char *pszElFormat, uint32_t cbEl, const void *pvVal, uint32_t cVal)
 {
     switch(cVal)
     {
         case 1:
-            return sprintf_s(pString, cbString, "%f", *pVal);
+            return crDmpFormatVal(pString, cbString, pszElFormat, cbEl, pvVal);
         case 16:
-            return crDmpFormatMatrixArrayf(pString, cbString, pVal, 4, 4);
+            return crDmpFormatMatrixArray(pString, cbString, pszElFormat, cbEl, pvVal, 4, 4);
         case 9:
-            return crDmpFormatMatrixArrayf(pString, cbString, pVal, 3, 3);
+            return crDmpFormatMatrixArray(pString, cbString, pszElFormat, cbEl, pvVal, 3, 3);
         case 0:
             crWarning("value array is empty");
             return 0;
         default:
-            return crDmpFormatRawArrayf(pString, cbString, pVal, cVal);
+            return crDmpFormatRawArray(pString, cbString, pszElFormat, cbEl, pvVal, cVal);
     }
+}
+
+VBOXDUMPDECL(void) crRecDumpVertAttrv(CR_RECORDER *pRec, CRContext *ctx, GLuint idx, const char*pszElFormat, uint32_t cbEl, const void *pvVal, uint32_t cVal)
+{
+    char aBuf[1024];
+    crDmpFormatRawArray(aBuf, sizeof (aBuf), pszElFormat, cbEl, pvVal, cVal);
+    crDmpStrF(pRec->pDumper, "(%u, %s)", idx, aBuf);
+}
+
+VBOXDUMPDECL(void) crRecDumpVertAttrV(CR_RECORDER *pRec, CRContext *ctx, const char*pszFormat, va_list pArgList)
+{
+    crDmpStrV(pRec->pDumper, pszFormat, pArgList);
+}
+
+VBOXDUMPDECL(void) crRecDumpVertAttrF(CR_RECORDER *pRec, CRContext *ctx, const char*pszFormat, ...)
+{
+    va_list pArgList;
+    va_start(pArgList, pszFormat);
+    crRecDumpVertAttrV(pRec, ctx, pszFormat, pArgList);
+    va_end(pArgList);
 }
 
 void crRecDumpBuffer(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, GLint idRedirFBO, VBOXVR_TEXTURE *pRedirTex)

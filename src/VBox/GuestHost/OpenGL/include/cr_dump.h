@@ -84,9 +84,9 @@ DECLINLINE(void) crDmpImgF(CR_DUMPER *pDumper, CR_BLITTER_IMG *pImg, const char 
     va_end(pArgList);
 }
 
-VBOXDUMPDECL(size_t) crDmpFormatArrayf(char *pString, size_t cbString, const float *pVal, uint32_t cVal);
-VBOXDUMPDECL(size_t) crDmpFormatRawArrayf(char *pString, size_t cbString, const float *pVal, uint32_t cVal);
-VBOXDUMPDECL(size_t) crDmpFormatMatrixArrayf(char *pString, size_t cbString, const float *pVal, uint32_t cX, uint32_t cY);
+VBOXDUMPDECL(size_t) crDmpFormatArray(char *pString, size_t cbString, const char *pszElFormat, uint32_t cbEl, const void *pVal, uint32_t cVal);
+VBOXDUMPDECL(size_t) crDmpFormatRawArray(char *pString, size_t cbString, const char *pszElFormat, uint32_t cbEl, const void *pVal, uint32_t cVal);
+VBOXDUMPDECL(size_t) crDmpFormatMatrixArray(char *pString, size_t cbString, const char *pszElFormat, uint32_t cbEl, const void *pVal, uint32_t cX, uint32_t cY);
 
 typedef struct CR_DBGPRINT_DUMPER
 {
@@ -133,6 +133,9 @@ VBOXDUMPDECL(void) crRecDumpProgramUniforms(CR_RECORDER *pRec, CRContext *ctx, G
 VBOXDUMPDECL(void) crRecDumpCurrentProgramUniforms(CR_RECORDER *pRec, CRContext *ctx);
 VBOXDUMPDECL(void) crRecDumpGlGetState(CR_RECORDER *pRec, CRContext *ctx);
 VBOXDUMPDECL(void) crRecDumpGlEnableState(CR_RECORDER *pRec, CRContext *ctx);
+VBOXDUMPDECL(void) crRecDumpVertAttrv(CR_RECORDER *pRec, CRContext *ctx, GLuint idx, const char*pszElFormat, uint32_t cbEl, const void *pvVal, uint32_t cVal);
+VBOXDUMPDECL(void) crRecDumpVertAttrF(CR_RECORDER *pRec, CRContext *ctx, const char*pszFormat, ...);
+VBOXDUMPDECL(void) crRecDumpVertAttrV(CR_RECORDER *pRec, CRContext *ctx, const char*pszFormat, va_list pArgList);
 
 typedef DECLCALLBACKPTR(GLuint, PFNCRDUMPGETHWID)(void *pvObj);
 void* crDmpHashtableSearchByHwid(CRHashTable *pHash, GLuint hwid, PFNCRDUMPGETHWID pfnGetHwid, unsigned long *pKey);
