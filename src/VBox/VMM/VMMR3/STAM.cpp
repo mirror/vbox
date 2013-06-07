@@ -47,7 +47,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-/*#define USE_PDMCRITSECTRW - testing, not for production. */
 #define LOG_GROUP LOG_GROUP_STAM
 #include <VBox/vmm/stam.h>
 #include "STAMInternal.h"
@@ -263,7 +262,6 @@ static const STAMR0SAMPLE g_aGMMStats[] =
  */
 VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
 {
-    int rc;
     LogFlow(("STAMR3Init\n"));
 
     /*
@@ -275,7 +273,7 @@ VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
     /*
      * Initialize the read/write lock.
      */
-    rc = RTSemRWCreate(&pUVM->stam.s.RWSem);
+    int rc = RTSemRWCreate(&pUVM->stam.s.RWSem);
     AssertRCReturn(rc, rc);
 
     /*
@@ -599,7 +597,6 @@ static int stamR3SlashCompare(const char *psz1, const char *psz2)
 static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
                            STAMTYPE enmType, STAMVISIBILITY enmVisibility, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
-    STAM_LAZY_INIT(pUVM);
     STAM_LOCK_WR(pUVM);
 
     /*
@@ -615,7 +612,7 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
     }
 #else
     PSTAMDESC   pPrev = NULL;
-    PSTAMDESC   pCur  = pUVM->stam.s.pHint;
+    PSTAMDESC   pCur  = pUVM->stam.s.pHead;
 #endif
     while (pCur)
     {
