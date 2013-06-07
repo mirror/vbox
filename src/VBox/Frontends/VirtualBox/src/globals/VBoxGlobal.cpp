@@ -270,7 +270,7 @@ VBoxGlobal::VBoxGlobal()
     , mRecompileUser(false)
     , mWarpPct(100)
     , mVerString("1.0")
-    , m3DAvailable(false)
+    , m3DAvailable(-1)
     , mSettingsPwSet(false)
 {
     /* Assign instance: */
@@ -407,6 +407,26 @@ QWidget* VBoxGlobal::activeMachineWindow()
     /* Active machine-window otherwise: */
     return m_pVirtualMachine->activeWindow();
 }
+
+
+/**
+ * Inner worker that for lazily querying for 3D support.
+ *
+ * Rational is that when starting a text mode guest (like DOS) that does not
+ * have 3D enabled, don't wast the developer's or user's time on launching the
+ * test application when starting the VM or editing it's settings.
+ *
+ * @returns true / false.
+ * @note If we ever end up checking this concurrently on multiple threads, use a
+ *       RTONCE construct to serialize the efforts.
+ */
+bool VBoxGlobal::is3DAvailableWorker() const
+{
+    bool fSupported = VBoxOglIs3DAccelerationSupported();
+    unconst(this)->m3DAvailable = fSupported;
+    return fSupported;
+}
+
 
 #ifdef VBOX_GUI_WITH_PIDFILE
 void VBoxGlobal::createPidfile()
@@ -1209,7 +1229,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             ++rows;
         }
 
-        QString acc3d = is3DAvailable() && aMachine.GetAccelerate3DEnabled()
+        QString acc3d = aMachine.GetAccelerate3DEnabled() && is3DAvailable()
             ? tr ("Enabled", "details report (3D Acceleration)")
             : tr ("Disabled", "details report (3D Acceleration)");
 
@@ -4026,11 +4046,6 @@ void VBoxGlobal::prepare()
         return;
     }
     mHost = virtualBox().GetHost();
-#ifdef VBOX_WITH_CROGL
-    m3DAvailable = VBoxOglIs3DAccelerationSupported();
-#else
-    m3DAvailable = false;
-#endif
 
     /* create default non-null global settings */
     gset = VBoxGlobalSettings (false);
