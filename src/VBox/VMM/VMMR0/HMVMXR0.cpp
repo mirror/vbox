@@ -1839,9 +1839,10 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
     AssertPtr(pVM);
     AssertPtr(pVCpu);
 
-    /** @todo Shouldn't we able to avoid initializing with 0? */
     int rc = VERR_GENERAL_FAILURE;
 
+    /* All fields are zero-initialized during allocation; but don't remove the commented block below. */
+#if 0
     /* All CR3 accesses cause VM-exits. Later we optimize CR3 accesses (see hmR0VmxLoadGuestControlRegs())*/
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_CR3_TARGET_COUNT, 0);           AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, 0);            AssertRCReturn(rc, rc);
@@ -1863,6 +1864,7 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, 0);       AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, 0);       AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,  0);       AssertRCReturn(rc, rc);
+#endif
 
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     /* Setup MSR autoloading/storing. */
@@ -1883,11 +1885,15 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
     rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, UINT64_C(0xffffffffffffffff));
     AssertRCReturn(rc, rc);
 
+    /* All fields are zero-initialized during allocation; but don't remove the commented block below. */
+#if 0
     /* Setup debug controls */
     rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_DEBUGCTL_FULL, 0);        /** @todo We don't support IA32_DEBUGCTL MSR. Should we? */
     AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, 0);
     AssertRCReturn(rc, rc);
+#endif
+
     return rc;
 }
 
