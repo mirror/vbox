@@ -87,7 +87,7 @@ public class XPCOMException extends RuntimeException {
    * @param message   detailed message of exception
    */
   public XPCOMException(long code, String message) {
-    super(message + "  (0x" + Long.toHexString(code) + ")");
+    super(message + " (0x" + Long.toHexString(code) + ")");
     this.errorcode = code;
   }
 

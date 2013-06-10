@@ -4,7 +4,7 @@
  * be used to connect to the webservice and (XP)COM APIs. */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,7 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-import org.virtualbox_4_2.*;
+import org.virtualbox_4_3.*;
 import java.util.List;
 import java.util.Arrays;
 import java.math.BigInteger;
@@ -25,7 +25,7 @@ public class TestVBox
     {
         System.out.println("got event: " + ev);
         VBoxEventType type = ev.getType();
-        System.out.println("type = "+type);
+        System.out.println("type = " + type);
         switch (type)
         {
             case OnMachineStateChanged:
@@ -34,7 +34,7 @@ public class TestVBox
                 if (mcse == null)
                     System.out.println("Cannot query an interface");
                 else
-                    System.out.println("mid="+mcse.getMachineId());
+                    System.out.println("mid=" + mcse.getMachineId());
                 break;
             }
         }
@@ -63,7 +63,7 @@ public class TestVBox
         es.registerListener(listener, Arrays.asList(VBoxEventType.Any), false);
 
         try {
-            for (int i=0; i<50; i++)
+            for (int i = 0; i < 50; i++)
             {
                 System.out.print(".");
                 IEvent ev = es.getEvent(listener, 500);
@@ -97,6 +97,8 @@ public class TestVBox
                 hwvirtEnabled = m.getHWVirtExProperty(HWVirtExPropertyType.Enabled);
                 hwvirtNestedPaging = m.getHWVirtExProperty(HWVirtExPropertyType.NestedPaging);
                 paeEnabled = m.getCPUProperty(CPUPropertyType.PAE);
+                String osType = m.getOSTypeId();
+                IGuestOSType foo = vbox.getGuestOSType(osType);
             }
             catch (VBoxException e)
             {
@@ -114,11 +116,29 @@ public class TestVBox
         }
     }
 
+    static boolean progressBar(VirtualBoxManager mgr, IProgress p, long waitMillis)
+    {
+        long end = System.currentTimeMillis() + waitMillis;
+        while (!p.getCompleted())
+        {
+            mgr.waitForEvents(0);
+            p.waitForCompletion(200);
+            if (System.currentTimeMillis() >= end)
+                return false;
+        }
+        return true;
+    }
+
     static void testStart(VirtualBoxManager mgr, IVirtualBox vbox)
     {
-        String m =  vbox.getMachines().get(0).getName();
-        System.out.println("\nAttempting to start VM '" + m + "'");
-        mgr.startVm(m, null, 7000);
+        IMachine m = vbox.getMachines().get(0);
+        String name = m.getName();
+        System.out.println("\nAttempting to start VM '" + name + "'");
+        
+        ISession session = mgr.getSessionObject();
+        IProgress p = m.launchVMProcess(session, "gui", "");
+        progressBar(mgr, p, 10000);
+        session.unlockMachine();
     }
 
     static void testMultiServer()
@@ -130,11 +150,18 @@ public class TestVBox
             mgr1.connect("http://i7:18083", "", "");
             mgr2.connect("http://main:18083", "", "");
 
-            String mach1 =  mgr1.getVBox().getMachines().get(0).getName();
-            String mach2 =  mgr2.getVBox().getMachines().get(0).getName();
-
-            mgr1.startVm(mach1, null, 7000);
-            mgr2.startVm(mach2, null, 7000);
+            IMachine m1 = mgr1.getVBox().getMachines().get(0);
+            IMachine m2 = mgr2.getVBox().getMachines().get(0);
+            String name1 = m1.getName();
+            String name2 = m2.getName();
+            ISession session1 = mgr1.getSessionObject();
+            ISession session2 = mgr2.getSessionObject();
+            IProgress p1 = m1.launchVMProcess(session1, "gui", "");
+            IProgress p2 = m2.launchVMProcess(session2, "gui", "");
+            progressBar(mgr1, p1, 10000);
+            progressBar(mgr2, p2, 10000);
+            session1.unlockMachine();
+            session2.unlockMachine();
         } finally {
             mgr1.cleanup();
             mgr2.cleanup();
@@ -157,6 +184,23 @@ public class TestVBox
         }
     }
 
+    static void printErrorInfo(VBoxException e)
+    {
+        System.out.println("VBox error: " + e.getMessage());
+        System.out.println("Error cause message: " + e.getCause());
+        System.out.println("Overall result code: " + Integer.toHexString(e.getResultCode()));
+        int i = 1;
+        for (IVirtualBoxErrorInfo ei = e.getVirtualBoxErrorInfo(); ei != null; ei = ei.getNext(), i++)
+        {
+            System.out.println("Detail information #" + i);
+            System.out.println("Error mesage: " + ei.getText());
+            System.out.println("Result code:  " + Integer.toHexString(ei.getResultCode()));
+            // optional, usually provides little additional information:
+            System.out.println("Component:    " + ei.getComponent());
+            System.out.println("Interface ID: " + ei.getInterfaceID());
+        }
+    }
+
 
     public static void main(String[] args)
     {
@@ -167,15 +211,15 @@ public class TestVBox
         String  user = null;
         String  passwd = null;
 
-        for (int i = 0; i<args.length; i++)
+        for (int i = 0; i < args.length; i++)
         {
-            if ("-w".equals(args[i]))
+            if (args[i].equals("-w"))
                 ws = true;
-            else if ("-url".equals(args[i]))
+            else if (args[i].equals("-url"))
                 url = args[++i];
-            else if ("-user".equals(args[i]))
+            else if (args[i].equals("-user"))
                 user = args[++i];
-            else if ("-passwd".equals(args[i]))
+            else if (args[i].equals("-passwd"))
                 passwd = args[++i];
         }
 
@@ -206,7 +250,13 @@ public class TestVBox
         }
         catch (VBoxException e)
         {
-            System.out.println("VBox error: "+e.getMessage()+" original="+e.getWrapped());
+            printErrorInfo(e);
+            System.out.println("Java stack trace:");
+            e.printStackTrace();
+        }
+        catch (RuntimeException e)
+        {
+            System.out.println("Runtime error: " + e.getMessage());
             e.printStackTrace();
         }
         catch (java.io.IOException e)

@@ -1495,7 +1495,7 @@ static void makeErrorMessage(nsresult r, char* msg, size_t msgSize)
             if (NS_SUCCEEDED (rc))
             {
                 nsCOMPtr <nsIException> ex;
-                rc = em->GetExceptionFromProvider(r, NULL, getter_AddRefs (ex));
+                rc = em->GetCurrentException(getter_AddRefs (ex));
                 if  (NS_SUCCEEDED (rc) && ex)
                 {
                     nsXPIDLCString emsg;

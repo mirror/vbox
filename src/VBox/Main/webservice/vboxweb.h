@@ -71,7 +71,7 @@ extern const WSDLT_ID          g_EmptyWSDLID;
 
 void RaiseSoapInvalidObjectFault(struct soap *soap, WSDLT_ID obj);
 
-void RaiseSoapRuntimeFault(struct soap *soap, const char *pcszMethodName, HRESULT apirc, IUnknown *pObj, const com::Guid &iid);
+void RaiseSoapRuntimeFault(struct soap *soap, const WSDLT_ID &idThis, const char *pcszMethodName, HRESULT apirc, IUnknown *pObj, const com::Guid &iid);
 
 /****************************************************************************
  *
@@ -85,7 +85,7 @@ std::string ConvertComString(const com::Guid &bstr);
 
 std::string Base64EncodeByteArray(ComSafeArrayIn(BYTE, aData));
 
-void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut(BYTE, aData), const char *pszMethodName, IUnknown *pObj, const com::Guid &iid);
+void Base64DecodeByteArray(struct soap *soap, const std::string& aStr, ComSafeArrayOut(BYTE, aData), const WSDLT_ID &idThis, const char *pszMethodName, IUnknown *pObj, const com::Guid &iid);
 /****************************************************************************
  *
  * managed object reference classes

@@ -163,7 +163,7 @@
     <!-- otherwise test for an interface with this name -->
     <xsl:when test="//interface[@name=$type]">
       <!-- the type is one of our own interfaces: then it must have a wsmap attr -->
-      <xsl:variable name="wsmap" select="(//interface[@name=$type]/@wsmap) | (//collection[@name=$type]/@wsmap)" />
+      <xsl:variable name="wsmap" select="//interface[@name=$type]/@wsmap" />
       <xsl:choose>
         <xsl:when test="not($wsmap)">
           <xsl:call-template name="fatalError">
@@ -185,9 +185,6 @@
           </xsl:call-template>
         </xsl:otherwise>
       </xsl:choose>
-    </xsl:when>
-    <xsl:when test="//collection[@name=$type]">
-      <xsl:value-of select="concat('vbox:ArrayOf', //collection[@name=$type]/@type)" />
     </xsl:when>
     <xsl:otherwise>
       <xsl:call-template name="fatalError">
@@ -695,7 +692,10 @@
       <!-- skip this attribute if it has parameters of a type that has wsmap="suppress" -->
       <xsl:choose>
         <xsl:when test="( $attrtype=($G_setSuppressedInterfaces/@name) )">
-          <xsl:comment><xsl:value-of select="concat('skipping attribute ', $attrtype, ' for it is of a suppressed type')" /></xsl:comment>
+          <xsl:comment><xsl:value-of select="concat('skipping attribute ', $attrname, ' for it is of a suppressed type')" /></xsl:comment>
+        </xsl:when>
+        <xsl:when test="@wsmap = 'suppress'">
+          <xsl:comment><xsl:value-of select="concat('skipping attribute ', $attrname, ' for it is suppressed')" /></xsl:comment>
         </xsl:when>
         <xsl:otherwise>
           <xsl:choose>
@@ -735,6 +735,9 @@
         <xsl:when test="   (param[@type=($G_setSuppressedInterfaces/@name)])
                         or (param[@mod='ptr'])" >
           <xsl:comment><xsl:value-of select="concat('skipping method ', $methodname, ' for it has parameters with suppressed types')" /></xsl:comment>
+        </xsl:when>
+        <xsl:when test="@wsmap = 'suppress'">
+          <xsl:comment><xsl:value-of select="concat('skipping method ', $methodname, ' for it is suppressed')" /></xsl:comment>
         </xsl:when>
         <xsl:otherwise>
           <!-- always emit a request message -->
@@ -777,7 +780,10 @@
     <xsl:choose>
       <!-- skip this attribute if it has parameters of a type that has wsmap="suppress" -->
       <xsl:when test="( $attrtype=($G_setSuppressedInterfaces/@name) )">
-        <xsl:comment><xsl:value-of select="concat('skipping attribute ', $attrtype, ' for it is of a suppressed type')" /></xsl:comment>
+        <xsl:comment><xsl:value-of select="concat('skipping attribute ', $attrname, ' for it is of a suppressed type')" /></xsl:comment>
+      </xsl:when>
+      <xsl:when test="@wsmap = 'suppress'">
+        <xsl:comment><xsl:value-of select="concat('skipping attribute ', $attrname, ' for it is suppressed')" /></xsl:comment>
       </xsl:when>
       <xsl:otherwise>
         <xsl:variable name="attrGetter"><xsl:call-template name="makeGetterName"><xsl:with-param name="attrname" select="$attrname" /></xsl:call-template></xsl:variable>
@@ -811,6 +817,9 @@
                       or (param[@mod='ptr'])" >
         <xsl:comment><xsl:value-of select="concat('skipping method ', $methodname, ' for it has parameters with suppressed types')" /></xsl:comment>
       </xsl:when>
+      <xsl:when test="@wsmap = 'suppress'">
+        <xsl:comment><xsl:value-of select="concat('skipping method ', $methodname, ' for it is suppressed')" /></xsl:comment>
+      </xsl:when>
       <xsl:otherwise>
         <xsl:call-template name="emitInOutOperation">
           <xsl:with-param name="_ifname" select="$ifname" />
@@ -837,7 +846,10 @@
     <!-- skip this attribute if it has parameters of a type that has wsmap="suppress" -->
     <xsl:choose>
       <xsl:when test="( $attrtype=($G_setSuppressedInterfaces/@name) )">
-        <xsl:comment><xsl:value-of select="concat('skipping attribute ', $attrtype, ' for it is of a suppressed type')" /></xsl:comment>
+        <xsl:comment><xsl:value-of select="concat('skipping attribute ', $attrname, ' for it is of a suppressed type')" /></xsl:comment>
+      </xsl:when>
+      <xsl:when test="@wsmap = 'suppress'">
+        <xsl:comment><xsl:value-of select="concat('skipping attribute ', $attrname, ' for it is suppressed')" /></xsl:comment>
       </xsl:when>
       <xsl:otherwise>
         <xsl:variable name="attrGetter"><xsl:call-template name="makeGetterName"><xsl:with-param name="attrname" select="$attrname" /></xsl:call-template></xsl:variable>
@@ -869,6 +881,9 @@
       <xsl:when test="   (param[@type=($G_setSuppressedInterfaces/@name)])
                       or (param[@mod='ptr'])" >
         <xsl:comment><xsl:value-of select="concat('skipping method ', $methodname, ' for it has parameters with suppressed types')" /></xsl:comment>
+      </xsl:when>
+      <xsl:when test="@wsmap = 'suppress'">
+        <xsl:comment><xsl:value-of select="concat('skipping method ', $methodname, ' for it is suppressed')" /></xsl:comment>
       </xsl:when>
       <xsl:otherwise>
         <xsl:call-template name="emitInOutOperation">
@@ -1024,40 +1039,6 @@
           </xsd:complexType>
         </xsl:for-each>
 
-        <!-- type-define all collections as arrays (complexTypes) -->
-        <xsl:comment>
-      ******************************************************
-      * collections as arrays
-      ******************************************************
-</xsl:comment>
-        <xsl:for-each select="//collection">
-          <xsl:variable name="type" select="@type" />
-          <xsl:variable name="ifwsmap" select="//interface[@name=$type]/@wsmap" />
-          <xsl:comment><xsl:value-of select="concat(' collection ', @name, ' as array (wsmap: ', $ifwsmap, '): ')" /></xsl:comment>
-          <xsd:complexType>
-            <xsl:attribute name="name"><xsl:value-of select="concat('ArrayOf', @type)" /></xsl:attribute>
-            <xsd:sequence>
-              <xsl:choose>
-                <xsl:when test="($ifwsmap='managed') or ($ifwsmap='explicit')">
-                  <xsd:element name="array" minOccurs="0" maxOccurs="unbounded">
-                    <xsl:attribute name="type"><xsl:value-of select="$G_typeObjectRef" /></xsl:attribute>
-                  </xsd:element>
-                </xsl:when>
-                <xsl:when test="$ifwsmap='struct'">
-                  <xsd:element name="array" minOccurs="0" maxOccurs="unbounded">
-                    <xsl:attribute name="type"><xsl:value-of select="concat('vbox:', @type)" /></xsl:attribute>
-                  </xsd:element>
-                </xsl:when>
-                <xsl:otherwise>
-                  <xsl:call-template name="fatalError">
-                    <xsl:with-param name="msg" select="concat('library template: collection &quot;', @name, '&quot; uses interface with unsupported wsmap attribute value &quot;', $ifwsmap, '&quot;')" />
-                  </xsl:call-template>
-                </xsl:otherwise>
-              </xsl:choose>
-            </xsd:sequence>
-          </xsd:complexType>
-        </xsl:for-each>
-
         <!-- for WSDL 'document' style, we need to emit elements since we can't
              refer to types in message parts as with RPC style -->
         <xsl:if test="$G_basefmt='document'">
@@ -1085,6 +1066,9 @@
                 <xsl:choose>
                   <xsl:when test="( $attrtype=($G_setSuppressedInterfaces/@name) )">
                     <xsl:comment><xsl:value-of select="concat('skipping attribute ', $attrtype, ' for it is of a suppressed type')" /></xsl:comment>
+                  </xsl:when>
+                  <xsl:when test="@wsmap = 'suppress'">
+                    <xsl:comment><xsl:value-of select="concat('skipping attribute ', $attrname, ' for it is suppressed')" /></xsl:comment>
                   </xsl:when>
                   <xsl:otherwise>
                     <xsl:choose>
@@ -1135,6 +1119,9 @@
                                   or (param[@mod='ptr'])" >
                     <xsl:comment><xsl:value-of select="concat('skipping method ', $methodname, ' for it has parameters with suppressed types')" /></xsl:comment>
                   </xsl:when>
+                  <xsl:when test="@wsmap = 'suppress'">
+                    <xsl:comment><xsl:value-of select="concat('skipping method ', $methodname, ' for it is suppressed')" /></xsl:comment>
+                  </xsl:when>
                   <xsl:otherwise>
                     <!-- always emit a request message -->
                     <xsl:call-template name="emitRequestElements">
@@ -1182,9 +1169,11 @@
           <xsd:complexType>
             <xsd:sequence>
               <xsd:element name="resultCode" type="xsd:int" />
-              <xsd:element name="interfaceID" type="xsd:string" />
-              <xsd:element name="component" type="xsd:string" />
-              <xsd:element name="text" type="xsd:string" />
+              <xsd:element name="returnval">
+                <xsl:attribute name="type">
+                  <xsl:value-of select="$G_typeObjectRef" />
+                </xsl:attribute>
+              </xsd:element>
             </xsd:sequence>
           </xsd:complexType>
         </xsd:element>

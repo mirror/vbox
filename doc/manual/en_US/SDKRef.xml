@@ -3447,7 +3447,7 @@ AuthResult AUTHCALL AuthEntry(
       setup phase (see <computeroutput>ws</computeroutput> variable). In the
       SOAP case it's possible to create several VirtualBoxManager instances to
       communicate with multiple VirtualBox hosts. <programlisting>
-          import org.virtualbox_3_3.*;
+          import org.virtualbox_4_3.*;
           ....
           VirtualBoxManager mgr = VirtualBoxManager.createInstance(null);
           boolean ws = false; // or true, if we need the SOAP version
@@ -3472,7 +3472,8 @@ AuthResult AUTHCALL AuthEntry(
           mgr.cleanup();
         </programlisting> For more a complete example, see
       <computeroutput>TestVBox.java</computeroutput>, shipped with the
-      SDK.</para>
+      SDK. It contains exception handling and error printing code, which
+      is important for reliable larger scale projects.</para>
     </sect1>
   </chapter>
 

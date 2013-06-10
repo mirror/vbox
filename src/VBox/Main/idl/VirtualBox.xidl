@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0"  encoding="utf-8"?>
 
 <!--
 
@@ -1238,7 +1238,7 @@
     </const>
     <const name="ComboMouse"        value="5">
       <desc>Combined device, working as PS/2 or USB mouse, depending on guest behavior.
-      Using of such device can have negative performance implications. </desc>
+      Using of such device can have negative performance implications.</desc>
     </const>
   </enum>
 
@@ -1260,7 +1260,7 @@
     </const>
     <const name="ComboKeyboard"     value="4">
       <desc>Combined device, working as PS/2 or USB keyboard, depending on guest behavior.
-      Using of such device can have negative performance implications. </desc>
+      Using of such device can have negative performance implications.</desc>
     </const>
   </enum>
 
@@ -1409,7 +1409,9 @@
     </attribute>
     <attribute name="IPv6Prefix" type="wstring">
       <desc>
-        This a CIDR IPv6 defining prefix for link-local addresses autoconfiguration     within network. Note: ignored if attribute ipv6enabled is false.
+        This a CIDR IPv6 defining prefix for link-local addresses
+        autoconfiguration within network. Note: ignored if attribute
+        IPv6Enabled is false.
       </desc>
     </attribute>
     <attribute name="advertiseDefaultIPv6RouteEnabled" type="boolean"/>
@@ -3802,8 +3804,8 @@
 
   <interface
     name="IPCIAddress" extends="$unknown"
-    uuid="D88B324F-DB19-4D3B-A1A9-BF5B127199A8"
-    wsmap="struct"
+    uuid="c984d15f-e191-400b-840e-970f3dad7296"
+    wsmap="managed"
     >
 
     <desc>
@@ -4731,7 +4733,7 @@
         this VM through the <link to="IMachine::launchVMProcess" /> method.
         Empty or @c null strings do not define a particular default, it is up
         to <link to="IMachine::launchVMProcess" /> to select one. See the
-        description of <link to="IMachine::launchVMProcess" />  for the valid
+        description of <link to="IMachine::launchVMProcess" /> for the valid
         frontend types.
 
         This per-VM setting overrides the default defined by
@@ -14280,8 +14282,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       Format of the video memory buffer. Constants represented by this enum can
       be used to test for particular values of <link
-      to="IFramebuffer::pixelFormat"/>. See also <link
-      to="IFramebuffer::requestResize"/>.
+      to="IFramebuffer::pixelFormat"/>.
 
       See also www.fourcc.org for more information about FOURCC pixel formats.
     </desc>
@@ -14303,9 +14304,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="IFramebuffer" extends="$unknown"
     uuid="e3f122c0-adab-4fc9-a8dc-da112fb48428"
-    wsmap="suppress"
+    wsmap="managed"
     >
-    <attribute name="address" type="octet" mod="ptr" readonly="yes">
+    <attribute name="address" type="octet" mod="ptr" readonly="yes" wsmap="suppress">
       <desc>Address of the start byte of the frame buffer.</desc>
     </attribute>
 
@@ -14338,9 +14339,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Frame buffer pixel format. It's either one of the values defined by <link
         to="FramebufferPixelFormat"/> or a raw FOURCC code.
         <note>
-          This attribute must never return <link
-          to="FramebufferPixelFormat_Opaque"/> -- the format of the buffer
-          <link to="#address"/> points to must be always known.
+          This attribute must never (and will never) return <link
+          to="FramebufferPixelFormat_Opaque"/> -- the format of the frame
+          buffer must be always known.
         </note>
       </desc>
     </attribute>
@@ -14348,8 +14349,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="usesGuestVRAM" type="boolean" readonly="yes">
       <desc>
         Defines whether this frame buffer uses the virtual video card's memory
-        buffer (guest VRAM) directly or not. See <link
-        to="IFramebuffer::requestResize"/> for more information.
+        buffer (guest VRAM) directly or not.
       </desc>
     </attribute>
 
@@ -14378,14 +14378,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="winId" type="long long" readonly="yes">
+    <attribute name="winId" type="long long" readonly="yes" wsmap="suppress">
       <desc>
         Platform-dependent identifier of the window where context of this
         frame buffer is drawn, or zero if there's no such window.
       </desc>
     </attribute>
 
-    <method name="lock">
+    <method name="lock" wsmap="suppress">
       <desc>
         Locks the frame buffer.
         Gets called by the IDisplay object where this frame buffer is
@@ -14393,7 +14393,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </method>
 
-    <method name="unlock">
+    <method name="unlock" wsmap="suppress">
       <desc>
         Unlocks the frame buffer.
         Gets called by the IDisplay object where this frame buffer is
@@ -14401,7 +14401,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </method>
 
-    <method name="notifyUpdate">
+    <method name="notifyUpdate" wsmap="suppress">
       <desc>
         Informs about an update.
         Gets called by the display object where this buffer is
@@ -14413,7 +14413,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="height" type="unsigned long" dir="in"/>
     </method>
 
-    <method name="requestResize">
+    <method name="requestResize" wsmap="suppress">
       <desc>
         Requests a size and pixel format change.
 
@@ -14548,7 +14548,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="supported" type="boolean" dir="return"/>
     </method>
 
-    <method name="getVisibleRegion">
+    <method name="getVisibleRegion" wsmap="suppress">
       <desc>
         Returns the visible region of this frame buffer.
 
@@ -14581,7 +14581,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="setVisibleRegion">
+    <method name="setVisibleRegion" wsmap="suppress">
       <desc>
         Suggests a new visible region to this frame buffer. This region
         represents the area of the VM display which is a union of regions of
@@ -14610,7 +14610,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="processVHWACommand">
+    <method name="processVHWACommand" wsmap="suppress">
       <desc>
         Posts a Video HW Acceleration Command to the frame buffer for processing.
         The commands used for 2D video acceleration (DDraw surface creation/destroying, blitting, scaling, color conversion, overlaying, etc.)
@@ -14645,7 +14645,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="IFramebufferOverlay" extends="IFramebuffer"
     uuid="0bcc1c7e-e415-47d2-bfdb-e4c705fb0f47"
-    wsmap="suppress"
+    wsmap="managed"
     >
     <desc>
       The IFramebufferOverlay interface represents an alpha blended overlay
@@ -15940,8 +15940,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="VM" type="long long" readonly="yes" wsmap="suppress">
       <desc>
-        Gets the user-mode VM handle, with a reference.  Must be passed to
-        VMR3ReleaseUVM when done.  This is only for internal use while we carve
+        Gets the user-mode VM handle, with a reference. Must be passed to
+        VMR3ReleaseUVM when done. This is only for internal use while we carve
         the details of this interface.
       </desc>
     </attribute>
@@ -18085,14 +18085,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           form metric/object pairs.
         </note>
         <note>
-          Data collection continues behind the scenes after call to @c
-          queryMetricsData. The return data can be seen as the snapshot of the
-          current state at the time of @c queryMetricsData call. The internally
-          kept metric values are not cleared by the call. This makes possible
-          querying different subsets of metrics or aggregates with subsequent
-          calls. If periodic querying is needed it is highly suggested to query
-          the values with @c interval*count period to avoid confusion. This way
-          a completely new set of data values will be provided by each query.
+          Data collection continues behind the scenes after call to
+          @c queryMetricsData. The return data can be seen as the snapshot of
+          the current state at the time of @c queryMetricsData call. The
+          internally kept metric values are not cleared by the call. This
+          allows querying different subsets of metrics or aggregates with
+          subsequent calls. If periodic querying is needed it is highly
+          suggested to query the values with @c interval*count period to avoid
+          confusion. This way a completely new set of data values will be
+          provided by each query.
         </note>
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
@@ -20971,12 +20972,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
              wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkPortForward">
     <attribute name="create" type="boolean" readonly="yes"/>
     <attribute name="ipv6" type="boolean" readonly="yes"/>
-    <attribute name="name"  type="wstring" readonly="yes"/>
-    <attribute name="proto"  type="NATProtocol" readonly="yes"/>
-    <attribute name="hostIp"  type="wstring" readonly="yes"/>
-    <attribute name="hostPort"  type="long" readonly="yes"/>
-    <attribute name="guestIp"  type="wstring" readonly="yes"/>
-    <attribute name="guestPort"  type="long" readonly="yes"/>
+    <attribute name="name" type="wstring" readonly="yes"/>
+    <attribute name="proto" type="NATProtocol" readonly="yes"/>
+    <attribute name="hostIp" type="wstring" readonly="yes"/>
+    <attribute name="hostPort" type="long" readonly="yes"/>
+    <attribute name="guestIp" type="wstring" readonly="yes"/>
+    <attribute name="guestPort" type="long" readonly="yes"/>
   </interface>
 
   <module name="VBoxSVC" context="LocalServer">

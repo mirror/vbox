@@ -3,7 +3,7 @@
  *      demo webservice client in C++. This mimics some of the
  *      functionality of VBoxManage for testing purposes.
  *
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -57,6 +57,8 @@ static void usage(int exitcode)
        " - IPerformanceCollector:\n"
        "   - webtest setupmetrics <pcref>: IPerformanceCollector::setupMetrics()\n"
        "   - webtest querymetricsdata <pcref>: IPerformanceCollector::QueryMetricsData()\n"
+       " - IVirtualBoxErrorInfo:\n"
+       "   - webtest errorinfo <eiref>: various IVirtualBoxErrorInfo getters\n"
        " - All managed object references:\n"
        "   - webtest getif <ref>: report interface of object.\n"
        "   - webtest release <ref>: IUnknown::Release().\n";
@@ -75,7 +77,7 @@ int main(int argc, char* argv[])
     const char *pcszArgEndpoint = "http://localhost:18083/";
 
     int ap;
-    for (ap = 1; ap <= argc; ap++)
+    for (ap = 1; ap < argc; ap++)
     {
         if (argv[ap][0] == '-')
         {
@@ -84,7 +86,7 @@ int main(int argc, char* argv[])
             else if (!strcmp(argv[ap], "-c"))
             {
                 ap++;
-                if (ap > argc)
+                if (ap >= argc)
                     usage(1);
                 pcszArgEndpoint = argv[ap];
                 fSSL = !strncmp(pcszArgEndpoint, "https://", 8);
@@ -452,6 +454,47 @@ int main(int argc, char* argv[])
             }
         }
     }
+    else if (!strcmp(pcszMode, "errorinfo"))
+    {
+        if (argc < 2 + ap)
+            std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
+        else
+        {
+            _vbox__IVirtualBoxErrorInfo_USCOREgetResultCode req;
+            req._USCOREthis = argv[ap + 1];
+            _vbox__IVirtualBoxErrorInfo_USCOREgetResultCodeResponse resp;
+            if (!(soaprc = soap_call___vbox__IVirtualBoxErrorInfo_USCOREgetResultCode(&soap,
+                                                                                      pcszArgEndpoint,
+                                                                                      NULL,
+                                                                                      &req,
+                                                                                      &resp)))
+            {
+                std::cout << "ErrorInfo ResultCode: " << std::hex << resp.returnval << "\n";
+
+                _vbox__IVirtualBoxErrorInfo_USCOREgetText req2;
+                req2._USCOREthis = argv[ap + 1];
+                _vbox__IVirtualBoxErrorInfo_USCOREgetTextResponse resp2;
+                if (!(soaprc = soap_call___vbox__IVirtualBoxErrorInfo_USCOREgetText(&soap,
+                                                                                    pcszArgEndpoint,
+                                                                                    NULL,
+                                                                                    &req2,
+                                                                                    &resp2)))
+                {
+                    std::cout << "ErrorInfo Text:       " << resp2.returnval << "\n";
+
+                    _vbox__IVirtualBoxErrorInfo_USCOREgetNext req3;
+                    req3._USCOREthis = argv[ap + 1];
+                    _vbox__IVirtualBoxErrorInfo_USCOREgetNextResponse resp3;
+                    if (!(soaprc = soap_call___vbox__IVirtualBoxErrorInfo_USCOREgetNext(&soap,
+                                                                                        pcszArgEndpoint,
+                                                                                        NULL,
+                                                                                        &req3,
+                                                                                        &resp3)))
+                        std::cout << "Next ErrorInfo:       " << resp3.returnval << "\n";
+                }
+            }
+        }
+    }
     else if (!strcmp(pcszMode, "release"))
     {
         if (argc < 2 + ap)
@@ -478,22 +521,18 @@ int main(int argc, char* argv[])
              && (soap.fault->detail)
            )
         {
+            // generic fault message whether the fault is known or not
+            std::cerr << "Generic fault message:\n";
+            soap_print_fault(&soap, stderr); // display the SOAP fault message on the stderr stream
+
             if (soap.fault->detail->vbox__InvalidObjectFault)
             {
-                std::cout << "Bad object ID: " << soap.fault->detail->vbox__InvalidObjectFault->badObjectID << "\n";
+                std::cerr << "Bad object ID: " << soap.fault->detail->vbox__InvalidObjectFault->badObjectID << "\n";
             }
             else if (soap.fault->detail->vbox__RuntimeFault)
             {
-                std::cout << "Result code:   0x" << std::hex << soap.fault->detail->vbox__RuntimeFault->resultCode << "\n";
-                std::cout << "Text:          " << std::hex << soap.fault->detail->vbox__RuntimeFault->text << "\n";
-                std::cout << "Component:     " << std::hex << soap.fault->detail->vbox__RuntimeFault->component << "\n";
-                std::cout << "Interface ID:  " << std::hex << soap.fault->detail->vbox__RuntimeFault->interfaceID << "\n";
-            }
-            else
-            {
-                // generic fault
-                std::cerr << "Generic fault message:\n";
-                soap_print_fault(&soap, stderr); // display the SOAP fault message on the stderr stream
+                std::cerr << "Result code:   0x" << std::hex << soap.fault->detail->vbox__RuntimeFault->resultCode << "\n";
+                std::cerr << "ErrorInfo:     " << soap.fault->detail->vbox__RuntimeFault->returnval << "\n";
             }
         }
         else

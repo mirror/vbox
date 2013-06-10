@@ -7,9 +7,9 @@
 <!--
 
     genjifaces.xsl:
-        XSLT stylesheet that generates Java XPCOM bridge intreface code from VirtualBox.xidl.
+        XSLT stylesheet that generates Java XPCOM bridge interface code from VirtualBox.xidl.
 
-    Copyright (C) 2010-2012 Oracle Corporation
+    Copyright (C) 2010-2013 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -67,7 +67,7 @@
 <xsl:template name="fileheader">
   <xsl:param name="name" />
   <xsl:text>/**
- *  Copyright (C) 2010 Oracle Corporation
+ *  Copyright (C) 2010-2013 Oracle Corporation
  *
  *  This file is part of VirtualBox Open Source Edition (OSE), as
  *  available from http://www.virtualbox.org. This file is free software;
@@ -119,16 +119,14 @@ public interface nsISupports
     "{00000000-0000-0000-c000-000000000046}";
 
   public nsISupports queryInterface(String arg1);
-
 }
-
 ]]></xsl:text>
 
  <xsl:call-template name="endFile">
    <xsl:with-param name="file" select="'nsISupports.java'" />
  </xsl:call-template>
 
-<xsl:call-template name="startFile">
+ <xsl:call-template name="startFile">
     <xsl:with-param name="file" select="'nsIComponentManager.java'" />
  </xsl:call-template>
 
@@ -146,14 +144,13 @@ public interface nsIComponentManager extends nsISupports
 
   public nsISupports createInstanceByContractID(String arg1, nsISupports arg2, String arg3);
 }
-
 ]]></xsl:text>
 
  <xsl:call-template name="endFile">
    <xsl:with-param name="file" select="'nsIComponentManager.java'" />
  </xsl:call-template>
 
-<xsl:call-template name="startFile">
+ <xsl:call-template name="startFile">
     <xsl:with-param name="file" select="'nsIServiceManager.java'" />
  </xsl:call-template>
 
@@ -171,14 +168,67 @@ public interface nsIServiceManager extends nsISupports
 
   public boolean isServiceInstantiatedByContractID(String arg1, String arg2);
 }
-
 ]]></xsl:text>
 
  <xsl:call-template name="endFile">
    <xsl:with-param name="file" select="'nsIServiceManager.java'" />
  </xsl:call-template>
 
-<xsl:call-template name="startFile">
+ <xsl:call-template name="startFile">
+    <xsl:with-param name="file" select="'nsIExceptionManager.java'" />
+ </xsl:call-template>
+
+ <xsl:text><![CDATA[
+public interface nsIExceptionManager extends nsISupports
+{
+  public static final String NS_IEXCEPTIONMANAGER_IID =
+    "{efc9d00b-231c-4feb-852c-ac017266a415}";
+
+  public nsIException getCurrentException();
+}
+]]></xsl:text>
+
+ <xsl:call-template name="endFile">
+   <xsl:with-param name="file" select="'nsISupports.java'" />
+ </xsl:call-template>
+
+ <xsl:call-template name="startFile">
+    <xsl:with-param name="file" select="'nsIExceptionService.java'" />
+ </xsl:call-template>
+
+ <xsl:text><![CDATA[
+public interface nsIExceptionService extends nsIExceptionManager
+{
+  public static final String NS_IEXCEPTIONSERVICE_IID =
+    "{35a88f54-f267-4414-92a7-191f6454ab52}";
+
+  public nsIExceptionManager getCurrentExceptionManager();
+}
+]]></xsl:text>
+
+ <xsl:call-template name="endFile">
+   <xsl:with-param name="file" select="'nsISupports.java'" />
+ </xsl:call-template>
+
+ <xsl:call-template name="startFile">
+    <xsl:with-param name="file" select="'nsIException.java'" />
+ </xsl:call-template>
+
+ <xsl:text><![CDATA[
+public interface nsIException extends nsISupports
+{
+  public static final String NS_IEXCEPTION_IID =
+    "{f3a8d3b4-c424-4edc-8bf6-8974c983ba78}";
+
+   // No methods - placeholder
+}
+]]></xsl:text>
+
+ <xsl:call-template name="endFile">
+   <xsl:with-param name="file" select="'nsISupports.java'" />
+ </xsl:call-template>
+
+ <xsl:call-template name="startFile">
     <xsl:with-param name="file" select="'nsIComponentRegistrar.java'" />
  </xsl:call-template>
 
@@ -190,7 +240,6 @@ public interface nsIComponentRegistrar extends nsISupports
 
    // No methods - placeholder
 }
-
 ]]></xsl:text>
 
  <xsl:call-template name="endFile">
@@ -198,7 +247,7 @@ public interface nsIComponentRegistrar extends nsISupports
  </xsl:call-template>
 
 
-<xsl:call-template name="startFile">
+ <xsl:call-template name="startFile">
     <xsl:with-param name="file" select="'nsIFile.java'" />
  </xsl:call-template>
 
@@ -210,14 +259,13 @@ public interface nsIFile extends nsISupports
 
   // No methods - placeholder
 }
-
 ]]></xsl:text>
 
  <xsl:call-template name="endFile">
    <xsl:with-param name="file" select="'nsIFile.java'" />
  </xsl:call-template>
 
-<xsl:call-template name="startFile">
+ <xsl:call-template name="startFile">
     <xsl:with-param name="file" select="'nsILocalFile.java'" />
  </xsl:call-template>
 
@@ -229,7 +277,6 @@ public interface nsILocalFile extends nsIFile
 
   // No methods - placeholder
 }
-
 ]]></xsl:text>
 
  <xsl:call-template name="endFile">
