@@ -91,9 +91,68 @@ EXPORTS
     CFGMR3QueryStringDef
     CFGMR3QueryString
     CFGMR3QueryStringAlloc
+    CFGMR3GetParent
+    CFGMR3GetRootU
+
+    CSAMR3IsEnabled
+    CSAMR3SetScanningEnabled
+
+    DBGCCreate
+
+    DBGFR3CoreWrite
+    DBGFR3Info
+    DBGFR3InfoRegisterExternal
+    DBGFR3InjectNMI
+    DBGFR3LogModifyDestinations
+    DBGFR3LogModifyFlags
+    DBGFR3LogModifyGroups
+    DBGFR3OSDetect
+    DBGFR3OSQueryNameAndVersion
+    DBGFR3RegCpuQueryU32
+    DBGFR3RegFormatValue
+    DBGFR3RegNmQuery
+    DBGFR3RegNmQueryAll
+    DBGFR3RegNmQueryAllCount
+    DBGFR3OSDeregister
+    DBGFR3OSRegister
+    DBGFR3MemReadString
+    DBGFR3MemRead
+    DBGFR3MemScan
+    DBGFR3AddrFromFlat
+    DBGFR3AsSymbolByName
+    DBGFR3AsResolveAndRetain
+    DBGFR3AsSetAlias
+    DBGFR3AddrAdd
+    DBGFR3AddrSub
+    DBGFR3AsGetConfig
+    DBGFR3CpuGetMode
+    DBGFR3AddrFromSelOff
+
+    EMR3QueryExecutionPolicy
+    EMR3SetExecutionPolicy
+
+    FTMR3CancelStandby
+    FTMR3PowerOn
+
+    HMR3IsEnabled
+    HMR3IsNestedPagingActive
+    HMR3IsUXActive
+    HMR3IsVpidActive
 
     MMR3HeapFree
     MMR3HeapRealloc
+
+    PATMR3AllowPatching
+    PATMR3IsEnabled
+
+    PDMR3AsyncCompletionBwMgrSetMaxForFile
+    PDMR3DeviceAttach
+    PDMR3DeviceDetach
+    PDMR3DriverAttach
+    PDMR3NsBwGroupSetLimit
+    PDMR3QueryDeviceLun
+    PDMR3QueryDriverOnLun
+    PDMR3QueryLun
 
     PDMCritSectEnter
     PDMCritSectEnterDebug
@@ -126,6 +185,10 @@ EXPORTS
     PDMR3ThreadSleep
     PDMR3ThreadSuspend
 
+    PDMR3UsbCreateProxyDevice
+    PDMR3UsbDetachDevice
+    PDMR3UsbHasHub
+
     PGMHandlerPhysicalPageTempOff
     PGMPhysReadGCPtr
     PGMPhysSimpleDirtyWriteGCPtr
@@ -134,6 +197,8 @@ EXPORTS
     PGMPhysSimpleWriteGCPtr
     PGMPhysWriteGCPtr
     PGMShwMakePageWritable
+    PGMR3QueryGlobalMemoryStats
+    PGMR3QueryMemoryStats
 
     SSMR3Close
     SSMR3DeregisterExternal
@@ -211,6 +276,15 @@ EXPORTS
     SSMR3Skip
     SSMR3SkipToEndOfUnit
     SSMR3ValidateFile
+    SSMR3Cancel
+    SSMR3RegisterExternal
+
+    STAMR3Dump
+    STAMR3Enum
+    STAMR3Reset
+    STAMR3Snapshot
+    STAMR3SnapshotFree
+    STAMR3GetUnit
 
     TMR3TimerSetCritSect
     TMR3TimerLoad
@@ -241,7 +315,45 @@ EXPORTS
     TMTimerToMilli
     TMTimerToNano
     TMTimerUnlock
+    TMR3GetWarpDrive
+    TMR3SetWarpDrive
+
+    VMMGetCpu
 
     VMMGetSvnRev
     VMSetError
     VMSetErrorV
+    VMR3AtErrorDeregister
+    VMR3AtErrorRegister
+    VMR3AtRuntimeErrorRegister
+    VMR3AtStateRegister
+    VMR3Create
+    VMR3Destroy
+    VMR3GetCpuCoreAndPackageIdFromCpuId
+    VMR3GetStateName
+    VMR3GetStateU
+    VMR3GetVM
+    VMR3HotPlugCpu
+    VMR3HotUnplugCpu
+    VMR3LoadFromFile
+    VMR3LoadFromStream
+    VMR3PowerOff
+    VMR3PowerOn
+    VMR3ReleaseUVM
+    VMR3ReqCallU
+    VMR3ReqCallVoidWaitU
+    VMR3ReqCallWaitU
+    VMR3ReqFree
+    VMR3ReqPriorityCallWaitU
+    VMR3ReqWait
+    VMR3Reset
+    VMR3Resume
+    VMR3RetainUVM
+    VMR3Save
+    VMR3SetCpuExecutionCap
+    VMR3SetError
+    VMR3Suspend
+    VMR3Teleport
+    VMR3AtStateDeregister
+    VMR3GetUVM
+

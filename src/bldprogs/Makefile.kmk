@@ -61,5 +61,11 @@ BLDPROGS.win += VBoxPeSetVersion
 VBoxPeSetVersion_TEMPLATE = VBOXBLDPROG
 VBoxPeSetVersion_SOURCES  = VBoxPeSetVersion.cpp
 
+
+BLDPROGS.win += VBoxDef2LazyLoad
+VBoxDef2LazyLoad_TEMPLATE = VBOXBLDPROG
+VBoxDef2LazyLoad_SOURCES  = VBoxDef2LazyLoad.cpp
+
+
 include $(FILE_KBUILD_SUB_FOOTER)
 

@@ -585,11 +585,11 @@ VBoxC_LDFLAGS.darwin = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/components/VBoxC.dylib \
 	-exported_symbols_list $(VBoxC_0_OUTDIR)/VBoxC.def \
 	-framework IOKit
-VBoxC_LDFLAGS.win += /DELAYLOAD:VBoxVMM.dll /MANIFEST
+VBoxC_LDFLAGS.win += /MANIFEST
 
 VBoxC_LIBS += \
-	$(LIB_VMM) \
-	$(LIB_REM)
+	$(if-expr "$(LIB_VMM)" == "$(VBOX_LIB_VMM_LAZY)",$(LIB_REM),) \
+	$(VBOX_LIB_VMM_LAZY)
 
 ifdef VBOX_WITH_NETFLT
  VBoxC_LIBS.win += \
