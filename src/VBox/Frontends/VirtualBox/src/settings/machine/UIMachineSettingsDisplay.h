@@ -168,11 +168,11 @@ private slots:
     /* Handlers: Video Capture stuff: */
     void sltHandleVideoCaptureSizeChange(int iCurrentIndex);
     void sltHandleVideoCaptureFrameRateChange(int iFrameRate);
-    void sltHandleVideoCaptureBitRateChange(int iCurrentIndex);
     void sltHandleVideoCaptureWidthChange();
     void sltHandleVideoCaptureHeightChange();
     void sltHandleVideoCaptureFrameRateChange();
-    void sltHandleVideoCaptureBitRateChange();
+    void sltHandleVideoCaptureQualitySliderChange();
+    void sltHandleVideoCaptureBitRateSpinboxChange();
 
 private:
 
@@ -189,8 +189,9 @@ private:
 
     /* Helpers: Video Capture stuff: */
     void lookForCorrespondingSizePreset();
-    void lookForCorrespondingBitRatePreset();
     static void lookForCorrespondingPreset(QComboBox *pWhere, const QVariant &whichData);
+    static int calculateBitRate(int iFrameWidth, int iFrameHeight, int iFrameRate, int iQuality);
+    static int calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate);
 
     /* Validation stuff: */
     QIWidgetValidator *m_pValidator;
