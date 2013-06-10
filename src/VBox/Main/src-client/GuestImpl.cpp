@@ -183,7 +183,7 @@ void Guest::uninit()
 }
 
 /* static */
-void Guest::staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick)
+DECLCALLBACK(void) Guest::staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick)
 {
     AssertReturnVoid(pvUser != NULL);
     Guest *guest = static_cast<Guest *>(pvUser);
