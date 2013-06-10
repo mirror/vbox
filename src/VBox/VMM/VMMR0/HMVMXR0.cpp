@@ -824,7 +824,7 @@ static int hmR0VmxStructsAlloc(PVM pVM)
     if (RT_FAILURE(rc))
         goto cleanup;
     strcpy((char *)pVM->hm.s.vmx.pbScratch, "SCRATCH Magic");
-    *(uint64_t *)(pVM->hm.s.vmx.pbScratch + 16) = UINT64_C(0xDEADBEEFDEADBEEF);
+    *(uint64_t *)(pVM->hm.s.vmx.pbScratch + 16) = UINT64_C(0xdeadbeefdeadbeef);
 #endif
 
     /* Allocate the APIC-access page for trapping APIC accesses from the guest. */
@@ -3687,7 +3687,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, pMixedCtx->gdtr.cbGdt);        AssertRCReturn(rc, rc);
         rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_GDTR_BASE,  pMixedCtx->gdtr.pGdt);         AssertRCReturn(rc, rc);
 
-        Assert(!(pMixedCtx->gdtr.cbGdt & UINT64_C(0xffff0000)));       /* Bits 31:16 MBZ. */
+        Assert(!(pMixedCtx->gdtr.cbGdt & 0xffff0000));          /* Bits 31:16 MBZ. */
         Log4(("Load: VMX_VMCS_GUEST_GDTR_BASE=%#RX64\n", pMixedCtx->gdtr.pGdt));
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_GDTR;
     }
@@ -3736,7 +3736,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_IDTR_LIMIT, pMixedCtx->idtr.cbIdt);         AssertRCReturn(rc, rc);
         rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_IDTR_BASE,  pMixedCtx->idtr.pIdt);          AssertRCReturn(rc, rc);
 
-        Assert(!(pMixedCtx->idtr.cbIdt & UINT64_C(0xffff0000)));       /* Bits 31:16 MBZ. */
+        Assert(!(pMixedCtx->idtr.cbIdt & 0xffff0000));          /* Bits 31:16 MBZ. */
         Log4(("Load: VMX_VMCS_GUEST_IDTR_BASE=%#RX64\n", pMixedCtx->idtr.pIdt));
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_IDTR;
     }
@@ -8315,7 +8315,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
                         pMixedCtx->dr[7] &= ~X86_DR7_GD;
 
                         /* Paranoia. */
-                        pMixedCtx->dr[7] &= UINT64_C(0xffffffff);                                   /* Upper 32 bits MBZ. */
+                        pMixedCtx->dr[7] &= 0xffffffff;                                             /* Upper 32 bits MBZ. */
                         pMixedCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));   /* MBZ. */
                         pMixedCtx->dr[7] |= 0x400;                                                  /* MB1. */
 
@@ -8781,9 +8781,9 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         pMixedCtx->dr[7] &= ~X86_DR7_GD;
 
         /* Paranoia. */
-        pMixedCtx->dr[7] &= UINT64_C(0xffffffff);                                    /* upper 32 bits MBZ. */
-        pMixedCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* must be zero */
-        pMixedCtx->dr[7] |= 0x400;                                                   /* must be one */
+        pMixedCtx->dr[7] &= 0xffffffff;                                              /* Upper 32 bits MBZ. */
+        pMixedCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* MBZ. */
+        pMixedCtx->dr[7] |= 0x400;                                                   /* MB1. */
 
         rc |= VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, (uint32_t)pMixedCtx->dr[7]);
         AssertRCReturn(rc,rc);
