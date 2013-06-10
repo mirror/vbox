@@ -64,7 +64,36 @@
         pCtx->reg.u64Base   = pVmcb->guest.REG.u64Base; \
         pCtx->reg.Attr.u    = HMSVM_VMCB_2_CPU_SEG_ATTR(pVmcb->guest.REG.u16Attr); \
     } while (0)
-/** @}  */
+/** @} */
+
+/** @name VMCB Clean Bits used for VMCB-state caching. */
+/** All intercepts vectors, TSC offset, PAUSE filter counter. */
+#define HMSVM_VMCB_CLEAN_INTERCEPTS             RT_BIT(0)
+/** I/O permission bitmap, MSR permission bitmap. */
+#define HMSVM_VMCB_CLEAN_IOPM_MSRPM             RT_BIT(1)
+/** ASID.  */
+#define HMSVM_VMCB_CLEAN_ASID                   RT_BIT(2)
+/** TRP: V_TPR, V_IRQ, V_INTR_PRIO, V_IGN_TPR, V_INTR_MASKING,
+V_INTR_VECTOR. */
+#define HMSVM_VMCB_CLEAN_TPR                    RT_BIT(3)
+/** Nested Paging: Nested CR3 (nCR3), PAT. */
+#define HMSVM_VMCB_CLEAN_NP                     RT_BIT(4)
+/** Control registers (CR0, CR3, CR4, EFER). */
+#define HMSVM_VMCB_CLEAN_CRX                    RT_BIT(5)
+/** Debug registers (DR6, DR7). */
+#define HMSVM_VMCB_CLEAN_DRX                    RT_BIT(6)
+/** GDT, IDT limit and base. */
+#define HMSVM_VMCB_CLEAN_DT                     RT_BIT(7)
+/** Segment register: CS, SS, DS, ES limit and base. */
+#define HMSVM_VMCB_CLEAN_SEG                    RT_BIT(8)
+/** CR2.*/
+#define HMSVM_VMCB_CLEAN_CR2                    RT_BIT(9)
+/** Last-branch record (DbgCtlMsr, br_from, br_to, lastint_from, lastint_to) */
+#define HMSVM_VMCB_CLEAN_LBR                    RT_BIT(10)
+/** AVIC (AVIC APIC_BAR; AVIC APIC_BACKING_PAGE, AVIC
+PHYSICAL_TABLE and AVIC LOGICAL_TABLE Pointers). */
+#define HMSVM_VMCB_CLEAN_AVIC                   RT_BIT(11)
+/** @} */
 
 /**
  * MSRPM (MSR permission bitmap) read permissions (for guest RDMSR).
@@ -787,22 +816,24 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 }
 
 
-DECLINLINE(void) hmR0VmxSvmAddXcptIntercept(uint32_t u32Xcpt)
+DECLINLINE(void) hmR0SvmAddXcptIntercept(uint32_t u32Xcpt)
 {
-    if (!(pVmcb->ctrl.u32InterceptException & u32Xcpt)
+    if (!(pVmcb->ctrl.u32InterceptException & RT_BIT(u32Xcpt))
     {
-        pVmcb->ctrl.u32InterceptException |= u32Xcpt;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_INTERCEPT_VECTORS;
+        pVmcb->ctrl.u32InterceptException |= RT_BIT(u32Xcpt);
+        pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
     }
 }
 
-DECLINLINE(void) hmR0VmxSvmRemoveXcptIntercept(uint32_t u32Xcpt)
+DECLINLINE(void) hmR0SvmRemoveXcptIntercept(uint32_t u32Xcpt)
 {
-    if (pVmcb->ctrl.u32InterceptException & u32Xcpt)
+#ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
+    if (pVmcb->ctrl.u32InterceptException & RT_BIT(u32Xcpt))
     {
-        pVmcb->ctrl.u32InterceptException &= ~u32Xcpt;
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_INTERCEPT_VECTORS;
+        pVmcb->ctrl.u32InterceptException &= ~RT_BIT(u32Xcpt);
+        pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
     }
+#endif
 }
 
 
@@ -828,12 +859,11 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         u64GuestCR0 &= ~(X86_CR0_CD | X86_CR0_NW);
 
         /*
-         * With Nested Paging, the guest is allowed to run with paging disabled; guest-physical to host-physical translations
-         * will remain active through the Nested CR3. AMD supports paged real-mode, See AMD spec. 15.19 "Paged Real Mode".
+         * When Nested Paging is not available use shadow page tables and intercept #PFs (latter done in SVMR0SetupVM()).
          */
         if (!pVM->hm.s.fNestedPaging)
         {
-            u64GuestCR0 |= X86_CR0_PG;  /* When Nested Paging is not available use shadow page tables. */
+            u64GuestCR0 |= X86_CR0_PG;  /* When Nested Paging is not available, use shadow page tables. */
             u64GuestCR0 |= X86_CR0_WP;  /* Guest CPL 0 writes to its read-only pages should cause a #PF VM-exit. */
         }
 
@@ -864,14 +894,14 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
          * Update the exception intercept bitmap.
          */
         if (fInterceptNM)
-            hmR0VmxSvmAddXcptIntercept(RT_BIT(X86_XCPT_NM));
+            hmR0SvmAddXcptIntercept(X86_XCPT_NM);
         else
-            hmR0VmxSvmRemoveXcptIntercept(RT_BIT(X86_XCPT_NM));
+            hmR0SvmRemoveXcptIntercept(X86_XCPT_NM);
 
         if (fInterceptMF)
-            hmR0VmxSvmAddXcptIntercept(RT_BIT(X86_XCPT_MF));
+            hmR0SvmAddXcptIntercept(X86_XCPT_MF);
         else
-            hmR0VmxSvmRemoveXcptIntercept(RT_BIT(X86_XCPT_MF));
+            hmR0SvmRemoveXcptIntercept(X86_XCPT_MF);
 
         pVmcb->guest.u64CR0 = u64GuestCR0;
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR0;
@@ -1055,6 +1085,101 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pCtx)
     pVmcb->guest.u64KernelGSBase = pCtx->msrKERNELGSBASE;
 }
 
+/**
+ * Loads the guest debug registers into the VMCB.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static void hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    if (!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_DEBUG))
+        return;
+
+    /** @todo Turn these into assertions if possible. */
+    pCtx->dr[6] |= X86_DR6_INIT_VAL;                                          /* Set reserved bits to 1. */
+    pCtx->dr[6] &= ~RT_BIT(12);                                               /* MBZ. */
+
+    pCtx->dr[7] &= 0xffffffff;                                                /* Upper 32 bits MBZ. */
+    pCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));      /* MBZ. */
+    pCtx->dr[7] |= 0x400;                                                     /* MB1. */
+
+    /* Update DR6, DR7 with the guest values. */
+    pVmcb->guest.u64DR7 = pCtx->dr[7];
+    pVmcb->guest.u64DR6 = pCtx->dr[6];
+    pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+
+    bool fInterceptDB     = false;
+    bool fInterceptMovDRx = false;
+    if (DBGFIsStepping(pVCpu))
+    {
+        /* AMD-V doesn't have any monitor-trap flag equivalent. Instead, enable tracing in the guest and trap #DB. */
+        pVmcb->guest.u64RFlags |= X86_EFL_TF;
+        fInterceptDB = true;
+    }
+
+    if (CPUMGetHyperDR7(pVCpu) & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
+    {
+        if (!CPUMIsHyperDebugStateActive(pVCpu))
+        {
+            rc = CPUMR0LoadHyperDebugState(pVM, pVCpu, pMixedCtx, true /* include DR6 */);
+            AssertRC(rc);
+
+            /* Update DR6, DR7 with the hypervisor values. */
+            pVmcb->guest.u64DR7 = CPUMGetHyperDR7(pVCpu);
+            pVmcb->guest.u64DR6 = CPUMGetHyperDR6(pVCpu);
+            pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+        }
+        Assert(CPUMIsHyperDebugStateActive(pVCpu));
+        fInterceptMovDRx = true;
+    }
+    else if (pMixedCtx->dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
+    {
+        if (!CPUMIsGuestDebugStateActive(pVCpu))
+        {
+            rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pMixedCtx, true /* include DR6 */);
+            AssertRC(rc);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
+        }
+        Assert(CPUMIsGuestDebugStateActive(pVCpu));
+        Assert(fInterceptMovDRx == false);
+    }
+    else if (!CPUMIsGuestDebugStateActive(pVCpu))
+    {
+        /* For the first time we would need to intercept MOV DRx accesses even when the guest debug registers aren't loaded. */
+        fInterceptMovDRx = true;
+    }
+
+    if (fInterceptDB)
+        hmR0SvmAddXcptIntercept(X86_XCPT_DB);
+    else
+        hmR0SvmRemoveXcptIntercept(X86_XCPT_DB);
+
+    if (fInterceptMovDRx)
+    {
+        if (   pVmcb->ctrl.u16InterceptRdDRx != 0xffff
+            || pVmcb->ctrl.u16InterceptWrDRx != 0xffff)
+        {
+            pVmcb->ctrl.u16InterceptRdDRx = 0xffff;
+            pVmcb->ctrl.u16InterceptWrDRx = 0xffff;
+            pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+        }
+    }
+    else
+    {
+        if (   pVmcb->ctrl.u16InterceptRdDRx
+            || pVmcb->ctrl.u16InterceptWrDRx)
+        {
+            pVmcb->ctrl.u16InterceptRdDRx = 0;
+            pVmcb->ctrl.u16InterceptWrDRx = 0;
+            pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+        }
+    }
+
+    pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_DEBUG;
+}
 
 /**
  * Sets up the appropriate function to run guest code.
@@ -1126,8 +1251,13 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     pVmcb->guest.u64RFlags = pCtx->eflags.u32;
     pVmcb->guest.u8CPL     = pCtx->ss.Attr.n.u2Dpl;
 
+    /* hmR0SvmLoadGuestDebugRegs() must be called -after- updating guest RFLAGS as the RFLAGS may need to be changed. */
+    hmR0SvmLoadGuestDebugRegs(pVCpu, pCtx);
+
     /* Guest RAX (VMRUN uses RAX as an implicit parameter). */
     pVmcb->guest.u64RAX    = pCtx->rax;
+
+    /* -XXX tsc offsetting */
 
     rc = hmR0SvmSetupVMRunHandler(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
