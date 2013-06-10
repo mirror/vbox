@@ -160,10 +160,10 @@ protected:
 private slots:
 
     /* Handlers: Video stuff: */
-    void sltValueChangedVRAM(int iValue);
-    void sltTextChangedVRAM(const QString &strText);
-    void sltValueChangedScreens(int iValue);
-    void sltTextChangedScreens(const QString &strText);
+    void sltHandleVideoMemorySizeSliderChange();
+    void sltHandleVideoMemorySizeEditorChange();
+    void sltHandleVideoScreenCountSliderChange();
+    void sltHandleVideoScreenCountEditorChange();
 
     /* Handlers: Video Capture stuff: */
     void sltHandleVideoCaptureFrameSizeComboboxChange();

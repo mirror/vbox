@@ -86,13 +86,7 @@
            </layout>
           </item>
           <item row="0" column="2">
-           <widget class="QILineEdit" name="m_pEditorVideoMemorySize">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
+           <widget class="QSpinBox" name="m_pEditorVideoMemorySize">
             <property name="whatsThis">
              <string>Controls the amount of video memory provided to the virtual machine.</string>
             </property>
@@ -158,13 +152,7 @@
            </layout>
           </item>
           <item row="2" column="2">
-           <widget class="QILineEdit" name="m_pEditorVideoScreenCount">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
+           <widget class="QSpinBox" name="m_pEditorVideoScreenCount">
             <property name="whatsThis">
              <string>Controls the amount of virtual monitors provided to the virtual machine.</string>
             </property>
@@ -646,11 +634,6 @@
   </layout>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>QILineEdit</class>
-   <extends>QLineEdit</extends>
-   <header>QILineEdit.h</header>
-  </customwidget>
   <customwidget>
    <class>QIAdvancedSlider</class>
    <extends>QSlider</extends>
