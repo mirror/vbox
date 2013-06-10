@@ -379,7 +379,11 @@ XPCOM_NATIVE2(waitForEvents) (JNIEnv *env, jobject, jlong aTimeout)
 #endif
 
 extern "C" NS_EXPORT jobject JNICALL
+#ifdef VBOX
+XPCOM_NATIVE2(getServiceManager) (JNIEnv *env, jobject)
+#else
 XPCOM_NATIVE(getServiceManager) (JNIEnv *env, jobject)
+#endif
 {
   // Call XPCOM method
   nsCOMPtr<nsIServiceManager> sm;

@@ -273,17 +273,19 @@ const char *g_pcszIUnknown = "IUnknown";
     <xsl:call-template name="emitNewline" />
 
     <xsl:for-each select="//interface[@name=$structname]/attribute">
-      <xsl:value-of select="concat('        // -- ', $structname, '.', @name)" />
-      <xsl:call-template name="emitNewline" />
-      <!-- recurse! -->
-      <xsl:call-template name="emitGetAttributeComCall">
-        <xsl:with-param name="ifname" select="$structname" />
-        <xsl:with-param name="object" select="'in'" />
-        <xsl:with-param name="attrname" select="@name" />
-        <xsl:with-param name="attrtype" select="@type" />
-        <xsl:with-param name="callerprefix" select="concat('out', '.')" />
-      </xsl:call-template>
-      <xsl:call-template name="emitNewline" />
+      <xsl:if test="not(@wsmap = 'suppress')">
+        <xsl:value-of select="concat('        // -- ', $structname, '.', @name)" />
+        <xsl:call-template name="emitNewline" />
+        <!-- recurse! -->
+        <xsl:call-template name="emitGetAttributeComCall">
+          <xsl:with-param name="ifname" select="$structname" />
+          <xsl:with-param name="object" select="'in'" />
+          <xsl:with-param name="attrname" select="@name" />
+          <xsl:with-param name="attrtype" select="@type" />
+          <xsl:with-param name="callerprefix" select="concat('out', '.')" />
+        </xsl:call-template>
+        <xsl:call-template name="emitNewline" />
+      </xsl:if>
     </xsl:for-each>
 
     <xsl:call-template name="emitEpilogue"><xsl:with-param name="fSkipHRESULT" select="'1'"/></xsl:call-template>
@@ -549,7 +551,7 @@ const char *g_pcszIUnknown = "IUnknown";
      <xsl:when test="$safearray='yes' and $type='octet'">
        <xsl:value-of select="concat('com::SafeArray&lt;BYTE&gt; comcall_',$name, ';')" />
        <xsl:call-template name="emitNewlineIndent8" />
-       <xsl:value-of select="concat('Base64DecodeByteArray(soap, ',$structprefix,$name,', ComSafeArrayAsOutParam(comcall_',$name, '), &quot;', $ifname, '::', $methodname, '&quot;, ', $object, ', COM_IIDOF(', $ifname, '));')" />
+       <xsl:value-of select="concat('Base64DecodeByteArray(soap, ',$structprefix,$name,', ComSafeArrayAsOutParam(comcall_',$name, '), idThis, &quot;', $ifname, '::', $methodname, '&quot;, ', $object, ', COM_IIDOF(', $ifname, '));')" />
     </xsl:when>
 
     <xsl:when test="$safearray='yes'">
@@ -856,7 +858,7 @@ const char *g_pcszIUnknown = "IUnknown";
   <xsl:call-template name="emitNewlineIndent8" />
   <xsl:text>{</xsl:text>
   <xsl:call-template name="emitNewlineIndent8" />
-  <xsl:value-of select="concat('    RaiseSoapRuntimeFault(soap, &quot;', $ifname, '::', $methodname,'&quot;, rc, ', $object, ', COM_IIDOF(', $ifname, '));')" />
+  <xsl:value-of select="concat('    RaiseSoapRuntimeFault(soap, idThis, &quot;', $ifname, '::', $methodname,'&quot;, rc, ', $object, ', COM_IIDOF(', $ifname, '));')" />
   <xsl:call-template name="emitNewlineIndent8" />
   <xsl:text>    break;</xsl:text>
   <xsl:call-template name="emitNewlineIndent8" />
@@ -1277,7 +1279,10 @@ const char *g_pcszIUnknown = "IUnknown";
       <!-- skip this attribute if it has parameters of a type that has wsmap="suppress" -->
       <xsl:choose>
         <xsl:when test="( $attrtype=($G_setSuppressedInterfaces/@name) )">
-          <xsl:value-of select="concat('// Skipping attribute ', $attrtype, ' for it is of suppressed type ', $attrtype)" />
+          <xsl:value-of select="concat('// Skipping attribute ', $attrname, ' for it is of suppressed type ', $attrtype)" />
+        </xsl:when>
+        <xsl:when test="@wsmap = 'suppress'">
+          <xsl:value-of select="concat('// Skipping attribute ', $attrname, ' for it is suppressed')" />
         </xsl:when>
         <xsl:otherwise>
           <xsl:choose>
@@ -1325,6 +1330,9 @@ const char *g_pcszIUnknown = "IUnknown";
         <xsl:when test="   (param[@type=($G_setSuppressedInterfaces/@name)])
                         or (param[@mod='ptr'])" >
           <xsl:comment><xsl:value-of select="concat('Skipping method ', $methodname, ' for it has parameters with suppressed types')" /></xsl:comment>
+        </xsl:when>
+        <xsl:when test="@wsmap = 'suppress'">
+          <xsl:comment><xsl:value-of select="concat('Skipping method ', $methodname, ' for it is suppressed')" /></xsl:comment>
         </xsl:when>
         <xsl:otherwise>
           <xsl:variable name="fHasReturnParms" select="param[@dir='return']" />

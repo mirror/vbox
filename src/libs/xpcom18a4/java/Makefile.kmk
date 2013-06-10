@@ -173,6 +173,7 @@ $(VBOX_JXPCOM_GEN)/jxpcomglue.list:  \
 	$(call MSG_L1,Generating Java glue files from XIDL)
 	$(QUIET)$(RM) -f $(wildcard $(VBOX_JXPCOM_GEN)/java/glue/*.java)
 	$(QUIET)$(VBOX_XSLTPROC)   \
+              --stringparam filelistonly ""                    \
               --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
               --stringparam G_vboxGlueStyle xpcom              \
               --stringparam G_vboxDirPrefix ""                 \

@@ -1438,7 +1438,7 @@ std::string Base64EncodeByteArray(ComSafeArrayIn(BYTE, aData))
 }
 
 #define DECODE_STR_MAX _1M
-void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut(BYTE, aData), const char *pszMethodName, IUnknown *pObj, const com::Guid &iid)
+void Base64DecodeByteArray(struct soap *soap, const std::string& aStr, ComSafeArrayOut(BYTE, aData), const WSDLT_ID &idThis, const char *pszMethodName, IUnknown *pObj, const com::Guid &iid)
 {
     const char* pszStr = aStr.c_str();
     ssize_t cbOut = RTBase64DecodedSize(pszStr, NULL);
@@ -1446,7 +1446,7 @@ void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut
     if (cbOut > DECODE_STR_MAX)
     {
         WebLog("Decode string too long.\n");
-        RaiseSoapRuntimeFault(soap, pszMethodName, E_INVALIDARG, pObj, iid);
+        RaiseSoapRuntimeFault(soap, idThis, pszMethodName, E_INVALIDARG, pObj, iid);
     }
 
     com::SafeArray<BYTE> result(cbOut);
@@ -1454,7 +1454,7 @@ void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut
     if (FAILED(rc))
     {
         WebLog("String Decoding Failed. Error code: %Rrc\n", rc);
-        RaiseSoapRuntimeFault(soap, pszMethodName, E_INVALIDARG, pObj, iid);
+        RaiseSoapRuntimeFault(soap, idThis, pszMethodName, E_INVALIDARG, pObj, iid);
     }
 
     result.detachTo(ComSafeArrayOutArg(aData));
@@ -1464,12 +1464,14 @@ void Base64DecodeByteArray(struct soap *soap, std::string& aStr, ComSafeArrayOut
  * Raises a SOAP runtime fault.
  *
  * @param soap
+ * @param idThis
  * @param pcszMethodName
  * @param apirc
  * @param pObj
  * @param iid
  */
 void RaiseSoapRuntimeFault(struct soap *soap,
+                           const WSDLT_ID &idThis,
                            const char *pcszMethodName,
                            HRESULT apirc,
                            IUnknown *pObj,
@@ -1509,13 +1511,10 @@ void RaiseSoapRuntimeFault(struct soap *soap,
 
     // allocate our own soap fault struct
     _vbox__RuntimeFault *ex = soap_new__vbox__RuntimeFault(soap, 1);
-    // some old vbox methods return errors without setting an error in the error info,
-    // so use the error info code if it's set and the HRESULT from the method otherwise
-    if (S_OK == (ex->resultCode = info.getResultCode()))
-        ex->resultCode = apirc;
-    ex->text = ConvertComString(info.getText());
-    ex->component = ConvertComString(info.getComponent());
-    ex->interfaceID = ConvertComString(info.getInterfaceID());
+    ComPtr<IVirtualBoxErrorInfo> pVirtualBoxErrorInfo;
+    info.getVirtualBoxErrorInfo(pVirtualBoxErrorInfo);
+    ex->resultCode = apirc;
+    ex->returnval = createOrFindRefFromComPtr(idThis, "IVirtualBoxErrorInfo", pVirtualBoxErrorInfo);
 
     RaiseSoapFault(soap,
                    str.c_str(),
