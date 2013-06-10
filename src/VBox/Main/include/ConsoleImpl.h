@@ -200,6 +200,7 @@ public:
     HRESULT onClipboardModeChange(ClipboardMode_T aClipboardMode);
     HRESULT onDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode);
     HRESULT onVRDEServerChange(BOOL aRestart);
+    HRESULT onVideoCaptureChange();
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange(BOOL aGlobal);
     HRESULT onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);

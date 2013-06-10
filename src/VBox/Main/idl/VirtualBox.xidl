@@ -14899,24 +14899,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="enableVideoCapture">
+    <method name="enableVideoCaptureScreens">
       <desc>
-        Start/continue video capture.
+        Start/stop video capture on selected screens.
       </desc>
       <param name="screens" type="boolean" safearray="yes" dir="in">
         <desc>
-          The screens to start/continue capturing.
-        </desc>
-      </param>
-    </method>
-
-    <method name="disableVideoCapture">
-      <desc>
-        Stop video capture.
-      </desc>
-      <param name="screens" type="boolean" safearray="yes" dir="in">
-        <desc>
-          The screens to stop capturing.
+          The screens to start/stop capturing.
         </desc>
       </param>
     </method>
@@ -17104,6 +17093,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="onVideoCaptureChange">
+      <desc>
+        Triggered when video capture settings have changed.
+      </desc>
+    </method>
+
     <method name="onUSBControllerChange">
       <desc>
         Triggered when settings of the USB controller object of the
@@ -18790,7 +18785,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="c51645b3-7108-4dce-b5a3-bbf5e4f69ed2"
+    uuid="f019b8c7-22a6-468a-9f7c-3443b7b6c40a"
     >
 
     <desc>
@@ -19149,8 +19144,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           not unnecessarily overflow the event queue.</note>
       </desc>
     </const>
+    <const name="OnVideoCaptureChanged" value="91">
+      <desc>
+        See <link to="IVideoCaptureChangedEvent">IVideoCapturedChangeEvent</link>.
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="91">
+    <const name="Last" value="92">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -20352,6 +20352,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Notification when the status of the VRDE server changes. Interested callees
       should use <link to="IConsole::VRDEServerInfo">IVRDEServerInfo</link>
       attributes to find out what is the current status.
+    </desc>
+  </interface>
+  
+  <interface
+    name="IVideoCaptureChangedEvent" extends="IEvent"
+    uuid="6215d169-25dd-4719-ab34-c908701efb58"
+    wsmap="managed" autogen="VBoxEvent" id="OnVideoCaptureChanged"
+    >
+    <desc>
+      Notification when video capture settings have changed.
     </desc>
   </interface>
 
