@@ -1204,7 +1204,7 @@ static void vnetTransmitPendingPackets(PVNETSTATE pThis, PVQUEUE pQueue, bool fO
                                     pGso->cbHdrsSeg   = pGso->cbHdrsTotal;
                                     break;
                                 case PDMNETWORKGSOTYPE_IPV4_UDP:
-                                    pGso->cbHdrsTotal = Hdr.u16CSumStart + sizeof(RTNETUDP);
+                                    pGso->cbHdrsTotal = (uint8_t)(Hdr.u16CSumStart + sizeof(RTNETUDP));
                                     pGso->cbHdrsSeg   = Hdr.u16CSumStart;
                                     break;
                             }
@@ -2086,6 +2086,9 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     rc = vnetIoCb_Reset(pThis);
     AssertRC(rc);
+
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Public/Net/VNet%u/BytesReceived", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Public/Net/VNet%u/BytesTransmitted", iInstance);
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/VNet%d/ReceiveBytes", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/VNet%d/TransmitBytes", iInstance);
