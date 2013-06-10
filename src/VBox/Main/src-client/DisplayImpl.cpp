@@ -2673,26 +2673,12 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray(ULONG aScreenId, ULONG width, ULO
     return rc;
 }
 
-STDMETHODIMP Display::EnableVideoCapture(ComSafeArrayIn(BOOL, aScreens))
+STDMETHODIMP Display::EnableVideoCaptureScreens(ComSafeArrayIn(BOOL, aScreens))
 {
 #ifdef VBOX_WITH_VPX
     com::SafeArray<LONG> Screens(ComSafeArrayInArg(aScreens));
     for (unsigned i = 0; i < Screens.size(); i++)
-        if (Screens[i])
-            maVideoRecEnabled[i] = true;
-    return S_OK;
-#else
-    return E_NOTIMPL;
-#endif
-}
-
-STDMETHODIMP Display::DisableVideoCapture(ComSafeArrayIn(BOOL, aScreens))
-{
-#ifdef VBOX_WITH_VPX
-    com::SafeArray<LONG> Screens(ComSafeArrayInArg(aScreens));
-    for (unsigned i = 0; i < Screens.size(); i++)
-        if (Screens[i])
-            maVideoRecEnabled[i] = false;
+        maVideoRecEnabled[i] = aScreens[i];
     return S_OK;
 #else
     return E_NOTIMPL;
@@ -4466,7 +4452,7 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
             return E_FAIL;
         }
         com::SafeArray<BOOL> screens;
-        int hrc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens));
+        HRESULT hrc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens));
         AssertComRCReturnRC(hrc);
         for (unsigned i = 0; i < RT_ELEMENTS(pDisplay->maVideoRecEnabled); i++)
             pDisplay->maVideoRecEnabled[i] = i < screens.size() && screens[i];

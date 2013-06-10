@@ -1344,23 +1344,22 @@ int handleControlVM(HandlerArg *a)
         {
             ULONG cMonitors = 64;
             CHECK_ERROR_BREAK(machine, COMGETTER(MonitorCount)(&cMonitors));
-            com::SafeArray<BOOL> saScreenIds(cMonitors);
+            com::SafeArray<BOOL> saScreens(cMonitors);
+            bool fEnable = !strcmp(a->argv[1], "enablevideocapture");
             if (a->argc < 3)
             {
                 /* default: handle all screens */
                 for (unsigned i = 0; i < cMonitors; i++)
-                    saScreenIds[i] = true;
+                    saScreens[i] = true;
             }
             else
             {
                 /* handle selected screens */
-                for (unsigned i = 0; i < cMonitors; i++)
-                    saScreenIds[i] = false;
+                CHECK_ERROR_BREAK(machine, COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(saScreens)));
                 for (int i = 2; SUCCEEDED(rc) && i < a->argc; i++)
                 {
                     uint32_t iScreen;
                     int vrc = RTStrToUInt32Ex(a->argv[i], NULL, 0, &iScreen);
-                    RTPrintf("i = %d => %d => %Rrc\n", i, iScreen, vrc);
                     if (vrc != VINF_SUCCESS)
                     {
                         errorArgument("Error parsing display number '%s'", a->argv[i]);
@@ -1373,23 +1372,13 @@ int handleControlVM(HandlerArg *a)
                         rc = E_FAIL;
                         break;
                     }
-                    saScreenIds[iScreen] = true;
+                    saScreens[iScreen] = fEnable;
                 }
             }
+
             for (unsigned i = 0; i < cMonitors; i++)
-                RTPrintf("  %d\n", saScreenIds[i]);
-            ComPtr<IDisplay> pDisplay;
-            CHECK_ERROR_BREAK(console, COMGETTER(Display)(pDisplay.asOutParam()));
-            if (!pDisplay)
-            {
-                RTMsgError("Guest not running");
-                rc = E_FAIL;
-                break;
-            }
-            if (!strcmp(a->argv[1], "enablevideocapture"))
-                CHECK_ERROR_BREAK(pDisplay, EnableVideoCapture(ComSafeArrayAsInParam(saScreenIds)));
-            else
-                CHECK_ERROR_BREAK(pDisplay, DisableVideoCapture(ComSafeArrayAsInParam(saScreenIds)));
+                RTPrintf("  %d\n", saScreens[i]);
+            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureScreens)(ComSafeArrayAsInParam(saScreens)));
         }
         else
         {

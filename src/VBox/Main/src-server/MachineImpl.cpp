@@ -1720,17 +1720,31 @@ STDMETHODIMP Machine::COMGETTER(VideoCaptureEnabled)(BOOL *fEnabled)
 
 STDMETHODIMP Machine::COMSETTER(VideoCaptureEnabled)(BOOL fEnabled)
 {
+    HRESULT rc = S_OK;
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
+
     mHWData->mVideoCaptureEnabled = fEnabled;
-    return S_OK;
+
+    return rc;
 }
 
 STDMETHODIMP Machine::COMGETTER(VideoCaptureScreens)(ComSafeArrayOut(BOOL, aScreens))
 {
     CheckComArgOutSafeArrayPointerValid(aScreens);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     SafeArray<BOOL> screens(mHWData->mMonitorCount);
     for (unsigned i = 0; i < screens.size(); i++)
@@ -1743,8 +1757,29 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureScreens)(ComSafeArrayIn(BOOL, aScree
 {
     SafeArray<BOOL> screens(ComSafeArrayInArg(aScreens));
     AssertReturn(screens.size() <= RT_ELEMENTS(mHWData->maVideoCaptureScreens), E_INVALIDARG);
+    bool fChanged = false;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     for (unsigned i = 0; i < screens.size(); i++)
-        mHWData->maVideoCaptureScreens[i] = RT_BOOL(screens[i]);
+    {
+        if (mHWData->maVideoCaptureScreens[i] != RT_BOOL(screens[i]))
+        {
+            mHWData->maVideoCaptureScreens[i] = RT_BOOL(screens[i]);
+            fChanged = true;
+        }
+    }
+    if (fChanged)
+    {
+        alock.release();
+        HRESULT rc = onVideoCaptureChange();
+        alock.acquire();
+        if (FAILED(rc)) return rc;
+        setModified(IsModified_MachineData);
+        if (Global::IsOnline(mData->mMachineState))
+            saveSettings(NULL);
+    }
+
     return S_OK;
 }
 
@@ -1765,9 +1800,17 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureFile)(IN_BSTR aFile)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc; 
+
     if (strFile.isEmpty())
        strFile = "VideoCap.webm";
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
     mHWData->mVideoCaptureFile = strFile;
+
     return S_OK;
 }
 
@@ -1784,14 +1827,17 @@ STDMETHODIMP Machine::COMGETTER(VideoCaptureWidth)(ULONG *aHorzRes)
 STDMETHODIMP Machine::COMSETTER(VideoCaptureWidth)(ULONG aHorzRes)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc()))
-    {
-        LogFlow(("Autolocked failed\n"));
-        return autoCaller.rc();
-    }
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc; 
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
     mHWData->mVideoCaptureWidth = aHorzRes;
+
     return S_OK;
 }
 
@@ -1810,8 +1856,15 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureHeight)(ULONG aVertRes)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc; 
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
     mHWData->mVideoCaptureHeight = aVertRes;
+
     return S_OK;
 }
 
@@ -1830,8 +1883,15 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureRate)(ULONG aRate)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
     mHWData->mVideoCaptureRate = aRate;
+
     return S_OK;
 }
 
@@ -1850,8 +1910,15 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureFps)(ULONG aFps)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
     mHWData->mVideoCaptureFps = aFps;
+
     return S_OK;
 }
 
@@ -13794,6 +13861,29 @@ HRESULT SessionMachine::onVRDEServerChange(BOOL aRestart)
         return S_OK;
 
     return directControl->OnVRDEServerChange(aRestart);
+}
+
+/**
+ * @note Locks this object for reading.
+ */
+HRESULT SessionMachine::onVideoCaptureChange()
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnVideoCaptureChange();
 }
 
 /**

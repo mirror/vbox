@@ -497,6 +497,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_VETOEVENT,
     /** Main group, IVFSExplorer. */
     LOG_GROUP_MAIN_VFSEXPLORER,
+    /** Main group, IVideoCaptureChangedEvent. */
+    LOG_GROUP_MAIN_VIDEOCAPTURECHANGEDEVENT,
     /** Main group, IVirtualBox. */
     LOG_GROUP_MAIN_VIRTUALBOX,
     /** Main group, IVirtualBoxClient. */

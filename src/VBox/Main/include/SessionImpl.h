@@ -92,6 +92,7 @@ public:
     STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove);
     STDMETHOD(OnCPUExecutionCapChange)(ULONG aExecutionCap);
     STDMETHOD(OnVRDEServerChange)(BOOL aRestart);
+    STDMETHOD(OnVideoCaptureChange)();
     STDMETHOD(OnUSBControllerChange)();
     STDMETHOD(OnSharedFolderChange)(BOOL aGlobal);
     STDMETHOD(OnClipboardModeChange)(ClipboardMode_T aClipboardMode);
