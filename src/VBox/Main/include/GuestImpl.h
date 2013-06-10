@@ -116,7 +116,7 @@ public:
 #ifdef VBOX_WITH_GUEST_CONTROL
     /** Static callback for handling guest control notifications. */
     static DECLCALLBACK(int) notifyCtrlDispatcher(void *pvExtension, uint32_t u32Function, void *pvData, uint32_t cbData);
-    static void staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
+    static DECLCALLBACK(void) staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
 #endif
     /** @}  */
 
