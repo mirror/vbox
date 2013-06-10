@@ -2678,7 +2678,7 @@ STDMETHODIMP Display::EnableVideoCaptureScreens(ComSafeArrayIn(BOOL, aScreens))
 #ifdef VBOX_WITH_VPX
     com::SafeArray<LONG> Screens(ComSafeArrayInArg(aScreens));
     for (unsigned i = 0; i < Screens.size(); i++)
-        maVideoRecEnabled[i] = aScreens[i];
+        maVideoRecEnabled[i] = RT_BOOL(aScreens[i]);
     return S_OK;
 #else
     return E_NOTIMPL;
