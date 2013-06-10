@@ -388,8 +388,8 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorVideoCaptureWidth, m_pEditorVideoCaptureHeight);
     setTabOrder(m_pEditorVideoCaptureHeight, m_pSliderVideoCaptureFrameRate);
     setTabOrder(m_pSliderVideoCaptureFrameRate, m_pEditorVideoCaptureFrameRate);
-    setTabOrder(m_pEditorVideoCaptureFrameRate, m_pComboVideoCaptureBitRate);
-    setTabOrder(m_pComboVideoCaptureBitRate, m_pEditorVideoCaptureBitRate);
+    setTabOrder(m_pEditorVideoCaptureFrameRate, m_pSliderVideoCaptureQuality);
+    setTabOrder(m_pSliderVideoCaptureQuality, m_pEditorVideoCaptureBitRate);
 }
 
 void UIMachineSettingsDisplay::retranslateUi()
@@ -414,16 +414,9 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pLabelVideoCaptureFrameRateMin->setText(tr("%1 fps").arg(m_pSliderVideoCaptureFrameRate->minimum()));
     m_pLabelVideoCaptureFrameRateMax->setText(tr("%1 fps").arg(m_pSliderVideoCaptureFrameRate->maximum()));
     m_pLabelVideoCaptureFrameRateUnits->setText(tr("fps"));
-    m_pComboVideoCaptureBitRate->setItemText(0, tr("User Defined"));
-    m_pComboVideoCaptureBitRate->setItemText(1, tr("%1 kbps").arg(32));
-    m_pComboVideoCaptureBitRate->setItemText(2, tr("%1 kbps").arg(64));
-    m_pComboVideoCaptureBitRate->setItemText(3, tr("%1 kbps").arg(128));
-    m_pComboVideoCaptureBitRate->setItemText(4, tr("%1 kbps").arg(160));
-    m_pComboVideoCaptureBitRate->setItemText(5, tr("%1 kbps").arg(256));
-    m_pComboVideoCaptureBitRate->setItemText(6, tr("%1 kbps").arg(320));
-    m_pComboVideoCaptureBitRate->setItemText(7, tr("%1 kbps").arg(512));
-    m_pComboVideoCaptureBitRate->setItemText(8, tr("%1 kbps").arg(1024));
-    m_pComboVideoCaptureBitRate->setItemText(9, tr("%1 kbps").arg(2048));
+    m_pLabelVideoCaptureQualityMin->setText(tr("low", "quality"));
+    m_pLabelVideoCaptureQualityMed->setText(tr("medium", "quality"));
+    m_pLabelVideoCaptureQualityMax->setText(tr("high", "quality"));
     m_pLabelVideoCaptureBitRateUnits->setText(tr("kbps"));
 }
 
@@ -491,41 +484,50 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameRateChange(int iFrameRa
     m_pEditorVideoCaptureFrameRate->setValue(iFrameRate);
 }
 
-void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateChange(int iCurrentIndex)
-{
-    /* Get the proposed bit-rate: */
-    int iVideoCaptureBitRate = m_pComboVideoCaptureBitRate->itemData(iCurrentIndex).toInt();
-
-    /* Make sure its valid: */
-    if (iVideoCaptureBitRate == 0)
-        return;
-
-    /* Apply proposed bit-rate: */
-    m_pEditorVideoCaptureBitRate->setValue(iVideoCaptureBitRate);
-}
-
 void UIMachineSettingsDisplay::sltHandleVideoCaptureWidthChange()
 {
     /* Look for preset: */
     lookForCorrespondingSizePreset();
+    /* Update quality and bit-rate: */
+    sltHandleVideoCaptureQualitySliderChange();
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureHeightChange()
 {
     /* Look for preset: */
     lookForCorrespondingSizePreset();
+    /* Update quality and bit-rate: */
+    sltHandleVideoCaptureQualitySliderChange();
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameRateChange()
 {
     /* Apply proposed frame-rate: */
     m_pSliderVideoCaptureFrameRate->setValue(m_pEditorVideoCaptureFrameRate->value());
+    /* Update quality and bit-rate: */
+    sltHandleVideoCaptureQualitySliderChange();
 }
 
-void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateChange()
+void UIMachineSettingsDisplay::sltHandleVideoCaptureQualitySliderChange()
 {
-    /* Look for preset: */
-    lookForCorrespondingBitRatePreset();
+    /* Calculate/apply proposed bit-rate: */
+    m_pEditorVideoCaptureBitRate->blockSignals(true);
+    m_pEditorVideoCaptureBitRate->setValue(calculateBitRate(m_pEditorVideoCaptureWidth->value(),
+                                                            m_pEditorVideoCaptureHeight->value(),
+                                                            m_pEditorVideoCaptureFrameRate->value(),
+                                                            m_pSliderVideoCaptureQuality->value()));
+    m_pEditorVideoCaptureBitRate->blockSignals(false);
+}
+
+void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateSpinboxChange()
+{
+    /* Calculate/apply proposed quality: */
+    m_pSliderVideoCaptureQuality->blockSignals(true);
+    m_pSliderVideoCaptureQuality->setValue(calculateQuality(m_pEditorVideoCaptureWidth->value(),
+                                                            m_pEditorVideoCaptureHeight->value(),
+                                                            m_pEditorVideoCaptureFrameRate->value(),
+                                                            m_pEditorVideoCaptureBitRate->value()));
+    m_pSliderVideoCaptureQuality->blockSignals(false);
 }
 
 void UIMachineSettingsDisplay::prepare()
@@ -659,24 +661,25 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     m_pEditorVideoCaptureFrameRate->setMaximum(30);
     connect(m_pEditorVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateChange()));
 
-    /* Prepare bit-rate combo-box: */
-    m_pComboVideoCaptureBitRate->insertItem(0, QString()); /* User Defined */
-    m_pComboVideoCaptureBitRate->insertItem(1, QString(), QVariant(32));
-    m_pComboVideoCaptureBitRate->insertItem(2, QString(), QVariant(64));
-    m_pComboVideoCaptureBitRate->insertItem(3, QString(), QVariant(128));
-    m_pComboVideoCaptureBitRate->insertItem(4, QString(), QVariant(160));
-    m_pComboVideoCaptureBitRate->insertItem(5, QString(), QVariant(256));
-    m_pComboVideoCaptureBitRate->insertItem(6, QString(), QVariant(320));
-    m_pComboVideoCaptureBitRate->insertItem(7, QString(), QVariant(512));
-    m_pComboVideoCaptureBitRate->insertItem(8, QString(), QVariant(1024));
-    m_pComboVideoCaptureBitRate->insertItem(9, QString(), QVariant(2048));
-    connect(m_pComboVideoCaptureBitRate, SIGNAL(currentIndexChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateChange(int)));
+    /* Prepare quality combo-box: */
+    m_pSliderLayoutVideoCaptureQuality->setColumnStretch(1, 4);
+    m_pSliderLayoutVideoCaptureQuality->setColumnStretch(3, 5);
+    m_pSliderVideoCaptureQuality->setMinimum(1);
+    m_pSliderVideoCaptureQuality->setMaximum(10);
+    m_pSliderVideoCaptureQuality->setPageStep(1);
+    m_pSliderVideoCaptureQuality->setSingleStep(1);
+    m_pSliderVideoCaptureQuality->setTickInterval(1);
+    m_pSliderVideoCaptureQuality->setSnappingEnabled(true);
+    m_pSliderVideoCaptureQuality->setOptimalHint(1, 5);
+    m_pSliderVideoCaptureQuality->setWarningHint(5, 9);
+    m_pSliderVideoCaptureQuality->setErrorHint(9, 10);
+    connect(m_pSliderVideoCaptureQuality, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureQualitySliderChange()));
 
     /* Prepare bit-rate spin-box: */
     vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureBitRate, 5);
     m_pEditorVideoCaptureBitRate->setMinimum(32);
     m_pEditorVideoCaptureBitRate->setMaximum(2048);
-    connect(m_pEditorVideoCaptureBitRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateChange()));
+    connect(m_pEditorVideoCaptureBitRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateSpinboxChange()));
 }
 
 void UIMachineSettingsDisplay::checkVRAMRequirements()
@@ -758,13 +761,6 @@ void UIMachineSettingsDisplay::lookForCorrespondingSizePreset()
                                      m_pEditorVideoCaptureHeight->value()));
 }
 
-void UIMachineSettingsDisplay::lookForCorrespondingBitRatePreset()
-{
-    /* Look for video-capture bit-rate preset: */
-    lookForCorrespondingPreset(m_pComboVideoCaptureBitRate,
-                               m_pEditorVideoCaptureBitRate->value());
-}
-
 /* static */
 void UIMachineSettingsDisplay::lookForCorrespondingPreset(QComboBox *pWhere, const QVariant &whichData)
 {
@@ -774,5 +770,27 @@ void UIMachineSettingsDisplay::lookForCorrespondingPreset(QComboBox *pWhere, con
         pWhere->setCurrentIndex(iLookupResult);
     else if (iLookupResult == -1 && pWhere->currentIndex() != 0)
         pWhere->setCurrentIndex(0);
+}
+
+/* static */
+int UIMachineSettingsDisplay::calculateBitRate(int iFrameWidth, int iFrameHeight, int iFrameRate, int iQuality)
+{
+    /* Linear quality<=>bit-rate scale-factor: */
+    return   (double)iQuality
+           * (double)iFrameWidth * (double)iFrameHeight * (double)iFrameRate
+           / (double)10 /* translate quality to [%] */
+           / (double)1024 /* translate bit-rate to [kbps] */
+           / (double)18.75 /* linear scale factor */;
+}
+
+/* static */
+int UIMachineSettingsDisplay::calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate)
+{
+    /* Linear bit-rate<=>quality scale-factor: */
+    return   (double)iBitRate
+           / (double)iFrameWidth / (double)iFrameHeight / (double)iFrameRate
+           * (double)10 /* translate quality to [%] */
+           * (double)1024 /* translate bit-rate to [kbps] */
+           * (double)18.75 /* linear scale factor */;
 }
 
