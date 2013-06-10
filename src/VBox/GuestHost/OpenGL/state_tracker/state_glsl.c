@@ -631,8 +631,7 @@ DECLEXPORT(void) STATE_APIENTRY crStateBindAttribLocation(GLuint program, GLuint
     {
         if (!crStrcmp(pProgram->currentState.pAttribs[i].name, name))
         {
-            crFree(pProgram->currentState.pAttribs[i].name);
-            pProgram->currentState.pAttribs[i].name = crStrdup(name);
+            pProgram->currentState.pAttribs[i].index = index;
             return;
         }
     }
