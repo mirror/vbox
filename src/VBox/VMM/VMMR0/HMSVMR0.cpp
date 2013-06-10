@@ -448,6 +448,8 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, SVMMSREXITREAD 
         ASMBitSet(pbMsrBitmap, ulBit + 1);
     else
         ASMBitClear(pbMsrBitmap, ulBit + 1);
+
+    pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
 }
 
 
@@ -468,7 +470,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU   pVCpu = &pVM->aCpus[i];
-        PSVMVMCB pVmcb = (PSVMVMCB)pVM->aCpus[i].hm.s.svm.pvVmcbGuest;
+        PSVMVMCB pVmcb = (PSVMVMCB)pVM->aCpus[i].hm.s.svm.pvVmcb;
 
         AssertMsgReturn(pVmcb, ("Invalid pVmcb\n"), VERR_SVM_INVALID_PVMCB);
 
@@ -539,6 +541,9 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         /* No LBR virtualization. */
         pVmcb->ctrl.u64LBRVirt = 0;
 
+        /* Initially set all VMCB clean bits to 0 indicating that everything should be loaded from memory. */
+        pVmcb->u64VmcbCleanBits = 0;
+
         /* The ASID must start at 1; the host uses 0. */
         pVmcb->ctrl.TLBCtrl.n.u32ASID = 1;
 
@@ -593,7 +598,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
 {
     PVM pVM              = pVCpu->CTX_SUFF(pVM);
-    PSVMVMCB pVmcb       = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcbGuest;
+    PSVMVMCB pVmcb       = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
 
     /*
@@ -701,7 +706,11 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
     /* Update VMCB with the ASID. */
-    pVmcb->ctrl.TLBCtrl.n.u32ASID = pVCpu->hm.s.uCurrentAsid;
+    if (pVmcb->ctrl.TLBCtrl.n.u32ASID != pVCpu->hm.s.uCurrentAsid)
+    {
+        pVmcb->ctrl.TLBCtrl.n.u32ASID = pVCpu->hm.s.uCurrentAsid;
+        pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_ASID;
+    }
 
     AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
               ("Flush count mismatch for cpu %d (%x vs %x)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
@@ -904,6 +913,7 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
             hmR0SvmRemoveXcptIntercept(X86_XCPT_MF);
 
         pVmcb->guest.u64CR0 = u64GuestCR0;
+        pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CR2;
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR0;
     }
 
@@ -913,6 +923,7 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR2)
     {
         pVmcb->guest.u64CR2 = pCtx->cr2;
+        pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CR2;
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR2;
     }
 
@@ -932,12 +943,14 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                 enmShwPagingMode = PGMGetHostMode(pVM);
 
             pVmcb->ctrl.u64NestedPagingCR3  = PGMGetNestedCR3(pVCpu, enmShwPagingMode);
+            pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_NP;
             Assert(pVmcb->ctrl.u64NestedPagingCR3);
             pVmcb->guest.u64CR3 = pCtx->cr3;
         }
         else
             pVmcb->guest.u64CR3 = PGMGetHyperCR3(pVCpu);
 
+        pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CR2;
         pVCpu->hm.s.fContextUseFlags &= HM_CHANGED_GUEST_CR3;
     }
 
@@ -982,6 +995,7 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         }
 
         pVmcb->guest.u64CR4 = u64GuestCR4;
+        pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CR2;
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR4;
     }
 
@@ -1009,6 +1023,7 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
         HMSVM_LOAD_SEG_REG(FS, cs);
         HMSVM_LOAD_SEG_REG(GS, cs);
 
+        pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_SEG;
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_SEGMENT_REGS;
     }
 
@@ -1031,6 +1046,7 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         pVmcb->guest.GDTR.u32Limit = pCtx->gdtr.cbGdt;
         pVmcb->guest.GDTR.u64Base  = pCtx->gdtr.pGdt;
+        pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DT;
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_GDTR;
     }
 
@@ -1039,6 +1055,7 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         pVmcb->guest.IDTR.u32Limit = pCtx->idtr.cbIdt;
         pVmcb->guest.IDTR.u64Base  = pCtx->idtr.pIdt;
+        pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DT;
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_IDTR;
     }
 }
@@ -1245,19 +1262,14 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     hmR0SvmLoadGuestSegmentRegs(pVCpu, pCtx);
     hmR0SvmLoadGuestMsrs(pVCpu, pCtx);
 
-    /* Guest RIP, RSP, RFLAGS, CPL. */
     pVmcb->guest.u64RIP    = pCtx->rip;
     pVmcb->guest.u64RSP    = pCtx->rsp;
     pVmcb->guest.u64RFlags = pCtx->eflags.u32;
     pVmcb->guest.u8CPL     = pCtx->ss.Attr.n.u2Dpl;
+    pVmcb->guest.u64RAX    = pCtx->rax;
 
     /* hmR0SvmLoadGuestDebugRegs() must be called -after- updating guest RFLAGS as the RFLAGS may need to be changed. */
     hmR0SvmLoadGuestDebugRegs(pVCpu, pCtx);
-
-    /* Guest RAX (VMRUN uses RAX as an implicit parameter). */
-    pVmcb->guest.u64RAX    = pCtx->rax;
-
-    /* -XXX tsc offsetting */
 
     rc = hmR0SvmSetupVMRunHandler(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
@@ -1274,5 +1286,42 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
 
     return rc;
+}
+
+
+/**
+ * Sets up the usage of TSC offsetting for the VCPU.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static void hmR0SvmSetupTscOffsetting(PVMCPU pVCpu)
+{
+    PSVMVMCB pVmcb = pVCpu->hm.s.svm.pvVmcb;
+    if (TMCpuTickCanUseRealTSC(pVCpu, &pVmcb->ctrl.u64TSCOffset))
+    {
+        uint64_t u64CurTSC = ASMReadTSC();
+        if (u64CurTSC + pVmcb->ctrl.u64TSCOffset > TMCpuTickGetLastSeen(pVCpu))
+        {
+            pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
+            pVmcb->ctrl.u32InterceptCtrl2 &= ~SVM_CTRL2_INTERCEPT_RDTSCP;
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
+        }
+        else
+        {
+            pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
+            pVmcb->ctrl.u32InterceptCtrl2 |= SVM_CTRL2_INTERCEPT_RDTSCP;
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatTscInterceptOverFlow);
+        }
+    }
+    else
+    {
+        pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
+        pVmcb->ctrl.u32InterceptCtrl2 |= SVM_CTRL2_INTERCEPT_RDTSCP;
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
+    }
+
+    pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 }
 
