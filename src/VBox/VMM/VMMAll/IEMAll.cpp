@@ -126,7 +126,7 @@
 #if defined(__GNUC__) && defined(RT_ARCH_X86)
 typedef VBOXSTRICTRC (__attribute__((__fastcall__)) * PFNIEMOP)(PIEMCPU pIemCpu);
 # define FNIEMOP_DEF(a_Name) \
-    static VBOXSTRICTRC __attribute__((__fastcall__, __nothrow__)) a_Name (PIEMCPU pIemCpu)
+    static VBOXSTRICTRC __attribute__((__fastcall__, __nothrow__)) a_Name(PIEMCPU pIemCpu)
 # define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
     static VBOXSTRICTRC __attribute__((__fastcall__, __nothrow__)) a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0)
 # define FNIEMOP_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) \
@@ -8476,7 +8476,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
     iemExecVerificationModeCheck(pIemCpu);
 #endif
 #ifdef IN_RC
-    rcStrict = iemRCRawMaybeReenter(pIemCpu, pVCpu, pCtx, rcStrict);
+    rcStrict = iemRCRawMaybeReenter(pIemCpu, pVCpu, pIemCpu->CTX_SUFF(pCtx), rcStrict);
 #endif
     if (rcStrict != VINF_SUCCESS)
         LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",

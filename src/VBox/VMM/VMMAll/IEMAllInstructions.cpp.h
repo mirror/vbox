@@ -6808,8 +6808,51 @@ FNIEMOP_DEF(iemOp_popa)
 
 /** Opcode 0x62. */
 FNIEMOP_STUB(iemOp_bound_Gv_Ma);
-/** Opcode 0x63. */
-FNIEMOP_STUB(iemOp_arpl_Ew_Gw); /** @todo up next. */
+
+/** Opcode 0x63 - non-64-bit modes. */
+FNIEMOP_STUB(iemOp_arpl_Ew_Gw);
+
+
+/** Opcode 0x63.
+ * @note This is a weird one. It works like a regular move instruction if
+ *       REX.W isn't set, at least according to AMD docs (rev 3.15, 2009-11). */
+FNIEMOP_DEF(iemOp_movsxd_Gv_Ev)
+{
+    Assert(pIemCpu->enmEffOpSize == IEMMODE_64BIT); /* Caller branched already . */
+
+    IEMOP_MNEMONIC("movsxd Gv,Ev");
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /*
+         * Register to register.
+         */
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(uint64_t, u64Value);
+        IEM_MC_FETCH_GREG_U32_SX_U64(u64Value, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+        IEM_MC_STORE_GREG_U64(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg, u64Value);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        /*
+         * We're loading a register from memory.
+         */
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(uint64_t, u64Value);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+        IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_FETCH_MEM_U32_SX_U64(u64Value, pIemCpu->iEffSeg, GCPtrEffDst);
+        IEM_MC_STORE_GREG_U64(((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg, u64Value);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
 
 
 /** Opcode 0x64. */
@@ -8577,6 +8620,17 @@ FNIEMOP_DEF(iemOp_mov_Gv_Ev)
         }
     }
     return VINF_SUCCESS;
+}
+
+
+/** Opcode 0x63. */
+FNIEMOP_DEF(iemOp_arpl_Ew_Gw_movsx_Gv_Ev)
+{
+    if (pIemCpu->enmCpuMode != IEMMODE_64BIT)
+        return FNIEMOP_CALL(iemOp_arpl_Ew_Gw);
+    if (pIemCpu->enmEffOpSize != IEMMODE_64BIT)
+        return FNIEMOP_CALL(iemOp_mov_Gv_Ev);
+    return FNIEMOP_CALL(iemOp_movsxd_Gv_Ev);
 }
 
 
@@ -15727,7 +15781,7 @@ const PFNIEMOP g_apfnOneByteMap[256] =
     /* 0x54 */  iemOp_push_eSP,         iemOp_push_eBP,         iemOp_push_eSI,         iemOp_push_eDI,
     /* 0x58 */  iemOp_pop_eAX,          iemOp_pop_eCX,          iemOp_pop_eDX,          iemOp_pop_eBX,
     /* 0x5c */  iemOp_pop_eSP,          iemOp_pop_eBP,          iemOp_pop_eSI,          iemOp_pop_eDI,
-    /* 0x60 */  iemOp_pusha,            iemOp_popa,             iemOp_bound_Gv_Ma,      iemOp_arpl_Ew_Gw,
+    /* 0x60 */  iemOp_pusha,            iemOp_popa,             iemOp_bound_Gv_Ma,      iemOp_arpl_Ew_Gw_movsx_Gv_Ev,
     /* 0x64 */  iemOp_seg_FS,           iemOp_seg_GS,           iemOp_op_size,          iemOp_addr_size,
     /* 0x68 */  iemOp_push_Iz,          iemOp_imul_Gv_Ev_Iz,    iemOp_push_Ib,          iemOp_imul_Gv_Ev_Ib,
     /* 0x6c */  iemOp_insb_Yb_DX,       iemOp_inswd_Yv_DX,      iemOp_outsb_Yb_DX,      iemOp_outswd_Yv_DX,
