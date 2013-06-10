@@ -389,10 +389,10 @@ $(VBOX_JWS_GEN_RAWSRC) \
 +| $(VBoxJWs-inst-jar_GENERATEDSOURCES): \
 		$(VBOXWEB_IDL_SRC_ORIG) \
 		$(VBOX_GLUE_XSLT_DIR)/glue-java.xsl \
-		$(VBOX_FILESPLIT) \
-		| $$(dir $$@)
+		$(VBOX_FILESPLIT)
 	$(call MSG_L1,Generating JAX-WS Java glue files from XIDL)
 	$(QUIET)$(RM) -f $(filter-out $(VBoxJWs-inst-jar_GENERATEDSOURCES),$(wildcard $(VBOX_JWS_GEN)/java/*/*/*.java))
+	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) \
               --stringparam filelistonly "" \
               --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
