@@ -187,10 +187,6 @@ ifneq ($(KBUILD_TARGET),win)
 VirtualBox_CXXFLAGS += -Wno-switch
 endif
 
-ifdef VBOX_WITH_VIDEOHWACCEL
-# Necessary for save state support
-VirtualBox_LIBS += $(LIB_VMM)
-endif
 ifeq ($(KBUILD_TYPE),release)
  VirtualBox_LDFLAGS.win   += /SUBSYSTEM:windows
 else

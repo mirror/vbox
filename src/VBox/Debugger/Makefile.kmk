@@ -46,7 +46,7 @@ Debugger_SOURCES   = \
 	DBGCBuiltInSymbols.cpp \
 	DBGCCmdHlp.cpp \
 	DBGCCmdWorkers.cpp \
-		DBGCCommands.cpp \
+	DBGCCommands.cpp \
 	DBGCFunctions.cpp \
 	DBGCEmulateCodeView.cpp \
 	DBGCOps.cpp \
@@ -66,8 +66,8 @@ DBGCPlugInDiggers_SOURCES = \
 	DBGPlugInOS2.cpp \
 	DBGPlugInCommonELF.cpp
 DBGCPlugInDiggers_LIBS = \
-	$(LIB_VMM) \
-	$(LIB_REM) \
+	$(if-expr "$(LIB_VMM)" == "$(VBOX_LIB_VMM_LAZY)",$(LIB_REM),) \
+	$(VBOX_LIB_VMM_LAZY) \
 	$(LIB_RUNTIME)
 
 
@@ -107,7 +107,7 @@ VBoxDbg_SOURCES = \
 	VBoxDbgConsole.cpp \
 	VBoxDbgStatsQt4.cpp
 VBoxDbg_LIBS = \
-	$(LIB_VMM)
+	$(VBOX_LIB_VMM_LAZY)
 VBoxDbg_LDFLAGS.darwin = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDbg.dylib
 

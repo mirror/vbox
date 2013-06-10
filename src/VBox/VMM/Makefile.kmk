@@ -361,6 +361,19 @@ endif # R0: pe + lx
 IMPORT_LIBS += VMMR3Imp
 $(call VBOX_GENERATE_IMPORT_TARGET_FN,VMMR3Imp,VBoxVMM,VMMR3/VMMR3.def)
 
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64)
+ #
+ # VMMR3LazyImp.lib (experimental)
+ #
+ IMPORT_LIBS += VMMR3LazyImp
+ VMMR3LazyImp_TEMPLATE = VBoxR3Dll
+ VMMR3LazyImp_INST     = $(INST_LIB)
+ VMMR3LazyImp_SOURCES  = $(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm
+ VMMR3LazyImp_CLEAN    = $(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm
+ $$(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm: $(PATH_SUB_CURRENT)/VMMR3/VMMR3.def $(VBOX_DEF_2_LAZY_LOAD)
+	$(VBOX_DEF_2_LAZY_LOAD) --output $@ --library VBoxVMM $<
+endif
+
 
 if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  #
