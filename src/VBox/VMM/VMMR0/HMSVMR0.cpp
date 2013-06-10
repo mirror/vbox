@@ -1325,3 +1325,24 @@ static void hmR0SvmSetupTscOffsetting(PVMCPU pVCpu)
     pVmcb->u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 }
 
+
+/**
+ * Posts a pending event (trap or external interrupt). An injected event should only
+ * be written to the VMCB immediately before VMRUN, otherwise we might have stale events
+ * injected across VM resets and suchlike. See @bugref{6220}.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pEvent      Pointer to the SVM event.
+ */
+DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, SVMEVENT *pEvent)
+{
+    Log4(("SVM: Set pending event: intInfo=%#RX64\n", pEvent->u));
+
+    /* If there's an event pending already, we're in trouble... */
+    Assert(!pVCpu->hm.s.Event.fPending);
+
+    /* Set pending event state. */
+    pVCpu->hm.s.Event.u64IntrInfo = pEvent->u;
+    pVCpu->hm.s.Event.fPending    = true;
+}
+
