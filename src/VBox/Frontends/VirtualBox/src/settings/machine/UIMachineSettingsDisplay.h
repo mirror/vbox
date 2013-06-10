@@ -167,12 +167,12 @@ private slots:
 
     /* Handlers: Video Capture stuff: */
     void sltHandleVideoCaptureFrameSizeComboboxChange();
-    void sltHandleVideoCaptureFrameWidthSpinboxChange();
-    void sltHandleVideoCaptureFrameHeightSpinboxChange();
+    void sltHandleVideoCaptureFrameWidthEditorChange();
+    void sltHandleVideoCaptureFrameHeightEditorChange();
     void sltHandleVideoCaptureFrameRateSliderChange();
-    void sltHandleVideoCaptureFrameRateSpinboxChange();
+    void sltHandleVideoCaptureFrameRateEditorChange();
     void sltHandleVideoCaptureQualitySliderChange();
-    void sltHandleVideoCaptureBitRateSpinboxChange();
+    void sltHandleVideoCaptureBitRateEditorChange();
 
 private:
 
