@@ -196,45 +196,50 @@ void Guest::staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick)
 
 /* static */
 int Guest::staticEnumStatsCallback(const char *pszName, STAMTYPE enmType, void *pvSample, STAMUNIT enmUnit,
-                                          STAMVISIBILITY enmVisiblity, const char *pszDesc, void *pvUser)
+                                   STAMVISIBILITY enmVisiblity, const char *pszDesc, void *pvUser)
 {
-    PSTAMCOUNTER pCnt = (PSTAMCOUNTER)pvSample;
-    const char *pszEnd = strrchr(pszName, '/');
-    if (pszEnd)
-    {
-        bool    fRx;
-        uint8_t uInstance = 0;
+    AssertLogRelMsgReturn(enmType == STAMTYPE_COUNTER, ("Unexpected sample type %d ('%s')\n", enmType, pszName), VINF_SUCCESS);
+    AssertLogRelMsgReturn(enmUnit == STAMUNIT_BYTES, ("Unexpected sample unit %d ('%s')\n", enmUnit, pszName), VINF_SUCCESS);
 
-        switch (pszEnd[1])
-        {
-            case 'R':
-                fRx = true;
-                break;
-            case 'T':
-                fRx = false;
-                break;
-            default:
-                LogRel(("Failed to parse the name of network stat counter (unknown counter): %s\n", pszName));
-                return VINF_SUCCESS;
-        }
-        do
-            --pszEnd;
-        while (pszEnd > pszName && RT_C_IS_DIGIT(*pszEnd));
-        if (RT_SUCCESS(RTStrToUInt8Ex(pszEnd + 1, NULL, 10, &uInstance)))
-        {
-            Guest *pGuest = (Guest *)pvUser;
-            LogFlowFunc(("%s i=%u d=%s %llu %s\n", pszName, uInstance, fRx ? "RX" : "TX",
-                         pCnt->c, STAMR3GetUnit(enmUnit)));
-            if (fRx)
-                pGuest->mNetStatRx += pCnt->c;
-            else
-                pGuest->mNetStatTx += pCnt->c;
-        }
-        else
-            LogRel(("Failed to extract the device instance from the name of network stat counter: %s\n", pszEnd));
-    }
+    /* Get the base name w/ slash. */
+    const char *pszLastSlash = strrchr(pszName, '/');
+    AssertLogRelMsgReturn(pszLastSlash, ("Unexpected sample '%s'\n", pszName), VINF_SUCCESS);
+
+    /* Receive or transmit? */
+    bool fRx;
+    if (!strcmp(pszLastSlash, "/BytesReceived"))
+        fRx = true;
+    else if (!strcmp(pszLastSlash, "/BytesTransmitted"))
+        fRx = false;
     else
-        LogRel(("Failed to parse the name of network stat counter (no slash): %s\n", pszName));
+        AssertLogRelMsgFailedReturn(("Unexpected sample '%s'\n", pszName), VINF_SUCCESS);
+
+#if 0 /* not used for anything, so don't bother parsing it. */
+    /* Find start of instance number. ASSUMES '/Public/Net/Name<Instance digits>/Bytes...' */
+    do
+        --pszLastSlash;
+    while (pszLastSlash > pszName && RT_C_IS_DIGIT(*pszLastSlash));
+    pszLastSlash++;
+
+    uint8_t uInstance;
+    int rc = RTStrToUInt8Ex(pszLastSlash, NULL, 10, &uInstance);
+    AssertLogRelMsgReturn(RT_SUCCESS(rc) && rc != VWRN_NUMBER_TOO_BIG && rc != VWRN_NEGATIVE_UNSIGNED,
+                          ("%Rrc '%s'\n", rc, pszName), VINF_SUCCESS)
+#endif
+
+    /* Add the bytes to our counters. */
+    PSTAMCOUNTER pCnt   = (PSTAMCOUNTER)pvSample;
+    Guest       *pGuest = (Guest *)pvUser;
+    uint64_t     cb     = pCnt->c;
+#if 0
+    LogFlowFunc(("%s i=%u d=%s %llu bytes\n", pszName, uInstance, fRx ? "RX" : "TX", cb));
+#else
+    LogFlowFunc(("%s d=%s %llu bytes\n", pszName, fRx ? "RX" : "TX", cb));
+#endif
+    if (fRx)
+        pGuest->mNetStatRx += cb;
+    else
+        pGuest->mNetStatTx += cb;
 
     return VINF_SUCCESS;
 }
@@ -297,10 +302,7 @@ void Guest::updateStats(uint64_t iTick)
         uint64_t uRxPrev = mNetStatRx;
         uint64_t uTxPrev = mNetStatTx;
         mNetStatRx = mNetStatTx = 0;
-        /** @todo we should move these statistics to /Network/<dev>#<inst>/ nodes. */
-        rc = STAMR3Enum(ptrVM.rawUVM(), "/Devices/*/ReceiveBytes", staticEnumStatsCallback, this);
-        AssertRC(rc);
-        rc = STAMR3Enum(ptrVM.rawUVM(), "/Devices/*/TransmitBytes", staticEnumStatsCallback, this);
+        rc = STAMR3Enum(ptrVM.rawUVM(), "/Public/Net/*/Bytes*", staticEnumStatsCallback, this);
         AssertRC(rc);
 
         uint64_t uTsNow = RTTimeNanoTS();
