@@ -67,14 +67,7 @@
             <item>
              <layout class="QHBoxLayout" name="m_pLayoutLegendMemory">
               <item>
-               <widget class="QLabel" name="m_pLabelMemoryMin">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-               </widget>
+               <widget class="QLabel" name="m_pLabelMemoryMin"/>
               </item>
               <item>
                <spacer name="m_pSpacerLegendMemory">
@@ -90,14 +83,7 @@
                </spacer>
               </item>
               <item>
-               <widget class="QLabel" name="m_pLabelMemoryMax">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-               </widget>
+               <widget class="QLabel" name="m_pLabelMemoryMax"/>
               </item>
              </layout>
             </item>
@@ -534,7 +520,7 @@
               </widget>
              </item>
              <item row="2" column="0">
-              <widget class="QLabel" name="m_pLabelVideoCaptureFPS">
+              <widget class="QLabel" name="m_pLabelVideoCaptureFrameRate">
                <property name="text">
                 <string>&amp;Frame Rate:</string>
                </property>
@@ -542,22 +528,48 @@
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
                <property name="buddy">
-                <cstring>m_pComboVideoCaptureFrameRate</cstring>
+                <cstring>m_pSliderVideoCaptureFrameRate</cstring>
                </property>
               </widget>
              </item>
-             <item row="2" column="1">
-              <widget class="QComboBox" name="m_pComboVideoCaptureFrameRate">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                 <horstretch>1</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
+             <item row="2" column="1" rowspan="2">
+              <layout class="QGridLayout" name="m_pSliderLayoutVideoCaptureFrameRate">
+               <property name="spacing">
+                <number>0</number>
                </property>
-               <property name="whatsThis">
-                <string>This setting determines the maximum number of &lt;b>frames per second&lt;/b>. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</string>
-               </property>
-              </widget>
+               <item row="0" column="0" colspan="3">
+                <widget class="QIAdvancedSlider" name="m_pSliderVideoCaptureFrameRate">
+                 <property name="whatsThis">
+                  <string>This setting determines the maximum number of &lt;b>frames per second&lt;/b>. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="tickPosition">
+                  <enum>QSlider::TicksBelow</enum>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="m_pLabelVideoCaptureFrameRateMin"/>
+               </item>
+               <item row="1" column="1">
+                <spacer name="m_pStretchVideoCaptureFrameRate">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>0</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="1" column="2">
+                <widget class="QLabel" name="m_pLabelVideoCaptureFrameRateMax"/>
+               </item>
+              </layout>
              </item>
              <item row="2" column="2">
               <widget class="QSpinBox" name="m_pEditorVideoCaptureFrameRate">
@@ -566,7 +578,10 @@
                </property>
               </widget>
              </item>
-             <item row="3" column="0">
+             <item row="2" column="3">
+              <widget class="QLabel" name="m_pLabelVideoCaptureFrameRateUnits"/>
+             </item>
+             <item row="4" column="0">
               <widget class="QLabel" name="m_pLabelVideoCaptureRate">
                <property name="text">
                 <string>&amp;Bit Rate:</string>
@@ -579,7 +594,7 @@
                </property>
               </widget>
              </item>
-             <item row="3" column="1">
+             <item row="4" column="1">
               <widget class="QComboBox" name="m_pComboVideoCaptureBitRate">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -592,12 +607,15 @@
                </property>
               </widget>
              </item>
-             <item row="3" column="2">
+             <item row="4" column="2">
               <widget class="QSpinBox" name="m_pEditorVideoCaptureBitRate">
                <property name="whatsThis">
                 <string>This setting determines the &lt;b>bitrate&lt;/b> in kilobits per second. Increasing this value makes the video look better for the cost of an increased file size.</string>
                </property>
               </widget>
+             </item>
+             <item row="4" column="3">
+              <widget class="QLabel" name="m_pLabelVideoCaptureBitRateUnits"/>
              </item>
             </layout>
            </widget>

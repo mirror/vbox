@@ -386,8 +386,8 @@ void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pEditorVideoCapturePath, m_pComboVideoCaptureSize);
     setTabOrder(m_pComboVideoCaptureSize, m_pEditorVideoCaptureWidth);
     setTabOrder(m_pEditorVideoCaptureWidth, m_pEditorVideoCaptureHeight);
-    setTabOrder(m_pEditorVideoCaptureHeight, m_pComboVideoCaptureFrameRate);
-    setTabOrder(m_pComboVideoCaptureFrameRate, m_pEditorVideoCaptureFrameRate);
+    setTabOrder(m_pEditorVideoCaptureHeight, m_pSliderVideoCaptureFrameRate);
+    setTabOrder(m_pSliderVideoCaptureFrameRate, m_pEditorVideoCaptureFrameRate);
     setTabOrder(m_pEditorVideoCaptureFrameRate, m_pComboVideoCaptureBitRate);
     setTabOrder(m_pComboVideoCaptureBitRate, m_pEditorVideoCaptureBitRate);
 }
@@ -400,7 +400,7 @@ void UIMachineSettingsDisplay::retranslateUi()
     /* Video stuff: */
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     m_pLabelMemoryMin->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_iMinVRAM));
-    m_pLabelMemoryMin->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_iMaxVRAMVisible));
+    m_pLabelMemoryMax->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_iMaxVRAMVisible));
     m_pLabelScreensMin->setText(tr("<qt>%1</qt>").arg(1));
     m_pLabelScreensMax->setText(tr("<qt>%1</qt>").arg(sys.GetMaxGuestMonitors()));
 
@@ -411,8 +411,20 @@ void UIMachineSettingsDisplay::retranslateUi()
 
     /* Video Capture stuff: */
     m_pComboVideoCaptureSize->setItemText(0, tr("User Defined"));
-    m_pComboVideoCaptureFrameRate->setItemText(0, tr("User Defined"));
+    m_pLabelVideoCaptureFrameRateMin->setText(tr("%1 fps").arg(m_pSliderVideoCaptureFrameRate->minimum()));
+    m_pLabelVideoCaptureFrameRateMax->setText(tr("%1 fps").arg(m_pSliderVideoCaptureFrameRate->maximum()));
+    m_pLabelVideoCaptureFrameRateUnits->setText(tr("fps"));
     m_pComboVideoCaptureBitRate->setItemText(0, tr("User Defined"));
+    m_pComboVideoCaptureBitRate->setItemText(1, tr("%1 kbps").arg(32));
+    m_pComboVideoCaptureBitRate->setItemText(2, tr("%1 kbps").arg(64));
+    m_pComboVideoCaptureBitRate->setItemText(3, tr("%1 kbps").arg(128));
+    m_pComboVideoCaptureBitRate->setItemText(4, tr("%1 kbps").arg(160));
+    m_pComboVideoCaptureBitRate->setItemText(5, tr("%1 kbps").arg(256));
+    m_pComboVideoCaptureBitRate->setItemText(6, tr("%1 kbps").arg(320));
+    m_pComboVideoCaptureBitRate->setItemText(7, tr("%1 kbps").arg(512));
+    m_pComboVideoCaptureBitRate->setItemText(8, tr("%1 kbps").arg(1024));
+    m_pComboVideoCaptureBitRate->setItemText(9, tr("%1 kbps").arg(2048));
+    m_pLabelVideoCaptureBitRateUnits->setText(tr("kbps"));
 }
 
 void UIMachineSettingsDisplay::polishPage()
@@ -473,17 +485,10 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureSizeChange(int iCurrentIndex
     m_pEditorVideoCaptureHeight->setValue(videoCaptureSize.height());
 }
 
-void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameRateChange(int iCurrentIndex)
+void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameRateChange(int iFrameRate)
 {
-    /* Get the proposed frame-rate: */
-    int iVideoCaptureFrameRate = m_pComboVideoCaptureFrameRate->itemData(iCurrentIndex).toInt();
-
-    /* Make sure its valid: */
-    if (iVideoCaptureFrameRate == 0)
-        return;
-
     /* Apply proposed frame-rate: */
-    m_pEditorVideoCaptureFrameRate->setValue(iVideoCaptureFrameRate);
+    m_pEditorVideoCaptureFrameRate->setValue(iFrameRate);
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateChange(int iCurrentIndex)
@@ -495,7 +500,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateChange(int iCurrentIn
     if (iVideoCaptureBitRate == 0)
         return;
 
-    /* Apply proposed frame-rate: */
+    /* Apply proposed bit-rate: */
     m_pEditorVideoCaptureBitRate->setValue(iVideoCaptureBitRate);
 }
 
@@ -513,8 +518,8 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureHeightChange()
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameRateChange()
 {
-    /* Look for preset: */
-    lookForCorrespondingFrameRatePreset();
+    /* Apply proposed frame-rate: */
+    m_pSliderVideoCaptureFrameRate->setValue(m_pEditorVideoCaptureFrameRate->value());
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateChange()
@@ -637,17 +642,16 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     connect(m_pEditorVideoCaptureWidth, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureWidthChange()));
     connect(m_pEditorVideoCaptureHeight, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureHeightChange()));
 
-    /* Prepare frame-rate combo-box: */
-    m_pComboVideoCaptureFrameRate->addItem(""); /* User Defined */
-    m_pComboVideoCaptureFrameRate->addItem("1",  QVariant(1));
-    m_pComboVideoCaptureFrameRate->addItem("2",  QVariant(2));
-    m_pComboVideoCaptureFrameRate->addItem("5",  QVariant(5));
-    m_pComboVideoCaptureFrameRate->addItem("10", QVariant(10));
-    m_pComboVideoCaptureFrameRate->addItem("15", QVariant(15));
-    m_pComboVideoCaptureFrameRate->addItem("20", QVariant(20));
-    m_pComboVideoCaptureFrameRate->addItem("25", QVariant(25));
-    m_pComboVideoCaptureFrameRate->addItem("30", QVariant(30));
-    connect(m_pComboVideoCaptureFrameRate, SIGNAL(currentIndexChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateChange(int)));
+    /* Prepare frame-rate slider: */
+    m_pSliderVideoCaptureFrameRate->setMinimum(1);
+    m_pSliderVideoCaptureFrameRate->setMaximum(30);
+    m_pSliderVideoCaptureFrameRate->setPageStep(1);
+    m_pSliderVideoCaptureFrameRate->setSingleStep(1);
+    m_pSliderVideoCaptureFrameRate->setTickInterval(1);
+    m_pSliderVideoCaptureFrameRate->setSnappingEnabled(true);
+    m_pSliderVideoCaptureFrameRate->setOptimalHint(1, 25);
+    m_pSliderVideoCaptureFrameRate->setWarningHint(25, 30);
+    connect(m_pSliderVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateChange(int)));
 
     /* Prepare frame-rate spin-box: */
     vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureFrameRate, 3);
@@ -656,16 +660,16 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     connect(m_pEditorVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateChange()));
 
     /* Prepare bit-rate combo-box: */
-    m_pComboVideoCaptureBitRate->addItem(""); /* User Defined */
-    m_pComboVideoCaptureBitRate->addItem("32",   QVariant(32));
-    m_pComboVideoCaptureBitRate->addItem("64",   QVariant(64));
-    m_pComboVideoCaptureBitRate->addItem("128",  QVariant(128));
-    m_pComboVideoCaptureBitRate->addItem("160",  QVariant(160));
-    m_pComboVideoCaptureBitRate->addItem("256",  QVariant(256));
-    m_pComboVideoCaptureBitRate->addItem("320",  QVariant(320));
-    m_pComboVideoCaptureBitRate->addItem("512",  QVariant(512));
-    m_pComboVideoCaptureBitRate->addItem("1024", QVariant(1024));
-    m_pComboVideoCaptureBitRate->addItem("2048", QVariant(2048));
+    m_pComboVideoCaptureBitRate->insertItem(0, QString()); /* User Defined */
+    m_pComboVideoCaptureBitRate->insertItem(1, QString(), QVariant(32));
+    m_pComboVideoCaptureBitRate->insertItem(2, QString(), QVariant(64));
+    m_pComboVideoCaptureBitRate->insertItem(3, QString(), QVariant(128));
+    m_pComboVideoCaptureBitRate->insertItem(4, QString(), QVariant(160));
+    m_pComboVideoCaptureBitRate->insertItem(5, QString(), QVariant(256));
+    m_pComboVideoCaptureBitRate->insertItem(6, QString(), QVariant(320));
+    m_pComboVideoCaptureBitRate->insertItem(7, QString(), QVariant(512));
+    m_pComboVideoCaptureBitRate->insertItem(8, QString(), QVariant(1024));
+    m_pComboVideoCaptureBitRate->insertItem(9, QString(), QVariant(2048));
     connect(m_pComboVideoCaptureBitRate, SIGNAL(currentIndexChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateChange(int)));
 
     /* Prepare bit-rate spin-box: */
@@ -715,7 +719,7 @@ void UIMachineSettingsDisplay::checkVRAMRequirements()
     m_pSliderMemory->setMaximum(m_iMaxVRAMVisible);
     m_pSliderMemory->setOptimalHint(uNeedMBytes, m_iMaxVRAMVisible);
     m_pEditorMemory->setValidator(new QIntValidator(m_iMinVRAM, m_iMaxVRAMVisible, this));
-    m_pLabelMemoryMin->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_iMaxVRAMVisible));
+    m_pLabelMemoryMax->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_iMaxVRAMVisible));
 }
 
 bool UIMachineSettingsDisplay::shouldWeWarnAboutLowVideoMemory()
@@ -752,13 +756,6 @@ void UIMachineSettingsDisplay::lookForCorrespondingSizePreset()
     lookForCorrespondingPreset(m_pComboVideoCaptureSize,
                                QSize(m_pEditorVideoCaptureWidth->value(),
                                      m_pEditorVideoCaptureHeight->value()));
-}
-
-void UIMachineSettingsDisplay::lookForCorrespondingFrameRatePreset()
-{
-    /* Look for video-capture frame-rate preset: */
-    lookForCorrespondingPreset(m_pComboVideoCaptureFrameRate,
-                               m_pEditorVideoCaptureFrameRate->value());
 }
 
 void UIMachineSettingsDisplay::lookForCorrespondingBitRatePreset()
