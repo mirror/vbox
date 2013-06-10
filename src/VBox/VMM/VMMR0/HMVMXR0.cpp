@@ -1227,6 +1227,18 @@ static void hmR0VmxFlushTaggedTlbNone(PVM pVM, PVMCPU pVCpu)
  */
 static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
 {
+#ifdef VBOX_WITH_STATISTICS
+    bool fTlbFlushed = false;
+# define HMVMX_SET_TAGGED_TLB_FLUSHED()       do { fTlbFlushed = true; } while (0)
+# define HMVMX_UPDATE_FLUSH_SKIPPED_STAT()    do { \
+                                                if (!fTlbFlushed) \
+                                                    STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch); \
+                                              } while (0)
+#else
+# define HMVMX_SET_TAGGED_TLB_FLUSHED()       do { } while (0)
+# define HMVMX_UPDATE_FLUSH_SKIPPED_STAT()    do { } while (0)
+#endif
+
     AssertPtr(pVM);
     AssertPtr(pVCpu);
     AssertMsg(pVM->hm.s.fNestedPaging && pVM->hm.s.vmx.fVpid,
@@ -1238,95 +1250,78 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
 
     /*
      * Force a TLB flush for the first world-switch if the current CPU differs from the one we ran on last.
-     * This can happen both for start & resume due to long jumps back to ring-3.
      * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB
      * or the host CPU is online after a suspend/resume, so we cannot reuse the current ASID anymore.
      */
-    bool fNewASID = false;
     if (   pVCpu->hm.s.idLastCpu   != pCpu->idCpu
         || pVCpu->hm.s.cTlbFlushes != pCpu->cTlbFlushes)
     {
-        pVCpu->hm.s.fForceTLBFlush = true;
-        fNewASID = true;
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
+        ++pCpu->uCurrentAsid;
+        if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
+        {
+            pCpu->uCurrentAsid = 1;              /* Wraparound to 1; host uses 0. */
+            pCpu->cTlbFlushes++;                 /* All VCPUs that run on this host CPU must use a new VPID. */
+            pCpu->fFlushAsidBeforeUse = true;    /* All VCPUs that run on this host CPU must flush their new VPID before use. */
+        }
+
+        pVCpu->hm.s.uCurrentAsid = pCpu->uCurrentAsid;
+        pVCpu->hm.s.idLastCpu    = pCpu->idCpu;
+        pVCpu->hm.s.cTlbFlushes  = pCpu->cTlbFlushes;
+
+        /*
+         * Flush by EPT when we get rescheduled to a new host CPU to ensure EPT-only tagged mappings are also
+         * invalidated. We don't need to flush-by-VPID here as flushing by EPT covers it. See @bugref{6568}.
+         */
+        hmR0VmxFlushEpt(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
+        HMVMX_SET_TAGGED_TLB_FLUSHED();
     }
 
-    /*
-     * Check for explicit TLB shootdowns.
-     */
-    bool fExplicitTlbFlush = false;
+    /* Check for explicit TLB shootdowns. */
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
     {
-        pVCpu->hm.s.fForceTLBFlush = true;
-        fExplicitTlbFlush = true;
+        /*
+         * Changes to the EPT paging structure by VMM requires flushing by EPT as the CPU creates
+         * guest-physical (only EPT-tagged) mappings while traversing the EPT tables when EPT is in use.
+         * Flushing by VPID will only flush linear (only VPID-tagged) and combined (EPT+VPID tagged) mappings
+         * but not guest-physical mappings.
+         * See Intel spec. 28.3.2 "Creating and Using Cached Translation Information". See @bugref{6568}.
+         */
+        hmR0VmxFlushEpt(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
+        HMVMX_SET_TAGGED_TLB_FLUSHED();
     }
 
-    pVCpu->hm.s.idLastCpu = pCpu->idCpu;
-    if (pVCpu->hm.s.fForceTLBFlush)
+    /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
+     *        not be executed. See hmQueueInvlPage() where it is commented
+     *        out. Support individual entry flushing someday. */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
     {
-        if (fNewASID)
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
+
+        /*
+         * Flush individual guest entries using VPID from the TLB or as little as possible with EPT
+         * as supported by the CPU.
+         */
+        if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
         {
-            ++pCpu->uCurrentAsid;
-            if (pCpu->uCurrentAsid >= pVM->hm.s.uMaxAsid)
-            {
-                pCpu->uCurrentAsid = 1;            /* Wraparound to 1; host uses 0. */
-                pCpu->cTlbFlushes++;               /* All VCPUs that run on this host CPU must use a new VPID. */
-                pCpu->fFlushAsidBeforeUse = true;  /* All VCPUs that run on this host CPU must flush their new VPID before use. */
-            }
-
-            pVCpu->hm.s.uCurrentAsid = pCpu->uCurrentAsid;
-            if (pCpu->fFlushAsidBeforeUse)
-                hmR0VmxFlushVpid(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVpid, 0 /* GCPtr */);
-        }
-
-        if (fExplicitTlbFlush)
-        {
-            /*
-             * Changes to the EPT paging structure by VMM requires flushing by EPT as the CPU creates
-             * guest-physical (only EPT-tagged) mappings while traversing the EPT tables when EPT is in use.
-             * Flushing by VPID will only flush linear (only VPID-tagged) and combined (EPT+VPID tagged) mappings
-             * but not guest-physical mappings.
-             * See Intel spec. 28.3.2 "Creating and Using Cached Translation Information". See @bugref{6568}.
-             */
-            hmR0VmxFlushEpt(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
-        }
-
-        pVCpu->hm.s.cTlbFlushes    = pCpu->cTlbFlushes;
-        pVCpu->hm.s.fForceTLBFlush = false;
-    }
-    else
-    {
-        AssertMsg(pVCpu->hm.s.uCurrentAsid && pCpu->uCurrentAsid,
-                  ("hm->uCurrentAsid=%lu hm->cTlbFlushes=%lu cpu->uCurrentAsid=%lu cpu->cTlbFlushes=%lu\n",
-                   pVCpu->hm.s.uCurrentAsid, pVCpu->hm.s.cTlbFlushes,
-                   pCpu->uCurrentAsid, pCpu->cTlbFlushes));
-
-        /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
-         *        not be executed. See hmQueueInvlPage() where it is commented
-         *        out. Support individual entry flushing someday. */
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
-        {
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
-
-            /*
-             * Flush individual guest entries using VPID from the TLB or as little as possible with EPT
-             * as supported by the CPU.
-             */
-            if (pVM->hm.s.vmx.msr.vmx_ept_vpid_caps & MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR)
-            {
-                for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
-                    hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
-            }
-            else
-                hmR0VmxFlushEpt(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
+            for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
+                hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
         }
         else
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch);
-    }
-    pVCpu->hm.s.TlbShootdown.cPages = 0;
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
+            hmR0VmxFlushEpt(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
 
+        HMVMX_SET_TAGGED_TLB_FLUSHED();
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
+    }
+
+    pVCpu->hm.s.TlbShootdown.cPages = 0;
+    pVCpu->hm.s.fForceTLBFlush = false;
+
+    HMVMX_UPDATE_FLUSH_SKIPPED_STAT();
+
+    Assert(pVCpu->hm.s.idLastCpu == pCpu->idCpu);
+    Assert(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes);
     AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
               ("Flush count mismatch for cpu %d (%u vs %u)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
     AssertMsg(pCpu->uCurrentAsid >= 1 && pCpu->uCurrentAsid < pVM->hm.s.uMaxAsid,
@@ -1337,6 +1332,8 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
     /* Update VMCS with the VPID. */
     int rc  = VMXWriteVmcs32(VMX_VMCS16_GUEST_FIELD_VPID, pVCpu->hm.s.uCurrentAsid);
     AssertRC(rc);
+
+#undef HMVMX_SET_TAGGED_TLB_FLUSHED
 }
 
 
@@ -1361,7 +1358,6 @@ static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu)
 
     /*
      * Force a TLB flush for the first world-switch if the current CPU differs from the one we ran on last.
-     * This can happen both for start & resume due to long jumps back to ring-3.
      * A change in the TLB flush count implies the host CPU is online after a suspend/resume.
      */
     if (   pVCpu->hm.s.idLastCpu   != pCpu->idCpu
@@ -1426,7 +1422,6 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu)
 
     /*
      * Force a TLB flush for the first world switch if the current CPU differs from the one we ran on last.
-     * This can happen both for start & resume due to long jumps back to ring-3.
      * If the TLB flush count changed, another VM (VCPU rather) has hit the ASID limit while flushing the TLB
      * or the host CPU is online after a suspend/resume, so we cannot reuse the current ASID anymore.
      */
