@@ -590,13 +590,13 @@ $(VBOXWEB_IDL_SRC): $(VBOXWEB_IDL_SRC_STRIPPED) $(VBOX_PATH_WEBSERVICE)/platform
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/platform-xidl.xsl $<
 
 # generate WSDL from main XIDL file
-$(VBOXWEB_WSDL): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
+$(VBOXWEB_WSDL): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) ## @todo | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-wsdl.xsl)
 	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-wsdl.xsl $<
 
-$(VBOXWEBSERVICE_WSDL): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl-service.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
+$(VBOXWEBSERVICE_WSDL): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl-service.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) ## @todo | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-wsdl-service.xsl)
 	$(QUIET)$(RM) -f -- $@
 	$(QUIET)$(MKDIR) -p $(@D)
