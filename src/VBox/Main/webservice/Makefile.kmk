@@ -170,8 +170,8 @@ VBOXWEB_IDL_SRC_STRIPPED      := $(VBOX_XIDL_FILE)
 # platform-specific XIDL file generated from $(VBOXWEB_IDL_SRC_STRIPPED):
 VBOXWEB_IDL_SRC               := $(VBOXWEB_OUT_DIR)/VirtualBox.xidl
 
-VBOXWEB_WSDL                   = $(VBOX_PATH_SDK)/bindings/webservice/vboxweb.wsdl
-VBOXWEBSERVICE_WSDL            = $(VBOX_PATH_SDK)/bindings/webservice/vboxwebService.wsdl
+VBOXWEB_WSDL                   = $(VBOXWEB_OUT_DIR)/vboxweb.wsdl
+VBOXWEBSERVICE_WSDL            = $(VBOXWEB_OUT_DIR)/vboxwebService.wsdl
 
 VBOXWEB_TYPEMAP               := $(VBOXWEB_OUT_DIR)/typemap.dat
 
@@ -564,12 +564,14 @@ if defined(VBOX_ONLY_SDK) && "$(KBUILD_TARGET)" != "win"
 	samples/python/Makefile.glue=>python/lib/Makefile \
 	$(PATH_ROOT)/COPYING.LIB=>java/jax-ws/COPYING.LIB
 
-endif # VBOX_ONLY_SDK
+ INSTALLS += vboxwebinst_wsdl
+ vboxwebinst_wsdl_INST = $(INST_SDK)bindings/webservice/
+ vboxwebinst_wsdl_MODE = a+r,u+w
+ vboxwebinst_wsdl_SOURCES = \
+	$(VBOXWEB_WSDL)=>vboxweb.wsdl \
+	$(VBOXWEBSERVICE_WSDL)=>vboxwebService.wsdl
 
-## @todo VBOXWEB_WSDL and VBOXWEBSERVICE_WSDL should be an install target.
-VBOXWEB_OTHERS += \
-	$(VBOXWEB_WSDL) \
-	$(VBOXWEBSERVICE_WSDL)
+endif # VBOX_ONLY_SDK
 
 #
 # Update the OTHERS and OTHER_CLEAN lists with VBOXWEB_OTHERS and some more stuff.
@@ -580,6 +582,8 @@ VBOXWEB_OTHERS += \
 OTHERS += $(VBOXWEB_OTHERS)
 OTHER_CLEAN += \
 	$(VBOXWEB_OTHERS) \
+	$(VBOXWEB_WSDL) \
+	$(VBOXWEBSERVICE_WSDL) \
 	$(VBOXWEB_TYPEMAP) \
 	$(VBOXWEB_IDL_SRC)
 
@@ -590,16 +594,14 @@ $(VBOXWEB_IDL_SRC): $(VBOXWEB_IDL_SRC_STRIPPED) $(VBOX_PATH_WEBSERVICE)/platform
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/platform-xidl.xsl $<
 
 # generate WSDL from main XIDL file
-$(VBOXWEB_WSDL): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) ## @todo | $$(dir $$@)
+$(VBOXWEB_WSDL): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-wsdl.xsl)
 	$(QUIET)$(RM) -f -- $@
-	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-wsdl.xsl $<
 
-$(VBOXWEBSERVICE_WSDL): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl-service.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) ## @todo | $$(dir $$@)
+$(VBOXWEBSERVICE_WSDL): $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-wsdl-service.xsl $(VBOX_PATH_IDL)/typemap-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-wsdl-service.xsl)
 	$(QUIET)$(RM) -f -- $@
-	$(QUIET)$(MKDIR) -p $(@D)
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOXWEB_XSLTPROC_VERBOSE) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-wsdl-service.xsl $<
 
 ifdef VBOX_ONLY_SDK
