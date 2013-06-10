@@ -167,7 +167,7 @@ private slots:
 
     /* Handlers: Video Capture stuff: */
     void sltHandleVideoCaptureSizeChange(int iCurrentIndex);
-    void sltHandleVideoCaptureFrameRateChange(int iCurrentIndex);
+    void sltHandleVideoCaptureFrameRateChange(int iFrameRate);
     void sltHandleVideoCaptureBitRateChange(int iCurrentIndex);
     void sltHandleVideoCaptureWidthChange();
     void sltHandleVideoCaptureHeightChange();
@@ -189,7 +189,6 @@ private:
 
     /* Helpers: Video Capture stuff: */
     void lookForCorrespondingSizePreset();
-    void lookForCorrespondingFrameRatePreset();
     void lookForCorrespondingBitRatePreset();
     static void lookForCorrespondingPreset(QComboBox *pWhere, const QVariant &whichData);
 
