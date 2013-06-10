@@ -1376,8 +1376,6 @@ int handleControlVM(HandlerArg *a)
                 }
             }
 
-            for (unsigned i = 0; i < cMonitors; i++)
-                RTPrintf("  %d\n", saScreens[i]);
             CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureScreens)(ComSafeArrayAsInParam(saScreens)));
         }
         else
