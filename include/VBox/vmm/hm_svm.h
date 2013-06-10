@@ -555,6 +555,7 @@ typedef union
     } n;
     uint64_t    u;
 } SVMAVIC;
+AssertCompileSize(SVMAVIC, 8);
 
 /**
  * SVM AVIC PHYSICAL_TABLE pointer.
@@ -570,6 +571,7 @@ typedef union
     } n;
     uint64_t    u;
 } SVMAVICPHYS;
+AssertCompileSize(SVMAVICPHYS, 8);
 
 /**
  * SVM VM Control Block. (VMCB)
