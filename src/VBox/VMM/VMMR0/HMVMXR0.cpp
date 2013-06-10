@@ -1254,9 +1254,11 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
     /*
      * Check for explicit TLB shootdowns.
      */
+    bool fExplicitTlbFlush = false;
     if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH))
     {
         pVCpu->hm.s.fForceTLBFlush = true;
+        fExplicitTlbFlush = true;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
     }
 
@@ -1277,7 +1279,8 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
             if (pCpu->fFlushAsidBeforeUse)
                 hmR0VmxFlushVpid(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVpid, 0 /* GCPtr */);
         }
-        else
+
+        if (fExplicitTlbFlush)
         {
             /*
              * Changes to the EPT paging structure by VMM requires flushing by EPT as the CPU creates
