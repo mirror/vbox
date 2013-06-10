@@ -479,7 +479,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameSizeComboboxChange()
     m_pEditorVideoCaptureHeight->setValue(videoCaptureSize.height());
 }
 
-void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameWidthSpinboxChange()
+void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameWidthEditorChange()
 {
     /* Look for preset: */
     lookForCorrespondingSizePreset();
@@ -487,7 +487,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameWidthSpinboxChange()
     sltHandleVideoCaptureQualitySliderChange();
 }
 
-void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameHeightSpinboxChange()
+void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameHeightEditorChange()
 {
     /* Look for preset: */
     lookForCorrespondingSizePreset();
@@ -505,7 +505,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameRateSliderChange()
     sltHandleVideoCaptureQualitySliderChange();
 }
 
-void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameRateSpinboxChange()
+void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameRateEditorChange()
 {
     /* Apply proposed frame-rate: */
     m_pSliderVideoCaptureFrameRate->blockSignals(true);
@@ -526,7 +526,7 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureQualitySliderChange()
     m_pEditorVideoCaptureBitRate->blockSignals(false);
 }
 
-void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateSpinboxChange()
+void UIMachineSettingsDisplay::sltHandleVideoCaptureBitRateEditorChange()
 {
     /* Calculate/apply proposed quality: */
     m_pSliderVideoCaptureQuality->blockSignals(true);
@@ -643,15 +643,15 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     m_pComboVideoCaptureSize->addItem("1920 x 1200 (16:10)", QVariant(QSize(1920, 1200)));
     connect(m_pComboVideoCaptureSize, SIGNAL(currentIndexChanged(int)), this, SLOT(sltHandleVideoCaptureFrameSizeComboboxChange()));
 
-    /* Prepare frame-width/height spin-boxes: */
+    /* Prepare frame-width/height editors: */
     vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureWidth, 5);
     vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureHeight, 5);
     m_pEditorVideoCaptureWidth->setMinimum(16);
     m_pEditorVideoCaptureWidth->setMaximum(1920);
     m_pEditorVideoCaptureHeight->setMinimum(16);
     m_pEditorVideoCaptureHeight->setMaximum(1200);
-    connect(m_pEditorVideoCaptureWidth, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameWidthSpinboxChange()));
-    connect(m_pEditorVideoCaptureHeight, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameHeightSpinboxChange()));
+    connect(m_pEditorVideoCaptureWidth, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameWidthEditorChange()));
+    connect(m_pEditorVideoCaptureHeight, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameHeightEditorChange()));
 
     /* Prepare frame-rate slider: */
     m_pSliderVideoCaptureFrameRate->setMinimum(1);
@@ -664,11 +664,11 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     m_pSliderVideoCaptureFrameRate->setWarningHint(25, 30);
     connect(m_pSliderVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateSliderChange()));
 
-    /* Prepare frame-rate spin-box: */
+    /* Prepare frame-rate editor: */
     vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureFrameRate, 3);
     m_pEditorVideoCaptureFrameRate->setMinimum(1);
     m_pEditorVideoCaptureFrameRate->setMaximum(30);
-    connect(m_pEditorVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateSpinboxChange()));
+    connect(m_pEditorVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateEditorChange()));
 
     /* Prepare quality combo-box: */
     m_pSliderLayoutVideoCaptureQuality->setColumnStretch(1, 4);
@@ -684,11 +684,11 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     m_pSliderVideoCaptureQuality->setErrorHint(9, 10);
     connect(m_pSliderVideoCaptureQuality, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureQualitySliderChange()));
 
-    /* Prepare bit-rate spin-box: */
+    /* Prepare bit-rate editor: */
     vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorVideoCaptureBitRate, 5);
     m_pEditorVideoCaptureBitRate->setMinimum(32);
     m_pEditorVideoCaptureBitRate->setMaximum(2048);
-    connect(m_pEditorVideoCaptureBitRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateSpinboxChange()));
+    connect(m_pEditorVideoCaptureBitRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateEditorChange()));
 }
 
 void UIMachineSettingsDisplay::checkVRAMRequirements()
