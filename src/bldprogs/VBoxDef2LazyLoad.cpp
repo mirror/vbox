@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * VBoxDef2LazyLoad - Lazy Library Loader Generator.
+ *
+ * @note Only tested on win.amd64.
  */
 
 /*
@@ -131,7 +133,6 @@ static RTEXITCODE parseInputInner(FILE *pInput)
         size_t cchWord0 = wordLength(psz);
 #define WORD_CMP(pszWord1, cchWord1, szWord2) \
             ( (cchWord1) == sizeof(szWord2) - 1 && memcmp(pszWord1, szWord2, sizeof(szWord2) - 1) == 0 )
-fprintf(stderr,"word: %u: cchWord0=%d '%s'\n", iLine, cchWord0, psz);
         if (WORD_CMP(psz, cchWord0, "EXPORTS"))
         {
             fInExports = true;
@@ -277,6 +278,14 @@ static RTEXITCODE  parseInput(void)
 }
 
 
+/**
+ * Generates the assembly source code, writing it to @a pOutput.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE, in the latter case full
+ *          details has been displayed.
+ * @param   pOutput              The output stream (caller checks it for errors
+ *                               when closing).
+ */
 static RTEXITCODE generateOutputInner(FILE *pOutput)
 {
     fprintf(pOutput,
@@ -492,6 +501,12 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
 }
 
 
+/**
+ * Generates the assembly source code, writing it to g_pszOutput.
+ *
+ * @returns RTEXITCODE_SUCCESS or RTEXITCODE_FAILURE, in the latter case full
+ *          details has been displayed.
+ */
 static RTEXITCODE generateOutput(void)
 {
     RTEXITCODE rcExit = RTEXITCODE_FAILURE;
@@ -511,6 +526,12 @@ static RTEXITCODE generateOutput(void)
 }
 
 
+/**
+ * Displays usage information.
+ *
+ * @returns RTEXITCODE_SUCCESS.
+ * @param   pszArgv0            The argv[0] string.
+ */
 static int usage(const char *pszArgv0)
 {
     printf("usage: %s --libary <loadname> --output <lazyload.asm> <input.def>\n",
@@ -550,6 +571,8 @@ int main(int argc, char **argv)
                 }
                 g_pszLibrary = argv[i];
             }
+            /** @todo Support different load methods so this can be used on system libs and
+             *        such if we like. */
             else if (   !strcmp(psz, "--help")
                      || !strcmp(psz, "-help")
                      || !strcmp(psz, "-h")
@@ -566,7 +589,6 @@ int main(int argc, char **argv)
                 fprintf(stderr, "syntax error: Unknown option '%s'.\n", psz);
                 return RTEXITCODE_SYNTAX;
             }
-
         }
         else
         {
