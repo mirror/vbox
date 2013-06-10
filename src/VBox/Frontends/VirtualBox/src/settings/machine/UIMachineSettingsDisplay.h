@@ -166,11 +166,11 @@ private slots:
     void sltTextChangedScreens(const QString &strText);
 
     /* Handlers: Video Capture stuff: */
-    void sltHandleVideoCaptureSizeChange(int iCurrentIndex);
-    void sltHandleVideoCaptureFrameRateChange(int iFrameRate);
-    void sltHandleVideoCaptureWidthChange();
-    void sltHandleVideoCaptureHeightChange();
-    void sltHandleVideoCaptureFrameRateChange();
+    void sltHandleVideoCaptureFrameSizeComboboxChange();
+    void sltHandleVideoCaptureFrameWidthSpinboxChange();
+    void sltHandleVideoCaptureFrameHeightSpinboxChange();
+    void sltHandleVideoCaptureFrameRateSliderChange();
+    void sltHandleVideoCaptureFrameRateSpinboxChange();
     void sltHandleVideoCaptureQualitySliderChange();
     void sltHandleVideoCaptureBitRateSpinboxChange();
 
