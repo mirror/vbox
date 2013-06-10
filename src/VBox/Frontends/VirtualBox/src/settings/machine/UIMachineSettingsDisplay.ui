@@ -47,11 +47,11 @@
            </widget>
           </item>
           <item row="0" column="1" rowspan="2">
-           <layout class="QVBoxLayout" name="m_pLayoutVideoMemorySizeSlider">
+           <layout class="QGridLayout" name="m_pLayoutVideoMemorySizeSlider">
             <property name="spacing">
              <number>0</number>
             </property>
-            <item>
+            <item row="0" column="0" colspan="3">
              <widget class="QIAdvancedSlider" name="m_pSliderVideoMemorySize">
               <property name="whatsThis">
                <string>Controls the amount of video memory provided to the virtual machine.</string>
@@ -64,54 +64,46 @@
               </property>
              </widget>
             </item>
-            <item>
-             <layout class="QHBoxLayout" name="m_pLayoutVideoMemorySizeLegeng">
-              <item>
-               <widget class="QLabel" name="m_pLabelVideoMemorySizeMin"/>
-              </item>
-              <item>
-               <spacer name="m_pSpacerVideoMemorySize">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QLabel" name="m_pLabelVideoMemorySizeMax"/>
-              </item>
-             </layout>
+            <item row="1" column="0">
+             <widget class="QLabel" name="m_pLabelVideoMemorySizeMin"/>
+            </item>
+            <item row="1" column="1">
+             <spacer name="m_pSpacerVideoMemorySize">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="1" column="2">
+             <widget class="QLabel" name="m_pLabelVideoMemorySizeMax"/>
             </item>
            </layout>
           </item>
           <item row="0" column="2">
-           <layout class="QHBoxLayout" name="m_pLayoutVideoMemorySizeEditor">
-            <item>
-             <widget class="QILineEdit" name="m_pEditorVideoMemorySize">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="whatsThis">
-               <string>Controls the amount of video memory provided to the virtual machine.</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="m_pLabelVideoMemorySizeUnit">
-              <property name="text">
-               <string>MB</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
+           <widget class="QILineEdit" name="m_pEditorVideoMemorySize">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="whatsThis">
+             <string>Controls the amount of video memory provided to the virtual machine.</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLabel" name="m_pLabelVideoMemoryUnit">
+            <property name="text">
+             <string>MB</string>
+            </property>
+           </widget>
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="m_pLabelVideoScreenCount">
@@ -127,11 +119,11 @@
            </widget>
           </item>
           <item row="2" column="1" rowspan="2">
-           <layout class="QVBoxLayout" name="m_pLayoutVideoScreenCount">
+           <layout class="QGridLayout" name="m_pLayoutVideoScreenCount">
             <property name="spacing">
              <number>0</number>
             </property>
-            <item>
+            <item row="0" column="0" colspan="3">
              <widget class="QIAdvancedSlider" name="m_pSliderVideoScreenCount">
               <property name="whatsThis">
                <string>Controls the amount of virtual monitors provided to the virtual machine.</string>
@@ -144,50 +136,39 @@
               </property>
              </widget>
             </item>
-            <item>
-             <layout class="QHBoxLayout" name="m_pLayoutVideoScreenCountLegeng">
-              <item>
-               <widget class="QLabel" name="m_pLabelVideoScreenCountMin"/>
-              </item>
-              <item>
-               <spacer name="m_pSpacerVideoScreenCount">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item>
-               <widget class="QLabel" name="m_pLabelVideoScreenCountMax"/>
-              </item>
-             </layout>
+            <item row="1" column="0">
+             <widget class="QLabel" name="m_pLabelVideoScreenCountMin"/>
+            </item>
+            <item row="1" column="1">
+             <spacer name="m_pSpacerVideoScreenCount">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="1" column="2">
+             <widget class="QLabel" name="m_pLabelVideoScreenCountMax"/>
             </item>
            </layout>
           </item>
           <item row="2" column="2">
-           <layout class="QHBoxLayout" name="m_pLayoutEditorScreens">
-            <item>
-             <widget class="QILineEdit" name="m_pEditorVideoScreenCount">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="whatsThis">
-               <string>Controls the amount of virtual monitors provided to the virtual machine.</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="m_pLabelVideoScreenCountUnit"/>
-            </item>
-           </layout>
+           <widget class="QILineEdit" name="m_pEditorVideoScreenCount">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="whatsThis">
+             <string>Controls the amount of virtual monitors provided to the virtual machine.</string>
+            </property>
+           </widget>
           </item>
           <item row="4" column="0">
            <widget class="QLabel" name="m_pLabelVideoOptions">
