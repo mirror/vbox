@@ -1476,3 +1476,9 @@ EXPORTS
     RTZipTarCmd
     RTZipTarFsStreamFromIoStream
 
+    ; Support library
+    SUPR3HardenedLdrLoad
+    SUPR3HardenedLdrLoadAppPriv
+    SUPR3HardenedLdrLoadPlugIn
+    SUPR3QueryVTxSupported
+    SUPR3QueryVTCaps
