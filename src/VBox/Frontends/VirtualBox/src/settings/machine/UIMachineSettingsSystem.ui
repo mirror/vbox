@@ -65,9 +65,6 @@
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="tickPosition">
-            <enum>QSlider::TicksBelow</enum>
-           </property>
           </widget>
          </item>
          <item>
@@ -473,9 +470,6 @@
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="tickPosition">
-            <enum>QSlider::TicksBelow</enum>
-           </property>
           </widget>
          </item>
          <item>
@@ -576,9 +570,6 @@
            </property>
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="tickPosition">
-            <enum>QSlider::TicksBelow</enum>
            </property>
           </widget>
          </item>
