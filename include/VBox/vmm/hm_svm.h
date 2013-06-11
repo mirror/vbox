@@ -783,5 +783,5 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt);
 
 /** @} */
 
-#endif /* ___VBox_vmm_svm_h */
+#endif
 
