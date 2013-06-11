@@ -171,6 +171,14 @@ enum {
     CTL_W_MASK      /* Write all DRQ mask bits. */
 };
 
+/* DMA transfer modes. */
+enum {
+    DMODE_DEMAND,   /* Demand transfer mode. */
+    DMODE_SINGLE,   /* Single transfer mode. */
+    DMODE_BLOCK,    /* Block transfer mode. */
+    DMODE_CASCADE   /* Cascade mode. */
+};
+
 /* Convert DMA channel number (0-7) to controller number (0-1). */
 #define DMACH2C(c)      (c < 4 ? 0 : 1)
 
@@ -540,9 +548,25 @@ static void dmaRunChannel(DMAState *pThis, int ctlidx, int chidx)
 
     /* Addresses and counts are shifted for 16-bit channels. */
     start_cnt = ch->u16CurCount << dc->is16bit;
+    /* NB: The device is responsible for examining the DMA mode and not
+     * transferring more than it should if auto-init is not in use.
+     */
     end_cnt = ch->pfnXferHandler(pThis->pDevIns, ch->pvUser, (ctlidx * 4) + chidx,
                                  start_cnt, (ch->u16BaseCount + 1) << dc->is16bit);
     ch->u16CurCount = end_cnt >> dc->is16bit;
+    /* Set the TC (Terminal Count) bit if transfer was completed. */
+    if (ch->u16CurCount == ch->u16BaseCount + 1)
+        switch (opmode) 
+        {
+        case DMODE_DEMAND:
+        case DMODE_SINGLE:
+        case DMODE_BLOCK:
+            dc->u8Status |= RT_BIT(chidx);
+            Log3(("TC set for DMA channel %d\n", (ctlidx * 4) + chidx));
+            break;
+        default:
+            break;
+        }
     Log3(("DMA position %d, size %d\n", end_cnt, (ch->u16BaseCount + 1) << dc->is16bit));
 }
 
