@@ -79,7 +79,7 @@ RTDECL(int) RTCritSectRwInitEx(PRTCRITSECTRW pThis, uint32_t fFlags,
 #endif
 
 #ifdef RTCRITSECTRW_STRICT
-    bool const fLVEnabled = !(fFlags & RTSEMRW_FLAGS_NO_LOCK_VAL);
+    bool const fLVEnabled = !(fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL);
     if (!pszNameFmt)
     {
         static uint32_t volatile s_iAnon = 0;
