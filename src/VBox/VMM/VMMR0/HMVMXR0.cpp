@@ -5654,19 +5654,19 @@ static int hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertRCReturn(rc, rc);
 
         /* Pending HM CR3 sync. */
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
         {
             rc = PGMUpdateCR3(pVCpu, pMixedCtx->cr3);
             Assert(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3);
-            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
         }
 
         /* Pending HM PAE PDPEs. */
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES))
         {
             rc = PGMGstUpdatePaePdpes(pVCpu, &pVCpu->hm.s.aPdpes[0]);
             AssertRC(rc);
-            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
+            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
         }
 
         /* Pending PGM C3 sync. */
@@ -5727,7 +5727,7 @@ static int hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @param   pVCpu           Pointer to the VMCPU.
  */
-static void hmR0VmxTRPMTrapToPendingEvent(PVMCPU pVCpu)
+static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
 {
     Assert(TRPMHasTrap(pVCpu));
     Assert(!pVCpu->hm.s.Event.fPending);
@@ -5772,10 +5772,10 @@ static void hmR0VmxTRPMTrapToPendingEvent(PVMCPU pVCpu)
     }
     else if (enmTrpmEvent == TRPM_HARDWARE_INT)
     {
-        if (uVector != X86_XCPT_NMI)
-            u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-        else
+        if (uVector == X86_XCPT_NMI)
             u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+        else
+            u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     }
     else if (enmTrpmEvent == TRPM_SOFTWARE_INT)
         u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
@@ -5796,7 +5796,7 @@ static void hmR0VmxTRPMTrapToPendingEvent(PVMCPU pVCpu)
  *
  * @param   pvCpu           Pointer to the VMCPU.
  */
-static void hmR0VmxPendingEventToTRPMTrap(PVMCPU pVCpu)
+static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
 {
     Assert(pVCpu->hm.s.Event.fPending);
 
@@ -5836,6 +5836,7 @@ static void hmR0VmxPendingEventToTRPMTrap(PVMCPU pVCpu)
 
     if (fErrorCodeValid)
         TRPMSetErrorCode(pVCpu, uErrorCode);
+
     if (   uVectorType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
         && uVector == X86_XCPT_PF)
     {
@@ -5951,7 +5952,7 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
     /* We need to do this only while truly exiting the "inner loop" back to ring-3 and -not- for any longjmp to ring3. */
     if (pVCpu->hm.s.Event.fPending)
     {
-        hmR0VmxPendingEventToTRPMTrap(pVCpu);
+        hmR0VmxPendingEventToTrpmTrap(pVCpu);
         Assert(!pVCpu->hm.s.Event.fPending);
     }
 
@@ -6710,7 +6711,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * This may cause longjmps to ring-3 and may even result in rescheduling to the
  * recompiler. We must be cautious what we do here regarding committing
  * guest-state information into the the VMCS assuming we assuredly execute the
- * guest in VT-x. If we fall back to the recompiler after updating VMCS and
+ * guest in VT-x. If we fall back to the recompiler after updating the VMCS and
  * clearing the common-state (TRPM/forceflags), we must undo those changes so
  * that the recompiler can (and should) use them when it resumes guest
  * execution. Otherwise such operations must be done when we can no longer
@@ -6786,7 +6787,7 @@ DECLINLINE(int) hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
      */
     /** @todo Rework event evaluation and injection to be completely separate. */
     if (TRPMHasTrap(pVCpu))
-        hmR0VmxTRPMTrapToPendingEvent(pVCpu);
+        hmR0VmxTrpmTrapToPendingEvent(pVCpu);
 
     rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
