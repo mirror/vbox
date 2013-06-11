@@ -64,6 +64,13 @@
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** The maximum name length excluding the terminator. */
+#define STAM_MAX_NAME_LEN   239
+
+
+/*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
@@ -486,14 +493,11 @@ VMMR3DECL(int)  STAMR3RegisterVU(PUVM pUVM, void *pvSample, STAMTYPE enmType, ST
 {
     AssertReturn(enmType != STAMTYPE_CALLBACK, VERR_INVALID_PARAMETER);
 
-    char *pszFormattedName;
-    RTStrAPrintfV(&pszFormattedName, pszName, args);
-    if (!pszFormattedName)
-        return VERR_NO_MEMORY;
+    char   szFormattedName[STAM_MAX_NAME_LEN + 8];
+    size_t cch = RTStrPrintfV(szFormattedName, sizeof(szFormattedName), pszName, args);
+    AssertReturn(cch <= STAM_MAX_NAME_LEN, VERR_OUT_OF_RANGE);
 
-    int rc = STAMR3RegisterU(pUVM, pvSample, enmType, enmVisibility, pszFormattedName, enmUnit, pszDesc);
-    RTStrFree(pszFormattedName);
-    return rc;
+    return STAMR3RegisterU(pUVM, pvSample, enmType, enmVisibility, szFormattedName, enmUnit, pszDesc);
 }
 
 
@@ -1253,7 +1257,7 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
     AssertReturn(pszName[0] == '/', VERR_INVALID_NAME);
     AssertReturn(pszName[1] != '/' && pszName[1], VERR_INVALID_NAME);
     uint32_t const cchName = (uint32_t)strlen(pszName);
-    AssertReturn(cchName < 256, VERR_OUT_OF_RANGE);
+    AssertReturn(cchName <= STAM_MAX_NAME_LEN, VERR_OUT_OF_RANGE);
     AssertReturn(pszName[cchName - 1] != '/', VERR_INVALID_NAME);
     AssertReturn(memchr(pszName, '\\', cchName) == NULL, VERR_INVALID_NAME);
 
@@ -1436,7 +1440,29 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
 
 
 /**
- * Deregisters a sample previously registered by STAR3Register().
+ * Destroys the statistics descriptor, unlinking it and freeing all resources.
+ *
+ * @returns VINF_SUCCESS
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   pCur        The descriptor to destroy.
+ */
+static int stamR3DestroyDesc(PUVM pUVM, PSTAMDESC pCur)
+{
+    RTListNodeRemove(&pCur->ListEntry);
+#ifdef STAM_WITH_LOOKUP_TREE
+    pCur->pLookup->pDesc = NULL; /** @todo free lookup nodes once it's working. */
+    stamR3LookupDecUsage(pCur->pLookup);
+    stamR3LookupMaybeFree(pCur->pLookup);
+#endif
+    RTMemFree(pCur);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Deregisters a sample previously registered by STAR3Register() given its
+ * address.
  *
  * This is intended used for devices which can be unplugged and for
  * temporary samples.
@@ -1445,9 +1471,14 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
  * @param   pUVM        Pointer to the user mode VM structure.
  * @param   pvSample    Pointer to the sample registered with STAMR3Register().
  */
-VMMR3DECL(int)  STAMR3DeregisterU(PUVM pUVM, void *pvSample)
+VMMR3DECL(int)  STAMR3DeregisterByAddr(PUVM pUVM, void *pvSample)
 {
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+
+    /* This is a complete waste of time when shutting down. */
+    VMSTATE enmState = VMR3GetStateU(pUVM);
+    if (enmState >= VMSTATE_DESTROYING)
+        return VINF_SUCCESS;
 
     STAM_LOCK_WR(pUVM);
 
@@ -1459,16 +1490,7 @@ VMMR3DECL(int)  STAMR3DeregisterU(PUVM pUVM, void *pvSample)
     RTListForEachSafe(&pUVM->stam.s.List, pCur, pNext, STAMDESC, ListEntry)
     {
         if (pCur->u.pv == pvSample)
-        {
-            RTListNodeRemove(&pCur->ListEntry);
-#ifdef STAM_WITH_LOOKUP_TREE
-            pCur->pLookup->pDesc = NULL; /** @todo free lookup nodes once it's working. */
-            stamR3LookupDecUsage(pCur->pLookup);
-            stamR3LookupMaybeFree(pCur->pLookup);
-#endif
-            RTMemFree(pCur);
-            rc = VINF_SUCCESS;
-        }
+            rc = stamR3DestroyDesc(pUVM, pCur);
     }
 
     STAM_UNLOCK_WR(pUVM);
@@ -1477,18 +1499,113 @@ VMMR3DECL(int)  STAMR3DeregisterU(PUVM pUVM, void *pvSample)
 
 
 /**
- * Deregisters a sample previously registered by STAR3Register().
+ * Worker for STAMR3Deregister, STAMR3DeregisterV and STAMR3DeregisterF.
  *
- * This is intended used for devices which can be unplugged and for
- * temporary samples.
+ * @returns VBox status code.
+ * @retval  VWRN_NOT_FOUND if no matching names found.
+ *
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   pszPat      The name pattern.
+ */
+static int stamR3DeregisterByPattern(PUVM pUVM, const char *pszPat)
+{
+    Assert(!strchr(pszPat, '|')); /* single pattern! */
+
+    int rc = VWRN_NOT_FOUND;
+    STAM_LOCK_WR(pUVM);
+
+    PSTAMDESC pLast;
+    PSTAMDESC pCur = stamR3LookupFindPatternDescRange(pUVM->stam.s.pRoot, &pUVM->stam.s.List, pszPat, &pLast);
+    if (pCur)
+    {
+        for (;;)
+        {
+            PSTAMDESC pNext = RTListNodeGetNext(&pCur->ListEntry, STAMDESC, ListEntry);
+
+            if (RTStrSimplePatternMatch(pszPat, pCur->pszName))
+                rc = stamR3DestroyDesc(pUVM, pCur);
+
+            /* advance. */
+            if (pCur == pLast)
+                break;
+            pCur = pNext;
+        }
+        Assert(pLast);
+    }
+    else
+        Assert(!pLast);
+
+    STAM_UNLOCK_WR(pUVM);
+    return rc;
+}
+
+
+/**
+ * Deregister zero or more samples given a (single) pattern matching their
+ * names.
  *
  * @returns VBox status.
- * @param   pVM         Pointer to the VM.
- * @param   pvSample    Pointer to the sample registered with STAMR3Register().
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   pszPat      The name pattern.
+ * @sa      STAMR3DeregisterF, STAMR3DeregisterV
  */
-VMMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample)
+VMMR3DECL(int)  STAMR3Deregister(PUVM pUVM, const char *pszPat)
 {
-    return STAMR3DeregisterU(pVM->pUVM, pvSample);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+
+    /* This is a complete waste of time when shutting down. */
+    VMSTATE enmState = VMR3GetStateU(pUVM);
+    if (enmState >= VMSTATE_DESTROYING)
+        return VINF_SUCCESS;
+
+    return stamR3DeregisterByPattern(pUVM, pszPat);
+}
+
+
+/**
+ * Deregister zero or more samples given a (single) pattern matching their
+ * names.
+ *
+ * @returns VBox status.
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   pszPatFmt   The name pattern format string.
+ * @param   ...         Format string arguments.
+ * @sa      STAMR3Deregister, STAMR3DeregisterV
+ */
+VMMR3DECL(int)  STAMR3DeregisterF(PUVM pUVM, const char *pszPatFmt, ...)
+{
+    va_list va;
+    va_start(va, pszPatFmt);
+    int rc = STAMR3DeregisterV(pUVM, pszPatFmt, va);
+    va_end(va);
+    return rc;
+}
+
+
+/**
+ * Deregister zero or more samples given a (single) pattern matching their
+ * names.
+ *
+ * @returns VBox status.
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   pszPatFmt   The name pattern format string.
+ * @param   va          Format string arguments.
+ * @sa      STAMR3Deregister, STAMR3DeregisterF
+ */
+VMMR3DECL(int)  STAMR3DeregisterV(PUVM pUVM, const char *pszPatFmt, va_list va)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+
+    /* This is a complete waste of time when shutting down. */
+    VMSTATE enmState = VMR3GetStateU(pUVM);
+    if (enmState >= VMSTATE_DESTROYING)
+        return VINF_SUCCESS;
+
+    char   szPat[STAM_MAX_NAME_LEN + 8];
+    size_t cchPat = RTStrPrintfV(szPat, sizeof(szPat), pszPatFmt, va);
+    AssertReturn(cchPat <= STAM_MAX_NAME_LEN, VERR_OUT_OF_RANGE);
+
+    return stamR3DeregisterByPattern(pUVM, szPat);
 }
 
 

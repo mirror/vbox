@@ -1048,229 +1048,166 @@ static int pdmR3AsyncCompletionStatisticsRegister(PPDMASYNCCOMPLETIONENDPOINT pE
 
     pEndpoint->tsIntervalStartMs = RTTimeMilliTS();
 
-    for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesNs); i++)
-    {
+    for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesNs) && RT_SUCCESS(rc); i++)
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesNs[i], STAMTYPE_COUNTER,
                              STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                              "Nanosecond resolution runtime statistics",
                              "/PDM/AsyncCompletion/File/%s/TaskRun1Ns-%u-%u",
                              RTPathFilename(pEndpoint->pszUri), i*100, i*100+100-1);
-        if (RT_FAILURE(rc))
-            break;
-    }
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesUs) && RT_SUCCESS(rc); i++)
+        rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesUs[i], STAMTYPE_COUNTER,
+                             STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                             "Microsecond resolution runtime statistics",
+                             "/PDM/AsyncCompletion/File/%s/TaskRun2MicroSec-%u-%u",
+                             RTPathFilename(pEndpoint->pszUri), i*100, i*100+100-1);
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesMs) && RT_SUCCESS(rc); i++)
+        rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesMs[i], STAMTYPE_COUNTER,
+                             STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                             "Milliseconds resolution runtime statistics",
+                             "/PDM/AsyncCompletion/File/%s/TaskRun3Ms-%u-%u",
+                             RTPathFilename(pEndpoint->pszUri), i*100, i*100+100-1);
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesMs) && RT_SUCCESS(rc); i++)
+        rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesSec[i], STAMTYPE_COUNTER,
+                             STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                             "Second resolution runtime statistics",
+                             "/PDM/AsyncCompletion/File/%s/TaskRun4Sec-%u-%u",
+                             RTPathFilename(pEndpoint->pszUri), i*10, i*10+10-1);
 
     if (RT_SUCCESS(rc))
-    {
-        for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesUs); i++)
-        {
-            rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesUs[i], STAMTYPE_COUNTER,
-                                 STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                                 "Microsecond resolution runtime statistics",
-                                 "/PDM/AsyncCompletion/File/%s/TaskRun2MicroSec-%u-%u",
-                                 RTPathFilename(pEndpoint->pszUri), i*100, i*100+100-1);
-            if (RT_FAILURE(rc))
-                break;
-        }
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesMs); i++)
-        {
-            rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesMs[i], STAMTYPE_COUNTER,
-                                 STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                                 "Milliseconds resolution runtime statistics",
-                                 "/PDM/AsyncCompletion/File/%s/TaskRun3Ms-%u-%u",
-                                 RTPathFilename(pEndpoint->pszUri), i*100, i*100+100-1);
-            if (RT_FAILURE(rc))
-                break;
-        }
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesMs); i++)
-        {
-            rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunTimesSec[i], STAMTYPE_COUNTER,
-                                 STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                                 "Second resolution runtime statistics",
-                                 "/PDM/AsyncCompletion/File/%s/TaskRun4Sec-%u-%u",
-                                 RTPathFilename(pEndpoint->pszUri), i*10, i*10+10-1);
-            if (RT_FAILURE(rc))
-                break;
-        }
-    }
-
-    if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatTaskRunOver100Sec, STAMTYPE_COUNTER,
                              STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                              "Tasks which ran more than 100sec",
                              "/PDM/AsyncCompletion/File/%s/TaskRunSecGreater100Sec",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatIoOpsPerSec, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Processed I/O operations per second",
                              "/PDM/AsyncCompletion/File/%s/IoOpsPerSec",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatIoOpsStarted, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Started I/O operations for this endpoint",
                              "/PDM/AsyncCompletion/File/%s/IoOpsStarted",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatIoOpsCompleted, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Completed I/O operations for this endpoint",
                              "/PDM/AsyncCompletion/File/%s/IoOpsCompleted",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqSizeSmaller512, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests with a size smaller than 512 bytes",
                              "/PDM/AsyncCompletion/File/%s/ReqSizeSmaller512",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqSize512To1K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests with a size between 512 bytes and 1KB",
                              "/PDM/AsyncCompletion/File/%s/ReqSize512To1K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqSize1KTo2K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests with a size between 1KB and 2KB",
                              "/PDM/AsyncCompletion/File/%s/ReqSize1KTo2K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqSize2KTo4K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests with a size between 2KB and 4KB",
                              "/PDM/AsyncCompletion/File/%s/ReqSize2KTo4K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqSize4KTo8K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests with a size between 4KB and 8KB",
                              "/PDM/AsyncCompletion/File/%s/ReqSize4KTo8K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqSize8KTo16K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests with a size between 8KB and 16KB",
                              "/PDM/AsyncCompletion/File/%s/ReqSize8KTo16K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqSize16KTo32K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests with a size between 16KB and 32KB",
                              "/PDM/AsyncCompletion/File/%s/ReqSize16KTo32K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqSize32KTo64K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests with a size between 32KB and 64KB",
                              "/PDM/AsyncCompletion/File/%s/ReqSize32KTo64K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqSize64KTo128K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests with a size between 64KB and 128KB",
                              "/PDM/AsyncCompletion/File/%s/ReqSize64KTo128K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqSize128KTo256K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests with a size between 128KB and 256KB",
                              "/PDM/AsyncCompletion/File/%s/ReqSize128KTo256K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqSize256KTo512K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests with a size between 256KB and 512KB",
                              "/PDM/AsyncCompletion/File/%s/ReqSize256KTo512K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqSizeOver512K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests with a size over 512KB",
                              "/PDM/AsyncCompletion/File/%s/ReqSizeOver512K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqsUnaligned512, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests which size is not aligned to 512 bytes",
                              "/PDM/AsyncCompletion/File/%s/ReqsUnaligned512",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqsUnaligned4K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests which size is not aligned to 4KB",
                              "/PDM/AsyncCompletion/File/%s/ReqsUnaligned4K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     if (RT_SUCCESS(rc))
-    {
         rc = STAMR3RegisterF(pVM, &pEndpoint->StatReqsUnaligned8K, STAMTYPE_COUNTER,
                              STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                              "Number of requests which size is not aligned to 8KB",
                              "/PDM/AsyncCompletion/File/%s/ReqsUnaligned8K",
                              RTPathFilename(pEndpoint->pszUri));
-    }
 
     return rc;
 }
@@ -1284,37 +1221,8 @@ static int pdmR3AsyncCompletionStatisticsRegister(PPDMASYNCCOMPLETIONENDPOINT pE
  */
 static void pdmR3AsyncCompletionStatisticsDeregister(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
 {
-    PVM pVM = pEndpoint->pEpClass->pVM;
-
-    for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesNs); i++)
-        STAMR3Deregister(pVM, &pEndpoint->StatTaskRunTimesNs[i]);
-    for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesUs); i++)
-        STAMR3Deregister(pVM, &pEndpoint->StatTaskRunTimesUs[i]);
-    for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesMs); i++)
-        STAMR3Deregister(pVM, &pEndpoint->StatTaskRunTimesMs[i]);
-    for (unsigned i = 0; i < RT_ELEMENTS(pEndpoint->StatTaskRunTimesMs); i++)
-        STAMR3Deregister(pVM, &pEndpoint->StatTaskRunTimesSec[i]);
-
-    STAMR3Deregister(pVM, &pEndpoint->StatTaskRunOver100Sec);
-    STAMR3Deregister(pVM, &pEndpoint->StatIoOpsPerSec);
-    STAMR3Deregister(pVM, &pEndpoint->StatIoOpsStarted);
-    STAMR3Deregister(pVM, &pEndpoint->StatIoOpsCompleted);
-
-    STAMR3Deregister(pVM, &pEndpoint->StatReqSizeSmaller512);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqSize512To1K);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqSize1KTo2K);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqSize2KTo4K);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqSize4KTo8K);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqSize8KTo16K);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqSize16KTo32K);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqSize32KTo64K);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqSize64KTo128K);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqSize128KTo256K);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqSize256KTo512K);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqSizeOver512K);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqsUnaligned512);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqsUnaligned4K);
-    STAMR3Deregister(pVM, &pEndpoint->StatReqsUnaligned8K);
+    /* I hope this doesn't remove too much... */
+    STAMR3DeregisterF(pEndpoint->pEpClass->pVM->pUVM, "/PDM/AsyncCompletion/File/%s/*", RTPathFilename(pEndpoint->pszUri));
 }
 
 

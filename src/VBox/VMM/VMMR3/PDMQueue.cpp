@@ -445,16 +445,7 @@ VMMR3_INT_DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
     /*
      * Deregister statistics.
      */
-    STAMR3Deregister(pVM, &pQueue->cbItem);
-    STAMR3Deregister(pVM, &pQueue->cbItem);
-    STAMR3Deregister(pVM, &pQueue->StatAllocFailures);
-    STAMR3Deregister(pVM, &pQueue->StatInsert);
-    STAMR3Deregister(pVM, &pQueue->StatFlush);
-    STAMR3Deregister(pVM, &pQueue->StatFlushLeftovers);
-#ifdef VBOX_WITH_STATISTICS
-    STAMR3Deregister(pVM, &pQueue->StatFlushPrf);
-    STAMR3Deregister(pVM, (void *)&pQueue->cStatPending);
-#endif
+    STAMR3DeregisterF(pVM->pUVM, "/PDM/Queue/%s/cbItem", pQueue->pszName);
 
     /*
      * Destroy the timer and free it.

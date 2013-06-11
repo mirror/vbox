@@ -1020,7 +1020,7 @@ static const REMPARMDESC g_aArgsSTAMR3Register[] =
 static const REMPARMDESC g_aArgsSTAMR3Deregister[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
 };
 static const REMPARMDESC g_aArgsTRPMAssertTrap[] =
 {

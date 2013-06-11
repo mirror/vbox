@@ -1153,8 +1153,8 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
     RTFileClose(pEpFile->hFile);
 
 #ifdef VBOX_WITH_STATISTICS
-    STAMR3Deregister(pEpClassFile->Core.pVM, &pEpFile->StatRead);
-    STAMR3Deregister(pEpClassFile->Core.pVM, &pEpFile->StatWrite);
+    /* Not sure if this might be unnecessary because of similar statement in pdmR3AsyncCompletionStatisticsDeregister? */
+    STAMR3DeregisterF(pEpClassFile->Core.pVM->pUVM, "/PDM/AsyncCompletion/File/%s/*", RTPathFilename(pEpFile->Core.pszUri));
 #endif
 
     return VINF_SUCCESS;
