@@ -232,7 +232,7 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
     if (!(fFlags & RTGETOPTINIT_FLAGS_NO_STD_OPTS))
         for (uint32_t i = 0; i < RT_ELEMENTS(g_aStdOptions); i++)
             if (   !strcmp(pszOption, g_aStdOptions[i].pszLong)
-                || (   pOpt->fFlags & RTGETOPT_FLAG_ICASE
+                || (   g_aStdOptions[i].fFlags & RTGETOPT_FLAG_ICASE
                     && !RTStrICmp(pszOption, g_aStdOptions[i].pszLong)))
                 return &g_aStdOptions[i];
 
