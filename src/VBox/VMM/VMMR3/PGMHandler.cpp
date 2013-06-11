@@ -410,9 +410,8 @@ VMMDECL(int) PGMR3HandlerVirtualRegisterEx(PVM pVM, PGMVIRTHANDLERTYPE enmType, 
         pgmUnlock(pVM);
 
 #ifdef VBOX_WITH_STATISTICS
-        char szPath[256];
-        RTStrPrintf(szPath, sizeof(szPath), "/PGM/VirtHandler/Calls/%RGv-%RGv", pNew->Core.Key, pNew->Core.KeyLast);
-        rc = STAMR3Register(pVM, &pNew->Stat, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szPath, STAMUNIT_TICKS_PER_CALL, pszDesc);
+        rc = STAMR3RegisterF(pVM, &pNew->Stat, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, pszDesc,
+                             "/PGM/VirtHandler/Calls/%RGv-%RGv", pNew->Core.Key, pNew->Core.KeyLast);
         AssertRC(rc);
 #endif
         return VINF_SUCCESS;
@@ -508,7 +507,9 @@ VMMDECL(int) PGMHandlerVirtualDeregister(PVM pVM, RTGCPTR GCPtr)
 
     pgmUnlock(pVM);
 
-    STAM_DEREG(pVM, &pCur->Stat);
+#ifdef VBOX_WITH_STATISTICS
+    STAMR3DeregisterF(pVM->pUVM, "/PGM/VirtHandler/Calls/%RGv-%RGv", pCur->Core.Key, pCur->Core.KeyLast);
+#endif
     MMHyperFree(pVM, pCur);
 
     return VINF_SUCCESS;

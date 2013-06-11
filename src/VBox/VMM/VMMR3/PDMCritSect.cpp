@@ -524,17 +524,10 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTINT pCritSect,
     pCritSect->pVMR3   = NULL;
     pCritSect->pVMR0   = NIL_RTR0PTR;
     pCritSect->pVMRC   = NIL_RTRCPTR;
+    if (!fFinal)
+        STAMR3DeregisterF(pVM->pUVM, "/PDM/CritSects/%s/*", pCritSect->pszName);
     RTStrFree((char *)pCritSect->pszName);
     pCritSect->pszName = NULL;
-    if (!fFinal)
-    {
-        STAMR3Deregister(pVM, &pCritSect->StatContentionRZLock);
-        STAMR3Deregister(pVM, &pCritSect->StatContentionRZUnlock);
-        STAMR3Deregister(pVM, &pCritSect->StatContentionR3);
-#ifdef VBOX_WITH_STATISTICS
-        STAMR3Deregister(pVM, &pCritSect->StatLocked);
-#endif
-    }
     return rc;
 }
 
@@ -601,24 +594,10 @@ static int pdmR3CritSectRwDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTRWINT pCritS
     pCritSect->pVMR3   = NULL;
     pCritSect->pVMR0   = NIL_RTR0PTR;
     pCritSect->pVMRC   = NIL_RTRCPTR;
+    if (!fFinal)
+        STAMR3DeregisterF(pVM->pUVM, "/PDM/CritSectsRw/%s/*", pCritSect->pszName);
     RTStrFree((char *)pCritSect->pszName);
     pCritSect->pszName = NULL;
-    if (!fFinal)
-    {
-        STAMR3Deregister(pVM, &pCritSect->StatContentionRZEnterExcl);
-        STAMR3Deregister(pVM, &pCritSect->StatContentionRZLeaveExcl);
-        STAMR3Deregister(pVM, &pCritSect->StatContentionRZEnterShared);
-        STAMR3Deregister(pVM, &pCritSect->StatContentionRZLeaveShared);
-        STAMR3Deregister(pVM, &pCritSect->StatRZEnterExcl);
-        STAMR3Deregister(pVM, &pCritSect->StatRZEnterShared);
-        STAMR3Deregister(pVM, &pCritSect->StatContentionR3EnterExcl);
-        STAMR3Deregister(pVM, &pCritSect->StatContentionR3EnterShared);
-        STAMR3Deregister(pVM, &pCritSect->StatR3EnterExcl);
-        STAMR3Deregister(pVM, &pCritSect->StatR3EnterShared);
-#ifdef VBOX_WITH_STATISTICS
-        STAMR3Deregister(pVM, &pCritSect->StatWriteLocked);
-#endif
-    }
 
     return RT_SUCCESS(rc1) ? rc2 : rc1;
 }

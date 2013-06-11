@@ -5630,23 +5630,8 @@ int patmR3RemovePatch(PVM pVM, PPATMPATCHREC pPatchRec, bool fForceRemove)
 #ifdef VBOX_WITH_STATISTICS
     if (PATM_STAT_INDEX_IS_VALID(pPatchRec->patch.uPatchIdx))
     {
-        STAMR3Deregister(pVM, &pPatchRec->patch);
-#ifndef DEBUG_sandervl
-        STAMR3Deregister(pVM, &pVM->patm.s.pStatsHC[pPatchRec->patch.uPatchIdx]);
-        STAMR3Deregister(pVM, &pPatchRec->patch.cbPatchBlockSize);
-        STAMR3Deregister(pVM, &pPatchRec->patch.cbPatchJump);
-        STAMR3Deregister(pVM, &pPatchRec->patch.cbPrivInstr);
-        STAMR3Deregister(pVM, &pPatchRec->patch.cCodeWrites);
-        STAMR3Deregister(pVM, &pPatchRec->patch.cInvalidWrites);
-        STAMR3Deregister(pVM, &pPatchRec->patch.cTraps);
-        STAMR3Deregister(pVM, &pPatchRec->patch.flags);
-        STAMR3Deregister(pVM, &pPatchRec->patch.nrJumpRecs);
-        STAMR3Deregister(pVM, &pPatchRec->patch.nrFixups);
-        STAMR3Deregister(pVM, &pPatchRec->patch.opcode);
-        STAMR3Deregister(pVM, &pPatchRec->patch.uState);
-        STAMR3Deregister(pVM, &pPatchRec->patch.uOldState);
-        STAMR3Deregister(pVM, &pPatchRec->patch.uOpMode);
-#endif
+        STAMR3DeregisterF(pVM->pUVM, "/PATM/Stats/Patch/0x%RRv", pPatchRec->patch.pPrivInstrGC);
+        STAMR3DeregisterF(pVM->pUVM, "/PATM/Stats/PatchBD/0x%RRv*", pPatchRec->patch.pPrivInstrGC);
     }
 #endif
 
@@ -5748,33 +5733,18 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
         pTrampolinePatchesHead = pPatch->pTrampolinePatchesHead;
     }
 
-    /** Note: quite ugly to enable/disable/remove/insert old and new patches, but there's no easy way around it. */
+    /* Note: quite ugly to enable/disable/remove/insert old and new patches, but there's no easy way around it. */
 
     rc = PATMR3DisablePatch(pVM, pInstrGC);
     AssertRC(rc);
 
-    /** Kick it out of the lookup tree to make sure PATMR3InstallPatch doesn't fail (hack alert) */
+    /* Kick it out of the lookup tree to make sure PATMR3InstallPatch doesn't fail (hack alert) */
     RTAvloU32Remove(&pVM->patm.s.PatchLookupTreeHC->PatchTree, pPatchRec->Core.Key);
 #ifdef VBOX_WITH_STATISTICS
     if (PATM_STAT_INDEX_IS_VALID(pPatchRec->patch.uPatchIdx))
     {
-        STAMR3Deregister(pVM, &pPatchRec->patch);
-#ifndef DEBUG_sandervl
-        STAMR3Deregister(pVM, &pVM->patm.s.pStatsHC[pPatchRec->patch.uPatchIdx]);
-        STAMR3Deregister(pVM, &pPatchRec->patch.cbPatchBlockSize);
-        STAMR3Deregister(pVM, &pPatchRec->patch.cbPatchJump);
-        STAMR3Deregister(pVM, &pPatchRec->patch.cbPrivInstr);
-        STAMR3Deregister(pVM, &pPatchRec->patch.cCodeWrites);
-        STAMR3Deregister(pVM, &pPatchRec->patch.cInvalidWrites);
-        STAMR3Deregister(pVM, &pPatchRec->patch.cTraps);
-        STAMR3Deregister(pVM, &pPatchRec->patch.flags);
-        STAMR3Deregister(pVM, &pPatchRec->patch.nrJumpRecs);
-        STAMR3Deregister(pVM, &pPatchRec->patch.nrFixups);
-        STAMR3Deregister(pVM, &pPatchRec->patch.opcode);
-        STAMR3Deregister(pVM, &pPatchRec->patch.uState);
-        STAMR3Deregister(pVM, &pPatchRec->patch.uOldState);
-        STAMR3Deregister(pVM, &pPatchRec->patch.uOpMode);
-#endif
+        STAMR3DeregisterF(pVM->pUVM, "/PATM/Stats/Patch/0x%RRv", pPatchRec->patch.pPrivInstrGC);
+        STAMR3DeregisterF(pVM->pUVM, "/PATM/Stats/PatchBD/0x%RRv*", pPatchRec->patch.pPrivInstrGC);
     }
 #endif
 

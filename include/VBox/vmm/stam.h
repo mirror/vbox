@@ -1200,25 +1200,10 @@ VMMR3DECL(int)  STAMR3RegisterCallback(PVM pVM, void *pvSample, STAMVISIBILITY e
 VMMR3DECL(int)  STAMR3RegisterCallbackV(PVM pVM, void *pvSample, STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
                                         PFNSTAMR3CALLBACKRESET pfnReset, PFNSTAMR3CALLBACKPRINT pfnPrint,
                                         const char *pszDesc, const char *pszName, va_list args);
-VMMR3DECL(int)  STAMR3DeregisterU(PUVM pUVM, void *pvSample);
-VMMR3DECL(int)  STAMR3Deregister(PVM pVM, void *pvSample);
-
-/** @def STAM_REL_DEREG
- * Deregisters a statistics sample if statistics are enabled.
- *
- * @param   pVM         VM Handle.
- * @param   pvSample    Pointer to the sample.
- */
-#define STAM_REL_DEREG(pVM, pvSample) \
-    STAM_REL_STATS({ int rcStam = STAMR3Deregister(pVM, pvSample); AssertRC(rcStam); })
-/** @def STAM_DEREG
- * Deregisters a statistics sample if statistics are enabled.
- *
- * @param   pVM         VM Handle.
- * @param   pvSample    Pointer to the sample.
- */
-#define STAM_DEREG(pVM, pvSample) \
-    STAM_STATS({ STAM_REL_DEREG(pVM, pvSample); })
+VMMR3DECL(int)  STAMR3Deregister(PUVM pUVM, const char *pszPat);
+VMMR3DECL(int)  STAMR3DeregisterF(PUVM pUVM, const char *pszPatFmt, ...);
+VMMR3DECL(int)  STAMR3DeregisterV(PUVM pUVM, const char *pszPatFmt, va_list va);
+VMMR3DECL(int)  STAMR3DeregisterByAddr(PUVM pUVM, void *pvSample);
 
 VMMR3DECL(int)  STAMR3Reset(PUVM pUVM, const char *pszPat);
 VMMR3DECL(int)  STAMR3Snapshot(PUVM pUVM, const char *pszPat, char **ppszSnapshot, size_t *pcchSnapshot, bool fWithDesc);
