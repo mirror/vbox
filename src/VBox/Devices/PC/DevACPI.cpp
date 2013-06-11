@@ -459,6 +459,8 @@ struct ACPITBLFADT
                                                      (COM too?) */
 #define IAPC_BOOT_ARCH_8042             RT_BIT(1)  /**< legacy keyboard device present */
 #define IAPC_BOOT_ARCH_NO_VGA           RT_BIT(2)  /**< VGA not present */
+#define IAPC_BOOT_ARCH_NO_MSI           RT_BIT(3)  /**< OSPM must not enable MSIs on this platform */
+#define IAPC_BOOT_ARCH_NO_ASPM          RT_BIT(4)  /**< OSPM must not enable ASPM on this platform */
     uint8_t             u8Must0_0;                 /**< must be 0 */
     uint32_t            u32Flags;                  /**< fixed feature flags */
 #define FADT_FL_WBINVD                  RT_BIT(0)  /**< emulation of WBINVD available */
