@@ -450,7 +450,6 @@ typedef struct
     uint64_t    u64Base;
 } SVMGDTR;
 #pragma pack()
-
 typedef SVMGDTR SVMIDTR;
 
 /**
@@ -469,7 +468,8 @@ typedef union
     } n;
     uint64_t    u;
 } SVMEVENT;
-
+/** Pointer to the SVMEVENT union. */
+typedef SVMEVENT *PSVMEVENT;
 
 /**
  * SVM Interrupt control structure (Virtual Interrupt Control).
@@ -775,8 +775,6 @@ AssertCompileMemberOffset(SVMVMCB, guest.u8Reserved9,         0x648);
 AssertCompileMemberOffset(SVMVMCB, guest.u64GPAT,             0x668);
 AssertCompileMemberOffset(SVMVMCB, guest.u64LASTEXCPTO,       0x690);
 AssertCompileMemberOffset(SVMVMCB, u8Reserved10,              0x698);
-AssertCompileSize(SVMAVIC, 0x8);
-AssertCompileSize(SVMAVICPHYS, 0x8);
 AssertCompileSize(SVMVMCB, 0x1000);
 
 #ifdef IN_RING0
