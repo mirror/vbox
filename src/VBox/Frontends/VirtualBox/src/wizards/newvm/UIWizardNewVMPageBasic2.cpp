@@ -64,7 +64,6 @@ UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
             {
                 m_pRamSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
                 m_pRamSlider->setOrientation(Qt::Horizontal);
-                m_pRamSlider->setTickPosition(QSlider::TicksBelow);
             }
             m_pRamEditor = new QILineEdit(this);
             {

@@ -43,7 +43,10 @@ public:
       , m_maxWrn(-1)
       , m_minErr(-1)
       , m_maxErr(-1)
-    {}
+    {
+        /* Make sure ticks *always* positioned below: */
+        setTickPosition(QSlider::TicksBelow);
+    }
 
     int positionForValue(int val) const
     {
@@ -65,16 +68,26 @@ public:
         int available = opt.rect.width() - style()->pixelMetric(QStyle::PM_SliderLength, &opt, this);
         QSize s = size();
 
-        QRect ticks = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderTickmarks, this);
+        /* We want to acquire SC_SliderTickmarks sub-control rectangle
+         * and fill it with necessary background colors: */
 #ifdef Q_WS_MAC
+        /* Under MacOS X SC_SliderTickmarks is not fully reliable
+         * source of the information we need, providing us with incorrect width.
+         * So we have to calculate tickmarks rectangle ourself: */
+        QRect ticks = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderTickmarks, this);
         ticks.setRect((s.width() - available) / 2, s.height() - ticks.y(), available, ticks.height());
 #else /* Q_WS_MAC */
-        if (ticks.isNull() || ticks.isEmpty())
-        {
-            ticks = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderHandle, this) | style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
-            ticks.setRect((s.width() - available) / 2, ticks.bottom() + 1, available, s.height() - ticks.bottom() - 1);
-        }
+        /* Under Windows SC_SliderTickmarks is fully unreliable
+         * source of the information we need, providing us with empty rectangle.
+         * Under X11 SC_SliderTickmarks is not fully reliable
+         * source of the information we need, providing us with different rectangles
+         * (correct or incorrect) under different look&feel styles.
+         * So we have to calculate tickmarks rectangle ourself: */
+        QRect ticks = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderHandle, this) |
+                      style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
+        ticks.setRect((s.width() - available) / 2, ticks.bottom() + 1, available, s.height() - ticks.bottom() - 1);
 #endif /* Q_WS_MAC */
+
         if ((m_minOpt != -1 &&
              m_maxOpt != -1) &&
             m_minOpt != m_maxOpt)
@@ -186,16 +199,6 @@ void QIAdvancedSlider::setTickInterval(int val)
 int QIAdvancedSlider::tickInterval() const
 {
     return m_pSlider->tickInterval();
-}
-
-void QIAdvancedSlider::setTickPosition(QSlider::TickPosition fPos)
-{
-    m_pSlider->setTickPosition(fPos);
-}
-
-QSlider::TickPosition QIAdvancedSlider::tickPosition() const
-{
-    return m_pSlider->tickPosition();
 }
 
 Qt::Orientation QIAdvancedSlider::orientation() const
