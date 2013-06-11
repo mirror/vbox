@@ -93,7 +93,34 @@ V_INTR_VECTOR. */
 /** AVIC (AVIC APIC_BAR; AVIC APIC_BACKING_PAGE, AVIC
 PHYSICAL_TABLE and AVIC LOGICAL_TABLE Pointers). */
 #define HMSVM_VMCB_CLEAN_AVIC                   RT_BIT(11)
+/** Mask of all valid VMCB Clean bits. */
+#define HMSVM_VMCB_CLEAN_ALL                    (  HMSVM_VMCB_CLEAN_INTERCEPTS
+                                                 | HMSVM_VMCB_CLEAN_IOPM_MSRPM
+                                                 | HMSVM_VMCB_CLEAN_ASID
+                                                 | HMSVM_VMCB_CLEAN_TPR
+                                                 | HMSVM_VMCB_CLEAN_NP
+                                                 | HMSVM_VMCB_CLEAN_CRX
+                                                 | HMSVM_VMCB_CLEAN_DRX
+                                                 | HMSVM_VMCB_CLEAN_DT
+                                                 | HMSVM_VMCB_CLEAN_SEG
+                                                 | HMSVM_VMCB_CLEAN_CR2
+                                                 | HMSVM_VMCB_CLEAN_LBR
+                                                 | HMSVM_VMCB_CLEAN_AVIC)
 /** @} */
+
+/** @name SVM-transient.
+ *
+ * A state structure for holding miscellaneous information across AMD-V
+ * VMRUN/#VMEXIT operation, restored after the transition.
+ *
+ * @{ */
+typedef struct SVMTRANSIENT
+{
+    /** The host's rflags/eflags. */
+    RTCCUINTREG     uEFlags;
+} SVMTRANSIENT, *PSVMTRANSIENT;
+/** @}  */
+
 
 /**
  * MSRPM (MSR permission bitmap) read permissions (for guest RDMSR).
@@ -415,20 +442,20 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, SVMMSREXITREAD 
      */
     if (uMsr <= 0x00001FFF)
     {
-        /* Pentium-compatible MSRs */
+        /* Pentium-compatible MSRs. */
         ulBit    = uMsr * 2;
     }
     else if (   uMsr >= 0xC0000000
              && uMsr <= 0xC0001FFF)
     {
-        /* AMD Sixth Generation x86 Processor MSRs and SYSCALL */
+        /* AMD Sixth Generation x86 Processor MSRs. */
         ulBit = (uMsr - 0xC0000000) * 2;
         pbMsrBitmap += 0x800;
     }
     else if (   uMsr >= 0xC0010000
              && uMsr <= 0xC0011FFF)
     {
-        /* AMD Seventh and Eighth Generation Processor MSRs */
+        /* AMD Seventh and Eighth Generation Processor MSRs. */
         ulBit = (uMsr - 0xC0001000) * 2;
         pbMsrBitmap += 0x1000;
     }
@@ -1746,10 +1773,11 @@ static int hmR0SvmCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @retval VINF_SUCCESS if we can proceed with running the guest.
  * @retval VINF_* scheduling changes, we have to go back to ring-3.
  *
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pSvmTransient   Pointer to the SVM transient structure.
  */
-DECLINE(int) hmR0SvmPreRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx)
+DECLINE(int) hmR0SvmPreRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     /* Check force flag actions that might require us to go back to ring-3. */
     int rc = hmR0VmxCheckForceFlags(pVM, pVCpu, pCtx);
@@ -1758,10 +1786,10 @@ DECLINE(int) hmR0SvmPreRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /* We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.) */
-    pVmxTransient->uEFlags = ASMIntDisableFlags();
+    pSvmTransient->uEFlags = ASMIntDisableFlags();
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
-        ASMSetFlags(pVmxTransient->uEFlags);
+        ASMSetFlags(pSvmTransient->uEFlags);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         /* Don't use VINF_EM_RAW_INTERRUPT_HYPER as we can't assume the host does kernel preemption. Maybe some day? */
         return VINF_EM_RAW_INTERRUPT;
@@ -1789,18 +1817,19 @@ DECLINE(int) hmR0SvmPreRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVM             Pointer to the VM.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pSvmTransient   Pointer to the SVM transient structure.
  *
  * @remarks Called with preemption disabled.
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
 #ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /** @todo I don't see the point of this, VMMR0EntryFast() already disables interrupts for the entire period. */
-    pVmxTransient->uEFlags = ASMIntDisableFlags();
+    pSvmTransient->uEFlags = ASMIntDisableFlags();
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
 
@@ -1817,7 +1846,32 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     int rc = SVMR0LoadGuestState(pVM, pVCpu, pCtx);
     AssertRC(rc);
     AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags =%#x\n", pVCpu->hm.s.fContextUseFlags));
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
 
+    /* Flush the appropriate tagged-TLB entries. */
+    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB-shootdowns, set this across the world switch. */
+    hmR0SvmFlushTaggedTlb(pVCpu);
+    Assert(HMR0GetCurrentCpu()->idCpu == pVCpu->hm.s.idLastCpu);
+
+    TMNotifyStartOfExecution(pVCpu);                            /* Finally, notify TM to resume its clocks as we're about
+                                                                    to start executing. */
+
+    /*
+     * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
+     * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
+     *
+     * This should be done -after- any RDTSCPs for obtaining the host timestamp (TM, STAM etc).
+     */
+    u32HostExtFeatures = pVM->hm.s.cpuid.u32AMDFeatureEDX;
+    if (    (u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
+        && !(pVmcb->ctrl.u32InterceptCtrl2 & SVM_CTRL2_INTERCEPT_RDTSCP))
+    {
+        pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
+        uint64_t u64GuestTscAux = 0;
+        rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64GuestTscAux);
+        AssertRC(rc2);
+        ASMWrMsr(MSR_K8_TSC_AUX, u64GuestTscAux);
+    }
 }
 
 
@@ -1839,12 +1893,62 @@ DECLINLINE(int) hmR0SvmRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * Refer MSDN docs. "Configuring Programs for 64-bit / x64 Software Conventions / Register Usage" for details.
      */
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    return HMR0SVMRunWrapXMM(pVCpu->hm.s.svm.HCPhysVmcbHost, pVCpu->hm.s.svm.HCPhysVmcb, pCtx, pVM, pVCpu,
-                             pVCpu->hm.s.svm.pfnVMRun);
+    HMR0SVMRunWrapXMM(pVCpu->hm.s.svm.HCPhysVmcbHost, pVCpu->hm.s.svm.HCPhysVmcb, pCtx, pVM, pVCpu,
+                          pVCpu->hm.s.svm.pfnVMRun);
 #else
-    return pVCpu->hm.s.svm.pfnStartVM(pVCpu->hm.s.fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu);
+    pVCpu->hm.s.svm.pfnVMRun(pVCpu->hm.s.svm.HCPhysVmcbHost, pVCpu->hm.s.svm.HCPhysVmcb, pCtx, pVM, pVCpu);
 #endif
 }
+
+
+/**
+ * Performs some essential restoration of state after running guest code in
+ * AMD-V.
+ *
+ * @param   pVM             Pointer to the VM.
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pMixedCtx       Pointer to the guest-CPU context. The data maybe
+ *                          out-of-sync. Make sure to update the required fields
+ *                          before using them.
+ * @param   pSvmTransient   Pointer to the SVM transient structure.
+ * @param   rcVMRun         Return code of VMRUN.
+ *
+ * @remarks Called with interrupts disabled.
+ * @remarks No-long-jump zone!!! This function will however re-enable longjmps
+ *          unconditionally when it is safe to do so.
+ */
+DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT pSvmTransient, rcVMRun)
+{
+    Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+
+    ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);   /* See HMInvalidatePageOnAllVCpus(): used for TLB-shootdowns. */
+    ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for TLB-shootdowns. */
+
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    pVmcb->u64VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;             /* Mark the VMCB-state cache as unmodified by VMM. */
+
+    /* Restore host's TSC_AUX if required. */
+    if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
+    {
+        if (u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
+            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
+
+        /** @todo Find a way to fix hardcoding a guestimate.  */
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() +
+                             pVmcb->ctrl.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
+    }
+
+    TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
+    Assert(!(ASMGetFlags() & X86_EFL_IF));
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
+
+    /* -XXX- TPR patching? */
+
+    ASMSetFlags(pSvmTransient->uEFlags);                        /* Enable interrupts. */
+
+    /* --XXX- todo */
+}
+
 
 
 /**
@@ -1860,6 +1964,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
+    SVMTRANSIENT SvmTransient;
     uint32_t cLoops = 0;
     PSVMVMCB pVmcb  = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     int      rc     = VERR_INTERNAL_ERROR_5;
@@ -1873,7 +1978,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         /* Preparatory work for running guest code, this may return to ring-3 for some last minute updates. */
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
-        rc = hmR0VmxPreRunGuest(pVM, pVCpu, pCtx);
+        rc = hmR0VmxPreRunGuest(pVM, pVCpu, pCtx, &SvmTransient);
         if (rc != VINF_SUCCESS)
             break;
 
@@ -1884,7 +1989,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          */
         VMMRZCallRing3Disable(pVCpu);
         VMMRZCallRing3RemoveNotification(pVCpu);
-        hmR0VmxPreRunGuestCommitted(pVM, pVCpu, pCtx);
+        hmR0SvmPreRunGuestCommitted(pVM, pVCpu, pCtx, &SvmTransient);
 
         rc = hmR0SvmRunGuest(pVM, pVCpu, pCtx);
 
