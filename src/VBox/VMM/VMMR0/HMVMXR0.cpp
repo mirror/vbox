@@ -2673,7 +2673,7 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 /**
  * Gets the guest's interruptibility-state ("interrupt shadow" as AMD calls it).
  *
- * @returns
+ * @returns Guest's interruptibility-state.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
@@ -2698,7 +2698,7 @@ DECLINLINE(uint32_t) hmR0VmxGetGuestIntrState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             /*
              * We can clear the inhibit force flag as even if we go back to the recompiler without executing guest code in
-             * VT-x the flag's condition to be cleared is met and thus the cleared state is correct.
+             * VT-x, the flag's condition to be cleared is met and thus the cleared state is correct.
              */
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
         }
@@ -6012,7 +6012,6 @@ DECLCALLBACK(void) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperat
  * Sets the interrupt-window exiting control in the VMCS which instructs VT-x to
  * cause a VM-exit as soon as the guest is in a state to receive interrupts.
  *
- * @returns VBox status code.
  * @param pVCpu         Pointer to the VMCPU.
  */
 DECLINLINE(void) hmR0VmxSetIntWindowExitVmcs(PVMCPU pVCpu)
