@@ -63,7 +63,6 @@ UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
                 {
                     m_pRamSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
                     m_pRamSlider->setOrientation(Qt::Horizontal);
-                    m_pRamSlider->setTickPosition(QSlider::TicksBelow);
                     m_pRamSlider->setValue(m_pNameAndSystemEditor->type().GetRecommendedRAM());
                 }
                 m_pRamEditor = new QILineEdit(m_pMemoryCnt);
