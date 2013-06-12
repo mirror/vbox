@@ -3952,7 +3952,7 @@ DECLINLINE(int) hmR0VmxRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
- * Report world-switch error and dump some useful debug info.
+ * Reports world-switch error and dumps some useful debug info.
  *
  * @param   pVM             Pointer to the VM.
  * @param   pVCpu           Pointer to the VMCPU.
