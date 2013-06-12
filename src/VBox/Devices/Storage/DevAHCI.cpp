@@ -2052,7 +2052,6 @@ static void ahciHBAReset(PAHCI pThis)
                             AHCI_HBA_CAP_NCS_SET(pThis->cCmdSlotsAvail) | /* Number of command slots we support */
                             AHCI_HBA_CAP_NP_SET(pThis->cPortsImpl); /* Number of supported ports */
     pThis->regHbaCtrl     = AHCI_HBA_CTRL_AE;
-    pThis->regHbaIs       = 0;
     pThis->regHbaPi       = ahciGetPortsImplemented(pThis->cPortsImpl);
     pThis->regHbaVs       = AHCI_HBA_VS_MJR | AHCI_HBA_VS_MNR;
     pThis->regHbaCccCtl   = 0;
@@ -2060,6 +2059,11 @@ static void ahciHBAReset(PAHCI pThis)
     pThis->uCccTimeout    = 0;
     pThis->uCccPortNr     = 0;
     pThis->uCccNr         = 0;
+
+    /* Clear pending interrupts. */
+    pThis->regHbaIs            = 0;
+    pThis->u32PortsInterrupted = 0;
+    ahciHbaClearInterrupt(pThis);
 
     pThis->f64BitAddr = false;
     pThis->u32PortsInterrupted = 0;
