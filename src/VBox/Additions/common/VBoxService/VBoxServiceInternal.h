@@ -163,7 +163,7 @@ extern VBOXSERVICE  g_CpuHotPlug;
 extern VBOXSERVICE  g_MemBalloon;
 extern VBOXSERVICE  g_VMStatistics;
 #endif
-#ifdef VBOX_WITH_PAGE_SHARING
+#ifdef VBOXSERVICE_PAGE_SHARING
 extern VBOXSERVICE  g_PageSharing;
 #endif
 #ifdef VBOX_WITH_SHARED_FOLDERS
@@ -203,7 +203,7 @@ extern int          VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 #ifdef VBOXSERVICE_MANAGEMENT
 extern uint32_t                 VBoxServiceBalloonQueryPages(uint32_t cbPage);
 #endif
-#if defined(VBOX_WITH_PAGE_SHARING) && defined(RT_OS_WINDOWS)
+#if defined(VBOXSERVICE_PAGE_SHARING)
 extern RTEXITCODE               VBoxServicePageSharingInitFork(void);
 #endif
 extern int                      VBoxServiceVMInfoSignal(void);

@@ -51,7 +51,7 @@ ifdef VBOX_WITH_MEMBALLOON
  VBoxService_DEFS        += VBOX_WITH_MEMBALLOON
 endif
 if1of ($(KBUILD_TARGET), win)
- VBoxService_DEFS        += VBOX_WITH_PAGE_SHARING
+ VBoxService_DEFS        += VBOXSERVICE_PAGE_SHARING
  ifdef VBOX_WITH_MMR
   VBoxService_DEFS       += VBOX_WITH_MMR
  endif

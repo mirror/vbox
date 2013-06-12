@@ -1600,7 +1600,7 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
     /*
      * Prepare environment variables list.
      */
-    char **papszEnv;
+    char **papszEnv = NULL;
     uint32_t uNumEnvVars = 0; /* Initialize in case of failing ... */
     if (RT_SUCCESS(rc))
     {
@@ -1639,7 +1639,8 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
      * Create the environment.
      */
     RTENV hEnv;
-    rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
+    if (RT_SUCCESS(rc))
+        rc = RTEnvClone(&hEnv, RTENV_DEFAULT);
     if (RT_SUCCESS(rc))
     {
         size_t i;
