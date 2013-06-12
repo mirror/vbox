@@ -101,10 +101,11 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
         }
         case SCSI_TEST_UNIT_READY:
         {
-            if (pVScsiDevice->papVScsiLun[pVScsiReq->iLun]->fReady)
+            if (   vscsiDeviceLunIsPresent(pVScsiDevice, pVScsiReq->iLun)
+                && pVScsiDevice->papVScsiLun[pVScsiReq->iLun]->fReady)
                 *prcReq = vscsiReqSenseOkSet(&pVScsiDevice->VScsiSense, pVScsiReq);
             else
-                fProcessed = false; /* The LUN will provide details. */
+                fProcessed = false; /* The LUN (if present) will provide details. */
             break;
         }
         case SCSI_REQUEST_SENSE:
