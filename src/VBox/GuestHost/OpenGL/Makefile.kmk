@@ -190,7 +190,7 @@ $(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c: $(PATH_SUB_CURRENT)/util/debug_opco
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI)
 
 ifdef VBOX_WITH_CRDUMPER
-$(VBOX_PATH_CROGL_GENFILES)/dump_gen.cpp: $(PATH_SUB_CURRENT)/state_tracker/dump_gen.py $(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/get_sizes.py $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_isenabled.txt state_extensions_isenabled.txt) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+$(VBOX_PATH_CROGL_GENFILES)/dump_gen.cpp: $(PATH_SUB_CURRENT)/state_tracker/dump_gen.py $(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/get_sizes.py  $(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib/get_components.py $(addprefix $(PATH_SUB_CURRENT)/state_tracker/, state_isenabled.txt state_extensions_isenabled.txt) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 endif

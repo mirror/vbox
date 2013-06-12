@@ -128,14 +128,22 @@ VBOXDUMPDECL(void) crRecDumpBuffer(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER
 VBOXDUMPDECL(void) crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin);
 VBOXDUMPDECL(void) crRecDumpShader(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
 VBOXDUMPDECL(void) crRecDumpProgram(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
+VBOXDUMPDECL(void) crRecRecompileShader(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
+VBOXDUMPDECL(void) crRecRecompileProgram(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
 VBOXDUMPDECL(void) crRecDumpCurrentProgram(CR_RECORDER *pRec, CRContext *ctx);
 VBOXDUMPDECL(void) crRecDumpProgramUniforms(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
 VBOXDUMPDECL(void) crRecDumpCurrentProgramUniforms(CR_RECORDER *pRec, CRContext *ctx);
+VBOXDUMPDECL(void) crRecRecompileCurrentProgram(CR_RECORDER *pRec, CRContext *ctx);
+VBOXDUMPDECL(void) crRecDumpProgramAttribs(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
+VBOXDUMPDECL(void) crRecDumpCurrentProgramAttribs(CR_RECORDER *pRec, CRContext *ctx);
 VBOXDUMPDECL(void) crRecDumpGlGetState(CR_RECORDER *pRec, CRContext *ctx);
 VBOXDUMPDECL(void) crRecDumpGlEnableState(CR_RECORDER *pRec, CRContext *ctx);
 VBOXDUMPDECL(void) crRecDumpVertAttrv(CR_RECORDER *pRec, CRContext *ctx, GLuint idx, const char*pszElFormat, uint32_t cbEl, const void *pvVal, uint32_t cVal);
 VBOXDUMPDECL(void) crRecDumpVertAttrF(CR_RECORDER *pRec, CRContext *ctx, const char*pszFormat, ...);
 VBOXDUMPDECL(void) crRecDumpVertAttrV(CR_RECORDER *pRec, CRContext *ctx, const char*pszFormat, va_list pArgList);
+VBOXDUMPDECL(void) crRecDumpTexParam(CR_RECORDER *pRec, CRContext *ctx, GLenum enmTarget);
+VBOXDUMPDECL(void) crRecDumpTexEnv(CR_RECORDER *pRec, CRContext *ctx);
+VBOXDUMPDECL(void) crRecDumpTexGen(CR_RECORDER *pRec, CRContext *ctx);
 
 typedef DECLCALLBACKPTR(GLuint, PFNCRDUMPGETHWID)(void *pvObj);
 void* crDmpHashtableSearchByHwid(CRHashTable *pHash, GLuint hwid, PFNCRDUMPGETHWID pfnGetHwid, unsigned long *pKey);

@@ -127,3 +127,133 @@ print """
 }
 #endif
 """
+
+from get_components import *;
+
+texenv_mappings = {
+    'GL_TEXTURE_ENV' : [
+        'GL_TEXTURE_ENV_MODE',
+        'GL_TEXTURE_ENV_COLOR',
+        'GL_COMBINE_RGB',
+        'GL_COMBINE_ALPHA',
+        'GL_RGB_SCALE',
+        'GL_ALPHA_SCALE', 
+        'GL_SRC0_RGB',
+        'GL_SRC1_RGB',
+        'GL_SRC2_RGB',
+        'GL_SRC0_ALPHA',
+        'GL_SRC1_ALPHA',
+        'GL_SRC2_ALPHA'
+    ],
+    'GL_TEXTURE_FILTER_CONTROL' : [
+        'GL_TEXTURE_LOD_BIAS'
+    ],
+    'GL_POINT_SPRITE' : [
+        'GL_COORD_REPLACE'
+    ]
+}
+
+texgen_coords = [
+    'GL_S',
+    'GL_T',
+    'GL_R',
+    'GL_Q'
+]
+
+texgen_names = [
+    'GL_TEXTURE_GEN_MODE',
+    'GL_OBJECT_PLANE',
+    'GL_EYE_PLANE'
+]
+
+texparam_names = [
+    'GL_TEXTURE_MAG_FILTER', 
+    'GL_TEXTURE_MIN_FILTER',
+    'GL_TEXTURE_MIN_LOD',
+    'GL_TEXTURE_MAX_LOD',
+    'GL_TEXTURE_BASE_LEVEL',
+    'GL_TEXTURE_MAX_LEVEL',
+    'GL_TEXTURE_WRAP_S',
+    'GL_TEXTURE_WRAP_T',
+    'GL_TEXTURE_WRAP_R',
+    'GL_TEXTURE_BORDER_COLOR',
+    'GL_TEXTURE_PRIORITY',
+    'GL_TEXTURE_RESIDENT',
+    'GL_TEXTURE_COMPARE_MODE',
+    'GL_TEXTURE_COMPARE_FUNC',
+    'GL_DEPTH_TEXTURE_MODE',
+    'GL_GENERATE_MIPMAP'
+]
+
+print """
+void crRecDumpTexParam(CR_RECORDER *pRec, CRContext *ctx, GLenum enmTarget)
+{
+    GLfloat afBuf[4];
+    char acBuf[1024];
+    unsigned int cComponents;
+    crDmpStrF(pRec->pDumper, "==TEX_PARAM for target(0x%x)==", enmTarget);
+"""
+for pname in texparam_names:
+    print "\tcComponents = lookupComponents(%s);" % pname
+    print "\tAssert(cComponents <= RT_ELEMENTS(afBuf));"
+    print "\tmemset(afBuf, 0, sizeof (afBuf));"
+    print "\tpRec->pDispatch->GetTexParameterfv(enmTarget, %s, afBuf);" % pname
+    print "\tcrDmpFormatArray(acBuf, sizeof (acBuf), \"%f\", sizeof (afBuf[0]), afBuf, cComponents);"
+    print "\tcrDmpStrF(pRec->pDumper, \"%s = %%s;\", acBuf);" % pname
+print """
+    crDmpStrF(pRec->pDumper, "==Done TEX_PARAM for target(0x%x)==", enmTarget);
+}
+"""
+
+print """
+void crRecDumpTexEnv(CR_RECORDER *pRec, CRContext *ctx)
+{
+    GLfloat afBuf[4];
+    char acBuf[1024];
+    unsigned int cComponents;
+    crDmpStrF(pRec->pDumper, "==TEX_ENV==");
+"""
+
+keys = texenv_mappings.keys()
+keys.sort();
+
+for target in keys:
+    print "\tcrDmpStrF(pRec->pDumper, \"===%s===\");" % target
+    values = texenv_mappings[target]
+    for pname in values:
+        print "\tcComponents = lookupComponents(%s);" % pname
+        print "\tAssert(cComponents <= RT_ELEMENTS(afBuf));"
+        print "\tmemset(afBuf, 0, sizeof (afBuf));"
+        print "\tpRec->pDispatch->GetTexEnvfv(%s, %s, afBuf);" % (target, pname)
+        print "\tcrDmpFormatArray(acBuf, sizeof (acBuf), \"%f\", sizeof (afBuf[0]), afBuf, cComponents);"
+        print "\tcrDmpStrF(pRec->pDumper, \"%s = %%s;\", acBuf);" % pname
+    print "\tcrDmpStrF(pRec->pDumper, \"===Done %s===\");" % target
+print """
+    crDmpStrF(pRec->pDumper, "==Done TEX_ENV==");
+}
+"""
+
+
+print """
+void crRecDumpTexGen(CR_RECORDER *pRec, CRContext *ctx)
+{
+    GLdouble afBuf[4];
+    char acBuf[1024];
+    unsigned int cComponents;
+    crDmpStrF(pRec->pDumper, "==TEX_GEN==");
+"""
+
+for coord in texgen_coords:
+    print "\tcrDmpStrF(pRec->pDumper, \"===%s===\");" % coord
+    for pname in texgen_names:
+        print "\tcComponents = lookupComponents(%s);" % pname
+        print "\tAssert(cComponents <= RT_ELEMENTS(afBuf));"
+        print "\tmemset(afBuf, 0, sizeof (afBuf));"
+        print "\tpRec->pDispatch->GetTexGendv(%s, %s, afBuf);" % (coord, pname)
+        print "\tcrDmpFormatArray(acBuf, sizeof (acBuf), \"%f\", sizeof (afBuf[0]), afBuf, cComponents);"
+        print "\tcrDmpStrF(pRec->pDumper, \"%s = %%s;\", acBuf);" % pname
+    print "\tcrDmpStrF(pRec->pDumper, \"===Done %s===\");" % coord
+print """
+    crDmpStrF(pRec->pDumper, "==Done TEX_GEN==");
+}
+"""
