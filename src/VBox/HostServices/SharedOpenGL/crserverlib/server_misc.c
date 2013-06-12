@@ -1395,13 +1395,16 @@ void crServerInitTmpCtxDispatch()
 unsigned long g_CrDbgDumpEnabled = 1;
 unsigned long g_CrDbgDumpDraw = CR_SERVER_DUMP_F_COMPILE_SHADER
         | CR_SERVER_DUMP_F_LINK_PROGRAM
+        | CR_SERVER_DUMP_F_DRAW_BUFF_ENTER
         | CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE
         | CR_SERVER_DUMP_F_DRAW_PROGRAM_UNIFORMS_ENTER
-        | CR_SERVER_DUMP_F_DRAW_TEX_LEAVE
+        | CR_SERVER_DUMP_F_DRAW_PROGRAM_ATTRIBS_ENTER
+        | CR_SERVER_DUMP_F_DRAW_TEX_ENTER
         | CR_SERVER_DUMP_F_DRAW_PROGRAM_ENTER
         | CR_SERVER_DUMP_F_DRAW_STATE_ENTER
         | CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER
         | CR_SERVER_DUMP_F_DRAWEL
+        | CR_SERVER_DUMP_F_SHADER_SOURCE
         ; //CR_SERVER_DUMP_F_DRAW_BUFF_ENTER | CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE;
 unsigned long g_CrDbgDumpDrawFramesSettings = CR_SERVER_DUMP_F_DRAW_BUFF_ENTER
         | CR_SERVER_DUMP_F_DRAW_BUFF_LEAVE
@@ -1486,10 +1489,41 @@ void crServerDumpCurrentProgram()
     crRecDumpCurrentProgram(&cr_server.Recorder, ctx);
 }
 
+void crServerDumpRecompileDumpCurrentProgram()
+{
+    crDmpStrF(cr_server.Recorder.pDumper, "==Dump(1)==");
+    crServerRecompileCurrentProgram();
+    crServerDumpCurrentProgramUniforms();
+    crServerDumpCurrentProgramAttribs();
+    crDmpStrF(cr_server.Recorder.pDumper, "Done Dump(1)");
+    crServerRecompileCurrentProgram();
+    crDmpStrF(cr_server.Recorder.pDumper, "Dump(2)");
+    crServerRecompileCurrentProgram();
+    crServerDumpCurrentProgramUniforms();
+    crServerDumpCurrentProgramAttribs();
+    crDmpStrF(cr_server.Recorder.pDumper, "Done Dump(2)");
+}
+
+void crServerRecompileCurrentProgram()
+{
+    CRContext *ctx = crStateGetCurrent();
+    crRecRecompileCurrentProgram(&cr_server.Recorder, ctx);
+}
+
 void crServerDumpCurrentProgramUniforms()
 {
     CRContext *ctx = crStateGetCurrent();
+    crDmpStrF(cr_server.Recorder.pDumper, "==Uniforms==");
     crRecDumpCurrentProgramUniforms(&cr_server.Recorder, ctx);
+    crDmpStrF(cr_server.Recorder.pDumper, "==Done Uniforms==");
+}
+
+void crServerDumpCurrentProgramAttribs()
+{
+    CRContext *ctx = crStateGetCurrent();
+    crDmpStrF(cr_server.Recorder.pDumper, "==Attribs==");
+    crRecDumpCurrentProgramAttribs(&cr_server.Recorder, ctx);
+    crDmpStrF(cr_server.Recorder.pDumper, "==Done Attribs==");
 }
 
 void crServerDumpState()

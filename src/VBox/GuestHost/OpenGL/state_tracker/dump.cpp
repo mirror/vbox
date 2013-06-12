@@ -482,11 +482,17 @@ static const char *crRecDumpVarTypeString(GLenum enmType, CR_DUMPER *pDumper)
 {
     switch (enmType)
     {
+        CR_DUMP_MAKE_CASE(GL_BYTE);
+        CR_DUMP_MAKE_CASE(GL_UNSIGNED_BYTE);
+        CR_DUMP_MAKE_CASE(GL_SHORT);
+        CR_DUMP_MAKE_CASE(GL_UNSIGNED_SHORT);
         CR_DUMP_MAKE_CASE(GL_FLOAT);
+        CR_DUMP_MAKE_CASE(GL_DOUBLE);
         CR_DUMP_MAKE_CASE(GL_FLOAT_VEC2);
         CR_DUMP_MAKE_CASE(GL_FLOAT_VEC3);
         CR_DUMP_MAKE_CASE(GL_FLOAT_VEC4);
         CR_DUMP_MAKE_CASE(GL_INT);
+        CR_DUMP_MAKE_CASE(GL_UNSIGNED_INT);
         CR_DUMP_MAKE_CASE(GL_INT_VEC2);
         CR_DUMP_MAKE_CASE(GL_INT_VEC3);
         CR_DUMP_MAKE_CASE(GL_INT_VEC4);
@@ -680,7 +686,132 @@ void crRecDumpProgram(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid)
 
     crFree(pShaders);
 
+    GLsizei cbLog = 0;
+
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_INFO_LOG_LENGTH_ARB, &cbLog);
+    if (cbLog)
+    {
+        char *pszLog = (char *)crCalloc(cbLog+1);
+        pRec->pDispatch->GetInfoLogARB(hwid, cbLog, NULL, pszLog);
+        crDmpStrF(pRec->pDumper, "==LOG==");
+        crRecDumpStrByLine(pRec->pDumper, pszLog, cbLog);
+        crDmpStrF(pRec->pDumper, "==Done LOG==");
+        crFree(pszLog);
+    }
+    else
+    {
+        crDmpStrF(pRec->pDumper, "==No LOG==");
+    }
+
     crDmpStr(pRec->pDumper, "===END PROGRAM====");
+}
+
+void crRecRecompileShader(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid)
+{
+    GLint length = 0;
+    GLint type = 0;
+    GLint compileStatus = 0;
+    CRGLSLShader *pShad;
+
+    if (!id)
+    {
+        unsigned long tstKey = 0;
+        Assert(hwid);
+        pShad = (CRGLSLShader *)crDmpHashtableSearchByHwid(ctx->glsl.shaders, hwid, crDmpGetHwidShaderCB, &tstKey);
+        Assert(pShad);
+        if (!pShad)
+            return;
+        id = pShad->id;
+        Assert(tstKey == id);
+    }
+    else
+    {
+        pShad = (CRGLSLShader *)crHashtableSearch(ctx->glsl.shaders, id);
+        Assert(pShad);
+        if (!pShad)
+            return;
+    }
+
+    if (!hwid)
+        hwid = pShad->hwid;
+
+    Assert(pShad->hwid == hwid);
+    Assert(pShad->id == id);
+
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_SUBTYPE_ARB, &type);
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_COMPILE_STATUS_ARB, &compileStatus);
+    crDmpStrF(pRec->pDumper, "==RECOMPILE SHADER ctx(%d) id(%d) hwid(%d) type(%s) status(%d)==", ctx->id, id, hwid, crRecDumpShaderTypeString(type, pRec->pDumper), compileStatus);
+
+    compileStatus = 0;
+    GLenum status;
+    while ((status = pRec->pDispatch->GetError()) != GL_NO_ERROR) {/*Assert(0);*/}
+    pRec->pDispatch->CompileShader(hwid);
+    while ((status = pRec->pDispatch->GetError()) != GL_NO_ERROR) {Assert(0);}
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_COMPILE_STATUS_ARB, &compileStatus);
+
+    crDmpStrF(pRec->pDumper, "==Done RECOMPILE SHADER, status(%d)==", compileStatus);
+}
+
+void crRecRecompileProgram(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid)
+{
+    GLint cShaders = 0, linkStatus = 0;
+    char *source = NULL;
+    CRGLSLProgram *pProg;
+
+    if (!id)
+    {
+        unsigned long tstKey = 0;
+        Assert(hwid);
+        pProg = (CRGLSLProgram*)crDmpHashtableSearchByHwid(ctx->glsl.programs, hwid, crDmpGetHwidProgramCB, &tstKey);
+        Assert(pProg);
+        if (!pProg)
+            return;
+        id = pProg->id;
+        Assert(tstKey == id);
+    }
+    else
+    {
+        pProg = (CRGLSLProgram *) crHashtableSearch(ctx->glsl.programs, id);
+        Assert(pProg);
+        if (!pProg)
+            return;
+    }
+
+    if (!hwid)
+        hwid = pProg->hwid;
+
+    Assert(pProg->hwid == hwid);
+    Assert(pProg->id == id);
+
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_ATTACHED_OBJECTS_ARB, &cShaders);
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_LINK_STATUS_ARB, &linkStatus);
+
+    crDmpStrF(pRec->pDumper, "==RECOMPILE PROGRAM ctx(%d) id(%d) hwid(%d) status(%d) shaders(%d)==", ctx->id, id, hwid, linkStatus, cShaders);
+
+    GLhandleARB *pShaders = (GLhandleARB*)crCalloc(cShaders * sizeof (*pShaders));
+    if (!pShaders)
+    {
+        crWarning("crCalloc failed");
+        crDmpStrF(pRec->pDumper, "WARNING: crCalloc failed");
+        return;
+    }
+
+    pRec->pDispatch->GetAttachedObjectsARB(hwid, cShaders, NULL, pShaders);
+    for (GLint i = 0; i < cShaders; ++i)
+    {
+        crRecRecompileShader(pRec, ctx, 0, pShaders[i]);
+    }
+
+    crFree(pShaders);
+
+    linkStatus = 0;
+    GLenum status;
+    while ((status = pRec->pDispatch->GetError()) != GL_NO_ERROR) {/*Assert(0);*/}
+    pRec->pDispatch->LinkProgram(hwid);
+    while ((status = pRec->pDispatch->GetError()) != GL_NO_ERROR) {Assert(0);}
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_LINK_STATUS_ARB, &linkStatus);
+
+    crDmpStrF(pRec->pDumper, "==Done RECOMPILE PROGRAM, status(%d)==", linkStatus);
 }
 
 VBOXDUMPDECL(void) crRecDumpCurrentProgram(CR_RECORDER *pRec, CRContext *ctx)
@@ -812,21 +943,21 @@ void crRecDumpProgramUniforms(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint
                     switch (uniformTypeSize)
                     {
                         case 1:
-                            crDmpStrF(pRec->pDumper, "%s = %d;", pszName, idata[0]);
+                            crDmpStrF(pRec->pDumper, "%s = %d; //location %d", pszName, idata[0], location);
                             break;
                         case 2:
-                            crDmpStrF(pRec->pDumper, "%s = {%d, %d};", pszName, idata[0], idata[1]);
+                            crDmpStrF(pRec->pDumper, "%s = {%d, %d}; //location %d", pszName, idata[0], idata[1], location);
                             break;
                         case 3:
-                            crDmpStrF(pRec->pDumper, "%s = {%d, %d, %d};", pszName, idata[0], idata[1], idata[2]);
+                            crDmpStrF(pRec->pDumper, "%s = {%d, %d, %d}; //location %d", pszName, idata[0], idata[1], idata[2], location);
                             break;
                         case 4:
-                            crDmpStrF(pRec->pDumper, "%s = {%d, %d, %d, %d};", pszName, idata[0], idata[1], idata[2], idata[3]);
+                            crDmpStrF(pRec->pDumper, "%s = {%d, %d, %d, %d}; //location %d", pszName, idata[0], idata[1], idata[2], idata[3], location);
                             break;
                         default:
                             for (GLint k = 0; k < uniformTypeSize; ++k)
                             {
-                                crDmpStrF(pRec->pDumper, "%s[%d] = %d;", pszName, k, idata[k]);
+                                crDmpStrF(pRec->pDumper, "%s[%d] = %d; //location %d", pszName, k, idata[k], location);
                             }
                             break;
                     }
@@ -837,21 +968,193 @@ void crRecDumpProgramUniforms(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint
                     switch (uniformTypeSize)
                     {
                         case 1:
-                            crDmpStrF(pRec->pDumper, "%s = %f;", pszName, fdata[0]);
+                            crDmpStrF(pRec->pDumper, "%s = %f; //location %d", pszName, fdata[0], location);
                             break;
                         case 2:
-                            crDmpStrF(pRec->pDumper, "%s = {%f, %f};", pszName, fdata[0], fdata[1]);
+                            crDmpStrF(pRec->pDumper, "%s = {%f, %f}; //location %d", pszName, fdata[0], fdata[1], location);
                             break;
                         case 3:
-                            crDmpStrF(pRec->pDumper, "%s = {%f, %f, %f};", pszName, fdata[0], fdata[1], fdata[2]);
+                            crDmpStrF(pRec->pDumper, "%s = {%f, %f, %f}; //location %d", pszName, fdata[0], fdata[1], fdata[2], location);
                             break;
                         case 4:
-                            crDmpStrF(pRec->pDumper, "%s = {%f, %f, %f, %f};", pszName, fdata[0], fdata[1], fdata[2], fdata[3]);
+                            crDmpStrF(pRec->pDumper, "%s = {%f, %f, %f, %f}; //location %d", pszName, fdata[0], fdata[1], fdata[2], fdata[3], location);
                             break;
                         default:
                             for (GLint k = 0; k < uniformTypeSize; ++k)
                             {
-                                crDmpStrF(pRec->pDumper, "%s[%d] = %f;", pszName, k, fdata[k]);
+                                crDmpStrF(pRec->pDumper, "%s[%d] = %f; //location %d", pszName, k, fdata[k], location);
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+
+        crFree(pszName);
+    }
+}
+
+void crRecDumpProgramAttribs(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid)
+{
+    CRGLSLProgram *pProg;
+
+    if (!id)
+    {
+        unsigned long tstKey = 0;
+        Assert(hwid);
+        pProg = (CRGLSLProgram*)crDmpHashtableSearchByHwid(ctx->glsl.programs, hwid, crDmpGetHwidProgramCB, &tstKey);
+        Assert(pProg);
+        if (!pProg)
+            return;
+        id = pProg->id;
+        Assert(tstKey == id);
+    }
+    else
+    {
+        pProg = (CRGLSLProgram *) crHashtableSearch(ctx->glsl.programs, id);
+        Assert(pProg);
+        if (!pProg)
+            return;
+    }
+
+    if (!hwid)
+        hwid = pProg->hwid;
+
+    Assert(pProg->hwid == hwid);
+    Assert(pProg->id == id);
+
+    GLint maxAttribLen = 0, activeAttrib = 0, i, j, attribCount = 0;
+    GLenum type;
+    GLint size, location;
+    GLchar *pszName = NULL;
+    pRec->pDispatch->GetProgramiv(hwid, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &maxAttribLen);
+    pRec->pDispatch->GetProgramiv(hwid, GL_ACTIVE_ATTRIBUTES, &activeAttrib);
+
+    if (!maxAttribLen)
+    {
+        if (activeAttrib)
+        {
+            crWarning("activeAttrib (%d), while maxAttribLen is zero", activeAttrib);
+            activeAttrib = 0;
+        }
+    }
+
+    if (activeAttrib>0)
+    {
+        pszName = (GLchar *) crAlloc((maxAttribLen+8)*sizeof(GLchar));
+
+        if (!pszName)
+        {
+            crWarning("crRecDumpProgramAttrib: out of memory");
+            return;
+        }
+    }
+
+    for (i=0; i<activeAttrib; ++i)
+    {
+        pRec->pDispatch->GetActiveAttrib(hwid, i, maxAttribLen, NULL, &size, &type, pszName);
+        attribCount += size;
+    }
+    Assert(attribCount>=activeAttrib);
+
+    if (activeAttrib>0)
+    {
+        GLfloat fdata[16];
+        GLint idata[16];
+        char *pIndexStr=NULL;
+
+        for (i=0; i<activeAttrib; ++i)
+        {
+            bool fPrintBraketsWithName = false;
+            pRec->pDispatch->GetActiveAttrib(hwid, i, maxAttribLen, NULL, &size, &type, pszName);
+            GLint arrayBufferBind = 0, arrayEnabled = 0, arraySize = 0, arrayStride = 0, arrayType = 0, arrayNormalized = 0, arrayInteger = 0/*, arrayDivisor = 0*/;
+
+            pRec->pDispatch->GetVertexAttribivARB(i, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &arrayBufferBind);
+            pRec->pDispatch->GetVertexAttribivARB(i, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &arrayEnabled);
+            pRec->pDispatch->GetVertexAttribivARB(i, GL_VERTEX_ATTRIB_ARRAY_SIZE, &arraySize);
+            pRec->pDispatch->GetVertexAttribivARB(i, GL_VERTEX_ATTRIB_ARRAY_STRIDE, &arrayStride);
+            pRec->pDispatch->GetVertexAttribivARB(i, GL_VERTEX_ATTRIB_ARRAY_TYPE, &arrayType);
+            pRec->pDispatch->GetVertexAttribivARB(i, GL_VERTEX_ATTRIB_ARRAY_NORMALIZED, &arrayNormalized);
+            pRec->pDispatch->GetVertexAttribivARB(i, GL_VERTEX_ATTRIB_ARRAY_INTEGER, &arrayInteger);
+//            pRec->pDispatch->GetVertexAttribivARB(i, GL_VERTEX_ATTRIB_ARRAY_DIVISOR, &arrayDivisor);
+
+            if (size>1)
+            {
+                pIndexStr = crStrchr(pszName, '[');
+                if (!pIndexStr)
+                {
+                    pIndexStr = pszName+crStrlen(pszName);
+                    fPrintBraketsWithName = true;
+                }
+            }
+
+            if (fPrintBraketsWithName)
+            {
+                crDmpStrF(pRec->pDumper, "%s %s[%d];", crRecDumpVarTypeString(type, pRec->pDumper), pszName, size);
+                Assert(size > 1);
+            }
+            else
+                crDmpStrF(pRec->pDumper, "%s %s;", crRecDumpVarTypeString(type, pRec->pDumper), pszName);
+
+            crDmpStrF(pRec->pDumper, "Array buff(%d), enabled(%d) size(%d), stride(%d), type(%s), normalized(%d), integer(%d)", arrayBufferBind, arrayEnabled, arraySize, arrayStride, crRecDumpVarTypeString(arrayType, pRec->pDumper), arrayNormalized, arrayInteger);
+
+            GLint attribTypeSize = crStateGetUniformSize(type);
+            Assert(attribTypeSize >= 1);
+
+            for (j=0; j<size; ++j)
+            {
+                if (size>1)
+                {
+                    sprintf(pIndexStr, "[%i]", j);
+                }
+                location = pRec->pDispatch->GetAttribLocation(hwid, pszName);
+
+                if (crStateIsIntUniform(type))
+                {
+                    pRec->pDispatch->GetVertexAttribivARB(location, GL_CURRENT_VERTEX_ATTRIB, &idata[0]);
+                    switch (attribTypeSize)
+                    {
+                        case 1:
+                            crDmpStrF(pRec->pDumper, "%s = %d; //location %d", pszName, idata[0], location);
+                            break;
+                        case 2:
+                            crDmpStrF(pRec->pDumper, "%s = {%d, %d}; //location %d", pszName, idata[0], idata[1], location);
+                            break;
+                        case 3:
+                            crDmpStrF(pRec->pDumper, "%s = {%d, %d, %d}; //location %d", pszName, idata[0], idata[1], idata[2], location);
+                            break;
+                        case 4:
+                            crDmpStrF(pRec->pDumper, "%s = {%d, %d, %d, %d}; //location %d", pszName, idata[0], idata[1], idata[2], idata[3], location);
+                            break;
+                        default:
+                            for (GLint k = 0; k < attribTypeSize; ++k)
+                            {
+                                crDmpStrF(pRec->pDumper, "%s[%d] = %d; //location %d", pszName, k, idata[k], location);
+                            }
+                            break;
+                    }
+                }
+                else
+                {
+                    pRec->pDispatch->GetVertexAttribfvARB(location, GL_CURRENT_VERTEX_ATTRIB, &fdata[0]);
+                    switch (attribTypeSize)
+                    {
+                        case 1:
+                            crDmpStrF(pRec->pDumper, "%s = %f; //location %d", pszName, fdata[0], location);
+                            break;
+                        case 2:
+                            crDmpStrF(pRec->pDumper, "%s = {%f, %f}; //location %d", pszName, fdata[0], fdata[1], location);
+                            break;
+                        case 3:
+                            crDmpStrF(pRec->pDumper, "%s = {%f, %f, %f}; //location %d", pszName, fdata[0], fdata[1], fdata[2], location);
+                            break;
+                        case 4:
+                            crDmpStrF(pRec->pDumper, "%s = {%f, %f, %f, %f}; //location %d", pszName, fdata[0], fdata[1], fdata[2], fdata[3], location);
+                            break;
+                        default:
+                            for (GLint k = 0; k < attribTypeSize; ++k)
+                            {
+                                crDmpStrF(pRec->pDumper, "%s[%d] = %f; //location %d", pszName, k, fdata[k], location);
                             }
                             break;
                     }
@@ -875,6 +1178,46 @@ VBOXDUMPDECL(void) crRecDumpCurrentProgramUniforms(CR_RECORDER *pRec, CRContext 
         else
             Assert(ctx->glsl.activeProgram->hwid == curProgram);
         crRecDumpProgramUniforms(pRec, ctx, 0, curProgram);
+    }
+    else
+    {
+        Assert(!ctx->glsl.activeProgram);
+        crDmpStrF(pRec->pDumper, "--no active program");
+    }
+}
+
+VBOXDUMPDECL(void) crRecDumpCurrentProgramAttribs(CR_RECORDER *pRec, CRContext *ctx)
+{
+    GLint curProgram = 0;
+    pRec->pDispatch->GetIntegerv(GL_CURRENT_PROGRAM, &curProgram);
+    if (curProgram)
+    {
+        Assert(ctx->glsl.activeProgram);
+        if (!ctx->glsl.activeProgram)
+            crWarning("no active program state with active hw program");
+        else
+            Assert(ctx->glsl.activeProgram->hwid == curProgram);
+        crRecDumpProgramAttribs(pRec, ctx, 0, curProgram);
+    }
+    else
+    {
+        Assert(!ctx->glsl.activeProgram);
+        crDmpStrF(pRec->pDumper, "--no active program");
+    }
+}
+
+VBOXDUMPDECL(void) crRecRecompileCurrentProgram(CR_RECORDER *pRec, CRContext *ctx)
+{
+    GLint curProgram = 0;
+    pRec->pDispatch->GetIntegerv(GL_CURRENT_PROGRAM, &curProgram);
+    if (curProgram)
+    {
+        Assert(ctx->glsl.activeProgram);
+        if (!ctx->glsl.activeProgram)
+            crWarning("no active program state with active hw program");
+        else
+            Assert(ctx->glsl.activeProgram->hwid == curProgram);
+        crRecRecompileProgram(pRec, ctx, 0, curProgram);
     }
     else
     {
@@ -971,13 +1314,17 @@ void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pC
                 Tex.target = GL_TEXTURE_2D;
                 Tex.hwid = hwTex;
 
+                crRecDumpTexParam(pRec, ctx, GL_TEXTURE_2D);
+                crRecDumpTexEnv(pRec, ctx);
+                crRecDumpTexGen(pRec, ctx);
+
                 rc = CrBltEnter(pRec->pBlitter, pCurCtx, pCurWin);
                 if (RT_SUCCESS(rc))
                 {
                     rc = CrBltImgGetTex(pRec->pBlitter, &Tex, GL_BGRA, &Img);
                     if (RT_SUCCESS(rc))
                     {
-                        crDmpImgF(pRec->pDumper, &Img, "ctx(%d), Unit %d: TEXTURE_2D id(%d) hwid(%d)", ctx, i, pTobj->id, pTobj->hwid);
+                        crDmpImgF(pRec->pDumper, &Img, "ctx(%d), Unit %d: TEXTURE_2D id(%d) hwid(%d), width(%d), height(%d)", ctx, i, pTobj->id, pTobj->hwid, width, height);
                         CrBltImgFree(pRec->pBlitter, &Img);
                     }
                     else
