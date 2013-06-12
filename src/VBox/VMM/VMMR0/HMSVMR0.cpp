@@ -1451,24 +1451,26 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     AssertMsg(   !pMixedCtx->reg.Attr.n.u1Present \
               || (   pMixedCtx->reg.Attr.n.u1Granularity \
                   ? (pMixedCtx->reg.u32Limit & 0xfff) == 0xfff \
-                  :  pMixedCtx->reg.u32Limit <= 0xfffff), \
+                  :  pMixedCtx->reg.u32Limit <= UINT32_C(0xfffff)), \
               ("Invalid Segment Attributes %#x %#x %#llx\n", pMixedCtx->reg.u32Limit,
               pMixedCtx->reg.Attr.u, pMixedCtx->reg.u64Base))
-    HMSVM_ASSERT_SEG_GRANULARITY(ss);
+
     HMSVM_ASSERT_SEG_GRANULARITY(cs);
+    HMSVM_ASSERT_SEG_GRANULARITY(ss);
     HMSVM_ASSERT_SEG_GRANULARITY(ds);
     HMSVM_ASSERT_SEG_GRANULARITY(es);
     HMSVM_ASSERT_SEG_GRANULARITY(fs);
     HMSVM_ASSERT_SEG_GRANULARITY(gs);
+
 # undef HMSVM_ASSERT_SEL_GRANULARITY
 #endif
 
     /*
-     * Correct the hidden SS DPL field. It can be wrong on certain CPUs sometimes (seen on
-     * AMD Fusion CPUs with 64-bit guests). The CPU always uses the CPL field in the VMCB
-     * instead of the DPL in the hidden SS. See AMD spec. 15.5.1 "Basic operation".
+     * Sync the hidden SS DPL field. AMD CPUs have a separate CPL field in the VMCB and uses that
+     * and thus it's possible that when the CPL changes during guest execution that the SS DPL
+     * isn't updated by AMD-V. Observed on some AMD Fusion CPUs with 64-bit guests.
+     * See AMD spec. 15.5.1 "Basic operation".
      */
-    /** @todo Verify this. */
     Assert(!(pVmcb->guest.u8CPL & ~0x3));
     pMixedCtx->ss.Attr.n.u2Dpl = pVmcb->guest.u8CPL & 0x3;
 
@@ -2384,7 +2386,7 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for TLB-shootdowns. */
 
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-    pVmcb->ctrl.u64VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;             /* Mark the VMCB-state cache as unmodified by VMM. */
+    pVmcb->ctrl.u64VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;        /* Mark the VMCB-state cache as unmodified by VMM. */
 
     /* Restore host's TSC_AUX if required. */
     if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
@@ -2394,7 +2396,7 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
 
         /** @todo Find a way to fix hardcoding a guestimate.  */
         TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() +
-                             pVmcb->ctrl.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
+                             pVmcb->ctrl.u64TSCOffset - 0x400);
     }
 
     TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
@@ -2404,6 +2406,7 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     /* -XXX- TPR patching? */
 
     ASMSetFlags(pSvmTransient->uEFlags);                        /* Enable interrupts. */
+
     VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, pMixedCtx);
     VMMRZCallRing3Enable(pVCpu);                                /* It is now safe to do longjmps to ring-3!!! */
 
