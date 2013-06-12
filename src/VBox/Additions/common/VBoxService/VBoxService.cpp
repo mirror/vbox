@@ -130,7 +130,7 @@ static struct
 # endif
     { &g_VMStatistics,  NIL_RTTHREAD, false, false, false, false, true },
 #endif
-#if defined(VBOX_WITH_PAGE_SHARING) && defined(RT_OS_WINDOWS)
+#if defined(VBOXSERVICE_PAGE_SHARING)
     { &g_PageSharing,   NIL_RTTHREAD, false, false, false, false, true },
 #endif
 #ifdef VBOX_WITH_SHARED_FOLDERS
