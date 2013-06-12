@@ -70,7 +70,7 @@
  * @{
  */
 /** Invalid guest state in VMCB. */
-#define SVM_EXIT_INVALID                -1
+#define SVM_EXIT_INVALID                (-1)
 /** Read from CR0-CR15. */
 #define SVM_EXIT_READ_CR0               0x0
 #define SVM_EXIT_READ_CR1               0x1
