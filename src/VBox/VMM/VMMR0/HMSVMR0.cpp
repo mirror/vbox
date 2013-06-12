@@ -66,7 +66,13 @@
     } while (0)
 /** @} */
 
-/** @name VMCB Clean Bits used for VMCB-state caching. */
+/** @name VMCB Clean Bits.
+ *
+ * These flags are used for VMCB-state caching. A set VMCB Clean Bit indicates
+ * AMD-V doesn't need to reload the corresponding value(s) from the VMCB in
+ * memory.
+ *
+ * @{ */
 /** All intercepts vectors, TSC offset, PAUSE filter counter. */
 #define HMSVM_VMCB_CLEAN_INTERCEPTS             RT_BIT(0)
 /** I/O permission bitmap, MSR permission bitmap. */
@@ -108,7 +114,7 @@ PHYSICAL_TABLE and AVIC LOGICAL_TABLE Pointers). */
                                                  | HMSVM_VMCB_CLEAN_AVIC)
 /** @} */
 
-/** @name SVM-transient.
+/** @name SVM transient.
  *
  * A state structure for holding miscellaneous information across AMD-V
  * VMRUN/#VMEXIT operation, restored after the transition.
@@ -118,6 +124,12 @@ typedef struct SVMTRANSIENT
 {
     /** The host's rflags/eflags. */
     RTCCUINTREG     uEFlags;
+#if HC_ARCH_BITS == 32
+    uint32_t        u32Alignment0;
+#endif
+
+    /** The #VMEXIT exit code. */
+    uint64_t        u64ExitCode;
 } SVMTRANSIENT, *PSVMTRANSIENT;
 /** @}  */
 
@@ -834,24 +846,6 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 /** @} */
 
 
-/**
- * Saves the host state.
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- *
- * @remarks No-long-jump zone!!!
- */
-VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
-{
-    NOREF(pVM);
-    NOREF(pVCpu);
-    /* Nothing to do here. AMD-V does this for us automatically during the world-switch. */
-    return VINF_SUCCESS;
-}
-
-
 DECLINLINE(void) hmR0SvmAddXcptIntercept(uint32_t u32Xcpt)
 {
     if (!(pVmcb->ctrl.u32InterceptException & RT_BIT(u32Xcpt))
@@ -1263,6 +1257,70 @@ static int hmR0SvmSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
+ * Enters the AMD-V session.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCpu        Pointer to the CPU info struct.
+ */
+VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
+{
+    AssertPtr(pVM);
+    AssertPtr(pVCpu);
+    Assert(pVM->hm.s.svm.fSupported);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    NOREF(pCpu);
+
+    LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
+
+    /* Nothing to do here. */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Leaves the AMD-V session.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ */
+VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    AssertPtr(pVCpu);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    NOREF(pVM);
+    NOREF(pCtx);
+
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+
+    /** -xxx- todo. */
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Saves the host state.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
+{
+    NOREF(pVM);
+    NOREF(pVCpu);
+    /* Nothing to do here. AMD-V does this for us automatically during the world-switch. */
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Loads the guest state.
  *
  * @returns VBox status code.
@@ -1314,6 +1372,223 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
 
     return rc;
+}
+
+
+/**
+ * Saves the entire guest state from the VMCB into the
+ * guest-CPU context. Currently there is no residual state left in the CPU that
+ * is not updated in the VMCB.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
+ *                          out-of-sync. Make sure to update the required fields
+ *                          before using them.
+ */
+static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+{
+    Assert(VMMRZCallRing3IsEnabled(pVCpu));
+
+    PSVMVMCB pVmcb        = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+
+    pMixedCtx->rip        = pVmcb->guest.u64RIP;
+    pMixedCtx->rsp        = pVmcb->guest.u64RSP;
+    pMixedCtx->eflags.u32 = pVmcb->guest.u64RFlags;
+    pMixedCtx->rax        = pVmcb->guest.u64RAX;
+
+    /*
+     * Save all the MSRs that can be changed by the guest without causing a world switch.
+     * FS & GS base are saved with HMSVM_SAVE_SEG_REG.
+     */
+    pMixedCtx->msrSTAR         = pVmcb->guest.u64STAR;            /* legacy syscall eip, cs & ss */
+    pMixedCtx->msrLSTAR        = pVmcb->guest.u64LSTAR;           /* 64-bit mode syscall rip */
+    pMixedCtx->msrCSTAR        = pVmcb->guest.u64CSTAR;           /* compatibility mode syscall rip */
+    pMixedCtx->msrSFMASK       = pVmcb->guest.u64SFMASK;          /* syscall flag mask */
+    pMixedCtx->msrKERNELGSBASE = pVmcb->guest.u64KernelGSBase;    /* swapgs exchange value */
+    pMixedCtx->SysEnter.cs     = pVmcb->guest.u64SysEnterCS;
+    pMixedCtx->SysEnter.eip    = pVmcb->guest.u64SysEnterEIP;
+    pMixedCtx->SysEnter.esp    = pVmcb->guest.u64SysEnterESP;
+
+    /* Can be updated behind our back in the nested paging case. */
+    pMixedCtx->cr2        = pVmcb->guest.u64CR2;
+
+    /* Segment registers:  CS, SS, DS, ES, FS, GS. */
+    HMSVM_SAVE_SEG_REG(CS, ss);
+    HMSVM_SAVE_SEG_REG(SS, cs);
+    HMSVM_SAVE_SEG_REG(DS, ds);
+    HMSVM_SAVE_SEG_REG(ES, es);
+    HMSVM_SAVE_SEG_REG(FS, fs);
+    HMSVM_SAVE_SEG_REG(GS, gs);
+
+    /*
+     * Correct the hidden CS granularity flag. Haven't seen it being wrong in any other
+     * register (yet).
+     */
+    /** @todo Verify this. */
+    if (   !pMixedCtx->cs.Attr.n.u1Granularity
+        &&  pMixedCtx->cs.Attr.n.u1Present
+        &&  pMixedCtx->cs.u32Limit > UINT32_C(0xfffff))
+    {
+        Assert((pMixedCtx->cs.u32Limit & 0xfff) == 0xfff);
+        pMixedCtx->cs.Attr.n.u1Granularity = 1;
+    }
+#ifdef VBOX_STRICT
+# define HMSVM_ASSERT_SEL_GRANULARITY(reg) \
+    AssertMsg(   !pMixedCtx->reg.Attr.n.u1Present \
+              || (   pMixedCtx->reg.Attr.n.u1Granularity \
+                  ? (pMixedCtx->reg.u32Limit & 0xfff) == 0xfff \
+                  :  pMixedCtx->reg.u32Limit <= 0xfffff), \
+              ("Invalid Segment Attributes %#x %#x %#llx\n", pMixedCtx->reg.u32Limit,
+              pMixedCtx->reg.Attr.u, pMixedCtx->reg.u64Base))
+    HMSVM_ASSERT_SEG_GRANULARITY(ss);
+    HMSVM_ASSERT_SEG_GRANULARITY(cs);
+    HMSVM_ASSERT_SEG_GRANULARITY(ds);
+    HMSVM_ASSERT_SEG_GRANULARITY(es);
+    HMSVM_ASSERT_SEG_GRANULARITY(fs);
+    HMSVM_ASSERT_SEG_GRANULARITY(gs);
+# undef HMSVM_ASSERT_SEL_GRANULARITY
+#endif
+
+    /*
+     * Correct the hidden SS DPL field. It can be wrong on certain CPUs sometimes (seen on
+     * AMD Fusion CPUs with 64-bit guests). The CPU always uses the CPL field in the VMCB
+     * instead of the DPL in the hidden SS. See AMD spec. 15.5.1 "Basic operation".
+     */
+    /** @todo Verify this. */
+    Assert(!(pVmcb->guest.u8CPL & ~0x3));
+    pMixedCtx->ss.Attr.n.u2Dpl = pVmcb->guest.u8CPL & 0x3;
+
+    /*
+     * Descriptor Table Registers: TR, IDTR, GDTR, LDTR.
+     */
+    HMSVM_SAVE_SEG_REG(TR, tr);
+    HMSVM_SAVE_SEG_REG(LDTR, ldtr);
+
+    pMixedCtx->gdtr.cbGdt = pVmcb->guest.GDTR.u32Limit;
+    pMixedCtx->gdtr.pGdt  = pVmcb->guest.GDTR.u64Base;
+
+    pMixedCtx->idtr.cbIdt = pVmcb->guest.IDTR.u32Limit;
+    pMixedCtx->idtr.pIdt  = pVmcb->guest.IDTR.u64Base;
+
+    /*
+     * Debug registers.
+     */
+    pMixedCtx->dr[6] = pVmcb->guest.u64DR6;
+    pMixedCtx->dr[7] = pVmcb->guest.u64DR7;
+
+    /*
+     * With Nested Paging, CR3 changes are not intercepted. Therefore, sync. it now.
+     */
+    if (   pVM->hm.s.fNestedPaging
+        && pMixedCtx->cr3 != pVmcb->guest.u64CR3)
+    {
+        CPUMSetGuestCR3(pVCpu, pVmcb->guest.u64CR3);
+        PGMUpdateCR3(pVCpu, pVmcb->guest.u64CR3);       /* This may longjmp to ring-3 hence done at the very end. */
+    }
+}
+
+
+/**
+ * Does the necessary state syncing before doing a longjmp to ring-3.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   rcExit      The reason for exiting to ring-3. Can be
+ *                      VINF_VMM_UNKNOWN_RING3_CALL.
+ *
+ * @remarks No-long-jmp zone!!!
+ */
+static void hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
+{
+    Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+    Assert(VMMR0IsLogFlushDisabled(pVCpu));
+
+    /* Restore FPU state if necessary and resync on next R0 reentry .*/
+    if (CPUMIsGuestFPUStateActive(pVCpu))
+    {
+        CPUMR0SaveGuestFPU(pVM, pVCpu, pCtx);
+        Assert(!CPUMIsGuestFPUStateActive(pVCpu));
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+    }
+
+    /* Restore debug registers if necessary and resync on next R0 reentry. */
+    if (CPUMIsGuestDebugStateActive(pVCpu))
+    {
+        CPUMR0SaveGuestDebugState(pVM, pVCpu, pCtx, true /* save DR6 */);
+        Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
+    }
+    else if (CPUMIsHyperDebugStateActive(pVCpu))
+    {
+        CPUMR0LoadHostDebugState(pVM, pVCpu);
+        Assert(!CPUMIsHyperDebugStateActive(pVCpu));
+        Assert(pVmcb->ctrl.u16InterceptRdDRx == 0xffff);
+        Assert(pVmcb->ctrl.u16InterceptWrDRx == 0xffff);
+    }
+
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
+    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
+}
+
+
+/**
+ * An action requires us to go back to ring-3. This function does the necessary
+ * steps before we can safely return to ring-3. This is not the same as longjmps
+ * to ring-3, this is voluntary.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   rcExit      The reason for exiting to ring-3. Can be
+ *                      VINF_VMM_UNKNOWN_RING3_CALL.
+ */
+static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
+{
+    Assert(pVM);
+    Assert(pVCpu);
+    Assert(pCtx);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    if (RT_UNLIKELY(rcExit == VERR_SVM_INVALID_GUEST_STATE))
+    {
+        /* We don't need to do any syncing here, we're not going to come back to execute anything again. */
+        return;
+    }
+
+    /* Please, no longjumps here (any logging shouldn't flush jump back to ring-3). NO LOGGING BEFORE THIS POINT! */
+    VMMRZCallRing3Disable(pVCpu);
+    Log4(("hmR0SvmExitToRing3: rcExit=%d\n", rcExit));
+
+    /* We need to do this only while truly exiting the "inner loop" back to ring-3 and -not- for any longjmp to ring3. */
+    if (pVCpu->hm.s.Event.fPending)
+    {
+        hmR0SvmPendingEventToTrpmTrap(pVCpu);
+        Assert(!pVCpu->hm.s.Event.fPending);
+    }
+
+    /* Sync. the guest state. */
+    hmR0SvmLongJmpToRing3(pVM, pVCpu, pCtx, rcExit);
+    STAM_COUNTER_DEC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
+
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
+    CPUMSetChangedFlags(pVCpu,  CPUM_CHANGED_SYSENTER_MSR
+                              | CPUM_CHANGED_LDTR
+                              | CPUM_CHANGED_GDTR
+                              | CPUM_CHANGED_IDTR
+                              | CPUM_CHANGED_TR
+                              | CPUM_CHANGED_HIDDEN_SEL_REGS);
+
+    /* On our way back from ring-3 the following needs to be done. */
+    /** @todo This can change with preemption hooks. */
+    if (rcExit == VINF_EM_RAW_INTERRUPT)
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
+    else
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
+
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExitToR3);
+    VMMRZCallRing3Enable(pVCpu);
 }
 
 
@@ -1670,6 +1945,143 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
+ * Reports world-switch error and dumps some useful debug info.
+ *
+ * @param   pVM             Pointer to the VM.
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   rcVMRun         The return code from VMRUN (or
+ *                          VERR_SVM_INVALID_GUEST_STATE for invalid
+ *                          guest-state).
+ * @param   pCtx            Pointer to the guest-CPU context.
+ */
+static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PCPUMCTX pCtx)
+{
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    if (rcVMRun == VERR_SVM_INVALID_GUEST_STATE)
+    {
+        HMDumpRegs(pVM, pVCpu, pCtx);
+#ifdef VBOX_STRICT
+        Log4(("ctrl.u16InterceptRdCRx            %#x\n",      pVmcb->ctrl.u16InterceptRdCRx));
+        Log4(("ctrl.u16InterceptWrCRx            %#x\n",      pVmcb->ctrl.u16InterceptWrCRx));
+        Log4(("ctrl.u16InterceptRdDRx            %#x\n",      pVmcb->ctrl.u16InterceptRdDRx));
+        Log4(("ctrl.u16InterceptWrDRx            %#x\n",      pVmcb->ctrl.u16InterceptWrDRx));
+        Log4(("ctrl.u32InterceptException        %#x\n",      pVmcb->ctrl.u32InterceptException));
+        Log4(("ctrl.u32InterceptCtrl1            %#x\n",      pVmcb->ctrl.u32InterceptCtrl1));
+        Log4(("ctrl.u32InterceptCtrl2            %#x\n",      pVmcb->ctrl.u32InterceptCtrl2));
+        Log4(("ctrl.u64IOPMPhysAddr              %#RX64\n",   pVmcb->ctrl.u64IOPMPhysAddr));
+        Log4(("ctrl.u64MSRPMPhysAddr             %#RX64\n",   pVmcb->ctrl.u64MSRPMPhysAddr));
+        Log4(("ctrl.u64TSCOffset                 %#RX64\n",   pVmcb->ctrl.u64TSCOffset));
+
+        Log4(("ctrl.TLBCtrl.u32ASID              %#x\n",      pVmcb->ctrl.TLBCtrl.n.u32ASID));
+        Log4(("ctrl.TLBCtrl.u8TLBFlush           %#x\n",      pVmcb->ctrl.TLBCtrl.n.u8TLBFlush));
+        Log4(("ctrl.TLBCtrl.u24Reserved          %#x\n",      pVmcb->ctrl.TLBCtrl.n.u24Reserved));
+
+        Log4(("ctrl.IntCtrl.u8VTPR               %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VTPR));
+        Log4(("ctrl.IntCtrl.u1VIrqValid          %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIrqValid));
+        Log4(("ctrl.IntCtrl.u7Reserved           %#x\n",      pVmcb->ctrl.IntCtrl.n.u7Reserved));
+        Log4(("ctrl.IntCtrl.u4VIrqPriority       %#x\n",      pVmcb->ctrl.IntCtrl.n.u4VIrqPriority));
+        Log4(("ctrl.IntCtrl.u1IgnoreTPR          %#x\n",      pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR));
+        Log4(("ctrl.IntCtrl.u3Reserved           %#x\n",      pVmcb->ctrl.IntCtrl.n.u3Reserved));
+        Log4(("ctrl.IntCtrl.u1VIrqMasking        %#x\n",      pVmcb->ctrl.IntCtrl.n.u1VIrqMasking));
+        Log4(("ctrl.IntCtrl.u6Reserved           %#x\n",      pVmcb->ctrl.IntCtrl.n.u6Reserved));
+        Log4(("ctrl.IntCtrl.u8VIrqVector         %#x\n",      pVmcb->ctrl.IntCtrl.n.u8VIrqVector));
+        Log4(("ctrl.IntCtrl.u24Reserved          %#x\n",      pVmcb->ctrl.IntCtrl.n.u24Reserved));
+
+        Log4(("ctrl.u64IntShadow                 %#RX64\n",   pVmcb->ctrl.u64IntShadow));
+        Log4(("ctrl.u64ExitCode                  %#RX64\n",   pVmcb->ctrl.u64ExitCode));
+        Log4(("ctrl.u64ExitInfo1                 %#RX64\n",   pVmcb->ctrl.u64ExitInfo1));
+        Log4(("ctrl.u64ExitInfo2                 %#RX64\n",   pVmcb->ctrl.u64ExitInfo2));
+        Log4(("ctrl.ExitIntInfo.u8Vector         %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u8Vector));
+        Log4(("ctrl.ExitIntInfo.u3Type           %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u3Type));
+        Log4(("ctrl.ExitIntInfo.u1ErrorCodeValid %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u1ErrorCodeValid));
+        Log4(("ctrl.ExitIntInfo.u19Reserved      %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u19Reserved));
+        Log4(("ctrl.ExitIntInfo.u1Valid          %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u1Valid));
+        Log4(("ctrl.ExitIntInfo.u32ErrorCode     %#x\n",      pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode));
+        Log4(("ctrl.NestedPaging                 %#RX64\n",   pVmcb->ctrl.NestedPaging.u));
+        Log4(("ctrl.EventInject.u8Vector         %#x\n",      pVmcb->ctrl.EventInject.n.u8Vector));
+        Log4(("ctrl.EventInject.u3Type           %#x\n",      pVmcb->ctrl.EventInject.n.u3Type));
+        Log4(("ctrl.EventInject.u1ErrorCodeValid %#x\n",      pVmcb->ctrl.EventInject.n.u1ErrorCodeValid));
+        Log4(("ctrl.EventInject.u19Reserved      %#x\n",      pVmcb->ctrl.EventInject.n.u19Reserved));
+        Log4(("ctrl.EventInject.u1Valid          %#x\n",      pVmcb->ctrl.EventInject.n.u1Valid));
+        Log4(("ctrl.EventInject.u32ErrorCode     %#x\n",      pVmcb->ctrl.EventInject.n.u32ErrorCode));
+
+        Log4(("ctrl.u64NestedPagingCR3           %#RX64\n",   pVmcb->ctrl.u64NestedPagingCR3));
+        Log4(("ctrl.u64LBRVirt                   %#RX64\n",   pVmcb->ctrl.u64LBRVirt));
+
+        Log4(("guest.CS.u16Sel                   %RTsel\n",   pVmcb->guest.CS.u16Sel));
+        Log4(("guest.CS.u16Attr                  %#x\n",      pVmcb->guest.CS.u16Attr));
+        Log4(("guest.CS.u32Limit                 %#RX32\n",   pVmcb->guest.CS.u32Limit));
+        Log4(("guest.CS.u64Base                  %#RX64\n",   pVmcb->guest.CS.u64Base));
+        Log4(("guest.DS.u16Sel                   %#RTsel\n",  pVmcb->guest.DS.u16Sel));
+        Log4(("guest.DS.u16Attr                  %#x\n",      pVmcb->guest.DS.u16Attr));
+        Log4(("guest.DS.u32Limit                 %#RX32\n",   pVmcb->guest.DS.u32Limit));
+        Log4(("guest.DS.u64Base                  %#RX64\n",   pVmcb->guest.DS.u64Base));
+        Log4(("guest.ES.u16Sel                   %RTsel\n",   pVmcb->guest.ES.u16Sel));
+        Log4(("guest.ES.u16Attr                  %#x\n",      pVmcb->guest.ES.u16Attr));
+        Log4(("guest.ES.u32Limit                 %#RX32\n",   pVmcb->guest.ES.u32Limit));
+        Log4(("guest.ES.u64Base                  %#RX64\n",   pVmcb->guest.ES.u64Base));
+        Log4(("guest.FS.u16Sel                   %RTsel\n",   pVmcb->guest.FS.u16Sel));
+        Log4(("guest.FS.u16Attr                  %#x\n",      pVmcb->guest.FS.u16Attr));
+        Log4(("guest.FS.u32Limit                 %#RX32\n",   pVmcb->guest.FS.u32Limit));
+        Log4(("guest.FS.u64Base                  %#RX64\n",   pVmcb->guest.FS.u64Base));
+        Log4(("guest.GS.u16Sel                   %RTsel\n",   pVmcb->guest.GS.u16Sel));
+        Log4(("guest.GS.u16Attr                  %#x\n",      pVmcb->guest.GS.u16Attr));
+        Log4(("guest.GS.u32Limit                 %#RX32\n",   pVmcb->guest.GS.u32Limit));
+        Log4(("guest.GS.u64Base                  %#RX64\n",   pVmcb->guest.GS.u64Base));
+
+        Log4(("guest.GDTR.u32Limit               %#RX32\n",   pVmcb->guest.GDTR.u32Limit));
+        Log4(("guest.GDTR.u64Base                %#RX64\n",   pVmcb->guest.GDTR.u64Base));
+
+        Log4(("guest.LDTR.u16Sel                 %RTsel\n",   pVmcb->guest.LDTR.u16Sel));
+        Log4(("guest.LDTR.u16Attr                %#x\n",      pVmcb->guest.LDTR.u16Attr));
+        Log4(("guest.LDTR.u32Limit               %#RX32\n",   pVmcb->guest.LDTR.u32Limit));
+        Log4(("guest.LDTR.u64Base                %#RX64\n",   pVmcb->guest.LDTR.u64Base));
+
+        Log4(("guest.IDTR.u32Limit               %#RX32\n",   pVmcb->guest.IDTR.u32Limit));
+        Log4(("guest.IDTR.u64Base                %#RX64\n",   pVmcb->guest.IDTR.u64Base));
+
+        Log4(("guest.TR.u16Sel                   %RTsel\n",   pVmcb->guest.TR.u16Sel));
+        Log4(("guest.TR.u16Attr                  %#x\n",      pVmcb->guest.TR.u16Attr));
+        Log4(("guest.TR.u32Limit                 %#RX32\n",   pVmcb->guest.TR.u32Limit));
+        Log4(("guest.TR.u64Base                  %#RX64\n",   pVmcb->guest.TR.u64Base));
+           4
+        Log4(("guest.u8CPL                       %#x\n",      pVmcb->guest.u8CPL));
+        Log4(("guest.u64CR0                      %#RX64\n",   pVmcb->guest.u64CR0));
+        Log4(("guest.u64CR2                      %#RX64\n",   pVmcb->guest.u64CR2));
+        Log4(("guest.u64CR3                      %#RX64\n",   pVmcb->guest.u64CR3));
+        Log4(("guest.u64CR4                      %#RX64\n",   pVmcb->guest.u64CR4));
+        Log4(("guest.u64DR6                      %#RX64\n",   pVmcb->guest.u64DR6));
+        Log4(("guest.u64DR7                      %#RX64\n",   pVmcb->guest.u64DR7));
+
+        Log4(("guest.u64RIP                      %#RX64\n",   pVmcb->guest.u64RIP));
+        Log4(("guest.u64RSP                      %#RX64\n",   pVmcb->guest.u64RSP));
+        Log4(("guest.u64RAX                      %#RX64\n",   pVmcb->guest.u64RAX));
+        Log4(("guest.u64RFlags                   %#RX64\n",   pVmcb->guest.u64RFlags));
+
+        Log4(("guest.u64SysEnterCS               %#RX64\n",   pVmcb->guest.u64SysEnterCS));
+        Log4(("guest.u64SysEnterEIP              %#RX64\n",   pVmcb->guest.u64SysEnterEIP));
+        Log4(("guest.u64SysEnterESP              %#RX64\n",   pVmcb->guest.u64SysEnterESP));
+
+        Log4(("guest.u64EFER                     %#RX64\n",   pVmcb->guest.u64EFER));
+        Log4(("guest.u64STAR                     %#RX64\n",   pVmcb->guest.u64STAR));
+        Log4(("guest.u64LSTAR                    %#RX64\n",   pVmcb->guest.u64LSTAR));
+        Log4(("guest.u64CSTAR                    %#RX64\n",   pVmcb->guest.u64CSTAR));
+        Log4(("guest.u64SFMASK                   %#RX64\n",   pVmcb->guest.u64SFMASK));
+        Log4(("guest.u64KernelGSBase             %#RX64\n",   pVmcb->guest.u64KernelGSBase));
+        Log4(("guest.u64GPAT                     %#RX64\n",   pVmcb->guest.u64GPAT));
+        Log4(("guest.u64DBGCTL                   %#RX64\n",   pVmcb->guest.u64DBGCTL));
+        Log4(("guest.u64BR_FROM                  %#RX64\n",   pVmcb->guest.u64BR_FROM));
+        Log4(("guest.u64BR_TO                    %#RX64\n",   pVmcb->guest.u64BR_TO));
+        Log4(("guest.u64LASTEXCPFROM             %#RX64\n",   pVmcb->guest.u64LASTEXCPFROM));
+        Log4(("guest.u64LASTEXCPTO               %#RX64\n",   pVmcb->guest.u64LASTEXCPTO));
+#endif
+    }
+    else
+        Log4(("hmR0SvmReportWorldSwitchError: rcVMRun=%d\n", rcVMRun));
+}
+
+
+/**
  * Check per-VM and per-VCPU force flag actions that require us to go back to
  * ring-3 for one reason or another.
  *
@@ -1798,13 +2210,15 @@ DECLINE(int) hmR0SvmPreRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
 
-    /** @todo -XXX- TPR patching. */
-
     /* Convert any pending TRPM traps to HM events for injection. */
+    /** @todo Optimization: move this before disabling interrupts, restore state
+     *        using pVmcb->ctrl.EventInject.u. */
     if (TRPMHasTrap(pVCpu))
         hmR0SvmTrpmTrapToPendingEvent(pVCpu);
 
     hmR0SvmInjectPendingEvent(pVCpu, pCtx);
+
+    /** @todo -XXX- TPR patching. */
     return VINF_SUCCESS;
 }
 
@@ -1832,6 +2246,8 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     pSvmTransient->uEFlags = ASMIntDisableFlags();
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
+
+    /* -XXX- todo TPR syncing. */
 
     /*
      * Re-enable nested paging (automatically disabled on every VM-exit). See AMD spec. 15.25.3 "Enabling Nested Paging".
@@ -1862,8 +2278,7 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
      *
      * This should be done -after- any RDTSCPs for obtaining the host timestamp (TM, STAM etc).
      */
-    u32HostExtFeatures = pVM->hm.s.cpuid.u32AMDFeatureEDX;
-    if (    (u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
+    if (    (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
         && !(pVmcb->ctrl.u32InterceptCtrl2 & SVM_CTRL2_INTERCEPT_RDTSCP))
     {
         pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
@@ -1893,10 +2308,10 @@ DECLINLINE(int) hmR0SvmRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * Refer MSDN docs. "Configuring Programs for 64-bit / x64 Software Conventions / Register Usage" for details.
      */
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    HMR0SVMRunWrapXMM(pVCpu->hm.s.svm.HCPhysVmcbHost, pVCpu->hm.s.svm.HCPhysVmcb, pCtx, pVM, pVCpu,
-                          pVCpu->hm.s.svm.pfnVMRun);
+    return HMR0SVMRunWrapXMM(pVCpu->hm.s.svm.HCPhysVmcbHost, pVCpu->hm.s.svm.HCPhysVmcb, pCtx, pVM, pVCpu,
+                             pVCpu->hm.s.svm.pfnVMRun);
 #else
-    pVCpu->hm.s.svm.pfnVMRun(pVCpu->hm.s.svm.HCPhysVmcbHost, pVCpu->hm.s.svm.HCPhysVmcb, pCtx, pVM, pVCpu);
+    return pVCpu->hm.s.svm.pfnVMRun(pVCpu->hm.s.svm.HCPhysVmcbHost, pVCpu->hm.s.svm.HCPhysVmcb, pCtx, pVM, pVCpu);
 #endif
 }
 
@@ -1930,7 +2345,7 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     /* Restore host's TSC_AUX if required. */
     if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
     {
-        if (u32HostExtFeatures & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
+        if (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
             ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
 
         /** @todo Find a way to fix hardcoding a guestimate.  */
@@ -1945,10 +2360,16 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     /* -XXX- TPR patching? */
 
     ASMSetFlags(pSvmTransient->uEFlags);                        /* Enable interrupts. */
+    VMMRZCallRing3SetNotification(pVCpu, hmR0VmxCallRing3Callback, pMixedCtx);
+    VMMRZCallRing3Enable(pVCpu);                                /* It is now safe to do longjmps to ring-3!!! */
 
-    /* --XXX- todo */
+    pSvmTransient->u64ExitCode = pVmcb->ctrl.u64ExitCode;
+    hmR0SvmSaveGuestState(pVCpu, pMixedCtx);                    /* Save the guest state from the VMCB to the guest-CPU context. */
+
+    /* --XXX- TPR syncing todo */
+
+    /* -XXX- premature interruption during event injection */
 }
-
 
 
 /**
@@ -1957,7 +2378,7 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest CPU context.
+ * @param   pCtx        Pointer to the guest-CPU context.
  */
 VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
@@ -1978,7 +2399,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         /* Preparatory work for running guest code, this may return to ring-3 for some last minute updates. */
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
-        rc = hmR0VmxPreRunGuest(pVM, pVCpu, pCtx, &SvmTransient);
+        rc = hmR0SvmPreRunGuest(pVM, pVCpu, pCtx, &SvmTransient);
         if (rc != VINF_SUCCESS)
             break;
 
@@ -1993,8 +2414,41 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         rc = hmR0SvmRunGuest(pVM, pVCpu, pCtx);
 
-        /** -XXX- todo  */
+        /*
+         * Restore any residual host-state and save any bits shared between host and guest into the guest-CPU state.
+         * This will also re-enable longjmps to ring-3 when it has reached a safe point!!!
+         */
+        hmR0SvmPostRunGuest(pVM, pVCpu, pCtx, &SvmTransient, rc);
+        if (RT_UNLIKELY(   rc != VINF_SUCCESS                              /* Check for errors with running the VM (VMRUN). */
+                        || SvmTransient.u64ExitCode == SVM_EXIT_INVALID))  /* Check for errors due to invalid guest state. */
+        {
+            if (rc == VINF_SUCCESS);
+                rc = VERR_SVM_INVALID_GUEST_STATE;
+            hmR0SvmReportWorldSwitchError(pVM, pVCpu, rc, pCtx, &SvmTransient);
+            return rc;
+        }
+
+        /* Handle the #VMEXIT. */
+        AssertMsg(SvmTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
+        STAM_COUNTER_INC(&pVCpu->hm.s.paStatExitReasonR0[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
+
+        /* -xxx- todo. */
+
+        if (rc != VINF_SUCCESS)
+            break;
+        else if (cLoops > pVM->hm.s.cMaxResumeLoops)
+        {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMaxResume);
+            rc = VINF_EM_RAW_INTERRUPT;
+            break;
+        }
     }
 
+    if (rc == VERR_EM_INTERPRETER)
+        rc = VINF_EM_RAW_EMULATE_INSTR;
+    else if (rc == VINF_EM_RESET)
+        rc = VINF_EM_TRIPLE_FAULT;
+    hmR0SvmExitToRing3(pVM, pVCpu, pCtx, rc);
     return rc;
 }
+
