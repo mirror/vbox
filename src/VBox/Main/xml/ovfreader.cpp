@@ -856,7 +856,7 @@ void VirtualHardwareItem::fillItem(const xml::ElementNode *item)
             resourceType = (ResourceType_T)ulType;
             fResourceRequired = true;
             const char *pcszAttValue;
-            if (pelmItemChild->getAttributeValue("required", pcszAttValue))
+            if (item->getAttributeValue("required", pcszAttValue))
             {
                 if (!strcmp(pcszAttValue, "false"))
                     fResourceRequired = false;
