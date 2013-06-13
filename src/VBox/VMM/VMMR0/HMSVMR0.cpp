@@ -39,6 +39,10 @@
 # define HMSVM_EXITCODE_STAM_COUNTER_INC(u64ExitCode) do { } while (0)
 #endif
 
+/** If we decide to use a function table approach this can be useful to
+ *  switch to a "static DECLCALLBACK(int)". */
+#define HMSVM_EXIT_DECL                 static int
+
 /** @name Segment attribute conversion between CPU and AMD-V VMCB format.
  *
  * The CPU format of the segment attribute is described in X86DESCATTRBITS
@@ -1457,6 +1461,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 
 
+
 /**
  * Saves the entire guest state from the VMCB into the
  * guest-CPU context. Currently there is no residual state left in the CPU that
@@ -1480,7 +1485,15 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     pMixedCtx->rax        = pVmcb->guest.u64RAX;
 
     /*
-     * Control registers: CR2, CR3 (handled at the end) - accesses to other control registers are always intercepted.
+     * Guest interrupt shadow.
+     */
+    if (pVmcb->ctrl.u64IntShadow & SVM_INTERRUPT_SHADOW_ACTIVE)
+        EMSetInhibitInterruptsPC(pVCpu, pMixedCtx->rip);
+    else
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+
+    /*
+     * Guest Control registers: CR2, CR3 (handled at the end) - accesses to other control registers are always intercepted.
      */
     pMixedCtx->cr2        = pVmcb->guest.u64CR2;
 
@@ -2162,7 +2175,7 @@ static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         Log4(("guest.TR.u16Attr                  %#x\n",      pVmcb->guest.TR.u16Attr));
         Log4(("guest.TR.u32Limit                 %#RX32\n",   pVmcb->guest.TR.u32Limit));
         Log4(("guest.TR.u64Base                  %#RX64\n",   pVmcb->guest.TR.u64Base));
-           4
+
         Log4(("guest.u8CPL                       %#x\n",      pVmcb->guest.u8CPL));
         Log4(("guest.u64CR0                      %#RX64\n",   pVmcb->guest.u64CR0));
         Log4(("guest.u64CR2                      %#RX64\n",   pVmcb->guest.u64CR2));
@@ -2336,7 +2349,6 @@ DECLINE(int) hmR0SvmPreRunGuest(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 
     hmR0SvmInjectPendingEvent(pVCpu, pCtx);
 
-    /** @todo -XXX- TPR patching. */
     return VINF_SUCCESS;
 }
 
@@ -2490,27 +2502,36 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, pMixedCtx);
     VMMRZCallRing3Enable(pVCpu);                                /* It is now safe to do longjmps to ring-3!!! */
 
+    /* If VMRUN failed, we can bail out early. This does -not- cover SVM_EXIT_INVALID. */
+    if (RT_UNLIKELY(rcVMRun != VINF_SUCCESS))
+    {
+        Log4(("VMRUN failure: rcVMRun=%Rrc\n", rcVMRun));
+        return;
+    }
+
     pSvmTransient->u64ExitCode = pVmcb->ctrl.u64ExitCode;
     hmR0SvmSaveGuestState(pVCpu, pMixedCtx);                    /* Save the guest state from the VMCB to the guest-CPU context. */
 
-    if (pVCpu->hm.s.svm.fSyncVTpr)
+    if (RT_LIKELY(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID))
     {
-        /* TPR patching (for 32-bit guests) uses LSTAR MSR for holding the TPR value, otherwise uses the VTPR. */
-        if (   pVM->hm.s.fTPRPatchingActive
-            && (pCtx->msrLSTAR & 0xff) != pSvmTransient->u8GuestTpr)
+        if (pVCpu->hm.s.svm.fSyncVTpr)
         {
-            int rc = PDMApicSetTPR(pVCpu, pCtx->msrLSTAR & 0xff);
-            AssertRC(rc);
+            /* TPR patching (for 32-bit guests) uses LSTAR MSR for holding the TPR value, otherwise uses the VTPR. */
+            if (   pVM->hm.s.fTPRPatchingActive
+                && (pCtx->msrLSTAR & 0xff) != pSvmTransient->u8GuestTpr)
+            {
+                int rc = PDMApicSetTPR(pVCpu, pCtx->msrLSTAR & 0xff);
+                AssertRC(rc);
+            }
+            else if ((uint8_t)(pSvmTransient->u8GuestTpr >> 4) != pVmcb->ctrl.IntCtrl.n.u8VTPR)
+            {
+                int rc = PDMApicSetTPR(pVCpu, (pVmcb->ctrl.IntCtrl.n.u8VTPR << 4));
+                AssertRC(rc);
+            }
         }
-        else if ((uint8_t)(pSvmTransient->u8GuestTpr >> 4) != pVmcb->ctrl.IntCtrl.n.u8VTPR)
-        {
-            int rc = PDMApicSetTPR(pVCpu, (pVmcb->ctrl.IntCtrl.n.u8VTPR << 4));
-            AssertRC(rc);
-        }
+
+        /* -XXX- premature interruption during event injection */
     }
-
-    /* -XXX- premature interruption during event injection */
-
 }
 
 
@@ -2613,6 +2634,7 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIEN
 
 }
 
+
 #ifdef DEBUG
 /* Is there some generic IPRT define for this that are not in Runtime/internal/\* ?? */
 # define HMSVM_ASSERT_PREEMPT_CPUID_VAR() \
@@ -2642,4 +2664,303 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIEN
 #else   /* Release builds */
 # define HMSVM_VALIDATE_EXIT_HANDLER_PARAMS() do { } while(0)
 #endif
+
+
+/**
+ * Worker for hmR0SvmInterpretInvlpg().
+ *
+ * @return VBox status code.
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pCpu            Pointer to the disassembler state.
+ * @param   pRegFrame       Pointer to the register frame.
+ */
+static int hmR0SvmInterpretInvlPgEx(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame)
+{
+    DISQPVPARAMVAL Param1;
+    RTGCPTR        GCPtrPage;
+
+    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->Param1, &Param1, DISQPVWHICH_SRC);
+    if (RT_FAILURE(rc))
+        return VERR_EM_INTERPRETER;
+
+    if (   Param1.type == DISQPV_TYPE_IMMEDIATE
+        || Param1.type == DISQPV_TYPE_ADDRESS)
+    {
+        if (!(Param1.flags & (DISQPV_FLAG_32 | DISQPV_FLAG_64)))
+            return VERR_EM_INTERPRETER;
+
+        GCPtrPage = Param1.val.val64;
+        rc = EMInterpretInvlpg(pVCpu->CTX_SUFF(pVM), pVCpu,  pRegFrame, GCPtrPage);
+    }
+    else
+    {
+        Log4(("hmR0SvmInterpretInvlPgEx invalid parameter type %#x\n", Param1.type));
+        rc = VERR_EM_INTERPRETER;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Interprets INVLPG.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_*                  Scheduling instructions.
+ * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
+ * @retval  VERR_*                  Fatal errors.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   pRegFrame   Pointer to the register frame.
+ *
+ * @remarks Updates the RIP if the instruction was executed successfully.
+ */
+static int hmR0SvmInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+{
+    /* Only allow 32 & 64 bit code. */
+    if (CPUMGetGuestCodeBits(pVCpu) != 16)
+    {
+        PDISSTATE pDis = &pVCpu->hm.s.DisState;
+        int rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL /* pcbInstr */);
+        if (   RT_SUCCESS(rc)
+            && pDis->pCurInstr->uOpcode == OP_INVLPG)
+        {
+            rc = hmR0SvmInterpretInvlPgEx(pVCpu, pDis, pRegFrame);
+            if (RT_SUCCESS(rc))
+                pRegFrame->rip += pDis->cbInstr;
+            return rc;
+        }
+    }
+    return VERR_EM_INTERPRETER;
+}
+
+
+/**
+ * Sets an invalid-opcode (#UD) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptUD(PVMCPU pVCpu)
+{
+    SVMEVENT Event;
+    Event.u          = 0;
+    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+    Event.n.u1Valid  = 1;
+    Event.n.u8Vector = X86_XCPT_UD;
+    hmR0SvmSetPendingEvent(pVCpu, &Event);
+}
+
+
+/* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+/* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- #VMEXIT handlers -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
+/* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+
+/**
+ * #VMEXIT handler for external interrupts (SVM_EXIT_INTR).
+ */
+HMSVM_EXIT_DECL hmR0SvmExitIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitExtInt);
+    /* 32-bit Windows hosts (4 cores) has trouble with this on Intel; causes higher interrupt latency. Assuming the
+       same for AMD-V.*/
+#if HC_ARCH_BITS == 64 && defined(VBOX_WITH_VMMR0_DISABLE_PREEMPTION)
+    Assert(ASMIntAreEnabled());
+    return VINF_SUCCESS;
+#else
+    return VINF_EM_RAW_INTERRUPT;
+#endif
+}
+
+
+/**
+ * #VMEXIT handler for WBINVD (SVM_EXIT_WBINVD). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitWbinvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    pCtx->rip += 2;         /* Hardcoded opcode, AMD-V doesn't give us this information. */
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWbinvd);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * #VMEXIT handler for INVD (SVM_EXIT_INVD). Unconditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitInvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    pCtx->rip += 2;         /* Hardcoded opcode, AMD-V doesn't give us this information. */
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvd);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * #VMEXIT handler for INVD (SVM_EXIT_CPUID). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitCpuid(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    int rc = EMInterpretCpuId(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+        pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+    else
+    {
+        AssertMsgFailed(("hmR0SvmExitCpuid: EMInterpretCpuId failed with %Rrc\n", rc));
+        rc = VERR_EM_INTERPRETER;
+    }
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCpuid);
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for RDTSC (SVM_EXIT_RDTSC). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    rc = EMInterpretRdtsc(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+        pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+    else
+    {
+        AssertMsgFailed(("hmR0SvmExitRdtsc: EMInterpretRdtsc failed with %Rrc\n", rc));
+        rc = VERR_EM_INTERPRETER;
+    }
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtsc);
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for RDTSCP (SVM_EXIT_RDTSCP). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    int rc = EMInterpretRdtscp(pVM, pVCpu, pCtx);
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+        pCtx->rip += 3;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+    else
+    {
+        AssertMsgFailed(("hmR0SvmExitRdtsc: EMInterpretRdtscp failed with %Rrc\n", rc));
+        rc = VERR_EM_INTERPRETER;
+    }
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdtscp);
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for RDPMC (SVM_EXIT_RDPMC). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitRdpmc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    int rc = EMInterpretRdpmc(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+        pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+    else
+    {
+        AssertMsgFailed(("hmR0SvmExitRdpmc: EMInterpretRdpmc failed with %Rrc\n", rc));
+        rc = VERR_EM_INTERPRETER;
+    }
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdpmc);
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for INVLPG (SVM_EXIT_INVLPG). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    Assert(!pVM->hm.s.fNestedPaging);
+
+    /** @todo With decode assist we no longer need to interpret the instruction. */
+    int rc = hmR0SvmInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pCtx));    /* Updates RIP if successful. */
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvlpg);
+    Assert(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER);
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for HLT (SVM_EXIT_HLT). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitHlt(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    pCtx->rip++;        /* Hardcoded opcode, AMD-V doesn't give us this information. */
+    int rc = EMShouldContinueAfterHalt(pVCpu, pCtx) ? VINF_SUCCESS : VINF_EM_HALT;
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHlt);
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for MONITOR (SVM_EXIT_MONITOR). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    int rc = EMInterpretMonitor(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+        pCtx->rip += 3;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+    else
+    {
+        AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMonitor: EMInterpretMonitor failed with %Rrc\n", rc));
+        rc = VERR_EM_INTERPRETER;
+    }
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMonitor);
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for MWAIT (SVM_EXIT_MWAIT_UNCOND). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    int rc = EMInterpretMWait(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+    if (    rc == VINF_EM_HALT
+        ||  rc == VINF_SUCCESS)
+    {
+        pCtx->rip += 3;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+
+        if (   rc == VINF_EM_HALT
+            && EMShouldContinueAfterHalt(pVCpu, pMixedCtx))
+        {
+            rc = VINF_SUCCESS;
+        }
+    }
+    else
+    {
+        AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMwait: EMInterpretMWait failed with %Rrc\n", rc));
+        rc = VERR_EM_INTERPRETER;
+    }
+    AssertMsg(rc == VINF_SUCCESS || rc == VINF_EM_HALT || rc == VERR_EM_INTERPRETER,
+              ("hmR0SvmExitMwait: failed, invalid error code %Rrc\n", rc));
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMwait);
+    return rc;
+}
+
+
+
+/**
+ * #VMEXIT handler for shutdown (triple-fault) (SVM_EXIT_SHUTDOWN).
+ * Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitShutdown(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    return VINF_EM_RESET;
+}
 
