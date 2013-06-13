@@ -596,6 +596,26 @@
              <item row="4" column="3">
               <widget class="QLabel" name="m_pLabelVideoCaptureBitRateUnits"/>
              </item>
+             <item row="6" column="0">
+              <widget class="QLabel" name="m_pLabelVideoCaptureScreens">
+               <property name="text">
+                <string>&amp;Screens:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignTop</set>
+               </property>
+               <property name="buddy">
+                <cstring>m_pScrollerVideoCaptureScreens</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="6" column="1" colspan="3">
+              <widget class="UIFilmContainer" name="m_pScrollerVideoCaptureScreens">
+               <property name="whatsThis">
+                <string></string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -638,6 +658,11 @@
    <header>VBoxFilePathSelectorWidget.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>UIFilmContainer</class>
+   <extends>QWidget</extends>
+   <header>UIFilmContainer.h</header>
+  </customwidget>
  </customwidgets>
  <resources/>
  <connections>
@@ -645,12 +670,6 @@
    <sender>m_pCheckboxRemoteDisplay</sender>
    <signal>toggled(bool)</signal>
    <receiver>m_pContainerRemoteDisplayOptions</receiver>
-   <slot>setEnabled(bool)</slot>
-  </connection>
-  <connection>
-   <sender>m_pCheckboxVideoCapture</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>m_pContainerVideoCaptureOptions</receiver>
    <slot>setEnabled(bool)</slot>
   </connection>
  </connections>
