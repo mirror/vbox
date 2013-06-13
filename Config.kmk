@@ -585,6 +585,8 @@ VBOX_WITH_MEMBALLOON = 1
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_CROGL = 1
 endif
+# enable new wined3d code
+VBOX_WITH_NEW_WINE = 1
 # Enable the VNC server extension pack (GPL only).
 #VBOX_WITH_EXTPACK_VNC = 1
 # Enable S3 support (requires libcurl)
