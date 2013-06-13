@@ -1617,6 +1617,8 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                             itemElement = "sasd:";
                             pItem = pelmVirtualHardwareSection->createChild("StorageItem");
                         }
+                        else
+                            pItem = NULL;
                     }
                     else
                     {
