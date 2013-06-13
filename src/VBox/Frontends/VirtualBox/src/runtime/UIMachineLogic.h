@@ -205,6 +205,7 @@ private slots:
     void sltPrepareDragAndDropMenu();
     void sltChangeDragAndDropType(QAction *pAction);
     void sltSwitchVrde(bool fOn);
+    void sltToggleVideoCapture(bool fEnabled);
     void sltInstallGuestAdditions();
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

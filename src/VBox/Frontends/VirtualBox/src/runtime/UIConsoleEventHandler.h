@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,6 +47,7 @@ signals:
     void sigNetworkAdapterChange(CNetworkAdapter adapter);
     void sigMediumChange(CMediumAttachment attachment);
     void sigVRDEChange();
+    void sigVideoCaptureChange();
     void sigUSBControllerChange();
     void sigUSBDeviceStateChange(CUSBDevice device, bool fAttached, CVirtualBoxErrorInfo error);
     void sigSharedFolderChange();

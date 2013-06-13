@@ -181,6 +181,7 @@ signals:
     void sigNetworkAdapterChange(const CNetworkAdapter &networkAdapter);
     void sigMediumChange(const CMediumAttachment &mediumAttachment);
     void sigVRDEChange();
+    void sigVideoCaptureChange();
     void sigUSBControllerChange();
     void sigUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
     void sigSharedFolderChange();
@@ -213,6 +214,7 @@ private slots:
     void sltStateChange(KMachineState state);
     void sltAdditionsChange();
     void sltVRDEChange();
+    void sltVideoCaptureChange();
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
 private:
