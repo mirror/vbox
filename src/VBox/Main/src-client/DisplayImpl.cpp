@@ -4528,7 +4528,10 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
     HRESULT hrc = pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
     AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
     if (fEnabled)
+    {
         rc = pDisplay->VideoCaptureStart();
+        fireVideoCaptureChangedEvent(pDisplay->mParent->getEventSource());
+    }
 #endif
 
     return rc;
