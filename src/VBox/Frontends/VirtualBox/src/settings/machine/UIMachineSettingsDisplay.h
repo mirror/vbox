@@ -72,7 +72,8 @@ struct UIDataSettingsMachineDisplay
                (m_iVideoCaptureFrameWidth == other.m_iVideoCaptureFrameWidth) &&
                (m_iVideoCaptureFrameHeight == other.m_iVideoCaptureFrameHeight) &&
                (m_iVideoCaptureFrameRate == other.m_iVideoCaptureFrameRate) &&
-               (m_iVideoCaptureBitRate == other.m_iVideoCaptureBitRate);
+               (m_iVideoCaptureBitRate == other.m_iVideoCaptureBitRate) &&
+               (m_screens == other.m_screens);
     }
 
     /* Operators: */
@@ -103,6 +104,7 @@ struct UIDataSettingsMachineDisplay
     int m_iVideoCaptureFrameHeight;
     int m_iVideoCaptureFrameRate;
     int m_iVideoCaptureBitRate;
+    QVector<BOOL> m_screens;
 };
 typedef UISettingsCache<UIDataSettingsMachineDisplay> UICacheSettingsMachineDisplay;
 
@@ -166,6 +168,7 @@ private slots:
     void sltHandleVideoScreenCountEditorChange();
 
     /* Handlers: Video Capture stuff: */
+    void sltHandleVideoCaptureCheckboxToggle();
     void sltHandleVideoCaptureFrameSizeComboboxChange();
     void sltHandleVideoCaptureFrameWidthEditorChange();
     void sltHandleVideoCaptureFrameHeightEditorChange();
@@ -189,6 +192,7 @@ private:
 
     /* Helpers: Video Capture stuff: */
     void lookForCorrespondingSizePreset();
+    void updateVideoCaptureScreenCount();
     static void lookForCorrespondingPreset(QComboBox *pWhere, const QVariant &whichData);
     static int calculateBitRate(int iFrameWidth, int iFrameHeight, int iFrameRate, int iQuality);
     static int calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate);

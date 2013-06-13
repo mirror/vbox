@@ -120,6 +120,7 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     displayData.m_iVideoCaptureFrameHeight = m_machine.GetVideoCaptureHeight();
     displayData.m_iVideoCaptureFrameRate = m_machine.GetVideoCaptureFps();
     displayData.m_iVideoCaptureBitRate = m_machine.GetVideoCaptureRate();
+    displayData.m_screens = m_machine.GetVideoCaptureScreens();
 
     /* Initialize other variables: */
     m_iInitialVRAM = RT_MIN(displayData.m_iCurrentVRAM, m_iMaxVRAM);
@@ -166,6 +167,7 @@ void UIMachineSettingsDisplay::getFromCache()
     m_pEditorVideoCaptureHeight->setValue(displayData.m_iVideoCaptureFrameHeight);
     m_pEditorVideoCaptureFrameRate->setValue(displayData.m_iVideoCaptureFrameRate);
     m_pEditorVideoCaptureBitRate->setValue(displayData.m_iVideoCaptureBitRate);
+    m_pScrollerVideoCaptureScreens->setValue(displayData.m_screens);
 
     /* Polish page finally: */
     polishPage();
@@ -208,6 +210,7 @@ void UIMachineSettingsDisplay::putToCache()
     displayData.m_iVideoCaptureFrameHeight = m_pEditorVideoCaptureHeight->value();
     displayData.m_iVideoCaptureFrameRate = m_pEditorVideoCaptureFrameRate->value();
     displayData.m_iVideoCaptureBitRate = m_pEditorVideoCaptureBitRate->value();
+    displayData.m_screens = m_pScrollerVideoCaptureScreens->value();
 
     /* Cache display data: */
     m_cache.cacheCurrentData(displayData);
@@ -253,17 +256,40 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
         }
 
         /* Store Video Capture data: */
-        m_machine.SetVideoCaptureEnabled(displayData.m_fVideoCaptureEnabled);
-        /* Make sure machine is 'offline': */
-        if (isMachineOffline()) // TODO: Ask about isMachineSaved()
+        if (isMachineOnline())
         {
+            /* If Video Capture is *enabled* now: */
+            if (m_cache.base().m_fVideoCaptureEnabled)
+            {
+                /* All we can do is to *disable* it: */
+                if (!displayData.m_fVideoCaptureEnabled)
+                    m_machine.SetVideoCaptureEnabled(displayData.m_fVideoCaptureEnabled);
+            }
+            /* If Video Capture is *disabled* now: */
+            else
+            {
+                /* We should save all the options *before* Video Capture activation: */
+                m_machine.SetVideoCaptureFile(displayData.m_strVideoCaptureFilePath);
+                m_machine.SetVideoCaptureWidth(displayData.m_iVideoCaptureFrameWidth);
+                m_machine.SetVideoCaptureHeight(displayData.m_iVideoCaptureFrameHeight);
+                m_machine.SetVideoCaptureFps(displayData.m_iVideoCaptureFrameRate);
+                m_machine.SetVideoCaptureRate(displayData.m_iVideoCaptureBitRate);
+                m_machine.SetVideoCaptureScreens(displayData.m_screens);
+                /* Finally we should *enable* Video Capture if necessary: */
+                if (displayData.m_fVideoCaptureEnabled)
+                    m_machine.SetVideoCaptureEnabled(displayData.m_fVideoCaptureEnabled);
+            }
+        }
+        else
+        {
+            /* For 'offline' and 'saved' states the order is irrelevant: */
+            m_machine.SetVideoCaptureEnabled(displayData.m_fVideoCaptureEnabled);
             m_machine.SetVideoCaptureFile(displayData.m_strVideoCaptureFilePath);
             m_machine.SetVideoCaptureWidth(displayData.m_iVideoCaptureFrameWidth);
             m_machine.SetVideoCaptureHeight(displayData.m_iVideoCaptureFrameHeight);
             m_machine.SetVideoCaptureFps(displayData.m_iVideoCaptureFrameRate);
             m_machine.SetVideoCaptureRate(displayData.m_iVideoCaptureBitRate);
-            QVector<BOOL> screens(m_machine.GetMonitorCount(), true);
-            m_machine.SetVideoCaptureScreens(screens);
+            m_machine.SetVideoCaptureScreens(displayData.m_screens);
         }
     }
 
@@ -439,8 +465,8 @@ void UIMachineSettingsDisplay::polishPage()
     m_pCheckboxMultipleConn->setEnabled(isMachineOffline() || isMachineSaved());
 
     /* Video Capture tab: */
-    m_pContainerVideoCapture->setEnabled(isMachineOffline()); // TODO: Ask about isMachineSaved()
-    m_pContainerVideoCaptureOptions->setEnabled(m_pCheckboxVideoCapture->isChecked());
+    m_pContainerVideoCapture->setEnabled(isMachineInValidMode());
+    sltHandleVideoCaptureCheckboxToggle();
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoMemorySizeSliderChange()
@@ -477,6 +503,9 @@ void UIMachineSettingsDisplay::sltHandleVideoScreenCountSliderChange()
     /* Update Video RAM requirements: */
     checkVRAMRequirements();
 
+    /* Update Video Capture tab screen count: */
+    updateVideoCaptureScreenCount();
+
     /* Revalidate if possible: */
     if (m_pValidator)
         m_pValidator->revalidate();
@@ -492,9 +521,21 @@ void UIMachineSettingsDisplay::sltHandleVideoScreenCountEditorChange()
     /* Update Video RAM requirements: */
     checkVRAMRequirements();
 
+    /* Update Video Capture tab screen count: */
+    updateVideoCaptureScreenCount();
+
     /* Revalidate if possible: */
     if (m_pValidator)
         m_pValidator->revalidate();
+}
+
+void UIMachineSettingsDisplay::sltHandleVideoCaptureCheckboxToggle()
+{
+    /* Video Capture options should be enabled only if:
+     * 1. Machine is in 'offline' or 'saved' state and check-box is checked,
+     * 2. Machine is in 'online' state, check-box is checked, and video recording is *disabled* currently. */
+    m_pContainerVideoCaptureOptions->setEnabled(((isMachineOffline() || isMachineSaved()) && m_pCheckboxVideoCapture->isChecked()) ||
+                                                (isMachineOnline()  && !m_cache.base().m_fVideoCaptureEnabled && m_pCheckboxVideoCapture->isChecked()));
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameSizeComboboxChange()
@@ -650,6 +691,9 @@ void UIMachineSettingsDisplay::prepareRemoteDisplayTab()
 
 void UIMachineSettingsDisplay::prepareVideoCaptureTab()
 {
+    /* Prepare Video Capture checkbox: */
+    connect(m_pCheckboxVideoCapture, SIGNAL(toggled(bool)), this, SLOT(sltHandleVideoCaptureCheckboxToggle()));
+
     /* Prepare filepath selector: */
     m_pEditorVideoCapturePath->setMode(VBoxFilePathSelectorWidget::Mode_File_Save);
 
@@ -806,6 +850,14 @@ void UIMachineSettingsDisplay::lookForCorrespondingSizePreset()
     lookForCorrespondingPreset(m_pComboVideoCaptureSize,
                                QSize(m_pEditorVideoCaptureWidth->value(),
                                      m_pEditorVideoCaptureHeight->value()));
+}
+
+void UIMachineSettingsDisplay::updateVideoCaptureScreenCount()
+{
+    /* Update copy of the cached item to get the desired result: */
+    QVector<BOOL> screens = m_cache.base().m_screens;
+    screens.resize(m_pEditorVideoScreenCount->value());
+    m_pScrollerVideoCaptureScreens->setValue(screens);
 }
 
 /* static */
