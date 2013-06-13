@@ -1115,7 +1115,7 @@ bool UISettingsDialogMachine::isPageAvailable(int iPageId)
             CUSBController controller = m_machine.GetUSBController();
             /* Show the machine error message if any: */
             if (!m_machine.isReallyOk() && !controller.isNull() && controller.GetEnabled())
-                msgCenter().warnAboutUnaccessibleUSB(m_machine, this);
+                msgCenter().warnAboutUnaccessibleUSB(m_machine, parentWidget());
             /* Check if USB is implemented: */
             if (controller.isNull() || !controller.GetProxyAvailable())
                 return false;
