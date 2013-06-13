@@ -122,10 +122,10 @@ HRESULT Display::FinalConstruct()
 
     int rc = RTCritSectInit(&mVBVALock);
     AssertRC(rc);
-    
+
     rc = RTCritSectInit(&mSaveSeamlessRectLock);
     AssertRC(rc);
-    
+
     mfu32PendingVideoAccelDisable = false;
 
 #ifdef VBOX_WITH_HGSMI
@@ -149,7 +149,7 @@ void Display::FinalRelease()
         RTCritSectDelete (&mVBVALock);
         memset (&mVBVALock, 0, sizeof (mVBVALock));
     }
-    
+
     if (RTCritSectIsInitialized(&mSaveSeamlessRectLock))
     {
         RTCritSectDelete(&mSaveSeamlessRectLock);
@@ -836,8 +836,8 @@ void Display::handleResizeCompletedEMT (void)
         }
         LogRelFlow(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
 
-        /* Handle the case if there are some saved visible region that needs to be 
-         * applied after the resize of the framebuffer is completed 
+        /* Handle the case if there are some saved visible region that needs to be
+         * applied after the resize of the framebuffer is completed
          */
         SaveSeamlessRectLock();
         PRTRECT pSavedVisibleRegion = pFBInfo->mpSavedVisibleRegion;
@@ -1124,7 +1124,7 @@ int Display::handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
                  * not updated and hence there is no intersection with the new rectangles passed
                  * for the new region (THis is checked in the above if condition ). With 0 intersection,
                  * cRectVisibleRegions = 0  is returned to the GUI and if GUI has invalidated its
-                 * earlier region then it draws nothihing and seamless mode doesn't display the 
+                 * earlier region then it draws nothihing and seamless mode doesn't display the
                  * guest desktop.
                  */
                 SaveSeamlessRectLock();
@@ -1422,17 +1422,17 @@ void Display::vbvaUnlock(void)
 {
     RTCritSectLeave(&mVBVALock);
 }
- 
+
 int Display::SaveSeamlessRectLock(void)
 {
     return RTCritSectEnter(&mSaveSeamlessRectLock);
 }
-    
+
 void Display::SaveSeamlessRectUnLock(void)
 {
     RTCritSectLeave(&mSaveSeamlessRectLock);
 }
-    
+
 
 /**
  * @thread EMT
@@ -2508,7 +2508,7 @@ STDMETHODIMP Display::TakeScreenShot(ULONG aScreenId, BYTE *address, ULONG width
         rc = setError(VBOX_E_IPRT_ERROR,
                       tr("Could not take a screenshot (%Rrc)"), vrc);
 
-    LogRelFlowFunc(("rc=%08X\n", rc));
+    LogRelFlowFunc(("rc=%Rhrc\n", rc));
     return rc;
 }
 
@@ -2586,7 +2586,7 @@ STDMETHODIMP Display::TakeScreenShotToArray(ULONG aScreenId, ULONG width, ULONG 
 
     RTMemFree(pu8Data);
 
-    LogRelFlowFunc(("rc=%08X\n", rc));
+    LogRelFlowFunc(("rc=%Rhrc\n", rc));
     return rc;
 }
 
@@ -2669,19 +2669,103 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray(ULONG aScreenId, ULONG width, ULO
 
     RTMemFree(pu8Data);
 
-    LogRelFlowFunc(("rc=%08X\n", rc));
+    LogRelFlowFunc(("rc=%Rhrc\n", rc));
     return rc;
 }
 
-STDMETHODIMP Display::EnableVideoCaptureScreens(ComSafeArrayIn(BOOL, aScreens))
+int Display::VideoCaptureEnableScreens(ComSafeArrayIn(BOOL, aScreens))
 {
 #ifdef VBOX_WITH_VPX
     com::SafeArray<BOOL> Screens(ComSafeArrayInArg(aScreens));
     for (unsigned i = 0; i < Screens.size(); i++)
         maVideoRecEnabled[i] = Screens[i];
-    return S_OK;
+    return VINF_SUCCESS;
 #else
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+/**
+ * Start video capturing. Does nothing if capturing is already active.
+ */
+int Display::VideoCaptureStart()
+{
+#ifdef VBOX_WITH_VPX
+    if (VideoRecIsEnabled(mpVideoRecCtx))
+        return VINF_SUCCESS;
+
+    int rc = VideoRecContextCreate(&mpVideoRecCtx, mcMonitors);
+    if (RT_FAILURE(rc))
+    {
+        LogFlow(("Failed to create video recording context (%Rrc)!\n", rc));
+        return rc;
+    }
+    ComPtr<IMachine> pMachine = mParent->machine();
+    com::SafeArray<BOOL> screens;
+    HRESULT hrc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens));
+    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+    for (unsigned i = 0; i < RT_ELEMENTS(maVideoRecEnabled); i++)
+        maVideoRecEnabled[i] = i < screens.size() && screens[i];
+    ULONG ulWidth;
+    hrc = pMachine->COMGETTER(VideoCaptureWidth)(&ulWidth);
+    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+    ULONG ulHeight;
+    hrc = pMachine->COMGETTER(VideoCaptureHeight)(&ulHeight);
+    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+    ULONG ulRate;
+    hrc = pMachine->COMGETTER(VideoCaptureRate)(&ulRate);
+    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+    ULONG ulFps;
+    hrc = pMachine->COMGETTER(VideoCaptureFps)(&ulFps);
+    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+    BSTR strFile;
+    hrc = pMachine->COMGETTER(VideoCaptureFile)(&strFile);
+    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+    for (unsigned uScreen = 0; uScreen < mcMonitors; uScreen++)
+    {
+        char *pszAbsPath = RTPathAbsDup(com::Utf8Str(strFile).c_str());
+        char *pszExt = RTPathExt(pszAbsPath);
+        if (pszExt)
+            pszExt = RTStrDup(pszExt);
+        RTPathStripExt(pszAbsPath);
+        if (!pszAbsPath)
+            rc = VERR_INVALID_PARAMETER;
+        if (!pszExt)
+            pszExt = RTStrDup(".webm");
+        char *pszName = NULL;
+        if (RT_SUCCESS(rc))
+        {
+            if (mcMonitors > 1)
+                rc = RTStrAPrintf(&pszName, "%s-%u%s", pszAbsPath, uScreen+1, pszExt);
+            else
+                rc = RTStrAPrintf(&pszName, "%s%s", pszAbsPath, pszExt);
+        }
+        if (RT_SUCCESS(rc))
+            rc = VideoRecStrmInit(mpVideoRecCtx, uScreen,
+                                  pszName, ulWidth, ulHeight, ulRate, ulFps);
+        if (RT_SUCCESS(rc))
+            LogRel(("WebM/VP8 video recording screen #%u with %ux%u @ %u kbps, %u fps to '%s' enabled!\n",
+                   uScreen, ulWidth, ulHeight, ulRate, ulFps, pszName));
+        else
+            LogRel(("Failed to initialize video recording context #%u (%Rrc)!\n", uScreen, rc));
+        RTStrFree(pszName);
+        RTStrFree(pszExt);
+        RTStrFree(pszAbsPath);
+    }
+    return rc;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+/**
+ * Stop video capturing. Does nothing if video capturing is not active.
+ */
+void Display::VideoCaptureStop()
+{
+#ifdef VBOX_WITH_VPX
+    VideoRecContextClose(mpVideoRecCtx);
+    mpVideoRecCtx = NULL;
 #endif
 }
 
@@ -2847,7 +2931,7 @@ STDMETHODIMP Display::DrawToScreen(ULONG aScreenId, BYTE *address,
 //        handleDisplayUpdate (x, y, width, height);
 //    }
 
-    LogRelFlowFunc(("rc=%08X\n", rc));
+    LogRelFlowFunc(("rc=%Rhrc\n", rc));
     return rc;
 }
 
@@ -2969,7 +3053,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
         rc = setError(VBOX_E_IPRT_ERROR,
                       tr("Could not invalidate and update the screen (%Rrc)"), rcVBox);
 
-    LogRelFlowFunc(("rc=%08X\n", rc));
+    LogRelFlowFunc(("rc=%Rhrc\n", rc));
     return rc;
 }
 
@@ -4329,8 +4413,7 @@ DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
     {
         AutoWriteLock displayLock(pThis->pDisplay COMMA_LOCKVAL_SRC_POS);
 #ifdef VBOX_WITH_VPX
-        VideoRecContextClose(pThis->pDisplay->mpVideoRecCtx);
-        pThis->pDisplay->mpVideoRecCtx = NULL;
+        pThis->pDisplay->VideoCaptureStop();
 #endif
 #ifdef VBOX_WITH_CRHGSMI
         pThis->pDisplay->destructCrHgsmiData();
@@ -4442,70 +4525,13 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
 #ifdef VBOX_WITH_VPX
     ComPtr<IMachine> pMachine = pDisplay->mParent->machine();
     BOOL fEnabled = false;
-    pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
+    HRESULT hrc = pMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
+    AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
     if (fEnabled)
-    {
-        rc = VideoRecContextCreate(&pDisplay->mpVideoRecCtx, pDisplay->mcMonitors);
-        if (RT_FAILURE(rc))
-        {
-            LogFlow(("Failed to create video recording context (%Rrc)!\n", rc));
-            return E_FAIL;
-        }
-        com::SafeArray<BOOL> screens;
-        HRESULT hrc = pMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens));
-        AssertComRCReturnRC(hrc);
-        for (unsigned i = 0; i < RT_ELEMENTS(pDisplay->maVideoRecEnabled); i++)
-            pDisplay->maVideoRecEnabled[i] = i < screens.size() && screens[i];
-        ULONG ulWidth;
-        hrc = pMachine->COMGETTER(VideoCaptureWidth)(&ulWidth);
-        AssertComRCReturnRC(hrc);
-        ULONG ulHeight;
-        hrc = pMachine->COMGETTER(VideoCaptureHeight)(&ulHeight);
-        AssertComRCReturnRC(hrc);
-        ULONG ulRate;
-        hrc = pMachine->COMGETTER(VideoCaptureRate)(&ulRate);
-        AssertComRCReturnRC(hrc);
-        ULONG ulFps;
-        hrc = pMachine->COMGETTER(VideoCaptureFps)(&ulFps);
-        AssertComRCReturnRC(hrc);
-        BSTR strFile;
-        hrc = pMachine->COMGETTER(VideoCaptureFile)(&strFile);
-        AssertComRCReturnRC(hrc);
-        for (unsigned uScreen = 0; uScreen < pDisplay->mcMonitors; uScreen++)
-        {
-            char *pszAbsPath = RTPathAbsDup(com::Utf8Str(strFile).c_str());
-            char *pszExt = RTPathExt(pszAbsPath);
-            if (pszExt)
-                pszExt = RTStrDup(pszExt);
-            RTPathStripExt(pszAbsPath);
-            if (!pszAbsPath)
-                rc = VERR_INVALID_PARAMETER;
-            if (!pszExt)
-                pszExt = RTStrDup(".webm");
-            char *pszName = NULL;
-            if (RT_SUCCESS(rc))
-            {
-                if (pDisplay->mcMonitors > 1)
-                    rc = RTStrAPrintf(&pszName, "%s-%u%s", pszAbsPath, uScreen+1, pszExt);
-                else
-                    rc = RTStrAPrintf(&pszName, "%s%s", pszAbsPath, pszExt);
-            }
-            if (RT_SUCCESS(rc))
-                rc = VideoRecStrmInit(pDisplay->mpVideoRecCtx, uScreen,
-                                      pszName, ulWidth, ulHeight, ulRate, ulFps);
-            if (RT_SUCCESS(rc))
-                LogRel(("WebM/VP8 video recording screen #%u with %ux%u @ %u kbps, %u fps to '%s' enabled!\n",
-                        uScreen, ulWidth, ulHeight, ulRate, ulFps, pszName));
-            else
-                LogRel(("Failed to initialize video recording context #%u (%Rrc)!\n", uScreen, rc));
-            RTStrFree(pszName);
-            RTStrFree(pszExt);
-            RTStrFree(pszAbsPath);
-        }
-    }
+        rc = pDisplay->VideoCaptureStart();
 #endif
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
