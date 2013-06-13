@@ -1806,7 +1806,8 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureFile)(IN_BSTR aFile)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mHWData->mVideoCaptureEnabled)
+    if (   Global::IsOnline(mData->mMachineState)
+        && mHWData->mVideoCaptureEnabled)
         return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
 
     if (strFile.isEmpty())
@@ -1836,7 +1837,8 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureWidth)(ULONG aHorzRes)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mHWData->mVideoCaptureEnabled)
+    if (   Global::IsOnline(mData->mMachineState)
+        && mHWData->mVideoCaptureEnabled)
         return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
 
     setModified(IsModified_MachineData);
@@ -1863,7 +1865,8 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureHeight)(ULONG aVertRes)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mHWData->mVideoCaptureEnabled)
+    if (   Global::IsOnline(mData->mMachineState)
+        && mHWData->mVideoCaptureEnabled)
         return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
 
     setModified(IsModified_MachineData);
@@ -1890,7 +1893,8 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureRate)(ULONG aRate)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mHWData->mVideoCaptureEnabled)
+    if (   Global::IsOnline(mData->mMachineState)
+        && mHWData->mVideoCaptureEnabled)
         return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
 
     setModified(IsModified_MachineData);
@@ -1917,7 +1921,8 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureFps)(ULONG aFps)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mHWData->mVideoCaptureEnabled)
+    if (   Global::IsOnline(mData->mMachineState)
+        && mHWData->mVideoCaptureEnabled)
         return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
 
     setModified(IsModified_MachineData);
