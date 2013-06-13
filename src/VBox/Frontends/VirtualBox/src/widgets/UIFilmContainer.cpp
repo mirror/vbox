@@ -139,8 +139,8 @@ bool UIFilm::checked() const
 void UIFilm::retranslateUi()
 {
     /* Translate check-box: */
-    m_pCheckBox->setText(tr("Screen %1").arg(m_iScreenIndex + 1));
-    m_pCheckBox->setToolTip(tr("Enable video recording for screen %1.").arg(m_iScreenIndex + 1));
+    m_pCheckBox->setText(QApplication::translate("UIMachineSettingsDisplay", "Screen %1").arg(m_iScreenIndex + 1));
+    m_pCheckBox->setToolTip(QApplication::translate("UIMachineSettingsDisplay", "Enable video recording for screen %1.").arg(m_iScreenIndex + 1));
 }
 
 void UIFilm::prepare()

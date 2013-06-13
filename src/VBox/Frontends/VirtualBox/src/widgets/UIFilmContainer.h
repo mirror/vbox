@@ -29,9 +29,9 @@
 #include <VBox/com/com.h>
 
 /* Forward declarations: */
+class QVBoxLayout;
 class QScrollArea;
 class UIFilm;
-class QVBoxLayout;
 class QCheckBox;
 
 /* Transparent QScrollArea container for UIFilm widgets: */
@@ -61,7 +61,7 @@ private:
     QList<UIFilm*> m_widgets;
 };
 
-/* QWidget item for UIFilmContainer: */
+/* QWidget item prototype for UIFilmContainer: */
 class UIFilm : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -71,25 +71,23 @@ public:
     /* Constructor: */
     UIFilm(int iScreenIndex, BOOL fEnabled, QWidget *pParent = 0);
 
-    /* API: Cehck-box stuff: */
+    /* API: Check-box stuff: */
     bool checked() const;
-
-protected:
-
-    /* Helper: Translate stuff: */
-    void retranslateUi();
 
 private:
 
-    /* Helper: Prepare stuff: */
+    /* Handler: Translate stuff: */
+    void retranslateUi();
+
+    /* Helpers: Prepare stuff: */
     void prepare();
     void prepareLayout();
     void prepareCheckBox();
 
-    /* Handler: Layut stuff: */
+    /* Helper: Layout stuff: */
     QSize minimumSizeHint() const;
 
-    /* Handlers: Paint stuff: */
+    /* Handler: Paint stuff: */
     void paintEvent(QPaintEvent *pEvent);
 
     /* Variables: */
@@ -98,4 +96,5 @@ private:
     QVBoxLayout *m_pMainLayout;
     QCheckBox *m_pCheckBox;
 };
+
 #endif /* __UIFilmContainer_h__ */
