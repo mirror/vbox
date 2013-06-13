@@ -108,7 +108,7 @@ public:
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal);
-    STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, ComSafeArrayIn(AdditionsUpdateFlag_T, aFlags), IProgress **aProgress);
+    STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(AdditionsUpdateFlag_T, aFlags), IProgress **aProgress);
 
 public:
     /** @name Static internal methods.

@@ -8581,7 +8581,7 @@
 
     <attribute name="loggingLevel" type="wstring">
       <desc>
-        Specifies the logging level in current use by VirtualBox. 
+        Specifies the logging level in current use by VirtualBox.
       </desc>
     </attribute>
 
@@ -11205,7 +11205,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="19c32350-0618-4ede-b0c3-2b4311bf0d9b"
+    uuid="1a1969c1-a583-4975-9810-1dd0f0e3a8ae"
     wsmap="managed"
     >
     <desc>
@@ -11698,7 +11698,14 @@
       </desc>
       <param name="source" type="wstring" dir="in">
         <desc>
-          Path to the Guest Additions .ISO file to use for the upate.
+          Path to the Guest Additions .ISO file to use for the update.
+        </desc>
+      </param>
+      <param name="arguments" type="wstring" dir="in" safearray="yes">
+        <desc>
+          Optional command line arguments to use for the Guest Additions
+          installer. Useful for retrofitting features which weren't installed
+          before on the guest.
         </desc>
       </param>
       <param name="flags" type="AdditionsUpdateFlag" dir="in" safearray="yes">
@@ -20354,7 +20361,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       attributes to find out what is the current status.
     </desc>
   </interface>
-  
+
   <interface
     name="IVideoCaptureChangedEvent" extends="IEvent"
     uuid="6215d169-25dd-4719-ab34-c908701efb58"

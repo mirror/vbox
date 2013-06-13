@@ -839,16 +839,58 @@ int SessionTaskCopyFrom::taskThread(RTTHREAD Thread, void *pvUser)
 }
 
 SessionTaskUpdateAdditions::SessionTaskUpdateAdditions(GuestSession *pSession,
-                                                       const Utf8Str &strSource, uint32_t uFlags)
+                                                       const Utf8Str &strSource,
+                                                       const ProcessArguments &aArguments,
+                                                       uint32_t uFlags)
                                                        : GuestSessionTask(pSession)
 {
     mSource = strSource;
+    mArguments = aArguments;
     mFlags  = uFlags;
 }
 
 SessionTaskUpdateAdditions::~SessionTaskUpdateAdditions(void)
 {
 
+}
+
+int SessionTaskUpdateAdditions::addProcessArguments(ProcessArguments &aArgumentsDest,
+                                                    const ProcessArguments &aArgumentsSource)
+{
+    int rc = VINF_SUCCESS;
+
+    try
+    {
+        /* Filter out arguments which already are in the destination to
+         * not end up having them specified twice. Not the fastest method on the
+         * planet but does the job. */
+        ProcessArguments::const_iterator itSource = aArgumentsSource.begin();
+        while (itSource != aArgumentsSource.end())
+        {
+            bool fFound = false;
+            ProcessArguments::iterator itDest = aArgumentsDest.begin();
+            while (itDest != aArgumentsDest.end())
+            {
+                if ((*itDest).equalsIgnoreCase((*itSource)))
+                {
+                    fFound = true;
+                    break;
+                }
+                itDest++;
+            }
+
+            if (!fFound)
+                aArgumentsDest.push_back((*itSource));
+
+            itSource++;
+        }
+    }
+    catch(std::bad_alloc &)
+    {
+        return VERR_NO_MEMORY;
+    }
+
+    return rc;
 }
 
 int SessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, PRTISOFSFILE pISO,
@@ -1330,6 +1372,10 @@ int SessionTaskUpdateAdditions::Run(void)
                          * using a running VBoxTray instance via balloon messages in the
                          * Windows taskbar. */
                         siInstaller.mArguments.push_back(Utf8Str("/post_installstatus"));
+                        /* Add optional installer command line arguments from the API to the
+                         * installer's startup info. */
+                        rc = addProcessArguments(siInstaller.mArguments, mArguments);
+                        AssertRC(rc);
                         /* If the caller does not want to wait for out guest update process to end,
                          * complete the progress object now so that the caller can do other work. */
                         if (mFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly)

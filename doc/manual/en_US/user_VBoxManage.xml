@@ -3215,7 +3215,7 @@ Value: 2006.01.01</screen>
 
           <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; updateadditions
             [--source "&lt;guest additions .ISO file to use&gt;"] [--verbose]
-            [--wait-start]</screen>
+            [--wait-start] [-- [&lt;argument1&gt;] ... [&lt;argumentN&gt;]]</screen>
 
           <para>where the parameters mean: <glosslist>
               <glossentry>
@@ -3253,6 +3253,18 @@ Value: 2006.01.01</screen>
                     guest OS during the installation phase.</para>
                   <para>When omitting this flag VBoxManage will wait for the
                     whole Guest Additions update to complete.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm>[-- [&lt;argument1s&gt;] ... [&lt;argumentNs&gt;]]</glossterm>
+
+                <glossdef>
+                  <para>Optional command line arguments to use for the Guest Additions
+                  installer. Useful for retrofitting features which weren't installed
+                  before on the guest.</para>
+                  <para>Arguments containing spaces must be enclosed in
+                  quotation marks.</para>
                 </glossdef>
               </glossentry>
             </glosslist></para>

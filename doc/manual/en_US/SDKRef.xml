@@ -3643,6 +3643,14 @@ AuthResult AUTHCALL AuthEntry(
             APIs are now implemented to provide native guest file access from
             the host.</para>
         </listitem>
+
+        <listitem>
+          <para>The parameter list for <xref
+          linkend="IGuest__updateGuestAdditions"
+          xreflabel="IMedium::updateGuestAdditions()" /> was modified.</para>
+          It now supports specifying optional command line arguments for the
+          Guest Additions installer performing the actual update on the guest.
+        </listitem>
       </itemizedlist>
     </sect1>
 
