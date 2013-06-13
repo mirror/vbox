@@ -90,19 +90,6 @@ void OVFReader::parse()
         m_envelopeData.setOVFVersion(ovf::OVFVersion_0_9);
     }
 
-//    if ((pTypeAttr = pRootElem->findAttribute("version")))
-//    {
-//        pcszTypeAttr = pTypeAttr->getValue();
-//        m_envelopeData.version = pcszTypeAttr;
-//    }
-//    else
-//    {
-//        throw OVFLogicError(N_("Error reading \"%s\": missing or invalid attribute '%s' in 'Envelope' element, line %d"),
-//                           m_strPath.c_str(),
-//                            "version",
-//                            pRootElem->getLineNumber());
-//    }
-
     if ((pTypeAttr = pRootElem->findAttribute("xml:lang")))
     {
         pcszTypeAttr = pTypeAttr->getValue();
@@ -254,6 +241,7 @@ void OVFReader::HandleDiskSection(const xml::ElementNode *pReferencesElem,
                      && ((pFileElem = pReferencesElem->findChildElementFromId(pcszFileRef)))
                    )
                 {
+
                     // copy remaining values from file node then
                     const char *pcszBadInFile = NULL;
                     const char *pcszHref;
@@ -431,94 +419,80 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                     vsys.strVirtualSystemType = pelmVirtualSystemType->getValue();
             }
 
-            xml::NodesLoop loopVirtualHardwareItems(*pelmThis, "Item");      // all "Item" child elements
-            const xml::ElementNode *pelmItem;
-            while ((pelmItem = loopVirtualHardwareItems.forAllNodes()))
             {
-                VirtualHardwareItem i;
-
-                i.ulLineNumber = pelmItem->getLineNumber();
-
-                xml::NodesLoop loopItemChildren(*pelmItem);      // all child elements
-                const xml::ElementNode *pelmItemChild;
-                while ((pelmItemChild = loopItemChildren.forAllNodes()))
+                xml::NodesLoop loopVirtualHardwareItems(*pelmThis, "Item");      // all "Item" child elements
+                const xml::ElementNode *pelmItem;
+                while ((pelmItem = loopVirtualHardwareItems.forAllNodes()))
                 {
-                    const char *pcszItemChildName = pelmItemChild->getName();
-                    if (!strcmp(pcszItemChildName, "Description"))
-                        i.strDescription = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "Caption"))
-                        i.strCaption = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "ElementName"))
-                        i.strElementName = pelmItemChild->getValue();
-                    else if (    (!strcmp(pcszItemChildName, "InstanceID"))
-                              || (!strcmp(pcszItemChildName, "InstanceId"))
-                            )
-                        pelmItemChild->copyValue(i.ulInstanceID);
-                    else if (!strcmp(pcszItemChildName, "HostResource"))
-                        i.strHostResource = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "ResourceType"))
-                    {
-                        uint32_t ulType;
-                        pelmItemChild->copyValue(ulType);
-                        i.resourceType = (ResourceType_T)ulType;
-                        i.fResourceRequired = true;
-                        const char *pcszAttValue;
-                        if (pelmItem->getAttributeValue("required", pcszAttValue))
-                        {
-                            if (!strcmp(pcszAttValue, "false"))
-                                i.fResourceRequired = false;
-                        }
-                    }
-                    else if (!strcmp(pcszItemChildName, "OtherResourceType"))
-                        i.strOtherResourceType = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "ResourceSubType"))
-                        i.strResourceSubType = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "AutomaticAllocation"))
-                        i.fAutomaticAllocation = (!strcmp(pelmItemChild->getValue(), "true")) ? true : false;
-                    else if (!strcmp(pcszItemChildName, "AutomaticDeallocation"))
-                        i.fAutomaticDeallocation = (!strcmp(pelmItemChild->getValue(), "true")) ? true : false;
-                    else if (!strcmp(pcszItemChildName, "Parent"))
-                        pelmItemChild->copyValue(i.ulParent);
-                    else if (!strcmp(pcszItemChildName, "Connection"))
-                        i.strConnection = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "Address"))
-                    {
-                        i.strAddress = pelmItemChild->getValue();
-                        pelmItemChild->copyValue(i.lAddress);
-                    }
-                    else if (!strcmp(pcszItemChildName, "AddressOnParent"))
-                        i.strAddressOnParent = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "AllocationUnits"))
-                        i.strAllocationUnits = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "VirtualQuantity"))
-                        pelmItemChild->copyValue(i.ullVirtualQuantity);
-                    else if (!strcmp(pcszItemChildName, "Reservation"))
-                        pelmItemChild->copyValue(i.ullReservation);
-                    else if (!strcmp(pcszItemChildName, "Limit"))
-                        pelmItemChild->copyValue(i.ullLimit);
-                    else if (!strcmp(pcszItemChildName, "Weight"))
-                        pelmItemChild->copyValue(i.ullWeight);
-                    else if (!strcmp(pcszItemChildName, "ConsumerVisibility"))
-                        i.strConsumerVisibility = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "MappingBehavior"))
-                        i.strMappingBehavior = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "PoolID"))
-                        i.strPoolID = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "BusNumber"))       // seen in some old OVF, but it's not listed in the OVF specs
-                        pelmItemChild->copyValue(i.ulBusNumber);
-                    else if (   pelmItemChild->getPrefix() == NULL
-                             || strcmp(pelmItemChild->getPrefix(), "vmw"))
-                        throw OVFLogicError(N_("Error reading \"%s\": unknown element \"%s\" under Item element, line %d"),
-                                            m_strPath.c_str(),
-                                            pcszItemChildName,
-                                            i.ulLineNumber);
-                }
+                    VirtualHardwareItem i;
 
-                // store!
-                vsys.mapHardwareItems[i.ulInstanceID] = i;
+                    i.ulLineNumber = pelmItem->getLineNumber();
+                    i.fillItem(pelmItem);
+                    try{
+                        i.checkConsistencyAndCompliance();
+                    }
+                    catch (OVFLogicError &e)
+                    {
+                        throw OVFLogicError(N_("Error reading \"%s\": \"%s\""),
+                                            m_strPath.c_str(),
+                                            e.what());
+                    }
+
+                    // store!
+                    vsys.mapHardwareItems[i.ulInstanceID] = i;
+                }
             }
 
-            HardDiskController *pPrimaryIDEController = NULL;       // will be set once found
+            {
+                xml::NodesLoop loopVirtualHardwareItems(*pelmThis, "StorageItem");// all "StorageItem" child elements
+                const xml::ElementNode *pelmItem;
+                while ((pelmItem = loopVirtualHardwareItems.forAllNodes()))
+                {
+                    StorageItem i;
+
+                    i.ulLineNumber = pelmItem->getLineNumber();
+                    i.fillItem(pelmItem);
+
+                    try
+                    {
+                        i.checkConsistencyAndCompliance();
+                    }
+                    catch (OVFLogicError &e)
+                    {
+                        throw OVFLogicError(N_("Error reading \"%s\": \"%s\""),
+                                            m_strPath.c_str(),
+                                            e.what());
+                    }
+
+                    vsys.mapHardwareItems[i.ulInstanceID] = i;
+                }
+            }
+
+            {
+                xml::NodesLoop loopVirtualHardwareItems(*pelmThis, "EthernetPortItem");// all "EthernetPortItem" child elements
+                const xml::ElementNode *pelmItem;
+                while ((pelmItem = loopVirtualHardwareItems.forAllNodes()))
+                {
+                    EthernetPortItem i;
+
+                    i.ulLineNumber = pelmItem->getLineNumber();
+                    i.fillItem(pelmItem);
+
+                    try{
+                        i.checkConsistencyAndCompliance();
+                    }
+                    catch (OVFLogicError &e)
+                    {
+                        throw OVFLogicError(N_("Error reading \"%s\": \"%s\""),
+                                            m_strPath.c_str(),
+                                            e.what());
+                    }
+
+                    vsys.mapHardwareItems[i.ulInstanceID] = i;
+                }
+            }
+
+            HardDiskController *pPrimaryIDEController = NULL;// will be set once found
 
             // now go thru all hardware items and handle them according to their type;
             // in this first loop we handle all items _except_ hard disk images,
@@ -854,6 +828,224 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
 
     // now create the virtual system
     m_llVirtualSystems.push_back(vsys);
+}
+
+void VirtualHardwareItem::fillItem(const xml::ElementNode *item)
+{
+    xml::NodesLoop loopItemChildren(*item);// all child elements
+    const xml::ElementNode *pelmItemChild;
+    while ((pelmItemChild = loopItemChildren.forAllNodes()))
+    {
+        const char *pcszItemChildName = pelmItemChild->getName();
+        if (!strcmp(pcszItemChildName, "Description"))
+            strDescription = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "Caption"))
+            strCaption = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "ElementName"))
+            strElementName = pelmItemChild->getValue();
+        else if ((!strcmp(pcszItemChildName, "InstanceID"))
+                 ||(!strcmp(pcszItemChildName, "InstanceId"))
+                )
+            pelmItemChild->copyValue(ulInstanceID);
+        else if (!strcmp(pcszItemChildName, "HostResource"))
+            strHostResource = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "ResourceType"))
+        {
+            uint32_t ulType;
+            pelmItemChild->copyValue(ulType);
+            resourceType = (ResourceType_T)ulType;
+            fResourceRequired = true;
+            const char *pcszAttValue;
+            if (pelmItemChild->getAttributeValue("required", pcszAttValue))
+            {
+                if (!strcmp(pcszAttValue, "false"))
+                    fResourceRequired = false;
+            }
+        }
+        else if (!strcmp(pcszItemChildName, "OtherResourceType"))
+            strOtherResourceType = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "ResourceSubType"))
+            strResourceSubType = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "AutomaticAllocation"))
+            fAutomaticAllocation = (!strcmp(pelmItemChild->getValue(), "true")) ? true : false;
+        else if (!strcmp(pcszItemChildName, "AutomaticDeallocation"))
+            fAutomaticDeallocation = (!strcmp(pelmItemChild->getValue(), "true")) ? true : false;
+        else if (!strcmp(pcszItemChildName, "Parent"))
+            pelmItemChild->copyValue(ulParent);
+        else if (!strcmp(pcszItemChildName, "Connection"))
+            strConnection = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "Address"))
+        {
+            strAddress = pelmItemChild->getValue();
+            pelmItemChild->copyValue(lAddress);
+        }
+        else if (!strcmp(pcszItemChildName, "AddressOnParent"))
+            strAddressOnParent = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "AllocationUnits"))
+            strAllocationUnits = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "VirtualQuantity"))
+            pelmItemChild->copyValue(ullVirtualQuantity);
+        else if (!strcmp(pcszItemChildName, "Reservation"))
+            pelmItemChild->copyValue(ullReservation);
+        else if (!strcmp(pcszItemChildName, "Limit"))
+            pelmItemChild->copyValue(ullLimit);
+        else if (!strcmp(pcszItemChildName, "Weight"))
+            pelmItemChild->copyValue(ullWeight);
+        else if (!strcmp(pcszItemChildName, "ConsumerVisibility"))
+            strConsumerVisibility = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "MappingBehavior"))
+            strMappingBehavior = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "PoolID"))
+            strPoolID = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "BusNumber"))
+            pelmItemChild->copyValue(ulBusNumber);
+//      else if (pelmItemChild->getPrefix() == NULL
+//               || strcmp(pelmItemChild->getPrefix(), "vmw"))
+//          throw OVFLogicError(N_("Unknown element \"%s\" under Item element, line %d"),
+//                              pcszItemChildName,
+//                              ulLineNumber);
+    }
+}
+
+void VirtualHardwareItem::_checkConsistencyAndCompliance() throw (OVFLogicError)
+{
+    RTCString name = getItemName();
+    if (ulInstanceID == 0)
+        throw OVFLogicError(N_("Element InstanceID is absent under %s element, line %d. "
+                               "see DMTF Schema Documentation %s"),
+                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+    if (resourceType == 0)
+        throw OVFLogicError(N_("Empty element ResourceType under %s element, line %d. "
+                               "see DMTF Schema Documentation %s"),
+                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+}
+
+void StorageItem::fillItem(const xml::ElementNode *item)
+{
+    VirtualHardwareItem::fillItem(item);
+
+    xml::NodesLoop loopItemChildren(*item);// all child elements
+    const xml::ElementNode *pelmItemChild;
+    while ((pelmItemChild = loopItemChildren.forAllNodes()))
+    {
+        const char *pcszItemChildName = pelmItemChild->getName();
+        if (!strcmp(pcszItemChildName, "HostExtentName"))
+            strHostExtentName = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "OtherHostExtentNameFormat"))
+            strOtherHostExtentNameFormat = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "OtherHostExtentNameNamespace"))
+            strOtherHostExtentNameNamespace = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "VirtualQuantityUnits"))
+            strVirtualQuantityUnits = pelmItemChild->getValue();
+        else if (!strcmp(pcszItemChildName, "Access"))
+        {
+            uint32_t temp;
+            pelmItemChild->copyValue(temp);
+            accessType = (StorageAccessType_T)temp;
+        }
+        else if (!strcmp(pcszItemChildName, "HostExtentNameFormat"))
+        {
+        }
+        else if (!strcmp(pcszItemChildName, "HostExtentNameNamespace"))
+        {
+        }
+        else if (!strcmp(pcszItemChildName, "HostExtentStartingAddress"))
+        {
+        }
+        else if (!strcmp(pcszItemChildName, "HostResourceBlockSize"))
+        {
+            int64_t temp;
+            pelmItemChild->copyValue(temp);
+            hostResourceBlockSize = temp;
+        }
+        else if (!strcmp(pcszItemChildName, "Limit"))
+        {
+            int64_t temp;
+            pelmItemChild->copyValue(temp);
+            limit = temp;
+        }
+        else if (!strcmp(pcszItemChildName, "Reservation"))
+        {
+            int64_t temp;
+            pelmItemChild->copyValue(temp);
+            reservation = temp;
+        }
+        else if (!strcmp(pcszItemChildName, "VirtualQuantity"))
+        {
+            int64_t temp;
+            pelmItemChild->copyValue(temp);
+            virtualQuantity = temp;
+        }
+        else if (!strcmp(pcszItemChildName, "VirtualResourceBlockSize"))
+        {
+            int64_t temp;
+            pelmItemChild->copyValue(temp);
+            virtualResourceBlockSize = temp;
+        }
+    }
+}
+
+
+void StorageItem::_checkConsistencyAndCompliance() throw (OVFLogicError)
+{
+    VirtualHardwareItem::_checkConsistencyAndCompliance();
+
+    RTCString name = getItemName();
+
+    if (accessType == StorageAccessType_Unknown)
+    {
+        //throw OVFLogicError(N_("Access type is unknown under %s element, line %d"),
+        //        name.c_str(), ulLineNumber);
+    }
+
+    if (hostResourceBlockSize <= 0 && reservation > 0)
+    {
+        throw OVFLogicError(N_("Element HostResourceBlockSize is absent under %s element, line %d. "
+                               "see DMTF Schema Documentation %s"),
+                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+    }
+
+    if (virtualResourceBlockSize <= 0 && virtualQuantity > 0)
+    {
+        throw OVFLogicError(N_("Element VirtualResourceBlockSize is absent under %s element, line %d. "
+                               "see DMTF Schema Documentation %s"),
+                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+    }
+
+    if (virtualQuantity > 0 && strVirtualQuantityUnits.isEmpty())
+    {
+        throw OVFLogicError(N_("Element VirtualQuantityUnits is absent under %s element, line %d. "
+                               "see DMTF Schema Documentation %s"),
+                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+    }
+
+    if (virtualResourceBlockSize <= 1 &&
+        strVirtualQuantityUnits.compare(RTCString("count"), RTCString::CaseInsensitive) == 0
+       )
+    {
+        throw OVFLogicError(N_("Element VirtualQuantityUnits is set to \"count\" "
+                               "while VirtualResourceBlockSize is set to 1. "
+                               "under %s element, line %d. "
+                               "It's needed to change on \"byte\". "
+                               "see DMTF Schema Documentation %s"),
+                                name.c_str(), ulLineNumber, DTMF_SPECS_URI);
+    }
+}
+
+void EthernetPortItem::fillItem(const xml::ElementNode *item)
+{
+    VirtualHardwareItem::fillItem(item);
+
+    xml::NodesLoop loopItemChildren(*item);// all child elements
+    const xml::ElementNode *pelmItemChild;
+    while ((pelmItemChild = loopItemChildren.forAllNodes()))
+    {
+    }
+}
+
+void EthernetPortItem::_checkConsistencyAndCompliance() throw (OVFLogicError)
+{
+    VirtualHardwareItem::_checkConsistencyAndCompliance();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

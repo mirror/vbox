@@ -28,6 +28,24 @@ namespace ovf
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+// Errors
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Thrown by OVFReader for any kind of error that is not an XML error but
+ * still makes the OVF impossible to parse. Based on xml::LogicError so
+ * that one catch() for all xml::LogicError can handle all possible errors.
+ */
+
+class OVFLogicError : public xml::LogicError
+{
+public:
+    OVFLogicError(const char *aFormat, ...);
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
 // Enumerations
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -172,6 +190,8 @@ const char* const OVF09_URI_string = "http://www.vmware.com/schema/ovf/1/envelop
 const char* const OVF10_URI_string = "http://schemas.dmtf.org/ovf/envelope/1";
 const char* const OVF20_URI_string = "http://schemas.dmtf.org/ovf/envelope/2";
 
+const char* const DTMF_SPECS_URI = "http://schemas.dmtf.org/wbem/cim-html/2/";
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Envelope data
@@ -205,6 +225,15 @@ struct EnvelopeData
         version = v;
     }
 };
+
+
+struct FileReference
+{
+    RTCString strHref;       // value from /References/File/@href (filename)
+    RTCString strDiskId;     // value from /References/File/@id ()
+};
+
+typedef std::map<uint32_t, FileReference> FileReferenceMap;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -260,8 +289,24 @@ enum ResourceType_T
     ResourceType_SoundCard   = 35
 };
 
-struct VirtualHardwareItem
+
+enum StorageAccessType_T
+{   StorageAccessType_Unknown = 0,
+    StorageAccessType_Readable = 1,
+    StorageAccessType_Writeable = 2,
+    StorageAccessType_ReadWrite = 3
+};
+
+enum ComplianceType_T
+{   ComplianceType_No = 0,
+    ComplianceType_Soft = 1,
+    ComplianceType_Medium = 2,
+    ComplianceType_Strong = 3
+};
+
+class VirtualHardwareItem
 {
+public:
     RTCString strDescription;
     RTCString strCaption;
     RTCString strElementName;
@@ -309,7 +354,133 @@ struct VirtualHardwareItem
           ullWeight(0),
           ulBusNumber(0),
           ulLineNumber(0)
-    {};
+    {
+        itemName = "Item";
+    };
+
+    void fillItem(const xml::ElementNode *item);
+
+    void setDefaultFlag()
+    {
+        fDefault = true;
+    }
+
+    bool isThereDefaultValues() const
+    {
+        return fDefault;
+    }
+
+    void checkConsistencyAndCompliance() throw (OVFLogicError)
+    {
+        _checkConsistencyAndCompliance();
+    }
+
+protected:
+    virtual void _checkConsistencyAndCompliance() throw (OVFLogicError);
+    virtual const RTCString& getItemName() 
+    {
+        return _getItemName();
+    }
+
+private:
+    RTCString itemName;
+    bool fDefault;//true means that some fields were absent in the XML and some default values were assigned to.
+
+    virtual const RTCString& _getItemName() 
+    {
+        return itemName;
+    }
+};
+
+class StorageItem: public VirtualHardwareItem
+{
+    //see DMTF Schema Documentation http://schemas.dmtf.org/wbem/cim-html/2/
+    StorageAccessType_T accessType;
+    RTCString strHostExtentName;
+    int16_t hostExtentNameFormat;
+    int16_t hostExtentNameNamespace;
+    int64_t hostExtentStartingAddress;
+    int64_t hostResourceBlockSize;
+    int64_t limit;
+    RTCString strOtherHostExtentNameFormat;
+    RTCString strOtherHostExtentNameNamespace;
+    int64_t reservation;
+    int64_t virtualQuantity;
+    RTCString strVirtualQuantityUnits;
+    int64_t virtualResourceBlockSize;
+
+public:
+    StorageItem(): VirtualHardwareItem(),
+        accessType(StorageAccessType_Unknown),
+        hostExtentNameFormat(-1),
+        hostExtentNameNamespace(-1),
+        hostExtentStartingAddress(-1),
+        hostResourceBlockSize(-1),
+        limit(-1),
+        reservation(-1),
+        virtualQuantity(-1),
+        virtualResourceBlockSize(-1)
+    {
+        itemName = "StorageItem";
+    };
+
+    void fillItem(const xml::ElementNode *item);
+
+protected:
+    virtual void _checkConsistencyAndCompliance() throw (OVFLogicError);
+private:
+    RTCString itemName;
+
+    virtual const RTCString& _getItemName() 
+    {
+        return itemName;
+    }
+};
+
+
+class EthernetPortItem: public VirtualHardwareItem
+{
+    //see DMTF Schema Documentation http://schemas.dmtf.org/wbem/cim-html/2/
+    uint16_t DefaultPortVID;
+    uint16_t DefaultPriority;
+    uint16_t DesiredVLANEndpointMode;
+    uint32_t GroupID;
+    uint32_t ManagerID;
+    RTCString strNetworkPortProfileID;
+    uint16_t NetworkPortProfileIDType;
+    RTCString strOtherEndpointMode;
+    RTCString strOtherNetworkPortProfileIDTypeInfo;
+    RTCString strPortCorrelationID;
+    uint16_t PortVID;
+    bool Promiscuous;
+    uint64_t ReceiveBandwidthLimit;
+    uint16_t ReceiveBandwidthReservation;
+    bool SourceMACFilteringEnabled;
+    uint32_t VSITypeID;
+    uint8_t VSITypeIDVersion;
+    uint16_t AllowedPriorities[256];
+    RTCString strAllowedToReceiveMACAddresses;
+    uint16_t AllowedToReceiveVLANs[256];
+    RTCString strAllowedToTransmitMACAddresses;
+    uint16_t AllowedToTransmitVLANs[256];
+
+public:
+    EthernetPortItem(): VirtualHardwareItem()
+    {
+        itemName = "EthernetPortItem";
+    };
+
+    void fillItem(const xml::ElementNode *item);
+
+protected:
+    virtual void _checkConsistencyAndCompliance() throw (OVFLogicError);
+private:
+    RTCString itemName;
+
+    virtual const RTCString& _getItemName() 
+    {
+        return itemName;
+    }
 };
 
 typedef std::map<RTCString, DiskImage> DiskImagesMap;
@@ -481,24 +652,6 @@ private:
     void HandleDiskSection(const xml::ElementNode *pReferencesElem, const xml::ElementNode *pSectionElem);
     void HandleNetworkSection(const xml::ElementNode *pSectionElem);
     void HandleVirtualSystemContent(const xml::ElementNode *pContentElem);
-};
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// Errors
-//
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Thrown by OVFReader for any kind of error that is not an XML error but
- * still makes the OVF impossible to parse. Based on xml::LogicError so
- * that one catch() for all xml::LogicError can handle all possible errors.
- */
-
-class OVFLogicError : public xml::LogicError
-{
-public:
-    OVFLogicError(const char *aFormat, ...);
 };
 
 } // end namespace ovf
