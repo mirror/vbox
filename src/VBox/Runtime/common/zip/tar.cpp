@@ -89,16 +89,6 @@ AssertCompileMemberSize(RTTARRECORD, h.name, RTTAR_NAME_MAX+1);
 /** Pointer to a tar file header. */
 typedef RTTARRECORD *PRTTARRECORD;
 
-
-#if 0 /* not currently used */
-typedef struct RTTARFILELIST
-{
-    char *pszFilename;
-    RTTARFILELIST *pNext;
-} RTTARFILELIST;
-typedef RTTARFILELIST *PRTTARFILELIST;
-#endif
-
 /** Pointer to a tar file handle. */
 typedef struct RTTARFILEINTERNAL *PRTTARFILEINTERNAL;
 
@@ -148,6 +138,16 @@ typedef struct RTTARFILEINTERNAL
 } RTTARFILEINTERNAL;
 /** Pointer to the internal data of a tar file.  */
 typedef RTTARFILEINTERNAL *PRTTARFILEINTERNAL;
+
+#if 0 /* not currently used */
+typedef struct RTTARFILELIST
+{
+    char *pszFilename;
+    RTTARFILELIST *pNext;
+} RTTARFILELIST;
+typedef RTTARFILELIST *PRTTARFILELIST;
+#endif
+
 
 
 /******************************************************************************

@@ -35,7 +35,6 @@
 /******************************************************************************
  *   Structures and Typedefs                                                  *
  ******************************************************************************/
-
 typedef struct FILESTORAGEINTERNAL
 {
     /** File handle. */
@@ -281,7 +280,7 @@ static int tarOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen
 
     int rc = VINF_SUCCESS;
 
-    if (   fOpen & RTFILE_O_READ
+    if (fOpen & RTFILE_O_READ
         && !(fOpen & RTFILE_O_WRITE))
     {
         /* Read only is a little bit more complicated than writing, cause we
@@ -297,6 +296,7 @@ static int tarOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen
          *
          */
         bool fFound = false;
+
         for (;;)
         {
             char *pszFilename = 0;
@@ -311,7 +311,9 @@ static int tarOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen
                 {
                     rc = RTTarSeekNextFile(tar);
                     if (RT_FAILURE(rc))
+                    {
                         break;
+                    }
                 }
             }
             else

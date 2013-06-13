@@ -18,8 +18,8 @@
 
 #include <iprt/path.h>
 #include <iprt/cpp/utils.h>
-
 #include <VBox/com/array.h>
+#include <map>
 
 #include "ApplianceImpl.h"
 #include "VFSExplorerImpl.h"
@@ -28,7 +28,8 @@
 #include "Global.h"
 #include "ProgressImpl.h"
 #include "MachineImpl.h"
-
+#include "MediumFormatImpl.h"
+#include "SystemPropertiesImpl.h"
 #include "AutoCaller.h"
 #include "Logging.h"
 
@@ -41,6 +42,20 @@ using namespace std;
 // Internal helpers
 //
 ////////////////////////////////////////////////////////////////////////////////
+
+static const char* const strISOURI = "http://www.ecma-international.org/publications/standards/Ecma-119.htm";
+static const char* const strVMDKStreamURI = "http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized";
+static const char* const strVMDKSparseURI = "http://www.vmware.com/specifications/vmdk.html#sparse";
+static const char* const strVMDKCompressedURI = "http://www.vmware.com/specifications/vmdk.html#compressed";
+static const char* const strVMDKCompressedURI2 = "http://www.vmware.com/interfaces/specifications/vmdk.html#compressed";
+static const char* const strVHDURI = "http://go.microsoft.com/fwlink/?LinkId=137171";
+
+static std::map<Utf8Str, Utf8Str> supportedStandardsURI;
+
+static const char* const applianceIOTarName = "Appliance::IOTar";
+static const char* const applianceIOFileName = "Appliance::IOFile";
+
+static std::map<APPLIANCEIONAME, Utf8Str> applianceIONameMap;
 
 static const struct
 {
@@ -303,6 +318,7 @@ bool checkComplianceDigestAndOVFVersion(bool fDigestType, ovf::OVFVersion_T ovfV
     return res;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // IVirtualBox public methods
@@ -354,6 +370,7 @@ Appliance::~Appliance()
  */
 HRESULT Appliance::init(VirtualBox *aVirtualBox)
 {
+    HRESULT rc = S_OK;
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -364,10 +381,14 @@ HRESULT Appliance::init(VirtualBox *aVirtualBox)
     // initialize data
     m = new Data;
 
+    initApplianceIONameMap();
+
+    rc = initSetOfSupportedStandardsURI();
+
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
-    return S_OK;
+    return rc;
 }
 
 /**
@@ -602,6 +623,112 @@ STDMETHODIMP Appliance::GetWarnings(ComSafeArrayOut(BSTR, aWarnings))
 // Appliance private methods
 //
 ////////////////////////////////////////////////////////////////////////////////
+
+HRESULT Appliance::initSetOfSupportedStandardsURI()
+{
+    HRESULT rc = S_OK;
+    if (!supportedStandardsURI.empty())
+        return rc;
+
+    /* Get the system properties. */
+    SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
+    {
+        ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension("iso");
+        if (trgFormat.isNull())
+            return setError(E_FAIL, tr("Can't find appropriate medium format for ISO type of a virtual disk."));
+
+        Bstr bstrFormatName;
+        rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+        if (FAILED(rc)) return rc;
+
+        Utf8Str strTrgFormat = Utf8Str(bstrFormatName);
+
+        supportedStandardsURI.insert(std::make_pair(Utf8Str(strISOURI), strTrgFormat));
+    }
+
+    {
+        ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension("vmdk");
+        if (trgFormat.isNull())
+            return setError(E_FAIL, tr("Can't find appropriate medium format for VMDK type of a virtual disk."));
+
+        Bstr bstrFormatName;
+        rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+        if (FAILED(rc)) return rc;
+
+        Utf8Str strTrgFormat = Utf8Str(bstrFormatName);
+
+        supportedStandardsURI.insert(std::make_pair(Utf8Str(strVMDKStreamURI), strTrgFormat));
+        supportedStandardsURI.insert(std::make_pair(Utf8Str(strVMDKSparseURI), strTrgFormat));
+        supportedStandardsURI.insert(std::make_pair(Utf8Str(strVMDKCompressedURI), strTrgFormat));
+        supportedStandardsURI.insert(std::make_pair(Utf8Str(strVMDKCompressedURI2), strTrgFormat));
+    }
+
+    {
+        ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension("vhd");
+        if (trgFormat.isNull())
+            return setError(E_FAIL, tr("Can't find appropriate medium format for VHD type of a virtual disk."));
+
+        Bstr bstrFormatName;
+        rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+        if (FAILED(rc)) return rc;
+
+        Utf8Str strTrgFormat = Utf8Str(bstrFormatName);
+
+        supportedStandardsURI.insert(std::make_pair(Utf8Str(strVHDURI), strTrgFormat));
+    }
+
+    return rc;
+}
+
+Utf8Str Appliance::typeOfVirtualDiskFormatFromURI(Utf8Str uri) const
+{
+    Utf8Str type;
+    std::map<Utf8Str, Utf8Str>::const_iterator cit = supportedStandardsURI.find(uri);
+    if (cit != supportedStandardsURI.end())
+    {
+        type = cit->second;
+    }
+
+    return type;
+}
+
+std::set<Utf8Str> Appliance::URIFromTypeOfVirtualDiskFormat(Utf8Str type)
+{
+    std::set<Utf8Str> uri;
+    std::map<Utf8Str, Utf8Str>::const_iterator cit = supportedStandardsURI.begin();
+    while(cit != supportedStandardsURI.end())
+    {
+        if (cit->second.compare(type,Utf8Str::CaseInsensitive) == 0)
+            uri.insert(cit->first);
+        ++cit;
+    }
+
+    return uri;
+}
+
+HRESULT Appliance::initApplianceIONameMap()
+{
+    HRESULT rc = S_OK;
+    if (!applianceIONameMap.empty())
+        return rc;
+
+        applianceIONameMap.insert(std::make_pair(applianceIOTar, applianceIOTarName));
+        applianceIONameMap.insert(std::make_pair(applianceIOFile, applianceIOFileName));
+
+    return rc;
+}
+
+Utf8Str Appliance::applianceIOName(APPLIANCEIONAME type) const
+{
+    Utf8Str name;
+    std::map<APPLIANCEIONAME, Utf8Str>::const_iterator cit = applianceIONameMap.find(type);
+    if (cit != applianceIONameMap.end())
+    {
+        name = cit->second;
+    }
+
+    return name;
+}
 
 /**
  * Returns true if the appliance is in "idle" state. This should always be the

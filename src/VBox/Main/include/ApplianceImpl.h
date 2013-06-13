@@ -26,8 +26,12 @@
 /* Todo: This file needs massive cleanup. Split IAppliance in a public and
  * private classes. */
 #include <iprt/tar.h>
+#include <iprt/circbuf.h>
+#include <VBox/vd.h>
+#include <iprt/sha.h>
 
 #include "ovfreader.h"
+#include <set>
 
 /* VBox forward declarations */
 class Progress;
@@ -37,6 +41,8 @@ struct LocationInfo;
 typedef struct VDINTERFACE   *PVDINTERFACE;
 typedef struct VDINTERFACEIO *PVDINTERFACEIO;
 typedef struct SHASTORAGE    *PSHASTORAGE;
+
+typedef enum applianceIOName { applianceIOTar, applianceIOFile } APPLIANCEIONAME;
 
 namespace ovf
 {
@@ -138,6 +144,16 @@ private:
 
     static DECLCALLBACK(int) taskThreadImportOrExport(RTTHREAD aThread, void *pvUser);
 
+    HRESULT initSetOfSupportedStandardsURI();
+
+    Utf8Str typeOfVirtualDiskFormatFromURI(Utf8Str type) const;
+
+    std::set<Utf8Str> URIFromTypeOfVirtualDiskFormat(Utf8Str type);
+
+    HRESULT initApplianceIONameMap();
+
+    Utf8Str applianceIOName(APPLIANCEIONAME type) const;
+
     /*******************************************************************************
      * Read stuff
      ******************************************************************************/
@@ -177,6 +193,7 @@ private:
                             ImportStack &stack,
                             PVDINTERFACEIO pCallbacks,
                             PSHASTORAGE pStorage);
+
     void importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                               ComObjPtr<VirtualSystemDescription> &vsdescThis,
                               ComPtr<IMachine> &pNewMachine,
@@ -217,6 +234,9 @@ private:
                                      ComObjPtr<VirtualSystemDescription> &vsdescThis,
                                      ovf::OVFVersion_T enFormat,
                                      XMLStack &stack);
+
+    HRESULT preCheckImageAvailability(PSHASTORAGE pSHAStorage,
+                                      RTCString &availableImage);
 
     friend class Machine;
 };

@@ -1229,6 +1229,10 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
 
             uint64_t uTemp;
 
+            ovf::VirtualHardwareItem vhi;
+            ovf::StorageItem si;
+            ovf::EthernetPortItem epi;
+
             switch (desc.type)
             {
                 case VirtualSystemDescriptionType_CPU:
@@ -1517,7 +1521,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                             <rasd:InstanceID>3</rasd:InstanceID>
                             <rasd:ResourceType>10</rasd:ResourceType>
                         </Item> */
-                    if (uLoop == 1)
+                    if (uLoop == 2)
                     {
                         lAutomaticAllocation = 1;
                         strCaption = Utf8StrFmt("Ethernet adapter on '%s'", desc.strOvf.c_str());
@@ -1586,65 +1590,174 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
             if (type)
             {
                 xml::ElementNode *pItem;
+                xml::ElementNode *pItemHelper;
+                RTCString itemElement;
+                RTCString itemElementHelper;
 
-                pItem = pelmVirtualHardwareSection->createChild("Item");
+                if (enFormat == ovf::OVFVersion_2_0)
+                {
+                    if(uLoop == 2)
+                    {
+                        if (desc.type == VirtualSystemDescriptionType_NetworkAdapter)
+                        {
+                            itemElement = "epasd:";
+                            pItem = pelmVirtualHardwareSection->createChild("EthernetPortItem");
+                        }
+                        else if (desc.type == VirtualSystemDescriptionType_CDROM ||
+                                 desc.type == VirtualSystemDescriptionType_HardDiskImage)
+                        {
+                            itemElement = "sasd:";
+                            pItem = pelmVirtualHardwareSection->createChild("StorageItem");
+                        }
+                    }
+                    else
+                    {
+                        itemElement = "rasd:";
+                        pItem = pelmVirtualHardwareSection->createChild("Item");
+                    }
+                }
+                else
+                {
+                    itemElement = "rasd:";
+                    pItem = pelmVirtualHardwareSection->createChild("Item");
+                }
 
                 // NOTE: DO NOT CHANGE THE ORDER of these items! The OVF standards prescribes that
                 // the elements from the rasd: namespace must be sorted by letter, and VMware
                 // actually requires this as well (see public bug #6612)
 
                 if (lAddress != -1)
-                    pItem->createChild("rasd:Address")->addContent(Utf8StrFmt("%d", lAddress));
+                {
+                    //pItem->createChild("rasd:Address")->addContent(Utf8StrFmt("%d", lAddress));
+                    itemElementHelper = itemElement;
+                    pItemHelper = pItem->createChild(itemElementHelper.append("Address").c_str());
+                    pItemHelper->addContent(Utf8StrFmt("%d", lAddress));
+                }
 
                 if (lAddressOnParent != -1)
-                    pItem->createChild("rasd:AddressOnParent")->addContent(Utf8StrFmt("%d", lAddressOnParent));
+                {
+                    //pItem->createChild("rasd:AddressOnParent")->addContent(Utf8StrFmt("%d", lAddressOnParent));
+                    itemElementHelper = itemElement;
+                    pItemHelper = pItem->createChild(itemElementHelper.append("AddressOnParent").c_str());
+                    pItemHelper->addContent(Utf8StrFmt("%d", lAddressOnParent));
+                }
 
                 if (!strAllocationUnits.isEmpty())
-                    pItem->createChild("rasd:AllocationUnits")->addContent(strAllocationUnits);
+                {
+                    //pItem->createChild("rasd:AllocationUnits")->addContent(strAllocationUnits);
+                    itemElementHelper = itemElement;
+                    pItemHelper = pItem->createChild(itemElementHelper.append("AllocationUnits").c_str());
+                    pItemHelper->addContent(strAllocationUnits);
+                }
 
                 if (lAutomaticAllocation != -1)
-                    pItem->createChild("rasd:AutomaticAllocation")->addContent( (lAutomaticAllocation) ? "true" : "false" );
+                {
+                    //pItem->createChild("rasd:AutomaticAllocation")->addContent( (lAutomaticAllocation) ? "true" : "false" );
+                    itemElementHelper = itemElement;
+                    pItemHelper = pItem->createChild(itemElementHelper.append("AutomaticAllocation").c_str());
+                    pItemHelper->addContent((lAutomaticAllocation) ? "true" : "false" );
+                }
 
                 if (lBusNumber != -1)
-                    if (enFormat == ovf::OVFVersion_0_9) // BusNumber is invalid OVF 1.0 so only write it in 0.9 mode for OVFTool y
-                        pItem->createChild("rasd:BusNumber")->addContent(Utf8StrFmt("%d", lBusNumber));
+                {
+                    if (enFormat == ovf::OVFVersion_0_9)
+                    {
+                        // BusNumber is invalid OVF 1.0 so only write it in 0.9 mode for OVFTool
+                        //pItem->createChild("rasd:BusNumber")->addContent(Utf8StrFmt("%d", lBusNumber));
+                        itemElementHelper = itemElement;
+                        pItemHelper = pItem->createChild(itemElementHelper.append("BusNumber").c_str());
+                        pItemHelper->addContent(Utf8StrFmt("%d", lBusNumber));
+                    }
+                }
 
                 if (!strCaption.isEmpty())
-                    pItem->createChild("rasd:Caption")->addContent(strCaption);
+                {
+                    //pItem->createChild("rasd:Caption")->addContent(strCaption);
+                    itemElementHelper = itemElement;
+                    pItemHelper = pItem->createChild(itemElementHelper.append("Caption").c_str());
+                    pItemHelper->addContent(strCaption);
+                }
 
                 if (!strConnection.isEmpty())
-                    pItem->createChild("rasd:Connection")->addContent(strConnection);
+                {
+                    //pItem->createChild("rasd:Connection")->addContent(strConnection);
+                    itemElementHelper = itemElement;
+                    pItemHelper = pItem->createChild(itemElementHelper.append("Connection").c_str());
+                    pItemHelper->addContent(strConnection);
+                }
 
                 if (!strDescription.isEmpty())
-                    pItem->createChild("rasd:Description")->addContent(strDescription);
+                {
+                    //pItem->createChild("rasd:Description")->addContent(strDescription);
+                    itemElementHelper = itemElement;
+                    pItemHelper = pItem->createChild(itemElementHelper.append("Description").c_str());
+                    pItemHelper->addContent(strDescription);
+                }
 
                 if (!strCaption.isEmpty())
-                    if (enFormat == ovf::OVFVersion_1_0)
-                        pItem->createChild("rasd:ElementName")->addContent(strCaption);
+                {
+                        if (enFormat == ovf::OVFVersion_1_0)
+                        {
+                            //pItem->createChild("rasd:ElementName")->addContent(strCaption);
+                            itemElementHelper = itemElement;
+                            pItemHelper = pItem->createChild(itemElementHelper.append("ElementName").c_str());
+                            pItemHelper->addContent(strCaption);
+                        }
+                }
 
                 if (!strHostResource.isEmpty())
-                    pItem->createChild("rasd:HostResource")->addContent(strHostResource);
+                {
+                    //pItem->createChild("rasd:HostResource")->addContent(strHostResource);
+                    itemElementHelper = itemElement;
+                    pItemHelper = pItem->createChild(itemElementHelper.append("HostResource").c_str());
+                    pItemHelper->addContent(strHostResource);
+                }
 
-                // <rasd:InstanceID>1</rasd:InstanceID>
-                xml::ElementNode *pelmInstanceID;
-                if (enFormat == ovf::OVFVersion_0_9)
-                    pelmInstanceID = pItem->createChild("rasd:InstanceId");
-                else
-                    pelmInstanceID = pItem->createChild("rasd:InstanceID");      // capitalization changed...
-                pelmInstanceID->addContent(Utf8StrFmt("%d", ulInstanceID++));
+                {
+                    // <rasd:InstanceID>1</rasd:InstanceID>
+                    itemElementHelper = itemElement;
+                    if (enFormat == ovf::OVFVersion_0_9)
+                        //pelmInstanceID = pItem->createChild("rasd:InstanceId");
+                        pItemHelper = pItem->createChild(itemElementHelper.append("InstanceId").c_str());
+                    else
+                        //pelmInstanceID = pItem->createChild("rasd:InstanceID");      // capitalization changed...
+                        pItemHelper = pItem->createChild(itemElementHelper.append("InstanceID").c_str());
+
+                    pItemHelper->addContent(Utf8StrFmt("%d", ulInstanceID++));
+                }
 
                 if (ulParent)
-                    pItem->createChild("rasd:Parent")->addContent(Utf8StrFmt("%d", ulParent));
+                {
+                    //pItem->createChild("rasd:Parent")->addContent(Utf8StrFmt("%d", ulParent));
+                    itemElementHelper = itemElement;
+                    pItemHelper = pItem->createChild(itemElementHelper.append("Parent").c_str());
+                    pItemHelper->addContent(Utf8StrFmt("%d", ulParent));
+                }
 
                 if (!strResourceSubType.isEmpty())
-                    pItem->createChild("rasd:ResourceSubType")->addContent(strResourceSubType);
+                {
+                    //pItem->createChild("rasd:ResourceSubType")->addContent(strResourceSubType);
+                    itemElementHelper = itemElement;
+                    pItemHelper = pItem->createChild(itemElementHelper.append("ResourceSubType").c_str());
+                    pItemHelper->addContent(strResourceSubType);
+                }
 
-                // <rasd:ResourceType>3</rasd:ResourceType>
-                pItem->createChild("rasd:ResourceType")->addContent(Utf8StrFmt("%d", type));
+                {
+                    // <rasd:ResourceType>3</rasd:ResourceType>
+                    //pItem->createChild("rasd:ResourceType")->addContent(Utf8StrFmt("%d", type));
+                    itemElementHelper = itemElement;
+                    pItemHelper = pItem->createChild(itemElementHelper.append("ResourceType").c_str());
+                    pItemHelper->addContent(Utf8StrFmt("%d", type));
+                }
 
                 // <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
                 if (lVirtualQuantity != -1)
-                    pItem->createChild("rasd:VirtualQuantity")->addContent(Utf8StrFmt("%d", lVirtualQuantity));
+                {
+                    //pItem->createChild("rasd:VirtualQuantity")->addContent(Utf8StrFmt("%d", lVirtualQuantity));
+                    itemElementHelper = itemElement;
+                    pItemHelper = pItem->createChild(itemElementHelper.append("VirtualQuantity").c_str());
+                    pItemHelper->addContent(Utf8StrFmt("%d", lVirtualQuantity));
+                }
             }
         }
     } // for (size_t uLoop = 1; uLoop <= 2; ++uLoop)
@@ -1756,7 +1869,11 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         RT_ZERO(storage);
         storage.fCreateDigest = m->fManifest;
         storage.fSha256 = m->fSha256;
-        int vrc = VDInterfaceAdd(&pFileIo->Core, "Appliance::IOFile",
+
+
+        Utf8Str name = applianceIOName(applianceIOFile);
+
+        int vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
                                  VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
                                  &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
@@ -1810,9 +1927,13 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         RT_ZERO(storage);
         storage.fCreateDigest = m->fManifest;
         storage.fSha256 = m->fSha256;
-        vrc = VDInterfaceAdd(&pTarIo->Core, "Appliance::IOTar",
+
+        Utf8Str name = applianceIOName(applianceIOTar);
+
+        vrc = VDInterfaceAdd(&pTarIo->Core, name.c_str(),
                              VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
                              &storage.pVDImageIfaces);
+        
         if (RT_FAILURE(vrc))
         {
             rc = E_FAIL;
@@ -1857,8 +1978,10 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             xml::Document doc;
             // Now fully build a valid ovf document in memory
             buildXML(writeLock, doc, stack, pTask->locInfo.strPath, pTask->enFormat);
+            /* Extract the OVA file name */
+            Utf8Str strOvaFile = pTask->locInfo.strPath;
             /* Extract the path */
-            Utf8Str strOvfFile = Utf8Str(pTask->locInfo.strPath).stripExt().append(".ovf");
+            Utf8Str strOvfFile = strOvaFile.stripExt().append(".ovf");
             // Create a memory buffer containing the XML. */
             void *pvBuf = 0;
             size_t cbSize;
@@ -1950,11 +2073,6 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             writeLock.release();
             try
             {
-                ComObjPtr<Progress> pProgress2;
-                pProgress2.createObject();
-                rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium '%s'"), strTargetFilePath.c_str()).raw(), TRUE);
-                if (FAILED(rc)) throw rc;
-
                 // advance to the next operation
                 pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"), RTPathFilename(strTargetFilePath.c_str())).raw(),
                                                    pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally
@@ -1962,29 +2080,73 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                 // create a flat copy of the source disk image
                 if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
                 {
-                    rc = pSourceDisk->exportFile(strTargetFilePath.c_str(),
-                                                 format,
+                    ComObjPtr<Progress> pProgress2;
+                    pProgress2.createObject();
+                    rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium '%s'"), strTargetFilePath.c_str()).raw(), TRUE);
+                    if (FAILED(rc)) throw rc;
+
+                    rc = pSourceDisk->exportFile(strTargetFilePath.c_str(), 
+                                                 format, 
                                                  MediumVariant_VmdkStreamOptimized,
                                                  pIfIo,
                                                  pStorage,
                                                  pProgress2);
                     if (FAILED(rc)) throw rc;
+
+                    ComPtr<IProgress> pProgress3(pProgress2);
+                    // now wait for the background disk operation to complete; this throws HRESULTs on error
+                    waitForAsyncProgress(pTask->pProgress, pProgress3);
                 }
                 else
                 {
                     //copy/clone CD/DVD image
-                    rc = pSourceDisk->exportFile(strTargetFilePath.c_str(),
-                                                 formatTemp,
-                                                 MediumVariant_Standard,
-                                                 pIfIo,
-                                                 pStorage,
-                                                 pProgress2);
-                    if (FAILED(rc)) throw rc;
-                }
+                    /* Read the ISO file into a memory buffer */
+                    {
+                        void *pvTmpBuf = 0;
+                        size_t cbSize = 0;
 
-                ComPtr<IProgress> pProgress3(pProgress2);
-                // now wait for the background disk operation to complete; this throws HRESULTs on error
-                waitForAsyncProgress(pTask->pProgress, pProgress3);
+                        if (RTFileExists(strSrcFilePath.c_str()))
+                        {
+                            // open ISO file and read one into memory buffer
+                            RTFILE pFile = NULL;
+                            vrc = RTFileOpen(&pFile, strSrcFilePath.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+                            if (RT_SUCCESS(vrc) && pFile != NULL)
+                            {
+                                uint64_t cbFile = 0;
+
+                                vrc = RTFileGetSize(pFile, &cbFile);
+
+                                if (RT_SUCCESS(vrc))
+                                   pvTmpBuf = RTMemAllocZ(cbFile);
+                                else
+                                    throw setError(VBOX_E_FILE_ERROR,
+                                            tr("Could not get size of the ISO file '%s' "),
+                                            RTPathFilename(strSrcFilePath.c_str()));
+
+                                vrc = RTFileRead(pFile, pvTmpBuf, cbFile, &cbSize);
+
+                                if (RT_FAILURE(vrc))
+                                {
+                                    if (pvTmpBuf)
+                                        RTMemFree(pvTmpBuf);
+                                    throw setError(VBOX_E_FILE_ERROR,
+                                           tr("Could not read the ISO file '%s' (%Rrc)"),
+                                           RTPathFilename(strSrcFilePath.c_str()), vrc);
+                                }
+                            }
+
+                            RTFileClose(pFile);
+                        }
+
+                        /* Write the ISO file to disk. */
+                        vrc = ShaWriteBuf(strTargetFilePath.c_str(), pvTmpBuf, cbSize, pIfIo, pStorage);
+                        RTMemFree(pvTmpBuf);
+                        if (RT_FAILURE(vrc))
+                            throw setError(VBOX_E_FILE_ERROR,
+                                           tr("Could not create ISO file '%s' (%Rrc)"),
+                                           strTargetFilePath.c_str(), vrc);
+                    }
+                }
             }
             catch (HRESULT rc3)
             {
