@@ -4262,24 +4262,33 @@
     <attribute name="VideoCaptureFile" type="wstring" default="Test.webm">
       <desc>
         This setting determines the filename VirtualBox uses to save
-        the recorded content.</desc>
+        the recorded content. This setting cannot be changed while video
+        capturing is enabled.
+      </desc>
     </attribute>
 
     <attribute name="VideoCaptureWidth" type="unsigned long" default="640">
       <desc>
-        This setting determines the horizontal resolution of the recorded video.</desc>
+        This setting determines the horizontal resolution of the recorded
+        video. This setting cannot be changed while video capturing is
+        enabled.
+      </desc>
     </attribute>
 
     <attribute name="VideoCaptureHeight" type="unsigned long" default="480">
       <desc>
-        This setting determines the vertical resolution of the recorded video.</desc>
+        This setting determines the vertical resolution of the recorded
+        video. This setting cannot be changed while video capturing is
+        enabled.
+      </desc>
     </attribute>
 
     <attribute name="VideoCaptureRate" type="unsigned long" default="512">
       <desc>
         This setting determines the bitrate in kilobits per second.
         Increasing this value makes the video look better for the
-        cost of an increased file size.
+        cost of an increased file size. This setting cannot be changed
+        while video capturing is enabled.
       </desc>
     </attribute>
 
@@ -4288,7 +4297,8 @@
         This setting determines the maximum number of frames per second.
         Frames with a higher frequency will be skipped. Reducing this
         value increses the number of skipped frames but reduces the
-        file size.
+        file size. This setting cannot be changed while video capturing
+        is enabled.
       </desc>
     </attribute>
 
@@ -14690,7 +14700,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="0598a3df-3dc0-43c7-a79c-237fb5bb633d"
+    uuid="23efdcab-1ae5-47ee-951e-e0f9a3935f2a"
     wsmap="managed"
     >
     <desc>
@@ -14895,17 +14905,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="screenData" type="octet" dir="return" safearray="yes">
         <desc>
           Array with resulting screen data.
-        </desc>
-      </param>
-    </method>
-
-    <method name="enableVideoCaptureScreens">
-      <desc>
-        Start/stop video capture on selected screens.
-      </desc>
-      <param name="screens" type="boolean" safearray="yes" dir="in">
-        <desc>
-          The screens to start/stop capturing.
         </desc>
       </param>
     </method>

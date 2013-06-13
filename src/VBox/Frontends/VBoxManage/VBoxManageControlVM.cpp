@@ -1339,23 +1339,53 @@ int handleControlVM(HandlerArg *a)
             }
             RTFileClose(pngFile);
         }
-        else if (   !strcmp(a->argv[1], "enablevideocapture")
-                 || !strcmp(a->argv[1], "disablevideocapture"))
+        else if (   !strcmp(a->argv[1], "vcpenabled"))
+        {
+            if (a->argc != 3)
+            {
+                errorArgument("Missing argument to '%s'", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+            if (!strcmp(a->argv[2], "on"))
+            {
+                CHECK_ERROR_RET(sessionMachine, COMSETTER(VideoCaptureEnabled)(TRUE), 1);
+            }
+            else if (!strcmp(a->argv[2], "off"))
+            {
+                CHECK_ERROR_RET(sessionMachine, COMSETTER(VideoCaptureEnabled)(FALSE), 1);
+            }
+            else
+            {
+                errorArgument("Invalid state '%s'", Utf8Str(a->argv[2]).c_str());
+                rc = E_FAIL;
+                break;
+            }
+        }
+        else if (   !strcmp(a->argv[1], "videocapturescreens"))
         {
             ULONG cMonitors = 64;
             CHECK_ERROR_BREAK(machine, COMGETTER(MonitorCount)(&cMonitors));
             com::SafeArray<BOOL> saScreens(cMonitors);
-            bool fEnable = !strcmp(a->argv[1], "enablevideocapture");
-            if (a->argc < 3)
+            if (   a->argc == 3
+                && !strcmp(a->argv[2], "all"))
             {
-                /* default: handle all screens */
+                /* enable all screens */
                 for (unsigned i = 0; i < cMonitors; i++)
                     saScreens[i] = true;
             }
+            else if (   a->argc == 3
+                     && !strcmp(a->argv[2], "none"))
+            {
+                /* disable all screens */
+                for (unsigned i = 0; i < cMonitors; i++)
+                    saScreens[i] = false;
+            }
             else
             {
-                /* handle selected screens */
-                CHECK_ERROR_BREAK(machine, COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(saScreens)));
+                /* enable selected screens */
+                for (unsigned i = 0; i < cMonitors; i++)
+                    saScreens[i] = false;
                 for (int i = 2; SUCCEEDED(rc) && i < a->argc; i++)
                 {
                     uint32_t iScreen;
@@ -1372,7 +1402,7 @@ int handleControlVM(HandlerArg *a)
                         rc = E_FAIL;
                         break;
                     }
-                    saScreens[iScreen] = fEnable;
+                    saScreens[iScreen] = true;
                 }
             }
 

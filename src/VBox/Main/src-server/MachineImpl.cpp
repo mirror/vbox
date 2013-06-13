@@ -1515,7 +1515,7 @@ STDMETHODIMP Machine::COMSETTER(CPUExecutionCap)(ULONG aExecutionCap)
     mHWData.backup();
     mHWData->mCpuExecutionCap = aExecutionCap;
 
-    /* Save settings if online - todo why is this required?? */
+    /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
         saveSettings(NULL);
 
@@ -1726,13 +1726,16 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureEnabled)(BOOL fEnabled)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
     setModified(IsModified_MachineData);
     mHWData.backup();
-
     mHWData->mVideoCaptureEnabled = fEnabled;
+
+    /** Save settings if online - @todo why is this required? -- @bugref{6818} */
+    if (Global::IsOnline(mData->mMachineState))
+        saveSettings(NULL);
+
+    alock.release();
+    rc = onVideoCaptureChange();
 
     return rc;
 }
@@ -1776,6 +1779,8 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureScreens)(ComSafeArrayIn(BOOL, aScree
         alock.acquire();
         if (FAILED(rc)) return rc;
         setModified(IsModified_MachineData);
+
+        /** Save settings if online - @todo why is this required? -- @bugref{6818} */
         if (Global::IsOnline(mData->mMachineState))
             saveSettings(NULL);
     }
@@ -1801,8 +1806,8 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureFile)(IN_BSTR aFile)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc; 
+    if (mHWData->mVideoCaptureEnabled)
+        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
 
     if (strFile.isEmpty())
        strFile = "VideoCap.webm";
@@ -1831,8 +1836,8 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureWidth)(ULONG aHorzRes)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc; 
+    if (mHWData->mVideoCaptureEnabled)
+        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
 
     setModified(IsModified_MachineData);
     mHWData.backup();
@@ -1858,8 +1863,8 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureHeight)(ULONG aVertRes)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc; 
+    if (mHWData->mVideoCaptureEnabled)
+        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
 
     setModified(IsModified_MachineData);
     mHWData.backup();
@@ -1885,8 +1890,8 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureRate)(ULONG aRate)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
+    if (mHWData->mVideoCaptureEnabled)
+        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
 
     setModified(IsModified_MachineData);
     mHWData.backup();
@@ -1912,8 +1917,8 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureFps)(ULONG aFps)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
+    if (mHWData->mVideoCaptureEnabled)
+        return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
 
     setModified(IsModified_MachineData);
     mHWData.backup();
@@ -2943,8 +2948,7 @@ STDMETHODIMP Machine::COMGETTER(ClipboardMode)(ClipboardMode_T *aClipboardMode)
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMSETTER(ClipboardMode)(ClipboardMode_T aClipboardMode)
+STDMETHODIMP Machine::COMSETTER(ClipboardMode)(ClipboardMode_T aClipboardMode)
 {
     HRESULT rc = S_OK;
 
@@ -2962,7 +2966,7 @@ Machine::COMSETTER(ClipboardMode)(ClipboardMode_T aClipboardMode)
     mHWData.backup();
     mHWData->mClipboardMode = aClipboardMode;
 
-    /* Save settings if online - todo why is this required?? */
+    /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
         saveSettings(NULL);
 
@@ -2983,8 +2987,7 @@ STDMETHODIMP Machine::COMGETTER(DragAndDropMode)(DragAndDropMode_T *aDragAndDrop
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMSETTER(DragAndDropMode)(DragAndDropMode_T aDragAndDropMode)
+STDMETHODIMP Machine::COMSETTER(DragAndDropMode)(DragAndDropMode_T aDragAndDropMode)
 {
     HRESULT rc = S_OK;
 
@@ -3002,15 +3005,14 @@ Machine::COMSETTER(DragAndDropMode)(DragAndDropMode_T aDragAndDropMode)
     mHWData.backup();
     mHWData->mDragAndDropMode = aDragAndDropMode;
 
-    /* Save settings if online - todo why is this required?? */
+    /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
         saveSettings(NULL);
 
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMGETTER(GuestPropertyNotificationPatterns)(BSTR *aPatterns)
+STDMETHODIMP Machine::COMGETTER(GuestPropertyNotificationPatterns)(BSTR *aPatterns)
 {
     CheckComArgOutPointerValid(aPatterns);
 
@@ -3031,8 +3033,7 @@ Machine::COMGETTER(GuestPropertyNotificationPatterns)(BSTR *aPatterns)
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMSETTER(GuestPropertyNotificationPatterns)(IN_BSTR aPatterns)
+STDMETHODIMP Machine::COMSETTER(GuestPropertyNotificationPatterns)(IN_BSTR aPatterns)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -3048,8 +3049,7 @@ Machine::COMSETTER(GuestPropertyNotificationPatterns)(IN_BSTR aPatterns)
     return rc;
 }
 
-STDMETHODIMP
-Machine::COMGETTER(StorageControllers)(ComSafeArrayOut(IStorageController *, aStorageControllers))
+STDMETHODIMP Machine::COMGETTER(StorageControllers)(ComSafeArrayOut(IStorageController *, aStorageControllers))
 {
     CheckComArgOutSafeArrayPointerValid(aStorageControllers);
 
@@ -3064,8 +3064,7 @@ Machine::COMGETTER(StorageControllers)(ComSafeArrayOut(IStorageController *, aSt
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMGETTER(TeleporterEnabled)(BOOL *aEnabled)
+STDMETHODIMP Machine::COMGETTER(TeleporterEnabled)(BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
@@ -6804,7 +6803,7 @@ STDMETHODIMP Machine::HotPlugCPU(ULONG aCpu)
     mHWData.backup();
     mHWData->mCPUAttached[aCpu] = true;
 
-    /* Save settings if online */
+    /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
         saveSettings(NULL);
 
@@ -6845,7 +6844,7 @@ STDMETHODIMP Machine::HotUnplugCPU(ULONG aCpu)
     mHWData.backup();
     mHWData->mCPUAttached[aCpu] = false;
 
-    /* Save settings if online */
+    /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
         saveSettings(NULL);
 
