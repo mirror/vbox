@@ -114,7 +114,8 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
-STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(AdditionsUpdateFlag_T, aFlags), IProgress **aProgress)
+STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(AdditionsUpdateFlag_T, aFlags),
+                                         ComSafeArrayIn(IN_BSTR, aArguments), IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -140,6 +141,23 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(Additio
             return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
     }
 
+    int rc = VINF_SUCCESS;
+
+    ProcessArguments aArgs;
+    if (aArguments)
+    {
+        try
+        {
+            com::SafeArray<IN_BSTR> arguments(ComSafeArrayInArg(aArguments));
+            for (size_t i = 0; i < arguments.size(); i++)
+                aArgs.push_back(Utf8Str(arguments[i]));
+        }
+        catch(std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
+        }
+    }
+
     HRESULT hr = S_OK;
 
     /*
@@ -153,7 +171,8 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(Additio
     RT_ZERO(guestCreds);
 
     ComObjPtr<GuestSession> pSession;
-    int rc = sessionCreate(startupInfo, guestCreds, pSession);
+    if (RT_SUCCESS(rc))
+        rc = sessionCreate(startupInfo, guestCreds, pSession);
     if (RT_FAILURE(rc))
     {
         switch (rc)
@@ -187,7 +206,7 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(Additio
             {
                 ComObjPtr<Progress> pProgress;
                 SessionTaskUpdateAdditions *pTask = new SessionTaskUpdateAdditions(pSession /* GuestSession */,
-                                                                                   Utf8Str(aSource), fFlags);
+                                                                                   Utf8Str(aSource), aArgs, fFlags);
                 rc = pSession->startTaskAsync(tr("Updating Guest Additions"), pTask, pProgress);
                 if (RT_SUCCESS(rc))
                 {

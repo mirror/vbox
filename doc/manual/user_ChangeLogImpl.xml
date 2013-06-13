@@ -40,6 +40,11 @@
       </listitem>
 
       <listitem>
+        <para>VBoxManage: added support for optional command line parameters for
+          the automatic Guest Additions update.</para>
+      </listitem>
+
+      <listitem>
         <para>3D support: several fixes for Mac OS X hosts</para>
       </listitem>
 

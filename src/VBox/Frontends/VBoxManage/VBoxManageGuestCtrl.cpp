@@ -260,6 +260,7 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                  "                            updateadditions\n"
                  "                            [--source <guest additions .ISO>] [--verbose]\n"
                  "                            [--wait-start]\n"
+                 "                            [-- [<argument1>] ... [<argumentN>]]\n"
                  "\n", pcszSep1, pcszSep2);
 }
 
@@ -632,8 +633,8 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     Utf8Str                 strCmd;
     com::SafeArray<ProcessCreateFlag_T>  aCreateFlags;
     com::SafeArray<ProcessWaitForFlag_T> aWaitFlags;
-    com::SafeArray<IN_BSTR>              args;
-    com::SafeArray<IN_BSTR>              env;
+    com::SafeArray<IN_BSTR>              aArgs;
+    com::SafeArray<IN_BSTR>              aEnv;
     Utf8Str                              strUsername;
     Utf8Str                              strPassword;
     Utf8Str                              strDomain;
@@ -668,7 +669,7 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                 if (RT_FAILURE(vrc))
                     return errorSyntax(USAGE_GUESTCONTROL, "Failed to parse environment value, rc=%Rrc", vrc);
                 for (int j = 0; j < cArgs; j++)
-                    env.push_back(Bstr(papszArg[j]).raw());
+                    aEnv.push_back(Bstr(papszArg[j]).raw());
 
                 RTGetOptArgvFree(papszArg);
                 break;
@@ -741,10 +742,10 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
 
             case VINF_GETOPT_NOT_OPTION:
             {
-                if (args.size() == 0 && strCmd.isEmpty())
+                if (aArgs.size() == 0 && strCmd.isEmpty())
                     strCmd = ValueUnion.psz;
                 else
-                    args.push_back(Bstr(ValueUnion.psz).raw());
+                    aArgs.push_back(Bstr(ValueUnion.psz).raw());
                 break;
             }
 
@@ -836,8 +837,8 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
          */
         ComPtr<IGuestProcess> pProcess;
         rc = pGuestSession->ProcessCreate(Bstr(strCmd).raw(),
-                                          ComSafeArrayAsInParam(args),
-                                          ComSafeArrayAsInParam(env),
+                                          ComSafeArrayAsInParam(aArgs),
+                                          ComSafeArrayAsInParam(aEnv),
                                           ComSafeArrayAsInParam(aCreateFlags),
                                           cMsTimeout,
                                           pProcess.asOutParam());
@@ -2651,6 +2652,7 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
      * arguments.
      */
     Utf8Str strSource;
+    com::SafeArray<IN_BSTR> aArgs;
     bool fVerbose = false;
     bool fWaitStartOnly = false;
 
@@ -2683,6 +2685,15 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
             case 'w':
                 fWaitStartOnly = true;
                 break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                if (aArgs.size() == 0 && strSource.isEmpty())
+                    strSource = ValueUnion.psz;
+                else
+                    aArgs.push_back(Bstr(ValueUnion.psz).raw());
+                break;
+            }
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
@@ -2730,6 +2741,7 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
 
         ComPtr<IProgress> pProgress;
         CHECK_ERROR(guest, UpdateGuestAdditions(Bstr(strSource).raw(),
+                                                ComSafeArrayAsInParam(aArgs),
                                                 /* Wait for whole update process to complete. */
                                                 ComSafeArrayAsInParam(aUpdateFlags),
                                                 pProgress.asOutParam()));

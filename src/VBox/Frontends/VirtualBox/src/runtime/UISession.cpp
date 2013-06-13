@@ -489,8 +489,10 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     fDoMount = true;
 #else
     CGuest guest = session().GetConsole().GetGuest();
-    QVector<KAdditionsUpdateFlag> flagsUpdate;
-    CProgress progressInstall = guest.UpdateGuestAdditions(strSource, flagsUpdate);
+    QVector<KAdditionsUpdateFlag> aFlagsUpdate;
+    QVector<QString> aArgs;
+    CProgress progressInstall = guest.UpdateGuestAdditions(strSource,
+                                                           aArgs, aFlagsUpdate);
     bool fResult = guest.isOk();
     if (fResult)
     {

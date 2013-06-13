@@ -158,7 +158,8 @@ class SessionTaskUpdateAdditions : public GuestSessionTask
 public:
 
     SessionTaskUpdateAdditions(GuestSession *pSession,
-                               const Utf8Str &strSource, uint32_t uFlags);
+                               const Utf8Str &strSource, const ProcessArguments &aArguments,
+                               uint32_t uFlags);
 
     virtual ~SessionTaskUpdateAdditions(void);
 
@@ -219,6 +220,8 @@ protected:
         GuestProcessStartupInfo mProcInfo;
     };
 
+    int addProcessArguments(ProcessArguments &aArgumentsDest,
+                            const ProcessArguments &aArgumentsSource);
     int copyFileToGuest(GuestSession *pSession, PRTISOFSFILE pISO,
                         Utf8Str const &strFileSource, const Utf8Str &strFileDest,
                         bool fOptional, uint32_t *pcbSize);
@@ -229,6 +232,8 @@ protected:
     /** The (optionally) specified Guest Additions .ISO on the host
      *  which will be used for the updating process. */
     Utf8Str                    mSource;
+    /** (Optional) installer command line arguments. */
+    ProcessArguments           mArguments;
     /** Update flags. */
     uint32_t                   mFlags;
 };
