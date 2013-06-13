@@ -141,6 +141,8 @@ typedef struct SVMTRANSIENT
 
     /** The #VMEXIT exit code (the EXITCODE field in the VMCB). */
     uint64_t        u64ExitCode;
+    /** The guest's TPR value used for TPR shadowing. */
+    uint8_t         u8GuestTpr;
 } SVMTRANSIENT, *PSVMTRANSIENT;
 /** @}  */
 
@@ -448,9 +450,9 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
  * Sets the permission bits for the specified MSR in the MSRPM.
  *
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   uMsr       The MSR.
- * @param   fRead       Whether reading is allowed.
- * @param   fWrite      Whether writing is allowed.
+ * @param   uMsr        The MSR for which the access permissions are being set.
+ * @param   enmRead     MSR read permissions.
+ * @param   enmWrite    MSR write permissions.
  */
 static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite)
 {
@@ -625,14 +627,14 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
          * The following MSRs are saved/restored automatically during the world-switch.
          * Don't intercept guest read/write accesses to these MSRs.
          */
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_CSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K6_STAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_SF_MASK, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_FS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR,          SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_CSTAR,          SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K6_STAR,           SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_SF_MASK,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_FS_BASE,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_GS_BASE,        SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
         hmR0SvmSetMsrPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
-        hmR0SvmSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_CS, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+        hmR0SvmSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_CS,  SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
         hmR0SvmSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_ESP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
         hmR0SvmSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
     }
@@ -885,11 +887,12 @@ DECLINLINE(void) hmR0SvmRemoveXcptIntercept(uint32_t u32Xcpt)
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVmcb       Pointer to the VMCB.
  * @param   pCtx        Pointer the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
+DECLINLINE(int) hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     /*
      * Guest CR0.
@@ -1036,16 +1039,18 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Loads the guest segment registers into the VMCB.
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVmcb       Pointer to the VMCB.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
+DECLINLINE(void) hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     /* Guest Segment registers: CS, SS, DS, ES, FS, GS. */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_SEGMENT_REGS)
@@ -1099,11 +1104,12 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
  * Loads the guest MSRs into the VMCB.
  *
  * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVmcb       Pointer to the VMCB.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pCtx)
+DECLINLINE(void) hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     /* Guest Sysenter MSRs. */
     pVmcb->guest.u64SysEnterCS  = pCtx->SysEnter.cs;
@@ -1146,8 +1152,9 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
+ * @remarks Requires EFLAGS to be up-to-date in the VMCB!
  */
-static void hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
+DECLINLINE(void) hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     if (!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_DEBUG))
         return;
@@ -1234,6 +1241,68 @@ static void hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
 
     pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_DEBUG;
 }
+
+
+/**
+ * Loads the guest APIC state (currently just the TPR).
+ *
+ * @returns VBox status code.
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pVmcb   Pointer to the VMCB.
+ * @param   pCtx    Pointer to the guest-CPU context.
+ */
+DECLINLINE(int) hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
+{
+    if (!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_SVM_GUEST_APIC_STATE))
+        return VINF_SUCCESS;
+
+    bool    fPendingIntr;
+    uint8_t u8Tpr;
+    int rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPendingIntr, NULL /* pu8PendingIrq */);
+    AssertRCReturn(rc, rc);
+
+    /** Assume that we need to trap all TPR accesses and thus need not check on
+     *  every #VMEXIT if we should update the TPR. */
+    Assert(pVmcb->ctrl.IntCtrl.n.u1VIrqMasking);
+    pVCpu->hm.s.svm.fSyncVTpr = false;
+
+    /* 32-bit guests uses LSTAR MSR for patching guest code which touches the TPR. */
+    if (pVCpu->CTX_SUFF(pVM)->hm.s.fTPRPatchingActive)
+    {
+        pCtx->msrLSTAR = u8LastTPR;
+
+        /* If there are interrupts pending, intercept LSTAR writes, otherwise don't intercept reads or writes. */
+        if (fPendingIntr)
+            hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_INTERCEPT_WRITE);
+        else
+        {
+            hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
+            pVCpu->hm.s.svm.fSyncVTpr = true;
+        }
+
+        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
+    }
+    else
+    {
+        /* Bits 3-0 of the VTPR field correspond to bits 7-4 of the TPR (which is the Task-Priority Class). */
+        pVmcb->ctrl.IntCtrl.n.u8VTPR = (u8Tpr >> 4);
+
+        /* If there are interrupts pending, intercept CR8 writes to evaluate ASAP if we can deliver the interrupt to the guest. */
+        if (fPending)
+            pVmcb->ctrl.u16InterceptWrCRx |= RT_BIT(8);
+        else
+        {
+            pVmcb->ctrl.u16InterceptWrCRx &= ~RT_BIT(8);
+            pVCpu->hm.s.svm.fSyncVTpr = true;
+        }
+
+        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+    }
+
+    pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_SVM_GUEST_APIC_STATE;
+    return rc;
+}
+
 
 /**
  * Sets up the appropriate function to run guest code.
@@ -1352,11 +1421,11 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestState, x);
 
-    int rc = hmR0SvmLoadGuestControlRegs(pVCpu, pCtx);
+    int rc = hmR0SvmLoadGuestControlRegs(pVCpu, pVmcb, pCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestControlRegs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-    hmR0SvmLoadGuestSegmentRegs(pVCpu, pCtx);
-    hmR0SvmLoadGuestMsrs(pVCpu, pCtx);
+    hmR0SvmLoadGuestSegmentRegs(pVCpu, pVmcb, pCtx);
+    hmR0SvmLoadGuestMsrs(pVCpu, pVmcb, pCtx);
 
     pVmcb->guest.u64RIP    = pCtx->rip;
     pVmcb->guest.u64RSP    = pCtx->rsp;
@@ -1365,7 +1434,10 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     pVmcb->guest.u64RAX    = pCtx->rax;
 
     /* hmR0SvmLoadGuestDebugRegs() must be called -after- updating guest RFLAGS as the RFLAGS may need to be changed. */
-    hmR0SvmLoadGuestDebugRegs(pVCpu, pCtx);
+    hmR0SvmLoadGuestDebugRegs(pVCpu, pVmcb, pCtx);
+
+    rc = hmR0SvmLoadGuestApicState(pVCpu, pVmcb, pCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestApicState! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
     rc = hmR0SvmSetupVMRunHandler(pVCpu, pCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
@@ -2293,8 +2365,6 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
 
-    /* -XXX- todo TPR syncing. */
-
     /*
      * Re-enable nested paging (automatically disabled on every VM-exit). See AMD spec. 15.25.3 "Enabling Nested Paging".
      * We avoid changing the corresponding VMCB Clean Bit as we're not changing it to a different value since the previous run.
@@ -2309,6 +2379,18 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     AssertRC(rc);
     AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags =%#x\n", pVCpu->hm.s.fContextUseFlags));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
+
+    /*
+     * If we're not intercepting TPR changes in the guest, save the guest TPR before the world-switch
+     * so we can update it on the way back if the guest changed the TPR.
+     */
+    if (pVCpu->hm.s.svm.fSyncVTpr)
+    {
+        if (pVM->hm.s.fTPRPatchingActive)
+            pSvmTransient->u8GuestTpr = pCtx->msrLSTAR;
+        else
+            pSvmTransient->u8GuestTpr = pVmcb->ctrl.IntCtrl.n.u8VTPR;
+    }
 
     /* Flush the appropriate tagged-TLB entries. */
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB-shootdowns, set this across the world switch. */
@@ -2400,11 +2482,9 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     }
 
     TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
-    Assert(!(ASMGetFlags() & X86_EFL_IF));
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
-    /* -XXX- TPR patching? */
-
+    Assert(!(ASMGetFlags() & X86_EFL_IF));
     ASMSetFlags(pSvmTransient->uEFlags);                        /* Enable interrupts. */
 
     VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, pMixedCtx);
@@ -2413,9 +2493,24 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     pSvmTransient->u64ExitCode = pVmcb->ctrl.u64ExitCode;
     hmR0SvmSaveGuestState(pVCpu, pMixedCtx);                    /* Save the guest state from the VMCB to the guest-CPU context. */
 
-    /* --XXX- TPR syncing todo */
+    if (pVCpu->hm.s.svm.fSyncVTpr)
+    {
+        /* TPR patching (for 32-bit guests) uses LSTAR MSR for holding the TPR value, otherwise uses the VTPR. */
+        if (   pVM->hm.s.fTPRPatchingActive
+            && (pCtx->msrLSTAR & 0xff) != pSvmTransient->u8GuestTpr)
+        {
+            int rc = PDMApicSetTPR(pVCpu, pCtx->msrLSTAR & 0xff);
+            AssertRC(rc);
+        }
+        else if ((uint8_t)(pSvmTransient->u8GuestTpr >> 4) != pVmcb->ctrl.IntCtrl.n.u8VTPR)
+        {
+            int rc = PDMApicSetTPR(pVCpu, (pVmcb->ctrl.IntCtrl.n.u8VTPR << 4));
+            AssertRC(rc);
+        }
+    }
 
     /* -XXX- premature interruption during event injection */
+
 }
 
 

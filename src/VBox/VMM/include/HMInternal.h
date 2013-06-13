@@ -127,16 +127,12 @@ RT_C_DECLS_BEGIN
 # define HM_CHANGED_VMX_GUEST_APIC_STATE         RT_BIT(18)
 # define HM_CHANGED_VMX_ENTRY_CTLS               RT_BIT(19)
 # define HM_CHANGED_VMX_EXIT_CTLS                RT_BIT(20)
-# define HM_CHANGED_VMX_RESERVED1                RT_BIT(21)
-# define HM_CHANGED_VMX_RESERVED2                RT_BIT(22)
 /* AMD-V specific state. */
-# define HM_CHANGED_SVM_INTERCEPT_VECTORS        RT_BIT(16)
-# define HM_CHANGED_SVM_IOPM_MSRPM_BITMAPS       RT_BIT(17)
-# define HM_CHANGED_SVM_GUEST_ASID               RT_BIT(18)
-# define HM_CHANGED_SVM_GUEST_TPR                RT_BIT(19)
-# define HM_CHANGED_SVM_GUEST_NP                 RT_BIT(20)
-# define HM_CHANGED_SVM_LBR                      RT_BIT(21)
-# define HM_CHANGED_SVM_AVIC                     RT_BIT(22)
+# define HM_CHANGED_SVM_GUEST_APIC_STATE         RT_BIT(16)
+# define HM_CHANGED_SVM_RESERVED1                RT_BIT(17)
+# define HM_CHANGED_SVM_RESERVED2                RT_BIT(18)
+# define HM_CHANGED_SVM_RESERVED3                RT_BIT(19)
+# define HM_CHANGED_SVM_RESERVED4                RT_BIT(20)
 
 # define HM_CHANGED_HOST_CONTEXT                 RT_BIT(23)
 # define HM_CHANGED_ALL_GUEST                   (  HM_CHANGED_GUEST_RIP                \
@@ -158,9 +154,7 @@ RT_C_DECLS_BEGIN
                                                  | HM_CHANGED_VMX_GUEST_ACTIVITY_STATE \
                                                  | HM_CHANGED_VMX_GUEST_APIC_STATE     \
                                                  | HM_CHANGED_VMX_ENTRY_CTLS           \
-                                                 | HM_CHANGED_VMX_EXIT_CTLS            \
-                                                 | HM_CHANGED_VMX_RESERVED1            \
-                                                 | HM_CHANGED_VMX_RESERVED2)
+                                                 | HM_CHANGED_VMX_EXIT_CTLS)
 #endif
 
 #define HM_CHANGED_ALL                          (HM_CHANGED_ALL_GUEST | HM_CHANGED_HOST_CONTEXT)
@@ -724,6 +718,10 @@ typedef struct HMCPU
         RTHCPHYS                    HCPhysMsrBitmap;
         /** Virtual address of the MSR bitmap. */
         R0PTRTYPE(void *)           pvMsrBitmap;
+
+        /** Whether VTPR with V_INTR_MASKING set is in effect, indicating
+         *  we should check if the VTPR changed on every VM-exit. */
+        bool                        fSyncVTpr;
     } svm;
 
     /** Event injection state. */

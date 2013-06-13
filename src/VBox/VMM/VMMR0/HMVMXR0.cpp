@@ -2658,7 +2658,7 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 pMixedCtx->msrLSTAR = u8Tpr;
                 if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
                 {
-                    /* If there are interrupts pending, intercept CR8 writes, otherwise don't intercept CR8 reads or writes. */
+                    /* If there are interrupts pending, intercept LSTAR writes, otherwise don't intercept reads or writes. */
                     if (fPendingIntr)
                         hmR0VmxSetMsrPermission(pVCpu, MSR_K8_LSTAR, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_INTERCEPT_WRITE);
                     else
@@ -6694,9 +6694,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
     /* Clear any unused and reserved bits. */
-    pVCpu->hm.s.fContextUseFlags &= ~(  HM_CHANGED_GUEST_CR2
-                                      | HM_CHANGED_VMX_RESERVED1
-                                      | HM_CHANGED_VMX_RESERVED2);
+    pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR2;
 
     AssertMsg(!pVCpu->hm.s.fContextUseFlags,
              ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p fContextUseFlags=%#RX32\n",
