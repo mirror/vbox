@@ -8628,6 +8628,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
         || rc == VERR_PAGE_TABLE_NOT_PRESENT
         || rc == VERR_PAGE_NOT_PRESENT)
     {
+        /* Successfully handled MMIO operation. */
         pVCpu->hm.s.fContextUseFlags |=   HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS
                                         | HM_CHANGED_VMX_GUEST_APIC_STATE;
         return VINF_SUCCESS;
@@ -8691,10 +8692,9 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
         || rc == VERR_PAGE_TABLE_NOT_PRESENT
         || rc == VERR_PAGE_NOT_PRESENT)
     {
-        /* Successfully synced our shadow page tables or emulation MMIO instruction. */
+        /* Successfully synced our nested page tables. */
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitReasonNpf);
-        pVCpu->hm.s.fContextUseFlags |=   HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS
-                                        | HM_CHANGED_VMX_GUEST_APIC_STATE;
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS;
         return VINF_SUCCESS;
     }
 
