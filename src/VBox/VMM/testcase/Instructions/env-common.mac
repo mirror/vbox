@@ -1,0 +1,152 @@
+; $Id$
+;; @file
+; Instruction Test Environment - Common Bits.
+;
+
+;
+; Copyright (C) 2006-2013 Oracle Corporation
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+
+%ifndef ___env_common_mac
+%define ___env_common_mac
+
+
+;*******************************************************************************
+;*  Defined Constants And Macros                                               *
+;*******************************************************************************
+%ifdef RT_ARCH_AMD64
+ %define MY_PUSH_FLAGS      pushfq
+ %define MY_POP_FLAGS       popfq
+ %define MY_PUSH_FLAGS_SIZE 8
+
+ %macro MY_PUSH_ALL 0
+        push rbp
+        mov  rbp, rsp
+        push rax
+        push rbx
+        push rcx
+        push rdx
+        push rsi
+        push rdi
+        push r8
+        push r9
+        push r10
+        push r11
+        push r12
+        push r13
+        push r14
+        push r15
+        pushfq
+ %endm
+ %macro MY_POP_ALL 0
+        popfq
+        pop  r15
+        pop  r14
+        pop  r13
+        pop  r12
+        pop  r11
+        pop  r10
+        pop  r9
+        pop  r8
+        pop  rdi
+        pop  rsi
+        pop  rdx
+        pop  rcx
+        pop  rbx
+        pop  rax
+        pop  rbp
+ %endm
+
+%else
+ %define MY_PUSH_FLAGS      pushfd
+ %define MY_POP_FLAGS       popfd
+ %define MY_PUSH_FLAGS_SIZE 4
+
+ %macro MY_PUSH_ALL 0
+        push eBP
+        mov  xBP, xSP
+        push eax
+        push ebx
+        push ecx
+        push edx
+        push esi
+        push edi
+        pushfd
+ %endm
+ %macro MY_POP_ALL 0
+        popfd
+        pop  edi
+        pop  esi
+        pop  edx
+        pop  ecx
+        pop  ebx
+        pop  eax
+        pop  ebp
+ %endm
+%endif
+
+
+;;
+; Report bad register value.
+;
+; Primary purpose is save all registers and convert from our stack-based to
+; the correct calling convention for the environment.
+;
+; @param    uExpected
+; @param    uActual
+; @param    uRegisterNo
+;
+VBINSTST_BEGINPROC Common_BadValue
+        MY_PUSH_ALL
+
+%ifdef ASM_CALL64_GCC
+        mov     r8d, [VBINSTST_NAME(g_uVBInsTstSubTestIndicator) wrt rip]
+        mov     rcx, [rbp + 10h] ; expected
+        mov     rdx, [rbp + 18h] ; actual
+        mov     rsi, [rbp + 20h] ; reg#
+        lea     rdi, [.szFmt wrt rip]
+        VBINSTST_CALL_FN_FAILURE_4
+
+%elifdef ASM_CALL64_MSC
+        sub     rsp, 28h
+        mov     r10d, [VBINSTST_NAME(g_uVBInsTstSubTestIndicator) wrt rip]
+        mov     [rsp + 20h], r10
+        mov     r9,  [rbp + 10h] ; expected
+        mov     r8,  [rbp + 18h] ; actual
+        mov     rdx, [rbp + 20h] ; reg#
+        lea     rcx, [.szFmt wrt rip]
+        VBINSTST_CALL_FN_FAILURE_4
+        add     rsp, 28h
+
+%else
+        mov     sBX, [VBINSTST_NAME(g_uVBInsTstSubTestIndicator)]
+        mov     sCX, [xBP + 4 + xS]     ; expected
+        mov     sAX, [xBP + 4 + xS + 4] ; actual
+        mov     sDX, [xBP + 4 + xS + 8] ; reg#
+        push    sBX
+        push    sCX
+        push    sAX
+        push    sDX
+        push    .szFmt
+        VBINSTST_CALL_FN_FAILURE_4
+        add     esp, 4*sCB + xCB
+%endif
+        MY_POP_ALL
+        ret
+%if ARCH_BITS == 64
+.szFmt: db 'Bad register %#llx value %#018llx, expected %#018llx (line %llu)', 0
+%else
+.szFmt: db 'Bad register %lx value %#010lx, expected %#010lx (line %lu)', 0
+%endif
+VBINSTST_ENDPROC   Common_BadValue
+
+%endif
+
