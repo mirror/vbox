@@ -735,6 +735,14 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
     pelmRoot->setAttribute("xmlns:vbox", "http://www.virtualbox.org/ovf/machine");
     //         pelmRoot->setAttribute("xsi:schemaLocation", "http://schemas.dmtf.org/ovf/envelope/1 ../ovf-envelope.xsd");
 
+    if (enFormat == ovf::OVFVersion_2_0)
+    {
+        pelmRoot->setAttribute("xmlns:epasd",
+        "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_EthernetPortAllocationSettingData.xsd");
+        pelmRoot->setAttribute("xmlns:sasd",
+        "http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_StorageAllocationSettingData.xsd");
+    }
+
     // <Envelope>/<References>
     xml::ElementNode *pelmReferences = pelmRoot->createChild("References");     // 0.9 and 1.0
 
