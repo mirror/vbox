@@ -100,15 +100,6 @@ void PACKSPU_APIENTRY packspu_End( void )
     {
         crPackEnd();
     }
-    
-#ifdef DEBUG_misha
-    {
-        GLuint rc = 0;
-        Assert(0);
-        packspu_GetChromiumParametervCR( GL_DBG_CHECK_BREAK_CR, 0, GL_UNSIGNED_INT, 1, &rc);
-        Assert(!rc);
-    }
-#endif
 }
 
 static void DoVertex( void )
