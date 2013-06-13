@@ -196,8 +196,10 @@ typedef struct USBHIDM_REPORT
 
 typedef struct USBHIDT_REPORT
 {
+    uint8_t     rid;
     uint8_t     btn;
     int8_t      dz;
+    int8_t      dummy;
     uint16_t    cx;
     uint16_t    cy;
 } USBHIDT_REPORT, *PUSBHIDT_REPORT;
@@ -299,11 +301,14 @@ static const uint8_t g_UsbHidMReportDesc[] =
  * as OS X shows no such problem. When X/Y is reported last, Windows behaves
  * properly.
  */
+#define REPORTID_MOUSE 1
+
 static const uint8_t g_UsbHidTReportDesc[] =
 {
     /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
     /* Usage */                     0x09, 0x02,     /* Mouse */
     /* Collection */                0xA1, 0x01,     /* Application */
+    /* Report ID */                 0x85, REPORTID_MOUSE,
     /* Usage */                     0x09, 0x01,     /* Pointer */
     /* Collection */                0xA1, 0x00,     /* Physical */
     /* Usage Page */                0x05, 0x09,     /* Button */
@@ -324,6 +329,8 @@ static const uint8_t g_UsbHidTReportDesc[] =
     /* Report Size */               0x75, 0x08,     /* 8 */
     /* Report Count */              0x95, 0x01,     /* 1 */
     /* Input */                     0x81, 0x06,     /* Data, Value, Relative, Bit field */
+    /* Report Count */              0x95, 0x01,     /* 1 (padding byte) */
+    /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
     /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
     /* Usage */                     0x09, 0x30,     /* X */
     /* Usage */                     0x09, 0x31,     /* Y */
@@ -724,6 +731,7 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport, PUSBHIDM_ACCUM pAccumul
 
     if (isAbsolute)
     {
+        pReport->t.rid = REPORTID_MOUSE;
         pReport->t.btn = pAccumulated->btn;
         pReport->t.cx  = pAccumulated->dX;
         pReport->t.cy  = pAccumulated->dY;
