@@ -746,6 +746,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_SharedFolders));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_VideoCapture));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_InstallGuestTools));
 
     /* Move actions into running-n-paused-n-stucked actions group: */
@@ -807,6 +808,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltOpenSharedFoldersDialog()));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer), SIGNAL(toggled(bool)),
             this, SLOT(sltSwitchVrde(bool)));
+    connect(gActionPool->action(UIActionIndexRuntime_Toggle_VideoCapture), SIGNAL(toggled(bool)),
+            this, SLOT(sltToggleVideoCapture(bool)));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_InstallGuestTools), SIGNAL(triggered()),
             this, SLOT(sltInstallGuestAdditions()));
 
@@ -1887,6 +1890,34 @@ void UIMachineLogic::sltSwitchVrde(bool fOn)
     CVRDEServer server = session().GetMachine().GetVRDEServer();
     AssertMsg(!server.isNull(), ("VRDE server should not be null!\n"));
     server.SetEnabled(fOn);
+}
+
+void UIMachineLogic::sltToggleVideoCapture(bool fEnabled)
+{
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Make sure something had changed: */
+    CMachine machine = session().GetMachine();
+    if (machine.GetVideoCaptureEnabled() == fEnabled)
+        return;
+
+    /* Machine is OK? */
+    if (machine.isOk())
+    {
+        /* Update Video Capture state: */
+        machine.SetVideoCaptureEnabled(fEnabled);
+        /* Machine still OK? */
+        if (machine.isOk())
+        {
+            /* Save machine-settings: */
+            machine.SaveSettings();
+        }
+    }
+    /* Machine had failed on one of steps? */
+    if (!machine.isOk())
+        msgCenter().cannotSaveMachineSettings(machine, activeMachineWindow());
 }
 
 void UIMachineLogic::sltInstallGuestAdditions()
