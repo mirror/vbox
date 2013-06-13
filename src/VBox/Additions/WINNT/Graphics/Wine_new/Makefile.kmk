@@ -279,12 +279,10 @@ VBoxD3D8_SOURCES     := \
 	d3d8/d3d8.def
 VBoxD3D8_LIBS         = \
 	$(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB)
-ifdef VBOX_WINE_WITH_IPRT
- VBoxD3D8_DEFS       += VBOX_WINE_WITH_IPRT
- VBoxD3D8_LIBS       += \
+VBoxD3D8_DEFS       += VBOX_WINE_WITH_IPRT
+VBoxD3D8_LIBS       += \
  	$(VBOX_LIB_IPRT_GUEST_R3) \
  	$(VBOX_LIB_VBGL_R3)
-endif
 
 #
 # VBoxD3D9 - ???.
@@ -319,12 +317,10 @@ VBoxD3D9_SOURCES      := \
 	d3d9/d3d9xpdm.def
 VBoxD3D9_LIBS             = \
 	$(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB)
-ifdef VBOX_WINE_WITH_IPRT
- VBoxD3D9_DEFS         += VBOX_WINE_WITH_IPRT
- VBoxD3D9_LIBS         += \
+VBoxD3D9_DEFS         += VBOX_WINE_WITH_IPRT
+VBoxD3D9_LIBS         += \
  	$(VBOX_LIB_IPRT_GUEST_R3) \
  	$(VBOX_LIB_VBGL_R3)
-endif
 
 ifdef VBOX_WITH_WDDM
  #
@@ -356,11 +352,9 @@ ifdef VBOX_WITH_WDDM
  VBoxD3D9wddm-x86_BLD_TRG_ARCH = x86
  VBoxD3D9wddm-x86_DEFS         = $(VBoxD3D9wddm_DEFS) VBOX_WDDM_WOW64
  VBoxD3D9wddm-x86_LIBS         = $(PATH_STAGE_LIB)/wined3dwddm-x86$(VBOX_SUFF_LIB)
- ifdef VBOX_WINE_WITH_IPRT
-  VBoxD3D9wddm-x86_LIBS        += \
+ VBoxD3D9wddm-x86_LIBS        += \
   	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
   	$(VBOX_LIB_VBGL_R3_X86)
- endif
  VBoxD3D9wddm-x86_LIBS        += \
   	$(VBOX_PATH_ADDITIONS_LIB)/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB) \
  	$(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi-x86$(VBOX_SUFF_LIB)
