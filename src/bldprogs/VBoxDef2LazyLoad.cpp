@@ -427,8 +427,8 @@ static RTEXITCODE generateOutputInner(FILE *pOutput)
             "    push    rcx\n"
             "    push    rdx\n"
             " %%ifdef ASM_CALL64_GCC\n"
-            "    push    rdi\n"
             "    push    rsi\n"
+            "    push    rdi\n"
             " %%else\n"
             "    sub     rsp, 20h\n"
             " %%endif\n"
@@ -534,7 +534,7 @@ static RTEXITCODE generateOutput(void)
  */
 static int usage(const char *pszArgv0)
 {
-    printf("usage: %s --libary <loadname> --output <lazyload.asm> <input.def>\n",
+    printf("usage: %s --libary <loadname> --output <lazyload.asm> <input.def>\n"
            "\n"
            "Copyright (C) 2013 Oracle Corporation\n"
            , pszArgv0);
