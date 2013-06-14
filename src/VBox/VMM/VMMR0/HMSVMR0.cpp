@@ -2746,7 +2746,7 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
  * Worker for hmR0SvmInterpretInvlpg().
  *
  * @return VBox status code.
- * @param   pVCpu     hmR0SvmExitReadDRx      Pointer to the VMCPU.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCpu            Pointer to the disassembler state.
  * @param   pRegFrame       Pointer to the register frame.
  */
@@ -2822,9 +2822,25 @@ DECLINLINE(void) hmR0SvmSetPendingXcptUD(PVMCPU pVCpu)
 {
     SVMEVENT Event;
     Event.u          = 0;
-    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
     Event.n.u1Valid  = 1;
+    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
     Event.n.u8Vector = X86_XCPT_UD;
+    hmR0SvmSetPendingEvent(pVCpu, &Event);
+}
+
+
+/**
+ * Sets an debug (#DB) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptDB(PVMCPU pVCpu)
+{
+    SVMEVENT Event;
+    Event.u          = 0;
+    Event.n.u1Valid  = 1;
+    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector = X86_XCPT_DB;
     hmR0SvmSetPendingEvent(pVCpu, &Event);
 }
 
@@ -3207,6 +3223,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
  */
 HMSVM_EXIT_DECL hmR0SvmExitWriteDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     /* For now it's the same since we interpret the instruction anyway. Will change when using of Decode Assist is implemented. */
     int rc = hmR0SvmExitReadDRx(pVCpu, pCtx, pSvmTransient);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxWrite);
@@ -3214,4 +3231,160 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     return rc;
 }
 
+
+/**
+ * #VMEXIT handler for I/O instructions (SVM_EXIT_IOIO). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    /* I/O operation lookup arrays. */
+    static uint32_t const s_aIOSize[8]  = { 0, 1, 2, 0, 4, 0, 0, 0 };                   /* Size of the I/O accesses in bytes. */
+    static uint32_t const s_aIOOpAnd[8] = { 0, 0xff, 0xffff, 0, 0xffffffff, 0, 0, 0 };  /* AND masks for saving
+                                                                                            the result (in AL/AX/EAX). */
+
+    /* Refer AMD spec. 15.10.2 "IN and OUT Behaviour" and Figure 15-2. "EXITINFO1 for IOIO Intercept" for the format. */
+    SVMIOIOEXIT IoExitInfo;
+    IoExitInfo.u       = (uint32_t)pVmcb->ctrl.u64ExitInfo1;
+    uint32_t uIOWidth  = (IoExitInfo.u >> 4) & 0x7;
+    uint32_t uIOSize   = s_aIOSize[uIOWidth];
+    uint32_t uAndVal   = s_aIOOpAnd[uIOWidth];
+
+    if (RT_UNLIKELY(!uIOSize))
+    {
+        AssertMsgFailed(("hmR0SvmExitIOInstr: Invalid IO operation. uIOWidth=%u\n", uIOWidth));
+        return VERR_EM_INTERPRETER;
+    }
+
+    int rc;
+    if (IoExitInfo.n.u1STR)
+    {
+        /* INS/OUTS - I/O String instruction. */
+        PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
+
+        /** @todo Huh? why can't we use the segment prefix information given by AMD-V
+         *        in EXITINFO1? Investigate once this thing is up and running. */
+
+        rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
+        if (rc == VINF_SUCCESS)
+        {
+            if (IoExitInfo.n.u1Type == 0)   /* OUT */
+            {
+                rc = IOMInterpretOUTSEx(pVM, pVCpu, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->fPrefix,
+                                        (DISCPUMODE)pDis->uAddrMode, uIOSize);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringWrite);
+            }
+            else
+            {
+                rc = IOMInterpretINSEx(pVM, pVCpu, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->fPrefix,
+                                       (DISCPUMODE)pDis->uAddrMode, uIOSize);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringRead);
+            }
+        }
+        else
+            rc = VINF_EM_RAW_EMULATE_INSTR;
+    }
+    else
+    {
+        /* IN/OUT - I/O instruction. */
+        Assert(!IoExitInfo.n.u1REP);
+
+        if (IoExitInfo.n.u1Type == 0)   /* OUT */
+        {
+            rc = IOMIOPortWrite(pVM, pVCpu, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
+            if (rc == VINF_IOM_R3_IOPORT_WRITE)
+                HMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pVmcb->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, uIOSize);
+
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOWrite);
+        }
+        else
+        {
+            uint32_t u32Val = 0;
+
+            rc = IOMIOPortRead(pVM, pVCpu, IoExitInfo.n.u16Port, &u32Val, uIOSize);
+            if (IOM_SUCCESS(rc))
+            {
+                /* Save result of I/O IN instr. in AL/AX/EAX. */
+                pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
+            }
+            else if (rc == VINF_IOM_R3_IOPORT_READ)
+                HMR0SavePendingIOPortRead(pVCpu, pCtx->rip, pVmcb->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, uIOSize);
+
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIORead);
+        }
+    }
+
+    if (IOM_SUCCESS(rc))
+    {
+        /* AMD-V saves the RIP of the instruction following the IO instruction in EXITINFO2. */
+        pCtx->rip = pVmcb->ctrl.u64ExitInfo2;
+
+        if (RT_LIKELY(rc == VINF_SUCCESS))
+        {
+            /* If any IO breakpoints are armed, then we should check if a debug trap needs to be generated. */
+            if (pCtx->dr[7] & X86_DR7_ENABLED_MASK)
+            {
+                /* I/O breakpoint length, in bytes. */
+                static uint32_t const s_aIOBPLen[4] = { 1, 2, 0, 4 };
+
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
+                for (unsigned i = 0; i < 4; i++)
+                {
+                    unsigned uBPLen = s_aIOBPLen[X86_DR7_GET_LEN(pCtx->dr[7], i)];
+
+                    if (   IoExitInfo.n.u16Port >= pCtx->dr[i]
+                        && IoExitInfo.n.u16Port < pCtx->dr[i] + uBPLen
+                        && (pCtx->dr[7] & (X86_DR7_L(i) | X86_DR7_G(i)))
+                        && (pCtx->dr[7] & X86_DR7_RW(i, X86_DR7_RW_IO)) == X86_DR7_RW(i, X86_DR7_RW_IO))
+                    {
+                        Assert(CPUMIsGuestDebugStateActive(pVCpu));
+
+                        /* Clear all breakpoint status flags and set the one we just hit. */
+                        pCtx->dr[6] &= ~(X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B2 | X86_DR6_B3);
+                        pCtx->dr[6] |= (uint64_t)RT_BIT(i);
+
+                        /*
+                         * Note: AMD64 Architecture Programmer's Manual 13.1:
+                         * Bits 15:13 of the DR6 register is never cleared by the processor and must be cleared
+                         * by software after the contents have been read.
+                         */
+                        pVmcb->guest.u64DR6 = pCtx->dr[6];
+
+                        /* X86_DR7_GD will be cleared if drx accesses should be trapped inside the guest. */
+                        pCtx->dr[7] &= ~X86_DR7_GD;
+
+                        /* Paranoia. */
+                        pMixedCtx->dr[7] &= 0xffffffff;                                             /* Upper 32 bits MBZ. */
+                        pMixedCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));   /* MBZ. */
+                        pMixedCtx->dr[7] |= 0x400;                                                  /* MB1. */
+
+                        pVmcb->guest.u64DR7 = pCtx->dr[7];
+                        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+
+                        /* Inject the debug exception. */
+                        hmR0SvmSetPendingXcptDB(pVCpu);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+#ifdef DEBUG
+    if (rc == VINF_IOM_R3_IOPORT_READ)
+        Assert(IoExitInfo.n.u1Type != 0);
+    else if (rc == VINF_IOM_R3_IOPORT_WRITE)
+        Assert(IoExitInfo.n.u1Type == 0);
+    else
+    {
+        AssertMsg(   RT_FAILURE(rc)
+                  || rc == VINF_SUCCESS
+                  || rc == VINF_EM_RAW_EMULATE_INSTR
+                  || rc == VINF_EM_RAW_GUEST_TRAP
+                  || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", rc));
+    }
+#endif
+    return rc;
+}
 
