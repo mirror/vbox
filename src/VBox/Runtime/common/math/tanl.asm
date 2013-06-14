@@ -31,13 +31,13 @@ BEGINCODE
 ;;
 ; Compute the sine of lrd
 ; @returns st(0)
-; @param    lrd     [xSP + xS*2]
+; @param    lrd     [xSP + xCB*2]
 BEGINPROC RT_NOCRT(tanl)
     push    xBP
     mov     xBP, xSP
     sub     xSP, 10h
 
-    fld     tword [xBP + xS*2]
+    fld     tword [xBP + xCB*2]
     fptan
     fnstsw  ax
     test    ah, 04h                     ; check for C2

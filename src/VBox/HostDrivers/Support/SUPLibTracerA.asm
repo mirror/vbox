@@ -102,49 +102,49 @@ EXPORTEDNAME SUPTracerFireProbe
         pushf
         pop     xAX
         mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.rflags], xAX
-        mov     xAX, [xBP + xS]
+        mov     xAX, [xBP + xCB]
         mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.rip], xAX
         mov     xAX, [xBP]
         mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.rbp], xAX
-        lea     xAX, [xBP + xS*2]
+        lea     xAX, [xBP + xCB*2]
         mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.rsp], xAX
  %ifdef ASM_CALL64_MSC
         mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.uVtgProbeLoc], rcx
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*0], rdx
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*1], r8
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*2], r9
-        mov     xAX, [xBP + xS*2 + 0x20 + xS*0]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*3], xAX
-        mov     xAX, [xBP + xS*2 + 0x20 + xS*1]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*4], xAX
-        mov     xAX, [xBP + xS*2 + 0x20 + xS*2]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*5], xAX
-        mov     xAX, [xBP + xS*2 + 0x20 + xS*3]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*6], xAX
-        mov     xAX, [xBP + xS*2 + 0x20 + xS*4]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*7], xAX
-        mov     xAX, [xBP + xS*2 + 0x20 + xS*5]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*8], xAX
-        mov     xAX, [xBP + xS*2 + 0x20 + xS*6]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*9], xAX
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*0], rdx
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*1], r8
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*2], r9
+        mov     xAX, [xBP + xCB*2 + 0x20 + xCB*0]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*3], xAX
+        mov     xAX, [xBP + xCB*2 + 0x20 + xCB*1]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*4], xAX
+        mov     xAX, [xBP + xCB*2 + 0x20 + xCB*2]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*5], xAX
+        mov     xAX, [xBP + xCB*2 + 0x20 + xCB*3]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*6], xAX
+        mov     xAX, [xBP + xCB*2 + 0x20 + xCB*4]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*7], xAX
+        mov     xAX, [xBP + xCB*2 + 0x20 + xCB*5]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*8], xAX
+        mov     xAX, [xBP + xCB*2 + 0x20 + xCB*6]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*9], xAX
         mov     eax, [xCX + 4]          ; VTGPROBELOC::idProbe.
  %else
         mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.uVtgProbeLoc], rdi
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*0], rsi
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*1], rdx
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*2], rcx
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*3], r8
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*4], r9
-        mov     xAX, [xBP + xS*2 + xS*0]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*5], xAX
-        mov     xAX, [xBP + xS*2 + xS*1]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*6], xAX
-        mov     xAX, [xBP + xS*2 + xS*2]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*7], xAX
-        mov     xAX, [xBP + xS*2 + xS*3]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*8], xAX
-        mov     xAX, [xBP + xS*2 + xS*4]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xS*9], xAX
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*0], rsi
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*1], rdx
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*2], rcx
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*3], r8
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*4], r9
+        mov     xAX, [xBP + xCB*2 + xCB*0]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*5], xAX
+        mov     xAX, [xBP + xCB*2 + xCB*1]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*6], xAX
+        mov     xAX, [xBP + xCB*2 + xCB*2]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*7], xAX
+        mov     xAX, [xBP + xCB*2 + xCB*3]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*8], xAX
+        mov     xAX, [xBP + xCB*2 + xCB*4]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.u.Amd64.aArgs + xCB*9], xAX
         mov     eax, [xDI + 4]          ; VTGPROBELOC::idProbe.
  %endif
         mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX64.idProbe], eax
@@ -179,21 +179,21 @@ EXPORTEDNAME SUPTracerFireProbe
         pushf
         pop     xAX
         mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX32.u.X86.eflags], xAX
-        mov     xAX, [xBP + xS]
+        mov     xAX, [xBP + xCB]
         mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX32.u.X86.eip], xAX
         mov     xAX, [xBP]
         mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX32.u.X86.ebp], xAX
-        lea     xAX, [xBP + xS*2]
+        lea     xAX, [xBP + xCB*2]
         mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX32.u.X86.esp], xAX
 
-        mov     xCX, [xBP + xS*2 + xS*0]
+        mov     xCX, [xBP + xCB*2 + xCB*0]
         mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX32.u.X86.uVtgProbeLoc], xCX ; keep, used below.
 
         mov     edx, 20
 .more:
         dec     edx
-        mov     xAX, [xBP + xS*2 + xS*xDX]
-        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX32.u.X86.aArgs + xS*xDX], xAX
+        mov     xAX, [xBP + xCB*2 + xCB*xDX]
+        mov     [xSP + SUPTRACERUMODFIREPROBE.In + SUPDRVTRACERUSRCTX32.u.X86.aArgs + xCB*xDX], xAX
         jnz     .more
 
         mov     eax, [xCX + 4]          ; VTGPROBELOC::idProbe.

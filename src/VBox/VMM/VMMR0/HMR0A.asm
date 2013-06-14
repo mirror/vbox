@@ -1583,7 +1583,7 @@ ENDPROC   SVMR0VMRun64
  %define RT_ARCH_AMD64
  %undef  ASM_CALL64_MSC
  %define ASM_CALL64_GCC
- %define xS             8
+ %define xCB             8
  %define xSP            rsp
  %define xBP            rbp
  %define xAX            rax

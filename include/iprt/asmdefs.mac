@@ -717,7 +717,7 @@ BEGINPROC RT_NOCRT(%1)
 
 
 
-;; @def xS
+;; @def xCB
 ; The stack unit size  / The register unit size.
 
 ;; @def xSP
@@ -748,7 +748,7 @@ BEGINPROC RT_NOCRT(%1)
 ; 'wrt rip' for AMD64 targets, nothing for x86 ones.
 
 %ifdef RT_ARCH_AMD64
- %define xS  8
+ %define xCB 8
  %define xSP rsp
  %define xBP rbp
  %define xAX rax
@@ -759,7 +759,7 @@ BEGINPROC RT_NOCRT(%1)
  %define xSI rsi
  %define xWrtRIP wrt rip
 %else
- %define xS  4
+ %define xCB 4
  %define xSP esp
  %define xBP ebp
  %define xAX eax

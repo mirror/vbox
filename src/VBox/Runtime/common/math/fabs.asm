@@ -48,7 +48,7 @@ BEGINPROC RT_NOCRT(fabs)
     movsd   xmm0, [xSP]
 
 %else
-    fld     qword [xBP + xS*2]
+    fld     qword [xBP + xCB*2]
     fabs
 %endif
 

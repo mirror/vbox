@@ -128,9 +128,9 @@ VBINSTST_BEGINPROC Common_BadValue
 
 %else
         mov     sBX, [VBINSTST_NAME(g_uVBInsTstSubTestIndicator)]
-        mov     sCX, [xBP + 4 + xS]     ; expected
-        mov     sAX, [xBP + 4 + xS + 4] ; actual
-        mov     sDX, [xBP + 4 + xS + 8] ; reg#
+        mov     sCX, [xBP + 4 + xCB]     ; expected
+        mov     sAX, [xBP + 4 + xCB + 4] ; actual
+        mov     sDX, [xBP + 4 + xCB + 8] ; reg#
         push    sBX
         push    sCX
         push    sAX
