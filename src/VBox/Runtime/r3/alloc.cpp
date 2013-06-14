@@ -39,6 +39,10 @@
 # undef RTMEMALLOC_USE_TRACKER
 #endif
 
+#if defined(RTMEMALLOC_USE_TRACKER) && defined(RTMEM_NO_WRAP_TO_EF_APIS)
+# error "Cannot define both RTMEMALLOC_USE_TRACKER and RTMEM_NO_WRAP_TO_EF_APIS!"
+#endif
+
 
 /*******************************************************************************
 *   Header Files                                                               *
