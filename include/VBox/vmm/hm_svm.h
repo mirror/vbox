@@ -264,11 +264,18 @@
 #define SVM_EXIT_MWAIT_ARMED            0x8C
 /** Nested paging: host-level page fault occurred (EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault). */
 #define SVM_EXIT_NPF                    0x400
+/** AVIC: Virtual IPI delivery not completed. */
+#define SVM_EXIT_AVIC_INCOMPLETE_IPI    0x401
+/** AVIC: Attempted access by guest to a vAPIC register not handled by AVIC
+ *  hardware. */
+#define SVM_EXIT_AVIC_NOACCEL           0x402
 
+/** The maximum possible exit value. */
+#define SVM_EXIT_MAX                    (SVM_EXIT_AVIC_NOACCEL)
 /** @} */
 
 
-/** @name SVMVMCB.u64ExitInfo2
+/** @name SVMVMCB.u64ExitInfo2 for task switches
  * @{
  */
 /** Set to 1 if the task switch was caused by an IRET; else cleared to 0. */
@@ -279,6 +286,15 @@
 #define SVM_EXIT2_TASK_SWITCH_HAS_ERROR_CODE        RT_BIT_64(44)
 /** The value of EFLAGS.RF that would be saved in the outgoing TSS if the task switch were not intercepted. */
 #define SVM_EXIT2_TASK_SWITCH_EFLAGS_RF             RT_BIT_64(48)
+/** @} */
+
+/** @name SVMVMCB.u64ExitInfo1 for MSR accesses
+ * @{
+ */
+/** The access was a read MSR. */
+#define SVM_EXIT1_MSR_READ                      0x0
+/** The access was a write MSR. */
+#define SVM_EXIT1_MSR_WRITE                     0x1
 /** @} */
 
 /** @name SVMVMCB.ctrl.u32InterceptCtrl1
