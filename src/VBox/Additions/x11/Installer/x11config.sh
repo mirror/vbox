@@ -14,7 +14,7 @@
 #
 
 auto_mouse=""
-new_mouse=""
+auto_keyboard=""
 no_bak=""
 old_mouse_dev="/dev/psaux"
 
@@ -55,6 +55,7 @@ reconfigure()
               grep -i "$OPT_XKB"`"
     kbd_drv="`cat "$cfg" | sed -n -e "/$KBD_SECTION/,/$END_SECTION/p" |
              sed -n -e "0,/$DRIVER_KBD/s/$DRIVER_KBD/\\1/p"`"
+    test -z "${kbd_drv}" && test -z "${auto_keyboard}" && kbd_drv=keyboard
     cat > "$tmp" << EOF
 # VirtualBox generated configuration file
 # based on $cfg.
@@ -69,33 +70,9 @@ $xkb_opts
   Option       "CoreKeyboard"
 EndSection
 EOF
-    kbd_layout=""
-    test -n "$kbd_drv" && kbd_layout='  InputDevice  "Keyboard[0]" "CoreKeyboard"'
-    test -z "$auto_mouse" -a -z "$new_mouse" && cat >> $tmp << EOF
-
-Section "InputDevice"
-  Identifier  "Mouse[1]"
-  Driver      "vboxmouse"
-  Option      "Buttons" "9"
-  Option      "Device" "$old_mouse_dev"
-  Option      "Name" "VirtualBox Mouse"
-  Option      "Protocol" "explorerps/2"
-  Option      "Vendor" "Oracle Corporation"
-  Option      "ZAxisMapping" "4 5"
-  Option      "CorePointer"
-EndSection
-
-Section "ServerLayout"
-  Identifier   "Layout[all]"
-$kbd_layout
-  InputDevice  "Mouse[1]" "CorePointer"
-  Option       "Clone" "off"
-  Option       "Xinerama" "off"
-  Screen       "Screen[0]"
-EndSection
-EOF
-
-    test -z "$auto_mouse" -a -n "$new_mouse" &&
+    kbd_line=""
+    test -n "$kbd_drv" && kbd_line='  InputDevice  "Keyboard[0]" "CoreKeyboard"'
+    test -z "$auto_mouse" &&
         cat >> "$tmp" << EOF
 
 Section "InputDevice"
@@ -121,7 +98,7 @@ EndSection
 
 Section "ServerLayout"
   Identifier   "Layout[all]"
-  InputDevice  "Keyboard[0]" "CoreKeyboard"
+${kbd_line}
   InputDevice  "Mouse[1]" "CorePointer"
   InputDevice  "Mouse[2]" "SendCoreEvents"
   Option       "Clone" "off"
@@ -165,8 +142,8 @@ do
     case "$1" in
         --autoMouse)
             auto_mouse=1 ;;
-        --newMouse)
-            new_mouse=1 ;;
+        --autoKeyboard)
+            auto_keyboard=1 ;;
         --noBak)
             no_bak=1 ;;
         --nopsaux)
