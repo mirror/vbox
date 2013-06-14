@@ -7718,7 +7718,8 @@ HMVMX_EXIT_DECL hmR0VmxExitHlt(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
 
 
 /**
- * VM-exit handler for instructions that result in a #UD exception delivered to the guest.
+ * VM-exit handler for instructions that result in a #UD exception delivered to
+ * the guest.
  */
 HMVMX_EXIT_DECL hmR0VmxExitSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
