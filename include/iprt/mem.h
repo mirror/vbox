@@ -313,8 +313,16 @@ RTDECL(void)    RTMemFree(void *pv) RT_NO_THROW;
 /** Allocate and free from any context.
  * Will return VERR_NOT_SUPPORTED if not supported. */
 #define RTMEMALLOCEX_FLAGS_ANY_CTX          (RTMEMALLOCEX_FLAGS_ANY_CTX_ALLOC | RTMEMALLOCEX_FLAGS_ANY_CTX_FREE)
+/** Reachable by 16-bit address.
+ * Will return VERR_NOT_SUPPORTED if not supported.  */
+#define RTMEMALLOCEX_FLAGS_16BIT_REACH      RT_BIT(4)
+/** Reachable by 32-bit address.
+ * Will return VERR_NOT_SUPPORTED if not supported.  */
+#define RTMEMALLOCEX_FLAGS_32BIT_REACH      RT_BIT(5)
 /** Mask of valid flags. */
-#define RTMEMALLOCEX_FLAGS_VALID_MASK       UINT32_C(0x0000000f)
+#define RTMEMALLOCEX_FLAGS_VALID_MASK       UINT32_C(0x0000003f)
+/** Mask of valid flags for ring-0. */
+#define RTMEMALLOCEX_FLAGS_VALID_MASK_R0    UINT32_C(0x0000000f)
 /** @}  */
 
 /**
@@ -337,6 +345,9 @@ RTDECL(void)    RTMemFree(void *pv) RT_NO_THROW;
 /**
  * Extended heap allocation API, custom tag.
  *
+ * Depending on the implementation, using this function may add extra overhead,
+ * so use the simpler APIs where ever possible.
+ *
  * @returns IPRT status code.
  * @retval  VERR_NO_MEMORY if we're out of memory.
  * @retval  VERR_NO_EXEC_MEMORY if we're out of executable memory.
@@ -357,6 +368,11 @@ RTDECL(int) RTMemAllocExTag(size_t cb, size_t cbAlignment, uint32_t fFlags, cons
  *
  * @param   pv                  What to free, NULL is fine.
  * @param   cb                  The amount of allocated memory.
+ * @param   fFlags              The flags specified when allocating the memory.
+ *                              Whether the exact flags are requires depends on
+ *                              the implementation, but in general, ring-0
+ *                              doesn't require anything while ring-3 requires
+ *                              RTMEMALLOCEX_FLAGS_EXEC if used.
  */
 RTDECL(void) RTMemFreeEx(void *pv, size_t cb) RT_NO_THROW;
 

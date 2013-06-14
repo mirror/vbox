@@ -582,6 +582,7 @@ RuntimeR3_SOURCES.win = \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
+	r3/generic/allocex-r3-generic.cpp \
 	r3/posix/env-posix.cpp \
 	r3/win/RTHandleGetStandard-win.cpp \
 	r3/win/RTSystemQueryOSInfo-win.cpp \
@@ -637,6 +638,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/mppresent-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
+	r3/generic/allocex-r3-generic.cpp \
 	r3/linux/RTThreadGetNativeState-linux.cpp \
 	r3/linux/mp-linux.cpp \
 	r3/linux/rtProcInitExePath-linux.cpp \
@@ -734,6 +736,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
+	r3/generic/allocex-r3-generic.cpp \
 	r3/os2/filelock-os2.cpp \
 	r3/os2/mp-os2.cpp \
 	r3/os2/pipe-os2.cpp \
@@ -807,6 +810,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/darwin/systemmem-darwin.cpp \
 	r3/darwin/time-darwin.cpp \
 	r3/darwin/RTPathUserDocuments-darwin.cpp \
+	r3/generic/allocex-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
@@ -867,6 +871,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTThreadGetNativeState-generic.cpp \
 	r3/freebsd/mp-freebsd.cpp \
 	r3/freebsd/rtProcInitExePath-freebsd.cpp \
+	r3/generic/allocex-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
@@ -927,6 +932,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
+	r3/generic/allocex-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
@@ -1002,6 +1008,7 @@ RuntimeR3_SOURCES.haiku = \
 	generic/RTMpGetCoreCount-generic.cpp \
 	r3/haiku/rtProcInitExePath-haiku.cpp \
 	r3/haiku/time-haiku.cpp \
+	r3/generic/allocex-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTHandleGetStandard-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \

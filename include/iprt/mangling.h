@@ -811,7 +811,7 @@
 # define RTMd5Init                                      RT_MANGLER(RTMd5Init)
 # define RTMd5ToString                                  RT_MANGLER(RTMd5ToString)
 # define RTMd5Update                                    RT_MANGLER(RTMd5Update)
-# define RTMemAllocExTag                                RT_MANGLER(RTMemAllocExTag) /* r0drv */
+# define RTMemAllocExTag                                RT_MANGLER(RTMemAllocExTag)
 # define RTMemAllocTag                                  RT_MANGLER(RTMemAllocTag)
 # define RTMemAllocVarTag                               RT_MANGLER(RTMemAllocVarTag)
 # define RTMemAllocZTag                                 RT_MANGLER(RTMemAllocZTag)
@@ -851,7 +851,7 @@
 # define RTMemExecAllocTag                              RT_MANGLER(RTMemExecAllocTag)
 # define RTMemExecFree                                  RT_MANGLER(RTMemExecFree)
 # define RTMemFree                                      RT_MANGLER(RTMemFree)
-# define RTMemFreeEx                                    RT_MANGLER(RTMemFreeEx)     /* r0drv */
+# define RTMemFreeEx                                    RT_MANGLER(RTMemFreeEx)
 # define RTMemPageAllocTag                              RT_MANGLER(RTMemPageAllocTag)
 # define RTMemPageAllocZTag                             RT_MANGLER(RTMemPageAllocZTag)
 # define RTMemPageFree                                  RT_MANGLER(RTMemPageFree)
