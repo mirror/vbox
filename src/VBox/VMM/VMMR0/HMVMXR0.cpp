@@ -2650,21 +2650,6 @@ DECLINLINE(int) hmR0VmxLoadGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
             rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
             AssertRCReturn(rc, rc);
-
-            /* 32-bit guests uses LSTAR MSR for patching guest code which touches the TPR. */
-            if (pVCpu->CTX_SUFF(pVM)->hm.s.fTPRPatchingActive)
-            {
-                Assert(!CPUMIsGuestInLongModeEx(pMixedCtx));     /* EFER always up-to-date. */
-                pMixedCtx->msrLSTAR = u8Tpr;
-                if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
-                {
-                    /* If there are interrupts pending, intercept LSTAR writes, otherwise don't intercept reads or writes. */
-                    if (fPendingIntr)
-                        hmR0VmxSetMsrPermission(pVCpu, MSR_K8_LSTAR, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_INTERCEPT_WRITE);
-                    else
-                        hmR0VmxSetMsrPermission(pVCpu, MSR_K8_LSTAR, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
-                }
-            }
         }
 
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_VMX_GUEST_APIC_STATE;
@@ -6856,24 +6841,6 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
     hmR0VmxFlushTaggedTlb(pVCpu);                               /* Invalidate the appropriate guest entries from the TLB. */
     Assert(HMR0GetCurrentCpu()->idCpu == pVCpu->hm.s.idLastCpu);
 
-    /*
-     * TPR patching (only active for 32-bit guests on 64-bit capable CPUs) when the CPU does not supported virtualizing
-     * APIC accesses feature (VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC).
-     */
-    if (pVM->hm.s.fTPRPatchingActive)
-    {
-        Assert(!CPUMIsGuestInLongMode(pVCpu));
-
-        /* Need guest's LSTAR MSR (which is part of the auto load/store MSRs in the VMCS), ensure we have the updated one. */
-        rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
-        AssertRC(rc);
-
-        /* The patch code uses the LSTAR as it's not used by a guest in 32-bit mode implicitly (i.e. SYSCALL is 64-bit only). */
-        pVmxTransient->u64LStarMsr = ASMRdMsr(MSR_K8_LSTAR);
-        ASMWrMsr(MSR_K8_LSTAR, pMixedCtx->msrLSTAR);            /* pMixedCtx->msrLSTAR contains the guest's TPR,
-                                                                    see hmR0VmxLoadGuestApicState(). */
-    }
-
 #ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     /*
      * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
@@ -6938,15 +6905,6 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
-
-    /* Restore the effects of TPR patching if any. */
-    if (pVM->hm.s.fTPRPatchingActive)
-    {
-        int rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
-        AssertRC(rc);
-        pMixedCtx->msrLSTAR = ASMRdMsr(MSR_K8_LSTAR);           /* MSR_K8_LSTAR contains the guest TPR. */
-        ASMWrMsr(MSR_K8_LSTAR, pVmxTransient->u64LStarMsr);
-    }
 
     ASMSetFlags(pVmxTransient->uEFlags);                        /* Enable interrupts. */
     pVCpu->hm.s.fResumeVM = true;                               /* Use VMRESUME instead of VMLAUNCH in the next run. */
@@ -7919,23 +7877,6 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc = VINF_SUCCESS;
-
-    /* If TPR patching is active, LSTAR holds the guest TPR, writes to it must be propagated to the APIC. */
-    if (   pVM->hm.s.fTPRPatchingActive
-        && pMixedCtx->ecx == MSR_K8_LSTAR)
-    {
-        Assert(!CPUMIsGuestInLongModeEx(pMixedCtx));    /* Requires EFER but it's always up-to-date. */
-        if ((pMixedCtx->eax & 0xff) != pVmxTransient->u8GuestTpr)
-        {
-            rc = PDMApicSetTPR(pVCpu, pMixedCtx->eax & 0xff);
-            AssertRC(rc);
-        }
-
-        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
-        Assert(pVmxTransient->cbInstr == 2);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWrmsr);
-        return VINF_SUCCESS;
-    }
 
     /* EMInterpretWrmsr() requires CR0, EFLAGS and SS segment register. */
     rc  = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
@@ -9149,37 +9090,6 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     }
 #else
     Assert(!pVM->hm.s.fNestedPaging);
-#endif
-
-#ifdef VBOX_HM_WITH_GUEST_PATCHING
-    rc  = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
-    AssertRCReturn(rc, rc);
-    /* Shortcut for APIC TPR access, only for 32-bit guests. */
-    if (   pVM->hm.s.fTRPPatchingAllowed
-        && pVM->hm.s.pGuestPatchMem
-        && (pVmxTransient->uExitQualification & 0xfff) == 0x80     /* TPR offset */
-        && !(pVmxTransient->uExitIntrErrorCode & X86_TRAP_PF_P)    /* Page not present */
-        && CPUMGetGuestCPL(pVCpu) == 0                             /* Requires CR0, EFLAGS, segments. */
-        && !CPUMIsGuestInLongModeEx(pMixedCtx)                     /* Requires EFER. */
-        && pVM->hm.s.cPatches < RT_ELEMENTS(pVM->hm.s.aPatches))
-    {
-        RTGCPHYS GCPhys;
-        RTGCPHYS GCPhysApicBase = (pMixedCtx->msrApicBase & PAGE_BASE_GC_MASK);
-        rc = PGMGstGetPage(pVCpu, (RTGCPTR)pVmxTransient->uExitQualification, NULL /* pfFlags */, &GCPhys);
-        if (    rc == VINF_SUCCESS
-            &&  GCPhys == GCPhysApicBase)
-        {
-            rc = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
-            AssertRCReturn(rc, rc);
-
-            /* Only attempt to patch the instruction once. */
-            PHMTPRPATCH pPatch = (PHMTPRPATCH)RTAvloU32Get(&pVM->hm.s.PatchTree, (AVLOU32KEY)pMixedCtx->eip);
-            if (!pPatch)
-                return VINF_EM_HM_PATCH_TPR_INSTR;
-        }
-    }
 #endif
 
     rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
