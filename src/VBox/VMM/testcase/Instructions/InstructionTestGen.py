@@ -231,6 +231,11 @@ class TargetEnv(object):
             return 16;
         return 8;
 
+    def randGRegNoSp(self):
+        """ Returns a random general register number, excluding the SP register. """
+        iReg = randU16();
+        return iReg % (16 if self.is64Bit() else 8);
+
 
 
 ## Target environments.
@@ -275,25 +280,53 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         self.fnCalcResult = fnCalcResult;
         self.acbOpVars = [ 1, 2, 4, 8 ] if not acbOpVars else list(acbOpVars);
 
-    def generateInputs(self, cbEffOp, cbMaxOp):
+    def generateInputs(self, cbEffOp, cbMaxOp, oGen, fLong = False):
         """ Generate a list of inputs. """
-        # Fixed ranges.
-        auRet = [0, 1, ];
-        if cbEffOp == 1:
-            auRet += [ UINT8_MAX  / 2, UINT8_MAX  / 2 + 1, UINT8_MAX  ];
-        elif cbEffOp == 2:
-            auRet += [ UINT16_MAX / 2, UINT16_MAX / 2 + 1, UINT16_MAX ];
-        elif cbEffOp == 4:
-            auRet += [ UINT32_MAX / 2, UINT32_MAX / 2 + 1, UINT32_MAX ];
-        elif cbEffOp == 8:
-            auRet += [ UINT64_MAX / 2, UINT64_MAX / 2 + 1, UINT64_MAX ];
+        if fLong:
+            #
+            # Try do extremes as well as different ranges of random numbers.
+            #
+            auRet = [0, 1, ];
+            if cbMaxOp >= 1:
+                auRet += [ UINT8_MAX  / 2, UINT8_MAX  / 2 + 1, UINT8_MAX  ];
+            if cbMaxOp >= 2:
+                auRet += [ UINT16_MAX / 2, UINT16_MAX / 2 + 1, UINT16_MAX ];
+            if cbMaxOp >= 4:
+                auRet += [ UINT32_MAX / 2, UINT32_MAX / 2 + 1, UINT32_MAX ];
+            if cbMaxOp >= 8:
+                auRet += [ UINT64_MAX / 2, UINT64_MAX / 2 + 1, UINT64_MAX ];
+
+            if oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
+                for cBits, cValues in ( (8, 4), (16, 4), (32, 8), (64, 8) ):
+                    if cBits < cbMaxOp * 8:
+                        auRet += randUxxList(cBits, cValues);
+                cWanted = 16;
+            elif oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Medium:
+                for cBits, cValues in ( (8, 8), (16, 8), (24, 2), (32, 16), (40, 1), (48, 1), (56, 1), (64, 16) ):
+                    if cBits < cbMaxOp * 8:
+                        auRet += randUxxList(cBits, cValues);
+                cWanted = 64;
+            else:
+                for cBits, cValues in ( (8, 16), (16, 16), (24, 4), (32, 64), (40, 4), (48, 4), (56, 4), (64, 64) ):
+                    if cBits < cbMaxOp * 8:
+                        auRet += randUxxList(cBits, cValues);
+                cWanted = 168;
+            if len(auRet) < cWanted:
+                auRet += randUxxList(cbEffOp * 8, cWanted - len(auRet));
         else:
-            assert False;
-
-        # Append some random values as well.
-        auRet += randUxxList(cbEffOp * 8, 4);
-        auRet += randUxxList(cbMaxOp * 8, 4);
-
+            #
+            # Short list, just do some random numbers.
+            #
+            auRet = [];
+            if oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
+                auRet += randUxxList(cbMaxOp, 1);
+            elif oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Medium:
+                auRet += randUxxList(cbMaxOp, 2);
+            else:
+                auRet = [];
+                for cBits in (8, 16, 32, 64):
+                    if cBits < cbMaxOp * 8:
+                        auRet += randUxxList(cBits, 1);
         return auRet;
 
     def writeInstrGregGreg(self, cbEffOp, iOp1, iOp2, oGen):
@@ -322,24 +355,32 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
     def generateStandardTests(self, oGen):
         """ Generate standard tests. """
 
-        cbDefOp  = oGen.oTarget.getDefOpBytes();
-        cbMaxOp  = oGen.oTarget.getMaxOpBytes();
-        auInputs = self.generateInputs(cbDefOp, cbMaxOp);
+        # Parameters.
+        cbDefOp       = oGen.oTarget.getDefOpBytes();
+        cbMaxOp       = oGen.oTarget.getMaxOpBytes();
+        auShortInputs = self.generateInputs(cbDefOp, cbMaxOp, oGen);
+        auLongInputs  = self.generateInputs(cbDefOp, cbMaxOp, oGen, fLong = True);
+        iLongOp1      = oGen.oTarget.randGRegNoSp();
+        iLongOp2      = oGen.oTarget.randGRegNoSp();
+        oOp2Range     = range(oGen.oTarget.getGRegCount());
+        if oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
+            oOp2Range = [iLongOp2,];
 
-
+        # Register tests.
         for cbEffOp in self.acbOpVars:
             if cbEffOp > cbMaxOp:
                 continue;
             for iOp1 in range(oGen.oTarget.getGRegCount()):
                 if oGen.oTarget.asGRegsNoSp[iOp1] is None:
                     continue;
-                for iOp2 in range(oGen.oTarget.getGRegCount()):
+                for iOp2 in oOp2Range:
                     if oGen.oTarget.asGRegsNoSp[iOp2] is None:
                         continue;
-                    for uInput in auInputs:
+                    for uInput in (auLongInputs if iOp1 == iLongOp1 and iOp2 == iLongOp2 else auShortInputs):
                         uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1] if iOp1 != iOp2 else uInput, oGen);
                         oGen.newSubTest();
                         self.generateOneStdTest(oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult);
+
         return True;
 
     def generateTest(self, oGen, sTestFnName):
@@ -404,6 +445,15 @@ class InstructionTestGen(object):
     """
     Instruction Test Generator.
     """
+
+    ## @name Test size
+    ## @{
+    ksTestSize_Large  = 'large';
+    ksTestSize_Medium = 'medium';
+    ksTestSize_Tiny   = 'tiny';
+    ## @}
+    kasTestSizes = ( ksTestSize_Large, ksTestSize_Medium, ksTestSize_Tiny );
+
 
 
     def __init__(self, oOptions):
@@ -776,6 +826,9 @@ class InstructionTestGen(object):
                            choices = g_dTargetEnvs.keys(),
                            help = 'The target environment. Choices: %s'
                                 % (', '.join(sorted(g_dTargetEnvs.keys())),));
+        oParser.add_option('--test-size', dest = 'sTestSize', default = InstructionTestGen.ksTestSize_Medium,
+                           choices = InstructionTestGen.kasTestSizes,
+                           help = 'Selects the test size.');
 
         (oOptions, asArgs) = oParser.parse_args();
         if len(asArgs) > 0:
