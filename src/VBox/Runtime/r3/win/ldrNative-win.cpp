@@ -35,9 +35,28 @@
 #include <iprt/path.h>
 #include <iprt/err.h>
 #include <iprt/alloca.h>
+#include <iprt/once.h>
 #include <iprt/string.h>
 #include "internal/ldr.h"
 
+static RTONCE g_Once = RTONCE_INITIALIZER;
+
+static DECLCALLBACK(int) rtldrOnceSetDllDirectory(void *pvUser)
+{
+    HMODULE hmod = GetModuleHandle(TEXT("kernel32.dll"));
+    if (hmod)
+    {
+        typedef BOOLEAN (WINAPI *PFNSETDLLDIRECTORY)(LPCWSTR);
+        PFNSETDLLDIRECTORY pfn = (PFNSETDLLDIRECTORY)GetProcAddress(hmod, "SetDllDirectoryW");
+        if (pfn)
+        {
+            BOOL fOk = pfn(L"");
+            if (!fOk)
+                return RTErrConvertFromWin32(GetLastError());
+        }
+    }
+    return VINF_SUCCESS;
+}
 
 int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlags, PRTERRINFO pErrInfo)
 {
@@ -59,6 +78,17 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
     }
 
     /*
+     * Don't allow loading DLLs from the current directory.
+     */
+#if 0
+    int rc = RTOnce(&g_Once, rtldrOnceSetDllDirectory, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+#else
+    int rc = VINF_SUCCESS;
+#endif
+
+    /*
      * Attempt load.
      */
     HMODULE hmod = LoadLibrary(pszFilename);
@@ -72,7 +102,7 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
      * Try figure why it failed to load.
      */
     DWORD dwErr = GetLastError();
-    int   rc    = RTErrConvertFromWin32(dwErr);
+    rc = RTErrConvertFromWin32(dwErr);
     return RTErrInfoSetF(pErrInfo, rc, "GetLastError=%u", dwErr);
 }
 
