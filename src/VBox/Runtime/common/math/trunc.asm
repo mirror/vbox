@@ -42,7 +42,7 @@ BEGINPROC RT_NOCRT(trunc)
     movsd   [xSP], xmm0
     fld     qword [xSP]
 %else
-    fld     qword [xBP + xS*2]
+    fld     qword [xBP + xCB*2]
 %endif
 
     ; Make it truncate up by modifying the fpu control word.

@@ -38,7 +38,7 @@ BEGINPROC RT_NOCRT(truncl)
     mov     xBP, xSP
     sub     xSP, 10h
 
-    fld     tword [xBP + xS*2]
+    fld     tword [xBP + xCB*2]
 
     ; Make it truncate up by modifying the fpu control word.
     fstcw   [xBP - 10h]

@@ -1521,7 +1521,7 @@ BEGINPROC   x861_Test2
 %endif
 
 .failed3:
-        add     xSP, 20h + xS
+        add     xSP, 20h + xCB
         jmp     .return
 
 
@@ -1941,7 +1941,7 @@ SaveFPUAndGRegsToStack:
         push    xAX
         push    xDI
 
-        lea     xDI, [xSP + xS * 5]
+        lea     xDI, [xSP + xCB * 5]
         mov     xCX, 512 / 4
         mov     eax, 0cccccccch
         cld
@@ -1953,69 +1953,69 @@ SaveFPUAndGRegsToStack:
         popf
 
         ; Save the FPU state.
-        mov     dword [xSP + xS + X86FXSTATE.FPUIP], 0
-        mov     dword [xSP + xS + X86FXSTATE.FPUCS], 0
-        mov     dword [xSP + xS + X86FXSTATE.FPUDP], 0
-        mov     dword [xSP + xS + X86FXSTATE.FPUDS], 0
-        arch_fxsave [xSP + xS]
+        mov     dword [xSP + xCB + X86FXSTATE.FPUIP], 0
+        mov     dword [xSP + xCB + X86FXSTATE.FPUCS], 0
+        mov     dword [xSP + xCB + X86FXSTATE.FPUDP], 0
+        mov     dword [xSP + xCB + X86FXSTATE.FPUDS], 0
+        arch_fxsave [xSP + xCB]
 
         ; Save GRegs (80h bytes).
 %ifdef RT_ARCH_AMD64
-        mov     [xSP + 512 + xS + 000h], xAX
-        mov     [xSP + 512 + xS + 008h], xBX
-        mov     [xSP + 512 + xS + 010h], xCX
-        mov     [xSP + 512 + xS + 018h], xDX
-        mov     [xSP + 512 + xS + 020h], xDI
-        mov     [xSP + 512 + xS + 028h], xSI
-        mov     [xSP + 512 + xS + 030h], xBP
-        mov     [xSP + 512 + xS + 038h], r8
-        mov     [xSP + 512 + xS + 040h], r9
-        mov     [xSP + 512 + xS + 048h], r10
-        mov     [xSP + 512 + xS + 050h], r11
-        mov     [xSP + 512 + xS + 058h], r12
-        mov     [xSP + 512 + xS + 060h], r13
-        mov     [xSP + 512 + xS + 068h], r14
-        mov     [xSP + 512 + xS + 070h], r15
+        mov     [xSP + 512 + xCB + 000h], xAX
+        mov     [xSP + 512 + xCB + 008h], xBX
+        mov     [xSP + 512 + xCB + 010h], xCX
+        mov     [xSP + 512 + xCB + 018h], xDX
+        mov     [xSP + 512 + xCB + 020h], xDI
+        mov     [xSP + 512 + xCB + 028h], xSI
+        mov     [xSP + 512 + xCB + 030h], xBP
+        mov     [xSP + 512 + xCB + 038h], r8
+        mov     [xSP + 512 + xCB + 040h], r9
+        mov     [xSP + 512 + xCB + 048h], r10
+        mov     [xSP + 512 + xCB + 050h], r11
+        mov     [xSP + 512 + xCB + 058h], r12
+        mov     [xSP + 512 + xCB + 060h], r13
+        mov     [xSP + 512 + xCB + 068h], r14
+        mov     [xSP + 512 + xCB + 070h], r15
         pushf
         pop     rax
-        mov     [xSP + 512 + xS + 078h], rax
-        mov     rax, [xSP + 512 + xS + 000h]
+        mov     [xSP + 512 + xCB + 078h], rax
+        mov     rax, [xSP + 512 + xCB + 000h]
 %else
-        mov     [xSP + 512 + xS + 000h], eax
-        mov     [xSP + 512 + xS + 004h], eax
-        mov     [xSP + 512 + xS + 008h], ebx
-        mov     [xSP + 512 + xS + 00ch], ebx
-        mov     [xSP + 512 + xS + 010h], ecx
-        mov     [xSP + 512 + xS + 014h], ecx
-        mov     [xSP + 512 + xS + 018h], edx
-        mov     [xSP + 512 + xS + 01ch], edx
-        mov     [xSP + 512 + xS + 020h], edi
-        mov     [xSP + 512 + xS + 024h], edi
-        mov     [xSP + 512 + xS + 028h], esi
-        mov     [xSP + 512 + xS + 02ch], esi
-        mov     [xSP + 512 + xS + 030h], ebp
-        mov     [xSP + 512 + xS + 034h], ebp
-        mov     [xSP + 512 + xS + 038h], eax
-        mov     [xSP + 512 + xS + 03ch], eax
-        mov     [xSP + 512 + xS + 040h], eax
-        mov     [xSP + 512 + xS + 044h], eax
-        mov     [xSP + 512 + xS + 048h], eax
-        mov     [xSP + 512 + xS + 04ch], eax
-        mov     [xSP + 512 + xS + 050h], eax
-        mov     [xSP + 512 + xS + 054h], eax
-        mov     [xSP + 512 + xS + 058h], eax
-        mov     [xSP + 512 + xS + 05ch], eax
-        mov     [xSP + 512 + xS + 060h], eax
-        mov     [xSP + 512 + xS + 064h], eax
-        mov     [xSP + 512 + xS + 068h], eax
-        mov     [xSP + 512 + xS + 06ch], eax
-        mov     [xSP + 512 + xS + 070h], eax
-        mov     [xSP + 512 + xS + 074h], eax
+        mov     [xSP + 512 + xCB + 000h], eax
+        mov     [xSP + 512 + xCB + 004h], eax
+        mov     [xSP + 512 + xCB + 008h], ebx
+        mov     [xSP + 512 + xCB + 00ch], ebx
+        mov     [xSP + 512 + xCB + 010h], ecx
+        mov     [xSP + 512 + xCB + 014h], ecx
+        mov     [xSP + 512 + xCB + 018h], edx
+        mov     [xSP + 512 + xCB + 01ch], edx
+        mov     [xSP + 512 + xCB + 020h], edi
+        mov     [xSP + 512 + xCB + 024h], edi
+        mov     [xSP + 512 + xCB + 028h], esi
+        mov     [xSP + 512 + xCB + 02ch], esi
+        mov     [xSP + 512 + xCB + 030h], ebp
+        mov     [xSP + 512 + xCB + 034h], ebp
+        mov     [xSP + 512 + xCB + 038h], eax
+        mov     [xSP + 512 + xCB + 03ch], eax
+        mov     [xSP + 512 + xCB + 040h], eax
+        mov     [xSP + 512 + xCB + 044h], eax
+        mov     [xSP + 512 + xCB + 048h], eax
+        mov     [xSP + 512 + xCB + 04ch], eax
+        mov     [xSP + 512 + xCB + 050h], eax
+        mov     [xSP + 512 + xCB + 054h], eax
+        mov     [xSP + 512 + xCB + 058h], eax
+        mov     [xSP + 512 + xCB + 05ch], eax
+        mov     [xSP + 512 + xCB + 060h], eax
+        mov     [xSP + 512 + xCB + 064h], eax
+        mov     [xSP + 512 + xCB + 068h], eax
+        mov     [xSP + 512 + xCB + 06ch], eax
+        mov     [xSP + 512 + xCB + 070h], eax
+        mov     [xSP + 512 + xCB + 074h], eax
         pushf
         pop     eax
-        mov     [xSP + 512 + xS + 078h], eax
-        mov     [xSP + 512 + xS + 07ch], eax
-        mov     eax, [xSP + 512 + xS + 000h]
+        mov     [xSP + 512 + xCB + 078h], eax
+        mov     [xSP + 512 + xCB + 07ch], eax
+        mov     eax, [xSP + 512 + xCB + 000h]
 %endif
         ret
 
@@ -2028,7 +2028,7 @@ SaveFPUAndGRegsToStack:
 ;           ZF reflects the eax value to save a couple of instructions...
 ;
 CompareFPUAndGRegsOnStack:
-        lea     xSP, [xSP - (1024 - xS)]
+        lea     xSP, [xSP - (1024 - xCB)]
         call    SaveFPUAndGRegsToStack
 
         push    xSI
@@ -2036,7 +2036,7 @@ CompareFPUAndGRegsOnStack:
         push    xCX
 
         mov     xCX, 640
-        lea     xSI, [xSP + xS*3]
+        lea     xSI, [xSP + xCB*3]
         lea     xDI, [xSI + 1024]
 
         cld
@@ -2044,7 +2044,7 @@ CompareFPUAndGRegsOnStack:
         je      .ok
 
         ;int3
-        lea     xAX, [xSP + xS*3]
+        lea     xAX, [xSP + xCB*3]
         xchg    xAX, xSI
         sub     xAX, xSI
 
@@ -2059,7 +2059,7 @@ CompareFPUAndGRegsOnStack:
         pop     xCX
         pop     xDI
         pop     xSI
-        lea     xSP, [xSP + (1024 - xS)]
+        lea     xSP, [xSP + (1024 - xCB)]
         or      eax, eax
         ret
 
@@ -2072,7 +2072,7 @@ CompareFPUAndGRegsOnStack:
 ;           ZF reflects the eax value to save a couple of instructions...
 ;
 CompareFPUAndGRegsOnStackIgnoreOpAndIp:
-        lea     xSP, [xSP - (1024 - xS)]
+        lea     xSP, [xSP - (1024 - xCB)]
         call    SaveFPUAndGRegsToStack
 
         push    xSI
@@ -2080,7 +2080,7 @@ CompareFPUAndGRegsOnStackIgnoreOpAndIp:
         push    xCX
 
         mov     xCX, 640
-        lea     xSI, [xSP + xS*3]
+        lea     xSI, [xSP + xCB*3]
         lea     xDI, [xSI + 1024]
 
         mov     word [xSI + X86FXSTATE.FOP], 0          ; ignore
@@ -2093,7 +2093,7 @@ CompareFPUAndGRegsOnStackIgnoreOpAndIp:
         je      .ok
 
         ;int3
-        lea     xAX, [xSP + xS*3]
+        lea     xAX, [xSP + xCB*3]
         xchg    xAX, xSI
         sub     xAX, xSI
 
@@ -2108,7 +2108,7 @@ CompareFPUAndGRegsOnStackIgnoreOpAndIp:
         pop     xCX
         pop     xDI
         pop     xSI
-        lea     xSP, [xSP + (1024 - xS)]
+        lea     xSP, [xSP + (1024 - xCB)]
         or      eax, eax
         ret
 
@@ -2493,7 +2493,7 @@ extern NAME(RTTestISub)
 ; Checks the opcode and CS:IP FPU.
 ;
 ; @returns ZF=1 on success, ZF=0 on failure.
-; @param    xSP + xS    fxsave image followed by fnstenv.
+; @param    xSP + xCB    fxsave image followed by fnstenv.
 ; @param    xCX         Opcode address (no prefixes).
 ;
 CheckOpcodeCsIp:
@@ -2503,15 +2503,15 @@ CheckOpcodeCsIp:
 
         ; Check the IP.
 %ifdef RT_ARCH_AMD64
-        cmp     rcx, [xBP + xS*2 + X86FXSTATE.FPUIP]
+        cmp     rcx, [xBP + xCB*2 + X86FXSTATE.FPUIP]
 %else
-        cmp     ecx, [xBP + xS*2 + X86FXSTATE.FPUIP]
+        cmp     ecx, [xBP + xCB*2 + X86FXSTATE.FPUIP]
 %endif
         jne     .failure1
 
 .check_fpucs:
         mov     ax, cs
-        cmp     ax, [xBP + xS*2 + 512 + X86FSTENV32P.FPUCS]
+        cmp     ax, [xBP + xCB*2 + 512 + X86FSTENV32P.FPUCS]
         jne     .failure2
 
         ; Check the opcode.  This may be disabled.
@@ -2519,13 +2519,13 @@ CheckOpcodeCsIp:
         mov     al, [xCX + 1]
         and     ax, 07ffh
 
-        cmp     ax, [xBP + xS*2 + X86FXSTATE.FOP]
+        cmp     ax, [xBP + xCB*2 + X86FXSTATE.FOP]
         je      .success
-        cmp     ax, [xBP + xS*2 + 512 + X86FSTENV32P.FOP]
+        cmp     ax, [xBP + xCB*2 + 512 + X86FSTENV32P.FOP]
         je      .success
 
 ;        xor     ax, ax
-;        cmp     ax, [xBP + xS*2 + X86FXSTATE.FOP]
+;        cmp     ax, [xBP + xCB*2 + X86FXSTATE.FOP]
 ;        jne     .failure3
 
 .success:
@@ -2539,11 +2539,11 @@ CheckOpcodeCsIp:
         ; AMD64 doesn't seem to store anything at IP and DP, so use the
         ; fnstenv image instead even if that only contains the lower 32-bit.
         xor     eax, eax
-        cmp     xAX, [xBP + xS*2 + X86FXSTATE.FPUIP]
+        cmp     xAX, [xBP + xCB*2 + X86FXSTATE.FPUIP]
         jne     .failure1_for_real
-        cmp     xAX, [xBP + xS*2 + X86FXSTATE.FPUDP]
+        cmp     xAX, [xBP + xCB*2 + X86FXSTATE.FPUDP]
         jne     .failure1_for_real
-        cmp     ecx, [xBP + xS*2 + 512 + X86FSTENV32P.FPUIP]
+        cmp     ecx, [xBP + xCB*2 + 512 + X86FSTENV32P.FPUIP]
         je      .check_fpucs
 .failure1_for_real:
         mov     eax, 10000000
@@ -2637,7 +2637,7 @@ BEGINCODE
 ; Checks the opcode, CS:IP and DS:DP of the FPU.
 ;
 ; @returns ZF=1 on success, ZF=0+EAX on failure.
-; @param    xSP + xS    fxsave image followed by fnstenv.
+; @param    xSP + xCB    fxsave image followed by fnstenv.
 ; @param    xCX         Opcode address (no prefixes).
 ; @param    xDX         Memory address (DS relative).
 ;
@@ -2648,15 +2648,15 @@ CheckOpcodeCsIpDsDp:
 
         ; Check the memory operand.
 %ifdef RT_ARCH_AMD64
-        cmp     rdx, [xBP + xS*2 + X86FXSTATE.FPUDP]
+        cmp     rdx, [xBP + xCB*2 + X86FXSTATE.FPUDP]
 %else
-        cmp     edx, [xBP + xS*2 + X86FXSTATE.FPUDP]
+        cmp     edx, [xBP + xCB*2 + X86FXSTATE.FPUDP]
 %endif
         jne     .failure1
 
 .check_fpuds:
         mov     ax, ds
-        cmp     ax, [xBP + xS*2 + 512 + X86FSTENV32P.FPUDS]
+        cmp     ax, [xBP + xCB*2 + 512 + X86FSTENV32P.FPUDS]
         jne     .failure2
 
 .success:
@@ -2669,11 +2669,11 @@ CheckOpcodeCsIpDsDp:
         ; AMD may leave all fields as ZERO in the FXSAVE image - figure
         ; if there is a flag controlling this anywhere...
         xor        eax, eax
-        cmp     xAX, [xBP + xS*2 + X86FXSTATE.FPUDP]
+        cmp     xAX, [xBP + xCB*2 + X86FXSTATE.FPUDP]
         jne     .failure1_for_real
-        cmp     xAX, [xBP + xS*2 + X86FXSTATE.FPUIP]
+        cmp     xAX, [xBP + xCB*2 + X86FXSTATE.FPUIP]
         jne     .failure1_for_real
-        cmp     edx, [xBP + xS*2 + 512 + X86FSTENV32P.FPUDP]
+        cmp     edx, [xBP + xCB*2 + 512 + X86FSTENV32P.FPUDP]
         je      .check_fpuds
 .failure1_for_real:
         mov     eax, 60000000

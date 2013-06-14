@@ -121,10 +121,10 @@ ALIGN(16)
 
     ; VT-x only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
 %ifdef VMX_SKIP_GDTR_IDTR
-    sub     xSP, xS*2
+    sub     xSP, xCB*2
     sgdt    [xSP]
 
-    sub     xSP, xS*2
+    sub     xSP, xCB*2
     sidt    [xSP]
 %endif
 
@@ -181,13 +181,13 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     ; Restore base and limit of the IDTR & GDTR.
 %ifdef VMX_SKIP_GDTR_IDTR
     lidt    [xSP]
-    add     xSP, xS*2
+    add     xSP, xCB*2
     lgdt    [xSP]
-    add     xSP, xS*2
+    add     xSP, xCB*2
 %endif
 
     push    xDI
-    mov     xDI, [xSP + xS * 3]         ; pCtx (*3 to skip the saved LDTR + TR).
+    mov     xDI, [xSP + xCB * 3]         ; pCtx (*3 to skip the saved LDTR + TR).
 
     mov     [ss:xDI + CPUMCTX.eax], eax
     mov     [ss:xDI + CPUMCTX.ebx], ebx
@@ -217,19 +217,19 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     ; @todo get rid of sgdt
     pop     xBX         ; Saved TR
-    sub     xSP, xS*2
+    sub     xSP, xCB*2
     sgdt    [xSP]
     mov     xAX, xBX
     and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
     add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
     and     dword [ss:xAX + 4], ~0200h              ; Clear busy flag (2nd type2 bit).
     ltr     bx
-    add     xSP, xS*2
+    add     xSP, xCB*2
 
     pop     xAX         ; Saved LDTR
     lldt    ax
 
-    add     xSP, xS     ; pCtx
+    add     xSP, xCB     ; pCtx
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     xDX         ; Saved pCache
@@ -273,31 +273,31 @@ ALIGN(16)
     ; Restore base and limit of the IDTR & GDTR
 %ifdef VMX_SKIP_GDTR_IDTR
     lidt    [xSP]
-    add     xSP, xS*2
+    add     xSP, xCB*2
     lgdt    [xSP]
-    add     xSP, xS*2
+    add     xSP, xCB*2
 %endif
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     ; @todo get rid of sgdt
     pop     xBX         ; Saved TR
-    sub     xSP, xS*2
+    sub     xSP, xCB*2
     sgdt    [xSP]
     mov     xAX, xBX
     and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
     add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
     and     dword [ss:xAX + 4], ~0200h              ; Clear busy flag (2nd type2 bit).
     ltr     bx
-    add     xSP, xS*2
+    add     xSP, xCB*2
 
     pop     xAX         ; Saved LDTR
     lldt    ax
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    add     xSP, xS*2   ; pCtx + pCache
+    add     xSP, xCB*2  ; pCtx + pCache
 %else
-    add     xSP, xS     ; pCtx
+    add     xSP, xCB     ; pCtx
 %endif
 
     ; Restore segment registers.
@@ -312,31 +312,31 @@ ALIGN(16)
     ; Restore base and limit of the IDTR & GDTR.
 %ifdef VMX_SKIP_GDTR_IDTR
     lidt    [xSP]
-    add     xSP, xS*2
+    add     xSP, xCB*2
     lgdt    [xSP]
-    add     xSP, xS*2
+    add     xSP, xCB*2
 %endif
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     ; @todo get rid of sgdt
     pop     xBX         ; Saved TR
-    sub     xSP, xS*2
+    sub     xSP, xCB*2
     sgdt    [xSP]
     mov     xAX, xBX
     and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
     add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
     and     dword [ss:xAX + 4], ~0200h              ; Clear busy flag (2nd type2 bit).
     ltr     bx
-    add     xSP, xS*2
+    add     xSP, xCB*2
 
     pop     xAX         ; Saved LDTR
     lldt    ax
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    add     xSP, xS*2   ; pCtx + pCache
+    add     xSP, xCB*2  ; pCtx + pCache
 %else
-    add     xSP, xS     ; pCtx
+    add     xSP, xCB    ; pCtx
 %endif
 
     ; Restore segment registers.
@@ -450,10 +450,10 @@ ALIGN(16)
 
     ; VT-x only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
 %ifdef VMX_SKIP_GDTR_IDTR
-    sub     xSP, xS*2
+    sub     xSP, xCB*2
     sgdt    [xSP]
 
-    sub     xSP, xS*2
+    sub     xSP, xCB*2
     sidt    [xSP]
 %endif
 
@@ -518,13 +518,13 @@ ALIGNCODE(16)
     ; Restore base and limit of the IDTR & GDTR
 %ifdef VMX_SKIP_GDTR_IDTR
     lidt    [xSP]
-    add     xSP, xS*2
+    add     xSP, xCB*2
     lgdt    [xSP]
-    add     xSP, xS*2
+    add     xSP, xCB*2
 %endif
 
     push    xDI
-    mov     xDI, [xSP + xS * 3]         ; pCtx (*3 to skip the saved LDTR + TR)
+    mov     xDI, [xSP + xCB * 3]        ; pCtx (*3 to skip the saved LDTR + TR)
 
     mov     qword [xDI + CPUMCTX.eax], rax
     mov     qword [xDI + CPUMCTX.ebx], rbx
@@ -558,14 +558,14 @@ ALIGNCODE(16)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
     ; @todo get rid of sgdt
     pop     xBX         ; Saved TR
-    sub     xSP, xS*2
+    sub     xSP, xCB*2
     sgdt    [xSP]
     mov     xAX, xBX
     and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
     add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
     and     dword [xAX + 4], ~0200h                 ; Clear busy flag (2nd type2 bit).
     ltr     bx
-    add     xSP, xS*2
+    add     xSP, xCB*2
 
     pop     xAX         ; Saved LDTR
     lldt    ax
@@ -627,23 +627,23 @@ ALIGN(16)
     ; Restore base and limit of the IDTR & GDTR.
 %ifdef VMX_SKIP_GDTR_IDTR
     lidt    [xSP]
-    add     xSP, xS*2
+    add     xSP, xCB*2
     lgdt    [xSP]
-    add     xSP, xS*2
+    add     xSP, xCB*2
 %endif
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
     ; @todo get rid of sgdt
     pop     xBX         ; Saved TR
-    sub     xSP, xS*2
+    sub     xSP, xCB*2
     sgdt    [xSP]
     mov     xAX, xBX
     and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
     add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
     and     dword [xAX + 4], ~0200h                 ; Clear busy flag (2nd type2 bit).
     ltr     bx
-    add     xSP, xS*2
+    add     xSP, xCB*2
 
     pop     xAX         ; Saved LDTR
     lldt    ax
@@ -664,7 +664,7 @@ ALIGN(16)
 %endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    add     xSP, xS     ; pCache
+    add     xSP, xCB    ; pCache
 %endif
 
     ; Restore segment registers.
@@ -679,23 +679,23 @@ ALIGN(16)
     ; Restore base and limit of the IDTR & GDTR.
 %ifdef VMX_SKIP_GDTR_IDTR
     lidt    [xSP]
-    add     xSP, xS*2
+    add     xSP, xCB*2
     lgdt    [xSP]
-    add     xSP, xS*2
+    add     xSP, xCB*2
 %endif
 
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
     ; @todo get rid of sgdt
     pop     xBX         ; Saved TR
-    sub     xSP, xS*2
+    sub     xSP, xCB*2
     sgdt    [xSP]
     mov     xAX, xBX
     and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
     add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
     and     dword [xAX + 4], ~0200h                 ; Clear busy flag (2nd type2 bit).
     ltr     bx
-    add     xSP, xS*2
+    add     xSP, xCB*2
 
     pop     xAX         ; Saved LDTR
     lldt    ax
@@ -716,7 +716,7 @@ ALIGN(16)
 %endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    add     xSP, xS     ; pCache
+    add     xSP, xCB    ; pCache
 %endif
 
     ; Restore segment registers.
@@ -769,16 +769,16 @@ BEGINPROC MY_NAME(SVMR0VMRun)
     MYPUSHAD
 
     ; Save the Guest CPU context pointer.
-    mov     xSI, [xBP + xS*2 + RTHCPHYS_CB*2]   ; pCtx
+    mov     xSI, [xBP + xCB*2 + RTHCPHYS_CB*2] ; pCtx
     push    xSI                     		; push for saving the state at the end
 
     ; Save host fs, gs, sysenter msr etc.
-    mov     xAX, [xBP + xS*2]       ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
+    mov     xAX, [xBP + xCB*2]      ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
     push    xAX                     ; save for the vmload after vmrun
     vmsave
 
     ; Setup eax for VMLOAD.
-    mov     xAX, [xBP + xS*2 + RTHCPHYS_CB]     ; pVMCBPhys (64 bits physical address; take low dword only)
+    mov     xAX, [xBP + xCB*2 + RTHCPHYS_CB]     ; pVMCBPhys (64 bits physical address; take low dword only)
 
     ; Restore Guest's general purpose registers.
     ; eax is loaded from the VMCB by VMRUN.
@@ -828,7 +828,7 @@ BEGINPROC MY_NAME(SVMR0VMRun)
     popf
     pop     xBP
 %ifdef RT_ARCH_AMD64
-    add     xSP, 4*xS
+    add     xSP, 4*xCB
 %endif
     ret
 ENDPROC MY_NAME(SVMR0VMRun)
@@ -873,16 +873,16 @@ BEGINPROC MY_NAME(SVMR0VMRun64)
     MYPUSHAD
 
     ; Save the Guest CPU context pointer.
-    mov     rsi, [rbp + xS*2 + RTHCPHYS_CB*2]   ; pCtx
+    mov     rsi, [rbp + xCB*2 + RTHCPHYS_CB*2]  ; pCtx
     push    rsi                     ; push for saving the state at the end
 
     ; Save host fs, gs, sysenter msr etc.
-    mov     rax, [rbp + xS*2]       ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
+    mov     rax, [rbp + xCB*2]      ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
     push    rax                     ; Save for the vmload after vmrun
     vmsave
 
     ; Setup eax for VMLOAD.
-    mov     rax, [rbp + xS*2 + RTHCPHYS_CB]     ; pVMCBPhys (64 bits physical address; take low dword only)
+    mov     rax, [rbp + xCB*2 + RTHCPHYS_CB]    ; pVMCBPhys (64 bits physical address; take low dword only)
 
     ; Restore Guest's general purpose registers.
     ; rax is loaded from the VMCB by VMRUN.
@@ -947,7 +947,7 @@ BEGINPROC MY_NAME(SVMR0VMRun64)
 
     popf
     pop     rbp
-    add     rsp, 4*xS
+    add     rsp, 4*xCB
     ret
 ENDPROC MY_NAME(SVMR0VMRun64)
 %endif ; RT_ARCH_AMD64

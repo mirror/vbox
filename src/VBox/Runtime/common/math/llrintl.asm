@@ -31,13 +31,13 @@ BEGINCODE
 ;;
 ; Round rd to the nearest integer value, rounding according to the current rounding direction.
 ; @returns 32-bit: edx:eax  64-bit: rax
-; @param    lrd     [rbp + xS*2]
+; @param    lrd     [rbp + xCB*2]
 BEGINPROC RT_NOCRT(llrintl)
     push    xBP
     mov     xBP, xSP
     sub     xSP, 10h
 
-    fld     tword [xBP + xS*2]
+    fld     tword [xBP + xCB*2]
     fistp   qword [xSP]
     fwait
 %ifdef RT_ARCH_AMD64
