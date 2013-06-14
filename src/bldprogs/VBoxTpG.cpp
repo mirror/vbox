@@ -843,13 +843,6 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                                 :
                                 "        jmp     NAME(%s)\n"
                                 , g_pszProbeFnName);
-            else if (fWin64)
-                ScmStreamPrintf(pStrm, g_fProbeFnImported ?
-                                "        mov     rax, IMP2(%s)\n"
-                                "        jmp     rax\n"
-                                :
-                                "        jmp     NAME(%s)\n"
-                                , g_pszProbeFnName);
             else if (fMachO64 && g_fProbeFnImported)
                 ScmStreamPrintf(pStrm,
                                 "        jmp     [g_pfnVtgProbeFn wrt rip]\n");
@@ -857,7 +850,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                 ScmStreamPrintf(pStrm, g_fPic ?
                                 "        jmp     [rel %s wrt ..got]\n"
                                 : g_fProbeFnImported ?
-                                "        lea     rax, [IMP2(%s)]\n"
+                                "        mov     rax, IMP2(%s)\n"
                                 "        jmp     rax\n"
                                 :
                                 "        jmp     NAME(%s)\n"
