@@ -48,7 +48,7 @@ enum
     /* currently in VideoRecCopyToIntBuf(), delay termination */
     VIDREC_COPYING = 2,
     /* signal that we are terminating */
-    VIDREC_TERMINATING = 2
+    VIDREC_TERMINATING = 3
 };
 static uint32_t g_enmState = VIDREC_UNINITIALIZED;
 
@@ -393,7 +393,8 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD Thread, void *pvUser)
         for (unsigned uScreen = 0; uScreen < pCtx->cScreens; uScreen++)
         {
             PVIDEORECSTREAM pStrm = &pCtx->Strm[uScreen];
-            if (ASMAtomicReadBool(&pStrm->fRgbFilled))
+            if (   pStrm->fEnabled
+                && ASMAtomicReadBool(&pStrm->fRgbFilled))
             {
                 rc = videoRecRGBToYUV(pStrm);
                 ASMAtomicWriteBool(&pStrm->fRgbFilled, false);
@@ -589,10 +590,9 @@ void VideoRecContextClose(PVIDEORECCONTEXT pCtx)
  */
 bool VideoRecIsEnabled(PVIDEORECCONTEXT pCtx)
 {
-    if (!pCtx)
-        return false;
-
-    return pCtx->fEnabled;
+    uint32_t enmState = ASMAtomicReadU32(&g_enmState);
+    return (   enmState == VIDREC_IDLE
+            || enmState == VIDREC_COPYING);
 }
 
 /**
@@ -719,13 +719,16 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
         AssertBreakStmt(uScreen < pCtx->cScreens, rc = VERR_INVALID_PARAMETER);
 
         PVIDEORECSTREAM pStrm = &pCtx->Strm[uScreen];
-
+        if (!pStrm->fEnabled)
+        {
+            rc = VINF_TRY_AGAIN; /* not (yet) enabled */
+            break;
+        }
         if (u64TimeStamp < pStrm->u64LastTimeStamp + pStrm->uDelay)
         {
             rc = VINF_TRY_AGAIN; /* respect maximum frames per second */
             break;
         }
-
         if (ASMAtomicReadBool(&pStrm->fRgbFilled))
         {
             rc = VERR_TRY_AGAIN; /* previous frame not yet encoded */
