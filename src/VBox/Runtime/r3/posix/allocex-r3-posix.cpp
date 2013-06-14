@@ -69,18 +69,37 @@ typedef RTMEMHDRR3 *PRTMEMHDRR3;
  */
 static void *rtMemAllocExAllocLow(size_t cbAlloc, uint32_t fFlags)
 {
-    int       fProt     = PROT_READ | PROT_WRITE | (fFlags & RTMEMALLOCEX_FLAGS_EXEC ? PROT_EXEC : 0);
-    uintptr_t uAddrLast = fFlags & RTMEMALLOCEX_FLAGS_16BIT_REACH ? _1M - 1 : UINT32_MAX;
-    uintptr_t uAddr     = fFlags & RTMEMALLOCEX_FLAGS_16BIT_REACH ? 0x1000  : _1M;
-    void *pv = mmap((void *)uAddr, cbAlloc, fProt, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (pv && ((uintptr_t)(pv) + cbAlloc - 1U) > uAddrLast)
+    int   fProt = PROT_READ | PROT_WRITE | (fFlags & RTMEMALLOCEX_FLAGS_EXEC ? PROT_EXEC : 0);
+    void *pv;
+    if (fFlags & RTMEMALLOCEX_FLAGS_16BIT_REACH)
     {
-        munmap(pv, cbAlloc);
-        return NULL;
+        AssertReturn(cbAlloc < _64K, NULL);
+
+        /*
+         * Try with every possible address hint since the possible range is very limited.
+         */
+        uintptr_t uAddr     = fFlags & RTMEMALLOCEX_FLAGS_16BIT_REACH ? 0x1000  : _1M;
+        uintptr_t uAddrLast = _64K - uAddr - cbAlloc;
+        while (uAddr < uAddrLast)
+        {
+            pv = mmap((void *)uAddr, cbAlloc, fProt, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+            if (pv && (uintptr_t)pv <= uAddrLast)
+                break;
+            if (pv)
+            {
+                munmap(pv, cbAlloc);
+                pv = NULL;
+            }
+            uAddr += _4K;
+        }
     }
-    /** @todo On linux, this method works for exactly one allocation. need to do
-     *        OS specific stuff to select a good address hint. Leaving this as a
-     *        TODO for now as I only need one allocation. */
+    else
+    {
+        /** @todo On linux, we need an accurate hint. Since I don't need this branch of
+         *        the code right now, I won't bother starting to parse
+         *        /proc/curproc/mmap right now... */
+        pv = NULL;
+    }
     return pv;
 }
 
