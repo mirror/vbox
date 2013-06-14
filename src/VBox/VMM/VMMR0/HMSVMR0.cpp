@@ -2622,16 +2622,86 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pCtx            Pointer to the guest-CPU context.
  * @param   pSvmTransient   Pointer to the SVM transient structure.
  */
-DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT pSvmTransient)
+DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
-    int rc;
-    uint32_t u32ExitCode = pSvmTransient->u64ExitCode;
-    switch (u32ExitCode)
-    {
+    Assert(pSvmTransient->u64ExitCode > 0);
+    Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
 
+    int      rc;
+    uint32_t u32ExitCode = pSvmTransient->u64ExitCode;
+    switch (pSvmTransient->u64ExitCode)
+    {
+        case SVM_EXIT_WRITE_CR0:
+        case SVM_EXIT_WRITE_CR3:
+        case SVM_EXIT_WRITE_CR4:
+        case SVM_EXIT_WRITE_CR8:
+            return hmR0SvmExitWriteCRx(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_READ_CR0:
+        case SVM_EXIT_READ_CR3:
+        case SVM_EXIT_READ_CR4:
+            return hmR0SvmExitReadCRx(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_MSR:
+            return hmR0SvmExitMsr(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_INTR:
+        case SVM_EXIT_FERR_FREEZE:
+        case SVM_EXIT_NMI:
+        case SVM_EXIT_INIT:
+            return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_WBINVD:
+            return hmR0SvmExitWbinvd(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_INVD:
+            return hmR0SvmExitInvd(pVCpu, pCtx, pSvmTransient);
+
+        default:
+        {
+            case SVM_EXIT_INVLPGA:
+            case SVM_EXIT_RSM:
+            case SVM_EXIT_VMRUN:
+            case SVM_EXIT_VMLOAD:
+            case SVM_EXIT_VMSAVE:
+            case SVM_EXIT_STGI:
+            case SVM_EXIT_CLGI:
+            case SVM_EXIT_SKINIT:
+                return hmR0SvmExitSetPendingXcptUD(pVCpu, pCtx, pSvmTransient);
+
+            case SVM_EXIT_MWAIT_ARMED:
+            case SVM_EXIT_PAUSE:
+            case SVM_EXIT_IDTR_READ:
+            case SVM_EXIT_GDTR_READ:
+            case SVM_EXIT_LDTR_READ:
+            case SVM_EXIT_TR_READ:
+            case SVM_EXIT_IDTR_WRITE:
+            case SVM_EXIT_GDTR_WRITE:
+            case SVM_EXIT_LDTR_WRITE:
+            case SVM_EXIT_TR_WRITE:
+            case SVM_EXIT_CR0_SEL_WRITE:
+            case SVM_EXIT_READ_CR1:     case SVM_EXIT_WRITE_CR1:
+            case SVM_EXIT_READ_CR2:     case SVM_EXIT_WRITE_CR2:
+            case SVM_EXIT_READ_CR5:     case SVM_EXIT_WRITE_CR5:
+            case SVM_EXIT_READ_CR6:     case SVM_EXIT_WRITE_CR6:
+            case SVM_EXIT_READ_CR7:     case SVM_EXIT_WRITE_CR7:
+            case SVM_EXIT_READ_CR8:
+            case SVM_EXIT_READ_CR9:     case SVM_EXIT_WRITE_CR9:
+            case SVM_EXIT_READ_CR10:    case SVM_EXIT_WRITE_CR10:
+            case SVM_EXIT_READ_CR11:    case SVM_EXIT_WRITE_CR11:
+            case SVM_EXIT_READ_CR12:    case SVM_EXIT_WRITE_CR12:
+            case SVM_EXIT_READ_CR13:    case SVM_EXIT_WRITE_CR13:
+            case SVM_EXIT_READ_CR14:    case SVM_EXIT_WRITE_CR14:
+            case SVM_EXIT_READ_CR15:    case SVM_EXIT_WRITE_CR15:
+            default:
+            {
+                rc = VERR_SVM_UNEXPECTED_EXIT;
+                AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit code %#x\n", u32ExitCode));
+                break;
+            }
+        }
     }
     return rc;
-
 }
 
 
@@ -2730,6 +2800,8 @@ static int hmR0SvmInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
                 pRegFrame->rip += pDis->cbInstr;
             return rc;
         }
+        else
+            Log4(("hmR0SvmInterpretInvlpg: EMInterpretDisasCurrent returned %Rrc uOpCode=%#x\n", rc, pDis->pCurInstr->uOpcode));
     }
     return VERR_EM_INTERPRETER;
 }
@@ -2756,7 +2828,8 @@ DECLINLINE(void) hmR0SvmSetPendingXcptUD(PVMCPU pVCpu)
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 
 /**
- * #VMEXIT handler for external interrupts (SVM_EXIT_INTR).
+ * #VMEXIT handler for external interrupts, NMIs, FPU assertion freeze and INIT
+ * signals (SVM_EXIT_INTR, SVM_EXIT_NMI, SVM_EXIT_FERR_FREEZE, SVM_EXIT_INIT).
  */
 HMSVM_EXIT_DECL hmR0SvmExitIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -2883,7 +2956,7 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     Assert(!pVM->hm.s.fNestedPaging);
 
-    /** @todo With decode assist we no longer need to interpret the instruction. */
+    /** @todo Decode Assist. */
     int rc = hmR0SvmInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pCtx));    /* Updates RIP if successful. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvlpg);
     Assert(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER);
@@ -2947,11 +3020,10 @@ HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         rc = VERR_EM_INTERPRETER;
     }
     AssertMsg(rc == VINF_SUCCESS || rc == VINF_EM_HALT || rc == VERR_EM_INTERPRETER,
-              ("hmR0SvmExitMwait: failed, invalid error code %Rrc\n", rc));
+              ("hmR0SvmExitMwait: EMInterpretMWait failed rc=%Rrc\n", rc));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMwait);
     return rc;
 }
-
 
 
 /**
@@ -2963,4 +3035,117 @@ HMSVM_EXIT_DECL hmR0SvmExitShutdown(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     return VINF_EM_RESET;
 }
+
+
+/**
+ * #VMEXIT handler for CRx reads (SVM_EXIT_READ_CR*). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    /** @todo Decode Assist. */
+    int rc = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
+    Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
+    Assert((pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0) <= 15);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCRxRead[pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0]);
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for CRx writes (SVM_EXIT_WRITE_CR*). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    /** @todo Decode Assist. */
+    int rc = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
+    if (rc == VINF_SUCCCES)
+    {
+        /* RIP has been updated by EMInterpretInstruction(). */
+        Assert((pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0) <= 15);
+        switch (pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0)
+        {
+            case 0:     /* CR0. */
+                pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+                break;
+
+            case 3:     /* CR3. */
+                Assert(!pVM->hm.s.fNestedPaging);
+                pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR3;
+                break;
+
+            case 4:     /* CR4. */
+                pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR4;
+                break;
+
+            case 8:     /* CR8 (TPR). */
+                pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_APIC_STATE;
+                break;
+
+            default:
+                AsserMsgFailed(("hmR0SvmExitWriteCRx: Invalid/Unexpected Write-CRx exit. u64ExitCode=%#RX64 %#x CRx=%#RX64\n",
+                                pSvmTransient->u64ExitCode, pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0));
+                break;
+        }
+    }
+    else
+        Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for instructions that result in a #UD exception delivered to
+ * the guest.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    return hmR0SvmSetPendingXcptUD(pVCpu);
+}
+
+
+/**
+ * #VMEXIT handler for MSR read and writes (SVM_EXIT_MSR). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+
+    int rc;
+    if (pVmcb->ctrl.u64ExitInfo1 == SVM_EXIT1_MSR_WRITE)
+    {
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWrmsr);
+
+        /* Handle TPR patching; intercepted LSTAR write. */
+        if (   pVM->hm.s.fTPRPatchingActive
+            && pCtx->ecx == MSR_K8_LSTAR)
+        {
+            if ((pCtx->eax & 0xff) != pSvmTransient->u8GuestTpr)
+            {
+                /* Our patch code uses LSTAR for TPR caching for 32-bit guests. */
+                int rc2 = PDMApicSetTPR(pVCpu, pCtx->eax & 0xff);
+                AssertRC(rc2);
+            }
+            pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+            return VINF_SUCCESS;
+        }
+
+        rc = EMInterpretWrmsr(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
+        AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretWrmsr failed rc=%Rrc\n", rc));
+    }
+    else
+    {
+        /* MSR Read access. */
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
+        int rc = EMInterpretRdmsr(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
+        AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretRdmsr failed rc=%Rrc\n", rc));
+    }
+
+    /* RIP has been updated by EMInterpret[Rd|Wr]msr(). */
+    return rc;
+}
+
 
