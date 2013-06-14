@@ -258,9 +258,9 @@
 #define SVM_EXIT_WBINVD                 0x89
 /** MONITOR instruction. */
 #define SVM_EXIT_MONITOR                0x8A
-/** MWAIT instruction uncond. */
-#define SVM_EXIT_MWAIT_UNCOND           0x8B
-/** MWAIT instruction when armed. */
+/** MWAIT instruction. */
+#define SVM_EXIT_MWAIT                  0x8B
+/** MWAIT instruction, when armed. */
 #define SVM_EXIT_MWAIT_ARMED            0x8C
 /** Nested paging: host-level page fault occurred (EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault). */
 #define SVM_EXIT_NPF                    0x400
@@ -393,7 +393,7 @@
 /** 10 Intercept MONITOR instruction. */
 #define SVM_CTRL2_INTERCEPT_MONITOR           RT_BIT(10)
 /** 11 Intercept MWAIT instruction unconditionally. */
-#define SVM_CTRL2_INTERCEPT_MWAIT_UNCOND      RT_BIT(11)
+#define SVM_CTRL2_INTERCEPT_MWAIT             RT_BIT(11)
 /** 12 Intercept MWAIT instruction when armed. */
 #define SVM_CTRL2_INTERCEPT_MWAIT_ARMED       RT_BIT(12)
 /** 13 Intercept XSETBV instruction. */

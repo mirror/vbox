@@ -574,7 +574,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                         | SVM_CTRL2_INTERCEPT_SKINIT        /* SKINIT causes a VM-exit. */
                                         | SVM_CTRL2_INTERCEPT_WBINVD        /* WBINVD causes a VM-exit. */
                                         | SVM_CTRL2_INTERCEPT_MONITOR       /* MONITOR causes a VM-exit. */
-                                        | SVM_CTRL2_INTERCEPT_MWAIT_UNCOND; /* MWAIT causes a VM-exit. */
+                                        | SVM_CTRL2_INTERCEPT_MWAIT;        /* MWAIT causes a VM-exit. */
 
         /* CR0, CR4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
         pVmcb->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(4);
@@ -2631,6 +2631,21 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     uint32_t u32ExitCode = pSvmTransient->u64ExitCode;
     switch (pSvmTransient->u64ExitCode)
     {
+        case SVM_EXIT_CPUID:
+            return hmR0SvmExitCpuid(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_RDTSC:
+            return hmR0SvmExitRdtsc(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_RDTSCP:
+            return hmR0SvmExitRdtscp(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_MONITOR:
+            return hmR0SvmExitMonitor(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_MWAIT:
+            return hmR0SvmExitMwait(pVCpu, pCtx, pSvmTransient);
+
         case SVM_EXIT_WRITE_CR0:
         case SVM_EXIT_WRITE_CR3:
         case SVM_EXIT_WRITE_CR4:
@@ -2657,6 +2672,21 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         case SVM_EXIT_INVD:
             return hmR0SvmExitInvd(pVCpu, pCtx, pSvmTransient);
 
+        case SVM_EXIT_RDPMC:
+            return hmR0SvmExitRdpmc(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_READ_DR0:     case SVM_EXIT_READ_DR1:     case SVM_EXIT_READ_DR2:     case SVM_EXIT_READ_DR3:
+        case SVM_EXIT_READ_DR6:     case SVM_EXIT_READ_DR7:     case SVM_EXIT_READ_DR8:     case SVM_EXIT_READ_DR9:
+        case SVM_EXIT_READ_DR10:    case SVM_EXIT_READ_DR11:    case SVM_EXIT_READ_DR12:    case SVM_EXIT_READ_DR13:
+        case SVM_EXIT_READ_DR14:    case SVM_EXIT_READ_DR15:
+            return hmR0SvmExitReadDRx(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_WRITE_DR0:    case SVM_EXIT_WRITE_DR1:    case SVM_EXIT_WRITE_DR2:    case SVM_EXIT_WRITE_DR3:
+        case SVM_EXIT_WRITE_DR6:    case SVM_EXIT_WRITE_DR7:    case SVM_EXIT_WRITE_DR8:    case SVM_EXIT_WRITE_DR9:
+        case SVM_EXIT_WRITE_DR10:   case SVM_EXIT_WRITE_DR11:   case SVM_EXIT_WRITE_DR12:   case SVM_EXIT_WRITE_DR13:
+        case SVM_EXIT_WRITE_DR14:   case SVM_EXIT_WRITE_DR15:
+            return hmR0SvmExitWriteDRx(pVCpu, pCtx, pSvmTransient);
+
         default:
         {
             case SVM_EXIT_INVLPGA:
@@ -2669,30 +2699,6 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
             case SVM_EXIT_SKINIT:
                 return hmR0SvmExitSetPendingXcptUD(pVCpu, pCtx, pSvmTransient);
 
-            case SVM_EXIT_MWAIT_ARMED:
-            case SVM_EXIT_PAUSE:
-            case SVM_EXIT_IDTR_READ:
-            case SVM_EXIT_GDTR_READ:
-            case SVM_EXIT_LDTR_READ:
-            case SVM_EXIT_TR_READ:
-            case SVM_EXIT_IDTR_WRITE:
-            case SVM_EXIT_GDTR_WRITE:
-            case SVM_EXIT_LDTR_WRITE:
-            case SVM_EXIT_TR_WRITE:
-            case SVM_EXIT_CR0_SEL_WRITE:
-            case SVM_EXIT_READ_CR1:     case SVM_EXIT_WRITE_CR1:
-            case SVM_EXIT_READ_CR2:     case SVM_EXIT_WRITE_CR2:
-            case SVM_EXIT_READ_CR5:     case SVM_EXIT_WRITE_CR5:
-            case SVM_EXIT_READ_CR6:     case SVM_EXIT_WRITE_CR6:
-            case SVM_EXIT_READ_CR7:     case SVM_EXIT_WRITE_CR7:
-            case SVM_EXIT_READ_CR8:
-            case SVM_EXIT_READ_CR9:     case SVM_EXIT_WRITE_CR9:
-            case SVM_EXIT_READ_CR10:    case SVM_EXIT_WRITE_CR10:
-            case SVM_EXIT_READ_CR11:    case SVM_EXIT_WRITE_CR11:
-            case SVM_EXIT_READ_CR12:    case SVM_EXIT_WRITE_CR12:
-            case SVM_EXIT_READ_CR13:    case SVM_EXIT_WRITE_CR13:
-            case SVM_EXIT_READ_CR14:    case SVM_EXIT_WRITE_CR14:
-            case SVM_EXIT_READ_CR15:    case SVM_EXIT_WRITE_CR15:
             default:
             {
                 rc = VERR_SVM_UNEXPECTED_EXIT;
@@ -2740,7 +2746,7 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
  * Worker for hmR0SvmInterpretInvlpg().
  *
  * @return VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pVCpu     hmR0SvmExitReadDRx      Pointer to the VMCPU.
  * @param   pCpu            Pointer to the disassembler state.
  * @param   pRegFrame       Pointer to the register frame.
  */
@@ -2913,7 +2919,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 /**
  * #VMEXIT handler for RDTSCP (SVM_EXIT_RDTSCP). Conditional #VMEXIT.
  */
-HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     int rc = EMInterpretRdtscp(pVM, pVCpu, pCtx);
@@ -2997,9 +3003,9 @@ HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
 
 /**
- * #VMEXIT handler for MWAIT (SVM_EXIT_MWAIT_UNCOND). Conditional #VMEXIT.
+ * #VMEXIT handler for MWAIT (SVM_EXIT_MWAIT). Conditional #VMEXIT.
  */
-HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+HMSVM_EXIT_DECL hmR0SvmExitMwait(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     int rc = EMInterpretMWait(pVM, pVCpu, CPUMCTX2CORE(pCtx));
@@ -3145,6 +3151,66 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
     }
 
     /* RIP has been updated by EMInterpret[Rd|Wr]msr(). */
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for DRx read (SVM_EXIT_READ_DRx). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxRead);
+
+    /* We should -not- get this VM-exit if the guest is debugging. */
+    if (CPUMIsGuestDebugStateActive(pVCpu))
+    {
+        AssertMsgFailed(("hmR0SvmExitReadDRx: Unexpected exit. pVCpu=%p pCtx=%p\n", pVCpu, pCtx));
+        return VERR_SVM_UNEXPECTED_EXIT;
+    }
+
+    if (   !DBGFIsStepping(pVCpu)
+        && !CPUMIsHyperDebugStateActive(pVCpu))
+    {
+        /* Don't intercept DRx read and writes. */
+        PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        pVmcb->ctrl.u16InterceptRdDRx = 0;
+        pVmcb->ctrl.u16InterceptWrDRx = 0;
+        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+
+        /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
+        rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
+        AssertRC(rc);
+        Assert(CPUMIsGuestDebugStateActive(pVCpu));
+
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxContextSwitch);
+        return VINF_SUCCESS;
+    }
+
+    /** @todo Decode assist.  */
+    int rc = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+    {
+        /* Not necessary for read accesses but whatever doesn't hurt for now, will be fixed with decode assist. */
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
+    }
+    else
+        Assert(c == VERR_EM_INTERPRETER);
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for DRx write (SVM_EXIT_WRITE_DRx). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitWriteDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    /* For now it's the same since we interpret the instruction anyway. Will change when using of Decode Assist is implemented. */
+    int rc = hmR0SvmExitReadDRx(pVCpu, pCtx, pSvmTransient);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxWrite);
+    STAM_COUNTER_DEC(&pVCpu->hm.s.StatExitDRxRead);
     return rc;
 }
 
