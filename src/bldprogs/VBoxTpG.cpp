@@ -850,8 +850,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                 ScmStreamPrintf(pStrm, g_fPic ?
                                 "        jmp     [rel %s wrt ..got]\n"
                                 : g_fProbeFnImported ?
-                                "        mov     rax, IMP2(%s)\n"
-                                "        jmp     rax\n"
+                                "        jmp     IMP2(%s)\n"
                                 :
                                 "        jmp     NAME(%s)\n"
                                 , g_pszProbeFnName);
