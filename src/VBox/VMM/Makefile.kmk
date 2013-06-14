@@ -361,11 +361,11 @@ endif # R0: pe + lx
 IMPORT_LIBS += VMMR3Imp
 $(call VBOX_GENERATE_IMPORT_TARGET_FN,VMMR3Imp,VBoxVMM,VMMR3/VMMR3.def)
 
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64)
+ifneq ($(VBOX_LIB_VMM_LAZY),$(LIB_VMM))
  #
  # VMMR3LazyImp.lib (experimental)
  #
- IMPORT_LIBS += VMMR3LazyImp
+ LIBRARIES += VMMR3LazyImp
  VMMR3LazyImp_TEMPLATE = VBoxR3Dll
  VMMR3LazyImp_INST     = $(INST_LIB)
  VMMR3LazyImp_SOURCES  = $(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm
