@@ -393,7 +393,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                         | SVM_CTRL2_INTERCEPT_SKINIT
                                         | SVM_CTRL2_INTERCEPT_WBINVD
                                         | SVM_CTRL2_INTERCEPT_MONITOR
-                                        | SVM_CTRL2_INTERCEPT_MWAIT_UNCOND; /* don't execute mwait or else we'll idle inside the
+                                        | SVM_CTRL2_INTERCEPT_MWAIT;        /* don't execute mwait or else we'll idle inside the
                                                                                guest (host thinks the cpu load is high) */
 
         Log(("pVmcb->ctrl.u32InterceptException = %x\n", pVmcb->ctrl.u32InterceptException));
@@ -2617,7 +2617,7 @@ ResumeExecution:
         rc = VINF_EM_HALT;
         break;
 
-    case SVM_EXIT_MWAIT_UNCOND:
+    case SVM_EXIT_MWAIT:
         Log2(("SVM: mwait\n"));
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMwait);
         rc = EMInterpretMWait(pVM, pVCpu, CPUMCTX2CORE(pCtx));

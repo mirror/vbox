@@ -251,7 +251,7 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(SVM_EXIT_IOIO               ,123, "IN/OUT accessing protected port (EXITINFO1 field provides more information)."),
     EXIT_REASON(SVM_EXIT_MSR                ,124, "RDMSR or WRMSR access to protected MSR."),
     EXIT_REASON(SVM_EXIT_TASK_SWITCH        ,125, "Task switch."),
-    EXIT_REASON(SVM_EXIT_FERR_FREEZE        ,126, "FP legacy handling enabled, and processor is frozen in an x87/mmx instruction waiting for an interrupt"),
+    EXIT_REASON(SVM_EXIT_FERR_FREEZE        ,126, "Legacy FPU handling enabled; processor is frozen in an x87/mmx instruction waiting for an interrupt"),
     EXIT_REASON(SVM_EXIT_SHUTDOWN           ,127, "Shutdown."),
     EXIT_REASON(SVM_EXIT_VMRUN              ,128, "VMRUN instruction."),
     EXIT_REASON(SVM_EXIT_VMMCALL            ,129, "VMCALL instruction."),
@@ -264,7 +264,7 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(SVM_EXIT_ICEBP              ,136, "ICEBP instruction."),
     EXIT_REASON(SVM_EXIT_WBINVD             ,137, "WBINVD instruction."),
     EXIT_REASON(SVM_EXIT_MONITOR            ,138, "MONITOR instruction."),
-    EXIT_REASON(SVM_EXIT_MWAIT_UNCOND       ,139, "MWAIT instruction unconditional."),
+    EXIT_REASON(SVM_EXIT_MWAIT              ,139, "MWAIT instruction."),
     EXIT_REASON(SVM_EXIT_MWAIT_ARMED        ,140, "MWAIT instruction when armed."),
     EXIT_REASON(SVM_EXIT_NPF                ,1024, "Nested paging: host-level page fault occurred (EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault)."),
     EXIT_REASON_NIL()
