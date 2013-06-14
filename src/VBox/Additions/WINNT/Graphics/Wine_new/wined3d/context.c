@@ -2939,11 +2939,13 @@ struct wined3d_context *context_acquire(const struct wined3d_device *device, str
     {
         TRACE("Rendering offscreen.\n");
 
+#ifndef VBOX_WINE_WITH_SINGLE_CONTEXT
         /* Stay with the current context if possible. Otherwise use the
          * context for the primary swapchain. */
         if (current_context && current_context->swapchain->device == device)
             context = current_context;
         else
+#endif
             context = swapchain_get_context(device->swapchains[0]);
     }
 
