@@ -2631,6 +2631,9 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     uint32_t u32ExitCode = pSvmTransient->u64ExitCode;
     switch (pSvmTransient->u64ExitCode)
     {
+        case SVM_EXIT_IOIO:
+            return hmR0SvmExitIOInstr(pVCpu, pCtx, pSvmTransient);
+
         case SVM_EXIT_CPUID:
             return hmR0SvmExitCpuid(pVCpu, pCtx, pSvmTransient);
 
