@@ -50,6 +50,8 @@ enum
     /* signal that we are terminating */
     VIDREC_TERMINATING = 3
 };
+
+/* Must be always accessible and therefore cannot be part of VIDEORECCONTEXT */
 static uint32_t g_enmState = VIDREC_UNINITIALIZED;
 
 
