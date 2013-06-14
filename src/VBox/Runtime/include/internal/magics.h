@@ -114,6 +114,8 @@
 #define RTMEMPOOL_MAGIC_DEAD            UINT32_C(0x18170718)
 /** The magic value for heap blocks. (Edgar Allan Poe) */
 #define RTMEMHDR_MAGIC                  UINT32_C(0x18090119)
+/** The magic value for heap blocks after freeing. */
+#define RTMEMHDR_MAGIC_DEAD             UINT32_C(0x18491007)
 /** The value of RTPIPEINTERNAL::u32Magic. (Frank Schaetzing) */
 #define RTPIPE_MAGIC                    UINT32_C(0x19570528)
 /** The value of RTPOLLSETINTERNAL::u32Magic. (Ai Yazawa) */
