@@ -284,9 +284,9 @@ setup()
     dox11config="true"
     # By default, we want to run our xorg.conf setup script
     setupxorgconf="true"
-    # On all but the oldest X servers we want to use our new mouse
-    # driver.
-    newmouse="--newMouse"
+    # All but the oldest supported X servers can automatically set up the
+    # keyboard driver.
+    autokeyboard="--autoKeyboard"
     # On more recent servers our kernel mouse driver will be used
     # automatically
     automouse="--autoMouse"
@@ -409,6 +409,7 @@ setup()
             vboxvideo_src=vboxvideo_drv.o
             vboxmouse_src=vboxmouse_drv.o
             automouse=""
+            autokeyboard=""  # Actually not true for 6.8, but it doesn't matter.
             ;;
         * )
             # Anything else, including all X server versions as of 1.12.
@@ -458,7 +459,7 @@ setup()
                     if grep -q "VirtualBox generated" "$i"; then
                         generated="$generated  `printf "$i\n"`"
                     else
-                        "$lib_dir/x11config.sh" $newmouse $automouse $nopsaux "$i"
+                        "$lib_dir/x11config.sh" $autokeyboard $automouse $nopsaux "$i"
                     fi
                     configured="true"
                 fi
@@ -472,7 +473,7 @@ setup()
             nobak="/etc/X11/xorg.vbox.nobak"
             if test -z "$configured"; then
                 touch "$main_cfg"
-                "$lib_dir/x11config.sh" $newmouse $automouse $nopsaux --noBak "$main_cfg"
+                "$lib_dir/x11config.sh" $autokeyboard $automouse $nopsaux --noBak "$main_cfg"
                 touch "$nobak"
             fi
         fi
