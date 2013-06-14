@@ -80,7 +80,7 @@ RTDECL(int) RTMemAllocExTag(size_t cb, size_t cbAlignment, uint32_t fFlags, cons
         cbAligned = RT_ALIGN_Z(cb, cbAlignment);
     else
         cbAligned = RT_ALIGN_Z(cb, sizeof(uint64_t));
-    AssertMsgReturn(cbAligned >= cb && cbAligned <= ~(size_t)0 / 2U, ("cbAligned=%#zx cb=%#zx", cbAligned, cb),
+    AssertMsgReturn(cbAligned >= cb && cbAligned <= ~(size_t)0, ("cbAligned=%#zx cb=%#zx", cbAligned, cb),
                     VERR_INVALID_PARAMETER);
 
     /*
@@ -106,8 +106,8 @@ RTDECL(int) RTMemAllocExTag(size_t cb, size_t cbAlignment, uint32_t fFlags, cons
     PRTMEMHDRR3 pHdr = (PRTMEMHDRR3)pv;
     pHdr->u32Magic  = RTMEMHDR_MAGIC;
     pHdr->fFlags    = fFlags;
-    pHdr->cb        = cbAligned;
-    pHdr->cbReq     = cb;
+    pHdr->cb        = (uint32_t)cbAligned;
+    pHdr->cbReq     = (uint32_t)cb;
 
     *ppv = pHdr + 1;
     return VINF_SUCCESS;
