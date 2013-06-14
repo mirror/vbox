@@ -19,8 +19,17 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
+
+#ifdef RT_OS_WINDOWS
+# define NO_LOW_MEM
+#elif defined(RT_OS_OS2) || defined(RT_OS_HAIKU)
+# define NO_LOW_MEM
+#else
+# include <sys/mman.h>
+#endif
 
 
 /*******************************************************************************
@@ -40,6 +49,7 @@ RTTEST g_hTest;
 
 
 RT_C_DECLS_BEGIN
+extern void *g_pvLowMem4K;
 DECLASM(void)    TestInstrMain(void);
 
 DECLEXPORT(void) VBInsTstFailure(const char *pszMessage);
@@ -87,7 +97,16 @@ int main()
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(g_hTest);
+
+    int rc = RTMemAllocEx(_4K, 0, RTMEMALLOCEX_FLAGS_16BIT_REACH, &g_pvLowMem4K);
+    if (RT_FAILURE(rc))
+    {
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Could not allocate low memory (%Rrc)\n", rc);
+        g_pvLowMem4K = NULL;
+    }
+
     TestInstrMain();
+
     return RTTestSummaryAndDestroy(g_hTest);
 }
 

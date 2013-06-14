@@ -236,6 +236,13 @@ class TargetEnv(object):
         iReg = randU16();
         return iReg % (16 if self.is64Bit() else 8);
 
+    def getAddrModes(self):
+        """ Gets a list of addressing mode (16, 32, or/and 64). """
+        if self.sInstrSet == self.ksInstrSet_16:
+            return [16,];
+        if self.sInstrSet == self.ksInstrSet_32:
+            return [32, 16];
+        return [64, 64];
 
 
 ## Target environments.
@@ -267,18 +274,6 @@ class InstrTestBase(object): # pylint: disable=R0903
         """
         oGen.write(';; @todo not implemented. This is for the linter: %s, %s\n' % (oGen, sTestFnName));
         return True;
-
-
-class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
-    """
-    Instruction reading memory or general register and writing the result to a
-    general register.
-    """
-
-    def __init__(self, sName, fnCalcResult, sInstr = None, acbOpVars = None):
-        InstrTestBase.__init__(self, sName, sInstr);
-        self.fnCalcResult = fnCalcResult;
-        self.acbOpVars = [ 1, 2, 4, 8 ] if not acbOpVars else list(acbOpVars);
 
     def generateInputs(self, cbEffOp, cbMaxOp, oGen, fLong = False):
         """ Generate a list of inputs. """
@@ -329,6 +324,19 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                         auRet += randUxxList(cBits, 1);
         return auRet;
 
+
+
+class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
+    """
+    Instruction reading memory or general register and writing the result to a
+    general register.
+    """
+
+    def __init__(self, sName, fnCalcResult, sInstr = None, acbOpVars = None):
+        InstrTestBase.__init__(self, sName, sInstr);
+        self.fnCalcResult = fnCalcResult;
+        self.acbOpVars = [ 1, 2, 4, 8 ] if not acbOpVars else list(acbOpVars);
+
     def writeInstrGregGreg(self, cbEffOp, iOp1, iOp2, oGen):
         """ Writes the instruction with two general registers as operands. """
         if cbEffOp == 8:
@@ -342,7 +350,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
             assert False;
         return True;
 
-    def generateOneStdTest(self, oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult):
+    def generateOneStdTestGregGreg(self, oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult):
         """ Generate one standard test. """
         oGen.write('        call VBINSTST_NAME(Common_LoadKnownValues)\n');
         oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[iOp2], uInput,));
@@ -363,10 +371,12 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         iLongOp1      = oGen.oTarget.randGRegNoSp();
         iLongOp2      = oGen.oTarget.randGRegNoSp();
         oOp2Range     = range(oGen.oTarget.getGRegCount());
+        oOp1MemRange  = range(oGen.oTarget.getGRegCount());
         if oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
-            oOp2Range = [iLongOp2,];
+            oOp2Range    = [iLongOp2,];
+            oOp1MemRange = [iLongOp1,];
 
-        # Register tests.
+        # Register tests
         for cbEffOp in self.acbOpVars:
             if cbEffOp > cbMaxOp:
                 continue;
@@ -379,7 +389,22 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                     for uInput in (auLongInputs if iOp1 == iLongOp1 and iOp2 == iLongOp2 else auShortInputs):
                         uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1] if iOp1 != iOp2 else uInput, oGen);
                         oGen.newSubTest();
-                        self.generateOneStdTest(oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult);
+                        self.generateOneStdTestGregGreg(oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult);
+
+        ## Memory test.
+        #for cbEffOp in self.acbOpVars:
+        #    if cbEffOp > cbMaxOp:
+        #        continue;
+        #    for iOp1 in oOp1MemRange:
+        #        if oGen.oTarget.asGRegsNoSp[iOp1] is None:
+        #            continue;
+        #        for cbAddrMode in oGen.oTarget.getAddrModes():
+        #
+        #            for uInput in (auLongInputs if iOp1 == iLongOp1 and False else auShortInputs):
+        #                uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1] if iOp1 != iOp2 else uInput, oGen);
+        #                oGen.newSubTest();
+        #                self.generateOneStdTestGregGreg(oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult);
+        #
 
         return True;
 
@@ -584,6 +609,8 @@ class InstructionTestGen(object):
                    '; Globals\n'
                    ';\n');
         self.write('VBINSTST_BEGINDATA\n'
+                   'VBINSTST_GLOBALNAME_EX g_pvLowMem4K, data hidden\n'
+                   '        dq      0\n'
                    'VBINSTST_GLOBALNAME_EX g_uVBInsTstSubTestIndicator, data hidden\n'
                    '        dd      0\n'
                    'VBINSTST_BEGINCODE\n'
