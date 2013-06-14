@@ -102,7 +102,7 @@ g_asGRegs16NoSp = ('ax',  'cx',  'dx',  'bx',  None,  'bp',  'si',  'di',
 g_asGRegs16     = ('ax',  'cx',  'dx',  'bx',  'sp',  'bp',  'si',  'di',
                    'r8w', 'r9w', 'r10w', 'r11w', 'r12w', 'r13w', 'r14w', 'r15w');
 g_asGRegs8      = ('al',  'cl',  'dl',  'bl',  'ah',  'ah',  'dh',  'bh');
-g_asGRegs8_64   = ('al',  'cl',  'dl',  'bl',  'spl', 'bpl', 'sil',  'dil',
+g_asGRegs8_64   = ('al',  'cl',  'dl',  'bl',  'spl', 'bpl', 'sil',  'dil',        # pylint: disable=C0103
                    'r8b', 'r9b', 'r10b', 'r11b', 'r12b', 'r13b', 'r14b', 'r15b');
 ## @}
 
@@ -249,9 +249,17 @@ class InstrTestBase(object): # pylint: disable=R0903
         self.sName = sName;
         self.sInstr = sInstr if sInstr else sName.split()[0];
 
+    def isApplicable(self, oGen):
+        """
+        Tests if the instruction test is applicable to the selected environment.
+        """
+        _ = oGen;
+        return True;
 
     def generateTest(self, oGen, sTestFnName):
-        """ Emits the test assembly code. """
+        """
+        Emits the test assembly code.
+        """
         oGen.write(';; @todo not implemented. This is for the linter: %s, %s\n' % (oGen, sTestFnName));
         return True;
 
@@ -301,6 +309,16 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
             assert False;
         return True;
 
+    def generateOneStdTest(self, oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult):
+        """ Generate one standard test. """
+        oGen.write('        call VBINSTST_NAME(Common_LoadKnownValues)\n');
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[iOp2], uInput,));
+        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2],));
+        self.writeInstrGregGreg(cbEffOp, iOp1, iOp2, oGen);
+        oGen.pushConst(uResult, cbMaxOp);
+        oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
+        return True;
+
     def generateStandardTests(self, oGen):
         """ Generate standard tests. """
 
@@ -310,6 +328,8 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
 
 
         for cbEffOp in self.acbOpVars:
+            if cbEffOp > cbMaxOp:
+                continue;
             for iOp1 in range(oGen.oTarget.getGRegCount()):
                 if oGen.oTarget.asGRegsNoSp[iOp1] is None:
                     continue;
@@ -317,14 +337,10 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                     if oGen.oTarget.asGRegsNoSp[iOp2] is None:
                         continue;
                     for uInput in auInputs:
-                        uResult = self.fnCalcResult(cbEffOp, uInput, oGen.au64Regs[iOp1] if iOp1 != iOp2 else uInput, oGen);
+                        uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1] if iOp1 != iOp2 else uInput, oGen);
                         oGen.newSubTest();
-                        oGen.write('        call VBINSTST_NAME(Common_LoadKnownValues)\n');
-                        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[iOp2], uInput,));
-                        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2],));
-                        self.writeInstrGregGreg(cbEffOp, iOp1, iOp2, oGen);
-                        oGen.pushConst(uResult, cbMaxOp);
-                        oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
+                        self.generateOneStdTest(oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult);
+        return True;
 
     def generateTest(self, oGen, sTestFnName):
         oGen.write('VBINSTST_BEGINPROC %s\n' % (sTestFnName,));
@@ -360,6 +376,9 @@ class InstrTest_MovSxD_Gv_Ev(InstrTest_MemOrGreg_2_Greg):
             assert False;
             assert False;
         return True;
+
+    def isApplicable(self, oGen):
+        return oGen.oTarget.is64Bit();
 
     @staticmethod
     def calc_movsxd(cbEffOp, uInput, uCur, oGen):
@@ -402,6 +421,7 @@ class InstructionTestGen(object):
         self.au64Regs       = randUxxList(64, 16);
         self.au32Regs       = [(self.au64Regs[i] & UINT32_MAX) for i in range(8)];
         self.au16Regs       = [(self.au64Regs[i] & UINT16_MAX) for i in range(8)];
+        self.auRegValues    = self.au64Regs if self.oTarget.is64Bit() else self.au32Regs;
 
         # Declare state variables used while generating.
         self.oFile          = sys.stderr;
@@ -687,17 +707,18 @@ class InstructionTestGen(object):
 
             for iInstrTest in range(iInstrTestStart, iInstrTestEnd):
                 oInstrTest = g_aoInstructionTests[iInstrTest];
-                self.write('%%ifdef ASM_CALL64_GCC\n'
-                           '        lea  rdi, [.szInstr%03u wrt rip]\n'
-                           '%%elifdef ASM_CALL64_MSC\n'
-                           '        lea  rcx, [.szInstr%03u wrt rip]\n'
-                           '%%else\n'
-                           '        mov  xAX, .szInstr%03u\n'
-                           '        mov  [xSP], xAX\n'
-                           '%%endif\n'
-                           '        VBINSTST_CALL_FN_SUB_TEST\n'
-                           '        call VBINSTST_NAME(%s)\n'
-                           % ( iInstrTest, iInstrTest, iInstrTest, self._calcTestFunctionName(oInstrTest, iInstrTest)));
+                if oInstrTest.isApplicable(self):
+                    self.write('%%ifdef ASM_CALL64_GCC\n'
+                               '        lea  rdi, [.szInstr%03u wrt rip]\n'
+                               '%%elifdef ASM_CALL64_MSC\n'
+                               '        lea  rcx, [.szInstr%03u wrt rip]\n'
+                               '%%else\n'
+                               '        mov  xAX, .szInstr%03u\n'
+                               '        mov  [xSP], xAX\n'
+                               '%%endif\n'
+                               '        VBINSTST_CALL_FN_SUB_TEST\n'
+                               '        call VBINSTST_NAME(%s)\n'
+                               % ( iInstrTest, iInstrTest, iInstrTest, self._calcTestFunctionName(oInstrTest, iInstrTest)));
 
             self.write('\n'
                        '        add  xSP, 40h\n'
