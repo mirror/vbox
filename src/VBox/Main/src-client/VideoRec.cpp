@@ -39,17 +39,19 @@
 static int videoRecEncodeAndWrite(PVIDEORECSTREAM pStrm);
 static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm);
 
-/* encoding */
+/* state to synchronized between threads */
 enum
 {
     VIDREC_UNINITIALIZED = 0,
-    /* initialized */
-    VIDREC_INITIALIZED = 1,
+    /* initialized, idle */
+    VIDREC_IDLE = 1,
+    /* currently in VideoRecCopyToIntBuf(), delay termination */
+    VIDREC_COPYING = 2,
     /* signal that we are terminating */
-    VIDREC_TERMINATING = 2,
-    /* confirmation that the worker thread terminated */
-    VIDREC_TERMINATED = 3
+    VIDREC_TERMINATING = 2
 };
+static uint32_t g_enmState = VIDREC_UNINITIALIZED;
+
 
 typedef struct VIDEORECSTREAM
 {
@@ -91,14 +93,14 @@ typedef struct VIDEORECSTREAM
 
 typedef struct VIDEORECCONTEXT
 {
-    /* semaphore */
+    /* semaphore to signal the encoding worker thread */
     RTSEMEVENT          WaitEvent;
+    /* semaphore required during termination */
+    RTSEMEVENT          TermEvent;
     /* true if video recording is enabled */
     bool                fEnabled;
     /* worker thread */
     RTTHREAD            Thread;
-    /* see VIDREC_xxx */
-    uint32_t            uState;
     /* number of stream contexts */
     uint32_t            cScreens;
     /* video recording stream contexts */
@@ -386,7 +388,7 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD Thread, void *pvUser)
         int rc = RTSemEventWait(pCtx->WaitEvent, RT_INDEFINITE_WAIT);
         AssertRCBreak(rc);
 
-        if (ASMAtomicReadU32(&pCtx->uState) == VIDREC_TERMINATING)
+        if (ASMAtomicReadU32(&g_enmState) == VIDREC_TERMINATING)
             break;
         for (unsigned uScreen = 0; uScreen < pCtx->cScreens; uScreen++)
         {
@@ -410,7 +412,6 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD Thread, void *pvUser)
         }
     }
 
-    ASMAtomicWriteU32(&pCtx->uState, VIDREC_TERMINATED);
     return VINF_SUCCESS;
 }
 
@@ -423,6 +424,8 @@ static DECLCALLBACK(int) videoRecThread(RTTHREAD Thread, void *pvUser)
  */
 int VideoRecContextCreate(PVIDEORECCONTEXT *ppCtx, uint32_t cScreens)
 {
+    Assert(ASMAtomicReadU32(&g_enmState) == VIDREC_UNINITIALIZED);
+
     PVIDEORECCONTEXT pCtx = (PVIDEORECCONTEXT)RTMemAllocZ(RT_OFFSETOF(VIDEORECCONTEXT, Strm[cScreens]));
     *ppCtx = pCtx;
     AssertPtrReturn(pCtx, VERR_NO_MEMORY);
@@ -434,11 +437,14 @@ int VideoRecContextCreate(PVIDEORECCONTEXT *ppCtx, uint32_t cScreens)
     int rc = RTSemEventCreate(&pCtx->WaitEvent);
     AssertRCReturn(rc, rc);
 
+    rc = RTSemEventCreate(&pCtx->TermEvent);
+    AssertRCReturn(rc, rc);
+
     rc = RTThreadCreate(&pCtx->Thread, videoRecThread, (void*)pCtx, 0,
                         RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE, "VideoRec");
     AssertRCReturn(rc, rc);
 
-    ASMAtomicWriteU32(&pCtx->uState, VIDREC_INITIALIZED);
+    ASMAtomicWriteU32(&g_enmState, VIDREC_IDLE);
     return VINF_SUCCESS;
 }
 
@@ -526,13 +532,24 @@ void VideoRecContextClose(PVIDEORECCONTEXT pCtx)
     if (!pCtx)
         return;
 
-    if (ASMAtomicReadU32(&pCtx->uState) != VIDREC_INITIALIZED)
-        return;
+    uint32_t enmState = VIDREC_IDLE;
+    for (;;)
+    {
+        if (ASMAtomicCmpXchgExU32(&g_enmState, VIDREC_TERMINATING, enmState, &enmState))
+            break;
+        if (enmState == VIDREC_UNINITIALIZED)
+            return;
+    }
+    if (enmState == VIDREC_COPYING)
+    {
+        int rc = RTSemEventWait(pCtx->TermEvent, RT_INDEFINITE_WAIT);
+        AssertRC(rc);
+    }
 
-    ASMAtomicWriteU32(&pCtx->uState, VIDREC_TERMINATING);
     RTSemEventSignal(pCtx->WaitEvent);
     RTThreadWait(pCtx->Thread, 10000, NULL);
     RTSemEventDestroy(pCtx->WaitEvent);
+    RTSemEventDestroy(pCtx->TermEvent);
 
     for (unsigned uScreen = 0; uScreen < pCtx->cScreens; uScreen++)
     {
@@ -559,7 +576,9 @@ void VideoRecContextClose(PVIDEORECCONTEXT pCtx)
         }
     }
 
-    ASMAtomicWriteU32(&pCtx->uState, VIDREC_UNINITIALIZED);
+    RTMemFree(pCtx);
+
+    ASMAtomicWriteU32(&g_enmState, VIDREC_UNINITIALIZED);
 }
 
 /**
@@ -664,8 +683,10 @@ static int videoRecRGBToYUV(PVIDEORECSTREAM pStrm)
 }
 
 /**
- * VideoRec utility function to copy source image (FrameBuf) to
- * intermediate RGB buffer.
+ * VideoRec utility function to copy a source image (FrameBuf) to the intermediate
+ * RGB buffer. This function is executed only once per time.
+ *
+ * @thread  EMT
  *
  * @returns IPRT status code.
  * @param   pCtx               Pointer to the video recording context.
@@ -685,115 +706,143 @@ int VideoRecCopyToIntBuf(PVIDEORECCONTEXT pCtx, uint32_t uScreen, uint32_t x, ui
                          uint32_t uSourceWidth, uint32_t uSourceHeight, uint8_t *pu8BufAddr,
                          uint64_t u64TimeStamp)
 {
-    AssertPtrReturn(pu8BufAddr, VERR_INVALID_PARAMETER);
-    AssertReturn(uSourceWidth, VERR_INVALID_PARAMETER);
-    AssertReturn(uSourceHeight, VERR_INVALID_PARAMETER);
-    AssertReturn(uScreen < pCtx->cScreens, VERR_INVALID_PARAMETER);
-    AssertReturn(pCtx->uState == VIDREC_INITIALIZED, VERR_INVALID_STATE);
+    /* Do not execute during termination and guard against termination */
+    if (!ASMAtomicCmpXchgU32(&g_enmState, VIDREC_COPYING, VIDREC_IDLE))
+        return VINF_TRY_AGAIN;
 
-    PVIDEORECSTREAM pStrm = &pCtx->Strm[uScreen];
-
-    if (u64TimeStamp < pStrm->u64LastTimeStamp + pStrm->uDelay)
-        return VINF_TRY_AGAIN; /* respect maximum frames per second */
-
-    if (ASMAtomicReadBool(&pStrm->fRgbFilled))
-        return VERR_TRY_AGAIN; /* previous frame not yet encoded */
-
-    pStrm->u64LastTimeStamp = u64TimeStamp;
-
-    int xDiff = ((int)pStrm->uTargetWidth - (int)uSourceWidth) / 2;
-    uint32_t w = uSourceWidth;
-    if ((int)w + xDiff + (int)x <= 0)  /* nothing visible */
-        return VERR_INVALID_PARAMETER;
-
-    uint32_t destX;
-    if ((int)x < -xDiff)
+    int rc = VINF_SUCCESS;
+    do
     {
-        w += xDiff + x;
-        x = -xDiff;
-        destX = 0;
-    }
-    else
-        destX = x + xDiff;
+        AssertPtrBreakStmt(pu8BufAddr, rc = VERR_INVALID_PARAMETER);
+        AssertBreakStmt(uSourceWidth, rc = VERR_INVALID_PARAMETER);
+        AssertBreakStmt(uSourceHeight, rc = VERR_INVALID_PARAMETER);
+        AssertBreakStmt(uScreen < pCtx->cScreens, rc = VERR_INVALID_PARAMETER);
 
-    uint32_t h = uSourceHeight;
-    int yDiff = ((int)pStrm->uTargetHeight - (int)uSourceHeight) / 2;
-    if ((int)h + yDiff + (int)y <= 0)  /* nothing visible */
-        return VERR_INVALID_PARAMETER;
+        PVIDEORECSTREAM pStrm = &pCtx->Strm[uScreen];
 
-    uint32_t destY;
-    if ((int)y < -yDiff)
-    {
-        h += yDiff + (int)y;
-        y = -yDiff;
-        destY = 0;
-    }
-    else
-        destY = y + yDiff;
-
-    if (   destX > pStrm->uTargetWidth
-        || destY > pStrm->uTargetHeight)
-        return VERR_INVALID_PARAMETER;  /* nothing visible */
-
-    if (destX + w > pStrm->uTargetWidth)
-        w = pStrm->uTargetWidth - destX;
-
-    if (destY + h > pStrm->uTargetHeight)
-        h = pStrm->uTargetHeight - destY;
-
-    /* Calculate bytes per pixel */
-    uint32_t bpp = 1;
-    if (uPixelFormat == FramebufferPixelFormat_FOURCC_RGB)
-    {
-        switch (uBitsPerPixel)
+        if (u64TimeStamp < pStrm->u64LastTimeStamp + pStrm->uDelay)
         {
-            case 32:
-                pStrm->u32PixelFormat = VPX_IMG_FMT_RGB32;
-                bpp = 4;
-                break;
-            case 24:
-                pStrm->u32PixelFormat = VPX_IMG_FMT_RGB24;
-                bpp = 3;
-                break;
-            case 16:
-                pStrm->u32PixelFormat = VPX_IMG_FMT_RGB565;
-                bpp = 2;
-                break;
-            default:
-                AssertMsgFailed(("Unknown color depth! mBitsPerPixel=%d\n", uBitsPerPixel));
-                break;
+            rc = VINF_TRY_AGAIN; /* respect maximum frames per second */
+            break;
         }
-    }
-    else
-        AssertMsgFailed(("Unknown pixel format! mPixelFormat=%d\n", uPixelFormat));
 
-    /* One of the dimensions of the current frame is smaller than before so
-     * clear the entire buffer to prevent artifacts from the previous frame */
-    if (   uSourceWidth  < pStrm->uLastSourceWidth
-        || uSourceHeight < pStrm->uLastSourceHeight)
-        memset(pStrm->pu8RgbBuf, 0, pStrm->uTargetWidth * pStrm->uTargetHeight * 4);
+        if (ASMAtomicReadBool(&pStrm->fRgbFilled))
+        {
+            rc = VERR_TRY_AGAIN; /* previous frame not yet encoded */
+            break;
+        }
 
-    pStrm->uLastSourceWidth  = uSourceWidth;
-    pStrm->uLastSourceHeight = uSourceHeight;
+        pStrm->u64LastTimeStamp = u64TimeStamp;
 
-    /* Calculate start offset in source and destination buffers */
-    uint32_t offSrc = y * uBytesPerLine + x * bpp;
-    uint32_t offDst = (destY * pStrm->uTargetWidth + destX) * bpp;
-    /* do the copy */
-    for (unsigned int i = 0; i < h; i++)
+        int xDiff = ((int)pStrm->uTargetWidth - (int)uSourceWidth) / 2;
+        uint32_t w = uSourceWidth;
+        if ((int)w + xDiff + (int)x <= 0)  /* nothing visible */
+        {
+            rc = VERR_INVALID_PARAMETER;
+            break;
+        }
+
+        uint32_t destX;
+        if ((int)x < -xDiff)
+        {
+            w += xDiff + x;
+            x = -xDiff;
+            destX = 0;
+        }
+        else
+            destX = x + xDiff;
+
+        uint32_t h = uSourceHeight;
+        int yDiff = ((int)pStrm->uTargetHeight - (int)uSourceHeight) / 2;
+        if ((int)h + yDiff + (int)y <= 0)  /* nothing visible */
+        {
+            rc = VERR_INVALID_PARAMETER;
+            break;
+        }
+
+        uint32_t destY;
+        if ((int)y < -yDiff)
+        {
+            h += yDiff + (int)y;
+            y = -yDiff;
+            destY = 0;
+        }
+        else
+            destY = y + yDiff;
+
+        if (   destX > pStrm->uTargetWidth
+            || destY > pStrm->uTargetHeight)
+        {
+            rc = VERR_INVALID_PARAMETER;  /* nothing visible */
+            break;
+        }
+
+        if (destX + w > pStrm->uTargetWidth)
+            w = pStrm->uTargetWidth - destX;
+
+        if (destY + h > pStrm->uTargetHeight)
+            h = pStrm->uTargetHeight - destY;
+
+        /* Calculate bytes per pixel */
+        uint32_t bpp = 1;
+        if (uPixelFormat == FramebufferPixelFormat_FOURCC_RGB)
+        {
+            switch (uBitsPerPixel)
+            {
+                case 32:
+                    pStrm->u32PixelFormat = VPX_IMG_FMT_RGB32;
+                    bpp = 4;
+                    break;
+                case 24:
+                    pStrm->u32PixelFormat = VPX_IMG_FMT_RGB24;
+                    bpp = 3;
+                    break;
+                case 16:
+                    pStrm->u32PixelFormat = VPX_IMG_FMT_RGB565;
+                    bpp = 2;
+                    break;
+                default:
+                    AssertMsgFailed(("Unknown color depth! mBitsPerPixel=%d\n", uBitsPerPixel));
+                    break;
+            }
+        }
+        else
+            AssertMsgFailed(("Unknown pixel format! mPixelFormat=%d\n", uPixelFormat));
+
+        /* One of the dimensions of the current frame is smaller than before so
+         * clear the entire buffer to prevent artifacts from the previous frame */
+        if (   uSourceWidth  < pStrm->uLastSourceWidth
+            || uSourceHeight < pStrm->uLastSourceHeight)
+            memset(pStrm->pu8RgbBuf, 0, pStrm->uTargetWidth * pStrm->uTargetHeight * 4);
+
+        pStrm->uLastSourceWidth  = uSourceWidth;
+        pStrm->uLastSourceHeight = uSourceHeight;
+
+        /* Calculate start offset in source and destination buffers */
+        uint32_t offSrc = y * uBytesPerLine + x * bpp;
+        uint32_t offDst = (destY * pStrm->uTargetWidth + destX) * bpp;
+        /* do the copy */
+        for (unsigned int i = 0; i < h; i++)
+        {
+            /* Overflow check */
+            Assert(offSrc + w * bpp <= uSourceHeight * uBytesPerLine);
+            Assert(offDst + w * bpp <= pStrm->uTargetHeight * pStrm->uTargetWidth * bpp);
+            memcpy(pStrm->pu8RgbBuf + offDst, pu8BufAddr + offSrc, w * bpp);
+            offSrc += uBytesPerLine;
+            offDst += pStrm->uTargetWidth * bpp;
+        }
+
+        pStrm->u64TimeStamp = u64TimeStamp;
+
+        ASMAtomicWriteBool(&pStrm->fRgbFilled, true);
+        RTSemEventSignal(pCtx->WaitEvent);
+    } while (0);
+
+    if (!ASMAtomicCmpXchgU32(&g_enmState, VIDREC_IDLE, VIDREC_COPYING))
     {
-        /* Overflow check */
-        Assert(offSrc + w * bpp <= uSourceHeight * uBytesPerLine);
-        Assert(offDst + w * bpp <= pStrm->uTargetHeight * pStrm->uTargetWidth * bpp);
-        memcpy(pStrm->pu8RgbBuf + offDst, pu8BufAddr + offSrc, w * bpp);
-        offSrc += uBytesPerLine;
-        offDst += pStrm->uTargetWidth * bpp;
+        rc = RTSemEventSignal(pCtx->TermEvent);
+        AssertRC(rc);
     }
 
-    pStrm->u64TimeStamp = u64TimeStamp;
-
-    ASMAtomicWriteBool(&pStrm->fRgbFilled, true);
-    RTSemEventSignal(pCtx->WaitEvent);
-
-    return VINF_SUCCESS;
+    return rc;
 }
