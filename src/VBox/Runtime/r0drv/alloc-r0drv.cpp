@@ -336,7 +336,7 @@ RTDECL(int) RTMemAllocExTag(size_t cb, size_t cbAlignment, uint32_t fFlags, cons
     int         rc;
 
     RT_ASSERT_PREEMPT_CPUID_VAR();
-    if (!(fFlags & RTMEMHDR_FLAG_ANY_CTX_ALLOC))
+    if (!(fFlags & RTMEMALLOCEX_FLAGS_ANY_CTX_ALLOC))
         RT_ASSERT_INTS_ON();
 
     /*
