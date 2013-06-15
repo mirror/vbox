@@ -114,6 +114,20 @@ typedef struct DEVINTNETIP
     const void             *pLinkHack;
     /** Flag whether the link is up. */
     bool                    fLnkUp;
+#ifndef VBOX_WITH_NEW_LWIP
+    /** 
+     * This hack-flag for spliting initialization logic in devINIPTcpipInitDone, 
+     * this is the only place when during initialization we can be called from TCPIP
+     * thread. 
+     * This callback used for Initialization and Finalization with old lwip.
+     */
+    bool fTermination;
+#endif
+    /**
+     * In callback we're getting status of interface adding operation (TCPIP thread),
+     * but we need inform constructing routine whether it was success or not(EMT thread).
+     */ 
+    bool rcInitialization;
 } DEVINTNETIP, *PDEVINTNETIP;
 
 
@@ -473,17 +487,108 @@ static DECLCALLBACK(void) devINIPNetworkDown_XmitPending(PPDMINETWORKDOWN pInter
     NOREF(pInterface);
 }
 
-#ifndef VBOX_WITH_NEW_LWIP
+
 /**
  * Signals the end of lwIP TCPIP initialization.
- *
- * @param   arg     opaque argument, here the pointer to the semaphore.
+ * 
+ * @note: TCPIP thread, corresponding EMT waiting on semaphore.
+ * @param   arg     opaque argument, here the pointer to the PDEVINTNETIP.
  */
 static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
 {
-    sys_sem_t *sem = (sys_sem_t *)arg;
+    PDEVINTNETIP pThis = (PDEVINTNETIP)arg;
+    AssertPtrReturnVoid(arg);
 
-    lwip_sys_sem_signal(*sem);
+    pThis->rcInitialization = VINF_SUCCESS;
+#ifndef VBOX_WITH_NEW_LWIP
+    /* see PDEVINTNETIP::fTermination */
+    if (!pThis->fTermination)
+    {
+#endif
+        struct netif *ret;
+        struct ip_addr ipaddr, netmask, gw;
+        struct in_addr ip;
+
+        if (!inet_aton(pThis->pszIP, &ip))
+        {
+            pThis->rcInitialization = VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+            PDMDEV_SET_ERROR(pThis->pDevIns, 
+                             pThis->rcInitialization,
+                             N_("Configuration error: Invalid \"IP\" value"));
+            goto done;
+        }
+        memcpy(&ipaddr, &ip, sizeof(ipaddr));
+        
+        if (!inet_aton(pThis->pszNetmask, &ip))
+        {
+            pThis->rcInitialization = VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+            PDMDEV_SET_ERROR(pThis->pDevIns, 
+                             pThis->rcInitialization,
+                             N_("Configuration error: Invalid \"Netmask\" value"));
+            goto done;
+        }
+        memcpy(&netmask, &ip, sizeof(netmask));
+
+        if (pThis->pszGateway)
+        {
+            if (!inet_aton(pThis->pszGateway, &ip))
+            {
+                pThis->rcInitialization = VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
+                PDMDEV_SET_ERROR(pThis->pDevIns, 
+                                 pThis->rcInitialization,
+                                 N_("Configuration error: Invalid \"Gateway\" value"));
+                goto done;
+            }
+
+        }
+        else
+        {
+            inet_aton(pThis->pszIP, &ip);
+        }
+        memcpy(&gw, &ip, sizeof(gw));
+
+        pThis->IntNetIF.name[0] = 'I';
+        pThis->IntNetIF.name[1] = 'N';
+    
+        ret = netif_add(&pThis->IntNetIF, &ipaddr, &netmask, &gw, NULL,
+                        devINIPInterface, lwip_tcpip_input);
+
+        if (!ret)
+        {
+           
+            pThis->rcInitialization = VERR_NET_NO_NETWORK;
+            PDMDEV_SET_ERROR(pThis->pDevIns, 
+                             pThis->rcInitialization,
+                             N_("netif_add failed"));
+            goto done;
+        }
+
+        lwip_netif_set_default(&pThis->IntNetIF);
+        lwip_netif_set_up(&pThis->IntNetIF);
+        
+#ifndef VBOX_WITH_NEW_LWIP
+    }
+    done:
+    lwip_sys_sem_signal(pThis->LWIPTcpInitSem);
+#else
+    done:
+    return;
+#endif
+}
+
+#ifdef VBOX_WITH_NEW_LWIP
+/**
+ * This callback is for finitializing our activity on TCPIP thread.
+ * XXX: We do it only for new LWIP, old LWIP will stay broken for now.
+ */
+static DECLCALLBACK(void) devINIPTcpipFiniDone(void *arg) 
+{
+    PDEVINTNETIP pThis = (PDEVINTNETIP)arg;
+    AssertPtrReturnVoid(arg);
+
+    netif_set_link_down(&pThis->IntNetIF);
+    netif_set_down(&pThis->IntNetIF);
+    netif_remove(&pThis->IntNetIF);
 }
 #endif
 
@@ -584,14 +689,15 @@ static DECLCALLBACK(int) devINIPDestruct(PPDMDEVINS pDevIns)
 
     if (g_pDevINIPData != NULL)
     {
+#ifndef VBOX_WITH_NEW_LWIP
         netif_set_down(&pThis->IntNetIF);
         netif_remove(&pThis->IntNetIF);
-#ifndef VBOX_WITH_NEW_LWIP
+        pThis->fTermination = true;
         tcpip_terminate();
         lwip_sys_sem_wait(pThis->LWIPTcpInitSem);
         lwip_sys_sem_free(pThis->LWIPTcpInitSem);
 #else
-        vboxLwipCoreFinalize();
+        vboxLwipCoreFinalize(devINIPTcpipFiniDone, pThis);
 #endif
     }
 
@@ -703,29 +809,15 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
     AssertMsgReturn(pThis->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"), VERR_PDM_MISSING_INTERFACE_BELOW);
 
-    struct ip_addr ipaddr, netmask, gw;
-    struct in_addr ip;
 
-    if (!inet_aton(pThis->pszIP, &ip))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Configuration error: Invalid \"IP\" value"));
-    memcpy(&ipaddr, &ip, sizeof(ipaddr));
-    if (!inet_aton(pThis->pszNetmask, &ip))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Configuration error: Invalid \"Netmask\" value"));
-    memcpy(&netmask, &ip, sizeof(netmask));
-    if (pThis->pszGateway)
-    {
-        if (!inet_aton(pThis->pszGateway, &ip))
-            return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                    N_("Configuration error: Invalid \"Gateway\" value"));
-        memcpy(&gw, &ip, sizeof(gw));
-    }
-    else
-    {
-        inet_aton(pThis->pszIP, &ip);
-        memcpy(&gw, &ip, sizeof(gw));
-    }
+    /*
+     * Set up global pointer to interface data.
+     */
+    g_pDevINIPData = pThis;
+
+
+    /* link hack */
+    pThis->pLinkHack = g_pDevINILinkHack;
 
     /*
      * Initialize lwIP.
@@ -752,32 +844,17 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     TMTimerSetMillies(pThis->TCPFastTimer, TCP_SLOW_INTERVAL);
 
     pThis->LWIPTcpInitSem = lwip_sys_sem_new(0);
-    {
-        lwip_tcpip_init(devINIPTcpipInitDone, &pThis->LWIPTcpInitSem);
-        lwip_sys_sem_wait(pThis->LWIPTcpInitSem);
-    }
+
+    lwip_tcpip_init(devINIPTcpipInitDone, pThis);
+    lwip_sys_sem_wait(pThis->LWIPTcpInitSem);
+
 #else /* VBOX_WITH_NEW_LWIP */
-    vboxLwipCoreInitialize();
+    vboxLwipCoreInitialize(devINIPTcpipInitDone, pThis);
 #endif
 
-    /*
-     * Set up global pointer to interface data.
-     */
-    g_pDevINIPData = pThis;
+    /* this rc could be updated in devINIPTcpInitDone thread */
+    AssertRCReturn(pThis->rcInitialization, pThis->rcInitialization);
 
-    struct netif *ret;
-    pThis->IntNetIF.name[0] = 'I';
-    pThis->IntNetIF.name[1] = 'N';
-    ret = netif_add(&pThis->IntNetIF, &ipaddr, &netmask, &gw, NULL,
-                    devINIPInterface, lwip_tcpip_input);
-    if (!ret)
-        return PDMDEV_SET_ERROR(pDevIns, VERR_NET_NO_NETWORK, N_("netif_add failed"));
-
-    lwip_netif_set_default(&pThis->IntNetIF);
-    lwip_netif_set_up(&pThis->IntNetIF);
-
-    /* link hack */
-    pThis->pLinkHack = g_pDevINILinkHack;
 
     LogFlow(("%s: return %Rrc\n", __FUNCTION__, rc));
     return rc;
