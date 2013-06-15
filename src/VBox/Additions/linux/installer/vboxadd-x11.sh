@@ -301,6 +301,9 @@ setup()
     vboxmouse_src=
     # The driver extension
     driver_ext=".so"
+    # The configuration file we generate if no original was found but we need
+    # one.
+    main_cfg="/etc/X11/xorg.conf"
 
     modules_dir=`X -showDefaultModulePath 2>&1` || modules_dir=
     if [ -z "$modules_dir" ]; then
@@ -403,13 +406,22 @@ setup()
             automouse=""
             ;;
         6.7* | 6.8.* | 4.2.* | 4.3.* )
-            # Assume X.Org post-fork or XFree86
+            # As the module binaries are the same we use one text for these
+            # four server versions.
             xserver_version="XFree86 4.2/4.3 and X.Org 6.7/6.8"
             driver_ext=.o
             vboxvideo_src=vboxvideo_drv.o
             vboxmouse_src=vboxmouse_drv.o
             automouse=""
-            autokeyboard=""  # Actually not true for 6.8, but it doesn't matter.
+            autokeyboard=""
+            case $x_version in
+                6.8.* )
+                    autokeyboard="true"
+                    ;;
+                4.2.* | 4.3.* )
+                    main_cfg="/etc/X11/XF86Config"
+                    ;;
+            esac
             ;;
         * )
             # Anything else, including all X server versions as of 1.12.
@@ -469,12 +481,11 @@ setup()
             done
             # X.Org Server 1.5 and 1.6 can detect hardware they know, but they
             # need a configuration file for VBoxVideo.
-            main_cfg="/etc/X11/xorg.conf"
-            nobak="/etc/X11/xorg.vbox.nobak"
+            nobak_cfg="`expr "${main_cfg}" : '\([^.]*\)'`.vbox.nobak"
             if test -z "$configured"; then
                 touch "$main_cfg"
                 "$lib_dir/x11config.sh" $autokeyboard $automouse $nopsaux --noBak "$main_cfg"
-                touch "$nobak"
+                touch "${nobak_cfg}"
             fi
         fi
         succ_msg
@@ -541,24 +552,30 @@ EOF
 cleanup()
 {
     # Restore xorg.conf files as far as possible
-    ## List of generated files which have been changed since we generated them
+    # List of generated files which have been changed since we generated them
     newer=""
-    ## Are we dealing with a legacy information which didn't support
+    # Are we dealing with a legacy information which didn't support
     # uninstallation?
     legacy=""
-    ## Do any of the restored configuration files still reference our drivers?
+    # Do any of the restored configuration files still reference our drivers?
     failed=""
+    # Have we encountered a "nobak" configuration file which means that there
+    # is no original file to restore?
+    nobak=""
     test -r "$CONFIG_DIR/$CONFIG" || legacy="true"
-    main_cfg="/etc/X11/xorg.conf"
-    nobak="/etc/X11/xorg.vbox.nobak"
-    if test -r "$nobak"; then
-        test -r "$main_cfg" &&
-            if test -n "$legacy" -o ! "$nobak" -ot "$main_cfg"; then
-                rm -f "$nobak" "$main_cfg"
+    for main_cfg in "/etc/X11/xorg.conf" "/etc/X11/XF86Config"; do
+        nobak_cfg="`expr "${main_cfg}" : '\([^.]*\)'`.vbox.nobak"
+        if test -r "${nobak_cfg}"; then
+            test -r "${main_cfg}" &&
+            if test -n "${legacy}" -o ! "${nobak_cfg}" -ot "${main_cfg}"; then
+                rm -f "${nobak_cfg}" "${main_cfg}"
             else
-                newer="$newer`printf "  $main_cfg (no original)\n"`"
+                newer="${newer}`printf "  ${main_cfg} (no original)\n"`"
             fi
-    else
+            nobak="true"
+        fi
+    done
+    if test -n "${nobak}"; then
         for i in $x11conf_files; do
             if test -r "$i.vbox"; then
                 if test ! "$i" -nt "$i.vbox" -o -n "$legacy"; then
