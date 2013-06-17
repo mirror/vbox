@@ -32,7 +32,7 @@ enum UIIndicatorIndex
     UIIndicatorIndex_NetworkAdapters,
     UIIndicatorIndex_USBDevices,
     UIIndicatorIndex_SharedFolders,
-    UIIndicatorIndex_VRDP,
+    UIIndicatorIndex_VideoCapture,
     UIIndicatorIndex_Virtualization,
     UIIndicatorIndex_Mouse,
     UIIndicatorIndex_Hostkey,

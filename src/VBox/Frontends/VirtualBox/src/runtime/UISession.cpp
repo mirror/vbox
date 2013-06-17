@@ -995,6 +995,7 @@ void UISession::updateSessionSettings()
     bool fAllowReconfiguration = m_machineState != KMachineState_Stuck && m_fReconfigurable;
     gActionPool->action(UIActionIndexRuntime_Simple_SettingsDialog)->setEnabled(fAllowReconfiguration);
     gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog)->setEnabled(fAllowReconfiguration);
+    gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureOptions)->setEnabled(fAllowReconfiguration);
     gActionPool->action(UIActionIndexRuntime_Simple_NetworkAdaptersDialog)->setEnabled(fAllowReconfiguration);
 }
 
