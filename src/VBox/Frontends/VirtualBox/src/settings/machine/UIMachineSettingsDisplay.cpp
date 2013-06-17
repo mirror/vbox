@@ -701,17 +701,23 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     m_pComboVideoCaptureSize->addItem(""); /* User Defined */
     m_pComboVideoCaptureSize->addItem("320 x 200 (16:10)",   QVariant(QSize(320, 200)));
     m_pComboVideoCaptureSize->addItem("640 x 480 (4:3)",     QVariant(QSize(640, 480)));
+    m_pComboVideoCaptureSize->addItem("720 x 400 (9:5)",     QVariant(QSize(720, 400)));
     m_pComboVideoCaptureSize->addItem("720 x 480 (3:2)",     QVariant(QSize(720, 480)));
     m_pComboVideoCaptureSize->addItem("800 x 600 (4:3)",     QVariant(QSize(800, 600)));
     m_pComboVideoCaptureSize->addItem("1024 x 768 (4:3)",    QVariant(QSize(1024, 768)));
     m_pComboVideoCaptureSize->addItem("1280 x 720 (16:9)",   QVariant(QSize(1280, 720)));
     m_pComboVideoCaptureSize->addItem("1280 x 800 (16:10)",  QVariant(QSize(1280, 800)));
+    m_pComboVideoCaptureSize->addItem("1280 x 960 (4:3)",    QVariant(QSize(1280, 960)));
+    m_pComboVideoCaptureSize->addItem("1280 x 1024 (5:4)",   QVariant(QSize(1280, 1024)));
     m_pComboVideoCaptureSize->addItem("1366 x 768 (16:9)",   QVariant(QSize(1366, 768)));
     m_pComboVideoCaptureSize->addItem("1440 x 900 (16:10)",  QVariant(QSize(1440, 900)));
+    m_pComboVideoCaptureSize->addItem("1440 x 1080 (4:3)",   QVariant(QSize(1440, 1080)));
     m_pComboVideoCaptureSize->addItem("1600 x 900 (16:9)",   QVariant(QSize(1600, 900)));
     m_pComboVideoCaptureSize->addItem("1680 x 1050 (16:10)", QVariant(QSize(1680, 1050)));
+    m_pComboVideoCaptureSize->addItem("1600 x 1200 (4:3)",   QVariant(QSize(1600, 1200)));
     m_pComboVideoCaptureSize->addItem("1920 x 1080 (16:9)",  QVariant(QSize(1920, 1080)));
     m_pComboVideoCaptureSize->addItem("1920 x 1200 (16:10)", QVariant(QSize(1920, 1200)));
+    m_pComboVideoCaptureSize->addItem("1920 x 1440 (4:3)",   QVariant(QSize(1920, 1440)));
     connect(m_pComboVideoCaptureSize, SIGNAL(currentIndexChanged(int)), this, SLOT(sltHandleVideoCaptureFrameSizeComboboxChange()));
 
     /* Prepare frame-width/height editors: */
@@ -720,7 +726,7 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     m_pEditorVideoCaptureWidth->setMinimum(16);
     m_pEditorVideoCaptureWidth->setMaximum(1920);
     m_pEditorVideoCaptureHeight->setMinimum(16);
-    m_pEditorVideoCaptureHeight->setMaximum(1200);
+    m_pEditorVideoCaptureHeight->setMaximum(1440);
     connect(m_pEditorVideoCaptureWidth, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameWidthEditorChange()));
     connect(m_pEditorVideoCaptureHeight, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameHeightEditorChange()));
 
