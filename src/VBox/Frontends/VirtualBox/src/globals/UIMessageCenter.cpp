@@ -61,6 +61,7 @@
 #include "CExtPackManager.h"
 #include "CExtPackFile.h"
 #include "CHostNetworkInterface.h"
+#include "CVRDEServer.h"
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # include "CGuest.h"
 #endif /* VBOX_WITH_DRAG_AND_DROP */
@@ -1977,6 +1978,15 @@ void UIMessageCenter::cannotDetachUSBDevice(const CVirtualBoxErrorInfo &errorInf
           tr("Failed to detach the USB device <b>%1</b> from the virtual machine <b>%2</b>.")
              .arg(strDevice, strMachineName),
           formatErrorInfo(errorInfo));
+}
+
+void UIMessageCenter::cannotToggleVRDEServer(const CVRDEServer &server, const QString &strMachineName, bool fEnable)
+{
+    error(0, MessageType_Error,
+          fEnable ?
+              tr("Failed to enable the remote desktop server for the virtual machine <b>%1</b>.").arg(strMachineName) :
+              tr("Failed to disable the remote desktop server for the virtual machine <b>%1</b>.").arg(strMachineName),
+          formatErrorInfo(server));
 }
 
 void UIMessageCenter::remindAboutGuestAdditionsAreNotActive() const
