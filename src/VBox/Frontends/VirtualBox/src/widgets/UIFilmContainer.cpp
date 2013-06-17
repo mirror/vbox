@@ -61,7 +61,7 @@ void UIFilmContainer::setValue(const QVector<BOOL> &value)
         if (QHBoxLayout *pWidgetLayout = new QHBoxLayout(pWidget))
         {
             /* Configure viewport layout: */
-            pWidgetLayout->setMargin(4);
+            pWidgetLayout->setMargin(0);
             pWidgetLayout->setSpacing(4);
             /* Create new widgets according passed vector: */
             for (int iScreenIndex = 0; iScreenIndex < value.size(); ++iScreenIndex)
