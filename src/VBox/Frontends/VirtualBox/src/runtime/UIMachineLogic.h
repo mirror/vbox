@@ -204,7 +204,7 @@ private slots:
     void sltChangeSharedClipboardType(QAction *pAction);
     void sltPrepareDragAndDropMenu();
     void sltChangeDragAndDropType(QAction *pAction);
-    void sltSwitchVrde(bool fOn);
+    void sltToggleVRDE(bool fEnabled);
     void sltToggleVideoCapture(bool fEnabled);
     void sltOpenVideoCaptureOptions();
     void sltInstallGuestAdditions();

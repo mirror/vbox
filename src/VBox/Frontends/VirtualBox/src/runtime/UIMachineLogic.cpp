@@ -809,7 +809,7 @@ void UIMachineLogic::prepareActionConnections()
     connect(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog), SIGNAL(triggered()),
             this, SLOT(sltOpenSharedFoldersDialog()));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer), SIGNAL(toggled(bool)),
-            this, SLOT(sltSwitchVrde(bool)));
+            this, SLOT(sltToggleVRDE(bool)));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_VideoCapture), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleVideoCapture(bool)));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureOptions), SIGNAL(triggered()),
@@ -1889,21 +1889,49 @@ void UIMachineLogic::sltChangeDragAndDropType(QAction *pAction)
     session().GetMachine().SetDragAndDropMode(mode);
 }
 
-void UIMachineLogic::sltSwitchVrde(bool fOn)
+void UIMachineLogic::sltToggleVRDE(bool fEnabled)
 {
-    /* Prepare variables: */
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Access VRDE server: */
     CMachine machine = session().GetMachine();
     CVRDEServer server = machine.GetVRDEServer();
-    AssertMsg(!server.isNull(), ("VRDE server should not be null!\n"));
+    AssertMsg(!server.isNull(), ("VRDE server should NOT be null!\n"));
+    if (!machine.isOk() || server.isNull())
+        return;
 
-    /* Toggle VRDE server state: */
-    server.SetEnabled(fOn);
-    if (!server.isOk())
+    /* Make sure something had changed: */
+    if (server.GetEnabled() == static_cast<BOOL>(fEnabled))
+        return;
+
+    /* Server is OK? */
+    if (server.isOk())
     {
-        /* Notify about the error: */
-        msgCenter().cannotToggleVRDEServer(server, machine.GetName(), fOn);
-        /* Make sure action is updated! */
-        uisession()->updateStatusVRDE();
+        /* Update VRDE server state: */
+        server.SetEnabled(fEnabled);
+        /* Server still OK? */
+        if (server.isOk())
+        {
+            /* Save machine-settings: */
+            machine.SaveSettings();
+            /* Machine still OK? */
+            if (!machine.isOk())
+            {
+                /* Notify about the error: */
+                msgCenter().cannotSaveMachineSettings(machine);
+                /* Make sure action is updated! */
+                uisession()->updateStatusVRDE();
+            }
+        }
+        else
+        {
+            /* Notify about the error: */
+            msgCenter().cannotToggleVRDEServer(server, machine.GetName(), fEnabled);
+            /* Make sure action is updated! */
+            uisession()->updateStatusVRDE();
+        }
     }
 }
 
@@ -1932,7 +1960,7 @@ void UIMachineLogic::sltToggleVideoCapture(bool fEnabled)
     }
     /* Machine had failed on one of steps? */
     if (!machine.isOk())
-        msgCenter().cannotSaveMachineSettings(machine, activeMachineWindow());
+        msgCenter().cannotSaveMachineSettings(machine);
 }
 
 void UIMachineLogic::sltOpenVideoCaptureOptions()
