@@ -2627,15 +2627,18 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     Assert(pSvmTransient->u64ExitCode > 0);
     Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
 
-    int      rc;
+    /*
+     * The ordering of the case labels is based on most-frequently-occurring VM-exits for most guests under
+     * normal workloads (for some definition of "normal").
+     */
     uint32_t u32ExitCode = pSvmTransient->u64ExitCode;
     switch (pSvmTransient->u64ExitCode)
     {
+        case SVM_EXIT_NPF:
+            return hmR0SvmExitNestedPF(pVCpu, pCtx, pSvmTransient);
+
         case SVM_EXIT_IOIO:
             return hmR0SvmExitIOInstr(pVCpu, pCtx, pSvmTransient);
-
-        case SVM_EXIT_CPUID:
-            return hmR0SvmExitCpuid(pVCpu, pCtx, pSvmTransient);
 
         case SVM_EXIT_RDTSC:
             return hmR0SvmExitRdtsc(pVCpu, pCtx, pSvmTransient);
@@ -2643,11 +2646,19 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         case SVM_EXIT_RDTSCP:
             return hmR0SvmExitRdtscp(pVCpu, pCtx, pSvmTransient);
 
+        case SVM_EXIT_CPUID:
+            return hmR0SvmExitCpuid(pVCpu, pCtx, pSvmTransient);
+
         case SVM_EXIT_MONITOR:
             return hmR0SvmExitMonitor(pVCpu, pCtx, pSvmTransient);
 
         case SVM_EXIT_MWAIT:
             return hmR0SvmExitMwait(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_READ_CR0:
+        case SVM_EXIT_READ_CR3:
+        case SVM_EXIT_READ_CR4:
+            return hmR0SvmExitReadCRx(pVCpu, pCtx, pSvmTransient);
 
         case SVM_EXIT_WRITE_CR0:
         case SVM_EXIT_WRITE_CR3:
@@ -2655,19 +2666,14 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         case SVM_EXIT_WRITE_CR8:
             return hmR0SvmExitWriteCRx(pVCpu, pCtx, pSvmTransient);
 
-        case SVM_EXIT_READ_CR0:
-        case SVM_EXIT_READ_CR3:
-        case SVM_EXIT_READ_CR4:
-            return hmR0SvmExitReadCRx(pVCpu, pCtx, pSvmTransient);
-
-        case SVM_EXIT_MSR:
-            return hmR0SvmExitMsr(pVCpu, pCtx, pSvmTransient);
-
         case SVM_EXIT_INTR:
         case SVM_EXIT_FERR_FREEZE:
         case SVM_EXIT_NMI:
         case SVM_EXIT_INIT:
             return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_MSR:
+            return hmR0SvmExitMsr(pVCpu, pCtx, pSvmTransient);
 
         case SVM_EXIT_WBINVD:
             return hmR0SvmExitWbinvd(pVCpu, pCtx, pSvmTransient);
@@ -2704,13 +2710,12 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
             default:
             {
-                rc = VERR_SVM_UNEXPECTED_EXIT;
                 AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit code %#x\n", u32ExitCode));
-                break;
+                return VERR_SVM_UNEXPECTED_EXIT;
             }
         }
     }
-    return rc;
+    return VERR_INTERNAL_ERROR_5;   /* Should never happen. */
 }
 
 
@@ -3388,6 +3393,109 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                   || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", rc));
     }
 #endif
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for Nested Page-faults (SVM_EXIT_NPF). Conditional
+ * #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    Assert(pVM->hm.s.fNestedPaging);
+
+    /* See AMD spec. 15.25.6 "Nested versus Guest Page Faults, Fault Ordering" for VMCB details for #NPF. */
+    PSVMVMCB pVmcb           = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    uint32_t u32ErrCode      = pVmcb->ctrl.u64ExitInfo1;
+    RTGCPHYS GCPhysFaultAddr = pVmcb->ctrl.u64ExitInfo2;
+
+    Log4(("#NPF at CS:RIP=%04x:%#RX64 faultaddr=%RGp errcode=%#x \n", pCtx->cs.Sel, pCtx->rip, GCPhysFaultAddr, u32ErrCode));
+
+#ifdef VBOX_HM_WITH_GUEST_PATCHING
+    /* TPR patching for 32-bit guests, using the reserved bit in the page tables for MMIO regions.  */
+    if (   pVM->hm.s.fTRPPatchingAllowed
+        && (GCPhysFaultAddr & PAGE_OFFSET_MASK) == 0x80
+        && (   !(u32ErrCode & X86_TRAP_PF_P)                                                             /* Not present */
+            || (u32ErrCode & (X86_TRAP_PF_P | X86_TRAP_PF_RSVD)) == (X86_TRAP_PF_P | X86_TRAP_PF_RSVD))  /* MMIO page. */
+        && !CPUMGetGuestCPL(pVCpu)
+        && !CPUMIsGuestInLongModeEx(pCtx)
+        && pVM->hm.s.cPatches < RT_ELEMENTS(pVM->hm.s.aPatches))
+    {
+        RTGCPHYS GCPhysApicBase = pCtx->msrApicBase;
+        GCPhysApicBase &= PAGE_BASE_GC_MASK;
+
+        if (GCPhysFaultAddr == GCPhysApicBase + 0x80)
+        {
+            /* Only attempt to patch the instruction once. */
+            PHMTPRPATCH pPatch = (PHMTPRPATCH)RTAvloU32Get(&pVM->hm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
+            if (!pPatch)
+            {
+                rc = VINF_EM_HM_PATCH_TPR_INSTR;
+                return rc;
+            }
+        }
+    }
+#endif
+
+    /*
+     * Determine the nested paging mode.
+     */
+    PGMMODE enmNestedPagingMode;
+#if HC_ARCH_BITS == 32
+    if (CPUMIsGuestInLongModeEx(pCtx))
+        enmNestedPagingMode = PGMMODE_AMD64_NX;
+    else
+#endif
+        enmNestedPagingMode = PGMGetHostMode(pVM);
+
+    /*
+     * MMIO optimization using the reserved (RSVD) bit in the guest page tables for MMIO pages.
+     */
+    int rc;
+    Assert((u32ErrCode & (X86_TRAP_PF_RSVD | X86_TRAP_PF_P)) != X86_TRAP_PF_RSVD);
+    if ((u32ErrCode & (X86_TRAP_PF_RSVD | X86_TRAP_PF_P)) == (X86_TRAP_PF_RSVD | X86_TRAP_PF_P))
+    {
+        rc = PGMR0Trap0eHandlerNPMisconfig(pVM, pVCpu, enmNestedPagingMode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr, u32ErrCode);
+
+        /*
+         * If we succeed, resume guest execution.
+         * If we fail in interpreting the instruction because we couldn't get the guest physical address
+         * of the page containing the instruction via the guest's page tables (we would invalidate the guest page
+         * in the host TLB), resume execution which would cause a guest page fault to let the guest handle this
+         * weird case. See @bugref{6043}.
+         */
+        if (   rc == VINF_SUCCESS
+            || rc == VERR_PAGE_TABLE_NOT_PRESENT
+            || rc == VERR_PAGE_NOT_PRESENT)
+        {
+            /* Successfully handled MMIO operation. */
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_APIC_STATE;
+            rc = VINF_SUCCESS;
+        }
+        return rc;
+    }
+
+    TRPMAssertXcptPF(pVCpu, GCPhysFaultAddr, u32ErrCode);
+    rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, enmNestedPagingMode, u32ErrCode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr);
+    TRPMResetTrap(pVCpu);
+
+    Log2(("#NPF: PGMR0Trap0eHandlerNestedPaging returned %Rrc\n",  rc));
+
+    /*
+     * Same case as PGMR0Trap0eHandlerNPMisconfig(). See comment above, @bugref{6043}.
+     */
+    if (   rc == VINF_SUCCESS
+        || rc == VERR_PAGE_TABLE_NOT_PRESENT
+        || rc == VERR_PAGE_NOT_PRESENT)
+    {
+        /* We've successfully synced our shadow page tables. */
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPF);
+        rc = VINF_SUCCESS;
+    }
+
     return rc;
 }
 
