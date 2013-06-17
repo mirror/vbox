@@ -2029,6 +2029,9 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         AssertPtr(pVCpu);
         AssertPtr(pVCpu->hm.s.vmx.pvVmcs);
 
+        /* Log the VCPU pointers, useful for debugging SMP VMs. */
+        Log4(("VMXR0SetupVM: pVCpu=%p idCpu=%RU32\n", pVCpu, pVCpu->idCpu));
+
         /* Set revision dword at the beginning of the VMCS structure. */
         *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hm.s.vmx.msr.vmx_basic_info);
 
