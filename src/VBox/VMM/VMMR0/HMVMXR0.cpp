@@ -6633,6 +6633,13 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     AssertPtr(pMixedCtx);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
+#ifdef LOG_ENABLED
+    /** @todo r=ramshankar: I'm not able to use VMMRZCallRing3Disable() here,
+     *        probably not initialized yet? Anyway this will do for now. */
+    bool fCallerDisabledLogFlush = VMMR0IsLogFlushDisabled(pVCpu);
+    VMMR0LogFlushDisable(pVCpu);
+#endif
+
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
 
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestState, x);
@@ -6688,6 +6695,12 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     AssertMsg(!pVCpu->hm.s.fContextUseFlags,
              ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p idCpu=%RU32 fContextUseFlags=%#RX32\n",
               pVM, pVCpu, pVCpu->idCpu, pVCpu->hm.s.fContextUseFlags));
+
+#ifdef LOG_ENABLED
+    /* Only reenable log-flushing if it the caller originally had it enabled. */
+    if (!fCallerDisabledLogFlush)
+        VMMR0LogFlushEnable(pVCpu);
+#endif
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
