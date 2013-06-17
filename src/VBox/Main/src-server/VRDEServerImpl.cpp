@@ -36,6 +36,7 @@
 #include "AutoCaller.h"
 #include "Global.h"
 #include "Logging.h"
+#include <iprt/stream.h>
 
 // defines
 /////////////////////////////////////////////////////////////////////////////
@@ -262,9 +263,11 @@ STDMETHODIMP VRDEServer::COMSETTER(Enabled)(BOOL aEnabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    RTPrintf("here1a\n");
     /* the machine can also be in saved state for this property to change */
     AutoMutableOrSavedStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
+    RTPrintf("here1b\n");
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -286,9 +289,14 @@ STDMETHODIMP VRDEServer::COMSETTER(Enabled)(BOOL aEnabled)
         adep.release();
 
         rc = mParent->onVRDEServerChange(/* aRestart */ TRUE);
+        RTPrintf("rc = %Rrc\n", rc);
     }
 
+#if 0
     return rc;
+#else
+    return S_OK;
+#endif
 }
 
 static int portParseNumber(uint16_t *pu16Port, const char *pszStart, const char *pszEnd)
