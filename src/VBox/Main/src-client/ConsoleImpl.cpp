@@ -2718,7 +2718,9 @@ STDMETHODIMP Console::SleepButton()
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mMachineState != MachineState_Running) /** @todo Live Migration: ??? */
+    if (   mMachineState != MachineState_Running
+        && mMachineState != MachineState_Teleporting
+        && mMachineState != MachineState_LiveSnapshotting)
         return setInvalidMachineStateError();
 
     /* get the VM handle. */
@@ -5048,6 +5050,7 @@ HRESULT Console::onVRDEServerChange(BOOL aRestart)
         &&  (   mMachineState == MachineState_Running
              || mMachineState == MachineState_Teleporting
              || mMachineState == MachineState_LiveSnapshotting
+             || mMachineState == MachineState_Paused
             )
        )
     {
@@ -5081,6 +5084,8 @@ HRESULT Console::onVRDEServerChange(BOOL aRestart)
             alock.acquire();
         }
     }
+    else
+        rc = setInvalidMachineStateError();
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
