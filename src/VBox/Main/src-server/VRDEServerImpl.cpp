@@ -268,6 +268,8 @@ STDMETHODIMP VRDEServer::COMSETTER(Enabled)(BOOL aEnabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    HRESULT rc = S_OK;
+
     if (mData->mEnabled != aEnabled)
     {
         mData.backup();
@@ -283,10 +285,10 @@ STDMETHODIMP VRDEServer::COMSETTER(Enabled)(BOOL aEnabled)
         /* Avoid deadlock when onVRDEServerChange eventually calls SetExtraData. */
         adep.release();
 
-        mParent->onVRDEServerChange(/* aRestart */ TRUE);
+        rc = mParent->onVRDEServerChange(/* aRestart */ TRUE);
     }
 
-    return S_OK;
+    return rc;
 }
 
 static int portParseNumber(uint16_t *pu16Port, const char *pszStart, const char *pszEnd)
