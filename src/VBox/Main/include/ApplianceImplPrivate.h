@@ -228,8 +228,6 @@ ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVBox, BOOL fLongMod
 
 Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type);
 
-bool checkComplianceDigestAndOVFVersion(bool digestType, ovf::OVFVersion_T ovfVersion);
-
 
 typedef struct SHASTORAGE
 {
