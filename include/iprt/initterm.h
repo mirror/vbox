@@ -107,6 +107,7 @@ RTR3DECL(void) RTR3Term(void);
 
 /**
  * Are we running in unobtrusive mode?
+ * @returns true/false.
  */
 RTR3DECL(bool) RTR3InitIsUnobtrusive(void);
 #endif /* IN_RING3 */
