@@ -129,7 +129,7 @@ RT_C_DECLS_BEGIN
 # define HM_CHANGED_VMX_EXIT_CTLS                RT_BIT(20)
 /* AMD-V specific state. */
 # define HM_CHANGED_SVM_GUEST_APIC_STATE         RT_BIT(16)
-# define HM_CHANGED_SVM_RESERVED1                RT_BIT(17)
+# define HM_CHANGED_SVM_GUEST_EFER_MSR           RT_BIT(17)
 # define HM_CHANGED_SVM_RESERVED2                RT_BIT(18)
 # define HM_CHANGED_SVM_RESERVED3                RT_BIT(19)
 # define HM_CHANGED_SVM_RESERVED4                RT_BIT(20)

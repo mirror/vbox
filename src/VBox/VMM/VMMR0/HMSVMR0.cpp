@@ -537,6 +537,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         pVmcb->ctrl.u32InterceptException |=   RT_BIT(X86_XCPT_PF);
 #endif
 #ifdef HMSVM_ALWAYS_TRAP_ALL_XCPTS
+        /* If you add any exceptions here, make sure to update hmR0SvmHandleExit(). */
         pVmcb->ctrl.u32InterceptException |=   RT_BIT(X86_XCPT_BP)
                                              | RT_BIT(X86_XCPT_DB)
                                              | RT_BIT(X86_XCPT_DE)
@@ -2645,9 +2646,6 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     uint32_t u32ExitCode = pSvmTransient->u64ExitCode;
     switch (pSvmTransient->u64ExitCode)
     {
-        /** @todo  */
-        //SVM_EXIT_EXCEPTION_x:
-
         case SVM_EXIT_NPF:
             return hmR0SvmExitNestedPF(pVCpu, pCtx, pSvmTransient);
 
@@ -2662,6 +2660,18 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
         case SVM_EXIT_CPUID:
             return hmR0SvmExitCpuid(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_EXCEPTION_E:   /* X86_XCPT_PF */
+            return hmR0SvmExitXcptPF(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_EXCEPTION_7:   /* X86_XCPT_NM */
+            return hmR0SvmExitXcptNM(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_EXCEPTION_10:  /* X86_XCPT_MF */
+            return hmR0SvmExitXcptMF(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_EXCEPTION_1:   /* X86_XCPT_DB */
+            return hmR0SvmExitXcptDB(pVCpu, pCtx, pSvmTransient);
 
         case SVM_EXIT_MONITOR:
             return hmR0SvmExitMonitor(pVCpu, pCtx, pSvmTransient);
@@ -2733,6 +2743,16 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
             case SVM_EXIT_CLGI:
             case SVM_EXIT_SKINIT:
                 return hmR0SvmExitSetPendingXcptUD(pVCpu, pCtx, pSvmTransient);
+
+#ifdef HMSVM_ALWAYS_TRAP_ALL_XCPTS
+            case SVM_EXIT_EXCEPTION_0:      /* X86_XCPT_DE */
+            case SVM_EXIT_EXCEPTION_3:      /* X86_XCPT_BP */
+            case SVM_EXIT_EXCEPTION_6:      /* X86_XCPT_UD */
+            case SVM_EXIT_EXCEPTION_B:      /* X86_XCPT_NP */
+            case SVM_EXIT_EXCEPTION_C:      /* X86_XCPT_SS */
+            case SVM_EXIT_EXCEPTION_D:      /* X86_XCPT_GP */
+                return
+#endif
 
             default:
             {
@@ -2875,6 +2895,67 @@ DECLINLINE(void) hmR0SvmSetPendingXcptDB(PVMCPU pVCpu)
     Event.n.u1Valid  = 1;
     Event.n.u3Type   = SVM_EVENT_EXCEPTION;
     Event.n.u8Vector = X86_XCPT_DB;
+    hmR0SvmSetPendingEvent(pVCpu, &Event);
+}
+
+
+/**
+ * Sets a page fault (#PF) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   u32ErrCode      The error-code for the page-fault.
+ * @param   uFaultAddress   The page fault address (CR2).
+ *
+ * @remarks This updates the guest CR2 with @a uFaultAddress!
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t u32ErrCode, RTGCUINTPTR uFaultAddress)
+{
+    SVMEVENT Event;
+    Event.u                  = 0;
+    Event.n.u1Valid          = 1;
+    Event.n.u3Type           = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector         = X86_XCPT_PF;
+    Event.n.u1ErrorCodeValid = 1;
+    Event.n.u32ErrorCode     = u32ErrCode;
+
+    /* Update CR2 of the guest. */
+    pCtx->cr2 = uFaultAddress;
+
+    hmR0SvmSetPendingEvent(pVCpu, &Event);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
+}
+
+
+/**
+ * Sets a device-not-available (#NM) exception as pending-for-injection into the
+ * VM.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptNM(PVMCPU pVCpu)
+{
+    SVMEVENT Event;
+    Event.u          = 0;
+    Event.n.u1Valid  = 1;
+    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector = X86_XCPT_NM;
+    hmR0SvmSetPendingEvent(pVCpu, &Event);
+}
+
+
+/**
+ * Sets a math-fault (#MF) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptMF(PVMCPU pVCpu)
+{
+    SVMEVENT Event;
+    Event.u          = 0;
+    Event.n.u1Valid  = 1;
+    Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector = X86_XCPT_MF;
     hmR0SvmSetPendingEvent(pVCpu, &Event);
 }
 
@@ -3664,4 +3745,143 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     return VINF_SUCCESS;
 }
 
+
+/**
+ * #VMEXIT handler for page faults (SVM_EXIT_PF). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    /* -XXX- @todo Vectoring pagefaults!! */
+
+    /* See AMD spec. 15.12.15 "#PF (Page Fault)". */
+    PSVMVMCB    pVmcb         = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    uint32_t    u32ErrCode    = pVmcb->ctrl.u64ExitInfo1;
+    RTGCUINTPTR uFaultAddress = pVmcb->ctrl.u64ExitInfo2;
+
+#if defined(HMVMX_ALWAYS_TRAP_ALL_XCPTS) || defined(HMVMX_ALWAYS_TRAP_PF)
+    if (pVM->hm.s.fNestedPaging)
+    {
+        /* A genuine guest #PF, reflect it to the guest. */
+        Log4(("#PF: Guest page fault at %04X:%RGv FaultAddr=%RGv ErrCode=%#x\n", pCtx->cs, (RTGCPTR)pCtx->rip, uFaultAddress,
+              u32ErrCode));
+        hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
+        return VINF_SUCCESS;
+    }
+#endif
+
+    Assert(!pVM->hm.s.fNestedPaging);
+
+#ifdef VBOX_HM_WITH_GUEST_PATCHING
+    /* Shortcut for APIC TPR reads and writes; only applicable to 32-bit guests. */
+    if (   pVM->hm.s.fTRPPatchingAllowed
+        && (uFaultAddress & 0xfff) == 0x80  /* TPR offset. */
+        && !(u32ErrCode & X86_TRAP_PF_P)    /* Not present */
+        && !CPUMGetGuestCPL(pVCpu)
+        && !CPUMIsGuestInLongModeEx(pCtx)
+        && pVM->hm.s.cPatches < RT_ELEMENTS(pVM->hm.s.aPatches))
+    {
+        RTGCPHYS GCPhysApicBase;
+        GCPhysApicBase  = pCtx->msrApicBase;
+        GCPhysApicBase &= PAGE_BASE_GC_MASK;
+
+        /* Check if the page at the fault-address is the APIC base. */
+        RTGCPHYS GCPhysPage;
+        rc = PGMGstGetPage(pVCpu, (RTGCPTR)uFaultAddress, NULL /* pfFlags */, &GCPhysPage);
+        if (   rc == VINF_SUCCESS
+            && GCPhys == GCPhysApicBase)
+        {
+            /* Only attempt to patch the instruction once. */
+            PHMTPRPATCH pPatch = (PHMTPRPATCH)RTAvloU32Get(&pVM->hm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
+            if (!pPatch)
+                return VINF_EM_HM_PATCH_TPR_INSTR;
+        }
+    }
+#endif
+
+    Log4(("#PF: uFaultAddress=%#RX64 cs:rip=%#04x:%#RX64 u32ErrCode %#RX32 cr3=%#RX64\n", uFaultAddress, pCtx->cs.Sel,
+          pCtx->rip, u32ErrCode, pCtx->cr3));
+
+    TRPMAssertXcptPF(pVCpu, uFaultAddress, u32ErrCode);
+    int rc = PGMTrap0eHandler(pVCpu, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)uFaultAddress);
+
+    Log2(("#PF rc=%Rrc\n", rc));
+    if (rc == VINF_SUCCESS)
+    {
+        /* Successfully synced shadow pages tables or emulated an MMIO instruction. */
+        TRPMResetTrap(pVCpu);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPF);
+        return rc;
+    }
+    else if (rc == VINF_EM_RAW_GUEST_TRAP)
+    {
+        /* It's a guest page fault and needs to be reflected to the guest. */
+
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
+        u32ErrCode = TRPMGetErrorCode(pVCpu);        /* The error code might have been changed. */
+        TRPMResetTrap(pVCpu);
+
+        hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
+        return VINF_SUCCESS;
+    }
+
+    TRPMResetTrap(pVCpu);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPFEM);
+    return rc;
+}
+
+
+/**
+ * #VMEXIT handler for device-not-available exception (SVM_EXIT_NM). Conditional
+ * #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+#ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
+    Assert(!CPUMIsGuestFPUStateActive(pVCpu));
+#endif
+
+    /* Lazy FPU loading; load the guest-FPU state transparently and continue execution of the guest. */
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    rc = CPUMR0LoadGuestFPU(pVM, pVCpu, pCtx);
+    if (rc == VINF_SUCCESS)
+    {
+        Assert(CPUMIsGuestFPUStateActive(pVCpu));
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowNM);
+        return VINF_SUCCESS;
+    }
+
+    /* Forward #NM to the guest. */
+    Assert(rc == VINF_EM_RAW_GUEST_TRAP);
+    hmR0SvmSetPendingXcptNM(pVCpu);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNM);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * #VMEXIT handler for math-fault (SVM_EXIT_MF). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    int rc;
+    if (!(pMixedCtx->cr0 & X86_CR0_NE))
+    {
+        /* Old-style FPU error reporting needs some extra work. */
+        /** @todo don't fall back to the recompiler, but do it manually. */
+        rc = VERR_EM_INTERPRETER;
+    }
+    else
+    {
+        hmR0SvmSetPendingXcptMF(pVCpu);
+        rc = VINF_SUCCESS;
+    }
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);
+    return rc;
+}
 
