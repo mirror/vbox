@@ -100,7 +100,7 @@ V_INTR_VECTOR. */
 /** Nested Paging: Nested CR3 (nCR3), PAT. */
 #define HMSVM_VMCB_CLEAN_NP                     RT_BIT(4)
 /** Control registers (CR0, CR3, CR4, EFER). */
-#define HMSVM_VMCB_CLEAN_CRX                    RT_BIT(5)
+#define HMSVM_VMCB_CLEAN_CRX_EFER               RT_BIT(5)
 /** Debug registers (DR6, DR7). */
 #define HMSVM_VMCB_CLEAN_DRX                    RT_BIT(6)
 /** GDT, IDT limit and base. */
@@ -954,7 +954,7 @@ DECLINLINE(int) hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMC
             hmR0SvmRemoveXcptIntercept(X86_XCPT_MF);
 
         pVmcb->guest.u64CR0 = u64GuestCR0;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX;
+        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR0;
     }
 
@@ -991,7 +991,7 @@ DECLINLINE(int) hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMC
         else
             pVmcb->guest.u64CR3 = PGMGetHyperCR3(pVCpu);
 
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX;
+        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
         pVCpu->hm.s.fContextUseFlags &= HM_CHANGED_GUEST_CR3;
     }
 
@@ -1036,7 +1036,7 @@ DECLINLINE(int) hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMC
         }
 
         pVmcb->guest.u64CR4 = u64GuestCR4;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX;
+        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR4;
     }
 
@@ -1125,7 +1125,12 @@ DECLINLINE(void) hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCt
      * AMD-V requires guest EFER.SVME to be set. Weird.                                                                                 .
      * See AMD spec. 15.5.1 "Basic Operation" | "Canonicalization and Consistency Checks".
      */
-    pVmcb->guest.u64EFER = pCtx->msrEFER | MSR_K6_EFER_SVME;
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_SVM_GUEST_EFER_MSR
+    {
+        pVmcb->guest.u64EFER = pCtx->msrEFER | MSR_K6_EFER_SVME;
+        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+        pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_SVM_GUEST_EFER_MSR;
+    }
 
     /* 64-bit MSRs. */
     if (CPUMIsGuestInLongModeEx(pCtx))
@@ -1136,8 +1141,13 @@ DECLINLINE(void) hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCt
     else
     {
         /* If the guest isn't in 64-bit mode, clear MSR_K6_LME bit from guest EFER otherwise AMD-V expects amd64 shadow paging. */
-        pVmcb->guest.u64EFER &= ~MSR_K6_EFER_LME;
+        if (pCtx->msrEFER & MSR_K6_EFER_LME)
+        {
+            pVmcb->guest.u64EFER &= ~MSR_K6_EFER_LME;
+            pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+        }
     }
+
 
     /** @todo The following are used in 64-bit only (SYSCALL/SYSRET) but they might
      *        be writable in 32-bit mode. Clarify with AMD spec. */
@@ -2884,9 +2894,7 @@ DECLINLINE(void) hmR0SvmSetPendingXcptDB(PVMCPU pVCpu)
  */
 static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    int rc;
     Log4(("Emulated VMMCall TPR access replacement at RIP=%RGv\n", pCtx->rip));
-
     for (;;)
     {
         bool    fPending;
@@ -2899,30 +2907,34 @@ static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         switch (pPatch->enmType)
         {
             case HMTPRINSTR_READ:
-                rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPending, NULL /* pu8PendingIrq */);
+            {
+                int rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPending, NULL /* pu8PendingIrq */);
                 AssertRC(rc);
 
                 rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pPatch->uDstOperand, u8Tpr);
                 AssertRC(rc);
                 pCtx->rip += pPatch->cbOp;
                 break;
+            }
 
             case HMTPRINSTR_WRITE_REG:
             case HMTPRINSTR_WRITE_IMM:
+            {
                 if (pPatch->enmType == HMTPRINSTR_WRITE_REG)
                 {
                     uint32_t u32Val;
-                    rc = DISFetchReg32(CPUMCTX2CORE(pCtx), pPatch->uSrcOperand, &u32Val);
+                    int rc = DISFetchReg32(CPUMCTX2CORE(pCtx), pPatch->uSrcOperand, &u32Val);
                     AssertRC(rc);
                     u8Tpr = u32Val;
                 }
                 else
                     u8Tpr = (uint8_t)pPatch->uSrcOperand;
 
-                rc = PDMApicSetTPR(pVCpu, u8Tpr);
-                AssertRC(rc);
+                int rc2 = PDMApicSetTPR(pVCpu, u8Tpr);
+                AssertRC(rc2);
                 pCtx->rip += pPatch->cbOp;
                 break;
+            }
 
             default:
                 AssertMsgFailedReturn(("Unexpected patch type %d\n", pPatch->enmType), VERR_SVM_UNEXPECTED_PATCH_TYPE);
@@ -3246,6 +3258,9 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
 
         rc = EMInterpretWrmsr(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
         AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretWrmsr failed rc=%Rrc\n", rc));
+
+        if (pCtx->ecx == MSR_K6_EFER)
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_EFER_MSR;
     }
     else
     {
