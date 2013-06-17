@@ -1972,7 +1972,8 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUs
             {
                 uint8_t abInstr[15];
 
-                /* Replacing two instructions now. */
+                /* Replacing the two instructions above with an AMD-V specific lock-prefixed 32-bit MOV CR8 instruction so as to
+                   access CR8 in 32-bit mode and not cause a #VMEXIT. */
                 rc = PGMPhysSimpleReadGCPtr(pVCpu, &pPatch->aOpcode, pCtx->rip, cbOpMmio + cbOp);
                 AssertRC(rc);
 
