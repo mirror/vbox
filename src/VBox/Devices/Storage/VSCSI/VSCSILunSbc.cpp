@@ -255,6 +255,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
             uint8_t uModePage = pVScsiReq->pbCDB[2] & 0x3f;
             uint8_t aReply[24];
             uint8_t *pu8ReplyPos;
+            bool    fValid = false;
 
             memset(aReply, 0, sizeof(aReply));
             aReply[0] = 4; /* Reply length 4. */
@@ -273,10 +274,18 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                 *pu8ReplyPos++ = 0x08; /* Page code. */
                 *pu8ReplyPos++ = 0x12; /* Size of the page. */
                 *pu8ReplyPos++ = 0x4;  /* Write cache enabled. */
+                fValid = true;
+            } else if (uModePage == 0) {
+                fValid = 0;
             }
 
-            RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, sizeof(aReply));
-            rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+            /* Querying unknown pages must fail. */
+            if (fValid) {
+                RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, sizeof(aReply));
+                rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+            } else {
+                rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
+            }
             break;
         }
         case SCSI_MODE_SELECT_6:
