@@ -138,6 +138,12 @@ static void wined3d_texture_cleanup(struct wined3d_texture *texture)
 
     TRACE("texture %p.\n", texture);
 
+#ifdef VBOX_WITH_WINE_FIX_TEXCLEAR
+    /* make texture unload first, because otherwise we may fail on context_acquire done for texture cleanup
+     * because the swapchain's surfaces might be destroyed and we may fail to select any render target in context_acquire */
+    wined3d_texture_unload(texture);
+#endif
+
     for (i = 0; i < sub_count; ++i)
     {
         struct wined3d_resource *sub_resource = texture->sub_resources[i];
@@ -146,7 +152,9 @@ static void wined3d_texture_cleanup(struct wined3d_texture *texture)
             texture->texture_ops->texture_sub_resource_cleanup(sub_resource);
     }
 
+#ifndef VBOX_WITH_WINE_FIX_TEXCLEAR
     wined3d_texture_unload(texture);
+#endif
     HeapFree(GetProcessHeap(), 0, texture->sub_resources);
     resource_cleanup(&texture->resource);
 }
