@@ -44,7 +44,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
             
             if (isWMP)
             {
-                RTR3InitDll(0);
+                RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
                 VbglR3Init();
                 VBoxMMRHookLog("VBoxMMR: Hooking wmplayer process\n");
             }

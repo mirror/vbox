@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * QILineEdit class implementation
+ * VirtualBox Qt GUI - QILineEdit class implementation.
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,8 +21,12 @@
 #include <QStyleOptionFrame>
 
 #if defined (Q_WS_WIN32)
-#include <QWindowsVistaStyle>
-#include <QLibrary>
+# include <QWindowsVistaStyle>
+# include <QLibrary>
+#endif
+#if defined (Q_WS_WIN32)
+# include <Windows.h>
+# include "iprt/ldr.h"
 #endif
 
 void QILineEdit::setMinimumWidthByText (const QString &aText)
@@ -61,10 +63,13 @@ QSize QILineEdit::featTextWidth (const QString &aText) const
     {
         /* Check if l&f style theme is really active else painting performed by
          * Windows Classic theme and there is no such shifting error. */
-        typedef bool (*IsAppThemedFunction)();
-        IsAppThemedFunction isAppThemed =
-            (IsAppThemedFunction) QLibrary::resolve ("uxtheme", "IsAppThemed");
-        if (isAppThemed && isAppThemed()) sa -= QSize (23, 0);
+        typedef BOOL (WINAPI *PFNISAPPTHEMED)(VOID);
+        static PFNISAPPTHEMED s_pfnIsAppThemed = (PFNISAPPTHEMED)~(uintptr_t)0;
+        if (s_pfnIsAppThemed == (PFNISAPPTHEMED)~(uintptr_t)0 )
+            s_pfnIsAppThemed = (PFNISAPPTHEMED)RTLdrGetSystemSymbol("uxtheme.dll", "IsAppThemed");
+
+        if (s_pfnIsAppThemed && s_pfnIsAppThemed())
+            sa -= QSize(23, 0);
     }
 #endif
 

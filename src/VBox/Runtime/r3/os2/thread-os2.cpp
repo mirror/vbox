@@ -78,7 +78,7 @@ DECLHIDDEN(int) rtThreadNativeInit(void)
 }
 
 
-DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
+static void rtThreadOs2BlockSigAlarm(void)
 {
     /*
      * Block SIGALRM - required for timer-posix.cpp.
@@ -89,6 +89,17 @@ DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
     sigemptyset(&SigSet);
     sigaddset(&SigSet, SIGALRM);
     sigprocmask(SIG_BLOCK, &SigSet, NULL);
+}
+
+
+DECLHIDDEN(void) rtThreadNativeReInitObtrusive(void)
+{
+    rtThreadOs2BlockSigAlarm();
+}
+
+
+DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
+{
 
     *g_ppCurThread = pThread;
     return VINF_SUCCESS;
@@ -107,15 +118,7 @@ DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
  */
 static void rtThreadNativeMain(void *pvArgs)
 {
-    /*
-     * Block SIGALRM - required for timer-posix.cpp.
-     * This is done to limit harm done by OSes which doesn't do special SIGALRM scheduling.
-     * It will not help much if someone creates threads directly using pthread_create. :/
-     */
-    sigset_t SigSet;
-    sigemptyset(&SigSet);
-    sigaddset(&SigSet, SIGALRM);
-    sigprocmask(SIG_BLOCK, &SigSet, NULL);
+    rtThreadOs2BlockSigAlarm();
 
     /*
      * Call common main.

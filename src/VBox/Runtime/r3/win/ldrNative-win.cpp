@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,37 +31,24 @@
 #include <Windows.h>
 
 #include <iprt/ldr.h>
-#include <iprt/assert.h>
-#include <iprt/path.h>
-#include <iprt/err.h>
+#include "internal/iprt.h"
+
 #include <iprt/alloca.h>
+#include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/file.h>
+#include <iprt/path.h>
+#include <iprt/string.h>
+
 #include <iprt/once.h>
 #include <iprt/string.h>
 #include "internal/ldr.h"
 
-static RTONCE g_Once = RTONCE_INITIALIZER;
-
-static DECLCALLBACK(int) rtldrOnceSetDllDirectory(void *pvUser)
-{
-    HMODULE hmod = GetModuleHandle(TEXT("kernel32.dll"));
-    if (hmod)
-    {
-        typedef BOOLEAN (WINAPI *PFNSETDLLDIRECTORY)(LPCWSTR);
-        PFNSETDLLDIRECTORY pfn = (PFNSETDLLDIRECTORY)GetProcAddress(hmod, "SetDllDirectoryW");
-        if (pfn)
-        {
-            BOOL fOk = pfn(L"");
-            if (!fOk)
-                return RTErrConvertFromWin32(GetLastError());
-        }
-    }
-    return VINF_SUCCESS;
-}
 
 int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlags, PRTERRINFO pErrInfo)
 {
     Assert(sizeof(*phHandle) >= sizeof(HMODULE));
-    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
+    AssertReturn(fFlags == 0 || fFlags == RTLDRLOAD_FLAGS_NO_UNLOAD, VERR_INVALID_PARAMETER);
 
     /*
      * Do we need to add an extension?
@@ -78,17 +65,6 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
     }
 
     /*
-     * Don't allow loading DLLs from the current directory.
-     */
-#if 0
-    int rc = RTOnce(&g_Once, rtldrOnceSetDllDirectory, NULL);
-    if (RT_FAILURE(rc))
-        return rc;
-#else
-    int rc = VINF_SUCCESS;
-#endif
-
-    /*
      * Attempt load.
      */
     HMODULE hmod = LoadLibrary(pszFilename);
@@ -102,7 +78,7 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
      * Try figure why it failed to load.
      */
     DWORD dwErr = GetLastError();
-    rc = RTErrConvertFromWin32(dwErr);
+    int rc = RTErrConvertFromWin32(dwErr);
     return RTErrInfoSetF(pErrInfo, rc, "GetLastError=%u", dwErr);
 }
 
@@ -124,11 +100,43 @@ DECLCALLBACK(int) rtldrNativeGetSymbol(PRTLDRMODINTERNAL pMod, const char *pszSy
 DECLCALLBACK(int) rtldrNativeClose(PRTLDRMODINTERNAL pMod)
 {
     PRTLDRMODNATIVE pModNative = (PRTLDRMODNATIVE)pMod;
-    if (FreeLibrary((HMODULE)pModNative->hNative))
+    if (   (pModNative->fFlags & RTLDRLOAD_FLAGS_NO_UNLOAD)
+        || FreeLibrary((HMODULE)pModNative->hNative))
     {
         pModNative->hNative = (uintptr_t)INVALID_HANDLE_VALUE;
         return VINF_SUCCESS;
     }
     return RTErrConvertFromWin32(GetLastError());
+}
+
+
+int rtldrNativeLoadSystem(const char *pszFilename, const char *pszExt, uint32_t fFlags, PRTLDRMOD phLdrMod)
+{
+    /*
+     * We only try the System32 directory.
+     */
+    WCHAR wszSysDir[MAX_PATH];
+    UINT cwcSysDir = GetSystemDirectoryW(wszSysDir, MAX_PATH);
+    if (cwcSysDir >= MAX_PATH)
+        return VERR_FILENAME_TOO_LONG;
+
+    char szPath[RTPATH_MAX];
+    char *pszPath = szPath;
+    int rc = RTUtf16ToUtf8Ex(wszSysDir, RTSTR_MAX, &pszPath, sizeof(szPath), NULL);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTPathAppend(szPath, sizeof(szPath), pszFilename);
+        if (pszExt && RT_SUCCESS(rc))
+            rc = RTStrCat(szPath, sizeof(szPath), pszExt);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTFileExists(szPath))
+                rc = RTLdrLoadEx(szPath, phLdrMod, fFlags, NULL);
+            else
+                rc = VERR_MODULE_NOT_FOUND;
+        }
+    }
+
+    return rc;
 }
 

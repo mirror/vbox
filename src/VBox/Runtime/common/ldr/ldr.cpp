@@ -93,6 +93,17 @@ RTDECL(int) RTLdrGetSymbol(RTLDRMOD hLdrMod, const char *pszSymbol, void **ppvVa
 RT_EXPORT_SYMBOL(RTLdrGetSymbol);
 
 
+RTDECL(PFNRT) RTLdrGetFunction(RTLDRMOD hLdrMod, const char *pszSymbol)
+{
+    PFNRT pfn;
+    int rc = RTLdrGetSymbol(hLdrMod, pszSymbol, (void **)&pfn);
+    if (RT_SUCCESS(rc))
+        return pfn;
+    return NULL;
+}
+RT_EXPORT_SYMBOL(RTLdrGetFunction);
+
+
 RTDECL(RTLDRFMT) RTLdrGetFormat(RTLDRMOD hLdrMod)
 {
     AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), RTLDRFMT_INVALID);

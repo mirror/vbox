@@ -33,6 +33,7 @@ extern "C" {
 }
 
 #include <iprt/err.h>
+#include <iprt/ldr.h>
 #include <iprt/mp.h>
 #include <iprt/mem.h>
 #include <iprt/system.h>
@@ -86,7 +87,6 @@ private:
 
     PFNGST  mpfnGetSystemTimes;
     PFNNQSI mpfnNtQuerySystemInformation;
-    HMODULE mhNtDll;
 
     ULONG   totalRAM;
 };
@@ -96,27 +96,17 @@ CollectorHAL *createHAL()
     return new CollectorWin();
 }
 
-CollectorWin::CollectorWin() : CollectorHAL(), mhNtDll(0)
+CollectorWin::CollectorWin() : CollectorHAL(), mpfnNtQuerySystemInformation(NULL)
 {
-    mpfnGetSystemTimes = (PFNGST)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")),
-                                                "GetSystemTimes");
+    /* Note! Both kernel32.dll and ntdll.dll can be assumed to always be present. */
+    mpfnGetSystemTimes = (PFNGST)RTLdrGetSystemSymbol("kernel32.dll", "GetSystemTimes");
     if (!mpfnGetSystemTimes)
     {
         /* Fall back to deprecated NtQuerySystemInformation */
-        if (!(mhNtDll = LoadLibrary(TEXT("ntdll.dll"))))
-        {
-            LogRel(("Failed to load NTDLL.DLL with error 0x%x. GetSystemTimes() is"
-                    " not available either. CPU and VM metrics will not be collected.\n",
-                    GetLastError()));
-            mpfnNtQuerySystemInformation = 0;
-        }
-        else if (!(mpfnNtQuerySystemInformation = (PFNNQSI)GetProcAddress(mhNtDll,
-                                                                          "NtQuerySystemInformation")))
-        {
-            LogRel(("Neither GetSystemTimes() nor NtQuerySystemInformation() is"
-                    " not available. CPU and VM metrics will not be collected.\n"));
-            mpfnNtQuerySystemInformation = 0;
-        }
+        mpfnNtQuerySystemInformation = (PFNNQSI)RTLdrGetSystemSymbol("ntdll.dll", "NtQuerySystemInformation");
+        if (!mpfnNtQuerySystemInformation)
+            LogRel(("Warning! Neither GetSystemTimes() nor NtQuerySystemInformation() is not available.\n"
+                    "         CPU and VM metrics will not be collected! (lasterr %u)\n", GetLastError()));
     }
 
     uint64_t cb;
@@ -129,8 +119,6 @@ CollectorWin::CollectorWin() : CollectorHAL(), mhNtDll(0)
 
 CollectorWin::~CollectorWin()
 {
-    if (mhNtDll)
-        FreeLibrary(mhNtDll);
 }
 
 #define FILETTIME_TO_100NS(ft) (((uint64_t)ft.dwHighDateTime << 32) + ft.dwLowDateTime)

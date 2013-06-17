@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -62,7 +62,7 @@ static DECLCALLBACK(int) rtldrNativeDone(PRTLDRMODINTERNAL pMod)
 /**
  * Operations for a native module.
  */
-static const RTLDROPS s_rtldrNativeOps =
+static const RTLDROPS g_rtldrNativeOps =
 {
     "native",
     rtldrNativeClose,
@@ -130,7 +130,7 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
     {
         pMod->Core.u32Magic     = RTLDRMOD_MAGIC;
         pMod->Core.eState       = LDR_STATE_LOADED;
-        pMod->Core.pOps         = &s_rtldrNativeOps;
+        pMod->Core.pOps         = &g_rtldrNativeOps;
         pMod->Core.pReader      = NULL;
         pMod->Core.enmFormat    = RTLDRFMT_NATIVE;
         pMod->Core.enmType      = RTLDRTYPE_SHARED_LIBRARY_RELOCATABLE; /* approx */
@@ -147,6 +147,7 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
         pMod->Core.enmArch      = RTLDRARCH_HOST;
 #endif
         pMod->hNative           = ~(uintptr_t)0;
+        pMod->fFlags            = fFlags;
 
         /*
          * Attempt to open the module.
@@ -168,6 +169,54 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
     return rc;
 }
 RT_EXPORT_SYMBOL(RTLdrLoadEx);
+
+
+RTDECL(int) RTLdrLoadSystem(const char *pszFilename, bool fNoUnload, PRTLDRMOD phLdrMod)
+{
+    LogFlow(("RTLdrLoadSystem: pszFilename=%p:{%s} fNoUnload=%RTbool phLdrMod=%p\n",
+             pszFilename, pszFilename, fNoUnload, phLdrMod));
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(phLdrMod, VERR_INVALID_PARAMETER);
+    *phLdrMod = NIL_RTLDRMOD;
+    AssertPtrReturn(pszFilename, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(!RTPathHavePath(pszFilename), ("%s\n", pszFilename), VERR_INVALID_PARAMETER);
+
+    /*
+     * Check the filename.
+     */
+    size_t cchFilename = strlen(pszFilename);
+    AssertMsgReturn(cchFilename < (RTPATH_MAX / 4) * 3, ("%zu\n", cchFilename), VERR_INVALID_PARAMETER);
+
+    const char *pszExt = "";
+    if (!RTPathHaveExt(pszFilename))
+        pszExt = RTLdrGetSuff();
+
+    /*
+     * Let the platform specific code do the rest.
+     */
+    int rc = rtldrNativeLoadSystem(pszFilename, pszExt, fNoUnload ? RTLDRLOAD_FLAGS_NO_UNLOAD : 0, phLdrMod);
+    LogFlow(("RTLdrLoadSystem: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+RTDECL(void *) RTLdrGetSystemSymbol(const char *pszFilename, const char *pszSymbol)
+{
+    void    *pvRet = NULL;
+    RTLDRMOD hLdrMod;
+    int rc = RTLdrLoadSystem(pszFilename, true /*fNoUnload*/, &hLdrMod);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTLdrGetSymbol(hLdrMod, pszSymbol, &pvRet);
+        if (RT_FAILURE(rc))
+            pvRet = NULL; /* paranoia */
+        RTLdrClose(hLdrMod);
+    }
+    return pvRet;
+}
 
 
 /**
@@ -256,4 +305,15 @@ RTDECL(const char *) RTLdrGetSuff(void)
     return s_szSuff;
 }
 RT_EXPORT_SYMBOL(RTLdrGetSuff);
+
+
+RTDECL(uintptr_t) RTLdrGetNativeHandle(RTLDRMOD hLdrMod)
+{
+    PRTLDRMODNATIVE pThis = (PRTLDRMODNATIVE)hLdrMod;
+    AssertPtrReturn(pThis, ~(uintptr_t)0);
+    AssertReturn(pThis->Core.u32Magic == RTLDRMOD_MAGIC, ~(uintptr_t)0);
+    AssertReturn(pThis->Core.pOps == &g_rtldrNativeOps, ~(uintptr_t)0);
+    return pThis->hNative;
+}
+RT_EXPORT_SYMBOL(RTLdrGetNativeHandle);
 

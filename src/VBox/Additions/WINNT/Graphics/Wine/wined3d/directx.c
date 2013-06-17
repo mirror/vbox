@@ -5307,6 +5307,24 @@ static void fillGLAttribFuncs(const struct wined3d_gl_info *gl_info)
     }
 }
 
+/**
+ * Loads a system DLL.
+ *
+ * @returns Module handle or NULL
+ * @param   pszName             The DLL name.
+ */
+static HMODULE loadSystemDll(const char *pszName)
+{
+    char   szPath[MAX_PATH];
+    UINT   cchPath = GetSystemDirectoryA(szPath, sizeof(szPath));
+    size_t cbName  = strlen(pszName) + 1;
+    if (cchPath + 1 + cbName > sizeof(szPath))
+        return NULL;
+    szPath[cchPath] = '\\';
+    memcpy(&szPath[cchPath + 1], pszName, cbName);
+    return LoadLibraryA(szPath);
+}
+
 static BOOL InitAdapters(IWineD3DImpl *This)
 {
     static HMODULE mod_gl;
@@ -5322,22 +5340,22 @@ static BOOL InitAdapters(IWineD3DImpl *This)
 
     if(!mod_gl) {
 #ifdef USE_WIN32_OPENGL
-#define USE_GL_FUNC(pfn) pfn = (void*)GetProcAddress(mod_gl, #pfn);
-#if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
+# define USE_GL_FUNC(pfn) pfn = (void*)GetProcAddress(mod_gl, #pfn);
+# if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
         BOOL (APIENTRY *pDrvValidateVersion)(DWORD) DECLSPEC_HIDDEN;
-#ifdef VBOX_WDDM_WOW64
-        mod_gl = LoadLibraryA("VBoxOGL-x86.dll");
-#else
-        mod_gl = LoadLibraryA("VBoxOGL.dll");
-#endif
-#else
-        mod_gl = LoadLibraryA("opengl32.dll");
-#endif
+#  ifdef VBOX_WDDM_WOW64
+        mod_gl = loadSystemDll("VBoxOGL-x86.dll");
+#  else
+        mod_gl = loadSystemDll("VBoxOGL.dll");
+#  endif
+# else
+        mod_gl = loadSystemDll("opengl32.dll");
+# endif
         if(!mod_gl) {
             ERR("Can't load opengl32.dll!\n");
             goto nogl_adapter;
         }
-#if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
+# if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
         /* init properly */
         pDrvValidateVersion = (void*)GetProcAddress(mod_gl, "DrvValidateVersion");
         if(!pDrvValidateVersion) {
@@ -5348,9 +5366,9 @@ static BOOL InitAdapters(IWineD3DImpl *This)
             ERR("DrvValidateVersion FAILED\n");
             goto nogl_adapter;
         }
-#endif
+# endif
 #else
-#define USE_GL_FUNC(pfn) pfn = (void*)pwglGetProcAddress(#pfn);
+# define USE_GL_FUNC(pfn) pfn = (void*)pwglGetProcAddress(#pfn);
         /* To bypass the opengl32 thunks load wglGetProcAddress from gdi32 (glXGetProcAddress wrapper) instead of opengl32's */
         mod_gl = GetModuleHandleA("gdi32.dll");
 #endif

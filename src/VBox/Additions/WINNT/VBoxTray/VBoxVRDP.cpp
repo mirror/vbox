@@ -24,6 +24,7 @@
 #include <VBox/VMMDev.h>
 #include <VBoxGuestInternal.h>
 #include <iprt/assert.h>
+#include <iprt/ldr.h>
 
 
 /* The guest receives VRDP_ACTIVE/VRDP_INACTIVE notifications.
@@ -255,7 +256,7 @@ typedef struct _VBOXVRDPCONTEXT
     uint32_t level;
     BOOL fSavedThemeEnabled;
 
-    HMODULE hModule;
+    RTLDRMOD hModUxTheme;
 
     HRESULT (* pfnEnableTheming)(BOOL fEnable);
     BOOL (* pfnIsThemeActive)(VOID);
@@ -273,16 +274,17 @@ int VBoxVRDPInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThr
     gCtx.level     = VRDP_EXPERIENCE_LEVEL_FULL;
     gCtx.fSavedThemeEnabled = FALSE;
 
-    gCtx.hModule = LoadLibrary("UxTheme");
-
-    if (gCtx.hModule)
+    int rc = RTLdrLoadSystem("UxTheme.dll", false /*fNoUnload*/, &gCtx.hModUxTheme);
+    if (RT_SUCCESS(rc))
     {
-        *(uintptr_t *)&gCtx.pfnEnableTheming = (uintptr_t)GetProcAddress(gCtx.hModule, "EnableTheming");
-        *(uintptr_t *)&gCtx.pfnIsThemeActive = (uintptr_t)GetProcAddress(gCtx.hModule, "IsThemeActive");
+        *(PFNRT *)&gCtx.pfnEnableTheming = RTLdrGetFunction(gCtx.hModUxTheme, "EnableTheming");
+        *(PFNRT *)&gCtx.pfnIsThemeActive = RTLdrGetFunction(gCtx.hModUxTheme, "IsThemeActive");
     }
     else
     {
-        gCtx.pfnEnableTheming = 0;
+        gCtx.hModUxTheme = NIL_RTLDRMOD;
+        gCtx.pfnEnableTheming = NULL;
+        gCtx.pfnIsThemeActive = NULL;
     }
 
     *pfStartThread = true;
@@ -296,9 +298,11 @@ void VBoxVRDPDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     Log(("VBoxTray: VBoxVRDPDestroy\n"));
     VBOXVRDPCONTEXT *pCtx = (VBOXVRDPCONTEXT *)pInstance;
     vboxExperienceRestore (pCtx->level);
-    if (gCtx.hModule)
-        FreeLibrary(gCtx.hModule);
-    gCtx.hModule = 0;
+    if (gCtx.hModUxTheme != NIL_RTLDRMOD)
+    {
+        RTLdrClose(gCtx.hModUxTheme);
+        gCtx.hModUxTheme = NIL_RTLDRMOD;
+    }
     return;
 }
 

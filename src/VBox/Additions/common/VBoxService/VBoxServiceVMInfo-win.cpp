@@ -168,20 +168,19 @@ static int VBoxServiceVMInfoWinProcessesGetModuleName(PVBOXSERVICEVMINFOPROC con
         {
             /* Loading the module and getting the symbol for each and every process is expensive
              * -- since this function (at the moment) only is used for debugging purposes it's okay. */
-            RTLDRMOD hMod;
-            rc = RTLdrLoad("kernel32.dll", &hMod);
-            if (RT_SUCCESS(rc))
+            PFNQUERYFULLPROCESSIMAGENAME pfnQueryFullProcessImageName;
+            pfnQueryFullProcessImageName = (PFNQUERYFULLPROCESSIMAGENAME)
+                RTLdrGetSystemSymbol("kernel32.dll", "QueryFullProcessImageNameA");
+            /** @todo r=bird: WTF don't we query the UNICODE name? */
+            if (pfnQueryFullProcessImageName)
             {
-                PFNQUERYFULLPROCESSIMAGENAME pfnQueryFullProcessImageName;
-                rc = RTLdrGetSymbol(hMod, "QueryFullProcessImageNameA", (void **)&pfnQueryFullProcessImageName);
-                if (RT_SUCCESS(rc))
-                {
-                    DWORD dwLen = cbName / sizeof(TCHAR);
-                    if (!pfnQueryFullProcessImageName(h, 0 /*PROCESS_NAME_NATIVE*/, pszName, &dwLen))
-                        rc = VERR_ACCESS_DENIED;
-                }
-
-                RTLdrClose(hMod);
+                /** @todo r=bird: Completely bogus use of TCHAR.
+                 *  !!ALL USE OF TCHAR IS HEREWITH BANNED IN ALL VBOX SOURCES!!
+                 *  We use WCHAR when talking to windows, everything else is WRONG. (We don't
+                 *  want Chinese MBCS being treated as UTF-8.) */
+                DWORD dwLen = cbName / sizeof(TCHAR);
+                if (!pfnQueryFullProcessImageName(h, 0 /*PROCESS_NAME_NATIVE*/, pszName, &dwLen))
+                    rc = VERR_ACCESS_DENIED;
             }
         }
         else

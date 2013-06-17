@@ -105,7 +105,7 @@ IPC_InitLog(const char *prefix)
 {
 #ifdef VBOX
     // initialize VBox Runtime
-    RTR3InitDll(0);
+    RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 
     PL_strncpyz(ipcLogPrefix, prefix, sizeof(ipcLogPrefix));
 #else

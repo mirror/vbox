@@ -5120,6 +5120,24 @@ static void wined3d_adapter_init_fb_cfgs(struct wined3d_adapter *adapter, HDC dc
     }
 }
 
+/**
+ * Loads a system DLL.
+ *
+ * @returns Module handle or NULL
+ * @param   pszName             The DLL name.
+ */
+static HMODULE loadSystemDll(const char *pszName)
+{
+    char   szPath[MAX_PATH];
+    UINT   cchPath = GetSystemDirectoryA(szPath, sizeof(szPath));
+    size_t cbName  = strlen(pszName) + 1;
+    if (cchPath + 1 + cbName > sizeof(szPath))
+        return NULL;
+    szPath[cchPath] = '\\';
+    memcpy(&szPath[cchPath + 1], pszName, cbName);
+    return LoadLibraryA(szPath);
+}
+
 /* Do not call while under the GL lock. */
 static BOOL wined3d_adapter_init(struct wined3d_adapter *adapter, UINT ordinal)
 {
@@ -5141,15 +5159,15 @@ static BOOL wined3d_adapter_init(struct wined3d_adapter *adapter, UINT ordinal)
 /* Dynamically load all GL core functions */
 #ifdef USE_WIN32_OPENGL
     {
-#ifndef VBOX
+# ifndef VBOX
         HMODULE mod_gl = GetModuleHandleA("opengl32.dll");
-#else
-        BOOL (APIENTRY *pDrvValidateVersion)(DWORD) DECLSPEC_HIDDEN;
-# ifdef VBOX_WDDM_WOW64
-        HMODULE mod_gl = LoadLibraryA("VBoxOGL-x86.dll");
 # else
-        HMODULE mod_gl = LoadLibraryA("VBoxOGL.dll");
-# endif
+        BOOL (APIENTRY *pDrvValidateVersion)(DWORD) DECLSPEC_HIDDEN;
+#  ifdef VBOX_WDDM_WOW64
+        HMODULE mod_gl = loadSystemDll("VBoxOGL-x86.dll");
+#  else
+        HMODULE mod_gl = loadSystemDll("VBoxOGL.dll");
+#  endif
         if (!mod_gl)
         {
             ERR("Can't load VBoxOGL.dll!\n");
@@ -5168,13 +5186,13 @@ static BOOL wined3d_adapter_init(struct wined3d_adapter *adapter, UINT ordinal)
             return FALSE;
         }
 
-# define VBOX_USE_FUNC(f) p##f = (void *)GetProcAddress(mod_gl, #f);
+#  define VBOX_USE_FUNC(f) p##f = (void *)GetProcAddress(mod_gl, #f);
         VBOX_GL_FUNCS_GEN
-# undef VBOX_USE_FUNC
-#endif
-#define USE_GL_FUNC(f) gl_info->gl_ops.gl.p_##f = (void *)GetProcAddress(mod_gl, #f);
+#  undef VBOX_USE_FUNC
+# endif
+# define USE_GL_FUNC(f) gl_info->gl_ops.gl.p_##f = (void *)GetProcAddress(mod_gl, #f);
         ALL_WGL_FUNCS
-#undef USE_GL_FUNC
+# undef USE_GL_FUNC
         gl_info->gl_ops.wgl.p_wglSwapBuffers = (void *)GetProcAddress(mod_gl, "wglSwapBuffers");
     }
 #else

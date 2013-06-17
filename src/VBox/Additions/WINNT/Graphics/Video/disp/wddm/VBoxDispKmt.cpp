@@ -22,13 +22,31 @@
 # define NT_SUCCESS(_Status) ((_Status) >= 0)
 #endif
 
+/**
+ * Loads a system DLL.
+ *
+ * @returns Module handle or NULL
+ * @param   pszName             The DLL name.
+ */
+static HMODULE loadSystemDll(const char *pszName)
+{
+    char   szPath[MAX_PATH];
+    UINT   cchPath = GetSystemDirectoryA(szPath, sizeof(szPath));
+    size_t cbName  = strlen(pszName) + 1;
+    if (cchPath + 1 + cbName > sizeof(szPath))
+        return NULL;
+    szPath[cchPath] = '\\';
+    memcpy(&szPath[cchPath + 1], pszName, cbName);
+    return LoadLibraryA(szPath);
+}
+
 HRESULT vboxDispKmtCallbacksInit(PVBOXDISPKMT_CALLBACKS pCallbacks)
 {
     HRESULT hr = S_OK;
 
     memset(pCallbacks, 0, sizeof (*pCallbacks));
 
-    pCallbacks->hGdi32 = LoadLibraryW(L"gdi32.dll");
+    pCallbacks->hGdi32 = loadSystemDll("gdi32.dll");
     if (pCallbacks->hGdi32 != NULL)
     {
         bool bSupported = true;

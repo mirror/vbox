@@ -68,6 +68,12 @@ DECLHIDDEN(int) rtThreadNativeInit(void)
 }
 
 
+DECLHIDDEN(void) rtThreadNativeReInitObtrusive(void)
+{
+    /* nothing to do here. */
+}
+
+
 DECLHIDDEN(void) rtThreadNativeDetach(void)
 {
     /*

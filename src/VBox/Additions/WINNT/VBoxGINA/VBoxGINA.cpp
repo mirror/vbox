@@ -19,6 +19,7 @@
 
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
+#include <iprt/ldr.h>
 
 #include <VBox/VBoxGuestLib.h>
 
@@ -82,7 +83,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
     {
         case DLL_PROCESS_ATTACH:
         {
-            RTR3InitDll(0 /* Flags */);
+            RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
             VbglR3Init();
 
             VBoxGINALoadConfiguration();
@@ -114,111 +115,111 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 BOOL WINAPI WlxNegotiate(DWORD dwWinlogonVersion,
                          DWORD *pdwDllVersion)
 {
-    HINSTANCE hDll;
-
     VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: dwWinlogonVersion: %ld\n", dwWinlogonVersion);
 
     /* Load the standard Microsoft GINA DLL. */
-    if (!(hDll = LoadLibrary(TEXT("MSGINA.DLL"))))
+    RTLDRMOD hLdrMod;
+    int rc = RTLdrLoadSystem("MSGINA.DLL", true /*fNoUnload*/, &hLdrMod);
+    if (RT_FAILURE(rc))
     {
-        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed loading MSGINA! Last error=%ld\n", GetLastError());
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed loading MSGINA! rc=%Rrc\n", rc);
         return FALSE;
     }
 
     /*
      * Now get the entry points of the MSGINA
      */
-    GWlxNegotiate = (PGWLXNEGOTIATE)GetProcAddress(hDll, "WlxNegotiate");
+    GWlxNegotiate = (PGWLXNEGOTIATE)RTLdrGetFunction(hLdrMod, "WlxNegotiate");
     if (!GWlxNegotiate)
     {
         VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxNegotiate\n");
         return FALSE;
     }
-    GWlxInitialize = (PGWLXINITIALIZE)GetProcAddress(hDll, "WlxInitialize");
+    GWlxInitialize = (PGWLXINITIALIZE)RTLdrGetFunction(hLdrMod, "WlxInitialize");
     if (!GWlxInitialize)
     {
         VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxInitialize\n");
         return FALSE;
     }
     GWlxDisplaySASNotice =
-        (PGWLXDISPLAYSASNOTICE)GetProcAddress(hDll, "WlxDisplaySASNotice");
+        (PGWLXDISPLAYSASNOTICE)RTLdrGetFunction(hLdrMod, "WlxDisplaySASNotice");
     if (!GWlxDisplaySASNotice)
     {
         VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxDisplaySASNotice\n");
         return FALSE;
     }
     GWlxLoggedOutSAS =
-        (PGWLXLOGGEDOUTSAS)GetProcAddress(hDll, "WlxLoggedOutSAS");
+        (PGWLXLOGGEDOUTSAS)RTLdrGetFunction(hLdrMod, "WlxLoggedOutSAS");
     if (!GWlxLoggedOutSAS)
     {
         VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxLoggedOutSAS\n");
         return FALSE;
     }
     GWlxActivateUserShell =
-        (PGWLXACTIVATEUSERSHELL)GetProcAddress(hDll, "WlxActivateUserShell");
+        (PGWLXACTIVATEUSERSHELL)RTLdrGetFunction(hLdrMod, "WlxActivateUserShell");
     if (!GWlxActivateUserShell)
     {
         VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxActivateUserShell\n");
         return FALSE;
     }
     GWlxLoggedOnSAS =
-        (PGWLXLOGGEDONSAS)GetProcAddress(hDll, "WlxLoggedOnSAS");
+        (PGWLXLOGGEDONSAS)RTLdrGetFunction(hLdrMod, "WlxLoggedOnSAS");
     if (!GWlxLoggedOnSAS)
     {
         VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxLoggedOnSAS\n");
         return FALSE;
     }
     GWlxDisplayLockedNotice =
-        (PGWLXDISPLAYLOCKEDNOTICE)GetProcAddress(hDll, "WlxDisplayLockedNotice");
+        (PGWLXDISPLAYLOCKEDNOTICE)RTLdrGetFunction(hLdrMod, "WlxDisplayLockedNotice");
     if (!GWlxDisplayLockedNotice)
     {
         VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxDisplayLockedNotice\n");
         return FALSE;
     }
-    GWlxIsLockOk = (PGWLXISLOCKOK)GetProcAddress(hDll, "WlxIsLockOk");
+    GWlxIsLockOk = (PGWLXISLOCKOK)RTLdrGetFunction(hLdrMod, "WlxIsLockOk");
     if (!GWlxIsLockOk)
     {
         VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxIsLockOk\n");
         return FALSE;
     }
     GWlxWkstaLockedSAS =
-        (PGWLXWKSTALOCKEDSAS)GetProcAddress(hDll, "WlxWkstaLockedSAS");
+        (PGWLXWKSTALOCKEDSAS)RTLdrGetFunction(hLdrMod, "WlxWkstaLockedSAS");
     if (!GWlxWkstaLockedSAS)
     {
         VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxWkstaLockedSAS\n");
         return FALSE;
     }
-    GWlxIsLogoffOk = (PGWLXISLOGOFFOK)GetProcAddress(hDll, "WlxIsLogoffOk");
+    GWlxIsLogoffOk = (PGWLXISLOGOFFOK)RTLdrGetFunction(hLdrMod, "WlxIsLogoffOk");
     if (!GWlxIsLogoffOk)
     {
         VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxIsLogoffOk\n");
         return FALSE;
     }
-    GWlxLogoff = (PGWLXLOGOFF)GetProcAddress(hDll, "WlxLogoff");
+    GWlxLogoff = (PGWLXLOGOFF)RTLdrGetFunction(hLdrMod, "WlxLogoff");
     if (!GWlxLogoff)
     {
         VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxLogoff\n");
         return FALSE;
     }
-    GWlxShutdown = (PGWLXSHUTDOWN)GetProcAddress(hDll, "WlxShutdown");
+    GWlxShutdown = (PGWLXSHUTDOWN)RTLdrGetFunction(hLdrMod, "WlxShutdown");
     if (!GWlxShutdown)
     {
         VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxShutdown\n");
         return FALSE;
     }
     /* GINA 1.1, optional */
-    GWlxStartApplication = (PGWLXSTARTAPPLICATION)GetProcAddress(hDll, "WlxStartApplication");
-    GWlxScreenSaverNotify = (PGWLXSCREENSAVERNOTIFY)GetProcAddress(hDll, "WlxScreenSaverNotify");
+    GWlxStartApplication = (PGWLXSTARTAPPLICATION)RTLdrGetFunction(hLdrMod, "WlxStartApplication");
+    GWlxScreenSaverNotify = (PGWLXSCREENSAVERNOTIFY)RTLdrGetFunction(hLdrMod, "WlxScreenSaverNotify");
     /* GINA 1.3, optional */
-    GWlxNetworkProviderLoad = (PGWLXNETWORKPROVIDERLOAD)GetProcAddress( hDll, "WlxNetworkProviderLoad");
-    GWlxDisplayStatusMessage = (PGWLXDISPLAYSTATUSMESSAGE)GetProcAddress( hDll, "WlxDisplayStatusMessage");
-    GWlxGetStatusMessage = (PGWLXGETSTATUSMESSAGE)GetProcAddress( hDll, "WlxGetStatusMessage");
-    GWlxRemoveStatusMessage = (PGWLXREMOVESTATUSMESSAGE)GetProcAddress( hDll, "WlxRemoveStatusMessage");
+    GWlxNetworkProviderLoad = (PGWLXNETWORKPROVIDERLOAD)RTLdrGetFunction(hLdrMod, "WlxNetworkProviderLoad");
+    GWlxDisplayStatusMessage = (PGWLXDISPLAYSTATUSMESSAGE)RTLdrGetFunction(hLdrMod, "WlxDisplayStatusMessage");
+    GWlxGetStatusMessage = (PGWLXGETSTATUSMESSAGE)RTLdrGetFunction(hLdrMod, "WlxGetStatusMessage");
+    GWlxRemoveStatusMessage = (PGWLXREMOVESTATUSMESSAGE)RTLdrGetFunction(hLdrMod, "WlxRemoveStatusMessage");
     /* GINA 1.4, optional */
     GWlxGetConsoleSwitchCredentials =
-        (PGWLXGETCONSOLESWITCHCREDENTIALS)GetProcAddress(hDll, "WlxGetConsoleSwitchCredentials");
-    GWlxReconnectNotify = (PGWLXRECONNECTNOTIFY)GetProcAddress(hDll, "WlxReconnectNotify");
-    GWlxDisconnectNotify = (PGWLXDISCONNECTNOTIFY)GetProcAddress(hDll, "WlxDisconnectNotify");
+        (PGWLXGETCONSOLESWITCHCREDENTIALS)RTLdrGetFunction(hLdrMod, "WlxGetConsoleSwitchCredentials");
+    GWlxReconnectNotify = (PGWLXRECONNECTNOTIFY)RTLdrGetFunction(hLdrMod, "WlxReconnectNotify");
+    GWlxDisconnectNotify = (PGWLXDISCONNECTNOTIFY)RTLdrGetFunction(hLdrMod, "WlxDisconnectNotify");
     VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: optional function pointers:\n"
                     "  WlxStartApplication: %p\n"
                     "  WlxScreenSaverNotify: %p\n"

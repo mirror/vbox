@@ -146,7 +146,7 @@ nsresult
 InitXPCOMVBox_Impl(JNIEnv* env, jobject aVBoxBinDirectory)
 {
 #if defined(VBOX_PATH_APP_PRIVATE_ARCH) && defined(VBOX_PATH_SHARED_LIBS)
-    rv = RTR3InitDll(0);
+    rv = RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 #else
     const char *pszHome  = nsnull;
     const char *jhome = nsnull;
@@ -174,9 +174,9 @@ InitXPCOMVBox_Impl(JNIEnv* env, jobject aVBoxBinDirectory)
       char *pszExePath = (char *)alloca(cchHome + 32);
       memcpy(pszExePath, pszHome, cchHome);
       memcpy(pszExePath + cchHome, "/javafake", sizeof("/javafake"));
-      rv = RTR3InitEx(RTR3INIT_VER_CUR, RTR3INIT_FLAGS_DLL, 0, NULL, pszExePath);
+      rv = RTR3InitEx(RTR3INIT_VER_CUR, RTR3INIT_FLAGS_DLL | RTR3INIT_FLAGS_UNOBTRUSIVE, 0, NULL, pszExePath);
     } else {
-      rv = RTR3InitDll(0);
+      rv = RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
     }
 
     if (jhome)

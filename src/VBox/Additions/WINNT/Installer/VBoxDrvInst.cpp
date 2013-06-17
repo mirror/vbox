@@ -132,6 +132,24 @@ void LogCallback(DIFXAPI_LOG Event, DWORD dwError, PCWSTR pEventDescription, PVO
 }
 
 /**
+ * Loads a system DLL.
+ *
+ * @returns Module handle or NULL
+ * @param   pszName             The DLL name.
+ */
+static HMODULE loadSystemDll(const char *pszName)
+{
+    char   szPath[MAX_PATH];
+    UINT   cchPath = GetSystemDirectoryA(szPath, sizeof(szPath));
+    size_t cbName  = strlen(pszName) + 1;
+    if (cchPath + 1 + cbName > sizeof(szPath))
+        return NULL;
+    szPath[cchPath] = '\\';
+    memcpy(&szPath[cchPath + 1], pszName, cbName);
+    return LoadLibraryA(szPath);
+}
+
+/**
  * (Un)Installs a driver from/to the system.
  *
  * @return  Exit code (EXIT_OK, EXIT_FAIL)
@@ -145,7 +163,7 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
                       const _TCHAR *pszLogFile)
 {
     HRESULT hr = S_OK;
-    HMODULE hDIFxAPI = LoadLibrary(_T("DIFxAPI.dll"));
+    HMODULE hDIFxAPI = loadSystemDll("DIFxAPI.dll");
     if (NULL == hDIFxAPI)
     {
         _tprintf(_T("ERROR: Unable to locate DIFxAPI.dll!\n"));

@@ -40,6 +40,7 @@
 #include <sddl.h>
 
 #include <iprt/buildconfig.h>
+#include <iprt/ldr.h>
 
 /* Default desktop state tracking */
 #include <Wtsapi32.h>
@@ -62,7 +63,7 @@
  * it is supposed to be called & used from within the window message handler thread
  * of the window passed to vboxStInit */
 static int vboxStInit(HWND hWnd);
-static void vboxStTerm();
+static void vboxStTerm(void);
 /* @returns true on "IsActiveConsole" state change */
 static BOOL vboxStHandleEvent(WPARAM EventID, LPARAM SessionID);
 static BOOL vboxStIsActiveConsole();
@@ -548,48 +549,38 @@ static int vboxTraySetupSeamless(void)
         if (gMajorVersion >= 6)
         {
             BOOL (WINAPI * pfnConvertStringSecurityDescriptorToSecurityDescriptorA)(LPCSTR StringSecurityDescriptor, DWORD StringSDRevision, PSECURITY_DESCRIPTOR  *SecurityDescriptor, PULONG  SecurityDescriptorSize);
-
-            HMODULE hModule = LoadLibrary("ADVAPI32.DLL");
-            if (!hModule)
-            {
-                dwErr = GetLastError();
-                Log(("VBoxTray: Loading module ADVAPI32.DLL failed with last error = %08X\n", dwErr));
-            }
-            else
+            *(void **)&pfnConvertStringSecurityDescriptorToSecurityDescriptorA =
+                RTLdrGetSystemSymbol("ADVAPI32.DLL", "ConvertStringSecurityDescriptorToSecurityDescriptorA");
+            Log(("VBoxTray: pfnConvertStringSecurityDescriptorToSecurityDescriptorA = %x\n", pfnConvertStringSecurityDescriptorToSecurityDescriptorA));
+            if (pfnConvertStringSecurityDescriptorToSecurityDescriptorA)
             {
                 PSECURITY_DESCRIPTOR    pSD;
                 PACL                    pSacl          = NULL;
                 BOOL                    fSaclPresent   = FALSE;
                 BOOL                    fSaclDefaulted = FALSE;
 
-                *(uintptr_t *)&pfnConvertStringSecurityDescriptorToSecurityDescriptorA = (uintptr_t)GetProcAddress(hModule, "ConvertStringSecurityDescriptorToSecurityDescriptorA");
-
-                Log(("VBoxTray: pfnConvertStringSecurityDescriptorToSecurityDescriptorA = %x\n", pfnConvertStringSecurityDescriptorToSecurityDescriptorA));
-                if (pfnConvertStringSecurityDescriptorToSecurityDescriptorA)
+                fRC = pfnConvertStringSecurityDescriptorToSecurityDescriptorA("S:(ML;;NW;;;LW)", /* this means "low integrity" */
+                                                                              SDDL_REVISION_1, &pSD, NULL);
+                if (!fRC)
                 {
-                    fRC = pfnConvertStringSecurityDescriptorToSecurityDescriptorA("S:(ML;;NW;;;LW)", /* this means "low integrity" */
-                                                                                  SDDL_REVISION_1, &pSD, NULL);
+                    dwErr = GetLastError();
+                    Log(("VBoxTray: ConvertStringSecurityDescriptorToSecurityDescriptorA failed with last error = %08X\n", dwErr));
+                }
+                else
+                {
+                    fRC = GetSecurityDescriptorSacl(pSD, &fSaclPresent, &pSacl, &fSaclDefaulted);
                     if (!fRC)
                     {
                         dwErr = GetLastError();
-                        Log(("VBoxTray: ConvertStringSecurityDescriptorToSecurityDescriptorA failed with last error = %08X\n", dwErr));
+                        Log(("VBoxTray: GetSecurityDescriptorSacl failed with last error = %08X\n", dwErr));
                     }
                     else
                     {
-                        fRC = GetSecurityDescriptorSacl(pSD, &fSaclPresent, &pSacl, &fSaclDefaulted);
+                        fRC = SetSecurityDescriptorSacl(SecAttr.lpSecurityDescriptor, TRUE, pSacl, FALSE);
                         if (!fRC)
                         {
                             dwErr = GetLastError();
-                            Log(("VBoxTray: GetSecurityDescriptorSacl failed with last error = %08X\n", dwErr));
-                        }
-                        else
-                        {
-                            fRC = SetSecurityDescriptorSacl(SecAttr.lpSecurityDescriptor, TRUE, pSacl, FALSE);
-                            if (!fRC)
-                            {
-                                dwErr = GetLastError();
-                                Log(("VBoxTray: SetSecurityDescriptorSacl failed with last error = %08X\n", dwErr));
-                            }
+                            Log(("VBoxTray: SetSecurityDescriptorSacl failed with last error = %08X\n", dwErr));
                         }
                     }
                 }
@@ -1014,7 +1005,7 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 typedef struct VBOXST
 {
     HWND hWTSAPIWnd;
-    HMODULE hWTSAPI32;
+    RTLDRMOD hLdrModWTSAPI32;
     BOOL fIsConsole;
     WTS_CONNECTSTATE_CLASS enmConnectState;
     UINT_PTR idDelayedInitTimer;
@@ -1031,20 +1022,20 @@ static int vboxStCheckState()
     WTS_CONNECTSTATE_CLASS *penmConnectState = NULL;
     USHORT *pProtocolType = NULL;
     DWORD cbBuf = 0;
-    if (gVBoxSt.pfnWTSQuerySessionInformationA(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSConnectState, (LPTSTR *)&penmConnectState, &cbBuf))
+    if (gVBoxSt.pfnWTSQuerySessionInformationA(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSConnectState,
+                                               (LPTSTR *)&penmConnectState, &cbBuf))
     {
-        if (gVBoxSt.pfnWTSQuerySessionInformationA(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSClientProtocolType, (LPTSTR *)&pProtocolType, &cbBuf))
+        if (gVBoxSt.pfnWTSQuerySessionInformationA(WTS_CURRENT_SERVER_HANDLE, WTS_CURRENT_SESSION, WTSClientProtocolType,
+                                                   (LPTSTR *)&pProtocolType, &cbBuf))
         {
             gVBoxSt.fIsConsole = (*pProtocolType == 0);
             gVBoxSt.enmConnectState = *penmConnectState;
             return VINF_SUCCESS;
         }
-        else
-        {
-            DWORD dwErr = GetLastError();
-            WARN(("VBoxTray: WTSQuerySessionInformationA WTSClientProtocolType failed, error = %08X\n", dwErr));
-            rc = RTErrConvertFromWin32(dwErr);
-        }
+
+        DWORD dwErr = GetLastError();
+        WARN(("VBoxTray: WTSQuerySessionInformationA WTSClientProtocolType failed, error = %08X\n", dwErr));
+        rc = RTErrConvertFromWin32(dwErr);
     }
     else
     {
@@ -1062,50 +1053,44 @@ static int vboxStCheckState()
 
 static int vboxStInit(HWND hWnd)
 {
-    int rc = VINF_SUCCESS;
-    memset(&gVBoxSt, 0, sizeof (gVBoxSt));
-    gVBoxSt.hWTSAPI32 = LoadLibrary("WTSAPI32.DLL");
-    if (gVBoxSt.hWTSAPI32)
+    RT_ZERO(gVBoxSt);
+    int rc = RTLdrLoadSystem("WTSAPI32.DLL", false /*fNoUnload*/, &gVBoxSt.hLdrModWTSAPI32);
+    if (RT_SUCCESS(rc))
     {
-        *(uintptr_t *)&gVBoxSt.pfnWTSRegisterSessionNotification = (uintptr_t)GetProcAddress(gVBoxSt.hWTSAPI32, "WTSRegisterSessionNotification");
-        if (!gVBoxSt.pfnWTSRegisterSessionNotification)
+        rc = RTLdrGetSymbol(gVBoxSt.hLdrModWTSAPI32, "WTSRegisterSessionNotification",
+                            (void **)&gVBoxSt.pfnWTSRegisterSessionNotification);
+        if (RT_SUCCESS(rc))
         {
+            rc = RTLdrGetSymbol(gVBoxSt.hLdrModWTSAPI32, "WTSUnRegisterSessionNotification",
+                                (void **)&gVBoxSt.pfnWTSUnRegisterSessionNotification);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTLdrGetSymbol(gVBoxSt.hLdrModWTSAPI32, "WTSQuerySessionInformationA",
+                                    (void **)&gVBoxSt.pfnWTSQuerySessionInformationA);
+                if (RT_FAILURE(rc))
+                    WARN(("VBoxTray: WTSQuerySessionInformationA not found\n"));
+            }
+            else
+                WARN(("VBoxTray: WTSUnRegisterSessionNotification not found\n"));
+        }
+        else
             WARN(("VBoxTray: WTSRegisterSessionNotification not found\n"));
-            rc = VERR_NOT_SUPPORTED;
-        }
-
-        *(uintptr_t *)&gVBoxSt.pfnWTSUnRegisterSessionNotification = (uintptr_t)GetProcAddress(gVBoxSt.hWTSAPI32, "WTSUnRegisterSessionNotification");
-        if (!gVBoxSt.pfnWTSUnRegisterSessionNotification)
-        {
-            WARN(("VBoxTray: WTSUnRegisterSessionNotification not found\n"));
-            rc = VERR_NOT_SUPPORTED;
-        }
-
-        *(uintptr_t *)&gVBoxSt.pfnWTSQuerySessionInformationA = (uintptr_t)GetProcAddress(gVBoxSt.hWTSAPI32, "WTSQuerySessionInformationA");
-        if (!gVBoxSt.pfnWTSQuerySessionInformationA)
-        {
-            WARN(("VBoxTray: WTSQuerySessionInformationA not found\n"));
-            rc = VERR_NOT_SUPPORTED;
-        }
-
-        if (rc == VINF_SUCCESS)
+        if (RT_SUCCESS(rc))
         {
             gVBoxSt.hWTSAPIWnd = hWnd;
             if (gVBoxSt.pfnWTSRegisterSessionNotification(gVBoxSt.hWTSAPIWnd, NOTIFY_FOR_THIS_SESSION))
-            {
                 vboxStCheckState();
-            }
             else
             {
                 DWORD dwErr = GetLastError();
                 WARN(("VBoxTray: WTSRegisterSessionNotification failed, error = %08X\n", dwErr));
                 if (dwErr == RPC_S_INVALID_BINDING)
                 {
-                    gVBoxSt.idDelayedInitTimer = SetTimer(gVBoxSt.hWTSAPIWnd, TIMERID_VBOXTRAY_ST_DELAYED_INIT_TIMER, 2000, (TIMERPROC)NULL);
-                    rc = VINF_SUCCESS;
-
+                    gVBoxSt.idDelayedInitTimer = SetTimer(gVBoxSt.hWTSAPIWnd, TIMERID_VBOXTRAY_ST_DELAYED_INIT_TIMER,
+                                                          2000, (TIMERPROC)NULL);
                     gVBoxSt.fIsConsole = TRUE;
                     gVBoxSt.enmConnectState = WTSActive;
+                    rc = VINF_SUCCESS;
                 }
                 else
                     rc = RTErrConvertFromWin32(dwErr);
@@ -1115,24 +1100,20 @@ static int vboxStInit(HWND hWnd)
                 return VINF_SUCCESS;
         }
 
-        FreeLibrary(gVBoxSt.hWTSAPI32);
+        RTLdrClose(gVBoxSt.hLdrModWTSAPI32);
     }
     else
-    {
-        DWORD dwErr = GetLastError();
-        WARN(("VBoxTray: WTSAPI32 load failed, error = %08X\n", dwErr));
-        rc = RTErrConvertFromWin32(dwErr);
-    }
+        WARN(("VBoxTray: WTSAPI32 load failed, rc = %Rrc\n", rc));
 
-    memset(&gVBoxSt, 0, sizeof (gVBoxSt));
+    RT_ZERO(gVBoxSt);
     gVBoxSt.fIsConsole = TRUE;
     gVBoxSt.enmConnectState = WTSActive;
     return rc;
 }
 
-static void vboxStTerm()
+static void vboxStTerm(void)
 {
-    if (gVBoxSt.hWTSAPIWnd)
+    if (!gVBoxSt.hWTSAPIWnd)
     {
         WARN(("VBoxTray: vboxStTerm called for non-initialized St\n"));
         return;
@@ -1153,8 +1134,8 @@ static void vboxStTerm()
         }
     }
 
-    FreeLibrary(gVBoxSt.hWTSAPI32);
-    memset(&gVBoxSt, 0, sizeof (gVBoxSt));
+    RTLdrClose(gVBoxSt.hLdrModWTSAPI32);
+    RT_ZERO(gVBoxSt);
 }
 
 #define VBOXST_DBG_MAKECASE(_val) case _val: return #_val;
@@ -1227,10 +1208,9 @@ typedef struct VBOXDT
     HANDLE hNotifyEvent;
     BOOL fIsInputDesktop;
     UINT_PTR idTimer;
-    HMODULE hHookModule;
+    RTLDRMOD hLdrModHook;
     BOOL (* pfnVBoxHookInstallActiveDesktopTracker)(HMODULE hDll);
     BOOL (* pfnVBoxHookRemoveActiveDesktopTracker)();
-    HMODULE hUSER32;
     HDESK (WINAPI * pfnGetThreadDesktop)(DWORD dwThreadId);
     HDESK (WINAPI * pfnOpenInputDesktop)(DWORD dwFlags, BOOL fInherit, ACCESS_MASK dwDesiredAccess);
     BOOL (WINAPI * pfnCloseDesktop)(HDESK hDesktop);
@@ -1288,90 +1268,86 @@ static int vboxDtInit()
         gMajorVersion = info.dwMajorVersion;
     }
 
-    memset(&gVBoxDt, 0, sizeof (gVBoxDt));
+    RT_ZERO(gVBoxDt);
 
     gVBoxDt.hNotifyEvent = CreateEvent(NULL, FALSE, FALSE, VBOXHOOK_GLOBAL_DT_EVENT_NAME);
     if (gVBoxDt.hNotifyEvent != NULL)
     {
-        gVBoxDt.hHookModule = LoadLibrary(VBOXHOOK_DLL_NAME);
-        if (gVBoxDt.hHookModule)
+        /* Load the hook dll and resolve the necessary entry points. */
+        rc = RTLdrLoadAppPriv(VBOXHOOK_DLL_NAME, &gVBoxDt.hLdrModHook);
+        if (RT_SUCCESS(rc))
         {
-            *(uintptr_t *)&gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker = (uintptr_t)GetProcAddress(gVBoxDt.hHookModule, "VBoxHookInstallActiveDesktopTracker");
-            if (!gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker)
+            rc = RTLdrGetSymbol(gVBoxDt.hLdrModHook, "VBoxHookInstallActiveDesktopTracker",
+                                (void **)&gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker);
+            if (RT_SUCCESS(rc))
             {
+                rc = RTLdrGetSymbol(gVBoxDt.hLdrModHook, "VBoxHookRemoveActiveDesktopTracker",
+                                    (void **)&gVBoxDt.pfnVBoxHookRemoveActiveDesktopTracker);
+                if (RT_FAILURE(rc))
+                    WARN(("VBoxTray: VBoxHookRemoveActiveDesktopTracker not found\n"));
+            }
+            else
                 WARN(("VBoxTray: VBoxHookInstallActiveDesktopTracker not found\n"));
-                rc = VERR_NOT_SUPPORTED;
-            }
-
-            *(uintptr_t *)&gVBoxDt.pfnVBoxHookRemoveActiveDesktopTracker  = (uintptr_t)GetProcAddress(gVBoxDt.hHookModule, "VBoxHookInstallActiveDesktopTracker");
-            if (!gVBoxDt.pfnVBoxHookRemoveActiveDesktopTracker)
+            if (RT_SUCCESS(rc))
             {
-                WARN(("VBoxTray: VBoxHookRemoveActiveDesktopTracker not found\n"));
-                rc = VERR_NOT_SUPPORTED;
-            }
-
-            if (VINF_SUCCESS == rc)
-            {
-                gVBoxDt.hUSER32 = LoadLibrary("User32.dll");
-                if (gVBoxDt.hUSER32)
+                /* Try get the system APIs we need. */
+                *(void **)&gVBoxDt.pfnGetThreadDesktop = RTLdrGetSystemSymbol("User32.dll", "GetThreadDesktop");
+                if (!gVBoxDt.pfnGetThreadDesktop)
                 {
-                    *(uintptr_t *)&gVBoxDt.pfnGetThreadDesktop = (uintptr_t)GetProcAddress(gVBoxDt.hUSER32, "GetThreadDesktop");
-                    if (!gVBoxDt.pfnGetThreadDesktop)
-                    {
-                        WARN(("VBoxTray: GetThreadDesktop not found\n"));
-                        rc = VERR_NOT_SUPPORTED;
-                    }
+                    WARN(("VBoxTray: GetThreadDesktop not found\n"));
+                    rc = VERR_NOT_SUPPORTED;
+                }
 
-                    *(uintptr_t *)&gVBoxDt.pfnOpenInputDesktop = (uintptr_t)GetProcAddress(gVBoxDt.hUSER32, "OpenInputDesktop");
-                    if (!gVBoxDt.pfnOpenInputDesktop)
-                    {
-                        WARN(("VBoxTray: OpenInputDesktop not found\n"));
-                        rc = VERR_NOT_SUPPORTED;
-                    }
+                *(void **)&gVBoxDt.pfnOpenInputDesktop = RTLdrGetSystemSymbol("User32.dll", "OpenInputDesktop");
+                if (!gVBoxDt.pfnOpenInputDesktop)
+                {
+                    WARN(("VBoxTray: OpenInputDesktop not found\n"));
+                    rc = VERR_NOT_SUPPORTED;
+                }
 
-                    *(uintptr_t *)&gVBoxDt.pfnCloseDesktop = (uintptr_t)GetProcAddress(gVBoxDt.hUSER32, "CloseDesktop");
-                    if (!gVBoxDt.pfnCloseDesktop)
-                    {
-                        WARN(("VBoxTray: CloseDesktop not found\n"));
-                        rc = VERR_NOT_SUPPORTED;
-                    }
+                *(void **)&gVBoxDt.pfnCloseDesktop = RTLdrGetSystemSymbol("User32.dll", "CloseDesktop");
+                if (!gVBoxDt.pfnCloseDesktop)
+                {
+                    WARN(("VBoxTray: CloseDesktop not found\n"));
+                    rc = VERR_NOT_SUPPORTED;
+                }
 
-                    if (VINF_SUCCESS == rc)
+                if (RT_SUCCESS(rc))
+                {
+                    BOOL fRc = FALSE;
+                    /* For Vista and up we need to change the integrity of the security descriptor, too. */
+                    if (gMajorVersion >= 6)
                     {
-                        BOOL bRc = FALSE;
-                        /* For Vista and up we need to change the integrity of the security descriptor, too. */
-                        if (gMajorVersion >= 6)
+                        HMODULE hModHook = (HMODULE)RTLdrGetNativeHandle(gVBoxDt.hLdrModHook);
+                        Assert((uintptr_t)hModHook != ~(uintptr_t)0);
+                        fRc = gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker(hModHook);
+                        if (!fRc)
                         {
-                            bRc = gVBoxDt.pfnVBoxHookInstallActiveDesktopTracker(gVBoxDt.hHookModule);
-                            if (!bRc)
-                            {
-                                DWORD dwErr = GetLastError();
-                                WARN(("VBoxTray: pfnVBoxHookInstallActiveDesktopTracker failed, last error = %08X\n", dwErr));
-                            }
-                        }
-
-                        if (!bRc)
-                        {
-                            gVBoxDt.idTimer = SetTimer(ghwndToolWindow, TIMERID_VBOXTRAY_DT_TIMER, 500, (TIMERPROC)NULL);
-                            if (!gVBoxDt.idTimer)
-                            {
-                                DWORD dwErr = GetLastError();
-                                WARN(("VBoxTray: SetTimer error %08X\n", dwErr));
-                                rc = RTErrConvertFromWin32(dwErr);
-                            }
-                        }
-
-                        if (RT_SUCCESS(rc))
-                        {
-                            gVBoxDt.fIsInputDesktop = vboxDtCalculateIsInputDesktop();
-                            return VINF_SUCCESS;
+                            DWORD dwErr = GetLastError();
+                            WARN(("VBoxTray: pfnVBoxHookInstallActiveDesktopTracker failed, last error = %08X\n", dwErr));
                         }
                     }
-                    FreeLibrary(gVBoxDt.hUSER32);
+
+                    if (!fRc)
+                    {
+                        gVBoxDt.idTimer = SetTimer(ghwndToolWindow, TIMERID_VBOXTRAY_DT_TIMER, 500, (TIMERPROC)NULL);
+                        if (!gVBoxDt.idTimer)
+                        {
+                            DWORD dwErr = GetLastError();
+                            WARN(("VBoxTray: SetTimer error %08X\n", dwErr));
+                            rc = RTErrConvertFromWin32(dwErr);
+                        }
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        gVBoxDt.fIsInputDesktop = vboxDtCalculateIsInputDesktop();
+                        return VINF_SUCCESS;
+                    }
                 }
             }
 
-            FreeLibrary(gVBoxDt.hHookModule);
+            RTLdrClose(gVBoxDt.hLdrModHook);
         }
         else
         {
@@ -1390,7 +1366,7 @@ static int vboxDtInit()
     }
 
 
-    memset(&gVBoxDt, 0, sizeof (gVBoxDt));
+    RT_ZERO(gVBoxDt);
     gVBoxDt.fIsInputDesktop = TRUE;
 
     return rc;
@@ -1398,16 +1374,15 @@ static int vboxDtInit()
 
 static void vboxDtTerm()
 {
-    if (!gVBoxDt.hHookModule)
+    if (!gVBoxDt.hLdrModHook)
         return;
 
     gVBoxDt.pfnVBoxHookRemoveActiveDesktopTracker();
 
-    FreeLibrary(gVBoxDt.hUSER32);
-    FreeLibrary(gVBoxDt.hHookModule);
+    RTLdrClose(gVBoxDt.hLdrModHook);
     CloseHandle(gVBoxDt.hNotifyEvent);
 
-    memset(&gVBoxDt, 0, sizeof (gVBoxDt));
+    RT_ZERO(gVBoxDt);
 }
 /* @returns true on "IsInputDesktop" state change */
 static BOOL vboxDtHandleEvent()

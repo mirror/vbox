@@ -23,6 +23,7 @@
 #include <iprt/avl.h>
 #include <iprt/asm.h>
 #include <iprt/mem.h>
+#include <iprt/ldr.h>
 #include <iprt/process.h>
 #include <iprt/env.h>
 #include <iprt/stream.h>
@@ -80,8 +81,7 @@ typedef struct _RTL_PROCESS_MODULES
 } RTL_PROCESS_MODULES, *PRTL_PROCESS_MODULES;
 
 typedef NTSTATUS (WINAPI *PFNZWQUERYSYSTEMINFORMATION)(ULONG, PVOID, ULONG, PULONG);
-static PFNZWQUERYSYSTEMINFORMATION ZwQuerySystemInformation = NULL;
-static HMODULE hNtdll = 0;
+static PFNZWQUERYSYSTEMINFORMATION g_pfnZwQuerySystemInformation = NULL;
 
 
 static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE pNode, void *pvUser);
@@ -365,13 +365,13 @@ void VBoxServicePageSharingInspectGuest()
     CloseHandle(hSnapshot);
 
     /* Check all loaded kernel modules. */
-    if (ZwQuerySystemInformation)
+    if (g_pfnZwQuerySystemInformation)
     {
         ULONG                cbBuffer = 0;
         PVOID                pBuffer = NULL;
         PRTL_PROCESS_MODULES pSystemModules;
 
-        NTSTATUS ret = ZwQuerySystemInformation(SystemModuleInformation, (PVOID)&cbBuffer, 0, &cbBuffer);
+        NTSTATUS ret = g_pfnZwQuerySystemInformation(SystemModuleInformation, (PVOID)&cbBuffer, 0, &cbBuffer);
         if (!cbBuffer)
         {
             VBoxServiceVerbose(1, "ZwQuerySystemInformation returned length 0\n");
@@ -382,7 +382,7 @@ void VBoxServicePageSharingInspectGuest()
         if (!pBuffer)
             goto skipkernelmodules;
 
-        ret = ZwQuerySystemInformation(SystemModuleInformation, pBuffer, cbBuffer, &cbBuffer);
+        ret = g_pfnZwQuerySystemInformation(SystemModuleInformation, pBuffer, cbBuffer, &cbBuffer);
         if (ret != STATUS_SUCCESS)
         {
             VBoxServiceVerbose(1, "ZwQuerySystemInformation returned %x (1)\n", ret);
@@ -552,12 +552,9 @@ static DECLCALLBACK(int) VBoxServicePageSharingInit(void)
     AssertRCReturn(rc, rc);
 
 #if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
-    hNtdll = LoadLibrary("ntdll.dll");
+    g_pfnZwQuerySystemInformation = (PFNZWQUERYSYSTEMINFORMATION)RTLdrGetSystemSymbol("ntdll.dll", "ZwQuerySystemInformation");
 
-    if (hNtdll)
-        ZwQuerySystemInformation = (PFNZWQUERYSYSTEMINFORMATION)GetProcAddress(hNtdll, "ZwQuerySystemInformation");
-
-    rc =  VbglR3GetSessionId(&g_idSession);
+    rc = VbglR3GetSessionId(&g_idSession);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_IO_GEN_FAILURE)
@@ -737,12 +734,6 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
 static DECLCALLBACK(void) VBoxServicePageSharingTerm(void)
 {
     VBoxServiceVerbose(3, "VBoxServicePageSharingTerm\n");
-
-#if defined(RT_OS_WINDOWS) && !defined(TARGET_NT4)
-    if (hNtdll)
-        FreeLibrary(hNtdll);
-#endif
-    return;
 }
 
 

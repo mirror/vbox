@@ -176,7 +176,7 @@ static void _PR_InitStuff(void)
     if (_pr_initialized) return;
     _pr_initialized = PR_TRUE;
 #ifdef VBOX_USE_IPRT_IN_NSPR
-    RTR3InitDll(0);
+    RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
 #endif
 #ifdef _PR_ZONE_ALLOCATOR
     _PR_InitZones();

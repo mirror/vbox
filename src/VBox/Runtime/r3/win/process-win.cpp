@@ -58,6 +58,8 @@
 #include <iprt/string.h>
 #include <iprt/socket.h>
 
+#include "../init.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -421,77 +423,73 @@ static bool rtProcWinFindTokenByProcessAndPsApi(const char * const *papszNames, 
     /*
      * Load PSAPI.DLL and resolve the two symbols we need.
      */
-    RTLDRMOD hPsApi;
-    int rc = RTLdrLoad("PSAPI.dll", &hPsApi);
-    if (RT_FAILURE_NP(rc))
+    PFNGETMODULEBASENAME pfnGetModuleBaseName = (PFNGETMODULEBASENAME)RTLdrGetSystemSymbol("psapi.dll", "GetModuleBaseName");
+    if (!pfnGetModuleBaseName)
         return false;
-    PFNGETMODULEBASENAME    pfnGetModuleBaseName;
-    PFNENUMPROCESSES        pfnEnumProcesses;
-    rc = RTLdrGetSymbol(hPsApi, "EnumProcesses", (void**)&pfnEnumProcesses);
-    if (RT_SUCCESS(rc))
-        rc = RTLdrGetSymbol(hPsApi, "GetModuleBaseName", (void**)&pfnGetModuleBaseName);
+    PFNENUMPROCESSES pfnEnumProcesses = (PFNENUMPROCESSES)RTLdrGetSystemSymbol("psapi.dll", "EnumProcesses");
+    if (!pfnEnumProcesses)
+        return false;
+
+    /*
+     * Get a list of PID.  We retry if it looks like there are more PIDs
+     * to be returned than what we supplied buffer space for.
+     */
+    int    rc = VINF_SUCCESS;
+    DWORD  cbPidsAllocated = 4096;
+    DWORD  cbPidsReturned  = 0;
+    DWORD *paPids;
+    for (;;)
+    {
+        paPids = (DWORD *)RTMemTmpAlloc(cbPidsAllocated);
+        AssertBreakStmt(paPids, rc = VERR_NO_TMP_MEMORY);
+        if (!pfnEnumProcesses(paPids, cbPidsAllocated, &cbPidsReturned))
+        {
+            rc = RTErrConvertFromWin32(GetLastError());
+            AssertMsgFailedBreak(("%Rrc\n", rc));
+        }
+        if (   cbPidsReturned < cbPidsAllocated
+            || cbPidsAllocated >= _512K)
+            break;
+        RTMemTmpFree(paPids);
+        cbPidsAllocated *= 2;
+    }
     if (RT_SUCCESS(rc))
     {
         /*
-         * Get a list of PID.  We retry if it looks like there are more PIDs
-         * to be returned than what we supplied buffer space for.
+         * Search for the process.
+         *
+         * We ASSUME that the caller won't be specifying any names longer
+         * than RTPATH_MAX.
          */
-        DWORD  cbPidsAllocated = 4096;
-        DWORD  cbPidsReturned  = 0;
-        DWORD *paPids;
-        for (;;)
+        DWORD cbProcName  = RTPATH_MAX;
+        char *pszProcName = (char *)RTMemTmpAlloc(RTPATH_MAX);
+        if (pszProcName)
         {
-            paPids = (DWORD *)RTMemTmpAlloc(cbPidsAllocated);
-            AssertBreakStmt(paPids, rc = VERR_NO_TMP_MEMORY);
-            if (!pfnEnumProcesses(paPids, cbPidsAllocated, &cbPidsReturned))
+            for (size_t i = 0; papszNames[i] && !fFound; i++)
             {
-                rc = RTErrConvertFromWin32(GetLastError());
-                AssertMsgFailedBreak(("%Rrc\n", rc));
-            }
-            if (   cbPidsReturned < cbPidsAllocated
-                || cbPidsAllocated >= _512K)
-                break;
-            RTMemTmpFree(paPids);
-            cbPidsAllocated *= 2;
-        }
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Search for the process.
-             *
-             * We ASSUME that the caller won't be specifying any names longer
-             * than RTPATH_MAX.
-             */
-            DWORD cbProcName  = RTPATH_MAX;
-            char *pszProcName = (char *)RTMemTmpAlloc(RTPATH_MAX);
-            if (pszProcName)
-            {
-                for (size_t i = 0; papszNames[i] && !fFound; i++)
+                const DWORD cPids = cbPidsReturned / sizeof(DWORD);
+                for (DWORD iPid = 0; iPid < cPids && !fFound; iPid++)
                 {
-                    const DWORD cPids = cbPidsReturned / sizeof(DWORD);
-                    for (DWORD iPid = 0; iPid < cPids && !fFound; iPid++)
+                    HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, paPids[iPid]);
+                    if (hProc)
                     {
-                        HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, paPids[iPid]);
-                        if (hProc)
-                        {
-                            *pszProcName = '\0';
-                            DWORD cbRet = pfnGetModuleBaseName(hProc, 0 /*hModule = exe */, pszProcName, cbProcName);
-                            if (   cbRet > 0
-                                && _stricmp(pszProcName, papszNames[i]) == 0
-                                && RT_SUCCESS(rtProcWinGetProcessTokenHandle(paPids[iPid], pSid, phToken)))
-                                fFound = true;
-                            CloseHandle(hProc);
-                        }
+                        *pszProcName = '\0';
+                        DWORD cbRet = pfnGetModuleBaseName(hProc, 0 /*hModule = exe */, pszProcName, cbProcName);
+                        if (   cbRet > 0
+                            && _stricmp(pszProcName, papszNames[i]) == 0
+                            && RT_SUCCESS(rtProcWinGetProcessTokenHandle(paPids[iPid], pSid, phToken)))
+                            fFound = true;
+                        CloseHandle(hProc);
                     }
                 }
-                RTMemTmpFree(pszProcName);
             }
-            else
-                rc = VERR_NO_TMP_MEMORY;
+            RTMemTmpFree(pszProcName);
         }
-        RTMemTmpFree(paPids);
+        else
+            rc = VERR_NO_TMP_MEMORY;
     }
-    RTLdrClose(hPsApi);
+    RTMemTmpFree(paPids);
+
     return fFound;
 }
 
@@ -518,59 +516,48 @@ static bool rtProcWinFindTokenByProcess(const char * const *papszNames, PSID pSi
      * On modern systems (W2K+) try the Toolhelp32 API first; this is more stable
      * and reliable.  Fallback to EnumProcess on NT4.
      */
-    RTLDRMOD hKernel32;
-    int rc = RTLdrLoad("Kernel32.dll", &hKernel32);
-    if (RT_SUCCESS(rc))
+    PFNCREATETOOLHELP32SNAPSHOT pfnCreateToolhelp32Snapshot;
+    pfnCreateToolhelp32Snapshot = (PFNCREATETOOLHELP32SNAPSHOT)GetProcAddress(g_hModKernel32, "CreateToolhelp32Snapshot");
+    PFNPROCESS32FIRST pfnProcess32First = (PFNPROCESS32FIRST)GetProcAddress(g_hModKernel32, "Process32First");
+    PFNPROCESS32NEXT  pfnProcess32Next  = (PFNPROCESS32NEXT )GetProcAddress(g_hModKernel32, "Process32Next");
+    bool fFallback = true;
+    if (pfnProcess32Next && pfnProcess32First && pfnCreateToolhelp32Snapshot)
     {
-        PFNCREATETOOLHELP32SNAPSHOT pfnCreateToolhelp32Snapshot;
-        PFNPROCESS32FIRST           pfnProcess32First;
-        PFNPROCESS32NEXT            pfnProcess32Next;
-        rc = RTLdrGetSymbol(hKernel32, "CreateToolhelp32Snapshot", (void **)&pfnCreateToolhelp32Snapshot);
-        if (RT_SUCCESS(rc))
-            rc = RTLdrGetSymbol(hKernel32, "Process32First", (void**)&pfnProcess32First);
-        if (RT_SUCCESS(rc))
-            rc = RTLdrGetSymbol(hKernel32, "Process32Next", (void**)&pfnProcess32Next);
-
-        if (RT_SUCCESS(rc))
+        HANDLE hSnap = pfnCreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (hSnap != INVALID_HANDLE_VALUE)
         {
-            HANDLE hSnap = pfnCreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-            if (hSnap != INVALID_HANDLE_VALUE)
+            fFallback = false;
+            for (size_t i = 0; papszNames[i] && !fFound; i++)
             {
-                for (size_t i = 0; papszNames[i] && !fFound; i++)
+                PROCESSENTRY32 procEntry;
+                procEntry.dwSize = sizeof(PROCESSENTRY32);
+                if (pfnProcess32First(hSnap, &procEntry))
                 {
-                    PROCESSENTRY32 procEntry;
-                    procEntry.dwSize = sizeof(PROCESSENTRY32);
-                    if (pfnProcess32First(hSnap, &procEntry))
+                    do
                     {
-                        do
+                        if (   _stricmp(procEntry.szExeFile, papszNames[i]) == 0
+                            && RT_SUCCESS(rtProcWinGetProcessTokenHandle(procEntry.th32ProcessID, pSid, phToken)))
                         {
-                            if (   _stricmp(procEntry.szExeFile, papszNames[i]) == 0
-                                && RT_SUCCESS(rtProcWinGetProcessTokenHandle(procEntry.th32ProcessID, pSid, phToken)))
-                            {
-                                fFound = true;
-                                break;
-                            }
-                        } while (pfnProcess32Next(hSnap, &procEntry));
-                    }
-#ifdef RT_STRICT
-                    else
-                    {
-                        DWORD dwErr = GetLastError();
-                        AssertMsgFailed(("dwErr=%u (%x)\n", dwErr, dwErr));
-                    }
-#endif
+                            fFound = true;
+                            break;
+                        }
+                    } while (pfnProcess32Next(hSnap, &procEntry));
                 }
-                CloseHandle(hSnap);
+#ifdef RT_STRICT
+                else
+                {
+                    DWORD dwErr = GetLastError();
+                    AssertMsgFailed(("dwErr=%u (%x)\n", dwErr, dwErr));
+                }
+#endif
             }
-            else /* hSnap == INVALID_HANDLE_VALUE */
-                rc = RTErrConvertFromWin32(GetLastError());
+            CloseHandle(hSnap);
         }
-        RTLdrClose(hKernel32);
     }
 
     /* If we couldn't take a process snapshot for some reason or another, fall
        back on the NT4 compatible API. */
-    if (RT_FAILURE(rc))
+    if (fFallback)
         return rtProcWinFindTokenByProcessAndPsApi(papszNames, pSid, phToken);
     return fFound;
 }
@@ -688,7 +675,7 @@ static int rtProcWinEnvironmentCreateInternal(VOID *pvBlock, RTENV hEnv, PRTUTF1
 static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, PRTUTF16 *ppwszBlock)
 {
     RTLDRMOD hUserenv;
-    int rc = RTLdrLoad("Userenv.dll", &hUserenv);
+    int rc = RTLdrLoadSystem("Userenv.dll", true /*fNoUnload*/, &hUserenv);
     if (RT_SUCCESS(rc))
     {
         PFNCREATEENVIRONMENTBLOCK pfnCreateEnvironmentBlock;
@@ -880,7 +867,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
              */
             phToken = fFound ? &hTokenUserDesktop : &hTokenLogon;
             RTLDRMOD hUserenv;
-            int rc = RTLdrLoad("Userenv.dll", &hUserenv);
+            int rc = RTLdrLoadSystem("Userenv.dll", true /*fNoUnload*/, &hUserenv);
             if (RT_SUCCESS(rc))
             {
                 PFNLOADUSERPROFILEW pfnLoadUserProfileW;
@@ -978,42 +965,36 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                                   RTENV hEnv, DWORD dwCreationFlags,
                                   STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo, uint32_t fFlags)
 {
-    RTLDRMOD hAdvAPI32;
-    int rc = RTLdrLoad("Advapi32.dll", &hAdvAPI32);
+    PFNCREATEPROCESSWITHLOGON pfnCreateProcessWithLogonW;
+    pfnCreateProcessWithLogonW = (PFNCREATEPROCESSWITHLOGON)RTLdrGetSystemSymbol("Advapi32.dll", "CreateProcessWithLogonW");
+    if (pfnCreateProcessWithLogonW)
+        return VERR_SYMBOL_NOT_FOUND;
+
+    PRTUTF16 pwszzBlock;
+    int rc = rtProcWinCreateEnvFromAccount(pwszUser, pwszPassword, NULL /* Domain */,
+                                           hEnv, &pwszzBlock);
     if (RT_SUCCESS(rc))
     {
-        PFNCREATEPROCESSWITHLOGON pfnCreateProcessWithLogonW;
-        rc = RTLdrGetSymbol(hAdvAPI32, "CreateProcessWithLogonW", (void **)&pfnCreateProcessWithLogonW);
-        if (RT_SUCCESS(rc))
+        BOOL fRc = pfnCreateProcessWithLogonW(pwszUser,
+                                              NULL,                       /* lpDomain*/
+                                              pwszPassword,
+                                              1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
+                                              pwszExec,
+                                              pwszCmdLine,
+                                              dwCreationFlags,
+                                              pwszzBlock,
+                                              NULL,                       /* pCurrentDirectory */
+                                              pStartupInfo,
+                                              pProcInfo);
+        if (!fRc)
         {
-            PRTUTF16 pwszzBlock;
-            rc = rtProcWinCreateEnvFromAccount(pwszUser, pwszPassword, NULL /* Domain */,
-                                               hEnv, &pwszzBlock);
-            if (RT_SUCCESS(rc))
-            {
-                BOOL fRc = pfnCreateProcessWithLogonW(pwszUser,
-                                                      NULL,                       /* lpDomain*/
-                                                      pwszPassword,
-                                                      1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
-                                                      pwszExec,
-                                                      pwszCmdLine,
-                                                      dwCreationFlags,
-                                                      pwszzBlock,
-                                                      NULL,                       /* pCurrentDirectory */
-                                                      pStartupInfo,
-                                                      pProcInfo);
-                if (!fRc)
-                {
-                    DWORD dwErr = GetLastError();
-                    rc = rtProcWinMapErrorCodes(dwErr);
-                    if (rc == VERR_UNRESOLVED_ERROR)
-                        LogRelFunc(("pfnCreateProcessWithLogonW (%p) failed: dwErr=%u (%#x), rc=%Rrc\n",
-                                    pfnCreateProcessWithLogonW, dwErr, dwErr, rc));
-                }
-                rtProcWinDestroyEnv(pwszzBlock);
-            }
+            DWORD dwErr = GetLastError();
+            rc = rtProcWinMapErrorCodes(dwErr);
+            if (rc == VERR_UNRESOLVED_ERROR)
+                LogRelFunc(("pfnCreateProcessWithLogonW (%p) failed: dwErr=%u (%#x), rc=%Rrc\n",
+                            pfnCreateProcessWithLogonW, dwErr, dwErr, rc));
         }
-        RTLdrClose(hAdvAPI32);
+        rtProcWinDestroyEnv(pwszzBlock);
     }
     return rc;
 }
