@@ -308,17 +308,6 @@ Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type)
     return strType;
 }
 
-bool checkComplianceDigestAndOVFVersion(bool fDigestType, ovf::OVFVersion_T ovfVersion)
-{
-    bool res = false;
-    if (   (ovfVersion == ovf::OVFVersion_2_0 &&  fDigestType)
-        || (ovfVersion == ovf::OVFVersion_1_0 && !fDigestType)
-        || (ovfVersion == ovf::OVFVersion_0_9 && !fDigestType))
-        res = true;
-    return res;
-}
-
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // IVirtualBox public methods
