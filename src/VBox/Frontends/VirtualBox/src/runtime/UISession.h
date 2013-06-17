@@ -167,6 +167,9 @@ public:
      * Ignores (asserts) if screen-number attribute is out of bounds: */
     void setFrameBuffer(ulong uScreenId, UIFrameBuffer* pFrameBuffer);
 
+    /* Temporary API: VRDE stuff: */
+    void updateStatusVRDE() { sltVRDEChange(); }
+
 signals:
 
     /* Notifier: Close Runtime UI stuff: */

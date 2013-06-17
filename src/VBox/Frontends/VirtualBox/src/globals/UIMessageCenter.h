@@ -297,6 +297,7 @@ public:
     void cannotAttachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const;
     void cannotDetachUSBDevice(const CConsole &console, const QString &strDevice) const;
     void cannotDetachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const;
+    void cannotToggleVRDEServer(const CVRDEServer &server, const QString &strMachineName, bool fEnable);
     void remindAboutGuestAdditionsAreNotActive() const;
 
     /* API: Network management warnings: */
