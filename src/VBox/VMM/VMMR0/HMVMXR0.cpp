@@ -6697,7 +6697,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
               pVM, pVCpu, pVCpu->idCpu, pVCpu->hm.s.fContextUseFlags));
 
 #ifdef LOG_ENABLED
-    /* Only reenable log-flushing if it the caller originally had it enabled. */
+    /* Only reenable log-flushing if the caller has it enabled. */
     if (!fCallerDisabledLogFlush)
         VMMR0LogFlushEnable(pVCpu);
 #endif
