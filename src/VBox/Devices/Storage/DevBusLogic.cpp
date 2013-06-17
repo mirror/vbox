@@ -1084,6 +1084,8 @@ static int buslogicR3HwReset(PBUSLOGIC pBusLogic, bool fResetIO)
     pBusLogic->iParameter = 0;
     pBusLogic->cbCommandParametersLeft = 0;
     pBusLogic->fIRQEnabled = true;
+    pBusLogic->fStrictRoundRobinMode = false;
+    pBusLogic->fExtendedLunCCBFormat = false;
     pBusLogic->uMailboxOutgoingPositionCurrent = 0;
     pBusLogic->uMailboxIncomingPositionCurrent = 0;
 
