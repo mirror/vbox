@@ -287,7 +287,9 @@ class UIActionTogglePause : public UIActionToggle
 public:
 
     UIActionTogglePause(UIActionPool *pParent)
-        : UIActionToggle(pParent, ":/pause_16px.png", ":/pause_disabled_16px.png")
+        : UIActionToggle(pParent,
+                         ":/pause_on_16px.png", ":/pause_16px.png",
+                         ":/pause_on_disabled_16px.png", ":/pause_disabled_16px.png")
     {
         retranslateUi();
     }

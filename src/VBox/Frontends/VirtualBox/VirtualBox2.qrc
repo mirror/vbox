@@ -129,7 +129,7 @@
         <file alias="hostkey_captured_16px.png">images/hostkey_captured_16px.png</file>
         <file alias="hostkey_captured_pressed_16px.png">images/hostkey_captured_pressed_16px.png</file>
         <file alias="fullscreen_16px.png">images/fullscreen_16px.png</file>
-        <file alias="fullscreen_on_16px.png.png">images/fullscreen_on_16px.png</file>
+        <file alias="fullscreen_on_16px.png">images/fullscreen_on_16px.png</file>
         <file alias="fullscreen_disabled_16px.png">images/fullscreen_disabled_16px.png</file>
         <file alias="fullscreen_on_disabled_16px.png">images/fullscreen_on_disabled_16px.png</file>
         <file alias="seamless_16px.png">images/seamless_16px.png</file>
