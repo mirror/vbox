@@ -2760,6 +2760,7 @@ static int hmR0VmxLoadGuestRsp(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     {
         rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_RSP, pMixedCtx->rsp);
         AssertRCReturn(rc, rc);
+        Log4(("Load: VMX_VMCS_GUEST_RSP=%#RX64\n", pMixedCtx->rsp));
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_RSP;
     }
     return rc;
@@ -5935,7 +5936,7 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
 
     /* Please, no longjumps here (any logging shouldn't flush jump back to ring-3). NO LOGGING BEFORE THIS POINT! */
     VMMRZCallRing3Disable(pVCpu);
-    Log4(("hmR0VmxExitToRing3: rcExit=%d\n", rcExit));
+    Log4(("hmR0VmxExitToRing3: pVCpu=%p idCpu=%RU32 rcExit=%d\n", pVCpu, pVCpu->idCpu, rcExit));
 
     /* We need to do this only while truly exiting the "inner loop" back to ring-3 and -not- for any longjmp to ring3. */
     if (pVCpu->hm.s.Event.fPending)
@@ -5990,7 +5991,7 @@ DECLCALLBACK(void) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperat
 
     VMMRZCallRing3Disable(pVCpu);
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
-    Log4(("hmR0VmxCallRing3Callback->hmR0VmxLongJmpToRing3\n"));
+    Log4(("hmR0VmxCallRing3Callback->hmR0VmxLongJmpToRing3 pVCpu=%p idCpu=%RU32\n", pVCpu, pVCpu->idCpu));
     hmR0VmxLongJmpToRing3(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser, VINF_VMM_UNKNOWN_RING3_CALL);
     VMMRZCallRing3Enable(pVCpu);
 }
@@ -6682,8 +6683,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR2;
 
     AssertMsg(!pVCpu->hm.s.fContextUseFlags,
-             ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p fContextUseFlags=%#RX32\n",
-              pVM, pVCpu, pVCpu->hm.s.fContextUseFlags));
+             ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p idCpu=%RU32 fContextUseFlags=%#RX32\n",
+              pVM, pVCpu, pVCpu->idCpu, pVCpu->hm.s.fContextUseFlags));
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
@@ -6923,7 +6924,8 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     /* If the VMLAUNCH/VMRESUME failed, we can bail out early. This does -not- cover VMX_EXIT_ERR_*. */
     if (RT_UNLIKELY(rcVMRun != VINF_SUCCESS))
     {
-        Log4(("VM-entry failure: rcVMRun=%Rrc fVMEntryFailed=%RTbool\n", rcVMRun, pVmxTransient->fVMEntryFailed));
+        Log4(("VM-entry failure: pVCpu=%p idCpu=%RU32 rcVMRun=%Rrc fVMEntryFailed=%RTbool\n", pVCpu, pVCpu->idCpu, rcVMRun,
+              pVmxTransient->fVMEntryFailed));
         return;
     }
 
@@ -7134,7 +7136,7 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                 Assert(ASMIntAreEnabled()); \
                 Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD)); \
                 HMVMX_ASSERT_PREEMPT_CPUID_VAR(); \
-                Log4Func(("vcpu[%u] -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-\n", (uint32_t)pVCpu->idCpu)); \
+                Log4Func(("vcpu[%RU32] -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v\n", pVCpu->idCpu)); \
                 Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD)); \
                 if (VMMR0IsLogFlushDisabled(pVCpu)) \
                     HMVMX_ASSERT_PREEMPT_CPUID(); \
