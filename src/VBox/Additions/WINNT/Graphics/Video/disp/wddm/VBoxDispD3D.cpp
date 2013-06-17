@@ -2445,34 +2445,47 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
 
     VBOXVDBG_DUMP_DRAWPRIM_ENTER(pDevice);
 
-    if (!pDevice->cStreamSources)
+    if (pDevice->cStreamSourcesUm)
     {
-        if (pDevice->aStreamSourceUm[0].pvBuffer)
-        {
 #ifdef DEBUG
-            for (UINT i = 1; i < RT_ELEMENTS(pDevice->aStreamSourceUm); ++i)
+        uint32_t cStreams = 0;
+        for (UINT i = 0; i < RT_ELEMENTS(pDevice->aStreamSourceUm); ++i)
+        {
+            if(pDevice->aStreamSourceUm[i].pvBuffer)
             {
-                Assert(!pDevice->aStreamSourceUm[i].pvBuffer);
+                ++cStreams;
             }
-#endif
-            hr = pDevice9If->DrawPrimitiveUP(pData->PrimitiveType,
-                                      pData->PrimitiveCount,
-                                      ((uint8_t*)pDevice->aStreamSourceUm[0].pvBuffer) + pData->VStart * pDevice->aStreamSourceUm[0].cbStride,
-                                      pDevice->aStreamSourceUm[0].cbStride);
-            Assert(hr == S_OK);
+        }
 
-//            vboxVDbgMpPrintF((pDevice, __FUNCTION__": DrawPrimitiveUP\n"));
+        Assert(cStreams);
+        Assert(cStreams == pDevice->cStreamSourcesUm);
+#endif
+        if (pDevice->cStreamSourcesUm == 1)
+        {
+            for (UINT i = 0; i < RT_ELEMENTS(pDevice->aStreamSourceUm); ++i)
+            {
+                if(pDevice->aStreamSourceUm[i].pvBuffer)
+                {
+                    hr = pDevice9If->DrawPrimitiveUP(pData->PrimitiveType,
+                                              pData->PrimitiveCount,
+                                              ((uint8_t*)pDevice->aStreamSourceUm[i].pvBuffer) + pData->VStart * pDevice->aStreamSourceUm[i].cbStride,
+                                              pDevice->aStreamSourceUm[i].cbStride);
+                    Assert(hr == S_OK);
+                    break;
+                }
+            }
         }
         else
         {
             /* todo: impl */
-            Assert(0);
+            WARN(("multiple user stream sources (%d) not implemented!!", pDevice->cStreamSourcesUm));
         }
     }
     else
     {
 
 #ifdef DEBUG
+        Assert(!pDevice->cStreamSourcesUm);
             for (UINT i = 0; i < RT_ELEMENTS(pDevice->aStreamSourceUm); ++i)
             {
                 Assert(!pDevice->aStreamSourceUm[i].pvBuffer);
