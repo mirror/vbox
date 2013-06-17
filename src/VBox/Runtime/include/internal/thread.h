@@ -139,6 +139,16 @@ typedef RTTHREADINT *PRTTHREADINT;
  */
 DECLHIDDEN(int) rtThreadNativeInit(void);
 
+#ifdef IN_RING3
+/**
+ * Called when IPRT was first initialized in unobtrusive mode and later changed
+ * to obtrustive.
+ *
+ * This is only applicable in ring-3.
+ */
+DECLHIDDEN(void) rtThreadNativeReInitObtrusive(void);
+#endif
+
 /**
  * Create a native thread.
  * This creates the thread as described in pThreadInt and stores the thread id in *pThread.
@@ -199,6 +209,9 @@ DECLHIDDEN(void)         rtThreadTerminate(PRTTHREADINT pThread, int rc);
 DECLHIDDEN(PRTTHREADINT) rtThreadGetByNative(RTNATIVETHREAD NativeThread);
 DECLHIDDEN(PRTTHREADINT) rtThreadGet(RTTHREAD Thread);
 DECLHIDDEN(int)          rtThreadInit(void);
+#ifdef IN_RING3
+DECLHIDDEN(void)         rtThreadReInitObtrusive(void);
+#endif
 DECLHIDDEN(void)         rtThreadTerm(void);
 DECLHIDDEN(void)         rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread);
 #ifdef IN_RING3

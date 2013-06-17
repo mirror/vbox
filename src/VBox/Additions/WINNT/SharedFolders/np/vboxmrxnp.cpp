@@ -1597,7 +1597,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst,
     switch (fdwReason)
     {
         case DLL_PROCESS_ATTACH:
-            RTR3InitDll(0);
+            RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
             VbglR3Init();
             LogRel(("VBOXNP: DLL loaded.\n"));
             break;

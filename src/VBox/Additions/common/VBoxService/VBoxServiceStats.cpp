@@ -43,6 +43,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/mem.h>
+#include <iprt/ldr.h>
 #include <VBox/param.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
@@ -123,45 +124,32 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
         VBoxServiceVerbose(3, "VBoxStatsInit: DeviceIoControl failed with %d\n", rc);
 
 #ifdef RT_OS_WINDOWS
-    /** @todo Use RTLdr instead of LoadLibrary/GetProcAddress here! */
-
-    /* NtQuerySystemInformation might be dropped in future releases, so load it dynamically as per Microsoft's recommendation */
-    HMODULE hMod = LoadLibrary("NTDLL.DLL");
-    if (hMod)
+    /* NtQuerySystemInformation might be dropped in future releases, so load
+       it dynamically as per Microsoft's recommendation. */
+    *(void **)&gCtx.pfnNtQuerySystemInformation = RTLdrGetSystemSymbol("NTDLL.DLL", "NtQuerySystemInformation");
+    if (gCtx.pfnNtQuerySystemInformation)
+        VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.pfnNtQuerySystemInformation = %x\n", gCtx.pfnNtQuerySystemInformation);
+    else
     {
-        *(uintptr_t *)&gCtx.pfnNtQuerySystemInformation = (uintptr_t)GetProcAddress(hMod, "NtQuerySystemInformation");
-        if (gCtx.pfnNtQuerySystemInformation)
-            VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.pfnNtQuerySystemInformation = %x\n", gCtx.pfnNtQuerySystemInformation);
-        else
-        {
-            VBoxServiceVerbose(3, "VBoxStatsInit: NTDLL.NtQuerySystemInformation not found!\n");
-            return VERR_SERVICE_DISABLED;
-        }
+        VBoxServiceVerbose(3, "VBoxStatsInit: NTDLL.NtQuerySystemInformation not found!\n");
+        return VERR_SERVICE_DISABLED;
     }
 
     /* GlobalMemoryStatus is win2k and up, so load it dynamically */
-    hMod = LoadLibrary("KERNEL32.DLL");
-    if (hMod)
+    *(void **)&gCtx.pfnGlobalMemoryStatusEx = RTLdrGetSystemSymbol("KERNEL32.DLL", "GlobalMemoryStatusEx");
+    if (gCtx.pfnGlobalMemoryStatusEx)
+        VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.GlobalMemoryStatusEx = %x\n", gCtx.pfnGlobalMemoryStatusEx);
+    else
     {
-        *(uintptr_t *)&gCtx.pfnGlobalMemoryStatusEx = (uintptr_t)GetProcAddress(hMod, "GlobalMemoryStatusEx");
-        if (gCtx.pfnGlobalMemoryStatusEx)
-            VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.GlobalMemoryStatusEx = %x\n", gCtx.pfnGlobalMemoryStatusEx);
-        else
-        {
-            /** @todo Now fails in NT4; do we care? */
-            VBoxServiceVerbose(3, "VBoxStatsInit: KERNEL32.GlobalMemoryStatusEx not found!\n");
-            return VERR_SERVICE_DISABLED;
-        }
+        /** @todo Now fails in NT4; do we care? */
+        VBoxServiceVerbose(3, "VBoxStatsInit: KERNEL32.GlobalMemoryStatusEx not found!\n");
+        return VERR_SERVICE_DISABLED;
     }
+
     /* GetPerformanceInfo is xp and up, so load it dynamically */
-    hMod = LoadLibrary("PSAPI.DLL");
-    if (hMod)
-    {
-        *(uintptr_t *)&gCtx.pfnGetPerformanceInfo = (uintptr_t)GetProcAddress(hMod, "GetPerformanceInfo");
-        if (gCtx.pfnGetPerformanceInfo)
-            VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.pfnGetPerformanceInfo= %x\n", gCtx.pfnGetPerformanceInfo);
-        /* failure is not fatal */
-    }
+    *(void **)&gCtx.pfnGetPerformanceInfo = RTLdrGetSystemSymbol("PSAPI.DLL", "GetPerformanceInfo");
+    if (gCtx.pfnGetPerformanceInfo)
+        VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.pfnGetPerformanceInfo= %x\n", gCtx.pfnGetPerformanceInfo);
 #endif /* RT_OS_WINDOWS */
 
     return VINF_SUCCESS;

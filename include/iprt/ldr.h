@@ -194,9 +194,34 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
 /** Symbols defined in this library will be made available for symbol
  * resolution of subsequently loaded libraries. */
 #define RTLDRLOAD_FLAGS_GLOBAL      RT_BIT_32(0)
+/** Do not unload the library upon RTLdrClose. (For system libs.) */
+#define RTLDRLOAD_FLAGS_NO_UNLOAD   RT_BIT_32(1)
 /** The mask of valid flag bits. */
-#define RTLDRLOAD_FLAGS_VALID_MASK  UINT32_C(0x00000001)
+#define RTLDRLOAD_FLAGS_VALID_MASK  UINT32_C(0x00000003)
 /** @} */
+
+/**
+ * Loads a dynamic load library (/shared object) image file residing in one of
+ * the default system library locations.
+ *
+ * Only the system library locations are searched. No suffix is required.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename Image filename. No path.
+ * @param   fNoUnload   Do not unload the library when RTLdrClose is called.
+ * @param   phLdrMod    Where to store the handle to the loaded module.
+ */
+RTDECL(int) RTLdrLoadSystem(const char *pszFilename, bool fNoUnload, PRTLDRMOD phLdrMod);
+
+/**
+ * Combines RTLdrLoadSystem and RTLdrGetSymbol, with fNoUnload set to true.
+ *
+ * @returns The symbol value, NULL on failure.  (If you care for a less boolean
+ *          status, go thru the necessary API calls yourself.)
+ * @param   pszFilename Image filename. No path.
+ * @param   pszSymbol       Symbol name.
+ */
+RTDECL(void *) RTLdrGetSystemSymbol(const char *pszFilename, const char *pszSymbol);
 
 /**
  * Loads a dynamic load library (/shared object) image file residing in the
@@ -209,6 +234,16 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
  * @param   phLdrMod    Where to store the handle to the loaded module.
  */
 RTDECL(int) RTLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod);
+
+/**
+ * Gets the native module handle for a module loaded by RTLdrLoad, RTLdrLoadEx,
+ * RTLdrLoadSystem,  or RTLdrLoadAppPriv.
+ *
+ * @returns Native handle on success, ~(uintptr_t)0 on failure.
+ * @param   hLdrMod     The loader module handle.
+ */
+RTDECL(uintptr_t) RTLdrGetNativeHandle(RTLDRMOD hLdrMod);
+
 
 /**
  * Image architecuture specifier for RTLdrOpenEx.
@@ -358,6 +393,19 @@ RTDECL(int) RTLdrGetSymbol(RTLDRMOD hLdrMod, const char *pszSymbol, void **ppvVa
  */
 RTDECL(int) RTLdrGetSymbolEx(RTLDRMOD hLdrMod, const void *pvBits, RTLDRADDR BaseAddress, const char *pszSymbol,
                              PRTLDRADDR pValue);
+
+
+/**
+ * Gets the address of a named exported function.
+ *
+ * Same as RTLdrGetSymbol, but skips the status code and pointer to return
+ * variable stuff.
+ *
+ * @returns Pointer to the function if found, NULL if not.
+ * @param   hLdrMod         The loader module handle.
+ * @param   pszSymbol       Function name.
+ */
+RTDECL(PFNRT) RTLdrGetFunction(RTLDRMOD hLdrMod, const char *pszSymbol);
 
 /**
  * Gets the size of the loaded image.

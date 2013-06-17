@@ -1342,19 +1342,29 @@ MonitorTSMFChannel(RTTHREAD hThreadSelf, void *pvUser)
     return VINF_SUCCESS;
 }
 
-void InstallHooksForModule(const char *pszName, HookEntry hooks[])
+void InstallHooksForSystemModule(const char *pszName, HookEntry hooks[])
 {
-    HMODULE hMod = LoadLibraryA(pszName);
-    if (hMod != NULL)
+    /* Construct the full path to the given module and load it. */
+    char   szPath[MAX_PATH];
+    UINT   cchPath = GetSystemDirectoryA(szPath, MAX_PATH);
+    size_t cbName  = strlen(pszName) + 1;
+    if (cchPath + 1 + cbName <= sizeof(szPath))
     {
-        VBoxMMRHookLog("VBoxMMR: Hooking %s -> %x \n", pszName, hMod);
-        const IMAGE_IMPORT_DESCRIPTOR *pDescriptor = GetImportDescriptor(hMod);
-        InstallHooks(pDescriptor, (PBYTE) hMod, hooks);
+        szPath[cchPath] = '\\';
+        memcpy(&szPath[cchPath + 1], pszName, cbName);
+
+        HMODULE hMod = LoadLibraryA(szPath);
+        if (hMod != NULL)
+        {
+            VBoxMMRHookLog("VBoxMMR: Hooking %s -> %x \n", pszName, hMod);
+            const IMAGE_IMPORT_DESCRIPTOR *pDescriptor = GetImportDescriptor(hMod);
+            InstallHooks(pDescriptor, (PBYTE) hMod, hooks);
+        }
+        else
+            VBoxMMRHookLog("VBoxMMR: Error hooking %s -> not found (last error %u)\n", pszName, GetLastError());
     }
     else
-    {
         VBoxMMRHookLog("VBoxMMR: Error hooking %s -> not found\n", pszName);
-    }
 }
 
 TSMFHOOK_API LRESULT CALLBACK CBTProc(int nCode, WPARAM wParam, LPARAM lParam)
@@ -1381,12 +1391,12 @@ TSMFHOOK_API LRESULT CALLBACK CBTProc(int nCode, WPARAM wParam, LPARAM lParam)
             VBoxMMRHookLog("VBoxMMR: Error hooking wmp -> not found\n");
         }
 
-        InstallHooksForModule("winmm.dll", g_WinMMHooks);
-        InstallHooksForModule("tsmf.dll", g_TSMFHooks);
-        InstallHooksForModule("DSHOWRDPFILTER.dll", g_TSMFHooks);
-        InstallHooksForModule("MSMPEG2VDEC.dll", g_DShowHooks);
-        InstallHooksForModule("MFDS.dll", g_DShowHooks);
-        InstallHooksForModule("mf.dll", g_MFHooks);
+        InstallHooksForSystemModule("winmm.dll", g_WinMMHooks);
+        InstallHooksForSystemModule("tsmf.dll", g_TSMFHooks);
+        InstallHooksForSystemModule("DSHOWRDPFILTER.dll", g_TSMFHooks);
+        InstallHooksForSystemModule("MSMPEG2VDEC.dll", g_DShowHooks);
+        InstallHooksForSystemModule("MFDS.dll", g_DShowHooks);
+        InstallHooksForSystemModule("mf.dll", g_MFHooks);
 
         ULONG ret = RegisterTraceGuids(
             ControlCallback, NULL, &ProviderId, 0,

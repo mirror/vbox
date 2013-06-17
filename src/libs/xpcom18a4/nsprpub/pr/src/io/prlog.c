@@ -423,7 +423,7 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
 #if defined(VBOX) && defined(DEBUG)
     if (strcmp(file, "IPRT") == 0) {
         /* initialize VBox Runtime */
-        RTR3InitDll(0);
+        RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
         newLogFile = IPRT_DEBUG_FILE;
     }
     else
@@ -464,7 +464,7 @@ PR_IMPLEMENT(PRBool) PR_SetLogFile(const char *file)
 #if defined(VBOX) && defined(DEBUG)
     if (strcmp(file, "IPRT") == 0) {
         /* initialize VBox Runtime */
-        RTR3InitDll(0);
+        RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
         logFile = IPRT_DEBUG_FILE;
         return PR_TRUE;
     }

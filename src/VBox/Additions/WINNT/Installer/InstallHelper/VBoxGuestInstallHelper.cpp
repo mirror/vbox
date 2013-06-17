@@ -196,6 +196,24 @@ static HRESULT vboxIPCWriteMessage(HANDLE hPipe, BYTE *pMessage, DWORD cbMessage
 }
 
 /**
+ * Loads a system DLL.
+ *
+ * @returns Module handle or NULL
+ * @param   pszName             The DLL name.
+ */
+static HMODULE loadSystemDll(const char *pszName)
+{
+    char   szPath[MAX_PATH];
+    UINT   cchPath = GetSystemDirectoryA(szPath, sizeof(szPath));
+    size_t cbName  = strlen(pszName) + 1;
+    if (cchPath + 1 + cbName > sizeof(szPath))
+        return NULL;
+    szPath[cchPath] = '\\';
+    memcpy(&szPath[cchPath + 1], pszName, cbName);
+    return LoadLibraryA(szPath);
+}
+
+/**
  * Disables the Windows File Protection for a specified file
  * using an undocumented SFC API call. Don't try this at home!
  *
@@ -213,7 +231,7 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size,
     HRESULT hr = vboxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
     if (SUCCEEDED(hr))
     {
-        HMODULE hSFC = LoadLibrary("sfc_os.dll");
+        HMODULE hSFC = loadSystemDll("sfc_os.dll");
         if (NULL != hSFC)
         {
             g_pfnSfcFileException = (PFNSFCFILEEXCEPTION)GetProcAddress(hSFC, "SfcFileException");

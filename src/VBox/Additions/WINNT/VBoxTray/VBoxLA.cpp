@@ -26,6 +26,7 @@
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/list.h>
+#include <iprt/ldr.h>
 
 #define LALOG(a) do { if (gCtx.fLogEnabled) LogRel(a); } while(0)
 #define LALOGFORCE(a) do { LogRel(a); } while(0)
@@ -86,8 +87,6 @@ struct VBOXLACONTEXT
 
         char *pszPropWaitPattern; /* Which properties are monitored. */
     } activeClient;
-
-    HMODULE hModuleKernel32;
 
     BOOL (WINAPI * pfnProcessIdToSessionId)(DWORD dwProcessId, DWORD *pSessionId);
 };
@@ -1249,16 +1248,7 @@ int VBoxLAInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThrea
 
     RT_ZERO(gCtx.activeClient);
 
-    gCtx.hModuleKernel32 = LoadLibrary("KERNEL32");
-
-    if (gCtx.hModuleKernel32)
-    {
-        *(uintptr_t *)&gCtx.pfnProcessIdToSessionId = (uintptr_t)GetProcAddress(gCtx.hModuleKernel32, "ProcessIdToSessionId");
-    }
-    else
-    {
-        gCtx.pfnProcessIdToSessionId = NULL;
-    }
+    *(void **)&gCtx.pfnProcessIdToSessionId = RTLdrGetSystemSymbol("KERNEL32", "ProcessIdToSessionId");
     *pfStartThread = true;
     *ppInstance = &gCtx;
     return VINF_SUCCESS;
@@ -1279,12 +1269,7 @@ void VBoxLADestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     ActionExecutorDeleteActions(&pCtx->listAttachActions);
     ActionExecutorDeleteActions(&pCtx->listDetachActions);
 
-    if (pCtx->hModuleKernel32)
-    {
-        FreeLibrary(pCtx->hModuleKernel32);
-        pCtx->pfnProcessIdToSessionId = NULL;
-    }
-    pCtx->hModuleKernel32 = NULL;
+    pCtx->pfnProcessIdToSessionId = NULL;
 }
 
 /*

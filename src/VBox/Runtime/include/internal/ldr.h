@@ -458,7 +458,11 @@ typedef struct RTLDRMODNATIVE
     RTLDRMODINTERNAL    Core;
     /** The native handle. */
     uintptr_t           hNative;
-} RTLDRMODNATIVE, *PRTLDRMODNATIVE;
+    /** The load flags (RTLDRLOAD_FLAGS_XXX). */
+    uint32_t            fFlags;
+} RTLDRMODNATIVE;
+/** Pointer to a native module. */
+typedef RTLDRMODNATIVE *PRTLDRMODNATIVE;
 
 /** @copydoc RTLDROPS::pfnGetSymbol */
 DECLCALLBACK(int) rtldrNativeGetSymbol(PRTLDRMODINTERNAL pMod, const char *pszSymbol, void **ppvValue);
@@ -471,10 +475,21 @@ DECLCALLBACK(int) rtldrNativeClose(PRTLDRMODINTERNAL pMod);
  * @returns iprt status code.
  * @param   pszFilename     The image filename.
  * @param   phHandle        Where to store the module handle on success.
- * @param   fFlags          See RTLDRFLAGS_.
+ * @param   fFlags          RTLDRLOAD_FLAGS_XXX.
  * @param   pErrInfo        Where to return extended error information. Optional.
  */
 int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlags, PRTERRINFO pErrInfo);
+
+/**
+ * Load a system library.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename     The image filename.
+ * @param   pszExt          Extension to add. NULL if none.
+ * @param   fFlags          RTLDRLOAD_FLAGS_XXX.
+ * @param   phLdrMod        Where to return the module handle on success.
+ */
+int rtldrNativeLoadSystem(const char *pszFilename, const char *pszExt, uint32_t fFlags, PRTLDRMOD phLdrMod);
 
 int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offNtHdrs, PRTLDRMOD phLdrMod);
 int rtldrELFOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod);

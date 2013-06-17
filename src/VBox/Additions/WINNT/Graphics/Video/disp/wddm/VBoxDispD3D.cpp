@@ -1799,7 +1799,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 #ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
             vboxVDbgVEHandlerRegister();
 #endif
-            int rc = RTR3InitDll(0);
+            int rc = RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
             AssertRC(rc);
             if (RT_SUCCESS(rc))
             {

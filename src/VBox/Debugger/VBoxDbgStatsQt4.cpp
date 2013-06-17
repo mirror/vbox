@@ -354,6 +354,17 @@ protected:
     static ssize_t getNodePath(PCDBGGUISTATSNODE pNode, char *psz, ssize_t cch);
 
     /**
+     * Calculates the full path of a node, returning the string pointer.
+     *
+     * @returns @a psz. On failure, NULL.
+     *
+     * @param   pNode       The node.
+     * @param   psz         The output buffer.
+     * @param   cch         The size of the buffer.
+     */
+    static char *getNodePath2(PCDBGGUISTATSNODE pNode, char *psz, ssize_t cch);
+
+    /**
      * Check if the first node is an ancestor to the second one.
      *
      * @returns true/false.
@@ -1311,6 +1322,16 @@ VBoxDbgStatsModel::getNodePath(PCDBGGUISTATSNODE pNode, char *psz, ssize_t cch)
 }
 
 
+/*static*/ char *
+VBoxDbgStatsModel::getNodePath2(PCDBGGUISTATSNODE pNode, char *psz, ssize_t cch)
+{
+    if (VBoxDbgStatsModel::getNodePath(pNode, psz, cch) < 0)
+        return NULL;
+    return psz;
+}
+
+
+
 /*static*/ bool
 VBoxDbgStatsModel::isNodeAncestorOf(PCDBGGUISTATSNODE pAncestor, PCDBGGUISTATSNODE pDescendant)
 {
@@ -1433,6 +1454,10 @@ VBoxDbgStatsModel::createDiffTree(PDBGGUISTATSNODE pTree1, PDBGGUISTATSNODE pTre
 PDBGGUISTATSNODE
 VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
 {
+#if defined(VBOX_STRICT) || defined(LOG_ENABLED)
+    char szStrict[1024];
+#endif
+
     /*
      * We might be inserting a new node between pPrev and pNode
      * or we might be removing one or more nodes. Either case is
@@ -1450,6 +1475,11 @@ VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
      */
     PDBGGUISTATSNODE pNode = m_pUpdateParent->papChildren[m_iUpdateChild];
     PDBGGUISTATSNODE const pPrev = prevDataNode(pNode);
+    AssertMsg(strcmp(pszName, getNodePath2(pNode, szStrict, sizeof(szStrict))), ("%s\n", szStrict));
+    AssertMsg(strcmp(pszName, getNodePath2(pPrev, szStrict, sizeof(szStrict))), ("%s\n", szStrict));
+    Log(("updateCallbackHandleOutOfOrder: pszName='%s' m_szUpdateParent='%s' m_cchUpdateParent=%u pNode='%s'\n",
+         pszName, m_szUpdateParent, m_cchUpdateParent, getNodePath2(pNode, szStrict, sizeof(szStrict))));
+
     pNode = pNode->pParent;
     while (pNode != m_pRoot)
     {
@@ -1458,6 +1488,7 @@ VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
         Assert(m_cchUpdateParent > pNode->cchName);
         m_cchUpdateParent -= pNode->cchName + 1;
         m_szUpdateParent[m_cchUpdateParent] = '\0';
+        Log2(("updateCallbackHandleOutOfOrder: m_szUpdateParent='%s' m_cchUpdateParent=%u, removed '/%s' (%u)\n", m_szUpdateParent, m_cchUpdateParent, pNode->pszName, __LINE__));
         pNode = pNode->pParent;
     }
     Assert(m_szUpdateParent[m_cchUpdateParent - 1] == '/');
@@ -1469,7 +1500,7 @@ VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
     while (pszName[m_cchUpdateParent - 1] == '/')
     {
         /* Find the end of this component. */
-        const char *const pszSubName = &pszName[m_cchUpdateParent];
+        const char * const pszSubName = &pszName[m_cchUpdateParent];
         const char *pszEnd = strchr(pszSubName, '/');
         if (!pszEnd)
             pszEnd = strchr(pszSubName, '\0');
@@ -1481,6 +1512,7 @@ VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
         m_szUpdateParent[m_cchUpdateParent++] = '/';
         m_szUpdateParent[m_cchUpdateParent] = '\0';
         Assert(m_cchUpdateParent < sizeof(m_szUpdateParent));
+        Log2(("updateCallbackHandleOutOfOrder: m_szUpdateParent='%s' m_cchUpdateParent=%u (%u)\n", m_szUpdateParent, m_cchUpdateParent, __LINE__));
 
         if (!pNode->cChildren)
         {
@@ -1570,6 +1602,7 @@ VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
     m_szUpdateParent[m_cchUpdateParent] = '\0';
     m_pUpdateParent = pNode->pParent;
     m_iUpdateChild = pNode->iSelf;
+    Log2(("updateCallbackHandleOutOfOrder: m_szUpdateParent='%s' m_cchUpdateParent=%u (%u)\n", m_szUpdateParent, m_cchUpdateParent, __LINE__));
 
     return pNode;
 }

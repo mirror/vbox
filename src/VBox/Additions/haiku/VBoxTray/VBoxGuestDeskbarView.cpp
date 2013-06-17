@@ -260,7 +260,7 @@ status_t VBoxGuestDeskbarView::_Init(BMessage *archive)
         fIcon = BTranslationUtils::GetBitmap(&mem);
     }
 
-    int rc = RTR3InitDll(0);
+    int rc = RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE);
     if (RT_SUCCESS(rc))
     {
         rc = VbglR3Init();

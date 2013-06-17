@@ -185,6 +185,20 @@ DECLHIDDEN(int) rtThreadInit(void)
 }
 
 
+#ifdef IN_RING3
+/**
+ * Called when IPRT was first initialized in unobtrusive mode and later changed
+ * to obtrustive.
+ *
+ * This is only applicable in ring-3.
+ */
+DECLHIDDEN(void) rtThreadReInitObtrusive(void)
+{
+    rtThreadNativeReInitObtrusive();
+}
+#endif
+
+
 /**
  * Terminates the thread database.
  */

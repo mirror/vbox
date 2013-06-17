@@ -35,7 +35,7 @@
 #include <iprt/buildconfig.h>
 #include <iprt/system.h>
 
-#include <libxml/xmlmodule.h>
+#include <libxml/catalog.h>
 #include <libxml/globals.h>
 #include <openssl/md5.h>
 #include <openssl/rc4.h>
@@ -57,7 +57,7 @@ PFNRT g_VBoxRTDeps[] =
     (PFNRT)SUPSemEventCreate,
     (PFNRT)SUPTracerFireProbe,
 #endif
-    (PFNRT)xmlModuleOpen,
+    (PFNRT)xmlLoadCatalogs,
     (PFNRT)MD5_Init,
     (PFNRT)RC4,
     (PFNRT)RC4_set_key,

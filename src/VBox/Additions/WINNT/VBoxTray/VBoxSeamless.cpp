@@ -24,13 +24,14 @@
 #include <VBoxDisplay.h>
 #include <VBox/VMMDev.h>
 #include <iprt/assert.h>
+#include <iprt/ldr.h>
 #include <VBoxGuestInternal.h>
 
 typedef struct _VBOXSEAMLESSCONTEXT
 {
     const VBOXSERVICEENV *pEnv;
 
-    HMODULE    hModule;
+    RTLDRMOD hModHook;
 
     BOOL    (* pfnVBoxHookInstallWindowTracker)(HMODULE hDll);
     BOOL    (* pfnVBoxHookRemoveWindowTracker)();
@@ -54,6 +55,7 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
 
     *pfStartThread = false;
     gCtx.pEnv = pEnv;
+    gCtx.hModHook = NIL_RTLDRMOD;
 
     OSVERSIONINFO OSinfo;
     OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
@@ -71,11 +73,11 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
     else
     {
         /* Will fail if SetWinEventHook is not present (version < NT4 SP6 apparently) */
-        gCtx.hModule = LoadLibrary(VBOXHOOK_DLL_NAME);
-        if (gCtx.hModule)
+        rc = RTLdrLoadAppPriv(VBOXHOOK_DLL_NAME, &gCtx.hModHook);
+        if (RT_SUCCESS(rc))
         {
-            *(uintptr_t *)&gCtx.pfnVBoxHookInstallWindowTracker = (uintptr_t)GetProcAddress(gCtx.hModule, "VBoxHookInstallWindowTracker");
-            *(uintptr_t *)&gCtx.pfnVBoxHookRemoveWindowTracker  = (uintptr_t)GetProcAddress(gCtx.hModule, "VBoxHookRemoveWindowTracker");
+            *(PFNRT *)&gCtx.pfnVBoxHookInstallWindowTracker = RTLdrGetFunction(gCtx.hModHook, "VBoxHookInstallWindowTracker");
+            *(PFNRT *)&gCtx.pfnVBoxHookRemoveWindowTracker  = RTLdrGetFunction(gCtx.hModHook, "VBoxHookRemoveWindowTracker");
 
             /* rc should contain success status */
             AssertRC(rc);
@@ -89,10 +91,7 @@ int VBoxSeamlessInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStar
             }
         }
         else
-        {
-            rc = RTErrConvertFromWin32(GetLastError());
             Log(("VBoxTray: VBoxSeamlessInit: LoadLibrary of \"%s\" failed with rc=%Rrc\n", VBOXHOOK_DLL_NAME, rc));
-        }
     }
 
     return rc;
@@ -108,9 +107,11 @@ void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     /* Inform the host that we no longer support the seamless window mode. */
     if (gCtx.pfnVBoxHookRemoveWindowTracker)
         gCtx.pfnVBoxHookRemoveWindowTracker();
-    if (gCtx.hModule)
-        FreeLibrary(gCtx.hModule);
-    gCtx.hModule = 0;
+    if (gCtx.hModHook != NIL_RTLDRMOD)
+    {
+        RTLdrClose(gCtx.hModHook);
+        gCtx.hModHook = NIL_RTLDRMOD;
+    }
     return;
 }
 
@@ -121,7 +122,9 @@ void VBoxSeamlessInstallHook()
         /* Check current visible region state */
         VBoxSeamlessCheckWindows();
 
-        gCtx.pfnVBoxHookInstallWindowTracker(gCtx.hModule);
+        HMODULE hMod = (HMODULE)RTLdrGetNativeHandle(gCtx.hModHook);
+        Assert(hMod != (HMODULE)~(uintptr_t)0);
+        gCtx.pfnVBoxHookInstallWindowTracker(hMod);
     }
 }
 
