@@ -276,7 +276,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                 *pu8ReplyPos++ = 0x4;  /* Write cache enabled. */
                 fValid = true;
             } else if (uModePage == 0) {
-                fValid = 0;
+                fValid = true;
             }
 
             /* Querying unknown pages must fail. */
