@@ -294,7 +294,11 @@ static void device_stream_info_from_declaration(struct wined3d_device *device, s
         wined3d_buffer_preload(buffer);
 
         /* If the preload dropped the buffer object, update the stream info. */
-        if (buffer->buffer_object != element->data.buffer_object)
+        if (
+#ifdef VBOX_WITH_WINE_FIX_STRINFOBUF
+                element->data.buffer_object &&
+#endif
+                buffer->buffer_object != element->data.buffer_object)
         {
             element->data.buffer_object = 0;
             element->data.addr = buffer_get_sysmem(buffer, &device->adapter->gl_info) + (ptrdiff_t)element->data.addr;
