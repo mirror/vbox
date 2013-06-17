@@ -40,6 +40,7 @@ private slots:
     /* Windowed mode functionality: */
     void sltPrepareNetworkAdaptersMenu();
     void sltPrepareSharedFoldersMenu();
+    void sltPrepareVideoCaptureMenu();
     void sltPrepareMouseIntegrationMenu();
 
 private:

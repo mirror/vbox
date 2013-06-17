@@ -49,6 +49,7 @@ private slots:
     void sltUSBDeviceStateChange();
     void sltNetworkAdapterChange();
     void sltSharedFolderChange();
+    void sltVideoCaptureChange();
     void sltCPUExecutionCapChange();
 
     /* LED connections: */

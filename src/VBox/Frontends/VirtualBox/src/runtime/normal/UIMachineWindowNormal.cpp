@@ -99,6 +99,12 @@ void UIMachineWindowNormal::sltSharedFolderChange()
     updateAppearanceOf(UIVisualElement_SharedFolderStuff);
 }
 
+void UIMachineWindowNormal::sltVideoCaptureChange()
+{
+    /* Update video-capture stuff: */
+    updateAppearanceOf(UIVisualElement_VideoCapture);
+}
+
 void UIMachineWindowNormal::sltCPUExecutionCapChange()
 {
     /* Update virtualization stuff: */
@@ -148,6 +154,12 @@ void UIMachineWindowNormal::sltShowIndicatorsContextMenu(QIStateIndicator *pIndi
         if (gActionPool->action(UIActionIndexRuntime_Menu_SharedFolders)->isEnabled())
             gActionPool->action(UIActionIndexRuntime_Menu_SharedFolders)->menu()->exec(pEvent->globalPos());
     }
+    /* Show video-capture LED context menu: */
+    else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_VideoCapture))
+    {
+        if (gActionPool->action(UIActionIndexRuntime_Menu_VideoCapture)->isEnabled())
+            gActionPool->action(UIActionIndexRuntime_Menu_VideoCapture)->menu()->exec(pEvent->globalPos());
+    }
     /* Show mouse LED context menu: */
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_Mouse))
     {
@@ -186,6 +198,10 @@ void UIMachineWindowNormal::prepareSessionConnections()
     /* Shared folder change updater: */
     connect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
             this, SLOT(sltSharedFolderChange()));
+
+    /* Video capture change updater: */
+    connect(machineLogic()->uisession(), SIGNAL(sigVideoCaptureChange()),
+            this, SLOT(sltVideoCaptureChange()));
 
     /* CPU execution cap change updater: */
     connect(machineLogic()->uisession(), SIGNAL(sigCPUExecutionCapChange()),
@@ -246,6 +262,12 @@ void UIMachineWindowNormal::prepareStatusBar()
     QIStateIndicator *pLedSharedFolders = indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders);
     pIndicatorBoxHLayout->addWidget(pLedSharedFolders);
     connect(pLedSharedFolders, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
+            this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
+
+    /* Video Capture: */
+    QIStateIndicator *pLedVideoCapture = indicatorsPool()->indicator(UIIndicatorIndex_VideoCapture);
+    pIndicatorBoxHLayout->addWidget(pLedVideoCapture);
+    connect(pLedVideoCapture, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
             this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
 
     /* Virtualization: */
@@ -555,6 +577,8 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
         indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->updateAppearance();
     if (iElement & UIVisualElement_SharedFolderStuff)
         indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders)->updateAppearance();
+    if (iElement & UIVisualElement_VideoCapture)
+        indicatorsPool()->indicator(UIIndicatorIndex_VideoCapture)->updateAppearance();
     if (iElement & UIVisualElement_VirtualizationStuff)
         indicatorsPool()->indicator(UIIndicatorIndex_Virtualization)->updateAppearance();
 }

@@ -494,50 +494,96 @@ protected:
     CSession &m_session;
 };
 
-class UIIndicatorVRDEDisks : public QIWithRetranslateUI<QIStateIndicator>
+class UIIndicatorVideoCapture : public QIWithRetranslateUI<QIStateIndicator>
 {
     Q_OBJECT;
 
 public:
 
-    UIIndicatorVRDEDisks(CSession &session)
-      : QIWithRetranslateUI<QIStateIndicator>()
-      , m_session(session)
+    /* State enumerator: */
+    enum UIIndicatorStateVideoCapture
     {
-        setStateIcon(0, QPixmap (":/vrdp_disabled_16px.png"));
-        setStateIcon(1, QPixmap (":/vrdp_16px.png"));
+        UIIndicatorStateVideoCapture_Disabled = 0,
+        UIIndicatorStateVideoCapture_Enabled  = 1,
+        UIIndicatorStateVideoCapture_Writing  = 2
+    };
 
+    /* Constructor: */
+    UIIndicatorVideoCapture(CSession &session)
+        : QIWithRetranslateUI<QIStateIndicator>()
+        , m_session(session)
+        , m_pUpdateTimer(new QTimer(this))
+    {
+        /* Assign state icons: */
+        setStateIcon(UIIndicatorStateVideoCapture_Disabled, QPixmap(":/video_capture_disabled_16px.png"));
+        setStateIcon(UIIndicatorStateVideoCapture_Enabled,  QPixmap(":/video_capture_16px.png"));
+        setStateIcon(UIIndicatorStateVideoCapture_Writing,  QPixmap(":/video_capture_write_16px.png"));
+
+        /* Connect timer to update active state: */
+        connect(m_pUpdateTimer, SIGNAL(timeout()), SLOT(sltUpdateState()));
+        m_pUpdateTimer->start(500);
+
+        /* Translate finally: */
         retranslateUi();
     }
 
+    /* API: Update stuff: */
+    void updateAppearance()
+    {
+        /* Get machine: */
+        CMachine machine = m_session.GetMachine();
+
+        /* Update LED state: */
+        setState(machine.GetVideoCaptureEnabled());
+
+        /* Update LED tool-tip: */
+        QString strToolTip = QApplication::translate("UIIndicatorsPool", "<nobr>Indicates the activity of the video capture:</nobr>");
+        strToolTip += "<br>";
+        switch (state())
+        {
+            case UIIndicatorStateVideoCapture_Disabled:
+            {
+                strToolTip += QApplication::translate("UIIndicatorsPool", "<b>Video capture disabled</b>");
+                break;
+            }
+            case UIIndicatorStateVideoCapture_Enabled:
+            case UIIndicatorStateVideoCapture_Writing:
+            {
+                strToolTip += QApplication::translate("UIIndicatorsPool", "<nobr><b>Video capture file:</b> %1</nobr>")
+                                                                          .arg(machine.GetVideoCaptureFile());
+                break;
+            }
+            default:
+                break;
+        }
+        setToolTip(strToolTip);
+    }
+
+protected slots:
+
+    /* Handler: Update stuff: */
+    void sltUpdateState()
+    {
+        /* Toggle state from 'Enabled' to 'Writing': */
+        if (state() == UIIndicatorStateVideoCapture_Enabled)
+            setState(UIIndicatorStateVideoCapture_Writing);
+        /* Toggle state from 'Writing' to 'Enabled': */
+        else if (state() == UIIndicatorStateVideoCapture_Writing)
+            setState(UIIndicatorStateVideoCapture_Enabled);
+    }
+
+protected:
+
+    /* Handler: Translate stuff: */
     void retranslateUi()
     {
         updateAppearance();
     }
 
-    void updateAppearance()
-    {
-        CVRDEServer srv = m_session.GetMachine().GetVRDEServer();
-        if (!srv.isNull())
-        {
-            /* update menu&status icon state */
-            bool fEnabled = srv.GetEnabled();
-
-            setState(fEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
-
-            QString tip = QApplication::translate("UIIndicatorsPool", "Indicates whether the Remote Desktop Server "
-                             "is enabled (<img src=:/vrdp_16px.png/>) or not "
-                             "(<img src=:/vrdp_disabled_16px.png/>).");
-            if (srv.GetEnabled())
-                tip += QApplication::translate("UIIndicatorsPool", "<hr>The Remote Desktop Server is listening on port %1").arg(srv.GetVRDEProperty("TCP/Ports"));
-            setToolTip(tip);
-        }
-    }
-
-protected:
-    /* For compatibility reason we do it here, later this should be moved to
-     * QIStateIndicator. */
+    /* For compatibility reason we do it here,
+     * later this should be moved to QIStateIndicator. */
     CSession &m_session;
+    QTimer *m_pUpdateTimer;
 };
 
 class UIIndicatorVirtualization : public QIWithRetranslateUI<QIStateIndicator>
@@ -738,6 +784,9 @@ QIStateIndicator* UIIndicatorsPool::indicator(UIIndicatorIndex index)
                 break;
             case UIIndicatorIndex_SharedFolders:
                 m_IndicatorsPool[index] = new UIIndicatorSharedFolders(m_session);
+                break;
+            case UIIndicatorIndex_VideoCapture:
+                m_IndicatorsPool[index] = new UIIndicatorVideoCapture(m_session);
                 break;
             case UIIndicatorIndex_Virtualization:
                 m_IndicatorsPool[index] = new UIIndicatorVirtualization(m_session);

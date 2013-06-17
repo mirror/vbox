@@ -881,6 +881,23 @@ protected:
     }
 };
 
+class UIActionMenuVideoCapture : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuVideoCapture(UIActionPool *pParent)
+        : UIActionMenu(pParent)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi() {}
+};
+
 class UIActionToggleVideoCapture : public UIActionToggle
 {
     Q_OBJECT;
@@ -905,6 +922,32 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "Enable &Video Capture"));
         setStatusTip(QApplication::translate("UIActionPool", "Enable video capture"));
+    }
+};
+
+class UIActionSimpleShowVideoCaptureOptions : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleShowVideoCaptureOptions(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/video_capture_settings_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("VideoCaptureOptions");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Video Capture Options..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Configure video capture options"));
     }
 };
 
@@ -1172,6 +1215,7 @@ void UIActionPoolRuntime::createActions()
     m_pool[UIActionIndexRuntime_Simple_SharedFoldersDialog] = new UIActionSimpleShowSharedFoldersDialog(this);
     m_pool[UIActionIndexRuntime_Toggle_VRDEServer] = new UIActionToggleVRDEServer(this);
     m_pool[UIActionIndexRuntime_Toggle_VideoCapture] = new UIActionToggleVideoCapture(this);
+    m_pool[UIActionIndexRuntime_Simple_VideoCaptureOptions] = new UIActionSimpleShowVideoCaptureOptions(this);
     m_pool[UIActionIndexRuntime_Simple_InstallGuestTools] = new UIActionSimplePerformInstallGuestTools(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -1241,6 +1285,9 @@ void UIActionPoolRuntime::createMenus()
     if (m_pool[UIActionIndexRuntime_Menu_SharedFolders])
         delete m_pool[UIActionIndexRuntime_Menu_SharedFolders];
     m_pool[UIActionIndexRuntime_Menu_SharedFolders] = new UIActionMenuSharedFolders(this);
+    if (m_pool[UIActionIndexRuntime_Menu_VideoCapture])
+        delete m_pool[UIActionIndexRuntime_Menu_VideoCapture];
+    m_pool[UIActionIndexRuntime_Menu_VideoCapture] = new UIActionMenuVideoCapture(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' menu: */

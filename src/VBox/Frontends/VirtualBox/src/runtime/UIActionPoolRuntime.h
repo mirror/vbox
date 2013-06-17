@@ -64,7 +64,9 @@ enum UIActionIndexRuntime
     UIActionIndexRuntime_Menu_SharedFolders,
     UIActionIndexRuntime_Simple_SharedFoldersDialog,
     UIActionIndexRuntime_Toggle_VRDEServer,
+    UIActionIndexRuntime_Menu_VideoCapture,
     UIActionIndexRuntime_Toggle_VideoCapture,
+    UIActionIndexRuntime_Simple_VideoCaptureOptions,
     UIActionIndexRuntime_Simple_InstallGuestTools,
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

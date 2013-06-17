@@ -746,7 +746,9 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_SharedFolders));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_VideoCapture));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_VideoCapture));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureOptions));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_InstallGuestTools));
 
     /* Move actions into running-n-paused-n-stucked actions group: */
@@ -810,6 +812,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltSwitchVrde(bool)));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_VideoCapture), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleVideoCapture(bool)));
+    connect(gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureOptions), SIGNAL(triggered()),
+            this, SLOT(sltOpenVideoCaptureOptions()));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_InstallGuestTools), SIGNAL(triggered()),
             this, SLOT(sltInstallGuestAdditions()));
 
@@ -1311,7 +1315,8 @@ void UIMachineLogic::sltClose()
     activeMachineWindow()->close();
 }
 
-void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QString() */)
+void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QString() */,
+                                             const QString &strControl /*= QString()*/)
 {
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())
@@ -1321,7 +1326,7 @@ void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QSt
      * Its necessary to allow QObject hierarchy cleanup to delete this dialog if necessary: */
     QPointer<UISettingsDialogMachine> pDialog = new UISettingsDialogMachine(activeMachineWindow(),
                                                                             session().GetMachine().GetId(),
-                                                                            strCategory, QString());
+                                                                            strCategory, strControl);
     /* Executing VM settings dialog.
      * This blocking function calls for the internal event-loop to process all further events,
      * including event which can delete the dialog itself. */
@@ -1900,7 +1905,7 @@ void UIMachineLogic::sltToggleVideoCapture(bool fEnabled)
 
     /* Make sure something had changed: */
     CMachine machine = session().GetMachine();
-    if (machine.GetVideoCaptureEnabled() == fEnabled)
+    if (machine.GetVideoCaptureEnabled() == static_cast<BOOL>(fEnabled))
         return;
 
     /* Machine is OK? */
@@ -1918,6 +1923,12 @@ void UIMachineLogic::sltToggleVideoCapture(bool fEnabled)
     /* Machine had failed on one of steps? */
     if (!machine.isOk())
         msgCenter().cannotSaveMachineSettings(machine, activeMachineWindow());
+}
+
+void UIMachineLogic::sltOpenVideoCaptureOptions()
+{
+    /* Open VM settings : Display page : Video Capture tab: */
+    sltOpenVMSettingsDialog("#display", "m_pCheckboxVideoCapture");
 }
 
 void UIMachineLogic::sltInstallGuestAdditions()
