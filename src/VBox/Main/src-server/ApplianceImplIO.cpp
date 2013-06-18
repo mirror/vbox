@@ -1327,7 +1327,7 @@ int ShaWriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFA
         cbAllWritten += cbWritten;
     }
 
-    pIfIo->pfnClose(pvUser, pvStorage);
+    rc = pIfIo->pfnClose(pvUser, pvStorage);
 
     return rc;
 }
