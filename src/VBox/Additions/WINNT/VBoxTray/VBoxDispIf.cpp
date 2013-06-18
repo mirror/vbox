@@ -99,7 +99,7 @@ static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
     if (OSinfo.dwMajorVersion >= 6)
     {
         Log((__FUNCTION__": this is vista and up\n"));
-        HMODULE hUser = GetModuleHandle("USER32");
+        HMODULE hUser = GetModuleHandle("user32.dll");
         if (hUser)
         {
             *(uintptr_t *)&pIf->modeData.wddm.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
@@ -168,7 +168,7 @@ static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
         }
         else
         {
-            Log((__FUNCTION__": GetModuleHandle(USER32) failed, err(%d)\n", GetLastError()));
+            Log((__FUNCTION__": GetModuleHandle(user32) failed, err(%d)\n", GetLastError()));
             err = ERROR_NOT_SUPPORTED;
         }
     }
@@ -1572,7 +1572,7 @@ static DWORD vboxDispIfSwitchToXPDM(PVBOXDISPIF pIf)
     GetVersionEx (&OSinfo);
     if (OSinfo.dwMajorVersion >= 5)
     {
-        HMODULE hUser = GetModuleHandle("USER32");
+        HMODULE hUser = GetModuleHandle("user32.dll");
         if (NULL != hUser)
         {
             bool bSupported = true;
@@ -1588,7 +1588,7 @@ static DWORD vboxDispIfSwitchToXPDM(PVBOXDISPIF pIf)
         }
         else
         {
-            Log((__FUNCTION__": failed to get USER32 handle, err (%d)\n", GetLastError()));
+            Log((__FUNCTION__": failed to get user32 handle, err (%d)\n", GetLastError()));
             err = ERROR_NOT_SUPPORTED;
         }
     }

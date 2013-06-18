@@ -126,28 +126,28 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
 #ifdef RT_OS_WINDOWS
     /* NtQuerySystemInformation might be dropped in future releases, so load
        it dynamically as per Microsoft's recommendation. */
-    *(void **)&gCtx.pfnNtQuerySystemInformation = RTLdrGetSystemSymbol("NTDLL.DLL", "NtQuerySystemInformation");
+    *(void **)&gCtx.pfnNtQuerySystemInformation = RTLdrGetSystemSymbol("ntdll.dll", "NtQuerySystemInformation");
     if (gCtx.pfnNtQuerySystemInformation)
         VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.pfnNtQuerySystemInformation = %x\n", gCtx.pfnNtQuerySystemInformation);
     else
     {
-        VBoxServiceVerbose(3, "VBoxStatsInit: NTDLL.NtQuerySystemInformation not found!\n");
+        VBoxServiceVerbose(3, "VBoxStatsInit: ntdll.NtQuerySystemInformation not found!\n");
         return VERR_SERVICE_DISABLED;
     }
 
     /* GlobalMemoryStatus is win2k and up, so load it dynamically */
-    *(void **)&gCtx.pfnGlobalMemoryStatusEx = RTLdrGetSystemSymbol("KERNEL32.DLL", "GlobalMemoryStatusEx");
+    *(void **)&gCtx.pfnGlobalMemoryStatusEx = RTLdrGetSystemSymbol("kernel32.dll", "GlobalMemoryStatusEx");
     if (gCtx.pfnGlobalMemoryStatusEx)
         VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.GlobalMemoryStatusEx = %x\n", gCtx.pfnGlobalMemoryStatusEx);
     else
     {
         /** @todo Now fails in NT4; do we care? */
-        VBoxServiceVerbose(3, "VBoxStatsInit: KERNEL32.GlobalMemoryStatusEx not found!\n");
+        VBoxServiceVerbose(3, "VBoxStatsInit: kernel32.GlobalMemoryStatusEx not found!\n");
         return VERR_SERVICE_DISABLED;
     }
 
     /* GetPerformanceInfo is xp and up, so load it dynamically */
-    *(void **)&gCtx.pfnGetPerformanceInfo = RTLdrGetSystemSymbol("PSAPI.DLL", "GetPerformanceInfo");
+    *(void **)&gCtx.pfnGetPerformanceInfo = RTLdrGetSystemSymbol("psapi.dll", "GetPerformanceInfo");
     if (gCtx.pfnGetPerformanceInfo)
         VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.pfnGetPerformanceInfo= %x\n", gCtx.pfnGetPerformanceInfo);
 #endif /* RT_OS_WINDOWS */

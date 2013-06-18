@@ -173,7 +173,7 @@ static void rtThreadNativeUninitComAndOle(void)
         AssertMsgFailed(("cComInits=%u (%#x) cOleInits=%u (%#x) - dangling COM/OLE inits!\n",
                          cComInits, cComInits, cOleInits, cOleInits));
 
-        HMODULE hOle32 = GetModuleHandle("OLE32");
+        HMODULE hOle32 = GetModuleHandle("ole32.dll");
         AssertReturnVoid(hOle32 != NULL);
 
         typedef void (WINAPI *PFNOLEUNINITIALIZE)(void);
@@ -257,7 +257,7 @@ static int rtThreadGetCurrentProcessorNumber(void)
     static DWORD (WINAPI *pfnGetCurrentProcessorNumber)(void) = NULL;
     if (!fInitialized)
     {
-        HMODULE hmodKernel32 = GetModuleHandle("KERNEL32.DLL");
+        HMODULE hmodKernel32 = GetModuleHandle("kernel32.dll");
         if (hmodKernel32)
             pfnGetCurrentProcessorNumber = (DWORD (WINAPI*)(void))GetProcAddress(hmodKernel32, "GetCurrentProcessorNumber");
         fInitialized = true;

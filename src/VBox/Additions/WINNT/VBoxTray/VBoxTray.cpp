@@ -550,7 +550,7 @@ static int vboxTraySetupSeamless(void)
         {
             BOOL (WINAPI * pfnConvertStringSecurityDescriptorToSecurityDescriptorA)(LPCSTR StringSecurityDescriptor, DWORD StringSDRevision, PSECURITY_DESCRIPTOR  *SecurityDescriptor, PULONG  SecurityDescriptorSize);
             *(void **)&pfnConvertStringSecurityDescriptorToSecurityDescriptorA =
-                RTLdrGetSystemSymbol("ADVAPI32.DLL", "ConvertStringSecurityDescriptorToSecurityDescriptorA");
+                RTLdrGetSystemSymbol("advapi32.dll", "ConvertStringSecurityDescriptorToSecurityDescriptorA");
             Log(("VBoxTray: pfnConvertStringSecurityDescriptorToSecurityDescriptorA = %x\n", pfnConvertStringSecurityDescriptorToSecurityDescriptorA));
             if (pfnConvertStringSecurityDescriptorToSecurityDescriptorA)
             {
@@ -1291,21 +1291,21 @@ static int vboxDtInit()
             if (RT_SUCCESS(rc))
             {
                 /* Try get the system APIs we need. */
-                *(void **)&gVBoxDt.pfnGetThreadDesktop = RTLdrGetSystemSymbol("User32.dll", "GetThreadDesktop");
+                *(void **)&gVBoxDt.pfnGetThreadDesktop = RTLdrGetSystemSymbol("user32.dll", "GetThreadDesktop");
                 if (!gVBoxDt.pfnGetThreadDesktop)
                 {
                     WARN(("VBoxTray: GetThreadDesktop not found\n"));
                     rc = VERR_NOT_SUPPORTED;
                 }
 
-                *(void **)&gVBoxDt.pfnOpenInputDesktop = RTLdrGetSystemSymbol("User32.dll", "OpenInputDesktop");
+                *(void **)&gVBoxDt.pfnOpenInputDesktop = RTLdrGetSystemSymbol("user32.dll", "OpenInputDesktop");
                 if (!gVBoxDt.pfnOpenInputDesktop)
                 {
                     WARN(("VBoxTray: OpenInputDesktop not found\n"));
                     rc = VERR_NOT_SUPPORTED;
                 }
 
-                *(void **)&gVBoxDt.pfnCloseDesktop = RTLdrGetSystemSymbol("User32.dll", "CloseDesktop");
+                *(void **)&gVBoxDt.pfnCloseDesktop = RTLdrGetSystemSymbol("user32.dll", "CloseDesktop");
                 if (!gVBoxDt.pfnCloseDesktop)
                 {
                     WARN(("VBoxTray: CloseDesktop not found\n"));

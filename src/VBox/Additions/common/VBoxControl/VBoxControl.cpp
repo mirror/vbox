@@ -581,7 +581,7 @@ static RTEXITCODE handleSetVideoMode(int argc, char *argv[])
         scr = atoi(argv[3]);
     }
 
-    HMODULE hUser = GetModuleHandle("USER32");
+    HMODULE hUser = GetModuleHandle("user32.dll");
 
     if (hUser)
     {
