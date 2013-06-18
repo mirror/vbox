@@ -2121,8 +2121,8 @@ static int vdCopyHelper(PVBOXHDD pDiskFrom, PVDIMAGE pImageFrom, PVBOXHDD pDiskT
 
             /* Read the source data. */
             rc = pImageFrom->Backend->pfnRead(pImageFrom->pBackendData,
-                                                   uOffset, cbThisRead, &IoCtx,
-                                                   &cbThisRead);
+                                              uOffset, cbThisRead, &IoCtx,
+                                              &cbThisRead);
 
             if (   rc == VERR_VD_BLOCK_FREE
                 && cImagesFromRead != 1)
@@ -3943,16 +3943,15 @@ static int vdIOIntTreeMetaXferDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
 
 static int vdIOIntClose(void *pvUser, PVDIOSTORAGE pIoStorage)
 {
-    PVDIO pVDIo             = (PVDIO)pvUser;
+    int rc = VINF_SUCCESS;
+    PVDIO pVDIo = (PVDIO)pvUser;
 
-    int rc = pVDIo->pInterfaceIo->pfnClose(pVDIo->pInterfaceIo->Core.pvUser,
-                                           pIoStorage->pStorage);
-    AssertRC(rc);
-
+    /* We free everything here, even if closing the file failed for some reason. */
+    rc = pVDIo->pInterfaceIo->pfnClose(pVDIo->pInterfaceIo->Core.pvUser, pIoStorage->pStorage);
     RTAvlrFileOffsetDestroy(pIoStorage->pTreeMetaXfers, vdIOIntTreeMetaXferDestroy, NULL);
     RTMemFree(pIoStorage->pTreeMetaXfers);
     RTMemFree(pIoStorage);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static int vdIOIntDelete(void *pvUser, const char *pcszFilename)
@@ -4689,10 +4688,9 @@ static int vdIOIntCloseLimited(void *pvUser, PVDIOSTORAGE pIoStorage)
 {
     PVDINTERFACEIO pInterfaceIo = (PVDINTERFACEIO)pvUser;
     int rc = pInterfaceIo->pfnClose(NULL, pIoStorage->pStorage);
-    AssertRC(rc);
 
     RTMemFree(pIoStorage);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static int vdIOIntDeleteLimited(void *pvUser, const char *pcszFilename)
@@ -6762,8 +6760,8 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                 fLockWrite = true;
 
                 rc = pImageTo->Backend->pfnRead(pImageTo->pBackendData,
-                                                     uOffset, cbThisRead,
-                                                     &IoCtx, &cbThisRead);
+                                                uOffset, cbThisRead,
+                                                &IoCtx, &cbThisRead);
                 if (rc == VERR_VD_BLOCK_FREE)
                 {
                     /* Search for image with allocated block. Do not attempt to
@@ -6775,8 +6773,8 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                          pCurrImage = pCurrImage->pPrev)
                     {
                         rc = pCurrImage->Backend->pfnRead(pCurrImage->pBackendData,
-                                                               uOffset, cbThisRead,
-                                                               &IoCtx, &cbThisRead);
+                                                          uOffset, cbThisRead,
+                                                          &IoCtx, &cbThisRead);
                     }
 
                     if (rc != VERR_VD_BLOCK_FREE)

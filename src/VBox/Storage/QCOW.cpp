@@ -995,7 +995,7 @@ static int qcowFreeImage(PQCOWIMAGE pImage, bool fDelete)
             if (!fDelete)
                 qcowFlushImage(pImage);
 
-            vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
+            rc = vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
             pImage->pStorage = NULL;
         }
 

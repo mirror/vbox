@@ -1141,7 +1141,7 @@ static int qedFreeImage(PQEDIMAGE pImage, bool fDelete)
             if (!fDelete)
                 qedFlushImage(pImage);
 
-            vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
+            rc = vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
             pImage->pStorage = NULL;
         }
 

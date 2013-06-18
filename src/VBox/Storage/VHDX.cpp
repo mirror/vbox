@@ -970,7 +970,7 @@ static int vhdxFreeImage(PVHDXIMAGE pImage, bool fDelete)
     {
         if (pImage->pStorage)
         {
-            vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
+            rc = vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
             pImage->pStorage = NULL;
         }
 
