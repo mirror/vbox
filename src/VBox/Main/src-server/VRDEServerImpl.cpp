@@ -288,11 +288,7 @@ STDMETHODIMP VRDEServer::COMSETTER(Enabled)(BOOL aEnabled)
         rc = mParent->onVRDEServerChange(/* aRestart */ TRUE);
     }
 
-#if 0
     return rc;
-#else
-    return S_OK;
-#endif
 }
 
 static int portParseNumber(uint16_t *pu16Port, const char *pszStart, const char *pszEnd)
