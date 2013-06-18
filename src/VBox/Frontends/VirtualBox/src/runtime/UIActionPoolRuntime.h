@@ -59,14 +59,14 @@ enum UIActionIndexRuntime
     UIActionIndexRuntime_Menu_USBDevices,
     UIActionIndexRuntime_Menu_SharedClipboard,
     UIActionIndexRuntime_Menu_DragAndDrop,
-    UIActionIndexRuntime_Menu_NetworkAdapters,
-    UIActionIndexRuntime_Simple_NetworkAdaptersDialog,
+    UIActionIndexRuntime_Menu_Network,
+    UIActionIndexRuntime_Simple_NetworkSettings,
     UIActionIndexRuntime_Menu_SharedFolders,
-    UIActionIndexRuntime_Simple_SharedFoldersDialog,
+    UIActionIndexRuntime_Simple_SharedFoldersSettings,
     UIActionIndexRuntime_Toggle_VRDEServer,
     UIActionIndexRuntime_Menu_VideoCapture,
     UIActionIndexRuntime_Toggle_VideoCapture,
-    UIActionIndexRuntime_Simple_VideoCaptureOptions,
+    UIActionIndexRuntime_Simple_VideoCaptureSettings,
     UIActionIndexRuntime_Simple_InstallGuestTools,
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
