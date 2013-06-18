@@ -261,7 +261,9 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
             /* If Video Capture is *enabled* now: */
             if (m_cache.base().m_fVideoCaptureEnabled)
             {
-                /* All we can do is to *disable* it: */
+                /* We can still save the *screens* option: */
+                m_machine.SetVideoCaptureScreens(displayData.m_screens);
+                /* Finally we should *disable* Video Capture if necessary: */
                 if (!displayData.m_fVideoCaptureEnabled)
                     m_machine.SetVideoCaptureEnabled(displayData.m_fVideoCaptureEnabled);
             }
@@ -534,8 +536,33 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureCheckboxToggle()
     /* Video Capture options should be enabled only if:
      * 1. Machine is in 'offline' or 'saved' state and check-box is checked,
      * 2. Machine is in 'online' state, check-box is checked, and video recording is *disabled* currently. */
-    m_pContainerVideoCaptureOptions->setEnabled(((isMachineOffline() || isMachineSaved()) && m_pCheckboxVideoCapture->isChecked()) ||
-                                                (isMachineOnline()  && !m_cache.base().m_fVideoCaptureEnabled && m_pCheckboxVideoCapture->isChecked()));
+    bool fIsVideoCaptureOptionsEnabled = ((isMachineOffline() || isMachineSaved()) && m_pCheckboxVideoCapture->isChecked()) ||
+                                         (isMachineOnline() && !m_cache.base().m_fVideoCaptureEnabled && m_pCheckboxVideoCapture->isChecked());
+
+    /* Video Capture Screens option should be enabled only if:
+     * Machine is in *any* valid state and check-box is checked. */
+    bool fIsVideoCaptureScreenOptionEnabled = isMachineInValidMode() && m_pCheckboxVideoCapture->isChecked();
+
+    m_pLabelVideoCapturePath->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pEditorVideoCapturePath->setEnabled(fIsVideoCaptureOptionsEnabled);
+
+    m_pLabelVideoCaptureSize->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pComboVideoCaptureSize->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pEditorVideoCaptureWidth->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pEditorVideoCaptureHeight->setEnabled(fIsVideoCaptureOptionsEnabled);
+
+    m_pLabelVideoCaptureFrameRate->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pContainerSliderVideoCaptureFrameRate->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pEditorVideoCaptureFrameRate->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pLabelVideoCaptureFrameRateUnits->setEnabled(fIsVideoCaptureOptionsEnabled);
+
+    m_pLabelVideoCaptureRate->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pContainerSliderVideoCaptureQuality->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pEditorVideoCaptureBitRate->setEnabled(fIsVideoCaptureOptionsEnabled);
+    m_pLabelVideoCaptureBitRateUnits->setEnabled(fIsVideoCaptureOptionsEnabled);
+
+    m_pLabelVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled);
+    m_pScrollerVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled);
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureFrameSizeComboboxChange()
@@ -748,8 +775,8 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     connect(m_pEditorVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureFrameRateEditorChange()));
 
     /* Prepare quality combo-box: */
-    m_pSliderLayoutVideoCaptureQuality->setColumnStretch(1, 4);
-    m_pSliderLayoutVideoCaptureQuality->setColumnStretch(3, 5);
+    m_pContainerLayoutSliderVideoCaptureQuality->setColumnStretch(1, 4);
+    m_pContainerLayoutSliderVideoCaptureQuality->setColumnStretch(3, 5);
     m_pSliderVideoCaptureQuality->setMinimum(1);
     m_pSliderVideoCaptureQuality->setMaximum(10);
     m_pSliderVideoCaptureQuality->setPageStep(1);
