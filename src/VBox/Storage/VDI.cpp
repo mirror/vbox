@@ -224,7 +224,7 @@ static int vdiFreeImage(PVDIIMAGEDESC pImage, bool fDelete)
             if (!fDelete)
                 vdiFlushImage(pImage);
 
-            vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
+            rc = vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
             pImage->pStorage = NULL;
         }
 
@@ -1505,27 +1505,29 @@ static int vdiRename(void *pBackendData, const char *pszFilename)
     }
 
     /* Close the image. */
-    vdiFreeImage(pImage, false);
-
-    /* Rename the file. */
-    rc = vdIfIoIntFileMove(pImage->pIfIo, pImage->pszFilename, pszFilename, 0);
-    if (RT_FAILURE(rc))
+    rc = vdiFreeImage(pImage, false);
+    if (RT_SUCCESS(rc))
     {
-        /* The move failed, try to reopen the original image. */
-        int rc2 = vdiOpenImage(pImage, pImage->uOpenFlags);
-        if (RT_FAILURE(rc2))
-            rc = rc2;
+        /* Rename the file. */
+        rc = vdIfIoIntFileMove(pImage->pIfIo, pImage->pszFilename, pszFilename, 0);
+        if (RT_FAILURE(rc))
+        {
+            /* The move failed, try to reopen the original image. */
+            int rc2 = vdiOpenImage(pImage, pImage->uOpenFlags);
+            if (RT_FAILURE(rc2))
+                rc = rc2;
 
-        goto out;
+            goto out;
+        }
+
+        /* Update pImage with the new information. */
+        pImage->pszFilename = pszFilename;
+
+        /* Open the new image. */
+        rc = vdiOpenImage(pImage, pImage->uOpenFlags);
+        if (RT_FAILURE(rc))
+            goto out;
     }
-
-    /* Update pImage with the new information. */
-    pImage->pszFilename = pszFilename;
-
-    /* Open the new image. */
-    rc = vdiOpenImage(pImage, pImage->uOpenFlags);
-    if (RT_FAILURE(rc))
-        goto out;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -3164,7 +3166,11 @@ static DECLCALLBACK(int) vdiRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
         RTMemFree(pu32BlockBitmap);
 
     if (pStorage)
-        vdIfIoIntFileClose(pIfIo, pStorage);
+    {
+        int rc2 = vdIfIoIntFileClose(pIfIo, pStorage);
+        if (RT_SUCCESS(rc))
+            rc = rc2; /* Propagate error code only if repairing was successful. */
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;

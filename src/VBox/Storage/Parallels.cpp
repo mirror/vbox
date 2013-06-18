@@ -157,7 +157,7 @@ static int parallelsFreeImage(PPARALLELSIMAGE pImage, bool fDelete)
             if (!fDelete)
                 parallelsFlushImage(pImage);
 
-            vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
+            rc = vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
             pImage->pStorage = NULL;
         }
 

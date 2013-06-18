@@ -523,8 +523,8 @@ static const VDFILEEXTENSION s_aVmdkFileExtensions[] =
 *******************************************************************************/
 
 static void vmdkFreeStreamBuffers(PVMDKEXTENT pExtent);
-static void vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
-                               bool fDelete);
+static int vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
+                              bool fDelete);
 
 static int vmdkCreateExtents(PVMDKIMAGE pImage, unsigned cExtents);
 static int vmdkFlushImage(PVMDKIMAGE pImage, PVDIOCTX pIoCtx);
@@ -2861,10 +2861,17 @@ static void vmdkFreeStreamBuffers(PVMDKEXTENT pExtent)
 /**
  * Internal: free the memory used by the extent data structure, optionally
  * deleting the referenced files.
+ *
+ * @returns VBox status code.
+ * @param   pImage    Pointer to the image instance data.
+ * @param   pExtent   The extent to free.
+ * @param   fDelete   Flag whether to delete the backing storage.
  */
-static void vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
-                               bool fDelete)
+static int vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
+                              bool fDelete)
 {
+    int rc = VINF_SUCCESS;
+
     vmdkFreeGrainDirectory(pExtent);
     if (pExtent->pDescData)
     {
@@ -2874,10 +2881,10 @@ static void vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     if (pExtent->pFile != NULL)
     {
         /* Do not delete raw extents, these have full and base names equal. */
-        vmdkFileClose(pImage, &pExtent->pFile,
-                         fDelete
-                      && pExtent->pszFullname
-                      && strcmp(pExtent->pszFullname, pExtent->pszBasename));
+        rc =vmdkFileClose(pImage, &pExtent->pFile,
+                             fDelete
+                          && pExtent->pszFullname
+                          && strcmp(pExtent->pszFullname, pExtent->pszBasename));
     }
     if (pExtent->pszBasename)
     {
@@ -2890,6 +2897,8 @@ static void vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         pExtent->pszFullname = NULL;
     }
     vmdkFreeStreamBuffers(pExtent);
+
+    return rc;
 }
 
 /**
@@ -4320,14 +4329,24 @@ static int vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
         if (pImage->pExtents != NULL)
         {
             for (unsigned i = 0 ; i < pImage->cExtents; i++)
-                vmdkFreeExtentData(pImage, &pImage->pExtents[i], fDelete);
+            {
+                int rc2 = vmdkFreeExtentData(pImage, &pImage->pExtents[i], fDelete);
+                if (RT_SUCCESS(rc))
+                    rc = rc2; /* Propogate any error when closing the file. */
+            }
             RTMemFree(pImage->pExtents);
             pImage->pExtents = NULL;
         }
         pImage->cExtents = 0;
         if (pImage->pFile != NULL)
-            vmdkFileClose(pImage, &pImage->pFile, fDelete);
-        vmdkFileCheckAllClose(pImage);
+        {
+            int rc2 = vmdkFileClose(pImage, &pImage->pFile, fDelete);
+            if (RT_SUCCESS(rc))
+                rc = rc2; /* Propogate any error when closing the file. */
+        }
+        int rc2 = vmdkFileCheckAllClose(pImage);
+        if (RT_SUCCESS(rc))
+            rc = rc2; /* Propogate any error when closing the file. */
 
         if (pImage->pGTCache)
         {
@@ -5516,7 +5535,10 @@ static int vmdkRename(void *pBackendData, const char *pszFilename)
         if (!apszNewName[i])
             goto rollback;
         /* Close the extent file. */
-        vmdkFileClose(pImage, &pExtent->pFile, false);
+        rc = vmdkFileClose(pImage, &pExtent->pFile, false);
+        if (RT_FAILURE(rc))
+            goto rollback;
+
         /* Rename the extent file. */
         rc = vdIfIoIntFileMove(pImage->pIfIo, pExtent->pszFullname, apszNewName[i], 0);
         if (RT_FAILURE(rc))
@@ -5525,7 +5547,9 @@ static int vmdkRename(void *pBackendData, const char *pszFilename)
         apszOldName[i] = RTStrDup(pExtent->pszFullname);
     }
     /* Release all old stuff. */
-    vmdkFreeImage(pImage, false);
+    rc = vmdkFreeImage(pImage, false);
+    if (RT_FAILURE(rc))
+        goto rollback;
 
     fImageFreed = true;
 

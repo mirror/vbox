@@ -740,7 +740,7 @@ static int dmgFreeImage(PDMGIMAGE pThis, bool fDelete)
             if (!fDelete)
                 dmgFlushImage(pThis);
 
-            vdIfIoIntFileClose(pThis->pIfIo, pThis->pStorage);
+            rc = vdIfIoIntFileClose(pThis->pIfIo, pThis->pStorage);
             pThis->pStorage = NULL;
         }
 
@@ -1495,7 +1495,7 @@ static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p penmType=%#p\n",
                  pszFilename, pVDIfsDisk, pVDIfsImage, penmType));
     int rc;
-    PVDIOSTORAGE pStorage;
+    PVDIOSTORAGE pStorage = NULL;
     uint64_t cbFile, offFtr = 0;
     DMGUDIF Ftr;
 
@@ -1517,10 +1517,7 @@ static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
         rc = vdIfIoIntFileReadSync(pIfIo, pStorage, offFtr, &Ftr, sizeof(Ftr));
     }
     else
-    {
-        vdIfIoIntFileClose(pIfIo, pStorage);
         rc = VERR_VD_DMG_INVALID_HEADER;
-    }
 
     if (RT_SUCCESS(rc))
     {
@@ -1547,7 +1544,8 @@ static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
             rc = VERR_VD_DMG_INVALID_HEADER;
     }
 
-    vdIfIoIntFileClose(pIfIo, pStorage);
+    if (pStorage)
+        vdIfIoIntFileClose(pIfIo, pStorage);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
