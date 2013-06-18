@@ -46,6 +46,13 @@ RTDECL(RTCPUID) RTMpGetPresentCount(void)
 RT_EXPORT_SYMBOL(RTMpGetPresentCount);
 
 
+RTDECL(RTCPUID) RTMpGetPresentCoreCount(void)
+{
+    return RTMpGetCoreCount();
+}
+RT_EXPORT_SYMBOL(RTMpGetPresentCoreCount);
+
+
 RTDECL(bool) RTMpIsCpuPresent(RTCPUID idCpu)
 {
     return RTMpIsCpuPossible(idCpu);

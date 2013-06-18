@@ -140,6 +140,14 @@ RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet);
 RTDECL(RTCPUID) RTMpGetOnlineCount(void);
 
 /**
+ * Get the count of physical CPU cores in the system with one or more online
+ * threads.
+ *
+ * @returns The number of online cores.
+ */
+RTDECL(RTCPUID) RTMpGetCoreOnlineCount(void);
+
+/**
  * Checks if a CPU is online or not.
  *
  * @returns true/false accordingly.
@@ -162,6 +170,13 @@ RTDECL(PRTCPUSET) RTMpGetPresentSet(PRTCPUSET pSet);
  * @return The count.
  */
 RTDECL(RTCPUID) RTMpGetPresentCount(void);
+
+/**
+ * Get the count of physical CPU cores present in the system.
+ *
+ * @returns The number of cores.
+ */
+RTDECL(RTCPUID) RTMpGetPresentCoreCount(void);
 
 /**
  * Checks if a CPU is present in the system.

@@ -33,6 +33,9 @@
 #include <errno.h>
 
 #include <iprt/mp.h>
+#include "internal/iprt.h"
+
+#include <iprt/alloca.h>
 #include <iprt/cpuset.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -179,28 +182,23 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 
 RTDECL(RTCPUID) RTMpGetCoreCount(void)
 {
-    RTCPUID cMax = rtMpLinuxMaxCpus();
-    uint32_t aCores[256];
-    RT_ZERO(aCores);
-    uint32_t cCores = 0;
+    RTCPUID     cMax      = rtMpLinuxMaxCpus();
+    uint32_t   *paidCores = (uint32_t *)alloca(sizeof(*uint32_t) * (cMax + 1));
+    uint32_t    cCores    = 0;
     for (RTCPUID idCpu = 0; idCpu < cMax; idCpu++)
     {
         if (RTMpIsCpuPossible(idCpu))
         {
-            uint32_t idCore =
-                (uint32_t)RTLinuxSysFsReadIntFile(0, "devices/system/cpu/cpu%d/topology/core_id", (int)idCpu);
-            unsigned i;
+            uint32_t idCore = (uint32_t)RTLinuxSysFsReadIntFile(0, "devices/system/cpu/cpu%d/topology/core_id", (int)idCpu);
+            uint32_t i;
             for (i = 0; i < cCores; i++)
-                if (aCores[i] == idCore)
+                if (paidCores[i] == idCore)
                     break;
-            if (   i >= cCores
-                && cCores < RT_ELEMENTS(aCores))
-            {
-                aCores[cCores] = idCore;
-                cCores++;
-            }
+            if (i >= cCores)
+                paidCores[cCores++] = idCore;
         }
     }
+    Assert(cCores > 0);
     return cCores;
 }
 
@@ -222,6 +220,30 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
     RTMpGetOnlineSet(&Set);
     return RTCpuSetCount(&Set);
 }
+
+
+RTDECL(RTCPUID) RTMpGetOnlineCoreCount(void)
+{
+    RTCPUID     cMax      = rtMpLinuxMaxCpus();
+    uint32_t   *paidCores = (uint32_t *)alloca(sizeof(*uint32_t) * (cMax + 1));
+    uint32_t    cCores    = 0;
+    for (RTCPUID idCpu = 0; idCpu < cMax; idCpu++)
+    {
+        if (RTMpIsCpuOnline(idCpu))
+        {
+            uint32_t idCore = (uint32_t)RTLinuxSysFsReadIntFile(0, "devices/system/cpu/cpu%d/topology/core_id", (int)idCpu);
+            uint32_t i;
+            for (i = 0; i < cCores; i++)
+                if (paidCores[i] == idCore)
+                    break;
+            if (i >= cCores)
+                paidCores[cCores++] = idCore;
+        }
+    }
+    Assert(cCores > 0);
+    return cCores;
+}
+
 
 
 RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
