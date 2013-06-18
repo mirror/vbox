@@ -124,7 +124,7 @@ RTDECL(RTCPUID) RTMpGetCoreCount(void)
                 switch (pSysInfoTmp->Relationship)
                 {
                     case RelationProcessorCore:
-                        cCore++;
+                        cCores++;
                         break;
                     case RelationCache:
                     case RelationNumaNode:
