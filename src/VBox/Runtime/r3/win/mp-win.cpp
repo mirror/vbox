@@ -165,3 +165,10 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
     return RTCpuSetCount(&Set);
 }
 
+
+RTDECL(RTCPUID) RTMpGetOnlineCoreCount(void)
+{
+    /** @todo this isn't entirely correct. */
+    return RTMpGetCoreCount();
+}
+

@@ -32,9 +32,9 @@
 #include "internal/iprt.h"
 
 
-RTDECL(RTCPUID) RTMpGetCoreCount(void)
+RTDECL(RTCPUID) RTMpGetOnlineCoreCount(void)
 {
-    return RTMpGetCount();
+    return RTMpGetOnlineCount();
 }
-RT_EXPORT_SYMBOL(RTMpGetCoreCount);
+RT_EXPORT_SYMBOL(RTMpGetOnlineCoreCount);
 
