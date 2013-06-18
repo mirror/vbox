@@ -392,8 +392,8 @@ void UIGChooserItemGroup::prepare()
     m_nameFont = font();
     m_nameFont.setWeight(QFont::Bold);
     m_infoFont = font();
-    m_groupsPixmap = QPixmap(":/nw_16px.png");
-    m_machinesPixmap = QPixmap(":/machine_16px.png");
+    m_groupsPixmap = QPixmap(":/group_abstract_16px.png");
+    m_machinesPixmap = QPixmap(":/machine_abstract_16px.png");
     m_pixmapSizeGroups = m_groupsPixmap.size();
     m_pixmapSizeMachines = m_machinesPixmap.size();
     m_minimumHeaderSize = QSize(0, 0);
