@@ -4279,6 +4279,7 @@ VMMR3DECL(void) CPUMR3LogCpuIds(PVM pVM)
     LogRel(("Logical host processors: %u present, %u max, %u online, online mask: %016RX64\n",
                 (unsigned)RTMpGetPresentCount(), (unsigned)RTMpGetCount(), (unsigned)RTMpGetOnlineCount(),
                 RTCpuSetToU64(RTMpGetOnlineSet(&OnlineSet)) ));
+    LogRel(("Physical core count = %u\n", (unsigned)RTMpGetCoreCount() ));
     LogRel(("************************* CPUID dump ************************\n"));
     DBGFR3Info(pVM->pUVM, "cpuid", "verbose", DBGFR3InfoLogRelHlp());
     LogRel(("\n"));
