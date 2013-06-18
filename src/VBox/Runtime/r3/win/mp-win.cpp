@@ -112,7 +112,7 @@ RTDECL(RTCPUID) RTMpGetCoreCount(void)
          * Query the information. This unfortunately requires a buffer, so we
          * start with a guess and let windows advice us if it's too small.
          */
-        DWORD                                   cbSysProcInfo = _4K / 16;
+        DWORD                                   cbSysProcInfo = _4K;
         PSYSTEM_LOGICAL_PROCESSOR_INFORMATION   paSysInfo = NULL;
         BOOL                                    fRc = FALSE;
         do
