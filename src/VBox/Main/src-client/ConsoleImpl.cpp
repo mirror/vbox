@@ -4437,7 +4437,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
 
     HRESULT rc = S_OK;
 
-    /* don't trigger network change if the VM isn't running */
+    /* don't trigger network changes if the VM isn't running */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
@@ -4550,7 +4550,7 @@ HRESULT Console::onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
 
     HRESULT rc = S_OK;
 
-    /* don't trigger nat engine change if the VM isn't running */
+    /* don't trigger NAT engine changes if the VM isn't running */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
@@ -4859,7 +4859,7 @@ HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForc
 
     HRESULT rc = S_OK;
 
-    /* don't trigger medium change if the VM isn't running */
+    /* don't trigger medium changes if the VM isn't running */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
@@ -4889,7 +4889,7 @@ HRESULT Console::onCPUChange(ULONG aCPU, BOOL aRemove)
 
     HRESULT rc = S_OK;
 
-    /* don't trigger CPU change if the VM isn't running */
+    /* don't trigger CPU changes if the VM isn't running */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
@@ -4968,7 +4968,7 @@ HRESULT Console::onClipboardModeChange(ClipboardMode_T aClipboardMode)
 
     HRESULT rc = S_OK;
 
-    /* don't trigger the Clipboard mode change if the VM isn't running */
+    /* don't trigger the clipboard mode change if the VM isn't running */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
@@ -5008,7 +5008,7 @@ HRESULT Console::onDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode)
 
     HRESULT rc = S_OK;
 
-    /* don't trigger the Drag'n'drop mode change if the VM isn't running */
+    /* don't trigger the drag'n'drop mode change if the VM isn't running */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
@@ -5046,46 +5046,50 @@ HRESULT Console::onVRDEServerChange(BOOL aRestart)
 
     HRESULT rc = S_OK;
 
-    if (    mVRDEServer
-        &&  (   mMachineState == MachineState_Running
-             || mMachineState == MachineState_Teleporting
-             || mMachineState == MachineState_LiveSnapshotting
-             || mMachineState == MachineState_Paused
-            )
-       )
+    /* don't trigger VRDE server changes if the VM isn't running */
+    SafeVMPtrQuiet ptrVM(this);
+    if (ptrVM.isOk())
     {
-        BOOL vrdpEnabled = FALSE;
-
-        rc = mVRDEServer->COMGETTER(Enabled)(&vrdpEnabled);
-        ComAssertComRCRetRC(rc);
-
-        if (aRestart)
+        if (    mVRDEServer
+            &&  (   mMachineState == MachineState_Running
+                 || mMachineState == MachineState_Teleporting
+                 || mMachineState == MachineState_LiveSnapshotting
+                 || mMachineState == MachineState_Paused
+                 )
+           )
         {
-            /* VRDP server may call this Console object back from other threads (VRDP INPUT or OUTPUT). */
-            alock.release();
+            BOOL vrdpEnabled = FALSE;
 
-            if (vrdpEnabled)
+            rc = mVRDEServer->COMGETTER(Enabled)(&vrdpEnabled);
+            ComAssertComRCRetRC(rc);
+
+            if (aRestart)
             {
-                // If there was no VRDP server started the 'stop' will do nothing.
-                // However if a server was started and this notification was called,
-                // we have to restart the server.
-                mConsoleVRDPServer->Stop();
+                /* VRDP server may call this Console object back from other threads (VRDP INPUT or OUTPUT). */
+                alock.release();
 
-                if (RT_FAILURE(mConsoleVRDPServer->Launch()))
-                    rc = E_FAIL;
+                if (vrdpEnabled)
+                {
+                    // If there was no VRDP server started the 'stop' will do nothing.
+                    // However if a server was started and this notification was called,
+                    // we have to restart the server.
+                    mConsoleVRDPServer->Stop();
+
+                    if (RT_FAILURE(mConsoleVRDPServer->Launch()))
+                        rc = E_FAIL;
+                    else
+                        mConsoleVRDPServer->EnableConnections();
+                }
                 else
-                    mConsoleVRDPServer->EnableConnections();
-            }
-            else
-            {
-                mConsoleVRDPServer->Stop();
-            }
+                    mConsoleVRDPServer->Stop();
 
-            alock.acquire();
+                alock.acquire();
+            }
         }
+        else
+            rc = setInvalidMachineStateError();
+        ptrVM.release();
     }
-    else
-        rc = setInvalidMachineStateError();
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
@@ -5112,27 +5116,44 @@ HRESULT Console::onVideoCaptureChange()
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    BOOL fEnabled;
-    HRESULT rc = mMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
-    SafeArray<BOOL> screens;
-    if (SUCCEEDED(rc))
-        rc = mMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens));
-    if (mDisplay)
+    HRESULT rc = S_OK;
+
+    /* don't trigger video capture changes if the VM isn't running */
+    SafeVMPtrQuiet ptrVM(this);
+    if (ptrVM.isOk())
     {
-        int vrc = VINF_SUCCESS;
+        BOOL fEnabled;
+        rc = mMachine->COMGETTER(VideoCaptureEnabled)(&fEnabled);
+        SafeArray<BOOL> screens;
         if (SUCCEEDED(rc))
-            vrc = mDisplay->VideoCaptureEnableScreens(ComSafeArrayAsInParam(screens));
-        if (RT_SUCCESS(vrc))
+            rc = mMachine->COMGETTER(VideoCaptureScreens)(ComSafeArrayAsOutParam(screens));
+        if (mDisplay)
         {
-            if (fEnabled)
-                vrc = mDisplay->VideoCaptureStart();
-            else
-                mDisplay->VideoCaptureStop();
+            int vrc = VINF_SUCCESS;
+            if (SUCCEEDED(rc))
+                vrc = mDisplay->VideoCaptureEnableScreens(ComSafeArrayAsInParam(screens));
             if (RT_SUCCESS(vrc))
-                fireVideoCaptureChangedEvent(mEventSource);
+            {
+                if (fEnabled)
+                {
+                    vrc = mDisplay->VideoCaptureStart();
+                    if (RT_FAILURE(vrc))
+                        rc = E_FAIL;
+                }
+                else
+                    mDisplay->VideoCaptureStop();
+            }
             else
                 rc = E_FAIL;
         }
+        ptrVM.release();
+    }
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(rc))
+    {
+        alock.release();
+        fireVideoCaptureChangedEvent(mEventSource);
     }
 
     return rc;
@@ -5362,7 +5383,7 @@ HRESULT Console::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
 
     HRESULT rc = S_OK;
 
-    /* don't trigger the CPU priority change if the VM isn't running */
+    /* don't trigger bandwidth group changes if the VM isn't running */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
@@ -5425,7 +5446,7 @@ HRESULT Console::onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOO
 
     HRESULT rc = S_OK;
 
-    /* don't trigger medium change if the VM isn't running */
+    /* don't trigger medium changes if the VM isn't running */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
