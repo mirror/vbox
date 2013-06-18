@@ -910,7 +910,6 @@ DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used)
     if (!tobj)
     {
 #ifdef IN_GUEST
-        Assert(crHashtableIsKeyUsed(g->shared->textureTable, texture));
         if (used)
         {
             tobj = crStateTextureAllocate_t(g, texture);
