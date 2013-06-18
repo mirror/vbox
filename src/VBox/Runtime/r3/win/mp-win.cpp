@@ -33,6 +33,7 @@
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 
 
 AssertCompile(MAXIMUM_PROCESSORS <= RTCPUSET_MAX_CPUS);
