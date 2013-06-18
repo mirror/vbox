@@ -183,7 +183,7 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 RTDECL(RTCPUID) RTMpGetCoreCount(void)
 {
     RTCPUID     cMax      = rtMpLinuxMaxCpus();
-    uint32_t   *paidCores = (uint32_t *)alloca(sizeof(*uint32_t) * (cMax + 1));
+    uint32_t   *paidCores = (uint32_t *)alloca(sizeof(paidCores[0]) * (cMax + 1));
     uint32_t    cCores    = 0;
     for (RTCPUID idCpu = 0; idCpu < cMax; idCpu++)
     {
@@ -225,7 +225,7 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 RTDECL(RTCPUID) RTMpGetOnlineCoreCount(void)
 {
     RTCPUID     cMax      = rtMpLinuxMaxCpus();
-    uint32_t   *paidCores = (uint32_t *)alloca(sizeof(*uint32_t) * (cMax + 1));
+    uint32_t   *paidCores = (uint32_t *)alloca(sizeof(paidCores[0]) * (cMax + 1));
     uint32_t    cCores    = 0;
     for (RTCPUID idCpu = 0; idCpu < cMax; idCpu++)
     {
