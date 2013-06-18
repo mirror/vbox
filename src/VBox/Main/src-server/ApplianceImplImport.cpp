@@ -2685,7 +2685,6 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 ovf::DiskImage diCurrent = oit->second;
                 ovf::VirtualDisksMap::const_iterator itVDisk = vsysThis.mapVirtualDisks.begin();
-                bool fFoundInCurrentPosition = false;
 
                 VirtualSystemDescriptionEntry *vsdeTargetHD = 0;
 
@@ -2734,6 +2733,15 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
                 if (strncmp(pStorage->pVDImageIfaces->pszInterfaceName, name.c_str(), name.length()) == 0)
                 {
+                    /* It means that we possibly have imported the storage earlier on the previous loop steps*/
+                    std::set<RTCString>::const_iterator h = disksResolvedNames.find(diCurrent.strHref);
+                    if (h != disksResolvedNames.end())
+                    {
+                        /* Yes, disk name was found, we can skip it*/
+                        ++oit;
+                        continue;
+                    }
+
                     RTCString availableImage(diCurrent.strHref);
 
                     rc = preCheckImageAvailability(pStorage,
@@ -2745,21 +2753,6 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         /* current opened file isn't the same as passed one */
                         if(availableImage.compare(diCurrent.strHref, Utf8Str::CaseInsensitive) != 0)
                         {
-
-                            if (RTPathHaveExt(availableImage.c_str()))
-                            {
-                                /* Figure out which format the user have. */
-                                char *pszExt = RTPathExt(availableImage.c_str());
-                                /* Get the system properties. */
-                                SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
-                                ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension(&pszExt[1]);
-                                if (trgFormat.isNull())
-                                {
-                                    ++oit;
-                                    continue;
-                                }
-                            }
-
                             /* 
                              * 
                              * availableImage contains the disk file reference (e.g. "disk1.vmdk"), which should exist
@@ -2818,7 +2811,6 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         }
                         else
                         {
-                            fFoundInCurrentPosition = true;
                             ++oit;
                         }
                     }
@@ -2831,19 +2823,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 else
                 {
                     /* just continue with normal files*/
-                    fFoundInCurrentPosition = true;
                     ++oit;
-                }
-
-                /* It means that we possibly have imported the storage earlier on the previous loop steps*/
-                if (!fFoundInCurrentPosition)
-                {
-                    std::set<RTCString>::const_iterator h = disksResolvedNames.find(diCurrent.strHref);
-                    if (h != disksResolvedNames.end())
-                    {
-                        /* Yes, disk name was found, we can skip it*/
-                        continue;
-                    }
                 }
 
                 const ovf::VirtualDisk &ovfVdisk = itVDisk->second;
@@ -3139,7 +3119,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 
     while(oit != stack.mapDisks.end())
     {
-        if (RTPathHaveExt(oit->first.c_str()))
+        if (RTPathHaveExt(oit->second.strHref.c_str()))
         {
             /* Figure out which format the user have. */
             char *pszExt = RTPathExt(oit->second.strHref.c_str());
@@ -3154,7 +3134,6 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
         }
 
         ovf::DiskImage diCurrent = oit->second;
-        bool fFoundInCurrentPosition = false;
 
         VirtualSystemDescriptionEntry *vsdeTargetHD = 0;
 
@@ -3191,6 +3170,15 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 
         if (strncmp(pStorage->pVDImageIfaces->pszInterfaceName, name.c_str(), name.length()) == 0)
         {
+            /* It means that we possibly have imported the storage earlier on the previous loop steps*/
+            std::set<RTCString>::const_iterator h = disksResolvedNames.find(diCurrent.strHref);
+            if (h != disksResolvedNames.end())
+            {
+                /* Yes, disk name was found, we can skip it*/
+                ++oit;
+                continue;
+            }
+
             RTCString availableImage(diCurrent.strHref);
 
             rc = preCheckImageAvailability(pStorage,
@@ -3202,20 +3190,6 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                 /* current opened file isn't the same as passed one */
                 if(availableImage.compare(diCurrent.strHref, Utf8Str::CaseInsensitive) != 0)
                 {
-                    if (RTPathHaveExt(availableImage.c_str()))
-                    {
-                        /* Figure out which format the user have. */
-                        char *pszExt = RTPathExt(availableImage.c_str());
-                        /* Get the system properties. */
-                        SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
-                        ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension(&pszExt[1]);
-                        if (trgFormat.isNull())
-                        {
-                            ++oit;
-                            continue;
-                        }
-                    }
-
                     // availableImage contains the disk identifier (e.g. "vmdisk1"), which should exist
                     // in the virtual system's disks map under that ID and also in the global images map
                     // and find the disk from the OVF's disk list
@@ -3257,7 +3231,6 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                 }
                 else
                 {
-                    fFoundInCurrentPosition = true;
                     ++oit;
                 }
             }
@@ -3270,19 +3243,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
         else
         {
             /* just continue with normal files*/
-            fFoundInCurrentPosition = true;
             ++oit;
-        }
-
-        /* It means that we possibly have imported the storage earlier on the previous loop steps*/
-        if (!fFoundInCurrentPosition)
-        {
-            std::set<RTCString>::const_iterator h = disksResolvedNames.find(diCurrent.strHref);
-            if (h != disksResolvedNames.end())
-            {
-                /* Yes, disk name was found, we can skip it*/
-                continue;
-            }
         }
 
         /* Important! to store disk name for the next checks */
