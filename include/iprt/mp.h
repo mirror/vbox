@@ -117,7 +117,10 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet);
 RTDECL(RTCPUID) RTMpGetCount(void);
 
 /**
- * Get the count of phyiscal CPU cores present in the system.
+ * Get the count of physical CPU cores present in the system plus any that may
+ * possibly be hotplugged later.
+ *
+ * @returns The number of cores.
  */
 RTDECL(RTCPUID) RTMpGetCoreCount(void);
 
