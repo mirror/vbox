@@ -145,8 +145,8 @@ void UIMachineWindowNormal::sltShowIndicatorsContextMenu(QIStateIndicator *pIndi
     /* Show network adapter LED context menu: */
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters))
     {
-        if (gActionPool->action(UIActionIndexRuntime_Menu_NetworkAdapters)->isEnabled())
-            gActionPool->action(UIActionIndexRuntime_Menu_NetworkAdapters)->menu()->exec(pEvent->globalPos());
+        if (gActionPool->action(UIActionIndexRuntime_Menu_Network)->isEnabled())
+            gActionPool->action(UIActionIndexRuntime_Menu_Network)->menu()->exec(pEvent->globalPos());
     }
     /* Show shared-folders LED context menu: */
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders))

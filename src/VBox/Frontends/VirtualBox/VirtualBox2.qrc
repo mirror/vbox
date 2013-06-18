@@ -195,5 +195,9 @@
         <file alias="preview_full_228x168px.png">images/preview_full_228x168px.png</file>
         <file alias="group_abstract_16px.png">images/group_abstract_16px.png</file>
         <file alias="machine_abstract_16px.png">images/machine_abstract_16px.png</file>
+        <file alias="nw_settings_16px.png">images/nw_settings_16px.png</file>
+        <file alias="nw_settings_disabled_16px.png">images/nw_settings_disabled_16px.png</file>
+        <file alias="sf_settings_16px.png">images/sf_settings_16px.png</file>
+        <file alias="sf_settings_disabled_16px.png">images/sf_settings_disabled_16px.png</file>
     </qresource>
 </RCC>

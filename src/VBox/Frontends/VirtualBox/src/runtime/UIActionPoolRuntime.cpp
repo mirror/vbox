@@ -786,14 +786,14 @@ protected:
     void retranslateUi() {}
 };
 
-class UIActionSimpleShowNetworkAdaptersDialog : public UIActionSimple
+class UIActionSimpleShowNetworkSettingsDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    UIActionSimpleShowNetworkAdaptersDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png")
+    UIActionSimpleShowNetworkSettingsDialog(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/nw_settings_16px.png", ":/nw_settings_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -802,12 +802,12 @@ protected:
 
     QString shortcutExtraDataID() const
     {
-        return QString("NetworkAdaptersDialog");
+        return QString("NetworkSettingsDialog");
     }
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Network Adapters..."));
+        setName(QApplication::translate("UIActionPool", "&Network Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Change the settings of network adapters"));
     }
 };
@@ -829,14 +829,14 @@ protected:
     void retranslateUi() {}
 };
 
-class UIActionSimpleShowSharedFoldersDialog : public UIActionSimple
+class UIActionSimpleShowSharedFoldersSettingsDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    UIActionSimpleShowSharedFoldersDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png")
+    UIActionSimpleShowSharedFoldersSettingsDialog(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/sf_settings_16px.png", ":/sf_settings_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -845,12 +845,12 @@ protected:
 
     QString shortcutExtraDataID() const
     {
-        return QString("SharedFoldersDialog");
+        return QString("SharedFoldersSettingsDialog");
     }
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Shared Folders..."));
+        setName(QApplication::translate("UIActionPool", "&Shared Folders Settings..."));
         setStatusTip(QApplication::translate("UIActionPool", "Create or modify shared folders"));
     }
 };
@@ -927,13 +927,13 @@ protected:
     }
 };
 
-class UIActionSimpleShowVideoCaptureOptions : public UIActionSimple
+class UIActionSimpleShowVideoCaptureSettingsDialog : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    UIActionSimpleShowVideoCaptureOptions(UIActionPool *pParent)
+    UIActionSimpleShowVideoCaptureSettingsDialog(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/video_capture_settings_16px.png")
     {
         retranslateUi();
@@ -943,13 +943,13 @@ protected:
 
     QString shortcutExtraDataID() const
     {
-        return QString("VideoCaptureOptions");
+        return QString("VideoCaptureSettingsDialog");
     }
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Video Capture Options..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Configure video capture options"));
+        setName(QApplication::translate("UIActionPool", "&Video Capture Settings..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Configure video capture settings"));
     }
 };
 
@@ -1213,11 +1213,11 @@ void UIActionPoolRuntime::createActions()
     m_pool[UIActionIndexRuntime_Simple_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
 
     /* 'Devices' actions: */
-    m_pool[UIActionIndexRuntime_Simple_NetworkAdaptersDialog] = new UIActionSimpleShowNetworkAdaptersDialog(this);
-    m_pool[UIActionIndexRuntime_Simple_SharedFoldersDialog] = new UIActionSimpleShowSharedFoldersDialog(this);
+    m_pool[UIActionIndexRuntime_Simple_NetworkSettings] = new UIActionSimpleShowNetworkSettingsDialog(this);
+    m_pool[UIActionIndexRuntime_Simple_SharedFoldersSettings] = new UIActionSimpleShowSharedFoldersSettingsDialog(this);
     m_pool[UIActionIndexRuntime_Toggle_VRDEServer] = new UIActionToggleVRDEServer(this);
     m_pool[UIActionIndexRuntime_Toggle_VideoCapture] = new UIActionToggleVideoCapture(this);
-    m_pool[UIActionIndexRuntime_Simple_VideoCaptureOptions] = new UIActionSimpleShowVideoCaptureOptions(this);
+    m_pool[UIActionIndexRuntime_Simple_VideoCaptureSettings] = new UIActionSimpleShowVideoCaptureSettingsDialog(this);
     m_pool[UIActionIndexRuntime_Simple_InstallGuestTools] = new UIActionSimplePerformInstallGuestTools(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -1281,9 +1281,9 @@ void UIActionPoolRuntime::createMenus()
     if (m_pool[UIActionIndexRuntime_Menu_DragAndDrop])
         delete m_pool[UIActionIndexRuntime_Menu_DragAndDrop];
     m_pool[UIActionIndexRuntime_Menu_DragAndDrop] = new UIActionMenuDragAndDrop(this);
-    if (m_pool[UIActionIndexRuntime_Menu_NetworkAdapters])
-        delete m_pool[UIActionIndexRuntime_Menu_NetworkAdapters];
-    m_pool[UIActionIndexRuntime_Menu_NetworkAdapters] = new UIActionMenuNetworkAdapters(this);
+    if (m_pool[UIActionIndexRuntime_Menu_Network])
+        delete m_pool[UIActionIndexRuntime_Menu_Network];
+    m_pool[UIActionIndexRuntime_Menu_Network] = new UIActionMenuNetworkAdapters(this);
     if (m_pool[UIActionIndexRuntime_Menu_SharedFolders])
         delete m_pool[UIActionIndexRuntime_Menu_SharedFolders];
     m_pool[UIActionIndexRuntime_Menu_SharedFolders] = new UIActionMenuSharedFolders(this);

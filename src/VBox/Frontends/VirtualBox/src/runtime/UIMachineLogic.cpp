@@ -741,14 +741,14 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_USBDevices));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_SharedClipboard));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_DragAndDrop));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_NetworkAdapters));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_NetworkAdaptersDialog));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_Network));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_NetworkSettings));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_SharedFolders));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersSettings));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_VideoCapture));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_VideoCapture));
-    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureOptions));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureSettings));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Simple_InstallGuestTools));
 
     /* Move actions into running-n-paused-n-stucked actions group: */
@@ -804,15 +804,15 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltPrepareSharedClipboardMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Menu_DragAndDrop)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareDragAndDropMenu()));
-    connect(gActionPool->action(UIActionIndexRuntime_Simple_NetworkAdaptersDialog), SIGNAL(triggered()),
+    connect(gActionPool->action(UIActionIndexRuntime_Simple_NetworkSettings), SIGNAL(triggered()),
             this, SLOT(sltOpenNetworkAdaptersDialog()));
-    connect(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog), SIGNAL(triggered()),
+    connect(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersSettings), SIGNAL(triggered()),
             this, SLOT(sltOpenSharedFoldersDialog()));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_VRDEServer), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleVRDE(bool)));
     connect(gActionPool->action(UIActionIndexRuntime_Toggle_VideoCapture), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleVideoCapture(bool)));
-    connect(gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureOptions), SIGNAL(triggered()),
+    connect(gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureSettings), SIGNAL(triggered()),
             this, SLOT(sltOpenVideoCaptureOptions()));
     connect(gActionPool->action(UIActionIndexRuntime_Simple_InstallGuestTools), SIGNAL(triggered()),
             this, SLOT(sltInstallGuestAdditions()));

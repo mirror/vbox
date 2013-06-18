@@ -50,7 +50,7 @@ void UIMachineLogicNormal::sltPrepareNetworkAdaptersMenu()
     QMenu *menu = qobject_cast<QMenu*>(sender());
     AssertMsg(menu, ("This slot should be called only on Network Adapters menu show!\n"));
     menu->clear();
-    menu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_NetworkAdaptersDialog));
+    menu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_NetworkSettings));
 }
 
 void UIMachineLogicNormal::sltPrepareSharedFoldersMenu()
@@ -58,7 +58,7 @@ void UIMachineLogicNormal::sltPrepareSharedFoldersMenu()
     QMenu *menu = qobject_cast<QMenu*>(sender());
     AssertMsg(menu, ("This slot should be called only on Shared Folders menu show!\n"));
     menu->clear();
-    menu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersDialog));
+    menu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SharedFoldersSettings));
 }
 
 void UIMachineLogicNormal::sltPrepareVideoCaptureMenu()
@@ -67,7 +67,7 @@ void UIMachineLogicNormal::sltPrepareVideoCaptureMenu()
     AssertMsg(pMenu, ("This slot should be called only on Video Capture menu show!\n"));
     pMenu->clear();
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_VideoCapture));
-    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureOptions));
+    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_VideoCaptureSettings));
 }
 
 void UIMachineLogicNormal::sltPrepareMouseIntegrationMenu()
@@ -84,7 +84,7 @@ void UIMachineLogicNormal::prepareActionConnections()
     UIMachineLogic::prepareActionConnections();
 
     /* This class connections: */
-    connect(gActionPool->action(UIActionIndexRuntime_Menu_NetworkAdapters)->menu(), SIGNAL(aboutToShow()),
+    connect(gActionPool->action(UIActionIndexRuntime_Menu_Network)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareNetworkAdaptersMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Menu_SharedFolders)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareSharedFoldersMenu()));
