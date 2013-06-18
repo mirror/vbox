@@ -102,6 +102,7 @@ static void vdiConvGeometryEndianess(VDIECONV enmConv, PVDIDISKGEOMETRY pDiskGeo
 static void vdiConvHeaderEndianessV0(VDIECONV enmConv, PVDIHEADER0 pHdrConv,
                                      PVDIHEADER0 pHdr)
 {
+    memmove(pHdrConv->szComment, pHdr->szComment, sizeof(pHdr->szComment));
     pHdrConv->u32Type          = SET_ENDIAN_U32(enmConv, pHdr->u32Type);
     pHdrConv->fFlags           = SET_ENDIAN_U32(enmConv, pHdr->fFlags);
     vdiConvGeometryEndianess(enmConv, &pHdrConv->LegacyGeometry, &pHdr->LegacyGeometry);
@@ -124,6 +125,7 @@ static void vdiConvHeaderEndianessV0(VDIECONV enmConv, PVDIHEADER0 pHdrConv,
 static void vdiConvHeaderEndianessV1(VDIECONV enmConv, PVDIHEADER1 pHdrConv,
                                      PVDIHEADER1 pHdr)
 {
+    memmove(pHdrConv->szComment, pHdr->szComment, sizeof(pHdr->szComment));
     pHdrConv->cbHeader         = SET_ENDIAN_U32(enmConv, pHdr->cbHeader);
     pHdrConv->u32Type          = SET_ENDIAN_U32(enmConv, pHdr->u32Type);
     pHdrConv->fFlags           = SET_ENDIAN_U32(enmConv, pHdr->fFlags);
@@ -152,6 +154,7 @@ static void vdiConvHeaderEndianessV1(VDIECONV enmConv, PVDIHEADER1 pHdrConv,
 static void vdiConvHeaderEndianessV1p(VDIECONV enmConv, PVDIHEADER1PLUS pHdrConv,
                                       PVDIHEADER1PLUS pHdr)
 {
+    memmove(pHdrConv->szComment, pHdr->szComment, sizeof(pHdr->szComment));
     pHdrConv->cbHeader         = SET_ENDIAN_U32(enmConv, pHdr->cbHeader);
     pHdrConv->u32Type          = SET_ENDIAN_U32(enmConv, pHdr->u32Type);
     pHdrConv->fFlags           = SET_ENDIAN_U32(enmConv, pHdr->fFlags);
