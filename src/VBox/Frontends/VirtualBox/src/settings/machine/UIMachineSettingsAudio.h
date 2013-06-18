@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,21 +26,22 @@
 /* Machine settings / Audio page / Data: */
 struct UIDataSettingsMachineAudio
 {
-    /* Default constructor: */
+    /* Constructor: */
     UIDataSettingsMachineAudio()
         : m_fAudioEnabled(false)
         , m_audioDriverType(KAudioDriverType_Null)
         , m_audioControllerType(KAudioControllerType_AC97) {}
-    /* Functions: */
+
+    /* Helpers: Compare functions/operators: */
     bool equal(const UIDataSettingsMachineAudio &other) const
     {
         return (m_fAudioEnabled == other.m_fAudioEnabled) &&
                (m_audioDriverType == other.m_audioDriverType) &&
                (m_audioControllerType == other.m_audioControllerType);
     }
-    /* Operators: */
     bool operator==(const UIDataSettingsMachineAudio &other) const { return equal(other); }
     bool operator!=(const UIDataSettingsMachineAudio &other) const { return !equal(other); }
+
     /* Variables: */
     bool m_fAudioEnabled;
     KAudioDriverType m_audioDriverType;
@@ -49,16 +50,19 @@ struct UIDataSettingsMachineAudio
 typedef UISettingsCache<UIDataSettingsMachineAudio> UICacheSettingsMachineAudio;
 
 /* Machine settings / Audio page: */
-class UIMachineSettingsAudio : public UISettingsPageMachine,
-                            public Ui::UIMachineSettingsAudio
+class UIMachineSettingsAudio : public UISettingsPageMachine, public Ui::UIMachineSettingsAudio
 {
     Q_OBJECT;
 
 public:
 
+    /* Constructor: */
     UIMachineSettingsAudio();
 
 protected:
+
+    /* API: Cache stuff: */
+    bool changed() const { return m_cache.wasChanged(); }
 
     /* Load data to cache from corresponding external object(s),
      * this task COULD be performed in other than GUI thread: */
@@ -74,18 +78,20 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    /* Page changed: */
-    bool changed() const { return m_cache.wasChanged(); }
+    /* API: Focus-order stuff: */
+    void setOrderAfter(QWidget *pWidget);
 
-    void setOrderAfter (QWidget *aWidget);
-
+    /* Helper: Translate stuff: */
     void retranslateUi();
+
+    /* Helper: Polish stuff: */
+    void polishPage();
 
 private:
 
+    /* Helpers: Prepare stuff: */
+    void prepare();
     void prepareComboboxes();
-
-    void polishPage();
 
     /* Cache: */
     UICacheSettingsMachineAudio m_cache;
