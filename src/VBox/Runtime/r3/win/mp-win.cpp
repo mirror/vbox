@@ -93,59 +93,52 @@ RTDECL(RTCPUID) RTMpGetCount(void)
 
 RTDECL(RTCPUID) RTMpGetCoreCount(void)
 {
-    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION pSysInfo = NULL;
-    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION pSysInfoTmp = NULL;
-    DWORD sysProcInfoLen = 0;
-    DWORD offset = 0;
-    DWORD coreCount = 0;
-    BOOL rc;
     BOOL (WINAPI *pfnGetLogicalProcInfo)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
 
     pfnGetLogicalProcInfo = (BOOL (WINAPI *)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD))
                              GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "GetLogicalProcessorInformation");
-    /* 0 represent error condition. Can't return VERR* error codes as caller expects a unsigned value of core count.*/
+    /* 0 represents an error condition. We cannot return VERR* error codes as caller expects a
+     * unsigned value of core count.*/
     if (!pfnGetLogicalProcInfo)
         return 0;
 
-    rc = pfnGetLogicalProcInfo(pSysInfo, &sysProcInfoLen);
-    if (rc == FALSE)
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION pSysInfo = NULL;
+    DWORD cbSysProcInfo = 0;
+    BOOL fRc = pfnGetLogicalProcInfo(pSysInfo, &cbSysProcInfo);
+    if (!fRc)
     {
         if (GetLastError() ==  ERROR_INSUFFICIENT_BUFFER)
-        {
-            RTMemFree(pSysInfo);
-            pSysInfo = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)RTMemAlloc(sysProcInfoLen);
-            if (!pSysInfo)
-                 return 0;
-        }
-        else
-            return 0;
+            pSysInfo = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)RTMemAlloc(cbSysProcInfo);
     }
 
-    rc = pfnGetLogicalProcInfo(pSysInfo, &sysProcInfoLen);
-    if (rc == FALSE)
+    RTCPUID cCores = 0;
+    if (pSysInfo)
     {
-        RTMemFree(pSysInfo);
-        return 0;
-    }
-    pSysInfoTmp = pSysInfo;
-    while (offset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= sysProcInfoLen)
-    {
-        switch (pSysInfoTmp->Relationship)
+        fRc = pfnGetLogicalProcInfo(pSysInfo, &cbSysProcInfo);
+        if (fRc)
         {
-            case RelationProcessorCore:
-                coreCount++;
-            break;
-            case RelationCache:
-            case RelationNumaNode:
-            case RelationProcessorPackage:
-            default:
-            ;
+            PSYSTEM_LOGICAL_PROCESSOR_INFORMATION pSysInfoTmp = pSysInfo;
+            size_t offs = 0;
+            while (offs + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= cbSysProcInfo)
+            {
+                switch (pSysInfoTmp->Relationship)
+                {
+                    case RelationProcessorCore:
+                        cCore++;
+                        break;
+                    case RelationCache:
+                    case RelationNumaNode:
+                    case RelationProcessorPackage:
+                    default:
+                        ;
+                }
+                offs += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+                pSysInfoTmp++;
+            }
         }
-        offset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
-        pSysInfoTmp++;
+        RTMemFree(pSysInfo);
     }
-    RTMemFree(pSysInfo);
-    return coreCount;
+    return cCores;
 }
 
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
