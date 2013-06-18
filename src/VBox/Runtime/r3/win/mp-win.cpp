@@ -90,6 +90,62 @@ RTDECL(RTCPUID) RTMpGetCount(void)
     return SysInfo.dwNumberOfProcessors;
 }
 
+RTDECL(RTCPUID) RTMpGetCoreCount(void)
+{
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION pSysInfo = NULL;
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION pSysInfoTmp = NULL;
+    DWORD sysProcInfoLen = 0;
+    DWORD offset = 0;
+    DWORD coreCount = 0;
+    BOOL rc;
+    BOOL (WINAPI *pfnGetLogicalProcInfo)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
+
+    pfnGetLogicalProcInfo = (BOOL (WINAPI *)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD))
+                             GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "GetLogicalProcessorInformation");
+    /* 0 represent error condition. Can't return VERR* error codes as caller expects a unsigned value of core count.*/
+    if (!pfnGetLogicalProcInfo)
+        return 0;
+
+    rc = pfnGetLogicalProcInfo(pSysInfo, &sysProcInfoLen);
+    if (rc == FALSE)
+    {
+        if (GetLastError() ==  ERROR_INSUFFICIENT_BUFFER)
+        {
+            RTMemFree(pSysInfo);
+            pSysInfo = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)RTMemAlloc(sysProcInfoLen);
+            if (!pSysInfo)
+                 return 0;
+        }
+        else
+            return 0;
+    }
+
+    rc = pfnGetLogicalProcInfo(pSysInfo, &sysProcInfoLen);
+    if (rc == FALSE)
+    {
+        RTMemFree(pSysInfo);
+        return 0;
+    }
+    pSysInfoTmp = pSysInfo;
+    while (offset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= sysProcInfoLen)
+    {
+        switch (pSysInfoTmp->Relationship)
+        {
+            case RelationProcessorCore:
+                coreCount++;
+            break;
+            case RelationCache:
+            case RelationNumaNode:
+            case RelationProcessorPackage:
+            default:
+            ;
+        }
+        offset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+        pSysInfoTmp++;
+    }
+    RTMemFree(pSysInfo);
+    return coreCount;
+}
 
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
