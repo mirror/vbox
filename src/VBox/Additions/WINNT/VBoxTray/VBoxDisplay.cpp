@@ -62,7 +62,7 @@ int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
     OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
     GetVersionEx (&OSinfo);
 
-    HMODULE hUser = GetModuleHandle("USER32");
+    HMODULE hUser = GetModuleHandle("user32.dll");
 
     gCtx.pEnv = pEnv;
 

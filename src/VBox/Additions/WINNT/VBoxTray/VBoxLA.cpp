@@ -1248,7 +1248,7 @@ int VBoxLAInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThrea
 
     RT_ZERO(gCtx.activeClient);
 
-    *(void **)&gCtx.pfnProcessIdToSessionId = RTLdrGetSystemSymbol("KERNEL32", "ProcessIdToSessionId");
+    *(void **)&gCtx.pfnProcessIdToSessionId = RTLdrGetSystemSymbol("kernel32.dll", "ProcessIdToSessionId");
     *pfStartThread = true;
     *ppInstance = &gCtx;
     return VINF_SUCCESS;

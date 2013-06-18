@@ -224,7 +224,7 @@ static RTWINOSTYPE rtSystemWinOSType(OSVERSIONINFOEX const *pOSInfoEx)
 static RTWINPRODTYPE rtSystemWinGetProductInfo(DWORD dwOSMajorVersion, DWORD dwOSMinorVersion, DWORD dwSpMajorVersion, DWORD dwSpMinorVersion)
 {
     BOOL (WINAPI *pfnGetProductInfo)(DWORD, DWORD, DWORD, DWORD, PDWORD);
-    pfnGetProductInfo = (BOOL (WINAPI *)(DWORD, DWORD, DWORD, DWORD, PDWORD))GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "GetProductInfo");
+    pfnGetProductInfo = (BOOL (WINAPI *)(DWORD, DWORD, DWORD, DWORD, PDWORD))GetProcAddress(GetModuleHandle("kernel32.dll"), "GetProductInfo");
     if (pfnGetProductInfo)
     {
         DWORD dwProductType = kRTWinProdType_UNDEFINED;
