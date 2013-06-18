@@ -132,6 +132,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         {
             udpstat.udps_badlen++;
             Log3(("NAT: IP(id: %hd) has bad size\n", ip->ip_id));
+            goto bad_free_mbuf;
         }
         m_adj(m, len - ip->ip_len);
         ip->ip_len = len;
