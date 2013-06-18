@@ -30,9 +30,13 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_SYSTEM
 #include <Windows.h>
+
 #include <iprt/mp.h>
-#include <iprt/cpuset.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
+#include <iprt/cpuset.h>
+#include <iprt/ldr.h>
 #include <iprt/mem.h>
 
 
@@ -91,55 +95,59 @@ RTDECL(RTCPUID) RTMpGetCount(void)
     return SysInfo.dwNumberOfProcessors;
 }
 
+
 RTDECL(RTCPUID) RTMpGetCoreCount(void)
 {
-    BOOL (WINAPI *pfnGetLogicalProcInfo)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
+    /*
+     * Resolve the API dynamically (one try) as it requires XP w/ sp3 or later.
+     */
+    typedef BOOL (WINAPI *PFNGETLOGICALPROCINFO)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
+    static PFNGETLOGICALPROCINFO s_pfnGetLogicalProcInfo = (PFNGETLOGICALPROCINFO)~(uintptr_t)0;
+    if (s_pfnGetLogicalProcInfo == (PFNGETLOGICALPROCINFO)~(uintptr_t)0)
+        s_pfnGetLogicalProcInfo = (PFNGETLOGICALPROCINFO)RTLdrGetSystemSymbol("kernel32.dll", "GetLogicalProcessorInformation");
 
-    pfnGetLogicalProcInfo = (BOOL (WINAPI *)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD))
-                             GetProcAddress(GetModuleHandle("kernel32.dll"), "GetLogicalProcessorInformation");
-    /* 0 represents an error condition. We cannot return VERR* error codes as caller expects a
-     * unsigned value of core count.*/
-    if (!pfnGetLogicalProcInfo)
-        return 0;
-
-    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION pSysInfo = NULL;
-    DWORD cbSysProcInfo = 0;
-    BOOL fRc = pfnGetLogicalProcInfo(pSysInfo, &cbSysProcInfo);
-    if (!fRc)
+    if (s_pfnGetLogicalProcInfo)
     {
-        if (GetLastError() ==  ERROR_INSUFFICIENT_BUFFER)
-            pSysInfo = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)RTMemAlloc(cbSysProcInfo);
-    }
-
-    RTCPUID cCores = 0;
-    if (pSysInfo)
-    {
-        fRc = pfnGetLogicalProcInfo(pSysInfo, &cbSysProcInfo);
+        /*
+         * Query the information. This unfortunately requires a buffer, so we
+         * start with a guess and let windows advice us if it's too small.
+         */
+        DWORD                                   cbSysProcInfo = _4K / 16;
+        PSYSTEM_LOGICAL_PROCESSOR_INFORMATION   paSysInfo = NULL;
+        BOOL                                    fRc = FALSE;
+        do
+        {
+            cbSysProcInfo = RT_ALIGN_32(cbSysProcInfo, 256);
+            void *pv = RTMemRealloc(paSysInfo, cbSysProcInfo);
+            if (!pv)
+                break;
+            paSysInfo = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)pv;
+            fRc = s_pfnGetLogicalProcInfo(paSysInfo, &cbSysProcInfo);
+        } while (!fRc && GetLastError() == ERROR_INSUFFICIENT_BUFFER);
         if (fRc)
         {
-            PSYSTEM_LOGICAL_PROCESSOR_INFORMATION pSysInfoTmp = pSysInfo;
-            size_t offs = 0;
-            while (offs + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= cbSysProcInfo)
-            {
-                switch (pSysInfoTmp->Relationship)
-                {
-                    case RelationProcessorCore:
-                        cCores++;
-                        break;
-                    case RelationCache:
-                    case RelationNumaNode:
-                    case RelationProcessorPackage:
-                    default:
-                        ;
-                }
-                offs += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
-                pSysInfoTmp++;
-            }
+            /*
+             * Parse the result.
+             */
+            uint32_t cCores = 0;
+            uint32_t i      = cbSysProcInfo / sizeof(paSysInfo[0]);
+            while (i-- > 0)
+                if (paSysInfo[i].Relationship == RelationProcessorCore)
+                    cCores++;
+
+            RTMemFree(paSysInfo);
+            Assert(cCores > 0);
+            return cCores;
         }
-        RTMemFree(pSysInfo);
+
+        RTMemFree(paSysInfo);
     }
-    return cCores;
+
+    /* If we don't have the necessary API or if it failed, return the same
+       value as the generic implementation. */
+    return RTMpGetCount();
 }
+
 
 RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
 {
