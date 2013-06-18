@@ -195,7 +195,7 @@ RTDECL(int) RTPathUserDocuments(char *pszPath, size_t cchPath)
     AssertReturn(cchPath, VERR_INVALID_PARAMETER);
 
     RTLDRMOD hShell32;
-    int rc = RTLdrLoad("Shell32.dll", &hShell32);
+    int rc = RTLdrLoadSystem("Shell32.dll", true /*fNoUnload*/, &hShell32);
     if (RT_SUCCESS(rc))
     {
         PFNSHGETFOLDERPATHW pfnSHGetFolderPathW;
