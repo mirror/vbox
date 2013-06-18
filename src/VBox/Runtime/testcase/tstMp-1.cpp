@@ -30,103 +30,81 @@
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
 #include <iprt/err.h>
-#include <iprt/initterm.h>
-#include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/test.h>
 
-
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-static unsigned g_cErrors = 0;
 
 
 int main()
 {
-    RTR3InitExeNoArguments(0);
-    RTPrintf("tstMp-1: TESTING...\n");
+    RTTEST hTest;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTMp-1", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+    RTTestBanner(hTest);
 
     /*
      * Present and possible CPUs.
      */
     RTCPUID cCpus = RTMpGetCount();
     if (cCpus > 0)
-        RTPrintf("tstMp-1: RTMpGetCount -> %d\n", (int)cCpus);
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "RTMpGetCount -> %u\n", cCpus);
     else
     {
-        RTPrintf("tstMp-1: FAILURE: RTMpGetCount -> %d\n", (int)cCpus);
-        g_cErrors++;
+        RTTestIFailed("RTMpGetCount returned zero");
         cCpus = 1;
     }
 
     RTCPUID cCoreCpus = RTMpGetCoreCount();
     if (cCoreCpus > 0)
-        RTPrintf("tstMp-1: RTMpGetCoreCount -> %d\n", (int)cCoreCpus);
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "RTMpGetCoreCount -> %d\n", (int)cCoreCpus);
     else
     {
-        RTPrintf("tstMp-1: FAILURE: RTMpGetCoreCount -> %d\n", (int)cCoreCpus);
-        g_cErrors++;
+        RTTestIFailed("RTMpGetCoreCount returned zero");
         cCoreCpus = 1;
     }
+    RTTESTI_CHECK(cCoreCpus <= cCpus);
 
     RTCPUSET Set;
     PRTCPUSET pSet = RTMpGetSet(&Set);
+    RTTESTI_CHECK(pSet == &Set);
     if (pSet == &Set)
     {
-        if ((RTCPUID)RTCpuSetCount(&Set) != cCpus)
-        {
-            RTPrintf("tstMp-1: FAILURE: RTMpGetSet returned a set with a different cpu count; %d, expected %d\n",
-                     RTCpuSetCount(&Set), cCpus);
-            g_cErrors++;
-        }
-        RTPrintf("tstMp-1: Possible CPU mask:\n");
+        RTTESTI_CHECK((RTCPUID)RTCpuSetCount(&Set) == cCpus);
+
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "Possible CPU mask:\n");
         for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
         {
             RTCPUID idCpu = RTMpCpuIdFromSetIndex(iCpu);
             if (RTCpuSetIsMemberByIndex(&Set, iCpu))
             {
-                RTPrintf("tstMp-1: %2d - id %d: %u/%u MHz", iCpu, (int)idCpu,
-                         RTMpGetCurFrequency(idCpu), RTMpGetMaxFrequency(idCpu));
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "%2d - id %d: %u/%u MHz", iCpu, (int)idCpu,
+                              RTMpGetCurFrequency(idCpu), RTMpGetMaxFrequency(idCpu));
                 if (RTMpIsCpuPresent(idCpu))
-                    RTPrintf(RTMpIsCpuOnline(idCpu) ? " online\n" : " offline\n");
+                    RTTestIPrintf(RTTESTLVL_ALWAYS, RTMpIsCpuOnline(idCpu) ? " online\n" : " offline\n");
                 else
                 {
                     if (!RTMpIsCpuOnline(idCpu))
-                        RTPrintf(" absent\n");
+                        RTTestIPrintf(RTTESTLVL_ALWAYS, " absent\n");
                     else
                     {
-                        RTPrintf(" online but absent!\n");
-                        RTPrintf("tstMp-1: FAILURE: Cpu with index %d is report as !RTIsCpuPresent while RTIsCpuOnline returns true!\n", iCpu);
-                        g_cErrors++;
+                        RTTestIPrintf(RTTESTLVL_ALWAYS, " online but absent!\n");
+                        RTTestIFailed("Cpu with index %d is report as !RTIsCpuPresent while RTIsCpuOnline returns true!\n", iCpu);
                     }
                 }
                 if (!RTMpIsCpuPossible(idCpu))
-                {
-                    RTPrintf("tstMp-1: FAILURE: Cpu with index %d is returned by RTCpuSet but not RTMpIsCpuPossible!\n", iCpu);
-                    g_cErrors++;
-                }
+                    RTTestIFailed("Cpu with index %d is returned by RTCpuSet but not RTMpIsCpuPossible!\n", iCpu);
             }
             else if (RTMpIsCpuPossible(idCpu))
-            {
-                RTPrintf("tstMp-1: FAILURE: Cpu with index %d is returned by RTMpIsCpuPossible but not RTCpuSet!\n", iCpu);
-                g_cErrors++;
-            }
+                RTTestIFailed("Cpu with index %d is returned by RTMpIsCpuPossible but not RTCpuSet!\n", iCpu);
             else if (RTMpGetCurFrequency(idCpu) != 0)
-            {
-                RTPrintf("tstMp-1: FAILURE: RTMpGetCurFrequency(%d[idx=%d]) didn't return 0 as it should\n", (int)idCpu, iCpu);
-                g_cErrors++;
-            }
+                RTTestIFailed("RTMpGetCurFrequency(%d[idx=%d]) didn't return 0 as it should\n", (int)idCpu, iCpu);
             else if (RTMpGetMaxFrequency(idCpu) != 0)
-            {
-                RTPrintf("tstMp-1: FAILURE: RTMpGetMaxFrequency(%d[idx=%d]) didn't return 0 as it should\n", (int)idCpu, iCpu);
-                g_cErrors++;
-            }
+                RTTestIFailed("RTMpGetMaxFrequency(%d[idx=%d]) didn't return 0 as it should\n", (int)idCpu, iCpu);
         }
     }
     else
     {
-        RTPrintf("tstMp-1: FAILURE: RTMpGetSet -> %p, expected %p\n", pSet, &Set);
-        g_cErrors++;
         RTCpuSetEmpty(&Set);
         RTCpuSetAdd(&Set, RTMpCpuIdFromSetIndex(0));
     }
@@ -138,18 +116,16 @@ int main()
     if (cCpusOnline > 0)
     {
         if (cCpusOnline <= cCpus)
-            RTPrintf("tstMp-1: RTMpGetOnlineCount -> %d\n", (int)cCpusOnline);
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "RTMpGetOnlineCount -> %d\n", (int)cCpusOnline);
         else
         {
-            RTPrintf("tstMp-1: FAILURE: RTMpGetOnlineCount -> %d, expected <= %d\n", (int)cCpusOnline, (int)cCpus);
-            g_cErrors++;
+            RTTestIFailed("RTMpGetOnlineCount -> %d, expected <= %d\n", (int)cCpusOnline, (int)cCpus);
             cCpusOnline = cCpus;
         }
     }
     else
     {
-        RTPrintf("tstMp-1: FAILURE: RTMpGetOnlineCount -> %d\n", (int)cCpusOnline);
-        g_cErrors++;
+        RTTestIFailed("RTMpGetOnlineCount -> %d\n", (int)cCpusOnline);
         cCpusOnline = 1;
     }
 
@@ -158,37 +134,25 @@ int main()
     if (pSet == &SetOnline)
     {
         if (RTCpuSetCount(&SetOnline) <= 0)
-        {
-            RTPrintf("tstMp-1: FAILURE: RTMpGetOnlineSet returned an empty set!\n");
-            g_cErrors++;
-        }
+            RTTestIFailed("RTMpGetOnlineSet returned an empty set!\n");
         else if ((RTCPUID)RTCpuSetCount(&SetOnline) > cCpus)
-        {
-            RTPrintf("tstMp-1: FAILURE: RTMpGetOnlineSet returned a too high value; %d, expected <= %d\n",
-                     RTCpuSetCount(&SetOnline), cCpus);
-            g_cErrors++;
-        }
-        RTPrintf("tstMp-1: Online CPU mask:\n");
+            RTTestIFailed("RTMpGetOnlineSet returned a too high value; %d, expected <= %d\n",
+                          RTCpuSetCount(&SetOnline), cCpus);
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "Online CPU mask:\n");
         for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
             if (RTCpuSetIsMemberByIndex(&SetOnline, iCpu))
             {
                 RTCPUID idCpu = RTMpCpuIdFromSetIndex(iCpu);
-                RTPrintf("tstMp-1: %2d - id %d: %u/%u MHz %s\n", iCpu, (int)idCpu, RTMpGetCurFrequency(idCpu),
-                         RTMpGetMaxFrequency(idCpu), RTMpIsCpuOnline(idCpu) ? "online" : "offline");
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "%2d - id %d: %u/%u MHz %s\n", iCpu, (int)idCpu, RTMpGetCurFrequency(idCpu),
+                              RTMpGetMaxFrequency(idCpu), RTMpIsCpuOnline(idCpu) ? "online" : "offline");
                 if (!RTCpuSetIsMemberByIndex(&Set, iCpu))
-                {
-                    RTPrintf("tstMp-1: FAILURE: online cpu with index %2d is not a member of the possible cpu set!\n", iCpu);
-                    g_cErrors++;
-                }
+                    RTTestIFailed("online cpu with index %2d is not a member of the possible cpu set!\n", iCpu);
             }
 
         /* There isn't any sane way of testing RTMpIsCpuOnline really... :-/ */
     }
     else
-    {
-        RTPrintf("tstMp-1: FAILURE: RTMpGetOnlineSet -> %p, expected %p\n", pSet, &Set);
-        g_cErrors++;
-    }
+        RTTestIFailed("RTMpGetOnlineSet -> %p, expected %p\n", pSet, &Set);
 
     /*
      * Present CPUs.
@@ -198,17 +162,14 @@ int main()
     {
         if (    cCpusPresent <= cCpus
             &&  cCpusPresent >= cCpusOnline)
-            RTPrintf("tstMp-1: RTMpGetPresentCount -> %d\n", (int)cCpusPresent);
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "RTMpGetPresentCount -> %d\n", (int)cCpusPresent);
         else
-        {
-            RTPrintf("tstMp-1: FAILURE: RTMpGetPresentCount -> %d, expected <= %d and >= %d\n", (int)cCpusPresent, (int)cCpus, (int)cCpusOnline);
-            g_cErrors++;
-        }
+            RTTestIFailed("RTMpGetPresentCount -> %d, expected <= %d and >= %d\n",
+                          (int)cCpusPresent, (int)cCpus, (int)cCpusOnline);
     }
     else
     {
-        RTPrintf("tstMp-1: FAILURE: RTMpGetPresentCount -> %d\n", (int)cCpusPresent);
-        g_cErrors++;
+        RTTestIFailed("RTMpGetPresentCount -> %d\n", (int)cCpusPresent);
         cCpusPresent = 1;
     }
 
@@ -217,37 +178,25 @@ int main()
     if (pSet == &SetPresent)
     {
         if (RTCpuSetCount(&SetPresent) <= 0)
-        {
-            RTPrintf("tstMp-1: FAILURE: RTMpGetPresentSet returned an empty set!\n");
-            g_cErrors++;
-        }
+            RTTestIFailed("RTMpGetPresentSet returned an empty set!\n");
         else if ((RTCPUID)RTCpuSetCount(&SetPresent) != cCpusPresent)
-        {
-            RTPrintf("tstMp-1: FAILURE: RTMpGetPresentSet returned a bad value; %d, expected = %d\n",
-                     RTCpuSetCount(&SetPresent), cCpusPresent);
-            g_cErrors++;
-        }
-        RTPrintf("tstMp-1: Present CPU mask:\n");
+            RTTestIFailed("RTMpGetPresentSet returned a bad value; %d, expected = %d\n",
+                          RTCpuSetCount(&SetPresent), cCpusPresent);
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "Present CPU mask:\n");
         for (int iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
             if (RTCpuSetIsMemberByIndex(&SetPresent, iCpu))
             {
                 RTCPUID idCpu = RTMpCpuIdFromSetIndex(iCpu);
-                RTPrintf("tstMp-1: %2d - id %d: %u/%u MHz %s\n", iCpu, (int)idCpu, RTMpGetCurFrequency(idCpu),
-                         RTMpGetMaxFrequency(idCpu), RTMpIsCpuPresent(idCpu) ? "present" : "absent");
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "%2d - id %d: %u/%u MHz %s\n", iCpu, (int)idCpu, RTMpGetCurFrequency(idCpu),
+                              RTMpGetMaxFrequency(idCpu), RTMpIsCpuPresent(idCpu) ? "present" : "absent");
                 if (!RTCpuSetIsMemberByIndex(&Set, iCpu))
-                {
-                    RTPrintf("tstMp-1: FAILURE: online cpu with index %2d is not a member of the possible cpu set!\n", iCpu);
-                    g_cErrors++;
-                }
+                    RTTestIFailed("online cpu with index %2d is not a member of the possible cpu set!\n", iCpu);
             }
 
         /* There isn't any sane way of testing RTMpIsCpuPresent really... :-/ */
     }
     else
-    {
-        RTPrintf("tstMp-1: FAILURE: RTMpGetPresentSet -> %p, expected %p\n", pSet, &Set);
-        g_cErrors++;
-    }
+        RTTestIFailed("RTMpGetPresentSet -> %p, expected %p\n", pSet, &Set);
 
 
     /* Find an online cpu for the next test. */
@@ -263,33 +212,20 @@ int main()
     int rc = RTMpGetDescription(idCpuOnline, &szBuf[0], sizeof(szBuf));
     if (RT_SUCCESS(rc))
     {
-        RTPrintf("tstMp-1: RTMpGetDescription -> '%s'\n", szBuf);
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "RTMpGetDescription -> '%s'\n", szBuf);
 
         size_t cch = strlen(szBuf);
         rc = RTMpGetDescription(idCpuOnline, &szBuf[0], cch);
         if (rc != VERR_BUFFER_OVERFLOW)
-        {
-            RTPrintf("tstMp-1: FAILURE: RTMpGetDescription -> %Rrc, expected VERR_BUFFER_OVERFLOW\n", rc);
-            g_cErrors++;
-        }
+            RTTestIFailed("RTMpGetDescription -> %Rrc, expected VERR_BUFFER_OVERFLOW\n", rc);
+
         rc = RTMpGetDescription(idCpuOnline, &szBuf[0], cch + 1);
         if (RT_FAILURE(rc))
-        {
-            RTPrintf("tstMp-1: FAILURE: RTMpGetDescription -> %Rrc, expected VINF_SUCCESS\n", rc);
-            g_cErrors++;
-        }
+            RTTestIFailed("RTMpGetDescription -> %Rrc, expected VINF_SUCCESS\n", rc);
     }
     else
-    {
-        RTPrintf("tstMp-1: FAILURE: RTMpGetDescription -> %Rrc\n", rc);
-        g_cErrors++;
-    }
+        RTTestIFailed("RTMpGetDescription -> %Rrc\n", rc);
 
-
-    if (!g_cErrors)
-        RTPrintf("tstMp-1: SUCCESS\n", g_cErrors);
-    else
-        RTPrintf("tstMp-1: FAILURE - %d errors\n", g_cErrors);
-    return !!g_cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
 
