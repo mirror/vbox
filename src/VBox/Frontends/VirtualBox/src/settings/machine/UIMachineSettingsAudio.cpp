@@ -194,7 +194,7 @@ void UIMachineSettingsAudio::prepareComboboxes()
 
 void UIMachineSettingsAudio::polishPage()
 {
-    setEnabled(isMachineOffline());
+    m_pContainerAudioOptions->setEnabled(isMachineOffline());
     mAudioChild->setEnabled(mGbAudio->isChecked());
 }
 
