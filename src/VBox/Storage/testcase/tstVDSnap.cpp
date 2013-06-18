@@ -275,6 +275,7 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
             if (pbTestPattern) \
                 RTMemFree(pbTestPattern); \
             VDDestroy(pVD); \
+            g_cErrors++; \
             return rc; \
         } \
     } while (0)
@@ -285,6 +286,7 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
         RTPrintf("%s rc=%Rrc\n", str, rc); \
         if (RT_FAILURE(rc)) \
         { \
+            g_cErrors++; \
             break; \
         } \
     } while (0)
