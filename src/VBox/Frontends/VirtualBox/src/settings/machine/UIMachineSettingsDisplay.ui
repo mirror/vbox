@@ -476,40 +476,42 @@
               </widget>
              </item>
              <item row="2" column="1" rowspan="2">
-              <layout class="QGridLayout" name="m_pSliderLayoutVideoCaptureFrameRate">
-               <property name="spacing">
-                <number>0</number>
-               </property>
-               <item row="0" column="0" colspan="3">
-                <widget class="QIAdvancedSlider" name="m_pSliderVideoCaptureFrameRate">
-                 <property name="whatsThis">
-                  <string>This setting determines the maximum number of &lt;b>frames per second&lt;/b>. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</string>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="m_pLabelVideoCaptureFrameRateMin"/>
-               </item>
-               <item row="1" column="1">
-                <spacer name="m_pStretchVideoCaptureFrameRate">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>0</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item row="1" column="2">
-                <widget class="QLabel" name="m_pLabelVideoCaptureFrameRateMax"/>
-               </item>
-              </layout>
+              <widget class="QWidget" name="m_pContainerSliderVideoCaptureFrameRate">
+               <layout class="QGridLayout" name="m_pContainerLayoutSliderVideoCaptureFrameRate">
+                <property name="spacing">
+                 <number>0</number>
+                </property>
+                <item row="0" column="0" colspan="3">
+                 <widget class="QIAdvancedSlider" name="m_pSliderVideoCaptureFrameRate">
+                  <property name="whatsThis">
+                   <string>This setting determines the maximum number of &lt;b>frames per second&lt;/b>. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</string>
+                  </property>
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="m_pLabelVideoCaptureFrameRateMin"/>
+                </item>
+                <item row="1" column="1">
+                 <spacer name="m_pStretchVideoCaptureFrameRate">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>0</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item row="1" column="2">
+                 <widget class="QLabel" name="m_pLabelVideoCaptureFrameRateMax"/>
+                </item>
+               </layout>
+              </widget>
              </item>
              <item row="2" column="2">
               <widget class="QSpinBox" name="m_pEditorVideoCaptureFrameRate">
@@ -535,56 +537,58 @@
               </widget>
              </item>
              <item row="4" column="1" rowspan="2">
-              <layout class="QGridLayout" name="m_pSliderLayoutVideoCaptureQuality">
-               <property name="spacing">
-                <number>0</number>
-               </property>
-               <item row="0" column="0" colspan="5">
-                <widget class="QIAdvancedSlider" name="m_pSliderVideoCaptureQuality">
-                 <property name="whatsThis">
-                  <string>This setting determines the &lt;b>quality&lt;/b>. Increasing this value makes the video look better for the cost of an increased file size.</string>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="m_pLabelVideoCaptureQualityMin"/>
-               </item>
-               <item row="1" column="1">
-                <spacer name="m_pStretchVideoCaptureQualityLeft">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>0</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item row="1" column="2">
-                <widget class="QLabel" name="m_pLabelVideoCaptureQualityMed"/>
-               </item>
-               <item row="1" column="3">
-                <spacer name="m_pStretchVideoCaptureQualityRight">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>0</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item row="1" column="4">
-                <widget class="QLabel" name="m_pLabelVideoCaptureQualityMax"/>
-               </item>
-              </layout>
+              <widget class="QWidget" name="m_pContainerSliderVideoCaptureQuality">
+               <layout class="QGridLayout" name="m_pContainerLayoutSliderVideoCaptureQuality">
+                <property name="spacing">
+                 <number>0</number>
+                </property>
+                <item row="0" column="0" colspan="5">
+                 <widget class="QIAdvancedSlider" name="m_pSliderVideoCaptureQuality">
+                  <property name="whatsThis">
+                   <string>This setting determines the &lt;b>quality&lt;/b>. Increasing this value makes the video look better for the cost of an increased file size.</string>
+                  </property>
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="m_pLabelVideoCaptureQualityMin"/>
+                </item>
+                <item row="1" column="1">
+                 <spacer name="m_pStretchVideoCaptureQualityLeft">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>0</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item row="1" column="2">
+                 <widget class="QLabel" name="m_pLabelVideoCaptureQualityMed"/>
+                </item>
+                <item row="1" column="3">
+                 <spacer name="m_pStretchVideoCaptureQualityRight">
+                  <property name="orientation">
+                   <enum>Qt::Horizontal</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>0</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item row="1" column="4">
+                 <widget class="QLabel" name="m_pLabelVideoCaptureQualityMax"/>
+                </item>
+               </layout>
+              </widget>
              </item>
              <item row="4" column="2">
               <widget class="QSpinBox" name="m_pEditorVideoCaptureBitRate">
