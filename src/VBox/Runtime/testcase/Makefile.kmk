@@ -87,7 +87,7 @@ PROGRAMS += \
 	tstRTMemPool \
 	tstRTMemWipe \
 	tstMove \
-	tstMp-1 \
+	tstRTMp-1 \
 	tstOnce \
 	tstRTPath \
 	tstRTPipe \
@@ -423,8 +423,8 @@ tstRTMemWipe_SOURCES = tstRTMemWipe.cpp
 tstMove_TEMPLATE = VBOXR3TSTEXE
 tstMove_SOURCES = tstMove.cpp
 
-tstMp-1_TEMPLATE = VBOXR3TSTEXE
-tstMp-1_SOURCES = tstMp-1.cpp
+tstRTMp-1_TEMPLATE = VBOXR3TSTEXE
+tstRTMp-1_SOURCES = tstRTMp-1.cpp
 
 tstNoCrt-1_TEMPLATE = VBOXR3TSTEXE
 tstNoCrt-1_DEFS = RT_WITHOUT_NOCRT_WRAPPER_ALIASES
