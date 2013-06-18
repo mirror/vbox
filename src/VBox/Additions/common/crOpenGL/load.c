@@ -986,10 +986,11 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
 #ifdef WINDOWS
     PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
 # ifdef VBOX_WITH_WDDM
-    hVBoxD3D = GetModuleHandle(VBOX_MODNAME_DISPD3D);
-    if (hVBoxD3D)
+    hVBoxD3D = NULL;
+    if (!GetModuleHandleEx(0, VBOX_MODNAME_DISPD3D, &hVBoxD3D))
     {
-        hVBoxD3D = LoadLibrary(VBOX_MODNAME_DISPD3D);
+        crDebug("GetModuleHandleEx failed err %d", GetLastError());
+        hVBoxD3D = NULL;
     }
 
     if (hVBoxD3D)
