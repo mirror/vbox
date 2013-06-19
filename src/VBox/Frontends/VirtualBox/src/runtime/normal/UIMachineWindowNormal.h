@@ -94,7 +94,6 @@ private:
 
     /* Widgets: */
     UIIndicatorsPool *m_pIndicatorsPool;
-    QWidget *m_pCntHostkey;
     QLabel *m_pNameHostkey;
 
     /* Variables: */

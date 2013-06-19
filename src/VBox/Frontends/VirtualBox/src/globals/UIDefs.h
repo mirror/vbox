@@ -136,6 +136,7 @@ namespace UIDefs
     extern const char* GUI_SaveMountedAtRuntime;
     extern const char* GUI_PassCAD;
     extern const char* GUI_DefaultCloseAction;
+    extern const char* GUI_RestrictedStatusBarIndicators;
 
     /* Mini tool-bar declarations: */
     extern const char* GUI_ShowMiniToolBar;
