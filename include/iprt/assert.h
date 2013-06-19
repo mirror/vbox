@@ -297,6 +297,8 @@ RT_C_DECLS_END
  */
 #ifdef __GNUC__
 # define AssertCompileNS(expr)  extern int RTASSERTVAR[1] __attribute__((unused)), RTASSERTVAR[(expr) ? 1 : 0] __attribute__((unused))
+#elif defined(__IBMC__) || defined(__IBMCPP__)
+# define AssertCompileNS(expr)  extern int RTASSERTVAR[(expr) ? 1 : 0]
 #else
 # define AssertCompileNS(expr)  typedef int RTASSERTTYPE[(expr) ? 1 : 0]
 #endif
@@ -311,6 +313,23 @@ RT_C_DECLS_END
 #else
 # define AssertCompile(expr)    AssertCompileNS(expr)
 #endif
+
+/** @def RTASSERT_OFFSET_OF()
+ * A offsetof() macro suitable for compile time assertions. 
+ * Both GCC v4 and VisualAge for C++ v3.08 has trouble using RT_OFFSETOF.
+ */
+#if defined(__GNUC__)
+# if __GNUC__ >= 4
+#  define RTASSERT_OFFSET_OF(a_Type, a_Member)  __builtin_offsetof(a_Type, a_Member)
+# else
+#  define RTASSERT_OFFSET_OF(a_Type, a_Member)  RT_OFFSETOF(a_Type, a_Member)
+# endif
+#elif (defined(__IBMC__) || defined(__IBMCPP__)) && defined(RT_OS_OS2)
+# define RTASSERT_OFFSET_OF(a_Type, a_Member)   __offsetof(a_Type, a_Member)
+#else
+# define RTASSERT_OFFSET_OF(a_Type, a_Member)   RT_OFFSETOF(a_Type, a_Member)
+#endif
+
 
 /** @def AssertCompileSize
  * Asserts a size at compile.
@@ -352,18 +371,8 @@ RT_C_DECLS_END
  * @param   member  The member.
  * @param   align   The member offset alignment to assert.
  */
-#if defined(__GNUC__)
-# if __GNUC__ >= 4
-#  define AssertCompileMemberAlignment(type, member, align) \
-    AssertCompile(!(__builtin_offsetof(type, member) & ((align) - 1)))
-# else
-#  define AssertCompileMemberAlignment(type, member, align) \
-    AssertCompile(!(RT_OFFSETOF(type, member) & ((align) - 1)))
-# endif
-#else
-# define AssertCompileMemberAlignment(type, member, align) \
-    AssertCompile(!(RT_OFFSETOF(type, member) & ((align) - 1)))
-#endif
+#define AssertCompileMemberAlignment(type, member, align) \
+    AssertCompile(!(RTASSERT_OFFSET_OF(type, member) & ((align) - 1)))
 
 /** @def AssertCompileMemberOffset
  * Asserts an offset of a structure member at compile.
@@ -371,18 +380,8 @@ RT_C_DECLS_END
  * @param   member  The member.
  * @param   off     The expected offset.
  */
-#if defined(__GNUC__)
-# if __GNUC__ >= 4
-#  define AssertCompileMemberOffset(type, member, off) \
-    AssertCompile(__builtin_offsetof(type, member) == (off))
-# else
-#  define AssertCompileMemberOffset(type, member, off) \
-    AssertCompile(RT_OFFSETOF(type, member) == (off))
-# endif
-#else
-# define AssertCompileMemberOffset(type, member, off) \
-    AssertCompile(RT_OFFSETOF(type, member) == (off))
-#endif
+#define AssertCompileMemberOffset(type, member, off) \
+    AssertCompile(RTASSERT_OFFSET_OF(type, member) == (off))
 
 /** @def AssertCompile2MemberOffsets
  * Asserts that two (sub-structure) members in union have the same offset.
@@ -390,18 +389,8 @@ RT_C_DECLS_END
  * @param   member1 The first member.
  * @param   member2 The second member.
  */
-#if defined(__GNUC__)
-# if __GNUC__ >= 4
-#  define AssertCompile2MemberOffsets(type, member1, member2) \
-    AssertCompile(__builtin_offsetof(type, member1) == __builtin_offsetof(type, member2))
-# else
-#  define AssertCompile2MemberOffsets(type, member1, member2) \
-    AssertCompile(RT_OFFSETOF(type, member1) == RT_OFFSETOF(type, member2))
-# endif
-#else
-# define AssertCompile2MemberOffsets(type, member1, member2) \
-    AssertCompile(RT_OFFSETOF(type, member1) == RT_OFFSETOF(type, member2))
-#endif
+#define AssertCompile2MemberOffsets(type, member1, member2) \
+    AssertCompile(RTASSERT_OFFSET_OF(type, member1) == RTASSERT_OFFSET_OF(type, member2))
 
 /** @def AssertCompileAdjacentMembers
  * Asserts that two structure members are adjacent.
@@ -409,18 +398,8 @@ RT_C_DECLS_END
  * @param   member1 The first member.
  * @param   member2 The second member.
  */
-#if defined(__GNUC__)
-# if __GNUC__ >= 4
-#  define AssertCompileAdjacentMembers(type, member1, member2) \
-    AssertCompile(__builtin_offsetof(type, member1) + RT_SIZEOFMEMB(type, member1) == __builtin_offsetof(type, member2))
-# else
-#  define AssertCompileAdjacentMembers(type, member1, member2) \
-    AssertCompile(RT_OFFSETOF(type, member1) + RT_SIZEOFMEMB(type, member1) == RT_OFFSETOF(type, member2))
-# endif
-#else
-# define AssertCompileAdjacentMembers(type, member1, member2) \
-    AssertCompile(RT_OFFSETOF(type, member1) + RT_SIZEOFMEMB(type, member1) == RT_OFFSETOF(type, member2))
-#endif
+#define AssertCompileAdjacentMembers(type, member1, member2) \
+    AssertCompile(RTASSERT_OFFSET_OF(type, member1) + RT_SIZEOFMEMB(type, member1) == RTASSERT_OFFSET_OF(type, member2))
 
 /** @def AssertCompileMembersAtSameOffset
  * Asserts that members of two different structures are at the same offset.
@@ -429,19 +408,9 @@ RT_C_DECLS_END
  * @param   type2   The second type.
  * @param   member2 The second member.
  */
-#if defined(__GNUC__)
-# if __GNUC__ >= 4
-#  define AssertCompileMembersAtSameOffset(type1, member1, type2, member2) \
-    AssertCompile(__builtin_offsetof(type1, member1) == __builtin_offsetof(type2, member2))
-# else
-#  define AssertCompileMembersAtSameOffset(type1, member1, type2, member2) \
-    AssertCompile(RT_OFFSETOF(type1, member1) == RT_OFFSETOF(type2, member2))
-# endif
-#else
-# define AssertCompileMembersAtSameOffset(type1, member1, type2, member2) \
-    AssertCompile(RT_OFFSETOF(type1, member1) == RT_OFFSETOF(type2, member2))
-#endif
-
+#define AssertCompileMembersAtSameOffset(type1, member1, type2, member2) \
+    AssertCompile(RTASSERT_OFFSET_OF(type1, member1) == RTASSERT_OFFSET_OF(type2, member2))
+ 
 /** @def AssertCompileMembersSameSize
  * Asserts that members of two different structures have the same size.
  * @param   type1   The first type.
@@ -460,18 +429,9 @@ RT_C_DECLS_END
  * @param   type2   The second type.
  * @param   member2 The second member.
  */
-#if defined(__GNUC__)
-# if __GNUC__ >= 4
-#  define AssertCompileMembersSameSizeAndOffset(type1, member1, type2, member2) \
-    AssertCompile(__builtin_offsetof(type1, member1) == __builtin_offsetof(type2, member2) && RT_SIZEOFMEMB(type1, member1) == RT_SIZEOFMEMB(type2, member2))
-# else
-#  define AssertCompileMembersSameSizeAndOffset(type1, member1, type2, member2) \
-    AssertCompile(RT_OFFSETOF(type1, member1) == RT_OFFSETOF(type2, member2) && RT_SIZEOFMEMB(type1, member1) == RT_SIZEOFMEMB(type2, member2))
-# endif
-#else
-# define AssertCompileMembersSameSizeAndOffset(type1, member1, type2, member2) \
-    AssertCompile(RT_OFFSETOF(type1, member1) == RT_OFFSETOF(type2, member2) && RT_SIZEOFMEMB(type1, member1) == RT_SIZEOFMEMB(type2, member2))
-#endif
+#define AssertCompileMembersSameSizeAndOffset(type1, member1, type2, member2) \
+    AssertCompile(   RTASSERT_OFFSET_OF(type1, member1) == RTASSERT_OFFSET_OF(type2, member2) \
+                  && RT_SIZEOFMEMB(type1, member1) == RT_SIZEOFMEMB(type2, member2))
 
 /** @} */
 
