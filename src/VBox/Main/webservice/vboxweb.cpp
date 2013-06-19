@@ -25,8 +25,8 @@
 #include <VBox/com/string.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
-#include <VBox/com/EventQueue.h>
 #include <VBox/com/listeners.h>
+#include <VBox/com/NativeEventQueue.h>
 #include <VBox/VBoxAuth.h>
 #include <VBox/version.h>
 #include <VBox/log.h>
@@ -1231,7 +1231,7 @@ int main(int argc, char *argv[])
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot start watchdog thread: %Rrc", rc);
     }
 
-    com::EventQueue *pQ = com::EventQueue::getMainEventQueue();
+    com::NativeEventQueue *pQ = com::NativeEventQueue::getMainEventQueue();
     for (;;)
     {
         // we have to process main event queue
