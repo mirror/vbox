@@ -165,6 +165,8 @@ RT_C_DECLS_END
 # include <iprt/nocrt/compiler/compiler.h>
 #endif /* no crt */
 
+
+
 /** @def NULL
  * NULL pointer.
  */
@@ -194,9 +196,9 @@ RT_C_DECLS_END
 #endif
 
 /*
- * C doesn't have bool.
+ * C doesn't have bool, nor does VisualAge for C++ v3.08.
  */
-#ifndef __cplusplus
+#if !defined(__cplusplus) || (defined(__IBMCPP__) && defined(RT_OS_OS2))
 # if defined(__GNUC__)
 #  if defined(RT_OS_LINUX) && __GNUC__ < 3
 typedef uint8_t bool;
@@ -548,6 +550,8 @@ typedef RTFLOAT64U *PRTFLOAT64U;
 typedef const RTFLOAT64U *PCRTFLOAT64U;
 
 
+#if !defined(__IBMCPP__) && !defined(__IBMC__)
+
 /**
  * Extended Double precision floating point format (80-bit).
  */
@@ -691,6 +695,8 @@ typedef RTFLOAT80U2 *PRTFLOAT80U2;
 /** Pointer to a const extended precision floating point format union, 2nd
  * variant. */
 typedef const RTFLOAT80U2 *PCRTFLOAT80U2;
+
+#endif /* uint16_t bitfields doesn't work */
 
 
 /** Generic function type.
