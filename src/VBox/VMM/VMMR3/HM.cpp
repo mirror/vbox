@@ -1378,9 +1378,9 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     LogRel(("HM: CPUID 0x80000001.u32AMDFeatureECX = %RX32\n", pVM->hm.s.cpuid.u32AMDFeatureECX));
     LogRel(("HM: CPUID 0x80000001.u32AMDFeatureEDX = %RX32\n", pVM->hm.s.cpuid.u32AMDFeatureEDX));
     LogRel(("HM: AMD HWCR MSR                      = %RX64\n", pVM->hm.s.svm.msrHwcr));
-    LogRel(("HM: AMD-V revision                    = %X\n", pVM->hm.s.svm.u32Rev));
-    LogRel(("HM: AMD-V max ASID                    = %RU32\n", pVM->hm.s.uMaxAsid));
-    LogRel(("HM: AMD-V features                    = %X\n", pVM->hm.s.svm.u32Features));
+    LogRel(("HM: AMD-V Revision                    = %X\n", pVM->hm.s.svm.u32Rev));
+    LogRel(("HM: AMD-V Max. ASID                   = %RU32\n", pVM->hm.s.uMaxAsid));
+    LogRel(("HM: AMD-V Features                    = %X\n", pVM->hm.s.svm.u32Features));
 
     /*
      * Enumerate AMD-V features.
@@ -1468,11 +1468,11 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     else if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
 
+    LogRel(("HM:    TPR Patching %s.\n", (pVM->hm.s.fTRPPatchingAllowed) ? "enabled" : "disabled"));
 
     LogRel((pVM->hm.s.fAllow64BitGuests
-            ? "HM:    32-bit and 64-bit guest supported.\n"
-            : "HM:    32-bit guest supported.\n"));
-    LogRel(("HM:    TPR Patching %s.\n", (pVM->hm.s.fTRPPatchingAllowed) ? "enabled" : "disabled"));
+            ? "HM: Guest support: 32-bit and 64-bit.\n"
+            : "HM: Guest support: 32-bit only.\n"));
 
     return VINF_SUCCESS;
 }
