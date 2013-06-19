@@ -18,6 +18,10 @@
 #include <dlfcn.h>
 #endif
 
+#ifdef WINDOWS
+#include <Shlwapi.h>
+#endif
+
 #ifdef DARWIN
 
 #include <Carbon/Carbon.h>
@@ -147,7 +151,6 @@ int get_dll_type( const char *name ) {
 
 #endif
 
-
 /*
  * Open the named shared library.
  * If resolveGlobal is non-zero, unresolved symbols can be satisfied by
@@ -162,14 +165,53 @@ CRDLL *crDLLOpen( const char *dllname, int resolveGlobal )
 {
 	CRDLL *dll;
 	char *dll_err;
+#if defined(WINDOWS)
+    char   szPath[MAX_PATH];
+
+    (void) resolveGlobal;
+
+# ifndef CR_NO_GL_SYSTEM_PATH
+    if (PathIsRelative(dllname))
+    {
+        size_t cbName  = strlen(dllname) + 1;
+#  ifdef IN_GUEST
+        UINT   cchPath = GetSystemDirectoryA(szPath, sizeof(szPath));
+#  else
+        UINT   cchPath = GetModuleFileNameA(NULL, szPath, sizeof(szPath));
+        if (cchPath != 0 && cchPath <= sizeof(szPath))
+        {
+            char * pszSlashFile = strrchr(szPath, '\\');
+            if (pszSlashFile)
+            {
+                cchPath = pszSlashFile - szPath;
+            }
+        }
+#  endif
+
+        if (cchPath + 1 + cbName > sizeof(szPath))
+        {
+            crError("invalid path specified");
+            SetLastError(ERROR_FILENAME_EXCED_RANGE);
+            return NULL;
+        }
+        szPath[cchPath] = '\\';
+        memcpy(&szPath[cchPath + 1], dllname, cbName);
+
+        dllname = szPath;
+    }
+# endif // CR_NO_GL_SYSTEM_PATH
+#endif
 
 	dll = (CRDLL *) crAlloc( sizeof( CRDLL ) );
 	dll->name = crStrdup( dllname );
 
 #if defined(WINDOWS)
-	(void) resolveGlobal;
-	dll->hinstLib = LoadLibrary( dllname );
-	dll_err = NULL;
+    dll->hinstLib = LoadLibrary( dllname );
+    if (!dll->hinstLib)
+    {
+        crError("failed to load dll %s", dllname);
+    }
+    dll_err = NULL;
 #elif defined(DARWIN)
 	/* XXX \todo Get better error handling in here */
 	dll->type = get_dll_type( dllname );
