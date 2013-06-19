@@ -114,10 +114,16 @@ VBoxOGLcrutil_SOURCES.win.x86 = \
 	util/util.rc
 VBoxOGLcrutil_LIBS.win = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/shlwapi.lib
 VBoxOGLcrutil_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
 	$(VBOX_LIB_VBGL_R3_SHARED)
+
+# Needed by GDEbuger
+ifdef CR_NO_GL_SYSTEM_PATH
+VBoxOGLcrutil_DEFS       += CR_NO_GL_SYSTEM_PATH
+endif 
 ifdef VBOX_WITH_CRHGSMI
 VBoxOGLcrutil_DEFS.win    += VBOX_WITH_CRHGSMI
 VBoxOGLcrutil_LIBS.win    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB)
