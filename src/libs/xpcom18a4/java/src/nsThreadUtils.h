@@ -50,11 +50,11 @@ do_GetMainThread() {
   return already_AddRefed<nsIThread>(thread);
 }
 
-#include "VBox/com/EventQueue.h"
+#include "VBox/com/NativeEventQueue.h"
 
 inline already_AddRefed<nsIEventQueue> do_GetMainThreadQueue()
 {
-  com::EventQueue* eq = com::EventQueue::getMainEventQueue();
+  com::NativeEventQueue* eq = com::NativeEventQueue::getMainEventQueue();
   NS_ASSERTION(eq != nsnull, "Must be valid");
   return eq->getIEventQueue();
 }

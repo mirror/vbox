@@ -5355,34 +5355,45 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler(RTTHREAD thread, void *pvUser)
 
     AssertReturn(pvUser, VERR_INVALID_POINTER);
 
-    com::Initialize();
+    HRESULT hr = com::Initialize();
+    if (FAILED(hr))
+        return VERR_COM_UNEXPECTED;
 
-    // create an event queue for the current thread
-    EventQueue *eventQ = new EventQueue();
-    AssertReturn(eventQ, VERR_NO_MEMORY);
+    int rc = VINF_SUCCESS;
 
-    // return the queue to the one who created this thread
-    *(static_cast <EventQueue **>(pvUser)) = eventQ;
-    // signal that we're ready
-    RTThreadUserSignal(thread);
+    try
+    {
+        /* Create an event queue for the current thread. */
+        EventQueue *pEventQueue = new EventQueue();
+        AssertPtr(pEventQueue);
 
-    /*
-     * In case of spurious wakeups causing VERR_TIMEOUTs and/or other return codes
-     * we must not stop processing events and delete the "eventQ" object. This must
-     * be done ONLY when we stop this loop via interruptEventQueueProcessing().
-     * See @bugref{5724}.
-     */
-    while (eventQ->processEventQueue(RT_INDEFINITE_WAIT) != VERR_INTERRUPTED)
-        /* nothing */ ;
+        /* Return the queue to the one who created this thread. */
+        *(static_cast <EventQueue **>(pvUser)) = pEventQueue;
 
-    delete eventQ;
+        /* signal that we're ready. */
+        RTThreadUserSignal(thread);
+
+        /*
+         * In case of spurious wakeups causing VERR_TIMEOUTs and/or other return codes
+         * we must not stop processing events and delete the pEventQueue object. This must
+         * be done ONLY when we stop this loop via interruptEventQueueProcessing().
+         * See @bugref{5724}.
+         */
+        while (pEventQueue->processEventQueue(RT_INDEFINITE_WAIT) != VERR_INTERRUPTED)
+            /* nothing */ ;
+
+        delete pEventQueue;
+    }
+    catch (std::bad_alloc &ba)
+    {
+        rc = VERR_NO_MEMORY;
+        NOREF(ba);
+    }
 
     com::Shutdown();
 
-
-    LogFlowFuncLeave();
-
-    return 0;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 

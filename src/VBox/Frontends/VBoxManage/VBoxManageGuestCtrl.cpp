@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,7 +29,7 @@
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 #include <VBox/com/VirtualBox.h>
-#include <VBox/com/EventQueue.h>
+#include <VBox/com/NativeEventQueue.h>
 
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -956,6 +956,13 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
 
             if (RT_FAILURE(vrc))
                 break;
+
+            /* Did we run out of time? */
+            if (   cMsTimeout
+                && RTTimeMilliTS() - u64StartMS > cMsTimeout)
+                break;
+
+            NativeEventQueue::getMainEventQueue()->processEventQueue(0);
 
         } /* while */
 

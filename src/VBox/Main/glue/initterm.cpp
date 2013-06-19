@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -48,7 +48,7 @@
 
 #include "VBox/com/com.h"
 #include "VBox/com/assert.h"
-#include "VBox/com/EventQueue.h"
+#include "VBox/com/NativeEventQueue.h"
 #include "VBox/com/AutoLock.h"
 
 #include "../include/Logging.h"
@@ -498,7 +498,7 @@ HRESULT Initialize(bool fGui)
      * Init the main event queue (ASSUMES it cannot fail).
      */
     if (SUCCEEDED(rc))
-        EventQueue::init();
+        NativeEventQueue::init();
 
     return rc;
 }
@@ -516,7 +516,7 @@ HRESULT Shutdown()
     {
         if (-- gCOMMainInitCount == 0)
         {
-            EventQueue::uninit();
+            NativeEventQueue::uninit();
             ASMAtomicWriteHandle(&gCOMMainThread, NIL_RTTHREAD);
         }
     }
@@ -555,7 +555,7 @@ HRESULT Shutdown()
              * init counter drops to zero */
             if (--gXPCOMInitCount == 0)
             {
-                EventQueue::uninit();
+                MainEventQueue::uninit();
                 rc = NS_ShutdownXPCOM(nsnull);
 
                 /* This is a thread initialized XPCOM and set gIsXPCOMInitialized to

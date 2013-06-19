@@ -735,6 +735,7 @@ VBoxCOM_SOURCES         = \
 	glue/string.cpp \
 	glue/AutoLock.cpp \
 	glue/EventQueue.cpp \
+	glue/NativeEventQueue.cpp \
 	glue/ErrorInfo.cpp \
 	glue/errorprint.cpp
 VBoxCOM_INCS          += \

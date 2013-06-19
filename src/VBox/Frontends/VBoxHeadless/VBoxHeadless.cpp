@@ -21,7 +21,7 @@
 #include <VBox/com/Guid.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
-#include <VBox/com/EventQueue.h>
+#include <VBox/com/NativeEventQueue.h>
 
 #include <VBox/com/VirtualBox.h>
 #include <VBox/com/listeners.h>
@@ -73,7 +73,7 @@ using namespace com;
 
 /* global weak references (for event handlers) */
 static IConsole *gConsole = NULL;
-static EventQueue *gEventQ = NULL;
+static NativeEventQueue *gEventQ = NULL;
 
 /* flag whether frontend should terminate */
 static volatile bool g_fTerminateFE = false;
@@ -193,15 +193,17 @@ public:
                     hrc = pChangedEvent->COMGETTER(Name)(strKey.asOutParam());
                     AssertComRC(hrc);
 
+                    Bstr strValue;
+                    hrc = pChangedEvent->COMGETTER(Value)(strValue.asOutParam());
+                    AssertComRC(hrc);
+
                     Utf8Str utf8Key = strKey;
-                    LogRelFlow(("Guest property \"%s\" has been changed\n", utf8Key.c_str()));
+                    Utf8Str utf8Value = strValue;
+                    LogRelFlow(("Guest property \"%s\" has been changed to \"%s\"\n",
+                                utf8Key.c_str(), utf8Value.c_str()));
 
                     if (utf8Key.equals("/VirtualBox/GuestInfo/OS/NoLoggedInUsers"))
                     {
-                        Bstr strValue;
-                        pChangedEvent->COMGETTER(Value)(strValue.asOutParam());
-                        Utf8Str utf8Value = strValue;
-
                         LogRelFlow(("Guest indicates that there %s logged in users\n",
                                     utf8Value.equals("true") ? "are no" : "are"));
 
@@ -1102,7 +1104,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         /* initialize global references */
         gConsole = console;
-        gEventQ = com::EventQueue::getMainEventQueue();
+        gEventQ = com::NativeEventQueue::getMainEventQueue();
 
         /* VirtualBoxClient events registration. */
         {
