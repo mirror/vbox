@@ -34,8 +34,10 @@
 #include <VBox/VMMDev2.h>
 #include <iprt/assert.h>
 
-
+ 
+#pragma pack(4) /* force structure dword packing here. */
 RT_C_DECLS_BEGIN
+
 
 /** @defgroup grp_vmmdev    VMM Device
  *
@@ -232,7 +234,6 @@ typedef enum
 /** Version of VMMDevRequestHeader structure. */
 #define VMMDEV_REQUEST_HEADER_VERSION (0x10001)
 
-#pragma pack(4) /* force structure dword packing here. */
 
 /**
  * Generic VMMDev request header.
@@ -959,7 +960,6 @@ AssertCompileSize(VMMDevGetStatisticsChangeRequest, 24+8);
  *
  * Used by VMMDevReq_QueryCredentials.
  */
-#pragma pack(4)
 typedef struct
 {
     /** Header. */
@@ -974,7 +974,6 @@ typedef struct
     char szDomain[VMMDEV_CREDENTIALS_SZ_SIZE];
 } VMMDevCredentials;
 AssertCompileSize(VMMDevCredentials, 24+4+3*128);
-#pragma pack()
 
 /** @name Credentials request flag (VMMDevCredentials::u32Flags)
  * @{ */
@@ -1422,8 +1421,6 @@ typedef struct
 AssertCompileSize(VMMDevReqWriteCoreDump, 24+4);
 
 
-#pragma pack()
-
 
 #ifdef VBOX_WITH_HGCM
 
@@ -1434,8 +1431,6 @@ AssertCompileSize(VMMDevReqWriteCoreDump, 24+4);
 # define VBOX_HGCM_REQ_DONE_BIT  0
 # define VBOX_HGCM_REQ_CANCELLED (0x2)
 /** @} */
-
-# pragma pack(4)
 
 /**
  * HGCM request header.
@@ -1779,7 +1774,6 @@ typedef struct
 } HGCMPageListInfo;
 AssertCompileSize(HGCMPageListInfo, 4+2+2+8);
 
-# pragma pack()
 
 /** Get the pointer to the first parmater of a HGCM call request.  */
 # define VMMDEV_HGCM_CALL_PARMS(a)   ((HGCMFunctionParameter *)((uint8_t *)(a) + sizeof (VMMDevHGCMCall)))
@@ -1980,7 +1974,6 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
  *
  * @todo Where does this fit in?
  */
-#pragma pack(1) /* unnecessary */
 typedef struct VBVACMDHDR
 {
    /** Coordinates of affected rectangle. */
@@ -1989,7 +1982,7 @@ typedef struct VBVACMDHDR
    uint16_t w;
    uint16_t h;
 } VBVACMDHDR;
-#pragma pack()
+AssertCompileSize(VBVACMDHDR, 8);
 
 /** @name VBVA ring defines.
  *
@@ -2038,7 +2031,6 @@ AssertCompileSize(VBVARECORD, 4);
  *
  * This is a subsection of the VMMDevMemory structure.
  */
-#pragma pack(1) /* paranoia */
 typedef struct VBVAMEMORY
 {
     /** VBVA_F_MODE_*. */
@@ -2065,14 +2057,12 @@ typedef struct VBVAMEMORY
     uint32_t fu32SupportedOrders;
 
 } VBVAMEMORY;
-#pragma pack()
 AssertCompileSize(VBVAMEMORY, 12 + (_4M-_1K) + 4*64 + 12);
 
 
 /**
  * The layout of VMMDEV RAM region that contains information for guest.
  */
-#pragma pack(1) /* paranoia */
 typedef struct VMMDevMemory
 {
     /** The size of this structure. */
@@ -2101,13 +2091,15 @@ typedef struct VMMDevMemory
 
 } VMMDevMemory;
 AssertCompileSize(VMMDevMemory, 8+8 + (12 + (_4M-_1K) + 4*64 + 12) );
-#pragma pack()
+AssertCompileMemberOffset(VMMDevMemory, vbvaMemory, 16);
 
 /** Version of VMMDevMemory structure (VMMDevMemory::u32Version). */
 #define VMMDEV_MEMORY_VERSION   (1)
 
 /** @} */
+
 RT_C_DECLS_END
+#pragma pack()
 
 #endif
 
