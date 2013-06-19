@@ -24,7 +24,6 @@
 #include <QUuid>
 
 /* Local includes: */
-#include "QIWithRetranslateUI.h"
 #include "QIStateIndicator.h"
 
 /* Forward declarations: */
@@ -39,7 +38,7 @@ enum UINetworkManagerIndicatorState
 };
 
 /* Network-manager status-bar indicator: */
-class UINetworkManagerIndicator : public QIWithRetranslateUI<QIStateIndicator>
+class UINetworkManagerIndicator : public QIStateIndicator
 {
     Q_OBJECT;
 

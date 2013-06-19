@@ -25,14 +25,8 @@
 # include <QContextMenuEvent>
 #endif
 
-/** @clas QIStateIndicator
- *
- *  The QIStateIndicator class is a simple class that can visually indicate
- *  the state of some thing, as described by the state property.
- */
-
-QIStateIndicator::QIStateIndicator(QWidget *pParent /* = 0 */)
-  : QFrame(pParent)
+QIStateIndicator::QIStateIndicator(QWidget *pParent /*= 0*/)
+  : QIWithRetranslateUI<QFrame>(pParent)
   , mState(0)
   , mSize(0, 0)
 {
