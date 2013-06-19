@@ -87,10 +87,6 @@ const char* UIDefs::GUI_Export_Bucket = "GUI/Export/Bucket";
 const char* UIDefs::GUI_SuppressMessages = "GUI/SuppressMessages";
 const char* UIDefs::GUI_InvertMessageOption = "GUI/InvertMessageOption";
 
-/* Registration dialog definitions: */
-const char* UIDefs::GUI_RegistrationDlgWinID = "GUI/RegistrationDlgWinID";
-const char* UIDefs::GUI_RegistrationData = "GUI/SUNOnlineData";
-
 /* Update manager definitions: */
 const char* UIDefs::GUI_UpdateDate = "GUI/UpdateDate";
 const char* UIDefs::GUI_UpdateCheckCount = "GUI/UpdateCheckCount";
