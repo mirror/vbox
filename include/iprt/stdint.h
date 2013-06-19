@@ -87,12 +87,12 @@
 # undef IPRT_STDINT_USE_STRUCT_FOR_64_BIT_TYPES
 # ifdef __IBMCPP__
 #  if __IBMCPP__ < 350 && (defined(__WINDOWS__) || defined(_AIX) || defined(__OS2__))
-#   defined IPRT_STDINT_USE_STRUCT_FOR_64_BIT_TYPES
+#   define IPRT_STDINT_USE_STRUCT_FOR_64_BIT_TYPES
 #  endif
 # endif
 # ifdef __IBMC__
 #  if __IBMC__   < 350 && (defined(__WINDOWS__) || defined(_AIX) || defined(__OS2__))
-#   defined IPRT_STDINT_USE_STRUCT_FOR_64_BIT_TYPES
+#   define IPRT_STDINT_USE_STRUCT_FOR_64_BIT_TYPES
 #  endif
 # endif
 
