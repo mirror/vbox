@@ -78,6 +78,8 @@ typedef struct VBOXDISPD3D
 
     PFNVBOXWINEEXD3DDEV9_FINISH pfnVBoxWineExD3DDev9Finish;
 
+    PFNVBOXWINEEXD3DSURF9_GETHOSTID pfnVBoxWineExD3DSurf9GetHostId;
+
     /* module handle */
     HMODULE hD3DLib;
 } VBOXDISPD3D;

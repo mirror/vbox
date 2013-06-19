@@ -2272,6 +2272,7 @@ NTSTATUS vboxWddmAllocationCreate(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_RESOURCE pRe
                 {
                     pAllocation->fRcFlags = pAllocInfo->fFlags;
                     pAllocation->AllocData.SurfDesc = pAllocInfo->SurfDesc;
+                    pAllocation->hostID = pAllocInfo->hostID;
 
                     pAllocationInfo->Size = pAllocInfo->SurfDesc.cbSize;
 

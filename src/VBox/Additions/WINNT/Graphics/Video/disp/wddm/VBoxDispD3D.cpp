@@ -4103,6 +4103,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
     }
     bool bIssueCreateResource = false;
     bool bCreateKMResource = false;
+    bool bSetHostID = false;
 
     pRc->hResource = pResource->hResource;
     pRc->hKMResource = NULL;
@@ -4184,6 +4185,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
         if (pRc->RcDesc.fFlags.RenderTarget)
         {
             bIssueCreateResource = true;
+            bSetHostID = true;
         }
 
         hr = VBoxD3DIfCreateForRc(pRc);
@@ -4235,92 +4237,120 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                 pAllocInfo->fFlags = pResource->Flags;
                 pAllocInfo->hSharedHandle = (uint64_t)pAllocation->hSharedHandle;
                 pAllocInfo->SurfDesc = pAllocation->SurfDesc;
+                if (bSetHostID)
+                {
+                    IDirect3DSurface9 *pSurfIf = NULL;
+                    hr = VBoxD3DIfSurfGet(pRc, i, &pSurfIf);
+                    if (SUCCEEDED(hr))
+                    {
+                        hr = pAdapter->D3D.D3D.pfnVBoxWineExD3DSurf9GetHostId(pSurfIf, &pAllocInfo->hostID);
+                        if (SUCCEEDED(hr))
+                        {
+                            Assert(pAllocInfo->hostID);
+                        }
+                        else
+                        {
+                            WARN(("pfnVBoxWineExD3DSurf9GetHostId failed, hr 0x%x", hr));
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        WARN(("VBoxD3DIfSurfGet failed, hr 0x%x", hr));
+                        break;
+                    }
+                }
+                else
+                    pAllocInfo->hostID = 0;
             }
 
             Assert(!pRc->fFlags.Opened);
 //                Assert(!pRc->fFlags.KmResource);
             Assert(pRc->fFlags.Generic);
 
-            if (bCreateKMResource)
-            {
-                Assert(pRc->fFlags.KmResource);
-
-                hr = pDevice->RtCallbacks.pfnAllocateCb(pDevice->hDevice, pDdiAllocate);
-                Assert(hr == S_OK);
-                Assert(pDdiAllocate->hKMResource
-                        || pResource->Flags.SharedResource /* for some reason shared resources
-                                                            * are created with zero km resource handle on Win7+ */
-                        );
-            }
-            else
-            {
-                Assert(!pRc->fFlags.KmResource);
-
-                pDdiAllocate->hResource = NULL;
-                pDdiAllocate->NumAllocations = 1;
-                pDdiAllocate->PrivateDriverDataSize = 0;
-                pDdiAllocate->pPrivateDriverData = NULL;
-                D3DDDI_ALLOCATIONINFO *pDdiAllocIBase = pDdiAllocate->pAllocationInfo;
-
-                for (UINT i = 0; i < pResource->SurfCount; ++i)
-                {
-                    pDdiAllocate->pAllocationInfo = &pDdiAllocIBase[i];
-                    hr = pDevice->RtCallbacks.pfnAllocateCb(pDevice->hDevice, pDdiAllocate);
-                    Assert(hr == S_OK);
-                    Assert(!pDdiAllocate->hKMResource);
-                    if (SUCCEEDED(hr))
-                    {
-                        Assert(pDdiAllocate->pAllocationInfo->hAllocation);
-                    }
-                    else
-                    {
-                        for (UINT j = 0; i < j; ++j)
-                        {
-                            D3DDDI_ALLOCATIONINFO * pCur = &pDdiAllocIBase[i];
-                            D3DDDICB_DEALLOCATE Dealloc;
-                            Dealloc.hResource = 0;
-                            Dealloc.NumAllocations = 1;
-                            Dealloc.HandleList = &pCur->hAllocation;
-                            HRESULT tmpHr = pDevice->RtCallbacks.pfnDeallocateCb(pDevice->hDevice, &Dealloc);
-                            Assert(tmpHr == S_OK);
-                        }
-                        break;
-                    }
-                }
-
-                pDdiAllocate->pAllocationInfo = pDdiAllocIBase;
-            }
-
             if (SUCCEEDED(hr))
             {
-                pRc->hKMResource = pDdiAllocate->hKMResource;
-
-                for (UINT i = 0; i < pResource->SurfCount; ++i)
+                if (bCreateKMResource)
                 {
-                    PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
-                    D3DDDI_ALLOCATIONINFO *pDdiAllocI = &pDdiAllocate->pAllocationInfo[i];
-                    PVBOXWDDM_ALLOCINFO pAllocInfo = (PVBOXWDDM_ALLOCINFO)pDdiAllocI->pPrivateDriverData;
-                    CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
-                    pAllocation->hAllocation = pDdiAllocI->hAllocation;
-                    pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
-                    pAllocation->pvMem = (void*)pSurf->pSysMem;
-                    pAllocation->SurfDesc = pAllocInfo->SurfDesc;
+                    Assert(pRc->fFlags.KmResource);
 
-                    if (pResource->Flags.SharedResource)
+                    hr = pDevice->RtCallbacks.pfnAllocateCb(pDevice->hDevice, pDdiAllocate);
+                    Assert(hr == S_OK);
+                    Assert(pDdiAllocate->hKMResource
+                            || pResource->Flags.SharedResource /* for some reason shared resources
+                                                                * are created with zero km resource handle on Win7+ */
+                            );
+                }
+                else
+                {
+                    Assert(!pRc->fFlags.KmResource);
+
+                    pDdiAllocate->hResource = NULL;
+                    pDdiAllocate->NumAllocations = 1;
+                    pDdiAllocate->PrivateDriverDataSize = 0;
+                    pDdiAllocate->pPrivateDriverData = NULL;
+                    D3DDDI_ALLOCATIONINFO *pDdiAllocIBase = pDdiAllocate->pAllocationInfo;
+
+                    for (UINT i = 0; i < pResource->SurfCount; ++i)
                     {
-#ifdef VBOXWDDMDISP_DEBUG_PRINT_SHARED_CREATE
-                        Assert(VBOXWDDMDISP_IS_TEXTURE(pResource->Flags));
-                        vboxVDbgPrint(("\n\n********\n(0x%x:0n%d)Shared CREATED pAlloc(0x%p), hRc(0x%p), hAl(0x%p), "
-                                        "Handle(0x%x), (0n%d) \n***********\n\n",
-                                    GetCurrentProcessId(), GetCurrentProcessId(),
-                                    pAllocation, pRc->hKMResource, pAllocation->hAllocation,
-                                    pAllocation->hSharedHandle, pAllocation->hSharedHandle
-                                    ));
-#endif
+                        pDdiAllocate->pAllocationInfo = &pDdiAllocIBase[i];
+                        hr = pDevice->RtCallbacks.pfnAllocateCb(pDevice->hDevice, pDdiAllocate);
+                        Assert(hr == S_OK);
+                        Assert(!pDdiAllocate->hKMResource);
+                        if (SUCCEEDED(hr))
+                        {
+                            Assert(pDdiAllocate->pAllocationInfo->hAllocation);
+                        }
+                        else
+                        {
+                            for (UINT j = 0; i < j; ++j)
+                            {
+                                D3DDDI_ALLOCATIONINFO * pCur = &pDdiAllocIBase[i];
+                                D3DDDICB_DEALLOCATE Dealloc;
+                                Dealloc.hResource = 0;
+                                Dealloc.NumAllocations = 1;
+                                Dealloc.HandleList = &pCur->hAllocation;
+                                HRESULT tmpHr = pDevice->RtCallbacks.pfnDeallocateCb(pDevice->hDevice, &Dealloc);
+                                Assert(tmpHr == S_OK);
+                            }
+                            break;
+                        }
                     }
+
+                    pDdiAllocate->pAllocationInfo = pDdiAllocIBase;
                 }
 
-                VBOXVDBG_CREATE_CHECK_SWAPCHAIN();
+                if (SUCCEEDED(hr))
+                {
+                    pRc->hKMResource = pDdiAllocate->hKMResource;
+
+                    for (UINT i = 0; i < pResource->SurfCount; ++i)
+                    {
+                        PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
+                        D3DDDI_ALLOCATIONINFO *pDdiAllocI = &pDdiAllocate->pAllocationInfo[i];
+                        PVBOXWDDM_ALLOCINFO pAllocInfo = (PVBOXWDDM_ALLOCINFO)pDdiAllocI->pPrivateDriverData;
+                        CONST D3DDDI_SURFACEINFO* pSurf = &pResource->pSurfList[i];
+                        pAllocation->hAllocation = pDdiAllocI->hAllocation;
+                        pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC;
+                        pAllocation->pvMem = (void*)pSurf->pSysMem;
+                        pAllocation->SurfDesc = pAllocInfo->SurfDesc;
+
+                        if (pResource->Flags.SharedResource)
+                        {
+#ifdef VBOXWDDMDISP_DEBUG_PRINT_SHARED_CREATE
+                            Assert(VBOXWDDMDISP_IS_TEXTURE(pResource->Flags));
+                            vboxVDbgPrint(("\n\n********\n(0x%x:0n%d)Shared CREATED pAlloc(0x%p), hRc(0x%p), hAl(0x%p), "
+                                            "Handle(0x%x), (0n%d) \n***********\n\n",
+                                        GetCurrentProcessId(), GetCurrentProcessId(),
+                                        pAllocation, pRc->hKMResource, pAllocation->hAllocation,
+                                        pAllocation->hSharedHandle, pAllocation->hSharedHandle
+                                        ));
+#endif
+                        }
+                    }
+
+                    VBOXVDBG_CREATE_CHECK_SWAPCHAIN();
+                }
             }
 
             vboxWddmRequestAllocFree(pDdiAllocate);

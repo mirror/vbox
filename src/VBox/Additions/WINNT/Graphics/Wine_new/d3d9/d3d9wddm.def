@@ -21,3 +21,4 @@ EXPORTS
   VBoxWineExD3DSwapchain9Present
   VBoxWineExD3DDev9VolBlt
   VBoxWineExD3DDev9VolTexBlt
+  VBoxWineExD3DSurf9GetHostId

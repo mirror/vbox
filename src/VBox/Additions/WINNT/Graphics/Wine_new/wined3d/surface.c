@@ -7766,3 +7766,26 @@ HRESULT CDECL wined3d_surface_create(struct wined3d_device *device, UINT width, 
 
     return hr;
 }
+
+#ifdef VBOX_WITH_WDDM
+HRESULT CDECL wined3d_surface_get_host_id(struct wined3d_surface *surface, uint32_t *id)
+{
+    struct wined3d_texture *texture;
+    surface_internal_preload(surface, SRGB_RGB);
+
+    texture = surface->container;
+    if (texture && texture->level_count != 1 && texture->layer_count != 1)
+    {
+        ERR("unsupported level(%d) or layer(%d) count", texture->level_count, texture->layer_count);
+    }
+
+    if (!surface->texture_name)
+    {
+        ERR("no texture name!");
+        return E_FAIL;
+    }
+
+    *id = surface->texture_name;
+    return S_OK;
+}
+#endif
