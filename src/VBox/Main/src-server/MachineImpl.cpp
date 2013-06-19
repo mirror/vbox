@@ -167,11 +167,10 @@ Machine::HWData::HWData()
     mAccelerate3DEnabled = false;
     mAccelerate2DVideoEnabled = false;
     mMonitorCount = 1;
-    mVideoCaptureFile = "Test.webm";
     mVideoCaptureWidth = 1024;
     mVideoCaptureHeight = 768;
     mVideoCaptureRate = 512;
-    mVideoCaptureFps = 25;
+    mVideoCaptureFPS = 25;
     mVideoCaptureEnabled = false;
     for (unsigned i = 0; i < RT_ELEMENTS(maVideoCaptureScreens); i++)
         maVideoCaptureScreens[i] = true;
@@ -1794,7 +1793,14 @@ STDMETHODIMP Machine::COMGETTER(VideoCaptureFile)(BSTR *apFile)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    mHWData->mVideoCaptureFile.cloneTo(apFile);
+    if (mHWData->mVideoCaptureFile.isEmpty())
+    {
+        Utf8Str defaultFile;
+        getDefaultVideoCaptureFile(defaultFile);
+        defaultFile.cloneTo(apFile);
+    }
+    else
+        mHWData->mVideoCaptureFile.cloneTo(apFile);
     return S_OK;
 }
 
@@ -1810,8 +1816,16 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureFile)(IN_BSTR aFile)
         && mHWData->mVideoCaptureEnabled)
         return setError(E_INVALIDARG, tr("Cannot change parameters while capturing is enabled"));
 
-    if (strFile.isEmpty())
-       strFile = "VideoCap.webm";
+    if (!RTPathStartsWithRoot(strFile.c_str()))
+        return setError(E_INVALIDARG, tr("Video capture file name '%s' is not absolute"), strFile.c_str());
+
+    if (!strFile.isEmpty())
+    {
+        Utf8Str defaultFile;
+        getDefaultVideoCaptureFile(defaultFile);
+        if (!RTPathCompare(strFile.c_str(), defaultFile.c_str()))
+            strFile.setNull();
+    }
 
     setModified(IsModified_MachineData);
     mHWData.backup();
@@ -1904,17 +1918,17 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureRate)(ULONG aRate)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(VideoCaptureFps)(ULONG *aFps)
+STDMETHODIMP Machine::COMGETTER(VideoCaptureFPS)(ULONG *aFPS)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-     *aFps = mHWData->mVideoCaptureFps;
+     *aFPS = mHWData->mVideoCaptureFPS;
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(VideoCaptureFps)(ULONG aFps)
+STDMETHODIMP Machine::COMSETTER(VideoCaptureFPS)(ULONG aFPS)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1927,7 +1941,7 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureFps)(ULONG aFps)
 
     setModified(IsModified_MachineData);
     mHWData.backup();
-    mHWData->mVideoCaptureFps = aFps;
+    mHWData->mVideoCaptureFPS = aFPS;
 
     return S_OK;
 }
@@ -7662,6 +7676,21 @@ void Machine::composeSavedStateFilename(Utf8Str &strStateFilePath)
 }
 
 /**
+ *  Returns the full path to the default video capture file.
+ */
+void Machine::getDefaultVideoCaptureFile(Utf8Str &strFile)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    strFile = mData->m_strConfigFileFull;       // path/to/machinesfolder/vmname/vmname.vbox
+    strFile.stripExt();                         // path/to/machinesfolder/vmname/vmname
+    strFile.append(".webm");                    // path/to/machinesfolder/vmname/vmname.webm
+}
+
+/**
  *  @note Locks this object for writing, calls the client process
  *        (inside the lock).
  */
@@ -9046,8 +9075,11 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
             mHWData->maVideoCaptureScreens[i] = ASMBitTest(&data.u64VideoCaptureScreens, i);
         AssertCompile(RT_ELEMENTS(mHWData->maVideoCaptureScreens) == sizeof(data.u64VideoCaptureScreens) * 8);
         mHWData->mVideoCaptureRate = data.ulVideoCaptureRate;
-        mHWData->mVideoCaptureFps = data.ulVideoCaptureFps;
-        mHWData->mVideoCaptureFile = data.strVideoCaptureFile;
+        mHWData->mVideoCaptureFPS = data.ulVideoCaptureFPS;
+        if (!data.strVideoCaptureFile.isEmpty())
+            calculateFullPath(data.strVideoCaptureFile, mHWData->mVideoCaptureFile);
+        else
+            mHWData->mVideoCaptureFile.setNull();
         mHWData->mFirmwareType = data.firmwareType;
         mHWData->mPointingHIDType = data.pointingHIDType;
         mHWData->mKeyboardHIDType = data.keyboardHIDType;
@@ -10285,7 +10317,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.ulVideoCaptureHorzRes = mHWData->mVideoCaptureWidth;
         data.ulVideoCaptureVertRes = mHWData->mVideoCaptureHeight;
         data.ulVideoCaptureRate = mHWData->mVideoCaptureRate;
-        data.ulVideoCaptureFps = mHWData->mVideoCaptureFps;
+        data.ulVideoCaptureFPS = mHWData->mVideoCaptureFPS;
         data.fVideoCaptureEnabled  = !!mHWData->mVideoCaptureEnabled;
         for (unsigned i = 0; i < sizeof(data.u64VideoCaptureScreens) * 8; i++)
         {
@@ -10294,7 +10326,8 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
             else
                 ASMBitClear(&data.u64VideoCaptureScreens, i);
         }
-        data.strVideoCaptureFile = mHWData->mVideoCaptureFile;
+        /* store relative video capture file if possible */
+        copyPathRelativeToMachine(mHWData->mVideoCaptureFile, data.strVideoCaptureFile);
 
         /* VRDEServer settings (optional) */
         rc = mVRDEServer->saveSettings(data.vrdeSettings);

@@ -30,6 +30,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/asm.h>
+#include <iprt/time.h>
 #include <iprt/cpp/utils.h>
 
 #include <VBox/vmm/pdmdrv.h>
@@ -2715,8 +2716,8 @@ int Display::VideoCaptureStart()
     ULONG ulRate;
     hrc = pMachine->COMGETTER(VideoCaptureRate)(&ulRate);
     AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
-    ULONG ulFps;
-    hrc = pMachine->COMGETTER(VideoCaptureFps)(&ulFps);
+    ULONG ulFPS;
+    hrc = pMachine->COMGETTER(VideoCaptureFPS)(&ulFPS);
     AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
     BSTR strFile;
     hrc = pMachine->COMGETTER(VideoCaptureFile)(&strFile);
@@ -2741,11 +2742,38 @@ int Display::VideoCaptureStart()
                 rc = RTStrAPrintf(&pszName, "%s%s", pszAbsPath, pszExt);
         }
         if (RT_SUCCESS(rc))
+        {
             rc = VideoRecStrmInit(mpVideoRecCtx, uScreen,
-                                  pszName, ulWidth, ulHeight, ulRate, ulFps);
+                                  pszName, ulWidth, ulHeight, ulRate, ulFPS);
+            if (rc == VERR_ALREADY_EXISTS)
+            {
+                RTStrFree(pszName);
+                pszName = NULL;
+
+                static RTTIMESPEC ts = { 0 };
+                if (!RTTimeSpecGetNano(&ts))
+                    RTTimeNow(&ts);
+                RTTIME time;
+                RTTimeExplode(&time, &ts);
+                if (mcMonitors > 1)
+                    rc = RTStrAPrintf(&pszName, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ-%u%s",
+                                      pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
+                                      time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
+                                      uScreen+1, pszExt);
+                else
+                    rc = RTStrAPrintf(&pszName, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ%s",
+                                      pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
+                                      time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
+                                      pszExt);
+                if (RT_SUCCESS(rc))
+                    rc = VideoRecStrmInit(mpVideoRecCtx, uScreen,
+                                          pszName, ulWidth, ulHeight, ulRate, ulFPS);
+            }
+        }
+
         if (RT_SUCCESS(rc))
             LogRel(("WebM/VP8 video recording screen #%u with %ux%u @ %u kbps, %u fps to '%s' enabled.\n",
-                   uScreen, ulWidth, ulHeight, ulRate, ulFps, pszName));
+                   uScreen, ulWidth, ulHeight, ulRate, ulFPS, pszName));
         else
             LogRel(("Failed to initialize video recording context #%u (%Rrc)!\n", uScreen, rc));
         RTStrFree(pszName);

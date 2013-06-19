@@ -1753,10 +1753,10 @@ Hardware::Hardware()
           ulVideoCaptureHorzRes(1024),
           ulVideoCaptureVertRes(768),
           ulVideoCaptureRate(512),
-          ulVideoCaptureFps(25),
+          ulVideoCaptureFPS(25),
           fVideoCaptureEnabled(false),
           u64VideoCaptureScreens(UINT64_C(0xffffffffffffffff)),
-          strVideoCaptureFile("Test.webm"),
+          strVideoCaptureFile(""),
           firmwareType(FirmwareType_BIOS),
           pointingHIDType(PointingHIDType_PS2Mouse),
           keyboardHIDType(KeyboardHIDType_PS2Keyboard),
@@ -1831,7 +1831,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (ulVideoCaptureHorzRes     == h.ulVideoCaptureHorzRes)
                   && (ulVideoCaptureVertRes     == h.ulVideoCaptureVertRes)
                   && (ulVideoCaptureRate        == h.ulVideoCaptureRate)
-                  && (ulVideoCaptureFps         == h.ulVideoCaptureFps)
+                  && (ulVideoCaptureFPS         == h.ulVideoCaptureFPS)
                   && (firmwareType              == h.firmwareType)
                   && (pointingHIDType           == h.pointingHIDType)
                   && (keyboardHIDType           == h.keyboardHIDType)
@@ -2730,11 +2730,11 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         {
             pelmHwChild->getAttributeValue("enabled",   hw.fVideoCaptureEnabled);
             pelmHwChild->getAttributeValue("screens",   hw.u64VideoCaptureScreens);
-            pelmHwChild->getAttributeValue("file",      hw.strVideoCaptureFile);
+            pelmHwChild->getAttributeValuePath("file",  hw.strVideoCaptureFile);
             pelmHwChild->getAttributeValue("horzRes",   hw.ulVideoCaptureHorzRes);
             pelmHwChild->getAttributeValue("vertRes",   hw.ulVideoCaptureVertRes);
             pelmHwChild->getAttributeValue("rate",      hw.ulVideoCaptureRate);
-            pelmHwChild->getAttributeValue("fps",       hw.ulVideoCaptureFps);
+            pelmHwChild->getAttributeValue("fps",       hw.ulVideoCaptureFPS);
         }
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
         {
@@ -3915,15 +3915,16 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         pelmDisplay->setAttribute("accelerate2DVideo", hw.fAccelerate2DVideo);
     xml::ElementNode *pelmVideoCapture = pelmHardware->createChild("VideoCapture");
 
-    if (m->sv >= SettingsVersion_v1_12)
+    if (m->sv >= SettingsVersion_v1_14)
     {
         pelmVideoCapture->setAttribute("enabled",   hw.fVideoCaptureEnabled);
         pelmVideoCapture->setAttribute("screens",   hw.u64VideoCaptureScreens);
-        pelmVideoCapture->setAttribute("file",      hw.strVideoCaptureFile);
+        if (!hw.strVideoCaptureFile.isEmpty())
+            pelmVideoCapture->setAttributePath("file",  hw.strVideoCaptureFile);
         pelmVideoCapture->setAttribute("horzRes",   hw.ulVideoCaptureHorzRes);
         pelmVideoCapture->setAttribute("vertRes",   hw.ulVideoCaptureVertRes);
         pelmVideoCapture->setAttribute("rate",      hw.ulVideoCaptureRate);
-        pelmVideoCapture->setAttribute("fps",       hw.ulVideoCaptureFps);
+        pelmVideoCapture->setAttribute("fps",       hw.ulVideoCaptureFPS);
     }
 
     xml::ElementNode *pelmVRDE = pelmHardware->createChild("RemoteDisplay");
@@ -5051,11 +5052,12 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     if (m->sv < SettingsVersion_v1_14)
     {
         // VirtualBox 4.3 adds default frontend setting, graphics controller
-        // setting, explicit long mode setting.
+        // setting, explicit long mode setting and video capturing.
         if (   !hardwareMachine.strDefaultFrontend.isEmpty()
             || hardwareMachine.graphicsControllerType != GraphicsControllerType_VBoxVGA
             || hardwareMachine.enmLongMode != Hardware::LongMode_Legacy
-            || machineUserData.ovIcon.length() > 0)
+            || machineUserData.ovIcon.length() > 0
+            || hardwareMachine.fVideoCaptureEnabled)
             m->sv = SettingsVersion_v1_14;
     }
 
@@ -5096,16 +5098,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 
     if (m->sv < SettingsVersion_v1_12)
     {
-        // 4.1: Emulated USB devices.
-        if (hardwareMachine.fEmulatedUSBCardReader)
-            m->sv = SettingsVersion_v1_12;
-    }
-
-    if (m->sv < SettingsVersion_v1_12)
-    {
-        // VirtualBox 4.1 adds PCI passthrough.
+        // VirtualBox 4.1 adds PCI passthrough and emulated USB Smart Card reader
         if (   hardwareMachine.pciAttachments.size()
-            || hardwareMachine.fVideoCaptureEnabled)
+            || hardwareMachine.fEmulatedUSBCardReader)
             m->sv = SettingsVersion_v1_12;
     }
 
