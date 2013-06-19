@@ -80,14 +80,14 @@ NativeEventQueue *NativeEventQueue::sMainQueue = NULL;
 
 struct MyPLEvent : public PLEvent
 {
-    MyPLEvent(Event *e) : event(e) {}
-    Event *event;
+    MyPLEvent(NativeEvent *e) : event(e) {}
+    NativeEvent *event;
 };
 
 /* static */
 void *PR_CALLBACK com::NativeEventQueue::plEventHandler(PLEvent *self)
 {
-    Event *ev = ((MyPLEvent *)self)->event;
+    NativeEvent *ev = ((MyPLEvent *)self)->event;
     if (ev)
         ev->handler();
     else
@@ -102,7 +102,7 @@ void *PR_CALLBACK com::NativeEventQueue::plEventHandler(PLEvent *self)
 /* static */
 void PR_CALLBACK com::NativeEventQueue::plEventDestructor(PLEvent *self)
 {
-    Event *ev = ((MyPLEvent *)self)->event;
+    NativeEvent *ev = ((MyPLEvent *)self)->event;
     if (ev)
         delete ev;
     delete self;
@@ -221,7 +221,7 @@ int NativeEventQueue::init()
 #ifdef VBOX_WITH_XPCOM
         /* Check that it actually is the main event queue, i.e. that
            we're called on the right thread. */
-        nsCOMPtr<nsINativeEventQueue> q;
+        nsCOMPtr<nsIEventQueue> q;
         nsresult rv = NS_GetMainEventQ(getter_AddRefs(q));
         Assert(NS_SUCCEEDED(rv));
         Assert(q == sMainQueue->mEventQ);
@@ -645,7 +645,7 @@ BOOL NativeEventQueue::postEvent(NativeEvent *pEvent)
 int NativeEventQueue::getSelectFD()
 {
 #ifdef VBOX_WITH_XPCOM
-    return mEventQ->GetNativeEventQueueSelectFD();
+    return mEventQ->GetEventQueueSelectFD();
 #else
     return -1;
 #endif

@@ -5379,8 +5379,16 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler(RTTHREAD thread, void *pvUser)
          * be done ONLY when we stop this loop via interruptEventQueueProcessing().
          * See @bugref{5724}.
          */
-        while (pEventQueue->processEventQueue(RT_INDEFINITE_WAIT) != VERR_INTERRUPTED)
-            /* nothing */ ;
+        for (;;)
+        {
+            rc = pEventQueue->processEventQueue(RT_INDEFINITE_WAIT);
+            if (rc == VERR_INTERRUPTED)
+            {
+                LogFlow(("Event queue processing ended with rc=%Rrc\n", rc));
+                rc = VINF_SUCCESS; /* Set success when exiting. */
+                break;
+            }
+        }
 
         delete pEventQueue;
     }

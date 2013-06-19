@@ -555,7 +555,7 @@ HRESULT Shutdown()
              * init counter drops to zero */
             if (--gXPCOMInitCount == 0)
             {
-                MainEventQueue::uninit();
+                NativeEventQueue::uninit();
                 rc = NS_ShutdownXPCOM(nsnull);
 
                 /* This is a thread initialized XPCOM and set gIsXPCOMInitialized to
