@@ -57,7 +57,7 @@ EventQueue::~EventQueue(void)
     {
         (*it)->Release();
         it = mEvents.erase(it);
-            }
+    }
 }
 
 /**
@@ -94,8 +94,10 @@ int EventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
         {
             int rc2 = RTCritSectLeave(&mCritSect);
             AssertRC(rc2);
+        }
     }
-    }
+    else
+        fWait = false;
 
     if (fWait)
     {
@@ -128,14 +130,14 @@ int EventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
 
                 pEvent->handler();
                 pEvent->Release();
-    }
-    else
-    {
+            }
+            else
+            {
                 int rc2 = RTCritSectLeave(&mCritSect);
                 if (RT_SUCCESS(rc))
                     rc = rc2;
+            }
         }
-    }
     }
 
     Assert(rc != VERR_TIMEOUT || cMsTimeout != RT_INDEFINITE_WAIT);
@@ -167,7 +169,7 @@ BOOL EventQueue::postEvent(Event *pEvent)
     int rc = RTCritSectEnter(&mCritSect);
     if (RT_SUCCESS(rc))
     {
-       try
+        try
         {
             if (pEvent)
             {
