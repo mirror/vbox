@@ -32,6 +32,7 @@
  * These functions returns 'true' for all allowed conversions. */
 template<> bool canConvert<StorageSlot>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
+template<> bool canConvert<IndicatorType>() { return true; }
 
 /* QString <= StorageSlot: */
 template<> QString toString(const StorageSlot &storageSlot)
@@ -367,5 +368,51 @@ template<> DetailsElementType fromInternalString<DetailsElementType>(const QStri
         AssertMsgFailed(("No value for '%s'", strDetailsElementType.toAscii().constData()));
     }
     return list.value(strDetailsElementType);
+}
+
+/* QString <= IndicatorType: */
+template<> QString toInternalString(const IndicatorType &indicatorType)
+{
+    QString strResult;
+    switch (indicatorType)
+    {
+        case IndicatorType_HardDisks:     strResult = "HardDisks"; break;
+        case IndicatorType_OpticalDisks:  strResult = "OpticalDisks"; break;
+        case IndicatorType_FloppyDisks:   strResult = "FloppyDisks"; break;
+        case IndicatorType_Network:       strResult = "Network"; break;
+        case IndicatorType_USB:           strResult = "USB"; break;
+        case IndicatorType_SharedFolders: strResult = "SharedFolders"; break;
+        case IndicatorType_VideoCapture:  strResult = "VideoCapture"; break;
+        case IndicatorType_Features:      strResult = "Features"; break;
+        case IndicatorType_Mouse:         strResult = "Mouse"; break;
+        case IndicatorType_Keyboard:      strResult = "Keyboard"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for indicator type=%d", indicatorType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* IndicatorType <= QString: */
+template<> IndicatorType fromInternalString<IndicatorType>(const QString &strIndicatorType)
+{
+    QHash<QString, IndicatorType> list;
+    list.insert("HardDisks",     IndicatorType_HardDisks);
+    list.insert("OpticalDisks",  IndicatorType_OpticalDisks);
+    list.insert("FloppyDisks",   IndicatorType_FloppyDisks);
+    list.insert("Network",       IndicatorType_Network);
+    list.insert("USB",           IndicatorType_USB);
+    list.insert("SharedFolders", IndicatorType_SharedFolders);
+    list.insert("VideoCapture",  IndicatorType_VideoCapture);
+    list.insert("Features",      IndicatorType_Features);
+    list.insert("Mouse",         IndicatorType_Mouse);
+    list.insert("Keyboard",      IndicatorType_Keyboard);
+    if (!list.contains(strIndicatorType))
+    {
+        AssertMsgFailed(("No value for '%s'", strIndicatorType.toAscii().constData()));
+    }
+    return list.value(strIndicatorType);
 }
 
