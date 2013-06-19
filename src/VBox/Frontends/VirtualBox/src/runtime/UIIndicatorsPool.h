@@ -31,14 +31,14 @@ enum UIIndicatorIndex
     UIIndicatorIndex_HardDisks,
     UIIndicatorIndex_OpticalDisks,
     UIIndicatorIndex_FloppyDisks,
-    UIIndicatorIndex_NetworkAdapters,
-    UIIndicatorIndex_USBDevices,
+    UIIndicatorIndex_Network,
+    UIIndicatorIndex_USB,
     UIIndicatorIndex_SharedFolders,
     UIIndicatorIndex_VideoCapture,
-    UIIndicatorIndex_Virtualization,
+    UIIndicatorIndex_Features,
     UIIndicatorIndex_Mouse,
-    UIIndicatorIndex_Hostkey,
-    UIIndicatorIndex_End
+    UIIndicatorIndex_Keyboard,
+    UIIndicatorIndex_Max
 };
 
 /* Indicator pool interface/prototype: */

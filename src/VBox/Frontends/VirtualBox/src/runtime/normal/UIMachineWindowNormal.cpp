@@ -60,7 +60,7 @@ void UIMachineWindowNormal::sltMachineStateChanged()
     UIMachineWindow::sltMachineStateChanged();
 
     /* Update pause and virtualization stuff: */
-    updateAppearanceOf(UIVisualElement_PauseStuff | UIVisualElement_VirtualizationStuff);
+    updateAppearanceOf(UIVisualElement_PauseStuff | UIVisualElement_FeaturesStuff);
 }
 
 void UIMachineWindowNormal::sltMediumChange(const CMediumAttachment &attachment)
@@ -108,42 +108,42 @@ void UIMachineWindowNormal::sltVideoCaptureChange()
 void UIMachineWindowNormal::sltCPUExecutionCapChange()
 {
     /* Update virtualization stuff: */
-    updateAppearanceOf(UIVisualElement_VirtualizationStuff);
+    updateAppearanceOf(UIVisualElement_FeaturesStuff);
 }
 
 void UIMachineWindowNormal::sltUpdateIndicators()
 {
-    /* Update LEDs: */
+    /* Update indicators: */
     updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_HardDisks), KDeviceType_HardDisk);
     updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks), KDeviceType_DVD);
     updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_FloppyDisks), KDeviceType_Floppy);
-    updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_USBDevices), KDeviceType_USB);
-    updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters), KDeviceType_Network);
+    updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_USB), KDeviceType_USB);
+    updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_Network), KDeviceType_Network);
     updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders), KDeviceType_SharedFolder);
 }
 
 void UIMachineWindowNormal::sltShowIndicatorsContextMenu(QIStateIndicator *pIndicator, QContextMenuEvent *pEvent)
 {
-    /* Show CD/DVD device LED context menu: */
+    /* Show optical-disks LED context menu: */
     if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks))
     {
         if (gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices)->isEnabled())
             gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices)->menu()->exec(pEvent->globalPos());
     }
-    /* Show floppy drive LED context menu: */
+    /* Show floppy-disks LED context menu: */
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_FloppyDisks))
     {
         if (gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices)->isEnabled())
             gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices)->menu()->exec(pEvent->globalPos());
     }
-    /* Show USB device LED context menu: */
-    else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_USBDevices))
+    /* Show usb LED context menu: */
+    else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_USB))
     {
         if (gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->isEnabled())
             gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->menu()->exec(pEvent->globalPos());
     }
-    /* Show network adapter LED context menu: */
-    else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters))
+    /* Show network LED context menu: */
+    else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_Network))
     {
         if (gActionPool->action(UIActionIndexRuntime_Menu_Network)->isEnabled())
             gActionPool->action(UIActionIndexRuntime_Menu_Network)->menu()->exec(pEvent->globalPos());
@@ -170,7 +170,7 @@ void UIMachineWindowNormal::sltShowIndicatorsContextMenu(QIStateIndicator *pIndi
 
 void UIMachineWindowNormal::sltProcessGlobalSettingChange(const char * /* aPublicName */, const char * /* aName */)
 {
-    /* Update host-combination LED: */
+    /* Update host-combination status-bar label: */
     m_pNameHostkey->setText(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo()));
 }
 
@@ -246,16 +246,16 @@ void UIMachineWindowNormal::prepareStatusBar()
     connect(pLedFloppyDisks, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
             this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
 
-    /* USB Devices: */
-    QIStateIndicator *pLedUSBDevices = indicatorsPool()->indicator(UIIndicatorIndex_USBDevices);
-    pIndicatorBoxHLayout->addWidget(pLedUSBDevices);
-    connect(pLedUSBDevices, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
+    /* USB: */
+    QIStateIndicator *pLedUSB = indicatorsPool()->indicator(UIIndicatorIndex_USB);
+    pIndicatorBoxHLayout->addWidget(pLedUSB);
+    connect(pLedUSB, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
             this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
 
-    /* Network Adapters: */
-    QIStateIndicator *pLedNetworkAdapters = indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters);
-    pIndicatorBoxHLayout->addWidget(pLedNetworkAdapters);
-    connect(pLedNetworkAdapters, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
+    /* Network: */
+    QIStateIndicator *pLedNetwork = indicatorsPool()->indicator(UIIndicatorIndex_Network);
+    pIndicatorBoxHLayout->addWidget(pLedNetwork);
+    connect(pLedNetwork, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
             this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
 
     /* Shared Folders: */
@@ -270,8 +270,8 @@ void UIMachineWindowNormal::prepareStatusBar()
     connect(pLedVideoCapture, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
             this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
 
-    /* Virtualization: */
-    pIndicatorBoxHLayout->addWidget(indicatorsPool()->indicator(UIIndicatorIndex_Virtualization));
+    /* Features: */
+    pIndicatorBoxHLayout->addWidget(indicatorsPool()->indicator(UIIndicatorIndex_Features));
 
     /* Separator: */
     QFrame *pSeparator = new QFrame;
@@ -284,13 +284,13 @@ void UIMachineWindowNormal::prepareStatusBar()
     connect(pLedMouse, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
             this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
 
-    /* Host Key: */
+    /* Keyboard: */
     m_pCntHostkey = new QWidget;
     QHBoxLayout *pHostkeyLedContainerLayout = new QHBoxLayout(m_pCntHostkey);
     VBoxGlobal::setLayoutMargin(pHostkeyLedContainerLayout, 0);
     pHostkeyLedContainerLayout->setSpacing(3);
     pIndicatorBoxHLayout->addWidget(m_pCntHostkey);
-    pHostkeyLedContainerLayout->addWidget(indicatorsPool()->indicator(UIIndicatorIndex_Hostkey));
+    pHostkeyLedContainerLayout->addWidget(indicatorsPool()->indicator(UIIndicatorIndex_Keyboard));
     m_pNameHostkey = new QLabel(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo()));
     pHostkeyLedContainerLayout->addWidget(m_pNameHostkey);
 
@@ -341,12 +341,12 @@ void UIMachineWindowNormal::prepareHandlers()
     /* Call to base-class: */
     UIMachineWindow::prepareHandlers();
 
-    /* Keyboard state-change updater: */
-    connect(machineLogic()->keyboardHandler(), SIGNAL(keyboardStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Hostkey), SLOT(setState(int)));
-    /* Mouse state-change updater: */
+    /* Connect keyboard state-change handler: */
+    connect(machineLogic()->keyboardHandler(), SIGNAL(keyboardStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Keyboard), SLOT(setState(int)));
+    /* Connect mouse state-change handler: */
     connect(machineLogic()->mouseHandler(), SIGNAL(mouseStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Mouse), SLOT(setState(int)));
-    /* Early initialize required connections: */
-    indicatorsPool()->indicator(UIIndicatorIndex_Hostkey)->setState(machineLogic()->keyboardHandler()->keyboardState());
+    /* Early initialize created connections: */
+    indicatorsPool()->indicator(UIIndicatorIndex_Keyboard)->setState(machineLogic()->keyboardHandler()->keyboardState());
     indicatorsPool()->indicator(UIIndicatorIndex_Mouse)->setState(machineLogic()->mouseHandler()->mouseState());
 }
 
@@ -435,12 +435,12 @@ void UIMachineWindowNormal::loadSettings()
             || !usbController.GetProxyAvailable())
         {
             /* Hide USB menu: */
-            indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->setHidden(true);
+            indicatorsPool()->indicator(UIIndicatorIndex_USB)->setHidden(true);
         }
         else
         {
             /* Toggle USB LED: */
-            indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->setState(
+            indicatorsPool()->indicator(UIIndicatorIndex_USB)->setState(
                 usbController.GetEnabled() ? KDeviceActivity_Idle : KDeviceActivity_Null);
         }
     }
@@ -571,16 +571,16 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
     if (iElement & UIVisualElement_FDStuff)
         indicatorsPool()->indicator(UIIndicatorIndex_FloppyDisks)->updateAppearance();
     if (iElement & UIVisualElement_NetworkStuff)
-        indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters)->updateAppearance();
+        indicatorsPool()->indicator(UIIndicatorIndex_Network)->updateAppearance();
     if (iElement & UIVisualElement_USBStuff &&
-        !indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->isHidden())
-        indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->updateAppearance();
+        !indicatorsPool()->indicator(UIIndicatorIndex_USB)->isHidden())
+        indicatorsPool()->indicator(UIIndicatorIndex_USB)->updateAppearance();
     if (iElement & UIVisualElement_SharedFolderStuff)
         indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders)->updateAppearance();
     if (iElement & UIVisualElement_VideoCapture)
         indicatorsPool()->indicator(UIIndicatorIndex_VideoCapture)->updateAppearance();
-    if (iElement & UIVisualElement_VirtualizationStuff)
-        indicatorsPool()->indicator(UIIndicatorIndex_Virtualization)->updateAppearance();
+    if (iElement & UIVisualElement_FeaturesStuff)
+        indicatorsPool()->indicator(UIIndicatorIndex_Features)->updateAppearance();
 }
 
 bool UIMachineWindowNormal::isMaximizedChecked()

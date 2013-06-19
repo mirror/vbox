@@ -44,7 +44,7 @@ enum UIVisualElement
     UIVisualElement_USBStuff              = RT_BIT(7),
     UIVisualElement_SharedFolderStuff     = RT_BIT(8),
     UIVisualElement_VideoCapture          = RT_BIT(9),
-    UIVisualElement_VirtualizationStuff   = RT_BIT(10),
+    UIVisualElement_FeaturesStuff         = RT_BIT(10),
     UIVisualElement_MiniToolBar           = RT_BIT(11),
     UIVisualElement_AllStuff              = 0xFFFF
 };
