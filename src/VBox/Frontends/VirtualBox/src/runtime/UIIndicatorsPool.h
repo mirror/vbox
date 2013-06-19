@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,11 +19,13 @@
 #ifndef __UIIndicatorsPool_h__
 #define __UIIndicatorsPool_h__
 
-/* Local includes */
+/* GUI includes: */
 #include "QIStateIndicator.h"
 
+/* Forward declarations: */
 class CSession;
 
+/* Indicator types: */
 enum UIIndicatorIndex
 {
     UIIndicatorIndex_HardDisks,
@@ -39,21 +41,25 @@ enum UIIndicatorIndex
     UIIndicatorIndex_End
 };
 
+/* Indicator pool interface/prototype: */
 class UIIndicatorsPool : public QObject
 {
     Q_OBJECT;
 
 public:
 
+    /* Constructor/destructor: */
     UIIndicatorsPool(CSession &session, QObject *pParent);
-   ~UIIndicatorsPool();
+    ~UIIndicatorsPool();
 
+    /* API indicator access stuff: */
     QIStateIndicator* indicator(UIIndicatorIndex index);
 
 private:
 
+    /* Variables: */
     CSession &m_session;
-    QVector<QIStateIndicator*> m_IndicatorsPool;
+    QVector<QIStateIndicator*> m_pool;
 };
 
 #endif // __UIIndicatorsPool_h__
