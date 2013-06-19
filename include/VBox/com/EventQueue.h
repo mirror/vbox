@@ -1,9 +1,10 @@
+/* $Id$ */
 /** @file
- * MS COM / XPCOM Abstraction Layer - Event and EventQueue class declaration.
+ * Event queue class declaration.
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,11 +27,10 @@
 #ifndef ___VBox_com_EventQueue_h
 #define ___VBox_com_EventQueue_h
 
-#ifndef VBOX_WITH_XPCOM
-# include <Windows.h>
-#else // VBOX_WITH_XPCOM
-# include <nsEventQueueUtils.h>
-#endif // VBOX_WITH_XPCOM
+#include <list>
+
+#include <iprt/asm.h>
+#include <iprt/critsect.h>
 
 #include <VBox/com/defs.h>
 #include <VBox/com/assert.h>
@@ -51,8 +51,21 @@ class Event
 {
 public:
 
-    Event() {}
-    virtual ~Event() {};
+    Event(void) :
+        mRefCount(0) { }
+    virtual ~Event(void) { AssertMsg(!mRefCount,
+                                     ("Reference count of event=%p not 0 on destruction (is %RU32)\n",
+                                      this, mRefCount)); }
+public:
+
+    uint32_t AddRef(void) { return ASMAtomicIncU32(&mRefCount); }
+    void     Release(void)
+    {
+        Assert(mRefCount);
+        uint32_t cRefs = ASMAtomicDecU32(&mRefCount);
+        if (!cRefs)
+            delete this;
+    }
 
 protected:
 
@@ -62,76 +75,48 @@ protected:
      *
      *  @return reserved, should be NULL.
      */
-    virtual void *handler() { return NULL; }
+    virtual void *handler(void) { return NULL; }
 
     friend class EventQueue;
+
+protected:
+
+    /** The event's reference count. */
+    uint32_t mRefCount;
 };
+
+typedef std::list< Event* >                 EventQueueList;
+typedef std::list< Event* >::iterator       EventQueueListIterator;
+typedef std::list< Event* >::const_iterator EventQueueListIteratorConst;
 
 /**
  *  Simple event queue.
- *
- *  When using XPCOM, this will map onto the default XPCOM queue for the thread.
- *  So, if a queue is created on the main thread, it automatically processes
- *  XPCOM/IPC events while waiting.
- *
- *  When using Windows, Darwin and OS/2, this will map onto the native thread
- *  queue/runloop.  So, windows messages and what not will be processed while
- *  waiting for events.
- *
- *  @note It is intentional that there is no way to retrieve arbitrary
- *  events and controlling their processing. There is no use case which
- *  warrants introducing the complexity of platform independent events.
  */
 class EventQueue
 {
 public:
 
-    EventQueue();
-    ~EventQueue(); /** @todo r=andy Why not virtual? */
+    EventQueue(void);
+    virtual ~EventQueue(void);
+
+public:
 
     BOOL postEvent(Event *event);
     int processEventQueue(RTMSINTERVAL cMsTimeout);
     int interruptEventQueueProcessing();
-    int getSelectFD();
-    static int init();
-    static int uninit();
-    static EventQueue *getMainEventQueue();
-
-#ifdef VBOX_WITH_XPCOM
-    already_AddRefed<nsIEventQueue> getIEventQueue()
-    {
-        return mEventQ.get();
-    }
-#else
-    static int dispatchMessageOnWindows(MSG const *pMsg, int rc);
-#endif
 
 private:
-    static EventQueue *sMainQueue;
 
-#ifndef VBOX_WITH_XPCOM
-
-    /** The thread which the queue belongs to. */
-    DWORD mThreadId;
-    /** Duplicated thread handle for MsgWaitForMultipleObjects. */
-    HANDLE mhThread;
-
-#else // VBOX_WITH_XPCOM
-
-    /** Whether it was created (and thus needs destroying) or if a queue already
-     *  associated with the thread was used. */
-    bool mEQCreated;
-
-    /** Whether event processing should be interrupted. */
-    bool mInterrupted;
-
-    nsCOMPtr <nsIEventQueue> mEventQ;
-    nsCOMPtr <nsIEventQueueService> mEventQService;
-
-    static void *PR_CALLBACK plEventHandler(PLEvent *self);
-    static void PR_CALLBACK plEventDestructor(PLEvent *self);
-
-#endif // VBOX_WITH_XPCOM
+    /** Critical section for serializing access to this
+     *  event queue. */
+    RTCRITSECT         mCritSect;
+    /** Event semaphore for getting notified on new
+     *  events being handled. */
+    RTSEMEVENT         mSemEvent;
+    /** The actual event queue, implemented as a list. */
+    EventQueueList     mEvents;
+    /** Shutdown indicator. */
+    bool               mShutdown;
 };
 
 } /* namespace com */

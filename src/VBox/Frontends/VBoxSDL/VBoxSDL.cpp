@@ -27,7 +27,7 @@
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 
-#include <VBox/com/EventQueue.h>
+#include <VBox/com/NativeEventQueue.h>
 #include <VBox/com/VirtualBox.h>
 
 using namespace com;
@@ -1377,7 +1377,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     ComPtr<IVirtualBox> pVirtualBox;
     ComPtr<ISession> pSession;
     bool sessionOpened = false;
-    EventQueue* eventQ = com::EventQueue::getMainEventQueue();
+    NativeEventQueue* eventQ = com::NativeEventQueue::getMainEventQueue();
 
     ComPtr<IMachine> pMachine;
 
