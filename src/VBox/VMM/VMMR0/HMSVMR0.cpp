@@ -4241,7 +4241,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     /* This can be a fault-type #DB (instruction breakpoint) or a trap-type #DB (data breakpoint). However, for both cases
        DR6 and DR7 are updated to what the exception handler expects. See AMD spec. 15.12.2 "#DB (Debug)". */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    rc = DBGFRZTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), pCtx->dr[6]);
+    int rc = DBGFRZTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), pCtx->dr[6]);
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
         /* X86_DR7_GD will be cleared if DRx accesses should be trapped inside the guest. */
@@ -4262,6 +4262,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         Event.n.u3Type   = SVM_EVENT_EXCEPTION;
         Event.n.u8Vector = X86_XCPT_DB;
         hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+
         rc = VINF_SUCCESS;
     }
 
