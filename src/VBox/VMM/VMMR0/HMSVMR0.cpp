@@ -726,6 +726,43 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
 
 /**
+ * Invalidates a guest page by guest virtual address.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   GCVirt      Guest virtual address of the page to invalidate.
+ */
+VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
+{
+    bool fFlushPending = pVM->hm.s.svm.fAlwaysFlushTLB | VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+
+    /* Skip it if a TLB flush is already pending. */
+    if (!fFlushPending)
+    {
+        Log4(("SVMR0InvalidatePage %RGv\n", GCVirt));
+        AssertReturn(pVM, VERR_INVALID_PARAMETER);
+        Assert(pVM->hm.s.svm.fSupported);
+
+        PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        AssertMsgReturn(pVmcb, ("Invalid pVmcb!\n"), VERR_SVM_INVALID_PVMCB);
+
+#if HC_ARCH_BITS == 32
+        /* If we get a flush in 64-bit guest mode, then force a full TLB flush. INVLPGA takes only 32-bit addresses. */
+        if (CPUMIsGuestInLongMode(pVCpu))
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+        else
+#endif
+        {
+            SVMR0InvlpgA(GCVirt, pVmcb->ctrl.TLBCtrl.n.u32ASID);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbInvlpgVirt);
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Flushes the appropriate tagged-TLB entries.
  *
  * @param    pVM        Pointer to the VM.
