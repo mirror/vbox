@@ -2680,6 +2680,7 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
 
                 pIoCtxWrite->Type.Child.cbPreRead  = cbPreRead;
                 pIoCtxWrite->Type.Child.cbPostRead = cbPostRead;
+                pIoCtxWrite->Req.Io.pImageParentOverride = pIoCtx->Req.Io.pImageParentOverride;
 
                 /* Process the write request */
                 rc = vdIoCtxProcessLocked(pIoCtxWrite);
