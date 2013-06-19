@@ -738,22 +738,29 @@ UIIndicatorsPool::UIIndicatorsPool(CSession &session, QObject *pParent)
     , m_session(session)
     , m_pool(UIIndicatorIndex_End)
 {
+    /* Prepare: */
+    prepare();
 }
 
 UIIndicatorsPool::~UIIndicatorsPool()
 {
-    for (int i = 0; i < m_pool.size(); ++i)
-    {
-        delete m_pool[i];
-        m_pool[i] = 0;
-    }
-    m_pool.clear();
+    /* Cleanup: */
+    cleanup();
 }
 
 QIStateIndicator* UIIndicatorsPool::indicator(UIIndicatorIndex index)
 {
-    if (!m_pool.at(index))
+    /* Just return what already exists: */
+    return m_pool[index];
+}
+
+void UIIndicatorsPool::prepare()
+{
+    /* Populate indicator-pool: */
+    for (int iIndex = 0; iIndex < UIIndicatorIndex_End; ++iIndex)
     {
+        /* Prepare indicator: */
+        UIIndicatorIndex index = static_cast<UIIndicatorIndex>(iIndex);
         switch (index)
         {
             case UIIndicatorIndex_HardDisks:       m_pool[index] = new UIIndicatorHardDisks(m_session); break;
@@ -769,7 +776,17 @@ QIStateIndicator* UIIndicatorsPool::indicator(UIIndicatorIndex index)
             default: break;
         }
     }
-    return m_pool.at(index);
+}
+
+void UIIndicatorsPool::cleanup()
+{
+    /* Wipe-out indicator-pool: */
+    for (int iIndex = 0; iIndex < UIIndicatorIndex_End; ++iIndex)
+    {
+        /* Wipe-out indicator: */
+        delete m_pool[iIndex];
+        m_pool[iIndex] = 0;
+    }
 }
 
 #include "UIIndicatorsPool.moc"

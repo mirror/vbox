@@ -57,6 +57,10 @@ public:
 
 private:
 
+    /* Helpers: Prepare/cleanup stuff: */
+    void prepare();
+    void cleanup();
+
     /* Variables: */
     CSession &m_session;
     QVector<QIStateIndicator*> m_pool;
