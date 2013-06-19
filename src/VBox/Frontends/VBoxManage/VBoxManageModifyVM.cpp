@@ -2495,7 +2495,20 @@ int handleModifyVM(HandlerArg *a)
             }
             case MODIFYVM_VCP_FILENAME:
             {
-                Bstr bstr(ValueUnion.psz);
+                Bstr bstr;
+                /* empty string will fall through, leaving bstr empty */
+                if (*ValueUnion.psz)
+                {
+                    char szVCFileAbs[RTPATH_MAX] = "";
+                    int vrc = RTPathAbs(ValueUnion.psz, szVCFileAbs, sizeof(szVCFileAbs));
+                    if (RT_FAILURE(vrc))
+                    {
+                        errorArgument("Cannot convert filename \"%s\" to absolute path\n", ValueUnion.psz);
+                        rc = E_FAIL;
+                        break;
+                    }
+                    bstr = szVCFileAbs;
+                }
                 CHECK_ERROR(machine, COMSETTER(VideoCaptureFile)(bstr.raw()));
                 break;
             }
