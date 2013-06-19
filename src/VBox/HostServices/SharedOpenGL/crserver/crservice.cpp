@@ -18,47 +18,27 @@
 
 #define __STDC_CONSTANT_MACROS  /* needed for a definition in iprt/string.h */
 
-#ifdef RT_OS_WINDOWS
-# include <iprt/alloc.h>
-# include <iprt/string.h>
-# include <iprt/assert.h>
-# include <iprt/stream.h>
-# include <VBox/vmm/ssm.h>
-# include <VBox/hgcmsvc.h>
-# include <VBox/HostServices/VBoxCrOpenGLSvc.h>
-# include "cr_server.h"
-# define LOG_GROUP LOG_GROUP_SHARED_CROPENGL
-# include <VBox/log.h>
+#define LOG_GROUP LOG_GROUP_SHARED_CROPENGL
 
-# include <VBox/com/com.h>
-# include <VBox/com/string.h>
-# include <VBox/com/array.h>
-# include <VBox/com/Guid.h>
-# include <VBox/com/ErrorInfo.h>
-# include <VBox/com/EventQueue.h>
-# include <VBox/com/VirtualBox.h>
-# include <VBox/com/assert.h>
-
-#else
-# include <VBox/com/VirtualBox.h>
-# include <iprt/assert.h>
-# include <VBox/vmm/ssm.h>
-# include <VBox/hgcmsvc.h>
-# include <VBox/HostServices/VBoxCrOpenGLSvc.h>
-
-# include "cr_server.h"
-# define LOG_GROUP LOG_GROUP_SHARED_CROPENGL
-# include <VBox/log.h>
-# include <VBox/com/ErrorInfo.h>
-#endif /* RT_OS_WINDOWS */
-
-#include <VBox/com/errorprint.h>
-#include <iprt/thread.h>
-#include <iprt/critsect.h>
-#include <iprt/semaphore.h>
+#include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/critsect.h>
+#include <iprt/mem.h>
+#include <iprt/semaphore.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
+#include <iprt/thread.h>
+
+#include <VBox/hgcmsvc.h>
+#include <VBox/log.h>
+#include <VBox/com/ErrorInfo.h>
+#include <VBox/com/VirtualBox.h>
+#include <VBox/com/errorprint.h>
+#include <VBox/HostServices/VBoxCrOpenGLSvc.h>
+#include <VBox/vmm/ssm.h>
 
 #include "cr_mem.h"
+#include "cr_server.h"
 
 PVBOXHGCMSVCHELPERS g_pHelpers;
 static IConsole* g_pConsole = NULL;
