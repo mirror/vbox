@@ -159,10 +159,6 @@ namespace UIDefs
     extern const char* GUI_SuppressMessages;
     extern const char* GUI_InvertMessageOption;
 
-    /* Registration dialog declarations: */
-    extern const char* GUI_RegistrationDlgWinID;
-    extern const char* GUI_RegistrationData;
-
     /* Update manager declarations: */
     extern const char* GUI_UpdateDate;
     extern const char* GUI_UpdateCheckCount;
