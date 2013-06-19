@@ -26,8 +26,12 @@ ifndef VBOX_ROOT_CONFIG_KMK_INCLUDED
 endif
 
 ## FIXME
-PATH_DDKVIDEO ?= D:/dev/ddk/200402/video
-PATH_DDKBASE  ?= D:/dev/ddk/200402/base
+PATH_DDKVIDEO ?= D:/ddk/200402/video
+PATH_DDKBASE  ?= D:/ddk/200402/base
+TOOL_MASM510_AS   ?= $(PATH_DDKBASE)/tools/masm.exe
+TOOL_MSLINK510_LD ?= $(PATH_DDKBASE)/tools/link.exe
+PATH_TOOL_VAC308  ?= D:/VACpp/v3.08
+PATH_TOOL_ALP     ?= D:/Toolkit/v4.52/bin
 
 #
 # Template for VAC308 Gradd stuff.
