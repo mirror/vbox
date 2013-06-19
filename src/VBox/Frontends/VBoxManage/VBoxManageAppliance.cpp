@@ -27,8 +27,6 @@
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
-#include <VBox/com/EventQueue.h>
-
 #include <VBox/com/VirtualBox.h>
 
 #include <list>
