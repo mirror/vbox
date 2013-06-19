@@ -1379,7 +1379,7 @@
   <interface name="INATNetwork" extends="$unknown"
     uuid="03DFD6F7-1B78-48A3-8345-C785281E9523"
     wsmap="managed">
-    <attribute name="NetworkName" type="wstring">
+    <attribute name="networkName" type="wstring">
       <desc>
         TBD: the idea, technically we can start any number of the NAT networks,
         but we should expect that at some point we will get collisions because of
@@ -4247,27 +4247,32 @@
       </desc>
     </attribute>
 
-    <attribute name="VideoCaptureEnabled" type="boolean" default="false">
+    <attribute name="videoCaptureEnabled" type="boolean" default="false">
       <desc>
         This setting determines whether VirtualBox uses video recording to
         record VM session.</desc>
     </attribute>
 
-    <attribute name="VideoCaptureScreens" type="boolean" safearray="yes">
+    <attribute name="videoCaptureScreens" type="boolean" safearray="yes">
       <desc>
         This setting determines for which screens video recording is
         enabled.</desc>
     </attribute>
 
-    <attribute name="VideoCaptureFile" type="wstring" default="Test.webm">
+    <attribute name="videoCaptureFile" type="wstring">
       <desc>
         This setting determines the filename VirtualBox uses to save
         the recorded content. This setting cannot be changed while video
-        capturing is enabled.
+        capturing is enabled. 
+        <note>
+          When setting this attribute, the specified path has to be
+          absolute (full path). When reading this attribute, a full path is
+          always returned.
+        </note>
       </desc>
     </attribute>
 
-    <attribute name="VideoCaptureWidth" type="unsigned long" default="640">
+    <attribute name="videoCaptureWidth" type="unsigned long" default="640">
       <desc>
         This setting determines the horizontal resolution of the recorded
         video. This setting cannot be changed while video capturing is
@@ -4275,7 +4280,7 @@
       </desc>
     </attribute>
 
-    <attribute name="VideoCaptureHeight" type="unsigned long" default="480">
+    <attribute name="videoCaptureHeight" type="unsigned long" default="480">
       <desc>
         This setting determines the vertical resolution of the recorded
         video. This setting cannot be changed while video capturing is
@@ -4283,7 +4288,7 @@
       </desc>
     </attribute>
 
-    <attribute name="VideoCaptureRate" type="unsigned long" default="512">
+    <attribute name="videoCaptureRate" type="unsigned long" default="512">
       <desc>
         This setting determines the bitrate in kilobits per second.
         Increasing this value makes the video look better for the
@@ -4292,11 +4297,11 @@
       </desc>
     </attribute>
 
-    <attribute name="VideoCaptureFps" type="unsigned long" default="25">
+    <attribute name="videoCaptureFPS" type="unsigned long" default="25">
       <desc>
         This setting determines the maximum number of frames per second.
         Frames with a higher frequency will be skipped. Reducing this
-        value increses the number of skipped frames but reduces the
+        value increases the number of skipped frames and reduces the
         file size. This setting cannot be changed while video capturing
         is enabled.
       </desc>
@@ -12748,7 +12753,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="variant" type="MediumVariant" safearray="yes" readonly="yes">
       <desc>
         Returns the storage format variant information for this medium
-        as an aaray of the flags described at <link to="MediumVariant" />.
+        as an array of the flags described at <link to="MediumVariant" />.
         Before <link to="#refreshState"/> is called this method returns
         an undefined value.
       </desc>
@@ -20941,7 +20946,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkChanged"
     >
     <!-- network name is common setting for all event types -->
-    <attribute name="NetworkName" type="wstring" readonly="yes"/>
+    <attribute name="networkName" type="wstring" readonly="yes"/>
   </interface>
   <!-- base class for start/stop events -->
   <interface name="INATNetworkStartStopEvent" extends="INATNetworkChangedEvent"

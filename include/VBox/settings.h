@@ -821,13 +821,13 @@ struct Hardware
     bool                fAccelerate3D,
                         fAccelerate2DVideo;     // requires settings version 1.8 (VirtualBox 3.1)
 
-    uint32_t            ulVideoCaptureHorzRes;  // requires settings version 1.12 (VirtualBox 4.3)
-    uint32_t            ulVideoCaptureVertRes;  // requires settings version 1.12 (VirtualBox 4.3)
-    uint32_t            ulVideoCaptureRate;     // requires settings version 1.12 (VirtualBox 4.3)
-    uint32_t            ulVideoCaptureFps;      // requires settings version 1.12 (VirtualBox 4.3)
-    bool                fVideoCaptureEnabled;   // requires settings version 1.12 (VirtualBox 4.3)
-    uint64_t            u64VideoCaptureScreens; // requires settings version 1.12 (VirtualBox 4.3)
-    com::Utf8Str        strVideoCaptureFile;    // requires settings version 1.12 (VirtualBox 4.3)
+    uint32_t            ulVideoCaptureHorzRes;  // requires settings version 1.14 (VirtualBox 4.3)
+    uint32_t            ulVideoCaptureVertRes;  // requires settings version 1.14 (VirtualBox 4.3)
+    uint32_t            ulVideoCaptureRate;     // requires settings version 1.14 (VirtualBox 4.3)
+    uint32_t            ulVideoCaptureFPS;      // requires settings version 1.14 (VirtualBox 4.3)
+    bool                fVideoCaptureEnabled;   // requires settings version 1.14 (VirtualBox 4.3)
+    uint64_t            u64VideoCaptureScreens; // requires settings version 1.14 (VirtualBox 4.3)
+    com::Utf8Str        strVideoCaptureFile;    // requires settings version 1.14 (VirtualBox 4.3)
 
     FirmwareType_T      firmwareType;           // requires settings version 1.9 (VirtualBox 3.1)
 

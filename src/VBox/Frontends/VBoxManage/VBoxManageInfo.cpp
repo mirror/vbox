@@ -2314,13 +2314,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         ULONG Rate;
         CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureRate)(&Rate), rc);
         ULONG Fps;
-        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureFps)(&Fps), rc);
+        CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureFPS)(&Fps), rc);
         Bstr File;
         CHECK_ERROR_RET(machine, COMGETTER(VideoCaptureFile)(File.asOutParam()), rc);
         if (details == VMINFO_MACHINEREADABLE)
         {
-            RTPrintf("VideoCaptureEnabled=\"%s\"\n", bActive ? "on" : "off");
-            RTPrintf("VideoCaptureScreens=");
+            RTPrintf("vcpenabled=\"%s\"\n", bActive ? "on" : "off");
+            RTPrintf("vcpscreens=");
             bool fComma = false;
             for (unsigned i = 0; i < screens.size(); i++)
                 if (screens[i])
@@ -2329,11 +2329,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     fComma = true;
                 }
             RTPrintf("\n");
-            RTPrintf("VideoCaptureWidth=%u\n", (unsigned)Width);
-            RTPrintf("VideoCaptureFile=\"%ls\"\n", File.raw());
-            RTPrintf("VideoCaptureHeight=%u\n", (unsigned)Height);
-            RTPrintf("VideoCaptureRate=%u\n", (unsigned)Rate);
-            RTPrintf("VideoCaptureFps=%u\n", (unsigned)Fps);
+            RTPrintf("vcpfile=\"%ls\"\n", File.raw());
+            RTPrintf("vcpwidth=%u\n", (unsigned)Width);
+            RTPrintf("vcpheight=%u\n", (unsigned)Height);
+            RTPrintf("vcprate=%u\n", (unsigned)Rate);
+            RTPrintf("vcpfps=%u\n", (unsigned)Fps);
         }
         else
         {

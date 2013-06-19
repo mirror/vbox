@@ -2516,7 +2516,7 @@ int handleModifyVM(HandlerArg *a)
             }
             case MODIFYVM_VCP_FPS:
             {
-                CHECK_ERROR(machine, COMSETTER(VideoCaptureFps)(ValueUnion.u32));
+                CHECK_ERROR(machine, COMSETTER(VideoCaptureFPS)(ValueUnion.u32));
                 break;
             }
 #endif
