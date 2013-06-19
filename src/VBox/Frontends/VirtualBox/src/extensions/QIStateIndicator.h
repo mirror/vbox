@@ -30,7 +30,6 @@ class QIStateIndicator : public QFrame
 public:
 
     QIStateIndicator (QWidget *pParent = 0);
-    QIStateIndicator (int aState);
     ~QIStateIndicator();
 
     virtual QSize sizeHint() const;
