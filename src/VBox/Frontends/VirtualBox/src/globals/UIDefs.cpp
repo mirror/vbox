@@ -64,6 +64,7 @@ const char* UIDefs::GUI_AutomountGuestScreens = "GUI/AutomountGuestScreens";
 const char* UIDefs::GUI_SaveMountedAtRuntime = "GUI/SaveMountedAtRuntime";
 const char* UIDefs::GUI_PassCAD = "GUI/PassCAD";
 const char* UIDefs::GUI_DefaultCloseAction = "GUI/DefaultCloseAction";
+const char* UIDefs::GUI_RestrictedStatusBarIndicators = "GUI/RestrictedStatusBarIndicators";
 
 /* Mini tool-bar definitions: */
 const char* UIDefs::GUI_ShowMiniToolBar = "GUI/ShowMiniToolBar";

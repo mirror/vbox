@@ -3722,6 +3722,29 @@ bool VBoxGlobal::shouldWeAutoMountGuestScreens(CMachine &machine,
     return isApprovedByExtraData(machine, GUI_AutomountGuestScreens);
 }
 
+/* static */
+bool VBoxGlobal::isItemRestrictedByExtraData(CMachine &machine,
+                                             const QString &strExtraDataKey,
+                                             const QString &strItemName)
+{
+    /* Load corresponding extra-data value: */
+    QString strExtraDataValue(machine.GetExtraData(strExtraDataKey));
+
+    /* 'false' if value was not set: */
+    if (strExtraDataValue.isEmpty())
+        return false;
+
+    /* Check if value represented as *string-list* contains passed *string-item*: */
+    return strExtraDataValue.split(",").contains(strItemName, Qt::CaseInsensitive);
+}
+
+/* static */
+bool VBoxGlobal::shouldWeShowStatusBarIndicator(CMachine &machine, const QString &strStatusBarIndicatorName)
+{
+    /* Check if list of restricted status-bar indicators contains passed status-bar indicator-name: */
+    return !isItemRestrictedByExtraData(machine, GUI_RestrictedStatusBarIndicators, strStatusBarIndicatorName);
+}
+
 #ifdef RT_OS_LINUX
 /* static */
 void VBoxGlobal::checkForWrongUSBMounted()
