@@ -1,6 +1,6 @@
 /** $Id$ */
 /** @file
- * VBoxSF - OS/2 Shared Folders, the FS and FSD level IFS EPs
+ * VBoxReplaceDll - helper for replacing a dll when it's in use by the system
  */
 
 /*
