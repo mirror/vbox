@@ -1527,6 +1527,21 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
                 }
             }
 
+#ifdef CONFIG_NUMA_BALANCING
+            if (RT_SUCCESS(rc))
+            {
+                /** @todo Ugly hack! But right now we have no other means to disable
+                 *        automatic NUMA page balancing. */
+# ifdef RT_OS_X86
+                pTask->mm->numa_next_reset = jiffies + 0x7fffffffUL;
+                pTask->mm->numa_next_scan  = jiffies + 0x7fffffffUL;
+# else
+                pTask->mm->numa_next_reset = jiffies + 0x7fffffffffffffffUL;
+                pTask->mm->numa_next_scan  = jiffies + 0x7fffffffffffffffUL;
+# endif
+            }
+#endif
+
             up_write(&pTask->mm->mmap_sem);
 
             if (RT_SUCCESS(rc))
