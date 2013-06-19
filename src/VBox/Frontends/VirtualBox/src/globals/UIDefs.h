@@ -239,5 +239,22 @@ enum DetailsElementType
 };
 Q_DECLARE_METATYPE(DetailsElementType);
 
+/* Indicator type: */
+enum IndicatorType
+{
+    IndicatorType_HardDisks,
+    IndicatorType_OpticalDisks,
+    IndicatorType_FloppyDisks,
+    IndicatorType_Network,
+    IndicatorType_USB,
+    IndicatorType_SharedFolders,
+    IndicatorType_VideoCapture,
+    IndicatorType_Features,
+    IndicatorType_Mouse,
+    IndicatorType_Keyboard,
+    IndicatorType_Max
+};
+Q_DECLARE_METATYPE(IndicatorType);
+
 #endif // __UIDefs_h__
 

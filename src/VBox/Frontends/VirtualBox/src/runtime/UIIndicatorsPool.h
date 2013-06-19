@@ -21,25 +21,10 @@
 
 /* GUI includes: */
 #include "QIStateIndicator.h"
+#include "UIDefs.h"
 
 /* Forward declarations: */
 class CSession;
-
-/* Indicator types: */
-enum UIIndicatorIndex
-{
-    UIIndicatorIndex_HardDisks,
-    UIIndicatorIndex_OpticalDisks,
-    UIIndicatorIndex_FloppyDisks,
-    UIIndicatorIndex_Network,
-    UIIndicatorIndex_USB,
-    UIIndicatorIndex_SharedFolders,
-    UIIndicatorIndex_VideoCapture,
-    UIIndicatorIndex_Features,
-    UIIndicatorIndex_Mouse,
-    UIIndicatorIndex_Keyboard,
-    UIIndicatorIndex_Max
-};
 
 /* Indicator pool interface/prototype: */
 class UIIndicatorsPool : public QObject
@@ -53,7 +38,7 @@ public:
     ~UIIndicatorsPool();
 
     /* API indicator access stuff: */
-    QIStateIndicator* indicator(UIIndicatorIndex index);
+    QIStateIndicator* indicator(IndicatorType index);
 
 private:
 
