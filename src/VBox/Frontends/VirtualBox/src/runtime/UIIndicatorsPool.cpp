@@ -24,7 +24,6 @@
 #include "UIIndicatorsPool.h"
 #include "VBoxGlobal.h"
 #include "UIMachineDefs.h"
-#include "QIWithRetranslateUI.h"
 #include "UIConverter.h"
 
 /* COM includes: */
@@ -44,15 +43,14 @@
 /* Other VBox includes: */
 #include <iprt/time.h>
 
-class UIIndicatorHardDisks : public QIWithRetranslateUI<QIStateIndicator>
+class UIIndicatorHardDisks : public QIStateIndicator
 {
     Q_OBJECT;
 
 public:
 
     UIIndicatorHardDisks(CSession &session)
-      : QIWithRetranslateUI<QIStateIndicator>()
-      , m_session(session)
+      : m_session(session)
     {
         setStateIcon(KDeviceActivity_Idle, QPixmap(":/hd_16px.png"));
         setStateIcon(KDeviceActivity_Reading, QPixmap(":/hd_read_16px.png"));
@@ -111,15 +109,14 @@ protected:
     CSession &m_session;
 };
 
-class UIIndicatorOpticalDisks : public QIWithRetranslateUI<QIStateIndicator>
+class UIIndicatorOpticalDisks : public QIStateIndicator
 {
     Q_OBJECT;
 
 public:
 
     UIIndicatorOpticalDisks(CSession &session)
-      : QIWithRetranslateUI<QIStateIndicator>()
-      , m_session(session)
+      : m_session(session)
     {
         setStateIcon(KDeviceActivity_Idle, QPixmap(":/cd_16px.png"));
         setStateIcon(KDeviceActivity_Reading, QPixmap(":/cd_read_16px.png"));
@@ -182,15 +179,14 @@ protected:
     CSession &m_session;
 };
 
-class UIIndicatorFloppyDisks : public QIWithRetranslateUI<QIStateIndicator>
+class UIIndicatorFloppyDisks : public QIStateIndicator
 {
     Q_OBJECT;
 
 public:
 
     UIIndicatorFloppyDisks(CSession &session)
-      : QIWithRetranslateUI<QIStateIndicator>()
-      , m_session(session)
+      : m_session(session)
     {
         setStateIcon(KDeviceActivity_Idle, QPixmap(":/fd_16px.png"));
         setStateIcon(KDeviceActivity_Reading, QPixmap(":/fd_read_16px.png"));
@@ -253,15 +249,14 @@ protected:
     CSession &m_session;
 };
 
-class UIIndicatorNetworkAdapters : public QIWithRetranslateUI<QIStateIndicator>
+class UIIndicatorNetworkAdapters : public QIStateIndicator
 {
     Q_OBJECT;
 
 public:
 
     UIIndicatorNetworkAdapters(CSession &session)
-      : QIWithRetranslateUI<QIStateIndicator>()
-      , m_session(session)
+      : m_session(session)
       , m_pUpdateTimer(new QTimer(this))
     {
         setStateIcon(KDeviceActivity_Idle, QPixmap(":/nw_16px.png"));
@@ -360,15 +355,14 @@ protected:
     QTimer *m_pUpdateTimer;
 };
 
-class UIIndicatorUSBDevices : public QIWithRetranslateUI<QIStateIndicator>
+class UIIndicatorUSBDevices : public QIStateIndicator
 {
     Q_OBJECT;
 
 public:
 
     UIIndicatorUSBDevices(CSession &session)
-      : QIWithRetranslateUI<QIStateIndicator>()
-      , m_session(session)
+      : m_session(session)
     {
         setStateIcon(KDeviceActivity_Idle, QPixmap(":/usb_16px.png"));
         setStateIcon(KDeviceActivity_Reading, QPixmap(":/usb_read_16px.png"));
@@ -418,15 +412,14 @@ protected:
     CSession &m_session;
 };
 
-class UIIndicatorSharedFolders : public QIWithRetranslateUI<QIStateIndicator>
+class UIIndicatorSharedFolders : public QIStateIndicator
 {
     Q_OBJECT;
 
 public:
 
     UIIndicatorSharedFolders(CSession &session)
-      : QIWithRetranslateUI<QIStateIndicator>()
-      , m_session(session)
+      : m_session(session)
     {
         setStateIcon(KDeviceActivity_Idle, QPixmap(":/shared_folder_16px.png"));
         setStateIcon(KDeviceActivity_Reading, QPixmap(":/shared_folder_read_16px.png"));
@@ -494,7 +487,7 @@ protected:
     CSession &m_session;
 };
 
-class UIIndicatorVideoCapture : public QIWithRetranslateUI<QIStateIndicator>
+class UIIndicatorVideoCapture : public QIStateIndicator
 {
     Q_OBJECT;
 
@@ -510,8 +503,7 @@ public:
 
     /* Constructor: */
     UIIndicatorVideoCapture(CSession &session)
-        : QIWithRetranslateUI<QIStateIndicator>()
-        , m_session(session)
+        : m_session(session)
         , m_pUpdateTimer(new QTimer(this))
     {
         /* Assign state icons: */
@@ -586,15 +578,14 @@ protected:
     QTimer *m_pUpdateTimer;
 };
 
-class UIIndicatorVirtualization : public QIWithRetranslateUI<QIStateIndicator>
+class UIIndicatorVirtualization : public QIStateIndicator
 {
     Q_OBJECT;
 
 public:
 
     UIIndicatorVirtualization(CSession &session)
-      : QIWithRetranslateUI<QIStateIndicator>()
-      , m_session(session)
+      : m_session(session)
     {
         setStateIcon(0, QPixmap(":/vtx_amdv_disabled_16px.png"));
         setStateIcon(1, QPixmap(":/vtx_amdv_16px.png"));
@@ -662,15 +653,14 @@ protected:
     CSession &m_session;
 };
 
-class UIIndicatorMouse : public QIWithRetranslateUI<QIStateIndicator>
+class UIIndicatorMouse : public QIStateIndicator
 {
     Q_OBJECT;
 
 public:
 
     UIIndicatorMouse(CSession &session)
-      : QIWithRetranslateUI<QIStateIndicator>()
-      , m_session(session)
+      : m_session(session)
     {
         setStateIcon(0, QPixmap(":/mouse_disabled_16px.png"));
         setStateIcon(1, QPixmap(":/mouse_16px.png"));
@@ -714,15 +704,14 @@ protected:
     CSession &m_session;
 };
 
-class UIIndicatorHostkey : public QIWithRetranslateUI<QIStateIndicator>
+class UIIndicatorHostkey : public QIStateIndicator
 {
     Q_OBJECT;
 
 public:
 
     UIIndicatorHostkey(CSession &session)
-      : QIWithRetranslateUI<QIStateIndicator>()
-      , m_session(session)
+      : m_session(session)
     {
         setStateIcon(0, QPixmap(":/hostkey_16px.png"));
         setStateIcon(1, QPixmap(":/hostkey_captured_16px.png"));

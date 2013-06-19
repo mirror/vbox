@@ -23,13 +23,16 @@
 #include <QFrame>
 #include <QHash>
 
-class QIStateIndicator : public QFrame
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+
+class QIStateIndicator : public QIWithRetranslateUI<QFrame>
 {
     Q_OBJECT;
 
 public:
 
-    QIStateIndicator (QWidget *pParent = 0);
+    QIStateIndicator(QWidget *pParent = 0);
     ~QIStateIndicator();
 
     virtual QSize sizeHint() const;
