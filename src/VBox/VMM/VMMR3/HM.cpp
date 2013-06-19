@@ -1366,34 +1366,42 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
 {
     Log(("pVM->hm.s.svm.fSupported = %d\n", pVM->hm.s.svm.fSupported));
 
+#ifndef VBOX_WITH_OLD_AMDV_CODE
+    LogRel(("HM: Using AMD-V implementation 2.0!\n"));
+#endif
+
     uint32_t u32Family;
     uint32_t u32Model;
     uint32_t u32Stepping;
     if (HMAmdIsSubjectToErratum170(&u32Family, &u32Model, &u32Stepping))
         LogRel(("HM: AMD Cpu with erratum 170 family %#x model %#x stepping %#x\n", u32Family, u32Model, u32Stepping));
-    LogRel(("HM: cpuid 0x80000001.u32AMDFeatureECX = %RX32\n", pVM->hm.s.cpuid.u32AMDFeatureECX));
-    LogRel(("HM: cpuid 0x80000001.u32AMDFeatureEDX = %RX32\n", pVM->hm.s.cpuid.u32AMDFeatureEDX));
+    LogRel(("HM: CPUID 0x80000001.u32AMDFeatureECX = %RX32\n", pVM->hm.s.cpuid.u32AMDFeatureECX));
+    LogRel(("HM: CPUID 0x80000001.u32AMDFeatureEDX = %RX32\n", pVM->hm.s.cpuid.u32AMDFeatureEDX));
     LogRel(("HM: AMD HWCR MSR                      = %RX64\n", pVM->hm.s.svm.msrHwcr));
     LogRel(("HM: AMD-V revision                    = %X\n", pVM->hm.s.svm.u32Rev));
-    LogRel(("HM: AMD-V max ASID                    = %d\n", pVM->hm.s.uMaxAsid));
+    LogRel(("HM: AMD-V max ASID                    = %RU32\n", pVM->hm.s.uMaxAsid));
     LogRel(("HM: AMD-V features                    = %X\n", pVM->hm.s.svm.u32Features));
 
+    /*
+     * Enumerate AMD-V features.
+     */
     static const struct { uint32_t fFlag; const char *pszName; } s_aSvmFeatures[] =
     {
-#define FLAG_NAME(a_Define) { a_Define, #a_Define }
-        FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING),
-        FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_LBR_VIRT),
-        FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_SVM_LOCK),
-        FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE),
-        FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_TSC_RATE_MSR),
-        FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN),
-        FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID),
-        FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST),
-        FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_SSE_3_5_DISABLE),
-        FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER),
-        FLAG_NAME(AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER),
-#undef FLAG_NAME
+#define HMSVM_REPORT_FEATURE(a_Define) { a_Define, #a_Define }
+        HMSVM_REPORT_FEATURE(AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING),
+        HMSVM_REPORT_FEATURE(AMD_CPUID_SVM_FEATURE_EDX_LBR_VIRT),
+        HMSVM_REPORT_FEATURE(AMD_CPUID_SVM_FEATURE_EDX_SVM_LOCK),
+        HMSVM_REPORT_FEATURE(AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE),
+        HMSVM_REPORT_FEATURE(AMD_CPUID_SVM_FEATURE_EDX_TSC_RATE_MSR),
+        HMSVM_REPORT_FEATURE(AMD_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN),
+        HMSVM_REPORT_FEATURE(AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID),
+        HMSVM_REPORT_FEATURE(AMD_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST),
+        HMSVM_REPORT_FEATURE(AMD_CPUID_SVM_FEATURE_EDX_SSE_3_5_DISABLE),
+        HMSVM_REPORT_FEATURE(AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER),
+        HMSVM_REPORT_FEATURE(AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER),
+#undef HMSVM_REPORT_FEATURE
     };
+
     uint32_t fSvmFeatures = pVM->hm.s.svm.u32Features;
     for (unsigned i = 0; i < RT_ELEMENTS(s_aSvmFeatures); i++)
         if (fSvmFeatures & s_aSvmFeatures[i].fFlag)
