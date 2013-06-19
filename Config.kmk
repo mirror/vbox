@@ -1391,9 +1391,6 @@ DEFS.win     = RT_OS_WINDOWS __WIN__
 DEFS.win.x86 = __WIN32__
 DEFS.win.amd64 = __WIN64__
 # optional defines (use environment or make commandline)
-ifdef VBOX_WITH_DEBUGGER
- DEFS += VBOX_WITH_DEBUGGER
-endif
 ifdef VBOX_WITH_STATISTICS
  DEFS += VBOX_WITH_STATISTICS
 endif
@@ -1409,14 +1406,19 @@ endif
 ifdef VBOX_WITH_64_BITS_GUESTS
  DEFS += VBOX_WITH_64_BITS_GUESTS
 endif
+
+# Don't flood CDEFS, old MASMs doesn't like too many defines.
+ifdef VBOX_WITH_DEBUGGER
+ DEFS += VBOX_WITH_DEBUGGER
+endif
 ifdef VBOX_WITH_HARDENING
- DEFS += VBOX_WITH_HARDENING
+ CDEFS += VBOX_WITH_HARDENING
 endif
 if defined(VBOX_WITH_STRICT_LOCKS) && ($(KBUILD_TYPE) == "debug" || $(KBUILD_TYPE) == "strict")
- DEFS += RT_LOCK_STRICT RT_LOCK_STRICT_ORDER
+ CDEFS += RT_LOCK_STRICT RT_LOCK_STRICT_ORDER
 endif
 ifdef VBOX_WITH_EF_WRAPS
- DEFS += RTMEM_WRAP_TO_EF_APIS RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF
+ CDEFS += RTMEM_WRAP_TO_EF_APIS RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF
 endif
 
 # Quoted strings should not be passed to the assemblers since they might not
