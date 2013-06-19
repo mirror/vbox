@@ -2505,6 +2505,10 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags =%#x\n", pVCpu->hm.s.fContextUseFlags));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
 
+    /* If VMCB Clean Bits isn't supported by the CPU, simply mark all state-bits as dirty, indicating (re)load-from-VMCB. */
+    if (!(pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN))
+        pVmcb->ctrl.u64VmcbCleanBits = 0;
+
     /*
      * If we're not intercepting TPR changes in the guest, save the guest TPR before the world-switch
      * so we can update it on the way back if the guest changed the TPR.
