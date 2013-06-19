@@ -1065,14 +1065,22 @@
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the variable member.
  */
-#define DECLCALLBACKPTR(type, name)  type (RTCALL * name)
+#if defined(__IBMC__) || defined(__IBMCPP__)
+# define DECLCALLBACKPTR(type, name)    type (* RTCALL name)
+#else
+# define DECLCALLBACKPTR(type, name)    type (RTCALL * name)
+#endif
 
 /** @def DECLCALLBACKMEMBER
  * How to declare an call back function pointer member.
  * @param   type    The return type of the function declaration.
  * @param   name    The name of the struct/union/class member.
  */
-#define DECLCALLBACKMEMBER(type, name)  type (RTCALL * name)
+#if defined(__IBMC__) || defined(__IBMCPP__)
+# define DECLCALLBACKMEMBER(type, name) type (* RTCALL name)
+#else
+# define DECLCALLBACKMEMBER(type, name) type (RTCALL * name)
+#endif
 
 /** @def DECLR3CALLBACKMEMBER
  * How to declare an call back function pointer member - R3 Ptr.
@@ -1081,7 +1089,7 @@
  * @param   args    The argument list enclosed in parentheses.
  */
 #ifdef IN_RING3
-# define DECLR3CALLBACKMEMBER(type, name, args)  type (RTCALL * name) args
+# define DECLR3CALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name) args
 #else
 # define DECLR3CALLBACKMEMBER(type, name, args)  RTR3PTR name
 #endif
@@ -1093,7 +1101,7 @@
  * @param   args    The argument list enclosed in parentheses.
  */
 #ifdef IN_RC
-# define DECLRCCALLBACKMEMBER(type, name, args)  type (RTCALL * name) args
+# define DECLRCCALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name)  args
 #else
 # define DECLRCCALLBACKMEMBER(type, name, args)  RTRCPTR name
 #endif
@@ -1105,7 +1113,7 @@
  * @param   args    The argument list enclosed in parentheses.
  */
 #ifdef IN_RING0
-# define DECLR0CALLBACKMEMBER(type, name, args)  type (RTCALL * name) args
+# define DECLR0CALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name) args
 #else
 # define DECLR0CALLBACKMEMBER(type, name, args)  RTR0PTR name
 #endif
