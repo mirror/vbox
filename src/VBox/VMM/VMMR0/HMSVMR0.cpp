@@ -43,6 +43,7 @@
  *  switch to a "static DECLCALLBACK(int)". */
 #define HMSVM_EXIT_DECL                 static int
 
+
 /** @name Segment attribute conversion between CPU and AMD-V VMCB format.
  *
  * The CPU format of the segment attribute is described in X86DESCATTRBITS
@@ -55,6 +56,7 @@
 #define HMSVM_CPU_2_VMCB_SEG_ATTR(a)       (a & 0xff) | ((a & 0xf000) >> 4)
 #define HMSVM_VMCB_2_CPU_SEG_ATTR(a)       (a & 0xff) | ((a & 0x0f00) << 4)
 /** @} */
+
 
 /** @name Macros for loading, storing segment registers to/from the VMCB.
  *  @{ */
@@ -80,6 +82,33 @@
         pCtx->reg.Attr.u    = HMSVM_VMCB_2_CPU_SEG_ATTR(pVmcb->guest.REG.u16Attr); \
     } while (0)
 /** @} */
+
+
+/** @name Macro for checking and returning from the using function for
+ *        #VMEXIT intercepts that maybe caused during delivering of another
+ *        event in the guest. */
+#define HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY() \
+    do \
+    { \
+        int rc = hmR0SvmCheckExitDueToEventDelivery(pVCpu, pCtx, pSvmTransient); \
+        if (RT_UNLIKELY(rc == VINF_HM_DOUBLE_FAULT)) \
+            return VINF_SUCCESS; \
+        else if (RT_UNLIKELY(rc == VINF_EM_RESET)) \
+            return rc; \
+    } while (0)
+/** @} */
+
+
+/**
+ * @name Exception bitmap mask for all contributory exceptions.
+ *
+ * Page fault is deliberately excluded here as it's conditional whether it's
+ * contributory or benign. It's handled separately.
+ */
+#define HMSVM_CONTRIBUTORY_XCPT_MASK  ( RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_TS) \
+                                       | RT_BIT(X86_XCPT_DE))
+/** @} */
+
 
 /** @name VMCB Clean Bits.
  *
@@ -147,6 +176,10 @@ typedef struct SVMTRANSIENT
     uint64_t        u64ExitCode;
     /** The guest's TPR value used for TPR shadowing. */
     uint8_t         u8GuestTpr;
+
+    /** Whether the #VMEXIT was caused by a page-fault during delivery of a
+     *  contributary exception or a page-fault. */
+    bool            fVectoringPF;
 } SVMTRANSIENT, *PSVMTRANSIENT;
 /** @}  */
 
@@ -2521,10 +2554,11 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         return;
     }
 
-    pSvmTransient->u64ExitCode = pVmcb->ctrl.u64ExitCode;
+    pSvmTransient->u64ExitCode   = pVmcb->ctrl.u64ExitCode;     /* Save the #VMEXIT reason. */
+    pSvmTransient->fVectoringPF  = false;                       /* Vectoring page-fault needs to be determined later. */
     hmR0SvmSaveGuestState(pVCpu, pMixedCtx);                    /* Save the guest state from the VMCB to the guest-CPU context. */
 
-    if (RT_LIKELY(pSvmTransient->u64ExitCode != SVM_EXIT_INVALID))
+    if (RT_LIKELY(pSvmTransient->u64ExitCode != (uint64_t)SVM_EXIT_INVALID))
     {
         if (pVCpu->hm.s.svm.fSyncVTpr)
         {
@@ -2594,8 +2628,8 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          * This will also re-enable longjmps to ring-3 when it has reached a safe point!!!
          */
         hmR0SvmPostRunGuest(pVM, pVCpu, pCtx, &SvmTransient, rc);
-        if (RT_UNLIKELY(   rc != VINF_SUCCESS                              /* Check for errors with running the VM (VMRUN). */
-                        || SvmTransient.u64ExitCode == SVM_EXIT_INVALID))  /* Check for errors due to invalid guest state. */
+        if (RT_UNLIKELY(   rc != VINF_SUCCESS                                         /* Check for VMRUN errors. */
+                        || SvmTransient.u64ExitCode == (uint64_t)SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
         {
             if (rc == VINF_SUCCESS);
                 rc = VERR_SVM_INVALID_GUEST_STATE;
@@ -2604,7 +2638,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
 
         /* Handle the #VMEXIT. */
-        AssertMsg(SvmTransient.u64ExitCode != SVM_EXIT_INVALID, ("%#x\n", SvmTransient.u64ExitCode));
+        AssertMsg(SvmTransient.u64ExitCode != (uint64_t)SVM_EXIT_INVALID, ("%#x\n", SvmTransient.u64ExitCode));
         HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
         rc = hmR0SvmHandleExit(pVCpu, pCtx, &SvmTransient);
         if (rc != VINF_SUCCESS)
@@ -2751,7 +2785,46 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
             case SVM_EXIT_EXCEPTION_B:      /* X86_XCPT_NP */
             case SVM_EXIT_EXCEPTION_C:      /* X86_XCPT_SS */
             case SVM_EXIT_EXCEPTION_D:      /* X86_XCPT_GP */
-                return
+            {
+                SVMEVENT Event;
+                Event.u          = 0;
+                Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+                Event.n.u1Valid  = 1;
+                Event.n.u8Vector = pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0;
+
+                switch (Event.n.u8Vector)
+                {
+                    case X86_XCPT_GP:
+                        Event.n.u1ErrorCodeValid    = 1;
+                        Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
+                        break;
+                    case X86_XCPT_BP:
+                        /** Saves the wrong EIP on the stack (pointing to the int3) instead of the
+                         *  next instruction. */
+                        /** @todo Investigate this later. */
+                        break;
+                    case X86_XCPT_DE:
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
+                        break;
+                    case X86_XCPT_UD:
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
+                        break;
+                    case X86_XCPT_SS:
+                        Event.n.u1ErrorCodeValid    = 1;
+                        Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestSS);
+                        break;
+                    case X86_XCPT_NP:
+                        Event.n.u1ErrorCodeValid    = 1;
+                        Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
+                        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNP);
+                        break;
+                }
+                Log4(("#Xcpt: Vector=%#x at CS:RIP=%04x:%RGv\n", Event.n.u8Vector, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
+                hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+                return VINF_SUCCESS;
+            }
 #endif
 
             default:
@@ -2780,12 +2853,12 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 # define HMSVM_VALIDATE_EXIT_HANDLER_PARAMS() \
             do { \
                 AssertPtr(pVCpu); \
-                AssertPtr(pMixedCtx); \
+                AssertPtr(pCtx); \
                 AssertPtr(pSvmTransient); \
                 Assert(ASMIntAreEnabled()); \
                 Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD)); \
                 HMSVM_ASSERT_PREEMPT_CPUID_VAR(); \
-                Log4Func(("vcpu[%u] -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-\n", (uint32_t)pVCpu->idCpu)); \
+                Log4Func(("vcpu[%u] -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-\n", (uint32_t)pVCpu->idCpu)); \
                 Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD)); \
                 if (VMMR0IsLogFlushDisabled(pVCpu)) \
                     HMSVM_ASSERT_PREEMPT_CPUID(); \
@@ -2923,7 +2996,6 @@ DECLINLINE(void) hmR0SvmSetPendingXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t u
     pCtx->cr2 = uFaultAddress;
 
     hmR0SvmSetPendingEvent(pVCpu, &Event);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
 }
 
 
@@ -2956,6 +3028,24 @@ DECLINLINE(void) hmR0SvmSetPendingXcptMF(PVMCPU pVCpu)
     Event.n.u1Valid  = 1;
     Event.n.u3Type   = SVM_EVENT_EXCEPTION;
     Event.n.u8Vector = X86_XCPT_MF;
+    hmR0SvmSetPendingEvent(pVCpu, &Event);
+}
+
+
+/**
+ * Sets a double fault (#DF) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+DECLINLINE(void) hmR0SvmSetPendingXcptDF(PVMCPU pVCpu)
+{
+    SVMEVENT Event;
+    Event.u                  = 0;
+    Event.n.u1Valid          = 1;
+    Event.n.u3Type           = SVM_EVENT_EXCEPTION;
+    Event.n.u8Vector         = X86_XCPT_DF;
+    Event.n.u1ErrorCodeValid = 1;
+    Event.n.u32ErrorCode     = 0;
     hmR0SvmSetPendingEvent(pVCpu, &Event);
 }
 
@@ -3024,6 +3114,144 @@ static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Determines if an exception is a contributory exception. Contributory
+ * exceptions are ones which can cause double-faults. Page-fault is
+ * intentionally not included here as it's a conditional contributory exception.
+ *
+ * @returns true if the exception is contributory, false otherwise.
+ * @param   uVector     The exception vector.
+ */
+DECLINLINE(bool) hmR0SvmIsContributoryXcpt(const uint32_t uVector)
+{
+    switch (uVector)
+    {
+        case X86_XCPT_GP:
+        case X86_XCPT_SS:
+        case X86_XCPT_NP:
+        case X86_XCPT_TS:
+        case X86_XCPT_DE:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
+
+/**
+ * Handle a condition that occurred while delivering an event through the guest
+ * IDT.
+ *
+ * @returns VBox status code (informational error codes included).
+ * @retval VINF_SUCCESS if we should continue handling the VM-exit.
+ * @retval VINF_HM_DOUBLE_FAULT if a #DF condition was detected and we ought to
+ *         continue execution of the guest which will delivery the #DF.
+ * @retval VINF_EM_RESET if we detected a triple-fault condition.
+ *
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pCtx            Pointer to the guest-CPU context.
+ * @param   pSvmTransient   Pointer to the SVM transient structure.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    int rc = VINF_SUCCESS;
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+
+    /* See AMD spec. 15.7.3 "EXITINFO Pseudo-Code". The EXITINTINFO (if valid) contains the prior exception (IDT vector)
+     * that was trying to be delivered to the guest which caused a #VMEXIT which was intercepted (Exit vector). */
+    if (pVmcb->ctrl.ExitIntInfo.n.u1Valid)
+    {
+        if (pVmcb->ctrl.ExitIntInfo.n.u3Type == SVM_EVENT_EXCEPTION)
+        {
+            typedef enum
+            {
+                SVMREFLECTXCPT_XCPT,    /* Reflect the exception to the guest or for further evaluation by VMM. */
+                SVMREFLECTXCPT_DF,      /* Reflect the exception as a double-fault to the guest. */
+                SVMREFLECTXCPT_TF,      /* Indicate a triple faulted state to the VMM. */
+                SVMREFLECTXCPT_NONE     /* Nothing to reflect. */
+            } SVMREFLECTXCPT;
+
+            SVMREFLECTXCPT enmReflect = SVMREFLECTXCPT_NONE;
+
+            if (pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_1F)
+            {
+                uint8_t uExitVector = (uint8_t)(pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0);
+                uint8_t uIdtVector  = pVmcb->ctrl.ExitIntInfo.n.u8Vector;
+
+                if (   uExitVector == X86_XCPT_PF
+                    && uIdtVector  == X86_XCPT_PF)
+                {
+                    pSvmTransient->fVectoringPF = true;
+                    Log4(("IDT: Vectoring #PF uCR2=%#RX64\n", pCtx->cr2));
+                }
+                else if (   (pVmcb->ctrl.u32InterceptException & HMSVM_CONTRIBUTORY_XCPT_MASK)
+                         && hmR0SvmIsContributoryXcpt(uExitVector)
+                         && (   hmR0SvmIsContributoryXcpt(uIdtVector)
+                             || uIdtVector == X86_XCPT_PF))
+               {
+                   enmReflect = SVMREFLECTXCPT_DF;
+               }
+               else if (uIdtVector == X86_XCPT_DF)
+                   enmReflect = SVMREFLECTXCPT_TF;
+               else
+                   enmReflect = SVMREFLECTXCPT_XCPT;
+            }
+            else
+            {
+                /*
+                 * If event delivery caused an #VMEXIT that is not an exception (e.g. #NPF) then reflect the original
+                 * exception to the guest after handling the VM-exit.
+                 */
+                enmReflect = SVMREFLECTXCPT_XCPT;
+            }
+        }
+        else if (pVmcb->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT)
+        {
+            /* Ignore software interrupts (INT n) as they reoccur when restarting the instruction. */
+            enmReflect = SVMREFLECTXCPT_XCPT;
+        }
+
+        switch (enmReflect)
+        {
+            case SVMREFLECTXCPT_XCPT:
+            {
+                pVCpu->hm.s.Event.u64IntrInfo = pVmcb->ctrl.ExitIntInfo.u;
+                pVCpu->hm.s.Event.fPending = true;
+
+                /* If uExitVector is #PF, CR2 value will be updated from the VMCB if it's a guest #PF. See hmR0SvmExitXcptPF(). */
+                Log4(("IDT: Pending vectoring event %#RX64 ErrValid=%RTbool Err=%#RX32\n", pVmcb->ctrl.ExitIntInfo.u,
+                      !!pVmcb->ctrl.ExitIntInfo.n.u1ErrorCodeValid, pVmcb->ctrl.ExitIntInfo.n.u32ErrorCode));
+                break;
+            }
+
+            case SVMREFLECTXCPT_DF:
+            {
+                hmR0SvmSetPendingXcptDF(pVCpu);
+                rc = VINF_HM_DOUBLE_FAULT;
+                Log4(("IDT: Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntrInfo,
+                      uIdtVector, uExitVector));
+                break;
+            }
+
+            case SVMREFLECTXCPT_TF:
+            {
+                rc = VINF_EM_RESET;
+                Log4(("IDT: Pending vectoring triple-fault uIdt=%#x uExit=%#x\n", uIdtVector, uExitVector));
+                break;
+            }
+
+            default:
+                Assert(rc == VINF_SUCCESS);
+                break;
+        }
+    }
+    Assert(rc == VINF_SUCCESS || rc == VINF_HM_DOUBLE_FAULT || rc == VINF_EM_RESET);
+    return rc;
 }
 
 
@@ -3213,7 +3441,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMwait(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
         pCtx->rip += 3;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
 
         if (   rc == VINF_EM_HALT
-            && EMShouldContinueAfterHalt(pVCpu, pMixedCtx))
+            && EMShouldContinueAfterHalt(pVCpu, pCtx))
         {
             rc = VINF_SUCCESS;
         }
@@ -3540,9 +3768,9 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                         pCtx->dr[7] &= ~X86_DR7_GD;
 
                         /* Paranoia. */
-                        pMixedCtx->dr[7] &= 0xffffffff;                                             /* Upper 32 bits MBZ. */
-                        pMixedCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));   /* MBZ. */
-                        pMixedCtx->dr[7] |= 0x400;                                                  /* MB1. */
+                        pCtx->dr[7] &= 0xffffffff;                                             /* Upper 32 bits MBZ. */
+                        pCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));   /* MBZ. */
+                        pCtx->dr[7] |= 0x400;                                                  /* MB1. */
 
                         pVmcb->guest.u64DR7 = pCtx->dr[7];
                         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
@@ -3583,6 +3811,8 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(pVM->hm.s.fNestedPaging);
+
+    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
     /* See AMD spec. 15.25.6 "Nested versus Guest Page Faults, Fault Ordering" for VMCB details for #NPF. */
     PSVMVMCB pVmcb           = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
@@ -3753,20 +3983,31 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    /* -XXX- @todo Vectoring pagefaults!! */
+    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
     /* See AMD spec. 15.12.15 "#PF (Page Fault)". */
     PSVMVMCB    pVmcb         = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     uint32_t    u32ErrCode    = pVmcb->ctrl.u64ExitInfo1;
     RTGCUINTPTR uFaultAddress = pVmcb->ctrl.u64ExitInfo2;
 
-#if defined(HMVMX_ALWAYS_TRAP_ALL_XCPTS) || defined(HMVMX_ALWAYS_TRAP_PF)
+#if defined(HMSVM_ALWAYS_TRAP_ALL_XCPTS) || defined(HMSVM_ALWAYS_TRAP_PF)
     if (pVM->hm.s.fNestedPaging)
     {
-        /* A genuine guest #PF, reflect it to the guest. */
-        Log4(("#PF: Guest page fault at %04X:%RGv FaultAddr=%RGv ErrCode=%#x\n", pCtx->cs, (RTGCPTR)pCtx->rip, uFaultAddress,
-              u32ErrCode));
-        hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
+        pVCpu->hm.s.Event.fPending = false;     /* In case it's a contributory or vectoring #PF. */
+        if (!pSvmTransient->fVectoringPF)
+        {
+            /* A genuine guest #PF, reflect it to the guest. */
+            hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
+            Log4(("#PF: Guest page fault at %04X:%RGv FaultAddr=%RGv ErrCode=%#x\n", pCtx->cs, (RTGCPTR)pCtx->rip, uFaultAddress,
+                  u32ErrCode));
+        }
+        else
+        {
+            /* A guest page-fault occurred during delivery of a page-fault. Inject #DF. */
+            hmR0VmxSetPendingXcptDF(pVCpu);
+            Log4(("Pending #DF due to vectoring #PF. NP\n"));
+        }
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
         return VINF_SUCCESS;
     }
 #endif
@@ -3804,7 +4045,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
           pCtx->rip, u32ErrCode, pCtx->cr3));
 
     TRPMAssertXcptPF(pVCpu, uFaultAddress, u32ErrCode);
-    int rc = PGMTrap0eHandler(pVCpu, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)uFaultAddress);
+    rc = PGMTrap0eHandler(pVCpu, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)uFaultAddress);
 
     Log2(("#PF rc=%Rrc\n", rc));
     if (rc == VINF_SUCCESS)
@@ -3816,13 +4057,23 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     }
     else if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
-        /* It's a guest page fault and needs to be reflected to the guest. */
+        if (!pSvmTransient->fVectoringPF)
+        {
+            /* It's a guest page fault and needs to be reflected to the guest. */
+            u32ErrCode = TRPMGetErrorCode(pVCpu);        /* The error code might have been changed. */
+            TRPMResetTrap(pVCpu);
 
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
-        u32ErrCode = TRPMGetErrorCode(pVCpu);        /* The error code might have been changed. */
-        TRPMResetTrap(pVCpu);
+            hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
+        }
+        else
+        {
+            /* A guest page-fault occurred during delivery of a page-fault. Inject #DF. */
+            TRPMResetTrap(pVCpu);
+            pVCpu->hm.s.Event.fPending = false;     /* Clear pending #PF to replace it with #DF. */
+            hmR0SvmSetPendingXcptDF(pVCpu);
+            Log4(("#PF: Pending #DF due to vectoring #PF\n"));
+        }
 
-        hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
         return VINF_SUCCESS;
     }
@@ -3841,7 +4092,9 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
-#ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
+    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
+
+#ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
     Assert(!CPUMIsGuestFPUStateActive(pVCpu));
 #endif
 
@@ -3869,8 +4122,11 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
-    int rc;
-    if (!(pMixedCtx->cr0 & X86_CR0_NE))
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
+
+    if (!(pCtx->cr0 & X86_CR0_NE))
     {
         /* Old-style FPU error reporting needs some extra work. */
         /** @todo don't fall back to the recompiler, but do it manually. */
