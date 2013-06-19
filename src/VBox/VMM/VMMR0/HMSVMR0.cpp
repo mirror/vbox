@@ -2575,8 +2575,6 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 AssertRC(rc);
             }
         }
-
-        /* -XXX- premature interruption during event injection */
     }
 }
 
@@ -2788,8 +2786,8 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
             {
                 SVMEVENT Event;
                 Event.u          = 0;
-                Event.n.u3Type   = SVM_EVENT_EXCEPTION;
                 Event.n.u1Valid  = 1;
+                Event.n.u3Type   = SVM_EVENT_EXCEPTION;
                 Event.n.u8Vector = pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0;
 
                 switch (Event.n.u8Vector)

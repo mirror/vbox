@@ -2914,7 +2914,8 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
     pVCpu->hm.s.fResumeVM = false;
 
     /* Force to reload LDTR, so we'll execute VMLoad to load additional guest state. */
-    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_LDTR;
+    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_LDTR;  /** @todo r=ramshankar: I can't understand what effect this will have.
+                                                                    Probably a left over? */
 
     return VINF_SUCCESS;
 }
