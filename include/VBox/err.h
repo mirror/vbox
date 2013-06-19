@@ -1906,8 +1906,6 @@
 #define VERR_VMX_NOT_IN_VMX_ROOT_MODE               (-4018)
 /** Undefined VM exit code. */
 #define VERR_VMX_UNDEFINED_EXIT_CODE                (-4019)
-/** Resume guest execution after injecting a double-fault. */
-#define VINF_VMX_DOUBLE_FAULT                       4020
 /** VMPTRLD failed; possibly because of invalid VMCS launch-state. */
 #define VERR_VMX_VMPTRLD_FAILED                     (-4021)
 /** Invalid VMCS pointer passed to VMLAUNCH/VMRESUME. */
@@ -1978,6 +1976,8 @@
 #define VERR_HM_IPE_5                               (-4115)
 /** Invalid HM64ON32OP value.  */
 #define VERR_HM_INVALID_HM64ON32OP                  (-4116)
+/** Resume guest execution after injecting a double-fault. */
+#define VINF_HM_DOUBLE_FAULT                        4117
 /** @} */
 
 
