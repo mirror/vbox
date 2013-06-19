@@ -141,6 +141,12 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
             break;
         }
 
+        pD3D->pfnVBoxWineExD3DSurf9GetHostId = (PFNVBOXWINEEXD3DSURF9_GETHOSTID)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DSurf9GetHostId");
+        if (!pD3D->pfnVBoxWineExD3DSurf9GetHostId)
+        {
+            WARN(("no VBoxWineExD3DSurf9GetHostId"));
+            break;
+        }
         return S_OK;
 
     } while (0);
@@ -953,13 +959,6 @@ static void vboxDispD3DGlobalD3DFormatsInit(PVBOXWDDMDISP_FORMATS pFormats)
     pFormats->paFormstOps = gVBoxFormatOps3D;
     pFormats->cFormstOps = RT_ELEMENTS(gVBoxFormatOps3D);
 }
-
-
-//#define D3DDEVCAPS_FLOATTLVERTEX        0x00000001
-//#define D3DPMISCCAPS_FOGINFVF           0x00002000
-//#define D3DPRASTERCAPS_SUBPIXEL         0x00000020
-//#define D3DPRASTERCAPS_STIPPLE          0x00000200
-//#define D3DPTEXTURECAPS_TRANSPARENCY    0x00000008
 
 static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_D3D pD3D, D3DCAPS9 *pCaps)
 {

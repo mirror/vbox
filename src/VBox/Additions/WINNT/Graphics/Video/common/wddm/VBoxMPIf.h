@@ -34,7 +34,7 @@
 #include <VBox/VBoxGuest2.h>
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 15
+#define VBOXVIDEOIF_VERSION 16
 
 #define VBOXWDDM_NODE_ID_SYSTEM           0
 #define VBOXWDDM_NODE_ID_3D               (VBOXWDDM_NODE_ID_SYSTEM)
@@ -105,6 +105,8 @@ typedef struct VBOXWDDM_ALLOCINFO
         struct
         {
             D3DDDI_RESOURCEFLAGS fFlags;
+            /* id used to identify the allocation on the host */
+            uint32_t hostID;
             uint64_t hSharedHandle;
             VBOXWDDM_SURFACE_DESC SurfDesc;
         };

@@ -257,4 +257,4 @@ EXPORTS
   wined3d_device_blt_vol
   wined3d_device_blt_voltex
   wined3d_swapchain_present_rt
-  
+  wined3d_surface_get_host_id

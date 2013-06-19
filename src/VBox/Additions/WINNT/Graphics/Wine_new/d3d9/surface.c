@@ -457,3 +457,15 @@ struct d3d9_surface *unsafe_impl_from_IDirect3DSurface9(IDirect3DSurface9 *iface
 
     return impl_from_IDirect3DSurface9(iface);
 }
+
+#ifdef VBOX_WITH_WDDM
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSurf9GetHostId(IDirect3DSurface9 *iface, uint32_t *pu32Id)
+{
+    struct d3d9_surface *surface = impl_from_IDirect3DSurface9(iface);
+    HRESULT hr;
+    wined3d_mutex_lock();
+    hr = wined3d_surface_get_host_id(surface->wined3d_surface, pu32Id);
+    wined3d_mutex_unlock();
+    return hr;
+}
+#endif

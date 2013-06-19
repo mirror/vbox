@@ -159,6 +159,7 @@ typedef struct VBOXWDDM_ALLOCATION
     uint32_t cOpens;
     KSPIN_LOCK OpenLock;
     LIST_ENTRY OpenList;
+    uint32_t hostID;
     /* helps tracking when to release wine shared resource */
     uint32_t cShRcRefs;
     HANDLE hSharedHandle;
