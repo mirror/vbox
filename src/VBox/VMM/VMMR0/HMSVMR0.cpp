@@ -376,7 +376,7 @@ VMMR0DECL(int) SVMR0GlobalInit(void)
 
 
 /**
- * Does global VT-x termination (called during module termination).
+ * Does global AMD-V termination (called during module termination).
  */
 VMMR0DECL(void) SVMR0GlobalTerm(void)
 {
@@ -2466,7 +2466,7 @@ DECLINLINE(int) hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRA
 
 
 /**
- * Prepares to run guest code in VT-x and we've committed to doing so. This
+ * Prepares to run guest code in AMD-V and we've committed to doing so. This
  * means there is no backing out to ring-3 or anywhere else at this
  * point.
  *
@@ -4092,7 +4092,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         else
         {
             /* A guest page-fault occurred during delivery of a page-fault. Inject #DF. */
-            hmR0VmxSetPendingXcptDF(pVCpu);
+            hmR0SvmSetPendingXcptDF(pVCpu);
             Log4(("Pending #DF due to vectoring #PF. NP\n"));
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestPF);
