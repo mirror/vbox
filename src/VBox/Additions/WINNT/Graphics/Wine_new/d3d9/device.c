@@ -287,6 +287,7 @@ static LONG d3d9_device_Term(struct d3d9_device *device)
 {
     unsigned i;
     LONG refs = device->refcount;
+    LONG wined3d_refs;
     device->in_destruction = TRUE;
 
     if (refs != 1)
@@ -310,14 +311,14 @@ static LONG d3d9_device_Term(struct d3d9_device *device)
 # ifndef VBOX_WITH_WDDM
     wined3d_device_release_focus_window(device->wined3d_device);
 # endif
-    wined3d_device_decref(device->wined3d_device);
+    wined3d_refs = wined3d_device_decref(device->wined3d_device);
     wined3d_mutex_unlock();
 
     IDirect3D9Ex_Release(&device->d3d_parent->IDirect3D9Ex_iface);
 
     HeapFree(GetProcessHeap(), 0, device);
 
-    return refs - 1;
+    return wined3d_refs;
 }
 #endif
 
@@ -3911,6 +3912,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9VolTexBlt(IDirect3DDevice9Ex *iface,
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Term(IDirect3DDevice9Ex *iface)
 {
     struct d3d9_device *device = impl_from_IDirect3DDevice9Ex(iface);
+    struct wined3d_device *wined3d_device = device->wined3d_device;
     LONG wined3d_refs;
     if (device->refcount != 1)
     {
@@ -3920,7 +3922,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Term(IDirect3DDevice9Ex *iface)
     if (wined3d_refs)
     {
         ERR("unexpected wined3dRefs %d, destroying in anyway", wined3d_refs);
-        while (wined3d_device_decref(device->wined3d_device)) {}
+        while (wined3d_device_decref(wined3d_device)) {}
     }
     return D3D_OK;
 }
