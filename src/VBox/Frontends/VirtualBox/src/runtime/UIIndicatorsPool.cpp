@@ -736,61 +736,40 @@ protected:
 UIIndicatorsPool::UIIndicatorsPool(CSession &session, QObject *pParent)
     : QObject(pParent)
     , m_session(session)
-    , m_IndicatorsPool(UIIndicatorIndex_End, 0)
+    , m_pool(UIIndicatorIndex_End)
 {
 }
 
 UIIndicatorsPool::~UIIndicatorsPool()
 {
-    for (int i = 0; i < m_IndicatorsPool.size(); ++i)
+    for (int i = 0; i < m_pool.size(); ++i)
     {
-        delete m_IndicatorsPool[i];
-        m_IndicatorsPool[i] = 0;
+        delete m_pool[i];
+        m_pool[i] = 0;
     }
-    m_IndicatorsPool.clear();
+    m_pool.clear();
 }
 
 QIStateIndicator* UIIndicatorsPool::indicator(UIIndicatorIndex index)
 {
-    if (!m_IndicatorsPool.at(index))
+    if (!m_pool.at(index))
     {
         switch (index)
         {
-            case UIIndicatorIndex_HardDisks:
-                m_IndicatorsPool[index] = new UIIndicatorHardDisks(m_session);
-                break;
-            case UIIndicatorIndex_OpticalDisks:
-                m_IndicatorsPool[index] = new UIIndicatorOpticalDisks(m_session);
-                break;
-            case UIIndicatorIndex_FloppyDisks:
-                m_IndicatorsPool[index] = new UIIndicatorFloppyDisks(m_session);
-                break;
-            case UIIndicatorIndex_NetworkAdapters:
-                m_IndicatorsPool[index] = new UIIndicatorNetworkAdapters(m_session);
-                break;
-            case UIIndicatorIndex_USBDevices:
-                m_IndicatorsPool[index] = new UIIndicatorUSBDevices(m_session);
-                break;
-            case UIIndicatorIndex_SharedFolders:
-                m_IndicatorsPool[index] = new UIIndicatorSharedFolders(m_session);
-                break;
-            case UIIndicatorIndex_VideoCapture:
-                m_IndicatorsPool[index] = new UIIndicatorVideoCapture(m_session);
-                break;
-            case UIIndicatorIndex_Virtualization:
-                m_IndicatorsPool[index] = new UIIndicatorVirtualization(m_session);
-                break;
-            case UIIndicatorIndex_Mouse:
-                m_IndicatorsPool[index] = new UIIndicatorMouse(m_session);
-                break;
-            case UIIndicatorIndex_Hostkey:
-                m_IndicatorsPool[index] = new UIIndicatorHostkey(m_session);
-                break;
-            default:
-                break;
+            case UIIndicatorIndex_HardDisks:       m_pool[index] = new UIIndicatorHardDisks(m_session); break;
+            case UIIndicatorIndex_OpticalDisks:    m_pool[index] = new UIIndicatorOpticalDisks(m_session); break;
+            case UIIndicatorIndex_FloppyDisks:     m_pool[index] = new UIIndicatorFloppyDisks(m_session); break;
+            case UIIndicatorIndex_NetworkAdapters: m_pool[index] = new UIIndicatorNetworkAdapters(m_session); break;
+            case UIIndicatorIndex_USBDevices:      m_pool[index] = new UIIndicatorUSBDevices(m_session); break;
+            case UIIndicatorIndex_SharedFolders:   m_pool[index] = new UIIndicatorSharedFolders(m_session); break;
+            case UIIndicatorIndex_VideoCapture:    m_pool[index] = new UIIndicatorVideoCapture(m_session); break;
+            case UIIndicatorIndex_Virtualization:  m_pool[index] = new UIIndicatorVirtualization(m_session); break;
+            case UIIndicatorIndex_Mouse:           m_pool[index] = new UIIndicatorMouse(m_session); break;
+            case UIIndicatorIndex_Hostkey:         m_pool[index] = new UIIndicatorHostkey(m_session); break;
+            default: break;
         }
     }
-    return m_IndicatorsPool.at(index);
+    return m_pool.at(index);
 }
 
 #include "UIIndicatorsPool.moc"
