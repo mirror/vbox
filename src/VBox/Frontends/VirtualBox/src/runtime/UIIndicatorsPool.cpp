@@ -736,7 +736,7 @@ protected:
 UIIndicatorsPool::UIIndicatorsPool(CSession &session, QObject *pParent)
     : QObject(pParent)
     , m_session(session)
-    , m_pool(UIIndicatorIndex_Max)
+    , m_pool(IndicatorType_Max)
 {
     /* Prepare: */
     prepare();
@@ -748,7 +748,7 @@ UIIndicatorsPool::~UIIndicatorsPool()
     cleanup();
 }
 
-QIStateIndicator* UIIndicatorsPool::indicator(UIIndicatorIndex index)
+QIStateIndicator* UIIndicatorsPool::indicator(IndicatorType index)
 {
     /* Just return what already exists: */
     return m_pool[index];
@@ -757,22 +757,22 @@ QIStateIndicator* UIIndicatorsPool::indicator(UIIndicatorIndex index)
 void UIIndicatorsPool::prepare()
 {
     /* Populate indicator-pool: */
-    for (int iIndex = 0; iIndex < UIIndicatorIndex_Max; ++iIndex)
+    for (int iIndex = 0; iIndex < IndicatorType_Max; ++iIndex)
     {
         /* Prepare indicator: */
-        UIIndicatorIndex index = static_cast<UIIndicatorIndex>(iIndex);
+        IndicatorType index = static_cast<IndicatorType>(iIndex);
         switch (index)
         {
-            case UIIndicatorIndex_HardDisks:     m_pool[index] = new UIIndicatorHardDisks(m_session); break;
-            case UIIndicatorIndex_OpticalDisks:  m_pool[index] = new UIIndicatorOpticalDisks(m_session); break;
-            case UIIndicatorIndex_FloppyDisks:   m_pool[index] = new UIIndicatorFloppyDisks(m_session); break;
-            case UIIndicatorIndex_Network:       m_pool[index] = new UIIndicatorNetwork(m_session); break;
-            case UIIndicatorIndex_USB:           m_pool[index] = new UIIndicatorUSB(m_session); break;
-            case UIIndicatorIndex_SharedFolders: m_pool[index] = new UIIndicatorSharedFolders(m_session); break;
-            case UIIndicatorIndex_VideoCapture:  m_pool[index] = new UIIndicatorVideoCapture(m_session); break;
-            case UIIndicatorIndex_Features:      m_pool[index] = new UIIndicatorFeatures(m_session); break;
-            case UIIndicatorIndex_Mouse:         m_pool[index] = new UIIndicatorMouse(m_session); break;
-            case UIIndicatorIndex_Keyboard:      m_pool[index] = new UIIndicatorKeyboard(m_session); break;
+            case IndicatorType_HardDisks:     m_pool[index] = new UIIndicatorHardDisks(m_session); break;
+            case IndicatorType_OpticalDisks:  m_pool[index] = new UIIndicatorOpticalDisks(m_session); break;
+            case IndicatorType_FloppyDisks:   m_pool[index] = new UIIndicatorFloppyDisks(m_session); break;
+            case IndicatorType_Network:       m_pool[index] = new UIIndicatorNetwork(m_session); break;
+            case IndicatorType_USB:           m_pool[index] = new UIIndicatorUSB(m_session); break;
+            case IndicatorType_SharedFolders: m_pool[index] = new UIIndicatorSharedFolders(m_session); break;
+            case IndicatorType_VideoCapture:  m_pool[index] = new UIIndicatorVideoCapture(m_session); break;
+            case IndicatorType_Features:      m_pool[index] = new UIIndicatorFeatures(m_session); break;
+            case IndicatorType_Mouse:         m_pool[index] = new UIIndicatorMouse(m_session); break;
+            case IndicatorType_Keyboard:      m_pool[index] = new UIIndicatorKeyboard(m_session); break;
             default: break;
         }
     }
@@ -781,7 +781,7 @@ void UIIndicatorsPool::prepare()
 void UIIndicatorsPool::cleanup()
 {
     /* Wipe-out indicator-pool: */
-    for (int iIndex = 0; iIndex < UIIndicatorIndex_Max; ++iIndex)
+    for (int iIndex = 0; iIndex < IndicatorType_Max; ++iIndex)
     {
         /* Wipe-out indicator: */
         delete m_pool[iIndex];
