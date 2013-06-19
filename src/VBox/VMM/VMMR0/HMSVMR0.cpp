@@ -4236,7 +4236,35 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
-    /* -XXX- todo!!*/
-    return VERR_NOT_IMPLEMENTED;
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
+
+    /* This can be a fault-type #DB (instruction breakpoint) or a trap-type #DB (data breakpoint). However, for both cases
+       DR6 and DR7 are updated to what the exception handler expects. See AMD spec. 15.12.2 "#DB (Debug)". */
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    rc = DBGFRZTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), pCtx->dr[6]);
+    if (rc == VINF_EM_RAW_GUEST_TRAP)
+    {
+        /* X86_DR7_GD will be cleared if DRx accesses should be trapped inside the guest. */
+        pCtx->dr[7] &= ~X86_DR7_GD;
+
+        /* Paranoia. */
+        pCtx->dr[7] &= 0xffffffff;                                              /* Upper 32 bits MBZ. */
+        pCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* MBZ. */
+        pCtx->dr[7] |= 0x400;                                                   /* MB1. */
+
+        PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+
+        /* Reflect the exception back to the guest. */
+        SVMEVENT Event;
+        Event.u          = 0;
+        Event.n.u1Valid  = 1;
+        Event.n.u3Type   = SVM_EVENT_EXCEPTION;
+        Event.n.u8Vector = X86_XCPT_DB;
+        hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
+        rc = VINF_SUCCESS;
+    }
+
+    return rc;
 }
 
