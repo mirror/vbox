@@ -3314,9 +3314,6 @@ static int hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /* Validate segment registers. See Intel spec. 26.3.1.2 "Checks on Guest Segment Registers". */
-    Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0);
-    Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS);
-
     /* NOTE: The reason we check for attribute value 0 and not just the unusable bit here is because hmR0VmxWriteSegmentReg()
      * only updates the VMCS bits with the unusable bit and doesn't change the guest-context value. */
     if (   !pVM->hm.s.vmx.fUnrestrictedGuest
@@ -5587,7 +5584,7 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         VMMR0LogFlushDisable(pVCpu);
     else
         Assert(VMMR0IsLogFlushDisabled(pVCpu));
-    Log4Func(("\n"));
+    Log4Func(("vcpu[%RU32]\n", pVCpu->idCpu));
 
     int rc = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestRipRspRflags failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
@@ -7937,7 +7934,9 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         if (   pMixedCtx->ecx >= MSR_IA32_X2APIC_START
             && pMixedCtx->ecx <= MSR_IA32_X2APIC_END)
         {
-            Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_APIC_STATE);
+            /* We've already saved the APIC related guest-state (TPR) in hmR0VmxPostRunGuest(). When full APIC register
+             * virtualization is implemented we'll have to make sure APIC state is saved from the VMCS before
+               EMInterpretWrmsr() changes it. */
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_GUEST_APIC_STATE;
         }
         else if (pMixedCtx->ecx == MSR_K6_EFER)         /* EFER is the only MSR we auto-load but don't allow write-passthrough. */
