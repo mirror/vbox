@@ -243,6 +243,7 @@ Q_DECLARE_METATYPE(DetailsElementType);
 /* Indicator type: */
 enum IndicatorType
 {
+    IndicatorType_Invalid,
     IndicatorType_HardDisks,
     IndicatorType_OpticalDisks,
     IndicatorType_FloppyDisks,

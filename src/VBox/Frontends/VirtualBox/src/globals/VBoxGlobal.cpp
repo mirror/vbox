@@ -3723,26 +3723,41 @@ bool VBoxGlobal::shouldWeAutoMountGuestScreens(CMachine &machine,
 }
 
 /* static */
-bool VBoxGlobal::isItemRestrictedByExtraData(CMachine &machine,
-                                             const QString &strExtraDataKey,
-                                             const QString &strItemName)
+QList<IndicatorType> VBoxGlobal::restrictedStatusBarIndicators(CMachine &machine)
 {
-    /* Load corresponding extra-data value: */
-    QString strExtraDataValue(machine.GetExtraData(strExtraDataKey));
-
-    /* 'false' if value was not set: */
-    if (strExtraDataValue.isEmpty())
-        return false;
-
-    /* Check if value represented as *string-list* contains passed *string-item*: */
-    return strExtraDataValue.split(",").contains(strItemName, Qt::CaseInsensitive);
+    /* Prepare result: */
+    QList<IndicatorType> result;
+    /* Load restricted status-bar-indicators: */
+    QString strList(machine.GetExtraData(GUI_RestrictedStatusBarIndicators));
+    QStringList list = strList.split(',');
+    /* Convert list into appropriate values: */
+    foreach (const QString &strValue, list)
+    {
+        IndicatorType value = gpConverter->fromInternalString<IndicatorType>(strValue);
+        if (value != IndicatorType_Invalid)
+            result << value;
+    }
+    /* Return result: */
+    return result;
 }
 
 /* static */
-bool VBoxGlobal::shouldWeShowStatusBarIndicator(CMachine &machine, const QString &strStatusBarIndicatorName)
+QList<MachineCloseAction> VBoxGlobal::restrictedMachineCloseActions(CMachine &machine)
 {
-    /* Check if list of restricted status-bar indicators contains passed status-bar indicator-name: */
-    return !isItemRestrictedByExtraData(machine, GUI_RestrictedStatusBarIndicators, strStatusBarIndicatorName);
+    /* Prepare result: */
+    QList<MachineCloseAction> result;
+    /* Load restricted machine-close-actions: */
+    QString strList(machine.GetExtraData(GUI_RestrictedCloseActions));
+    QStringList list = strList.split(',');
+    /* Convert list into appropriate values: */
+    foreach (const QString &strValue, list)
+    {
+        MachineCloseAction value = gpConverter->fromInternalString<MachineCloseAction>(strValue);
+        if (value != MachineCloseAction_Invalid)
+            result << value;
+    }
+    /* Return result: */
+    return result;
 }
 
 #ifdef RT_OS_LINUX

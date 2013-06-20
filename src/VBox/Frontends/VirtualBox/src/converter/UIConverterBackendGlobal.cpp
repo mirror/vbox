@@ -399,22 +399,24 @@ template<> QString toInternalString(const IndicatorType &indicatorType)
 /* IndicatorType <= QString: */
 template<> IndicatorType fromInternalString<IndicatorType>(const QString &strIndicatorType)
 {
-    QHash<QString, IndicatorType> list;
-    list.insert("HardDisks",     IndicatorType_HardDisks);
-    list.insert("OpticalDisks",  IndicatorType_OpticalDisks);
-    list.insert("FloppyDisks",   IndicatorType_FloppyDisks);
-    list.insert("Network",       IndicatorType_Network);
-    list.insert("USB",           IndicatorType_USB);
-    list.insert("SharedFolders", IndicatorType_SharedFolders);
-    list.insert("VideoCapture",  IndicatorType_VideoCapture);
-    list.insert("Features",      IndicatorType_Features);
-    list.insert("Mouse",         IndicatorType_Mouse);
-    list.insert("Keyboard",      IndicatorType_Keyboard);
-    if (!list.contains(strIndicatorType))
-    {
-        AssertMsgFailed(("No value for '%s'", strIndicatorType.toAscii().constData()));
-    }
-    return list.value(strIndicatorType);
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;        QList<IndicatorType> values;
+    keys << "HardDisks";     values << IndicatorType_HardDisks;
+    keys << "OpticalDisks";  values << IndicatorType_OpticalDisks;
+    keys << "FloppyDisks";   values << IndicatorType_FloppyDisks;
+    keys << "Network";       values << IndicatorType_Network;
+    keys << "USB";           values << IndicatorType_USB;
+    keys << "SharedFolders"; values << IndicatorType_SharedFolders;
+    keys << "VideoCapture";  values << IndicatorType_VideoCapture;
+    keys << "Features";      values << IndicatorType_Features;
+    keys << "Mouse";         values << IndicatorType_Mouse;
+    keys << "Keyboard";      values << IndicatorType_Keyboard;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strIndicatorType, Qt::CaseInsensitive))
+        return IndicatorType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strIndicatorType, Qt::CaseInsensitive)));
 }
 
 /* QString <= MachineCloseAction: */
@@ -439,12 +441,16 @@ template<> QString toInternalString(const MachineCloseAction &machineCloseAction
 /* MachineCloseAction <= QString: */
 template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QString &strMachineCloseAction)
 {
-    QHash<QString, MachineCloseAction> list;
-    list.insert("Save",                      MachineCloseAction_Save);
-    list.insert("Shutdown",                  MachineCloseAction_Shutdown);
-    list.insert("PowerOff",                  MachineCloseAction_PowerOff);
-    list.insert("PowerOffRestoringSnapshot", MachineCloseAction_PowerOff_RestoringSnapshot);
-    if (!list.contains(strMachineCloseAction))
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;                    QList<MachineCloseAction> values;
+    keys << "Save";                      values << MachineCloseAction_Save;
+    keys << "Shutdown";                  values << MachineCloseAction_Shutdown;
+    keys << "PowerOff";                  values << MachineCloseAction_PowerOff;
+    keys << "PowerOffRestoringSnapshot"; values << MachineCloseAction_PowerOff_RestoringSnapshot;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strMachineCloseAction, Qt::CaseInsensitive))
         return MachineCloseAction_Invalid;
-    return list.value(strMachineCloseAction);
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strMachineCloseAction, Qt::CaseInsensitive)));
 }
