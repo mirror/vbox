@@ -260,7 +260,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     }
 
     /* Choose the close action: */
-    UIVMCloseDialog::ResultCode closeAction = UIVMCloseDialog::ResultCode_Cancel;
+    MachineCloseAction closeAction = MachineCloseAction_Cancel;
 
     /* If there IS default close-action defined: */
     QString strDefaultAction = machine().GetExtraData(GUI_DefaultCloseAction);
@@ -271,17 +271,17 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
         /* If VM is stuck, and the default close-action is not 'power-off',
          * we should ask the user about what to do: */
         if (uisession()->isStuck() &&
-            closeAction != UIVMCloseDialog::ResultCode_PowerOff)
-            closeAction = UIVMCloseDialog::ResultCode_Cancel;
+            closeAction != MachineCloseAction_PowerOff)
+            closeAction = MachineCloseAction_Cancel;
         /* If the default-action is 'power-off',
          * we should check if its possible to discard machine-state: */
-        if (closeAction == UIVMCloseDialog::ResultCode_PowerOff &&
+        if (closeAction == MachineCloseAction_PowerOff &&
             machine().GetSnapshotCount() > 0)
-            closeAction = UIVMCloseDialog::ResultCode_PowerOff_With_Discarding;
+            closeAction = MachineCloseAction_PowerOff_Restoring_Snapshot;
     }
 
     /* If the close-action still undefined: */
-    if (closeAction == UIVMCloseDialog::ResultCode_Cancel)
+    if (closeAction == MachineCloseAction_Cancel)
     {
         /* Prepare close-dialog: */
         QWidget *pParentDlg = windowManager().realParentWindow(this);
@@ -296,7 +296,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             {
                 /* Show close-dialog to let the user make the choice: */
                 windowManager().registerNewParent(pCloseDlg, pParentDlg);
-                closeAction = (UIVMCloseDialog::ResultCode)pCloseDlg->exec();
+                closeAction = static_cast<MachineCloseAction>(pCloseDlg->exec());
 
                 /* Make sure the dialog still valid: */
                 if (!pCloseDlg)
@@ -305,19 +305,19 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 /* If VM was not paused before but paused now,
                  * we should resume it if user canceled dialog or chosen shutdown: */
                 if (!fWasPaused && uisession()->isPaused() &&
-                    (closeAction == UIVMCloseDialog::ResultCode_Cancel ||
-                     closeAction == UIVMCloseDialog::ResultCode_Shutdown))
+                    (closeAction == MachineCloseAction_Cancel ||
+                     closeAction == MachineCloseAction_Shutdown))
                 {
                     /* If we unable to resume VM, cancel closing: */
                     if (!uisession()->unpause())
-                        closeAction = UIVMCloseDialog::ResultCode_Cancel;
+                        closeAction = MachineCloseAction_Cancel;
                 }
             }
         }
         else
         {
             /* Else user misconfigured .vbox file, 'power-off' will be the action: */
-            closeAction = UIVMCloseDialog::ResultCode_PowerOff;
+            closeAction = MachineCloseAction_PowerOff;
         }
 
         /* Cleanup close-dialog: */
@@ -327,23 +327,23 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     /* Depending on chosen result: */
     switch (closeAction)
     {
-        case UIVMCloseDialog::ResultCode_Save:
+        case MachineCloseAction_Save:
         {
             /* Save VM state: */
             machineLogic()->saveState();
             break;
         }
-        case UIVMCloseDialog::ResultCode_Shutdown:
+        case MachineCloseAction_Shutdown:
         {
             /* Shutdown VM: */
             machineLogic()->shutdown();
             break;
         }
-        case UIVMCloseDialog::ResultCode_PowerOff:
-        case UIVMCloseDialog::ResultCode_PowerOff_With_Discarding:
+        case MachineCloseAction_PowerOff:
+        case MachineCloseAction_PowerOff_Restoring_Snapshot:
         {
             /* Power VM off: */
-            machineLogic()->powerOff(closeAction == UIVMCloseDialog::ResultCode_PowerOff_With_Discarding);
+            machineLogic()->powerOff(closeAction == MachineCloseAction_PowerOff_Restoring_Snapshot);
             break;
         }
         default:

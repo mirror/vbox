@@ -20,8 +20,9 @@
 #define __UIVMCloseDialog_h__
 
 /* GUI includes: */
-#include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
+#include "QIDialog.h"
+#include "UIDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -40,16 +41,6 @@ class UIVMCloseDialog : public QIWithRetranslateUI<QIDialog>
 
 public:
 
-    /* Dialog result-code enumerator: */
-    enum ResultCode
-    {
-        ResultCode_Cancel = 0,
-        ResultCode_Save,
-        ResultCode_Shutdown,
-        ResultCode_PowerOff,
-        ResultCode_PowerOff_With_Discarding
-    };
-
     /* Constructor: */
     UIVMCloseDialog(QWidget *pParent, const CMachine &machine, const CSession &session);
 
@@ -57,7 +48,7 @@ public:
     bool isValid() const { return m_fValid; }
 
     /* Static API: Parse string containing result-code: */
-    static ResultCode parseResultCode(const QString &strCloseAction);
+    static MachineCloseAction parseResultCode(const QString &strCloseAction);
 
 private slots:
 

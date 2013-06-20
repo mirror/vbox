@@ -64,16 +64,16 @@ UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, const CMachine &machine, cons
 }
 
 /* static */
-UIVMCloseDialog::ResultCode UIVMCloseDialog::parseResultCode(const QString &strCloseAction)
+MachineCloseAction UIVMCloseDialog::parseResultCode(const QString &strCloseAction)
 {
-    ResultCode resultCode = ResultCode_Cancel;
+    MachineCloseAction closeAction = MachineCloseAction_Cancel;
     if (!strCloseAction.compare("Save", Qt::CaseInsensitive))
-        resultCode = ResultCode_Save;
+        closeAction = MachineCloseAction_Save;
     else if (!strCloseAction.compare("Shutdown", Qt::CaseInsensitive))
-        resultCode = ResultCode_Shutdown;
+        closeAction = MachineCloseAction_Shutdown;
     else if (!strCloseAction.compare("PowerOff", Qt::CaseInsensitive))
-        resultCode = ResultCode_PowerOff;
-    return resultCode;
+        closeAction = MachineCloseAction_PowerOff;
+    return closeAction;
 }
 
 void UIVMCloseDialog::sltUpdateWidgetAvailability()
@@ -86,15 +86,15 @@ void UIVMCloseDialog::accept()
 {
     /* Calculate result: */
     if (m_pSaveRadio->isChecked())
-        setResult(ResultCode_Save);
+        setResult(MachineCloseAction_Save);
     else if (m_pShutdownRadio->isChecked())
-        setResult(ResultCode_Shutdown);
+        setResult(MachineCloseAction_Shutdown);
     else if (m_pPowerOffRadio->isChecked())
     {
         if (!m_pDiscardCheckBox->isChecked() || !m_pDiscardCheckBox->isVisible())
-            setResult(ResultCode_PowerOff);
+            setResult(MachineCloseAction_PowerOff);
         else
-            setResult(ResultCode_PowerOff_With_Discarding);
+            setResult(MachineCloseAction_PowerOff_Restoring_Snapshot);
     }
 
     /* Read the last user's choice for the given VM: */
@@ -103,17 +103,17 @@ void UIVMCloseDialog::accept()
     QString strLastAction = m_strExtraDataOptionPowerOff;
     switch (result())
     {
-        case ResultCode_Save:
+        case MachineCloseAction_Save:
         {
             strLastAction = m_strExtraDataOptionSave;
             break;
         }
-        case ResultCode_Shutdown:
+        case MachineCloseAction_Shutdown:
         {
             strLastAction = m_strExtraDataOptionShutdown;
             break;
         }
-        case ResultCode_PowerOff:
+        case MachineCloseAction_PowerOff:
         {
             if (previousChoice[0] == m_strExtraDataOptionShutdown && !m_fIsACPIEnabled)
                 strLastAction = m_strExtraDataOptionShutdown;
@@ -121,7 +121,7 @@ void UIVMCloseDialog::accept()
                 strLastAction = m_strExtraDataOptionPowerOff;
             break;
         }
-        case ResultCode_PowerOff_With_Discarding:
+        case MachineCloseAction_PowerOff_Restoring_Snapshot:
         {
             strLastAction = m_strExtraDataOptionPowerOff + "," +
                             m_strExtraDataOptionDiscard;
