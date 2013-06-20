@@ -429,13 +429,13 @@ typedef struct VDIOCTX
 } VDIOCTX;
 
 /** Default flags for an I/O context, i.e. unblocked and async. */
-#define VDIOCTX_FLAGS_DEFAULT                   (0)
+#define VDIOCTX_FLAGS_DEFAULT                         (0)
 /** Flag whether the context is blocked. */
-#define VDIOCTX_FLAGS_BLOCKED          RT_BIT_32(0)
+#define VDIOCTX_FLAGS_BLOCKED                RT_BIT_32(0)
 /** Flag whether the I/O context is using synchronous I/O. */
-#define VDIOCTX_FLAGS_SYNC             RT_BIT_32(1)
+#define VDIOCTX_FLAGS_SYNC                   RT_BIT_32(1)
 /** Flag whether the read should update the cache. */
-#define VDIOCTX_FLAGS_READ_UDATE_CACHE RT_BIT_32(2)
+#define VDIOCTX_FLAGS_READ_UPDATE_CACHE      RT_BIT_32(2)
 /** Flag whether free blocks should be zeroed.
  * If false and no image has data for sepcified
  * range VERR_VD_BLOCK_FREE is returned for the I/O context.
@@ -443,10 +443,12 @@ typedef struct VDIOCTX
  * if at least one image has valid data for a part
  * of the range.
  */
-#define VDIOCTX_FLAGS_ZERO_FREE_BLOCKS RT_BIT_32(3)
+#define VDIOCTX_FLAGS_ZERO_FREE_BLOCKS       RT_BIT_32(3)
 /** Don't free the I/O context when complete because
  * it was alloacted elsewhere (stack, ...). */
-#define VDIOCTX_FLAGS_DONT_FREE        RT_BIT_32(4)
+#define VDIOCTX_FLAGS_DONT_FREE              RT_BIT_32(4)
+/* Don't set the modified flag for this I/O context when writing. */
+#define VDIOCTX_FLAGS_DONT_SET_MODIFIED_FLAG RT_BIT_32(5)
 
 /** NIL I/O context pointer value. */
 #define NIL_VDIOCTX ((PVDIOCTX)0)
@@ -1775,7 +1777,7 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
 
                 /* If the read was successful, write the data back into the cache. */
                 if (   RT_SUCCESS(rc)
-                    && pIoCtx->fFlags & VDIOCTX_FLAGS_READ_UDATE_CACHE)
+                    && pIoCtx->fFlags & VDIOCTX_FLAGS_READ_UPDATE_CACHE)
                 {
                     rc = vdCacheWriteHelper(pDisk->pCache, uOffset, cbThisRead,
                                             pIoCtx, NULL);
@@ -1949,7 +1951,7 @@ static int vdReadHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParent
     if (fZeroFreeBlocks)
         fFlags |= VDIOCTX_FLAGS_ZERO_FREE_BLOCKS;
     if (fUpdateCache)
-        fFlags |= VDIOCTX_FLAGS_READ_UDATE_CACHE;
+        fFlags |= VDIOCTX_FLAGS_READ_UPDATE_CACHE;
 
     Segment.pvSeg = pvBuf;
     Segment.cbSeg = cbRead;
@@ -2031,15 +2033,13 @@ static void vdSetModifiedFlag(PVBOXHDD pDisk)
 static int vdWriteHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage,
                            PVDIMAGE pImageParentOverride, uint64_t uOffset,
                            const void *pvBuf, size_t cbWrite,
-                           bool fUpdateCache, unsigned cImagesRead)
+                           uint32_t fFlags, unsigned cImagesRead)
 {
-    uint32_t fFlags = VDIOCTX_FLAGS_SYNC | VDIOCTX_FLAGS_DONT_FREE;
     RTSGSEG Segment;
     RTSGBUF SgBuf;
     VDIOCTX IoCtx;
 
-    if (fUpdateCache)
-        fFlags |= VDIOCTX_FLAGS_READ_UDATE_CACHE;
+    fFlags |= VDIOCTX_FLAGS_SYNC | VDIOCTX_FLAGS_DONT_FREE;
 
     Segment.pvSeg = (void *)pvBuf;
     Segment.cbSeg = cbWrite;
@@ -2061,10 +2061,10 @@ static int vdWriteHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage,
  * write optimizations.
  */
 static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
-                         const void *pvBuf, size_t cbWrite, bool fUpdateCache)
+                         const void *pvBuf, size_t cbWrite, uint32_t fFlags)
 {
     return vdWriteHelperEx(pDisk, pImage, NULL, uOffset, pvBuf, cbWrite,
-                           fUpdateCache, 0);
+                           fFlags, 0);
 }
 
 /**
@@ -2162,7 +2162,7 @@ static int vdCopyHelper(PVBOXHDD pDiskFrom, PVDIMAGE pImageFrom, PVBOXHDD pDiskT
 
             /* Only do collapsed I/O if we are copying the data blockwise. */
             rc = vdWriteHelperEx(pDiskTo, pDiskTo->pLast, NULL, uOffset, pvBuf,
-                                 cbThisRead, false /* fUpdateCache */,
+                                 cbThisRead, VDIOCTX_FLAGS_DONT_SET_MODIFIED_FLAG /* fFlags */,
                                  fBlockwiseCopy ? cImagesToRead : 0);
             if (RT_FAILURE(rc))
                 break;
@@ -2617,9 +2617,12 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
     size_t cbThisWrite;
     size_t cbPreRead, cbPostRead;
 
-    rc = vdSetModifiedFlagAsync(pDisk, pIoCtx);
-    if (RT_FAILURE(rc)) /* Includes I/O in progress. */
-        return rc;
+    if (!(pIoCtx->fFlags & VDIOCTX_FLAGS_DONT_SET_MODIFIED_FLAG))
+    {
+        rc = vdSetModifiedFlagAsync(pDisk, pIoCtx);
+        if (RT_FAILURE(rc)) /* Includes I/O in progress. */
+            return rc;
+    }
 
     rc = vdDiscardSetRangeAllocated(pDisk, uOffset, cbWrite);
     if (RT_FAILURE(rc))
@@ -6785,7 +6788,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                         /* Updating the cache is required because this might be a live merge. */
                         rc = vdWriteHelperEx(pDisk, pImageTo, pImageFrom->pPrev,
                                              uOffset, pvBuf, cbThisRead,
-                                             true /* fUpdateCache */, 0);
+                                             VDIOCTX_FLAGS_READ_UPDATE_CACHE, 0);
                         if (RT_FAILURE(rc))
                             break;
                     }
@@ -6909,7 +6912,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                     if (RT_FAILURE(rc))
                         break;
                     rc = vdWriteHelper(pDisk, pImageTo, uOffset, pvBuf,
-                                       cbThisRead, true /* fUpdateCache */);
+                                       cbThisRead, VDIOCTX_FLAGS_READ_UPDATE_CACHE);
                     if (RT_FAILURE(rc))
                         break;
                 }
@@ -8041,7 +8044,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
 
         vdSetModifiedFlag(pDisk);
         rc = vdWriteHelper(pDisk, pImage, uOffset, pvBuf, cbWrite,
-                           true /* fUpdateCache */);
+                           VDIOCTX_FLAGS_READ_UPDATE_CACHE);
         if (RT_FAILURE(rc))
             break;
 
@@ -8055,7 +8058,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
          * as this write is covered by the previous one. */
         if (RT_UNLIKELY(pDisk->pImageRelay))
             rc = vdWriteHelper(pDisk, pDisk->pImageRelay, uOffset,
-                               pvBuf, cbWrite, false /* fUpdateCache */);
+                               pvBuf, cbWrite, VDIOCTX_FLAGS_DEFAULT);
     } while (0);
 
     if (RT_UNLIKELY(fLockWrite))
