@@ -64,6 +64,8 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
         pszFilename = psz;
     }
 
+    AssertMsg(RTPathStartsWithRoot(pszFilename), ("pszFilename='%s'\n", pszFilename));
+
     /*
      * Attempt load.
      */
