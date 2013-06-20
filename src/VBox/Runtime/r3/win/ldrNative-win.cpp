@@ -49,6 +49,9 @@ int rtldrNativeLoad(const char *pszFilename, uintptr_t *phHandle, uint32_t fFlag
 {
     Assert(sizeof(*phHandle) >= sizeof(HMODULE));
     AssertReturn(fFlags == 0 || fFlags == RTLDRLOAD_FLAGS_NO_UNLOAD, VERR_INVALID_PARAMETER);
+    AssertLogRelMsgReturn(RTPathStartsWithRoot(pszFilename),  /* Relative names will still be applied to the search path. */
+                          ("pszFilename='%s'\n", pszFilename),
+                          VERR_INTERNAL_ERROR_2);
 
     /*
      * Do we need to add an extension?
