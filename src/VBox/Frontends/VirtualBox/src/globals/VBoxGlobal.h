@@ -382,9 +382,8 @@ public:
     static bool shouldWeShowDetails(CMachine &machine,
                                     bool fIncludingMachineGeneralCheck = false);
     static bool shouldWeAutoMountGuestScreens(CMachine &machine, bool fIncludingSanityCheck = true);
-
-    static bool isItemRestrictedByExtraData(CMachine &machine, const QString &strExtraDataKey, const QString &strItemName);
-    static bool shouldWeShowStatusBarIndicator(CMachine &machine, const QString &strStatusBarIndicatorName);
+    static QList<IndicatorType> restrictedStatusBarIndicators(CMachine &machine);
+    static QList<MachineCloseAction> restrictedMachineCloseActions(CMachine &machine);
 
 #ifdef RT_OS_LINUX
     static void checkForWrongUSBMounted();

@@ -280,11 +280,11 @@ void UIVMCloseDialog::configure(const CMachine &machine, const CSession &session
     setPixmap(vboxGlobal().vmGuestOSTypeIcon(m_machine.GetOSTypeId()));
 
     /* Check which close-actions are resticted: */
-    QStringList restictedActionsList = m_machine.GetExtraData(GUI_RestrictedCloseActions).split(',');
-    bool fIsStateSavingAllowed = !restictedActionsList.contains("SaveState", Qt::CaseInsensitive);
-    bool fIsACPIShutdownAllowed = !restictedActionsList.contains("Shutdown", Qt::CaseInsensitive);
-    bool fIsPowerOffAllowed = !restictedActionsList.contains("PowerOff", Qt::CaseInsensitive);
-    bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && !restictedActionsList.contains("Restore", Qt::CaseInsensitive);
+    QList<MachineCloseAction> restictedCloseActions = vboxGlobal().restrictedMachineCloseActions(m_machine);
+    bool fIsStateSavingAllowed = !restictedCloseActions.contains(MachineCloseAction_Save);
+    bool fIsACPIShutdownAllowed = !restictedCloseActions.contains(MachineCloseAction_Shutdown);
+    bool fIsPowerOffAllowed = !restictedCloseActions.contains(MachineCloseAction_PowerOff);
+    bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && !restictedCloseActions.contains(MachineCloseAction_PowerOff_RestoringSnapshot);
 
     /* Make 'Save state' button visible/hidden depending on restriction: */
     setSaveButtonVisible(fIsStateSavingAllowed);
