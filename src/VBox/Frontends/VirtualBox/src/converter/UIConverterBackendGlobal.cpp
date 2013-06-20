@@ -130,7 +130,7 @@ template<> QString toString(const StorageSlot &storageSlot)
         }
         default:
         {
-            AssertMsgFailed(("No text for bus=%d & port=% & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));
+            AssertMsgFailed(("No text for bus=%d & port=%d & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));
             break;
         }
     }
