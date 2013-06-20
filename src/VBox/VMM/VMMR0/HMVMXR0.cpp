@@ -4793,14 +4793,14 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 if (   hmR0VmxIsContributoryXcpt(uIdtVector)
                     && uExitVector == X86_XCPT_PF)
                 {
-                    Log4(("IDT: Contributory #PF uCR2=%#RX64\n", pMixedCtx->cr2));
+                    Log4(("IDT: vcpu[%RU32] Contributory #PF uCR2=%#RX64\n", pVCpu->idCpu, pMixedCtx->cr2));
                 }
 #endif
                 if (   uExitVector == X86_XCPT_PF
                     && uIdtVector == X86_XCPT_PF)
                 {
                     pVmxTransient->fVectoringPF = true;
-                    Log4(("IDT: Vectoring #PF uCR2=%#RX64\n", pMixedCtx->cr2));
+                    Log4(("IDT: vcpu[%RU32] Vectoring #PF uCR2=%#RX64\n", pVCpu->idCpu, pMixedCtx->cr2));
                 }
                 else if (   (pVCpu->hm.s.vmx.u32XcptBitmap & HMVMX_CONTRIBUTORY_XCPT_MASK)
                          && hmR0VmxIsContributoryXcpt(uExitVector)
@@ -4812,9 +4812,9 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 else if (uIdtVector == X86_XCPT_DF)
                     enmReflect = VMXREFLECTXCPT_TF;
             }
-            else if (   uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_INT
-                     && uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT
-                     && uIntType != VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT)
+            else if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
+                     || uIntType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
+                     || uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
             {
                 /*
                  * Ignore software interrupts (INT n), software exceptions (#BP, #OF) and privileged software exception
@@ -4830,13 +4830,22 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
              * interruption-information will not be valid and we end up here. In such cases, it is sufficient to reflect the
              * original exception to the guest after handling the VM-exit.
              */
-            enmReflect = VMXREFLECTXCPT_XCPT;
+            if (   uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT
+                || uIntType == VMX_IDT_VECTORING_INFO_TYPE_EXT_INT
+                || uIntType == VMX_IDT_VECTORING_INFO_TYPE_NMI)
+            {
+                enmReflect = VMXREFLECTXCPT_XCPT;
+            }
         }
 
         switch (enmReflect)
         {
             case VMXREFLECTXCPT_XCPT:
             {
+                Assert(   uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_INT
+                       && uIntType != VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT
+                       && uIntType != VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT);
+
                 uint32_t u32ErrCode = 0;
                 if (VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntrInfo))
                 {
@@ -4849,8 +4858,8 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INTR_INFO_FROM_EXIT_IDT_INFO(pVmxTransient->uIdtVectoringInfo),
                                        0 /* cbInstr */,  u32ErrCode, pMixedCtx->cr2);
                 rc = VINF_SUCCESS;
-                Log4(("IDT: Pending vectoring event %#RX64 Err=%#RX32\n", pVCpu->hm.s.Event.u64IntrInfo,
-                      pVCpu->hm.s.Event.u32ErrCode));
+                Log4(("IDT: vcpu[%RU32] Pending vectoring event %#RX64 Err=%#RX32\n", pVCpu->idCpu,
+                      pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.u32ErrCode));
                 break;
             }
 
@@ -4858,15 +4867,16 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             {
                 hmR0VmxSetPendingXcptDF(pVCpu, pMixedCtx);
                 rc = VINF_HM_DOUBLE_FAULT;
-                Log4(("IDT: Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntrInfo,
-                      uIdtVector, uExitVector));
+                Log4(("IDT: vcpu[%RU32] Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->idCpu,
+                      pVCpu->hm.s.Event.u64IntrInfo, uIdtVector, uExitVector));
                 break;
             }
 
             case VMXREFLECTXCPT_TF:
             {
                 rc = VINF_EM_RESET;
-                Log4(("IDT: Pending vectoring triple-fault uIdt=%#x uExit=%#x\n", uIdtVector, uExitVector));
+                Log4(("IDT: vcpu[%RU32] Pending vectoring triple-fault uIdt=%#x uExit=%#x\n", pVCpu->idCpu, uIdtVector,
+                      uExitVector));
                 break;
             }
 
@@ -6082,7 +6092,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
         if (fInject)
         {
-            Log4(("Injecting pending event\n"));
+            Log4(("Injecting pending event vcpu[%RU32]\n", pVCpu->idCpu));
             rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.cbInstr,
                                         pVCpu->hm.s.Event.u32ErrCode, pVCpu->hm.s.Event.GCPtrFaultAddress, &uIntrState);
             AssertRCReturn(rc, rc);
@@ -6493,8 +6503,8 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
         pMixedCtx->cr2 = GCPtrFaultAddress;
     }
 
-    Log4(("Injecting u32IntrInfo=%#x u32ErrCode=%#x cbInstr=%#x pMixedCtx->uCR2=%#RX64\n", u32IntrInfo, u32ErrCode, cbInstr,
-          pMixedCtx->cr2));
+    Log4(("Injecting vcpu[%RU32] u32IntrInfo=%#x u32ErrCode=%#x cbInstr=%#x pMixedCtx->uCR2=%#RX64\n", pVCpu->idCpu,
+          u32IntrInfo, u32ErrCode, cbInstr, pMixedCtx->cr2));
 
     AssertRCReturn(rc, rc);
     return rc;
