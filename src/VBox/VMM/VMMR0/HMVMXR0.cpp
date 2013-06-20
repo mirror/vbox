@@ -45,16 +45,16 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define HMVMXHCUINTREG                RTHCUINTREG
 #if defined(RT_ARCH_AMD64)
 # define HMVMX_IS_64BIT_HOST_MODE()   (true)
+typedef RTHCUINTREG                   HMVMXHCUINTREG;
 #elif defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 extern "C" uint32_t g_fVMXIs64bitHost;
 # define HMVMX_IS_64BIT_HOST_MODE()   (g_fVMXIs64bitHost != 0)
-# undef HMVMXHCUINTREG
-# define HMVMXHCUINTREG               uint64_t
+typedef uint64_t                      HMVMXHCUINTREG;
 #else
 # define HMVMX_IS_64BIT_HOST_MODE()   (false)
+typedef RTHCUINTREG                   HMVMXHCUINTREG;
 #endif
 
 /** Use the function table. */
