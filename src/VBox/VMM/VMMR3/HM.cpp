@@ -2942,20 +2942,20 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 
             case VERR_VMX_UNABLE_TO_START_VM:
                 LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM:\n"));
-                LogRel(("HM: CPU%d instruction error %#x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError));
-                LogRel(("HM: CPU%d exit reason       %#x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32ExitReason));
+                LogRel(("HM: CPU%d Instruction error %#x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError));
+                LogRel(("HM: CPU%d Exit reason       %#x\n", i, pVM->aCpus[i].hm.s.vmx.lasterror.u32ExitReason));
                 if (pVM->aCpus[i].hm.s.vmx.lasterror.u32InstrError == VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS)
                 {
-                    LogRel(("HM: Cpu%d PinCtls       %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32PinCtls));
-                    LogRel(("HM: Cpu%d ProcCtls      %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ProcCtls));
-                    LogRel(("HM: Cpu%d ProcCtls2     %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ProcCtls2));
-                    LogRel(("HM: Cpu%d EntryCtls     %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32EntryCtls));
-                    LogRel(("HM: Cpu%d ExitCtls      %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ExitCtls));
-                    LogRel(("HM: Cpu%d MSRBitmapPhys %#RHp\n",  i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
+                    LogRel(("HM: CPU%d PinCtls       %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32PinCtls));
+                    LogRel(("HM: CPU%d ProcCtls      %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ProcCtls));
+                    LogRel(("HM: CPU%d ProcCtls2     %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ProcCtls2));
+                    LogRel(("HM: CPU%d EntryCtls     %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32EntryCtls));
+                    LogRel(("HM: CPU%d ExitCtls      %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ExitCtls));
+                    LogRel(("HM: CPU%d MSRBitmapPhys %#RHp\n",  i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-                    LogRel(("HM: Cpu%d GuestMSRPhys  %#RHp\n",  i, pVM->aCpus[i].hm.s.vmx.HCPhysGuestMsr));
-                    LogRel(("HM: Cpu%d HostMsrPhys   %#RHp\n",  i, pVM->aCpus[i].hm.s.vmx.HCPhysHostMsr));
-                    LogRel(("HM: Cpu%d cGuestMSRs    %u\n",     i, pVM->aCpus[i].hm.s.vmx.cGuestMsrs));
+                    LogRel(("HM: CPU%d GuestMSRPhys  %#RHp\n",  i, pVM->aCpus[i].hm.s.vmx.HCPhysGuestMsr));
+                    LogRel(("HM: CPU%d HostMsrPhys   %#RHp\n",  i, pVM->aCpus[i].hm.s.vmx.HCPhysHostMsr));
+                    LogRel(("HM: CPU%d cGuestMSRs    %u\n",     i, pVM->aCpus[i].hm.s.vmx.cGuestMsrs));
 #endif
                 }
                 /** @todo Log VM-entry event injection control fields
