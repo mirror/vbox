@@ -141,6 +141,7 @@ static HMODULE loadInstalledDll(const char *pszName)
 {
     char   szPath[MAX_PATH];
     UINT   cchPath = GetModuleFileNameA(NULL, szPath, sizeof(szPath));
+    size_t cbName = strlen(pszName) + 1;
     if (cchPath && cchPath <= sizeof(szPath))
     {
         char *pszSlashFile = strrchr(szPath, '\\');
