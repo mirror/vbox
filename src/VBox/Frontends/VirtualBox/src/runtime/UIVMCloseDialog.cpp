@@ -35,6 +35,7 @@
 # include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 # include "QIDialogButtonBox.h"
+# include "UIConverter.h"
 
 /* COM includes: */
 # include "CSession.h"
@@ -45,12 +46,9 @@
 
 UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, const CMachine &machine, const CSession &session)
     : QIWithRetranslateUI<QIDialog>(pParent)
-    , m_strExtraDataOptionSave("save")
-    , m_strExtraDataOptionShutdown("shutdown")
-    , m_strExtraDataOptionPowerOff("powerOff")
-    , m_strExtraDataOptionDiscard("discardCurState")
     , m_fValid(false)
     , m_fIsACPIEnabled(false)
+    , m_lastCloseAction(MachineCloseAction_Invalid)
 {
     /* Prepare: */
     prepare();
@@ -61,19 +59,6 @@ UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, const CMachine &machine, cons
 
     /* Retranslate finally: */
     retranslateUi();
-}
-
-/* static */
-MachineCloseAction UIVMCloseDialog::parseResultCode(const QString &strCloseAction)
-{
-    MachineCloseAction closeAction = MachineCloseAction_Invalid;
-    if (!strCloseAction.compare("Save", Qt::CaseInsensitive))
-        closeAction = MachineCloseAction_Save;
-    else if (!strCloseAction.compare("Shutdown", Qt::CaseInsensitive))
-        closeAction = MachineCloseAction_Shutdown;
-    else if (!strCloseAction.compare("PowerOff", Qt::CaseInsensitive))
-        closeAction = MachineCloseAction_PowerOff;
-    return closeAction;
 }
 
 void UIVMCloseDialog::sltUpdateWidgetAvailability()
@@ -97,38 +82,13 @@ void UIVMCloseDialog::accept()
             setResult(MachineCloseAction_PowerOff_RestoringSnapshot);
     }
 
-    /* Read the last user's choice for the given VM: */
-    QStringList previousChoice = m_machine.GetExtraData(GUI_LastCloseAction).split(',');
     /* Memorize the last user's choice for the given VM: */
-    QString strLastAction = m_strExtraDataOptionPowerOff;
-    switch (result())
-    {
-        case MachineCloseAction_Save:
-        {
-            strLastAction = m_strExtraDataOptionSave;
-            break;
-        }
-        case MachineCloseAction_Shutdown:
-        {
-            strLastAction = m_strExtraDataOptionShutdown;
-            break;
-        }
-        case MachineCloseAction_PowerOff:
-        {
-            if (previousChoice[0] == m_strExtraDataOptionShutdown && !m_fIsACPIEnabled)
-                strLastAction = m_strExtraDataOptionShutdown;
-            else
-                strLastAction = m_strExtraDataOptionPowerOff;
-            break;
-        }
-        case MachineCloseAction_PowerOff_RestoringSnapshot:
-        {
-            strLastAction = m_strExtraDataOptionPowerOff + "," +
-                            m_strExtraDataOptionDiscard;
-        }
-        default: break;
-    }
-    m_machine.SetExtraData(GUI_LastCloseAction, strLastAction);
+    MachineCloseAction newCloseAction = static_cast<MachineCloseAction>(result());
+    /* But make sure 'Shutdown' is preserved if temporary unavailable: */
+    if (newCloseAction == MachineCloseAction_PowerOff &&
+        m_lastCloseAction == MachineCloseAction_Shutdown && !m_fIsACPIEnabled)
+        newCloseAction = MachineCloseAction_Shutdown;
+    m_machine.SetExtraData(GUI_LastCloseAction, gpConverter->toInternalString(newCloseAction));
 
     /* Hide the dialog: */
     hide();
@@ -343,33 +303,34 @@ void UIVMCloseDialog::configure(const CMachine &machine, const CSession &session
     if (!m_machine.GetCurrentSnapshot().isNull())
         m_strDiscardCheckBoxText = m_machine.GetCurrentSnapshot().GetName();
 
-    /* Read the last user's choice for the given VM: */
-    QStringList lastAction = m_machine.GetExtraData(GUI_LastCloseAction).split(',');
-
     /* Check which radio-button should be initially chosen: */
     QRadioButton *pRadioButtonToChoose = 0;
     /* If choosing 'last choice' is possible: */
-    if (lastAction[0] == m_strExtraDataOptionSave && fIsStateSavingAllowed)
+    m_lastCloseAction = gpConverter->fromInternalString<MachineCloseAction>(m_machine.GetExtraData(GUI_LastCloseAction));
+    if (m_lastCloseAction == MachineCloseAction_Save && fIsStateSavingAllowed)
     {
         pRadioButtonToChoose = m_pSaveRadio;
     }
-    else if (lastAction[0] == m_strExtraDataOptionShutdown && fIsACPIShutdownAllowed && m_fIsACPIEnabled)
+    else if (m_lastCloseAction == MachineCloseAction_Shutdown && fIsACPIShutdownAllowed && m_fIsACPIEnabled)
     {
         pRadioButtonToChoose = m_pShutdownRadio;
     }
-    else if (lastAction[0] == m_strExtraDataOptionPowerOff && fIsPowerOffAllowed)
+    else if (m_lastCloseAction == MachineCloseAction_PowerOff && fIsPowerOffAllowed)
     {
         pRadioButtonToChoose = m_pPowerOffRadio;
-        if (fIsPowerOffAndRestoreAllowed)
-            m_pDiscardCheckBox->setChecked(lastAction.count() > 1 && lastAction[1] == m_strExtraDataOptionDiscard);
+    }
+    else if (m_lastCloseAction == MachineCloseAction_PowerOff_RestoringSnapshot && fIsPowerOffAndRestoreAllowed)
+    {
+        pRadioButtonToChoose = m_pPowerOffRadio;
+        m_pDiscardCheckBox->setChecked(true);
     }
     /* Else 'default choice' will be used: */
     else
     {
-        if (fIsACPIShutdownAllowed && m_fIsACPIEnabled)
-            pRadioButtonToChoose = m_pShutdownRadio;
-        else if (fIsStateSavingAllowed)
+        if (fIsStateSavingAllowed)
             pRadioButtonToChoose = m_pSaveRadio;
+        else if (fIsACPIShutdownAllowed && m_fIsACPIEnabled)
+            pRadioButtonToChoose = m_pShutdownRadio;
         else if (fIsPowerOffAllowed)
             pRadioButtonToChoose = m_pPowerOffRadio;
     }

@@ -267,7 +267,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     if (!strDefaultAction.isEmpty())
     {
         /* Parse the close-action which was defined: */
-        closeAction = UIVMCloseDialog::parseResultCode(strDefaultAction);
+        closeAction = gpConverter->fromInternalString<MachineCloseAction>(strDefaultAction);
         /* If VM is stuck, and the default close-action is not 'power-off',
          * we should ask the user about what to do: */
         if (uisession()->isStuck() &&

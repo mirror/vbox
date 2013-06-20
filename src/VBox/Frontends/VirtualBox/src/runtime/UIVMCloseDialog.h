@@ -47,9 +47,6 @@ public:
     /* API: Validation stuff: */
     bool isValid() const { return m_fValid; }
 
-    /* Static API: Parse string containing result-code: */
-    static MachineCloseAction parseResultCode(const QString &strCloseAction);
-
 private slots:
 
     /* Handler: Update stuff: */
@@ -97,14 +94,11 @@ private:
     QCheckBox *m_pDiscardCheckBox;
 
     /* Variables: */
-    const QString m_strExtraDataOptionSave;
-    const QString m_strExtraDataOptionShutdown;
-    const QString m_strExtraDataOptionPowerOff;
-    const QString m_strExtraDataOptionDiscard;
     bool m_fValid;
     CMachine m_machine;
     bool m_fIsACPIEnabled;
     QString m_strDiscardCheckBoxText;
+    MachineCloseAction m_lastCloseAction;
 };
 
 #endif // __UIVMCloseDialog_h__
