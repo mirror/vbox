@@ -134,11 +134,12 @@ RT_C_DECLS_BEGIN
 # define HM_CHANGED_SVM_RESERVED3                RT_BIT(19)
 # define HM_CHANGED_SVM_RESERVED4                RT_BIT(20)
 
-# define HM_CHANGED_HOST_CONTEXT                 RT_BIT(23)
+# define HM_CHANGED_HOST_CONTEXT                 RT_BIT(21)
 # define HM_CHANGED_ALL_GUEST                   (  HM_CHANGED_GUEST_RIP                \
                                                  | HM_CHANGED_GUEST_RSP                \
                                                  | HM_CHANGED_GUEST_RFLAGS             \
                                                  | HM_CHANGED_GUEST_CR0                \
+                                                 | HM_CHANGED_GUEST_CR2                \
                                                  | HM_CHANGED_GUEST_CR3                \
                                                  | HM_CHANGED_GUEST_CR4                \
                                                  | HM_CHANGED_GUEST_GDTR               \
