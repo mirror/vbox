@@ -260,7 +260,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     }
 
     /* Choose the close action: */
-    MachineCloseAction closeAction = MachineCloseAction_Cancel;
+    MachineCloseAction closeAction = MachineCloseAction_Invalid;
 
     /* If there IS default close-action defined: */
     QString strDefaultAction = machine().GetExtraData(GUI_DefaultCloseAction);
@@ -272,16 +272,16 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
          * we should ask the user about what to do: */
         if (uisession()->isStuck() &&
             closeAction != MachineCloseAction_PowerOff)
-            closeAction = MachineCloseAction_Cancel;
+            closeAction = MachineCloseAction_Invalid;
         /* If the default-action is 'power-off',
          * we should check if its possible to discard machine-state: */
         if (closeAction == MachineCloseAction_PowerOff &&
             machine().GetSnapshotCount() > 0)
-            closeAction = MachineCloseAction_PowerOff_Restoring_Snapshot;
+            closeAction = MachineCloseAction_PowerOff_RestoringSnapshot;
     }
 
     /* If the close-action still undefined: */
-    if (closeAction == MachineCloseAction_Cancel)
+    if (closeAction == MachineCloseAction_Invalid)
     {
         /* Prepare close-dialog: */
         QWidget *pParentDlg = windowManager().realParentWindow(this);
@@ -305,12 +305,12 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 /* If VM was not paused before but paused now,
                  * we should resume it if user canceled dialog or chosen shutdown: */
                 if (!fWasPaused && uisession()->isPaused() &&
-                    (closeAction == MachineCloseAction_Cancel ||
+                    (closeAction == MachineCloseAction_Invalid ||
                      closeAction == MachineCloseAction_Shutdown))
                 {
                     /* If we unable to resume VM, cancel closing: */
                     if (!uisession()->unpause())
-                        closeAction = MachineCloseAction_Cancel;
+                        closeAction = MachineCloseAction_Invalid;
                 }
             }
         }
@@ -340,10 +340,10 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             break;
         }
         case MachineCloseAction_PowerOff:
-        case MachineCloseAction_PowerOff_Restoring_Snapshot:
+        case MachineCloseAction_PowerOff_RestoringSnapshot:
         {
             /* Power VM off: */
-            machineLogic()->powerOff(closeAction == MachineCloseAction_PowerOff_Restoring_Snapshot);
+            machineLogic()->powerOff(closeAction == MachineCloseAction_PowerOff_RestoringSnapshot);
             break;
         }
         default:

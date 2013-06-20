@@ -33,6 +33,7 @@
 template<> bool canConvert<StorageSlot>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
 template<> bool canConvert<IndicatorType>() { return true; }
+template<> bool canConvert<MachineCloseAction>() { return true; }
 
 /* QString <= StorageSlot: */
 template<> QString toString(const StorageSlot &storageSlot)
@@ -416,3 +417,34 @@ template<> IndicatorType fromInternalString<IndicatorType>(const QString &strInd
     return list.value(strIndicatorType);
 }
 
+/* QString <= MachineCloseAction: */
+template<> QString toInternalString(const MachineCloseAction &machineCloseAction)
+{
+    QString strResult;
+    switch (machineCloseAction)
+    {
+        case MachineCloseAction_Save:                       strResult = "Save"; break;
+        case MachineCloseAction_Shutdown:                   strResult = "Shutdown"; break;
+        case MachineCloseAction_PowerOff:                   strResult = "PowerOff"; break;
+        case MachineCloseAction_PowerOff_RestoringSnapshot: strResult = "PowerOffRestoringSnapshot"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for indicator type=%d", machineCloseAction));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* MachineCloseAction <= QString: */
+template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QString &strMachineCloseAction)
+{
+    QHash<QString, MachineCloseAction> list;
+    list.insert("Save",                      MachineCloseAction_Save);
+    list.insert("Shutdown",                  MachineCloseAction_Shutdown);
+    list.insert("PowerOff",                  MachineCloseAction_PowerOff);
+    list.insert("PowerOffRestoringSnapshot", MachineCloseAction_PowerOff_RestoringSnapshot);
+    if (!list.contains(strMachineCloseAction))
+        return MachineCloseAction_Invalid;
+    return list.value(strMachineCloseAction);
+}

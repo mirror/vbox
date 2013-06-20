@@ -57,6 +57,7 @@ template<class X> X fromInternalString(const QString & /* strData */) { Assert(0
 template<> bool canConvert<StorageSlot>();
 template<> bool canConvert<DetailsElementType>();
 template<> bool canConvert<IndicatorType>();
+template<> bool canConvert<MachineCloseAction>();
 
 /* Declare COM canConvert specializations: */
 template<> bool canConvert<KMachineState>();
@@ -89,6 +90,8 @@ template<> QString toInternalString(const DetailsElementType &detailsElementType
 template<> DetailsElementType fromInternalString<DetailsElementType>(const QString &strDetailsElementType);
 template<> QString toInternalString(const IndicatorType &indicatorType);
 template<> IndicatorType fromInternalString<IndicatorType>(const QString &strIndicatorType);
+template<> QString toInternalString(const MachineCloseAction &machineCloseAction);
+template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QString &strMachineCloseAction);
 
 /* Declare COM conversion specializations: */
 template<> QColor toColor(const KMachineState &state);
