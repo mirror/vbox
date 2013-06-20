@@ -37,6 +37,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/log.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 
