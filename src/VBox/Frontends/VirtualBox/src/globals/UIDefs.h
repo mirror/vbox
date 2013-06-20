@@ -257,5 +257,17 @@ enum IndicatorType
 };
 Q_DECLARE_METATYPE(IndicatorType);
 
+/* Machine close action: */
+enum MachineCloseAction
+{
+    MachineCloseAction_Cancel,
+    MachineCloseAction_Save,
+    MachineCloseAction_Shutdown,
+    MachineCloseAction_PowerOff,
+    MachineCloseAction_PowerOff_Restoring_Snapshot,
+    MachineCloseAction_Max
+};
+Q_DECLARE_METATYPE(MachineCloseAction);
+
 #endif // __UIDefs_h__
 
