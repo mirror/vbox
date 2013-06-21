@@ -340,14 +340,48 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
     def writeInstrGregGreg(self, cbEffOp, iOp1, iOp2, oGen):
         """ Writes the instruction with two general registers as operands. """
         if cbEffOp == 8:
-            iOp2 = iOp2 % len(g_asGRegs32);
-            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs64[iOp1], g_asGRegs32[iOp2]));
+            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs64[iOp1], g_asGRegs64[iOp2]));
         elif cbEffOp == 4:
-            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs32[iOp1], g_asGRegs16[iOp2]));
+            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs32[iOp1], g_asGRegs32[iOp2]));
         elif cbEffOp == 2:
-            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs16[iOp1], g_asGRegs8[iOp2]));
+            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs16[iOp1], g_asGRegs16[iOp2]));
         else:
             assert False;
+        return True;
+
+    def writeInstrGregPureRM(self, cbEffOp, iOp1, cAddrBits, iOp2, iMod, offDisp, oGen):
+        """ Writes the instruction with two general registers as operands. """
+        if cbEffOp == 8:
+            oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs64[iOp1],));
+        elif cbEffOp == 4:
+            oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs64[iOp1],));
+        elif cbEffOp == 2:
+            oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs16[iOp1],));
+        else:
+            assert False;
+
+        if iOp2 == 5 and iMod == 0:
+            oGen.write('VBINSTST_NAME(g_u%sData)' % (cbEffOp * 8,))
+            if oGen.oTarget.is64Bit():
+                oGen.write(' wrt rip');
+        else:
+            if iMod == 1:
+                oGen.write('byte %d + ' % (offDisp,));
+            elif iMod == 2:
+                oGen.write('dword %d + ' % (offDisp,));
+            else:
+                assert iMod == 0;
+
+            if cAddrBits == 64:
+                oGen.write(g_asGRegs64[iOp2]);
+            elif cAddrBits == 32:
+                oGen.write(g_asGRegs32[iOp2]);
+            elif cAddrBits == 16:
+                assert False; ## @todo implement 16-bit addressing.
+            else:
+                assert False, str(cAddrBits);
+
+        oGen.write(']\n');
         return True;
 
     def generateOneStdTestGregGreg(self, oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult):
@@ -356,11 +390,57 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[iOp2], uInput,));
         oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2],));
         self.writeInstrGregGreg(cbEffOp, iOp1, iOp2, oGen);
-        oGen.pushConst(uResult, cbMaxOp);
+        oGen.pushConst(uResult);
         oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
+        _ = cbMaxOp;
         return True;
 
-    def generateStandardTests(self, oGen):
+    def generateMemSetupPureRM(self, oGen, cAddrBits, cbEffOp, iOp2, iMod, uInput, offDisp = None):
+        """ Sets up memory for a pure R/M addressed read, iOp2 being the R/M value. """
+        oGen.pushConst(uInput);
+        assert offDisp is None or iMod != 0;
+        if (iOp2 != 5 and iOp2 != 13) or iMod != 0:
+            oGen.write('        call    VBINSTST_NAME(%s)\n'
+                       % (oGen.needGRegMemSetup(cAddrBits, cbEffOp, iOp2, offDisp),));
+        else:
+            ## @todo generate REX.B=1 variant.
+            oGen.write('        call    VBINSTST_NAME(Common_SetupMemReadU%u)\n' % (cbEffOp/2,));
+        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2],));
+        return True;
+
+
+    def generateOneStdTestGregMemNoSib(self, oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult):
+        """ Generate mode 0, 1 and 2 test for the R/M=iOp2. """
+        if cAddrBits == 16:
+            _ = cbMaxOp;
+        else:
+            iMod = 0; # No disp, except for i=5.
+            oGen.write('        call    VBINSTST_NAME(Common_LoadKnownValues)\n');
+            self.generateMemSetupPureRM(oGen, cAddrBits, cbEffOp, iOp2, iMod, uInput);
+            self.writeInstrGregPureRM(cbEffOp, iOp1, cAddrBits, iOp2, iMod, None, oGen);
+            oGen.pushConst(uResult);
+            oGen.write('        call    VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
+
+            iMod = 2;
+            for offDisp in (127, -128):
+                oGen.write('        call    VBINSTST_NAME(Common_LoadKnownValues)\n');
+                self.generateMemSetupPureRM(oGen, cAddrBits, cbEffOp, iOp2, iMod, uInput, offDisp);
+                self.writeInstrGregPureRM(cbEffOp, iOp1, cAddrBits, iOp2, iMod, offDisp, oGen);
+                oGen.pushConst(uResult);
+                oGen.write('        call    VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
+
+            iMod = 2;
+            for offDisp in (2147483647, -2147483648):
+                oGen.write('        call    VBINSTST_NAME(Common_LoadKnownValues)\n');
+                self.generateMemSetupPureRM(oGen, cAddrBits, cbEffOp, iOp2, iMod, uInput, offDisp);
+                self.writeInstrGregPureRM(cbEffOp, iOp1, cAddrBits, iOp2, iMod, offDisp, oGen);
+                oGen.pushConst(uResult);
+                oGen.write('        call    VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
+
+        return True;
+
+
+    def generateStandardTests(self, oGen): # pylint: disable=R0914
         """ Generate standard tests. """
 
         # Parameters.
@@ -377,34 +457,45 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
             oOp1MemRange = [iLongOp1,];
 
         # Register tests
+        if False:
+            for cbEffOp in self.acbOpVars:
+                if cbEffOp > cbMaxOp:
+                    continue;
+                for iOp1 in range(oGen.oTarget.getGRegCount()):
+                    if oGen.oTarget.asGRegsNoSp[iOp1] is None:
+                        continue;
+                    for iOp2 in oOp2Range:
+                        if oGen.oTarget.asGRegsNoSp[iOp2] is None:
+                            continue;
+                        for uInput in (auLongInputs if iOp1 == iLongOp1 and iOp2 == iLongOp2 else auShortInputs):
+                            uResult = self.fnCalcResult(cbEffOp, uInput,
+                                                        oGen.auRegValues[iOp1] if iOp1 != iOp2 else uInput, oGen);
+                            oGen.newSubTest();
+                            self.generateOneStdTestGregGreg(oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult);
+
+        # Memory test.
         for cbEffOp in self.acbOpVars:
             if cbEffOp > cbMaxOp:
                 continue;
-            for iOp1 in range(oGen.oTarget.getGRegCount()):
+            for iOp1 in oOp1MemRange:
                 if oGen.oTarget.asGRegsNoSp[iOp1] is None:
                     continue;
-                for iOp2 in oOp2Range:
-                    if oGen.oTarget.asGRegsNoSp[iOp2] is None:
-                        continue;
-                    for uInput in (auLongInputs if iOp1 == iLongOp1 and iOp2 == iLongOp2 else auShortInputs):
-                        uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1] if iOp1 != iOp2 else uInput, oGen);
-                        oGen.newSubTest();
-                        self.generateOneStdTestGregGreg(oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult);
+                for cAddrBits in oGen.oTarget.getAddrModes():
+                    for iOp2 in range(len(oGen.oTarget.asGRegs)):
+                        if iOp2 != 4:
 
-        ## Memory test.
-        #for cbEffOp in self.acbOpVars:
-        #    if cbEffOp > cbMaxOp:
-        #        continue;
-        #    for iOp1 in oOp1MemRange:
-        #        if oGen.oTarget.asGRegsNoSp[iOp1] is None:
-        #            continue;
-        #        for cbAddrMode in oGen.oTarget.getAddrModes():
-        #
-        #            for uInput in (auLongInputs if iOp1 == iLongOp1 and False else auShortInputs):
-        #                uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1] if iOp1 != iOp2 else uInput, oGen);
-        #                oGen.newSubTest();
-        #                self.generateOneStdTestGregGreg(oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult);
-        #
+                            for uInput in (auLongInputs if iOp1 == iLongOp1 and False else auShortInputs):
+                                oGen.newSubTest();
+                                if iOp1 == iOp2 and iOp2 != 5 and iOp2 != 13 and cbEffOp != cbMaxOp:
+                                    continue; # Don't know the high bit of the address ending up the result - skip it.
+                                uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1], oGen);
+                                self.generateOneStdTestGregMemNoSib(oGen, cAddrBits, cbEffOp, cbMaxOp,
+                                                                    iOp1, iOp2, uInput, uResult);
+                        else:
+                            pass; # SIB
+                    break; ## remove me!
+                break; ## remove me!
+            break; ## remove me!
 
         return True;
 
@@ -503,6 +594,7 @@ class InstructionTestGen(object):
         self.iFile          = -1;
         self.sFile          = '';
         self.dCheckFns      = dict();
+        self.dMemSetupFns   = dict();
         self.d64BitConsts   = dict();
 
 
@@ -547,6 +639,19 @@ class InstructionTestGen(object):
             self.dCheckFns[iRegs]  = 1;
         return 'Common_Check_%s_%s' % (self.oTarget.asGRegs[iReg1], self.oTarget.asGRegs[iReg2]);
 
+    def needGRegMemSetup(self, cAddrBits, cbEffOp, iReg1, offDisp = None):
+        """
+        Records the need for a given register checker function, returning its label.
+        """
+        sName = '%ubit_U%u_%s' % (cAddrBits, cbEffOp * 8, self.oTarget.asGRegs[iReg1]);
+        if offDisp is not None:
+            sName += '_0x%016x' % (offDisp & UINT64_MAX, );
+        if sName in self.dCheckFns:
+            self.dMemSetupFns[sName] += 1;
+        else:
+            self.dMemSetupFns[sName]  = 1;
+        return 'Common_MemSetup_' + sName;
+
     def need64BitConstant(self, uVal):
         """
         Records the need for a 64-bit constant, returning its label.
@@ -559,11 +664,11 @@ class InstructionTestGen(object):
             self.d64BitConsts[uVal]  = 1;
         return 'g_u64Const_0x%016x' % (uVal, );
 
-    def pushConst(self, uResult, cbMaxOp):
+    def pushConst(self, uResult):
         """
         Emits a push constant value, taking care of high values on 64-bit hosts.
         """
-        if cbMaxOp == 8 and uResult >= 0x80000000:
+        if self.oTarget.is64Bit() and uResult >= 0x80000000:
             self.write('        push    qword [%s wrt rip]\n' % (self.need64BitConstant(uResult),));
         else:
             self.write('        push    dword 0x%x\n' % (uResult,));
@@ -609,7 +714,11 @@ class InstructionTestGen(object):
                    '; Globals\n'
                    ';\n');
         self.write('VBINSTST_BEGINDATA\n'
-                   'VBINSTST_GLOBALNAME_EX g_pvLowMem4K, data hidden\n'
+                   'VBINSTST_GLOBALNAME_EX g_pvLow16Mem4K, data hidden\n'
+                   '        dq      0\n'
+                   'VBINSTST_GLOBALNAME_EX g_pvLow32Mem4K, data hidden\n'
+                   '        dq      0\n'
+                   'VBINSTST_GLOBALNAME_EX g_pvMem4K, data hidden\n'
                    '        dq      0\n'
                    'VBINSTST_GLOBALNAME_EX g_uVBInsTstSubTestIndicator, data hidden\n'
                    '        dd      0\n'

@@ -94,6 +94,12 @@
 %endif
 
 
+
+;*******************************************************************************
+;*  Internal Functions                                                         *
+;*******************************************************************************
+
+
 ;;
 ; Report bad register value.
 ;
@@ -147,6 +153,76 @@ VBINSTST_BEGINPROC Common_BadValue
 .szFmt: db 'Bad register %lx value %#010lx, expected %#010lx (line %lu)', 0
 %endif
 VBINSTST_ENDPROC   Common_BadValue
+
+
+
+;
+; Global data variables used by Common_SetupMemReadUxx.
+;
+BEGINDATA
+VBINSTST_GLOBALNAME_EX g_u64Data, data hidden
+        dq      0
+VBINSTST_GLOBALNAME_EX g_u32Data, data hidden
+        dd      0
+VBINSTST_GLOBALNAME_EX g_u16Data, data hidden
+        dw      0
+VBINSTST_GLOBALNAME_EX g_u8Data, data hidden
+        db      0
+        db      90h
+
+BEGINCODE
+
+;;
+; Sets up g_u8Data.
+; @param    uValue
+VBINSTST_BEGINPROC Common_SetupMemReadU8
+        push    sAX
+        mov     ax, [xSP + sCB + xCB]
+        mov     [VBINSTST_NAME(g_u8Data) xWrtRip], ax
+        pop     sAX
+        ret sCB
+VBINSTST_ENDPROC   Common_SetupMemReadU8
+
+;;
+; Sets up g_u16Data.
+; @param    uValue
+VBINSTST_BEGINPROC Common_SetupMemReadU16
+        push    sAX
+        mov     ax, [xSP + sCB + xCB]
+        mov     [VBINSTST_NAME(g_u16Data) xWrtRip], ax
+        pop     sAX
+        ret sCB
+VBINSTST_ENDPROC   Common_SetupMemReadU16
+
+;;
+; Sets up g_u32Data.
+; @param    uValue
+VBINSTST_BEGINPROC Common_SetupMemReadU32
+        push    sAX
+        mov     eax, [xSP + sCB + xCB]
+        mov     [VBINSTST_NAME(g_u32Data) xWrtRip], eax
+        pop     sAX
+        ret sCB
+VBINSTST_ENDPROC   Common_SetupMemReadU32
+
+;;
+; Sets up g_u64Data.
+; @param    uValue
+VBINSTST_BEGINPROC Common_SetupMemReadU64
+        push    sAX
+%ifdef RT_ARCH_AMD64
+        mov     rax, [xSP + sCB + xCB]
+        mov     [VBINSTST_NAME(g_u64Data) xWrtRip], rax
+%else
+        mov     eax, [xSP + sCB + xCB]
+        mov     [VBINSTST_NAME(g_u64Data) xWrtRip], eax
+        mov     eax, [xSP + sCB + xCB + 4]
+        mov     [VBINSTST_NAME(g_u64Data) + 4 xWrtRip], eax
+%endif
+        pop     sAX
+        ret sCB
+VBINSTST_ENDPROC   Common_SetupMemReadU64
+
 
 %endif
 
