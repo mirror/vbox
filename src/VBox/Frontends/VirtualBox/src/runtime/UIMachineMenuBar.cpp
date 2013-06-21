@@ -32,6 +32,7 @@
 #include "UIExtraDataEventHandler.h"
 #include "UIImageTools.h"
 #include "UINetworkManager.h"
+#include "VBoxGlobal.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -97,10 +98,11 @@ private:
     bool m_fShowBetaLabel;
 };
 
-UIMachineMenuBar::UIMachineMenuBar()
+UIMachineMenuBar::UIMachineMenuBar(const CMachine &machine)
     /* On the Mac we add some items only the first time, cause otherwise they
      * will be merged more than once to the application menu by Qt. */
     : m_fIsFirstTime(true)
+    , m_machine(machine)
 {
 }
 
@@ -194,7 +196,10 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu)
 
     /* Machine submenu: */
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SettingsDialog));
-    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TakeSnapshot));
+    if (vboxGlobal().shouldWeAllowSnapshotOperations(m_machine))
+        pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TakeSnapshot));
+    else
+        gActionPool->action(UIActionIndexRuntime_Simple_TakeSnapshot)->setEnabled(false);
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TakeScreenshot));
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_InformationDialog));
     pMenu->addSeparator();
