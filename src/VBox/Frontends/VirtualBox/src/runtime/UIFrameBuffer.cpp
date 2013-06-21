@@ -236,17 +236,13 @@ STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULON
     if (   (screen.width() != 0)
         && (uWidth > (ULONG)screen.width())
         && (uWidth > (ULONG)width()))
-    {
-        LogRel(("Host rejected width: %u.\n", uWidth));
         *pbSupported = FALSE;
-    }
+
     if (   (screen.height() != 0)
         && (uHeight > (ULONG)screen.height())
         && (uHeight > (ULONG)height()))
-    {
-        LogRel(("Host rejected height: %u.\n", uHeight));
         *pbSupported = FALSE;
-    }
+
     LogFlowThisFunc(("screenW=%lu, screenH=%lu -> aSupported=%s\n",
                     screen.width(), screen.height(), *pbSupported ? "TRUE" : "FALSE"));
 
