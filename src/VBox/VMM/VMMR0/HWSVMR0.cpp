@@ -2810,7 +2810,7 @@ end:
         /* On the next entry we'll sync everything. */
         /** @todo we can do better than this */
         /* Not in the VINF_PGM_CHANGE_MODE though! */
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL;
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
     }
 
     /* Translate into a less severe return code */

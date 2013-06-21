@@ -1377,7 +1377,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
 
     /* On first entry we'll sync everything. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        pVM->aCpus[i].hm.s.fContextUseFlags = HM_CHANGED_ALL;
+        pVM->aCpus[i].hm.s.fContextUseFlags = (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
 
     /* Enable VT-x or AMD-V if local init is required. */
     int rc;

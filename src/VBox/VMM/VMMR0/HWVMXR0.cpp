@@ -4049,7 +4049,7 @@ ResumeExecution:
                          * LIDT, LGDT can end up here. In the future CRx changes as well. Just reload the
                          * whole context to be done with it.
                          */
-                        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL;
+                        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
 
                         /* Only resume if successful. */
                         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
@@ -5023,7 +5023,7 @@ end:
         /* On the next entry we'll sync everything. */
         /** @todo we can do better than this */
         /* Not in the VINF_PGM_CHANGE_MODE though! */
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL;
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
     }
 
     /* Translate into a less severe return code */
