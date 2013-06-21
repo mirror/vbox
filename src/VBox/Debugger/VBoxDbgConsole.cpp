@@ -82,6 +82,18 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
     Pal.setColor(QPalette::All, QPalette::Base, QColor(Qt::black));
     setPalette(Pal);
     setTextColor(QColor(qRgb(0, 0xe0, 0)));
+
+#ifdef DEBUG_ramshankar
+    /* Solaris host (esp. S10) has illegible Courier font (bad aliasing). */
+    Font.setFamily("Monospace [Monotype]");
+    setFont(Font);
+
+    /* White on black while I'm at it. */
+    Pal.setColor(QPalette::All, QPalette::Base, QColor(Qt::white));
+    setPalette(Pal);
+    setTextColor(QColor(qRgb(0, 0, 0)));
+#endif
+
     NOREF(pszName);
 }
 
@@ -101,9 +113,9 @@ VBoxDbgConsoleOutput::appendText(const QString &rStr, bool fClearSelection)
         return;
 
     /*
-     * Insert all in one go and make sure it's visible. 
-     *  
-     * We need to move the cursor and unselect any selected text before 
+     * Insert all in one go and make sure it's visible.
+     *
+     * We need to move the cursor and unselect any selected text before
      * inserting anything, otherwise, text will disappear.
      */
     QTextCursor Cursor = textCursor();
