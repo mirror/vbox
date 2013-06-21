@@ -50,6 +50,14 @@
 #include <list>
 #include <map>
 
+/**
+ * Maximum depth of the snapshot tree, to prevent stack overflows.
+ * XPCOM has a relatively low stack size for its workers, and we have
+ * to avoid crashes due to exceeding the limit both on reading and
+ * writing config files.
+ */
+#define SETTINGS_SNAPSHOT_DEPTH_MAX 250
+
 namespace xml
 {
     class ElementNode;
@@ -1195,7 +1203,7 @@ private:
     void readDebugging(const xml::ElementNode *pElmDbg, Debugging *pDbg);
     void readAutostart(const xml::ElementNode *pElmAutostart, Autostart *pAutostart);
     void readGroups(const xml::ElementNode *elmGroups, StringsList *pllGroups);
-    void readSnapshot(const xml::ElementNode &elmSnapshot, Snapshot &snap);
+    void readSnapshot(uint32_t depth, const xml::ElementNode &elmSnapshot, Snapshot &snap);
     void convertOldOSType_pre1_5(com::Utf8Str &str);
     void readMachine(const xml::ElementNode &elmMachine);
 
@@ -1208,7 +1216,7 @@ private:
     void buildDebuggingXML(xml::ElementNode *pElmParent, const Debugging *pDbg);
     void buildAutostartXML(xml::ElementNode *pElmParent, const Autostart *pAutostart);
     void buildGroupsXML(xml::ElementNode *pElmParent, const StringsList *pllGroups);
-    void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
+    void buildSnapshotXML(uint32_t depth, xml::ElementNode &elmParent, const Snapshot &snap);
 
     void bumpSettingsVersionIfNeeded();
 };
