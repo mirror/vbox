@@ -3340,6 +3340,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* SS */
         Assert((pCtx->ss.Sel & X86_SEL_RPL) == (pCtx->cs.Sel & X86_SEL_RPL));
         Assert(pCtx->ss.Attr.n.u2Dpl == (pCtx->ss.Sel & X86_SEL_RPL));
+        Assert(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR0));
         if (   !(pCtx->cr0 & X86_CR0_PE)
             || pCtx->cs.Attr.n.u4Type == 3)
         {
@@ -6702,7 +6703,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     /* Must be done after hmR0VmxLoadGuestDebugRegs() as it may update eflags.TF for debugging purposes. */
     rc = hmR0VmxLoadGuestRipRspRflags(pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestGprs! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestRipRspRflags! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
     rc = hmR0VmxSetupVMRunHandler(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
