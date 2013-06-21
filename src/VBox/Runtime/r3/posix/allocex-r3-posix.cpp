@@ -95,10 +95,23 @@ static void *rtMemAllocExAllocLow(size_t cbAlloc, uint32_t fFlags)
     }
     else
     {
+#if ARCH_BITS == 32
+        pv = mmap(NULL, cbAlloc, fProt, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+#elif defined(RT_OS_LINUX)
+# ifdef MAP_32BIT
+        pv = mmap(NULL, cbAlloc, fProt, MAP_PRIVATE | MAP_ANONYMOUS | MAP_32BIT, -1, 0);
+        if (pv)
+            return pv;
+# endif
+
         /** @todo On linux, we need an accurate hint. Since I don't need this branch of
          *        the code right now, I won't bother starting to parse
          *        /proc/curproc/mmap right now... */
         pv = NULL;
+#else
+        pv = NULL;
+#endif
     }
     return pv;
 }
