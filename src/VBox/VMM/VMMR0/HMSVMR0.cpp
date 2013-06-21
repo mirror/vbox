@@ -629,7 +629,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
         /* Set up unconditional intercepts and conditions. */
         pVmcb->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR          /* External interrupt causes a VM-exit. */
-                                        | SVM_CTRL1_INTERCEPT_VINTR         /* When guest enables interrupts cause a VM-exit. */
+                                        | SVM_CTRL1_INTERCEPT_VINTR         /* Interrupt-window VM-exit. */
                                         | SVM_CTRL1_INTERCEPT_NMI           /* Non-Maskable Interrupts causes a VM-exit. */
                                         | SVM_CTRL1_INTERCEPT_SMI           /* System Management Interrupt cause a VM-exit. */
                                         | SVM_CTRL1_INTERCEPT_INIT          /* INIT signal causes a VM-exit. */
@@ -3332,6 +3332,8 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
         {
             case SVMREFLECTXCPT_XCPT:
             {
+                Assert(pVmcb->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT);
+
                 pVCpu->hm.s.Event.u64IntrInfo = pVmcb->ctrl.ExitIntInfo.u;
                 pVCpu->hm.s.Event.fPending = true;
 
