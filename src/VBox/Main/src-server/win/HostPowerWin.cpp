@@ -31,7 +31,7 @@ extern "C" {
 
 static WCHAR gachWindowClassName[] = L"VBoxPowerNotifyClass";
 
-HostPowerServiceWin::HostPowerServiceWin(VirtualBox *aVirtualBox) : HostPowerService(aVirtualBox)
+HostPowerServiceWin::HostPowerServiceWin(VirtualBox *aVirtualBox) : HostPowerService(aVirtualBox), mThread(NIL_RTTHREAD)
 {
     mHwnd = 0;
 
@@ -55,6 +55,8 @@ HostPowerServiceWin::~HostPowerServiceWin()
         SetWindowLongPtr(mHwnd, 0, 0);
         /* Send the quit message and wait for it be processed. */
         SendMessage(mHwnd, WM_QUIT, 0, 0);
+        RTThreadWait(mThread, 5000, NULL);
+        mThread = NIL_RTTHREAD;
     }
 }
 
