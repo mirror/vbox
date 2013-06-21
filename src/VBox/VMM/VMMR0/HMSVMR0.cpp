@@ -1591,9 +1591,16 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
     /* Clear any unused and reserved bits. */
-    pVCpu->hm.s.fContextUseFlags &= ~(  HM_CHANGED_GUEST_SYSENTER_CS_MSR
+    pVCpu->hm.s.fContextUseFlags &= ~(  HM_CHANGED_GUEST_MSR                /* Unused (legacy). */
+                                      | HM_CHANGED_GUEST_RIP                /* Unused (loaded unconditionally). */
+                                      | HM_CHANGED_GUEST_RSP
+                                      | HM_CHANGED_GUEST_RFLAGS
+                                      | HM_CHANGED_GUEST_SYSENTER_CS_MSR
                                       | HM_CHANGED_GUEST_SYSENTER_EIP_MSR
-                                      | HM_CHANGED_GUEST_SYSENTER_ESP_MSR);
+                                      | HM_CHANGED_GUEST_SYSENTER_ESP_MSR
+                                      | HM_CHANGED_SVM_RESERVED1            /* Reserved. */
+                                      | HM_CHANGED_SVM_RESERVED2
+                                      | HM_CHANGED_SVM_RESERVED3);
 
     AssertMsg(!pVCpu->hm.s.fContextUseFlags,
              ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p fContextUseFlags=%#RX32\n",
