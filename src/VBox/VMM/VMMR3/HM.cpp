@@ -2611,6 +2611,7 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
             if (    !CPUMIsGuestInLongModeEx(pCtx)
                 &&  !pVM->hm.s.vmx.fUnrestrictedGuest)
             {
+#ifdef VBOX_WITH_OLD_VTX_CODE
                 /** @todo   This should (probably) be set on every excursion to the REM,
                  *          however it's too risky right now. So, only apply it when we go
                  *          back to REM for real mode execution. (The XP hack below doesn't
@@ -2618,6 +2619,7 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                  *  Update: Implemented in EM.cpp, see #ifdef EM_NOTIFY_HM.  */
                 for (uint32_t i = 0; i < pVM->cCpus; i++)
                     pVM->aCpus[i].hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
+#endif
 
                 if (    !pVM->hm.s.fNestedPaging        /* requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap */
                     ||  CPUMIsGuestInRealModeEx(pCtx))  /* requires a fake TSS for real mode - stored in the VMM device heap */
