@@ -100,6 +100,8 @@ public:
 
     const Utf8Str& getStateFilePath() const;
 
+    uint32_t getDepth();
+
     ULONG getChildrenCount();
     ULONG getAllChildrenCount();
     ULONG getAllChildrenCountImpl();

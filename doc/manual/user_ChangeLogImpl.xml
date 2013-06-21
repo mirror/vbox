@@ -29,6 +29,11 @@
       </listitem>
 
       <listitem>
+        <para>Settings: limit depth of snapshot tree to 250 levels, as more
+          will lead to decreased performance and may trigger crashes</para>
+      </listitem>
+
+      <listitem>
         <para>Main: use the XDG standard configuration folder instead of
            .VirtualBox on systems where it is appropriate (bug #5099)</para>
       </listitem>

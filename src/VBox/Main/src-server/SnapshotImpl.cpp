@@ -495,6 +495,31 @@ const Utf8Str& Snapshot::getStateFilePath() const
 }
 
 /**
+ * Returns the depth in the snapshot tree for this snapshot.
+ *
+ * @note takes the snapshot tree lock
+ */
+
+uint32_t Snapshot::getDepth()
+{
+    AutoCaller autoCaller(this);
+    AssertComRC(autoCaller.rc());
+
+    // snapshots tree is protected by machine lock
+    AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+
+    uint32_t cDepth = 0;
+    ComObjPtr<Snapshot> pSnap(this);
+    while (!pSnap.isNull())
+    {
+        pSnap = pSnap->m->pParent;
+        cDepth++;
+    }
+
+    return cDepth;
+}
+
+/**
  * Returns the number of direct child snapshots, without grandchildren.
  * Does not recurse.
  * @return
@@ -790,11 +815,19 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
              it != m->llChildren.end();
              ++it)
         {
-            settings::Snapshot snap;
-            rc = (*it)->saveSnapshotImpl(snap, aAttrsOnly);
-            if (FAILED(rc)) return rc;
+           // Use the heap to reduce the stack footprint. Each recursion needs
+           // over 1K, and there can be VMs with deeply nested snapshots. The
+           // stack can be quite small, especially with XPCOM.
 
-            data.llChildSnapshots.push_back(snap);
+            settings::Snapshot *snap = new settings::Snapshot();
+            rc = (*it)->saveSnapshotImpl(*snap, aAttrsOnly);
+            if (FAILED(rc))
+            {
+                delete snap;
+                return rc;
+            }
+            data.llChildSnapshots.push_back(*snap);
+            delete snap;
         }
     }
 
@@ -1419,6 +1452,14 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
                   || mData->mMachineState == MachineState_Paused, E_FAIL);
     AssertReturn(mConsoleTaskData.mLastState == MachineState_Null, E_FAIL);
     AssertReturn(mConsoleTaskData.mSnapshot.isNull(), E_FAIL);
+
+    if (   mData->mCurrentSnapshot
+        && mData->mCurrentSnapshot->getDepth() >= SETTINGS_SNAPSHOT_DEPTH_MAX)
+    {
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Cannot take another snapshot for machine '%s', because it exceeds the maximum snapshot depth limit. Please delete some earlier snapshot which you no longer need"),
+                        mUserData->s.strName.c_str());
+    }
 
     if (    !fTakingSnapshotOnline
          && mData->mMachineState != MachineState_Saved
@@ -2107,7 +2148,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     size_t childrenCount = pSnapshot->getChildrenCount();
     if (childrenCount > 1)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Snapshot '%s' of the machine '%s' cannot be deleted. because it has %d child snapshots, which is more than the one snapshot allowed for deletion"),
+                        tr("Snapshot '%s' of the machine '%s' cannot be deleted, because it has %d child snapshots, which is more than the one snapshot allowed for deletion"),
                         pSnapshot->getName().c_str(),
                         mUserData->s.strName.c_str(),
                         childrenCount);

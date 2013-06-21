@@ -3425,6 +3425,9 @@ void Medium::markRegistriesModified()
         llRegistryIDs = m->llRegistryIDs;
     }
 
+    /* Save the error information now, the implicit restore when this goes
+     * out of scope will throw away spurious additional errors created below. */
+    ErrorInfoKeeper eik;
     for (GuidList::const_iterator it = llRegistryIDs.begin();
          it != llRegistryIDs.end();
          ++it)

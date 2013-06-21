@@ -3478,12 +3478,17 @@ void MachineConfigFile::readGroups(const xml::ElementNode *pElmGroups, StringsLi
  * contain a list of child snapshots; such lists are maintained in the
  * Snapshot structure.
  *
+ * @param depth
  * @param elmSnapshot
  * @param snap
  */
-void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
+void MachineConfigFile::readSnapshot(uint32_t depth,
+                                     const xml::ElementNode &elmSnapshot,
                                      Snapshot &snap)
 {
+    if (depth > SETTINGS_SNAPSHOT_DEPTH_MAX)
+        throw ConfigFileError(this, &elmSnapshot, N_("Maximum snapshot tree depth of %u exceeded"), depth);
+
     Utf8Str strTemp;
 
     if (!elmSnapshot.getAttributeValue("uuid", strTemp))
@@ -3530,9 +3535,14 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
             {
                 if (pelmChildSnapshot->nameEquals("Snapshot"))
                 {
-                    Snapshot child;
-                    readSnapshot(*pelmChildSnapshot, child);
-                    snap.llChildSnapshots.push_back(child);
+                    // Use the heap to reduce the stack footprint. Each
+                    // recursion needs over 1K, and there can be VMs with
+                    // deeply nested snapshots. The stack can be quite
+                    // small, especially with XPCOM.
+                    Snapshot *child = new Snapshot();
+                    readSnapshot(depth + 1, *pelmChildSnapshot, *child);
+                    snap.llChildSnapshots.push_back(*child);
+                    delete child;
                 }
             }
         }
@@ -3669,7 +3679,7 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             {
                 Snapshot snap;
                 // this will recurse into child snapshots, if necessary
-                readSnapshot(*pelmMachineChild, snap);
+                readSnapshot(1, *pelmMachineChild, snap);
                 llFirstSnapshot.push_back(snap);
             }
             else if (pelmMachineChild->nameEquals("Description"))
@@ -4550,7 +4560,7 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
         if (    (m->sv < SettingsVersion_v1_9)
              && (sc.controllerType == StorageControllerType_I82078)
            )
-            // floppy controller already got written into <Hardware>/<FloppyController> in writeHardware()
+            // floppy controller already got written into <Hardware>/<FloppyController> in buildHardwareXML()
             // for pre-1.9 settings
             continue;
 
@@ -4750,12 +4760,18 @@ void MachineConfigFile::buildGroupsXML(xml::ElementNode *pElmParent, const Strin
  * Writes a single snapshot into the DOM tree. Initially this gets called from MachineConfigFile::write()
  * for the root snapshot of a machine, if present; elmParent then points to the <Snapshots> node under the
  * <Machine> node to which <Snapshot> must be added. This may then recurse for child snapshots.
+ *
+ * @param depth
  * @param elmParent
  * @param snap
  */
-void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
+void MachineConfigFile::buildSnapshotXML(uint32_t depth,
+                                         xml::ElementNode &elmParent,
                                          const Snapshot &snap)
 {
+    if (depth > SETTINGS_SNAPSHOT_DEPTH_MAX)
+        throw ConfigFileError(this, NULL, N_("Maximum snapshot tree depth of %u exceeded"), SETTINGS_SNAPSHOT_DEPTH_MAX);
+
     xml::ElementNode *pelmSnapshot = elmParent.createChild("Snapshot");
 
     pelmSnapshot->setAttribute("uuid", snap.uuid.toStringCurly());
@@ -4787,7 +4803,7 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
              ++it)
         {
             const Snapshot &child = *it;
-            buildSnapshotXML(*pelmChildren, child);
+            buildSnapshotXML(depth + 1, *pelmChildren, child);
         }
     }
 }
@@ -4924,7 +4940,7 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
 
     if (    (fl & BuildMachineXML_IncludeSnapshots)
          && llFirstSnapshot.size())
-        buildSnapshotXML(elmMachine, llFirstSnapshot.front());
+        buildSnapshotXML(1, elmMachine, llFirstSnapshot.front());
 
     buildHardwareXML(elmMachine, hardwareMachine, storageMachine);
     buildStorageControllersXML(elmMachine,
