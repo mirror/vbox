@@ -49,7 +49,8 @@ RTTEST g_hTest;
 
 
 RT_C_DECLS_BEGIN
-extern void *g_pvLowMem4K;
+extern void *g_pvLow16Mem4K;
+extern void *g_pvLow32Mem4K;
 DECLASM(void)    TestInstrMain(void);
 
 DECLEXPORT(void) VBInsTstFailure(const char *pszMessage);
@@ -98,11 +99,18 @@ int main()
         return rcExit;
     RTTestBanner(g_hTest);
 
-    int rc = RTMemAllocEx(_4K, 0, RTMEMALLOCEX_FLAGS_16BIT_REACH, &g_pvLowMem4K);
+    int rc = RTMemAllocEx(_4K, 0, RTMEMALLOCEX_FLAGS_16BIT_REACH, &g_pvLow16Mem4K);
     if (RT_FAILURE(rc))
     {
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Could not allocate low memory (%Rrc)\n", rc);
-        g_pvLowMem4K = NULL;
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Could not allocate low 16-bit memory (%Rrc)\n", rc);
+        g_pvLow16Mem4K = NULL;
+    }
+
+    rc = RTMemAllocEx(_4K, 0, RTMEMALLOCEX_FLAGS_32BIT_REACH, &g_pvLow32Mem4K);
+    if (RT_FAILURE(rc))
+    {
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Could not allocate low 32-bit memory (%Rrc)\n", rc);
+        g_pvLow32Mem4K = NULL;
     }
 
     TestInstrMain();
