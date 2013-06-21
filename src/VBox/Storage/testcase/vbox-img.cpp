@@ -68,7 +68,9 @@ static void printUsage(PRTSTREAM pStrm)
                  "\n"
                  "   repair       --filename <filename>\n"
                  "                [--dry-run]\n"
-                 "                [--format VDI|VMDK|VHD] (default: autodetect)\n",
+                 "                [--format VDI|VMDK|VHD] (default: autodetect)\n"
+                 "\n"
+                 "   clearcomment --filename <filename>\n",
                  g_pszProgName);
 }
 
@@ -1503,6 +1505,64 @@ int handleRepair(HandlerArg *a)
 }
 
 
+int handleClearComment(HandlerArg *a)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXHDD pDisk = NULL;
+    const char *pszFilename = NULL;
+    bool fDryRun = false;
+
+    /* Parse the command line. */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--filename", 'f', RTGETOPT_REQ_STRING  }
+    };
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /* fFlags */);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'f':   // --filename
+                pszFilename = ValueUnion.psz;
+                break;
+
+            default:
+                ch = RTGetOptPrintError(ch, &ValueUnion);
+                printUsage(g_pStdErr);
+                return ch;
+        }
+    }
+
+    /* Check for mandatory parameters. */
+    if (!pszFilename)
+        return errorSyntax("Mandatory --filename option missing\n");
+
+    /* just try it */
+    char *pszFormat = NULL;
+    VDTYPE enmType = VDTYPE_INVALID;
+    rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
+    if (RT_FAILURE(rc))
+        return errorSyntax("Format autodetect failed: %Rrc\n", rc);
+
+    rc = VDCreate(pVDIfs, enmType, &pDisk);
+    if (RT_FAILURE(rc))
+        return errorRuntime("Error while creating the virtual disk container: %Rrc\n", rc);
+
+    /* Open the image */
+    rc = VDOpen(pDisk, pszFormat, pszFilename, VD_OPEN_FLAGS_INFO, NULL);
+    if (RT_FAILURE(rc))
+        return errorRuntime("Error while opening the image: %Rrc\n", rc);
+
+    VDSetComment(pDisk, 0, NULL);
+
+    VDDestroy(pDisk);
+    return rc;
+}
+
+
 int main(int argc, char *argv[])
 {
     int exitcode = 0;
@@ -1585,13 +1645,14 @@ int main(int argc, char *argv[])
         int (*handler)(HandlerArg *a);
     } s_commandHandlers[] =
     {
-        { "setuuid",     handleSetUUID     },
-        { "convert",     handleConvert     },
-        { "info",        handleInfo        },
-        { "compact",     handleCompact     },
-        { "createcache", handleCreateCache },
-        { "createbase",  handleCreateBase  },
-        { "repair",      handleRepair      },
+        { "setuuid",      handleSetUUID      },
+        { "convert",      handleConvert      },
+        { "info",         handleInfo         },
+        { "compact",      handleCompact      },
+        { "createcache",  handleCreateCache  },
+        { "createbase",   handleCreateBase   },
+        { "repair",       handleRepair       },
+        { "clearcomment", handleClearComment },
         { NULL,                       NULL }
     };
 
