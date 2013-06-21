@@ -25,6 +25,10 @@
 /* Global includes */
 #include <QList>
 
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
+
 /* Global forwards */
 class QMenu;
 class QMenuBar;
@@ -32,7 +36,8 @@ class QMenuBar;
 class UIMachineMenuBar
 {
 public:
-    UIMachineMenuBar();
+
+    UIMachineMenuBar(const CMachine &machine);
 
     QMenu* createMenu(UIMainMenuType fOptions = UIMainMenuType_All);
     QMenuBar* createMenuBar(UIMainMenuType fOptions = UIMainMenuType_All);
@@ -49,6 +54,7 @@ protected:
     void prepareMenuHelp(QMenu *pMenu);
 
     bool m_fIsFirstTime;
+    CMachine m_machine;
 };
 
 #endif /* __UIMachineMenuBar_h__ */

@@ -108,6 +108,8 @@ private:
     QAction         *mCloneSnapshotAction;
 
     QTimer          mAgeUpdateTimer;
+
+    bool            m_fShapshotOperationsAllowed;
 };
 
 #endif // __VBoxSnapshotsWgt_h__

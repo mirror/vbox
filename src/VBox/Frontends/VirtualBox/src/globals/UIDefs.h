@@ -118,6 +118,7 @@ namespace UIDefs
     extern const char* GUI_GroupDefinitions;
     extern const char* GUI_HideFromManager;
     extern const char* GUI_PreventReconfiguration;
+    extern const char* GUI_PreventSnapshotOperations;
     extern const char* GUI_HideDetails;
 
     /* Machine-window declarations: */

@@ -339,6 +339,7 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     , mShowSnapshotDetailsAction (new QAction (mSnapshotActionGroup))
     , mTakeSnapshotAction (new QAction (mCurStateActionGroup))
     , mCloneSnapshotAction(new QAction(mCurStateActionGroup))
+    , m_fShapshotOperationsAllowed(false)
 {
     /* Apply UI decorations */
     Ui::VBoxSnapshotsWgt::setupUi (this);
@@ -437,11 +438,13 @@ void VBoxSnapshotsWgt::setMachine (const CMachine &aMachine)
     {
         mMachineId = QString::null;
         mSessionState = KSessionState_Null;
+        m_fShapshotOperationsAllowed = false;
     }
     else
     {
         mMachineId = aMachine.GetId();
         mSessionState = aMachine.GetSessionState();
+        m_fShapshotOperationsAllowed = vboxGlobal().shouldWeAllowSnapshotOperations(mMachine);
     }
 
     refreshAll();
@@ -508,16 +511,16 @@ void VBoxSnapshotsWgt::onCurrentChanged (QTreeWidgetItem *aItem)
     mRestoreSnapshotAction->setEnabled (!busy && mCurSnapshotItem && item && !item->isCurrentStateItem());
 
     /* Enable/disable deleting snapshot */
-    mDeleteSnapshotAction->setEnabled (   canTakeDeleteSnapshot
-                                       && mCurSnapshotItem && item && !item->isCurrentStateItem());
+    mDeleteSnapshotAction->setEnabled (m_fShapshotOperationsAllowed &&
+                                       canTakeDeleteSnapshot && mCurSnapshotItem && item && !item->isCurrentStateItem());
 
     /* Enable/disable the details action regardless of the session state */
     mShowSnapshotDetailsAction->setEnabled (mCurSnapshotItem && item && !item->isCurrentStateItem());
 
     /* Enable/disable taking snapshots */
-    mTakeSnapshotAction->setEnabled (   (   canTakeDeleteSnapshot
-                                         && mCurSnapshotItem && item && item->isCurrentStateItem())
-                                     || (item && !mCurSnapshotItem));
+    mTakeSnapshotAction->setEnabled (m_fShapshotOperationsAllowed &&
+                                     ((canTakeDeleteSnapshot && mCurSnapshotItem && item && item->isCurrentStateItem()) ||
+                                      (item && !mCurSnapshotItem)));
 
     /* Enable/disable cloning snapshots */
     mCloneSnapshotAction->setEnabled(!busy && item);

@@ -382,6 +382,7 @@ public:
     static bool shouldWeShowDetails(CMachine &machine,
                                     bool fIncludingMachineGeneralCheck = false);
     static bool shouldWeAutoMountGuestScreens(CMachine &machine, bool fIncludingSanityCheck = true);
+    static bool shouldWeAllowSnapshotOperations(CMachine &machine, bool fIncludingSanityCheck = true);
     static QList<IndicatorType> restrictedStatusBarIndicators(CMachine &machine);
     static QList<MachineCloseAction> restrictedMachineCloseActions(CMachine &machine);
 

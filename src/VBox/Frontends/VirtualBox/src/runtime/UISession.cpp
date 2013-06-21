@@ -892,7 +892,7 @@ void UISession::prepareFramebuffers()
 
 void UISession::prepareMenuPool()
 {
-    m_pMenuPool = new UIMachineMenuBar;
+    m_pMenuPool = new UIMachineMenuBar(session().GetMachine());
 }
 
 void UISession::loadSessionSettings()

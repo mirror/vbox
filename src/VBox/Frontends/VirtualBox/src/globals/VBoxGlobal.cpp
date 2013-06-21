@@ -3723,6 +3723,27 @@ bool VBoxGlobal::shouldWeAutoMountGuestScreens(CMachine &machine,
 }
 
 /* static */
+bool VBoxGlobal::shouldWeAllowSnapshotOperations(CMachine &machine,
+                                                 bool fIncludingSanityCheck /*= true*/)
+{
+    if (fIncludingSanityCheck)
+    {
+        /* 'false' for null machines,
+         * we can't operate snapshot in that case: */
+        if (machine.isNull())
+            return false;
+
+        /* 'false' for inaccessible machines,
+         * we can't operate snapshot in that case: */
+        if (!machine.GetAccessible())
+            return false;
+    }
+
+    /* 'true' if snapshot operations are not restricted by the extra-data: */
+    return !isApprovedByExtraData(machine, GUI_PreventSnapshotOperations);
+}
+
+/* static */
 QList<IndicatorType> VBoxGlobal::restrictedStatusBarIndicators(CMachine &machine)
 {
     /* Prepare result: */
