@@ -113,7 +113,7 @@ g_asGRegs16NoSp = ('ax',  'cx',  'dx',  'bx',  None,  'bp',  'si',  'di',
                    'r8w', 'r9w', 'r10w', 'r11w', 'r12w', 'r13w', 'r14w', 'r15w');
 g_asGRegs16     = ('ax',  'cx',  'dx',  'bx',  'sp',  'bp',  'si',  'di',
                    'r8w', 'r9w', 'r10w', 'r11w', 'r12w', 'r13w', 'r14w', 'r15w');
-g_asGRegs8      = ('al',  'cl',  'dl',  'bl',  'ah',  'ah',  'dh',  'bh');
+g_asGRegs8_86   = ('al',  'cl',  'dl',  'bl',  'ah',  'ah',  'dh',  'bh');
 g_asGRegs8_64   = ('al',  'cl',  'dl',  'bl',  'spl', 'bpl', 'sil',  'dil',        # pylint: disable=C0103
                    'r8b', 'r9b', 'r10b', 'r11b', 'r12b', 'r13b', 'r14b', 'r15b');
 ## @}
@@ -371,7 +371,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         elif cbEffOp == 2:
             oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs16[iOp1], g_asGRegs16[iOp2]));
         elif cbEffOp == 1:
-            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs8[iOp1], g_asGRegs8[iOp2]));
+            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs8_64[iOp1], g_asGRegs8_64[iOp2]));
         else:
             assert False;
         return True;
@@ -381,15 +381,15 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         if cbEffOp == 8:
             oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs64[iOp1],));
         elif cbEffOp == 4:
-            oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs64[iOp1],));
+            oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs32[iOp1],));
         elif cbEffOp == 2:
             oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs16[iOp1],));
         elif cbEffOp == 1:
-            oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs8[iOp1],));
+            oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs8_64[iOp1],));
         else:
             assert False;
 
-        if iOp2 == 5 and iMod == 0:
+        if (iOp2 == 5 or iOp2 == 13) and iMod == 0:
             oGen.write('VBINSTST_NAME(g_u%sData)' % (cbEffOp * 8,))
             if oGen.oTarget.is64Bit():
                 oGen.write(' wrt rip');
@@ -450,21 +450,22 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
             oGen.pushConst(uResult);
             oGen.write('        call    VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
 
-            iMod = 2;
-            for offDisp in (127, -128):
-                oGen.write('        call    VBINSTST_NAME(Common_LoadKnownValues)\n');
-                self.generateMemSetupPureRM(oGen, cAddrBits, cbEffOp, iOp2, iMod, uInput, offDisp);
-                self.writeInstrGregPureRM(cbEffOp, iOp1, cAddrBits, iOp2, iMod, offDisp, oGen);
-                oGen.pushConst(uResult);
-                oGen.write('        call    VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
+            if iOp2 != 5 and iOp2 != 13:
+                iMod = 1;
+                for offDisp in (127, -128):
+                    oGen.write('        call    VBINSTST_NAME(Common_LoadKnownValues)\n');
+                    self.generateMemSetupPureRM(oGen, cAddrBits, cbEffOp, iOp2, iMod, uInput, offDisp);
+                    self.writeInstrGregPureRM(cbEffOp, iOp1, cAddrBits, iOp2, iMod, offDisp, oGen);
+                    oGen.pushConst(uResult);
+                    oGen.write('        call    VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
 
-            iMod = 2;
-            for offDisp in (2147483647, -2147483648):
-                oGen.write('        call    VBINSTST_NAME(Common_LoadKnownValues)\n');
-                self.generateMemSetupPureRM(oGen, cAddrBits, cbEffOp, iOp2, iMod, uInput, offDisp);
-                self.writeInstrGregPureRM(cbEffOp, iOp1, cAddrBits, iOp2, iMod, offDisp, oGen);
-                oGen.pushConst(uResult);
-                oGen.write('        call    VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
+                iMod = 2;
+                for offDisp in (2147483647, -2147483648):
+                    oGen.write('        call    VBINSTST_NAME(Common_LoadKnownValues)\n');
+                    self.generateMemSetupPureRM(oGen, cAddrBits, cbEffOp, iOp2, iMod, uInput, offDisp);
+                    self.writeInstrGregPureRM(cbEffOp, iOp1, cAddrBits, iOp2, iMod, offDisp, oGen);
+                    oGen.pushConst(uResult);
+                    oGen.write('        call    VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
 
         return True;
 
@@ -523,8 +524,8 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                         else:
                             pass; # SIB
                     break; ## remove me!
-                break; ## remove me!
-            break; ## remove me!
+                #break; ## remove me!
+            #break; ## remove me!
 
         return True;
 
@@ -557,7 +558,7 @@ class InstrTest_Mov_Gv_Ev(InstrTest_MemOrGreg_2_Greg):
             return uInput & UINT32_MAX;
         if cbEffOp == 2:
             return (uCur & 0xffffffffffff0000) | (uInput & UINT16_MAX);
-        assert cbEffOp == 1;
+        assert cbEffOp == 1; _ = oGen;
         return (uCur & 0xffffffffffffff00) | (uInput & UINT8_MAX);
 
 
@@ -845,10 +846,10 @@ class InstructionTestGen(object):
             if cAddrBits == 64:   asAddrGRegs = g_asGRegs64;
             elif cAddrBits == 32: asAddrGRegs = g_asGRegs32;
             else:                 asAddrGRegs = g_asGRegs16;
-            iBaseReg   = asAddrGRegs.index(sBaseReg);
+            iBaseReg = asAddrGRegs.index(sBaseReg);
 
             i = 3;
-            offDisp    = None;
+            u32Disp = None;
             if i < len(asParams) and len(asParams[i]) == 10:
                 u32Disp = long(asParams[i], 16);
                 i += 1;
@@ -860,10 +861,12 @@ class InstructionTestGen(object):
                 iBaseReg  = asAddrGRegs.index(sBaseReg);
                 i += 1;
 
-            iScale    = 1;
+            iScale = 1;
             if i < len(asParams):
                 iScale = int(asParams[i]); assert iScale in [2, 4, 8];
                 i += 1;
+
+            assert i == len(asParams), 'i=%d len=%d len[i]=%d (%s)' % (i, len(asParams), len(asParams[i]), asParams[i],);
 
             # Prologue.
             iTmpReg1 = 0 if iBaseReg != 0 else 1;
@@ -872,6 +875,8 @@ class InstructionTestGen(object):
                        '        MY_PUSH_FLAGS\n'
                        '        push    %s\n'
                        % (sName, self.oTarget.asGRegs[iTmpReg1], ));
+            self.write('; cAddrBits=%s cEffOpBits=%s iBaseReg=%s u32Disp=%s iIndexReg=%s iScale=%s\n'
+                       % (cAddrBits, cEffOpBits, iBaseReg, u32Disp, iIndexReg, iScale,));
 
             # Figure out what to use.
             if cEffOpBits == 64:
@@ -885,7 +890,7 @@ class InstructionTestGen(object):
                 sDataVar = 'VBINSTST_NAME(g_u16Data)';
             else:
                 assert cEffOpBits == 8;
-                sTmpReg1 = g_asGRegs8[iTmpReg1];
+                sTmpReg1 = g_asGRegs8_64[iTmpReg1];
                 sDataVar = 'VBINSTST_NAME(g_u8Data)';
 
             # Load the value and mem address, sorting the value there.
@@ -903,7 +908,7 @@ class InstructionTestGen(object):
                 self.write('        mov     [%s], %s\n' % (sBaseReg, sTmpReg1, ));
 
             # Adjust for disposition and scaling.
-            if offDisp is not None:
+            if u32Disp is not None:
                 self.write('        sub     %s, %d\n' % ( sBaseReg, convU32ToSigned(u32Disp), ));
             if iIndexReg is not None:
                 uIdxRegVal = randUxx(cAddrBits);
@@ -940,7 +945,7 @@ class InstructionTestGen(object):
             # Epilogue.
             self.write('        pop     %s\n'
                        '        MY_POP_FLAGS\n'
-                       '        ret\n'
+                       '        ret sCB\n'
                        'VBINSTST_ENDPROC   Common_MemSetup_%s\n'
                        % ( self.oTarget.asGRegs[iTmpReg1], sName,));
 
