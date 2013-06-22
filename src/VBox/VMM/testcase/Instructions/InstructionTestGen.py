@@ -47,6 +47,18 @@ def RT_BIT_64(iBit): # pylint: disable=C0103
 ## @}
 
 
+## @name Misc
+## @{
+
+def convU32ToSigned(u32):
+    """ Converts a 32-bit unsigned value to 32-bit signed. """
+    if u32 < 0x80000000:
+        return u32;
+    return u32 - UINT32_MAX - 1;
+
+## @}
+
+
 ## @name ModR/M
 ## @{
 X86_MODRM_RM_MASK   = 0x07;
@@ -130,6 +142,7 @@ def randUxxList(cBits, cElements):
     """ List of nsigned 8-, 16-, 32-, or 64-bit random numbers. """
     return [randUxx(cBits) for _ in range(cElements)];
 ## @}
+
 
 
 
@@ -225,6 +238,18 @@ class TargetEnv(object):
         """ Get the max operand size as a byte count. """
         return self.getMaxOpBits() / 8;
 
+    def getDefAddrBits(self):
+        """ Get the default address size as a bit count. """
+        if self.sInstrSet == self.ksInstrSet_16:
+            return 16;
+        if self.sInstrSet == self.ksInstrSet_32:
+            return 32;
+        return 64;
+
+    def getDefAddrBytes(self):
+        """ Get the default address size as a byte count. """
+        return self.getDefAddrBits() / 8;
+
     def getGRegCount(self):
         """ Get the number of general registers. """
         if self.sInstrSet == self.ksInstrSet_64:
@@ -239,7 +264,7 @@ class TargetEnv(object):
     def getAddrModes(self):
         """ Gets a list of addressing mode (16, 32, or/and 64). """
         if self.sInstrSet == self.ksInstrSet_16:
-            return [16,];
+            return [16, 32];
         if self.sInstrSet == self.ksInstrSet_32:
             return [32, 16];
         return [64, 64];
@@ -252,7 +277,7 @@ g_dTargetEnvs = {
 };
 
 
-class InstrTestBase(object): # pylint: disable=R0903
+class InstrTestBase(object):
     """
     Base class for testing one instruction.
     """
@@ -345,6 +370,8 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
             oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs32[iOp1], g_asGRegs32[iOp2]));
         elif cbEffOp == 2:
             oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs16[iOp1], g_asGRegs16[iOp2]));
+        elif cbEffOp == 1:
+            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs8[iOp1], g_asGRegs8[iOp2]));
         else:
             assert False;
         return True;
@@ -357,6 +384,8 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
             oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs64[iOp1],));
         elif cbEffOp == 2:
             oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs16[iOp1],));
+        elif cbEffOp == 1:
+            oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs8[iOp1],));
         else:
             assert False;
 
@@ -404,7 +433,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                        % (oGen.needGRegMemSetup(cAddrBits, cbEffOp, iOp2, offDisp),));
         else:
             ## @todo generate REX.B=1 variant.
-            oGen.write('        call    VBINSTST_NAME(Common_SetupMemReadU%u)\n' % (cbEffOp/2,));
+            oGen.write('        call    VBINSTST_NAME(Common_SetupMemReadU%u)\n' % (cbEffOp*8,));
         oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2],));
         return True;
 
@@ -440,7 +469,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         return True;
 
 
-    def generateStandardTests(self, oGen): # pylint: disable=R0914
+    def generateStandardTests(self, oGen):
         """ Generate standard tests. """
 
         # Parameters.
@@ -511,6 +540,27 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         return True;
 
 
+
+class InstrTest_Mov_Gv_Ev(InstrTest_MemOrGreg_2_Greg):
+    """
+    Tests MOV Gv,Ev.
+    """
+    def __init__(self):
+        InstrTest_MemOrGreg_2_Greg.__init__(self, 'mov Gv,Ev', self.calc_mov);
+
+    @staticmethod
+    def calc_mov(cbEffOp, uInput, uCur, oGen):
+        """ Calculates the result of a mov instruction."""
+        if cbEffOp == 8:
+            return uInput & UINT64_MAX;
+        if cbEffOp == 4:
+            return uInput & UINT32_MAX;
+        if cbEffOp == 2:
+            return (uCur & 0xffffffffffff0000) | (uInput & UINT16_MAX);
+        assert cbEffOp == 1;
+        return (uCur & 0xffffffffffffff00) | (uInput & UINT8_MAX);
+
+
 class InstrTest_MovSxD_Gv_Ev(InstrTest_MemOrGreg_2_Greg):
     """
     Tests MOVSXD Gv,Ev.
@@ -553,7 +603,8 @@ class InstrTest_MovSxD_Gv_Ev(InstrTest_MemOrGreg_2_Greg):
 
 ## Instruction Tests.
 g_aoInstructionTests = [
-    InstrTest_MovSxD_Gv_Ev(),
+    InstrTest_Mov_Gv_Ev(),
+    #InstrTest_MovSxD_Gv_Ev(),
 ];
 
 
@@ -645,7 +696,7 @@ class InstructionTestGen(object):
         """
         sName = '%ubit_U%u_%s' % (cAddrBits, cbEffOp * 8, self.oTarget.asGRegs[iReg1]);
         if offDisp is not None:
-            sName += '_0x%016x' % (offDisp & UINT64_MAX, );
+            sName += '_%#010x' % (offDisp & UINT32_MAX, );
         if sName in self.dCheckFns:
             self.dMemSetupFns[sName] += 1;
         else:
@@ -779,6 +830,121 @@ class InstructionTestGen(object):
 
         return True;
 
+    def _generateMemSetupFunctions(self):
+        """
+        Generates the memory setup functions.
+        """
+        cDefAddrBits = self.oTarget.getDefAddrBits();
+        for sName in self.dMemSetupFns:
+            # Unpack it.
+            asParams = sName.split('_');
+            cAddrBits  = int(asParams[0][:-3]);
+            cEffOpBits = int(asParams[1][1:]);
+            sBaseReg   = asParams[2];
+
+            if cAddrBits == 64:   asAddrGRegs = g_asGRegs64;
+            elif cAddrBits == 32: asAddrGRegs = g_asGRegs32;
+            else:                 asAddrGRegs = g_asGRegs16;
+            iBaseReg   = asAddrGRegs.index(sBaseReg);
+
+            i = 3;
+            offDisp    = None;
+            if i < len(asParams) and len(asParams[i]) == 10:
+                u32Disp = long(asParams[i], 16);
+                i += 1;
+
+            sIndexReg = None;
+            iIndexReg = None;
+            if i < len(asParams):
+                sIndexReg = asParams[i];
+                iBaseReg  = asAddrGRegs.index(sBaseReg);
+                i += 1;
+
+            iScale    = 1;
+            if i < len(asParams):
+                iScale = int(asParams[i]); assert iScale in [2, 4, 8];
+                i += 1;
+
+            # Prologue.
+            iTmpReg1 = 0 if iBaseReg != 0 else 1;
+            self.write('\n\n'
+                       'VBINSTST_BEGINPROC Common_MemSetup_%s\n'
+                       '        MY_PUSH_FLAGS\n'
+                       '        push    %s\n'
+                       % (sName, self.oTarget.asGRegs[iTmpReg1], ));
+
+            # Figure out what to use.
+            if cEffOpBits == 64:
+                sTmpReg1 = g_asGRegs64[iTmpReg1];
+                sDataVar = 'VBINSTST_NAME(g_u64Data)';
+            elif cEffOpBits == 32:
+                sTmpReg1 = g_asGRegs32[iTmpReg1];
+                sDataVar = 'VBINSTST_NAME(g_u32Data)';
+            elif cEffOpBits == 16:
+                sTmpReg1 = g_asGRegs16[iTmpReg1];
+                sDataVar = 'VBINSTST_NAME(g_u16Data)';
+            else:
+                assert cEffOpBits == 8;
+                sTmpReg1 = g_asGRegs8[iTmpReg1];
+                sDataVar = 'VBINSTST_NAME(g_u8Data)';
+
+            # Load the value and mem address, sorting the value there.
+            self.write('        mov     %s, [xSP + sCB + MY_PUSH_FLAGS_SIZE + xCB]\n' % (sTmpReg1,));
+            if cAddrBits >= cDefAddrBits:
+                self.write('        mov     [%s xWrtRIP], %s\n' % (sDataVar, sTmpReg1,));
+                self.write('        lea     %s, [%s xWrtRIP]\n' % (sBaseReg, sDataVar,));
+            else:
+
+                if cAddrBits == 16:
+                    self.write('        mov     %s, [VBINSTST_NAME(g_pvLow16Mem4K) xWrtRIP]\n' % (sBaseReg,));
+                else:
+                    self.write('        mov     %s, [VBINSTST_NAME(g_pvLow32Mem4K) xWrtRIP]\n' % (sBaseReg,));
+                self.write('        add     %s, %s\n' % (sBaseReg, (randU16() << cEffOpBits) & 0xfff, ));
+                self.write('        mov     [%s], %s\n' % (sBaseReg, sTmpReg1, ));
+
+            # Adjust for disposition and scaling.
+            if offDisp is not None:
+                self.write('        sub     %s, %d\n' % ( sBaseReg, convU32ToSigned(u32Disp), ));
+            if iIndexReg is not None:
+                uIdxRegVal = randUxx(cAddrBits);
+                self.write('        mov     %s, %u\n' % ( sIndexReg, uIdxRegVal,));
+                if cAddrBits == 64:
+                    self.write('        sub     %s, %#06x\n' % ( sBaseReg, uIdxRegVal * iScale, ));
+                elif cAddrBits == 16:
+                    self.write('        sub     %s, %#06x\n' % ( sBaseReg, (uIdxRegVal * iScale) & UINT32_MAX, ));
+                else:
+                    assert cAddrBits == 16;
+                    self.write('        sub     %s, %#06x\n' % ( sBaseReg, (uIdxRegVal * iScale) & UINT16_MAX, ));
+
+            # Set upper bits that's supposed to be unused.
+            if cDefAddrBits > cAddrBits or cAddrBits == 16:
+                if cDefAddrBits == 64:
+                    assert cAddrBits == 32;
+                    self.write('        mov     %s, %#018x\n'
+                               '        or      %s, %s\n'
+                               % ( g_asGRegs64[iTmpReg1], randU64() & 0xffffffff00000000,
+                                   g_asGRegs64[iBaseReg], g_asGRegs64[iTmpReg1],));
+                    if iIndexReg is not None:
+                        self.write('        mov     %s, %#018x\n'
+                                   '        or      %s, %s\n'
+                                   % ( g_asGRegs64[iTmpReg1], randU64() & 0xffffffff00000000,
+                                       g_asGRegs64[iIndexReg], g_asGRegs64[iTmpReg1],));
+                else:
+                    assert cDefAddrBits == 32; assert cAddrBits == 16;
+                    self.write('        or      %s, %#010x\n'
+                               % ( g_asGRegs32[iBaseReg], randU32() & 0xffff0000, ));
+                    if iIndexReg is not None:
+                        self.write('        or      %s, %#010x\n'
+                                   % ( g_asGRegs32[iIndexReg], randU32() & 0xffff0000, ));
+
+            # Epilogue.
+            self.write('        pop     %s\n'
+                       '        MY_POP_FLAGS\n'
+                       '        ret\n'
+                       'VBINSTST_ENDPROC   Common_MemSetup_%s\n'
+                       % ( self.oTarget.asGRegs[iTmpReg1], sName,));
+
+
     def _generateFileFooter(self):
         """
         Generates file footer.
@@ -840,6 +1006,8 @@ class InstructionTestGen(object):
                        'VBINSTST_ENDPROC   Common_Check_%s_%s\n'
                        % (sReg1, sReg2,));
 
+        # memory setup functions
+        self._generateMemSetupFunctions();
 
         # 64-bit constants.
         if len(self.d64BitConsts) > 0:

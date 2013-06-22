@@ -178,7 +178,7 @@ BEGINCODE
 VBINSTST_BEGINPROC Common_SetupMemReadU8
         push    sAX
         mov     ax, [xSP + sCB + xCB]
-        mov     [VBINSTST_NAME(g_u8Data) xWrtRip], ax
+        mov     [VBINSTST_NAME(g_u8Data) xWrtRIP], ax
         pop     sAX
         ret sCB
 VBINSTST_ENDPROC   Common_SetupMemReadU8
@@ -189,7 +189,7 @@ VBINSTST_ENDPROC   Common_SetupMemReadU8
 VBINSTST_BEGINPROC Common_SetupMemReadU16
         push    sAX
         mov     ax, [xSP + sCB + xCB]
-        mov     [VBINSTST_NAME(g_u16Data) xWrtRip], ax
+        mov     [VBINSTST_NAME(g_u16Data) xWrtRIP], ax
         pop     sAX
         ret sCB
 VBINSTST_ENDPROC   Common_SetupMemReadU16
@@ -200,7 +200,7 @@ VBINSTST_ENDPROC   Common_SetupMemReadU16
 VBINSTST_BEGINPROC Common_SetupMemReadU32
         push    sAX
         mov     eax, [xSP + sCB + xCB]
-        mov     [VBINSTST_NAME(g_u32Data) xWrtRip], eax
+        mov     [VBINSTST_NAME(g_u32Data) xWrtRIP], eax
         pop     sAX
         ret sCB
 VBINSTST_ENDPROC   Common_SetupMemReadU32
@@ -212,12 +212,12 @@ VBINSTST_BEGINPROC Common_SetupMemReadU64
         push    sAX
 %ifdef RT_ARCH_AMD64
         mov     rax, [xSP + sCB + xCB]
-        mov     [VBINSTST_NAME(g_u64Data) xWrtRip], rax
+        mov     [VBINSTST_NAME(g_u64Data) xWrtRIP], rax
 %else
         mov     eax, [xSP + sCB + xCB]
-        mov     [VBINSTST_NAME(g_u64Data) xWrtRip], eax
+        mov     [VBINSTST_NAME(g_u64Data) xWrtRIP], eax
         mov     eax, [xSP + sCB + xCB + 4]
-        mov     [VBINSTST_NAME(g_u64Data) + 4 xWrtRip], eax
+        mov     [VBINSTST_NAME(g_u64Data) + 4 xWrtRIP], eax
 %endif
         pop     sAX
         ret sCB
