@@ -36,7 +36,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-//#define DEBUG
 #define LOG_GROUP LOG_GROUP_DEV_AHCI
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmqueue.h>
@@ -5309,6 +5308,7 @@ static size_t ahciCopyFromPrdtl(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
  * Allocate I/O memory and copies the guest buffer for writes.
  *
  * @returns VBox status code.
+ * @param   pDevIns     The device instance.
  * @param   pAhciReq    The request state.
  * @param   cbTransfer  Amount of bytes to allocate.
  */
@@ -5332,6 +5332,15 @@ static int ahciIoBufAllocate(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, size_t cbTra
     return VINF_SUCCESS;
 }
 
+/**
+ * Frees the I/O memory of the given request and updates the guest buffer if necessary.
+ *
+ * @returns nothing.
+ * @param   pDevIns      The device instance.
+ * @param   pAhciReq     The request state.
+ * @param   fCopyToGuest Flag whether to update the guest buffer if necessary.
+ *                       Nothing is copied if false even if the request was a read.
+ */
 static void ahciIoBufFree(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
                           bool fCopyToGuest)
 {
@@ -7445,14 +7454,14 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
  */
 static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PAHCI       pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    PAHCIPort   pAhciPort = &pAhci->ahciPort[iLUN];
+    PAHCI       pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCIPort   pAhciPort = &pThis->ahciPort[iLUN];
     int         rc;
 
     Log(("%s:\n", __FUNCTION__));
 
     /* the usual paranoia */
-    AssertMsg(iLUN < pAhci->cPortsImpl, ("iLUN=%u", iLUN));
+    AssertMsg(iLUN < pThis->cPortsImpl, ("iLUN=%u", iLUN));
     AssertRelease(!pAhciPort->pDrvBase);
     AssertRelease(!pAhciPort->pDrvBlock);
     AssertRelease(!pAhciPort->pDrvBlockAsync);
@@ -7483,6 +7492,11 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
             pAhciPort->fAsyncInterface = true;
         else
             pAhciPort->fAsyncInterface = false;
+
+        rc = SUPSemEventCreate(pThis->pSupDrvSession, &pAhciPort->hEvtProcess);
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("AHCI: Failed to create SUP event semaphore"));
 
         /* Create the async IO thread. */
         rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop, ahciAsyncIOLoopWakeUp, 0,
@@ -7966,16 +7980,16 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                 pAhciPort->fAsyncInterface = false;
             }
 
+            rc = SUPSemEventCreate(pThis->pSupDrvSession, &pAhciPort->hEvtProcess);
+            if (RT_FAILURE(rc))
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                           N_("AHCI: Failed to create SUP event semaphore"));
+
             rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop,
                                        ahciAsyncIOLoopWakeUp, 0, RTTHREADTYPE_IO, szName);
             if (RT_FAILURE(rc))
                 return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                            N_("AHCI: Failed to create worker thread %s"), szName);
-
-            rc = SUPSemEventCreate(pThis->pSupDrvSession, &pAhciPort->hEvtProcess);
-            if (RT_FAILURE(rc))
-                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                           N_("AHCI: Failed to create SUP event semaphore"));
         }
         else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
