@@ -135,24 +135,42 @@ void LogCallback(DIFXAPI_LOG Event, DWORD dwError, PCWSTR pEventDescription, PVO
  * Loads a system DLL.
  *
  * @returns Module handle or NULL
- * @param   pszName             The DLL name.
+ * @param   pwszName            The DLL name.
  */
-static HMODULE loadInstalledDll(const char *pszName)
+static HMODULE loadInstalledDll(const wchar_t *pwszName)
 {
-    char   szPath[MAX_PATH];
-    UINT   cchPath = GetModuleFileNameA(NULL, szPath, sizeof(szPath));
-    size_t cbName = strlen(pszName) + 1;
-    if (cchPath && cchPath <= sizeof(szPath))
-    {
-        char *pszSlashFile = strrchr(szPath, '\\');
-        if (pszSlashFile)
-            cchPath = pszSlashFile - szPath;
-    }
-    if (cchPath + 1 + cbName > sizeof(szPath))
+    /* Get the process image path. */
+    WCHAR  wszPath[MAX_PATH];
+    UINT   cwcPath = GetModuleFileNameW(NULL, wszPath, MAX_PATH);
+    if (!cwcPath || cwcPath >= MAX_PATH)
         return NULL;
-    szPath[cchPath] = '\\';
-    memcpy(&szPath[cchPath + 1], pszName, cbName);
-    return LoadLibraryA(szPath);
+
+    /* Drop the image filename. */
+    UINT   off = cwcPath - 1;
+    for (;;)
+    {
+        if (   wszPath[off] == '\\'
+            || wszPath[off] == '/'
+            || wszPath[off] == ':')
+        {
+            wszPath[off] = '\0';
+            cwcPath = off;
+            break;
+        }
+        if (!off--)
+            return NULL; /* No path? Shouldn't ever happen! */
+    }
+
+    /* Check if there is room in the buffer to construct the desired name. */
+    size_t cwcName = 0;
+    while (pwszName[cwcName])
+        cwcName++;
+    if (cwcPath + 1 + cwcName + 1 > MAX_PATH)
+        return NULL;
+
+    wszPath[cwcPath] = '\\';
+    memcpy(&wszPath[cwcPath + 1], pwszName, (cwcName + 1) * sizeof(wszPath[0]));
+    return LoadLibraryW(wszPath);
 }
 
 /**
@@ -169,7 +187,7 @@ int VBoxInstallDriver(const BOOL fInstall, const _TCHAR *pszDriverPath, BOOL fSi
                       const _TCHAR *pszLogFile)
 {
     HRESULT hr = S_OK;
-    HMODULE hDIFxAPI = loadInstalledDll("DIFxAPI.dll");
+    HMODULE hDIFxAPI = loadInstalledDll(L"DIFxAPI.dll");
     if (NULL == hDIFxAPI)
     {
         _tprintf(_T("ERROR: Unable to locate DIFxAPI.dll!\n"));
