@@ -101,7 +101,7 @@ g_asGRegs16NoSp = ('ax',  'cx',  'dx',  'bx',  None,  'bp',  'si',  'di',
                    'r8w', 'r9w', 'r10w', 'r11w', 'r12w', 'r13w', 'r14w', 'r15w');
 g_asGRegs16     = ('ax',  'cx',  'dx',  'bx',  'sp',  'bp',  'si',  'di',
                    'r8w', 'r9w', 'r10w', 'r11w', 'r12w', 'r13w', 'r14w', 'r15w');
-g_asGRegs8      = ('al',  'cl',  'dl',  'bl',  'ah',  'ah',  'dh',  'bh');
+g_asGRegs8      = ('al',  'cl',  'dl',  'bl',  'ah',  'ch',  'dh',  'bh');
 g_asGRegs8Rex   = ('al',  'cl',  'dl',  'bl',  'spl', 'bpl', 'sil',  'dil',
                    'r8b', 'r9b', 'r10b', 'r11b', 'r12b', 'r13b', 'r14b', 'r15b');
 ## @}
@@ -145,9 +145,9 @@ def calcRexPrefixForTwoModRmRegs(iReg, iRm, bOtherRexPrefixes = 0):
     """
     bRex = bOtherRexPrefixes;
     if iReg >= 8:
-        bRex = bRex | X86_OP_REX_R;
+        bRex |= X86_OP_REX_R;
     if iRm >= 8:
-        bRex = bRex | X86_OP_REX_B;
+        bRex |= X86_OP_REX_B;
     if bRex == 0:
         return [];
     return [bRex,];
@@ -363,7 +363,6 @@ class InstrTestBase(object):
         return auRet;
 
 
-
 class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
     """
     Instruction reading memory or general register and writing the result to a
@@ -373,7 +372,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
     def __init__(self, sName, fnCalcResult, sInstr = None, acbOpVars = None):
         InstrTestBase.__init__(self, sName, sInstr);
         self.fnCalcResult = fnCalcResult;
-        self.acbOpVars = [ 1, 2, 4, 8 ] if not acbOpVars else list(acbOpVars);
+        self.acbOpVars    = [ 1, 2, 4, 8 ] if not acbOpVars else list(acbOpVars);
 
     def writeInstrGregGreg(self, cbEffOp, iOp1, iOp2, oGen):
         """ Writes the instruction with two general registers as operands. """
@@ -389,9 +388,23 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
             assert False;
         return True;
 
+
     def writeInstrGregPureRM(self, cbEffOp, iOp1, cAddrBits, iOp2, iMod, offDisp, oGen):
         """ Writes the instruction with two general registers as operands. """
-        if cbEffOp == 8:
+        if iOp2 == 13 and iMod == 0 and cAddrBits == 64: # Alt rip encoding, yasm isn't helping, do what we can.
+            if cbEffOp == 2:
+                oGen.write('        db %#04x\n' % (X86_OP_PRF_SIZE_OP,));
+            bRex = X86_OP_REX_B;
+            if iOp1 >= 8:
+                bRex |= X86_OP_REX_R;
+            if cbEffOp == 8:
+                bRex |= X86_OP_REX_W;
+            oGen.write('        db %#04x\n' % (bRex,));
+            if cbEffOp == 1:
+                oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs8[iOp1 & 0x7],));
+            else:
+                oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs32[iOp1 & 0x7],));
+        elif cbEffOp == 8:
             oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs64[iOp1],));
         elif cbEffOp == 4:
             oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs32[iOp1],));
@@ -445,7 +458,6 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
             oGen.write('        call    VBINSTST_NAME(%s)\n'
                        % (oGen.needGRegMemSetup(cAddrBits, cbEffOp, iOp2, offDisp),));
         else:
-            ## @todo generate REX.B=1 variant.
             oGen.write('        call    VBINSTST_NAME(Common_SetupMemReadU%u)\n' % (cbEffOp*8,));
         oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2],));
         return True;
@@ -500,7 +512,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
             oOp1MemRange = [iLongOp1,];
 
         # Register tests
-        if False:
+        if True:
             for cbEffOp in self.acbOpVars:
                 if cbEffOp > cbMaxOp:
                     continue;
@@ -517,25 +529,26 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                             self.generateOneStdTestGregGreg(oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult);
 
         # Memory test.
-        for cbEffOp in self.acbOpVars:
-            if cbEffOp > cbMaxOp:
-                continue;
-            for iOp1 in oOp1MemRange:
-                if oGen.oTarget.asGRegsNoSp[iOp1] is None:
+        if True:
+            for cbEffOp in self.acbOpVars:
+                if cbEffOp > cbMaxOp:
                     continue;
-                for cAddrBits in oGen.oTarget.getAddrModes():
-                    for iOp2 in range(len(oGen.oTarget.asGRegs)):
-                        if iOp2 != 4:
+                for iOp1 in oOp1MemRange:
+                    if oGen.oTarget.asGRegsNoSp[iOp1] is None:
+                        continue;
+                    for cAddrBits in oGen.oTarget.getAddrModes():
+                        for iOp2 in range(len(oGen.oTarget.asGRegs)):
+                            if iOp2 != 4:
 
-                            for uInput in (auLongInputs if iOp1 == iLongOp1 and False else auShortInputs):
-                                oGen.newSubTest();
-                                if iOp1 == iOp2 and iOp2 != 5 and iOp2 != 13 and cbEffOp != cbMaxOp:
-                                    continue; # Don't know the high bit of the address ending up the result - skip it.
-                                uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1], oGen);
-                                self.generateOneStdTestGregMemNoSib(oGen, cAddrBits, cbEffOp, cbMaxOp,
-                                                                    iOp1, iOp2, uInput, uResult);
-                        else:
-                            pass; # SIB
+                                for uInput in (auLongInputs if iOp1 == iLongOp1 and False else auShortInputs):
+                                    oGen.newSubTest();
+                                    if iOp1 == iOp2 and iOp2 != 5 and iOp2 != 13 and cbEffOp != cbMaxOp:
+                                        continue; # Don't know the high bit of the address ending up the result - skip it.
+                                    uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1], oGen);
+                                    self.generateOneStdTestGregMemNoSib(oGen, cAddrBits, cbEffOp, cbMaxOp,
+                                                                        iOp1, iOp2, uInput, uResult);
+                            else:
+                                pass; # SIB
 
         return True;
 
