@@ -4,8 +4,6 @@
 <dict>
   <key>Disabled</key>
   <true/>
-  <key>KeepAlive</key>
-  <false/>
   <key>Label</key>
   <string>org.virtualbox.vboxautostart</string>
   <key>ProgramArguments</key>
@@ -13,5 +11,9 @@
     <string>/Applications/VirtualBox.app/Contents/MacOS/VBoxAutostartDarwin.sh</string>
     <string>/etc/vbox/autostart.cfg</string>
   </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>LaunchOnlyOnce</key>
+  <true/>
 </dict>
 </plist>
