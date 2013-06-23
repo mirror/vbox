@@ -42,7 +42,7 @@
 
 DECLHIDDEN(int) rtMemAllocEx16BitReach(size_t cbAlloc, uint32_t fFlags, void **ppv)
 {
-    AssertReturn(cbAlloc < _64K, NULL);
+    AssertReturn(cbAlloc < _64K, VERR_NO_MEMORY);
 
     /*
      * Try with every possible address hint since the possible range is very limited.
