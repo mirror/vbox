@@ -1173,7 +1173,7 @@ static int PortSControl_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32
         Assert(fAllTasksCanceled);
 
         if (!ASMAtomicXchgBool(&pAhciPort->fPortReset, true))
-            LogRel(("AHCI#%d: Port %d reset\n", ahci->CTX_SUFF(pDevIns)->iInstance,
+            LogRel(("AHCI#%u: Port %d reset\n", ahci->CTX_SUFF(pDevIns)->iInstance,
                     pAhciPort->iLUN));
 
         pAhciPort->regSSTS = 0;
@@ -2022,7 +2022,7 @@ static void ahciHBAReset(PAHCI pThis)
     unsigned i;
     int rc = VINF_SUCCESS;
 
-    LogRel(("AHCI#%d: Reset the HBA\n", pThis->CTX_SUFF(pDevIns)->iInstance));
+    LogRel(("AHCI#%u: Reset the HBA\n", pThis->CTX_SUFF(pDevIns)->iInstance));
 
     /* Stop the CCC timer. */
     if (pThis->regHbaCccCtl & AHCI_HBA_CCC_CTL_EN)
@@ -5404,7 +5404,7 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort)
                  * a new task structure for this tag.
                  */
                 ASMAtomicWriteNullPtr(&pAhciPort->aCachedTasks[i]);
-                LogRel(("AHCI#%dP%d: Cancelled task %u\n", pAhciPort->CTX_SUFF(pDevIns)->iInstance,
+                LogRel(("AHCI#%uP%u: Cancelled task %u\n", pAhciPort->CTX_SUFF(pDevIns)->iInstance,
                         pAhciPort->iLUN, pAhciReq->uTag));
             }
             else
@@ -5662,8 +5662,8 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                 pcszReq = "<Invalid>";
         }
 
-        LogRel(("AHCI#%u: %s request was active for %llu seconds\n",
-                pAhciPort->iLUN, pcszReq, (tsNow - pAhciReq->tsStart) / 1000));
+        LogRel(("AHCI#%uP%u: %s request was active for %llu seconds\n",
+                pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN, pcszReq, (tsNow - pAhciReq->tsStart) / 1000));
     }
 
     ASMAtomicCmpXchgSize(&pAhciReq->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
@@ -5694,14 +5694,14 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
             if (pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
             {
                 if (pAhciReq->enmTxDir == AHCITXDIR_FLUSH)
-                    LogRel(("AHCI#%u: Flush returned rc=%Rrc\n",
-                            pAhciPort->iLUN, rcReq));
+                    LogRel(("AHCI#%uP%u: Flush returned rc=%Rrc\n",
+                            pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN, rcReq));
                 else if (pAhciReq->enmTxDir == AHCITXDIR_TRIM)
-                    LogRel(("AHCI#%u: Trim returned rc=%Rrc\n",
-                            pAhciPort->iLUN, rcReq));
+                    LogRel(("AHCI#%uP%u: Trim returned rc=%Rrc\n",
+                            pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN, rcReq));
                 else
-                    LogRel(("AHCI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
-                            pAhciPort->iLUN,
+                    LogRel(("AHCI#%uP%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
+                            pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN,
                             pAhciReq->enmTxDir == AHCITXDIR_READ
                             ? "Read"
                             : "Write",
@@ -5798,14 +5798,14 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
         if (pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
         {
             if (pAhciReq->enmTxDir == AHCITXDIR_FLUSH)
-                LogRel(("AHCI#%u: Canceled flush returned rc=%Rrc\n",
-                        pAhciPort->iLUN, rcReq));
+                LogRel(("AHCI#%uP%u: Canceled flush returned rc=%Rrc\n",
+                        pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN, rcReq));
             else if (pAhciReq->enmTxDir == AHCITXDIR_TRIM)
-                LogRel(("AHCI#%u: Canceled trim returned rc=%Rrc\n",
-                        pAhciPort->iLUN, rcReq));
+                LogRel(("AHCI#%uP%u: Canceled trim returned rc=%Rrc\n",
+                        pAhciPort->CTX_SUFF(pDevIns)->iInstance,pAhciPort->iLUN, rcReq));
             else
-                LogRel(("AHCI#%u: Canceled %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
-                        pAhciPort->iLUN,
+                LogRel(("AHCI#%uP%u: Canceled %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
+                        pAhciPort->CTX_SUFF(pDevIns)->iInstance, pAhciPort->iLUN,
                         pAhciReq->enmTxDir == AHCITXDIR_READ
                         ? "read"
                         : "write",
