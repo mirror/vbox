@@ -380,9 +380,15 @@ static int autostartConfigTokenizerGetNextToken(PCFGTOKENIZER pCfgTokenizer,
     return autostartConfigTokenizerCreateToken(pCfgTokenizer, NULL, &pCfgTokenizer->pTokenNext);
 }
 
-static const char *autostartConfigTokenToString(PCFGTOKEN pToken)
+/**
+ * Returns a stringified version of the token type.
+ *
+ * @returns Stringified version of the token type.
+ * @param   enmType         Token type.
+ */
+static const char *autostartConfigTokenTypeToStr(CFGTOKENTYPE enmType)
 {
-    switch (pToken->enmType)
+    switch (enmType)
     {
         case CFGTOKENTYPE_COMMA:
             return ",";
@@ -395,7 +401,7 @@ static const char *autostartConfigTokenToString(PCFGTOKEN pToken)
         case CFGTOKENTYPE_EOF:
             return "<EOF>";
         case CFGTOKENTYPE_ID:
-            return pToken->u.Id.achToken;
+            return "<Identifier>";
         default:
             AssertFailed();
             return "<Invalid>";
@@ -405,6 +411,26 @@ static const char *autostartConfigTokenToString(PCFGTOKEN pToken)
     return NULL;
 }
 
+/**
+ * Returns a stringified version of the token.
+ *
+ * @returns Stringified version of the token type.
+ * @param   pToken         Token.
+ */
+static const char *autostartConfigTokenToString(PCFGTOKEN pToken)
+{
+    if (pToken->enmType == CFGTOKENTYPE_ID)
+        return pToken->u.Id.achToken;
+    else
+        return autostartConfigTokenTypeToStr(pToken->enmType);
+}
+
+/**
+ * Returns the length of the token in characters (without zero terminator).
+ *
+ * @returns Token length.
+ * @param   pToken          Token.
+ */
 static size_t autostartConfigTokenGetLength(PCFGTOKEN pToken)
 {
     switch (pToken->enmType)
@@ -427,12 +453,19 @@ static size_t autostartConfigTokenGetLength(PCFGTOKEN pToken)
     return 0;
 }
 
+/**
+ * Log unexpected token error.
+ *
+ * @returns nothing.
+ * @param   pToken          The token which caused the error.
+ * @param   pszExpected     String of the token which was expected.
+ */
 static void autostartConfigTokenizerMsgUnexpectedToken(PCFGTOKEN pToken, const char *pszExpected)
 {
-    RTMsgError("Unexpected token '%s' at %d:%d.%d, expected '%s'",
-               autostartConfigTokenToString(pToken),
-               pToken->iLine, pToken->cchStart,
-               pToken->cchStart + autostartConfigTokenGetLength(pToken) - 1, pszExpected);
+    autostartSvcLogError("Unexpected token '%s' at %d:%d.%d, expected '%s'",
+                         autostartConfigTokenToString(pToken),
+                         pToken->iLine, pToken->cchStart,
+                         pToken->cchStart + autostartConfigTokenGetLength(pToken) - 1, pszExpected);
 }
 
 /**
@@ -452,7 +485,7 @@ static int autostartConfigTokenizerCheckAndConsume(PCFGTOKENIZER pCfgTokenizer, 
     {
         if (pCfgToken->enmType != enmType)
         {
-            autostartConfigTokenizerMsgUnexpectedToken(pCfgToken, "@todo");
+            autostartConfigTokenizerMsgUnexpectedToken(pCfgToken, autostartConfigTokenTypeToStr(enmType));
             rc = VERR_INVALID_PARAMETER;
         }
 
@@ -569,6 +602,7 @@ static int autostartConfigParseCompoundNode(PCFGTOKENIZER pCfgTokenizer, const c
         return VERR_NO_MEMORY;
 
     pCfgAst->enmType = CFGASTNODETYPE_COMPOUND;
+    pCfgAst->u.Compound.cAstNodes = 0;
     pCfgAst->pszKey  = RTStrDup(pszScopeId);
     if (!pCfgAst->pszKey)
     {
@@ -618,10 +652,22 @@ static int autostartConfigParseCompoundNode(PCFGTOKENIZER pCfgTokenizer, const c
         /* Add to the current compound node. */
         if (RT_SUCCESS(rc))
         {
-            Assert(idxAstNodeCur < cAstNodesMax);
-            pCfgAst->u.Compound.apAstNodes[idxAstNodeCur] = pAstNode;
-            idxAstNodeCur++;
-            /** @todo: realloc if array is getting to small. */
+            if (pCfgAst->u.Compound.cAstNodes >= cAstNodesMax)
+            {
+                cAstNodesMax += 10;
+
+                PCFGAST pCfgAstNew = (PCFGAST)RTMemRealloc(pCfgAst, RT_OFFSETOF(CFGAST, u.Compound.apAstNodes[cAstNodesMax]));
+                if (!pCfgAstNew)
+                    rc = VERR_NO_MEMORY;
+                else
+                    pCfgAst = pCfgAstNew;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                pCfgAst->u.Compound.apAstNodes[pCfgAst->u.Compound.cAstNodes] = pAstNode;
+                pCfgAst->u.Compound.cAstNodes++;
+            }
         }
 
         autostartConfigTokenFree(pCfgTokenizer, pToken);
@@ -629,10 +675,7 @@ static int autostartConfigParseCompoundNode(PCFGTOKENIZER pCfgTokenizer, const c
     } while (RT_SUCCESS(rc));
 
     if (RT_SUCCESS(rc))
-    {
-        pCfgAst->u.Compound.cAstNodes = idxAstNodeCur;
         *ppCfgAst = pCfgAst;
-    }
     else
         autostartConfigAstDestroy(pCfgAst);
 
