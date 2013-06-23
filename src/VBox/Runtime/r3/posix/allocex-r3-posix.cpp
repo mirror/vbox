@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Memory Allocation, Extended Alloc and Free Functions for Ring-3, posix.
+ * IPRT - Memory Allocation, Extended Alloc Workers, posix.
  */
 
 /*
@@ -34,164 +34,75 @@
 
 #include <iprt/assert.h>
 #include <iprt/string.h>
-#include "internal/magics.h"
+#include "../allocex.h"
 
 #include <sys/mman.h>
 
 
-/*******************************************************************************
-*   Structures and Typedefs                                                    *
-*******************************************************************************/
-/**
- * Heading for extended memory allocations in ring-3.
- */
-typedef struct RTMEMHDRR3
+DECLHIDDEN(int) rtMemAllocEx16BitReach(size_t cbAlloc, uint32_t fFlags, void **ppv)
 {
-    /** Magic (RTMEMHDR_MAGIC). */
-    uint32_t    u32Magic;
-    /** Block flags (RTMEMALLOCEX_FLAGS_*). */
-    uint32_t    fFlags;
-    /** The actual size of the block, header not included. */
-    uint32_t    cb;
-    /** The requested allocation size. */
-    uint32_t    cbReq;
-} RTMEMHDRR3;
-/** Pointer to a ring-3 extended memory header. */
-typedef RTMEMHDRR3 *PRTMEMHDRR3;
+    AssertReturn(cbAlloc < _64K, NULL);
 
-
-/**
- * Allocates memory with upper boundrary.
- *
- * @returns Pointer to mmap allocation.
- * @param   cbAlloc             Number of bytes to alloacate.
- * @param   fFlags              Allocation flags.
- */
-static void *rtMemAllocExAllocLow(size_t cbAlloc, uint32_t fFlags)
-{
-    int   fProt = PROT_READ | PROT_WRITE | (fFlags & RTMEMALLOCEX_FLAGS_EXEC ? PROT_EXEC : 0);
-    void *pv    = NULL;
-    if (fFlags & RTMEMALLOCEX_FLAGS_16BIT_REACH)
+    /*
+     * Try with every possible address hint since the possible range is very limited.
+     */
+    int       fProt     = PROT_READ | PROT_WRITE | (fFlags & RTMEMALLOCEX_FLAGS_EXEC ? PROT_EXEC : 0);
+    uintptr_t uAddr     = 0x1000;
+    uintptr_t uAddrLast = _64K - uAddr - cbAlloc;
+    while (uAddr <= uAddrLast)
     {
-        AssertReturn(cbAlloc < _64K, NULL);
-
-        /*
-         * Try with every possible address hint since the possible range is very limited.
-         */
-        uintptr_t uAddr     = fFlags & RTMEMALLOCEX_FLAGS_16BIT_REACH ? 0x1000  : _1M;
-        uintptr_t uAddrLast = _64K - uAddr - cbAlloc;
-        while (uAddr <= uAddrLast)
+        void *pv = mmap((void *)uAddr, cbAlloc, fProt, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        if (pv && (uintptr_t)pv <= uAddrLast)
         {
-            pv = mmap((void *)uAddr, cbAlloc, fProt, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-            if (pv && (uintptr_t)pv <= uAddrLast)
-                break;
-            if (pv)
-            {
-                munmap(pv, cbAlloc);
-                pv = NULL;
-            }
-            uAddr += _4K;
+            *ppv = pv;
+            return VINF_SUCCESS;
         }
+
+        if (pv)
+        {
+            munmap(pv, cbAlloc);
+            pv = NULL;
+        }
+        uAddr += _4K;
     }
-    else
-    {
+
+    return VERR_NO_MEMORY;
+}
+
+
+DECLHIDDEN(int) rtMemAllocEx32BitReach(size_t cbAlloc, uint32_t fFlags, void **ppv)
+{
+    int     fProt = PROT_READ | PROT_WRITE | (fFlags & RTMEMALLOCEX_FLAGS_EXEC ? PROT_EXEC : 0);
 #if ARCH_BITS == 32
-        pv = mmap(NULL, cbAlloc, fProt, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    void   *pv = mmap(NULL, cbAlloc, fProt, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (pv)
+    {
+        *ppv = pv;
+        return VINF_SUCCESS;
+    }
+    return VERR_NO_MEMORY;
 
 #elif defined(RT_OS_LINUX)
 # ifdef MAP_32BIT
-        pv = mmap(NULL, cbAlloc, fProt, MAP_PRIVATE | MAP_ANONYMOUS | MAP_32BIT, -1, 0);
-        if (pv)
-            return pv;
+    void *pv = mmap(NULL, cbAlloc, fProt, MAP_PRIVATE | MAP_ANONYMOUS | MAP_32BIT, -1, 0);
+    if (pv)
+    {
+        *ppv = pv;
+        return VINF_SUCCESS;
+    }
 # endif
 
-        /** @todo On linux, we need an accurate hint. Since I don't need this branch of
-         *        the code right now, I won't bother starting to parse
-         *        /proc/curproc/mmap right now... */
-        pv = NULL;
+    /** @todo On linux, we need an accurate hint. Since I don't need this branch of
+     *        the code right now, I won't bother starting to parse
+     *        /proc/curproc/mmap right now... */
 #else
-        pv = NULL;
 #endif
-    }
-    return pv;
+    return VERR_NOT_SUPPORTED;
 }
 
 
-RTDECL(int) RTMemAllocExTag(size_t cb, size_t cbAlignment, uint32_t fFlags, const char *pszTag, void **ppv) RT_NO_THROW
+DECLHIDDEN(void) rtMemFreeExYyBitReach(void *pv, size_t cb, uint32_t fFlags)
 {
-    /*
-     * Validate and adjust input.
-     */
-    AssertMsgReturn(!(fFlags & ~RTMEMALLOCEX_FLAGS_VALID_MASK), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
-    AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    AssertReturn(RT_IS_POWER_OF_TWO(cbAlignment), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(cbAlignment <= sizeof(void *), ("%zu (%#x)\n", cbAlignment, cbAlignment), VERR_UNSUPPORTED_ALIGNMENT);
-
-    if (fFlags & RTMEMALLOCEX_FLAGS_ANY_CTX)
-        return VERR_NOT_SUPPORTED;
-
-    /*
-     * Align the request.
-     */
-    size_t cbAligned = cb;
-    if (cbAlignment)
-        cbAligned = RT_ALIGN_Z(cb, cbAlignment);
-    else
-        cbAligned = RT_ALIGN_Z(cb, sizeof(uint64_t));
-    AssertMsgReturn(cbAligned >= cb && cbAligned <= ~(size_t)0, ("cbAligned=%#zx cb=%#zx", cbAligned, cb),
-                    VERR_INVALID_PARAMETER);
-
-    /*
-     * Allocate the requested memory.
-     */
-    void *pv;
-    if (fFlags & (RTMEMALLOCEX_FLAGS_16BIT_REACH | RTMEMALLOCEX_FLAGS_32BIT_REACH))
-        pv = rtMemAllocExAllocLow(cbAligned + sizeof(RTMEMHDRR3), fFlags);
-    else if (fFlags & RTMEMALLOCEX_FLAGS_EXEC)
-    {
-        pv = RTMemExecAlloc(cbAligned + sizeof(RTMEMHDRR3));
-        if ((fFlags & RTMEMALLOCEX_FLAGS_ZEROED) && pv)
-            RT_BZERO(pv, cbAligned + sizeof(RTMEMHDRR3));
-    }
-    else if (fFlags & RTMEMALLOCEX_FLAGS_ZEROED)
-        pv = RTMemAllocZ(cbAligned + sizeof(RTMEMHDRR3));
-    else
-        pv = RTMemAlloc(cbAligned + sizeof(RTMEMHDRR3));
-    if (!pv)
-        return VERR_NO_MEMORY;
-
-    /*
-     * Fill in the header and return.
-     */
-    PRTMEMHDRR3 pHdr = (PRTMEMHDRR3)pv;
-    pHdr->u32Magic  = RTMEMHDR_MAGIC;
-    pHdr->fFlags    = fFlags;
-    pHdr->cb        = cbAligned;
-    pHdr->cbReq     = cb;
-
-    *ppv = pHdr + 1;
-    return VINF_SUCCESS;
+    munmap(pv, cb);
 }
-RT_EXPORT_SYMBOL(RTMemAllocExTag);
-
-
-RTDECL(void) RTMemFreeEx(void *pv, size_t cb) RT_NO_THROW
-{
-    if (!pv)
-        return;
-    AssertPtr(pv);
-
-    PRTMEMHDRR3 pHdr = (PRTMEMHDRR3)pv - 1;
-    AssertMsg(pHdr->u32Magic == RTMEMHDR_MAGIC, ("pHdr->u32Magic=%RX32 pv=%p cb=%#x\n", pHdr->u32Magic, pv, cb));
-    pHdr->u32Magic = RTMEMHDR_MAGIC_DEAD;
-    Assert(pHdr->cbReq == cb);
-
-    if (pHdr->fFlags & (RTMEMALLOCEX_FLAGS_16BIT_REACH | RTMEMALLOCEX_FLAGS_32BIT_REACH))
-        munmap(pHdr, pHdr->cb + sizeof(*pHdr));
-    else if (pHdr->fFlags & RTMEMALLOCEX_FLAGS_EXEC)
-        RTMemExecFree(pHdr, pHdr->cb + sizeof(*pHdr));
-    else
-        RTMemFree(pHdr);
-}
-RT_EXPORT_SYMBOL(RTMemFreeEx);
 
