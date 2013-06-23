@@ -47,18 +47,6 @@ def RT_BIT_64(iBit): # pylint: disable=C0103
 ## @}
 
 
-## @name Misc
-## @{
-
-def convU32ToSigned(u32):
-    """ Converts a 32-bit unsigned value to 32-bit signed. """
-    if u32 < 0x80000000:
-        return u32;
-    return u32 - UINT32_MAX - 1;
-
-## @}
-
-
 ## @name ModR/M
 ## @{
 X86_MODRM_RM_MASK   = 0x07;
@@ -113,8 +101,8 @@ g_asGRegs16NoSp = ('ax',  'cx',  'dx',  'bx',  None,  'bp',  'si',  'di',
                    'r8w', 'r9w', 'r10w', 'r11w', 'r12w', 'r13w', 'r14w', 'r15w');
 g_asGRegs16     = ('ax',  'cx',  'dx',  'bx',  'sp',  'bp',  'si',  'di',
                    'r8w', 'r9w', 'r10w', 'r11w', 'r12w', 'r13w', 'r14w', 'r15w');
-g_asGRegs8_86   = ('al',  'cl',  'dl',  'bl',  'ah',  'ah',  'dh',  'bh');
-g_asGRegs8_64   = ('al',  'cl',  'dl',  'bl',  'spl', 'bpl', 'sil',  'dil',        # pylint: disable=C0103
+g_asGRegs8      = ('al',  'cl',  'dl',  'bl',  'ah',  'ah',  'dh',  'bh');
+g_asGRegs8Rex   = ('al',  'cl',  'dl',  'bl',  'spl', 'bpl', 'sil',  'dil',
                    'r8b', 'r9b', 'r10b', 'r11b', 'r12b', 'r13b', 'r14b', 'r15b');
 ## @}
 
@@ -173,6 +161,31 @@ def calcModRmForTwoRegs(iReg, iRm):
         | ((iReg << X86_MODRM_REG_SHIFT) & X86_MODRM_REG_MASK) \
         | (iRm   &  X86_MODRM_RM_MASK);
     return [bRm,];
+
+## @}
+
+
+## @name Misc
+## @{
+
+def convU32ToSigned(u32):
+    """ Converts a 32-bit unsigned value to 32-bit signed. """
+    if u32 < 0x80000000:
+        return u32;
+    return u32 - UINT32_MAX - 1;
+
+def gregName(iReg, cBits, fRexByteRegs = True):
+    """ Gets the name of a general register by index and width. """
+    if cBits == 64:
+        return g_asGRegs64[iReg];
+    if cBits == 32:
+        return g_asGRegs32[iReg];
+    if cBits == 16:
+        return g_asGRegs16[iReg];
+    assert cBits == 8;
+    if fRexByteRegs:
+        return g_asGRegs8Rex[iReg];
+    return g_asGRegs8[iReg];
 
 ## @}
 
@@ -267,7 +280,7 @@ class TargetEnv(object):
             return [16, 32];
         if self.sInstrSet == self.ksInstrSet_32:
             return [32, 16];
-        return [64, 64];
+        return [64, 32];
 
 
 ## Target environments.
@@ -371,7 +384,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         elif cbEffOp == 2:
             oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs16[iOp1], g_asGRegs16[iOp2]));
         elif cbEffOp == 1:
-            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs8_64[iOp1], g_asGRegs8_64[iOp2]));
+            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs8Rex[iOp1], g_asGRegs8Rex[iOp2]));
         else:
             assert False;
         return True;
@@ -385,7 +398,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         elif cbEffOp == 2:
             oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs16[iOp1],));
         elif cbEffOp == 1:
-            oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs8_64[iOp1],));
+            oGen.write('        %s %s, [' % (self.sInstr, g_asGRegs8Rex[iOp1],));
         else:
             assert False;
 
@@ -523,9 +536,6 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                                                                     iOp1, iOp2, uInput, uResult);
                         else:
                             pass; # SIB
-                    break; ## remove me!
-                #break; ## remove me!
-            #break; ## remove me!
 
         return True;
 
@@ -695,7 +705,7 @@ class InstructionTestGen(object):
         """
         Records the need for a given register checker function, returning its label.
         """
-        sName = '%ubit_U%u_%s' % (cAddrBits, cbEffOp * 8, self.oTarget.asGRegs[iReg1]);
+        sName = '%ubit_U%u_%s' % (cAddrBits, cbEffOp * 8, gregName(iReg1, cAddrBits),);
         if offDisp is not None:
             sName += '_%#010x' % (offDisp & UINT32_MAX, );
         if sName in self.dCheckFns:
@@ -846,7 +856,11 @@ class InstructionTestGen(object):
             if cAddrBits == 64:   asAddrGRegs = g_asGRegs64;
             elif cAddrBits == 32: asAddrGRegs = g_asGRegs32;
             else:                 asAddrGRegs = g_asGRegs16;
-            iBaseReg = asAddrGRegs.index(sBaseReg);
+            try:
+                iBaseReg = asAddrGRegs.index(sBaseReg);
+            except ValueError:
+                assert False, 'sBaseReg=%s' % (sBaseReg,);
+                raise;
 
             i = 3;
             u32Disp = None;
@@ -890,7 +904,7 @@ class InstructionTestGen(object):
                 sDataVar = 'VBINSTST_NAME(g_u16Data)';
             else:
                 assert cEffOpBits == 8;
-                sTmpReg1 = g_asGRegs8_64[iTmpReg1];
+                sTmpReg1 = g_asGRegs8Rex[iTmpReg1];
                 sDataVar = 'VBINSTST_NAME(g_u8Data)';
 
             # Load the value and mem address, sorting the value there.
