@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Memory Allocation, Extended Alloc and Free Functions for Ring-3, generic.
+ * IPRT - Memory Allocation, Extended Alloc Workers, generic.
  */
 
 /*
@@ -33,103 +33,24 @@
 #include "internal/iprt.h"
 
 #include <iprt/assert.h>
-#include <iprt/string.h>
-#include "internal/magics.h"
+#include "../allocex-r3.h"
 
 
-/*******************************************************************************
-*   Structures and Typedefs                                                    *
-*******************************************************************************/
-/**
- * Heading for extended memory allocations in ring-3.
- */
-typedef struct RTMEMHDRR3
+
+DECLHIDDEN(int) rtMemAllocEx16BitReach(size_t cbAlloc, uint32_t fFlags, void **ppv)
 {
-    /** Magic (RTMEMHDR_MAGIC). */
-    uint32_t    u32Magic;
-    /** Block flags (RTMEMALLOCEX_FLAGS_*). */
-    uint32_t    fFlags;
-    /** The actual size of the block, header not included. */
-    uint32_t    cb;
-    /** The requested allocation size. */
-    uint32_t    cbReq;
-} RTMEMHDRR3;
-/** Pointer to a ring-3 extended memory header. */
-typedef RTMEMHDRR3 *PRTMEMHDRR3;
-
-
-
-RTDECL(int) RTMemAllocExTag(size_t cb, size_t cbAlignment, uint32_t fFlags, const char *pszTag, void **ppv) RT_NO_THROW
-{
-    /*
-     * Validate and adjust input.
-     */
-    AssertMsgReturn(!(fFlags & ~RTMEMALLOCEX_FLAGS_VALID_MASK), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
-    AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
-    AssertReturn(RT_IS_POWER_OF_TWO(cbAlignment), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(cbAlignment <= sizeof(void *), ("%zu (%#x)\n", cbAlignment, cbAlignment), VERR_UNSUPPORTED_ALIGNMENT);
-
-    if (fFlags & (RTMEMALLOCEX_FLAGS_16BIT_REACH | RTMEMALLOCEX_FLAGS_32BIT_REACH | RTMEMALLOCEX_FLAGS_ANY_CTX))
-        return VERR_NOT_SUPPORTED;
-
-    /*
-     * Align the request.
-     */
-    size_t cbAligned = cb;
-    if (cbAlignment)
-        cbAligned = RT_ALIGN_Z(cb, cbAlignment);
-    else
-        cbAligned = RT_ALIGN_Z(cb, sizeof(uint64_t));
-    AssertMsgReturn(cbAligned >= cb && cbAligned <= ~(size_t)0, ("cbAligned=%#zx cb=%#zx", cbAligned, cb),
-                    VERR_INVALID_PARAMETER);
-
-    /*
-     * Allocate the requested memory.
-     */
-    void *pv;
-    if (fFlags & RTMEMALLOCEX_FLAGS_EXEC)
-    {
-        pv = RTMemExecAlloc(cbAligned + sizeof(RTMEMHDRR3));
-        if ((fFlags & RTMEMALLOCEX_FLAGS_ZEROED) && pv)
-            RT_BZERO(pv, cbAligned + sizeof(RTMEMHDRR3));
-    }
-    else if (fFlags & RTMEMALLOCEX_FLAGS_ZEROED)
-        pv = RTMemAllocZ(cbAligned + sizeof(RTMEMHDRR3));
-    else
-        pv = RTMemAlloc(cbAligned + sizeof(RTMEMHDRR3));
-    if (!pv)
-        return VERR_NO_MEMORY;
-
-    /*
-     * Fill in the header and return.
-     */
-    PRTMEMHDRR3 pHdr = (PRTMEMHDRR3)pv;
-    pHdr->u32Magic  = RTMEMHDR_MAGIC;
-    pHdr->fFlags    = fFlags;
-    pHdr->cb        = (uint32_t)cbAligned;
-    pHdr->cbReq     = (uint32_t)cb;
-
-    *ppv = pHdr + 1;
-    return VINF_SUCCESS;
+    return VERR_NOT_SUPPORTED;
 }
-RT_EXPORT_SYMBOL(RTMemAllocExTag);
 
 
-RTDECL(void) RTMemFreeEx(void *pv, size_t cb) RT_NO_THROW
+DECLHIDDEN(int) rtMemAllocEx32BitReach(size_t cbAlloc, uint32_t fFlags, void **ppv)
 {
-    if (!pv)
-        return;
-    AssertPtr(pv);
-
-    PRTMEMHDRR3 pHdr = (PRTMEMHDRR3)pv - 1;
-    AssertMsg(pHdr->u32Magic == RTMEMHDR_MAGIC, ("pHdr->u32Magic=%RX32 pv=%p cb=%#x\n", pHdr->u32Magic, pv, cb));
-    pHdr->u32Magic = RTMEMHDR_MAGIC_DEAD;
-    Assert(pHdr->cbReq == cb);
-
-    if (pHdr->fFlags & RTMEMALLOCEX_FLAGS_EXEC)
-        RTMemExecFree(pHdr, pHdr->cb + sizeof(*pHdr));
-    else
-        RTMemFree(pHdr);
+    return VERR_NOT_SUPPORTED;
 }
-RT_EXPORT_SYMBOL(RTMemFreeEx);
+
+
+DECLHIDDEN(void) rtMemFreeExYyBitReach(void *pv, size_t cb, uint32_t fFlags)
+{
+    AssertFailed();
+}
 
