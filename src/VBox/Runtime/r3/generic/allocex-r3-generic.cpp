@@ -32,8 +32,8 @@
 #include <iprt/mem.h>
 #include "internal/iprt.h"
 
-#include <iprt/assert.h>
-#include "../allocex-r3.h"
+#include <iprt/err.h>
+#include "../allocex.h"
 
 
 
