@@ -379,15 +379,15 @@ template<> QString toInternalString(const GlobalSettingsPageType &globalSettings
     QString strResult;
     switch (globalSettingsPageType)
     {
-        case GlobalSettingsPageType_General:   strResult = "General"; break;
-        case GlobalSettingsPageType_Input:     strResult = "Input"; break;
-        case GlobalSettingsPageType_Update:    strResult = "Update"; break;
-        case GlobalSettingsPageType_Language:  strResult = "Language"; break;
-        case GlobalSettingsPageType_Display:   strResult = "Display"; break;
-        case GlobalSettingsPageType_USB:       strResult = "USB"; break;
-        case GlobalSettingsPageType_Network:   strResult = "Network"; break;
-        case GlobalSettingsPageType_Extension: strResult = "Extension"; break;
-        case GlobalSettingsPageType_Proxy:     strResult = "Proxy"; break;
+        case GlobalSettingsPageType_General:    strResult = "General"; break;
+        case GlobalSettingsPageType_Input:      strResult = "Input"; break;
+        case GlobalSettingsPageType_Update:     strResult = "Update"; break;
+        case GlobalSettingsPageType_Language:   strResult = "Language"; break;
+        case GlobalSettingsPageType_Display:    strResult = "Display"; break;
+        case GlobalSettingsPageType_USB:        strResult = "USB"; break;
+        case GlobalSettingsPageType_Network:    strResult = "Network"; break;
+        case GlobalSettingsPageType_Extensions: strResult = "Extensions"; break;
+        case GlobalSettingsPageType_Proxy:      strResult = "Proxy"; break;
         default:
         {
             AssertMsgFailed(("No text for settings page type=%d", globalSettingsPageType));
@@ -403,15 +403,15 @@ template<> GlobalSettingsPageType fromInternalString<GlobalSettingsPageType>(con
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;    QList<GlobalSettingsPageType> values;
-    keys << "General";   values << GlobalSettingsPageType_General;
-    keys << "Input";     values << GlobalSettingsPageType_Input;
-    keys << "Update";    values << GlobalSettingsPageType_Update;
-    keys << "Language";  values << GlobalSettingsPageType_Language;
-    keys << "Display";   values << GlobalSettingsPageType_Display;
-    keys << "USB";       values << GlobalSettingsPageType_USB;
-    keys << "Network";   values << GlobalSettingsPageType_Network;
-    keys << "Extension"; values << GlobalSettingsPageType_Extension;
-    keys << "Proxy";     values << GlobalSettingsPageType_Proxy;
+    keys << "General";    values << GlobalSettingsPageType_General;
+    keys << "Input";      values << GlobalSettingsPageType_Input;
+    keys << "Update";     values << GlobalSettingsPageType_Update;
+    keys << "Language";   values << GlobalSettingsPageType_Language;
+    keys << "Display";    values << GlobalSettingsPageType_Display;
+    keys << "USB";        values << GlobalSettingsPageType_USB;
+    keys << "Network";    values << GlobalSettingsPageType_Network;
+    keys << "Extensions"; values << GlobalSettingsPageType_Extensions;
+    keys << "Proxy";      values << GlobalSettingsPageType_Proxy;
     /* Invalid type for unknown words: */
     if (!keys.contains(strGlobalSettingsPageType, Qt::CaseInsensitive))
         return GlobalSettingsPageType_Invalid;
