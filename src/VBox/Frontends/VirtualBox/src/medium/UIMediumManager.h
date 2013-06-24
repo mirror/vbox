@@ -132,6 +132,9 @@ private:
 
     QString formatPaneText (const QString &aText, bool aCompact = true, const QString &aElipsis = "middle");
 
+    /* Helper: Enumeration stuff: */
+    static bool isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium);
+
     /* Private member vars */
     /* Window status */
     bool mDoSelect;
