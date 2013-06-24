@@ -1483,6 +1483,14 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         SHASTORAGE storage;
         RT_ZERO(storage);
 
+        Utf8Str name = applianceIOName(applianceIOFile);
+
+        int vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
+                                 VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
+                                 &storage.pVDImageIfaces);
+        if (RT_FAILURE(vrc))
+            throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
+
         /* Create the import stack for the rollback on errors. */
         ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress);
 
@@ -1493,14 +1501,6 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
                 throw setError(E_OUTOFMEMORY);
 
             storage.fCreateDigest = true;
-
-            Utf8Str name = applianceIOName(applianceIOFile);
-
-            int vrc = VDInterfaceAdd(&pFileIo->Core, name.c_str(),
-                                     VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
-                                     &storage.pVDImageIfaces);
-            if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
 
             size_t cbMfSize = 0;
             
@@ -3168,7 +3168,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 
         Utf8Str name = applianceIOName(applianceIOTar);
 
-        if (strncmp(pStorage->pVDImageIfaces->pszInterfaceName, name.c_str(), name.length()) == 0)
+        if (strncmp(pCallbacks->Core.pszInterfaceName, name.c_str(), name.length()) == 0)
         {
             /* It means that we possibly have imported the storage earlier on the previous loop steps*/
             std::set<RTCString>::const_iterator h = disksResolvedNames.find(diCurrent.strHref);
