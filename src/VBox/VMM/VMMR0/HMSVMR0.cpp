@@ -113,8 +113,8 @@
 /**
  * @name Exception bitmap mask for all contributory exceptions.
  *
- * Page fault is deliberately excluded here as it's conditional whether it's
- * contributory or benign. It's handled separately.
+ * Page fault is deliberately excluded here as it's conditional as to whether
+ * it's contributory or benign. Page faults are handled separately.
  */
 #define HMSVM_CONTRIBUTORY_XCPT_MASK  ( RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_TS) \
                                        | RT_BIT(X86_XCPT_DE))
@@ -2002,8 +2002,8 @@ static void hmR0SvmTrpmTrapToPendingEvent(PVMCPU pVCpu)
             case X86_XCPT_GP:
             case X86_XCPT_AC:
             {
-                Event.n.u32ErrorCode     = uErrCode;
                 Event.n.u1ErrorCodeValid = 1;
+                Event.n.u32ErrorCode     = uErrCode;
                 break;
             }
         }
@@ -2911,33 +2911,39 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
                     switch (Event.n.u8Vector)
                     {
-                        case X86_XCPT_GP:
-                            Event.n.u1ErrorCodeValid    = 1;
-                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
+                        case X86_XCPT_DE:
+                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
                             break;
+
                         case X86_XCPT_BP:
                             /** Saves the wrong EIP on the stack (pointing to the int3) instead of the
                              *  next instruction. */
                             /** @todo Investigate this later. */
                             break;
-                        case X86_XCPT_DE:
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDE);
-                            break;
+
                         case X86_XCPT_UD:
                             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
                             break;
-                        case X86_XCPT_SS:
-                            Event.n.u1ErrorCodeValid    = 1;
-                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestSS);
-                            break;
+
                         case X86_XCPT_NP:
                             Event.n.u1ErrorCodeValid    = 1;
                             Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
                             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNP);
                             break;
+
+                        case X86_XCPT_SS:
+                            Event.n.u1ErrorCodeValid    = 1;
+                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
+                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestSS);
+                            break;
+
+                        case X86_XCPT_GP:
+                            Event.n.u1ErrorCodeValid    = 1;
+                            Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
+                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
+                            break;
                     }
+
                     Log4(("#Xcpt: Vector=%#x at CS:RIP=%04x:%RGv\n", Event.n.u8Vector, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
                     hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
                     return VINF_SUCCESS;
