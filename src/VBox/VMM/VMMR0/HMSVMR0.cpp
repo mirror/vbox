@@ -1124,7 +1124,7 @@ DECLINLINE(int) hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMC
             pVmcb->guest.u64CR3 = PGMGetHyperCR3(pVCpu);
 
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
-        pVCpu->hm.s.fContextUseFlags &= HM_CHANGED_GUEST_CR3;
+        pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR3;
     }
 
     /*
@@ -1543,6 +1543,7 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
     NOREF(pVM);
     NOREF(pVCpu);
     /* Nothing to do here. AMD-V does this for us automatically during the world-switch. */
+    pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_HOST_CONTEXT;
     return VINF_SUCCESS;
 }
 
@@ -2753,7 +2754,6 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
 
         /* Handle the #VMEXIT. */
-        AssertMsg(SvmTransient.u64ExitCode != (uint64_t)SVM_EXIT_INVALID, ("%#x\n", SvmTransient.u64ExitCode));
         HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
         rc = hmR0SvmHandleExit(pVCpu, pCtx, &SvmTransient);
         if (rc != VINF_SUCCESS)
@@ -2785,7 +2785,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
-    Assert(pSvmTransient->u64ExitCode > 0);
+    Assert(pSvmTransient->u64ExitCode != (uint64_t)SVM_EXIT_INVALID);
     Assert(pSvmTransient->u64ExitCode <= SVM_EXIT_MAX);
 
     /*
@@ -2884,6 +2884,9 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
                 case SVM_EXIT_VMMCALL:
                     return hmR0SvmExitVmmCall(pVCpu, pCtx, pSvmTransient);
+
+                case SVM_EXIT_SHUTDOWN:
+                    return hmR0SvmExitShutdown(pVCpu, pCtx, pSvmTransient);
 
                 case SVM_EXIT_INVLPGA:
                 case SVM_EXIT_RSM:
@@ -3607,7 +3610,8 @@ HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     /** @todo Decode Assist. */
     VBOXSTRICTRC rc2 = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
     int rc = VBOXSTRICTRC_VAL(rc2);
-    Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
+    AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3,
+              ("hmR0SvmExitReadCRx: EMInterpretInstruction failed rc=%Rrc\n", rc));
     Assert((pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0) <= 15);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCRxRead[pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0]);
     return rc;
