@@ -244,6 +244,7 @@ Q_DECLARE_METATYPE(DetailsElementType);
 /* Global settings page type: */
 enum GlobalSettingsPageType
 {
+    GlobalSettingsPageType_Invalid,
     GlobalSettingsPageType_General,
     GlobalSettingsPageType_Input,
     GlobalSettingsPageType_Update,
@@ -260,6 +261,7 @@ Q_DECLARE_METATYPE(GlobalSettingsPageType);
 /* Machine settings page type: */
 enum MachineSettingsPageType
 {
+    MachineSettingsPageType_Invalid,
     MachineSettingsPageType_General,
     MachineSettingsPageType_System,
     MachineSettingsPageType_Display,

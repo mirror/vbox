@@ -56,6 +56,8 @@ template<class X> X fromInternalString(const QString & /* strData */) { Assert(0
 /* Declare global canConvert specializations: */
 template<> bool canConvert<StorageSlot>();
 template<> bool canConvert<DetailsElementType>();
+template<> bool canConvert<GlobalSettingsPageType>();
+template<> bool canConvert<MachineSettingsPageType>();
 template<> bool canConvert<IndicatorType>();
 template<> bool canConvert<MachineCloseAction>();
 
@@ -88,6 +90,10 @@ template<> QString toString(const DetailsElementType &detailsElementType);
 template<> DetailsElementType fromString<DetailsElementType>(const QString &strDetailsElementType);
 template<> QString toInternalString(const DetailsElementType &detailsElementType);
 template<> DetailsElementType fromInternalString<DetailsElementType>(const QString &strDetailsElementType);
+template<> QString toInternalString(const GlobalSettingsPageType &globalSettingsPageType);
+template<> GlobalSettingsPageType fromInternalString<GlobalSettingsPageType>(const QString &strGlobalSettingsPageType);
+template<> QString toInternalString(const MachineSettingsPageType &machineSettingsPageType);
+template<> MachineSettingsPageType fromInternalString<MachineSettingsPageType>(const QString &strMachineSettingsPageType);
 template<> QString toInternalString(const IndicatorType &indicatorType);
 template<> IndicatorType fromInternalString<IndicatorType>(const QString &strIndicatorType);
 template<> QString toInternalString(const MachineCloseAction &machineCloseAction);
