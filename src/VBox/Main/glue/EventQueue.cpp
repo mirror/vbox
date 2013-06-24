@@ -113,7 +113,11 @@ int EventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
     if (RT_SUCCESS(rc))
     {
         if (ASMAtomicReadBool(&mShutdown))
+        {
+            int rc2 = RTCritSectLeave(&mCritSect);
+            AssertRC(rc2);
             return VERR_INTERRUPTED;
+        }
 
         if (RT_SUCCESS(rc))
         {
