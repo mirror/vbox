@@ -241,6 +241,40 @@ enum DetailsElementType
 };
 Q_DECLARE_METATYPE(DetailsElementType);
 
+/* Global settings page type: */
+enum GlobalSettingsPageType
+{
+    GlobalSettingsPageType_General,
+    GlobalSettingsPageType_Input,
+    GlobalSettingsPageType_Update,
+    GlobalSettingsPageType_Language,
+    GlobalSettingsPageType_Display,
+    GlobalSettingsPageType_USB,
+    GlobalSettingsPageType_Network,
+    GlobalSettingsPageType_Extension,
+    GlobalSettingsPageType_Proxy,
+    GlobalSettingsPageType_Max
+};
+Q_DECLARE_METATYPE(GlobalSettingsPageType);
+
+/* Machine settings page type: */
+enum MachineSettingsPageType
+{
+    MachineSettingsPageType_General,
+    MachineSettingsPageType_System,
+    MachineSettingsPageType_Display,
+    MachineSettingsPageType_Storage,
+    MachineSettingsPageType_Audio,
+    MachineSettingsPageType_Network,
+    MachineSettingsPageType_Ports,
+    MachineSettingsPageType_Serial,
+    MachineSettingsPageType_Parallel,
+    MachineSettingsPageType_USB,
+    MachineSettingsPageType_SF,
+    MachineSettingsPageType_Max
+};
+Q_DECLARE_METATYPE(MachineSettingsPageType);
+
 /* Indicator type: */
 enum IndicatorType
 {
