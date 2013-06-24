@@ -129,6 +129,8 @@ public:
     void blockAndQueryState();
     void refresh();
 
+    bool isAttachedToHiddenMachinesOnly() const { return m_fAttachedToHiddenMachinesOnly; }
+
     const CMedium &medium() const { return mMedium; }
 
     UIMediumType type() const { return mType; }
@@ -240,6 +242,8 @@ public:
 private:
 
     void checkNoDiffs (bool aNoDiffs);
+
+    bool m_fAttachedToHiddenMachinesOnly;
 
     CMedium mMedium;
 

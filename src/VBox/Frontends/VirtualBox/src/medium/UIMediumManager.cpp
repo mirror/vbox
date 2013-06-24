@@ -777,6 +777,10 @@ void UIMediumManager::mediumAdded (const UIMedium &aMedium)
         (aMedium.isHostDrive()))
         return;
 
+    /* Ignore mediums (and their children) attached to hidden machines only: */
+    if (isMediumAttachedToHiddenMachinesOnly(aMedium))
+        return;
+
     if (!mShowDiffs && aMedium.type() == UIMediumType_HardDisk)
     {
         if (aMedium.parent() && !mSessionMachineId.isNull())
@@ -886,6 +890,10 @@ void UIMediumManager::mediumUpdated (const UIMedium &aMedium)
     if ((aMedium.isNull()) ||
         (mType != UIMediumType_All && mType != aMedium.type()) ||
         (aMedium.isHostDrive()))
+        return;
+
+    /* Ignore mediums (and their children) attached to hidden machines only: */
+    if (isMediumAttachedToHiddenMachinesOnly(aMedium))
         return;
 
     MediaItem *item = 0;
@@ -1980,6 +1988,24 @@ QString UIMediumManager::formatPaneText (const QString &aText, bool aCompact /* 
               aText)
         .arg (aCompact ? "</compact>" : "");
     return info;
+}
+
+/* static */
+bool UIMediumManager::isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium)
+{
+    /* Iterate till the root: */
+    const UIMedium *pMedium = &medium;
+    do
+    {
+        /* Ignore medium if its attached to hidden machines only: */
+        if (pMedium->isAttachedToHiddenMachinesOnly())
+            return true;
+        /* Move iterator to parent: */
+        pMedium = pMedium->parent();
+    }
+    while (pMedium);
+    /* False by default: */
+    return false;
 }
 
 #include "UIMediumManager.moc"
