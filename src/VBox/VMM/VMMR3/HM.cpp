@@ -1436,7 +1436,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
 
     if (pVM->hm.s.fNestedPaging)
     {
-        LogRel(("HM:    Enabled nested paging!\n"));
+        LogRel(("HM:    Nested paging enabled!\n"));
 
         /*
          * Enable large pages (2 MB) if applicable.
