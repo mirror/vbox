@@ -1564,12 +1564,14 @@ VBoxManage setextradata "nom VM"
 VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiBoardLocInChass"   "Emplacement carte"
 VBoxManage setextradata "nom VM"
-      "VBoxInternal/Devices/pcbios/0/Config/DmiBoardType"         10</screen>
+      "VBoxInternal/Devices/pcbios/0/Config/DmiBoardBoardType"    10</screen>
     </sect2>
     <sect2>
       <title>Boîtier système DMI ou chassis (type 3)</title>
       <screen>VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiChassisVendor"     "Fabricant Chassis"
+VBoxManage setextradata "nom VM"
+      "VBoxInternal/Devices/pcbios/0/Config/DmiChassisType"       3
 VBoxManage setextradata "nom VM"
       "VBoxInternal/Devices/pcbios/0/Config/DmiChassisVersion"    "Version Chassis"
 VBoxManage setextradata "nom VM"

@@ -51,7 +51,10 @@
           <computeroutput>--long</computeroutput> pour afficher véritablement
           tous les détails disponibles</para>
       </listitem>
-
+      <listitem>
+        <para>VBoxManage : ajout du support de paramètres en ligne de commandes
+        pour la mise à jour automatique des suppléments invité.</para>
+      </listitem>
       <listitem>
         <para>support 3D : plusieurs corrections pour les hôtes Mac OS X</para>
       </listitem>
