@@ -7,7 +7,7 @@
 #include "packer.h"
 #include "cr_error.h"
 
-void PACK_APIENTRY crPackChromiumParametervCR(GLenum target, GLenum type, GLsizei count, const GLvoid *values)
+void PACK_APIENTRY crPackChromiumParametervCR(CR_PACKER_CONTEXT_ARGDECL GLenum target, GLenum type, GLsizei count, const GLvoid *values)
 {
     CR_GET_PACKER_CONTEXT(pc);
     unsigned int header_length = 2 * sizeof(int) + sizeof(target) + sizeof(type) + sizeof(count);
@@ -29,9 +29,11 @@ void PACK_APIENTRY crPackChromiumParametervCR(GLenum target, GLenum type, GLsize
     case GL_UNSIGNED_INT:
         params_length = sizeof(GLint) * count;
         break;
+#ifndef IN_RING0
     case GL_FLOAT:
         params_length = sizeof(GLfloat) * count;
         break;
+#endif
 #if 0
     case GL_DOUBLE:
         params_length = sizeof(GLdouble) * count;
@@ -74,11 +76,13 @@ void PACK_APIENTRY crPackChromiumParametervCR(GLenum target, GLenum type, GLsize
             WRITE_DATA( pos, GLint, ((GLint *) values)[i]);
         }
         break;
+#ifndef IN_RING0
     case GL_FLOAT:
         for (i = 0; i < count; i++, pos += sizeof(GLfloat)) {
             WRITE_DATA( pos, GLfloat, ((GLfloat *) values)[i]);
         }
         break;
+#endif
 #if 0
     case GL_DOUBLE:
         for (i = 0; i < count; i++) {
@@ -95,7 +99,8 @@ void PACK_APIENTRY crPackChromiumParametervCR(GLenum target, GLenum type, GLsize
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
-void PACK_APIENTRY crPackDeleteQueriesARB(GLsizei n, const GLuint * ids)
+#ifndef IN_RING0
+void PACK_APIENTRY crPackDeleteQueriesARB(CR_PACKER_CONTEXT_ARGDECL GLsizei n, const GLuint * ids)
 {
     unsigned char *data_ptr;
     int packet_length = sizeof(GLenum)+sizeof(n)+n*sizeof(*ids);
@@ -106,4 +111,79 @@ void PACK_APIENTRY crPackDeleteQueriesARB(GLsizei n, const GLuint * ids)
     crMemcpy(data_ptr + 8, ids, n*sizeof(*ids));
     crHugePacket(CR_EXTEND_OPCODE, data_ptr);
     crPackFree(data_ptr);
+}
+#endif
+
+void PACK_APIENTRY crPackVBoxTexPresent( CR_PACKER_CONTEXT_ARGDECL GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, const GLint * pRects )
+{
+    GLint i, size, cnt;
+
+    CR_GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    (void) pc;
+    size = 28 + cRects * 4 * sizeof(GLint);
+    CR_GET_BUFFERED_POINTER( pc, size );
+    WRITE_DATA( 0, GLint, size );
+    WRITE_DATA( 4, GLenum, CR_VBOXTEXPRESENT_EXTEND_OPCODE );
+    WRITE_DATA( 8, GLint, texture );
+    WRITE_DATA( 12, GLint, cfg );
+    WRITE_DATA( 16, GLint, xPos );
+    WRITE_DATA( 20, GLint, yPos );
+    WRITE_DATA( 24, GLint, cRects );
+
+    cnt = 28;
+    for (i=0; i<cRects; ++i)
+    {
+        WRITE_DATA(cnt, GLint, (GLint) pRects[4*i+0]);
+        WRITE_DATA(cnt+4, GLint, (GLint) pRects[4*i+1]);
+        WRITE_DATA(cnt+8, GLint, (GLint) pRects[4*i+2]);
+        WRITE_DATA(cnt+12, GLint, (GLint) pRects[4*i+3]);
+        cnt += 16;
+    }
+    WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
+}
+
+void PACK_APIENTRY crPackWindowPosition( CR_PACKER_CONTEXT_ARGDECL GLint window, GLint x, GLint y )
+{
+    CR_GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    (void) pc;
+    CR_GET_BUFFERED_POINTER( pc, 20 );
+    WRITE_DATA( 0, GLint, 20 );
+    WRITE_DATA( 4, GLenum, CR_WINDOWPOSITION_EXTEND_OPCODE );
+    WRITE_DATA( 8, GLint, window );
+    WRITE_DATA( 12, GLint, x );
+    WRITE_DATA( 16, GLint, y );
+    WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
+}
+
+void PACK_APIENTRY crPackWindowShow( CR_PACKER_CONTEXT_ARGDECL GLint window, GLint flag )
+{
+    CR_GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    (void) pc;
+    CR_GET_BUFFERED_POINTER( pc, 16 );
+    WRITE_DATA( 0, GLint, 16 );
+    WRITE_DATA( 4, GLenum, CR_WINDOWSHOW_EXTEND_OPCODE );
+    WRITE_DATA( 8, GLint, window );
+    WRITE_DATA( 12, GLint, flag );
+    WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
+}
+
+void PACK_APIENTRY crPackWindowSize( CR_PACKER_CONTEXT_ARGDECL GLint window, GLint w, GLint h )
+{
+    CR_GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    (void) pc;
+    CR_GET_BUFFERED_POINTER( pc, 20 );
+    WRITE_DATA( 0, GLint, 20 );
+    WRITE_DATA( 4, GLenum, CR_WINDOWSIZE_EXTEND_OPCODE );
+    WRITE_DATA( 8, GLint, window );
+    WRITE_DATA( 12, GLint, w );
+    WRITE_DATA( 16, GLint, h );
+    WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }

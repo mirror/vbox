@@ -16,16 +16,106 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #include <cr_vreg.h>
-#include <iprt/memcache.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
-#ifndef IN_RING0
 #include <cr_error.h>
 #define WARN(_m) do { crWarning _m ; } while (0)
+
+#ifndef IN_RING0
+#include <iprt/memcache.h>
+#ifndef VBOXVDBG_VR_LAL_DISABLE
+static RTMEMCACHE g_VBoxVrLookasideList;
+#define vboxVrRegLaAlloc(_c) RTMemCacheAlloc((_c))
+#define vboxVrRegLaFree(_c, _e) RTMemCacheFree((_c), (_e))
+DECLINLINE(int) vboxVrLaCreate(RTMEMCACHE *pCache, size_t cbElement)
+{
+    int rc = RTMemCacheCreate(pCache, cbElement,
+                            0, /* size_t cbAlignment */
+                            UINT32_MAX, /* uint32_t cMaxObjects */
+                            NULL, /* PFNMEMCACHECTOR pfnCtor*/
+                            NULL, /* PFNMEMCACHEDTOR pfnDtor*/
+                            NULL, /* void *pvUser*/
+                            0 /* uint32_t fFlags*/
+                            );
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("RTMemCacheCreate failed rc %d", rc));
+        return rc;
+    }
+    return VINF_SUCCESS;
+}
+#define vboxVrLaDestroy(_c) RTMemCacheDestroy((_c))
+#endif
 #else
-# error port me!
+# ifdef RT_OS_WINDOWS
+#  ifdef PAGE_SIZE
+#    undef PAGE_SIZE
+#  endif
+#  ifdef PAGE_SHIFT
+#    undef PAGE_SHIFT
+#  endif
+#  define VBOX_WITH_WORKAROUND_MISSING_PACK
+#  if (_MSC_VER >= 1400) && !defined(VBOX_WITH_PATCHED_DDK)
+#    define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
+#    define _InterlockedExchangeAdd        _InterlockedExchangeAdd_StupidDDKVsCompilerCrap
+#    define _InterlockedCompareExchange    _InterlockedCompareExchange_StupidDDKVsCompilerCrap
+#    define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
+#    define _interlockedbittestandset      _interlockedbittestandset_StupidDDKVsCompilerCrap
+#    define _interlockedbittestandreset    _interlockedbittestandreset_StupidDDKVsCompilerCrap
+#    define _interlockedbittestandset64    _interlockedbittestandset64_StupidDDKVsCompilerCrap
+#    define _interlockedbittestandreset64  _interlockedbittestandreset64_StupidDDKVsCompilerCrap
+#    pragma warning(disable : 4163)
+#    ifdef VBOX_WITH_WORKAROUND_MISSING_PACK
+#      pragma warning(disable : 4103)
+#    endif
+#    include <ntddk.h>
+#    pragma warning(default : 4163)
+#    ifdef VBOX_WITH_WORKAROUND_MISSING_PACK
+#      pragma pack()
+#      pragma warning(default : 4103)
+#    endif
+#    undef  _InterlockedExchange
+#    undef  _InterlockedExchangeAdd
+#    undef  _InterlockedCompareExchange
+#    undef  _InterlockedAddLargeStatistic
+#    undef  _interlockedbittestandset
+#    undef  _interlockedbittestandreset
+#    undef  _interlockedbittestandset64
+#    undef  _interlockedbittestandreset64
+#  else
+#    include <ntddk.h>
+#  endif
+#ifndef VBOXVDBG_VR_LAL_DISABLE
+static LOOKASIDE_LIST_EX g_VBoxVrLookasideList;
+#define vboxVrRegLaAlloc(_c) ExAllocateFromLookasideListEx(&(_c))
+#define vboxVrRegLaFree(_c, _e) ExFreeToLookasideListEx(&(_c), (_e))
+#define VBOXWDDMVR_MEMTAG 'vDBV'
+DECLINLINE(int) vboxVrLaCreate(LOOKASIDE_LIST_EX *pCache, size_t cbElement)
+{
+    NTSTATUS Status = ExInitializeLookasideListEx(pCache,
+                                NULL, /* PALLOCATE_FUNCTION_EX Allocate */
+                                NULL, /* PFREE_FUNCTION_EX Free */
+                                NonPagedPool,
+                                0, /* ULONG Flags */
+                                cbElement,
+                                VBOXWDDMVR_MEMTAG,
+                                0 /* USHORT Depth - reserved, must be null */
+                                );
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("ExInitializeLookasideListEx failed, Status (0x%x)", Status));
+        return VERR_GENERAL_FAILURE;
+    }
+
+    return VINF_SUCCESS;
+}
+#define vboxVrLaDestroy(_c) ExDeleteLookasideListEx(&(_c))
+#endif
+# else
+#  error "port me!"
+# endif
 #endif
 
 #ifdef DEBUG_misha
@@ -34,13 +124,12 @@
 
 #ifndef VBOXVDBG_VR_LAL_DISABLE
 static volatile int32_t g_cVBoxVrInits = 0;
-static RTMEMCACHE g_VBoxVrLookasideList;
 #endif
 
 static PVBOXVR_REG vboxVrRegCreate()
 {
 #ifndef VBOXVDBG_VR_LAL_DISABLE
-    PVBOXVR_REG pReg = (PVBOXVR_REG)RTMemCacheAlloc(g_VBoxVrLookasideList);
+    PVBOXVR_REG pReg = (PVBOXVR_REG)vboxVrRegLaAlloc(g_VBoxVrLookasideList);
     if (!pReg)
     {
         WARN(("ExAllocateFromLookasideListEx failed!"));
@@ -54,7 +143,7 @@ static PVBOXVR_REG vboxVrRegCreate()
 static void vboxVrRegTerm(PVBOXVR_REG pReg)
 {
 #ifndef VBOXVDBG_VR_LAL_DISABLE
-    RTMemCacheFree(g_VBoxVrLookasideList, pReg);
+    vboxVrRegLaFree(g_VBoxVrLookasideList, pReg);
 #else
     RTMemFree(pReg);
 #endif
@@ -82,14 +171,7 @@ VBOXVREGDECL(int) VBoxVrInit()
         return VINF_SUCCESS;
 
 #ifndef VBOXVDBG_VR_LAL_DISABLE
-    int rc = RTMemCacheCreate(&g_VBoxVrLookasideList, sizeof (VBOXVR_REG),
-                            0, /* size_t cbAlignment */
-                            UINT32_MAX, /* uint32_t cMaxObjects */
-                            NULL, /* PFNMEMCACHECTOR pfnCtor*/
-                            NULL, /* PFNMEMCACHEDTOR pfnDtor*/
-                            NULL, /* void *pvUser*/
-                            0 /* uint32_t fFlags*/
-                            );
+    int rc = vboxVrLaCreate(&g_VBoxVrLookasideList, sizeof (VBOXVR_REG));
     if (!RT_SUCCESS(rc))
     {
         WARN(("ExInitializeLookasideListEx failed, rc (%d)", rc));
@@ -108,7 +190,7 @@ VBOXVREGDECL(void) VBoxVrTerm()
         return;
 
 #ifndef VBOXVDBG_VR_LAL_DISABLE
-    RTMemCacheDestroy(g_VBoxVrLookasideList);
+    vboxVrLaDestroy(g_VBoxVrLookasideList);
 #endif
 }
 
@@ -1541,8 +1623,13 @@ static DECLCALLBACK(bool) crVrScrCompositorRectsAssignerCb(PVBOXVR_COMPOSITOR pC
     Assert(cRects >= pData->cRects);
     int rc = VBoxVrListRectsGet(&pCEntry->Vr, cRects, pEntry->paDstRects);
     AssertRC(rc);
-    if (pCompositor->StretchX >= 1. && pCompositor->StretchY >= 1. /* <- stretching can not zero some rects */
-            && !pEntry->Pos.x && !pEntry->Pos.y)
+    if (
+#ifndef IN_RING0
+            pCompositor->StretchX >= 1. && pCompositor->StretchY >= 1. /* <- stretching can not zero some rects */
+            &&
+#endif
+            !pEntry->Pos.x && !pEntry->Pos.y
+            )
     {
         memcpy(pEntry->paSrcRects, pEntry->paDstRects, cRects * sizeof (*pEntry->paSrcRects));
     }
@@ -1550,14 +1637,27 @@ static DECLCALLBACK(bool) crVrScrCompositorRectsAssignerCb(PVBOXVR_COMPOSITOR pC
     {
         for (uint32_t i = 0; i < cRects; ++i)
         {
-            pEntry->paSrcRects[i].xLeft = (int32_t)((pEntry->paDstRects[i].xLeft - pEntry->Pos.x) * pCompositor->StretchX);
-            pEntry->paSrcRects[i].yTop = (int32_t)((pEntry->paDstRects[i].yTop - pEntry->Pos.y) * pCompositor->StretchY);
-            pEntry->paSrcRects[i].xRight = (int32_t)((pEntry->paDstRects[i].xRight - pEntry->Pos.x) * pCompositor->StretchX);
-            pEntry->paSrcRects[i].yBottom = (int32_t)((pEntry->paDstRects[i].yBottom - pEntry->Pos.y) * pCompositor->StretchY);
+            pEntry->paSrcRects[i].xLeft = (int32_t)((pEntry->paDstRects[i].xLeft - pEntry->Pos.x));
+            pEntry->paSrcRects[i].yTop = (int32_t)((pEntry->paDstRects[i].yTop - pEntry->Pos.y));
+            pEntry->paSrcRects[i].xRight = (int32_t)((pEntry->paDstRects[i].xRight - pEntry->Pos.x));
+            pEntry->paSrcRects[i].yBottom = (int32_t)((pEntry->paDstRects[i].yBottom - pEntry->Pos.y));
+#ifndef IN_RING0
+            if (pCompositor->StretchX != 1.)
+            {
+                pEntry->paSrcRects[i].xLeft = (int32_t)(pEntry->paSrcRects[i].xLeft * pCompositor->StretchX);
+                pEntry->paSrcRects[i].xRight = (int32_t)(pEntry->paSrcRects[i].xRight * pCompositor->StretchX);
+            }
+            if (pCompositor->StretchY != 1.)
+            {
+                pEntry->paSrcRects[i].yTop = (int32_t)(pEntry->paSrcRects[i].yTop * pCompositor->StretchY);
+                pEntry->paSrcRects[i].yBottom = (int32_t)(pEntry->paSrcRects[i].yBottom * pCompositor->StretchY);
+            }
+#endif
         }
 
-        bool canZeroX = (pCompositor->StretchX < 1);
-        bool canZeroY = (pCompositor->StretchY < 1);
+#ifndef IN_RING0
+        bool canZeroX = (pCompositor->StretchX < 1.);
+        bool canZeroY = (pCompositor->StretchY < 1.);
         if (canZeroX && canZeroY)
         {
             /* filter out zero rectangles*/
@@ -1588,8 +1688,8 @@ static DECLCALLBACK(bool) crVrScrCompositorRectsAssignerCb(PVBOXVR_COMPOSITOR pC
                 cRects -= cDiff;
             }
         }
+#endif
     }
-
     pEntry->cRects = cRects;
     pData->paDstRects += cRects;
     pData->paSrcRects += cRects;
@@ -1979,19 +2079,20 @@ VBOXVREGDECL(int) CrVrScrCompositorEntryRemove(PVBOXVR_SCR_COMPOSITOR pComposito
 VBOXVREGDECL(int) CrVrScrCompositorInit(PVBOXVR_SCR_COMPOSITOR pCompositor)
 {
     memset(pCompositor, 0, sizeof (*pCompositor));
+#ifndef IN_RING0
     int rc = RTCritSectInit(&pCompositor->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        VBoxVrCompositorInit(&pCompositor->Compositor, NULL);
-        pCompositor->StretchX = 1.0;
-        pCompositor->StretchY = 1.0;
-        return VINF_SUCCESS;
-    }
-    else
+    if (!RT_SUCCESS(rc))
     {
         WARN(("RTCritSectInit failed rc %d", rc));
+        return rc;
     }
-    return rc;
+#endif
+    VBoxVrCompositorInit(&pCompositor->Compositor, NULL);
+#ifndef IN_RING0
+    pCompositor->StretchX = 1.0;
+    pCompositor->StretchY = 1.0;
+#endif
+    return VINF_SUCCESS;
 }
 
 VBOXVREGDECL(void) CrVrScrCompositorTerm(PVBOXVR_SCR_COMPOSITOR pCompositor)
@@ -2001,8 +2102,9 @@ VBOXVREGDECL(void) CrVrScrCompositorTerm(PVBOXVR_SCR_COMPOSITOR pCompositor)
         RTMemFree(pCompositor->paDstRects);
     if (pCompositor->paSrcRects)
         RTMemFree(pCompositor->paSrcRects);
-
+#ifndef IN_RING0
     RTCritSectDelete(&pCompositor->CritSect);
+#endif
 }
 
 
@@ -2017,7 +2119,7 @@ VBOXVREGDECL(void) CrVrScrCompositorEntrySetAllChanged(PVBOXVR_SCR_COMPOSITOR pC
 {
     VBoxVrCompositorVisit(&pCompositor->Compositor, crVrScrCompositorEntrySetAllChangedCb, (void*)fChanged);
 }
-
+#ifndef IN_RING0
 VBOXVREGDECL(void) CrVrScrCompositorSetStretching(PVBOXVR_SCR_COMPOSITOR pCompositor, float StretchX, float StretchY)
 {
     pCompositor->StretchX = StretchX;
@@ -2025,7 +2127,7 @@ VBOXVREGDECL(void) CrVrScrCompositorSetStretching(PVBOXVR_SCR_COMPOSITOR pCompos
     crVrScrCompositorRectsInvalidate(pCompositor);
     CrVrScrCompositorEntrySetAllChanged(pCompositor, true);
 }
-
+#endif
 /* regions are valid until the next CrVrScrCompositor call */
 VBOXVREGDECL(int) CrVrScrCompositorRegionsGet(PVBOXVR_SCR_COMPOSITOR pCompositor, uint32_t *pcRegions, const RTRECT **ppaSrcRegions, const RTRECT **ppaDstRegions)
 {

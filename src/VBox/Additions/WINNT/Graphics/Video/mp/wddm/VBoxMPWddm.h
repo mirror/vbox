@@ -167,6 +167,21 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE 
         vboxWddmAllocationRetain(pAllocation);
     }
 
+    if (pAllocation && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
+    {
+        RTRECT Rect;
+        Rect.xLeft = 0;
+        Rect.yTop = 0;
+        Rect.xRight = pAllocation->AllocData.SurfDesc.width;
+        Rect.yBottom = pAllocation->AllocData.SurfDesc.height;
+
+        VBoxVrListRectsSet(&pSource->VrList, 1, &Rect, NULL);
+    }
+    else
+        VBoxVrListClear(&pSource->VrList);
+
+    pSource->fHas3DVrs = FALSE;
+
     KIRQL OldIrql;
     KeAcquireSpinLock(&pSource->AllocationLock, &OldIrql);
     pSource->pPrimaryAllocation = pAllocation;
@@ -217,29 +232,16 @@ DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmAquirePrimary(PVBOXMP_DEVEXT pDevExt, P
 # define VBOXWDDM_FB_ALLOCATION(_pDevExt, _pSrc) ((_pSrc)->pPrimaryAllocation)
 #endif
 
-#ifdef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
-# define VBOXWDDM_CTXLOCK_INIT(_p) do { \
+#define VBOXWDDM_CTXLOCK_INIT(_p) do { \
         KeInitializeSpinLock(&(_p)->ContextLock); \
     } while (0)
-# define VBOXWDDM_CTXLOCK_DATA KIRQL _ctxLockOldIrql;
-# define VBOXWDDM_CTXLOCK_LOCK(_p) do { \
+#define VBOXWDDM_CTXLOCK_DATA KIRQL _ctxLockOldIrql;
+#define VBOXWDDM_CTXLOCK_LOCK(_p) do { \
         KeAcquireSpinLock(&(_p)->ContextLock, &_ctxLockOldIrql); \
     } while (0)
-# define VBOXWDDM_CTXLOCK_UNLOCK(_p) do { \
+#define VBOXWDDM_CTXLOCK_UNLOCK(_p) do { \
         KeReleaseSpinLock(&(_p)->ContextLock, _ctxLockOldIrql); \
     } while (0)
-#else
-# define VBOXWDDM_CTXLOCK_INIT(_p) do { \
-        ExInitializeFastMutex(&(_p)->ContextMutex); \
-    } while (0)
-# define VBOXWDDM_CTXLOCK_LOCK(_p) do { \
-        ExAcquireFastMutex(&(_p)->ContextMutex); \
-    } while (0)
-# define VBOXWDDM_CTXLOCK_UNLOCK(_p) do { \
-        ExReleaseFastMutex(&(_p)->ContextMutex); \
-    } while (0)
-# define VBOXWDDM_CTXLOCK_DATA
-#endif
 
 #endif /* #ifndef ___VBoxMPWddm_h___ */
 

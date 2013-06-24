@@ -36,7 +36,6 @@ int VBoxMpCrCtlConDisconnect(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID);
 int VBoxMpCrCtlConCall(PVBOXMP_CRCTLCON pCrCtlCon, struct VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
 int VBoxMpCrCtlConCallUserData(PVBOXMP_CRCTLCON pCrCtlCon, struct VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
 
-#ifdef VBOX_WDDM_WITH_CRCMD
 # include <cr_pack.h>
 
 typedef struct VBOXMP_CRDATACON
@@ -217,9 +216,12 @@ DECLINLINE(int) VBoxMpCrUnpackerRxBufferProcess(void *pvBuffer, uint32_t cbBuffe
             return VERR_NOT_SUPPORTED;
     }
 }
+#define VBOXMP_CRCMD_HEADER_SIZE sizeof (CRMessageOpcodes)
+/* last +4 below is 4-aligned comand opcode size (i.e. ((1 + 3) & ~3)) */
+#define VBOXMP_CRCMD_SIZE_WINDOWPOSITION (20 + 4)
+#define VBOXMP_CRCMD_SIZE_WINDOWVISIBLEREGIONS(_cRects) (16 + (_cRects) * 4 * sizeof (GLint) + 4)
+#define VBOXMP_CRCMD_SIZE_VBOXTEXPRESENT(_cRects) (28 + (_cRects) * 4 * sizeof (GLint) + 4)
+#define VBOXMP_CRCMD_SIZE_WINDOWSHOW (16 + 4)
+#define VBOXMP_CRCMD_SIZE_WINDOWSIZE (20 + 4)
 
-#define VBOXMP_CRCMD_SIZE_WINDOWPOSITION 20
-#define VBOXMP_CRCMD_SIZE_WINDOWVISIBLEREGIONS(_cRects) (16 + _cRects * 4 * sizeof(GLint))
-
-#endif
 #endif /* #ifndef ___VBoxMPCr_h__ */

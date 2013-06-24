@@ -24,8 +24,6 @@
 #ifdef VBOX_WITH_CROGL
 #include <cr_protocol.h>
 
-# ifdef VBOX_WDDM_WITH_CRCMD
-
 static void* vboxMpCrShgsmiBufferAlloc(PVBOXMP_DEVEXT pDevExt, HGSMISIZE cbData)
 {
     return VBoxSHGSMIHeapBufferAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, cbData);
@@ -479,13 +477,12 @@ static DECLCALLBACK(VOID) vboxMpCrShgsmiTransportSendWriteAsyncCompletion(PVBOXM
     CRVBOXHGSMIWRITE *pCmd = &pWrData->Cmd;
     VBOXVDMACMD_CHROMIUM_BUFFER *pBufCmd = &pBody->aBuffers[0];
     Assert(pBufCmd->cbBuffer == sizeof (CRVBOXHGSMIWRITE));
-    CRVBOXHGSMIWRITE * pWr = (CRVBOXHGSMIWRITE*)vboxMpCrShgsmiTransportBufFromOffset(pCon, pBufCmd->offBuffer);
     PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEASYNC_COMPLETION pfnCompletion = (PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEASYNC_COMPLETION)pBufCmd->u64GuestData;
 
     int rc = pDr->rc;
     if (RT_SUCCESS(rc))
     {
-        rc = pWr->hdr.result;
+        rc = pCmd->hdr.result;
         if (!RT_SUCCESS(rc))
         {
             WARN(("CRVBOXHGSMIWRITE failed, rc %d", rc));
@@ -587,10 +584,10 @@ void* VBoxMpCrShgsmiTransportCmdCreateWriteAsync(PVBOXMP_CRSHGSMITRANSPORT pCon,
     PVBOXMP_CRHGSMICMD_WRITE pWrData = VBOXMP_CRSHGSMICON_DR_GET_CMDBUF(pHdr, cBuffers, VBOXMP_CRHGSMICMD_WRITE);
     CRVBOXHGSMIWRITE *pCmd = &pWrData->Cmd;
 
-    pDr->fFlags = VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET;
+    pDr->fFlags = VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR;
     pDr->cbBuf = cbCmd;
     pDr->rc = VERR_NOT_IMPLEMENTED;
-    pDr->Location.offVramBuf = vboxMpCrShgsmiTransportBufOffset(pCon, pCmd);
+//    pDr->Location.offVramBuf = vboxMpCrShgsmiTransportBufOffset(pCon, pCmd);
 
     pHdr->enmType = VBOXVDMACMD_TYPE_CHROMIUM_CMD;
     pHdr->u32CmdSpecific = 0;
@@ -599,12 +596,12 @@ void* VBoxMpCrShgsmiTransportCmdCreateWriteAsync(PVBOXMP_CRSHGSMITRANSPORT pCon,
 
     pCmd->hdr.result      = VERR_WRONG_ORDER;
     pCmd->hdr.u32ClientID = u32ClientID;
-    pCmd->hdr.u32Function = SHCRGL_GUEST_FN_WRITE_READ;
+    pCmd->hdr.u32Function = SHCRGL_GUEST_FN_WRITE;
     //    pCmd->hdr.u32Reserved = 0;
     pCmd->iBuffer = 1;
 
     VBOXVDMACMD_CHROMIUM_BUFFER *pBufCmd = &pBody->aBuffers[0];
-    pBufCmd->offBuffer = vboxMpCrShgsmiTransportBufOffset(pCon, pCmd);
+    pBufCmd->offBuffer = vboxVdmaCBufDrPtrOffset(&pDevExt->u.primary.Vdma, pCmd);
     pBufCmd->cbBuffer = sizeof (*pCmd);
     pBufCmd->u32GuestData = 0;
     pBufCmd->u64GuestData = (uint64_t)pfnCompletion;
@@ -642,7 +639,6 @@ void VBoxMpCrShgsmiTransportCmdTermWriteAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, vo
     vboxMpCrShgsmiTransportCmdTermDmaCmd(pCon, pHdr);
 }
 
-# endif
 #endif
 
 static int vboxMpCrCtlAddRef(PVBOXMP_CRCTLCON pCrCtlCon)

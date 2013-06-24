@@ -18,7 +18,7 @@
 
 #include "VBoxDispD3DCmn.h"
 #include "VBoxDispMp.h"
-
+#if 0
 #include <iprt/assert.h>
 
 typedef struct VBOXVIDEOCM_ITERATOR
@@ -293,3 +293,4 @@ HRESULT vboxDispMpInternalCancel(VBOXWDDMDISP_CONTEXT *pContext, PVBOXWDDMDISP_S
     LeaveCriticalSection(&g_VBoxDispMp.CritSect);
     return hr;
 }
+#endif /* 0 */

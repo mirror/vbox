@@ -115,9 +115,7 @@ VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
 	wddm/VBoxDispD3DIf.cpp \
 	wddm/VBoxDispCm.cpp \
-	wddm/VBoxDispMp.cpp \
 	wddm/VBoxScreen.cpp \
-	wddm/VBoxDispMpTst.cpp \
 	wddm/VBoxDispKmt.cpp \
 	wddm/VBoxDispDbg.cpp \
 	wddm/VBoxD3DIf.cpp \

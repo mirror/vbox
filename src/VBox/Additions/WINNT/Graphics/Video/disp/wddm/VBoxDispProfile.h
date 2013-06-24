@@ -77,11 +77,19 @@ public:
 //        VBOXDISPPROFILE_DUMP((pDevice, "Entry '%s': calls(%d), time: nanos(%I64u), micros(%I64u), millis(%I64u)\n",
 //                m_pName, m_cCalls,
 //                m_cTime, m_cTime/1000, m_cTime/1000000));
-        VBOXDISPPROFILE_DUMP(("'%s' [0x%p]: \t%d\t%u\t%u\t%u\t%u\t%u", m_pName, pvObj,
+
+//        VBOXDISPPROFILE_DUMP(("'%s' [0x%p]: \t%d\t%u\t%u\t%u\t%f\t%f", m_pName, pvObj,
+//                m_cCalls,
+//                (uint32_t)m_cTime, (uint32_t)(m_cTime/1000), (uint32_t)(m_cTime/1000000),
+//                (((double)m_cTime)/cTotalEntriesTime),
+//                (((double)m_cTime)/cTotalTime)));
+
+        VBOXDISPPROFILE_DUMP(("'%s' [0x%p]: \t%d\t%u\t%f\t%f", m_pName, pvObj,
                 m_cCalls,
-                (uint32_t)m_cTime, (uint32_t)(m_cTime/1000), (uint32_t)(m_cTime/1000000),
-                (uint32_t)(((double)m_cTime)/cTotalEntriesTime),
-                (uint32_t)(((double)m_cTime)/cTotalTime)));
+                (uint32_t)(m_cTime/1000000),
+                (((double)m_cTime)/cTotalEntriesTime),
+                (((double)m_cTime)/cTotalTime)));
+
     }
 private:
     uint32_t m_cCalls;

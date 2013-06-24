@@ -219,7 +219,7 @@ typedef struct VBOXVDMAPIPE_FLAGS_DMACMD
         {
             UINT fRealOp             : 1;
             UINT fVisibleRegions     : 1;
-            UINT Reserve             : 30;
+            UINT Reserved            : 30;
         };
         UINT Value;
     };
@@ -294,8 +294,6 @@ typedef struct VBOXVDMAINFO
 #endif
     UINT      uLastCompletedPagingBufferCmdFenceId;
     BOOL      fEnabled;
-    /* dma-related commands list processed on the guest w/o host part involvement (guest-guest commands) */
-    VBOXVDMAGG DmaGg;
 } VBOXVDMAINFO, *PVBOXVDMAINFO;
 
 int vboxVdmaCreate (PVBOXMP_DEVEXT pDevExt, VBOXVDMAINFO *pInfo
@@ -312,6 +310,10 @@ int vboxVdmaDestroy(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo);
 
 #ifdef VBOX_WITH_VDMA
 int vboxVdmaFlush(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo);
+DECLINLINE(HGSMIOFFSET) vboxVdmaCBufDrPtrOffset(const PVBOXVDMAINFO pInfo, const void* pvPtr)
+{
+    return VBoxSHGSMICommandPtrOffset(&pInfo->CmdHeap, pvPtr);
+}
 int vboxVdmaCBufDrSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr);
 int vboxVdmaCBufDrSubmitSynch(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr);
 struct VBOXVDMACBUF_DR* vboxVdmaCBufDrCreate(PVBOXVDMAINFO pInfo, uint32_t cbTrailingData);
@@ -326,24 +328,6 @@ AssertCompile(sizeof (VBOXVDMADDI_CMD) <= RT_SIZEOFMEMB(VBOXVDMACBUF_DR, aGuestD
 #define VBOXVDMACBUF_DR_FROM_DDI_CMD(_pCmd) ((PVBOXVDMACBUF_DR)(((uint8_t*)(_pCmd)) - RT_OFFSETOF(VBOXVDMACBUF_DR, aGuestData)))
 
 #endif
-NTSTATUS vboxVdmaGgCmdSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD_DR pCmd);
-PVBOXVDMAPIPE_CMD_DR vboxVdmaGgCmdCreate(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE_CMD_TYPE enmType, uint32_t cbCmd);
-DECLINLINE(void) vboxVdmaGgCmdAddRef(PVBOXVDMAPIPE_CMD_DR pDr)
-{
-    ASMAtomicIncU32(&pDr->cRefs);
-}
-void vboxVdmaGgCmdDestroy(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD_DR pDr);
-DECLINLINE(void) vboxVdmaGgCmdRelease(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD_DR pDr)
-{
-    uint32_t cRefs = ASMAtomicDecU32(&pDr->cRefs);
-    Assert(cRefs < UINT32_MAX/2);
-    if (!cRefs)
-        vboxVdmaGgCmdDestroy(pDevExt, pDr);
-}
-#ifndef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
-NTSTATUS vboxVdmaGgCmdFinish(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, PKEVENT pEvent);
-NTSTATUS vboxVdmaGgCmdCancel(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, PVBOXWDDM_SWAPCHAIN pSwapchain);
-#endif
 
 NTSTATUS vboxVdmaPostHideSwapchain(PVBOXWDDM_SWAPCHAIN pSwapchain);
 
@@ -357,5 +341,9 @@ NTSTATUS vboxVdmaGgDmaBltPerform(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_ALLOC_D
         struct VBOXWDDM_ALLOC_DATA *pDstAlloc, RECT* pDstRect);
 
 #define VBOXVDMAPIPE_CMD_DR_FROM_DDI_CMD(_pCmd) ((PVBOXVDMAPIPE_CMD_DR)(((uint8_t*)(_pCmd)) - RT_OFFSETOF(VBOXVDMAPIPE_CMD_DR, DdiCmd)))
-DECLCALLBACK(VOID) vboxVdmaGgDdiCmdRelease(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext);
+
+NTSTATUS vboxVdmaProcessBltCmd(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, struct VBOXWDDM_DMA_PRIVATEDATA_BLT *pBlt, struct VBOXVDMAPIPE_FLAGS_DMACMD fBltFlags);
+NTSTATUS vboxVdmaProcessFlipCmd(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, struct VBOXWDDM_DMA_PRIVATEDATA_FLIP *pFlip, struct VBOXVDMAPIPE_FLAGS_DMACMD fFlags);
+NTSTATUS vboxVdmaProcessClrFillCmd(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, struct VBOXWDDM_DMA_PRIVATEDATA_CLRFILL *pCF, struct VBOXVDMAPIPE_FLAGS_DMACMD fFlags);
+
 #endif /* #ifndef ___VBoxMPVdma_h___ */

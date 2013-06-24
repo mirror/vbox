@@ -617,48 +617,48 @@ static void diffCaps(D3DCAPS9 *pCaps1, D3DCAPS9 *pCaps2)
 }
 
 static DWORD g_aCaps1[] = {
-          0x00000001, 0x00000000, 0x00000000, 0x60020000,
-          0x00000320, 0x80000001, 0x00000003, 0x0059aff0,
-          0x000a0ff2, 0x07322191, 0x000000ff, 0x00003fff,
-          0x000023ff, 0x000000ff, 0x00084208, 0x0007ec85,
-          0x07030700, 0x07030700, 0x03030300, 0x0000001f,
-          0x0000001f, 0x0000001f, 0x00001000, 0x00001000,
-          0x00000100, 0x00008000, 0x00001000, 0x00000010,
-          0x3f800000, 0x00000000, 0x00000000, 0x00000000,
-          0x00000000, 0x00000000, 0x000001ff, 0x00100008,
-          0x03feffff, 0x00000008, 0x00000008, 0x0000003b,
-          0x00000008, 0x00000006, 0x00000001, 0x00000000,
-          0x437f0000, 0x000fffff, 0x000fffff, 0x00000010,
-          0x00000400, 0xfffe0200, 0x00000080, 0xffff0200,
-          0x41000000, 0x00000051, 0x00000000, 0x00000000,
-          0x00000000, 0x00000000, 0x00000001, 0x0000000f,
-          0x00000001, 0x03000300, 0x00000000, 0x00000000,
-          0x0000001f, 0x00000001, 0x00000000, 0x00000000,
-          0x00000100, 0x00000000, 0x00000060, 0x00000000,
-          0x0000ffff, 0x00000200, 0x00000000, 0x00000000
+        0x00000001, 0x00000000, 0x00020000, 0xe0000000,
+        0x00000320, 0x80000001, 0x00000003, 0x0019aff0,
+        0x000f4ff2, 0x07736191, 0x000000ff, 0x00003fff,
+        0x000023ff, 0x000000ff, 0x00084208, 0x0001ecc5,
+        0x07030700, 0x07030700, 0x03030300, 0x0000003f,
+        0x0000003f, 0x0000001f, 0x00001000, 0x00001000,
+        0x00000100, 0x00008000, 0x00001000, 0x00000010,
+        0x3f800000, 0xc6000000, 0xc6000000, 0x46000000,
+        0x46000000, 0x00000000, 0x000001ff, 0x00100008,
+        0x03feffff, 0x00000008, 0x00000008, 0x0000013b,
+        0x00000008, 0x00000006, 0x00000000, 0x00000000,
+        0x437f0000, 0x000fffff, 0x000fffff, 0x00000010,
+        0x00000400, 0xfffe0200, 0x00000080, 0xffff0200,
+        0x41000000, 0x00000051, 0x00000000, 0x00000000,
+        0x00000000, 0x00000000, 0x00000001, 0x0000030f,
+        0x00000001, 0x03000300, 0x00000000, 0x00000018,
+        0x00000020, 0x00000001, 0x00000000, 0x00000018,
+        0x00000020, 0x00000000, 0x00000060, 0x01000100,
+        0x0000ffff, 0x00000200, 0x00000000, 0x00000000
 };
 
 
 static DWORD g_aCaps2[] = {
-          0x00000001, 0x00000000, 0x00000000, 0x60020000,
-          0x00000320, 0x80000001, 0x00000003, 0x0019aff0,
-          0x000a0ff2, 0x07322191, 0x000000ff, 0x00003fff,
-          0x000023ff, 0x000000ff, 0x00084208, 0x0001ec85,
-          0x07030700, 0x07030700, 0x03030300, 0x0000001f,
-          0x0000001f, 0x0000001f, 0x00001000, 0x00001000,
-          0x00000100, 0x00008000, 0x00001000, 0x00000010,
-          0x3f800000, 0x00000000, 0x00000000, 0x00000000,
-          0x00000000, 0x00000000, 0x000001ff, 0x00100008,
-          0x03feffff, 0x00000008, 0x00000008, 0x0000003b,
-          0x00000008, 0x00000006, 0x00000001, 0x00000000,
-          0x437f0000, 0x000fffff, 0x000fffff, 0x00000010,
-          0x00000400, 0xfffe0200, 0x00000080, 0xffff0200,
-          0x41000000, 0x00000051, 0x00000000, 0x00000000,
-          0x00000000, 0x00000000, 0x00000001, 0x0000000f,
-          0x00000001, 0x03000300, 0x00000000, 0x00000000,
-          0x0000001f, 0x00000001, 0x00000000, 0x00000000,
-          0x00000100, 0x00000000, 0x00000060, 0x00000000,
-          0x0000ffff, 0x00000200, 0x00000000, 0x00000000
+        0x00000001, 0x00000000, 0x00000000, 0x60020000,
+        0x00000320, 0x80000001, 0x00000003, 0x0019aff0,
+        0x000a0ff2, 0x07332191, 0x000000ff, 0x00003fff,
+        0x000023ff, 0x000000ff, 0x00084208, 0x0001ec85,
+        0x07030700, 0x07030700, 0x03030300, 0x0000001f,
+        0x0000001f, 0x0000001f, 0x00001000, 0x00001000,
+        0x00000100, 0x00008000, 0x00001000, 0x00000010,
+        0x3f800000, 0x00000000, 0x00000000, 0x00000000,
+        0x00000000, 0x00000000, 0x000001ff, 0x00100008,
+        0x03feffff, 0x00000008, 0x00000008, 0x0000013b,
+        0x00000008, 0x00000006, 0x00000000, 0x00000000,
+        0x437f0000, 0x000fffff, 0x000fffff, 0x00000010,
+        0x00000400, 0xfffe0200, 0x00000080, 0xffff0200,
+        0x41000000, 0x00000051, 0x00000000, 0x00000000,
+        0x00000000, 0x00000000, 0x00000001, 0x0000000f,
+        0x00000001, 0x03000300, 0x00000000, 0x00000000,
+        0x0000001f, 0x00000001, 0x00000000, 0x00000000,
+        0x00000100, 0x00000000, 0x00000060, 0x00000000,
+        0x0000ffff, 0x00000200, 0x00000000, 0x00000000
 };
 
 
@@ -933,7 +933,8 @@ typedef enum
     D3DCAPSSOURCE_TYPE_EMBEDDED2,
     D3DCAPSSOURCE_TYPE_NULL,
     D3DCAPSSOURCE_TYPE_LOCAL,
-    D3DCAPSSOURCE_TYPE_FILE
+    D3DCAPSSOURCE_TYPE_FILE,
+    D3DCAPSSOURCE_TYPE_NONE
 } D3DCAPSSOURCE_TYPE;
 
 static D3DCAPS9* selectCaps(D3DCAPS9 *pLocalStorage, D3DCAPS9 *pLocalEmbedded1, D3DCAPS9 *pLocalEmbedded2, D3DCAPSSOURCE_TYPE enmCapsType)
@@ -976,6 +977,8 @@ static D3DCAPS9* selectCaps(D3DCAPS9 *pLocalStorage, D3DCAPS9 *pLocalEmbedded1, 
             Log(("Loading caps from file not implemented yet!"));
             return NULL;
         }
+        case D3DCAPSSOURCE_TYPE_NONE:
+            return NULL;
         default:
         {
             Log(("Unsupported type %d", enmCapsType));
@@ -985,6 +988,46 @@ static D3DCAPS9* selectCaps(D3DCAPS9 *pLocalStorage, D3DCAPS9 *pLocalEmbedded1, 
 
     Log(("Should not be here!"));
     return NULL;
+}
+
+static void vboxUmdDumpDword(DWORD *pvData, DWORD cData)
+{
+    char aBuf[16*4];
+    DWORD dw1, dw2, dw3, dw4;
+    for (UINT i = 0; i < (cData & (~3)); i+=4)
+    {
+        dw1 = *pvData++;
+        dw2 = *pvData++;
+        dw3 = *pvData++;
+        dw4 = *pvData++;
+        sprintf(aBuf, "0x%08x, 0x%08x, 0x%08x, 0x%08x,\n", dw1, dw2, dw3, dw4);
+        Log(("%s", aBuf));
+    }
+
+    cData = cData % 4;
+    switch (cData)
+    {
+        case 3:
+            dw1 = *pvData++;
+            dw2 = *pvData++;
+            dw3 = *pvData++;
+            sprintf(aBuf, "0x%08x, 0x%08x, 0x%08x\n", dw1, dw2, dw3);
+            Log(("%s", aBuf));
+            break;
+        case 2:
+            dw1 = *pvData++;
+            dw2 = *pvData++;
+            sprintf(aBuf, "0x%08x, 0x%08x\n", dw1, dw2);
+            Log(("%s", aBuf));
+            break;
+        case 1:
+            dw1 = *pvData++;
+            sprintf(aBuf, "0x%8x\n", dw1);
+            Log(("%s", aBuf));
+            break;
+        default:
+            break;
+    }
 }
 
 int main()
@@ -1005,8 +1048,8 @@ int main()
 
     D3DCAPS9 Caps1, Caps2;
     D3DCAPS9 *pCaps1, *pCaps2;
-    D3DCAPSSOURCE_TYPE enmCaps1 = D3DCAPSSOURCE_TYPE_EMBEDDED2;
-    D3DCAPSSOURCE_TYPE enmCaps2 = D3DCAPSSOURCE_TYPE_EMBEDDED1;
+    D3DCAPSSOURCE_TYPE enmCaps1 = D3DCAPSSOURCE_TYPE_EMBEDDED1;
+    D3DCAPSSOURCE_TYPE enmCaps2 = D3DCAPSSOURCE_TYPE_EMBEDDED2;
 
     pCaps1 = selectCaps(&Caps1, (D3DCAPS9*)g_aCaps1, (D3DCAPS9*)g_aCaps2, enmCaps1);
     if (!pCaps1)
@@ -1015,13 +1058,20 @@ int main()
         return 1;
     }
 
-    pCaps2 = selectCaps(&Caps2, (D3DCAPS9*)g_aCaps1, (D3DCAPS9*)g_aCaps2, enmCaps2);
-    if (!pCaps2)
+    if (D3DCAPSSOURCE_TYPE_NONE != enmCaps2)
     {
-        Log(("Failed to select Caps2"));
-        return 1;
-    }
+        pCaps2 = selectCaps(&Caps2, (D3DCAPS9*)g_aCaps1, (D3DCAPS9*)g_aCaps2, enmCaps2);
+        if (!pCaps2)
+        {
+            Log(("Failed to select Caps2"));
+            return 1;
+        }
 
-    diffCaps((D3DCAPS9*)g_aCaps2, (D3DCAPS9*)g_aCaps1);
+        diffCaps((D3DCAPS9*)pCaps1, (D3DCAPS9*)pCaps2);
+    }
+    else
+    {
+        vboxUmdDumpDword((DWORD*)pCaps1, sizeof (*pCaps1) / sizeof (DWORD));
+    }
     return 0;
 }

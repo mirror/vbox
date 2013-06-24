@@ -597,6 +597,13 @@ static HRESULT vboxWddmSwapchainKmSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
     Buf.SwapchainInfo.EscapeHdr.escapeCode = VBOXESC_SWAPCHAININFO;
     Buf.SwapchainInfo.SwapchainInfo.hSwapchainKm = pSwapchain->hSwapchainKm;
     Buf.SwapchainInfo.SwapchainInfo.hSwapchainUm = (VBOXDISP_UMHANDLE)pSwapchain;
+    HRESULT hr = pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DSwapchain9GetHostWinID(pSwapchain->pSwapChainIf, &Buf.SwapchainInfo.SwapchainInfo.winHostID);
+    if (FAILED(hr))
+    {
+        WARN(("pfnVBoxWineExD3DSwapchain9GetHostWinID failed, hr 0x%x", hr));
+        return hr;
+    }
+    Assert(Buf.SwapchainInfo.SwapchainInfo.winHostID);
 //    Buf.SwapchainInfo.SwapchainInfo.Rect;
 //    Buf.SwapchainInfo.SwapchainInfo.u32Reserved;
     Buf.SwapchainInfo.SwapchainInfo.cAllocs = pSwapchain->cRTs;
@@ -610,7 +617,6 @@ static HRESULT vboxWddmSwapchainKmSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
     }
 
     Assert(cAllocsKm == Buf.SwapchainInfo.SwapchainInfo.cAllocs || !cAllocsKm);
-    HRESULT hr = S_OK;
     if (cAllocsKm == Buf.SwapchainInfo.SwapchainInfo.cAllocs)
     {
         D3DDDICB_ESCAPE DdiEscape = {0};
@@ -679,7 +685,6 @@ DECLINLINE(VOID) vboxWddmSwapchainClear(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
 
     /* first do a Km destroy to ensure all km->um region submissions are completed */
     vboxWddmSwapchainKmDestroy(pDevice, pSwapchain);
-    vboxDispMpInternalCancel(&pDevice->DefaultContext, pSwapchain);
     vboxWddmSwapchainDestroyIf(pDevice, pSwapchain);
     vboxWddmSwapchainInit(pSwapchain);
 }
@@ -1811,14 +1816,9 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
                     Assert(hr == S_OK);
                     if (hr == S_OK)
                     {
-                        hr = vboxDispMpInternalInit();
-                        Assert(hr == S_OK);
-                        if (hr == S_OK)
-                        {
-                            VBoxDispD3DGlobalInit();
-                            vboxVDbgPrint(("VBoxDispD3D: DLL loaded OK\n"));
-                            return TRUE;
-                        }
+                        VBoxDispD3DGlobalInit();
+                        vboxVDbgPrint(("VBoxDispD3D: DLL loaded OK\n"));
+                        return TRUE;
                     }
 //                    VbglR3Term();
                 }
@@ -1835,19 +1835,14 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 #ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
             vboxVDbgVEHandlerUnregister();
 #endif
-            HRESULT hr = vboxDispMpInternalTerm();
+            HRESULT hr = vboxDispCmTerm();
             Assert(hr == S_OK);
             if (hr == S_OK)
             {
-                hr = vboxDispCmTerm();
-                Assert(hr == S_OK);
-                if (hr == S_OK)
-                {
 //                    VbglR3Term();
-                    /// @todo RTR3Term();
-                    VBoxDispD3DGlobalTerm();
-                    return TRUE;
-                }
+                /// @todo RTR3Term();
+                VBoxDispD3DGlobalTerm();
+                return TRUE;
             }
 
             break;
@@ -4508,6 +4503,7 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
             uint32_t cCPS = (((uint64_t)cCals) * 1000ULL)/TimeMs;
         }
 #endif
+        pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9FlushToHost((IDirect3DDevice9Ex*)pDevice->pDevice9If);
         PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
         Assert(pRc);
         Assert(pRc->cAllocations > pData->SrcSubResourceIndex);

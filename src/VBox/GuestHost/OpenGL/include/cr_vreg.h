@@ -71,6 +71,12 @@ DECLINLINE(void) VBoxRectTranslate(RTRECT * pRect, int32_t x, int32_t y)
     pRect->yBottom += y;
 }
 
+DECLINLINE(void) VBoxRectTranslated(const RTRECT * pRect, int32_t x, int32_t y, RTRECT *pResult)
+{
+    *pResult = *pRect;
+    VBoxRectTranslate(pResult, x, y);
+}
+
 DECLINLINE(void) VBoxRectMove(RTRECT * pRect, int32_t x, int32_t y)
 {
     int32_t w = pRect->xRight - pRect->xLeft;
@@ -79,6 +85,12 @@ DECLINLINE(void) VBoxRectMove(RTRECT * pRect, int32_t x, int32_t y)
     pRect->yTop    = y;
     pRect->xRight  = w + x;
     pRect->yBottom = h + y;
+}
+
+DECLINLINE(void) VBoxRectMoved(const RTRECT * pRect, int32_t x, int32_t y, RTRECT *pResult)
+{
+    *pResult = *pRect;
+    VBoxRectMove(pResult, x, y);
 }
 
 DECLINLINE(bool) VBoxRectIsCoveres(const RTRECT *pRect, const RTRECT *pCovered)
@@ -280,13 +292,17 @@ typedef struct VBOXVR_SCR_COMPOSITOR_ENTRY
 typedef struct VBOXVR_SCR_COMPOSITOR
 {
     VBOXVR_COMPOSITOR Compositor;
+#ifndef IN_RING0
     float StretchX;
     float StretchY;
+#endif
     uint32_t cRects;
     uint32_t cRectsBuffer;
     PRTRECT paSrcRects;
     PRTRECT paDstRects;
+#ifndef IN_RING0
     RTCRITSECT CritSect;
+#endif
 } VBOXVR_SCR_COMPOSITOR, *PVBOXVR_SCR_COMPOSITOR;
 
 typedef DECLCALLBACK(bool) FNVBOXVRSCRCOMPOSITOR_VISITOR(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, void *pvVisitor);
@@ -350,7 +366,9 @@ VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsGet(PVBOXVR_SCR_COMPOSITOR pCompo
 VBOXVREGDECL(int) CrVrScrCompositorEntryRemove(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry);
 VBOXVREGDECL(int) CrVrScrCompositorInit(PVBOXVR_SCR_COMPOSITOR pCompositor);
 VBOXVREGDECL(void) CrVrScrCompositorTerm(PVBOXVR_SCR_COMPOSITOR pCompositor);
+#ifndef IN_RING0
 VBOXVREGDECL(void) CrVrScrCompositorSetStretching(PVBOXVR_SCR_COMPOSITOR pCompositor, float StretchX, float StretchY);
+#endif
 /* regions are valid until the next CrVrScrCompositor call */
 VBOXVREGDECL(int) CrVrScrCompositorRegionsGet(PVBOXVR_SCR_COMPOSITOR pCompositor, uint32_t *pcRegions, const RTRECT **ppaSrcRegions, const RTRECT **ppaDstRegions);
 
@@ -377,6 +395,7 @@ DECLINLINE(PVBOXVR_SCR_COMPOSITOR_ENTRY) CrVrScrCompositorIterNext(PVBOXVR_SCR_C
     return NULL;
 }
 
+#ifndef IN_RING0
 DECLINLINE(int) CrVrScrCompositorLock(PVBOXVR_SCR_COMPOSITOR pCompositor)
 {
     int rc = RTCritSectEnter(&pCompositor->CritSect);
@@ -390,7 +409,7 @@ DECLINLINE(int) CrVrScrCompositorUnlock(PVBOXVR_SCR_COMPOSITOR pCompositor)
     AssertRC(rc);
     return rc;
 }
-
+#endif
 RT_C_DECLS_END
 
 #endif /* #ifndef ___cr_vreg_h_ */

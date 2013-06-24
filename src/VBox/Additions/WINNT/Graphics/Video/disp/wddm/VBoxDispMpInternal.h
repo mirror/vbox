@@ -21,8 +21,10 @@
 
 #include <windows.h>
 
+#if 0
 HRESULT vboxDispMpInternalInit();
 HRESULT vboxDispMpInternalTerm();
 HRESULT vboxDispMpInternalCancel(struct VBOXWDDMDISP_CONTEXT *pContext, struct VBOXWDDMDISP_SWAPCHAIN *pSwapchain);
+#endif
 
 #endif /* #ifndef ___VBoxDispMpInternal_h__ */

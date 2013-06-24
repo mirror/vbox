@@ -245,6 +245,9 @@ void crEnableWarnings(int onOff)
     warnings_enabled = onOff;
 }
 
+#ifdef DEBUG_misha
+# undef crWarning
+#endif
 DECLEXPORT(void) crWarning(const char *format, ... )
 {
     if (warnings_enabled) {
@@ -495,18 +498,14 @@ DECLEXPORT(void) crDebug(const char *format, ... )
     outputChromiumMessage( output, txt );
 #else
     if (!output
-# ifndef DEBUG_misha
             || output==stderr
-# endif
             )
     {
         LogRel(("%s\n", txt));
     }
     else
     {
-# ifndef DEBUG_misha
         LogRel(("%s\n", txt));
-# endif
         outputChromiumMessage(output, txt);
     }
 #endif
