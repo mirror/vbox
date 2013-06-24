@@ -27,7 +27,9 @@
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
-#include "VBoxDD.h"
+#ifndef TESTCASE
+# include "VBoxDD.h"
+#endif
 
 
 /*******************************************************************************
@@ -886,18 +888,6 @@ static PVUSBURB usbHidUrbReapCore(PUSBHID pThis, RTMSINTERVAL cMillies)
 }
 
 
-/**
- * @copydoc PDMUSBREG::pfnUrbReap
- */
-static DECLCALLBACK(PVUSBURB) usbHidUrbReap(PPDMUSBINS pUsbIns,
-                                            RTMSINTERVAL cMillies)
-{
-    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidUrbReap/#%u: cMillies=%u\n", pThis->iInstance, cMillies));
-    return usbHidUrbReapCore(pThis, cMillies);
-}
-
-
 static int usbHidUrbCancelCore(PUSBHID pThis, PVUSBURB pUrb)
 {
     RTCritSectEnter(&pThis->CritSect);
@@ -912,17 +902,6 @@ static int usbHidUrbCancelCore(PUSBHID pThis, PVUSBURB pUrb)
     return VINF_SUCCESS;
 }
 
-
-/**
- * @copydoc PDMUSBREG::pfnUrbCancel
- */
-static DECLCALLBACK(int) usbHidUrbCancel(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
-{
-    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidUrbCancel/#%u: pUrb=%p:%s\n", pThis->iInstance, pUrb,
-             pUrb->pszDesc));
-    return usbHidUrbCancelCore(pThis, pUrb);
-}
 
 /**
  * Handles request sent to the inbound (device to host) interrupt pipe. This is
@@ -1192,18 +1171,6 @@ static int usbHidQueueCore(PUSBHID pThis, PVUSBURB pUrb)
 }
 
 
-/**
- * @copydoc PDMUSBREG::pfnUrbQueue
- */
-static DECLCALLBACK(int) usbHidQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
-{
-    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidQueue/#%u: pUrb=%p:%s EndPt=%#x\n", pUsbIns->iInstance,
-             pUrb, pUrb->pszDesc, pUrb->EndPt));
-    return usbHidQueueCore(pThis, pUrb);
-}
-
-
 static int usbHidUsbClearHaltedEndpointCore(PUSBHID pThis, unsigned uEndpoint)
 {
     if ((uEndpoint & ~0x80) < RT_ELEMENTS(pThis->aEps))
@@ -1213,33 +1180,6 @@ static int usbHidUsbClearHaltedEndpointCore(PUSBHID pThis, unsigned uEndpoint)
         RTCritSectLeave(&pThis->CritSect);
     }
 
-    return VINF_SUCCESS;
-}
-
-
-/**
- * @copydoc PDMUSBREG::pfnUsbClearHaltedEndpoint
- */
-static DECLCALLBACK(int) usbHidUsbClearHaltedEndpoint(PPDMUSBINS pUsbIns,
-                                                      unsigned uEndpoint)
-{
-    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidUsbClearHaltedEndpoint/#%u: uEndpoint=%#x\n",
-             pUsbIns->iInstance, uEndpoint));
-    return usbHidUsbClearHaltedEndpointCore(pThis, uEndpoint);
-}
-
-
-/**
- * @copydoc PDMUSBREG::pfnUsbSetInterface
- */
-static DECLCALLBACK(int) usbHidUsbSetInterface(PPDMUSBINS pUsbIns,
-                                               uint8_t bInterfaceNumber,
-                                               uint8_t bAlternateSetting)
-{
-    LogFlow(("usbHidUsbSetInterface/#%u: bInterfaceNumber=%u bAlternateSetting=%u\n",
-             pUsbIns->iInstance, bInterfaceNumber, bAlternateSetting));
-    Assert(bAlternateSetting == 0);
     return VINF_SUCCESS;
 }
 
@@ -1272,27 +1212,6 @@ static int usbHidUsbSetConfigurationCore(PUSBHID pThis,
 }
 
 
-/**
- * @copydoc PDMUSBREG::pfnUsbSetConfiguration
- */
-static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns,
-                                                   uint8_t bConfigurationValue,
-                                                   const void *pvOldCfgDesc,
-                                                   const void *pvOldIfState,
-                                                   const void *pvNewCfgDesc)
-{
-    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidUsbSetConfiguration/#%u: bConfigurationValue=%u\n",
-             pUsbIns->iInstance, bConfigurationValue));
-    return usbHidUsbSetConfigurationCore(pThis, bConfigurationValue,
-                                         pvOldCfgDesc, pvOldIfState,
-                                         pvNewCfgDesc);
-}
-
-
-/**
- * @copydoc PDMUSBREG::pfnUsbGetDescriptorCache
- */
 static PCPDMUSBDESCCACHE usbHidUsbGetDescriptorCacheCore(PUSBHID pThis)
 {
     if (pThis->isAbsolute) {
@@ -1303,19 +1222,7 @@ static PCPDMUSBDESCCACHE usbHidUsbGetDescriptorCacheCore(PUSBHID pThis)
 }
 
 
-/**
- * @copydoc PDMUSBREG::pfnUsbGetDescriptorCache
- */
-static DECLCALLBACK(PCPDMUSBDESCCACHE) usbHidUsbGetDescriptorCache(PPDMUSBINS
-                                                                        pUsbIns)
-{
-    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidUsbGetDescriptorCache/#%u:\n", pUsbIns->iInstance));
-    return usbHidUsbGetDescriptorCacheCore(pThis);
-}
-
-
-static DECLCALLBACK(int) usbHidUsbResetCore(PUSBHID pThis)
+static int usbHidUsbResetCore(PUSBHID pThis)
 {
     RTCritSectEnter(&pThis->CritSect);
 
@@ -1323,17 +1230,6 @@ static DECLCALLBACK(int) usbHidUsbResetCore(PUSBHID pThis)
 
     RTCritSectLeave(&pThis->CritSect);
     return rc;
-}
-
-
-/**
- * @copydoc PDMUSBREG::pfnUsbReset
- */
-static DECLCALLBACK(int) usbHidUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
-{
-    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidUsbReset/#%u:\n", pUsbIns->iInstance));
-    return usbHidUsbResetCore(pThis);
 }
 
 
@@ -1351,17 +1247,6 @@ static void usbHidDestructCore(PUSBHID pThis)
         RTSemEventDestroy(pThis->hEvtDoneQueue);
         pThis->hEvtDoneQueue = NIL_RTSEMEVENT;
     }
-}
-
-
-/**
- * @copydoc PDMUSBREG::pfnDestruct
- */
-static DECLCALLBACK(void) usbHidDestruct(PPDMUSBINS pUsbIns)
-{
-    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidDestruct/#%u:\n", pUsbIns->iInstance));
-    usbHidDestructCore(pThis);
 }
 
 
@@ -1394,9 +1279,127 @@ static int usbHidConstructCore(PUSBHID pThis, int iInstance, bool isAbsolute,
 }
 
 
-static void usbHidConstructFinish(PUSBHID pThis, PPDMIMOUSECONNECTOR pDrv)
+static int usbHidConstructFinish(PUSBHID pThis)
 {
-    pThis->Lun0.pDrv = pDrv;
+    pThis->Lun0.pDrv = PDMIBASE_QUERY_INTERFACE(pThis->Lun0.pDrvBase,
+                                                PDMIMOUSECONNECTOR);
+    return pThis->Lun0.pDrv ? VINF_SUCCESS : VERR_PDM_MISSING_INTERFACE;
+}
+
+
+#ifndef TESTCASE
+/**
+ * @copydoc PDMUSBREG::pfnUrbReap
+ */
+static DECLCALLBACK(PVUSBURB) usbHidUrbReap(PPDMUSBINS pUsbIns,
+                                            RTMSINTERVAL cMillies)
+{
+    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+    LogFlow(("usbHidUrbReap/#%u: cMillies=%u\n", pThis->iInstance, cMillies));
+    return usbHidUrbReapCore(pThis, cMillies);
+}
+
+
+/**
+ * @copydoc PDMUSBREG::pfnUrbCancel
+ */
+static DECLCALLBACK(int) usbHidUrbCancel(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
+{
+    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+    LogFlow(("usbHidUrbCancel/#%u: pUrb=%p:%s\n", pThis->iInstance, pUrb,
+             pUrb->pszDesc));
+    return usbHidUrbCancelCore(pThis, pUrb);
+}
+
+
+/**
+ * @copydoc PDMUSBREG::pfnUrbQueue
+ */
+static DECLCALLBACK(int) usbHidQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
+{
+    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+    LogFlow(("usbHidQueue/#%u: pUrb=%p:%s EndPt=%#x\n", pUsbIns->iInstance,
+             pUrb, pUrb->pszDesc, pUrb->EndPt));
+    return usbHidQueueCore(pThis, pUrb);
+}
+
+
+/**
+ * @copydoc PDMUSBREG::pfnUsbClearHaltedEndpoint
+ */
+static DECLCALLBACK(int) usbHidUsbClearHaltedEndpoint(PPDMUSBINS pUsbIns,
+                                                      unsigned uEndpoint)
+{
+    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+    LogFlow(("usbHidUsbClearHaltedEndpoint/#%u: uEndpoint=%#x\n",
+             pUsbIns->iInstance, uEndpoint));
+    return usbHidUsbClearHaltedEndpointCore(pThis, uEndpoint);
+}
+
+
+/**
+ * @copydoc PDMUSBREG::pfnUsbSetInterface
+ */
+static DECLCALLBACK(int) usbHidUsbSetInterface(PPDMUSBINS pUsbIns,
+                                               uint8_t bInterfaceNumber,
+                                               uint8_t bAlternateSetting)
+{
+    LogFlow(("usbHidUsbSetInterface/#%u: bInterfaceNumber=%u bAlternateSetting=%u\n",
+             pUsbIns->iInstance, bInterfaceNumber, bAlternateSetting));
+    Assert(bAlternateSetting == 0);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @copydoc PDMUSBREG::pfnUsbSetConfiguration
+ */
+static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns,
+                                                   uint8_t bConfigurationValue,
+                                                   const void *pvOldCfgDesc,
+                                                   const void *pvOldIfState,
+                                                   const void *pvNewCfgDesc)
+{
+    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+    LogFlow(("usbHidUsbSetConfiguration/#%u: bConfigurationValue=%u\n",
+             pUsbIns->iInstance, bConfigurationValue));
+    return usbHidUsbSetConfigurationCore(pThis, bConfigurationValue,
+                                         pvOldCfgDesc, pvOldIfState,
+                                         pvNewCfgDesc);
+}
+
+
+/**
+ * @copydoc PDMUSBREG::pfnUsbGetDescriptorCache
+ */
+static DECLCALLBACK(PCPDMUSBDESCCACHE) usbHidUsbGetDescriptorCache(PPDMUSBINS
+                                                                        pUsbIns)
+{
+    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+    LogFlow(("usbHidUsbGetDescriptorCache/#%u:\n", pUsbIns->iInstance));
+    return usbHidUsbGetDescriptorCacheCore(pThis);
+}
+
+
+/**
+ * @copydoc PDMUSBREG::pfnUsbReset
+ */
+static DECLCALLBACK(int) usbHidUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
+{
+    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+    LogFlow(("usbHidUsbReset/#%u:\n", pUsbIns->iInstance));
+    return usbHidUsbResetCore(pThis);
+}
+
+
+/**
+ * @copydoc PDMUSBREG::pfnDestruct
+ */
+static DECLCALLBACK(void) usbHidDestruct(PPDMUSBINS pUsbIns)
+{
+    PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
+    LogFlow(("usbHidDestruct/#%u:\n", pUsbIns->iInstance));
+    usbHidDestructCore(pThis);
 }
 
 
@@ -1409,7 +1412,6 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance,
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     bool isAbsolute;
     uint8_t u8CoordShift;
-    PPDMIMOUSECONNECTOR pDrv;
     Log(("usbHidConstruct/#%u:\n", iInstance));
 
     /*
@@ -1430,6 +1432,8 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance,
                                    N_("HID failed to query shift factor"));
 
     rc = usbHidConstructCore(pThis, iInstance, isAbsolute, u8CoordShift);
+    if (RT_FAILURE(rc))  /* Already asserted previously. */
+        return rc;
 
     /*
      * Attach the mouse driver.
@@ -1440,12 +1444,10 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance,
         return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS,
                                    N_("HID failed to attach mouse driver"));
 
-    pDrv = PDMIBASE_QUERY_INTERFACE(pThis->Lun0.pDrvBase, PDMIMOUSECONNECTOR);
-    if (!pDrv)
-        return PDMUsbHlpVMSetError(pUsbIns, VERR_PDM_MISSING_INTERFACE,
-                                   RT_SRC_POS,
+    rc = usbHidConstructFinish(pThis);
+    if (RT_FAILURE(rc))
+        return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS,
                                    N_("HID failed to query mouse interface"));
-    usbHidConstructFinish(pThis, pDrv);
 
     return VINF_SUCCESS;
 }
@@ -1515,3 +1517,40 @@ const PDMUSBREG g_UsbHidMou =
     /* u32TheEnd */
     PDM_USBREG_VERSION
 };
+
+#else /* TESTCASE */
+
+# include "testcase/tstUsbMouse.h"
+
+static int tstUsbMouseConstruct(PUSBHID pThis, int iInstance, bool isAbsolute,
+                                uint8_t u8CoordShift, PPDMIBASE pConnectorBase,
+                                PPDMIBASE *ppBase)
+{
+    int rc = usbHidConstructCore(pThis, iInstance, isAbsolute, u8CoordShift);
+    if (RT_SUCCESS(rc))
+    {
+        *ppBase = &pThis->Lun0.IBase;
+        pThis->Lun0.pDrvBase = pConnectorBase;
+        rc = usbHidConstructFinish(pThis);
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
+    }
+    RTMemFree(pThis);
+    return rc;
+}
+
+TSTUSBMOUSEREG g_TstUsbMouseReg =
+{
+    sizeof(USBHID),
+    tstUsbMouseConstruct,
+    usbHidDestructCore,
+    usbHidUsbResetCore,
+    usbHidUsbGetDescriptorCacheCore,
+    usbHidUsbSetConfigurationCore,
+    usbHidUsbClearHaltedEndpointCore,
+    usbHidQueueCore,
+    usbHidUrbCancelCore,
+    usbHidUrbReapCore
+};
+
+#endif /* TESTCASE */
