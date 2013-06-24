@@ -385,6 +385,8 @@ public:
     static bool shouldWeAllowSnapshotOperations(CMachine &machine, bool fIncludingSanityCheck = true);
     static QList<IndicatorType> restrictedStatusBarIndicators(CMachine &machine);
     static QList<MachineCloseAction> restrictedMachineCloseActions(CMachine &machine);
+    static QList<GlobalSettingsPageType> restrictedGlobalSettingsPages(CVirtualBox &vbox);
+    static QList<MachineSettingsPageType> restrictedMachineSettingsPages(CMachine &machine);
 
 #ifdef RT_OS_LINUX
     static void checkForWrongUSBMounted();

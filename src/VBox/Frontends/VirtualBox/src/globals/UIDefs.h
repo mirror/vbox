@@ -139,6 +139,10 @@ namespace UIDefs
     extern const char* GUI_DefaultCloseAction;
     extern const char* GUI_RestrictedStatusBarIndicators;
 
+    /* Settings dialogs stuff: */
+    extern const char* GUI_RestrictedGlobalSettingsPages;
+    extern const char* GUI_RestrictedMachineSettingsPages;
+
     /* Mini tool-bar declarations: */
     extern const char* GUI_ShowMiniToolBar;
     extern const char* GUI_MiniToolBarAlignment;
