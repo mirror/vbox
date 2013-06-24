@@ -31,6 +31,7 @@
 #include <VBox/vmm/tm.h>
 
 #ifdef DEBUG_ramshankar
+# define HMVMX_SYNC_FULL_GUEST_STATE
 # define HMSVM_ALWAYS_TRAP_ALL_XCPTS
 # define HMSVM_ALWAYS_TRAP_PF
 #endif
@@ -1192,11 +1193,11 @@ DECLINLINE(void) hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUM
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_SEGMENT_REGS)
     {
         HMSVM_LOAD_SEG_REG(CS, cs);
-        HMSVM_LOAD_SEG_REG(SS, cs);
-        HMSVM_LOAD_SEG_REG(DS, cs);
-        HMSVM_LOAD_SEG_REG(ES, cs);
-        HMSVM_LOAD_SEG_REG(FS, cs);
-        HMSVM_LOAD_SEG_REG(GS, cs);
+        HMSVM_LOAD_SEG_REG(SS, ss);
+        HMSVM_LOAD_SEG_REG(DS, ds);
+        HMSVM_LOAD_SEG_REG(ES, es);
+        HMSVM_LOAD_SEG_REG(FS, fs);
+        HMSVM_LOAD_SEG_REG(GS, gs);
 
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_SEG;
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_SEGMENT_REGS;
@@ -1549,7 +1550,7 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * Loads the guest state.
+ * Worker for loading the guest-state into the VMCB.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
@@ -1558,13 +1559,8 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  *
  * @remarks No-long-jump zone!!!
  */
-VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    AssertPtr(pVM);
-    AssertPtr(pVCpu);
-    AssertPtr(pCtx);
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     AssertMsgReturn(pVmcb, ("Invalid pVmcb\n"), VERR_SVM_INVALID_PVMCB);
 
@@ -1607,9 +1603,27 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
              ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p fContextUseFlags=%#RX32\n",
               pVM, pVCpu, pVCpu->hm.s.fContextUseFlags));
 
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
+    Log4(("Load: CS:RIP=%04x:%#RX64\n", pCtx->cs.Sel, pCtx->rip));
 
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
+}
+
+
+/**
+ * Loads the guest state.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    /* Nothing to do here. Loading is done below before VM-entry. */
+    return VINF_SUCCESS;
 }
 
 
@@ -1664,8 +1678,8 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /*
      * Guest segment registers (includes FS, GS base MSRs for 64-bit guests).
      */
-    HMSVM_SAVE_SEG_REG(CS, ss);
-    HMSVM_SAVE_SEG_REG(SS, cs);
+    HMSVM_SAVE_SEG_REG(CS, cs);
+    HMSVM_SAVE_SEG_REG(SS, ss);
     HMSVM_SAVE_SEG_REG(DS, ds);
     HMSVM_SAVE_SEG_REG(ES, es);
     HMSVM_SAVE_SEG_REG(FS, fs);
@@ -1924,24 +1938,14 @@ static void hmR0SvmSetupTscOffsetting(PVMCPU pVCpu)
 DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, PSVMEVENT pEvent, RTGCUINTPTR GCPtrFaultAddress)
 {
     Assert(!pVCpu->hm.s.Event.fPending);
+    Assert(pEvent->n.u1Valid);
 
     pVCpu->hm.s.Event.u64IntrInfo       = pEvent->u;
     pVCpu->hm.s.Event.fPending          = true;
     pVCpu->hm.s.Event.GCPtrFaultAddress = GCPtrFaultAddress;
 
-#ifdef VBOX_STRICT
-    if (GCPtrFaultAddress)
-    {
-        AssertMsg(   pEvent->n.u8Vector == X86_XCPT_PF
-                  && pEvent->n.u3Type   == SVM_EVENT_EXCEPTION,
-                  ("hmR0SvmSetPendingEvent: Setting fault-address for non-#PF. u8Vector=%#x Type=%#RX32 GCPtrFaultAddr=%#RGx\n",
-                   pEvent->n.u8Vector, (uint32_t)pEvent->n.u3Type, GCPtrFaultAddress));
-        Assert(GCPtrFaultAddress == CPUMGetGuestCR2(pVCpu));
-    }
-#endif
-
-    Log4(("hmR0SvmSetPendingEvent: u=%#RX64 u8Vector=%#x ErrorCodeValid=%#x ErrorCode=%#RX32\n", pEvent->u,
-          pEvent->n.u8Vector, pEvent->n.u3Type, (uint8_t)pEvent->n.u1ErrorCodeValid, pEvent->n.u32ErrorCode));
+    Log4(("hmR0SvmSetPendingEvent: u=%#RX64 u8Vector=%#x Type=%#x ErrorCodeValid=%RTbool ErrorCode=%#RX32\n", pEvent->u,
+          pEvent->n.u8Vector, (uint8_t)pEvent->n.u3Type, !!pEvent->n.u1ErrorCodeValid, pEvent->n.u32ErrorCode));
 }
 
 
@@ -2162,8 +2166,8 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     Event.u = 0;
     if (pVCpu->hm.s.Event.fPending)                            /* First, inject any pending HM events. */
     {
-        Assert(Event.n.u1Valid);
         Event.u = pVCpu->hm.s.Event.u64IntrInfo;
+        Assert(Event.n.u1Valid);
         bool fInject = true;
         if (   fIntShadow
             && (   Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ
@@ -2545,8 +2549,12 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     pVmcb->ctrl.NestedPaging.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
 
+#ifdef HMVMX_SYNC_FULL_GUEST_STATE
+    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
+#endif
+
     /* Load the guest state. */
-    int rc = SVMR0LoadGuestState(pVM, pVCpu, pCtx);
+    int rc = hmR0SvmLoadGuestState(pVM, pVCpu, pCtx);
     AssertRC(rc);
     AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags =%#x\n", pVCpu->hm.s.fContextUseFlags));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
@@ -2672,8 +2680,8 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         return;
     }
 
-    pSvmTransient->u64ExitCode   = pVmcb->ctrl.u64ExitCode;     /* Save the #VMEXIT reason. */
-    pSvmTransient->fVectoringPF  = false;                       /* Vectoring page-fault needs to be determined later. */
+    pSvmTransient->u64ExitCode  = pVmcb->ctrl.u64ExitCode;      /* Save the #VMEXIT reason. */
+    pSvmTransient->fVectoringPF = false;                        /* Vectoring page-fault needs to be determined later. */
     hmR0SvmSaveGuestState(pVCpu, pMixedCtx);                    /* Save the guest state from the VMCB to the guest-CPU context. */
 
     if (RT_LIKELY(pSvmTransient->u64ExitCode != (uint64_t)SVM_EXIT_INVALID))
@@ -3019,7 +3027,7 @@ static int hmR0SvmInterpretInvlPgEx(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCOR
             return VERR_EM_INTERPRETER;
 
         GCPtrPage = Param1.val.val64;
-        VBOXSTRICTRC rc2 = EMInterpretInvlpg(pVCpu->CTX_SUFF(pVM), pVCpu,  pRegFrame, GCPtrPage);
+        VBOXSTRICTRC rc2 = EMInterpretInvlpg(pVCpu->CTX_SUFF(pVM), pVCpu, pRegFrame, GCPtrPage);
         rc = VBOXSTRICTRC_VAL(rc2);
     }
     else
@@ -3607,6 +3615,9 @@ HMSVM_EXIT_DECL hmR0SvmExitShutdown(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    Log4(("hmR0SvmExitReadCRx: CS:RIP=%04x:%#RX64\n", pCtx->cs.Sel, pCtx->rip));
+
     /** @todo Decode Assist. */
     VBOXSTRICTRC rc2 = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
     int rc = VBOXSTRICTRC_VAL(rc2);
@@ -3794,6 +3805,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     static uint32_t const s_aIOSize[8]  = { 0, 1, 2, 0, 4, 0, 0, 0 };                   /* Size of the I/O accesses in bytes. */
     static uint32_t const s_aIOOpAnd[8] = { 0, 0xff, 0xffff, 0, 0xffffffff, 0, 0, 0 };  /* AND masks for saving
                                                                                             the result (in AL/AX/EAX). */
+    Log4(("hmR0SvmExitIOInstr: CS:RIP=%04x:%#RX64\n", pCtx->cs.Sel, pCtx->rip));
 
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     PVM      pVM   = pVCpu->CTX_SUFF(pVM);
@@ -4033,7 +4045,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     rc = PGMR0Trap0eHandlerNestedPaging(pVM, pVCpu, enmNestedPagingMode, u32ErrCode, CPUMCTX2CORE(pCtx), GCPhysFaultAddr);
     TRPMResetTrap(pVCpu);
 
-    Log2(("#NPF: PGMR0Trap0eHandlerNestedPaging returned %Rrc\n",  rc));
+    Log4(("#NPF: PGMR0Trap0eHandlerNestedPaging returned %Rrc CS:RIP=%04x:%#RX64\n", rc, pCtx->cs.Sel, pCtx->rip));
 
     /*
      * Same case as PGMR0Trap0eHandlerNPMisconfig(). See comment above, @bugref{6043}.
@@ -4143,8 +4155,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         {
             /* A genuine guest #PF, reflect it to the guest. */
             hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
-            Log4(("#PF: Guest page fault at %04X:%RGv FaultAddr=%RGv ErrCode=%#x\n", pCtx->cs, (RTGCPTR)pCtx->rip, uFaultAddress,
-                  u32ErrCode));
+            Log4(("#PF: Guest page fault at %04X:%RGv FaultAddr=%RGv ErrCode=%#x\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip,
+                  uFaultAddress, u32ErrCode));
         }
         else
         {
@@ -4187,7 +4199,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     }
 #endif
 
-    Log4(("#PF: uFaultAddress=%#RX64 cs:rip=%#04x:%#RX64 u32ErrCode %#RX32 cr3=%#RX64\n", uFaultAddress, pCtx->cs.Sel,
+    Log4(("#PF: uFaultAddress=%#RX64 CS:RIP=%#04x:%#RX64 u32ErrCode %#RX32 cr3=%#RX64\n", uFaultAddress, pCtx->cs.Sel,
           pCtx->rip, u32ErrCode, pCtx->cr3));
 
     TRPMAssertXcptPF(pVCpu, uFaultAddress, u32ErrCode);
