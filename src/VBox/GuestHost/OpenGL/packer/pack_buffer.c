@@ -242,7 +242,11 @@ void crPackInitBuffer( CRPackBuffer *buf, void *pack, int size, int mtu
 	buf->pack = pack;
 
 #ifdef IN_RING0
-	if(!num_opcodes)
+	if(num_opcodes)
+	{
+	    num_opcodes = (num_opcodes + 0x3) & (~0x3);
+	}
+	else
 #endif
 	{
 	    num_opcodes = crPackMaxOpcodes( buf->size );

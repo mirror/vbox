@@ -305,4 +305,14 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSwapchain9Present(IDirect3DSwapChain9 *ifa
     wined3d_mutex_unlock();
     return hr;
 }
+
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSwapchain9GetHostWinID(IDirect3DSwapChain9 *iface, DWORD *pID)
+{
+    struct d3d9_swapchain *swapchain = impl_from_IDirect3DSwapChain9(iface);
+    HRESULT hr;
+    wined3d_mutex_lock();
+    hr = wined3d_swapchain_get_host_win_id(swapchain->wined3d_swapchain, pID);
+    wined3d_mutex_unlock();
+    return hr;
+}
 #endif

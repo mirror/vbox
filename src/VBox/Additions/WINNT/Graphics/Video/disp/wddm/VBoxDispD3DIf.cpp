@@ -147,6 +147,14 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
             WARN(("no VBoxWineExD3DSurf9GetHostId"));
             break;
         }
+
+        pD3D->pfnVBoxWineExD3DSwapchain9GetHostWinID = (PFNVBOXWINEEXD3DSWAPCHAIN9_GETHOSTWINID)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DSwapchain9GetHostWinID");
+        if (!pD3D->pfnVBoxWineExD3DSwapchain9GetHostWinID)
+        {
+            WARN(("no VBoxWineExD3DSwapchain9GetHostWinID"));
+            break;
+        }
+
         return S_OK;
 
     } while (0);

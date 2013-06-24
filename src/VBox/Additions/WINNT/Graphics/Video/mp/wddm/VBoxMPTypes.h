@@ -32,6 +32,9 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 #include "VBoxMPVbva.h"
 #include "VBoxMPCr.h"
 
+#include <cr_vreg.h>
+
+
 #if 0
 #include <iprt/avl.h>
 #endif
@@ -111,6 +114,9 @@ typedef struct VBOXWDDM_SOURCE
     VBOXWDDM_ALLOC_DATA AllocData;
     BOOLEAN bVisible;
     char fGhSynced;
+    /* specifies whether the source has 3D overlay data visible */
+    BOOLEAN fHas3DVrs;
+    VBOXVR_LIST VrList;
     VBOXVBVAINFO Vbva;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* @todo: in our case this seems more like a target property,
@@ -221,10 +227,12 @@ typedef struct VBOXWDDM_SWAPCHAIN
     volatile uint32_t cRefs;
     VBOXDISP_UMHANDLE hSwapchainUm;
     VBOXDISP_KMHANDLE hSwapchainKm;
+    UINT winHostID;
+    BOOLEAN fExposed;
     POINT Pos;
     UINT width;
     UINT height;
-    VBOXWDDMVR_LIST VisibleRegions;
+    VBOXVR_LIST VisibleRegions;
 }VBOXWDDM_SWAPCHAIN, *PVBOXWDDM_SWAPCHAIN;
 
 typedef struct VBOXWDDM_CONTEXT
@@ -236,9 +244,7 @@ typedef struct VBOXWDDM_CONTEXT
     UINT  EngineAffinity;
     BOOLEAN fRenderFromShadowDisabled;
     uint32_t u32CrConClientID;
-#ifdef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
     VBOXMP_CRPACKER CrPacker;
-#endif
     VBOXWDDM_HTABLE Swapchains;
     VBOXVIDEOCM_CTX CmContext;
     VBOXVIDEOCM_ALLOC_CONTEXT AllocContext;

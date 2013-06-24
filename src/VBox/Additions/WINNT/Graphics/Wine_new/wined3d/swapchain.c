@@ -1534,4 +1534,16 @@ HRESULT CDECL wined3d_swapchain_present_rt(struct wined3d_swapchain *swapchain, 
 
     return S_OK;
 }
+
+HRESULT CDECL wined3d_swapchain_get_host_win_id(struct wined3d_swapchain *swapchain, DWORD *pID)
+{
+    DWORD id = (DWORD)pVBoxGetWindowId(swapchain->hDC);
+    if (!id)
+    {
+        ERR("failed to get id for hdc 0x%x", swapchain->hDC);
+        return E_FAIL;
+    }
+    *pID = id;
+    return S_OK;
+}
 #endif

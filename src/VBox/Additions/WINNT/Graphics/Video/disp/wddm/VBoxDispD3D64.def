@@ -18,4 +18,3 @@ LIBRARY VBoxDispD3D64
 
 EXPORTS
 	OpenAdapter
-	VBoxDispMpGetCallbacks

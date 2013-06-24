@@ -1164,14 +1164,15 @@ NTSTATUS DxgkDdiStartDevice(
 #endif
                     VBoxWddmSlInit(pDevExt);
 
-#ifdef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
                     VBoxMpCrShgsmiTransportCreate(&pDevExt->CrHgsmiTransport, pDevExt);
-#endif
+                    /* @todo: implement detection */
+                    pDevExt->fTexPresentEnabled = FALSE;
 
                     for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
                     {
                         PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
                         KeInitializeSpinLock(&pSource->AllocationLock);
+                        VBoxVrListInit(&pSource->VrList);
                     }
 
 #ifdef VBOX_WDDM_WIN8
@@ -1257,9 +1258,7 @@ NTSTATUS DxgkDdiStopDevice(
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)MiniportDeviceContext;
     NTSTATUS Status = STATUS_SUCCESS;
 
-#ifdef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
     VBoxMpCrShgsmiTransportTerm(&pDevExt->CrHgsmiTransport);
-#endif
 
     VBoxWddmSlTerm(pDevExt);
 
@@ -1798,7 +1797,7 @@ VOID DxgkDdiUnload(
 
     VbglTerminate();
 
-    VBoxWddmVrTerm();
+    VBoxVrTerm();
 
     PRTLOGGER pLogger = RTLogRelSetDefaultInstance(NULL);
     if (pLogger)
@@ -2896,54 +2895,6 @@ NTSTATUS vboxWddmCallIsr(PVBOXMP_DEVEXT pDevExt)
     return Status;
 }
 
-static NTSTATUS vboxWddmSubmitCmd(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE_CMD_DMACMD *pCmd)
-{
-    NTSTATUS Status = vboxVdmaGgCmdDmaNotifySubmitted(pDevExt, pCmd);
-    Assert(Status == STATUS_SUCCESS);
-    if (Status == STATUS_SUCCESS)
-    {
-        NTSTATUS submStatus = vboxVdmaGgCmdSubmit(pDevExt, &pCmd->Hdr);
-        Assert(submStatus == STATUS_SUCCESS);
-        if (submStatus != STATUS_SUCCESS)
-        {
-            vboxVdmaGgCmdDmaNotifyCompleted(pDevExt, pCmd, DXGK_INTERRUPT_DMA_FAULTED);
-        }
-    }
-    else
-    {
-        vboxVdmaGgCmdRelease(pDevExt, &pCmd->Hdr);
-    }
-    return Status;
-}
-
-static NTSTATUS vboxWddmSubmitBltCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, UINT u32FenceId, PVBOXWDDM_DMA_PRIVATEDATA_BLT pBlt, VBOXVDMAPIPE_FLAGS_DMACMD fBltFlags)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-    PVBOXVDMAPIPE_CMD_DMACMD_BLT pBltCmd = (PVBOXVDMAPIPE_CMD_DMACMD_BLT)vboxVdmaGgCmdCreate(pDevExt, VBOXVDMAPIPE_CMD_TYPE_DMACMD, RT_OFFSETOF(VBOXVDMAPIPE_CMD_DMACMD_BLT, Blt.DstRects.UpdateRects.aRects[pBlt->Blt.DstRects.UpdateRects.cRects]));
-    Assert(pBltCmd);
-    if (pBltCmd)
-    {
-        VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pBlt->Blt.DstAlloc.srcId];
-        vboxVdmaGgCmdDmaNotifyInit(&pBltCmd->Hdr, pContext->NodeOrdinal, u32FenceId, vboxVdmaGgDdiCmdRelease, pBltCmd);
-        pBltCmd->Hdr.fFlags = fBltFlags;
-        pBltCmd->Hdr.pContext = pContext;
-        pBltCmd->Hdr.enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_BLT;
-        memcpy(&pBltCmd->Blt, &pBlt->Blt, RT_OFFSETOF(VBOXVDMA_BLT, DstRects.UpdateRects.aRects[pBlt->Blt.DstRects.UpdateRects.cRects]));
-        Status = vboxWddmSubmitCmd(pDevExt, &pBltCmd->Hdr);
-        if (Status != STATUS_SUCCESS)
-        {
-            WARN(("vboxWddmSubmitCmd failed, Status 0x%x", Status));
-            Status = STATUS_SUCCESS;
-        }
-        vboxVdmaGgCmdRelease(pDevExt, &pBltCmd->Hdr.Hdr);
-    }
-    else
-    {
-        Status = vboxVdmaDdiCmdFenceComplete(pDevExt, pContext->NodeOrdinal, u32FenceId, DXGK_INTERRUPT_DMA_FAULTED);
-    }
-    return Status;
-}
-
 #ifdef VBOX_WITH_CRHGSMI
 DECLCALLBACK(VOID) vboxWddmDmaCompleteChromiumCmd(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext)
 {
@@ -3180,13 +3131,10 @@ DxgkDdiSubmitCommand(
             }
 
             if (fBltFlags.Value)
-            {
-                Status = vboxWddmSubmitBltCmd(pDevExt, pContext, pSubmitCommand->SubmissionFenceId, pBlt, fBltFlags);
-            }
-            else
-            {
-                Status = vboxVdmaDdiCmdFenceComplete(pDevExt, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId, DXGK_INTERRUPT_DMA_COMPLETED);
-            }
+                Status = vboxVdmaProcessBltCmd(pDevExt, pContext, pBlt, fBltFlags);
+
+            Status = vboxVdmaDdiCmdFenceComplete(pDevExt, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId,
+                    NT_SUCCESS(Status) ? DXGK_INTERRUPT_DMA_COMPLETED : DXGK_INTERRUPT_DMA_FAULTED);
             break;
         }
         case VBOXVDMACMD_TYPE_CHROMIUM_CMD:
@@ -3246,57 +3194,34 @@ DxgkDdiSubmitCommand(
         {
             VBOXWDDM_DMA_PRIVATEDATA_FLIP *pFlip = (VBOXWDDM_DMA_PRIVATEDATA_FLIP*)pPrivateDataBase;
             vboxWddmAddrSetVram(&pFlip->Flip.Alloc.pAlloc->AllocData.Addr, pFlip->Flip.Alloc.segmentIdAlloc, pFlip->Flip.Alloc.offAlloc);
-            PVBOXVDMAPIPE_CMD_DMACMD_FLIP pFlipCmd = (PVBOXVDMAPIPE_CMD_DMACMD_FLIP)vboxVdmaGgCmdCreate(pDevExt,
-                    VBOXVDMAPIPE_CMD_TYPE_DMACMD, sizeof (VBOXVDMAPIPE_CMD_DMACMD_FLIP));
-            Assert(pFlipCmd);
-            if (pFlipCmd)
-            {
-                VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pFlip->Flip.Alloc.srcId];
-                vboxVdmaGgCmdDmaNotifyInit(&pFlipCmd->Hdr, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId, vboxVdmaGgDdiCmdRelease, pFlipCmd);
-                pFlipCmd->Hdr.fFlags.Value = 0;
-                pFlipCmd->Hdr.fFlags.fVisibleRegions = 1;
-                pFlipCmd->Hdr.pContext = pContext;
-                pFlipCmd->Hdr.enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP;
-                memcpy(&pFlipCmd->Flip, &pFlip->Flip, sizeof (pFlipCmd->Flip));
-                Status = vboxWddmSubmitCmd(pDevExt, &pFlipCmd->Hdr);
-                if (Status != STATUS_SUCCESS)
-                    WARN(("vboxWddmSubmitCmd failed, Status 0x%x", Status));
-                vboxVdmaGgCmdRelease(pDevExt, &pFlipCmd->Hdr.Hdr);
-            }
+            VBOXVDMAPIPE_FLAGS_DMACMD fFlags;
+            fFlags.Value = 0;
+
+            if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D)
+                fFlags.fVisibleRegions = 1;
             else
-            {
-                Status = vboxVdmaDdiCmdFenceComplete(pDevExt, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId, DXGK_INTERRUPT_DMA_FAULTED);
-                Assert(Status == STATUS_SUCCESS);
-            }
+                WARN(("unexpected flip cmd"));
+
+            if (fFlags.Value)
+                Status = vboxVdmaProcessFlipCmd(pDevExt, pContext, pFlip, fFlags);
+
+            Status = vboxVdmaDdiCmdFenceComplete(pDevExt, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId,
+                    NT_SUCCESS(Status) ? DXGK_INTERRUPT_DMA_COMPLETED : DXGK_INTERRUPT_DMA_FAULTED);
             break;
         }
         case VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL:
         {
             PVBOXWDDM_DMA_PRIVATEDATA_CLRFILL pCF = (PVBOXWDDM_DMA_PRIVATEDATA_CLRFILL)pPrivateDataBase;
             vboxWddmAddrSetVram(&pCF->ClrFill.Alloc.pAlloc->AllocData.Addr, pCF->ClrFill.Alloc.segmentIdAlloc, pCF->ClrFill.Alloc.offAlloc);
-            PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL pCFCmd = (PVBOXVDMAPIPE_CMD_DMACMD_CLRFILL)vboxVdmaGgCmdCreate(pDevExt,
-                    VBOXVDMAPIPE_CMD_TYPE_DMACMD, RT_OFFSETOF(VBOXVDMAPIPE_CMD_DMACMD_CLRFILL, ClrFill.Rects.aRects[pCF->ClrFill.Rects.cRects]));
-            Assert(pCFCmd);
-            if (pCFCmd)
-            {
-                vboxVdmaGgCmdDmaNotifyInit(&pCFCmd->Hdr, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId, vboxVdmaGgDdiCmdRelease, pCFCmd);
-                pCFCmd->Hdr.fFlags.Value = 0;
-                pCFCmd->Hdr.fFlags.fRealOp = 1;
-                pCFCmd->Hdr.pContext = pContext;
-                pCFCmd->Hdr.enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL;
-                memcpy(&pCFCmd->ClrFill, &pCF->ClrFill, RT_OFFSETOF(VBOXVDMA_CLRFILL, Rects.aRects[pCF->ClrFill.Rects.cRects]));
-                Status = vboxWddmSubmitCmd(pDevExt, &pCFCmd->Hdr);
-                if (Status != STATUS_SUCCESS)
-                    WARN(("vboxWddmSubmitCmd failed, Status 0x%x", Status));
-                vboxVdmaGgCmdRelease(pDevExt, &pCFCmd->Hdr.Hdr);
+            VBOXVDMAPIPE_FLAGS_DMACMD fFlags;
+            fFlags.Value = 0;
+            fFlags.fRealOp = 1;
 
-            }
-            else
-            {
-                Status = vboxVdmaDdiCmdFenceComplete(pDevExt, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId, DXGK_INTERRUPT_DMA_FAULTED);
-                Assert(Status == STATUS_SUCCESS);
-            }
+            if (fFlags.Value)
+                Status = vboxVdmaProcessClrFillCmd(pDevExt, pContext, pCF, fFlags);
 
+            Status = vboxVdmaDdiCmdFenceComplete(pDevExt, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId,
+                    NT_SUCCESS(Status) ? DXGK_INTERRUPT_DMA_COMPLETED : DXGK_INTERRUPT_DMA_FAULTED);
             break;
         }
         case VBOXVDMACMD_TYPE_DMA_NOP:
@@ -5739,14 +5664,14 @@ DxgkDdiPresent(
                     if (cbCmd >= cbRects)
                     {
                         cbCmd -= cbRects;
-                        memcpy(&pBlt->Blt.DstRects.UpdateRects.aRects[pPresent->MultipassOffset], pPresent->pDstSubRects, cbRects);
+                        memcpy(&pBlt->Blt.DstRects.UpdateRects.aRects[pPresent->MultipassOffset], &pPresent->pDstSubRects[pPresent->MultipassOffset], cbRects);
                         pBlt->Blt.DstRects.UpdateRects.cRects += cbRects/sizeof (RECT);
                     }
                     else
                     {
                         UINT cbFitingRects = (cbCmd/sizeof (RECT)) * sizeof (RECT);
                         Assert(cbFitingRects);
-                        memcpy(&pBlt->Blt.DstRects.UpdateRects.aRects[pPresent->MultipassOffset], pPresent->pDstSubRects, cbFitingRects);
+                        memcpy(&pBlt->Blt.DstRects.UpdateRects.aRects[pPresent->MultipassOffset], &pPresent->pDstSubRects[pPresent->MultipassOffset], cbFitingRects);
                         cbCmd -= cbFitingRects;
                         pPresent->MultipassOffset += cbFitingRects/sizeof (RECT);
                         pBlt->Blt.DstRects.UpdateRects.cRects += cbFitingRects/sizeof (RECT);
@@ -6185,9 +6110,7 @@ DxgkDdiCreateContext(
                                             &pContext->u32CrConClientID);
                                         if (RT_SUCCESS(rc))
                                         {
-#ifdef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
                                             VBoxMpCrPackerInit(&pContext->CrPacker);
-#endif
                                         }
                                         else
                                         {
@@ -6813,8 +6736,8 @@ DriverEntry(
 
         if (NT_SUCCESS(Status))
         {
-            Status = VBoxWddmVrInit();
-            if (NT_SUCCESS(Status))
+            rc = VBoxVrInit();
+            if (RT_SUCCESS(rc))
             {
 #ifdef VBOX_WDDM_WIN8
                 if (g_VBoxDisplayOnly)
@@ -6830,10 +6753,13 @@ DriverEntry(
                 if (NT_SUCCESS(Status))
                     return Status;
 
-                VBoxWddmVrTerm();
+                VBoxVrTerm();
             }
             else
-                WARN(("VBoxWddmVrInit failed, Status(0x%x)", Status));
+            {
+                WARN(("VBoxVrInit failed, rc(%d)", rc));
+                Status = STATUS_UNSUCCESSFUL;
+            }
         }
         else
             LOGREL(("Aborting the video driver load due to 3D support missing"));

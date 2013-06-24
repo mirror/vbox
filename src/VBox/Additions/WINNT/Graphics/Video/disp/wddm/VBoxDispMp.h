@@ -25,6 +25,7 @@
 #include <d3dhal.h>
 #include "../../common/wddm/VBoxMPIf.h"
 
+#if 0
 typedef struct VBOXDISPMP_REGIONS
 {
     HWND hWnd;
@@ -80,5 +81,5 @@ typedef struct VBOXDISPMP_CALLBACKS
  */
 typedef VBOXDISPMP_DECL(HRESULT) FNVBOXDISPMP_GETCALLBACKS(uint32_t u32Version, PVBOXDISPMP_CALLBACKS pCallbacks);
 typedef FNVBOXDISPMP_GETCALLBACKS *PFNVBOXDISPMP_GETCALLBACKS;
-
+#endif /* 0 */
 #endif /* #ifndef ___VBoxDispMp_h___ */

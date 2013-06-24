@@ -27,7 +27,14 @@ extern "C" {
 DECLEXPORT(void) crEnableWarnings(int onOff);
 
 DECLEXPORT(void) crDebug(const char *format, ... ) PRINTF;
+#ifdef DEBUG_misha
+typedef void FNCRDEBUG(const char *format, ... ) PRINTF;
+typedef FNCRDEBUG *PFNCRDEBUG;
+DECLINLINE(PFNCRDEBUG) crGetDebug() {return crDebug;}
+# define crWarning (RT_BREAKPOINT(), crDebug)
+#else
 DECLEXPORT(void) crWarning(const char *format, ... ) PRINTF;
+#endif
 DECLEXPORT(void) crInfo(const char *format, ... ) PRINTF;
 
 DECLEXPORT(void) crError(const char *format, ... ) NORETURN_PRINTF;

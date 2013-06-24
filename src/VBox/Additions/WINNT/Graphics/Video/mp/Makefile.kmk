@@ -87,13 +87,9 @@ ifdef VBOX_WITH_WDDM
   VBoxVideoWddm_DEFS      += LOG_ENABLED
  endif
  VBoxVideoWddm_DEFS       += LOG_TO_BACKDOOR
- ifdef VBOX_WITH_CROGL
-  VBoxVideoWddm_DEFS      += VBOX_WITH_CROGL
- endif
  ifdef VBOX_VDMA_WITH_WATCHDOG
   VBoxVideoWddm_DEFS      += VBOX_VDMA_WITH_WATCHDOG
  endif
- 
  VBoxVideoWddm_INCS       += \
  	../../../include \
  	.. \
@@ -121,14 +117,17 @@ ifdef VBOX_WITH_WDDM
  	common/VBoxMPHGSMI.cpp \
  	common/VBoxMPVidModes.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
- 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
- if defined(VBOX_WITH_CROGL) && defined(VBOX_WDDM_WITH_CRCMD)
+ 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/util/vreg.cpp
+ if defined(VBOX_WITH_CROGL)
    VBoxVideoWddm_SOURCES   += \
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_buffer.c \
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_bounds.c \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_visibleregion.c \
+ 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_misc.c \
  	$(VBOX_PATH_CROGL_GENFILES)/pack_bounds_swap.c \
  	wddm/VBoxMPCrUtil.cpp
-   VBoxVideoWddm_DEFS      += VBOX_WDDM_WITH_CRCMD
+   VBoxVideoWddm_DEFS      += VBOX_WITH_CROGL
  endif
  ifdef VBOXWDDM_WITH_VBVA
   VBoxVideoWddm_SOURCES   += \

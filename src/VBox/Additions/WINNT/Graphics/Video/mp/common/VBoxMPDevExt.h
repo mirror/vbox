@@ -105,11 +105,7 @@ typedef struct _VBOXMP_DEVEXT
    LIST_ENTRY DpcCmdQueue;
    LIST_ENTRY SwapchainList3D;
    /* mutex for context list operations */
-#ifdef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
    KSPIN_LOCK ContextLock;
-#else
-   FAST_MUTEX ContextMutex;
-#endif
    KSPIN_LOCK SynchLock;
    volatile uint32_t cContexts3D;
    volatile uint32_t cContexts2D;
@@ -118,10 +114,10 @@ typedef struct _VBOXMP_DEVEXT
    /* this is examined and swicthed by DxgkDdiSubmitCommand only! */
    volatile BOOLEAN fRenderToShadowDisabled;
 
+   BOOLEAN fTexPresentEnabled;
+
    VBOXMP_CRCTLCON CrCtlCon;
-#ifdef VBOX_WDDM_MINIPORT_WITH_VISIBLE_RECTS
    VBOXMP_CRSHGSMITRANSPORT CrHgsmiTransport;
-#endif
 
    VBOXWDDM_GLOBAL_POINTER_INFO PointerInfo;
 

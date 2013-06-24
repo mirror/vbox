@@ -31,7 +31,10 @@ DECLEXPORT(void) crMemset( void *ptr, int value, unsigned int bytes );
 DECLEXPORT(void) crMemZero( void *ptr, unsigned int bytes );
 DECLEXPORT(int)  crMemcmp( const void *p1, const void *p2, unsigned int bytes );
 DECLEXPORT(void) crDebug(const char *format, ... );
+#ifndef DEBUG_misha
 DECLEXPORT(void) crWarning(const char *format, ... );
+#endif
+
 DECLEXPORT(void) crInfo(const char *format, ... );
 DECLEXPORT(void) crError(const char *format, ... );
 
@@ -73,10 +76,12 @@ DECLEXPORT(void) crDebug(const char *format, ... )
 
 }
 
+#ifndef DEBUG_misha
 DECLEXPORT(void) crWarning(const char *format, ... )
 {
 
 }
+#endif
 
 DECLEXPORT(void) crInfo(const char *format, ... )
 {

@@ -16,4 +16,3 @@
 
 EXPORTS
 	OpenAdapter
-	VBoxDispMpGetCallbacks

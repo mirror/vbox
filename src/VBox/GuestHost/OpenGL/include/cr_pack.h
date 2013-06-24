@@ -144,8 +144,10 @@ extern DECLEXPORT(int) crPackCanHoldBoundedBuffer( CR_PACKER_CONTEXT_ARGDECL con
 #else
 #undef CR_UNALIGNED_ACCESS_OKAY
 #endif
+#ifndef IN_RING0
 extern DECLEXPORT(void) crWriteUnalignedDouble( void *buffer, double d );
 extern DECLEXPORT(void) crWriteSwappedDouble( void *buffer, double d );
+#endif
 
 extern DECLEXPORT(void) *crPackAlloc( CR_PACKER_CONTEXT_ARGDECL unsigned int len );
 extern DECLEXPORT(void) crHugePacket( CR_PACKER_CONTEXT_ARGDECL CROpcode op, void *ptr );
@@ -308,12 +310,22 @@ crPackCanHoldOpcode(const CRPackContext *pc, int num_opcode, int num_data)
 #define WRITE_DOUBLE( offset, data ) \
   WRITE_DATA( offset, GLdouble, data )
 #else
-#define WRITE_DOUBLE( offset, data ) \
-  crWriteUnalignedDouble( data_ptr + (offset), (data) )
+# ifndef IN_RING0
+#  define WRITE_DOUBLE( offset, data ) \
+        crWriteUnalignedDouble( data_ptr + (offset), (data) )
+# else
+#  define WRITE_DOUBLE( offset, data ) \
+        AssertReleaseFailed()
+# endif
 #endif
 
+#ifndef IN_RING0
 #define WRITE_SWAPPED_DOUBLE( offset, data ) \
     crWriteSwappedDouble( data_ptr + (offset), (data) )
+#else
+#define WRITE_SWAPPED_DOUBLE( offset, data ) \
+        AssertReleaseFailed()
+#endif
 
 #define WRITE_OPCODE( pc, opcode )  \
   *(pc->buffer.opcode_current--) = (unsigned char) opcode
