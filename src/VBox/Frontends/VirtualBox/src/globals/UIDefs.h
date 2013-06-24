@@ -252,7 +252,7 @@ enum GlobalSettingsPageType
     GlobalSettingsPageType_Display,
     GlobalSettingsPageType_USB,
     GlobalSettingsPageType_Network,
-    GlobalSettingsPageType_Extension,
+    GlobalSettingsPageType_Extensions,
     GlobalSettingsPageType_Proxy,
     GlobalSettingsPageType_Max
 };
