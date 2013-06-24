@@ -3168,7 +3168,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 
         Utf8Str name = applianceIOName(applianceIOTar);
 
-        if (strncmp(pCallbacks->Core.pszInterfaceName, name.c_str(), name.length()) == 0)
+        if (strncmp(pStorage->pVDImageIfaces->pszInterfaceName, name.c_str(), name.length()) == 0)
         {
             /* It means that we possibly have imported the storage earlier on the previous loop steps*/
             std::set<RTCString>::const_iterator h = disksResolvedNames.find(diCurrent.strHref);
