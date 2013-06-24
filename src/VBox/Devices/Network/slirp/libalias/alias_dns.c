@@ -27,7 +27,6 @@
 #define isdigit(ch)    RT_C_IS_DIGIT(ch)
 #define isalpha(ch)    RT_C_IS_ALPHA(ch)
 
-
 #define DNS_CONTROL_PORT_NUMBER 53
 /* see RFC 1035(4.1.1) */
 union dnsmsg_header
@@ -197,14 +196,7 @@ protohandler(struct libalias *la, struct ip *pIp, struct alias_data *ah)
     int i;
     /* Parse dns request */
     char *qw_qname = NULL;
-    struct { 
-        struct hostent hostnt;
-        char buffer[1024];
-    } hostent_with_buffer;
-    struct hostent *pHostent = &hostent_with_buffer.hostnt;
-    int rc_hostent = 0;
-    int h_errnop = 0;
-
+    struct hostent *pHostent = NULL;
     char pszCname[255];
     int cname_len = 0;
     struct dns_meta_data *meta;
@@ -252,17 +244,7 @@ protohandler(struct libalias *la, struct ip *pIp, struct alias_data *ah)
             pszCname[cname_len - 1] = 0;
             pszCname[cname_len - 2] = 0;
         }
-        rc_hostent = gethostbyname_r(pszCname, 
-                                     &hostent_with_buffer.hostnt, 
-                                     hostent_with_buffer.buffer,
-                                     1024,
-                                     &pHostent, 
-                                     &h_errnop);
-        /* Expected rc_hostent equals to 0, if not 0 and h_errnop == ERANGE
-         * we need to alloc more memory, for buffer.
-         */
-        if (rc_hostent)
-            return 1;
+        pHostent = gethostbyname(pszCname);
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
         if (   pHostent
             && !LIST_EMPTY(&la->pData->DNSMapHead))
