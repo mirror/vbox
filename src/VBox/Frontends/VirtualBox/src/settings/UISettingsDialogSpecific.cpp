@@ -310,7 +310,8 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
     setDialogType(SettingsDialogType_Offline);
 
     /* Creating settings pages: */
-    QList<GlobalSettingsPageType> restrictedGlobalSettingsPages = vboxGlobal().restrictedGlobalSettingsPages(vboxGlobal().virtualBox());
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    QList<GlobalSettingsPageType> restrictedGlobalSettingsPages = vboxGlobal().restrictedGlobalSettingsPages(vbox);
     for (int iPageIndex = GlobalSettingsPageType_General; iPageIndex < GlobalSettingsPageType_Max; ++iPageIndex)
     {
         /* Make sure page was not restricted: */
