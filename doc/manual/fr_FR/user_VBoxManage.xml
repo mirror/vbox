@@ -729,7 +729,7 @@ Statistics update:  disabled
 
           <listitem>
             <para><computeroutput>--defaultfrontend
-            default|&lt;nom&gt;</computeroutput>&nbsp;: Ceci vous permet de
+            default|&lt;nom&gt;</computeroutput>&#xA0;: Ceci vous permet de
             spécifier l'interface par défaut qui sera utilisée au démarrage de
             cette VM&#xA0; voir 
             <xref linkend="vboxmanage-startvm" /> pour des détails.</para>
