@@ -7216,6 +7216,11 @@ DECLINLINE(int) hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- VM-exit handlers -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+
+/** @name VM-exit handlers.
+ * @{
+ */
+
 /**
  * VM-exit handler for external interrupts (VMX_EXIT_EXT_INT).
  */
@@ -8682,10 +8687,16 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTR
     return rc;
 }
 
+/** @} */
 
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 /* -=-=-=-=-=-=-=-=-=- VM-exit Exception Handlers -=-=-=-=-=-=-=-=-=-=- */
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-= */
+
+/** @name VM-exit exception handlers.
+ * @{
+ */
+
 /**
  * VM-exit exception handler for #MF (Math Fault: floating point exception).
  */
@@ -9181,4 +9192,6 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPFEM);
     return rc;
 }
+
+/** @} */
 
