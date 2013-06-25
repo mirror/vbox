@@ -1793,7 +1793,6 @@ RuntimeR0Drv_SOURCES.darwin = \
 	darwin/RTErrConvertFromDarwinKern.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
-	generic/RTMpGetCount-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
 	generic/mppresent-generic.cpp \
 	generic/timer-generic.cpp \
