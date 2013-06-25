@@ -450,6 +450,26 @@ Global::stringifyDeviceType(DeviceType_T aType)
     }
 }
 
+
+/*static*/ const char *
+Global::stringifyReason(Reason_T aReason)
+{
+    switch (aReason)
+    {
+        case Reason_Unspecified:      return "unspecified";
+        case Reason_HostSuspend:      return "host suspend";
+        case Reason_HostResume:       return "host resume";
+        case Reason_HostBatteryLow:   return "host battery low";
+        default:
+        {
+            AssertMsgFailed(("%d (%#x)\n", aReason, aReason));
+            static char s_szMsg[48];
+            RTStrPrintf(s_szMsg, sizeof(s_szMsg), "invalid reason %#010x\n", aReason);
+            return s_szMsg;
+        }
+    }
+}
+
 /*static*/ int
 Global::vboxStatusCodeFromCOM(HRESULT aComStatus)
 {

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -116,6 +116,9 @@ public:
                                  ComSafeArrayIn(IMedium *, aChildrenToReparent),
                                  IProgress *aProgress);
     STDMETHOD(EnableVMMStatistics)(BOOL aEnable);
+    STDMETHOD(PauseWithReason)(Reason_T aReason);
+    STDMETHOD(ResumeWithReason)(Reason_T aReason);
+    STDMETHOD(SaveStateWithReason)(Reason_T aReason, IProgress **aProgress);
 
 private:
 

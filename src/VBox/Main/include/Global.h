@@ -193,6 +193,14 @@ public:
     static const char *stringifyDeviceType(DeviceType_T aType);
 
     /**
+     * Stringify a reason.
+     *
+     * @returns Pointer to a read only string.
+     * @param   aReason     The reason code.
+     */
+    static const char *stringifyReason(Reason_T aReason);
+
+    /**
      * Try convert a COM status code to a VirtualBox status code (VBox/err.h).
      *
      * @returns VBox status code.

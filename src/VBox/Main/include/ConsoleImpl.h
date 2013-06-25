@@ -258,6 +258,10 @@ public:
     }
     void enableVMMStatistics(BOOL aEnable);
 
+    HRESULT pause(Reason_T aReason);
+    HRESULT resume(Reason_T aReason);
+    HRESULT saveState(Reason_T aReason, IProgress **aProgress);
+
     // callback callers (partly; for some events console callbacks are notified
     // directly from IInternalSessionControl event handlers declared above)
     void onMousePointerShapeChange(bool fVisible, bool fAlpha,
