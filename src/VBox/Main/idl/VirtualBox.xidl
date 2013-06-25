@@ -17401,7 +17401,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <result name="VBOX_E_VM_ERROR">
           Virtual machine error in resume operation.
         </result>
-        <see><link to="Console::resume"/></see>
+        <see><link to="IConsole::resume"/></see>
       </desc>
 
       <param name="reason" type="Reason" dir="in">
@@ -17421,7 +17421,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <result name="VBOX_E_FILE_ERROR">
           Failed to create directory for saved state file.
         </result>
-        <see><link to="Console::saveState"/></see>
+        <see><link to="IConsole::saveState"/></see>
       </desc>
 
       <param name="reason" type="Reason" dir="in">
