@@ -484,7 +484,9 @@ UIUpdateManager::UIUpdateManager()
 
 #ifdef VBOX_WITH_UPDATE_REQUEST
     /* Ask updater to check for the first time: */
-    if (!vboxGlobal().isVMConsoleProcess())
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    if (VBoxGlobal::shouldWeAllowApplicationUpdate(vbox) &&
+        !vboxGlobal().isVMConsoleProcess())
         QTimer::singleShot(0, this, SLOT(sltCheckIfUpdateIsNecessary()));
 #endif /* VBOX_WITH_UPDATE_REQUEST */
 }

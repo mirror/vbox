@@ -103,6 +103,7 @@ namespace UIDefs
     extern const char* GUI_RecentListHD;
     extern const char* GUI_RecentListCD;
     extern const char* GUI_RecentListFD;
+    extern const char* GUI_PreventApplicationUpdate;
 
     /* Selector-window declarations: */
     extern const char* GUI_Input_SelectorShortcuts;

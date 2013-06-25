@@ -374,7 +374,9 @@ public:
     static QString fullMediumFormatName(const QString &strBaseMediumFormatName);
 
     /* Extra-data settings stuff: */
+    static bool isApprovedByExtraData(CVirtualBox &vbox, const QString &strExtraDataKey);
     static bool isApprovedByExtraData(CMachine &machine, const QString &strExtraDataKey);
+    static bool shouldWeAllowApplicationUpdate(CVirtualBox &vbox);
     static bool shouldWeShowMachine(CMachine &machine);
     static bool shouldWeAllowMachineReconfiguration(CMachine &machine,
                                                     bool fIncludingMachineGeneralCheck = false,

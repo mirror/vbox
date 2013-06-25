@@ -3618,6 +3618,23 @@ QString VBoxGlobal::fullMediumFormatName(const QString &strBaseMediumFormatName)
 }
 
 /* static */
+bool VBoxGlobal::isApprovedByExtraData(CVirtualBox &vbox, const QString &strExtraDataKey)
+{
+    /* Load corresponding extra-data value: */
+    QString strExtraDataValue(vbox.GetExtraData(strExtraDataKey));
+
+    /* 'false' if value was not set: */
+    if (strExtraDataValue.isEmpty())
+        return false;
+
+    /* Handle particular values: */
+    return    strExtraDataValue.compare("true", Qt::CaseInsensitive) == 0
+           || strExtraDataValue.compare("yes", Qt::CaseInsensitive) == 0
+           || strExtraDataValue.compare("on", Qt::CaseInsensitive) == 0
+           || strExtraDataValue == "1";
+}
+
+/* static */
 bool VBoxGlobal::isApprovedByExtraData(CMachine &machine, const QString &strExtraDataKey)
 {
     /* Load corresponding extra-data value: */
@@ -3632,6 +3649,13 @@ bool VBoxGlobal::isApprovedByExtraData(CMachine &machine, const QString &strExtr
            || strExtraDataValue.compare("yes", Qt::CaseInsensitive) == 0
            || strExtraDataValue.compare("on", Qt::CaseInsensitive) == 0
            || strExtraDataValue == "1";
+}
+
+/* static */
+bool VBoxGlobal::shouldWeAllowApplicationUpdate(CVirtualBox &vbox)
+{
+    /* 'true' if disabling is not approved by the extra-data: */
+    return !isApprovedByExtraData(vbox, GUI_PreventApplicationUpdate);
 }
 
 /* static */
