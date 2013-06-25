@@ -16846,9 +16846,31 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   /////////////////////////////////////////////////////////////////////////
   -->
 
+  <enum
+    name="Reason"
+    uuid="e7e8e097-299d-4e98-8bbc-c31c2d47d0cc"
+    >
+    <desc>
+      Internal event reason type.
+    </desc>
+
+    <const name="Unspecified"       value="0">
+      <desc>Null value, means "no known reason".</desc>
+    </const>
+    <const name="HostSuspend"       value="1">
+      <desc>Host is being suspended (power management event).</desc>
+    </const>
+    <const name="HostResume"        value="2">
+      <desc>Host is being resumed (power management event).</desc>
+    </const>
+    <const name="HostBatteryLow"    value="3">
+      <desc>Host is running low on battery (power management event).</desc>
+    </const>
+  </enum>
+
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="0ba8d8b3-204b-448e-99c2-242eaa666ea8"
+    uuid="cddf451c-a006-4c33-8245-63b3c9ae6586"
     internal="yes"
     wsmap="suppress"
     >
@@ -17344,6 +17366,69 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="enable" type="boolean" dir="in">
         <desc>True enables statistics collection.</desc>
+      </param>
+    </method>
+
+    <method name="pauseWithReason">
+      <desc>
+        Internal method for triggering a VM pause with a specified reason code.
+        The reason code can be interpreted by device/drivers and thus it might
+        behave slightly differently than a normal VM pause.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine not in Running state.
+        </result>
+        <result name="VBOX_E_VM_ERROR">
+          Virtual machine error in suspend operation.
+        </result>
+        <see><link to="Console::pause"/></see>
+      </desc>
+
+      <param name="reason" type="Reason" dir="in">
+        <desc>Specify the best matching reason code please.</desc>
+      </param>
+    </method>
+
+    <method name="resumeWithReason">
+      <desc>
+        Internal method for triggering a VM resume with a specified reason code.
+        The reason code can be interpreted by device/drivers and thus it might
+        behave slightly differently than a normal VM resume.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine not in Paused state.
+        </result>
+        <result name="VBOX_E_VM_ERROR">
+          Virtual machine error in resume operation.
+        </result>
+        <see><link to="Console::resume"/></see>
+      </desc>
+
+      <param name="reason" type="Reason" dir="in">
+        <desc>Specify the best matching reason code please.</desc>
+      </param>
+    </method>
+
+    <method name="saveStateWithReason">
+      <desc>
+        Internal method for triggering a VM save state with a specified reason
+        code. The reason code can be interpreted by device/drivers and thus it
+        might behave slightly differently than a normal VM save state.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine state neither Running nor Paused.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          Failed to create directory for saved state file.
+        </result>
+        <see><link to="Console::saveState"/></see>
+      </desc>
+
+      <param name="reason" type="Reason" dir="in">
+        <desc>Specify the best matching reason code please.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 
