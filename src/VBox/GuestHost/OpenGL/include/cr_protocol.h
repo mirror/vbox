@@ -21,6 +21,11 @@ extern "C" {
 #define CR_PROTOCOL_VERSION_MAJOR 9
 #define CR_PROTOCOL_VERSION_MINOR 1
 
+/* new TexPresent mechanism is available */
+#define CR_VBOX_CAP_TEX_PRESENT    0x00000001
+/* no DWM support available, required for Win8 guests to switch to display-only mode gracefully */
+#define CR_VBOX_CAP_NO_DWM_SUPPORT 0x00000002
+
 typedef enum {
     /* first message types is 'wGL\001', so we can immediately
          recognize bad message types */

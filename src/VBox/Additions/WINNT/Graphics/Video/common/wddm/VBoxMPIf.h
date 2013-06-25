@@ -34,7 +34,7 @@
 #include <VBox/VBoxGuest2.h>
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 17
+#define VBOXVIDEOIF_VERSION 18
 
 #define VBOXWDDM_NODE_ID_SYSTEM           0
 #define VBOXWDDM_NODE_ID_3D               (VBOXWDDM_NODE_ID_SYSTEM)
@@ -484,6 +484,7 @@ typedef struct VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL
 typedef struct VBOXWDDM_QI
 {
     uint32_t u32Version;
+    uint32_t u32VBox3DCaps;
     uint32_t cInfos;
     VBOXVHWA_INFO aInfos[VBOX_VIDEO_MAX_SCREENS];
 } VBOXWDDM_QI;

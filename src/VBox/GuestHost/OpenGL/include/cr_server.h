@@ -526,6 +526,12 @@ typedef struct {
 
     GLboolean             bWindowsInitiallyHidden;
 
+    /* OR-ed CR_VBOX_CAP_XXX cap values
+     * describing VBox Chromium functionality caps visible to guest
+     * Currently can have only CR_VBOX_CAP_TEX_PRESENT cap to notify
+     * that the TexPresent mechanism is available and enabled */
+    uint32_t              u32Caps;
+
     uint32_t              NotifyEventMap[(CR_MAX_GUEST_MONITORS + 31)/32];
     uint32_t              cDisableEvent;
     PFNCRSERVERNOTIFYEVENT pfnNotifyEventCB;
@@ -565,6 +571,7 @@ extern DECLEXPORT(void) crVBoxServerRemoveClient(uint32_t u32ClientID);
 extern DECLEXPORT(int32_t) crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t cbBuffer);
 extern DECLEXPORT(int32_t) crVBoxServerClientRead(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t *pcbBuffer);
 extern DECLEXPORT(int32_t) crVBoxServerClientSetVersion(uint32_t u32ClientID, uint32_t vMajor, uint32_t vMinor);
+extern DECLEXPORT(int32_t) crVBoxServerClientGetCaps(uint32_t u32ClientID, uint32_t *pu32Caps);
 extern DECLEXPORT(int32_t) crVBoxServerClientSetPID(uint32_t u32ClientID, uint64_t pid);
 
 extern DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM);

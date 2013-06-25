@@ -895,6 +895,30 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             break;
         }
 
+        case SHCRGL_GUEST_FN_GET_CAPS:
+        {
+            Log(("svcCall: SHCRGL_GUEST_FN_GET_CAPS\n"));
+
+            /* Verify parameter count and types. */
+            if (cParms != SHCRGL_CPARMS_GET_CAPS)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            if (paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* Execute the function. */
+                rc = crVBoxServerClientGetCaps(u32ClientID, &paParms[0].u.uint32);
+                AssertRC(rc);
+            }
+
+            break;
+        }
+
         default:
         {
             rc = VERR_NOT_IMPLEMENTED;

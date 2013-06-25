@@ -80,6 +80,9 @@ typedef FNVBOXWINEEXD3DDEV9_TERM *PFNVBOXWINEEXD3DDEV9_TERM;
 typedef VBOXWINEEX_DECL(HRESULT) FNVBOXWINEEXD3DSURF9_GETHOSTID(IDirect3DSurface9 *iface, uint32_t *pu32Id);
 typedef FNVBOXWINEEXD3DSURF9_GETHOSTID *PFNVBOXWINEEXD3DSURF9_GETHOSTID;
 
+typedef VBOXWINEEX_DECL(HRESULT) FNVBOXWINEEXD3DSURF9_SYNCTOHOST(IDirect3DSurface9 *iface);
+typedef FNVBOXWINEEXD3DSURF9_SYNCTOHOST *PFNVBOXWINEEXD3DSURF9_SYNCTOHOST;
+
 typedef VBOXWINEEX_DECL(HRESULT) FNVBOXWINEEXD3DSWAPCHAIN9_PRESENT(IDirect3DSwapChain9 *iface, IDirect3DSurface9 *surf);
 typedef FNVBOXWINEEXD3DSWAPCHAIN9_PRESENT *PFNVBOXWINEEXD3DSWAPCHAIN9_PRESENT;
 
@@ -126,6 +129,10 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9FlushToHost(IDirect3DDevice9Ex *iface)
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Term(IDirect3DDevice9Ex *iface);
 
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSurf9GetHostId(IDirect3DSurface9 *iface, uint32_t *pu32Id);
+
+/* makes the surface contents to be synched with host,
+ * i.e. typically in case wine surface's location is in sysmem, puts it to texture*/
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSurf9SyncToHost(IDirect3DSurface9 *iface);
 
 /* used for backwards compatibility purposes only with older host versions not supportgin new present mechanism */
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSwapchain9Present(IDirect3DSwapChain9 *iface,
