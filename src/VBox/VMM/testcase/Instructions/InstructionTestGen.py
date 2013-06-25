@@ -374,6 +374,9 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         self.fnCalcResult = fnCalcResult;
         self.acbOpVars    = [ 1, 2, 4, 8 ] if not acbOpVars else list(acbOpVars);
 
+    ## @name Test Instruction Writers
+    ## @{
+
     def writeInstrGregGreg(self, cbEffOp, iOp1, iOp2, oGen):
         """ Writes the instruction with two general registers as operands. """
         if cbEffOp == 8:
@@ -439,15 +442,70 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         oGen.write(']\n');
         return True;
 
-    def generateOneStdTestGregGreg(self, oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult):
-        """ Generate one standard test. """
-        oGen.write('        call VBINSTST_NAME(Common_LoadKnownValues)\n');
-        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[iOp2], uInput,));
-        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2],));
-        self.writeInstrGregGreg(cbEffOp, iOp1, iOp2, oGen);
-        oGen.pushConst(uResult);
-        oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
-        _ = cbMaxOp;
+    def writeInstrGregSibLabel(self, cbEffOp, iOp1, cAddrBits, iBaseReg, iIndexReg, iScale, oGen):
+        """ Writes the instruction taking a register and a lable, SIB form. """
+        ## @todo Dunno how to convince yasm to generate these. Considering patching it.
+        oGen.write('        %s %s, [VBINSTST_NAME(g_u%sData) xWrtRIP]\n'
+                   % (self.sInstr, gregName(iOp1, cbEffOp * 8),));
+        return True;
+
+    def writeInstrGregSibScaledReg(self, cbEffOp, iOp1, cAddrBits, iBaseReg, iIndexReg, iScale, offDisp, oGen):
+        ## @todo Dunno how to convince yasm to generate SIB variants for iScale == 1 here. Considering patching it.
+        oGen.write('        %s %s, [%s * %#x'
+                   % (self.sInstr, gregName(iOp1, cbEffOp * 8), gregName(iIndexReg, cAddrBits), iScale,));
+        if offDisp is not None:
+            oGen.write(' + %#x' % (offDisp,));
+        oGen.write('] ; iScale=%s\n' % (iScale,));
+        _ = iBaseReg;
+        return True;
+
+    def writeInstrGregSibBase(self, cbEffOp, iOp1, cAddrBits, iBaseReg, iIndexReg, iScale, offDisp, oGen):
+        ## @todo Dunno how to convince yasm to generate SIB variants for iScale == 1 here. Considering patching it.
+        oGen.write('        %s %s, [%s'
+                   % (self.sInstr, gregName(iOp1, cbEffOp * 8), gregName(iBaseReg, cAddrBits), iScale,));
+        if offDisp is not None:
+            oGen.write(' + %#x' % (offDisp,));
+        oGen.write('] ; iScale=%s\n' % (iScale,));
+        _ = iIndexReg;
+        return True;
+
+    def writeInstrGregSibBaseAndScaledReg(self, cbEffOp, iOp1, cAddrBits, iBaseReg, iIndexReg, iScale, offDisp, oGen):
+        return True;
+
+    ## @}
+
+
+    ## @name Memory setups
+    ## @{
+    def generateMemSetupReadByLabel(self, oGen, cAddrBits, uInput):
+        """ Sets up memory for a memory read. """
+        oGen.pushConst(uInput);
+        oGen.write('        call    VBINSTST_NAME(Common_SetupMemReadU%u)\n' % (cbEffOp*8,));
+        return True;
+
+    def generateMemSetupReadByReg(self, oGen, cAddrBits, cbEffOp, iReg1, uInput, offDisp = None):
+        """ Sets up memory for a memory read indirectly addressed thru one register and optional displacement. """
+        oGen.pushConst(uInput);
+        oGen.write('        call    VBINSTST_NAME(%s)\n'
+                   % (oGen.needGRegMemSetup(cAddrBits, cbEffOp, iReg1, offDisp),));
+        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iReg1],));
+        return True;
+
+    def generateMemSetupReadByScaledReg(self, oGen, cAddrBits, cbEffOp, iReg2, iScale, uInput, offDisp = None):
+        """ Sets up memory for a memory read indirectly addressed thru one register and optional displacement. """
+        oGen.pushConst(uInput);
+        oGen.write('        call    VBINSTST_NAME(%s)\n'
+                   % (oGen.needGRegMemSetup(cAddrBits, cbEffOp, iReg2, offDisp, iScale = iScale),));
+        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iReg1],));
+        return True;
+
+    def generateMemSetupReadByBaseAndScaledReg(self, oGen, cAddrBits, cbEffOp, iBaseReg, iIndexReg, iScale, uInput, offDisp):
+        """ Sets up memory for a memory read indirectly addressed thru two registers with optional displacement. """
+        oGen.pushConst(uInput);
+        if iScale == 1:
+        oGen.write('        call    VBINSTST_NAME(%s)\n'
+                   % (oGen.needGRegMemSetup(cAddrBits, cbEffOp, iReg1, offDisp),));
+        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iReg1],));
         return True;
 
     def generateMemSetupPureRM(self, oGen, cAddrBits, cbEffOp, iOp2, iMod, uInput, offDisp = None):
@@ -462,6 +520,18 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2],));
         return True;
 
+    ## @}
+
+    def generateOneStdTestGregGreg(self, oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult):
+        """ Generate one standard test. """
+        oGen.write('        call VBINSTST_NAME(Common_LoadKnownValues)\n');
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[iOp2], uInput,));
+        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2],));
+        self.writeInstrGregGreg(cbEffOp, iOp1, iOp2, oGen);
+        oGen.pushConst(uResult);
+        oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
+        _ = cbMaxOp;
+        return True;
 
     def generateOneStdTestGregMemNoSib(self, oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult):
         """ Generate mode 0, 1 and 2 test for the R/M=iOp2. """
@@ -477,7 +547,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
 
             if iOp2 != 5 and iOp2 != 13:
                 iMod = 1;
-                for offDisp in (127, -128):
+                for offDisp in oGen.getDispForMod(iMod):
                     oGen.write('        call    VBINSTST_NAME(Common_LoadKnownValues)\n');
                     self.generateMemSetupPureRM(oGen, cAddrBits, cbEffOp, iOp2, iMod, uInput, offDisp);
                     self.writeInstrGregPureRM(cbEffOp, iOp1, cAddrBits, iOp2, iMod, offDisp, oGen);
@@ -485,12 +555,63 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                     oGen.write('        call    VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
 
                 iMod = 2;
-                for offDisp in (2147483647, -2147483648):
+                for offDisp in oGen.getDispForMod(iMod):
                     oGen.write('        call    VBINSTST_NAME(Common_LoadKnownValues)\n');
                     self.generateMemSetupPureRM(oGen, cAddrBits, cbEffOp, iOp2, iMod, uInput, offDisp);
                     self.writeInstrGregPureRM(cbEffOp, iOp1, cAddrBits, iOp2, iMod, offDisp, oGen);
                     oGen.pushConst(uResult);
                     oGen.write('        call    VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
+
+        return True;
+
+    def generateOneStdTestGregMemNoSib(self, oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, iMod,
+                                       iBaseReg, iIndexReg, iScale, uInput, uResult):
+        """ Generate one SIB variations. """
+        for offDisp in oGen.getDispForMod(iMod, cbEffOp):
+            if ((iBaseReg == 5 or iBaseReg == 13) and iMod == 0):
+                if iIndexReg == 4:
+                    if cAddrBits == 64:
+                        continue; # skipping.
+                    oGen.write('        call    VBINSTST_NAME(Common_LoadKnownValues)\n');
+                    self.generateMemSetupReadByLabel(oGen, cAddrBits, uInput);
+                    self.writeInstrGregSibLabel(cbEffOp, iOp1, cAddrBits, iBaseReg, iIndexReg, iScale, oGen);
+                    sChecker = oGen.needGRegChecker(iOp1);
+                else:
+                    oGen.write('        call    VBINSTST_NAME(Common_LoadKnownValues)\n');
+                    self.generateMemSetupReadByScaledReg(oGen, cAddrBits, cbEffOp, iIndexReg, iScale, uInput, offDisp);
+                    self.writeInstrGregSibScaledReg(cbEffOp, iOp1, cAddrBits, iBaseReg, iIndexReg, iScale, offDisp, oGen);
+                    sChecker = oGen.needGRegChecker(iOp1, iIndexReg);
+            else:
+                oGen.write('        call    VBINSTST_NAME(Common_LoadKnownValues)\n');
+                if iIndexReg == 4:
+                    self.generateMemSetupReadByReg(oGen, cAddrBits, cbEffOp, iBaseReg, uInput, offDisp);
+                    self.writeInstrGregSibBase(cbEffOp, iOp1, cAddrBits, iBaseReg, iIndexReg, iScale, offDisp, oGen);
+                    sChecker = oGen.needGRegChecker(iOp1, iBaseReg);
+                else:
+                    self.generateMemSetupReadByBaseAndScaledReg(oGen, cAddrBits, cbEffOp, iBaseReg,
+                                                                iIndexReg, iScale, uInput, offDisp);
+                    self.writeInstrGregSibBaseAndScaledReg(cbEffOp, iOp1, cAddrBits, iBaseReg, iIndexReg, iScale, offDisp, oGen);
+                    sChecker = oGen.needGRegChecker(iOp1, iBaseReg, iIndexReg);
+            oGen.pushConst(uResult);
+            oGen.write('        call    VBINSTST_NAME(%s)\n' % (sChecker,));
+        return True;
+
+    def generateStdTestGregMemSib(self, oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, auInputs):
+        """ Generate all SIB variations for the given iOp1 (reg) value. """
+        assert cAddrBits in [32, 64];
+        for iBaseReg in range(len(oGen.oTarget.asGRegs)):
+            for iIndexReg in range(len(oGen.oTarget.asGRegs)):
+                if iBaseReg == 4 or iIndexReg == 4: # no RSP testing atm.
+                    continue;
+                for iMod in [0, 1, 2]:
+                    if iBaseReg == iOp1 and ((iBaseReg != 5 and iBaseReg != 13) or iMod != 0) and cAddrBits != cbMaxOp:
+                        continue; # Don't know the high bit of the address ending up the result - skip it for now.
+                    for iScale in (1, 2, 4, 8):
+                        for uInput in auInputs:
+                            oGen.newSubTest();
+                            uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1], oGen);
+                            self.generateOneStdTestGregMemSib(oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, iMod,
+                                                              iBaseReg, iIndexReg, iScale, uInput, uResult);
 
         return True;
 
@@ -538,17 +659,17 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                         continue;
                     for cAddrBits in oGen.oTarget.getAddrModes():
                         for iOp2 in range(len(oGen.oTarget.asGRegs)):
-                            if iOp2 != 4:
-
+                            if iOp2 != 4 or cAddrBits == 16:
                                 for uInput in (auLongInputs if iOp1 == iLongOp1 and False else auShortInputs):
                                     oGen.newSubTest();
                                     if iOp1 == iOp2 and iOp2 != 5 and iOp2 != 13 and cbEffOp != cbMaxOp:
-                                        continue; # Don't know the high bit of the address ending up the result - skip it.
+                                        continue; # Don't know the high bit of the address ending up the result - skip it for now.
                                     uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1], oGen);
                                     self.generateOneStdTestGregMemNoSib(oGen, cAddrBits, cbEffOp, cbMaxOp,
                                                                         iOp1, iOp2, uInput, uResult);
                             else:
-                                pass; # SIB
+                                # SIB.
+                                self.generateStdTestGregMemSib(oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, auInputs);
 
         return True;
 
@@ -702,7 +823,7 @@ class InstructionTestGen(object):
         self.write('        mov     dword [VBINSTST_NAME(g_uVBInsTstSubTestIndicator) xWrtRIP], __LINE__\n');
         return True;
 
-    def needGRegChecker(self, iReg1, iReg2):
+    def needGRegChecker(self, iReg1, iReg2 = None, iReg3 = None):
         """
         Records the need for a given register checker function, returning its label.
         """
@@ -714,11 +835,16 @@ class InstructionTestGen(object):
             self.dCheckFns[iRegs]  = 1;
         return 'Common_Check_%s_%s' % (self.oTarget.asGRegs[iReg1], self.oTarget.asGRegs[iReg2]);
 
-    def needGRegMemSetup(self, cAddrBits, cbEffOp, iReg1, offDisp = None):
+    def needGRegMemSetup(self, cAddrBits, cbEffOp, iBaseReg, offDisp = None, iIndexReg = None, iScale = 1):
         """
         Records the need for a given register checker function, returning its label.
         """
-        sName = '%ubit_U%u_%s' % (cAddrBits, cbEffOp * 8, gregName(iReg1, cAddrBits),);
+        sName = '%ubit_U%u' % (cAddrBits, cbEffOp * 8,);
+        if iBaseReg is not None:
+            sName += '_%s' % (gregName(iBaseReg, cAddrBits),);
+        sName += '_x%u' % (iScale,);
+        if iIndexReg is not None:
+            sName += '_%s' % (gregName(iIndexReg, cAddrBits),);
         if offDisp is not None:
             sName += '_%#010x' % (offDisp & UINT32_MAX, );
         if sName in self.dCheckFns:
@@ -748,6 +874,21 @@ class InstructionTestGen(object):
         else:
             self.write('        push    dword 0x%x\n' % (uResult,));
         return True;
+
+    def getDispForMod(self, iMod, cbAlignment = 1):
+        """
+        Get a set of address dispositions for a given addressing mode.
+        The alignment restriction is for SIB scaling.
+        """
+        assert cbAlignment in [1, 2, 4, 8];
+        if iMod == 0:
+            aoffDisp = [ None, ];
+        elif iMod == 1:
+            aoffDisp = [ 127 & ~cbAlignment, -128 ];
+        elif iMod == 2:
+            aoffDisp = [ 2147483647 & ~(cbAlignment - 1), -2147483648 ];
+        else: assert False;
+        return aoffDisp;
 
 
     #
@@ -864,18 +1005,20 @@ class InstructionTestGen(object):
             asParams = sName.split('_');
             cAddrBits  = int(asParams[0][:-3]);
             cEffOpBits = int(asParams[1][1:]);
-            sBaseReg   = asParams[2];
-
             if cAddrBits == 64:   asAddrGRegs = g_asGRegs64;
             elif cAddrBits == 32: asAddrGRegs = g_asGRegs32;
             else:                 asAddrGRegs = g_asGRegs16;
-            try:
-                iBaseReg = asAddrGRegs.index(sBaseReg);
-            except ValueError:
-                assert False, 'sBaseReg=%s' % (sBaseReg,);
-                raise;
 
-            i = 3;
+            i = 2;
+            if i < len(asParams[i]) and asParams[i]:
+                sBaseReg = asParams[i];
+                i += 1
+                try:
+                    iBaseReg = asAddrGRegs.index(sBaseReg);
+                except ValueError:
+                    assert False, 'sBaseReg=%s' % (sBaseReg,);
+                    raise;
+
             u32Disp = None;
             if i < len(asParams) and len(asParams[i]) == 10:
                 u32Disp = long(asParams[i], 16);
