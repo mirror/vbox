@@ -468,4 +468,14 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSurf9GetHostId(IDirect3DSurface9 *iface, u
     wined3d_mutex_unlock();
     return hr;
 }
+
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSurf9SyncToHost(IDirect3DSurface9 *iface)
+{
+    struct d3d9_surface *surface = impl_from_IDirect3DSurface9(iface);
+    HRESULT hr;
+    wined3d_mutex_lock();
+    hr = wined3d_surface_sync_to_host(surface->wined3d_surface);
+    wined3d_mutex_unlock();
+    return hr;
+}
 #endif

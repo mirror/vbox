@@ -24,6 +24,13 @@
 #ifdef VBOX_WITH_CROGL
 #include <cr_protocol.h>
 
+static uint32_t g_VBoxMpCrHostCaps = 0;
+
+uint32_t VBoxMpCrGetHostCaps()
+{
+    return g_VBoxMpCrHostCaps;
+}
+
 static void* vboxMpCrShgsmiBufferAlloc(PVBOXMP_DEVEXT pDevExt, HGSMISIZE cbData)
 {
     return VBoxSHGSMIHeapBufferAlloc(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, cbData);
@@ -526,10 +533,11 @@ void* VBoxMpCrShgsmiTransportCmdCreateWriteReadAsync(PVBOXMP_CRSHGSMITRANSPORT p
     PVBOXMP_CRHGSMICMD_WRITEREAD pWrData = VBOXMP_CRSHGSMICON_DR_GET_CMDBUF(pHdr, cBuffers, VBOXMP_CRHGSMICMD_WRITEREAD);
     CRVBOXHGSMIWRITEREAD *pCmd = &pWrData->Cmd;
 
-    pDr->fFlags = VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET;
+    pDr->fFlags = VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR;
     pDr->cbBuf = cbCmd;
     pDr->rc = VERR_NOT_IMPLEMENTED;
-    pDr->Location.offVramBuf = vboxMpCrShgsmiTransportBufOffset(pCon, pCmd);
+//    pDr->Location.offVramBuf = vboxMpCrShgsmiTransportBufOffset(pCon, pCmd);
+
 
     pHdr->enmType = VBOXVDMACMD_TYPE_CHROMIUM_CMD;
     pHdr->u32CmdSpecific = 0;
@@ -545,7 +553,7 @@ void* VBoxMpCrShgsmiTransportCmdCreateWriteReadAsync(PVBOXMP_CRSHGSMITRANSPORT p
     pCmd->cbWriteback = 0;
 
     VBOXVDMACMD_CHROMIUM_BUFFER *pBufCmd = &pBody->aBuffers[0];
-    pBufCmd->offBuffer = vboxMpCrShgsmiTransportBufOffset(pCon, pCmd);
+    pBufCmd->offBuffer = vboxVdmaCBufDrPtrOffset(&pDevExt->u.primary.Vdma, pCmd);
     pBufCmd->cbBuffer = sizeof (*pCmd);
     pBufCmd->u32GuestData = 0;
     pBufCmd->u64GuestData = (uint64_t)pfnCompletion;
@@ -568,7 +576,6 @@ void* VBoxMpCrShgsmiTransportCmdCreateWriteReadAsync(PVBOXMP_CRSHGSMITRANSPORT p
 void* VBoxMpCrShgsmiTransportCmdCreateWriteAsync(PVBOXMP_CRSHGSMITRANSPORT pCon, uint32_t u32ClientID, void *pvBuffer, uint32_t cbBuffer,
         PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEASYNC_COMPLETION pfnCompletion, uint32_t cbContextData)
 {
-
     const uint32_t cBuffers = 2;
     const uint32_t cbCmd = VBOXMP_CRSHGSMICON_DR_SIZE(cBuffers, sizeof (VBOXMP_CRHGSMICMD_WRITE), cbContextData);
     PVBOXMP_DEVEXT pDevExt = pCon->pDevExt;
@@ -710,6 +717,39 @@ static int vboxMpCrCtlConSetVersion(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32Clie
     return VINF_SUCCESS;
 }
 
+static int vboxMpCrCtlConGetCaps(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID, uint32_t *pu32Caps)
+{
+    CRVBOXHGCMGETCAPS parms;
+    int rc;
+
+    parms.hdr.result      = VERR_WRONG_ORDER;
+    parms.hdr.u32ClientID = u32ClientID;
+    parms.hdr.u32Function = SHCRGL_GUEST_FN_GET_CAPS;
+    parms.hdr.cParms      = SHCRGL_CPARMS_GET_CAPS;
+
+    parms.Caps.type      = VMMDevHGCMParmType_32bit;
+    parms.Caps.u.value32 = 0;
+
+    *pu32Caps = 0;
+
+    rc = vboxCrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
+    if (RT_FAILURE(rc))
+    {
+        WARN(("vboxCrCtlConCall failed, rc (%d)", rc));
+        return rc;
+    }
+
+    if (RT_FAILURE(parms.hdr.result))
+    {
+        WARN(("SHCRGL_GUEST_FN_GET_CAPS failed, rc (%d)", parms.hdr.result));
+        return parms.hdr.result;
+    }
+
+    *pu32Caps = parms.Caps.u.value32;
+
+    return VINF_SUCCESS;
+}
+
 static int vboxMpCrCtlConSetPID(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID)
 {
     CRVBOXHGCMSETPID parms;
@@ -834,12 +874,52 @@ bool VBoxMpCrCtlConIs3DSupported()
         return false;
     }
 
+    rc = vboxMpCrCtlConGetCaps(&CrCtlCon, u32ClientID, &g_VBoxMpCrHostCaps);
+    if (RT_FAILURE(rc))
+    {
+        WARN(("vboxMpCrCtlConGetCaps failed rc (%d), ignoring..", rc));
+        g_VBoxMpCrHostCaps = 0;
+    }
+
     rc = VBoxMpCrCtlConDisconnect(&CrCtlCon, u32ClientID);
     if (RT_FAILURE(rc))
-        WARN(("VBoxMpCrCtlConDisconnect failed, ignoring.."));
+        WARN(("VBoxMpCrCtlConDisconnect failed rc (%d), ignoring..", rc));
 
     return true;
 #else
     return false;
 #endif
 }
+
+int VBoxMpCrCmdRxReadbackHandler(CRMessageReadback *pRx, uint32_t cbRx)
+{
+    if (cbRx < sizeof (*pRx))
+    {
+        WARN(("invalid rx size %d", cbRx));
+        return VERR_INVALID_PARAMETER;
+    }
+    void* pvData = VBoxMpCrCmdRxReadbackData(pRx);
+    uint32_t cbData = VBoxMpCrCmdRxReadbackDataSize(pRx, cbRx);
+    void *pvDataPtr = *((void**)&pRx->readback_ptr);
+    memcpy(pvDataPtr, pvData, cbData);
+    return VINF_SUCCESS;
+}
+
+int VBoxMpCrCmdRxHandler(CRMessageHeader *pRx, uint32_t cbRx)
+{
+    if (cbRx < sizeof (*pRx))
+    {
+        WARN(("invalid rx size %d", cbRx));
+        return VERR_INVALID_PARAMETER;
+    }
+    CRMessageHeader *pHdr = (CRMessageHeader*)pRx;
+    switch (pHdr->type)
+    {
+        case CR_MESSAGE_READBACK:
+            return VBoxMpCrCmdRxReadbackHandler((CRMessageReadback*)pRx, cbRx);
+        default:
+            WARN(("unsupported rx message type: %d", pHdr->type));
+            return VERR_INVALID_PARAMETER;
+    }
+}
+

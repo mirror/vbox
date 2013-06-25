@@ -1165,8 +1165,8 @@ NTSTATUS DxgkDdiStartDevice(
                     VBoxWddmSlInit(pDevExt);
 
                     VBoxMpCrShgsmiTransportCreate(&pDevExt->CrHgsmiTransport, pDevExt);
-                    /* @todo: implement detection */
-                    pDevExt->fTexPresentEnabled = FALSE;
+
+                    pDevExt->fTexPresentEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_TEX_PRESENT);
 
                     for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
                     {
@@ -1987,8 +1987,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             if (!g_VBoxDisplayOnly)
 #endif
             {
-                Assert (pQueryAdapterInfo->OutputDataSize >= sizeof (VBOXWDDM_QI));
-                if (pQueryAdapterInfo->OutputDataSize >= sizeof (VBOXWDDM_QI))
+                if (pQueryAdapterInfo->OutputDataSize == sizeof (VBOXWDDM_QI))
                 {
                     VBOXWDDM_QI * pQi = (VBOXWDDM_QI*)pQueryAdapterInfo->pOutputData;
                     memset (pQi, 0, sizeof (VBOXWDDM_QI));
@@ -2003,7 +2002,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 }
                 else
                 {
-                    LOGREL(("buffer too small"));
+                    WARN(("incorrect buffer size %d, expected %d", pQueryAdapterInfo->OutputDataSize, sizeof (VBOXWDDM_QI)));
                     Status = STATUS_BUFFER_TOO_SMALL;
                 }
             }
@@ -6076,6 +6075,17 @@ DxgkDdiCreateContext(
                 NTSTATUS tmpStatus= vboxWddmDisplaySettingsQueryPos(pDevExt, i, &pDevExt->aSources[i].VScreenPos);
                 Assert(tmpStatus == STATUS_SUCCESS);
             }
+
+            int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pContext->u32CrConClientID);
+            if (RT_SUCCESS(rc))
+            {
+                VBoxMpCrPackerInit(&pContext->CrPacker);
+            }
+            else
+            {
+                WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
+                Status = STATUS_UNSUCCESSFUL;
+            }
         }
         else
         {
@@ -6102,10 +6112,9 @@ DxgkDdiCreateContext(
                                 Assert(Status == STATUS_SUCCESS);
                                 if (Status == STATUS_SUCCESS)
                                 {
-                                    int rc = VINF_SUCCESS;
                                     if (pInfo->crVersionMajor || pInfo->crVersionMinor)
                                     {
-                                        rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
+                                        int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
                                             pInfo->crVersionMajor, pInfo->crVersionMinor,
                                             &pContext->u32CrConClientID);
                                         if (RT_SUCCESS(rc))
@@ -6119,7 +6128,7 @@ DxgkDdiCreateContext(
                                         }
                                     }
 
-                                    if (RT_SUCCESS(rc))
+                                    if (NT_SUCCESS(Status))
                                     {
                                         ASMAtomicIncU32(&pDevExt->cContexts3D);
                                         break;
@@ -6140,10 +6149,9 @@ DxgkDdiCreateContext(
                         Assert(Status == STATUS_SUCCESS);
                         if (Status == STATUS_SUCCESS)
                         {
-                            int rc = VINF_SUCCESS;
                             if (pInfo->crVersionMajor || pInfo->crVersionMinor)
                             {
-                                rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
+                                int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
                                     pInfo->crVersionMajor, pInfo->crVersionMinor,
                                     &pContext->u32CrConClientID);
                                 if (!RT_SUCCESS(rc))
@@ -6153,7 +6161,7 @@ DxgkDdiCreateContext(
                                 }
                             }
 
-                            if (RT_SUCCESS(rc))
+                            if (NT_SUCCESS(Status))
                             {
                                 ASMAtomicIncU32(&pDevExt->cContexts3D);
                                 break;
@@ -6219,10 +6227,6 @@ DxgkDdiDestroyContext(
         {
             uint32_t cContexts = ASMAtomicDecU32(&pDevExt->cContexts3D);
             Assert(cContexts < UINT32_MAX/2);
-            if (pContext->u32CrConClientID)
-            {
-                VBoxMpCrCtlConDisconnect(&pDevExt->CrCtlCon, pContext->u32CrConClientID);
-            }
             break;
         }
         case VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D:
@@ -6233,6 +6237,11 @@ DxgkDdiDestroyContext(
         }
         default:
             break;
+    }
+
+    if (pContext->u32CrConClientID)
+    {
+        VBoxMpCrCtlConDisconnect(&pDevExt->CrCtlCon, pContext->u32CrConClientID);
     }
 
     vboxWddmModeRenderFromShadowDisableUnregister(pDevExt, pContext);
@@ -6673,7 +6682,7 @@ DriverEntry(
 
     ULONG major, minor, build;
     BOOLEAN checkedBuild = PsGetVersion(&major, &minor, &build, NULL);
-    BOOLEAN f3DCheckRequired = FALSE;
+    BOOLEAN f3DRequired = FALSE;
 
     LOGREL(("OsVersion( %d, %d, %d )", major, minor, build));
 
@@ -6685,47 +6694,51 @@ DriverEntry(
         if (major > 6)
         {
             WARN(("Unknow win version, newer major release, assuming 3D check is required"));
-            f3DCheckRequired = TRUE;
+            f3DRequired = TRUE;
         }
         else if (major == 6)
         {
             if (minor > 2)
             {
                 WARN(("Unknow win version, newer minor release, assuming 3D check is required"));
-                f3DCheckRequired = TRUE;
+                f3DRequired = TRUE;
             }
             else if (minor == 2)
             {
                 LOG(("3D check is required!"));
-                f3DCheckRequired = TRUE;
+                f3DRequired = TRUE;
             }
             else
             {
                 LOG(("3D is NOT required!"));
-                f3DCheckRequired = FALSE;
+                f3DRequired = FALSE;
             }
         }
         else
         {
             WARN(("Unsupported OLDER win version, ignore and assume 3D is NOT required"));
-            f3DCheckRequired = FALSE;
+            f3DRequired = FALSE;
         }
 
         Status = STATUS_SUCCESS;
 
-        if (f3DCheckRequired)
+        /* always need to do the check to request host caps */
+        LOG(("Doing the 3D check.."));
+        if (!VBoxMpCrCtlConIs3DSupported())
         {
-            LOG(("3D check is required, doing the 3D check.."));
-            if (!VBoxMpCrCtlConIs3DSupported())
-            {
 #ifdef VBOX_WDDM_WIN8
-                LOGREL(("3D is NOT supported by the host, falling back to display-only mode.."));
-                g_VBoxDisplayOnly = 1;
+            Assert(f3DRequired);
+            LOGREL(("3D is NOT supported by the host, falling back to display-only mode.."));
+            g_VBoxDisplayOnly = 1;
 #else
+            if (f3DRequired)
+            {
                 LOGREL(("3D is NOT supported by the host, but is required for the current guest version using this driver.."));
                 Status = STATUS_UNSUCCESSFUL;
-#endif
             }
+            else
+                LOGREL(("3D is NOT supported by the host, but is NOT required for the current guest version using this driver, continuing with Disabled 3D.."));
+#endif
         }
 
 #if 0 //defined(DEBUG_misha) && defined(VBOX_WDDM_WIN8)

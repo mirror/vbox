@@ -216,6 +216,22 @@ DECLINLINE(int) VBoxMpCrUnpackerRxBufferProcess(void *pvBuffer, uint32_t cbBuffe
             return VERR_NOT_SUPPORTED;
     }
 }
+
+DECLINLINE(void*) VBoxMpCrCmdRxReadbackData(CRMessageReadback *pRx)
+{
+    return (void*)(pRx+1);
+}
+
+DECLINLINE(uint32_t) VBoxMpCrCmdRxReadbackDataSize(CRMessageReadback *pRx, uint32_t cbRx)
+{
+    return cbRx - sizeof (*pRx);
+}
+int VBoxMpCrCmdRxReadbackHandler(CRMessageReadback *pRx, uint32_t cbRx);
+int VBoxMpCrCmdRxHandler(CRMessageHeader *pRx, uint32_t cbRx);
+
+/* must be called after calling VBoxMpCrCtlConIs3DSupported only */
+uint32_t VBoxMpCrGetHostCaps();
+
 #define VBOXMP_CRCMD_HEADER_SIZE sizeof (CRMessageOpcodes)
 /* last +4 below is 4-aligned comand opcode size (i.e. ((1 + 3) & ~3)) */
 #define VBOXMP_CRCMD_SIZE_WINDOWPOSITION (20 + 4)
@@ -223,5 +239,6 @@ DECLINLINE(int) VBoxMpCrUnpackerRxBufferProcess(void *pvBuffer, uint32_t cbBuffe
 #define VBOXMP_CRCMD_SIZE_VBOXTEXPRESENT(_cRects) (28 + (_cRects) * 4 * sizeof (GLint) + 4)
 #define VBOXMP_CRCMD_SIZE_WINDOWSHOW (16 + 4)
 #define VBOXMP_CRCMD_SIZE_WINDOWSIZE (20 + 4)
+#define VBOXMP_CRCMD_SIZE_GETCHROMIUMPARAMETERVCR (36 + 4)
 
 #endif /* #ifndef ___VBoxMPCr_h__ */

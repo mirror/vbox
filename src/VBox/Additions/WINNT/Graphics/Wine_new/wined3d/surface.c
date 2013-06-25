@@ -7788,4 +7788,16 @@ HRESULT CDECL wined3d_surface_get_host_id(struct wined3d_surface *surface, uint3
     *id = surface->texture_name;
     return S_OK;
 }
+
+HRESULT CDECL wined3d_surface_sync_to_host(struct wined3d_surface *surface)
+{
+    HRESULT hr = surface_load_location(surface, SFLAG_INTEXTURE, NULL);
+    if (!SUCCEEDED(hr))
+    {
+        ERR("surface_load_location failed hr 0x%x", hr);
+        return hr;
+    }
+
+    return S_OK;
+}
 #endif

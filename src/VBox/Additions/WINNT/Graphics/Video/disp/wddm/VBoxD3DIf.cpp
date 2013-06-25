@@ -570,28 +570,26 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
             PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
             HANDLE hSharedHandle = pAllocation->hSharedHandle;
             IDirect3DSurface9* pD3D9Surf;
-            switch (pAllocation->enmType)
+            if ((pDevice->pAdapter->u32VBox3DCaps & CR_VBOX_CAP_TEX_PRESENT) || pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC)
             {
-                case VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC:
-                {
-                    hr = pDevice9If->CreateRenderTarget(pAllocation->SurfDesc.width,
-                            pAllocation->SurfDesc.height,
-                            vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
-                            vboxDDI2D3DMultiSampleType(pRc->RcDesc.enmMultisampleType),
-                            pRc->RcDesc.MultisampleQuality,
-                            !pRc->RcDesc.fFlags.NotLockable /* BOOL Lockable */,
-                            &pD3D9Surf,
+                hr = pDevice9If->CreateRenderTarget(pAllocation->SurfDesc.width,
+                        pAllocation->SurfDesc.height,
+                        vboxDDI2D3DFormat(pRc->RcDesc.enmFormat),
+                        vboxDDI2D3DMultiSampleType(pRc->RcDesc.enmMultisampleType),
+                        pRc->RcDesc.MultisampleQuality,
+                        !pRc->RcDesc.fFlags.NotLockable /* BOOL Lockable */,
+                        &pD3D9Surf,
 #ifdef VBOXWDDMDISP_DEBUG_NOSHARED
-                            NULL
+                        NULL
 #else
-                            pRc->RcDesc.fFlags.SharedResource ? &hSharedHandle : NULL
+                        pRc->RcDesc.fFlags.SharedResource ? &hSharedHandle : NULL
 #endif
-                    );
-                    Assert(hr == S_OK);
-                    break;
-                }
-                case VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE:
-                {
+                );
+                Assert(hr == S_OK);
+            }
+            else if (pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
+            {
+                do {
                     BOOL bNeedPresent;
                     if (pRc->cAllocations != 1)
                     {
@@ -622,13 +620,12 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
                     Assert(pAllocation->pD3DIf);
                     pD3D9Surf = (IDirect3DSurface9*)pAllocation->pD3DIf;
                     break;
-                }
-                default:
-                {
-                    WARN(("unexpected alloc type %d", pAllocation->enmType));
-                    hr = E_FAIL;
-                    break;
-                }
+                } while (0);
+            }
+            else
+            {
+                WARN(("unexpected alloc type %d", pAllocation->enmType));
+                hr = E_FAIL;
             }
 
             if (SUCCEEDED(hr))

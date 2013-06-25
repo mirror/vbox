@@ -23,3 +23,4 @@ EXPORTS
   VBoxWineExD3DDev9VolTexBlt
   VBoxWineExD3DSurf9GetHostId
   VBoxWineExD3DSwapchain9GetHostWinID
+  VBoxWineExD3DSurf9SyncToHost

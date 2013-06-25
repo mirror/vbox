@@ -66,6 +66,7 @@
 #ifndef IN_VBOXCRHGSMI
 #include "VBoxD3DIf.h"
 #endif
+#include <cr_protocol.h>
 
 # ifdef VBOXWDDMDISP
 #  define VBOXWDDMDISP_DECL(_type) DECLEXPORT(_type)

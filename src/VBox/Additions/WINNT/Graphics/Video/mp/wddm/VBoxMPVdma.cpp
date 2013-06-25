@@ -321,6 +321,56 @@ static DECLCALLBACK(void) vboxVdmaCrWriteCompletion(PVBOXMP_CRSHGSMITRANSPORT pC
     VBoxMpCrShgsmiTransportCmdTermWriteAsync(pCon, pvCtx);
 }
 
+typedef struct VBOXMP_VDMACR_WRITEREADCOMPLETION
+{
+    void *pvBufferToFree;
+    void *pvContext;
+} VBOXMP_VDMACR_WRITEREADCOMPLETION, *PVBOXMP_VDMACR_WRITEREADCOMPLETION;
+
+void vboxVdmaCrSubmitWriteReadAsyncGenericCompletion(PVBOXMP_CRSHGSMITRANSPORT pCon, void *pvCtx)
+{
+    PVBOXMP_VDMACR_WRITEREADCOMPLETION pData = (PVBOXMP_VDMACR_WRITEREADCOMPLETION)pvCtx;
+    void* pvBufferToFree = pData->pvBufferToFree;
+    if (pvBufferToFree)
+        VBoxMpCrShgsmiTransportBufFree(pCon, pvBufferToFree);
+
+    VBoxMpCrShgsmiTransportCmdTermWriteReadAsync(pCon, pvCtx);
+}
+
+NTSTATUS vboxVdmaCrSubmitWriteReadAsync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER *pCrPacker, uint32_t u32CrConClientID, PFNVBOXMP_CRSHGSMITRANSPORT_SENDWRITEREADASYNC_COMPLETION pfnCompletion, void *pvCompletion)
+{
+    Assert(u32CrConClientID);
+    NTSTATUS Status = STATUS_SUCCESS;
+    uint32_t cbBuffer;
+    void * pvPackBuffer;
+    void * pvBuffer = VBoxMpCrPackerTxBufferComplete(pCrPacker, &cbBuffer, &pvPackBuffer);
+    if (pvBuffer)
+    {
+        PVBOXMP_VDMACR_WRITEREADCOMPLETION pvCompletionData = (PVBOXMP_VDMACR_WRITEREADCOMPLETION)VBoxMpCrShgsmiTransportCmdCreateWriteReadAsync(&pDevExt->CrHgsmiTransport, u32CrConClientID, pvBuffer, cbBuffer,
+                pfnCompletion, sizeof (*pvCompletionData));
+        if (pvCompletionData)
+        {
+            pvCompletionData->pvBufferToFree = pvPackBuffer;
+            pvCompletionData->pvContext = pvCompletion;
+            int rc = VBoxMpCrShgsmiTransportCmdSubmitWriteReadAsync(&pDevExt->CrHgsmiTransport, pvCompletionData);
+            if (RT_SUCCESS(rc))
+            {
+                return STATUS_SUCCESS;
+            }
+            WARN(("VBoxMpCrShgsmiTransportCmdSubmitWriteAsync failed, rc %d", rc));
+            Status = STATUS_UNSUCCESSFUL;
+            VBoxMpCrShgsmiTransportCmdTermWriteReadAsync(&pDevExt->CrHgsmiTransport, pvCompletionData);
+        }
+        else
+        {
+            WARN(("VBoxMpCrShgsmiTransportCmdCreateWriteAsync failed"));
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+        }
+    }
+
+    return Status;
+}
+
 NTSTATUS vboxVdmaCrSubmitWriteAsync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER *pCrPacker, uint32_t u32CrConClientID)
 {
     Assert(u32CrConClientID);
@@ -336,16 +386,18 @@ NTSTATUS vboxVdmaCrSubmitWriteAsync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER *pCr
         {
             pvCompletionData->pvBufferToFree = pvPackBuffer;
             int rc = VBoxMpCrShgsmiTransportCmdSubmitWriteAsync(&pDevExt->CrHgsmiTransport, pvCompletionData);
-            if (!RT_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
             {
-                WARN(("VBoxMpCrShgsmiTransportCmdSubmitWriteAsync failed, rc %d", rc));
-                Status = STATUS_UNSUCCESSFUL;
+                return STATUS_SUCCESS;
             }
+            WARN(("VBoxMpCrShgsmiTransportCmdSubmitWriteAsync failed, rc %d", rc));
+            Status = STATUS_UNSUCCESSFUL;
+            VBoxMpCrShgsmiTransportCmdTermWriteAsync(&pDevExt->CrHgsmiTransport, pvCompletionData);
         }
         else
         {
             WARN(("VBoxMpCrShgsmiTransportCmdCreateWriteAsync failed"));
-            Status = STATUS_NO_MEMORY;
+            Status = STATUS_INSUFFICIENT_RESOURCES;
         }
     }
 
@@ -549,7 +601,7 @@ static NTSTATUS vboxVdmaProcessVRegCmdLegacy(PVBOXMP_DEVEXT pDevExt,
     if (!pvCommandBuffer)
     {
         WARN(("VBoxMpCrShgsmiTransportBufAlloc failed!"));
-        Status = STATUS_NO_MEMORY;
+        Status = STATUS_INSUFFICIENT_RESOURCES;
         goto done;
     }
 
@@ -791,6 +843,93 @@ static NTSTATUS vboxVdmaGgDmaBlt(PVBOXMP_DEVEXT pDevExt, PVBOXVDMA_BLT pBlt)
 
     return Status;
 }
+
+typedef struct VBOXVDMA_CRRXGENERICSYNC
+{
+    int rc;
+    KEVENT Event;
+} VBOXVDMA_CRRXGENERICSYNC, *PVBOXVDMA_CRRXGENERICSYNC;
+
+static DECLCALLBACK(void) vboxVdmaCrRxGenericSyncCompletion(PVBOXMP_CRSHGSMITRANSPORT pCon, int rc, void *pvRx, uint32_t cbRx, void *pvCtx)
+{
+    PVBOXMP_VDMACR_WRITEREADCOMPLETION pvCompletionData = (PVBOXMP_VDMACR_WRITEREADCOMPLETION)pvCtx;
+    PVBOXVDMA_CRRXGENERICSYNC pData = (PVBOXVDMA_CRRXGENERICSYNC)pvCompletionData->pvContext;
+    if (RT_SUCCESS(rc))
+    {
+        rc = VBoxMpCrCmdRxHandler((CRMessageHeader*)pvRx, cbRx);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("VBoxMpCrCmdRxHandler failed %d", rc));
+        }
+    }
+    else
+    {
+        WARN(("rx failure %d", rc));
+    }
+
+    pData->rc = rc;
+
+    KeSetEvent(&pData->Event, 0, FALSE);
+
+    vboxVdmaCrSubmitWriteReadAsyncGenericCompletion(pCon, pvCtx);
+}
+
+NTSTATUS vboxVdmaCrRxGenericSync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER *pCrPacker, uint32_t u32CrConClientID)
+{
+    VBOXVDMA_CRRXGENERICSYNC Data;
+    Data.rc = VERR_NOT_SUPPORTED;
+    KeInitializeEvent(&Data.Event, SynchronizationEvent, FALSE);
+    NTSTATUS Status = vboxVdmaCrSubmitWriteReadAsync(pDevExt, pCrPacker, u32CrConClientID, vboxVdmaCrRxGenericSyncCompletion, &Data);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVdmaCrSubmitWriteAsync failed Status 0x%x", Status));
+        return Status;
+    }
+
+     Status = KeWaitForSingleObject(&Data.Event, Executive, KernelMode, FALSE, NULL /* PLARGE_INTEGER Timeout */);
+     if (!NT_SUCCESS(Status))
+     {
+         WARN(("KeWaitForSingleObject failed Status 0x%x", Status));
+         return Status;
+     }
+
+     return STATUS_SUCCESS;
+}
+
+#if 0
+NTSTATUS vboxVdmaCrCmdGetChromiumParametervCR(PVBOXMP_DEVEXT pDevExt, uint32_t u32CrConClientID, GLenum target, GLuint index, GLenum type, GLsizei count, GLvoid * values)
+{
+    uint32_t cbCommandBuffer = VBOXMP_CRCMD_HEADER_SIZE + VBOXMP_CRCMD_SIZE_GETCHROMIUMPARAMETERVCR;
+    uint32_t cCommands = 1;
+    void *pvCommandBuffer = VBoxMpCrShgsmiTransportBufAlloc(&pDevExt->CrHgsmiTransport, cbCommandBuffer);
+    if (!pvCommandBuffer)
+    {
+        WARN(("VBoxMpCrShgsmiTransportBufAlloc failed!"));
+        return VERR_OUT_OF_RESOURCES;
+    }
+
+    VBOXMP_CRPACKER CrPacker;
+    VBoxMpCrPackerInit(&CrPacker);
+
+    VBoxMpCrPackerTxBufferInit(&CrPacker, pvCommandBuffer, cbCommandBuffer, cCommands);
+
+    int dummy = 1;
+
+    crPackGetChromiumParametervCR(&CrPacker.CrPacker, target, index, type, count, values, &dummy);
+
+
+    NTSTATUS Status = vboxVdmaCrRxGenericSync(pDevExt, &CrPacker, u32CrConClientID);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVdmaCrRxGenericSync failed Status 0x%x", Status));
+        VBoxMpCrShgsmiTransportBufFree(&pDevExt->CrHgsmiTransport, pvCommandBuffer);
+        return Status;
+    }
+
+
+    return STATUS_SUCCESS;
+}
+#endif
 
 static NTSTATUS vboxVdmaSubitVBoxTexPresent(PVBOXMP_DEVEXT pDevExt,
         VBOXMP_CRPACKER *pCrPacker,

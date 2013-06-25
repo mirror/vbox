@@ -78,6 +78,7 @@ typedef struct VBOXWDDMDISP_ADAPTER
     D3DDDI_ADAPTERCALLBACKS RtCallbacks;
     VBOXWDDMDISP_D3D D3D;
     VBOXWDDMDISP_FORMATS Formats;
+    uint32_t u32VBox3DCaps;
 #ifdef VBOX_WDDMDISP_WITH_PROFILE
     VBoxDispProfileFpsCounter ProfileDdiFps;
     VBoxDispProfileSet ProfileDdiFunc;

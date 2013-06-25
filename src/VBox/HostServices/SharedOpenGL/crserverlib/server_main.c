@@ -708,6 +708,12 @@ int32_t crVBoxServerClientRead(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t 
     return crVBoxServerInternalClientRead(pClient, pBuffer, pcbBuffer);
 }
 
+extern DECLEXPORT(int32_t) crVBoxServerClientGetCaps(uint32_t u32ClientID, uint32_t *pu32Caps)
+{
+    *pu32Caps = cr_server.u32Caps;
+    return VINF_SUCCESS;
+}
+
 int32_t crVBoxServerClientSetVersion(uint32_t u32ClientID, uint32_t vMajor, uint32_t vMinor)
 {
     CRClient *pClient=NULL;

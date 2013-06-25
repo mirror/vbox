@@ -1927,7 +1927,7 @@ struct wined3d_context *context_create(struct wined3d_swapchain *swapchain,
     pglChromiumParameteriCR(GL_FLUSH_ON_THREAD_SWITCH_CR,  GL_TRUE);
 # endif
 # if defined(VBOX_WITH_WDDM)
-    pglChromiumParameteriCR(GL_HOST_WND_CREATED_HIDDEN,  GL_TRUE);
+    pglChromiumParameteriCR(GL_HOST_WND_CREATED_HIDDEN_CR,  GL_TRUE);
 # endif
 #endif
 

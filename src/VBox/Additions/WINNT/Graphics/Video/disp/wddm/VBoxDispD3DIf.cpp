@@ -148,6 +148,13 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
             break;
         }
 
+        pD3D->pfnVBoxWineExD3DSurf9SyncToHost = (PFNVBOXWINEEXD3DSURF9_SYNCTOHOST)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DSurf9SyncToHost");
+        if (!pD3D->pfnVBoxWineExD3DSurf9SyncToHost)
+        {
+            WARN(("no VBoxWineExD3DSurf9SyncToHost"));
+            break;
+        }
+
         pD3D->pfnVBoxWineExD3DSwapchain9GetHostWinID = (PFNVBOXWINEEXD3DSWAPCHAIN9_GETHOSTWINID)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DSwapchain9GetHostWinID");
         if (!pD3D->pfnVBoxWineExD3DSwapchain9GetHostWinID)
         {

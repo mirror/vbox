@@ -4492,7 +4492,27 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
     Assert(pDevice);
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     HRESULT hr = S_OK;
-    if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
+    PVBOXWDDMDISP_ADAPTER pAdapter = pDevice->pAdapter;
+    PVBOXWDDMDISP_RESOURCE pSrcRc = NULL, pDstRc = NULL;
+    PVBOXWDDMDISP_ALLOCATION pSrcAlloc = NULL, pDstAlloc = NULL;
+
+    if (pData->hSrcResource)
+    {
+        pSrcRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
+        Assert(pSrcRc->cAllocations > pData->SrcSubResourceIndex);
+        pSrcAlloc = &pSrcRc->aAllocations[pData->SrcSubResourceIndex];
+        Assert(pSrcAlloc->hAllocation);
+    }
+
+    if (pData->hDstResource)
+    {
+        pDstRc = (PVBOXWDDMDISP_RESOURCE)pData->hDstResource;
+        Assert(pDstRc->cAllocations > pData->DstSubResourceIndex);
+        pDstAlloc = &pDstRc->aAllocations[pData->DstSubResourceIndex];
+        Assert(pDstAlloc->hAllocation);
+    }
+
+    if (VBOXDISPMODE_IS_3D(pAdapter))
     {
 #ifdef VBOXWDDM_TEST_UHGSMI
         {
@@ -4503,56 +4523,64 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
             uint32_t cCPS = (((uint64_t)cCals) * 1000ULL)/TimeMs;
         }
 #endif
-        pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9FlushToHost((IDirect3DDevice9Ex*)pDevice->pDevice9If);
-        PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
-        Assert(pRc);
-        Assert(pRc->cAllocations > pData->SrcSubResourceIndex);
-        PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SrcSubResourceIndex];
-        hr = vboxWddmSwapchainPresent(pDevice, pAlloc);
-        Assert(hr == S_OK);
-    }
-
-    {
-        D3DDDICB_PRESENT DdiPresent = {0};
-        if (pData->hSrcResource)
+        if (pAdapter->u32VBox3DCaps & CR_VBOX_CAP_TEX_PRESENT)
         {
+            IDirect3DSurface9 *pSrcSurfIf = NULL;
+            hr = VBoxD3DIfSurfGet(pSrcRc, pData->DstSubResourceIndex, &pSrcSurfIf);
+            if (SUCCEEDED(hr))
+            {
+                pAdapter->D3D.D3D.pfnVBoxWineExD3DSurf9SyncToHost(pSrcSurfIf);
+            }
+            else
+            {
+                WARN(("VBoxD3DIfSurfGet failed, hr = 0x%x", hr));
+                return hr;
+            }
+
+            pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9FlushToHost((IDirect3DDevice9Ex*)pDevice->pDevice9If);
+        }
+        else
+        {
+            pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9FlushToHost((IDirect3DDevice9Ex*)pDevice->pDevice9If);
             PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
+            Assert(pRc);
             Assert(pRc->cAllocations > pData->SrcSubResourceIndex);
             PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SrcSubResourceIndex];
-            Assert(pAlloc->hAllocation);
-            DdiPresent.hSrcAllocation = pAlloc->hAllocation;
+            hr = vboxWddmSwapchainPresent(pDevice, pAlloc);
+            Assert(hr == S_OK);
         }
-        if (pData->hDstResource)
-        {
-            PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hDstResource;
-            Assert(pRc->cAllocations > pData->DstSubResourceIndex);
-            PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->DstSubResourceIndex];
-            Assert(pAlloc->hAllocation);
-            DdiPresent.hDstAllocation = pAlloc->hAllocation;
-        }
-        DdiPresent.hContext = pDevice->DefaultContext.ContextInfo.hContext;
+    }
+
+    D3DDDICB_PRESENT DdiPresent = {0};
+    if (pSrcAlloc)
+        DdiPresent.hSrcAllocation = pSrcAlloc->hAllocation;
+
+    if (pDstAlloc)
+        DdiPresent.hDstAllocation = pDstAlloc->hAllocation;
+
+    DdiPresent.hContext = pDevice->DefaultContext.ContextInfo.hContext;
 
 #if 0 //def VBOX_WDDMDISP_WITH_PROFILE
-        VBoxDispProfileScopeLogger<VBoxDispProfileEntry> profilePresentCbLogger(pDevice->ProfileDdiPresentCb.alloc("pfnPresentCb"));
+    VBoxDispProfileScopeLogger<VBoxDispProfileEntry> profilePresentCbLogger(pDevice->ProfileDdiPresentCb.alloc("pfnPresentCb"));
 #endif
+
 #ifdef VBOXWDDMDISP_DEBUG_TIMER
-        HANDLE hTimer = NULL;
-        vboxVDbgTimerStart(pDevice->hTimerQueue, &hTimer, 1000);
+    HANDLE hTimer = NULL;
+    vboxVDbgTimerStart(pDevice->hTimerQueue, &hTimer, 1000);
 #endif
-        hr = pDevice->RtCallbacks.pfnPresentCb(pDevice->hDevice, &DdiPresent);
+    hr = pDevice->RtCallbacks.pfnPresentCb(pDevice->hDevice, &DdiPresent);
 #ifdef VBOXWDDMDISP_DEBUG_TIMER
-        vboxVDbgTimerStop(pDevice->hTimerQueue, hTimer);
+    vboxVDbgTimerStop(pDevice->hTimerQueue, hTimer);
 #endif
 #if 0 //def VBOX_WDDMDISP_WITH_PROFILE
-        profilePresentCbLogger.logAndDisable();
-        if (pDevice->ProfileDdiPresentCb.getNumEntries() == 64)
-        {
-            pDevice->ProfileDdiPresentCb.dump(pDevice);
-            pDevice->ProfileDdiPresentCb.reset();
-        }
-#endif
-        Assert(hr == S_OK);
+    profilePresentCbLogger.logAndDisable();
+    if (pDevice->ProfileDdiPresentCb.getNumEntries() == 64)
+    {
+        pDevice->ProfileDdiPresentCb.dump(pDevice);
+        pDevice->ProfileDdiPresentCb.reset();
     }
+#endif
+    Assert(hr == S_OK);
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
 
@@ -6179,8 +6207,9 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
         pAdapter->uRtVersion= pOpenData->Version;
         pAdapter->RtCallbacks = *pOpenData->pAdapterCallbacks;
 
-        pAdapter->cHeads = Query.cInfos;
+        pAdapter->u32VBox3DCaps = Query.u32VBox3DCaps;
 
+        pAdapter->cHeads = Query.cInfos;
 
         pOpenData->hAdapter = pAdapter;
         pOpenData->pAdapterFuncs->pfnGetCaps = vboxWddmDispGetCaps;
