@@ -1642,7 +1642,7 @@ ifeq ($(KBUILD_TARGET),win)
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.dll
  LIB_DDU         = $(PATH_STAGE_LIB)/VBoxDDU.lib
 endif
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64)
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64 linux.amd64)
  VBOX_LIB_VMM_LAZY      = $(PATH_STAGE_LIB)/VMMR3LazyImp$(VBOX_SUFF_LIB)
 else
  VBOX_LIB_VMM_LAZY      = $(LIB_VMM)

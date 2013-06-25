@@ -887,7 +887,7 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
                         if (pState->mfSuspendedByUs)
                         {
                             autoLock.release();
-                            int rc = VMR3Resume(pState->mpUVM);
+                            int rc = VMR3Resume(pState->mpUVM, VMRESUMEREASON_TELEPORT_FAILED);
                             AssertLogRelMsgRC(rc, ("VMR3Resume -> %Rrc\n", rc));
                             autoLock.acquire();
                         }
@@ -1412,7 +1412,7 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
                 if (RT_SUCCESS(vrc))
                 {
                     if (!strcmp(szCmd, "hand-over-resume"))
-                        vrc = VMR3Resume(pState->mpUVM);
+                        vrc = VMR3Resume(pState->mpUVM, VMRESUMEREASON_TELEPORTED);
                     else
                         pState->mptrConsole->setMachineState(MachineState_Paused);
                     fDone = true;
