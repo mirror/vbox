@@ -739,7 +739,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     Assert(pVM->hm.s.svm.fSupported);
 
-    bool fFlushPending = pVM->hm.s.svm.fAlwaysFlushTLB | VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+    bool fFlushPending = pVM->hm.s.svm.fAlwaysFlushTLB | VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_FLUSH);
 
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)
@@ -1965,6 +1965,9 @@ DECLINLINE(void) hmR0SvmInjectEventVmcb(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
 {
     pVmcb->ctrl.EventInject.u = pEvent->u;
     STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedIrqsR0[pEvent->n.u8Vector & MASK_INJECT_IRQ_STAT]);
+
+    Log4(("hmR0SvmInjectEventVmcb: u=%#RX64 u8Vector=%#x Type=%#x ErrorCodeValid=%RTbool ErrorCode=%#RX32\n", pEvent->u,
+          pEvent->n.u8Vector, (uint8_t)pEvent->n.u3Type, !!pEvent->n.u1ErrorCodeValid, pEvent->n.u32ErrorCode));
 }
 
 
@@ -2144,6 +2147,8 @@ DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
         pVmcb->ctrl.IntCtrl.n.u8VIrqVector = 0;     /* Not necessary as we #VMEXIT for delivering the interrupt. */
         pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_VINTR;
         pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
+
+        Log4(("Setting virtual interrupt intercept\n"));
     }
 }
 
@@ -2184,7 +2189,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
         else
             hmR0SvmSetVirtIntrIntercept(pVmcb);
     }                                                          /** @todo SMI. SMIs take priority over NMIs. */
-    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))   /* NMI. NMIs take priority over regular interrupts . */
+    else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))   /* NMI. NMIs take priority over regular interrupts . */
     {
         if (!fIntShadow)
         {
@@ -2415,7 +2420,7 @@ static int hmR0SvmCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Pending PGM C3 sync. */
         if (VMCPU_FF_IS_PENDING(pVCpu,VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
         {
-            int rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+            int rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
             if (rc != VINF_SUCCESS)
             {
                 Log4(("hmR0SvmCheckForceFlags: PGMSyncCR3 forcing us back to ring-3. rc=%d\n", rc));
@@ -2835,6 +2840,9 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
         case SVM_EXIT_MWAIT:
             return hmR0SvmExitMwait(pVCpu, pCtx, pSvmTransient);
+
+        case SVM_EXIT_HLT:
+            return hmR0SvmExitHlt(pVCpu, pCtx, pSvmTransient);
 
         case SVM_EXIT_READ_CR0:
         case SVM_EXIT_READ_CR3:
