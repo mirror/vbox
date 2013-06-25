@@ -677,6 +677,38 @@ typedef struct PDMUSBHLP
      */
     DECLR3CALLBACKMEMBER(void, pfnAsyncNotificationCompleted, (PPDMUSBINS pUsbIns));
 
+    /**
+     * Gets the reason for the most recent VM suspend.
+     *
+     * @returns The suspend reason. VMSUSPENDREASON_INVALID is returned if no
+     *          suspend has been made or if the pUsbIns is invalid.
+     * @param   pUsbIns             The driver instance.
+     */
+    DECLR3CALLBACKMEMBER(VMSUSPENDREASON, pfnVMGetSuspendReason,(PPDMUSBINS pUsbIns));
+
+    /**
+     * Gets the reason for the most recent VM resume.
+     *
+     * @returns The resume reason. VMRESUMEREASON_INVALID is returned if no
+     *          resume has been made or if the pUsbIns is invalid.
+     * @param   pUsbIns             The driver instance.
+     */
+    DECLR3CALLBACKMEMBER(VMRESUMEREASON, pfnVMGetResumeReason,(PPDMUSBINS pUsbIns));
+
+    /** @name Space reserved for minor interface changes.
+     * @{ */
+    DECLR3CALLBACKMEMBER(void, pfnReserved0,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved1,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved2,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved3,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved4,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved5,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved6,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved7,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved8,(PPDMUSBINS pUsbIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved9,(PPDMUSBINS pUsbIns));
+    /** @}  */
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMUSBHLP;
@@ -686,7 +718,7 @@ typedef PDMUSBHLP *PPDMUSBHLP;
 typedef const PDMUSBHLP *PCPDMUSBHLP;
 
 /** Current USBHLP version number. */
-#define PDM_USBHLP_VERSION                      PDM_VERSION_MAKE(0xeefe, 2, 0)
+#define PDM_USBHLP_VERSION                      PDM_VERSION_MAKE(0xeefe, 3, 0)
 
 #endif /* IN_RING3 */
 

@@ -1757,6 +1757,33 @@ static DECLCALLBACK(int) pdmR3DrvHlp_BlkCacheRetain(PPDMDRVINS pDrvIns, PPPDMBLK
 }
 
 
+
+/** @interface_method_impl{PDMDRVHLP,pfnVMGetSuspendReason} */
+static DECLCALLBACK(VMSUSPENDREASON) pdmR3DrvHlp_VMGetSuspendReason(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    PVM pVM = pDrvIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
+    VMSUSPENDREASON enmReason = VMR3GetSuspendReason(pVM->pUVM);
+    LogFlow(("pdmR3DrvHlp_VMGetSuspendReason: caller='%s'/%d: returns %d\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, enmReason));
+    return enmReason;
+}
+
+
+/** @interface_method_impl{PDMDRVHLP,pfnVMGetResumeReason} */
+static DECLCALLBACK(VMRESUMEREASON) pdmR3DrvHlp_VMGetResumeReason(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    PVM pVM = pDrvIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
+    VMRESUMEREASON enmReason = VMR3GetResumeReason(pVM->pUVM);
+    LogFlow(("pdmR3DrvHlp_VMGetResumeReason: caller='%s'/%d: returns %d\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, enmReason));
+    return enmReason;
+}
+
+
 /**
  * The driver helper structure.
  */
@@ -1804,6 +1831,18 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_CallR0,
     pdmR3DrvHlp_FTSetCheckpoint,
     pdmR3DrvHlp_BlkCacheRetain,
+    pdmR3DrvHlp_VMGetSuspendReason,
+    pdmR3DrvHlp_VMGetResumeReason,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
     PDM_DRVHLPR3_VERSION /* u32TheEnd */
 };
 

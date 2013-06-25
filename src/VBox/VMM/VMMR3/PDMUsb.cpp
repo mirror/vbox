@@ -1464,6 +1464,32 @@ static DECLCALLBACK(void) pdmR3UsbHlp_AsyncNotificationCompleted(PPDMUSBINS pUsb
 }
 
 
+/** @interface_method_impl{PDMUSBHLP,pfnVMGetSuspendReason} */
+static DECLCALLBACK(VMSUSPENDREASON) pdmR3UsbHlp_VMGetSuspendReason(PPDMUSBINS pUsbIns)
+{
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    PVM pVM = pUsbIns->Internal.s.pVM;
+    VM_ASSERT_EMT(pVM);
+    VMSUSPENDREASON enmReason = VMR3GetSuspendReason(pVM->pUVM);
+    LogFlow(("pdmR3UsbHlp_VMGetSuspendReason: caller='%s'/%d: returns %d\n",
+             pUsbIns->pReg->szName, pUsbIns->iInstance, enmReason));
+    return enmReason;
+}
+
+
+/** @interface_method_impl{PDMUSBHLP,pfnVMGetResumeReason} */
+static DECLCALLBACK(VMRESUMEREASON) pdmR3UsbHlp_VMGetResumeReason(PPDMUSBINS pUsbIns)
+{
+    PDMUSB_ASSERT_USBINS(pUsbIns);
+    PVM pVM = pUsbIns->Internal.s.pVM;
+    VM_ASSERT_EMT(pVM);
+    VMRESUMEREASON enmReason = VMR3GetResumeReason(pVM->pUVM);
+    LogFlow(("pdmR3UsbHlp_VMGetResumeReason: caller='%s'/%d: returns %d\n",
+             pUsbIns->pReg->szName, pUsbIns->iInstance, enmReason));
+    return enmReason;
+}
+
+
 /**
  * The USB device helper structure.
  */
@@ -1487,6 +1513,18 @@ const PDMUSBHLP g_pdmR3UsbHlp =
     pdmR3UsbHlp_ThreadCreate,
     pdmR3UsbHlp_SetAsyncNotification,
     pdmR3UsbHlp_AsyncNotificationCompleted,
+    pdmR3UsbHlp_VMGetSuspendReason,
+    pdmR3UsbHlp_VMGetResumeReason,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
     PDM_USBHLP_VERSION
 };
 

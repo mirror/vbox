@@ -228,6 +228,11 @@ typedef struct VMINTUSERPERVM
      * and when debugging. */
     VMSTATE                         enmPrevVMState;
 
+    /** Reason for the most recent suspend operation. */
+    VMSUSPENDREASON                 enmSuspendReason;
+    /** Reason for the most recent operation. */
+    VMRESUMEREASON                  enmResumeReason;
+
     /** Critical section for pAtError and pAtRuntimeError. */
     RTCRITSECT                      AtErrorCritSect;
 

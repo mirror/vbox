@@ -1297,12 +1297,43 @@ typedef struct PDMDRVHLPR3
                                                   PFNPDMBLKCACHEXFERENQUEUEDRV pfnXferEnqueue,
                                                   PFNPDMBLKCACHEXFERENQUEUEDISCARDDRV pfnXferEnqueueDiscard,
                                                   const char *pcszId));
+    /**
+     * Gets the reason for the most recent VM suspend.
+     *
+     * @returns The suspend reason. VMSUSPENDREASON_INVALID is returned if no
+     *          suspend has been made or if the pDrvIns is invalid.
+     * @param   pDrvIns             The driver instance.
+     */
+    DECLR3CALLBACKMEMBER(VMSUSPENDREASON, pfnVMGetSuspendReason,(PPDMDRVINS pDrvIns));
+
+    /**
+     * Gets the reason for the most recent VM resume.
+     *
+     * @returns The resume reason. VMRESUMEREASON_INVALID is returned if no
+     *          resume has been made or if the pDrvIns is invalid.
+     * @param   pDrvIns             The driver instance.
+     */
+    DECLR3CALLBACKMEMBER(VMRESUMEREASON, pfnVMGetResumeReason,(PPDMDRVINS pDrvIns));
+
+    /** @name Space reserved for minor interface changes.
+     * @{ */
+    DECLR3CALLBACKMEMBER(void, pfnReserved0,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved1,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved2,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved3,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved4,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved5,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved6,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved7,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved8,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(void, pfnReserved9,(PPDMDRVINS pDrvIns));
+    /** @}  */
 
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 2, 0)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 3, 0)
 
 #endif /* IN_RING3 */
 
@@ -1776,6 +1807,23 @@ DECLINLINE(int) PDMDrvHlpBlkCacheRetain(PPDMDRVINS pDrvIns, PPPDMBLKCACHE ppBlkC
 {
     return pDrvIns->pHlpR3->pfnBlkCacheRetain(pDrvIns, ppBlkCache, pfnXferComplete, pfnXferEnqueue, pfnXferEnqueueDiscard, pcszId);
 }
+
+/**
+ * @copydoc PDMDRVHLP::pfnVMGetSuspendReason
+ */
+DECLINLINE(VMSUSPENDREASON) PDMDrvHlpVMGetSuspendReason(PPDMDRVINS pDrvIns)
+{
+    return pDrvIns->pHlpR3->pfnVMGetSuspendReason(pDrvIns);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnVMGetResumeReason
+ */
+DECLINLINE(VMRESUMEREASON) PDMDrvHlpVMGetResumeReason(PPDMDRVINS pDrvIns)
+{
+    return pDrvIns->pHlpR3->pfnVMGetResumeReason(pDrvIns);
+}
+
 
 /** Pointer to callbacks provided to the VBoxDriverRegister() call. */
 typedef struct PDMDRVREGCB *PPDMDRVREGCB;

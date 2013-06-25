@@ -3616,7 +3616,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
             LogFlowFunc(("Suspending the VM...\n"));
             /* disable the callback to prevent Console-level state change */
             pConsole->mVMStateChangeCallbackDisabled = true;
-            int rc = VMR3Suspend(pUVM);
+            int rc = VMR3Suspend(pUVM, VMSUSPENDREASON_RECONFIG);
             pConsole->mVMStateChangeCallbackDisabled = false;
             AssertRCReturn(rc, rc);
             fResume = true;
@@ -3679,7 +3679,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
         LogFlowFunc(("Resuming the VM...\n"));
         /* disable the callback to prevent Console-level state change */
         pConsole->mVMStateChangeCallbackDisabled = true;
-        rc = VMR3Resume(pUVM);
+        rc = VMR3Resume(pUVM, VMRESUMEREASON_RECONFIG);
         pConsole->mVMStateChangeCallbackDisabled = false;
         AssertRC(rc);
         if (RT_FAILURE(rc))
@@ -3865,7 +3865,7 @@ DECLCALLBACK(int) Console::attachStorageDevice(Console *pConsole,
             LogFlowFunc(("Suspending the VM...\n"));
             /* disable the callback to prevent Console-level state change */
             pConsole->mVMStateChangeCallbackDisabled = true;
-            int rc = VMR3Suspend(pUVM);
+            int rc = VMR3Suspend(pUVM, VMSUSPENDREASON_RECONFIG);
             pConsole->mVMStateChangeCallbackDisabled = false;
             AssertRCReturn(rc, rc);
             fResume = true;
@@ -3928,7 +3928,7 @@ DECLCALLBACK(int) Console::attachStorageDevice(Console *pConsole,
         LogFlowFunc(("Resuming the VM...\n"));
         /* disable the callback to prevent Console-level state change */
         pConsole->mVMStateChangeCallbackDisabled = true;
-        rc = VMR3Resume(pUVM);
+        rc = VMR3Resume(pUVM, VMRESUMEREASON_RECONFIG);
         pConsole->mVMStateChangeCallbackDisabled = false;
         AssertRC(rc);
         if (RT_FAILURE(rc))
@@ -4108,7 +4108,7 @@ DECLCALLBACK(int) Console::detachStorageDevice(Console *pConsole,
             LogFlowFunc(("Suspending the VM...\n"));
             /* disable the callback to prevent Console-level state change */
             pConsole->mVMStateChangeCallbackDisabled = true;
-            int rc = VMR3Suspend(pUVM);
+            int rc = VMR3Suspend(pUVM, VMSUSPENDREASON_RECONFIG);
             pConsole->mVMStateChangeCallbackDisabled = false;
             AssertRCReturn(rc, rc);
             fResume = true;
@@ -4190,7 +4190,7 @@ DECLCALLBACK(int) Console::detachStorageDevice(Console *pConsole,
         LogFlowFunc(("Resuming the VM...\n"));
         /* disable the callback to prevent Console-level state change */
         pConsole->mVMStateChangeCallbackDisabled = true;
-        rc = VMR3Resume(pUVM);
+        rc = VMR3Resume(pUVM, VMRESUMEREASON_RECONFIG);
         pConsole->mVMStateChangeCallbackDisabled = false;
         AssertRC(rc);
         if (RT_FAILURE(rc))
@@ -4532,7 +4532,7 @@ DECLCALLBACK(int) Console::changeNetworkAttachment(Console *pThis,
             LogFlowFunc(("Suspending the VM...\n"));
             /* disable the callback to prevent Console-level state change */
             pThis->mVMStateChangeCallbackDisabled = true;
-            int rc = VMR3Suspend(pUVM);
+            int rc = VMR3Suspend(pUVM, VMSUSPENDREASON_RECONFIG);
             pThis->mVMStateChangeCallbackDisabled = false;
             AssertRCReturn(rc, rc);
             fResume = true;
@@ -4568,7 +4568,7 @@ DECLCALLBACK(int) Console::changeNetworkAttachment(Console *pThis,
         LogFlowFunc(("Resuming the VM...\n"));
         /* disable the callback to prevent Console-level state change */
         pThis->mVMStateChangeCallbackDisabled = true;
-        rc = VMR3Resume(pUVM);
+        rc = VMR3Resume(pUVM, VMRESUMEREASON_RECONFIG);
         pThis->mVMStateChangeCallbackDisabled = false;
         AssertRC(rc);
         if (RT_FAILURE(rc))
@@ -5577,7 +5577,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         LogFlowFunc(("Suspending the VM...\n"));
         /* disable the callback to prevent Console-level state change */
         mVMStateChangeCallbackDisabled = true;
-        int vrc2 = VMR3Suspend(ptrVM.rawUVM());
+        int vrc2 = VMR3Suspend(ptrVM.rawUVM(), VMSUSPENDREASON_RECONFIG);
         mVMStateChangeCallbackDisabled = false;
         AssertRCReturn(vrc2, E_FAIL);
     }
@@ -5606,7 +5606,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         LogFlowFunc(("Resuming the VM...\n"));
         /* disable the callback to prevent Console-level state change */
         mVMStateChangeCallbackDisabled = true;
-        int vrc2 = VMR3Resume(ptrVM.rawUVM());
+        int vrc2 = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_RECONFIG);
         mVMStateChangeCallbackDisabled = false;
         if (RT_FAILURE(vrc2))
         {
@@ -5648,7 +5648,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         LogFlowFunc(("Suspending the VM...\n"));
         /* disable the callback to prevent Console-level state change */
         mVMStateChangeCallbackDisabled = true;
-        int vrc2 = VMR3Suspend(ptrVM.rawUVM());
+        int vrc2 = VMR3Suspend(ptrVM.rawUVM(), VMSUSPENDREASON_RECONFIG);
         mVMStateChangeCallbackDisabled = false;
         AssertRCReturn(vrc2, E_FAIL);
     }
@@ -5682,7 +5682,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         LogFlowFunc(("Resuming the VM...\n"));
         /* disable the callback to prevent Console-level state change */
         mVMStateChangeCallbackDisabled = true;
-        int vrc2 = VMR3Resume(ptrVM.rawUVM());
+        int vrc2 = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_RECONFIG);
         mVMStateChangeCallbackDisabled = false;
         AssertRC(vrc2);
         if (RT_FAILURE(vrc2))
@@ -5752,7 +5752,12 @@ HRESULT Console::pause(Reason_T aReason)
         LogRel(("Pausing VM execution, reason \"%s\"\n", Global::stringifyReason(aReason)));
 
     /** @todo r=klaus make use of aReason */
-    int vrc = VMR3Suspend(ptrVM.rawUVM());
+    VMSUSPENDREASON enmReason = VMSUSPENDREASON_USER;
+    if (aReason == Reason_HostSuspend)
+        enmReason = VMSUSPENDREASON_HOST_SUSPEND;
+    else if (aReason == Reason_HostBatteryLow)
+        enmReason = VMSUSPENDREASON_HOST_BATTERY_LOW;
+    int vrc = VMR3Suspend(ptrVM.rawUVM(), enmReason);
 
     HRESULT hrc = S_OK;
     if (RT_FAILURE(vrc))
@@ -5793,7 +5798,6 @@ HRESULT Console::resume(Reason_T aReason)
     if (aReason != Reason_Unspecified)
         LogRel(("Resuming VM execution, reason \"%s\"\n", Global::stringifyReason(aReason)));
 
-    /** @todo r=klaus make use of aReason */
     int vrc;
     if (VMR3GetStateU(ptrVM.rawUVM()) == VMSTATE_CREATED)
     {
@@ -5806,7 +5810,12 @@ HRESULT Console::resume(Reason_T aReason)
             vrc = VMR3PowerOn(ptrVM.rawUVM()); /* (PowerUpPaused) */
     }
     else
-        vrc = VMR3Resume(ptrVM.rawUVM());
+    {
+        VMRESUMEREASON enmReason = VMRESUMEREASON_USER;
+        if (aReason == Reason_HostResume)
+            enmReason = VMRESUMEREASON_HOST_RESUME;
+        vrc = VMR3Resume(ptrVM.rawUVM(), enmReason);
+    }
 
     HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
         setError(VBOX_E_VM_ERROR,
@@ -5857,7 +5866,12 @@ HRESULT Console::saveState(Reason_T aReason, IProgress **aProgress)
 
         /* release the lock before a VMR3* call (EMT will call us back)! */
         alock.release();
-        int vrc = VMR3Suspend(ptrVM.rawUVM());
+        VMSUSPENDREASON enmReason = VMSUSPENDREASON_USER;
+        if (aReason == Reason_HostSuspend)
+            enmReason = VMSUSPENDREASON_HOST_SUSPEND;
+        else if (aReason == Reason_HostBatteryLow)
+            enmReason = VMSUSPENDREASON_HOST_BATTERY_LOW;
+        int vrc = VMR3Suspend(ptrVM.rawUVM(), enmReason);
         alock.acquire();
 
         HRESULT hrc = S_OK;
@@ -5966,7 +5980,7 @@ HRESULT Console::saveState(Reason_T aReason, IProgress **aProgress)
             if (ptrVM.isOk())
             {
                 alock.release();
-                VMR3Resume(ptrVM.rawUVM());
+                VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_STATE_RESTORED);
                 alock.acquire();
             }
         }
@@ -9089,7 +9103,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                             vrc = pConsole->mptrExtPackManager->callAllVmPowerOnHooks(pConsole, pVM);
 #endif
                             if (RT_SUCCESS(vrc))
-                                vrc = VMR3Resume(pConsole->mpUVM);
+                                vrc = VMR3Resume(pConsole->mpUVM, VMRESUMEREASON_STATE_RESTORED);
                             AssertLogRelRC(vrc);
                         }
                     }
@@ -9629,7 +9643,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 LogFlowFunc(("VMR3Resume...\n"));
                 SafeVMPtr ptrVM(that);
                 alock.release();
-                int vrc = VMR3Resume(ptrVM.rawUVM());
+                int vrc = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_STATE_SAVED);
                 alock.acquire();
                 if (RT_FAILURE(vrc))
                 {
@@ -9687,7 +9701,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                         LogFlowFunc(("VMR3Resume (on failure)...\n"));
                         SafeVMPtr ptrVM(that);
                         alock.release();
-                        int vrc = VMR3Resume(ptrVM.rawUVM()); AssertLogRelRC(vrc);
+                        int vrc = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_STATE_SAVED); AssertLogRelRC(vrc);
                         alock.acquire();
                         if (RT_FAILURE(vrc))
                             that->setMachineState(MachineState_Paused);
@@ -9746,7 +9760,6 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
 
     LogFlowFunc(("Saving the state to '%s'...\n", task->mSavedStateFile.c_str()));
 
-    /** @todo r=klaus make use of task->mReason */
     bool fSuspenededBySave;
     int vrc = VMR3Save(task->mpUVM,
                        task->mSavedStateFile.c_str(),
