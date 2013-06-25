@@ -630,7 +630,6 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
         /* Set up unconditional intercepts and conditions. */
         pVmcb->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR          /* External interrupt causes a VM-exit. */
-                                        | SVM_CTRL1_INTERCEPT_VINTR         /* Interrupt-window VM-exit. */
                                         | SVM_CTRL1_INTERCEPT_NMI           /* Non-Maskable Interrupts causes a VM-exit. */
                                         | SVM_CTRL1_INTERCEPT_SMI           /* System Management Interrupt cause a VM-exit. */
                                         | SVM_CTRL1_INTERCEPT_INIT          /* INIT signal causes a VM-exit. */
@@ -1993,8 +1992,9 @@ static void hmR0SvmTrpmTrapToPendingEvent(PVMCPU pVCpu)
     AssertRC(rc);
 
     SVMEVENT Event;
-    Event.u         = 0;
-    Event.n.u1Valid = 1;
+    Event.u          = 0;
+    Event.n.u1Valid  = 1;
+    Event.n.u8Vector = uVector;
 
     /* Refer AMD spec. 15.20 "Event Injection" for the format. */
     if (enmTrpmEvent == TRPM_TRAP)
@@ -2688,6 +2688,8 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     pSvmTransient->u64ExitCode  = pVmcb->ctrl.u64ExitCode;      /* Save the #VMEXIT reason. */
     pSvmTransient->fVectoringPF = false;                        /* Vectoring page-fault needs to be determined later. */
     hmR0SvmSaveGuestState(pVCpu, pMixedCtx);                    /* Save the guest state from the VMCB to the guest-CPU context. */
+
+    Log4(("Vintr Intercept=%RTbool\n", !!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_VINTR)));
 
     if (RT_LIKELY(pSvmTransient->u64ExitCode != (uint64_t)SVM_EXIT_INVALID))
     {
@@ -3723,7 +3725,10 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
         }
 
         rc = EMInterpretWrmsr(pVM, pVCpu, CPUMCTX2CORE(pCtx));
-        AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretWrmsr failed rc=%Rrc\n", rc));
+        if (RT_LIKELY(rc == VINF_SUCCESS))
+            pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+        else
+            AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretWrmsr failed rc=%Rrc\n", rc));
 
         if (pCtx->ecx == MSR_K6_EFER)
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_EFER_MSR;
@@ -3733,7 +3738,10 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
         /* MSR Read access. */
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
         rc = EMInterpretRdmsr(pVM, pVCpu, CPUMCTX2CORE(pCtx));
-        AssertMsg(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretRdmsr failed rc=%Rrc\n", rc));
+        if (RT_LIKELY(rc == VINF_SUCCESS))
+            pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+        else
+            AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretRdmsr failed rc=%Rrc\n", rc));
     }
 
     /* RIP has been updated by EMInterpret[Rd|Wr]msr(). */
