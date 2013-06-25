@@ -736,7 +736,7 @@ class UIActionMenuSharedClipboard : public UIActionMenu
 public:
 
     UIActionMenuSharedClipboard(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/vm_open_filemanager_16px.png", ":/vm_open_filemanager_disabled_16px.png")
+        : UIActionMenu(pParent, ":/shared_clipboard_16px.png", ":/shared_clipboard_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -756,7 +756,7 @@ class UIActionMenuDragAndDrop : public UIActionMenu
 public:
 
     UIActionMenuDragAndDrop(UIActionPool *pParent)
-        : UIActionMenu(pParent, ":/vm_open_filemanager_16px.png", ":/vm_open_filemanager_disabled_16px.png")
+        : UIActionMenu(pParent, ":/drag_drop_16px.png", ":/drag_drop_disabled_16px.png")
     {
         retranslateUi();
     }
