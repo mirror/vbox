@@ -546,6 +546,14 @@ typedef union
     uint32_t    u;
 } SVMIOIOEXIT;
 
+/** @name SVMIOIOEXIT.u1Type
+ *  @{ */
+/** IO write. */
+#define SVM_IOIO_WRITE                  0
+/** IO read. */
+#define SVM_IOIO_READ                   1
+/** @}*/
+
 /**
  * SVM nested paging structure.
  */

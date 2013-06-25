@@ -3310,7 +3310,6 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
     if (pVmcb->ctrl.ExitIntInfo.n.u1Valid)
     {
         uint8_t uIdtVector  = pVmcb->ctrl.ExitIntInfo.n.u8Vector;
-        uint8_t uExitVector = UINT8_MAX;       /* Start off with an invalid vector, updated when it's valid. See below. */
 
         typedef enum
         {
@@ -3325,7 +3324,7 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
         {
             if (pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_1F)
             {
-                uExitVector = (uint8_t)(pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0);
+                uint8_t uExitVector = (uint8_t)(pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0);
                 if (   uExitVector == X86_XCPT_PF
                     && uIdtVector  == X86_XCPT_PF)
                 {
@@ -3336,14 +3335,19 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                          && hmR0SvmIsContributoryXcpt(uExitVector)
                          && (   hmR0SvmIsContributoryXcpt(uIdtVector)
                              || uIdtVector == X86_XCPT_PF))
-               {
-                   enmReflect = SVMREFLECTXCPT_DF;
-                   Log4(("IDT: Pending vectoring #DF %#RX64 uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntrInfo, uExitVector));
+                {
+                    enmReflect = SVMREFLECTXCPT_DF;
+                    Log4(("IDT: Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntrInfo,
+                          uIdtVector, uExitVector));
                 }
-               else if (uIdtVector == X86_XCPT_DF)
-                   enmReflect = SVMREFLECTXCPT_TF;
-               else
-                   enmReflect = SVMREFLECTXCPT_XCPT;
+                else if (uIdtVector == X86_XCPT_DF)
+                {
+                    enmReflect = SVMREFLECTXCPT_TF;
+                    Log4(("IDT: Pending vectoring triple-fault %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntrInfo,
+                          uIdtVector, uExitVector));
+                }
+                else
+                    enmReflect = SVMREFLECTXCPT_XCPT;
             }
             else
             {
@@ -3379,15 +3383,12 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
             {
                 hmR0SvmSetPendingXcptDF(pVCpu);
                 rc = VINF_HM_DOUBLE_FAULT;
-                Log4(("IDT: Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntrInfo,
-                      uIdtVector, uExitVector));
                 break;
             }
 
             case SVMREFLECTXCPT_TF:
             {
                 rc = VINF_EM_RESET;
-                Log4(("IDT: Pending vectoring triple-fault uIdt=%#x uExit=%#x\n", uIdtVector, uExitVector));
                 break;
             }
 
@@ -3843,7 +3844,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
         if (rc == VINF_SUCCESS)
         {
-            if (IoExitInfo.n.u1Type == 0)   /* OUT */
+            if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
             {
                 VBOXSTRICTRC rc2 = IOMInterpretOUTSEx(pVM, pVCpu, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->fPrefix,
                                                       (DISCPUMODE)pDis->uAddrMode, uIOSize);
@@ -3866,7 +3867,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         /* IN/OUT - I/O instruction. */
         Assert(!IoExitInfo.n.u1REP);
 
-        if (IoExitInfo.n.u1Type == 0)   /* OUT */
+        if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
         {
             VBOXSTRICTRC rc2 = IOMIOPortWrite(pVM, pVCpu, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
             rc = VBOXSTRICTRC_VAL(rc2);
@@ -3949,11 +3950,11 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         }
     }
 
-#ifdef DEBUG
+#ifdef VBOX_STRICT
     if (rc == VINF_IOM_R3_IOPORT_READ)
-        Assert(IoExitInfo.n.u1Type != 0);
+        Assert(IoExitInfo.n.u1Type == SVM_IOIO_READ);
     else if (rc == VINF_IOM_R3_IOPORT_WRITE)
-        Assert(IoExitInfo.n.u1Type == 0);
+        Assert(IoExitInfo.n.u1Type == SVM_IOIO_WRITE);
     else
     {
         AssertMsg(   RT_FAILURE(rc)
