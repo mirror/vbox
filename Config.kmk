@@ -1700,6 +1700,8 @@ VBOX_PYLINT_FLAGS    = --report=n --output-format=parseable --include-ids=y --pe
 	--max-public-methods=139 \
 	--max-args=9 \
 	--max-module-lines=4096 \
+       --max-locals=32 \
+       --min-public-methods=0 \
 	--function-rgx='[a-z_][a-zA-Z0-9_]{2,30}$(DOLLAR)' \
 	--method-rgx='[a-z_][a-zA-Z0-9_]{2,30}$(DOLLAR)' \
 	--argument-rgx='([a-z_][a-zA-Z0-9_]{2,30}|rc|hr|s|c|cx|cy|cb|fn)$(DOLLAR)' \
