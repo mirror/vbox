@@ -17381,7 +17381,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <result name="VBOX_E_VM_ERROR">
           Virtual machine error in suspend operation.
         </result>
-        <see><link to="Console::pause"/></see>
+        <see><link to="IConsole::pause"/></see>
       </desc>
 
       <param name="reason" type="Reason" dir="in">
