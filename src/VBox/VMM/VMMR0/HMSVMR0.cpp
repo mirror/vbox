@@ -902,7 +902,10 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushAsid);
     }
     else
+    {
         Assert(pVmcb->ctrl.TLBCtrl.n.u8TLBFlush == SVM_TLB_FLUSH_ENTIRE);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushEntire);
+    }
 #endif
 }
 
