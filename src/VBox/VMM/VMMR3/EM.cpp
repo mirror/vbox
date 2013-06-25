@@ -2239,7 +2239,11 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Guest debug events.
                  */
                 case VINF_EM_DBG_STEPPED:
+                    /* Commenting this assertion for now as it hinders with single-stepping in new AMD-V code
+                     * (using guest EFLAGS.TF) and returning VINF_EM_DBG_STEPPED in the #DB handler. */
+#if 0
                     AssertMsgFailed(("VINF_EM_DBG_STEPPED cannot be here!"));
+#endif
                 case VINF_EM_DBG_STOP:
                 case VINF_EM_DBG_BREAKPOINT:
                 case VINF_EM_DBG_STEP:
