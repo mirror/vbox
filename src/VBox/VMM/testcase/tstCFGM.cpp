@@ -30,143 +30,124 @@
 #include <VBox/param.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 
+#include <iprt/test.h>
+
+
+static void doGeneralTests(PCFGMNODE pRoot)
+{
+    /* test multilevel node creation */
+    PCFGMNODE pChild = NULL;
+    RTTESTI_CHECK_RC_RETV(CFGMR3InsertNode(pRoot, "First/Second/Third//Final", &pChild), VINF_SUCCESS);
+    RTTESTI_CHECK_RETV(RT_VALID_PTR(pChild));
+    RTTESTI_CHECK(CFGMR3GetChild(pRoot, "First/Second/Third/Final") == pChild);
+
+    /*
+     * Boolean queries.
+     */
+    RTTESTI_CHECK_RC(CFGMR3InsertInteger(pChild, "BoolValue", 1), VINF_SUCCESS);
+    bool f = false;
+    RTTESTI_CHECK_RC(CFGMR3QueryBool(pChild, "BoolValue", &f), VINF_SUCCESS);
+    RTTESTI_CHECK(f == true);
+
+    RTTESTI_CHECK_RC(CFGMR3QueryBool(pRoot, "BoolValue", &f), VERR_CFGM_VALUE_NOT_FOUND);
+    RTTESTI_CHECK_RC(CFGMR3QueryBool(NULL, "BoolValue", &f), VERR_CFGM_NO_PARENT);
+
+    RTTESTI_CHECK_RC(CFGMR3QueryBoolDef(pChild, "ValueNotFound", &f, true), VINF_SUCCESS);
+    RTTESTI_CHECK(f == true);
+    RTTESTI_CHECK_RC(CFGMR3QueryBoolDef(pChild, "ValueNotFound", &f, false), VINF_SUCCESS);
+    RTTESTI_CHECK(f == false);
+
+    RTTESTI_CHECK_RC(CFGMR3QueryBoolDef(NULL, "BoolValue", &f, true), VINF_SUCCESS);
+    RTTESTI_CHECK(f == true);
+    RTTESTI_CHECK_RC(CFGMR3QueryBoolDef(NULL, "BoolValue", &f, false), VINF_SUCCESS);
+    RTTESTI_CHECK(f == false);
+
+}
+
+
+
+static void doTestsOnDefaultValues(PCFGMNODE pRoot)
+{
+    /* integer */
+    uint64_t u64;
+    RTTESTI_CHECK_RC(CFGMR3QueryU64(pRoot, "RamSize", &u64), VINF_SUCCESS);
+
+    size_t cb = 0;
+    RTTESTI_CHECK_RC(CFGMR3QuerySize(pRoot, "RamSize", &cb), VINF_SUCCESS);
+    RTTESTI_CHECK(cb == sizeof(uint64_t));
+
+    /* string */
+    char *pszName = NULL;
+    RTTESTI_CHECK_RC(CFGMR3QueryStringAlloc(pRoot, "Name", &pszName), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(CFGMR3QuerySize(pRoot, "Name", &cb), VINF_SUCCESS);
+    RTTESTI_CHECK(cb == strlen(pszName) + 1);
+    MMR3HeapFree(pszName);
+}
+
+
+static void doInVmmTests(RTTEST hTest)
+{
+    /*
+     * Create empty VM structure and init SSM.
+     */
+    int rc = SUPR3Init(NULL);
+    if (RT_FAILURE(rc))
+    {
+        RTTestSkipped(hTest, "SUPR3Init failed with rc=%Rrc",  rc);
+        return;
+    }
+
+    PVM pVM;
+    RTTESTI_CHECK_RC_RETV(SUPR3PageAlloc(RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT, (void **)&pVM), VINF_SUCCESS);
+
+
+    PUVM pUVM = (PUVM)RTMemPageAlloc(sizeof(*pUVM));
+    pUVM->u32Magic = UVM_MAGIC;
+    pUVM->pVM = pVM;
+    pVM->pUVM = pUVM;
+
+    /*
+     * Do the testing.
+     */
+    RTTESTI_CHECK_RC_RETV(STAMR3InitUVM(pUVM), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(MMR3InitUVM(pUVM), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(CFGMR3Init(pVM, NULL, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RETV(CFGMR3GetRoot(pVM) != NULL);
+
+    doTestsOnDefaultValues(CFGMR3GetRoot(pVM));
+    doGeneralTests(CFGMR3GetRoot(pVM));
+
+
+    /* done */
+    RTTESTI_CHECK_RC_RETV(CFGMR3Term(pVM), VINF_SUCCESS);
+}
+
+
+static void doStandaloneTests(void)
+{
+    RTTestISub("Standalone");
+    PCFGMNODE pRoot;;
+    RTTESTI_CHECK_RETV((pRoot = CFGMR3CreateTree(NULL)) != NULL);
+    doGeneralTests(pRoot);
+}
 
 int main()
 {
     /*
      * Init runtime.
      */
+    RTTEST hTest;
     RTR3InitExeNoArguments(RTR3INIT_FLAGS_SUPLIB);
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstCFGM", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
 
-    /*
-     * Create empty VM structure and init SSM.
-     */
-    PVM         pVM;
-    int rc = SUPR3Init(NULL);
-    if (RT_SUCCESS(rc))
-        rc = SUPR3PageAlloc(RT_ALIGN_Z(sizeof(*pVM), PAGE_SIZE) >> PAGE_SHIFT, (void **)&pVM);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("Fatal error: SUP Failure! rc=%Rrc\n", rc);
-        return 1;
-    }
+    doInVmmTests(hTest);
+    doStandaloneTests();
 
-    static UVM s_UVM;
-    PUVM pUVM = &s_UVM;
-    pUVM->pVM = pVM;
-    pVM->pUVM = pUVM;
-
-    rc = STAMR3InitUVM(pUVM);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("FAILURE: STAMR3Init failed. rc=%Rrc\n", rc);
-        return 1;
-    }
-
-    rc = MMR3InitUVM(pUVM);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("FAILURE: STAMR3Init failed. rc=%Rrc\n", rc);
-        return 1;
-    }
-
-    rc = CFGMR3Init(pVM, NULL, NULL);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("FAILURE: CFGMR3Init failed. rc=%Rrc\n", rc);
-        return 1;
-    }
-
-    if (!CFGMR3GetRoot(pVM))
-    {
-        RTPrintf("FAILURE: CFGMR3GetRoot failed\n");
-        return 1;
-    }
-
-    /* integer */
-    uint64_t u64;
-    rc = CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &u64);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("FAILURE: CFGMR3QueryU64(,\"RamSize\",) failed. rc=%Rrc\n", rc);
-        return 1;
-    }
-
-    size_t cb;
-    rc = CFGMR3QuerySize(CFGMR3GetRoot(pVM), "RamSize", &cb);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("FAILURE: CFGMR3QuerySize(,\"RamSize\",) failed. rc=%Rrc\n", rc);
-        return 1;
-    }
-    if (cb != sizeof(uint64_t))
-    {
-        RTPrintf("FAILURE: Incorrect valuesize %d for \"RamSize\" value.\n", cb);
-        return 1;
-    }
-
-    /* string */
-    char *pszName = NULL;
-    rc = CFGMR3QueryStringAlloc(CFGMR3GetRoot(pVM), "Name", &pszName);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("FAILURE: CFGMR3QueryStringAlloc(,\"Name\" failed. rc=%Rrc\n", rc);
-        return 1;
-    }
-
-    rc = CFGMR3QuerySize(CFGMR3GetRoot(pVM), "Name", &cb);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("FAILURE: CFGMR3QuerySize(,\"RamSize\",) failed. rc=%Rrc\n", rc);
-        return 1;
-    }
-    if (cb != strlen(pszName) + 1)
-    {
-        RTPrintf("FAILURE: Incorrect valuesize %d for \"Name\" value '%s'.\n", cb, pszName);
-        return 1;
-    }
-    MMR3HeapFree(pszName);
-
-
-    /* test multilevel node creation */
-    PCFGMNODE pChild = NULL;
-    rc = CFGMR3InsertNode(CFGMR3GetRoot(pVM), "First/Second/Third//Final", &pChild);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("FAILURE: CFGMR3InsertNode(,\"First/Second/Third//Final\" failed. rc=%Rrc\n", rc);
-        return 1;
-    }
-    rc = CFGMR3InsertInteger(pChild, "BoolValue", 1);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("FAILURE: CFGMR3InsertInteger(,\"BoolValue\", 1) failed. rc=%Rrc\n", rc);
-        return 1;
-    }
-    PCFGMNODE pNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "First/Second/Third/Final");
-    if (pNode != pChild)
-    {
-        RTPrintf("FAILURE: CFGMR3GetChild(,\"First/Second/Third/Final/BoolValue\") failed. pNode=%p expected %p\n", pNode, pChild);
-        return 1;
-    }
-    bool f = false;
-    rc = CFGMR3QueryBool(pNode, "BoolValue", &f);
-    if (RT_FAILURE(rc) || !f)
-    {
-        RTPrintf("FAILURE: CFGMR3QueryBool(,\"BoolValue\",) failed. rc=%Rrc f=%d\n", rc, f);
-        return 1;
-    }
-
-
-    /* done */
-    rc = CFGMR3Term(pVM);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("FAILURE: CFGMR3QueryU64(,\"RamSize\" failed. rc=%Rrc\n", rc);
-        return 1;
-    }
-
-    RTPrintf("tstCFGM: SUCCESS\n");
-    return rc;
+    return RTTestSummaryAndDestroy(hTest);
 }
+

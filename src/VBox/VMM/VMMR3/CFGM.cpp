@@ -65,6 +65,7 @@
 
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
@@ -80,7 +81,93 @@ static int  cfgmR3ResolveNode(PCFGMNODE pNode, const char *pszPath, PCFGMNODE *p
 static int  cfgmR3ResolveLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *ppLeaf);
 static int  cfgmR3InsertLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *ppLeaf);
 static void cfgmR3RemoveLeaf(PCFGMNODE pNode, PCFGMLEAF pLeaf);
-static void cfgmR3FreeValue(PCFGMLEAF pLeaf);
+static void cfgmR3FreeValue(PVM pVM, PCFGMLEAF pLeaf);
+
+
+/**
+ * Allocator wrapper.
+ *
+ * @returns Pointer to the allocated memory, NULL on failure.
+ * @param   pVM                 The VM handle, if tree associated with one.
+ * @param   enmTag              The allocation tag.
+ * @param   cb                  The size of the allocation.
+ */
+static void *cfgmR3MemAlloc(PVM pVM, MMTAG enmTag, size_t cb)
+{
+    if (pVM)
+        return MMR3HeapAlloc(pVM, enmTag, cb);
+    return RTMemAlloc(cb);
+}
+
+
+/**
+ * Free wrapper.
+ *
+ * @returns Pointer to the allocated memory, NULL on failure.
+ * @param   pVM                 The VM handle, if tree associated with one.
+ * @param   pv                  The memory block to free.
+ */
+static void cfgmR3MemFree(PVM pVM, void *pv)
+{
+    if (pVM)
+        MMR3HeapFree(pv);
+    else
+        RTMemFree(pv);
+}
+
+
+/**
+ * String allocator wrapper.
+ *
+ * @returns Pointer to the allocated memory, NULL on failure.
+ * @param   pVM                 The VM handle, if tree associated with one.
+ * @param   enmTag              The allocation tag.
+ * @param   cbString            The size of the allocation, terminator included.
+ */
+static char *cfgmR3StrAlloc(PVM pVM, MMTAG enmTag,  size_t cbString)
+{
+    if (pVM)
+        return (char *)MMR3HeapAlloc(pVM, enmTag, cbString);
+    return (char *)RTStrAlloc(cbString);
+}
+
+
+/**
+ * String free wrapper.
+ *
+ * @returns Pointer to the allocated memory, NULL on failure.
+ * @param   pVM                 The VM handle, if tree associated with one.
+ * @param   pszString           The memory block to free.
+ */
+static void cfgmR3StrFree(PVM pVM, char *pszString)
+{
+    if (pVM)
+        MMR3HeapFree(pszString);
+    else
+        RTStrFree(pszString);
+}
+
+
+/**
+ * Frees one node, leaving any children or leaves to the caller.
+ *
+ * @param   pNode               The node structure to free.
+ */
+static void cfgmR3FreeNodeOnly(PCFGMNODE pNode)
+{
+    pNode->pFirstLeaf    = NULL;
+    pNode->pFirstChild   = NULL;
+    pNode->pNext         = NULL;
+    pNode->pPrev         = NULL;
+    if (!pNode->pVM)
+        RTMemFree(pNode);
+    else
+    {
+        pNode->pVM       = NULL;
+        MMR3HeapFree(pNode);
+    }
+}
+
 
 
 
@@ -1202,14 +1289,25 @@ static int cfgmR3ResolveLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *pp
  *
  * @returns Pointer to the root node, NULL on error (out of memory or invalid
  *          VM handle).
- * @param   pUVM            The user mode VM handle.
+ * @param   pUVM            The user mode VM handle.  For testcase (and other
+ *                          purposes, NULL can be used.  However, the resulting
+ *                          tree cannot be inserted into a tree that has a
+ *                          non-NULL value.  Using NULL can be usedful for
+ *                          testcases and similar, non VMM uses.
  */
 VMMR3DECL(PCFGMNODE) CFGMR3CreateTree(PUVM pUVM)
 {
-    UVM_ASSERT_VALID_EXT_RETURN(pUVM, NULL);
-    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, NULL);
+    if (pUVM)
+    {
+        UVM_ASSERT_VALID_EXT_RETURN(pUVM, NULL);
+        VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, NULL);
+    }
 
-    PCFGMNODE pNew = (PCFGMNODE)MMR3HeapAllocU(pUVM, MM_TAG_CFGM, sizeof(*pNew));
+    PCFGMNODE pNew;
+    if (pUVM)
+        pNew = (PCFGMNODE)MMR3HeapAllocU(pUVM, MM_TAG_CFGM, sizeof(*pNew));
+    else
+        pNew = (PCFGMNODE)RTMemAlloc(sizeof(*pNew));
     if (pNew)
     {
         pNew->pPrev         = NULL;
@@ -1217,7 +1315,7 @@ VMMR3DECL(PCFGMNODE) CFGMR3CreateTree(PUVM pUVM)
         pNew->pParent       = NULL;
         pNew->pFirstChild   = NULL;
         pNew->pFirstLeaf    = NULL;
-        pNew->pVM           = pUVM->pVM;
+        pNew->pVM           = pUVM ? pUVM->pVM : NULL;
         pNew->fRestrictedRoot = false;
         pNew->cchName       = 0;
         pNew->szName[0]     = 0;
@@ -1241,7 +1339,7 @@ VMMR3DECL(int) CFGMR3DuplicateSubTree(PCFGMNODE pRoot, PCFGMNODE *ppCopy)
     /*
      * Create a new tree.
      */
-    PCFGMNODE pNewRoot = CFGMR3CreateTree(pRoot->pVM->pUVM);
+    PCFGMNODE pNewRoot = CFGMR3CreateTree(pRoot->pVM ? pRoot->pVM->pUVM : NULL);
     if (!pNewRoot)
         return VERR_NO_MEMORY;
 
@@ -1351,7 +1449,7 @@ VMMR3DECL(int) CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMNO
     AssertPtrReturn(pSubTree, VERR_INVALID_POINTER);
     AssertReturn(pNode != pSubTree, VERR_INVALID_PARAMETER);
     AssertReturn(!pSubTree->pParent, VERR_INVALID_PARAMETER);
-    AssertReturn(pSubTree->pVM, VERR_INVALID_PARAMETER);
+    AssertReturn(pNode->pVM == pSubTree->pVM, VERR_INVALID_PARAMETER);
     Assert(!pSubTree->pNext);
     Assert(!pSubTree->pPrev);
 
@@ -1375,10 +1473,7 @@ VMMR3DECL(int) CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMNO
             *ppChild = pNewChild;
 
         /* free the old subtree root */
-        pSubTree->pVM = NULL;
-        pSubTree->pFirstLeaf = NULL;
-        pSubTree->pFirstChild = NULL;
-        MMR3HeapFree(pSubTree);
+        cfgmR3FreeNodeOnly(pSubTree);
     }
     return rc;
 }
@@ -1406,7 +1501,6 @@ VMMR3DECL(int) CFGMR3ReplaceSubTree(PCFGMNODE pRoot, PCFGMNODE pNewRoot)
     AssertPtrReturn(pNewRoot, VERR_INVALID_POINTER);
     AssertReturn(pRoot != pNewRoot, VERR_INVALID_PARAMETER);
     AssertReturn(!pNewRoot->pParent, VERR_INVALID_PARAMETER);
-    AssertReturn(pNewRoot->pVM, VERR_INVALID_PARAMETER);
     AssertReturn(pNewRoot->pVM == pRoot->pVM, VERR_INVALID_PARAMETER);
     AssertReturn(!pNewRoot->pNext, VERR_INVALID_PARAMETER);
     AssertReturn(!pNewRoot->pPrev, VERR_INVALID_PARAMETER);
@@ -1428,10 +1522,7 @@ VMMR3DECL(int) CFGMR3ReplaceSubTree(PCFGMNODE pRoot, PCFGMNODE pNewRoot)
     for (PCFGMNODE pChild = pRoot->pFirstChild; pChild; pChild = pChild->pNext)
         pChild->pParent     = pRoot;
 
-    pNewRoot->pFirstLeaf    = NULL;
-    pNewRoot->pFirstChild   = NULL;
-    pNewRoot->pVM           = NULL;
-    MMR3HeapFree(pNewRoot);
+    cfgmR3FreeNodeOnly(pNewRoot);
 
     return VINF_SUCCESS;
 }
@@ -1643,7 +1734,7 @@ VMMR3DECL(int) CFGMR3InsertNode(PCFGMNODE pNode, const char *pszName, PCFGMNODE 
             /*
              * Allocate and init node.
              */
-            PCFGMNODE pNew = (PCFGMNODE)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM, sizeof(*pNew) + cchName);
+            PCFGMNODE pNew = (PCFGMNODE)cfgmR3MemAlloc(pNode->pVM, MM_TAG_CFGM, sizeof(*pNew) + cchName);
             if (pNew)
             {
                 pNew->pParent       = pNode;
@@ -1785,7 +1876,7 @@ static int cfgmR3InsertLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *ppL
             /*
              * Allocate and init node.
              */
-            PCFGMLEAF pNew = (PCFGMLEAF)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM, sizeof(*pNew) + cchName);
+            PCFGMLEAF pNew = (PCFGMLEAF)cfgmR3MemAlloc(pNode->pVM, MM_TAG_CFGM, sizeof(*pNew) + cchName);
             if (pNew)
             {
                 pNew->cchName       = cchName;
@@ -1855,13 +1946,9 @@ VMMR3DECL(void) CFGMR3RemoveNode(PCFGMNODE pNode)
             pNode->pNext->pPrev = pNode->pPrev;
 
         /*
-         * Free ourselves. (bit of paranoia first)
+         * Free ourselves.
          */
-        pNode->pVM = NULL;
-        pNode->pNext = NULL;
-        pNode->pPrev = NULL;
-        pNode->pParent = NULL;
-        MMR3HeapFree(pNode);
+        cfgmR3FreeNodeOnly(pNode);
     }
 }
 
@@ -1889,10 +1976,10 @@ static void cfgmR3RemoveLeaf(PCFGMNODE pNode, PCFGMLEAF pLeaf)
         /*
          * Free value and node.
          */
-        cfgmR3FreeValue(pLeaf);
+        cfgmR3FreeValue(pNode->pVM, pLeaf);
         pLeaf->pNext = NULL;
         pLeaf->pPrev = NULL;
-        MMR3HeapFree(pLeaf);
+        cfgmR3MemFree(pNode->pVM, pLeaf);
     }
 }
 
@@ -1903,22 +1990,23 @@ static void cfgmR3RemoveLeaf(PCFGMNODE pNode, PCFGMLEAF pLeaf)
  * Use this before assigning a new value to a leaf.
  * The caller must either free the leaf or assign a new value to it.
  *
+ * @param   pVM         Used to select the heap.
  * @param   pLeaf       Pointer to the leaf which value should be free.
  */
-static void cfgmR3FreeValue(PCFGMLEAF pLeaf)
+static void cfgmR3FreeValue(PVM pVM, PCFGMLEAF pLeaf)
 {
     if (pLeaf)
     {
         switch (pLeaf->enmType)
         {
             case CFGMVALUETYPE_BYTES:
-                MMR3HeapFree(pLeaf->Value.Bytes.pau8);
+                cfgmR3MemFree(pVM, pLeaf->Value.Bytes.pau8);
                 pLeaf->Value.Bytes.pau8 = NULL;
                 pLeaf->Value.Bytes.cb = 0;
                 break;
 
             case CFGMVALUETYPE_STRING:
-                MMR3HeapFree(pLeaf->Value.String.psz);
+                cfgmR3StrFree(pVM, pLeaf->Value.String.psz);
                 pLeaf->Value.String.psz = NULL;
                 pLeaf->Value.String.cb = 0;
                 break;
@@ -1973,7 +2061,7 @@ VMMR3DECL(int) CFGMR3InsertStringN(PCFGMNODE pNode, const char *pszName, const c
         /*
          * Allocate string object first.
          */
-        char *pszStringCopy = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_STRING, cchString + 1);
+        char *pszStringCopy = (char *)cfgmR3StrAlloc(pNode->pVM, MM_TAG_CFGM_STRING, cchString + 1);
         if (pszStringCopy)
         {
             memcpy(pszStringCopy, pszString, cchString);
@@ -1991,7 +2079,7 @@ VMMR3DECL(int) CFGMR3InsertStringN(PCFGMNODE pNode, const char *pszName, const c
                 pLeaf->Value.String.cb  = cchString + 1;
             }
             else
-                MMR3HeapFree(pszStringCopy);
+                cfgmR3StrFree(pNode->pVM, pszStringCopy);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -2036,7 +2124,11 @@ VMMR3DECL(int) CFGMR3InsertStringFV(PCFGMNODE pNode, const char *pszName, const 
         /*
          * Allocate string object first.
          */
-        char *pszString = MMR3HeapAPrintfVU(pNode->pVM->pUVM, MM_TAG_CFGM_STRING, pszFormat, va);
+        char *pszString;
+        if (!pNode->pVM)
+            pszString = RTStrAPrintf2(pszFormat, va);
+        else
+            pszString = MMR3HeapAPrintfVU(pNode->pVM->pUVM, MM_TAG_CFGM_STRING, pszFormat, va);
         if (pszString)
         {
             /*
@@ -2051,7 +2143,7 @@ VMMR3DECL(int) CFGMR3InsertStringFV(PCFGMNODE pNode, const char *pszName, const 
                 pLeaf->Value.String.cb  = strlen(pszString) + 1;
             }
             else
-                MMR3HeapFree(pszString);
+                cfgmR3StrFree(pNode->pVM, pszString);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -2123,7 +2215,7 @@ VMMR3DECL(int) CFGMR3InsertBytes(PCFGMNODE pNode, const char *pszName, const voi
             /*
              * Allocate string object first.
              */
-            void *pvCopy = MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_STRING, cbBytes);
+            void *pvCopy = cfgmR3MemAlloc(pNode->pVM, MM_TAG_CFGM_STRING, cbBytes);
             if (pvCopy || !cbBytes)
             {
                 memcpy(pvCopy, pvBytes, cbBytes);
@@ -2139,6 +2231,8 @@ VMMR3DECL(int) CFGMR3InsertBytes(PCFGMNODE pNode, const char *pszName, const voi
                     pLeaf->Value.Bytes.cb   = cbBytes;
                     pLeaf->Value.Bytes.pau8 = (uint8_t *)pvCopy;
                 }
+                else
+                    cfgmR3MemFree(pNode->pVM, pvCopy);
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -2917,7 +3011,8 @@ VMMR3DECL(int) CFGMR3QueryGCPtrSDef(PCFGMNODE pNode, const char *pszName, PRTGCI
  * @param   pNode           Which node to search for pszName in.
  * @param   pszName         Value name. This value must be of zero terminated character string type.
  * @param   ppszString      Where to store the string pointer.
- *                          Free this using MMR3HeapFree().
+ *                          Free this using MMR3HeapFree() (or RTStrFree if not
+ *                          associated with a pUVM - see CFGMR3CreateTree).
  */
 VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char **ppszString)
 {
@@ -2925,14 +3020,14 @@ VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char
     int rc = CFGMR3QuerySize(pNode, pszName, &cbString);
     if (RT_SUCCESS(rc))
     {
-        char *pszString = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_USER, cbString);
+        char *pszString = cfgmR3StrAlloc(pNode->pVM, MM_TAG_CFGM_USER, cbString);
         if (pszString)
         {
             rc = CFGMR3QueryString(pNode, pszName, pszString, cbString);
             if (RT_SUCCESS(rc))
                 *ppszString = pszString;
             else
-                MMR3HeapFree(pszString);
+                cfgmR3StrFree(pNode->pVM, pszString);
         }
         else
             rc = VERR_NO_MEMORY;
@@ -2952,7 +3047,8 @@ VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char
  *                          MMR3HeapStrDup.
  * @param   pszName         Value name. This value must be of zero terminated character string type.
  * @param   ppszString      Where to store the string pointer. Not set on failure.
- *                          Free this using MMR3HeapFree().
+ *                          Free this using MMR3HeapFree() (or RTStrFree if not
+ *                          associated with a pUVM - see CFGMR3CreateTree).
  * @param   pszDef          The default return value.  This can be NULL.
  */
 VMMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, char **ppszString, const char *pszDef)
@@ -2970,7 +3066,7 @@ VMMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, c
         if (pLeaf->enmType == CFGMVALUETYPE_STRING)
         {
             size_t const cbSrc = pLeaf->Value.String.cb;
-            char *pszString = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_USER, cbSrc);
+            char *pszString = cfgmR3StrAlloc(pNode->pVM, MM_TAG_CFGM_USER, cbSrc);
             if (pszString)
             {
                 memcpy(pszString, pLeaf->Value.String.psz, cbSrc);
@@ -2987,7 +3083,11 @@ VMMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, c
         if (!pszDef)
             *ppszString = NULL;
         else
-            *ppszString = MMR3HeapStrDup(pNode->pVM, MM_TAG_CFGM_USER, pszDef);
+        {
+            size_t const cbDef = strlen(pszDef) + 1;
+            *ppszString = cfgmR3StrAlloc(pNode->pVM, MM_TAG_CFGM_USER, cbDef);
+            memcpy(*ppszString, pszDef, cbDef);
+        }
         if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
             rc = VINF_SUCCESS;
     }
