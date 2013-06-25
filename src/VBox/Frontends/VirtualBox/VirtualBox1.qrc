@@ -250,5 +250,9 @@
         <file alias="video_capture_disabled_16px.png">images/video_capture_disabled_16px.png</file>
         <file alias="video_capture_settings_16px.png">images/video_capture_settings_16px.png</file>
         <file alias="video_capture_write_16px.png">images/video_capture_write_16px.png</file>
+        <file alias="drag_drop_16px.png">images/drag_drop_16px.png</file>
+        <file alias="drag_drop_disabled_16px.png">images/drag_drop_disabled_16px.png</file>
+        <file alias="shared_clipboard_16px.png">images/shared_clipboard_16px.png</file>
+        <file alias="shared_clipboard_disabled_16px.png">images/shared_clipboard_disabled_16px.png</file>
     </qresource>
 </RCC>
