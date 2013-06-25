@@ -2689,8 +2689,6 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     pSvmTransient->fVectoringPF = false;                        /* Vectoring page-fault needs to be determined later. */
     hmR0SvmSaveGuestState(pVCpu, pMixedCtx);                    /* Save the guest state from the VMCB to the guest-CPU context. */
 
-    Log4(("Vintr Intercept=%RTbool\n", !!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_VINTR)));
-
     if (RT_LIKELY(pSvmTransient->u64ExitCode != (uint64_t)SVM_EXIT_INVALID))
     {
         if (pVCpu->hm.s.svm.fSyncVTpr)
