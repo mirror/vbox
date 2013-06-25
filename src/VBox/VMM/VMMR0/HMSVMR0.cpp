@@ -4156,7 +4156,8 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
 
 /**
- * #VMEXIT handler for page faults (SVM_EXIT_EXCEPTION_E). Conditional #VMEXIT.
+ * #VMEXIT handler for page-fault exceptions (SVM_EXIT_EXCEPTION_E). Conditional
+ * #VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4265,7 +4266,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * Exception handler for device-not-available exception (SVM_EXIT_EXCEPTION_7).
+ * #VMEXIT handler for device-not-available exceptions (SVM_EXIT_EXCEPTION_7).
  * Conditional #VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
@@ -4297,7 +4298,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * #VMEXIT handler for math-fault (SVM_EXIT_EXCEPTION_10). Conditional #VMEXIT.
+ * #VMEXIT handler for math-fault exceptions (SVM_EXIT_EXCEPTION_10).
+ * Conditional #VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
@@ -4323,7 +4325,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
 
 /**
- * #VMEXIT handler for debug exception (SVM_EXIT_EXCEPTION_1). Conditional
+ * #VMEXIT handler for debug exceptions (SVM_EXIT_EXCEPTION_1). Conditional
  * #VMEXIT.
  */
 HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
