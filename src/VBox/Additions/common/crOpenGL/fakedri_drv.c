@@ -30,7 +30,7 @@
 #include <elf.h>
 #include <unistd.h>
 
-#if defined(BSD)
+#if defined(RT_OS_FREEBSD)
 #include <sys/param.h>
 #include <fcntl.h>
 #include <gelf.h>
@@ -59,7 +59,7 @@ typedef enum {
 
 //@todo this could be different...
 #ifdef RT_ARCH_AMD64
-# ifdef BSD
+# ifdef RT_OS_FREEBSD
 #  define DRI_DEFAULT_DRIVER_DIR "/usr/local/lib/dri"
 #  define DRI_XORG_DRV_DIR "/usr/local/lib/xorg/modules/drivers/"
 # else
@@ -67,7 +67,7 @@ typedef enum {
 #  define DRI_XORG_DRV_DIR "/usr/lib/xorg/modules/drivers/"
 # endif
 #else
-# ifdef BSD
+# ifdef RT_OS_FREEBSD
 #  define DRI_DEFAULT_DRIVER_DIR "/usr/local/lib/dri"
 #  define DRI_XORG_DRV_DIR "/usr/local/lib/xorg/modules/drivers/"
 # else
@@ -228,7 +228,7 @@ vboxApplyPatch(const char* psFuncName, void *pDst, const void *pSrc, unsigned lo
 
 #define FAKEDRI_JMP64_PATCH_SIZE 13
 
-#if defined(BSD)
+#if defined(RT_OS_FREEBSD)
 /* Provide basic dladdr1 flags */
 enum {
 	RTLD_DL_SYMENT	= 1
