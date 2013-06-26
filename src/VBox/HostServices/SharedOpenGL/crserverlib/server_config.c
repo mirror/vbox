@@ -63,7 +63,7 @@ setDefaults(void)
     cr_server.pfnNotifyEventCB = NULL;
 }
 
-static int crServerVBoxParseNumerics(const char *pszStr, const int defaultVal)
+int crServerVBoxParseNumerics(const char *pszStr, const int defaultVal)
 {
     int result = 0;
     bool neg = false;

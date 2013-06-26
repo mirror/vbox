@@ -16,14 +16,13 @@ crServerDispatchWindowCreate(const char *dpyName, GLint visBits)
     return crServerDispatchWindowCreateEx(dpyName, visBits, -1);
 }
 
-GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID)
+GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID, GLboolean fSetVRegs)
 {
     CRMuralInfo *defaultMural;
     GLint dims[2];
     GLint windowID = -1;
     GLint spuWindow;
     VBOXVR_TEXTURE Tex = {0};
-    RTRECT Rect;
     int rc;
 
     crMemset(mural, 0, sizeof (*mural));
@@ -102,15 +101,19 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
 
     CR_STATE_SHAREDOBJ_USAGE_INIT(mural);
 
-    Rect.xLeft = 0;
-    Rect.xRight = mural->width;
-    Rect.yTop = 0;
-    Rect.yBottom = mural->height;
-    rc = CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->CEntry, NULL, 1, &Rect, NULL);
-    if (!RT_SUCCESS(rc))
+    if (fSetVRegs)
     {
-        crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
-        return -1;
+        RTRECT Rect;
+        Rect.xLeft = 0;
+        Rect.xRight = mural->width;
+        Rect.yTop = 0;
+        Rect.yBottom = mural->height;
+        rc = CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->CEntry, NULL, 1, &Rect, NULL);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
+            return -1;
+        }
     }
 
     crServerSetupOutputRedirect(mural);
@@ -182,7 +185,7 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
         return -1;
     }
 
-    windowID = crServerMuralInit(mural, dpyName, visBits, preloadWinID);
+    windowID = crServerMuralInit(mural, dpyName, visBits, preloadWinID, GL_TRUE);
     if (windowID < 0)
     {
         crWarning("crServerMuralInit failed!");

@@ -345,7 +345,6 @@ typedef struct CR_DISPLAY_ENTRY
  *    since we just need to blit the given textures to it if we are NOT in CR_SERVER_REDIR_F_FBO_RAM mode */
 typedef struct CR_DISPLAY
 {
-    VBOXVR_SCR_COMPOSITOR Compositor;
     CRMuralInfo Mural;
 } CR_DISPLAY, *PCR_DISPLAY;
 
@@ -357,7 +356,6 @@ void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData)
 void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry);
 int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
 int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
-int CrDpPresentEntry(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry);
 DECLINLINE(bool) CrDpEntryIsUsed(PCR_DISPLAY_ENTRY pEntry)
 {
     return CrVrScrCompositorEntryIsInList(&pEntry->CEntry);

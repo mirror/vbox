@@ -1992,6 +1992,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                     VBOXWDDM_QI * pQi = (VBOXWDDM_QI*)pQueryAdapterInfo->pOutputData;
                     memset (pQi, 0, sizeof (VBOXWDDM_QI));
                     pQi->u32Version = VBOXVIDEOIF_VERSION;
+                    pQi->u32VBox3DCaps = VBoxMpCrGetHostCaps();
                     pQi->cInfos = VBoxCommonFromDeviceExt(pDevExt)->cDisplays;
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
