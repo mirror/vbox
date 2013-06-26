@@ -368,10 +368,11 @@ void vusbReadAheadStart(PVUSBDEV pDev, PVUSBPIPE pPipe)
 
     if (pArgs)
     {
+        PVUSBROOTHUB pRh = vusbDevGetRh(pDev);
         pArgs->pDev  = pDev;
         pArgs->pPipe = pPipe;
         pArgs->fTerminate = false;
-        pArgs->fHighSpeed = ((vusbDevGetRh(pDev)->fHcVersions & VUSB_STDVER_20) != 0);
+        pArgs->fHighSpeed = pRh && ((pRh->fHcVersions & VUSB_STDVER_20) != 0);
         if (pArgs->fHighSpeed)
             rc = RTThreadCreate(&pPipe->ReadAheadThread, vusbDevReadAheadThread, pArgs, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "USBISOC");
         else
