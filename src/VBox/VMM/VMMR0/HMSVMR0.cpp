@@ -3714,6 +3714,8 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     PVM      pVM   = pVCpu->CTX_SUFF(pVM);
 
+    /** @todo r=ramshankar: This cannot be right if prefixes are involved. When
+     *        NRIP_SAVE isn't available we have to disassemble the instruction. */
     int rc;
     if (pVmcb->ctrl.u64ExitInfo1 == SVM_EXIT1_MSR_WRITE)
     {
