@@ -18,7 +18,9 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-PROGRAMS += tstUsbMouse
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
+ PROGRAMS += tstUsbMouse
+endif
 tstUsbMouse_TEMPLATE = VBOXR3TSTEXE
 tstUsbMouse_DEFS     = VBOX_WITH_VUSB
 tstUsbMouse_INCS     = \
