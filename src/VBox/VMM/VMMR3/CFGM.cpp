@@ -1939,7 +1939,8 @@ VMMR3DECL(void) CFGMR3RemoveNode(PCFGMNODE pNode)
         {
             if (pNode->pParent)
                 pNode->pParent->pFirstChild = pNode->pNext;
-            else if (pNode == pNode->pVM->cfgm.s.pRoot) /* might be a different tree */
+            else if (   pNode->pVM                         /* might be a different tree */
+                     && pNode == pNode->pVM->cfgm.s.pRoot)
                 pNode->pVM->cfgm.s.pRoot = NULL;
         }
         if (pNode->pNext)
