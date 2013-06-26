@@ -2027,7 +2027,7 @@ static void cfgmR3FreeValue(PVM pVM, PCFGMLEAF pLeaf)
  */
 VMMR3DECL(int) CFGMR3DestroyTree(PCFGMNODE pRoot)
 {
-    if (pRoot)
+    if (!pRoot)
         return VINF_SUCCESS;
     AssertReturn(!pRoot->pParent, VERR_INVALID_PARAMETER);
     AssertReturn(!pRoot->pVM || pRoot != pRoot->pVM->cfgm.s.pRoot, VERR_ACCESS_DENIED);
