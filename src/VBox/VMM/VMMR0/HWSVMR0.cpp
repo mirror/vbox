@@ -764,6 +764,8 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  */
 VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatLoadGuestState, x);
+
     RTGCUINTPTR val;
     PSVMVMCB pVmcb;
 
@@ -1057,6 +1059,8 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     /* Done. */
     pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_ALL_GUEST;
+
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
 
     return VINF_SUCCESS;
 }
