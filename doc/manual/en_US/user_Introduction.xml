@@ -502,7 +502,7 @@
           </itemizedlist></para>
 
         <para>It should be possible to use VirtualBox on most systems based on
-        Linux kernel 2.6 using either the VirtualBox installer or by doing a
+        Linux kernel 2.6 or 3.x using either the VirtualBox installer or by doing a
         manual installation; see <xref linkend="install-linux-host" />. However,
         the formally tested and supported Linux distributions are those for
         which we offer a dedicated package.</para>

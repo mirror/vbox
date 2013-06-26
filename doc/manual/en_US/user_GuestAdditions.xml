@@ -386,7 +386,7 @@
           </listitem>
 
           <listitem>
-            <para>Do a <computeroutput>VBoxCertUtil add-trusted-publisher oracle-vbox.cer --root oracle-vbox.cer</computeroutput>.</para>
+            <para>Do<screen>VBoxCertUtil add-trusted-publisher oracle-vbox.cer --root oracle-vbox.cer</screen></para>
             <para>This will install the certificates to the certificate store. When installing the same certificate
             more than once, an appropriate error will be displayed.</para>
           </listitem>
@@ -521,6 +521,10 @@
       <para>The following Linux distributions are officially supported:</para>
 
       <itemizedlist>
+        <listitem>
+          <para>Oracle Linux as of version 5 including UEK kernels</para>
+        </listitem>
+
         <listitem>
           <para>Fedora as of Fedora Core 4;</para>
         </listitem>
@@ -762,8 +766,7 @@
         </sect4>
 
         <sect4>
-          <title>CentOS, Red Hat Enterprise Linux and Oracle
-          Enterprise Linux</title>
+          <title>Oracle Enterprise Linux, Red Hat Enterprise Linux and CentOS</title>
 
           <para><orderedlist>
               <listitem>
@@ -781,7 +784,9 @@
               <listitem>
                 <para>Install the GNU C compiler and the kernel development
                 packages using <screen>yum install gcc</screen> followed by
-                <screen>yum install kernel-devel</screen></para>
+                <screen>yum install kernel-devel</screen> If the Oracle UEK
+                kernel is used, use <screen>yum install kernel-uek-devel</screen>
+                to install the UEK kernel headers.</para>
               </listitem>
 
               <listitem>
