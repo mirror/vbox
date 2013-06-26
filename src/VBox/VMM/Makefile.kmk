@@ -373,7 +373,7 @@ ifneq ($(VBOX_LIB_VMM_LAZY),$(LIB_VMM))
  VMMR3LazyImp_INST     = $(INST_LIB)
  VMMR3LazyImp_SOURCES  = $(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm
  VMMR3LazyImp_CLEAN    = $(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm
- $$(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm: $(PATH_SUB_CURRENT)/VMMR3/VMMR3.def $(VBOX_DEF_2_LAZY_LOAD)
+ $$(VMMR3LazyImp_0_OUTDIR)/VMMR3LazyLoad.asm: $(PATH_SUB_CURRENT)/VMMR3/VMMR3.def $(VBOX_DEF_2_LAZY_LOAD) | $$(dir $$@)
 	$(VBOX_DEF_2_LAZY_LOAD) --output $@ --library VBoxVMM $<
 endif
 
