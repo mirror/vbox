@@ -4933,13 +4933,13 @@ HRESULT Console::onVideoCaptureChange()
                 {
                     vrc = mDisplay->VideoCaptureStart();
                     if (RT_FAILURE(vrc))
-                        rc = E_FAIL;
+                        rc = setError(E_FAIL, tr("Unable to start video capturing (%Rrc)"), vrc);
                 }
                 else
                     mDisplay->VideoCaptureStop();
             }
             else
-                rc = E_FAIL;
+                rc = setError(E_FAIL, tr("Unable to set screens for capturing (%Rrc)"), vrc);
         }
         ptrVM.release();
     }
