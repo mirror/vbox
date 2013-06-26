@@ -594,6 +594,9 @@ protected:
         /* Configure painter for *enabled* state: */
         if (state() == UIIndicatorStateVideoCapture_Enabled)
         {
+            /* Configure painter for smooth animation: */
+            painter.setRenderHint(QPainter::Antialiasing);
+            painter.setRenderHint(QPainter::SmoothPixmapTransform);
             /* Shift rotation origin according pixmap center: */
             painter.translate(height() / 2, height() / 2);
             /* Rotate painter: */
