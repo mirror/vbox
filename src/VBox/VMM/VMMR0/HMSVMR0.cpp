@@ -192,6 +192,8 @@ typedef struct SVMTRANSIENT
     /** Whether the #VMEXIT was caused by a page-fault during delivery of a
      *  contributary exception or a page-fault. */
     bool            fVectoringPF;
+    /** Whether the TSC offset mode needs to be updated. */
+    bool            fUpdateTscOffsetting;
 } SVMTRANSIENT, *PSVMTRANSIENT;
 /** @}  */
 
@@ -1893,13 +1895,14 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
 
 
 /**
- * Sets up the usage of TSC offsetting for the VCPU.
+ * Updates the use of TSC offsetting mode for the CPU and adjusts the necessary
+ * intercepts.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0SvmSetupTscOffsetting(PVMCPU pVCpu)
+static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
 {
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     if (TMCpuTickCanUseRealTSC(pVCpu, &pVmcb->ctrl.u64TSCOffset))
@@ -2583,6 +2586,14 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
             pSvmTransient->u8GuestTpr = pVmcb->ctrl.IntCtrl.n.u8VTPR;
     }
 
+    /* Setup TSC offsetting. */
+    if (   pSvmTransient->fUpdateTscOffsetting
+        || HMR0GetCurrentCpu()->idCpu != pVCpu->hm.s.idLastCpu)
+    {
+        pSvmTransient->fUpdateTscOffsetting = false;
+        hmR0SvmUpdateTscOffsetting(pVCpu);
+    }
+
     /* Flush the appropriate tagged-TLB entries. */
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB-shootdowns, set this across the world switch. */
     hmR0SvmFlushTaggedTlb(pVCpu);
@@ -2661,15 +2672,14 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     pVmcb->ctrl.u64VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;        /* Mark the VMCB-state cache as unmodified by VMM. */
 
-    /* Restore host's TSC_AUX if required. */
     if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
     {
+        /* Restore host's TSC_AUX if required. */
         if (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
             ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
 
         /** @todo Find a way to fix hardcoding a guestimate.  */
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() +
-                             pVmcb->ctrl.u64TSCOffset - 0x400);
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcb->ctrl.u64TSCOffset - 0x400);
     }
 
     TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
@@ -2727,6 +2737,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     SVMTRANSIENT SvmTransient;
+    SvmTransient.fUpdateTscOffsetting = true;
     uint32_t cLoops = 0;
     PSVMVMCB pVmcb  = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     int      rc     = VERR_INTERNAL_ERROR_5;
@@ -3489,7 +3500,10 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc = EMInterpretRdtsc(pVM, pVCpu, CPUMCTX2CORE(pCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
+    {
         pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+        pSvmTransient->fUpdateTscOffsetting = true;
+    }
     else
     {
         AssertMsgFailed(("hmR0SvmExitRdtsc: EMInterpretRdtsc failed with %Rrc\n", rc));
@@ -3508,7 +3522,10 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     int rc = EMInterpretRdtscp(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
     if (RT_LIKELY(rc == VINF_SUCCESS))
+    {
         pCtx->rip += 3;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+        pSvmTransient->fUpdateTscOffsetting = true;
+    }
     else
     {
         AssertMsgFailed(("hmR0SvmExitRdtsc: EMInterpretRdtscp failed with %Rrc\n", rc));
@@ -3743,6 +3760,8 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
 
         if (pCtx->ecx == MSR_K6_EFER)
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_EFER_MSR;
+        else if (pCtx->ecx == MSR_IA32_TSC)
+            pSvmTransient->fUpdateTscOffsetting = true;
     }
     else
     {
