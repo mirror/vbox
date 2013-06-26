@@ -1945,26 +1945,41 @@ void UIMachineLogic::sltToggleVideoCapture(bool fEnabled)
     if (!isMachineWindowsCreated())
         return;
 
-    /* Make sure something had changed: */
+    /* Access machine: */
     CMachine machine = session().GetMachine();
+    AssertMsg(!machine.isNull(), ("Machine should NOT be null!\n"));
+    if (machine.isNull())
+        return;
+
+    /* Make sure something had changed: */
     if (machine.GetVideoCaptureEnabled() == static_cast<BOOL>(fEnabled))
         return;
 
-    /* Machine is OK? */
-    if (machine.isOk())
+    /* Update Video Capture state: */
+    AssertMsg(machine.isOk(), ("Machine should be OK!\n"));
+    machine.SetVideoCaptureEnabled(fEnabled);
+    /* Machine is not OK? */
+    if (!machine.isOk())
     {
-        /* Update Video Capture state: */
-        machine.SetVideoCaptureEnabled(fEnabled);
-        /* Machine still OK? */
-        if (machine.isOk())
+        /* Notify about the error: */
+        msgCenter().cannotToggleVideoCapture(machine, fEnabled);
+        /* Make sure action is updated! */
+        uisession()->updateStatusVideoCapture();
+    }
+    /* Machine is OK? */
+    else
+    {
+        /* Save machine-settings: */
+        machine.SaveSettings();
+        /* Machine is not OK? */
+        if (!machine.isOk())
         {
-            /* Save machine-settings: */
-            machine.SaveSettings();
+            /* Notify about the error: */
+            msgCenter().cannotSaveMachineSettings(machine);
+            /* Make sure action is updated! */
+            uisession()->updateStatusVideoCapture();
         }
     }
-    /* Machine had failed on one of steps? */
-    if (!machine.isOk())
-        msgCenter().cannotSaveMachineSettings(machine);
 }
 
 void UIMachineLogic::sltOpenVideoCaptureOptions()
