@@ -1989,6 +1989,17 @@ void UIMessageCenter::cannotToggleVRDEServer(const CVRDEServer &server, const QS
           formatErrorInfo(server));
 }
 
+void UIMessageCenter::cannotToggleVideoCapture(const CMachine &machine, bool fEnable)
+{
+    /* Get machine-name preserving error-info: */
+    QString strMachineName(CMachine(machine).GetName());
+    error(0, MessageType_Error,
+          fEnable ?
+              tr("Failed to enable the video capture for the virtual machine <b>%1</b>.").arg(strMachineName) :
+              tr("Failed to disable the video capture for the virtual machine <b>%1</b>.").arg(strMachineName),
+          formatErrorInfo(machine));
+}
+
 void UIMessageCenter::remindAboutGuestAdditionsAreNotActive() const
 {
     alert(0, MessageType_Warning,
