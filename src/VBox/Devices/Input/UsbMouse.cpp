@@ -302,6 +302,9 @@ static const uint8_t g_UsbHidMReportDesc[] =
  * properly.
  */
 #define REPORTID_MOUSE 1
+#define REPORTID_MTOUCH 2
+#define REPORTID_MAX_COUNT 3
+#define REPORTID_FEATURE 4
 
 static const uint8_t g_UsbHidTReportDesc[] =
 {
@@ -343,6 +346,129 @@ static const uint8_t g_UsbHidTReportDesc[] =
     /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
     /* End Collection */            0xC0,
     /* End Collection */            0xC0,
+};
+
+static const uint8_t g_UsbHidMTReportDesc[] =
+{
+    /* Usage Page */                0x05, 0x0D,     /* Digitisers */
+    /* Usage */                     0x09, 0x04,     /* Touch Screen */
+    /* Collection */                0xA1, 0x01,     /* Application */
+    /* Report ID */                 0x85, REPORTID_MTOUCH,
+    /* Usage */                     0x09, 0x22,     /* Finger */
+    /* Collection */                0xA1, 0x02,     /* Logical */
+    /* Usage */                     0x09, 0x42,     /* Tip Switch */
+    /* Logical Minimum */           0x15, 0x00,     /* 0 */
+    /* Logical Maximum */           0x25, 0x01,     /* 1 */
+    /* Report Size */               0x75, 0x01,     /* 1 */
+    /* Report Count */              0x95, 0x01,     /* 1 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Usage */                     0x09, 0x32,     /* In Range */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Report Count */              0x95, 0x06,     /* 6 */
+    /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
+    /* Report Size */               0x75, 0x08,     /* 8 */
+    /* Usage */                     0x09, 0x51,     /* Contact Identifier */
+    /* Report Count */              0x95, 0x01,     /* 1 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Collection */                0xA1, 0x00,     /* Physical */
+    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
+    /* Logical Maximum */           0x26, 0xff,0x0f,/* 4095 */
+    /* Report Size */               0x75, 0x10,     /* 16 */
+    /* Unit Exponent   */           0x55, 0x0e,     /* -2 */
+    /* Unit            */           0x65, 0x33,     /* Inch,EngLinear */
+    /* Usage */                     0x09, 0x30,     /* X */
+    /* Physical Minimum */          0x35, 0x00,     /* 0 */
+    /* Physical Maximum */          0x46, 0xb5,0x04,/* 1205 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Physical Maximum */          0x46, 0x8a,0x03,/* 906 */
+    /* Usage */                     0x09, 0x31,     /* Y */
+    /* Physical Maximum */          0x45, 0x00,     /* 0 (reset) */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* End Collection */            0xC0,
+    /* End Collection */            0xC0,
+    /* Usage Page */                0x05, 0x0d,     /* Digitisers */
+    /* Usage */                     0x09, 0x22,     /* Finger */
+    /* Collection */                0xA1, 0x02,     /* Logical */
+    /* Usage */                     0x09, 0x42,     /* Tip Switch */
+    /* Logical Minimum */           0x15, 0x00,     /* 0 */
+    /* Logical Maximum */           0x25, 0x01,     /* 1 */
+    /* Report Size */               0x75, 0x01,     /* 1 */
+    /* Report Count */              0x95, 0x01,     /* 1 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Usage */                     0x09, 0x32,     /* In Range */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Report Count */              0x95, 0x06,     /* 6 */
+    /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
+    /* Report Size */               0x75, 0x08,     /* 8 */
+    /* Usage */                     0x09, 0x51,     /* Contact Identifier */
+    /* Report Count */              0x95, 0x01,     /* 1 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Collection */                0xA1, 0x00,     /* Physical */
+    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
+    /* Logical Maximum */           0x26, 0xff,0x0f,/* 4095 */
+    /* Report Size */               0x75, 0x10,     /* 16 */
+    /* Unit Exponent   */           0x55, 0x0e,     /* -2 */
+    /* Unit            */           0x65, 0x33,     /* Inch,EngLinear */
+    /* Usage */                     0x09, 0x30,     /* X */
+    /* Physical Minimum */          0x35, 0x00,     /* 0 */
+    /* Physical Maximum */          0x46, 0xb5,0x04,/* 1205 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Physical Maximum */          0x46, 0x8a,0x03,/* 906 */
+    /* Usage */                     0x09, 0x31,     /* Y */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* End Collection */            0xC0,
+    /* End Collection */            0xC0,
+    /* Usage Page */                0x05, 0x0d,     /* Digitizers */
+    /* Usage */                     0x09, 0x54,     /* Contact Count */
+    /* Report Count */              0x95, 0x01,     /* 1 */
+    /* Report Size */               0x75, 0x08,     /* 8 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Report ID */                 0x85, REPORTID_MAX_COUNT,
+    /* Usage */                     0x09, 0x55,     /* Contact Count Maximum */
+    /* Report Count */              0x95, 0x01,     /* 1 */
+    /* Logical Maximum */           0x25, 0x02,     /* 2 */
+    /* Feature        */            0xB1, 0x03,     /* Constant, Value, Absolute, Bit field */
+    /* End Collection */            0xC0,
+    /* Usage */                     0x09, 0x0E,     /* Configuration */
+    /* Collection */                0xA1, 0x01,     /* Application */
+    /* Report ID */                 0x85, REPORTID_FEATURE,
+    /* Usage */                     0x09, 0x23,     /* Device Settings */
+    /* Collection */                0xA1, 0x02,     /* logical */
+    /* Usage */                     0x09, 0x52,     /* Input Mode */
+    /* Usage */                     0x09, 0x53,     /* Device Index */
+    /* Logical Minimum */           0x15, 0x00,     /* 0 */
+    /* Logical Maximum */           0x25, 0x0a,     /* 10 */
+    /* Report Size */               0x75, 0x08,     /* 8 */
+    /* Report Count */              0x95, 0x02,     /* 2 */
+    /* Feature        */            0xB1, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* End Collection */            0xC0,
+    /* End Collection */            0xC0,
+    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
+    /* Usage */                     0x09, 0x02,     /* Mouse */
+    /* Collection */                0xA1, 0x01,     /* Application */
+    /* Report ID */                 0x85, REPORTID_MOUSE,
+    /* Usage */                     0x09, 0x01,     /* Pointer */
+    /* Collection */                0xA1, 0x00,     /* Physical */
+    /* Usage Page */                0x05, 0x09,     /* Button */
+    /* Usage Minimum */             0x19, 0x01,     /* Button 1 */
+    /* Usage Maximum */             0x29, 0x02,     /* Button 2 */
+    /* Logical Minimum */           0x15, 0x00,     /* 0 */
+    /* Logical Maximum */           0x25, 0x01,     /* 1 */
+    /* Report Size */               0x75, 0x01,     /* 1 */
+    /* Report Count */              0x95, 0x02,     /* 2 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Report Count */              0x95, 0x06,     /* 6 */
+    /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
+    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
+    /* Usage */                     0x09, 0x30,     /* X */
+    /* Usage */                     0x09, 0x31,     /* Y */
+    /* Report Size */               0x75, 0x10,     /* 16 */
+    /* Report Count */              0x95, 0x02,     /* 2 */
+    /* Logical Minimum */           0x15, 0x00,     /* 0 */
+    /* Logical Maximum */           0x26, 0xff,0x7f,/* 32767 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* End Collection */            0xC0,
+    /* End Collection */            0xC0
 };
 
 /* Additional HID class interface descriptor. */
