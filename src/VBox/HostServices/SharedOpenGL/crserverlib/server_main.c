@@ -186,6 +186,11 @@ static void crServerTearDown( void )
     /* Free murals */
     crFreeHashtable(cr_server.muralTable, deleteMuralInfoCallback);
 
+    crServerDisplayTermAll();
+    CrDemTerm(&cr_server.PresentTexturepMap);
+    memset(cr_server.DisplaysInitMap, 0, sizeof (cr_server.DisplaysInitMap));
+    memset(cr_server.aDispplays, 0, sizeof (cr_server.aDispplays));
+
     for (i = 0; i < cr_server.numClients; i++) {
         if (cr_server.clients[i]) {
             CRConnection *conn = cr_server.clients[i]->conn;
@@ -332,6 +337,20 @@ crServerInit(int argc, char *argv[])
         crDebug("Debug: using multiple contexts!");
     }
 
+    env = crGetenv("CR_SERVER_CAPS");
+    if (env && env[0] != '\0')
+    {
+        cr_server.u32Caps = crServerVBoxParseNumerics(env, 0);
+        cr_server.u32Caps &= ~(CR_VBOX_CAP_TEX_PRESENT | CR_VBOX_CAP_NO_DWM_SUPPORT);
+    }
+    else
+    {
+        cr_server.u32Caps = 0;
+#ifdef DEBUG_misha
+        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
+#endif
+    }
+
     cr_server.firstCallCreateContext = GL_TRUE;
     cr_server.firstCallMakeCurrent = GL_TRUE;
     cr_server.bForceMakeCurrentOnClientSwitch = GL_FALSE;
@@ -360,6 +379,10 @@ crServerInit(int argc, char *argv[])
     cr_server.curClient->currentCtxInfo = &cr_server.MainContextInfo;
 
     cr_server.dummyMuralTable = crAllocHashtable();
+
+    CrDemInit(&cr_server.PresentTexturepMap);
+    memset(cr_server.DisplaysInitMap, 0, sizeof (cr_server.DisplaysInitMap));
+    memset(cr_server.aDispplays, 0, sizeof (cr_server.aDispplays));
 
     cr_server.fRootVrOn = GL_FALSE;
     VBoxVrListInit(&cr_server.RootVr);
@@ -426,6 +449,20 @@ GLboolean crVBoxServerInit(void)
         crDebug("Debug: using multiple contexts!");
     }
 
+    env = crGetenv("CR_SERVER_CAPS");
+    if (env && env[0] != '\0')
+    {
+        cr_server.u32Caps = crServerVBoxParseNumerics(env, 0);
+        cr_server.u32Caps &= ~(CR_VBOX_CAP_TEX_PRESENT | CR_VBOX_CAP_NO_DWM_SUPPORT);
+    }
+    else
+    {
+        cr_server.u32Caps = 0;
+#ifdef DEBUG_misha
+        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
+#endif
+    }
+
     crNetInit(crServerRecv, crServerClose);
 
     cr_server.firstCallCreateContext = GL_TRUE;
@@ -463,6 +500,10 @@ GLboolean crVBoxServerInit(void)
     cr_server.contextTable = crAllocHashtable();
 
     cr_server.dummyMuralTable = crAllocHashtable();
+
+    CrDemInit(&cr_server.PresentTexturepMap);
+    memset(cr_server.DisplaysInitMap, 0, sizeof (cr_server.DisplaysInitMap));
+    memset(cr_server.aDispplays, 0, sizeof (cr_server.aDispplays));
 
     cr_server.fRootVrOn = GL_FALSE;
     VBoxVrListInit(&cr_server.RootVr);
@@ -969,7 +1010,7 @@ CRMuralInfo * crServerGetDummyMural(GLint visualBits)
             crWarning("crCalloc failed!");
             return NULL;
         }
-        id = crServerMuralInit(pMural, "", visualBits, -1);
+        id = crServerMuralInit(pMural, "", visualBits, -1, GL_TRUE);
         if (id < 0)
         {
             crWarning("crServerMuralInit failed!");

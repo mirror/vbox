@@ -112,7 +112,7 @@ GLboolean crServerClientInBeginEnd(const CRClient *client);
 
 GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLint shareCtx, GLint preloadCtxID, int32_t internalID);
 GLint crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preloadWinID);
-GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID);
+GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID, GLboolean fSetVRegs);
 void crServerMuralTerm(CRMuralInfo *mural);
 void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height);
 int crServerMuralSynchRootVr(CRMuralInfo *mural, uint32_t *pcRects, const RTRECT **ppRects);
@@ -130,6 +130,7 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural);
 GLboolean crServerSupportRedirMuralFBO(void);
 
 void crVBoxServerNotifyEvent(int32_t idScreen);
+void crServerDisplayTermAll();
 
 #define CR_SERVER_REDIR_F_NONE     0x00
 /* the data should be displayed on host (unset when is on or when CR_SERVER_REDIR_F_FBO_RAM_VMFB is set) */
@@ -402,7 +403,9 @@ void crServerDumpFramesCheck();
 void crServerDumpState();
 void crServerDumpDrawel(const char*pszFormat, ...);
 void crServerDumpDrawelv(GLuint idx, const char*pszElFormat, uint32_t cbEl, const void *pvVal, uint32_t cVal);
-
+int crServerVBoxParseNumerics(const char *pszStr, const int defaultVal);
+void CrDpEnter(PCR_DISPLAY pDisplay);
+void CrDpLeave(PCR_DISPLAY pDisplay);
 
 extern unsigned long g_CrDbgDumpEnabled;
 extern unsigned long g_CrDbgDumpDraw;

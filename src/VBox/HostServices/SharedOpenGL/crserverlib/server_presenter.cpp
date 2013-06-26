@@ -61,33 +61,18 @@
 
 int CrDpInit(PCR_DISPLAY pDisplay)
 {
-    int rc = CrVrScrCompositorInit(&pDisplay->Compositor);
-    if (RT_SUCCESS(rc))
+    const GLint visBits = cr_server.MainContextInfo.CreateInfo.visualBits;
+    if (crServerMuralInit(&pDisplay->Mural, "", visBits, -1, GL_FALSE) < 0)
     {
-        const GLint visBits = CR_RGB_BIT | CR_DOUBLE_BIT;
-        if (crServerMuralInit(&pDisplay->Mural, "", visBits, -1) >= 0)
-        {
-            return VINF_SUCCESS;
-//            crServerMuralTerm(&pDisplay->Mural);
-        }
-        else
-        {
-            crWarning("crServerMuralInit failed!");
-            rc = VERR_GENERAL_FAILURE;
-        }
-        CrVrScrCompositorTerm(&pDisplay->Compositor);
+        crWarning("crServerMuralInit failed!");
+        return VERR_GENERAL_FAILURE;
     }
-    else
-    {
-        crWarning("CrVrScrCompositorInit failed, rc %d", rc);
-    }
-    CRASSERT(RT_FAILURE(rc));
-    return rc;
+
+    return VINF_SUCCESS;
 }
 
 void CrDpTerm(PCR_DISPLAY pDisplay)
 {
-    CrVrScrCompositorTerm(&pDisplay->Compositor);
     crServerMuralTerm(&pDisplay->Mural);
 }
 
@@ -98,46 +83,19 @@ void CrDpResize(PCR_DISPLAY pDisplay, uint32_t width, uint32_t height,
     StretchX = ((float)stretchedWidth)/width;
     StretchY = ((float)stretchedHeight)/height;
     crServerMuralSize(&pDisplay->Mural, stretchedWidth, stretchedHeight);
-    CrVrScrCompositorLock(&pDisplay->Compositor);
-    CrVrScrCompositorSetStretching(&pDisplay->Compositor, StretchX, StretchY);
-    CrVrScrCompositorUnlock(&pDisplay->Compositor);
+    CrVrScrCompositorSetStretching(&pDisplay->Mural.Compositor, StretchX, StretchY);
 }
 
 int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions)
 {
-    CrVrScrCompositorLock(&pDisplay->Compositor);
-    int rc = CrVrScrCompositorEntryRegionsSet(&pDisplay->Compositor, &pEntry->CEntry, pPos, cRegions, paRegions, NULL);
-    CrVrScrCompositorUnlock(&pDisplay->Compositor);
+    int rc = CrVrScrCompositorEntryRegionsSet(&pDisplay->Mural.Compositor, pEntry ? &pEntry->CEntry : NULL, pPos, cRegions, paRegions, NULL);
     return rc;
 }
 
 int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions)
 {
-    CrVrScrCompositorLock(&pDisplay->Compositor);
-    int rc = CrVrScrCompositorEntryRegionsAdd(&pDisplay->Compositor, &pEntry->CEntry, pPos, cRegions, paRegions, NULL);
-    CrVrScrCompositorUnlock(&pDisplay->Compositor);
+    int rc = CrVrScrCompositorEntryRegionsAdd(&pDisplay->Mural.Compositor, pEntry ? &pEntry->CEntry : NULL, pPos, cRegions, paRegions, NULL);
     return rc;
-}
-
-int CrDpPresentEntry(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
-{
-    GLuint idDrawFBO = 0, idReadFBO = 0;
-    CRMuralInfo *pMural = cr_server.currentMural;
-    CRContext *pCtx = cr_server.currentCtxInfo ? cr_server.currentCtxInfo->pContext : cr_server.MainContextInfo.pContext;
-
-    if (pMural)
-    {
-        idDrawFBO = CR_SERVER_FBO_FOR_IDX(pMural, pMural->iCurDrawBuffer);
-        idReadFBO = CR_SERVER_FBO_FOR_IDX(pMural, pMural->iCurReadBuffer);
-    }
-
-    crStateSwitchPrepare(NULL, pCtx, idDrawFBO, idReadFBO);
-
-    cr_server.head_spu->dispatch_table.VBoxPresentComposition(pDisplay->Mural.spuWindow, &pDisplay->Compositor, &pEntry->CEntry);
-
-    crStateSwitchPostprocess(pCtx, NULL, idDrawFBO, idReadFBO);
-
-    return VINF_SUCCESS;
 }
 
 void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData)
@@ -147,9 +105,18 @@ void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData)
 
 void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
 {
-    CrVrScrCompositorLock(&pDisplay->Compositor);
-    CrVrScrCompositorEntryRemove(&pDisplay->Compositor, &pEntry->CEntry);
-    CrVrScrCompositorUnlock(&pDisplay->Compositor);
+    CrVrScrCompositorEntryRemove(&pDisplay->Mural.Compositor, &pEntry->CEntry);
+}
+
+void CrDpEnter(PCR_DISPLAY pDisplay)
+{
+    crServerVBoxCompositionDisableEnter(&pDisplay->Mural);
+}
+
+void CrDpLeave(PCR_DISPLAY pDisplay)
+{
+    pDisplay->Mural.fDataPresented = GL_TRUE;
+    crServerVBoxCompositionDisableLeave(&pDisplay->Mural, GL_FALSE);
 }
 
 int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap)
@@ -277,6 +244,19 @@ static PCR_DISPLAY crServerDisplayGet(uint32_t idScreen)
     return NULL;
 }
 
+void crServerDisplayTermAll()
+{
+    int i;
+    for (i = 0; i < cr_server.screenCount; ++i)
+    {
+        if (ASMBitTest(cr_server.DisplaysInitMap, i))
+        {
+            CrDpTerm(&cr_server.aDispplays[i]);
+            ASMBitClear(cr_server.DisplaysInitMap, i);
+        }
+    }
+}
+
 void CrHlpFreeTexImage(CRContext *pCurCtx, GLuint idPBO, void *pvData)
 {
     if (idPBO)
@@ -394,12 +374,18 @@ crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPo
         return;
     }
 
-    PCR_DISPLAY_ENTRY pEntry = CrDemEntryGetCreate(&cr_server.PresentTexturepMap, texture, cr_server.currentCtxInfo);
-    if (!pEntry)
+    PCR_DISPLAY_ENTRY pEntry = NULL;
+    if (texture)
     {
-        crWarning("CrDemEntryGetCreate Failed");
-        return;
+        pEntry = CrDemEntryGetCreate(&cr_server.PresentTexturepMap, texture, cr_server.currentCtxInfo);
+        if (!pEntry)
+        {
+            crWarning("CrDemEntryGetCreate Failed");
+            return;
+        }
     }
+
+    CrDpEnter(pDisplay);
 
     RTPOINT Point = {xPos, yPos};
     int rc = CrDpEntryRegionsAdd(pDisplay, pEntry, &Point, (uint32_t)cRects, (const RTRECT*)pRects);
@@ -409,10 +395,5 @@ crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPo
         return;
     }
 
-    rc = CrDpPresentEntry(pDisplay, pEntry);
-    if (!RT_SUCCESS(rc))
-    {
-        crWarning("CrDpEntrySetRegions Failed rc %d", rc);
-        return;
-    }
+    CrDpLeave(pDisplay);
 }
