@@ -166,38 +166,62 @@ CRDLL *crDLLOpen( const char *dllname, int resolveGlobal )
 	CRDLL *dll;
 	char *dll_err;
 #if defined(WINDOWS)
-    char   szPath[MAX_PATH];
+    WCHAR   szwPath[MAX_PATH];
+    UINT   cwcPath = 0;
 
     (void) resolveGlobal;
 
 # ifndef CR_NO_GL_SYSTEM_PATH
     if (PathIsRelative(dllname))
     {
-        size_t cbName  = strlen(dllname) + 1;
+        size_t cName  = strlen(dllname) + 1;
 #  ifdef IN_GUEST
-        UINT   cchPath = GetSystemDirectoryA(szPath, sizeof(szPath));
-#  else
-        UINT   cchPath = GetModuleFileNameA(NULL, szPath, sizeof(szPath));
-        if (cchPath != 0 && cchPath <= sizeof(szPath))
+        cwcPath = GetSystemDirectoryW(szwPath, RT_ELEMENTS(szwPath));
+        if (!cwcPath || cwcPath >= MAX_PATH)
         {
-            char * pszSlashFile = strrchr(szPath, '\\');
-            if (pszSlashFile)
-            {
-                cchPath = pszSlashFile - szPath;
-            }
+            DWORD winEr = GetLastError();
+            crError("GetSystemDirectoryW failed err %d", winEr);
+            SetLastError(winEr);
+            return NULL;
         }
+#  else
+        WCHAR * pszwSlashFile;
+        cwcPath = GetModuleFileNameW(NULL, szwPath, RT_ELEMENTS(szwPath));
+        if (!cwcPath || cwcPath >= MAX_PATH)
+        {
+            DWORD winEr = GetLastError();
+            crError("GetModuleFileNameW failed err %d", winEr);
+            SetLastError(winEr);
+            return NULL;
+        }
+
+        pszwSlashFile = wcsrchr(szwPath, L'\\');
+        if (!pszwSlashFile)
+        {
+            crError("failed to match file name");
+            SetLastError(ERROR_PATH_NOT_FOUND);
+            return NULL;
+        }
+
+        cwcPath = pszwSlashFile - szwPath;
 #  endif
 
-        if (cchPath + 1 + cbName > sizeof(szPath))
+        if (cwcPath + 1 + cName > MAX_PATH)
         {
             crError("invalid path specified");
             SetLastError(ERROR_FILENAME_EXCED_RANGE);
             return NULL;
         }
-        szPath[cchPath] = '\\';
-        memcpy(&szPath[cchPath + 1], dllname, cbName);
+        szwPath[cwcPath] = '\\';
+        ++cwcPath;
+    }
 
-        dllname = szPath;
+    if (!MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, dllname, -1, &szwPath[cwcPath], MAX_PATH - cwcPath))
+    {
+        DWORD winEr = GetLastError();
+        crError("MultiByteToWideChar failed err %d", winEr);
+        SetLastError(winEr);
+        return NULL;
     }
 # endif // CR_NO_GL_SYSTEM_PATH
 #endif
@@ -206,7 +230,7 @@ CRDLL *crDLLOpen( const char *dllname, int resolveGlobal )
 	dll->name = crStrdup( dllname );
 
 #if defined(WINDOWS)
-    dll->hinstLib = LoadLibrary( dllname );
+    dll->hinstLib = LoadLibraryW( szwPath );
     if (!dll->hinstLib)
     {
         crError("failed to load dll %s", dllname);
