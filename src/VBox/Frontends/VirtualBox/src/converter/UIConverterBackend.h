@@ -55,6 +55,7 @@ template<class X> X fromInternalString(const QString & /* strData */) { Assert(0
 
 /* Declare global canConvert specializations: */
 template<> bool canConvert<StorageSlot>();
+template<> bool canConvert<RuntimeMenuType>();
 template<> bool canConvert<DetailsElementType>();
 template<> bool canConvert<GlobalSettingsPageType>();
 template<> bool canConvert<MachineSettingsPageType>();
@@ -86,6 +87,8 @@ template<> bool canConvert<KNATProtocol>();
 /* Declare global conversion specializations: */
 template<> QString toString(const StorageSlot &storageSlot);
 template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot);
+template<> QString toInternalString(const RuntimeMenuType &runtimeMenuType);
+template<> RuntimeMenuType fromInternalString<RuntimeMenuType>(const QString &strRuntimeMenuType);
 template<> QString toString(const DetailsElementType &detailsElementType);
 template<> DetailsElementType fromString<DetailsElementType>(const QString &strDetailsElementType);
 template<> QString toInternalString(const DetailsElementType &detailsElementType);
