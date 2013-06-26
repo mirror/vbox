@@ -1729,12 +1729,14 @@ STDMETHODIMP Machine::COMSETTER(VideoCaptureEnabled)(BOOL fEnabled)
     mHWData.backup();
     mHWData->mVideoCaptureEnabled = fEnabled;
 
+    alock.release();
+    rc = onVideoCaptureChange();
+    alock.acquire();
+    if (FAILED(rc)) return rc;
+
     /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
         saveSettings(NULL);
-
-    alock.release();
-    rc = onVideoCaptureChange();
 
     return rc;
 }
