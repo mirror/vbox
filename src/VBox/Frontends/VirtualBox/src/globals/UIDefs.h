@@ -226,6 +226,18 @@ struct StorageSlot
 };
 Q_DECLARE_METATYPE(StorageSlot);
 
+/* Runtime UI menu types: */
+enum RuntimeMenuType
+{
+    RuntimeMenuType_Invalid = 0,
+    RuntimeMenuType_Machine = RT_BIT(0),
+    RuntimeMenuType_View    = RT_BIT(1),
+    RuntimeMenuType_Devices = RT_BIT(2),
+    RuntimeMenuType_Debug   = RT_BIT(3),
+    RuntimeMenuType_Help    = RT_BIT(4),
+    RuntimeMenuType_All     = 0xFF
+};
+
 /* Details element type: */
 enum DetailsElementType
 {

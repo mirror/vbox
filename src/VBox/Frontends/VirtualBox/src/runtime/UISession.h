@@ -25,7 +25,7 @@
 #include <QEvent>
 
 /* GUI includes: */
-#include "UIMachineDefs.h"
+#include "UIDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -98,8 +98,8 @@ public:
     KMachineState machineState() const { return m_machineState; }
     UIMachineLogic* machineLogic() const;
     QWidget* mainMachineWindow() const;
-    QMenu* newMenu(UIMainMenuType fOptions = UIMainMenuType_All);
-    QMenuBar* newMenuBar(UIMainMenuType fOptions = UIMainMenuType_All);
+    QMenu* newMenu(RuntimeMenuType fOptions = RuntimeMenuType_All);
+    QMenuBar* newMenuBar(RuntimeMenuType fOptions = RuntimeMenuType_All);
     QCursor cursor() const { return m_cursor; }
 
     bool isSaved() const { return machineState() == KMachineState_Saved; }

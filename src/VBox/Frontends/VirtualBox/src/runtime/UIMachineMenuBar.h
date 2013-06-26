@@ -20,7 +20,7 @@
 #define __UIMachineMenuBar_h__
 
 /* Local includes */
-#include "UIMachineDefs.h"
+#include "UIDefs.h"
 
 /* Global includes */
 #include <QList>
@@ -39,12 +39,12 @@ public:
 
     UIMachineMenuBar(const CMachine &machine);
 
-    QMenu* createMenu(UIMainMenuType fOptions = UIMainMenuType_All);
-    QMenuBar* createMenuBar(UIMainMenuType fOptions = UIMainMenuType_All);
+    QMenu* createMenu(RuntimeMenuType fOptions = RuntimeMenuType_All);
+    QMenuBar* createMenuBar(RuntimeMenuType fOptions = RuntimeMenuType_All);
 
 protected:
 
-    QList<QMenu*> prepareSubMenus(UIMainMenuType fOptions = UIMainMenuType_All);
+    QList<QMenu*> prepareSubMenus(RuntimeMenuType fOptions = RuntimeMenuType_All);
     void prepareMenuMachine(QMenu *pMenu);
     void prepareMenuView(QMenu *pMenu);
     void prepareMenuDevices(QMenu *pMenu);
