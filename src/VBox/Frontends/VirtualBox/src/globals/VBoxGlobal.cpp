@@ -3768,6 +3768,25 @@ bool VBoxGlobal::shouldWeAllowSnapshotOperations(CMachine &machine,
 }
 
 /* static */
+RuntimeMenuType VBoxGlobal::restrictedRuntimeMenuTypes(CMachine &machine)
+{
+    /* Prepare result: */
+    RuntimeMenuType result = RuntimeMenuType_Invalid;
+    /* Load restricted runtime-menu-types: */
+    QString strList(machine.GetExtraData(GUI_RestrictedRuntimeMenus));
+    QStringList list = strList.split(',');
+    /* Convert list into appropriate values: */
+    foreach (const QString &strValue, list)
+    {
+        RuntimeMenuType value = gpConverter->fromInternalString<RuntimeMenuType>(strValue);
+        if (value != RuntimeMenuType_Invalid)
+            result = static_cast<RuntimeMenuType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+/* static */
 QList<IndicatorType> VBoxGlobal::restrictedStatusBarIndicators(CMachine &machine)
 {
     /* Prepare result: */

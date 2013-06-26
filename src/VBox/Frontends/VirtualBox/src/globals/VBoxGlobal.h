@@ -385,6 +385,7 @@ public:
                                     bool fIncludingMachineGeneralCheck = false);
     static bool shouldWeAutoMountGuestScreens(CMachine &machine, bool fIncludingSanityCheck = true);
     static bool shouldWeAllowSnapshotOperations(CMachine &machine, bool fIncludingSanityCheck = true);
+    static RuntimeMenuType restrictedRuntimeMenuTypes(CMachine &machine);
     static QList<IndicatorType> restrictedStatusBarIndicators(CMachine &machine);
     static QList<MachineCloseAction> restrictedMachineCloseActions(CMachine &machine);
     static QList<GlobalSettingsPageType> restrictedGlobalSettingsPages(CVirtualBox &vbox);

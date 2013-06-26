@@ -222,8 +222,11 @@ void UIMachineWindowNormal::prepareMenu()
     UIMachineWindow::prepareMenu();
 
 #ifndef Q_WS_MAC
-    /* Prepare menu-bar: */
-    setMenuBar(uisession()->newMenuBar());
+    /* Prepare application menu-bar: */
+    CMachine machine = session().GetMachine();
+    RuntimeMenuType restrictedMenus = VBoxGlobal::restrictedRuntimeMenuTypes(machine);
+    RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
+    setMenuBar(uisession()->newMenuBar(allowedMenus));
 #endif /* !Q_WS_MAC */
 }
 
