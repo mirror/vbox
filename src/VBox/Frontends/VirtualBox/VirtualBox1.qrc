@@ -254,5 +254,6 @@
         <file alias="drag_drop_disabled_16px.png">images/drag_drop_disabled_16px.png</file>
         <file alias="shared_clipboard_16px.png">images/shared_clipboard_16px.png</file>
         <file alias="shared_clipboard_disabled_16px.png">images/shared_clipboard_disabled_16px.png</file>
+        <file alias="movie_reel_16px.png">images/movie_reel_16px.png</file>
     </qresource>
 </RCC>
