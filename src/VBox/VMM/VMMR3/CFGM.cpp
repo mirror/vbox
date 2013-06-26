@@ -1910,9 +1910,9 @@ static int cfgmR3InsertLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *ppL
 
 
 /**
- * Remove a node.
+ * Removes a node.
  *
- * @param   pNode       Parent node.
+ * @param   pNode       The node to remove.
  */
 VMMR3DECL(void) CFGMR3RemoveNode(PCFGMNODE pNode)
 {
@@ -2017,6 +2017,23 @@ static void cfgmR3FreeValue(PVM pVM, PCFGMLEAF pLeaf)
         }
         pLeaf->enmType = (CFGMVALUETYPE)0;
     }
+}
+
+/**
+ * Destroys a tree created with CFGMR3CreateTree or CFGMR3DuplicateSubTree.
+ *
+ * @returns VBox status code.
+ * @param   pRoot       The root node of the tree.
+ */
+VMMR3DECL(int) CFGMR3DestroyTree(PCFGMNODE pRoot)
+{
+    if (pRoot)
+        return VINF_SUCCESS;
+    AssertReturn(!pRoot->pParent, VERR_INVALID_PARAMETER);
+    AssertReturn(!pRoot->pVM || pRoot != pRoot->pVM->cfgm.s.pRoot, VERR_ACCESS_DENIED);
+
+    CFGMR3RemoveNode(pRoot);
+    return VINF_SUCCESS;
 }
 
 
