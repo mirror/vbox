@@ -19,12 +19,14 @@
 
 /* Qt includes: */
 #include <QTimer>
+#include <QPainter>
 
 /* GUI includes: */
 #include "UIIndicatorsPool.h"
 #include "VBoxGlobal.h"
 #include "UIMachineDefs.h"
 #include "UIConverter.h"
+#include "UIAnimationFramework.h"
 
 /* COM includes: */
 #include "CConsole.h"
@@ -490,6 +492,9 @@ protected:
 class UIIndicatorVideoCapture : public QIStateIndicator
 {
     Q_OBJECT;
+    Q_PROPERTY(double rotationAngleStart READ rotationAngleStart);
+    Q_PROPERTY(double rotationAngleFinal READ rotationAngleFinal);
+    Q_PROPERTY(double rotationAngle READ rotationAngle WRITE setRotationAngle);
 
 public:
 
@@ -497,23 +502,23 @@ public:
     enum UIIndicatorStateVideoCapture
     {
         UIIndicatorStateVideoCapture_Disabled = 0,
-        UIIndicatorStateVideoCapture_Enabled  = 1,
-        UIIndicatorStateVideoCapture_Writing  = 2
+        UIIndicatorStateVideoCapture_Enabled  = 1
     };
 
     /* Constructor: */
     UIIndicatorVideoCapture(CSession &session)
         : m_session(session)
-        , m_pUpdateTimer(new QTimer(this))
+        , m_pAnimation(0)
+        , m_dRotationAngle(0)
     {
         /* Assign state icons: */
-        setStateIcon(UIIndicatorStateVideoCapture_Disabled, QPixmap(":/video_capture_disabled_16px.png"));
-        setStateIcon(UIIndicatorStateVideoCapture_Enabled,  QPixmap(":/video_capture_16px.png"));
-        setStateIcon(UIIndicatorStateVideoCapture_Writing,  QPixmap(":/video_capture_write_16px.png"));
+        setStateIcon(UIIndicatorStateVideoCapture_Disabled, QPixmap(":/movie_reel_16px.png"));
+        setStateIcon(UIIndicatorStateVideoCapture_Enabled, QPixmap(":/movie_reel_16px.png"));
 
-        /* Connect timer to update active state: */
-        connect(m_pUpdateTimer, SIGNAL(timeout()), SLOT(sltUpdateState()));
-        m_pUpdateTimer->start(500);
+        /* Prepare *enabled* state animation: */
+        m_pAnimation = UIAnimationLoop::installAnimationLoop(this, "rotationAngle",
+                                                                   "rotationAngleStart", "rotationAngleFinal",
+                                                                   1000);
 
         /* Translate finally: */
         retranslateUi();
@@ -539,7 +544,6 @@ public:
                 break;
             }
             case UIIndicatorStateVideoCapture_Enabled:
-            case UIIndicatorStateVideoCapture_Writing:
             {
                 strToolTip += QApplication::translate("UIIndicatorsPool", "<nobr><b>Video capture file:</b> %1</nobr>")
                                                                           .arg(machine.GetVideoCaptureFile());
@@ -551,17 +555,27 @@ public:
         setToolTip(strToolTip);
     }
 
-protected slots:
+public slots:
 
-    /* Handler: Update stuff: */
-    void sltUpdateState()
+    /* Handler: State stuff: */
+    void setState(int iState)
     {
-        /* Toggle state from 'Enabled' to 'Writing': */
-        if (state() == UIIndicatorStateVideoCapture_Enabled)
-            setState(UIIndicatorStateVideoCapture_Writing);
-        /* Toggle state from 'Writing' to 'Enabled': */
-        else if (state() == UIIndicatorStateVideoCapture_Writing)
-            setState(UIIndicatorStateVideoCapture_Enabled);
+        /* Update animation state: */
+        switch (iState)
+        {
+            case UIIndicatorStateVideoCapture_Disabled:
+                m_pAnimation->stop();
+                m_dRotationAngle = 0;
+                break;
+            case UIIndicatorStateVideoCapture_Enabled:
+                m_pAnimation->start();
+                break;
+            default:
+                break;
+        }
+
+        /* Call to base-class: */
+        QIStateIndicator::setState(iState);
     }
 
 protected:
@@ -572,10 +586,36 @@ protected:
         updateAppearance();
     }
 
+    /* Handler: Paint stuff: */
+    void paintEvent(QPaintEvent*)
+    {
+        /* Create new painter: */
+        QPainter painter(this);
+        /* Configure painter for *enabled* state: */
+        if (state() == UIIndicatorStateVideoCapture_Enabled)
+        {
+            /* Shift rotation origin according pixmap center: */
+            painter.translate(height() / 2, height() / 2);
+            /* Rotate painter: */
+            painter.rotate(rotationAngle());
+            /* Unshift rotation origin according pixmap center: */
+            painter.translate(- height() / 2, - height() / 2);
+        }
+        /* Draw contents: */
+        drawContents(&painter);
+    }
+
+    /* Properties: Rotation stuff: */
+    double rotationAngleStart() const { return 0; }
+    double rotationAngleFinal() const { return 360; }
+    double rotationAngle() const { return m_dRotationAngle; }
+    void setRotationAngle(double dRotationAngle) { m_dRotationAngle = dRotationAngle; update(); }
+
     /* For compatibility reason we do it here,
      * later this should be moved to QIStateIndicator. */
     CSession &m_session;
-    QTimer *m_pUpdateTimer;
+    UIAnimationLoop *m_pAnimation;
+    double m_dRotationAngle;
 };
 
 class UIIndicatorFeatures : public QIStateIndicator
