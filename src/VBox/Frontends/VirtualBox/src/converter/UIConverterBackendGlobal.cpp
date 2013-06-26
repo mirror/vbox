@@ -31,6 +31,7 @@
 /* Determines if <Object of type X> can be converted to object of other type.
  * These functions returns 'true' for all allowed conversions. */
 template<> bool canConvert<StorageSlot>() { return true; }
+template<> bool canConvert<RuntimeMenuType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
 template<> bool canConvert<GlobalSettingsPageType>() { return true; }
 template<> bool canConvert<MachineSettingsPageType>() { return true; }
@@ -263,6 +264,46 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
         }
     }
     return result;
+}
+
+/* QString <= RuntimeMenuType: */
+template<> QString toInternalString(const RuntimeMenuType &runtimeMenuType)
+{
+    QString strResult;
+    switch (runtimeMenuType)
+    {
+        case RuntimeMenuType_Machine: strResult = "Machine"; break;
+        case RuntimeMenuType_View:    strResult = "View"; break;
+        case RuntimeMenuType_Devices: strResult = "Devices"; break;
+        case RuntimeMenuType_Debug:   strResult = "Debug"; break;
+        case RuntimeMenuType_Help:    strResult = "Help"; break;
+        case RuntimeMenuType_All:     strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for indicator type=%d", runtimeMenuType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* RuntimeMenuType <= QString: */
+template<> RuntimeMenuType fromInternalString<RuntimeMenuType>(const QString &strRuntimeMenuType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;  QList<RuntimeMenuType> values;
+    keys << "Machine"; values << RuntimeMenuType_Machine;
+    keys << "View";    values << RuntimeMenuType_View;
+    keys << "Devices"; values << RuntimeMenuType_Devices;
+    keys << "Debug";   values << RuntimeMenuType_Debug;
+    keys << "Help";    values << RuntimeMenuType_Help;
+    keys << "All";     values << RuntimeMenuType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strRuntimeMenuType, Qt::CaseInsensitive))
+        return RuntimeMenuType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strRuntimeMenuType, Qt::CaseInsensitive)));
 }
 
 /* QString <= DetailsElementType: */
@@ -552,3 +593,4 @@ template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QStri
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strMachineCloseAction, Qt::CaseInsensitive)));
 }
+
