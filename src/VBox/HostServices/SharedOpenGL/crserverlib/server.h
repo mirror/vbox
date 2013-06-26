@@ -386,6 +386,10 @@ DECLINLINE(void) crServerCtxSwitchPostprocess(CR_SERVER_CTX_SWITCH *pData)
 
 void crServerInitTmpCtxDispatch();
 
+int crServerVBoxParseNumerics(const char *pszStr, const int defaultVal);
+void CrDpEnter(PCR_DISPLAY pDisplay);
+void CrDpLeave(PCR_DISPLAY pDisplay);
+
 //#define VBOX_WITH_CRSERVER_DUMPER
 #ifdef VBOX_WITH_CRSERVER_DUMPER
 void crServerDumpCheckTerm();
@@ -403,9 +407,6 @@ void crServerDumpFramesCheck();
 void crServerDumpState();
 void crServerDumpDrawel(const char*pszFormat, ...);
 void crServerDumpDrawelv(GLuint idx, const char*pszElFormat, uint32_t cbEl, const void *pvVal, uint32_t cVal);
-int crServerVBoxParseNumerics(const char *pszStr, const int defaultVal);
-void CrDpEnter(PCR_DISPLAY pDisplay);
-void CrDpLeave(PCR_DISPLAY pDisplay);
 
 extern unsigned long g_CrDbgDumpEnabled;
 extern unsigned long g_CrDbgDumpDraw;
