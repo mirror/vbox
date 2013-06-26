@@ -70,4 +70,43 @@ private:
     QPropertyAnimation *m_pReverseAnimation;
 };
 
+/* UIAnimationLoop factory: */
+class UIAnimationLoop : public QObject
+{
+    Q_OBJECT;
+
+public:
+
+    /* API: Factory stuff: */
+    static UIAnimationLoop* installAnimationLoop(QWidget *pTarget, const char *pszPropertyName,
+                                                 const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
+                                                 int iAnimationDuration = 300);
+
+    /* API: Update stuff: */
+    void update();
+
+    /* API: Loop stuff: */
+    void start();
+    void stop();
+
+protected:
+
+    /* Constructor: */
+    UIAnimationLoop(QWidget *pParent, const char *pszPropertyName,
+                    const char *pszValuePropertyNameStart, const char *pszValuePropertyNameFinal,
+                    int iAnimationDuration);
+
+private:
+
+    /* Helper: Prepare stuff: */
+    void prepare();
+
+    /* Variables: */
+    const char *m_pszPropertyName;
+    const char *m_pszValuePropertyNameStart;
+    const char *m_pszValuePropertyNameFinal;
+    int m_iAnimationDuration;
+    QPropertyAnimation *m_pAnimation;
+};
+
 #endif /* __UIAnimationFramework_h__ */
