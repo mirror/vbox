@@ -23,12 +23,9 @@
 #include <QTimer>
 #include <QSpacerItem>
 #include <QResizeEvent>
-#ifdef Q_WS_MAC
-# include <QMenuBar>
-#endif /* Q_WS_MAC */
 
 /* GUI includes: */
-#include "UIDefs.h"
+#include "VBoxGlobal.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindowScale.h"
@@ -37,12 +34,8 @@
 #endif /* Q_WS_WIN */
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
-# include "VBoxGlobal.h"
 # include "UIImageTools.h"
 #endif /* Q_WS_MAC */
-
-/* COM includes: */
-#include "CMachine.h"
 
 UIMachineWindowScale::UIMachineWindowScale(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : UIMachineWindow(pMachineLogic, uScreenId)
@@ -78,7 +71,10 @@ void UIMachineWindowScale::prepareMenu()
     UIMachineWindow::prepareMenu();
 
     /* Prepare menu: */
-    m_pMainMenu = uisession()->newMenu();
+    CMachine machine = session().GetMachine();
+    RuntimeMenuType restrictedMenus = VBoxGlobal::restrictedRuntimeMenuTypes(machine);
+    RuntimeMenuType allowedMenus = static_cast<RuntimeMenuType>(RuntimeMenuType_All ^ restrictedMenus);
+    m_pMainMenu = uisession()->newMenu(allowedMenus);
 }
 
 #ifdef Q_WS_MAC

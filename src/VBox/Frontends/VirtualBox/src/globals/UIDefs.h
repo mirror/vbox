@@ -123,6 +123,7 @@ namespace UIDefs
     extern const char* GUI_HideDetails;
 
     /* Machine-window declarations: */
+    extern const char* GUI_RestrictedRuntimeMenus;
     extern const char* GUI_Input_MachineShortcuts;
     extern const char* GUI_LastNormalWindowPosition;
     extern const char* GUI_LastScaleWindowPosition;

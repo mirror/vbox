@@ -51,6 +51,7 @@ const char* UIDefs::GUI_PreventSnapshotOperations = "GUI/PreventSnapshotOperatio
 const char* UIDefs::GUI_HideDetails = "GUI/HideDetails";
 
 /* Machine-window definitions: */
+const char* UIDefs::GUI_RestrictedRuntimeMenus = "GUI/RestrictedRuntimeMenus";
 const char* UIDefs::GUI_Input_MachineShortcuts = "GUI/Input/MachineShortcuts";
 const char* UIDefs::GUI_LastNormalWindowPosition = "GUI/LastNormalWindowPosition";
 const char* UIDefs::GUI_LastScaleWindowPosition = "GUI/LastScaleWindowPosition";
