@@ -106,7 +106,7 @@ UIMachineMenuBar::UIMachineMenuBar(const CMachine &machine)
 {
 }
 
-QMenu* UIMachineMenuBar::createMenu(UIMainMenuType fOptions /* = UIMainMenuType_All */)
+QMenu* UIMachineMenuBar::createMenu(RuntimeMenuType fOptions /* = RuntimeMenuType_All */)
 {
     /* Create empty menu: */
     QMenu *pMenu = new QIMenu;
@@ -119,7 +119,7 @@ QMenu* UIMachineMenuBar::createMenu(UIMainMenuType fOptions /* = UIMainMenuType_
     return pMenu;
 }
 
-QMenuBar* UIMachineMenuBar::createMenuBar(UIMainMenuType fOptions /* = UIMainMenuType_All */)
+QMenuBar* UIMachineMenuBar::createMenuBar(RuntimeMenuType fOptions /* = RuntimeMenuType_All */)
 {
     /* Create empty menubar: */
     QMenuBar *pMenuBar = new UIMenuBar;
@@ -132,13 +132,13 @@ QMenuBar* UIMachineMenuBar::createMenuBar(UIMainMenuType fOptions /* = UIMainMen
     return pMenuBar;
 }
 
-QList<QMenu*> UIMachineMenuBar::prepareSubMenus(UIMainMenuType fOptions /* = UIMainMenuType_All */)
+QList<QMenu*> UIMachineMenuBar::prepareSubMenus(RuntimeMenuType fOptions /* = RuntimeMenuType_All */)
 {
     /* Create empty submenu list: */
     QList<QMenu*> preparedSubMenus;
 
     /* Machine submenu: */
-    if (fOptions & UIMainMenuType_Machine)
+    if (fOptions & RuntimeMenuType_Machine)
     {
         QMenu *pMenuMachine = gActionPool->action(UIActionIndexRuntime_Menu_Machine)->menu();
         prepareMenuMachine(pMenuMachine);
@@ -146,7 +146,7 @@ QList<QMenu*> UIMachineMenuBar::prepareSubMenus(UIMainMenuType fOptions /* = UIM
     }
 
     /* View submenu: */
-    if (fOptions & UIMainMenuType_View)
+    if (fOptions & RuntimeMenuType_View)
     {
         QMenu *pMenuView = gActionPool->action(UIActionIndexRuntime_Menu_View)->menu();
         prepareMenuView(pMenuView);
@@ -154,7 +154,7 @@ QList<QMenu*> UIMachineMenuBar::prepareSubMenus(UIMainMenuType fOptions /* = UIM
     }
 
     /* Devices submenu: */
-    if (fOptions & UIMainMenuType_Devices)
+    if (fOptions & RuntimeMenuType_Devices)
     {
         QMenu *pMenuDevices = gActionPool->action(UIActionIndexRuntime_Menu_Devices)->menu();
         prepareMenuDevices(pMenuDevices);
@@ -163,7 +163,7 @@ QList<QMenu*> UIMachineMenuBar::prepareSubMenus(UIMainMenuType fOptions /* = UIM
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Debug submenu: */
-    if (fOptions & UIMainMenuType_Debug)
+    if (fOptions & RuntimeMenuType_Debug)
     {
         CMachine machine; /** @todo we should try get the machine here. But we'll
                            *        probably be fine with the cached values. */
@@ -177,7 +177,7 @@ QList<QMenu*> UIMachineMenuBar::prepareSubMenus(UIMainMenuType fOptions /* = UIM
 #endif
 
     /* Help submenu: */
-    if (fOptions & UIMainMenuType_Help)
+    if (fOptions & RuntimeMenuType_Help)
     {
         QMenu *pMenuHelp = gActionPool->action(UIActionIndex_Menu_Help)->menu();
         prepareMenuHelp(pMenuHelp);
