@@ -1232,9 +1232,13 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
     {
         uint32_t u32GuestFlags = VMMDEV_SETCREDENTIALS_GUESTLOGON;
 
-        int rc = m_pVMMDev->getVMMDevPort()->pfnSetCredentials(m_pVMMDev->getVMMDevPort(),
-                     pszUser, pszPassword, pszDomain, u32GuestFlags);
-        AssertRC(rc);
+        PPDMIVMMDEVPORT pDevPort = m_pVMMDev->getVMMDevPort();
+        if (pDevPort)
+        {
+            int rc = pDevPort->pfnSetCredentials(m_pVMMDev->getVMMDevPort(),
+                                                 pszUser, pszPassword, pszDomain, u32GuestFlags);
+            AssertRC(rc);
+        }
     }
 
     return VINF_SUCCESS;
