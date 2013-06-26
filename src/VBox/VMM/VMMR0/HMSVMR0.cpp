@@ -31,7 +31,7 @@
 #include <VBox/vmm/tm.h>
 
 #ifdef DEBUG_ramshankar
-# define HMVMX_SYNC_FULL_GUEST_STATE
+# define HMSVM_SYNC_FULL_GUEST_STATE
 # define HMSVM_ALWAYS_TRAP_ALL_XCPTS
 # define HMSVM_ALWAYS_TRAP_PF
 #endif
@@ -2560,7 +2560,7 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     pVmcb->ctrl.NestedPaging.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
 
-#ifdef HMVMX_SYNC_FULL_GUEST_STATE
+#ifdef HMSVM_SYNC_FULL_GUEST_STATE
     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
 #endif
 
@@ -2715,8 +2715,9 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             }
             else if ((uint8_t)(pSvmTransient->u8GuestTpr >> 4) != pVmcb->ctrl.IntCtrl.n.u8VTPR)
             {
-                int rc = PDMApicSetTPR(pVCpu, (pVmcb->ctrl.IntCtrl.n.u8VTPR << 4));
+                int rc = PDMApicSetTPR(pVCpu, pVmcb->ctrl.IntCtrl.n.u8VTPR << 4);
                 AssertRC(rc);
+                pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_APIC_STATE;
             }
         }
     }
@@ -3758,7 +3759,16 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
         else
             AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretWrmsr failed rc=%Rrc\n", rc));
 
-        if (pCtx->ecx == MSR_K6_EFER)
+        /* If this is an X2APIC WRMSR access, update the APIC state as well. */
+        if (   pCtx->ecx >= MSR_IA32_X2APIC_START
+            && pCtx->ecx <= MSR_IA32_X2APIC_END)
+        {
+            /* We've already saved the APIC related guest-state (TPR) in hmR0SvmPostRunGuest(). When full APIC register
+             * virtualization is implemented we'll have to make sure APIC state is saved from the VMCB before
+               EMInterpretWrmsr() changes it. */
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_APIC_STATE;
+        }
+        else if (pCtx->ecx == MSR_K6_EFER)
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_EFER_MSR;
         else if (pCtx->ecx == MSR_IA32_TSC)
             pSvmTransient->fUpdateTscOffsetting = true;
@@ -4260,6 +4270,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         /* Successfully synced shadow pages tables or emulated an MMIO instruction. */
         TRPMResetTrap(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPF);
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_APIC_STATE;
         return rc;
     }
     else if (rc == VINF_EM_RAW_GUEST_TRAP)
