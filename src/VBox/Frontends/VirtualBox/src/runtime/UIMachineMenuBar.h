@@ -53,7 +53,6 @@ protected:
 #endif
     void prepareMenuHelp(QMenu *pMenu);
 
-    bool m_fIsFirstTime;
     CMachine m_machine;
 };
 
