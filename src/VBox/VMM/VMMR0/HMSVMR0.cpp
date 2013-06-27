@@ -2196,7 +2196,6 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
         if (fInject)
         {
-            Log4(("TPR=%#x\n", pVmcb->ctrl.IntCtrl.n.u8VTPR));
             hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
             pVCpu->hm.s.Event.fPending = false;
             STAM_COUNTER_INC(&pVCpu->hm.s.StatIntReinject);
