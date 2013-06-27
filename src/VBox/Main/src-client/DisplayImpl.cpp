@@ -2722,6 +2722,10 @@ int Display::VideoCaptureStart()
     BSTR strFile;
     hrc = pMachine->COMGETTER(VideoCaptureFile)(&strFile);
     AssertComRCReturn(hrc, VERR_COM_UNEXPECTED);
+    RTTIMESPEC ts;
+    RTTimeNow(&ts);
+    RTTIME time;
+    RTTimeExplode(&time, &ts);
     for (unsigned uScreen = 0; uScreen < mcMonitors; uScreen++)
     {
         char *pszAbsPath = RTPathAbsDup(com::Utf8Str(strFile).c_str());
@@ -2750,10 +2754,6 @@ int Display::VideoCaptureStart()
                 RTStrFree(pszName);
                 pszName = NULL;
 
-                static RTTIMESPEC ts = { 0 };
-                RTTimeNow(&ts);
-                RTTIME time;
-                RTTimeExplode(&time, &ts);
                 if (mcMonitors > 1)
                     rc = RTStrAPrintf(&pszName, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ-%u%s",
                                       pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
