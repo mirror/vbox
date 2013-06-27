@@ -540,15 +540,17 @@ Function ${un}CheckForWDDMCapability
 
 !if $%VBOX_WITH_WDDM% == "1"
   ; If we're on a 32-bit Windows Vista / 7 / 8 we can use the WDDM driver
-  ${If} $g_strWinVersion == "Vista"
+  ${If}   $g_strWinVersion == "Vista"
   ${OrIf} $g_strWinVersion == "7"
   ${OrIf} $g_strWinVersion == "8"
+  ${OrIf} $g_strWinVersion == "8_1"
     StrCpy $g_bCapWDDM "true"
     ${LogVerbose} "OS is WDDM driver capable"
   ${EndIf}
   ; If we're on Windows 8 we *have* to use the WDDM driver, so select it
   ; by default
-  ${If} $g_strWinVersion == "8"
+  ${If}   $g_strWinVersion == "8"
+  ${OrIf} $g_strWinVersion == "8_1"
     StrCpy $g_bWithWDDM "true"
     ${LogVerbose} "OS needs WDDM driver by default"
   ${EndIf}
@@ -569,9 +571,10 @@ Function ${un}CheckForCapabilities
   StrCpy $g_iSystemMode $0
 
   ; Does the guest have a DLL cache?
-  ${If} $g_strWinVersion == "Vista"
+  ${If}   $g_strWinVersion == "Vista"
   ${OrIf} $g_strWinVersion == "7"
   ${OrIf} $g_strWinVersion == "8"
+  ${OrIf} $g_strWinVersion == "8_1"
     StrCpy $g_bCapDllCache "true"
     ${LogVerbose}  "OS has a DLL cache"
   ${EndIf}
