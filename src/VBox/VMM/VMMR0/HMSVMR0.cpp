@@ -2177,7 +2177,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
     SVMEVENT Event;
     Event.u = 0;
-    if (pVCpu->hm.s.Event.fPending)                            /* First, inject any pending HM events. */
+    if (pVCpu->hm.s.Event.fPending)                                /* First, inject any pending HM events. */
     {
         Event.u = pVCpu->hm.s.Event.u64IntrInfo;
         Assert(Event.n.u1Valid);
