@@ -92,8 +92,9 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SharedFolder, ISharedFolder)
 NS_DECL_CLASSINFO(VRDEServerInfo)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDEServerInfo, IVRDEServerInfo)
 #ifdef VBOX_WITH_EXTPACK
-NS_DECL_CLASSINFO(ExtPackFile)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(ExtPackFile, IExtPackFile, IExtPackBase)
+// deliberately omit ExtPackFile as it's unusable in the client context
+// NS_DECL_CLASSINFO(ExtPackFile)
+// NS_IMPL_THREADSAFE_ISUPPORTS2_CI(ExtPackFile, IExtPackFile, IExtPackBase)
 NS_DECL_CLASSINFO(ExtPack)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(ExtPack, IExtPack, IExtPackBase)
 NS_DECL_CLASSINFO(ExtPackManager)
