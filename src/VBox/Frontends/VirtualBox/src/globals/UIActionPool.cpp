@@ -660,37 +660,7 @@ void UIActionPool::createMenus()
      * This means we have to recreate all QMenus when creating a new QMenuBar.
      * For simplicity we doing this on all platforms right now. */
 
-    /* Recreate 'help' menu items as well.
-     * This makes sure they are removed also from the Application menu: */
-    if (m_pool[UIActionIndex_Simple_Contents])
-        delete m_pool[UIActionIndex_Simple_Contents];
-    m_pool[UIActionIndex_Simple_Contents] = new UIActionSimpleContents(this);
-    if (m_pool[UIActionIndex_Simple_WebSite])
-        delete m_pool[UIActionIndex_Simple_WebSite];
-    m_pool[UIActionIndex_Simple_WebSite] = new UIActionSimpleWebSite(this);
-    if (m_pool[UIActionIndex_Simple_ResetWarnings])
-        delete m_pool[UIActionIndex_Simple_ResetWarnings];
-    m_pool[UIActionIndex_Simple_ResetWarnings] = new UIActionSimpleResetWarnings(this);
-    if (m_pool[UIActionIndex_Simple_NetworkAccessManager])
-        delete m_pool[UIActionIndex_Simple_NetworkAccessManager];
-    m_pool[UIActionIndex_Simple_NetworkAccessManager] = new UIActionSimpleNetworkAccessManager(this);
-#if defined(Q_WS_MAC) && (QT_VERSION >= 0x040700)
-    /* For whatever reason, Qt doesn't fully remove items with a
-     * ApplicationSpecificRole from the application menu. Although the QAction
-     * itself is deleted, a dummy entry is leaved back in the menu.
-     * Hiding before deletion helps. */
-    m_pool[UIActionIndex_Simple_CheckForUpdates]->setVisible(false);
-#endif
-#if !(defined(Q_WS_MAC) && (QT_VERSION < 0x040700))
-    if (m_pool[UIActionIndex_Simple_CheckForUpdates])
-        delete m_pool[UIActionIndex_Simple_CheckForUpdates];
-    m_pool[UIActionIndex_Simple_CheckForUpdates] = new UIActionSimpleCheckForUpdates(this);
-    if (m_pool[UIActionIndex_Simple_About])
-        delete m_pool[UIActionIndex_Simple_About];
-    m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
-#endif
-
-    /* 'Help' menu itself: */
+    /* 'Help' menu: */
     if (m_pool[UIActionIndex_Menu_Help])
         delete m_pool[UIActionIndex_Menu_Help];
     m_pool[UIActionIndex_Menu_Help] = new UIActionMenuHelp(this);
