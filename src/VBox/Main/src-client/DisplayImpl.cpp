@@ -2751,8 +2751,7 @@ int Display::VideoCaptureStart()
                 pszName = NULL;
 
                 static RTTIMESPEC ts = { 0 };
-                if (!RTTimeSpecGetNano(&ts))
-                    RTTimeNow(&ts);
+                RTTimeNow(&ts);
                 RTTIME time;
                 RTTimeExplode(&time, &ts);
                 if (mcMonitors > 1)
