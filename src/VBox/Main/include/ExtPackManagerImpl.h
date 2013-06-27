@@ -22,6 +22,7 @@
 #include <VBox/ExtPack/ExtPack.h>
 #include <iprt/fs.h>
 
+#if !defined(VBOX_COM_INPROC)
 /**
  * An extension pack file.
  */
@@ -84,6 +85,7 @@ private:
 
     friend class ExtPackManager;
 };
+#endif
 
 
 /**
@@ -214,10 +216,12 @@ class ATL_NO_VTABLE ExtPackManager :
 
     /** @name Internal interfaces used by other Main classes.
      * @{ */
+#if !defined(VBOX_COM_INPROC)
     static DECLCALLBACK(int) doInstallThreadProc(RTTHREAD hThread, void *pvJob);
     HRESULT     doInstall(ExtPackFile *a_pExtPackFile, bool a_fReplace, Utf8Str const *a_pstrDisplayInfo);
     static DECLCALLBACK(int) doUninstallThreadProc(RTTHREAD hThread, void *pvJob);
     HRESULT     doUninstall(const Utf8Str *a_pstrName, bool a_fForcedRemoval, const Utf8Str *a_pstrDisplayInfo);
+#endif
     void        callAllVirtualBoxReadyHooks(void);
     void        callAllConsoleReadyHooks(IConsole *a_pConsole);
     void        callAllVmCreatedHooks(IMachine *a_pMachine);
