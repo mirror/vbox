@@ -905,21 +905,23 @@ void UIMachineSettingsDisplay::lookForCorrespondingPreset(QComboBox *pWhere, con
 int UIMachineSettingsDisplay::calculateBitRate(int iFrameWidth, int iFrameHeight, int iFrameRate, int iQuality)
 {
     /* Linear quality<=>bit-rate scale-factor: */
-    return   (double)iQuality
-           * (double)iFrameWidth * (double)iFrameHeight * (double)iFrameRate
-           / (double)10 /* translate quality to [%] */
-           / (double)1024 /* translate bit-rate to [kbps] */
-           / (double)18.75 /* linear scale factor */;
+    double dResult = (double)iQuality
+                   * (double)iFrameWidth * (double)iFrameHeight * (double)iFrameRate
+                   / (double)10 /* translate quality to [%] */
+                   / (double)1024 /* translate bit-rate to [kbps] */
+                   / (double)18.75 /* linear scale factor */;
+    return (int)dResult;
 }
 
 /* static */
 int UIMachineSettingsDisplay::calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate)
 {
     /* Linear bit-rate<=>quality scale-factor: */
-    return   (double)iBitRate
-           / (double)iFrameWidth / (double)iFrameHeight / (double)iFrameRate
-           * (double)10 /* translate quality to [%] */
-           * (double)1024 /* translate bit-rate to [kbps] */
-           * (double)18.75 /* linear scale factor */;
+    double dResult = (double)iBitRate
+                   / (double)iFrameWidth / (double)iFrameHeight / (double)iFrameRate
+                   * (double)10 /* translate quality to [%] */
+                   * (double)1024 /* translate bit-rate to [kbps] */
+                   * (double)18.75 /* linear scale factor */;
+    return (int)dResult;
 }
 
