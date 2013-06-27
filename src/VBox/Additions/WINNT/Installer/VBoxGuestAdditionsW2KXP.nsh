@@ -120,6 +120,7 @@ change_res:
   ${ElseIf} $g_strWinVersion == "XP"
   ${OrIf} $g_strWinVersion == "7"
   ${OrIf} $g_strWinVersion == "8"
+  ${OrIf} $g_strWinVersion == "8_1"
     StrCpy $reg_path_device "SYSTEM\CurrentControlSet\Control\Video\$dev_id\0000"
     StrCpy $reg_path_monitor "SYSTEM\CurrentControlSet\Control\VIDEO\$dev_id\0000\Mon00000001"
   ${Else}
