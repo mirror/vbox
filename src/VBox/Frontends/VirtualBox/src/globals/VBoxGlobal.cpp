@@ -3540,22 +3540,15 @@ QList <QPair <QString, QString> > VBoxGlobal::FloppyBackends()
 /* static */
 QString VBoxGlobal::documentsPath()
 {
-    QString path;
-#if QT_VERSION < 0x040400
-    path = QDir::homePath();
-#else
-    path = QDesktopServices::storageLocation (QDesktopServices::DocumentsLocation);
-#endif
-
-    /* Make sure the path exists */
-    QDir dir (path);
+    QString path = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+    QDir dir(path);
     if (dir.exists())
-        return QDir::cleanPath (dir.canonicalPath());
+        return QDir::cleanPath(dir.canonicalPath());
     else
     {
-        dir.setPath (QDir::homePath() + "/Documents");
+        dir.setPath(QDir::homePath() + "/Documents");
         if (dir.exists())
-            return QDir::cleanPath (dir.canonicalPath());
+            return QDir::cleanPath(dir.canonicalPath());
         else
             return QDir::homePath();
     }
