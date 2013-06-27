@@ -101,8 +101,7 @@ private:
 UIMachineMenuBar::UIMachineMenuBar(const CMachine &machine)
     /* On the Mac we add some items only the first time, cause otherwise they
      * will be merged more than once to the application menu by Qt. */
-    : m_fIsFirstTime(true)
-    , m_machine(machine)
+    : m_machine(machine)
 {
 }
 
@@ -282,29 +281,13 @@ void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu)
     pMenu->addSeparator();
     pMenu->addAction(gActionPool->action(UIActionIndex_Simple_ResetWarnings));
     pMenu->addSeparator();
-
     pMenu->addAction(gActionPool->action(UIActionIndex_Simple_NetworkAccessManager));
-
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
 #endif /* !Q_WS_MAC */
-#if defined(Q_WS_MAC) && (QT_VERSION < 0x040700)
-    if (m_fIsFirstTime)
-# endif
-        pMenu->addAction(gActionPool->action(UIActionIndex_Simple_About));
+    pMenu->addAction(gActionPool->action(UIActionIndex_Simple_About));
 
-#if defined(Q_WS_MAC) && (QT_VERSION < 0x040700)
-    /* Because this connections are done to VBoxGlobal, they are needed once only.
-     * Otherwise we will get the slots called more than once. */
-    if (m_fIsFirstTime)
-    {
-#endif
-        VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_About), SIGNAL(triggered()),
-                            &msgCenter(), SLOT(sltShowHelpAboutDialog()));
-#if defined(Q_WS_MAC) && (QT_VERSION < 0x040700)
-    }
-#endif
-
+    /* Prepare connections: */
     VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_Contents), SIGNAL(triggered()),
                         &msgCenter(), SLOT(sltShowHelpHelpDialog()));
     VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()),
@@ -313,8 +296,8 @@ void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu)
                         &msgCenter(), SLOT(sltResetSuppressedMessages()));
     VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_NetworkAccessManager), SIGNAL(triggered()),
                         gNetworkManager, SLOT(show()));
-
-    m_fIsFirstTime = false;
+    VBoxGlobal::connect(gActionPool->action(UIActionIndex_Simple_About), SIGNAL(triggered()),
+                        &msgCenter(), SLOT(sltShowHelpAboutDialog()));
 }
 
 #include "UIMachineMenuBar.moc"
