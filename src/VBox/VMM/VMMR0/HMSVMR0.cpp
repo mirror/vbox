@@ -741,7 +741,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     Assert(pVM->hm.s.svm.fSupported);
 
-    bool fFlushPending = pVM->hm.s.svm.fAlwaysFlushTLB | VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_FLUSH);
+    bool fFlushPending = pVM->hm.s.svm.fAlwaysFlushTLB || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_FLUSH);
 
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)
