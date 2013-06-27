@@ -505,7 +505,7 @@
               as Mac OS X, that old chipset is no longer well supported. As a
               result, VirtualBox 4.0 introduced an emulation of the more
               modern ICH9 chipset, which supports PCI express, three PCI
-              buses, PCI-to-PCI bridges and Message Signalled Interrupts
+              buses, PCI-to-PCI bridges and Message Signaled Interrupts
               (MSI). This allows modern operating systems to address more PCI
               devices and no longer requires IRQ sharing. Note that the ICH9
               support is experimental and not recommended for guest operating

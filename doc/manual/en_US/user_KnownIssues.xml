@@ -285,7 +285,7 @@
           </note>
           To solve this problem, one should uninstall the VirtualBox WDDM Video driver manually.
           To do that open Device Manager, and check whether the Display Adapter is named 
-          "VirtualBox Graphics Adapter ..". If no - there is nothing to be done. If yes - right-clik 
+          "VirtualBox Graphics Adapter ..". If no - there is nothing to be done. If yes - right-click 
           the VirtualBox Graphics Adapter in Device Manager, select "Uninstall", check "Delete the driver software for this device"
           and click "OK". Once uninstallation is done - in Device Manager go to menu "Action" and select 
           "Scan for hardware changes" to make the propper (Windows default) driver be picked up for the Graphics adapter.
