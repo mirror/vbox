@@ -182,11 +182,7 @@ void QILabel::mouseMoveEvent (QMouseEvent *aEvent)
         mimeData->setText (removeHtmlTags (mText));
         drag->setMimeData (mimeData);
         /* Start the dragging */
-#if QT_VERSION >= 0x040300
         drag->exec();
-#else /* QT_VERSION >= 0x040300 */
-        drag->start (Qt::MoveAction);
-#endif /* QT_VERSION >= 0x040300 */
     }
     else
         QLabel::mouseMoveEvent (aEvent);
