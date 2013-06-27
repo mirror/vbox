@@ -27,7 +27,9 @@
 
 #include "ProgressImpl.h"
 
-#include "VirtualBoxImpl.h"
+#if !defined(VBOX_COM_INPROC)
+# include "VirtualBoxImpl.h"
+#endif
 #include "VirtualBoxErrorInfoImpl.h"
 
 #include "Logging.h"

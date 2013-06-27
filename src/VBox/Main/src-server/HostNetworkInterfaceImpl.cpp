@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,8 +21,10 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 #include "netif.h"
-#include "Performance.h"
-#include "PerformanceImpl.h"
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+# include "Performance.h"
+# include "PerformanceImpl.h"
+#endif
 
 #include <iprt/cpp/utils.h>
 
@@ -86,6 +88,8 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, Bstr aShortName, Guid aG
     return S_OK;
 }
 
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+
 void HostNetworkInterface::registerMetrics(PerformanceCollector *aCollector, ComPtr<IUnknown> objptr)
 {
     LogFlowThisFunc(("mShortName={%ls}, mInterfaceName={%ls}, mGuid={%s}, mSpeedMbits=%u\n",
@@ -139,6 +143,8 @@ void HostNetworkInterface::unregisterMetrics(PerformanceCollector *aCollector, C
     aCollector->unregisterMetricsFor(objptr, name + "/*");
     aCollector->unregisterBaseMetricsFor(objptr, name);
 }
+
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 #ifdef VBOX_WITH_HOSTNETIF_API
 
