@@ -4383,16 +4383,6 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     int rc = DBGFRZTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), pCtx->dr[6]);
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
-        /* X86_DR7_GD will be cleared if DRx accesses should be trapped inside the guest. */
-        pCtx->dr[7] &= ~X86_DR7_GD;
-
-        /* Paranoia. */
-        pCtx->dr[7] &= 0xffffffff;                                              /* Upper 32 bits MBZ. */
-        pCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* MBZ. */
-        pCtx->dr[7] |= 0x400;                                                   /* MB1. */
-
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
-
         /* Reflect the exception back to the guest. */
         SVMEVENT Event;
         Event.u          = 0;
