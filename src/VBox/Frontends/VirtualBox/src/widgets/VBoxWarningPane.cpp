@@ -22,13 +22,12 @@
 
 /* Local includes */
 #include "VBoxWarningPane.h"
-#include "VBoxGlobal.h"
 
 VBoxWarningPane::VBoxWarningPane(QWidget *pParent)
     : QWidget(pParent)
 {
     QHBoxLayout *pLayout = new QHBoxLayout(this);
-    VBoxGlobal::setLayoutMargin(pLayout, 0);
+    pLayout->setContentsMargins(0, 0, 0, 0);
     pLayout->addWidget(&m_icon);
     pLayout->addWidget(&m_label);
 }

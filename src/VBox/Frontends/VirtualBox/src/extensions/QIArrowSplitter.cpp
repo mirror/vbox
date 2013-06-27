@@ -18,10 +18,10 @@
  */
 
 /* VBox includes */
-#include "VBoxGlobal.h"
 #include "QIArrowSplitter.h"
 
 /* Qt includes */
+#include <QApplication>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 
@@ -34,7 +34,7 @@ QIArrowSplitter::QIArrowSplitter (QWidget *aChild, QWidget *aParent)
     , mChild (aChild)
 {
     /* Setup main-layout */
-    VBoxGlobal::setLayoutMargin (mMainLayout, 0);
+    mMainLayout->setContentsMargins(0, 0, 0, 0);
     mMainLayout->setSpacing(3);
 
     /* Setup buttons */
@@ -48,7 +48,7 @@ QIArrowSplitter::QIArrowSplitter (QWidget *aChild, QWidget *aParent)
 
     /* Setup button layout */
     QHBoxLayout *buttonLayout = new QHBoxLayout();
-    VBoxGlobal::setLayoutMargin (buttonLayout, 0);
+    buttonLayout->setContentsMargins(0, 0, 0, 0);
     buttonLayout->setSpacing (0);
     buttonLayout->addWidget (mSwitchButton);
     buttonLayout->addStretch();

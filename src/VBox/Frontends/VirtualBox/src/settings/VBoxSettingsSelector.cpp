@@ -20,11 +20,12 @@
 /* Global includes */
 #include <QHeaderView>
 #include <QTabWidget>
+#include <QLayout>
+#include <QAction>
 
 /* Local includes */
 #include "VBoxSettingsSelector.h"
 #include "UISettingsPage.h"
-#include "VBoxGlobal.h"
 #include "UIToolBar.h"
 #include "QITreeWidget.h"
 #include "QITabWidget.h"
@@ -230,7 +231,7 @@ QWidget *VBoxSettingsTreeViewSelector::addItem (const QString & /* aBigIcon */,
                                                                                   << aLink);
         twitem->setIcon (treeWidget_Category, item->icon());
         aPage->setContentsMargins (0, 0, 0, 0);
-        VBoxGlobal::setLayoutMargin (aPage->layout(), 0);
+        aPage->layout()->setContentsMargins(0, 0, 0, 0);
         result = aPage;
     }
     return result;
@@ -423,7 +424,7 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon,
         mActionGroup->addAction (item->action());
         mTbSelector->addAction (item->action());
         aPage->setContentsMargins (0, 0, 0, 0);
-        VBoxGlobal::setLayoutMargin (aPage->layout(), 0);
+        aPage->layout()->setContentsMargins(0, 0, 0, 0);
         result = aPage;
     }
     else if (aParentId == -1 &&
@@ -445,7 +446,7 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon,
         {
             QTabWidget *tabWidget = parent->tabWidget();
             aPage->setContentsMargins (9, 5, 9, 9);
-            VBoxGlobal::setLayoutMargin (aPage->layout(), 0);
+            aPage->layout()->setContentsMargins(0, 0, 0, 0);
             QIcon icon1 (aSmallIcon);
             if (!aSmallIconDisabled.isEmpty())
                 icon1.addFile (aSmallIconDisabled, QSize(), QIcon::Disabled);
