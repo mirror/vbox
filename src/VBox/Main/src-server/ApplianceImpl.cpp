@@ -1012,6 +1012,16 @@ void Appliance::disksWeight()
             m->ulTotalDisksMB += pHD->ulSizeMB;
             ++m->cDisks;
         }
+
+        avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_CDROM);
+        for (itH = avsdeHDs.begin();
+             itH != avsdeHDs.end();
+             ++itH)
+        {
+            const VirtualSystemDescriptionEntry *pHD = *itH;
+            m->ulTotalDisksMB += pHD->ulSizeMB;
+            ++m->cDisks;
+        }
     }
 
 }
