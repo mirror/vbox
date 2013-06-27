@@ -272,11 +272,7 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
 
 void UIMultiScreenLayout::calculateHostMonitorCount()
 {
-#if (QT_VERSION >= 0x040600)
     m_cHostScreens = QApplication::desktop()->screenCount();
-#else /* (QT_VERSION >= 0x040600) */
-    m_cHostScreens = QApplication::desktop()->numScreens();
-#endif /* !(QT_VERSION >= 0x040600) */
 }
 
 void UIMultiScreenLayout::calculateGuestScreenCount()
