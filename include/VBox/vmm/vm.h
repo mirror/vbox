@@ -498,7 +498,7 @@ typedef struct VMCPU
  * @param   pVCpu     VMCPU Handle.
  * @param   fFlag   The flag to set.
  */
-#define VMCPU_FF_SET(pVCpu, fFlag)    ASMAtomicOrU32(&(pVCpu)->fLocalForcedActions, (fFlag))
+#define VMCPU_FF_SET(pVCpu, fFlag)          ASMAtomicOrU32(&(pVCpu)->fLocalForcedActions, (fFlag))
 
 /** @def VM_FF_CLEAR
  * Clears a force action flag.
@@ -521,7 +521,7 @@ typedef struct VMCPU
  * @param   pVCpu     VMCPU Handle.
  * @param   fFlag   The flag to clear.
  */
-#define VMCPU_FF_CLEAR(pVCpu, fFlag)  ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlag))
+#define VMCPU_FF_CLEAR(pVCpu, fFlag)        ASMAtomicAndU32(&(pVCpu)->fLocalForcedActions, ~(fFlag))
 
 /** @def VM_FF_ISSET
  * Checks if a force action flag is set.
@@ -545,7 +545,7 @@ typedef struct VMCPU
  * @param   pVM     VM Handle.
  * @param   fFlags  The flags to check for.
  */
-#define VM_FF_IS_PENDING(pVM, fFlags)       ((pVM)->fGlobalForcedActions & (fFlags))
+#define VM_FF_IS_PENDING(pVM, fFlags)       RT_BOOL((pVM)->fGlobalForcedActions & (fFlags))
 
 /** @def VM_FF_TESTANDCLEAR
  * Checks if one (!) force action in the specified set is pending and clears it atomically
@@ -573,7 +573,7 @@ typedef struct VMCPU
  * @param   pVCpu   VMCPU Handle.
  * @param   fFlags  The flags to check for.
  */
-#define VMCPU_FF_IS_PENDING(pVCpu, fFlags)  ((pVCpu)->fLocalForcedActions & (fFlags))
+#define VMCPU_FF_IS_PENDING(pVCpu, fFlags)  RT_BOOL((pVCpu)->fLocalForcedActions & (fFlags))
 
 /** @def VM_FF_ISPENDING
  * Checks if one or more force action in the specified set is pending while one
