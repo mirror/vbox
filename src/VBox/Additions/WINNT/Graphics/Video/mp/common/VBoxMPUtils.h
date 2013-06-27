@@ -93,7 +93,8 @@ typedef enum
     WINXP     = 3,
     WINVISTA  = 4,
     WIN7      = 5,
-    WIN8      = 6
+    WIN8      = 6,
+    WIN8_1    = 7
 } vboxWinVersion_t;
 
 RT_C_DECLS_BEGIN

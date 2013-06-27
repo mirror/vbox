@@ -61,7 +61,9 @@ vboxWinVersion_t VBoxQueryWinVersion()
 
     if(major == 6)
     {
-        if (minor == 2)
+        if (minor == 3)
+            s_WinVersion = WIN8_1;
+        else if (minor == 2)
             s_WinVersion = WIN8;
         else if (minor == 1)
             s_WinVersion = WIN7;
