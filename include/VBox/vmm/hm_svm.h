@@ -56,13 +56,13 @@
 #define AMD_CPUID_SVM_FEATURE_EDX_FLUSH_BY_ASID             RT_BIT(6)
 /** Bit 7 - DecodeAssist - Indicate decode assist is supported. */
 #define AMD_CPUID_SVM_FEATURE_EDX_DECODE_ASSIST             RT_BIT(7)
-/** Where did we get this from? */
-#define AMD_CPUID_SVM_FEATURE_EDX_SSE_3_5_DISABLE           RT_BIT(9)
 /** Bit 10 - PauseFilter - Indicates support for the PAUSE intercept filter. */
 #define AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER              RT_BIT(10)
 /** Bit 12 - PauseFilterThreshold - Indicates support for the PAUSE
  *  intercept filter cycle count threshold. */
 #define AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER_THRESHOLD    RT_BIT(12)
+/** Bit 13 - AVIC - Advanced Virtual Interrupt Controller. */
+#define AMD_CPUID_SVM_FEATURE_EDX_AVIC                      RT_BIT(13)
 /** @} */
 
 
