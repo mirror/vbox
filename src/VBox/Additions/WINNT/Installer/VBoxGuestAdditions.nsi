@@ -653,6 +653,7 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
   ;
 
   ; Which OS are we using?
+  ; @todo Use logic lib here
 !if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
   StrCmp $g_strWinVersion "NT4" nt4     ; Windows NT 4.0
 !endif
@@ -662,6 +663,7 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
   StrCmp $g_strWinVersion "Vista" vista ; Windows Vista
   StrCmp $g_strWinVersion "7" vista     ; Windows 7
   StrCmp $g_strWinVersion "8" vista     ; Windows 8
+  StrCmp $g_strWinVersion "8_1" vista   ; Windows 8.1 / Windows 2012 Server R2
 
   ${If} $g_bForceInstall == "true"
     Goto vista ; Assume newer OS than we know of ...
@@ -697,7 +699,7 @@ w2k: ; Windows 2000 and XP ...
   Call W2K_Main
   goto success
 
-vista: ; Windows Vista / Windows 7 / Windows 8
+vista: ; Windows Vista / Windows 7 / Windows 8(.1)
 
   ; Check requirments; this function can abort the installation if necessary!
   Call Vista_CheckForRequirements
