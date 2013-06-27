@@ -1067,7 +1067,6 @@ DECLINLINE(int) hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMC
             if (!(u64GuestCR0 & X86_CR0_NE))
             {
                 Log4(("hmR0SvmLoadGuestControlRegs: Intercepting Guest CR0.MP Old-style FPU handling!!!\n"));
-                pVmcb->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_MF);
                 fInterceptMF = true;
             }
         }
@@ -1433,8 +1432,6 @@ DECLINLINE(int) hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX
             hmR0SvmSetMsrPermission(pVCpu, MSR_K8_LSTAR, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
             pVCpu->hm.s.svm.fSyncVTpr = true;
         }
-
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_IOPM_MSRPM;
     }
     else
     {
@@ -4394,8 +4391,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         pCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));    /* MBZ. */
         pCtx->dr[7] |= 0x400;                                                   /* MB1. */
 
-        PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
 
         /* Reflect the exception back to the guest. */
         SVMEVENT Event;
