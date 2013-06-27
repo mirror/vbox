@@ -669,7 +669,8 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         /* Virtualize masking of INTR interrupts. (reads/writes from/to CR8 go to the V_TPR register) */
         pVmcb->ctrl.IntCtrl.n.u1VIrqMasking = 1;
 
-        /* Ignore the priority in the TPR; we take into account the guest TPR anyway while delivering interrupts. */
+        /* Ignore the priority in the TPR. This is necessary for delivering PIC style (ExtInt) interrupts and we currently
+           deliver both PIC and APIC interrupts alike. See hmR0SvmInjectPendingEvent() */
         pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR   = 1;
 
         /* Set IO and MSR bitmap permission bitmap physical addresses. */
@@ -679,10 +680,10 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         /* No LBR virtualization. */
         pVmcb->ctrl.u64LBRVirt = 0;
 
-        /* Initially set all VMCB clean bits to 0 indicating that everything should be loaded from memory. */
+        /* Initially set all VMCB clean bits to 0 indicating that everything should be loaded from the VMCB in memory. */
         pVmcb->ctrl.u64VmcbCleanBits = 0;
 
-        /* The guest ASID MBNZ, set it to 1. The host uses 0. */
+        /* The host ASID MBZ, for the guest start with 1. */
         pVmcb->ctrl.TLBCtrl.n.u32ASID = 1;
 
         /*
@@ -2154,7 +2155,7 @@ DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
         pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_VINTR;
         pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
 
-        Log4(("Setting virtual interrupt intercept\n"));
+        Log4(("Setting virtual interrupt pending intercept\n"));
     }
 }
 
@@ -2171,6 +2172,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!TRPMHasTrap(pVCpu));
 
     const bool fIntShadow = !!hmR0SvmGetGuestIntrShadow(pVCpu, pCtx);
+    const bool fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
     PSVMVMCB pVmcb        = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
 
     SVMEVENT Event;
@@ -2180,9 +2182,14 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
         Event.u = pVCpu->hm.s.Event.u64IntrInfo;
         Assert(Event.n.u1Valid);
         bool fInject = true;
-        if (   fIntShadow
-            && (   Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ
-                || Event.n.u3Type == SVM_EVENT_NMI))
+        if (   Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ
+            && (   fBlockInt
+                || fIntShadow))
+        {
+            fInject = false;
+        }
+        else if (   Event.n.u3Type == SVM_EVENT_NMI
+                 && fIntShadow)
         {
             fInject = false;
         }
@@ -2194,7 +2201,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
         }
         else
             hmR0SvmSetVirtIntrIntercept(pVmcb);
-    }                                                          /** @todo SMI. SMIs take priority over NMIs. */
+    }                                                              /** @todo SMI. SMIs take priority over NMIs. */
     else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))   /* NMI. NMIs take priority over regular interrupts . */
     {
         if (!fIntShadow)
@@ -2214,7 +2221,6 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     else if (VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)))
     {
         /* Check if there are guest external interrupts (PIC/APIC) pending and inject them, if the guest can receive them. */
-        const bool fBlockInt = !(pCtx->eflags.u32 & X86_EFL_IF);
         if (   !fBlockInt
             && !fIntShadow)
         {
@@ -2590,8 +2596,8 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     if (   pSvmTransient->fUpdateTscOffsetting
         || HMR0GetCurrentCpu()->idCpu != pVCpu->hm.s.idLastCpu)
     {
-        pSvmTransient->fUpdateTscOffsetting = false;
         hmR0SvmUpdateTscOffsetting(pVCpu);
+        pSvmTransient->fUpdateTscOffsetting = false;
     }
 
     /* Flush the appropriate tagged-TLB entries. */
