@@ -230,7 +230,7 @@ typedef struct
     /** Replacement instruction size. */
     uint32_t                cbNewOp;
     /** Instruction type. */
-    HMTPRINSTR          enmType;
+    HMTPRINSTR              enmType;
     /** Source operand. */
     uint32_t                uSrcOperand;
     /** Destination operand. */
