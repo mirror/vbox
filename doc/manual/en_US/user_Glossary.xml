@@ -228,7 +228,7 @@
       <glossterm>MSI</glossterm>
 
       <glossdef>
-        <para>Message Signalled Interrupts, as supported by modern chipsets
+        <para>Message Signaled Interrupts, as supported by modern chipsets
         such as the ICH9; see <xref linkend="settings-motherboard" />. As
         opposed to traditional pin-based interrupts, with MSI, a small amount
         of data can accompany the actual interrupt message. This reduces the

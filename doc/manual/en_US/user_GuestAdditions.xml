@@ -522,7 +522,7 @@
 
       <itemizedlist>
         <listitem>
-          <para>Oracle Linux as of version 5 including UEK kernels</para>
+          <para>Oracle Linux as of version 5 including UEK kernels;</para>
         </listitem>
 
         <listitem>
@@ -784,8 +784,8 @@
               <listitem>
                 <para>Install the GNU C compiler and the kernel development
                 packages using <screen>yum install gcc</screen> followed by
-                <screen>yum install kernel-devel</screen> If the Oracle UEK
-                kernel is used, use <screen>yum install kernel-uek-devel</screen>
+                <screen>yum install kernel-devel</screen> For Oracle UEK
+                kernels, use <screen>yum install kernel-uek-devel</screen>
                 to install the UEK kernel headers.</para>
               </listitem>
 
@@ -1340,12 +1340,12 @@ $</screen>
       <para>The Aero theme is not enabled by default. To enable it<itemizedlist>
           <listitem>
             <para>In Windows Vista guest: right-click on the desktop, in the
-            contect menu select "Personalize", then select "Windows Color and Appearance"
+            context menu select "Personalize", then select "Windows Color and Appearance"
             in the "Personalization" window, in the "Appearance Settings" dialog select
             "Windows Aero" and press "OK"</para></listitem>
           <listitem>
             <para>In Windows 7 guest: right-click on the desktop, in the
-            contect menu select "Personalize" and select any Aero theme
+            context menu select "Personalize" and select any Aero theme
             in the "Personalization" window</para></listitem>
           </itemizedlist>
         </para>

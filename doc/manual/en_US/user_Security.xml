@@ -342,7 +342,7 @@
           <para>The web services are not started by default. Please refer to
           <xref linkend="vboxwebsrv-daemon"/> to find out how to start this
           service and how to enable SSL/TLS support. It has to be started as
-          a regular user and only the VMs of that user can be controled. By
+          a regular user and only the VMs of that user can be controlled. By
           default, the service binds to localhost preventing any remote connection.</para>
         </listitem>
         

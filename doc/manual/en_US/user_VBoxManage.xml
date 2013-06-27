@@ -1596,7 +1596,7 @@ Virtual system 0:
     <title>VBoxManage adoptstate</title>
 
     <para>If you have a saved state file (<computeroutput>.sav</computeroutput>)
-    that is seperate from the VM configuration, you can use this command to
+    that is separate from the VM configuration, you can use this command to
     "adopt" the file. This will change the VM to saved state and when you
     start it, VirtualBox will attempt to restore it from the saved state file
     you indicated. This command should only be used in special setups.</para>

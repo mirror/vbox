@@ -2637,7 +2637,7 @@ svccfg -s svc:/application/virtualbox/balloonctrl:default setprop config/balloon
       which controls whether the autostart service allows or denies to start a VM
       for users which are not in the exception list.
       The exception list starts with <computeroutput>exception_list</computeroutput>
-      and contains a comma seperated list with usernames. Furthermore a separate
+      and contains a comma separated list with usernames. Furthermore a separate
       startup delay can be configured for every user to avoid overloading the host.
       A sample configuration is given below:</para>
 
