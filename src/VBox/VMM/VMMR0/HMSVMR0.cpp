@@ -2155,7 +2155,7 @@ DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
         pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_VINTR;
         pVmcb->ctrl.u64VmcbCleanBits &= ~(HMSVM_VMCB_CLEAN_INTERCEPTS | HMSVM_VMCB_CLEAN_TPR);
 
-        Log4(("Setting virtual interrupt pending intercept\n"));
+        Log4(("Setting VINTR intercept\n"));
     }
 }
 
@@ -2196,8 +2196,10 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
         if (fInject)
         {
-            pVCpu->hm.s.Event.fPending = false;
+            Log4(("TPR=%#x\n", pVmcb->ctrl.IntCtrl.n.u8VTPR));
             hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
+            pVCpu->hm.s.Event.fPending = false;
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatIntReinject);
         }
         else
             hmR0SvmSetVirtIntrIntercept(pVmcb);
@@ -2719,7 +2721,7 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 int rc = PDMApicSetTPR(pVCpu, (pMixedCtx->msrLSTAR & 0xff));
                 AssertRC(rc);
             }
-            else if ((uint8_t)(pSvmTransient->u8GuestTpr >> 4) != pVmcb->ctrl.IntCtrl.n.u8VTPR)
+            else if (pSvmTransient->u8GuestTpr != pVmcb->ctrl.IntCtrl.n.u8VTPR)
             {
                 int rc = PDMApicSetTPR(pVCpu, pVmcb->ctrl.IntCtrl.n.u8VTPR << 4);
                 AssertRC(rc);
