@@ -32,10 +32,6 @@
 
 #include <Carbon/Carbon.h>
 
-#if QT_VERSION < 0x040400
-extern void qt_mac_set_menubar_icons(bool b);
-#endif /* QT_VERSION < 0x040400 */
-
 NativeNSViewRef darwinToNativeView(QWidget *pWidget)
 {
     if (pWidget)
@@ -182,12 +178,7 @@ QString darwinSystemLanguage(void)
 void darwinDisableIconsInMenus(void)
 {
     /* No icons in the menu of a mac application. */
-#if QT_VERSION < 0x040400
-    qt_mac_set_menubar_icons(false);
-#else /* QT_VERSION < 0x040400 */
-    /* Available since Qt 4.4 only */
     QApplication::instance()->setAttribute(Qt::AA_DontShowIconsInMenus, true);
-#endif /* QT_VERSION >= 0x040400 */
 }
 
 int darwinWindowToolBarHeight(QWidget *pWidget)
