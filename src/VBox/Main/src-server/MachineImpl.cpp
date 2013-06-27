@@ -251,13 +251,15 @@ Machine::MediaData::~MediaData()
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-Machine::Machine()
-    : mCollectorGuest(NULL),
-      mPeer(NULL),
-      mParent(NULL),
-      mSerialPorts(),
-      mParallelPorts(),
-      uRegistryNeedsSaving(0)
+Machine::Machine() :
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
+    mCollectorGuest(NULL),
+#endif
+    mPeer(NULL),
+    mParent(NULL),
+    mSerialPorts(),
+    mParallelPorts(),
+    uRegistryNeedsSaving(0)
 {}
 
 Machine::~Machine()
@@ -12581,19 +12583,13 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     // and others need mParent lock, and USB needs host lock.
     AutoMultiWriteLock3 multilock(mParent, mParent->host(), this COMMA_LOCKVAL_SRC_POS);
 
-#if 0
-    // Trigger async cleanup tasks, avoid doing things here which are not
-    // vital to be done immediately and maybe need more locks. This calls
-    // Machine::unregisterMetrics().
-    mParent->onMachineUninit(mPeer);
-#else
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
     /*
      * It is safe to call Machine::unregisterMetrics() here because
      * PerformanceCollector::samplerCallback no longer accesses guest methods
      * holding the lock.
      */
     unregisterMetrics(mParent->performanceCollector(), mPeer);
-#endif
     /* The guest must be unregistered after its metrics (@bugref{5949}). */
     LogAleksey(("{%p} " LOG_FN_FMT ": mCollectorGuest=%p\n",
                 this, __PRETTY_FUNCTION__, mCollectorGuest));
@@ -12603,6 +12599,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         // delete mCollectorGuest; => CollectorGuestManager::destroyUnregistered()
         mCollectorGuest = NULL;
     }
+#endif
 
     if (aReason == Uninit::Abnormal)
     {
@@ -12796,6 +12793,7 @@ STDMETHODIMP SessionMachine::ReportVmStatistics(ULONG aValidStats, ULONG aCpuUse
                                                 ULONG aBalloonedVMM, ULONG aSharedVMM,
                                                 ULONG aVmNetRx, ULONG aVmNetTx)
 {
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
     if (mCollectorGuest)
         mCollectorGuest->updateStats(aValidStats, aCpuUser, aCpuKernel, aCpuIdle,
                                      aMemTotal, aMemFree, aMemBalloon, aMemShared,
@@ -12803,6 +12801,25 @@ STDMETHODIMP SessionMachine::ReportVmStatistics(ULONG aValidStats, ULONG aCpuUse
                                      aBalloonedVMM, aSharedVMM, aVmNetRx, aVmNetTx);
 
     return S_OK;
+#else
+    NOREF(aValidStats);
+    NOREF(aCpuUser);
+    NOREF(aCpuKernel);
+    NOREF(aCpuIdle);
+    NOREF(aMemTotal);
+    NOREF(aMemFree);
+    NOREF(aMemBalloon);
+    NOREF(aMemShared);
+    NOREF(aMemCache);
+    NOREF(aPageTotal);
+    NOREF(aAllocVMM);
+    NOREF(aFreeVMM);
+    NOREF(aBalloonedVMM);
+    NOREF(aSharedVMM);
+    NOREF(aVmNetRx);
+    NOREF(aVmNetTx);
+    return E_NOTIMPL;
+#endif
 }
 
 /**

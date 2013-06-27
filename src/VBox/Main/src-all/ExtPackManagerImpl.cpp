@@ -45,7 +45,9 @@
 #include "Global.h"
 #include "ProgressImpl.h"
 #include "SystemPropertiesImpl.h"
+#if !defined(VBOX_COM_INPROC)
 #include "VirtualBoxImpl.h"
+#endif
 
 
 /*******************************************************************************
@@ -80,6 +82,7 @@ public:
     Utf8Str             strWhyUnusable;
 };
 
+#if !defined(VBOX_COM_INPROC)
 /**
  * Private extension pack data.
  */
@@ -101,6 +104,7 @@ public:
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
+#endif
 
 /**
  * Private extension pack data.
@@ -150,8 +154,10 @@ struct ExtPackManager::Data
     Utf8Str             strCertificatDirPath;
     /** The list of installed extension packs. */
     ExtPackList         llInstalledExtPacks;
+#if !defined(VBOX_COM_INPROC)
     /** Pointer to the VirtualBox object, our parent. */
     VirtualBox         *pVirtualBox;
+#endif
     /** The current context. */
     VBOXEXTPACKCTX      enmContext;
 #if !defined(RT_OS_WINDOWS) && !defined(RT_OS_DARWIN)
@@ -162,6 +168,7 @@ struct ExtPackManager::Data
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
+#if !defined(VBOX_COM_INPROC)
 /**
  * Extension pack installation job.
  */
@@ -705,6 +712,7 @@ STDMETHODIMP ExtPackFile::Install(BOOL a_fReplace, IN_BSTR a_bstrDisplayInfo, IP
     return hrc;
 }
 
+#endif
 
 
 
@@ -1883,7 +1891,9 @@ HRESULT ExtPackManager::initExtPackManager(VirtualBox *a_pVirtualBox, VBOXEXTPAC
     m = new Data;
     m->strBaseDir           = szBaseDir;
     m->strCertificatDirPath = szCertificatDir;
+#if !defined(VBOX_COM_INPROC)
     m->pVirtualBox          = a_pVirtualBox;
+#endif
     m->enmContext           = a_enmContext;
 
     /*
@@ -2028,6 +2038,7 @@ STDMETHODIMP ExtPackManager::Find(IN_BSTR a_bstrName, IExtPack **a_pExtPack)
     return hrc;
 }
 
+#if !defined(VBOX_COM_INPROC)
 STDMETHODIMP ExtPackManager::OpenExtPackFile(IN_BSTR a_bstrTarballAndDigest, IExtPackFile **a_ppExtPackFile)
 {
     CheckComArgNotNull(a_bstrTarballAndDigest);
@@ -2116,6 +2127,7 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
 
     return hrc;
 }
+#endif
 
 STDMETHODIMP ExtPackManager::Cleanup(void)
 {
@@ -2448,6 +2460,7 @@ void ExtPackManager::removeExtPack(const char *a_pszName)
     AssertMsgFailed(("%s\n", a_pszName));
 }
 
+#if !defined(VBOX_COM_INPROC)
 /**
  * Refreshes the specified extension pack.
  *
@@ -2848,6 +2861,7 @@ void ExtPackManager::callAllVirtualBoxReadyHooks(void)
             it++;
     }
 }
+#endif
 
 /**
  * Calls the pfnConsoleReady hook for all working extension packs.
@@ -2875,6 +2889,7 @@ void ExtPackManager::callAllConsoleReadyHooks(IConsole *a_pConsole)
     }
 }
 
+#if !defined(VBOX_COM_INPROC)
 /**
  * Calls the pfnVMCreated hook for all working extension packs.
  *
@@ -2893,6 +2908,7 @@ void ExtPackManager::callAllVmCreatedHooks(IMachine *a_pMachine)
     for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); it++)
         (*it)->callVmCreatedHook(m->pVirtualBox, a_pMachine, &autoLock);
 }
+#endif
 
 /**
  * Calls the pfnVMConfigureVMM hook for all working extension packs.

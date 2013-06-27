@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2012 Oracle Corporation
+ * Copyright (C) 2004-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -157,6 +157,7 @@ typedef SOLARISDVD *PSOLARISDVD;
 #include <iprt/x86.h>
 
 #include "VBox/com/MultiResult.h"
+#include "VBox/com/array.h"
 
 #include <stdio.h>
 
@@ -2893,7 +2894,9 @@ HRESULT Host::updateNetIfList()
     /* Make a copy as the original may be partially destroyed later. */
     listCopy = list;
     HostNetworkInterfaceList::iterator itOld, itNew;
+# ifdef VBOX_WITH_RESOURCE_USAGE_API
     PerformanceCollector *aCollector = m->pParent->performanceCollector();
+# endif
     for (itOld = m->llNetIfs.begin(); itOld != m->llNetIfs.end(); ++itOld)
     {
         bool fGone = true;
@@ -2911,7 +2914,11 @@ HRESULT Host::updateNetIfList()
             }
         }
         if (fGone)
+        {
+# ifdef VBOX_WITH_RESOURCE_USAGE_API
             (*itOld)->unregisterMetrics(aCollector, this);
+# endif
+        }
     }
     /*
      * Need to set the references to VirtualBox object in all interface objects
@@ -2931,7 +2938,11 @@ HRESULT Host::updateNetIfList()
             LogRel(("Host::updateNetIfList: failed to get interface type for %ls\n", n.raw()));
         }
         else if (t == HostNetworkInterfaceType_Bridged)
+        {
+# ifdef VBOX_WITH_RESOURCE_USAGE_API
             (*itNew)->registerMetrics(aCollector, this);
+# endif
+        }
     }
     m->llNetIfs = list;
     return S_OK;
@@ -3170,6 +3181,8 @@ void Host::unregisterMetrics (PerformanceCollector *aCollector)
     aCollector->unregisterBaseMetricsFor(this);
 }
 
+#endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
 
 /* static */
 void Host::generateMACAddress(Utf8Str &mac)
@@ -3184,7 +3197,5 @@ void Host::generateMACAddress(Utf8Str &mac)
     mac = Utf8StrFmt("080027%02X%02X%02X",
                      guid.raw()->au8[0], guid.raw()->au8[1], guid.raw()->au8[2]);
 }
-
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

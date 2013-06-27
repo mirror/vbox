@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -99,9 +99,12 @@ private:
     VirtualBoxBase * const  mParent;
 
     /* weak parents (only one of them is not null) */
+#if !defined(VBOX_COM_INPROC)
     Machine * const         mMachine;
-    Console * const         mConsole;
     VirtualBox * const      mVirtualBox;
+#else
+    Console * const         mConsole;
+#endif
 
     struct Data;            // opaque data struct, defined in SharedFolderImpl.cpp
     Data *m;

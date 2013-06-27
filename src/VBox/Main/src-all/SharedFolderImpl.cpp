@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,8 +16,10 @@
  */
 
 #include "SharedFolderImpl.h"
-#include "VirtualBoxImpl.h"
-#include "MachineImpl.h"
+#if !defined(VBOX_COM_INPROC)
+# include "VirtualBoxImpl.h"
+# include "MachineImpl.h"
+#endif
 #include "ConsoleImpl.h"
 
 #include "AutoCaller.h"
@@ -50,9 +52,12 @@ struct SharedFolder::Data
 
 SharedFolder::SharedFolder()
     : mParent(NULL),
+#if !defined(VBOX_COM_INPROC)
       mMachine(NULL),
-      mConsole(NULL),
       mVirtualBox(NULL)
+#else
+      mConsole(NULL)
+#endif
 {
     m = new Data;
 }
@@ -77,6 +82,7 @@ void SharedFolder::FinalRelease()
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
+#if !defined(VBOX_COM_INPROC)
 /**
  *  Initializes the shared folder object.
  *
@@ -147,42 +153,7 @@ HRESULT SharedFolder::initCopy(Machine *aMachine, SharedFolder *aThat)
     return rc;
 }
 
-/**
- *  Initializes the shared folder object.
- *
- *  This variant initializes an instance that lives in the console address space.
- *
- *  @param aConsole     Console parent object
- *  @param aName        logical name of the shared folder
- *  @param aHostPath    full path to the shared folder on the host
- *  @param aWritable    writable if true, readonly otherwise
- *  @param fFailOnError Whether to fail with an error if the shared folder path is bad.
- *
- *  @return          COM result indicator
- */
-HRESULT SharedFolder::init(Console *aConsole,
-                           const Utf8Str &aName,
-                           const Utf8Str &aHostPath,
-                           bool aWritable,
-                           bool aAutoMount,
-                           bool fFailOnError)
-{
-    /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
-
-    unconst(mConsole) = aConsole;
-
-    HRESULT rc = protectedInit(aConsole, aName, aHostPath, aWritable, aAutoMount, fFailOnError);
-
-    /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED(rc))
-        autoInitSpan.setSucceeded();
-
-    return rc;
-}
-
-#if 0
+# if 0
 
 /**
  *  Initializes the shared folder object.
@@ -219,6 +190,44 @@ HRESULT SharedFolder::init(VirtualBox *aVirtualBox,
     return rc;
 }
 
+# endif
+
+#else
+
+/**
+ *  Initializes the shared folder object.
+ *
+ *  This variant initializes an instance that lives in the console address space.
+ *
+ *  @param aConsole     Console parent object
+ *  @param aName        logical name of the shared folder
+ *  @param aHostPath    full path to the shared folder on the host
+ *  @param aWritable    writable if true, readonly otherwise
+ *  @param fFailOnError Whether to fail with an error if the shared folder path is bad.
+ *
+ *  @return          COM result indicator
+ */
+HRESULT SharedFolder::init(Console *aConsole,
+                           const Utf8Str &aName,
+                           const Utf8Str &aHostPath,
+                           bool aWritable,
+                           bool aAutoMount,
+                           bool fFailOnError)
+{
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    unconst(mConsole) = aConsole;
+
+    HRESULT rc = protectedInit(aConsole, aName, aHostPath, aWritable, aAutoMount, fFailOnError);
+
+    /* Confirm a successful initialization when it's the case */
+    if (SUCCEEDED(rc))
+        autoInitSpan.setSucceeded();
+
+    return rc;
+}
 #endif
 
 /**
@@ -304,9 +313,12 @@ void SharedFolder::uninit()
 
     unconst(mParent) = NULL;
 
+#if !defined(VBOX_COM_INPROC)
     unconst(mMachine) = NULL;
-    unconst(mConsole) = NULL;
     unconst(mVirtualBox) = NULL;
+#else
+    unconst(mConsole) = NULL;
+#endif
 }
 
 // ISharedFolder properties

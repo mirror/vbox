@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -78,8 +78,10 @@ public:
     STDMETHOD(DHCPRediscover)();
 
     HRESULT setVirtualBox(VirtualBox *pVBox);
+#ifdef VBOX_WITH_RESOURCE_USAGE_API
     void registerMetrics(PerformanceCollector *aCollector, ComPtr<IUnknown> objptr);
     void unregisterMetrics(PerformanceCollector *aCollector, ComPtr<IUnknown> objptr);
+#endif
 
 private:
     Bstr composeNetworkName(const Utf8Str szShortName);

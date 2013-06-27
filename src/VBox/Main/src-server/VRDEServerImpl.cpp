@@ -29,6 +29,7 @@
 
 #include <VBox/err.h>
 #include <VBox/sup.h>
+#include <VBox/com/array.h>
 
 #include <VBox/RemoteDesktop/VRDE.h>
 
