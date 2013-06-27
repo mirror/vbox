@@ -1054,17 +1054,6 @@ bool UISelectorWindow::eventFilter(QObject *pObject, QEvent *pEvent)
             return true;
             break;
         }
-# if (QT_VERSION < 0x040402)
-        case QEvent::KeyPress:
-        {
-            /* Bug in Qt below 4.4.2. The key events are send to the current
-             * window even if a menu is shown & has the focus. See
-             * http://trolltech.com/developer/task-tracker/index_html?method=entry&id=214681. */
-            if (::darwinIsMenuOpen())
-                return true;
-            break;
-        }
-# endif
         default:
             break;
     }
