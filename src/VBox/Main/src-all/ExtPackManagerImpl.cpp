@@ -2038,13 +2038,13 @@ STDMETHODIMP ExtPackManager::Find(IN_BSTR a_bstrName, IExtPack **a_pExtPack)
     return hrc;
 }
 
-#if !defined(VBOX_COM_INPROC)
 STDMETHODIMP ExtPackManager::OpenExtPackFile(IN_BSTR a_bstrTarballAndDigest, IExtPackFile **a_ppExtPackFile)
 {
     CheckComArgNotNull(a_bstrTarballAndDigest);
     CheckComArgOutPointerValid(a_ppExtPackFile);
     AssertReturn(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON, E_UNEXPECTED);
 
+#if !defined(VBOX_COM_INPROC)
     /* The API can optionally take a ::SHA-256=<hex-digest> attribute at the
        end of the file name.  This is just a temporary measure for
        backporting, in 4.2 we'll add another parameter to the method. */
@@ -2068,6 +2068,9 @@ STDMETHODIMP ExtPackManager::OpenExtPackFile(IN_BSTR a_bstrTarballAndDigest, IEx
         NewExtPackFile.queryInterfaceTo(a_ppExtPackFile);
 
     return hrc;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval, IN_BSTR a_bstrDisplayInfo,
@@ -2078,6 +2081,7 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
         *a_ppProgress = NULL;
     Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
 
+#if !defined(VBOX_COM_INPROC)
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
@@ -2126,8 +2130,10 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
     }
 
     return hrc;
-}
+#else
+    return E_NOTIMPL;
 #endif
+}
 
 STDMETHODIMP ExtPackManager::Cleanup(void)
 {
