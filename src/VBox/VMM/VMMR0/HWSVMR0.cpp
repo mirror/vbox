@@ -1485,7 +1485,6 @@ ResumeExecution:
     uOldEFlags = ASMIntDisableFlags();
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
-    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 
     /* Setup TLB control and ASID in the VMCB. */
     hmR0SvmSetupTLB(pVM, pVCpu);
@@ -1504,6 +1503,7 @@ ResumeExecution:
     Assert(idCpuCheck == RTMpCpuId());
 #endif
     TMNotifyStartOfExecution(pVCpu);
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 
     /*
      * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
@@ -1540,9 +1540,9 @@ ResumeExecution:
                              pVmcb->ctrl.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
     }
 
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
-    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
     ASMSetFlags(uOldEFlags);
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     uOldEFlags = ~(RTCCUINTREG)0;

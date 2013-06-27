@@ -5910,14 +5910,15 @@ static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int
         Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT);
     }
 
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit1, x);
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitIO, y1);
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit1);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit2);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitIO);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitMovCRx);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitXcptNmi);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
+
     VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
 }
 
@@ -6878,6 +6879,11 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
     hmR0VmxFlushTaggedTlb(pVCpu);                               /* Invalidate the appropriate guest entries from the TLB. */
     Assert(HMR0GetCurrentCpu()->idCpu == pVCpu->hm.s.idLastCpu);
 
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
+
+    TMNotifyStartOfExecution(pVCpu);                            /* Finally, notify TM to resume its clocks as we're about
+                                                                    to start executing. */
+
 #ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     /*
      * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
@@ -6893,10 +6899,6 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
         ASMWrMsr(MSR_K8_TSC_AUX, u64HostTscAux);
     }
 #endif
-
-    TMNotifyStartOfExecution(pVCpu);                            /* Finally, notify TM to resume its clocks as we're about
-                                                                    to start executing. */
-    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 }
 
 
@@ -6919,7 +6921,6 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
 DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, int rcVMRun)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
 
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, false);   /* See HMInvalidatePageOnAllVCpus(): used for TLB-shootdowns. */
     ASMAtomicIncU32(&pVCpu->hm.s.cWorldSwitchExits);            /* Initialized in vmR3CreateUVM(): used for TLB-shootdowns. */
@@ -6939,6 +6940,7 @@ DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                              + pVCpu->hm.s.vmx.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
     }
 
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
     TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);

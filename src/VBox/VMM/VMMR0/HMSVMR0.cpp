@@ -1799,7 +1799,12 @@ static void hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcEx
 #endif
     }
 
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit1);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit2);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
+
     VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
 }
 
@@ -2603,6 +2608,8 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     hmR0SvmFlushTaggedTlb(pVCpu);
     Assert(HMR0GetCurrentCpu()->idCpu == pVCpu->hm.s.idLastCpu);
 
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
+
     TMNotifyStartOfExecution(pVCpu);                            /* Finally, notify TM to resume its clocks as we're about
                                                                     to start executing. */
 
@@ -2686,6 +2693,7 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
         TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcb->ctrl.u64TSCOffset - 0x400);
     }
 
+    STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
     TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
@@ -2781,13 +2789,16 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             if (rc == VINF_SUCCESS)
                 rc = VERR_SVM_INVALID_GUEST_STATE;
+            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit1, x);
             hmR0SvmReportWorldSwitchError(pVM, pVCpu, rc, pCtx);
             return rc;
         }
 
         /* Handle the #VMEXIT. */
         HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
+        STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
         rc = hmR0SvmHandleExit(pVCpu, pCtx, &SvmTransient);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
         if (rc != VINF_SUCCESS)
             break;
         else if (cLoops > pVM->hm.s.cMaxResumeLoops)
@@ -2798,6 +2809,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
     }
 
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
     else if (rc == VINF_EM_RESET)
