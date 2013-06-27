@@ -32,7 +32,9 @@
 #include "QILabel.h"
 #include "QIArrowSplitter.h"
 #include "QIDialogButtonBox.h"
-#include "VBoxGlobal.h"
+
+/* Other VBox includes: */
+#include <VBox/sup.h>
 
 QIMessageBox::QIMessageBox(const QString &strCaption, const QString &strMessage, AlertIconType iconType,
                            int iButton1 /*= 0*/, int iButton2 /*= 0*/, int iButton3 /*= 0*/, QWidget *pParent /*= 0*/)
@@ -201,7 +203,7 @@ void QIMessageBox::prepareContent()
         pMainLayout->setContentsMargins(40, 11, 40, 11);
         pMainLayout->setSpacing(15);
 #else /* !Q_WS_MAC */
-        VBoxGlobal::setLayoutMargin(pMainLayout, 11);
+        pMainLayout->setContentsMargins(11, 11, 11, 11);
         pMainLayout->setSpacing(10);
 #endif /* !Q_WS_MAC */
         /* Create top-layout: */
@@ -210,7 +212,7 @@ void QIMessageBox::prepareContent()
             /* Insert into parent layout: */
             pMainLayout->addLayout(pTopLayout);
             /* Configure layout: */
-            VBoxGlobal::setLayoutMargin(pTopLayout, 0);
+            pTopLayout->setContentsMargins(0, 0, 0, 0);
             pTopLayout->setSpacing(10);
             /* Create icon-label: */
             m_pIconLabel = new QLabel;

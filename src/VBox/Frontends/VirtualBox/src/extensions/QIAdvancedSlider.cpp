@@ -18,7 +18,6 @@
  */
 
 #include "QIAdvancedSlider.h"
-#include "VBoxGlobal.h"
 
 /* Qt includes */
 #include <QVBoxLayout>
@@ -262,7 +261,7 @@ void QIAdvancedSlider::init(Qt::Orientation fOrientation /* = Qt::Horizontal */)
     m_fSnappingEnabled = false;
 
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-    VBoxGlobal::setLayoutMargin(pMainLayout, 0);
+    pMainLayout->setContentsMargins(0, 0, 0, 0);
     m_pSlider = new CPrivateSlider(fOrientation, this);
     pMainLayout->addWidget(m_pSlider);
 

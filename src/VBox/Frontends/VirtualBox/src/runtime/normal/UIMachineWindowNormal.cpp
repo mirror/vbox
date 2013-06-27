@@ -239,7 +239,7 @@ void UIMachineWindowNormal::prepareStatusBar()
     setStatusBar(new QIStatusBar(this));
     QWidget *pIndicatorBox = new QWidget;
     QHBoxLayout *pIndicatorBoxHLayout = new QHBoxLayout(pIndicatorBox);
-    VBoxGlobal::setLayoutMargin(pIndicatorBoxHLayout, 0);
+    pIndicatorBoxHLayout->setContentsMargins(0, 0, 0, 0);
     pIndicatorBoxHLayout->setSpacing(5);
     bool fAtLeastOneAddedToLeftSection = false;
 
@@ -334,7 +334,7 @@ void UIMachineWindowNormal::prepareStatusBar()
         {
             if (QHBoxLayout *pContainerLayoutHostkey = new QHBoxLayout(pContainerWidgetHostkey))
             {
-                VBoxGlobal::setLayoutMargin(pContainerLayoutHostkey, 0);
+                pContainerLayoutHostkey->setContentsMargins(0, 0, 0, 0);
                 pContainerLayoutHostkey->setSpacing(3);
                 m_pNameHostkey = new QLabel(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo()));
                 pContainerLayoutHostkey->addWidget(pLedKeyboard);

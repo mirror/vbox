@@ -18,10 +18,10 @@
  */
 
 /* VBox includes */
-#include "VBoxGlobal.h"
 #include "QIRichToolButton.h"
 
 /* Qt includes */
+#include <QApplication>
 #include <QLabel>
 #include <QHBoxLayout>
 #include <QToolButton>
@@ -63,7 +63,7 @@ void QIRichToolButton::init()
 
     /* Setup main-layout */
     QHBoxLayout *mainLayout = new QHBoxLayout (this);
-    VBoxGlobal::setLayoutMargin (mainLayout, 0);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing (0);
     mainLayout->addWidget (mButton);
     mainLayout->addWidget (mLabel);

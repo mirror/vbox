@@ -343,18 +343,6 @@ public:
     static QList <QPair <QString, QString> > DVDBackends();
     static QList <QPair <QString, QString> > FloppyBackends();
 
-    /* Qt 4.2.0 support function */
-    static inline void setLayoutMargin (QLayout *aLayout, int aMargin)
-    {
-#if QT_VERSION < 0x040300
-        /* Deprecated since > 4.2 */
-        aLayout->setMargin (aMargin);
-#else
-        /* New since > 4.2 */
-        aLayout->setContentsMargins (aMargin, aMargin, aMargin, aMargin);
-#endif
-    }
-
     static QString documentsPath();
 
 #ifdef VBOX_WITH_VIDEOHWACCEL

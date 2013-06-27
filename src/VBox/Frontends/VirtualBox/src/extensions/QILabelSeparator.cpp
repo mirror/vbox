@@ -23,7 +23,6 @@
 
 /* Local includes */
 #include "QILabelSeparator.h"
-#include "VBoxGlobal.h"
 
 QILabelSeparator::QILabelSeparator (QWidget *aParent /* = NULL */, Qt::WindowFlags aFlags /* = 0 */)
     : QWidget (aParent, aFlags)
@@ -72,7 +71,7 @@ void QILabelSeparator::init()
     separator->setSizePolicy (QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
     QHBoxLayout *pLayout = new QHBoxLayout (this);
-    VBoxGlobal::setLayoutMargin (pLayout, 0);
+    pLayout->setContentsMargins(0, 0, 0, 0);
     pLayout->addWidget (mLabel);
     pLayout->addWidget (separator, Qt::AlignBottom);
 }
