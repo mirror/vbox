@@ -63,7 +63,7 @@ ENDPROC %1
 
 ;; Call RTTestISub like function.
 %define VBINSTST_CALL_FN_SUB_TEST   call IMP2(RTTestISub)
-extern IMPNAME(RTTestISub)
+EXTERN_IMP2 RTTestISub
 
 ;; Call RTTestIFailure like function with simple message.
 %define VBINSTST_CALL_FN_FAILURE    call NAME(VBInsTstFailure)

@@ -69,7 +69,7 @@ X86_SIB_SCALE_SMASK = 0x03;
 X86_SIB_SCALE_SHIFT = 6;
 ## @}
 
-## @name PRefixes
+## @name Prefixes
 ## @
 X86_OP_PRF_CS       = 0x2e;
 X86_OP_PRF_SS       = 0x36;
@@ -89,6 +89,27 @@ X86_OP_REX_W        = 0x48;
 ## @}
 
 
+## @name General registers
+## @
+X86_GREG_xAX        = 0
+X86_GREG_xCX        = 1
+X86_GREG_xDX        = 2
+X86_GREG_xBX        = 3
+X86_GREG_xSP        = 4
+X86_GREG_xBP        = 5
+X86_GREG_xSI        = 6
+X86_GREG_xDI        = 7
+X86_GREG_x8         = 8
+X86_GREG_x9         = 9
+X86_GREG_x10        = 10
+X86_GREG_x11        = 11
+X86_GREG_x12        = 12
+X86_GREG_x13        = 13
+X86_GREG_x14        = 14
+X86_GREG_x15        = 15
+## @}
+
+
 ## @name Register names.
 ## @{
 g_asGRegs64NoSp = ('rax', 'rcx', 'rdx', 'rbx', None,  'rbp', 'rsi', 'rdi', 'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15');
@@ -103,7 +124,8 @@ g_asGRegs16     = ('ax',  'cx',  'dx',  'bx',  'sp',  'bp',  'si',  'di',
                    'r8w', 'r9w', 'r10w', 'r11w', 'r12w', 'r13w', 'r14w', 'r15w');
 g_asGRegs8      = ('al',  'cl',  'dl',  'bl',  'ah',  'ch',  'dh',  'bh');
 g_asGRegs8Rex   = ('al',  'cl',  'dl',  'bl',  'spl', 'bpl', 'sil',  'dil',
-                   'r8b', 'r9b', 'r10b', 'r11b', 'r12b', 'r13b', 'r14b', 'r15b');
+                   'r8b', 'r9b', 'r10b', 'r11b', 'r12b', 'r13b', 'r14b', 'r15b',
+                   'ah',  'ch',  'dh',  'bh');
 ## @}
 
 
@@ -127,7 +149,7 @@ def randUxx(cBits):
     return g_oMyRand.getrandbits(cBits);
 
 def randUxxList(cBits, cElements):
-    """ List of nsigned 8-, 16-, 32-, or 64-bit random numbers. """
+    """ List of unsigned 8-, 16-, 32-, or 64-bit random numbers. """
     return [randUxx(cBits) for _ in range(cElements)];
 ## @}
 
@@ -173,6 +195,44 @@ def convU32ToSigned(u32):
     if u32 < 0x80000000:
         return u32;
     return u32 - UINT32_MAX - 1;
+
+def rotateLeftUxx(cBits, uVal, cShift):
+    """ Rotate a xx-bit wide unsigned number to the left. """
+    assert cShift < cBits;
+
+    if cBits == 16:
+        uMask = UINT16_MAX;
+    elif cBits == 32:
+        uMask = UINT32_MAX;
+    elif cBits == 64:
+        uMask = UINT64_MAX;
+    else:
+        assert cBits == 8;
+        uMask = UINT8_MAX;
+
+    uVal &= uMask;
+    uRet = (uVal << cShift) & uMask;
+    uRet |= (uVal >> (cBits - cShift));
+    return uRet;
+
+def rotateRightUxx(cBits, uVal, cShift):
+    """ Rotate a xx-bit wide unsigned number to the right. """
+    assert cShift < cBits;
+
+    if cBits == 16:
+        uMask = UINT16_MAX;
+    elif cBits == 32:
+        uMask = UINT32_MAX;
+    elif cBits == 64:
+        uMask = UINT64_MAX;
+    else:
+        assert cBits == 8;
+        uMask = UINT8_MAX;
+
+    uVal &= uMask;
+    uRet = (uVal >> cShift);
+    uRet |= (uVal << (cBits - cShift)) & uMask;
+    return uRet;
 
 def gregName(iReg, cBits, fRexByteRegs = True):
     """ Gets the name of a general register by index and width. """
@@ -263,9 +323,11 @@ class TargetEnv(object):
         """ Get the default address size as a byte count. """
         return self.getDefAddrBits() / 8;
 
-    def getGRegCount(self):
+    def getGRegCount(self, cbEffBytes = 4):
         """ Get the number of general registers. """
         if self.sInstrSet == self.ksInstrSet_64:
+            if cbEffBytes == 1:
+                return 16 + 4;
             return 16;
         return 8;
 
@@ -281,6 +343,17 @@ class TargetEnv(object):
         if self.sInstrSet == self.ksInstrSet_32:
             return [32, 16];
         return [64, 32];
+
+    def is8BitHighGReg(self, cbEffOp, iGReg):
+        """ Checks if the given register is a high 8-bit general register (AH, CH, DH or BH). """
+        assert cbEffOp in [1, 2, 4, 8];
+        if cbEffOp == 1:
+            if iGReg >= 16:
+                return True;
+            if iGReg >= 4 and not self.is64Bit():
+                return True;
+        return False;
+
 
 
 ## Target environments.
@@ -379,16 +452,9 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
 
     def writeInstrGregGreg(self, cbEffOp, iOp1, iOp2, oGen):
         """ Writes the instruction with two general registers as operands. """
-        if cbEffOp == 8:
-            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs64[iOp1], g_asGRegs64[iOp2]));
-        elif cbEffOp == 4:
-            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs32[iOp1], g_asGRegs32[iOp2]));
-        elif cbEffOp == 2:
-            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs16[iOp1], g_asGRegs16[iOp2]));
-        elif cbEffOp == 1:
-            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs8Rex[iOp1], g_asGRegs8Rex[iOp2]));
-        else:
-            assert False;
+        fRexByteRegs = oGen.oTarget.is64Bit();
+        oGen.write('        %s %s, %s\n'
+                   % (self.sInstr, gregName(iOp1, cbEffOp * 8, fRexByteRegs),  gregName(iOp2, cbEffOp * 8, fRexByteRegs),));
         return True;
 
     def writeInstrGregPureRM(self, cbEffOp, iOp1, cAddrBits, iOp2, iMod, offDisp, oGen):
@@ -534,16 +600,49 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
 
     ## @}
 
-    def generateOneStdTestGregGreg(self, oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult):
-        """ Generate one standard test. """
+    def generateOneStdTestGregGreg(self, oGen, cbEffOp, cbMaxOp, iOp1, iOp1X, iOp2, iOp2X, uInput, uResult):
+        """ Generate one standard instr greg,greg test. """
         oGen.write('        call VBINSTST_NAME(Common_LoadKnownValues)\n');
-        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[iOp2], uInput,));
-        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2],));
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[iOp2X], uInput,));
+        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2X],));
         self.writeInstrGregGreg(cbEffOp, iOp1, iOp2, oGen);
         oGen.pushConst(uResult);
-        oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1, iOp2),));
+        oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(iOp1X, iOp2X),));
         _ = cbMaxOp;
         return True;
+
+    def generateOneStdTestGregGreg8BitHighPain(self, oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput):
+        """ High 8-bit registers are a real pain! """
+        assert oGen.oTarget.is8BitHighGReg(cbEffOp, iOp1) or oGen.oTarget.is8BitHighGReg(cbEffOp, iOp2);
+        # Figure out the register indexes of the max op sized regs involved.
+        iOp1X = iOp1 & 3;
+        iOp2X = iOp2 & 3;
+        oGen.write('        ; iOp1=%u iOp1X=%u iOp2=%u iOp2X=%u\n' % (iOp1, iOp1X, iOp2, iOp2X,));
+
+        # Calculate unshifted result.
+        if iOp1X != iOp2X:
+            uCur = oGen.auRegValues[iOp1X];
+            if oGen.oTarget.is8BitHighGReg(cbEffOp, iOp1):
+                uCur = rotateRightUxx(cbMaxOp * 8, uCur, 8);
+        else:
+            uCur = uInput;
+            if oGen.oTarget.is8BitHighGReg(cbEffOp, iOp1) != oGen.oTarget.is8BitHighGReg(cbEffOp, iOp2):
+                if oGen.oTarget.is8BitHighGReg(cbEffOp, iOp1):
+                    uCur = rotateRightUxx(cbMaxOp * 8, uCur, 8);
+                else:
+                    uCur = rotateLeftUxx(cbMaxOp * 8, uCur, 8);
+        uResult = self.fnCalcResult(cbEffOp, uInput, uCur, oGen);
+
+
+        # Rotate the input and/or result to match their max-op-sized registers.
+        if oGen.oTarget.is8BitHighGReg(cbEffOp, iOp2):
+            uInput = rotateLeftUxx(cbMaxOp * 8, uInput, 8);
+        if oGen.oTarget.is8BitHighGReg(cbEffOp, iOp1):
+            uResult = rotateLeftUxx(cbMaxOp * 8, uResult, 8);
+
+        # Hand it over to an overridable worker method.
+        return self.generateOneStdTestGregGreg(oGen, cbEffOp, cbMaxOp, iOp1, iOp1X, iOp2, iOp2X, uInput, uResult);
+
 
     def generateOneStdTestGregMemNoSib(self, oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult):
         """ Generate mode 0, 1 and 2 test for the R/M=iOp2. """
@@ -639,8 +738,8 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         auLongInputs  = self.generateInputs(cbDefOp, cbMaxOp, oGen, fLong = True);
         iLongOp1      = oGen.oTarget.randGRegNoSp();
         iLongOp2      = oGen.oTarget.randGRegNoSp();
-        oOp2Range     = range(oGen.oTarget.getGRegCount());
         oOp1MemRange  = range(oGen.oTarget.getGRegCount());
+        oOp2Range     = None;
         if oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
             oOp2Range    = [iLongOp2,];
             oOp1MemRange = [iLongOp1,];
@@ -650,26 +749,40 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
             for cbEffOp in self.acbOpVars:
                 if cbEffOp > cbMaxOp:
                     continue;
-                for iOp1 in range(oGen.oTarget.getGRegCount()):
-                    if oGen.oTarget.asGRegsNoSp[iOp1] is None:
-                        continue;
+                oOp2Range = range(oGen.oTarget.getGRegCount(cbEffOp));
+                if oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
+                    oOp2Range = [iLongOp2,];
+                oGen.write('; cbEffOp=%u\n' % (cbEffOp,));
+
+                for iOp1 in range(oGen.oTarget.getGRegCount(cbEffOp)):
+                    if iOp1 == X86_GREG_xSP:
+                        continue; # Cannot test xSP atm.
                     for iOp2 in oOp2Range:
-                        if oGen.oTarget.asGRegsNoSp[iOp2] is None:
-                            continue;
+                        if   (iOp2 >= 16 and iOp1 in range(4, 16)) \
+                          or (iOp1 >= 16 and iOp2 in range(4, 16)):
+                            continue; # Any REX encoding turns AH,CH,DH,BH regs into SPL,BPL,SIL,DIL.
+                        if iOp2 == X86_GREG_xSP:
+                            continue; # Cannot test xSP atm.
+
+                        oGen.write('; iOp2=%u cbEffOp=%u\n' % (iOp2, cbEffOp));
                         for uInput in (auLongInputs if iOp1 == iLongOp1 and iOp2 == iLongOp2 else auShortInputs):
-                            uResult = self.fnCalcResult(cbEffOp, uInput,
-                                                        oGen.auRegValues[iOp1] if iOp1 != iOp2 else uInput, oGen);
                             oGen.newSubTest();
-                            self.generateOneStdTestGregGreg(oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput, uResult);
+                            if not oGen.oTarget.is8BitHighGReg(cbEffOp, iOp1) and not oGen.oTarget.is8BitHighGReg(cbEffOp, iOp2):
+                                uCur = oGen.auRegValues[iOp1 & 15] if iOp1 != iOp2 else uInput;
+                                uResult = self.fnCalcResult(cbEffOp, uInput, uCur, oGen);
+                                self.generateOneStdTestGregGreg(oGen, cbEffOp, cbMaxOp, iOp1, iOp1 & 15, iOp2, iOp2 & 15,
+                                                                uInput, uResult);
+                            else:
+                                self.generateOneStdTestGregGreg8BitHighPain(oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput);
 
         # Memory test.
-        if True:
+        if False:
             for cbEffOp in self.acbOpVars:
                 if cbEffOp > cbMaxOp:
                     continue;
                 for iOp1 in oOp1MemRange:
-                    if oGen.oTarget.asGRegsNoSp[iOp1] is None:
-                        continue;
+                    if iOp1 == X86_GREG_xSP:
+                        continue; # Cannot test xSP atm.
                     for cAddrBits in oGen.oTarget.getAddrModes():
                         auInputs = auLongInputs if iOp1 == iLongOp1 and False else auShortInputs;
                         for iOp2 in range(len(oGen.oTarget.asGRegs)):
@@ -1149,68 +1262,50 @@ class InstructionTestGen(object):
 
         # Register checking functions.
         for sName in self.dCheckFns:
-            # Decode the name.
             asRegs = sName.split('_');
-            sReg1 = asRegs[0];
-            iReg1 = self.oTarget.index(sReg1);
-            if len(asRegs) >= 2:
-                sReg2 = None;
-                iReg2 = None;
-
-            iReg1 = iRegs & 0x1f;
-            sReg1 = self.oTarget.asGRegs[iReg1];
-            iReg2 = (iRegs >> 5) & 0x1f;
-            sReg2 = self.oTarget.asGRegs[iReg2];
             sPushSize = 'dword';
 
-            # Write the test
+            # Prologue
             self.write('\n\n'
-                       '; Checks two register values, expected values pushed on the stack.\n'
-                        '; To save space, the callee cleans up the stack.'
+                       '; Checks 1 or more register values, expected values pushed on the stack.\n'
+                       '; To save space, the callee cleans up the stack.'
                        '; Ref count: %u\n'
-                       'VBINSTST_BEGINPROC Common_Check_%s_%s\n'
+                       'VBINSTST_BEGINPROC Common_Check_%s\n'
                        '        MY_PUSH_FLAGS\n'
-                       % ( self.dCheckFns[iRegs], sReg1, sReg2, ) );
+                       % ( self.dCheckFns[sName], sName, ) );
 
-            self.write('        cmp     %s, [xSP + MY_PUSH_FLAGS_SIZE + xCB]\n'
-                       '        je      .equal1\n'
-                       '        push    %s %u      ; register number\n'
-                       '        push    %s         ; actual\n'
-                       '        mov     %s, [xSP + sCB*2 + MY_PUSH_FLAGS_SIZE + xCB]\n'
-                       '        push    %s         ; expected\n'
-                       '        call    VBINSTST_NAME(Common_BadValue)\n'
-                       '        pop     %s\n'
-                       '        pop     %s\n'
-                       '        pop     %s\n'
-                       '.equal1:\n'
-                       % ( sReg1, sPushSize, iReg1, sReg1, sReg1, sReg1, sReg1, sReg1, sReg1, ) );
-            if iReg1 != iReg2: # If input and result regs are the same, only check the result.
-                self.write('        cmp     %s, [xSP + sCB + MY_PUSH_FLAGS_SIZE + xCB]\n'
-                           '        je      .equal2\n'
-                           '        push    %s %u      ; register number\n'
-                           '        push    %s         ; actual\n'
-                           '        mov     %s, [xSP + sCB*3 + MY_PUSH_FLAGS_SIZE + xCB]\n'
-                           '        push    %s         ; expected\n'
-                           '        call    VBINSTST_NAME(Common_BadValue)\n'
-                           '        pop     %s\n'
-                           '        pop     %s\n'
-                           '        pop     %s\n'
-                           '.equal2:\n'
-                           % ( sReg2, sPushSize, iReg2, sReg2, sReg2, sReg2, sReg2, sReg2, sReg2, ) );
+            # Register checks.
+            iRegPrev = -1;
+            for i in range(len(asRegs)):
+                sReg = asRegs[i];
+                iReg = self.oTarget.asGRegs.index(sReg);
+                if i == asRegs.index(sReg): # Only check once, i.e. input = output reg.
+                    self.write('        cmp     %s, [xSP + MY_PUSH_FLAGS_SIZE + xCB + sCB * %u]\n'
+                               '        je      .equal%u\n'
+                               '        push    %s %u      ; register number\n'
+                               '        push    %s         ; actual\n'
+                               '        mov     %s, [xSP + sCB*2 + MY_PUSH_FLAGS_SIZE + xCB]\n'
+                               '        push    %s         ; expected\n'
+                               '        call    VBINSTST_NAME(Common_BadValue)\n'
+                               '        pop     %s\n'
+                               '        pop     %s\n'
+                               '        pop     %s\n'
+                               '.equal%u:\n'
+                           % ( sReg, i, i, sPushSize, iReg, sReg, sReg, sReg, sReg, sReg, sReg, i, ) );
 
-            if self.oTarget.is64Bit():
-                self.write('        mov     %s, [g_u64KnownValue_%s wrt rip]\n' % (sReg1, sReg1,));
-                if iReg1 != iReg2:
-                    self.write('        mov     %s, [g_u64KnownValue_%s wrt rip]\n' % (sReg2, sReg2,));
-            else:
-                self.write('        mov     %s, 0x%x\n' % (sReg1, self.au32Regs[iReg1],));
-                if iReg1 != iReg2:
-                    self.write('        mov     %s, 0x%x\n' % (sReg2, self.au32Regs[iReg2],));
+
+            # Restore known register values and check the other registers.
+            for sReg in asRegs:
+                if self.oTarget.is64Bit():
+                    self.write('        mov     %s, [g_u64KnownValue_%s wrt rip]\n' % (sReg, sReg,));
+                else:
+                    iReg = self.oTarget.asGRegs.index(sReg)
+                    self.write('        mov     %s, 0x%x\n' % (sReg, self.au32Regs[iReg],));
             self.write('        MY_POP_FLAGS\n'
                        '        call    VBINSTST_NAME(Common_CheckKnownValues)\n'
-                       '        ret     sCB*2\n'
-                       'VBINSTST_ENDPROC   Common_Check_%s_%s\n'
-                       % (sReg1, sReg2,));
+                       '        ret     sCB*%u\n'
+                       'VBINSTST_ENDPROC   Common_Check_%s\n'
+                       % (len(asRegs), sName,));
 
         # memory setup functions
         self._generateMemSetupFunctions();
