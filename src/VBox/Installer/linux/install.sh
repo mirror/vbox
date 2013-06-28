@@ -361,10 +361,7 @@ if [ "$ACTION" = "install" ]; then
         test -e $INSTALLATION_DIR/VBoxNetDHCP   && chmod 4511 $INSTALLATION_DIR/VBoxNetDHCP
 
         ln -sf $INSTALLATION_DIR/VBoxVMM.so   $INSTALLATION_DIR/components/VBoxVMM.so
-        ln -sf $INSTALLATION_DIR/VBoxREM.so   $INSTALLATION_DIR/components/VBoxREM.so
         ln -sf $INSTALLATION_DIR/VBoxRT.so    $INSTALLATION_DIR/components/VBoxRT.so
-        ln -sf $INSTALLATION_DIR/VBoxDDU.so   $INSTALLATION_DIR/components/VBoxDDU.so
-        ln -sf $INSTALLATION_DIR/VBoxXPCOM.so $INSTALLATION_DIR/components/VBoxXPCOM.so
 
         chmod go-w $INSTALLATION_DIR
     fi
