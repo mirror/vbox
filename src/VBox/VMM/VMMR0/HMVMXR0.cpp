@@ -4710,6 +4710,10 @@ DECLINLINE(bool) hmR0VmxIsContributoryXcpt(const uint32_t uVector)
  * @param   u32ErrCode          The VM-entry exception error code.
  * @param   GCPtrFaultAddress   The fault-address (CR2) in case it's a
  *                              page-fault.
+ *
+ * @remarks Statistics counter assumes this is a guest event being injected or
+ *          re-injected into the guest, i.e. 'StatInjectPendingReflect' is
+ *          always incremented.
  */
 DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntrInfo, uint32_t cbInstr, uint32_t u32ErrCode,
                                         RTGCUINTPTR GCPtrFaultAddress)
@@ -4720,6 +4724,8 @@ DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntrInfo, uint
     pVCpu->hm.s.Event.u32ErrCode        = u32ErrCode;
     pVCpu->hm.s.Event.cbInstr           = cbInstr;
     pVCpu->hm.s.Event.GCPtrFaultAddress = GCPtrFaultAddress;
+
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
 }
 
 
@@ -4857,6 +4863,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 rc = VINF_SUCCESS;
                 Log4(("IDT: vcpu[%RU32] Pending vectoring event %#RX64 Err=%#RX32\n", pVCpu->idCpu,
                       pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.u32ErrCode));
+
                 break;
             }
 
@@ -4866,6 +4873,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 rc = VINF_HM_DOUBLE_FAULT;
                 Log4(("IDT: vcpu[%RU32] Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->idCpu,
                       pVCpu->hm.s.Event.u64IntrInfo, uIdtVector, uExitVector));
+
                 break;
             }
 
@@ -5797,7 +5805,9 @@ static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
     AssertRC(rc);
     Log4(("TRPM->HM event: u32IntrInfo=%#RX32 enmTrpmEvent=%d cbInstr=%u uErrCode=%#RX32 GCPtrFaultAddress=%#RGv\n",
          u32IntrInfo, enmTrpmEvent, cbInstr, uErrCode, GCPtrFaultAddress));
+
     hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, cbInstr, uErrCode, GCPtrFaultAddress);
+    STAM_COUNTER_DEC(&pVCpu->hm.s.StatInjectPendingReflect);
 }
 
 
@@ -6095,7 +6105,13 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                                         pVCpu->hm.s.Event.u32ErrCode, pVCpu->hm.s.Event.GCPtrFaultAddress, &uIntrState);
             AssertRCReturn(rc, rc);
             pVCpu->hm.s.Event.fPending = false;
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatIntReinject);
+
+#ifdef VBOX_WITH_STATISTICS
+            if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
+            else
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
+#endif
         }
         else
             hmR0VmxSetIntWindowExitVmcs(pVCpu);
@@ -6113,6 +6129,8 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                                         0 /* GCPtrFaultAddress */, &uIntrState);
             AssertRCReturn(rc, rc);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
         }
         else
             hmR0VmxSetIntWindowExitVmcs(pVCpu);
@@ -6136,7 +6154,8 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
                 rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntrInfo, 0 /* cbInstr */,  0 /* u32ErrCode */,
                                             0 /* GCPtrFaultAddress */, &uIntrState);
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatIntInject);
+
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
             }
             else
             {
@@ -8716,6 +8735,7 @@ static int hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         /** @todo don't fall back to the recompiler, but do it manually. */
         return VERR_EM_INTERPRETER;
     }
+
     hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
                            pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode, 0 /* GCPtrFaultAddress */);
     return rc;

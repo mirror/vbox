@@ -1094,7 +1094,7 @@ static int hmR0VmxCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
     {
         Log(("CPU%d: Reinjecting event %RX64 %08x at %RGv cr2=%RX64\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntrInfo,
              pVCpu->hm.s.Event.u32ErrCode, (RTGCPTR)pCtx->rip, pCtx->cr2));
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatIntReinject);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
         rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, pVCpu->hm.s.Event.u64IntrInfo, 0, pVCpu->hm.s.Event.u32ErrCode);
         AssertRC(rc);
 
@@ -1120,6 +1120,7 @@ static int hmR0VmxCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
             rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, intInfo, 0, 0);
             AssertRC(rc);
 
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
             return VINF_SUCCESS;
         }
 
@@ -1232,11 +1233,15 @@ static int hmR0VmxCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
             }
             else
                 intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
         }
         else
+        {
             intInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
+        }
 
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatIntInject);
         rc = hmR0VmxInjectEvent(pVM, pVCpu, pCtx, intInfo, 0, errCode);
         AssertRC(rc);
     } /* if (interrupts can be dispatched) */
@@ -5014,7 +5019,6 @@ end:
     if (    exitReason == VMX_EXIT_EXT_INT
         &&  !VMX_EXIT_INTERRUPTION_INFO_IS_VALID(intInfo))
     {
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         /* On the next entry we'll only sync the host context. */
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
     }

@@ -592,7 +592,7 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, PSVMVMCB pVmcb, C
 
         Log(("Reinjecting event %08x %08x at %RGv\n", pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.u32ErrCode,
              (RTGCPTR)pCtx->rip));
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatIntReinject);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
         Event.u = pVCpu->hm.s.Event.u64IntrInfo;
         hmR0SvmInjectEvent(pVCpu, pVmcb, pCtx, &Event);
 
@@ -616,6 +616,7 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, PSVMVMCB pVmcb, C
             Event.n.u3Type       = SVM_EVENT_NMI;
 
             hmR0SvmInjectEvent(pVCpu, pVmcb, pCtx, &Event);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
             return VINF_SUCCESS;
         }
 
@@ -724,11 +725,15 @@ static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, PSVMVMCB pVmcb, C
                 Event.n.u3Type = SVM_EVENT_NMI;
             else
                 Event.n.u3Type = SVM_EVENT_EXCEPTION;
+
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
         }
         else
+        {
             Event.n.u3Type = SVM_EVENT_EXTERNAL_IRQ;
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
+        }
 
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatIntInject);
         hmR0SvmInjectEvent(pVCpu, pVmcb, pCtx, &Event);
     } /* if (interrupts can be dispatched) */
 
@@ -2223,8 +2228,8 @@ ResumeExecution:
         pVmcb->ctrl.IntCtrl.n.u8VIrqVector   = 0;
         goto ResumeExecution;
 
+    case SVM_EXIT_INTR:         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitExtInt);  /* no break */
     case SVM_EXIT_FERR_FREEZE:
-    case SVM_EXIT_INTR:
     case SVM_EXIT_NMI:
     case SVM_EXIT_SMI:
     case SVM_EXIT_INIT:
@@ -2805,7 +2810,6 @@ end:
      */
     if (exitCode == SVM_EXIT_INTR)
     {
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         /* On the next entry we'll only sync the host context. */
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
     }

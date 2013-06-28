@@ -791,7 +791,9 @@ typedef struct HMCPU
     STAMPROFILEADV          StatSpinPoke;
     STAMPROFILEADV          StatSpinPokeFailed;
 
-    STAMCOUNTER             StatIntInject;
+    STAMCOUNTER             StatInjectInterrupt;
+    STAMCOUNTER             StatInjectXcpt;
+    STAMCOUNTER             StatInjectPendingReflect;
 
     STAMCOUNTER             StatExitShadowNM;
     STAMCOUNTER             StatExitGuestNM;
@@ -847,7 +849,6 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitTaskSwitch;
     STAMCOUNTER             StatExitMtf;
     STAMCOUNTER             StatExitApicAccess;
-    STAMCOUNTER             StatIntReinject;
     STAMCOUNTER             StatPendingHostIrq;
 
     STAMCOUNTER             StatFlushPage;
