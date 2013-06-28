@@ -221,10 +221,10 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(SVM_EXIT_EXCEPTION_1D       , 93, "Exception Vector 29 (0x1D)."),
     EXIT_REASON(SVM_EXIT_EXCEPTION_1E       , 94, "Exception Vector 30 (0x1E)."),
     EXIT_REASON(SVM_EXIT_EXCEPTION_1F       , 95, "Exception Vector 31 (0x1F)."),
-    EXIT_REASON(SVM_EXIT_INTR               , 96, "Physical maskable interrupt."),
-    EXIT_REASON(SVM_EXIT_NMI                , 97, "Physical non-maskable interrupt."),
-    EXIT_REASON(SVM_EXIT_SMI                , 98, "System management interrupt."),
-    EXIT_REASON(SVM_EXIT_INIT               , 99, "Physical INIT signal."),
+    EXIT_REASON(SVM_EXIT_INTR               , 96, "Physical maskable interrupt (host)."),
+    EXIT_REASON(SVM_EXIT_NMI                , 97, "Physical non-maskable interrupt (host)."),
+    EXIT_REASON(SVM_EXIT_SMI                , 98, "System management interrupt (host)."),
+    EXIT_REASON(SVM_EXIT_INIT               , 99, "Physical INIT signal (host)."),
     EXIT_REASON(SVM_EXIT_VINTR              ,100, "Virtual interrupt-window exit."),
     EXIT_REASON(SVM_EXIT_CR0_SEL_WRITE      ,101, "Write to CR0 that changed any bits other than CR0.TS or CR0.MP."),
     EXIT_REASON(SVM_EXIT_IDTR_READ          ,102, "Read IDTR"),
@@ -688,13 +688,14 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitApicAccess,         "/HM/CPU%d/Exit/ApicAccess", "APIC access. Guest attempted to access memory at a physical address on the APIC-access page.");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchGuestIrq,         "/HM/CPU%d/Switch/IrqPending", "PDMGetInterrupt() cleared behind our back!?!.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatPendingHostIrq,         "/HM/CPU%d/Switch/PendingHostIrq", "Exit to ring-3 due to pending host interrupt before executing guest code.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchHmToR3FF,         "/HM/CPU%d/Switch/HmToR3FF", "Exit to ring-3 due to pending timers, EMT rendezvous, critical section etc.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchExitToR3,         "/HM/CPU%d/Switch/ExitToR3", "Exit to ring-3 (total).");
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchLongJmpToR3,      "/HM/CPU%d/Switch/LongJmpToR3", "Longjump to ring-3.");
 
-        HM_REG_COUNTER(&pVCpu->hm.s.StatIntInject,              "/HM/CPU%d/Irq/Inject", "Injecting hardware interrupt into the guest.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatIntReinject,            "/HM/CPU%d/Irq/Reinject", "Re-injecting an event into the guest.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatPendingHostIrq,         "/HM/CPU%d/Irq/PendingOnHost", "Exiting to ring-3 due to preemption pending on the host.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatInjectInterrupt,        "/HM/CPU%d/EventInject/Interrupt", "Injected an external interrupt into the guest.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatInjectXcpt,             "/HM/CPU%d/EventInject/Trap", "Injected an exception into the guest.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatInjectPendingReflect,   "/HM/CPU%d/EventInject/PendingReflect", "Reflecting an exception back to the guest.");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatFlushPage,              "/HM/CPU%d/Flush/Page", "Invalidating a guest page on all guest CPUs.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatFlushPageManual,        "/HM/CPU%d/Flush/Page/Virt", "Invalidating a guest page using guest-virtual address.");
@@ -719,13 +720,12 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatDRxContextSwitch,       "/HM/CPU%d/Debug/ContextSwitch", "Loaded guest-debug state on MOV DRx.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatDRxIoCheck,             "/HM/CPU%d/Debug/IOCheck", "Checking for I/O breakpoint.");
 
-        HM_REG_COUNTER(&pVCpu->hm.s.StatLoadMinimal,            "/HM/CPU%d/Load/Minimal", "VM-entry loading just RIP (+RSP, RFLAGs for old VT-x code).");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatLoadFull,               "/HM/CPU%d/Load/Full", "VM-entry loading more of the state.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatLoadMinimal,            "/HM/CPU%d/Load/Minimal", "VM-entry loading minimal guest-state.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatLoadFull,               "/HM/CPU%d/Load/Full", "VM-entry loading the full guest-state.");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelBase,   "/HM/CPU%d/VMXCheck/RMSelBase", "Could not use VMX due to unsuitable real-mode selector base.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelLimit,  "/HM/CPU%d/VMXCheck/RMSelLimit", "Could not use VMX due to unsuitable real-mode selector limit.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckRmOk,           "/HM/CPU%d/VMXCheck/VMX_RM", "VMX execution in real (V86) mode OK.");
-
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadSel,         "/HM/CPU%d/VMXCheck/Selector", "Could not use VMX due to unsuitable selector.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRpl,         "/HM/CPU%d/VMXCheck/RPL", "Could not use VMX due to unsuitable RPL.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadLdt,         "/HM/CPU%d/VMXCheck/LDT", "Could not use VMX due to unsuitable LDT.");
@@ -790,8 +790,8 @@ static int hmR3InitCPU(PVM pVM)
         for (unsigned j = 0; j < 255; j++)
         {
             STAMR3RegisterF(pVM, &pVCpu->hm.s.paStatInjectedIrqs[j], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
-                            "Forwarded interrupts.",
-                            (j < 0x20) ? "/HM/CPU%d/Interrupt/Trap/%02X" : "/HM/CPU%d/Interrupt/IRQ/%02X", i, j);
+                            "Injected event.",
+                            (j < 0x20) ? "/HM/CPU%d/EventInject/Event/Trap/%02X" : "/HM/CPU%d/EventInject/Event/IRQ/%02X", i, j);
         }
 
     }

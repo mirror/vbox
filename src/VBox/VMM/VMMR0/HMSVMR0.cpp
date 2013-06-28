@@ -1690,10 +1690,11 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     HMSVM_SAVE_SEG_REG(GS, gs);
 
     /*
-     * Correct the hidden CS granularity flag. Haven't seen it being wrong in any other
+     * Correct the hidden CS granularity bit. Haven't seen it being wrong in any other
      * register (yet).
      */
-    /** @todo Verify this. */
+    /** @todo SELM might need to be fixed as it too should not care about the
+     *        granularity bit. See @bugref{6785}. */
     if (   !pMixedCtx->cs.Attr.n.u1Granularity
         && pMixedCtx->cs.Attr.n.u1Present
         && pMixedCtx->cs.u32Limit > UINT32_C(0xfffff))
@@ -1701,13 +1702,14 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert((pMixedCtx->cs.u32Limit & 0xfff) == 0xfff);
         pMixedCtx->cs.Attr.n.u1Granularity = 1;
     }
+
 #ifdef VBOX_STRICT
 # define HMSVM_ASSERT_SEG_GRANULARITY(reg) \
     AssertMsg(   !pMixedCtx->reg.Attr.n.u1Present \
               || (   pMixedCtx->reg.Attr.n.u1Granularity \
                   ? (pMixedCtx->reg.u32Limit & 0xfff) == 0xfff \
                   :  pMixedCtx->reg.u32Limit <= UINT32_C(0xfffff)), \
-              ("Invalid Segment Attributes %#x %#x %#llx\n", pMixedCtx->reg.u32Limit, \
+              ("Invalid Segment Attributes Limit=%#RX32 Attr=%#RX32 Base=%#RX64\n", pMixedCtx->reg.u32Limit, \
               pMixedCtx->reg.Attr.u, pMixedCtx->reg.u64Base))
 
     HMSVM_ASSERT_SEG_GRANULARITY(cs);
@@ -1944,6 +1946,9 @@ static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
  * @param   pEvent              Pointer to the SVM event.
  * @param   GCPtrFaultAddress   The fault-address (CR2) in case it's a
  *                              page-fault.
+ *
+ * @remarks Statistics counter assumes this is a guest event being reflected to
+ *          the guest i.e. 'StatInjectPendingReflect' is incremented always.
  */
 DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, PSVMEVENT pEvent, RTGCUINTPTR GCPtrFaultAddress)
 {
@@ -1956,6 +1961,8 @@ DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, PSVMEVENT pEvent, RTGCUINT
 
     Log4(("hmR0SvmSetPendingEvent: u=%#RX64 u8Vector=%#x Type=%#x ErrorCodeValid=%RTbool ErrorCode=%#RX32\n", pEvent->u,
           pEvent->n.u8Vector, (uint8_t)pEvent->n.u3Type, !!pEvent->n.u1ErrorCodeValid, pEvent->n.u32ErrorCode));
+
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectPendingReflect);
 }
 
 
@@ -2044,7 +2051,9 @@ static void hmR0SvmTrpmTrapToPendingEvent(PVMCPU pVCpu)
 
     Log4(("TRPM->HM event: u=%#RX64 u8Vector=%#x uErrorCodeValid=%RTbool uErrorCode=%#RX32\n", Event.u, Event.n.u8Vector,
           !!Event.n.u1ErrorCodeValid, Event.n.u32ErrorCode));
+
     hmR0SvmSetPendingEvent(pVCpu, &Event, GCPtrFaultAddress);
+    STAM_COUNTER_DEC(&pVCpu->hm.s.StatInjectPendingReflect);
 }
 
 
@@ -2202,7 +2211,13 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
             pVCpu->hm.s.Event.fPending = false;
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatIntReinject);
+
+#ifdef VBOX_WITH_STATISTICS
+            if (Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ)
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
+            else
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
+#endif
         }
         else
             hmR0SvmSetVirtIntrIntercept(pVmcb);
@@ -2219,6 +2234,8 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
             hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
         }
         else
             hmR0SvmSetVirtIntrIntercept(pVmcb);
@@ -2240,7 +2257,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
                 Event.n.u3Type   = SVM_EVENT_EXTERNAL_IRQ;
 
                 hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatIntInject);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
             }
             else
             {
@@ -2975,6 +2992,7 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                             /** Saves the wrong EIP on the stack (pointing to the int3) instead of the
                              *  next instruction. */
                             /** @todo Investigate this later. */
+                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);
                             break;
 
                         case X86_XCPT_UD:
@@ -3137,7 +3155,7 @@ DECLINLINE(void) hmR0SvmSetPendingXcptUD(PVMCPU pVCpu)
 
 
 /**
- * Sets an debug (#DB) exception as pending-for-injection into the VM.
+ * Sets a debug (#DB) exception as pending-for-injection into the VM.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  */
@@ -3366,6 +3384,14 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
             if (pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0 <= SVM_EXIT_EXCEPTION_1F)
             {
                 uint8_t uExitVector = (uint8_t)(pSvmTransient->u64ExitCode - SVM_EXIT_EXCEPTION_0);
+
+#ifdef VBOX_STRICT
+                if (   hmR0SvmIsContributoryXcpt(uIdtVector)
+                    && uExitVector == X86_XCPT_PF)
+                {
+                    Log4(("IDT: Contributory #PF uCR2=%#RX64\n", pVCpu->idCpu, pCtx->cr2));
+                }
+#endif
                 if (   uExitVector == X86_XCPT_PF
                     && uIdtVector  == X86_XCPT_PF)
                 {
@@ -3413,6 +3439,8 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
 
                 pVCpu->hm.s.Event.u64IntrInfo = pVmcb->ctrl.ExitIntInfo.u;
                 pVCpu->hm.s.Event.fPending = true;
+
+                hmR0SvmSetPendingEvent(pVCpu, &pVmcb->ctrl.ExitIntInfo, 0 /* GCPtrFaultAddress */);
 
                 /* If uExitVector is #PF, CR2 value will be updated from the VMCB if it's a guest #PF. See hmR0SvmExitXcptPF(). */
                 Log4(("IDT: Pending vectoring event %#RX64 ErrValid=%RTbool Err=%#RX32\n", pVmcb->ctrl.ExitIntInfo.u,
@@ -4297,19 +4325,19 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     }
     else if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
+        pVCpu->hm.s.Event.fPending = false;     /* In case it's a contributory or vectoring #PF. */
+
         if (!pSvmTransient->fVectoringPF)
         {
             /* It's a guest page fault and needs to be reflected to the guest. */
             u32ErrCode = TRPMGetErrorCode(pVCpu);        /* The error code might have been changed. */
             TRPMResetTrap(pVCpu);
-
             hmR0SvmSetPendingXcptPF(pVCpu, pCtx, u32ErrCode, uFaultAddress);
         }
         else
         {
             /* A guest page-fault occurred during delivery of a page-fault. Inject #DF. */
             TRPMResetTrap(pVCpu);
-            pVCpu->hm.s.Event.fPending = false;     /* Clear pending #PF to replace it with #DF. */
             hmR0SvmSetPendingXcptDF(pVCpu);
             Log4(("#PF: Pending #DF due to vectoring #PF\n"));
         }
@@ -4366,20 +4394,18 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);
+
     int rc;
     if (!(pCtx->cr0 & X86_CR0_NE))
     {
         /* Old-style FPU error reporting needs some extra work. */
         /** @todo don't fall back to the recompiler, but do it manually. */
-        rc = VERR_EM_INTERPRETER;
+        return VERR_EM_INTERPRETER;
     }
-    else
-    {
-        hmR0SvmSetPendingXcptMF(pVCpu);
-        rc = VINF_SUCCESS;
-    }
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);
-    return rc;
+
+    hmR0SvmSetPendingXcptMF(pVCpu);
+    return VINF_SUCCESS;
 }
 
 
@@ -4402,13 +4428,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
         /* Reflect the exception back to the guest. */
-        SVMEVENT Event;
-        Event.u          = 0;
-        Event.n.u1Valid  = 1;
-        Event.n.u3Type   = SVM_EVENT_EXCEPTION;
-        Event.n.u8Vector = X86_XCPT_DB;
-        hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-
+        hmR0SvmSetPendingXcptDB(pVCpu);
         rc = VINF_SUCCESS;
     }
 
