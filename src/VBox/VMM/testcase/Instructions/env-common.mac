@@ -99,6 +99,7 @@
 ;*  Internal Functions                                                         *
 ;*******************************************************************************
 
+VBINSTST_BEGINCODE
 
 ;;
 ; Report bad register value.
@@ -112,6 +113,10 @@
 ;
 VBINSTST_BEGINPROC Common_BadValue
         MY_PUSH_ALL
+        mov     xAX, xSP                ; 16-byte align the stack and reserve space for arguments and stuff.
+        sub     xSP, 40h
+        and     xSP, ~15
+        mov     [xSP + 38h], xAX
 
 %ifdef ASM_CALL64_GCC
         mov     r8d, [VBINSTST_NAME(g_uVBInsTstSubTestIndicator) wrt rip]
@@ -122,7 +127,6 @@ VBINSTST_BEGINPROC Common_BadValue
         VBINSTST_CALL_FN_FAILURE_4
 
 %elifdef ASM_CALL64_MSC
-        sub     rsp, 28h
         mov     r10d, [VBINSTST_NAME(g_uVBInsTstSubTestIndicator) wrt rip]
         mov     [rsp + 20h], r10
         mov     r9,  [rbp + 10h] ; expected
@@ -130,21 +134,21 @@ VBINSTST_BEGINPROC Common_BadValue
         mov     rdx, [rbp + 20h] ; reg#
         lea     rcx, [.szFmt wrt rip]
         VBINSTST_CALL_FN_FAILURE_4
-        add     rsp, 28h
 
 %else
         mov     sBX, [VBINSTST_NAME(g_uVBInsTstSubTestIndicator)]
         mov     sCX, [xBP + 4 + xCB]     ; expected
         mov     sAX, [xBP + 4 + xCB + 4] ; actual
         mov     sDX, [xBP + 4 + xCB + 8] ; reg#
-        push    sBX
-        push    sCX
-        push    sAX
-        push    sDX
-        push    .szFmt
+        mov     [xSP + xCB + 3*sCB], sBX
+        mov     [xSP + xCB + 2*sCB], sCX
+        mov     [xSP + xCB + 1*sCB], sAX
+        mov     [xSP + xCB], sDX
+        mov     [xSP], RTCCPTR_PRE .szFmt
         VBINSTST_CALL_FN_FAILURE_4
-        add     esp, 4*sCB + xCB
 %endif
+
+        mov     xSP, [xSP + 38h]
         MY_POP_ALL
         ret
 %if ARCH_BITS == 64
