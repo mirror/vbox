@@ -1070,7 +1070,7 @@ d3d_install:
   ${Else} ; D3D unselected again
 
     ${If}   $g_strWinVersion != "8"   ; On Windows 8 WDDM is mandatory
-    ${OrIf} $g_strWinVersion != "8_1" ; ... also on Windows 8.1 / Windows 2012 Server R2
+    ${AndIf} $g_strWinVersion != "8_1" ; ... also on Windows 8.1 / Windows 2012 Server R2
       StrCpy $g_bWithWDDM "false"
     ${EndIf}
 
