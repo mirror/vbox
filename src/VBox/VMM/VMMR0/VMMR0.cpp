@@ -263,12 +263,13 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
  *
  * @param   pVM         Pointer to the VM.
  * @param   uSvnRev     The SVN revision of the ring-3 part.
+ * @param   uBuildType  Build type indicator.
  * @thread  EMT.
  */
-static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
+static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
 {
     /*
-     * Match the SVN revisions.
+     * Match the SVN revisions and build type.
      */
     if (uSvnRev != VMMGetSvnRev())
     {
@@ -276,9 +277,16 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev)
         SUPR0Printf("VMMR0InitVM: Revision mismatch, r3=%d r0=%d\n", uSvnRev, VMMGetSvnRev());
         return VERR_VMM_R0_VERSION_MISMATCH;
     }
+    if (uBuildType != vmmGetBuildType())
+    {
+        LogRel(("VMMR0InitVM: Build type mismatch, r3=%#x r0=%#x\n", uBuildType, vmmGetBuildType()));
+        SUPR0Printf("VMMR0InitVM: Build type mismatch, r3=%#x r0=%#x\n", uBuildType, vmmGetBuildType());
+        return VERR_VMM_R0_VERSION_MISMATCH;
+    }
     if (    !VALID_PTR(pVM)
         ||  pVM->pVMR0 != pVM)
         return VERR_INVALID_PARAMETER;
+
 
 #ifdef LOG_ENABLED
     /*
@@ -952,7 +960,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
          * Initialize the R0 part of a VM instance.
          */
         case VMMR0_DO_VMMR0_INIT:
-            return vmmR0InitVM(pVM, (uint32_t)u64Arg);
+            return vmmR0InitVM(pVM, RT_LODWORD(u64Arg), RT_HIDWORD(u64Arg));
 
         /*
          * Terminate the R0 part of a VM instance.

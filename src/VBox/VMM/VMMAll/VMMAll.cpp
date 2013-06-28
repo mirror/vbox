@@ -359,3 +359,21 @@ VMM_INT_DECL(bool) VMMIsInRing3Call(PVMCPU pVCpu)
 #endif
 }
 
+
+/**
+ * Returns the build type for matching components.
+ *
+ * @returns Build type value.
+ */
+uint32_t vmmGetBuildType(void)
+{
+    uint32_t uRet = 0xbeef0000;
+#ifdef DEBUG
+    uRet |= RT_BIT_32(0);
+#endif
+#ifdef VBOX_WITH_STATISTICS
+    uRet |= RT_BIT_32(1);
+#endif
+    return uRet;
+}
+

@@ -510,7 +510,8 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
         //rc = VERR_GENERAL_FAILURE;
         rc = VINF_SUCCESS;
 #else
-        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_VMMR0_INIT, VMMGetSvnRev(), NULL);
+        rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_VMMR0_INIT,
+                              RT_MAKE_U64(VMMGetSvnRev(), vmmGetBuildType()), NULL);
 #endif
         /*
          * Flush the logs.
@@ -568,12 +569,13 @@ VMMR3_INT_DECL(int) VMMR3InitRC(PVM pVM)
     {
         CPUMSetHyperESP(pVCpu, pVCpu->vmm.s.pbEMTStackBottomRC); /* Clear the stack. */
         uint64_t u64TS = RTTimeProgramStartNanoTS();
-        CPUMPushHyper(pVCpu, (uint32_t)(u64TS >> 32));    /* Param 3: The program startup TS - Hi. */
-        CPUMPushHyper(pVCpu, (uint32_t)u64TS);            /* Param 3: The program startup TS - Lo. */
+        CPUMPushHyper(pVCpu, (uint32_t)(u64TS >> 32));    /* Param 4: The program startup TS - Hi. */
+        CPUMPushHyper(pVCpu, (uint32_t)u64TS);            /* Param 4: The program startup TS - Lo. */
+        CPUMPushHyper(pVCpu, vmmGetBuildType());          /* Param 3: Version argument. */
         CPUMPushHyper(pVCpu, VMMGetSvnRev());             /* Param 2: Version argument. */
         CPUMPushHyper(pVCpu, VMMGC_DO_VMMGC_INIT);        /* Param 1: Operation. */
         CPUMPushHyper(pVCpu, pVM->pVMRC);                 /* Param 0: pVM */
-        CPUMPushHyper(pVCpu, 5 * sizeof(RTRCPTR));        /* trampoline param: stacksize.  */
+        CPUMPushHyper(pVCpu, 6 * sizeof(RTRCPTR));        /* trampoline param: stacksize.  */
         CPUMPushHyper(pVCpu, RCPtrEP);                    /* Call EIP. */
         CPUMSetHyperEIP(pVCpu, pVM->vmm.s.pfnCallTrampolineRC);
         Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
