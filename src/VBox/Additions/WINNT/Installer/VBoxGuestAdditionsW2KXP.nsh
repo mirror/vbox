@@ -233,6 +233,7 @@ Function W2K_CopyFiles
 
   !if $%VBOX_WITH_WDDM_W8% == "1"
     ${If} $g_strWinVersion == "8"
+    ${OrIf} $g_strWinVersion == "8_1"
       !ifdef VBOX_SIGN_ADDITIONS
         FILE "$%PATH_OUT%\bin\additions\VBoxVideoW8.cat"
       !endif
@@ -393,6 +394,7 @@ Function W2K_InstallFiles
     ${If} $g_bWithWDDM == "true"
   !if $%VBOX_WITH_WDDM_W8% == "1"
       ${If} $g_strWinVersion == "8"
+      ${OrIf} $g_strWinVersion == "8_1"
         ${LogVerbose} "Installing WDDM video driver for Windows 8..."
         ${CmdExecute} "$\"$INSTDIR\VBoxDrvInst.exe$\" driver install $\"$INSTDIR\VBoxVideoW8.inf$\" $\"$INSTDIR\install_drivers.log$\"" "false"
       ${Else}
