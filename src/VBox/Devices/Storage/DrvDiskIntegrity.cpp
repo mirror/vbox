@@ -160,6 +160,8 @@ typedef struct DRVDISKINTEGRITY
 
     /** Flag whether consistency checks are enabled. */
     bool                    fCheckConsistency;
+    /** Flag whether the RAM disk was prepopulated. */
+    bool                    fPrepopulateRamDisk;
     /** AVL tree containing the disk blocks to check. */
     PAVLRFOFFTREE           pTreeSegments;
 
@@ -437,6 +439,17 @@ static int drvdiskintReadVerify(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsign
                 cbRange = cbLeft;
             else
                 cbRange = pSeg->Core.Key - offCurr;
+
+            if (pThis->fPrepopulateRamDisk)
+            {
+                /* No segment means everything should be 0 for this part. */
+                if (!RTSgBufIsZero(&SgBuf, cbRange))
+                {
+                    RTMsgError("Corrupted disk at offset %llu (expected everything to be 0)!\n",
+                               offCurr);
+                    RTAssertDebugBreak();
+                }
+            }
         }
         else
         {
@@ -1241,7 +1254,8 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
                                     "ExpireIntervalMs\0"
                                     "CheckDoubleCompletions\0"
                                     "HistorySize\0"
-                                    "IoLog\0"))
+                                    "IoLog\0"
+                                    "PrepopulateRamDisk\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     rc = CFGMR3QueryBoolDef(pCfg, "CheckConsistency", &pThis->fCheckConsistency, false);
@@ -1255,6 +1269,8 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     rc = CFGMR3QueryBoolDef(pCfg, "CheckDoubleCompletions", &pThis->fCheckDoubleCompletion, false);
     AssertRC(rc);
     rc = CFGMR3QueryU32Def(pCfg, "HistorySize", &pThis->cEntries, 512);
+    AssertRC(rc);
+    rc = CFGMR3QueryBoolDef(pCfg, "PrepopulateRamDisk", &pThis->fPrepopulateRamDisk, false);
     AssertRC(rc);
 
     char *pszIoLogFilename = NULL;
@@ -1361,6 +1377,50 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     {
         rc = VDDbgIoLogCreate(&pThis->hIoLogger, pszIoLogFilename, VDDBG_IOLOG_LOG_DATA);
         MMR3HeapFree(pszIoLogFilename);
+    }
+
+    /* Read in all data before the start if requested. */
+    if (pThis->fPrepopulateRamDisk)
+    {
+        uint64_t cbDisk = 0;
+
+        LogRel(("DiskIntegrity: Prepopulating RAM disk, this will take some time...\n"));
+
+        cbDisk = pThis->pDrvMedia->pfnGetSize(pThis->pDrvMedia);
+        if (cbDisk)
+        {
+            uint64_t off = 0;
+            uint8_t abBuffer[_64K];
+            RTSGSEG Seg;
+
+            Seg.pvSeg = abBuffer;
+
+            while (cbDisk)
+            {
+                size_t cbThisRead = RT_MIN(cbDisk, sizeof(abBuffer));
+
+                rc = pThis->pDrvMedia->pfnRead(pThis->pDrvMedia, off, abBuffer, cbThisRead);
+                if (RT_FAILURE(rc))
+                    break;
+
+                if (ASMBitFirstSet(abBuffer, sizeof(abBuffer) * 8) != -1)
+                {
+                    Seg.cbSeg = cbThisRead;
+                    rc = drvdiskintWriteRecord(pThis, &Seg, 1,
+                                               off, cbThisRead);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+
+                cbDisk -= cbThisRead;
+                off    += cbThisRead;
+            }
+
+            LogRel(("DiskIntegrity: Prepopulating RAM disk finished with %Rrc\n", rc));
+        }
+        else
+            return PDMDRV_SET_ERROR(pDrvIns, VERR_INTERNAL_ERROR,
+                                    N_("DiskIntegrity: Error querying the media size below"));
     }
 
     return rc;
