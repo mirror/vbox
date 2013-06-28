@@ -21,12 +21,13 @@
 # include "precomp.h"
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* Local includes */
+/* GUI includes: */
 # include "UIMachineView.h"
 # include "UIFrameBuffer.h"
 # include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
 
+/* Other VBox includes: */
 # include <VBox/VBoxVideo3D.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -167,12 +168,20 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
                                           ULONG uWidth, ULONG uHeight,
                                           BOOL *pbFinished)
 {
+    LogRelFlow(("UIFrameBuffer::RequestResize: "
+                "Screen=%lu, Format=%lu, "
+                "BitsPerPixel=%lu, BytesPerLine=%lu, "
+                "Size=%lux%lu\n",
+                (unsigned long)uScreenId, (unsigned long)uPixelFormat,
+                (unsigned long)uBitsPerPixel, (unsigned long)uBytesPerLine,
+                (unsigned long)uWidth, (unsigned long)uHeight));
+
     /* Make sure frame-buffer is not yet scheduled for removal: */
     if (m_fIsScheduledToDelete)
         return E_FAIL;
 
     /* Currently screen ID is not used: */
-    NOREF(uScreenId);
+    Q_UNUSED(uScreenId);
 
     /* Mark request as not-yet-finished: */
     *pbFinished = FALSE;
@@ -199,6 +208,10 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
 
 STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
 {
+    LogRelFlow(("UIFrameBuffer::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu\n",
+                (unsigned long)uX, (unsigned long)uY,
+                (unsigned long)uWidth, (unsigned long)uHeight));
+
     /* Make sure frame-buffer is not yet scheduled for removal: */
     if (m_fIsScheduledToDelete)
         return E_FAIL;
@@ -220,32 +233,44 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
 
 STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULONG uBPP, BOOL *pbSupported)
 {
-    NOREF(uBPP);
-    LogFlowThisFunc(("width=%lu, height=%lu, BPP=%lu\n",
-                    (unsigned long)uWidth, (unsigned long)uHeight, (unsigned long)uBPP));
+    LogRelFlow(("UIFrameBuffer::VideoModeSupported: Mode: BPP=%lu, Size=%lux%lu\n",
+                (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
+
+    /* Make sure frame-buffer is not yet scheduled for removal: */
+    if (m_fIsScheduledToDelete)
+        return E_FAIL;
 
     if (!pbSupported)
         return E_POINTER;
     *pbSupported = TRUE;
 
-    lock(); /* See comment in setView(). */
-    QSize screen;
+    /* Currently BPP is not used: */
+    Q_UNUSED(uBPP);
+
+    /* See comment in setView(): */
+    lock();
+
+    QSize screenSize;
     if (m_pMachineView)
-        screen = m_pMachineView->maxGuestSize();
+        screenSize = m_pMachineView->maxGuestSize();
+
+    /* Unlock thread finally: */
     unlock();
-    if (   (screen.width() != 0)
-        && (uWidth > (ULONG)screen.width())
+
+    if (   (screenSize.width() != 0)
+        && (uWidth > (ULONG)screenSize.width())
         && (uWidth > (ULONG)width()))
         *pbSupported = FALSE;
 
-    if (   (screen.height() != 0)
-        && (uHeight > (ULONG)screen.height())
+    if (   (screenSize.height() != 0)
+        && (uHeight > (ULONG)screenSize.height())
         && (uHeight > (ULONG)height()))
         *pbSupported = FALSE;
 
-    LogFlowThisFunc(("screenW=%lu, screenH=%lu -> aSupported=%s\n",
-                    screen.width(), screen.height(), *pbSupported ? "TRUE" : "FALSE"));
+    LogRelFlow(("UIFrameBuffer::VideoModeSupported: Verdict: Supported=%s\n",
+                *pbSupported ? "TRUE" : "FALSE"));
 
+    /* Confirm VideoModeSupported: */
     return S_OK;
 }
 
@@ -256,14 +281,16 @@ STDMETHODIMP UIFrameBuffer::GetVisibleRegion(BYTE *pRectangles, ULONG uCount, UL
     if (!rects)
         return E_POINTER;
 
-    NOREF(uCount);
-    NOREF(puCountCopied);
+    Q_UNUSED(uCount);
+    Q_UNUSED(puCountCopied);
 
     return S_OK;
 }
 
 STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
 {
+    LogRelFlow(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu\n", (unsigned long)uCount));
+
     /* Make sure frame-buffer is not yet scheduled for removal: */
     if (m_fIsScheduledToDelete)
         return E_FAIL;
@@ -333,7 +360,7 @@ void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
     /* should never be here */
     AssertBreakpoint();
 }
-#endif
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 void UIFrameBuffer::setView(UIMachineView * pView)
 {
