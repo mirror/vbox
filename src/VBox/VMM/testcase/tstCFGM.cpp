@@ -132,7 +132,7 @@ static void doStandaloneTests(void)
     PCFGMNODE pRoot;;
     RTTESTI_CHECK_RETV((pRoot = CFGMR3CreateTree(NULL)) != NULL);
     doGeneralTests(pRoot);
-    CFGMR3RemoveNode(pRoot);
+    CFGMR3DestroyTree(pRoot);
 }
 
 int main()
