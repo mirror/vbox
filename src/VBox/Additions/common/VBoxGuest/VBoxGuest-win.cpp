@@ -127,6 +127,9 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 case 2:
                     g_enmVbgdNtVer = VBGDNTVER_WIN8;
                     break;
+                case 3:
+                    g_enmVbgdNtVer = VBGDNTVER_WIN8_1;
+                    break;
                 default:
                     Log(("VBoxGuest::DriverEntry: Unknown version of Windows (%u.%u), refusing!\n", ulMajorVer, ulMinorVer));
                     rc = STATUS_DRIVER_UNABLE_TO_LOAD;
@@ -1325,6 +1328,7 @@ VBOXOSTYPE vbgdNtVersionToOSType(VBGDNTVER enmNtVer)
             break;
 
         case VBGDNTVER_WIN8:
+        case VBGDNTVER_WIN8_1:
 #if ARCH_BITS == 64
             enmOsType = VBOXOSTYPE_Win8_x64;
 #else
