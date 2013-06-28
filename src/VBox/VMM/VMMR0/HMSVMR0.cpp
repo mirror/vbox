@@ -194,6 +194,8 @@ typedef struct SVMTRANSIENT
     bool            fVectoringPF;
     /** Whether the TSC offset mode needs to be updated. */
     bool            fUpdateTscOffsetting;
+    /** Whether the TSC_AUX MSR needs restoring on #VMEXIT. */
+    bool            fRestoreTscAuxMsr;
 } SVMTRANSIENT, *PSVMTRANSIENT;
 /** @}  */
 
@@ -2619,6 +2621,7 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
      *
      * This should be done -after- any RDTSCPs for obtaining the host timestamp (TM, STAM etc).
      */
+    pSvmTransient->fRestoreTscAuxMsr = false;
     if (    (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
         && !(pVmcb->ctrl.u32InterceptCtrl2 & SVM_CTRL2_INTERCEPT_RDTSCP))
     {
@@ -2626,7 +2629,11 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
         uint64_t u64GuestTscAux = 0;
         int rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64GuestTscAux);
         AssertRC(rc2);
-        ASMWrMsr(MSR_K8_TSC_AUX, u64GuestTscAux);
+        if (u64GuestTscAux != pVCpu->hm.s.u64HostTscAux)
+        {
+            ASMWrMsr(MSR_K8_TSC_AUX, u64GuestTscAux);
+            pSvmTransient->fRestoreTscAuxMsr = true;
+        }
     }
 }
 
@@ -2683,12 +2690,11 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     pVmcb->ctrl.u64VmcbCleanBits = HMSVM_VMCB_CLEAN_ALL;        /* Mark the VMCB-state cache as unmodified by VMM. */
 
+    if (pSvmTransient->fRestoreTscAuxMsr)
+        ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
+
     if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
     {
-        /* Restore host's TSC_AUX if required. */
-        if (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
-            ASMWrMsr(MSR_K8_TSC_AUX, pVCpu->hm.s.u64HostTscAux);
-
         /** @todo Find a way to fix hardcoding a guestimate.  */
         TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcb->ctrl.u64TSCOffset - 0x400);
     }
