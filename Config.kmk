@@ -1682,7 +1682,7 @@ endif
 # Note! Yes, --max-branchs is a typo, but not by me.
 #
 ifndef VBOX_PYLINT
- VBOX_PYLINT        := $(firstword $(which pylint-2.7) $(which pylint-2.6) $(which pylint))
+ VBOX_PYLINT        := $(firstword $(which pylint-2.7) $(which pylint-2.6) $(which pylint2) $(which pylint))
  ifdef VBOX_PYLINT
   VBOX_PYLINT       := $(VBOX_BLD_PYTHON) $(VBOX_PYLINT)
  endif
