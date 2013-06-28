@@ -112,9 +112,9 @@
 ;;
 ; Mangles the given C name so it will _import_ the right symbol.
 %ifdef ASM_FORMAT_PE
-%define IMPNAME(name)   __imp_ %+ NAME(name)
+ %define IMPNAME(name)  __imp_ %+ NAME(name)
 %else
-%define IMPNAME(name)   NAME(name)
+ %define IMPNAME(name)  NAME(name)
 %endif
 
 ;;
@@ -128,6 +128,17 @@
 %else
  %define IMP(name)      IMPNAME(name)
 %endif
+
+;;
+; Declares an imported object for use with IMP2.
+; @note May change the current section!
+%macro EXTERN_IMP2 1
+    extern IMPNAME(%1)
+    BEGINDATA
+ %ifdef ASM_FORMAT_MACHO
+    g_Imp2_ %+ %1:  RTCCPTR_DEF IMPNAME(%1)
+ %endif
+%endmacro
 
 ;;
 ; Gets the pointer to an imported object, version 2.
@@ -146,11 +157,7 @@
   %endif
  %endif
 %elifdef ASM_FORMAT_MACHO
- %ifdef RT_ARCH_AMD64
-  %define IMP2(name)    qword [IMPNAME(name) wrt rip]
- %else
-  %define IMP2(name)    IMPNAME(name)
- %endif
+ %define IMP2(name)     RTCCPTR_PRE [g_Imp2_ %+ name xWrtRIP]
 %endif
 %ifndef IMP2
  %define IMP2(name)     IMPNAME(name)
