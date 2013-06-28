@@ -87,6 +87,7 @@ mv VBoxXPCOMIPCD $RPM_BUILD_ROOT/usr/lib/virtualbox
 mv components $RPM_BUILD_ROOT/usr/lib/virtualbox/components
 mv *.so $RPM_BUILD_ROOT/usr/lib/virtualbox
 mv *.so.4 $RPM_BUILD_ROOT/usr/lib/virtualbox || true
+ln -s ../VBoxVMM.so $RPM_BUILD_ROOT/usr/lib/virtualbox/components/VBoxVMM.so
 mv VBoxTestOGL $RPM_BUILD_ROOT/usr/lib/virtualbox
 mv vboxshell.py $RPM_BUILD_ROOT/usr/lib/virtualbox
 (export VBOX_INSTALL_PATH=/usr/lib/virtualbox && \
