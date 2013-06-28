@@ -26,6 +26,10 @@
 
 BITS 32
 
+%if __YASM_MAJOR__ > 1 || (__YASM_MAJOR__ == 1 && __YASM_MINOR__ >= 2)
+ %define pmulhrwa pmulhrw
+%endif
+
 
 BEGINCODE
 
