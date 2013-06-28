@@ -301,7 +301,7 @@ static bool vboxHwBufferWrite(PVBVABUFFERCONTEXT pCtx,
     pRecord = pCtx->pRecord;
     Assert(pRecord && (pRecord->cbRecord & VBVA_F_RECORD_PARTIAL));
 
-    LogFunc(("%d\n", cb));
+    // LogFunc(("%d\n", cb));
 
     cbHwBufferAvail = vboxHwBufferAvail (pVBVA);
 
