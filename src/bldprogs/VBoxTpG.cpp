@@ -782,22 +782,21 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
      * Emit code for the stub functions.
      */
     bool const fWin64   = g_cBits == 64 && (!strcmp(g_pszAssemblerFmtVal, "win64") || !strcmp(g_pszAssemblerFmtVal, "pe64"));
-    bool const fMachO64 = g_cBits == 64 && !strcmp(g_pszAssemblerFmtVal, "macho64");
-    bool const fMachO32 = g_cBits == 32 && !strcmp(g_pszAssemblerFmtVal, "macho32");
+    bool const fElf     = !strcmp(g_pszAssemblerFmtVal, "elf32") || !strcmp(g_pszAssemblerFmtVal, "elf64");
     ScmStreamPrintf(pStrm,
                     "\n"
                     ";\n"
                     "; Prob stubs.\n"
                     ";\n"
                     "BEGINCODE\n"
-                    "extern %sNAME(%s)\n",
-                    g_fProbeFnImported ? "IMP" : "",
-                    g_pszProbeFnName);
-    if (fMachO64 && g_fProbeFnImported && !g_fPic)
+                    );
+    if (g_fProbeFnImported)
         ScmStreamPrintf(pStrm,
-                        "g_pfnVtgProbeFn:\n"
-                        "   dq NAME(%s)\n",
+                        "EXTERN_IMP2 %s\n"
+                        "BEGINCODE ; EXTERN_IMP2 changes section\n",
                         g_pszProbeFnName);
+    else
+        ScmStreamPrintf(pStrm, "extern NAME(%s)\n", g_pszProbeFnName);
 
     RTListForEach(&g_ProviderHead, pProvider, VTGPROVIDER, ListEntry)
     {
@@ -835,7 +834,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
              * Jump to the fire-probe function.
              */
             if (g_cBits == 32)
-                ScmStreamPrintf(pStrm, g_fPic ?
+                ScmStreamPrintf(pStrm, g_fPic && fElf ?
                                 "        jmp     %s wrt ..plt\n"
                                 : g_fProbeFnImported ?
                                 "        mov     ecx, IMP2(%s)\n"
@@ -843,11 +842,8 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                                 :
                                 "        jmp     NAME(%s)\n"
                                 , g_pszProbeFnName);
-            else if (fMachO64 && g_fProbeFnImported)
-                ScmStreamPrintf(pStrm,
-                                "        jmp     [g_pfnVtgProbeFn wrt rip]\n");
             else
-                ScmStreamPrintf(pStrm, g_fPic ?
+                ScmStreamPrintf(pStrm, g_fPic && fElf ?
                                 "        jmp     [rel %s wrt ..got]\n"
                                 : g_fProbeFnImported ?
                                 "        jmp     IMP2(%s)\n"
