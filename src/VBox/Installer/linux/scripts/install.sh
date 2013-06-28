@@ -244,7 +244,7 @@ else
     mv "${INSTALL_SOURCE}/src/vboxhost" "${PREFIX}/src/vboxhost-${VBOX_VERSION_STRING}"
 fi
 # currently required, otherwise the extpacks will not load
-ln -s .. ${PREFIX}/lib/virtualbox/components/VBoxVMM.so
+ln -s ../VBoxVMM.so ${PREFIX}/lib/virtualbox/components/VBoxVMM.so
 test -z "${NO_QT}" && ln -s "VBox" "${PREFIX}/bin/VirtualBox"
 test -z "${NO_QT}" && ln -sf "VBox" "${PREFIX}/bin/virtualbox"
 ln -s "VBox" "${PREFIX}/bin/VBoxManage"
