@@ -162,17 +162,26 @@ VBINSTST_ENDPROC   Common_BadValue
 
 ;
 ; Global data variables used by Common_SetupMemReadUxx.
+; For address calculation reasons, these must be qword aligned.
 ;
 BEGINDATA
+        dd      09d8af498h, 09ab3e5f8h
 VBINSTST_GLOBALNAME_EX g_u64Data, data hidden
         dq      0
+        dd      07d7af797h, 096b36562h
 VBINSTST_GLOBALNAME_EX g_u32Data, data hidden
         dd      0
+        dd      012305987h
 VBINSTST_GLOBALNAME_EX g_u16Data, data hidden
         dw      0
+        dw      05865h
+        dw      03863h
+        dw      02679h
 VBINSTST_GLOBALNAME_EX g_u8Data, data hidden
         db      0
         db      90h
+        dw      0865ah
+        dd      058daffe2h
 
 BEGINCODE
 
