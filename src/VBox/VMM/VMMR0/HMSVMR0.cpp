@@ -188,15 +188,19 @@ typedef struct SVMTRANSIENT
     uint64_t        u64ExitCode;
     /** The guest's TPR value used for TPR shadowing. */
     uint8_t         u8GuestTpr;
+    /** Alignment. */
+    uint8_t         abAlignment0[7];
 
+    /** Whether the TSC_AUX MSR needs restoring on #VMEXIT. */
+    bool            fRestoreTscAuxMsr;
     /** Whether the #VMEXIT was caused by a page-fault during delivery of a
      *  contributary exception or a page-fault. */
     bool            fVectoringPF;
     /** Whether the TSC offset mode needs to be updated. */
     bool            fUpdateTscOffsetting;
-    /** Whether the TSC_AUX MSR needs restoring on #VMEXIT. */
-    bool            fRestoreTscAuxMsr;
 } SVMTRANSIENT, *PSVMTRANSIENT;
+AssertCompileMemberAlignment(SVMTRANSIENT, u64ExitCode,       sizeof(uint64_t));
+AssertCompileMemberAlignment(SVMTRANSIENT, fRestoreTscAuxMsr, sizeof(uint64_t));
 /** @}  */
 
 
@@ -2190,6 +2194,7 @@ DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
 static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(!TRPMHasTrap(pVCpu));
+    Log4Func(("\n"));
 
     const bool fIntShadow = !!hmR0SvmGetGuestIntrShadow(pVCpu, pCtx);
     const bool fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
@@ -2216,6 +2221,8 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
         if (fInject)
         {
+            Log4(("Injecting pending HM event.\n"));
+
             hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
             pVCpu->hm.s.Event.fPending = false;
 
@@ -3445,8 +3452,6 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                 Assert(pVmcb->ctrl.ExitIntInfo.n.u3Type != SVM_EVENT_SOFTWARE_INT);
 
                 pVCpu->hm.s.Event.u64IntrInfo = pVmcb->ctrl.ExitIntInfo.u;
-                pVCpu->hm.s.Event.fPending = true;
-
                 hmR0SvmSetPendingEvent(pVCpu, &pVmcb->ctrl.ExitIntInfo, 0 /* GCPtrFaultAddress */);
 
                 /* If uExitVector is #PF, CR2 value will be updated from the VMCB if it's a guest #PF. See hmR0SvmExitXcptPF(). */
@@ -4405,7 +4410,6 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestMF);
 
-    int rc;
     if (!(pCtx->cr0 & X86_CR0_NE))
     {
         /* Old-style FPU error reporting needs some extra work. */
