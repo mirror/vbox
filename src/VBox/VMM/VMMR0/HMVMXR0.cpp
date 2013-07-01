@@ -6665,7 +6665,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  *
  * @remarks No-long-jump zone!!!
  */
-VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     AssertPtr(pVM);
     AssertPtr(pVCpu);
@@ -6744,6 +6744,29 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
+}
+
+
+/**
+ * Loads the guest state into the VMCS guest-state area.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
+ *                      out-of-sync. Make sure to update the required fields
+ *                      before using them.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+{
+    /*
+     * Avoid reloading the guest state on longjmp reentrants and do it lazily just before executing the guest.
+     * This only helps when we get rescheduled more than once to a different host CPU on a longjmp trip before
+     * finally executing guest code.
+     */
+    return VINF_SUCCESS;
 }
 
 
@@ -6877,7 +6900,7 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
     }
     else if (pVCpu->hm.s.fContextUseFlags)
     {
-        rc = VMXR0LoadGuestState(pVM, pVCpu, pMixedCtx);
+        rc = hmR0VmxLoadGuestState(pVM, pVCpu, pMixedCtx);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
     }
     AssertRC(rc);
