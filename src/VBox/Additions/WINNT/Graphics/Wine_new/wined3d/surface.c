@@ -2146,18 +2146,28 @@ static void surface_unload(struct wined3d_resource *resource)
      * Otherwise, destroy it. */
     if (!surface->container)
     {
-#ifdef VBOX_WITH_WDDM
-        texture_gl_delete(surface->texture_name);
-#else
-        gl_info->gl_ops.gl.p_glDeleteTextures(1, &surface->texture_name);
+#ifdef VBOX_WITH_WINE_FIX_TEXCLEAR
+        if (surface->texture_name)
 #endif
-        surface->texture_name = 0;
+        {
 #ifdef VBOX_WITH_WDDM
-        texture_gl_delete(surface->texture_name_srgb);
+            texture_gl_delete(surface->texture_name);
 #else
-        gl_info->gl_ops.gl.p_glDeleteTextures(1, &surface->texture_name_srgb);
+            gl_info->gl_ops.gl.p_glDeleteTextures(1, &surface->texture_name);
 #endif
-        surface->texture_name_srgb = 0;
+            surface->texture_name = 0;
+        }
+#ifdef VBOX_WITH_WINE_FIX_TEXCLEAR
+        if (surface->texture_name_srgb)
+#endif
+        {
+#ifdef VBOX_WITH_WDDM
+            texture_gl_delete(surface->texture_name_srgb);
+#else
+            gl_info->gl_ops.gl.p_glDeleteTextures(1, &surface->texture_name_srgb);
+#endif
+            surface->texture_name_srgb = 0;
+        }
     }
     if (surface->rb_multisample)
     {
