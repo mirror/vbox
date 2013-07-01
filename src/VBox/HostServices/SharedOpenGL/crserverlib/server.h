@@ -112,10 +112,13 @@ GLboolean crServerClientInBeginEnd(const CRClient *client);
 
 GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLint shareCtx, GLint preloadCtxID, int32_t internalID);
 GLint crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preloadWinID);
-GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID, GLboolean fSetVRegs);
+GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID, GLboolean fUseDefaultDEntry);
 void crServerMuralTerm(CRMuralInfo *mural);
 void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height);
-int crServerMuralSynchRootVr(CRMuralInfo *mural, uint32_t *pcRects, const RTRECT **ppRects);
+void crServerMutalPosition(CRMuralInfo *mural, GLint x, GLint y);
+void crServerMuralVisibleRegion( CRMuralInfo *mural, GLint cRects, const GLint *pRects );
+void crServerMuralShow( CRMuralInfo *mural, GLint state );
+int crServerMuralSynchRootVr(CRMuralInfo *mural);
 
 GLint crServerGenerateID(GLint *pCounter);
 
@@ -185,7 +188,7 @@ DECLINLINE(GLboolean) crServerVBoxCompositionPresentNeeded(CRMuralInfo *mural)
     return mural->bVisible
                 && mural->width
                 && mural->height
-                && !mural->fRootVrOn ? CrVrScrCompositorEntryIsInList(&mural->CEntry) : CrVrScrCompositorEntryIsInList(&mural->RootVrCEntry);
+                && !mural->fRootVrOn ? !CrVrScrCompositorIsEmpty(&mural->Compositor) : !CrVrScrCompositorIsEmpty(&mural->RootVrCompositor);
 }
 
 #define CR_SERVER_FBO_BB_IDX(_mural) ((_mural)->iBbBuffer)

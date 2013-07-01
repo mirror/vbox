@@ -2796,7 +2796,7 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
     {
         PCR_DISPLAY pDisplay = crServerDisplayGetInitialized(sIndex);
         if (pDisplay)
-            CrDpResize(pDisplay, w, h, w, h);
+            CrDpResize(pDisplay, x, y, w, h);
     }
 
     return VINF_SUCCESS;
@@ -2817,57 +2817,32 @@ static int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
     {
         if (!pMI->fRootVrOn)
         {
-            VBOXVR_TEXTURE Tex = {0};
-
-            rc = CrVrScrCompositorInit(&pMI->RootVrCompositor);
-            if (!RT_SUCCESS(rc))
-            {
-                crWarning("CrVrScrCompositorInit failed, rc %d", rc);
-                goto end;
-            }
-
-
-            Tex.width = pMI->width;
-            Tex.height = pMI->height;
-            Tex.target = GL_TEXTURE_2D;
-            Tex.hwid = 0;
-            CrVrScrCompositorEntryInit(&pMI->RootVrCEntry, &Tex);
+            CrVrScrCompositorInit(&pMI->RootVrCompositor);
         }
 
-        rc = crServerMuralSynchRootVr(pMI, &cRects, &pRects);
+        rc = crServerMuralSynchRootVr(pMI);
         if (!RT_SUCCESS(rc))
         {
             crWarning("crServerMuralSynchRootVr failed, rc %d", rc);
             goto end;
         }
 
-        if (!pMI->fRootVrOn)
-        {
-            rc = CrVrScrCompositorEntryTexUpdate(&pMI->RootVrCompositor, &pMI->RootVrCEntry, CrVrScrCompositorEntryTexGet(&pMI->CEntry));
-            if (!RT_SUCCESS(rc))
-            {
-                crWarning("CrVrScrCompositorEntryTexUpdate failed, rc %d", rc);
-                goto end;
-            }
-        }
-    }
-    else
-    {
-        CrVrScrCompositorTerm(&pMI->RootVrCompositor);
-        rc = CrVrScrCompositorEntryRegionsGet(&pMI->Compositor, &pMI->CEntry, &cRects, NULL, &pRects);
+        rc = CrVrScrCompositorRegionsGet(&pMI->RootVrCompositor, &cRects, NULL, &pRects, NULL);
         if (!RT_SUCCESS(rc))
         {
             crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
             goto end;
         }
-
-        /* CEntry should always be in sync */
-//        rc = CrVrScrCompositorEntryTexUpdate(&pMI->Compositor, &pMI->CEntry,  CrVrScrCompositorEntryTexGet(&pMI->RootVrCEntry));
-//        if (!RT_SUCCESS(rc))
-//        {
-//            crWarning("CrVrScrCompositorEntryTexUpdate failed, rc %d", rc);
-//            goto end;
-//        }
+    }
+    else
+    {
+        CrVrScrCompositorClear(&pMI->RootVrCompositor);
+        rc = CrVrScrCompositorRegionsGet(&pMI->Compositor, &cRects, NULL, &pRects, NULL);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
+            goto end;
+        }
     }
 
     cr_server.head_spu->dispatch_table.WindowVisibleRegion(pMI->spuWindow, cRects, (const GLint*)pRects);

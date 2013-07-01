@@ -292,7 +292,7 @@ static LONG d3d9_device_Term(struct d3d9_device *device)
 
     if (refs != 1)
     {
-        ERR("unexpected ref count %d, destroying in anyway", refs);
+        WARN("unexpected ref count %d, destroying in anyway", refs);
     }
 
     wined3d_mutex_lock();
@@ -3916,7 +3916,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Term(IDirect3DDevice9Ex *iface)
     LONG wined3d_refs;
     if (device->refcount != 1)
     {
-        ERR("unexpected ref count %d, destroying in anyway", device->refcount);
+        WARN("unexpected ref count %d, destroying in anyway", device->refcount);
     }
     wined3d_refs = d3d9_device_Term(device);
     if (wined3d_refs)

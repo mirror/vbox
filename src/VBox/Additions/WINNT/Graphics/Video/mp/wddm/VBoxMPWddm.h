@@ -167,20 +167,37 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE 
         vboxWddmAllocationRetain(pAllocation);
     }
 
-    if (pAllocation && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
+    if (pAllocation && pAllocation->hostID)
     {
+        NTSTATUS Status = vboxVdmaTexPresentSetAlloc(pDevExt, srcId, pAllocation);
+        if (!NT_SUCCESS(Status))
+        {
+            WARN(("vboxVdmaTexPresentSetAlloc failed, Status 0x%x", Status));
+        }
+
+        VBoxVrListClear(&pSource->VrList);
+        pSource->fHas3DVrs = TRUE;
+    }
+    else
+    {
+        if (pSource->fHas3DVrs)
+        {
+            NTSTATUS Status = vboxVdmaTexPresentSetAlloc(pDevExt, srcId, NULL);
+            if (!NT_SUCCESS(Status))
+            {
+                WARN(("vboxVdmaTexPresentSetAlloc failed, Status 0x%x", Status));
+            }
+            pSource->fHas3DVrs = FALSE;
+        }
+
         RTRECT Rect;
         Rect.xLeft = 0;
         Rect.yTop = 0;
-        Rect.xRight = pAllocation->AllocData.SurfDesc.width;
-        Rect.yBottom = pAllocation->AllocData.SurfDesc.height;
+        Rect.xRight = pAllocation ? pAllocation->AllocData.SurfDesc.width : pSource->AllocData.SurfDesc.width;
+        Rect.yBottom = pAllocation ? pAllocation->AllocData.SurfDesc.height : pSource->AllocData.SurfDesc.height;
 
         VBoxVrListRectsSet(&pSource->VrList, 1, &Rect, NULL);
     }
-    else
-        VBoxVrListClear(&pSource->VrList);
-
-    pSource->fHas3DVrs = FALSE;
 
     KIRQL OldIrql;
     KeAcquireSpinLock(&pSource->AllocationLock, &OldIrql);

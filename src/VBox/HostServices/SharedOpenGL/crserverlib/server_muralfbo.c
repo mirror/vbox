@@ -89,7 +89,7 @@ void crServerSetupOutputRedirect(CRMuralInfo *mural)
             uint32_t cRects;
             const RTRECT *pRects;
 
-            int rc = CrVrScrCompositorEntryRegionsGet(&mural->Compositor, &mural->CEntry, &cRects, NULL, &pRects);
+            int rc = CrVrScrCompositorRegionsGet(&mural->Compositor, &cRects, NULL, &pRects, NULL);
             if (!RT_SUCCESS(rc))
             {
                 crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
@@ -119,14 +119,15 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
     CRASSERT(mural->spuWindow);
     CRASSERT(mural->spuWindow != CR_RENDER_DEFAULT_WINDOW_ID);
 
+    crServerVBoxCompositionDisableEnter(mural);
+
     if (!mural->width || !mural->height)
     {
         crServerRedirMuralFBO(mural, CR_SERVER_REDIR_F_NONE);
         crServerDeleteMuralFBO(mural);
+        crServerVBoxCompositionDisableLeave(mural, GL_FALSE);
         return;
     }
-
-    crServerVBoxCompositionDisableEnter(mural);
 
     tlS = crServerGetPointScreen(mural->gX, mural->gY);
     brS = crServerGetPointScreen(mural->gX+mural->width-1, mural->gY+mural->height-1);
@@ -207,6 +208,12 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
         fPresentMode &= ~CR_SERVER_REDIR_F_DISPLAY;
     else if (overlappingScreenCount > 1)
         fPresentMode = (fPresentMode | CR_SERVER_REDIR_F_FBO_RAM_VMFB | cr_server.fVramPresentModeDefault) & ~CR_SERVER_REDIR_F_DISPLAY;
+
+    if (!mural->fUseDefaultDEntry)
+    {
+        /* only display matters */
+        fPresentMode &= CR_SERVER_REDIR_F_DISPLAY;
+    }
 
     fPresentMode = crServerRedirModeAdjust(fPresentMode);
 
@@ -452,8 +459,9 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
 
     CRASSERT(mural->aidFBOs[0]==0);
     CRASSERT(mural->aidFBOs[1]==0);
-    CRASSERT(mural->width == mural->CEntry.Tex.width);
-    CRASSERT(mural->height == mural->CEntry.Tex.height);
+    CRASSERT(mural->fUseDefaultDEntry);
+    CRASSERT(mural->width == mural->DefaultDEntry.CEntry.Tex.width);
+    CRASSERT(mural->height == mural->DefaultDEntry.CEntry.Tex.height);
 
     pMuralContextInfo = cr_server.currentCtxInfo;
     if (!pMuralContextInfo)
@@ -565,10 +573,10 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
 
     CRASSERT(mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
 
-    CrVrScrCompositorEntryTexNameUpdate(&mural->CEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
+    CrVrScrCompositorEntryTexNameUpdate(&mural->DefaultDEntry.CEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
 
-    if (mural->fRootVrOn)
-        CrVrScrCompositorEntryTexNameUpdate(&mural->RootVrCEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
+//    if (mural->fRootVrOn)
+//        CrVrScrCompositorEntryTexNameUpdate(&mural->DefaultDEntry.RootVrCEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
 }
 
 void crServerDeleteMuralFBO(CRMuralInfo *mural)
@@ -667,7 +675,7 @@ static void crServerVBoxCompositionPresentPerform(CRMuralInfo *mural)
 
     CRASSERT(curCtx == crStateGetCurrent());
 
-    Assert(mural->fPresentMode & CR_SERVER_REDIR_F_FBO);
+    Assert((mural->fPresentMode & CR_SERVER_REDIR_F_FBO) || !mural->fUseDefaultDEntry);
     Assert(mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY);
 
     mural->fDataPresented = GL_TRUE;
@@ -686,9 +694,9 @@ static void crServerVBoxCompositionPresentPerform(CRMuralInfo *mural)
     crStateSwitchPrepare(NULL, curCtx, idDrawFBO, idReadFBO);
 
     if (!mural->fRootVrOn)
-        cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, &mural->CEntry);
+        cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->Compositor, NULL);
     else
-        cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->RootVrCompositor, &mural->RootVrCEntry);
+        cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, &mural->RootVrCompositor, NULL);
 
     crStateSwitchPostprocess(curCtx, NULL, idDrawFBO, idReadFBO);
 }
@@ -702,7 +710,8 @@ void crServerVBoxCompositionPresent(CRMuralInfo *mural)
 
 static void crServerVBoxCompositionReenable(CRMuralInfo *mural, GLboolean fForcePresent)
 {
-    if ((mural->fPresentMode & (CR_SERVER_REDIR_F_FBO | CR_SERVER_REDIR_F_DISPLAY)) != (CR_SERVER_REDIR_F_FBO | CR_SERVER_REDIR_F_DISPLAY)
+    if (!(mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY)
+            || (mural->fUseDefaultDEntry && !(mural->fPresentMode & CR_SERVER_REDIR_F_FBO))
             || !mural->fDataPresented
             || (!fForcePresent
                     && !crServerVBoxCompositionPresentNeeded(mural)))
@@ -1035,7 +1044,8 @@ void crServerMuralFBOSwapBuffers(CRMuralInfo *mural)
         cr_server.head_spu->dispatch_table.BindFramebufferEXT(GL_READ_FRAMEBUFFER, CR_SERVER_FBO_FOR_IDX(mural, mural->iCurReadBuffer));
     }
     Assert(mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
-    CrVrScrCompositorEntryTexNameUpdate(&mural->CEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
+    Assert(mural->fUseDefaultDEntry);
+    CrVrScrCompositorEntryTexNameUpdate(&mural->DefaultDEntry.CEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
     if (mural->fRootVrOn)
-        CrVrScrCompositorEntryTexNameUpdate(&mural->RootVrCEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
+        CrVrScrCompositorEntryTexNameUpdate(&mural->DefaultDEntry.RootVrCEntry, mural->aidColorTexs[CR_SERVER_FBO_FB_IDX(mural)]);
 }
