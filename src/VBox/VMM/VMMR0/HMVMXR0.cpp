@@ -177,7 +177,7 @@ typedef struct VMXTRANSIENT
     /** The guest's TPR value used for TPR shadowing. */
     uint8_t         u8GuestTpr;
     /** Alignment. */
-    uint8_t         abAlignment0[6];
+    uint8_t         abAlignment0[7];
 
     /** The basic VM-exit reason. */
     uint16_t        uExitReason;
@@ -195,7 +195,7 @@ typedef struct VMXTRANSIENT
     /** Whether the VM-entry failed or not. */
     bool            fVMEntryFailed;
     /** Alignment. */
-    uint8_t         abAlignment1[5];
+    uint8_t         abAlignment1[7];
 
     /** The VM-entry interruption-information field. */
     uint32_t        uEntryIntrInfo;
