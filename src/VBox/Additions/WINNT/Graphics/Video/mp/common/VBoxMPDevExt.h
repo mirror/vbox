@@ -116,6 +116,8 @@ typedef struct _VBOXMP_DEVEXT
 
    BOOLEAN fTexPresentEnabled;
 
+   uint32_t u32CrConDefaultClientID;
+
    VBOXMP_CRCTLCON CrCtlCon;
    VBOXMP_CRSHGSMITRANSPORT CrHgsmiTransport;
 

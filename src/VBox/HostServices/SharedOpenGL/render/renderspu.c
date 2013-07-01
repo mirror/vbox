@@ -667,7 +667,8 @@ void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pComp
     {
         uint32_t cRegions;
         const RTRECT *paSrcRegions, *paDstRegions;
-        int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions);
+        int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions, NULL);
+        uint32_t fFlags = CrVrScrCompositorEntryFlagsGet(pCompositor, pEntry);
         if (RT_SUCCESS(rc))
         {
             uint32_t i;
@@ -678,7 +679,7 @@ void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pComp
                 DstRect.yTop = paDstRegions[i].yTop * scaleY;
                 DstRect.xRight = paDstRegions[i].xRight * scaleX;
                 DstRect.yBottom = paDstRegions[i].yBottom * scaleY;
-                CrBltBlitTexMural(pBlitter, true, &pEntry->Tex, &paSrcRegions[i], &DstRect, 1, CRBLT_F_LINEAR | CRBLT_F_INVERT_YCOORDS);
+                CrBltBlitTexMural(pBlitter, true, &pEntry->Tex, &paSrcRegions[i], &DstRect, 1, fFlags);
             }
         }
         else
@@ -697,10 +698,11 @@ void renderspuVBoxCompositorBlit ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, P
     {
         uint32_t cRegions;
         const RTRECT *paSrcRegions, *paDstRegions;
-        int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions);
+        int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions, NULL);
+        uint32_t fFlags = CrVrScrCompositorEntryFlagsGet(pCompositor, pEntry);
         if (RT_SUCCESS(rc))
         {
-            CrBltBlitTexMural(pBlitter, true, &pEntry->Tex, paSrcRegions, paDstRegions, cRegions, CRBLT_F_LINEAR | CRBLT_F_INVERT_YCOORDS);
+            CrBltBlitTexMural(pBlitter, true, &pEntry->Tex, paSrcRegions, paDstRegions, cRegions, fFlags);
         }
         else
         {

@@ -1253,7 +1253,8 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     {
         uint32_t cRegions;
         const RTRECT *paSrcRegions, *paDstRegions;
-        int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions);
+        int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions, NULL);
+        uint32_t fFlags = CrVrScrCompositorEntryFlagsGet(pCompositor, pEntry);
         if (RT_SUCCESS(rc))
         {
             uint32_t i;
@@ -1283,7 +1284,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
                         pSrcRect = &SrcRect;
                     }
                     
-                    CrBltBlitTexMural(m_pBlitter, true, &pEntry->Tex, pSrcRect, pDstRect, 1, CRBLT_F_LINEAR | CRBLT_F_INVERT_YCOORDS);
+                    CrBltBlitTexMural(m_pBlitter, true, &pEntry->Tex, pSrcRect, pDstRect, 1, fFlags);
                 }
                 CrBltLeave(m_pBlitter);
             }
@@ -1376,7 +1377,8 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
             {
                 uint32_t cRegions;
                 const RTRECT *paSrcRegions, *paDstRegions;
-                int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions);
+                int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions, NULL);
+                uint32_t fFlags = CrVrScrCompositorEntryFlagsGet(pCompositor, pEntry);
                 if (RT_SUCCESS(rc))
                 {
                     uint32_t i;
@@ -1406,7 +1408,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
                                 pSrcRect = &SrcRect;
                             }
                     
-                            CrBltBlitTexMural(m_pBlitter, true, &pEntry->Tex, pSrcRect, pDstRect, 1, CRBLT_F_LINEAR | CRBLT_F_INVERT_SRC_YCOORDS);
+                            CrBltBlitTexMural(m_pBlitter, true, &pEntry->Tex, pSrcRect, pDstRect, 1, fFlags);
                         }
                         CrBltLeave(m_pBlitter);
                     }

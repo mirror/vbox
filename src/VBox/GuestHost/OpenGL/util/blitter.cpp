@@ -231,6 +231,15 @@ DECLINLINE(GLfloat*) crBltVtRectTFNormalized(const RTRECT *pRect, uint32_t norma
     return &pBuff[8];
 }
 
+DECLINLINE(GLfloat*) crBltVtRectsTFNormalized(const RTRECT *paRects, uint32_t cRects, uint32_t normalX, uint32_t normalY, GLfloat* pBuff, uint32_t height)
+{
+    for (uint32_t i = 0; i < cRects; ++i)
+    {
+        pBuff = crBltVtRectTFNormalized(&paRects[i], normalX, normalY, pBuff, height);
+    }
+    return pBuff;
+}
+
 DECLINLINE(GLint*) crBltVtRectTF(const RTRECT *pRect, uint32_t normalX, uint32_t normalY, GLint* pBuff, uint32_t height)
 {
     /* xLeft yTop */
@@ -373,7 +382,6 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, const V
     GLuint normalX, normalY;
     uint32_t srcHeight = (fFlags & CRBLT_F_INVERT_SRC_YCOORDS) ? pSrc->height : 0;
     uint32_t dstHeight = (fFlags & CRBLT_F_INVERT_DST_YCOORDS) ? pDstSize->cy : 0;
-    Assert(srcHeight == dstHeight);
 
     switch (pSrc->target)
     {
@@ -404,23 +412,14 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, const V
 
     if (cRects == 1)
     {
-        /* just optimizatino to draw a single rect with GL_TRIANGLE_FAN */
-        bool bUseSameVerticies = paSrcRect == paDstRect && normalX == 1 && normalY == 1 && srcHeight == dstHeight;
+        /* just optimization to draw a single rect with GL_TRIANGLE_FAN */
         GLfloat *pVerticies;
         GLfloat *pTexCoords;
-        GLuint cElements = crBltVtGetNumVerticiesTF(1);
-        if (bUseSameVerticies)
-        {
-            pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * sizeof (*pVerticies));
-            crBltVtRectTFNormalized(paDstRect, normalX, normalY, pVerticies, dstHeight);
-            pTexCoords = pVerticies;
-        }
-        else
-        {
-            pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * 2 * sizeof (*pVerticies));
-            pTexCoords = crBltVtRectTFNormalized(paDstRect, 1, 1, pVerticies, dstHeight);
-            crBltVtRectTFNormalized(paSrcRect, normalX, normalY, pTexCoords, srcHeight);
-        }
+        GLuint cElements = crBltVtGetNumVerticiesTF(cRects);
+
+        pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * 2 * sizeof (*pVerticies));
+        pTexCoords = crBltVtRectsTFNormalized(paDstRect, cRects, 1, 1, pVerticies, dstHeight);
+        crBltVtRectsTFNormalized(paSrcRect, cRects, normalX, normalY, pTexCoords, srcHeight);
 
         pBlitter->pDispatch->EnableClientState(GL_VERTEX_ARRAY);
         pBlitter->pDispatch->VertexPointer(2, GL_FLOAT, 0, pVerticies);
@@ -439,25 +438,16 @@ static DECLCALLBACK(int) crBltBlitTexBufImplDraw2D(PCR_BLITTER pBlitter, const V
     }
     else
     {
-        bool bUseSameVerticies = paSrcRect == paDstRect && normalX == 1 && normalY == 1 && srcHeight == dstHeight;
         GLfloat *pVerticies;
         GLfloat *pTexCoords;
         GLubyte *pIndicies;
         GLuint cElements = crBltVtGetNumVerticiesIT(cRects);
         GLuint cIndicies = crBltVtGetNumIndiciesIT(cRects);
         GLubyte iIdxBase = 0;
-        if (bUseSameVerticies)
-        {
-            pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * sizeof (*pVerticies) + cIndicies * sizeof (*pIndicies));
-            crBltVtRectsITNormalized(paDstRect, cRects, normalX, normalY, pVerticies, &pIndicies, &iIdxBase, dstHeight);
-            pTexCoords = pVerticies;
-        }
-        else
-        {
-            pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * 2 * sizeof (*pVerticies) + cIndicies * sizeof (*pIndicies));
-            pTexCoords = crBltVtRectsITNormalized(paDstRect, cRects, 1, 1, pVerticies, &pIndicies, &iIdxBase, dstHeight);
-            crBltVtRectsITNormalized(paSrcRect, cRects, normalX, normalY, pTexCoords, NULL, NULL, srcHeight);
-        }
+
+        pVerticies = (GLfloat*)crBltBufGet(&pBlitter->Verticies, cElements * 2 * 2 * sizeof (*pVerticies) + cIndicies * sizeof (*pIndicies));
+        pTexCoords = crBltVtRectsITNormalized(paDstRect, cRects, 1, 1, pVerticies, &pIndicies, &iIdxBase, dstHeight);
+        crBltVtRectsITNormalized(paSrcRect, cRects, normalX, normalY, pTexCoords, NULL, NULL, srcHeight);
 
         pBlitter->pDispatch->EnableClientState(GL_VERTEX_ARRAY);
         pBlitter->pDispatch->VertexPointer(2, GL_FLOAT, 0, pVerticies);

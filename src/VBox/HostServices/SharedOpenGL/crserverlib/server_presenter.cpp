@@ -67,7 +67,7 @@ int CrDpInit(PCR_DISPLAY pDisplay)
         crWarning("crServerMuralInit failed!");
         return VERR_GENERAL_FAILURE;
     }
-
+    pDisplay->fForcePresent = GL_FALSE;
     return VINF_SUCCESS;
 }
 
@@ -76,31 +76,75 @@ void CrDpTerm(PCR_DISPLAY pDisplay)
     crServerMuralTerm(&pDisplay->Mural);
 }
 
-void CrDpResize(PCR_DISPLAY pDisplay, uint32_t width, uint32_t height,
-        uint32_t stretchedWidth, uint32_t stretchedHeight)
+void CrDpResize(PCR_DISPLAY pDisplay, int32_t xPos, int32_t yPos, uint32_t width, uint32_t height)
 {
-    float StretchX, StretchY;
-    StretchX = ((float)stretchedWidth)/width;
-    StretchY = ((float)stretchedHeight)/height;
-    crServerMuralSize(&pDisplay->Mural, stretchedWidth, stretchedHeight);
-    CrVrScrCompositorSetStretching(&pDisplay->Mural.Compositor, StretchX, StretchY);
+    crServerMuralVisibleRegion(&pDisplay->Mural, 0, NULL);
+    crServerMutalPosition(&pDisplay->Mural, xPos, yPos);
+    crServerMuralSize(&pDisplay->Mural, width, height);
+    crServerMuralShow(&pDisplay->Mural, GL_TRUE);
+    CrVrScrCompositorSetStretching(&pDisplay->Mural.Compositor, 1., 1.);
 }
 
 int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions)
 {
-    int rc = CrVrScrCompositorEntryRegionsSet(&pDisplay->Mural.Compositor, pEntry ? &pEntry->CEntry : NULL, pPos, cRegions, paRegions, NULL);
+    int rc = CrVrScrCompositorEntryRegionsSet(&pDisplay->Mural.Compositor, pEntry ? &pEntry->CEntry : NULL, pPos, cRegions, paRegions, false, NULL);
     return rc;
+}
+
+void crDbgDumpRect(uint32_t i, const RTRECT *pRect)
+{
+    crDebug("%d: (%d;%d) X (%d;%d)", i, pRect->xLeft, pRect->yTop, pRect->xRight, pRect->yBottom);
+}
+
+void crDbgDumpRects(uint32_t cRects, const RTRECT *paRects)
+{
+    crDebug("Dumping rects (%d)", cRects);
+    for (uint32_t i = 0; i < cRects; ++i)
+    {
+        crDbgDumpRect(i, &paRects[i]);
+    }
+    crDebug("End Dumping rects (%d)", cRects);
 }
 
 int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions)
 {
-    int rc = CrVrScrCompositorEntryRegionsAdd(&pDisplay->Mural.Compositor, pEntry ? &pEntry->CEntry : NULL, pPos, cRegions, paRegions, NULL);
+    uint32_t fChangeFlags = 0;
+    int rc = CrVrScrCompositorEntryRegionsAdd(&pDisplay->Mural.Compositor, pEntry ? &pEntry->CEntry : NULL, pPos, cRegions, paRegions, false, &fChangeFlags);
+    if (RT_SUCCESS(rc))
+    {
+        if (fChangeFlags & VBOXVR_COMPOSITOR_CF_REGIONS_CHANGED)
+        {
+            uint32_t cRects;
+            const RTRECT *pRects;
+            rc = CrVrScrCompositorRegionsGet(&pDisplay->Mural.Compositor, &cRects, NULL, &pRects, NULL);
+            if (RT_SUCCESS(rc))
+                crServerMuralVisibleRegion(&pDisplay->Mural, cRects, (GLint *)pRects);
+            else
+                crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
+        }
+    }
+    else
+        crWarning("CrVrScrCompositorEntryRegionsAdd failed, rc %d", rc);
+
     return rc;
+}
+
+void CrDpEntryRegionsClear(PCR_DISPLAY pDisplay)
+{
+    bool fChanged = false;
+    CrVrScrCompositorRegionsClear(&pDisplay->Mural.Compositor, &fChanged);
+    if (fChanged)
+    {
+        crServerMuralVisibleRegion(&pDisplay->Mural, 0, NULL);
+    }
 }
 
 void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData)
 {
     CrVrScrCompositorEntryInit(&pEntry->CEntry, pTextureData);
+    CrVrScrCompositorEntryFlagsSet(&pEntry->CEntry, CRBLT_F_INVERT_SRC_YCOORDS);
+    CrVrScrCompositorEntryInit(&pEntry->RootVrCEntry, pTextureData);
+    CrVrScrCompositorEntryFlagsSet(&pEntry->RootVrCEntry, CRBLT_F_INVERT_SRC_YCOORDS);
 }
 
 void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
@@ -110,13 +154,14 @@ void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
 
 void CrDpEnter(PCR_DISPLAY pDisplay)
 {
+    pDisplay->fForcePresent = crServerVBoxCompositionPresentNeeded(&pDisplay->Mural);
     crServerVBoxCompositionDisableEnter(&pDisplay->Mural);
 }
 
 void CrDpLeave(PCR_DISPLAY pDisplay)
 {
     pDisplay->Mural.fDataPresented = GL_TRUE;
-    crServerVBoxCompositionDisableLeave(&pDisplay->Mural, GL_FALSE);
+    crServerVBoxCompositionDisableLeave(&pDisplay->Mural, pDisplay->fForcePresent);
 }
 
 int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap)
@@ -198,12 +243,6 @@ void CrDemEntryDestroy(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture)
     crHashtableDelete(pMap->pTextureMap, idTexture, crFree);
 }
 
-#define CR_PRESENT_SCREEN_MASK 0xffff
-#define CR_PRESENT_FLAGS_OFFSET 16
-
-#define CR_PRESENT_GET_SCREEN(_cfg) ((_cfg) & CR_PRESENT_SCREEN_MASK)
-#define CR_PRESENT_GET_FLAGS(_cfg) ((_cfg) >> CR_PRESENT_FLAGS_OFFSET)
-
 PCR_DISPLAY crServerDisplayGetInitialized(uint32_t idScreen)
 {
     if (ASMBitTest(cr_server.DisplaysInitMap, idScreen))
@@ -222,16 +261,11 @@ static PCR_DISPLAY crServerDisplayGet(uint32_t idScreen)
     if (ASMBitTest(cr_server.DisplaysInitMap, idScreen))
         return &cr_server.aDispplays[idScreen];
 
-    /* the display (screen id == 0) can be initialized while doing crServerCheckInitDisplayBlitter,
-     * so re-check the bit map */
-     if (ASMBitTest(cr_server.DisplaysInitMap, idScreen))
-         return &cr_server.aDispplays[idScreen];
-
      int rc = CrDpInit(&cr_server.aDispplays[idScreen]);
      if (RT_SUCCESS(rc))
      {
          CrDpResize(&cr_server.aDispplays[idScreen],
-                 cr_server.screen[idScreen].w, cr_server.screen[idScreen].h,
+                 cr_server.screen[idScreen].x, cr_server.screen[idScreen].y,
                  cr_server.screen[idScreen].w, cr_server.screen[idScreen].h);
          ASMBitSet(cr_server.DisplaysInitMap, idScreen);
          return &cr_server.aDispplays[idScreen];
@@ -387,12 +421,19 @@ crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPo
 
     CrDpEnter(pDisplay);
 
-    RTPOINT Point = {xPos, yPos};
-    int rc = CrDpEntryRegionsAdd(pDisplay, pEntry, &Point, (uint32_t)cRects, (const RTRECT*)pRects);
-    if (!RT_SUCCESS(rc))
+    if (!(cfg & CR_PRESENT_FLAG_CLEAR_RECTS))
     {
-        crWarning("CrDpEntrySetRegions Failed rc %d", rc);
-        return;
+        RTPOINT Point = {xPos, yPos};
+        int rc = CrDpEntryRegionsAdd(pDisplay, pEntry, &Point, (uint32_t)cRects, (const RTRECT*)pRects);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("CrDpEntrySetRegions Failed rc %d", rc);
+            return;
+        }
+    }
+    else
+    {
+        CrDpEntryRegionsClear(pDisplay);
     }
 
     CrDpLeave(pDisplay);

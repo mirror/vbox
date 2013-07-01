@@ -931,7 +931,7 @@ NTSTATUS vboxVdmaCrCmdGetChromiumParametervCR(PVBOXMP_DEVEXT pDevExt, uint32_t u
 }
 #endif
 
-static NTSTATUS vboxVdmaSubitVBoxTexPresent(PVBOXMP_DEVEXT pDevExt,
+static NTSTATUS vboxVdmaTexPresentSubmit(PVBOXMP_DEVEXT pDevExt,
         VBOXMP_CRPACKER *pCrPacker,
         uint32_t u32CrConClientID,
         uint32_t hostID,
@@ -964,6 +964,62 @@ static NTSTATUS vboxVdmaSubitVBoxTexPresent(PVBOXMP_DEVEXT pDevExt,
     return Status;
 }
 
+static NTSTATUS vboxVdmaCrCtlGetDefaultClientId(PVBOXMP_DEVEXT pDevExt, uint32_t *pu32ClienID)
+{
+    if (!pDevExt->u32CrConDefaultClientID)
+    {
+        int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pDevExt->u32CrConDefaultClientID);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("VBoxMpCrCtlConConnect failed, rc %d", rc));
+            return STATUS_UNSUCCESSFUL;
+        }
+    }
+
+    *pu32ClienID = pDevExt->u32CrConDefaultClientID;
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS vboxVdmaTexPresentSetAlloc(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, PVBOXWDDM_ALLOCATION pAllocation)
+{
+    RTRECT Rect, *pRect = NULL;
+    uint32_t cRects = 0;
+    uint32_t hostID = 0;
+    uint32_t cfg = VidPnSourceId | CR_PRESENT_FLAG_CLEAR_RECTS;
+    uint32_t u32CrConClientID;
+    NTSTATUS Status = vboxVdmaCrCtlGetDefaultClientId(pDevExt, &u32CrConClientID);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVdmaCrCtlGetDefaultClientId failed Status 0x%x", Status));
+        return Status;
+    }
+
+    VBOXMP_CRPACKER CrPacker;
+    VBoxMpCrPackerInit(&CrPacker);
+
+    if (pAllocation && pAllocation->hostID)
+    {
+        hostID = pAllocation->hostID;
+        cRects = 1;
+        Rect.xLeft = 0;
+        Rect.yTop = 0;
+        Rect.xRight = pAllocation->AllocData.SurfDesc.width;
+        Rect.yBottom = pAllocation->AllocData.SurfDesc.height;
+        pRect = &Rect;
+        cfg = VidPnSourceId;
+    }
+
+    Status = vboxVdmaTexPresentSubmit(pDevExt, &CrPacker, u32CrConClientID,
+            hostID, cfg, 0, 0, cRects, pRect);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVdmaCrCtlGetDefaultClientId failed Status 0x%x", Status));
+        return Status;
+    }
+
+    return STATUS_SUCCESS;
+ }
+
 static NTSTATUS vboxVdmaProcessVRegCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext,
         VBOXWDDM_DMA_ALLOCINFO *pSrcAllocInfo,
         VBOXWDDM_DMA_ALLOCINFO *pDstAllocInfo,
@@ -993,7 +1049,7 @@ static NTSTATUS vboxVdmaProcessVRegCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT 
             int32_t posX = pDstRects->ContextRect.left - pSrcRect->left;
             int32_t posY = pDstRects->ContextRect.top - pSrcRect->top;
 
-            Status = vboxVdmaSubitVBoxTexPresent(pDevExt, &pContext->CrPacker, pContext->u32CrConClientID, hostID, srcId, posX, posY, pDstRects->UpdateRects.cRects, (const RTRECT*)pDstRects->UpdateRects.aRects);
+            Status = vboxVdmaTexPresentSubmit(pDevExt, &pContext->CrPacker, pContext->u32CrConClientID, hostID, srcId, posX, posY, pDstRects->UpdateRects.cRects, (const RTRECT*)pDstRects->UpdateRects.aRects);
             if (NT_SUCCESS(Status))
             {
                 rc = VBoxVrListRectsSubst(&pSource->VrList, pDstRects->UpdateRects.cRects, (const RTRECT*)pDstRects->UpdateRects.aRects, NULL);
@@ -1003,7 +1059,7 @@ static NTSTATUS vboxVdmaProcessVRegCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT 
                     WARN(("VBoxVrListRectsSubst failed rc %d, ignoring..", rc));
             }
             else
-                WARN(("vboxVdmaSubitVBoxTexPresent failed Status 0x%x", Status));
+                WARN(("vboxVdmaTexPresentSubmit failed Status 0x%x", Status));
         }
         else if (pSource->pPrimaryAllocation == pDstAlloc)
         {
@@ -1014,7 +1070,7 @@ static NTSTATUS vboxVdmaProcessVRegCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT 
             {
                 if (fChanged)
                 {
-                    Status = vboxVdmaSubitVBoxTexPresent(pDevExt, &pContext->CrPacker, pContext->u32CrConClientID, hostID, srcId, 0, 0, pDstRects->UpdateRects.cRects, (const RTRECT*)pDstRects->UpdateRects.aRects);
+                    Status = vboxVdmaTexPresentSubmit(pDevExt, &pContext->CrPacker, pContext->u32CrConClientID, hostID, srcId, 0, 0, pDstRects->UpdateRects.cRects, (const RTRECT*)pDstRects->UpdateRects.aRects);
                     if (NT_SUCCESS(Status))
                     {
                         if (pSource->fHas3DVrs)
@@ -1034,7 +1090,7 @@ static NTSTATUS vboxVdmaProcessVRegCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT 
                         }
                     }
                     else
-                        WARN(("vboxVdmaSubitVBoxTexPresent failed Status 0x%x", Status));
+                        WARN(("vboxVdmaTexPresentSubmit failed Status 0x%x", Status));
                 }
             }
             else
