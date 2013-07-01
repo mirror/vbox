@@ -903,7 +903,7 @@
 
       <para>Linux kernels shipped with Red Hat Enterprise Linux (RHEL) as of
       release 4.7 and 5.1 as well as kernels of related Linux distributions
-      (for instance CentOS and Oracle Enterprise Linux) support a kernel
+      (for instance CentOS and Oracle Linux) support a kernel
       parameter <emphasis>divider=N</emphasis>. Hence, such kernels support a
       lower timer frequency without recompilation. We suggest to add the
       kernel parameter <emphasis>divider=10</emphasis> to select a guest
