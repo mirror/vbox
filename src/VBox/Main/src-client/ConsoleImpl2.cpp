@@ -864,6 +864,15 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCPUM, "NT4LeafLimit", true);
         }
 
+        /* Expose CMPXCHG16B. Currently a hack. */
+        if (   osTypeId == "Windows81"
+            || osTypeId == "Windows81_64"
+            || osTypeId == "Windows2012_64")
+        {
+            LogRel(("Enabling CMPXCHG16B for Windows 8.1 / 2k12 guests"));
+            InsertConfigInteger(pCPUM, "CMPXCHG16B", true);
+        }
+
         /* Expose extended MWAIT features to Mac OS X guests. */
         if (fOsXGuest)
         {
