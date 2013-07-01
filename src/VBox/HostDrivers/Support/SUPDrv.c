@@ -4864,7 +4864,7 @@ DECLINLINE(int) supdrvLdrUnlock(PSUPDRVDEVEXT pDevExt)
  */
 static int supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq)
 {
-#if !defined(RT_OS_WINDOWS) || defined(DEBUG)
+#if !defined(RT_OS_WINDOWS) || defined(RT_ARCH_AMD64) || defined(DEBUG)
     int rc;
 
     /*
@@ -4909,9 +4909,9 @@ static int supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
         Log4(("SUP_IOCTL_CALL_SERVICE: rc=%Rrc op=%u out=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
               rc, pReq->u.In.uOperation, pReq->Hdr.cbOut, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
     return rc;
-#else  /* RT_OS_WINDOWS && !DEBUG */
+#else  /* RT_OS_WINDOWS && !RT_ARCH_AMD64 && !DEBUG */
     return VERR_NOT_IMPLEMENTED;
-#endif /* RT_OS_WINDOWS && !DEBUG */
+#endif /* RT_OS_WINDOWS && !RT_ARCH_AMD64 && !DEBUG */
 }
 
 
