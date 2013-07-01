@@ -721,26 +721,33 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         _ = cbMaxOp;
         return True;
 
-    def generateStdTestGregMemSib(self, oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, auInputs, oBaseRegRange, oIndexRegRange):
+    def generateStdTestGregMemSib(self, oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, auInputs):
         """ Generate all SIB variations for the given iOp1 (reg) value. """
         assert cAddrBits in [32, 64];
-        for iBaseReg in oBaseRegRange:
-            for iIndexReg in oIndexRegRange:
-                if iBaseReg == X86_GREG_xSP: # no RSP testing atm.
-                    continue;
-
+        for _ in oGen.oSibBaseRange:
+            oGen.iSibBaseReg = (oGen.iSibBaseReg + 1) % oGen.oTarget.getGRegCount(cAddrBits / 8);
+            if oGen.iSibBaseReg == X86_GREG_xSP: # no RSP testing atm.
+                continue;
+            for _ in oGen.oSibIndexRange:
+                oGen.iSibIndexReg = (oGen.iSibIndexReg + 1) % oGen.oTarget.getGRegCount(cAddrBits / 8);
                 for iMod in [0, 1, 2]:
-                    if iBaseReg == iOp1 and ((iBaseReg != 5 and iBaseReg != 13) or iMod != 0) and cAddrBits != cbMaxOp:
+                    if oGen.iSibBaseReg == iOp1 and ((oGen.iSibBaseReg != 5 and oGen.iSibBaseReg != 13) or iMod != 0) \
+                      and cAddrBits != cbMaxOp:
                         continue; # Don't know the high bit of the address ending up the result - skip it for now.
-                    if iIndexReg == iOp1 and iIndexReg != 4 and cAddrBits != cbMaxOp:
+                    if oGen.iSibIndexReg == iOp1 and oGen.iSibIndexReg != 4 and cAddrBits != cbMaxOp:
                         continue; # Don't know the high bit of the address ending up the result - skip it for now.
 
-                    for iScale in (1, 2, 4, 8):
+                    for _ in oGen.oSibScaleRange:
+                        oGen.iSibScale *= 2;
+                        if oGen.iSibScale > 8:
+                            oGen.iSibScale = 1;
+
                         for uInput in auInputs:
                             oGen.newSubTest();
                             uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1], oGen);
                             self.generateOneStdTestGregMemSib(oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, iMod,
-                                                              iBaseReg, iIndexReg, iScale, uInput, uResult);
+                                                              oGen.iSibBaseReg, oGen.iSibIndexReg, oGen.iSibScale,
+                                                              uInput, uResult);
 
         return True;
 
@@ -760,7 +767,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
             oOp2Range    = [iLongOp2,];
 
         # Register tests
-        if False:
+        if True:
             for cbEffOp in self.acbOpVars:
                 if cbEffOp > cbMaxOp:
                     continue;
@@ -799,18 +806,12 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
 
                     oOp1MemRange   = range(oGen.oTarget.getGRegCount());
                     oOp2MemRange   = range(oGen.oTarget.getGRegCount(cAddrBits / 8))
-                    oBaseRegRange  = range(oGen.oTarget.getGRegCount(cAddrBits / 8));
-                    oIndexRegRange = range(oGen.oTarget.getGRegCount(cAddrBits / 8));
                     if oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
                         oOp1MemRange   = [iLongOp1,];
                         oOp2MemRange   = [iLongOp2,];
-                        oBaseRegRange  = oGen.oTarget.randGRegNoSpList(2, cAddrBits / 8);
-                        oIndexRegRange = oGen.oTarget.randGRegNoSpList(2, cAddrBits / 8);
                     elif oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Medium:
                         oOp1MemRange   = oGen.oTarget.randGRegNoSpList(3 if oGen.oTarget.is64Bit() else 1, cbEffOp);
                         oOp2MemRange   = oGen.oTarget.randGRegNoSpList(3 + (cAddrBits == 64) * 2, cAddrBits / 8);
-                        oBaseRegRange  = oGen.oTarget.randGRegNoSpList(4 + (cAddrBits == 64) * 3, cAddrBits / 8);
-                        oIndexRegRange = oGen.oTarget.randGRegNoSpList(4 + (cAddrBits == 64) * 3, cAddrBits / 8);
                     if iLongOp2 not in oOp1MemRange:
                         oOp1MemRange.append(iLongOp2);
                     if cAddrBits != 16 and 4 not in oOp2MemRange:
@@ -821,7 +822,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                             continue; # Cannot test xSP atm.
                         if iOp1 > 15:
                             continue; ## TODO AH,CH,DH,BH
-                        auInputs = auLongInputs if iOp1 == iLongOp1 and False else auShortInputs;
+                        auInputs = auLongInputs if iOp1 == iLongOp1 else auShortInputs;
 
                         for iOp2 in oOp2MemRange:
                             if iOp2 != 4 or cAddrBits == 16:
@@ -834,8 +835,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                                                                         iOp1, iOp2, uInput, uResult);
                             else:
                                 # SIB.
-                                self.generateStdTestGregMemSib(oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, auInputs,
-                                                               oBaseRegRange, oIndexRegRange);
+                                self.generateStdTestGregMemSib(oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, auInputs);
                     break;
                 break;
 
@@ -961,6 +961,23 @@ class InstructionTestGen(object):
         self.dCheckFns      = dict();
         self.dMemSetupFns   = dict();
         self.d64BitConsts   = dict();
+
+        # State variables used while generating test convenientely placed here (lazy bird)...
+        self.iSibBaseReg    = 0;
+        self.iSibIndexReg   = 0;
+        self.iSibScale      = 1;
+        if self.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
+            self.oSibBaseRange   = range(1);
+            self.oSibIndexRange  = range(2);
+            self.oSibScaleRange  = range(1);
+        elif self.oOptions.sTestSize == InstructionTestGen.ksTestSize_Medium:
+            self.oSibBaseRange   = range(5);
+            self.oSibIndexRange  = range(4);
+            self.oSibScaleRange  = range(2);
+        else:
+            self.oSibBaseRange   = range(8);
+            self.oSibIndexRange  = range(9);
+            self.oSibScaleRange  = range(4);
 
 
     #
