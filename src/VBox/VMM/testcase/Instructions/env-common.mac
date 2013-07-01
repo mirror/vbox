@@ -107,6 +107,8 @@ VBINSTST_BEGINCODE
 ; Primary purpose is save all registers and convert from our stack-based to
 ; the correct calling convention for the environment.
 ;
+; This function will clean up the stack upon return (to save space in the caller).
+;
 ; @param    uExpected
 ; @param    uActual
 ; @param    uRegisterNo
@@ -150,7 +152,7 @@ VBINSTST_BEGINPROC Common_BadValue
 
         mov     xSP, [xSP + 38h]
         MY_POP_ALL
-        ret
+        ret     3*sCB
 %if ARCH_BITS == 64
 .szFmt: db 'Bad register %#llx value %#018llx, expected %#018llx (line %llu)', 0
 %else

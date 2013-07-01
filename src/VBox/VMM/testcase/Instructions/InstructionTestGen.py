@@ -331,10 +331,19 @@ class TargetEnv(object):
             return 16;
         return 8;
 
-    def randGRegNoSp(self):
+    def randGRegNoSp(self, cbEffBytes = 4):
         """ Returns a random general register number, excluding the SP register. """
-        iReg = randU16();
-        return iReg % (16 if self.is64Bit() else 8);
+        iReg = randU16() % self.getGRegCount(cbEffBytes);
+        while iReg == X86_GREG_xSP:
+            iReg = randU16() % self.getGRegCount(cbEffBytes);
+        return iReg;
+
+    def randGRegNoSpList(self, cItems, cbEffBytes = 4):
+        """ List of randGRegNoSp values. """
+        aiRegs = [];
+        for i in range(cItems):
+            aiRegs.append(self.randGRegNoSp(cbEffBytes));
+        return aiRegs;
 
     def getAddrModes(self):
         """ Gets a list of addressing mode (16, 32, or/and 64). """
@@ -712,18 +721,20 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         _ = cbMaxOp;
         return True;
 
-    def generateStdTestGregMemSib(self, oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, auInputs):
+    def generateStdTestGregMemSib(self, oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, auInputs, oBaseRegRange, oIndexRegRange):
         """ Generate all SIB variations for the given iOp1 (reg) value. """
         assert cAddrBits in [32, 64];
-        for iBaseReg in range(oGen.oTarget.getGRegCount(cAddrBits / 8)):
-            for iIndexReg in range(oGen.oTarget.getGRegCount(cAddrBits / 8)):
-                if iBaseReg == 4 or iIndexReg == 4: # no RSP testing atm.
+        for iBaseReg in oBaseRegRange:
+            for iIndexReg in oIndexRegRange:
+                if iBaseReg == X86_GREG_xSP: # no RSP testing atm.
                     continue;
+
                 for iMod in [0, 1, 2]:
                     if iBaseReg == iOp1 and ((iBaseReg != 5 and iBaseReg != 13) or iMod != 0) and cAddrBits != cbMaxOp:
                         continue; # Don't know the high bit of the address ending up the result - skip it for now.
                     if iIndexReg == iOp1 and iIndexReg != 4 and cAddrBits != cbMaxOp:
                         continue; # Don't know the high bit of the address ending up the result - skip it for now.
+
                     for iScale in (1, 2, 4, 8):
                         for uInput in auInputs:
                             oGen.newSubTest();
@@ -744,11 +755,9 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         auLongInputs  = self.generateInputs(cbDefOp, cbMaxOp, oGen, fLong = True);
         iLongOp1      = oGen.oTarget.randGRegNoSp();
         iLongOp2      = oGen.oTarget.randGRegNoSp();
-        oOp1MemRange  = range(oGen.oTarget.getGRegCount());
         oOp2Range     = None;
         if oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
             oOp2Range    = [iLongOp2,];
-            oOp1MemRange = [iLongOp1,];
 
         # Register tests
         if False:
@@ -783,26 +792,50 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
 
         # Memory test.
         if True:
-            for cbEffOp in self.acbOpVars:
-                if cbEffOp > cbMaxOp:
-                    continue;
-                for iOp1 in oOp1MemRange:
-                    if iOp1 == X86_GREG_xSP:
-                        continue; # Cannot test xSP atm.
-                    for cAddrBits in oGen.oTarget.getAddrModes():
+            for cAddrBits in oGen.oTarget.getAddrModes():
+                for cbEffOp in self.acbOpVars:
+                    if cbEffOp > cbMaxOp:
+                        continue;
+
+                    oOp1MemRange   = range(oGen.oTarget.getGRegCount());
+                    oOp2MemRange   = range(oGen.oTarget.getGRegCount(cAddrBits / 8))
+                    oBaseRegRange  = range(oGen.oTarget.getGRegCount(cAddrBits / 8));
+                    oIndexRegRange = range(oGen.oTarget.getGRegCount(cAddrBits / 8));
+                    if oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
+                        oOp1MemRange   = [iLongOp1,];
+                        oOp2MemRange   = [iLongOp2,];
+                        oBaseRegRange  = oGen.oTarget.randGRegNoSpList(2, cAddrBits / 8);
+                        oIndexRegRange = oGen.oTarget.randGRegNoSpList(2, cAddrBits / 8);
+                    elif oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Medium:
+                        oOp1MemRange   = oGen.oTarget.randGRegNoSpList(3 if oGen.oTarget.is64Bit() else 1, cbEffOp);
+                        oOp2MemRange   = oGen.oTarget.randGRegNoSpList(3 + (cAddrBits == 64) * 2, cAddrBits / 8);
+                        oBaseRegRange  = oGen.oTarget.randGRegNoSpList(4 + (cAddrBits == 64) * 3, cAddrBits / 8);
+                        oIndexRegRange = oGen.oTarget.randGRegNoSpList(4 + (cAddrBits == 64) * 3, cAddrBits / 8);
+                    if iLongOp2 not in oOp1MemRange:
+                        oOp1MemRange.append(iLongOp2);
+                    if cAddrBits != 16 and 4 not in oOp2MemRange:
+                        oOp2MemRange.append(4)
+
+                    for iOp1 in oOp1MemRange:
+                        if iOp1 == X86_GREG_xSP:
+                            continue; # Cannot test xSP atm.
+                        if iOp1 > 15:
+                            continue; ## TODO AH,CH,DH,BH
                         auInputs = auLongInputs if iOp1 == iLongOp1 and False else auShortInputs;
-                        for iOp2 in range(oGen.oTarget.getGRegCount(cAddrBits / 8)):
+
+                        for iOp2 in oOp2MemRange:
                             if iOp2 != 4 or cAddrBits == 16:
                                 for uInput in auInputs:
                                     oGen.newSubTest();
                                     if iOp1 == iOp2 and iOp2 != 5 and iOp2 != 13 and cbEffOp != cbMaxOp:
                                         continue; # Don't know the high bit of the address ending up the result - skip it for now.
-                                    uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1], oGen);
+                                    uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1 & 15], oGen);
                                     self.generateOneStdTestGregMemNoSib(oGen, cAddrBits, cbEffOp, cbMaxOp,
                                                                         iOp1, iOp2, uInput, uResult);
                             else:
                                 # SIB.
-                                self.generateStdTestGregMemSib(oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, auInputs);
+                                self.generateStdTestGregMemSib(oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, auInputs,
+                                                               oBaseRegRange, oIndexRegRange);
                     break;
                 break;
 
@@ -1355,11 +1388,8 @@ class InstructionTestGen(object):
                                '        mov     %s, [xSP + sCB*2 + MY_PUSH_FLAGS_SIZE + xCB]\n'
                                '        push    %s         ; expected\n'
                                '        call    VBINSTST_NAME(Common_BadValue)\n'
-                               '        pop     %s\n'
-                               '        pop     %s\n'
-                               '        pop     %s\n'
                                '.equal%u:\n'
-                           % ( sReg, i, i, sPushSize, iReg, sReg, sReg, sReg, sReg, sReg, sReg, i, ) );
+                           % ( sReg, i, i, sPushSize, iReg, sReg, sReg, sReg, i, ) );
 
 
             # Restore known register values and check the other registers.
