@@ -446,16 +446,18 @@ MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
                         pWindow->redraw_device_context = hDC;
 
                         renderspuVBoxPresentCompositionGeneric(pWindow, pCompositor, NULL, 1);
-                        renderspuVBoxCompositorRelease(pWindow);
 
                         bRc = EndPaint(pWindow->hWnd, &Paint);
+
+                        pWindow->redraw_device_context = NULL;
+
+                        renderspuVBoxCompositorRelease(pWindow);
+
                         if (!bRc)
                         {
                             DWORD winEr = GetLastError();
                             crWarning("EndPaint failed, winEr %d", winEr);
                         }
-
-                        pWindow->redraw_device_context = NULL;
                     }
                     else
                     {
@@ -1365,7 +1367,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
             /*@todo Chromium has no correct code to remove window ids and associated info from 
              * various tables. This is hack which just hides the root case.
              */
-            crWarning("Recreating window in renderspu_SystemMakeCurrent\n");
+//            crWarning("Recreating window in renderspu_SystemMakeCurrent\n");
             renderspu_SystemDestroyWindow( window );
             renderspu_SystemVBoxCreateWindow( context->visual, window->visible, window );
         }
