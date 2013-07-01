@@ -1554,12 +1554,16 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * Worker for loading the guest-state into the VMCB.
+ * Loads the guest state into the VMCB. The CPU state will be loaded from these
+ * fields on every successful VM-entry.
+ *
+ * Sets up the appropriate VMRUN function to execute guest code based
+ * on the guest CPU mode.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pMixedCtx   Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
  */
@@ -1615,7 +1619,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
- * Loads the guest state.
+ * Loads the guest state on the way from ring-3.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
@@ -1626,10 +1630,13 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    /* Nothing to do here. Loading is done below before VM-entry. */
+    /*
+     * Avoid reloading the guest state on longjmp reentrants and do it lazily just before executing the guest.
+     * This only helps when we get rescheduled more than once to a different host CPU on a longjmp trip before
+     * finally executing guest code.
+     */
     return VINF_SUCCESS;
 }
-
 
 
 /**
@@ -3487,14 +3494,16 @@ HMSVM_EXIT_DECL hmR0SvmExitIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitExtInt);
-    /* 32-bit Windows hosts (4 cores) has trouble with this on Intel; causes higher interrupt latency. Assuming the
-       same for AMD-V.*/
-#if HC_ARCH_BITS == 64 && defined(VBOX_WITH_VMMR0_DISABLE_PREEMPTION)
-    Assert(ASMIntAreEnabled());
-    return VINF_SUCCESS;
-#else
+
+    /*
+     * AMD-V has no preemption timer and the generic periodic preemption timer has no way to signal -before- the timer
+     * fires if the current interrupt is our own timer or a some other host interrupt. We also cannot examine what
+     * interrupt it is until the host actually take the interrupt.
+     *
+     * Going back to executing guest code here unconditionally causes random scheduling problems (observed on an
+     * AMD Phenom 9850 Quad-Core on Windows 64-bit host).
+     */
     return VINF_EM_RAW_INTERRUPT;
-#endif
 }
 
 
