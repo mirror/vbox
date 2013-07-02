@@ -609,38 +609,120 @@ static RTEXITCODE handleSetVideoMode(int argc, char *argv[])
     return RTEXITCODE_SUCCESS;
 }
 
-HKEY getVideoKey(bool writable)
+static int checkVBoxVideoKey(HKEY hkeyVideo)
+{
+    char szValue[128];
+    DWORD len = sizeof(szValue);
+    DWORD dwKeyType;
+    LONG status = RegQueryValueExA(hkeyVideo, "Device Description", NULL, &dwKeyType,
+                                   (LPBYTE)szValue, &len);
+
+    if (status == ERROR_SUCCESS)
+    {
+        /* WDDM has additional chars after "Adapter" */
+        static char sszDeviceDescription[] = "VirtualBox Graphics Adapter";
+        if (_strnicmp(szValue, sszDeviceDescription, sizeof(sszDeviceDescription) - sizeof(char)) == 0)
+        {
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+static HKEY getVideoKey(bool writable)
 {
     HKEY hkeyDeviceMap = 0;
-    HKEY hkeyVideo = 0;
-    LONG status;
-
-    status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, "HARDWARE\\DEVICEMAP\\VIDEO", 0, KEY_READ, &hkeyDeviceMap);
-    if ((status != ERROR_SUCCESS) || !hkeyDeviceMap)
+    LONG status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, "HARDWARE\\DEVICEMAP\\VIDEO", 0, KEY_READ, &hkeyDeviceMap);
+    if (status != ERROR_SUCCESS || !hkeyDeviceMap)
     {
         VBoxControlError("Error opening video device map registry key!\n");
         return 0;
     }
-    char szVideoLocation[256];
+
+    HKEY hkeyVideo = 0;
+    ULONG iDevice;
     DWORD dwKeyType;
-    szVideoLocation[0] = 0;
-    DWORD len = sizeof(szVideoLocation);
-    status = RegQueryValueExA(hkeyDeviceMap, "\\Device\\Video0", NULL, &dwKeyType, (LPBYTE)szVideoLocation, &len);
+
     /*
-     * This value will start with a weird value: \REGISTRY\Machine
-     * Make sure this is true.
+     * Scan all '\Device\VideoX' REG_SZ keys to find VBox video driver entry.
+     * 'ObjectNumberList' REG_BINARY is an array of 32 bit device indexes (X).
      */
-    if (   (status == ERROR_SUCCESS)
-        && (dwKeyType == REG_SZ)
-        && (_strnicmp(szVideoLocation, "\\REGISTRY\\Machine", 17) == 0))
+
+    /* Get the 'ObjectNumberList' */
+    ULONG numDevices = 0;
+    DWORD adwObjectNumberList[256];
+    DWORD len = sizeof(adwObjectNumberList);
+    status = RegQueryValueExA(hkeyDeviceMap, "ObjectNumberList", NULL, &dwKeyType, (LPBYTE)&adwObjectNumberList[0], &len);
+
+    if (   status == ERROR_SUCCESS
+        && dwKeyType == REG_BINARY)
     {
-        /* open that branch */
-        status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, &szVideoLocation[18], 0, KEY_READ | (writable ? KEY_WRITE : 0), &hkeyVideo);
+        numDevices = len / sizeof(DWORD);
     }
     else
     {
-        VBoxControlError("Error opening registry key '%s'\n", &szVideoLocation[18]);
+       /* The list might not exists. Use 'MaxObjectNumber' REG_DWORD and build a list. */
+       DWORD dwMaxObjectNumber = 0;
+       len = sizeof(dwMaxObjectNumber);
+       status = RegQueryValueExA(hkeyDeviceMap, "MaxObjectNumber", NULL, &dwKeyType, (LPBYTE)&dwMaxObjectNumber, &len);
+
+       if (   status == ERROR_SUCCESS
+           && dwKeyType == REG_DWORD)
+       {
+           /* 'MaxObjectNumber' is inclusive. */
+           numDevices = RT_MIN(dwMaxObjectNumber + 1, RT_ELEMENTS(adwObjectNumberList));
+           for (iDevice = 0; iDevice < numDevices; iDevice++)
+           {
+               adwObjectNumberList[iDevice] = iDevice;
+           }
+       }
     }
+    
+    if (numDevices == 0)
+    {
+        /* Always try '\Device\Video0' as the old code did. Enum can be used in this case in principle. */
+        adwObjectNumberList[0] = 0;
+        numDevices = 1;
+    }
+
+    /* Scan device entries */
+    for (iDevice = 0; iDevice < numDevices; iDevice++)
+    {
+        char szValueName[64];
+        RTStrPrintf(szValueName, sizeof(szValueName), "\\Device\\Video%u", adwObjectNumberList[iDevice]);
+
+        char szVideoLocation[256];
+        len = sizeof(szVideoLocation);
+        status = RegQueryValueExA(hkeyDeviceMap, szValueName, NULL, &dwKeyType, (LPBYTE)&szVideoLocation[0], &len);
+
+        /* This value starts with '\REGISTRY\Machine' */
+        if (   status == ERROR_SUCCESS
+            && dwKeyType == REG_SZ
+            && _strnicmp(szVideoLocation, "\\REGISTRY\\Machine", 17) == 0)
+        {
+            status = RegOpenKeyExA(HKEY_LOCAL_MACHINE, &szVideoLocation[18], 0,
+                                   KEY_READ | (writable ? KEY_WRITE : 0), &hkeyVideo);
+            if (status == ERROR_SUCCESS)
+            {
+                int rc = checkVBoxVideoKey(hkeyVideo);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Found, return hkeyVideo to the caller. */
+                    break;
+                }
+
+                RegCloseKey(hkeyVideo);
+                hkeyVideo = 0;
+            }
+        }
+    }
+
+    if (hkeyVideo == 0)
+    {
+        VBoxControlError("Error opening video registry key!\n");
+    }
+
     RegCloseKey(hkeyDeviceMap);
     return hkeyVideo;
 }
