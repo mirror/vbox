@@ -327,17 +327,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
      * registering/unregistering or calling the helper functionality. */
     if (fRun)
     {
+        char szLogFile[RTPATH_MAX];
         if (!pszLogFile)
         {
-            char szLogFile[RTPATH_MAX];
             vrc = com::GetVBoxUserHomeDirectory(szLogFile, sizeof(szLogFile));
             if (RT_SUCCESS(vrc))
                 vrc = RTPathAppend(szLogFile, sizeof(szLogFile), "VBoxSVC.log");
-            if (RT_SUCCESS(vrc))
-                pszLogFile = RTStrDup(szLogFile);
         }
+        else
+        {
+            if (!RTStrPrintf(szLogFile, sizeof(szLogFile), "%s", pszLogFile))
+                vrc = VERR_NO_MEMORY;
+        }
+        if (RT_FAILURE(vrc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to create logging file name, rc=%Rrc", vrc);
+
         char szError[RTPATH_MAX + 128];
-        vrc = com::VBoxLogRelCreate("COM Server", pszLogFile,
+        vrc = com::VBoxLogRelCreate("COM Server", szLogFile,
                                     RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
                                     "all", "VBOXSVC_RELEASE_LOG",
                                     RTLOGDEST_FILE, UINT32_MAX /* cMaxEntriesPerGroup */,
