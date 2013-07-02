@@ -1837,6 +1837,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
                 /** @todo this really isn't nice, should properly handle this */
                 rc2 = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT);
+                if (pVM->em.s.fIemExecutesAll && rc2 == VINF_EM_RESCHEDULE_REM)
+                    rc2 = VINF_EM_RESCHEDULE;
 #ifdef VBOX_STRICT
                 rcIrq = rc2;
 #endif
@@ -1848,6 +1850,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             /** @todo really ugly; if we entered the hlt state when exiting the recompiler and an interrupt was pending, we previously got stuck in the halted state. */
             else if (REMR3QueryPendingInterrupt(pVM, pVCpu) != REM_NO_PENDING_IRQ)
             {
+                Log2(("REMR3QueryPendingInterrupt -> %#x\n", REMR3QueryPendingInterrupt(pVM, pVCpu)));
                 rc2 = VINF_EM_RESCHEDULE_REM;
                 UPDATE_RC();
             }
@@ -2049,6 +2052,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
             pVCpu->em.s.enmState = pVCpu->em.s.enmPrevState;
         else
             pVCpu->em.s.enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+        Log(("EMR3ExecuteVM: enmState=%s\n", emR3GetStateName(pVCpu->em.s.enmState)));
 
         STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
         for (;;)
@@ -2096,7 +2100,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_RESCHEDULE_RAW:
                     Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_RAW: %d -> %d (EMSTATE_RAW)\n", enmOldState, EMSTATE_RAW));
-                    pVCpu->em.s.enmState = EMSTATE_RAW;
+                    Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
                     break;
 
                 /*
@@ -2104,6 +2108,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_RESCHEDULE_HM:
                     Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HM: %d -> %d (EMSTATE_HM)\n", enmOldState, EMSTATE_HM));
+                    Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
                     Assert(!pVCpu->em.s.fForceRAW);
                     pVCpu->em.s.enmState = EMSTATE_HM;
                     break;
@@ -2113,6 +2118,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_RESCHEDULE_REM:
                     Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_REM: %d -> %d (EMSTATE_REM)\n", enmOldState, EMSTATE_REM));
+                    Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
                     pVCpu->em.s.enmState = EMSTATE_REM;
                     break;
 
