@@ -75,6 +75,23 @@ VMMR3_INT_DECL(void)    PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(int)     PDMR3Term(PVM pVM);
 VMMR3_INT_DECL(void)    PDMR3TermUVM(PUVM pUVM);
 
+/** PDM loader context indicator.  */
+typedef enum  PDMLDRCTX
+{
+    /** Invalid zero value. */
+    PDMLDRCTX_INVALID = 0,
+    /** Ring-0 context. */
+    PDMLDRCTX_RING_0,
+    /** Ring-3 context. */
+    PDMLDRCTX_RING_3,
+    /** Raw-mode context. */
+    PDMLDRCTX_RAW_MODE,
+    /** End of valid context values. */
+    PDMLDRCTX_END,
+    /** 32-bit type hack. */
+    PDMLDRCTX_32BIT_HACK = 0x7fffffff
+} PDMLDRCTX;
+
 /**
  * Module enumeration callback function.
  *
@@ -86,11 +103,11 @@ VMMR3_INT_DECL(void)    PDMR3TermUVM(PUVM pUVM);
  * @param   pszName         Module name. (short and unique)
  * @param   ImageBase       Address where to executable image is loaded.
  * @param   cbImage         Size of the executable image.
- * @param   fRC             Set if raw-mode context, clear if host context.
+ * @param   enmCtx          The context the module is loaded into.
  * @param   pvArg           User argument.
  */
 typedef DECLCALLBACK(int) FNPDMR3ENUM(PVM pVM, const char *pszFilename, const char *pszName,
-                                      RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg);
+                                      RTUINTPTR ImageBase, size_t cbImage, PDMLDRCTX enmCtx, void *pvArg);
 /** Pointer to a FNPDMR3ENUM() function. */
 typedef FNPDMR3ENUM *PFNPDMR3ENUM;
 VMMR3DECL(int)          PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg);
