@@ -2840,49 +2840,52 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
          */
         for (;;)
         {
-            /* Read the 'header'. */
+            /* Read the 'header'. Skipping zero code bytes. */
             uint32_t const uCurCode  = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
-            uint32_t const uCurTag   = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
-            uint8_t  const uChildren = rtDwarfCursor_GetU8(&Cursor, 0);
-            if (RT_FAILURE(Cursor.rc))
-                break;
-            if (   uCurTag > 0xffff
-                || uChildren > 1)
+            if (uCurCode != 0)
             {
-                Cursor.rc = VERR_DWARF_BAD_ABBREV;
-                break;
-            }
-
-            /* Cache it? */
-            if (uCurCode <= pThis->cCachedAbbrevsAlloced)
-            {
-                PRTDWARFABBREV pEntry = &pThis->paCachedAbbrevs[uCurCode - 1];
-                while (pThis->cCachedAbbrevs < uCurCode)
+                uint32_t const uCurTag   = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+                uint8_t  const uChildren = rtDwarfCursor_GetU8(&Cursor, 0);
+                if (RT_FAILURE(Cursor.rc))
+                    break;
+                if (   uCurTag > 0xffff
+                    || uChildren > 1)
                 {
-                    pThis->paCachedAbbrevs[pThis->cCachedAbbrevs].fFilled = false;
-                    pThis->cCachedAbbrevs++;
+                    Cursor.rc = VERR_DWARF_BAD_ABBREV;
+                    break;
                 }
 
-                pEntry->fFilled   = true;
-                pEntry->fChildren = RT_BOOL(uChildren);
-                pEntry->uTag      = uCurTag;
-                pEntry->offSpec   = rtDwarfCursor_CalcSectOffsetU32(&Cursor);
-
-                if (uCurCode == uCode)
+                /* Cache it? */
+                if (uCurCode <= pThis->cCachedAbbrevsAlloced)
                 {
-                    pRet = pEntry;
-                    if (uCurCode == pThis->cCachedAbbrevsAlloced)
-                        break;
-                }
-            }
+                    PRTDWARFABBREV pEntry = &pThis->paCachedAbbrevs[uCurCode - 1];
+                    while (pThis->cCachedAbbrevs < uCurCode)
+                    {
+                        pThis->paCachedAbbrevs[pThis->cCachedAbbrevs].fFilled = false;
+                        pThis->cCachedAbbrevs++;
+                    }
 
-            /* Skip the specification. */
-            uint32_t uAttr, uForm;
-            do
-            {
-                uAttr = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
-                uForm = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
-            } while (uAttr != 0);
+                    pEntry->fFilled   = true;
+                    pEntry->fChildren = RT_BOOL(uChildren);
+                    pEntry->uTag      = uCurTag;
+                    pEntry->offSpec   = rtDwarfCursor_CalcSectOffsetU32(&Cursor);
+
+                    if (uCurCode == uCode)
+                    {
+                        pRet = pEntry;
+                        if (uCurCode == pThis->cCachedAbbrevsAlloced)
+                            break;
+                    }
+                }
+
+                /* Skip the specification. */
+                uint32_t uAttr, uForm;
+                do
+                {
+                    uAttr = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+                    uForm = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+                } while (uAttr != 0);
+            }
             if (RT_FAILURE(Cursor.rc))
                 break;
 
