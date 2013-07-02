@@ -366,7 +366,7 @@ VBOX_WITH_PDM_LOCK = 1
 # Activate this to use the old VT-x code.
 VBOX_WITH_OLD_VTX_CODE =
 # Activate this to use the old AMD-V code.
-VBOX_WITH_OLD_AMDV_CODE = 1
+VBOX_WITH_OLD_AMDV_CODE =
 ## @}
 
 
