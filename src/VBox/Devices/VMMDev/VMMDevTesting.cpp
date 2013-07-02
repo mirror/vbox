@@ -479,6 +479,7 @@ void vmmdevTestingTerminate(PPDMDEVINS pDevIns)
 
     if (pThis->hTestingTest != NIL_RTTEST)
     {
+        RTTestFailed(pThis->hTestingTest, "Still open at vmmdev destruction.");
         RTTestSummaryAndDestroy(pThis->hTestingTest);
         pThis->hTestingTest = NIL_RTTEST;
     }
