@@ -417,6 +417,22 @@ void UIGDetailsUpdateThreadDisplay::run()
                     m_text << UITextTableLine(QApplication::translate("UIGDetails", "Remote Desktop Server", "details (display/vrde)"),
                                               QApplication::translate("UIGDetails", "Disabled", "details (display/vrde/VRDE server)"));
             }
+
+            /* Video Capture info: */
+            if (machine().GetVideoCaptureEnabled())
+            {
+                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Video Capture File", "details (display/video capture)"),
+                                          machine().GetVideoCaptureFile());
+                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Video Capture Attributes", "details (display/video capture)"),
+                                          tr("Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps")
+                                             .arg(machine().GetVideoCaptureWidth()).arg(machine().GetVideoCaptureHeight())
+                                             .arg(machine().GetVideoCaptureFPS()).arg(machine().GetVideoCaptureRate()));
+            }
+            else
+            {
+                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Video Capture", "details (display/video capture)"),
+                                          QApplication::translate("UIGDetails", "Disabled", "details (display/video capture)"));
+            }
         }
         else
             m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());
