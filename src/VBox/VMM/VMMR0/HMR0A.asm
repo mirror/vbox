@@ -70,10 +70,6 @@
 ; Use define because I'm too lazy to convert the struct.
 %define XMM_OFF_IN_X86FXSTATE   160
 
-
-;; This is too risky wrt. stability, performance and correctness.
-;%define VBOX_WITH_DR6_EXPERIMENT 1
-
 ;; @def MYPUSHAD
 ; Macro generating an equivalent to pushad
 
