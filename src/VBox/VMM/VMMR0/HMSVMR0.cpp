@@ -2453,18 +2453,14 @@ static int hmR0SvmCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
-    if (   VM_FF_IS_PENDING(pVM, VM_FF_HM_TO_R3_MASK | VM_FF_REQUEST | VM_FF_PGM_POOL_FLUSH_PENDING | VM_FF_PDM_DMA)
-        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
-                               | VMCPU_FF_REQUEST | VMCPU_FF_HM_UPDATE_CR3))
-    {
-        /* Pending HM CR3 sync. No PAE PDPEs (VMCPU_FF_HM_UPDATE_PAE_PDPES) on AMD-V. */
-        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
-        {
-            int rc = PGMUpdateCR3(pVCpu, pCtx->cr3);
-            Assert(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3);
-            Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
-        }
+    /* On AMD-V we don't need to update CR3, PAE PDPES lazily. See hmR0SvmSaveGuestState(). */
+    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3));
+    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES));
 
+    if (   VM_FF_IS_PENDING(pVM, VM_FF_HM_TO_R3_MASK | VM_FF_REQUEST | VM_FF_PGM_POOL_FLUSH_PENDING | VM_FF_PDM_DMA)
+        || VMCPU_FF_IS_PENDING(pVCpu,   VMCPU_FF_HM_TO_R3_MASK | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
+                                      | VMCPU_FF_REQUEST))
+    {
         /* Pending PGM C3 sync. */
         if (VMCPU_FF_IS_PENDING(pVCpu,VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
         {
