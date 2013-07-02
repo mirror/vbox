@@ -125,9 +125,11 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
 #define HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_ERROR_CODE  RT_BIT(5)
 
 /**
- * Exception bitmap mask for real-mode guests (real-on-v86). We need to intercept all exceptions manually (except #PF).
- * #NM is also handled spearetely, see hmR0VmxLoadGuestControlRegs(). #PF need not be intercepted even in real-mode if
- * we have Nested Paging support.
+ * @name Exception bitmap mask for real-mode guests (real-on-v86).
+ *
+ * We need to intercept all exceptions manually (except #PF). #NM is also
+ * handled spearetely, see hmR0VmxLoadGuestControlRegs(). #PF need not be
+ * intercepted even in real-mode if we have Nested Paging support.
  */
 #define HMVMX_REAL_MODE_XCPT_MASK    (  RT_BIT(X86_XCPT_DE)             | RT_BIT(X86_XCPT_DB)    | RT_BIT(X86_XCPT_NMI)   \
                                       | RT_BIT(X86_XCPT_BP)             | RT_BIT(X86_XCPT_OF)    | RT_BIT(X86_XCPT_BR)    \
@@ -136,12 +138,17 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
                                       | RT_BIT(X86_XCPT_SS)             | RT_BIT(X86_XCPT_GP)   /* RT_BIT(X86_XCPT_PF) */ \
                                       | RT_BIT(X86_XCPT_MF)             | RT_BIT(X86_XCPT_AC)    | RT_BIT(X86_XCPT_MC)    \
                                       | RT_BIT(X86_XCPT_XF))
+/** @} */
 
 /**
- * Exception bitmap mask for all contributory exceptions.
+ * @name Exception bitmap mask for all contributory exceptions.
+ *
+ * Page fault is deliberately excluded here as it's conditional as to whether
+ * it's contributory or benign. Page faults are handled separately.
  */
-#define HMVMX_CONTRIBUTORY_XCPT_MASK  ( RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_TS) \
+#define HMVMX_CONTRIBUTORY_XCPT_MASK  (  RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_TS) \
                                        | RT_BIT(X86_XCPT_DE))
+/** @} */
 
 /** Maximum VM-instruction error number. */
 #define HMVMX_INSTR_ERROR_MAX     28
