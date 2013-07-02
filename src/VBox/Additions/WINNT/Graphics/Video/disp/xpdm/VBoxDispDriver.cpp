@@ -518,6 +518,14 @@ VBoxDispDrvEnablePDEV(DEVMODEW *pdm, LPWSTR pwszLogAddress, ULONG cPat, HSURF *p
     }
     pDev->hDriver = hDriver;
 
+    ULONG ulRegistryFlags = 0;
+    rc = VBoxDispMPQueryRegistryFlags(hDriver, &ulRegistryFlags);
+    if (RT_SUCCESS(rc))
+    {
+        pDev->bBitmapCacheDisabled = (ulRegistryFlags & VBOXVIDEO_REGISTRY_FLAGS_DISABLE_BITMAP_CACHE) != 0;
+        LOG(("Bitmap cache %s", pDev->bBitmapCacheDisabled? "disabled": "enabled"));
+    }
+
     /* Initialize device structure and query miniport to fill device and gdi infos */
     rc = VBoxDispInitDevice(pDev, pdm, &gdiInfo, &devInfo);
     if (RT_FAILURE(rc))

@@ -406,3 +406,24 @@ int VBoxDispMPUnshareVideoMemory(HANDLE hDriver, PVIDEO_SHARE_MEMORY pSMem)
     LOGF_LEAVE();
     return VINF_SUCCESS;
 }
+
+int VBoxDispMPQueryRegistryFlags(HANDLE hDriver, ULONG *pulFlags)
+{
+    DWORD dwrc;
+    ULONG cbReturned;
+    ULONG ulInfoLevel;
+    LOGF_ENTER();
+
+    *pulFlags = 0;
+    ulInfoLevel = VBOXVIDEO_INFO_LEVEL_REGISTRY_FLAGS;
+    dwrc = EngDeviceIoControl(hDriver, IOCTL_VIDEO_QUERY_VBOXVIDEO_INFO, &ulInfoLevel, sizeof(DWORD),
+                              pulFlags, sizeof(DWORD), &cbReturned);
+    VBOX_CHECK_WINERR_RETRC(dwrc, VERR_DEV_IO_ERROR);
+    VBOX_WARN_IOCTLCB_RETRC("IOCTL_VIDEO_QUERY_INFO", cbReturned, sizeof(DWORD), VERR_DEV_IO_ERROR);
+
+    if (*pulFlags != 0)
+        LogRel(("VBoxDisp: video flags 0x%08X\n", *pulFlags));
+
+    LOGF_LEAVE();
+    return VINF_SUCCESS;
+}
