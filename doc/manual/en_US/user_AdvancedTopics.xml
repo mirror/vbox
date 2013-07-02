@@ -1903,7 +1903,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
     <title>Locking down the VirtualBox manager GUI</title>
 
     <sect2>
-      <title>GUI customization</title>
+      <title>Customizing the VM manager</title>
 
       <para>There are several advanced customization settings for locking down
       the VirtualBox manager, that is, removing some features that the user
@@ -1939,13 +1939,16 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           </glossentry>
         </glosslist></para>
 
-      <para>To disable any GUI customization do
+      <para>To disable any of these VM manager customizations do
         <screen>VBoxManage setextradata global GUI/Customizations</screen></para>
+
+    </sect2>
+    <sect2>
 
       <title>VM selector customization</title>
       <para>The following per-machine VM extradata settings can be used to change the
         behavior of the VM selector window in respect of certain VMs:</para>
-      <screen>VBoxManage setextradata VM_NAME SETTING true</screen>
+      <screen>VBoxManage setextradata "VM name" true</screen>
       <para>where <computeroutput>SETTING</computeroutput> can be:</para>
       <glosslist>
         <glossentry>
@@ -1962,16 +1965,257 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           </glossdef>
         </glossentry>
         <glossentry>
+          <glossterm><computeroutput>GUI/PreventSnapshotOperations</computeroutput></glossterm>
+          <glossdef>
+            <para>Prevent snapshot operations for a VM from the GUI, either at runtime or when
+              the VM is powered off.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
           <glossterm><computeroutput>GUI/HideFromManager</computeroutput></glossterm>
           <glossdef>
             <para>Hide a certain VM in the VM selector window.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>GUI/PreventApplicationUpdate</computeroutput></glossterm>
+          <glossdef>
+            <para>Disable the automatic update check and hide the corresponding menu item.</para>
           </glossdef>
         </glossentry>
       </glosslist>
       <para>Please note that these settings wouldn't prevent the user from
         reconfiguring the VM by <computeroutput>VBoxManage modifyvm</computeroutput>.</para>
 
-      </sect2>
+    </sect2>
+
+    <sect2>
+      <title>Configure VM selector menu entries</title>
+      <para>You can disable (i.e. black-list) certain entries in the global settings
+        page of the VM selector:</para>
+      <screen>VBoxManage setextradata global GUI/RestrictedGlobalSettingsPages OPTION[,OPTION...]</screen>
+      <para>where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>General</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>General</emphasis> settings pane.</para>
+          </glossdef>
+        </glossentry>
+      
+        <glossentry>
+          <glossterm><computeroutput>Input</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Input</emphasis> settings pane.</para>
+          </glossdef>
+        </glossentry>
+      
+        <glossentry>
+          <glossterm><computeroutput>Update</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Update</emphasis> settings pane.</para>
+          </glossdef>
+        </glossentry>
+      
+        <glossentry>
+          <glossterm><computeroutput>Language</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Language</emphasis> settings pane.</para>
+          </glossdef>
+        </glossentry>
+      
+        <glossentry>
+          <glossterm><computeroutput>Display</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Display</emphasis> settings pane.</para>
+          </glossdef>
+        </glossentry>
+      
+        <glossentry>
+          <glossterm><computeroutput>Network</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Network</emphasis> settings pane.</para>
+          </glossdef>
+        </glossentry>
+      
+        <glossentry>
+          <glossterm><computeroutput>Extensions</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Extensions</emphasis> settings pane.</para>
+          </glossdef>
+        </glossentry>
+      
+        <glossentry>
+          <glossterm><computeroutput>Proxy</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Proxy</emphasis> settings pane.</para>
+          </glossdef>
+        </glossentry>
+
+      </glosslist>
+
+      <para>This is a global setting. Any combination of the above is allowed.
+         To restore the default behavior, use</para>
+      <screen>VBoxManage setextradata global GUI/RestrictedGlobalSettingsPages</screen>
+
+    </sect2>
+      
+
+    <sect2>
+      <title>Configure VM window menu entries</title>
+      <para>You can disable (i.e. black-list) certain menu actions in the VM window:</para>
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeMenus OPTION[,OPTION...]</screen>
+
+      <para>where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>All</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show any menu in the VM window.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Machine</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Machine</emphasis> menu in the VM window.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>View</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>View</emphasis> menu in the VM window.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Devices</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Devices</emphasis> menu in the VM window.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Help</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Help</emphasis> menu in the VM window.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Debug</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the <emphasis>Debug</emphasis> menu in the VM window. The debug
+              menu is only visible if the GUI was started with special command line parameters
+              or environment variable settings.</para>
+          </glossdef>
+        </glossentry>
+
+      </glosslist>
+
+      <para>This is a per-VM setting. Any combination of the above is allowed. To restore
+      the default behavior, use</para>
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeMenus</screen>
+
+    </sect2>
+
+    <sect2>
+
+      <title>Configure VM window status bar entries</title>
+
+      <para>You can disable (i.e. black-list) certain status bar items:</para>
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedStatusBarIndicators OPTION[,OPTION...]</screen>
+
+      <para>where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>HardDisks</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the hard disk icon in the VM window status bar. By default
+              the hard disk icon is only shown if the VM configuration contains one or
+              more hard disks.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>OpticalDisks</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the CD icon in the VM window status bar. By default the
+              CD icon is only shown if the VM configuration contains one or more CD
+            drives.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>FloppyDisks</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the floppy icon in the VM window status bar. By default the
+              floppy icon is only shown if the VM configuration contains one more
+              more floppy drives.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Network</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the network icon in the VM window status bar. By default
+              the network icon is only shown if the VM configuration contains one or more
+            active network adapters.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>USB</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the USB icon in the status bar. </para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>SharedFolders</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the shared folders icon in the status bar.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>VideoCapture</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the video capture icon in the status bar.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Features</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the CPU features icon in the status bar.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Mouse</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the mouse icon in the status bar.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Keyboard</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't show the keyboard icon in the status bar.</para>
+          </glossdef>
+        </glossentry>
+
+      </glosslist>
+
+      <para>This is a per-VM setting. Any combination of the above is allowed. If all options
+        are specified, no icons are displayed in the status bar of the VM window. To restore
+        the default behavior, use</para>
+
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedStatusBarIndicators</screen>
+
+  </sect2>
 
       <sect2>
         <title>Host Key customization</title>
@@ -1997,112 +2241,112 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
                 <entry><emphasis role="bold">Action</emphasis></entry>
               </row>
               <row>
-                <entry>TakeSnapshot</entry>
+                <entry><computeroutput>TakeSnapshot</computeroutput></entry>
                 <entry>T</entry>
                 <entry>take a snapshot</entry>
               </row>
               <row>
-                <entry>TakeScreenshot</entry>
+                <entry><computeroutput>TakeScreenshot</computeroutput></entry>
                 <entry>E</entry>
                 <entry>take a screenshot</entry>
               </row>
               <row>
-                <entry>MouseIntegration</entry>
+                <entry><computeroutput>MouseIntegration</computeroutput></entry>
                 <entry>I</entry>
                 <entry>toggle mouse integration</entry>
               </row>
               <row>
-                <entry>TypeCAD</entry>
+                <entry><computeroutput>TypeCAD</computeroutput></entry>
                 <entry>Del</entry>
                 <entry>inject Ctrl+Alt+Del</entry>
               </row>
               <row>
-                <entry>TypeCABS</entry>
+                <entry><computeroutput>TypeCABS</computeroutput></entry>
                 <entry>Backspace</entry>
                 <entry>inject Ctrl+Alt+Backspace</entry>
               </row>
               <row>
-                <entry>Pause</entry>
+                <entry><computeroutput>Pause</computeroutput></entry>
                 <entry>P</entry>
                 <entry>Pause the VM</entry>
               </row>
               <row>
-                <entry>Reset</entry>
+                <entry><computeroutput>Reset</computeroutput></entry>
                 <entry>R</entry>
                 <entry>(hard) reset the guest</entry>
               </row>
               <row>
-                <entry>Save</entry>
+                <entry><computeroutput>SaveState</computeroutput></entry>
                 <entry></entry>
                 <entry>save the VM state and terminate the VM</entry>
               </row>
               <row>
-                <entry>Shutdown</entry>
+                <entry><computeroutput>Shutdown</computeroutput></entry>
                 <entry>H</entry>
                 <entry>press the (virtual) ACPI power button</entry>
               </row>
               <row>
-                <entry>PowerOff</entry>
+                <entry><computeroutput>PowerOff</computeroutput></entry>
                 <entry></entry>
                 <entry>power the VM off (without saving the state!)</entry>
               </row>
               <row>
-                <entry>Close</entry>
+                <entry><computeroutput>Close</computeroutput></entry>
                 <entry>Q</entry>
                 <entry>show the VM close dialog</entry>
               </row>
               <row>
-                <entry>FullscreenMode</entry>
+                <entry><computeroutput>FullscreenMode</computeroutput></entry>
                 <entry>F</entry>
                 <entry>switch the VM into fullscreen</entry>
               </row>
               <row>
-                <entry>SeamlessMode</entry>
+                <entry><computeroutput>SeamlessMode</computeroutput></entry>
                 <entry>L</entry>
                 <entry>switch the VM into seamless mode</entry>
               </row>
               <row>
-                <entry>ScaleMode</entry>
+                <entry><computeroutput>ScaleMode</computeroutput></entry>
                 <entry>C</entry>
                 <entry>switch the VM into scale mode</entry>
               </row>
               <row>
-                <entry>GuestAutoResize</entry>
+                <entry><computeroutput>GuestAutoResize</computeroutput></entry>
                 <entry>G</entry>
                 <entry>automatically resize the guest window</entry>
               </row>
               <row>
-                <entry>WindowAdjust</entry>
+                <entry><computeroutput>WindowAdjust</computeroutput></entry>
                 <entry>A</entry>
                 <entry>immediately resize the guest window</entry>
               </row>
               <row>
-                <entry>PopupMenu</entry>
+                <entry><computeroutput>PopupMenu</computeroutput></entry>
                 <entry>Home</entry>
-                <entry>show popup menu in fullscreen / seamless mode</entry>
+                <entry>show popup menu in fullscreen / seaml. mode</entry>
               </row>
               <row>
-                <entry>SettingsDialog</entry>
+                <entry><computeroutput>SettingsDialog</computeroutput></entry>
                 <entry>S</entry>
                 <entry>open the VM settings dialog</entry>
               </row>
               <row>
-                <entry>InformationsDialog</entry>
+                <entry><computeroutput>InformationsDialog</computeroutput></entry>
                 <entry>N</entry>
                 <entry>show the VM information window</entry>
               </row>
               <row>
-                <entry>NetworkAdaptersDialog</entry>
+                <entry><computeroutput>NetworkAdaptersDialog</computeroutput></entry>
                 <entry></entry>
                 <entry>show the VM network adapters dialog</entry>
               </row>
               <row>
-                <entry>SharedFoldersDialog</entry>
+                <entry><computeroutput>SharedFoldersDialog</computeroutput></entry>
                 <entry></entry>
                 <entry>show the VM shared folders dialog</entry>
               </row>
               <row>
-                <entry>InstallGuestAdditions</entry>
+                <entry><computeroutput>InstallGuestAdditions</computeroutput></entry>
                 <entry>D</entry>
                 <entry>mount the ISO containing the Guest Additions</entry>
               </row>
@@ -2118,12 +2362,13 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
       <sect2>
         <title>Action when terminating the VM</title>
 
-        <para>You can disallow certain actions when terminating a VM. To disallow specific actions, type:</para>
+        <para>You can disallow (i.e. black-list) certain actions when terminating a VM.
+          To disallow specific actions, type:</para>
 
         <para><screen>VBoxManage setextradata "VM name" GUI/RestrictedCloseActions OPTION[,OPTION...]</screen></para>
 
         <para>where <computeroutput>OPTION</computeroutput> is one of the
-          following keywords:<glosslist>
+          following keywords:</para><glosslist>
           <glossentry>
             <glossterm><computeroutput>SaveState</computeroutput></glossterm>
 
@@ -2158,10 +2403,10 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
                 powering off the VM.</para>
             </glossdef>
           </glossentry>
-        </glosslist></para>
+        </glosslist>
 
-      <para>Any combination of the above is allowed. If all options are
-        specified, the VM cannot be shut down at all.</para>
+        <para>This is a per-VM setting. Any combination of the above is allowed. If all
+          options are specified, the VM cannot be shut down at all.</para>
     </sect2>
   </sect1>
 
