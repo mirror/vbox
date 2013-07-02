@@ -208,10 +208,18 @@ for kext in $my_kexts; do
     fi
 done
 if test "$my_rc" -eq 0; then
-    echo "Successfully uninstalled VirtualBox."
+    echo "Successfully unloaded VirtualBox kernel extensions."
 else
-    echo "Failed to unload on or more KEXTs, please reboot the machine to complete the uninstall."
+    echo "Failed to unload one or more KEXTs, please reboot the machine to complete the uninstall."
+    exit 1;
 fi
+
+# Cleaning up pkgutil database
+pkgs=`/usr/sbin/pkgutil --pkgs | grep org.virtualbox.pkg`
+for pkg in $pkgs; do
+    /usr/bin/sudo /usr/sbin/pkgutil --forget "$pkg"
+done
+
 echo "Done."
 exit 0;
 
