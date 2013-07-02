@@ -117,7 +117,7 @@
  * Page fault is deliberately excluded here as it's conditional as to whether
  * it's contributory or benign. Page faults are handled separately.
  */
-#define HMSVM_CONTRIBUTORY_XCPT_MASK  ( RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_TS) \
+#define HMSVM_CONTRIBUTORY_XCPT_MASK  (  RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_TS) \
                                        | RT_BIT(X86_XCPT_DE))
 /** @} */
 
