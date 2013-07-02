@@ -564,7 +564,7 @@ template<> QString toInternalString(const MachineCloseAction &machineCloseAction
     QString strResult;
     switch (machineCloseAction)
     {
-        case MachineCloseAction_Save:                       strResult = "Save"; break;
+        case MachineCloseAction_SaveState:                  strResult = "SaveState"; break;
         case MachineCloseAction_Shutdown:                   strResult = "Shutdown"; break;
         case MachineCloseAction_PowerOff:                   strResult = "PowerOff"; break;
         case MachineCloseAction_PowerOff_RestoringSnapshot: strResult = "PowerOffRestoringSnapshot"; break;
@@ -583,7 +583,7 @@ template<> MachineCloseAction fromInternalString<MachineCloseAction>(const QStri
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;                    QList<MachineCloseAction> values;
-    keys << "Save";                      values << MachineCloseAction_Save;
+    keys << "SaveState";                 values << MachineCloseAction_SaveState;
     keys << "Shutdown";                  values << MachineCloseAction_Shutdown;
     keys << "PowerOff";                  values << MachineCloseAction_PowerOff;
     keys << "PowerOffRestoringSnapshot"; values << MachineCloseAction_PowerOff_RestoringSnapshot;

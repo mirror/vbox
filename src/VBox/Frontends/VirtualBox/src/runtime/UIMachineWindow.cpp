@@ -327,7 +327,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     /* Depending on chosen result: */
     switch (closeAction)
     {
-        case MachineCloseAction_Save:
+        case MachineCloseAction_SaveState:
         {
             /* Save VM state: */
             machineLogic()->saveState();

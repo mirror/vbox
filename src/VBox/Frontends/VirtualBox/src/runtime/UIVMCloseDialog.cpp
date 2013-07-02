@@ -71,7 +71,7 @@ void UIVMCloseDialog::accept()
 {
     /* Calculate result: */
     if (m_pSaveRadio->isChecked())
-        setResult(MachineCloseAction_Save);
+        setResult(MachineCloseAction_SaveState);
     else if (m_pShutdownRadio->isChecked())
         setResult(MachineCloseAction_Shutdown);
     else if (m_pPowerOffRadio->isChecked())
@@ -281,7 +281,7 @@ void UIVMCloseDialog::configure(const CMachine &machine, const CSession &session
 
     /* Check which close-actions are resticted: */
     QList<MachineCloseAction> restictedCloseActions = vboxGlobal().restrictedMachineCloseActions(m_machine);
-    bool fIsStateSavingAllowed = !restictedCloseActions.contains(MachineCloseAction_Save);
+    bool fIsStateSavingAllowed = !restictedCloseActions.contains(MachineCloseAction_SaveState);
     bool fIsACPIShutdownAllowed = !restictedCloseActions.contains(MachineCloseAction_Shutdown);
     bool fIsPowerOffAllowed = !restictedCloseActions.contains(MachineCloseAction_PowerOff);
     bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && !restictedCloseActions.contains(MachineCloseAction_PowerOff_RestoringSnapshot);
@@ -307,7 +307,7 @@ void UIVMCloseDialog::configure(const CMachine &machine, const CSession &session
     QRadioButton *pRadioButtonToChoose = 0;
     /* If choosing 'last choice' is possible: */
     m_lastCloseAction = gpConverter->fromInternalString<MachineCloseAction>(m_machine.GetExtraData(GUI_LastCloseAction));
-    if (m_lastCloseAction == MachineCloseAction_Save && fIsStateSavingAllowed)
+    if (m_lastCloseAction == MachineCloseAction_SaveState && fIsStateSavingAllowed)
     {
         pRadioButtonToChoose = m_pSaveRadio;
     }
