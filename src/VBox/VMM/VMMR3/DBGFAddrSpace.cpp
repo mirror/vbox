@@ -541,12 +541,12 @@ VMMR3DECL(int) DBGFR3AsSetAlias(PUVM pUVM, RTDBGAS hAlias, RTDBGAS hAliasFor)
  * @callback_method_impl{FNPDMR3ENUM}
  */
 static DECLCALLBACK(int) dbgfR3AsLazyPopulateR0Callback(PVM pVM, const char *pszFilename, const char *pszName,
-                                                        RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg)
+                                                        RTUINTPTR ImageBase, size_t cbImage, PDMLDRCTX enmCtx, void *pvArg)
 {
     NOREF(pVM); NOREF(cbImage);
 
     /* Only ring-0 modules. */
-    if (!fRC)
+    if (enmCtx == PDMLDRCTX_RING_0)
     {
         RTDBGMOD hDbgMod;
         int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszName, RTLDRARCH_HOST, pVM->pUVM->dbgf.s.hDbgCfg);
@@ -569,12 +569,12 @@ static DECLCALLBACK(int) dbgfR3AsLazyPopulateR0Callback(PVM pVM, const char *psz
  * @callback_method_impl{FNPDMR3ENUM}
  */
 static DECLCALLBACK(int) dbgfR3AsLazyPopulateRCCallback(PVM pVM, const char *pszFilename, const char *pszName,
-                                                        RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg)
+                                                        RTUINTPTR ImageBase, size_t cbImage, PDMLDRCTX enmCtx, void *pvArg)
 {
     NOREF(pVM); NOREF(cbImage);
 
     /* Only raw-mode modules. */
-    if (fRC)
+    if (enmCtx == PDMLDRCTX_RAW_MODE)
     {
         RTDBGMOD hDbgMod;
         int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszName, RTLDRARCH_X86_32, pVM->pUVM->dbgf.s.hDbgCfg);

@@ -139,9 +139,10 @@ DECLCALLBACK(int) tstTMWorker(PVM pVM, RTTEST hTest)
 
 /** PDMR3LdrEnumModules callback, see FNPDMR3ENUM. */
 static DECLCALLBACK(int)
-tstVMMLdrEnum(PVM pVM, const char *pszFilename, const char *pszName, RTUINTPTR ImageBase, size_t cbImage, bool fGC, void *pvUser)
+tstVMMLdrEnum(PVM pVM, const char *pszFilename, const char *pszName, RTUINTPTR ImageBase, size_t cbImage,
+              PDMLDRCTX enmCtx, void *pvUser)
 {
-    NOREF(pVM); NOREF(pszFilename); NOREF(fGC); NOREF(pvUser); NOREF(cbImage);
+    NOREF(pVM); NOREF(pszFilename); NOREF(enmCtx); NOREF(pvUser); NOREF(cbImage);
     RTPrintf("tstVMM: %RTptr %s\n", ImageBase, pszName);
     return VINF_SUCCESS;
 }
