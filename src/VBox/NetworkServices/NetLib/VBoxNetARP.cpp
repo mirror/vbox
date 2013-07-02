@@ -43,7 +43,7 @@ bool VBoxNetArpHandleIt(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBUF 
      */
     PCINTNETHDR pHdr = IntNetRingGetNextFrameToRead(&pBuf->Recv);
     if (   !pHdr
-        || pHdr->u16Type != INTNETHDR_TYPE_FRAME)
+        || pHdr->u8Type != INTNETHDR_TYPE_FRAME)
         return false;
 
     size_t          cbFrame = pHdr->cbFrame;

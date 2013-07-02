@@ -2687,6 +2687,11 @@ static int intnetR0TrunkIfSendGsoFallback(PINTNETTRUNKIF pThis, PINTNETIF pIfSen
     } u;
 
     /*
+     * @todo: We have to adjust MSS so it does not exceed the value configured
+     * for the host's interface.
+     */
+
+    /*
      * Carve out the frame segments with the header and frame in different
      * scatter / gather segments.
      */
@@ -3743,8 +3748,8 @@ INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
             PINTNETHDR          pHdr;
             while ((pHdr = IntNetRingGetNextFrameToRead(&pIf->pIntBuf->Send)) != NULL)
             {
-                uint16_t const      u16Type = pHdr->u16Type;
-                if (u16Type == INTNETHDR_TYPE_FRAME)
+                uint8_t const      u8Type = pHdr->u8Type;
+                if (u8Type == INTNETHDR_TYPE_FRAME)
                 {
                     /* Send regular frame. */
                     void *pvCurFrame = IntNetHdrGetFramePtr(pHdr, pIf->pIntBuf);
@@ -3753,7 +3758,7 @@ INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
                         intnetR0IfSnoopAddr(pIf, (uint8_t *)pvCurFrame, pHdr->cbFrame, false /*fGso*/, (uint16_t *)&Sg.fFlags);
                     enmSwDecision = intnetR0NetworkSend(pNetwork, pIf,  0 /*fSrc*/, &Sg, pDstTab);
                 }
-                else if (u16Type == INTNETHDR_TYPE_GSO)
+                else if (u8Type == INTNETHDR_TYPE_GSO)
                 {
                     /* Send GSO frame if sane. */
                     PPDMNETWORKGSO  pGso       = IntNetHdrGetGsoContext(pHdr, pIf->pIntBuf);
@@ -3775,7 +3780,7 @@ INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
                 /* Unless it's a padding frame, we're getting babble from the producer. */
                 else
                 {
-                    if (u16Type != INTNETHDR_TYPE_PADDING)
+                    if (u8Type != INTNETHDR_TYPE_PADDING)
                         STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatBadFrames); /* ignore */
                     enmSwDecision = INTNETSWDECISION_DROP;
                 }

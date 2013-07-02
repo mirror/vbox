@@ -43,13 +43,13 @@
  * Valid internal networking frame type.
  *
  * @returns  true / false.
- * @param   u16Type             The frame type to check.
+ * @param    u8Type             The frame type to check.
  */
-DECLINLINE(bool) IntNetIsValidFrameType(uint16_t u16Type)
+DECLINLINE(bool) IntNetIsValidFrameType(uint8_t u8Type)
 {
-    if (RT_LIKELY(   u16Type == INTNETHDR_TYPE_FRAME
-                  || u16Type == INTNETHDR_TYPE_GSO
-                  || u16Type == INTNETHDR_TYPE_PADDING))
+    if (RT_LIKELY(   u8Type == INTNETHDR_TYPE_FRAME
+                  || u8Type == INTNETHDR_TYPE_GSO
+                  || u8Type == INTNETHDR_TYPE_PADDING))
         return true;
     return false;
 }
@@ -327,7 +327,7 @@ DECLINLINE(void *) IntNetHdrGetFramePtr(PCINTNETHDR pHdr, PCINTNETBUF pBuf)
     uint8_t *pu8 = (uint8_t *)pHdr + pHdr->offFrame;
 #ifdef VBOX_STRICT
     const uintptr_t off = (uintptr_t)pu8 - (uintptr_t)pBuf;
-    Assert(IntNetIsValidFrameType(pHdr->u16Type));
+    Assert(IntNetIsValidFrameType(pHdr->u8Type));
     Assert(off < pBuf->cbBuf);
     Assert(off + pHdr->cbFrame <= pBuf->cbBuf);
 #endif
@@ -353,7 +353,7 @@ DECLINLINE(PPDMNETWORKGSO) IntNetHdrGetGsoContext(PCINTNETHDR pHdr, PCINTNETBUF 
     PPDMNETWORKGSO pGso = (PPDMNETWORKGSO)((uint8_t *)pHdr + pHdr->offFrame);
 #ifdef VBOX_STRICT
     const uintptr_t off = (uintptr_t)pGso - (uintptr_t)pBuf;
-    Assert(pHdr->u16Type == INTNETHDR_TYPE_GSO);
+    Assert(pHdr->u8Type == INTNETHDR_TYPE_GSO);
     Assert(off < pBuf->cbBuf);
     Assert(off + pHdr->cbFrame <= pBuf->cbBuf);
 #endif
@@ -374,7 +374,7 @@ DECLINLINE(void) IntNetRingSkipFrame(PINTNETRINGBUF pRingBuf)
     Assert(offReadOld >= pRingBuf->offStart);
     Assert(offReadOld <  pRingBuf->offEnd);
     Assert(RT_ALIGN_PT(pHdr, INTNETHDR_ALIGNMENT, INTNETHDR *) == pHdr);
-    Assert(IntNetIsValidFrameType(pHdr->u16Type));
+    Assert(IntNetIsValidFrameType(pHdr->u8Type));
 
     /* skip the frame */
     uint32_t        offReadNew  = offReadOld + pHdr->offFrame + pHdr->cbFrame;
@@ -401,7 +401,7 @@ DECLINLINE(void) IntNetRingSkipFrame(PINTNETRINGBUF pRingBuf)
  *                              Don't touch this!
  * @param   ppvFrame            Where to return the frame pointer.
  */
-DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_t cbFrame, uint16_t u16Type,
+DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_t cbFrame, uint8_t u8Type,
                                                 PINTNETHDR *ppHdr, void **ppvFrame)
 {
     /*
@@ -425,11 +425,11 @@ DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_
                 offNew = pRingBuf->offStart;
             if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
                 return VERR_WRONG_ORDER; /* race */
-            Log2(("intnetRingAllocateFrameInternal: offWriteInt: %#x -> %#x (1) (R=%#x T=%#x S=%#x)\n", offWriteInt, offNew, offRead, u16Type, cbFrame));
+            Log2(("intnetRingAllocateFrameInternal: offWriteInt: %#x -> %#x (1) (R=%#x T=%#x S=%#x)\n", offWriteInt, offNew, offRead, u8Type, cbFrame));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
-            pHdr->u16Type  = u16Type;
-            pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
+            pHdr->u8Type   = u8Type;
+            pHdr->cbFrame  = cbFrame; Assert(pHdr->cbFrame == cbFrame);
             pHdr->offFrame = sizeof(INTNETHDR);
 
             *ppHdr = pHdr;
@@ -446,11 +446,11 @@ DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_
             uint32_t offNew = pRingBuf->offStart + cb;
             if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
                 return VERR_WRONG_ORDER; /* race */
-            Log2(("intnetRingAllocateFrameInternal: offWriteInt: %#x -> %#x (2) (R=%#x T=%#x S=%#x)\n", offWriteInt, offNew, offRead, u16Type, cbFrame));
+            Log2(("intnetRingAllocateFrameInternal: offWriteInt: %#x -> %#x (2) (R=%#x T=%#x S=%#x)\n", offWriteInt, offNew, offRead, u8Type, cbFrame));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
-            pHdr->u16Type  = u16Type;
-            pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
+            pHdr->u8Type   = u8Type;
+            pHdr->cbFrame  = cbFrame; Assert(pHdr->cbFrame == cbFrame);
             pHdr->offFrame = pRingBuf->offStart - offWriteInt;
 
             *ppHdr = pHdr;
@@ -466,11 +466,11 @@ DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_
         uint32_t offNew = offWriteInt + cb + sizeof(INTNETHDR);
         if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
             return VERR_WRONG_ORDER; /* race */
-        Log2(("intnetRingAllocateFrameInternal: offWriteInt: %#x -> %#x (3) (R=%#x T=%#x S=%#x)\n", offWriteInt, offNew, offRead, u16Type, cbFrame));
+        Log2(("intnetRingAllocateFrameInternal: offWriteInt: %#x -> %#x (3) (R=%#x T=%#x S=%#x)\n", offWriteInt, offNew, offRead, u8Type, cbFrame));
 
         PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
-        pHdr->u16Type  = u16Type;
-        pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
+        pHdr->u8Type   = u8Type;
+        pHdr->cbFrame  = cbFrame; Assert(pHdr->cbFrame == cbFrame);
         pHdr->offFrame = sizeof(INTNETHDR);
 
         *ppHdr = pHdr;
@@ -560,7 +560,7 @@ DECLINLINE(void) IntNetRingCommitFrame(PINTNETRINGBUF pRingBuf, PINTNETHDR pHdr)
         Assert(offWriteCom == pRingBuf->offEnd);
         offWriteCom = pRingBuf->offStart;
     }
-    Log2(("IntNetRingCommitFrame:   offWriteCom: %#x -> %#x (R=%#x T=%#x S=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX, pHdr->u16Type, cbFrame));
+    Log2(("IntNetRingCommitFrame:   offWriteCom: %#x -> %#x (R=%#x T=%#x S=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX, pHdr->u8Type, cbFrame));
     ASMAtomicWriteU32(&pRingBuf->offWriteCom, offWriteCom);
     STAM_REL_COUNTER_ADD(&pRingBuf->cbStatWritten, cbFrame);
     STAM_REL_COUNTER_INC(&pRingBuf->cStatFrames);
@@ -588,7 +588,7 @@ DECLINLINE(void) IntNetRingCommitFrameEx(PINTNETRINGBUF pRingBuf, PINTNETHDR pHd
     INTNETHDR_ASSERT_SANITY(pHdr, pRingBuf);
     Assert(pRingBuf->offWriteCom == ((uintptr_t)pHdr - (uintptr_t)pRingBuf));
 
-    if (pHdr->u16Type == INTNETHDR_TYPE_GSO)
+    if (pHdr->u8Type == INTNETHDR_TYPE_GSO)
         cbUsed += sizeof(PDMNETWORKGSO);
 
     /*
@@ -612,13 +612,14 @@ DECLINLINE(void) IntNetRingCommitFrameEx(PINTNETRINGBUF pRingBuf, PINTNETHDR pHd
     {
         /** @todo Later: Try unallocate the extra memory.  */
         PINTNETHDR pHdrPadding = (PINTNETHDR)((uint8_t *)pHdr + pHdr->offFrame + cbAlignedUsed);
-        pHdrPadding->u16Type  = INTNETHDR_TYPE_PADDING;
-        pHdrPadding->cbFrame  = (uint16_t)(cbAlignedFrame - cbAlignedUsed - sizeof(INTNETHDR));
+        pHdrPadding->u8Type   = INTNETHDR_TYPE_PADDING;
+        pHdrPadding->cbFrame  = cbAlignedFrame - cbAlignedUsed - sizeof(INTNETHDR);
+        Assert(pHdrPadding->cbFrame == cbAlignedFrame - cbAlignedUsed - sizeof(INTNETHDR));
         pHdrPadding->offFrame = sizeof(INTNETHDR);
-        pHdr->cbFrame = (uint16_t)cbUsed;
+        pHdr->cbFrame = cbUsed; Assert(pHdr->cbFrame == cbUsed);
     }
 
-    Log2(("IntNetRingCommitFrameEx:   offWriteCom: %#x -> %#x (R=%#x T=%#x S=%#x P=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX, pHdr->u16Type, pHdr->cbFrame, cbAlignedFrame - cbAlignedUsed));
+    Log2(("IntNetRingCommitFrameEx:   offWriteCom: %#x -> %#x (R=%#x T=%#x S=%#x P=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX, pHdr->u8Type, pHdr->cbFrame, cbAlignedFrame - cbAlignedUsed));
     ASMAtomicWriteU32(&pRingBuf->offWriteCom, offWriteCom);
     STAM_REL_COUNTER_ADD(&pRingBuf->cbStatWritten, cbUsed);
     STAM_REL_COUNTER_INC(&pRingBuf->cStatFrames);
@@ -664,8 +665,8 @@ DECLINLINE(int) IntNetRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
             Log2(("IntNetRingWriteFrame: offWriteInt: %#x -> %#x (1)\n", offWriteInt, offNew));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
-            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-            pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
+            pHdr->u8Type   = INTNETHDR_TYPE_FRAME;
+            pHdr->cbFrame  = cbFrame; Assert(pHdr->cbFrame == cbFrame);
             pHdr->offFrame = sizeof(INTNETHDR);
 
             memcpy(pHdr + 1, pvFrame, cbFrame);
@@ -689,8 +690,8 @@ DECLINLINE(int) IntNetRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
             Log2(("IntNetRingWriteFrame: offWriteInt: %#x -> %#x (2)\n", offWriteInt, offNew));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
-            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-            pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
+            pHdr->u8Type   = INTNETHDR_TYPE_FRAME;
+            pHdr->cbFrame  = cbFrame; Assert(pHdr->cbFrame == cbFrame);
             pHdr->offFrame = pRingBuf->offStart - offWriteInt;
 
             memcpy((uint8_t *)pRingBuf + pRingBuf->offStart, pvFrame, cbFrame);
@@ -713,8 +714,8 @@ DECLINLINE(int) IntNetRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
         Log2(("IntNetRingWriteFrame: offWriteInt: %#x -> %#x (3)\n", offWriteInt, offNew));
 
         PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
-        pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-        pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
+        pHdr->u8Type   = INTNETHDR_TYPE_FRAME;
+        pHdr->cbFrame  = cbFrame; Assert(pHdr->cbFrame == cbFrame);
         pHdr->offFrame = sizeof(INTNETHDR);
 
         memcpy(pHdr + 1, pvFrame, cbFrame);

@@ -159,6 +159,8 @@ typedef struct VBOXNETFLTINS
              * @{ */
             /** Pointer to the device. */
             struct net_device * volatile pDev;
+            /** MTU of host's interface. */
+            uint32_t cbMtu;
             /** Whether we've successfully put the interface into to promiscuous mode.
              * This is for dealing with the ENETDOWN case. */
             bool volatile fPromiscuousSet;

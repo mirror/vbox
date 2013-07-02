@@ -462,7 +462,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
         PINTNETHDR pHdr;
         while ((pHdr = IntNetRingGetNextFrameToRead(pRingBuf)))
         {
-            if (pHdr->u16Type == INTNETHDR_TYPE_FRAME)
+            if (pHdr->u8Type == INTNETHDR_TYPE_FRAME)
             {
                 size_t      cbFrame = pHdr->cbFrame;
                 const void *pvFrame = IntNetHdrGetFramePtr(pHdr, pBuf);
@@ -539,7 +539,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                     }
                 }
             }
-            else if (pHdr->u16Type == INTNETHDR_TYPE_GSO)
+            else if (pHdr->u8Type == INTNETHDR_TYPE_GSO)
             {
                 PCPDMNETWORKGSO pGso    = IntNetHdrGetGsoContext(pHdr, pBuf);
                 size_t          cbFrame = pHdr->cbFrame;
@@ -567,9 +567,9 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                     g_cErrors++;
                 }
             }
-            else if (pHdr->u16Type != INTNETHDR_TYPE_PADDING)
+            else if (pHdr->u8Type != INTNETHDR_TYPE_PADDING)
             {
-                RTPrintf("tstIntNet-1: Unknown frame type %d\n", pHdr->u16Type);
+                RTPrintf("tstIntNet-1: Unknown frame type %d\n", pHdr->u8Type);
                 STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);
                 g_cErrors++;
             }
