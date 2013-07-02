@@ -545,6 +545,23 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
             break;
         }
 
+        case IOCTL_VIDEO_QUERY_VBOXVIDEO_INFO:
+        {
+            STARTIO_IN(ULONG, pulInfoLevel);
+            if (*pulInfoLevel == VBOXVIDEO_INFO_LEVEL_REGISTRY_FLAGS)
+            {
+                STARTIO_OUT(ULONG, pulFlags);
+                bResult = VBoxMPQueryRegistryFlags(pExt, pulFlags, pStatus);
+            }
+            else
+            {
+                pStatus->Status = ERROR_INVALID_PARAMETER;
+                bResult = FALSE;
+            }
+                
+            break;
+        }
+
         default:
         {
             WARN(("unsupported IOCTL %p, fn(%#x)",

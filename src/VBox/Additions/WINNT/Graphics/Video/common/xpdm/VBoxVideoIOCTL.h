@@ -58,6 +58,10 @@
 #define IOCTL_VIDEO_VHWA_QUERY_INFO \
     CTL_CODE(FILE_DEVICE_VIDEO, 0x435, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
+/* Called to get adapter's generic information */
+#define IOCTL_VIDEO_QUERY_VBOXVIDEO_INFO \
+    CTL_CODE(FILE_DEVICE_VIDEO, 0x436, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
 /* ==================== Data structures used by Virtual Box VRPS's ==================== */
 typedef void* HVBOXVIDEOHGSMI;
 
@@ -145,5 +149,10 @@ typedef struct _VHWAQUERYINFO
 } VHWAQUERYINFO;
 #endif
 #pragma pack()
+
+/* IOCTL_VIDEO_QUERY_INFO */
+#define VBOXVIDEO_INFO_LEVEL_REGISTRY_FLAGS 1
+
+#define VBOXVIDEO_REGISTRY_FLAGS_DISABLE_BITMAP_CACHE 0x00000001
 
 #endif /*VBOXVIDEOIOCTL_H*/

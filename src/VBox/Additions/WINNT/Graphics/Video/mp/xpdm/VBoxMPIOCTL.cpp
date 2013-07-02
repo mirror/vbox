@@ -616,3 +616,35 @@ BOOLEAN VBoxMPVhwaQueryInfo(PVBOXMP_DEVEXT pExt, VHWAQUERYINFO *pInfo, PSTATUS_B
     return bRC;
 }
 #endif
+
+BOOLEAN VBoxMPQueryRegistryFlags(PVBOXMP_DEVEXT pExt, ULONG *pulFlags, PSTATUS_BLOCK pStatus)
+{
+    BOOLEAN bRC = TRUE;
+    LOGF_ENTER();
+
+    VBOXMPCMNREGISTRY Registry;
+
+    int rc = VBoxMPCmnRegInit(pExt, &Registry);
+    VBOXMP_WARN_VPS_NOBP(rc);
+
+    if (rc == NO_ERROR)
+    {
+        uint32_t u32Flags = 0;
+        rc = VBoxMPCmnRegQueryDword(Registry, L"VBoxVideoFlags", &u32Flags);
+        VBOXMP_WARN_VPS_NOBP(rc);
+        if (rc != NO_ERROR)
+        {   
+            u32Flags = 0;
+        }
+
+        LOG(("Registry flags 0x%08X", u32Flags));
+        *pulFlags = u32Flags;
+        pStatus->Information = sizeof(ULONG);
+    }
+
+    rc = VBoxMPCmnRegFini(Registry);
+    VBOXMP_WARN_VPS_NOBP(rc);
+
+    LOGF_LEAVE();
+    return bRC;
+}

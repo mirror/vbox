@@ -38,5 +38,6 @@ int VBoxDispMPSetVisibleRegion(HANDLE hDriver, PRTRECT pRects, DWORD cRects);
 int VBoxDispMPResetDevice(HANDLE hDriver);
 int VBoxDispMPShareVideoMemory(HANDLE hDriver, PVIDEO_SHARE_MEMORY pSMem, PVIDEO_SHARE_MEMORY_INFORMATION pSMemInfo);
 int VBoxDispMPUnshareVideoMemory(HANDLE hDriver, PVIDEO_SHARE_MEMORY pSMem);
+int VBoxDispMPQueryRegistryFlags(HANDLE hDriver, ULONG *pulFlags);
 
 #endif /*VBOXDISPMINI_H*/

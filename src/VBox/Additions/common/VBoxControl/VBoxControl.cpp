@@ -75,6 +75,7 @@ enum VBoxControlUsage
 #ifdef RT_OS_WINDOWS
     GET_VIDEO_ACCEL,
     SET_VIDEO_ACCEL,
+    VIDEO_FLAGS,
     LIST_CUST_MODES,
     ADD_CUST_MODE,
     REMOVE_CUST_MODE,
@@ -112,6 +113,8 @@ static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
         doUsage("", g_pszProgName, "getvideoacceleration");
     if (eWhich  == SET_VIDEO_ACCEL || eWhich == USAGE_ALL)
         doUsage("<on|off>", g_pszProgName, "setvideoacceleration");
+    if (eWhich  == VIDEO_FLAGS || eWhich == USAGE_ALL)
+        doUsage("<get|set|clear|delete> [hex mask]", g_pszProgName, "videoflags");
     if (eWhich  == LIST_CUST_MODES || eWhich == USAGE_ALL)
         doUsage("", g_pszProgName, "listcustommodes");
     if (eWhich  == ADD_CUST_MODE || eWhich == USAGE_ALL)
@@ -778,6 +781,135 @@ static RTEXITCODE handleSetVideoAcceleration(int argc, char *argv[])
         RegCloseKey(hkeyVideo);
     }
     return RTEXITCODE_SUCCESS;
+}
+
+static RTEXITCODE videoFlagsGet(void)
+{
+    HKEY hkeyVideo = getVideoKey(false);
+
+    if (hkeyVideo)
+    {
+        DWORD dwFlags = 0;
+        DWORD len = sizeof(dwFlags);
+        DWORD dwKeyType;
+        ULONG status = RegQueryValueExA(hkeyVideo, "VBoxVideoFlags", NULL, &dwKeyType, (LPBYTE)&dwFlags, &len);
+        if (status != ERROR_SUCCESS)
+            RTPrintf("Video flags: default\n");
+        else
+            RTPrintf("Video flags: 0x%08X\n", dwFlags);
+        RegCloseKey(hkeyVideo);
+        return RTEXITCODE_SUCCESS;
+    }
+
+    return RTEXITCODE_FAILURE;
+}
+
+static RTEXITCODE videoFlagsDelete(void)
+{
+    HKEY hkeyVideo = getVideoKey(true);
+
+    if (hkeyVideo)
+    {
+        ULONG status = RegDeleteValueA(hkeyVideo, "VBoxVideoFlags");
+        if (status != ERROR_SUCCESS)
+            VBoxControlError("Error %d deleting video flags.\n", status);
+        RegCloseKey(hkeyVideo);
+        return RTEXITCODE_SUCCESS;
+    }
+
+    return RTEXITCODE_FAILURE;
+}
+
+static RTEXITCODE videoFlagsModify(bool fSet, int argc, char *argv[])
+{
+    if (argc != 1)
+    {
+        VBoxControlError("Mask required.\n");
+        return RTEXITCODE_FAILURE;
+    }
+
+    uint32_t u32Mask = 0;
+    int rc = RTStrToUInt32Full(argv[0], 16, &u32Mask);
+    if (RT_FAILURE(rc))
+    {
+        VBoxControlError("Invalid video flags mask.\n");
+        return RTEXITCODE_FAILURE;
+    }
+
+    RTEXITCODE exitCode = RTEXITCODE_SUCCESS;
+
+    HKEY hkeyVideo = getVideoKey(true);
+    if (hkeyVideo)
+    {
+        DWORD dwFlags = 0;
+        DWORD len = sizeof(dwFlags);
+        DWORD dwKeyType;
+        ULONG status = RegQueryValueExA(hkeyVideo, "VBoxVideoFlags", NULL, &dwKeyType, (LPBYTE)&dwFlags, &len);
+        if (status != ERROR_SUCCESS)
+        {
+            dwFlags = 0;
+        }
+
+        dwFlags = fSet? (dwFlags | u32Mask):
+                        (dwFlags & ~u32Mask);
+
+        status = RegSetValueExA(hkeyVideo, "VBoxVideoFlags", 0, REG_DWORD, (LPBYTE)&dwFlags, sizeof(dwFlags));
+        if (status != ERROR_SUCCESS)
+        {
+            VBoxControlError("Error %d writing video flags.\n", status);
+            exitCode = RTEXITCODE_FAILURE;
+        }
+
+        RegCloseKey(hkeyVideo);
+    }
+    else
+    {
+        exitCode = RTEXITCODE_FAILURE;
+    }
+
+    return exitCode;
+}
+
+static RTEXITCODE handleVideoFlags(int argc, char *argv[])
+{
+    /* Must have a keyword and optional value (32 bit hex string). */
+    if (argc != 1 && argc != 2)
+    {
+        VBoxControlError("Invalid number of arguments.\n");
+        usage(VIDEO_FLAGS);
+        return RTEXITCODE_FAILURE;
+    }
+
+    RTEXITCODE exitCode = RTEXITCODE_SUCCESS;
+
+    if (RTStrICmp(argv[0], "get") == 0)
+    {
+        exitCode = videoFlagsGet();
+    }
+    else if (RTStrICmp(argv[0], "delete") == 0)
+    {
+        exitCode = videoFlagsDelete();
+    }
+    else if (RTStrICmp(argv[0], "set") == 0)
+    {
+        exitCode = videoFlagsModify(true, argc - 1, &argv[1]);
+    }
+    else if (RTStrICmp(argv[0], "clear") == 0)
+    {
+        exitCode = videoFlagsModify(false, argc - 1, &argv[1]);
+    }
+    else
+    {
+        VBoxControlError("Invalid command.\n");
+        exitCode = RTEXITCODE_FAILURE;
+    }
+
+    if (exitCode != RTEXITCODE_SUCCESS)
+    {
+        usage(VIDEO_FLAGS);
+    }
+
+    return exitCode;
 }
 
 #define MAX_CUSTOM_MODES 128
@@ -1662,6 +1794,7 @@ struct COMMANDHANDLER
 #if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
     { "getvideoacceleration",   handleGetVideoAcceleration },
     { "setvideoacceleration",   handleSetVideoAcceleration },
+    { "videoflags",             handleVideoFlags },
     { "listcustommodes",        handleListCustomModes },
     { "addcustommode",          handleAddCustomMode },
     { "removecustommode",       handleRemoveCustomMode },
