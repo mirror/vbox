@@ -541,6 +541,61 @@ DECLINLINE(bool) vboxNetFltLinuxSkBufIsOur(struct sk_buff *pBuf)
 
 
 /**
+ * Checks whether this SG list contains a GSO packet.
+ *
+ * @returns true / false accordingly.
+ * @param   pSG             The (scatter/)gather list.
+ */
+DECLINLINE(bool) vboxNetFltLinuxIsGso(PINTNETSG pSG)
+{
+#if defined(VBOXNETFLT_WITH_GSO_XMIT_WIRE) || defined(VBOXNETFLT_WITH_GSO_XMIT_HOST)
+    return !((PDMNETWORKGSOTYPE)pSG->GsoCtx.u8Type == PDMNETWORKGSOTYPE_INVALID);
+#else /* !VBOXNETFLT_WITH_GSO_XMIT_WIRE && !VBOXNETFLT_WITH_GSO_XMIT_HOST */
+    return false;
+#endif /* !VBOXNETFLT_WITH_GSO_XMIT_WIRE && !VBOXNETFLT_WITH_GSO_XMIT_HOST */
+}
+
+
+/**
+ * Find out the frame size (of a single segment in case of GSO frames).
+ *
+ * @returns the frame size.
+ * @param   pSG             The (scatter/)gather list.
+ */
+DECLINLINE(uint32_t) vboxNetFltLinuxFrameSize(PINTNETSG pSG)
+{
+    RTNETETHERHDR EthHdr;
+    uint16_t      u16Type = 0;
+    uint32_t      cbVlanTag = 0;
+    if (pSG->aSegs[0].cb >= sizeof(EthHdr))
+        u16Type = RT_BE2H_U16(((PCRTNETETHERHDR)pSG->aSegs[0].pv)->EtherType);
+    else if (pSG->cbTotal >= sizeof(EthHdr))
+    {
+        uint32_t i, uOffset = RT_OFFSETOF(RTNETETHERHDR, EtherType);
+        for (i = 0; i < pSG->cSegsUsed; ++i)
+        {
+            if (uOffset > pSG->aSegs[i].cb)
+            {
+                uOffset -= pSG->aSegs[i].cb;
+                continue;
+            }
+            if (uOffset + sizeof(uint16_t) > pSG->aSegs[i].cb)
+            {
+                if (i + 1 < pSG->cSegsUsed)
+                    u16Type = RT_BE2H_U16(  ((uint16_t)( ((uint8_t*)pSG->aSegs[i].pv)[uOffset] ) << 8)
+                                          + *(uint8_t*)pSG->aSegs[i + 1].pv);
+            }
+            else
+                u16Type = RT_BE2H_U16(*(uint16_t*)((uint8_t*)pSG->aSegs[i].pv + uOffset));
+        }
+    }
+    if (u16Type == RTNET_ETHERTYPE_VLAN)
+        cbVlanTag = 4;
+    return (vboxNetFltLinuxIsGso(pSG) ? (uint32_t)pSG->GsoCtx.cbMaxSeg + pSG->GsoCtx.cbHdrsTotal : pSG->cbTotal) - cbVlanTag;
+}
+
+
+/**
  * Internal worker that create a linux sk_buff for a
  * (scatter/)gather list.
  *
@@ -558,6 +613,17 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
     if (pSG->cbTotal == 0)
     {
         LogRel(("VBoxNetFlt: Dropped empty packet coming from internal network.\n"));
+        return NULL;
+    }
+    Log5(("VBoxNetFlt: Packet to %s of %d bytes (frame=%d).\n", fDstWire?"wire":"host", pSG->cbTotal, vboxNetFltLinuxFrameSize(pSG)));
+    if (fDstWire && (vboxNetFltLinuxFrameSize(pSG) > ASMAtomicReadU32(&pThis->u.s.cbMtu) + 14))
+    {
+        static bool fOnce = true;
+        if (fOnce)
+        {
+            fOnce = false;
+            printk("VBoxNetFlt: Dropped over-sized packet (%d bytes) coming from internal network.\n", vboxNetFltLinuxFrameSize(pSG));
+        }
         return NULL;
     }
 
@@ -1529,6 +1595,8 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
 
     /* Get the mac address while we still have a valid net_device reference. */
     memcpy(&pThis->u.s.MacAddr, pDev->dev_addr, sizeof(pThis->u.s.MacAddr));
+    /* Initialize MTU */
+    pThis->u.s.cbMtu = pDev->mtu;
 
     /*
      * Install a packet filter for this device with a protocol wildcard (ETH_P_ALL).
@@ -1679,6 +1747,24 @@ static int vboxNetFltLinuxDeviceGoingDown(PVBOXNETFLTINS pThis, struct net_devic
     return NOTIFY_OK;
 }
 
+/**
+ * Callback for listening to MTU change event.
+ *
+ * We need to track changes of host's inteface MTU to discard over-sized frames
+ * coming from the internal network as they may hang the TX queue of host's
+ * adapter.
+ *
+ * @returns NOTIFY_OK
+ * @param   pThis               The netfilter instance.
+ * @param   pDev                Pointer to device structure of host's interface.
+ */
+static int vboxNetFltLinuxDeviceMtuChange(PVBOXNETFLTINS pThis, struct net_device *pDev)
+{
+    ASMAtomicWriteU32(&pThis->u.s.cbMtu, pDev->mtu);
+    Log(("vboxNetFltLinuxDeviceMtuChange: set MTU for %s to %d\n", pThis->szName, pDev->mtu));
+    return NOTIFY_OK;
+}
+
 #ifdef LOG_ENABLED
 /** Stringify the NETDEV_XXX constants. */
 static const char *vboxNetFltLinuxGetNetDevEventName(unsigned long ulEventType)
@@ -1745,6 +1831,9 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
                     break;
                 case NETDEV_GOING_DOWN:
                     rc = vboxNetFltLinuxDeviceGoingDown(pThis, pDev);
+                    break;
+                case NETDEV_CHANGEMTU:
+                    rc = vboxNetFltLinuxDeviceMtuChange(pThis, pDev);
                     break;
                 case NETDEV_CHANGENAME:
                     break;

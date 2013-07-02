@@ -462,12 +462,12 @@ PDMBOTHCBDECL(int) drvIntNetUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGAT
 #endif
     Assert(pSgBuf->fFlags == (PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1));
     Assert(pSgBuf->cbUsed <= pSgBuf->cbAvailable);
-    Assert(   pHdr->u16Type == INTNETHDR_TYPE_FRAME
-           || pHdr->u16Type == INTNETHDR_TYPE_GSO);
+    Assert(   pHdr->u8Type == INTNETHDR_TYPE_FRAME
+           || pHdr->u8Type == INTNETHDR_TYPE_GSO);
     Assert(PDMCritSectIsOwner(&pThis->XmitLock));
 
     /** @todo LATER: try unalloc the frame. */
-    pHdr->u16Type = INTNETHDR_TYPE_PADDING;
+    pHdr->u8Type = INTNETHDR_TYPE_PADDING;
     IntNetRingCommitFrame(&pThis->CTX_SUFF(pBuf)->Send, pHdr);
 
 #ifdef IN_RING3
@@ -702,9 +702,9 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
             }
 
             Log2(("pHdr=%p offRead=%#x: %.8Rhxs\n", pHdr, pRingBuf->offReadX, pHdr));
-            uint16_t u16Type = pHdr->u16Type;
-            if (    (   u16Type == INTNETHDR_TYPE_FRAME
-                     || u16Type == INTNETHDR_TYPE_GSO)
+            uint8_t u8Type = pHdr->u8Type;
+            if (    (   u8Type == INTNETHDR_TYPE_FRAME
+                     || u8Type == INTNETHDR_TYPE_GSO)
                 &&  !pThis->fLinkDown)
             {
                 /*
@@ -714,7 +714,7 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                 int rc = pThis->pIAboveNet->pfnWaitReceiveAvail(pThis->pIAboveNet, 0);
                 if (rc == VINF_SUCCESS)
                 {
-                    if (u16Type == INTNETHDR_TYPE_FRAME)
+                    if (u8Type == INTNETHDR_TYPE_FRAME)
                     {
                         /*
                          * Normal frame.
@@ -813,7 +813,7 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                             /*
                              * NIC is going down, likely because the VM is being reset. Skip the frame.
                              */
-                            AssertMsg(IntNetIsValidFrameType(pHdr->u16Type), ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u16Type, pRingBuf->offReadX));
+                            AssertMsg(IntNetIsValidFrameType(pHdr->u8Type), ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u8Type, pRingBuf->offReadX));
                             IntNetRingSkipFrame(pRingBuf);
                         }
                         else
@@ -830,7 +830,7 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                 /*
                  * Link down or unknown frame - skip to the next frame.
                  */
-                AssertMsg(IntNetIsValidFrameType(pHdr->u16Type), ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u16Type, pRingBuf->offReadX));
+                AssertMsg(IntNetIsValidFrameType(pHdr->u8Type), ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u8Type, pRingBuf->offReadX));
                 IntNetRingSkipFrame(pRingBuf);
                 STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);
             }

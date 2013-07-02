@@ -213,11 +213,11 @@ typedef INTNETIFHANDLE *PINTNETIFHANDLE;
  */
 typedef struct INTNETHDR
 {
+    /** The size of the frame. */
+    uint32_t        cbFrame : 24;
     /** Header type. This is currently serving as a magic, it
      * can be extended later to encode special command frames and stuff. */
-    uint16_t        u16Type;
-    /** The size of the frame. */
-    uint16_t        cbFrame;
+    uint32_t        u8Type  : 8;
     /** The offset from the start of this header to where the actual frame starts.
      * This is used to keep the frame it self contiguous in virtual memory and
      * thereby both simplify access as well as the descriptor. */
@@ -235,16 +235,16 @@ typedef INTNETHDR const *PCINTNETHDR;
 AssertCompile(sizeof(INTNETHDR) == INTNETHDR_ALIGNMENT);
 AssertCompile(INTNETHDR_ALIGNMENT <= INTNETRINGBUF_ALIGNMENT);
 
-/** @name Frame types (INTNETHDR::u16Type).
+/** @name Frame types (INTNETHDR::u8Type).
  * @{ */
 /** Normal frames. */
-#define INTNETHDR_TYPE_FRAME        0x2442
+#define INTNETHDR_TYPE_FRAME        0x42
 /** Padding frames. */
-#define INTNETHDR_TYPE_PADDING      0x3553
+#define INTNETHDR_TYPE_PADDING      0x53
 /** Generic segment offload frames.
  * The frame starts with a PDMNETWORKGSO structure which is followed by the
  * header template and data. */
-#define INTNETHDR_TYPE_GSO          0x4664
+#define INTNETHDR_TYPE_GSO          0x64
 AssertCompileSize(PDMNETWORKGSO, 8);
 /** @}  */
 
@@ -257,9 +257,9 @@ AssertCompileSize(PDMNETWORKGSO, 8);
     { \
         AssertPtr(pHdr); \
         Assert(RT_ALIGN_PT(pHdr, INTNETHDR_ALIGNMENT, INTNETHDR *) == pHdr); \
-        Assert(   (pHdr)->u16Type == INTNETHDR_TYPE_FRAME \
-               || (pHdr)->u16Type == INTNETHDR_TYPE_GSO \
-               || (pHdr)->u16Type == INTNETHDR_TYPE_PADDING); \
+        Assert(   (pHdr)->u8Type == INTNETHDR_TYPE_FRAME \
+               || (pHdr)->u8Type == INTNETHDR_TYPE_GSO \
+               || (pHdr)->u8Type == INTNETHDR_TYPE_PADDING); \
         { \
             uintptr_t const offHdr   = (uintptr_t)pHdr - (uintptr_t)pRingBuf; \
             uintptr_t const offFrame = offHdr + (pHdr)->offFrame; \
