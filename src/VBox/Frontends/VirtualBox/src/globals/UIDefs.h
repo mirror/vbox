@@ -317,7 +317,7 @@ Q_DECLARE_METATYPE(IndicatorType);
 enum MachineCloseAction
 {
     MachineCloseAction_Invalid,
-    MachineCloseAction_Save,
+    MachineCloseAction_SaveState,
     MachineCloseAction_Shutdown,
     MachineCloseAction_PowerOff,
     MachineCloseAction_PowerOff_RestoringSnapshot,
