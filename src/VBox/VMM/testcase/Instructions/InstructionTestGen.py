@@ -131,7 +131,15 @@ g_asGRegs8Rex   = ('al',  'cl',  'dl',  'bl',  'spl', 'bpl', 'sil',  'dil',
 
 ## @name Random
 ## @{
-g_oMyRand = random.SystemRandom()
+g_iMyRandSeed = int((os.urandom(4)).encode('hex'), 16);
+#g_iMyRandSeed = 286523426;
+g_oMyRand = random.Random(g_iMyRandSeed);
+#g_oMyRand = random.SystemRandom();
+
+def randU8():
+    """ Unsigned 8-bit random number. """
+    return g_oMyRand.getrandbits(8);
+
 def randU16():
     """ Unsigned 16-bit random number. """
     return g_oMyRand.getrandbits(16);
@@ -724,17 +732,22 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
     def generateStdTestGregMemSib(self, oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, auInputs):
         """ Generate all SIB variations for the given iOp1 (reg) value. """
         assert cAddrBits in [32, 64];
-        for _ in oGen.oSibBaseRange:
+        i = oGen.cSibBasePerRun;
+        while i > 0:
             oGen.iSibBaseReg = (oGen.iSibBaseReg + 1) % oGen.oTarget.getGRegCount(cAddrBits / 8);
             if oGen.iSibBaseReg == X86_GREG_xSP: # no RSP testing atm.
                 continue;
-            for _ in oGen.oSibIndexRange:
+
+            j = oGen.getSibIndexPerRun();
+            while j > 0:
                 oGen.iSibIndexReg = (oGen.iSibIndexReg + 1) % oGen.oTarget.getGRegCount(cAddrBits / 8);
+                if oGen.iSibIndexReg == iOp1 and oGen.iSibIndexReg != 4 and cAddrBits != cbMaxOp:
+                    continue; # Don't know the high bit of the address ending up the result - skip it for now.
+
                 for iMod in [0, 1, 2]:
-                    if oGen.iSibBaseReg == iOp1 and ((oGen.iSibBaseReg != 5 and oGen.iSibBaseReg != 13) or iMod != 0) \
+                    if oGen.iSibBaseReg == iOp1 \
+                      and ((oGen.iSibBaseReg != 5 and oGen.iSibBaseReg != 13) or iMod != 0) \
                       and cAddrBits != cbMaxOp:
-                        continue; # Don't know the high bit of the address ending up the result - skip it for now.
-                    if oGen.iSibIndexReg == iOp1 and oGen.iSibIndexReg != 4 and cAddrBits != cbMaxOp:
                         continue; # Don't know the high bit of the address ending up the result - skip it for now.
 
                     for _ in oGen.oSibScaleRange:
@@ -748,6 +761,8 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                             self.generateOneStdTestGregMemSib(oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, iMod,
                                                               oGen.iSibBaseReg, oGen.iSibIndexReg, oGen.iSibScale,
                                                               uInput, uResult);
+                j -= 1;
+            i -= 1;
 
         return True;
 
@@ -762,9 +777,6 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         auLongInputs  = self.generateInputs(cbDefOp, cbMaxOp, oGen, fLong = True);
         iLongOp1      = oGen.oTarget.randGRegNoSp();
         iLongOp2      = oGen.oTarget.randGRegNoSp();
-        oOp2Range     = None;
-        if oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
-            oOp2Range    = [iLongOp2,];
 
         # Register tests
         if True:
@@ -804,38 +816,27 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                     if cbEffOp > cbMaxOp:
                         continue;
 
-                    oOp1MemRange   = range(oGen.oTarget.getGRegCount());
-                    oOp2MemRange   = range(oGen.oTarget.getGRegCount(cAddrBits / 8))
-                    if oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
-                        oOp1MemRange   = [iLongOp1,];
-                        oOp2MemRange   = [iLongOp2,];
-                    elif oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Medium:
-                        oOp1MemRange   = oGen.oTarget.randGRegNoSpList(3 if oGen.oTarget.is64Bit() else 1, cbEffOp);
-                        oOp2MemRange   = oGen.oTarget.randGRegNoSpList(3 + (cAddrBits == 64) * 2, cAddrBits / 8);
-                    if iLongOp2 not in oOp1MemRange:
-                        oOp1MemRange.append(iLongOp2);
-                    if cAddrBits != 16 and 4 not in oOp2MemRange:
-                        oOp2MemRange.append(4)
-
-                    for iOp1 in oOp1MemRange:
-                        if iOp1 == X86_GREG_xSP:
+                    for _ in oGen.getModRegRange(cbEffOp):
+                        oGen.iModReg = (oGen.iModReg + 1) % oGen.oTarget.getGRegCount(cbEffOp);
+                        if oGen.iModReg == X86_GREG_xSP:
                             continue; # Cannot test xSP atm.
-                        if iOp1 > 15:
+                        if oGen.iModReg > 15:
                             continue; ## TODO AH,CH,DH,BH
-                        auInputs = auLongInputs if iOp1 == iLongOp1 else auShortInputs;
 
-                        for iOp2 in oOp2MemRange:
-                            if iOp2 != 4 or cAddrBits == 16:
+                        auInputs = auLongInputs if oGen.iModReg == iLongOp1 else auShortInputs;
+                        for _ in oGen.oModRmRange:
+                            oGen.iModRm = (oGen.iModRm + 1) % oGen.oTarget.getGRegCount(cAddrBits * 8);
+                            if oGen.iModRm != 4 or cAddrBits == 16:
                                 for uInput in auInputs:
                                     oGen.newSubTest();
-                                    if iOp1 == iOp2 and iOp2 != 5 and iOp2 != 13 and cbEffOp != cbMaxOp:
+                                    if oGen.iModReg == oGen.iModRm and oGen.iModRm != 5 and oGen.iModRm != 13 and cbEffOp != cbMaxOp:
                                         continue; # Don't know the high bit of the address ending up the result - skip it for now.
-                                    uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[iOp1 & 15], oGen);
+                                    uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[oGen.iModReg & 15], oGen);
                                     self.generateOneStdTestGregMemNoSib(oGen, cAddrBits, cbEffOp, cbMaxOp,
-                                                                        iOp1, iOp2, uInput, uResult);
+                                                                        oGen.iModReg, oGen.iModRm, uInput, uResult);
                             else:
-                                # SIB.
-                                self.generateStdTestGregMemSib(oGen, cAddrBits, cbEffOp, cbMaxOp, iOp1, auInputs);
+                                # SIB - currently only short list of inputs or things may get seriously out of hand.
+                                self.generateStdTestGregMemSib(oGen, cAddrBits, cbEffOp, cbMaxOp, oGen.iModReg, auShortInputs);
                     break;
                 break;
 
@@ -958,26 +959,38 @@ class InstructionTestGen(object):
         self.oFile          = sys.stderr;
         self.iFile          = -1;
         self.sFile          = '';
-        self.dCheckFns      = dict();
-        self.dMemSetupFns   = dict();
-        self.d64BitConsts   = dict();
+        self._dCheckFns     = dict();
+        self._dMemSetupFns  = dict();
+        self._d64BitConsts  = dict();
 
         # State variables used while generating test convenientely placed here (lazy bird)...
+        self.iModReg        = 0;
+        self.iModRm         = 0;
         self.iSibBaseReg    = 0;
         self.iSibIndexReg   = 0;
         self.iSibScale      = 1;
         if self.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
-            self.oSibBaseRange   = range(1);
-            self.oSibIndexRange  = range(2);
-            self.oSibScaleRange  = range(1);
+            self._oModRegRange     = range(2);
+            self._oModRegRange8    = range(2);
+            self.oModRmRange       = range(2);
+            self.cSibBasePerRun    = 1;
+            self._cSibIndexPerRun  = 2;
+            self.oSibScaleRange    = range(1);
         elif self.oOptions.sTestSize == InstructionTestGen.ksTestSize_Medium:
-            self.oSibBaseRange   = range(5);
-            self.oSibIndexRange  = range(4);
-            self.oSibScaleRange  = range(2);
+            self._oModRegRange     = range( 5 if self.oTarget.is64Bit() else 4);
+            self._oModRegRange8    = range( 6 if self.oTarget.is64Bit() else 4);
+            self.oModRmRange       = range(5);
+            self.cSibBasePerRun    = 5;
+            self._cSibIndexPerRun  = 4
+            self.oSibScaleRange    = range(2);
         else:
-            self.oSibBaseRange   = range(8);
-            self.oSibIndexRange  = range(9);
-            self.oSibScaleRange  = range(4);
+            self._oModRegRange     = range(16 if self.oTarget.is64Bit() else 8);
+            self._oModRegRange8    = range(20 if self.oTarget.is64Bit() else 8);
+            self.oModRmRange       = range(16 if self.oTarget.is64Bit() else 8);
+            self.cSibBasePerRun    = 8;
+            self._cSibIndexPerRun  = 9;
+            self.oSibScaleRange    = range(4);
+        self.iSibIndexRange = 0;
 
 
     #
@@ -1022,10 +1035,10 @@ class InstructionTestGen(object):
             sName = '%s' % (self.oTarget.asGRegs[iReg1],);
             assert iReg3 is None;
 
-        if sName in self.dCheckFns:
-            self.dCheckFns[sName] += 1;
+        if sName in self._dCheckFns:
+            self._dCheckFns[sName] += 1;
         else:
-            self.dCheckFns[sName]  = 1;
+            self._dCheckFns[sName]  = 1;
 
         return 'Common_Check_' + sName;
 
@@ -1033,6 +1046,10 @@ class InstructionTestGen(object):
         """
         Records the need for a given register checker function, returning its label.
         """
+        assert cAddrBits in [64, 32, 16];
+        assert cbEffOp   in [8, 4, 2, 1];
+        assert iScale    in [1, 2, 4, 8];
+
         sName = '%ubit_U%u' % (cAddrBits, cbEffOp * 8,);
         if iBaseReg is not None:
             sName += '_%s' % (gregName(iBaseReg, cAddrBits),);
@@ -1041,10 +1058,10 @@ class InstructionTestGen(object):
             sName += '_%s' % (gregName(iIndexReg, cAddrBits),);
         if offDisp is not None:
             sName += '_%#010x' % (offDisp & UINT32_MAX, );
-        if sName in self.dMemSetupFns:
-            self.dMemSetupFns[sName] += 1;
+        if sName in self._dMemSetupFns:
+            self._dMemSetupFns[sName] += 1;
         else:
-            self.dMemSetupFns[sName]  = 1;
+            self._dMemSetupFns[sName]  = 1;
         return 'Common_MemSetup_' + sName;
 
     def need64BitConstant(self, uVal):
@@ -1053,10 +1070,10 @@ class InstructionTestGen(object):
         These constants are pooled to attempt reduce the size of the whole thing.
         """
         assert uVal >= 0 and uVal <= UINT64_MAX;
-        if uVal in self.d64BitConsts:
-            self.d64BitConsts[uVal] += 1;
+        if uVal in self._d64BitConsts:
+            self._d64BitConsts[uVal] += 1;
         else:
-            self.d64BitConsts[uVal]  = 1;
+            self._d64BitConsts[uVal]  = 1;
         return 'g_u64Const_0x%016x' % (uVal, );
 
     def pushConst(self, uResult):
@@ -1084,10 +1101,47 @@ class InstructionTestGen(object):
         else: assert False;
         return aoffDisp;
 
+    def getModRegRange(self, cbEffOp):
+        """
+        The Mod R/M register range varies with the effective operand size, for
+        8-bit registers we have 4 more.
+        """
+        if cbEffOp == 1:
+            return self._oModRegRange8;
+        return self._oModRegRange;
+
+    def getSibIndexPerRun(self):
+        """
+        We vary the SIB index test range a little to try cover more operand
+        combinations and avoid repeating the same ones.
+        """
+        self.iSibIndexRange += 1;
+        self.iSibIndexRange %= 3;
+        if self.iSibIndexRange == 0:
+            return self._cSibIndexPerRun - 1;
+        return self._cSibIndexPerRun;
+
 
     #
     # Internal machinery.
     #
+
+    def _randInitIndexes(self):
+        """
+        Initializes the Mod R/M and SIB state index with random numbers prior
+        to generating a test.
+
+        Note! As with all other randomness and variations we do, we cannot
+              test all combinations for each and every instruction so we try
+              get coverage over time.
+        """
+        self.iModReg        = randU8();
+        self.iModRm         = randU8();
+        self.iSibBaseReg    = randU8();
+        self.iSibIndexReg   = randU8();
+        self.iSibScale      = 1 << (randU8() & 3);
+        self.iSibIndexRange = randU8();
+        return True;
 
     def _calcTestFunctionName(self, oInstrTest, iInstrTest):
         """
@@ -1194,7 +1248,7 @@ class InstructionTestGen(object):
         Generates the memory setup functions.
         """
         cDefAddrBits = self.oTarget.getDefAddrBits();
-        for sName in self.dMemSetupFns:
+        for sName in self._dMemSetupFns:
             # Unpack it.
             asParams = sName.split('_');
             cAddrBits  = int(asParams[0][:-3]); assert asParams[0][-3:] == 'bit';
@@ -1212,7 +1266,7 @@ class InstructionTestGen(object):
                 i += 1
 
             assert i < len(asParams); assert asParams[i][0] == 'x';
-            iScale = iScale = int(asParams[i][1:]); assert iScale in [1, 2, 4, 8];
+            iScale = iScale = int(asParams[i][1:]); assert iScale in [1, 2, 4, 8], '%u %s' % (iScale, sName);
             i += 1;
 
             sIndexReg = None;
@@ -1380,7 +1434,7 @@ class InstructionTestGen(object):
         """
 
         # Register checking functions.
-        for sName in self.dCheckFns:
+        for sName in self._dCheckFns:
             asRegs = sName.split('_');
             sPushSize = 'dword';
 
@@ -1391,7 +1445,7 @@ class InstructionTestGen(object):
                        '; Ref count: %u\n'
                        'VBINSTST_BEGINPROC Common_Check_%s\n'
                        '        MY_PUSH_FLAGS\n'
-                       % ( self.dCheckFns[sName], sName, ) );
+                       % ( self._dCheckFns[sName], sName, ) );
 
             # Register checks.
             for i in range(len(asRegs)):
@@ -1426,13 +1480,13 @@ class InstructionTestGen(object):
         self._generateMemSetupFunctions();
 
         # 64-bit constants.
-        if len(self.d64BitConsts) > 0:
+        if len(self._d64BitConsts) > 0:
             self.write('\n\n'
                        ';\n'
                        '; 64-bit constants\n'
                        ';\n');
-            for uVal in self.d64BitConsts:
-                self.write('g_u64Const_0x%016x: dq 0x%016x ; Ref count: %d\n' % (uVal, uVal, self.d64BitConsts[uVal], ) );
+            for uVal in self._d64BitConsts:
+                self.write('g_u64Const_0x%016x: dq 0x%016x ; Ref count: %d\n' % (uVal, uVal, self._d64BitConsts[uVal], ) );
 
         return True;
 
@@ -1466,6 +1520,7 @@ class InstructionTestGen(object):
                            '; %s\n'
                            ';\n'
                            % (oInstrTest.sName,));
+                self._randInitIndexes();
                 oInstrTest.generateTest(self, self._calcTestFunctionName(oInstrTest, iInstrTest));
 
             # Generate the main function.
@@ -1522,6 +1577,7 @@ class InstructionTestGen(object):
         """
         if self.oOptions.fMakefileMode:
             return self._runMakefileMode();
+        sys.stderr.write('InstructionTestGen.py: Seed = %s\n' % (g_iMyRandSeed,));
         return self._generateTests();
 
     @staticmethod
