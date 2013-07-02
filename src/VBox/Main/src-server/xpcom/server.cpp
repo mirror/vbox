@@ -879,6 +879,7 @@ int main(int argc, char **argv)
 
     nsresult rc;
 
+    /** @todo Merge this code with svcmain.cpp (use Logging.cpp?). */
     char szLogFile[RTPATH_MAX];
     if (!pszLogFile)
     {

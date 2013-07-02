@@ -327,6 +327,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
      * registering/unregistering or calling the helper functionality. */
     if (fRun)
     {
+        /** @todo Merge this code with server.cpp (use Logging.cpp?). */
         char szLogFile[RTPATH_MAX];
         if (!pszLogFile)
         {
