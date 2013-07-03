@@ -178,9 +178,6 @@ RuntimeWin64ASM_SOURCES = \
 	win/amd64/ASMGetFlags.asm \
 	win/amd64/ASMGetFS.asm \
 	win/amd64/ASMGetGS.asm \
-	win/amd64/ASMGetIDTR.asm \
-	win/amd64/ASMGetGDTR.asm \
-	win/amd64/ASMGetTR.asm \
 	win/amd64/ASMGetSS.asm \
 	win/amd64/ASMProbeReadByte.asm \
 	win/amd64/ASMSetFlags.asm \
@@ -194,7 +191,10 @@ RuntimeWin64ASM_SOURCES = \
 	common/asm/ASMMultU64ByU32DivByU32.asm \
 	common/asm/ASMCpuId_Idx_ECX.asm \
 	common/asm/ASMNopPause.asm \
-	common/asm/ASMGetLDTR.asm
+	common/asm/ASMGetIDTR.asm \
+	common/asm/ASMGetGDTR.asm \
+	common/asm/ASMGetLDTR.asm \
+	common/asm/ASMGetTR.asm
 
 #
 # Win32 assembly sources.
