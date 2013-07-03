@@ -135,13 +135,14 @@ $$(VgaDefBiosLogo_0_OUTDIR)/VgaDefBiosLogo.c: $(VBOX_BRAND_BIOS_LOGO) $(VBOX_BIN
 	$(QUIET)$(VBOX_BIN2C) VgaDefBiosLogo $< $@
 
 
-#
-# Install the symbol file for the BIOS.
-#
-INSTALLS += VBoxVgaBiosSym
-VBoxVgaBiosSym_TEMPLATE = VBoxDbgSyms
-VBoxVgaBiosSym_SOURCES = $(basename $(VBoxVgaBios_1_TARGET)).sym
-
+ifdef VBOX_WITH_OPEN_WATCOM
+ #
+ # Install the symbol file for the BIOS.
+ #
+ INSTALLS += VBoxVgaBiosSym
+ VBoxVgaBiosSym_TEMPLATE = VBoxDbgSyms
+ VBoxVgaBiosSym_SOURCES = $(basename $(VBoxVgaBios_1_TARGET)).sym
+endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

@@ -131,12 +131,14 @@ else
 endif
 
 
-#
-# Install the symbol file for the BIOS.
-#
-INSTALLS += VBoxPcBiosSym
-VBoxPcBiosSym_TEMPLATE = VBoxDbgSyms
-VBoxPcBiosSym_SOURCES = $(basename $(VBoxPcBios_1_TARGET)).sym
+ifdef VBOX_WITH_OPEN_WATCOM
+ #
+ # Install the symbol file for the BIOS.
+ #
+ INSTALLS += VBoxPcBiosSym
+ VBoxPcBiosSym_TEMPLATE = VBoxDbgSyms
+ VBoxPcBiosSym_SOURCES = $(basename $(VBoxPcBios_1_TARGET)).sym
+endif
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
