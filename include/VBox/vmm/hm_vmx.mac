@@ -60,16 +60,16 @@
 %define VMX_VMCS_GUEST_LINK_PTR_HIGH                            02801h
 %define VMX_VMCS_GUEST_DEBUGCTL_FULL                            02802h
 %define VMX_VMCS_GUEST_DEBUGCTL_HIGH                            02803h
-%define VMX_VMCS_CTRL_PIN_EXEC		                        04000h
-%define VMX_VMCS_CTRL_PROC_EXEC	                                04002h
+%define VMX_VMCS_CTRL_PIN_EXEC                                  04000h
+%define VMX_VMCS_CTRL_PROC_EXEC                                 04002h
 %define VMX_VMCS_CTRL_EXCEPTION_BITMAP                          04004h
 %define VMX_VMCS_CTRL_PAGEFAULT_ERROR_MASK                      04006h
 %define VMX_VMCS_CTRL_PAGEFAULT_ERROR_MATCH                     04008h
 %define VMX_VMCS_CTRL_CR3_TARGET_COUNT                          0400Ah
-%define VMX_VMCS_CTRL_EXIT		                        0400Ch
+%define VMX_VMCS_CTRL_EXIT                                      0400Ch
 %define VMX_VMCS_CTRL_EXIT_MSR_STORE_COUNT                      0400Eh
 %define VMX_VMCS_CTRL_EXIT_MSR_LOAD_COUNT                       04010h
-%define VMX_VMCS_CTRL_ENTRY 		                        04012h
+%define VMX_VMCS_CTRL_ENTRY                                     04012h
 %define VMX_VMCS_CTRL_ENTRY_MSR_LOAD_COUNT                      04014h
 %define VMX_VMCS_CTRL_ENTRY_IRQ_INFO                            04016h
 %define VMX_VMCS_CTRL_ENTRY_EXCEPTION_ERRCODE                   04018h
@@ -151,19 +151,23 @@
 %define VMX_VMCS_HOST_RSP                                       06C14h
 %define VMX_VMCS_HOST_RIP                                       06C16h
 
-%define VMX_RESTORE_HOST_SEL_DS                			1h	;RT_BIT(0)
-%define VMX_RESTORE_HOST_SEL_ES                			2h	;RT_BIT(1)
-%define VMX_RESTORE_HOST_SEL_FS                			4h	;RT_BIT(2)
-%define VMX_RESTORE_HOST_SEL_GS                			8h	;RT_BIT(3)
-%define VMX_RESTORE_HOST_GDTR                  			10h	;RT_BIT(4)
-%define VMX_RESTORE_HOST_IDTR                  			20h	;RT_BIT(5)
-%define VMX_RESTORE_HOST_LDTR                  			40h	;RT_BIT(6)
+%define VMX_RESTORE_HOST_SEL_DS                                 1h    ;RT_BIT(0)
+%define VMX_RESTORE_HOST_SEL_ES                                 2h    ;RT_BIT(1)
+%define VMX_RESTORE_HOST_SEL_FS                                 4h    ;RT_BIT(2)
+%define VMX_RESTORE_HOST_SEL_GS                                 8h    ;RT_BIT(3)
+%define VMX_RESTORE_HOST_SEL_LDTR                               10h   ;RT_BIT(4)
+%define VMX_RESTORE_HOST_SEL_TR                                 20h   ;RT_BIT(5)
+%define VMX_RESTORE_HOST_GDTR                                   40h   ;RT_BIT(6)
+%define VMX_RESTORE_HOST_IDTR                                   80h   ;RT_BIT(7)
 
 struc VMXRESTOREHOST
     .uHostSelDS         resw    1
     .uHostSelES         resw    1
     .uHostSelFS         resw    1
     .uHostSelGS         resw    1
+    .uHostSelLDTR       resw    1
+    .uHostSelTR         resw    1
+    .u32Padding         resd    1
     .uHostFSBase        resq    1
     .uHostGSBase        resq    1
     .HostGdtr           resb    10

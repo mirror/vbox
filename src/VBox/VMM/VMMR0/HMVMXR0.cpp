@@ -2137,21 +2137,23 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
 DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 {
     int rc = VERR_INTERNAL_ERROR_5;
-    RTSEL uSelDS = 0;
-    RTSEL uSelES = 0;
-    RTSEL uSelFS = 0;
-    RTSEL uSelGS = 0;
-    RTSEL uSelTR = 0;
+    RTSEL uSelDS   = 0;
+    RTSEL uSelES   = 0;
+    RTSEL uSelFS   = 0;
+    RTSEL uSelGS   = 0;
+    RTSEL uSelTR   = 0;
+    RTSEL uSelLDTR = 0;
 
     /*
      * Host DS, ES, FS and GS segment registers.
      */
 #if HC_ARCH_BITS == 64
     pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
-    uSelDS = ASMGetDS();
-    uSelES = ASMGetES();
-    uSelFS = ASMGetFS();
-    uSelGS = ASMGetGS();
+    uSelDS   = ASMGetDS();
+    uSelES   = ASMGetES();
+    uSelFS   = ASMGetFS();
+    uSelGS   = ASMGetGS();
+    uSelLDTR = ASMGetLDTR();
 #endif
 
     /*
@@ -2209,6 +2211,16 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_GS;
         pVCpu->hm.s.vmx.RestoreHost.uHostSelGS = uSelGS;
         uSelGS = 0;
+    }
+
+    /*
+     * VT-x unconditionally writes LDTR to 0 on all VM-exits. If the host has something different, we shall restore it.
+     * See Intel spec. 27.5.2 "Loading Host Segment and Descriptor-Table Registers".
+     */
+    if (uSelLDTR)
+    {
+        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_LDTR;
+        pVCpu->hm.s.vmx.RestoreHost.uHostSelLDTR = uSelLDTR;
     }
 #endif
 
@@ -2316,6 +2328,26 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         uintptr_t uTRBase;
 #if HC_ARCH_BITS == 64
         uTRBase = X86DESC64_BASE(pDesc);
+
+        /*
+         * VT-x unconditionally restores the TR limit to 0x67 and type to 11 (32-bit busy TSS) on all VM-exits.
+         * The type is the same for 64-bit busy TSS[1]. The limit needs manual restoration if the host has something else.
+         * Task switching is not supported in 64-bit mode[2], but the limit still matters as IOPM is supported in 64-bit mode.
+         * Restoring the limit lazily while returning to ring-3 is safe because IOPM is not applicable in ring-0.
+         *
+         * [1] See Intel spec. 3.5 "System Descriptor Types".
+         * [2] See Intel spec. 7.2.3 "TSS Descriptor in 64-bit mode".
+         */
+        Assert(pDesc->System.u4Type == 11);
+        if (   pDesc->System.u16LimitLow != 0x67
+            || pDesc->System.u4LimitHigh)
+        {
+            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_TR;
+            pVCpu->hm.s.vmx.RestoreHost.uHostSelTR = uSelTR;
+
+            /* Store the GDTR here as we need it while restoring TR. */
+            memcpy(&pVCpu->hm.s.vmx.RestoreHost.HostGdtr, &Gdtr, sizeof(X86XDTR64));
+        }
 #else
         uTRBase = X86DESC_BASE(pDesc);
 #endif

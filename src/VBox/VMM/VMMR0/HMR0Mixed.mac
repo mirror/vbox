@@ -20,6 +20,7 @@
 %ifndef VBOX_WITH_OLD_VTX_CODE
  %ifdef RT_ARCH_AMD64
   %define VMX_SKIP_GDTR_IDTR
+  %define VMX_SKIP_LDTR_TR
  %endif
 %endif
 
@@ -110,6 +111,7 @@ ALIGN(16)
     ; Save the pCtx pointer.
     push    xSI
 
+%ifndef VMX_SKIP_LDTR_TR
     ; Save LDTR.
     xor     eax, eax
     sldt    ax
@@ -118,9 +120,10 @@ ALIGN(16)
     ; The TR limit is reset to 0x67; restore it manually.
     str     eax
     push    xAX
+%endif
 
-    ; VT-x only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
 %ifndef VMX_SKIP_GDTR_IDTR
+    ; VT-x only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
     sub     xSP, xCB * 2
     sgdt    [xSP]
 
@@ -181,7 +184,11 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
 %endif
 
     push    xDI
-    mov     xDI, [xSP + xCB * 3]         ; pCtx (*3 to skip the saved LDTR + TR).
+%ifndef VMX_SKIP_LDTR_TR
+    mov     xDI, [xSP + xCB * 3]         ; pCtx (*3 to skip the saved xDI, LDTR + TR).
+%else
+    mov     xDI, [xSP + xCB]             ; pCtx
+%endif
 
     mov     [ss:xDI + CPUMCTX.eax], eax
     mov     [ss:xDI + CPUMCTX.ebx], ebx
@@ -201,6 +208,7 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     pop     dword [ss:xDI + CPUMCTX.edi]        ; The guest edi we pushed above.
 %endif
 
+%ifndef VMX_SKIP_LDTR_TR
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     ; @todo get rid of sgdt
@@ -216,6 +224,7 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
 
     pop     xAX         ; Saved LDTR
     lldt    ax
+%endif
 
     add     xSP, xCB     ; pCtx
 
@@ -266,6 +275,7 @@ ALIGN(16)
     add     xSP, xCB * 2
 %endif
 
+%ifndef VMX_SKIP_LDTR_TR
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     ; @todo get rid of sgdt
@@ -281,6 +291,7 @@ ALIGN(16)
 
     pop     xAX         ; Saved LDTR
     lldt    ax
+%endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     add     xSP, xCB * 2  ; pCtx + pCache
@@ -305,6 +316,7 @@ ALIGN(16)
     add     xSP, xCB * 2
 %endif
 
+%ifndef VMX_SKIP_LDTR_TR
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     ; @todo get rid of sgdt
@@ -320,6 +332,7 @@ ALIGN(16)
 
     pop     xAX         ; Saved LDTR
     lldt    ax
+%endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     add     xSP, xCB * 2  ; pCtx + pCache
