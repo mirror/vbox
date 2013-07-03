@@ -543,6 +543,7 @@ ALIGNCODE(16)
     pop     xAX                                 ; The guest edi we pushed above
     mov     qword [xDI + CPUMCTX.edi], rax
 
+%ifndef VMX_SKIP_LDTR_TR
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
     ; @todo get rid of sgdt
@@ -558,6 +559,7 @@ ALIGNCODE(16)
 
     pop     xAX         ; Saved LDTR
     lldt    ax
+%endif
 
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
@@ -621,6 +623,7 @@ ALIGN(16)
     add     xSP, xCB * 2
 %endif
 
+%ifndef VMX_SKIP_LDTR_TR
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
     ; @todo get rid of sgdt
@@ -636,6 +639,7 @@ ALIGN(16)
 
     pop     xAX         ; Saved LDTR
     lldt    ax
+%endif
 
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
@@ -673,6 +677,7 @@ ALIGN(16)
     add     xSP, xCB * 2
 %endif
 
+%ifndef VMX_SKIP_LDTR_TR
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
     ; @todo get rid of sgdt
@@ -688,6 +693,7 @@ ALIGN(16)
 
     pop     xAX         ; Saved LDTR
     lldt    ax
+%endif
 
     pop     xSI         ; pCtx (needed in rsi by the macros below).
 
