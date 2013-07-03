@@ -20,7 +20,7 @@
 %ifndef VBOX_WITH_OLD_VTX_CODE
  %ifdef RT_ARCH_AMD64
   %define VMX_SKIP_GDTR_IDTR
-  %define VMX_SKIP_LDTR_TR
+  %define VMX_SKIP_TR
  %endif
 %endif
 
@@ -111,12 +111,12 @@ ALIGN(16)
     ; Save the pCtx pointer.
     push    xSI
 
-%ifndef VMX_SKIP_LDTR_TR
     ; Save LDTR.
     xor     eax, eax
     sldt    ax
     push    xAX
 
+%ifndef VMX_SKIP_TR
     ; The TR limit is reset to 0x67; restore it manually.
     str     eax
     push    xAX
@@ -184,10 +184,10 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
 %endif
 
     push    xDI
-%ifndef VMX_SKIP_LDTR_TR
-    mov     xDI, [xSP + xCB * 3]         ; pCtx (*3 to skip the saved xDI, LDTR + TR).
+%ifndef VMX_SKIP_TR
+    mov     xDI, [xSP + xCB * 3]         ; pCtx (*3 to skip the saved xDI, TR, LDTR).
 %else
-    mov     xDI, [xSP + xCB]             ; pCtx
+    mov     xDI, [xSP + xCB * 2]         ; pCtx (*2 to skip the saved xDI, LDTR).
 %endif
 
     mov     [ss:xDI + CPUMCTX.eax], eax
@@ -208,7 +208,7 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     pop     dword [ss:xDI + CPUMCTX.edi]        ; The guest edi we pushed above.
 %endif
 
-%ifndef VMX_SKIP_LDTR_TR
+%ifndef VMX_SKIP_TR
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     ; @todo get rid of sgdt
@@ -221,11 +221,16 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     and     dword [ss:xAX + 4], ~0200h              ; Clear busy flag (2nd type2 bit).
     ltr     bx
     add     xSP, xCB * 2
-
-    pop     xAX         ; Saved LDTR
-    lldt    ax
 %endif
 
+    pop     xAX         ; Saved LDTR
+%ifdef RT_ARCH_AMD64
+    cmp     xAX, 0
+    je      .skipldtwrite32
+%endif
+    lldt    ax
+
+.skipldtwrite32:
     add     xSP, xCB     ; pCtx
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -275,7 +280,7 @@ ALIGN(16)
     add     xSP, xCB * 2
 %endif
 
-%ifndef VMX_SKIP_LDTR_TR
+%ifndef VMX_SKIP_TR
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     ; @todo get rid of sgdt
@@ -288,10 +293,10 @@ ALIGN(16)
     and     dword [ss:xAX + 4], ~0200h              ; Clear busy flag (2nd type2 bit).
     ltr     bx
     add     xSP, xCB * 2
+%endif
 
     pop     xAX         ; Saved LDTR
-    lldt    ax
-%endif
+    lldt    ax          ; Don't bother with conditional restoration in the error case.
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     add     xSP, xCB * 2  ; pCtx + pCache
@@ -316,7 +321,7 @@ ALIGN(16)
     add     xSP, xCB * 2
 %endif
 
-%ifndef VMX_SKIP_LDTR_TR
+%ifndef VMX_SKIP_TR
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
     ; @todo get rid of sgdt
@@ -329,10 +334,10 @@ ALIGN(16)
     and     dword [ss:xAX + 4], ~0200h              ; Clear busy flag (2nd type2 bit).
     ltr     bx
     add     xSP, xCB * 2
+%endif
 
     pop     xAX         ; Saved LDTR
-    lldt    ax
-%endif
+    lldt    ax          ; Don't bother with conditional restoration in the error case
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     add     xSP, xCB * 2  ; pCtx + pCache
@@ -445,9 +450,11 @@ ALIGN(16)
     sldt    ax
     push    xAX
 
+%ifndef VMX_SKIP_TR
     ; The TR limit is reset to 0x67; restore it manually.
     str     eax
     push    xAX
+%endif
 
     ; VT-x only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
 %ifndef VMX_SKIP_GDTR_IDTR
@@ -519,7 +526,11 @@ ALIGNCODE(16)
 %endif
 
     push    xDI
-    mov     xDI, [xSP + xCB * 3]        ; pCtx (*3 to skip the saved LDTR + TR)
+%ifndef VMX_SKIP_TR
+    mov     xDI, [xSP + xCB * 3]        ; pCtx (*3 to skip the saved xDI, LDTR, TR)
+%else
+    mov     xDI, [xSP + xCB * 2]        ; pCtx (*2 to skip the saved xDI, LDTR)
+%endif
 
     mov     qword [xDI + CPUMCTX.eax], rax
     mov     qword [xDI + CPUMCTX.ebx], rbx
@@ -543,7 +554,7 @@ ALIGNCODE(16)
     pop     xAX                                 ; The guest edi we pushed above
     mov     qword [xDI + CPUMCTX.edi], rax
 
-%ifndef VMX_SKIP_LDTR_TR
+%ifndef VMX_SKIP_TR
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
     ; @todo get rid of sgdt
@@ -556,11 +567,14 @@ ALIGNCODE(16)
     and     dword [xAX + 4], ~0200h                 ; Clear busy flag (2nd type2 bit).
     ltr     bx
     add     xSP, xCB * 2
-
-    pop     xAX         ; Saved LDTR
-    lldt    ax
 %endif
 
+    pop     xAX         ; Saved LDTR
+    cmp     xAX, 0
+    je      .skipldtwrite64
+    lldt    ax
+
+.skipldtwrite64:
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
 %ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
@@ -623,7 +637,7 @@ ALIGN(16)
     add     xSP, xCB * 2
 %endif
 
-%ifndef VMX_SKIP_LDTR_TR
+%ifndef VMX_SKIP_TR
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
     ; @todo get rid of sgdt
@@ -636,10 +650,10 @@ ALIGN(16)
     and     dword [xAX + 4], ~0200h                 ; Clear busy flag (2nd type2 bit).
     ltr     bx
     add     xSP, xCB * 2
+%endif
 
     pop     xAX         ; Saved LDTR
-    lldt    ax
-%endif
+    lldt    ax          ; Don't bother with conditional restoration in the error case.
 
     pop     xSI         ; pCtx (needed in rsi by the macros below)
 
@@ -677,7 +691,7 @@ ALIGN(16)
     add     xSP, xCB * 2
 %endif
 
-%ifndef VMX_SKIP_LDTR_TR
+%ifndef VMX_SKIP_TR
     ; Restore TSS selector; must mark it as not busy before using ltr (!)
     ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
     ; @todo get rid of sgdt
@@ -690,10 +704,10 @@ ALIGN(16)
     and     dword [xAX + 4], ~0200h                 ; Clear busy flag (2nd type2 bit).
     ltr     bx
     add     xSP, xCB * 2
+%endif
 
     pop     xAX         ; Saved LDTR
-    lldt    ax
-%endif
+    lldt    ax          ; Don't bother with conditional restoration in the error case.
 
     pop     xSI         ; pCtx (needed in rsi by the macros below).
 

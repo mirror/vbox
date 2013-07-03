@@ -44,10 +44,9 @@
 #define VMX_RESTORE_HOST_SEL_ES               RT_BIT(1)
 #define VMX_RESTORE_HOST_SEL_FS               RT_BIT(2)
 #define VMX_RESTORE_HOST_SEL_GS               RT_BIT(3)
-#define VMX_RESTORE_HOST_SEL_LDTR             RT_BIT(4)
-#define VMX_RESTORE_HOST_SEL_TR               RT_BIT(5)
-#define VMX_RESTORE_HOST_GDTR                 RT_BIT(6)
-#define VMX_RESTORE_HOST_IDTR                 RT_BIT(7)
+#define VMX_RESTORE_HOST_SEL_TR               RT_BIT(4)
+#define VMX_RESTORE_HOST_GDTR                 RT_BIT(5)
+#define VMX_RESTORE_HOST_IDTR                 RT_BIT(6)
 /** @} */
 
 /**
@@ -62,13 +61,12 @@ typedef struct VMXRESTOREHOST
     RTSEL       uHostSelES;     /* 0x02 */
     RTSEL       uHostSelFS;     /* 0x04 */
     RTSEL       uHostSelGS;     /* 0x06 */
-    RTSEL       uHostSelLDTR;   /* 0x08 */
-    RTSEL       uHostSelTR;     /* 0x0a */
-    uint32_t    u32Padding;     /* 0x0c */
-    uint64_t    uHostFSBase;    /* 0x10 */
-    uint64_t    uHostGSBase;    /* 0x18 */
-    X86XDTR64   HostGdtr;       /* 0x20 */
-    X86XDTR64   HostIdtr;       /* 0x2a */
+    RTSEL       uHostSelTR;     /* 0x08 */
+    uint16_t    u16Padding;     /* 0x0a */
+    uint64_t    uHostFSBase;    /* 0x0c */
+    uint64_t    uHostGSBase;    /* 0x14 */
+    X86XDTR64   HostGdtr;       /* 0x1c */
+    X86XDTR64   HostIdtr;       /* 0x26 */
 } VMXRESTOREHOST;
 #pragma pack()
 /** Pointer to VMXRESTOREHOST. */
@@ -78,13 +76,12 @@ AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelDS,    0);
 AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelES,    2);
 AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelFS,    4);
 AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelGS,    6);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelLDTR,  8);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelTR,   10);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,  16);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostGSBase,  24);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr,     32);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr,     42);
-AssertCompileSize(VMXRESTOREHOST, 52);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelTR,    8);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,  12);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostGSBase,  20);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr,     28);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr,     38);
+AssertCompileSize(VMXRESTOREHOST, 48);
 
 /** @name VMX VMCS-Read cache indices.
  * @{

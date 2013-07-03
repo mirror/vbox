@@ -155,19 +155,17 @@
 %define VMX_RESTORE_HOST_SEL_ES                                 2h    ;RT_BIT(1)
 %define VMX_RESTORE_HOST_SEL_FS                                 4h    ;RT_BIT(2)
 %define VMX_RESTORE_HOST_SEL_GS                                 8h    ;RT_BIT(3)
-%define VMX_RESTORE_HOST_SEL_LDTR                               10h   ;RT_BIT(4)
-%define VMX_RESTORE_HOST_SEL_TR                                 20h   ;RT_BIT(5)
-%define VMX_RESTORE_HOST_GDTR                                   40h   ;RT_BIT(6)
-%define VMX_RESTORE_HOST_IDTR                                   80h   ;RT_BIT(7)
+%define VMX_RESTORE_HOST_SEL_TR                                 10h   ;RT_BIT(4)
+%define VMX_RESTORE_HOST_GDTR                                   20h   ;RT_BIT(5)
+%define VMX_RESTORE_HOST_IDTR                                   40h   ;RT_BIT(6)
 
 struc VMXRESTOREHOST
     .uHostSelDS         resw    1
     .uHostSelES         resw    1
     .uHostSelFS         resw    1
     .uHostSelGS         resw    1
-    .uHostSelLDTR       resw    1
     .uHostSelTR         resw    1
-    .u32Padding         resd    1
+    .u16Padding         resw    1
     .uHostFSBase        resq    1
     .uHostGSBase        resq    1
     .HostGdtr           resb    10

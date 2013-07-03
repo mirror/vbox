@@ -346,15 +346,12 @@ VMMR0DECL(int) SVMR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS H
     AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
     NOREF(pCpu);
 
-    /* Turn off AMD-V in the EFER MSR if AMD-V is active. */
+    /* Turn off AMD-V in the EFER MSR. */
     uint64_t u64HostEfer = ASMRdMsr(MSR_K6_EFER);
-    if (u64HostEfer & MSR_K6_EFER_SVME)
-    {
-        ASMWrMsr(MSR_K6_EFER, u64HostEfer & ~MSR_K6_EFER_SVME);
+    ASMWrMsr(MSR_K6_EFER, u64HostEfer & ~MSR_K6_EFER_SVME);
 
-        /* Invalidate host state physical address. */
-        ASMWrMsr(MSR_K8_VM_HSAVE_PA, 0);
-    }
+    /* Invalidate host state physical address. */
+    ASMWrMsr(MSR_K8_VM_HSAVE_PA, 0);
 
     return VINF_SUCCESS;
 }

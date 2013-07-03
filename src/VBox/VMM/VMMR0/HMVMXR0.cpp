@@ -2142,7 +2142,6 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     RTSEL uSelFS   = 0;
     RTSEL uSelGS   = 0;
     RTSEL uSelTR   = 0;
-    RTSEL uSelLDTR = 0;
 
     /*
      * Host DS, ES, FS and GS segment registers.
@@ -2153,7 +2152,6 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
     uSelES   = ASMGetES();
     uSelFS   = ASMGetFS();
     uSelGS   = ASMGetGS();
-    uSelLDTR = ASMGetLDTR();
 #endif
 
     /*
@@ -2211,16 +2209,6 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_GS;
         pVCpu->hm.s.vmx.RestoreHost.uHostSelGS = uSelGS;
         uSelGS = 0;
-    }
-
-    /*
-     * VT-x unconditionally writes LDTR to 0 on all VM-exits. If the host has something different, we shall restore it.
-     * See Intel spec. 27.5.2 "Loading Host Segment and Descriptor-Table Registers".
-     */
-    if (uSelLDTR)
-    {
-        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_LDTR;
-        pVCpu->hm.s.vmx.RestoreHost.uHostSelLDTR = uSelLDTR;
     }
 #endif
 
