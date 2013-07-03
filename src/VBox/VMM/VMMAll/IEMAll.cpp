@@ -8439,7 +8439,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
                            DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
                            szInstr, sizeof(szInstr), &cbInstr);
 
-        Log3(("**** "
+        Log2(("**** "
               " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
               " eip=%08x esp=%08x ebp=%08x iopl=%d\n"
               " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"
@@ -8625,7 +8625,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
                            DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
                            szInstr, sizeof(szInstr), &cbInstr);
 
-        Log3(("**** "
+        Log2(("**** "
               " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
               " eip=%08x esp=%08x ebp=%08x iopl=%d\n"
               " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"

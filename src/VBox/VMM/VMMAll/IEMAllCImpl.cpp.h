@@ -3107,10 +3107,10 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
     {
         case 0: ASMAtomicBitSet(pvDesc, 40 + 1); break;
         case 1: ASMAtomicBitSet((uint8_t *)pvDesc + 3, 40 + 1 - 24); break;
-        case 2: ASMAtomicBitSet((uint8_t *)pvDesc + 3, 40 + 1 - 16); break;
-        case 3: ASMAtomicBitSet((uint8_t *)pvDesc + 3, 40 + 1 -  8); break;
+        case 2: ASMAtomicBitSet((uint8_t *)pvDesc + 2, 40 + 1 - 16); break;
+        case 3: ASMAtomicBitSet((uint8_t *)pvDesc + 1, 40 + 1 -  8); break;
     }
-    rcStrict = iemMemMap(pIemCpu, &pvDesc, 8, UINT8_MAX, pCtx->gdtr.pGdt, IEM_ACCESS_DATA_RW);
+    rcStrict = iemMemCommitAndUnmap(pIemCpu, pvDesc, IEM_ACCESS_DATA_RW);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     Desc.Legacy.Gen.u4Type |= X86_SEL_TYPE_SYS_TSS_BUSY_MASK;
