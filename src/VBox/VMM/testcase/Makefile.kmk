@@ -426,6 +426,9 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o: \
 		$(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac \
 		$(DEPTH)/include/iprt/asmdefs.mac \
 		$(DEPTH)/include/VBox/vmm/cpum.mac \
+		$(DEPTH)/include/VBox/vmm/hm_vmx.mac \
+		$(DEPTH)/include/VBox/vmm/stam.mac \
+		$(DEPTH)/include/VBox/vmm/trpm.mac \
 		$(DEPTH)/include/VBox/vmm/vm.mac \
 		$(DEPTH)/include/VBox/sup.mac \
 		$(DEPTH)/include/iprt/x86.mac \
