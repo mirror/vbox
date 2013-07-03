@@ -54,16 +54,6 @@ BEGINPROC MY_NAME(VMXR0StartVM32)
 %endif
     ; Note: assumes success!
 
-    ; Manual save and restore:
-    ;  - General purpose registers except RIP, RSP.
-    ;
-    ; Trashed:
-    ;  - CR2 (we don't care).
-    ;  - LDTR (reset to 0).
-    ;  - DRx (presumably not changed at all).
-    ;  - DR7 (reset to 0x400).
-    ;  - EFLAGS (reset to RT_BIT(1); not relevant).
-
     ; Save the Guest CPU context pointer.
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
@@ -380,16 +370,6 @@ BEGINPROC MY_NAME(VMXR0StartVM64)
     mov     rax, VMX_VMCS_HOST_RIP      ; Return address (too difficult to continue after VMLAUNCH?).
     vmwrite rax, r10
     ; Note: assumes success!
-
-    ; Manual save and restore:
-    ;  - General purpose registers except RIP, RSP.
-    ;
-    ; Trashed:
-    ;  - CR2 (we don't care).
-    ;  - LDTR (reset to 0).
-    ;  - DRx (presumably not changed at all).
-    ;  - DR7 (reset to 0x400).
-    ;  - EFLAGS (reset to RT_BIT(1); not relevant).
 
     ; Save the Guest CPU context pointer.
 %ifdef ASM_CALL64_GCC
