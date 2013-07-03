@@ -7181,10 +7181,10 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, uint8_t 
             pIemCpu->iEffSeg = X86_SREG_SS; \
     } while (0)
 
-/** @todo Check the effective address size crap! */
-    switch (pIemCpu->enmEffAddrMode)
+    if (pIemCpu->enmCpuMode != IEMMODE_64BIT)
     {
-        case IEMMODE_16BIT:
+/** @todo Check the effective address size crap! */
+        if (pIemCpu->enmEffAddrMode == IEMMODE_16BIT)
         {
             uint16_t u16EffAddr;
 
@@ -7217,12 +7217,10 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, uint8_t 
             }
 
             *pGCPtrEff = u16EffAddr;
-            Log5(("iemOpHlpCalcRmEffAddr: EffAddr=%#06RGv\n", *pGCPtrEff));
-            return VINF_SUCCESS;
         }
-
-        case IEMMODE_32BIT:
+        else
         {
+            Assert(pIemCpu->enmEffAddrMode == IEMMODE_32BIT);
             uint32_t u32EffAddr;
 
             /* Handle the disp32 form with no registers first. */
@@ -7318,145 +7316,145 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, uint8_t 
                 Assert(pIemCpu->enmEffAddrMode == IEMMODE_16BIT);
                 *pGCPtrEff = u32EffAddr & UINT16_MAX;
             }
-            Log5(("iemOpHlpCalcRmEffAddr: EffAddr=%#010RGv\n", *pGCPtrEff));
-            return VINF_SUCCESS;
         }
+    }
+    else
+    {
+        uint64_t u64EffAddr;
 
-        case IEMMODE_64BIT:
+        /* Handle the rip+disp32 form with no registers first. */
+        if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
         {
-            uint64_t u64EffAddr;
-
-            /* Handle the rip+disp32 form with no registers first. */
-            if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
+            IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64EffAddr);
+            u64EffAddr += pCtx->rip + pIemCpu->offOpcode + cbImm;
+        }
+        else
+        {
+            /* Get the register (or SIB) value. */
+            switch ((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB)
             {
-                IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64EffAddr);
-                u64EffAddr += pCtx->rip + pIemCpu->offOpcode + cbImm;
-            }
-            else
-            {
-                /* Get the register (or SIB) value. */
-                switch ((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB)
+                case  0: u64EffAddr = pCtx->rax; break;
+                case  1: u64EffAddr = pCtx->rcx; break;
+                case  2: u64EffAddr = pCtx->rdx; break;
+                case  3: u64EffAddr = pCtx->rbx; break;
+                case  5: u64EffAddr = pCtx->rbp; SET_SS_DEF(); break;
+                case  6: u64EffAddr = pCtx->rsi; break;
+                case  7: u64EffAddr = pCtx->rdi; break;
+                case  8: u64EffAddr = pCtx->r8;  break;
+                case  9: u64EffAddr = pCtx->r9;  break;
+                case 10: u64EffAddr = pCtx->r10; break;
+                case 11: u64EffAddr = pCtx->r11; break;
+                case 13: u64EffAddr = pCtx->r13; break;
+                case 14: u64EffAddr = pCtx->r14; break;
+                case 15: u64EffAddr = pCtx->r15; break;
+                /* SIB */
+                case 4:
+                case 12:
                 {
-                    case  0: u64EffAddr = pCtx->rax; break;
-                    case  1: u64EffAddr = pCtx->rcx; break;
-                    case  2: u64EffAddr = pCtx->rdx; break;
-                    case  3: u64EffAddr = pCtx->rbx; break;
-                    case  5: u64EffAddr = pCtx->rbp; SET_SS_DEF(); break;
-                    case  6: u64EffAddr = pCtx->rsi; break;
-                    case  7: u64EffAddr = pCtx->rdi; break;
-                    case  8: u64EffAddr = pCtx->r8;  break;
-                    case  9: u64EffAddr = pCtx->r9;  break;
-                    case 10: u64EffAddr = pCtx->r10; break;
-                    case 11: u64EffAddr = pCtx->r11; break;
-                    case 13: u64EffAddr = pCtx->r13; break;
-                    case 14: u64EffAddr = pCtx->r14; break;
-                    case 15: u64EffAddr = pCtx->r15; break;
-                    /* SIB */
-                    case 4:
-                    case 12:
+                    uint8_t bSib; IEM_OPCODE_GET_NEXT_U8(&bSib);
+
+                    /* Get the index and scale it. */
+                    switch (((bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK) | pIemCpu->uRexIndex)
                     {
-                        uint8_t bSib; IEM_OPCODE_GET_NEXT_U8(&bSib);
+                        case  0: u64EffAddr = pCtx->rax; break;
+                        case  1: u64EffAddr = pCtx->rcx; break;
+                        case  2: u64EffAddr = pCtx->rdx; break;
+                        case  3: u64EffAddr = pCtx->rbx; break;
+                        case  4: u64EffAddr = 0; /*none */ break;
+                        case  5: u64EffAddr = pCtx->rbp; break;
+                        case  6: u64EffAddr = pCtx->rsi; break;
+                        case  7: u64EffAddr = pCtx->rdi; break;
+                        case  8: u64EffAddr = pCtx->r8;  break;
+                        case  9: u64EffAddr = pCtx->r9;  break;
+                        case 10: u64EffAddr = pCtx->r10; break;
+                        case 11: u64EffAddr = pCtx->r11; break;
+                        case 12: u64EffAddr = pCtx->r12; break;
+                        case 13: u64EffAddr = pCtx->r13; break;
+                        case 14: u64EffAddr = pCtx->r14; break;
+                        case 15: u64EffAddr = pCtx->r15; break;
+                        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                    }
+                    u64EffAddr <<= (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
 
-                        /* Get the index and scale it. */
-                        switch (((bSib >> X86_SIB_INDEX_SHIFT) & X86_SIB_INDEX_SMASK) | pIemCpu->uRexIndex)
-                        {
-                            case  0: u64EffAddr = pCtx->rax; break;
-                            case  1: u64EffAddr = pCtx->rcx; break;
-                            case  2: u64EffAddr = pCtx->rdx; break;
-                            case  3: u64EffAddr = pCtx->rbx; break;
-                            case  4: u64EffAddr = 0; /*none */ break;
-                            case  5: u64EffAddr = pCtx->rbp; break;
-                            case  6: u64EffAddr = pCtx->rsi; break;
-                            case  7: u64EffAddr = pCtx->rdi; break;
-                            case  8: u64EffAddr = pCtx->r8;  break;
-                            case  9: u64EffAddr = pCtx->r9;  break;
-                            case 10: u64EffAddr = pCtx->r10; break;
-                            case 11: u64EffAddr = pCtx->r11; break;
-                            case 12: u64EffAddr = pCtx->r12; break;
-                            case 13: u64EffAddr = pCtx->r13; break;
-                            case 14: u64EffAddr = pCtx->r14; break;
-                            case 15: u64EffAddr = pCtx->r15; break;
-                            IEM_NOT_REACHED_DEFAULT_CASE_RET();
-                        }
-                        u64EffAddr <<= (bSib >> X86_SIB_SCALE_SHIFT) & X86_SIB_SCALE_SMASK;
-
-                        /* add base */
-                        switch ((bSib & X86_SIB_BASE_MASK) | pIemCpu->uRexB)
-                        {
-                            case  0: u64EffAddr += pCtx->rax; break;
-                            case  1: u64EffAddr += pCtx->rcx; break;
-                            case  2: u64EffAddr += pCtx->rdx; break;
-                            case  3: u64EffAddr += pCtx->rbx; break;
-                            case  4: u64EffAddr += pCtx->rsp; SET_SS_DEF(); break;
-                            case  6: u64EffAddr += pCtx->rsi; break;
-                            case  7: u64EffAddr += pCtx->rdi; break;
-                            case  8: u64EffAddr += pCtx->r8;  break;
-                            case  9: u64EffAddr += pCtx->r9;  break;
-                            case 10: u64EffAddr += pCtx->r10; break;
-                            case 11: u64EffAddr += pCtx->r11; break;
-                            case 12: u64EffAddr += pCtx->r12; break;
-                            case 14: u64EffAddr += pCtx->r14; break;
-                            case 15: u64EffAddr += pCtx->r15; break;
-                            /* complicated encodings */
-                            case 5:
-                            case 13:
-                                if ((bRm & X86_MODRM_MOD_MASK) != 0)
+                    /* add base */
+                    switch ((bSib & X86_SIB_BASE_MASK) | pIemCpu->uRexB)
+                    {
+                        case  0: u64EffAddr += pCtx->rax; break;
+                        case  1: u64EffAddr += pCtx->rcx; break;
+                        case  2: u64EffAddr += pCtx->rdx; break;
+                        case  3: u64EffAddr += pCtx->rbx; break;
+                        case  4: u64EffAddr += pCtx->rsp; SET_SS_DEF(); break;
+                        case  6: u64EffAddr += pCtx->rsi; break;
+                        case  7: u64EffAddr += pCtx->rdi; break;
+                        case  8: u64EffAddr += pCtx->r8;  break;
+                        case  9: u64EffAddr += pCtx->r9;  break;
+                        case 10: u64EffAddr += pCtx->r10; break;
+                        case 11: u64EffAddr += pCtx->r11; break;
+                        case 12: u64EffAddr += pCtx->r12; break;
+                        case 14: u64EffAddr += pCtx->r14; break;
+                        case 15: u64EffAddr += pCtx->r15; break;
+                        /* complicated encodings */
+                        case 5:
+                        case 13:
+                            if ((bRm & X86_MODRM_MOD_MASK) != 0)
+                            {
+                                if (!pIemCpu->uRexB)
                                 {
-                                    if (!pIemCpu->uRexB)
-                                    {
-                                        u64EffAddr += pCtx->rbp;
-                                        SET_SS_DEF();
-                                    }
-                                    else
-                                        u64EffAddr += pCtx->r13;
+                                    u64EffAddr += pCtx->rbp;
+                                    SET_SS_DEF();
                                 }
                                 else
-                                {
-                                    uint32_t u32Disp;
-                                    IEM_OPCODE_GET_NEXT_U32(&u32Disp);
-                                    u64EffAddr += (int32_t)u32Disp;
-                                }
-                                break;
-                            IEM_NOT_REACHED_DEFAULT_CASE_RET();
-                        }
-                        break;
+                                    u64EffAddr += pCtx->r13;
+                            }
+                            else
+                            {
+                                uint32_t u32Disp;
+                                IEM_OPCODE_GET_NEXT_U32(&u32Disp);
+                                u64EffAddr += (int32_t)u32Disp;
+                            }
+                            break;
+                        IEM_NOT_REACHED_DEFAULT_CASE_RET();
                     }
-                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                    break;
                 }
-
-                /* Get and add the displacement. */
-                switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
-                {
-                    case 0:
-                        break;
-                    case 1:
-                    {
-                        int8_t i8Disp;
-                        IEM_OPCODE_GET_NEXT_S8(&i8Disp);
-                        u64EffAddr += i8Disp;
-                        break;
-                    }
-                    case 2:
-                    {
-                        uint32_t u32Disp;
-                        IEM_OPCODE_GET_NEXT_U32(&u32Disp);
-                        u64EffAddr += (int32_t)u32Disp;
-                        break;
-                    }
-                    IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* (caller checked for these) */
-                }
-
+                IEM_NOT_REACHED_DEFAULT_CASE_RET();
             }
-            if (pIemCpu->enmEffAddrMode == IEMMODE_64BIT)
-                *pGCPtrEff = u64EffAddr;
-            else
-                *pGCPtrEff = u64EffAddr & UINT16_MAX;
-            Log5(("iemOpHlpCalcRmEffAddr: EffAddr=%#010RGv\n", *pGCPtrEff));
-            return VINF_SUCCESS;
+
+            /* Get and add the displacement. */
+            switch ((bRm >> X86_MODRM_MOD_SHIFT) & X86_MODRM_MOD_SMASK)
+            {
+                case 0:
+                    break;
+                case 1:
+                {
+                    int8_t i8Disp;
+                    IEM_OPCODE_GET_NEXT_S8(&i8Disp);
+                    u64EffAddr += i8Disp;
+                    break;
+                }
+                case 2:
+                {
+                    uint32_t u32Disp;
+                    IEM_OPCODE_GET_NEXT_U32(&u32Disp);
+                    u64EffAddr += (int32_t)u32Disp;
+                    break;
+                }
+                IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* (caller checked for these) */
+            }
+
+        }
+
+        if (pIemCpu->enmEffAddrMode == IEMMODE_64BIT)
+            *pGCPtrEff = u64EffAddr;
+        else
+        {
+            Assert(pIemCpu->enmEffAddrMode == IEMMODE_32BIT);
+            *pGCPtrEff = u64EffAddr & UINT32_MAX;
         }
     }
 
-    AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+    Log5(("iemOpHlpCalcRmEffAddr: EffAddr=%#010RGv\n", *pGCPtrEff));
+    return VINF_SUCCESS;
 }
 
 /** @}  */
