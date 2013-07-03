@@ -102,6 +102,8 @@ void UIMachineLogicFullscreen::sltScreenLayoutChanged()
 
 void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
 {
+    LogRelFlow(("UIMachineLogicFullscreen::GuestScreenCountChanged.\n"));
+
     /* Update multi-screen layout before any window update: */
     if (changeType == KGuestMonitorChangedEventType_Enabled ||
         changeType == KGuestMonitorChangedEventType_Disabled)
@@ -113,6 +115,8 @@ void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventTy
 
 void UIMachineLogicFullscreen::sltHostScreenCountChanged(int cScreenCount)
 {
+    LogRelFlow(("UIMachineLogicFullscreen::HostScreenCountChanged.\n"));
+
     /* Update multi-screen layout before any window update: */
     m_pScreenLayout->rebuild();
 

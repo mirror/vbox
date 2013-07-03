@@ -63,6 +63,8 @@ void UIMultiScreenLayout::setViewMenu(QMenu *pViewMenu)
 
 void UIMultiScreenLayout::update()
 {
+    LogRelFlow(("UIMultiScreenLayout::update: Started...\n"));
+
     /* Clear screen-map initially: */
     m_screenMap.clear();
 
@@ -77,6 +79,7 @@ void UIMultiScreenLayout::update()
     CMachine machine = m_pMachineLogic->session().GetMachine();
     CDisplay display = m_pMachineLogic->session().GetConsole().GetDisplay();
     bool fShouldWeAutoMountGuestScreens = VBoxGlobal::shouldWeAutoMountGuestScreens(machine, false);
+    LogRelFlow(("UIMultiScreenLayout::update: GUI/AutomountGuestScreens is %s.\n", fShouldWeAutoMountGuestScreens ? "enabled" : "disabled"));
     QDesktopWidget *pDW = QApplication::desktop();
     foreach (int iGuestScreen, m_guestScreens)
     {
@@ -141,6 +144,7 @@ void UIMultiScreenLayout::update()
         else if (fShouldWeAutoMountGuestScreens)
         {
             /* Then we have to disable excessive guest-screen: */
+            LogRelFlow(("UIMultiScreenLayout::update: Disabling excessive guest-screen %d.\n", iGuestScreen));
             display.SetVideoModeHint(iGuestScreen, false, false, 0, 0, 0, 0, 0);
         }
     }
@@ -160,6 +164,7 @@ void UIMultiScreenLayout::update()
             /* Get corresponding guest-screen: */
             int iGuestScreen = m_disabledGuestScreens[iGuestScreenIndex];
             /* Re-enable guest-screen with the old arguments: */
+            LogRelFlow(("UIMultiScreenLayout::update: Enabling guest-screen %d.\n", iGuestScreen));
             ULONG iWidth, iHeight, iBpp;
             display.GetScreenResolution(iGuestScreen, iWidth, iHeight, iBpp);
             display.SetVideoModeHint(iGuestScreen, true, false, 0, 0, iWidth, iHeight, iBpp);
@@ -168,10 +173,14 @@ void UIMultiScreenLayout::update()
 
     /* Update menu actions: */
     updateMenuActions(false);
+
+    LogRelFlow(("UIMultiScreenLayout::update: Finished!\n"));
 }
 
 void UIMultiScreenLayout::rebuild()
 {
+    LogRelFlow(("UIMultiScreenLayout::rebuild: Started...\n"));
+
     /* Recalculate host/guest screen count: */
     calculateHostMonitorCount();
     calculateGuestScreenCount();
@@ -179,6 +188,8 @@ void UIMultiScreenLayout::rebuild()
     prepareViewMenu();
     /* Update layout: */
     update();
+
+    LogRelFlow(("UIMultiScreenLayout::rebuild: Finished!\n"));
 }
 
 int UIMultiScreenLayout::hostScreenCount() const

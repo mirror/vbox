@@ -89,6 +89,8 @@ bool UIMachineLogicSeamless::hasHostScreenForGuestScreen(int iScreenId) const
 
 void UIMachineLogicSeamless::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
 {
+    LogRelFlow(("UIMachineLogicSeamless::GuestScreenCountChanged.\n"));
+
     /* Update multi-screen layout before any window update: */
     if (changeType == KGuestMonitorChangedEventType_Enabled ||
         changeType == KGuestMonitorChangedEventType_Disabled)
@@ -100,6 +102,8 @@ void UIMachineLogicSeamless::sltGuestMonitorChange(KGuestMonitorChangedEventType
 
 void UIMachineLogicSeamless::sltHostScreenCountChanged(int cScreenCount)
 {
+    LogRelFlow(("UIMachineLogicSeamless::HostScreenCountChanged.\n"));
+
     /* Update multi-screen layout before any window update: */
     m_pScreenLayout->rebuild();
 
