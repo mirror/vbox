@@ -71,6 +71,54 @@ void set_diskette_current_cyl(uint8_t drive, uint8_t cyl)
 
 extern  int     diskette_param_table;   /* At a fixed location. */
 
+#ifndef VBOX_WITH_FLOPPY_IRQ_POLLING
+
+/**
+ * Wait for the 7th bit of 0040:003e to be set by int0e_handler.
+ * @returns first 7 bits of byte 0040:003e, interrupts disabled.
+ */
+uint8_t floppy_wait_for_interrupt(void)
+{
+    int_disable();
+    for (;;)
+    {
+        uint8_t val8 = read_byte(0x0040, 0x003e);
+        if (val8 & 0x80)
+            return val8 & ~0x7f;
+        int_enable_hlt_disable();
+    }
+}
+
+/**
+ * Wait for the 7th bit of 0040:003e to be set by int0e_handler or 0040:0040 to
+ * be cleared by the timer, clearing the interrupt flag on success.
+ *
+ * @returns 0 on timeout with interrupts enabled.
+ *          All 8 bits at 0040:003e on interrupt with interrupts disabled (i.e.
+ *          non-zero), after first clearing the 7th bit at 0040:003e.
+ */
+uint8_t floppy_wait_for_interrupt_or_timeout(void)
+{
+    int_disable();
+    for (;;)
+    {
+        uint8_t val8 = read_byte(0x0040, 0x0040);
+        if (val8 == 0) {
+            int_enable();
+            return 0;
+        }
+
+        val8 = read_byte(0x0040, 0x003e);
+        if (val8 & 0x80) {
+            write_byte(0x0040, 0x003e, val8 & 0x7f);
+            return val8;
+        }
+        int_enable_hlt_disable();
+    }
+}
+
+#endif /* !VBOX_WITH_FLOPPY_IRQ_POLLING */
+
 void floppy_reset_controller(void)
 {
     uint8_t     val8;
@@ -106,7 +154,7 @@ void floppy_prepare_controller(uint16_t drive)
         outb(0x03f2, dor);
     
     // reset the disk motor timeout value of INT 08
-    write_byte(0x40,0x40, BX_FLOPPY_ON_CNT);
+    write_byte(0x0040,0x0040, BX_FLOPPY_ON_CNT);
     
     // program data rate
     val8 = read_byte(0x0040, 0x008b);
@@ -119,6 +167,7 @@ void floppy_prepare_controller(uint16_t drive)
     } while ( (val8 & 0xc0) != 0x80 );
     
     if (prev_reset == 0) {
+#ifdef VBOX_WITH_FLOPPY_IRQ_POLLING
         // turn on interrupts
         int_enable();
         // wait on 40:3e bit 7 to become 1
@@ -127,6 +176,9 @@ void floppy_prepare_controller(uint16_t drive)
         } while ( (val8 & 0x80) == 0 );
         val8 &= 0x7f;
         int_disable();
+#else
+        val8 = floppy_wait_for_interrupt(); /* (7th bit cleared in ret val) */
+#endif
         write_byte(0x0040, 0x003e, val8);
     }
 }
@@ -158,7 +210,9 @@ bx_bool floppy_media_known(uint16_t drive)
 
 bx_bool floppy_read_id(uint16_t drive)
 {
+#ifdef VBOX_WITH_FLOPPY_IRQ_POLLING
     uint8_t     val8;
+#endif
     uint8_t     return_status[7];
     int         i;
     
@@ -168,6 +222,7 @@ bx_bool floppy_read_id(uint16_t drive)
     outb(0x03f5, 0x4a);  // 4a: Read ID (MFM)
     outb(0x03f5, drive); // 0=drive0, 1=drive1, head always 0
     
+#ifdef VBOX_WITH_FLOPPY_IRQ_POLLING
     // turn on interrupts
     int_enable();
     
@@ -179,6 +234,9 @@ bx_bool floppy_read_id(uint16_t drive)
     val8 = 0; // separate asm from while() loop
     // turn off interrupts
     int_disable();
+#else
+    floppy_wait_for_interrupt();
+#endif
     
     // read 7 return status bytes from controller
     for (i = 0; i < 7; ++i) {
@@ -202,6 +260,7 @@ bx_bool floppy_drive_recal(uint16_t drive)
     outb(0x03f5, 0x07);  // 07: Recalibrate
     outb(0x03f5, drive); // 0=drive0, 1=drive1
     
+#ifdef VBOX_WITH_FLOPPY_IRQ_POLLING
     // turn on interrupts
     int_enable();
     
@@ -213,10 +272,15 @@ bx_bool floppy_drive_recal(uint16_t drive)
     val8 = 0; // separate asm from while() loop
     // turn off interrupts
     int_disable();
-    
+
     // set 40:3e bit 7 to 0, and calibrated bit
     val8 = read_byte(0x0040, 0x003e);
     val8 &= 0x7f;
+#else
+    val8 = floppy_wait_for_interrupt(); /* (7th bit cleared in ret val) */
+
+    // set 40:3e bit 7 to 0, and calibrated bit
+#endif
     if (drive) {
         val8 |= 0x02; // Drive 1 calibrated
         curr_cyl_offset = 0x0095;
@@ -562,12 +626,13 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             outb(0x03f5, 0); // Gap length
             outb(0x03f5, 0xff); // Gap length
             
+#ifdef VBOX_WITH_FLOPPY_IRQ_POLLING
             // turn on interrupts
             int_enable();
             
-            // wait on 40:3e bit 7 to become 1
+            // wait on 40:3e bit 7 to become 1 or timeout (latter isn't armed so it won't happen)
             do {
-                    val8 = read_byte(0x0040, 0x0040);
+                val8 = read_byte(0x0040, 0x0040);
                 if (val8 == 0) {
                     floppy_reset_controller();
                     SET_AH(0x80); // drive not ready (timeout)
@@ -582,11 +647,23 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             val8 = 0; // separate asm from while() loop
             // turn off interrupts
             int_disable();
-            
+
             // set 40:3e bit 7 to 0
             val8 = read_byte(0x0040, 0x003e);
             val8 &= 0x7f;
             write_byte(0x0040, 0x003e, val8);
+
+#else
+            val8 = floppy_wait_for_interrupt_or_timeout();
+            if (val8 == 0) { /* Note! Interrupts enabled in this branch. */
+                floppy_reset_controller();
+                SET_AH(0x80); // drive not ready (timeout)
+                set_diskette_ret_status(0x80);
+                SET_AL(0); // no sectors read
+                SET_CF(); // error occurred
+                return;
+            }
+#endif
             
             // check port 3f4 for accessibility to status bytes
             val8 = inb(0x3f4);
@@ -685,6 +762,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             outb(0x03f5, 0); // Gap length
             outb(0x03f5, 0xff); // Gap length
             
+#ifdef VBOX_WITH_FLOPPY_IRQ_POLLING
             // turn on interrupts
             int_enable();
             
@@ -705,11 +783,22 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             val8 = 0; // separate asm from while() loop @todo: why??
             // turn off interrupts
             int_disable();
-            
+
             // set 40:3e bit 7 to 0
             val8 = read_byte(0x0040, 0x003e);
             val8 &= 0x7f;
             write_byte(0x0040, 0x003e, val8);
+#else
+            val8 = floppy_wait_for_interrupt_or_timeout();
+            if (val8 == 0) { /* Note! Interrupts enabled in this branch. */
+                floppy_reset_controller();
+                SET_AH(0x80); // drive not ready (timeout)
+                set_diskette_ret_status(0x80);
+                SET_AL(0); // no sectors written
+                SET_CF(); // error occurred
+                return;
+            }
+#endif
             
             // check port 3f4 for accessibility to status bytes
             val8 = inb(0x3f4);
@@ -834,6 +923,8 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         outb(0x03f5, num_sectors); // number of sectors per track
         outb(0x03f5, 0); // Gap length
         outb(0x03f5, 0xf6); // Fill byte
+
+#ifdef VBOX_WITH_FLOPPY_IRQ_POLLING
         // turn on interrupts
         int_enable();
         
@@ -853,10 +944,22 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         val8 = 0; // separate asm from while() loop
         // turn off interrupts
         int_disable();
+
         // set 40:3e bit 7 to 0
         val8 = read_byte(0x0040, 0x003e);
         val8 &= 0x7f;
         write_byte(0x0040, 0x003e, val8);
+#else
+        val8 = floppy_wait_for_interrupt_or_timeout();
+        if (val8 == 0) { /* Note! Interrupts enabled in this branch. */
+            floppy_reset_controller();
+            SET_AH(0x80); // drive not ready (timeout)
+            set_diskette_ret_status(0x80);
+            SET_CF(); // error occurred
+            return;
+        }
+#endif
+
         // check port 3f4 for accessibility to status bytes
         val8 = inb(0x3f4);
         if ( (val8 & 0xc0) != 0xc0 )

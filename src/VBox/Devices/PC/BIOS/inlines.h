@@ -38,6 +38,13 @@ void int_enable(void);
 void int_disable(void);
 #pragma aux int_disable = "cli" modify exact [] nomemory;
 
+void int_enable_hlt_disable(void);
+#pragma aux int_enable_hlt_disable = \
+    "sti" \
+    "hlt" \
+    "cli" \
+    modify exact [] nomemory;
+
 uint16_t int_query(void);
 #pragma aux int_query =     \
     "pushf"                 \
