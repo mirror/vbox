@@ -200,6 +200,21 @@ int dbgfR3AsInit(PUVM pUVM)
     }
 
     /*
+     * Prepend the VBoxDbgSyms directory to the path.
+     */
+    char szPath[RTPATH_MAX];
+    rc = RTPathAppPrivateNoArch(szPath, sizeof(szPath));
+    AssertRCReturn(rc, rc);
+#ifdef RT_OS_DARWIN
+    rc = RTPathAppend(szPath, sizeof(szPath), "../Resources/VBoxDbgSyms/");
+#else
+    rc = RTPathAppend(szPath, sizeof(szPath), "VBoxDbgSyms/");
+#endif
+    AssertRCReturn(rc, rc);
+    rc = RTDbgCfgChangeString(pUVM->dbgf.s.hDbgCfg, RTDBGCFGPROP_PATH, RTDBGCFGOP_PREPEND, szPath);
+    AssertRCReturn(rc, rc);
+
+    /*
      * Create the standard address spaces.
      */
     RTDBGAS hDbgAs;
@@ -615,6 +630,10 @@ static void dbgfR3AsLazyPopulate(PUVM pUVM, RTDBGAS hAlias)
 #ifdef VBOX_WITH_RAW_MODE
             PATMR3DbgPopulateAddrSpace(pUVM->pVM, hDbgAs);
 #endif
+        }
+        else if (hAlias == DBGF_AS_PHYS && pUVM->pVM)
+        {
+            /** @todo Lazy load pc and vga bios symbols or the EFI stuff. */
         }
 
         pUVM->dbgf.s.afAsAliasPopuplated[iAlias] = true;
