@@ -706,6 +706,8 @@ typedef struct HMCPU
         /** Whether VTPR with V_INTR_MASKING set is in effect, indicating
          *  we should check if the VTPR changed on every VM-exit. */
         bool                        fSyncVTpr;
+        uint8_t                     u8Align[7];
+
         /** Alignment padding. */
         uint32_t                    u32Padding;
     } svm;
