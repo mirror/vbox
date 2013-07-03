@@ -56,7 +56,12 @@ TEMPLATE_VBoxBios32Lib_EXTENDS    = VBoxBios
 TEMPLATE_VBoxBios32Lib_INSTTYPE   = none
 TEMPLATE_VBoxBios32Lib_TOOL       = OPENWATCOM
 TEMPLATE_VBoxBios32Lib_ASTOOL     = OPENWATCOM
-TEMPLATE_VBoxBios32Lib_CFLAGS     = -q -wx -zu -s -oas -ms -nt=BIOS32 -nd=BIOS32 -hc -d1+
+TEMPLATE_VBoxBios32Lib_CFLAGS     = -q -wx -zu -s -oas -ms -nt=BIOS32 -nd=BIOS32 -hc
+ifeq ($(KBUILD_TARGET),darwin) # The Open Watcom version we use on darwin generate trouble for the link in -d1+ mode; -d2 doesn't work anywhere.
+TEMPLATE_VBoxBios32Lib_CFLAGS    += -d1
+else
+TEMPLATE_VBoxBios32Lib_CFLAGS    += -d1+
+endif
 TEMPLATE_VBoxBios32Lib_CXXFLAGS   = $(TEMPLATE_VBoxBios32_CFLAGS)
 TEMPLATE_VBoxBios32Lib_LNK_DEPS   = $(NO_SUCH_VARIABLE)
 TEMPLATE_VBoxBios32Lib_POST_CMDS  = $(NO_SUCH_VARIABLE)
