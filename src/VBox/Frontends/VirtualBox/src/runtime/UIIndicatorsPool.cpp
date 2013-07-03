@@ -512,7 +512,7 @@ public:
         , m_dRotationAngle(0)
     {
         /* Assign state icons: */
-        setStateIcon(UIIndicatorStateVideoCapture_Disabled, QPixmap(":/movie_reel_16px.png"));
+        setStateIcon(UIIndicatorStateVideoCapture_Disabled, QPixmap(":/video_capture_16px.png"));
         setStateIcon(UIIndicatorStateVideoCapture_Enabled, QPixmap(":/movie_reel_16px.png"));
 
         /* Prepare *enabled* state animation: */
