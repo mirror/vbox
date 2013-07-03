@@ -6747,8 +6747,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     } while (0)
 
 /** Calculate efficient address from R/M. */
-#define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm) \
-    IEM_MC_RETURN_ON_FAILURE(iemOpHlpCalcRmEffAddr(pIemCpu, (bRm), &(a_GCPtrEff)))
+#define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm, cbImm) \
+    IEM_MC_RETURN_ON_FAILURE(iemOpHlpCalcRmEffAddr(pIemCpu, (bRm), (cbImm), &(a_GCPtrEff)))
 
 #define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0)               (a_pfn)((a0))
 #define IEM_MC_CALL_VOID_AIMPL_2(a_pfn, a0, a1)           (a_pfn)((a0), (a1))
@@ -7165,9 +7165,12 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  * @return  Strict VBox status code.
  * @param   pIemCpu             The IEM per CPU data.
  * @param   bRm                 The ModRM byte.
+ * @param   cbImm               The size of any immediate following the
+ *                              effective address opcode bytes. Important for
+ *                              RIP relative addressing.
  * @param   pGCPtrEff           Where to return the effective address.
  */
-static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR pGCPtrEff)
+static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, uint8_t cbImm, PRTGCPTR pGCPtrEff)
 {
     Log5(("iemOpHlpCalcRmEffAddr: bRm=%#x\n", bRm));
     PCCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
@@ -7327,7 +7330,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
             if ((bRm & (X86_MODRM_MOD_MASK | X86_MODRM_RM_MASK)) == 5)
             {
                 IEM_OPCODE_GET_NEXT_S32_SX_U64(&u64EffAddr);
-                u64EffAddr += pCtx->rip + pIemCpu->offOpcode;
+                u64EffAddr += pCtx->rip + pIemCpu->offOpcode + cbImm;
             }
             else
             {

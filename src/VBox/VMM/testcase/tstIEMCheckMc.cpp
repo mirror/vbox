@@ -497,7 +497,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_MEM_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_iSeg, a_GCPtrMem, a_iArg)  do {} while (0)
 #define IEM_MC_MEM_COMMIT_AND_UNMAP(a_pvMem, a_fAccess)                             do {} while (0)
 #define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(a_pvMem, a_fAccess, a_u16FSW)     do {} while (0)
-#define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm)                        do { (a_GCPtrEff) = 0; CHK_GCPTR(a_GCPtrEff); } while (0)
+#define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm, cbImm)                 do { (a_GCPtrEff) = 0; CHK_GCPTR(a_GCPtrEff); } while (0)
 #define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0)                             do {} while (0)
 #define IEM_MC_CALL_VOID_AIMPL_2(a_pfn, a0, a1)                         do {} while (0)
 #define IEM_MC_CALL_VOID_AIMPL_3(a_pfn, a0, a1, a2)                     do {} while (0)
