@@ -26,6 +26,7 @@
 #include "VMMSwitcher.h"
 #include "VMMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/hm_vmx.h>
 
 #include "tstHelp.h"
 #include <stdio.h>
