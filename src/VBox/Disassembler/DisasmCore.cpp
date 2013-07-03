@@ -1706,17 +1706,10 @@ static size_t ParseFixedReg(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
             pParam->fUse  |= DISUSE_REG_GEN32;
             pParam->cb     = 4;
         }
-        else
-        if (pDis->uOpMode == DISCPUMODE_64BIT)
+        else if (pDis->uOpMode == DISCPUMODE_64BIT)
         {
             /* Use 64-bit registers. */
             pParam->Base.idxGenReg = pParam->fParam - OP_PARM_REG_GEN32_START;
-            if (    (pOp->fOpType & DISOPTYPE_REXB_EXTENDS_OPREG)
-                &&  pParam == &pDis->Param1             /* ugly assumption that it only applies to the first parameter */
-                &&  (pDis->fPrefix & DISPREFIX_REX)
-                &&  (pDis->fRexPrefix & DISPREFIX_REX_FLAGS))
-                pParam->Base.idxGenReg += 8;
-
             pParam->fUse  |= DISUSE_REG_GEN64;
             pParam->cb     = 8;
         }
@@ -1728,42 +1721,50 @@ static size_t ParseFixedReg(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PD
             pParam->cb     = 2;
             pParam->fParam = pParam->fParam - OP_PARM_REG_GEN32_START + OP_PARM_REG_GEN16_START;
         }
+
+        if (    (pOp->fOpType & DISOPTYPE_REXB_EXTENDS_OPREG)
+            &&  pParam == &pDis->Param1             /* ugly assumption that it only applies to the first parameter */
+            &&  (pDis->fPrefix & DISPREFIX_REX)
+            &&  (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_B))
+        {
+            Assert(pDis->uCpuMode == DISCPUMODE_64BIT);
+            pParam->Base.idxGenReg += 8;
+        }
     }
-    else
-    if (pParam->fParam <= OP_PARM_REG_SEG_END)
+    else if (pParam->fParam <= OP_PARM_REG_SEG_END)
     {
         /* Segment ES..GS registers. */
         pParam->Base.idxSegReg = (DISSELREG)(pParam->fParam - OP_PARM_REG_SEG_START);
         pParam->fUse  |= DISUSE_REG_SEG;
         pParam->cb     = 2;
     }
-    else
-    if (pParam->fParam <= OP_PARM_REG_GEN16_END)
+    else if (pParam->fParam <= OP_PARM_REG_GEN16_END)
     {
         /* 16-bit AX..DI registers. */
         pParam->Base.idxGenReg = pParam->fParam - OP_PARM_REG_GEN16_START;
         pParam->fUse  |= DISUSE_REG_GEN16;
         pParam->cb     = 2;
     }
-    else
-    if (pParam->fParam <= OP_PARM_REG_GEN8_END)
+    else if (pParam->fParam <= OP_PARM_REG_GEN8_END)
     {
         /* 8-bit AL..DL, AH..DH registers. */
         pParam->Base.idxGenReg = pParam->fParam - OP_PARM_REG_GEN8_START;
         pParam->fUse  |= DISUSE_REG_GEN8;
         pParam->cb     = 1;
 
-        if (pDis->uOpMode == DISCPUMODE_64BIT)
+        if (   pDis->uCpuMode == DISCPUMODE_64BIT
+            && (pOp->fOpType & DISOPTYPE_REXB_EXTENDS_OPREG)
+            &&  pParam == &pDis->Param1             /* ugly assumption that it only applies to the first parameter */
+            &&  (pDis->fPrefix & DISPREFIX_REX))
         {
-            if (    (pOp->fOpType & DISOPTYPE_REXB_EXTENDS_OPREG)
-                &&  pParam == &pDis->Param1             /* ugly assumption that it only applies to the first parameter */
-                &&  (pDis->fPrefix & DISPREFIX_REX)
-                &&  (pDis->fRexPrefix & DISPREFIX_REX_FLAGS))
+            if (pDis->fRexPrefix & DISPREFIX_REX_FLAGS_B)
                 pParam->Base.idxGenReg += 8;              /* least significant byte of R8-R15 */
+            else if (   pParam->Base.idxGenReg >= DISGREG_AH
+                     && pParam->Base.idxGenReg <= DISGREG_BH)
+                pParam->Base.idxGenReg += DISGREG_SPL - DISGREG_AH;
         }
     }
-    else
-    if (pParam->fParam <= OP_PARM_REG_FP_END)
+    else if (pParam->fParam <= OP_PARM_REG_FP_END)
     {
         /* FPU registers. */
         pParam->Base.idxFpuReg = pParam->fParam - OP_PARM_REG_FP_START;

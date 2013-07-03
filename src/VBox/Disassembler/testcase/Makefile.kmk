@@ -44,6 +44,7 @@ tstDisasm-2_LIBS        = \
 VBOX_DISAS_TESTS_BUILD = \
 	tstAsmFnstsw-1.asm \
 	tstAsmLock-1.asm \
+	tstAsmMovFixedReg-1.asm \
 	tstAsmMovSeg-1.asm \
 	tstAsmMovzx-1.asm \
 	tstAsmPop-1.asm \
