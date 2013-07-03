@@ -12,6 +12,10 @@
  *
  *  - "High Level Languages Debug Table Documentation", aka HLLDBG.HTML, aka
  *     IBMHLL.HTML, last changed 1996-07-08.
+ *
+ * Testcases using RTLdrFlt:
+ *     - VBoxPcBios.sym at 0xf0000.
+ *     - NT4 kernel PE image (coff syms).
  */
 
 /*
@@ -445,6 +449,19 @@ typedef RTCVSYMTYPE const *PCRTCVSYMTYPE;
 #define RTCVSYMBOLS_SIGNATURE_CV4   UINT32_C(0x00000001)
 
 
+/**
+ * Directory sorting order.
+ */
+typedef enum RTCVDIRORDER
+{
+    RTCVDIRORDER_INVALID = 0,
+    /** Ordered by module. */
+    RTCVDIRORDER_BY_MOD,
+    /** Ordered by module, but 0 modules at the end. */
+    RTCVDIRORDER_BY_MOD_0,
+    /** Ordered by section, with global modules at the end. */
+    RTCVDIRORDER_BY_SST_MOD
+} RTCVDIRORDER;
 
 
 /**
@@ -486,6 +503,8 @@ typedef struct RTDBGMODCV
     uint32_t        cbDbgInfo;
     /** The offset of the subsection directory (relative to offBase). */
     uint32_t        offDir;
+    /** The directory order. */
+    RTCVDIRORDER    enmDirOrder;
     /** @}  */
 
     /** @name COFF details.
@@ -510,6 +529,8 @@ typedef struct RTDBGMODCV
 
     /** Indicates that we've loaded segments intot he container already. */
     bool            fHaveLoadedSegments;
+    /** Alternative address translation method for DOS frames. */
+    bool            fHaveDosFrames;
 
     /** @name Codeview Parsing state.
      * @{ */
@@ -565,7 +586,7 @@ typedef FNDBGMODCVSUBSECTCALLBACK *PFNDBGMODCVSUBSECTCALLBACK;
         { \
             Log(("RTDbgCv: Check failed on line %d: " #a_Expr "\n", __LINE__)); \
             Log(a_LogArgs); \
-            return VERR_CV_BAD_FORMAT; \
+            /*return VERR_CV_BAD_FORMAT;*/ \
         } \
     } while (0)
 
@@ -576,7 +597,7 @@ typedef FNDBGMODCVSUBSECTCALLBACK *PFNDBGMODCVSUBSECTCALLBACK;
         if (!(a_Expr)) \
         { \
             Log(("RTDbgCv: Check failed on line %d: " #a_Expr "\n", __LINE__)); \
-            return VERR_CV_BAD_FORMAT; \
+            /*return VERR_CV_BAD_FORMAT;*/ \
         } \
     } while (0)
 
@@ -704,18 +725,57 @@ static int rtDbgModCvAddSymbol(PRTDBGMODCV pThis, uint32_t iSeg, uint64_t off, c
     if (!pszName)
         return VERR_NO_STR_MEMORY;
 #if 1
+    Log2(("CV Sym: %04x:%08x %.*s\n", iSeg, off, cchName, pchName));
     if (iSeg == 0)
         iSeg = RTDBGSEGIDX_ABS;
     else if (pThis->pSegMap)
     {
-        if (   iSeg > pThis->pSegMap->Hdr.cSegs
-            || iSeg == 0
-            || off > pThis->pSegMap->aDescs[iSeg - 1].cb)
+        if (pThis->fHaveDosFrames)
         {
-            Log(("Invalid segment index/offset %#06x:%08x for symbol %.*s\n", iSeg, off, cchName, pchName));
-            return VERR_CV_BAD_FORMAT;
+            if (   iSeg > pThis->pSegMap->Hdr.cSegs
+                || iSeg == 0)
+            {
+                Log(("Invalid segment index/offset %#06x:%08x for symbol %.*s\n", iSeg, off, cchName, pchName));
+                return VERR_CV_BAD_FORMAT;
+            }
+            if (off <= pThis->pSegMap->aDescs[iSeg - 1].cb + pThis->pSegMap->aDescs[iSeg - 1].off)
+                off -= pThis->pSegMap->aDescs[iSeg - 1].off;
+            else
+            {
+                /* Workaround for VGABIOS where _DATA symbols like vgafont8 are
+                   reported in the VGAROM segment. */
+                uint64_t uAddrSym = off + ((uint32_t)pThis->pSegMap->aDescs[iSeg - 1].iFrame << 4);
+                uint16_t j = pThis->pSegMap->Hdr.cSegs;
+                while (j-- > 0)
+                {
+                    uint64_t uAddrFirst = (uint64_t)pThis->pSegMap->aDescs[j].off
+                                        + ((uint32_t)pThis->pSegMap->aDescs[j].iFrame << 4);
+                    if (uAddrSym - uAddrFirst < pThis->pSegMap->aDescs[j].cb)
+                    {
+                        Log(("CV addr fix: %04x:%08x -> %04x:%08x\n", iSeg, off, j + 1, uAddrSym - uAddrFirst));
+                        off  = uAddrSym - uAddrFirst;
+                        iSeg = j + 1;
+                        break;
+                    }
+                }
+                if (j == UINT16_MAX)
+                {
+                    Log(("Invalid segment index/offset %#06x:%08x for symbol %.*s [2]\n", iSeg, off, cchName, pchName));
+                    return VERR_CV_BAD_FORMAT;
+                }
+            }
         }
-        off += pThis->pSegMap->aDescs[iSeg - 1].off;
+        else
+        {
+            if (   iSeg > pThis->pSegMap->Hdr.cSegs
+                || iSeg == 0
+                || off > pThis->pSegMap->aDescs[iSeg - 1].cb)
+            {
+                Log(("Invalid segment index/offset %#06x:%08x for symbol %.*s\n", iSeg, off, cchName, pchName));
+                return VERR_CV_BAD_FORMAT;
+            }
+            off += pThis->pSegMap->aDescs[iSeg - 1].off;
+        }
         if (pThis->pSegMap->aDescs[iSeg - 1].fFlags & RTCVSEGMAPDESC_F_ABS)
             iSeg = RTDBGSEGIDX_ABS;
         else
@@ -937,6 +997,14 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
     bool const fNoGroups = pHdr->cSegs == pHdr->cLogSegs;
 
     /*
+     * The PE image has an extra section/segment for the headers, the others
+     * doesn't.  PE images doesn't have DOS frames. So, figure the image type now.
+     */
+    RTLDRFMT enmImgFmt = RTLDRFMT_INVALID;
+    if (pThis->pMod->pImgVt)
+        enmImgFmt = pThis->pMod->pImgVt->pfnGetFormat(pThis->pMod);
+
+    /*
      * Validate and display it all.
      */
     Log2(("RTDbgModCv: SegMap: cSegs=%#x cLogSegs=%#x (cbSegNames=%#x)\n", pHdr->cSegs, pHdr->cLogSegs, pThis->cbSegNames));
@@ -945,6 +1013,8 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
     RTDBGMODCV_CHECK_NOMSG_RET_BF(pHdr->cSegs >= pHdr->cLogSegs);
 
     Log2(("Logical segment descriptors: %u\n", pHdr->cLogSegs));
+
+    bool fHaveDosFrames = false;
     for (i = 0; i < pHdr->cSegs; i++)
     {
         if (i == pHdr->cLogSegs)
@@ -996,8 +1066,34 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
         if (fNoGroups)
         {
             RTDBGMODCV_CHECK_NOMSG_RET_BF(paDescs[i].iGroup == 0);
-            RTDBGMODCV_CHECK_NOMSG_RET_BF(paDescs[i].off == 0);
+            if (   !fHaveDosFrames
+                && paDescs[i].iFrame != 0
+                && (paDescs[i].fFlags & (RTCVSEGMAPDESC_F_SEL | RTCVSEGMAPDESC_F_ABS))
+                && paDescs[i].iOverlay == 0
+                && enmImgFmt != RTLDRFMT_PE
+                && enmImgFmt != RTCVFILETYPE_DBG)
+                fHaveDosFrames = true; /* BIOS, only groups with frames. */
         }
+    }
+
+    /*
+     * Further valiations based on fHaveDosFrames or not.
+     */
+    if (fNoGroups)
+    {
+        if (fHaveDosFrames)
+            for (i = 0; i < pHdr->cSegs; i++)
+            {
+                RTDBGMODCV_CHECK_NOMSG_RET_BF(paDescs[i].iOverlay == 0);
+                RTDBGMODCV_CHECK_NOMSG_RET_BF(      (paDescs[i].fFlags & (RTCVSEGMAPDESC_F_SEL | RTCVSEGMAPDESC_F_ABS))
+                                                 == RTCVSEGMAPDESC_F_SEL
+                                              ||    (paDescs[i].fFlags & (RTCVSEGMAPDESC_F_SEL | RTCVSEGMAPDESC_F_ABS))
+                                                 == RTCVSEGMAPDESC_F_ABS);
+                RTDBGMODCV_CHECK_NOMSG_RET_BF(!(paDescs[i].fFlags & RTCVSEGMAPDESC_F_ABS));
+            }
+        else
+            for (i = 0; i < pHdr->cSegs; i++)
+                RTDBGMODCV_CHECK_NOMSG_RET_BF(paDescs[i].off == 0);
     }
 
     /*
@@ -1009,7 +1105,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
        omitting the CODE group. */
     const char *pszGroup0 = NULL;
     uint64_t    cbGroup0  = 0;
-    if (!fNoGroups)
+    if (!fNoGroups && !fHaveDosFrames)
     {
         for (i = 0; i < pHdr->cSegs; i++)
             if (   !(paDescs[i].fFlags & (RTCVSEGMAPDESC_F_GROUP | RTCVSEGMAPDESC_F_ABS))
@@ -1029,29 +1125,160 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
     /** @todo Try see if we can figure something out from the frame value later. */
     if (!pThis->fHaveLoadedSegments)
     {
-        Assert(!pThis->pMod->pImgVt); Assert(pThis->enmType != RTCVFILETYPE_DBG);
         uint16_t iSeg = 0;
-        uint64_t uRva = 0;
-        if (cbGroup0 && !fNoGroups)
+        if (!fHaveDosFrames)
         {
-            rc = RTDbgModSegmentAdd(pThis->hCnt, 0, cbGroup0, pszGroup0 ? pszGroup0 : "Seg00", 0 /*fFlags*/, NULL);
-            uRva += cbGroup0;
-            iSeg++;
-        }
-
-        for (i = 0; RT_SUCCESS(rc) && i < pHdr->cSegs; i++)
-            if ((paDescs[i].fFlags & RTCVSEGMAPDESC_F_GROUP) || fNoGroups)
+            Assert(!pThis->pMod->pImgVt); Assert(pThis->enmType != RTCVFILETYPE_DBG);
+            uint64_t uRva = 0;
+            if (cbGroup0 && !fNoGroups)
             {
-                char szName[16];
-                char *pszName = szName;
-                if (paDescs[i].offSegName != UINT16_MAX)
-                    pszName = pThis->pszzSegNames + paDescs[i].offSegName;
-                else
-                    RTStrPrintf(szName, sizeof(szName), "Seg%02u", iSeg);
-                rc = RTDbgModSegmentAdd(pThis->hCnt, uRva, paDescs[i].cb, pszName, 0 /*fFlags*/, NULL);
-                uRva += paDescs[i].cb;
+                rc = RTDbgModSegmentAdd(pThis->hCnt, 0, cbGroup0, pszGroup0 ? pszGroup0 : "Seg00", 0 /*fFlags*/, NULL);
+                uRva += cbGroup0;
                 iSeg++;
             }
+
+            for (i = 0; RT_SUCCESS(rc) && i < pHdr->cSegs; i++)
+                if ((paDescs[i].fFlags & RTCVSEGMAPDESC_F_GROUP) || fNoGroups)
+                {
+                    char szName[16];
+                    char *pszName = szName;
+                    if (paDescs[i].offSegName != UINT16_MAX)
+                        pszName = pThis->pszzSegNames + paDescs[i].offSegName;
+                    else
+                        RTStrPrintf(szName, sizeof(szName), "Seg%02u", iSeg);
+                    rc = RTDbgModSegmentAdd(pThis->hCnt, uRva, paDescs[i].cb, pszName, 0 /*fFlags*/, NULL);
+                    uRva += paDescs[i].cb;
+                    iSeg++;
+                }
+        }
+        else
+        {
+            /* The map is not sorted by RVA, very annoying, but I'm countering
+               by being lazy and slow about it. :-) Btw. this is the BIOS case. */
+            Assert(fNoGroups);
+#if 1 /** @todo need more inputs */
+
+            /* Figure image base address. */
+            uint64_t uImageBase = UINT64_MAX;
+            for (i = 0; RT_SUCCESS(rc) && i < pHdr->cSegs; i++)
+            {
+                uint64_t uAddr = (uint64_t)paDescs[i].off + ((uint32_t)paDescs[i].iFrame << 4);
+                if (uAddr < uImageBase)
+                    uImageBase = uAddr;
+            }
+
+            /* Add the segments. */
+            uint64_t uMinAddr = uImageBase;
+            for (i = 0; RT_SUCCESS(rc) && i < pHdr->cSegs; i++)
+            {
+                /* Figure out the next one. */
+                uint16_t cOverlaps = 0;
+                uint16_t iBest     = UINT16_MAX;
+                uint64_t uBestAddr = UINT64_MAX;
+                for (uint16_t j = 0; j < pHdr->cSegs; j++)
+                {
+                    uint64_t uAddr = (uint64_t)paDescs[j].off + ((uint32_t)paDescs[j].iFrame << 4);
+                    if (uAddr >= uMinAddr && uAddr < uBestAddr)
+                    {
+                        uBestAddr = uAddr;
+                        iBest     = j;
+                    }
+                    else if (uAddr == uBestAddr)
+                    {
+                        cOverlaps++;
+                        if (paDescs[j].cb > paDescs[iBest].cb)
+                        {
+                            uBestAddr = uAddr;
+                            iBest     = j;
+                        }
+                    }
+                }
+                if (iBest == UINT16_MAX && RT_SUCCESS(rc))
+                {
+                    rc = VERR_CV_IPE;
+                    break;
+                }
+
+                /* Add it. */
+                char szName[16];
+                char *pszName = szName;
+                if (paDescs[iBest].offSegName != UINT16_MAX)
+                    pszName = pThis->pszzSegNames + paDescs[iBest].offSegName;
+                else
+                    RTStrPrintf(szName, sizeof(szName), "Seg%02u", iSeg);
+                Log(("CV: %#010x LB %#010x %s uRVA=%#010x iBest=%u cOverlaps=%u\n",
+                     uBestAddr, paDescs[iBest].cb, szName, uBestAddr - uImageBase, iBest, cOverlaps));
+                rc = RTDbgModSegmentAdd(pThis->hCnt, uBestAddr - uImageBase, paDescs[iBest].cb, pszName, 0 /*fFlags*/, NULL);
+
+                /* Update translations. */
+                paDescs[iBest].iGroup = iSeg;
+                if (cOverlaps > 0)
+                {
+                    for (uint16_t j = 0; j < pHdr->cSegs; j++)
+                        if ((uint64_t)paDescs[j].off + ((uint32_t)paDescs[j].iFrame << 4) == uBestAddr)
+                            paDescs[iBest].iGroup = iSeg;
+                    i += cOverlaps;
+                }
+
+                /* Advance. */
+                uMinAddr = uBestAddr + 1;
+                iSeg++;
+            }
+
+            pThis->fHaveDosFrames = true;
+#else
+            uint32_t iFrameFirst = UINT32_MAX;
+            uint16_t iSeg        = 0;
+            uint32_t iFrameMin   = 0;
+            do
+            {
+                /* Find next frame. */
+                uint32_t iFrame = UINT32_MAX;
+                for (uint16_t j = 0; j < pHdr->cSegs; j++)
+                    if (paDescs[j].iFrame >= iFrameMin && paDescs[j].iFrame < iFrame)
+                        iFrame = paDescs[j].iFrame;
+                if (iFrame == UINT32_MAX)
+                    break;
+
+                /* Figure the frame span. */
+                uint32_t offFirst = UINT32_MAX;
+                uint64_t offEnd   = 0;
+                for (uint16_t j = 0; j < pHdr->cSegs; j++)
+                    if (paDescs[j].iFrame == iFrame)
+                    {
+                        uint64_t offThisEnd = paDescs[j].off + paDescs[j].cb;
+                        if (offThisEnd > offEnd)
+                            offEnd   = offThisEnd;
+                        if (paDescs[j].off < offFirst)
+                            offFirst = paDescs[j].off;
+                    }
+
+                if (offFirst < offEnd)
+                {
+                    /* Add it. */
+                    char szName[16];
+                    RTStrPrintf(szName, sizeof(szName), "Frame_%04x", iFrame);
+                    Log(("CV: %s offEnd=%#x offFirst=%#x\n", szName, offEnd, offFirst));
+                    if (iFrameFirst == UINT32_MAX)
+                        iFrameFirst = iFrame;
+                    rc = RTDbgModSegmentAdd(pThis->hCnt, (iFrame - iFrameFirst) << 4, offEnd, szName, 0 /*fFlags*/, NULL);
+
+                    /* Translation updates. */
+                    for (uint16_t j = 0; j < pHdr->cSegs; j++)
+                        if (paDescs[j].iFrame == iFrame)
+                        {
+                            paDescs[j].iGroup = iSeg;
+                            paDescs[j].off    = 0;
+                            paDescs[j].cb     = offEnd > UINT32_MAX ? UINT32_MAX : (uint32_t)offEnd;
+                        }
+
+                    iSeg++;
+                }
+
+                iFrameMin = iFrame + 1;
+            } while (RT_SUCCESS(rc));
+#endif
+        }
 
         if (RT_FAILURE(rc))
         {
@@ -1060,16 +1287,15 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
         }
 
         pThis->fHaveLoadedSegments = true;
-    }
 
-    /* The PE image has an extra section/segment for the headers, the others doesn't. */
-    RTLDRFMT enmImgFmt = RTLDRFMT_INVALID;
-    if (pThis->pMod->pImgVt)
-        enmImgFmt = pThis->pMod->pImgVt->pfnGetFormat(pThis->pMod);
+        /* Skip the stuff below if we have DOS frames since we did it all above. */
+        if (fHaveDosFrames)
+            return VINF_SUCCESS;
+    }
 
     /* Pass one: Fixate the group segment indexes. */
     uint16_t iSeg0 = enmImgFmt == RTLDRFMT_PE || pThis->enmType == RTCVFILETYPE_DBG ? 1 : 0;
-    uint16_t iSeg = iSeg0 + cbGroup0 > 0;
+    uint16_t iSeg = iSeg0 + (cbGroup0 > 0); /** @todo probably wrong... */
     for (i = 0; i < pHdr->cSegs; i++)
         if (paDescs[i].fFlags & RTCVSEGMAPDESC_F_ABS)
             paDescs[i].iGroup = (uint16_t)RTDBGSEGIDX_ABS;
@@ -1201,14 +1427,17 @@ static int rtDbgModCvLoadDirectory(PRTDBGMODCV pThis)
         }
     }
 
-    /*
-     * Validate the information in the directory a little.
-     */
     if (RT_SUCCESS(rc))
     {
-        uint16_t       iMod      = 0;
-        uint32_t const cbDbgInfo = pThis->cbDbgInfo;
-        uint32_t const cDirEnts  = pThis->cDirEnts;
+        /*
+         * Basic info validation and determining the directory ordering.
+         */
+        bool           fWatcom      = 0;
+        uint16_t       cGlobalMods  = 0;
+        uint16_t       cNormalMods  = 0;
+        uint16_t       iModLast     = 0;
+        uint32_t const cbDbgInfo    = pThis->cbDbgInfo;
+        uint32_t const cDirEnts     = pThis->cDirEnts;
         Log2(("RTDbgModCv: %u (%#x) directory entries:\n", cDirEnts, cDirEnts));
         for (uint32_t i = 0; i < cDirEnts; i++)
         {
@@ -1232,29 +1461,138 @@ static int rtDbgModCvLoadDirectory(PRTDBGMODCV pThis)
                 Log(("CV directory entry #%u uses module index 0 (uSubSectType=%#x)\n", i, pDirEnt->iMod, pDirEnt->uSubSectType));
                 rc = VERR_CV_BAD_FORMAT;
             }
-            if (   pDirEnt->iMod < iMod
-                && (   pDirEnt->iMod != 0
-                    || (   pThis->u32CvMagic != RTCVHDR_MAGIC_NB00 /* May be first, maybe last. */
-                        && pThis->u32CvMagic != RTCVHDR_MAGIC_NB02
-                        && pThis->u32CvMagic != RTCVHDR_MAGIC_NB04) ) )
+            if (pDirEnt->iMod == 0 || pDirEnt->iMod == 0xffff)
+                cGlobalMods++;
+            else
             {
-                Log(("CV directory entry #%u is out of module order, this mod %u, prev mod %#u\n", i, pDirEnt->iMod, iMod));
-                rc = VERR_CV_BAD_FORMAT;
-            }
-            if (pDirEnt->iMod != iMod)
-            {
-                iMod = pDirEnt->iMod;
-                if (   iMod != 0
-                    && iMod != 0xffff
-                    && pDirEnt->uSubSectType != kCvSst_Module
-                    && pDirEnt->uSubSectType != kCvSst_OldModule)
+                if (pDirEnt->iMod > iModLast)
                 {
-                    Log(("CV directory entry #%u: expected module subsection first, found %s (%#x)\n",
-                         i, rtDbgModCvGetSubSectionName(pDirEnt->uSubSectType), pDirEnt->uSubSectType));
-                    rc = VERR_CV_BAD_FORMAT;
+                    if (   pDirEnt->uSubSectType != kCvSst_Module
+                        && pDirEnt->uSubSectType != kCvSst_OldModule)
+                    {
+                        Log(("CV directory entry #%u: expected module subsection first, found %s (%#x)\n",
+                             i, rtDbgModCvGetSubSectionName(pDirEnt->uSubSectType), pDirEnt->uSubSectType));
+                        rc = VERR_CV_BAD_FORMAT;
+                    }
+                    if (pDirEnt->iMod != iModLast + 1)
+                    {
+                        Log(("CV directory entry #%u: skips from mod %#x to %#x modules\n", iModLast, pDirEnt->iMod));
+                        rc = VERR_CV_BAD_FORMAT;
+                    }
+                    iModLast = pDirEnt->iMod;
                 }
+                else if (pDirEnt->iMod < iModLast)
+                    fWatcom = true;
+                cNormalMods++;
             }
         }
+        if (cGlobalMods == 0)
+        {
+            Log(("CV directory contains no global modules\n"));
+            rc = VERR_CV_BAD_FORMAT;
+        }
+        if (RT_SUCCESS(rc))
+        {
+            if (fWatcom)
+                pThis->enmDirOrder = RTCVDIRORDER_BY_SST_MOD;
+            else if (pThis->paDirEnts[0].iMod == 0)
+                pThis->enmDirOrder = RTCVDIRORDER_BY_MOD_0;
+            else
+                pThis->enmDirOrder = RTCVDIRORDER_BY_MOD;
+            Log(("CV dir stats: %u total, %u normal, %u special, iModLast=%#x (%u), enmDirOrder=%d\n",
+                 cDirEnts, cNormalMods, cGlobalMods, iModLast, iModLast, pThis->enmDirOrder));
+
+
+            /*
+             * Validate the directory ordering.
+             */
+            uint16_t i = 0;
+
+            /* Old style with special modules up front. */
+            if (pThis->enmDirOrder == RTCVDIRORDER_BY_MOD_0)
+                while (i < cGlobalMods)
+                {
+                    if (pThis->paDirEnts[i].iMod != 0)
+                    {
+                        Log(("CV directory entry #%u: Expected iMod=%x instead of %x\n", i, 0, pThis->paDirEnts[i].iMod));
+                        rc = VERR_CV_BAD_FORMAT;
+                    }
+                    i++;
+                }
+
+            /* Normal modules. */
+            if (pThis->enmDirOrder != RTCVDIRORDER_BY_SST_MOD)
+            {
+                uint16_t iEndNormalMods = cNormalMods + (pThis->enmDirOrder == RTCVDIRORDER_BY_MOD_0 ? cGlobalMods : 0);
+                while (i < iEndNormalMods)
+                {
+                    if (pThis->paDirEnts[i].iMod == 0 || pThis->paDirEnts[i].iMod == 0xffff)
+                    {
+                        Log(("CV directory entry #%u: Unexpected global module entry.\n", i));
+                        rc = VERR_CV_BAD_FORMAT;
+                    }
+                    i++;
+                }
+            }
+            else
+            {
+                uint32_t fSeen = RT_BIT_32(kCvSst_Module      - kCvSst_Module)
+                               | RT_BIT_32(kCvSst_Libraries   - kCvSst_Module)
+                               | RT_BIT_32(kCvSst_GlobalSym   - kCvSst_Module)
+                               | RT_BIT_32(kCvSst_GlobalPub   - kCvSst_Module)
+                               | RT_BIT_32(kCvSst_GlobalTypes - kCvSst_Module)
+                               | RT_BIT_32(kCvSst_SegName     - kCvSst_Module)
+                               | RT_BIT_32(kCvSst_SegMap      - kCvSst_Module)
+                               | RT_BIT_32(kCvSst_StaticSym   - kCvSst_Module)
+                               | RT_BIT_32(kCvSst_FileIndex   - kCvSst_Module)
+                               | RT_BIT_32(kCvSst_MPC         - kCvSst_Module);
+                uint16_t iMod = 0;
+                uint16_t uSst = kCvSst_Module;
+                while (i < cNormalMods)
+                {
+                    PCRTCVDIRENT32 pDirEnt = &pThis->paDirEnts[i];
+                    if (pDirEnt->iMod > iMod)
+                    {
+                        if (pDirEnt->uSubSectType != uSst)
+                        {
+                            Log(("CV directory entry #%u: Expected %s (%#x), found %s (%#x).\n",
+                                 i, rtDbgModCvGetSubSectionName(uSst), uSst,
+                                 rtDbgModCvGetSubSectionName(pDirEnt->uSubSectType), pDirEnt->uSubSectType));
+                            rc = VERR_CV_BAD_FORMAT;
+                        }
+                    }
+                    else
+                    {
+                        uint32_t iBit = pDirEnt->uSubSectType - kCvSst_Module;
+                        if (iBit >= 32U || (fSeen & RT_BIT_32(iBit)))
+                        {
+                            Log(("CV directory entry #%u: SST %s (%#x) has already been seen or is for globals.\n",
+                                 i, rtDbgModCvGetSubSectionName(pDirEnt->uSubSectType), pDirEnt->uSubSectType));
+                            rc = VERR_CV_BAD_FORMAT;
+                        }
+                        fSeen |= RT_BIT_32(iBit);
+                    }
+
+                    uSst = pDirEnt->uSubSectType;
+                    iMod = pDirEnt->iMod;
+                    i++;
+                }
+            }
+
+            /* New style with special modules at the end. */
+            if (pThis->enmDirOrder != RTCVDIRORDER_BY_MOD_0)
+                while (i < cDirEnts)
+                {
+                    if (pThis->paDirEnts[i].iMod != 0 && pThis->paDirEnts[i].iMod != 0xffff)
+                    {
+                        Log(("CV directory entry #%u: Expected global module entry, not %#x.\n", i,
+                             pThis->paDirEnts[i].iMod));
+                        rc = VERR_CV_BAD_FORMAT;
+                    }
+                    i++;
+                }
+        }
+
     }
 
     return rc;
@@ -2015,9 +2353,11 @@ static int rtDbgModCvCreateInstance(PRTDBGMODINT pDbgMod, RTCVFILETYPE enmFileTy
     if (RT_SUCCESS(rc))
     {
         pDbgMod->pvDbgPriv = pThis;
-        pThis->enmType    = enmFileType;
-        pThis->hFile      = hFile;
-        pThis->pMod       = pDbgMod;
+        pThis->enmType          = enmFileType;
+        pThis->hFile            = hFile;
+        pThis->pMod             = pDbgMod;
+        pThis->offBase          = UINT32_MAX;
+        pThis->offCoffDbgInfo   = UINT32_MAX;
         *ppThis = pThis;
         return VINF_SUCCESS;
     }
@@ -2385,7 +2725,7 @@ static DECLCALLBACK(int) rtDbgModCv_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch
     PRTDBGMODCV pThis = (PRTDBGMODCV)pMod->pvDbgPriv;
     if (!pThis)
         return RT_SUCCESS_NP(rc) ? VERR_DBG_NO_MATCHING_INTERPRETER : rc;
-    Assert(pThis->offBase || pThis->offCoffDbgInfo);
+    Assert(pThis->offBase  != UINT32_MAX || pThis->offCoffDbgInfo != UINT32_MAX);
 
     /*
      * Load the debug info.
@@ -2395,9 +2735,9 @@ static DECLCALLBACK(int) rtDbgModCv_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmArch
         rc = pMod->pImgVt->pfnEnumSegments(pMod, rtDbgModCvAddSegmentsCallback, pThis);
         pThis->fHaveLoadedSegments = true;
     }
-    if (RT_SUCCESS(rc) && pThis->offBase)
+    if (RT_SUCCESS(rc) && pThis->offBase != UINT32_MAX)
         rc = rtDbgModCvLoadCodeViewInfo(pThis);
-    if (RT_SUCCESS(rc) && pThis->offCoffDbgInfo)
+    if (RT_SUCCESS(rc) && pThis->offCoffDbgInfo != UINT32_MAX)
         rc = rtDbgModCvLoadCoffInfo(pThis);
     if (RT_SUCCESS(rc))
     {
