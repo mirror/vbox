@@ -180,6 +180,7 @@ VBINSTST_ENDPROC   Common_BadValue
 ; For address calculation reasons, these must be qword aligned.
 ;
 VBINSTST_BEGINDATA
+        align 64
         dd      09d8af498h, 09ab3e5f8h
 VBINSTST_GLOBALNAME_EX g_u64Data, data hidden
         dq      0
