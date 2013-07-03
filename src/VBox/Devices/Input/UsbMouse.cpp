@@ -1461,7 +1461,8 @@ static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t b
      */
     pThis->Lun0.pDrv->pfnReportModes(pThis->Lun0.pDrv,
                                      pThis->enmMode == USBHIDMODE_RELATIVE,
-                                     pThis->enmMode == USBHIDMODE_ABSOLUTE);
+                                     pThis->enmMode == USBHIDMODE_ABSOLUTE,
+                                     pThis->enmMode == USBHIDMODE_MULTI_TOUCH);
 
     RTCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
