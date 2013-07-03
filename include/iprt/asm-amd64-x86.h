@@ -350,6 +350,30 @@ DECLINLINE(RTSEL) ASMGetTR(void)
 
 
 /**
+ * Get the LDTR register.
+ * @returns LDTR.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(RTSEL) ASMGetLDTR(void);
+#else
+DECLINLINE(RTSEL) ASMGetLDTR(void)
+{
+    RTSEL SelLDTR;
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("sldt %w0\n\t" : "=r" (SelLDTR));
+# else
+    __asm
+    {
+        sldt    ax
+        mov     [SelLDTR], ax
+    }
+# endif
+    return SelLDTR;
+}
+#endif
+
+
+/**
  * Get the [RE]FLAGS register.
  * @returns [RE]FLAGS.
  */
