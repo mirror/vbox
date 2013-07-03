@@ -1,9 +1,10 @@
+; $Id$
 ;; @file
-; IPRT - ASMGetTR().
+; IPRT - ASMGetGDTR().
 ;
 
 ;
-; Copyright (C) 2006-2010 Oracle Corporation
+; Copyright (C) 2006-2013 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -31,12 +32,21 @@
 BEGINCODE
 
 ;;
-; Get the TR register.
-; @returns TR.
-; 
-BEGINPROC_EXPORTED ASMGetTR
-        str     ax
-        movzx   eax, ax
+; Gets the content of the GDTR CPU register.
+; @param   pGdtr    Where to store the GDTR contents.
+;                   msc=rcx, gcc=rdi, x86=[esp+4]
+;
+BEGINPROC_EXPORTED ASMGetGDTR
+%ifdef ASM_CALL64_MSC
+        mov     rax, rcx
+%elifdef ASM_CALL64_GCC
+        mov     rax, rdi
+%elifdef RT_ARCH_X86
+        mov     eax, [esp + 4]
+%else
+ %error "Undefined arch?"
+%endif
+        sgdt    [xAX]
         ret
-ENDPROC ASMGetTR
+ENDPROC ASMGetGDTR
 

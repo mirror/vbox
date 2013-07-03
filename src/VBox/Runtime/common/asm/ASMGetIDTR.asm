@@ -1,9 +1,10 @@
+; $Id$
 ;; @file
 ; IPRT - ASMGetIDTR().
 ;
 
 ;
-; Copyright (C) 2006-2010 Oracle Corporation
+; Copyright (C) 2006-2013 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -32,11 +33,20 @@ BEGINCODE
 
 ;;
 ; Gets the content of the IDTR CPU register.
-; @param   rcx  pIdtr   Where to store the IDTR contents.
+; @param    pIdtr   Where to store the IDTR contents.
+;                   msc=rcx, gcc=rdi, x86=[esp+4]
 ;
 BEGINPROC_EXPORTED ASMGetIDTR
-        sidt    [rcx]
+%ifdef ASM_CALL64_MSC
+        mov     rax, rcx
+%elifdef ASM_CALL64_GCC
+        mov     rax, rdi
+%elifdef RT_ARCH_X86
+        mov     eax, [esp + 4]
+%else
+ %error "Undefined arch?"
+%endif
+        sidt    [xAX]
         ret
 ENDPROC ASMGetIDTR
-
 
