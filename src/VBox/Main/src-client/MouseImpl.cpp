@@ -674,7 +674,7 @@ void Mouse::sendMouseCapsNotifications(void)
  * @interface_method_impl{PDMIMOUSECONNECTOR,pfnReportModes}
  * A virtual device is notifying us about its current state and capabilities
  */
-DECLCALLBACK(void) Mouse::mouseReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRel, bool fAbs)
+DECLCALLBACK(void) Mouse::mouseReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRel, bool fAbs, bool)
 {
     PDRVMAINMOUSE pDrv = RT_FROM_MEMBER(pInterface, DRVMAINMOUSE, IConnector);
     if (fRel)
