@@ -10233,7 +10233,7 @@ FNIEMOP_DEF_1(iemOpCommonMov_r8_Ib, uint8_t, iReg)
 FNIEMOP_DEF(iemOp_mov_AL_Ib)
 {
     IEMOP_MNEMONIC("mov AL,Ib");
-    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xAX);
+    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xAX | pIemCpu->uRexB);
 }
 
 
@@ -10241,7 +10241,7 @@ FNIEMOP_DEF(iemOp_mov_AL_Ib)
 FNIEMOP_DEF(iemOp_CL_Ib)
 {
     IEMOP_MNEMONIC("mov CL,Ib");
-    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xCX);
+    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xCX | pIemCpu->uRexB);
 }
 
 
@@ -10249,7 +10249,7 @@ FNIEMOP_DEF(iemOp_CL_Ib)
 FNIEMOP_DEF(iemOp_DL_Ib)
 {
     IEMOP_MNEMONIC("mov DL,Ib");
-    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xDX);
+    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xDX | pIemCpu->uRexB);
 }
 
 
@@ -10257,7 +10257,7 @@ FNIEMOP_DEF(iemOp_DL_Ib)
 FNIEMOP_DEF(iemOp_BL_Ib)
 {
     IEMOP_MNEMONIC("mov BL,Ib");
-    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xBX);
+    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xBX | pIemCpu->uRexB);
 }
 
 
@@ -10265,7 +10265,7 @@ FNIEMOP_DEF(iemOp_BL_Ib)
 FNIEMOP_DEF(iemOp_mov_AH_Ib)
 {
     IEMOP_MNEMONIC("mov AH,Ib");
-    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xSP);
+    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xSP | pIemCpu->uRexB);
 }
 
 
@@ -10273,7 +10273,7 @@ FNIEMOP_DEF(iemOp_mov_AH_Ib)
 FNIEMOP_DEF(iemOp_CH_Ib)
 {
     IEMOP_MNEMONIC("mov CH,Ib");
-    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xBP);
+    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xBP | pIemCpu->uRexB);
 }
 
 
@@ -10281,7 +10281,7 @@ FNIEMOP_DEF(iemOp_CH_Ib)
 FNIEMOP_DEF(iemOp_DH_Ib)
 {
     IEMOP_MNEMONIC("mov DH,Ib");
-    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xSI);
+    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xSI | pIemCpu->uRexB);
 }
 
 
@@ -10289,7 +10289,7 @@ FNIEMOP_DEF(iemOp_DH_Ib)
 FNIEMOP_DEF(iemOp_BH_Ib)
 {
     IEMOP_MNEMONIC("mov BH,Ib");
-    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xDI);
+    return FNIEMOP_CALL_1(iemOpCommonMov_r8_Ib, X86_GREG_xDI | pIemCpu->uRexB);
 }
 
 
@@ -10347,7 +10347,7 @@ FNIEMOP_DEF_1(iemOpCommonMov_Rv_Iv, uint8_t, iReg)
 FNIEMOP_DEF(iemOp_eAX_Iv)
 {
     IEMOP_MNEMONIC("mov rAX,IV");
-    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xAX);
+    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xAX | pIemCpu->uRexB);
 }
 
 
@@ -10355,7 +10355,7 @@ FNIEMOP_DEF(iemOp_eAX_Iv)
 FNIEMOP_DEF(iemOp_eCX_Iv)
 {
     IEMOP_MNEMONIC("mov rCX,IV");
-    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xCX);
+    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xCX | pIemCpu->uRexB);
 }
 
 
@@ -10363,7 +10363,7 @@ FNIEMOP_DEF(iemOp_eCX_Iv)
 FNIEMOP_DEF(iemOp_eDX_Iv)
 {
     IEMOP_MNEMONIC("mov rDX,IV");
-    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xDX);
+    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xDX | pIemCpu->uRexB);
 }
 
 
@@ -10371,7 +10371,7 @@ FNIEMOP_DEF(iemOp_eDX_Iv)
 FNIEMOP_DEF(iemOp_eBX_Iv)
 {
     IEMOP_MNEMONIC("mov rBX,IV");
-    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xBX);
+    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xBX | pIemCpu->uRexB);
 }
 
 
@@ -10379,7 +10379,7 @@ FNIEMOP_DEF(iemOp_eBX_Iv)
 FNIEMOP_DEF(iemOp_eSP_Iv)
 {
     IEMOP_MNEMONIC("mov rSP,IV");
-    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xSP);
+    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xSP | pIemCpu->uRexB);
 }
 
 
@@ -10387,7 +10387,7 @@ FNIEMOP_DEF(iemOp_eSP_Iv)
 FNIEMOP_DEF(iemOp_eBP_Iv)
 {
     IEMOP_MNEMONIC("mov rBP,IV");
-    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xBP);
+    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xBP | pIemCpu->uRexB);
 }
 
 
@@ -10395,7 +10395,7 @@ FNIEMOP_DEF(iemOp_eBP_Iv)
 FNIEMOP_DEF(iemOp_eSI_Iv)
 {
     IEMOP_MNEMONIC("mov rSI,IV");
-    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xSI);
+    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xSI | pIemCpu->uRexB);
 }
 
 
@@ -10403,7 +10403,7 @@ FNIEMOP_DEF(iemOp_eSI_Iv)
 FNIEMOP_DEF(iemOp_eDI_Iv)
 {
     IEMOP_MNEMONIC("mov rDI,IV");
-    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xDI);
+    return FNIEMOP_CALL_1(iemOpCommonMov_Rv_Iv, X86_GREG_xDI | pIemCpu->uRexB);
 }
 
 
