@@ -8589,7 +8589,82 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPC(PVMCPU pVCpu, PCP
 
 VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
 {
-    return IEMExecOne(pVCpu);
+    PIEMCPU  pIemCpu = &pVCpu->iem.s;
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /*
+     * See if there is an interrupt pending in TRPM and inject it if we can.
+     */
+#ifdef IEM_VERIFICATION_MODE_FULL
+    pIemCpu->uInjectCpl = UINT8_MAX;
+#endif
+    if (   pCtx->eflags.Bits.u1IF
+        && TRPMHasTrap(pVCpu)
+        && EMGetInhibitInterruptsPC(pVCpu) != pCtx->rip)
+    {
+        uint8_t     u8TrapNo;
+        TRPMEVENT   enmType;
+        RTGCUINT    uErrCode;
+        RTGCPTR     uCr2;
+        int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, NULL /* pu8InstLen */); AssertRC(rc2);
+        IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2);
+        if (!IEM_VERIFICATION_ENABLED(pIemCpu))
+            TRPMResetTrap(pVCpu);
+    }
+
+    /*
+     * Log the state.
+     */
+#ifdef LOG_ENABLED
+# ifdef IN_RING3
+    if (LogIs2Enabled())
+    {
+        char     szInstr[256];
+        uint32_t cbInstr = 0;
+        DBGFR3DisasInstrEx(pVCpu->pVMR3->pUVM, pVCpu->idCpu, 0, 0,
+                           DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                           szInstr, sizeof(szInstr), &cbInstr);
+
+        Log3(("**** "
+              " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
+              " eip=%08x esp=%08x ebp=%08x iopl=%d\n"
+              " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"
+              " fsw=%04x fcw=%04x ftw=%02x mxcsr=%04x/%04x\n"
+              " %s\n"
+              ,
+              pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
+              pCtx->eip, pCtx->esp, pCtx->ebp, pCtx->eflags.Bits.u2IOPL,
+              pCtx->cs.Sel, pCtx->ss.Sel, pCtx->ds.Sel, pCtx->es.Sel,
+              pCtx->fs.Sel, pCtx->gs.Sel, pCtx->eflags.u,
+              pCtx->fpu.FSW, pCtx->fpu.FCW, pCtx->fpu.FTW, pCtx->fpu.MXCSR, pCtx->fpu.MXCSR_MASK,
+              szInstr));
+
+        if (LogIs3Enabled())
+            DBGFR3Info(pVCpu->pVMR3->pUVM, "cpumguest", "verbose", NULL);
+    }
+    else
+# endif
+        LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x\n",
+                 pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->rsp, pCtx->eflags.u));
+#endif
+
+    /*
+     * Do the decoding and emulation.
+     */
+    VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, false);
+    if (rcStrict == VINF_SUCCESS)
+        rcStrict = iemExecOneInner(pVCpu, pIemCpu, true);
+
+    /*
+     * Maybe re-enter raw-mode and log.
+     */
+#ifdef IN_RC
+    rcStrict = iemRCRawMaybeReenter(pIemCpu, pVCpu, pIemCpu->CTX_SUFF(pCtx), rcStrict);
+#endif
+    if (rcStrict != VINF_SUCCESS)
+        LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",
+                 pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->rsp, pCtx->eflags.u, VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
 }
 
 
