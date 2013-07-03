@@ -130,5 +130,14 @@ else
 	$(QUIET)$(RM) -f -- $$(PcBiosBin_0_OUTDIR)/VBoxPcBios.rom
 endif
 
+
+#
+# Install the symbol file for the BIOS.
+#
+INSTALLS += VBoxPcBiosSym
+VBoxPcBiosSym_TEMPLATE = VBoxDbgSyms
+VBoxPcBiosSym_SOURCES = $(basename $(VBoxPcBios_1_TARGET)).sym
+
+
 include $(FILE_KBUILD_SUB_FOOTER)
 
