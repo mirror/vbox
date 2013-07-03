@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2008-2010 Oracle Corporation
+; Copyright (C) 2008-2013 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -50,5 +50,9 @@
 %endif
 %ifndef xCB
  %error "TEST_BITS is missing or wrong."
+%endif
+
+%if __YASM_MAJOR__ > 1 || (__YASM_MAJOR__ == 1 && __YASM_MINOR__ >= 2)
+ %define pmulhrwa pmulhrw
 %endif
 
