@@ -42,6 +42,8 @@ typedef struct DRVTSTMOUSE
     bool                        fRel;
     /** Is absolute mode currently supported? */
     bool                        fAbs;
+    /** Is multi-touch mode currently supported? */
+    bool                        fMT;
 } DRVTSTMOUSE, *PDRVTSTMOUSE;
 
 
@@ -99,11 +101,12 @@ static DECLCALLBACK(void *) tstMouseQueryInterface(PPDMIBASE pInterface,
  * @interface_method_impl{PDMIMOUSECONNECTOR,pfnReportModes}
  */
 static DECLCALLBACK(void) tstMouseReportModes(PPDMIMOUSECONNECTOR pInterface,
-                                              bool fRel, bool fAbs)
+                                              bool fRel, bool fAbs, bool fMT)
 {
     PDRVTSTMOUSE pDrv = RT_FROM_MEMBER(pInterface, DRVTSTMOUSE, IConnector);
     pDrv->fRel = fRel;
     pDrv->fAbs = fAbs;
+    pDrv->fMT  = fMT;
 }
 
 
