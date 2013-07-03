@@ -333,7 +333,7 @@ BEGINPROC VMXRestoreHostState
     mov         dx, word [rsi + VMXRESTOREHOST.uHostSelTR]
     xor         xAX, xAX
     mov         ax, dx
-    and         al, X86_SEL_MASK                                  ; Mask away TI and RPL bits leaving only the descriptor offset.
+    and         al, ~(X86_SEL_LDT | X86_SEL_RPL)                  ; Mask away TI and RPL bits leaving only the descriptor offset.
     add         xAX, qword [rsi + VMXRESTOREHOST.HostGdtr + 2]    ; xAX <- descriptor offset + GDTR.pGdt.
     and         dword [ss:xAX + 4], ~RT_BIT(9)                    ; Clear the busy flag in TSS (bits 0-7=base, bit 9=busy bit).
     ltr         dx
