@@ -2686,9 +2686,8 @@ static int intnetR0TrunkIfSendGsoFallback(PINTNETTRUNKIF pThis, PINTNETIF pIfSen
         INTNETSG    SG;
     } u;
 
-    /*
-     * @todo: We have to adjust MSS so it does not exceed the value configured
-     * for the host's interface.
+    /** @todo We have to adjust MSS so it does not exceed the value configured for
+     * the host's interface.
      */
 
     /*
