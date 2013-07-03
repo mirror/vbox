@@ -1071,7 +1071,7 @@ static int rtDbgModCvLoadSegmentMap(PRTDBGMODCV pThis)
                 && (paDescs[i].fFlags & (RTCVSEGMAPDESC_F_SEL | RTCVSEGMAPDESC_F_ABS))
                 && paDescs[i].iOverlay == 0
                 && enmImgFmt != RTLDRFMT_PE
-                && enmImgFmt != RTCVFILETYPE_DBG)
+                && pThis->enmType != RTCVFILETYPE_DBG)
                 fHaveDosFrames = true; /* BIOS, only groups with frames. */
         }
     }
