@@ -787,7 +787,8 @@ static void usbHidLinkDone(PUSBHID pThis, PVUSBURB pUrb)
  */
 static int usbHidCompleteStall(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb, const char *pszWhy)
 {
-    Log(("usbHidCompleteStall/#%u: pUrb=%p:%s: %s\n", pThis->pUsbIns->iInstance, pUrb, pUrb->pszDesc, pszWhy));
+    LogRelFlow(("usbHidCompleteStall/#%u: pUrb=%p:%s: %s\n",
+                pThis->pUsbIns->iInstance, pUrb, pUrb->pszDesc, pszWhy));
 
     pUrb->enmStatus = VUSBSTATUS_STALL;
 
@@ -810,7 +811,8 @@ static int usbHidCompleteStall(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb, cons
  */
 static int usbHidCompleteOk(PUSBHID pThis, PVUSBURB pUrb, size_t cbData)
 {
-    Log(("usbHidCompleteOk/#%u: pUrb=%p:%s cbData=%#zx\n", pThis->pUsbIns->iInstance, pUrb, pUrb->pszDesc, cbData));
+    LogRelFlow(("usbHidCompleteOk/#%u: pUrb=%p:%s cbData=%#zx\n",
+                pThis->pUsbIns->iInstance, pUrb, pUrb->pszDesc, cbData));
 
     pUrb->enmStatus = VUSBSTATUS_OK;
     pUrb->cbData    = (uint32_t)cbData;
@@ -895,7 +897,9 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
         pReport->t.dz  = clamp_i8(pAccumulated->dZ);
 
         cbCopy = sizeof(pReport->t);
-//        LogRel(("Abs movement, X=%d, Y=%d, dZ=%d, btn=%02x, report size %d\n", pReport->t.cx, pReport->t.cy, pReport->t.dz, pReport->t.btn, cbCopy));
+        LogRel3(("Abs event, X=%d, Y=%d, dZ=%d, btn=%02x, report size %d\n",
+                 pReport->t.cx, pReport->t.cy, pReport->t.dz, pReport->t.btn,
+                 cbCopy));
         break;
     }
     case USBHIDMODE_RELATIVE:
@@ -906,7 +910,9 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
         pReport->m.dz  = clamp_i8(pAccumulated->dZ);
     
         cbCopy = sizeof(pReport->m);
-//        LogRel(("Rel movement, dX=%d, dY=%d, dZ=%d, btn=%02x, report size %d\n", pReport->m.dx, pReport->m.dy, pReport->m.dz, pReport->m.btn, cbCopy));
+        LogRel3(("Rel event, dX=%d, dY=%d, dZ=%d, btn=%02x, report size %d\n",
+                 pReport->m.dx, pReport->m.dy, pReport->m.dz, pReport->m.btn,
+                 cbCopy));
         break;
     }
     case USBHIDMODE_MULTI_TOUCH:
@@ -949,7 +955,7 @@ static int usbHidSendReport(PUSBHID pThis)
     }
     else
     {
-        Log2(("No available URB for USB mouse\n"));
+        LogRelFlow(("No available URB for USB mouse\n"));
         pThis->fHasPendingChanges = true;
     }
     return VINF_EOF;
@@ -1038,7 +1044,7 @@ static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface, uint3
 static DECLCALLBACK(PVUSBURB) usbHidUrbReap(PPDMUSBINS pUsbIns, RTMSINTERVAL cMillies)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidUrbReap/#%u: cMillies=%u\n", pUsbIns->iInstance, cMillies));
+    LogRelFlow(("usbHidUrbReap/#%u: cMillies=%u\n", pUsbIns->iInstance, cMillies));
 
     RTCritSectEnter(&pThis->CritSect);
 
@@ -1060,7 +1066,8 @@ static DECLCALLBACK(PVUSBURB) usbHidUrbReap(PPDMUSBINS pUsbIns, RTMSINTERVAL cMi
     RTCritSectLeave(&pThis->CritSect);
 
     if (pUrb)
-        Log(("usbHidUrbReap/#%u: pUrb=%p:%s\n", pUsbIns->iInstance, pUrb, pUrb->pszDesc));
+        LogRelFlow(("usbHidUrbReap/#%u: pUrb=%p:%s\n", pUsbIns->iInstance, pUrb,
+                    pUrb->pszDesc));
     return pUrb;
 }
 
@@ -1071,7 +1078,8 @@ static DECLCALLBACK(PVUSBURB) usbHidUrbReap(PPDMUSBINS pUsbIns, RTMSINTERVAL cMi
 static DECLCALLBACK(int) usbHidUrbCancel(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidUrbCancel/#%u: pUrb=%p:%s\n", pUsbIns->iInstance, pUrb, pUrb->pszDesc));
+    LogRelFlow(("usbHidUrbCancel/#%u: pUrb=%p:%s\n", pUsbIns->iInstance, pUrb,
+                pUrb->pszDesc));
     RTCritSectEnter(&pThis->CritSect);
 
     /*
@@ -1109,7 +1117,7 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
         case USBHIDREQSTATE_DATA_TO_HOST:
         {
             AssertFailed();
-            Log(("usbHidHandleIntrDevToHost: Entering STATUS\n"));
+            LogRelFlow(("usbHidHandleIntrDevToHost: Entering STATUS\n"));
             return usbHidCompleteOk(pThis, pUrb, 0);
         }
 
@@ -1119,7 +1127,7 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
         case USBHIDREQSTATE_STATUS:
         {
             AssertFailed();
-            Log(("usbHidHandleIntrDevToHost: Entering READY\n"));
+            LogRelFlow(("usbHidHandleIntrDevToHost: Entering READY\n"));
             pThis->enmState = USBHIDREQSTATE_READY;
             return usbHidCompleteOk(pThis, pUrb, 0);
         }
@@ -1129,14 +1137,16 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
             /* If a report is pending, send it right away. */
             if (pThis->fHasPendingChanges)
                 usbHidSendReport(pThis);
-            LogFlow(("usbHidHandleIntrDevToHost: Added %p:%s to the queue\n", pUrb, pUrb->pszDesc));
+            LogRelFlow(("usbHidHandleIntrDevToHost: Added %p:%s to the queue\n",
+                        pUrb, pUrb->pszDesc));
             return VINF_SUCCESS;
 
         /*
          * Bad states, stall.
          */
         default:
-            Log(("usbHidHandleIntrDevToHost: enmState=%d cbData=%#x\n", pThis->enmState, pUrb->cbData));
+            LogRelFlow(("usbHidHandleIntrDevToHost: enmState=%d cbData=%#x\n",
+                        pThis->enmState, pUrb->cbData));
             return usbHidCompleteStall(pThis, NULL, pUrb, "Really bad state (D2H)!");
     }
 }
@@ -1163,10 +1173,12 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         switch (pSetup->wValue >> 8)
                         {
                             case VUSB_DT_STRING:
-                                Log(("usbHid: GET_DESCRIPTOR DT_STRING wValue=%#x wIndex=%#x\n", pSetup->wValue, pSetup->wIndex));
+                                LogRelFlow(("usbHid: GET_DESCRIPTOR DT_STRING wValue=%#x wIndex=%#x\n",
+                                            pSetup->wValue, pSetup->wIndex));
                                 break;
                             default:
-                                Log(("usbHid: GET_DESCRIPTOR, huh? wValue=%#x wIndex=%#x\n", pSetup->wValue, pSetup->wIndex));
+                                LogRelFlow(("usbHid: GET_DESCRIPTOR, huh? wValue=%#x wIndex=%#x\n",
+                                            pSetup->wValue, pSetup->wIndex));
                                 break;
                         }
                         break;
@@ -1206,7 +1218,9 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                                 /* Returned data is written after the setup message. */
                                 cbCopy = pUrb->cbData - sizeof(*pSetup);
                                 cbCopy = RT_MIN(cbCopy, cbDesc);
-                                Log(("usbHidMouse: GET_DESCRIPTOR DT_IF_HID_DESCRIPTOR wValue=%#x wIndex=%#x cbCopy=%#x\n", pSetup->wValue, pSetup->wIndex, cbCopy));
+                                LogRelFlow(("usbHidMouse: GET_DESCRIPTOR DT_IF_HID_DESCRIPTOR wValue=%#x wIndex=%#x cbCopy=%#x\n",
+                                            pSetup->wValue, pSetup->wIndex,
+                                            cbCopy));
                                 memcpy(&pUrb->abData[sizeof(*pSetup)], pDesc, cbCopy);
                                 return usbHidCompleteOk(pThis, pUrb, cbCopy + sizeof(*pSetup));
                             }
@@ -1237,20 +1251,24 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                                 /* Returned data is written after the setup message. */
                                 cbCopy = pUrb->cbData - sizeof(*pSetup);
                                 cbCopy = RT_MIN(cbCopy, cbDesc);
-                                Log(("usbHid: GET_DESCRIPTOR DT_IF_HID_REPORT wValue=%#x wIndex=%#x cbCopy=%#x\n", pSetup->wValue, pSetup->wIndex, cbCopy));
+                                LogRelFlow(("usbHid: GET_DESCRIPTOR DT_IF_HID_REPORT wValue=%#x wIndex=%#x cbCopy=%#x\n",
+                                            pSetup->wValue, pSetup->wIndex,
+                                            cbCopy));
                                 memcpy(&pUrb->abData[sizeof(*pSetup)], pDesc, cbCopy);
                                 return usbHidCompleteOk(pThis, pUrb, cbCopy + sizeof(*pSetup));
                             }
 
                             default:
-                                Log(("usbHid: GET_DESCRIPTOR, huh? wValue=%#x wIndex=%#x\n", pSetup->wValue, pSetup->wIndex));
+                                LogRelFlow(("usbHid: GET_DESCRIPTOR, huh? wValue=%#x wIndex=%#x\n",
+                                            pSetup->wValue, pSetup->wIndex));
                                 break;
                         }
                         break;
                     }
 
                     default:
-                        Log(("usbHid: Bad GET_DESCRIPTOR req: bmRequestType=%#x\n", pSetup->bmRequestType));
+                        LogRelFlow(("usbHid: Bad GET_DESCRIPTOR req: bmRequestType=%#x\n",
+                                    pSetup->bmRequestType));
                         return usbHidCompleteStall(pThis, pEp, pUrb, "Bad GET_DESCRIPTOR");
                 }
                 break;
@@ -1262,7 +1280,8 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
 
                 if (pSetup->wLength != 2)
                 {
-                    Log(("usbHid: Bad GET_STATUS req: wLength=%#x\n", pSetup->wLength));
+                    LogRelFlow(("usbHid: Bad GET_STATUS req: wLength=%#x\n",
+                                pSetup->wLength));
                     break;
                 }
                 Assert(pSetup->wValue == 0);
@@ -1271,7 +1290,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                     case VUSB_TO_DEVICE | VUSB_REQ_STANDARD | VUSB_DIR_TO_HOST:
                     {
                         Assert(pSetup->wIndex == 0);
-                        Log(("usbHid: GET_STATUS (device)\n"));
+                        LogRelFlow(("usbHid: GET_STATUS (device)\n"));
                         wRet = 0;   /* Not self-powered, no remote wakeup. */
                         memcpy(&pUrb->abData[sizeof(*pSetup)], &wRet, sizeof(wRet));
                         return usbHidCompleteOk(pThis, pUrb, sizeof(wRet) + sizeof(*pSetup));
@@ -1286,7 +1305,8 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         }
                         else
                         {
-                            Log(("usbHid: GET_STATUS (interface) invalid, wIndex=%#x\n", pSetup->wIndex));
+                            LogRelFlow(("usbHid: GET_STATUS (interface) invalid, wIndex=%#x\n",
+                                        pSetup->wIndex));
                         }
                         break;
                     }
@@ -1301,13 +1321,15 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         }
                         else
                         {
-                            Log(("usbHid: GET_STATUS (endpoint) invalid, wIndex=%#x\n", pSetup->wIndex));
+                            LogRelFlow(("usbHid: GET_STATUS (endpoint) invalid, wIndex=%#x\n",
+                                        pSetup->wIndex));
                         }
                         break;
                     }
 
                     default:
-                        Log(("usbHid: Bad GET_STATUS req: bmRequestType=%#x\n", pSetup->bmRequestType));
+                        LogRelFlow(("usbHid: Bad GET_STATUS req: bmRequestType=%#x\n",
+                                    pSetup->bmRequestType));
                         return usbHidCompleteStall(pThis, pEp, pUrb, "Bad GET_STATUS");
                 }
                 break;
@@ -1318,8 +1340,9 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
         }
 
         /** @todo implement this. */
-        Log(("usbHid: Implement standard request: bmRequestType=%#x bRequest=%#x wValue=%#x wIndex=%#x wLength=%#x\n",
-             pSetup->bmRequestType, pSetup->bRequest, pSetup->wValue, pSetup->wIndex, pSetup->wLength));
+        LogRelFlow(("usbHid: Implement standard request: bmRequestType=%#x bRequest=%#x wValue=%#x wIndex=%#x wLength=%#x\n",
+                    pSetup->bmRequestType, pSetup->bRequest, pSetup->wValue,
+                    pSetup->wIndex, pSetup->wLength));
 
         usbHidCompleteStall(pThis, pEp, pUrb, "TODO: standard request stuff");
     }
@@ -1330,13 +1353,14 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
              &&  !pSetup->wLength
              &&  pSetup->wIndex == 0)
     {
-        Log(("usbHidHandleDefaultPipe: Bulk-Only Mass Storage Reset\n"));
+        LogRelFlow(("usbHidHandleDefaultPipe: Bulk-Only Mass Storage Reset\n"));
         return usbHidResetWorker(pThis, pUrb, false /*fSetConfig*/);
     }
     else
     {
-        Log(("usbHid: Unknown control msg: bmRequestType=%#x bRequest=%#x wValue=%#x wIndex=%#x wLength=%#x\n",
-             pSetup->bmRequestType, pSetup->bRequest, pSetup->wValue, pSetup->wIndex, pSetup->wLength));
+        LogRelFlow(("usbHid: Unknown control msg: bmRequestType=%#x bRequest=%#x wValue=%#x wIndex=%#x wLength=%#x\n",
+                    pSetup->bmRequestType, pSetup->bRequest, pSetup->wValue,
+                    pSetup->wIndex, pSetup->wLength));
         return usbHidCompleteStall(pThis, pEp, pUrb, "Unknown control msg");
     }
 
@@ -1350,7 +1374,8 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
 static DECLCALLBACK(int) usbHidQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidQueue/#%u: pUrb=%p:%s EndPt=%#x\n", pUsbIns->iInstance, pUrb, pUrb->pszDesc, pUrb->EndPt));
+    LogRelFlow(("usbHidQueue/#%u: pUrb=%p:%s EndPt=%#x\n", pUsbIns->iInstance,
+                pUrb, pUrb->pszDesc, pUrb->EndPt));
     RTCritSectEnter(&pThis->CritSect);
 
     /*
@@ -1386,7 +1411,8 @@ static DECLCALLBACK(int) usbHidQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 static DECLCALLBACK(int) usbHidUsbClearHaltedEndpoint(PPDMUSBINS pUsbIns, unsigned uEndpoint)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidUsbClearHaltedEndpoint/#%u: uEndpoint=%#x\n", pUsbIns->iInstance, uEndpoint));
+    LogRelFlow(("usbHidUsbClearHaltedEndpoint/#%u: uEndpoint=%#x\n",
+                pUsbIns->iInstance, uEndpoint));
 
     if ((uEndpoint & ~0x80) < RT_ELEMENTS(pThis->aEps))
     {
@@ -1404,7 +1430,8 @@ static DECLCALLBACK(int) usbHidUsbClearHaltedEndpoint(PPDMUSBINS pUsbIns, unsign
  */
 static DECLCALLBACK(int) usbHidUsbSetInterface(PPDMUSBINS pUsbIns, uint8_t bInterfaceNumber, uint8_t bAlternateSetting)
 {
-    LogFlow(("usbHidUsbSetInterface/#%u: bInterfaceNumber=%u bAlternateSetting=%u\n", pUsbIns->iInstance, bInterfaceNumber, bAlternateSetting));
+    LogRelFlow(("usbHidUsbSetInterface/#%u: bInterfaceNumber=%u bAlternateSetting=%u\n",
+                pUsbIns->iInstance, bInterfaceNumber, bAlternateSetting));
     Assert(bAlternateSetting == 0);
     return VINF_SUCCESS;
 }
@@ -1417,7 +1444,8 @@ static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t b
                                                    const void *pvOldCfgDesc, const void *pvOldIfState, const void *pvNewCfgDesc)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidUsbSetConfiguration/#%u: bConfigurationValue=%u\n", pUsbIns->iInstance, bConfigurationValue));
+    LogRelFlow(("usbHidUsbSetConfiguration/#%u: bConfigurationValue=%u\n",
+                pUsbIns->iInstance, bConfigurationValue));
     Assert(bConfigurationValue == 1);
     RTCritSectEnter(&pThis->CritSect);
 
@@ -1446,7 +1474,7 @@ static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t b
 static DECLCALLBACK(PCPDMUSBDESCCACHE) usbHidUsbGetDescriptorCache(PPDMUSBINS pUsbIns)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidUsbGetDescriptorCache/#%u:\n", pUsbIns->iInstance));
+    LogRelFlow(("usbHidUsbGetDescriptorCache/#%u:\n", pUsbIns->iInstance));
     switch (pThis->enmMode)
     {
     case USBHIDMODE_ABSOLUTE:
@@ -1467,7 +1495,7 @@ static DECLCALLBACK(PCPDMUSBDESCCACHE) usbHidUsbGetDescriptorCache(PPDMUSBINS pU
 static DECLCALLBACK(int) usbHidUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidUsbReset/#%u:\n", pUsbIns->iInstance));
+    LogRelFlow(("usbHidUsbReset/#%u:\n", pUsbIns->iInstance));
     RTCritSectEnter(&pThis->CritSect);
 
     int rc = usbHidResetWorker(pThis, NULL, false /*fSetConfig*/);
@@ -1483,7 +1511,7 @@ static DECLCALLBACK(int) usbHidUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
 static void usbHidDestruct(PPDMUSBINS pUsbIns)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogFlow(("usbHidDestruct/#%u:\n", pUsbIns->iInstance));
+    LogRelFlow(("usbHidDestruct/#%u:\n", pUsbIns->iInstance));
 
     if (RTCritSectIsInitialized(&pThis->CritSect))
     {
@@ -1507,7 +1535,7 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     bool isAbsolute;
-    Log(("usbHidConstruct/#%u:\n", iInstance));
+    LogRelFlow(("usbHidConstruct/#%u:\n", iInstance));
 
     /*
      * Perform the basic structure initialization first so the destructor
