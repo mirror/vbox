@@ -564,29 +564,27 @@ DECLINLINE(bool) vboxNetFltLinuxIsGso(PINTNETSG pSG)
  */
 DECLINLINE(uint32_t) vboxNetFltLinuxFrameSize(PINTNETSG pSG)
 {
-    RTNETETHERHDR EthHdr;
-    uint16_t      u16Type = 0;
-    uint32_t      cbVlanTag = 0;
-    if (pSG->aSegs[0].cb >= sizeof(EthHdr))
+    uint16_t u16Type = 0;
+    uint32_t cbVlanTag = 0;
+    if (pSG->aSegs[0].cb >= sizeof(RTNETETHERHDR))
         u16Type = RT_BE2H_U16(((PCRTNETETHERHDR)pSG->aSegs[0].pv)->EtherType);
-    else if (pSG->cbTotal >= sizeof(EthHdr))
+    else if (pSG->cbTotal >= sizeof(RTNETETHERHDR))
     {
-        uint32_t i, uOffset = RT_OFFSETOF(RTNETETHERHDR, EtherType);
+        uint32_t off = RT_OFFSETOF(RTNETETHERHDR, EtherType);
+        uint32_t i;
         for (i = 0; i < pSG->cSegsUsed; ++i)
         {
-            if (uOffset > pSG->aSegs[i].cb)
+            if (off <= pSG->aSegs[i].cb)
             {
-                uOffset -= pSG->aSegs[i].cb;
-                continue;
+                if (off + sizeof(uint16_t) <= pSG->aSegs[i].cb)
+                    u16Type = RT_BE2H_U16(*(uint16_t *)((uintptr_t)pSG->aSegs[i].pv + off));
+                else if (i + 1 < pSG->cSegsUsed)
+                    u16Type = RT_BE2H_U16(  ((uint16_t)( ((uint8_t *)pSG->aSegs[i].pv)[off] ) << 8)
+                                          + *(uint8_t *)pSG->aSegs[i + 1].pv); /* ASSUMES no empty segments! */
+                /* else: frame is too short. */
+                break;
             }
-            if (uOffset + sizeof(uint16_t) > pSG->aSegs[i].cb)
-            {
-                if (i + 1 < pSG->cSegsUsed)
-                    u16Type = RT_BE2H_U16(  ((uint16_t)( ((uint8_t*)pSG->aSegs[i].pv)[uOffset] ) << 8)
-                                          + *(uint8_t*)pSG->aSegs[i + 1].pv);
-            }
-            else
-                u16Type = RT_BE2H_U16(*(uint16_t*)((uint8_t*)pSG->aSegs[i].pv + uOffset));
+            off -= pSG->aSegs[i].cb;
         }
     }
     if (u16Type == RTNET_ETHERTYPE_VLAN)
@@ -618,10 +616,10 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
     Log5(("VBoxNetFlt: Packet to %s of %d bytes (frame=%d).\n", fDstWire?"wire":"host", pSG->cbTotal, vboxNetFltLinuxFrameSize(pSG)));
     if (fDstWire && (vboxNetFltLinuxFrameSize(pSG) > ASMAtomicReadU32(&pThis->u.s.cbMtu) + 14))
     {
-        static bool fOnce = true;
-        if (fOnce)
+        static bool s_fOnce = true;
+        if (s_fOnce)
         {
-            fOnce = false;
+            s_fOnce = false;
             printk("VBoxNetFlt: Dropped over-sized packet (%d bytes) coming from internal network.\n", vboxNetFltLinuxFrameSize(pSG));
         }
         return NULL;
