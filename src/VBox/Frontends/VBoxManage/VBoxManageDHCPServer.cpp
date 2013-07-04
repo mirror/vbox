@@ -296,7 +296,8 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                                          VmNameSlotKey::VmNameSlotKey(pszVmName, 
                                                                       u8Slot)] 
                                        : GlobalDhcpOptions);
-                    map[u8OptId] = std::string(ValueUnion.psz);
+                    std::string strVal = ValueUnion.psz;
+                    map.insert(DhcpOptValuePair(u8OptId, strVal);
 
                 }
                 break; // --end of value
