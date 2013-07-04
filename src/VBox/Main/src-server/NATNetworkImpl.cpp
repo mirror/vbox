@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "DHCPServerRunner.h"
+#include "NetworkServiceRunner.h"
 #include "DHCPServerImpl.h"
 #include "NATNetworkImpl.h"
 #include "AutoCaller.h"
@@ -34,7 +34,6 @@
 #include "EventImpl.h"
 #include "VBoxEvents.h"
 
-#include "NATNetworkServiceRunner.h"
 #include "VirtualBoxImpl.h"
 
 
@@ -631,28 +630,13 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->fEnabled) return S_OK;
-    m->NATRunner.setOption(NATSCCFG_NAME, mName, true);
-    m->NATRunner.setOption(NATSCCFG_TRUNKTYPE, Utf8Str(aTrunkType), true);
-    m->NATRunner.setOption(NATSCCFG_IPADDRESS, m->IPv4Gateway, true);
-    m->NATRunner.setOption(NATSCCFG_NETMASK, m->IPv4NetworkMask, true);
-    
-    /* port-forwarding */
-    
-    for (constNATRuleMapIterator it = m->mapName2PortForwardRule4.begin();
-	 it != m->mapName2PortForwardRule4.end(); ++it)
-    {
-	settings::NATRule r = it->second;
-	m->NATRunner.setOption(NATSCCFG_PORTFORWARD4, 
-			       Bstr(Utf8StrFmt("%s:%d:[%s]:%d:[%s]:%d",
-					       r.strName.c_str(),
-					       r.proto,
-					       r.strHostIP.isEmpty() ? 
-					              "0.0.0.0" :
-					               r.strHostIP.c_str(),
-					       r.u16HostPort,
-					       r.strGuestIP.c_str(),
-					       r.u16GuestPort)), true);
-    }
+
+    m->NATRunner.setOption(NETCFG_NETNAME, mName, true);
+    m->NATRunner.setOption(NETCFG_TRUNKTYPE, Utf8Str(aTrunkType), true);
+    m->NATRunner.setOption(NETCFG_IPADDRESS, m->IPv4Gateway, true);
+    m->NATRunner.setOption(NETCFG_NETMASK, m->IPv4NetworkMask, true);
+
+    /* No portforwarding rules from command-line, all will be fetched via API */
 
     if (m->fNeedDhcpServer)
     {
@@ -681,34 +665,37 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
                 if (FAILED(rc))
                   return E_FAIL;
                 /* breakthrough */
-            case S_OK:
+
             {
                 LogFunc(("gateway: %s, dhcpserver:%s, dhcplowerip:%s, dhcpupperip:%s\n", 
                          Utf8Str(m->IPv4Gateway.raw()).c_str(), 
                          Utf8Str(m->IPv4DhcpServer.raw()).c_str(),
                          Utf8Str(m->IPv4DhcpServerLowerIp.raw()).c_str(), 
                          Utf8Str(m->IPv4DhcpServerUpperIp.raw()).c_str()));
-                         
+
+                m->dhcpServer->AddGlobalOption(DhcpOpt_Router, m->IPv4Gateway.raw());
 
                 rc = m->dhcpServer->SetEnabled(true);
+
                 BSTR dhcpip = NULL;
                 BSTR netmask = NULL;
                 BSTR lowerip = NULL;
                 BSTR upperip = NULL;
+
                 m->IPv4DhcpServer.cloneTo(&dhcpip);
                 m->IPv4NetworkMask.cloneTo(&netmask);
-                
                 m->IPv4DhcpServerLowerIp.cloneTo(&lowerip); 
                 m->IPv4DhcpServerUpperIp.cloneTo(&upperip);
                 rc = m->dhcpServer->SetConfiguration(dhcpip, 
                                                      netmask,
                                                      lowerip,
                                                      upperip);
-            break;
             }
-            
-        default:
-            return E_FAIL;
+            case S_OK:
+                break;
+                
+            default:
+                return E_FAIL;
         }
 
         rc = m->dhcpServer->Start(mName.raw(), Bstr("").raw(), aTrunkType);
@@ -727,7 +714,7 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
     else return E_FAIL;
 #else
     NOREF(aTrunkType);
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -740,9 +727,8 @@ STDMETHODIMP NATNetwork::Stop()
         return S_OK;
     }
     else return E_FAIL;
-        
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -817,7 +803,12 @@ int NATNetwork::RecalculateIpv4AddressAssignments()
         m->IPv4DhcpServer = aszDhcpIp;
         m->IPv4DhcpServerLowerIp = aszDhcpLowerIp;
         m->IPv4DhcpServerUpperIp = aszDhcpUpperIp;
-        LogFunc(("network: %RTnaipv4, dhcpserver:%RTnaipv4, dhcplowerip:%RTnaipv4, dhcpupperip:%RTnaipv4\n", network, dhcpserver, dhcplowerip, dhcpupperip));
+
+        LogFunc(("network: %RTnaipv4, dhcpserver:%RTnaipv4, dhcplowerip:%RTnaipv4, dhcpupperip:%RTnaipv4\n", 
+                 network, 
+                 dhcpserver, 
+                 dhcplowerip, 
+                 dhcpupperip));
     }
     /* we need IPv4NetworkMask for NAT's gw service start */
     netmask.u = RT_H2N_U32(netmask.u);

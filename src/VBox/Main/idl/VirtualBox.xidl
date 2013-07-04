@@ -1465,9 +1465,77 @@
     <method name="stop"/>
   </interface>
 
+  <enum 
+      name="DhcpOpt"
+      uuid="40d99bd3-3ece-44d2-a07e-1085fe9c4f0b">
+    <const name="SubnetMask" value="1"/>
+    <const name="TimeOffset" value="2"/>
+    <const name="Router" value="3"/>
+    <const name="TimeServer" value="4"/>
+    <const name="NameServer" value="5"/>
+    <const name="DomainNameServer" value="6"/>
+    <const name="LogServer" value="7"/>
+    <const name="Cookie" value="8"/>
+    <const name="LPRServer" value="9"/>
+    <const name="ImpressServer" value="10"/>
+    <const name="ResourseLocationServer" value="11"/>
+    <const name="HostName" value="12"/>
+    <const name="BootFileSize" value="13"/>
+    <const name="MeritDumpFile" value="14"/>    
+    <const name="DomainName" value="15"/>
+    <const name="SwapServer" value="16"/>
+    <const name="RootPath" value="17"/>
+    <const name="ExtensionPath" value="18"/>
+    <const name="IPForwardingEnableDisable" value="19"/>
+    <const name="NonLocalSourceRoutingEnableDisable" value="20"/>
+    <const name="PolicyFilter" value="21"/>
+    <const name="MaximumDatagramReassemblySize" value="22"/>
+    <const name="DefaultIPTime2Live" value="23"/>
+    <const name="PathMTUAgingTimeout" value="24"/>
+    <const name="IPLayerParametersPerInterface" value="25"/>
+    <const name="InterfaceMTU" value="26"/>
+    <const name="AllSubnetsAreLocal" value="27"/>
+    <const name="BroadcastAddress" value="28"/>
+    <const name="PerformMaskDiscovery" value="29"/>
+    <const name="MaskSupplier" value="30"/>
+    <const name="PerformRouteDiscovery" value="31"/>
+    <const name="RouterSolicitationAddress" value="32"/>
+    <const name="StaticRoute" value="33"/>
+    <const name="TrailerEncapsulation" value="34"/>
+    <const name="ARPCacheTimeout" value="35"/>
+    <const name="EthernetEncapsulation" value="36"/>
+    <const name="TCPDefaultTTL" value="37"/>
+    <const name="TCPKeepAliveInterval" value="38"/>
+    <const name="TCPKeepAliveGarbage" value="39"/>
+    <const name="NetworkInformationServiceDomain" value="40"/>
+    <const name="NetworkInformationServiceServers" value="41"/>
+    <const name="NetworkTimeProtocolServers" value="42"/>
+    <const name="VendorSpecificInformation" value="43"/>
+    <const name="Option_44" value="44"/>
+    <const name="Option_45" value="45"/>
+    <const name="Option_46" value="46"/>
+    <const name="Option_47" value="47"/>
+    <const name="Option_48" value="48"/>
+    <const name="Option_49" value="49"/>
+    <const name="IPAddressLeaseTime" value="51"/>
+    <const name="Option_64" value="64"/>
+    <const name="Option_65" value="65"/>
+    <const name="TFTPServerName" value="66"/>
+    <const name="BootfileName" value="67"/>
+    <const name="Option_68" value="68"/>
+    <const name="Option_69" value="69"/>
+    <const name="Option_70" value="70"/>
+    <const name="Option_71" value="71"/>
+    <const name="Option_72" value="72"/>
+    <const name="Option_73" value="73"/>
+    <const name="Option_74" value="74"/>
+    <const name="Option_75" value="75"/>
+    <const name="Option_119" value="119"/>
+  </enum>
+  
   <interface
     name="IDHCPServer" extends="$unknown"
-    uuid="6cfe387c-74fb-4ca7-bff6-973bec8af7a3"
+    uuid="ff0774c5-1f62-4bc3-919c-7fc942bf1d25"
     wsmap="managed"
     >
     <desc>
@@ -1476,7 +1544,8 @@
       To enumerate all the DHCP servers on the host, use the
       <link to="IVirtualBox::DHCPServers"/> attribute.
     </desc>
-
+    <!-- We want to keep our "real" servers updated about configuration changes -->
+    <attribute name="eventSource" type="IEventSource" readonly="yes"/>
     <attribute name="enabled" type="boolean">
       <desc>
         specifies if the DHCP server is enabled
@@ -1512,6 +1581,62 @@
         specifies to IP address in server address range
       </desc>
     </attribute>
+    
+    <method name="addGlobalOption">
+      <param name="option" type="DhcpOpt" dir="in"/>
+      <param name="value" type="wstring" dir="in" />
+    </method>
+    
+    <!-- string in format: "option_id:value" -->
+    <attribute name="globalOptions" type="wstring" safearray="yes" readonly="yes"/>
+
+    <!-- string in format: "[vm name]:slot" -->
+    <attribute name="vmConfigs" type="wstring" safearray="yes" readonly="yes"/>
+
+    <!-- VM-slot settings 
+	 It's corresponds to dhcpd.conf entries, like:
+
+	 host ncd1 { hardware ethernet 0:c0:c3:11:90:23; }
+
+	 - in Main we can match (vm name, slot) to ethernet address
+	 that why it's easy to configure dhcp server in such way, 
+	 then ask user to to enter valid name, 
+	 
+	 - mac address might change because of adapter type (e1k <-> pcnet) or because
+	 of import/export
+	 
+	 - it's easy to provide vm-name.rom in boot filename VM with network boot.
+	 
+	 XXX: do we need classic getOptionValueByMAC?
+	 
+	 XML: O-o-oh, this settings are per VM, so perhaps they should be stored in
+	      VM configuration files. And we haven't got the attachment type for 
+	      NATNetwork.
+    -->
+    <method name="addVmSlotOption">
+      <param name="vmname" type="wstring" dir="in"/>
+      <param name="slot" type="long" dir="in"/>
+      <param name="option" type="DhcpOpt" dir="in"/>
+      <param name="value" type="wstring" dir="in" />
+    </method>
+
+    <method name="removeVmSlotOptions">
+      <param name="vmname" type="wstring" dir="in"/>
+      <param name="slot" type="long" dir="in"/>
+    </method>
+
+    <!-- returns array of strings in format: "option_id:value" for a given pair (vm, slot) -->
+    <method name="getVmSlotOptions">
+      <param name="vmname" type="wstring" dir="in"/>
+      <param name="slot" type="long" dir="in"/>
+      <param name="option" type="wstring" safearray="yes" dir="return"/>
+    </method>
+    
+    <!-- Returns options by MAC address -->
+    <method name="getMacOptions">
+      <param name="mac" type="wstring" dir="in"/>
+      <param name="option" type="wstring" safearray="yes" dir="return"/>
+    </method>
 
     <method name="setConfiguration">
       <desc>
@@ -8037,7 +8162,7 @@
 
   <interface
     name="IHost" extends="$unknown"
-    uuid="30678943-32df-4830-b413-931b25ac86a0"
+    uuid="a6107246-f939-42c4-82b6-8aca40327b6d"
     wsmap="managed"
     >
     <desc>
@@ -8098,6 +8223,18 @@
 
     <attribute name="networkInterfaces" type="IHostNetworkInterface" safearray="yes" readonly="yes">
       <desc>List of host network interfaces currently defined on the host.</desc>
+    </attribute>
+
+    <attribute name="nameServers" type="wstring" safearray="yes" readonly="yes">
+      <desc> The list of nameservers registered in host's name resolving system.</desc>
+    </attribute>
+
+    <attribute name="domainName" type="wstring" readonly="yes">
+      <desc>Domain name used for name resoving.</desc>
+    </attribute>
+
+    <attribute name="searchStrings" type="wstring" safearray="yes" readonly="yes">
+      <desc>Search string registered for name resoving.</desc>
     </attribute>
 
     <attribute name="processorCount" type="unsigned long" readonly="yes">
