@@ -52,6 +52,7 @@ my_files=""
 test -f "${HOME}/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist"  && my_files="$my_files ${HOME}/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist"
 
 test -d /Library/StartupItems/VirtualBox/          && my_directories="$my_directories /Library/StartupItems/VirtualBox/"
+test -d /Library/Receipts/VBoxStartupItems.pkg/    && my_directories="$my_directories /Library/Receipts/VBoxStartupItems.pkg/"
 
 test -d /Library/Extensions/VBoxDrv.kext/          && my_directories="$my_directories /Library/Extensions/VBoxDrv.kext/"
 test -d /Library/Extensions/VBoxUSB.kext/          && my_directories="$my_directories /Library/Extensions/VBoxUSB.kext/"
@@ -61,6 +62,7 @@ test -d /Library/Extensions/VBoxNetAdp.kext/       && my_directories="$my_direct
 # VirtualBox versions
 test -d /Library/Extensions/VBoxDrvTiger.kext/     && my_directories="$my_directories /Library/Extensions/VBoxDrvTiger.kext/" 
 test -d /Library/Extensions/VBoxUSBTiger.kext/     && my_directories="$my_directories /Library/Extensions/VBoxUSBTiger.kext/"
+test -d /Library/Receipts/VBoxKEXTs.pkg/           && my_directories="$my_directories /Library/Receipts/VBoxKEXTs.pkg/"
 
 test -f /usr/bin/VirtualBox                        && my_files="$my_files /usr/bin/VirtualBox"
 test -f /usr/bin/VBoxManage                        && my_files="$my_files /usr/bin/VBoxManage"
@@ -70,8 +72,14 @@ test -f /usr/bin/vboxwebsrv                        && my_files="$my_files /usr/b
 test -f /usr/bin/VBoxBalloonCtrl                   && my_files="$my_files /usr/bin/VBoxBalloonCtrl"
 test -f /usr/bin/VBoxAutostart                     && my_files="$my_files /usr/bin/VBoxAutostart"
 test -f /usr/bin/vbox-img                          && my_files="$my_files /usr/bin/vbox-img"
+test -d /Library/Receipts/VirtualBoxCLI.pkg/       && my_directories="$my_directories /Library/Receipts/VirtualBoxCLI.pkg/"
 
 test -d /Applications/VirtualBox.app/              && my_directories="$my_directories /Applications/VirtualBox.app/"
+test -d /Library/Receipts/VirtualBox.pkg/          && my_directories="$my_directories /Library/Receipts/VirtualBox.pkg/"
+
+# legacy
+test -d /Library/Receipts/VBoxDrv.pkg/             && my_directories="$my_directories /Library/Receipts/VBoxDrv.pkg/"
+test -d /Library/Receipts/VBoxUSB.pkg/             && my_directories="$my_directories /Library/Receipts/VBoxUSB.pkg/"
 
 # python stuff
 python_versions="2.3 2.5 2.6 2.7"
