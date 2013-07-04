@@ -39,6 +39,10 @@
 
 #include "VBoxManage.h"
 
+#include <string>
+#include <vector>
+#include <map>
+
 #ifndef VBOX_ONLY_DOCS
 using namespace com;
 
@@ -48,6 +52,37 @@ typedef enum enMainOpCodes
     OP_REMOVE,
     OP_MODIFY
 } OPCODE;
+
+typedef std::map<DhcpOpt_T, std::string> DhcpOptMap;
+typedef DhcpOptMap::iterator DhcpOptIterator;
+typedef DhcpOptMap::value_type DhcpOptValuePair;
+
+struct VmNameSlotKey;
+typedef struct VmNameSlotKey VmNameSlotKey;
+
+struct VmNameSlotKey
+{
+    std::string VmName;
+    uint8_t u8Slot;
+
+    VmNameSlotKey(std::string aVmName, uint8_t aSlot) :
+      VmName(aVmName),
+      u8Slot(aSlot) {}
+
+    bool operator< (const VmNameSlotKey& that) const
+    {
+        if (VmName == that.VmName)
+            return u8Slot < that.u8Slot;
+        else
+            return VmName < that.VmName;
+    }
+};
+
+typedef std::map<VmNameSlotKey, DhcpOptMap> VmSlot2OptionsM;
+typedef VmSlot2OptionsM::iterator VmSlot2OptionsIterator;
+typedef VmSlot2OptionsM::value_type VmSlot2OptionsPair;
+
+typedef std::vector<VmNameSlotKey> VmConfigs;
 
 static const RTGETOPTDEF g_aDHCPIPOptions[]
     = {
@@ -71,7 +106,13 @@ static const RTGETOPTDEF g_aDHCPIPOptions[]
         { "--enable",           'e', RTGETOPT_REQ_NOTHING },
         { "-enable",            'e', RTGETOPT_REQ_NOTHING },    // deprecated
         { "--disable",          'd', RTGETOPT_REQ_NOTHING },
-        { "-disable",           'd', RTGETOPT_REQ_NOTHING }     // deprecated
+        { "-disable",           'd', RTGETOPT_REQ_NOTHING },     // deprecated
+        { "--options",          'o', RTGETOPT_REQ_NOTHING },     
+        {"--vm",                'n', RTGETOPT_REQ_STRING}, /* only with -o */
+        {"--slot",              's', RTGETOPT_REQ_UINT8}, /* only with -o and -n */
+        {"--id",                'i', RTGETOPT_REQ_UINT8}, /* only with -o */
+        {"--value",             'p', RTGETOPT_REQ_STRING} /* only with -i */
+
       };
 
 static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
@@ -81,14 +122,25 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
 
     int index = iStart;
     HRESULT rc;
+    bool fOptionsRead = false;
+    bool fVmOptionRead = false;
 
+    const char *pszVmName = NULL;
     const char *pNetName = NULL;
     const char *pIfName = NULL;
     const char * pIp = NULL;
     const char * pNetmask = NULL;
     const char * pLowerIp = NULL;
     const char * pUpperIp = NULL;
+
+    uint8_t u8OptId = -1;
+    uint8_t u8Slot = -1;
+
     int enable = -1;
+
+    DhcpOptMap GlobalDhcpOptions;
+    VmSlot2OptionsM VmSlot2Options;
+    VmConfigs       VmConfigs2Delete;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -175,6 +227,80 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
             case VINF_GETOPT_NOT_OPTION:
                 return errorSyntax(USAGE_DHCPSERVER, "unhandled parameter: %s", ValueUnion.psz);
             break;
+
+            case 'o': // --options
+                {
+        // {"--vm",                'n', RTGETOPT_REQ_STRING}, /* only with -o */
+        // {"--slot",              's', RTGETOPT_REQ_UINT8}, /* only with -o and -n*/
+        // {"--id",                'i', RTGETOPT_REQ_UINT8}, /* only with -o */
+        // {"--value",             'p', RTGETOPT_REQ_STRING} /* only with -i */
+                    if (fOptionsRead)
+                        return errorSyntax(USAGE_DHCPSERVER, 
+                                           "previos option edition  wasn't finished");
+                    fOptionsRead = true;
+                    fVmOptionRead = false; /* we want specify new global or vm option*/
+                    u8Slot = (uint8_t)~0;
+                    u8OptId = (uint8_t)~0;
+                    pszVmName = NULL;
+                } /* end of --options  */
+                break;
+
+            case 'n': // --vm-name
+                {
+                    if (fVmOptionRead)
+                        return errorSyntax(USAGE_DHCPSERVER, 
+                                           "previous vm option edition wasn't finished");
+                    else
+                        fVmOptionRead = true;
+                    u8Slot = (uint8_t)~0; /* clear slor */
+                    pszVmName = RTStrDup(ValueUnion.psz);
+                }
+                break; /* end of --vm-name */
+
+            case 's': // --slot
+                {
+                    if (!fVmOptionRead)
+                        return errorSyntax(USAGE_DHCPSERVER, 
+                                           "vm name wasn't specified");
+                    
+                    u8Slot = ValueUnion.u8;
+                }
+                break; /* end of --slot */
+
+            case 'i': // --id
+                {
+                    if (!fOptionsRead)
+                        return errorSyntax(USAGE_DHCPSERVER, 
+                                           "-o wasn't found");
+
+                    u8OptId = ValueUnion.u8;
+                }
+                break; /* end of --id */
+
+            case 'p': // --value
+                {
+                    if (!fOptionsRead)
+                        return errorSyntax(USAGE_DHCPSERVER, 
+                                           "-o wasn't found");
+                    
+                    if (u8OptId == (uint8_t)~0)
+                        return errorSyntax(USAGE_DHCPSERVER, 
+                                           "--id wasn't found");
+                    if (   fVmOptionRead 
+                        && u8Slot == (uint8_t)~0)
+                        return errorSyntax(USAGE_DHCPSERVER, 
+                                           "--slot wasn't found");
+                    
+                    DhcpOptMap& map = (fVmOptionRead ? 
+                                       VmSlot2Options[
+                                         VmNameSlotKey::VmNameSlotKey(pszVmName, 
+                                                                      u8Slot)] 
+                                       : GlobalDhcpOptions);
+                    map[u8OptId] = std::string(ValueUnion.psz);
+
+                }
+                break; // --end of value
+
             default:
                 if (c > 0)
                 {
@@ -195,7 +321,9 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
     if(! pNetName && !pIfName)
         return errorSyntax(USAGE_DHCPSERVER, "You need to specify either --netname or --ifname to identify the DHCP server");
 
-    if(enmCode != OP_REMOVE)
+    if(   enmCode != OP_REMOVE
+       && GlobalDhcpOptions.size() == 0
+       && VmSlot2Options.size() == 0)
     {
         if(enable < 0 || pIp || pNetmask || pLowerIp || pUpperIp)
         {
@@ -253,7 +381,11 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
     {
         if (pIp || pNetmask || pLowerIp || pUpperIp)
         {
-            CHECK_ERROR(svr, SetConfiguration (Bstr(pIp).mutableRaw(), Bstr(pNetmask).mutableRaw(), Bstr(pLowerIp).mutableRaw(), Bstr(pUpperIp).mutableRaw()));
+            CHECK_ERROR(svr, SetConfiguration (
+                          Bstr(pIp).mutableRaw(), 
+                          Bstr(pNetmask).mutableRaw(), 
+                          Bstr(pLowerIp).mutableRaw(), 
+                          Bstr(pUpperIp).mutableRaw()));
             if(FAILED(rc))
                 return errorArgument("Failed to set configuration");
         }
@@ -261,6 +393,39 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
         if(enable >= 0)
         {
             CHECK_ERROR(svr, COMSETTER(Enabled) ((BOOL)enable));
+        }
+
+        /* option processing */
+        DhcpOptIterator itOpt;
+        VmSlot2OptionsIterator it;
+        
+        /* Global Options */
+        for(itOpt = GlobalDhcpOptions.begin(); 
+            itOpt != GlobalDhcpOptions.end();
+            ++itOpt)
+        {
+            CHECK_ERROR(svr, 
+                        AddGlobalOption(
+                          itOpt->first, 
+                          com::Bstr(itOpt->second.c_str()).raw()));
+        }
+
+        /* heh, vm slot options. */
+
+        for (it = VmSlot2Options.begin();
+             it != VmSlot2Options.end();
+             ++it)
+        {
+            for(itOpt = it->second.begin();
+                itOpt != it->second.end();
+                ++itOpt)
+            {
+                CHECK_ERROR(svr, 
+                            AddVmSlotOption(Bstr(it->first.VmName.c_str()).raw(),
+                                            it->first.u8Slot,
+                                            itOpt->first, 
+                                            com::Bstr(itOpt->second.c_str()).raw()));
+            }
         }
     }
     else
