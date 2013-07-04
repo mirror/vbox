@@ -95,7 +95,11 @@ public:
                         bool fProposeAutoConfirmation = false);
 
     /* API: Runtime UI stuff: */
+    void cannotSendACPIToMachine(QWidget *pParent);
+    void remindAboutAutoCapture(QWidget *pParent);
     void remindAboutMouseIntegration(QWidget *pParent, bool fSupportsAbsolute);
+    void remindAboutPausedVMInput(QWidget *pParent);
+    void remindAboutGuestAdditionsAreNotActive(QWidget *pParent);
 
 private slots:
 
