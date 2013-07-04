@@ -439,7 +439,7 @@ STDMETHODIMP DHCPServer::GetMacOptions(IN_BSTR aMAC, ComSafeArrayOut(BSTR, aValu
         com::Bstr mac;
 
         alock.release();
-        hrc = nic->GetMACAddress(mac.asOutParam());
+        hrc = nic->COMGETTER(MACAddress)(mac.asOutParam());
         alock.acquire();
 
         if (FAILED(hrc)) /* no MAC address ??? */
