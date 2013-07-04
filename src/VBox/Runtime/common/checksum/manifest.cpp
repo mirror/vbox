@@ -275,7 +275,7 @@ RTR3DECL(int) RTManifestVerifyDigestType(void *pvBuf, size_t cbSize, RTDIGESTTYP
     /* Validate input */
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbSize > 0, VERR_INVALID_PARAMETER);
-    AssertPtrRetrn(penmDigestType, VERR_INVALID_POINTER)
+    AssertPtrReturn(penmDigestType, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
 
