@@ -28,6 +28,13 @@
 class QWidget;
 class UIPopupStack;
 
+/* Popup integration types: */
+enum UIPopupIntegrationType
+{
+    UIPopupIntegrationType_Embedded,
+    UIPopupIntegrationType_Toplevel
+};
+
 /* Popup-center singleton: */
 class UIPopupCenter: public QObject
 {
@@ -43,6 +50,9 @@ public:
     /* Static API: Create/destroy stuff: */
     static void create();
     static void destroy();
+
+    /* API: Stack layout stuff: */
+    void setStackIntegrationType(UIPopupIntegrationType type);
 
     /* API: Main message function.
      * Provides one-two buttons.
@@ -103,7 +113,8 @@ private:
     UIPopupCenter();
     ~UIPopupCenter();
 
-    /* Helper: Cleanup stuff: */
+    /* Helpers: Prepare/cleanup stuff: */
+    void prepare();
     void cleanup();
 
     /* Helper: Popup-pane stuff: */
@@ -116,11 +127,14 @@ private:
     /* Helpers: Popup-stack stuff: */
     void showPopupStack(QWidget *pParent);
     void hidePopupStack(QWidget *pParent);
+    void assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent);
+    void unassignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent);
 
     /* Static helper: Popup-stack stuff: */
     static QString popupStackID(QWidget *pParent);
 
     /* Variable: Popup-stack stuff: */
+    UIPopupIntegrationType m_type;
     QMap<QString, QPointer<UIPopupStack> > m_stacks;
 
     /* Instance stuff: */

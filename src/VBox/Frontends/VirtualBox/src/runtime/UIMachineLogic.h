@@ -55,8 +55,8 @@ class UIMachineLogic : public QIWithRetranslateUI3<QObject>
 signals:
 
     /* Notifiers: Machine-window(s) stuff: */
-    void sigMachineWidnowsCreated();
-    void sigMachineWidnowsDestroyed();
+    void sigMachineWindowsCreated();
+    void sigMachineWindowsDestroyed();
 
 public:
 

@@ -40,6 +40,8 @@ void UIPopupCenter::create()
 
     /* Create instance: */
     new UIPopupCenter;
+    /* Prepare instance: */
+    m_spInstance->prepare();
 }
 
 /* static */
@@ -67,6 +69,12 @@ UIPopupCenter::~UIPopupCenter()
     m_spInstance = 0;
 }
 
+void UIPopupCenter::prepare()
+{
+    /* Embedded by default: */
+    m_type = UIPopupIntegrationType_Embedded;
+}
+
 void UIPopupCenter::cleanup()
 {
     /* Make sure all the popup-stacks destroyed: */
@@ -75,6 +83,16 @@ void UIPopupCenter::cleanup()
         delete m_stacks[strPopupStackID];
         m_stacks.remove(strPopupStackID);
     }
+}
+
+void UIPopupCenter::setStackIntegrationType(UIPopupIntegrationType type)
+{
+    /* Make sure type changed: */
+    if (m_type == type)
+        return;
+
+    /* Assign new type:  */
+    m_type = type;
 }
 
 void UIPopupCenter::message(QWidget *pParent, const QString &strPopupPaneID,
@@ -228,10 +246,9 @@ void UIPopupCenter::showPopupStack(QWidget *pParent)
     if (!m_stacks.contains(strPopupStackID))
         return;
 
-    /* Install stack to passed parent: */
+    /* Assign stack with passed parent: */
     UIPopupStack *pPopupStack = m_stacks[strPopupStackID];
-    pParent->installEventFilter(pPopupStack);
-    pPopupStack->setParent(pParent);
+    assignPopupStackParent(pPopupStack, pParent);
     pPopupStack->show();
 }
 
@@ -249,10 +266,46 @@ void UIPopupCenter::hidePopupStack(QWidget *pParent)
     if (!m_stacks.contains(strPopupStackID))
         return;
 
-    /* Uninstall stack from passed parent: */
+    /* Unassign stack with passed parent: */
     UIPopupStack *pPopupStack = m_stacks[strPopupStackID];
     pPopupStack->hide();
+    unassignPopupStackParent(pPopupStack, pParent);
+}
+
+void UIPopupCenter::assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent)
+{
+    /* Make sure parent is not NULL: */
+    AssertMsg(pParent, ("Invalid parent passed!"));
+
+    /* Assign event-filter: */
+    pParent->installEventFilter(pPopupStack);
+
+    /* Assign parent depending on *integration* type: */
+    switch (m_type)
+    {
+        case UIPopupIntegrationType_Embedded:
+        {
+            pPopupStack->setParent(pParent);
+            break;
+        }
+        case UIPopupIntegrationType_Toplevel:
+        {
+            pPopupStack->setParent(pParent, Qt::Window | Qt::FramelessWindowHint);
+            break;
+        }
+        default: break;
+    }
+}
+
+void UIPopupCenter::unassignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent)
+{
+    /* Make sure parent is not NULL: */
+    AssertMsg(pParent, ("Invalid parent passed!"));
+
+    /* Unassign parent: */
     pPopupStack->setParent(0);
+
+    /* Unassign event-filter: */
     pParent->removeEventFilter(pPopupStack);
 }
 

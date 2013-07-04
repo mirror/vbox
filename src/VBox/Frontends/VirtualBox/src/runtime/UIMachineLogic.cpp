@@ -534,18 +534,18 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
 #endif /* Q_WS_MAC */
 {
     /* Register popup-center connections: */
-    connect(this, SIGNAL(sigMachineWidnowsCreated()),
+    connect(this, SIGNAL(sigMachineWindowsCreated()),
             &popupCenter(), SLOT(sltShowPopupStack()));
-    connect(this, SIGNAL(sigMachineWidnowsDestroyed()),
+    connect(this, SIGNAL(sigMachineWindowsDestroyed()),
             &popupCenter(), SLOT(sltHidePopupStack()));
 }
 
 UIMachineLogic::~UIMachineLogic()
 {
     /* Unregister popup-center connections: */
-    disconnect(this, SIGNAL(sigMachineWidnowsCreated()),
+    disconnect(this, SIGNAL(sigMachineWindowsCreated()),
                &popupCenter(), SLOT(sltShowPopupStack()));
-    disconnect(this, SIGNAL(sigMachineWidnowsDestroyed()),
+    disconnect(this, SIGNAL(sigMachineWindowsDestroyed()),
                &popupCenter(), SLOT(sltHidePopupStack()));
 }
 
@@ -560,7 +560,7 @@ void UIMachineLogic::setMachineWindowsCreated(bool fIsWindowsCreated)
     {
         /* We emit this signal *before* the remembering new value
          * because we want UIMachineLogic::activeMachineWindow() to be yet alive. */
-        emit sigMachineWidnowsDestroyed();
+        emit sigMachineWindowsDestroyed();
     }
 
     /* Remember new value: */
@@ -571,7 +571,7 @@ void UIMachineLogic::setMachineWindowsCreated(bool fIsWindowsCreated)
     {
         /* We emit this signal *after* the remembering new value
          * because we want UIMachineLogic::activeMachineWindow() to be already alive. */
-        emit sigMachineWidnowsCreated();
+        emit sigMachineWindowsCreated();
     }
 }
 
@@ -648,6 +648,9 @@ void UIMachineLogic::prepareRequiredFeatures()
     initSharedAVManager();
 # endif /* VBOX_WITH_ICHAT_THEATER */
 #endif /* Q_WS_MAC */
+
+    /* Switch popup-center into default integration mode: */
+    popupCenter().setStackIntegrationType(UIPopupIntegrationType_Embedded);
 }
 
 void UIMachineLogic::prepareSessionConnections()

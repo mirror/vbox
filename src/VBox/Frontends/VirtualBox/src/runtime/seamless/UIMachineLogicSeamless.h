@@ -51,6 +51,7 @@ private slots:
 private:
 
     /* Prepare helpers: */
+    void prepareRequiredFeatures();
     void prepareActionGroups();
     void prepareMachineWindows();
     void prepareMenu();
@@ -59,6 +60,7 @@ private:
     //void cleanupMenu() {}
     void cleanupMachineWindows();
     void cleanupActionGroups();
+    //void cleanupRequiredFeatures();
 
     /* Variables: */
     UIMultiScreenLayout *m_pScreenLayout;
