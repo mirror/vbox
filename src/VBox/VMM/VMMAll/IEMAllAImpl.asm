@@ -1321,17 +1321,51 @@ IEMIMPL_MUL_OP imul, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_E
 ; @param        1       The instruction mnemonic.
 ; @param        2       The modified flags.
 ; @param        3       The undefined flags.
+; @param        4       1 if signed, 0 if unsigned.
 ;
 ; Makes ASSUMPTIONS about A0, A1, A2, A3, T0 and T1 assignments.
 ;
-%macro IEMIMPL_DIV_OP 3
+%macro IEMIMPL_DIV_OP 4
 BEGINCODE
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         PROLOGUE_3_ARGS
 
         test    A1_8, A1_8
         jz      .div_zero
-        ;; @todo test for overflow
+ %if %4 == 0
+        mov     ax, [A0]
+        cmp     ah, A1_8
+        jae     .div_overflow
+ %else
+        js      .divisor_negative
+.divisor_positive:
+        mov     ax, [A0]
+        test    ax, ax
+        js      .divisor_positive_dividend_negative
+
+.both_positive:
+        shl     ax, 1
+        cmp     ah, A1_8
+        jae     .div_overflow
+        jmp     .div_no_overflow
+.both_negative:
+        neg     ax
+        shl     ax, 1
+        mov     al, A1_8
+        neg     al
+        cmp     ah, al
+        jae     .div_overflow
+        jmp     .div_no_overflow
+
+.divisor_positive_dividend_negative:
+        jmp     .div_no_overflow
+.divisor_negative:
+        test    ax, ax
+        js      .both_negative
+.divisor_negative_dividend_positive:
+        jmp     .div_no_overflow
+.div_no_overflow:
+ %endif
 
         IEM_MAYBE_LOAD_FLAGS A2, %2, %3
         mov     ax, [A0]
@@ -1344,6 +1378,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         EPILOGUE_3_ARGS
 
 .div_zero:
+.div_overflow:
         mov     eax, -1
         jmp     .return
 ENDPROC iemAImpl_ %+ %1 %+ _u8
@@ -1351,9 +1386,14 @@ ENDPROC iemAImpl_ %+ %1 %+ _u8
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         PROLOGUE_4_ARGS
 
-        test    A1_16, A1_16
+        test    A2_16, A2_16
         jz      .div_zero
-        ;; @todo test for overflow
+ %if %4 == 0
+        cmp     [A1], A2_16
+        jae     .div_overflow
+ %else
+ ;; @todo idiv  overflow checking.
+ %endif
 
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
  %ifdef ASM_CALL64_GCC
@@ -1378,6 +1418,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         EPILOGUE_4_ARGS
 
 .div_zero:
+.div_overflow:
         mov     eax, -1
         jmp     .return
 ENDPROC iemAImpl_ %+ %1 %+ _u16
@@ -1385,9 +1426,14 @@ ENDPROC iemAImpl_ %+ %1 %+ _u16
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         PROLOGUE_4_ARGS
 
-        test    A1_32, A1_32
+        test    A2_32, A2_32
         jz      .div_zero
-        ;; @todo test for overflow
+ %if %4 == 0
+        cmp     [A1], A2_32
+        jae     .div_overflow
+ %else
+  ;; @todo idiv  overflow checking.
+ %endif
 
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
         mov     eax, [A0]
@@ -1413,6 +1459,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         EPILOGUE_4_ARGS
 
 .div_zero:
+.div_overflow:
         mov     eax, -1
         jmp     .return
 ENDPROC iemAImpl_ %+ %1 %+ _u32
@@ -1421,9 +1468,14 @@ ENDPROC iemAImpl_ %+ %1 %+ _u32
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         PROLOGUE_4_ARGS
 
-        test    A1, A1
+        test    A2, A2
         jz      .div_zero
-        ;; @todo test for overflow
+ %if %4 == 0
+        cmp     [A1], A2
+        jae     .div_overflow
+ %else
+  ;; @todo idiv  overflow checking.
+ %endif
 
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
         mov     rax, [A0]
@@ -1449,6 +1501,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         EPILOGUE_4_ARGS_EX 12
 
 .div_zero:
+.div_overflow:
         mov     eax, -1
         jmp     .return
 ENDPROC iemAImpl_ %+ %1 %+ _u64
@@ -1461,8 +1514,8 @@ ENDPROC iemAImpl_ %+ %1 %+ _u64
 
 %endmacro
 
-IEMIMPL_DIV_OP div,  0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF)
-IEMIMPL_DIV_OP idiv, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF)
+IEMIMPL_DIV_OP div,  0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
+IEMIMPL_DIV_OP idiv, 0, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 1
 
 
 ;
