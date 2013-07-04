@@ -1333,38 +1333,37 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         test    A1_8, A1_8
         jz      .div_zero
  %if %4 == 0
-        mov     ax, [A0]
-        cmp     ah, A1_8
+        cmp     [A0 + 1], A1_8
         jae     .div_overflow
  %else
-        js      .divisor_negative
-.divisor_positive:
-        mov     ax, [A0]
-        test    ax, ax
-        js      .divisor_positive_dividend_negative
-
-.both_positive:
-        shl     ax, 1
-        cmp     ah, A1_8
-        jae     .div_overflow
-        jmp     .div_no_overflow
-.both_negative:
-        neg     ax
-        shl     ax, 1
-        mov     al, A1_8
-        neg     al
-        cmp     ah, al
-        jae     .div_overflow
-        jmp     .div_no_overflow
-
-.divisor_positive_dividend_negative:
-        jmp     .div_no_overflow
-.divisor_negative:
-        test    ax, ax
-        js      .both_negative
-.divisor_negative_dividend_positive:
-        jmp     .div_no_overflow
-.div_no_overflow:
+;        js      .divisor_negative
+;.divisor_positive:
+;        mov     ax, [A0]
+;        test    ax, ax
+;        js      .divisor_positive_dividend_negative
+;
+;.both_positive:
+;        shl     ax, 1
+;        cmp     ah, A1_8
+;        jae     .div_overflow
+;        jmp     .div_no_overflow
+;.both_negative:
+;        neg     ax
+;        shl     ax, 1
+;        mov     al, A1_8
+;        neg     al
+;        cmp     ah, al
+;        jae     .div_overflow
+;        jmp     .div_no_overflow
+;
+;.divisor_positive_dividend_negative:
+;        jmp     .div_no_overflow
+;.divisor_negative:
+;        test    ax, ax
+;        js      .both_negative
+;.divisor_negative_dividend_positive:
+;        jmp     .div_no_overflow
+;.div_no_overflow:
  %endif
 
         IEM_MAYBE_LOAD_FLAGS A2, %2, %3
