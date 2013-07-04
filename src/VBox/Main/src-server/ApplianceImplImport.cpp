@@ -808,7 +808,17 @@ HRESULT Appliance::preCheckImageAvailability(PSHASTORAGE pSHAStorage,
     if (RT_FAILURE(vrc))
     {
         throw setError(VBOX_E_FILE_ERROR,
-               tr("Could not open the current file in the archive (%Rrc)"), vrc);
+               tr("Could not open the current file in the OVA package (%Rrc)"), vrc);
+    }
+    else
+    {
+        if (vrc == VINF_TAR_DIR_PATH)
+        {
+            throw setError(VBOX_E_FILE_ERROR,
+                   tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"), 
+                      pszFilename,
+                      vrc);
+        }
     }
 
     availableImage = pszFilename;
@@ -1076,6 +1086,20 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
                 rc = VBOX_E_FILE_ERROR;
                 break;
             }
+
+            Utf8Str extension(RTPathExt(pszFilename));
+
+            if (!extension.endsWith(".ovf",Utf8Str::CaseInsensitive))
+            {
+                vrc = VERR_FILE_NOT_FOUND;
+                rc = setError(VBOX_E_FILE_ERROR,
+                              tr("First file in the OVA package must have the extension 'ovf'. "
+                                 "But the file '%s' has the different extension (%Rrc)"),
+                                 pszFilename,
+                                 vrc);
+                break;
+            }
+
             pTarIo = TarCreateInterface();
             if (!pTarIo)
             {
@@ -1140,7 +1164,7 @@ HRESULT Appliance::readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDI
         /* Read the OVF into a memory buffer */
         size_t cbSize = 0;
         int vrc = ShaReadBuf(strFilename.c_str(), &pvTmpBuf, &cbSize, pIfIo, pStorage);
-        if (   RT_FAILURE(vrc)
+        if (RT_FAILURE(vrc)
             || !pvTmpBuf)
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Could not read OVF file '%s' (%Rrc)"),
@@ -1586,12 +1610,33 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Getting the current file within the archive failed (%Rrc)"), vrc);
+        else
+        {
+            if (vrc == VINF_TAR_DIR_PATH)
+            {
+                throw setError(VBOX_E_FILE_ERROR,
+                       tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"), 
+                          pszFilename,
+                          vrc);
+            }
+        }
         /* Skip the OVF file, cause this was read in IAppliance::Read already. */
         vrc = RTTarSeekNextFile(tar);
         if (   RT_FAILURE(vrc)
             && vrc != VERR_TAR_END_OF_FILE)
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Seeking within the archive failed (%Rrc)"), vrc);
+        else
+        {
+            if (vrc == VINF_TAR_DIR_PATH)
+            {
+                RTTarCurrentFile(tar, &pszFilename);
+                throw setError(VBOX_E_FILE_ERROR,
+                       tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"), 
+                          pszFilename,
+                          vrc);
+            }
+        }
 
         PVDINTERFACEIO pCallbacks = pShaIo;
         PSHASTORAGE pStorage = &storage;
@@ -1877,9 +1922,19 @@ HRESULT Appliance::readTarManifestFile(RTTAR tar, const Utf8Str &strFile, void *
     int vrc = RTTarCurrentFile(tar, &pszCurFile);
     if (RT_SUCCESS(vrc))
     {
-        if (!strcmp(pszCurFile, RTPathFilename(strFile.c_str())))
-            rc = readManifestFile(strFile, ppvBuf, pcbSize, pCallbacks, pStorage);
-        RTStrFree(pszCurFile);
+        if (vrc == VINF_TAR_DIR_PATH)
+        {
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Empty directory folder (%s) isn't allowed in the OVA package (%Rrc)"),
+                             pszCurFile,
+                             vrc);
+        }
+        else
+        {
+            if (!strcmp(pszCurFile, RTPathFilename(strFile.c_str())))
+                rc = readManifestFile(strFile, ppvBuf, pcbSize, pCallbacks, pStorage);
+            RTStrFree(pszCurFile);
+        }
     }
     else if (vrc != VERR_TAR_END_OF_FILE)
         rc = setError(VBOX_E_IPRT_ERROR, "Seeking within the archive failed (%Rrc)", vrc);
@@ -2770,7 +2825,9 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                 if (itDiskImage == stack.mapDisks.end())
                                 {
                                     throw setError(E_FAIL,
-                                                   tr("Internal inconsistency looking up disk image '%s'"),
+                                                   tr("Internal inconsistency looking up disk image '%s'. "
+                                                      "Check compliance OVA package structure and file names "
+                                                      "references in the section <References> in the OVF file."),
                                                    availableImage.c_str());
                                 }
 
@@ -3202,7 +3259,9 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                     if (itDiskImage == stack.mapDisks.end())
                     {
                         throw setError(E_FAIL,
-                                       tr("Internal inconsistency looking up disk image '%s'"),
+                                       tr("Internal inconsistency looking up disk image '%s'. "
+                                          "Check compliance OVA package structure and file names "
+                                          "references in the section <References> in the OVF file."),
                                        availableImage.c_str());
                     }
 

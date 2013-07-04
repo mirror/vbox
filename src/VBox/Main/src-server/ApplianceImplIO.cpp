@@ -303,7 +303,13 @@ static int tarOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen
             rc = RTTarCurrentFile(tar, &pszFilename);
             if (RT_SUCCESS(rc))
             {
-                fFound = !strcmp(pszFilename, RTPathFilename(pszLocation));
+                if (rc == VINF_TAR_DIR_PATH)
+                {
+                    break;
+                }
+
+                fFound = !RTStrICmp(pszFilename, pszLocation);
+
                 RTStrFree(pszFilename);
                 if (fFound)
                     break;
