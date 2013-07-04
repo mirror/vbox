@@ -66,7 +66,7 @@
 #include "AudioAdapterImpl.h"
 #include "BandwidthControlImpl.h"
 #include "BandwidthGroupImpl.h"
-#include "NetworkServiceRunner.h"
+#include "DHCPServerRunner.h"
 #include "DHCPServerImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "HostImpl.h"

@@ -17,7 +17,6 @@
 
 #ifndef ___VBoxNetBaseService_h___
 #define ___VBoxNetBaseService_h___
-
 #include <iprt/critsect.h>
 class VBoxNetBaseService
 {
@@ -32,38 +31,14 @@ public:
     int                 waitForIntNetEvent(int cMillis);
     int                 sendBufferOnWire(PCINTNETSEG pSg, int cSg, size_t cbBuffer);
     void                flushWire();
-
     virtual void        usage(void) = 0;
-    virtual int         run(void) = 0;
+    virtual void        run(void) = 0;
+    virtual int         init(void);
     virtual int         parseOpt(int rc, const RTGETOPTUNION& getOptVal) = 0;
 
-    virtual int         init(void);
-
-    /* VirtualBox instance */
-    ComPtr<IVirtualBox> virtualbox;
-
-protected:
-    /**
-     * Print debug message depending on the m_cVerbosity level.
-     *
-     * @param   iMinLevel       The minimum m_cVerbosity level for this message.
-     * @param   fMsg            Whether to dump parts for the current DHCP message.
-     * @param   pszFmt          The message format string.
-     * @param   ...             Optional arguments.
-     */
-    void debugPrint(int32_t iMinLevel, bool fMsg, const char *pszFmt, ...) const
-    {
-        if (iMinLevel <= m_cVerbosity)
-        {
-            va_list va;
-            va_start(va, pszFmt);
-            debugPrintV(iMinLevel, fMsg, pszFmt, va);
-            va_end(va);
-        }
-    }
-
-    virtual void debugPrintV(int32_t iMinLevel, bool fMsg, const char *pszFmt, va_list va) const;
-
+    inline void         debugPrint( int32_t iMinLevel, bool fMsg,  const char *pszFmt, ...) const;
+    void                debugPrintV(int32_t iMinLevel, bool fMsg,  const char *pszFmt, va_list va) const;
+public:
     /** @name The server configuration data members.
      * @{ */
     std::string         m_Name;
@@ -73,6 +48,8 @@ protected:
     RTMAC               m_MacAddress;
     RTNETADDRIPV4       m_Ipv4Address;
     RTNETADDRIPV4       m_Ipv4Netmask;
+    /* cs for syncing */
+    RTCRITSECT          m_csThis;
     /** @} */
     /** @name The network interface
      * @{ */
@@ -88,10 +65,6 @@ protected:
     int32_t             m_cVerbosity;
 private:
     PRTGETOPTDEF getOptionsPtr();
-
-    /* cs for syncing */
-    RTCRITSECT          m_csThis;
-
     /** @} */
 };
 #endif

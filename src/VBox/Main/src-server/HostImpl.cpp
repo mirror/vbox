@@ -133,10 +133,8 @@ typedef SOLARISDVD *PSOLARISDVD;
 #include <iprt/env.h>
 #include <iprt/mem.h>
 #include <iprt/system.h>
-#ifndef RT_OS_WINDOWS
-# include <iprt/path.h>
-#endif
 #ifdef RT_OS_SOLARIS
+# include <iprt/path.h>
 # include <iprt/ctype.h>
 #endif
 #ifdef VBOX_WITH_HOSTNETIF_API
@@ -216,45 +214,8 @@ struct Host::Data
     int                     f3DAccelerationSupported;
 
     HostPowerService        *pHostPowerService;
-
-    /* Name resolving */
-    std::list<com::Bstr>     llNameServers;
-    std::list<com::Bstr>     llSearchStrings;
-    Bstr                     DomainName;
-    /* XXX: we need timestamp when these values were set, on repeate in some 
-     *  (~1h?, 5 min?) period, this values should be refetched from host syetem.
-     */
 };
 
-#ifndef RT_OS_WINDOWS
-static char g_aszResolvConf[RTPATH_MAX];
-
-static inline char *getResolvConfPath()
-{
-    int rc = VINF_SUCCESS;
-    if (!g_aszResolvConf[0]) return g_aszResolvConf;
-# ifdef RT_OS_OS2
-    /*
-     * This was in an old Slirp code:
-     * IBM's "Technical Document # - 16070238", clearly says \MPTN\ETC\RESOLV2 
-     * no redolv.conf (remark to code in old Slirp code)
-     */
-    if (RTEnvExists("ETC"))
-    {
-        RTStrmPrintf(g_aszResolvConf, MAX_PATH, "%/RESOLV2", RTEnvGet("ETC"));
-        rc = RTFileExists(g_aszResolvConf);
-        if (RT_SUCCESS(rc))
-            return g_aszResolvConf;
-    }
-
-    RT_ZERO(g_aszResolvConf);
-    RTStrmPrintf(g_aszResolvConf, MAX_PATH, "%/RESOLV2", _PATH_ETC);
-# else
-    strcmp(g_aszResolvConf, "/etc/resolv.conf");
-# endif    
-    return g_aszResolvConf;
-}
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -835,34 +796,6 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(ComSafeArrayOut(IHostUSBDevice*, aUSBDe
     ReturnComNotImplemented();
 #endif
 }
-
-
-/**
- * This method return the list of registered name servers 
- */
-STDMETHODIMP Host::COMGETTER(NameServers)(ComSafeArrayOut(BSTR, aNameServers))
-{
-    return E_NOTIMPL;
-}
-
-
-/**
- * This method returns the domain name of the host
- */
-STDMETHODIMP Host::COMGETTER(DomainName)(BSTR *aDomainName)
-{
-    return E_NOTIMPL;
-}
-
-
-/**
- * This method returns the search string.
- */
-STDMETHODIMP Host::COMGETTER(SearchStrings)(ComSafeArrayOut(BSTR, aSearchStrings))
-{
-    return E_NOTIMPL;
-}
-
 
 STDMETHODIMP Host::COMGETTER(USBDeviceFilters)(ComSafeArrayOut(IHostUSBDeviceFilter*, aUSBDeviceFilters))
 {
