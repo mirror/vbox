@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,6 +18,7 @@
 #define ___winnt_include_VBoxHook_h
 
 /* custom messages as we must install the hook from the main thread */
+/** @todo r=andy Use WM_APP + n offsets here! */
 #define WM_VBOX_SEAMLESS_ENABLE                     0x2001
 #define WM_VBOX_SEAMLESS_DISABLE                    0x2002
 #define WM_VBOX_SEAMLESS_UPDATE                     0x2003
@@ -25,7 +26,7 @@
 #define WM_VBOX_GRAPHICS_UNSUPPORTED                0x2005
 
 
-#define VBOXHOOK_DLL_NAME           "VBoxHook.dll"
+#define VBOXHOOK_DLL_NAME              "VBoxHook.dll"
 #define VBOXHOOK_GLOBAL_DT_EVENT_NAME  "Local\\VBoxHookDtNotifyEvent"
 #define VBOXHOOK_GLOBAL_WT_EVENT_NAME  "Local\\VBoxHookWtNotifyEvent"
 
