@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox Main - interface for VBox NAT Network service
+ * VirtualBox Main - interface for VBox DHCP server
  */
 
 /*
@@ -22,28 +22,36 @@
 
 typedef enum
 {
-    NATSCCFG_NAME = 1,
-    NATSCCFG_TRUNKTYPE,
-    NATSCCFG_MACADDRESS,
-    NATSCCFG_IPADDRESS,
-    NATSCCFG_NETMASK,
-    NATSCCFG_PORTFORWARD4,
-    NATSCCFG_PORTFORWARD6,
-    NATSCCFG_NOTOPT_MAXVAL
-}NATSCCFG;
+    NETCFG_NAME = 1,
+    NETCFG_NETNAME,
+    NETCFG_TRUNKTYPE,
+    NETCFG_TRUNKNAME,
+    NETCFG_MACADDRESS,
+    NETCFG_IPADDRESS,
+    NETCFG_NETMASK,
+    NETCFG_VERBOSE,
+    NETCFG_NOTOPT_MAXVAL
+}NETCFG;
 
 #define TRUNKTYPE_WHATEVER "whatever"
+#define TRUNKTYPE_NETFLT   "netflt"
+#define TRUNKTYPE_NETADP   "netadp"
 #define TRUNKTYPE_SRVNAT   "srvnat"
 
-class NATNetworkServiceRunner
+class NetworkServiceRunner
 {
 public:
-    NATNetworkServiceRunner();
-    ~NATNetworkServiceRunner() { stop(); /* don't leave abandoned networks */}
-
-    int setOption(NATSCCFG opt, const char *val, bool enabled)
+    NetworkServiceRunner(const char *aProcName):
+      mProcName(aProcName),
+      mProcess(NIL_RTPROCESS)
     {
-        if (opt == 0 || opt >= NATSCCFG_NOTOPT_MAXVAL)
+        memset(mOptionEnabled, 0, sizeof(mOptionEnabled));
+    };
+    ~NetworkServiceRunner() { stop(); /* don't leave abandoned servers */}
+
+    int setOption(NETCFG opt, const char *val, bool enabled)
+    {
+        if (opt == 0 || opt >= NETCFG_NOTOPT_MAXVAL)
             return VERR_INVALID_PARAMETER;
         if (isRunning())
             return VERR_INVALID_STATE;
@@ -53,7 +61,7 @@ public:
         return VINF_SUCCESS;
     }
 
-    int setOption(NATSCCFG opt, const com::Utf8Str &val, bool enabled)
+    int setOption(NETCFG opt, const com::Utf8Str &val, bool enabled)
     {
         return setOption(opt, val.c_str(), enabled);
     }
@@ -64,7 +72,8 @@ public:
 
     void detachFromServer();
 private:
-    com::Utf8Str mOptions[NATSCCFG_NOTOPT_MAXVAL];
-    bool mOptionEnabled[NATSCCFG_NOTOPT_MAXVAL];
+    com::Utf8Str mOptions[NETCFG_NOTOPT_MAXVAL];
+    bool mOptionEnabled[NETCFG_NOTOPT_MAXVAL];
+    const char *mProcName;
     RTPROCESS mProcess;
 };

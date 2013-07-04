@@ -334,9 +334,8 @@ VBoxSVC_SOURCES = \
 	src-server/BandwidthGroupImpl.cpp \
 	src-server/BIOSSettingsImpl.cpp \
 	src-server/DHCPServerImpl.cpp \
-	src-server/DHCPServerRunner.cpp \
+	src-server/NetworkServiceRunner.cpp \
 	src-server/NATNetworkImpl.cpp \
-	$(if $(VBOX_WITH_NAT_SERVICE),src-server/NATNetworkServiceRunner.cpp,) \
 	src-server/GuestOSTypeImpl.cpp \
 	src-server/HostImpl.cpp \
 	src-server/HostNetworkInterfaceImpl.cpp \
