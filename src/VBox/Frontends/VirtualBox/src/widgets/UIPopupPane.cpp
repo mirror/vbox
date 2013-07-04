@@ -173,8 +173,8 @@ UIPopupPane::UIPopupPane(QWidget *pParent,
     , m_fProposeAutoConfirmation(fProposeAutoConfirmation)
     , m_buttonDescriptions(buttonDescriptions)
     , m_fHovered(false)
-    , m_iDefaultOpacity(128)
-    , m_iHoveredOpacity(230)
+    , m_iDefaultOpacity(180)
+    , m_iHoveredOpacity(250)
     , m_iOpacity(m_iDefaultOpacity)
     , m_fFocused(false)
     , m_pTextPane(0), m_pButtonPane(0)
@@ -351,6 +351,7 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
         case QEvent::HoverEnter:
         case QEvent::Enter:
         {
+            /* Hover pane if not yet hovered: */
             if (!m_fHovered)
             {
                 m_fHovered = true;
@@ -361,15 +362,18 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
         /* Nothing is hovered: */
         case QEvent::Leave:
         {
-            if (pWatched == this && m_fHovered)
+            /* Unhover pane if hovered but not focused: */
+            if (pWatched == this && m_fHovered && !m_fFocused)
             {
                 m_fHovered = false;
                 emit sigHoverLeave();
             }
             break;
         }
+        /* Pane is focused: */
         case QEvent::FocusIn:
         {
+            /* Focus pane if not focused: */
             if (!m_fFocused)
             {
                 m_fFocused = true;
@@ -377,12 +381,16 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
             }
             break;
         }
+        /* Pane is unfocused: */
         case QEvent::FocusOut:
         {
+            /* Unfocus and unhover pane: */
             if (m_fFocused)
             {
                 m_fFocused = false;
                 emit sigFocusLeave();
+                m_fHovered = false;
+                emit sigHoverLeave();
             }
             break;
         }
