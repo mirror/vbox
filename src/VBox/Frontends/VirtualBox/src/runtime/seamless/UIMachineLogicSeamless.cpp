@@ -23,6 +23,7 @@
 /* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIPopupCenter.h"
 #include "UISession.h"
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicSeamless.h"
@@ -109,6 +110,15 @@ void UIMachineLogicSeamless::sltHostScreenCountChanged(int cScreenCount)
 
     /* Call to base-class: */
     UIMachineLogic::sltHostScreenCountChanged(cScreenCount);
+}
+
+void UIMachineLogicSeamless::prepareRequiredFeatures()
+{
+    /* Call to base-class: */
+    UIMachineLogic::prepareRequiredFeatures();
+
+    /* Switch popup-center into 'top-level' integration mode: */
+    popupCenter().setStackIntegrationType(UIPopupIntegrationType_Toplevel);
 }
 
 void UIMachineLogicSeamless::prepareActionGroups()

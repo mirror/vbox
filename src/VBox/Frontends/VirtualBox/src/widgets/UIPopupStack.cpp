@@ -33,6 +33,11 @@
 UIPopupStack::UIPopupStack()
     : m_iLayoutMargin(1), m_iLayoutSpacing(1)
 {
+#if defined(Q_WS_WIN) || defined (Q_WS_MAC)
+    /* Using Qt API to enable translucent background for the Win/Mac host.
+     * - Under x11 host Qt 4.8.3 has it broken wih KDE 4.9 for now: */
+    setAttribute(Qt::WA_TranslucentBackground);
+#endif /* Q_WS_WIN || Q_WS_MAC */
 }
 
 bool UIPopupStack::exists(const QString &strPopupPaneID) const
@@ -108,6 +113,14 @@ void UIPopupStack::setParent(QWidget *pParent)
     m_iParentStatusBarHeight = parentStatusBarHeight(pParent);
 }
 
+void UIPopupStack::setParent(QWidget *pParent, Qt::WindowFlags flags)
+{
+    /* Call to base-class: */
+    QWidget::setParent(pParent, flags);
+    /* Recalculate parent status-bar height: */
+    m_iParentStatusBarHeight = parentStatusBarHeight(pParent);
+}
+
 void UIPopupStack::sltAdjustGeometry()
 {
     /* Adjust geometry only if parent is currently set: */
@@ -118,10 +131,9 @@ void UIPopupStack::sltAdjustGeometry()
     const int iWidth = parentWidget()->width();
     const int iHeight = minimumHeightHint();
 
-    /* Move according parent: */
-    move(0, parentWidget()->height() - iHeight - m_iParentStatusBarHeight);
-    /* Resize according parent: */
-    resize(iWidth, iHeight);
+    /* Move/resize according parent: */
+    setGeometry(0, parentWidget()->height() - iHeight - m_iParentStatusBarHeight,
+                iWidth, iHeight);
 
     /* Layout content: */
     layoutContent();

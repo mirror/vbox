@@ -55,6 +55,7 @@ public:
 
     /* API: Parent stuff: */
     void setParent(QWidget *pParent);
+    void setParent(QWidget *pParent, Qt::WindowFlags flags);
 
 private slots:
 
