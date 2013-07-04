@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -335,6 +335,7 @@ DECLINLINE(int) rtTarCreateHeaderRecord(PRTTARRECORD pRecord, const char *pszSrc
     /** @todo check for field overflows. */
     /* Fill the header record */
 //    RT_ZERO(pRecord); - done by the caller.
+    /** @todo use RTStrCopy */
     size_t cb = RTStrPrintf(pRecord->h.name,  sizeof(pRecord->h.name),  "%s", pszSrcName);
     if (cb < strlen(pszSrcName))
         return VERR_BUFFER_OVERFLOW;
@@ -1668,7 +1669,7 @@ RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **pps
             rtDeleteTarFileInternal(pInt->pFileCache);
             pInt->pFileCache = NULL;
         }
-        else/* Are we still direct behind that header? */
+        else/* Are we still directly behind that header? */
         {
             /* Yes, so the streaming can start. Just return the cached file
              * structure to the caller. */
@@ -1677,8 +1678,7 @@ RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **pps
                 *ppszFilename = RTStrDup(pInt->pFileCache->pszFilename);
             if (pInt->pFileCache->linkflag == LF_DIR)
                 return VINF_TAR_DIR_PATH;
-            else
-                return VINF_SUCCESS;
+            return VINF_SUCCESS;
         }
 
     }
@@ -1721,9 +1721,7 @@ RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **pps
                 *ppszFilename = RTStrDup(pFileInt->pszFilename);
 
             if (pFileInt->linkflag == LF_DIR)
-            {
                 rc = VINF_TAR_DIR_PATH;
-            }
         }
     } while (0);
 
