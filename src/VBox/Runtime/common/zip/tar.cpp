@@ -135,6 +135,8 @@ typedef struct RTTARFILEINTERNAL
     uint64_t        offCurrent;
     /** The open mode. */
     uint32_t        fOpenMode;
+    /** The link flag. */
+    char            linkflag;
 } RTTARFILEINTERNAL;
 /** Pointer to the internal data of a tar file.  */
 typedef RTTARFILEINTERNAL *PRTTARFILEINTERNAL;
@@ -1620,14 +1622,23 @@ RTR3DECL(int) RTTarSeekNextFile(RTTAR hTar)
      * If not we are somehow busted. */
     uint64_t offCur = RTFileTell(pInt->hTarFile);
     if (!(   pInt->pFileCache->offStart <= offCur
-          && offCur < pInt->pFileCache->offStart + sizeof(RTTARRECORD) + pInt->pFileCache->cbSize))
+          && offCur <= pInt->pFileCache->offStart + sizeof(RTTARRECORD) + pInt->pFileCache->cbSize))
         return VERR_INVALID_STATE;
 
     /* Seek to the next file header. */
     uint64_t offNext = RT_ALIGN(pInt->pFileCache->offStart + sizeof(RTTARRECORD) + pInt->pFileCache->cbSize, sizeof(RTTARRECORD));
-    rc = RTFileSeek(pInt->hTarFile, offNext - offCur, RTFILE_SEEK_CURRENT, NULL);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (pInt->pFileCache->cbSize != 0)
+    {
+        rc = RTFileSeek(pInt->hTarFile, offNext - offCur, RTFILE_SEEK_CURRENT, NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    else
+    {
+        /* Else delete the last open file cache. Might be recreated below. */
+        rtDeleteTarFileInternal(pInt->pFileCache);
+        pInt->pFileCache = NULL;
+    }
 
     /* Again check the current filename to fill the cache with the new value. */
     return RTTarCurrentFile(hTar, NULL);
@@ -1651,20 +1662,25 @@ RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **pps
     /* Is there some cached entry? */
     if (pInt->pFileCache)
     {
-        /* Are we still direct behind that header? */
-        if (pInt->pFileCache->offStart + sizeof(RTTARRECORD) == RTFileTell(pInt->hTarFile))
+        if (pInt->pFileCache->offStart + sizeof(RTTARRECORD) < RTFileTell(pInt->hTarFile))
+        {
+            /* Else delete the last open file cache. Might be recreated below. */
+            rtDeleteTarFileInternal(pInt->pFileCache);
+            pInt->pFileCache = NULL;
+        }
+        else/* Are we still direct behind that header? */
         {
             /* Yes, so the streaming can start. Just return the cached file
              * structure to the caller. */
             *phFile = rtCopyTarFileInternal(pInt->pFileCache);
             if (ppszFilename)
                 *ppszFilename = RTStrDup(pInt->pFileCache->pszFilename);
-            return VINF_SUCCESS;
+            if (pInt->pFileCache->linkflag == LF_DIR)
+                return VINF_TAR_DIR_PATH;
+            else
+                return VINF_SUCCESS;
         }
 
-        /* Else delete the last open file cache. Might be recreated below. */
-        rtDeleteTarFileInternal(pInt->pFileCache);
-        pInt->pFileCache = NULL;
     }
 
     PRTTARFILEINTERNAL pFileInt = NULL;
@@ -1682,7 +1698,8 @@ RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **pps
 
         /* We support normal files only */
         if (   record.h.linkflag == LF_OLDNORMAL
-            || record.h.linkflag == LF_NORMAL)
+            || record.h.linkflag == LF_NORMAL
+            || record.h.linkflag == LF_DIR)
         {
             pFileInt = rtCreateTarFileInternal(pInt, record.h.name, fOpen);
             if (!pFileInt)
@@ -1695,11 +1712,18 @@ RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **pps
             pFileInt->cbSize = rtTarRecToSize(&record);
             /* The start is -512 from here. */
             pFileInt->offStart = RTFileTell(pInt->hTarFile) - sizeof(RTTARRECORD);
+            /* remember the type of a file */
+            pFileInt->linkflag = record.h.linkflag;
 
             /* Copy the new file structure to our cache. */
             pInt->pFileCache = rtCopyTarFileInternal(pFileInt);
             if (ppszFilename)
                 *ppszFilename = RTStrDup(pFileInt->pszFilename);
+
+            if (pFileInt->linkflag == LF_DIR)
+            {
+                rc = VINF_TAR_DIR_PATH;
+            }
         }
     } while (0);
 
