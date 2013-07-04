@@ -1,8 +1,7 @@
 /* $Id$ */
 /** @file
- * VBoxNetDHCP - DHCP Service for connecting to IntNet.
+ * VBoxNetBaseService - Base Service class for connecting to IntNet.
  */
-/** @todo r=bird: Cut&Past rules... Please fix DHCP refs! */
 
 /*
  * Copyright (C) 2009-2011 Oracle Corporation
@@ -21,6 +20,16 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_NET_SERVICE
 
+#include <VBox/com/com.h>
+#include <VBox/com/listeners.h>
+#include <VBox/com/string.h>
+#include <VBox/com/Guid.h>
+#include <VBox/com/array.h>
+#include <VBox/com/ErrorInfo.h>
+#include <VBox/com/errorprint.h>
+#include <VBox/com/EventQueue.h>
+#include <VBox/com/VirtualBox.h>
+
 #include <iprt/alloca.h>
 #include <iprt/buildconfig.h>
 #include <iprt/err.h>
@@ -29,10 +38,12 @@
 #include <iprt/initterm.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/process.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
 #include <iprt/mem.h>
+#include <iprt/message.h>
 
 #include <VBox/sup.h>
 #include <VBox/intnet.h>
@@ -43,6 +54,7 @@
 #include <vector>
 #include <string>
 
+#include <VBox/err.h>
 #include <VBox/log.h>
 
 #include "VBoxNetLib.h"
@@ -57,6 +69,11 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/* Commonly used options for network configuration */
 static RTGETOPTDEF g_aGetOptDef[] =
 {
     { "--name",           'N',   RTGETOPT_REQ_STRING },
@@ -68,11 +85,31 @@ static RTGETOPTDEF g_aGetOptDef[] =
     { "--netmask",        'm',   RTGETOPT_REQ_IPV4ADDR },
     { "--verbose",        'v',   RTGETOPT_REQ_NOTHING },
 };
+
+
 VBoxNetBaseService::VBoxNetBaseService()
 {
-  int rc = RTCritSectInit(&m_csThis);
-  AssertRC(rc);
+    int rc = RTCritSectInit(&m_csThis);
+    AssertRC(rc);
+    /* numbers from DrvIntNet */
+    m_cbSendBuf             = 128 * _1K;
+    m_cbRecvBuf             = 256 * _1K;
+    m_hIf                   = INTNET_HANDLE_INVALID;
+    m_pIfBuf                = NULL;
+
+    m_cVerbosity            = 0;
+    m_Name                  = "VBoxNetNAT";
+    m_Network               = "intnet";
+   
+    for(unsigned int i = 0; i < RT_ELEMENTS(g_aGetOptDef); ++i)
+        m_vecOptionDefs.push_back(&g_aGetOptDef[i]);
+
+    HRESULT hrc = virtualbox.createLocalObject(CLSID_VirtualBox);
+    if (FAILED(hrc))
+        RTMsgError("Failed to create the VirtualBox object!");
 }
+
+
 VBoxNetBaseService::~VBoxNetBaseService()
 {
     /*
@@ -98,21 +135,13 @@ VBoxNetBaseService::~VBoxNetBaseService()
     RTCritSectDelete(&m_csThis);
 }
 
+
 int VBoxNetBaseService::init()
 {
-    /* numbers from DrvIntNet */
-    m_cbSendBuf             = 128 * _1K;
-    m_cbRecvBuf             = 256 * _1K;
-    m_hIf                   = INTNET_HANDLE_INVALID;
-    m_pIfBuf                = NULL;
-
-    m_cVerbosity            = 0;
-    m_Name                  = "VBoxNetNAT";
-    m_Network               = "intnet";
-    for(unsigned int i = 0; i < RT_ELEMENTS(g_aGetOptDef); ++i)
-        m_vecOptionDefs.push_back(&g_aGetOptDef[i]);
     return VINF_SUCCESS;
 }
+
+
 /**
  * Parse the arguments.
  *
@@ -187,13 +216,16 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
                 return 1;
 
             case 'h':
-                RTPrintf("VBoxNetDHCP Version %s\n"
+                RTPrintf("%s Version %s\n"
                          "(C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                          "All rights reserved.\n"
                          "\n"
-                         "Usage: VBoxNetDHCP <options>\n"
+                         "Usage: %s <options>\n"
                          "\n"
                          "Options:\n",
+                         RTProcShortName(),
+                         RTProcShortName(),
+                         RTProcShortName(),
                          RTBldCfgVersion());
                 for (unsigned int i = 0; i < m_vecOptionDefs.size(); i++)
                     RTPrintf("    -%c, %s\n", m_vecOptionDefs[i]->iShort, m_vecOptionDefs[i]->pszLong);
@@ -214,6 +246,7 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
     RTMemFree(paOptionArray);
     return rc;
 }
+
 
 int VBoxNetBaseService::tryGoOnline(void)
 {
@@ -316,9 +349,11 @@ int VBoxNetBaseService::tryGoOnline(void)
         return 1;
 }
 
+
 void VBoxNetBaseService::shutdown(void)
 {
 }
+
 
 int VBoxNetBaseService::waitForIntNetEvent(int cMillis)
 {
@@ -376,31 +411,12 @@ void VBoxNetBaseService::flushWire()
 
 }
 
-/**
- * Print debug message depending on the m_cVerbosity level.
- *
- * @param   iMinLevel       The minimum m_cVerbosity level for this message.
- * @param   fMsg            Whether to dump parts for the current DHCP message.
- * @param   pszFmt          The message format string.
- * @param   ...             Optional arguments.
- */
-inline void VBoxNetBaseService::debugPrint(int32_t iMinLevel, bool fMsg, const char *pszFmt, ...) const
-{
-    if (iMinLevel <= m_cVerbosity)
-    {
-        va_list va;
-        va_start(va, pszFmt);
-        debugPrintV(iMinLevel, fMsg, pszFmt, va);
-        va_end(va);
-    }
-}
-
 
 /**
  * Print debug message depending on the m_cVerbosity level.
  *
  * @param   iMinLevel       The minimum m_cVerbosity level for this message.
- * @param   fMsg            Whether to dump parts for the current DHCP message.
+ * @param   fMsg            Whether to dump parts for the current service message.
  * @param   pszFmt          The message format string.
  * @param   va              Optional arguments.
  */
@@ -410,11 +426,16 @@ void VBoxNetBaseService::debugPrintV(int iMinLevel, bool fMsg, const char *pszFm
     {
         va_list vaCopy;                 /* This dude is *very* special, thus the copy. */
         va_copy(vaCopy, va);
-        RTStrmPrintf(g_pStdErr, "VBoxNetDHCP: %s: %N\n", iMinLevel >= 2 ? "debug" : "info", pszFmt, &vaCopy);
+        RTStrmPrintf(g_pStdErr, "%s: %s: %N\n", 
+                     RTProcShortName(),
+                     iMinLevel >= 2 ? "debug" : "info",
+                     pszFmt,
+                     &vaCopy);
         va_end(vaCopy);
     }
 
 }
+
 
 PRTGETOPTDEF VBoxNetBaseService::getOptionsPtr()
 {
