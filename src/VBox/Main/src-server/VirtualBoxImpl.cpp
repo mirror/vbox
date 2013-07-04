@@ -60,7 +60,7 @@
 #include "USBControllerImpl.h"
 #include "SystemPropertiesImpl.h"
 #include "GuestOSTypeImpl.h"
-#include "NetworkServiceRunner.h"
+#include "DHCPServerRunner.h"
 #include "DHCPServerImpl.h"
 #include "NATNetworkImpl.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API

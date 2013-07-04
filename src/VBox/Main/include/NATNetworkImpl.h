@@ -36,18 +36,6 @@ namespace settings
     struct NATRule;
 }
 
-#ifdef RT_OS_WINDOWS
-# define NATSR_EXECUTABLE_NAME "VBoxNetLwipNAT.exe"
-#else
-# define NATSR_EXECUTABLE_NAME "VBoxNetLwipNAT"
-#endif
-
-class NATNetworkServiceRunner: public NetworkServiceRunner
-{
-public: 
-    NATNetworkServiceRunner(): NetworkServiceRunner(NATSR_EXECUTABLE_NAME){}
-    virtual ~NATNetworkServiceRunner(){}
-};
 
 class ATL_NO_VTABLE NATNetwork :
     public VirtualBoxBase,

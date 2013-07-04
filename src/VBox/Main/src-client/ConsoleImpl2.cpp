@@ -114,7 +114,7 @@
 # endif
 #endif /* VBOX_WITH_NETFLT */
 
-#include "NetworkServiceRunner.h"
+#include "DHCPServerRunner.h"
 #include "BusAssignmentManager.h"
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
