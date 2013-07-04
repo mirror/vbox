@@ -111,6 +111,7 @@ DECLEXPORT(void)
 crStateFreeShared(CRContext *pContext, CRSharedState *s)
 {
     s->refCount--;
+    Assert(s->refCount >= 0);
     if (s->refCount <= 0) {
         if (s==gSharedState)
         {
@@ -124,7 +125,7 @@ crStateFreeShared(CRContext *pContext, CRSharedState *s)
         crFree(s);
     }
 #ifndef IN_GUEST
-    else
+    else if (pContext)
     {
         /* evaluate usage bits*/
         CR_STATE_RELEASEOBJ CbData;
@@ -136,6 +137,22 @@ crStateFreeShared(CRContext *pContext, CRSharedState *s)
         crHashtableWalk(s->rbTable, ReleaseRBOCallback, &CbData);
     }
 #endif
+}
+
+DECLEXPORT(CRSharedState *) crStateGlobalSharedAcquire()
+{
+    if (!gSharedState)
+    {
+        crWarning("No Global Shared State!");
+        return NULL;
+    }
+    gSharedState->refCount++;
+    return gSharedState;
+}
+
+DECLEXPORT(void) crStateGlobalSharedRelease()
+{
+    crStateFreeShared(NULL, gSharedState);
 }
 
 DECLEXPORT(void) STATE_APIENTRY

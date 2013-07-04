@@ -208,6 +208,8 @@ typedef struct CR_DISPLAY_ENTRY
 {
     VBOXVR_SCR_COMPOSITOR_ENTRY CEntry;
     VBOXVR_SCR_COMPOSITOR_ENTRY RootVrCEntry;
+    void *pvUserData1;
+    void *pvUserData2;
 } CR_DISPLAY_ENTRY, *PCR_DISPLAY_ENTRY;
 /**/
 
@@ -357,7 +359,7 @@ typedef struct CR_DISPLAY
 int CrDpInit(PCR_DISPLAY pDisplay);
 void CrDpTerm(PCR_DISPLAY pDisplay);
 void CrDpResize(PCR_DISPLAY pDisplay, int32_t xPos, int32_t yPos, uint32_t width, uint32_t height);
-void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData);
+void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData, void *pvUserData);
 void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry);
 int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
 int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
@@ -379,8 +381,9 @@ typedef struct CR_DISPLAY_ENTRY_MAP
 
 int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap);
 void CrDemTerm(PCR_DISPLAY_ENTRY_MAP pMap);
-PCR_DISPLAY_ENTRY CrDemEntryGetCreate(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture, CRContextInfo *pCtxInfo);
-void CrDemEntryDestroy(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture);
+PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture);
+void CrDemEntryRelease(PCR_DISPLAY_ENTRY pEntry);
+//void CrDemEntryDestroy(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture);
 
 /* */
 

@@ -54,11 +54,11 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
         Tex.height = dims[1];
         Tex.target = GL_TEXTURE_2D;
         Tex.hwid = 0;
-        CrVrScrCompositorEntryInit(&mural->DefaultDEntry.CEntry, &Tex);
+        CrVrScrCompositorEntryInit(&mural->DefaultDEntry.CEntry, &Tex, NULL);
 
         if (cr_server.fRootVrOn)
         {
-            CrVrScrCompositorEntryInit(&mural->DefaultDEntry.RootVrCEntry, &Tex);
+            CrVrScrCompositorEntryInit(&mural->DefaultDEntry.RootVrCEntry, &Tex, NULL);
             mural->fRootVrOn = GL_TRUE;
         }
     }
@@ -406,7 +406,7 @@ crServerDispatchWindowDestroy( GLint window )
 static DECLCALLBACK(VBOXVR_SCR_COMPOSITOR_ENTRY*) crServerMuralGetRootVrCEntry(VBOXVR_SCR_COMPOSITOR_ENTRY*pEntry, void *pvContext)
 {
     CR_DISPLAY_ENTRY *pDEntry = CR_DENTRY_FROM_CENTRY(pEntry);
-    CrVrScrCompositorEntryInit(&pDEntry->RootVrCEntry, CrVrScrCompositorEntryTexGet(pEntry));
+    CrVrScrCompositorEntryInit(&pDEntry->RootVrCEntry, CrVrScrCompositorEntryTexGet(pEntry), NULL);
     return &pDEntry->RootVrCEntry;
 }
 
@@ -415,6 +415,10 @@ int crServerMuralSynchRootVr(CRMuralInfo *mural)
     int rc;
 
     crServerVBoxRootVrTranslateForMural(mural);
+
+    /* ensure the rootvr compositor does not hold any data,
+     * i.e. cleanup all rootvr entries data */
+    CrVrScrCompositorClear(&mural->RootVrCompositor);
 
     rc = CrVrScrCompositorIntersectedList(&mural->Compositor, &cr_server.RootVr, &mural->RootVrCompositor, crServerMuralGetRootVrCEntry, NULL, NULL);
     if (!RT_SUCCESS(rc))
@@ -467,7 +471,7 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
                 crWarning("CrVrScrCompositorEntryRemove failed, rc %d", rc);
                 goto end;
             }
-            CrVrScrCompositorEntryInit(&mural->DefaultDEntry.CEntry, &Tex);
+            CrVrScrCompositorEntryInit(&mural->DefaultDEntry.CEntry, &Tex, NULL);
             /* initially set regions to all visible since this is what some guest assume
              * and will not post any more visible regions command */
             Rect.xLeft = 0;

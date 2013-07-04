@@ -227,7 +227,7 @@ typedef struct VBOXWDDM_SWAPCHAIN
     volatile uint32_t cRefs;
     VBOXDISP_UMHANDLE hSwapchainUm;
     VBOXDISP_KMHANDLE hSwapchainKm;
-    UINT winHostID;
+    int32_t winHostID;
     BOOLEAN fExposed;
     POINT Pos;
     UINT width;
@@ -243,6 +243,7 @@ typedef struct VBOXWDDM_CONTEXT
     UINT  NodeOrdinal;
     UINT  EngineAffinity;
     BOOLEAN fRenderFromShadowDisabled;
+    int32_t hostID;
     uint32_t u32CrConClientID;
     VBOXMP_CRPACKER CrPacker;
     VBOXWDDM_HTABLE Swapchains;

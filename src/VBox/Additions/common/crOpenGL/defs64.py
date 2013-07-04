@@ -478,5 +478,6 @@ crSwapBuffers
 crGetProcAddress
 VBoxCreateContext
 VBoxGetWindowId
+VBoxGetContextId
 VBoxFlushToHost"""
 #print "DllMain"

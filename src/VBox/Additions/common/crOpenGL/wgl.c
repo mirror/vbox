@@ -328,21 +328,68 @@ DECLEXPORT(HGLRC) WINAPI VBoxCreateContext( HDC hdc, struct VBOXUHGSMI *pHgsmi )
 
 DECLEXPORT(GLint) WINAPI VBoxGetWindowId( HDC hdc )
 {
-    WindowInfo *window = stubGetWindowInfo(hdc);
+    WindowInfo *window;
+    GLint winid = 0;
+
+    CR_DDI_PROLOGUE();
+
+    crHashtableLock(stub.windowTable);
+
+    window = stubGetWindowInfo(hdc);
     if (!window)
     {
-        CRASSERT(0);
         crWarning("stubGetWindowInfo: window not found!");
-        return 0;
+        goto end;
     }
     if (!window->spuWindow)
     {
-        CRASSERT(0);
         crWarning("stubGetWindowInfo: window is null!");
-        return 0;
+        goto end;
     }
-    return window->spuWindow;
+
+    winid = window->spuWindow;
+
+end:
+    crHashtableUnlock(stub.windowTable);
+    return winid;
 }
+
+DECLEXPORT(GLint) WINAPI VBoxGetContextId( HGLRC hglrc )
+{
+    ContextInfo *context;
+    GLint ctxid = 0;
+
+    CR_DDI_PROLOGUE();
+
+//    crHashtableLock(stub.windowTable);
+    crHashtableLock(stub.contextTable);
+
+    context = (ContextInfo *) crHashtableSearch(stub.contextTable, (unsigned long) hglrc);
+    if (!context)
+    {
+        crWarning("crHashtableSearch: context not found!");
+        goto end;
+    }
+
+    if (context->type != CHROMIUM)
+    {
+        crWarning("unexpected context type %d", context->type);
+        goto end;
+    }
+
+    if (context->spuContext <= 0)
+    {
+        crWarning("no spuSontext defined");
+        goto end;
+    }
+
+    ctxid = context->spuContext;
+
+end:
+    crHashtableUnlock(stub.contextTable);
+    return ctxid;
+}
+
 
 DECLEXPORT(HGLRC) WINAPI wglCreateContext_prox( HDC hdc )
 {

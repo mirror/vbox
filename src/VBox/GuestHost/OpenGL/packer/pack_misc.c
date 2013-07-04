@@ -125,8 +125,8 @@ void PACK_APIENTRY crPackVBoxTexPresent( CR_PACKER_CONTEXT_ARGDECL GLuint textur
     CR_GET_BUFFERED_POINTER( pc, size );
     WRITE_DATA( 0, GLint, size );
     WRITE_DATA( 4, GLenum, CR_VBOXTEXPRESENT_EXTEND_OPCODE );
-    WRITE_DATA( 8, GLint, texture );
-    WRITE_DATA( 12, GLint, cfg );
+    WRITE_DATA( 8, GLuint, texture );
+    WRITE_DATA( 12, GLuint, cfg );
     WRITE_DATA( 16, GLint, xPos );
     WRITE_DATA( 20, GLint, yPos );
     WRITE_DATA( 24, GLint, cRects );

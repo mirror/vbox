@@ -34,7 +34,7 @@
 #include <VBox/VBoxGuest2.h>
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 18
+#define VBOXVIDEOIF_VERSION 19
 
 #define VBOXWDDM_NODE_ID_SYSTEM           0
 #define VBOXWDDM_NODE_ID_3D               (VBOXWDDM_NODE_ID_SYSTEM)
@@ -423,7 +423,7 @@ typedef struct VBOXSWAPCHAININFO
 {
     VBOXDISP_KMHANDLE hSwapchainKm; /* in, NULL if new is being created */
     VBOXDISP_UMHANDLE hSwapchainUm; /* in, UMD private data */
-    DWORD winHostID;
+    int32_t winHostID;
     RECT Rect;
     UINT u32Reserved;
     UINT cAllocs;
