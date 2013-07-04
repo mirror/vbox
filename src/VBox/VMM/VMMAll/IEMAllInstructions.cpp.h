@@ -129,6 +129,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_rv, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
 
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 break;
@@ -327,6 +328,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
 
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 break;
@@ -384,6 +386,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rv_rm, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
 
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 break;
@@ -479,6 +482,7 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rAX_Iz, PCIEMOPBINSIZES, pImpl)
             IEM_MC_REF_EFLAGS(pEFlags);
             IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
 
+            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
             IEM_MC_ADVANCE_RIP();
             IEM_MC_END();
             return VINF_SUCCESS;
@@ -3336,6 +3340,7 @@ FNIEMOP_DEF_1(iemOpCommonBit_Ev_Gv, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
 
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
@@ -3520,6 +3525,7 @@ FNIEMOP_DEF_1(iemOpCommonShldShrd_Ib, PCIEMOPSHIFTDBLSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_4(pImpl->pfnNormalU32, pu32Dst, u32Src, cShiftArg, pEFlags);
 
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
@@ -3666,6 +3672,7 @@ FNIEMOP_DEF_1(iemOpCommonShldShrd_CL, PCIEMOPSHIFTDBLSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_4(pImpl->pfnNormalU32, pu32Dst, u32Src, cShiftArg, pEFlags);
 
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
@@ -4540,6 +4547,7 @@ FNIEMOP_DEF(iemOp_Grp8)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
 
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
@@ -4937,6 +4945,8 @@ FNIEMOP_DEF(iemOp_xadd_Ev_Gv)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_xadd_u32, pu32Dst, pu32Reg, pEFlags);
 
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Reg);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
@@ -6200,6 +6210,7 @@ FNIEMOP_DEF_2(iemOpCommonUnaryGReg, PCIEMOPUNARYSIZES, pImpl, uint8_t, iReg)
             IEM_MC_REF_GREG_U32(pu32Dst, iReg);
             IEM_MC_REF_EFLAGS(pEFlags);
             IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnNormalU32, pu32Dst, pEFlags);
+            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
             IEM_MC_ADVANCE_RIP();
             IEM_MC_END();
             return VINF_SUCCESS;
@@ -6700,6 +6711,7 @@ FNIEMOP_DEF_1(iemOpCommonPopGReg, uint8_t, iReg)
             IEM_MC_LOCAL(uint32_t, *pu32Dst);
             IEM_MC_REF_GREG_U32(pu32Dst, iReg);
             IEM_MC_POP_U32(pu32Dst);
+            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst); /** @todo testcase*/
             IEM_MC_ADVANCE_RIP();
             IEM_MC_END();
             break;
@@ -7913,6 +7925,7 @@ FNIEMOP_DEF(iemOp_Grp1_Ev_Iz)
                 IEM_MC_REF_GREG_U32(pu32Dst, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
 
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
@@ -8060,6 +8073,7 @@ FNIEMOP_DEF(iemOp_Grp1_Ev_Ib)
                 IEM_MC_REF_GREG_U32(pu32Dst, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
 
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
@@ -8344,6 +8358,7 @@ FNIEMOP_DEF(iemOp_xchg_Ev_Gv)
                 IEM_MC_CALL_VOID_AIMPL_2(iemAImpl_xchg_u32, pu32Mem, pu32Reg);
                 IEM_MC_MEM_COMMIT_AND_UNMAP(pu32Mem, IEM_ACCESS_DATA_RW);
 
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Reg);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
@@ -10513,6 +10528,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
                 IEM_MC_REF_GREG_U32(pu32Dst, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, cShiftArg, pEFlags);
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
@@ -10940,6 +10956,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_1)
                 IEM_MC_REF_GREG_U32(pu32Dst, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, cShiftArg, pEFlags);
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
@@ -11131,6 +11148,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_CL)
                 IEM_MC_FETCH_GREG_U8(cShiftArg, X86_GREG_xCX);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, cShiftArg, pEFlags);
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
@@ -14938,6 +14956,7 @@ FNIEMOP_DEF_1(iemOp_grp3_test_Ev, uint8_t, bRm)
                 IEM_MC_REF_GREG_U32(pu32Dst, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_test_u32, pu32Dst, u32Src, pEFlags);
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
@@ -15134,6 +15153,8 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_AIMPL_4(rc, pImpl->pfnU32, pu32AX, pu32DX, u32Value, pEFlags);
                 IEM_MC_IF_LOCAL_IS_Z(rc) {
+                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32AX);
+                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32DX);
                     IEM_MC_ADVANCE_RIP();
                 } IEM_MC_ELSE() {
                     IEM_MC_RAISE_DIVIDE_ERROR();
@@ -15221,6 +15242,8 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEv, uint8_t, bRm, PCIEMOPMULDIVSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_AIMPL_4(rc, pImpl->pfnU32, pu32AX, pu32DX, u32Value, pEFlags);
                 IEM_MC_IF_LOCAL_IS_Z(rc) {
+                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32AX);
+                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32DX);
                     IEM_MC_ADVANCE_RIP();
                 } IEM_MC_ELSE() {
                     IEM_MC_RAISE_DIVIDE_ERROR();
