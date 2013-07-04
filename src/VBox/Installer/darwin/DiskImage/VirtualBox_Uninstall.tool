@@ -2,7 +2,7 @@
 #
 # VirtualBox Uninstaller Script.
 #
-# Copyright (C) 2007-2010 Oracle Corporation
+# Copyright (C) 2007-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -52,7 +52,6 @@ my_files=""
 test -f "${HOME}/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist"  && my_files="$my_files ${HOME}/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist"
 
 test -d /Library/StartupItems/VirtualBox/          && my_directories="$my_directories /Library/StartupItems/VirtualBox/"
-test -d /Library/Receipts/VBoxStartupItems.pkg/    && my_directories="$my_directories /Library/Receipts/VBoxStartupItems.pkg/"
 
 test -d /Library/Extensions/VBoxDrv.kext/          && my_directories="$my_directories /Library/Extensions/VBoxDrv.kext/"
 test -d /Library/Extensions/VBoxUSB.kext/          && my_directories="$my_directories /Library/Extensions/VBoxUSB.kext/"
@@ -62,7 +61,6 @@ test -d /Library/Extensions/VBoxNetAdp.kext/       && my_directories="$my_direct
 # VirtualBox versions
 test -d /Library/Extensions/VBoxDrvTiger.kext/     && my_directories="$my_directories /Library/Extensions/VBoxDrvTiger.kext/" 
 test -d /Library/Extensions/VBoxUSBTiger.kext/     && my_directories="$my_directories /Library/Extensions/VBoxUSBTiger.kext/"
-test -d /Library/Receipts/VBoxKEXTs.pkg/           && my_directories="$my_directories /Library/Receipts/VBoxKEXTs.pkg/"
 
 test -f /usr/bin/VirtualBox                        && my_files="$my_files /usr/bin/VirtualBox"
 test -f /usr/bin/VBoxManage                        && my_files="$my_files /usr/bin/VBoxManage"
@@ -72,14 +70,8 @@ test -f /usr/bin/vboxwebsrv                        && my_files="$my_files /usr/b
 test -f /usr/bin/VBoxBalloonCtrl                   && my_files="$my_files /usr/bin/VBoxBalloonCtrl"
 test -f /usr/bin/VBoxAutostart                     && my_files="$my_files /usr/bin/VBoxAutostart"
 test -f /usr/bin/vbox-img                          && my_files="$my_files /usr/bin/vbox-img"
-test -d /Library/Receipts/VirtualBoxCLI.pkg/       && my_directories="$my_directories /Library/Receipts/VirtualBoxCLI.pkg/"
 
 test -d /Applications/VirtualBox.app/              && my_directories="$my_directories /Applications/VirtualBox.app/"
-test -d /Library/Receipts/VirtualBox.pkg/          && my_directories="$my_directories /Library/Receipts/VirtualBox.pkg/"
-
-# legacy
-test -d /Library/Receipts/VBoxDrv.pkg/             && my_directories="$my_directories /Library/Receipts/VBoxDrv.pkg/"
-test -d /Library/Receipts/VBoxUSB.pkg/             && my_directories="$my_directories /Library/Receipts/VBoxUSB.pkg/"
 
 # python stuff
 python_versions="2.3 2.5 2.6 2.7"
@@ -104,10 +96,16 @@ for kext in org.virtualbox.kext.VBoxUSB org.virtualbox.kext.VBoxNetFlt org.virtu
 done
 
 #
+# Collect packages to forget
+#
+my_pb='org\.virtualbox\.pkg\.'
+my_pkgs=`/usr/sbin/pkgutil --pkgs="${my_pb}vboxkexts|${my_pb}vboxstartupitems|${my_pb}virtualbox|${my_pb}virtualboxcli"`
+
+#
 # Did we find anything to uninstall?
 #
-if test -z "$my_directories"  -a  -z "$my_files"   -a  -z "$my_kexts"; then
-    echo "No VirtualBox files, directories or KEXTs to uninstall."
+if test -z "$my_directories"  -a  -z "$my_files"   -a  -z "$my_kexts"  -a  -z "$my_pkgs"; then
+    echo "No VirtualBox files, directories, KEXTs or packages to uninstall."
     echo "Done."
     exit 0;
 fi
@@ -150,8 +148,12 @@ if test -n "$my_files"  -o  -n "$my_directories"; then
     for dir  in $my_directories; do echo "    $dir"; done
 fi
 if test -n "$my_kexts"; then
-echo "And the following KEXTs will be unloaded:"
+    echo "And the following KEXTs will be unloaded:"
     for kext in $my_kexts;       do echo "    $kext"; done
+fi
+if test -n "$my_pkgs"; then
+    echo "And the traces of following packages will be removed:"
+    for kext in $my_pkgs;       do echo "    $kext"; done
 fi
 echo ""
 
@@ -215,9 +217,8 @@ else
 fi
 
 # Cleaning up pkgutil database
-pkgs=`/usr/sbin/pkgutil --pkgs | grep org.virtualbox.pkg`
-for pkg in $pkgs; do
-    /usr/bin/sudo /usr/sbin/pkgutil --forget "$pkg"
+for my_pkg in $my_pkgs; do
+    /usr/bin/sudo -p "Please enter %u's password (removing $my_pkg):" /usr/sbin/pkgutil --forget "$my_pkg"
 done
 
 echo "Done."
