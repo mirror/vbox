@@ -128,12 +128,14 @@ void UIPopupStack::sltAdjustGeometry()
         return;
 
     /* Get this attributes: */
+    bool fIsWindow = isWindow();
+    const int iX = fIsWindow ? parentWidget()->x() : 0;
+    const int iY = fIsWindow ? parentWidget()->y() : 0;
     const int iWidth = parentWidget()->width();
     const int iHeight = minimumHeightHint();
 
     /* Move/resize according parent: */
-    setGeometry(0, parentWidget()->height() - iHeight - m_iParentStatusBarHeight,
-                iWidth, iHeight);
+    setGeometry(iX, iY, iWidth, iHeight);
 
     /* Layout content: */
     layoutContent();
