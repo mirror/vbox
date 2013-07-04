@@ -33,6 +33,9 @@
 UIPopupStack::UIPopupStack()
     : m_iLayoutMargin(1), m_iLayoutSpacing(1)
 {
+    /* Make sure cursor is *always* valid: */
+    setCursor(Qt::ArrowCursor);
+
 #if defined(Q_WS_WIN) || defined (Q_WS_MAC)
     /* Using Qt API to enable translucent background for the Win/Mac host.
      * - Under x11 host Qt 4.8.3 has it broken wih KDE 4.9 for now: */
