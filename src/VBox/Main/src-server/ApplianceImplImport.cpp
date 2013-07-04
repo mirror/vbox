@@ -964,7 +964,7 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
                     uint64_t cbFile = 0;
                     uint64_t maxFileSize = _1M;
                     size_t cbRead = 0;
-                    void  *pBuf;
+                    void  *pBuf; /** @todo r=bird: You leak this buffer! throwing stuff is evil. */
 
                     vrc = RTFileGetSize(pFile, &cbFile);
                     if (cbFile > maxFileSize)
@@ -992,8 +992,8 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
 
                     RTFileClose(pFile);
 
-                    RTDIGESTTYPE digestType = RTDIGESTTYPE_UNKNOWN;
-                    vrc = RTManifestVerifyDigestType(pBuf, cbRead, digestType);
+                    RTDIGESTTYPE digestType;
+                    vrc = RTManifestVerifyDigestType(pBuf, cbRead, &digestType);
 
                     if (RT_FAILURE(vrc))
                     {

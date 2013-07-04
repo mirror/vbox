@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Manifest file handling.
+ * IPRT - Manifest file handling, old style - deprecated.
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -66,6 +66,7 @@ typedef struct RTMANIFESTCALLBACKDATA
 } RTMANIFESTCALLBACKDATA;
 typedef RTMANIFESTCALLBACKDATA* PRTMANIFESTCALLBACKDATA;
 
+
 /*******************************************************************************
 *   Private functions
 *******************************************************************************/
@@ -95,6 +96,7 @@ int rtSHAProgressCallback(unsigned uPercent, void *pvUser)
                                                  / (float)pData->cMaxFiles),
                                       pData->pvUser);
 }
+
 
 /*******************************************************************************
 *   Public functions
@@ -268,25 +270,22 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, RTDIGESTTYPE enm
 }
 
 
-RTR3DECL(int) RTManifestVerifyDigestType(void *pvBuf, size_t cbSize, RTDIGESTTYPE &digestType)
+RTR3DECL(int) RTManifestVerifyDigestType(void *pvBuf, size_t cbSize, RTDIGESTTYPE *penmDigestType)
 {
     /* Validate input */
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbSize > 0, VERR_INVALID_PARAMETER);
+    AssertPtrRetrn(penmDigestType, VERR_INVALID_POINTER)
 
     int rc = VINF_SUCCESS;
 
-    char *pcBuf = (char*)pvBuf;
+    char const *pcBuf = (char *)pvBuf;
     size_t cbRead = 0;
     /* Parse the manifest file line by line */
     for (;;)
     {
         if (cbRead >= cbSize)
-        {
-            digestType = RTDIGESTTYPE_UNKNOWN;
-            rc = VERR_MANIFEST_UNSUPPORTED_DIGEST_TYPE;
-            break;
-        }
+            return VERR_MANIFEST_UNSUPPORTED_DIGEST_TYPE;
 
         size_t cch = rtManifestIndexOfCharInBuf(pcBuf, cbSize - cbRead, '\n') + 1;
 
@@ -302,23 +301,24 @@ RTR3DECL(int) RTManifestVerifyDigestType(void *pvBuf, size_t cbSize, RTDIGESTTYP
             continue;
         }
 
+/** @todo r=bird: Missing space check here. */
         /* Check for the digest algorithm */
-        if (pcBuf[0] == 'S'
-                 && pcBuf[1] == 'H'
-                 && pcBuf[2] == 'A'
-                 && pcBuf[3] == '1')
+        if (   pcBuf[0] == 'S'
+            && pcBuf[1] == 'H'
+            && pcBuf[2] == 'A'
+            && pcBuf[3] == '1')
         {
-            digestType = RTDIGESTTYPE_SHA1;
+            *penmDigestType = RTDIGESTTYPE_SHA1;
             break;
         }
-        else if (pcBuf[0] == 'S'
-                 && pcBuf[1] == 'H'
-                 && pcBuf[2] == 'A'
-                 && pcBuf[3] == '2'
-                 && pcBuf[4] == '5'
-                 && pcBuf[5] == '6')
+        if (   pcBuf[0] == 'S'
+            && pcBuf[1] == 'H'
+            && pcBuf[2] == 'A'
+            && pcBuf[3] == '2'
+            && pcBuf[4] == '5'
+            && pcBuf[5] == '6')
         {
-            digestType = RTDIGESTTYPE_SHA256;
+            *penmDigestType = RTDIGESTTYPE_SHA256;
             break;
         }
 
@@ -328,6 +328,7 @@ RTR3DECL(int) RTManifestVerifyDigestType(void *pvBuf, size_t cbSize, RTDIGESTTYP
 
     return rc;
 }
+
 
 RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTEST paTests, size_t cTests, size_t *piFailed)
 {
@@ -372,26 +373,27 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
 
         /** @todo r=bird:
          *  -# Better deal with this EOF line platform dependency
-         *  -# The SHA1 test should probably include a blank space check.
+         *  -# The SHA1 and SHA256 tests should probably include a blank space check.
          *  -# If there is a specific order to the elements in the string, it would be
          *     good if the delimiter searching checked for it.
          *  -# Deal with filenames containing delimiter characters.
          */
 
         /* Check for the digest algorithm */
-        if (   cch < 4  ||
-               (!(   pcBuf[0] == 'S'
-                 && pcBuf[1] == 'H'
-                 && pcBuf[2] == 'A'
-                 && pcBuf[3] == '1')
-                        &&
-               !(   pcBuf[0] == 'S'
-                 && pcBuf[1] == 'H'
-                 && pcBuf[2] == 'A'
-                 && pcBuf[3] == '2'
-                 && pcBuf[4] == '5'
-                 && pcBuf[5] == '6'))
+        if (   cch < 4  
+            || (   !(   pcBuf[0] == 'S'
+                     && pcBuf[1] == 'H'
+                     && pcBuf[2] == 'A'
+                     && pcBuf[3] == '1')
+                &&
+                   !(   pcBuf[0] == 'S'
+                     && pcBuf[1] == 'H'
+                     && pcBuf[2] == 'A'
+                     && pcBuf[3] == '2'
+                     && pcBuf[4] == '5'
+                     && pcBuf[5] == '6')
                )
+            )
         {
             /* Digest unsupported */
             rc = VERR_MANIFEST_UNSUPPORTED_DIGEST_TYPE;
@@ -454,6 +456,7 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
         bool fFound = false;
         for (size_t i = 0; i < cTests; ++i)
         {
+            /** @todo r=bird: Using RTStrStr here looks bogus. */
             if (RTStrStr(paFiles[i].pTestPattern->pszTestFile, RTStrStrip(pszName)) != NULL)
             {
                 /* Add the data of the manifest file to the file list */
@@ -576,4 +579,5 @@ RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, RTDIGESTTY
 
     return VINF_SUCCESS;
 }
+
 
