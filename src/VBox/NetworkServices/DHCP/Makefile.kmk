@@ -53,7 +53,7 @@ VBoxNetDHCP_LIBS = \
 	$(LIB_RUNTIME)
 VBoxNetDHCP_LDFLAGS.win = /SUBSYSTEM:windows
 
-ifdef VBOX_WITH_TESTCASES
+ifeq ($(USERNAME),vvl)
 PROGRAMS += tstDhcpConfig
 
 #
