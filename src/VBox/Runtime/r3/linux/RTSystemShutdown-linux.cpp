@@ -47,20 +47,24 @@ RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char 
      * Assemble the argument vector.
      */
     int         iArg = 0;
-    const char *apszArgs[5];
+    const char *apszArgs[6];
+
+    RT_BZERO(apszArgs, sizeof(apszArgs));
 
     apszArgs[iArg++] = "/sbin/shutdown";
     switch (fFlags & RTSYSTEM_SHUTDOWN_ACTION_MASK)
     {
         case RTSYSTEM_SHUTDOWN_HALT:
-            apszArgs[iArg++] = "--halt";
+            apszArgs[iArg++] = "-h";
+            apszArgs[iArg++] = "-H";
             break;
         case RTSYSTEM_SHUTDOWN_REBOOT:
-            apszArgs[iArg++] = "--reboot";
+            apszArgs[iArg++] = "-r";
             break;
         case RTSYSTEM_SHUTDOWN_POWER_OFF:
         case RTSYSTEM_SHUTDOWN_POWER_OFF_HALT:
-            apszArgs[iArg++] = "--poweroff";
+            apszArgs[iArg++] = "-h";
+            apszArgs[iArg++] = "-P";
             break;
     }
 
