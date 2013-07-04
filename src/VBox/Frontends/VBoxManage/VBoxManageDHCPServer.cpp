@@ -297,7 +297,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                                                                       u8Slot)] 
                                        : GlobalDhcpOptions);
                     std::string strVal = ValueUnion.psz;
-                    map.insert(DhcpOptValuePair(u8OptId, strVal);
+                    map.insert(DhcpOptValuePair(u8OptId, strVal));
 
                 }
                 break; // --end of value
