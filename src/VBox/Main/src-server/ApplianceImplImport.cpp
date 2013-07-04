@@ -2109,8 +2109,18 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
     SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
 
     const Utf8Str &strSourceOVF = di.strHref;
+
+    Utf8Str strSrcFilePath(stack.strSourceDir);
     /* Construct source file path */
-    Utf8StrFmt strSrcFilePath("%s%c%s", stack.strSourceDir.c_str(), RTPATH_DELIMITER, strSourceOVF.c_str());
+    Utf8Str name = applianceIOName(applianceIOTar);
+
+    if (RTStrNICmp(pStorage->pVDImageIfaces->pszInterfaceName, name.c_str(), name.length()) == 0)
+        strSrcFilePath = strSourceOVF;
+    else
+    {
+        strSrcFilePath.append(RTPATH_SLASH_STR);
+        strSrcFilePath.append(strSourceOVF);
+    }
 
     /* First of all check if the path is an UUID. If so, the user like to
      * import the disk into an existing path. This is useful for iSCSI for
