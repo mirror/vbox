@@ -4109,6 +4109,43 @@ DxgkDdiEscape(
                 Status = STATUS_SUCCESS;
                 break;
             }
+            case VBOXESC_SETCTXHOSTID:
+            {
+                /* set swapchain information */
+                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
+                if (!pContext)
+                {
+                    WARN(("VBOXESC_SETCTXHOSTID: no context specified"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                if (pEscape->PrivateDriverDataSize != sizeof (VBOXDISPIFESCAPE))
+                {
+                    WARN(("VBOXESC_SETCTXHOSTID: invalid data size %d", pEscape->PrivateDriverDataSize));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                int32_t hostID = (int32_t)pEscapeHdr->u32CmdSpecific;
+                if (hostID <= 0)
+                {
+                    WARN(("VBOXESC_SETCTXHOSTID: invalid hostID %d", hostID));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                if (pContext->hostID)
+                {
+                    WARN(("VBOXESC_SETCTXHOSTID: context already has hostID specified"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                pContext->hostID = hostID;
+                Status = STATUS_SUCCESS;
+                break;
+            }
             case VBOXESC_SWAPCHAININFO:
             {
                 /* set swapchain information */

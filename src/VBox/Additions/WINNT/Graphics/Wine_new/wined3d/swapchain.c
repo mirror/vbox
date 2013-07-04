@@ -1535,15 +1535,16 @@ HRESULT CDECL wined3d_swapchain_present_rt(struct wined3d_swapchain *swapchain, 
     return S_OK;
 }
 
-HRESULT CDECL wined3d_swapchain_get_host_win_id(struct wined3d_swapchain *swapchain, DWORD *pID)
+HRESULT CDECL wined3d_swapchain_get_host_win_id(struct wined3d_swapchain *swapchain, int32_t *pi32Id)
 {
-    DWORD id = (DWORD)pVBoxGetWindowId(swapchain->hDC);
+    int32_t id = pVBoxGetWindowId(swapchain->hDC);
     if (!id)
     {
+        *pi32Id = 0;
         ERR("failed to get id for hdc 0x%x", swapchain->hDC);
         return E_FAIL;
     }
-    *pID = id;
+    *pi32Id = id;
     return S_OK;
 }
 #endif

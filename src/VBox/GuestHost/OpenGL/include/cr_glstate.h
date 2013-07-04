@@ -286,6 +286,9 @@ DECLEXPORT(void) crStateFreeShared(CRContext *pContext, CRSharedState *s);
 
 DECLEXPORT(int32_t) crStateLoadGlobals(PSSMHANDLE pSSM, uint32_t u32Version);
 DECLEXPORT(int32_t) crStateSaveGlobals(PSSMHANDLE pSSM);
+
+DECLEXPORT(CRSharedState *) crStateGlobalSharedAcquire();
+DECLEXPORT(void) crStateGlobalSharedRelease();
 #endif
 
 DECLEXPORT(void) crStateSetTextureUsed(GLuint texture, GLboolean used);

@@ -260,3 +260,4 @@ EXPORTS
   wined3d_surface_get_host_id
   wined3d_surface_sync_to_host
   wined3d_swapchain_get_host_win_id
+  wined3d_device_get_host_id

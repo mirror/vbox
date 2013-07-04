@@ -830,13 +830,40 @@ HRESULT VBoxD3DIfDeviceCreateDummy(PVBOXWDDMDISP_DEVICE pDevice)
     IDirect3DDevice9 * pDevice9If = NULL;
 
     HRESULT hr = pAdapter->D3D.pD3D9If->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, NULL, fFlags, &Params.Base, &pDevice9If);
-    if (!SUCCEEDED(hr))
+    if (SUCCEEDED(hr))
     {
-        WARN(("CreateDevice failed hr 0x%x", hr));
-        return hr;
-    }
+        int32_t hostId = 0;
+        hr = pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9GetHostId((IDirect3DDevice9Ex*)pDevice9If, &hostId);
+        if (SUCCEEDED(hr))
+        {
+            Assert(hostId);
 
-    pDevice->pDevice9If = pDevice9If;
-    return S_OK;
+            VBOXDISPIFESCAPE Data;
+            Data.escapeCode = VBOXESC_SETCTXHOSTID;
+            Data.u32CmdSpecific = (uint32_t)hostId;
+            D3DDDICB_ESCAPE DdiEscape = {0};
+            DdiEscape.hContext = pDevice->DefaultContext.ContextInfo.hContext;
+            DdiEscape.hDevice = pDevice->hDevice;
+        //    DdiEscape.Flags.Value = 0;
+            DdiEscape.pPrivateDriverData = &Data;
+            DdiEscape.PrivateDriverDataSize = sizeof (Data);
+            hr = pDevice->RtCallbacks.pfnEscapeCb(pDevice->pAdapter->hAdapter, &DdiEscape);
+            if (SUCCEEDED(hr))
+            {
+                pDevice->pDevice9If = pDevice9If;
+                return S_OK;
+            }
+            else
+                WARN(("pfnEscapeCb VBOXESC_SETCTXHOSTID failed hr 0x%x", hr));
+        }
+        else
+            WARN(("pfnVBoxWineExD3DDev9GetHostId failed hr 0x%x", hr));
+
+        pDevice->pAdapter->D3D.D3D.pfnVBoxWineExD3DDev9Term((IDirect3DDevice9Ex *)pDevice9If);
+    }
+    else
+        WARN(("CreateDevice failed hr 0x%x", hr));
+
+    return hr;
 }
 

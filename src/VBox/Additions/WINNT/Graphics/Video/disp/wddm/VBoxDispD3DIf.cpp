@@ -162,6 +162,13 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
             break;
         }
 
+        pD3D->pfnVBoxWineExD3DDev9GetHostId = (PFNVBOXWINEEXD3DDEV9_GETHOSTID)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9GetHostId");
+        if (!pD3D->pfnVBoxWineExD3DDev9GetHostId)
+        {
+            WARN(("no VBoxWineExD3DDev9GetHostId"));
+            break;
+        }
+
         return S_OK;
 
     } while (0);

@@ -5687,4 +5687,18 @@ HRESULT CDECL wined3d_device_finish(struct wined3d_device *device)
     return WINED3D_OK;
 
 }
+
+HRESULT CDECL wined3d_device_get_host_id(struct wined3d_device *device, int32_t *pid)
+{
+    int32_t id = pVBoxGetContextId(device->contexts[0]->glCtx);
+    if (!id)
+    {
+        *pid = 0;
+        ERR("pVBoxGetContextId to get id for context 0x%x", device->contexts[0]->glCtx);
+        return E_FAIL;
+    }
+
+    *pid = id;
+    return WINED3D_OK;
+}
 #endif

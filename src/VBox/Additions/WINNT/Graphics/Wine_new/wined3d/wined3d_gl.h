@@ -184,6 +184,7 @@ PGLFNCHROMIUMPARAMETERUCR pglChromiumParameteriCR;
 HGLRC (WINAPI *pVBoxCreateContext)(HDC, struct VBOXUHGSMI*) DECLSPEC_HIDDEN;
 void (WINAPI *pVBoxFlushToHost)(HGLRC) DECLSPEC_HIDDEN;
 GLint (WINAPI *pVBoxGetWindowId)(HDC)  DECLSPEC_HIDDEN;
+GLint (WINAPI *pVBoxGetContextId)(HGLRC)  DECLSPEC_HIDDEN;
 
 
 #define VBOX_USE_GL_FUNC(pfn) p##pfn = (void *)wglGetProcAddress(#pfn);
@@ -191,7 +192,8 @@ GLint (WINAPI *pVBoxGetWindowId)(HDC)  DECLSPEC_HIDDEN;
 # define VBOX_GL_FUNCS_GEN \
         VBOX_USE_FUNC(VBoxCreateContext) \
         VBOX_USE_FUNC(VBoxFlushToHost) \
-        VBOX_USE_FUNC(VBoxGetWindowId)
+        VBOX_USE_FUNC(VBoxGetWindowId) \
+        VBOX_USE_FUNC(VBoxGetContextId)
 
 # define VBOX_GL_EXT_FUNCS_GEN \
         VBOX_USE_GL_FUNC(glChromiumParameteriCR)

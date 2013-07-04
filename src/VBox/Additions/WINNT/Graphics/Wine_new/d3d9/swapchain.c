@@ -306,12 +306,12 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSwapchain9Present(IDirect3DSwapChain9 *ifa
     return hr;
 }
 
-VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSwapchain9GetHostWinID(IDirect3DSwapChain9 *iface, DWORD *pID)
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSwapchain9GetHostWinID(IDirect3DSwapChain9 *iface, int32_t *pi32Id)
 {
     struct d3d9_swapchain *swapchain = impl_from_IDirect3DSwapChain9(iface);
     HRESULT hr;
     wined3d_mutex_lock();
-    hr = wined3d_swapchain_get_host_win_id(swapchain->wined3d_swapchain, pID);
+    hr = wined3d_swapchain_get_host_win_id(swapchain->wined3d_swapchain, pi32Id);
     wined3d_mutex_unlock();
     return hr;
 }

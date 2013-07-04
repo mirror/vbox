@@ -821,6 +821,20 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Finish(IDirect3DDevice9Ex *iface)
     return hr;
 }
 
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9GetHostId(IDirect3DDevice9Ex *iface, int32_t *pi32Id)
+{
+    struct d3d9_device *device = impl_from_IDirect3DDevice9Ex(iface);
+    HRESULT hr;
+
+    TRACE("iface %p, FlushToHost\n", iface);
+
+    wined3d_mutex_lock();
+    hr = wined3d_device_get_host_id(device->wined3d_device, pi32Id);
+    wined3d_mutex_unlock();
+
+    return hr;
+}
+
 //#pragma comment(linker, "/export:VBoxWineExD3DDev9CreateTexture=_VBoxWineExD3DDev9CreateTexture@40")
 
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateTexture(IDirect3DDevice9Ex *iface,

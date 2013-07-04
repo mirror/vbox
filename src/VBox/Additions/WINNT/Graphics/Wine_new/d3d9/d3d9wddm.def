@@ -12,7 +12,7 @@ EXPORTS
   Direct3DCreate9
   Direct3DCreate9Ex
   VBoxWineExD3DDev9Flush
-  VBoxWineExD3DDev9FlushToHost
+  VBoxWineExD3DDev9GetHostId
   VBoxWineExD3DDev9Finish
   VBoxWineExD3DDev9CreateTexture
   VBoxWineExD3DDev9CreateCubeTexture
@@ -24,3 +24,4 @@ EXPORTS
   VBoxWineExD3DSurf9GetHostId
   VBoxWineExD3DSwapchain9GetHostWinID
   VBoxWineExD3DSurf9SyncToHost
+  VBoxWineExD3DDev9FlushToHost
