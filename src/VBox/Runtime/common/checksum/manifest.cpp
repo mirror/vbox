@@ -270,7 +270,7 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, RTDIGESTTYPE enm
 }
 
 
-RTR3DECL(int) RTManifestVerifyDigestType(void *pvBuf, size_t cbSize, RTDIGESTTYPE *penmDigestType)
+RTR3DECL(int) RTManifestVerifyDigestType(void const *pvBuf, size_t cbSize, RTDIGESTTYPE *penmDigestType)
 {
     /* Validate input */
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
