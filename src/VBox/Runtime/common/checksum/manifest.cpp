@@ -454,7 +454,7 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
         bool fFound = false;
         for (size_t i = 0; i < cTests; ++i)
         {
-            if (!RTStrCmp(RTPathFilename(paFiles[i].pTestPattern->pszTestFile), RTStrStrip(pszName)))
+            if (RTStrStr(paFiles[i].pTestPattern->pszTestFile, RTStrStrip(pszName)) != NULL)
             {
                 /* Add the data of the manifest file to the file list */
                 paFiles[i].pszManifestFile = RTStrDup(RTStrStrip(pszName));
@@ -491,7 +491,7 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
                 break;
             }
 
-            /* Do the manifest SHA1 digest match against the actual digest? */
+            /* Do the manifest SHA digest match against the actual digest? */
             if (RTStrICmp(paFiles[i].pszManifestDigest, paFiles[i].pTestPattern->pszTestDigest))
             {
                 if (piFailed)
