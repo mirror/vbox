@@ -18,6 +18,9 @@ All rights reserved
 __version__ = "$Revision$";
 
 
+# pylint: disable=C0103,R0913
+
+
 # Standard python imports.
 import io;
 import os;
@@ -156,6 +159,14 @@ def randU64():
 def randUxx(cBits):
     """ Unsigned 8-, 16-, 32-, or 64-bit random number. """
     return g_oMyRand.getrandbits(cBits);
+
+def randSxx(cBits):
+    """ Signed 8-, 16-, 32-, or 64-bit random number. """
+    uVal = randUxx(cBits);
+    iRet = uVal & ((1 << (cBits - 1)) - 1);
+    if iRet != uVal:
+        iRet = -iRet;
+    return iRet;
 
 def randUxxList(cBits, cElements):
     """ List of unsigned 8-, 16-, 32-, or 64-bit random numbers. """
@@ -350,7 +361,7 @@ class TargetEnv(object):
     def randGRegNoSpList(self, cItems, cbEffBytes = 4):
         """ List of randGRegNoSp values. """
         aiRegs = [];
-        for i in range(cItems):
+        for _ in range(cItems):
             aiRegs.append(self.randGRegNoSp(cbEffBytes));
         return aiRegs;
 
@@ -831,7 +842,8 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                             if oGen.iModRm != 4 or cAddrBits == 16:
                                 for uInput in auInputs:
                                     oGen.newSubTest();
-                                    if oGen.iModReg == oGen.iModRm and oGen.iModRm != 5 and oGen.iModRm != 13 and cbEffOp != cbMaxOp:
+                                    if oGen.iModReg == oGen.iModRm and oGen.iModRm != 5 \
+                                       and oGen.iModRm != 13 and cbEffOp != cbMaxOp:
                                         continue; # Don't know the high bit of the address ending up the result - skip it for now.
                                     uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[oGen.iModReg & 15], oGen);
                                     self.generateOneStdTestGregMemNoSib(oGen, cAddrBits, cbEffOp, cbMaxOp,
@@ -925,25 +937,178 @@ class InstrTest_DivIDiv(InstrTestBase):
 
     def __init__(self, fIsIDiv):
         if not fIsIDiv:
-            InstrTest_MemOrGreg_2_Greg.__init__(self, 'div Gv,Ev',  self.calc_div,  acbOpVars = [ 8, 4, 2, 1 ]);
-        else
-            InstrTest_MemOrGreg_2_Greg.__init__(self, 'idiv Gv,Ev', self.calc_idiv, acbOpVars = [ 8, 4, 2, 1 ]);
+            InstrTestBase.__init__(self, 'div Gv,Ev', 'div');
+        else:
+            InstrTestBase.__init__(self, 'idiv Gv,Ev', 'idiv');
         self.fIsIDiv = fIsIDiv;
+
+    def generateInputsNoXcpt(self, cbEffOp, fLong = False):
+        """ Generate inputs for cbEffOp. Returns a list of pairs, dividen + divisor. """
+        # Test params.
+        uStep = 1 << (cbEffOp * 8);
+        if self.fIsIDiv:
+            uStep /= 2;
+
+        # edge tests
+        auRet = [];
+
+        uDivisor  = 1 if fLong else 3;
+        uDividend = uStep * uDivisor - 1;
+        for i in range(5 if fLong else 3):
+            auRet.append([uDividend, uDivisor]);
+            if self.fIsIDiv:
+                auRet.append([-uDividend, -uDivisor]);
+                auRet.append([-(uDividend + uDivisor - 1), uDivisor]);
+                auRet.append([ (uDividend + uDivisor - 1), -uDivisor]);
+            if i <= 3 and fLong:
+                auRet.append([uDividend - 1, uDivisor]);
+                if self.fIsIDiv:
+                    auRet.append([-(uDividend - 1), -uDivisor]);
+            uDivisor += 1;
+            uDividend += uStep;
+
+        uDivisor  = uStep - 1;
+        uDividend = uStep * uDivisor - 1;
+        for _ in range(3 if fLong else 1):
+            auRet.append([uDividend, uDivisor]);
+            if self.fIsIDiv:
+                auRet.append([-uDividend, -uDivisor]);
+            uDivisor  -= 1;
+            uDividend -= uStep;
+
+        if self.fIsIDiv:
+            uDivisor = -uStep;
+            for _ in range(3 if fLong else 1):
+                auRet.append([uDivisor * (uDivisor - 1) - 1, uDivisor]);
+                uDivisor += 1
+            uDivisor = uStep - 1;
+            for _ in range(3 if fLong else 1):
+                auRet.append([-(uDivisor * (uDivisor + 1) - 1), uDivisor]);
+                uDivisor -= 1
+
+        # random tests.
+        if self.fIsIDiv:
+            for _ in range(6 if fLong else 2):
+                while True:
+                    uDivisor  = randSxx(cbEffOp * 4);
+                    if uDivisor == 0 or uDivisor >= uStep or uDivisor < -uStep:
+                        continue;
+                    uDividend = randSxx(cbEffOp * 8);
+                    uResult = uDividend / uDivisor;
+                    if uResult >= uStep or uResult <= -uStep: # exclude difficulties
+                        continue;
+                    break;
+                auRet.append([uDividend, uDivisor]);
+        else:
+            for _ in range(6 if fLong else 2):
+                while True:
+                    uDivisor  = randUxx(cbEffOp * 4);
+                    if uDivisor == 0 or uDivisor >= uStep:
+                        continue;
+                    uDividend = randUxx(cbEffOp * 8);
+                    uResult = uDividend / uDivisor;
+                    if uResult >= uStep:
+                        continue;
+                    break;
+                auRet.append([uDividend, uDivisor]);
+
+        return auRet;
+
+
+    def generateOneStdTestGreg(self, oGen, cbEffOp, iOp2, iDividend, iDivisor):
+        """ Generate code of one '[I]DIV rDX:rAX,<GREG>' test. """
+        cbMaxOp   = oGen.oTarget.getMaxOpBytes();
+        fEffOp    = ((1 << (cbEffOp *8) ) - 1);
+        fMaxOp    = UINT64_MAX if cbMaxOp == 8 else UINT32_MAX; assert cbMaxOp in [8, 4];
+        fTopOp    = fMaxOp - fEffOp;
+        fFullOp1  = ((1 << (cbEffOp*16)) - 1);
+
+        uAX       = iDividend & fFullOp1;       # full with unsigned
+        uDX       = uAX >> (cbEffOp*8);
+        uAX      &= fEffOp;
+        uOp2Val   = iDivisor & fEffOp;
+
+        iQuotient = iDividend / iDivisor;
+        iReminder = iDividend % iDivisor;
+        if iReminder != 0 and iQuotient < 0:    # python has different rounding rules for negative division.
+            iQuotient += 1;
+            iReminder -= iDivisor;
+        uAXResult = iQuotient & fEffOp;
+        uDXResult = iReminder & fEffOp;
+
+        if cbEffOp < cbMaxOp:
+            uAX     |= randUxx(cbMaxOp * 8) & fTopOp;
+            uDX     |= randUxx(cbMaxOp * 8) & fTopOp;
+            uOp2Val |= randUxx(cbMaxOp * 8) & fTopOp;
+            if cbEffOp < 4:
+                uAXResult |= uAX & fTopOp;
+                uDXResult |= uDX & fTopOp;
+        oGen.write('        ; iDividend=%#x (%d) iDivisor=%#x (%d)\n'
+                   '        ; iQuotient=%#x (%d) iReminder=%#x (%d)\n'
+                   % ( iDividend & fFullOp1, iDividend, iDivisor & fEffOp, iDivisor,
+                       iQuotient & fEffOp, iQuotient, iReminder & fEffOp, iReminder, ));
+
+        oGen.write('        call VBINSTST_NAME(Common_LoadKnownValues)\n');
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[X86_GREG_xDX], uDX,));
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[X86_GREG_xAX], uAX,));
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[iOp2],         uOp2Val,));
+
+        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2],));
+        oGen.pushConst(uDXResult);
+        oGen.pushConst(uAXResult);
+
+        oGen.write('        %-4s    %s\n' % (self.sInstr, gregName(iOp2, cbEffOp * 8),));
+        oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(X86_GREG_xAX, X86_GREG_xDX, iOp2),));
+        return True;
+
+    def generateOneStdTestGreg8Bit(self, oGen, cbEffOp, iOp2, iDividend, iDivisor):
+        """ Generate code of one '[I]DIV AX,<GREG>' test (8-bit). """
+        cbMaxOp   = oGen.oTarget.getMaxOpBytes();
+        fMaxOp    = UINT64_MAX if cbMaxOp == 8 else UINT32_MAX; assert cbMaxOp in [8, 4];
+        iOp2X     = (iOp2 & 3) if oGen.oTarget.is8BitHighGReg(cbEffOp, iOp2) else iOp2;
+        assert iOp2X != X86_GREG_xAX;
+
+        uAX       = iDividend & UINT16_MAX;     # full with unsigned
+        uOp2Val   = iDivisor  & UINT8_MAX;
+
+        iQuotient = iDividend / iDivisor;
+        iReminder = iDividend % iDivisor;
+        if iReminder != 0 and iQuotient < 0:    # python has different rounding rules for negative division.
+            iQuotient += 1;
+            iReminder -= iDivisor;
+        uAXResult = (iQuotient & UINT8_MAX) | ((iReminder & UINT8_MAX) << 8);
+
+        uAX       |= randUxx(cbMaxOp * 8) & (fMaxOp - UINT16_MAX);
+        uAXResult |= uAX & (fMaxOp - UINT16_MAX);
+        uOp2Val   |= randUxx(cbMaxOp * 8) & (fMaxOp - UINT8_MAX);
+        if iOp2X != iOp2:
+            uOp2Val = rotateLeftUxx(cbMaxOp * 8, uOp2Val, 8);
+        oGen.write('        ; iDividend=%#x (%d) iDivisor=%#x (%d)\n'
+                   '        ; iQuotient=%#x (%d) iReminder=%#x (%d)\n'
+                   % ( iDividend & UINT16_MAX, iDividend, iDivisor & UINT8_MAX, iDivisor,
+                       iQuotient & UINT8_MAX, iQuotient, iReminder & UINT8_MAX, iReminder, ));
+
+        oGen.write('        call VBINSTST_NAME(Common_LoadKnownValues)\n');
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[X86_GREG_xAX], uAX,));
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[iOp2X], uOp2Val,));
+        oGen.write('        push    %s\n'       % (oGen.oTarget.asGRegs[iOp2X],));
+        oGen.pushConst(uAXResult);
+
+        oGen.write('        %-4s    %s\n' % (self.sInstr, gregName(iOp2, cbEffOp * 8),));
+        oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(X86_GREG_xAX, iOp2X),));
+        return;
+
 
     def generateStandardTests(self, oGen):
         """ Generates test that causes no exceptions. """
 
         # Parameters.
-        cbDefOp       = oGen.oTarget.getDefOpBytes();
-        cbMaxOp       = oGen.oTarget.getMaxOpBytes();
-        #auShortInputs = self.generateInputs(cbDefOp, cbMaxOp, oGen);
-        #auLongInputs  = self.generateInputs(cbDefOp, cbMaxOp, oGen, fLong = True);
-        iLongOp2      = oGen.oTarget.randGRegNoSp();
+        iLongOp2       = oGen.oTarget.randGRegNoSp();
 
         # Register tests
         if True:
-            for cbEffOp in self.acbOpVars:
-                if cbEffOp > cbMaxOp:
+            for cbEffOp in  ( 8, 4, 2, 1 ):
+                if cbEffOp > oGen.oTarget.getMaxOpBytes():
                     continue;
                 oGen.write('; cbEffOp=%u\n' % (cbEffOp,));
                 oOp2Range = range(oGen.oTarget.getGRegCount(cbEffOp));
@@ -952,14 +1117,17 @@ class InstrTest_DivIDiv(InstrTestBase):
                 for iOp2 in oOp2Range:
                     if iOp2 == X86_GREG_xSP:
                         continue; # Cannot test xSP atm.
-                    #for uInput in (auLongInputs if iOp2 == iLongOp2 else auShortInputs):
-                    #    oGen.newSubTest();
-                    #    if not oGen.oTarget.is8BitHighGReg(cbEffOp, iOp2):
-                    #        uResult = self.fnCalcResult(cbEffOp, uInput, uCur, oGen);
-                    #        self.generateOneStdTestGregGreg(oGen, cbEffOp, cbMaxOp, iOp2, iOp2 & 15,
-                    #                                        uInput, uResult);
-                    #    else:
-                    #        self.generateOneStdTestGregGreg8BitHighPain(oGen, cbEffOp, cbMaxOp, iOp2, uInput);
+                    if iOp2 == X86_GREG_xAX or (cbEffOp > 1 and iOp2 == X86_GREG_xDX):
+                        continue; # Will overflow or be too complicated to get right.
+                    if cbEffOp == 1 and iOp2 == (16 if oGen.oTarget.is64Bit() else 4):
+                        continue; # Avoid dividing by AH, same reasons as above.
+
+                    for iDividend, iDivisor in self.generateInputsNoXcpt(cbEffOp, iOp2 == iLongOp2):
+                        oGen.newSubTest();
+                        if cbEffOp > 1:
+                            self.generateOneStdTestGreg(oGen, cbEffOp, iOp2, iDividend, iDivisor);
+                        else:
+                            self.generateOneStdTestGreg8Bit(oGen, cbEffOp, iOp2, iDividend, iDivisor);
 
         ## Memory test.
         #if False:
@@ -989,34 +1157,31 @@ class InstrTest_DivIDiv(InstrTestBase):
         oGen.write('VBINSTST_BEGINPROC %s\n' % (sTestFnName,));
         #oGen.write('        int3\n');
 
-        self.generateNoXcptTests(oGen);
+        self.generateStandardTests(oGen);
 
         #oGen.write('        int3\n');
         oGen.write('        ret\n');
         oGen.write('VBINSTST_ENDPROC   %s\n' % (sTestFnName,));
         return True;
 
-    @staticmethod
-    def calc_div(cbEffOp, uInput, uCur, oGen):
-        """ Returns a register pair. """
-        return 0;
-
-    @staticmethod
-    def calc_idiv(cbEffOp, uInput, uCur, oGen):
-        """ Returns a register pair. """
-        return 0;
 
 
-## Instruction Tests.
+
+##
+# Instruction Tests.
+#
 g_aoInstructionTests = [
-    #InstrTest_Mov_Gv_Ev(),
+    InstrTest_Mov_Gv_Ev(),
     #InstrTest_MovSxD_Gv_Ev(),
-    #InstrTest_DivIDiv(fIsIDiv = False),
+    InstrTest_DivIDiv(fIsIDiv = False),
     InstrTest_DivIDiv(fIsIDiv = True),
 ];
 
 
-class InstructionTestGen(object):
+
+
+
+class InstructionTestGen(object): # pylint: disable=R0902
     """
     Instruction Test Generator.
     """
@@ -1336,7 +1501,7 @@ class InstructionTestGen(object):
 
         return True;
 
-    def _generateMemSetupFunctions(self):
+    def _generateMemSetupFunctions(self): # pylint: disable=R0915
         """
         Generates the memory setup functions.
         """
@@ -1549,11 +1714,11 @@ class InstructionTestGen(object):
                                '        je      .equal%u\n'
                                '        push    %s %u      ; register number\n'
                                '        push    %s         ; actual\n'
-                               '        mov     %s, [xSP + sCB*2 + MY_PUSH_FLAGS_SIZE + xCB]\n'
+                               '        mov     %s, [xSP + sCB*2 + MY_PUSH_FLAGS_SIZE + xCB + sCB * %u]\n'
                                '        push    %s         ; expected\n'
                                '        call    VBINSTST_NAME(Common_BadValue)\n'
                                '.equal%u:\n'
-                           % ( sReg, i, i, sPushSize, iReg, sReg, sReg, sReg, i, ) );
+                           % ( sReg, i, i, sPushSize, iReg, sReg, sReg, i, sReg, i, ) );
 
 
             # Restore known register values and check the other registers.
