@@ -188,7 +188,7 @@ RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuf
 RTDECL(int) RTLocalIpcSessionFlush(RTLOCALIPCSESSION hSession);
 
 /**
- * Wait for data to become read for reading or for the
+ * Wait for data to become ready for reading or for the
  * session to be disconnected.
  *
  * @returns IPRT status code.
