@@ -1330,40 +1330,45 @@ BEGINCODE
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         PROLOGUE_3_ARGS
 
+        ; div by chainsaw check.
         test    A1_8, A1_8
         jz      .div_zero
+
+        ; Overflow check - unsigned division is simple to verify, haven't
+        ; found a simple way to check signed division yet unfortunately.
  %if %4 == 0
         cmp     [A0 + 1], A1_8
         jae     .div_overflow
  %else
-;        js      .divisor_negative
-;.divisor_positive:
-;        mov     ax, [A0]
-;        test    ax, ax
-;        js      .divisor_positive_dividend_negative
-;
-;.both_positive:
-;        shl     ax, 1
-;        cmp     ah, A1_8
-;        jae     .div_overflow
-;        jmp     .div_no_overflow
-;.both_negative:
-;        neg     ax
-;        shl     ax, 1
-;        mov     al, A1_8
-;        neg     al
-;        cmp     ah, al
-;        jae     .div_overflow
-;        jmp     .div_no_overflow
-;
-;.divisor_positive_dividend_negative:
-;        jmp     .div_no_overflow
-;.divisor_negative:
-;        test    ax, ax
-;        js      .both_negative
-;.divisor_negative_dividend_positive:
-;        jmp     .div_no_overflow
-;.div_no_overflow:
+        mov     T0_16, [A0]             ; T0 = dividend
+        mov     T1_8, A1_8              ; T1 = divisor
+        test    T1_16, T1_16
+        js      .divisor_negative
+        test    T0_16, T0_16
+        jns     .both_positive
+        neg     T0_16
+.one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
+        push    T0                      ; Start off like unsigned below.
+        shr     T0_16, 7
+        cmp     T0_8, T1_8
+        pop     T0
+        jb      .div_no_overflow
+        ja      .div_overflow
+        and     T0_8, 0x7f              ; Special case for covering (divisor - 1).
+        cmp     T0_8, T1_8
+        jae     .div_overflow
+        jmp     .div_no_overflow
+
+.divisor_negative:
+        neg     T1_8
+        test    T0_16, T0_16
+        jns     .one_of_each
+        neg     T0_16
+.both_positive:                         ; Same as unsigned shifted by sign indicator bit.
+        shr     T0_16, 7
+        cmp     T0_8, T1_8
+        jae     .div_overflow
+.div_no_overflow:
  %endif
 
         IEM_MAYBE_LOAD_FLAGS A2, %2, %3
