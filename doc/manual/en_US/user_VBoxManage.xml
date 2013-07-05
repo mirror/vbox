@@ -3345,7 +3345,7 @@ Value: 2006.01.01</screen>
               </glossentry>
 
               <glossentry>
-                <glossterm>--source "&lt;guest additions .ISO file to
+                <glossterm><computeroutput>--source</computeroutput> "&lt;guest additions .ISO file to
                 use&gt;"</glossterm>
 
                 <glossdef>
