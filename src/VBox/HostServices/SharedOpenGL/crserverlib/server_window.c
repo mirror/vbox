@@ -732,7 +732,7 @@ void crServerMuralVisibleRegion( CRMuralInfo *mural, GLint cRects, const GLint *
 
         if (mural->fRootVrOn)
         {
-            rc = rc = crServerMuralSynchRootVr(mural);
+            rc = crServerMuralSynchRootVr(mural);
             if (!RT_SUCCESS(rc))
             {
                 crWarning("crServerMuralSynchRootVr failed, rc %d", rc);
