@@ -308,8 +308,8 @@ static int rtSystemWinQueryOSVersion(RTSYSOSINFO enmInfo, char *pszInfo, size_t 
      * ASSUMES OSVERSIONINFOEX starts with the exact same layout as OSVERSIONINFO (safe).
      */
     OSVERSIONINFOEX OSInfoEx;
-    memset(&OSInfoEx, '\0', sizeof(OSInfoEx));
-    OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    RT_ZERO(OSInfoEx);
+    OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
     if (!GetVersionEx((LPOSVERSIONINFO) &OSInfoEx))
     {
         DWORD err = GetLastError();
@@ -318,10 +318,10 @@ static int rtSystemWinQueryOSVersion(RTSYSOSINFO enmInfo, char *pszInfo, size_t 
     }
 
     /* Get extended version info for 2000 and later. */
-    if (    OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT
-        &&  OSInfoEx.dwMajorVersion >= 5)
+    if (   OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT
+        && OSInfoEx.dwMajorVersion >= 5)
     {
-        ZeroMemory(&OSInfoEx, sizeof(OSInfoEx));
+        RT_ZERO(OSInfoEx);
         OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
         if (!GetVersionEx((LPOSVERSIONINFO) &OSInfoEx))
         {
