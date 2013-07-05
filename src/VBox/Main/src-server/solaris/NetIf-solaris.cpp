@@ -419,7 +419,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         if (!rc)
         {
             int cbIfaces = IfNum.lifn_count * sizeof(struct lifreq);
-            struct lifreq *Ifaces = (struct lifreq *Ifaces)RTMemTmpAlloc(cbIfaces);
+            struct lifreq *Ifaces = (struct lifreq *)RTMemTmpAlloc(cbIfaces);
             if (Ifaces)
             {
                 struct lifconf IfConfig;
