@@ -26,16 +26,26 @@
 /* Forward declaration: */
 class UIPopupPaneTextPane;
 class UIPopupPaneButtonPane;
+class UIAnimation;
 
 /* Popup-pane prototype: */
 class UIPopupPane : public QWidget
 {
     Q_OBJECT;
+    Q_PROPERTY(QSize hiddenSizeHint READ hiddenSizeHint);
+    Q_PROPERTY(QSize shownSizeHint READ shownSizeHint);
+    Q_PROPERTY(QSize minimumSizeHint READ minimumSizeHint WRITE setMinimumSizeHint);
     Q_PROPERTY(int defaultOpacity READ defaultOpacity);
     Q_PROPERTY(int hoveredOpacity READ hoveredOpacity);
     Q_PROPERTY(int opacity READ opacity WRITE setOpacity);
 
 signals:
+
+    /* Notifiers: Show/hide stuff: */
+    void sigToShow();
+    void sigToHide();
+    void sigShow();
+    void sigHide();
 
     /* Notifiers: Hover stuff: */
     void sigHoverEnter();
@@ -68,11 +78,15 @@ public:
 
     /* API: Layout stuff: */
     QSize minimumSizeHint() const { return m_minimumSizeHint; }
+    void setMinimumSizeHint(const QSize &minimumSizeHint);
     void updateSizeHint();
     void setDesiredWidth(int iWidth);
     void layoutContent();
 
 private slots:
+
+    /* Handler: Show/hide stuff: */
+    void sltMarkAsShown();
 
     /* Handler: Layout stuff: */
     void sltAdjustGeometry();
@@ -90,7 +104,9 @@ private:
     /* Handler: Event-filter stuff: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
-    /* Handler: Event stuff: */
+    /* Handlers: Event stuff: */
+    void showEvent(QShowEvent *pEvent);
+    void polishEvent(QShowEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
 
     /* Helpers: Paint stuff: */
@@ -100,6 +116,10 @@ private:
     /* Helper: Complete stuff: */
     void done(int iResultCode);
 
+    /* Property: Show/hide stuff: */
+    QSize hiddenSizeHint() const { return m_hiddenSizeHint; }
+    QSize shownSizeHint() const { return m_shownSizeHint; }
+
     /* Property: Hover stuff: */
     int defaultOpacity() const { return m_iDefaultOpacity; }
     int hoveredOpacity() const { return m_iHoveredOpacity; }
@@ -107,6 +127,7 @@ private:
     void setOpacity(int iOpacity) { m_iOpacity = iOpacity; update(); }
 
     /* Variables: General stuff: */
+    bool m_fPolished;
     const QString m_strId;
     const int m_iLayoutMargin;
     const int m_iLayoutSpacing;
@@ -120,6 +141,12 @@ private:
 
     /* Variables: Button stuff: */
     QMap<int, QString> m_buttonDescriptions;
+
+    /* Variables: Show/hide stuff: */
+    bool m_fShown;
+    UIAnimation *m_pShowAnimation;
+    QSize m_hiddenSizeHint;
+    QSize m_shownSizeHint;
 
     /* Variables: Hover stuff: */
     bool m_fHovered;

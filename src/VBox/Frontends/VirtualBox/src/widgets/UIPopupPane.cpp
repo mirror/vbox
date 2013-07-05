@@ -32,10 +32,13 @@ UIPopupPane::UIPopupPane(QWidget *pParent,
                          const QMap<int, QString> &buttonDescriptions,
                          bool fProposeAutoConfirmation)
     : QWidget(pParent)
+    , m_fPolished(false)
     , m_iLayoutMargin(10), m_iLayoutSpacing(5)
     , m_strMessage(strMessage), m_strDetails(strDetails)
     , m_fProposeAutoConfirmation(fProposeAutoConfirmation)
     , m_buttonDescriptions(buttonDescriptions)
+    , m_fShown(false)
+    , m_pShowAnimation(0)
     , m_fHovered(false)
     , m_iDefaultOpacity(180)
     , m_iHoveredOpacity(250)
@@ -90,6 +93,19 @@ void UIPopupPane::setDesiredWidth(int iWidth)
                                         - m_pButtonPane->minimumSizeHint().width());
 }
 
+void UIPopupPane::setMinimumSizeHint(const QSize &minimumSizeHint)
+{
+    /* Make sure the size-hint is changed: */
+    if (m_minimumSizeHint == minimumSizeHint)
+        return;
+
+    /* Assign new size-hint: */
+    m_minimumSizeHint = minimumSizeHint;
+
+    /* Notify parent popup-stack: */
+    emit sigSizeHintChanged();
+}
+
 void UIPopupPane::updateSizeHint()
 {
     /* Calculate minimum width-hint: */
@@ -118,8 +134,14 @@ void UIPopupPane::updateSizeHint()
         }
     }
 
-    /* Compose minimum size-hint: */
-    m_minimumSizeHint = QSize(iMinimumWidthHint, iMinimumHeightHint);
+    /* Compose minimum size-hints: */
+    m_hiddenSizeHint = QSize(iMinimumWidthHint, 1);
+    m_shownSizeHint = QSize(iMinimumWidthHint, iMinimumHeightHint);
+    m_minimumSizeHint = m_fShown ? m_shownSizeHint : m_hiddenSizeHint;
+
+    /* Update 'show/hide' animation: */
+    if (m_pShowAnimation)
+        m_pShowAnimation->update();
 }
 
 void UIPopupPane::layoutContent()
@@ -149,6 +171,12 @@ void UIPopupPane::layoutContent()
                         m_iLayoutMargin);
     m_pButtonPane->resize(iButtonPaneMinimumWidth,
                           iHeight - 2 * m_iLayoutMargin);
+}
+
+void UIPopupPane::sltMarkAsShown()
+{
+    /* Mark popup-pane as 'shown': */
+    m_fShown = true;
 }
 
 void UIPopupPane::sltAdjustGeometry()
@@ -211,6 +239,12 @@ void UIPopupPane::prepareContent()
 
 void UIPopupPane::prepareAnimation()
 {
+    /* Install 'show' animation for 'minimumSizeHint' property: */
+    connect(this, SIGNAL(sigToShow()), this, SIGNAL(sigShow()), Qt::QueuedConnection);
+    m_pShowAnimation = UIAnimation::installPropertyAnimation(this, "minimumSizeHint", "hiddenSizeHint", "shownSizeHint",
+                                                             SIGNAL(sigShow()), SIGNAL(sigHide()));
+    connect(m_pShowAnimation, SIGNAL(sigStateEnteredFinal()), this, SLOT(sltMarkAsShown()));
+
     /* Install 'hover' animation for 'opacity' property: */
     UIAnimation::installPropertyAnimation(this, "opacity", "defaultOpacity", "hoveredOpacity",
                                           SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
@@ -273,6 +307,26 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
     }
     /* Do not filter anything: */
     return false;
+}
+
+void UIPopupPane::showEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    QWidget::showEvent(pEvent);
+
+    /* Polish border: */
+    if (m_fPolished)
+        return;
+    m_fPolished = true;
+
+    /* Call to polish event: */
+    polishEvent(pEvent);
+}
+
+void UIPopupPane::polishEvent(QShowEvent*)
+{
+    /* Emit signal to start *show* animation: */
+    emit sigToShow();
 }
 
 void UIPopupPane::paintEvent(QPaintEvent*)
