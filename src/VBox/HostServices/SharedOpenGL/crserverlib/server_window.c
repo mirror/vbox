@@ -47,6 +47,8 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     /* get initial window size */
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_SIZE_CR, spuWindow, GL_INT, 2, dims);
 
+    mural->fUseDefaultDEntry = fUseDefaultDEntry;
+
     if (fUseDefaultDEntry)
     {
         VBOXVR_TEXTURE Tex = {0};
