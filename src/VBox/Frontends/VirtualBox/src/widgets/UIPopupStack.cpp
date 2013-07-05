@@ -31,7 +31,9 @@
 #include <VBox/sup.h>
 
 UIPopupStack::UIPopupStack()
-    : m_iLayoutMargin(1), m_iLayoutSpacing(1)
+    : m_iLayoutMargin(1)
+    , m_iLayoutSpacing(1)
+    , m_iParentStatusBarHeight(0)
 {
     /* Make sure cursor is *always* valid: */
     setCursor(Qt::ArrowCursor);
@@ -130,12 +132,15 @@ void UIPopupStack::sltAdjustGeometry()
     if (!parent())
         return;
 
+    /* Update size-hint: */
+    updateSizeHint();
+
     /* Get this attributes: */
     bool fIsWindow = isWindow();
     const int iX = fIsWindow ? parentWidget()->x() : 0;
     const int iY = fIsWindow ? parentWidget()->y() : 0;
     const int iWidth = parentWidget()->width();
-    const int iHeight = minimumHeightHint();
+    const int iHeight = m_minimumSizeHint.height();
 
     /* Move/resize according parent: */
     setGeometry(iX, iY, iWidth, iHeight);
@@ -180,46 +185,36 @@ void UIPopupStack::sltPopupPaneDone(int iResultCode)
     emit sigRemove();
 }
 
-int UIPopupStack::minimumWidthHint()
+void UIPopupStack::updateSizeHint()
 {
-    /* Prepare width hint: */
-    int iWidthHint = 0;
+    /* Calculate minimum width-hint: */
+    int iMinimumWidthHint = 0;
+    {
+        /* Take into account all the panes: */
+        foreach (UIPopupPane *pPane, m_panes)
+            iMinimumWidthHint = qMax(iMinimumWidthHint, pPane->minimumSizeHint().width());
 
-    /* Take into account all the panes: */
-    foreach (UIPopupPane *pPane, m_panes)
-        iWidthHint = qMax(iWidthHint, pPane->minimumWidthHint());
+        /* And two margins finally: */
+        iMinimumWidthHint += 2 * m_iLayoutMargin;
+    }
 
-    /* And two margins finally: */
-    iWidthHint += 2 * m_iLayoutMargin;
+    /* Calculate minimum height-hint: */
+    int iMinimumHeightHint = 0;
+    {
+        /* Take into account all the panes: */
+        foreach (UIPopupPane *pPane, m_panes)
+            iMinimumHeightHint += pPane->minimumSizeHint().height();
 
-    /* Return width hint: */
-    return iWidthHint;
-}
+        /* Take into account all the spacings, if any: */
+        if (!m_panes.isEmpty())
+            iMinimumHeightHint += (m_panes.size() - 1) * m_iLayoutSpacing;
 
-int UIPopupStack::minimumHeightHint()
-{
-    /* Prepare height hint: */
-    int iHeightHint = 0;
+        /* And two margins finally: */
+        iMinimumHeightHint += 2 * m_iLayoutMargin;
+    }
 
-    /* Take into account all the panes: */
-    foreach (UIPopupPane *pPane, m_panes)
-        iHeightHint += pPane->minimumHeightHint();
-
-    /* Take into account all the spacings, if any: */
-    if (!m_panes.isEmpty())
-        iHeightHint += (m_panes.size() - 1) * m_iLayoutSpacing;
-
-    /* And two margins finally: */
-    iHeightHint += 2 * m_iLayoutMargin;
-
-    /* Return height hint: */
-    return iHeightHint;
-}
-
-QSize UIPopupStack::minimumSizeHint()
-{
-    /* Wrap reimplemented getters: */
-    return QSize(minimumWidthHint(), minimumHeightHint());
+    /* Compose minimum size-hint: */
+    m_minimumSizeHint = QSize(iMinimumWidthHint, iMinimumHeightHint);
 }
 
 void UIPopupStack::setDesiredWidth(int iWidth)
@@ -240,7 +235,7 @@ void UIPopupStack::layoutContent()
     {
         /* Get pane attributes: */
         const int iPaneWidth = width() - 2 * m_iLayoutMargin;
-        const int iPaneHeight = pPane->minimumHeightHint();
+        const int iPaneHeight = pPane->minimumSizeHint().height();
         /* Adjust geometry for the pane: */
         pPane->move(iX, iY);
         pPane->resize(iPaneWidth, iPaneHeight);

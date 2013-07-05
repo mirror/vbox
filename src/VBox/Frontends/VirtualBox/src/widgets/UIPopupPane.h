@@ -67,13 +67,15 @@ public:
     void setProposeAutoConfirmation(bool fPropose);
 
     /* API: Layout stuff: */
+    QSize minimumSizeHint() const { return m_minimumSizeHint; }
+    void updateSizeHint();
     void setDesiredWidth(int iWidth);
-    int minimumWidthHint() const;
-    int minimumHeightHint() const;
-    QSize minimumSizeHint() const;
     void layoutContent();
 
 private slots:
+
+    /* Handler: Layout stuff: */
+    void sltAdjustGeometry();
 
     /* Handler: Button stuff: */
     void sltButtonClicked(int iButtonID);
@@ -108,6 +110,7 @@ private:
     const QString m_strId;
     const int m_iLayoutMargin;
     const int m_iLayoutSpacing;
+    QSize m_minimumSizeHint;
 
     /* Variables: Text stuff: */
     QString m_strMessage, m_strDetails;

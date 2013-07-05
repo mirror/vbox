@@ -68,9 +68,8 @@ private slots:
 private:
 
     /* Helpers: Layout stuff: */
-    int minimumWidthHint();
-    int minimumHeightHint();
-    QSize minimumSizeHint();
+    QSize minimumSizeHint() const { return m_minimumSizeHint; }
+    void updateSizeHint();
     void setDesiredWidth(int iWidth);
     void layoutContent();
 
@@ -86,6 +85,7 @@ private:
     /* Variables: */
     const int m_iLayoutMargin;
     const int m_iLayoutSpacing;
+    QSize m_minimumSizeHint;
     int m_iParentStatusBarHeight;
     QMap<QString, UIPopupPane*> m_panes;
 };
