@@ -90,46 +90,36 @@ void UIPopupPane::setDesiredWidth(int iWidth)
                                         - m_pButtonPane->minimumSizeHint().width());
 }
 
-int UIPopupPane::minimumWidthHint() const
+void UIPopupPane::updateSizeHint()
 {
-    /* Prepare width hint: */
-    int iWidthHint = 0;
-
-    /* Take into account layout: */
-    iWidthHint += 2 * m_iLayoutMargin;
+    /* Calculate minimum width-hint: */
+    int iMinimumWidthHint = 0;
     {
-        /* Take into account widgets: */
-        iWidthHint += m_pTextPane->minimumSizeHint().width();
-        iWidthHint += m_iLayoutSpacing;
-        iWidthHint += m_pButtonPane->minimumSizeHint().width();
+        /* Take into account layout: */
+        iMinimumWidthHint += 2 * m_iLayoutMargin;
+        {
+            /* Take into account widgets: */
+            iMinimumWidthHint += m_pTextPane->minimumSizeHint().width();
+            iMinimumWidthHint += m_iLayoutSpacing;
+            iMinimumWidthHint += m_pButtonPane->minimumSizeHint().width();
+        }
     }
 
-    /* Return width hint: */
-    return iWidthHint;
-}
-
-int UIPopupPane::minimumHeightHint() const
-{
-    /* Prepare height hint: */
-    int iHeightHint = 0;
-
-    /* Take into account layout: */
-    iHeightHint += 2 * m_iLayoutMargin;
+    /* Calculate minimum height-hint: */
+    int iMinimumHeightHint = 0;
     {
-        /* Take into account widgets: */
-        const int iTextPaneHeight = m_pTextPane->minimumSizeHint().height();
-        const int iButtonBoxHeight = m_pButtonPane->minimumSizeHint().height();
-        iHeightHint += qMax(iTextPaneHeight, iButtonBoxHeight);
+        /* Take into account layout: */
+        iMinimumHeightHint += 2 * m_iLayoutMargin;
+        {
+            /* Take into account widgets: */
+            const int iTextPaneHeight = m_pTextPane->minimumSizeHint().height();
+            const int iButtonBoxHeight = m_pButtonPane->minimumSizeHint().height();
+            iMinimumHeightHint += qMax(iTextPaneHeight, iButtonBoxHeight);
+        }
     }
 
-    /* Return height hint: */
-    return iHeightHint;
-}
-
-QSize UIPopupPane::minimumSizeHint() const
-{
-    /* Wrap reimplemented getters: */
-    return QSize(minimumWidthHint(), minimumHeightHint());
+    /* Compose minimum size-hint: */
+    m_minimumSizeHint = QSize(iMinimumWidthHint, iMinimumHeightHint);
 }
 
 void UIPopupPane::layoutContent()
@@ -161,6 +151,15 @@ void UIPopupPane::layoutContent()
                           iHeight - 2 * m_iLayoutMargin);
 }
 
+void UIPopupPane::sltAdjustGeometry()
+{
+    /* Update size-hint: */
+    updateSizeHint();
+
+    /* Notify parent popup-stack: */
+    emit sigSizeHintChanged();
+}
+
 void UIPopupPane::sltButtonClicked(int iButtonID)
 {
     /* Complete popup with corresponding code: */
@@ -173,6 +172,9 @@ void UIPopupPane::prepare()
     prepareContent();
     /* Prepare animation: */
     prepareAnimation();
+
+    /* Adjust geometry: */
+    sltAdjustGeometry();
 }
 
 void UIPopupPane::prepareContent()
@@ -184,7 +186,7 @@ void UIPopupPane::prepareContent()
     m_pTextPane = new UIPopupPaneTextPane(this);
     {
         /* Prepare label: */
-        connect(m_pTextPane, SIGNAL(sigSizeHintChanged()), this, SIGNAL(sigSizeHintChanged()));
+        connect(m_pTextPane, SIGNAL(sigSizeHintChanged()), this, SLOT(sltAdjustGeometry()));
         m_pTextPane->installEventFilter(this);
         m_pTextPane->setText(m_strMessage);
         m_pTextPane->setProposeAutoConfirmation(m_fProposeAutoConfirmation);
