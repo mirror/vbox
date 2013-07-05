@@ -53,23 +53,23 @@ using namespace com;
 void usageGuestProperty(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2)
 {
     RTStrmPrintf(pStrm,
-                       "%s guestproperty %s   get <vmname|uuid>\n"
+                       "%s guestproperty %s   get <uuid|vmname>\n"
                  "                            <property> [--verbose]\n"
                  "\n", pcszSep1, pcszSep2);
     RTStrmPrintf(pStrm,
-                       "%s guestproperty %s   set <vmname|uuid>\n"
+                       "%s guestproperty %s   set <uuid|vmname>\n"
                  "                            <property> [<value> [--flags <flags>]]\n"
                  "\n", pcszSep1, pcszSep2);
     RTStrmPrintf(pStrm,
-                       "%s guestproperty %s   delete|unset <vmname|uuid>\n"
+                       "%s guestproperty %s   delete|unset <uuid|vmname>\n"
                  "                            <property>\n"
                  "\n", pcszSep1, pcszSep2);
     RTStrmPrintf(pStrm,
-                       "%s guestproperty %s   enumerate <vmname|uuid>\n"
+                       "%s guestproperty %s   enumerate <uuid|vmname>\n"
                  "                            [--patterns <patterns>]\n"
                  "\n", pcszSep1, pcszSep2);
     RTStrmPrintf(pStrm,
-                       "%s guestproperty %s   wait <vmname|uuid> <patterns>\n"
+                       "%s guestproperty %s   wait <uuid|vmname> <patterns>\n"
                  "                            [--timeout <msec>] [--fail-on-timeout]\n"
                  "\n", pcszSep1, pcszSep2);
 }
