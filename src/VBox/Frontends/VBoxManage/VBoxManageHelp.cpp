@@ -133,9 +133,9 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     if (u64Cmd & USAGE_SHOWVMINFO)
         RTStrmPrintf(pStrm,
-                           "%s showvminfo %s      <uuid>|<name> [--details]\n"
+                           "%s showvminfo %s      <uuid|vmname> [--details]\n"
                      "                            [--machinereadable]\n"
-                           "%s showvminfo %s      <uuid>|<name> --log <idx>\n"
+                           "%s showvminfo %s      <uuid|vmname> --log <idx>\n"
                      "\n", SEP, SEP);
 
     if (u64Cmd & USAGE_REGISTERVM)
@@ -145,7 +145,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     if (u64Cmd & USAGE_UNREGISTERVM)
         RTStrmPrintf(pStrm,
-                           "%s unregistervm %s    <uuid>|<name> [--delete]\n"
+                           "%s unregistervm %s    <uuid|vmname> [--delete]\n"
                      "\n", SEP);
 
     if (u64Cmd & USAGE_CREATEVM)
@@ -161,7 +161,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_MODIFYVM)
     {
         RTStrmPrintf(pStrm,
-                           "%s modifyvm %s        <uuid|name>\n"
+                           "%s modifyvm %s        <uuid|vmname>\n"
                      "                            [--name <name>]\n"
                      "                            [--groups <group>, ...]\n"
                      "                            [--ostype <ostype>]\n"
@@ -383,7 +383,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     if (u64Cmd & USAGE_CLONEVM)
         RTStrmPrintf(pStrm,
-                           "%s clonevm %s         <uuid>|<name>\n"
+                           "%s clonevm %s         <uuid|vmname>\n"
                      "                            [--snapshot <uuid>|<name>]\n"
                      "                            [--mode machine|machineandchildren|all]\n"
                      "                            [--options link|keepallmacs|keepnatmacs|\n"
@@ -397,7 +397,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     if (u64Cmd & USAGE_IMPORTAPPLIANCE)
         RTStrmPrintf(pStrm,
-                           "%s import %s          <ovf/ova>\n"
+                           "%s import %s          <ovfname/ovaname>\n"
                      "                            [--dry-run|-n]\n"
                      "                            [--options keepallmacs|keepnatmacs]\n"
                      "                            [more options]\n"
@@ -423,7 +423,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_STARTVM)
     {
         RTStrmPrintf(pStrm,
-                           "%s startvm %s         <uuid>|<name>...\n"
+                           "%s startvm %s         <uuid|vmname>...\n"
                      "                            [--type gui", SEP);
         if (fVBoxSDL)
             RTStrmPrintf(pStrm, "|sdl");
@@ -435,7 +435,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_CONTROLVM)
     {
         RTStrmPrintf(pStrm,
-                           "%s controlvm %s       <uuid>|<name>\n"
+                           "%s controlvm %s       <uuid|vmname>\n"
                      "                            pause|resume|reset|poweroff|savestate|\n"
                      "                            acpipowerbutton|acpisleepbutton|\n"
                      "                            keyboardputscancode <hex> [<hex> ...]|\n"
@@ -487,31 +487,31 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     if (u64Cmd & USAGE_DISCARDSTATE)
         RTStrmPrintf(pStrm,
-                           "%s discardstate %s    <uuid>|<name>\n"
+                           "%s discardstate %s    <uuid|vmname>\n"
                      "\n", SEP);
 
     if (u64Cmd & USAGE_ADOPTSTATE)
         RTStrmPrintf(pStrm,
-                           "%s adoptstate %s      <uuid>|<name> <state_file>\n"
+                           "%s adoptstate %s      <uuid|vmname> <state_file>\n"
                      "\n", SEP);
 
     if (u64Cmd & USAGE_SNAPSHOT)
         RTStrmPrintf(pStrm,
-                           "%s snapshot %s        <uuid>|<name>\n"
+                           "%s snapshot %s        <uuid|vmname>\n"
                      "                            take <name> [--description <desc>] [--pause] |\n"
-                     "                            delete <uuid>|<name> |\n"
-                     "                            restore <uuid>|<name> |\n"
+                     "                            delete <uuid|snapname> |\n"
+                     "                            restore <uuid|snapname> |\n"
                      "                            restorecurrent |\n"
-                     "                            edit <uuid>|<name>|--current\n"
+                     "                            edit <uuid|snapname>|--current\n"
                      "                                 [--name <name>]\n"
                      "                                 [--description <desc>] |\n"
                      "                            list [--details|--machinereadable]\n"
-                     "                            showvminfo <uuid>|<name>\n"
+                     "                            showvminfo <uuid|snapname>\n"
                      "\n", SEP);
 
     if (u64Cmd & USAGE_CLOSEMEDIUM)
         RTStrmPrintf(pStrm,
-                           "%s closemedium %s     disk|dvd|floppy <uuid>|<filename>\n"
+                           "%s closemedium %s     disk|dvd|floppy <uuid|filename>\n"
                      "                            [--delete]\n"
                      "\n", SEP);
 
@@ -523,7 +523,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--device <number>]\n"
                      "                            [--type dvddrive|hdd|fdd]\n"
                      "                            [--medium none|emptydrive|additions|\n"
-                     "                                      <uuid>|<filename>|host:<drive>|iscsi]\n"
+                     "                                      <uuid|filename>|host:<drive>|iscsi]\n"
                      "                            [--mtype normal|writethrough|immutable|shareable|\n"
                      "                                     readonly|multiattach]\n"
                      "                            [--comment <text>]\n"
@@ -574,7 +574,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     if (u64Cmd & USAGE_SHOWHDINFO)
         RTStrmPrintf(pStrm,
-                           "%s showhdinfo %s      <uuid>|<filename>\n"
+                           "%s showhdinfo %s      <uuid|filename>\n"
                      "\n", SEP);
 
     if (u64Cmd & USAGE_CREATEHD)
@@ -588,7 +588,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     if (u64Cmd & USAGE_MODIFYHD)
         RTStrmPrintf(pStrm,
-                           "%s modifyhd %s        <uuid>|<filename>\n"
+                           "%s modifyhd %s        <uuid|filename>\n"
                      "                            [--type normal|writethrough|immutable|shareable|\n"
                      "                                    readonly|multiattach]\n"
                      "                            [--autoreset on|off]\n"
@@ -598,7 +598,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     if (u64Cmd & USAGE_CLONEHD)
         RTStrmPrintf(pStrm,
-                           "%s clonehd %s         <uuid>|<filename> <uuid>|<outputfile>\n"
+                           "%s clonehd %s         <uuid|inputfile> <uuid|outputfile>\n"
                      "                            [--format VDI|VMDK|VHD|RAW|<other>]\n"
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
                      "                            [--existing]\n"
@@ -618,13 +618,13 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
     if (u64Cmd & USAGE_GETEXTRADATA)
         RTStrmPrintf(pStrm,
-                           "%s getextradata %s    global|<uuid>|<name>\n"
+                           "%s getextradata %s    global|<uuid|vmname>\n"
                      "                            <key>|enumerate\n"
                      "\n", SEP);
 
     if (u64Cmd & USAGE_SETEXTRADATA)
         RTStrmPrintf(pStrm,
-                           "%s setextradata %s    global|<uuid>|<name>\n"
+                           "%s setextradata %s    global|<uuid|vmname>\n"
                      "                            <key>\n"
                      "                            [<value>] (no value deletes key)\n"
                      "\n", SEP);
@@ -643,7 +643,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_USBFILTER_ADD)
         RTStrmPrintf(pStrm,
                            "%s usbfilter %s       add <index,0-N>\n"
-                     "                            --target <uuid>|<name>|global\n"
+                     "                            --target <uuid|vmname>|global\n"
                      "                            --name <string>\n"
                      "                            --action ignore|hold (global filters only)\n"
                      "                            [--active yes|no] (yes)\n"
@@ -660,7 +660,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_USBFILTER_MODIFY)
         RTStrmPrintf(pStrm,
                            "%s usbfilter %s       modify <index,0-N>\n"
-                     "                            --target <uuid>|<name>|global\n"
+                     "                            --target <uuid|vmname>|global\n"
                      "                            [--name <string>]\n"
                      "                            [--action ignore|hold] (global filters only)\n"
                      "                            [--active yes|no]\n"
@@ -677,19 +677,19 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_USBFILTER_REMOVE)
         RTStrmPrintf(pStrm,
                            "%s usbfilter %s       remove <index,0-N>\n"
-                     "                            --target <uuid>|<name>|global\n"
+                     "                            --target <uuid|vmname>|global\n"
                      "\n", SEP);
 
     if (u64Cmd & USAGE_SHAREDFOLDER_ADD)
         RTStrmPrintf(pStrm,
-                           "%s sharedfolder %s    add <vmname>|<uuid>\n"
+                           "%s sharedfolder %s    add <uuid|vmname>\n"
                      "                            --name <name> --hostpath <hostpath>\n"
                      "                            [--transient] [--readonly] [--automount]\n"
                      "\n", SEP);
 
     if (u64Cmd & USAGE_SHAREDFOLDER_REMOVE)
         RTStrmPrintf(pStrm,
-                           "%s sharedfolder %s    remove <vmname>|<uuid>\n"
+                           "%s sharedfolder %s    remove <uuid|vmname>\n"
                      "                            --name <name> [--transient]\n"
                      "\n", SEP);
 
@@ -706,7 +706,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_DEBUGVM)
     {
         RTStrmPrintf(pStrm,
-                           "%s debugvm %s         <uuid>|<name>\n"
+                           "%s debugvm %s         <uuid|vmname>\n"
                      "                            dumpguestcore --filename <name> |\n"
                      "                            info <item> [args] |\n"
                      "                            injectnmi |\n"
