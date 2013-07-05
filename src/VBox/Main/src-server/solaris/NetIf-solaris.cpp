@@ -418,7 +418,8 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         int rc = ioctl(Sock, SIOCGLIFNUM, &IfNum);
         if (!rc)
         {
-            int cbIfaces = IfNum.lifn_count * sizeof(struct lifreq);
+            int cIfaces = RT_MIN(1024, IfNum.lifn_count); /* sane limit */
+            int cbIfaces = cIfaces * sizeof(struct lifreq);
             struct lifreq *Ifaces = (struct lifreq *)RTMemTmpAlloc(cbIfaces);
             if (Ifaces)
             {
@@ -430,7 +431,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
                 rc = ioctl(Sock, SIOCGLIFCONF, &IfConfig);
                 if (!rc)
                 {
-                    for (int i = 0; i < IfNum.lifn_count; i++)
+                    for (int i = 0; i < cIfaces; i++)
                     {
                         /*
                          * Skip loopback interfaces.
