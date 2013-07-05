@@ -2843,7 +2843,7 @@ svccfg -s svc:/application/virtualbox/balloonctrl:default setprop config/balloon
     differently. VNC can only deal with password authentication, and there
     is no option to use password hashes. This leaves no other choice than
     having a clear-text password in the VM configuration, which can be set with
-    the following command:<screen>VBoxManage modifyvm VMNAME --vrdeproperty VNCPassword=secret</screen></para>
+    the following command:<screen>VBoxManage modifyvm "VM name" --vrdeproperty VNCPassword=secret</screen></para>
 
     <para>The user is responsible for keeping this password secret, and it
     should be removed when a VM configuration is passed to another person,
@@ -2955,7 +2955,7 @@ alice = {
 
     <para>The expert storage management mode can be enabled per VM executing:</para>
 
-    <screen>VBoxManage setextradata vmname "VBoxInternal2/SilentReconfigureWhilePaused" 1
+    <screen>VBoxManage setextradata "VM name" "VBoxInternal2/SilentReconfigureWhilePaused" 1
 </screen>
 
     <para>Storage attachments can be reconfigured while the VM is paused afterwards using:</para>
