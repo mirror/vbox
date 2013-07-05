@@ -23,9 +23,6 @@
 #include <QWidget>
 #include <QMap>
 
-/* GUI includes: */
-#include "QIMessageBox.h"
-
 /* Forward declaration: */
 class UIPopupPaneTextPane;
 class UIPopupPaneButtonPane;
