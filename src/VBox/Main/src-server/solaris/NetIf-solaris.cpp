@@ -471,7 +471,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
                         vboxSolarisAddLinkHostIface(pszIface, &list);
                     }
                 }
-                RTMemTempFree(Ifaces);
+                RTMemTmpFree(Ifaces);
             }
         }
         close(Sock);
