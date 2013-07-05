@@ -1720,10 +1720,13 @@ int08_handler:
 		xor	ax, ax
 		mov	ds, ax
 
-		;; time to turn off floppy driv motor(s)?
-		mov	al, ds:[440h]    ;; @todo Shouldn't this be decreased if > 0? How would we ever get to zero otherwise?
+		;; time to turn off floppy drive motor(s)?
+		mov	al, ds:[440h]
 		or	al, al
 		jz	int08_floppy_off
+		dec	al
+		mov	ds:[440h], al
+		jnz	int08_floppy_off
 		;; turn motor(s) off
 		push	dx
 		mov	dx, 03F2h
