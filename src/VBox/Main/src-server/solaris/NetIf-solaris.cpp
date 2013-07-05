@@ -24,6 +24,7 @@
 
 #include <iprt/err.h>
 #include <iprt/ctype.h>
+#include <iprt/mem.h>
 #include <iprt/path.h>
 #include <list>
 
@@ -198,7 +199,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
      * Try to get IP V4 address and netmask as well as Ethernet address.
      */
     NETIFINFO Info;
-    memset(&Info, 0, sizeof(Info));
+    RT_ZERO(Info);
     int Sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (Sock > 0)
     {
@@ -412,59 +413,64 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
     if (Sock > 0)
     {
         struct lifnum IfNum;
-        memset(&IfNum, 0, sizeof(IfNum));
+        RT_ZERO(IfNum);
         IfNum.lifn_family = AF_INET;
         int rc = ioctl(Sock, SIOCGLIFNUM, &IfNum);
         if (!rc)
         {
-            struct lifreq Ifaces[24];
-            struct lifconf IfConfig;
-            memset(&IfConfig, 0, sizeof(IfConfig));
-            IfConfig.lifc_family = AF_INET;
-            IfConfig.lifc_len = sizeof(Ifaces);
-            IfConfig.lifc_buf = (caddr_t)&(Ifaces[0]);
-            rc = ioctl(Sock, SIOCGLIFCONF, &IfConfig);
-            if (!rc)
+            int cbIfaces = IfNum.lifn_count * sizeof(struct lifreq);
+            struct lifreq *Ifaces = (struct lifreq *Ifaces)RTMemTmpAlloc(cbIfaces);
+            if (Ifaces)
             {
-                for (int i = 0; i < IfNum.lifn_count; i++)
+                struct lifconf IfConfig;
+                RT_ZERO(IfConfig);
+                IfConfig.lifc_family = AF_INET;
+                IfConfig.lifc_len = cbIfaces;
+                IfConfig.lifc_buf = (caddr_t)Ifaces;
+                rc = ioctl(Sock, SIOCGLIFCONF, &IfConfig);
+                if (!rc)
                 {
-                    /*
-                     * Skip loopback interfaces.
-                     */
-                    if (!strncmp(Ifaces[i].lifr_name, "lo", 2))
-                        continue;
+                    for (int i = 0; i < IfNum.lifn_count; i++)
+                    {
+                        /*
+                         * Skip loopback interfaces.
+                         */
+                        if (!strncmp(Ifaces[i].lifr_name, "lo", 2))
+                            continue;
 
 #if 0
-                    rc = ioctl(Sock, SIOCGLIFADDR, &(Ifaces[i]));
-                    if (rc >= 0)
-                    {
-                        memcpy(Info.IPAddress.au8, ((struct sockaddr *)&Ifaces[i].lifr_addr)->sa_data,
-                               sizeof(Info.IPAddress.au8));
-                        // SIOCGLIFNETMASK
-                        struct arpreq ArpReq;
-                        memcpy(&ArpReq.arp_pa, &Ifaces[i].lifr_addr, sizeof(struct sockaddr_in));
-
-                        /*
-                         * We might fail if the interface has not been assigned an IP address.
-                         * That doesn't matter; as long as it's plumbed we can pick it up.
-                         * But, if it has not acquired an IP address we cannot obtain it's MAC
-                         * address this way, so we just use all zeros there.
-                         */
-                        rc = ioctl(Sock, SIOCGARP, &ArpReq);
+                        rc = ioctl(Sock, SIOCGLIFADDR, &(Ifaces[i]));
                         if (rc >= 0)
-                            memcpy(&Info.MACAddress, ArpReq.arp_ha.sa_data, sizeof(Info.MACAddress));
+                        {
+                            memcpy(Info.IPAddress.au8, ((struct sockaddr *)&Ifaces[i].lifr_addr)->sa_data,
+                                   sizeof(Info.IPAddress.au8));
+                            // SIOCGLIFNETMASK
+                            struct arpreq ArpReq;
+                            memcpy(&ArpReq.arp_pa, &Ifaces[i].lifr_addr, sizeof(struct sockaddr_in));
 
-                        char szNICDesc[LIFNAMSIZ + 256];
-                        char *pszIface = Ifaces[i].lifr_name;
-                        strcpy(szNICDesc, pszIface);
+                            /*
+                             * We might fail if the interface has not been assigned an IP address.
+                             * That doesn't matter; as long as it's plumbed we can pick it up.
+                             * But, if it has not acquired an IP address we cannot obtain it's MAC
+                             * address this way, so we just use all zeros there.
+                             */
+                            rc = ioctl(Sock, SIOCGARP, &ArpReq);
+                            if (rc >= 0)
+                                memcpy(&Info.MACAddress, ArpReq.arp_ha.sa_data, sizeof(Info.MACAddress));
 
-                        vboxSolarisAddLinkHostIface(pszIface, &list);
-                    }
+                            char szNICDesc[LIFNAMSIZ + 256];
+                            char *pszIface = Ifaces[i].lifr_name;
+                            strcpy(szNICDesc, pszIface);
+
+                            vboxSolarisAddLinkHostIface(pszIface, &list);
+                        }
 #endif
 
-                    char *pszIface = Ifaces[i].lifr_name;
-                    vboxSolarisAddLinkHostIface(pszIface, &list);
+                        char *pszIface = Ifaces[i].lifr_name;
+                        vboxSolarisAddLinkHostIface(pszIface, &list);
+                    }
                 }
+                RTMemTempFree(Ifaces);
             }
         }
         close(Sock);
