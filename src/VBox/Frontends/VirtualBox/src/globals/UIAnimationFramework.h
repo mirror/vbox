@@ -24,12 +24,19 @@
 
 /* Forward declaration: */
 class QStateMachine;
+class QState;
 class QPropertyAnimation;
 
 /* UIAnimation factory: */
 class UIAnimation : public QObject
 {
     Q_OBJECT;
+
+signals:
+
+    /* Notifiers: State-change stuff: */
+    void sigStateEnteredStart();
+    void sigStateEnteredFinal();
 
 public:
 
@@ -66,6 +73,8 @@ private:
 
     /* Variables: Animation-machine stuff: */
     QStateMachine *m_pAnimationMachine;
+    QState *m_pStateStart;
+    QState *m_pStateFinal;
     QPropertyAnimation *m_pForwardAnimation;
     QPropertyAnimation *m_pReverseAnimation;
 };
