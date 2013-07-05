@@ -153,7 +153,8 @@ void UIPopupPane::layoutContent()
     m_pTextPane->resize(iTextPaneWidth,
                         iTextPaneHeight);
     m_pTextPane->layoutContent();
-    /* Button-box: */
+
+    /* Button-pane: */
     m_pButtonPane->move(m_iLayoutMargin + iTextPaneWidth + m_iLayoutSpacing,
                         m_iLayoutMargin);
     m_pButtonPane->resize(iButtonPaneMinimumWidth,
@@ -162,38 +163,38 @@ void UIPopupPane::layoutContent()
 
 void UIPopupPane::sltButtonClicked(int iButtonID)
 {
+    /* Complete popup with corresponding code: */
     done(iButtonID & AlertButtonMask);
 }
 
 void UIPopupPane::prepare()
 {
-    /* Install 'hover' animation for 'opacity' property: */
-    UIAnimation::installPropertyAnimation(this, "opacity", "defaultOpacity", "hoveredOpacity",
-                                          SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
     /* Prepare content: */
     prepareContent();
+    /* Prepare animation: */
+    prepareAnimation();
 }
 
 void UIPopupPane::prepareContent()
 {
     /* Prepare this: */
     installEventFilter(this);
+
     /* Create message-label: */
     m_pTextPane = new UIPopupPaneTextPane(this);
     {
         /* Prepare label: */
-        connect(m_pTextPane, SIGNAL(sigSizeHintChanged()),
-                this, SIGNAL(sigSizeHintChanged()));
+        connect(m_pTextPane, SIGNAL(sigSizeHintChanged()), this, SIGNAL(sigSizeHintChanged()));
         m_pTextPane->installEventFilter(this);
         m_pTextPane->setText(m_strMessage);
         m_pTextPane->setProposeAutoConfirmation(m_fProposeAutoConfirmation);
     }
+
     /* Create button-box: */
     m_pButtonPane = new UIPopupPaneButtonPane(this);
     {
         /* Prepare button-box: */
-        connect(m_pButtonPane, SIGNAL(sigButtonClicked(int)),
-                this, SLOT(sltButtonClicked(int)));
+        connect(m_pButtonPane, SIGNAL(sigButtonClicked(int)), this, SLOT(sltButtonClicked(int)));
         m_pButtonPane->installEventFilter(this);
         m_pButtonPane->setButtons(m_buttonDescriptions);
     }
@@ -204,6 +205,13 @@ void UIPopupPane::prepareContent()
     m_pButtonPane->setFocusPolicy(Qt::StrongFocus);
     setFocusProxy(m_pButtonPane);
     m_pTextPane->setFocusProxy(m_pButtonPane);
+}
+
+void UIPopupPane::prepareAnimation()
+{
+    /* Install 'hover' animation for 'opacity' property: */
+    UIAnimation::installPropertyAnimation(this, "opacity", "defaultOpacity", "hoveredOpacity",
+                                          SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
 }
 
 bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -274,7 +282,16 @@ void UIPopupPane::paintEvent(QPaintEvent*)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    /* Configure painter clipping: */
+    /* Configure clipping: */
+    configureClipping(rect, painter);
+
+    /* Paint background: */
+    paintBackground(rect, painter);
+}
+
+void UIPopupPane::configureClipping(const QRect &rect, QPainter &painter)
+{
+    /* Configure clipping: */
     QPainterPath path;
     int iDiameter = 6;
     QSizeF arcSize(2 * iDiameter, 2 * iDiameter);
@@ -288,8 +305,11 @@ void UIPopupPane::paintEvent(QPaintEvent*)
     path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-2 * iDiameter, -iDiameter), 0, 90);
     path.closeSubpath();
     painter.setClipPath(path);
+}
 
-    /* Fill with background: */
+void UIPopupPane::paintBackground(const QRect &rect, QPainter &painter)
+{
+    /* Paint background: */
     QColor currentColor(palette().color(QPalette::Window));
     QColor newColor1(currentColor.red(), currentColor.green(), currentColor.blue(), opacity());
     QColor newColor2 = newColor1.darker(115);

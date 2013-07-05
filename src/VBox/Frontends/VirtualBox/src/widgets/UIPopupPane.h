@@ -27,7 +27,7 @@
 class UIPopupPaneTextPane;
 class UIPopupPaneButtonPane;
 
-/* Popup-pane prototype class: */
+/* Popup-pane prototype: */
 class UIPopupPane : public QWidget
 {
     Q_OBJECT;
@@ -83,12 +83,17 @@ private:
     /* Helpers: Prepare stuff: */
     void prepare();
     void prepareContent();
+    void prepareAnimation();
 
     /* Handler: Event-filter stuff: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
     /* Handler: Event stuff: */
     void paintEvent(QPaintEvent *pEvent);
+
+    /* Helpers: Paint stuff: */
+    void configureClipping(const QRect &rect, QPainter &painter);
+    void paintBackground(const QRect &rect, QPainter &painter);
 
     /* Helper: Complete stuff: */
     void done(int iResultCode);
