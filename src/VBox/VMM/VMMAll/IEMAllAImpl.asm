@@ -1341,8 +1341,8 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
         jae     .div_overflow
  %else
         mov     T0_16, [A0]             ; T0 = dividend
-        mov     T1_8, A1_8              ; T1 = divisor
-        test    T1_16, T1_16
+        mov     T1, A1                  ; T1 = saved divisor (because of missing T1_8 in 32-bit)
+        test    A1_8, A1_8
         js      .divisor_negative
         test    T0_16, T0_16
         jns     .both_positive
@@ -1350,25 +1350,26 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u8, 12
 .one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
         push    T0                      ; Start off like unsigned below.
         shr     T0_16, 7
-        cmp     T0_8, T1_8
+        cmp     T0_8, A1_8
         pop     T0
         jb      .div_no_overflow
         ja      .div_overflow
         and     T0_8, 0x7f              ; Special case for covering (divisor - 1).
-        cmp     T0_8, T1_8
+        cmp     T0_8, A1_8
         jae     .div_overflow
         jmp     .div_no_overflow
 
 .divisor_negative:
-        neg     T1_8
+        neg     A1_8
         test    T0_16, T0_16
         jns     .one_of_each
         neg     T0_16
 .both_positive:                         ; Same as unsigned shifted by sign indicator bit.
         shr     T0_16, 7
-        cmp     T0_8, T1_8
+        cmp     T0_8, A1_8
         jae     .div_overflow
 .div_no_overflow:
+        mov     A1, T1                  ; restore divisor
  %endif
 
         IEM_MAYBE_LOAD_FLAGS A2, %2, %3
