@@ -918,10 +918,101 @@ class InstrTest_MovSxD_Gv_Ev(InstrTest_MemOrGreg_2_Greg):
         return uInput & UINT32_MAX;
 
 
+class InstrTest_DivIDiv(InstrTestBase):
+    """
+    Tests IDIV and DIV instructions.
+    """
+
+    def __init__(self, fIsIDiv):
+        if not fIsIDiv:
+            InstrTest_MemOrGreg_2_Greg.__init__(self, 'div Gv,Ev',  self.calc_div,  acbOpVars = [ 8, 4, 2, 1 ]);
+        else
+            InstrTest_MemOrGreg_2_Greg.__init__(self, 'idiv Gv,Ev', self.calc_idiv, acbOpVars = [ 8, 4, 2, 1 ]);
+        self.fIsIDiv = fIsIDiv;
+
+    def generateStandardTests(self, oGen):
+        """ Generates test that causes no exceptions. """
+
+        # Parameters.
+        cbDefOp       = oGen.oTarget.getDefOpBytes();
+        cbMaxOp       = oGen.oTarget.getMaxOpBytes();
+        #auShortInputs = self.generateInputs(cbDefOp, cbMaxOp, oGen);
+        #auLongInputs  = self.generateInputs(cbDefOp, cbMaxOp, oGen, fLong = True);
+        iLongOp2      = oGen.oTarget.randGRegNoSp();
+
+        # Register tests
+        if True:
+            for cbEffOp in self.acbOpVars:
+                if cbEffOp > cbMaxOp:
+                    continue;
+                oGen.write('; cbEffOp=%u\n' % (cbEffOp,));
+                oOp2Range = range(oGen.oTarget.getGRegCount(cbEffOp));
+                if oGen.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny:
+                    oOp2Range = [iLongOp2,];
+                for iOp2 in oOp2Range:
+                    if iOp2 == X86_GREG_xSP:
+                        continue; # Cannot test xSP atm.
+                    #for uInput in (auLongInputs if iOp2 == iLongOp2 else auShortInputs):
+                    #    oGen.newSubTest();
+                    #    if not oGen.oTarget.is8BitHighGReg(cbEffOp, iOp2):
+                    #        uResult = self.fnCalcResult(cbEffOp, uInput, uCur, oGen);
+                    #        self.generateOneStdTestGregGreg(oGen, cbEffOp, cbMaxOp, iOp2, iOp2 & 15,
+                    #                                        uInput, uResult);
+                    #    else:
+                    #        self.generateOneStdTestGregGreg8BitHighPain(oGen, cbEffOp, cbMaxOp, iOp2, uInput);
+
+        ## Memory test.
+        #if False:
+        #    for cAddrBits in oGen.oTarget.getAddrModes():
+        #        for cbEffOp in self.acbOpVars:
+        #            if cbEffOp > cbMaxOp:
+        #                continue;
+        #
+        #            auInputs = auLongInputs if oGen.iModReg == iLongOp1 else auShortInputs;
+        #            for _ in oGen.oModRmRange:
+        #                oGen.iModRm = (oGen.iModRm + 1) % oGen.oTarget.getGRegCount(cAddrBits * 8);
+        #                if oGen.iModRm != 4 or cAddrBits == 16:
+        #                    for uInput in auInputs:
+        #                        oGen.newSubTest();
+        #                        if oGen.iModReg == oGen.iModRm and oGen.iModRm != 5 and oGen.iModRm != 13 and cbEffOp != cbMaxOp:
+        #                            continue; # Don't know the high bit of the address ending up the result - skip it for now.
+        #                        uResult = self.fnCalcResult(cbEffOp, uInput, oGen.auRegValues[oGen.iModReg & 15], oGen);
+        #                        self.generateOneStdTestGregMemNoSib(oGen, cAddrBits, cbEffOp, cbMaxOp,
+        #                                                            oGen.iModReg, oGen.iModRm, uInput, uResult);
+        #                else:
+        #                    # SIB - currently only short list of inputs or things may get seriously out of hand.
+        #                    self.generateStdTestGregMemSib(oGen, cAddrBits, cbEffOp, cbMaxOp, oGen.iModReg, auShortInputs);
+        #
+        return True;
+
+    def generateTest(self, oGen, sTestFnName):
+        oGen.write('VBINSTST_BEGINPROC %s\n' % (sTestFnName,));
+        #oGen.write('        int3\n');
+
+        self.generateNoXcptTests(oGen);
+
+        #oGen.write('        int3\n');
+        oGen.write('        ret\n');
+        oGen.write('VBINSTST_ENDPROC   %s\n' % (sTestFnName,));
+        return True;
+
+    @staticmethod
+    def calc_div(cbEffOp, uInput, uCur, oGen):
+        """ Returns a register pair. """
+        return 0;
+
+    @staticmethod
+    def calc_idiv(cbEffOp, uInput, uCur, oGen):
+        """ Returns a register pair. """
+        return 0;
+
+
 ## Instruction Tests.
 g_aoInstructionTests = [
-    InstrTest_Mov_Gv_Ev(),
+    #InstrTest_Mov_Gv_Ev(),
     #InstrTest_MovSxD_Gv_Ev(),
+    #InstrTest_DivIDiv(fIsIDiv = False),
+    InstrTest_DivIDiv(fIsIDiv = True),
 ];
 
 
