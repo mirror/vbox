@@ -222,7 +222,7 @@ static int ctrlCopyDirExists(PCOPYCONTEXT pContext, bool bGuest, const char *psz
 void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2)
 {
     RTStrmPrintf(pStrm,
-                       "%s guestcontrol %s    <vmname>|<uuid>\n"
+                       "%s guestcontrol %s    <vmname|uuid>\n"
                  "                            exec[ute]\n"
                  "                            --image <path to program> --username <name>\n"
                  "                            [--passwordfile <file> | --password <password>]\n"
