@@ -17,7 +17,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "DHCPServerRunner.h"
+#include "NetworkServiceRunner.h"
 #include "DHCPServerImpl.h"
 #include "NATNetworkImpl.h"
 #include "AutoCaller.h"
@@ -34,7 +34,6 @@
 #include "EventImpl.h"
 #include "VBoxEvents.h"
 
-#include "NATNetworkServiceRunner.h"
 #include "VirtualBoxImpl.h"
 
 
@@ -43,8 +42,8 @@
 
 struct NATNetwork::Data
 {
-    Data() : 
-      
+    Data() :
+
       fEnabled(FALSE),
       fIPv6Enabled(FALSE),
       fAdvertiseDefaultIPv6Route(FALSE),
@@ -127,8 +126,8 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox, IN_BSTR aName)
     m->IPv6Prefix = "fe80::/64";
     m->fEnabled = FALSE;
 
-    
-    
+
+
     RecalculateIpv4AddressAssignments();
 
     HRESULT hrc = unconst(m->pEventSource).createObject();
@@ -136,7 +135,7 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox, IN_BSTR aName)
 
     hrc = m->pEventSource->init(static_cast<INATNetwork *>(this));
     if (FAILED(hrc)) throw hrc;
-        
+
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
@@ -184,7 +183,7 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox,
 
     hrc = m->pEventSource->init(static_cast<INATNetwork *>(this));
     if (FAILED(hrc)) throw hrc;
-   
+
     autoInitSpan.setSucceeded();
 
     return S_OK;
@@ -205,7 +204,7 @@ HRESULT NATNetwork::saveSettings(settings::NATNetwork &data)
     data.fNeedDhcpServer = RT_BOOL(m->fNeedDhcpServer);
     data.fIPv6 = RT_BOOL(m->fIPv6Enabled);
     data.strIPv6Prefix = m->IPv6Prefix;
-    
+
     /* saving ipv4 port-forward Rules*/
     data.llPortForwardRules4.clear();
     for (NATRuleMap::iterator it = m->mapName2PortForwardRule4.begin();
@@ -220,10 +219,10 @@ HRESULT NATNetwork::saveSettings(settings::NATNetwork &data)
 
     /* XXX: should we do here a copy of params */
     /* XXX: should we unlock here? */
-    mVirtualBox->onNATNetworkSetting(mName.raw(), 
+    mVirtualBox->onNATNetworkSetting(mName.raw(),
                                      data.fEnabled ? TRUE : FALSE,
                                      m->IPv4NetworkCidr.raw(),
-                                     m->IPv4Gateway.raw(), 
+                                     m->IPv4Gateway.raw(),
                                      data.fAdvertiseDefaultIPv6Route ? TRUE : FALSE,
                                      data.fNeedDhcpServer ? TRUE : FALSE);
     return S_OK;
@@ -484,13 +483,13 @@ STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules4)(ComSafeArrayOut(BSTR, aPor
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    GetPortForwardRulesFromMap(ComSafeArrayInArg(aPortForwardRules4), 
+    GetPortForwardRulesFromMap(ComSafeArrayInArg(aPortForwardRules4),
                                m->mapName2PortForwardRule4);
     alock.release();
     return S_OK;
 }
 
-STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules6)(ComSafeArrayOut(BSTR, 
+STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules6)(ComSafeArrayOut(BSTR,
 								      aPortForwardRules6))
 {
     CheckComArgOutSafeArrayPointerValid(aPortForwardRules6);
@@ -503,8 +502,8 @@ STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules6)(ComSafeArrayOut(BSTR,
     return S_OK;
 }
 
-STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6, 
-                                            IN_BSTR aPortForwardRuleName, 
+STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
+                                            IN_BSTR aPortForwardRuleName,
                                             NATProtocol_T aProto,
                                             IN_BSTR aHostIp,
                                             USHORT aHostPort,
@@ -532,7 +531,7 @@ STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
             return E_INVALIDARG;
     }
     if (name.isEmpty())
-      name = Utf8StrFmt("%s_[%s]%%%d_[%s]%%%d", proto.c_str(), 
+      name = Utf8StrFmt("%s_[%s]%%%d_[%s]%%%d", proto.c_str(),
                         Utf8Str(aHostIp).c_str(), aHostPort,
                         Utf8Str(aGuestIp).c_str(), aGuestPort);
 
@@ -560,13 +559,13 @@ STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
     mapRules.insert(std::make_pair(name, r));
 
     alock.release();
-    mVirtualBox->onNATNetworkPortForward(mName.raw(), TRUE, aIsIpv6, 
-                                         aPortForwardRuleName, aProto, 
-                                         aHostIp, aHostPort, 
+    mVirtualBox->onNATNetworkPortForward(mName.raw(), TRUE, aIsIpv6,
+                                         aPortForwardRuleName, aProto,
+                                         aHostIp, aHostPort,
                                          aGuestIp, aGuestPort);
 
     /* Notify listerners listening on this network only */
-    fireNATNetworkPortForwardEvent(m->pEventSource, mName.raw(), TRUE, 
+    fireNATNetworkPortForwardEvent(m->pEventSource, mName.raw(), TRUE,
                                    aIsIpv6, aPortForwardRuleName, aProto,
                                    aHostIp, aHostPort,
                                    aGuestIp, aGuestPort);
@@ -591,10 +590,10 @@ STDMETHODIMP NATNetwork::RemovePortForwardRule(BOOL aIsIpv6, IN_BSTR aPortForwar
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     NATRuleMap& mapRules = aIsIpv6 ? m->mapName2PortForwardRule6 : m->mapName2PortForwardRule4;
     NATRuleMap::iterator it = mapRules.find(aPortForwardRuleName);
-    
+
     if (it == mapRules.end())
         return E_INVALIDARG;
-    
+
     strHostIP = it->second.strHostIP;
     strGuestIP = it->second.strGuestIP;
     u16HostPort = it->second.u16HostPort;
@@ -602,16 +601,16 @@ STDMETHODIMP NATNetwork::RemovePortForwardRule(BOOL aIsIpv6, IN_BSTR aPortForwar
     proto = it->second.proto;
 
     mapRules.erase(it);
-    
+
     alock.release();
 
-    mVirtualBox->onNATNetworkPortForward(mName.raw(), FALSE, aIsIpv6, 
-                                         aPortForwardRuleName, proto, 
-                                         Bstr(strHostIP).raw(), u16HostPort, 
+    mVirtualBox->onNATNetworkPortForward(mName.raw(), FALSE, aIsIpv6,
+                                         aPortForwardRuleName, proto,
+                                         Bstr(strHostIP).raw(), u16HostPort,
                                          Bstr(strGuestIP).raw(), u16GuestPort);
 
     /* Notify listerners listening on this network only */
-    fireNATNetworkPortForwardEvent(m->pEventSource, mName.raw(), FALSE, 
+    fireNATNetworkPortForwardEvent(m->pEventSource, mName.raw(), FALSE,
                                    aIsIpv6, aPortForwardRuleName, proto,
                                    Bstr(strHostIP).raw(), u16HostPort,
                                    Bstr(strGuestIP).raw(), u16GuestPort);
@@ -631,84 +630,72 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     if (!m->fEnabled) return S_OK;
-    m->NATRunner.setOption(NATSCCFG_NAME, mName, true);
-    m->NATRunner.setOption(NATSCCFG_TRUNKTYPE, Utf8Str(aTrunkType), true);
-    m->NATRunner.setOption(NATSCCFG_IPADDRESS, m->IPv4Gateway, true);
-    m->NATRunner.setOption(NATSCCFG_NETMASK, m->IPv4NetworkMask, true);
-    
-    /* port-forwarding */
-    
-    for (constNATRuleMapIterator it = m->mapName2PortForwardRule4.begin();
-	 it != m->mapName2PortForwardRule4.end(); ++it)
-    {
-	settings::NATRule r = it->second;
-	m->NATRunner.setOption(NATSCCFG_PORTFORWARD4, 
-			       Bstr(Utf8StrFmt("%s:%d:[%s]:%d:[%s]:%d",
-					       r.strName.c_str(),
-					       r.proto,
-					       r.strHostIP.isEmpty() ? 
-					              "0.0.0.0" :
-					               r.strHostIP.c_str(),
-					       r.u16HostPort,
-					       r.strGuestIP.c_str(),
-					       r.u16GuestPort)), true);
-    }
+
+    m->NATRunner.setOption(NETCFG_NETNAME, mName, true);
+    m->NATRunner.setOption(NETCFG_TRUNKTYPE, Utf8Str(aTrunkType), true);
+    m->NATRunner.setOption(NETCFG_IPADDRESS, m->IPv4Gateway, true);
+    m->NATRunner.setOption(NETCFG_NETMASK, m->IPv4NetworkMask, true);
+
+    /* No portforwarding rules from command-line, all will be fetched via API */
 
     if (m->fNeedDhcpServer)
     {
         /**
          * Just to as idea... via API (on creation user pass the cidr of network and)
-         * and we calculate it's addreses (mutable?). 
+         * and we calculate it's addreses (mutable?).
          */
-         
-        /* 
+
+        /*
          * Configuration and running DHCP server:
          * 1. find server first createDHCPServer
          * 2. if return status is E_INVALARG => server already exists just find and start.
          * 3. if return status neither E_INVALRG nor S_OK => return E_FAIL
          * 4. if return status S_OK proceed to DHCP server configuration
-         * 5. call setConfiguration() and pass all required parameters 
+         * 5. call setConfiguration() and pass all required parameters
          * 6. start dhcp server.
          */
-        int rc = mVirtualBox->FindDHCPServerByNetworkName(mName.raw(), 
+        int rc = mVirtualBox->FindDHCPServerByNetworkName(mName.raw(),
                                                       m->dhcpServer.asOutParam());
-        switch (rc) 
+        switch (rc)
         {
             case E_INVALIDARG:
                 /* server haven't beeen found let create it then */
-                rc = mVirtualBox->CreateDHCPServer(mName.raw(), 
+                rc = mVirtualBox->CreateDHCPServer(mName.raw(),
                                                    m->dhcpServer.asOutParam());
                 if (FAILED(rc))
                   return E_FAIL;
                 /* breakthrough */
-            case S_OK:
+
             {
-                LogFunc(("gateway: %s, dhcpserver:%s, dhcplowerip:%s, dhcpupperip:%s\n", 
-                         Utf8Str(m->IPv4Gateway.raw()).c_str(), 
+                LogFunc(("gateway: %s, dhcpserver:%s, dhcplowerip:%s, dhcpupperip:%s\n",
+                         Utf8Str(m->IPv4Gateway.raw()).c_str(),
                          Utf8Str(m->IPv4DhcpServer.raw()).c_str(),
-                         Utf8Str(m->IPv4DhcpServerLowerIp.raw()).c_str(), 
+                         Utf8Str(m->IPv4DhcpServerLowerIp.raw()).c_str(),
                          Utf8Str(m->IPv4DhcpServerUpperIp.raw()).c_str()));
-                         
+
+                m->dhcpServer->AddGlobalOption(DhcpOpt_Router, m->IPv4Gateway.raw());
 
                 rc = m->dhcpServer->SetEnabled(true);
+
                 BSTR dhcpip = NULL;
                 BSTR netmask = NULL;
                 BSTR lowerip = NULL;
                 BSTR upperip = NULL;
+
                 m->IPv4DhcpServer.cloneTo(&dhcpip);
                 m->IPv4NetworkMask.cloneTo(&netmask);
-                
-                m->IPv4DhcpServerLowerIp.cloneTo(&lowerip); 
+                m->IPv4DhcpServerLowerIp.cloneTo(&lowerip);
                 m->IPv4DhcpServerUpperIp.cloneTo(&upperip);
-                rc = m->dhcpServer->SetConfiguration(dhcpip, 
+                rc = m->dhcpServer->SetConfiguration(dhcpip,
                                                      netmask,
                                                      lowerip,
                                                      upperip);
-            break;
             }
-            
-        default:
-            return E_FAIL;
+            case S_OK:
+                break;
+
+            default:
+                return E_FAIL;
         }
 
         rc = m->dhcpServer->Start(mName.raw(), Bstr("").raw(), aTrunkType);
@@ -718,7 +705,7 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
             return E_FAIL;
         }
     }
-    
+
     if (RT_SUCCESS(m->NATRunner.start()))
     {
         mVirtualBox->onNATNetworkStartStop(mName.raw(), TRUE);
@@ -727,7 +714,7 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
     else return E_FAIL;
 #else
     NOREF(aTrunkType);
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -740,9 +727,8 @@ STDMETHODIMP NATNetwork::Stop()
         return S_OK;
     }
     else return E_FAIL;
-        
 #else
-    return E_NOTIMPL;
+    ReturnComNotImplemented();
 #endif
 }
 
@@ -772,11 +758,11 @@ int NATNetwork::RecalculateIpv4AddressAssignments()
     RTNETADDRIPV4 network, netmask, gateway;
     char aszGatewayIp[16], aszNetmask[16];
     RT_ZERO(aszNetmask);
-    int rc = RTCidrStrToIPv4(Utf8Str(m->IPv4NetworkCidr.raw()).c_str(), 
-                             &network, 
+    int rc = RTCidrStrToIPv4(Utf8Str(m->IPv4NetworkCidr.raw()).c_str(),
+                             &network,
                              &netmask);
     AssertRCReturn(rc, rc);
-  
+
     /* I don't remember the reason CIDR calcualted in host */
     gateway.u = network.u;
 
@@ -789,7 +775,7 @@ int NATNetwork::RecalculateIpv4AddressAssignments()
         RTNETADDRIPV4 dhcpserver,
           dhcplowerip,
           dhcpupperip;
-        char aszNetwork[16], 
+        char aszNetwork[16],
           aszDhcpIp[16],
           aszDhcpLowerIp[16],
           aszDhcpUpperIp[16];
@@ -801,14 +787,14 @@ int NATNetwork::RecalculateIpv4AddressAssignments()
 
         dhcpserver.u = network.u;
         dhcpserver.u += 2;
-        
-        
+
+
         /* XXX: adding more services should change the math here */
         dhcplowerip.u = RT_H2N_U32(dhcpserver.u + 1);
         dhcpupperip.u = RT_H2N_U32((network.u | (~netmask.u)) -1);
         dhcpserver.u = RT_H2N_U32(dhcpserver.u);
         network.u = RT_H2N_U32(network.u);
-               
+
         RTStrPrintf(aszNetwork, 16, "%RTnaipv4", network);
         RTStrPrintf(aszDhcpLowerIp, 16, "%RTnaipv4", dhcplowerip);
         RTStrPrintf(aszDhcpUpperIp, 16, "%RTnaipv4", dhcpupperip);
@@ -817,7 +803,12 @@ int NATNetwork::RecalculateIpv4AddressAssignments()
         m->IPv4DhcpServer = aszDhcpIp;
         m->IPv4DhcpServerLowerIp = aszDhcpLowerIp;
         m->IPv4DhcpServerUpperIp = aszDhcpUpperIp;
-        LogFunc(("network: %RTnaipv4, dhcpserver:%RTnaipv4, dhcplowerip:%RTnaipv4, dhcpupperip:%RTnaipv4\n", network, dhcpserver, dhcplowerip, dhcpupperip));
+
+        LogFunc(("network: %RTnaipv4, dhcpserver:%RTnaipv4, dhcplowerip:%RTnaipv4, dhcpupperip:%RTnaipv4\n",
+                 network,
+                 dhcpserver,
+                 dhcplowerip,
+                 dhcpupperip));
     }
     /* we need IPv4NetworkMask for NAT's gw service start */
     netmask.u = RT_H2N_U32(netmask.u);

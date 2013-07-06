@@ -285,6 +285,29 @@ struct MachineRegistryEntry
 };
 typedef std::list<MachineRegistryEntry> MachinesRegistry;
 
+typedef std::map<DhcpOpt_T, com::Utf8Str> DhcpOptionMap;
+typedef DhcpOptionMap::value_type DhcpOptValuePair;
+typedef DhcpOptionMap::iterator DhcpOptIterator;
+typedef DhcpOptionMap::const_iterator DhcpOptConstIterator;
+
+typedef struct VmNameSlotKey
+{
+    VmNameSlotKey(const com::Utf8Str& aVmName, LONG aSlot): VmName(aVmName),
+      Slot(aSlot){}
+    const com::Utf8Str VmName;
+    LONG      Slot;
+    bool operator< (const VmNameSlotKey& that) const
+    {
+        if (VmName == that.VmName)
+            return Slot < that.Slot;
+        else return VmName < that.VmName;
+    }
+} VmNameSlotKey;
+typedef std::map<VmNameSlotKey, DhcpOptionMap> VmSlot2OptionsMap;
+typedef VmSlot2OptionsMap::value_type VmSlot2OptionsPair;
+typedef VmSlot2OptionsMap::iterator VmSlot2OptionsIterator;
+typedef VmSlot2OptionsMap::const_iterator VmSlot2OptionsConstIterator;
+
 struct DHCPServer
 {
     DHCPServer()
@@ -293,10 +316,11 @@ struct DHCPServer
 
     com::Utf8Str    strNetworkName,
                     strIPAddress,
-                    strIPNetworkMask,
                     strIPLower,
                     strIPUpper;
     bool            fEnabled;
+    std::map<DhcpOpt_T, com::Utf8Str>  GlobalDhcpOptions;
+    VmSlot2OptionsMap VmSlot2OptionsM;
 };
 typedef std::list<DHCPServer> DHCPServersList;
 
@@ -336,6 +360,7 @@ public:
 
     void readMachineRegistry(const xml::ElementNode &elmMachineRegistry);
     void readDHCPServers(const xml::ElementNode &elmDHCPServers);
+    void readDhcpOptions(DhcpOptionMap& map, const xml::ElementNode& options);
     void readNATNetworks(const xml::ElementNode &elmNATNetworks);
 
     void write(const com::Utf8Str strFilename);

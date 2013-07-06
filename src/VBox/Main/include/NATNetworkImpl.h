@@ -36,6 +36,18 @@ namespace settings
     struct NATRule;
 }
 
+#ifdef RT_OS_WINDOWS
+# define NATSR_EXECUTABLE_NAME "VBoxNetLwipNAT.exe"
+#else
+# define NATSR_EXECUTABLE_NAME "VBoxNetLwipNAT"
+#endif
+
+class NATNetworkServiceRunner: public NetworkServiceRunner
+{
+public:
+    NATNetworkServiceRunner(): NetworkServiceRunner(NATSR_EXECUTABLE_NAME){}
+    virtual ~NATNetworkServiceRunner(){}
+};
 
 class ATL_NO_VTABLE NATNetwork :
     public VirtualBoxBase,
@@ -81,24 +93,24 @@ public:
 
     STDMETHOD(COMGETTER(Network))(BSTR *aIPNetwork);
     STDMETHOD(COMSETTER(Network))(IN_BSTR aIPNetwork);
-    
+
     STDMETHOD(COMGETTER(IPv6Enabled))(BOOL *aEnabled);
     STDMETHOD(COMSETTER(IPv6Enabled))(BOOL aEnabled);
-    
+
     STDMETHOD(COMGETTER(IPv6Prefix))(BSTR *aName);
     STDMETHOD(COMSETTER(IPv6Prefix))(IN_BSTR aName);
 
     STDMETHOD(COMGETTER(AdvertiseDefaultIPv6RouteEnabled))(BOOL *aEnabled);
     STDMETHOD(COMSETTER(AdvertiseDefaultIPv6RouteEnabled))(BOOL aEnabled);
-    
+
     STDMETHOD(COMGETTER(NeedDhcpServer))(BOOL *aEnabled);
     STDMETHOD(COMSETTER(NeedDhcpServer))(BOOL aEnabled);
-    
+
     STDMETHOD(COMGETTER(PortForwardRules4))(ComSafeArrayOut(BSTR, aPortForwardRules4));
     STDMETHOD(COMGETTER(PortForwardRules6))(ComSafeArrayOut(BSTR, aPortForwardRules6));
 
-    STDMETHOD(AddPortForwardRule)(BOOL aIsIpv6, 
-                                  IN_BSTR aPortForwardRuleName, 
+    STDMETHOD(AddPortForwardRule)(BOOL aIsIpv6,
+                                  IN_BSTR aPortForwardRuleName,
                                   NATProtocol_T aProto,
                                   IN_BSTR aHostIp,
                                   USHORT aHostPort,

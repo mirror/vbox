@@ -61,6 +61,9 @@ public:
     STDMETHOD(COMGETTER(USBDevices))(ComSafeArrayOut(IHostUSBDevice *, aUSBDevices));
     STDMETHOD(COMGETTER(USBDeviceFilters))(ComSafeArrayOut(IHostUSBDeviceFilter *, aUSBDeviceFilters));
     STDMETHOD(COMGETTER(NetworkInterfaces))(ComSafeArrayOut(IHostNetworkInterface *, aNetworkInterfaces));
+    STDMETHOD(COMGETTER(NameServers))(ComSafeArrayOut(BSTR, aNameServers));
+    STDMETHOD(COMGETTER(DomainName))(BSTR *aDomainName);
+    STDMETHOD(COMGETTER(SearchStrings))(ComSafeArrayOut(BSTR, aSearchStrings));
     STDMETHOD(COMGETTER(ProcessorCount))(ULONG *count);
     STDMETHOD(COMGETTER(ProcessorOnlineCount))(ULONG *count);
     STDMETHOD(COMGETTER(ProcessorCoreCount))(ULONG *count);
@@ -145,6 +148,12 @@ private:
 #endif
 
     HRESULT updateNetIfList();
+
+#ifndef RT_OS_WINDOWS
+    HRESULT parseResolvConf();
+#else
+    HRESULT fetchNameResolvingInformation();
+#endif
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     void registerMetrics(PerformanceCollector *aCollector);
