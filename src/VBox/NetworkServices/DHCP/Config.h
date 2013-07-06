@@ -32,7 +32,7 @@ typedef enum CLIENTSESSIONSTATE
    * defult state, session isn't operable, not initialized an so on.
    */
   DHCPNONSENSE,
-  /** We've received dhcp discover => 
+  /** We've received dhcp discover =>
    * we're starting new client and/or session.
    * Using XID (we record session)
    * and response with DHCPOFFER
@@ -43,7 +43,7 @@ typedef enum CLIENTSESSIONSTATE
    */
   DHCPOFFERPREPARED,
   /**
-   * This more, session state, we responsed, to 
+   * This more, session state, we responsed, to
    * client with DHCPOFFER using session's XID
    */
   DHCPOFFERSENT,
@@ -57,7 +57,7 @@ typedef enum CLIENTSESSIONSTATE
   DHCPACKNAKPREPARED,
   /**
    * We've been able to furfill client's request for (XID) session, erased others Client
-   * 's sessions ... and send DHCPACK (should be Lease bind at this point?) 
+   * 's sessions ... and send DHCPACK (should be Lease bind at this point?)
    */
   DHCPACKSENT,
   /**
@@ -89,9 +89,9 @@ class Client;
 class BaseConfigEntity;
 
 /**
- * This class joins client and the lease ... 
+ * This class joins client and the lease ...
  * at the begining client might request several address assignments...
- * 
+ *
  * So session here is descriptor joining client to each of it's requests.
  * When client finalizes its selection ... only single assignment is chosen,
  * others are released.
@@ -99,9 +99,9 @@ class BaseConfigEntity;
 class Session
 {
 public:
-    Session(const Client *client = NULL,  
-            uint32_t xid = 0, 
-            CLIENTSESSIONSTATE enmState = DHCPNONSENSE): 
+    Session(const Client *client = NULL,
+            uint32_t xid = 0,
+            CLIENTSESSIONSTATE enmState = DHCPNONSENSE):
       m_pClient(client),
       m_state(enmState),
       m_u32Xid(xid),
@@ -111,23 +111,23 @@ public:
         addressHint.u = 0;
         RT_ZERO(reqParamList);
     }
-    
+
     bool operator < (const Session& s) const;
-    
+
     int switchTo(CLIENTSESSIONSTATE);
     /* XXX private: */
 
     /**/
     const Client* m_pClient;
-    /* We don't store the state in the client, because client might initiate several 
+    /* We don't store the state in the client, because client might initiate several
      * sessions.
      */
     CLIENTSESSIONSTATE m_state;
-    /** 
-     * uniq identificator of session 
+    /**
+     * uniq identificator of session
      */
     uint32_t m_u32Xid;
-    
+
     /* dhcp-opts: request address */
     RTNETADDRIPV4 addressHint;
 
@@ -155,7 +155,7 @@ public:
     virtual ~Lease(){}
 private:
     const Client *m_pClient;
-    
+
     bool operator == (const Session& session) const
     {
         /* XXX: pointer comparison, perhaps not we really need */
@@ -167,33 +167,33 @@ typedef std::map<Lease, RTNETADDRIPV4> MapLease2Ip4Address;
 typedef MapLease2Ip4Address::value_type MapLease2Ip4AddressPair;
 typedef MapLease2Ip4Address::iterator MapLease2Ip4AddressIterator;
 
-/* 
- * it's a basic representation of 
+/*
+ * it's a basic representation of
  * of out undestanding what client is
- * XXX: Client might sends Option 61 (RFC2132 9.14 "Client-identifier") signalling 
+ * XXX: Client might sends Option 61 (RFC2132 9.14 "Client-identifier") signalling
  * that we may identify it in special way
- * 
+ *
  * XXX: Client might send Option 60 (RFC2132 9.13 "Vendor class undentifier")
- * in response it's expected server sends Option 43 (RFC2132 8.4. "Vendor Specific Information") 
+ * in response it's expected server sends Option 43 (RFC2132 8.4. "Vendor Specific Information")
  */
-class Client 
+class Client
 {
     public:
 
     /* XXX: Option 60 and 61 */
     Client(const RTMAC& mac, uint32_t xid = 0);
-    
-    bool operator== (const RTMAC& mac) const 
+
+    bool operator== (const RTMAC& mac) const
     {
-        return (  m_mac.au16[0] == mac.au16[0] 
-                && m_mac.au16[1] == mac.au16[1] 
+        return (  m_mac.au16[0] == mac.au16[0]
+                && m_mac.au16[1] == mac.au16[1]
                 && m_mac.au16[2] == mac.au16[2]);
     }
     /** Dumps client query */
     void dump();
-    
+
     /* XXX! private: */
-    
+
     RTMAC m_mac;
     Map2ClientSession m_sessions;
     /* XXX: it's logically per session object, but some client broke XIDness */
@@ -212,20 +212,20 @@ class SessionManager
     public:
 
     static SessionManager* getSessionManager();
-    
+
     /**
      * This method we call on every DHCP packet we've received.
      * 1. it finds/creates Client/and Session Object.
      */
     Session& getClientSessionByDhcpPacket(const RTNETBOOTP* pDhcpMsg, size_t cbPacket);
-    
+
     /* XXX: DHCPDECLINE */
     void releaseClientSession(Session& session);
     /* XXX: DHCPRELEASE */
     void releaseClient(Client& client);
 
     private:
-    
+
     VecClient m_clients;
 
     SessionManager(){}
@@ -250,14 +250,14 @@ class ConfigurationManager
      * We call this on DHCPDISCOVER
      */
     int findConfiguration4Session(Session& session);
-    
+
     /**
      * XXX: it's could be done on DHCPOFFER or on DHCPACK (rfc2131 gives freedom here
-     * 3.1.2, what is strict that allocation should do address check before real 
-     * allocation)... 
+     * 3.1.2, what is strict that allocation should do address check before real
+     * allocation)...
      */
     int allocateConfiguration4Session(Session& session);
-        
+
     /*
      * We call this before DHCPACK sent and after DHCPREQUEST received ...
      * when requested configuration is acceptable.
@@ -265,15 +265,15 @@ class ConfigurationManager
     int commitConfiguration4ClientSession(Session& sesion);
 
     static int findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg, RawOption& opt);
-    
-    NetworkConfigEntity *addNetwork(NetworkConfigEntity *pCfg, 
+
+    NetworkConfigEntity *addNetwork(NetworkConfigEntity *pCfg,
                                     const RTNETADDRIPV4& networkId,
                                     const RTNETADDRIPV4& netmask,
-                                    RTNETADDRIPV4& UpperAddress, 
+                                    RTNETADDRIPV4& UpperAddress,
                                     RTNETADDRIPV4& LowerAddress);
 
     HostConfigEntity *addHost(NetworkConfigEntity*, const RTNETADDRIPV4&, ClientMatchCriteria*);
-    
+
     RTNETADDRIPV4  getSessionAddress(const Session& session);
 
     /* XXX: from config */
@@ -320,7 +320,7 @@ class ConfigurationManager
 
            case RTNET_DHCP_OPT_ROUTERS:
                return m_routers;
-               
+
        }
        /* XXX: Grrr !!! */
        return m_empty;
@@ -344,18 +344,18 @@ class NetworkManager
 {
     public:
     static NetworkManager *getNetworkManager();
-    
+
     int offer4Session(Session& ses);
     int ack(Session& ses);
     int nak(Session& ses);
 
     const RTNETADDRIPV4& getOurAddress(){ return m_OurAddress;}
     const RTNETADDRIPV4& getOurNetmask(){ return m_OurNetmask;}
-    const RTMAC& getOurMac() {return m_OurMac;} 
+    const RTMAC& getOurMac() {return m_OurMac;}
 
     void setOurAddress(const RTNETADDRIPV4& aAddress){ m_OurAddress = aAddress;}
     void setOurNetmask(const RTNETADDRIPV4& aNetmask){ m_OurNetmask = aNetmask;}
-    void setOurMac(const RTMAC& aMac) {m_OurMac = aMac;} 
+    void setOurMac(const RTMAC& aMac) {m_OurMac = aMac;}
 
     /* XXX: artifacts should be hidden or removed from here. */
     PSUPDRVSESSION m_pSession;
@@ -376,7 +376,7 @@ class NetworkManager
     RTNETADDRIPV4 m_OurAddress;
     RTNETADDRIPV4 m_OurNetmask;
     RTMAC m_OurMac;
-    
+
     NetworkManager(){}
     virtual ~NetworkManager(){}
 };
@@ -400,7 +400,7 @@ class ORClientMatchCriteria: ClientMatchCriteria
         m_left = left;
         m_right = right;
     }
-    
+
     virtual bool check(const Client& client) const
     {
         return (m_left->check(client) || m_right->check(client));
@@ -417,7 +417,7 @@ class ANDClientMatchCriteria: ClientMatchCriteria
         m_left = left;
         m_right = right;
     }
-    
+
     virtual bool check(const Client& client) const
     {
         return (m_left->check(client) && m_right->check(client));
@@ -439,7 +439,7 @@ class MACClientMatchCriteria: public ClientMatchCriteria
 
     public:
     MACClientMatchCriteria(const RTMAC& mac):m_mac(mac){}
-    
+
     virtual bool check(const Client& client) const
     {
         return (client == m_mac);
@@ -474,7 +474,7 @@ class ClientIdentifierMatchCriteria: ClientMatchCriteria{};
 class BaseConfigEntity
 {
 public:
-    BaseConfigEntity(const ClientMatchCriteria *criteria = NULL, 
+    BaseConfigEntity(const ClientMatchCriteria *criteria = NULL,
                      int matchingLevel = 0)
       : m_criteria(criteria),
       m_MatchLevel(matchingLevel){};
@@ -485,9 +485,9 @@ public:
         m_children.push_back(cfg);
         return 0;
     }
-    
+
     /* Should return how strong matching */
-    virtual int match(const Client& client, const BaseConfigEntity **cfg) const 
+    virtual int match(const Client& client, const BaseConfigEntity **cfg) const
     {
         int iMatch = (m_criteria && m_criteria->check(client)? m_MatchLevel: 0);
         if (m_children.empty())
@@ -556,14 +556,14 @@ class ConfigEntity: public BaseConfigEntity
     {
         unconst(m_parentCfg)->add(this);
     }
-      
+
     std::string m_name;
     const BaseConfigEntity *m_parentCfg;
 };
 
 
 /**
- * Network specific entries 
+ * Network specific entries
  */
 class NetworkConfigEntity:public ConfigEntity
 {
@@ -573,7 +573,7 @@ class NetworkConfigEntity:public ConfigEntity
                         const BaseConfigEntity *cfg,
                         const ClientMatchCriteria *criteria,
                         int matchlvl,
-                        const RTNETADDRIPV4& networkID, 
+                        const RTNETADDRIPV4& networkID,
                         const RTNETADDRIPV4& networkMask,
                         const RTNETADDRIPV4& lowerIP,
                         const RTNETADDRIPV4& upperIP):
@@ -584,11 +584,11 @@ class NetworkConfigEntity:public ConfigEntity
       m_LowerIP(lowerIP)
     {
     };
-    
+
     NetworkConfigEntity(std::string name,
                         const BaseConfigEntity *cfg,
                         const ClientMatchCriteria *criteria,
-                        const RTNETADDRIPV4& networkID, 
+                        const RTNETADDRIPV4& networkID,
                         const RTNETADDRIPV4& networkMask):
       ConfigEntity(name, cfg, criteria, 5),
       m_NetworkID(networkID),
@@ -611,7 +611,7 @@ class NetworkConfigEntity:public ConfigEntity
 };
 
 
-/** 
+/**
  * Host specific entry
  * Address pool is contains one element
  */
@@ -621,22 +621,22 @@ class HostConfigEntity: public NetworkConfigEntity
     public:
     HostConfigEntity(const RTNETADDRIPV4& addr,
                      std::string name,
-                     const NetworkConfigEntity *cfg, 
+                     const NetworkConfigEntity *cfg,
                      const ClientMatchCriteria *criteria):
-      NetworkConfigEntity(name, 
-                          static_cast<const ConfigEntity*>(cfg), 
-                          criteria, 
-                          10, 
-                          cfg->networkId(), 
-                          cfg->netmask(), 
-                          addr, 
+      NetworkConfigEntity(name,
+                          static_cast<const ConfigEntity*>(cfg),
+                          criteria,
+                          10,
+                          cfg->networkId(),
+                          cfg->netmask(),
+                          addr,
                           addr)
     {
         /* upper addr == lower addr */
     }
 
-    virtual int match(const Client& client) const 
-    { 
+    virtual int match(const Client& client) const
+    {
         return (m_criteria->check(client) ? 10 : 0);
     }
 
@@ -652,25 +652,25 @@ class RootConfigEntity: public NetworkConfigEntity
 
 #if 0
 /**
- * Shared regions e.g. some of configured networks declarations 
+ * Shared regions e.g. some of configured networks declarations
  * are cover each other.
- * XXX: Shared Network is join on Network config entities with possible 
- * overlaps in address pools. for a moment we won't configure and use them them  
+ * XXX: Shared Network is join on Network config entities with possible
+ * overlaps in address pools. for a moment we won't configure and use them them
  */
 class SharedNetworkConfigEntity: public NetworkEntity
 {
     public:
     SharedNetworkConfigEntity(){}
     int match(const Client& client) const { return m_criteria.match(client)? 3 : 0;}
-    
+
     SharedNetworkConfigEntity(NetworkEntity& network)
     {
         Networks.push_back(network);
     }
     virtual ~SharedNetworkConfigEntity(){}
-        
+
     std::vector<NetworkConfigEntity> Networks;
-    
+
 };
 #endif
 
