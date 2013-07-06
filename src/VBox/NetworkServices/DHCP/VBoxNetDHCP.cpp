@@ -79,7 +79,7 @@
 /**
  * DHCP server instance.
  */
-class VBoxNetDhcp: public VBoxNetBaseService 
+class VBoxNetDhcp: public VBoxNetBaseService
 {
 public:
     VBoxNetDhcp();
@@ -103,9 +103,9 @@ protected:
 protected:
     /** @name The DHCP server specific configuration data members.
      * @{ */
-    /* 
+    /*
      * XXX: what was the plan? SQL3 or plain text file?
-     * How it will coexists with managment from VBoxManagement, who should manage db 
+     * How it will coexists with managment from VBoxManagement, who should manage db
      * in that case (VBoxManage, VBoxSVC ???)
      */
     std::string         m_LeaseDBName;
@@ -116,7 +116,7 @@ protected:
     ComPtr<IDHCPServer> m_DhcpServer;
 
     ComPtr<INATNetwork> m_NATNetwork;
-    
+
     /*
      * We will ignore cmd line parameters IFF there will be some DHCP specific arguments
      * otherwise all paramters will come from Main.
@@ -124,9 +124,9 @@ protected:
     bool m_fIgnoreCmdLineParameters;
 
     /*
-     * -b -n 10.0.1.2 -m 255.255.255.0 -> to the list processing in 
+     * -b -n 10.0.1.2 -m 255.255.255.0 -> to the list processing in
      */
-    typedef struct 
+    typedef struct
     {
         char Key;
         std::string strValue;
@@ -301,11 +301,11 @@ VBoxNetDhcp::~VBoxNetDhcp()
 
 /**
  * Parse the DHCP specific arguments.
- * 
+ *
  * This callback caled for each paramenter so
  * ....
- * we nee post analisys of the parameters, at least 
- *    for -b, -g, -l, -u, -m  
+ * we nee post analisys of the parameters, at least
+ *    for -b, -g, -l, -u, -m
  */
 int VBoxNetDhcp::parseOpt(int rc, const RTGETOPTUNION& Val)
 {
@@ -319,7 +319,7 @@ int VBoxNetDhcp::parseOpt(int rc, const RTGETOPTUNION& Val)
     switch (rc)
     {
             /* Begin config. */
-        case 'b': 
+        case 'b':
             CmdParameterll.push_back(prm);
             break;
 
@@ -346,16 +346,16 @@ int VBoxNetDhcp::parseOpt(int rc, const RTGETOPTUNION& Val)
 int VBoxNetDhcp::init()
 {
     HRESULT hrc = S_OK;
-    /* ok, here we should initiate instance of dhcp server 
-     * and listener for Dhcp configuration events 
+    /* ok, here we should initiate instance of dhcp server
+     * and listener for Dhcp configuration events
      */
     AssertRCReturn(virtualbox.isNull(), VERR_INTERNAL_ERROR);
 
-    hrc = virtualbox->FindDHCPServerByNetworkName(com::Bstr(m_Network.c_str()).raw(), 
+    hrc = virtualbox->FindDHCPServerByNetworkName(com::Bstr(m_Network.c_str()).raw(),
                                                   m_DhcpServer.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
-    hrc = virtualbox->FindNATNetworkByName(com::Bstr(m_Network.c_str()).raw(), 
+    hrc = virtualbox->FindNATNetworkByName(com::Bstr(m_Network.c_str()).raw(),
                                            m_NATNetwork.asOutParam());
 
     /* This isn't fatal in general case.
@@ -366,7 +366,7 @@ int VBoxNetDhcp::init()
     AssertPtrReturn(confManager, VERR_INTERNAL_ERROR);
 
     /**
-     * if we have nat netework of the same name 
+     * if we have nat netework of the same name
      * this is good chance that we are assigned to this network.
      */
     BOOL fNeedDhcpServer = false;
@@ -394,31 +394,31 @@ int VBoxNetDhcp::init()
     if (m_fIgnoreCmdLineParameters)
     {
         /* just fetch option array and add options to config */
-        /* per VM-settings ??? 
-         * 
-         * - we have vms with attached adapters with known mac-addresses 
+        /* per VM-settings ???
+         *
+         * - we have vms with attached adapters with known mac-addresses
          * - mac-addresses might be changed as well as names, how keep our config cleaned ????
          */
         com::SafeArray<BSTR> sf;
         hrc = m_DhcpServer->COMGETTER(GlobalOptions)(ComSafeArrayAsOutParam(sf));
         AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
-#if 0        
+#if 0
         for (int i = 0; i < sf.size(); ++i)
         {
             RTPrintf("%d: %s\n", i, com::Utf8Str(sf[i]).c_str());
         }
-     
-#endif   
+
+#endif
         com::Bstr strUpperIp, strLowerIp;
-        
+
         RTNETADDRIPV4 LowerAddress;
         RTNETADDRIPV4 UpperAddress;
 
         hrc = m_DhcpServer->COMGETTER(UpperIP)(strUpperIp.asOutParam());
         AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
         RTNetStrToIPv4Addr(com::Utf8Str(strUpperIp).c_str(), &UpperAddress);
-        
+
 
         hrc = m_DhcpServer->COMGETTER(LowerIP)(strLowerIp.asOutParam());
         AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
@@ -427,24 +427,24 @@ int VBoxNetDhcp::init()
         RTNETADDRIPV4 networkId;
         networkId.u = m_Ipv4Address.u & m_Ipv4Netmask.u;
         std::string name = std::string("default");
-        
-        NetworkConfigEntity *pCfg = confManager->addNetwork(unconst(g_RootConfig), 
+
+        NetworkConfigEntity *pCfg = confManager->addNetwork(unconst(g_RootConfig),
                                                             networkId,
                                                             m_Ipv4Netmask,
-                                                            LowerAddress, 
+                                                            LowerAddress,
                                                             UpperAddress);
 
     } /* if(m_fIgnoreCmdLineParameters) */
     else
     {
         CmdParameterIterator it;
-        
+
         RTNETADDRIPV4 networkId;
         networkId.u = m_Ipv4Address.u & m_Ipv4Netmask.u;
         RTNETADDRIPV4 netmask = m_Ipv4Netmask;
         RTNETADDRIPV4 LowerAddress;
         RTNETADDRIPV4 UpperAddress;
-        
+
         LowerAddress = networkId;
         UpperAddress.u = RT_H2N_U32(RT_N2H_U32(LowerAddress.u) | RT_N2H_U32(netmask.u));
 
@@ -462,7 +462,7 @@ int VBoxNetDhcp::init()
             {
                 case 'b':
                     /* config */
-                    NetworkConfigEntity(strname, 
+                    NetworkConfigEntity(strname,
                                         g_RootConfig,
                                         g_AnyClient,
                                         5,
@@ -632,12 +632,12 @@ bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
         {
             /* XXX: per-host configuration */
         }
-        
+
         SessionManager *sesionManager = SessionManager::getSessionManager();
         Session& session = sesionManager->getClientSessionByDhcpPacket(pDhcpMsg, cb);
         /* XXX: switch -> private */
         session.switchTo(DHCPDISCOVERRECEIEVED);
-        
+
         ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
         int rc = confManager->findConfiguration4Session(session);
         AssertRCReturn(rc, false);
@@ -670,7 +670,7 @@ bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
     Session& session = sesionManager->getClientSessionByDhcpPacket(pDhcpMsg, cb);
     /* XXX: switch -> private */
     session.switchTo(DHCPREQUESTRECEIVED);
-        
+
     ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
     int rc = confManager->findConfiguration4Session(session);
     AssertRCReturn(rc, false);
@@ -682,7 +682,7 @@ bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
         rc = netManager->ack(session);
     else
         rc = netManager->nak(session);
-    
+
     AssertRCReturn(rc, false);
 
     return true;
@@ -772,7 +772,7 @@ void VBoxNetDhcp::debugPrintV(int iMinLevel, bool fMsg, const char *pszFmt, va_l
             &&  m_cVerbosity >= 2
             &&  m_pCurMsg)
         {
-            /* XXX: export this to debugPrinfDhcpMsg or variant and other method export 
+            /* XXX: export this to debugPrinfDhcpMsg or variant and other method export
              *  to base class
              */
             const char *pszMsg = m_uCurMsgType != UINT8_MAX ? debugDhcpName(m_uCurMsgType) : "";

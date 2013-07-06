@@ -64,11 +64,11 @@ int Session::switchTo(CLIENTSESSIONSTATE enmState)
     return VINF_SUCCESS;
 }
 
-/* Configs 
+/* Configs
     NetworkConfigEntity(std::string name,
                         ConfigEntity* pCfg,
                         ClientMatchCriteria* criteria,
-                        RTNETADDRIPV4& networkID, 
+                        RTNETADDRIPV4& networkID,
                         RTNETADDRIPV4& networkMask)
 */
 static const RTNETADDRIPV4 g_AnyIpv4 = {0};
@@ -88,17 +88,17 @@ SessionManager *SessionManager::getSessionManager()
 }
 
 /*
- *  XXX: it sounds like a hack, we use packet descriptor to get the session, 
- * instead use corresponding functions in NetworkManager to fetch client identification 
+ *  XXX: it sounds like a hack, we use packet descriptor to get the session,
+ * instead use corresponding functions in NetworkManager to fetch client identification
  * (note: it isn't only mac driven) and XID for the session.
  */
 
 /**
- * XXX: what about leases ... Lease is a committed Session.... 
+ * XXX: what about leases ... Lease is a committed Session....
  */
 Session& SessionManager::getClientSessionByDhcpPacket(const RTNETBOOTP *pDhcpMsg, size_t cbDhcpMsg)
 {
-    
+
     VecClientIterator it;
     bool fDhcpValid = false;
     uint8_t uMsgType = 0;
@@ -120,10 +120,10 @@ Session& SessionManager::getClientSessionByDhcpPacket(const RTNETBOOTP *pDhcpMsg
     if (it == m_clients.end())
     {
         /* We hasn't got any session for this client */
-        m_clients.push_back(Client(pDhcpMsg->bp_chaddr.Mac, 
+        m_clients.push_back(Client(pDhcpMsg->bp_chaddr.Mac,
                                    pDhcpMsg->bp_xid));
         Client& client = m_clients.back();
-        client.m_sessions.insert(Map2ClientSessionType(xid, Session(&client, xid)));                          
+        client.m_sessions.insert(Map2ClientSessionType(xid, Session(&client, xid)));
         Assert(client.m_sessions[xid].m_pClient);
         return client.m_sessions[xid];
     }
@@ -148,10 +148,10 @@ Session& SessionManager::getClientSessionByDhcpPacket(const RTNETBOOTP *pDhcpMsg
             }
             /* MAY: todo */
             rc = ConfigurationManager::findOption(RTNET_DHCP_OPT_LEASE_TIME, pDhcpMsg, cbDhcpMsg, opt);
-            
+
             /* MAY: not now  */
             rc = ConfigurationManager::findOption(RTNET_DHCP_OPT_CLIENT_ID, pDhcpMsg, cbDhcpMsg, opt);
-            /* XXX: MAY 
+            /* XXX: MAY
             ConfigurationManager::findOption(RTNET_DHCP_OPT_VENDOR_CLASS_IDENTIFIER, pDhcpMsg, opt);
             */
             /* MAY: well */
@@ -178,7 +178,7 @@ Session& SessionManager::getClientSessionByDhcpPacket(const RTNETBOOTP *pDhcpMsg
             ConfigurationManager::findOption(RTNET_DHCP_OPT_LEASE_TIME, pDhcpMsg, cbDhcpMsg, opt);
             /* MAY */
             ConfigurationManager::findOption(RTNET_DHCP_OPT_CLIENT_ID, pDhcpMsg, cbDhcpMsg, opt);
-            /* XXX: MAY 
+            /* XXX: MAY
             ConfigurationManager::findOption(RTNET_DHCP_OPT_VENDOR_CLASS_IDENTIFIER, pDhcpMsg, opt);
             */
             /* MAY */
@@ -218,7 +218,7 @@ ConfigurationManager *ConfigurationManager::getConfigurationManager()
 {
     if (!g_ConfigurationManager)
         g_ConfigurationManager = new ConfigurationManager();
-    
+
     return g_ConfigurationManager;
 }
 
@@ -293,12 +293,12 @@ ConfigurationManager::findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t 
 
 
 /**
- * We've find the config for session ... 
- * XXX: using Session's private members 
+ * We've find the config for session ...
+ * XXX: using Session's private members
  */
 int ConfigurationManager::findConfiguration4Session(Session& session)
 {
-    /* XXX: state switching broken? 
+    /* XXX: state switching broken?
      * XXX: DHCPDECLINE and DHCPINFO should we support them.
      */
     AssertReturn(   session.m_state == DHCPDISCOVERRECEIEVED
@@ -312,7 +312,7 @@ int ConfigurationManager::findConfiguration4Session(Session& session)
         return VINF_SUCCESS;
     else
         return VERR_INTERNAL_ERROR; /* XXX: is it really *internal* error? Perhaps some misconfiguration */
-    
+
 }
 
 /**
@@ -321,12 +321,12 @@ int ConfigurationManager::findConfiguration4Session(Session& session)
 int ConfigurationManager::allocateConfiguration4Session(Session& session)
 {
     /**
-     * Well, session hasn't get the config. 
+     * Well, session hasn't get the config.
      */
     AssertPtrReturn(session.m_pCfg, VERR_INTERNAL_ERROR);
 
     bool fWithAddressHint = (session.addressHint.u != 0);
-    
+
     if (fWithAddressHint)
     {
         if (m_allocations[session].u == session.addressHint.u)
@@ -348,23 +348,23 @@ int ConfigurationManager::allocateConfiguration4Session(Session& session)
      * We've received DHCPDISCOVER
      */
     AssertReturn(session.m_state == DHCPDISCOVERRECEIEVED, VERR_INTERNAL_ERROR);
-    
+
     /**
      * XXX: this is wrong allocation check...
      * session initilized by client shouldn't be equal to lease in STL terms.
      */
     MapSession2Ip4AddressIterator it = m_allocations.find(session);
-    
+
     if (it == m_allocations.end())
     {
         /* XXX: not optimal allocation */
         const NetworkConfigEntity *pNetCfg = dynamic_cast<const NetworkConfigEntity *>(session.m_pCfg);
-        
+
         /**
          * Check config class.
          */
         AssertPtrReturn(pNetCfg, VERR_INTERNAL_ERROR);
-        
+
         uint32_t u32Address = RT_N2H_U32(pNetCfg->lowerIp().u);
         while (u32Address < RT_N2H_U32(pNetCfg->upperIp().u))
         {
@@ -379,17 +379,17 @@ int ConfigurationManager::allocateConfiguration4Session(Session& session)
             {
                 if (RT_N2H_U32(addressIterator->second.u) == u32Address)
                 {
-                    /* 
-                     * This address is taken 
-                     * XXX: check if session isn't expired... if expired we can 
-                     * reuse it for this request 
+                    /*
+                     * This address is taken
+                     * XXX: check if session isn't expired... if expired we can
+                     * reuse it for this request
                      */
                     /* XXX: fTakeAddress = true; owning session is expired */
                     fFound = true;
                     break;
                 }
             } /* end of for over allocations */
-            
+
             if (!fFound)
             {
                 RTNETADDRIPV4 address = { RT_H2N_U32_C(u32Address)};
@@ -400,9 +400,9 @@ int ConfigurationManager::allocateConfiguration4Session(Session& session)
 
             u32Address ++;
         } /* end of while over candidates */
-        
+
     }
-    
+
     /* XXX: really??? */
     session.switchTo(DHCPOFFERPREPARED);
     return VINF_SUCCESS;
@@ -413,7 +413,7 @@ int ConfigurationManager::commitConfiguration4ClientSession(Session& session)
 {
     /**/
     session.switchTo(DHCPACKNAKPREPARED);
-    
+
     /* XXX: clean up the rest of the session, now this session LEASE!!! */
     return VINF_SUCCESS;
 }
@@ -424,49 +424,49 @@ RTNETADDRIPV4 ConfigurationManager::getSessionAddress(const Session& session)
 }
 
 
-NetworkConfigEntity *ConfigurationManager::addNetwork(NetworkConfigEntity *pCfg, 
+NetworkConfigEntity *ConfigurationManager::addNetwork(NetworkConfigEntity *pCfg,
                                     const RTNETADDRIPV4& networkId,
                                     const RTNETADDRIPV4& netmask,
-                                    RTNETADDRIPV4& LowerAddress, 
+                                    RTNETADDRIPV4& LowerAddress,
                                     RTNETADDRIPV4& UpperAddress)
 {
         static int id;
         char name[64];
-        
+
         RTStrPrintf(name, RT_ELEMENTS(name), "network-%d", id);
         std::string strname(name);
         id++;
 
-        
+
         if (!LowerAddress.u)
             LowerAddress = networkId;
 
         if (!UpperAddress.u)
             UpperAddress.u = networkId.u | (~netmask.u);
 
-        return new NetworkConfigEntity(strname, 
-                            g_RootConfig, 
+        return new NetworkConfigEntity(strname,
+                            g_RootConfig,
                             g_AnyClient,
                             5,
                             networkId,
                             netmask,
-                            LowerAddress, 
+                            LowerAddress,
                             UpperAddress);
 }
 
-HostConfigEntity *ConfigurationManager::addHost(NetworkConfigEntity* pCfg, 
-                                                const RTNETADDRIPV4& address, 
+HostConfigEntity *ConfigurationManager::addHost(NetworkConfigEntity* pCfg,
+                                                const RTNETADDRIPV4& address,
                                                 ClientMatchCriteria *criteria)
 {
     static int id;
     char name[64];
-    
+
     RTStrPrintf(name, RT_ELEMENTS(name), "host-%d", id);
     std::string strname(name);
     id++;
-        
+
     return new HostConfigEntity(address, strname, pCfg, criteria);
-} 
+}
 
 /**
  * Network manager
@@ -494,19 +494,19 @@ int NetworkManager::offer4Session(Session& session)
 
     /* Ubuntu ???*/
     BootPReplyMsg.BootPHeader.bp_ciaddr =  address;
-    
-    /* options: 
+
+    /* options:
      * - IP lease time
      * - message type
      * - server identifier
      */
     RawOption opt;
     RT_ZERO(opt);
-    
+
     /* XXX: can't store options per session */
     Client *client = unconst(session.m_pClient);
     AssertPtr(client);
-    
+
     opt.u8OptId = RTNET_DHCP_OPT_MSG_TYPE;
     opt.au8RawOpt[0] = RTNET_DHCP_MT_OFFER;
     opt.cbRawOpt = 1;
@@ -522,7 +522,7 @@ int NetworkManager::offer4Session(Session& session)
     opt.cbRawOpt = sizeof(RTNETADDRIPV4);
     client->rawOptions.push_back(opt);
 
-    processParameterReqList(session);     
+    processParameterReqList(session);
 
     return doReply(session);
 }
@@ -540,18 +540,18 @@ int NetworkManager::ack(Session& session)
 
     address = ConfigurationManager::getConfigurationManager()->getSessionAddress(session);
     BootPReplyMsg.BootPHeader.bp_ciaddr =  address;
-      
- 
-    /* rfc2131 4.3.1 is about DHCPDISCOVER and this value is equal to ciaddr from 
-     * DHCPREQUEST or 0 ... 
+
+
+    /* rfc2131 4.3.1 is about DHCPDISCOVER and this value is equal to ciaddr from
+     * DHCPREQUEST or 0 ...
      * XXX: Using addressHint is not correct way to initialize [cy]iaddress...
      */
     BootPReplyMsg.BootPHeader.bp_ciaddr = session.addressHint;
     BootPReplyMsg.BootPHeader.bp_yiaddr = session.addressHint;
 
     Assert(BootPReplyMsg.BootPHeader.bp_yiaddr.u);
- 
-    /* options: 
+
+    /* options:
      * - IP address lease time (if DHCPREQUEST)
      * - message type
      * - server identifier
@@ -584,12 +584,12 @@ int NetworkManager::nak(Session& session)
 
     prepareReplyPacket4Session(session);
 
-    /* this field filed in prepareReplyPacket4Session, and 
+    /* this field filed in prepareReplyPacket4Session, and
      * RFC 2131 require to have it zero fo NAK.
      */
     BootPReplyMsg.BootPHeader.bp_yiaddr.u = 0;
 
-    /* options: 
+    /* options:
      * - message type (if DHCPREQUEST)
      * - server identifier
      */
@@ -610,7 +610,7 @@ int NetworkManager::nak(Session& session)
 
 
 /**
- * 
+ *
  */
 int NetworkManager::prepareReplyPacket4Session(const Session& session)
 {
@@ -623,23 +623,23 @@ int NetworkManager::prepareReplyPacket4Session(const Session& session)
     BootPReplyMsg.BootPHeader.bp_xid    = session.m_u32Xid;
     BootPReplyMsg.BootPHeader.bp_secs   = 0;
     /* XXX: bp_flags should be processed specially */
-    BootPReplyMsg.BootPHeader.bp_flags  = 0; 
+    BootPReplyMsg.BootPHeader.bp_flags  = 0;
     BootPReplyMsg.BootPHeader.bp_ciaddr.u = 0;
     BootPReplyMsg.BootPHeader.bp_giaddr.u = 0;
 
     Assert(session.m_pClient);
     BootPReplyMsg.BootPHeader.bp_chaddr.Mac = session.m_pClient->m_mac;
 
-    BootPReplyMsg.BootPHeader.bp_yiaddr = 
-      ConfigurationManager::getConfigurationManager()->getSessionAddress(session); 
+    BootPReplyMsg.BootPHeader.bp_yiaddr =
+      ConfigurationManager::getConfigurationManager()->getSessionAddress(session);
 
     BootPReplyMsg.BootPHeader.bp_siaddr.u = 0;
-    
+
 
     BootPReplyMsg.BootPHeader.bp_vend.Dhcp.dhcp_cookie = RT_H2N_U32_C(RTNET_DHCP_COOKIE);
 
-    memset(&BootPReplyMsg.BootPHeader.bp_vend.Dhcp.dhcp_opts[0], 
-           '\0', 
+    memset(&BootPReplyMsg.BootPHeader.bp_vend.Dhcp.dhcp_opts[0],
+           '\0',
            RTNET_DHCP_OPT_SIZE);
 
     return VINF_SUCCESS;
@@ -649,7 +649,7 @@ int NetworkManager::prepareReplyPacket4Session(const Session& session)
 int NetworkManager::doReply(const Session& session)
 {
     int rc;
-    
+
     /*
       Options....
      */
@@ -662,7 +662,7 @@ int NetworkManager::doReply(const Session& session)
     /* The basics */
 
     Cursor.optIPv4Addr(RTNET_DHCP_OPT_SERVER_ID, m_OurAddress);
-    
+
     while(!cl->rawOptions.empty())
     {
         RawOption opt = cl->rawOptions.back();
@@ -693,35 +693,35 @@ int NetworkManager::doReply(const Session& session)
             AssertMsgFailedReturn(("Unsupported state(%d)\n", session.m_state), VERR_INTERNAL_ERROR);
     }
 
-    /* 
+    /*
      */
 #if 0
     if (!(pDhcpMsg->bp_flags & RTNET_DHCP_FLAGS_NO_BROADCAST)) /** @todo need to see someone set this flag to check that it's correct. */
     {
-        rc = VBoxNetUDPUnicast(m_pSession, 
-                               m_hIf, 
+        rc = VBoxNetUDPUnicast(m_pSession,
+                               m_hIf,
                                m_pIfBuf,
-                               m_OurAddress, 
-                               &m_OurMac, 
+                               m_OurAddress,
+                               &m_OurMac,
                                RTNETIPV4_PORT_BOOTPS,                 /* sender */
-                               IPv4AddrBrdCast, 
-                               &BootPReplyMsg.BootPHeader->bp_chaddr.Mac, 
+                               IPv4AddrBrdCast,
+                               &BootPReplyMsg.BootPHeader->bp_chaddr.Mac,
                                RTNETIPV4_PORT_BOOTPC,    /* receiver */
                                &BootPReplyMsg, cbBooPReplyMsg);
     }
     else
 #endif
-        rc = VBoxNetUDPBroadcast(m_pSession, 
-                                 m_hIf, 
+        rc = VBoxNetUDPBroadcast(m_pSession,
+                                 m_hIf,
                                  m_pIfBuf,
-                                 m_OurAddress, 
-                                 &m_OurMac, 
+                                 m_OurAddress,
+                                 &m_OurMac,
                                  RTNETIPV4_PORT_BOOTPS,               /* sender */
-                                 RTNETIPV4_PORT_BOOTPC, 
+                                 RTNETIPV4_PORT_BOOTPC,
                                  &BootPReplyMsg, RTNET_DHCP_NORMAL_SIZE);
 
     AssertRCReturn(rc,rc);
-    
+
     return VINF_SUCCESS;
 }
 
@@ -729,7 +729,7 @@ int NetworkManager::doReply(const Session& session)
 int NetworkManager::processParameterReqList(Session& session)
 {
     /* request parameter list */
-    RawOption opt;    
+    RawOption opt;
     int idxParam = 0;
 
     uint8_t *pReqList = session.reqParamList.au8RawOpt;
@@ -744,7 +744,7 @@ int NetworkManager::processParameterReqList(Session& session)
     for (idxParam = 0; idxParam < session.reqParamList.cbRawOpt; ++idxParam)
     {
 
-        RT_ZERO(opt);        
+        RT_ZERO(opt);
         opt.u8OptId = pReqList[idxParam];
         switch(pReqList[idxParam])
         {
