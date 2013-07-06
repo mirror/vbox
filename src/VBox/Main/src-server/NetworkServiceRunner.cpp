@@ -14,43 +14,30 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#include "DHCPServerRunner.h"
+#include "NetworkServiceRunner.h"
 #include <iprt/process.h>
 #include <iprt/param.h>
 #include <iprt/env.h>
 
 struct ARGDEF
 {
-    DHCPCFG Type;
+    NETCFG Type;
     const char * Name;
 };
 
-#ifdef RT_OS_WINDOWS
-# define DHCP_EXECUTABLE_NAME "VBoxNetDHCP.exe"
-#else
-# define DHCP_EXECUTABLE_NAME "VBoxNetDHCP"
-#endif
-
 static const ARGDEF g_aArgDefs[] =
 {
-    {DHCPCFG_NAME, "--name"},
-    {DHCPCFG_NETNAME, "--network"},
-    {DHCPCFG_TRUNKTYPE, "--trunk-type"},
-    {DHCPCFG_TRUNKNAME, "--trunk-name"},
-    {DHCPCFG_MACADDRESS, "--mac-address"},
-    {DHCPCFG_IPADDRESS, "--ip-address"},
-    {DHCPCFG_LEASEDB, "--lease-db"},
-    {DHCPCFG_VERBOSE, "--verbose"},
-    {DHCPCFG_BEGINCONFIG, "--begin-config"},
-    {DHCPCFG_GATEWAY, "--gateway"},
-    {DHCPCFG_LOWERIP, "--lower-ip"},
-    {DHCPCFG_UPPERIP, "--upper-ip"},
-    {DHCPCFG_NETMASK, "--netmask"},
-    {DHCPCFG_HELP, "--help"},
-    {DHCPCFG_VERSION, "--version"}
+    {NETCFG_NAME, "--name"},
+    {NETCFG_NETNAME, "--network"},
+    {NETCFG_TRUNKTYPE, "--trunk-type"},
+    {NETCFG_TRUNKNAME, "--trunk-name"},
+    {NETCFG_MACADDRESS, "--mac-address"},
+    {NETCFG_IPADDRESS, "--ip-address"},
+    {NETCFG_VERBOSE, "--verbose"},
+    {NETCFG_NETMASK, "--netmask"},
 };
 
-static const ARGDEF * getArgDef(DHCPCFG type)
+static const ARGDEF * getArgDef(NETCFG type)
 {
     for (unsigned i = 0; i < RT_ELEMENTS(g_aArgDefs); i++)
         if (g_aArgDefs[i].Type == type)
@@ -59,26 +46,17 @@ static const ARGDEF * getArgDef(DHCPCFG type)
     return NULL;
 }
 
-DHCPServerRunner::DHCPServerRunner()
-{
-    mProcess = NIL_RTPROCESS;
-    for (unsigned i = 0; i < DHCPCFG_NOTOPT_MAXVAL; i++)
-    {
-        mOptionEnabled[i] = false;
-    }
-}
-
-void DHCPServerRunner::detachFromServer()
+void NetworkServiceRunner::detachFromServer()
 {
     mProcess = NIL_RTPROCESS;
 }
 
-int DHCPServerRunner::start()
+int NetworkServiceRunner::start()
 {
     if (isRunning())
         return VINF_ALREADY_INITIALIZED;
 
-    const char * args[DHCPCFG_NOTOPT_MAXVAL * 2];
+    const char * args[NETCFG_NOTOPT_MAXVAL * 2];
 
     /* get the path to the executable */
     char exePathBuf[RTPATH_MAX];
@@ -90,27 +68,22 @@ int DHCPServerRunner::start()
     if (suffix)
     {
         suffix++;
-        strcpy(suffix, DHCP_EXECUTABLE_NAME);
+        strcpy(suffix, mProcName);
     }
-    else
-        exePath = DHCP_EXECUTABLE_NAME;
 
     int index = 0;
 
     args[index++] = exePath;
 
-    for (unsigned i = 0; i < DHCPCFG_NOTOPT_MAXVAL; i++)
+    for (unsigned i = 0; i < NETCFG_NOTOPT_MAXVAL; i++)
     {
         if (mOptionEnabled[i])
         {
-            const ARGDEF *pArgDef = getArgDef((DHCPCFG)i);
+            const ARGDEF *pArgDef = getArgDef((NETCFG)i);
             if (!pArgDef)
                 continue;
-            args[index++] = pArgDef->Name;      // e.g. "--network"
+            args[index++] = pArgDef->Name;
 
-            /* value can be null for e.g. --begin-config has no value
-             * and thus check the mOptions string length here
-             */
             if (mOptions[i].length())
                 args[index++] = mOptions[i].c_str();  // value
         }
@@ -118,14 +91,14 @@ int DHCPServerRunner::start()
 
     args[index++] = NULL;
 
-    int rc = RTProcCreate(exePath, args, RTENV_DEFAULT, 0, &mProcess);
+    int rc = RTProcCreate(suffix ? exePath : mProcName, args, RTENV_DEFAULT, 0, &mProcess);
     if (RT_FAILURE(rc))
         mProcess = NIL_RTPROCESS;
 
     return rc;
 }
 
-int DHCPServerRunner::stop()
+int NetworkServiceRunner::stop()
 {
     if (!isRunning())
         return VINF_OBJECT_DESTROYED;
@@ -135,7 +108,7 @@ int DHCPServerRunner::stop()
     return rc;
 }
 
-bool DHCPServerRunner::isRunning()
+bool NetworkServiceRunner::isRunning()
 {
     if (mProcess == NIL_RTPROCESS)
         return false;

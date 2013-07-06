@@ -1301,16 +1301,59 @@ void MainConfigFile::readDHCPServers(const xml::ElementNode &elmDHCPServers)
             DHCPServer srv;
             if (    (pelmServer->getAttributeValue("networkName", srv.strNetworkName))
                  && (pelmServer->getAttributeValue("IPAddress", srv.strIPAddress))
-                 && (pelmServer->getAttributeValue("networkMask", srv.strIPNetworkMask))
+                    && (pelmServer->getAttributeValue("networkMask", srv.GlobalDhcpOptions[DhcpOpt_SubnetMask]))
                  && (pelmServer->getAttributeValue("lowerIP", srv.strIPLower))
                  && (pelmServer->getAttributeValue("upperIP", srv.strIPUpper))
                  && (pelmServer->getAttributeValue("enabled", srv.fEnabled))
                )
+            {
+                xml::NodesLoop nlOptions(*pelmServer, "Options");
+                const xml::ElementNode *options;
+                /* XXX: Options are in 1:1 relation to DHCPServer */
+
+                while ((options = nlOptions.forAllNodes()))
+                {
+                    readDhcpOptions(srv.GlobalDhcpOptions, *options);
+                } /* end of forall("Options") */
+                xml::NodesLoop nlConfig(*pelmServer, "Config");
+                const xml::ElementNode *cfg;
+                while ((cfg = nlConfig.forAllNodes()))
+                {
+                    com::Utf8Str strVmName;
+                    uint32_t u32Slot;
+                    cfg->getAttributeValue("vm-name", strVmName);
+                    cfg->getAttributeValue("slot", (uint32_t&)u32Slot);
+                    readDhcpOptions(srv.VmSlot2OptionsM[VmNameSlotKey(strVmName, u32Slot)],
+                                   *cfg);
+                }
                 llDhcpServers.push_back(srv);
+            }
             else
                 throw ConfigFileError(this, pelmServer, N_("Required DHCPServer/@networkName, @IPAddress, @networkMask, @lowerIP, @upperIP or @enabled attribute is missing"));
         }
     }
+}
+
+void MainConfigFile::readDhcpOptions(DhcpOptionMap& map,
+                                     const xml::ElementNode& options)
+{
+    xml::NodesLoop nl2(options, "Option");
+    const xml::ElementNode *opt;
+    while((opt = nl2.forAllNodes()))
+    {
+        DhcpOpt_T OptName;
+        com::Utf8Str OptValue;
+        opt->getAttributeValue("name", (uint32_t&)OptName);
+
+        if (OptName == DhcpOpt_SubnetMask)
+            continue;
+
+        opt->getAttributeValue("value", OptValue);
+
+        map.insert(
+          std::map<DhcpOpt_T, Utf8Str>::value_type(OptName, OptValue));
+    } /* end of forall("Option") */
+
 }
 
 /**
@@ -1445,7 +1488,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
             "HostInterfaceNetworking-vboxnet0";
 #endif
         srv.strIPAddress = "192.168.56.100";
-        srv.strIPNetworkMask = "255.255.255.0";
+        srv.GlobalDhcpOptions[DhcpOpt_SubnetMask] = "255.255.255.0";
         srv.strIPLower = "192.168.56.101";
         srv.strIPUpper = "192.168.56.254";
         srv.fEnabled = true;
@@ -1488,13 +1531,65 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     {
         const DHCPServer &d = *it;
         xml::ElementNode *pelmThis = pelmDHCPServers->createChild("DHCPServer");
+        DhcpOptConstIterator itOpt;
+        itOpt = d.GlobalDhcpOptions.find(DhcpOpt_SubnetMask);
+
         pelmThis->setAttribute("networkName", d.strNetworkName);
         pelmThis->setAttribute("IPAddress", d.strIPAddress);
-        pelmThis->setAttribute("networkMask", d.strIPNetworkMask);
+        if (itOpt != d.GlobalDhcpOptions.end())
+            pelmThis->setAttribute("networkMask", itOpt->second);
         pelmThis->setAttribute("lowerIP", d.strIPLower);
         pelmThis->setAttribute("upperIP", d.strIPUpper);
         pelmThis->setAttribute("enabled", (d.fEnabled) ? 1 : 0);        // too bad we chose 1 vs. 0 here
-    }
+        /* We assume that if there're only 1 element it means that */
+        int cOpt = d.GlobalDhcpOptions.size();
+        /* We don't want duplicate validation check of networkMask here*/
+        if (   (   itOpt == d.GlobalDhcpOptions.end()
+                && cOpt > 0)
+            || cOpt > 1)
+        {
+            xml::ElementNode *pelmOptions = pelmThis->createChild("Options");
+            for (itOpt = d.GlobalDhcpOptions.begin();
+                 itOpt != d.GlobalDhcpOptions.end();
+                 ++itOpt)
+            {
+                if (itOpt->first == DhcpOpt_SubnetMask)
+                    continue;
+
+                xml::ElementNode *pelmOpt = pelmOptions->createChild("Option");
+
+                if (!pelmOpt)
+                    break;
+
+                pelmOpt->setAttribute("name", itOpt->first);
+                pelmOpt->setAttribute("value", itOpt->second);
+            }
+        } /* end of if */
+
+        if (d.VmSlot2OptionsM.size() > 0)
+        {
+            VmSlot2OptionsConstIterator itVmSlot;
+            DhcpOptConstIterator itOpt1;
+            for(itVmSlot = d.VmSlot2OptionsM.begin();
+                itVmSlot != d.VmSlot2OptionsM.end();
+                ++itVmSlot)
+            {
+                xml::ElementNode *pelmCfg = pelmThis->createChild("Config");
+                pelmCfg->setAttribute("vm-name", itVmSlot->first.VmName);
+                pelmCfg->setAttribute("slot", itVmSlot->first.Slot);
+
+                for (itOpt1 = itVmSlot->second.begin();
+                     itOpt1 != itVmSlot->second.end();
+                     ++itOpt1)
+                {
+                    xml::ElementNode *pelmOpt = pelmCfg->createChild("Option");
+                    pelmOpt->setAttribute("name", itOpt1->first);
+                    pelmOpt->setAttribute("value", itOpt1->second);
+                }
+            }
+        } /* and of if */
+
+     }
 
     /* TODO: bump main version ? */
     xml::ElementNode *pelmNATNetworks;
