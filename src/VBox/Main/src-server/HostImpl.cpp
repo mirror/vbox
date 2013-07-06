@@ -250,7 +250,7 @@ static inline char *getResolvConfPath()
     RT_ZERO(g_aszResolvConf);
     RTStrmPrintf(g_aszResolvConf, MAX_PATH, "%/RESOLV2", _PATH_ETC);
 # else
-    strcmp(g_aszResolvConf, "/etc/resolv.conf");
+    strcpy(g_aszResolvConf, "/etc/resolv.conf");
 # endif    
     return g_aszResolvConf;
 }
