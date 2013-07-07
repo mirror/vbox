@@ -167,7 +167,7 @@ VBoxNetNAT::VBoxNetNAT()
     m_MacAddress.au8[3]     = 0x40;
     m_MacAddress.au8[4]     = 0x41;
     m_MacAddress.au8[5]     = 0x42;
-    m_Ipv4Address.u         = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  2)));
+    m_Ipv4Address.u         = RT_MAKE_U32_FROM_U8( 10,  0,  2,  2); // NB: big-endian
     m_Ipv4Netmask.u         = RT_H2N_U32_C(0xffffff);
     cPkt = 0;
     cUrgPkt = 0;
