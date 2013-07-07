@@ -7974,13 +7974,22 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
         AssertRC(rc2);
         fLockRead = true;
 
-        AssertMsgBreakStmt(uOffset + cbRead <= pDisk->cbSize,
-                           ("uOffset=%llu cbRead=%zu pDisk->cbSize=%llu\n",
-                            uOffset, cbRead, pDisk->cbSize),
-                           rc = VERR_INVALID_PARAMETER);
-
         PVDIMAGE pImage = pDisk->pLast;
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
+
+        if (uOffset + cbRead > pDisk->cbSize)
+        {
+            /* Floppy images might be smaller than the standard expected by
+               the floppy controller code.  So, we won't fail here. */
+            AssertMsgBreakStmt(pDisk->enmType == VDTYPE_FLOPPY,
+                               ("uOffset=%llu cbRead=%zu pDisk->cbSize=%llu\n",
+                                uOffset, cbRead, pDisk->cbSize),
+                               rc = VERR_EOF);
+            memset(pvBuf, 0xf6, cbRead); /* f6h = format.com filler byte */
+            if (uOffset >= pDisk->cbSize)
+                break;
+            cbRead = pDisk->cbSize - uOffset;
+        }
 
         rc = vdReadHelper(pDisk, pImage, uOffset, pvBuf, cbRead,
                           true /* fUpdateCache */);
