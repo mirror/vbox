@@ -1289,9 +1289,9 @@ ifndef DONT_USE_YASM
  VBOX_LDR_FMT_2_YASM_DBGINFO.lx    = -g stabs
  VBOX_LDR_FMT_2_YASM_DBGINFO.macho =
  VBOX_LDR_FMT_2_YASM_DBGINFO.pe    = -g cv8
- VBOX_ASFLAGS   = $(VBOX_ASFLAGS_FMT)   -D__YASM__ -Worphan-labels $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT))
- VBOX_ASFLAGS32 = $(VBOX_ASFLAGS_FMT32) -D__YASM__ -Worphan-labels $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT32))
- VBOX_ASFLAGS64 = $(VBOX_ASFLAGS_FMT64) -D__YASM__ -Worphan-labels $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT64))
+ VBOX_ASFLAGS   = $(VBOX_ASFLAGS_FMT)   -D__YASM__ -Worphan-labels $(VBOX_YASM_Wno-segreg-in-64bit) $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT))
+ VBOX_ASFLAGS32 = $(VBOX_ASFLAGS_FMT32) -D__YASM__ -Worphan-labels $(VBOX_YASM_Wno-segreg-in-64bit) $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT32))
+ VBOX_ASFLAGS64 = $(VBOX_ASFLAGS_FMT64) -D__YASM__ -Worphan-labels $(VBOX_YASM_Wno-segreg-in-64bit) $(VBOX_LDR_FMT_2_YASM_DBGINFO.$(VBOX_LDR_FMT64))
 else
  VBOX_ASTOOL    = NASM
  VBOX_ASFLAGS   = $(subst elf32,elf,$(VBOX_ASFLAGS_FMT))   -D__NASM__ -w+orphan-labels -g
@@ -2177,9 +2177,9 @@ else
 endif
 
 
-ifndef VBOX_NOINC_GCC_CONFIG_KMK
+ifndef VBOX_NOINC_DYNAMIC_CONFIG_KMK
 #
-# GCC stuff properties.
+# GCC and YASM dynamic properties.
 # Most of this is resolved on first kmk invocation and cached in PATH_OUT.
 #
 # Note! That a harmless warning is printed if the file doesn't exist.
@@ -2231,8 +2231,17 @@ VBOX_GCC_VERSION = $(shell \
   $(1) -dumpversion | $(SED_EXT) 's|\([0-9]\)\.\([0-9]\)\.\{0,1\}\([0-9]\{0,1\}\).*|$$(int-add $$(int-mul 10000, \1), $$(int-mul 100, \2), $$(firstword \3 0))|' )
 endif
 
+# YASM macros
+ifndef DONT_USE_YASM
+ include $(KBUILD_PATH)/tools/YASM.kmk
+ VBOX_YASM_CHECK = $(shell $(TOOL_YASM_AS) -e -o vbox-yasm-check.o $1 - < /dev/null 2>&1)
+ VBOX_YASM_CHECK = $(if-expr "$(shell $(TOOL_YASM_AS) -e -o vbox-yasm-check.o $1 - < /dev/null 2>&1)" == "",$(1),)
+else
+ VBOX_YASM_CHECK = $(error what??)
+endif
+
 # No $(QUIET) here as it's interesting to see what goes into the file.
-$(PATH_OUT)/GCCConfig.kmk: \
+$(PATH_OUT)/DynamicConfig.kmk: \
 		$(PATH_ROOT)/Config.kmk \
 		$(LOCALCFG) \
 		$(AUTOCFG) \
@@ -2328,12 +2337,15 @@ endif
 ifeq ($(KBUILD_HOST),darwin)
 	$(QUIET)$(APPEND) '$@' 'VBOX_LD_no_compact_linkedit    ?= $(call VBOX_GCC_CHECK_LD,-no_compact_linkedit,)'
 endif
+# YASM
+	$(QUIET)$(APPEND) '$@' 'VBOX_YASM_Wno-segreg-in-64bit  ?= $(call VBOX_YASM_CHECK,-Wno-segreg-in-64bit,)'
+
 	$(QUIET)$(ECHO) '========= START OF $@ ========='
 	$(QUIET)$(CAT) $@
 	$(QUIET)$(ECHO) '=========== END OF $@ ========='
 
-include $(PATH_OUT)/GCCConfig.kmk
-endif # !VBOX_NOINC_GCC_CONFIG_KMK
+include $(PATH_OUT)/DynamicConfig.kmk
+endif # !VBOX_NOINC_DYNAMIC_CONFIG_KMK
 
 #
 # Warnings as errors.
