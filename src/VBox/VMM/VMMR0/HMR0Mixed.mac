@@ -749,16 +749,16 @@ BEGINPROC MY_NAME(SVMR0VMRun)
     MYPUSHAD
 
     ; Save the Guest CPU context pointer.
-    mov     xSI, [xBP + xCB * 2]                 ; pCtx
-    push    xSI                                  ; push for saving the state at the end
+    mov     xSI, [xBP + xCB * 2 + RTHCPHYS_CB * 2]  ; pCtx
+    push    xSI                                     ; push for saving the state at the end
 
     ; Save host fs, gs, sysenter msr etc.
-    mov     xAX, [xBP + xCB * 2]                 ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
-    push    xAX                                  ; save for the vmload after vmrun
+    mov     xAX, [xBP + xCB * 2]                    ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
+    push    xAX                                     ; save for the vmload after vmrun
     vmsave
 
     ; Setup eax for VMLOAD.
-    mov     xAX, [xBP + xCB * 2 + RTHCPHYS_CB]    ; pVMCBPhys (64 bits physical address; take low dword only)
+    mov     xAX, [xBP + xCB * 2 + RTHCPHYS_CB]      ; pVMCBPhys (64 bits physical address; take low dword only)
 
     ; Restore Guest's general purpose registers.
     ; eax is loaded from the VMCB by VMRUN.
