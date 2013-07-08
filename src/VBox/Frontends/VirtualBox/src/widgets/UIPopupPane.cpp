@@ -286,19 +286,29 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
             {
                 m_fFocused = true;
                 emit sigFocusEnter();
+                /* Hover pane if not hovered: */
+                if (!m_fHovered)
+                {
+                    m_fHovered = true;
+                    emit sigHoverEnter();
+                }
             }
             break;
         }
         /* Pane is unfocused: */
         case QEvent::FocusOut:
         {
-            /* Unfocus and unhover pane: */
+            /* Unhocus pane if focused: */
             if (m_fFocused)
             {
                 m_fFocused = false;
                 emit sigFocusLeave();
-                m_fHovered = false;
-                emit sigHoverLeave();
+                /* Unhover pane if hovered: */
+                if (m_fHovered)
+                {
+                    m_fHovered = false;
+                    emit sigHoverLeave();
+                }
             }
             break;
         }
