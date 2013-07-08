@@ -391,6 +391,12 @@ bx_bool floppy_media_sense(uint16_t drive)
         media_state = 0x27; // 0010 0111
         retval = 1;
     }
+    else if ( drive_type == 14 || drive_type == 15 ) {
+        // 15.6 MB 3.5" (fake) || 63.5 MB 3.5" (fake) - report same as 2.88 MB.
+        config_data = 0xCC; // 1100 1100
+        media_state = 0xD7; // 1101 0111
+        retval = 1;
+    }
     else {
         // not recognized
         config_data = 0x00; // 0000 0000
@@ -1025,6 +1031,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         SET_AH(0);
         SET_AL(0);
         SET_DL(num_floppies);
+        SET_DH(1);      // max head #
         
         switch (drive_type) {
         case 0: // none
@@ -1034,27 +1041,22 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         
         case 1: // 360KB, 5.25"
             CX = 0x2709;    // 40 tracks, 9 sectors
-            SET_DH(1);      // max head #
             break;
         
         case 2: // 1.2MB, 5.25"
             CX = 0x4f0f;    // 80 tracks, 15 sectors
-            SET_DH(1);      // max head #
             break;
         
         case 3: // 720KB, 3.5"
             CX = 0x4f09;    // 80 tracks, 9 sectors
-            SET_DH(1);      // max head #
             break;
         
         case 4: // 1.44MB, 3.5"
             CX = 0x4f12;    // 80 tracks, 18 sectors
-            SET_DH(1);      // max head #
             break;
         
         case 5: // 2.88MB, 3.5"
             CX = 0x4f24;    // 80 tracks, 36 sectors
-            SET_DH(1);      // max head #
             break;
         
         case 6: // 160k, 5.25"
@@ -1069,9 +1071,17 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         
         case 8: // 320k, 5.25"
             CX = 0x2708;    // 40 tracks, 8 sectors
-            SET_DH(1);      // max head #
             break;
         
+        case 14: // 15.6 MB 3.5" (fake)
+            CX = 0xfe3f;    // 255 tracks, 63 sectors
+            break;
+
+        case 15: // 63.5 MB 3.5" (fake)
+            CX = 0xfeff;    // 255 tracks, 255 sectors - This works because the cylinder
+            break;          // and sectors limits/encoding aren't checked by the BIOS
+                            // due to copy protection schemes and such stuff.
+
         default: // ?
             BX_PANIC("%s: bad floppy type\n", __func__);
         }

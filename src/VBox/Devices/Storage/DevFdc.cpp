@@ -121,6 +121,10 @@ typedef enum fdrive_type_t {
     FDRIVE_DRV_288  = 0x01,   /* 2.88 MB 3"5 drive      */
     FDRIVE_DRV_120  = 0x02,   /* 1.2  MB 5"25 drive     */
     FDRIVE_DRV_NONE = 0x03    /* No drive connected     */
+#ifdef VBOX
+    , FDRIVE_DRV_FAKE_15_6 = 0x0e /* Fake 15.6 MB drive. */
+    , FDRIVE_DRV_FAKE_63_5 = 0x0f /* Fake 63.5 MB drive. */
+#endif
 } fdrive_type_t;
 
 typedef uint8_t fdrive_flags_t;
@@ -183,10 +187,43 @@ typedef struct fdrive_t {
 
 #define NUM_SIDES(drv)      (drv->flags & FDISK_DBL_SIDES ? 2 : 1)
 
-static void fd_init(fdrive_t *drv)
+static void fd_init(fdrive_t *drv, bool fInit)
 {
     /* Drive */
+#ifndef VBOX
     drv->drive = FDRIVE_DRV_NONE;
+#else  /* VBOX */
+    if (fInit) {
+        /* Fixate the drive type at init time if possible. */
+        if (drv->pDrvBlock) {
+            PDMBLOCKTYPE enmType = drv->pDrvBlock->pfnGetType(drv->pDrvBlock);
+            switch (enmType) {
+                case PDMBLOCKTYPE_FLOPPY_360:
+                case PDMBLOCKTYPE_FLOPPY_1_20:
+                    drv->drive = FDRIVE_DRV_120;
+                    break;
+                case PDMBLOCKTYPE_FLOPPY_720:
+                case PDMBLOCKTYPE_FLOPPY_1_44:
+                    drv->drive = FDRIVE_DRV_144;
+                    break;
+                default:
+                    AssertFailed();
+                case PDMBLOCKTYPE_FLOPPY_2_88:
+                    drv->drive = FDRIVE_DRV_288;
+                    break;
+                case PDMBLOCKTYPE_FLOPPY_FAKE_15_6:
+                    drv->drive = FDRIVE_DRV_FAKE_15_6;
+                    break;
+                case PDMBLOCKTYPE_FLOPPY_FAKE_63_5:
+                    drv->drive = FDRIVE_DRV_FAKE_63_5;
+                    break;
+            }
+        } else {
+            drv->drive = FDRIVE_DRV_NONE;
+        }
+    } /* else: The BIOS (and others) get the drive type via the CMOS, so
+               don't change it after the VM has been constructed. */
+#endif /* VBOX */
     drv->perpendicular = 0;
     /* Disk */
     drv->last_sect = 0;
@@ -266,9 +303,9 @@ static void fd_recalibrate(fdrive_t *drv)
 typedef struct fd_format_t {
     fdrive_type_t drive;
     fdisk_type_t  disk;
-    uint8_t last_sect;
-    uint8_t max_track;
-    uint8_t max_head;
+    uint8_t last_sect;      /**< Number of sectors. */
+    uint8_t max_track;      /**< Number of tracks. */
+    uint8_t max_head;       /**< Max head number. */
     fdrive_rate_t rate;
     const char *str;
 } fd_format_t;
@@ -316,6 +353,53 @@ static fd_format_t fd_formats[] = {
     { FDRIVE_DRV_120, FDRIVE_DISK_288,  8, 40, 0, FDRIVE_RATE_250K,  "160 kB 5\"1/4", },
     /* 360 kB must match 5"1/4 better than 3"1/2... */
     { FDRIVE_DRV_144, FDRIVE_DISK_720,  9, 80, 0, FDRIVE_RATE_250K,  "360 kB 3\"1/2", },
+#ifdef VBOX /* For larger than real life floppy images (see DrvBlock.cpp). */
+    /* 15.6 MB fake floppy disk (just need something big). */
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_USER,  63, 255, 1, FDRIVE_RATE_1M,   "15.6 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_288,   36,  80, 1, FDRIVE_RATE_1M,   "2.88 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_288,   39,  80, 1, FDRIVE_RATE_1M,   "3.12 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_288,   40,  80, 1, FDRIVE_RATE_1M,    "3.2 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_288,   44,  80, 1, FDRIVE_RATE_1M,   "3.52 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_288,   48,  80, 1, FDRIVE_RATE_1M,   "3.84 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_144,   18,  80, 1, FDRIVE_RATE_500K, "1.44 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_144,   20,  80, 1, FDRIVE_RATE_500K,  "1.6 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_144,   21,  80, 1, FDRIVE_RATE_500K, "1.68 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_144,   21,  82, 1, FDRIVE_RATE_500K, "1.72 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_144,   21,  83, 1, FDRIVE_RATE_500K, "1.74 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_144,   22,  80, 1, FDRIVE_RATE_500K, "1.76 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_144,   23,  80, 1, FDRIVE_RATE_500K, "1.84 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_144,   24,  80, 1, FDRIVE_RATE_500K, "1.92 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_720,    9,  80, 1, FDRIVE_RATE_250K,  "720 kB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_720,   10,  80, 1, FDRIVE_RATE_250K,  "800 kB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_720,   10,  82, 1, FDRIVE_RATE_250K,  "820 kB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_720,   10,  83, 1, FDRIVE_RATE_250K,  "830 kB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_720,   13,  80, 1, FDRIVE_RATE_250K, "1.04 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_720,   14,  80, 1, FDRIVE_RATE_250K, "1.12 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_15_6, FDRIVE_DISK_720,    9,  80, 0, FDRIVE_RATE_250K,  "360 kB 3\"1/2", },
+    /* 63.5 MB fake floppy disk (just need something big). */
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_USER, 255, 255, 1, FDRIVE_RATE_1M,   "63.5 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_USER,  63, 255, 1, FDRIVE_RATE_1M,   "15.6 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_288,   36,  80, 1, FDRIVE_RATE_1M,   "2.88 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_288,   39,  80, 1, FDRIVE_RATE_1M,   "3.12 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_288,   40,  80, 1, FDRIVE_RATE_1M,    "3.2 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_288,   44,  80, 1, FDRIVE_RATE_1M,   "3.52 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_288,   48,  80, 1, FDRIVE_RATE_1M,   "3.84 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_144,   18,  80, 1, FDRIVE_RATE_500K, "1.44 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_144,   20,  80, 1, FDRIVE_RATE_500K,  "1.6 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_144,   21,  80, 1, FDRIVE_RATE_500K, "1.68 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_144,   21,  82, 1, FDRIVE_RATE_500K, "1.72 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_144,   21,  83, 1, FDRIVE_RATE_500K, "1.74 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_144,   22,  80, 1, FDRIVE_RATE_500K, "1.76 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_144,   23,  80, 1, FDRIVE_RATE_500K, "1.84 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_144,   24,  80, 1, FDRIVE_RATE_500K, "1.92 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_720,    9,  80, 1, FDRIVE_RATE_250K,  "720 kB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_720,   10,  80, 1, FDRIVE_RATE_250K,  "800 kB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_720,   10,  82, 1, FDRIVE_RATE_250K,  "820 kB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_720,   10,  83, 1, FDRIVE_RATE_250K,  "830 kB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_720,   13,  80, 1, FDRIVE_RATE_250K, "1.04 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_720,   14,  80, 1, FDRIVE_RATE_250K, "1.12 MB 3\"1/2", },
+    { FDRIVE_DRV_FAKE_63_5, FDRIVE_DISK_720,    9,  80, 0, FDRIVE_RATE_250K,  "360 kB 3\"1/2", },
+#endif
     /* end */
     { FDRIVE_DRV_NONE, FDRIVE_DISK_NONE, (uint8_t)-1, (uint8_t)-1, 0, (fdrive_rate_t)0, NULL, },
 };
@@ -334,7 +418,7 @@ static void fd_revalidate(fdrive_t *drv)
         ro = bdrv_is_read_only(drv->bs);
         bdrv_get_geometry_hint(drv->bs, &nb_heads, &max_track, &last_sect);
 #else /* VBOX */
-    if (drv->pDrvBlock
+    if (   drv->pDrvBlock
         && drv->pDrvMount
         && drv->pDrvMount->pfnIsMounted (drv->pDrvMount)) {
         ro = drv->pDrvBlock->pfnIsReadOnly (drv->pDrvBlock);
@@ -739,6 +823,7 @@ static void fdctrl_reset_irq(fdctrl_t *fdctrl)
 static void fdctrl_raise_irq(fdctrl_t *fdctrl, uint8_t status0)
 {
     if (!(fdctrl->sra & FD_SRA_INTPEND)) {
+        FLOPPY_DPRINTF("Raising interrupt...\n");
 #ifdef VBOX
         PDMDevHlpISASetIrq (fdctrl->pDevIns, fdctrl->irq_lvl, 1);
 #else
@@ -2362,8 +2447,9 @@ static DECLCALLBACK(void *) fdcStatusQueryInterface(PPDMIBASE pInterface, const 
  * @returns VBox status code.
  * @param   drv         The drive in question.
  * @param   pDevIns     The driver instance.
+ * @param   fInit       Set if we're at init time and can change the drive type.
  */
-static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
+static int fdConfig(fdrive_t *drv, PPDMDEVINS pDevIns, bool fInit)
 {
     static const char * const s_apszDesc[] = {"Floppy Drive A:", "Floppy Drive B"};
     int rc;
@@ -2387,7 +2473,7 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
             if (drv->pDrvBlockBios) {
                 drv->pDrvMount = PDMIBASE_QUERY_INTERFACE(drv->pDrvBase, PDMIMOUNT);
                 if (drv->pDrvMount) {
-                    fd_init(drv);
+                    fd_init(drv, fInit);
                 } else {
                     AssertMsgFailed (("Configuration error: LUN#%d without mountable interface!\n", drv->iLUN));
                     rc = VERR_PDM_MISSING_INTERFACE;
@@ -2466,7 +2552,7 @@ static DECLCALLBACK(int)  fdcAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
     AssertRelease (!drv->pDrvBlockBios);
     AssertRelease (!drv->pDrvMount);
 
-    rc = fdConfig (drv, pDevIns);
+    rc = fdConfig (drv, pDevIns, false /*fInit*/);
     AssertMsg (rc != VERR_PDM_NO_ATTACHED_DRIVER,
                ("Configuration error: failed to configure drive %d, rc=%Rrc\n", rc));
     if (RT_SUCCESS(rc)) {
@@ -2669,7 +2755,7 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     for (i = 0; i < RT_ELEMENTS(pThis->drives); i++)
     {
         fdrive_t *pDrv = &pThis->drives[i];
-        rc = fdConfig(pDrv, pDevIns);
+        rc = fdConfig(pDrv, pDevIns, true /*fInit*/);
         if (   RT_FAILURE(rc)
             && rc != VERR_PDM_NO_ATTACHED_DRIVER)
         {

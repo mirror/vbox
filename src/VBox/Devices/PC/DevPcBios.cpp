@@ -501,7 +501,6 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     unsigned        i;
     PUVM            pUVM = PDMDevHlpGetUVM(pDevIns); AssertRelease(pUVM);
     PPDMIBLOCKBIOS  apHDs[4] = {0};
-    PPDMIBLOCKBIOS  apFDs[2] = {0};
     LogFlow(("pcbiosInitComplete:\n"));
 
     /*
@@ -586,45 +585,42 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     /*
      * Floppy drive type.
      */
-    for (i = 0; i < RT_ELEMENTS(apFDs); i++)
+    uint32_t cFDs = 0;
+    u32 = 0;
+    for (i = 0; i < 2; i++)
     {
         PPDMIBASE pBase;
         int rc = PDMR3QueryLun(pUVM, pThis->pszFDDevice, 0, i, &pBase);
         if (RT_SUCCESS(rc))
-            apFDs[i] = PDMIBASE_QUERY_INTERFACE(pBase, PDMIBLOCKBIOS);
+        {
+            PPDMIBLOCKBIOS pFD = PDMIBASE_QUERY_INTERFACE(pBase, PDMIBLOCKBIOS);
+            if (pFD)
+            {
+                cFDs++;
+                unsigned cShift = i == 0 ? 4 : 0;
+                switch (pFD->pfnGetType(pFD))
+                {
+                    case PDMBLOCKTYPE_FLOPPY_360:       u32 |= 1  << cShift; break;
+                    case PDMBLOCKTYPE_FLOPPY_1_20:      u32 |= 2  << cShift; break;
+                    case PDMBLOCKTYPE_FLOPPY_720:       u32 |= 3  << cShift; break;
+                    case PDMBLOCKTYPE_FLOPPY_1_44:      u32 |= 4  << cShift; break;
+                    case PDMBLOCKTYPE_FLOPPY_2_88:      u32 |= 5  << cShift; break;
+                    case PDMBLOCKTYPE_FLOPPY_FAKE_15_6: u32 |= 14 << cShift; break;
+                    case PDMBLOCKTYPE_FLOPPY_FAKE_63_5: u32 |= 15 << cShift; break;
+                    default:                        AssertFailed(); break;
+                }
+            }
+        }
     }
-    u32 = 0;
-    if (apFDs[0])
-        switch (apFDs[0]->pfnGetType(apFDs[0]))
-        {
-            case PDMBLOCKTYPE_FLOPPY_360:   u32 |= 1 << 4; break;
-            case PDMBLOCKTYPE_FLOPPY_1_20:  u32 |= 2 << 4; break;
-            case PDMBLOCKTYPE_FLOPPY_720:   u32 |= 3 << 4; break;
-            case PDMBLOCKTYPE_FLOPPY_1_44:  u32 |= 4 << 4; break;
-            case PDMBLOCKTYPE_FLOPPY_2_88:  u32 |= 5 << 4; break;
-            default:                        AssertFailed(); break;
-        }
-    if (apFDs[1])
-        switch (apFDs[1]->pfnGetType(apFDs[1]))
-        {
-            case PDMBLOCKTYPE_FLOPPY_360:   u32 |= 1; break;
-            case PDMBLOCKTYPE_FLOPPY_1_20:  u32 |= 2; break;
-            case PDMBLOCKTYPE_FLOPPY_720:   u32 |= 3; break;
-            case PDMBLOCKTYPE_FLOPPY_1_44:  u32 |= 4; break;
-            case PDMBLOCKTYPE_FLOPPY_2_88:  u32 |= 5; break;
-            default:                        AssertFailed(); break;
-        }
     pcbiosCmosWrite(pDevIns, 0x10, u32);                                        /* 10h - Floppy Drive Type */
 
     /*
      * Equipment byte.
      */
-    u32 = !!apFDs[0] + !!apFDs[1];
-    switch (u32)
-    {
-        case 1: u32 = 0x01; break;      /* floppy installed, 2 drives. */
-        default:u32 = 0;    break;      /* floppy not installed. */
-    }
+    if (cFDs > 0)
+        u32 = 0x01;                        /* floppy installed, 2 drives. */
+    else
+        u32 = 0x00;                        /* floppy not installed. */
     u32 |= RT_BIT(1);                      /* math coprocessor installed  */
     u32 |= RT_BIT(2);                      /* keyboard enabled (or mouse?) */
     u32 |= RT_BIT(3);                      /* display enabled (monitory type is 0, i.e. vga) */
