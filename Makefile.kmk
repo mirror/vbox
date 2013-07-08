@@ -42,7 +42,7 @@ OTHER_CLEAN += \
 	$(wildcard $(PATH_OUT)/version-stamp-*.*.*) \
 	$(VBOX_SVN_REV_KMK).ts \
 	$(VBOX_SVN_REV_KMK) \
-	$(PATH_OUT)/GCCConfig.kmk
+	$(PATH_OUT)/DynamicConfig.kmk
 
 
 if  !defined(VBOX_ONLY_ADDITIONS) \
