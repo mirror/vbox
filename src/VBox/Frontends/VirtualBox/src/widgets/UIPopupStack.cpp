@@ -174,6 +174,10 @@ void UIPopupStack::sltPopupPaneDone(int iResultCode)
     m_panes.remove(strPopupPaneID);
     delete pPopupPane;
 
+    /* Give focus back to parent: */
+    if (parentWidget())
+        parentWidget()->setFocus();
+
     /* Layout content: */
     layoutContent();
 
