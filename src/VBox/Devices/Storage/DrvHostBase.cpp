@@ -2079,6 +2079,8 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
         case PDMBLOCKTYPE_FLOPPY_1_20:
         case PDMBLOCKTYPE_FLOPPY_1_44:
         case PDMBLOCKTYPE_FLOPPY_2_88:
+        case PDMBLOCKTYPE_FLOPPY_FAKE_15_6:
+        case PDMBLOCKTYPE_FLOPPY_FAKE_63_5:
             if (uDriveType != DRIVE_REMOVABLE)
             {
                 AssertMsgFailed(("Configuration error: '%s' is not a floppy (type=%d)\n",

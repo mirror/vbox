@@ -893,6 +893,12 @@ typedef enum PDMBLOCKTYPE
     PDMBLOCKTYPE_FLOPPY_1_44,
     /** 2.88MB 3 1/2" floppy drive. */
     PDMBLOCKTYPE_FLOPPY_2_88,
+    /** Fake drive that can take up to 15.6 MB images.
+     * C=255, H=2, S=63.  */
+    PDMBLOCKTYPE_FLOPPY_FAKE_15_6,
+    /** Fake drive that can take up to 63.5 MB images.
+     * C=255, H=2, S=255.  */
+    PDMBLOCKTYPE_FLOPPY_FAKE_63_5,
     /** CDROM drive. */
     PDMBLOCKTYPE_CDROM,
     /** DVD drive. */
@@ -901,6 +907,8 @@ typedef enum PDMBLOCKTYPE
     PDMBLOCKTYPE_HARD_DISK
 } PDMBLOCKTYPE;
 
+/** Check if the given block type is a floppy. */
+#define PDMBLOCKTYPE_IS_FLOPPY(a_enmType) ( (a_enmType) >= PDMBLOCKTYPE_FLOPPY_360 && (a_enmType) <= PDMBLOCKTYPE_FLOPPY_2_88 )
 
 /**
  * Block raw command data transfer direction.

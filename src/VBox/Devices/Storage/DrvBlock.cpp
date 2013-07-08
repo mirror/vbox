@@ -774,6 +774,7 @@ static DECLCALLBACK(void)  drvblockDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
     NOREF(fFlags);
 }
 
+
 /**
  * Reset notification.
  *
@@ -786,6 +787,34 @@ static DECLCALLBACK(void)  drvblockReset(PPDMDRVINS pDrvIns)
 
     pThis->fLocked = false;
 }
+
+
+/**
+ * Translates a PDMBLOCKTYPE value into a string.
+ *
+ * @returns Read only string.
+ * @param   enmType             The type value.
+ */
+static const char *drvblockGetTypeName(PDMBLOCKTYPE enmType)
+{
+    switch (enmType)
+    {
+        case PDMBLOCKTYPE_ERROR:                return "ERROR";
+        case PDMBLOCKTYPE_FLOPPY_360:           return "FLOPPY_360";
+        case PDMBLOCKTYPE_FLOPPY_720:           return "FLOPPY_720";
+        case PDMBLOCKTYPE_FLOPPY_1_20:          return "FLOPPY_1_20";
+        case PDMBLOCKTYPE_FLOPPY_1_44:          return "FLOPPY_1_44";
+        case PDMBLOCKTYPE_FLOPPY_2_88:          return "FLOPPY_2_88";
+        case PDMBLOCKTYPE_FLOPPY_FAKE_15_6:     return "FLOPPY_FAKE_15_6";
+        case PDMBLOCKTYPE_FLOPPY_FAKE_63_5:     return "FLOPPY_FAKE_63_5";
+        case PDMBLOCKTYPE_CDROM:                return "CDROM";
+        case PDMBLOCKTYPE_DVD:                  return "DVD";
+        case PDMBLOCKTYPE_HARD_DISK:            return "HARD_DISK";
+        default:                                return "Unknown";
+
+    }
+}
+
 
 /**
  * Construct a block driver instance.
@@ -889,6 +918,10 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
         pThis->enmType = PDMBLOCKTYPE_FLOPPY_720;
     else if (!strcmp(psz, "Floppy 360"))
         pThis->enmType = PDMBLOCKTYPE_FLOPPY_360;
+    else if (!strcmp(psz, "Floppy 15.6"))
+        pThis->enmType = PDMBLOCKTYPE_FLOPPY_FAKE_15_6;
+    else if (!strcmp(psz, "Floppy 63.5"))
+        pThis->enmType = PDMBLOCKTYPE_FLOPPY_FAKE_63_5;
     else
     {
         PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_BLOCK_UNKNOWN_TYPE, RT_SRC_POS,
@@ -1007,6 +1040,56 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     {
         if (pThis->enmType == PDMBLOCKTYPE_HARD_DISK)
             pThis->pDrvMedia->pfnGetUuid(pThis->pDrvMedia, &pThis->Uuid);
+    }
+
+    /*
+     * Automatically upgrade the floppy drive if the specified one is too
+     * small to represent the whole boot time image. (We cannot do this later
+     * since the BIOS (and others) gets the info via CMOS.)
+     *
+     * This trick should make 2.88 images as well as the fake 15.6 and 63.5 MB
+     * images despite the hardcoded default 1.44 drive.
+     */
+    if (   PDMBLOCKTYPE_IS_FLOPPY(pThis->enmType)
+        && pThis->pDrvMedia)
+    {
+        uint64_t     const cbFloppyImg = pThis->pDrvMedia->pfnGetSize(pThis->pDrvMedia);
+        PDMBLOCKTYPE const enmCfgType  = pThis->enmType;
+        switch (enmCfgType)
+        {
+            default:
+                AssertFailed();
+            case PDMBLOCKTYPE_FLOPPY_360:
+                if (cbFloppyImg > 40 * 2 * 9 * 512)
+                    pThis->enmType = PDMBLOCKTYPE_FLOPPY_360;
+                /* fall thru */
+            case PDMBLOCKTYPE_FLOPPY_720:
+                if (cbFloppyImg > 80 * 2 * 14 * 512)
+                    pThis->enmType = PDMBLOCKTYPE_FLOPPY_1_20;
+                /* fall thru */
+            case PDMBLOCKTYPE_FLOPPY_1_20:
+                if (cbFloppyImg > 80 * 2 * 20 * 512)
+                    pThis->enmType = PDMBLOCKTYPE_FLOPPY_1_44;
+                /* fall thru */
+            case PDMBLOCKTYPE_FLOPPY_1_44:
+                if (cbFloppyImg > 80 * 2 * 24 * 512)
+                    pThis->enmType = PDMBLOCKTYPE_FLOPPY_2_88;
+                /* fall thru */
+            case PDMBLOCKTYPE_FLOPPY_2_88:
+                if (cbFloppyImg > 80 * 2 * 48 * 512)
+                    pThis->enmType = PDMBLOCKTYPE_FLOPPY_FAKE_15_6;
+                /* fall thru */
+            case PDMBLOCKTYPE_FLOPPY_FAKE_15_6:
+                if (cbFloppyImg > 255 * 2 * 63 * 512)
+                    pThis->enmType = PDMBLOCKTYPE_FLOPPY_FAKE_63_5;
+            case PDMBLOCKTYPE_FLOPPY_FAKE_63_5:
+                if (cbFloppyImg > 255 * 2 * 255 * 512)
+                    LogRel(("Warning: Floppy image is larger that 63.5 MB! (%llu bytes)\n", cbFloppyImg));
+                break;
+        }
+        if (pThis->enmType != enmCfgType)
+            LogRel(("Automatically upgraded floppy drive from %s to %s to better support the %u byte image\n",
+                    drvblockGetTypeName(enmCfgType), drvblockGetTypeName(pThis->enmType), cbFloppyImg));
     }
 
     return VINF_SUCCESS;
