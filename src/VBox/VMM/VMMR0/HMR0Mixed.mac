@@ -853,16 +853,16 @@ BEGINPROC MY_NAME(SVMR0VMRun64)
     MYPUSHAD
 
     ; Save the Guest CPU context pointer.
-    mov     rsi, [rbp + xCB * 2]                  ; pCtx
-    push    rsi                                   ; push for saving the state at the end
+    mov     rsi, [rbp + xCB * 2 + RTHCPHYS_CB * 2]  ; pCtx
+    push    rsi                                     ; push for saving the state at the end
 
     ; Save host fs, gs, sysenter msr etc.
-    mov     rax, [rbp + xCB * 2]                  ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
-    push    rax                                   ; Save for the vmload after vmrun
+    mov     rax, [rbp + xCB * 2]                    ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
+    push    rax                                     ; Save for the vmload after vmrun
     vmsave
 
     ; Setup eax for VMLOAD.
-    mov     rax, [rbp + xCB * 2 + RTHCPHYS_CB]    ; pVMCBPhys (64 bits physical address; take low dword only)
+    mov     rax, [rbp + xCB * 2 + RTHCPHYS_CB]      ; pVMCBPhys (64 bits physical address; take low dword only)
 
     ; Restore Guest's general purpose registers.
     ; rax is loaded from the VMCB by VMRUN.
@@ -927,7 +927,7 @@ BEGINPROC MY_NAME(SVMR0VMRun64)
 
     popf
     pop     rbp
-    add     rsp, 4*xCB
+    add     rsp, 4 * xCB
     ret
 ENDPROC MY_NAME(SVMR0VMRun64)
 %endif ; RT_ARCH_AMD64
