@@ -20,6 +20,7 @@
 /* Qt includes: */
 #include <QEvent>
 #include <QMainWindow>
+#include <QMenuBar>
 #include <QStatusBar>
 
 /* GUI includes: */
@@ -33,6 +34,7 @@
 UIPopupStack::UIPopupStack()
     : m_iLayoutMargin(1)
     , m_iLayoutSpacing(1)
+    , m_iParentMenuBarHeight(0)
     , m_iParentStatusBarHeight(0)
 {
     /* Make sure cursor is *always* valid: */
@@ -114,6 +116,8 @@ void UIPopupStack::setParent(QWidget *pParent)
 {
     /* Call to base-class: */
     QWidget::setParent(pParent);
+    /* Recalculate parent menu-bar height: */
+    m_iParentMenuBarHeight = parentMenuBarHeight(pParent);
     /* Recalculate parent status-bar height: */
     m_iParentStatusBarHeight = parentStatusBarHeight(pParent);
 }
@@ -122,6 +126,8 @@ void UIPopupStack::setParent(QWidget *pParent, Qt::WindowFlags flags)
 {
     /* Call to base-class: */
     QWidget::setParent(pParent, flags);
+    /* Recalculate parent menu-bar height: */
+    m_iParentMenuBarHeight = parentMenuBarHeight(pParent);
     /* Recalculate parent status-bar height: */
     m_iParentStatusBarHeight = parentStatusBarHeight(pParent);
 }
@@ -138,7 +144,7 @@ void UIPopupStack::sltAdjustGeometry()
     /* Get this attributes: */
     bool fIsWindow = isWindow();
     const int iX = fIsWindow ? parentWidget()->x() : 0;
-    const int iY = fIsWindow ? parentWidget()->y() : 0;
+    const int iY = fIsWindow ? parentWidget()->y() : m_iParentMenuBarHeight;
     const int iWidth = parentWidget()->width();
     const int iHeight = m_minimumSizeHint.height();
 
@@ -281,17 +287,28 @@ void UIPopupStack::showEvent(QShowEvent*)
 }
 
 /* static */
+int UIPopupStack::parentMenuBarHeight(QWidget *pParent)
+{
+    /* Menu-bar can exist only on QMainWindow sub-class: */
+    if (QMainWindow *pMainWindow = qobject_cast<QMainWindow*>(pParent))
+    {
+        /* Search for existing menu-bar child: */
+        if (QMenuBar *pMenuBar = pMainWindow->findChild<QMenuBar*>())
+            return pMenuBar->height();
+    }
+    /* Zero by default: */
+    return 0;
+}
+
+/* static */
 int UIPopupStack::parentStatusBarHeight(QWidget *pParent)
 {
     /* Status-bar can exist only on QMainWindow sub-class: */
     if (QMainWindow *pMainWindow = qobject_cast<QMainWindow*>(pParent))
     {
-        /* Status-bar can exist only:
-         * 1. on non-machine-window
-         * 2. on machine-window in normal mode: */
-        if (!qobject_cast<UIMachineWindow*>(pMainWindow) ||
-            qobject_cast<UIMachineWindowNormal*>(pMainWindow))
-            return pMainWindow->statusBar()->height();
+        /* Search for existing status-bar child: */
+        if (QStatusBar *pStatusBar = pMainWindow->findChild<QStatusBar*>())
+            return pStatusBar->height();
     }
     /* Zero by default: */
     return 0;

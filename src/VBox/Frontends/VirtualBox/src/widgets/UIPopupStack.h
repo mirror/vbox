@@ -80,12 +80,14 @@ private:
     void showEvent(QShowEvent *pEvent);
 
     /* Static helpers: Prepare stuff: */
+    static int parentMenuBarHeight(QWidget *pParent);
     static int parentStatusBarHeight(QWidget *pParent);
 
     /* Variables: */
     const int m_iLayoutMargin;
     const int m_iLayoutSpacing;
     QSize m_minimumSizeHint;
+    int m_iParentMenuBarHeight;
     int m_iParentStatusBarHeight;
     QMap<QString, UIPopupPane*> m_panes;
 };
