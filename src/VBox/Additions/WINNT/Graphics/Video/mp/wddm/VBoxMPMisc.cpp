@@ -658,10 +658,61 @@ NTSTATUS vboxWddmRegQueryDisplaySettingsKeyName(PVBOXMP_DEVEXT pDevExt, D3DDDI_V
 #define VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Video\\"
 #define VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY_SUBKEY L"\\Video"
 
-NTSTATUS vboxWddmRegQueryVideoGuidString(ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
+NTSTATUS vboxWddmRegQueryVideoGuidString(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
 {
-    HANDLE hKey;
-    NTSTATUS Status = vboxWddmRegOpenKey(&hKey, VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY, GENERIC_READ);
+    BOOLEAN fNewMethodSucceeded = FALSE;
+    HANDLE hKey = NULL;
+    NTSTATUS Status = IoOpenDeviceRegistryKey(pDevExt->pPDO, PLUGPLAY_REGKEY_DEVICE, GENERIC_READ, &hKey);
+    if (NT_SUCCESS(Status))
+    {
+        struct
+        {
+            KEY_VALUE_PARTIAL_INFORMATION Info;
+            UCHAR Buf[1024]; /* should be enough */
+        } KeyData;
+        ULONG cbResult;
+        UNICODE_STRING RtlStr;
+        RtlInitUnicodeString(&RtlStr, L"VideoID");
+        Status = ZwQueryValueKey(hKey,
+                    &RtlStr,
+                    KeyValuePartialInformation,
+                    &KeyData.Info,
+                    sizeof(KeyData),
+                    &cbResult);
+        if (NT_SUCCESS(Status))
+        {
+            if (KeyData.Info.Type == REG_SZ)
+            {
+                fNewMethodSucceeded = TRUE;
+                *pcbResult = KeyData.Info.DataLength + 2;
+                if (cbBuf >= KeyData.Info.DataLength)
+                {
+                    memcpy(pBuf, KeyData.Info.Data, KeyData.Info.DataLength + 2);
+                    Status = STATUS_SUCCESS;
+                }
+                else
+                    Status = STATUS_BUFFER_TOO_SMALL;
+            }
+        }
+        else
+        {
+            WARN(("ZwQueryValueKey failed, Status 0x%x", Status));
+        }
+
+        NTSTATUS tmpStatus = ZwClose(hKey);
+        Assert(tmpStatus == STATUS_SUCCESS);
+    }
+    else
+    {
+        WARN(("IoOpenDeviceRegistryKey failed Status 0x%x", Status));
+    }
+
+    if (fNewMethodSucceeded)
+        return Status;
+    else
+        WARN(("failed to acquire the VideoID, falling back to the old impl"));
+
+    Status = vboxWddmRegOpenKey(&hKey, VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY, GENERIC_READ);
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
@@ -743,15 +794,20 @@ NTSTATUS vboxWddmRegQueryVideoGuidString(ULONG cbBuf, PWCHAR pBuf, PULONG pcbRes
     return Status;
 }
 
-NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PWCHAR pName, IN ACCESS_MASK fAccess)
+NTSTATUS vboxWddmRegOpenKeyEx(OUT PHANDLE phKey, IN HANDLE hRootKey, IN PWCHAR pName, IN ACCESS_MASK fAccess)
 {
     OBJECT_ATTRIBUTES ObjAttr;
     UNICODE_STRING RtlStr;
 
     RtlInitUnicodeString(&RtlStr, pName);
-    InitializeObjectAttributes(&ObjAttr, &RtlStr, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+    InitializeObjectAttributes(&ObjAttr, &RtlStr, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, hRootKey, NULL);
 
     return ZwOpenKey(phKey, fAccess, &ObjAttr);
+}
+
+NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PWCHAR pName, IN ACCESS_MASK fAccess)
+{
+    return vboxWddmRegOpenKeyEx(phKey, NULL, pName, fAccess);
 }
 
 NTSTATUS vboxWddmRegOpenDisplaySettingsKey(IN PVBOXMP_DEVEXT pDeviceExtension, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, OUT PHANDLE phKey)
@@ -877,7 +933,7 @@ UNICODE_STRING* vboxWddmVGuidGet(PVBOXMP_DEVEXT pDevExt)
     Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
     WCHAR VideoGuidBuf[512];
     ULONG cbVideoGuidBuf = sizeof (VideoGuidBuf);
-    NTSTATUS Status = vboxWddmRegQueryVideoGuidString(cbVideoGuidBuf, VideoGuidBuf, &cbVideoGuidBuf);
+    NTSTATUS Status = vboxWddmRegQueryVideoGuidString(pDevExt ,cbVideoGuidBuf, VideoGuidBuf, &cbVideoGuidBuf);
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
