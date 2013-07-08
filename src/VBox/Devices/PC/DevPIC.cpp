@@ -333,6 +333,7 @@ static void pic_update_imr(PDEVPIC pThis, PPICSTATE pPic, uint8_t val)
     }
 
     /* Update IMR */
+    Log(("pic_update_imr: pic%u %#x -> %#x\n", pPic->idxPic, pPic->imr, val));
     pPic->imr = val;
 
     /* If an interrupt is pending and now masked, then clear the FF flag. */
