@@ -193,13 +193,7 @@ void UIPopupPaneTextPane::prepareContent()
     m_pLabel = new QLabel(this);
     {
         /* Prepare label: */
-        QFont currentFont = m_pLabel->font();
-#ifdef Q_WS_MAC
-        currentFont.setPointSize(currentFont.pointSize() - 2);
-#else /* Q_WS_MAC */
-        currentFont.setPointSize(currentFont.pointSize() - 1);
-#endif /* !Q_WS_MAC */
-        m_pLabel->setFont(currentFont);
+        m_pLabel->setFont(tuneFont(m_pLabel->font()));
         m_pLabel->setWordWrap(true);
         m_pLabel->setFocusPolicy(Qt::NoFocus);
         m_pLabel->setText(m_strText);
@@ -209,13 +203,7 @@ void UIPopupPaneTextPane::prepareContent()
     m_pAutoConfirmCheckBox = new QCheckBox(this);
     {
         /* Prepare check-box: */
-        QFont currentFont = m_pAutoConfirmCheckBox->font();
-#ifdef Q_WS_MAC
-        currentFont.setPointSize(currentFont.pointSize() - 2);
-#else /* Q_WS_MAC */
-        currentFont.setPointSize(currentFont.pointSize() - 1);
-#endif /* !Q_WS_MAC */
-        m_pAutoConfirmCheckBox->setFont(currentFont);
+        m_pAutoConfirmCheckBox->setFont(tuneFont(m_pAutoConfirmCheckBox->font()));
         m_pAutoConfirmCheckBox->setFocusPolicy(Qt::NoFocus);
     }
 
@@ -273,5 +261,16 @@ void UIPopupPaneTextPane::updateSizeHint()
 
     /* Notify parent popup-pane: */
     emit sigSizeHintChanged();
+}
+
+/* static */
+QFont UIPopupPaneTextPane::tuneFont(QFont font)
+{
+#if defined(Q_WS_MAC)
+    font.setPointSize(currentFont.pointSize() - 2);
+#elif defined(Q_WS_X11)
+    font.setPointSize(currentFont.pointSize() - 1);
+#endif
+    return font;
 }
 
