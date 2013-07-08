@@ -50,7 +50,7 @@ signals:
 public:
 
     /* Constructor: */
-    UIPopupPaneTextPane(QWidget *pParent = 0);
+    UIPopupPaneTextPane(QWidget *pParent, const QString &strText, bool fProposeAutoConfirmation);
 
     /* API: Text stuff: */
     void setText(const QString &strText);
@@ -79,6 +79,7 @@ private:
     /* Helpers: Prepare stuff: */
     void prepare();
     void prepareContent();
+    void prepareAnimation();
 
     /* Helper: Translate stuff: */
     void retranslateUi();
@@ -100,6 +101,7 @@ private:
     QSize m_minimumSizeHint;
 
     /* Variables: Widget stuff: */
+    QString m_strText;
     QLabel *m_pLabel;
     int m_iDesiredLabelWidth;
     QCheckBox *m_pAutoConfirmCheckBox;

@@ -25,14 +25,15 @@
 #include "UIPopupPaneTextPane.h"
 #include "UIAnimationFramework.h"
 
-UIPopupPaneTextPane::UIPopupPaneTextPane(QWidget *pParent /*= 0*/)
+UIPopupPaneTextPane::UIPopupPaneTextPane(QWidget *pParent, const QString &strText, bool fProposeAutoConfirmation)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_iLayoutMargin(0)
     , m_iLayoutSpacing(10)
+    , m_strText(strText)
     , m_pLabel(0)
     , m_iDesiredLabelWidth(-1)
     , m_pAutoConfirmCheckBox(0)
-    , m_fProposeAutoConfirmation(false)
+    , m_fProposeAutoConfirmation(fProposeAutoConfirmation)
     , m_fFocused(false)
     , m_pAnimation(0)
 {
@@ -42,31 +43,41 @@ UIPopupPaneTextPane::UIPopupPaneTextPane(QWidget *pParent /*= 0*/)
 
 void UIPopupPaneTextPane::setText(const QString &strText)
 {
-    /* Make sure the text is changed: */
+    /* Make sure the text has changed: */
     if (m_pLabel->text() == strText)
         return;
-    /* Update the pane for the new text: */
-    m_pLabel->setText(strText);
+
+    /* Fetch new text: */
+    m_strText = strText;
+    m_pLabel->setText(m_strText);
+
+    /* Update size-hint: */
     updateSizeHint();
 }
 
 void UIPopupPaneTextPane::setDesiredWidth(int iDesiredWidth)
 {
-    /* Make sure the desired-width is changed: */
+    /* Make sure the desired-width has changed: */
     if (m_iDesiredLabelWidth == iDesiredWidth)
         return;
-    /* Update the pane for the new desired-width: */
+
+    /* Fetch new desired-width: */
     m_iDesiredLabelWidth = iDesiredWidth;
+
+    /* Update size-hint: */
     updateSizeHint();
 }
 
 void UIPopupPaneTextPane::setProposeAutoConfirmation(bool fPropose)
 {
-    /* Make sure the auto-confirmation-proposal is changed: */
+    /* Make sure the auto-confirmation-proposal has changed: */
     if (m_fProposeAutoConfirmation == fPropose)
         return;
-    /* Update the pane for the new auto-confirmation-proposal: */
+
+    /* Fetch new auto-confirmation-proposal: */
     m_fProposeAutoConfirmation = fPropose;
+
+    /* Update size-hint: */
     updateSizeHint();
 }
 
@@ -94,11 +105,13 @@ QSize UIPopupPaneTextPane::minimumSizeHint() const
 
 void UIPopupPaneTextPane::setMinimumSizeHint(const QSize &minimumSizeHint)
 {
-    /* Make sure the size-hint is changed: */
+    /* Make sure the size-hint has changed: */
     if (m_minimumSizeHint == minimumSizeHint)
         return;
-    /* Assign new size-hint: */
+
+    /* Fetch new size-hint: */
     m_minimumSizeHint = minimumSizeHint;
+
     /* Notify parent popup-pane: */
     emit sigSizeHintChanged();
 }
@@ -110,6 +123,7 @@ void UIPopupPaneTextPane::layoutContent()
     const int iHeight = height();
     const int iLabelWidth = m_labelSizeHint.width();
     const int iLabelHeight = m_labelSizeHint.height();
+
     /* Label: */
     m_pLabel->move(m_iLayoutMargin, m_iLayoutMargin);
     m_pLabel->resize(qMin(iWidth, iLabelWidth), qMin(iHeight, iLabelHeight));
@@ -164,14 +178,13 @@ void UIPopupPaneTextPane::sltFocusLeave()
 
 void UIPopupPaneTextPane::prepare()
 {
-    /* Propagate parent signals: */
-    connect(parent(), SIGNAL(sigFocusEnter()), this, SLOT(sltFocusEnter()));
-    connect(parent(), SIGNAL(sigFocusLeave()), this, SLOT(sltFocusLeave()));
     /* Prepare content: */
     prepareContent();
-    /* Install geometry animation for 'minimumSizeHint' property: */
-    m_pAnimation = UIAnimation::installPropertyAnimation(this, "minimumSizeHint", "collapsedSizeHint", "expandedSizeHint",
-                                                         SIGNAL(sigFocusEnter()), SIGNAL(sigFocusLeave()));
+    /* Prepare animation: */
+    prepareAnimation();
+
+    /* Update size-hint: */
+    updateSizeHint();
 }
 
 void UIPopupPaneTextPane::prepareContent()
@@ -189,7 +202,9 @@ void UIPopupPaneTextPane::prepareContent()
         m_pLabel->setFont(currentFont);
         m_pLabel->setWordWrap(true);
         m_pLabel->setFocusPolicy(Qt::NoFocus);
+        m_pLabel->setText(m_strText);
     }
+
     /* Create check-box: */
     m_pAutoConfirmCheckBox = new QCheckBox(this);
     {
@@ -203,8 +218,19 @@ void UIPopupPaneTextPane::prepareContent()
         m_pAutoConfirmCheckBox->setFont(currentFont);
         m_pAutoConfirmCheckBox->setFocusPolicy(Qt::NoFocus);
     }
+
     /* Translate UI finally: */
     retranslateUi();
+}
+
+void UIPopupPaneTextPane::prepareAnimation()
+{
+    /* Propagate parent signals: */
+    connect(parent(), SIGNAL(sigFocusEnter()), this, SLOT(sltFocusEnter()));
+    connect(parent(), SIGNAL(sigFocusLeave()), this, SLOT(sltFocusLeave()));
+    /* Install geometry animation for 'minimumSizeHint' property: */
+    m_pAnimation = UIAnimation::installPropertyAnimation(this, "minimumSizeHint", "collapsedSizeHint", "expandedSizeHint",
+                                                         SIGNAL(sigFocusEnter()), SIGNAL(sigFocusLeave()));
 }
 
 void UIPopupPaneTextPane::retranslateUi()
@@ -242,6 +268,10 @@ void UIPopupPaneTextPane::updateSizeHint()
     m_minimumSizeHint = m_fFocused ? m_expandedSizeHint : m_collapsedSizeHint;
 
     /* Update animation: */
-    m_pAnimation->update();
+    if (m_pAnimation)
+        m_pAnimation->update();
+
+    /* Notify parent popup-pane: */
+    emit sigSizeHintChanged();
 }
 

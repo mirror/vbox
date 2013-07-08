@@ -79,7 +79,6 @@ public:
     /* API: Layout stuff: */
     QSize minimumSizeHint() const { return m_minimumSizeHint; }
     void setMinimumSizeHint(const QSize &minimumSizeHint);
-    void updateSizeHint();
     void setDesiredWidth(int iWidth);
     void layoutContent();
 
@@ -89,7 +88,7 @@ private slots:
     void sltMarkAsShown();
 
     /* Handler: Layout stuff: */
-    void sltAdjustGeometry();
+    void sltUpdateSizeHint();
 
     /* Handler: Button stuff: */
     void sltButtonClicked(int iButtonID);
