@@ -91,6 +91,9 @@ private:
     QSize collapsedSizeHint() const { return m_collapsedSizeHint; }
     QSize expandedSizeHint() const { return m_expandedSizeHint; }
 
+    /* Static helper: Font stuff: */
+    static QFont tuneFont(QFont font);
+
     /* Variables: Layout stuff: */
     const int m_iLayoutMargin;
     const int m_iLayoutSpacing;
