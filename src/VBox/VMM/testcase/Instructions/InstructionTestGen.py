@@ -387,9 +387,10 @@ class TargetEnv(object):
 
 ## Target environments.
 g_dTargetEnvs = {
-    'iprt-r3-32':   TargetEnv('iprt-r3-32', TargetEnv.ksInstrSet_32, TargetEnv.ksCpuMode_Protect, 3),
-    'iprt-r3-64':   TargetEnv('iprt-r3-64', TargetEnv.ksInstrSet_64, TargetEnv.ksCpuMode_Long,    3),
-    'bs2-r0-64':    TargetEnv('bs2-r0-64',  TargetEnv.ksInstrSet_64, TargetEnv.ksCpuMode_Long,    0),
+    'iprt-r3-32':       TargetEnv('iprt-r3-32',     TargetEnv.ksInstrSet_32, TargetEnv.ksCpuMode_Protect, 3),
+    'iprt-r3-64':       TargetEnv('iprt-r3-64',     TargetEnv.ksInstrSet_64, TargetEnv.ksCpuMode_Long,    3),
+    'bs2-r0-64':        TargetEnv('bs2-r0-64',      TargetEnv.ksInstrSet_64, TargetEnv.ksCpuMode_Long,    0),
+    'bs2-r0-64-big':    TargetEnv('bs2-r0-64-big',  TargetEnv.ksInstrSet_64, TargetEnv.ksCpuMode_Long,    0),
 };
 
 
