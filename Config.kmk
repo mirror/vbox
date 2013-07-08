@@ -2237,7 +2237,7 @@ ifndef DONT_USE_YASM
  VBOX_YASM_CHECK = $(shell $(TOOL_YASM_AS) -e -o vbox-yasm-check.o $1 - < /dev/null 2>&1)
  VBOX_YASM_CHECK = $(if-expr "$(shell $(TOOL_YASM_AS) -e -o vbox-yasm-check.o $1 - < /dev/null 2>&1)" == "",$(1),)
 else
- VBOX_YASM_CHECK = $(error what??)
+ VBOX_YASM_CHECK =
 endif
 
 # No $(QUIET) here as it's interesting to see what goes into the file.
