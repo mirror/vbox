@@ -368,6 +368,7 @@ VMMR0DECL(int) SVMR0GlobalInit(void)
      * Allocate 12 KB for the IO bitmap. Since this is non-optional and we always intercept all IO accesses, it's done
      * once globally here instead of per-VM.
      */
+    Assert(g_hMemObjIOBitmap == NIL_RTR0MEMOBJ);
     int rc = RTR0MemObjAllocCont(&g_hMemObjIOBitmap, 3 << PAGE_SHIFT, false /* fExecutable */);
     if (RT_FAILURE(rc))
         return rc;
