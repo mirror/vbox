@@ -103,6 +103,8 @@ typedef struct VBOXWDDM_ALLOC_DATA
 {
     VBOXWDDM_SURFACE_DESC SurfDesc;
     VBOXWDDM_ADDR Addr;
+    uint32_t hostID;
+    struct VBOXWDDM_SWAPCHAIN *pSwapchain;
 } VBOXWDDM_ALLOC_DATA, *PVBOXWDDM_ALLOC_DATA;
 
 typedef struct VBOXWDDM_SOURCE
@@ -143,7 +145,6 @@ typedef struct VBOXWDDM_TARGET
 typedef struct VBOXWDDM_ALLOCATION
 {
     LIST_ENTRY SwapchainEntry;
-    struct VBOXWDDM_SWAPCHAIN *pSwapchain;
     VBOXWDDM_ALLOC_TYPE enmType;
     volatile uint32_t cRefs;
     D3DDDI_RESOURCEFLAGS fRcFlags;
@@ -165,7 +166,6 @@ typedef struct VBOXWDDM_ALLOCATION
     uint32_t cOpens;
     KSPIN_LOCK OpenLock;
     LIST_ENTRY OpenList;
-    uint32_t hostID;
     /* helps tracking when to release wine shared resource */
     uint32_t cShRcRefs;
     HANDLE hSharedHandle;
