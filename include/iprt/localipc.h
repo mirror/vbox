@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -75,7 +75,7 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
 
 /** @name RTLocalIpcServerCreate flags
  * @{ */
-/** The server can handle multiple session. */
+/** The server can handle multiple sessions. */
 #define RTLOCALIPC_FLAGS_MULTI_SESSION      RT_BIT_32(0)
 /** The mask of valid flags. */
 #define RTLOCALIPC_FLAGS_VALID_MASK         UINT32_C(0x00000001)
@@ -150,7 +150,7 @@ RTDECL(int) RTLocalIpcSessionClose(RTLOCALIPCSESSION hSession);
  * @param   hSession            The session handle.
  * @param   pvBuffer            Where to store the data.
  * @param   cbBuffer            If pcbRead is non-NULL this indicates the maximum number of
- *                              bytes to read. If pcbRead is NULL the this is the exact number
+ *                              bytes to read. If pcbRead is NULL then this is the exact number
  *                              of bytes to read.
  * @param   pcbRead             Optional argument for indicating a partial read and returning
  *                              the number of bytes actually read.
