@@ -240,6 +240,8 @@
 #define DW_AT_enum_class                    UINT16_C(0x006d)
 #define DW_AT_linkage_name                  UINT16_C(0x006e)
 #define DW_AT_lo_user                       UINT16_C(0x2000)
+/** Used by GCC and others, same as DW_AT_linkage_name. See http://wiki.dwarfstd.org/index.php?title=DW_AT_linkage_name*/
+#define DW_AT_MIPS_linkage_name             UINT16_C(0x2007)
 #define DW_AT_hi_user                       UINT16_C(0x3fff)
 /** @} */
 
@@ -597,11 +599,12 @@ typedef FNRTDWARFATTRDECODER *PFNRTDWARFATTRDECODER;
 typedef struct RTDWARFATTRDESC
 {
     /** The attribute. */
-    uint8_t                 uAttr;
-    /** The data member size and initialization method. */
-    uint8_t                 cbInit;
+    uint16_t                uAttr;
     /** The data member offset. */
     uint16_t                off;
+    /** The data member size and initialization method. */
+    uint8_t                 cbInit;
+    uint8_t                 bPadding[3]; /**< Alignment padding. */
     /** The decoder function. */
     PFNRTDWARFATTRDECODER   pfnDecoder;
 } RTDWARFATTRDESC;
@@ -610,8 +613,9 @@ typedef struct RTDWARFATTRDESC
 #define ATTR_ENTRY(a_uAttr, a_Struct, a_Member, a_Init, a_pfnDecoder) \
     { \
         a_uAttr, \
-        a_Init | ((uint8_t)RT_SIZEOFMEMB(a_Struct, a_Member) & ATTR_SIZE_MASK), \
         (uint16_t)RT_OFFSETOF(a_Struct, a_Member), \
+        a_Init | ((uint8_t)RT_SIZEOFMEMB(a_Struct, a_Member) & ATTR_SIZE_MASK), \
+        { 0, 0, 0 }, \
         a_pfnDecoder\
     }
 
@@ -847,6 +851,8 @@ typedef struct RTDWARFDIESUBPROGRAM
     RTDWARFADDR         EntryPc;
     /** Segment number (watcom). */
     RTSEL               uSegment;
+    /** Reference to the specification. */
+    RTDWARFREF          SpecRef;
 } RTDWARFDIESUBPROGRAM;
 /** Pointer to a DW_TAG_subprogram DIE.  */
 typedef RTDWARFDIESUBPROGRAM *PRTDWARFDIESUBPROGRAM;
@@ -859,15 +865,29 @@ static const RTDWARFATTRDESC g_aSubProgramAttrs[] =
 {
     ATTR_ENTRY(DW_AT_name,              RTDWARFDIESUBPROGRAM, pszName,        ATTR_INIT_ZERO, rtDwarfDecode_String),
     ATTR_ENTRY(DW_AT_linkage_name,      RTDWARFDIESUBPROGRAM, pszLinkageName, ATTR_INIT_ZERO, rtDwarfDecode_String),
+    ATTR_ENTRY(DW_AT_MIPS_linkage_name, RTDWARFDIESUBPROGRAM, pszLinkageName, ATTR_INIT_ZERO, rtDwarfDecode_String),
     ATTR_ENTRY(DW_AT_low_pc,            RTDWARFDIESUBPROGRAM, PcRange,        ATTR_INIT_ZERO, rtDwarfDecode_LowHighPc),
     ATTR_ENTRY(DW_AT_high_pc,           RTDWARFDIESUBPROGRAM, PcRange,        ATTR_INIT_ZERO, rtDwarfDecode_LowHighPc),
     ATTR_ENTRY(DW_AT_ranges,            RTDWARFDIESUBPROGRAM, PcRange,        ATTR_INIT_ZERO, rtDwarfDecode_Ranges),
     ATTR_ENTRY(DW_AT_entry_pc,          RTDWARFDIESUBPROGRAM, EntryPc,        ATTR_INIT_ZERO, rtDwarfDecode_Address),
-    ATTR_ENTRY(DW_AT_segment,           RTDWARFDIESUBPROGRAM, uSegment,       ATTR_INIT_ZERO, rtDwarfDecode_SegmentLoc)
+    ATTR_ENTRY(DW_AT_segment,           RTDWARFDIESUBPROGRAM, uSegment,       ATTR_INIT_ZERO, rtDwarfDecode_SegmentLoc),
+    ATTR_ENTRY(DW_AT_specification,     RTDWARFDIESUBPROGRAM, SpecRef,        ATTR_INIT_ZERO, rtDwarfDecode_Reference)
 };
 
 /** RTDWARFDIESUBPROGRAM description. */
 static const RTDWARFDIEDESC g_SubProgramDesc = DIE_DESC_INIT(RTDWARFDIESUBPROGRAM, g_aSubProgramAttrs);
+
+
+/** RTDWARFDIESUBPROGRAM attributes for the specification hack. */
+static const RTDWARFATTRDESC g_aSubProgramSpecHackAttrs[] =
+{
+    ATTR_ENTRY(DW_AT_name,              RTDWARFDIESUBPROGRAM, pszName,        ATTR_INIT_ZERO, rtDwarfDecode_String),
+    ATTR_ENTRY(DW_AT_linkage_name,      RTDWARFDIESUBPROGRAM, pszLinkageName, ATTR_INIT_ZERO, rtDwarfDecode_String),
+    ATTR_ENTRY(DW_AT_MIPS_linkage_name, RTDWARFDIESUBPROGRAM, pszLinkageName, ATTR_INIT_ZERO, rtDwarfDecode_String),
+};
+
+/** RTDWARFDIESUBPROGRAM description for the specification hack. */
+static const RTDWARFDIEDESC g_SubProgramSpecHackDesc = DIE_DESC_INIT(RTDWARFDIESUBPROGRAM, g_aSubProgramSpecHackAttrs);
 
 
 /**
@@ -995,6 +1015,14 @@ static const struct RTDWARFTAGDESC
 };
 
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie, PCRTDWARFDIEDESC pDieDesc,
+                                PRTDWARFCURSOR pCursor, PCRTDWARFABBREV pAbbrev, bool fInitDie);
+
+
+
 #if defined(LOG_ENABLED) || defined(RT_STRICT)
 
 /**
@@ -1120,6 +1148,7 @@ static const char *rtDwarfLog_AttrName(uint32_t uAttr)
         RT_CASE_RET_STR(DW_AT_const_expr);
         RT_CASE_RET_STR(DW_AT_enum_class);
         RT_CASE_RET_STR(DW_AT_linkage_name);
+        RT_CASE_RET_STR(DW_AT_MIPS_linkage_name);
     }
     static char s_szStatic[32];
     RTStrPrintf(s_szStatic, sizeof(s_szStatic),"DW_AT_%#x", uAttr);
@@ -1191,8 +1220,8 @@ static DECLCALLBACK(int) rtDbgModDwarfScanSegmentsCallback(RTLDRMOD hLdrMod, PCR
 static DECLCALLBACK(int) rtDbgModDwarfAddSegmentsCallback(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser)
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pvUser;
-    Log(("Segment %.*s: LinkAddress=%#llx RVA=%#llx cb=%#llx\n",
-         pSeg->cchName, pSeg->pszName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
+    Log(("Segment %.*s: LinkAddress=%#llx RVA=%#llx cb=%#llx cbMapped=%#llx\n",
+         pSeg->cchName, pSeg->pszName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb, pSeg->cbMapped));
     NOREF(hLdrMod);
     Assert(pSeg->cchName > 0);
     Assert(!pSeg->pszName[pSeg->cchName]);
@@ -3218,7 +3247,7 @@ static DECLCALLBACK(int) rtDwarfDecode_Reference(PRTDWARFDIE pDie, uint8_t *pbMe
 
     /* Decode it. */
     uint64_t        off;
-    krtDwarfRef     enmWrt = krtDwarfRef_InfoSection;
+    krtDwarfRef     enmWrt = krtDwarfRef_SameUnit;
     switch (uForm)
     {
         case DW_FORM_ref1:          off = rtDwarfCursor_GetU8(pCursor, 0); break;
@@ -3676,6 +3705,87 @@ static DECLCALLBACK(int) rtDwarfDecode_SegmentLoc(PRTDWARFDIE pDie, uint8_t *pbM
 
 
 /**
+ * Special hack to get the name and/or linkage name for a subprogram via a
+ * specification reference.
+ *
+ * Since this is a hack, we ignore failure.
+ *
+ * If we want to really make use of DWARF info, we'll have to create some kind
+ * of lookup tree for handling this. But currently we don't, so a hack will
+ * suffice.
+ *
+ * @param   pThis               The DWARF instance.
+ * @param   pSubProgram         The subprogram which is short on names.
+ */
+static void rtDwarfInfo_TryGetSubProgramNameFromSpecRef(PRTDBGMODDWARF pThis, PRTDWARFDIESUBPROGRAM pSubProgram)
+{
+    /*
+     * Must have a spec ref, and it must be in the info section.
+     */
+    if (pSubProgram->SpecRef.enmWrt != krtDwarfRef_InfoSection)
+        return;
+
+    /*
+     * Create a cursor for reading the info and then the abbrivation code
+     * starting the off the DIE.
+     */
+    RTDWARFCURSOR InfoCursor;
+    int rc = rtDwarfCursor_InitWithOffset(&InfoCursor, pThis, krtDbgModDwarfSect_info, pSubProgram->SpecRef.off);
+    if (RT_FAILURE(rc))
+        return;
+
+    uint32_t uAbbrCode = rtDwarfCursor_GetULeb128AsU32(&InfoCursor, UINT32_MAX);
+    if (uAbbrCode)
+    {
+        /* Only references to subprogram tags are interesting here. */
+        PCRTDWARFABBREV pAbbrev = rtDwarfAbbrev_Lookup(pThis, uAbbrCode);
+        if (   pAbbrev
+            && pAbbrev->uTag == DW_TAG_subprogram)
+        {
+            /*
+             * Use rtDwarfInfo_ParseDie to do the parsing, but with a different
+             * attribute spec than usual.
+             */
+            rtDwarfInfo_ParseDie(pThis, &pSubProgram->Core, &g_SubProgramSpecHackDesc, &InfoCursor,
+                                 pAbbrev, false /*fInitDie*/);
+        }
+    }
+
+    rtDwarfCursor_Delete(&InfoCursor, VINF_SUCCESS);
+}
+
+
+/**
+ * Select which name to use.
+ *
+ * @returns One of the names.
+ * @param   pszName             The DWARF name, may exclude namespace and class.
+ *                              Can also be NULL.
+ * @param   pszLinkageName      The linkage name. Can be NULL.
+ */
+static const char *rtDwarfInfo_SelectName(const char *pszName,  const char *pszLinkageName)
+{
+    if (!pszName || !pszLinkageName)
+        return pszName ? pszName : pszLinkageName;
+
+    /*
+     * Some heuristics for selecting the link name if the normal name is missing
+     * namespace or class prefixes.
+     */
+    size_t cchName = strlen(pszName);
+    size_t cchLinkageName = strlen(pszLinkageName);
+    if (cchLinkageName <= cchName + 1)
+        return pszName;
+
+    const char *psz = strstr(pszLinkageName, pszName);
+    if (!psz || psz - pszLinkageName < 4)
+        return pszName;
+
+    return pszLinkageName;
+}
+
+
+/**
  * Parse the attributes of a DIE.
  *
  * @returns IPRT status code.
@@ -3689,7 +3799,13 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
     {
         case DW_TAG_subprogram:
         {
-            PCRTDWARFDIESUBPROGRAM pSubProgram = (PCRTDWARFDIESUBPROGRAM)pDie;
+            PRTDWARFDIESUBPROGRAM pSubProgram = (PRTDWARFDIESUBPROGRAM)pDie;
+
+            /* Obtain referenced specification there is only partial info. */
+            if (   pSubProgram->PcRange.cAttrs
+                && !pSubProgram->pszName)
+                rtDwarfInfo_TryGetSubProgramNameFromSpecRef(pThis, pSubProgram);
+
             if (pSubProgram->PcRange.cAttrs)
             {
                 if (pSubProgram->PcRange.fHaveRanges)
@@ -3699,7 +3815,7 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
                     Log5(("subprogram %s (%s) %#llx-%#llx%s\n", pSubProgram->pszName, pSubProgram->pszLinkageName,
                           pSubProgram->PcRange.uLowAddress, pSubProgram->PcRange.uHighAddress,
                           pSubProgram->PcRange.cAttrs == 2 ? "" : " !bad!"));
-                    if (   pSubProgram->pszName
+                    if (   ( pSubProgram->pszName || pSubProgram->pszLinkageName)
                         && pSubProgram->PcRange.cAttrs == 2)
                     {
                         if (pThis->iWatcomPass == 1)
@@ -3713,7 +3829,9 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
                                                                      &iSeg, &offSeg);
                             if (RT_SUCCESS(rc))
                             {
-                                rc = RTDbgModSymbolAdd(pThis->hCnt, pSubProgram->pszName, iSeg, offSeg,
+                                rc = RTDbgModSymbolAdd(pThis->hCnt,
+                                                       rtDwarfInfo_SelectName(pSubProgram->pszName, pSubProgram->pszLinkageName),
+                                                       iSeg, offSeg,
                                                        pSubProgram->PcRange.uHighAddress - pSubProgram->PcRange.uLowAddress,
                                                        0 /*fFlags*/, NULL /*piOrdinal*/);
                                 AssertMsg(RT_SUCCESS(rc) || rc == VERR_DBG_DUPLICATE_SYMBOL, ("%Rrc\n", rc));
@@ -4009,16 +4127,21 @@ static int rtDwarfInfo_SkipDie(PRTDWARFCURSOR pCursor, PRTDWARFCURSOR pAbbrevCur
  * @param   pDieDesc            The DIE descriptor.
  * @param   pCursor             The debug_info cursor.
  * @param   pAbbrev             The abbreviation cache entry.
+ * @param   fInitDie            Whether to initialize the DIE first.  If not (@c
+ *                              false) it's safe to assume we're following a
+ *                              DW_AT_specification or DW_AT_abstract_origin,
+ *                              and that we shouldn't be snooping any symbols.
  */
 static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie, PCRTDWARFDIEDESC pDieDesc,
-                                PRTDWARFCURSOR pCursor, PCRTDWARFABBREV pAbbrev)
+                                PRTDWARFCURSOR pCursor, PCRTDWARFABBREV pAbbrev, bool fInitDie)
 {
     RTDWARFCURSOR AbbrevCursor;
     int rc = rtDwarfCursor_InitWithOffset(&AbbrevCursor, pThis, krtDbgModDwarfSect_abbrev, pAbbrev->offSpec);
     if (RT_FAILURE(rc))
         return rc;
 
-    rtDwarfInfo_InitDie(pDie, pDieDesc);
+    if (fInitDie)
+        rtDwarfInfo_InitDie(pDie, pDieDesc);
     for (;;)
     {
         uint32_t uAttr = rtDwarfCursor_GetULeb128AsU32(&AbbrevCursor, 0);
@@ -4059,7 +4182,7 @@ static int rtDwarfInfo_ParseDie(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie, PCRTDWAR
     /*
      * Snoop up symbols on the way out.
      */
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) && fInitDie)
     {
         rc = rtDwarfInfo_SnoopSymbols(pThis, pDie);
         /* Ignore duplicates, get work done instead. */
@@ -4142,7 +4265,7 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, bo
     pUnit->uDwarfVer    = (uint8_t)uVer;
     RTListAppend(&pThis->CompileUnitList, &pUnit->Core.SiblingNode);
 
-    int rc = rtDwarfInfo_ParseDie(pThis, &pUnit->Core, &g_CompileUnitDesc, pCursor, pAbbrev);
+    int rc = rtDwarfInfo_ParseDie(pThis, &pUnit->Core, &g_CompileUnitDesc, pCursor, pAbbrev, true /*fInitDie*/);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -4219,7 +4342,7 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, bo
                 cDepth++;
             }
 
-            rc = rtDwarfInfo_ParseDie(pThis, pNewDie, pDieDesc, pCursor, pAbbrev);
+            rc = rtDwarfInfo_ParseDie(pThis, pNewDie, pDieDesc, pCursor, pAbbrev, true /*fInitDie*/);
             if (RT_FAILURE(rc))
                 return rc;
 
