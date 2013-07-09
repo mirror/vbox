@@ -4890,7 +4890,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                        && uIntType != VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT);
 
                 uint32_t u32ErrCode = 0;
-                if (VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntrInfo))
+                if (VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVmxTransient->uIdtVectoringInfo))
                 {
                     rc = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
                     AssertRCReturn(rc, rc);
