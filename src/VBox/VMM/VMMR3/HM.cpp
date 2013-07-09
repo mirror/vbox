@@ -1469,7 +1469,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
     else if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
 
-    LogRel(("HM:    TPR Patching %s.\n", (pVM->hm.s.fTRPPatchingAllowed) ? "enabled" : "disabled"));
+    LogRel(("HM: TPR Patching %s.\n", (pVM->hm.s.fTRPPatchingAllowed) ? "enabled" : "disabled"));
 
     LogRel((pVM->hm.s.fAllow64BitGuests
             ? "HM: Guest support: 32-bit and 64-bit.\n"
