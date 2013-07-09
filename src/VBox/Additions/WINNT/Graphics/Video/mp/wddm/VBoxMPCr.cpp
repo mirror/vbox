@@ -881,7 +881,7 @@ bool VBoxMpCrCtlConIs3DSupported()
         g_VBoxMpCrHostCaps = 0;
     }
 
-#ifndef DEBUG_misha
+#if 1 //ndef DEBUG_misha
     /* zero it up temporary to avoid new code activation */
     g_VBoxMpCrHostCaps = 0;
 #endif

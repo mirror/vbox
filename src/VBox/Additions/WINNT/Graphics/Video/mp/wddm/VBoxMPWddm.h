@@ -167,36 +167,44 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE 
         vboxWddmAllocationRetain(pAllocation);
     }
 
-    if (pAllocation && pAllocation->hostID)
+    if (pDevExt->fTexPresentEnabled)
     {
-        NTSTATUS Status = vboxVdmaTexPresentSetAlloc(pDevExt, srcId, pAllocation);
-        if (!NT_SUCCESS(Status))
+        /* only submit TexPresent if host supports it and it is enabled */
+        if (pAllocation && pAllocation->hostID)
         {
-            WARN(("vboxVdmaTexPresentSetAlloc failed, Status 0x%x", Status));
-        }
-
-        VBoxVrListClear(&pSource->VrList);
-        pSource->fHas3DVrs = TRUE;
-    }
-    else
-    {
-        if (pSource->fHas3DVrs)
-        {
-            NTSTATUS Status = vboxVdmaTexPresentSetAlloc(pDevExt, srcId, NULL);
+            NTSTATUS Status = vboxVdmaTexPresentSetAlloc(pDevExt, srcId, pAllocation);
             if (!NT_SUCCESS(Status))
             {
                 WARN(("vboxVdmaTexPresentSetAlloc failed, Status 0x%x", Status));
             }
-            pSource->fHas3DVrs = FALSE;
+
+            VBoxVrListClear(&pSource->VrList);
+            pSource->fHas3DVrs = TRUE;
         }
+        else
+        {
+            if (pSource->fHas3DVrs)
+            {
+                NTSTATUS Status = vboxVdmaTexPresentSetAlloc(pDevExt, srcId, NULL);
+                if (!NT_SUCCESS(Status))
+                {
+                    WARN(("vboxVdmaTexPresentSetAlloc failed, Status 0x%x", Status));
+                }
+                pSource->fHas3DVrs = FALSE;
+            }
 
-        RTRECT Rect;
-        Rect.xLeft = 0;
-        Rect.yTop = 0;
-        Rect.xRight = pAllocation ? pAllocation->AllocData.SurfDesc.width : pSource->AllocData.SurfDesc.width;
-        Rect.yBottom = pAllocation ? pAllocation->AllocData.SurfDesc.height : pSource->AllocData.SurfDesc.height;
+            RTRECT Rect;
+            Rect.xLeft = 0;
+            Rect.yTop = 0;
+            Rect.xRight = pAllocation ? pAllocation->AllocData.SurfDesc.width : pSource->AllocData.SurfDesc.width;
+            Rect.yBottom = pAllocation ? pAllocation->AllocData.SurfDesc.height : pSource->AllocData.SurfDesc.height;
 
-        VBoxVrListRectsSet(&pSource->VrList, 1, &Rect, NULL);
+            VBoxVrListRectsSet(&pSource->VrList, 1, &Rect, NULL);
+        }
+    }
+    else
+    {
+        Assert(!pSource->fHas3DVrs);
     }
 
     KIRQL OldIrql;
