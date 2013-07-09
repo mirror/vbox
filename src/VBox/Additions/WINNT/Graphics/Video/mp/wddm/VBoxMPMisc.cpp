@@ -208,7 +208,7 @@ DECLINLINE(BOOLEAN) vboxWddmSwapchainRetainLocked(PVBOXWDDM_SWAPCHAIN pSwapchain
     return FALSE;
 }
 
-DECLINLINE(BOOLEAN) vboxWddmSwapchainRetain(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SWAPCHAIN pSwapchain)
+BOOLEAN vboxWddmSwapchainRetain(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SWAPCHAIN pSwapchain)
 {
     KIRQL OldIrql;
     BOOLEAN bRc;
@@ -218,7 +218,7 @@ DECLINLINE(BOOLEAN) vboxWddmSwapchainRetain(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SW
     return bRc;
 }
 
-DECLINLINE(VOID) vboxWddmSwapchainRelease(PVBOXWDDM_SWAPCHAIN pSwapchain)
+VOID vboxWddmSwapchainRelease(PVBOXWDDM_SWAPCHAIN pSwapchain)
 {
     const uint32_t cRefs = ASMAtomicDecU32(&pSwapchain->cRefs);
     Assert(cRefs < UINT32_MAX/2);
@@ -229,24 +229,29 @@ DECLINLINE(VOID) vboxWddmSwapchainRelease(PVBOXWDDM_SWAPCHAIN pSwapchain)
     }
 }
 
-PVBOXWDDM_SWAPCHAIN vboxWddmSwapchainRetainByAlloc(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAlloc)
+PVBOXWDDM_SWAPCHAIN vboxWddmSwapchainRetainByAllocData(PVBOXMP_DEVEXT pDevExt, const struct VBOXWDDM_ALLOC_DATA *pAllocData)
 {
     KIRQL OldIrql;
     PVBOXWDDM_SWAPCHAIN pSwapchain;
     KeAcquireSpinLock(&pDevExt->SynchLock, &OldIrql);
-    pSwapchain = pAlloc->pSwapchain;
+    pSwapchain = pAllocData->pSwapchain;
     if (pSwapchain && !vboxWddmSwapchainRetainLocked(pSwapchain))
         pSwapchain = NULL;
     KeReleaseSpinLock(&pDevExt->SynchLock, OldIrql);
     return pSwapchain;
 }
 
+PVBOXWDDM_SWAPCHAIN vboxWddmSwapchainRetainByAlloc(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAlloc)
+{
+    return vboxWddmSwapchainRetainByAllocData(pDevExt, &pAlloc->AllocData);
+}
+
 VOID vboxWddmSwapchainAllocRemove(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SWAPCHAIN pSwapchain, PVBOXWDDM_ALLOCATION pAlloc)
 {
     KIRQL OldIrql;
     KeAcquireSpinLock(&pDevExt->SynchLock, &OldIrql);
-    Assert(pAlloc->pSwapchain == pSwapchain);
-    pAlloc->pSwapchain = NULL;
+    Assert(pAlloc->AllocData.pSwapchain == pSwapchain);
+    pAlloc->AllocData.pSwapchain = NULL;
     RemoveEntryList(&pAlloc->SwapchainEntry);
     KeReleaseSpinLock(&pDevExt->SynchLock, OldIrql);
     vboxWddmSwapchainRelease(pSwapchain);
@@ -256,17 +261,17 @@ BOOLEAN vboxWddmSwapchainAllocAdd(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SWAPCHAIN pS
 {
     KIRQL OldIrql;
     BOOLEAN bRc;
-    Assert(!pAlloc->pSwapchain);
+    Assert(!pAlloc->AllocData.pSwapchain);
     KeAcquireSpinLock(&pDevExt->SynchLock, &OldIrql);
     bRc = vboxWddmSwapchainRetainLocked(pSwapchain);
     if (bRc)
     {
-        if (pAlloc->pSwapchain)
+        if (pAlloc->AllocData.pSwapchain)
         {
             RemoveEntryList(&pAlloc->SwapchainEntry);
         }
         InsertTailList(&pSwapchain->AllocList, &pAlloc->SwapchainEntry);
-        pAlloc->pSwapchain = pSwapchain;
+        pAlloc->AllocData.pSwapchain = pSwapchain;
     }
     KeReleaseSpinLock(&pDevExt->SynchLock, OldIrql);
     return bRc;
@@ -286,8 +291,8 @@ static VOID vboxWddmSwapchainAllocRemoveAllInternal(PVBOXMP_DEVEXT pDevExt, PVBO
         {
             PVBOXWDDM_ALLOCATION pAlloc = VBOXSCENTRY_2_ALLOC(pEntry);
             pEntry = pEntry->Flink;
-            Assert(pAlloc->pSwapchain == pSwapchain);
-            pAlloc->pSwapchain = NULL;
+            Assert(pAlloc->AllocData.pSwapchain == pSwapchain);
+            pAlloc->AllocData.pSwapchain = NULL;
             RemoveEntryList(&pAlloc->SwapchainEntry);
             ++cRemoved;
         }

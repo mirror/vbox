@@ -134,6 +134,9 @@ DECLINLINE(void) vboxWddmAssignShadow(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE p
     }
 
     pSource->pShadowAllocation = pAllocation;
+
+    Assert(!pSource->AllocData.pSwapchain);
+    Assert(!pSource->AllocData.hostID);
 }
 #endif
 
@@ -167,50 +170,13 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE 
         vboxWddmAllocationRetain(pAllocation);
     }
 
-    if (pDevExt->fTexPresentEnabled)
-    {
-        /* only submit TexPresent if host supports it and it is enabled */
-        if (pAllocation && pAllocation->hostID)
-        {
-            NTSTATUS Status = vboxVdmaTexPresentSetAlloc(pDevExt, srcId, pAllocation);
-            if (!NT_SUCCESS(Status))
-            {
-                WARN(("vboxVdmaTexPresentSetAlloc failed, Status 0x%x", Status));
-            }
-
-            VBoxVrListClear(&pSource->VrList);
-            pSource->fHas3DVrs = TRUE;
-        }
-        else
-        {
-            if (pSource->fHas3DVrs)
-            {
-                NTSTATUS Status = vboxVdmaTexPresentSetAlloc(pDevExt, srcId, NULL);
-                if (!NT_SUCCESS(Status))
-                {
-                    WARN(("vboxVdmaTexPresentSetAlloc failed, Status 0x%x", Status));
-                }
-                pSource->fHas3DVrs = FALSE;
-            }
-
-            RTRECT Rect;
-            Rect.xLeft = 0;
-            Rect.yTop = 0;
-            Rect.xRight = pAllocation ? pAllocation->AllocData.SurfDesc.width : pSource->AllocData.SurfDesc.width;
-            Rect.yBottom = pAllocation ? pAllocation->AllocData.SurfDesc.height : pSource->AllocData.SurfDesc.height;
-
-            VBoxVrListRectsSet(&pSource->VrList, 1, &Rect, NULL);
-        }
-    }
-    else
-    {
-        Assert(!pSource->fHas3DVrs);
-    }
-
     KIRQL OldIrql;
     KeAcquireSpinLock(&pSource->AllocationLock, &OldIrql);
     pSource->pPrimaryAllocation = pAllocation;
     KeReleaseSpinLock(&pSource->AllocationLock, OldIrql);
+
+    Assert(!pSource->AllocData.pSwapchain);
+    Assert(!pSource->AllocData.hostID);
 }
 
 DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmAquirePrimary(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
@@ -230,13 +196,13 @@ DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmAquirePrimary(PVBOXMP_DEVEXT pDevExt, P
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
 # ifdef VBOX_WDDM_WIN8
 #  define VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, _pAlloc) ( (_pAlloc)->bAssigned \
-        && (  (_pAlloc)->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC \
+        && (  (_pAlloc)->AllocData.hostID \
            || (_pAlloc)->enmType == \
                ((g_VBoxDisplayOnly || (_pDevExt)->fRenderToShadowDisabled) ? VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE : VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE) \
                ))
 # else
 #  define VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, _pAlloc) ( (_pAlloc)->bAssigned \
-        && (  (_pAlloc)->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC \
+        && (  (_pAlloc)->AllocData.hostID \
            || (_pAlloc)->enmType == \
                (((_pDevExt)->fRenderToShadowDisabled) ? VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE : VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE) \
                ))

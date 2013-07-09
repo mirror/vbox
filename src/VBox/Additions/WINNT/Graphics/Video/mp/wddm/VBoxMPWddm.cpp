@@ -272,23 +272,28 @@ NTSTATUS vboxWddmGhDisplayUpdateScreenPos(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOUR
 NTSTATUS vboxWddmGhDisplaySetInfo(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const POINT * pVScreenPos)
 {
     NTSTATUS Status = vboxWddmGhDisplaySetMode(pDevExt, pAllocData);
-    Assert(Status == STATUS_SUCCESS);
-    if (Status == STATUS_SUCCESS)
+    if (NT_SUCCESS(Status))
     {
         Status = vboxWddmGhDisplayPostInfoView(pDevExt, pAllocData);
-        Assert(Status == STATUS_SUCCESS);
-        if (Status == STATUS_SUCCESS)
+        if (NT_SUCCESS(Status))
         {
             Status = vboxWddmGhDisplayPostInfoScreen(pDevExt, pAllocData, pVScreenPos);
-            Assert(Status == STATUS_SUCCESS);
-            if (!NT_SUCCESS(Status))
-                WARN(("vboxWddmGhDisplayPostInfoScreen failed"));
+            if (NT_SUCCESS(Status))
+            {
+                Status = vboxVdmaTexPresentSetAlloc(pDevExt, pAllocData);
+                if (NT_SUCCESS(Status))
+                    return STATUS_SUCCESS;
+                else
+                    WARN(("vboxVdmaTexPresentSetAlloc failed, Status 0x%x", Status));
+            }
+            else
+                WARN(("vboxWddmGhDisplayPostInfoScreen failed, Status 0x%x", Status));
         }
         else
-            WARN(("vboxWddmGhDisplayPostInfoView failed"));
+            WARN(("vboxWddmGhDisplayPostInfoView failed, Status 0x%x", Status));
     }
     else
-        WARN(("vboxWddmGhDisplaySetMode failed"));
+        WARN(("vboxWddmGhDisplaySetMode failed, Status 0x%x", Status));
 
     return Status;
 }
@@ -2272,7 +2277,7 @@ NTSTATUS vboxWddmAllocationCreate(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_RESOURCE pRe
                 {
                     pAllocation->fRcFlags = pAllocInfo->fFlags;
                     pAllocation->AllocData.SurfDesc = pAllocInfo->SurfDesc;
-                    pAllocation->hostID = pAllocInfo->hostID;
+                    pAllocation->AllocData.hostID = pAllocInfo->hostID;
 
                     pAllocationInfo->Size = pAllocInfo->SurfDesc.cbSize;
 
@@ -4741,24 +4746,7 @@ DxgkDdiSetVidPnSourceAddress(
 
     pSource->fGhSynced = 0; /* force guest->host notification */
 
-    if (pSource->bVisible
-//#if defined(VBOXWDDM_RENDER_FROM_SHADOW)
-//            && (
-//# if defined(VBOX_WDDM_WIN8)
-//            g_VBoxDisplayOnly
-//                    ||
-//# endif
-//                    pDevExt->fRenderToShadowDisabled
-//                    /* only update for UMD_RC_GENERIC when resolution changes to inform host about it
-//                     * otherwise keep host using the same VRAM, containing a valid data before the switch (i.e. SHADOW) */
-//                    || (pAllocation
-//                            && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
-//                            && (pAllocation->AllocData.SurfDesc.width != pSource->AllocData.SurfDesc.width
-//                                    || pAllocation->AllocData.SurfDesc.height != pSource->AllocData.SurfDesc.height)
-//                            )
-//                    )
-//#endif
-            )
+    if (pSource->bVisible)
     {
         vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
     }
@@ -4804,24 +4792,7 @@ DxgkDdiSetVidPnSourceVisibility(
     if (pSource->bVisible != pSetVidPnSourceVisibility->Visible)
     {
         pSource->bVisible = pSetVidPnSourceVisibility->Visible;
-        if (pSource->bVisible
-//#if defined(VBOXWDDM_RENDER_FROM_SHADOW)
-//                && (
-//# if defined(VBOX_WDDM_WIN8)
-//                g_VBoxDisplayOnly
-//                        ||
-//# endif
-//                        pDevExt->fRenderToShadowDisabled
-//                        /* only update for UMD_RC_GENERIC when resolution changes to inform host about it
-//                         * otherwise keep host using the same VRAM, containing a valid data before the switch (i.e. SHADOW) */
-//                        || (pAllocation
-//                                && pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC
-//                                && (pAllocation->AllocData.SurfDesc.width != pSource->AllocData.SurfDesc.width
-//                                        || pAllocation->AllocData.SurfDesc.height != pSource->AllocData.SurfDesc.height)
-//                                )
-//                        )
-//#endif
-                )
+        if (pSource->bVisible)
         {
             vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
         }
@@ -6408,6 +6379,8 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
     SrcAllocData.SurfDesc.cbSize =  ~0UL;
     SrcAllocData.Addr.SegmentId = 0;
     SrcAllocData.Addr.pvMem = pPresentDisplayOnly->pSource;
+    SrcAllocData.hostID = 0;
+    SrcAllocData.pSwapchain = NULL;
 
     RECT UpdateRect;
     BOOLEAN bUpdateRectInited = FALSE;
