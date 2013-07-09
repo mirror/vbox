@@ -2754,6 +2754,7 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             {
                 int rc = PDMApicSetTPR(pVCpu, (pMixedCtx->msrLSTAR & 0xff));
                 AssertRC(rc);
+                pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_APIC_STATE;
             }
             else if (pSvmTransient->u8GuestTpr != pVmcb->ctrl.IntCtrl.n.u8VTPR)
             {
@@ -3312,6 +3313,8 @@ static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
                 int rc2 = PDMApicSetTPR(pVCpu, u8Tpr);
                 AssertRC(rc2);
+                pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_APIC_STATE;
+
                 pCtx->rip += pPatch->cbOp;
                 break;
             }
@@ -3803,6 +3806,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
                 /* Our patch code uses LSTAR for TPR caching for 32-bit guests. */
                 int rc2 = PDMApicSetTPR(pVCpu, pCtx->eax & 0xff);
                 AssertRC(rc2);
+                pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_APIC_STATE;
             }
             pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
             return VINF_SUCCESS;
