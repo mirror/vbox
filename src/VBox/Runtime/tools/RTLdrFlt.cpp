@@ -148,6 +148,9 @@ int main(int argc, char **argv)
         { "--cache-file",   'c', RTGETOPT_REQ_NOTHING },
         { "--pe-image",     'p', RTGETOPT_REQ_NOTHING },
         { "--verbose",      'v', RTGETOPT_REQ_NOTHING },
+        { "--x86",          '8', RTGETOPT_REQ_NOTHING },
+        { "--amd64",        '6', RTGETOPT_REQ_NOTHING },
+        { "--whatever",     '*', RTGETOPT_REQ_NOTHING },
     };
 
     PRTSTREAM       pInput          = g_pStdIn;
@@ -158,6 +161,7 @@ int main(int argc, char **argv)
         kOpenMethod_FromPeImage
     }               enmOpenMethod   = kOpenMethod_FromImage;
     bool            fCacheFile      = false;
+    RTLDRARCH       enmArch         = RTLDRARCH_WHATEVER;
 
     RTGETOPTUNION   ValueUnion;
     RTGETOPTSTATE   GetState;
@@ -188,6 +192,18 @@ int main(int argc, char **argv)
                 cVerbosityLevel++;
                 break;
 
+            case '8':
+                enmArch = RTLDRARCH_X86_32;
+                break;
+
+            case '6':
+                enmArch = RTLDRARCH_AMD64;
+                break;
+
+            case '*':
+                enmArch = RTLDRARCH_WHATEVER;
+                break;
+
             case 'h':
                 RTPrintf("Usage: %s [options] <module> <address> [<module> <address> [..]]\n"
                          "\n"
@@ -198,6 +214,8 @@ int main(int argc, char **argv)
                          "      Use RTDbgModCreateFromPeImage to open the file."
                          "  -v, --verbose\n"
                          "      Display the address space before doing the filtering.\n"
+                         "  --amd64,--x86,--whatever\n"
+                         "      Selects the desired architecture.\n"
                          "  -h, -?, --help\n"
                          "      Display this help text and exit successfully.\n"
                          "  -V, --version\n"
@@ -236,7 +254,7 @@ int main(int argc, char **argv)
 
                 RTDBGMOD hMod;
                 if (enmOpenMethod == kOpenMethod_FromImage)
-                    rc = RTDbgModCreateFromImage(&hMod, pszModule, NULL, RTLDRARCH_WHATEVER, hDbgCfg);
+                    rc = RTDbgModCreateFromImage(&hMod, pszModule, NULL, enmArch, hDbgCfg);
                 else
                     rc = RTDbgModCreateFromPeImage(&hMod, pszModule, NULL, NIL_RTLDRMOD, cbImage, uTimestamp, hDbgCfg);
                 if (RT_FAILURE(rc))
