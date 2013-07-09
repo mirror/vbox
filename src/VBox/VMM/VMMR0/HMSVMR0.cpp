@@ -557,7 +557,7 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD 
     if (uMsr <= 0x00001FFF)
     {
         /* Pentium-compatible MSRs. */
-        ulBit    = uMsr * 2;
+        ulBit = uMsr * 2;
     }
     else if (   uMsr >= 0xC0000000
              && uMsr <= 0xC0001FFF)
