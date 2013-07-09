@@ -4186,9 +4186,17 @@ static struct glsl_shader_prog_link *get_glsl_program_entry(const struct shader_
     return entry ? WINE_RB_ENTRY_VALUE(entry, struct glsl_shader_prog_link, program_lookup_entry) : NULL;
 }
 
+#ifdef VBOX_WITH_WINE_FIX_SHADERCLEANUP
+static void shader_glsl_disable(void *shader_priv, const struct wined3d_context *context);
+#endif
+
 /* Context activation is done by the caller. */
 static void delete_glsl_program_entry(struct shader_glsl_priv *priv, const struct wined3d_gl_info *gl_info,
-        struct glsl_shader_prog_link *entry)
+        struct glsl_shader_prog_link *entry
+#ifdef VBOX_WITH_WINE_FIX_SHADERCLEANUP
+        , struct wined3d_context *context
+#endif
+        )
 {
     struct glsl_program_key key;
 
@@ -4196,6 +4204,13 @@ static void delete_glsl_program_entry(struct shader_glsl_priv *priv, const struc
     key.gs_id = entry->gs.id;
     key.ps_id = entry->ps.id;
     wine_rb_remove(&priv->program_lookup, &key);
+#ifdef VBOX_WITH_WINE_FIX_SHADERCLEANUP
+    if (priv->glsl_program == entry)
+    {
+        shader_glsl_disable(priv, context);
+        Assert(!priv->glsl_program);
+    }
+#endif
 
     GL_EXTCALL(glDeleteObjectARB(entry->programId));
     if (entry->vs.id)
@@ -6192,7 +6207,11 @@ static void shader_glsl_destroy(struct wined3d_shader *shader)
                 LIST_FOR_EACH_ENTRY_SAFE(entry, entry2, linked_programs,
                         struct glsl_shader_prog_link, ps.shader_entry)
                 {
-                    delete_glsl_program_entry(priv, gl_info, entry);
+                    delete_glsl_program_entry(priv, gl_info, entry
+#ifdef VBOX_WITH_WINE_FIX_SHADERCLEANUP
+                            , context
+#endif
+                            );
                 }
 
                 for (i = 0; i < shader_data->num_gl_shaders; ++i)
@@ -6215,7 +6234,11 @@ static void shader_glsl_destroy(struct wined3d_shader *shader)
                 LIST_FOR_EACH_ENTRY_SAFE(entry, entry2, linked_programs,
                         struct glsl_shader_prog_link, vs.shader_entry)
                 {
-                    delete_glsl_program_entry(priv, gl_info, entry);
+                    delete_glsl_program_entry(priv, gl_info, entry
+#ifdef VBOX_WITH_WINE_FIX_SHADERCLEANUP
+                            , context
+#endif
+                    );
                 }
 
                 for (i = 0; i < shader_data->num_gl_shaders; ++i)
@@ -6238,7 +6261,11 @@ static void shader_glsl_destroy(struct wined3d_shader *shader)
                 LIST_FOR_EACH_ENTRY_SAFE(entry, entry2, linked_programs,
                         struct glsl_shader_prog_link, gs.shader_entry)
                 {
-                    delete_glsl_program_entry(priv, gl_info, entry);
+                    delete_glsl_program_entry(priv, gl_info, entry
+#ifdef VBOX_WITH_WINE_FIX_SHADERCLEANUP
+                            , context
+#endif
+                            );
                 }
 
                 for (i = 0; i < shader_data->num_gl_shaders; ++i)
@@ -6708,7 +6735,11 @@ static void shader_glsl_free_ffp_vertex_shader(struct wine_rb_entry *entry, void
     LIST_FOR_EACH_ENTRY_SAFE(program, program2, &shader->linked_programs,
             struct glsl_shader_prog_link, vs.shader_entry)
     {
-        delete_glsl_program_entry(ctx->priv, ctx->gl_info, program);
+        delete_glsl_program_entry(ctx->priv, ctx->gl_info, program
+#ifdef VBOX_WITH_WINE_FIX_SHADERCLEANUP
+                            , NULL
+#endif
+                            );
     }
     ctx->gl_info->gl_ops.ext.p_glDeleteObjectARB(shader->id);
     HeapFree(GetProcessHeap(), 0, shader);
@@ -6969,7 +7000,11 @@ static void shader_glsl_free_ffp_fragment_shader(struct wine_rb_entry *entry, vo
     LIST_FOR_EACH_ENTRY_SAFE(program, program2, &shader->linked_programs,
             struct glsl_shader_prog_link, ps.shader_entry)
     {
-        delete_glsl_program_entry(ctx->priv, ctx->gl_info, program);
+        delete_glsl_program_entry(ctx->priv, ctx->gl_info, program
+#ifdef VBOX_WITH_WINE_FIX_SHADERCLEANUP
+                            , context
+#endif
+                            );
     }
     ctx->gl_info->gl_ops.ext.p_glDeleteObjectARB(shader->id);
     HeapFree(GetProcessHeap(), 0, shader);
