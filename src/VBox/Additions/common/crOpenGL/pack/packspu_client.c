@@ -500,25 +500,10 @@ void PACKSPU_APIENTRY packspu_DisableVertexAttribArrayARB(GLuint index)
     crPackDisableVertexAttribArrayARB(index);
 }
 
-#define CRDBG_BREAK_ENABLE_TEXTURE_2D         0x0001
-#define CRDBG_BREAK_DISABLE_TEXTURE_2D        0x0002
-#define CRDBG_BREAK_ENABLE_TEXTURE_RECTANGLE  0x0010
-#define CRDBG_BREAK_DISABLE_TEXTURE_RECTANGLE 0x0020
-
-static int g_VDbgBreakEnableDisable = 0x33;
-
 void PACKSPU_APIENTRY packspu_Enable( GLenum cap )
 {
     if (cap!=GL_LIGHT_MODEL_TWO_SIDE)
     {
-        if (cap == GL_TEXTURE_2D)
-        {
-            if (g_VDbgBreakEnableDisable & CRDBG_BREAK_ENABLE_TEXTURE_2D) { RT_BREAKPOINT();}
-        }
-        else if (cap == GL_TEXTURE_RECTANGLE_NV)
-        {
-            if (g_VDbgBreakEnableDisable & CRDBG_BREAK_ENABLE_TEXTURE_RECTANGLE) { RT_BREAKPOINT();}
-        }
         crStateEnable(cap);
 
         if (pack_spu.swap)
