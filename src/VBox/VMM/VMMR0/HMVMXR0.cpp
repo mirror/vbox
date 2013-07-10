@@ -6429,6 +6429,28 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
     const uint32_t uVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(u32IntrInfo);
     const uint32_t uIntrType = VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntrInfo);
 
+#ifdef VBOX_STRICT
+    /* Validate the error-code-valid bit for hardware exceptions. */
+    if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT)
+    {
+        switch (uVector)
+        {
+            case X86_XCPT_PF:
+            case X86_XCPT_DF:
+            case X86_XCPT_TS:
+            case X86_XCPT_NP:
+            case X86_XCPT_SS:
+            case X86_XCPT_GP:
+            case X86_XCPT_AC:
+                AssertMsg(VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntrInfo),
+                          ("Error-code-valid bit not set for exception that has an error code uVector=%#x\n", uVector));
+                /* fallthru */
+            default:
+                break;
+        }
+    }
+#endif
+
     /* Cannot inject an NMI when block-by-MOV SS is in effect. */
     Assert(   uIntrType != VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI
            || !(*puIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS));
@@ -6480,13 +6502,13 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
 
             /* Software exceptions (#BP and #OF exceptions thrown as a result of INT3 or INTO) */
             uint16_t uGuestIp = pMixedCtx->ip;
-            if (VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntrInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT)
+            if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT)
             {
                 Assert(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF);
                 /* #BP and #OF are both benign traps, we need to resume the next instruction. */
                 uGuestIp = pMixedCtx->ip + (uint16_t)cbInstr;
             }
-            else if (VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntrInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT)
+            else if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT)
                 uGuestIp = pMixedCtx->ip + (uint16_t)cbInstr;
 
             /* Get the code segment selector and offset from the IDT entry for the interrupt handler. */
@@ -6510,8 +6532,8 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
                 pMixedCtx->rip         = offIdtEntry;
                 pMixedCtx->cs.Sel      = selIdtEntry;
                 pMixedCtx->cs.u64Base  = selIdtEntry << cbIdtEntry;
-                if (   VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntrInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT
-                    && uVector == X86_XCPT_PF)
+                if (   uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT
+                    && uVector   == X86_XCPT_PF)
                 {
                     pMixedCtx->cr2 = GCPtrFaultAddress;
                 }
