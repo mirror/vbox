@@ -280,11 +280,14 @@ NTSTATUS vboxWddmGhDisplaySetInfo(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_D
             Status = vboxWddmGhDisplayPostInfoScreen(pDevExt, pAllocData, pVScreenPos);
             if (NT_SUCCESS(Status))
             {
-                Status = vboxVdmaTexPresentSetAlloc(pDevExt, pAllocData);
-                if (NT_SUCCESS(Status))
-                    return STATUS_SUCCESS;
-                else
-                    WARN(("vboxVdmaTexPresentSetAlloc failed, Status 0x%x", Status));
+                if (pDevExt->f3DEnabled)
+                {
+                    Status = vboxVdmaTexPresentSetAlloc(pDevExt, pAllocData);
+                    if (NT_SUCCESS(Status))
+                        return STATUS_SUCCESS;
+                    else
+                        WARN(("vboxVdmaTexPresentSetAlloc failed, Status 0x%x", Status));
+                }
             }
             else
                 WARN(("vboxWddmGhDisplayPostInfoScreen failed, Status 0x%x", Status));
@@ -1171,8 +1174,15 @@ NTSTATUS DxgkDdiStartDevice(
 
                     VBoxMpCrShgsmiTransportCreate(&pDevExt->CrHgsmiTransport, pDevExt);
 
-                    pDevExt->fTexPresentEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_TEX_PRESENT);
-                    Assert(!pDevExt->fTexPresentEnabled);
+                    pDevExt->f3DEnabled = VBoxMpCrCtlConIs3DSupported();
+
+                    if (pDevExt->f3DEnabled)
+                    {
+                        pDevExt->fTexPresentEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_TEX_PRESENT);
+                        Assert(!pDevExt->fTexPresentEnabled);
+                    }
+                    else
+                        pDevExt->fTexPresentEnabled = FALSE;
 
                     for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
                     {
@@ -5970,16 +5980,15 @@ DxgkDdiCreateContext(
                 Assert(tmpStatus == STATUS_SUCCESS);
             }
 
-            int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pContext->u32CrConClientID);
-            if (RT_SUCCESS(rc))
+            if (!VBOXWDDM_IS_DISPLAYONLY() && pDevExt->f3DEnabled)
             {
                 VBoxMpCrPackerInit(&pContext->CrPacker);
+                int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pContext->u32CrConClientID);
+                if (!RT_SUCCESS(rc))
+                    WARN(("VBoxMpCrCtlConConnect failed rc (%d), ignoring for system context", rc));
             }
-            else
-            {
-                WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
-                Status = STATUS_UNSUCCESSFUL;
-            }
+
+            Status = STATUS_SUCCESS;
         }
         else
         {
@@ -6008,16 +6017,24 @@ DxgkDdiCreateContext(
                                 {
                                     if (pInfo->crVersionMajor || pInfo->crVersionMinor)
                                     {
-                                        int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
-                                            pInfo->crVersionMajor, pInfo->crVersionMinor,
-                                            &pContext->u32CrConClientID);
-                                        if (RT_SUCCESS(rc))
+                                        if (pDevExt->f3DEnabled)
                                         {
-                                            VBoxMpCrPackerInit(&pContext->CrPacker);
+                                            int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
+                                                pInfo->crVersionMajor, pInfo->crVersionMinor,
+                                                &pContext->u32CrConClientID);
+                                            if (RT_SUCCESS(rc))
+                                            {
+                                                VBoxMpCrPackerInit(&pContext->CrPacker);
+                                            }
+                                            else
+                                            {
+                                                WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
+                                                Status = STATUS_UNSUCCESSFUL;
+                                            }
                                         }
                                         else
                                         {
-                                            WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
+                                            LOG(("3D Not Enabled, failing 3D context creation"));
                                             Status = STATUS_UNSUCCESSFUL;
                                         }
                                     }
@@ -6045,12 +6062,20 @@ DxgkDdiCreateContext(
                         {
                             if (pInfo->crVersionMajor || pInfo->crVersionMinor)
                             {
-                                int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
-                                    pInfo->crVersionMajor, pInfo->crVersionMinor,
-                                    &pContext->u32CrConClientID);
-                                if (!RT_SUCCESS(rc))
+                                if (pDevExt->f3DEnabled)
                                 {
-                                    WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
+                                    int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
+                                        pInfo->crVersionMajor, pInfo->crVersionMinor,
+                                        &pContext->u32CrConClientID);
+                                    if (!RT_SUCCESS(rc))
+                                    {
+                                        WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
+                                        Status = STATUS_UNSUCCESSFUL;
+                                    }
+                                }
+                                else
+                                {
+                                    LOG(("3D Not Enabled, failing 3D (hgsmi) context creation"));
                                     Status = STATUS_UNSUCCESSFUL;
                                 }
                             }
@@ -6617,6 +6642,8 @@ DriverEntry(
         }
 
         Status = STATUS_SUCCESS;
+
+        VBoxMpCrCtlConInit();
 
         /* always need to do the check to request host caps */
         LOG(("Doing the 3D check.."));

@@ -114,6 +114,7 @@ typedef struct _VBOXMP_DEVEXT
    /* this is examined and swicthed by DxgkDdiSubmitCommand only! */
    volatile BOOLEAN fRenderToShadowDisabled;
 
+   BOOLEAN f3DEnabled;
    BOOLEAN fTexPresentEnabled;
 
    uint32_t u32CrConDefaultClientID;

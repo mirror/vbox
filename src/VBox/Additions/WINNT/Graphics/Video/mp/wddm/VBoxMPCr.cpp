@@ -25,10 +25,16 @@
 #include <cr_protocol.h>
 
 static uint32_t g_VBoxMpCrHostCaps = 0;
+static uint32_t g_VBoxMpCr3DSupported = 0;
 
 uint32_t VBoxMpCrGetHostCaps()
 {
     return g_VBoxMpCrHostCaps;
+}
+
+bool VBoxMpCrCtlConIs3DSupported()
+{
+    return !!g_VBoxMpCr3DSupported;
 }
 
 static void* vboxMpCrShgsmiBufferAlloc(PVBOXMP_DEVEXT pDevExt, HGSMISIZE cbData)
@@ -862,8 +868,11 @@ int VBoxMpCrCtlConCallUserData(PVBOXMP_CRCTLCON pCrCtlCon, VBoxGuestHGCMCallInfo
     return rc;
 }
 
-bool VBoxMpCrCtlConIs3DSupported()
+void VBoxMpCrCtlConInit()
 {
+    g_VBoxMpCr3DSupported = 0;
+    g_VBoxMpCrHostCaps = 0;
+
 #ifdef VBOX_WITH_CROGL
     VBOXMP_CRCTLCON CrCtlCon = {0};
     uint32_t u32ClientID = 0;
@@ -871,8 +880,10 @@ bool VBoxMpCrCtlConIs3DSupported()
     if (RT_FAILURE(rc))
     {
         LOGREL(("VBoxMpCrCtlConConnect failed with rc(%d), 3D not supported!"));
-        return false;
+        return;
     }
+
+    g_VBoxMpCr3DSupported = 1;
 
     rc = vboxMpCrCtlConGetCaps(&CrCtlCon, u32ClientID, &g_VBoxMpCrHostCaps);
     if (RT_FAILURE(rc))
@@ -889,10 +900,7 @@ bool VBoxMpCrCtlConIs3DSupported()
     rc = VBoxMpCrCtlConDisconnect(&CrCtlCon, u32ClientID);
     if (RT_FAILURE(rc))
         WARN(("VBoxMpCrCtlConDisconnect failed rc (%d), ignoring..", rc));
-
-    return true;
 #else
-    return false;
 #endif
 }
 
