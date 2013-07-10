@@ -221,6 +221,7 @@ typedef enum RTFSTYPE
     RTFSTYPE_SYSFS,
     RTFSTYPE_PROC,
     RTFSTYPE_OCFS2,
+    RTFSTYPE_BTRFS,
 
     /* Windows: */
     /** New Technology File System. */
