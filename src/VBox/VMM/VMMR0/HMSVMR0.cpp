@@ -2980,12 +2980,31 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                     return hmR0SvmExitSetPendingXcptUD(pVCpu, pCtx, pSvmTransient);
 
 #ifdef HMSVM_ALWAYS_TRAP_ALL_XCPTS
-                case SVM_EXIT_EXCEPTION_0:      /* X86_XCPT_DE */
-                case SVM_EXIT_EXCEPTION_3:      /* X86_XCPT_BP */
-                case SVM_EXIT_EXCEPTION_6:      /* X86_XCPT_UD */
-                case SVM_EXIT_EXCEPTION_B:      /* X86_XCPT_NP */
-                case SVM_EXIT_EXCEPTION_C:      /* X86_XCPT_SS */
-                case SVM_EXIT_EXCEPTION_D:      /* X86_XCPT_GP */
+                case SVM_EXIT_EXCEPTION_0:             /* X86_XCPT_DE */
+                /*   SVM_EXIT_EXCEPTION_1: */          /* X86_XCPT_DB - Handled above. */
+                case SVM_EXIT_EXCEPTION_2:             /* X86_XCPT_NMI */
+                case SVM_EXIT_EXCEPTION_3:             /* X86_XCPT_BP */
+                case SVM_EXIT_EXCEPTION_4:             /* X86_XCPT_OF */
+                case SVM_EXIT_EXCEPTION_5:             /* X86_XCPT_BR */
+                case SVM_EXIT_EXCEPTION_6:             /* X86_XCPT_UD */
+                /*   SVM_EXIT_EXCEPTION_7: */          /* X86_XCPT_NM - Handled above. */
+                case SVM_EXIT_EXCEPTION_8:             /* X86_XCPT_DF */
+                case SVM_EXIT_EXCEPTION_9:             /* X86_XCPT_CO_SEG_OVERRUN */
+                case SVM_EXIT_EXCEPTION_A:             /* X86_XCPT_TS */
+                case SVM_EXIT_EXCEPTION_B:             /* X86_XCPT_NP */
+                case SVM_EXIT_EXCEPTION_C:             /* X86_XCPT_SS */
+                case SVM_EXIT_EXCEPTION_D:             /* X86_XCPT_GP */
+                /*   SVM_EXIT_EXCEPTION_E: */          /* X86_XCPT_PF - Handled above. */
+                /*   SVM_EXIT_EXCEPTION_10: */         /* X86_XCPT_MF - Handled above. */
+                case SVM_EXIT_EXCEPTION_11:            /* X86_XCPT_AC */
+                case SVM_EXIT_EXCEPTION_12:            /* X86_XCPT_MC */
+                case SVM_EXIT_EXCEPTION_13:            /* X86_XCPT_XF */
+
+                case SVM_EXIT_EXCEPTION_F:             /* Reserved */
+                case SVM_EXIT_EXCEPTION_14: case SVM_EXIT_EXCEPTION_15: case SVM_EXIT_EXCEPTION_16:
+                case SVM_EXIT_EXCEPTION_17: case SVM_EXIT_EXCEPTION_18: case SVM_EXIT_EXCEPTION_19:
+                case SVM_EXIT_EXCEPTION_1A: case SVM_EXIT_EXCEPTION_1B: case SVM_EXIT_EXCEPTION_1C:
+                case SVM_EXIT_EXCEPTION_1D: case SVM_EXIT_EXCEPTION_1E: case SVM_EXIT_EXCEPTION_1F:
                 {
                     SVMEVENT Event;
                     Event.u          = 0;
@@ -3027,6 +3046,10 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                             Event.n.u32ErrorCode        = pVmcb->ctrl.u64ExitInfo1;
                             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestGP);
                             break;
+
+                        default:
+                            AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit caused by exception %#x\n", Event.n.u8Vector));
+                            return VERR_SVM_UNEXPECTED_XCPT_EXIT;
                     }
 
                     Log4(("#Xcpt: Vector=%#x at CS:RIP=%04x:%RGv\n", Event.n.u8Vector, pCtx->cs.Sel, (RTGCPTR)pCtx->rip));
