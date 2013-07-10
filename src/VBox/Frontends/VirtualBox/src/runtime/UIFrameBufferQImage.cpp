@@ -34,9 +34,6 @@
 # include "VBoxGlobal.h"
 # include "UISession.h"
 # include "UIMachineLogic.h"
-# ifdef Q_WS_X11
-#  include "UIMachineWindow.h"
-# endif /* Q_WS_X11 */
 
 /* COM includes: */
 #include "COMEnums.h"
