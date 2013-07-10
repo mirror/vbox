@@ -133,7 +133,7 @@ DLLS += vboxvideo_drv_70
 vboxvideo_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_70_DEFS = $(vboxvideo_70_DEFS) XORG_VERSION_CURRENT=700000000
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
- vboxvideo_drv_70_CFLAGS += -D_XPG6 # Until we have moved the C++ bits into a library
+ vboxvideo_drv_70_CFLAGS += -D_XPG6 -Wno-shadow # Use XPG6 until we have moved the C++ bits into a library.
 endif
 vboxvideo_drv_70_INCS = \
 	$(VBOX_PATH_X11_XORG_7_0) \
