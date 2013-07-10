@@ -287,9 +287,9 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(ASMGetCR4() & X86_CR4_OSFSXR);
 
     /* If the FPU state has already been loaded, then it's a guest trap. */
-    if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU)
+    if (CPUMIsGuestFPUStateActive(pVCpu))
     {
-        Assert(    ((pCtx->cr0 & (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
+        Assert(    ((pCtx->cr0 & (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_TS | X86_CR0_EM))
                ||  ((pCtx->cr0 & (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS)) == (X86_CR0_MP | X86_CR0_TS)));
         return VINF_EM_RAW_GUEST_TRAP;
     }
@@ -322,7 +322,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     switch (pCtx->cr0 & (X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
     {
         case X86_CR0_MP | X86_CR0_TS:
-        case X86_CR0_MP | X86_CR0_EM | X86_CR0_TS:
+        case X86_CR0_MP | X86_CR0_TS | X86_CR0_EM:
             return VINF_EM_RAW_GUEST_TRAP;
         default:
             break;
