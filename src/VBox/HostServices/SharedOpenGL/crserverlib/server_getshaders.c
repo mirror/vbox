@@ -46,6 +46,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetActiveAttrib(GLuint program, GL
         zero.length = 0;
         crServerReturnValue(&zero, sizeof(zero));
     }
+    /* zero out just the header to ensure it initially contains zero size values */
+    memset(pLocal, 0, sizeof (*pLocal));
     cr_server.head_spu->dispatch_table.GetActiveAttrib(crStateGetProgramHWID(program), index, bufSize, &pLocal->length, &pLocal->size, &pLocal->type, (char*)&pLocal[1]);
     crServerReturnValue(pLocal, pLocal->length+1+sizeof(crGetActive_t));
     crFree(pLocal);
@@ -62,6 +64,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetActiveUniform(GLuint program, G
         zero.length = 0;
         crServerReturnValue(&zero, sizeof(zero));
     }
+    /* zero out just the header to ensure it initially contains zero size values */
+    memset(pLocal, 0, sizeof (*pLocal));
     cr_server.head_spu->dispatch_table.GetActiveUniform(crStateGetProgramHWID(program), index, bufSize, &pLocal->length, &pLocal->size, &pLocal->type, (char*)&pLocal[1]);
     crServerReturnValue(pLocal, pLocal->length+1+sizeof(crGetActive_t));
     crFree(pLocal);
@@ -77,6 +81,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedShaders(GLuint program,
         GLsizei zero=0;
         crServerReturnValue(&zero, sizeof(zero));
     }
+    /* initial (fallback )value */
+    *pLocal = 0;
     cr_server.head_spu->dispatch_table.GetAttachedShaders(crStateGetProgramHWID(program), maxCount, pLocal, (GLuint*)&pLocal[1]);
 
     {
@@ -101,6 +107,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedObjectsARB(GLhandleARB 
         GLsizei zero=0;
         crServerReturnValue(&zero, sizeof(zero));
     }
+    /* initial (fallback )value */
+    *pLocal = 0;
     cr_server.head_spu->dispatch_table.GetAttachedObjectsARB(crStateGetProgramHWID(containerObj), maxCount, pLocal, (GLhandleARB*)&pLocal[1]);
 
     {
@@ -128,6 +136,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetInfoLogARB(GLhandleARB obj, GLs
         GLsizei zero=0;
         crServerReturnValue(&zero, sizeof(zero));
     }
+    /* initial (fallback )value */
+    *pLocal = 0;
     /*@todo: recheck*/
     hwid = crStateGetProgramHWID(obj);
     if (!hwid) hwid = crStateGetShaderHWID(obj);
@@ -147,6 +157,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetShaderInfoLog(GLuint shader, GL
         GLsizei zero=0;
         crServerReturnValue(&zero, sizeof(zero));
     }
+    /* initial (fallback )value */
+    *pLocal = 0;
     cr_server.head_spu->dispatch_table.GetShaderInfoLog(crStateGetShaderHWID(shader), bufSize, pLocal, (char*)&pLocal[1]);
     crServerReturnValue(pLocal, pLocal[0]+sizeof(GLsizei));
     crFree(pLocal);
@@ -162,6 +174,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetProgramInfoLog(GLuint program, 
         GLsizei zero=0;
         crServerReturnValue(&zero, sizeof(zero));
     }
+    /* initial (fallback )value */
+    *pLocal = 0;
     cr_server.head_spu->dispatch_table.GetProgramInfoLog(crStateGetProgramHWID(program), bufSize, pLocal, (char*)&pLocal[1]);
     CRASSERT(pLocal[0] <= bufSize);
     crServerReturnValue(pLocal, pLocal[0]+sizeof(GLsizei));
@@ -178,6 +192,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetShaderSource(GLuint shader, GLs
         GLsizei zero=0;
         crServerReturnValue(&zero, sizeof(zero));
     }
+    /* initial (fallback )value */
+    *pLocal = 0;
     cr_server.head_spu->dispatch_table.GetShaderSource(crStateGetShaderHWID(shader), bufSize, pLocal, (char*)&pLocal[1]);
     CRASSERT(pLocal[0] <= bufSize);
     crServerReturnValue(pLocal, pLocal[0]+sizeof(GLsizei));
@@ -199,6 +215,8 @@ crServerDispatchGetUniformsLocations(GLuint program, GLsizei maxcbData, GLsizei 
         crServerReturnValue(&zero, sizeof(zero));
     }
     
+    /* initial (fallback )value */
+    *pLocal = 0;
     crStateGLSLProgramCacheUniforms(program, maxcbData, pLocal, (char*)&pLocal[1]);
 
     crServerReturnValue(pLocal, (*pLocal)+sizeof(GLsizei));
@@ -207,8 +225,8 @@ crServerDispatchGetUniformsLocations(GLuint program, GLsizei maxcbData, GLsizei 
 
 static GLint __GetUniformSize(GLuint program, GLint location)
 {
-    GLint  size;
-    GLenum type;
+    GLint  size = 0;
+    GLenum type = 0;
 
     /*@todo: check if index and location is the same*/
     cr_server.head_spu->dispatch_table.GetActiveUniform(crStateGetProgramHWID(program), location, 0, NULL, &size, &type, NULL);
