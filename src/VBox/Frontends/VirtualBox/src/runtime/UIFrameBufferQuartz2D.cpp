@@ -247,11 +247,40 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
     /* We handle the seamless mode as a special case. */
     if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
     {
-        /* Clear the background (make the rect fully transparent): */
-        CGContextClearRect(ctx, viewRect);
-
         /* Determine current visible region: */
         RegionRects *pRgnRcts = ASMAtomicXchgPtrT(&mRegion, NULL, RegionRects*);
+
+        /* Prepare cleanup-region: */
+        QRegion cleanupRegion(aEvent->rect());
+        /* Filter out visible-rectangles;
+         * That way we erase *only* invisible-rectangles of paint-region: */
+        if (pRgnRcts && pRgnRcts->used > 0)
+        {
+            /* Slowly, step-by-step filter our visible-rectangles: */
+            CGRect *pCgVisibleRect = pRgnRcts->rcts;
+            for (ULONG uVisibleRectIndex = 0; uVisibleRectIndex < pRgnRcts->used; ++uVisibleRectIndex)
+            {
+                /* Prepare Qt visible-rectangle, flipping received CG visible-rectangle: */
+                CGRect cgVisibleRectFlippedToQt = ::darwinFlipCGRect(*pCgVisibleRect, viewRect.size.height);
+                QRect visibleRect(cgVisibleRectFlippedToQt.origin.x, cgVisibleRectFlippedToQt.origin.y,
+                                  cgVisibleRectFlippedToQt.size.width, cgVisibleRectFlippedToQt.size.height);
+                /* Filter that rectangle out: */
+                cleanupRegion -= visibleRect;
+                ++pCgVisibleRect;
+            }
+        }
+        /* Erase cleanup-region: */
+        if (!cleanupRegion.isEmpty())
+        {
+            /* Slowly, step-by-step erase cleanup-rectangles: */
+            foreach (const QRect &cleanupRect, cleanupRegion.rects())
+            {
+                CGRect cgCleanupRect = ::darwinToCGRect(cleanupRect);
+                CGContextClearRect(ctx, ::darwinFlipCGRect(cgCleanupRect, viewRect.size.height));
+            }
+        }
+
+        /* Prepare painting path/clipping: */
         if (pRgnRcts)
         {
             /* If visible region is determined: */
