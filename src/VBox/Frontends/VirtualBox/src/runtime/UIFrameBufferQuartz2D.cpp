@@ -305,13 +305,14 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
         /* If visible region is still determined: */
         if (pRgnRcts && pRgnRcts->used > 0)
         {
-            /* Create a subimage of the current view.
-             * Currently this subimage is the whole screen. */
+            /* Create a subimage of the current view in the size
+             * of the bounding box of the current paint event: */
+            CGRect cgPaintRect = ::darwinToCGRect(aEvent->rect());
             CGImageRef subImage;
             if (!m_pMachineView->pauseShot().isNull())
             {
                 CGImageRef pauseImg = ::darwinToCGImageRef(&m_pMachineView->pauseShot());
-                subImage = CGImageCreateWithImageInRect(pauseImg, CGRectMake(m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
+                subImage = CGImageCreateWithImageInRect(pauseImg, cgPaintRect);
                 CGImageRelease(pauseImg);
             }
             else
@@ -321,7 +322,7 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
                  * something terrible wrong (on a second monitor) when directly
                  * using CGImageCreateWithImageInRect without making a copy. We saw
                  * something like this already with the scale mode. */
-                CGImageRef tmpImage = CGImageCreateWithImageInRect(m_image, CGRectMake(m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
+                CGImageRef tmpImage = CGImageCreateWithImageInRect(m_image, cgPaintRect);
                 subImage = CGImageCreateCopy(tmpImage);
                 CGImageRelease(tmpImage);
 #else /* RT_ARCH_AMD64 */
@@ -333,7 +334,7 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
             /* In any case clip the drawing to the view window: */
             CGContextClipToRect(ctx, viewRect);
             /* At this point draw the real vm image: */
-            CGContextDrawImage(ctx, ::darwinFlipCGRect(viewRect, viewRect.size.height), subImage);
+            CGContextDrawImage(ctx, ::darwinFlipCGRect(cgPaintRect, viewRect.size.height), subImage);
 
             /* Release the subimage: */
             CGImageRelease(subImage);
