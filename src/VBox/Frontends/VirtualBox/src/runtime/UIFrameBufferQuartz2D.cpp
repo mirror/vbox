@@ -39,9 +39,6 @@
 # include <iprt/asm.h>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-//#define COMP_WITH_SHADOW
-//#define OVERLAY_CLIPRECTS
-
 /** @class UIFrameBufferQuartz2D
  *
  *  The UIFrameBufferQuartz2D class is a class that implements the IFrameBuffer
@@ -253,17 +250,6 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
         /* Clear the background (make the rect fully transparent): */
         CGContextClearRect(ctx, viewRect);
 
-#ifdef OVERLAY_CLIPRECTS
-        /* Enable overlay above the seamless mask: */
-        CGContextSetRGBFillColor(ctx, 0.0, 0.0, 5.0, 0.7);
-        CGContextFillRect(ctx, viewRect);
-#endif /* OVERLAY_CLIPRECTS */
-#ifdef COMP_WITH_SHADOW
-        /* Enable shadows: */
-        CGContextSetShadow(ctx, CGSizeMake (10, -10), 10);
-        CGContextBeginTransparencyLayer(ctx, NULL);
-#endif /* COMP_WITH_SHADOW */
-
         /* Determine current visible region: */
         RegionRects *pRgnRcts = ASMAtomicXchgPtrT(&mRegion, NULL, RegionRects*);
         if (pRgnRcts)
@@ -323,21 +309,6 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
             /* Release the subimage: */
             CGImageRelease(subImage);
         }
-
-#ifdef COMP_WITH_SHADOW
-        CGContextEndTransparencyLayer(ctx);
-#endif /* COMP_WITH_SHADOW */
-#ifdef OVERLAY_CLIPRECTS
-        if (pRgnRcts && pRgnRcts->used > 0)
-        {
-            CGContextBeginPath(ctx);
-            CGContextAddRects(ctx, pRgnRcts->rcts, pRgnRcts->used);
-            CGContextSetRGBStrokeColor(ctx, 1.0, 0.0, 0.0, 0.7);
-            CGContextDrawPath(ctx, kCGPathStroke);
-        }
-        CGContextSetRGBStrokeColor(ctx, 0.0, 1.0, 0.0, 0.7);
-        CGContextStrokeRect(ctx, viewRect);
-#endif /* OVERLAY_CLIPRECTS */
     }
     else if (   m_pMachineLogic->visualStateType() == UIVisualStateType_Scale
              && m_scaledSize.isValid())
