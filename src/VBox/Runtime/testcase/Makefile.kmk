@@ -79,7 +79,6 @@ PROGRAMS += \
 	tstLdr \
 	tstLdrLoad \
 	tstRTList \
-	tstRTLocalIpc \
 	tstRTLockValidator \
 	tstLog \
 	tstMemAutoPtr \
@@ -138,8 +137,9 @@ PROGRAMS += \
 	tstVector
 
 PROGRAMS.win += \
-	tstRTProcWait \
 	tstRTCritSectW32 \
+	tstRTLocalIpc \
+	tstRTProcWait \
 	tstFileAppendWin-1 \
 	ntGetTimerResolution
 PROGRAMS.linux += \
