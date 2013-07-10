@@ -1664,10 +1664,6 @@ static void hmR0VmxUpdateExceptionBitmap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (!(pCtx->cr0 & X86_CR0_NE))
         u32TrapMask |= RT_BIT(X86_XCPT_MF);
 
-#ifdef VBOX_STRICT
-    Assert(u32TrapMask & RT_BIT(X86_XCPT_GP));
-#endif
-
     /*
      * Intercept all exceptions in real mode as none of them can be injected directly (#GP otherwise).
      */
