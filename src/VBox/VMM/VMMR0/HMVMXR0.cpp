@@ -2987,7 +2987,8 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
 
         /* Additional intercepts for debugging, define these yourself explicitly. */
 #ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
-        pVCpu->hm.s.vmx.u32XcptBitmap |=   RT_BIT(X86_XCPT_BP)
+        pVCpu->hm.s.vmx.u32XcptBitmap |= 0
+                                         | RT_BIT(X86_XCPT_BP)
                                          | RT_BIT(X86_XCPT_DB)
                                          | RT_BIT(X86_XCPT_DE)
                                          | RT_BIT(X86_XCPT_NM)
@@ -2996,7 +2997,8 @@ static int hmR0VmxLoadGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pCtx)
                                          | RT_BIT(X86_XCPT_SS)
                                          | RT_BIT(X86_XCPT_GP)
                                          | RT_BIT(X86_XCPT_PF)
-                                         | RT_BIT(X86_XCPT_MF);
+                                         | RT_BIT(X86_XCPT_MF)
+                                         ;
 #elif defined(HMVMX_ALWAYS_TRAP_PF)
         pVCpu->hm.s.vmx.u32XcptBitmap    |= RT_BIT(X86_XCPT_PF);
 #endif
