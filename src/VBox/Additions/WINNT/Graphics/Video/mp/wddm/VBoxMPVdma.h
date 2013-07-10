@@ -211,19 +211,6 @@ typedef struct VBOXVDMAPIPE_CMD_CANCEL
     PKEVENT pEvent;
 } VBOXVDMAPIPE_CMD_CANCEL, *PVBOXVDMAPIPE_CMD_CANCEL;
 
-typedef struct VBOXVDMAPIPE_FLAGS_DMACMD
-{
-    union
-    {
-        struct
-        {
-            UINT fRealOp             : 1;
-            UINT fVisibleRegions     : 1;
-            UINT Reserved            : 30;
-        };
-        UINT Value;
-    };
-} VBOXVDMAPIPE_FLAGS_DMACMD, *PVBOXVDMAPIPE_FLAGS_DMACMD;
 typedef struct VBOXVDMAPIPE_CMD_DMACMD
 {
     VBOXVDMAPIPE_CMD_DR Hdr;
@@ -232,7 +219,7 @@ typedef struct VBOXVDMAPIPE_CMD_DMACMD
 #endif
     PVBOXWDDM_CONTEXT pContext;
     VBOXVDMACMD_TYPE enmCmd;
-    VBOXVDMAPIPE_FLAGS_DMACMD fFlags;
+//    VBOXVDMAPIPE_FLAGS_DMACMD fFlags;
 } VBOXVDMAPIPE_CMD_DMACMD, *PVBOXVDMAPIPE_CMD_DMACMD;
 
 typedef struct VBOXVDMA_CLRFILL
@@ -342,9 +329,9 @@ NTSTATUS vboxVdmaGgDmaBltPerform(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_ALLOC_D
 
 #define VBOXVDMAPIPE_CMD_DR_FROM_DDI_CMD(_pCmd) ((PVBOXVDMAPIPE_CMD_DR)(((uint8_t*)(_pCmd)) - RT_OFFSETOF(VBOXVDMAPIPE_CMD_DR, DdiCmd)))
 
-NTSTATUS vboxVdmaProcessBltCmd(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, struct VBOXWDDM_DMA_PRIVATEDATA_BLT *pBlt, struct VBOXVDMAPIPE_FLAGS_DMACMD fBltFlags);
-NTSTATUS vboxVdmaProcessFlipCmd(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, struct VBOXWDDM_DMA_PRIVATEDATA_FLIP *pFlip, struct VBOXVDMAPIPE_FLAGS_DMACMD fFlags);
-NTSTATUS vboxVdmaProcessClrFillCmd(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, struct VBOXWDDM_DMA_PRIVATEDATA_CLRFILL *pCF, struct VBOXVDMAPIPE_FLAGS_DMACMD fFlags);
+NTSTATUS vboxVdmaProcessBltCmd(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, struct VBOXWDDM_DMA_PRIVATEDATA_BLT *pBlt);
+NTSTATUS vboxVdmaProcessFlipCmd(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, struct VBOXWDDM_DMA_PRIVATEDATA_FLIP *pFlip);
+NTSTATUS vboxVdmaProcessClrFillCmd(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, struct VBOXWDDM_DMA_PRIVATEDATA_CLRFILL *pCF);
 
 NTSTATUS vboxVdmaTexPresentSetAlloc(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData);
 
