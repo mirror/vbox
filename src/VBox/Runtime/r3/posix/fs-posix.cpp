@@ -216,6 +216,8 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
                                 *penmType = RTFSTYPE_JFS;
                             else if (!strcmp("xfs", mntEnt.mnt_type))
                                 *penmType = RTFSTYPE_XFS;
+                            else if (!strcmp("btrfs", mntEnt.mnt_type))
+                                *penmType = RTFSTYPE_BTRFS;
                             else if (   !strcmp("vfat", mntEnt.mnt_type)
                                      || !strcmp("msdos", mntEnt.mnt_type))
                                 *penmType = RTFSTYPE_FAT;
