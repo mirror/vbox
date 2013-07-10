@@ -1123,61 +1123,76 @@ static NTSTATUS vboxVdmaProcessVRegCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT 
             pSrcRect, pDstRects);
 }
 
-NTSTATUS vboxVdmaProcessBltCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, VBOXWDDM_DMA_PRIVATEDATA_BLT *pBlt, VBOXVDMAPIPE_FLAGS_DMACMD fBltFlags)
+static void vboxVdmaBltDirtyRectsUpdate(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_SOURCE *pSource, uint32_t cRects, const RECT *paRects)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    if (fBltFlags.fRealOp)
+    if (!cRects)
     {
-        PVBOXWDDM_ALLOCATION pDstAlloc = pBlt->Blt.DstAlloc.pAlloc;
-        PVBOXWDDM_ALLOCATION pSrcAlloc = pBlt->Blt.SrcAlloc.pAlloc;
-
-        vboxVdmaGgDmaBlt(pDevExt, &pBlt->Blt);
-
-        if (VBOXWDDM_IS_FB_ALLOCATION(pDevExt, pDstAlloc)
-                        && pDstAlloc->bVisible)
-        {
-            VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pDstAlloc->AllocData.SurfDesc.VidPnSourceId];
-            Assert(pDstAlloc->AllocData.SurfDesc.VidPnSourceId < VBOX_VIDEO_MAX_SCREENS);
-            Assert(pSource->pPrimaryAllocation == pDstAlloc);
-
-            RECT UpdateRect;
-            UpdateRect = pBlt->Blt.DstRects.UpdateRects.aRects[0];
-            for (UINT i = 1; i < pBlt->Blt.DstRects.UpdateRects.cRects; ++i)
-            {
-                vboxWddmRectUnite(&UpdateRect, &pBlt->Blt.DstRects.UpdateRects.aRects[i]);
-            }
-
-            uint32_t cUnlockedVBVADisabled = ASMAtomicReadU32(&pDevExt->cUnlockedVBVADisabled);
-            if (!cUnlockedVBVADisabled)
-            {
-                VBOXVBVA_OP(ReportDirtyRect, pDevExt, pSource, &UpdateRect);
-            }
-            else
-            {
-                VBOXVBVA_OP_WITHLOCK(ReportDirtyRect, pDevExt, pSource, &UpdateRect);
-            }
-        }
+        WARN(("vboxVdmaBltDirtyRectsUpdate: no rects specified"));
+        return;
     }
 
-    if (fBltFlags.fVisibleRegions)
+    RECT rect;
+    rect = paRects[0];
+    for (UINT i = 1; i < cRects; ++i)
     {
-        Status = vboxVdmaProcessVRegCmd(pDevExt, pContext, &pBlt->Blt.SrcAlloc, &pBlt->Blt.DstAlloc, &pBlt->Blt.SrcRect, &pBlt->Blt.DstRects);
-        if (!NT_SUCCESS(Status))
-            WARN(("vboxVdmaProcessVRegCmd failed Status 0x%x", Status));
+        vboxWddmRectUnited(&rect, &rect, &paRects[i]);
+    }
+
+    uint32_t cUnlockedVBVADisabled = ASMAtomicReadU32(&pDevExt->cUnlockedVBVADisabled);
+    if (!cUnlockedVBVADisabled)
+    {
+        VBOXVBVA_OP(ReportDirtyRect, pDevExt, pSource, &rect);
+    }
+    else
+    {
+        VBOXVBVA_OP_WITHLOCK_ATDPC(ReportDirtyRect, pDevExt, pSource, &rect);
+    }
+}
+
+NTSTATUS vboxVdmaProcessBltCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, VBOXWDDM_DMA_PRIVATEDATA_BLT *pBlt)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXWDDM_ALLOCATION pDstAlloc = pBlt->Blt.DstAlloc.pAlloc;
+    PVBOXWDDM_ALLOCATION pSrcAlloc = pBlt->Blt.SrcAlloc.pAlloc;
+    BOOLEAN fRenderFromSharedDisabled = pDevExt->fRenderToShadowDisabled;
+    BOOLEAN fVRAMUpdated = FALSE;
+
+    if (!pDstAlloc->AllocData.hostID && !pSrcAlloc->AllocData.hostID)
+    {
+        /* the allocations contain a real data in VRAM, do blitting */
+        vboxVdmaGgDmaBlt(pDevExt, &pBlt->Blt);
+        fVRAMUpdated = TRUE;
+    }
+
+    if (VBOXWDDM_IS_REAL_FB_ALLOCATION(pDevExt, pDstAlloc)
+            && pDstAlloc->bVisible)
+    {
+        VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pDstAlloc->AllocData.SurfDesc.VidPnSourceId];
+        Assert(pDstAlloc->AllocData.SurfDesc.VidPnSourceId < VBOX_VIDEO_MAX_SCREENS);
+        Assert(pSource->pPrimaryAllocation == pDstAlloc);
+
+
+        if (fVRAMUpdated)
+            vboxVdmaBltDirtyRectsUpdate(pDevExt, pSource, pBlt->Blt.DstRects.UpdateRects.cRects, pBlt->Blt.DstRects.UpdateRects.aRects);
+
+        if (pSrcAlloc->AllocData.hostID || pSource->fHas3DVrs)
+        {
+            Status = vboxVdmaProcessVRegCmd(pDevExt, pContext, &pBlt->Blt.SrcAlloc, &pBlt->Blt.DstAlloc, &pBlt->Blt.SrcRect, &pBlt->Blt.DstRects);
+            if (!NT_SUCCESS(Status))
+                WARN(("vboxVdmaProcessVRegCmd failed Status 0x%x", Status));
+        }
     }
 
     return Status;
 }
 
-NTSTATUS vboxVdmaProcessFlipCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, VBOXWDDM_DMA_PRIVATEDATA_FLIP *pFlip, VBOXVDMAPIPE_FLAGS_DMACMD fFlags)
+NTSTATUS vboxVdmaProcessFlipCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, VBOXWDDM_DMA_PRIVATEDATA_FLIP *pFlip)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_ALLOCATION pAlloc = pFlip->Flip.Alloc.pAlloc;
     VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pAlloc->AllocData.SurfDesc.VidPnSourceId];
     vboxWddmAssignPrimary(pDevExt, pSource, pAlloc, pAlloc->AllocData.SurfDesc.VidPnSourceId);
-    Assert(!fFlags.fRealOp);
-    if (fFlags.fVisibleRegions)
+    if (pAlloc->AllocData.hostID)
     {
         RECT SrcRect;
         VBOXVDMAPIPE_RECTS Rects;
@@ -1202,12 +1217,12 @@ NTSTATUS vboxVdmaProcessFlipCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pConte
     return Status;
 }
 
-NTSTATUS vboxVdmaProcessClrFillCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, VBOXWDDM_DMA_PRIVATEDATA_CLRFILL *pCF, VBOXVDMAPIPE_FLAGS_DMACMD fFlags)
+NTSTATUS vboxVdmaProcessClrFillCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, VBOXWDDM_DMA_PRIVATEDATA_CLRFILL *pCF)
 {
     NTSTATUS Status = STATUS_SUCCESS;
-    Assert(!fFlags.fVisibleRegions);
+    PVBOXWDDM_ALLOCATION pAlloc = pCF->ClrFill.Alloc.pAlloc;
 
-    if (fFlags.fRealOp)
+    if (!pAlloc->AllocData.hostID)
     {
         Status = vboxVdmaGgDmaColorFill(pDevExt, &pCF->ClrFill);
         if (!NT_SUCCESS(Status))

@@ -193,20 +193,25 @@ DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmAquirePrimary(PVBOXMP_DEVEXT pDevExt, P
 
 #define VBOXWDDMENTRY_2_SWAPCHAIN(_pE) ((PVBOXWDDM_SWAPCHAIN)((uint8_t*)(_pE) - RT_OFFSETOF(VBOXWDDM_SWAPCHAIN, DevExtListEntry)))
 
+#ifdef VBOX_WDDM_WIN8
+# define VBOXWDDM_IS_DISPLAYONLY() (g_VBoxDisplayOnly)
+#else
+# define VBOXWDDM_IS_DISPLAYONLY() (FALSE)
+#endif
+
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
-# ifdef VBOX_WDDM_WIN8
-#  define VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, _pAlloc) ( (_pAlloc)->bAssigned \
+
+# define VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, _pAlloc) ( (_pAlloc)->bAssigned \
         && (  (_pAlloc)->AllocData.hostID \
            || (_pAlloc)->enmType == \
-               ((g_VBoxDisplayOnly || (_pDevExt)->fRenderToShadowDisabled) ? VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE : VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE) \
+               ((VBOXWDDM_IS_DISPLAYONLY() || (_pDevExt)->fRenderToShadowDisabled) ? VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE : VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE) \
                ))
-# else
-#  define VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, _pAlloc) ( (_pAlloc)->bAssigned \
+
+# define VBOXWDDM_IS_REAL_FB_ALLOCATION(_pDevExt, _pAlloc) ( (_pAlloc)->bAssigned \
         && (  (_pAlloc)->AllocData.hostID \
-           || (_pAlloc)->enmType == \
-               (((_pDevExt)->fRenderToShadowDisabled) ? VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE : VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE) \
+           || (_pAlloc)->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE \
                ))
-# endif
+
 # define VBOXWDDM_FB_ALLOCATION(_pDevExt, _pSrc) ( ((_pSrc)->pPrimaryAllocation && VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, (_pSrc)->pPrimaryAllocation)) ? \
                 (_pSrc)->pPrimaryAllocation : ( \
                         ((_pSrc)->pShadowAllocation && VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, (_pSrc)->pShadowAllocation)) ? \
