@@ -26,6 +26,9 @@
 # include "UIFrameBuffer.h"
 # include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
+# ifdef Q_WS_X11
+#  include "UIMachineWindow.h"
+# endif /* Q_WS_X11 */
 
 /* Other VBox includes: */
 # include <VBox/VBoxVideo3D.h>
