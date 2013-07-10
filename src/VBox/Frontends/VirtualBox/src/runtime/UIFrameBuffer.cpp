@@ -353,6 +353,28 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, BYTE *pReserved)
     }
 }
 
+void UIFrameBuffer::applyVisibleRegion(const QRegion &region)
+{
+    /* Make sure async visible-region has changed: */
+    if (m_asyncVisibleRegion == region)
+        return;
+
+    /* We are accounting async visible-regions one-by-one
+     * to keep corresponding viewport area always updated! */
+    if (!m_asyncVisibleRegion.isEmpty())
+        m_pMachineView->viewport()->update(m_asyncVisibleRegion - region);
+
+    /* Remember last visible region: */
+    m_asyncVisibleRegion = region;
+
+#ifdef Q_WS_X11
+    /* Qt 4.8.3 under X11 has Qt::WA_TranslucentBackground window attribute broken,
+     * so we are also have to use async visible-region to apply to [Q]Widget [set]Mask
+     * which internally wraps old one known (approved) Xshape extension: */
+    m_pMachineView->machineWindow()->setMask(m_asyncVisibleRegion);
+#endif /* Q_WS_X11 */
+}
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
 void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
 {

@@ -189,7 +189,7 @@ public:
     virtual void moveEvent(QMoveEvent* /*pEvent*/) {}
     virtual void resizeEvent(UIResizeEvent *pEvent) = 0;
     virtual void paintEvent(QPaintEvent *pEvent) = 0;
-    virtual void applyVisibleRegion(const QRegion &region) = 0;
+    virtual void applyVisibleRegion(const QRegion &region);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* this method is called from the GUI thread
