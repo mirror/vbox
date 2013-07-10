@@ -1936,6 +1936,8 @@
 #define VERR_SVM_UNEXPECTED_PATCH_TYPE              (-4058)
 /** Unable to start VM execution due to an invalid guest state. */
 #define VERR_SVM_INVALID_GUEST_STATE                (-4059)
+/** Unknown or unrecognized SVM exit.  */
+#define VERR_SVM_UNKNOWN_EXIT                       (-4060)
 /** @} */
 
 

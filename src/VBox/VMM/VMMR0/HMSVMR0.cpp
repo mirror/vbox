@@ -3035,8 +3035,8 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
                 default:
                 {
-                    AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit code %#x\n", u32ExitCode));
-                    return VERR_SVM_UNEXPECTED_EXIT;
+                    AssertMsgFailed(("hmR0SvmHandleExit: Unknown exit code %#x\n", u32ExitCode));
+                    return VERR_SVM_UNKNOWN_EXIT;
                 }
             }
         }
