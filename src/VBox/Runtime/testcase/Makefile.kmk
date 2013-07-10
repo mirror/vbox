@@ -79,6 +79,7 @@ PROGRAMS += \
 	tstLdr \
 	tstLdrLoad \
 	tstRTList \
+	tstRTLocalIpc \
 	tstRTLockValidator \
 	tstLog \
 	tstMemAutoPtr \
@@ -398,6 +399,9 @@ tstLdrLoad_SOURCES = tstLdrLoad.cpp
 
 tstRTList_TEMPLATE = VBOXR3TSTEXE
 tstRTList_SOURCES = tstRTList.cpp
+
+tstRTLocalIpc_TEMPLATE = VBOXR3TSTEXE
+tstRTLocalIpc_SOURCES = tstRTLocalIpc.cpp
 
 tstRTLockValidator_TEMPLATE = VBOXR3TSTEXE
 tstRTLockValidator_SOURCES = tstRTLockValidator.cpp

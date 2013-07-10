@@ -177,6 +177,70 @@ static int rtLocalIpcWinCreateSession(PRTLOCALIPCSESSION phClientSession, HANDLE
 
 
 /**
+ * Builds and allocates the security descriptor required for securing the local pipe.
+ *
+ * @return  IPRT status code.
+ * @param   ppDesc              Where to store the allocated security descriptor on success.
+ *                              Must be free'd using LocalFree().
+ */
+static int rtLocalIpcServerWinAllocSecurityDescriptior(PSECURITY_DESCRIPTOR *ppDesc)
+{
+    /** @todo Stuff this into RTInitOnce? Later. */
+    PFNCONVERTSTRINGSECURITYDESCRIPTORTOSECURITYDESCRIPTOR
+        pfnConvertStringSecurityDescriptorToSecurityDescriptor = NULL;
+
+    RTLDRMOD hAdvApi32 = NIL_RTLDRMOD;
+    int rc = RTLdrLoadSystem("Advapi32.dll", true /*fNoUnload*/, &hAdvApi32);
+    if (RT_SUCCESS(rc))
+        rc = RTLdrGetSymbol(hAdvApi32, "ConvertStringSecurityDescriptorToSecurityDescriptorW",
+                            (void**)&pfnConvertStringSecurityDescriptorToSecurityDescriptor);
+
+    PSECURITY_DESCRIPTOR pSecDesc = NULL;
+    if (RT_SUCCESS(rc))
+    {
+        AssertPtr(pfnConvertStringSecurityDescriptorToSecurityDescriptor);
+
+        /*
+         * We'll create a security descriptor from a SDDL that denies
+         * access to network clients (this is local IPC after all), it
+         * makes some further restrictions to prevent non-authenticated
+         * users from screwing around.
+         */
+        PRTUTF16 pwszSDDL;
+        rc = RTStrToUtf16(RTLOCALIPC_WIN_SDDL, &pwszSDDL);
+        if (RT_SUCCESS(rc))
+        {
+            if (!pfnConvertStringSecurityDescriptorToSecurityDescriptor((LPCTSTR)pwszSDDL,
+                                                                        SDDL_REVISION_1,
+                                                                        &pSecDesc,
+                                                                        NULL))
+            {
+                rc = RTErrConvertFromWin32(GetLastError());
+            }
+
+            RTUtf16Free(pwszSDDL);
+        }
+    }
+    else
+    {
+        /* Windows OSes < W2K SP2 not supported for now, bail out. */
+        /** @todo Implement me! */
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    if (hAdvApi32 != NIL_RTLDRMOD)
+         RTLdrClose(hAdvApi32);
+
+    if (RT_SUCCESS(rc))
+    {
+        AssertPtr(pSecDesc);
+        *ppDesc = pSecDesc;
+    }
+
+    return rc;
+}
+
+/**
  * Creates a named pipe instance.
  *
  * This is used by both RTLocalIpcServerCreate and RTLocalIpcServerListen.
@@ -192,49 +256,12 @@ static int rtLocalIpcServerWinCreatePipeInstance(PHANDLE phNmPipe, const char *p
 {
     *phNmPipe = INVALID_HANDLE_VALUE;
 
-    /** @todo Stuff this into RTInitOnce. Later. */
-    PFNCONVERTSTRINGSECURITYDESCRIPTORTOSECURITYDESCRIPTOR
-        pfnConvertStringSecurityDescriptorToSecurityDescriptor = NULL;
-
-    RTLDRMOD hAdvApi32 = NIL_RTLDRMOD;
-    int rc = RTLdrLoadSystem("Advapi32.lib", true /*fNoUnload*/, &hAdvApi32);
-    if (RT_SUCCESS(rc))
-        rc = RTLdrGetSymbol(hAdvApi32, "ConvertStringSecurityDescriptorToSecurityDescriptor",
-                            (void**)&pfnConvertStringSecurityDescriptorToSecurityDescriptor);
-
-    PSECURITY_DESCRIPTOR pSecDesc = NULL;
-    if (RT_SUCCESS(rc))
-    {
-        AssertPtr(pfnConvertStringSecurityDescriptorToSecurityDescriptor);
-
-        /*
-         * We'll create a security descriptor from a SDDL that denies
-         * access to network clients (this is local IPC after all), it
-         * makes some further restrictions to prevent non-authenticated
-         * users from screwing around.
-         */
-        if (!pfnConvertStringSecurityDescriptorToSecurityDescriptor(RTLOCALIPC_WIN_SDDL,
-                                                                    SDDL_REVISION_1,
-                                                                    &pSecDesc,
-                                                                    NULL))
-        {
-            rc = RTErrConvertFromWin32(GetLastError());
-        }
-    }
-    else
-    {
-        /* Windows OSes < W2K SP2 not supported for now, bail out. */
-        /** @todo Implement me! */
-        rc = VERR_NOT_SUPPORTED;
-    }
-
-    if (hAdvApi32 != NIL_RTLDRMOD)
-         RTLdrClose(hAdvApi32);
-
+    PSECURITY_DESCRIPTOR pSecDesc;
+    int rc = rtLocalIpcServerWinAllocSecurityDescriptior(&pSecDesc);
     if (RT_SUCCESS(rc))
     {
         SECURITY_ATTRIBUTES SecAttrs;
-        SecAttrs.nLength = sizeof(SecAttrs);
+        SecAttrs.nLength = sizeof(SECURITY_ATTRIBUTES);
         SecAttrs.lpSecurityDescriptor = pSecDesc;
         SecAttrs.bInheritHandle = FALSE;
 
@@ -275,8 +302,7 @@ static int rtLocalIpcServerWinCreatePipeInstance(PHANDLE phNmPipe, const char *p
                                          PAGE_SIZE,                     /* nOutBufferSize (advisory) */
                                          PAGE_SIZE,                     /* nInBufferSize (ditto) */
                                          30*1000,                       /* nDefaultTimeOut = 30 sec */
-                                         &SecAttrs);                    /* lpSecurityAttributes */
-
+                                         NULL /** @todo !!! Fix this !!! &SecAttrs */);                    /* lpSecurityAttributes */
         LocalFree(pSecDesc);
         if (hNmPipe != INVALID_HANDLE_VALUE)
         {
@@ -299,8 +325,7 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertReturn(*pszName, VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & ~(RTLOCALIPC_FLAGS_VALID_MASK)), VERR_INVALID_PARAMETER);
-
-    AssertReturn(fFlags & RTLOCALIPC_FLAGS_MULTI_SESSION, VERR_NOT_IMPLEMENTED); /** @todo implement !RTLOCALIPC_FLAGS_MULTI_SESSION */
+    AssertReturn((fFlags & RTLOCALIPC_FLAGS_MULTI_SESSION), VERR_INVALID_PARAMETER); /** @todo Implement !RTLOCALIPC_FLAGS_MULTI_SESSION */
 
     /*
      * Allocate and initialize the instance data.
@@ -447,8 +472,8 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
         }
 
         RTCritSectEnter(&pThis->CritSect);
-        if (    !pThis->fCancelled /* Event signalled but not cancelled? */
-            &&  pThis->u32Magic == RTLOCALIPCSERVER_MAGIC)
+        if (   !pThis->fCancelled /* Event signalled but not cancelled? */
+            && pThis->u32Magic == RTLOCALIPCSERVER_MAGIC)
         {
             /*
              * Still alive, some error or an actual client.
@@ -461,8 +486,8 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
                 || err == ERROR_PIPE_CONNECTED)
             {
                 HANDLE hNmPipe;
-                DWORD err = rtLocalIpcServerWinCreatePipeInstance(&hNmPipe, pThis->szName, false /* fFirst */);
-                if (err == NO_ERROR)
+                rc = rtLocalIpcServerWinCreatePipeInstance(&hNmPipe, pThis->szName, false /* fFirst */);
+                if (RT_SUCCESS(rc))
                 {
                     HANDLE hNmPipeSession = pThis->hNmPipe; /* consumed */
                     pThis->hNmPipe = hNmPipe;
@@ -474,7 +499,6 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
                      * We failed to create a new instance for the server, disconnect
                      * the client and fail. Don't try service the client here.
                      */
-                    rc = RTErrConvertFromWin32(err);
                     fRc = DisconnectNamedPipe(pThis->hNmPipe);
                     AssertMsg(fRc, ("%d\n", GetLastError()));
                 }
@@ -549,7 +573,7 @@ RTDECL(int) RTLocalIpcServerCancel(RTLOCALIPCSERVER hServer)
 static int rtLocalIpcWinCreateSession(PRTLOCALIPCSESSION phClientSession, HANDLE hNmPipeSession)
 {
     AssertPtrReturn(phClientSession, VERR_INVALID_POINTER);
-    AssertReturn(hNmPipeSession != INVALID_HANDLE_VALUE, VERR_INVALID_PARAMETER);
+    AssertReturn(hNmPipeSession != INVALID_HANDLE_VALUE, VERR_INVALID_HANDLE);
 
     int rc;
 
@@ -597,6 +621,7 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
 {
     AssertPtrReturn(phSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertReturn(*pszName, VERR_INVALID_PARAMETER);
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER); /* Flags currently unused, must be 0. */
 
     PRTLOCALIPCSESSIONINT pThis = (PRTLOCALIPCSESSIONINT)RTMemAlloc(sizeof(*pThis));
@@ -625,22 +650,35 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
             char *pszPipe;
             if (RTStrAPrintf(&pszPipe, "%s%s", RTLOCALIPC_WIN_PREFIX, pszName))
             {
-                HANDLE hPipe = CreateFile(pszPipe,                  /* pipe name */
-                                          GENERIC_READ |            /* read and write access */
-                                          GENERIC_WRITE,
-                                          0,                        /* no sharing */
-                                          NULL,                     /* default security attributes */
-                                          OPEN_EXISTING,            /* opens existing pipe */
-                                          FILE_FLAG_OVERLAPPED,     /* default attributes */
-                                          NULL);                    /* no template file */
-                RTStrFree(pszPipe);
-                if (hPipe != INVALID_HANDLE_VALUE)
+                PSECURITY_DESCRIPTOR pSecDesc;
+                rc = rtLocalIpcServerWinAllocSecurityDescriptior(&pSecDesc);
+                if (RT_SUCCESS(rc))
                 {
-                    pThis->hNmPipe = hPipe;
-                    return VINF_SUCCESS;
+                    SECURITY_ATTRIBUTES SecAttrs;
+                    SecAttrs.nLength = sizeof(SECURITY_ATTRIBUTES);
+                    SecAttrs.lpSecurityDescriptor = pSecDesc;
+                    SecAttrs.bInheritHandle = FALSE;
+
+                    HANDLE hPipe = CreateFile(pszPipe,                  /* pipe name */
+                                              GENERIC_READ |            /* read and write access */
+                                              GENERIC_WRITE,
+                                              0,                        /* no sharing */
+                                              &SecAttrs,                /* default security attributes */
+                                              OPEN_EXISTING,            /* opens existing pipe */
+                                              FILE_FLAG_OVERLAPPED,     /* default attributes */
+                                              NULL);                    /* no template file */
+                    LocalFree(pSecDesc);
+                    RTStrFree(pszPipe);
+
+                    if (hPipe != INVALID_HANDLE_VALUE)
+                    {
+                        pThis->hNmPipe = hPipe;
+                        *phSession = pThis;
+                        return VINF_SUCCESS;
+                    }
+                    else
+                        rc = RTErrConvertFromWin32(GetLastError());
                 }
-                else
-                    rc = RTErrConvertFromWin32(GetLastError());
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -689,9 +727,9 @@ RTDECL(int) RTLocalIpcSessionClose(RTLOCALIPCSESSION hSession)
      */
     if (hSession == NIL_RTLOCALIPCSESSION)
         return VINF_SUCCESS;
-    PRTLOCALIPCSESSIONINT pThis = (RTLOCALIPCSESSION)hSession;
+    PRTLOCALIPCSESSIONINT pThis = (PRTLOCALIPCSESSIONINT)hSession;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic != RTLOCALIPCSESSION_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, VERR_INVALID_MAGIC);
 
     /*
      * Cancel any thread currently busy using the session,
@@ -718,7 +756,7 @@ RTDECL(int) RTLocalIpcSessionClose(RTLOCALIPCSESSION hSession)
 
 RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
 {
-    PRTLOCALIPCSESSIONINT pThis = hSession;
+    PRTLOCALIPCSESSIONINT pThis = (PRTLOCALIPCSESSIONINT)hSession;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrReturn(pvBuffer, VERR_INVALID_POINTER);
@@ -866,7 +904,7 @@ static int rtLocalIpcSessionWriteCheckCompletion(PRTLOCALIPCSESSIONINT pThis)
 
 RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuffer, size_t cbBuffer)
 {
-    PRTLOCALIPCSESSIONINT pThis = hSession;
+    PRTLOCALIPCSESSIONINT pThis = (PRTLOCALIPCSESSIONINT)hSession;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrReturn(pvBuffer, VERR_INVALID_POINTER);
@@ -963,7 +1001,7 @@ RTDECL(int) RTLocalIpcSessionFlush(RTLOCALIPCSESSION hSession)
 
 RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cMillies)
 {
-    PRTLOCALIPCSESSIONINT pThis = hSession;
+    PRTLOCALIPCSESSIONINT pThis = (PRTLOCALIPCSESSIONINT)hSession;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, VERR_INVALID_HANDLE);
 
@@ -974,6 +1012,7 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
         if (pThis->cRefs == 0)
         {
             pThis->cRefs++;
+            pThis->fCancelled = false; /* Reset canellation status. */
             RTCritSectLeave(&pThis->CritSect);
 
             DWORD dwTimeout = cMillies == RT_INDEFINITE_WAIT
@@ -991,6 +1030,8 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
             }
             else if (dwRc == WAIT_FAILED)
                 rc = RTErrConvertFromWin32(GetLastError());
+            else if (pThis->fCancelled)
+                rc = VERR_CANCELLED;
 
             pThis->cRefs--;
         }
@@ -1005,7 +1046,25 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
 
 RTDECL(int) RTLocalIpcSessionCancel(RTLOCALIPCSESSION hSession)
 {
-    return VINF_SUCCESS;
+    PRTLOCALIPCSESSIONINT pThis = (PRTLOCALIPCSESSIONINT)hSession;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, VERR_INVALID_HANDLE);
+
+    /*
+     * Enter the critical section, then set the cancellation flag
+     * and signal the event (to wake up anyone in/at WaitForSingleObject).
+     */
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        ASMAtomicUoWriteBool(&pThis->fCancelled, true);
+        BOOL fRc = SetEvent(pThis->hEvent);
+        AssertMsg(fRc, ("%d\n", GetLastError())); NOREF(fRc);
+
+        RTCritSectLeave(&pThis->CritSect);
+    }
+
+    return rc;
 }
 
 
