@@ -27,6 +27,8 @@ typedef struct VBOXMP_CRCTLCON
     uint32_t cCrCtlRefs;
 } VBOXMP_CRCTLCON, *PVBOXMP_CRCTLCON;
 
+void VBoxMpCrCtlConInit();
+
 bool VBoxMpCrCtlConIs3DSupported();
 
 int VBoxMpCrCtlConConnect(PVBOXMP_CRCTLCON pCrCtlCon,
