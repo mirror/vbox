@@ -529,15 +529,6 @@ void PACKSPU_APIENTRY packspu_Disable( GLenum cap )
 {
     if (cap!=GL_LIGHT_MODEL_TWO_SIDE)
     {
-        if (cap == GL_TEXTURE_2D)
-        {
-            if (g_VDbgBreakEnableDisable & CRDBG_BREAK_DISABLE_TEXTURE_2D) { RT_BREAKPOINT();}
-        }
-        else if (cap == GL_TEXTURE_RECTANGLE_NV)
-        {
-            if (g_VDbgBreakEnableDisable & CRDBG_BREAK_DISABLE_TEXTURE_RECTANGLE) { RT_BREAKPOINT();}
-        }
-
         crStateDisable(cap);
 
         if (pack_spu.swap)
