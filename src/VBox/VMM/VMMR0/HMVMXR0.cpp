@@ -7363,6 +7363,8 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
 
     if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
     {
+        /** @todo We should inject the NMI to the host by calling the NMI
+         *  interrupt handler! See Intel spec. 27.5.5 "Updating Non-Register State". */
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
         return VINF_EM_RAW_INTERRUPT;
     }
