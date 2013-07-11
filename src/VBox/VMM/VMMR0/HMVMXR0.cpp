@@ -7477,6 +7477,7 @@ HMVMX_EXIT_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     AssertMsgFailed(("Unexpected NMI-window exit.\n"));
+    pVCpu->hm.s.u32HMError = VMX_EXIT_NMI_WINDOW;
     return VERR_VMX_UNEXPECTED_EXIT_CODE;
 }
 
@@ -7539,6 +7540,7 @@ HMVMX_EXIT_DECL hmR0VmxExitGetsec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         return VINF_EM_RAW_EMULATE_INSTR;
 
     AssertMsgFailed(("hmR0VmxExitGetsec: unexpected VM-exit when CR4.SMXE is 0.\n"));
+    pVCpu->hm.s.u32HMError = VMX_EXIT_GETSEC;
     return VERR_VMX_UNEXPECTED_EXIT_CODE;
 }
 
@@ -7727,10 +7729,11 @@ HMVMX_EXIT_DECL hmR0VmxExitRsm(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
     /*
      * Execution of RSM outside of SMM mode causes #UD regardless of VMX root or VMX non-root mode. In theory, we should never
      * get this VM-exit. This can happen only if dual-monitor treatment of SMI and VMX is enabled, which can (only?) be done by
-     * executing VMCALL in VMX root operation. If we get here something funny is going on.
+     * executing VMCALL in VMX root operation. If we get here, something funny is going on.
      * See Intel spec. "33.15.5 Enabling the Dual-Monitor Treatment".
      */
     AssertMsgFailed(("Unexpected RSM VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
+    pVCpu->hm.s.u32HMError = VMX_EXIT_RSM;
     return VERR_VMX_UNEXPECTED_EXIT_CODE;
 }
 
@@ -7742,10 +7745,12 @@ HMVMX_EXIT_DECL hmR0VmxExitSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
 {
     /*
      * This can only happen if we support dual-monitor treatment of SMI, which can be activated by executing VMCALL in VMX
-     * root operation. If we get there there is something funny going on.
+     * root operation. Only an STM (SMM transfer monitor) would get this exit when we (the executive monitor) execute a VMCALL
+     * in VMX root mode or receive an SMI. If we get here, something funny is going on.
      * See Intel spec. "33.15.6 Activating the Dual-Monitor Treatment" and Intel spec. 25.3 "Other Causes of VM-Exits"
      */
     AssertMsgFailed(("Unexpected SMI VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
+    pVCpu->hm.s.u32HMError = VMX_EXIT_SMI;
     return VERR_VMX_UNEXPECTED_EXIT_CODE;
 }
 
@@ -7757,6 +7762,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 {
     /* Same treatment as VMX_EXIT_SMI. See comment in hmR0VmxExitSmi(). */
     AssertMsgFailed(("Unexpected IO SMI VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
+    pVCpu->hm.s.u32HMError = VMX_EXIT_IO_SMI;
     return VERR_VMX_UNEXPECTED_EXIT_CODE;
 }
 
@@ -7772,6 +7778,7 @@ HMVMX_EXIT_DECL hmR0VmxExitSipi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT 
      * See Intel spec. 25.3 "Other Causes of VM-exits".
      */
     AssertMsgFailed(("Unexpected SIPI VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
+    pVCpu->hm.s.u32HMError = VMX_EXIT_SIPI;
     return VERR_VMX_UNEXPECTED_EXIT_CODE;
 }
 
