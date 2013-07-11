@@ -639,7 +639,6 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         /* Set up unconditional intercepts and conditions. */
         pVmcb->ctrl.u32InterceptCtrl1 =   SVM_CTRL1_INTERCEPT_INTR          /* External interrupt causes a VM-exit. */
                                         | SVM_CTRL1_INTERCEPT_NMI           /* Non-Maskable Interrupts causes a VM-exit. */
-                                        | SVM_CTRL1_INTERCEPT_SMI           /* System Management Interrupt cause a VM-exit. */
                                         | SVM_CTRL1_INTERCEPT_INIT          /* INIT signal causes a VM-exit. */
                                         | SVM_CTRL1_INTERCEPT_RDPMC         /* RDPMC causes a VM-exit. */
                                         | SVM_CTRL1_INTERCEPT_CPUID         /* CPUID causes a VM-exit. */
