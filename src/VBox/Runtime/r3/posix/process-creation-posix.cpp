@@ -563,9 +563,10 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 #endif
     {
 #ifdef RT_OS_SOLARIS
+        int templateFd = -1;
         if (!(fFlags & RTPROC_FLAGS_SAME_CONTRACT))
         {
-            int templateFd = rtSolarisContractPreFork();
+            templateFd = rtSolarisContractPreFork();
             if (templateFd == -1)
                 return VERR_OPEN_FAILED;
         }
