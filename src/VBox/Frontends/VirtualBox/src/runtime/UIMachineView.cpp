@@ -290,6 +290,11 @@ void UIMachineView::sltHandleSetVisibleRegion(QRegion region)
     Q_UNUSED(region);
 }
 
+void UIMachineView::sltNotify3DEvent()
+{
+    machineLogic()->notifyAbout3DEvent();
+}
+
 void UIMachineView::sltDesktopResized()
 {
     setMaxGuestSize();

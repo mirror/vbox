@@ -350,6 +350,12 @@ void UIMachineLogic::powerOff(bool fDiscardingState)
         uisession()->closeRuntimeUI();
 }
 
+void UIMachineLogic::notifyAbout3DEvent()
+{
+    /* Notify listener about 3D event: */
+    emit sigNotify3DEvent();
+}
+
 void UIMachineLogic::sltMachineStateChanged()
 {
     /* Get machine state: */
@@ -538,6 +544,8 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
             &popupCenter(), SLOT(sltShowPopupStack()));
     connect(this, SIGNAL(sigMachineWindowsDestroyed()),
             &popupCenter(), SLOT(sltHidePopupStack()));
+    connect(this, SIGNAL(sigNotify3DEvent()),
+            &popupCenter(), SLOT(sltRaisePopupStack()));
 }
 
 UIMachineLogic::~UIMachineLogic()
@@ -547,6 +555,8 @@ UIMachineLogic::~UIMachineLogic()
                &popupCenter(), SLOT(sltShowPopupStack()));
     disconnect(this, SIGNAL(sigMachineWindowsDestroyed()),
                &popupCenter(), SLOT(sltHidePopupStack()));
+    disconnect(this, SIGNAL(sigNotify3DEvent()),
+               &popupCenter(), SLOT(sltRaisePopupStack()));
 }
 
 void UIMachineLogic::setMachineWindowsCreated(bool fIsWindowsCreated)

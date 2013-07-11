@@ -98,6 +98,7 @@ signals:
                           int iWidth, int iHeight);
     void sigNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
     void sigSetVisibleRegion(QRegion region);
+    void sigNotify3DEvent();
 
 public:
 

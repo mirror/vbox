@@ -346,11 +346,15 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, BYTE *pReserved)
     switch (uType)
     {
         case VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_WINDOW:
+        {
             if (pReserved)
                 return E_INVALIDARG;
 
-            /* @todo: submit asynchronous event to GUI thread */
-            return E_NOTIMPL;
+            /* Notify GUI about 3D event: */
+            emit sigNotify3DEvent();
+
+            return S_OK;
+        }
         default:
             return E_INVALIDARG;
     }
@@ -422,6 +426,9 @@ void UIFrameBuffer::prepareConnections()
     connect(this, SIGNAL(sigSetVisibleRegion(QRegion)),
             m_pMachineView, SLOT(sltHandleSetVisibleRegion(QRegion)),
             Qt::QueuedConnection);
+    connect(this, SIGNAL(sigNotify3DEvent()),
+            m_pMachineView, SLOT(sltNotify3DEvent()),
+            Qt::QueuedConnection);
 }
 
 void UIFrameBuffer::cleanupConnections()
@@ -432,5 +439,7 @@ void UIFrameBuffer::cleanupConnections()
                m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)));
     disconnect(this, SIGNAL(sigSetVisibleRegion(QRegion)),
                m_pMachineView, SLOT(sltHandleSetVisibleRegion(QRegion)));
+    disconnect(this, SIGNAL(sigNotify3DEvent()),
+               m_pMachineView, SLOT(sltNotify3DEvent()));
 }
 

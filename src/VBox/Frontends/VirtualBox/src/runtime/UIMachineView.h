@@ -102,6 +102,9 @@ protected slots:
     /* Handler: Frame-buffer SetVisibleRegion stuff: */
     virtual void sltHandleSetVisibleRegion(QRegion region);
 
+    /* Handler: Frame-buffer Notify3DEvent stuff: */
+    virtual void sltNotify3DEvent();
+
     /* Watch dog for desktop resizes: */
     void sltDesktopResized();
 
