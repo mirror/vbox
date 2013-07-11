@@ -57,6 +57,7 @@ signals:
     /* Notifiers: Machine-window(s) stuff: */
     void sigMachineWindowsCreated();
     void sigMachineWindowsDestroyed();
+    void sigNotify3DEvent();
 
 public:
 
@@ -98,6 +99,9 @@ public:
     void saveState();
     void shutdown();
     void powerOff(bool fDiscardingState);
+
+    /* API: 3D event stuff: */
+    void notifyAbout3DEvent();
 
 protected slots:
 
