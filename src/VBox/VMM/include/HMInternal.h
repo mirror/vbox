@@ -660,7 +660,7 @@ typedef struct HMCPU
             RTCPUID                 idEnteredCpu;
             RTCPUID                 idCurrentCpu;
             uint32_t                padding;
-        } lasterror;
+        } LastError;
 
 #ifdef VBOX_WITH_OLD_VTX_CODE
         /** The last seen guest paging mode (by VT-x). */

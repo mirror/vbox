@@ -465,7 +465,7 @@ static void hmR0VmxUpdateErrorRecord(PVM pVM, PVMCPU pVCpu, int rc)
         || rc == VERR_VMX_UNABLE_TO_START_VM)
     {
         AssertPtrReturnVoid(pVCpu);
-        VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &pVCpu->hm.s.vmx.lasterror.u32InstrError);
+        VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &pVCpu->hm.s.vmx.LastError.u32InstrError);
     }
     pVM->hm.s.lLastError = rc;
 }
@@ -4006,18 +4006,18 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
         case VINF_SUCCESS:                  /* VMLAUNCH/VMRESUME succeeded but VM-entry failed... yeah, true story. */
         case VERR_VMX_UNABLE_TO_START_VM:   /* VMLAUNCH/VMRESUME itself failed. */
         {
-            int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_REASON, &pVCpu->hm.s.vmx.lasterror.u32ExitReason);
-            rc    |= VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &pVCpu->hm.s.vmx.lasterror.u32InstrError);
+            int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_REASON, &pVCpu->hm.s.vmx.LastError.u32ExitReason);
+            rc    |= VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &pVCpu->hm.s.vmx.LastError.u32InstrError);
             rc    |= hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
             AssertRC(rc);
 
 #ifdef VBOX_STRICT
-                Log4(("uExitReason        %#RX32 (VmxTransient %#RX16)\n", pVCpu->hm.s.vmx.lasterror.u32ExitReason,
+                Log4(("uExitReason        %#RX32 (VmxTransient %#RX16)\n", pVCpu->hm.s.vmx.LastError.u32ExitReason,
                      pVmxTransient->uExitReason));
                 Log4(("Exit Qualification %#RX64\n", pVmxTransient->uExitQualification));
-                Log4(("InstrError         %#RX32\n", pVCpu->hm.s.vmx.lasterror.u32InstrError));
-                if (pVCpu->hm.s.vmx.lasterror.u32InstrError <= HMVMX_INSTR_ERROR_MAX)
-                    Log4(("InstrError Desc.  \"%s\"\n", g_apszVmxInstrErrors[pVCpu->hm.s.vmx.lasterror.u32InstrError]));
+                Log4(("InstrError         %#RX32\n", pVCpu->hm.s.vmx.LastError.u32InstrError));
+                if (pVCpu->hm.s.vmx.LastError.u32InstrError <= HMVMX_INSTR_ERROR_MAX)
+                    Log4(("InstrError Desc.  \"%s\"\n", g_apszVmxInstrErrors[pVCpu->hm.s.vmx.LastError.u32InstrError]));
                 else
                     Log4(("InstrError Desc.    Range exceeded %u\n", HMVMX_INSTR_ERROR_MAX));
 
@@ -6002,10 +6002,10 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
     }
     else if (RT_UNLIKELY(rcExit == VERR_VMX_INVALID_VMCS_PTR))
     {
-        VMXGetActivateVMCS(&pVCpu->hm.s.vmx.lasterror.u64VMCSPhys);
-        pVCpu->hm.s.vmx.lasterror.u32VMCSRevision = *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs;
-        pVCpu->hm.s.vmx.lasterror.idEnteredCpu    = pVCpu->hm.s.idEnteredCpu;
-        pVCpu->hm.s.vmx.lasterror.idCurrentCpu    = RTMpCpuId();
+        VMXGetActivateVMCS(&pVCpu->hm.s.vmx.LastError.u64VMCSPhys);
+        pVCpu->hm.s.vmx.LastError.u32VMCSRevision = *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs;
+        pVCpu->hm.s.vmx.LastError.idEnteredCpu    = pVCpu->hm.s.idEnteredCpu;
+        pVCpu->hm.s.vmx.LastError.idCurrentCpu    = RTMpCpuId();
         return;
     }
 
