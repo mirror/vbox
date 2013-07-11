@@ -2925,8 +2925,6 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         case SVM_EXIT_INTR:
         case SVM_EXIT_FERR_FREEZE:
         case SVM_EXIT_NMI:
-        case SVM_EXIT_SMI:
-        case SVM_EXIT_INIT:
             return hmR0SvmExitIntr(pVCpu, pCtx, pSvmTransient);
 
         case SVM_EXIT_MSR:
@@ -2968,6 +2966,18 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
                 case SVM_EXIT_SHUTDOWN:
                     return hmR0SvmExitShutdown(pVCpu, pCtx, pSvmTransient);
+
+                case SVM_EXIT_SMI:
+                case SVM_EXIT_INIT:
+                {
+                    /*
+                     * We don't intercept NMIs. As for INIT signals, it really shouldn't ever happen here. If it ever does,
+                     * we want to know about it so log the exit code and bail.
+                     */
+                    AssertMsgFailed(("hmR0SvmHandleExit: Unexpected exit %#RX32\n", (uint32_t)pSvmTransient->u64ExitCode));
+                    pVCpu->hm.s.u32HMError = (uint32_t)pSvmTransient->u64ExitCode;
+                    return VERR_SVM_UNEXPECTED_EXIT;
+                }
 
                 case SVM_EXIT_INVLPGA:
                 case SVM_EXIT_RSM:
