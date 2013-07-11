@@ -2973,6 +2973,13 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 
             case VERR_VMX_INVALID_VMXON_PTR:
                 break;
+
+            case VERR_SVM_UNKNOWN_EXIT:
+            case VERR_SVM_UNEXPECTED_EXIT:
+            case VERR_SVM_UNEXPECTED_PATCH_TYPE:
+            case VERR_SVM_UNEXPECTED_XCPT_EXIT:
+                LogRel(("HM: CPU%d HM error          %#x\n", i, pVM->aCpus[i].hm.s.u32HMError));
+                break;
         }
     }
 

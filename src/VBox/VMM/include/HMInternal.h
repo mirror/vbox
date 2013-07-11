@@ -543,13 +543,15 @@ typedef struct HMCPU
     volatile uint32_t           cWorldSwitchExits;
     /** HM_CHANGED_* flags. */
     uint32_t                    fContextUseFlags;
-    /** Id of the last cpu we were executing code on (NIL_RTCPUID for the first time) */
+    /** Id of the last cpu we were executing code on (NIL_RTCPUID for the first
+     *  time). */
     RTCPUID                     idLastCpu;
-    /** TLB flush count */
+    /** TLB flush count. */
     uint32_t                    cTlbFlushes;
-    /** Current ASID in use by the VM */
+    /** Current ASID in use by the VM. */
     uint32_t                    uCurrentAsid;
-    uint32_t                    u32Alignment;
+    /** An additional error code used for some gurus. */
+    uint32_t                    u32HMError;
 
     /** Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
     uint64_t                    u64HostTscAux;
