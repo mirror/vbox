@@ -461,3 +461,18 @@ void UIPopupCenter::remindAboutGuestAdditionsAreNotActive(QWidget *pParent)
           true);
 }
 
+void UIPopupCenter::remindAboutWrongColorDepth(QWidget *pParent, ulong uRealBPP, ulong uWantedBPP)
+{
+    alert(pParent, "remindAboutWrongColorDepth",
+          QApplication::translate("UIMessageCenter", "<p>The virtual machine window is optimized to work in <b>%1&nbsp;bit</b> color mode "
+                                                     "but the virtual display is currently set to <b>%2&nbsp;bit</b>.</p>"
+                                                     "<p>Please open the display properties dialog of the guest OS and select a <b>%3&nbsp;bit</b> color mode, "
+                                                     "if it is available, for best possible performance of the virtual video subsystem.</p>"
+                                                     "<p><b>Note</b>. Some operating systems, like OS/2, may actually work in 32&nbsp;bit mode "
+                                                     "but report it as 24&nbsp;bit (16 million colors). You may try to select a different color "
+                                                     "mode to see if this message disappears or you can simply disable the message now "
+                                                     "if you are sure the required color mode (%4&nbsp;bit) is not available in the guest OS.</p>")
+                                                     .arg(uWantedBPP).arg(uRealBPP).arg(uWantedBPP).arg(uWantedBPP),
+          true);
+}
+
