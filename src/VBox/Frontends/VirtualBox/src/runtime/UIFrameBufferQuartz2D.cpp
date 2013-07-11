@@ -27,10 +27,12 @@
 
 /* GUI includes: */
 # include "UIFrameBufferQuartz2D.h"
-# include "UIMachineView.h"
-# include "UIMachineLogic.h"
 # include "VBoxUtils.h"
+# include "UIPopupCenter.h"
 # include "UISession.h"
+# include "UIMachineLogic.h"
+# include "UIMachineWindow.h"
+# include "UIMachineView.h"
 
 /* COM includes: */
 # include "COMEnums.h"
@@ -207,8 +209,9 @@ void UIFrameBufferQuartz2D::resizeEvent(UIResizeEvent *aEvent)
     setImageRef(m_image);
 #endif
 
-//    if (remind)
-//        msgCenter().remindAboutWrongColorDepth(aEvent->bitsPerPixel(), 32);
+    if (remind)
+        popupCenter().remindAboutWrongColorDepth(m_pMachineView->machineWindow(),
+                                                 aEvent->bitsPerPixel(), 32);
 }
 
 void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
