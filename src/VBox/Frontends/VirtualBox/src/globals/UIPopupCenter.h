@@ -100,6 +100,7 @@ public:
     void remindAboutMouseIntegration(QWidget *pParent, bool fSupportsAbsolute);
     void remindAboutPausedVMInput(QWidget *pParent);
     void remindAboutGuestAdditionsAreNotActive(QWidget *pParent);
+    void remindAboutWrongColorDepth(QWidget *pParent, ulong uRealBPP, ulong uWantedBPP);
 
 private slots:
 
