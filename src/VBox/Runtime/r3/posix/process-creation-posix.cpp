@@ -563,15 +563,19 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 #endif
     {
 #ifdef RT_OS_SOLARIS
-        int templateFd = rtSolarisContractPreFork();
-        if (templateFd == -1)
-            return VERR_OPEN_FAILED;
+        if (!(fFlags & RTPROC_FLAGS_SAME_CONTRACT))
+        {
+            int templateFd = rtSolarisContractPreFork();
+            if (templateFd == -1)
+                return VERR_OPEN_FAILED;
+        }
 #endif /* RT_OS_SOLARIS */
         pid = fork();
         if (!pid)
         {
 #ifdef RT_OS_SOLARIS
-            rtSolarisContractPostForkChild(templateFd);
+            if (!(fFlags & RTPROC_FLAGS_SAME_CONTRACT))
+                rtSolarisContractPostForkChild(templateFd);
 #endif /* RT_OS_SOLARIS */
             if (!(fFlags & RTPROC_FLAGS_DETACHED))
                 setpgid(0, 0); /* see comment above */
@@ -658,7 +662,8 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                 exit(127);
         }
 #ifdef RT_OS_SOLARIS
-        rtSolarisContractPostForkParent(templateFd, pid);
+        if (!(fFlags & RTPROC_FLAGS_SAME_CONTRACT))
+            rtSolarisContractPostForkParent(templateFd, pid);
 #endif /* RT_OS_SOLARIS */
         if (pid > 0)
         {
