@@ -325,7 +325,7 @@ void UIMachineLogic::shutdown()
     /* Warn the user about ACPI is not available if so: */
     CConsole console = session().GetConsole();
     if (!console.GetGuestEnteredACPIMode())
-        return msgCenter().cannotSendACPIToMachine();
+        return popupCenter().cannotSendACPIToMachine(activeMachineWindow());
 
     /* Shutdown: */
     uisession()->shutdown();
