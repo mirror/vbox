@@ -170,7 +170,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc
 
 
 /**
- * Updates error from VMCS to HMCPU's lasterror record.
+ * Updates error from VMCS to HMCPU's LastError record.
  *
  * @param    pVM            Pointer to the VM.
  * @param    pVCpu          Pointer to the VMCPU.
@@ -184,7 +184,7 @@ static void hmR0VmxCheckError(PVM pVM, PVMCPU pVCpu, int rc)
         RTCCUINTREG instrError;
 
         VMXReadVmcs(VMX_VMCS32_RO_VM_INSTR_ERROR, &instrError);
-        pVCpu->hm.s.vmx.lasterror.u32InstrError = instrError;
+        pVCpu->hm.s.vmx.LastError.u32InstrError = instrError;
     }
     pVM->hm.s.lLastError = rc;
 }
@@ -5032,10 +5032,10 @@ end:
     else if (rc == VERR_VMX_INVALID_VMCS_PTR)
     {
         /* Try to extract more information about what might have gone wrong here. */
-        VMXGetActivateVMCS(&pVCpu->hm.s.vmx.lasterror.u64VMCSPhys);
-        pVCpu->hm.s.vmx.lasterror.u32VMCSRevision = *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs;
-        pVCpu->hm.s.vmx.lasterror.idEnteredCpu    = pVCpu->hm.s.idEnteredCpu;
-        pVCpu->hm.s.vmx.lasterror.idCurrentCpu    = RTMpCpuId();
+        VMXGetActivateVMCS(&pVCpu->hm.s.vmx.LastError.u64VMCSPhys);
+        pVCpu->hm.s.vmx.LastError.u32VMCSRevision = *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs;
+        pVCpu->hm.s.vmx.LastError.idEnteredCpu    = pVCpu->hm.s.idEnteredCpu;
+        pVCpu->hm.s.vmx.LastError.idCurrentCpu    = RTMpCpuId();
     }
 
     /* Just set the correct state here instead of trying to catch every goto above. */
@@ -5300,8 +5300,8 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc
                      (uint32_t)instrError));
                 Log(("Current stack %08x\n", &rc2));
 
-                pVCpu->hm.s.vmx.lasterror.u32InstrError = instrError;
-                pVCpu->hm.s.vmx.lasterror.u32ExitReason = exitReason;
+                pVCpu->hm.s.vmx.LastError.u32InstrError = instrError;
+                pVCpu->hm.s.vmx.LastError.u32ExitReason = exitReason;
 
 #ifdef VBOX_STRICT
                 RTGDTR      gdtr;
