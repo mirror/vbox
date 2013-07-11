@@ -80,7 +80,8 @@ RTR3DECL(int) RTProcDaemonize(const char * const *papszArgs, const char *pszDaem
         {
             hStdOutAndErr.enmType = RTHANDLETYPE_FILE;
 
-            rc = RTProcCreateEx(szExecPath, papszNewArgs, RTENV_DEFAULT, RTPROC_FLAGS_DETACHED,
+            rc = RTProcCreateEx(szExecPath, papszNewArgs, RTENV_DEFAULT,
+                                RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SAME_CONTRACT,
                                 &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
                                 NULL /*pszAsUser*/,  NULL /*pszPassword*/, NULL /*phProcess*/);
 
