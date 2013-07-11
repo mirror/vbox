@@ -26,6 +26,7 @@
 /* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIPopupCenter.h"
 #include "UIActionPool.h"
 #include "UIKeyboardHandlerNormal.h"
 #include "UIKeyboardHandlerFullscreen.h"
@@ -913,7 +914,7 @@ bool UIKeyboardHandler::eventFilter(QObject *pWatchedObject, QEvent *pEvent)
                 {
                     /* Show a possible warning on key release which seems to be more expected by the end user: */
                     if (uisession()->isPaused())
-                        msgCenter().remindAboutPausedVMInput();
+                        popupCenter().remindAboutPausedVMInput(machineLogic()->activeMachineWindow());
                 }
                 break;
             }

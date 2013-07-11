@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIPopupCenter.h"
 #include "UIKeyboardHandler.h"
 #include "UIMouseHandler.h"
 #include "UISession.h"
@@ -359,7 +360,8 @@ void UIMouseHandler::sltMouseCapabilityChanged()
         /* don't annoy the user while restoring a VM */
         KMachineState state = uisession()->machineState();
         if (state != KMachineState_Restoring)
-            msgCenter().remindAboutMouseIntegration(uisession()->isMouseSupportsAbsolute());
+            popupCenter().remindAboutMouseIntegration(uisession()->machineLogic()->activeMachineWindow(),
+                                                      uisession()->isMouseSupportsAbsolute());
     }
 
     /* Notify all listeners: */
@@ -843,7 +845,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             {
                 if (uisession()->isPaused())
                 {
-                    msgCenter().remindAboutPausedVMInput();
+                    popupCenter().remindAboutPausedVMInput(machineLogic()->activeMachineWindow());
                 }
                 else if (uisession()->isRunning())
                 {
