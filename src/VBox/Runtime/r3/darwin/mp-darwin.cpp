@@ -46,18 +46,63 @@
 
 
 /**
- * Internal worker that determines the max possible CPU count.
+ * Internal worker that determines the max possible logical CPU count (hyperthreads).
  *
  * @returns Max cpus.
  */
-static RTCPUID rtMpDarwinMaxCpus(void)
+static RTCPUID rtMpDarwinMaxLogicalCpus(void)
 {
-    int aiMib[2];
-    aiMib[0] = CTL_HW;
-    aiMib[1] = HW_NCPU;
     int cCpus = -1;
     size_t cb = sizeof(cCpus);
-    int rc = sysctl(aiMib, RT_ELEMENTS(aiMib), &cCpus, &cb, NULL, 0);
+    int rc = sysctlbyname("hw.logicalcpu_max", &cCpus, &cb, NULL, 0);
+    if (rc != -1 && cCpus >= 1)
+        return cCpus;
+    AssertFailed();
+    return 1;
+}
+
+/**
+ * Internal worker that determines the max possible physical core count.
+ *
+ * @returns Max cpus.
+ */
+static RTCPUID rtMpDarwinMaxPhysicalCpus(void)
+{
+    int cCpus = -1;
+    size_t cb = sizeof(cCpus);
+    int rc = sysctlbyname("hw.physicalcpu_max", &cCpus, &cb, NULL, 0);
+    if (rc != -1 && cCpus >= 1)
+        return cCpus;
+    AssertFailed();
+    return 1;
+}
+
+/**
+ * Internal worker that determines the current number of logical CPUs (hyperthreads).
+ *
+ * @returns Max cpus.
+ */
+static RTCPUID rtMpDarwinOnlineLogicalCpus(void)
+{
+    int cCpus = -1;
+    size_t cb = sizeof(cCpus);
+    int rc = sysctlbyname("hw.logicalcpu", &cCpus, &cb, NULL, 0);
+    if (rc != -1 && cCpus >= 1)
+        return cCpus;
+    AssertFailed();
+    return 1;
+}
+
+/**
+ * Internal worker that determines the current number of physical CPUs.
+ *
+ * @returns Max cpus.
+ */
+static RTCPUID rtMpDarwinOnlinePhysicalCpus(void)
+{
+    int cCpus = -1;
+    size_t cb = sizeof(cCpus);
+    int rc = sysctlbyname("hw.physicalcpu", &cCpus, &cb, NULL, 0);
     if (rc != -1 && cCpus >= 1)
         return cCpus;
     AssertFailed();
@@ -69,19 +114,19 @@ static RTCPUID rtMpDarwinMaxCpus(void)
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < RTCPUSET_MAX_CPUS && idCpu < rtMpDarwinMaxCpus() ? idCpu : -1;
+    return idCpu < RTCPUSET_MAX_CPUS && idCpu < rtMpDarwinMaxLogicalCpus() ? idCpu : -1;
 }
 
 
 RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 {
-    return (unsigned)iCpu < rtMpDarwinMaxCpus() ? iCpu : NIL_RTCPUID;
+    return (unsigned)iCpu < rtMpDarwinMaxLogicalCpus() ? iCpu : NIL_RTCPUID;
 }
 
 
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 {
-    return rtMpDarwinMaxCpus() - 1;
+    return rtMpDarwinMaxLogicalCpus() - 1;
 }
 
 
@@ -107,19 +152,19 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
     return idCpu != NIL_RTCPUID
-        && idCpu < rtMpDarwinMaxCpus();
+        && idCpu < rtMpDarwinMaxLogicalCpus();
 }
 
 
 RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 {
 #if 0
-    RTCPUID cCpus = rtMpDarwinMaxCpus();
+    RTCPUID cCpus = rtMpDarwinMaxLogicalCpus();
     return RTCpuSetFromU64(RT_BIT_64(cCpus) - 1);
 
 #else
     RTCpuSetEmpty(pSet);
-    RTCPUID cMax = rtMpDarwinMaxCpus();
+    RTCPUID cMax = rtMpDarwinMaxLogicalCpus();
     for (RTCPUID idCpu = 0; idCpu < cMax; idCpu++)
         if (RTMpIsCpuPossible(idCpu))
             RTCpuSetAdd(pSet, idCpu);
@@ -130,7 +175,13 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
-    return rtMpDarwinMaxCpus();
+    return rtMpDarwinMaxLogicalCpus();
+}
+
+
+RTDECL(RTCPUID) RTMpGetCoreCount(void)
+{
+    return rtMpDarwinMaxPhysicalCpus();
 }
 
 
@@ -140,7 +191,7 @@ RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
     return RTMpGetSet(pSet);
 #else
     RTCpuSetEmpty(pSet);
-    RTCPUID cMax = rtMpDarwinMaxCpus();
+    RTCPUID cMax = rtMpDarwinMaxLogicalCpus();
     for (RTCPUID idCpu = 0; idCpu < cMax; idCpu++)
         if (RTMpIsCpuOnline(idCpu))
             RTCpuSetAdd(pSet, idCpu);
