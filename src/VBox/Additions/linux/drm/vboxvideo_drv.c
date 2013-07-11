@@ -62,6 +62,8 @@ static struct pci_device_id pciidlist[] = {
         vboxvideo_PCI_IDS
 };
 
+MODULE_DEVICE_TABLE(pci, pciidlist);
+
 static struct drm_driver driver =
 {
     .driver_features = 0,

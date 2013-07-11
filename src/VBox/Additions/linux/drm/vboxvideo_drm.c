@@ -91,6 +91,8 @@ static struct pci_device_id pciidlist[] = {
         vboxvideo_PCI_IDS
 };
 
+MODULE_DEVICE_TABLE(pci, pciidlist);
+
 int vboxvideo_driver_load(struct drm_device * dev, unsigned long flags)
 {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
