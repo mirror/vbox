@@ -32,6 +32,7 @@
 #include "UIMachineWindow.h"
 #include "UIMachineMenuBar.h"
 #include "UIMessageCenter.h"
+#include "UIPopupCenter.h"
 #include "UIWizardFirstRun.h"
 #include "UIConsoleEventHandler.h"
 #include "UIFrameBuffer.h"
@@ -1297,7 +1298,7 @@ bool UISession::preparePowerUp()
 {
     /* Notify user about mouse&keyboard auto-capturing: */
     if (vboxGlobal().settings().autoCapture())
-        msgCenter().remindAboutAutoCapture();
+        popupCenter().remindAboutAutoCapture(machineLogic()->activeMachineWindow());
 
     /* Shows First Run wizard if necessary: */
     const CMachine &machine = session().GetMachine();
