@@ -588,7 +588,7 @@ typedef union
 /** -1 Invalid exit code */
 #define VMX_EXIT_INVALID            -1
 /** 0 Exception or non-maskable interrupt (NMI). */
-#define VMX_EXIT_XCPT_NMI           0
+#define VMX_EXIT_XCPT_OR_NMI        0
 /** 1 External interrupt. */
 #define VMX_EXIT_EXT_INT            1
 /** 2 Triple fault. */

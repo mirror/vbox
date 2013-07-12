@@ -61,7 +61,7 @@
 /** Exit reason descriptions for VT-x, used to describe statistics. */
 static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
 {
-    EXIT_REASON(VMX_EXIT_XCPT_NMI           ,  0, "Exception or non-maskable interrupt (NMI)."),
+    EXIT_REASON(VMX_EXIT_XCPT_OR_NMI        ,  0, "Exception or non-maskable interrupt (NMI)."),
     EXIT_REASON(VMX_EXIT_EXT_INT            ,  1, "External interrupt."),
     EXIT_REASON(VMX_EXIT_TRIPLE_FAULT       ,  2, "Triple fault."),
     EXIT_REASON(VMX_EXIT_INIT_SIGNAL        ,  3, "INIT signal."),
