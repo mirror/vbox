@@ -7364,10 +7364,17 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
 
     if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
     {
-        /** @todo We should inject the NMI to the host by calling the NMI
-         *  interrupt handler! See Intel spec. 27.5.5 "Updating Non-Register State". */
+        /*
+         * This cannot be a guest NMI as the only way for the guest to receive an NMI is if we injected it ourselves and
+         * anything we inject is not going to cause a VM-exit directly for the event being injected.
+         * See Intel spec. 27.2.3 "Information for VM Exits During Event Delivery".
+         *
+         * Dispatch the NMI to the host. See Intel spec. 27.5.5 "Updating Non-Register State".
+         */
+        VMXDispatchHostNmi();
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHostNmi);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
-        return VINF_EM_RAW_INTERRUPT;
+        return VINF_SUCCESS;
     }
 
     /* If this VM-exit occurred while delivering an event through the guest IDT, handle it accordingly. */
@@ -7433,6 +7440,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
                     else
                     {
                         AssertMsgFailed(("Unexpected VM-exit caused by exception %#x\n", uVector));
+                        pVCpu->hm.s.u32HMError = uVector;
                         rc = VERR_VMX_UNEXPECTED_EXCEPTION;
                     }
                     break;
@@ -7441,9 +7449,9 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
             break;
         }
 
-        case VMX_EXIT_INTERRUPTION_INFO_TYPE_DB_XCPT:
         default:
         {
+            pVCpu->hm.s.u32HMError = uExitIntrInfo;
             rc = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_CODE;
             AssertMsgFailed(("Unexpected interruption code %#x\n", VMX_EXIT_INTERRUPTION_INFO_TYPE(uExitIntrInfo)));
             break;

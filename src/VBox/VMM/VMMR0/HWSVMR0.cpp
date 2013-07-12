@@ -2228,11 +2228,17 @@ ResumeExecution:
         pVmcb->ctrl.IntCtrl.n.u8VIrqVector   = 0;
         goto ResumeExecution;
 
-    case SVM_EXIT_INTR:         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitExtInt);  /* no break */
+    case SVM_EXIT_INTR:
     case SVM_EXIT_FERR_FREEZE:
     case SVM_EXIT_NMI:
     case SVM_EXIT_SMI:
     case SVM_EXIT_INIT:
+#ifdef VBOX_WITH_STATISTICS
+        if (vector == SVM_EXIT_INTR)
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitExtInt);
+        else if (vector == SVM_EXIT_NMI)
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHostNmi);
+#endif
         /* External interrupt; leave to allow it to be dispatched again. */
         rc = VINF_EM_RAW_INTERRUPT;
         break;

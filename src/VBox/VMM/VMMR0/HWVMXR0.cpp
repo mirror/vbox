@@ -3534,6 +3534,7 @@ ResumeExecution:
         {
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI:       /* Non-maskable interrupt. */
             /* External interrupt; leave to allow it to be dispatched again. */
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHostNmi);
             rc = VINF_EM_RAW_INTERRUPT;
             break;
 
