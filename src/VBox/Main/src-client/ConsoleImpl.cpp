@@ -369,6 +369,8 @@ VBOX_LISTENER_DECLARE(VmEventListenerImpl)
 Console::Console()
     : mSavedStateDataLoaded(false)
     , mConsoleVRDPServer(NULL)
+    , mfVRDEChangeInProcess(false)
+    , mfVRDEChangePending(false)
     , mpUVM(NULL)
     , mVMCallers(0)
     , mVMZeroCallersSem(NIL_RTSEMEVENT)
@@ -4845,44 +4847,58 @@ HRESULT Console::onVRDEServerChange(BOOL aRestart)
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
-        if (    mVRDEServer
-            &&  (   mMachineState == MachineState_Running
-                 || mMachineState == MachineState_Teleporting
-                 || mMachineState == MachineState_LiveSnapshotting
-                 || mMachineState == MachineState_Paused
-                 )
-           )
+        /* Serialize. */
+        if (mfVRDEChangeInProcess)
+            mfVRDEChangePending = true;
+        else
         {
-            BOOL vrdpEnabled = FALSE;
+            do {
+                mfVRDEChangeInProcess = true;
+                mfVRDEChangePending = false;
 
-            rc = mVRDEServer->COMGETTER(Enabled)(&vrdpEnabled);
-            ComAssertComRCRetRC(rc);
-
-            if (aRestart)
-            {
-                /* VRDP server may call this Console object back from other threads (VRDP INPUT or OUTPUT). */
-                alock.release();
-
-                if (vrdpEnabled)
+                if (    mVRDEServer
+                    &&  (   mMachineState == MachineState_Running
+                         || mMachineState == MachineState_Teleporting
+                         || mMachineState == MachineState_LiveSnapshotting
+                         || mMachineState == MachineState_Paused
+                         )
+                   )
                 {
-                    // If there was no VRDP server started the 'stop' will do nothing.
-                    // However if a server was started and this notification was called,
-                    // we have to restart the server.
-                    mConsoleVRDPServer->Stop();
+                    BOOL vrdpEnabled = FALSE;
 
-                    if (RT_FAILURE(mConsoleVRDPServer->Launch()))
-                        rc = E_FAIL;
-                    else
-                        mConsoleVRDPServer->EnableConnections();
+                    rc = mVRDEServer->COMGETTER(Enabled)(&vrdpEnabled);
+                    ComAssertComRCRetRC(rc);
+
+                    if (aRestart)
+                    {
+                        /* VRDP server may call this Console object back from other threads (VRDP INPUT or OUTPUT). */
+                        alock.release();
+
+                        if (vrdpEnabled)
+                        {
+                            // If there was no VRDP server started the 'stop' will do nothing.
+                            // However if a server was started and this notification was called,
+                            // we have to restart the server.
+                            mConsoleVRDPServer->Stop();
+
+                            if (RT_FAILURE(mConsoleVRDPServer->Launch()))
+                                rc = E_FAIL;
+                            else
+                                mConsoleVRDPServer->EnableConnections();
+                        }
+                        else
+                            mConsoleVRDPServer->Stop();
+
+                        alock.acquire();
+                    }
                 }
                 else
-                    mConsoleVRDPServer->Stop();
+                    rc = setInvalidMachineStateError();
 
-                alock.acquire();
-            }
+                mfVRDEChangeInProcess = false;
+            } while (mfVRDEChangePending && SUCCEEDED(rc));
         }
-        else
-            rc = setInvalidMachineStateError();
+
         ptrVM.release();
     }
 
