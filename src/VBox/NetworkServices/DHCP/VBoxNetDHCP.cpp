@@ -625,8 +625,7 @@ bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
                                                   pDhcpMsg->bp_chaddr.Mac.au8[2],
                                                   pDhcpMsg->bp_chaddr.Mac.au8[3],
                                                   pDhcpMsg->bp_chaddr.Mac.au8[4],
-                                                  pDhcpMsg->bp_chaddr.Mac.au8[5],
-                                                  pDhcpMsg->bp_chaddr.Mac.au8[6]).raw(),
+                                                  pDhcpMsg->bp_chaddr.Mac.au8[5]).raw(),
                                           ComSafeArrayAsOutParam(sf));
         if (SUCCEEDED(hrc))
         {
