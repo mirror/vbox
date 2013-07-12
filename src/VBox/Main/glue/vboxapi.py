@@ -605,10 +605,16 @@ class VirtualBoxManager:
         return PerfCollector(self, vbox)
 
     def getBinDir(self):
+        """
+        Returns the VirtualBox binary directory.
+        """
         global VBoxBinDir
         return VBoxBinDir
 
     def getSdkDir(self):
+        """
+        Returns the VirtualBox SDK directory.
+        """
         global VBoxSdkDir
         return VBoxSdkDir
 
