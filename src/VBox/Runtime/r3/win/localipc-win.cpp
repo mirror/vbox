@@ -51,6 +51,7 @@
 #include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
+#include <iprt/time.h>
 
 #include "internal/magics.h"
 
@@ -147,6 +148,8 @@ typedef struct RTLOCALIPCSESSIONINT
     uint32_t volatile   cRefs;
     /** Set if there is already pending I/O. */
     bool                fIOPending;
+    /** Set if the zero byte read that the poll code using is pending. */
+    bool                fZeroByteRead;
     /** Indicates that there is a pending cancel request. */
     bool volatile       fCancelled;
     /** The name pipe handle. */
@@ -161,6 +164,9 @@ typedef struct RTLOCALIPCSESSIONINT
     size_t              cbBounceBufUsed;
     /** Amount of allocated buffer space. */
     size_t              cbBounceBufAlloc;
+    /** Buffer for the zero byte read.
+     *  Used in RTLocalIpcSessionWaitForData(). */
+    uint8_t             abBuf[8];
 } RTLOCALIPCSESSIONINT;
 /** Pointer to a local IPC session instance (Windows). */
 typedef RTLOCALIPCSESSIONINT *PRTLOCALIPCSESSIONINT;
@@ -413,9 +419,10 @@ RTDECL(int) RTLocalIpcServerDestroy(RTLOCALIPCSERVER hServer)
     RTCritSectEnter(&pThis->CritSect);
     ASMAtomicUoWriteU32(&pThis->u32Magic, ~RTLOCALIPCSERVER_MAGIC);
     ASMAtomicUoWriteBool(&pThis->fCancelled, true);
+    Assert(pThis->cRefs);
     pThis->cRefs--;
 
-    if (pThis->cRefs > 0)
+    if (pThis->cRefs)
     {
         BOOL fRc = SetEvent(pThis->hEvent);
         AssertMsg(fRc, ("%d\n", GetLastError())); NOREF(fRc);
@@ -461,14 +468,14 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
          */
         SetLastError(NO_ERROR);
         BOOL fRc = ConnectNamedPipe(pThis->hNmPipe, &pThis->OverlappedIO);
-        DWORD err = fRc ? NO_ERROR : GetLastError();
+        DWORD dwErr = fRc ? NO_ERROR : GetLastError();
         if (    !fRc
-            &&  err == ERROR_IO_PENDING)
+            &&  dwErr == ERROR_IO_PENDING)
         {
             WaitForSingleObject(pThis->hEvent, INFINITE);
             DWORD dwIgnored;
             fRc = GetOverlappedResult(pThis->hNmPipe, &pThis->OverlappedIO, &dwIgnored, FALSE /* bWait*/);
-            err = fRc ? NO_ERROR : GetLastError();
+            dwErr = fRc ? NO_ERROR : GetLastError();
         }
 
         RTCritSectEnter(&pThis->CritSect);
@@ -483,7 +490,7 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
              * will be assigned to the client session.
              */
             if (   fRc
-                || err == ERROR_PIPE_CONNECTED)
+                || dwErr == ERROR_PIPE_CONNECTED)
             {
                 HANDLE hNmPipe;
                 rc = rtLocalIpcServerWinCreatePipeInstance(&hNmPipe, pThis->szName, false /* fFirst */);
@@ -504,7 +511,7 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
                 }
             }
             else
-                rc = RTErrConvertFromWin32(err);
+                rc = RTErrConvertFromWin32(dwErr);
         }
         else
         {
@@ -515,9 +522,9 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
              * in the this thread) or disconnect the client.
              */
             if (    fRc
-                ||  err == ERROR_PIPE_CONNECTED)
+                ||  dwErr == ERROR_PIPE_CONNECTED)
                 fRc = DisconnectNamedPipe(pThis->hNmPipe);
-            else if (err == ERROR_IO_PENDING)
+            else if (dwErr == ERROR_IO_PENDING)
                 fRc = CancelIo(pThis->hNmPipe);
             else
                 fRc = TRUE;
@@ -549,15 +556,17 @@ RTDECL(int) RTLocalIpcServerCancel(RTLOCALIPCSERVER hServer)
      * Enter the critical section, then set the cancellation flag
      * and signal the event (to wake up anyone in/at WaitForSingleObject).
      */
-    RTCritSectEnter(&pThis->CritSect);
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        ASMAtomicUoWriteBool(&pThis->fCancelled, true);
+        BOOL fRc = SetEvent(pThis->hEvent);
+        AssertMsg(fRc, ("%d\n", GetLastError())); NOREF(fRc);
 
-    ASMAtomicUoWriteBool(&pThis->fCancelled, true);
-    BOOL fRc = SetEvent(pThis->hEvent);
-    AssertMsg(fRc, ("%d\n", GetLastError())); NOREF(fRc);
+        rc = RTCritSectLeave(&pThis->CritSect);
+    }
 
-    RTCritSectLeave(&pThis->CritSect);
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -631,6 +640,7 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
     pThis->u32Magic = RTLOCALIPCSESSION_MAGIC;
     pThis->cRefs = 1; /* The one we return. */
     pThis->fIOPending = false;
+    pThis->fZeroByteRead = false;
     pThis->fCancelled = false;
     pThis->pbBounceBuf = NULL;
     pThis->cbBounceBufAlloc = 0;
@@ -766,7 +776,7 @@ RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, si
     if (RT_SUCCESS(rc))
     {
         /* No concurrent readers, sorry. */
-        if (pThis->cRefs == 0)
+        if (pThis->cRefs == 1)
         {
             pThis->cRefs++;
 
@@ -914,7 +924,7 @@ RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuf
     if (RT_SUCCESS(rc))
     {
         /* No concurrent writers, sorry. */
-        if (pThis->cRefs == 0)
+        if (pThis->cRefs == 1)
         {
             pThis->cRefs++;
 
@@ -1005,40 +1015,137 @@ RTDECL(int) RTLocalIpcSessionWaitForData(RTLOCALIPCSESSION hSession, uint32_t cM
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTLOCALIPCSESSION_MAGIC, VERR_INVALID_HANDLE);
 
+    uint64_t const StartMsTS = RTTimeMilliTS();
+
     int rc = RTCritSectEnter(&pThis->CritSect);
-    if (RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
+        return rc;
+    for (unsigned iLoop = 0;; iLoop++)
     {
-        /* No concurrent waiters, sorry. */
-        if (pThis->cRefs == 0)
+        HANDLE hWait = INVALID_HANDLE_VALUE;
+
+        if (pThis->fIOPending)
+            hWait = pThis->OverlappedIO.hEvent;
+        else
         {
-            pThis->cRefs++;
-            pThis->fCancelled = false; /* Reset canellation status. */
-            RTCritSectLeave(&pThis->CritSect);
+            /* Peek at the pipe buffer and see how many bytes it contains. */
+            DWORD cbAvailable;
+            BOOL fRc = PeekNamedPipe(pThis->hNmPipe, NULL, 0, NULL, &cbAvailable, NULL);
+            if (   fRc
+                && cbAvailable)
+            {
+                rc = VINF_SUCCESS;
+                break;
+            }
+            else if (!fRc)
+            {
+                rc = RTErrConvertFromWin32(GetLastError());
+                break;
+            }
 
-            DWORD dwTimeout = cMillies == RT_INDEFINITE_WAIT
-                            ? INFINITE : cMillies;
-            DWORD dwRc = WaitForSingleObject(pThis->OverlappedIO.hEvent, dwTimeout);
-
-            RTCritSectEnter(&pThis->CritSect);
-            if (dwRc == WAIT_TIMEOUT)
+            /* Start a zero byte read operation that we can wait on. */
+            if (cMillies == 0)
             {
                 rc = VERR_TIMEOUT;
+                break;
             }
-            else if (dwRc == WAIT_ABANDONED)
+            AssertBreakStmt(pThis->cRefs == 1, rc = VERR_WRONG_ORDER);
+            fRc = ResetEvent(pThis->OverlappedIO.hEvent); Assert(fRc == TRUE);
+            DWORD cbRead = 0;
+            if (ReadFile(pThis->hNmPipe, pThis->abBuf, 0, &cbRead, &pThis->OverlappedIO))
             {
-                rc = VERR_BROKEN_PIPE;
+                rc = VINF_SUCCESS;
+                if (iLoop > 10)
+                    RTThreadYield();
             }
-            else if (dwRc == WAIT_FAILED)
+            else if (GetLastError() == ERROR_IO_PENDING)
+            {
+                pThis->cRefs++;
+                pThis->fIOPending = true;
+                pThis->fZeroByteRead = true;
+                hWait = pThis->OverlappedIO.hEvent;
+            }
+            else
                 rc = RTErrConvertFromWin32(GetLastError());
-            else if (pThis->fCancelled)
-                rc = VERR_CANCELLED;
-
-            pThis->cRefs--;
         }
-        else
-            rc = VERR_WRONG_ORDER;
-        RTCritSectLeave(&pThis->CritSect);
+
+        if (RT_FAILURE(rc))
+            break;
+
+        /*
+         * Check for timeout.
+         */
+        DWORD cMsMaxWait = INFINITE;
+        if (   cMillies != RT_INDEFINITE_WAIT
+            && (   hWait != INVALID_HANDLE_VALUE
+                || iLoop > 10)
+           )
+        {
+            uint64_t cElapsed = RTTimeMilliTS() - StartMsTS;
+            if (cElapsed >= cMillies)
+            {
+                rc = VERR_TIMEOUT;
+                break;
+            }
+            cMsMaxWait = cMillies - (uint32_t)cElapsed;
+        }
+
+        /*
+         * Wait.
+         */
+        if (hWait != INVALID_HANDLE_VALUE)
+        {
+            RTCritSectLeave(&pThis->CritSect);
+
+            DWORD dwRc = WaitForSingleObject(hWait, cMsMaxWait);
+            if (dwRc == WAIT_OBJECT_0)
+                rc = VINF_SUCCESS;
+            else if (dwRc == WAIT_TIMEOUT)
+                rc = VERR_TIMEOUT;
+            else if (dwRc == WAIT_ABANDONED)
+                rc = VERR_INVALID_HANDLE;
+            else
+                rc = RTErrConvertFromWin32(GetLastError());
+
+            if (   RT_FAILURE(rc)
+                && pThis->u32Magic != RTLOCALIPCSESSION_MAGIC)
+                return rc;
+
+            int rc2 = RTCritSectEnter(&pThis->CritSect);
+            AssertRC(rc2);
+            if (pThis->fZeroByteRead)
+            {
+                Assert(pThis->cRefs);
+                pThis->cRefs--;
+                pThis->fIOPending = false;
+
+                if (rc != VINF_SUCCESS)
+                {
+                    BOOL fRc = CancelIo(pThis->hNmPipe);
+                    Assert(fRc == TRUE);
+                }
+
+                DWORD cbRead = 0;
+                BOOL fRc = GetOverlappedResult(pThis->hNmPipe, &pThis->OverlappedIO, &cbRead, TRUE /*fWait*/);
+                if (   !fRc
+                    && RT_SUCCESS(rc))
+                {
+                    DWORD dwRc = GetLastError();
+                    if (dwRc == ERROR_OPERATION_ABORTED)
+                        rc = VERR_CANCELLED;
+                    else
+                        rc = RTErrConvertFromWin32(dwRc);
+                }
+            }
+
+            if (RT_FAILURE(rc))
+                break;
+        }
     }
+
+    int rc2 = RTCritSectLeave(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     return rc;
 }
