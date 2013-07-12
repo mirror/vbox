@@ -7360,6 +7360,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
     uint32_t uIntrType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVmxTransient->uExitIntrInfo);
     Assert(   !(pVCpu->hm.s.vmx.u32ExitCtls & VMX_VMCS_CTRL_EXIT_ACK_EXT_INT)
            && uIntrType != VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT);
+    Assert(VMX_EXIT_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uExitIntrInfo));
 
     if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
     {
