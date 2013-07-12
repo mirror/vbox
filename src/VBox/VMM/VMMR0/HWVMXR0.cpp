@@ -3516,7 +3516,7 @@ ResumeExecution:
     Assert(rc == VINF_SUCCESS); /* might consider VERR_IPE_UNINITIALIZED_STATUS here later... */
     switch (exitReason)
     {
-    case VMX_EXIT_XCPT_NMI:             /* 0 Exception or non-maskable interrupt (NMI). */
+    case VMX_EXIT_XCPT_OR_NMI:          /* 0 Exception or non-maskable interrupt (NMI). */
     case VMX_EXIT_EXT_INT:              /* 1 External interrupt. */
     {
         uint32_t vector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(intInfo);
@@ -4801,7 +4801,7 @@ ResumeExecution:
     /* Investigate why there was a VM-exit. (part 2) */
     switch (exitReason)
     {
-    case VMX_EXIT_XCPT_NMI:             /* 0 Exception or non-maskable interrupt (NMI). */
+    case VMX_EXIT_XCPT_OR_NMI:          /* 0 Exception or non-maskable interrupt (NMI). */
     case VMX_EXIT_EXT_INT:              /* 1 External interrupt. */
     case VMX_EXIT_EPT_VIOLATION:
     case VMX_EXIT_EPT_MISCONFIG:        /* 49 EPT misconfig is used by the PGM/MMIO optimizations. */
