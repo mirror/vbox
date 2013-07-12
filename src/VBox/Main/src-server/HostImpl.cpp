@@ -54,6 +54,11 @@
 # include <VBox/VBoxNetCfg-win.h>
 #endif /* #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) */
 
+#if defined(RT_OS_DARWIN) && ARCH_BITS == 32
+# include <sys/types.h>
+# include <sys/sysctl.h>
+#endif
+
 #ifdef RT_OS_LINUX
 # include <sys/ioctl.h>
 # include <errno.h>
@@ -352,6 +357,13 @@ HRESULT Host::init(VirtualBox *aParent)
             ASMCpuId(0x80000001, &uDummy, &uDummy, &fExtFeaturesEcx, &fExtFeaturesEdx);
             m->fLongModeSupported = ASMIsValidExtRange(uExtMaxId)
                                  && (fExtFeaturesEdx & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
+
+#if defined(RT_OS_DARWIN) && ARCH_BITS == 32 /* darwin.x86 has some optimizations of 64-bit on 32-bit. */
+            int     f64bitCapable = 0;
+            size_t  cbParameter   = sizeof(f64bitCapable);
+            if (sysctlbyname("hw.cpu64bit_capable", &f64bitCapable, &cbParameter, NULL, NULL) != -1)
+                m->fLongModeSupported = f64bitCapable != 0;
+#endif
 
             /* VT-x? */
             if (   ASMIsIntelCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
