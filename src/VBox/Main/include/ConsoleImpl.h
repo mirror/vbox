@@ -725,6 +725,8 @@ private:
     const ComPtr<IVRDEServer> mVRDEServer;
 
     ConsoleVRDPServer * const mConsoleVRDPServer;
+    bool mfVRDEChangeInProcess;
+    bool mfVRDEChangePending;
 
     const ComObjPtr<Guest> mGuest;
     const ComObjPtr<Keyboard> mKeyboard;
