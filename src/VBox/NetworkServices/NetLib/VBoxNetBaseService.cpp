@@ -217,7 +217,7 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
                 return 1;
 
             case 'h':
-                RTPrintf("%s Version %s\n"
+                RTPrintf("%s Version %sr%u\n"
                          "(C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                          "All rights reserved.\n"
                          "\n"
@@ -225,9 +225,9 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
                          "\n"
                          "Options:\n",
                          RTProcShortName(),
-                         RTProcShortName(),
-                         RTProcShortName(),
-                         RTBldCfgVersion());
+                         RTBldCfgVersion(),
+                         RTBldCfgRevision(),
+                         RTProcShortName());
                 for (unsigned int i = 0; i < m_vecOptionDefs.size(); i++)
                     RTPrintf("    -%c, %s\n", m_vecOptionDefs[i]->iShort, m_vecOptionDefs[i]->pszLong);
                 usage(); /* to print Service Specific usage */
