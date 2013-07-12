@@ -378,16 +378,16 @@ static void crServerEnableDisplayMuralFBO(CRMuralInfo *mural, GLboolean fEnable)
 
 void crServerRedirMuralFBO(CRMuralInfo *mural, GLuint redir)
 {
-    if (!mural->CreateInfo.externalID)
-    {
-        crWarning("trying to change redir setting for internal mural %d", mural->spuWindow);
-        return;
-    }
-
     if (mural->fPresentMode == redir)
     {
 //        if (redir)
 //            crWarning("crServerRedirMuralFBO called with the same redir status %d", redir);
+        return;
+    }
+
+    if (!mural->CreateInfo.externalID)
+    {
+        crWarning("trying to change redir setting for internal mural %d", mural->spuWindow);
         return;
     }
 

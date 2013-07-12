@@ -62,7 +62,7 @@
 int CrDpInit(PCR_DISPLAY pDisplay)
 {
     const GLint visBits = cr_server.MainContextInfo.CreateInfo.visualBits;
-    if (crServerMuralInit(&pDisplay->Mural, "", visBits, -1, GL_FALSE) < 0)
+    if (crServerMuralInit(&pDisplay->Mural, "", visBits, 0, GL_FALSE) < 0)
     {
         crWarning("crServerMuralInit failed!");
         return VERR_GENERAL_FAILURE;
