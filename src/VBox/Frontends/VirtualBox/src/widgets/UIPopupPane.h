@@ -23,13 +23,16 @@
 #include <QWidget>
 #include <QMap>
 
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
+
 /* Forward declaration: */
 class UIPopupPaneTextPane;
 class UIPopupPaneButtonPane;
 class UIAnimation;
 
 /* Popup-pane prototype: */
-class UIPopupPane : public QWidget
+class UIPopupPane : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
     Q_PROPERTY(QSize hiddenSizeHint READ hiddenSizeHint);
@@ -99,6 +102,10 @@ private:
     void prepare();
     void prepareContent();
     void prepareAnimation();
+
+    /* Helpers: Translate stuff: */
+    void retranslateUi();
+    void retranslateToolTips();
 
     /* Handler: Event-filter stuff: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
