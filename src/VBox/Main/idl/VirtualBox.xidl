@@ -118,7 +118,7 @@
 <if target="midl">
   <cpp line="enum {"/>
   <cpp line="    kTypeLibraryMajorVersion = 1,"/>
-  <cpp line="    kTypeLibraryMinorVersion = 0"/>
+  <cpp line="    kTypeLibraryMinorVersion = 3"/>
   <cpp line="};"/>
 </if>
 
@@ -268,6 +268,10 @@
   </cpp>
 </if>
 
+<!--
+  Note!! Don't forget to update the python bindings (++) when changing the
+         UUID or version!!
+-->
 <library
   name="VirtualBox"
   uuid="d7569351-1750-46f0-936e-bd127d5bc264"
