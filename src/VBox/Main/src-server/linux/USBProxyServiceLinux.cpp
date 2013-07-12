@@ -320,7 +320,7 @@ int USBProxyServiceLinux::waitUsbfs(RTMSINTERVAL aMillies)
         aMillies = 500;
     }
 
-    memset(&PollFds, 0, sizeof(PollFds));
+    RT_ZERO(PollFds);
     PollFds[0].fd        = RTFileToNative(mhFile);
     PollFds[0].events    = POLLIN;
     PollFds[1].fd        = RTPipeToNative(mhWakeupPipeR);

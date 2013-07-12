@@ -85,7 +85,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         memcpy(pNew->szName, pEtherNICs->szName, cbNameLen);
 
         struct ifreq IfReq;
-        strcpy(IfReq.ifr_name, pNew->szShortName);
+        RTStrCopy(IfReq.ifr_name, sizeof(IfReq.ifr_name), pNew->szShortName);
         if (ioctl(sock, SIOCGIFFLAGS, &IfReq) < 0)
         {
             Log(("NetIfList: ioctl(SIOCGIFFLAGS) -> %d\n", errno));
@@ -391,7 +391,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         if (pSdl->sdl_type == IFT_ETHER)
         {
             struct ifreq IfReq;
-            strcpy(IfReq.ifr_name, pNew->szShortName);
+            RTStrCopy(IfReq.ifr_name, sizeof(IfReq.ifr_name), pNew->szShortName);
             if (ioctl(sock, SIOCGIFFLAGS, &IfReq) < 0)
             {
                 Log(("NetIfList: ioctl(SIOCGIFFLAGS) -> %d\n", errno));
@@ -511,7 +511,7 @@ int NetIfGetConfigByName(PNETIFINFO pInfo)
             pInfo->Uuid = uuid;
 
             struct ifreq IfReq;
-            strcpy(IfReq.ifr_name, pInfo->szShortName);
+            RTStrCopy(IfReq.ifr_name, sizeof(IfReq.ifr_name), pInfo->szShortName);
             if (ioctl(sock, SIOCGIFFLAGS, &IfReq) < 0)
             {
                 Log(("NetIfList: ioctl(SIOCGIFFLAGS) -> %d\n", errno));

@@ -53,9 +53,8 @@
 #include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/env.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
-
-#include <string.h>
 
 #if defined(RT_OS_SOLARIS)
 # include <sys/systeminfo.h>
@@ -137,7 +136,7 @@ static nsresult vboxsvcSpawnDaemon(void)
     writable = nsnull;
 
     char msg[10];
-    memset(msg, '\0', sizeof(msg));
+    RT_ZERO(msg);
     if (   PR_Read(readable, msg, sizeof(msg)-1) != 5
         || strcmp(msg, "READY"))
     {

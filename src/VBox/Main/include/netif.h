@@ -128,7 +128,7 @@ DECLINLINE(int) prefixLength2IPv6Address(ULONG cPrefix, PRTNETADDRIPV6 aAddrPtr)
     if (!aAddrPtr)
         return VERR_INVALID_PARAMETER;
 
-    memset(aAddrPtr, 0, sizeof(RTNETADDRIPV6));
+    RT_ZERO(*aAddrPtr);
 
     ASMBitSetRange(aAddrPtr, 0, cPrefix);
 

@@ -148,13 +148,13 @@ void Display::FinalRelease()
     if (RTCritSectIsInitialized (&mVBVALock))
     {
         RTCritSectDelete (&mVBVALock);
-        memset (&mVBVALock, 0, sizeof (mVBVALock));
+        RT_ZERO(mVBVALock);
     }
 
     if (RTCritSectIsInitialized(&mSaveSeamlessRectLock))
     {
         RTCritSectDelete(&mSaveSeamlessRectLock);
-        memset(&mSaveSeamlessRectLock, 0, sizeof (mSaveSeamlessRectLock));
+        RT_ZERO(mSaveSeamlessRectLock);
     }
     BaseFinalRelease();
 }
@@ -488,12 +488,12 @@ HRESULT Display::init(Console *aParent)
         maFramebuffers[ul].mcSavedVisibleRegion = 0;
         maFramebuffers[ul].mpSavedVisibleRegion = NULL;
 
-        memset (&maFramebuffers[ul].dirtyRect, 0 , sizeof (maFramebuffers[ul].dirtyRect));
-        memset (&maFramebuffers[ul].pendingResize, 0 , sizeof (maFramebuffers[ul].pendingResize));
+        RT_ZERO(maFramebuffers[ul].dirtyRect);
+        RT_ZERO(maFramebuffers[ul].pendingResize);
 #ifdef VBOX_WITH_HGSMI
         maFramebuffers[ul].fVBVAEnabled = false;
         maFramebuffers[ul].cVBVASkipUpdate = 0;
-        memset (&maFramebuffers[ul].vbvaSkippedRect, 0, sizeof (maFramebuffers[ul].vbvaSkippedRect));
+        RT_ZERO(maFramebuffers[ul].vbvaSkippedRect);
         maFramebuffers[ul].pVBVAHostFlags = NULL;
 #endif /* VBOX_WITH_HGSMI */
     }
@@ -1243,7 +1243,7 @@ static void vbvaRgnInit (VBVADIRTYREGION *prgn, DISPLAYFBINFO *paFramebuffers, u
     {
         DISPLAYFBINFO *pFBInfo = &prgn->paFramebuffers[uScreenId];
 
-        memset (&pFBInfo->dirtyRect, 0, sizeof (pFBInfo->dirtyRect));
+        RT_ZERO(pFBInfo->dirtyRect);
     }
 }
 

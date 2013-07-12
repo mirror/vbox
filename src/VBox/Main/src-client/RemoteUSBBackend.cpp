@@ -961,7 +961,7 @@ RemoteUSBBackend::RemoteUSBBackend(Console *console, ConsoleVRDPServer *server, 
     if (RT_FAILURE(rc))
     {
         AssertFailed ();
-        memset (&mCritsect, 0, sizeof (mCritsect));
+        RT_ZERO(mCritsect);
     }
 
     mCallback.pInstance           = (PREMOTEUSBBACKEND)this;

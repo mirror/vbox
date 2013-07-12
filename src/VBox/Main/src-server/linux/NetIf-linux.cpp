@@ -118,8 +118,8 @@ static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
     // this point. So make sure the structure is cleared by the caller if necessary!
     // memset(pInfo, 0, sizeof(*pInfo));
     struct ifreq Req;
-    memset(&Req, 0, sizeof(Req));
-    strncpy(Req.ifr_name, pszName, sizeof(Req.ifr_name) - 1);
+    RT_ZERO(Req);
+    RTStrCopy(Req.ifr_name, sizeof(Req.ifr_name), pszName);
     if (ioctl(iSocket, SIOCGIFHWADDR, &Req) >= 0)
     {
         switch (Req.ifr_hwaddr.sa_family)
@@ -163,7 +163,7 @@ static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
             char szName[30];
             for (;;)
             {
-                memset(szName, 0, sizeof(szName));
+                RT_ZERO(szName);
                 int n = fscanf(fp,
                                "%08x%08x%08x%08x"
                                " %02x %02x %02x %02x %20s\n",
@@ -287,8 +287,8 @@ int NetIfGetLinkSpeed(const char *pcszIfName, uint32_t *puMbits)
     if (sock < 0)
         return VERR_OUT_OF_RESOURCES;
     struct ifreq Req;
-    memset(&Req, 0, sizeof(Req));
-    strncpy(Req.ifr_name, pcszIfName, sizeof(Req.ifr_name) - 1);
+    RT_ZERO(Req);
+    RTStrCopy(Req.ifr_name, sizeof(Req.ifr_name), pcszIfName);
     if (ioctl(sock, SIOCGIFHWADDR, &Req) >= 0)
     {
         if (ioctl(sock, SIOCGIFFLAGS, &Req) >= 0)

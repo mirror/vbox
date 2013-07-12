@@ -78,7 +78,7 @@ int AutostartDb::autostartModifyDb(bool fAutostart, bool fAddVM)
                     char abBuf[16 + 1]; /* trailing \0 */
                     uint32_t cAutostartVms = 0;
 
-                    memset(abBuf, 0, sizeof(abBuf));
+                    RT_ZERO(abBuf);
 
                     /* Check if the file was just created. */
                     if (cbFile)

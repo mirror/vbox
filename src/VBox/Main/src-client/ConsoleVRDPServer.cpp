@@ -1350,7 +1350,7 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     m_InputSynch.fClientCapsLock   = false;
     m_InputSynch.fClientScrollLock = false;
 
-    memset(maFramebuffers, 0, sizeof(maFramebuffers));
+    RT_ZERO(maFramebuffers);
 
     {
         ComPtr<IEventSource> es;
@@ -1376,8 +1376,8 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
      * Optional interfaces.
      */
     m_fInterfaceImage = false;
-    memset(&m_interfaceImage, 0, sizeof (m_interfaceImage));
-    memset(&m_interfaceCallbacksImage, 0, sizeof (m_interfaceCallbacksImage));
+    RT_ZERO(m_interfaceImage);
+    RT_ZERO(m_interfaceCallbacksImage);
     RT_ZERO(m_interfaceMousePtr);
     RT_ZERO(m_interfaceSCard);
     RT_ZERO(m_interfaceCallbacksSCard);
@@ -1415,13 +1415,13 @@ ConsoleVRDPServer::~ConsoleVRDPServer()
     if (RTCritSectIsInitialized(&mCritSect))
     {
         RTCritSectDelete(&mCritSect);
-        memset(&mCritSect, 0, sizeof(mCritSect));
+        RT_ZERO(mCritSect);
     }
 
     if (RTCritSectIsInitialized(&mTSMFLock))
     {
         RTCritSectDelete(&mTSMFLock);
-        memset(&mTSMFLock, 0, sizeof(mTSMFLock));
+        RT_ZERO(mTSMFLock);
     }
 }
 
@@ -2585,7 +2585,7 @@ void ConsoleVRDPServer::setupTSMF(void)
 
                 pThis->tsmfUnlock();
 
-                memset(pVRDPCtx, 0, sizeof(*pVRDPCtx));
+                RT_ZERO(*pVRDPCtx);
                 RTMemFree(pVRDPCtx);
             }
         } break;

@@ -1914,7 +1914,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             char *macStr = (char*)macAddrUtf8.c_str();
             Assert(strlen(macStr) == 12);
             RTMAC Mac;
-            memset(&Mac, 0, sizeof(Mac));
+            RT_ZERO(Mac);
             char *pMac = (char*)&Mac;
             for (uint32_t i = 0; i < 6; ++i)
             {
@@ -4396,7 +4396,7 @@ int Console::configNetwork(const char *pszDevice,
                     {
                         struct ifreq Req;
                         RT_ZERO(Req);
-                        strncpy(Req.ifr_name, pszBridgedIfName, sizeof(Req.ifr_name) - 1);
+                        RTStrCopy(Req.ifr_name, sizeof(Req.ifr_name), pszBridgedIfName);
                         if (ioctl(iSock, SIOCGIFFLAGS, &Req) >= 0)
                             if ((Req.ifr_flags & IFF_UP) == 0)
                                 setVMRuntimeErrorCallbackF(0, "BridgedInterfaceDown",
@@ -4445,7 +4445,7 @@ int Console::configNetwork(const char *pszDevice,
                 {
                     struct iwreq WRq;
 
-                    memset(&WRq, 0, sizeof(WRq));
+                    RT_ZERO(WRq);
                     strncpy(WRq.ifr_name, pszBridgedIfName, IFNAMSIZ);
                     bool fSharedMacOnWire = ioctl(iSock, SIOCGIWNAME, &WRq) >= 0;
                     close(iSock);
@@ -4466,7 +4466,7 @@ int Console::configNetwork(const char *pszDevice,
                     struct ieee80211req WReq;
                     uint8_t abData[32];
 
-                    memset(&WReq, 0, sizeof(WReq));
+                    RT_ZERO(WReq);
                     strncpy(WReq.i_name, pszBridgedIfName, sizeof(WReq.i_name));
                     WReq.i_type = IEEE80211_IOC_SSID;
                     WReq.i_val = -1;
