@@ -375,6 +375,16 @@ ENDPROC VMXRestoreHostState
 
 
 ;/**
+; * Dispatches an NMI to the host.
+; */
+ALIGNCODE(16)
+BEGINPROC VMXDispatchHostNmi
+    int 2   ; NMI is always vector 2. The IDT[2] IRQ handler cannot be anything else. See Intel spec. 6.3.1 "External Interrupts".
+    ret
+ENDPROC VMXDispatchHostNmi
+
+
+;/**
 ; * Executes VMWRITE, 64-bit value.
 ; *
 ; * @returns VBox status code
