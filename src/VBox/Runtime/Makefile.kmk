@@ -926,7 +926,6 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTProcIsRunningByName-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
-	generic/RTSystemShutdown-generic.cpp \
 	generic/RTThreadSetAffinityToCpu-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
@@ -979,6 +978,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/solaris/systemmem-solaris.cpp \
 	r3/solaris/mp-solaris.cpp \
 	r3/solaris/rtProcInitExePath-solaris.cpp \
+	r3/solaris/RTSystemShutdown-solaris.cpp \
 	r3/solaris/thread-affinity-solaris.cpp
 RuntimeR3_SOURCES.solaris.amd64 = \
 	r3/solaris/coredumper-solaris.cpp \
