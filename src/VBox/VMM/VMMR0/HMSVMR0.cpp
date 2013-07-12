@@ -2754,7 +2754,7 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
             if (   pVM->hm.s.fTPRPatchingActive
                 && (pMixedCtx->msrLSTAR & 0xff) != pSvmTransient->u8GuestTpr)
             {
-                int rc = PDMApicSetTPR(pVCpu, (pMixedCtx->msrLSTAR & 0xff));
+                int rc = PDMApicSetTPR(pVCpu, pMixedCtx->msrLSTAR & 0xff);
                 AssertRC(rc);
                 pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_APIC_STATE;
             }
@@ -4136,7 +4136,7 @@ HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
     /* TPR patching for 32-bit guests, using the reserved bit in the page tables for MMIO regions.  */
     if (   pVM->hm.s.fTRPPatchingAllowed
-        && (GCPhysFaultAddr & PAGE_OFFSET_MASK) == 0x80
+        && (GCPhysFaultAddr & PAGE_OFFSET_MASK) == 0x80                                                  /* TPR offset. */
         && (   !(u32ErrCode & X86_TRAP_PF_P)                                                             /* Not present */
             || (u32ErrCode & (X86_TRAP_PF_P | X86_TRAP_PF_RSVD)) == (X86_TRAP_PF_P | X86_TRAP_PF_RSVD))  /* MMIO page. */
         && !CPUMGetGuestCPL(pVCpu)
@@ -4332,7 +4332,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     /* Shortcut for APIC TPR reads and writes; only applicable to 32-bit guests. */
     if (   pVM->hm.s.fTRPPatchingAllowed
         && (uFaultAddress & 0xfff) == 0x80  /* TPR offset. */
-        && !(u32ErrCode & X86_TRAP_PF_P)    /* Not present */
+        && !(u32ErrCode & X86_TRAP_PF_P)    /* Not present. */
         && !CPUMGetGuestCPL(pVCpu)
         && !CPUMIsGuestInLongModeEx(pCtx)
         && pVM->hm.s.cPatches < RT_ELEMENTS(pVM->hm.s.aPatches))
