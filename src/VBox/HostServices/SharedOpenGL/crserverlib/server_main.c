@@ -153,7 +153,7 @@ static void crServerTearDown( void )
     /* needed to make sure window dummy mural not get created on mural destruction
      * and generally this should be zeroed up */
     cr_server.currentCtxInfo = NULL;
-    cr_server.currentWindow = 0;
+    cr_server.currentWindow = -1;
     cr_server.currentNativeWindow = 0;
     cr_server.currentMural = NULL;
 
@@ -347,7 +347,7 @@ crServerInit(int argc, char *argv[])
     {
         cr_server.u32Caps = 0;
 #ifdef DEBUG_misha
-        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
+//        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
 #endif
     }
 
@@ -459,7 +459,7 @@ GLboolean crVBoxServerInit(void)
     {
         cr_server.u32Caps = 0;
 #ifdef DEBUG_misha
-        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
+//        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
 #endif
     }
 
@@ -1010,7 +1010,7 @@ CRMuralInfo * crServerGetDummyMural(GLint visualBits)
             crWarning("crCalloc failed!");
             return NULL;
         }
-        id = crServerMuralInit(pMural, "", visualBits, -1, GL_TRUE);
+        id = crServerMuralInit(pMural, "", visualBits, 0, GL_TRUE);
         if (id < 0)
         {
             crWarning("crServerMuralInit failed!");
@@ -1706,7 +1706,7 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
             rc = SSMR3PutMem(pSSM, pClient, sizeof(*pClient));
             AssertRCReturn(rc, rc);
 
-            if (pClient->currentCtxInfo && pClient->currentCtxInfo->pContext && pClient->currentContextNumber>=0)
+            if (pClient->currentCtxInfo && pClient->currentCtxInfo->pContext && pClient->currentContextNumber > 0)
             {
                 b = crHashtableGetDataKey(cr_server.contextTable, pClient->currentCtxInfo, &key);
                 CRASSERT(b);
@@ -1714,7 +1714,7 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
                 AssertRCReturn(rc, rc);
             }
 
-            if (pClient->currentMural && pClient->currentWindow>=0)
+            if (pClient->currentMural && pClient->currentWindow > 0)
             {
                 b = crHashtableGetDataKey(cr_server.muralTable, pClient->currentMural, &key);
                 CRASSERT(b);
@@ -2459,7 +2459,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
             pContextInfo->currentMural = pInitialCurMural;
         }
 
-        CRASSERT(cr_server.currentCtxInfo == &cr_server.MainContextInfo);
+        CRASSERT(!uiNumElems || cr_server.currentCtxInfo == &cr_server.MainContextInfo);
 
         cr_server.curClient = NULL;
         cr_server.bForceMakeCurrentOnClientSwitch = GL_TRUE;
@@ -2519,7 +2519,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 
             cr_server.curClient = pClient;
 
-            if (client.currentCtxInfo && client.currentContextNumber>=0)
+            if (client.currentCtxInfo && client.currentContextNumber > 0)
             {
                 rc = crServerLsrDataGetMem(&Reader, &ctxID, sizeof(ctxID));
                 AssertRCReturn(rc, rc);
@@ -2530,7 +2530,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
                 //pClient->currentContextNumber = ctxID;
             }
 
-            if (client.currentMural && client.currentWindow>=0)
+            if (client.currentMural && client.currentWindow > 0)
             {
                 rc = crServerLsrDataGetMem(&Reader, &winID, sizeof(winID));
                 AssertRCReturn(rc, rc);
