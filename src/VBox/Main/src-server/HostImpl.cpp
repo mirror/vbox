@@ -231,7 +231,6 @@ static char g_aszResolvConf[RTPATH_MAX];
 
 static inline char *getResolvConfPath()
 {
-    int rc = VINF_SUCCESS;
     if (!g_aszResolvConf[0]) return g_aszResolvConf;
 # ifdef RT_OS_OS2
     /*
@@ -242,7 +241,7 @@ static inline char *getResolvConfPath()
     if (RTEnvExists("ETC"))
     {
         RTStrmPrintf(g_aszResolvConf, MAX_PATH, "%/RESOLV2", RTEnvGet("ETC"));
-        rc = RTFileExists(g_aszResolvConf);
+        int rc = RTFileExists(g_aszResolvConf);
         if (RT_SUCCESS(rc))
             return g_aszResolvConf;
     }
@@ -842,6 +841,10 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(ComSafeArrayOut(IHostUSBDevice*, aUSBDe
  */
 STDMETHODIMP Host::COMGETTER(NameServers)(ComSafeArrayOut(BSTR, aNameServers))
 {
+    NOREF(aNameServers);
+#ifndef RT_OS_WINDOWS
+    NOREF(aNameServersSize);
+#endif
     return E_NOTIMPL;
 }
 
@@ -851,6 +854,7 @@ STDMETHODIMP Host::COMGETTER(NameServers)(ComSafeArrayOut(BSTR, aNameServers))
  */
 STDMETHODIMP Host::COMGETTER(DomainName)(BSTR *aDomainName)
 {
+    NOREF(aDomainName);
     return E_NOTIMPL;
 }
 
@@ -860,6 +864,10 @@ STDMETHODIMP Host::COMGETTER(DomainName)(BSTR *aDomainName)
  */
 STDMETHODIMP Host::COMGETTER(SearchStrings)(ComSafeArrayOut(BSTR, aSearchStrings))
 {
+    NOREF(aSearchStrings);
+#ifndef RT_OS_WINDOWS
+    NOREF(aSearchStringsSize);
+#endif
     return E_NOTIMPL;
 }
 
