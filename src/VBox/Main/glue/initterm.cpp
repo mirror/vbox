@@ -345,8 +345,8 @@ HRESULT Initialize(bool fGui)
     if (vrc == VERR_ACCESS_DENIED)
         return NS_ERROR_FILE_ACCESS_DENIED;
     AssertRCReturn(vrc, NS_ERROR_FAILURE);
-    strcpy(szXptiDat, szCompReg);
-
+    vrc = RTStrCopy(szXptiDat, sizeof(szXptiDat), szCompReg);
+    AssertRCReturn(vrc, NS_ERROR_FAILURE);
     vrc = RTPathAppend(szCompReg, sizeof(szCompReg), "compreg.dat");
     AssertRCReturn(vrc, NS_ERROR_FAILURE);
     vrc = RTPathAppend(szXptiDat, sizeof(szXptiDat), "xpti.dat");
@@ -396,8 +396,7 @@ HRESULT Initialize(bool fGui)
         else
         {
             /* Iterate over all other paths */
-            szAppHomeDir[RTPATH_MAX - 1] = '\0';
-            strncpy(szAppHomeDir, kAppPathsToProbe[i], RTPATH_MAX - 1);
+            RTStrCopy(szAppHomeDir, sizeof(szAppHomeDir), kAppPathsToProbe[i]);
             vrc = VINF_SUCCESS;
         }
         if (RT_FAILURE(vrc))
@@ -405,9 +404,14 @@ HRESULT Initialize(bool fGui)
             rc = NS_ERROR_FAILURE;
             continue;
         }
-
         char szCompDir[RTPATH_MAX];
-        vrc = RTPathAppend(strcpy(szCompDir, szAppHomeDir), sizeof(szCompDir), "components");
+        vrc = RTStrCopy(szCompDir, sizeof(szCompDir), szAppHomeDir);
+        if (RT_FAILURE(vrc))
+        {
+            rc = NS_ERROR_FAILURE;
+            continue;
+        }
+        vrc = RTPathAppend(szCompDir, sizeof(szCompDir), "components");
         if (RT_FAILURE(vrc))
         {
             rc = NS_ERROR_FAILURE;

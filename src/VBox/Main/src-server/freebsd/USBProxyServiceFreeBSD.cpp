@@ -266,7 +266,7 @@ PUSBDEVICE USBProxyServiceFreeBSD::getDevices(void)
         LogFlowFunc((": %s opened successfully\n", pszDevicePath));
 
         struct usb_device_info UsbDevInfo;
-        memset(&UsbDevInfo, 0, sizeof(struct usb_device_info));
+        RT_ZERO(UsbDevInfo);
 
         rc = ioctl(FileUsb, USB_GET_DEVICEINFO, &UsbDevInfo);
         if (rc < 0)

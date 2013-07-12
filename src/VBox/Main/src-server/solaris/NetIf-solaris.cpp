@@ -204,7 +204,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
     if (Sock > 0)
     {
         struct lifreq IfReq;
-        strcpy(IfReq.lifr_name, szNICInstance);
+        RTStrCopy(IfReq.lifr_name, sizeof(IfReq.lifr_name), szNICInstance);
         if (ioctl(Sock, SIOCGLIFADDR, &IfReq) >= 0)
         {
             memcpy(Info.IPAddress.au8, &((struct sockaddr_in *)&IfReq.lifr_addr)->sin_addr.s_addr,
@@ -243,7 +243,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
     if (Sock > 0)
     {
         struct lifreq IfReq;
-        strcpy(IfReq.lifr_name, szNICInstance);
+        RTStrCopy(IfReq.lifr_name, sizeof(IfReq.lifr_name), szNICInstance);
         if (ioctl(Sock, SIOCGLIFADDR, &IfReq) >= 0)
         {
             memcpy(Info.IPv6Address.au8, ((struct sockaddr_in6 *)&IfReq.lifr_addr)->sin6_addr.s6_addr,

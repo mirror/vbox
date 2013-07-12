@@ -220,7 +220,7 @@ HGCMThread::HGCMThread ()
     m_pFreeTail (NULL),
     m_handle (0)
 {
-    memset (&m_critsect, 0, sizeof (m_critsect));
+    RT_ZERO(m_critsect);
 }
 
 HGCMThread::~HGCMThread ()
@@ -306,7 +306,7 @@ int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, 
             else
             {
                 Log(("hgcmThreadCreate: FAILURE: Can't init a critical section for a hgcm worker thread.\n"));
-                memset (&m_critsect, 0, sizeof (m_critsect));
+                RT_ZERO(m_critsect);
             }
         }
         else

@@ -593,7 +593,7 @@ static PUSBDEVICE getDevicesFromUsbfs(const char *pcszUsbfsRoot, bool testfs)
                         deviceFreeMembers(&Dev);
 
                     /* Reset device state */
-                    memset(&Dev, 0, sizeof (Dev));
+                    RT_ZERO(Dev);
                     Dev.enmState = USBDEVICESTATE_UNUSED;
                     cHits = 1;
 

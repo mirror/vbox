@@ -954,7 +954,7 @@ static int vboxNetWinAddComponent(std::list<ComObjPtr<HostNetworkInterface> > * 
         if (hr == S_OK)
         {
             NETIFINFO Info;
-            memset(&Info, 0, sizeof(Info));
+            RT_ZERO(Info);
             Info.Uuid = *(Guid(IfGuid).raw());
             rc = collectNetIfInfo(name, Guid(IfGuid), &Info, iDefaultInterface);
             if (RT_FAILURE(rc))

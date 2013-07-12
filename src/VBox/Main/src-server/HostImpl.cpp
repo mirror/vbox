@@ -252,9 +252,9 @@ static inline char *getResolvConfPath()
     }
 
     RT_ZERO(g_aszResolvConf);
-    RTStrmPrintf(g_aszResolvConf, MAX_PATH, "%/RESOLV2", _PATH_ETC);
+    RTStrmPrintf(g_aszResolvConf, sizeof(g_aszResolvConf), "%/RESOLV2", _PATH_ETC);
 # else
-    strcpy(g_aszResolvConf, "/etc/resolv.conf");
+    RTStrCopy(g_aszResolvConf, sizeof(g_aszResolvConf), "/etc/resolv.conf");
 # endif    
     return g_aszResolvConf;
 }

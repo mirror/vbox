@@ -404,10 +404,10 @@ HRESULT Console::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
 
-    memset(mapStorageLeds, 0, sizeof(mapStorageLeds));
-    memset(mapNetworkLeds, 0, sizeof(mapNetworkLeds));
-    memset(&mapUSBLed, 0, sizeof(mapUSBLed));
-    memset(&mapSharedFolderLed, 0, sizeof(mapSharedFolderLed));
+    RT_ZERO(mapStorageLeds);
+    RT_ZERO(mapNetworkLeds);
+    RT_ZERO(mapUSBLed);
+    RT_ZERO(mapSharedFolderLed);
 
     for (unsigned i = 0; i < RT_ELEMENTS(maStorageDevType); ++i)
         maStorageDevType[i] = DeviceType_Null;
@@ -8296,7 +8296,7 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
          * Set/obtain the tap interface.
          */
         struct ifreq IfReq;
-        memset(&IfReq, 0, sizeof(IfReq));
+        RT_ZERO(IfReq);
         /* The name of the TAP interface we are using */
         Bstr tapDeviceName;
         rc = networkAdapter->COMGETTER(BridgedInterface)(tapDeviceName.asOutParam());
@@ -8312,10 +8312,7 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
         {
             /* If we are using a static TAP device then try to open it. */
             Utf8Str str(tapDeviceName);
-            if (str.length() <= sizeof(IfReq.ifr_name))
-                strcpy(IfReq.ifr_name, str.c_str());
-            else
-                memcpy(IfReq.ifr_name, str.c_str(), sizeof(IfReq.ifr_name) - 1); /** @todo bitch about names which are too long... */
+            RTStrCopy(IfReq.ifr_name, sizeof(IfReq.ifr_name), str.c_str()); /** @todo bitch about names which are too long... */
             IfReq.ifr_flags = IFF_TAP | IFF_NO_PI;
             rcVBox = ioctl(maTapFD[slot], TUNSETIFF, &IfReq);
             if (rcVBox != 0)
