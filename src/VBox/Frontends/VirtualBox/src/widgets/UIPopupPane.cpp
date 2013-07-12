@@ -31,7 +31,7 @@ UIPopupPane::UIPopupPane(QWidget *pParent,
                          const QString &strMessage, const QString &strDetails,
                          const QMap<int, QString> &buttonDescriptions,
                          bool fProposeAutoConfirmation)
-    : QWidget(pParent)
+    : QIWithRetranslateUI<QWidget>(pParent)
     , m_fPolished(false)
     , m_iLayoutMargin(10), m_iLayoutSpacing(5)
     , m_strMessage(strMessage), m_strDetails(strDetails)
@@ -227,6 +227,9 @@ void UIPopupPane::prepareContent()
     m_pButtonPane->setFocusPolicy(Qt::StrongFocus);
     setFocusProxy(m_pButtonPane);
     m_pTextPane->setFocusProxy(m_pButtonPane);
+
+    /* Translate UI finally: */
+    retranslateUi();
 }
 
 void UIPopupPane::prepareAnimation()
@@ -240,6 +243,27 @@ void UIPopupPane::prepareAnimation()
     /* Install 'hover' animation for 'opacity' property: */
     UIAnimation::installPropertyAnimation(this, "opacity", "defaultOpacity", "hoveredOpacity",
                                           SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
+}
+
+void UIPopupPane::retranslateUi()
+{
+    /* Translate tool-tips: */
+    retranslateToolTips();
+}
+
+void UIPopupPane::retranslateToolTips()
+{
+    /* Translate pane & text-pane tool-tips: */
+    if (m_fFocused)
+    {
+        setToolTip(QString());
+        m_pTextPane->setToolTip(QString());
+    }
+    else
+    {
+        setToolTip(QApplication::translate("UIPopupCenter", "Click for full details"));
+        m_pTextPane->setToolTip(QApplication::translate("UIPopupCenter", "Click for full details"));
+    }
 }
 
 bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -284,6 +308,8 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
                     m_fHovered = true;
                     emit sigHoverEnter();
                 }
+                /* Translate tool-tips: */
+                retranslateToolTips();
             }
             break;
         }
@@ -301,6 +327,8 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
                     m_fHovered = false;
                     emit sigHoverLeave();
                 }
+                /* Translate tool-tips: */
+                retranslateToolTips();
             }
             break;
         }
