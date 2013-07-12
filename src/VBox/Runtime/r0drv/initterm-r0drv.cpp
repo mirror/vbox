@@ -64,6 +64,7 @@ static int32_t volatile g_crtR0Users = 0;
 RTR0DECL(int) RTR0Init(unsigned fReserved)
 {
     int rc;
+    uint32_t cNewUsers;
     Assert(fReserved == 0);
     RT_ASSERT_PREEMPTIBLE();
 
@@ -72,8 +73,14 @@ RTR0DECL(int) RTR0Init(unsigned fReserved)
      * We rely on the module loader to ensure that there are no
      * initialization races should two modules share the IPRT.
      */
-    if (ASMAtomicIncS32(&g_crtR0Users) != 1)
-        return VINF_SUCCESS;
+    cNewUsers = ASMAtomicIncS32(&g_crtR0Users);
+    if (cNewUsers != 1)
+    {
+        if (cNewUsers > 1)
+            return VINF_SUCCESS;
+        ASMAtomicDecS32(&g_crtR0Users);
+        return VERR_INTERNAL_ERROR_3;
+    }
 
     rc = rtR0InitNative();
     if (RT_SUCCESS(rc))
@@ -126,6 +133,8 @@ RTR0DECL(void) RTR0Term(void)
     Assert(cNewUsers >= 0);
     if (cNewUsers == 0)
         rtR0Term();
+    else if (cNewUsers < 0)
+        ASMAtomicIncS32(&g_crtR0Users);
 }
 RT_EXPORT_SYMBOL(RTR0Term);
 
@@ -134,7 +143,9 @@ RT_EXPORT_SYMBOL(RTR0Term);
 RTR0DECL(void) RTR0TermForced(void)
 {
     RT_ASSERT_PREEMPTIBLE();
+
     AssertMsg(g_crtR0Users == 1, ("%d\n", g_crtR0Users));
+    ASMAtomicWriteS32(&g_crtR0Users, 0);
 
     rtR0Term();
 }
