@@ -192,10 +192,10 @@ class PlatformMSCOM:
                 except AttributeError, e:
                     return self.__dict__['_rootFake'].__getattr__(a)
 
-    VBOX_TLB_GUID  = '{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}'
+    VBOX_TLB_GUID  = '{D7569351-1750-46F0-936E-BD127D5BC264}'
     VBOX_TLB_LCID  = 0
     VBOX_TLB_MAJOR = 1
-    VBOX_TLB_MINOR = 0
+    VBOX_TLB_MINOR = 3
 
     def __init__(self, params):
         from win32com import universal
