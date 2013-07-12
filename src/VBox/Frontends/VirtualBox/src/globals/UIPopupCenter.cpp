@@ -116,9 +116,9 @@ void UIPopupCenter::error(QWidget *pParent, const QString &strPopupPaneID,
 {
     message(pParent, strPopupPaneID,
             strMessage, strDetails,
-            AlertButton_Ok | AlertButtonOption_Default | AlertButtonOption_Escape /* 1st button */,
+            AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape /* 1st button */,
             0 /* 2nd button */,
-            QString() /* 1st button text */,
+            QApplication::translate("UIMessageCenter", "Close") /* 1st button text */,
             QString() /* 2nd button text */,
             fProposeAutoConfirmation);
 }
@@ -164,12 +164,15 @@ void UIPopupCenter::questionBinary(QWidget *pParent, const QString &strPopupPane
 void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneID,
                                   const QString &strMessage, const QString &strDetails,
                                   int iButton1, int iButton2,
-                                  const QString &strButtonText1, const QString &strButtonText2,
+                                  QString strButtonText1, QString strButtonText2,
                                   bool fProposeAutoConfirmation)
 {
     /* Make sure at least one button is valid: */
     if (iButton1 == 0 && iButton2 == 0)
-        iButton1 = AlertButton_Ok | AlertButtonOption_Default | AlertButtonOption_Escape;
+    {
+        iButton1 = AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape;
+        strButtonText1 = QApplication::translate("UIMessageCenter", "Close");
+    }
 
     /* Check if popup-pane was auto-confirmed before: */
     if (fProposeAutoConfirmation)

@@ -127,7 +127,7 @@ private:
     void showPopupPane(QWidget *pParent, const QString &strPopupPaneID,
                        const QString &strMessage, const QString &strDetails,
                        int iButton1, int iButton2,
-                       const QString &strButtonText1, const QString &strButtonText2,
+                       QString strButtonText1, QString strButtonText2,
                        bool fProposeAutoConfirmation);
 
     /* Helpers: Popup-stack stuff: */
