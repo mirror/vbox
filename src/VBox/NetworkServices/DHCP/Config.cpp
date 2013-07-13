@@ -512,6 +512,7 @@ int NetworkManager::offer4Session(Session& session)
     opt.cbRawOpt = 1;
     client->rawOptions.push_back(opt);
 
+    /* XXX: here should be condition MUST NOT on DHCPINFORM */
     opt.u8OptId = RTNET_DHCP_OPT_LEASE_TIME;
     *(uint32_t *)opt.au8RawOpt = RT_H2N_U32(ConfigurationManager::getConfigurationManager()->getLeaseTime());
     opt.cbRawOpt = sizeof(RTNETADDRIPV4);
