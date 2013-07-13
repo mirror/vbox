@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,18 +31,12 @@ UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
     Ui::UIGlobalSettingsGeneral::setupUi(this);
 
 #ifndef Q_WS_MAC
-    m_pEnablePresentationModeCheckbox->hide();
-    m_pSpacerWidget2->hide();
+    m_pPresentationModeLabel->hide();
+    m_pPresentationModeCheckbox->hide();
 #endif /* !Q_WS_MAC */
-//#ifndef Q_WS_WIN /* Checkbox hidden for now! */
-    m_pDisableHostScreenSaverCheckbox->hide();
-    m_pSpacerWidget3->hide();
-//#endif /* !Q_WS_WIN */
-
-    /* If all checkboxes hidden, hide separator too: */
-    if (m_pEnablePresentationModeCheckbox->isHidden() &&
-        m_pDisableHostScreenSaverCheckbox->isHidden())
-        m_pLineSeparator2->hide();
+    /* Hide checkbox for now: */
+    m_pHostScreenSaverLabel->hide();
+    m_pHostScreenSaverCheckbox->hide();
 
     /* Setup widgets: */
     m_pMachineFolderSelector->setHomeDir(vboxGlobal().virtualBox().GetHomeFolder());
@@ -66,7 +60,7 @@ void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
 #ifdef Q_WS_MAC
     m_cache.m_fPresentationModeEnabled = m_settings.presentationModeEnabled();
 #endif /* Q_WS_MAC */
-    m_cache.m_fHostScreenSaverDisables = m_settings.hostScreenSaverDisabled();
+    m_cache.m_fHostScreenSaverDisabled = m_settings.hostScreenSaverDisabled();
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -80,9 +74,9 @@ void UIGlobalSettingsGeneral::getFromCache()
     m_pMachineFolderSelector->setPath(m_cache.m_strDefaultMachineFolder);
     m_pVRDPLibNameSelector->setPath(m_cache.m_strVRDEAuthLibrary);
 #ifdef Q_WS_MAC
-    m_pEnablePresentationModeCheckbox->setChecked(m_cache.m_fPresentationModeEnabled);
+    m_pPresentationModeCheckbox->setChecked(m_cache.m_fPresentationModeEnabled);
 #endif /* Q_WS_MAC */
-    m_pDisableHostScreenSaverCheckbox->setChecked(m_cache.m_fHostScreenSaverDisables);
+    m_pHostScreenSaverCheckbox->setChecked(m_cache.m_fHostScreenSaverDisabled);
 }
 
 /* Save data from corresponding widgets to cache,
@@ -93,9 +87,9 @@ void UIGlobalSettingsGeneral::putToCache()
     m_cache.m_strDefaultMachineFolder = m_pMachineFolderSelector->path();
     m_cache.m_strVRDEAuthLibrary = m_pVRDPLibNameSelector->path();
 #ifdef Q_WS_MAC
-    m_cache.m_fPresentationModeEnabled = m_pEnablePresentationModeCheckbox->isChecked();
+    m_cache.m_fPresentationModeEnabled = m_pPresentationModeCheckbox->isChecked();
 #endif /* Q_WS_MAC */
-    m_cache.m_fHostScreenSaverDisables = m_pDisableHostScreenSaverCheckbox->isChecked();
+    m_cache.m_fHostScreenSaverDisabled = m_pHostScreenSaverCheckbox->isChecked();
 }
 
 /* Save data from cache to corresponding external object(s),
@@ -113,7 +107,7 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
 #ifdef Q_WS_MAC
     m_settings.setPresentationModeEnabled(m_cache.m_fPresentationModeEnabled);
 #endif /* Q_WS_MAC */
-    m_settings.setHostScreenSaverDisabled(m_cache.m_fHostScreenSaverDisables);
+    m_settings.setHostScreenSaverDisabled(m_cache.m_fHostScreenSaverDisabled);
 
     /* Upload properties & settings to data: */
     UISettingsPageGlobal::uploadData(data);
@@ -124,8 +118,8 @@ void UIGlobalSettingsGeneral::setOrderAfter(QWidget *pWidget)
 {
     setTabOrder(pWidget, m_pMachineFolderSelector);
     setTabOrder(m_pMachineFolderSelector, m_pVRDPLibNameSelector);
-    setTabOrder(m_pVRDPLibNameSelector, m_pEnablePresentationModeCheckbox);
-    setTabOrder(m_pEnablePresentationModeCheckbox, m_pDisableHostScreenSaverCheckbox);
+    setTabOrder(m_pVRDPLibNameSelector, m_pPresentationModeCheckbox);
+    setTabOrder(m_pPresentationModeCheckbox, m_pHostScreenSaverCheckbox);
 }
 
 /* Translation stuff: */
@@ -133,13 +127,5 @@ void UIGlobalSettingsGeneral::retranslateUi()
 {
     /* Translate uic generated strings: */
     Ui::UIGlobalSettingsGeneral::retranslateUi(this);
-
-    m_pMachineFolderSelector->setWhatsThis(tr("Displays the path to the default virtual "
-                                              "machine folder. This folder is used, if not "
-                                              "explicitly specified otherwise, when creating "
-                                              "new virtual machines."));
-    m_pVRDPLibNameSelector->setWhatsThis(tr("Displays the path to the library that "
-                                            "provides authentication for Remote Display "
-                                            "(VRDP) clients."));
 }
 
