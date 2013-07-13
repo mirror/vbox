@@ -512,11 +512,6 @@ int NetworkManager::offer4Session(Session& session)
     opt.cbRawOpt = 1;
     client->rawOptions.push_back(opt);
 
-    opt.u8OptId = RTNET_DHCP_OPT_SERVER_ID;
-    ((PRTNETADDRIPV4)opt.au8RawOpt)->u = m_OurAddress.u;
-    opt.cbRawOpt = sizeof(RTNETADDRIPV4);
-    client->rawOptions.push_back(opt);
-
     opt.u8OptId = RTNET_DHCP_OPT_LEASE_TIME;
     *(uint32_t *)opt.au8RawOpt = RT_H2N_U32(ConfigurationManager::getConfigurationManager()->getLeaseTime());
     opt.cbRawOpt = sizeof(RTNETADDRIPV4);
@@ -566,6 +561,11 @@ int NetworkManager::ack(Session& session)
     opt.u8OptId = RTNET_DHCP_OPT_MSG_TYPE;
     opt.au8RawOpt[0] = RTNET_DHCP_MT_ACK;
     opt.cbRawOpt = 1;
+    client->rawOptions.push_back(opt);
+
+    opt.u8OptId = RTNET_DHCP_OPT_LEASE_TIME;
+    *(uint32_t *)opt.au8RawOpt = RT_H2N_U32(ConfigurationManager::getConfigurationManager()->getLeaseTime());
+    opt.cbRawOpt = sizeof(RTNETADDRIPV4);
     client->rawOptions.push_back(opt);
 
     processParameterReqList(session);
