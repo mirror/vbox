@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,7 +31,7 @@ struct UISettingsCacheGlobalGeneral
 #ifdef Q_WS_MAC
     bool m_fPresentationModeEnabled;
 #endif /* Q_WS_MAC */
-    bool m_fHostScreenSaverDisables;
+    bool m_fHostScreenSaverDisabled;
 };
 
 /* Global settings / General page: */
@@ -73,4 +73,3 @@ private:
 };
 
 #endif // __UIGlobalSettingsGeneral_h__
-
