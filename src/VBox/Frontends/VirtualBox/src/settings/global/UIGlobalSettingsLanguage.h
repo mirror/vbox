@@ -61,6 +61,10 @@ protected:
     /* Helper: Translation stuff: */
     void retranslateUi();
 
+    /* Handlers: Event stuff: */
+    void showEvent(QShowEvent *pEvent);
+    void polishEvent(QShowEvent *pEvent);
+
 private slots:
 
     /* Handler: List-painting stuff: */
@@ -75,6 +79,7 @@ private:
     void reload(const QString &strLangId);
 
     /* Variables: */
+    bool m_fPolished;
     bool m_fIsLanguageChanged;
 
     /* Cache: */
