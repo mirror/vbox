@@ -86,6 +86,10 @@ extern NAME(VBInsTstFailure3)
 extern NAME(VBInsTstFailure4)
 
 
+;; Cannot do traps yet.
+%undef VBINSTST_CAN_DO_TRAPS
+
+
 ;
 ; Include the common bits (contains code using above macros)
 ;

@@ -174,6 +174,94 @@ VBINSTST_BEGINPROC Common_BadValue
 VBINSTST_ENDPROC   Common_BadValue
 
 
+%ifdef VBINSTST_CAN_DO_TRAPS
+
+;;
+; Report a missing TRAP.
+;
+; Primary purpose is save all registers and convert from our stack-based to
+; the correct calling convention for the environment.
+;
+; This function will clean up the stack upon return (to save space in the caller).
+;
+; @param    uExpected
+;
+VBINSTST_BEGINPROC Common_MissingTrap
+        MY_PUSH_ALL
+        mov     xAX, xSP                ; 16-byte align the stack and reserve space for arguments and stuff.
+        sub     xSP, 40h
+        and     xSP, ~15
+        mov     [xSP + 38h], xAX
+
+ %ifdef ASM_CALL64_GCC
+        mov     rdx, [VBINSTST_NAME(g_uVBInsTstSubTestIndicator) wrt rip]
+        movzx   rsi, byte [rbp + 10h] ; expected
+        lea     rdi, [.szFmt wrt rip]
+        VBINSTST_CALL_FN_FAILURE_2
+
+ %elifdef ASM_CALL64_MSC
+        mov     r8d, [VBINSTST_NAME(g_uVBInsTstSubTestIndicator) wrt rip]
+        movzx   rdx, byte [rbp + 10h] ; expected
+        lea     rcx, [.szFmt wrt rip]
+        VBINSTST_CALL_FN_FAILURE_2
+
+ %elifdef ASM_CALL64_BS2
+        mov     sBX, [VBINSTST_NAME(g_uVBInsTstSubTestIndicator) xWrtRIP]
+        mov     sDX, [xBP + xCB + xCB]     ; expected
+        lea     sSI, [.szFmt xWrtRIP]
+        mov     qword [xSP + xCB + 1*sCB], sBX
+        mov     qword [xSP + xCB], sDX
+        mov     [xSP], sSI
+        VBINSTST_CALL_FN_FAILURE_2
+
+ %else
+        mov     sBX, [VBINSTST_NAME(g_uVBInsTstSubTestIndicator)]
+        mov     sDX, [xBP + xCB + xCB]     ; expected
+        mov     [xSP + xCB + 1*sCB], sBX
+        mov     [xSP + xCB], sDX
+        mov     [xSP], RTCCPTR_PRE .szFmt
+        VBINSTST_CALL_FN_FAILURE_2
+ %endif
+
+        mov     xSP, [xSP + 38h]
+        MY_POP_ALL
+        ret     1*sCB
+ %if ARCH_BITS == 64
+.szFmt: db 'Missing trap %RX8 (line %RU64)', 13, 0
+ %else
+.szFmt: db 'Missing trap %RX8 (line %RU32)', 13, 0
+ %endif
+VBINSTST_ENDPROC   Common_MissingTrap
+
+ %macro Common_MissingTrapTemplate 1
+    VBINSTST_BEGINPROC Common_MissingTrap_%1
+        push    %1
+        call    VBINSTST_NAME(Common_MissingTrap)
+        ret
+    VBINSTST_ENDPROC   Common_MissingTrap_%1
+ %endmacro
+ Common_MissingTrapTemplate X86_XCPT_DE
+ Common_MissingTrapTemplate X86_XCPT_DB
+ Common_MissingTrapTemplate X86_XCPT_NMI
+ Common_MissingTrapTemplate X86_XCPT_BP
+ Common_MissingTrapTemplate X86_XCPT_OF
+ Common_MissingTrapTemplate X86_XCPT_BR
+ Common_MissingTrapTemplate X86_XCPT_UD
+ Common_MissingTrapTemplate X86_XCPT_NM
+ ;Common_MissingTrapTemplate X86_XCPT_DF
+ ;Common_MissingTrapTemplate X86_XCPT_CO_SEG_OVERRUN
+ Common_MissingTrapTemplate X86_XCPT_TS
+ Common_MissingTrapTemplate X86_XCPT_NP
+ Common_MissingTrapTemplate X86_XCPT_SS
+ Common_MissingTrapTemplate X86_XCPT_GP
+ Common_MissingTrapTemplate X86_XCPT_PF
+ Common_MissingTrapTemplate X86_XCPT_MF
+ Common_MissingTrapTemplate X86_XCPT_AC
+ ;Common_MissingTrapTemplate X86_XCPT_MC
+ Common_MissingTrapTemplate X86_XCPT_XF
+
+%endif ; VBINSTST_CAN_DO_TRAPS
+
 
 ;
 ; Global data variables used by Common_SetupMemReadUxx.
