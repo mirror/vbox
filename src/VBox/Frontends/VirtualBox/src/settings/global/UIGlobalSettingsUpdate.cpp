@@ -21,7 +21,6 @@
 #include "UIGlobalSettingsUpdate.h"
 #include "VBoxGlobal.h"
 
-/* Update page constructor: */
 UIGlobalSettingsUpdate::UIGlobalSettingsUpdate()
     : m_pLastChosenRadio(0)
     , m_fChanged(false)

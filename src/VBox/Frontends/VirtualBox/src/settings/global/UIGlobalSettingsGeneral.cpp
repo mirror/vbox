@@ -17,31 +17,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Qt includes: */
 #include <QDir>
 
-/* Local includes */
+/* GUI includes: */
 #include "UIGlobalSettingsGeneral.h"
 #include "VBoxGlobal.h"
 
-/* General page constructor: */
 UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsGeneral::setupUi(this);
 
 #ifndef Q_WS_MAC
-    m_pPresentationModeLabel->hide();
-    m_pPresentationModeCheckbox->hide();
+    m_pLabelPresentationMode->hide();
+    m_pCheckBoxPresentationMode->hide();
 #endif /* !Q_WS_MAC */
     /* Hide checkbox for now: */
-    m_pHostScreenSaverLabel->hide();
-    m_pHostScreenSaverCheckbox->hide();
+    m_pLabelHostScreenSaver->hide();
+    m_pCheckBoxHostScreenSaver->hide();
 
     /* Setup widgets: */
-    m_pMachineFolderSelector->setHomeDir(vboxGlobal().virtualBox().GetHomeFolder());
-    m_pVRDPLibNameSelector->setHomeDir(vboxGlobal().virtualBox().GetHomeFolder());
-    m_pVRDPLibNameSelector->setMode(VBoxFilePathSelectorWidget::Mode_File_Open);
+    m_pSelectorMachineFolder->setHomeDir(vboxGlobal().virtualBox().GetHomeFolder());
+    m_pSelectorVRDPLibName->setHomeDir(vboxGlobal().virtualBox().GetHomeFolder());
+    m_pSelectorVRDPLibName->setMode(VBoxFilePathSelectorWidget::Mode_File_Open);
 
     /* Apply language settings: */
     retranslateUi();
@@ -71,12 +70,12 @@ void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsGeneral::getFromCache()
 {
     /* Fetch from cache: */
-    m_pMachineFolderSelector->setPath(m_cache.m_strDefaultMachineFolder);
-    m_pVRDPLibNameSelector->setPath(m_cache.m_strVRDEAuthLibrary);
+    m_pSelectorMachineFolder->setPath(m_cache.m_strDefaultMachineFolder);
+    m_pSelectorVRDPLibName->setPath(m_cache.m_strVRDEAuthLibrary);
 #ifdef Q_WS_MAC
-    m_pPresentationModeCheckbox->setChecked(m_cache.m_fPresentationModeEnabled);
+    m_pCheckBoxPresentationMode->setChecked(m_cache.m_fPresentationModeEnabled);
 #endif /* Q_WS_MAC */
-    m_pHostScreenSaverCheckbox->setChecked(m_cache.m_fHostScreenSaverDisabled);
+    m_pCheckBoxHostScreenSaver->setChecked(m_cache.m_fHostScreenSaverDisabled);
 }
 
 /* Save data from corresponding widgets to cache,
@@ -84,12 +83,12 @@ void UIGlobalSettingsGeneral::getFromCache()
 void UIGlobalSettingsGeneral::putToCache()
 {
     /* Upload to cache: */
-    m_cache.m_strDefaultMachineFolder = m_pMachineFolderSelector->path();
-    m_cache.m_strVRDEAuthLibrary = m_pVRDPLibNameSelector->path();
+    m_cache.m_strDefaultMachineFolder = m_pSelectorMachineFolder->path();
+    m_cache.m_strVRDEAuthLibrary = m_pSelectorVRDPLibName->path();
 #ifdef Q_WS_MAC
-    m_cache.m_fPresentationModeEnabled = m_pPresentationModeCheckbox->isChecked();
+    m_cache.m_fPresentationModeEnabled = m_pCheckBoxPresentationMode->isChecked();
 #endif /* Q_WS_MAC */
-    m_cache.m_fHostScreenSaverDisabled = m_pHostScreenSaverCheckbox->isChecked();
+    m_cache.m_fHostScreenSaverDisabled = m_pCheckBoxHostScreenSaver->isChecked();
 }
 
 /* Save data from cache to corresponding external object(s),
@@ -100,9 +99,9 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Save from cache: */
-    if (m_properties.isOk() && m_pMachineFolderSelector->isModified())
+    if (m_properties.isOk() && m_pSelectorMachineFolder->isModified())
         m_properties.SetDefaultMachineFolder(m_cache.m_strDefaultMachineFolder);
-    if (m_properties.isOk() && m_pVRDPLibNameSelector->isModified())
+    if (m_properties.isOk() && m_pSelectorVRDPLibName->isModified())
         m_properties.SetVRDEAuthLibrary(m_cache.m_strVRDEAuthLibrary);
 #ifdef Q_WS_MAC
     m_settings.setPresentationModeEnabled(m_cache.m_fPresentationModeEnabled);
@@ -113,16 +112,15 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-/* Navigation stuff: */
 void UIGlobalSettingsGeneral::setOrderAfter(QWidget *pWidget)
 {
-    setTabOrder(pWidget, m_pMachineFolderSelector);
-    setTabOrder(m_pMachineFolderSelector, m_pVRDPLibNameSelector);
-    setTabOrder(m_pVRDPLibNameSelector, m_pPresentationModeCheckbox);
-    setTabOrder(m_pPresentationModeCheckbox, m_pHostScreenSaverCheckbox);
+    /* Configure navigation: */
+    setTabOrder(pWidget, m_pSelectorMachineFolder);
+    setTabOrder(m_pSelectorMachineFolder, m_pSelectorVRDPLibName);
+    setTabOrder(m_pSelectorVRDPLibName, m_pCheckBoxPresentationMode);
+    setTabOrder(m_pCheckBoxPresentationMode, m_pCheckBoxHostScreenSaver);
 }
 
-/* Translation stuff: */
 void UIGlobalSettingsGeneral::retranslateUi()
 {
     /* Translate uic generated strings: */
