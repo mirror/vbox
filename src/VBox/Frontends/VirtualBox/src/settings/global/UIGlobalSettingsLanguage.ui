@@ -14,74 +14,22 @@
  </comment>
  <class>UIGlobalSettingsLanguage</class>
  <widget class="QWidget" name="UIGlobalSettingsLanguage">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>350</width>
-    <height>250</height>
-   </rect>
-  </property>
   <layout class="QGridLayout">
    <property name="margin">
     <number>0</number>
    </property>
    <item row="0" column="0">
-    <spacer>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="0" column="1" colspan="2">
-    <widget class="QLabel" name="m_pLanguageLabel">
+    <widget class="QILabelSeparator" native="1" name="m_pLanguageLabel">
      <property name="text">
-      <string>&amp;Interface Language:</string>
+      <string>&amp;Interface Languages</string>
      </property>
      <property name="buddy">
       <cstring>m_pLanguageTree</cstring>
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
-    <spacer>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint">
-      <size>
-       <width>20</width>
-       <height>0</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="1" column="2">
+   <item row="1" column="0">
     <widget class="QITreeWidget" name="m_pLanguageTree">
-     <property name="sizePolicy">
-      <sizepolicy vsizetype="Expanding" hsizetype="Expanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>150</height>
-      </size>
-     </property>
      <property name="whatsThis">
       <string>Lists all available user interface languages. The effective language is written in &lt;b>bold&lt;/b>. Select &lt;i>Default&lt;/i> to reset to the system default language.</string>
      </property>
@@ -110,21 +58,8 @@
      </column>
     </widget>
    </item>
-   <item row="2" column="2">
-    <widget class="QILabel" name="m_pLanguageInfo">
-     <property name="sizePolicy">
-      <sizepolicy vsizetype="Minimum" hsizetype="Expanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
+   <item row="2" column="0">
+    <widget class="QIRichTextLabel" name="m_pLanguageInfo"/>
    </item>
   </layout>
  </widget>
@@ -135,9 +70,14 @@
    <header>QITreeWidget.h</header>
   </customwidget>
   <customwidget>
-   <class>QILabel</class>
+   <class>QIRichTextLabel</class>
+   <extends>QTextEdit</extends>
+   <header>QIRichTextLabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QILabelSeparator</class>
    <extends>QLabel</extends>
-   <header>QILabel.h</header>
+   <header>QILabelSeparator.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
