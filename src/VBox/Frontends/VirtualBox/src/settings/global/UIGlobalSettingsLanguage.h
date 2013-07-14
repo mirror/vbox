@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,7 @@
 #ifndef __UIGlobalSettingsLanguage_h__
 #define __UIGlobalSettingsLanguage_h__
 
-/* Local includes */
+/* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsLanguage.gen.h"
 
@@ -55,26 +55,26 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    /* Navigation stuff: */
+    /* Helper: Navigation stuff: */
     void setOrderAfter(QWidget *pWidget);
 
-    /* Translation stuff: */
+    /* Helper: Translation stuff: */
     void retranslateUi();
-
-    /* Reload language tree: */
-    void reload(const QString &strLangId);
 
 private slots:
 
-    /* Routine to paint language items: */
+    /* Handler: List-painting stuff: */
     void sltLanguageItemPainted(QTreeWidgetItem *pItem, QPainter *pPainter);
 
-    /* Slot to handle current language change signal: */
+    /* Handler: Current-changed stuff: */
     void sltCurrentLanguageChanged(QTreeWidgetItem *pItem);
 
 private:
 
-    /* Edited flag: */
+    /* Helper: List-loading stuff: */
+    void reload(const QString &strLangId);
+
+    /* Variables: */
     bool m_fIsLanguageChanged;
 
     /* Cache: */
@@ -82,4 +82,3 @@ private:
 };
 
 #endif // __UIGlobalSettingsLanguage_h__
-
