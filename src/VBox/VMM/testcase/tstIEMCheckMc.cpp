@@ -502,6 +502,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_CALL_VOID_AIMPL_2(a_pfn, a0, a1)                         do {} while (0)
 #define IEM_MC_CALL_VOID_AIMPL_3(a_pfn, a0, a1, a2)                     do {} while (0)
 #define IEM_MC_CALL_VOID_AIMPL_4(a_pfn, a0, a1, a2, a3)                 do {} while (0)
+#define IEM_MC_CALL_AIMPL_3(a_rc, a_pfn, a0, a1, a2)                    do { (a_rc) = VINF_SUCCESS; } while (0)
 #define IEM_MC_CALL_AIMPL_4(a_rc, a_pfn, a0, a1, a2, a3)                do { (a_rc) = VINF_SUCCESS; } while (0)
 #define IEM_MC_CALL_CIMPL_0(a_pfnCImpl)                                 return VINF_SUCCESS
 #define IEM_MC_CALL_CIMPL_1(a_pfnCImpl, a0)                             return VINF_SUCCESS

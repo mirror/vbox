@@ -1391,13 +1391,47 @@ ENDPROC iemAImpl_ %+ %1 %+ _u8
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u16, 16
         PROLOGUE_4_ARGS
 
+        ; div by chainsaw check.
         test    A2_16, A2_16
         jz      .div_zero
+
+        ; Overflow check - unsigned division is simple to verify, haven't
+        ; found a simple way to check signed division yet unfortunately.
  %if %4 == 0
         cmp     [A1], A2_16
         jae     .div_overflow
  %else
- ;; @todo idiv  overflow checking.
+        mov     T0_16, [A1]
+        shl     T0_32, 16
+        mov     T0_16, [A0]              ; T0 = dividend
+        mov     T1, A2                   ; T1 = divisor
+        test    T1_16, T1_16
+        js      .divisor_negative
+        test    T0_32, T0_32
+        jns     .both_positive
+        neg     T0_32
+.one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
+        push    T0                      ; Start off like unsigned below.
+        shr     T0_32, 15
+        cmp     T0_16, T1_16
+        pop     T0
+        jb      .div_no_overflow
+        ja      .div_overflow
+        and     T0_16, 0x7fff           ; Special case for covering (divisor - 1).
+        cmp     T0_16, T1_16
+        jae     .div_overflow
+        jmp     .div_no_overflow
+
+.divisor_negative:
+        neg     T1_16
+        test    T0_32, T0_32
+        jns     .one_of_each
+        neg     T0_32
+.both_positive:                         ; Same as unsigned shifted by sign indicator bit.
+        shr     T0_32, 15
+        cmp     T0_16, T1_16
+        jae     .div_overflow
+.div_no_overflow:
  %endif
 
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
@@ -1431,13 +1465,53 @@ ENDPROC iemAImpl_ %+ %1 %+ _u16
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         PROLOGUE_4_ARGS
 
+        ; div by chainsaw check.
         test    A2_32, A2_32
         jz      .div_zero
+
+        ; Overflow check - unsigned division is simple to verify, haven't
+        ; found a simple way to check signed division yet unfortunately.
  %if %4 == 0
         cmp     [A1], A2_32
         jae     .div_overflow
  %else
-  ;; @todo idiv  overflow checking.
+        push    A2                      ; save A2 so we modify it (we out of regs on x86).
+        mov     T0_32, [A0]             ; T0 = dividend low
+        mov     T1_32, [A1]             ; T1 = dividend high
+        test    A2_32, A2_32
+        js      .divisor_negative
+        test    T1_32, T1_32
+        jns     .both_positive
+        neg     T0_32
+        neg     T1_32
+.one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
+        push    T0                      ; Start off like unsigned below.
+        shl     T1_32, 1
+        shr     T0_32, 31
+        or      T1_32, T0_32
+        cmp     T1_32, A2_32
+        pop     T0
+        jb      .div_no_overflow
+        ja      .div_overflow
+        and     T0_32, 0x7fffffff       ; Special case for covering (divisor - 1).
+        cmp     T0_32, A2_32
+        jae     .div_overflow
+        jmp     .div_no_overflow
+
+.divisor_negative:
+        neg     A2_32
+        test    T1_32, T1_32
+        jns     .one_of_each
+        neg     T0_32
+        neg     T1_32
+.both_positive:                         ; Same as unsigned shifted by sign indicator bit.
+        shl     T1_32, 1
+        shr     T0_32, 31
+        or      T1_32, T0_32
+        cmp     T1_32, A2_32
+        jae     .div_overflow
+.div_no_overflow:
+        pop     A2
  %endif
 
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
@@ -1463,8 +1537,11 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
 .return:
         EPILOGUE_4_ARGS
 
-.div_zero:
 .div_overflow:
+ %if %4 != 0
+        pop     A2
+ %endif
+.div_zero:
         mov     eax, -1
         jmp     .return
 ENDPROC iemAImpl_ %+ %1 %+ _u32
@@ -1479,7 +1556,44 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         cmp     [A1], A2
         jae     .div_overflow
  %else
-  ;; @todo idiv  overflow checking.
+        push    A2                      ; save A2 so we modify it (we out of regs on x86).
+        mov     T0, [A0]                ; T0 = dividend low
+        mov     T1, [A1]                ; T1 = dividend high
+        test    A2, A2
+        js      .divisor_negative
+        test    T1, T1
+        jns     .both_positive
+        neg     T0
+        neg     T1
+.one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
+        push    T0                      ; Start off like unsigned below.
+        shl     T1, 1
+        shr     T0, 63
+        or      T1, T0
+        cmp     T1, A2
+        pop     T0
+        jb      .div_no_overflow
+        ja      .div_overflow
+        mov     T1, 0x7fffffffffffffff
+        and     T0, T1                  ; Special case for covering (divisor - 1).
+        cmp     T0, A2
+        jae     .div_overflow
+        jmp     .div_no_overflow
+
+.divisor_negative:
+        neg     A2
+        test    T1, T1
+        jns     .one_of_each
+        neg     T0
+        neg     T1
+.both_positive:                         ; Same as unsigned shifted by sign indicator bit.
+        shl     T1, 1
+        shr     T0, 63
+        or      T1, T0
+        cmp     T1, A2
+        jae     .div_overflow
+.div_no_overflow:
+        pop     A2
  %endif
 
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
@@ -1505,8 +1619,11 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
 .return:
         EPILOGUE_4_ARGS_EX 12
 
-.div_zero:
 .div_overflow:
+ %if %4 != 0
+        pop     A2
+ %endif
+.div_zero:
         mov     eax, -1
         jmp     .return
 ENDPROC iemAImpl_ %+ %1 %+ _u64

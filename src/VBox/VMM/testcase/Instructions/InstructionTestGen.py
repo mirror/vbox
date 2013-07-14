@@ -1291,7 +1291,7 @@ class InstrTest_DivIDiv(InstrTestBase):
             while iOp2 == X86_GREG_xAX or iOp2 == X86_GREG_xDX:
                 iOp2 = oGen.oTarget.randGRegNoSp();
 
-            for cbEffOp in [1]:#( 8, 4, 2, 1 ):
+            for cbEffOp in ( 8, 4, 2, 1 ):
                 if cbEffOp > oGen.oTarget.getMaxOpBytes():
                     continue;
                 oGen.write('; cbEffOp=%u iOp2=%u\n' % (cbEffOp, iOp2,));
@@ -1329,7 +1329,7 @@ g_aoInstructionTests = [
     #InstrTest_Mov_Gv_Ev(),
     ##InstrTest_MovSxD_Gv_Ev(),
     InstrTest_DivIDiv(fIsIDiv = False),
-    #InstrTest_DivIDiv(fIsIDiv = True),
+    InstrTest_DivIDiv(fIsIDiv = True),
 ];
 
 
