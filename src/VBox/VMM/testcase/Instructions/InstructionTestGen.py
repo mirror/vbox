@@ -383,6 +383,15 @@ class TargetEnv(object):
                 return True;
         return False;
 
+    def gregNameBits(self, iReg, cBits):
+        """ Gets the name of the given register for the specified width (bits). """
+        return gregName(iReg, cBits, self.is64Bit());
+
+    def gregNameBytes(self, iReg, cbWidth):
+        """ Gets the name of the given register for the specified with (in bytes). """
+        return gregName(iReg, cbWidth * 8, self.is64Bit());
+
+
 
 
 ## Target environments.
@@ -391,6 +400,7 @@ g_dTargetEnvs = {
     'iprt-r3-64':       TargetEnv('iprt-r3-64',     TargetEnv.ksInstrSet_64, TargetEnv.ksCpuMode_Long,    3),
     'bs2-r0-64':        TargetEnv('bs2-r0-64',      TargetEnv.ksInstrSet_64, TargetEnv.ksCpuMode_Long,    0),
     'bs2-r0-64-big':    TargetEnv('bs2-r0-64-big',  TargetEnv.ksInstrSet_64, TargetEnv.ksCpuMode_Long,    0),
+    'bs2-r0-32-big':    TargetEnv('bs2-r0-32-big',  TargetEnv.ksInstrSet_32, TargetEnv.ksCpuMode_Protect, 0),
 };
 
 
@@ -1237,12 +1247,15 @@ class InstrTest_DivIDiv(InstrTestBase):
         oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[X86_GREG_xDX],));
         oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[X86_GREG_xAX],));
         oGen.write('        VBINSTST_TRAP_INSTR X86_XCPT_DE, 0, %-4s    %s\n'
-                   % (self.sInstr, gregName(iOp2, cbEffOp * 8),));
+                   % (self.sInstr, oGen.gregNameBytes(iOp2, cbEffOp),));
         oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(X86_GREG_xAX, X86_GREG_xDX, iOp2),));
         return True;
 
     def generateOneDivideErrorTestGreg8Bit(self, oGen, cbEffOp, iOp2, iDividend, iDivisor):
         """ Generate code of one '[I]DIV AX,<GREG>' test that causes #DE (8-bit). """
+        if not oGen.oTarget.is64Bit() and iOp2 == 4: # Avoid AH.
+            iOp2 = 5;
+
         cbMaxOp   = oGen.oTarget.getMaxOpBytes();
         fMaxOp    = UINT64_MAX if cbMaxOp == 8 else UINT32_MAX; assert cbMaxOp in [8, 4];
         iOp2X     = (iOp2 & 3) if oGen.oTarget.is8BitHighGReg(cbEffOp, iOp2) else iOp2;
@@ -1263,7 +1276,7 @@ class InstrTest_DivIDiv(InstrTestBase):
         oGen.write('        push    %s\n'       % (oGen.oTarget.asGRegs[iOp2X],));
         oGen.write('        push    sAX\n');
         oGen.write('        VBINSTST_TRAP_INSTR X86_XCPT_DE, 0, %-4s    %s\n'
-                   % (self.sInstr, gregName(iOp2, cbEffOp * 8),));
+                   % (self.sInstr, oGen.gregNameBytes(iOp2, cbEffOp),));
         oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(X86_GREG_xAX, iOp2X),));
         return;
 
@@ -1278,7 +1291,7 @@ class InstrTest_DivIDiv(InstrTestBase):
             while iOp2 == X86_GREG_xAX or iOp2 == X86_GREG_xDX:
                 iOp2 = oGen.oTarget.randGRegNoSp();
 
-            for cbEffOp in ( 8, 4, 2, 1 ):
+            for cbEffOp in [1]:#( 8, 4, 2, 1 ):
                 if cbEffOp > oGen.oTarget.getMaxOpBytes():
                     continue;
                 oGen.write('; cbEffOp=%u iOp2=%u\n' % (cbEffOp, iOp2,));
@@ -1298,7 +1311,7 @@ class InstrTest_DivIDiv(InstrTestBase):
         oGen.write('VBINSTST_BEGINPROC %s\n' % (sTestFnName,));
         #oGen.write('        int3\n');
 
-        self.generateStandardTests(oGen);
+        #self.generateStandardTests(oGen);
         self.generateDivideErrorTests(oGen);
 
         #oGen.write('        int3\n');
@@ -1313,10 +1326,10 @@ class InstrTest_DivIDiv(InstrTestBase):
 # Instruction Tests.
 #
 g_aoInstructionTests = [
-    InstrTest_Mov_Gv_Ev(),
-    #InstrTest_MovSxD_Gv_Ev(),
+    #InstrTest_Mov_Gv_Ev(),
+    ##InstrTest_MovSxD_Gv_Ev(),
     InstrTest_DivIDiv(fIsIDiv = False),
-    InstrTest_DivIDiv(fIsIDiv = True),
+    #InstrTest_DivIDiv(fIsIDiv = True),
 ];
 
 
@@ -1524,6 +1537,24 @@ class InstructionTestGen(object): # pylint: disable=R0902
     def isTiny(self):
         """ Checks if we're in tiny mode."""
         return self.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny;
+
+
+    #
+    # Forwarding calls for oTarget to shorted typing and lessen the attacks
+    # on the right margin.
+    #
+
+    def gregNameBits(self, iReg, cBitsWide):
+        """ Target: Get the name of a general register for the given size (in bits). """
+        return self.oTarget.gregNameBits(iReg, cBitsWide);
+
+    def gregNameBytes(self, iReg, cbWide):
+        """ Target: Get the name of a general register for the given size (in bytes). """
+        return self.oTarget.gregNameBytes(iReg, cbWide);
+
+    def is64Bit(self):
+        """ Target: Is the target 64-bit? """
+        return self.oTarget.is64Bit();
 
 
     #
