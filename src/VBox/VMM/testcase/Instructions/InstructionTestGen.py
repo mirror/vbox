@@ -943,8 +943,8 @@ class InstrTest_DivIDiv(InstrTestBase):
             InstrTestBase.__init__(self, 'idiv Gv,Ev', 'idiv');
         self.fIsIDiv = fIsIDiv;
 
-    def generateInputsNoXcpt(self, cbEffOp, fLong = False):
-        """ Generate inputs for cbEffOp. Returns a list of pairs, dividen + divisor. """
+    def generateInputEdgeCases(self, cbEffOp, fLong, fXcpt):
+        """ Generate edge case inputs for cbEffOp. Returns a list of pairs, dividen + divisor. """
         # Test params.
         uStep = 1 << (cbEffOp * 8);
         if self.fIsIDiv:
@@ -956,45 +956,57 @@ class InstrTest_DivIDiv(InstrTestBase):
         uDivisor  = 1 if fLong else 3;
         uDividend = uStep * uDivisor - 1;
         for i in range(5 if fLong else 3):
-            auRet.append([uDividend, uDivisor]);
+            auRet.append([uDividend + fXcpt, uDivisor]);
             if self.fIsIDiv:
-                auRet.append([-uDividend, -uDivisor]);
-                auRet.append([-(uDividend + uDivisor - 1), uDivisor]);
-                auRet.append([ (uDividend + uDivisor - 1), -uDivisor]);
+                auRet.append([-uDividend - fXcpt, -uDivisor]);
+                auRet.append([-(uDividend + uDivisor + fXcpt), uDivisor]);
+                auRet.append([ (uDividend + uDivisor + fXcpt), -uDivisor]);
             if i <= 3 and fLong:
-                auRet.append([uDividend - 1, uDivisor]);
+                auRet.append([uDividend - 1 + fXcpt*3, uDivisor]);
                 if self.fIsIDiv:
-                    auRet.append([-(uDividend - 1), -uDivisor]);
+                    auRet.append([-(uDividend - 1 + fXcpt*3), -uDivisor]);
             uDivisor += 1;
             uDividend += uStep;
 
         uDivisor  = uStep - 1;
         uDividend = uStep * uDivisor - 1;
         for _ in range(3 if fLong else 1):
-            auRet.append([uDividend, uDivisor]);
+            auRet.append([uDividend + fXcpt, uDivisor]);
             if self.fIsIDiv:
-                auRet.append([-uDividend, -uDivisor]);
+                auRet.append([-uDividend - fXcpt, -uDivisor]);
             uDivisor  -= 1;
             uDividend -= uStep;
 
         if self.fIsIDiv:
             uDivisor = -uStep;
             for _ in range(3 if fLong else 1):
-                auRet.append([uDivisor * (uDivisor - 1) - 1, uDivisor]);
+                auRet.append([uDivisor * (-uStep - 1) - (not fXcpt), uDivisor]);
                 uDivisor += 1
             uDivisor = uStep - 1;
             for _ in range(3 if fLong else 1):
-                auRet.append([-(uDivisor * (uDivisor + 1) - 1), uDivisor]);
+                auRet.append([-(uDivisor * (uStep + 1) - (not fXcpt)), uDivisor]);
                 uDivisor -= 1
+
+        return auRet;
+
+    def generateInputsNoXcpt(self, cbEffOp, fLong = False):
+        """ Generate inputs for cbEffOp. Returns a list of pairs, dividen + divisor. """
+        # Test params.
+        uStep = 1 << (cbEffOp * 8);
+        if self.fIsIDiv:
+            uStep /= 2;
+
+        # edge tests
+        auRet = self.generateInputEdgeCases(cbEffOp, fLong, False)
 
         # random tests.
         if self.fIsIDiv:
             for _ in range(6 if fLong else 2):
                 while True:
-                    uDivisor  = randSxx(cbEffOp * 4);
+                    uDivisor  = randSxx(cbEffOp * 8);
                     if uDivisor == 0 or uDivisor >= uStep or uDivisor < -uStep:
                         continue;
-                    uDividend = randSxx(cbEffOp * 8);
+                    uDividend = randSxx(cbEffOp * 16);
                     uResult = uDividend / uDivisor;
                     if uResult >= uStep or uResult <= -uStep: # exclude difficulties
                         continue;
@@ -1003,10 +1015,10 @@ class InstrTest_DivIDiv(InstrTestBase):
         else:
             for _ in range(6 if fLong else 2):
                 while True:
-                    uDivisor  = randUxx(cbEffOp * 4);
+                    uDivisor  = randUxx(cbEffOp * 8);
                     if uDivisor == 0 or uDivisor >= uStep:
                         continue;
-                    uDividend = randUxx(cbEffOp * 8);
+                    uDividend = randUxx(cbEffOp * 16);
                     uResult = uDividend / uDivisor;
                     if uResult >= uStep:
                         continue;
@@ -1154,11 +1166,140 @@ class InstrTest_DivIDiv(InstrTestBase):
         #
         return True;
 
+    def generateInputsXcpt(self, cbEffOp, fLong = False):
+        """
+        Generate inputs for cbEffOp that will overflow or underflow.
+        Returns a list of pairs, dividen + divisor.
+        """
+        # Test params.
+        uStep = 1 << (cbEffOp * 8);
+        if self.fIsIDiv:
+            uStep /= 2;
+
+        # edge tests
+        auRet = self.generateInputEdgeCases(cbEffOp, fLong, True);
+        auRet.extend([[0, 0], [1, 0], [ uStep * uStep / 2 - 1, 0]]);
+
+        # random tests.
+        if self.fIsIDiv:
+            for _ in range(6 if fLong else 2):
+                while True:
+                    uDivisor  = randSxx(cbEffOp * 8);
+                    uDividend = randSxx(cbEffOp * 16);
+                    if uDivisor >= uStep or uDivisor < -uStep:
+                        continue;
+                    if uDivisor != 0:
+                        uResult = uDividend / uDivisor;
+                        if (uResult <= uStep and uResult >= 0) or (uResult >= -uStep and uResult < 0):
+                            continue;  # exclude difficulties
+                    break;
+                auRet.append([uDividend, uDivisor]);
+        else:
+            for _ in range(6 if fLong else 2):
+                while True:
+                    uDivisor  = randUxx(cbEffOp * 8);
+                    uDividend = randUxx(cbEffOp * 16);
+                    if uDivisor >= uStep:
+                        continue;
+                    if uDivisor != 0:
+                        uResult = uDividend / uDivisor;
+                        if uResult < uStep:
+                            continue;
+                    break;
+                auRet.append([uDividend, uDivisor]);
+
+        return auRet;
+
+    def generateOneDivideErrorTestGreg(self, oGen, cbEffOp, iOp2, iDividend, iDivisor):
+        """ Generate code of one '[I]DIV rDX:rAX,<GREG>' test that causes #DE. """
+        cbMaxOp   = oGen.oTarget.getMaxOpBytes();
+        fEffOp    = ((1 << (cbEffOp *8) ) - 1);
+        fMaxOp    = UINT64_MAX if cbMaxOp == 8 else UINT32_MAX; assert cbMaxOp in [8, 4];
+        fTopOp    = fMaxOp - fEffOp;
+        fFullOp1  = ((1 << (cbEffOp*16)) - 1);
+
+        uAX       = iDividend & fFullOp1;       # full with unsigned
+        uDX       = uAX >> (cbEffOp*8);
+        uAX      &= fEffOp;
+        uOp2Val   = iDivisor & fEffOp;
+
+        if cbEffOp < cbMaxOp:
+            uAX     |= randUxx(cbMaxOp * 8) & fTopOp;
+            uDX     |= randUxx(cbMaxOp * 8) & fTopOp;
+            uOp2Val |= randUxx(cbMaxOp * 8) & fTopOp;
+        oGen.write('        ; iDividend=%#x (%d) iDivisor=%#x (%d)\n'
+                   % ( iDividend & fFullOp1, iDividend, iDivisor & fEffOp, iDivisor,));
+        oGen.write('        call VBINSTST_NAME(Common_LoadKnownValues)\n');
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[X86_GREG_xDX], uDX,));
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[X86_GREG_xAX], uAX,));
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[iOp2],         uOp2Val,));
+        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[iOp2],));
+        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[X86_GREG_xDX],));
+        oGen.write('        push    %s\n' % (oGen.oTarget.asGRegs[X86_GREG_xAX],));
+        oGen.write('        VBINSTST_TRAP_INSTR X86_XCPT_DE, 0, %-4s    %s\n'
+                   % (self.sInstr, gregName(iOp2, cbEffOp * 8),));
+        oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(X86_GREG_xAX, X86_GREG_xDX, iOp2),));
+        return True;
+
+    def generateOneDivideErrorTestGreg8Bit(self, oGen, cbEffOp, iOp2, iDividend, iDivisor):
+        """ Generate code of one '[I]DIV AX,<GREG>' test that causes #DE (8-bit). """
+        cbMaxOp   = oGen.oTarget.getMaxOpBytes();
+        fMaxOp    = UINT64_MAX if cbMaxOp == 8 else UINT32_MAX; assert cbMaxOp in [8, 4];
+        iOp2X     = (iOp2 & 3) if oGen.oTarget.is8BitHighGReg(cbEffOp, iOp2) else iOp2;
+        assert iOp2X != X86_GREG_xAX;
+
+        uAX       = iDividend & UINT16_MAX;     # full with unsigned
+        uOp2Val   = iDivisor  & UINT8_MAX;
+
+        uAX       |= randUxx(cbMaxOp * 8) & (fMaxOp - UINT16_MAX);
+        uOp2Val   |= randUxx(cbMaxOp * 8) & (fMaxOp - UINT8_MAX);
+        if iOp2X != iOp2:
+            uOp2Val = rotateLeftUxx(cbMaxOp * 8, uOp2Val, 8);
+        oGen.write('        ; iDividend=%#x (%d) iDivisor=%#x (%d)\n'
+                   % ( iDividend & UINT16_MAX, iDividend, iDivisor & UINT8_MAX, iDivisor,));
+        oGen.write('        call VBINSTST_NAME(Common_LoadKnownValues)\n');
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[X86_GREG_xAX], uAX,));
+        oGen.write('        mov     %s, 0x%x\n' % (oGen.oTarget.asGRegs[iOp2X], uOp2Val,));
+        oGen.write('        push    %s\n'       % (oGen.oTarget.asGRegs[iOp2X],));
+        oGen.write('        push    sAX\n');
+        oGen.write('        VBINSTST_TRAP_INSTR X86_XCPT_DE, 0, %-4s    %s\n'
+                   % (self.sInstr, gregName(iOp2, cbEffOp * 8),));
+        oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(X86_GREG_xAX, iOp2X),));
+        return;
+
+    def generateDivideErrorTests(self, oGen):
+        """ Generate divide error tests (raises X86_XCPT_DE). """
+        oGen.write('%ifdef VBINSTST_CAN_DO_TRAPS\n');
+
+        # We do one register variation here, assuming the standard test has got them covered.
+        # Register tests
+        if True:
+            iOp2 = oGen.oTarget.randGRegNoSp();
+            while iOp2 == X86_GREG_xAX or iOp2 == X86_GREG_xDX:
+                iOp2 = oGen.oTarget.randGRegNoSp();
+
+            for cbEffOp in ( 8, 4, 2, 1 ):
+                if cbEffOp > oGen.oTarget.getMaxOpBytes():
+                    continue;
+                oGen.write('; cbEffOp=%u iOp2=%u\n' % (cbEffOp, iOp2,));
+
+                for iDividend, iDivisor in self.generateInputsXcpt(cbEffOp, fLong = not oGen.isTiny()):
+                    oGen.newSubTest();
+                    if cbEffOp > 1:
+                        self.generateOneDivideErrorTestGreg(oGen, cbEffOp, iOp2, iDividend, iDivisor);
+                    else:
+                        self.generateOneDivideErrorTestGreg8Bit(oGen, cbEffOp, iOp2, iDividend, iDivisor);
+
+        oGen.write('%endif ; VBINSTST_CAN_DO_TRAPS\n');
+        return True;
+
+
     def generateTest(self, oGen, sTestFnName):
         oGen.write('VBINSTST_BEGINPROC %s\n' % (sTestFnName,));
         #oGen.write('        int3\n');
 
         self.generateStandardTests(oGen);
+        self.generateDivideErrorTests(oGen);
 
         #oGen.write('        int3\n');
         oGen.write('        ret\n');
@@ -1380,6 +1521,10 @@ class InstructionTestGen(object): # pylint: disable=R0902
             return self._cSibIndexPerRun - 1;
         return self._cSibIndexPerRun;
 
+    def isTiny(self):
+        """ Checks if we're in tiny mode."""
+        return self.oOptions.sTestSize == InstructionTestGen.ksTestSize_Tiny;
+
 
     #
     # Internal machinery.
@@ -1445,6 +1590,9 @@ class InstructionTestGen(object): # pylint: disable=R0902
                    '        dq      0\n'
                    'VBINSTST_GLOBALNAME_EX g_uVBInsTstSubTestIndicator, data hidden\n'
                    '        dd      0\n'
+                   '%ifdef VBINSTST_CAN_DO_TRAPS\n'
+                   'VBINSTST_TRAP_RECS_BEGIN\n'
+                   '%endif\n'
                    'VBINSTST_BEGINCODE\n'
                    );
         self.write('%ifdef RT_ARCH_AMD64\n');
@@ -1692,6 +1840,17 @@ class InstructionTestGen(object): # pylint: disable=R0902
         Generates file footer.
         """
 
+        # Terminate the trap records.
+        self.write('\n\n'
+                   ';\n'
+                   '; Terminate the trap records\n'
+                   ';\n'
+                   'VBINSTST_BEGINDATA\n'
+                   '%ifdef VBINSTST_CAN_DO_TRAPS\n'
+                   'VBINSTST_TRAP_RECS_END\n'
+                   '%endif\n'
+                   'VBINSTST_BEGINCODE\n');
+
         # Register checking functions.
         for sName in self._dCheckFns:
             asRegs = sName.split('_');
@@ -1787,6 +1946,9 @@ class InstructionTestGen(object): # pylint: disable=R0902
                        'VBINSTST_BEGINPROC TestInstrMain\n'
                        '        MY_PUSH_ALL\n'
                        '        sub xSP, 40h\n'
+                       '%ifdef VBINSTST_CAN_DO_TRAPS\n'
+                       '        VBINSTST_TRAP_RECS_INSTALL\n'
+                       '%endif\n'
                        '\n');
 
             for iInstrTest in range(iInstrTestStart, iInstrTestEnd):
@@ -1805,6 +1967,9 @@ class InstructionTestGen(object): # pylint: disable=R0902
                                % ( iInstrTest, iInstrTest, iInstrTest, self._calcTestFunctionName(oInstrTest, iInstrTest)));
 
             self.write('\n'
+                       '%ifdef VBINSTST_CAN_DO_TRAPS\n'
+                       '        VBINSTST_TRAP_RECS_UNINSTALL\n'
+                       '%endif\n'
                        '        add  xSP, 40h\n'
                        '        MY_POP_ALL\n'
                        '        ret\n\n');

@@ -19,33 +19,6 @@
 %define ___env_bs2_r0_mac
 
 
-;; Same as BEGINPROC in asmdefs.mac.
-%macro VBINSTST_BEGINPROC 1
-VBINSTST_GLOBALNAME_EX %1, function hidden
-%endm
-
-;; Same as ENDPROC in asmdefs.mac.
-%macro VBINSTST_ENDPROC 1,
-VBINSTST_GLOBALNAME_EX %1 %+ _EndProc, function hidden
-%endm
-
-;; Same as NAME in asmdefs.mac.
-%define VBINSTST_NAME(a_Name)   TMPL_NM(a_Name)
-
-;; Same as GLOBALNAME_EX in asmdefs.mac.
-%macro VBINSTST_GLOBALNAME_EX 2,
-VBINSTST_NAME(%1):
-%endmacro
-
-;; Same as BEGINCODE in asmdefs.mac.
-%macro VBINSTST_BEGINCODE 0,
-%endmacro
-
-;; Same as BEGINDATA in asmdefs.mac.
-%macro VBINSTST_BEGINDATA 0,
-%endmacro
-
-
 ;; Call RTTestISub like function.
 %define VBINSTST_CALL_FN_SUB_TEST   call TMPL_NM_CMN(TestSub)
 
@@ -64,11 +37,17 @@ VBINSTST_NAME(%1):
 ;; Call RTTestIFailure like function with format message + 4 args.
 %define VBINSTST_CALL_FN_FAILURE_4  call TMPL_NM_CMN(TestFailedF)
 
+;; The image base label (used by the trap macros).
+%define VBINSTST_IMAGE_BASE_LABLE start
+
+;; Wrapper for calling TestInstallTrapRecs (used by the trap macros).
+%define VBINSTST_CALL_TEST_INSTALL_TRAP_RECS  call TMPL_NM_CMN(TestInstallTrapRecs)
+
 
 ;
 ; Include the common bits (contains code using above macros)
 ;
-%include "env-common.mac"
+%include "env-bs2-r0-common.mac"
 
 %endif
 
