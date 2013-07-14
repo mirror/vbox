@@ -15066,15 +15066,22 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEb, uint8_t, bRm, PFNIEMAIMPLMULDIVU8, pfnU8)
     {
         /* register access */
         IEMOP_HLP_NO_LOCK_PREFIX();
-        IEM_MC_BEGIN(3, 0);
+        IEM_MC_BEGIN(3, 1);
         IEM_MC_ARG(uint16_t *,      pu16AX,     0);
         IEM_MC_ARG(uint8_t,         u8Value,    1);
         IEM_MC_ARG(uint32_t *,      pEFlags,    2);
+        IEM_MC_LOCAL(int32_t,       rc);
+
         IEM_MC_FETCH_GREG_U8(u8Value, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
         IEM_MC_REF_GREG_U16(pu16AX, X86_GREG_xAX);
         IEM_MC_REF_EFLAGS(pEFlags);
-        IEM_MC_CALL_VOID_AIMPL_3(pfnU8, pu16AX, u8Value, pEFlags);
-        IEM_MC_ADVANCE_RIP();
+        IEM_MC_CALL_AIMPL_3(rc, pfnU8, pu16AX, u8Value, pEFlags);
+        IEM_MC_IF_LOCAL_IS_Z(rc) {
+            IEM_MC_ADVANCE_RIP();
+        } IEM_MC_ELSE() {
+            IEM_MC_RAISE_DIVIDE_ERROR();
+        } IEM_MC_ENDIF();
+
         IEM_MC_END();
     }
     else
@@ -15082,19 +15089,24 @@ FNIEMOP_DEF_2(iemOpCommonGrp3MulDivEb, uint8_t, bRm, PFNIEMAIMPLMULDIVU8, pfnU8)
         /* memory access. */
         IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo should probably not be raised until we've fetched all the opcode bytes? */
 
-        IEM_MC_BEGIN(3, 1);
+        IEM_MC_BEGIN(3, 2);
         IEM_MC_ARG(uint16_t *,      pu16AX,     0);
         IEM_MC_ARG(uint8_t,         u8Value,    1);
         IEM_MC_ARG(uint32_t *,      pEFlags,    2);
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
+        IEM_MC_LOCAL(int32_t,       rc);
 
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm, 0);
         IEM_MC_FETCH_MEM_U8(u8Value, pIemCpu->iEffSeg, GCPtrEffDst);
         IEM_MC_REF_GREG_U16(pu16AX, X86_GREG_xAX);
         IEM_MC_REF_EFLAGS(pEFlags);
-        IEM_MC_CALL_VOID_AIMPL_3(pfnU8, pu16AX, u8Value, pEFlags);
+        IEM_MC_CALL_AIMPL_3(rc, pfnU8, pu16AX, u8Value, pEFlags);
+        IEM_MC_IF_LOCAL_IS_Z(rc) {
+            IEM_MC_ADVANCE_RIP();
+        } IEM_MC_ELSE() {
+            IEM_MC_RAISE_DIVIDE_ERROR();
+        } IEM_MC_ENDIF();
 
-        IEM_MC_ADVANCE_RIP();
         IEM_MC_END();
     }
     return VINF_SUCCESS;
