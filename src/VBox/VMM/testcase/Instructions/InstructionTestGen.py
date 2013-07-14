@@ -1037,7 +1037,6 @@ class InstrTest_DivIDiv(InstrTestBase):
 
         return auRet;
 
-
     def generateOneStdTestGreg(self, oGen, cbEffOp, iOp2, iDividend, iDivisor):
         """ Generate code of one '[I]DIV rDX:rAX,<GREG>' test. """
         cbMaxOp   = oGen.oTarget.getMaxOpBytes();
@@ -1080,7 +1079,7 @@ class InstrTest_DivIDiv(InstrTestBase):
         oGen.pushConst(uDXResult);
         oGen.pushConst(uAXResult);
 
-        oGen.write('        %-4s    %s\n' % (self.sInstr, gregName(iOp2, cbEffOp * 8),));
+        oGen.write('        %-4s    %s\n' % (self.sInstr, oGen.gregNameBytes(iOp2, cbEffOp),));
         oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(X86_GREG_xAX, X86_GREG_xDX, iOp2),));
         return True;
 
@@ -1117,7 +1116,7 @@ class InstrTest_DivIDiv(InstrTestBase):
         oGen.write('        push    %s\n'       % (oGen.oTarget.asGRegs[iOp2X],));
         oGen.pushConst(uAXResult);
 
-        oGen.write('        %-4s    %s\n' % (self.sInstr, gregName(iOp2, cbEffOp * 8),));
+        oGen.write('        %-4s    %s\n' % (self.sInstr, oGen.gregNameBytes(iOp2, cbEffOp),));
         oGen.write('        call VBINSTST_NAME(%s)\n' % (oGen.needGRegChecker(X86_GREG_xAX, iOp2X),));
         return;
 
@@ -1311,7 +1310,7 @@ class InstrTest_DivIDiv(InstrTestBase):
         oGen.write('VBINSTST_BEGINPROC %s\n' % (sTestFnName,));
         #oGen.write('        int3\n');
 
-        #self.generateStandardTests(oGen);
+        self.generateStandardTests(oGen);
         self.generateDivideErrorTests(oGen);
 
         #oGen.write('        int3\n');
