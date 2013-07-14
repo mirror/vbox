@@ -169,7 +169,8 @@ private:
 
 /* Language page constructor: */
 UIGlobalSettingsLanguage::UIGlobalSettingsLanguage()
-    : m_fIsLanguageChanged(false)
+    : m_fPolished(false)
+    , m_fIsLanguageChanged(false)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsLanguage::setupUi(this);
@@ -179,7 +180,9 @@ UIGlobalSettingsLanguage::UIGlobalSettingsLanguage()
     m_pLanguageTree->hideColumn(1);
     m_pLanguageTree->hideColumn(2);
     m_pLanguageTree->hideColumn(3);
+    m_pLanguageTree->setMinimumHeight(150);
     m_pLanguageInfo->setWordWrapMode(QTextOption::WordWrap);
+    m_pLanguageInfo->setMinimumHeight(QFontMetrics(m_pLanguageInfo->font(), m_pLanguageInfo).height() * 5);
 
     /* Setup connections: */
     connect(m_pLanguageTree, SIGNAL(painted(QTreeWidgetItem*, QPainter*)),
@@ -211,9 +214,6 @@ void UIGlobalSettingsLanguage::getFromCache()
 {
     /* Fetch from cache: */
     reload(m_cache.m_strLanguageId);
-
-    /* Remember current info-label width: */
-    m_pLanguageInfo->setMinimumTextWidth(m_pLanguageInfo->width());
 }
 
 /* Save data from corresponding widgets to cache,
@@ -255,6 +255,26 @@ void UIGlobalSettingsLanguage::retranslateUi()
 
     /* Reload language tree: */
     reload(VBoxGlobal::languageId());
+}
+
+void UIGlobalSettingsLanguage::showEvent(QShowEvent *pEvent)
+{
+    /* Call to base-class: */
+    UISettingsPageGlobal::showEvent(pEvent);
+
+    /* Polishing border: */
+    if (m_fPolished)
+        return;
+    m_fPolished = true;
+
+    /* Call for polish event: */
+    polishEvent(pEvent);
+}
+
+void UIGlobalSettingsLanguage::polishEvent(QShowEvent*)
+{
+    /* Remember current info-label width: */
+    m_pLanguageInfo->setMinimumTextWidth(m_pLanguageInfo->width());
 }
 
 void UIGlobalSettingsLanguage::reload(const QString &strLangId)
