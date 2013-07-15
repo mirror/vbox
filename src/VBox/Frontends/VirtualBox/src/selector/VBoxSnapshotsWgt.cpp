@@ -369,10 +369,9 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     toolBar->addSeparator();
     toolBar->addAction (mRestoreSnapshotAction);
     toolBar->addAction (mDeleteSnapshotAction);
+    toolBar->addAction (mShowSnapshotDetailsAction);
     toolBar->addSeparator();
     toolBar->addAction(mCloneSnapshotAction);
-    toolBar->addSeparator();
-    toolBar->addAction (mShowSnapshotDetailsAction);
 
     ((QVBoxLayout*)layout())->insertWidget (0, toolBar);
 
@@ -393,8 +392,10 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
         QSize (22, 22), QSize (16, 16),
         ":/snapshot_take_22px.png", ":/snapshot_take_16px.png",
         ":/snapshot_take_disabled_22px.png", ":/snapshot_take_disabled_16px.png"));
-    mCloneSnapshotAction->setIcon(UIIconPool::iconSet(
-        ":/vm_clone_16px.png", ":/vm_clone_disabled_16px.png")); // TODO: Update Icons!
+    mCloneSnapshotAction->setIcon(UIIconPool::iconSetFull(
+        QSize (22, 22), QSize (16, 16),
+        ":/vm_clone_22px.png", ":/vm_clone_16px.png",
+        ":/vm_clone_disabled_22px.png", ":/vm_clone_disabled_16px.png"));
 
     mRestoreSnapshotAction->setShortcut (QString ("Ctrl+Shift+R"));
     mDeleteSnapshotAction->setShortcut (QString ("Ctrl+Shift+D"));
@@ -539,10 +540,9 @@ void VBoxSnapshotsWgt::onContextMenuRequested (const QPoint &aPoint)
     {
         menu.addAction (mRestoreSnapshotAction);
         menu.addAction (mDeleteSnapshotAction);
+        menu.addAction (mShowSnapshotDetailsAction);
         menu.addSeparator();
         menu.addAction(mCloneSnapshotAction);
-        menu.addSeparator();
-        menu.addAction (mShowSnapshotDetailsAction);
     }
     else
     {

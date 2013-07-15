@@ -15,6 +15,8 @@
         <file alias="vm_settings_disabled_32px.png">images/vm_settings_disabled_32px.png</file>
         <file alias="vm_clone_16px.png">images/vm_clone_16px.png</file>
         <file alias="vm_clone_disabled_16px.png">images/vm_clone_disabled_16px.png</file>
+        <file alias="vm_clone_22px.png">images/vm_clone_22px.png</file>
+        <file alias="vm_clone_disabled_22px.png">images/vm_clone_disabled_22px.png</file>
         <file alias="vm_show_logs_32px.png">images/vm_show_logs_32px.png</file>
         <file alias="vm_show_logs_disabled_32px.png">images/vm_show_logs_disabled_32px.png</file>
         <file alias="vm_start_32px.png">images/vm_start_32px.png</file>
