@@ -72,6 +72,11 @@
 %define RT_BIT(bit)        (1 << bit)
 
 ;;
+; Makes a 32-bit unsigned (not type safe, but whatever) out of four byte values.
+%define RT_MAKE_U32_FROM_U8(b0, b1, b2, b3) ( (b3 << 24) | (b2 << 16) | (b1 << 8) | b0) )
+
+
+;;
 ; Align code, pad with INT3.
 %define ALIGNCODE(alignment) align alignment, db 0cch
 
@@ -296,8 +301,8 @@ size NAME(%1 %+ _EndProc)   0
 
 %ifdef ASM_FORMAT_MACHO
  %ifdef __YASM__
- [section .text]
- [section .data]
+  section .text
+  section .data
  %endif
 %endif
 
@@ -310,7 +315,7 @@ size NAME(%1 %+ _EndProc)   0
  %endmacro
 %else
 %macro BEGINCODE 0
-[section .text]
+ section .text
 %endmacro
 %endif
 
@@ -327,9 +332,9 @@ size NAME(%1 %+ _EndProc)   0
 %else
  %macro BEGINCONST 0
   %ifdef ASM_FORMAT_MACHO ;; @todo check the other guys too.
-   [section .rodata]
+   section .rodata
   %else
-   [section .text]
+   section .text
   %endif
  %endmacro
 %endif
@@ -342,7 +347,7 @@ size NAME(%1 %+ _EndProc)   0
  %endmacro
 %else
 %macro BEGINDATA 0
-[section .data]
+ section .data
 %endmacro
 %endif
 
@@ -354,7 +359,7 @@ size NAME(%1 %+ _EndProc)   0
  %endmacro
 %else
 %macro BEGINBSS 0
-[section .bss]
+ section .bss
 %endmacro
 %endif
 
