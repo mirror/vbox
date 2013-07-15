@@ -379,22 +379,22 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     /* Setup actions */
     mRestoreSnapshotAction->setIcon(UIIconPool::iconSetFull(
         QSize (22, 22), QSize (16, 16),
-        ":/discard_cur_state_22px.png", ":/discard_cur_state_16px.png", // TODO: Update Icons!
-        ":/discard_cur_state_dis_22px.png", ":/discard_cur_state_dis_16px.png")); // TODO: Update Icons!
+        ":/snapshot_restore_22px.png", ":/snapshot_restore_16px.png",
+        ":/snapshot_restore_disabled_22px.png", ":/snapshot_restore_disabled_16px.png"));
     mDeleteSnapshotAction->setIcon(UIIconPool::iconSetFull(
         QSize (22, 22), QSize (16, 16),
-        ":/delete_snapshot_22px.png", ":/delete_snapshot_16px.png",
-        ":/delete_snapshot_dis_22px.png", ":/delete_snapshot_dis_16px.png"));
+        ":/snapshot_delete_22px.png", ":/snapshot_delete_16px.png",
+        ":/snapshot_delete_disabled_22px.png", ":/snapshot_delete_disabled_16px.png"));
     mShowSnapshotDetailsAction->setIcon(UIIconPool::iconSetFull(
         QSize (22, 22), QSize (16, 16),
-        ":/show_snapshot_details_22px.png", ":/show_snapshot_details_16px.png",
-        ":/show_snapshot_details_dis_22px.png", ":/show_snapshot_details_dis_16px.png"));
+        ":/snapshot_show_details_22px.png", ":/snapshot_show_details_16px.png",
+        ":/snapshot_show_details_disabled_22px.png", ":/snapshot_details_show_disabled_16px.png"));
     mTakeSnapshotAction->setIcon(UIIconPool::iconSetFull(
         QSize (22, 22), QSize (16, 16),
-        ":/take_snapshot_22px.png", ":/take_snapshot_16px.png",
-        ":/take_snapshot_dis_22px.png", ":/take_snapshot_dis_16px.png"));
+        ":/snapshot_take_22px.png", ":/snapshot_take_16px.png",
+        ":/snapshot_take_disabled_22px.png", ":/snapshot_take_disabled_16px.png"));
     mCloneSnapshotAction->setIcon(UIIconPool::iconSet(
-        ":/vm_clone_16px.png", ":/vm_clone_disabled_16px.png"));
+        ":/vm_clone_16px.png", ":/vm_clone_disabled_16px.png")); // TODO: Update Icons!
 
     mRestoreSnapshotAction->setShortcut (QString ("Ctrl+Shift+R"));
     mDeleteSnapshotAction->setShortcut (QString ("Ctrl+Shift+D"));
