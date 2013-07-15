@@ -179,12 +179,12 @@ UIMachineSettingsSF::UIMachineSettingsSF()
     mEdtAction->setShortcut (QKeySequence ("Ctrl+Space"));
     mDelAction->setShortcut (QKeySequence ("Del"));
 
-    mNewAction->setIcon(UIIconPool::iconSet(":/add_shared_folder_16px.png",
-                                            ":/add_shared_folder_disabled_16px.png"));
-    mEdtAction->setIcon(UIIconPool::iconSet(":/edit_shared_folder_16px.png",
-                                            ":/edit_shared_folder_disabled_16px.png"));
-    mDelAction->setIcon(UIIconPool::iconSet(":/remove_shared_folder_16px.png",
-                                            ":/remove_shared_folder_disabled_16px.png"));
+    mNewAction->setIcon(UIIconPool::iconSet(":/sf_add_16px.png",
+                                            ":/sf_add_disabled_16px.png"));
+    mEdtAction->setIcon(UIIconPool::iconSet(":/sf_edit_16px.png",
+                                            ":/sf_edit_disabled_16px.png"));
+    mDelAction->setIcon(UIIconPool::iconSet(":/sf_remove_16px.png",
+                                            ":/sf_remove_disabled_16px.png"));
 
     /* Prepare tool-bar: */
     m_pFoldersToolBar->setUsesTextLabel(false);
