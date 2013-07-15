@@ -34,6 +34,7 @@
 # define HMSVM_SYNC_FULL_GUEST_STATE
 # define HMSVM_ALWAYS_TRAP_ALL_XCPTS
 # define HMSVM_ALWAYS_TRAP_PF
+# define HMSVM_ALWAYS_TRAP_TASK_SWITCH
 #endif
 
 
@@ -712,6 +713,10 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
             /* Page faults must be intercepted to implement shadow paging. */
             pVmcb->ctrl.u32InterceptException |= RT_BIT(X86_XCPT_PF);
         }
+
+#ifdef HMSVM_ALWAYS_TRAP_TASK_SWITCH
+        pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_TASK_SWITCH;
+#endif
 
         /*
          * The following MSRs are saved/restored automatically during the world-switch.
@@ -4251,6 +4256,10 @@ HMSVM_EXIT_DECL hmR0SvmExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
 HMSVM_EXIT_DECL hmR0SvmExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+#ifndef HMSVM_ALWAYS_TRAP_TASK_SWITCH
+    Assert(!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
+#endif
 
     /* Check if this task-switch occurred while delivery an event through the guest IDT. */
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
