@@ -2407,9 +2407,286 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
                             uint16_t    uErr,
                             uint64_t    uCr2)
 {
+    NOREF(cbInstr);
+#if 0
+    /*
+     * Read the IDT entry.
+     */
+    uint16_t offIdt = (uint16_t)u8Vector << 4;
+    if (pCtx->idtr.cbIdt < offIdt + 7)
+    {
+        Log(("iemRaiseXcptOrIntInLongMode: %#x is out of bounds (%#x)\n", u8Vector, pCtx->idtr.cbIdt));
+        return iemRaiseGeneralProtectionFault(pIemCpu, X86_TRAP_ERR_IDT | ((uint16_t)u8Vector << X86_TRAP_ERR_SEL_SHIFT));
+    }
+    X86DESC64 Idte;
+    VBOXSTRICTRC rcStrict = iemMemFetchSysU64(pIemCpu, &Idte.au64[0], UINT8_MAX, pCtx->idtr.pIdt + offIdt);
+    if (RT_LIKELY(rcStrict != VINF_SUCCESS))
+        rcStrict = iemMemFetchSysU64(pIemCpu, &Idte.au64[1], UINT8_MAX, pCtx->idtr.pIdt + offIdt + 8);
+    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
+        return rcStrict;
+    Log(("iemiemRaiseXcptOrIntInLongMode: vec=%#x P=%u DPL=%u DT=%u:%u IST=%u %04x:%08x%04x%04x\n",
+         u8Vector, Idte.Gate.u1Present, Idte.Gate.u2Dpl, Idte.Gate.u1DescType, Idte.Gate.u4Type,
+         Idte.Gate.u3IST, Idte.Gate.u16Sel, Idte.Gate.u32OffsetTop, Idte.Gate.u16OffsetHigh, Idte.Gate.u16OffsetLow));
+
+    /*
+     * Check the descriptor type, DPL and such.
+     * ASSUMES this is done in the same order as described for call-gate calls.
+     */
+    if (Idte.Gate.u1DescType)
+    {
+        Log(("iemRaiseXcptOrIntInLongMode %#x - not system selector (%#x) -> #GP\n", u8Vector, Idte.Gate.u4Type));
+        return iemRaiseGeneralProtectionFault(pIemCpu, X86_TRAP_ERR_IDT | ((uint16_t)u8Vector << X86_TRAP_ERR_SEL_SHIFT));
+    }
+    uint32_t fEflToClear = X86_EFL_TF | X86_EFL_NT | X86_EFL_RF | X86_EFL_VM;
+    switch (Idte.Gate.u4Type)
+    {
+        case AMD64_SEL_TYPE_SYS_INT_GATE:
+            fEflToClear |= X86_EFL_IF;
+            break;
+        case AMD64_SEL_TYPE_SYS_TRAP_GATE:
+            break;
+
+        default:
+            Log(("iemRaiseXcptOrIntInLongMode %#x - invalid type (%#x) -> #GP\n", u8Vector, Idte.Gate.u4Type));
+            return iemRaiseGeneralProtectionFault(pIemCpu, X86_TRAP_ERR_IDT | ((uint16_t)u8Vector << X86_TRAP_ERR_SEL_SHIFT));
+
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+
+    /* Check DPL against CPL if applicable. */
+    if (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+    {
+        if (pIemCpu->uCpl > Idte.Gate.u2Dpl)
+        {
+            Log(("iemRaiseXcptOrIntInLongMode %#x - CPL (%d) > DPL (%d) -> #GP\n", u8Vector, pIemCpu->uCpl, Idte.Gate.u2Dpl));
+            return iemRaiseGeneralProtectionFault(pIemCpu, X86_TRAP_ERR_IDT | ((uint16_t)u8Vector << X86_TRAP_ERR_SEL_SHIFT));
+        }
+    }
+
+    /* Is it there? */
+    if (!Idte.Gate.u1Present)
+    {
+        Log(("iemRaiseXcptOrIntInLongMode %#x - not present -> #NP\n", u8Vector));
+        return iemRaiseSelectorNotPresentWithErr(pIemCpu, X86_TRAP_ERR_IDT | ((uint16_t)u8Vector << X86_TRAP_ERR_SEL_SHIFT));
+    }
+
+    /* A null CS is bad. */
+    RTSEL NewCS = Idte.Gate.u16Sel;
+    if (!(NewCS & X86_SEL_MASK_OFF_RPL))
+    {
+        Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x -> #GP\n", u8Vector, NewCS));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    /* Fetch the descriptor for the new CS. */
+    IEMSELDESC DescCS;
+    rcStrict = iemMemFetchSelDesc(pIemCpu, &DescCS, NewCS);
+    if (rcStrict != VINF_SUCCESS)
+    {
+        Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x - rc=%Rrc\n", u8Vector, NewCS, VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
+    }
+
+    /* Must be a 64-bit code segment. */
+    if (!DescCS.Long.Gen.u1DescType)
+    {
+        Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x - system selector (%#x) -> #GP\n", u8Vector, NewCS, DescCS.Legacy.Gen.u4Type));
+        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
+    }
+    /** @todo what do we check here?  */
+    if (!DescCS.Long.Gen.u1Long || DescCS.Long.Gen.u1DefBig)
+    {
+        Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x -  (%#x) -> #GP\n", u8Vector, NewCS, DescCS.Legacy.Gen.u4Type));
+        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
+    }
+
+    /* Don't allow lowering the privilege level. */
+    /** @todo Does the lowering of privileges apply to software interrupts
+     *        only?  This has bearings on the more-privileged or
+     *        same-privilege stack behavior further down.  A testcase would
+     *        be nice. */
+    if (DescCS.Legacy.Gen.u2Dpl > pIemCpu->uCpl)
+    {
+        Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x - DPL (%d) > CPL (%d) -> #GP\n",
+             u8Vector, NewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
+        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
+    }
+    /** @todo is the RPL of the interrupt/trap gate descriptor checked? */
+
+    /* Check the new EIP against the new CS limit. */
+    uint32_t const uNewEip =    Idte.Gate.u4Type == X86_SEL_TYPE_SYS_286_INT_GATE
+                             || Idte.Gate.u4Type == X86_SEL_TYPE_SYS_286_TRAP_GATE
+                           ? Idte.Gate.u16OffsetLow
+                           : Idte.Gate.u16OffsetLow | ((uint32_t)Idte.Gate.u16OffsetHigh << 16);
+    uint32_t cbLimitCS = X86DESC_LIMIT_G(&DescCS.Legacy);
+    if (uNewEip > cbLimitCS)
+    {
+        Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x - DPL (%d) > CPL (%d) -> #GP\n",
+             u8Vector, NewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
+        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
+    }
+
+    /* Make sure the selector is present. */
+    if (!DescCS.Legacy.Gen.u1Present)
+    {
+        Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x - segment not present -> #NP\n", u8Vector, NewCS));
+        return iemRaiseSelectorNotPresentBySelector(pIemCpu, NewCS);
+    }
+
+    /*
+     * If the privilege level changes, we need to get a new stack from the TSS.
+     * This in turns means validating the new SS and ESP...
+     */
+    uint32_t        fEfl    = IEMMISC_GET_EFL(pIemCpu, pCtx);
+    uint8_t const   uNewCpl = DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF
+                            ? pIemCpu->uCpl : DescCS.Legacy.Gen.u2Dpl;
+    if (uNewCpl != pIemCpu->uCpl)
+    {
+        RTSEL    NewSS;
+        uint32_t uNewEsp;
+        rcStrict = iemRaiseLoadStackFromTss32Or16(pIemCpu, pCtx, uNewCpl, &NewSS, &uNewEsp);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        IEMSELDESC DescSS;
+        rcStrict = iemMiscValidateNewSS(pIemCpu, pCtx, NewSS, uNewCpl, &DescSS);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        /* Check that there is sufficient space for the stack frame. */
+        uint32_t cbLimitSS = X86DESC_LIMIT_G(&DescSS.Legacy);
+        if (DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_DOWN)
+        {
+            IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Expand down segments\n")); /** @todo Implement expand down segment support. */
+        }
+
+        uint8_t const cbStackFrame = fFlags & IEM_XCPT_FLAGS_ERR ? 24 : 20;
+        if (   uNewEsp - 1 > cbLimitSS
+            || uNewEsp < cbStackFrame)
+        {
+            Log(("iemRaiseXcptOrIntInLongMode: %#x - SS=%#x ESP=%#x cbStackFrame=%#x is out of bounds -> #GP\n",
+                 u8Vector, NewSS, uNewEsp, cbStackFrame));
+            return iemRaiseSelectorBoundsBySelector(pIemCpu, NewSS);
+        }
+
+        /*
+         * Start making changes.
+         */
+
+        /* Create the stack frame. */
+        RTPTRUNION uStackFrame;
+        rcStrict = iemMemMap(pIemCpu, &uStackFrame.pv, cbStackFrame, UINT8_MAX,
+                             uNewEsp - cbStackFrame + X86DESC_BASE(&DescSS.Legacy), IEM_ACCESS_STACK_W | IEM_ACCESS_WHAT_SYS); /* _SYS is a hack ... */
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        void * const pvStackFrame = uStackFrame.pv;
+
+        if (fFlags & IEM_XCPT_FLAGS_ERR)
+            *uStackFrame.pu32++ = uErr;
+        uStackFrame.pu32[0] = (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
+                            ? pCtx->eip + cbInstr : pCtx->eip;
+        uStackFrame.pu32[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl;
+        uStackFrame.pu32[2] = fEfl;
+        uStackFrame.pu32[3] = pCtx->esp;
+        uStackFrame.pu32[4] = pCtx->ss.Sel;
+        rcStrict = iemMemCommitAndUnmap(pIemCpu, pvStackFrame, IEM_ACCESS_STACK_W | IEM_ACCESS_WHAT_SYS);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        /* Mark the selectors 'accessed' (hope this is the correct time). */
+        /** @todo testcase: excatly _when_ are the accessed bits set - before or
+         *        after pushing the stack frame? (Write protect the gdt + stack to
+         *        find out.) */
+        if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+        {
+            rcStrict = iemMemMarkSelDescAccessed(pIemCpu, NewCS);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+            DescCS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+        }
+
+        if (!(DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+        {
+            rcStrict = iemMemMarkSelDescAccessed(pIemCpu, NewSS);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+            DescSS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+        }
+
+        /*
+         * Start comitting the register changes (joins with the DPL=CPL branch).
+         */
+        pCtx->ss.Sel            = NewSS;
+        pCtx->ss.ValidSel       = NewSS;
+        pCtx->ss.fFlags         = CPUMSELREG_FLAGS_VALID;
+        pCtx->ss.u32Limit       = cbLimitSS;
+        pCtx->ss.u64Base        = X86DESC_BASE(&DescSS.Legacy);
+        pCtx->ss.Attr.u         = X86DESC_GET_HID_ATTR(&DescSS.Legacy);
+        pCtx->rsp               = uNewEsp - cbStackFrame; /** @todo Is the high word cleared for 16-bit stacks and/or interrupt handlers? */
+        pIemCpu->uCpl           = uNewCpl;
+    }
+    /*
+     * Same privilege, no stack change and smaller stack frame.
+     */
+    else
+    {
+        uint64_t        uNewRsp;
+        RTPTRUNION      uStackFrame;
+        uint8_t const   cbStackFrame = fFlags & IEM_XCPT_FLAGS_ERR ? 16 : 12;
+        rcStrict = iemMemStackPushBeginSpecial(pIemCpu, cbStackFrame, &uStackFrame.pv, &uNewRsp);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+        void * const pvStackFrame = uStackFrame.pv;
+
+        if (fFlags & IEM_XCPT_FLAGS_ERR)
+            *uStackFrame.pu32++ = uErr;
+        uStackFrame.pu32[0] = (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
+                            ? pCtx->eip + cbInstr : pCtx->eip;
+        uStackFrame.pu32[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl;
+        uStackFrame.pu32[2] = fEfl;
+        rcStrict = iemMemCommitAndUnmap(pIemCpu, pvStackFrame, IEM_ACCESS_STACK_W); /* don't use the commit here */
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+
+        /* Mark the CS selector as 'accessed'. */
+        if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
+        {
+            rcStrict = iemMemMarkSelDescAccessed(pIemCpu, NewCS);
+            if (rcStrict != VINF_SUCCESS)
+                return rcStrict;
+            DescCS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
+        }
+
+        /*
+         * Start committing the register changes (joins with the other branch).
+         */
+        pCtx->rsp = uNewRsp;
+    }
+
+    /* ... register committing continues. */
+    pCtx->cs.Sel            = (NewCS & ~X86_SEL_RPL) | uNewCpl;
+    pCtx->cs.ValidSel       = (NewCS & ~X86_SEL_RPL) | uNewCpl;
+    pCtx->cs.fFlags         = CPUMSELREG_FLAGS_VALID;
+    pCtx->cs.u32Limit       = cbLimitCS;
+    pCtx->cs.u64Base        = X86DESC_BASE(&DescCS.Legacy);
+    pCtx->cs.Attr.u         = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
+
+    pCtx->rip               = uNewEip;
+    fEfl &= ~fEflToClear;
+    IEMMISC_SET_EFL(pIemCpu, pCtx, fEfl);
+
+    if (fFlags & IEM_XCPT_FLAGS_CR2)
+        pCtx->cr2 = uCr2;
+
+    if (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
+        iemRaiseXcptAdjustState(pCtx, u8Vector);
+
+    return fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT ? VINF_IEM_RAISED_XCPT : VINF_SUCCESS;
+#else
     NOREF(pIemCpu); NOREF(pCtx); NOREF(cbInstr); NOREF(u8Vector); NOREF(fFlags); NOREF(uErr); NOREF(uCr2);
     /** @todo implement me. */
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("long mode exception / interrupt dispatching\n"));
+#endif
 }
 
 

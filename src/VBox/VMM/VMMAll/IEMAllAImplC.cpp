@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,27 +22,39 @@
 #include <VBox/vmm/vm.h>
 #include <iprt/x86.h>
 
-#if 0
+
+#ifdef RT_ARCH_X86
+/*
+ * There are a few 64-bit on 32-bit things we'd rather do in C.
+ */
 
 
-IEM_DECL_IMPL_DEF(void, iemImpl_add_u8,(uint8_t  *pu8Dst,  uint8_t  u8Src,  uint32_t *pEFlags))
+IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Factor, uint32_t *pEFlags))
 {
-    /* incorrect sketch (testing fastcall + gcc) */
-    uint8_t u8Dst = *pu8Dst;
-    uint8_t u8Res = u8Dst + u8Src;
-    *pu8Dst = u8Res;
-
-    if (u8Res)
-        *pEFlags &= X86_EFL_ZF;
-    else
-        *pEFlags |= X86_EFL_ZF;
-}
-
-IEM_DECL_IMPL_DEF(void, iemImpl_add_u8_locked,(uint8_t  *pu8Dst,  uint8_t  u8Src,  uint32_t *pEFlags))
-{
-    iemImpl_add_u8(pu8Dst, u8Src, pEFlags);
+    AssertFailed();
+    return -1;
 }
 
 
-#endif
+IEM_DECL_IMPL_DEF(int, iemAImpl_imul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Factor, uint32_t *pEFlags))
+{
+    AssertFailed();
+    return -1;
+}
+
+
+IEM_DECL_IMPL_DEF(int, iemAImpl_div_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Divisor, uint32_t *pEFlags))
+{
+    AssertFailed();
+    return -1;
+}
+
+
+IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Divisor, uint32_t *pEFlags))
+{
+    AssertFailed();
+    return -1;
+}
+
+#endif /* RT_ARCH_X86 */
 
