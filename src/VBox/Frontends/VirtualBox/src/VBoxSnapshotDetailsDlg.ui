@@ -23,7 +23,7 @@
    </rect>
   </property>
   <property name="windowIcon">
-   <iconset resource="../VirtualBox1.qrc">:/settings_16px.png</iconset>
+   <iconset resource="../VirtualBox1.qrc">:/show_snapshot_details_16px.png</iconset>
   </property>
   <layout class="QGridLayout">
    <item row="0" column="0">
