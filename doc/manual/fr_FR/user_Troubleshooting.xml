@@ -934,7 +934,7 @@
 
       <para>Les noyaux Linux inclus avec Linux Red Hat Enterprise (RHEL) entre
       la version 4.7 et 5.1 ainsi que les noyaux des distributions Linux associées
-      (par exemple, CentOS et Oracle Enterprise Linux) supportent un paramètre
+      (par exemple, CentOS et Oracle Linux) supportent un paramètre
       <emphasis>divider=N</emphasis> du noyau. D'où le fait que de tels noyaux
       supportent une fréquence d'horloge plus faible sans recompilation. Nous
       vous suggérons d'ajouter le paramçtre <emphasis>divider=10</emphasis> du

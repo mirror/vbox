@@ -404,7 +404,7 @@
           </listitem>
 
           <listitem>
-            <para>Faites <computeroutput>VBoxCertUtil add-trusted-publisher oracle-vbox.cer --root oracle-vbox.cer</computeroutput>.</para>
+            <para>Faites <screen>VBoxCertUtil add-trusted-publisher oracle-vbox.cer --root oracle-vbox.cer</screen></para>
             <para>Cela installera les certificats dans le stockage des certificats.
             Si on installe les mêmes certificats plus d'une fois, une erreur
             circonstanciée s'affichera.</para>
@@ -553,6 +553,9 @@
       <para>Les distributions Linux suivantes sont supportées officiellement&#xA0;:</para>
 
       <itemizedlist>
+        <listitem>
+          <para>Oracle Linux à partir de la version 5, y compris les noyaux UEK ;</para>
+        </listitem>
         <listitem>
           <para>Fedora à partir de Fedora Core 4;</para>
         </listitem>
@@ -802,8 +805,7 @@
         </sect4>
 
         <sect4>
-          <title>CentOS, Red Hat Enterprise Linux et Oracle
-          Enterprise Linux</title>
+          <title>Oracle Linux, Red Hat Enterprise Linux et CentOS</title>
 
           <para><orderedlist>
               <listitem>
@@ -823,7 +825,9 @@
               <listitem>
                 <para>Installez le compilateur GNU C et les paquets de développement
                 du noyau en utilisant <screen>yum install gcc</screen> suivi de
-                <screen>yum install kernel-devel</screen></para>
+                <screen>yum install kernel-devel</screen> Pour les noyaux
+                Oracle UEK, utilisez <screen>yum install kernel-uek-devel</screen>
+                pour installer les en-têtes du noyau UEK.</para>
               </listitem>
 
               <listitem>
@@ -832,7 +836,7 @@
               </listitem>
 
               <listitem>
-                <para>Si Oracle Enterprise Linux ne trouve pas les paquets requis,
+                <para>Si Oracle Linux ne trouve pas les paquets requis,
                 soit vous devez les installer à partir d'une autre source (comme
                 un DVD),  soit utilisez use le serveur public Yum d'Oracle
                 qui se troupe sur <ulink

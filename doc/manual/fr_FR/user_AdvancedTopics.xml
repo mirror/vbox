@@ -842,8 +842,8 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
         </listitem>
       </orderedlist></para>
 
-    <para>Une fois que vo% êtes sûre que le noyau hôte supporte l'IOMMU, la
-    srochaine étape est de sélectionner la carte PCI et de l'attacher à l'invité.
+    <para>Une fois que vous êtes sûre que le noyau hôte supporte l'IOMMU, la
+    prochaine étape est de sélectionner la carte PCI et de l'attacher à l'invité.
     Pour visualiser la liste des périphériques PCI disponibles, utilisez
     la commande <computeroutput>lspci</computeroutput>. La sortie ressemblera à
     ceci :</para>
@@ -1971,7 +1971,7 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
     <title>Déverrouiller l'interface graphique du gestionnaire de VirtualBox</title>
 
     <sect2>
-      <title>Personnalisation de l'interface graphique</title>
+      <title>Personnalisation du gestiOnnaire de VM</title>
 
       <para>Il existe plusieurs paramètres de personnalisation avancés pour
       déverrouiller le gestionnaire de VirtualBox, c'est-à-dire pour supprimer
@@ -2007,9 +2007,291 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
           </glossentry>
         </glosslist></para>
 
-        <para>Pour désactiver toutes les personnalisations de l'interface graphique,
-        faites <screen>VBoxManage setextradata global GUI/Customizations</screen></para>
+        <para>Pour désactiver toutes les personnalisations du gestionnaire de
+        VM, faites <screen>VBoxManage setextradata global GUI/Customizations</screen></para>
       </sect2>
+      <sect2>      
+        <title>Personnalisation du sélecteur de VM</title>
+      <para>Les paramètres de données supplémentaires suivants sont disponibles,
+      par machine, pour modifier le comportement de la fenêtre du sélecteur de VM
+      selon certaines VMs :</para>
+      <screen>VBoxManage setextradata "VM name" PARAMETRE true</screen>
+      <para>où <computeroutput>PARAMETRE</computeroutput> peut être :</para>
+      <glosslist>
+        <glossentry>
+        <glossterm><computeroutput>GUI/HideDetails</computeroutput></glossterm>
+        <glossdef>
+          <para>N'affiehe pas la configuration de VM d'une VM en particulier.
+          Les fenêtre des détails sera tout simplement vide si on sélectionne
+          cette VM.</para>
+        </glossdef>
+      </glossentry>
+      <glossentry>
+        <glossterm><computeroutput>GUI/PreventReconfiguration</computeroutput></glossterm>
+        <glossdef>
+          <para>Ne permet pas à l'utilisateur d'ouvrir la boîte de dialogue
+          des paramètres d'une VM en particulier.</para>
+        </glossdef>
+      </glossentry>
+      <glossentry>
+        <glossterm><computeroutput>GUI/PreventSnapshotOperations</computeroutput></glossterm>
+        <glossdef>
+          <para>Empêche de prendre des instantanés d'une VM avec la GUI, pendant
+          son exécution ou quand on coupe la VM.</para>
+        </glossdef>
+      </glossentry>
+      <glossentry>
+        <glossterm><computeroutput>GUI/HideFromManager</computeroutput></glossterm>
+        <glossdef>
+          <para>Cache une VM en particulier dans la fenêtre du sélecteur de VM.</para>
+        </glossdef>
+      </glossentry>
+      <glossentry>
+        <glossterm><computeroutput>GUI/PreventApplicationUpdate</computeroutput></glossterm>
+        <glossdef>
+          <para>Désactive la vérification automatique des mises à jour et
+          cache l'élément de menu correspondant.</para>
+        </glossdef>
+      </glossentry>
+    </glosslist>
+
+    <para>Merci de remarquer que ces paramètres n'empêchent pas l'utilisateur de
+  reconfigurer la VM avec <computeroutput>VBoxManage modifyvm</computeroutput>.</para>
+  </sect2>
+                                                                                                                                                                                                                                                                                                                                                                                           
+  <sect2>
+    <title>Configurer les entrées du menu de sélection de VM</title>
+
+    <para>Vous pouvez désactiver (c'est-à-dire black-lister) certaines entrées
+    de l'onglet des paramèt!es globaux dans le sélecteur de VM :</para>
+       <screen>VBoxManage setextradata global GUI/RestrictedGlobalSettingsPages OPTION[,OPTION...]</screen>
+       <para>où <computeroutput>OPTION</computeroutput> est un des mots-clés
+       suivants :</para><glosslist>
+       <glossentry>
+         <glossterm><computeroutput>General</computeroutput></glossterm>
+         <glossdef>
+           <para>N'affiche pas l'onglet <emphasis>Général</emphasis> des
+           paramètres.</para>
+         </glossdef>
+       </glossentry>
+       <glossentry>
+         <glossterm><computeroutput>Input</computeroutput></glossterm>
+         <glossdef>
+           <para>N'affiche pas l'onglet <emphasis>Entrée</emphasis> des
+           paramètres.</para>
+         </glossdef>
+       </glossentry>
+       <glossentry>
+       <glossterm><computeroutput>Update</computeroutput></glossterm>
+         <glossdef>
+           <para>N'affiche pas l'onglet <emphasis>Mise à jour</emphasis> des
+           paramètres.</para>
+         </glossdef>
+       </glossentry>
+       <glossentry>
+         <glossterm><computeroutput>Language</computeroutput></glossterm>
+         <glossdef>
+           <para>N'affiche pas l'onglet <emphasis>Langue</emphasis> des
+           paramètres.</para>
+         </glossdef>
+       </glossentry>
+       <glossentry>
+         <glossterm><computeroutput>Display</computeroutput></glossterm>
+         <glossdef>
+           <para>N'affiche pas l'onglet <emphasis>AAffichage</emphasis> des
+           paramètres.</para>
+         </glossdef>
+       </glossentry>
+
+       <glossentry>
+       <glossterm><computeroutput>Network</computeroutput></glossterm>
+       <glossdef>
+         <para>N'affiche pas l'onglet <emphasis>Réseau</emphasis> des
+         paramètres.</para>
+       </glossdef>
+     </glossentry>
+     <glossentry>
+       <glossterm><computeroutput>Extensions</computeroutput></glossterm>
+       <glossdef>
+         <para>N'affiche pas l'onglet <emphasis>Extensions</emphasis> des
+         paramètres.</para>
+       </glossdef>
+     </glossentry>
+
+     <glossentry>
+       <glossterm><computeroutput>Proxy</computeroutput></glossterm>
+       <glossdef>
+         <para>N'affiche pas l'onglet <emphasis>Proxy</emphasis> des
+         paramètres.</para>
+       </glossdef>
+     </glossentry>
+   </glosslist>
+   <para>C'est un paramètre global. Toutes les combinaisons de ce qui précède
+   est possible . Pour restaurer le comportement
+   par défaut, utilisez</para>
+   <screen>VBoxManage setextradata global GUI/RestrictedGlobalSettingsPages</screen>
+
+  </sect2>
+
+
+
+  <sect2>
+    <title>Configurer les entrées du menu de la fenêtre d'une VM</title>
+
+    <para>Vous pouvez désactiver (c'est-à-dire black-lister) certaines actions
+    du menu dans la fenêtre de la VM :</para>
+    <screen>VBoxManage setextradata "nom VM" GUI/RestrictedRuntimeMenus OPTION[,OPTION...]</screen>
+    
+    <para>où <computeroutput>OPTION</computeroutput> est l'un des mots-clés
+    suivants :</para><glosslist>
+    <glossentry>
+      <glossterm><computeroutput>All</computeroutput></glossterm>
+      <glossdef>
+        <para>N'affiche pas de menu dans la fenêtre de la VM.</para>
+      </glossdef>
+    </glossentry>
+
+   <glossentry>
+     <glossterm><computeroutput>Machine</computeroutput></glossterm>
+     <glossdef>
+       <para>N'affiche pas le menu <emphasis>Machine</emphasis> dans la fenêtre
+       de la VM.</para>
+     </glossdef>
+   </glossentry>
+
+   <glossentry>
+     <glossterm><computeroutput>View</computeroutput></glossterm>
+     <glossdef>
+       <para>N'affiche pas le menu <emphasis>Vue</emphasis> dans la fenêtre de la
+       VM.</para>
+   </glossdef>
+  </glossentry>
+                                        
+  <glossentry>
+    <glossterm><computeroutput>Devices</computeroutput></glossterm>
+    <glossdef>
+        <para>N'affiche pas le menu <emphasis>Périphéhiques</emphasis> dans la
+        fenêtre de la VM.</para>
+      </glossdef>
+    </glossentry>
+    <glossentry>
+      <glossterm><computeroutput>Help</computeroutput></glossterm>
+      <glossdef>
+        <para>N'affiche pas le menu <emphasis>Aide</emphasis> dans la fenêtre de
+        la VM.</para>
+      </glossdef>
+    </glossentry>
+
+    <glossentry>
+      <glossterm><computeroutput>Debug</computeroutput></glossterm>
+      <glossdef>
+        <para>N'affiche pas le menu <emphasis>Débogage</emphasis> dans la fenêtre 
+        de la VM. Le menu de débogage n'est visible que si on démarre la GUI avec
+        des paramètres spécial en ligne de commandes ou des paramètres de
+        variables d'environnement particulières.</para>
+      </glossdef>
+    </glossentry>
+
+  </glosslist>
+
+  <para>C'est un paramètre spécifique à chaque VM. Toute combinaison de ce
+  qui précède est possible. Pour restaurer le comportement par défaut, lancez :</para>
+  <screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeMenus</screen>
+
+  </sect2>
+  <sect2>
+    <title>Configurer les entrées de la barre d'état de la fenêtre de la VM</title>
+
+    <para>Vous pouvez désactiver (c'est-à-dire black-lister) certains éléments
+    de la barre d'état :</para>
+      <screen>VBoxManage setextradata "nom VM" GUI/RestrictedStatusBarIndicators OPTION[,OPTION...]</screen>
+
+      <para>où <computeroutput>OPTION</computeroutput> est un des mots-clés
+      suivants :</para><glosslist>
+      <glossentry>
+        <glossterm><computeroutput>HardDisks</computeroutput></glossterm>
+        <glossdef>
+          <para>N'affiche pas l'icône du disque dur dans la barre d'état de la
+          fenêtre de la VM. Par défaut, l'icône de disque dur ne s'affiche que
+          si la configuration de la VM contient un ou plusieurs disques durs.</para>
+        </glossdef>
+      </glossentry>
+      <glossentry>
+        <glossterm><computeroutput>OpticalDisks</computeroutput></glossterm>
+        <glossdef>
+          <para>N'affiche pas l'icône du CD dans la barre d'état de la fenêtre
+          de la VM. Par défaut, l'icône du CD ne s'affiche que si la configuration 
+          de la VM contient un ou plusieurs lecteurs CD.</para>
+        </glossdef>
+      </glossentry>
+      <glossentry>
+        <glossterm><computeroutput>FloppyDisks</computeroutput></glossterm>
+        <glossdef>
+          <para>N'affiche pas l'icône du lecteur amovible dans la barre d'état
+          de la fenêtre de la VM. Par défaut, l'icône du lecteur amovible ne
+          s'affiche que si la configuration de la VM contient un ou plusieurs
+          lecteurs amovibles.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm><computeroutput>Network</computeroutput></glossterm>
+        <glossdef>
+          <para>N'affiche pas l'icône du réseau dans la barre d'état de la
+          fenêtre de la VM. Par défaut, l'icône de réseau ne s'affiche que si la
+          configuration de la VM contient un ou plusieurs adaptateurs réseaux.</para>
+        </glossdef>
+      </glossentry>
+      
+      <glossentry>
+        <glossterm><computeroutput>USB</computeroutput></glossterm>
+        <glossdef>
+          <para>N'affiche pas l'icône de l'USB dans la barre d'état.</para>
+        </glossdef>
+      </glossentry>
+      <glossentry>
+        <glossterm><computeroutput>SharedFolders</computeroutput></glossterm>
+        <glossdef>
+          <para>N'affiche pas l'icône des dossiers dans la barre d'état.</para>
+        </glossdef>
+      </glossentry>
+      <glossentry>
+        <glossterm><computeroutput>VideoCapture</computeroutput></glossterm>
+        <glossdef>
+          <para>N'affiche pas l'icône de la capture vidéo dans la barre d'état.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm><computeroutput>Features</computeroutput></glossterm>
+        <glossdef>
+          <para>N'affiche pas l'icône des fonctions du processeur dans la barre
+          d'état.</para>
+        </glossdef>
+      </glossentry>
+      <glossentry>
+        <glossterm><computeroutput>Mouse</computeroutput></glossterm>
+        <glossdef>
+          <para>N'affiche pas l'icône de la souris dans la barre d'état.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm><computeroutput>Keyboard</computeroutput></glossterm>
+        <glossdef>
+          <para>N'affiche pas l'icône du clavier dans la barre d'état.</para>
+        </glossdef>
+      </glossentry>
+
+    </glosslist>
+    
+    <para>C'est un paramètre individuel à chaque VM. Toutes les combinaisons de
+    ce qui précède est possible. Si vous spécifiez toutes les options, aucune
+    icône n'est affichée dans la barre d'état de la fenêtre de la VM. Pour
+    restaurer le comportement par défaut, utilisez</para>
+    <screen>VBoxManage setextradata "VM name" GUI/RestrictedStatusBarIndicators</screen>
+  </sect2>
+
 
       <sect2>
         <title>Personnalisation de la touche hôte</title>
@@ -2034,78 +2316,119 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
             <tbody>
               <row>
                 <entry><emphasis role="bold">Action</emphasis></entry>
-                <entry><emphasis role="bold">Touche hôte par défaut</emphasis></entry>
+                <entry><emphasis role="bold">Touche par défaut</emphasis></entry>
                 <entry><emphasis role="bold">Action</emphasis></entry>
               </row>
               <row>
-                <entry>SettingsDialog</entry>
-                <entry>S</entry>
-                <entry>ouvre la boîte >e dialogue des préférences de la VM</entry>
-              </row>
-              <row>
-                <entry>TakeSnapshot</entry>
-                <entry>S</entry>
+                <entry><computeroutput>TakeSnapshot</computeroutput></entry>
+                <entry>T</entry>
                 <entry>prend un instantané</entry>
               </row>
               <row>
-                <entry>InformationsDialog</entry>
-                <entry>N</entry>
-                <entry>affiche la boîte de dialogue d'informations de la VM</entry>
+                <entry><computeroutput>TakeScreenshot</computeroutput></entry>
+                <entry>E</entry>
+                <entry>fait une impression d'écran</entry>
               </row>
               <row>
-                <entry>MouseIntegration</entry>
+                <entry><computeroutput>MouseIntegration</computeroutput></entry>
                 <entry>I</entry>
                 <entry>bascule l'intégration de la souris</entry>
               </row>
               <row>
-                <entry>TypeCAD</entry>
+                <entry><computeroutput>TypeCAD</computeroutput></entry>
                 <entry>Del</entry>
-                <entry>envoie Ctrl+Alt+Del</entry>
+                <entry>envoie Ctrl+Alt+Supp</entry>
               </row>
               <row>
-                <entry>TypeCABS</entry>
+                <entry><computeroutput>TypeCABS</computeroutput></entry>
                 <entry>Backspace</entry>
-                <entry>envoie Ctrl+Alt+Backspace</entry>
+                <entry>envoie Ctrl+Alt+Effacement</entry>
               </row>
               <row>
-                <entry>Pause</entry>
+                <entry><computeroutput>Pause</computeroutput></entry>
                 <entry>P</entry>
-                <entry>Met en pause la VM</entry>
+                <entry>Met la VM en pause</entry>
               </row>
               <row>
-                <entry>Reset</entry>
+                <entry><computeroutput>Reset</computeroutput></entry>
                 <entry>R</entry>
-                <entry>réinitialise (en dur) l'invité</entry>
+                <entry>réinitialisation (brutale) de l'invité</entry>
               </row>
               <row>
-                <entry>Shutdown</entry>
+                <entry><computeroutput>SaveState</computeroutput></entry>
+                <entry></entry>
+                <entry>enregistre l'état de la VM et ferme la VM</entry>
+              </row>
+              <row>
+                <entry><computeroutput>Shutdown</computeroutput></entry>
                 <entry>H</entry>
-                <entry>appui sur le bouton d'alimentation ACPI</entry>
+                <entry>appuie sur le bouton ACPI (virtuel) d'alimentation</entry>
               </row>
               <row>
-                <entry>Close</entry>
+                <entry><computeroutput>PowerOff</computeroutput></entry>
+                <entry></entry>
+                <entry>coupe la VM (sans sauvegarder son état !)</entry>
+              </row>
+              <row>
+                <entry><computeroutput>Close</computeroutput></entry>
                 <entry>Q</entry>
-                <entry>affiche la boîte de dialogue Fermer la VM</entry>
+                <entry>affiche la boîte de dialogue de fermeture de la VM</entry>
               </row>
               <row>
-                <entry>FullscreenMode</entry>
+                <entry><computeroutput>FullscreenMode</computeroutput></entry>
                 <entry>F</entry>
                 <entry>passe la VM en plein écran</entry>
               </row>
               <row>
-                <entry>SeamlessMode</entry>
+                <entry><computeroutput>SeamlessMode</computeroutput></entry>
                 <entry>L</entry>
                 <entry>passe la VM en mode transparent</entry>
               </row>
               <row>
-                <entry>ScaleMode</entry>
+                <entry><computeroutput>ScaleMode</computeroutput></entry>
                 <entry>C</entry>
-                <entry>passe la VM en mode échelle</entry>
+                <entry>passe la VM en mode échelonné</entry>
               </row>
               <row>
-                <entry>PopupMenu</entry>
+                <entry><computeroutput>GuestAutoResize</computeroutput></entry>
+                <entry>G</entry>
+                <entry>redimensionne automatiquement la fenêtre de l'invité</entry>
+              </row>
+              <row>
+                <entry><computeroutput>WindowAdjust</computeroutput></entry>
+                <entry>A</entry>
+                <entry>redimension automatique de la fenêtre invité</entry>
+              </row>
+              <row>
+                <entry><computeroutput>PopupMenu</computeroutput></entry>
                 <entry>Home</entry>
-                <entry>affiche un menu popup en mode plein-écran / transparent</entry>
+                <entry>affiche un menu en mode plein écran/transparent</entry>
+              </row>
+              <row>
+                <entry><computeroutput>SettingsDialog</computeroutput></entry>
+                <entry>S</entry>
+                <entry>ouvre la boîte de dialogue des paramètres de la VM</entry>
+              </row>
+              <row>
+                <entry><computeroutput>InformationsDialog</computeroutput></entry>
+                <entry>N</entry>
+                <entry>affiche la fenêtre d'informations sur la VM</entry>
+              </row>
+              <row>
+                <entry><computeroutput>NetworkAdaptersDialog</computeroutput></entry>
+                <entry></entry>
+                <entry>affiche la boîte de dialogue des adaptateurs réseaux</entry>
+              </row>
+              <row>
+                <entry><computeroutput>SharedFoldersDialog</computeroutput></entry>
+                <entry></entry>
+                <entry>affiche la boîte de dialogue des dossiers partagés de la
+                VM</entry>
+              </row>
+              <row>
+                <entry><computeroutput>InstallGuestAdditions</computeroutput></entry>
+                <entry>D</entry>
+                <entry>mounte l'ISO contenant les suppléments invité</entry>
               </row>
             </tbody>
           </tgroup>
@@ -2120,13 +2443,14 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
       <sect2>
         <title>Action puand la VM s'arrête</title>
 
-        <para>Vous pouvez interdire certaines ctions quand la VM s'arrête. Pour
-        interdire des actions spécifiques, tapez&#xA0;:</para>
+        <para>Vous pouvez interdire (c'est-à-dire blacklister) certaines ctions
+        quand la VM s'arrête. Pour interdire des actions spécifiques,
+        tapez&#xA0;:</para>
 
         <para><screen>VBoxManage setextradata "nom VM" GUI/RestrictedCloseActions OPTION[,OPTION...]</screen></para>
 
         <para>où <computeroutput>OPTION</computeroutput> est l'un des mots-clés
-        suivants&#xA0;:<glosslist>
+        suivants&#xA0;:</para><glosslist>
           <glossentry>
             <glossterm><computeroutput>SaveState</computeroutput></glossterm>
 
@@ -2161,9 +2485,9 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
               lors de l'extinction de la VM.</para>
             </glossdef>
           </glossentry>
-        </glosslist></para>
+        </glosslist>
 
-      <para>Toutes les combinaison de ce qui précède est possible. Si
+      <para>Il s'agit d'un paramètre individuel à chaque VM. Toutes les combinaison de ce qui précède est possible. Si
       vous spécifiez toutes les options, la VM ne pourra pas être éteinte.</para>
     </sect2>
   </sect1>
@@ -2202,82 +2526,82 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
               <entry><emphasis role="bold">Par défaut</emphasis></entry>
             </row>
             <row>
-              <entry>USER</entry>
+              <entry><computeroutput>USER</computeroutput></entry>
               <entry>L'utilisateur sous lequel fonctionne le service web</entry>
               <entry></entry>
             </row>
             <row>
-              <entry>HOST</entry>
+              <entry><computeroutput>HOST</computeroutput></entry>
               <entry>L'hôte où on doit chercher le service web</entry>
               <entry>localhost</entry>
             </row>
             <row>
-              <entry>PORT</entry>
+              <entry><computeroutput>PORT</computeroutput></entry>
               <entry>Le port où on doit chercher le service web</entry>
               <entry>18083</entry>
             </row>
             <row>
-              <entry>SSL_KEYFILE</entry>
+              <entry><computeroutput>SSL_KEYFILE</computeroutput></entry>
               <entry>Fichier de clé et du certificat du serveur, format PEM</entry>
               <entry></entry>
             </row>
             <row>
-              <entry>SSL_PASSWORDFILE</entry>
+              <entry><computeroutput>SSL_PASSWORDFILE</computeroutput></entry>
               <entry>Nom du fichier mot de passe de la clé du serveur</entry>
               <entry></entry>
             </row>
             <row>
-              <entry>SSL_CACERT</entry>
+              <entry><computeroutput>SSL_CACERT</computeroutput></entry>
               <entry>Fichier de certificat CA, format PEM</entry>
               <entry></entry>
             </row>
             <row>
-              <entry>SSL_CAPATH</entry>
+              <entry><computeroutput>SSL_CAPATH</computeroutput></entry>
               <entry>Chemin du certificat CA</entry>
               <entry></entry>
             </row>
             <row>
-              <entry>SSL_DHFILE</entry>
+              <entry><computeroutput>SSL_DHFILE</computeroutput></entry>
               <entry>Nom du fichier DH ou longueur de la clé DH en octets</entry>
               <entry></entry>
             </row>
             <row>
-              <entry>SSL_RANDFILE</entry>
+              <entry><computeroutput>SSL_RANDFILE</computeroutput></entry>
               <entry>Fichier contenant seed en générateur de nombre aléatoire</entry>
               <entry></entry>
             </row>
             <row>
-              <entry>TIMEOUT</entry>
+              <entry><computeroutput>TIMEOUT</computeroutput></entry>
               <entry>Timous de la session en secondes&#xA0;; 0 désactive le timeouts</entry>
               <entry>300</entry>
             </row>
             <row>
-              <entry>CHECK_INTERVAL</entry>
+              <entry><computeroutput>CHECK_INTERVAL</computeroutput></entry>
               <entry>Fréquence des vérifications des timeout en secondes</entry>
               <entry>5</entry>
             </row>
             <row>
-              <entry>THREADS</entry>
+              <entry><computeroutput>THREADS</computeroutput></entry>
               <entry>Nombre maximum de session simultanées possibles</entry>
               <entry>100</entry>
             </row>
             <row>
-              <entry>KEEPALIVE</entry>
+              <entry><computeroutput>KEEPALIVE</computeroutput></entry>
               <entry>Nombre maximum de requêtes avant de fermer une socket</entry>
               <entry>100</entry>
             </row>
             <row>
-              <entry>ROTATE</entry>
+              <entry><computeroutput>ROTATE</computeroutput></entry>
               <entry>Nombre de fichiers journaux&#xA0;; 0 désactive la journalisation</entry>
               <entry>10</entry>
             </row>
             <row>
-              <entry>LOGSIZE</entry>
+              <entry><computeroutput>LOGSIZE</computeroutput></entry>
               <entry>Taille maximum d'un fichier journal en octets à récupérer</entry>
               <entry>1Mo</entry>
             </row>
             <row>
-              <entry>LOGINTERVAL</entry>
+              <entry><computeroutput>LOGINTERVAL</computeroutput></entry>
               <entry>Délai maximum en secondes pour ratraper l'enregistrement des journaux</entry>
               <entry>1 day</entry>
             </row>
@@ -2365,7 +2689,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
             <para>La détection d'un isolement de l'hôte, qui offre un moyen de
             détecter si l'hôte ne peut plus atteindre une instance en particulier
             du serveur VirtualBox et qui prend les mesures appropriées telles que
-            l'extinction, la sauvegarde de l'état actuel, voire la coupure de
+            l'extinction, la sauvegarde de l'état actuel, voire la coupure
             de certaines VMs.</para>
         </listitem>
     </itemizedlist></para>
@@ -2516,48 +2840,48 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
               <entry><emphasis role="bold">Réglage par défaut</emphasis></entry>
             </row>
             <row>
-              <entry>USER</entry>
+              <entry><computeroutput>USER</computeroutput></entry>
               <entry>L'utilisateur sous lequel fonctionne le service watchdog</entry>
               <entry></entry>
             </row>
             <row>
-              <entry>ROTATE</entry>
+              <entry><computeroutput>ROTATE</computeroutput></entry>
               <entry>Nombre de fichiers journaux&#xA0;; 0 désactive la gestion des journaux</entry>
               <entry>10</entry>
             </row>
             <row>
-              <entry>LOGSIZE</entry>
+              <entry><computeroutput>LOGSIZE</computeroutput></entry>
               <entry>Taille maximum du fichier journal, en octets, pour faire la gestion</entry>
               <entry>1Mo</entry>
             </row>
             <row>
-              <entry>LOGINTERVAL</entry>
+              <entry><computeroutput>LOGINTERVAL</computeroutput></entry>
               <entry>Intervalle de secondes maximum en secondes pour faire la
               rotation des journaux</entry>
               <entry>1 day</entry>
             </row>
             <row>
-              <entry>BALLOON_INTERVAL</entry>
+              <entry><computeroutput>BALLOON_INTERVAL</computeroutput></entry>
               <entry>Intervalle de la vérification de la taille du ballon (msec)</entry>
               <entry>30000</entry>
             </row>
             <row>
-              <entry>BALLOON_INCREMENT</entry>
+              <entry><computeroutput>BALLOON_INCREMENT</computeroutput></entry>
               <entry>Incrémentation de la taille du ballon (Mo)</entry>
               <entry>256</entry>
             </row>
             <row>
-              <entry>BALLOON_DECREMENT</entry>
+              <entry><computeroutput>BALLOON_DECREMENT</computeroutput></entry>
               <entry>Diminution de la taille du ballon (Mo)</entry>
               <entry>128</entry>
             </row>
             <row>
-              <entry>BALLOON_LOWERLIMIT</entry>
+              <entry><computeroutput>BALLOON_LOWERLIMIT</computeroutput></entry>
               <entry>Limite la plus basse de la taille du ballon (Mo)</entry>
               <entry>64</entry>
             </row>
             <row>
-              <entry>BALLOON_SAFETYMARGIN</entry>
+              <entry><computeroutput>BALLOON_SAFETYMARGIN</computeroutput></entry>
               <entry>Mémoire libre nécessaire pour diminuer la taille du ballon (Mo)</entry>
               <entry>1024</entry>
             </row>
@@ -2627,7 +2951,7 @@ svccfg -s svc:/application/virtualbox/balloonctrl:default setprop config/balloon
     par mot de passe et il n'y a aucune possibilité d'utiliser le hachage de
     mots de passe. Il ne reste pas d'autre choix que de donner un mot de passe
     en clair dans la configuration de VNC, ce qu'on peut faire avec la
-    commande suivante&#xA0;:<screen>VBoxManage modifyvm NOMVM --vrdeproperty VNCPassword=secret</screen></para>
+    commande suivante&#xA0;:<screen>VBoxManage modifyvm "nom VM" --vrdeproperty VNCPassword=secret</screen></para>
 
     <para>L'utilisateur est responsable du secret de son mot de passe et vous
     devriez le supprimer quand vous donnez la configuration d'une VM à quelqu'un
@@ -2732,5 +3056,26 @@ alice = {
       services launchd pourraient se configurer, voir <literal><ulink
       url="http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html">http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html</ulink></literal>.</para>
     </sect2>
+  </sect1>
+
+  <sect1 id="vboxexpertstoragemgmt">
+    <title>La gestion experte par VirtualBox du stockage</title>
+
+    <para>Si le modèle d'instantané de VirtualBox ne suffit pas, il est possible
+    d'activer un mode spécial qui permet de configurer des connexions de supports
+    de stockage pendant que la VM est en pause. L'utilisateur doit être sûr que
+    les données du disque restent cohérentes pour l'invité car, tout comme avec
+    le montage à chaud, l'invité n'est pas informé des médias déconnectés
+    ou nouvellement connectés.</para>
+
+    <para>Vous pouvez activer le mode de gestion experte du stockage pour chaque
+    VM en exécuting :</para>
+
+    <screen>VBoxManage setextradata "nom VM" "VBoxInternal2/SilentReconfigureWhilePaused" 1
+</screen>
+
+    <para>Vous pouvez reconfigurer les  connexions de supports de stockage pendant
+    que la VM est en pause en utilisant :</para>
+    <screen>VBoxManage storageattach ...</screen>
   </sect1>
 </chapter>
