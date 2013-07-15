@@ -180,10 +180,10 @@
         <file alias="refresh_disabled_22px.png">images/refresh_disabled_22px.png</file>
         <file alias="refresh_32px.png">images/refresh_32px.png</file>
         <file alias="refresh_disabled_32px.png">images/refresh_disabled_32px.png</file>
-        <file alias="show_logs_16px.png">images/show_logs_16px.png</file>
-        <file alias="show_logs_disabled_16px.png">images/show_logs_disabled_16px.png</file>
-        <file alias="show_logs_22px.png">images/show_logs_22px.png</file>
-        <file alias="show_logs_disabled_22px.png">images/show_logs_disabled_22px.png</file>
+        <file alias="vm_show_logs_16px.png">images/vm_show_logs_16px.png</file>
+        <file alias="vm_show_logs_disabled_16px.png">images/vm_show_logs_disabled_16px.png</file>
+        <file alias="vm_show_logs_22px.png">images/vm_show_logs_22px.png</file>
+        <file alias="vm_show_logs_disabled_22px.png">images/vm_show_logs_disabled_22px.png</file>
         <file alias="description_16px.png">images/description_16px.png</file>
         <file alias="description_disabled_16px.png">images/description_disabled_16px.png</file>
         <file alias="description_edit_16px.png">images/description_edit_16px.png</file>
