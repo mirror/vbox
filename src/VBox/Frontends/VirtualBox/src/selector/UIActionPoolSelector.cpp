@@ -231,7 +231,7 @@ class UIActionSimpleGroupNew : public UIActionSimple
 public:
 
     UIActionSimpleGroupNew(UIActionPool *pParent)
-        : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16), ":/vm_new_32px.png", ":/new_16px.png")
+        : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16), ":/vm_new_32px.png", ":/vm_new_16px.png")
     {
         retranslateUi();
     }
@@ -327,8 +327,8 @@ public:
 
     UIActionSimpleGroupRemove(UIActionPool *pParent)
         : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16),
-                         ":/vm_delete_32px.png", ":/delete_16px.png",
-                         ":/vm_delete_disabled_32px.png", ":/delete_dis_16px.png")
+                         ":/vm_delete_32px.png", ":/vm_delete_16px.png",
+                         ":/vm_delete_disabled_32px.png", ":/vm_delete_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -359,7 +359,7 @@ class UIActionSimpleGroupSort : public UIActionSimple
 public:
 
     UIActionSimpleGroupSort(UIActionPool *pParent)
-        : UIActionSimple(pParent/*, ":/settings_16px.png", ":/settings_dis_16px.png"*/)
+        : UIActionSimple(pParent)
     {
         retranslateUi();
     }
@@ -406,7 +406,7 @@ class UIActionSimpleMachineNew : public UIActionSimple
 public:
 
     UIActionSimpleMachineNew(UIActionPool *pParent)
-        : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16), ":/vm_new_32px.png", ":/new_16px.png")
+        : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16), ":/vm_new_32px.png", ":/vm_new_16px.png")
     {
         retranslateUi();
     }
@@ -470,7 +470,7 @@ class UIActionSimpleMachineAddGroup : public UIActionSimple
 public:
 
     UIActionSimpleMachineAddGroup(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/sf_add_16px.png")
+        : UIActionSimple(pParent, ":/sf_add_16px.png") // TODO: Change icon!
     {
         retranslateUi();
     }
@@ -502,8 +502,8 @@ public:
 
     UIActionSimpleMachineSettings(UIActionPool *pParent)
         : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16),
-                         ":/vm_settings_32px.png", ":/settings_16px.png",
-                         ":/vm_settings_disabled_32px.png", ":/settings_dis_16px.png")
+                         ":/vm_settings_32px.png", ":/vm_settings_16px.png",
+                         ":/vm_settings_disabled_32px.png", ":/vm_settings_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -568,8 +568,8 @@ public:
 
     UIActionSimpleMachineRemove(UIActionPool *pParent)
         : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16),
-                         ":/vm_delete_32px.png", ":/delete_16px.png",
-                         ":/vm_delete_disabled_32px.png", ":/delete_dis_16px.png")
+                         ":/vm_delete_32px.png", ":/vm_delete_16px.png",
+                         ":/vm_delete_disabled_32px.png", ":/vm_delete_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -602,8 +602,8 @@ public:
 
     UIActionStateCommonStartOrShow(UIActionPool *pParent)
         : UIActionState(pParent, QSize(32, 32), QSize(16, 16),
-                        ":/vm_start_32px.png", ":/start_16px.png",
-                        ":/vm_start_disabled_32px.png", ":/start_dis_16px.png")
+                        ":/vm_start_32px.png", ":/vm_start_16px.png",
+                        ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -649,8 +649,8 @@ public:
 
     UIActionToggleCommonPauseAndResume(UIActionPool *pParent)
         : UIActionToggle(pParent, QSize(32, 32), QSize(16, 16),
-                         ":/vm_pause_32px.png", ":/pause_16px.png",
-                         ":/vm_pause_disabled_32px.png", ":/pause_disabled_16px.png")
+                         ":/vm_pause_32px.png", ":/vm_pause_16px.png",
+                         ":/vm_pause_disabled_32px.png", ":/vm_pause_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -681,7 +681,7 @@ class UIActionSimpleCommonReset : public UIActionSimple
 public:
 
     UIActionSimpleCommonReset(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/reset_16px.png", ":/reset_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_reset_16px.png", ":/vm_reset_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -713,8 +713,8 @@ public:
 
     UIActionSimpleCommonDiscard(UIActionPool *pParent)
         : UIActionSimple(pParent, QSize(32, 32), QSize(16, 16),
-                         ":/vm_discard_32px.png", ":/discard_16px.png",
-                         ":/vm_discard_disabled_32px.png", ":/discard_dis_16px.png")
+                         ":/vm_discard_32px.png", ":/vm_discard_16px.png",
+                         ":/vm_discard_disabled_32px.png", ":/vm_discard_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -841,7 +841,7 @@ class UIActionSimpleMachineSortParent : public UIActionSimple
 public:
 
     UIActionSimpleMachineSortParent(UIActionPool *pParent)
-        : UIActionSimple(pParent/*, ":/settings_16px.png", ":/settings_dis_16px.png"*/)
+        : UIActionSimple(pParent)
     {
         retranslateUi();
     }
@@ -888,7 +888,7 @@ class UIActionSimpleSave : public UIActionSimple
 public:
 
     UIActionSimpleSave(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/save_state_16px.png", ":/save_state_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -919,7 +919,7 @@ class UIActionSimpleACPIShutdown : public UIActionSimple
 public:
 
     UIActionSimpleACPIShutdown(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/acpi_16px.png", ":/acpi_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -950,7 +950,7 @@ class UIActionSimplePowerOff : public UIActionSimple
 public:
 
     UIActionSimplePowerOff(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/poweroff_16px.png", ":/poweroff_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_poweroff_16px.png", ":/vm_poweroff_disabled_16px.png")
     {
         retranslateUi();
     }

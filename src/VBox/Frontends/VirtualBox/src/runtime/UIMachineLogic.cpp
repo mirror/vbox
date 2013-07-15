@@ -1728,7 +1728,7 @@ void UIMachineLogic::sltPrepareUSBMenu()
         pEmptyMenuAction->setEnabled(false);
         pEmptyMenuAction->setText(tr("No USB Devices Connected"));
         pEmptyMenuAction->setToolTip(tr("No supported devices connected to the host PC"));
-        pEmptyMenuAction->setIcon(UIIconPool::iconSet(":/delete_16px.png", ":/delete_dis_16px.png"));
+        pEmptyMenuAction->setIcon(UIIconPool::iconSet(":/vm_delete_16px.png", ":/vm_delete_disabled_16px.png")); // TODO: Change icon!
         pMenu->addAction(pEmptyMenuAction);
     }
     /* If device list is NOT empty: */

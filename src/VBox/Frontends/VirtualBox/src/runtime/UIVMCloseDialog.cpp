@@ -182,7 +182,7 @@ void UIVMCloseDialog::prepare()
                     {
                         /* Configure icon: */
                         m_pSaveIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                        m_pSaveIcon->setPixmap(QPixmap(":/save_state_16px.png"));
+                        m_pSaveIcon->setPixmap(QPixmap(":/vm_save_state_16px.png"));
                     }
                     /* Prepare 'save' radio-button: */
                     m_pSaveRadio = new QRadioButton(this);
@@ -195,7 +195,7 @@ void UIVMCloseDialog::prepare()
                     {
                         /* Configure icon: */
                         m_pShutdownIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                        m_pShutdownIcon->setPixmap(QPixmap(":/acpi_16px.png"));
+                        m_pShutdownIcon->setPixmap(QPixmap(":/vm_shutdown_16px.png"));
                     }
                     /* Prepare 'shutdown' radio-button: */
                     m_pShutdownRadio = new QRadioButton(this);
@@ -208,7 +208,7 @@ void UIVMCloseDialog::prepare()
                     {
                         /* Configure icon: */
                         m_pPowerOffIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-                        m_pPowerOffIcon->setPixmap(QPixmap(":/poweroff_16px.png"));
+                        m_pPowerOffIcon->setPixmap(QPixmap(":/vm_poweroff_16px.png"));
                     }
                     /* Prepare 'shutdown' radio-button: */
                     m_pPowerOffRadio = new QRadioButton(this);

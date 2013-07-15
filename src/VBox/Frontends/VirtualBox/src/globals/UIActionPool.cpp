@@ -412,7 +412,7 @@ class UIActionSimpleResetWarnings : public UIActionSimple
 public:
 
     UIActionSimpleResetWarnings(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/reset_16px.png")
+        : UIActionSimple(pParent, ":/vm_reset_16px.png") // TODO: Change icon!
     {
         retranslateUi();
     }

@@ -136,7 +136,7 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
     m_pResetButton->setIcon(UIIconPool::iconSet(":/import_16px.png"));
     connect(m_pResetButton, SIGNAL(clicked(bool)), this, SLOT(sltReset()));
     m_pClearButton->removeBorder();
-    m_pClearButton->setIcon(UIIconPool::iconSet(":/delete_16px.png"));
+    m_pClearButton->setIcon(UIIconPool::iconSet(":/eraser_16px.png"));
     connect(m_pClearButton, SIGNAL(clicked(bool)), this, SLOT(sltClear()));
 
     /* Translate finally: */

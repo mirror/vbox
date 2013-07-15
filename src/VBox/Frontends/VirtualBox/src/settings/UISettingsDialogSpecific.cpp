@@ -569,7 +569,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
 {
     /* Window icon: */
 #ifndef Q_WS_MAC
-    setWindowIcon(QIcon(":/settings_16px.png"));
+    setWindowIcon(QIcon(":/vm_settings_16px.png"));
 #endif /* Q_WS_MAC */
 
     /* Allow to reset first-run flag just when medium enumeration was finished: */

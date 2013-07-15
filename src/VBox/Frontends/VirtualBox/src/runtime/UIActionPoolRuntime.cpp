@@ -49,7 +49,7 @@ class UIActionSimpleShowSettingsDialog : public UIActionSimple
 public:
 
     UIActionSimpleShowSettingsDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/settings_16px.png", ":/settings_dis_16px.png")
+        : UIActionSimple(pParent, ":/vm_settings_16px.png", ":/vm_settings_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -288,8 +288,8 @@ public:
 
     UIActionTogglePause(UIActionPool *pParent)
         : UIActionToggle(pParent,
-                         ":/pause_on_16px.png", ":/pause_16px.png",
-                         ":/pause_on_disabled_16px.png", ":/pause_disabled_16px.png")
+                         ":/vm_pause_on_16px.png", ":/vm_pause_16px.png",
+                         ":/vm_pause_on_disabled_16px.png", ":/vm_pause_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -320,7 +320,7 @@ class UIActionSimplePerformReset : public UIActionSimple
 public:
 
     UIActionSimplePerformReset(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/reset_16px.png", ":/reset_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_reset_16px.png", ":/vm_reset_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -351,7 +351,7 @@ class UIActionSimplePerformSave : public UIActionSimple
 public:
 
     UIActionSimplePerformSave(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/save_state_16px.png", ":/save_state_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -377,7 +377,7 @@ class UIActionSimplePerformShutdown : public UIActionSimple
 public:
 
     UIActionSimplePerformShutdown(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/acpi_16px.png", ":/acpi_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_shutdown_16px.png", ":/vm_shutdown_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -412,7 +412,7 @@ class UIActionSimplePerformPowerOff : public UIActionSimple
 public:
 
     UIActionSimplePerformPowerOff(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/poweroff_16px.png", ":/poweroff_disabled_16px.png")
+        : UIActionSimple(pParent, ":/vm_poweroff_16px.png", ":/vm_poweroff_disabled_16px.png")
     {
         retranslateUi();
     }
