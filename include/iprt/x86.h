@@ -2280,34 +2280,34 @@ typedef const X86DESCATTR *PCX86DESCATTR;
 #pragma pack(1)
 typedef struct X86DESCGENERIC
 {
-    /** Limit - Low word. */
+    /** 00 - Limit - Low word. */
     unsigned    u16LimitLow : 16;
-    /** Base address - lowe word.
+    /** 10 - Base address - lowe word.
      * Don't try set this to 24 because MSC is doing stupid things then. */
     unsigned    u16BaseLow : 16;
-    /** Base address - first 8 bits of high word. */
+    /** 20 - Base address - first 8 bits of high word. */
     unsigned    u8BaseHigh1 : 8;
-    /** Segment Type. */
+    /** 28 - Segment Type. */
     unsigned    u4Type : 4;
-    /** Descriptor Type. System(=0) or code/data selector */
+    /** 2c - Descriptor Type. System(=0) or code/data selector */
     unsigned    u1DescType : 1;
-    /** Descriptor Privelege level. */
+    /** 2d - Descriptor Privelege level. */
     unsigned    u2Dpl : 2;
-    /** Flags selector present(=1) or not. */
+    /** 2f - Flags selector present(=1) or not. */
     unsigned    u1Present : 1;
-    /** Segment limit 16-19. */
+    /** 30 - Segment limit 16-19. */
     unsigned    u4LimitHigh : 4;
-    /** Available for system software. */
+    /** 34 - Available for system software. */
     unsigned    u1Available : 1;
-    /** 32 bits mode: Reserved - 0, long mode: Long Attribute Bit. */
+    /** 35 - 32 bits mode: Reserved - 0, long mode: Long Attribute Bit. */
     unsigned    u1Long : 1;
-    /** This flags meaning depends on the segment type. Try make sense out
+    /** 36 - This flags meaning depends on the segment type. Try make sense out
      * of the intel manual yourself.  */
     unsigned    u1DefBig : 1;
-    /** Granularity of the limit. If set 4KB granularity is used, if
+    /** 37 - Granularity of the limit. If set 4KB granularity is used, if
      * clear byte. */
     unsigned    u1Granularity : 1;
-    /** Base address - highest 8 bits. */
+    /** 38 - Base address - highest 8 bits. */
     unsigned    u8BaseHigh2 : 8;
 } X86DESCGENERIC;
 #pragma pack()
