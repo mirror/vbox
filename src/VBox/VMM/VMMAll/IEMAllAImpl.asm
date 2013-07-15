@@ -1273,36 +1273,61 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         EPILOGUE_4_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
- %ifdef RT_ARCH_AMD64
+ %ifdef RT_ARCH_AMD64 ; The 32-bit host version lives in IEMAllAImplC.cpp.
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         PROLOGUE_4_ARGS
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
         mov     rax, [A0]
- %ifdef ASM_CALL64_GCC
+  %ifdef ASM_CALL64_GCC
         %1      A2
         mov     [A0], rax
         mov     [A1], rdx
- %else
+  %else
         mov     T1, A1
         %1      A2
         mov     [A0], rax
         mov     [T1], rdx
- %endif
+  %endif
         IEM_SAVE_FLAGS       A3, %2, %3
         xor     eax, eax
         EPILOGUE_4_ARGS_EX 12
 ENDPROC iemAImpl_ %+ %1 %+ _u64
- %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
-        int3
-        ret 12
-ENDPROC iemAImpl_ %+ %1 %+ _u64
-  %endif ; !RT_ARCH_AMD64
+ %endif ; !RT_ARCH_AMD64
 
 %endmacro
 
 IEMIMPL_MUL_OP mul,  (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
 IEMIMPL_MUL_OP imul, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
+
+
+BEGINCODE
+;;
+; Worker function for negating a 32-bit number in T1:T0
+; @uses None (T0,T1)
+iemAImpl_negate_T0_T1_u32:
+        push    0
+        push    0
+        xchg    T0_32, [xSP]
+        xchg    T1_32, [xSP + xCB]
+        sub     T0_32, [xSP]
+        sbb     T1_32, [xSP + xCB]
+        add     xSP, xCB*2
+        ret
+
+%ifdef RT_ARCH_AMD64
+;;
+; Worker function for negating a 64-bit number in T1:T0
+; @uses None (T0,T1)
+iemAImpl_negate_T0_T1_u64:
+        push    0
+        push    0
+        xchg    T0, [xSP]
+        xchg    T1, [xSP + xCB]
+        sub     T0, [xSP]
+        sbb     T1, [xSP + xCB]
+        add     xSP, xCB*2
+        ret
+%endif
 
 
 ;;
@@ -1482,8 +1507,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         js      .divisor_negative
         test    T1_32, T1_32
         jns     .both_positive
-        neg     T0_32
-        neg     T1_32
+        call    iemAImpl_negate_T0_T1_u32
 .one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
         push    T0                      ; Start off like unsigned below.
         shl     T1_32, 1
@@ -1502,8 +1526,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         neg     A2_32
         test    T1_32, T1_32
         jns     .one_of_each
-        neg     T0_32
-        neg     T1_32
+        call    iemAImpl_negate_T0_T1_u32
 .both_positive:                         ; Same as unsigned shifted by sign indicator bit.
         shl     T1_32, 1
         shr     T0_32, 31
@@ -1546,16 +1569,16 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u32, 16
         jmp     .return
 ENDPROC iemAImpl_ %+ %1 %+ _u32
 
- %ifdef RT_ARCH_AMD64
+ %ifdef RT_ARCH_AMD64 ; The 32-bit host version lives in IEMAllAImplC.cpp.
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         PROLOGUE_4_ARGS
 
         test    A2, A2
         jz      .div_zero
- %if %4 == 0
+  %if %4 == 0
         cmp     [A1], A2
         jae     .div_overflow
- %else
+  %else
         push    A2                      ; save A2 so we modify it (we out of regs on x86).
         mov     T0, [A0]                ; T0 = dividend low
         mov     T1, [A1]                ; T1 = dividend high
@@ -1563,8 +1586,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         js      .divisor_negative
         test    T1, T1
         jns     .both_positive
-        neg     T0
-        neg     T1
+        call    iemAImpl_negate_T0_T1_u64
 .one_of_each:                           ; OK range is 2^(result-with - 1) + (divisor - 1).
         push    T0                      ; Start off like unsigned below.
         shl     T1, 1
@@ -1584,8 +1606,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         neg     A2
         test    T1, T1
         jns     .one_of_each
-        neg     T0
-        neg     T1
+        call    iemAImpl_negate_T0_T1_u64
 .both_positive:                         ; Same as unsigned shifted by sign indicator bit.
         shl     T1, 1
         shr     T0, 63
@@ -1594,25 +1615,25 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         jae     .div_overflow
 .div_no_overflow:
         pop     A2
- %endif
+  %endif
 
         IEM_MAYBE_LOAD_FLAGS A3, %2, %3
         mov     rax, [A0]
- %ifdef ASM_CALL64_GCC
+  %ifdef ASM_CALL64_GCC
         mov     T1, A2
         mov     rax, [A0]
         mov     rdx, [A1]
         %1      T1
         mov     [A0], rax
         mov     [A1], rdx
- %else
+  %else
         mov     T1, A1
         mov     rax, [A0]
         mov     rdx, [T1]
         %1      A2
         mov     [A0], rax
         mov     [T1], rdx
- %endif
+  %endif
         IEM_SAVE_FLAGS       A3, %2, %3
         xor     eax, eax
 
@@ -1620,19 +1641,14 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         EPILOGUE_4_ARGS_EX 12
 
 .div_overflow:
- %if %4 != 0
+  %if %4 != 0
         pop     A2
- %endif
+  %endif
 .div_zero:
         mov     eax, -1
         jmp     .return
 ENDPROC iemAImpl_ %+ %1 %+ _u64
- %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
-        int3
-        ret
-ENDPROC iemAImpl_ %+ %1 %+ _u64
-  %endif ; !RT_ARCH_AMD64
+ %endif ; !RT_ARCH_AMD64
 
 %endmacro
 
