@@ -260,7 +260,6 @@ typedef struct {
 # endif
 # ifdef VBOX_WITH_WDDM
     bool            bRunningUnderWDDM;
-    bool            bNewPresent;
 # endif
 #endif
 

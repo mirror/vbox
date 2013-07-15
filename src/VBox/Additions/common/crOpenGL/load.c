@@ -396,7 +396,7 @@ static void stubSPUSafeTearDown(void)
 #if defined(CR_NEWWINTRACK)
     crUnlockMutex(mutex);
 # if defined(WINDOWS)
-    if (RTThreadGetState(stub.hSyncThread)!=RTTHREADSTATE_TERMINATED)
+    if (stub.hSyncThread && RTThreadGetState(stub.hSyncThread)!=RTTHREADSTATE_TERMINATED)
     {
         HANDLE hNative;
         DWORD ec=0;
@@ -819,7 +819,6 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
     MSG msg;
 # ifdef VBOX_WITH_WDDM
     HMODULE hVBoxD3D = NULL;
-    HRESULT hr;
     GLint spuConnection = 0;
 # endif
 #endif
@@ -937,6 +936,9 @@ stubInitLocked(void)
     const char *app_id;
     int i;
     int disable_sync = 0;
+#if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
+    HMODULE hVBoxD3D = NULL;
+#endif
 
     stubInitVars();
 
@@ -953,10 +955,21 @@ stubInitLocked(void)
         disable_sync = 1;
     }
 #elif defined(WINDOWS) && defined(VBOX_WITH_WDDM)
-    if (stub.bNewPresent)
+    hVBoxD3D = NULL;
+    if (!GetModuleHandleEx(0, VBOX_MODNAME_DISPD3D, &hVBoxD3D))
+    {
+        crDebug("GetModuleHandleEx failed err %d", GetLastError());
+        hVBoxD3D = NULL;
+    }
+
+    if (hVBoxD3D)
     {
         disable_sync = 1;
         crDebug("running with %s", VBOX_MODNAME_DISPD3D);
+        stub.trackWindowVisibleRgn = 0;
+        stub.trackWindowSize = 0;
+        stub.trackWindowPos = 0;
+        stub.trackWindowVisibility = 0;
         stub.trackWindowVisibleRgn = 0;
         stub.bRunningUnderWDDM = true;
     }
@@ -1115,15 +1128,142 @@ stubInit(void)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-#ifdef DEBUG_misha
+#if 1//def DEBUG_misha
  /* debugging: this is to be able to catch first-chance notifications
   * for exceptions other than EXCEPTION_BREAKPOINT in kernel debugger */
 # define VDBG_VEHANDLER
 #endif
 
 #ifdef VDBG_VEHANDLER
-static PVOID g_VBoxWDbgVEHandler = NULL;
-static DWORD g_VBoxWDbgVEHExit = 1;
+# include <dbghelp.h>
+static PVOID g_VBoxVehHandler = NULL;
+static DWORD g_VBoxVehEnable = 0;
+
+/* generate a crash dump on exception */
+#define VBOXVEH_F_DUMP 0x00000001
+/* generate a debugger breakpoint exception */
+#define VBOXVEH_F_BREAK 0x00000002
+/* exit on exception */
+#define VBOXVEH_F_EXIT  0x00000004
+
+static DWORD g_VBoxVehFlags = VBOXVEH_F_DUMP
+#ifdef DEBUG_misha
+                            | VBOXVEH_F_BREAK
+#endif
+        ;
+
+typedef BOOL WINAPI FNVBOXDBG_MINIDUMPWRITEDUMP(HANDLE hProcess,
+            DWORD ProcessId,
+            HANDLE hFile,
+            MINIDUMP_TYPE DumpType,
+            PMINIDUMP_EXCEPTION_INFORMATION ExceptionParam,
+            PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
+            PMINIDUMP_CALLBACK_INFORMATION CallbackParam);
+typedef FNVBOXDBG_MINIDUMPWRITEDUMP *PFNVBOXDBG_MINIDUMPWRITEDUMP;
+
+static HMODULE g_hVBoxMdDbgHelp = NULL;
+static PFNVBOXDBG_MINIDUMPWRITEDUMP g_pfnVBoxMdMiniDumpWriteDump = NULL;
+static uint32_t g_cVBoxMdFilePrefixLen = 0;
+static WCHAR g_aszwVBoxMdFilePrefix[MAX_PATH];
+static WCHAR g_aszwVBoxMdDumpCount = 0;
+static MINIDUMP_TYPE g_enmVBoxMdDumpType = MiniDumpNormal
+        | MiniDumpWithDataSegs
+        | MiniDumpWithFullMemory
+        | MiniDumpWithHandleData
+////        | MiniDumpFilterMemory
+////        | MiniDumpScanMemory
+//        | MiniDumpWithUnloadedModules
+////        | MiniDumpWithIndirectlyReferencedMemory
+////        | MiniDumpFilterModulePaths
+//        | MiniDumpWithProcessThreadData
+//        | MiniDumpWithPrivateReadWriteMemory
+////        | MiniDumpWithoutOptionalData
+//        | MiniDumpWithFullMemoryInfo
+//        | MiniDumpWithThreadInfo
+//        | MiniDumpWithCodeSegs
+//        | MiniDumpWithFullAuxiliaryState
+//        | MiniDumpWithPrivateWriteCopyMemory
+//        | MiniDumpIgnoreInaccessibleMemory
+//        | MiniDumpWithTokenInformation
+////        | MiniDumpWithModuleHeaders
+////        | MiniDumpFilterTriage
+        ;
+
+
+
+#define VBOXMD_DUMP_DIR_PREFIX_DEFAULT L"C:\\dumps\\vboxdmp"
+
+static HMODULE loadSystemDll(const char *pszName)
+{
+    char   szPath[MAX_PATH];
+    UINT   cchPath = GetSystemDirectoryA(szPath, sizeof(szPath));
+    size_t cbName  = strlen(pszName) + 1;
+    if (cchPath + 1 + cbName > sizeof(szPath))
+    {
+        SetLastError(ERROR_FILENAME_EXCED_RANGE);
+        return NULL;
+    }
+    szPath[cchPath] = '\\';
+    memcpy(&szPath[cchPath + 1], pszName, cbName);
+    return LoadLibraryA(szPath);
+}
+
+static DWORD vboxMdMinidumpCreate(struct _EXCEPTION_POINTERS *pExceptionInfo)
+{
+    WCHAR aszwMdFileName[MAX_PATH];
+    HANDLE hProcess = GetCurrentProcess();
+    DWORD ProcessId = GetCurrentProcessId();
+    MINIDUMP_EXCEPTION_INFORMATION ExceptionInfo;
+    HANDLE hFile;
+    DWORD winErr = ERROR_SUCCESS;
+
+    if (!g_pfnVBoxMdMiniDumpWriteDump)
+    {
+        if (!g_hVBoxMdDbgHelp)
+        {
+            g_hVBoxMdDbgHelp = loadSystemDll("DbgHelp.dll");
+            if (!g_hVBoxMdDbgHelp)
+                return GetLastError();
+        }
+
+        g_pfnVBoxMdMiniDumpWriteDump = (PFNVBOXDBG_MINIDUMPWRITEDUMP)GetProcAddress(g_hVBoxMdDbgHelp, "MiniDumpWriteDump");
+        if (!g_pfnVBoxMdMiniDumpWriteDump)
+            return GetLastError();
+    }
+
+    /* @todo: this is a tmp stuff until we get that info from the settings properly */
+    if (!g_cVBoxMdFilePrefixLen)
+    {
+        g_cVBoxMdFilePrefixLen = sizeof (VBOXMD_DUMP_DIR_PREFIX_DEFAULT)/sizeof (g_aszwVBoxMdFilePrefix[0]) - 1 /* <- don't include nul terminator */;
+        memcpy(g_aszwVBoxMdFilePrefix, VBOXMD_DUMP_DIR_PREFIX_DEFAULT, sizeof (VBOXMD_DUMP_DIR_PREFIX_DEFAULT));
+    }
+
+
+    if (RT_ELEMENTS(aszwMdFileName) <= g_cVBoxMdFilePrefixLen)
+    {
+        return ERROR_INVALID_STATE;
+    }
+
+    ++g_aszwVBoxMdDumpCount;
+
+    memcpy(aszwMdFileName, g_aszwVBoxMdFilePrefix, g_cVBoxMdFilePrefixLen * sizeof (g_aszwVBoxMdFilePrefix[0]));
+    swprintf(aszwMdFileName + g_cVBoxMdFilePrefixLen, RT_ELEMENTS(aszwMdFileName) - g_cVBoxMdFilePrefixLen, L"%d_%d.dmp", ProcessId, g_aszwVBoxMdDumpCount);
+
+    hFile = CreateFileW(aszwMdFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE)
+        return GetLastError();
+
+    ExceptionInfo.ThreadId = GetCurrentThreadId();
+    ExceptionInfo.ExceptionPointers = pExceptionInfo;
+    ExceptionInfo.ClientPointers = FALSE;
+
+    if (!g_pfnVBoxMdMiniDumpWriteDump(hProcess, ProcessId, hFile, g_enmVBoxMdDumpType, &ExceptionInfo, NULL, NULL))
+        winErr = GetLastError();
+
+    CloseHandle(hFile);
+    return winErr;
+}
+
 LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
 {
     PEXCEPTION_RECORD pExceptionRecord = pExceptionInfo->ExceptionRecord;
@@ -1138,8 +1278,30 @@ LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
         case EXCEPTION_FLT_INVALID_OPERATION:
         case EXCEPTION_INT_DIVIDE_BY_ZERO:
         case EXCEPTION_ILLEGAL_INSTRUCTION:
-            CRASSERT(0);
-            if (g_VBoxWDbgVEHExit)
+            if (g_VBoxVehFlags & VBOXVEH_F_BREAK)
+            {
+                BOOL fBreak = TRUE;
+                if (pExceptionRecord->ExceptionCode == EXCEPTION_BREAKPOINT)
+                {
+                    HANDLE hProcess = GetCurrentProcess();
+                    BOOL fDebuggerPresent = FALSE;
+                    /* we do not want to generate breakpoint exceptions recursively, so do it only when running under debugger */
+                    if (CheckRemoteDebuggerPresent(hProcess, &fDebuggerPresent))
+                        fBreak = !!fDebuggerPresent;
+                    else
+                        fBreak = FALSE; /* <- the function has failed, don't break for sanity */
+                }
+
+                if (fBreak)
+                {
+                    RT_BREAKPOINT();
+                }
+            }
+
+            if (g_VBoxVehFlags & VBOXVEH_F_DUMP)
+                vboxMdMinidumpCreate(pExceptionInfo);
+
+            if (g_VBoxVehFlags & VBOXVEH_F_EXIT)
                 exit(1);
             break;
         default:
@@ -1150,19 +1312,19 @@ LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
 
 void vboxVDbgVEHandlerRegister()
 {
-    CRASSERT(!g_VBoxWDbgVEHandler);
-    g_VBoxWDbgVEHandler = AddVectoredExceptionHandler(1,vboxVDbgVectoredHandler);
-    CRASSERT(g_VBoxWDbgVEHandler);
+    CRASSERT(!g_VBoxVehHandler);
+    g_VBoxVehHandler = AddVectoredExceptionHandler(1,vboxVDbgVectoredHandler);
+    CRASSERT(g_VBoxVehHandler);
 }
 
 void vboxVDbgVEHandlerUnregister()
 {
     ULONG uResult;
-    if (g_VBoxWDbgVEHandler)
+    if (g_VBoxVehHandler)
     {
-        uResult = RemoveVectoredExceptionHandler(g_VBoxWDbgVEHandler);
+        uResult = RemoveVectoredExceptionHandler(g_VBoxVehHandler);
         CRASSERT(uResult);
-        g_VBoxWDbgVEHandler = NULL;
+        g_VBoxVehHandler = NULL;
     }
 }
 #endif
@@ -1185,7 +1347,9 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         crInitMutex(&stub_init_mutex);
 
 #ifdef VDBG_VEHANDLER
-        vboxVDbgVEHandlerRegister();
+        g_VBoxVehEnable = !!crGetenv("CR_DBG_VEH_ENABLE");
+        if (g_VBoxVehEnable)
+            vboxVDbgVEHandlerRegister();
 #endif
 
         crNetInit(NULL, NULL);
@@ -1200,17 +1364,13 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         {
             crDebug("Failed to connect to host (is guest 3d acceleration enabled?), aborting ICD load.");
 #ifdef VDBG_VEHANDLER
-            vboxVDbgVEHandlerUnregister();
+            if (g_VBoxVehEnable)
+                vboxVDbgVEHandlerUnregister();
 #endif
             return FALSE;
         }
         else
         {
-            /* @todo: impl proper detection */
-#ifndef DEBUG_misha
-            stub.bNewPresent = true;
-#endif
-
             crNetFreeConnection(ns.conn);
         }
 
@@ -1235,7 +1395,8 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 #endif
 
 #ifdef VDBG_VEHANDLER
-        vboxVDbgVEHandlerUnregister();
+        if (g_VBoxVehEnable)
+            vboxVDbgVEHandlerUnregister();
 #endif
         break;
     }
