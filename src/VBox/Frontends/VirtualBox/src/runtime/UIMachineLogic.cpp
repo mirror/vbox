@@ -1551,29 +1551,6 @@ void UIMachineLogic::sltPrepareStorageMenu()
             }
         }
     }
-
-    if (pMenu->menuAction()->data().toInt() == 0)
-    {
-        /* Empty menu item */
-        Assert(pMenu->isEmpty());
-        QAction *pEmptyMenuAction = new QAction(pMenu);
-        pEmptyMenuAction->setEnabled(false);
-        switch (mediumType)
-        {
-            case UIMediumType_DVD:
-                pEmptyMenuAction->setText(QApplication::translate("UIMachineLogic", "No CD/DVD Devices Attached"));
-                pEmptyMenuAction->setToolTip(QApplication::translate("UIMachineLogic", "No CD/DVD devices attached to that VM"));
-                break;
-            case UIMediumType_Floppy:
-                pEmptyMenuAction->setText(QApplication::translate("UIMachineLogic", "No Floppy Devices Attached"));
-                pEmptyMenuAction->setToolTip(QApplication::translate("UIMachineLogic", "No floppy devices attached to that VM"));
-                break;
-            default:
-                break;
-        }
-        pEmptyMenuAction->setIcon(UIIconPool::iconSet(":/delete_16px.png", ":/delete_dis_16px.png"));
-        pMenu->addAction(pEmptyMenuAction);
-    }
 }
 
 void UIMachineLogic::sltMountStorageMedium()
