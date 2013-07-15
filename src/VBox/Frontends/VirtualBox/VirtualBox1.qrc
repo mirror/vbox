@@ -192,6 +192,8 @@
         <file alias="session_info_disabled_16px.png">images/session_info_disabled_16px.png</file>
         <file alias="session_info_32px.png">images/session_info_32px.png</file>
         <file alias="session_info_disabled_32px.png">images/session_info_disabled_32px.png</file>
+        <file alias="session_info_details_16px.png">images/session_info_details_16px.png</file>
+        <file alias="session_info_runtime_16px.png">images/session_info_runtime_16px.png</file>
         <file alias="global_settings_16px.png">images/global_settings_16px.png</file>
         <file alias="global_settings_disabled_16px.png">images/global_settings_disabled_16px.png</file>
         <file alias="vrdp_16px.png">images/vrdp_16px.png</file>

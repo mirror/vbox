@@ -172,10 +172,6 @@ void VBoxVMInformationDlg::retranslateUi()
     /* Setup a dialog caption */
     setWindowTitle (tr ("%1 - Session Information").arg (machine.GetName()));
 
-    /* Setup a tabwidget page names */
-    mInfoStack->setTabText (0, tr ("&Details"));
-    mInfoStack->setTabText (1, tr ("&Runtime"));
-
     /* Clear counter names initially */
     mNamesMap.clear();
     mUnitsMap.clear();
