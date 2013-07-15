@@ -227,6 +227,11 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
                 char szBuf[128]; /* We are not interested in long error messages. */
                 if (fgets(szBuf, sizeof(szBuf), fp))
                 {
+                    /* Remove trailing new line characters. */
+                    char *pLast = szBuf + strlen(szBuf) - 1;
+                    if (pLast >= szBuf && *pLast == '\n')
+                        *pLast = 0;
+
                     if (!strncmp(VBOXNETADPCTL_NAME ":", szBuf, sizeof(VBOXNETADPCTL_NAME)))
                     {
                         progress->notifyComplete(E_FAIL,
@@ -236,9 +241,6 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
                         pclose(fp);
                         return E_FAIL;
                     }
-                    char *pLast = szBuf + strlen(szBuf) - 1;
-                    if (pLast >= szBuf && *pLast == '\n')
-                        *pLast = 0;
 
                     size_t cbNameLen = strlen(szBuf) + 1;
                     PNETIFINFO pInfo = (PNETIFINFO)RTMemAllocZ(RT_OFFSETOF(NETIFINFO, szName[cbNameLen]));
