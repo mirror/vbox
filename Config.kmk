@@ -2234,7 +2234,6 @@ endif
 # YASM macros
 ifndef DONT_USE_YASM
  include $(KBUILD_PATH)/tools/YASM.kmk
- VBOX_YASM_CHECK = $(shell $(TOOL_YASM_AS) -e -o vbox-yasm-check.o $1 - < /dev/null 2>&1)
  VBOX_YASM_CHECK = $(if-expr "$(shell $(TOOL_YASM_AS) -e -o vbox-yasm-check.o $1 - < /dev/null 2>&1)" == "",$(1),)
 else
  VBOX_YASM_CHECK =
