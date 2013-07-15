@@ -954,25 +954,6 @@ stubInitLocked(void)
     {
         disable_sync = 1;
     }
-#elif defined(WINDOWS) && defined(VBOX_WITH_WDDM)
-    hVBoxD3D = NULL;
-    if (!GetModuleHandleEx(0, VBOX_MODNAME_DISPD3D, &hVBoxD3D))
-    {
-        crDebug("GetModuleHandleEx failed err %d", GetLastError());
-        hVBoxD3D = NULL;
-    }
-
-    if (hVBoxD3D)
-    {
-        disable_sync = 1;
-        crDebug("running with %s", VBOX_MODNAME_DISPD3D);
-        stub.trackWindowVisibleRgn = 0;
-        stub.trackWindowSize = 0;
-        stub.trackWindowPos = 0;
-        stub.trackWindowVisibility = 0;
-        stub.trackWindowVisibleRgn = 0;
-        stub.bRunningUnderWDDM = true;
-    }
 #endif
 
     /* @todo check if it'd be of any use on other than guests, no use for windows */
@@ -1025,6 +1006,27 @@ stubInitLocked(void)
     }
 
     stubSetDefaultConfigurationOptions();
+
+#if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
+    hVBoxD3D = NULL;
+    if (!GetModuleHandleEx(0, VBOX_MODNAME_DISPD3D, &hVBoxD3D))
+    {
+        crDebug("GetModuleHandleEx failed err %d", GetLastError());
+        hVBoxD3D = NULL;
+    }
+
+    if (hVBoxD3D)
+    {
+        disable_sync = 1;
+        crDebug("running with %s", VBOX_MODNAME_DISPD3D);
+        stub.trackWindowVisibleRgn = 0;
+        /* @todo: should we enable that? */
+        stub.trackWindowSize = 0;
+        stub.trackWindowPos = 0;
+        stub.trackWindowVisibility = 0;
+        stub.bRunningUnderWDDM = true;
+    }
+#endif
 
     stub.spu = crSPULoadChain( num_spus, spu_ids, spu_names, stub.spu_dir, NULL );
 
