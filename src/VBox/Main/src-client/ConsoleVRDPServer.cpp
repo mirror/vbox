@@ -925,6 +925,16 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientConnect(void *pvCallback
     ConsoleVRDPServer *server = static_cast<ConsoleVRDPServer*>(pvCallback);
 
     server->mConsole->VRDPClientConnect(u32ClientId);
+
+    /* Should the server report usage of an interface for each client?
+     * Similar to Intercept.
+     */
+    int c = ASMAtomicIncS32(&server->mcClients);
+    if (c == 1)
+    {
+        /* Features which should be enabled only if there is a client. */
+        server->remote3DRedirect(true);
+    }
 }
 
 DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallback, uint32_t u32ClientId, uint32_t fu32Intercepted)
@@ -947,6 +957,13 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackClientDisconnect(void *pvCallb
         {
             AssertFailed();
         }
+    }
+
+    int c = ASMAtomicDecS32(&server->mcClients);
+    if (c == 0)
+    {
+        /* Features which should be enabled only if there is a client. */
+        server->remote3DRedirect(false);
     }
 }
 
@@ -1371,6 +1388,7 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     mAuthLibrary = 0;
 
     mu32AudioInputClientId = 0;
+    mcClients = 0;
 
     /*
      * Optional interfaces.
@@ -1995,7 +2013,7 @@ typedef struct H3DORInstance
     return rc;
 }
 
-void ConsoleVRDPServer::remote3DRedirect(void)
+void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
 {
     if (!m_fInterfaceImage)
     {
@@ -2003,21 +2021,17 @@ void ConsoleVRDPServer::remote3DRedirect(void)
         return;
     }
 
-    /* Check if 3D redirection has been enabled. */
+    /* Check if 3D redirection has been enabled. It is enabled by default. */
     com::Bstr bstr;
     HRESULT hrc = mConsole->getVRDEServer()->GetVRDEProperty(Bstr("H3DRedirect/Enabled").raw(), bstr.asOutParam());
 
-    if (hrc != S_OK)
-    {
-        bstr = "";
-    }
+    com::Utf8Str value = hrc == S_OK? bstr: "";
 
-    com::Utf8Str value = bstr;
+    bool fAllowed =    RTStrICmp(value.c_str(), "true") == 0
+                    || RTStrICmp(value.c_str(), "1") == 0
+                    || value.c_str()[0] == 0;
 
-    bool fEnabled =    RTStrICmp(value.c_str(), "true") == 0
-                    || RTStrICmp(value.c_str(), "1") == 0;
-
-    if (!fEnabled)
+    if (!fAllowed && fEnable)
     {
         return;
     }
@@ -2033,6 +2047,12 @@ void ConsoleVRDPServer::remote3DRedirect(void)
         H3DOREnd,
         H3DORContextProperty
     };
+
+    if (!fEnable)
+    {
+        /* This will tell the service to disable rediection. */
+        RT_ZERO(outputRedirect);
+    }
 
     VBOXHGCMSVCPARM parm;
 
@@ -2059,7 +2079,7 @@ void ConsoleVRDPServer::remote3DRedirect(void)
         return;
     }
 
-    LogRel(("VRDE: Enabled 3D redirect.\n"));
+    LogRel(("VRDE: %s 3D redirect.\n", fEnable? "Enabled": "Disabled"));
 
     return;
 }
@@ -2745,9 +2765,6 @@ void ConsoleVRDPServer::EnableConnections(void)
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEEnableConnections(mhServer, true);
-
-        /* Redirect 3D output if it is enabled. */
-        remote3DRedirect();
 
         /* Setup the generic TSMF channel. */
         setupTSMF();
