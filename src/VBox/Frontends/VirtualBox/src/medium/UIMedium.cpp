@@ -393,7 +393,7 @@ QPixmap UIMedium::icon (bool aNoDiffs /* = false */, bool aCheckRO /* = false */
         pixmap = result (aNoDiffs).isOk() ? vboxGlobal().warningIcon() : vboxGlobal().errorIcon();
 
     if (aCheckRO && mIsReadOnly)
-        pixmap = VBoxGlobal::joinPixmaps (pixmap, QPixmap (":/new_16px.png"));
+        pixmap = VBoxGlobal::joinPixmaps (pixmap, QPixmap (":/hd_new_16px.png"));
 
     return pixmap;
 }
