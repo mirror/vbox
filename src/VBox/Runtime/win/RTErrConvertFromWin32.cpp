@@ -48,6 +48,7 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         case ERROR_PATH_NOT_FOUND:          return VERR_PATH_NOT_FOUND;
         case ERROR_TOO_MANY_OPEN_FILES:     return VERR_TOO_MANY_OPEN_FILES;
         case ERROR_ACCESS_DENIED:           return VERR_ACCESS_DENIED;
+        case ERROR_NOACCESS:                return VERR_ACCESS_DENIED;
 
         case ERROR_INVALID_HANDLE:
         case ERROR_DIRECT_ACCESS_HANDLE:    return VERR_INVALID_HANDLE;
