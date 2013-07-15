@@ -2940,6 +2940,13 @@ DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value)
             : cr_server.fPresentModeDefault);
 }
 
+static void crVBoxServerOutputRedirectCB(unsigned long key, void *data1, void *data2)
+{
+    CRMuralInfo *mural = (CRMuralInfo*) data1;
+
+    crServerSetupOutputRedirect(mural);
+}
+
 DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect *pCallbacks)
 {
     /* No need for a synchronization as this is single threaded. */
@@ -2953,8 +2960,8 @@ DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect *pCallb
         cr_server.bUseOutputRedirect = false;
     }
 
-    // @todo dynamically intercept already existing output:
-    // crHashtableWalk(cr_server.muralTable, crVBoxServerOutputRedirectCB, NULL);
+    /* dynamically intercept already existing output */
+    crHashtableWalk(cr_server.muralTable, crVBoxServerOutputRedirectCB, NULL);
 
     return VINF_SUCCESS;
 }

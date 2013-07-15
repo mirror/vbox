@@ -247,6 +247,8 @@ private:
 
     uint32_t volatile mu32AudioInputClientId;
 
+    int32_t volatile mcClients;
+
     static DECLCALLBACK(void) H3DORBegin(const void *pvContext, void **ppvInstance,
                                          const char *pszFormat);
     static DECLCALLBACK(void) H3DORGeometry(void *pvInstance,
@@ -259,7 +261,7 @@ private:
     static DECLCALLBACK(int)  H3DORContextProperty(const void *pvContext, uint32_t index,
                                                    void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
 
-    void remote3DRedirect(void);
+    void remote3DRedirect(bool fEnable);
 
     /*
      * VRDE server optional interfaces.

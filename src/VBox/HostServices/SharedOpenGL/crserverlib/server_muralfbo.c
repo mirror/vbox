@@ -102,6 +102,8 @@ void crServerSetupOutputRedirect(CRMuralInfo *mural)
             // @todo the code assumes that RTRECT == four of GLInts
             cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance,
                                                        mural->cVisibleRects, (RTRECT *)mural->pVisibleRects);
+
+            crServerPresentFBO(mural);
         }
     }
 }
