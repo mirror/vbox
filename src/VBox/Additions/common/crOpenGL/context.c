@@ -152,6 +152,7 @@ void stubDestroyWindow( GLint con, GLint window )
         }
 # endif
 #endif
+
         stubForcedFlush(con);
 
         crHashtableWalk(stub.contextTable, stubWindowCleanupForContextsCB, winInfo);
@@ -1319,7 +1320,8 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
                 stub.spu->dispatch_table.Viewport( 0, 0, winW, winH );
         }
 #ifdef VBOX_WITH_WDDM
-        stub.spu->dispatch_table.WindowVisibleRegion(window->spuWindow, 0, NULL);
+        if (stub.trackWindowVisibleRgn)
+            stub.spu->dispatch_table.WindowVisibleRegion(window->spuWindow, 0, NULL);
 #endif
     }
 
