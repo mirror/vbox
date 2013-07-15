@@ -3044,7 +3044,7 @@ typedef enum X86XCPT
     X86_XCPT_GP = 0x0d,
     /** \#PF - Page fault. */
     X86_XCPT_PF = 0x0e,
-    /* 0x0f is reserved. */
+    /* 0x0f is reserved (to avoid conflict with spurious interrupts in BIOS setup). */
     /** \#MF - Math fault (FPU). */
     X86_XCPT_MF = 0x10,
     /** \#AC - Alignment check. */
@@ -3052,14 +3052,18 @@ typedef enum X86XCPT
     /** \#MC - Machine check. */
     X86_XCPT_MC = 0x12,
     /** \#XF - SIMD Floating-Pointer Exception. */
-    X86_XCPT_XF = 0x13
+    X86_XCPT_XF = 0x13,
+    /** \#VE - Virtualzation Exception. */
+    X86_XCPT_VE = 0x14,
+    /** \#SX - Security Exception. */
+    X86_XCPT_SX = 0x2f
 } X86XCPT;
 /** Pointer to a x86 exception code. */
 typedef X86XCPT *PX86XCPT;
 /** Pointer to a const x86 exception code. */
 typedef const X86XCPT *PCX86XCPT;
 /** The maximum exception value. */
-#define X86_XCPT_MAX                (X86_XCPT_XF)
+#define X86_XCPT_MAX                (X86_XCPT_SX)
 
 
 /** @name Trap Error Codes
