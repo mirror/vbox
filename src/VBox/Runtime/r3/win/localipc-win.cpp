@@ -595,6 +595,8 @@ static int rtLocalIpcWinCreateSession(PRTLOCALIPCSESSION phClientSession, HANDLE
         pThis->u32Magic = RTLOCALIPCSESSION_MAGIC;
         pThis->cRefs = 1; /* our ref */
         pThis->fCancelled = false;
+        pThis->fIOPending = false;
+        pThis->fZeroByteRead = false;
         pThis->hNmPipe = hNmPipeSession;
 
         rc = RTCritSectInit(&pThis->CritSect);
@@ -660,35 +662,24 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
             char *pszPipe;
             if (RTStrAPrintf(&pszPipe, "%s%s", RTLOCALIPC_WIN_PREFIX, pszName))
             {
-                PSECURITY_DESCRIPTOR pSecDesc;
-                rc = rtLocalIpcServerWinAllocSecurityDescriptior(&pSecDesc);
-                if (RT_SUCCESS(rc))
+                HANDLE hPipe = CreateFile(pszPipe,                  /* pipe name */
+                                          GENERIC_READ |            /* read and write access */
+                                          GENERIC_WRITE,
+                                          0,                        /* no sharing */
+                                          NULL,                     /* lpSecurityAttributes */
+                                          OPEN_EXISTING,            /* opens existing pipe */
+                                          FILE_FLAG_OVERLAPPED,     /* default attributes */
+                                          NULL);                    /* no template file */
+                RTStrFree(pszPipe);
+
+                if (hPipe != INVALID_HANDLE_VALUE)
                 {
-                    SECURITY_ATTRIBUTES SecAttrs;
-                    SecAttrs.nLength = sizeof(SECURITY_ATTRIBUTES);
-                    SecAttrs.lpSecurityDescriptor = pSecDesc;
-                    SecAttrs.bInheritHandle = FALSE;
-
-                    HANDLE hPipe = CreateFile(pszPipe,                  /* pipe name */
-                                              GENERIC_READ |            /* read and write access */
-                                              GENERIC_WRITE,
-                                              0,                        /* no sharing */
-                                              &SecAttrs,                /* default security attributes */
-                                              OPEN_EXISTING,            /* opens existing pipe */
-                                              FILE_FLAG_OVERLAPPED,     /* default attributes */
-                                              NULL);                    /* no template file */
-                    LocalFree(pSecDesc);
-                    RTStrFree(pszPipe);
-
-                    if (hPipe != INVALID_HANDLE_VALUE)
-                    {
-                        pThis->hNmPipe = hPipe;
-                        *phSession = pThis;
-                        return VINF_SUCCESS;
-                    }
-                    else
-                        rc = RTErrConvertFromWin32(GetLastError());
+                    pThis->hNmPipe = hPipe;
+                    *phSession = pThis;
+                    return VINF_SUCCESS;
                 }
+                else
+                    rc = RTErrConvertFromWin32(GetLastError());
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -809,10 +800,18 @@ RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, si
                                             &cbRead, TRUE /*fWait*/))
                         rc = VINF_SUCCESS;
                     else
-                        rc = RTErrConvertFromWin32(GetLastError());
+                    {
+                        DWORD dwErr = GetLastError();
+                        AssertMsgFailed(("err=%ld\n",  dwErr));
+                            rc = RTErrConvertFromWin32(dwErr);
+                    }
                 }
-                else
-                    rc = RTErrConvertFromWin32(GetLastError());
+                 else
+                    {
+                        DWORD dwErr = GetLastError();
+                        AssertMsgFailed(("err2=%ld\n",  dwErr));
+                            rc = RTErrConvertFromWin32(dwErr);
+                    }
 
                 RTCritSectEnter(&pThis->CritSect);
                 pThis->fIOPending = false;
@@ -877,15 +876,16 @@ static int rtLocalIpcSessionWriteCheckCompletion(PRTLOCALIPCSESSIONINT pThis)
                 if (!WriteFile(pThis->hNmPipe, pThis->pbBounceBuf, (DWORD)pThis->cbBounceBufUsed,
                                &cbWritten, &pThis->OverlappedIO))
                 {
-                    if (GetLastError() == ERROR_IO_PENDING)
+                    DWORD dwErr = GetLastError();
+                    if (dwErr == ERROR_IO_PENDING)
                         rc = VINF_TRY_AGAIN;
                     else
                     {
                         pThis->fIOPending = false;
-                        if (GetLastError() == ERROR_NO_DATA)
+                        if (dwErr == ERROR_NO_DATA)
                             rc = VERR_BROKEN_PIPE;
                         else
-                            rc = RTErrConvertFromWin32(GetLastError());
+                            rc = RTErrConvertFromWin32(dwErr);
                     }
                     break;
                 }
@@ -954,27 +954,43 @@ RTDECL(int) RTLocalIpcSessionWrite(RTLOCALIPCSESSION hSession, const void *pvBuf
                 size_t cbTotalWritten = 0;
                 while (cbBuffer > 0)
                 {
-                    rc = ResetEvent(pThis->OverlappedIO.hEvent); Assert(rc == TRUE);
+                    BOOL fRc = ResetEvent(pThis->OverlappedIO.hEvent); Assert(fRc == TRUE);
                     pThis->fIOPending = true;
                     RTCritSectLeave(&pThis->CritSect);
 
                     DWORD cbWritten = 0;
-                    if (WriteFile(pThis->hNmPipe, pvBuffer,
-                                  cbBuffer <= ~(DWORD)0 ? (DWORD)cbBuffer : ~(DWORD)0,
-                                  &cbWritten, &pThis->OverlappedIO))
-                        rc = VINF_SUCCESS;
-                    else if (GetLastError() == ERROR_IO_PENDING)
+                    fRc = WriteFile(pThis->hNmPipe, pvBuffer,
+                                    cbBuffer <= ~(DWORD)0 ? (DWORD)cbBuffer : ~(DWORD)0,
+                                    &cbWritten, &pThis->OverlappedIO);
+                    if (fRc)
                     {
-                        WaitForSingleObject(pThis->OverlappedIO.hEvent, INFINITE);
-                        if (GetOverlappedResult(pThis->hNmPipe, &pThis->OverlappedIO, &cbWritten, TRUE /*fWait*/))
-                            rc = VINF_SUCCESS;
-                        else
-                            rc = RTErrConvertFromWin32(GetLastError());
+                        rc = VINF_SUCCESS;
                     }
-                    else if (GetLastError() == ERROR_NO_DATA)
-                        rc = VERR_BROKEN_PIPE;
                     else
-                        rc = RTErrConvertFromWin32(GetLastError());
+                    {
+                        DWORD dwErr = GetLastError();
+                        if (dwErr == ERROR_IO_PENDING)
+                        {
+                            DWORD dwRc = WaitForSingleObject(pThis->OverlappedIO.hEvent, INFINITE);
+                            if (dwRc == WAIT_OBJECT_0)
+                            {
+                                if (GetOverlappedResult(pThis->hNmPipe, &pThis->OverlappedIO, &cbWritten, TRUE /*fWait*/))
+                                    rc = VINF_SUCCESS;
+                                else
+                                    rc = RTErrConvertFromWin32(GetLastError());
+                            }
+                            else if (dwRc == WAIT_TIMEOUT)
+                                rc = VERR_TIMEOUT;
+                            else if (dwRc == WAIT_ABANDONED)
+                                rc = VERR_INVALID_HANDLE;
+                            else
+                                rc = RTErrConvertFromWin32(GetLastError());
+                        }
+                        else if (dwErr == ERROR_NO_DATA)
+                            rc = VERR_BROKEN_PIPE;
+                        else
+                            rc = RTErrConvertFromWin32(dwErr);
+                    }
 
                     RTCritSectEnter(&pThis->CritSect);
                     pThis->fIOPending = false;

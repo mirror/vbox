@@ -30,6 +30,7 @@
 *******************************************************************************/
 #include <iprt/env.h>
 #include <iprt/localipc.h>
+#include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
@@ -317,6 +318,145 @@ static int testSessionWait(RTTEST hTest, const char *pszExecPath)
     return VINF_SUCCESS;
 }
 
+/**
+ * Simple structure holding the test IPC messages.
+ */
+typedef struct LOCALIPCTESTMSG
+{
+    /** The actual message. */
+    char szOp[255];
+} LOCALIPCTESTMSG, *PLOCALIPCTESTMSG;
+
+static DECLCALLBACK(int) testSessionDataThread(RTTHREAD hSelf, void *pvUser)
+{
+    PLOCALIPCTHREADCTX pCtx = (PLOCALIPCTHREADCTX)pvUser;
+    AssertPtr(pCtx);
+
+    do
+    {
+        /* Note: At the moment we only support one client per run. */
+        RTTestPrintf(pCtx->hTest, RTTESTLVL_INFO, "testSessionDataThread: Listening for incoming connections ...\n");
+        RTLOCALIPCSESSION ipcSession;
+        RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcServerListen(pCtx->hServer, &ipcSession), VINF_SUCCESS);
+        RTTestPrintf(pCtx->hTest, RTTESTLVL_INFO, "testSessionDataThread: Got new client connection\n");
+        uint32_t cRounds = 256; /** @todo Use RTRand(). */
+        RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcSessionWrite(ipcSession, &cRounds, sizeof(cRounds)), VINF_SUCCESS);
+        RTTestPrintf(pCtx->hTest, RTTESTLVL_INFO, "testSessionDataThread: Written number of rounds\n");
+        for (uint32_t i = 0; i < cRounds; i++)
+        {
+            LOCALIPCTESTMSG msg;
+            RTTEST_CHECK_BREAK(pCtx->hTest, RTStrPrintf(msg.szOp, sizeof(msg.szOp),
+                                                        "YayIGotRound%RU32FromTheServer", i) > 0);
+            RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcSessionWrite(ipcSession, &msg, sizeof(msg)), VINF_SUCCESS);
+        }
+        RTThreadSleep(10 * 1000); /* Fudge. */
+        RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcSessionClose(ipcSession), VINF_SUCCESS);
+        RTTestPrintf(pCtx->hTest, RTTESTLVL_INFO, "testSessionDataThread: Data successfully written\n");
+
+    } while (0);
+
+    return !RTTestErrorCount(pCtx->hTest) ? VINF_SUCCESS : VERR_GENERAL_FAILURE /* Doesn't matter */;
+}
+
+static RTEXITCODE testSessionDataChild(int argc, char **argv, RTTEST hTest)
+{
+    uint8_t *pvScratchBuf = (uint8_t*)RTMemAlloc(_1K);
+    RTTEST_CHECK_RET(hTest, pvScratchBuf != NULL, RTEXITCODE_FAILURE);
+
+    do
+    {
+        RTThreadSleep(2000); /* Fudge. */
+        RTLOCALIPCSESSION clientSession;
+        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionConnect(&clientSession, "tstRTLocalIpcSessionData",
+                                                              0 /* Flags */), VINF_SUCCESS);
+        /* Get number of rounds we want to read/write. */
+        uint32_t cRounds = 0; size_t cbRead;
+        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionWaitForData(clientSession, RT_INDEFINITE_WAIT),
+                                                                  VINF_SUCCESS);
+        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionRead(clientSession, &cRounds, sizeof(cRounds),
+                                                           NULL /* Get exactly sizeof(cRounds) bytes */), VINF_SUCCESS);
+        RTTEST_CHECK_BREAK(hTest, cRounds == 256); /** @todo Check for != 0 when using RTRand(). */
+        /* Process all rounds. */
+        size_t uOffScratchBuf = 0;
+        char szStr[32];
+        for (uint32_t i = 0; i < 1; cRounds++)
+        {
+            RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionWaitForData(clientSession, RT_INDEFINITE_WAIT),
+                                                                      VINF_SUCCESS);
+            RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionRead(clientSession, pvScratchBuf,
+                                                               sizeof(*pvScratchBuf) - uOffScratchBuf,
+                                                               &cbRead), VINF_SUCCESS);
+
+            uOffScratchBuf += cbRead;
+            RTTEST_CHECK_BREAK(hTest, uOffScratchBuf <= sizeof(*pvScratchBuf));
+            if (uOffScratchBuf >= sizeof(LOCALIPCTESTMSG)) /* Got a complete test message? */
+            {
+                PLOCALIPCTESTMSG pMsg = (PLOCALIPCTESTMSG)pvScratchBuf;
+                RTTEST_CHECK_BREAK(hTest, pMsg != NULL);
+                RTTEST_CHECK_BREAK(hTest, RTStrPrintf(szStr, sizeof(szStr), "YayIGotRound%RU32FromTheServer", i) > 0);
+                RTTEST_CHECK_BREAK(hTest, !RTStrICmp(pMsg->szOp, szStr));
+                memcpy(pvScratchBuf, (void*)pvScratchBuf[sizeof(LOCALIPCTESTMSG)], cbRead);
+            }
+            if (RTTestErrorCount(hTest))
+                break;
+        }
+        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionClose(clientSession), VINF_SUCCESS);
+
+    } while (0);
+
+    RTMemFree(pvScratchBuf);
+    return !RTTestErrorCount(hTest) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+static int testSessionData(RTTEST hTest, const char *pszExecPath)
+{
+    RTTestSub(hTest, "testSessionData");
+
+    RTLOCALIPCSERVER ipcServer;
+    int rc = RTLocalIpcServerCreate(&ipcServer, "tstRTLocalIpcSessionData",
+                                    RTLOCALIPC_FLAGS_MULTI_SESSION);
+    if (RT_SUCCESS(rc))
+    {
+        LOCALIPCTHREADCTX threadCtx = { ipcServer, hTest };
+
+        /* Spawn a simple worker thread and let it listen for incoming connections.
+         * In the meanwhile we try to cancel the server and see what happens. */
+        RTTHREAD hThread;
+        rc = RTThreadCreate(&hThread, testSessionDataThread,
+                            &threadCtx, 0 /* Stack */, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "tstIpc4");
+        if (RT_SUCCESS(rc))
+        {
+            do
+            {
+                RTPROCESS hProc;
+                const char *apszArgs[4] = { pszExecPath, "child", "tstRTLocalIpcSessionDataFork", NULL };
+                RTTEST_CHECK_RC_BREAK(hTest, RTProcCreate(pszExecPath, apszArgs,
+                                                          RTENV_DEFAULT, 0 /* fFlags*/, &hProc), VINF_SUCCESS);
+                /* Wait for the server thread to terminate. */
+                int threadRc;
+                RTTEST_CHECK_RC(hTest, RTThreadWait(hThread,
+                                                    5 * 60 * 1000 /* 5 minutes timeout */, &threadRc), VINF_SUCCESS);
+                RTTEST_CHECK_RC_BREAK(hTest, threadRc, VINF_SUCCESS);
+                RTTEST_CHECK_RC(hTest, RTLocalIpcServerDestroy(ipcServer), VINF_SUCCESS);
+                RTTestPrintf(hTest, RTTESTLVL_INFO, "Server thread terminated successfully\n");
+                /* Check if the child ran successfully. */
+                RTPROCSTATUS stsChild;
+                RTTEST_CHECK_RC_BREAK(hTest, RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &stsChild), VINF_SUCCESS);
+                RTTestPrintf(hTest, RTTESTLVL_INFO, "Child terminated\n");
+                RTTEST_CHECK_BREAK(hTest, stsChild.enmReason == RTPROCEXITREASON_NORMAL);
+                RTTEST_CHECK_BREAK(hTest, stsChild.iStatus == 0);
+            }
+            while (0);
+        }
+        else
+            RTTestFailed(hTest, "Unable to create thread for cancelling server, rc=%Rrc\n", rc);
+    }
+    else
+        RTTestFailed(hTest, "Unable to create IPC server, rc=%Rrc\n", rc);
+
+    return VINF_SUCCESS;
+}
+
 static RTEXITCODE mainChild(int argc, char **argv)
 {
     if (argc < 3) /* Safety first. */
@@ -330,13 +470,15 @@ static RTEXITCODE mainChild(int argc, char **argv)
 
     RTAssertSetMayPanic(false);
 #ifdef DEBUG_andy
-    RTAssertSetQuiet(true);
+    RTAssertSetQuiet(false);
 #endif
 
     if (!RTStrICmp(argv[2], "tstRTLocalIpcSessionConnectionFork"))
         rcExit = testSessionConnectionChild(argc, argv, hTest);
     else if (!RTStrICmp(argv[2], "tstRTLocalIpcSessionWaitFork"))
         rcExit = testSessionWaitChild(argc, argv, hTest);
+    else if (!RTStrICmp(argv[2], "tstRTLocalIpcSessionDataFork"))
+        rcExit = testSessionDataChild(argc, argv, hTest);
 
     return RTTestSummaryAndDestroy(hTest);
 }
@@ -361,7 +503,7 @@ int main(int argc, char **argv)
 
     RTAssertSetMayPanic(false);
 #ifdef DEBUG_andy
-    RTAssertSetQuiet(true);
+    RTAssertSetQuiet(false);
 #endif
 
     /* Server-side. */
@@ -393,9 +535,10 @@ int main(int argc, char **argv)
 
     if (RTTestErrorCount(hTest) == 0)
     {
-        RTTESTI_CHECK_RC_RET(testServerListenAndCancel(hTest, szExecPath), VINF_SUCCESS, 1);
+        /*RTTESTI_CHECK_RC_RET(testServerListenAndCancel(hTest, szExecPath), VINF_SUCCESS, 1);
         RTTESTI_CHECK_RC_RET(testSessionConnection(hTest, szExecPath), VINF_SUCCESS, 1);
-        RTTESTI_CHECK_RC_RET(testSessionWait(hTest, szExecPath), VINF_SUCCESS, 1);
+        RTTESTI_CHECK_RC_RET(testSessionWait(hTest, szExecPath), VINF_SUCCESS, 1);*/
+        RTTESTI_CHECK_RC_RET(testSessionData(hTest, szExecPath), VINF_SUCCESS, 1);
     }
 
     /*
