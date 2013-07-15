@@ -530,7 +530,7 @@
           </itemizedlist></para>
 
         <para>On devrait pouvoir utiliser VirtualBox sur la plupart des systèmes
-        basés sur un noyau Linux 2.6, soit en utilisant l'installeur de
+        basés sur un noyau Linux 2.6 ou 3.x, soit en utilisant l'installeur de
         VirtualBox, soit en faisant une installation manuelle&#xA0;; voir
         le <xref linkend="install-linux-host" />. Cependant, les distributions
         Linux formellement testées et supportées sont celles pour lesquelles

@@ -88,6 +88,15 @@
         </glossentry>
 
         <glossentry>
+          <glossterm>Linux 3.x</glossterm>
+
+          <glossdef>
+            <para>Toutes les versions/éditions sont complètement supportées (32 bits et 64
+            bits). Les suppléments invité sont disponibles.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
           <glossterm>Solaris 10 (u6 et supérieur), Solaris 11 (y compris Solaris
          11 Express)</glossterm>
 
@@ -505,7 +514,7 @@
               modernes tels que Mac OS X, ce vieux chipset n'est plus bien 
               supporté. Du coup, VirtualBox 4.0 a introduit une émulation du
               chipset ICH9, plus moderne, qui supporte le PCI express, trois bus
-              PCI, des ponts PCI-à-PCI et des Message Signalled Interrupts
+              PCI, des ponts PCI-à-PCI et des Message Signaled Interrupts
               (MSI). Cela permet aux systèmes d'exploitation modernes de gérer 
               davantage périphériques PCI sans besoin d'un partage d'IRQ. 
               Remarquez que le support ICH9 est expérimental et non recommandé

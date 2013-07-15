@@ -602,7 +602,7 @@
     version 2.2 de VirtualBox. On peut le voir comme un mode hybride entre les
     modes réseaux bridgé et interne&#xA0;: comme en réseau bridgé, les machines
     virtuelles peuvent se parler entre elles et avec l'hôte comme si elles étaient
-    connectées à un switch ethernet physique. Au contraire, comme avec un
+    connectées à un commutateur Ethernet physique. Au contraire, comme avec un
     réseau interne, il faut une interface réseau physique et les machines virtuelles
     ne peuvent pas parler au monde extérieur à l'hôte puisqu'elles ne sont pas
     connectées à une interface réseau physique.</para>
