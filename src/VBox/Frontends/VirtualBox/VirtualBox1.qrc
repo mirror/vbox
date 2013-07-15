@@ -186,8 +186,8 @@
         <file alias="show_logs_disabled_22px.png">images/show_logs_disabled_22px.png</file>
         <file alias="description_16px.png">images/description_16px.png</file>
         <file alias="description_disabled_16px.png">images/description_disabled_16px.png</file>
-        <file alias="edit_description_16px.png">images/edit_description_16px.png</file>
-        <file alias="edit_description_disabled_16px.png">images/edit_description_disabled_16px.png</file>
+        <file alias="description_edit_16px.png">images/description_edit_16px.png</file>
+        <file alias="description_edit_disabled_16px.png">images/description_edit_disabled_16px.png</file>
         <file alias="session_info_16px.png">images/session_info_16px.png</file>
         <file alias="session_info_disabled_16px.png">images/session_info_disabled_16px.png</file>
         <file alias="session_info_32px.png">images/session_info_32px.png</file>
