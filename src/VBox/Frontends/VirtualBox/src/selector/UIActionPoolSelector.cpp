@@ -470,7 +470,7 @@ class UIActionSimpleMachineAddGroup : public UIActionSimple
 public:
 
     UIActionSimpleMachineAddGroup(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/add_shared_folder_16px.png")
+        : UIActionSimple(pParent, ":/sf_add_16px.png")
     {
         retranslateUi();
     }

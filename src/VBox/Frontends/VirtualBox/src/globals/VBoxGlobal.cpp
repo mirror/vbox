@@ -1559,7 +1559,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
         report += sectionTpl
             .arg (2 + 1) /* rows */
-            .arg (":/shared_folder_16px.png", /* icon */
+            .arg (":/sf_16px.png", /* icon */
                   "#sfolders", /* link */
                   tr ("Shared Folders", "details report"), /* title */
                   item); /* items */

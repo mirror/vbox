@@ -423,10 +423,10 @@ public:
     UIIndicatorSharedFolders(CSession &session)
       : m_session(session)
     {
-        setStateIcon(KDeviceActivity_Idle, QPixmap(":/shared_folder_16px.png"));
-        setStateIcon(KDeviceActivity_Reading, QPixmap(":/shared_folder_read_16px.png"));
-        setStateIcon(KDeviceActivity_Writing, QPixmap(":/shared_folder_write_16px.png"));
-        setStateIcon(KDeviceActivity_Null, QPixmap(":/shared_folder_disabled_16px.png"));
+        setStateIcon(KDeviceActivity_Idle, QPixmap(":/sf_16px.png"));
+        setStateIcon(KDeviceActivity_Reading, QPixmap(":/sf_read_16px.png"));
+        setStateIcon(KDeviceActivity_Writing, QPixmap(":/sf_write_16px.png"));
+        setStateIcon(KDeviceActivity_Null, QPixmap(":/sf_disabled_16px.png"));
 
         retranslateUi();
     }

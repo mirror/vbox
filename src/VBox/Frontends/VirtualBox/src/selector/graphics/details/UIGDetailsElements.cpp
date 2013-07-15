@@ -975,7 +975,7 @@ UIGDetailsElementSF::UIGDetailsElementSF(UIGDetailsSet *pParent, bool fOpened)
     : UIGDetailsElementInterface(pParent, DetailsElementType_SF, fOpened)
 {
     /* Icon: */
-    setIcon(UIIconPool::iconSet(":/shared_folder_16px.png"));
+    setIcon(UIIconPool::iconSet(":/sf_16px.png"));
 
     /* Translate: */
     retranslateUi();
