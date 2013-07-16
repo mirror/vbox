@@ -19,7 +19,7 @@
     <number>0</number>
    </property>
    <item row="0" column="0">
-    <widget class="QILabelSeparator" native="1" name="m_pLanguageLabel">
+    <widget class="QILabelSeparator" native="1" name="m_pNetworkLabel">
      <property name="text">
      <string>&amp;Host-only Networks</string>
      </property>

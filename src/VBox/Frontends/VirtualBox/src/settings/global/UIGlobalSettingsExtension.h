@@ -68,19 +68,19 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    /* Navigation stuff: */
+    /* Helper: Navigation stuff: */
     void setOrderAfter(QWidget *pWidget);
 
-    /* Translation stuff: */
+    /* Helper: Translation stuff: */
     void retranslateUi();
 
 private slots:
 
-    /* Tree-widget slots: */
+    /* Handlers: Tree-widget stuff: */
     void sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem);
     void sltShowContextMenu(const QPoint &position);
 
-    /* Package add/remove procedures: */
+    /* Handlers: Package stuff: */
     void sltInstallPackage();
     void sltRemovePackage();
 
@@ -89,7 +89,7 @@ private:
     /* Prepare UISettingsCacheGlobalExtensionItem basing on CExtPack: */
     UISettingsCacheGlobalExtensionItem fetchData(const CExtPack &package) const;
 
-    /* Actions: */
+    /* Variables: Actions: */
     QAction *m_pActionAdd;
     QAction *m_pActionRemove;
 
