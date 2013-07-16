@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGlobalSettingsExtension class implementation.
+ *
+ * VBox frontends: Qt4 GUI ("VirtualBox"):
+ * UIGlobalSettingsExtension class implementation
  */
 
 /*
@@ -113,19 +115,9 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     retranslateUi();
 }
 
-/**
- * Attempt the actual installation.
- *
- * This code is shared by UIGlobalSettingsExtension::sltInstallPackage and UISelectorWindow::sltOpenUrls.
- *
- * @param   strFilePath     The path to the tarball.
- * @param   strDigest       The digest of the file (SHA-256). Empty string if no
- *                          digest was performed.
- * @param   pParent         The parent widget.
- * @param   pstrExtPackName Where to return the extension pack name. Optional.
- */
-/*static*/ void UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QString const &strDigest,
-                                                          QWidget *pParent, QString *pstrExtPackName)
+/* static */
+void UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QString const &strDigest,
+                                               QWidget *pParent, QString *pstrExtPackName)
 {
     /*
      * Open the extpack tarball via IExtPackManager.
@@ -271,14 +263,12 @@ void UIGlobalSettingsExtension::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-/* Navigation stuff: */
 void UIGlobalSettingsExtension::setOrderAfter(QWidget *pWidget)
 {
     /* Setup tab-order: */
     setTabOrder(pWidget, m_pPackagesTree);
 }
 
-/* Translation stuff: */
 void UIGlobalSettingsExtension::retranslateUi()
 {
     /* Translate uic generated strings: */
@@ -289,7 +279,6 @@ void UIGlobalSettingsExtension::retranslateUi()
     m_pActionRemove->setText(tr("Remove package"));
 }
 
-/* Handle current-item change fact: */
 void UIGlobalSettingsExtension::sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem)
 {
     /* Check action's availability: */
@@ -297,7 +286,6 @@ void UIGlobalSettingsExtension::sltHandleCurrentItemChange(QTreeWidgetItem *pCur
     m_pActionRemove->setEnabled(pCurrentItem);
 }
 
-/* Invoke context menu: */
 void UIGlobalSettingsExtension::sltShowContextMenu(const QPoint &position)
 {
     QMenu menu;
@@ -313,7 +301,6 @@ void UIGlobalSettingsExtension::sltShowContextMenu(const QPoint &position)
     menu.exec(m_pPackagesTree->viewport()->mapToGlobal(position));
 }
 
-/* Package add procedure: */
 void UIGlobalSettingsExtension::sltInstallPackage()
 {
     /*
@@ -390,7 +377,6 @@ void UIGlobalSettingsExtension::sltInstallPackage()
     }
 }
 
-/* Package remove procedure: */
 void UIGlobalSettingsExtension::sltRemovePackage()
 {
     /* Get current item: */
