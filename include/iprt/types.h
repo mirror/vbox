@@ -1824,6 +1824,13 @@ typedef RTTHREAD                                   *PRTTHREAD;
 /** Nil thread handle. */
 #define NIL_RTTHREAD                                0
 
+/** Thread-context handle.*/
+typedef R0PTRTYPE(struct RTTHREADCTXINT *)          RTTHREADCTX;
+/** Pointer to thread handle. */
+typedef RTTHREADCTX                                *PRTTHREADCTX;
+/** Nil thread-context handle. */
+#define NIL_RTTHREADCTX                             0
+
 /** A TLS index. */
 typedef RTHCINTPTR                                  RTTLS;
 /** Pointer to a TLS index. */

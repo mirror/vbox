@@ -1736,6 +1736,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/linux/spinlock-r0drv-linux.c \
 	r0drv/linux/thread-r0drv-linux.c \
 	r0drv/linux/thread2-r0drv-linux.c \
+	r0drv/linux/threadctxhooks-r0drv-linux.c \
 	r0drv/linux/time-r0drv-linux.c \
 	r0drv/linux/timer-r0drv-linux.c \
 	r0drv/memobj-r0drv.cpp \
@@ -1758,6 +1759,7 @@ RuntimeR0Drv_SOURCES.win = \
 	generic/mppresent-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
+	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
 	r0drv/powernotification-r0drv.c \
@@ -1797,6 +1799,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	generic/mppresent-generic.cpp \
 	generic/timer-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
+	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
 	r0drv/darwin/alloc-r0drv-darwin.cpp \
 	r0drv/darwin/assert-r0drv-darwin.cpp \
 	r0drv/darwin/initterm-r0drv-darwin.cpp \
@@ -1856,6 +1859,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
+	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/powernotification-r0drv.c \
 	r0drv/os2/alloc-r0drv-os2.cpp \
@@ -1893,6 +1897,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/mppresent-generic.cpp \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
+	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
 	r0drv/freebsd/alloc-r0drv-freebsd.c \
 	r0drv/freebsd/assert-r0drv-freebsd.c \
 	r0drv/freebsd/initterm-r0drv-freebsd.c \
@@ -1923,6 +1928,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
 	r0drv/powernotification-r0drv.c \
+	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
 	r0drv/solaris/RTLogWriteDebugger-r0drv-solaris.c \
 	r0drv/solaris/RTMpPokeCpu-r0drv-solaris.c \
 	r0drv/solaris/alloc-r0drv-solaris.c \
@@ -1956,6 +1962,7 @@ RuntimeR0Drv_SOURCES.haiku = \
 	generic/mppresent-generic.cpp \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
+	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
 	r0drv/haiku/alloc-r0drv-haiku.c \
 	r0drv/haiku/assert-r0drv-haiku.c \
 	r0drv/haiku/initterm-r0drv-haiku.c \

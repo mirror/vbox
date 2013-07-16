@@ -31,11 +31,106 @@
 
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/err.h>
+#include <iprt/mem.h>
 #include <iprt/time.h>
 #include <iprt/string.h>
 #include <VBox/sup.h>
 #include "tstR0ThreadPreemption.h"
 
+
+#define TSTRTR0THREADCTXDATA_MAGIC      0xc01a50da
+
+/**
+ * Thread-context hook data.
+ */
+typedef struct TSTRTR0THREADCTXDATA
+{
+    uint32_t volatile   u32Magic;
+    RTCPUID             uSourceCpuId;
+    RTTHREADCTX         hThreadCtx;
+
+    /* For RTTHREADCTXEVENT_PREEMPTING. */
+    bool                fPreemptingSuccess;
+    volatile bool       fPreemptingInvoked;
+
+    /* For RTTHREADCTXEVENT_RESUMED. */
+    bool                fResumedSuccess;
+    volatile bool       fResumedInvoked;
+
+    char                achResult[512];
+} TSTRTR0THREADCTXDATA, *PTSTRTR0THREADCTXDATA;
+
+
+/**
+ * Thread-context hook function.
+ *
+ * @param   enmEvent    The thread-context event.
+ * @param   pvUser      Pointer to the user argument.
+ */
+static void tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pvUser)
+{
+    PTSTRTR0THREADCTXDATA pData = (PTSTRTR0THREADCTXDATA)pvUser;
+    AssertPtrReturnVoid(pData);
+
+    if (pData->u32Magic != TSTRTR0THREADCTXDATA_MAGIC)
+    {
+        RTStrPrintf(pData->achResult, sizeof(pData->achResult), "!tstR0ThreadCtxHook: Invalid magic.");
+        return;
+    }
+
+    switch (enmEvent)
+    {
+        case RTTHREADCTXEVENT_PREEMPTING:
+        {
+            ASMAtomicWriteBool(&pData->fPreemptingInvoked, true);
+
+            /* We've already been called once, we now might very well be on another CPU. Nothing to do here. */
+            if (pData->fPreemptingSuccess)
+                return;
+
+            if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+            {
+                RTStrPrintf(pData->achResult, sizeof(pData->achResult),
+                            "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_PREEMPTING]: Called with preemption enabled");
+                break;
+            }
+
+            RTCPUID uCurrentCpuId = RTMpCpuId();
+            if (pData->uSourceCpuId != uCurrentCpuId)
+            {
+                RTStrPrintf(pData->achResult, sizeof(pData->achResult),
+                            "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_PREEMPTING]: migrated uSourceCpuId=%RU32 uCurrentCpuId=%RU32",
+                            pData->uSourceCpuId, uCurrentCpuId);
+                break;
+            }
+
+            pData->fPreemptingSuccess = true;
+            break;
+        }
+
+        case RTTHREADCTXEVENT_RESUMED:
+        {
+            ASMAtomicWriteBool(&pData->fResumedInvoked, true);
+
+            /* We've already been called once successfully, nothing more to do. */
+            if (ASMAtomicReadBool(&pData->fResumedSuccess))
+                return;
+
+            if (!pData->fPreemptingSuccess)
+            {
+                RTStrPrintf(pData->achResult, sizeof(pData->achResult),
+                            "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_RESUMED]: Called before preempting callback was invoked.");
+            }
+
+            ASMAtomicWriteBool(&pData->fResumedSuccess, true);
+            break;
+        }
+
+        default:
+            AssertMsgFailed(("Invalid event %#x\n", enmEvent));
+            break;
+    }
+}
 
 
 /**
@@ -175,6 +270,109 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             RTThreadPreemptRestore(&State1);
             if (RTThreadPreemptIsEnabled(NIL_RTTHREAD) != fDefault && !*pszErr)
                 RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns false after 3rd RTThreadPreemptRestore");
+            break;
+        }
+
+        case TSTR0THREADPREEMPTION_CTXHOOKS:
+        {
+            if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+            {
+                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksCreate must be called with preemption enabled");
+                break;
+            }
+
+            RTTHREADCTX hThreadCtx;
+            int rc = RTThreadCtxHooksCreate(&hThreadCtx);
+            if (RT_FAILURE(rc))
+            {
+                if (rc == VERR_NOT_SUPPORTED)
+                    RTStrPrintf(pszErr, cchErr, "RTThreadCtxHooksCreate returns VERR_NOT_SUPPORTED");
+                else
+                    RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksCreate returns %Rrc", rc);
+                break;
+            }
+
+            PTSTRTR0THREADCTXDATA pCtxData = (PTSTRTR0THREADCTXDATA)RTMemAlloc(sizeof(*pCtxData));
+            AssertReturn(pCtxData, VERR_NO_MEMORY);
+            pCtxData->u32Magic           = TSTRTR0THREADCTXDATA_MAGIC;
+            pCtxData->hThreadCtx         = hThreadCtx;
+            pCtxData->fPreemptingSuccess = false;
+            pCtxData->fPreemptingInvoked = false;
+            pCtxData->fResumedInvoked    = false;
+            pCtxData->fResumedSuccess    = false;
+            RT_ZERO(pCtxData->achResult);
+
+            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+            RTThreadPreemptDisable(&PreemptState);
+            Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+            pCtxData->uSourceCpuId       = RTMpCpuId();
+
+            rc = RTThreadCtxHooksRegister(hThreadCtx, &tstR0ThreadCtxHook, pCtxData);
+            if (RT_FAILURE(rc))
+            {
+                RTMemFree(pCtxData);
+                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksRegister returns %Rrc", rc);
+                break;
+            }
+
+            RTThreadPreemptRestore(&PreemptState);
+
+            /* Check if the preempting callback has/will been invoked. */
+            const uint32_t  cMsTimeout           = 8000;
+            const uint32_t  cMsSleepGranularity  = 50;
+            uint32_t        cMsSlept             = 0;
+            for (;;)
+            {
+                RTThreadPreemptDisable(&PreemptState);
+                const RTCPUID uCurrentCpuId = RTMpCpuId();
+                RTThreadPreemptRestore(&PreemptState);
+
+                if (   pCtxData->uSourceCpuId != uCurrentCpuId
+                    || cMsSlept >= cMsTimeout)
+                {
+                    break;
+                }
+
+                RTThreadSleep(cMsSleepGranularity);
+                cMsSlept += cMsSleepGranularity;
+            }
+
+            if (!ASMAtomicReadBool(&pCtxData->fPreemptingInvoked))
+            {
+                RTStrPrintf(pszErr, cchErr, "!tstR0ThreadCtxHooks[RTTHREADCTXEVENT_PREEMPTING] not invoked after ca. %u ms",
+                            cMsSlept);
+            }
+            else if (!pCtxData->fPreemptingSuccess)
+                RTStrCopy(pszErr, cchErr, pCtxData->achResult);
+            else
+            {
+                /* Preempting callback succeeded, now check if the resumed callback has/will been invoked. */
+                cMsSlept = 0;
+                for (;;)
+                {
+                    if (   ASMAtomicReadBool(&pCtxData->fResumedInvoked)
+                        || cMsSlept >= cMsTimeout)
+                    {
+                        break;
+                    }
+
+                    RTThreadSleep(cMsSleepGranularity);
+                    cMsSlept += cMsSleepGranularity;
+                }
+
+                if (!ASMAtomicReadBool(&pCtxData->fResumedInvoked))
+                {
+                    RTStrPrintf(pszErr, cchErr, "!tstR0ThreadCtxHooks[RTTHREADCTXEVENT_RESUMED] not invoked after ca. %u ms",
+                                cMsSlept);
+                }
+                else if (!pCtxData->fResumedSuccess)
+                    RTStrCopy(pszErr, cchErr, pCtxData->achResult);
+            }
+
+            RTThreadCtxHooksDeregister(hThreadCtx);
+            RTThreadCtxHooksDestroy(hThreadCtx);
+            RTMemFree(pCtxData);
             break;
         }
 

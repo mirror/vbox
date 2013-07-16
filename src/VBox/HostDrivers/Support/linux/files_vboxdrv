@@ -185,6 +185,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/the-linux-kernel.h=>r0drv/linux/the-linux-kernel.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/thread-r0drv-linux.c=>r0drv/linux/thread-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/thread2-r0drv-linux.c=>r0drv/linux/thread2-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/threadctxhooks-r0drv-linux.c=>r0drv/linux/threadctxhooks-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/time-r0drv-linux.c=>r0drv/linux/time-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/timer-r0drv-linux.c=>r0drv/linux/timer-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/waitqueue-r0drv-linux.h=>r0drv/linux/waitqueue-r0drv-linux.h \
