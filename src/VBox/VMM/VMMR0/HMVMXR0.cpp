@@ -3357,7 +3357,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /* Validate segment registers. See Intel spec. 26.3.1.2 "Checks on Guest Segment Registers". */
     /* NOTE: The reason we check for attribute value 0 and not just the unusable bit here is because hmR0VmxWriteSegmentReg()
-     * only updates the VMCS bits with the unusable bit and doesn't change the guest-context value. */
+     * only updates the VMCS' copy of the value with the unusable bit and doesn't change the guest-context value. */
     if (   !pVM->hm.s.vmx.fUnrestrictedGuest
         && (   !CPUMIsGuestInRealModeEx(pCtx)
             && !CPUMIsGuestInV86ModeEx(pCtx)))
@@ -5592,7 +5592,7 @@ static int hmR0VmxSaveGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 
 /**
- * Saves the guest APIC state from the currentl VMCS into the guest-CPU context.
+ * Saves the guest APIC state from the current VMCS into the guest-CPU context.
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
@@ -7801,12 +7801,14 @@ HMVMX_EXIT_DECL hmR0VmxExitSipi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT 
 HMVMX_EXIT_DECL hmR0VmxExitInitSignal(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     /*
-     * INIT signals are blocked in VMX root operation by VMXON and by SMI in SMM. See Intel spec. "33.14.1 Default Treatment of
-     * SMI Delivery" and "29.3 VMX Instructions" for "VMXON". It is -NOT- blocked in VMX non-root operation so we can potentially
-     * still get these exits. See Intel spec. "23.8 Restrictions on VMX operation".
+     * INIT signals are blocked in VMX root operation by VMXON and by SMI in SMM.
+     * See Intel spec. 33.14.1 Default Treatment of SMI Delivery" and Intel spec. 29.3 "VMX Instructions" for "VMXON".
+     *
+     * It is -NOT- blocked in VMX non-root operation so we can, in theory, still get these VM-exits.
+     * See Intel spec. "23.8 Restrictions on VMX operation".
      */
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
-    return VINF_SUCCESS;    /** @todo r=ramshankar: correct?. */
+    return VINF_SUCCESS;
 }
 
 
