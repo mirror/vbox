@@ -99,7 +99,7 @@ void Mouse::FinalRelease()
  * @returns COM result indicator
  * @param parent handle of our parent object
  */
-HRESULT Mouse::init (Console *parent)
+HRESULT Mouse::init (ConsoleMouseInterface *parent)
 {
     LogFlowThisFunc(("\n"));
 
@@ -158,7 +158,7 @@ void Mouse::uninit()
 HRESULT Mouse::updateVMMDevMouseCaps(uint32_t fCapsAdded,
                                      uint32_t fCapsRemoved)
 {
-    VMMDev *pVMMDev = mParent->getVMMDev();
+    VMMDevMouseInterface *pVMMDev = mParent->getVMMDevMouseInterface();
     if (!pVMMDev)
         return E_FAIL;  /* No assertion, as the front-ends can send events
                          * at all sorts of inconvenient times. */
@@ -383,7 +383,7 @@ HRESULT Mouse::reportMTEventToMouseDev(int32_t mouseX, int32_t mouseY,
  */
 HRESULT Mouse::reportAbsEventToVMMDev(int32_t mouseXAbs, int32_t mouseYAbs)
 {
-    VMMDev *pVMMDev = mParent->getVMMDev();
+    VMMDevMouseInterface *pVMMDev = mParent->getVMMDevMouseInterface();
     ComAssertRet(pVMMDev, E_FAIL);
     PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
     ComAssertRet(pVMMDevPort, E_FAIL);
@@ -509,7 +509,7 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
     AssertPtrReturn(pcX, E_POINTER);
     AssertPtrReturn(pcY, E_POINTER);
     AssertPtrNullReturn(pfValid, E_POINTER);
-    Display *pDisplay = mParent->getDisplay();
+    DisplayMouseInterface *pDisplay = mParent->getDisplayMouseInterface();
     ComAssertRet(pDisplay, E_FAIL);
     /** The amount to add to the result (multiplied by the screen width/height)
      * to compensate for differences in guest methods for mapping back to
@@ -522,7 +522,7 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
     {
         ULONG displayWidth, displayHeight;
         /* Takes the display lock */
-        HRESULT rc = pDisplay->GetScreenResolution(0, &displayWidth,
+        HRESULT rc = pDisplay->getScreenResolution(0, &displayWidth,
                                                    &displayHeight, NULL);
         if (FAILED(rc))
             return rc;

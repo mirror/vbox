@@ -23,7 +23,13 @@
 
 class Console;
 
-class VMMDev
+class VMMDevMouseInterface
+{
+public:
+    virtual PPDMIVMMDEVPORT getVMMDevPort() = 0;
+};
+
+class VMMDev : public VMMDevMouseInterface
 {
 public:
     VMMDev(Console *console);
@@ -48,6 +54,7 @@ public:
 
     PPDMIVMMDEVPORT getVMMDevPort();
 
+#ifdef VBOX_WITH_HGCM
     int hgcmLoadService (const char *pszServiceLibrary, const char *pszServiceName);
     int hgcmHostCall (const char *pszServiceName, uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms);
 #ifdef VBOX_WITH_CRHGSMI
@@ -58,6 +65,7 @@ public:
     void hgcmShutdown (void);
 
     bool hgcmIsActive (void) { return ASMAtomicReadBool(&m_fHGCMActive); }
+#endif /* VBOX_WITH_HGCM */
 
 private:
     static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
