@@ -2,7 +2,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
- Copyright (C) 2011-2012 Oracle Corporation
+ Copyright (C) 2011-2013 Oracle Corporation
 
  This file is part of VirtualBox Open Source Edition (OSE), as
  available from http://www.virtualbox.org. This file is free software;
@@ -14,48 +14,21 @@
  </comment>
  <class>UIGlobalSettingsProxy</class>
  <widget class="QWidget" name="UIGlobalSettingsProxy">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>300</width>
-    <height>150</height>
-   </rect>
-  </property>
   <layout class="QGridLayout">
    <property name="margin">
     <number>0</number>
    </property>
-   <item row="0" column="0">
-    <spacer>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint">
-      <size>
-       <width>40</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="0" column="1" colspan="4">
-    <widget class="QCheckBox" name="m_pProxyCheckbox">
+   <item row="0" column="0" colspan="2">
+    <widget class="QCheckBox" name="m_pCheckboxProxy">
      <property name="whatsThis">
       <string>When checked, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</string>
      </property>
      <property name="text">
       <string>&amp;Enable proxy</string>
      </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
     </widget>
    </item>
-   <item row="1" column="1">
+   <item row="1" column="0">
     <spacer>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -65,129 +38,68 @@
      </property>
      <property name="sizeHint">
       <size>
-       <width>16</width>
+       <width>20</width>
        <height>0</height>
       </size>
      </property>
     </spacer>
    </item>
-   <item row="1" column="2" colspan="3">
-    <layout class="QHBoxLayout">
-     <property name="margin">
-      <number>0</number>
+   <item row="1" column="1" colspan="2">
+    <widget class="QWidget" name="m_pContainerProxy">
+     <property name="sizePolicy">
+      <sizepolicy vsizetype="MinimumExpanding" hsizetype="MinimumExpanding">
+       <horstretch>1</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
      </property>
-     <item>
-      <widget class="QLabel" name="m_pHostLabel">
-       <property name="text">
-        <string>Ho&amp;st:</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-       <property name="buddy">
-        <cstring>m_pHostEditor</cstring>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QILineEdit" name="m_pHostEditor">
-       <property name="whatsThis">
-        <string>Changes the proxy host.</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="m_pPortLabel">
-       <property name="text">
-        <string>&amp;Port:</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-       </property>
-       <property name="buddy">
-        <cstring>m_pPortEditor</cstring>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QILineEdit" name="m_pPortEditor">
-       <property name="whatsThis">
-        <string>Changes the proxy port.</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="2" column="2" colspan="3">
-    <widget class="QCheckBox" name="m_pAuthCheckbox">
-     <property name="whatsThis">
-      <string>When checked the authentication supplied will be used with the proxy server.</string>
-     </property>
-     <property name="text">
-      <string>&amp;Use authentication</string>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
+     <layout class="QHBoxLayout">
+      <property name="margin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="m_pHostLabel">
+        <property name="text">
+         <string>Ho&amp;st:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="buddy">
+         <cstring>m_pHostEditor</cstring>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QILineEdit" name="m_pHostEditor">
+        <property name="whatsThis">
+         <string>Changes the proxy host.</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="m_pPortLabel">
+        <property name="text">
+         <string>&amp;Port:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="buddy">
+         <cstring>m_pPortEditor</cstring>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QILineEdit" name="m_pPortEditor">
+        <property name="whatsThis">
+         <string>Changes the proxy port.</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
-   <item row="3" column="2" rowspan="2">
-    <spacer>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint">
-      <size>
-       <width>16</width>
-       <height>0</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="3" column="3">
-    <widget class="QLabel" name="m_pLoginLabel">
-     <property name="text">
-      <string>User &amp;name:</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="buddy">
-      <cstring>m_pLoginEditor</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="4">
-    <widget class="QILineEdit" name="m_pLoginEditor">
-     <property name="whatsThis">
-      <string>Changes the user name used for authentication.</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="3">
-    <widget class="QLabel" name="m_pPasswordLabel">
-     <property name="text">
-      <string>Pass&amp;word:</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="buddy">
-      <cstring>m_pPasswordEditor</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="4">
-    <widget class="QILineEdit" name="m_pPasswordEditor">
-     <property name="whatsThis">
-      <string>Changes the password used for authentication.</string>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1" colspan="4">
+   <item row="2" column="0" colspan="3">
     <spacer>
      <property name="orientation">
       <enum>Qt::Vertical</enum>

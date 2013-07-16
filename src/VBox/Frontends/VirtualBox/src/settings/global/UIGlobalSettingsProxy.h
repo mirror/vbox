@@ -28,18 +28,10 @@ struct UISettingsCacheGlobalProxy
 {
     UISettingsCacheGlobalProxy()
         : m_fProxyEnabled(false)
-#if 0
-        , m_fAuthEnabled(false)
-#endif
     {}
     bool m_fProxyEnabled;
     QString m_strProxyHost;
     QString m_strProxyPort;
-#if 0
-    bool m_fAuthEnabled;
-    QString m_strAuthLogin;
-    QString m_strAuthPassword;
-#endif
 };
 
 /* Global settings / Proxy page: */
@@ -68,25 +60,23 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    /* Validation stuff: */
+    /* Helper: Validation stuff: */
     void setValidator(QIWidgetValidator *pValidator);
 
-    /* Navigation stuff: */
+    /* Helper: Navigation stuff: */
     void setOrderAfter(QWidget *pWidget);
 
-    /* Translation stuff: */
+    /* Helper: Translation stuff: */
     void retranslateUi();
 
 private slots:
 
+    /* Handler: Proxy-checkbox stuff: */
     void sltProxyToggled();
-#if 0
-    void sltAuthToggled();
-#endif
 
 private:
 
-    /* Validator: */
+    /* Variable: Validation stuff: */
     QIWidgetValidator *m_pValidator;
 
     /* Cache: */
