@@ -46,7 +46,7 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
     /* Create tab widget: */
     m_pTabWidget = new QTabWidget(this);
     m_pTabWidget->setMinimumWidth(400);
-    m_pMainLayout->addWidget(m_pTabWidget, 0, 0);
+    m_pMainLayout->addWidget(m_pTabWidget, 0, 0, 1, 2);
 
     /* Create selector tab: */
     QWidget *pSelectorTab = new QWidget;
