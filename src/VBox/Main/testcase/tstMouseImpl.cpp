@@ -42,8 +42,8 @@ class TestDisplay : public DisplayMouseInterface
 {
     void getFramebufferDimensions(int32_t *px1, int32_t *py1,
                                   int32_t *px2, int32_t *py2);
-    int getScreenResolution(uint32_t cScreen, uint32_t *pcx, uint32_t *pcy,
-                            uint32_t *pcBPP);
+    int getScreenResolution(uint32_t cScreen, ULONG *pcx, ULONG *pcy,
+                            ULONG *pcBPP);
 };
 
 class TestConsole : public ConsoleMouseInterface
@@ -169,8 +169,8 @@ void TestDisplay::getFramebufferDimensions(int32_t *px1, int32_t *py1,
         *py2 = 240;
 }
 
-int TestDisplay::getScreenResolution(uint32_t cScreen, uint32_t *pcx,
-                                     uint32_t *pcy, uint32_t *pcBPP)
+int TestDisplay::getScreenResolution(uint32_t cScreen, ULONGt *pcx,
+                                     ULONG *pcy, ULONG *pcBPP)
 {
     NOREF(cScreen);
     if (pcx)
