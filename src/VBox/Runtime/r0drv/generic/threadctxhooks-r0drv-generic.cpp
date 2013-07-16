@@ -31,6 +31,7 @@
 #include <iprt/thread.h>
 #include <iprt/err.h>
 
+#include "internal/iprt.h"
 
 RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
 {
