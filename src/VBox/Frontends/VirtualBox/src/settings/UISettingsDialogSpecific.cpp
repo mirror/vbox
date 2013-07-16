@@ -384,7 +384,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                     pSettingsPage = new UIGlobalSettingsNetwork;
                     addItem(":/nw_32px.png", ":/nw_disabled_32px.png",
                             ":/nw_16px.png", ":/nw_disabled_16px.png",
-                            iPageIndex, "#language", pSettingsPage);
+                            iPageIndex, "#network", pSettingsPage);
                     break;
                 }
                 /* Extensions page: */
