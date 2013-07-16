@@ -508,8 +508,6 @@ void UIGlobalSettingsNetwork::sltUpdateCurrentItem()
 {
     /* Get current item: */
     UIHostInterfaceItem *pItem = static_cast<UIHostInterfaceItem*>(m_pInterfacesTree->currentItem());
-    /* Set the final label text: */
-    m_pInfoLabel->setText(pItem ? pItem->updateInfo() : QString());
     /* Update availability: */
     m_pDelAction->setEnabled(pItem);
     m_pEditAction->setEnabled(pItem);
