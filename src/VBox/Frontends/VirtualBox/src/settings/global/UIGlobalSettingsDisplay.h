@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -55,20 +55,20 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    /* Navigation stuff: */
+    /* Helper: Navigation stuff: */
     void setOrderAfter(QWidget *pWidget);
 
-    /* Translation stuff: */
+    /* Helper: Translation stuff: */
     void retranslateUi();
 
 protected slots:
 
-    /* Max resolution combo activation handler: */
+    /* Handler: Resolution-combo stuff: */
     void sltMaxResolutionComboActivated();
 
 private:
 
-    /* Populate combo-box: */
+    /* Helper: Resolution-combo stuff: */
     void populate();
 
     /* Cache: */

@@ -138,14 +138,14 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    /* Validation stuff: */
+    /* Helpers: Validation stuff: */
     void setValidator(QIWidgetValidator *pValidator);
     bool revalidate(QString &strWarning, QString &strTitle);
 
-    /* Navigation stuff: */
+    /* Helper: Navigation stuff: */
     void setOrderAfter(QWidget *pWidget);
 
-    /* Translation stuff: */
+    /* Helper: Translation stuff: */
     void retranslateUi();
 
 private:
