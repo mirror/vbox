@@ -125,7 +125,7 @@
         <file alias="serial_port_read_16px.png">images/serial_port_read_16px.png</file>
         <file alias="serial_port_write_16px.png">images/serial_port_write_16px.png</file>
         <file alias="select_file_16px.png">images/select_file_16px.png</file>
-        <file alias="select_file_dis_16px.png">images/select_file_dis_16px.png</file>
+        <file alias="select_file_disabled_16px.png">images/select_file_disabled_16px.png</file>
         <file alias="list_moveup_16px.png">images/list_moveup_16px.png</file>
         <file alias="list_moveup_22px.png">images/list_moveup_22px.png</file>
         <file alias="list_moveup_disabled_16px.png">images/list_moveup_disabled_16px.png</file>

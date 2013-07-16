@@ -74,7 +74,7 @@ UIWizardCloneVDPageBasic1::UIWizardCloneVDPageBasic1(const CMedium &sourceVirtua
             m_pSourceDiskOpenButton = new QIToolButton(this);
             {
                 m_pSourceDiskOpenButton->setAutoRaise(true);
-                m_pSourceDiskOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
+                m_pSourceDiskOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
             }
             pSourceDiskLayout->addWidget(m_pSourceDiskSelector);
             pSourceDiskLayout->addWidget(m_pSourceDiskOpenButton);

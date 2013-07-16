@@ -165,7 +165,7 @@ UIWizardCloneVDPageBasic4::UIWizardCloneVDPageBasic4()
             m_pDestinationDiskOpenButton = new QIToolButton(this);
             {
                 m_pDestinationDiskOpenButton->setAutoRaise(true);
-                m_pDestinationDiskOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_dis_16px.png"));
+                m_pDestinationDiskOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
             }
             pLocationLayout->addWidget(m_pDestinationDiskEditor);
             pLocationLayout->addWidget(m_pDestinationDiskOpenButton);

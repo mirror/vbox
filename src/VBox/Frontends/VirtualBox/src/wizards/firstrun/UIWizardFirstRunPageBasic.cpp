@@ -74,7 +74,7 @@ UIWizardFirstRunPageBasic::UIWizardFirstRunPageBasic(const QString &strMachineId
             }
             m_pSelectMediaButton = new QIToolButton(this);
             {
-                m_pSelectMediaButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
+                m_pSelectMediaButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
                 m_pSelectMediaButton->setAutoRaise(true);
             }
             pSourceDiskLayout->addWidget(m_pMediaSelector);
