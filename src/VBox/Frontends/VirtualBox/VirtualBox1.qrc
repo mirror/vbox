@@ -154,8 +154,8 @@
         <file alias="snapshot_delete_22px.png">images/snapshot_delete_22px.png</file>
         <file alias="snapshot_delete_disabled_16px.png">images/snapshot_delete_disabled_16px.png</file>
         <file alias="snapshot_delete_disabled_22px.png">images/snapshot_delete_disabled_22px.png</file>
-        <file alias="take_screenshot_16px.png">images/take_screenshot_16px.png</file>
-        <file alias="take_screenshot_disabled_16px.png">images/take_screenshot_disabled_16px.png</file>
+        <file alias="screenshot_take_16px.png">images/screenshot_take_16px.png</file>
+        <file alias="screenshot_take_disabled_16px.png">images/screenshot_take_disabled_16px.png</file>
         <file alias="snapshot_show_details_16px.png">images/snapshot_show_details_16px.png</file>
         <file alias="snapshot_show_details_22px.png">images/snapshot_show_details_22px.png</file>
         <file alias="snapshot_show_details_disabled_16px.png">images/snapshot_show_details_disabled_16px.png</file>

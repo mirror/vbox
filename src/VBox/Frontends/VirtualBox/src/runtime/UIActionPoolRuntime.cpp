@@ -111,7 +111,7 @@ class UIActionSimplePerformTakeScreenshot : public UIActionSimple
 public:
 
     UIActionSimplePerformTakeScreenshot(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/take_screenshot_16px.png", ":/take_screenshot_disabled_16px.png")
+        : UIActionSimple(pParent, ":/screenshot_take_16px.png", ":/screenshot_take_disabled_16px.png")
     {
         retranslateUi();
     }
