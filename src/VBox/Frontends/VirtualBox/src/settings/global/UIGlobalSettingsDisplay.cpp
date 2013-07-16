@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -123,12 +123,10 @@ void UIGlobalSettingsDisplay::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-/* Navigation stuff: */
-void UIGlobalSettingsDisplay::setOrderAfter(QWidget* /* pWidget */)
+void UIGlobalSettingsDisplay::setOrderAfter(QWidget*)
 {
 }
 
-/* Translation stuff: */
 void UIGlobalSettingsDisplay::retranslateUi()
 {
     /* Translate uic generated strings: */
