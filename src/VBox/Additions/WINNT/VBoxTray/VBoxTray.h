@@ -100,6 +100,7 @@ typedef struct _VBOXSERVICEINFO
     char     *pszName;
     int      (* pfnInit)             (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
     unsigned (__stdcall * pfnThread) (void *pInstance);
+    void     (* pfnStop)             (const VBOXSERVICEENV *pEnv, void *pInstance);
     void     (* pfnDestroy)          (const VBOXSERVICEENV *pEnv, void *pInstance);
 
     /* Variables. */
