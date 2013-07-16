@@ -36,7 +36,9 @@ enum
     /** The mouse device can do relative reporting */
     MOUSE_DEVCAP_RELATIVE = 1,
     /** The mouse device can do absolute reporting */
-    MOUSE_DEVCAP_ABSOLUTE = 2
+    MOUSE_DEVCAP_ABSOLUTE = 2,
+    /** The mouse device can do absolute reporting */
+    MOUSE_DEVCAP_MULTI_TOUCH = 4
 };
 /** @} */
 
@@ -170,9 +172,8 @@ HRESULT Mouse::updateVMMDevMouseCaps(uint32_t fCapsAdded,
 }
 
 /**
- * Returns whether the current setup can accept absolute mouse events, either
- * because an emulated absolute pointing device is active or because the Guest
- * Additions are.
+ * Returns whether the currently active device portfolio can accept absolute
+ * mouse events.
  *
  * @returns COM status code
  * @param absoluteSupported address of result variable
@@ -190,8 +191,8 @@ STDMETHODIMP Mouse::COMGETTER(AbsoluteSupported) (BOOL *absoluteSupported)
 }
 
 /**
- * Returns whether the current setup can accept relative mouse events, that is,
- * whether an emulated relative pointing device is active.
+ * Returns whether the currently active device portfolio can accept relative
+ * mouse events.
  *
  * @returns COM status code
  * @param relativeSupported address of result variable
@@ -205,6 +206,25 @@ STDMETHODIMP Mouse::COMGETTER(RelativeSupported) (BOOL *relativeSupported)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     *relativeSupported = supportsRel();
+    return S_OK;
+}
+
+/**
+ * Returns whether the currently active device portfolio can accept multi-touch
+ * mouse events.
+ *
+ * @returns COM status code
+ * @param multiTouchSupported address of result variable
+ */
+STDMETHODIMP Mouse::COMGETTER(MultiTouchSupported) (BOOL *multiTouchSupported)
+{
+    if (!multiTouchSupported)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    *multiTouchSupported = FALSE;
     return S_OK;
 }
 
@@ -339,6 +359,19 @@ HRESULT Mouse::reportAbsEventToMouseDev(int32_t mouseXAbs, int32_t mouseYAbs,
 
     }
     return S_OK;
+}
+
+
+/**
+ * Send an absolute pointer event to the emulated absolute device we deem most
+ * appropriate.
+ *
+ * @returns   COM status code
+ */
+HRESULT Mouse::reportMTEventToMouseDev(int32_t mouseX, int32_t mouseY,
+                                       uint32_t cContact, bool fContact)
+{
+    return E_NOTIMPL;
 }
 
 
@@ -582,10 +615,11 @@ bool Mouse::guestNeedsHostCursor(void)
 
 /** Check what sort of reporting can be done using the devices currently
  * enabled.  Does not consider the VMM device. */
-void Mouse::getDeviceCaps(bool *pfAbs, bool *pfRel)
+void Mouse::getDeviceCaps(bool *pfAbs, bool *pfRel, bool *pfMT)
 {
     bool fAbsDev = false;
     bool fRelDev = false;
+    bool fMTDev  = false;
 
     AutoReadLock aLock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -596,6 +630,8 @@ void Mouse::getDeviceCaps(bool *pfAbs, bool *pfRel)
                fAbsDev = true;
            if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_RELATIVE)
                fRelDev = true;
+           if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_MULTI_TOUCH)
+               fMTDev  = true;
         }
     if (pfAbs)
         *pfAbs = fAbsDev;
@@ -609,7 +645,7 @@ bool Mouse::vmmdevCanAbs(void)
 {
     bool fRelDev;
 
-    getDeviceCaps(NULL, &fRelDev);
+    getDeviceCaps(NULL, &fRelDev, NULL);
     return    (mfVMMDevGuestCaps & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
            && fRelDev;
 }
@@ -620,7 +656,7 @@ bool Mouse::deviceCanAbs(void)
 {
     bool fAbsDev;
 
-    getDeviceCaps(&fAbsDev, NULL);
+    getDeviceCaps(&fAbsDev, NULL, NULL);
     return fAbsDev;
 }
 
@@ -630,7 +666,7 @@ bool Mouse::supportsRel(void)
 {
     bool fRelDev;
 
-    getDeviceCaps(NULL, &fRelDev);
+    getDeviceCaps(NULL, &fRelDev, NULL);
     return fRelDev;
 }
 
@@ -640,8 +676,18 @@ bool Mouse::supportsAbs(void)
 {
     bool fAbsDev;
 
-    getDeviceCaps(&fAbsDev, NULL);
+    getDeviceCaps(&fAbsDev, NULL, NULL);
     return fAbsDev || vmmdevCanAbs();
+}
+
+
+/** Can we currently send absolute events to the guest? */
+bool Mouse::supportsMT(void)
+{
+    bool fMTDev;
+
+    getDeviceCaps(NULL, NULL, &fMTDev);
+    return fMTDev;
 }
 
 
@@ -650,12 +696,12 @@ bool Mouse::supportsAbs(void)
  */
 void Mouse::sendMouseCapsNotifications(void)
 {
-    bool fAbsDev, fRelDev, fCanAbs, fNeedsHostCursor;
+    bool fAbsDev, fRelDev, fMTDev, fCanAbs, fNeedsHostCursor;
 
     {
         AutoReadLock aLock(this COMMA_LOCKVAL_SRC_POS);
 
-        getDeviceCaps(&fAbsDev, &fRelDev);
+        getDeviceCaps(&fAbsDev, &fRelDev, &fMTDev);
         fCanAbs = supportsAbs();
         fNeedsHostCursor = guestNeedsHostCursor();
     }
@@ -666,7 +712,7 @@ void Mouse::sendMouseCapsNotifications(void)
     /** @todo this call takes the Console lock in order to update the cached
      * callback data atomically.  However I can't see any sign that the cached
      * data is ever used again. */
-    mParent->onMouseCapabilityChange(fCanAbs, fRelDev, fNeedsHostCursor);
+    mParent->onMouseCapabilityChange(fCanAbs, fRelDev, fMTDev, fNeedsHostCursor);
 }
 
 
@@ -674,7 +720,7 @@ void Mouse::sendMouseCapsNotifications(void)
  * @interface_method_impl{PDMIMOUSECONNECTOR,pfnReportModes}
  * A virtual device is notifying us about its current state and capabilities
  */
-DECLCALLBACK(void) Mouse::mouseReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRel, bool fAbs, bool)
+DECLCALLBACK(void) Mouse::mouseReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRel, bool fAbs, bool fMT)
 {
     PDRVMAINMOUSE pDrv = RT_FROM_MEMBER(pInterface, DRVMAINMOUSE, IConnector);
     if (fRel)
@@ -685,6 +731,10 @@ DECLCALLBACK(void) Mouse::mouseReportModes(PPDMIMOUSECONNECTOR pInterface, bool 
         pDrv->u32DevCaps |= MOUSE_DEVCAP_ABSOLUTE;
     else
         pDrv->u32DevCaps &= ~MOUSE_DEVCAP_ABSOLUTE;
+    if (fMT)
+        pDrv->u32DevCaps |= MOUSE_DEVCAP_MULTI_TOUCH;
+    else
+        pDrv->u32DevCaps &= ~MOUSE_DEVCAP_MULTI_TOUCH;
 
     pDrv->pMouse->sendMouseCapsNotifications();
 }
