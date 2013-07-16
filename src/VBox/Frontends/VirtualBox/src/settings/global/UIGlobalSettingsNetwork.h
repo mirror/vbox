@@ -91,17 +91,17 @@ public:
     /* Constructor: */
     UIHostInterfaceItem();
 
-    /* Get/return data to/form items: */
+    /* API: Get/return data to/form items: */
     void fetchNetworkData(const UIHostNetworkData &data);
     void uploadNetworkData(UIHostNetworkData &data);
 
-    /* Validation stuff: */
+    /* API: Validation stuff: */
     bool revalidate(QString &strWarning, QString &strTitle);
 
-    /* Helpers: */
+    /* API: Update stuff: */
     QString updateInfo();
 
-    /* Network item getters: */
+    /* API: Network item getters: */
     QString name() const { return m_data.m_interface.m_strName; }
     bool isDhcpClientEnabled() const { return m_data.m_interface.m_fDhcpClientEnabled; }
     QString interfaceAddress() const { return m_data.m_interface.m_strInterfaceAddress; }
@@ -116,7 +116,7 @@ public:
     QString dhcpLowerAddress() const { return m_data.m_dhcpserver.m_strDhcpLowerAddress; }
     QString dhcpUpperAddress() const { return m_data.m_dhcpserver.m_strDhcpUpperAddress; }
 
-    /* Network item setters */
+    /* API: Network item setters */
     void setDhcpClientEnabled(bool fEnabled) { m_data.m_interface.m_fDhcpClientEnabled = fEnabled; }
     void setInterfaceAddress (const QString &strValue) { m_data.m_interface.m_strInterfaceAddress = strValue; }
     void setInterfaceMask (const QString &strValue) { m_data.m_interface.m_strInterfaceMask = strValue; }
