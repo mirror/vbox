@@ -51,7 +51,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(Console *parent);
+    HRESULT init(ConsoleMouseInterface *parent);
     void uninit();
 
     // IMouse properties
@@ -69,7 +69,7 @@ public:
 
     static const PDMDRVREG  DrvReg;
 
-    Console *getParent() const
+    ConsoleMouseInterface *getParent() const
     {
         return mParent;
     }
@@ -111,7 +111,7 @@ private:
     bool supportsRel(void);
     bool supportsMT(void);
 
-    Console * const         mParent;
+    ConsoleMouseInterface * const         mParent;
     /** Pointer to the associated mouse driver. */
     struct DRVMAINMOUSE    *mpDrv[MOUSE_MAX_DEVICES];
 

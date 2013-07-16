@@ -30,7 +30,8 @@ ifndef VBOX_ONLY_SDK
 	$(if $(VBOX_WITH_XPCOM),tstVBoxAPILinux,tstVBoxAPIWin) \
 	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
-	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlContextID,)
+	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlContextID,) \
+	$(if ,tstMouseImpl,)
   PROGRAMS.linux += \
 	$(if $(VBOX_WITH_USB),tstUSBProxyLinux,)
  endif # !VBOX_WITH_TESTCASES
@@ -205,6 +206,24 @@ tstUSBProxyLinux_DEPS     = \
 tstUSBProxyLinux_LIBS     += \
 	$(PATH_OUT)/lib/USBLib.a \
 	$(PATH_OUT)/lib/VBoxCOM.a
+
+
+#
+# tstMouseImpl
+#
+# Not yet enabled, as I still haven't managed to wrap everything into the test
+# case.
+#
+tstMouseImpl_TEMPLATE = VBOXMAINCLIENTEXE
+tstMouseImpl_INST     = $(INST_TESTCASE)
+tstMouseImpl_SOURCES  = \
+	tstMouseImpl.cpp \
+	../src-client/MouseImpl.cpp \
+	../src-all/EventImpl.cpp \
+	../src-all/VirtualBoxBase.cpp
+tstMouseImpl_INCS     = ../include \
+	$(dir $(VBOX_XML_SCHEMADEFS_H))
+tstMouseImpl_LIBS     = $(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB)
 
 
 # generate rules.

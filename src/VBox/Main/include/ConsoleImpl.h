@@ -48,6 +48,8 @@ COM_STRUCT_OR_CLASS(IEventListener);
 #ifdef VBOX_WITH_EXTPACK
 class ExtPackManager;
 #endif
+class VMMDevMouseInterface;
+class DisplayMouseInterface;
 
 #include <VBox/RemoteDesktop/VRDE.h>
 #include <VBox/vmm/pdmdrv.h>
@@ -88,10 +90,21 @@ typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 // Console
 ///////////////////////////////////////////////////////////////////////////////
 
+class ConsoleMouseInterface
+{
+public:
+    virtual VMMDevMouseInterface  *getVMMDevMouseInterface()  = 0;
+    virtual DisplayMouseInterface *getDisplayMouseInterface() = 0;
+    virtual void onMouseCapabilityChange(BOOL supportsAbsolute,
+                                         BOOL supportsRelative,
+                                         BOOL supportsMT,
+                                         BOOL needsHostCursor) = 0;
+};
+
 /** IConsole implementation class */
 class ATL_NO_VTABLE Console :
     public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IConsole)
+    VBOX_SCRIPTABLE_IMPL(IConsole), public ConsoleMouseInterface
 {
     Q_OBJECT
 
@@ -290,6 +303,10 @@ public:
     // Called from event listener
     HRESULT onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
                                  NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort);
+
+    // Mouse interface
+    VMMDevMouseInterface *getVMMDevMouseInterface();
+    DisplayMouseInterface *getDisplayMouseInterface();
 
 private:
 

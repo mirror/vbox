@@ -4419,6 +4419,15 @@ HRESULT Console::onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
     return rc;
 }
 
+VMMDevMouseInterface *Console::getVMMDevMouseInterface()
+{
+    return m_pVMMDev;
+}
+
+DisplayMouseInterface *Console::getDisplayMouseInterface()
+{
+    return mDisplay;
+}
 
 /**
  * Process a network adaptor change.
