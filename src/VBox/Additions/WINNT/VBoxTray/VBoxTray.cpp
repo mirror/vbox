@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -150,18 +150,21 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         "Display",
         VBoxDisplayInit,
         VBoxDisplayThread,
+        NULL /* pfnStop */,
         VBoxDisplayDestroy
     },
     {
         "Shared Clipboard",
         VBoxClipboardInit,
         VBoxClipboardThread,
+        NULL /* pfnStop */,
         VBoxClipboardDestroy
     },
     {
         "Seamless Windows",
         VBoxSeamlessInit,
         VBoxSeamlessThread,
+        NULL /* pfnStop */,
         VBoxSeamlessDestroy
     },
 #ifdef VBOX_WITH_VRDP_SESSION_HANDLING
@@ -169,6 +172,7 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         "Restore",
         VBoxRestoreInit,
         VBoxRestoreThread,
+        NULL /* pfnStop */,
         VBoxRestoreDestroy
     },
 #endif
@@ -176,18 +180,21 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         "VRDP",
         VBoxVRDPInit,
         VBoxVRDPThread,
+        NULL /* pfnStop */,
         VBoxVRDPDestroy
     },
     {
         "IPC",
         VBoxIPCInit,
         VBoxIPCThread,
+        VBoxIPCStop,
         VBoxIPCDestroy
     },
     {
         "Location Awareness",
         VBoxLAInit,
         VBoxLAThread,
+        NULL /* pfnStop */,
         VBoxLADestroy
     },
 #ifdef VBOX_WITH_MMR
@@ -195,6 +202,7 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         "Multimedia Redirection",
         VBoxMMRInit,
         VBoxMMRThread,
+        NULL /* pfnStop */,
         VBoxMMRDestroy
     },
 #endif
@@ -288,9 +296,14 @@ static void vboxTrayRemoveTrayIcon()
 
 static int vboxTrayStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 {
+    AssertPtrReturn(pEnv, VERR_INVALID_POINTER);
+    AssertPtrReturn(pTable, VERR_INVALID_POINTER);
+
     Log(("VBoxTray: Starting services ...\n"));
 
-    pEnv->hStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    /** @todo Use IPRT events here. */
+    pEnv->hStopEvent = CreateEvent(NULL, TRUE /* bManualReset */,
+                                   FALSE /* bInitialState */, NULL);
 
     if (!pEnv->hStopEvent)
     {
@@ -298,7 +311,8 @@ static int vboxTrayStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
         return VERR_NOT_SUPPORTED;
     }
 
-    while (pTable->pszName)
+    while (   pTable
+           && pTable->pszName)
     {
         Log(("VBoxTray: Starting %s ...\n", pTable->pszName));
 
@@ -311,24 +325,26 @@ static int vboxTrayStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
         pTable->fStarted = false;
 
         if (pTable->pfnInit)
-            rc = pTable->pfnInit (pEnv, &pTable->pInstance, &fStartThread);
+            rc = pTable->pfnInit(pEnv, &pTable->pInstance, &fStartThread);
 
         if (RT_FAILURE(rc))
         {
-            Log(("VBoxTray: Failed to initialize rc = %Rrc\n", rc));
+            LogRel(("VBoxTray: Failed to initialize service \"%s\", rc=%Rrc\n",
+                    pTable->pszName, rc));
         }
         else
         {
-            if (pTable->pfnThread && fStartThread)
+            if (   pTable->pfnThread
+                && fStartThread)
             {
                 unsigned threadid;
+                /** @todo Use RTThread* here. */
                 pTable->hThread = (HANDLE)_beginthreadex(NULL,  /* security */
                                                          0,     /* stacksize */
                                                          pTable->pfnThread,
                                                          pTable->pInstance,
                                                          0,     /* initflag */
                                                          &threadid);
-
                 if (pTable->hThread == (HANDLE)(0))
                     rc = VERR_NOT_SUPPORTED;
             }
@@ -358,26 +374,42 @@ static void vboxTrayStopServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
     /* Signal to all threads. */
     SetEvent(pEnv->hStopEvent);
 
-    while (pTable->pszName)
+    VBOXSERVICEINFO *pCurTable = pTable;
+    while (   pCurTable
+           && pCurTable->pszName)
     {
-        if (pTable->fStarted)
+        if (pCurTable->pfnStop)
+            pCurTable->pfnStop(pEnv, pCurTable->pInstance);
+
+        /* Advance to next table element. */
+        pCurTable++;
+    }
+
+    pCurTable = pTable; /* Reset to first element. */
+    while (   pCurTable
+           && pCurTable->pszName)
+    {
+        if (pCurTable->fStarted)
         {
-            if (pTable->pfnThread)
+            if (pCurTable->pfnThread)
             {
                 /* There is a thread, wait for termination. */
-                WaitForSingleObject(pTable->hThread, INFINITE);
+                /** @todo Use RTThread* here. */
+                /** @todo Don't wait forever here. Use a sensible default. */
+                WaitForSingleObject(pCurTable->hThread, INFINITE);
 
-                CloseHandle(pTable->hThread);
-                pTable->hThread = 0;
+                /** @todo Dito. */
+                CloseHandle(pCurTable->hThread);
+                pCurTable->hThread = NULL;
             }
 
-            if (pTable->pfnDestroy)
-                pTable->pfnDestroy (pEnv, pTable->pInstance);
-            pTable->fStarted = false;
+            if (pCurTable->pfnDestroy)
+                pCurTable->pfnDestroy(pEnv, pCurTable->pInstance);
+            pCurTable->fStarted = false;
         }
 
         /* Advance to next table element. */
-        pTable++;
+        pCurTable++;
     }
 
     CloseHandle(pEnv->hStopEvent);

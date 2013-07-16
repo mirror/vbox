@@ -1,9 +1,12 @@
+/* $Id$ */
 /** @file
- * VBoxSeamless - Seamless windows
+ * VBoxIPC - IPC thread, acts as a (purely) local IPC server.
+ *           Multiple sessions are supported, whereas every session
+ *           has its own thread for processing requests.
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,12 +17,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBOXSERVICEIPC__H
-#define __VBOXSERVICEIPC__H
+#ifndef __VBOXTRAYIPCSERVER__H
+#define __VBOXTRAYIPCSERVER__H
 
-/* The seamless windows service prototypes */
-int                VBoxIPCInit     (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
-unsigned __stdcall VBoxIPCThread   (void *pInstance);
-void               VBoxIPCDestroy  (const VBOXSERVICEENV *pEnv, void *pInstance);
+int                VBoxIPCInit    (const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread);
+unsigned __stdcall VBoxIPCThread  (void *pInstance);
+void               VBoxIPCStop    (const VBOXSERVICEENV *pEnv, void *pInstance);
+void               VBoxIPCDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
 
-#endif /* __VBOXSERVICEIPC__H */
+#endif /* __VBOXTRAYIPCSERVER__H */
