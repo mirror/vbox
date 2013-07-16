@@ -2183,7 +2183,13 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
              u8Vector, NewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
         return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
     }
-    /** @todo is the RPL of the interrupt/trap gate descriptor checked? */
+
+    /* Make sure the selector is present. */
+    if (!DescCS.Legacy.Gen.u1Present)
+    {
+        Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x - segment not present -> #NP\n", u8Vector, NewCS));
+        return iemRaiseSelectorNotPresentBySelector(pIemCpu, NewCS);
+    }
 
     /* Check the new EIP against the new CS limit. */
     uint32_t const uNewEip =    Idte.Gate.u4Type == X86_SEL_TYPE_SYS_286_INT_GATE
@@ -2196,13 +2202,6 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
         Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x - DPL (%d) > CPL (%d) -> #GP\n",
              u8Vector, NewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
         return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
-    }
-
-    /* Make sure the selector is present. */
-    if (!DescCS.Legacy.Gen.u1Present)
-    {
-        Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x - segment not present -> #NP\n", u8Vector, NewCS));
-        return iemRaiseSelectorNotPresentBySelector(pIemCpu, NewCS);
     }
 
     /*
@@ -2408,7 +2407,7 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
                             uint64_t    uCr2)
 {
     NOREF(cbInstr);
-#if 0
+
     /*
      * Read the IDT entry.
      */
@@ -2449,8 +2448,6 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
         default:
             Log(("iemRaiseXcptOrIntInLongMode %#x - invalid type (%#x) -> #GP\n", u8Vector, Idte.Gate.u4Type));
             return iemRaiseGeneralProtectionFault(pIemCpu, X86_TRAP_ERR_IDT | ((uint16_t)u8Vector << X86_TRAP_ERR_SEL_SHIFT));
-
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 
     /* Check DPL against CPL if applicable. */
@@ -2493,10 +2490,12 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
         Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x - system selector (%#x) -> #GP\n", u8Vector, NewCS, DescCS.Legacy.Gen.u4Type));
         return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
     }
-    /** @todo what do we check here?  */
-    if (!DescCS.Long.Gen.u1Long || DescCS.Long.Gen.u1DefBig)
+    if (   !DescCS.Long.Gen.u1Long
+        || DescCS.Long.Gen.u1DefBig
+        || (DescCS.Long.Gen.u4Type & X86_SEL_TYPE_CODE) )
     {
-        Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x -  (%#x) -> #GP\n", u8Vector, NewCS, DescCS.Legacy.Gen.u4Type));
+        Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x - not 64-bit code selector (%#x, L=%u, D=%u) -> #GP\n",
+             u8Vector, NewCS, DescCS.Legacy.Gen.u4Type, DescCS.Long.Gen.u1Long, DescCS.Long.Gen.u1DefBig));
         return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
     }
 
@@ -2511,20 +2510,6 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
              u8Vector, NewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
         return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
     }
-    /** @todo is the RPL of the interrupt/trap gate descriptor checked? */
-
-    /* Check the new EIP against the new CS limit. */
-    uint32_t const uNewEip =    Idte.Gate.u4Type == X86_SEL_TYPE_SYS_286_INT_GATE
-                             || Idte.Gate.u4Type == X86_SEL_TYPE_SYS_286_TRAP_GATE
-                           ? Idte.Gate.u16OffsetLow
-                           : Idte.Gate.u16OffsetLow | ((uint32_t)Idte.Gate.u16OffsetHigh << 16);
-    uint32_t cbLimitCS = X86DESC_LIMIT_G(&DescCS.Legacy);
-    if (uNewEip > cbLimitCS)
-    {
-        Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x - DPL (%d) > CPL (%d) -> #GP\n",
-             u8Vector, NewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
-        return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
-    }
 
     /* Make sure the selector is present. */
     if (!DescCS.Legacy.Gen.u1Present)
@@ -2533,6 +2518,17 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
         return iemRaiseSelectorNotPresentBySelector(pIemCpu, NewCS);
     }
 
+    /* Check that the new RIP is canonical. */
+    uint64_t const uNewRip = Idte.Gate.u16OffsetLow
+                           | ((uint32_t)Idte.Gate.u16OffsetHigh << 16)
+                           | ((uint64_t)Idte.Gate.u32OffsetTop  << 32);
+    if (IEM_IS_CANONICAL(uNewRip))
+    {
+        Log(("iemRaiseXcptOrIntInLongMode %#x - RIP=%#x - Not canonical -> #GP(0)\n", u8Vector, uNewRip));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+#if 0
     /*
      * If the privilege level changes, we need to get a new stack from the TSS.
      * This in turns means validating the new SS and ESP...
