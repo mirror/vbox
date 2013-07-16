@@ -33,6 +33,7 @@
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
+#include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
 #include <iprt/thread.h>
@@ -327,85 +328,156 @@ typedef struct LOCALIPCTESTMSG
     char szOp[255];
 } LOCALIPCTESTMSG, *PLOCALIPCTESTMSG;
 
-static DECLCALLBACK(int) testSessionDataThread(RTTHREAD hSelf, void *pvUser)
+static int testSessionDataReadTestMsg(RTTEST hTest, RTLOCALIPCSESSION hSession,
+                                      void *pvBuffer, size_t cbBuffer, const char *pszMsg)
 {
-    PLOCALIPCTHREADCTX pCtx = (PLOCALIPCTHREADCTX)pvUser;
+    AssertPtrReturn(pvBuffer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszMsg, VERR_INVALID_POINTER);
+
+    void *pvBufCur = pvBuffer;
+    size_t cbReadTotal = 0;
+    for (;;)
+    {
+        size_t cbRead = RTRandU32Ex(1, sizeof(LOCALIPCTESTMSG) - cbReadTotal); /* Force a bit of fragmentation. */
+        RTTEST_CHECK_BREAK(hTest, cbRead);
+        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionRead(hSession, pvBufCur,
+                                                           cbBuffer,
+                                                           &cbRead), VINF_SUCCESS);
+        RTTEST_CHECK_BREAK(hTest, cbRead);
+        pvBufCur     = (uint8_t *)pvBufCur + cbRead; /* Advance. */
+        cbReadTotal += cbRead;
+        RTTEST_CHECK_BREAK(hTest, cbReadTotal <= cbBuffer);
+        if (cbReadTotal >= sizeof(LOCALIPCTESTMSG)) /* Got a complete test message? */
+        {
+            RTTEST_CHECK_BREAK(hTest, cbReadTotal == sizeof(LOCALIPCTESTMSG));
+            PLOCALIPCTESTMSG pMsg = (PLOCALIPCTESTMSG)pvBuffer;
+            RTTEST_CHECK_BREAK(hTest, pMsg != NULL);
+            RTTEST_CHECK_BREAK(hTest, !RTStrCmp(pMsg->szOp, pszMsg));
+            break;
+        }
+        /* Try receiving next part of the message in another round. */
+    }
+
+    return !RTTestErrorCount(hTest) ? VINF_SUCCESS : VERR_GENERAL_FAILURE /* Doesn't matter */;
+}
+
+static int testSessionDataThreadWorker(PLOCALIPCTHREADCTX pCtx)
+{
     AssertPtr(pCtx);
+
+    size_t cbScratchBuf = _1K; /** @todo Make this random in future. */
+    uint8_t *pvScratchBuf = (uint8_t*)RTMemAlloc(cbScratchBuf);
+    RTTEST_CHECK_RET(pCtx->hTest, pvScratchBuf != NULL, VERR_NO_MEMORY);
 
     do
     {
         /* Note: At the moment we only support one client per run. */
         RTTestPrintf(pCtx->hTest, RTTESTLVL_INFO, "testSessionDataThread: Listening for incoming connections ...\n");
-        RTLOCALIPCSESSION ipcSession;
-        RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcServerListen(pCtx->hServer, &ipcSession), VINF_SUCCESS);
+        RTLOCALIPCSESSION hSession;
+        RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcServerListen(pCtx->hServer, &hSession), VINF_SUCCESS);
         RTTestPrintf(pCtx->hTest, RTTESTLVL_INFO, "testSessionDataThread: Got new client connection\n");
         uint32_t cRounds = 256; /** @todo Use RTRand(). */
-        RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcSessionWrite(ipcSession, &cRounds, sizeof(cRounds)), VINF_SUCCESS);
+        /* Write how many rounds we're going to send data. */
+        RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcSessionWrite(hSession, &cRounds, sizeof(cRounds)), VINF_SUCCESS);
         RTTestPrintf(pCtx->hTest, RTTESTLVL_INFO, "testSessionDataThread: Written number of rounds\n");
         for (uint32_t i = 0; i < cRounds; i++)
         {
             LOCALIPCTESTMSG msg;
             RTTEST_CHECK_BREAK(pCtx->hTest, RTStrPrintf(msg.szOp, sizeof(msg.szOp),
                                                         "YayIGotRound%RU32FromTheServer", i) > 0);
-            RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcSessionWrite(ipcSession, &msg, sizeof(msg)), VINF_SUCCESS);
+            RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcSessionWrite(hSession, &msg, sizeof(msg)), VINF_SUCCESS);
         }
-        RTThreadSleep(10 * 1000); /* Fudge. */
-        RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcSessionClose(ipcSession), VINF_SUCCESS);
-        RTTestPrintf(pCtx->hTest, RTTESTLVL_INFO, "testSessionDataThread: Data successfully written\n");
+        if (!RTTestErrorCount(pCtx->hTest))
+            RTTestPrintf(pCtx->hTest, RTTESTLVL_INFO, "testSessionDataThread: Data successfully written\n");
+        /* Try to receive the same amount of rounds from the client. */
+        for (uint32_t i = 0; i < cRounds; i++)
+        {
+            RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcSessionWaitForData(hSession, RT_INDEFINITE_WAIT),
+                                  VINF_SUCCESS);
+            char szMsg[32];
+            RTTEST_CHECK_BREAK(pCtx->hTest, RTStrPrintf(szMsg, sizeof(szMsg), "YayIGotRound%RU32FromTheClient", i) > 0);
+            RTTEST_CHECK_RC_BREAK(pCtx->hTest, testSessionDataReadTestMsg(pCtx->hTest, hSession,
+                                                                          pvScratchBuf, cbScratchBuf,
+                                                                          szMsg), VINF_SUCCESS);
+            if (RTTestErrorCount(pCtx->hTest))
+                break;
+        }
+        if (!RTTestErrorCount(pCtx->hTest))
+            RTTestPrintf(pCtx->hTest, RTTESTLVL_INFO, "testSessionDataThread: Data successfully read\n");
+        RTTEST_CHECK_RC_BREAK(pCtx->hTest, RTLocalIpcSessionClose(hSession), VINF_SUCCESS);
 
     } while (0);
 
+    RTMemFree(pvScratchBuf);
     return !RTTestErrorCount(pCtx->hTest) ? VINF_SUCCESS : VERR_GENERAL_FAILURE /* Doesn't matter */;
 }
 
-static RTEXITCODE testSessionDataChild(int argc, char **argv, RTTEST hTest)
+static DECLCALLBACK(int) testSessionDataThread(RTTHREAD hSelf, void *pvUser)
 {
-    uint8_t *pvScratchBuf = (uint8_t*)RTMemAlloc(_1K);
+    PLOCALIPCTHREADCTX pCtx = (PLOCALIPCTHREADCTX)pvUser;
+    AssertPtr(pCtx);
+
+    return testSessionDataThreadWorker(pCtx);
+}
+
+static int testSessionDataChildWorker(RTTEST hTest)
+{
+    size_t cbScratchBuf = _1K; /** @todo Make this random in future. */
+    uint8_t *pvScratchBuf = (uint8_t*)RTMemAlloc(cbScratchBuf);
     RTTEST_CHECK_RET(hTest, pvScratchBuf != NULL, RTEXITCODE_FAILURE);
 
     do
     {
         RTThreadSleep(2000); /* Fudge. */
-        RTLOCALIPCSESSION clientSession;
-        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionConnect(&clientSession, "tstRTLocalIpcSessionData",
+        RTLOCALIPCSESSION hSession;
+        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionConnect(&hSession, "tstRTLocalIpcSessionData",
                                                               0 /* Flags */), VINF_SUCCESS);
         /* Get number of rounds we want to read/write. */
-        uint32_t cRounds = 0; size_t cbRead;
-        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionWaitForData(clientSession, RT_INDEFINITE_WAIT),
+        uint32_t cRounds = 0;
+        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionWaitForData(hSession, RT_INDEFINITE_WAIT),
                                                                   VINF_SUCCESS);
-        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionRead(clientSession, &cRounds, sizeof(cRounds),
+        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionRead(hSession, &cRounds, sizeof(cRounds),
                                                            NULL /* Get exactly sizeof(cRounds) bytes */), VINF_SUCCESS);
         RTTEST_CHECK_BREAK(hTest, cRounds == 256); /** @todo Check for != 0 when using RTRand(). */
-        /* Process all rounds. */
-        size_t uOffScratchBuf = 0;
-        char szStr[32];
-        for (uint32_t i = 0; i < 1; cRounds++)
+        /* Receive all rounds. */
+        for (uint32_t i = 0; i < cRounds; i++)
         {
-            RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionWaitForData(clientSession, RT_INDEFINITE_WAIT),
+            RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionWaitForData(hSession, RT_INDEFINITE_WAIT),
                                                                       VINF_SUCCESS);
-            RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionRead(clientSession, pvScratchBuf,
-                                                               sizeof(*pvScratchBuf) - uOffScratchBuf,
-                                                               &cbRead), VINF_SUCCESS);
-
-            uOffScratchBuf += cbRead;
-            RTTEST_CHECK_BREAK(hTest, uOffScratchBuf <= sizeof(*pvScratchBuf));
-            if (uOffScratchBuf >= sizeof(LOCALIPCTESTMSG)) /* Got a complete test message? */
-            {
-                PLOCALIPCTESTMSG pMsg = (PLOCALIPCTESTMSG)pvScratchBuf;
-                RTTEST_CHECK_BREAK(hTest, pMsg != NULL);
-                RTTEST_CHECK_BREAK(hTest, RTStrPrintf(szStr, sizeof(szStr), "YayIGotRound%RU32FromTheServer", i) > 0);
-                RTTEST_CHECK_BREAK(hTest, !RTStrICmp(pMsg->szOp, szStr));
-                memcpy(pvScratchBuf, (void*)pvScratchBuf[sizeof(LOCALIPCTESTMSG)], cbRead);
-            }
+            char szMsg[32];
+            RTTEST_CHECK_BREAK(hTest, RTStrPrintf(szMsg, sizeof(szMsg), "YayIGotRound%RU32FromTheServer", i) > 0);
+            RTTEST_CHECK_RC_BREAK(hTest, testSessionDataReadTestMsg(hTest, hSession,
+                                                                    pvScratchBuf, cbScratchBuf,
+                                                                    szMsg), VINF_SUCCESS);
             if (RTTestErrorCount(hTest))
                 break;
         }
-        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionClose(clientSession), VINF_SUCCESS);
+        /* Send all rounds back to the server. */
+        for (uint32_t i = 0; i < cRounds; i++)
+        {
+            LOCALIPCTESTMSG msg;
+            RTTEST_CHECK_BREAK(hTest, RTStrPrintf(msg.szOp, sizeof(msg.szOp),
+                                                  "YayIGotRound%RU32FromTheClient", i) > 0);
+            RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionWrite(hSession, &msg, sizeof(msg)), VINF_SUCCESS);
+        }
+        RTTEST_CHECK_RC_BREAK(hTest, RTLocalIpcSessionClose(hSession), VINF_SUCCESS);
 
     } while (0);
 
     RTMemFree(pvScratchBuf);
-    return !RTTestErrorCount(hTest) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+    return !RTTestErrorCount(hTest) ? VINF_SUCCESS : VERR_GENERAL_FAILURE /* Doesn't matter */;
+}
+
+static DECLCALLBACK(int) testSessionDataChildAsThread(RTTHREAD hSelf, void *pvUser)
+{
+    PRTTEST phTest = (PRTTEST)pvUser;
+    AssertPtr(phTest);
+    return testSessionDataChildWorker(*phTest);
+}
+
+static RTEXITCODE testSessionDataChild(int argc, char **argv, RTTEST hTest)
+{
+    return RT_SUCCESS(testSessionDataChildWorker(hTest)) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static int testSessionData(RTTEST hTest, const char *pszExecPath)
@@ -418,7 +490,29 @@ static int testSessionData(RTTEST hTest, const char *pszExecPath)
     if (RT_SUCCESS(rc))
     {
         LOCALIPCTHREADCTX threadCtx = { ipcServer, hTest };
+#if 0
+        /* Run server + client in threads instead of fork'ed processes (useful for debugging). */
+        RTTHREAD hThreadServer, hThreadClient;
+        rc = RTThreadCreate(&hThreadServer, testSessionDataThread,
+                            &threadCtx, 0 /* Stack */, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "tstIpc4");
+        if (RT_SUCCESS(rc))
+            rc = RTThreadCreate(&hThreadClient, testSessionDataChildAsThread,
+                                &hTest, 0 /* Stack */, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "tstIpc5");
+        if (RT_SUCCESS(rc))
+        {
+            do
+            {
+                int threadRc;
+                RTTEST_CHECK_RC(hTest, RTThreadWait(hThreadServer,
+                                                    5 * 60 * 1000 /* 5 minutes timeout */, &threadRc), VINF_SUCCESS);
+                RTTEST_CHECK_RC_BREAK(hTest, threadRc, VINF_SUCCESS);
+                RTTEST_CHECK_RC(hTest, RTThreadWait(hThreadClient,
+                                                    5 * 60 * 1000 /* 5 minutes timeout */, &threadRc), VINF_SUCCESS);
+                RTTEST_CHECK_RC_BREAK(hTest, threadRc, VINF_SUCCESS);
 
+            } while (0);
+        }
+#else
         /* Spawn a simple worker thread and let it listen for incoming connections.
          * In the meanwhile we try to cancel the server and see what happens. */
         RTTHREAD hThread;
@@ -450,11 +544,12 @@ static int testSessionData(RTTEST hTest, const char *pszExecPath)
         }
         else
             RTTestFailed(hTest, "Unable to create thread for cancelling server, rc=%Rrc\n", rc);
+#endif
     }
     else
         RTTestFailed(hTest, "Unable to create IPC server, rc=%Rrc\n", rc);
 
-    return VINF_SUCCESS;
+    return !RTTestErrorCount(hTest) ? VINF_SUCCESS : VERR_GENERAL_FAILURE /* Doesn't matter */;
 }
 
 static RTEXITCODE mainChild(int argc, char **argv)
@@ -535,9 +630,9 @@ int main(int argc, char **argv)
 
     if (RTTestErrorCount(hTest) == 0)
     {
-        /*RTTESTI_CHECK_RC_RET(testServerListenAndCancel(hTest, szExecPath), VINF_SUCCESS, 1);
+        RTTESTI_CHECK_RC_RET(testServerListenAndCancel(hTest, szExecPath), VINF_SUCCESS, 1);
         RTTESTI_CHECK_RC_RET(testSessionConnection(hTest, szExecPath), VINF_SUCCESS, 1);
-        RTTESTI_CHECK_RC_RET(testSessionWait(hTest, szExecPath), VINF_SUCCESS, 1);*/
+        RTTESTI_CHECK_RC_RET(testSessionWait(hTest, szExecPath), VINF_SUCCESS, 1);
         RTTESTI_CHECK_RC_RET(testSessionData(hTest, szExecPath), VINF_SUCCESS, 1);
     }
 
