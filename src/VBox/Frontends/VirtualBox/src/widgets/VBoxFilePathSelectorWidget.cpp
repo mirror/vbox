@@ -574,7 +574,7 @@ VBoxEmptyFileSelector::VBoxEmptyFileSelector (QWidget *aParent /* = NULL */)
     mMainLayout->setMargin (0);
 
     mSelectButton = new QIToolButton(this);
-    mSelectButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_dis_16px.png"));
+    mSelectButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
     connect(mSelectButton, SIGNAL(clicked()), this, SLOT(choose()));
     mMainLayout->addWidget(mSelectButton);
 

@@ -62,7 +62,7 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
                 m_pLocationOpenButton = new QIToolButton(m_pLocationCnt);
                 {
                     m_pLocationOpenButton->setAutoRaise(true);
-                    m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_dis_16px.png"));
+                    m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
                 }
                 pLocationCntLayout->addWidget(m_pLocationEditor);
                 pLocationCntLayout->addWidget(m_pLocationOpenButton);

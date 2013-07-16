@@ -270,7 +270,7 @@ UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, 
             m_pLocationOpenButton = new QIToolButton(this);
             {
                 m_pLocationOpenButton->setAutoRaise(true);
-                m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_dis_16px.png"));
+                m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_disabled_16px.png"));
             }
             pLocationLayout->addWidget(m_pLocationEditor);
             pLocationLayout->addWidget(m_pLocationOpenButton);
