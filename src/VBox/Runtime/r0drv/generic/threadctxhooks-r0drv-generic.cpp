@@ -37,14 +37,14 @@ RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
     NOREF(phThreadCtx);
     return VERR_NOT_SUPPORTED;
 }
-RT_EXPORT_SYMBOL(RTThreadCtxHooksRegister);
+RT_EXPORT_SYMBOL(RTThreadCtxHooksCreate);
 
 
 RTDECL(void) RTThreadCtxHooksDestroy(RTTHREADCTX hThreadCtx)
 {
     NOREF(hThreadCtx);
 }
-RT_EXPORT_SYMBOL(RTThreadCtxHooksRegister);
+RT_EXPORT_SYMBOL(RTThreadCtxHooksDestroy);
 
 
 RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK pfnCallback, void *pvUser)
