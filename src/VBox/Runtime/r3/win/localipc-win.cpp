@@ -773,7 +773,7 @@ RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, si
 
             /*
              * If pcbRead is non-NULL this indicates the maximum number of bytes to read.
-             * If pcbRead is NULL the this is the exact number of bytes to read.
+             * If pcbRead is NULL then this is the exact number of bytes to read.
              */
             size_t cbToRead = pcbRead ? *pcbRead : cbBuffer;
             size_t cbTotalRead = 0;
