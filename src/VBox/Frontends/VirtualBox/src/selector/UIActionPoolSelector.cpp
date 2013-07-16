@@ -359,7 +359,7 @@ class UIActionSimpleGroupSort : public UIActionSimple
 public:
 
     UIActionSimpleGroupSort(UIActionPool *pParent)
-        : UIActionSimple(pParent)
+        : UIActionSimple(pParent, ":/sort_16px.png", ":/sort_disabled_16px.png")
     {
         retranslateUi();
     }
@@ -841,7 +841,7 @@ class UIActionSimpleMachineSortParent : public UIActionSimple
 public:
 
     UIActionSimpleMachineSortParent(UIActionPool *pParent)
-        : UIActionSimple(pParent)
+        : UIActionSimple(pParent, ":/sort_16px.png", ":/sort_disabled_16px.png")
     {
         retranslateUi();
     }
