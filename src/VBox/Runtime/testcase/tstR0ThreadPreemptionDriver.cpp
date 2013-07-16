@@ -244,6 +244,23 @@ RTThreadSleep(250); /** @todo fix GIP initialization? */
     else if (Req.szMsg[0])
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
 
+
+    /*
+     * Test thread-context hooks.
+     */
+    RTTestSub(hTest, "RTThreadCtxHooks");
+    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
+    Req.Hdr.cbReq = sizeof(Req);
+    Req.szMsg[0] = '\0';
+    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
+                                             TSTR0THREADPREEMPTION_CTXHOOKS, 0, &Req.Hdr), VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        return RTTestSummaryAndDestroy(hTest);
+    if (Req.szMsg[0] == '!')
+        RTTestIFailed("%s", &Req.szMsg[1]);
+    else if (Req.szMsg[0])
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
+
     /*
      * Done.
      */

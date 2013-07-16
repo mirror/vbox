@@ -579,6 +579,75 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState);
  */
 RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread);
 
+
+/**
+ * Thread-context events.
+ */
+typedef enum RTTHREADCTXEVENT
+{
+    /** This thread is about to be preempted. */
+    RTTHREADCTXEVENT_PREEMPTING = 0,
+    /** This thread has just been resumed. */
+    RTTHREADCTXEVENT_RESUMED,
+    /** The usual 32-bit size hack. */
+    RTTHREADCTXEVENT_32BIT_HACK = 0x7fffffff
+} RTTHREADCTXEVENT;
+
+/**
+ * Thread-context hook.
+ *
+ * @returns IPRT status code.
+ * @param   enmEvent    The thread-context event.
+ * @param   pvUser      User argument.
+ *
+ * @remarks This function may be called under different contexts, i.e. with
+ *          different locks held, with/without preemption disabled depending on
+ *          the event in @a enmEvent.
+ */
+typedef DECLCALLBACK(void) FNRTTHREADCTXHOOK(RTTHREADCTXEVENT enmEvent, void *pvUser);
+/** Pointer to a thread-context hook. */
+typedef FNRTTHREADCTXHOOK *PFNRTTHREADCTXHOOK;
+
+/**
+ * Create a handle for a thread-context hook.
+ *
+ * This must be called once per-thread before using RTThreadCtxHooksRegister().
+ *
+ * @returns IPRT status code.
+ * @param   phThreadCtx         Where to store the thread-context handle.
+ */
+RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx);
+
+/**
+ * Destroy a thread-context hook handle for the current thread.
+ *
+ * This will deregister any thread-context hooks registered under this handle if
+ * required.
+ *
+ * @param   phThreadCtx         Pointer to the thread-context handle.
+ */
+RTDECL(void) RTThreadCtxHooksDestroy(RTTHREADCTX hThreadCtx);
+
+/**
+ * Registers a thread-context hook for the current thread to receive
+ * notifications for all supported thread-context events.
+ *
+ * @returns IPRT status code.
+ * @param   phThreadCtx         Poinner to the thread-context handle.
+ * @param   pfnThreadHook       Pointer to a thread-context hook (a callback)
+ *                              for all thread-context events.
+ * @param   pvUser              User argument (optional, can be NULL).
+ */
+RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK pfnThreadHook, void *pvUser);
+
+/**
+ * Deregisters a thread-context hook for the current thread.
+ *
+ * @returns IPRT status code.
+ * @param   phThreadCtx         Pointer to the thread-context handle.
+ */
+RTDECL(int) RTThreadCtxHooksDeregister(RTTHREADCTX hThreadCtx);
+
 # endif /* IN_RING0 */
 
 
