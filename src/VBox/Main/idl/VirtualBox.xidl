@@ -14296,6 +14296,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <attribute name="multiTouchSupported" type="boolean" readonly="yes">
+      <desc>
+        Whether the guest OS supports multi-touch event reporting.
+        <note>
+          You can use the <link to="IMouseCapabilityChangedEvent"/>
+          event to be instantly informed about changes of this attribute
+          during virtual machine execution.
+        </note>
+        <see><link to="#putMouseEvent"/></see>
+      </desc>
+    </attribute>
+
     <attribute name="needsHostCursor" type="boolean" readonly="yes">
       <desc>
         Whether the guest OS can currently switch to drawing it's own mouse
@@ -20213,6 +20225,38 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
   </interface>
 
+  <enum
+    name="GuestMouseEventMode"
+    uuid="ef172985-7e36-4297-95be-e46396968d66"
+    >
+
+    <desc>
+      The mode (relative, absolute, multi-touch) of a pointer event.
+      TODO: a clear pattern seems to be emerging that we should usually have
+      multiple input devices active for different types of reporting, so we
+      should really have different event types for relative (including wheel),
+      absolute (not including wheel) and multi-touch events.
+    </desc>
+
+    <const name="Relative" value="0">
+      <desc>
+        Relative event.
+      </desc>
+    </const>
+
+    <const name="Absolute" value="1">
+      <desc>
+        Absolute event.
+      </desc>
+    </const>
+
+    <const name="MultiTouch" value="2">
+      <desc>
+        Multi-touch event.
+      </desc>
+    </const>
+  </enum>
+
   <interface
     name="IGuestMouseEvent" extends="IReusableEvent"
     uuid="1f85d35c-c524-40ff-8e98-307000df0992"
@@ -20222,9 +20266,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Notification when guest mouse event happens.
     </desc>
 
-    <attribute name="absolute" type="boolean" readonly="yes">
+    <attribute name="mode" type="GuestMouseEventMode" readonly="yes">
       <desc>
-        If this event is relative or absolute.
+        If this event is relative, absolute or multi-touch.
       </desc>
     </attribute>
 
@@ -20252,9 +20296,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <attribute name="contact" type="long" readonly="yes">
+      <desc>
+        The multi-touch contact identifier.  This remains valid as long as a
+        touch is in progress and can and should be re-used after a touch has
+        terminated (see @a buttons).
+      </desc>
+    </attribute>
+
     <attribute name="buttons" type="long" readonly="yes">
       <desc>
-        Button state bitmask.
+        Button state bitmask.  Multi-touch events should have the first bit set
+        as long as the touch is in progress and terminate with an event with no
+        bits set.
       </desc>
     </attribute>
 

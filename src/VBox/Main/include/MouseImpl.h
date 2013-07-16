@@ -57,6 +57,7 @@ public:
     // IMouse properties
     STDMETHOD(COMGETTER(AbsoluteSupported)) (BOOL *absoluteSupported);
     STDMETHOD(COMGETTER(RelativeSupported)) (BOOL *relativeSupported);
+    STDMETHOD(COMGETTER(MultiTouchSupported)) (BOOL *multiTouchSupported);
     STDMETHOD(COMGETTER(NeedsHostCursor)) (BOOL *needsHostCursor);
 
     // IMouse methods
@@ -83,7 +84,7 @@ public:
 private:
 
     static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
-    static DECLCALLBACK(void)   mouseReportModes (PPDMIMOUSECONNECTOR pInterface, bool fRel, bool fAbs, bool);
+    static DECLCALLBACK(void)   mouseReportModes (PPDMIMOUSECONNECTOR pInterface, bool fRel, bool fAbs, bool fMT);
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
 
@@ -92,6 +93,8 @@ private:
                                  int32_t dw, uint32_t fButtons);
     HRESULT reportAbsEventToMouseDev(int32_t mouseXAbs, int32_t mouseYAbs,
                                  int32_t dz, int32_t dw, uint32_t fButtons);
+    HRESULT reportMTEventToMouseDev(int32_t mouseX, int32_t mouseY,
+                                 uint32_t cContact, bool fContact);
     HRESULT reportAbsEventToVMMDev(int32_t mouseXAbs, int32_t mouseYAbs);
     HRESULT reportAbsEvent(int32_t mouseXAbs, int32_t mouseYAbs,
                            int32_t dz, int32_t dw, uint32_t fButtons,
@@ -99,13 +102,14 @@ private:
     HRESULT convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
                               bool *pfValid);
 
-    void getDeviceCaps(bool *pfAbs, bool *pfRel);
+    void getDeviceCaps(bool *pfAbs, bool *pfRel, bool *fMT);
     void sendMouseCapsNotifications(void);
     bool guestNeedsHostCursor(void);
     bool vmmdevCanAbs(void);
     bool deviceCanAbs(void);
     bool supportsAbs(void);
     bool supportsRel(void);
+    bool supportsMT(void);
 
     Console * const         mParent;
     /** Pointer to the associated mouse driver. */
