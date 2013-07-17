@@ -93,15 +93,14 @@ private:
     HRESULT updateVMMDevMouseCaps(uint32_t fCapsAdded, uint32_t fCapsRemoved);
     HRESULT reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
                                  int32_t dw, uint32_t fButtons);
-    HRESULT reportAbsEventToMouseDev(int32_t mouseXAbs, int32_t mouseYAbs,
-                                 int32_t dz, int32_t dw, uint32_t fButtons);
-    HRESULT reportMTEventToMouseDev(int32_t mouseX, int32_t mouseY,
-                                 uint32_t cContact, bool fContact);
-    HRESULT reportAbsEventToVMMDev(int32_t mouseXAbs, int32_t mouseYAbs);
-    HRESULT reportAbsEvent(int32_t mouseXAbs, int32_t mouseYAbs,
-                           int32_t dz, int32_t dw, uint32_t fButtons,
-                           bool fUsesVMMDevEvent);
-    HRESULT convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
+    HRESULT reportAbsEventToMouseDev(int32_t x, int32_t y, int32_t dz,
+                                     int32_t dw, uint32_t fButtons);
+    HRESULT reportMTEventToMouseDev(int32_t x, int32_t z, uint32_t cContact,
+                                    bool fContact);
+    HRESULT reportAbsEventToVMMDev(int32_t x, int32_t y);
+    HRESULT reportAbsEvent(int32_t x, int32_t y, int32_t dz, int32_t dw,
+                           uint32_t fButtons, bool fUsesVMMDevEvent);
+    HRESULT convertDisplayRes(LONG x, LONG y, int32_t *pxAdj, int32_t *pyAdj,
                               bool *pfValid);
 
     void getDeviceCaps(bool *pfAbs, bool *pfRel, bool *fMT);
@@ -125,7 +124,8 @@ private:
     const ComObjPtr<EventSource> mEventSource;
     VBoxEventDesc                mMouseEvent;
 
-    void fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw, LONG Buttons);
+    void fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw,
+                        LONG cContact, LONG fButtons);
 };
 
 #endif // !____H_MOUSEIMPL

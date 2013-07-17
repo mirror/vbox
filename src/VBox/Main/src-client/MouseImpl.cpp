@@ -462,19 +462,22 @@ HRESULT Mouse::reportAbsEvent(int32_t x, int32_t y,
     return rc;
 }
 
-void Mouse::fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw, LONG Buttons)
+void Mouse::fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw,
+                           LONG cContact, LONG fButtons)
 {
     /* If mouse button is pressed, we generate new event, to avoid reusable events coalescing and thus
        dropping key press events */
-    if (Buttons != 0)
+    if (fButtons != 0)
     {
         VBoxEventDesc evDesc;
-        evDesc.init(mEventSource, VBoxEventType_OnGuestMouse, fAbsolute, x, y, dz, dw, Buttons);
+        evDesc.init(mEventSource, VBoxEventType_OnGuestMouse, fAbsolute, x, y,
+                    dz, dw, cContact, fButtons);
         evDesc.fire(0);
     }
     else
     {
-        mMouseEvent.reinit(VBoxEventType_OnGuestMouse, fAbsolute, x, y, dz, dw, Buttons);
+        mMouseEvent.reinit(VBoxEventType_OnGuestMouse, fAbsolute, x, y, dz, dw,
+                           cContact, fButtons);
         mMouseEvent.fire(0);
     }
 }
@@ -490,25 +493,26 @@ void Mouse::fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw, LON
  * @param dx          X movement
  * @param dy          Y movement
  * @param dz          Z movement
- * @param buttonState The mouse button state
+ * @param fButtons    The mouse button state
  */
-STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG buttonState)
+STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw,
+                                  LONG fButtons)
 {
     HRESULT rc;
-    uint32_t fButtons;
+    uint32_t fButtonsAdj;
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     LogRel3(("%s: dx=%d, dy=%d, dz=%d, dw=%d\n", __PRETTY_FUNCTION__,
                  dx, dy, dz, dw));
 
-    fButtons = mouseButtonsToPDM(buttonState);
+    fButtonsAdj = mouseButtonsToPDM(fButtons);
     /* Make sure that the guest knows that we are sending real movement
      * events to the PS/2 device and not just dummy wake-up ones. */
     updateVMMDevMouseCaps(0, VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE);
-    rc = reportRelEventToMouseDev(dx, dy, dz, dw, fButtons);
+    rc = reportRelEventToMouseDev(dx, dy, dz, dw, fButtonsAdj);
 
-    fireMouseEvent(false, dx, dy, dz, dw, buttonState);
+    fireMouseEvent(false, dx, dy, dz, dw, 0, fButtons);
 
     return rc;
 }
@@ -528,11 +532,11 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
  *
  * @returns   COM status value
  */
-HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
+HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pxAdj, int32_t *pyAdj,
                                  bool *pfValid)
 {
-    AssertPtrReturn(pcX, E_POINTER);
-    AssertPtrReturn(pcY, E_POINTER);
+    AssertPtrReturn(pxAdj, E_POINTER);
+    AssertPtrReturn(pyAdj, E_POINTER);
     AssertPtrNullReturn(pfValid, E_POINTER);
     DisplayMouseInterface *pDisplay = mParent->getDisplayMouseInterface();
     ComAssertRet(pDisplay, E_FAIL);
@@ -552,22 +556,24 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
         if (FAILED(rc))
             return rc;
 
-        *pcX = displayWidth ?    (x * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
-                               / (LONG) displayWidth: 0;
-        *pcY = displayHeight ?   (y * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
-                               / (LONG) displayHeight: 0;
+        *pxAdj = displayWidth ?   (x * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
+                                / (LONG) displayWidth: 0;
+        *pyAdj = displayHeight ?   (y * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
+                                 / (LONG) displayHeight: 0;
     }
     else
     {
         int32_t x1, y1, x2, y2;
         /* Takes the display lock */
         pDisplay->getFramebufferDimensions(&x1, &y1, &x2, &y2);
-        *pcX = x1 < x2 ?   ((x - x1) * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
-                         / (x2 - x1) : 0;
-        *pcY = y1 < y2 ?   ((y - y1) * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
-                         / (y2 - y1) : 0;
-        if (   *pcX < VMMDEV_MOUSE_RANGE_MIN || *pcX > VMMDEV_MOUSE_RANGE_MAX
-            || *pcY < VMMDEV_MOUSE_RANGE_MIN || *pcY > VMMDEV_MOUSE_RANGE_MAX)
+        *pxAdj = x1 < x2 ?   ((x - x1) * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
+                           / (x2 - x1) : 0;
+        *pyAdj = y1 < y2 ?   ((y - y1) * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
+                           / (y2 - y1) : 0;
+        if (   *pxAdj < VMMDEV_MOUSE_RANGE_MIN
+            || *pxAdj > VMMDEV_MOUSE_RANGE_MAX
+            || *pyAdj < VMMDEV_MOUSE_RANGE_MIN
+            || *pyAdj > VMMDEV_MOUSE_RANGE_MAX)
             if (pfValid)
                 *pfValid = false;
     }
@@ -588,19 +594,19 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
  * @param x          X position (pixel), starting from 1
  * @param y          Y position (pixel), starting from 1
  * @param dz         Z movement
- * @param buttonState The mouse button state
+ * @param fButtons   The mouse button state
  */
 STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
-                                          LONG buttonState)
+                                          LONG fButtons)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    LogRel3(("%s: x=%d, y=%d, dz=%d, dw=%d, buttonState=0x%x\n",
-             __PRETTY_FUNCTION__, x, y, dz, dw, buttonState));
+    LogRel3(("%s: x=%d, y=%d, dz=%d, dw=%d, fButtons=0x%x\n",
+             __PRETTY_FUNCTION__, x, y, dz, dw, fButtons));
 
     int32_t xAdj, yAdj;
-    uint32_t fButtons;
+    uint32_t fButtonsAdj;
     bool fValid;
 
     /** @todo the front end should do this conversion to avoid races */
@@ -609,18 +615,18 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     HRESULT rc = convertDisplayRes(x, y, &xAdj, &yAdj, &fValid);
     if (FAILED(rc)) return rc;
 
-    fButtons = mouseButtonsToPDM(buttonState);
+    fButtonsAdj = mouseButtonsToPDM(fButtons);
     /* If we are doing old-style (IRQ-less) absolute reporting to the VMM
      * device then make sure the guest is aware of it, so that it knows to
      * ignore relative movement on the PS/2 device. */
     updateVMMDevMouseCaps(VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE, 0);
     if (fValid)
     {
-        rc = reportAbsEvent(xAdj, yAdj, dz, dw, fButtons,
+        rc = reportAbsEvent(xAdj, yAdj, dz, dw, fButtonsAdj,
                             RT_BOOL(  mfVMMDevGuestCaps
                                     & VMMDEV_MOUSE_NEW_PROTOCOL));
 
-        fireMouseEvent(true, x, y, dz, dw, buttonState);
+        fireMouseEvent(true, x, y, dz, dw, 0, fButtons);
     }
 
     return rc;
@@ -629,17 +635,16 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
 /**
  * @interface_method_impl{IMouse,putMouseEventMultiTouch}
  */
-STDMETHODIMP Mouse::PutMouseEventMultiTouch(LONG x, LONG y, LONG contactID,
-                                            BOOL inContact)
+STDMETHODIMP Mouse::PutMouseEventMultiTouch(LONG x, LONG y, LONG cContact,
+                                            BOOL fContact)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    LogRel3(("%s: x=%d, y=%d, contactID=%d, inContact=%RTBool\n",
-             __PRETTY_FUNCTION__, x, y, contactID, inContact));
+    LogRel3(("%s: x=%d, y=%d, cContact=%d, fContact=%RTBool\n",
+             __PRETTY_FUNCTION__, x, y, cContact, fContact));
 
     int32_t xAdj, yAdj;
-    uint32_t fButtons;
     bool fValid;
 
     /** @todo the front end should do this conversion to avoid races */
@@ -650,9 +655,9 @@ STDMETHODIMP Mouse::PutMouseEventMultiTouch(LONG x, LONG y, LONG contactID,
 
     if (fValid)
     {
-        rc = reportMTEventToMouseDev(xAdj, yAdj, contactID, inContact);
+        rc = reportMTEventToMouseDev(xAdj, yAdj, cContact, fContact);
 
-        // fireMouseEvent(true, x, y, dz, dw, buttonState);
+        fireMouseEvent(true, x, y, 0, 0, cContact, fContact);
     }
 
     return rc;

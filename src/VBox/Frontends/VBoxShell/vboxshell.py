@@ -307,7 +307,7 @@ def guestExec(ctx, machine, console, cmds):
     exec cmds
 
 def printMouseEvent(_ctx, mev):
-    print "Mouse : absolute=%d x=%d y=%d z=%d buttons=%x" % (mev.absolute, mev.x, mev.y, mev.z, mev.buttons)
+    print "Mouse : mode=%d x=%d y=%d z=%d w=%d contact=%d buttons=%x" % (mev.mode, mev.x, mev.y, mev.z, mev.w, mev.contact, mev.buttons)
 
 def printKbdEvent(ctx, kev):
     print "Kbd: ", ctx['global'].getArray(kev, 'scancodes')
