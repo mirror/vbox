@@ -21344,7 +21344,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="stateDetails" type="wstring" readonly="yes">
       <desc>
-        Optional state details, depending on the <link to="#state"/> attribute.</li>
+        Optional state details, depending on the <link to="#state"/> attribute.
       </desc>
     </attribute>
 
