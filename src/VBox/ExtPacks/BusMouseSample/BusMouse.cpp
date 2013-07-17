@@ -199,7 +199,7 @@ static void bms_update_downstream_status(MouState *pThis)
 {
     PPDMIMOUSECONNECTOR pDrv = pThis->Mouse.pDrv;
     bool fEnabled = !!pThis->mouse_enabled;
-    pDrv->pfnReportModes(pDrv, fEnabled, false);
+    pDrv->pfnReportModes(pDrv, fEnabled, false, false);
 }
 
 /**
@@ -583,14 +583,15 @@ static DECLCALLBACK(void *) mouQueryMouseInterface(PPDMIBASE pInterface, const c
 /**
  * @interface_method_impl{PDMIMOUSEPORT, pfnPutEvent}
  */
-static DECLCALLBACK(int) mouPutEvent(PPDMIMOUSEPORT pInterface, int32_t iDeltaX, int32_t iDeltaY,
-                                     int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtonStates)
+static DECLCALLBACK(int) mouPutEvent(PPDMIMOUSEPORT pInterface, int32_t dx,
+                                     int32_t dy, int32_t dz, int32_t dw,
+                                     uint32_t fButtons)
 {
     MouState *pThis = RT_FROM_MEMBER(pInterface, MouState, Mouse.IPort);
     int rc = PDMCritSectEnter(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo), VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
-    bms_mouse_event(pThis, iDeltaX, iDeltaY, iDeltaZ, iDeltaW, fButtonStates);
+    bms_mouse_event(pThis, dx, dy, dz, dw, fButtons);
 
     PDMCritSectLeave(pThis->CTX_SUFF(pDevIns)->CTX_SUFF(pCritSectRo));
     return VINF_SUCCESS;
@@ -599,7 +600,19 @@ static DECLCALLBACK(int) mouPutEvent(PPDMIMOUSEPORT pInterface, int32_t iDeltaX,
 /**
  * @interface_method_impl{PDMIMOUSEPORT, pfnPutEventAbs}
  */
-static DECLCALLBACK(int) mouPutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t uX, uint32_t uY, int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtons)
+static DECLCALLBACK(int) mouPutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t x,
+                                        uint32_t y, int32_t dz, int32_t dw,
+                                        uint32_t fButtons)
+{
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+}
+
+/**
+ * @interface_method_impl{PDMIMOUSEPORT, pfnPutEventMT}
+ */
+static DECLCALLBACK(int) mouPutEventMT(PPDMIMOUSEPORT pInterface, uint32_t x,
+                                       uint32_t y, uint32_t cContact,
+                                       bool fContact)
 {
     AssertFailedReturn(VERR_NOT_SUPPORTED);
 }
@@ -757,6 +770,7 @@ static DECLCALLBACK(int) mouConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pThis->Mouse.IBase.pfnQueryInterface = mouQueryMouseInterface;
     pThis->Mouse.IPort.pfnPutEvent       = mouPutEvent;
     pThis->Mouse.IPort.pfnPutEventAbs    = mouPutEventAbs;
+    pThis->Mouse.IPort.pfnPutEventMT     = mouPutEventMT;
 
     /*
      * Create the interrupt timer.

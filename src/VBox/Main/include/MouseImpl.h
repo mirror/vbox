@@ -65,6 +65,8 @@ public:
                              LONG buttonState);
     STDMETHOD(PutMouseEventAbsolute)(LONG x, LONG y, LONG dz, LONG dw,
                                      LONG buttonState);
+    STDMETHOD(PutMouseEventMultiTouch)(LONG x, LONG y, LONG contactID,
+                                       BOOL inContact);
     STDMETHOD(COMGETTER(EventSource)) (IEventSource ** aEventSource);
 
     static const PDMDRVREG  DrvReg;
@@ -116,8 +118,8 @@ private:
     struct DRVMAINMOUSE    *mpDrv[MOUSE_MAX_DEVICES];
 
     uint32_t mfVMMDevGuestCaps;  /** We cache this to avoid access races */
-    int32_t mcLastAbsX;
-    int32_t mcLastAbsY;
+    int32_t mcLastX;
+    int32_t mcLastY;
     uint32_t mfLastButtons;
 
     const ComObjPtr<EventSource> mEventSource;

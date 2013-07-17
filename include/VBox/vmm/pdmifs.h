@@ -296,14 +296,16 @@ typedef struct PDMIMOUSEPORT
      * @returns VBox status code.  Return VERR_TRY_AGAIN if you cannot process the
      *          event now and want it to be repeated at a later point.
      *
-     * @param   pInterface          Pointer to this interface structure.
-     * @param   iDeltaX             The X delta.
-     * @param   iDeltaY             The Y delta.
-     * @param   iDeltaZ             The Z delta.
-     * @param   iDeltaW             The W (horizontal scroll button) delta.
-     * @param   fButtonStates       The button states, see the PDMIMOUSEPORT_BUTTON_* \#defines.
+     * @param   pInterface     Pointer to this interface structure.
+     * @param   dx             The X delta.
+     * @param   dy             The Y delta.
+     * @param   dz             The Z delta.
+     * @param   dw             The W (horizontal scroll button) delta.
+     * @param   fButtons       The button states, see the PDMIMOUSEPORT_BUTTON_* \#defines.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPutEvent,(PPDMIMOUSEPORT pInterface, int32_t iDeltaX, int32_t iDeltaY, int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtonStates));
+    DECLR3CALLBACKMEMBER(int, pfnPutEvent,(PPDMIMOUSEPORT pInterface,
+                                           int32_t dx, int32_t dy, int32_t dz,
+                                           int32_t dw, uint32_t fButtons));
     /**
      * Puts an absolute mouse event.
      *
@@ -313,17 +315,38 @@ typedef struct PDMIMOUSEPORT
      * @returns VBox status code.  Return VERR_TRY_AGAIN if you cannot process the
      *          event now and want it to be repeated at a later point.
      *
-     * @param   pInterface          Pointer to this interface structure.
-     * @param   uX                  The X value, in the range 0 to 0xffff.
-     * @param   uY                  The Y value, in the range 0 to 0xffff.
-     * @param   iDeltaZ             The Z delta.
-     * @param   iDeltaW             The W (horizontal scroll button) delta.
-     * @param   fButtonStates       The button states, see the PDMIMOUSEPORT_BUTTON_* \#defines.
+     * @param   pInterface     Pointer to this interface structure.
+     * @param   x              The X value, in the range 0 to 0xffff.
+     * @param   z              The Y value, in the range 0 to 0xffff.
+     * @param   dz             The Z delta.
+     * @param   dw             The W (horizontal scroll button) delta.
+     * @param   fButtons       The button states, see the PDMIMOUSEPORT_BUTTON_* \#defines.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPutEventAbs,(PPDMIMOUSEPORT pInterface, uint32_t uX, uint32_t uY, int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtonStates));
+    DECLR3CALLBACKMEMBER(int, pfnPutEventAbs,(PPDMIMOUSEPORT pInterface,
+                                              uint32_t x, uint32_t z,
+                                              int32_t dz, int32_t dw,
+                                              uint32_t fButtons));
+    /**
+     * Puts a multi-touch pointer event.
+     *
+     * This is called by the source of mouse events.  The event will be passed up
+     * until the topmost driver, which then calls the registered event handler.
+     *
+     * @returns VBox status code.  Return VERR_TRY_AGAIN if you cannot process the
+     *          event now and want it to be repeated at a later point.
+     *
+     * @param   pInterface          Pointer to this interface structure.
+     * @param   x                   The X value, in the range 0 to 0xffff.
+     * @param   y                   The Y value, in the range 0 to 0xffff.
+     * @param   cContact            The number of the touch contact.
+     * @param   fContact            Whether the touch is currently in contact.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPutEventMT,(PPDMIMOUSEPORT pInterface,
+                                             uint32_t x, uint32_t y,
+                                             uint32_t cContact, bool fContact));
 } PDMIMOUSEPORT;
 /** PDMIMOUSEPORT interface ID. */
-#define PDMIMOUSEPORT_IID                       "442136fe-6f3c-49ec-9964-259b378ffa64"
+#define PDMIMOUSEPORT_IID                       "7abcf389-3f7c-4a62-8d19-65102da58ef3"
 
 /** Mouse button defines for PDMIMOUSEPORT::pfnPutEvent.
  * @{ */

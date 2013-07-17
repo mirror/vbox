@@ -121,10 +121,30 @@ typedef USBHIDURBQUEUE const *PCUSBHIDURBQUEUE;
  */
 typedef struct USBHIDM_ACCUM
 {
-    uint32_t    btn;
-    int32_t     dX;
-    int32_t     dY;
-    int32_t     dZ;
+    union
+    {
+        struct
+        {
+            uint32_t    fButtons;
+            int32_t     dx;
+            int32_t     dy;
+            int32_t     dz;
+        } Relative;
+        struct
+        {
+            uint32_t    fButtons;
+            uint32_t    x;
+            uint32_t    y;
+            int32_t     dz;
+        } Absolute;
+        struct
+        {
+            bool        fContact;
+            uint32_t    x;
+            uint32_t    y;
+            uint32_t    cContact;
+        } MultiTouch;
+    } u;
 } USBHIDM_ACCUM, *PUSBHIDM_ACCUM;
 
 
@@ -198,7 +218,7 @@ typedef USBHID *PUSBHID;
  */
 typedef struct USBHIDM_REPORT
 {
-    uint8_t     btn;
+    uint8_t     fButtons;
     int8_t      dx;
     int8_t      dy;
     int8_t      dz;
@@ -211,11 +231,11 @@ typedef struct USBHIDM_REPORT
 typedef struct USBHIDT_REPORT
 {
     uint8_t     rid;
-    uint8_t     btn;
+    uint8_t     fButtons;
     int8_t      dz;
     int8_t      dummy;
-    uint16_t    cx;
-    uint16_t    cy;
+    uint16_t    x;
+    uint16_t    y;
 } USBHIDT_REPORT, *PUSBHIDT_REPORT;
 
 /**
@@ -890,43 +910,42 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
     {
     case USBHIDMODE_ABSOLUTE:
     {
-        pReport->t.rid = REPORTID_MOUSE;
-        pReport->t.btn = pAccumulated->btn;
-        pReport->t.cx  = pAccumulated->dX;
-        pReport->t.cy  = pAccumulated->dY;
-        pReport->t.dz  = clamp_i8(pAccumulated->dZ);
+        pReport->t.rid      = REPORTID_MOUSE;
+        pReport->t.fButtons = pAccumulated->u.Absolute.fButtons;
+        pReport->t.x        = pAccumulated->u.Absolute.x;
+        pReport->t.y        = pAccumulated->u.Absolute.y;
+        pReport->t.dz       = clamp_i8(pAccumulated->u.Absolute.dz);
 
         cbCopy = sizeof(pReport->t);
-        LogRel3(("Abs event, X=%d, Y=%d, dZ=%d, btn=%02x, report size %d\n",
-                 pReport->t.cx, pReport->t.cy, pReport->t.dz, pReport->t.btn,
+        LogRel3(("Abs event, x=%d, y=%d, dz=%d, fButtons=%02x, report size %d\n",
+                 pReport->t.x, pReport->t.y, pReport->t.dz, pReport->t.fButtons,
                  cbCopy));
         break;
     }
     case USBHIDMODE_RELATIVE:
     {
-        pReport->m.btn = pAccumulated->btn;
-        pReport->m.dx  = clamp_i8(pAccumulated->dX);
-        pReport->m.dy  = clamp_i8(pAccumulated->dY);
-        pReport->m.dz  = clamp_i8(pAccumulated->dZ);
+        pReport->m.fButtons = pAccumulated->u.Relative.fButtons;
+        pReport->m.dx       = clamp_i8(pAccumulated->u.Relative.dx);
+        pReport->m.dy       = clamp_i8(pAccumulated->u.Relative.dy);
+        pReport->m.dz       = clamp_i8(pAccumulated->u.Relative.dz);
     
         cbCopy = sizeof(pReport->m);
-        LogRel3(("Rel event, dX=%d, dY=%d, dZ=%d, btn=%02x, report size %d\n",
-                 pReport->m.dx, pReport->m.dy, pReport->m.dz, pReport->m.btn,
-                 cbCopy));
+        LogRel3(("Rel event, dx=%d, dy=%d, dz=%d, fButtons=%02x, report size %d\n",
+                 pReport->m.dx, pReport->m.dy, pReport->m.dz,
+                 pReport->m.fButtons, cbCopy));
         break;
     }
     case USBHIDMODE_MULTI_TOUCH:
     {
         pReport->mt.idReport         = REPORTID_MOUSE;
-        pReport->mt.idContact        = 1;
-        pReport->mt.x                = pAccumulated->dX;
-        pReport->mt.y                = pAccumulated->dY;
-        pReport->mt.fButton          = 0x1;  /* We only send events when there
-                                              * is contact. */
+        pReport->mt.idContact        = pAccumulated->u.MultiTouch.cContact;
+        pReport->mt.x                = pAccumulated->u.MultiTouch.x;
+        pReport->mt.y                = pAccumulated->u.MultiTouch.y;
+        pReport->mt.fButton          = pAccumulated->u.MultiTouch.fContact;
 
         cbCopy = sizeof(pReport->t);
-        LogRel3(("Multi-touch event, X=%d, Y=%d, report size %d\n",
-                 pAccumulated->dX, pAccumulated->dY, cbCopy));
+        LogRel3(("Multi-touch event, x=%u, y=%u, report size %d\n",
+                 pReport->mt.x, pReport->mt.y, cbCopy));
         break;
     }
     }
@@ -973,17 +992,11 @@ static DECLCALLBACK(void *) usbHidMouseQueryInterface(PPDMIBASE pInterface, cons
 }
 
 /**
- * Relative mouse event handler.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the mouse port interface (KBDState::Mouse.iPort).
- * @param   i32DeltaX       The X delta.
- * @param   i32DeltaY       The Y delta.
- * @param   i32DeltaZ       The Z delta.
- * @param   i32DeltaW       The W delta.
- * @param   fButtonStates   The button states.
+ * @interface_method_impl{PDMIMOUSEPORT,pfnPutEvent}
  */
-static DECLCALLBACK(int) usbHidMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t i32DeltaX, int32_t i32DeltaY, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates)
+static DECLCALLBACK(int) usbHidMousePutEvent(PPDMIMOUSEPORT pInterface,
+                                             int32_t dx, int32_t dy, int32_t dz,
+                                             int32_t dw, uint32_t fButtons)
 {
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
     RTCritSectEnter(&pThis->CritSect);
@@ -991,10 +1004,10 @@ static DECLCALLBACK(int) usbHidMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t 
     /* Accumulate movement - the events from the front end may arrive
      * at a much higher rate than USB can handle.
      */
-    pThis->PtrDelta.btn = fButtonStates;
-    pThis->PtrDelta.dX += i32DeltaX;
-    pThis->PtrDelta.dY += i32DeltaY;
-    pThis->PtrDelta.dZ -= i32DeltaZ;    /* Inverted! */
+    pThis->PtrDelta.u.Relative.fButtons = fButtons;
+    pThis->PtrDelta.u.Relative.dx      += dx;
+    pThis->PtrDelta.u.Relative.dy      += dy;
+    pThis->PtrDelta.u.Relative.dz      -= dz;    /* Inverted! */
 
     /* Send a report if possible. */
     usbHidSendReport(pThis);
@@ -1004,17 +1017,12 @@ static DECLCALLBACK(int) usbHidMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t 
 }
 
 /**
- * Absolute mouse event handler.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the mouse port interface (KBDState::Mouse.iPort).
- * @param   u32X            The X coordinate.
- * @param   u32Y            The Y coordinate.
- * @param   i32DeltaZ       The Z delta.
- * @param   i32DeltaW       The W delta.
- * @param   fButtonStates   The button states.
+ * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventAbs}
  */
-static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t u32X, uint32_t u32Y, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates)
+static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface,
+                                                uint32_t x, uint32_t y,
+                                                int32_t dz, int32_t dw,
+                                                uint32_t fButtons)
 {
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
     RTCritSectEnter(&pThis->CritSect);
@@ -1026,10 +1034,40 @@ static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface, uint3
      * when only the Z axis is relative (X/Y movement isn't technically
      * accumulated and only the last value is used).
      */
-    pThis->PtrDelta.btn = fButtonStates;
-    pThis->PtrDelta.dX  = u32X >> pThis->u8CoordShift;
-    pThis->PtrDelta.dY  = u32Y >> pThis->u8CoordShift;
-    pThis->PtrDelta.dZ -= i32DeltaZ;    /* Inverted! */
+    pThis->PtrDelta.u.Absolute.fButtons = fButtons;
+    pThis->PtrDelta.u.Absolute.x        = x >> pThis->u8CoordShift;
+    pThis->PtrDelta.u.Absolute.y        = y >> pThis->u8CoordShift;
+    pThis->PtrDelta.u.Absolute.dz      -= dz;    /* Inverted! */
+
+    /* Send a report if possible. */
+    usbHidSendReport(pThis);
+
+    RTCritSectLeave(&pThis->CritSect);
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventMT}
+ */
+static DECLCALLBACK(int) usbHidMousePutEventMT(PPDMIMOUSEPORT pInterface,
+                                               uint32_t x, uint32_t y,
+                                               uint32_t cContact,
+                                               bool fContact)
+{
+    PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
+    RTCritSectEnter(&pThis->CritSect);
+
+    Assert(pThis->enmMode == USBHIDMODE_MULTI_TOUCH);
+
+    /* Accumulate movement - the events from the front end may arrive
+     * at a much higher rate than USB can handle. Probably not a real issue
+     * when only the Z axis is relative (X/Y movement isn't technically
+     * accumulated and only the last value is used).
+     */
+    pThis->PtrDelta.u.MultiTouch.fContact = fContact;
+    pThis->PtrDelta.u.MultiTouch.x        = x;
+    pThis->PtrDelta.u.MultiTouch.y        = y;
+    pThis->PtrDelta.u.MultiTouch.cContact = cContact;
 
     /* Send a report if possible. */
     usbHidSendReport(pThis);
