@@ -125,7 +125,17 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
 
     /* Fallback if requested: */
     if (bFallback)
+    {
+        LogRelFlow(("UIFrameBufferQImage::resizeEvent: "
+                    "Going fallback due to frame-buffer format become invalid: "
+                    "Format=%lu, BitsPerPixel=%lu, BytesPerLine=%lu, Size=%lux%lu\n",
+                    (unsigned long)pEvent->pixelFormat(),
+                    (unsigned long)pEvent->bitsPerPixel(),
+                    (unsigned long)pEvent->bytesPerLine(),
+                    (unsigned long)pEvent->width(),
+                    (unsigned long)pEvent->height()));
         goFallback();
+    }
 
     /* Remind if requested: */
     if (bRemind)
@@ -161,7 +171,12 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
         /* saving */
         && machineState != KMachineState_Saving
         )
+    {
+        LogRelFlow(("UIFrameBufferQImage::paintEvent: "
+                    "Going fallback due to machine-state become invalid: "
+                    "%d.\n", (int)machineState));
         goFallback();
+    }
 
     /* Depending on visual-state type: */
     switch (m_pMachineView->machineLogic()->visualStateType())
