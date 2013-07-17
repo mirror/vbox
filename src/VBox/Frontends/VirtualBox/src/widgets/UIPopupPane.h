@@ -72,6 +72,9 @@ public:
                 const QMap<int, QString> &buttonDescriptions,
                 bool fProposeAutoConfirmation);
 
+    /* API: Recall stuff: */
+    void recall();
+
     /* API: Text stuff: */
     void setMessage(const QString &strMessage);
     void setDetails(const QString &strDetails);

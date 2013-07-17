@@ -161,6 +161,11 @@ void UIPopupCenter::questionBinary(QWidget *pParent, const QString &strPopupPane
              fProposeAutoConfirmation);
 }
 
+void UIPopupCenter::recall(QWidget *pParent, const QString &strPopupPaneID)
+{
+    hidePopupPane(pParent, strPopupPaneID);
+}
+
 void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneID,
                                   const QString &strMessage, const QString &strDetails,
                                   int iButton1, int iButton2,
@@ -190,7 +195,7 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
         }
     }
 
-    /* Make sure parent is always set! */
+    /* Make sure parent is set! */
     AssertMsg(pParent, ("Parent is NULL!"));
     if (!pParent)
         return;
@@ -234,6 +239,27 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
         pPopupStack->createPopupPane(strPopupPaneID, strMessage, strDetails,
                                      buttonDescriptions, fProposeAutoConfirmation);
     }
+}
+
+void UIPopupCenter::hidePopupPane(QWidget *pParent, const QString &strPopupPaneID)
+{
+    /* Make sure parent is set! */
+    AssertMsg(pParent, ("Parent is NULL!"));
+    if (!pParent)
+        return;
+
+    /* Make sure corresponding popup-stack *exists*: */
+    const QString strPopupStackID(popupStackID(pParent));
+    if (!m_stacks.contains(strPopupStackID))
+        return;
+
+    /* Make sure corresponding popup-pane *exists*: */
+    UIPopupStack *pPopupStack = m_stacks[strPopupStackID];
+    if (!pPopupStack->exists(strPopupPaneID))
+        return;
+
+    /* Recall corresponding popup-pane: */
+    pPopupStack->recallPopupPane(strPopupPaneID);
 }
 
 void UIPopupCenter::showPopupStack(QWidget *pParent)

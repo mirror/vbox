@@ -94,6 +94,10 @@ public:
                         const QString &strCancelButtonText = QString(),
                         bool fProposeAutoConfirmation = false);
 
+    /* API: Recall function,
+     * Close corresponding popup of passed parent: */
+    void recall(QWidget *pParent, const QString &strPopupPaneID);
+
     /* API: Runtime UI stuff: */
     void cannotSendACPIToMachine(QWidget *pParent);
     void remindAboutAutoCapture(QWidget *pParent);
@@ -123,12 +127,13 @@ private:
     void prepare();
     void cleanup();
 
-    /* Helper: Popup-pane stuff: */
+    /* Helpers: Popup-pane stuff: */
     void showPopupPane(QWidget *pParent, const QString &strPopupPaneID,
                        const QString &strMessage, const QString &strDetails,
                        int iButton1, int iButton2,
                        QString strButtonText1, QString strButtonText2,
                        bool fProposeAutoConfirmation);
+    void hidePopupPane(QWidget *pParent, const QString &strPopupPaneID);
 
     /* Helpers: Popup-stack stuff: */
     void showPopupStack(QWidget *pParent);

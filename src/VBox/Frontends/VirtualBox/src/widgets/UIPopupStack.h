@@ -52,6 +52,7 @@ public:
                          bool fProposeAutoConfirmation);
     void updatePopupPane(const QString &strPopupPaneID,
                          const QString &strMessage, const QString &strDetails);
+    void recallPopupPane(const QString &strPopupPaneID);
 
     /* API: Parent stuff: */
     void setParent(QWidget *pParent);
