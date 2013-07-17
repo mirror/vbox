@@ -1573,7 +1573,7 @@ static void usbHidDestruct(PPDMUSBINS pUsbIns)
 static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFGMNODE pCfg, PCFGMNODE pCfgGlobal)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    bool isAbsolute;
+    char szMode[64];
     LogRelFlow(("usbHidConstruct/#%u:\n", iInstance));
 
     /*
@@ -1594,13 +1594,21 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    rc = CFGMR3ValidateConfig(pCfg, "/", "Absolute|CoordShift", "Config", "UsbHid", iInstance);
+    rc = CFGMR3ValidateConfig(pCfg, "/", "Mode|CoordShift", "Config", "UsbHid", iInstance);
     if (RT_FAILURE(rc))
         return rc;
-    rc = CFGMR3QueryBoolDef(pCfg, "Absolute", &isAbsolute, false);
+    rc = CFGMR3QueryStringDef(pCfg, "Mode", szMode, sizeof(szMode), "relative");
     if (RT_FAILURE(rc))
         return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS, N_("HID failed to query settings"));
-    pThis->enmMode = isAbsolute ? USBHIDMODE_ABSOLUTE : USBHIDMODE_RELATIVE;
+    if (!RTStrCmp(szMode, "relative"))
+        pThis->enmMode = USBHIDMODE_RELATIVE;
+    else if (!RTStrCmp(szMode, "absolute"))
+        pThis->enmMode = USBHIDMODE_ABSOLUTE;
+    else if (!RTStrCmp(szMode, "multitouch"))
+        pThis->enmMode = USBHIDMODE_MULTI_TOUCH;
+    else
+        return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS,
+                                   N_("Invalid HID device mode"));
 
     pThis->Lun0.IBase.pfnQueryInterface = usbHidMouseQueryInterface;
     pThis->Lun0.IPort.pfnPutEvent       = usbHidMousePutEvent;

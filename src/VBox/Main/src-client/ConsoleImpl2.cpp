@@ -2426,11 +2426,11 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
                     if (aPointingHID == PointingHIDType_USBTablet)
                     {
-                        InsertConfigInteger(pCfg, "Absolute", 1);
+                        InsertConfigString(pCfg, "Mode", "absolute");
                     }
                     else
                     {
-                        InsertConfigInteger(pCfg, "Absolute", 0);
+                        InsertConfigString(pCfg, "Mode", "relative");
                     }
                     InsertConfigNode(pInst,    "LUN#0", &pLunL0);
                     InsertConfigString(pLunL0, "Driver",        "MouseQueue");
