@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -77,7 +77,8 @@ static const DeviceAssignmentRule aGenericRules[] =
 
     /* Network controllers */
     /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
-     * next 4 get 16..19. */
+     * next 4 get 16..19. In "VMWare compatibility" mode the IDs 3 and 17
+     * swap places, i.e. the first card goes to ID 17=0x11. */
     {"nic",           0,  3,  0, 1},
     {"nic",           0,  8,  0, 1},
     {"nic",           0,  9,  0, 1},
@@ -86,8 +87,6 @@ static const DeviceAssignmentRule aGenericRules[] =
     {"nic",           0, 17,  0, 1},
     {"nic",           0, 18,  0, 1},
     {"nic",           0, 19,  0, 1},
-    /* VMWare assigns first NIC to slot 11 */
-    {"nic-vmware",    0, 11,  0, 1},
 
     /* ISA/LPC controller */
     {"lpc",           0, 31,  0, 0},
