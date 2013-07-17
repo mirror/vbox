@@ -33,8 +33,6 @@
 
 
 
-
-
 /**
  * IPC context data.
  */
@@ -72,7 +70,59 @@ typedef struct VBOXIPCSESSION
 
 } VBOXIPCSESSION, *PVBOXIPCSESSION;
 
-int vboxIPCSessionDestroyLocked(PVBOXIPCCONTEXT pCtx, PVBOXIPCSESSION pSession);
+int vboxIPCSessionDestroyLocked(PVBOXIPCSESSION pSession);
+
+static int vboxIPCHandleVBoxTrayRestart(RTLOCALIPCSESSION hSession, PVBOXTRAYIPCHEADER pHdr)
+{
+    AssertPtrReturn(pHdr, VERR_INVALID_POINTER);
+
+    /** @todo Not implemented yet; don't return an error here. */
+    return VINF_SUCCESS;
+}
+
+static int vboxIPCHandleShowBalloonMsg(RTLOCALIPCSESSION hSession, PVBOXTRAYIPCHEADER pHdr)
+{
+    AssertPtrReturn(pHdr, VERR_INVALID_POINTER);
+    AssertReturn(pHdr->uMsgLen > 0, VERR_INVALID_PARAMETER);
+
+    VBOXTRAYIPCMSG_SHOWBALLOONMSG ipcMsg;
+    int rc = RTLocalIpcSessionRead(hSession, &ipcMsg, pHdr->uMsgLen,
+                                   NULL /* Exact read, blocking */);
+    if (RT_SUCCESS(rc))
+    {
+        /* Showing the balloon tooltip is not critical. */
+        int rc2 = hlpShowBalloonTip(ghInstance, ghwndToolWindow, ID_TRAYICON,
+                                    ipcMsg.szMsgContent, ipcMsg.szMsgTitle,
+                                    ipcMsg.uShowMS, ipcMsg.uType);
+        LogFlowFunc(("Showing \"%s\" - \"%s\" (type %RU32, %RU32ms), rc=%Rrc\n",
+                     ipcMsg.szMsgTitle, ipcMsg.szMsgContent,
+                     ipcMsg.uType, ipcMsg.uShowMS, rc2));
+    }
+
+    return rc;
+}
+
+static int vboxIPCHandleUserLastInput(RTLOCALIPCSESSION hSession, PVBOXTRAYIPCHEADER pHdr)
+{
+    AssertPtrReturn(pHdr, VERR_INVALID_POINTER);
+    /* No actual message from client. */
+
+    int rc = VINF_SUCCESS;
+
+    LASTINPUTINFO lastInput;
+    lastInput.cbSize = sizeof(LASTINPUTINFO);
+    BOOL fRc = GetLastInputInfo(&lastInput);
+    if (fRc)
+    {
+        VBOXTRAYIPCRES_USERLASTINPUT ipcRes;
+        ipcRes.uTickCount = lastInput.dwTime; /** @sa GetTickCount(). */
+        rc = RTLocalIpcSessionWrite(hSession, &ipcRes, sizeof(ipcRes));
+    }
+    else
+        rc = RTErrConvertFromWin32(GetLastError());
+
+    return rc;
+}
 
 /**
  * Initializes the IPC communication.
@@ -98,7 +148,8 @@ int VBoxIPCInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
     int rc = RTCritSectInit(&gCtx.CritSect);
     if (RT_SUCCESS(rc))
     {
-        rc = RTLocalIpcServerCreate(&gCtx.hServer, "VBoxTrayIPCSvc", RTLOCALIPC_FLAGS_MULTI_SESSION);
+        rc = RTLocalIpcServerCreate(&gCtx.hServer, VBOXTRAY_IPC_PIPENAME,
+                                    RTLOCALIPC_FLAGS_MULTI_SESSION);
         if (RT_FAILURE(rc))
         {
             LogRelFunc(("Creating local IPC server failed with rc=%Rrc\n", rc));
@@ -115,8 +166,8 @@ int VBoxIPCInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
 
 void VBoxIPCStop(const VBOXSERVICEENV *pEnv, void *pInstance)
 {
-    AssertPtr(pEnv);
-    AssertPtr(pInstance);
+    AssertPtrReturnVoid(pEnv);
+    AssertPtrReturnVoid(pInstance);
 
     LogFunc(("Stopping pInstance=%p\n", pInstance));
 
@@ -147,7 +198,7 @@ void VBoxIPCDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
         PVBOXIPCSESSION pSession;
         RTListForEach(&pCtx->SessionList, pSession, VBOXIPCSESSION, Node)
         {
-            int rc2 = vboxIPCSessionDestroyLocked(pCtx, pSession);
+            int rc2 = vboxIPCSessionDestroyLocked(pSession);
             if (RT_FAILURE(rc2))
             {
                 LogFunc(("Destroying IPC session %p failed with rc=%Rrc\n",
@@ -185,53 +236,103 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
 
     LogFunc(("pThis=%p\n", pThis));
 
+    int rc = VINF_SUCCESS;
+
     /*
      * Process client requests until it quits or we're cancelled on termination.
      */
-    while (!ASMAtomicUoReadBool(&pThis->fTerminate))
+    while (   !ASMAtomicUoReadBool(&pThis->fTerminate)
+           && RT_SUCCESS(rc))
     {
-        int rc = RTLocalIpcSessionWaitForData(hSession, 1000 /* Timeout in ms. */);
+        /* The next call will be cancelled via VBoxIPCStop if needed. */
+        rc = RTLocalIpcSessionWaitForData(hSession, RT_INDEFINITE_WAIT);
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_CANCELLED)
             {
-                LogFunc(("Waiting for data cancelled\n"));
+                LogFunc(("Session %p: Waiting for data cancelled\n", pThis));
                 rc = VINF_SUCCESS;
                 break;
             }
-            else if (rc != VERR_TIMEOUT)
+            else
+                LogRelFunc(("Session %p: Waiting for session data failed with rc=%Rrc\n",
+                            pThis, rc));
+        }
+        else
+        {
+            VBOXTRAYIPCHEADER ipcHdr;
+            rc = RTLocalIpcSessionRead(hSession, &ipcHdr, sizeof(ipcHdr),
+                                       NULL /* Exact read, blocking */);
+            if (RT_SUCCESS(rc))
             {
-                LogFunc(("Waiting for data failed, rc=%Rrc\n", rc));
-                break;
+                switch (ipcHdr.uMsgType)
+                {
+                    case VBOXTRAYIPCMSGTYPE_RESTART:
+                        rc = vboxIPCHandleVBoxTrayRestart(hSession, &ipcHdr);
+                        break;
+
+                    case VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG:
+                        rc = vboxIPCHandleShowBalloonMsg(hSession, &ipcHdr);
+                        break;
+
+                    case VBOXTRAYIPCMSGTYPE_USERLASTINPUT:
+                        rc = vboxIPCHandleUserLastInput(hSession, &ipcHdr);
+                        break;
+
+                    default:
+                    {
+                        static int s_cRejectedCmds = 0;
+                        if (++s_cRejectedCmds <= 3)
+                        {
+                            LogRelFunc(("Session %p: Received unknown command %RU32 (%RU32 bytes), rejecting (%RU32/3)\n",
+                                        pThis, ipcHdr.uMsgType, ipcHdr.uMsgLen, s_cRejectedCmds + 1));
+                            if (ipcHdr.uMsgLen)
+                            {
+                                /* Get and discard payload data. */
+                                size_t cbRead;
+                                uint8_t devNull[_1K];
+                                while (ipcHdr.uMsgLen)
+                                {
+                                    rc = RTLocalIpcSessionRead(hSession, &devNull, sizeof(devNull), &cbRead);
+                                    if (RT_FAILURE(rc))
+                                        break;
+                                    AssertRelease(cbRead <= ipcHdr.uMsgLen);
+                                    ipcHdr.uMsgLen -= (uint32_t)cbRead;
+                                }
+                            }
+                        }
+                        else
+                            rc = VERR_INVALID_PARAMETER; /* Enough fun, bail out. */
+                        break;
+                    }
+
+                    if (RT_FAILURE(rc))
+                        LogFunc(("Session %p: Handling command %RU32 failed with rc=%Rrc\n",
+                                 pThis, ipcHdr.uMsgType, rc));
+                }
             }
         }
-
-        /** @todo Implement handler. */
     }
+
+    LogRelFunc(("Session %p: Handler ended with rc=%Rrc\n", rc));
 
     /*
      * Clean up the session.
      */
     PVBOXIPCCONTEXT pCtx = ASMAtomicReadPtrT(&pThis->pCtx, PVBOXIPCCONTEXT);
-    if (pCtx)
-        RTCritSectEnter(&pCtx->CritSect);
-    else
-        AssertMsgFailed(("Session %p: No context found\n", pThis));
-
-    ASMAtomicXchgHandle(&pThis->hSession, NIL_RTLOCALIPCSESSION, &hSession);
-    if (hSession != NIL_RTLOCALIPCSESSION)
-        RTLocalIpcSessionClose(hSession);
-    else
-        AssertMsgFailed(("Session %p: No/invalid session handle\n", pThis));
-
-    if (pCtx)
+    AssertMsg(pCtx, ("Session %p: No context found\n", pThis));
+    rc = RTCritSectEnter(&pCtx->CritSect);
+    if (RT_SUCCESS(rc))
     {
-        //RTSemEventSignal(pCtx->hSessionEvent);
-        RTCritSectLeave(&pCtx->CritSect);
+        rc = vboxIPCSessionDestroyLocked(pThis);
+
+        int rc2 = RTCritSectLeave(&pCtx->CritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
 
-    LogFunc(("pThis=%p terminated\n", pThis));
-    return VINF_SUCCESS;
+    LogFunc(("Session %p: Terminated\n", pThis));
+    return rc;
 }
 
 static int vboxIPCSessionCreate(PVBOXIPCCONTEXT pCtx, RTLOCALIPCSESSION hSession)
@@ -279,24 +380,21 @@ static int vboxIPCSessionCreate(PVBOXIPCCONTEXT pCtx, RTLOCALIPCSESSION hSession
     return rc;
 }
 
-static int vboxIPCSessionDestroyLocked(PVBOXIPCCONTEXT pCtx, PVBOXIPCSESSION pSession)
+static int vboxIPCSessionDestroyLocked(PVBOXIPCSESSION pSession)
 {
-    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-
     pSession->hThread = NIL_RTTHREAD;
 
     RTLOCALIPCSESSION hSession;
     ASMAtomicXchgHandle(&pSession->hSession, NIL_RTLOCALIPCSESSION, &hSession);
-    if (hSession != NIL_RTLOCALIPCSESSION)
-        RTLocalIpcSessionClose(hSession);
+    int rc = RTLocalIpcSessionClose(hSession);
 
     RTListNodeRemove(&pSession->Node);
 
     RTMemFree(pSession);
     pSession = NULL;
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
