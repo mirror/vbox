@@ -594,8 +594,6 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
 endif
 # enable new wined3d code
 VBOX_WITH_NEW_WINE = 1
-# Enable the VNC server extension pack (GPL only).
-#VBOX_WITH_EXTPACK_VNC = 1
 # Enable S3 support (requires libcurl)
 VBOX_WITH_S3 = 1
 # Enable Host=>Guest Drag'n'Drop
@@ -644,6 +642,10 @@ VBOX_WITH_EXTPACK = 1
 VBOX_WITH_EXTPACK_PUEL = 1
 # Enables building+packing the Oracle VM VirtualBox Extension Pack, includes VBOX_WITH_EXTPACK_PUEL
 VBOX_WITH_EXTPACK_PUEL_BUILD = 1
+# Enable the BusMouse sample extension pack.
+#VBOX_WITH_EXTPACK_BUSMOUSESAMPLE = 1
+# Enable the VNC server extension pack (GPL only).
+#VBOX_WITH_EXTPACK_VNC = 1
 ## @}
 
 ## @name Misc
