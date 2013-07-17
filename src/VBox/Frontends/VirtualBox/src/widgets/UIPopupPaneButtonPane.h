@@ -45,6 +45,8 @@ public:
 
     /* API: Button stuff: */
     void setButtons(const QMap<int, QString> &buttonDescriptions);
+    int defaultButton() const { return m_iDefaultButton; }
+    int escapeButton() const { return m_iEscapeButton; }
 
 private slots:
 

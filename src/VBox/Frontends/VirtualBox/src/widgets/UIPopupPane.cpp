@@ -50,6 +50,12 @@ UIPopupPane::UIPopupPane(QWidget *pParent,
     prepare();
 }
 
+void UIPopupPane::recall()
+{
+    /* Close popup-pane with *escape* button: */
+    done(m_pButtonPane->escapeButton());
+}
+
 void UIPopupPane::setMessage(const QString &strMessage)
 {
     /* Make sure the message has changed: */
