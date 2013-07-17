@@ -28,6 +28,7 @@
 #include <QScrollBar>
 #include <QWindowsStyle>
 #include <QPointer>
+#include <QApplication>
 
 /* GUI includes: */
 #include "UIIconPool.h"
@@ -412,6 +413,8 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
              this, SLOT (onContextMenuRequested (const QPoint&)));
     connect (mTreeWidget, SIGNAL (itemChanged (QTreeWidgetItem*, int)),
              this, SLOT (onItemChanged (QTreeWidgetItem*)));
+    connect(mTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
+            this, SLOT (sltItemDoubleClicked(QTreeWidgetItem*)));
 
     connect (mTakeSnapshotAction, SIGNAL (triggered()), this, SLOT (sltTakeSnapshot()));
     connect (mRestoreSnapshotAction, SIGNAL (triggered()), this, SLOT (sltRestoreSnapshot()));
@@ -569,12 +572,31 @@ void VBoxSnapshotsWgt::onItemChanged (QTreeWidgetItem *aItem)
     }
 }
 
+void VBoxSnapshotsWgt::sltItemDoubleClicked(QTreeWidgetItem *pItem)
+{
+    /* Make sure *nothing* is being edited currently: */
+    if (mEditProtector)
+        return;
+
+    /* Make sure some *valid* item was *really* double-clicked: */
+    SnapshotWgtItem *pValidItem = pItem ? static_cast<SnapshotWgtItem*>(pItem) : 0;
+    if (!pValidItem)
+        return;
+
+    /* Handle Ctrl+DoubleClick: */
+    if (QApplication::keyboardModifiers() == Qt::ControlModifier)
+    {
+        /* As call for snapshot-restore procedure: */
+        sltRestoreSnapshot(true /* suppress non-critical warnings */);
+    }
+}
+
 void VBoxSnapshotsWgt::sltTakeSnapshot()
 {
     takeSnapshot();
 }
 
-void VBoxSnapshotsWgt::sltRestoreSnapshot()
+void VBoxSnapshotsWgt::sltRestoreSnapshot(bool fSuppressNonCriticalWarnings /*= false*/)
 {
     /* Get currently chosen item: */
     SnapshotWgtItem *pItem = mTreeWidget->currentItem() ? static_cast<SnapshotWgtItem*>(mTreeWidget->currentItem()) : 0;
@@ -586,9 +608,13 @@ void VBoxSnapshotsWgt::sltRestoreSnapshot()
     CSnapshot snapshot = mMachine.FindSnapshot(strSnapshotId);
 
     /* Ask the user if he really wants to restore the snapshot: */
-    int iResultCode = msgCenter().confirmSnapshotRestoring(snapshot.GetName(), mMachine.GetCurrentStateModified());
-    if (iResultCode & AlertButton_Cancel)
-        return;
+    int iResultCode = AlertButton_Ok;
+    if (!fSuppressNonCriticalWarnings || mMachine.GetCurrentStateModified())
+    {
+        iResultCode = msgCenter().confirmSnapshotRestoring(snapshot.GetName(), mMachine.GetCurrentStateModified());
+        if (iResultCode & AlertButton_Cancel)
+            return;
+    }
 
     /* If user also confirmed new snapshot creation: */
     if (iResultCode & AlertOption_CheckBox)
