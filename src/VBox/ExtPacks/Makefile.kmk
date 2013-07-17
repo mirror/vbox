@@ -24,6 +24,9 @@ endif
 ifdef VBOX_WITH_EXTPACK_VNC
  include $(PATH_SUB_CURRENT)/VNC/Makefile.kmk
 endif
+ifdef VBOX_WITH_EXTPACK_BUSMOUSESAMPLE
+ include $(PATH_SUB_CURRENT)/BusMouseSample/Makefile.kmk
+endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
