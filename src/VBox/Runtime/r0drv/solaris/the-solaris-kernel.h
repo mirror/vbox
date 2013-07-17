@@ -57,6 +57,7 @@
 #include <sys/kobj.h>
 #include <sys/ctf_api.h>
 #include <sys/modctl.h>
+#include <sys/proc.h>
 
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 

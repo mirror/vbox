@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -615,6 +615,8 @@ typedef FNRTTHREADCTXHOOK *PFNRTTHREADCTXHOOK;
  *
  * @returns IPRT status code.
  * @param   phThreadCtx         Where to store the thread-context handle.
+ *
+ * @remarks Must be called with preemption enabled!
  */
 RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx);
 
@@ -625,6 +627,8 @@ RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx);
  * required.
  *
  * @param   phThreadCtx         Pointer to the thread-context handle.
+ *
+ * @remarks Must be called with preemption enabled!
  */
 RTDECL(void) RTThreadCtxHooksDestroy(RTTHREADCTX hThreadCtx);
 
@@ -637,6 +641,8 @@ RTDECL(void) RTThreadCtxHooksDestroy(RTTHREADCTX hThreadCtx);
  * @param   pfnThreadHook       Pointer to a thread-context hook (a callback)
  *                              for all thread-context events.
  * @param   pvUser              User argument (optional, can be NULL).
+ *
+ * @remarks Can be called with preemption disabled.
  */
 RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK pfnThreadHook, void *pvUser);
 
@@ -645,6 +651,8 @@ RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK 
  *
  * @returns IPRT status code.
  * @param   phThreadCtx         Pointer to the thread-context handle.
+ *
+ * @remarks Can be called with preemption disabled.
  */
 RTDECL(int) RTThreadCtxHooksDeregister(RTTHREADCTX hThreadCtx);
 

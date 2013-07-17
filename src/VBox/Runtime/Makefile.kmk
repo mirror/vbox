@@ -1928,7 +1928,6 @@ RuntimeR0Drv_SOURCES.solaris = \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
 	r0drv/powernotification-r0drv.c \
-	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
 	r0drv/solaris/RTLogWriteDebugger-r0drv-solaris.c \
 	r0drv/solaris/RTMpPokeCpu-r0drv-solaris.c \
 	r0drv/solaris/alloc-r0drv-solaris.c \
@@ -1947,6 +1946,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	r0drv/solaris/spinlock-r0drv-solaris.c \
 	r0drv/solaris/thread-r0drv-solaris.c \
 	r0drv/solaris/thread2-r0drv-solaris.c \
+	r0drv/solaris/threadctxhooks-r0drv-solaris.c \
 	r0drv/solaris/time-r0drv-solaris.c \
 	r0drv/solaris/timer-r0drv-solaris.c
 
