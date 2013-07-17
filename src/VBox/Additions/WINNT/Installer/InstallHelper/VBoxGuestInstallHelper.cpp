@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,6 +24,12 @@
 #include <tchar.h>
 #include <strsafe.h>
 #include "exdll.h"
+
+#include <iprt/err.h>
+#include <iprt/initterm.h>
+#include <iprt/localipc.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
 
 /* Required structures/defines of VBoxTray. */
 #include "../../VBoxTray/VBoxTrayMsg.h"
@@ -48,6 +54,9 @@ HINSTANCE               g_hInstance;
 HWND                    g_hwndParent;
 PFNSFCFILEEXCEPTION     g_pfnSfcFileException = NULL;
 
+/**
+ * @todo Clean up this DLL, use more IPRT in here!
+ */
 
 /**
  * Pops (gets) a value from the internal NSIS stack.
@@ -62,7 +71,7 @@ static HRESULT vboxPopString(TCHAR *pszDest, size_t cchDest)
 {
     HRESULT hr = S_OK;
     if (!g_stacktop || !*g_stacktop)
-        hr = __HRESULT_FROM_WIN32(ERROR_EMPTY);
+        hr = __HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE);
     else
     {
         stack_t *pStack = (*g_stacktop);
@@ -75,6 +84,8 @@ static HRESULT vboxPopString(TCHAR *pszDest, size_t cchDest)
                 GlobalFree((HGLOBAL)pStack);
             }
         }
+        else
+            hr = __HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE);
     }
     return hr;
 }
@@ -143,58 +154,6 @@ static HRESULT vboxChar2WCharAlloc(const char *pszString, PWCHAR *ppwString)
     return hr;
 }
 
-static HANDLE vboxIPCConnect(void)
-{
-    HANDLE hPipe = NULL;
-    while (1)
-    {
-        hPipe = CreateFile(VBOXTRAY_PIPE_IPC,   /* Pipe name. */
-                           GENERIC_READ |       /* Read and write access. */
-                           GENERIC_WRITE,
-                           0,                   /* No sharing. */
-                           NULL,                /* Default security attributes. */
-                           OPEN_EXISTING,       /* Opens existing pipe. */
-                           0,                   /* Default attributes. */
-                           NULL);               /* No template file. */
-
-        /* Break if the pipe handle is valid. */
-        if (hPipe != INVALID_HANDLE_VALUE)
-            break;
-
-        /* Exit if an error other than ERROR_PIPE_BUSY occurs. */
-        if (GetLastError() != ERROR_PIPE_BUSY)
-            return NULL;
-
-        /* All pipe instances are busy, so wait for 20 seconds. */
-        if (!WaitNamedPipe(VBOXTRAY_PIPE_IPC, 20000))
-            return NULL;
-    }
-
-    /* The pipe connected; change to message-read mode. */
-    DWORD dwMode = PIPE_READMODE_MESSAGE;
-    BOOL fSuccess = SetNamedPipeHandleState(hPipe,    /* Pipe handle. */
-                                            &dwMode,  /* New pipe mode. */
-                                            NULL,     /* Don't set maximum bytes. */
-                                            NULL);    /* Don't set maximum time. */
-    if (!fSuccess)
-        return NULL;
-    return hPipe;
-}
-
-static void vboxIPCDisconnect(HANDLE hPipe)
-{
-    CloseHandle(hPipe);
-}
-
-static HRESULT vboxIPCWriteMessage(HANDLE hPipe, BYTE *pMessage, DWORD cbMessage)
-{
-    HRESULT hr = S_OK;
-    DWORD cbWritten = 0;
-    if (!WriteFile(hPipe, pMessage, cbMessage - cbWritten, &cbWritten, 0))
-        hr = HRESULT_FROM_WIN32(GetLastError());
-    return hr;
-}
-
 /**
  * Loads a system DLL.
  *
@@ -231,7 +190,7 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size,
     HRESULT hr = vboxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
     if (SUCCEEDED(hr))
     {
-        HMODULE hSFC = loadSystemDll("sfc_os.dll");
+        HMODULE hSFC = loadSystemDll("sfc_os.dll"); /** @todo Replace this by RTLdr APIs. */
         if (NULL != hSFC)
         {
             g_pfnSfcFileException = (PFNSFCFILEEXCEPTION)GetProcAddress(hSFC, "SfcFileException");
@@ -444,31 +403,62 @@ VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
 {
     EXDLL_INIT();
 
-    VBOXTRAYIPCHEADER hdr;
-    hdr.ulMsg = VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG;
-    hdr.cbBody = sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG);
+    char szMsg[256];
+    char szTitle[128];
+    HRESULT hr = vboxPopString(szMsg, sizeof(szMsg) / sizeof(char));
+    if (SUCCEEDED(hr))
+        hr = vboxPopString(szTitle, sizeof(szTitle) / sizeof(char));
 
-    VBOXTRAYIPCMSG_SHOWBALLOONMSG msg;
-    HRESULT hr = vboxPopString(msg.szContent, sizeof(msg.szContent) / sizeof(TCHAR));
-    if (SUCCEEDED(hr))
-        hr = vboxPopString(msg.szTitle, sizeof(msg.szTitle) / sizeof(TCHAR));
-    if (SUCCEEDED(hr))
-        hr = vboxPopULong(&msg.ulType);
-    if (SUCCEEDED(hr))
-        hr = vboxPopULong(&msg.ulShowMS);
+    /** @todo Do we need to restore the stack on failure? */
 
     if (SUCCEEDED(hr))
     {
-        msg.ulFlags = 0;
+        RTR3InitDll(0);
 
-        HANDLE hPipe = vboxIPCConnect();
-        if (hPipe)
+        uint32_t cbMsg = sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG)
+                       + strlen(szMsg) + 1    /* Include terminating zero */
+                       + strlen(szTitle) + 1; /* Dito. */
+        Assert(cbMsg);
+        PVBOXTRAYIPCMSG_SHOWBALLOONMSG pIpcMsg =
+            (PVBOXTRAYIPCMSG_SHOWBALLOONMSG)RTMemAlloc(cbMsg);
+        if (pIpcMsg)
         {
-            hr = vboxIPCWriteMessage(hPipe, (BYTE*)&hdr, sizeof(VBOXTRAYIPCHEADER));
+            /* Stuff in the strings. */
+            memcpy(pIpcMsg->szMsgContent, szMsg, strlen(szMsg)   + 1);
+            memcpy(pIpcMsg->szMsgTitle, szTitle, strlen(szTitle) + 1);
+
+            /* Pop off the values in reverse order from the stack. */
             if (SUCCEEDED(hr))
-                hr = vboxIPCWriteMessage(hPipe, (BYTE*)&msg, sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG));
-            vboxIPCDisconnect(hPipe);
+                hr = vboxPopULong((ULONG*)&pIpcMsg->uType);
+            if (SUCCEEDED(hr))
+                hr = vboxPopULong((ULONG*)&pIpcMsg->uShowMS);
+
+            if (SUCCEEDED(hr))
+            {
+                RTLOCALIPCSESSION hSession;
+                int rc = RTLocalIpcSessionConnect(&hSession, VBOXTRAY_IPC_PIPENAME, 0 /* Flags */);
+                if (RT_SUCCESS(rc))
+                {
+                    VBOXTRAYIPCHEADER ipcHdr = { 0 /* Header version */,
+                                                 VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG, cbMsg };
+
+                    rc = RTLocalIpcSessionWrite(hSession, &ipcHdr, sizeof(ipcHdr));
+                    if (RT_SUCCESS(rc))
+                        rc = RTLocalIpcSessionWrite(hSession, pIpcMsg, cbMsg);
+
+                    int rc2 = RTLocalIpcSessionClose(hSession);
+                    if (RT_SUCCESS(rc))
+                        rc = rc2;
+                }
+
+                if (RT_FAILURE(rc))
+                    hr = __HRESULT_FROM_WIN32(ERROR_BROKEN_PIPE);
+            }
+
+            RTMemFree(pIpcMsg);
         }
+        else
+            hr = __HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
     }
 
     /* Push simple return value on stack. */
