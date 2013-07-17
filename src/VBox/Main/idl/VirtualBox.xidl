@@ -14259,7 +14259,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMouse" extends="$unknown"
-    uuid="05044a52-7811-4f00-ae3a-0ab7ff707b10"
+    uuid="436a3712-d818-4bb1-84f2-8da4d1a29e0a"
     wsmap="managed"
     >
     <desc>
@@ -14298,7 +14298,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="multiTouchSupported" type="boolean" readonly="yes">
       <desc>
-        Whether the guest OS supports multi-touch event reporting.
+        Whether the guest OS has enabled the multi-touch reporting device.
         <note>
           You can use the <link to="IMouseCapabilityChangedEvent"/>
           event to be instantly informed about changes of this attribute
@@ -14433,6 +14433,55 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           </table>
           A value of @c 1 means the corresponding button is pressed.
           otherwise it is released.
+        </desc>
+      </param>
+    </method>
+
+    <method name="putMouseEventMultiTouch">
+      <desc>
+        Sends a multi-touch pointer event.  The coordinates are expressed in
+        pixels and start from <tt>[1,1]</tt> which corresponds to the top left
+        corner of the virtual display.
+
+        <result name="E_ACCESSDENIED">
+          Console not powered up.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not send mouse event to virtual mouse.
+        </result>
+
+        <note>
+          The guest may not understand or may choose to ignore this event.
+        </note>
+
+        <see><link to="#multiTouchSupported"/></see>
+      </desc>
+
+      <param name="x" type="long" dir="in">
+        <desc>
+          X coordinate of the touch in pixels, starting from @c 1.
+        </desc>
+      </param>
+      <param name="y" type="long" dir="in">
+        <desc>
+          Y coordinate of the touch in pixels, starting from @c 1.
+        </desc>
+      </param>
+      <param name="contactID" type="long" dir="in">
+        <desc>
+          Identifier for the touch number.  When a touch starts (i.e. a finger
+          first touches the device) it is given a currently unused identifier,
+          but if the touch moves without interruption (i.e. the finger is
+          touching the device the whole time) the identifier will be the same
+          for all following events.
+        </desc>
+      </param>
+      <param name="inContact" type="boolean" dir="in">
+        <desc>
+          Whether the touch is continuing.  If this is true, expect more events
+          with the same @a contactID, and this will usually be false when the
+          last event is received before the contact is stopped (i.e. the finger
+          is removed from the device).
         </desc>
       </param>
     </method>

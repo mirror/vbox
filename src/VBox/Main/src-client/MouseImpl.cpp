@@ -77,8 +77,8 @@ Mouse::~Mouse()
 HRESULT Mouse::FinalConstruct()
 {
     RT_ZERO(mpDrv);
-    mcLastAbsX = 0x8000;
-    mcLastAbsY = 0x8000;
+    mcLastX = 0x8000;
+    mcLastY = 0x8000;
     mfLastButtons = 0;
     mfVMMDevGuestCaps = 0;
     return BaseFinalConstruct();
@@ -324,16 +324,16 @@ HRESULT Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
  *
  * @returns   COM status code
  */
-HRESULT Mouse::reportAbsEventToMouseDev(int32_t mouseXAbs, int32_t mouseYAbs,
+HRESULT Mouse::reportAbsEventToMouseDev(int32_t x, int32_t y,
                                         int32_t dz, int32_t dw, uint32_t fButtons)
 {
-    if (   mouseXAbs < VMMDEV_MOUSE_RANGE_MIN
-        || mouseXAbs > VMMDEV_MOUSE_RANGE_MAX)
+    if (   x < VMMDEV_MOUSE_RANGE_MIN
+        || x > VMMDEV_MOUSE_RANGE_MAX)
         return S_OK;
-    if (   mouseYAbs < VMMDEV_MOUSE_RANGE_MIN
-        || mouseYAbs > VMMDEV_MOUSE_RANGE_MAX)
+    if (   y < VMMDEV_MOUSE_RANGE_MIN
+        || y > VMMDEV_MOUSE_RANGE_MAX)
         return S_OK;
-    if (   mouseXAbs != mcLastAbsX || mouseYAbs != mcLastAbsY
+    if (   x != mcLastX || y != mcLastY
         || dz || dw || fButtons != mfLastButtons)
     {
         PPDMIMOUSEPORT pUpPort = NULL;
@@ -349,7 +349,7 @@ HRESULT Mouse::reportAbsEventToMouseDev(int32_t mouseXAbs, int32_t mouseYAbs,
         if (!pUpPort)
             return S_OK;
 
-        int vrc = pUpPort->pfnPutEventAbs(pUpPort, mouseXAbs, mouseYAbs, dz,
+        int vrc = pUpPort->pfnPutEventAbs(pUpPort, x, y, dz,
                                           dw, fButtons);
         if (RT_FAILURE(vrc))
             return setError(VBOX_E_IPRT_ERROR,
@@ -363,15 +363,40 @@ HRESULT Mouse::reportAbsEventToMouseDev(int32_t mouseXAbs, int32_t mouseYAbs,
 
 
 /**
- * Send an absolute pointer event to the emulated absolute device we deem most
- * appropriate.
+ * Send a multi-touch event to the first enabled emulated multi-touch device.
  *
  * @returns   COM status code
  */
-HRESULT Mouse::reportMTEventToMouseDev(int32_t mouseX, int32_t mouseY,
+HRESULT Mouse::reportMTEventToMouseDev(int32_t x, int32_t y,
                                        uint32_t cContact, bool fContact)
 {
-    return E_NOTIMPL;
+    if (   x < VMMDEV_MOUSE_RANGE_MIN
+        || x > VMMDEV_MOUSE_RANGE_MAX)
+        return S_OK;
+    if (   y < VMMDEV_MOUSE_RANGE_MIN
+        || y > VMMDEV_MOUSE_RANGE_MAX)
+        return S_OK;
+    PPDMIMOUSEPORT pUpPort = NULL;
+    {
+        AutoReadLock aLock(this COMMA_LOCKVAL_SRC_POS);
+
+        for (unsigned i = 0; !pUpPort && i < MOUSE_MAX_DEVICES; ++i)
+        {
+            if (   mpDrv[i]
+                && (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_MULTI_TOUCH))
+                pUpPort = mpDrv[i]->pUpPort;
+        }
+    }
+    if (!pUpPort)
+        return S_OK;
+
+    int vrc = pUpPort->pfnPutEventMT(pUpPort, x, y,
+                                     cContact, fContact);
+    if (RT_FAILURE(vrc))
+        return setError(VBOX_E_IPRT_ERROR,
+                        tr("Could not send the touch event to the virtual device (%Rrc)"),
+                        vrc);
+    return S_OK;
 }
 
 
@@ -381,17 +406,17 @@ HRESULT Mouse::reportMTEventToMouseDev(int32_t mouseX, int32_t mouseY,
  *
  * @returns   COM status code
  */
-HRESULT Mouse::reportAbsEventToVMMDev(int32_t mouseXAbs, int32_t mouseYAbs)
+HRESULT Mouse::reportAbsEventToVMMDev(int32_t x, int32_t y)
 {
     VMMDevMouseInterface *pVMMDev = mParent->getVMMDevMouseInterface();
     ComAssertRet(pVMMDev, E_FAIL);
     PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
     ComAssertRet(pVMMDevPort, E_FAIL);
 
-    if (mouseXAbs != mcLastAbsX || mouseYAbs != mcLastAbsY)
+    if (x != mcLastX || y != mcLastY)
     {
         int vrc = pVMMDevPort->pfnSetAbsoluteMouse(pVMMDevPort,
-                                                   mouseXAbs, mouseYAbs);
+                                                   x, y);
         if (RT_FAILURE(vrc))
             return setError(VBOX_E_IPRT_ERROR,
                             tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
@@ -407,7 +432,7 @@ HRESULT Mouse::reportAbsEventToVMMDev(int32_t mouseXAbs, int32_t mouseYAbs)
  *
  * @returns   COM status code
  */
-HRESULT Mouse::reportAbsEvent(int32_t mouseXAbs, int32_t mouseYAbs,
+HRESULT Mouse::reportAbsEvent(int32_t x, int32_t y,
                               int32_t dz, int32_t dw, uint32_t fButtons,
                               bool fUsesVMMDevEvent)
 {
@@ -422,18 +447,18 @@ HRESULT Mouse::reportAbsEvent(int32_t mouseXAbs, int32_t mouseYAbs,
         /*
          * Send the absolute mouse position to the VMM device.
          */
-        if (mouseXAbs != mcLastAbsX || mouseYAbs != mcLastAbsY)
+        if (x != mcLastX || y != mcLastY)
         {
-            rc = reportAbsEventToVMMDev(mouseXAbs, mouseYAbs);
+            rc = reportAbsEventToVMMDev(x, y);
             cJiggle = !fUsesVMMDevEvent;
         }
         rc = reportRelEventToMouseDev(cJiggle, 0, dz, dw, fButtons);
     }
     else
-        rc = reportAbsEventToMouseDev(mouseXAbs, mouseYAbs, dz, dw, fButtons);
+        rc = reportAbsEventToMouseDev(x, y, dz, dw, fButtons);
 
-    mcLastAbsX = mouseXAbs;
-    mcLastAbsY = mouseYAbs;
+    mcLastX = x;
+    mcLastY = y;
     return rc;
 }
 
@@ -574,14 +599,14 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     LogRel3(("%s: x=%d, y=%d, dz=%d, dw=%d, buttonState=0x%x\n",
              __PRETTY_FUNCTION__, x, y, dz, dw, buttonState));
 
-    int32_t mouseXAbs, mouseYAbs;
+    int32_t xAdj, yAdj;
     uint32_t fButtons;
     bool fValid;
 
     /** @todo the front end should do this conversion to avoid races */
     /** @note Or maybe not... races are pretty inherent in everything done in
      *        this object and not really bad as far as I can see. */
-    HRESULT rc = convertDisplayRes(x, y, &mouseXAbs, &mouseYAbs, &fValid);
+    HRESULT rc = convertDisplayRes(x, y, &xAdj, &yAdj, &fValid);
     if (FAILED(rc)) return rc;
 
     fButtons = mouseButtonsToPDM(buttonState);
@@ -591,11 +616,43 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     updateVMMDevMouseCaps(VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE, 0);
     if (fValid)
     {
-        rc = reportAbsEvent(mouseXAbs, mouseYAbs, dz, dw, fButtons,
+        rc = reportAbsEvent(xAdj, yAdj, dz, dw, fButtons,
                             RT_BOOL(  mfVMMDevGuestCaps
                                     & VMMDEV_MOUSE_NEW_PROTOCOL));
 
         fireMouseEvent(true, x, y, dz, dw, buttonState);
+    }
+
+    return rc;
+}
+
+/**
+ * @interface_method_impl{IMouse,putMouseEventMultiTouch}
+ */
+STDMETHODIMP Mouse::PutMouseEventMultiTouch(LONG x, LONG y, LONG contactID,
+                                            BOOL inContact)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    LogRel3(("%s: x=%d, y=%d, contactID=%d, inContact=%RTBool\n",
+             __PRETTY_FUNCTION__, x, y, contactID, inContact));
+
+    int32_t xAdj, yAdj;
+    uint32_t fButtons;
+    bool fValid;
+
+    /** @todo the front end should do this conversion to avoid races */
+    /** @note Or maybe not... races are pretty inherent in everything done in
+     *        this object and not really bad as far as I can see. */
+    HRESULT rc = convertDisplayRes(x, y, &xAdj, &yAdj, &fValid);
+    if (FAILED(rc)) return rc;
+
+    if (fValid)
+    {
+        rc = reportMTEventToMouseDev(xAdj, yAdj, contactID, inContact);
+
+        // fireMouseEvent(true, x, y, dz, dw, buttonState);
     }
 
     return rc;

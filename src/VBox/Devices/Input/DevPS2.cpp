@@ -1363,14 +1363,15 @@ static DECLCALLBACK(void *)  kbdMouseQueryInterface(PPDMIBASE pInterface, const 
 /**
  * @interface_method_impl{PDMIMOUSEPORT, pfnPutEvent}
  */
-static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t iDeltaX, int32_t iDeltaY,
-                                          int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtonStates)
+static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t dx,
+                                          int32_t dy, int32_t dz, int32_t dw,
+                                          uint32_t fButtons)
 {
     KBDState *pThis = RT_FROM_MEMBER(pInterface, KBDState, Mouse.IPort);
     int rc = PDMCritSectEnter(pThis->pDevInsR3->pCritSectRoR3, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
-    pc_kbd_mouse_event(pThis, iDeltaX, iDeltaY, iDeltaZ, iDeltaW, fButtonStates);
+    pc_kbd_mouse_event(pThis, dx, dy, dz, dw, fButtons);
 
     PDMCritSectLeave(pThis->pDevInsR3->pCritSectRoR3);
     return VINF_SUCCESS;
@@ -1379,10 +1380,24 @@ static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t iDe
 /**
  * @interface_method_impl{PDMIMOUSEPORT, pfnPutEventAbs}
  */
-static DECLCALLBACK(int) kbdMousePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t uX, uint32_t uY, int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtons)
+static DECLCALLBACK(int) kbdMousePutEventAbs(PPDMIMOUSEPORT pInterface,
+                                             uint32_t x, uint32_t y, int32_t dz,
+                                             int32_t dw, uint32_t fButtons)
 {
     AssertFailedReturn(VERR_NOT_SUPPORTED);
-    NOREF(pInterface); NOREF(uX); NOREF(uY); NOREF(iDeltaZ); NOREF(iDeltaW); NOREF(fButtons);
+    NOREF(pInterface); NOREF(x); NOREF(y); NOREF(dz); NOREF(dw); NOREF(fButtons);
+}
+
+/**
+ * @interface_method_impl{PDMIMOUSEPORT, pfnPutEventMT}
+ */
+static DECLCALLBACK(int) kbdMousePutEventMT(PPDMIMOUSEPORT pInterface,
+                                            uint32_t x, uint32_t y,
+                                            uint32_t cContact,
+                                            bool fContact)
+{
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
+    NOREF(pInterface); NOREF(x); NOREF(y); NOREF(cContact); NOREF(fContact);
 }
 
 
@@ -1551,6 +1566,7 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pThis->Mouse.IBase.pfnQueryInterface    = kbdMouseQueryInterface;
     pThis->Mouse.IPort.pfnPutEvent          = kbdMousePutEvent;
     pThis->Mouse.IPort.pfnPutEventAbs       = kbdMousePutEventAbs;
+    pThis->Mouse.IPort.pfnPutEventMT        = kbdMousePutEventMT;
 
     /*
      * Register I/O ports, save state, keyboard event handler and mouse event handlers.
