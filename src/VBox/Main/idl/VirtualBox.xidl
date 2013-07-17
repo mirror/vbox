@@ -19523,7 +19523,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
     <!-- Last event marker -->
-    <const name="Last" value="92">
+    <const name="Last" value="93">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
