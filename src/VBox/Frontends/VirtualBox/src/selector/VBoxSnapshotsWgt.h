@@ -63,10 +63,11 @@ private slots:
     void onCurrentChanged (QTreeWidgetItem *aItem = 0);
     void onContextMenuRequested (const QPoint &aPoint);
     void onItemChanged (QTreeWidgetItem *aItem);
+    void sltItemDoubleClicked(QTreeWidgetItem *pItem);
 
     /* Snapshot functionality slots: */
     void sltTakeSnapshot();
-    void sltRestoreSnapshot();
+    void sltRestoreSnapshot(bool fSuppressNonCriticalWarnings = false);
     void sltDeleteSnapshot();
     void sltShowSnapshotDetails();
     void sltCloneSnapshot();
