@@ -1605,14 +1605,14 @@
 	 - in Main we can match (vm name, slot) to ethernet address
 	 that why it's easy to configure dhcp server in such way,
 	 then ask user to to enter valid name,
-	
+
 	 - mac address might change because of adapter type (e1k <-> pcnet) or because
 	 of import/export
-	
+
 	 - it's easy to provide vm-name.rom in boot filename VM with network boot.
-	
+
 	 XXX: do we need classic getOptionValueByMAC?
-	
+
 	 XML: O-o-oh, this settings are per VM, so perhaps they should be stored in
 	      VM configuration files. And we haven't got the attachment type for
 	      NATNetwork.
@@ -9446,6 +9446,75 @@
         A waiting flag specified in the <link to="IGuestSession::waitFor"/> call
         is not supported by the guest.
       </desc>
+    </const>
+  </enum>
+
+  <enum
+    name="GuestUserState"
+    uuid="b2a82b02-fd3d-4fc2-ba84-6ba5ac8be198"
+    >
+    <desc>
+      State a guest user has been changed to.
+    </desc>
+
+    <const name="Unknown"                 value="0">
+      <desc>Unknown state. Not being used.</desc>
+    </const>
+    <const name="LoggedIn"                value="1">
+      <desc>A guest user has been successfully logged into
+        the guest OS.</desc>
+    </const>
+    <const name="LoggedOut"               value="2">
+      <desc>A guest user has been successfully logged out
+        of the guest OS.</desc>
+    </const>
+    <const name="Locked"                  value="3">
+      <desc>A guest user has locked its account. This might
+        include running a password-protected screensaver
+        on the guest.</desc>
+    </const>
+    <const name="Unlocked"                value="4">
+      <desc>A guest user has unlocked its account.</desc>
+    </const>
+    <const name="Disabled"                value="5">
+      <desc>A guest user has been disabled by the guest OS.</desc>
+    </const>
+    <const name="Idle"                    value="6">
+      <desc>A guest user currently is not using the guest
+        OS.</desc>
+    </const>
+    <const name="InUse"                   value="7">
+      <desc>A guest user continued using the guest OS.</desc>
+    </const>
+    <const name="Created"                 value="8">
+      <desc>A guest user has been successfully created.</desc>
+    </const>
+    <const name="Deleted"                 value="9">
+      <desc>A guest user has been successfully deleted.</desc>
+    </const>
+    <const name="SessionChanged"          value="10">
+      <desc>To guest OS has changed the session of a user.</desc>
+    </const>
+    <const name="CredentialsChanged"      value="11">
+      <desc>To guest OS has changed the authentication
+        credentials of a user. This might include changed passwords
+        and authentication types.</desc>
+    </const>
+    <const name="RoleChanged"             value="12">
+      <desc>To guest OS has changed the role of a user permanently,
+        e.g. granting / denying administrative rights.</desc>
+    </const>
+    <const name="GroupAdded"              value="13">
+      <desc>To guest OS has added a user to a specific
+        user group.</desc>
+    </const>
+    <const name="GroupRemoved"            value="14">
+      <desc>To guest OS has removed a user from a specific
+        user group.</desc>
+    </const>
+    <const name="Elevated"                value="15">
+      <desc>To guest OS temporarily has elevated a user
+        to perform a certain task.</desc>
     </const>
   </enum>
 
@@ -19084,7 +19153,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="f019b8c7-22a6-468a-9f7c-3443b7b6c40a"
+    uuid="84af836d-0afc-4598-b9f4-37bf34d13cbd"
     >
 
     <desc>
@@ -19446,6 +19515,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="OnVideoCaptureChanged" value="91">
       <desc>
         See <link to="IVideoCaptureChangedEvent">IVideoCapturedChangeEvent</link>.
+      </desc>
+    </const>
+    <const name="OnGuestUserStateChanged" value="92">
+      <desc>
+        See <link to="IGuestUserStateChangedEvent">IGuestUserStateChangedEvent</link>.
       </desc>
     </const>
     <!-- Last event marker -->
@@ -21244,6 +21318,39 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
+    name="IGuestUserStateChangedEvent" extends="IEvent"
+    uuid="39b4e759-1ec0-4c0f-857f-fbe2a737a256"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestUserStateChanged"
+    >
+    <desc>
+      Notification when a guest user changed its state.
+    </desc>
+
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>
+        Name of the guest user whose state changed.
+      </desc>
+    </attribute>
+    <attribute name="domain" type="wstring" readonly="yes">
+      <desc>
+        Name of the FQDN (fully qualified domain name) this user is bound
+        to. Optional.
+      </desc>
+    </attribute>
+    <attribute name="state" type="GuestUserState" readonly="yes">
+      <desc>
+        What was changed for this guest user.
+      </desc>
+    </attribute>
+    <attribute name="stateDetails" type="wstring" readonly="yes">
+      <desc>
+        Optional state details, depending on the <link to="#state"/> attribute.</li>
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <interface
     name="IStorageDeviceChangedEvent" extends="IEvent"
     uuid="232e9151-ae84-4b8e-b0f3-5c20c35caac9"
     wsmap="managed" autogen="VBoxEvent" id="OnStorageDeviceChanged"
@@ -21269,6 +21376,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
   </interface>
+
   <interface
     name="INATNetworkChangedEvent" extends="IEvent"
     uuid="101ae042-1a29-4a19-92cf-02285773f3b5"
