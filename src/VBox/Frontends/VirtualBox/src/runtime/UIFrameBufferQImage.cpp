@@ -129,8 +129,10 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
 
     /* Remind if requested: */
     if (bRemind)
-        popupCenter().remindAboutWrongColorDepth(m_pMachineView->machineWindow(),
-                                                 pEvent->bitsPerPixel(), 32);
+        popupCenter().updatePopupAboutWrongColorDepth(m_pMachineView->machineWindow(),
+                                                      pEvent->bitsPerPixel(), 32);
+    else
+        popupCenter().recallPopupAboutWrongColorDepth(m_pMachineView->machineWindow());
 }
 
 void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
