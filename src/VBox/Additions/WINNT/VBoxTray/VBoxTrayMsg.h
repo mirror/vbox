@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,48 +18,73 @@
 #ifndef ___VBOXTRAY_MSG_H
 #define ___VBOXTRAY_MSG_H
 
-#define VBOXTRAY_PIPE_IPC               "\\\\.\\pipe\\VBoxTrayIPC"
-#define VBOXTRAY_PIPE_IPC_BUFSIZE       64 * 1024
+#define VBOXTRAY_IPC_PIPENAME           "VBoxTrayIPCSvc"
 
 enum VBOXTRAYIPCMSGTYPE
 {
     /** Restarts VBoxTray. */
     VBOXTRAYIPCMSGTYPE_RESTART        = 10,
-
-    /** Asks the IPC thread to quit. */
-    VBOXTRAYIPCMSGTYPE_IPC_QUIT       = 50,
-
     /** Shows a balloon message in the tray area. */
-    VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG = 100
+    VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG = 100,
+    /** Retrieves the current user's last input
+     *  time. This will be the user VBoxTray is running
+     *  under. */
+    VBOXTRAYIPCMSGTYPE_USERLASTINPUT  = 120
 };
 
 /* VBoxTray's IPC header. */
-typedef struct _VBOXTRAYIPCHEADER
+typedef struct VBOXTRAYIPCHEADER
 {
-    /** Message type. */
-    ULONG ulMsg;
-    /** Size of message body
-     *  (without this header). */
-    ULONG cbBody;
-    /** User-supplied wParam. */
-    ULONG wParam;
-    /** User-supplied lParam. */
-    ULONG lParam;
+    /** Header version, must be 0 by now. */
+    uint32_t uHdrVersion;
+    /** Message type. Specifies a message
+     *  of VBOXTRAYIPCMSGTYPE. */
+    uint32_t uMsgType;
+    /** Message length (in bytes). This must
+     *  include the overall message length, including
+     *  (eventual) dynamically allocated areas which
+     *  are passed into the message structure.
+     */
+    uint32_t uMsgLen;
+
 } VBOXTRAYIPCHEADER, *PVBOXTRAYIPCHEADER;
 
-typedef struct _VBOXTRAYIPCMSG_SHOWBALLOONMSG
+/**
+ * Tells VBoxTray to show a balloon message in Windows'
+ * tray area. This may or may not work depending on the
+ * system's configuration / set user preference.
+ */
+typedef struct VBOXTRAYIPCMSG_SHOWBALLOONMSG
 {
-    /** Message content. */
-    TCHAR    szContent[256];
-    /** Message title. */
-    TCHAR    szTitle[64];
+    /** Length of message body (in bytes). */
+    uint32_t cbMsgContent;
+    /** Length of message title (in bytes). */
+    uint32_t cbMsgTitle;
     /** Message type. */
-    ULONG    ulType;
-    /** Flags; not used yet. */
-    ULONG    ulFlags;
-    /** Time to show the message (in msec). */
-    ULONG    ulShowMS;
+    uint32_t uType;
+    /** Time to show the message (in ms). */
+    uint32_t uShowMS;
+    /** Dynamically allocated stuff.
+     *
+     *  Note: These must come at the end of the
+     *  structure to not overwrite any important
+     *  stuff above.
+     */
+    /** Message body. Can be up to 256 chars
+     *  long. */
+    char     szMsgContent[1];
+        /** Message title. Can be up to 73 chars
+     *  long. */
+    char     szMsgTitle[1];
 } VBOXTRAYIPCMSG_SHOWBALLOONMSG, *PVBOXTRAYIPCMSG_SHOWBALLOONMSG;
+
+/**
+ * Response telling the last input of the current user.
+ */
+typedef struct VBOXTRAYIPCRES_USERLASTINPUT
+{
+    uint32_t uTickCount;
+} VBOXTRAYIPCRES_USERLASTINPUT, *PVBOXTRAYIPCRES_USERLASTINPUT;
 
 #endif /* !___VBOXTRAY_MSG_H */
 
