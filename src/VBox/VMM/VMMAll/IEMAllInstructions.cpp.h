@@ -15581,6 +15581,9 @@ FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, FNIEMCIMPLFARBRANCH *, pfnCImp
             return VINF_SUCCESS;
 
         case IEMMODE_64BIT:
+            /** @todo AMD does not believe in the case (see bs-cpu-xcpt-1) and will
+             *        apparently ignore REX.W, at least for the jmp far qword [rsp] and
+             *        call far qword [rsp] encodings. */
             IEM_MC_BEGIN(3, 1);
             IEM_MC_ARG(uint16_t,        u16Sel,                         0);
             IEM_MC_ARG(uint64_t,        offSeg,                         1);
@@ -15699,8 +15702,8 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
  */
 FNIEMOP_DEF_1(iemOp_Grp5_jmpf_Ep, uint8_t, bRm)
 {
-    IEMOP_MNEMONIC("jmp Ep");
-    IEMOP_HLP_NO_64BIT();
+    IEMOP_MNEMONIC("jmpf Ep");
+    IEMOP_HLP_NO_64BIT(); /** @todo this isn't quite right I'm afraid... */
     return FNIEMOP_CALL_2(iemOpHlp_Grp5_far_Ep, bRm, iemCImpl_FarJmp);
 }
 
