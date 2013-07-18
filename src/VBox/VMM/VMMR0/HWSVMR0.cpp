@@ -2234,9 +2234,9 @@ ResumeExecution:
     case SVM_EXIT_SMI:
     case SVM_EXIT_INIT:
 #ifdef VBOX_WITH_STATISTICS
-        if (vector == SVM_EXIT_INTR)
+        if (exitCode == SVM_EXIT_INTR)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitExtInt);
-        else if (vector == SVM_EXIT_NMI)
+        else if (exitCode == SVM_EXIT_NMI)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHostNmi);
 #endif
         /* External interrupt; leave to allow it to be dispatched again. */
