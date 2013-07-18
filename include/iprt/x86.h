@@ -2253,6 +2253,8 @@ typedef struct X86DESCATTRBITS
     /** 0f - Granularity of the limit. If set 4KB granularity is used, if
      * clear byte. */
     unsigned    u1Granularity : 1;
+    /** 10 - Unusable selector, special Intel (VT-x only?) bit. */
+    unsigned    u1Unusable : 1;
 } X86DESCATTRBITS;
 #endif /* !VBOX_FOR_DTRACE_LIB */
 
