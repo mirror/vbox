@@ -37,26 +37,42 @@
  */
 static int rtLdrLazyLoadDbgHelp(const char *pszFile, PRTLDRMOD phMod)
 {
-    char        szPath[RTPATH_MAX];
-    size_t      cchPath;
-    int rc = RTEnvGetEx(RTENV_DEFAULT, "ProgramFiles", szPath, sizeof(szPath), &cchPath);
-    if (RT_SUCCESS(rc))
+    static const struct
     {
-        /** @todo try Windows SDK location. */
-#ifdef RT_ARCH_X86
-        rc = RTPathAppend(szPath, sizeof(szPath), "Debugging Tools for Windows (x86)\\dbghelp.dll");
+        const char *pszEnv;
+        const char *pszSubDir;
+    } s_aLocations[] =
+    {
+#ifdef RT_ARCH_AMD64
+        { "ProgramFiles(x86)",  "Windows Kits\\8.1\\Debuggers\\x64\\dbghelp.dll" },
+        { "ProgramFiles(x86)",  "Windows Kits\\8.0\\Debuggers\\x64\\dbghelp.dll" },
+        { "ProgramFiles",       "Debugging Tools for Windows (x64)\\dbghelp.dll" },
 #else
-        rc = RTPathAppend(szPath, sizeof(szPath), "Debugging Tools for Windows (x64)\\dbghelp.dll");
-#endif
-        if (RTPathExists(szPath))
+        { "ProgramFiles",       "Windows Kits\\8.1\\Debuggers\\x86\\dbghelp.dll" },
+        { "ProgramFiles",       "Windows Kits\\8.0\\Debuggers\\x86\\dbghelp.dll" },
+        { "ProgramFiles",       "Debugging Tools for Windows (x86)\\dbghelp.dll" },
+#endif /** @todo More places we should look? */
+    };
+    uint32_t i;
+    for (i = 0; i < RT_ELEMENTS(s_aLocations); i++)
+    {
+        char   szPath[RTPATH_MAX];
+        size_t cchPath;
+        int rc = RTEnvGetEx(RTENV_DEFAULT, s_aLocations[i].pszEnv, szPath, sizeof(szPath), &cchPath);
+        if (RT_SUCCESS(rc))
         {
-            rc = RTLdrLoad(szPath, phMod);
+            rc = RTPathAppend(szPath, sizeof(szPath), s_aLocations[i].pszSubDir);
             if (RT_SUCCESS(rc))
-                return rc;
+            {
+                rc = RTLdrLoad(szPath, phMod);
+                if (RT_SUCCESS(rc))
+                    return rc;
+            }
         }
     }
 
-    return RTLdrLoad(pszFile, phMod);
+    /* Fall back on the system one, if present. */
+    return RTLdrLoadSystem(pszFile, true /*fNoUnload*/, phMod);
 }
 
 RTLDRLAZY_MODULE_EX(dbghelp, "dbghelp.dll", rtLdrLazyLoadDbgHelp);
