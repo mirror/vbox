@@ -18,7 +18,7 @@
 #ifndef ___VBOXTRAY_MSG_H
 #define ___VBOXTRAY_MSG_H
 
-#define VBOXTRAY_IPC_PIPENAME           "VBoxTrayIPCSvc"
+#define VBOXTRAY_IPC_PIPE_PREFIX      "VBoxTrayIPC-"
 
 enum VBOXTRAYIPCMSGTYPE
 {
@@ -28,13 +28,15 @@ enum VBOXTRAYIPCMSGTYPE
     VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG = 100,
     /** Retrieves the current user's last input
      *  time. This will be the user VBoxTray is running
-     *  under. */
+     *  under. No actual message for this command
+     *  required. */
     VBOXTRAYIPCMSGTYPE_USERLASTINPUT  = 120
 };
 
 /* VBoxTray's IPC header. */
 typedef struct VBOXTRAYIPCHEADER
 {
+    /** @todo Add magic? */
     /** Header version, must be 0 by now. */
     uint32_t uHdrVersion;
     /** Message type. Specifies a message
@@ -83,7 +85,8 @@ typedef struct VBOXTRAYIPCMSG_SHOWBALLOONMSG
  */
 typedef struct VBOXTRAYIPCRES_USERLASTINPUT
 {
-    uint32_t uTickCount;
+    /** Last occurred user input event (in ms). */
+    uint32_t uLastInputMs;
 } VBOXTRAYIPCRES_USERLASTINPUT, *PVBOXTRAYIPCRES_USERLASTINPUT;
 
 #endif /* !___VBOXTRAY_MSG_H */

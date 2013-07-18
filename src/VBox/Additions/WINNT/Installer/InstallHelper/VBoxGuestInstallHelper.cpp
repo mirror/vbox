@@ -125,6 +125,45 @@ static void vboxPushResultAsString(HRESULT hr)
     pushstring(szErr);
 }
 
+/**
+ * Connects to VBoxTray IPC under the behalf of the user running
+ * in the current thread context.
+ *
+ * @return  IPRT status code.
+ * @param   phSession               Where to store the IPC session.
+ */
+static int vboxConnectToVBoxTray(RTLOCALIPCSESSION hSession)
+{
+    int rc = VINF_SUCCESS;
+
+    RTUTF16 wszUserName[255];
+    DWORD cchUserName = sizeof(wszUserName) / sizeof(RTUTF16);
+    BOOL fRc = GetUserNameW(wszUserName, &cchUserName);
+    if (!fRc)
+        rc = RTErrConvertFromWin32(GetLastError());
+
+    if (RT_SUCCESS(rc))
+    {
+        char *pszUserName;
+        rc = RTUtf16ToUtf8(wszUserName, &pszUserName);
+        if (RT_SUCCESS(rc))
+        {
+            char szPipeName[255];
+            if (RTStrPrintf(szPipeName, sizeof(szPipeName), "%s%s",
+                            VBOXTRAY_IPC_PIPE_PREFIX, pszUserName))
+            {
+                rc = RTLocalIpcSessionConnect(&hSession, szPipeName, 0 /* Flags */);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+
+            RTStrFree(pszUserName);
+        }
+    }
+
+    return rc;
+}
+
 static void vboxChar2WCharFree(PWCHAR pwString)
 {
     if (pwString)
@@ -436,7 +475,7 @@ VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
             if (SUCCEEDED(hr))
             {
                 RTLOCALIPCSESSION hSession;
-                int rc = RTLocalIpcSessionConnect(&hSession, VBOXTRAY_IPC_PIPENAME, 0 /* Flags */);
+                int rc = vboxConnectToVBoxTray(hSession);
                 if (RT_SUCCESS(rc))
                 {
                     VBOXTRAYIPCHEADER ipcHdr = { 0 /* Header version */,

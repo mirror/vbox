@@ -30,6 +30,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
+#include <iprt/localipc.h>
 #include <iprt/mem.h>
 #include <iprt/thread.h>
 #include <iprt/string.h>
@@ -39,6 +40,7 @@
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
+#include "../../WINNT/VBoxTray/VBoxTrayMsg.h" /* For IPC. */
 
 static uint32_t s_uGuestPropClientID = 0;
 static uint32_t s_uIter = 0;
@@ -89,6 +91,7 @@ uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMI
 bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);
 int  VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
 void VBoxServiceVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paProcs);
+int vboxServiceVMInfoWinWriteLastInput(char *pszUser);
 
 typedef BOOL WINAPI FNQUERYFULLPROCESSIMAGENAME(HANDLE,  DWORD, LPTSTR, PDWORD);
 typedef FNQUERYFULLPROCESSIMAGENAME *PFNQUERYFULLPROCESSIMAGENAME;
@@ -804,6 +807,68 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
 }
 
 
+static int vboxServiceVMInfoWinWriteLastInput(char *pszUser)
+{
+    AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    char szPipeName[255];
+    if (RTStrPrintf(szPipeName, sizeof(szPipeName), "%s%s",
+                    VBOXTRAY_IPC_PIPE_PREFIX, pszUser))
+    {
+        RTLOCALIPCSESSION hSession;
+        rc = RTLocalIpcSessionConnect(&hSession, szPipeName, 0 /* Flags */);
+        if (RT_SUCCESS(rc))
+        {
+            VBOXTRAYIPCHEADER ipcHdr = { 0 /* Header version */,
+                                         VBOXTRAYIPCMSGTYPE_USERLASTINPUT, 0 /* No msg */ };
+
+            rc = RTLocalIpcSessionWrite(hSession, &ipcHdr, sizeof(ipcHdr));
+
+            VBOXTRAYIPCRES_USERLASTINPUT ipcRes;
+            if (RT_SUCCESS(rc))
+                rc = RTLocalIpcSessionRead(hSession, &ipcRes, sizeof(ipcRes),
+                                           NULL /* Exact read */);
+            if (RT_SUCCESS(rc))
+            {
+                if (ipcRes.uLastInputMs)
+                    VBoxServiceVerbose(4, "User \"%s\" is idle for %RU32ms\n",
+                                       pszUser, ipcRes.uLastInputMs);
+            }
+#ifdef DEBUG
+            VBoxServiceVerbose(4, "Querying last input for user \"%s\" ended with rc=%Rrc\n",
+                               pszUser, rc);
+#endif
+            int rc2 = RTLocalIpcSessionClose(hSession);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+        else
+        {
+            switch (rc)
+            {
+                case VERR_FILE_NOT_FOUND:
+                    /* No VBoxTray (or too old version which does not support IPC) running
+                       for the given user. Not much we can do then. */
+                    VBoxServiceVerbose(4, "User \"%s\" not logged in, no last input available\n",
+                                       pszUser);
+                    break;
+
+                default:
+                    VBoxServiceVerbose(4, "Error querying last input for user \"%s\", rc=%Rrc\n",
+                                       pszUser, rc);
+                    break;
+            }
+
+            rc = VINF_SUCCESS;
+        }
+    }
+
+    return rc;
+}
+
+
 /**
  * Retrieves the currently logged in users and stores their names along with the
  * user count.
@@ -994,12 +1059,14 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
 
                     *pcUsersInList += 1;
 
-                    char *pszTemp;
-                    int rc2 = RTUtf16ToUtf8(pUserInfo[i].wszUser, &pszTemp);
+                    char *pszUser;
+                    int rc2 = RTUtf16ToUtf8(pUserInfo[i].wszUser, &pszUser);
                     if (RT_SUCCESS(rc2))
                     {
-                        rc = RTStrAAppend(ppszUserList, pszTemp);
-                        RTMemFree(pszTemp);
+                        rc = RTStrAAppend(ppszUserList, pszUser);
+                        if (RT_SUCCESS(rc))
+                            rc = vboxServiceVMInfoWinWriteLastInput(pszUser);
+                        RTMemFree(pszUser);
                     }
                     else
                         rc = RTStrAAppend(ppszUserList, "<string-conversion-error>");
