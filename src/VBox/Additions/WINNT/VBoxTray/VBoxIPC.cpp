@@ -109,13 +109,15 @@ static int vboxIPCHandleUserLastInput(RTLOCALIPCSESSION hSession, PVBOXTRAYIPCHE
 
     int rc = VINF_SUCCESS;
 
+    /* Note: This only works up to 49.7 days (= 2^32, 32-bit counter)
+       since Windows was started. */
     LASTINPUTINFO lastInput;
     lastInput.cbSize = sizeof(LASTINPUTINFO);
     BOOL fRc = GetLastInputInfo(&lastInput);
     if (fRc)
     {
         VBOXTRAYIPCRES_USERLASTINPUT ipcRes;
-        ipcRes.uTickCount = lastInput.dwTime; /** @sa GetTickCount(). */
+        ipcRes.uLastInputMs = GetTickCount() - lastInput.dwTime;
         rc = RTLocalIpcSessionWrite(hSession, &ipcRes, sizeof(ipcRes));
     }
     else
@@ -142,25 +144,54 @@ int VBoxIPCInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
 
     *pfStartThread = false;
 
-    gCtx.pEnv = pEnv;
-    gCtx.hServer = NIL_RTLOCALIPCSERVER;
-
     int rc = RTCritSectInit(&gCtx.CritSect);
     if (RT_SUCCESS(rc))
     {
-        rc = RTLocalIpcServerCreate(&gCtx.hServer, VBOXTRAY_IPC_PIPENAME,
-                                    RTLOCALIPC_FLAGS_MULTI_SESSION);
-        if (RT_FAILURE(rc))
+        RTUTF16 wszUserName[255];
+        DWORD cchUserName = sizeof(wszUserName) / sizeof(RTUTF16);
+        BOOL fRc = GetUserNameW(wszUserName, &cchUserName);
+        if (!fRc)
+            rc = RTErrConvertFromWin32(GetLastError());
+
+        if (RT_SUCCESS(rc))
         {
-            LogRelFunc(("Creating local IPC server failed with rc=%Rrc\n", rc));
-            return rc;
+            char *pszUserName;
+            rc = RTUtf16ToUtf8(wszUserName, &pszUserName);
+            if (RT_SUCCESS(rc))
+            {
+                char szPipeName[255];
+                if (RTStrPrintf(szPipeName, sizeof(szPipeName), "%s%s",
+                                VBOXTRAY_IPC_PIPE_PREFIX, pszUserName))
+                {
+                    rc = RTLocalIpcServerCreate(&gCtx.hServer, szPipeName,
+                                                RTLOCALIPC_FLAGS_MULTI_SESSION);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTStrFree(pszUserName);
+
+                        gCtx.pEnv = pEnv;
+                        RTListInit(&gCtx.SessionList);
+
+                        *ppInstance = &gCtx;
+                        *pfStartThread = true;
+
+                        LogRelFunc(("Local IPC server now running at \"%s\"\n",
+                                    szPipeName));
+                        return VINF_SUCCESS;
+                    }
+
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+
+                RTStrFree(pszUserName);
+            }
         }
 
-        RTListInit(&gCtx.SessionList);
-
-        *pfStartThread = true;
+        RTCritSectDelete(&gCtx.CritSect);
     }
 
+    LogRelFunc(("Creating local IPC server failed with rc=%Rrc\n", rc));
     return rc;
 }
 
