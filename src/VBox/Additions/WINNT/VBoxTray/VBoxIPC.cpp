@@ -294,6 +294,10 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
             VBOXTRAYIPCHEADER ipcHdr;
             rc = RTLocalIpcSessionRead(hSession, &ipcHdr, sizeof(ipcHdr),
                                        NULL /* Exact read, blocking */);
+            bool fRejected = false;
+            if (RT_SUCCESS(rc))
+                fRejected = ipcHdr.uMagic != VBOXTRAY_IPC_HDR_MAGIC;
+
             if (RT_SUCCESS(rc))
             {
                 switch (ipcHdr.uMsgType)
@@ -312,35 +316,41 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
 
                     default:
                     {
-                        static int s_cRejectedCmds = 0;
-                        if (++s_cRejectedCmds <= 3)
-                        {
-                            LogRelFunc(("Session %p: Received unknown command %RU32 (%RU32 bytes), rejecting (%RU32/3)\n",
-                                        pThis, ipcHdr.uMsgType, ipcHdr.uMsgLen, s_cRejectedCmds + 1));
-                            if (ipcHdr.uMsgLen)
-                            {
-                                /* Get and discard payload data. */
-                                size_t cbRead;
-                                uint8_t devNull[_1K];
-                                while (ipcHdr.uMsgLen)
-                                {
-                                    rc = RTLocalIpcSessionRead(hSession, &devNull, sizeof(devNull), &cbRead);
-                                    if (RT_FAILURE(rc))
-                                        break;
-                                    AssertRelease(cbRead <= ipcHdr.uMsgLen);
-                                    ipcHdr.uMsgLen -= (uint32_t)cbRead;
-                                }
-                            }
-                        }
-                        else
-                            rc = VERR_INVALID_PARAMETER; /* Enough fun, bail out. */
+                        /* Unknown command, reject. */
+                        fRejected = true;
                         break;
                     }
-
-                    if (RT_FAILURE(rc))
-                        LogFunc(("Session %p: Handling command %RU32 failed with rc=%Rrc\n",
-                                 pThis, ipcHdr.uMsgType, rc));
                 }
+
+                if (RT_FAILURE(rc))
+                    LogFunc(("Session %p: Handling command %RU32 failed with rc=%Rrc\n",
+                             pThis, ipcHdr.uMsgType, rc));
+            }
+
+            if (fRejected)
+            {
+                static int s_cRejectedCmds = 0;
+                if (++s_cRejectedCmds <= 3)
+                {
+                    LogRelFunc(("Session %p: Received invalid/unknown command %RU32 (%RU32 bytes), rejecting (%RU32/3)\n",
+                                pThis, ipcHdr.uMsgType, ipcHdr.uMsgLen, s_cRejectedCmds + 1));
+                    if (ipcHdr.uMsgLen)
+                    {
+                        /* Get and discard payload data. */
+                        size_t cbRead;
+                        uint8_t devNull[_1K];
+                        while (ipcHdr.uMsgLen)
+                        {
+                            rc = RTLocalIpcSessionRead(hSession, &devNull, sizeof(devNull), &cbRead);
+                            if (RT_FAILURE(rc))
+                                break;
+                            AssertRelease(cbRead <= ipcHdr.uMsgLen);
+                            ipcHdr.uMsgLen -= (uint32_t)cbRead;
+                        }
+                    }
+                }
+                else
+                    rc = VERR_INVALID_PARAMETER; /* Enough fun, bail out. */
             }
         }
     }

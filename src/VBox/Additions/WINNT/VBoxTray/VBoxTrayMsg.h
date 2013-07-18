@@ -18,7 +18,11 @@
 #ifndef ___VBOXTRAY_MSG_H
 #define ___VBOXTRAY_MSG_H
 
+/** The IPC pipe's prefix. Will be followed by the
+ *  username VBoxTray runs under. */
 #define VBOXTRAY_IPC_PIPE_PREFIX      "VBoxTrayIPC-"
+/** The IPC header's magic. */
+#define VBOXTRAY_IPC_HDR_MAGIC        0x19840804
 
 enum VBOXTRAYIPCMSGTYPE
 {
@@ -36,7 +40,8 @@ enum VBOXTRAYIPCMSGTYPE
 /* VBoxTray's IPC header. */
 typedef struct VBOXTRAYIPCHEADER
 {
-    /** @todo Add magic? */
+    /** The header's magic. */
+    uint32_t uMagic;
     /** Header version, must be 0 by now. */
     uint32_t uHdrVersion;
     /** Message type. Specifies a message
