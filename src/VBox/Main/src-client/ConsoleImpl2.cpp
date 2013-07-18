@@ -2418,20 +2418,45 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 /* Virtual USB Mouse/Tablet */
                 PointingHIDType_T aPointingHID;
                 hrc = pMachine->COMGETTER(PointingHIDType)(&aPointingHID);                  H();
-                if (aPointingHID == PointingHIDType_USBMouse || aPointingHID == PointingHIDType_USBTablet)
+                if (   aPointingHID == PointingHIDType_USBMouse
+                    || aPointingHID == PointingHIDType_USBTablet)
                 {
                     InsertConfigNode(pUsbDevices, "HidMouse", &pDev);
                     InsertConfigNode(pDev,     "0", &pInst);
                     InsertConfigNode(pInst,    "Config", &pCfg);
 
-                    if (aPointingHID == PointingHIDType_USBTablet)
-                    {
-                        InsertConfigString(pCfg, "Mode", "absolute");
-                    }
-                    else
-                    {
-                        InsertConfigString(pCfg, "Mode", "relative");
-                    }
+                    InsertConfigString(pCfg,   "Mode", "relative");
+                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                    InsertConfigString(pLunL0, "Driver",        "MouseQueue");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
+                    InsertConfigInteger(pCfg,  "QueueSize",            128);
+
+                    InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+                    InsertConfigString(pLunL1, "Driver",        "MainMouse");
+                    InsertConfigNode(pLunL1,   "Config", &pCfg);
+                    pMouse = mMouse;
+                    InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
+                }
+                if (aPointingHID == PointingHIDType_USBTablet)
+                {
+                    InsertConfigNode(pDev,     "1", &pInst);
+                    InsertConfigNode(pInst,    "Config", &pCfg);
+
+                    InsertConfigString(pCfg,   "Mode", "absolute");
+                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                    InsertConfigString(pLunL0, "Driver",        "MouseQueue");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
+                    InsertConfigInteger(pCfg,  "QueueSize",            128);
+
+                    InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+                    InsertConfigString(pLunL1, "Driver",        "MainMouse");
+                    InsertConfigNode(pLunL1,   "Config", &pCfg);
+                    pMouse = mMouse;
+                    InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
+                    InsertConfigNode(pDev,     "2", &pInst);
+                    InsertConfigNode(pInst,    "Config", &pCfg);
+
+                    InsertConfigString(pCfg,   "Mode", "multitouch");
                     InsertConfigNode(pInst,    "LUN#0", &pLunL0);
                     InsertConfigString(pLunL0, "Driver",        "MouseQueue");
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
