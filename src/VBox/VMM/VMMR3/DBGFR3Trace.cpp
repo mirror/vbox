@@ -150,8 +150,8 @@ int dbgfR3TraceInit(PVM pVM)
      */
     PCFGMNODE pDbgfNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "DBGF");
 #if defined(DEBUG) || defined(RTTRACE_ENABLED)
-    bool const          fDefault        = true;
-    const char * const  pszConfigDefault = "all";
+    bool const          fDefault        = false;
+    const char * const  pszConfigDefault = "";
 #else
     bool const          fDefault        = false;
     const char * const  pszConfigDefault = "";
