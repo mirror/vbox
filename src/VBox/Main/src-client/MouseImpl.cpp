@@ -436,7 +436,7 @@ HRESULT Mouse::reportAbsEvent(int32_t x, int32_t y,
                               int32_t dz, int32_t dw, uint32_t fButtons,
                               bool fUsesVMMDevEvent)
 {
-    HRESULT rc;
+    HRESULT rc = S_OK;
     /** If we are using the VMMDev to report absolute position but without
      * VMMDev IRQ support then we need to send a small "jiggle" to the emulated
      * relative mouse device to alert the guest to changes. */
@@ -453,9 +453,13 @@ HRESULT Mouse::reportAbsEvent(int32_t x, int32_t y,
             cJiggle = !fUsesVMMDevEvent;
         }
         else
-            rc = reportAbsEventToMouseDev(x, y, 0, 0, 0);
+        {
+            rc = reportAbsEventToMouseDev(x, y, 0, 0, fButtons);
+            fButtons = 0;
+        }
     }
-    rc = reportRelEventToMouseDev(cJiggle, 0, dz, dw, fButtons);
+    if (SUCCEEDED(rc))
+        rc = reportRelEventToMouseDev(cJiggle, 0, dz, dw, fButtons);
 
     mcLastX = x;
     mcLastY = y;
