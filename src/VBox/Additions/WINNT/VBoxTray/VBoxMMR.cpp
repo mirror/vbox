@@ -45,10 +45,7 @@ void VBoxMMRCleanup(VBOXMMRCONTEXT *pCtx)
     }
 }
 
-int VBoxMMRInit(
-    const VBOXSERVICEENV *pEnv,
-    void **ppInstance,
-    bool *pfStartThread)
+int VBoxMMRInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
     LogRel2(("VBoxMMR: Initializing\n"));
 
@@ -75,12 +72,13 @@ int VBoxMMRInit(
             LogRel2(("VBoxMMR: Hooking proc not found\n"));
             rc = VERR_NOT_FOUND;
         }
+
+        RTLdrClose(gCtx.hModHook);
+        gCtx.hModHook = NIL_RTLDRMOD;
     }
     else
         LogRel2(("VBoxMMR: Hooking library not found (%Rrc)\n", rc));
 
-    RTLdrClose(gCtx.hModHook);
-    gCtx.hModHook = NIL_RTLDRMOD;
     return rc;
 }
 
