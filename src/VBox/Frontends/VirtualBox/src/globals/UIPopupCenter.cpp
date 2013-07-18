@@ -342,17 +342,7 @@ void UIPopupCenter::assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *p
         }
         case UIPopupIntegrationType_Toplevel:
         {
-            pPopupStack->setParent(pParent,
-#if defined(Q_WS_WIN) || defined(Q_WS_X11)
-                                   /* Under Win and x11/KDE hosts *tool-window*:
-                                    * 1. has no task-bar record,
-                                    * 2. do not rewoke focus from current-window on show-event. */
-                                   Qt::Tool
-#else /* Q_WS_WIN || Q_WS_X11 */
-                                   /* Need to test under Mac host... */
-                                   Qt::Window
-#endif /* !Q_WS_X11 */
-                                   | Qt::FramelessWindowHint);
+            pPopupStack->setParent(pParent, Qt::Tool | Qt::FramelessWindowHint);
             break;
         }
         default: break;
