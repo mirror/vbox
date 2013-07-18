@@ -1869,6 +1869,7 @@ static VBOXSTRICTRC iemMiscValidateNewSS(PIEMCPU pIemCpu, PCCPUMCTX pCtx, RTSEL 
 #define IEM_XCPT_FLAGS_BP_INSTR         RT_BIT_32(5)
 /** @}  */
 
+
 /**
  * Loads the specified stack far pointer from the TSS.
  *
@@ -1941,6 +1942,40 @@ static VBOXSTRICTRC iemRaiseLoadStackFromTss32Or16(PIEMCPU pIemCpu, PCCPUMCTX pC
             AssertFailedReturn(VERR_INTERNAL_ERROR_2);
     }
     return rcStrict;
+}
+
+
+/**
+ * Loads the specified stack pointer from the 64-bit TSS.
+ *
+ * @returns VBox strict status code.
+ * @param   pIemCpu         The IEM per CPU instance data.
+ * @param   pCtx            The CPU context.
+ * @param   uCpl            The CPL to load the stack for.
+ * @param   uIst            The interrupt stack table index, 0 if to use uCpl.
+ * @param   puRsp           Where to return the new stack pointer.
+ */
+static VBOXSTRICTRC iemRaiseLoadStackFromTss64(PIEMCPU pIemCpu, PCCPUMCTX pCtx, uint8_t uCpl, uint8_t uIst,
+                                               uint64_t *puRsp)
+{
+    Assert(uCpl < 4);
+    Assert(uIst < 8);
+    *puRsp  = 0; /* make gcc happy */
+
+    AssertReturn(pCtx->tr.Attr.n.u4Type == AMD64_SEL_TYPE_SYS_TSS_BUSY, VERR_INTERNAL_ERROR_2);
+
+    uint32_t off;
+    if (uIst)
+        off = (uIst - 1) * sizeof(uint64_t) + RT_OFFSETOF(X86TSS64, ist1);
+    else
+        off = uCpl * sizeof(uint64_t) + RT_OFFSETOF(X86TSS64, rsp0);
+    if (off + sizeof(uint64_t) > pCtx->tr.u32Limit)
+    {
+        Log(("iemRaiseLoadStackFromTss64: out of bounds! uCpl=%d uIst=%d, u32Limit=%#x\n", uCpl, uIst, pCtx->tr.u32Limit));
+        return iemRaiseTaskSwitchFaultCurrentTSS(pIemCpu);
+    }
+
+    return iemMemFetchSysU64(pIemCpu, puRsp, UINT8_MAX, pCtx->tr.u64Base + off);
 }
 
 
@@ -2499,17 +2534,19 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
         return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
     }
 
-    /* Don't allow lowering the privilege level. */
-    /** @todo Does the lowering of privileges apply to software interrupts
-     *        only?  This has bearings on the more-privileged or
-     *        same-privilege stack behavior further down.  A testcase would
-     *        be nice. */
+    /* Don't allow lowering the privilege level.  For non-conforming CS
+       selectors, the CS.DPL sets the privilege level the trap/interrupt
+       handler runs at.  For conforming CS selectors, the CPL remains
+       unchanged, but the CS.DPL must be <= CPL. */
+    /** @todo Testcase: Interrupt handler with CS.DPL=1, interrupt dispatched
+     *        when CPU in Ring-0. Result \#GP?  */
     if (DescCS.Legacy.Gen.u2Dpl > pIemCpu->uCpl)
     {
         Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x - DPL (%d) > CPL (%d) -> #GP\n",
              u8Vector, NewCS, DescCS.Legacy.Gen.u2Dpl, pIemCpu->uCpl));
         return iemRaiseGeneralProtectionFault(pIemCpu, NewCS & X86_SEL_MASK_OFF_RPL);
     }
+
 
     /* Make sure the selector is present. */
     if (!DescCS.Legacy.Gen.u1Present)
@@ -2528,146 +2565,93 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
 
-#if 0
     /*
-     * If the privilege level changes, we need to get a new stack from the TSS.
-     * This in turns means validating the new SS and ESP...
+     * If the privilege level changes or if the IST isn't zero, we need to get
+     * a new stack from the TSS.
      */
+    uint64_t        uNewRsp;
     uint32_t        fEfl    = IEMMISC_GET_EFL(pIemCpu, pCtx);
     uint8_t const   uNewCpl = DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_CONF
                             ? pIemCpu->uCpl : DescCS.Legacy.Gen.u2Dpl;
-    if (uNewCpl != pIemCpu->uCpl)
+    if (   uNewCpl != pIemCpu->uCpl
+        || Idte.Gate.u3IST != 0)
     {
-        RTSEL    NewSS;
-        uint32_t uNewEsp;
-        rcStrict = iemRaiseLoadStackFromTss32Or16(pIemCpu, pCtx, uNewCpl, &NewSS, &uNewEsp);
+        rcStrict = iemRaiseLoadStackFromTss64(pIemCpu, pCtx, uNewCpl, Idte.Gate.u3IST, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
-
-        IEMSELDESC DescSS;
-        rcStrict = iemMiscValidateNewSS(pIemCpu, pCtx, NewSS, uNewCpl, &DescSS);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
-
-        /* Check that there is sufficient space for the stack frame. */
-        uint32_t cbLimitSS = X86DESC_LIMIT_G(&DescSS.Legacy);
-        if (DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_DOWN)
-        {
-            IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Expand down segments\n")); /** @todo Implement expand down segment support. */
-        }
-
-        uint8_t const cbStackFrame = fFlags & IEM_XCPT_FLAGS_ERR ? 24 : 20;
-        if (   uNewEsp - 1 > cbLimitSS
-            || uNewEsp < cbStackFrame)
-        {
-            Log(("iemRaiseXcptOrIntInLongMode: %#x - SS=%#x ESP=%#x cbStackFrame=%#x is out of bounds -> #GP\n",
-                 u8Vector, NewSS, uNewEsp, cbStackFrame));
-            return iemRaiseSelectorBoundsBySelector(pIemCpu, NewSS);
-        }
-
-        /*
-         * Start making changes.
-         */
-
-        /* Create the stack frame. */
-        RTPTRUNION uStackFrame;
-        rcStrict = iemMemMap(pIemCpu, &uStackFrame.pv, cbStackFrame, UINT8_MAX,
-                             uNewEsp - cbStackFrame + X86DESC_BASE(&DescSS.Legacy), IEM_ACCESS_STACK_W | IEM_ACCESS_WHAT_SYS); /* _SYS is a hack ... */
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
-        void * const pvStackFrame = uStackFrame.pv;
-
-        if (fFlags & IEM_XCPT_FLAGS_ERR)
-            *uStackFrame.pu32++ = uErr;
-        uStackFrame.pu32[0] = (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
-                            ? pCtx->eip + cbInstr : pCtx->eip;
-        uStackFrame.pu32[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl;
-        uStackFrame.pu32[2] = fEfl;
-        uStackFrame.pu32[3] = pCtx->esp;
-        uStackFrame.pu32[4] = pCtx->ss.Sel;
-        rcStrict = iemMemCommitAndUnmap(pIemCpu, pvStackFrame, IEM_ACCESS_STACK_W | IEM_ACCESS_WHAT_SYS);
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
-
-        /* Mark the selectors 'accessed' (hope this is the correct time). */
-        /** @todo testcase: excatly _when_ are the accessed bits set - before or
-         *        after pushing the stack frame? (Write protect the gdt + stack to
-         *        find out.) */
-        if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
-        {
-            rcStrict = iemMemMarkSelDescAccessed(pIemCpu, NewCS);
-            if (rcStrict != VINF_SUCCESS)
-                return rcStrict;
-            DescCS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-        }
-
-        if (!(DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
-        {
-            rcStrict = iemMemMarkSelDescAccessed(pIemCpu, NewSS);
-            if (rcStrict != VINF_SUCCESS)
-                return rcStrict;
-            DescSS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-        }
-
-        /*
-         * Start comitting the register changes (joins with the DPL=CPL branch).
-         */
-        pCtx->ss.Sel            = NewSS;
-        pCtx->ss.ValidSel       = NewSS;
-        pCtx->ss.fFlags         = CPUMSELREG_FLAGS_VALID;
-        pCtx->ss.u32Limit       = cbLimitSS;
-        pCtx->ss.u64Base        = X86DESC_BASE(&DescSS.Legacy);
-        pCtx->ss.Attr.u         = X86DESC_GET_HID_ATTR(&DescSS.Legacy);
-        pCtx->rsp               = uNewEsp - cbStackFrame; /** @todo Is the high word cleared for 16-bit stacks and/or interrupt handlers? */
-        pIemCpu->uCpl           = uNewCpl;
+        /** @todo testcase: is this aligned? */
     }
-    /*
-     * Same privilege, no stack change and smaller stack frame.
-     */
     else
+        uNewRsp = pCtx->rsp & 0xf;
+
+    /*
+     * Start making changes.
+     */
+
+    /* Create the stack frame. */
+    uint32_t   cbStackFrame = sizeof(uint64_t) * (6 + !!(fFlags & IEM_XCPT_FLAGS_ERR));
+    RTPTRUNION uStackFrame;
+    rcStrict = iemMemMap(pIemCpu, &uStackFrame.pv, cbStackFrame, UINT8_MAX,
+                         uNewRsp - cbStackFrame, IEM_ACCESS_STACK_W | IEM_ACCESS_WHAT_SYS); /* _SYS is a hack ... */
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+    void * const pvStackFrame = uStackFrame.pv;
+
+    if (fFlags & IEM_XCPT_FLAGS_ERR)
+        *uStackFrame.pu64++ = uErr;
+    uStackFrame.pu64[0] = (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
+                        ? pCtx->rip + cbInstr : pCtx->rip;
+    uStackFrame.pu64[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl;
+    uStackFrame.pu64[2] = fEfl;
+    uStackFrame.pu64[3] = pCtx->rsp;
+    uStackFrame.pu64[4] = pCtx->ss.Sel;
+    rcStrict = iemMemCommitAndUnmap(pIemCpu, pvStackFrame, IEM_ACCESS_STACK_W | IEM_ACCESS_WHAT_SYS);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /* Mark the CS selectors 'accessed' (hope this is the correct time). */
+    /** @todo testcase: excatly _when_ are the accessed bits set - before or
+     *        after pushing the stack frame? (Write protect the gdt + stack to
+     *        find out.) */
+    if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
     {
-        uint64_t        uNewRsp;
-        RTPTRUNION      uStackFrame;
-        uint8_t const   cbStackFrame = fFlags & IEM_XCPT_FLAGS_ERR ? 16 : 12;
-        rcStrict = iemMemStackPushBeginSpecial(pIemCpu, cbStackFrame, &uStackFrame.pv, &uNewRsp);
+        rcStrict = iemMemMarkSelDescAccessed(pIemCpu, NewCS);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
-        void * const pvStackFrame = uStackFrame.pv;
-
-        if (fFlags & IEM_XCPT_FLAGS_ERR)
-            *uStackFrame.pu32++ = uErr;
-        uStackFrame.pu32[0] = (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
-                            ? pCtx->eip + cbInstr : pCtx->eip;
-        uStackFrame.pu32[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl;
-        uStackFrame.pu32[2] = fEfl;
-        rcStrict = iemMemCommitAndUnmap(pIemCpu, pvStackFrame, IEM_ACCESS_STACK_W); /* don't use the commit here */
-        if (rcStrict != VINF_SUCCESS)
-            return rcStrict;
-
-        /* Mark the CS selector as 'accessed'. */
-        if (!(DescCS.Legacy.Gen.u4Type & X86_SEL_TYPE_ACCESSED))
-        {
-            rcStrict = iemMemMarkSelDescAccessed(pIemCpu, NewCS);
-            if (rcStrict != VINF_SUCCESS)
-                return rcStrict;
-            DescCS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
-        }
-
-        /*
-         * Start committing the register changes (joins with the other branch).
-         */
-        pCtx->rsp = uNewRsp;
+        DescCS.Legacy.Gen.u4Type |= X86_SEL_TYPE_ACCESSED;
     }
 
-    /* ... register committing continues. */
-    pCtx->cs.Sel            = (NewCS & ~X86_SEL_RPL) | uNewCpl;
-    pCtx->cs.ValidSel       = (NewCS & ~X86_SEL_RPL) | uNewCpl;
-    pCtx->cs.fFlags         = CPUMSELREG_FLAGS_VALID;
-    pCtx->cs.u32Limit       = cbLimitCS;
-    pCtx->cs.u64Base        = X86DESC_BASE(&DescCS.Legacy);
-    pCtx->cs.Attr.u         = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
+    /*
+     * Start comitting the register changes.
+     */
+    /** @todo research/testcase: Figure out what VT-x and AMD-V loads into the
+     *        hidden registers when interrupting 32-bit or 16-bit code! */
+    pCtx->ss.Sel        = 0 | uNewCpl;
+    pCtx->ss.ValidSel   = 0 | uNewCpl;
+    pCtx->ss.fFlags     = CPUMSELREG_FLAGS_VALID;
+    pCtx->ss.u32Limit   = UINT32_MAX;
+    pCtx->ss.u64Base    = 0;
+    pCtx->ss.Attr.u     = 0;
+    pCtx->ss.Attr.n.u4Type          = X86_SEL_TYPE_RW_ACC;
+    pCtx->ss.Attr.n.u1DescType      = 1;
+    pCtx->ss.Attr.n.u2Dpl           = uNewCpl;
+    pCtx->ss.Attr.n.u1Present       = uNewCpl;
+    pCtx->ss.Attr.n.u4LimitHigh     = 0;
+    pCtx->ss.Attr.n.u1Available     = 0;
+    pCtx->ss.Attr.n.u1Long          = 0;
+    pCtx->ss.Attr.n.u1DefBig        = 0;
+    pCtx->ss.Attr.n.u1Granularity   = 0;
+    pCtx->ss.Attr.n.u1Unusable      = 1;
+    pCtx->rsp           = uNewRsp - cbStackFrame;
+    pCtx->cs.Sel        = (NewCS & ~X86_SEL_RPL) | uNewCpl;
+    pCtx->cs.ValidSel   = (NewCS & ~X86_SEL_RPL) | uNewCpl;
+    pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
+    pCtx->cs.u32Limit   = X86DESC_LIMIT_G(&DescCS.Legacy);
+    pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
+    pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
+    pCtx->rip           = uNewRip;
+    pIemCpu->uCpl       = uNewCpl;
 
-    pCtx->rip               = uNewEip;
     fEfl &= ~fEflToClear;
     IEMMISC_SET_EFL(pIemCpu, pCtx, fEfl);
 
@@ -2678,11 +2662,6 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
         iemRaiseXcptAdjustState(pCtx, u8Vector);
 
     return fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT ? VINF_IEM_RAISED_XCPT : VINF_SUCCESS;
-#else
-    NOREF(pIemCpu); NOREF(pCtx); NOREF(cbInstr); NOREF(u8Vector); NOREF(fFlags); NOREF(uErr); NOREF(uCr2);
-    /** @todo implement me. */
-    IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("long mode exception / interrupt dispatching\n"));
-#endif
 }
 
 
