@@ -45,6 +45,13 @@ UIPopupStack::UIPopupStack()
      * - Under x11 host Qt 4.8.3 has it broken wih KDE 4.9 for now: */
     setAttribute(Qt::WA_TranslucentBackground);
 #endif /* Q_WS_WIN || Q_WS_MAC */
+
+#ifdef Q_WS_MAC
+    /* Do not hide popup-stack
+     * and actually the seamless machine-window too
+     * due to Qt bug on window deactivation... */
+    setAttribute(Qt::WA_MacAlwaysShowToolWindow);
+#endif /* Q_WS_MAC */
 }
 
 bool UIPopupStack::exists(const QString &strPopupPaneID) const
