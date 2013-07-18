@@ -3021,6 +3021,7 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                 case SVM_EXIT_EXCEPTION_1A: case SVM_EXIT_EXCEPTION_1B: case SVM_EXIT_EXCEPTION_1C:
                 case SVM_EXIT_EXCEPTION_1D: case SVM_EXIT_EXCEPTION_1E: case SVM_EXIT_EXCEPTION_1F:
                 {
+                    PSVMVMCB pVmcb   = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
                     SVMEVENT Event;
                     Event.u          = 0;
                     Event.n.u1Valid  = 1;
@@ -4317,6 +4318,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     PSVMVMCB    pVmcb         = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     uint32_t    u32ErrCode    = pVmcb->ctrl.u64ExitInfo1;
     RTGCUINTPTR uFaultAddress = pVmcb->ctrl.u64ExitInfo2;
+    PVM         pVM           = pVCpu->CTX_SUFF(pVM);
 
 #if defined(HMSVM_ALWAYS_TRAP_ALL_XCPTS) || defined(HMSVM_ALWAYS_TRAP_PF)
     if (pVM->hm.s.fNestedPaging)
@@ -4340,7 +4342,6 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     }
 #endif
 
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(!pVM->hm.s.fNestedPaging);
 
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
