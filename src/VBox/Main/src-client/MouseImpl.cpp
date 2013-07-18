@@ -442,20 +442,20 @@ HRESULT Mouse::reportAbsEvent(int32_t x, int32_t y,
      * relative mouse device to alert the guest to changes. */
     LONG cJiggle = 0;
 
-    if (vmmdevCanAbs())
+    /*
+     * Send the absolute mouse position to the device.
+     */
+    if (x != mcLastX || y != mcLastY)
     {
-        /*
-         * Send the absolute mouse position to the VMM device.
-         */
-        if (x != mcLastX || y != mcLastY)
+        if (vmmdevCanAbs())
         {
             rc = reportAbsEventToVMMDev(x, y);
             cJiggle = !fUsesVMMDevEvent;
         }
-        rc = reportRelEventToMouseDev(cJiggle, 0, dz, dw, fButtons);
+        else
+            rc = reportAbsEventToMouseDev(x, y, 0, 0, 0);
     }
-    else
-        rc = reportAbsEventToMouseDev(x, y, dz, dw, fButtons);
+    rc = reportRelEventToMouseDev(cJiggle, 0, dz, dw, fButtons);
 
     mcLastX = x;
     mcLastY = y;
