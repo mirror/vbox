@@ -38,6 +38,7 @@
 #define USBHID_STR_ID_MANUFACTURER  1
 #define USBHID_STR_ID_PRODUCT_M     2
 #define USBHID_STR_ID_PRODUCT_T     3
+#define USBHID_STR_ID_PRODUCT_MT    4
 /** @} */
 
 /** @name USB HID specific descriptor types
@@ -51,6 +52,7 @@
 #define VBOX_USB_VENDOR             0x80EE
 #define USBHID_PID_MOUSE            0x0020
 #define USBHID_PID_TABLET           0x0021
+#define USBHID_PID_MULTI_TOUCH      0x0022
 /** @} */
 
 /*******************************************************************************
@@ -132,10 +134,9 @@ typedef struct USBHIDM_ACCUM
         } Relative;
         struct
         {
-            uint32_t    fButtons;
             uint32_t    x;
             uint32_t    y;
-            int32_t     dz;
+            uint32_t    fButtons;
         } Absolute;
         struct
         {
@@ -230,12 +231,9 @@ typedef struct USBHIDM_REPORT
 
 typedef struct USBHIDT_REPORT
 {
-    uint8_t     rid;
-    uint8_t     fButtons;
-    int8_t      dz;
-    int8_t      dummy;
     uint16_t    x;
     uint16_t    y;
+    uint8_t     fButtons;
 } USBHIDT_REPORT, *PUSBHIDT_REPORT;
 
 /**
@@ -267,9 +265,10 @@ typedef union USBHIDTM_REPORT
 *******************************************************************************/
 static const PDMUSBDESCCACHESTRING g_aUsbHidStrings_en_US[] =
 {
-    { USBHID_STR_ID_MANUFACTURER,   "VirtualBox"    },
-    { USBHID_STR_ID_PRODUCT_M,      "USB Mouse"     },
-    { USBHID_STR_ID_PRODUCT_T,      "USB Tablet"    },
+    { USBHID_STR_ID_MANUFACTURER,   "VirtualBox"      },
+    { USBHID_STR_ID_PRODUCT_M,      "USB Mouse"       },
+    { USBHID_STR_ID_PRODUCT_T,      "USB Tablet"      },
+    { USBHID_STR_ID_PRODUCT_MT,     "USB Multi-Touch" },
 };
 
 static const PDMUSBDESCCACHELANG g_aUsbHidLanguages[] =
@@ -358,9 +357,17 @@ static const uint8_t g_UsbHidTReportDesc[] =
     /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
     /* Usage */                     0x09, 0x02,     /* Mouse */
     /* Collection */                0xA1, 0x01,     /* Application */
-    /* Report ID */                 0x85, REPORTID_MOUSE,
     /* Usage */                     0x09, 0x01,     /* Pointer */
     /* Collection */                0xA1, 0x00,     /* Physical */
+    /* Usage */                     0x09, 0x30,     /* X */
+    /* Usage */                     0x09, 0x31,     /* Y */
+    /* Logical Minimum */           0x15, 0x00,     /* 0 */
+    /* Logical Maximum */           0x26, 0xFF,0x7F,/* 0x7fff */
+    /* Physical Minimum */          0x35, 0x00,     /* 0 */
+    /* Physical Maximum */          0x46, 0xFF,0x7F,/* 0x7fff */
+    /* Report Size */               0x75, 0x10,     /* 16 */
+    /* Report Count */              0x95, 0x02,     /* 2 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
     /* Usage Page */                0x05, 0x09,     /* Button */
     /* Usage Minimum */             0x19, 0x01,     /* Button 1 */
     /* Usage Maximum */             0x29, 0x05,     /* Button 5 */
@@ -372,25 +379,6 @@ static const uint8_t g_UsbHidTReportDesc[] =
     /* Report Count */              0x95, 0x01,     /* 1 */
     /* Report Size */               0x75, 0x03,     /* 3 (padding bits) */
     /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
-    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
-    /* Usage */                     0x09, 0x38,     /* Z (wheel) */
-    /* Logical Minimum */           0x15, 0x81,     /* -127 */
-    /* Logical Maximum */           0x25, 0x7F,     /* +127 */
-    /* Report Size */               0x75, 0x08,     /* 8 */
-    /* Report Count */              0x95, 0x01,     /* 1 */
-    /* Input */                     0x81, 0x06,     /* Data, Value, Relative, Bit field */
-    /* Report Count */              0x95, 0x01,     /* 1 (padding byte) */
-    /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
-    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
-    /* Usage */                     0x09, 0x30,     /* X */
-    /* Usage */                     0x09, 0x31,     /* Y */
-    /* Logical Minimum */           0x15, 0x00,     /* 0 */
-    /* Logical Maximum */           0x26, 0xFF,0x7F,/* 0x7fff */
-    /* Physical Minimum */          0x35, 0x00,     /* 0 */
-    /* Physical Maximum */          0x46, 0xFF,0x7F,/* 0x7fff */
-    /* Report Size */               0x75, 0x10,     /* 16 */
-    /* Report Count */              0x95, 0x02,     /* 2 */
-    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
     /* End Collection */            0xC0,
     /* End Collection */            0xC0,
 };
@@ -647,10 +635,10 @@ static const VUSBDESCDEVICE g_UsbHidMTDeviceDesc =
     /* .bDeviceProtocol = */        0 /* Protocol specified in the interface desc. */,
     /* .bMaxPacketSize0 = */        8,
     /* .idVendor = */               VBOX_USB_VENDOR,
-    /* .idProduct = */              USBHID_PID_TABLET,
+    /* .idProduct = */              USBHID_PID_MULTI_TOUCH,
     /* .bcdDevice = */              0x0100, /* 1.0 */
     /* .iManufacturer = */          USBHID_STR_ID_MANUFACTURER,
-    /* .iProduct = */               USBHID_STR_ID_PRODUCT_T,
+    /* .iProduct = */               USBHID_STR_ID_PRODUCT_MT,
     /* .iSerialNumber = */          0,
     /* .bNumConfigurations = */     1
 };
@@ -910,15 +898,13 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
     {
     case USBHIDMODE_ABSOLUTE:
     {
-        pReport->t.rid      = REPORTID_MOUSE;
         pReport->t.fButtons = pAccumulated->u.Absolute.fButtons;
         pReport->t.x        = pAccumulated->u.Absolute.x;
         pReport->t.y        = pAccumulated->u.Absolute.y;
-        pReport->t.dz       = clamp_i8(pAccumulated->u.Absolute.dz);
 
         cbCopy = sizeof(pReport->t);
-        LogRel3(("Abs event, x=%d, y=%d, dz=%d, fButtons=%02x, report size %d\n",
-                 pReport->t.x, pReport->t.y, pReport->t.dz, pReport->t.fButtons,
+        LogRel3(("Abs event, x=%d, y=%d, fButtons=%02x, report size %d\n",
+                 pReport->t.x, pReport->t.y, pReport->t.fButtons,
                  cbCopy));
         break;
     }
@@ -1037,7 +1023,6 @@ static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface,
     pThis->PtrDelta.u.Absolute.fButtons = fButtons;
     pThis->PtrDelta.u.Absolute.x        = x >> pThis->u8CoordShift;
     pThis->PtrDelta.u.Absolute.y        = y >> pThis->u8CoordShift;
-    pThis->PtrDelta.u.Absolute.dz      -= dz;    /* Inverted! */
 
     /* Send a report if possible. */
     usbHidSendReport(pThis);
