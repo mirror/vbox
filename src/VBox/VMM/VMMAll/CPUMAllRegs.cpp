@@ -2848,6 +2848,14 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
      * Note! The SS RPL is always equal to the CPL, while the CS RPL
      * isn't necessarily equal if the segment is conforming.
      * See section 4.11.1 in the AMD manual.
+     *
+     * Update: Where the heck does it say CS.RPL can differ from CPL other than
+     *         right after real->prot mode switch and when in V8086 mode?  That
+     *         section says the RPL specified in a direct transfere (call, jmp,
+     *         ret) is not the one loaded into CS. Besides, if CS.RPL != CPL
+     *         it would be impossible for an exception handle or the iret
+     *         instruction to figure out whether SS:ESP are part of the frame
+     *         or not.  VBox or qemu bug must've lead to this misconception.
      */
     uint32_t uCpl;
     if (pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE)
