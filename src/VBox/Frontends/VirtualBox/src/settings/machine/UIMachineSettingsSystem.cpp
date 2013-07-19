@@ -34,9 +34,9 @@
 #include <iprt/cdefs.h>
 
 UIMachineSettingsSystem::UIMachineSettingsSystem()
-    : mValidator(0)
-    , mMinGuestCPU(0), mMaxGuestCPU(0)
-    , mMinGuestCPUExecCap(0), mMedGuestCPUExecCap(0), mMaxGuestCPUExecCap(0)
+    : m_pValidator(0)
+    , m_uMinGuestCPU(0), m_uMaxGuestCPU(0)
+    , m_uMinGuestCPUExecCap(0), m_uMedGuestCPUExecCap(0), m_uMaxGuestCPUExecCap(0)
     , m_fOHCIEnabled(false)
 {
     /* Apply UI decorations */
@@ -45,11 +45,11 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     /* Setup constants */
     CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
     uint hostCPUs = vboxGlobal().host().GetProcessorCount();
-    mMinGuestCPU = properties.GetMinGuestCPUCount();
-    mMaxGuestCPU = RT_MIN (2 * hostCPUs, properties.GetMaxGuestCPUCount());
-    mMinGuestCPUExecCap = 1;
-    mMedGuestCPUExecCap = 40;
-    mMaxGuestCPUExecCap = 100;
+    m_uMinGuestCPU = properties.GetMinGuestCPUCount();
+    m_uMaxGuestCPU = RT_MIN (2 * hostCPUs, properties.GetMaxGuestCPUCount());
+    m_uMinGuestCPUExecCap = 1;
+    m_uMedGuestCPUExecCap = 40;
+    m_uMaxGuestCPUExecCap = 100;
 
     /* Populate possible boot items list.
      * Currently, it seems, we are supporting only 4 possible boot device types:
@@ -90,37 +90,28 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     }
 
     /* Setup validators: */
-    mLeMemory->setValidator (new QIntValidator (mSlMemory->minRAM(), mSlMemory->maxRAM(), this));
-    mLeCPU->setValidator (new QIntValidator (mMinGuestCPU, mMaxGuestCPU, this));
-    mLeCPUExecCap->setValidator(new QIntValidator(mMinGuestCPUExecCap, mMaxGuestCPUExecCap, this));
+    mLeMemory->setValidator(new QIntValidator(mSlMemory->minRAM(), mSlMemory->maxRAM(), this));
+    mLeCPU->setValidator(new QIntValidator(m_uMinGuestCPU, m_uMaxGuestCPU, this));
+    mLeCPUExecCap->setValidator(new QIntValidator(m_uMinGuestCPUExecCap, m_uMaxGuestCPUExecCap, this));
 
     /* Setup RAM connections: */
-    connect (mSlMemory, SIGNAL (valueChanged (int)),
-             this, SLOT (valueChangedRAM (int)));
-    connect (mLeMemory, SIGNAL (textChanged (const QString&)),
-             this, SLOT (textChangedRAM (const QString&)));
+    connect(mSlMemory, SIGNAL(valueChanged(int)), this, SLOT(valueChangedRAM(int)));
+    connect(mLeMemory, SIGNAL(textChanged(const QString&)), this, SLOT(textChangedRAM(const QString&)));
 
     /* Setup boot-table connections: */
-    connect (mTbBootItemUp, SIGNAL (clicked()),
-             mTwBootOrder, SLOT(sltMoveItemUp()));
-    connect (mTbBootItemDown, SIGNAL (clicked()),
-             mTwBootOrder, SLOT(sltMoveItemDown()));
-    connect (mTwBootOrder, SIGNAL (sigRowChanged(int)),
-             this, SLOT (onCurrentBootItemChanged (int)));
+    connect(mTbBootItemUp, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemUp()));
+    connect(mTbBootItemDown, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemDown()));
+    connect(mTwBootOrder, SIGNAL(sigRowChanged(int)), this, SLOT(onCurrentBootItemChanged(int)));
 
     /* Setup CPU connections: */
-    connect (mSlCPU, SIGNAL (valueChanged (int)),
-             this, SLOT (valueChangedCPU (int)));
-    connect (mLeCPU, SIGNAL (textChanged (const QString&)),
-             this, SLOT (textChangedCPU (const QString&)));
+    connect(mSlCPU, SIGNAL(valueChanged(int)), this, SLOT(valueChangedCPU(int)));
+    connect(mLeCPU, SIGNAL(textChanged(const QString&)), this, SLOT(textChangedCPU(const QString&)));
     connect(mSlCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltValueChangedCPUExecCap(int)));
     connect(mLeCPUExecCap, SIGNAL(textChanged(const QString&)), this, SLOT(sltTextChangedCPUExecCap(const QString&)));
 
     /* Setup boot-table iconsets: */
-    mTbBootItemUp->setIcon(UIIconPool::iconSet(":/list_moveup_16px.png",
-                                               ":/list_moveup_disabled_16px.png"));
-    mTbBootItemDown->setIcon(UIIconPool::iconSet(":/list_movedown_16px.png",
-                                                 ":/list_movedown_disabled_16px.png"));
+    mTbBootItemUp->setIcon(UIIconPool::iconSet(":/list_moveup_16px.png", ":/list_moveup_disabled_16px.png"));
+    mTbBootItemDown->setIcon(UIIconPool::iconSet(":/list_movedown_16px.png", ":/list_movedown_disabled_16px.png"));
 
 #ifdef Q_WS_MAC
     /* We need a little space for the focus rect: */
@@ -129,44 +120,44 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
 #endif /* Q_WS_MAC */
 
     /* Limit min/max size of QLineEdit: */
-    mLeMemory->setFixedWidthByText (QString().fill ('8', 5));
+    mLeMemory->setFixedWidthByText(QString().fill('8', 5));
     /* Ensure mLeMemory value and validation is updated: */
-    valueChangedRAM (mSlMemory->value());
+    valueChangedRAM(mSlMemory->value());
 
     /* Setup cpu slider: */
-    mSlCPU->setPageStep (1);
-    mSlCPU->setSingleStep (1);
-    mSlCPU->setTickInterval (1);
+    mSlCPU->setPageStep(1);
+    mSlCPU->setSingleStep(1);
+    mSlCPU->setTickInterval(1);
     /* Setup the scale so that ticks are at page step boundaries: */
-    mSlCPU->setMinimum (mMinGuestCPU);
-    mSlCPU->setMaximum (mMaxGuestCPU);
-    mSlCPU->setOptimalHint (1, hostCPUs);
-    mSlCPU->setWarningHint (hostCPUs, mMaxGuestCPU);
+    mSlCPU->setMinimum(m_uMinGuestCPU);
+    mSlCPU->setMaximum(m_uMaxGuestCPU);
+    mSlCPU->setOptimalHint(1, hostCPUs);
+    mSlCPU->setWarningHint(hostCPUs, m_uMaxGuestCPU);
     /* Limit min/max. size of QLineEdit: */
     mLeCPU->setFixedWidthByText(QString().fill('8', 4));
     /* Ensure mLeMemory value and validation is updated: */
-    valueChangedCPU (mSlCPU->value());
+    valueChangedCPU(mSlCPU->value());
 
     /* Setup cpu cap slider: */
     mSlCPUExecCap->setPageStep(10);
     mSlCPUExecCap->setSingleStep(1);
     mSlCPUExecCap->setTickInterval(10);
     /* Setup the scale so that ticks are at page step boundaries: */
-    mSlCPUExecCap->setMinimum(mMinGuestCPUExecCap);
-    mSlCPUExecCap->setMaximum(mMaxGuestCPUExecCap);
-    mSlCPUExecCap->setWarningHint(mMinGuestCPUExecCap, mMedGuestCPUExecCap);
-    mSlCPUExecCap->setOptimalHint(mMedGuestCPUExecCap, mMaxGuestCPUExecCap);
+    mSlCPUExecCap->setMinimum(m_uMinGuestCPUExecCap);
+    mSlCPUExecCap->setMaximum(m_uMaxGuestCPUExecCap);
+    mSlCPUExecCap->setWarningHint(m_uMinGuestCPUExecCap, m_uMedGuestCPUExecCap);
+    mSlCPUExecCap->setOptimalHint(m_uMedGuestCPUExecCap, m_uMaxGuestCPUExecCap);
     /* Limit min/max. size of QLineEdit: */
     mLeCPUExecCap->setFixedWidthByText(QString().fill('8', 4));
     /* Ensure mLeMemory value and validation is updated: */
     sltValueChangedCPUExecCap(mSlCPUExecCap->value());
 
     /* Populate chipset combo: */
-    mCbChipset->insertItem(0, gpConverter->toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
-    mCbChipset->insertItem(1, gpConverter->toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
+    mCbChipset->addItem(gpConverter->toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
+    mCbChipset->addItem(gpConverter->toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
 
     /* Install global event filter: */
-    qApp->installEventFilter (this);
+    qApp->installEventFilter(this);
 
     /* Retranslate finally: */
     retranslateUi();
@@ -289,8 +280,8 @@ void UIMachineSettingsSystem::getFromCache()
     polishPage();
 
     /* Revalidate if possible: */
-    if (mValidator)
-        mValidator->revalidate();
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -381,67 +372,67 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsSystem::setValidator (QIWidgetValidator *aVal)
+void UIMachineSettingsSystem::setValidator(QIWidgetValidator *pValidator)
 {
     /* Configure validation: */
-    mValidator = aVal;
-    connect (mCbApic, SIGNAL (stateChanged (int)), mValidator, SLOT (revalidate()));
-    connect (mCbVirt, SIGNAL (stateChanged (int)), mValidator, SLOT (revalidate()));
-    connect (mCbUseAbsHID, SIGNAL (stateChanged (int)), mValidator, SLOT (revalidate()));
-    connect(mCbChipset, SIGNAL(currentIndexChanged(int)), mValidator, SLOT(revalidate()));
+    m_pValidator = pValidator;
+    connect(mCbChipset, SIGNAL(currentIndexChanged(int)), m_pValidator, SLOT(revalidate()));
+    connect(mCbApic, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
+    connect(mCbVirt, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
+    connect(mCbUseAbsHID, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
 }
 
-bool UIMachineSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle */)
+bool UIMachineSettingsSystem::revalidate(QString &strWarning, QString& /* strTitle */)
 {
     /* RAM amount test: */
-    ulong fullSize = vboxGlobal().host().GetMemorySize();
+    ulong uFullSize = vboxGlobal().host().GetMemorySize();
     if (mSlMemory->value() > (int)mSlMemory->maxRAMAlw())
     {
-        aWarning = tr (
+        strWarning = tr(
             "you have assigned more than <b>%1%</b> of your computer's memory "
             "(<b>%2</b>) to the virtual machine. Not enough memory is left "
             "for your host operating system. Please select a smaller amount.")
-            .arg ((unsigned)qRound ((double)mSlMemory->maxRAMAlw() / fullSize * 100.0))
-            .arg (vboxGlobal().formatSize ((uint64_t)fullSize * _1M));
+            .arg((unsigned)qRound((double)mSlMemory->maxRAMAlw() / uFullSize * 100.0))
+            .arg(vboxGlobal().formatSize((uint64_t)uFullSize * _1M));
         return false;
     }
     if (mSlMemory->value() > (int)mSlMemory->maxRAMOpt())
     {
-        aWarning = tr (
+        strWarning = tr(
             "you have assigned more than <b>%1%</b> of your computer's memory "
             "(<b>%2</b>) to the virtual machine. There might not be enough memory "
             "left for your host operating system. Continue at your own risk.")
-            .arg ((unsigned)qRound ((double)mSlMemory->maxRAMOpt() / fullSize * 100.0))
-            .arg (vboxGlobal().formatSize ((uint64_t)fullSize * _1M));
+            .arg((unsigned)qRound((double)mSlMemory->maxRAMOpt() / uFullSize * 100.0))
+            .arg(vboxGlobal().formatSize((uint64_t)uFullSize * _1M));
         return true;
     }
 
     /* VCPU amount test: */
-    int totalCPUs = vboxGlobal().host().GetProcessorOnlineCount();
-    if (mSlCPU->value() > 2 * totalCPUs)
+    int cTotalCPUs = vboxGlobal().host().GetProcessorOnlineCount();
+    if (mSlCPU->value() > 2 * cTotalCPUs)
     {
-        aWarning = tr (
+        strWarning = tr(
             "for performance reasons, the number of virtual CPUs attached to the "
             "virtual machine may not be more than twice the number of physical "
             "CPUs on the host (<b>%1</b>). Please reduce the number of virtual CPUs.")
-            .arg (totalCPUs);
+            .arg(cTotalCPUs);
         return false;
     }
-    if (mSlCPU->value() > totalCPUs)
+    if (mSlCPU->value() > cTotalCPUs)
     {
-        aWarning = tr (
+        strWarning = tr(
             "you have assigned more virtual CPUs to the virtual machine than "
             "the number of physical CPUs on your host system (<b>%1</b>). "
             "This is likely to degrade the performance of your virtual machine. "
             "Please consider reducing the number of virtual CPUs.")
-            .arg (totalCPUs);
+            .arg(cTotalCPUs);
         return true;
     }
 
     /* VCPU IO-APIC test: */
     if (mSlCPU->value() > 1 && !mCbApic->isChecked())
     {
-        aWarning = tr (
+        strWarning = tr(
             "you have assigned more than one virtual CPU to this VM. "
             "This will not work unless the IO-APIC feature is also enabled. "
             "This will be done automatically when you accept the VM Settings "
@@ -452,7 +443,7 @@ bool UIMachineSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle
     /* VCPU VT-x/AMD-V test: */
     if (mSlCPU->value() > 1 && !mCbVirt->isChecked())
     {
-        aWarning = tr (
+        strWarning = tr(
             "you have assigned more than one virtual CPU to this VM. "
             "This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. "
             "This will be done automatically when you accept the VM Settings "
@@ -461,9 +452,9 @@ bool UIMachineSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle
     }
 
     /* CPU execution cap is low: */
-    if (mSlCPUExecCap->value() < (int)mMedGuestCPUExecCap)
+    if (mSlCPUExecCap->value() < (int)m_uMedGuestCPUExecCap)
     {
-        aWarning = tr (
+        strWarning = tr(
             "you have set the processor execution cap to a low value. "
             "This can make the machine feel slow to respond.");
         return true;
@@ -472,7 +463,7 @@ bool UIMachineSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle
     /* Chipset type & IO-APIC test: */
     if ((KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt() == KChipsetType_ICH9 && !mCbApic->isChecked())
     {
-        aWarning = tr (
+        strWarning = tr(
             "you have assigned ICH9 chipset type to this VM. "
             "It will not work properly unless the IO-APIC feature is also enabled. "
             "This will be done automatically when you accept the VM Settings "
@@ -483,7 +474,7 @@ bool UIMachineSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle
     /* HID dependency from OHCI feature: */
     if (mCbUseAbsHID->isChecked() && !m_fOHCIEnabled)
     {
-        aWarning = tr (
+        strWarning = tr(
             "you have enabled a USB HID (Human Interface Device). "
             "This will not work unless USB emulation is also enabled. "
             "This will be done automatically when you accept the VM Settings "
@@ -494,73 +485,74 @@ bool UIMachineSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle
     return true;
 }
 
-void UIMachineSettingsSystem::setOrderAfter (QWidget *aWidget)
+void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
 {
-    /* Motherboard tab-order */
-    setTabOrder (aWidget, mTwSystem->focusProxy());
-    setTabOrder (mTwSystem->focusProxy(), mSlMemory);
-    setTabOrder (mSlMemory, mLeMemory);
-    setTabOrder (mLeMemory, mTwBootOrder);
-    setTabOrder (mTwBootOrder, mTbBootItemUp);
-    setTabOrder (mTbBootItemUp, mTbBootItemDown);
-    setTabOrder (mTbBootItemDown, mCbApic);
-    setTabOrder (mCbApic, mCbEFI);
-    setTabOrder (mCbEFI, mCbTCUseUTC);
-    setTabOrder (mCbTCUseUTC, mCbUseAbsHID);
+    /* Motherboard tab-order: */
+    setTabOrder(pWidget, mTwSystem->focusProxy());
+    setTabOrder(mTwSystem->focusProxy(), mSlMemory);
+    setTabOrder(mSlMemory, mLeMemory);
+    setTabOrder(mLeMemory, mTwBootOrder);
+    setTabOrder(mTwBootOrder, mTbBootItemUp);
+    setTabOrder(mTbBootItemUp, mTbBootItemDown);
+    setTabOrder(mTbBootItemDown, mCbChipset);
+    setTabOrder(mCbChipset, mCbApic);
+    setTabOrder(mCbApic, mCbEFI);
+    setTabOrder(mCbEFI, mCbTCUseUTC);
+    setTabOrder(mCbTCUseUTC, mCbUseAbsHID);
 
     /* Processor tab-order: */
-    setTabOrder (mCbUseAbsHID, mSlCPU);
-    setTabOrder (mSlCPU, mLeCPU);
+    setTabOrder(mCbUseAbsHID, mSlCPU);
+    setTabOrder(mSlCPU, mLeCPU);
     setTabOrder(mLeCPU, mSlCPUExecCap);
     setTabOrder(mSlCPUExecCap, mLeCPUExecCap);
     setTabOrder(mLeCPUExecCap, mCbPae);
 
     /* Acceleration tab-order: */
-    setTabOrder (mCbPae, mCbVirt);
-    setTabOrder (mCbVirt, mCbNestedPaging);
+    setTabOrder(mCbPae, mCbVirt);
+    setTabOrder(mCbVirt, mCbNestedPaging);
 }
 
 void UIMachineSettingsSystem::retranslateUi()
 {
     /* Translate uic generated strings: */
-    Ui::UIMachineSettingsSystem::retranslateUi (this);
+    Ui::UIMachineSettingsSystem::retranslateUi(this);
 
     /* Readjust the tree widget items size: */
     adjustBootOrderTWSize();
 
     /* Retranslate the memory slider legend: */
-    mLbMemoryMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (mSlMemory->minRAM()));
-    mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (mSlMemory->maxRAM()));
+    mLbMemoryMin->setText(tr("<qt>%1&nbsp;MB</qt>").arg(mSlMemory->minRAM()));
+    mLbMemoryMax->setText(tr("<qt>%1&nbsp;MB</qt>").arg(mSlMemory->maxRAM()));
 
     /* Retranslate the cpu slider legend: */
-    mLbCPUMin->setText (tr ("<qt>%1&nbsp;CPU</qt>", "%1 is 1 for now").arg (mMinGuestCPU));
-    mLbCPUMax->setText (tr ("<qt>%1&nbsp;CPUs</qt>", "%1 is host cpu count * 2 for now").arg (mMaxGuestCPU));
+    mLbCPUMin->setText(tr("<qt>%1&nbsp;CPU</qt>", "%1 is 1 for now").arg(m_uMinGuestCPU));
+    mLbCPUMax->setText(tr("<qt>%1&nbsp;CPUs</qt>", "%1 is host cpu count * 2 for now").arg(m_uMaxGuestCPU));
 
     /* Retranslate the cpu cap slider legend: */
-    mLbCPUExecCapMin->setText(tr("<qt>%1%</qt>", "Min CPU execution cap in %").arg(mMinGuestCPUExecCap));
-    mLbCPUExecCapMax->setText(tr("<qt>%1%</qt>", "Max CPU execution cap in %").arg(mMaxGuestCPUExecCap));
+    mLbCPUExecCapMin->setText(tr("<qt>%1%</qt>", "Min CPU execution cap in %").arg(m_uMinGuestCPUExecCap));
+    mLbCPUExecCapMax->setText(tr("<qt>%1%</qt>", "Max CPU execution cap in %").arg(m_uMaxGuestCPUExecCap));
 }
 
-void UIMachineSettingsSystem::valueChangedRAM (int aVal)
+void UIMachineSettingsSystem::valueChangedRAM(int iValue)
 {
-    mLeMemory->setText (QString().setNum (aVal));
+    mLeMemory->setText(QString::number(iValue));
 }
 
-void UIMachineSettingsSystem::textChangedRAM (const QString &aText)
+void UIMachineSettingsSystem::textChangedRAM(const QString &strText)
 {
-    mSlMemory->setValue (aText.toInt());
+    mSlMemory->setValue(strText.toInt());
 }
 
-void UIMachineSettingsSystem::onCurrentBootItemChanged (int i)
+void UIMachineSettingsSystem::onCurrentBootItemChanged(int iCurrentItem)
 {
     /* Update boot-order tool-buttons: */
-    bool upEnabled   = i > 0;
-    bool downEnabled = i < mTwBootOrder->count() - 1;
-    if ((mTbBootItemUp->hasFocus() && !upEnabled) ||
-        (mTbBootItemDown->hasFocus() && !downEnabled))
+    bool fEnabledUP = iCurrentItem > 0;
+    bool fEnabledDOWN = iCurrentItem < mTwBootOrder->count() - 1;
+    if ((mTbBootItemUp->hasFocus() && !fEnabledUP) ||
+        (mTbBootItemDown->hasFocus() && !fEnabledDOWN))
         mTwBootOrder->setFocus();
-    mTbBootItemUp->setEnabled (upEnabled);
-    mTbBootItemDown->setEnabled (downEnabled);
+    mTbBootItemUp->setEnabled(fEnabledUP);
+    mTbBootItemDown->setEnabled(fEnabledDOWN);
 }
 
 void UIMachineSettingsSystem::adjustBootOrderTWSize()
@@ -575,64 +567,24 @@ void UIMachineSettingsSystem::adjustBootOrderTWSize()
     }
 }
 
-void UIMachineSettingsSystem::valueChangedCPU (int aVal)
+void UIMachineSettingsSystem::valueChangedCPU(int iValue)
 {
-    mLeCPU->setText (QString().setNum (aVal));
+    mLeCPU->setText(QString::number(iValue));
 }
 
-void UIMachineSettingsSystem::textChangedCPU (const QString &aText)
+void UIMachineSettingsSystem::textChangedCPU(const QString &strText)
 {
-    mSlCPU->setValue (aText.toInt());
+    mSlCPU->setValue(strText.toInt());
 }
 
 void UIMachineSettingsSystem::sltValueChangedCPUExecCap(int iValue)
 {
-    mLeCPUExecCap->setText(QString().setNum(iValue));
+    mLeCPUExecCap->setText(QString::number(iValue));
 }
 
 void UIMachineSettingsSystem::sltTextChangedCPUExecCap(const QString &strText)
 {
     mSlCPUExecCap->setValue(strText.toInt());
-}
-
-bool UIMachineSettingsSystem::eventFilter (QObject *aObject, QEvent *aEvent)
-{
-    if (!aObject->isWidgetType())
-        return QWidget::eventFilter (aObject, aEvent);
-
-    QWidget *widget = static_cast<QWidget*> (aObject);
-    if (widget->window() != window())
-        return QWidget::eventFilter (aObject, aEvent);
-
-    switch (aEvent->type())
-    {
-        case QEvent::FocusIn:
-        {
-            /* Boot Table: */
-            if (widget == mTwBootOrder)
-            {
-                if (!mTwBootOrder->currentItem())
-                    mTwBootOrder->setCurrentItem (mTwBootOrder->item (0));
-                else
-                    onCurrentBootItemChanged (mTwBootOrder->currentRow());
-                mTwBootOrder->currentItem()->setSelected (true);
-            }
-            else if (widget != mTbBootItemUp && widget != mTbBootItemDown)
-            {
-                if (mTwBootOrder->currentItem())
-                {
-                    mTwBootOrder->currentItem()->setSelected (false);
-                    mTbBootItemUp->setEnabled (false);
-                    mTbBootItemDown->setEnabled (false);
-                }
-            }
-            break;
-        }
-        default:
-            break;
-    }
-
-    return QWidget::eventFilter (aObject, aEvent);
 }
 
 void UIMachineSettingsSystem::polishPage()
@@ -678,5 +630,45 @@ void UIMachineSettingsSystem::polishPage()
     mLbVirt->setEnabled(isMachineOffline());
     mCbVirt->setEnabled(isMachineOffline());
     mCbNestedPaging->setEnabled(isMachineOffline() && mCbVirt->isChecked());
+}
+
+bool UIMachineSettingsSystem::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    if (!pObject->isWidgetType())
+        return QWidget::eventFilter(pObject, pEvent);
+
+    QWidget *pWidget = static_cast<QWidget*>(pObject);
+    if (pWidget->window() != window())
+        return QWidget::eventFilter(pObject, pEvent);
+
+    switch (pEvent->type())
+    {
+        case QEvent::FocusIn:
+        {
+            /* Boot Table: */
+            if (pWidget == mTwBootOrder)
+            {
+                if (!mTwBootOrder->currentItem())
+                    mTwBootOrder->setCurrentItem(mTwBootOrder->item(0));
+                else
+                    onCurrentBootItemChanged(mTwBootOrder->currentRow());
+                mTwBootOrder->currentItem()->setSelected(true);
+            }
+            else if (pWidget != mTbBootItemUp && pWidget != mTbBootItemDown)
+            {
+                if (mTwBootOrder->currentItem())
+                {
+                    mTwBootOrder->currentItem()->setSelected(false);
+                    mTbBootItemUp->setEnabled(false);
+                    mTbBootItemDown->setEnabled(false);
+                }
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    return QWidget::eventFilter(pObject, pEvent);
 }
 
