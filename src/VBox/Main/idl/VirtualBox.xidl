@@ -20137,7 +20137,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMouseCapabilityChangedEvent" extends="IEvent"
-    uuid="d633ad48-820c-4207-b46c-6bd3596640d5"
+    uuid="70e7779a-e64a-4908-804e-371cad23a756"
     wsmap="managed" autogen="VBoxEvent" id="OnMouseCapabilityChanged"
     >
     <desc>
@@ -20152,6 +20152,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="supportsRelative" type="boolean" readonly="yes">
       <desc>
         Supports relative coordinates.
+      </desc>
+    </attribute>
+    <attribute name="supportsMultiTouch" type="boolean" readonly="yes">
+      <desc>
+        Supports multi-touch events coordinates.
       </desc>
     </attribute>
     <attribute name="needsHostCursor" type="boolean" readonly="yes">
