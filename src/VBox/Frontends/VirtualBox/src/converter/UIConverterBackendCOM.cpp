@@ -34,6 +34,7 @@ template<> bool canConvert<KSessionState>() { return true; }
 template<> bool canConvert<KDeviceType>() { return true; }
 template<> bool canConvert<KClipboardMode>() { return true; }
 template<> bool canConvert<KDragAndDropMode>() { return true; }
+template<> bool canConvert<KPointingHIDType>() { return true; }
 template<> bool canConvert<KMediumType>() { return true; }
 template<> bool canConvert<KMediumVariant>() { return true; }
 template<> bool canConvert<KNetworkAttachmentType>() { return true; }
@@ -210,6 +211,21 @@ template<> QString toString(const KDragAndDropMode &mode)
         case KDragAndDropMode_GuestToHost:   return QApplication::translate("VBoxGlobal", "Guest To Host", "DragAndDropType");
         case KDragAndDropMode_Bidirectional: return QApplication::translate("VBoxGlobal", "Bidirectional", "DragAndDropType");
         default: AssertMsgFailed(("No text for %d", mode)); break;
+    }
+    return QString();
+}
+
+/* QString <= KPointingHIDType: */
+template<> QString toString(const KPointingHIDType &type)
+{
+    switch (type)
+    {
+        case KPointingHIDType_PS2Mouse:      return QApplication::translate("VBoxGlobal", "PS/2 Mouse", "PointingHIDType");
+        case KPointingHIDType_USBMouse:      return QApplication::translate("VBoxGlobal", "USB Mouse", "PointingHIDType");
+        case KPointingHIDType_USBTablet:     return QApplication::translate("VBoxGlobal", "USB Mouse/Tablet", "PointingHIDType");
+        case KPointingHIDType_ComboMouse:    return QApplication::translate("VBoxGlobal", "PS/2 and USB Mouse", "PointingHIDType");
+        case KPointingHIDType_USBMultiTouch: return QApplication::translate("VBoxGlobal", "USB Multi-Touch Mouse/Tablet", "PointingHIDType");
+        default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
 }
