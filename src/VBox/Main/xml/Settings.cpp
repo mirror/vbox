@@ -2724,6 +2724,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     hw.pointingHIDType = PointingHIDType_PS2Mouse;
                 else if (strHIDType == "ComboMouse")
                     hw.pointingHIDType = PointingHIDType_ComboMouse;
+                else if (strHIDType == "USBMultiTouch")
+                    hw.pointingHIDType = PointingHIDType_USBMultiTouch;
                 else
                     throw ConfigFileError(this,
                                           pelmHwChild,
@@ -3935,12 +3937,13 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
          switch (hw.pointingHIDType)
          {
-            case PointingHIDType_USBMouse:      pcszHID = "USBMouse";   break;
-            case PointingHIDType_USBTablet:     pcszHID = "USBTablet";  break;
-            case PointingHIDType_PS2Mouse:      pcszHID = "PS2Mouse";   break;
-            case PointingHIDType_ComboMouse:    pcszHID = "ComboMouse"; break;
-            case PointingHIDType_None:          pcszHID = "None";       break;
-            default:            Assert(false);  pcszHID = "PS2Mouse";   break;
+            case PointingHIDType_USBMouse:      pcszHID = "USBMouse";     break;
+            case PointingHIDType_USBTablet:     pcszHID = "USBTablet";    break;
+            case PointingHIDType_PS2Mouse:      pcszHID = "PS2Mouse";     break;
+            case PointingHIDType_ComboMouse:    pcszHID = "ComboMouse";   break;
+            case PointingHIDType_USBMultiTouch: pcszHID = "USBMultiTouch";break;
+            case PointingHIDType_None:          pcszHID = "None";         break;
+            default:            Assert(false);  pcszHID = "PS2Mouse";     break;
          }
          pelmHID->setAttribute("Pointing", pcszHID);
 

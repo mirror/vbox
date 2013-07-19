@@ -704,7 +704,8 @@ static void kbd_mouse_update_downstream_status(KBDState *pThis)
 {
     PPDMIMOUSECONNECTOR pDrv = pThis->Mouse.pDrv;
     bool fEnabled = !!(pThis->mouse_status & MOUSE_STATUS_ENABLED);
-    pDrv->pfnReportModes(pDrv, fEnabled, false, false);
+    if (pDrv)
+        pDrv->pfnReportModes(pDrv, fEnabled, false, false);
 }
 
 #endif /* IN_RING3 */

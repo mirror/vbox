@@ -256,7 +256,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--nataliasmode<1-N> default|[log],[proxyonly],\n"
                      "                                                         [sameports]]\n"
                      "                            [--macaddress<1-N> auto|<mac>]\n"
-                     "                            [--mouse ps2|usb|usbtablet\n"
+                     "                            [--mouse ps2|usb|usbtablet|usbmultitouch]\n"
                      "                            [--keyboard ps2|usb\n"
                      "                            [--uart<1-N> off|<I/O base> <IRQ>]\n"
                      "                            [--uartmode<1-N> disconnected|\n"

@@ -1218,6 +1218,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             pszHID = "USB Tablet and PS/2 Mouse";
             pszMrHID = "combomouse";
             break;
+        case PointingHIDType_USBMultiTouch:
+            pszHID = "USB Multi-Touch";
+            pszMrHID = "usbmultitouch";
+            break;
         default:
             break;
     }
