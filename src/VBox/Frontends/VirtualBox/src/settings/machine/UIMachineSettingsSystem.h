@@ -50,7 +50,7 @@ struct UIDataSettingsMachineSystem
         : m_fSupportedPAE(false)
         , m_fSupportedHwVirtEx(false)
         /* Motherboard data: */
-        , m_iRAMSize(-1)
+        , m_iMemorySize(-1)
         , m_bootItems(QList<UIBootItemData>())
         , m_chipsetType(KChipsetType_Null)
         , m_pointingHIDType(KPointingHIDType_None)
@@ -73,7 +73,7 @@ struct UIDataSettingsMachineSystem
                (m_fSupportedPAE == other.m_fSupportedPAE) &&
                (m_fSupportedHwVirtEx == other.m_fSupportedHwVirtEx) &&
                /* Motherboard data: */
-               (m_iRAMSize == other.m_iRAMSize) &&
+               (m_iMemorySize == other.m_iMemorySize) &&
                (m_bootItems == other.m_bootItems) &&
                (m_chipsetType == other.m_chipsetType) &&
                (m_pointingHIDType == other.m_pointingHIDType) &&
@@ -98,7 +98,7 @@ struct UIDataSettingsMachineSystem
     bool m_fSupportedHwVirtEx;
 
     /* Variables: Motherboard data: */
-    int m_iRAMSize;
+    int m_iMemorySize;
     QList<UIBootItemData> m_bootItems;
     KChipsetType m_chipsetType;
     KPointingHIDType m_pointingHIDType;
@@ -163,18 +163,18 @@ protected:
 
 private slots:
 
-    /* Handlers: RAM stuff: */
-    void valueChangedRAM(int iValue);
-    void textChangedRAM(const QString &strText);
+    /* Handlers: Memory-size stuff: */
+    void sltHandleMemorySizeSliderChange();
+    void sltHandleMemorySizeEditorChange();
 
     /* Handler: Boot-table stuff: */
     void onCurrentBootItemChanged(int iCurrentIndex);
 
     /* Handlers: CPU stuff: */
-    void valueChangedCPU(int iValue);
-    void textChangedCPU(const QString &strText);
-    void sltValueChangedCPUExecCap(int iValue);
-    void sltTextChangedCPUExecCap(const QString &strText);
+    void sltHandleCPUCountSliderChange();
+    void sltHandleCPUCountEditorChange();
+    void sltHandleCPUExecCapSliderChange();
+    void sltHandleCPUExecCapEditorChange();
 
 private:
 

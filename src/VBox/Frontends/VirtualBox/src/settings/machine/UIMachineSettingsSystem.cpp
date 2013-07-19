@@ -89,14 +89,24 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
         mTwBootOrder->addItem(pItem);
     }
 
-    /* Setup validators: */
-    m_pEditorMemorySize->setValidator(new QIntValidator(m_pSliderMemorySize->minRAM(), m_pSliderMemorySize->maxRAM(), this));
-    m_pEditorCPUCount->setValidator(new QIntValidator(m_uMinGuestCPU, m_uMaxGuestCPU, this));
-    m_pEditorCPUExecCap->setValidator(new QIntValidator(m_uMinGuestCPUExecCap, m_uMaxGuestCPUExecCap, this));
+    /* Pre-configure memory-size editor: */
+    m_pEditorMemorySize->setMinimum(m_pSliderMemorySize->minRAM());
+    m_pEditorMemorySize->setMaximum(m_pSliderMemorySize->maxRAM());
+    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorMemorySize, 5);
 
-    /* Setup RAM connections: */
-    connect(m_pSliderMemorySize, SIGNAL(valueChanged(int)), this, SLOT(valueChangedRAM(int)));
-    connect(m_pEditorMemorySize, SIGNAL(textChanged(const QString&)), this, SLOT(textChangedRAM(const QString&)));
+    /* Pre-configure CPU-count editor: */
+    m_pEditorCPUCount->setMinimum(m_uMinGuestCPU);
+    m_pEditorCPUCount->setMaximum(m_uMaxGuestCPU);
+    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorCPUCount, 4);
+
+    /* Pre-configure CPU-execution-cap editor: */
+    m_pEditorCPUExecCap->setMinimum(m_uMinGuestCPUExecCap);
+    m_pEditorCPUExecCap->setMaximum(m_uMaxGuestCPUExecCap);
+    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorCPUExecCap, 4);
+
+    /* Setup memory-size connections: */
+    connect(m_pSliderMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeSliderChange()));
+    connect(m_pEditorMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeEditorChange()));
 
     /* Setup boot-table connections: */
     connect(mTbBootItemUp, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemUp()));
@@ -104,10 +114,10 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     connect(mTwBootOrder, SIGNAL(sigRowChanged(int)), this, SLOT(onCurrentBootItemChanged(int)));
 
     /* Setup CPU connections: */
-    connect(m_pSliderCPUCount, SIGNAL(valueChanged(int)), this, SLOT(valueChangedCPU(int)));
-    connect(m_pEditorCPUCount, SIGNAL(textChanged(const QString&)), this, SLOT(textChangedCPU(const QString&)));
-    connect(m_pSliderCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltValueChangedCPUExecCap(int)));
-    connect(m_pEditorCPUExecCap, SIGNAL(textChanged(const QString&)), this, SLOT(sltTextChangedCPUExecCap(const QString&)));
+    connect(m_pSliderCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountSliderChange()));
+    connect(m_pEditorCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountEditorChange()));
+    connect(m_pSliderCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapSliderChange()));
+    connect(m_pEditorCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapEditorChange()));
 
     /* Setup boot-table iconsets: */
     mTbBootItemUp->setIcon(UIIconPool::iconSet(":/list_moveup_16px.png", ":/list_moveup_disabled_16px.png"));
@@ -119,11 +129,6 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     m_pLayoutBootOrder->setSpacing (3);
 #endif /* Q_WS_MAC */
 
-    /* Limit min/max size of QLineEdit: */
-    m_pEditorMemorySize->setFixedWidthByText(QString().fill('8', 5));
-    /* Ensure m_pEditorMemorySize value and validation is updated: */
-    valueChangedRAM(m_pSliderMemorySize->value());
-
     /* Setup cpu slider: */
     m_pSliderCPUCount->setPageStep(1);
     m_pSliderCPUCount->setSingleStep(1);
@@ -133,10 +138,6 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     m_pSliderCPUCount->setMaximum(m_uMaxGuestCPU);
     m_pSliderCPUCount->setOptimalHint(1, hostCPUs);
     m_pSliderCPUCount->setWarningHint(hostCPUs, m_uMaxGuestCPU);
-    /* Limit min/max. size of QLineEdit: */
-    m_pEditorCPUCount->setFixedWidthByText(QString().fill('8', 4));
-    /* Ensure m_pEditorMemorySize value and validation is updated: */
-    valueChangedCPU(m_pSliderCPUCount->value());
 
     /* Setup cpu cap slider: */
     m_pSliderCPUExecCap->setPageStep(10);
@@ -147,10 +148,6 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     m_pSliderCPUExecCap->setMaximum(m_uMaxGuestCPUExecCap);
     m_pSliderCPUExecCap->setWarningHint(m_uMinGuestCPUExecCap, m_uMedGuestCPUExecCap);
     m_pSliderCPUExecCap->setOptimalHint(m_uMedGuestCPUExecCap, m_uMaxGuestCPUExecCap);
-    /* Limit min/max. size of QLineEdit: */
-    m_pEditorCPUExecCap->setFixedWidthByText(QString().fill('8', 4));
-    /* Ensure m_pEditorMemorySize value and validation is updated: */
-    sltValueChangedCPUExecCap(m_pSliderCPUExecCap->value());
 
     /* Configure 'pointing HID type' combo: */
     m_pComboPointingHIDType->setSizeAdjustPolicy(QComboBox::AdjustToContents);
@@ -204,7 +201,7 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     systemData.m_fSupportedHwVirtEx = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
 
     /* Load motherboard data: */
-    systemData.m_iRAMSize = m_machine.GetMemorySize();
+    systemData.m_iMemorySize = m_machine.GetMemorySize();
     /* Load boot-items of current VM: */
     QList<KDeviceType> usedBootItems;
     for (int i = 1; i <= m_possibleBootItems.size(); ++i)
@@ -267,7 +264,7 @@ void UIMachineSettingsSystem::getFromCache()
     repopulateComboPointingHIDType();
 
     /* Load motherboard data to page: */
-    m_pSliderMemorySize->setValue(systemData.m_iRAMSize);
+    m_pSliderMemorySize->setValue(systemData.m_iMemorySize);
     /* Remove any old data in the boot view: */
     QAbstractItemView *iv = qobject_cast <QAbstractItemView*> (mTwBootOrder);
     iv->model()->removeRows(0, iv->model()->rowCount());
@@ -313,7 +310,7 @@ void UIMachineSettingsSystem::putToCache()
     UIDataSettingsMachineSystem systemData = m_cache.base();
 
     /* Gather motherboard data: */
-    systemData.m_iRAMSize = m_pSliderMemorySize->value();
+    systemData.m_iMemorySize = m_pSliderMemorySize->value();
     /* Gather boot-table data: */
     systemData.m_bootItems.clear();
     for (int i = 0; i < mTwBootOrder->count(); ++i)
@@ -362,7 +359,7 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
         if (isMachineOffline())
         {
             /* Motherboard tab: */
-            m_machine.SetMemorySize(systemData.m_iRAMSize);
+            m_machine.SetMemorySize(systemData.m_iMemorySize);
             /* Save boot-items of current VM: */
             int iBootIndex = 0;
             for (int i = 0; i < systemData.m_bootItems.size(); ++i)
@@ -566,14 +563,28 @@ void UIMachineSettingsSystem::retranslateUi()
     retranslateComboPointingHIDType();
 }
 
-void UIMachineSettingsSystem::valueChangedRAM(int iValue)
+void UIMachineSettingsSystem::sltHandleMemorySizeSliderChange()
 {
-    m_pEditorMemorySize->setText(QString::number(iValue));
+    /* Apply new memory-size value: */
+    m_pEditorMemorySize->blockSignals(true);
+    m_pEditorMemorySize->setValue(m_pSliderMemorySize->value());
+    m_pEditorMemorySize->blockSignals(false);
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
-void UIMachineSettingsSystem::textChangedRAM(const QString &strText)
+void UIMachineSettingsSystem::sltHandleMemorySizeEditorChange()
 {
-    m_pSliderMemorySize->setValue(strText.toInt());
+    /* Apply new memory-size value: */
+    m_pSliderMemorySize->blockSignals(true);
+    m_pSliderMemorySize->setValue(m_pEditorMemorySize->value());
+    m_pSliderMemorySize->blockSignals(false);
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 void UIMachineSettingsSystem::onCurrentBootItemChanged(int iCurrentItem)
@@ -643,24 +654,52 @@ void UIMachineSettingsSystem::repopulateComboPointingHIDType()
     }
 }
 
-void UIMachineSettingsSystem::valueChangedCPU(int iValue)
+void UIMachineSettingsSystem::sltHandleCPUCountSliderChange()
 {
-    m_pEditorCPUCount->setText(QString::number(iValue));
+    /* Apply new memory-size value: */
+    m_pEditorCPUCount->blockSignals(true);
+    m_pEditorCPUCount->setValue(m_pSliderCPUCount->value());
+    m_pEditorCPUCount->blockSignals(false);
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
-void UIMachineSettingsSystem::textChangedCPU(const QString &strText)
+void UIMachineSettingsSystem::sltHandleCPUCountEditorChange()
 {
-    m_pSliderCPUCount->setValue(strText.toInt());
+    /* Apply new memory-size value: */
+    m_pSliderCPUCount->blockSignals(true);
+    m_pSliderCPUCount->setValue(m_pEditorCPUCount->value());
+    m_pSliderCPUCount->blockSignals(false);
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
-void UIMachineSettingsSystem::sltValueChangedCPUExecCap(int iValue)
+void UIMachineSettingsSystem::sltHandleCPUExecCapSliderChange()
 {
-    m_pEditorCPUExecCap->setText(QString::number(iValue));
+    /* Apply new memory-size value: */
+    m_pEditorCPUExecCap->blockSignals(true);
+    m_pEditorCPUExecCap->setValue(m_pSliderCPUExecCap->value());
+    m_pEditorCPUExecCap->blockSignals(false);
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
-void UIMachineSettingsSystem::sltTextChangedCPUExecCap(const QString &strText)
+void UIMachineSettingsSystem::sltHandleCPUExecCapEditorChange()
 {
-    m_pSliderCPUExecCap->setValue(strText.toInt());
+    /* Apply new memory-size value: */
+    m_pSliderCPUExecCap->blockSignals(true);
+    m_pSliderCPUExecCap->setValue(m_pEditorCPUExecCap->value());
+    m_pSliderCPUExecCap->blockSignals(false);
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 void UIMachineSettingsSystem::retranslateComboPointingChipsetType()
