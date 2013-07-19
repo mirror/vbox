@@ -1038,7 +1038,7 @@ static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface,
 static DECLCALLBACK(int) usbHidMousePutEventMT(PPDMIMOUSEPORT pInterface,
                                                uint32_t x, uint32_t y,
                                                uint32_t cContact,
-                                               bool fContact)
+                                               uint32_t fContact)
 {
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
     RTCritSectEnter(&pThis->CritSect);

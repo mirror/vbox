@@ -612,7 +612,7 @@ static DECLCALLBACK(int) mouPutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t x,
  */
 static DECLCALLBACK(int) mouPutEventMT(PPDMIMOUSEPORT pInterface, uint32_t x,
                                        uint32_t y, uint32_t cContact,
-                                       bool fContact)
+                                       uint32_t fContact)
 {
     AssertFailedReturn(VERR_NOT_SUPPORTED);
 }
