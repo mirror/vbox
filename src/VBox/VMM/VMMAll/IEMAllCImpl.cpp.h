@@ -2766,45 +2766,28 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
      */
     if (!(uSel & X86_SEL_MASK_OFF_RPL))
     {
+        Assert(iSegReg != X86_SREG_CS); /** @todo testcase for \#UD on MOV CS, ax! */
         if (iSegReg == X86_SREG_SS)
         {
+            /* In 64-bit kernel mode, the stack can be 0 because of the way
+               interrupts are dispatched. AMD seems to have a slighly more
+               relaxed relationship to SS.RPL than intel does. */
+            /** @todo We cannot 'mov ss, 3' in 64-bit kernel mode, can we? There is a testcase (bs-cpu-xcpt-1), but double check this! */
             if (   pIemCpu->enmCpuMode != IEMMODE_64BIT
-                || pIemCpu->uCpl != 0
-                || uSel != 0) /** @todo We cannot 'mov ss, 3' in 64-bit kernel mode, can we?  */
+                || pIemCpu->uCpl > 2
+                || (   uSel != pIemCpu->uCpl
+                    && !IEM_IS_GUEST_CPU_AMD(pIemCpu)) )
             {
-                Log(("load sreg -> invalid stack selector, #GP(0)\n", uSel));
+                Log(("load sreg %#x -> invalid stack selector, #GP(0)\n", uSel));
                 return iemRaiseGeneralProtectionFault0(pIemCpu);
             }
-
-            /* In 64-bit kernel mode, the stack can be 0 because of the way
-               interrupts are dispatched when in kernel ctx. Just load the
-               selector value into the register and leave the hidden bits
-               as is. */
-            *pSel = uSel;
-            pHid->ValidSel = uSel;
-            iemRegAddToRip(pIemCpu, cbInstr);
-            return VINF_SUCCESS;
         }
 
         *pSel = uSel;   /* Not RPL, remember :-) */
-        if (   pIemCpu->enmCpuMode == IEMMODE_64BIT
-            && iSegReg != X86_SREG_FS
-            && iSegReg != X86_SREG_GS)
-        {
-            /** @todo figure out what this actually does, it works. Needs
-             *        testcase! */
-            pHid->Attr.u           = 0;
-            pHid->Attr.n.u1Present = 1;
-            pHid->Attr.n.u1Long    = 1;
-            pHid->Attr.n.u4Type    = X86_SEL_TYPE_RW;
-            pHid->Attr.n.u2Dpl     = 3;
-            pHid->u32Limit         = 0;
-            pHid->u64Base          = 0;
-            pHid->ValidSel         = uSel;
-            pHid->fFlags           = CPUMSELREG_FLAGS_VALID;
-        }
-        else
-            iemHlpLoadNullDataSelectorProt(pHid, uSel);
+        iemHlpLoadNullDataSelectorProt(pHid, uSel);
+        if (iSegReg == X86_SREG_SS)
+            pHid->Attr.u |= pIemCpu->uCpl << X86DESCATTR_DPL_SHIFT;
+
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pHid));
         CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_HIDDEN_SEL_REGS);
 
