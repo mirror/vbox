@@ -14577,10 +14577,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="contactState" type="long" dir="in">
         <desc>
           State information for the touch identified by @a contactID.  See the
-          @a touchContactState enumeration value.  If this is not zero, expect
-          more events with the same @a contactID, and this will usually be zero
-          when the last event is received before the contact is stopped (i.e.
-          the finger is removed from the device).
+          <link to="TouchContactState"/> enumeration value.  If this is not
+          zero, expect more events with the same @a contactID, and this will
+          usually be zero when the last event is received before the contact is
+          stopped (i.e. the finger is removed from the device).
         </desc>
       </param>
     </method>
