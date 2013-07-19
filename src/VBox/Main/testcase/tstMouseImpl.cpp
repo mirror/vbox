@@ -28,8 +28,10 @@
 #include <iprt/assert.h>
 #include <iprt/test.h>
 
+#ifndef RT_OS_WINDOWS
 NS_DECL_CLASSINFO(Mouse)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Mouse, IMouse)
+#endif
 
 PDMIVMMDEVPORT VMMDevPort;
 
