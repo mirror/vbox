@@ -119,10 +119,8 @@ public:
     /* Constructor: */
     UIMachineSettingsDisplay();
 
-    /* API: Guest OS type stuff: */
+    /* API: Correlation stuff: */
     void setGuestOSType(CGuestOSType guestOSType);
-
-    /* API: 2D video acceleration stuff: */
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool isAcceleration2DVideoSelected() const;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
@@ -132,17 +130,17 @@ protected:
     /* API: Cache stuff: */
     bool changed() const { return m_cache.wasChanged(); }
 
-    /* Load data to cache from corresponding external object(s),
+    /* API: Load data to cache from corresponding external object(s),
      * this task COULD be performed in other than GUI thread: */
     void loadToCacheFrom(QVariant &data);
-    /* Load data to corresponding widgets from cache,
+    /* API: Load data to corresponding widgets from cache,
      * this task SHOULD be performed in GUI thread only: */
     void getFromCache();
 
-    /* Save data from corresponding widgets to cache,
+    /* API: Save data from corresponding widgets to cache,
      * this task SHOULD be performed in GUI thread only: */
     void putToCache();
-    /* Save data from cache to corresponding external object(s),
+    /* API: Save data from cache to corresponding external object(s),
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
@@ -150,13 +148,13 @@ protected:
     void setValidator(QIWidgetValidator *pValidator);
     bool revalidate(QString &strWarning, QString &strTitle);
 
-    /* API: Focus-order stuff: */
+    /* Helper: Navigation stuff: */
     void setOrderAfter(QWidget *pWidget);
 
-    /* Helper: Translate stuff: */
+    /* Helper: Translation stuff: */
     void retranslateUi();
 
-    /* Helper: Polish stuff: */
+    /* Helper: Polishing stuff: */
     void polishPage();
 
 private slots:

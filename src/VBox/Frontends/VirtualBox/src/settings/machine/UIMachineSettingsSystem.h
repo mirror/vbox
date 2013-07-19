@@ -161,6 +161,9 @@ protected:
     /* Helper: Translation stuff: */
     void retranslateUi();
 
+    /* Helper: Polishing stuff: */
+    void polishPage();
+
 private slots:
 
     /* Handlers: Memory-size stuff: */
@@ -181,9 +184,6 @@ private:
     /* Helpers: Translation stuff: */
     void retranslateComboPointingChipsetType();
     void retranslateComboPointingHIDType();
-
-    /* Handler: Polishing stuff: */
-    void polishPage();
 
     /* Handler: Event-filtration stuff: */
     bool eventFilter(QObject *aObject, QEvent *aEvent);
