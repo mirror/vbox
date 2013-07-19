@@ -47,6 +47,8 @@
 %define X86_XCPT_AC             0x11
 %define X86_XCPT_MC             0x12
 %define X86_XCPT_XF             0x13
+%define X86_XCPT_VE             0x14
+%define X86_XCPT_SX             0x1f
 
 %define PAGE_SIZE               0x1000
 
@@ -113,6 +115,95 @@ struc X86FXSTATE
         .au32RsrvdRest  resd 24
 endstruc
 
+
+struc X86TSS16
+        .selPrev        resw 1
+        .sp0            resw 1
+        .ss0            resw 1
+        .sp1            resw 1
+        .ss1            resw 1
+        .sp2            resw 1
+        .ss2            resw 1
+        .ip             resw 1
+        .flags          resw 1
+        .ax             resw 1
+        .cx             resw 1
+        .dx             resw 1
+        .bx             resw 1
+        .sp             resw 1
+        .bp             resw 1
+        .si             resw 1
+        .di             resw 1
+        .es             resw 1
+        .cs             resw 1
+        .ss             resw 1
+        .ds             resw 1
+        .selLdt         resw 1
+endstruc
+AssertCompileSize(X86TSS16, 44)
+
+
+struc X86TSS32
+        .selPrev        resw 1
+        .padding1       resw 1
+        .esp0           resd 1
+        .ss0            resw 1
+        .padding_ss0    resw 1
+        .esp1           resd 1
+        .ss1            resw 1
+        .padding_ss1    resw 1
+        .esp2           resd 1
+        .ss2            resw 1
+        .padding_ss2    resw 1
+        .cr3            resd 1
+        .eip            resd 1
+        .eflags         resd 1
+        .eax            resd 1
+        .ecx            resd 1
+        .edx            resd 1
+        .ebx            resd 1
+        .esp            resd 1
+        .ebp            resd 1
+        .esi            resd 1
+        .edi            resd 1
+        .es             resw 1
+        .padding_es     resw 1
+        .cs             resw 1
+        .padding_cs     resw 1
+        .ss             resw 1
+        .padding_ss     resw 1
+        .ds             resw 1
+        .padding_ds     resw 1
+        .fs             resw 1
+        .padding_fs     resw 1
+        .gs             resw 1
+        .padding_gs     resw 1
+        .selLdt         resw 1
+        .padding_ldt    resw 1
+        .fDebugTrap     resw 1
+        .offIoBitmap    resw 1
+        .IntRedirBitmap resb 32
+endstruc
+
+
+struc X86TSS64
+        .u32Reserved    resd 1
+        .rsp0           resq 1
+        .rsp1           resq 1
+        .rsp2           resq 1
+        .u32Reserved2   resd 2
+        .ist1           resq 1
+        .ist2           resq 1
+        .ist3           resq 1
+        .ist4           resq 1
+        .ist5           resq 1
+        .ist6           resq 1
+        .ist7           resq 1
+        .u16Reserved    resw 5
+        .offIoBitmap    resw 1
+        .IntRedirBitmap resb 32
+endstruc
+AssertCompileSize(X86TSS64, 136)
 
 %endif
 
