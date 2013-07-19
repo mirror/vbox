@@ -82,6 +82,7 @@
 #define LOG_GROUP   LOG_GROUP_IEM
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/pdm.h>
 #include <VBox/vmm/pgm.h>
 #include <internal/pgm.h>
 #include <VBox/vmm/iom.h>

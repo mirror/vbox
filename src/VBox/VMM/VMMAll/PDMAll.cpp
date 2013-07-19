@@ -312,19 +312,20 @@ VMMDECL(int) PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR)
 /**
  * Get the TPR (task priority register).
  *
- * @returns The current TPR.
+ * @returns VINF_SUCCESS or VERR_PDM_NO_APIC_INSTANCE.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pu8TPR          Where to store the TRP.
- * @param   pfPending       Pending interrupt state (out).
+ * @param   pfPending       Pending interrupt state (out, optional).
  * @param   pu8PendingIrq   Where to store the highest-priority pending IRQ
- *                          (optional, can be NULL) (out).
+ *                          (out, optional).
  *
  * @remarks No-long-jump zone!!!
  */
 VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending, uint8_t *pu8PendingIrq)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
+    PVM     pVM      = pVCpu->CTX_SUFF(pVM);
+    PPDMDEVINS pApicIns = pVM->pdm.s.Apic.CTX_SUFF(pDevIns);
+    if (pApicIns)
     {
         /*
          * Note! We don't acquire the PDM lock here as we're just reading
@@ -332,12 +333,9 @@ VMMDECL(int) PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending, uint8
          *       function is called very often by each and every VCPU.
          */
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR));
-        *pu8TPR = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu);
+        *pu8TPR = pVM->pdm.s.Apic.CTX_SUFF(pfnGetTPR)(pApicIns, pVCpu->idCpu);
         if (pfPending)
-        {
-            *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), pVCpu->idCpu,
-                                                                    pu8PendingIrq);
-        }
+            *pfPending = pVM->pdm.s.Apic.CTX_SUFF(pfnHasPendingIrq)(pApicIns, pVCpu->idCpu, pu8PendingIrq);
         return VINF_SUCCESS;
     }
     *pu8TPR = 0;
