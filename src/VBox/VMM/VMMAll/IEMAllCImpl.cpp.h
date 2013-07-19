@@ -3156,11 +3156,15 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         case 3: crX = pCtx->cr3; break;
         case 4: crX = pCtx->cr4; break;
         case 8:
-            if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
-                IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Implement CR8/TPR read\n")); /** @todo implement CR8 reading and writing. */
+        {
+            uint8_t uTpr;
+            int rc = PDMApicGetTPR(IEMCPU_TO_VMCPU(pIemCpu), &uTpr, NULL, NULL);
+            if (RT_SUCCESS(rc))
+                crX = uTpr >> 4;
             else
-                crX = 0xff;
+                crX = 0;
             break;
+        }
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* call checks */
     }
 
@@ -3447,10 +3451,15 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
          * CR8 maps to the APIC TPR.
          */
         case 8:
+            if (uNewCrX & ~(uint64_t)0xf)
+            {
+                Log(("Trying to set reserved CR8 bits (%#RX64)\n", uNewCrX));
+                return iemRaiseGeneralProtectionFault0(pIemCpu);
+            }
+
             if (!IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
-                IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Implement CR8/TPR read\n")); /** @todo implement CR8 reading and writing. */
-            else
-                rcStrict = VINF_SUCCESS;
+                PDMApicSetTPR(IEMCPU_TO_VMCPU(pIemCpu), (uint8_t)uNewCrX << 4);
+            rcStrict = VINF_SUCCESS;
             break;
 
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* call checks */
