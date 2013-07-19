@@ -2075,7 +2075,7 @@ void ConsoleVRDPServer::remote3DRedirect(bool fEnable)
 
     if (!RT_SUCCESS(rc))
     {
-        AssertMsgFailed(("SHCRGL_HOST_FN_SET_CONSOLE failed with %Rrc\n", rc));
+        Log(("SHCRGL_HOST_FN_SET_CONSOLE failed with %Rrc\n", rc));
         return;
     }
 
