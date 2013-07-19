@@ -18,6 +18,7 @@
 /******************************************************************************
 *   Header Files                                                              *
 ******************************************************************************/
+#define IN_VMM_R3 /* Kill most Windows warnings on CFGMR3* implementations. */
 #include "MouseImpl.h"
 #include "VMMDev.h"
 #include "DisplayImpl.h"

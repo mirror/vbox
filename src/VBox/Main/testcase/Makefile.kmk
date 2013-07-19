@@ -221,9 +221,9 @@ tstMouseImpl_SOURCES  = \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
 tstMouseImpl_INCS      = ../include \
-    $(VBOX_PATH_SDK)/bindings/xpcom/include \
-    $(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
-    $(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
+	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
 	$(dir $(VBOX_XML_SCHEMADEFS_H))
 tstMouseImpl_LIBS      = $(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB)
 # Super ugly hack to make the code work well enough without having ATL/COM
