@@ -551,6 +551,9 @@ void UIMachineSettingsSystem::retranslateUi()
     /* Retranslate the cpu cap slider legend: */
     mLbCPUExecCapMin->setText(tr("<qt>%1%</qt>", "Min CPU execution cap in %").arg(m_uMinGuestCPUExecCap));
     mLbCPUExecCapMax->setText(tr("<qt>%1%</qt>", "Max CPU execution cap in %").arg(m_uMaxGuestCPUExecCap));
+
+    /* Retranslate combo-box: */
+    retranslateComboPointingChipsetType();
 }
 
 void UIMachineSettingsSystem::valueChangedRAM(int iValue)
@@ -605,6 +608,21 @@ void UIMachineSettingsSystem::sltValueChangedCPUExecCap(int iValue)
 void UIMachineSettingsSystem::sltTextChangedCPUExecCap(const QString &strText)
 {
     mSlCPUExecCap->setValue(strText.toInt());
+}
+
+void UIMachineSettingsSystem::retranslateComboPointingChipsetType()
+{
+    /* For each the element in KPointingHIDType enum: */
+    for (int iIndex = (int)KChipsetType_Null; iIndex < (int)KChipsetType_Max; ++iIndex)
+    {
+        /* Cast to the corresponding type: */
+        KChipsetType type = (KChipsetType)iIndex;
+        /* Look for the corresponding item: */
+        int iCorrespondingIndex = mCbChipset->findData((int)type);
+        /* Re-translate corresponding item if it was found: */
+        if (iCorrespondingIndex != -1)
+            mCbChipset->setItemText(iCorrespondingIndex, gpConverter->toString(type));
+    }
 }
 
 void UIMachineSettingsSystem::polishPage()

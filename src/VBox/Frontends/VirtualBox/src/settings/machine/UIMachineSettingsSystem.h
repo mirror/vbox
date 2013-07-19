@@ -178,6 +178,9 @@ private slots:
 
 private:
 
+    /* Helper: Translation stuff: */
+    void retranslateComboPointingChipsetType();
+
     /* Handler: Polishing stuff: */
     void polishPage();
 
