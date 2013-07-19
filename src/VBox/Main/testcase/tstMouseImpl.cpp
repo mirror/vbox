@@ -169,7 +169,7 @@ void TestDisplay::getFramebufferDimensions(int32_t *px1, int32_t *py1,
         *py2 = 240;
 }
 
-int TestDisplay::getScreenResolution(uint32_t cScreen, ULONGt *pcx,
+int TestDisplay::getScreenResolution(uint32_t cScreen, ULONG *pcx,
                                      ULONG *pcy, ULONG *pcBPP)
 {
     NOREF(cScreen);
