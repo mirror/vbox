@@ -5434,11 +5434,23 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
      * to VT-x, everyone else relies on the attribute being zero and have no clue what the unusable bit is.
      *
      * See Intel spec. 27.3.2 "Saving Segment Registers and Descriptor-Table Registers".
+     *
+     * bird: This isn't quite as simple.  VT-x and VBox(!) requires the DPL for SS to be the the same as CPL.  In 64-bit mode it
+     *       is possible (int/trap/xxx injects does this when switching rings) to load SS with a NULL selector and RPL=CPL.
+     *       The Attr.u = HMVMX_SEL_UNUSABLE works fine as long as nobody uses ring-1 or ring-2.  VT-x seems to set the DPL
+     *       correctly in the attributes even when the unusable bit is set, we need to preseve the DPL or we get invalid guest
+     *       state trouble.  Try bs2-cpu-hidden-regs-1.
      */
     if (pSelReg->Attr.u & HMVMX_SEL_UNUSABLE)
     {
         Assert(idxSel != VMX_VMCS16_GUEST_FIELD_TR);          /* TR is the only selector that can never be unusable. */
+        Log(("idxSel=%#x attr=%#x\n", idxSel, pSelReg->Attr.u));
+
+#if 0 /** @todo Is there any code which will freak out if we do this for all?  Better track it down and fix. */
+        pSelReg->Attr.u &= HMVMX_SEL_UNUSABLE | (UINT32_C(3) << 5);
+#else
         pSelReg->Attr.u = HMVMX_SEL_UNUSABLE;
+#endif
     }
     return VINF_SUCCESS;
 }
