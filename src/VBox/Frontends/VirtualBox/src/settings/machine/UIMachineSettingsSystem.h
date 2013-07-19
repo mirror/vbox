@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -171,7 +171,7 @@ private slots:
     void sltHandleMemorySizeEditorChange();
 
     /* Handler: Boot-table stuff: */
-    void onCurrentBootItemChanged(int iCurrentIndex);
+    void sltCurrentBootItemChanged(int iCurrentIndex);
 
     /* Handlers: CPU stuff: */
     void sltHandleCPUCountSliderChange();
@@ -181,18 +181,23 @@ private slots:
 
 private:
 
+    /* Helpers: Prepare stuff: */
+    void prepare();
+    void prepareTabMotherboard();
+    void prepareTabProcessor();
+
+    /* Helper: Pointing HID type combo stuff: */
+    void repopulateComboPointingHIDType();
+
     /* Helpers: Translation stuff: */
     void retranslateComboPointingChipsetType();
     void retranslateComboPointingHIDType();
 
-    /* Handler: Event-filtration stuff: */
-    bool eventFilter(QObject *aObject, QEvent *aEvent);
-
     /* Helper: Boot-table stuff: */
     void adjustBootOrderTWSize();
 
-    /* Helper: Pointing HID type combo stuff: */
-    void repopulateComboPointingHIDType();
+    /* Handler: Event-filtration stuff: */
+    bool eventFilter(QObject *aObject, QEvent *aEvent);
 
     /* Variable: Validation stuff: */
     QIWidgetValidator *m_pValidator;

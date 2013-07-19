@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,128 +39,8 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     , m_uMinGuestCPUExecCap(0), m_uMedGuestCPUExecCap(0), m_uMaxGuestCPUExecCap(0)
     , m_fOHCIEnabled(false)
 {
-    /* Apply UI decorations: */
-    Ui::UIMachineSettingsSystem::setupUi(this);
-
-    /* Setup constants: */
-    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-    uint hostCPUs = vboxGlobal().host().GetProcessorCount();
-    m_uMinGuestCPU = properties.GetMinGuestCPUCount();
-    m_uMaxGuestCPU = RT_MIN (2 * hostCPUs, properties.GetMaxGuestCPUCount());
-    m_uMinGuestCPUExecCap = 1;
-    m_uMedGuestCPUExecCap = 40;
-    m_uMaxGuestCPUExecCap = 100;
-
-    /* Populate possible boot items list.
-     * Currently, it seems, we are supporting only 4 possible boot device types:
-     * 1. Floppy, 2. DVD-ROM, 3. Hard Disk, 4. Network.
-     * But maximum boot devices count supported by machine
-     * should be retrieved through the ISystemProperties getter.
-     * Moreover, possible boot device types are not listed in some separate Main vector,
-     * so we should get them (randomely?) from the list of all device types.
-     * Until there will be separate Main getter for list of supported boot device types,
-     * this list will be hard-coded here... */
-    int iPossibleBootListSize = qMin((ULONG)4, properties.GetMaxBootPosition());
-    for (int iBootPosition = 1; iBootPosition <= iPossibleBootListSize; ++iBootPosition)
-    {
-        switch (iBootPosition)
-        {
-            case 1:
-                m_possibleBootItems << KDeviceType_Floppy;
-                break;
-            case 2:
-                m_possibleBootItems << KDeviceType_DVD;
-                break;
-            case 3:
-                m_possibleBootItems << KDeviceType_HardDisk;
-                break;
-            case 4:
-                m_possibleBootItems << KDeviceType_Network;
-                break;
-            default:
-                break;
-        }
-    }
-
-    /* Add all available devices types, so we could initially calculate the right size: */
-    for (int i = 0; i < m_possibleBootItems.size(); ++i)
-    {
-        QListWidgetItem *pItem = new UIBootTableItem(m_possibleBootItems[i]);
-        mTwBootOrder->addItem(pItem);
-    }
-
-    /* Pre-configure memory-size editor: */
-    m_pEditorMemorySize->setMinimum(m_pSliderMemorySize->minRAM());
-    m_pEditorMemorySize->setMaximum(m_pSliderMemorySize->maxRAM());
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorMemorySize, 5);
-
-    /* Pre-configure CPU-count editor: */
-    m_pEditorCPUCount->setMinimum(m_uMinGuestCPU);
-    m_pEditorCPUCount->setMaximum(m_uMaxGuestCPU);
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorCPUCount, 4);
-
-    /* Pre-configure CPU-execution-cap editor: */
-    m_pEditorCPUExecCap->setMinimum(m_uMinGuestCPUExecCap);
-    m_pEditorCPUExecCap->setMaximum(m_uMaxGuestCPUExecCap);
-    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorCPUExecCap, 4);
-
-    /* Setup memory-size connections: */
-    connect(m_pSliderMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeSliderChange()));
-    connect(m_pEditorMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeEditorChange()));
-
-    /* Setup boot-table connections: */
-    connect(mTbBootItemUp, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemUp()));
-    connect(mTbBootItemDown, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemDown()));
-    connect(mTwBootOrder, SIGNAL(sigRowChanged(int)), this, SLOT(onCurrentBootItemChanged(int)));
-
-    /* Setup CPU connections: */
-    connect(m_pSliderCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountSliderChange()));
-    connect(m_pEditorCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountEditorChange()));
-    connect(m_pSliderCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapSliderChange()));
-    connect(m_pEditorCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapEditorChange()));
-
-    /* Setup boot-table iconsets: */
-    mTbBootItemUp->setIcon(UIIconPool::iconSet(":/list_moveup_16px.png", ":/list_moveup_disabled_16px.png"));
-    mTbBootItemDown->setIcon(UIIconPool::iconSet(":/list_movedown_16px.png", ":/list_movedown_disabled_16px.png"));
-
-#ifdef Q_WS_MAC
-    /* We need a little space for the focus rect: */
-    m_pLayoutBootOrder->setContentsMargins (3, 3, 3, 3);
-    m_pLayoutBootOrder->setSpacing (3);
-#endif /* Q_WS_MAC */
-
-    /* Setup cpu slider: */
-    m_pSliderCPUCount->setPageStep(1);
-    m_pSliderCPUCount->setSingleStep(1);
-    m_pSliderCPUCount->setTickInterval(1);
-    /* Setup the scale so that ticks are at page step boundaries: */
-    m_pSliderCPUCount->setMinimum(m_uMinGuestCPU);
-    m_pSliderCPUCount->setMaximum(m_uMaxGuestCPU);
-    m_pSliderCPUCount->setOptimalHint(1, hostCPUs);
-    m_pSliderCPUCount->setWarningHint(hostCPUs, m_uMaxGuestCPU);
-
-    /* Setup cpu cap slider: */
-    m_pSliderCPUExecCap->setPageStep(10);
-    m_pSliderCPUExecCap->setSingleStep(1);
-    m_pSliderCPUExecCap->setTickInterval(10);
-    /* Setup the scale so that ticks are at page step boundaries: */
-    m_pSliderCPUExecCap->setMinimum(m_uMinGuestCPUExecCap);
-    m_pSliderCPUExecCap->setMaximum(m_uMaxGuestCPUExecCap);
-    m_pSliderCPUExecCap->setWarningHint(m_uMinGuestCPUExecCap, m_uMedGuestCPUExecCap);
-    m_pSliderCPUExecCap->setOptimalHint(m_uMedGuestCPUExecCap, m_uMaxGuestCPUExecCap);
-
-    /* Configure 'pointing HID type' combo: */
-    m_pComboPointingHIDType->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-
-    /* Populate chipset combo: */
-    m_pComboChipsetType->addItem(gpConverter->toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
-    m_pComboChipsetType->addItem(gpConverter->toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
-
-    /* Install global event filter: */
-    qApp->installEventFilter(this);
-
-    /* Retranslate finally: */
-    retranslateUi();
+    /* Prepare: */
+    prepare();
 }
 
 bool UIMachineSettingsSystem::isHWVirtExEnabled() const
@@ -513,7 +393,7 @@ bool UIMachineSettingsSystem::revalidate(QString &strWarning, QString& /* strTit
 
 void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
 {
-    /* Motherboard tab-order: */
+    /* Configure navigation for 'motherboard' tab: */
     setTabOrder(pWidget, m_pTabWidgetSystem->focusProxy());
     setTabOrder(m_pTabWidgetSystem->focusProxy(), m_pSliderMemorySize);
     setTabOrder(m_pSliderMemorySize, m_pEditorMemorySize);
@@ -526,14 +406,14 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(m_pCheckBoxApic, m_pCheckBoxEFI);
     setTabOrder(m_pCheckBoxEFI, m_pCheckBoxUseUTC);
 
-    /* Processor tab-order: */
+    /* Configure navigation for 'processor' tab: */
     setTabOrder(m_pCheckBoxUseUTC, m_pSliderCPUCount);
     setTabOrder(m_pSliderCPUCount, m_pEditorCPUCount);
     setTabOrder(m_pEditorCPUCount, m_pSliderCPUExecCap);
     setTabOrder(m_pSliderCPUExecCap, m_pEditorCPUExecCap);
     setTabOrder(m_pEditorCPUExecCap, m_pCheckBoxPAE);
 
-    /* Acceleration tab-order: */
+    /* Configure navigation for 'acceleration' tab: */
     setTabOrder(m_pCheckBoxPAE, m_pCheckBoxVirtualization);
     setTabOrder(m_pCheckBoxVirtualization, m_pCheckBoxNestedPaging);
 }
@@ -633,7 +513,7 @@ void UIMachineSettingsSystem::sltHandleMemorySizeEditorChange()
         m_pValidator->revalidate();
 }
 
-void UIMachineSettingsSystem::onCurrentBootItemChanged(int iCurrentItem)
+void UIMachineSettingsSystem::sltCurrentBootItemChanged(int iCurrentItem)
 {
     /* Update boot-order tool-buttons: */
     bool fEnabledUP = iCurrentItem > 0;
@@ -643,61 +523,6 @@ void UIMachineSettingsSystem::onCurrentBootItemChanged(int iCurrentItem)
         mTwBootOrder->setFocus();
     mTbBootItemUp->setEnabled(fEnabledUP);
     mTbBootItemDown->setEnabled(fEnabledDOWN);
-}
-
-void UIMachineSettingsSystem::adjustBootOrderTWSize()
-{
-    /* Adjust boot-table size: */
-    mTwBootOrder->adjustSizeToFitContent();
-    /* Update the layout system */
-    if (m_pTabMotherboard->layout())
-    {
-        m_pTabMotherboard->layout()->activate();
-        m_pTabMotherboard->layout()->update();
-    }
-}
-
-void UIMachineSettingsSystem::repopulateComboPointingHIDType()
-{
-    /* Is there any value currently present/selected? */
-    KPointingHIDType currentValue = KPointingHIDType_None;
-    {
-        int iCurrentIndex = m_pComboPointingHIDType->currentIndex();
-        if (iCurrentIndex != -1)
-            currentValue = (KPointingHIDType)m_pComboPointingHIDType->itemData(iCurrentIndex).toInt();
-    }
-
-    /* Clear combo: */
-    m_pComboPointingHIDType->clear();
-
-    /* Repopulate combo taking into account currently cached value: */
-    KPointingHIDType cachedValue = m_cache.base().m_pointingHIDType;
-    {
-        /* "PS/2 Mouse" value is always here: */
-        m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_PS2Mouse), (int)KPointingHIDType_PS2Mouse);
-
-        /* "USB Mouse" value is here only if it is currently selected: */
-        if (cachedValue == KPointingHIDType_USBMouse)
-            m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_USBMouse), (int)KPointingHIDType_USBMouse);
-
-        /* "USB Mouse/Tablet" value is always here: */
-        m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_USBTablet), (int)KPointingHIDType_USBTablet);
-
-        /* "PS/2 and USB Mouse" value is here only if it is currently selected: */
-        if (cachedValue == KPointingHIDType_ComboMouse)
-            m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_ComboMouse), (int)KPointingHIDType_ComboMouse);
-
-        /* "USB Multi-Touch Mouse/Tablet" value is always here: */
-        m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_USBMultiTouch), (int)KPointingHIDType_USBMultiTouch);
-    }
-
-    /* Was there any value previously present/selected? */
-    if (currentValue != KPointingHIDType_None)
-    {
-        int iPreviousIndex = m_pComboPointingHIDType->findData((int)currentValue);
-        if (iPreviousIndex != -1)
-            m_pComboPointingHIDType->setCurrentIndex(iPreviousIndex);
-    }
 }
 
 void UIMachineSettingsSystem::sltHandleCPUCountSliderChange()
@@ -748,6 +573,179 @@ void UIMachineSettingsSystem::sltHandleCPUExecCapEditorChange()
         m_pValidator->revalidate();
 }
 
+void UIMachineSettingsSystem::prepare()
+{
+    /* Apply UI decorations: */
+    Ui::UIMachineSettingsSystem::setupUi(this);
+
+    /* Prepare 'motherboard' tab: */
+    prepareTabMotherboard();
+
+    /* Prepare 'processor' tab: */
+    prepareTabProcessor();
+
+    /* Retranslate finally: */
+    retranslateUi();
+}
+
+void UIMachineSettingsSystem::prepareTabMotherboard()
+{
+    /* Load configuration: */
+    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
+
+    /* Preconfigure memory-size editor: */
+    m_pEditorMemorySize->setMinimum(m_pSliderMemorySize->minRAM());
+    m_pEditorMemorySize->setMaximum(m_pSliderMemorySize->maxRAM());
+    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorMemorySize, 5);
+
+    /* Preconfigure boot-table widgets: */
+    mTbBootItemUp->setIcon(UIIconPool::iconSet(":/list_moveup_16px.png", ":/list_moveup_disabled_16px.png"));
+    mTbBootItemDown->setIcon(UIIconPool::iconSet(":/list_movedown_16px.png", ":/list_movedown_disabled_16px.png"));
+#ifdef Q_WS_MAC
+    /* We need a little space for the focus rect: */
+    m_pLayoutBootOrder->setContentsMargins(3, 3, 3, 3);
+    m_pLayoutBootOrder->setSpacing(3);
+#endif /* Q_WS_MAC */
+    /* Install global event filter
+     * to handle boot-table focus in/out events: */
+    // TODO: Get rid of that *crap*!
+    qApp->installEventFilter(this);
+
+    /* Populate possible boot items list.
+     * Currently, it seems, we are supporting only 4 possible boot device types:
+     * 1. Floppy, 2. DVD-ROM, 3. Hard Disk, 4. Network.
+     * But maximum boot devices count supported by machine
+     * should be retrieved through the ISystemProperties getter.
+     * Moreover, possible boot device types are not listed in some separate Main vector,
+     * so we should get them (randomely?) from the list of all device types.
+     * Until there will be separate Main getter for list of supported boot device types,
+     * this list will be hard-coded here... */
+    int iPossibleBootListSize = qMin((ULONG)4, properties.GetMaxBootPosition());
+    for (int iBootPosition = 1; iBootPosition <= iPossibleBootListSize; ++iBootPosition)
+    {
+        switch (iBootPosition)
+        {
+            case 1: m_possibleBootItems << KDeviceType_Floppy; break;
+            case 2: m_possibleBootItems << KDeviceType_DVD; break;
+            case 3: m_possibleBootItems << KDeviceType_HardDisk; break;
+            case 4: m_possibleBootItems << KDeviceType_Network; break;
+            default: break;
+        }
+    }
+    /* Add all available devices types, so we could initially calculate the right size: */
+    for (int i = 0; i < m_possibleBootItems.size(); ++i)
+    {
+        QListWidgetItem *pItem = new UIBootTableItem(m_possibleBootItems[i]);
+        mTwBootOrder->addItem(pItem);
+    }
+
+    /* Populate 'chipset type' combo: */
+    m_pComboChipsetType->addItem(gpConverter->toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
+    m_pComboChipsetType->addItem(gpConverter->toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
+
+    /* Preconfigure 'pointing HID type' combo: */
+    m_pComboPointingHIDType->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+
+    /* Install memory-size widget connections: */
+    connect(m_pSliderMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeSliderChange()));
+    connect(m_pEditorMemorySize, SIGNAL(valueChanged(int)), this, SLOT(sltHandleMemorySizeEditorChange()));
+
+    /* Install boot-table connections: */
+    connect(mTbBootItemUp, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemUp()));
+    connect(mTbBootItemDown, SIGNAL(clicked()), mTwBootOrder, SLOT(sltMoveItemDown()));
+    connect(mTwBootOrder, SIGNAL(sigRowChanged(int)), this, SLOT(sltCurrentBootItemChanged(int)));
+}
+
+void UIMachineSettingsSystem::prepareTabProcessor()
+{
+    /* Load configuration: */
+    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
+    uint hostCPUs = vboxGlobal().host().GetProcessorCount();
+    m_uMinGuestCPU = properties.GetMinGuestCPUCount();
+    m_uMaxGuestCPU = qMin(2 * hostCPUs, properties.GetMaxGuestCPUCount());
+    m_uMinGuestCPUExecCap = 1;
+    m_uMedGuestCPUExecCap = 40;
+    m_uMaxGuestCPUExecCap = 100;
+
+    /* Preconfigure CPU-count slider: */
+    m_pSliderCPUCount->setPageStep(1);
+    m_pSliderCPUCount->setSingleStep(1);
+    m_pSliderCPUCount->setTickInterval(1);
+    m_pSliderCPUCount->setMinimum(m_uMinGuestCPU);
+    m_pSliderCPUCount->setMaximum(m_uMaxGuestCPU);
+    m_pSliderCPUCount->setOptimalHint(1, hostCPUs);
+    m_pSliderCPUCount->setWarningHint(hostCPUs, m_uMaxGuestCPU);
+
+    /* Preconfigure CPU-count editor: */
+    m_pEditorCPUCount->setMinimum(m_uMinGuestCPU);
+    m_pEditorCPUCount->setMaximum(m_uMaxGuestCPU);
+    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorCPUCount, 4);
+
+    /* Preconfigure CPU-execution-cap slider: */
+    m_pSliderCPUExecCap->setPageStep(10);
+    m_pSliderCPUExecCap->setSingleStep(1);
+    m_pSliderCPUExecCap->setTickInterval(10);
+    /* Setup the scale so that ticks are at page step boundaries: */
+    m_pSliderCPUExecCap->setMinimum(m_uMinGuestCPUExecCap);
+    m_pSliderCPUExecCap->setMaximum(m_uMaxGuestCPUExecCap);
+    m_pSliderCPUExecCap->setWarningHint(m_uMinGuestCPUExecCap, m_uMedGuestCPUExecCap);
+    m_pSliderCPUExecCap->setOptimalHint(m_uMedGuestCPUExecCap, m_uMaxGuestCPUExecCap);
+
+    /* Preconfigure CPU-execution-cap editor: */
+    m_pEditorCPUExecCap->setMinimum(m_uMinGuestCPUExecCap);
+    m_pEditorCPUExecCap->setMaximum(m_uMaxGuestCPUExecCap);
+    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorCPUExecCap, 4);
+
+    /* Install CPU widget connections: */
+    connect(m_pSliderCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountSliderChange()));
+    connect(m_pEditorCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountEditorChange()));
+    connect(m_pSliderCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapSliderChange()));
+    connect(m_pEditorCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapEditorChange()));
+}
+
+void UIMachineSettingsSystem::repopulateComboPointingHIDType()
+{
+    /* Is there any value currently present/selected? */
+    KPointingHIDType currentValue = KPointingHIDType_None;
+    {
+        int iCurrentIndex = m_pComboPointingHIDType->currentIndex();
+        if (iCurrentIndex != -1)
+            currentValue = (KPointingHIDType)m_pComboPointingHIDType->itemData(iCurrentIndex).toInt();
+    }
+
+    /* Clear combo: */
+    m_pComboPointingHIDType->clear();
+
+    /* Repopulate combo taking into account currently cached value: */
+    KPointingHIDType cachedValue = m_cache.base().m_pointingHIDType;
+    {
+        /* "PS/2 Mouse" value is always here: */
+        m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_PS2Mouse), (int)KPointingHIDType_PS2Mouse);
+
+        /* "USB Mouse" value is here only if it is currently selected: */
+        if (cachedValue == KPointingHIDType_USBMouse)
+            m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_USBMouse), (int)KPointingHIDType_USBMouse);
+
+        /* "USB Mouse/Tablet" value is always here: */
+        m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_USBTablet), (int)KPointingHIDType_USBTablet);
+
+        /* "PS/2 and USB Mouse" value is here only if it is currently selected: */
+        if (cachedValue == KPointingHIDType_ComboMouse)
+            m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_ComboMouse), (int)KPointingHIDType_ComboMouse);
+
+        /* "USB Multi-Touch Mouse/Tablet" value is always here: */
+        m_pComboPointingHIDType->addItem(gpConverter->toString(KPointingHIDType_USBMultiTouch), (int)KPointingHIDType_USBMultiTouch);
+    }
+
+    /* Was there any value previously present/selected? */
+    if (currentValue != KPointingHIDType_None)
+    {
+        int iPreviousIndex = m_pComboPointingHIDType->findData((int)currentValue);
+        if (iPreviousIndex != -1)
+            m_pComboPointingHIDType->setCurrentIndex(iPreviousIndex);
+    }
+}
+
 void UIMachineSettingsSystem::retranslateComboPointingChipsetType()
 {
     /* For each the element in KPointingHIDType enum: */
@@ -778,6 +776,18 @@ void UIMachineSettingsSystem::retranslateComboPointingHIDType()
     }
 }
 
+void UIMachineSettingsSystem::adjustBootOrderTWSize()
+{
+    /* Adjust boot-table size: */
+    mTwBootOrder->adjustSizeToFitContent();
+    /* Update the layout system */
+    if (m_pTabMotherboard->layout())
+    {
+        m_pTabMotherboard->layout()->activate();
+        m_pTabMotherboard->layout()->update();
+    }
+}
+
 bool UIMachineSettingsSystem::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     if (!pObject->isWidgetType())
@@ -797,7 +807,7 @@ bool UIMachineSettingsSystem::eventFilter(QObject *pObject, QEvent *pEvent)
                 if (!mTwBootOrder->currentItem())
                     mTwBootOrder->setCurrentItem(mTwBootOrder->item(0));
                 else
-                    onCurrentBootItemChanged(mTwBootOrder->currentRow());
+                    sltCurrentBootItemChanged(mTwBootOrder->currentRow());
                 mTwBootOrder->currentItem()->setSelected(true);
             }
             else if (pWidget != mTbBootItemUp && pWidget != mTbBootItemDown)
