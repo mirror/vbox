@@ -8911,7 +8911,7 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
             uint64_t u64Value;
             rcStrict = iemMemStackPopU64Ex(pIemCpu, &u64Value, &TmpRsp);
             if (rcStrict == VINF_SUCCESS)
-                rcStrict = iemMemStoreDataU16(pIemCpu, pIemCpu->iEffSeg, GCPtrEff, u64Value);
+                rcStrict = iemMemStoreDataU64(pIemCpu, pIemCpu->iEffSeg, GCPtrEff, u64Value);
             break;
         }
 
