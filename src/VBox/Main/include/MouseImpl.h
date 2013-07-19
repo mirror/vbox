@@ -66,7 +66,7 @@ public:
     STDMETHOD(PutMouseEventAbsolute)(LONG x, LONG y, LONG dz, LONG dw,
                                      LONG buttonState);
     STDMETHOD(PutMouseEventMultiTouch)(LONG x, LONG y, LONG contactID,
-                                       BOOL inContact);
+                                       LONG contactState);
     STDMETHOD(COMGETTER(EventSource)) (IEventSource ** aEventSource);
 
     static const PDMDRVREG  DrvReg;
@@ -96,7 +96,7 @@ private:
     HRESULT reportAbsEventToMouseDev(int32_t x, int32_t y, int32_t dz,
                                      int32_t dw, uint32_t fButtons);
     HRESULT reportMTEventToMouseDev(int32_t x, int32_t z, uint32_t cContact,
-                                    bool fContact);
+                                    uint32_t fContact);
     HRESULT reportAbsEventToVMMDev(int32_t x, int32_t y);
     HRESULT reportAbsEvent(int32_t x, int32_t y, int32_t dz, int32_t dw,
                            uint32_t fButtons, bool fUsesVMMDevEvent);

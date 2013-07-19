@@ -14326,9 +14326,28 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="MouseStateMask"    value="0x7F"/>
   </enum>
 
+  <enum
+    name="TouchContactState"
+    uuid="3f942686-2506-421c-927c-90d4b45f4a38"
+    >
+    <desc>
+      Touch event contact state.
+    </desc>
+
+    <const name="InContact"         value="0x01">
+      <desc>Whether the touch is really touching the device.</desc>
+    </const>
+    <const name="InRange"           value="0x02">
+      <desc>
+        Whether the touch is close enough to the device to be detected.
+      </desc>
+    </const>
+    <const name="ContactStateMask"  value="0x03"/>
+  </enum>
+
   <interface
     name="IMouse" extends="$unknown"
-    uuid="436a3712-d818-4bb1-84f2-8da4d1a29e0a"
+    uuid="b84498e5-c8ad-4ae0-adbe-7928c7a546df"
     wsmap="managed"
     >
     <desc>
@@ -14545,12 +14564,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           for all following events.
         </desc>
       </param>
-      <param name="inContact" type="boolean" dir="in">
+      <param name="contactState" type="long" dir="in">
         <desc>
-          Whether the touch is continuing.  If this is true, expect more events
-          with the same @a contactID, and this will usually be false when the
-          last event is received before the contact is stopped (i.e. the finger
-          is removed from the device).
+          State information for the touch identified by @a contactID.  See the
+          @touchContactState enumeration value.  If this is not zero, expect
+          more events with the same @a contactID, and this will usually be zero
+          when the last event is received before the contact is stopped (i.e.
+          the finger is removed from the device).
         </desc>
       </param>
     </method>
