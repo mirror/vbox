@@ -243,10 +243,10 @@ typedef struct USBHIDT_REPORT
 typedef struct USBHIDMT_REPORT
 {
     uint8_t     idReport;
-    uint8_t     idContact;
+    uint8_t     fContact;
     uint16_t    x;
     uint16_t    y;
-    uint8_t     fButton;
+    uint8_t     cContact;
 } USBHIDMT_REPORT, *PUSBHIDMT_REPORT;
 
 /**
@@ -390,11 +390,16 @@ static const uint8_t g_UsbHidMTReportDesc[] =
     /* Collection */                0xA1, 0x01,     /* Application */
     /* Report ID */                 0x85, REPORTID_MOUSE,
     /* Usage */                     0x09, 0x22,     /* Finger */
-    /* Collection */                0xA1, 0x02,     /* Logical */
-    /* Usage */                     0x09, 0x51,     /* Contact Identifier */
-    /* Report Count */              0x95, 0x01,     /* 1 */
-    /* Report Size */               0x75, 0x08,     /* 8 */
+    /* Collection */                0xA1, 0x00,     /* Physical */
+    /* Usage */                     0x09, 0x42,     /* Tip Switch */
+    /* Usage */                     0x09, 0x32,     /* In Range */
+    /* Logical Minimum */           0x15, 0x00,     /* 0 */
+    /* Logical Maximum */           0x25, 0x01,     /* 1 */
+    /* Report Count */              0x95, 0x02,     /* 2 */
+    /* Report Size */               0x75, 0x01,     /* 1 */
     /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Report Count */              0x95, 0x06,     /* 6 (padding bits) */
+    /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
     /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
     /* Usage */                     0x09, 0x30,     /* X */
     /* Usage */                     0x09, 0x31,     /* Y */
@@ -406,21 +411,17 @@ static const uint8_t g_UsbHidMTReportDesc[] =
     /* Report Count */              0x95, 0x02,     /* 2 */
     /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
     /* Usage Page */                0x05, 0x0D,     /* Digitisers */
-    /* Usage */                     0x09, 0x42,     /* Tip Switch */
-    /* Logical Minimum */           0x15, 0x00,     /* 0 */
-    /* Logical Maximum */           0x25, 0x01,     /* 1 */
+    /* Usage */                     0x09, 0x51,     /* Contact Identifier */
     /* Report Count */              0x95, 0x01,     /* 1 */
-    /* Report Size */               0x75, 0x01,     /* 1 */
+    /* Report Size */               0x75, 0x08,     /* 8 */
     /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
-    /* Report Count */              0x95, 0x07,     /* 7 */
-    /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
     /* End Collection */            0xC0,
     /* Report ID */                 0x85, REPORTID_MAX_COUNT,
     /* Usage */                     0x09, 0x55,     /* Contact Count Maximum */
     /* Report Count */              0x95, 0x01,     /* 1 */
     /* Logical Maximum */           0x25, 0x40,     /* 64 */
     /* Feature */                   0xB1, 0x03,     /* Constant, Value, Absolute, Bit field */
-    /* End Collection */            0xC0,
+    /* End Collection */            0xC0
 };
 
 /** @todo Do these really have to all be duplicated three times? */
@@ -924,10 +925,10 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
     case USBHIDMODE_MULTI_TOUCH:
     {
         pReport->mt.idReport         = REPORTID_MOUSE;
-        pReport->mt.idContact        = pAccumulated->u.MultiTouch.cContact;
+        pReport->mt.cContact         = pAccumulated->u.MultiTouch.cContact;
         pReport->mt.x                = pAccumulated->u.MultiTouch.x;
         pReport->mt.y                = pAccumulated->u.MultiTouch.y;
-        pReport->mt.fButton          = pAccumulated->u.MultiTouch.fContact;
+        pReport->mt.fContact         = pAccumulated->u.MultiTouch.fContact;
 
         cbCopy = sizeof(pReport->t);
         LogRel3(("Multi-touch event, x=%u, y=%u, report size %d\n",
