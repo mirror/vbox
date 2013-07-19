@@ -11430,7 +11430,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="1a1969c1-a583-4975-9810-1dd0f0e3a8ae"
+    uuid="8011a1b1-6adb-4ffb-a37e-20abdaee4650"
     wsmap="managed"
     >
     <desc>
@@ -11475,6 +11475,12 @@
         The internal build revision number of the additions.
 
         See also <link to="IVirtualBox::revision"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="eventSource" type="IEventSource" readonly="yes">
+      <desc>
+        Event source for guest events.
       </desc>
     </attribute>
 
