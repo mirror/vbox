@@ -563,6 +563,52 @@ void UIMachineSettingsSystem::retranslateUi()
     retranslateComboPointingHIDType();
 }
 
+void UIMachineSettingsSystem::polishPage()
+{
+    /* Get system data from cache: */
+    const UIDataSettingsMachineSystem &systemData = m_cache.base();
+
+    /* Motherboard tab: */
+    m_pLabelMemorySize->setEnabled(isMachineOffline());
+    m_pLabelMemoryMin->setEnabled(isMachineOffline());
+    m_pLabelMemoryMax->setEnabled(isMachineOffline());
+    m_pLabelMemoryUnits->setEnabled(isMachineOffline());
+    m_pSliderMemorySize->setEnabled(isMachineOffline());
+    m_pEditorMemorySize->setEnabled(isMachineOffline());
+    m_pLabelBootOrder->setEnabled(isMachineOffline());
+    mTwBootOrder->setEnabled(isMachineOffline());
+    mTbBootItemUp->setEnabled(isMachineOffline() && mTwBootOrder->hasFocus() && mTwBootOrder->currentRow() > 0);
+    mTbBootItemDown->setEnabled(isMachineOffline() && mTwBootOrder->hasFocus() && (mTwBootOrder->currentRow() < mTwBootOrder->count() - 1));
+    m_pLabelChipsetType->setEnabled(isMachineOffline());
+    m_pComboChipsetType->setEnabled(isMachineOffline());
+    m_pLabelPointingHIDType->setEnabled(isMachineOffline());
+    m_pComboPointingHIDType->setEnabled(isMachineOffline());
+    m_pLabelMotherboardExtended->setEnabled(isMachineOffline());
+    m_pCheckBoxApic->setEnabled(isMachineOffline());
+    m_pCheckBoxEFI->setEnabled(isMachineOffline());
+    m_pCheckBoxUseUTC->setEnabled(isMachineOffline());
+
+    /* Processor tab: */
+    m_pLabelCPUCount->setEnabled(isMachineOffline());
+    m_pLabelCPUMin->setEnabled(isMachineOffline());
+    m_pLabelCPUMax->setEnabled(isMachineOffline());
+    m_pSliderCPUCount->setEnabled(isMachineOffline() && systemData.m_fSupportedHwVirtEx);
+    m_pEditorCPUCount->setEnabled(isMachineOffline() && systemData.m_fSupportedHwVirtEx);
+    m_pLabelCPUExecCap->setEnabled(isMachineInValidMode());
+    m_pLabelCPUExecCapMin->setEnabled(isMachineInValidMode());
+    m_pLabelCPUExecCapMax->setEnabled(isMachineInValidMode());
+    m_pSliderCPUExecCap->setEnabled(isMachineInValidMode());
+    m_pEditorCPUExecCap->setEnabled(isMachineInValidMode());
+    m_pLabelCPUExtended->setEnabled(isMachineOffline());
+    m_pCheckBoxPAE->setEnabled(isMachineOffline() && systemData.m_fSupportedPAE);
+
+    /* Acceleration tab: */
+    m_pTabWidgetSystem->setTabEnabled(2, systemData.m_fSupportedHwVirtEx);
+    m_pLabelVirtualization->setEnabled(isMachineOffline());
+    m_pCheckBoxVirtualization->setEnabled(isMachineOffline());
+    m_pCheckBoxNestedPaging->setEnabled(isMachineOffline() && m_pCheckBoxVirtualization->isChecked());
+}
+
 void UIMachineSettingsSystem::sltHandleMemorySizeSliderChange()
 {
     /* Apply new memory-size value: */
@@ -730,52 +776,6 @@ void UIMachineSettingsSystem::retranslateComboPointingHIDType()
         if (iCorrespondingIndex != -1)
             m_pComboPointingHIDType->setItemText(iCorrespondingIndex, gpConverter->toString(type));
     }
-}
-
-void UIMachineSettingsSystem::polishPage()
-{
-    /* Get system data from cache: */
-    const UIDataSettingsMachineSystem &systemData = m_cache.base();
-
-    /* Motherboard tab: */
-    m_pLabelMemorySize->setEnabled(isMachineOffline());
-    m_pLabelMemoryMin->setEnabled(isMachineOffline());
-    m_pLabelMemoryMax->setEnabled(isMachineOffline());
-    m_pLabelMemoryUnits->setEnabled(isMachineOffline());
-    m_pSliderMemorySize->setEnabled(isMachineOffline());
-    m_pEditorMemorySize->setEnabled(isMachineOffline());
-    m_pLabelBootOrder->setEnabled(isMachineOffline());
-    mTwBootOrder->setEnabled(isMachineOffline());
-    mTbBootItemUp->setEnabled(isMachineOffline() && mTwBootOrder->hasFocus() && mTwBootOrder->currentRow() > 0);
-    mTbBootItemDown->setEnabled(isMachineOffline() && mTwBootOrder->hasFocus() && (mTwBootOrder->currentRow() < mTwBootOrder->count() - 1));
-    m_pLabelChipsetType->setEnabled(isMachineOffline());
-    m_pComboChipsetType->setEnabled(isMachineOffline());
-    m_pLabelPointingHIDType->setEnabled(isMachineOffline());
-    m_pComboPointingHIDType->setEnabled(isMachineOffline());
-    m_pLabelMotherboardExtended->setEnabled(isMachineOffline());
-    m_pCheckBoxApic->setEnabled(isMachineOffline());
-    m_pCheckBoxEFI->setEnabled(isMachineOffline());
-    m_pCheckBoxUseUTC->setEnabled(isMachineOffline());
-
-    /* Processor tab: */
-    m_pLabelCPUCount->setEnabled(isMachineOffline());
-    m_pLabelCPUMin->setEnabled(isMachineOffline());
-    m_pLabelCPUMax->setEnabled(isMachineOffline());
-    m_pSliderCPUCount->setEnabled(isMachineOffline() && systemData.m_fSupportedHwVirtEx);
-    m_pEditorCPUCount->setEnabled(isMachineOffline() && systemData.m_fSupportedHwVirtEx);
-    m_pLabelCPUExecCap->setEnabled(isMachineInValidMode());
-    m_pLabelCPUExecCapMin->setEnabled(isMachineInValidMode());
-    m_pLabelCPUExecCapMax->setEnabled(isMachineInValidMode());
-    m_pSliderCPUExecCap->setEnabled(isMachineInValidMode());
-    m_pEditorCPUExecCap->setEnabled(isMachineInValidMode());
-    m_pLabelCPUExtended->setEnabled(isMachineOffline());
-    m_pCheckBoxPAE->setEnabled(isMachineOffline() && systemData.m_fSupportedPAE);
-
-    /* Acceleration tab: */
-    m_pTabWidgetSystem->setTabEnabled(2, systemData.m_fSupportedHwVirtEx);
-    m_pLabelVirtualization->setEnabled(isMachineOffline());
-    m_pCheckBoxVirtualization->setEnabled(isMachineOffline());
-    m_pCheckBoxNestedPaging->setEnabled(isMachineOffline() && m_pCheckBoxVirtualization->isChecked());
 }
 
 bool UIMachineSettingsSystem::eventFilter(QObject *pObject, QEvent *pEvent)
