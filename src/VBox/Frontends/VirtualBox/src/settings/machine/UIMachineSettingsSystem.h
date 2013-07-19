@@ -53,10 +53,10 @@ struct UIDataSettingsMachineSystem
         , m_iRAMSize(-1)
         , m_bootItems(QList<UIBootItemData>())
         , m_chipsetType(KChipsetType_Null)
+        , m_pointingHIDType(KPointingHIDType_None)
         , m_fEnabledIoApic(false)
         , m_fEnabledEFI(false)
         , m_fEnabledUTC(false)
-        , m_fEnabledAbsoluteHID(false)
         /* CPU data: */
         , m_cCPUCount(-1)
         , m_iCPUExecCap(-1)
@@ -76,10 +76,10 @@ struct UIDataSettingsMachineSystem
                (m_iRAMSize == other.m_iRAMSize) &&
                (m_bootItems == other.m_bootItems) &&
                (m_chipsetType == other.m_chipsetType) &&
+               (m_pointingHIDType == other.m_pointingHIDType) &&
                (m_fEnabledIoApic == other.m_fEnabledIoApic) &&
                (m_fEnabledEFI == other.m_fEnabledEFI) &&
                (m_fEnabledUTC == other.m_fEnabledUTC) &&
-               (m_fEnabledAbsoluteHID == other.m_fEnabledAbsoluteHID) &&
                /* CPU data: */
                (m_cCPUCount == other.m_cCPUCount) &&
                (m_iCPUExecCap == other.m_iCPUExecCap) &&
@@ -101,10 +101,10 @@ struct UIDataSettingsMachineSystem
     int m_iRAMSize;
     QList<UIBootItemData> m_bootItems;
     KChipsetType m_chipsetType;
+    KPointingHIDType m_pointingHIDType;
     bool m_fEnabledIoApic;
     bool m_fEnabledEFI;
     bool m_fEnabledUTC;
-    bool m_fEnabledAbsoluteHID;
     /* Variables: CPU data: */
     int m_cCPUCount;
     int m_iCPUExecCap;
@@ -178,8 +178,9 @@ private slots:
 
 private:
 
-    /* Helper: Translation stuff: */
+    /* Helpers: Translation stuff: */
     void retranslateComboPointingChipsetType();
+    void retranslateComboPointingHIDType();
 
     /* Handler: Polishing stuff: */
     void polishPage();
@@ -189,6 +190,9 @@ private:
 
     /* Helper: Boot-table stuff: */
     void adjustBootOrderTWSize();
+
+    /* Helper: Pointing HID type combo stuff: */
+    void repopulateComboPointingHIDType();
 
     /* Variable: Validation stuff: */
     QIWidgetValidator *m_pValidator;

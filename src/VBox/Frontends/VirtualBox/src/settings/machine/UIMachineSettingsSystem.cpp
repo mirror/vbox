@@ -152,6 +152,9 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     /* Ensure mLeMemory value and validation is updated: */
     sltValueChangedCPUExecCap(mSlCPUExecCap->value());
 
+    /* Configure 'pointing HID type' combo: */
+    mCbHIDType->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+
     /* Populate chipset combo: */
     mCbChipset->addItem(gpConverter->toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
     mCbChipset->addItem(gpConverter->toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
@@ -170,7 +173,7 @@ bool UIMachineSettingsSystem::isHWVirtExEnabled() const
 
 bool UIMachineSettingsSystem::isHIDEnabled() const
 {
-    return mCbUseAbsHID->isChecked();
+    return (KPointingHIDType)mCbHIDType->itemData(mCbHIDType->currentIndex()).toInt() != KPointingHIDType_PS2Mouse;
 }
 
 KChipsetType UIMachineSettingsSystem::chipsetType() const
@@ -230,10 +233,10 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     }
     /* Load other motherboard data: */
     systemData.m_chipsetType = m_machine.GetChipsetType();
+    systemData.m_pointingHIDType = m_machine.GetPointingHIDType();
     systemData.m_fEnabledIoApic = m_machine.GetBIOSSettings().GetIOAPICEnabled();
     systemData.m_fEnabledEFI = m_machine.GetFirmwareType() >= KFirmwareType_EFI && m_machine.GetFirmwareType() <= KFirmwareType_EFIDUAL;
     systemData.m_fEnabledUTC = m_machine.GetRTCUseUTC();
-    systemData.m_fEnabledAbsoluteHID = m_machine.GetPointingHIDType() == KPointingHIDType_USBTablet;
 
     /* Load CPU data: */
     systemData.m_cCPUCount = systemData.m_fSupportedHwVirtEx ? m_machine.GetCPUCount() : 1;
@@ -258,6 +261,11 @@ void UIMachineSettingsSystem::getFromCache()
     /* Get system data from cache: */
     const UIDataSettingsMachineSystem &systemData = m_cache.base();
 
+    /* Repopulate 'pointing HID type' combo.
+     * We are doing that *now* because it has dynamical content
+     * which depends on recashed value: */
+    repopulateComboPointingHIDType();
+
     /* Load motherboard data to page: */
     mSlMemory->setValue(systemData.m_iRAMSize);
     /* Remove any old data in the boot view: */
@@ -272,12 +280,13 @@ void UIMachineSettingsSystem::getFromCache()
         mTwBootOrder->addItem(pItem);
     }
     /* Load other motherboard data to page: */
-    int iChipsetPosition = mCbChipset->findData(systemData.m_chipsetType);
-    mCbChipset->setCurrentIndex(iChipsetPosition == -1 ? 0 : iChipsetPosition);
+    int iChipsetTypePosition = mCbChipset->findData(systemData.m_chipsetType);
+    mCbChipset->setCurrentIndex(iChipsetTypePosition == -1 ? 0 : iChipsetTypePosition);
+    int iHIDTypePosition = mCbHIDType->findData(systemData.m_pointingHIDType);
+    mCbHIDType->setCurrentIndex(iHIDTypePosition == -1 ? 0 : iHIDTypePosition);
     mCbApic->setChecked(systemData.m_fEnabledIoApic);
     mCbEFI->setChecked(systemData.m_fEnabledEFI);
     mCbTCUseUTC->setChecked(systemData.m_fEnabledUTC);
-    mCbUseAbsHID->setChecked(systemData.m_fEnabledAbsoluteHID);
 
     /* Load CPU data to page: */
     mSlCPU->setValue(systemData.m_cCPUCount);
@@ -317,11 +326,11 @@ void UIMachineSettingsSystem::putToCache()
     }
     /* Gather other motherboard data: */
     systemData.m_chipsetType = (KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt();
+    systemData.m_pointingHIDType = (KPointingHIDType)mCbHIDType->itemData(mCbHIDType->currentIndex()).toInt();
     systemData.m_fEnabledIoApic = mCbApic->isChecked() || mSlCPU->value() > 1 ||
                                   (KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt() == KChipsetType_ICH9;
     systemData.m_fEnabledEFI = mCbEFI->isChecked();
     systemData.m_fEnabledUTC = mCbTCUseUTC->isChecked();
-    systemData.m_fEnabledAbsoluteHID = mCbUseAbsHID->isChecked();
 
     /* Gather CPU data: */
     systemData.m_cCPUCount = mSlCPU->value();
@@ -368,10 +377,10 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
                     m_machine.SetBootOrder(++iBootIndex, KDeviceType_Null);
             }
             m_machine.SetChipsetType(systemData.m_chipsetType);
+            m_machine.SetPointingHIDType(systemData.m_pointingHIDType);
             m_machine.GetBIOSSettings().SetIOAPICEnabled(systemData.m_fEnabledIoApic);
             m_machine.SetFirmwareType(systemData.m_fEnabledEFI ? KFirmwareType_EFI : KFirmwareType_BIOS);
             m_machine.SetRTCUseUTC(systemData.m_fEnabledUTC);
-            m_machine.SetPointingHIDType(systemData.m_fEnabledAbsoluteHID ? KPointingHIDType_USBTablet : KPointingHIDType_PS2Mouse);
 
             /* Processor tab: */
             m_machine.SetCPUCount(systemData.m_cCPUCount);
@@ -397,9 +406,9 @@ void UIMachineSettingsSystem::setValidator(QIWidgetValidator *pValidator)
     /* Configure validation: */
     m_pValidator = pValidator;
     connect(mCbChipset, SIGNAL(currentIndexChanged(int)), m_pValidator, SLOT(revalidate()));
+    connect(mCbHIDType, SIGNAL(currentIndexChanged(int)), m_pValidator, SLOT(revalidate()));
     connect(mCbApic, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
     connect(mCbVirt, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
-    connect(mCbUseAbsHID, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
 }
 
 bool UIMachineSettingsSystem::revalidate(QString &strWarning, QString& /* strTitle */)
@@ -492,7 +501,7 @@ bool UIMachineSettingsSystem::revalidate(QString &strWarning, QString& /* strTit
     }
 
     /* HID dependency from OHCI feature: */
-    if (mCbUseAbsHID->isChecked() && !m_fOHCIEnabled)
+    if (isHIDEnabled() && !m_fOHCIEnabled)
     {
         strWarning = tr(
             "you have enabled a USB HID (Human Interface Device). "
@@ -515,13 +524,13 @@ void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)
     setTabOrder(mTwBootOrder, mTbBootItemUp);
     setTabOrder(mTbBootItemUp, mTbBootItemDown);
     setTabOrder(mTbBootItemDown, mCbChipset);
-    setTabOrder(mCbChipset, mCbApic);
+    setTabOrder(mCbChipset, mCbHIDType);
+    setTabOrder(mCbHIDType, mCbApic);
     setTabOrder(mCbApic, mCbEFI);
     setTabOrder(mCbEFI, mCbTCUseUTC);
-    setTabOrder(mCbTCUseUTC, mCbUseAbsHID);
 
     /* Processor tab-order: */
-    setTabOrder(mCbUseAbsHID, mSlCPU);
+    setTabOrder(mCbTCUseUTC, mSlCPU);
     setTabOrder(mSlCPU, mLeCPU);
     setTabOrder(mLeCPU, mSlCPUExecCap);
     setTabOrder(mSlCPUExecCap, mLeCPUExecCap);
@@ -552,8 +561,9 @@ void UIMachineSettingsSystem::retranslateUi()
     mLbCPUExecCapMin->setText(tr("<qt>%1%</qt>", "Min CPU execution cap in %").arg(m_uMinGuestCPUExecCap));
     mLbCPUExecCapMax->setText(tr("<qt>%1%</qt>", "Max CPU execution cap in %").arg(m_uMaxGuestCPUExecCap));
 
-    /* Retranslate combo-box: */
+    /* Retranslate combo-boxes: */
     retranslateComboPointingChipsetType();
+    retranslateComboPointingHIDType();
 }
 
 void UIMachineSettingsSystem::valueChangedRAM(int iValue)
@@ -590,6 +600,49 @@ void UIMachineSettingsSystem::adjustBootOrderTWSize()
     }
 }
 
+void UIMachineSettingsSystem::repopulateComboPointingHIDType()
+{
+    /* Is there any value currently present/selected? */
+    KPointingHIDType currentValue = KPointingHIDType_None;
+    {
+        int iCurrentIndex = mCbHIDType->currentIndex();
+        if (iCurrentIndex != -1)
+            currentValue = (KPointingHIDType)mCbHIDType->itemData(iCurrentIndex).toInt();
+    }
+
+    /* Clear combo: */
+    mCbHIDType->clear();
+
+    /* Repopulate combo taking into account currently cached value: */
+    KPointingHIDType cachedValue = m_cache.base().m_pointingHIDType;
+    {
+        /* "PS/2 Mouse" value is always here: */
+        mCbHIDType->addItem(gpConverter->toString(KPointingHIDType_PS2Mouse), (int)KPointingHIDType_PS2Mouse);
+
+        /* "USB Mouse" value is here only if it is currently selected: */
+        if (cachedValue == KPointingHIDType_USBMouse)
+            mCbHIDType->addItem(gpConverter->toString(KPointingHIDType_USBMouse), (int)KPointingHIDType_USBMouse);
+
+        /* "USB Mouse/Tablet" value is always here: */
+        mCbHIDType->addItem(gpConverter->toString(KPointingHIDType_USBTablet), (int)KPointingHIDType_USBTablet);
+
+        /* "PS/2 and USB Mouse" value is here only if it is currently selected: */
+        if (cachedValue == KPointingHIDType_ComboMouse)
+            mCbHIDType->addItem(gpConverter->toString(KPointingHIDType_ComboMouse), (int)KPointingHIDType_ComboMouse);
+
+        /* "USB Multi-Touch Mouse/Tablet" value is always here: */
+        mCbHIDType->addItem(gpConverter->toString(KPointingHIDType_USBMultiTouch), (int)KPointingHIDType_USBMultiTouch);
+    }
+
+    /* Was there any value previously present/selected? */
+    if (currentValue != KPointingHIDType_None)
+    {
+        int iPreviousIndex = mCbHIDType->findData((int)currentValue);
+        if (iPreviousIndex != -1)
+            mCbHIDType->setCurrentIndex(iPreviousIndex);
+    }
+}
+
 void UIMachineSettingsSystem::valueChangedCPU(int iValue)
 {
     mLeCPU->setText(QString::number(iValue));
@@ -619,9 +672,24 @@ void UIMachineSettingsSystem::retranslateComboPointingChipsetType()
         KChipsetType type = (KChipsetType)iIndex;
         /* Look for the corresponding item: */
         int iCorrespondingIndex = mCbChipset->findData((int)type);
-        /* Re-translate corresponding item if it was found: */
+        /* Re-translate if corresponding item was found: */
         if (iCorrespondingIndex != -1)
             mCbChipset->setItemText(iCorrespondingIndex, gpConverter->toString(type));
+    }
+}
+
+void UIMachineSettingsSystem::retranslateComboPointingHIDType()
+{
+    /* For each the element in KPointingHIDType enum: */
+    for (int iIndex = (int)KPointingHIDType_None; iIndex < (int)KPointingHIDType_Max; ++iIndex)
+    {
+        /* Cast to the corresponding type: */
+        KPointingHIDType type = (KPointingHIDType)iIndex;
+        /* Look for the corresponding item: */
+        int iCorrespondingIndex = mCbHIDType->findData((int)type);
+        /* Re-translate if corresponding item was found: */
+        if (iCorrespondingIndex != -1)
+            mCbHIDType->setItemText(iCorrespondingIndex, gpConverter->toString(type));
     }
 }
 
@@ -643,11 +711,12 @@ void UIMachineSettingsSystem::polishPage()
     mTbBootItemDown->setEnabled(isMachineOffline() && mTwBootOrder->hasFocus() && (mTwBootOrder->currentRow() < mTwBootOrder->count() - 1));
     mLbChipset->setEnabled(isMachineOffline());
     mCbChipset->setEnabled(isMachineOffline());
+    mLbHIDType->setEnabled(isMachineOffline());
+    mCbHIDType->setEnabled(isMachineOffline());
     mLbMotherboardExtended->setEnabled(isMachineOffline());
     mCbApic->setEnabled(isMachineOffline());
     mCbEFI->setEnabled(isMachineOffline());
     mCbTCUseUTC->setEnabled(isMachineOffline());
-    mCbUseAbsHID->setEnabled(isMachineOffline());
 
     /* Processor tab: */
     mLbCPU->setEnabled(isMachineOffline());

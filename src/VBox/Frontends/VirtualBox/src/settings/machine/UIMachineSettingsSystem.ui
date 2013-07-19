@@ -330,6 +330,55 @@
         </layout>
        </item>
        <item row="5" column="0">
+        <widget class="QLabel" name="mLbHIDType">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>&amp;Pointing device:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy">
+          <cstring>mCbHIDType</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1" colspan="3">
+        <layout class="QHBoxLayout" name="mLtHIDType">
+         <item>
+          <widget class="QComboBox" name="mCbHIDType" >
+           <property name="sizePolicy" >
+            <sizepolicy vsizetype="Fixed" hsizetype="Minimum" >
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+             </sizepolicy>
+           </property>
+           <property name="whatsThis" >
+            <string>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="mSpHor4">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item row="6" column="0">
         <widget class="QLabel" name="mLbMotherboardExtended">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -345,7 +394,7 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="1" colspan="3">
+       <item row="6" column="1" colspan="3">
         <widget class="QCheckBox" name="mCbApic">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -361,7 +410,7 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="1" colspan="3">
+       <item row="7" column="1" colspan="3">
         <widget class="QCheckBox" name="mCbEFI">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -377,7 +426,7 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="1" colspan="3">
+       <item row="8" column="1" colspan="3">
         <widget class="QCheckBox" name="mCbTCUseUTC" >
          <property name="sizePolicy" >
           <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -390,22 +439,6 @@
          </property>
          <property name="text" >
           <string>Hardware clock in &amp;UTC time</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1" colspan="3">
-        <widget class="QCheckBox" name="mCbUseAbsHID" >
-         <property name="sizePolicy" >
-          <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-           </sizepolicy>
-         </property>
-         <property name="whatsThis" >
-          <string>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</string>
-         </property>
-         <property name="text" >
-          <string>Enable &amp;absolute pointing device</string>
          </property>
         </widget>
        </item>
@@ -488,7 +521,7 @@
             </widget>
            </item>
            <item>
-            <spacer name="mSpHor4">
+            <spacer name="mSpHor5">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
@@ -589,7 +622,7 @@
             </widget>
            </item>
            <item>
-            <spacer name="mSpHor5">
+            <spacer name="mSpHor6">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
