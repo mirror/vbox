@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -137,8 +137,8 @@ static struct PDMDRVINS pdmdrvInsCore =
 
 static struct PDMDRVINS *ppdmdrvIns = NULL;
 
-Mouse *pMouse;
-ConsoleMouseInterface *pConsole;
+ComObjPtr<Mouse> pMouse;
+ConsoleMouseInterface *pConsole = NULL;
 
 static struct
 {
@@ -203,8 +203,10 @@ static int setup(void)
 {
     VMMDevPort.pfnSetAbsoluteMouse = setAbsoluteMouse;
     VMMDevPort.pfnUpdateMouseCapabilities = updateMouseCapabilities;
-    pMouse = new Mouse;
-    Assert(SUCCEEDED(pMouse->FinalConstruct()));
+    HRESULT hrc = pMouse.createInstance();
+    AssertComRC(hrc);
+    if (FAILED(hrc))
+        return VERR_GENERAL_FAILURE;
     pConsole = new TestConsole;
     pMouse->init(pConsole);
     ppdmdrvIns = (struct PDMDRVINS *) RTMemAllocZ(  sizeof(struct PDMDRVINS)
@@ -216,9 +218,11 @@ static int setup(void)
 
 static void teardown(void)
 {
-    delete pMouse;
-    delete pConsole;
-    RTMemFree(ppdmdrvIns);
+    pMouse.setNull();
+    if (pConsole)
+        delete pConsole;
+    if (ppdmdrvIns)
+        RTMemFree(ppdmdrvIns);
 }
 
 static bool approxEq(int a, int b, int prec)
@@ -350,8 +354,10 @@ int main(void)
      */
     for (unsigned i = 0; g_tests[i]; ++i)
     {
-        AssertRC(setup());
-        g_tests[i](hTest);
+        int rc = setup();
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+            g_tests[i](hTest);
         teardown();
     }
 
