@@ -3522,6 +3522,29 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
 }
 
 
+/**
+ * Advances the guest RIP in the if the NRIP_SAVE feature is supported by the
+ * CPU, otherwise advances the RIP by @a cb bytes.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   cb          RIP increment value in bytes.
+ *
+ * @remarks Use this function only from #VMEXIT's where the NRIP value is valid
+ *          when NRIP_SAVE is supported by the CPU!
+ */
+DECLINLINE(void) hmR0SvmUpdateRip(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t cb)
+{
+    if (pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+    {
+        PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        pCtx->rip = pVmcb->ctrl.u64NextRIP;
+    }
+    else
+        pCtx->rip += cb;
+}
+
+
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- #VMEXIT handlers -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
@@ -3563,7 +3586,8 @@ HMSVM_EXIT_DECL hmR0SvmExitIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 HMSVM_EXIT_DECL hmR0SvmExitWbinvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-    pCtx->rip += 2;         /* Hardcoded opcode, AMD-V doesn't give us this information. */
+
+    hmR0SvmUpdateRip(pVCpu, pCtx, 2);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWbinvd);
     return VINF_SUCCESS;
 }
@@ -3575,7 +3599,8 @@ HMSVM_EXIT_DECL hmR0SvmExitWbinvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 HMSVM_EXIT_DECL hmR0SvmExitInvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-    pCtx->rip += 2;         /* Hardcoded opcode, AMD-V doesn't give us this information. */
+
+    hmR0SvmUpdateRip(pVCpu, pCtx, 2);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvd);
     return VINF_SUCCESS;
 }
@@ -3590,7 +3615,7 @@ HMSVM_EXIT_DECL hmR0SvmExitCpuid(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc = EMInterpretCpuId(pVM, pVCpu, CPUMCTX2CORE(pCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
-        pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+        hmR0SvmUpdateRip(pVCpu, pCtx, 2);
     else
     {
         AssertMsgFailed(("hmR0SvmExitCpuid: EMInterpretCpuId failed with %Rrc\n", rc));
@@ -3611,7 +3636,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     int rc = EMInterpretRdtsc(pVM, pVCpu, CPUMCTX2CORE(pCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-        pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+        hmR0SvmUpdateRip(pVCpu, pCtx, 2);
         pSvmTransient->fUpdateTscOffsetting = true;
     }
     else
@@ -3633,7 +3658,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     int rc = EMInterpretRdtscp(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-        pCtx->rip += 3;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+        hmR0SvmUpdateRip(pVCpu, pCtx, 3);
         pSvmTransient->fUpdateTscOffsetting = true;
     }
     else
@@ -3654,7 +3679,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdpmc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     int rc = EMInterpretRdpmc(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
-        pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+        hmR0SvmUpdateRip(pVCpu, pCtx, 2);
     else
     {
         AssertMsgFailed(("hmR0SvmExitRdpmc: EMInterpretRdpmc failed with %Rrc\n", rc));
@@ -3688,7 +3713,7 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 HMSVM_EXIT_DECL hmR0SvmExitHlt(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
-    pCtx->rip++;        /* Hardcoded opcode, AMD-V doesn't give us this information. */
+    hmR0SvmUpdateRip(pVCpu, pCtx, 1);
     int rc = EMShouldContinueAfterHalt(pVCpu, pCtx) ? VINF_SUCCESS : VINF_EM_HALT;
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHlt);
     return rc;
@@ -3703,7 +3728,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     int rc = EMInterpretMonitor(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
-        pCtx->rip += 3;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+        hmR0SvmUpdateRip(pVCpu, pCtx, 3);
     else
     {
         AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMonitor: EMInterpretMonitor failed with %Rrc\n", rc));
@@ -3725,7 +3750,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMwait(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     if (    rc == VINF_EM_HALT
         ||  rc == VINF_SUCCESS)
     {
-        pCtx->rip += 3;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+        hmR0SvmUpdateRip(pVCpu, pCtx, 3);
 
         if (   rc == VINF_EM_HALT
             && EMShouldContinueAfterHalt(pVCpu, pCtx))
@@ -3841,8 +3866,6 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     PVM      pVM   = pVCpu->CTX_SUFF(pVM);
 
-    /** @todo r=ramshankar: This cannot be right if prefixes are involved. When
-     *        NRIP_SAVE isn't available we have to disassemble the instruction. */
     int rc;
     if (pVmcb->ctrl.u64ExitInfo1 == SVM_EXIT1_MSR_WRITE)
     {
@@ -3859,15 +3882,26 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
                 AssertRC(rc2);
                 pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_APIC_STATE;
             }
-            pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+            hmR0SvmUpdateRip(pVCpu, pCtx, 2);
             return VINF_SUCCESS;
         }
 
-        rc = EMInterpretWrmsr(pVM, pVCpu, CPUMCTX2CORE(pCtx));
-        if (RT_LIKELY(rc == VINF_SUCCESS))
-            pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+        if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+        {
+            rc = EMInterpretWrmsr(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                pCtx->rip = pVmcb->ctrl.u64NextRIP;
+            else
+                AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretWrmsr failed rc=%Rrc\n", rc));
+        }
         else
-            AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretWrmsr failed rc=%Rrc\n", rc));
+        {
+            VBOXSTRICTRC rcStrict = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
+            rc = VBOXSTRICTRC_VAL(rcStrict);
+            if (RT_UNLIKELY(rc != VINF_SUCCESS))
+                AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: WrMsr. EMInterpretInstruction failed rc=%Rrc\n", rc));
+            /* RIP updated by EMInterpretInstruction(). */
+        }
 
         /* If this is an X2APIC WRMSR access, update the APIC state as well. */
         if (   pCtx->ecx >= MSR_IA32_X2APIC_START
@@ -3887,11 +3921,24 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
     {
         /* MSR Read access. */
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
-        rc = EMInterpretRdmsr(pVM, pVCpu, CPUMCTX2CORE(pCtx));
-        if (RT_LIKELY(rc == VINF_SUCCESS))
-            pCtx->rip += 2;     /* Hardcoded opcode, AMD-V doesn't give us this information. */
+        Assert(pVmcb->ctrl.u64ExitInfo1 == SVM_EXIT1_MSR_READ);
+
+        if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+        {
+            rc = EMInterpretRdmsr(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+            if (RT_LIKELY(rc == VINF_SUCCESS))
+                pCtx->rip = pVmcb->ctrl.u64NextRIP;
+            else
+                AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretRdmsr failed rc=%Rrc\n", rc));
+        }
         else
-            AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretRdmsr failed rc=%Rrc\n", rc));
+        {
+            VBOXSTRICTRC rcStrict = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0);
+            rc = VBOXSTRICTRC_VAL(rcStrict);
+            if (RT_UNLIKELY(rc != VINF_SUCCESS))
+                AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: RdMsr. EMInterpretInstruction failed rc=%Rrc\n", rc));
+            /* RIP updated by EMInterpretInstruction(). */
+        }
     }
 
     /* RIP has been updated by EMInterpret[Rd|Wr]msr(). */
