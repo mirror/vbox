@@ -203,7 +203,7 @@ static int setup(void)
 {
     VMMDevPort.pfnSetAbsoluteMouse = setAbsoluteMouse;
     VMMDevPort.pfnUpdateMouseCapabilities = updateMouseCapabilities;
-    HRESULT hrc = pMouse.createInstance();
+    HRESULT hrc = pMouse.createObject();
     AssertComRC(hrc);
     if (FAILED(hrc))
         return VERR_GENERAL_FAILURE;
