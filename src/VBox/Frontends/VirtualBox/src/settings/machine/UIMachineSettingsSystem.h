@@ -23,7 +23,7 @@
 #include "UISettingsPage.h"
 #include "UIMachineSettingsSystem.gen.h"
 
-/* Machine settings / System page / Boot item: */
+/* Machine settings / System page / Data / Boot item: */
 struct UIBootItemData
 {
     /* Default constructor: */
@@ -99,22 +99,20 @@ typedef UISettingsCache<UIDataSettingsMachineSystem> UICacheSettingsMachineSyste
 
 /* Machine settings / System page: */
 class UIMachineSettingsSystem : public UISettingsPageMachine,
-                             public Ui::UIMachineSettingsSystem
+                                public Ui::UIMachineSettingsSystem
 {
     Q_OBJECT;
 
 public:
 
+    /* Constructor: */
     UIMachineSettingsSystem();
 
+    /* API: Correlation stuff: */
     bool isHWVirtExEnabled() const;
     bool isHIDEnabled() const;
     KChipsetType chipsetType() const;
     void setOHCIEnabled(bool fEnabled);
-
-signals:
-
-    void tableChanged();
 
 protected:
 
@@ -132,23 +130,29 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    /* Page changed: */
+    /* API: Cache stuff: */
     bool changed() const { return m_cache.wasChanged(); }
 
+    /* Helpers: Validation stuff: */
     void setValidator (QIWidgetValidator *aVal);
     bool revalidate (QString &aWarning, QString &aTitle);
 
+    /* Helper: Navigation stuff: */
     void setOrderAfter (QWidget *aWidget);
 
+    /* Helper: Translation stuff: */
     void retranslateUi();
 
 private slots:
 
+    /* Handlers: RAM stuff: */
     void valueChangedRAM (int aVal);
     void textChangedRAM (const QString &aText);
 
+    /* Handler: Boot stuff: */
     void onCurrentBootItemChanged (int);
 
+    /* Handlers: CPU stuff: */
     void valueChangedCPU (int aVal);
     void textChangedCPU (const QString &aText);
     void sltValueChangedCPUExecCap(int iValue);
@@ -156,22 +160,29 @@ private slots:
 
 private:
 
+    /* Handler: Event-filtration stuff: */
     bool eventFilter (QObject *aObject, QEvent *aEvent);
 
+    /* Helper: Boot stuff: */
     void adjustBootOrderTWSize();
 
+    /* Handler: Polishing stuff: */
     void polishPage();
 
+    /* Variable: Validation stuff: */
     QIWidgetValidator *mValidator;
 
+    /* Variables: CPU stuff: */
     uint mMinGuestCPU;
     uint mMaxGuestCPU;
     uint mMinGuestCPUExecCap;
     uint mMedGuestCPUExecCap;
     uint mMaxGuestCPUExecCap;
 
+    /* Variable: Boot stuff: */
     QList<KDeviceType> m_possibleBootItems;
 
+    /* Variable: Correlation stuff: */
     bool m_fOHCIEnabled;
 
     /* Cache: */
@@ -179,4 +190,3 @@ private:
 };
 
 #endif // __UIMachineSettingsSystem_h__
-
