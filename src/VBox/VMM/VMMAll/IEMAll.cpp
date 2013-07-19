@@ -203,7 +203,7 @@ typedef IEMSELDESC *PIEMSELDESC;
 #ifdef LOG_ENABLED
 # define IEM_RETURN_ASPECT_NOT_IMPLEMENTED() \
     do { \
-        Log(("%s: returning IEM_RETURN_ASPECT_NOT_IMPLEMENTED (line %d)\n", __FUNCTION__, __LINE__)); \
+        /*Log*/ LogAlways(("%s: returning IEM_RETURN_ASPECT_NOT_IMPLEMENTED (line %d)\n", __FUNCTION__, __LINE__)); \
         return VERR_IEM_ASPECT_NOT_IMPLEMENTED; \
     } while (0)
 #else
@@ -220,7 +220,8 @@ typedef IEMSELDESC *PIEMSELDESC;
 #ifdef LOG_ENABLED
 # define IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(a_LoggerArgs) \
     do { \
-        LogFunc(a_LoggerArgs); \
+        LogAlways((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogAlways(a_LoggerArgs); \
+        /*LogFunc(a_LoggerArgs);*/ \
         return VERR_IEM_ASPECT_NOT_IMPLEMENTED; \
     } while (0)
 #else
@@ -1859,7 +1860,8 @@ static VBOXSTRICTRC iemMiscValidateNewSS(PIEMCPU pIemCpu, PCCPUMCTX pCtx, RTSEL 
 #define IEM_XCPT_FLAGS_T_CPU_XCPT       RT_BIT_32(0)
 /** External interrupt (from PIC, APIC, whatever). */
 #define IEM_XCPT_FLAGS_T_EXT_INT        RT_BIT_32(1)
-/** Software interrupt (int, into or bound). */
+/** Software interrupt (int or into, not bound).
+ * Returns to the following instruction */
 #define IEM_XCPT_FLAGS_T_SOFT_INT       RT_BIT_32(2)
 /** Takes an error code. */
 #define IEM_XCPT_FLAGS_ERR              RT_BIT_32(3)
@@ -2048,7 +2050,7 @@ iemRaiseXcptOrIntInRealMode(PIEMCPU     pIemCpu,
     uint32_t fEfl = IEMMISC_GET_EFL(pIemCpu, pCtx);
     pu16Frame[2] = (uint16_t)fEfl;
     pu16Frame[1] = (uint16_t)pCtx->cs.Sel;
-    pu16Frame[0] = pCtx->ip + cbInstr;
+    pu16Frame[0] = (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT) ? pCtx->ip + cbInstr : pCtx->ip;
     rcStrict = iemMemStackPushCommitSpecial(pIemCpu, pu16Frame, uNewRsp);
     if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
         return rcStrict;
@@ -2289,8 +2291,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
 
         if (fFlags & IEM_XCPT_FLAGS_ERR)
             *uStackFrame.pu32++ = uErr;
-        uStackFrame.pu32[0] = (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
-                            ? pCtx->eip + cbInstr : pCtx->eip;
+        uStackFrame.pu32[0] = (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT) ? pCtx->eip + cbInstr : pCtx->eip;
         uStackFrame.pu32[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl;
         uStackFrame.pu32[2] = fEfl;
         uStackFrame.pu32[3] = pCtx->esp;
@@ -2346,8 +2347,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
 
         if (fFlags & IEM_XCPT_FLAGS_ERR)
             *uStackFrame.pu32++ = uErr;
-        uStackFrame.pu32[0] = (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
-                            ? pCtx->eip + cbInstr : pCtx->eip;
+        uStackFrame.pu32[0] = fFlags & IEM_XCPT_FLAGS_T_SOFT_INT ? pCtx->eip + cbInstr : pCtx->eip;
         uStackFrame.pu32[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl;
         uStackFrame.pu32[2] = fEfl;
         rcStrict = iemMemCommitAndUnmap(pIemCpu, pvStackFrame, IEM_ACCESS_STACK_W); /* don't use the commit here */
@@ -2454,7 +2454,7 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
     }
     X86DESC64 Idte;
     VBOXSTRICTRC rcStrict = iemMemFetchSysU64(pIemCpu, &Idte.au64[0], UINT8_MAX, pCtx->idtr.pIdt + offIdt);
-    if (RT_LIKELY(rcStrict != VINF_SUCCESS))
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
         rcStrict = iemMemFetchSysU64(pIemCpu, &Idte.au64[1], UINT8_MAX, pCtx->idtr.pIdt + offIdt + 8);
     if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
         return rcStrict;
@@ -2527,7 +2527,7 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
     }
     if (   !DescCS.Long.Gen.u1Long
         || DescCS.Long.Gen.u1DefBig
-        || (DescCS.Long.Gen.u4Type & X86_SEL_TYPE_CODE) )
+        || !(DescCS.Long.Gen.u4Type & X86_SEL_TYPE_CODE) )
     {
         Log(("iemRaiseXcptOrIntInLongMode %#x - CS=%#x - not 64-bit code selector (%#x, L=%u, D=%u) -> #GP\n",
              u8Vector, NewCS, DescCS.Legacy.Gen.u4Type, DescCS.Long.Gen.u1Long, DescCS.Long.Gen.u1DefBig));
@@ -2559,9 +2559,9 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
     uint64_t const uNewRip = Idte.Gate.u16OffsetLow
                            | ((uint32_t)Idte.Gate.u16OffsetHigh << 16)
                            | ((uint64_t)Idte.Gate.u32OffsetTop  << 32);
-    if (IEM_IS_CANONICAL(uNewRip))
+    if (!IEM_IS_CANONICAL(uNewRip))
     {
-        Log(("iemRaiseXcptOrIntInLongMode %#x - RIP=%#x - Not canonical -> #GP(0)\n", u8Vector, uNewRip));
+        Log(("iemRaiseXcptOrIntInLongMode %#x - RIP=%#R64 - Not canonical -> #GP(0)\n", u8Vector, uNewRip));
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
 
@@ -2579,10 +2579,10 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
         rcStrict = iemRaiseLoadStackFromTss64(pIemCpu, pCtx, uNewCpl, Idte.Gate.u3IST, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
-        /** @todo testcase: is this aligned? */
     }
     else
-        uNewRsp = pCtx->rsp & 0xf;
+        uNewRsp = pCtx->rsp;
+    uNewRsp &= ~(uint64_t)0xf;
 
     /*
      * Start making changes.
@@ -2599,9 +2599,8 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
 
     if (fFlags & IEM_XCPT_FLAGS_ERR)
         *uStackFrame.pu64++ = uErr;
-    uStackFrame.pu64[0] = (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
-                        ? pCtx->rip + cbInstr : pCtx->rip;
-    uStackFrame.pu64[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl;
+    uStackFrame.pu64[0] = fFlags & IEM_XCPT_FLAGS_T_SOFT_INT ? pCtx->rip + cbInstr : pCtx->rip;
+    uStackFrame.pu64[1] = (pCtx->cs.Sel & ~X86_SEL_RPL) | pIemCpu->uCpl; /* CPL paranoia */
     uStackFrame.pu64[2] = fEfl;
     uStackFrame.pu64[3] = pCtx->rsp;
     uStackFrame.pu64[4] = pCtx->ss.Sel;
@@ -2626,22 +2625,15 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
      */
     /** @todo research/testcase: Figure out what VT-x and AMD-V loads into the
      *        hidden registers when interrupting 32-bit or 16-bit code! */
-    pCtx->ss.Sel        = 0 | uNewCpl;
-    pCtx->ss.ValidSel   = 0 | uNewCpl;
-    pCtx->ss.fFlags     = CPUMSELREG_FLAGS_VALID;
-    pCtx->ss.u32Limit   = UINT32_MAX;
-    pCtx->ss.u64Base    = 0;
-    pCtx->ss.Attr.u     = 0;
-    pCtx->ss.Attr.n.u4Type          = X86_SEL_TYPE_RW_ACC;
-    pCtx->ss.Attr.n.u1DescType      = 1;
-    pCtx->ss.Attr.n.u2Dpl           = uNewCpl;
-    pCtx->ss.Attr.n.u1Present       = uNewCpl;
-    pCtx->ss.Attr.n.u4LimitHigh     = 0;
-    pCtx->ss.Attr.n.u1Available     = 0;
-    pCtx->ss.Attr.n.u1Long          = 0;
-    pCtx->ss.Attr.n.u1DefBig        = 0;
-    pCtx->ss.Attr.n.u1Granularity   = 0;
-    pCtx->ss.Attr.n.u1Unusable      = 1;
+    if (uNewCpl != pIemCpu->uCpl)
+    {
+        pCtx->ss.Sel        = 0 | uNewCpl;
+        pCtx->ss.ValidSel   = 0 | uNewCpl;
+        pCtx->ss.fFlags     = CPUMSELREG_FLAGS_VALID;
+        pCtx->ss.u32Limit   = UINT32_MAX;
+        pCtx->ss.u64Base    = 0;
+        pCtx->ss.Attr.u     = (uNewCpl << X86DESCATTR_DPL_SHIFT) | X86DESCATTR_UNUSABLE;
+    }
     pCtx->rsp           = uNewRsp - cbStackFrame;
     pCtx->cs.Sel        = (NewCS & ~X86_SEL_RPL) | uNewCpl;
     pCtx->cs.ValidSel   = (NewCS & ~X86_SEL_RPL) | uNewCpl;
@@ -2704,7 +2696,12 @@ iemRaiseXcptOrInt(PIEMCPU     pIemCpu,
 
         /** @todo double and tripple faults. */
         if (pIemCpu->cXcptRecursions >= 3)
+        {
+#ifdef DEBUG_bird
+            AssertFailed();
+#endif
             IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Too many fault nestings.\n"));
+        }
 
         /** @todo set X86_TRAP_ERR_EXTERNAL when appropriate.
         if (fPrevXcpt & IEM_XCPT_FLAGS_T_EXT_INT)
@@ -5468,7 +5465,7 @@ static VBOXSTRICTRC iemMemMap(PIEMCPU pIemCpu, void **ppvMem, size_t cbMem, uint
     /*
      * Check the input and figure out which mapping entry to use.
      */
-    Assert(cbMem <= 32 || cbMem == 512 || cbMem == 108 || cbMem == 94);
+    Assert(cbMem <= 32 || cbMem == 512 || cbMem == 108 || cbMem == 94 || cbMem == 48 || cbMem == 56); /* 512 is max! */
     Assert(~(fAccess & ~(IEM_ACCESS_TYPE_MASK | IEM_ACCESS_WHAT_MASK)));
 
     unsigned iMemMap = pIemCpu->iNextMapping;
