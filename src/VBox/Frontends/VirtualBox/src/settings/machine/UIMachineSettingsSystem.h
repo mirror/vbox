@@ -26,7 +26,7 @@
 /* Machine settings / System page / Data / Boot item: */
 struct UIBootItemData
 {
-    /* Default constructor: */
+    /* Constructor: */
     UIBootItemData() : m_type(KDeviceType_Null), m_fEnabled(false) {}
 
     /* Operator==: */
@@ -44,61 +44,74 @@ struct UIBootItemData
 /* Machine settings / System page / Data: */
 struct UIDataSettingsMachineSystem
 {
-    /* Default constructor: */
+    /* Constructor: */
     UIDataSettingsMachineSystem()
-        : m_bootItems(QList<UIBootItemData>())
-        , m_chipsetType(KChipsetType_Null)
-        , m_fPFHwVirtExSupported(false)
-        , m_fPFPAESupported(false)
-        , m_fIoApicEnabled(false)
-        , m_fEFIEnabled(false)
-        , m_fUTCEnabled(false)
-        , m_fUseAbsHID(false)
-        , m_fPAEEnabled(false)
-        , m_fHwVirtExEnabled(false)
-        , m_fNestedPagingEnabled(false)
+        /* Support flags: */
+        : m_fSupportedPAE(false)
+        , m_fSupportedHwVirtEx(false)
+        /* Motherboard data: */
         , m_iRAMSize(-1)
+        , m_bootItems(QList<UIBootItemData>())
+        , m_chipsetType(KChipsetType_Null)
+        , m_fEnabledIoApic(false)
+        , m_fEnabledEFI(false)
+        , m_fEnabledUTC(false)
+        , m_fEnabledAbsoluteHID(false)
+        /* CPU data: */
         , m_cCPUCount(-1)
-        , m_cCPUExecCap(-1) {}
+        , m_iCPUExecCap(-1)
+        , m_fEnabledPAE(false)
+        /* Acceleration data: */
+        , m_fEnabledHwVirtEx(false)
+        , m_fEnabledNestedPaging(false)
+    {}
 
     /* Functions: */
     bool equal(const UIDataSettingsMachineSystem &other) const
     {
-        return (m_bootItems == other.m_bootItems) &&
-               (m_chipsetType == other.m_chipsetType) &&
-               (m_fPFHwVirtExSupported == other.m_fPFHwVirtExSupported) &&
-               (m_fPFPAESupported == other.m_fPFPAESupported) &&
-               (m_fIoApicEnabled == other.m_fIoApicEnabled) &&
-               (m_fEFIEnabled == other.m_fEFIEnabled) &&
-               (m_fUTCEnabled == other.m_fUTCEnabled) &&
-               (m_fUseAbsHID == other.m_fUseAbsHID) &&
-               (m_fPAEEnabled == other.m_fPAEEnabled) &&
-               (m_fHwVirtExEnabled == other.m_fHwVirtExEnabled) &&
-               (m_fNestedPagingEnabled == other.m_fNestedPagingEnabled) &&
+        return /* Support flags: */
+               (m_fSupportedPAE == other.m_fSupportedPAE) &&
+               (m_fSupportedHwVirtEx == other.m_fSupportedHwVirtEx) &&
+               /* Motherboard data: */
                (m_iRAMSize == other.m_iRAMSize) &&
+               (m_bootItems == other.m_bootItems) &&
+               (m_chipsetType == other.m_chipsetType) &&
+               (m_fEnabledIoApic == other.m_fEnabledIoApic) &&
+               (m_fEnabledEFI == other.m_fEnabledEFI) &&
+               (m_fEnabledUTC == other.m_fEnabledUTC) &&
+               (m_fEnabledAbsoluteHID == other.m_fEnabledAbsoluteHID) &&
+               /* CPU data: */
                (m_cCPUCount == other.m_cCPUCount) &&
-               (m_cCPUExecCap == other.m_cCPUExecCap);
+               (m_iCPUExecCap == other.m_iCPUExecCap) &&
+               (m_fEnabledPAE == other.m_fEnabledPAE) &&
+                /* Acceleration data: */
+               (m_fEnabledHwVirtEx == other.m_fEnabledHwVirtEx) &&
+               (m_fEnabledNestedPaging == other.m_fEnabledNestedPaging);
     }
 
     /* Operators: */
     bool operator==(const UIDataSettingsMachineSystem &other) const { return equal(other); }
     bool operator!=(const UIDataSettingsMachineSystem &other) const { return !equal(other); }
 
-    /* Variables: */
+    /* Variables: Support flags: */
+    bool m_fSupportedPAE;
+    bool m_fSupportedHwVirtEx;
+
+    /* Variables: Motherboard data: */
+    int m_iRAMSize;
     QList<UIBootItemData> m_bootItems;
     KChipsetType m_chipsetType;
-    bool m_fPFHwVirtExSupported;
-    bool m_fPFPAESupported;
-    bool m_fIoApicEnabled;
-    bool m_fEFIEnabled;
-    bool m_fUTCEnabled;
-    bool m_fUseAbsHID;
-    bool m_fPAEEnabled;
-    bool m_fHwVirtExEnabled;
-    bool m_fNestedPagingEnabled;
-    int m_iRAMSize;
+    bool m_fEnabledIoApic;
+    bool m_fEnabledEFI;
+    bool m_fEnabledUTC;
+    bool m_fEnabledAbsoluteHID;
+    /* Variables: CPU data: */
     int m_cCPUCount;
-    int m_cCPUExecCap;
+    int m_iCPUExecCap;
+    bool m_fEnabledPAE;
+    /* Variables: Acceleration data: */
+    bool m_fEnabledHwVirtEx;
+    bool m_fEnabledNestedPaging;
 };
 typedef UISettingsCache<UIDataSettingsMachineSystem> UICacheSettingsMachineSystem;
 
@@ -177,15 +190,15 @@ private:
     /* Variable: Validation stuff: */
     QIWidgetValidator *m_pValidator;
 
+    /* Variable: Boot-table stuff: */
+    QList<KDeviceType> m_possibleBootItems;
+
     /* Variables: CPU stuff: */
     uint m_uMinGuestCPU;
     uint m_uMaxGuestCPU;
     uint m_uMinGuestCPUExecCap;
     uint m_uMedGuestCPUExecCap;
     uint m_uMaxGuestCPUExecCap;
-
-    /* Variable: Boot-table stuff: */
-    QList<KDeviceType> m_possibleBootItems;
 
     /* Variable: Correlation stuff: */
     bool m_fOHCIEnabled;

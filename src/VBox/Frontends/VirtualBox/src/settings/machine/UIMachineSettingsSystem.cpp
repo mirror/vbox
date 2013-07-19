@@ -39,10 +39,10 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
     , m_uMinGuestCPUExecCap(0), m_uMedGuestCPUExecCap(0), m_uMaxGuestCPUExecCap(0)
     , m_fOHCIEnabled(false)
 {
-    /* Apply UI decorations */
-    Ui::UIMachineSettingsSystem::setupUi (this);
+    /* Apply UI decorations: */
+    Ui::UIMachineSettingsSystem::setupUi(this);
 
-    /* Setup constants */
+    /* Setup constants: */
     CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
     uint hostCPUs = vboxGlobal().host().GetProcessorCount();
     m_uMinGuestCPU = properties.GetMinGuestCPUCount();
@@ -196,6 +196,12 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
     /* Prepare system data: */
     UIDataSettingsMachineSystem systemData;
 
+    /* Load support flags: */
+    systemData.m_fSupportedPAE = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_PAE);
+    systemData.m_fSupportedHwVirtEx = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+
+    /* Load motherboard data: */
+    systemData.m_iRAMSize = m_machine.GetMemorySize();
     /* Load boot-items of current VM: */
     QList<KDeviceType> usedBootItems;
     for (int i = 1; i <= m_possibleBootItems.size(); ++i)
@@ -222,20 +228,21 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
             systemData.m_bootItems << data;
         }
     }
-    /* Gather other system data: */
-    systemData.m_fPFHwVirtExSupported = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
-    systemData.m_fPFPAESupported = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_PAE);
-    systemData.m_fIoApicEnabled = m_machine.GetBIOSSettings().GetIOAPICEnabled();
-    systemData.m_fEFIEnabled = m_machine.GetFirmwareType() >= KFirmwareType_EFI && m_machine.GetFirmwareType() <= KFirmwareType_EFIDUAL;
-    systemData.m_fUTCEnabled = m_machine.GetRTCUseUTC();
-    systemData.m_fUseAbsHID = m_machine.GetPointingHIDType() == KPointingHIDType_USBTablet;
-    systemData.m_fPAEEnabled = m_machine.GetCPUProperty(KCPUPropertyType_PAE);
-    systemData.m_fHwVirtExEnabled = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled);
-    systemData.m_fNestedPagingEnabled = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
-    systemData.m_iRAMSize = m_machine.GetMemorySize();
-    systemData.m_cCPUCount = systemData.m_fPFHwVirtExSupported ? m_machine.GetCPUCount() : 1;
-    systemData.m_cCPUExecCap = m_machine.GetCPUExecutionCap();
+    /* Load other motherboard data: */
     systemData.m_chipsetType = m_machine.GetChipsetType();
+    systemData.m_fEnabledIoApic = m_machine.GetBIOSSettings().GetIOAPICEnabled();
+    systemData.m_fEnabledEFI = m_machine.GetFirmwareType() >= KFirmwareType_EFI && m_machine.GetFirmwareType() <= KFirmwareType_EFIDUAL;
+    systemData.m_fEnabledUTC = m_machine.GetRTCUseUTC();
+    systemData.m_fEnabledAbsoluteHID = m_machine.GetPointingHIDType() == KPointingHIDType_USBTablet;
+
+    /* Load CPU data: */
+    systemData.m_cCPUCount = systemData.m_fSupportedHwVirtEx ? m_machine.GetCPUCount() : 1;
+    systemData.m_iCPUExecCap = m_machine.GetCPUExecutionCap();
+    systemData.m_fEnabledPAE = m_machine.GetCPUProperty(KCPUPropertyType_PAE);
+
+    /* Load acceleration data: */
+    systemData.m_fEnabledHwVirtEx = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled);
+    systemData.m_fEnabledNestedPaging = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
 
     /* Cache system data: */
     m_cache.cacheInitialData(systemData);
@@ -251,6 +258,8 @@ void UIMachineSettingsSystem::getFromCache()
     /* Get system data from cache: */
     const UIDataSettingsMachineSystem &systemData = m_cache.base();
 
+    /* Load motherboard data to page: */
+    mSlMemory->setValue(systemData.m_iRAMSize);
     /* Remove any old data in the boot view: */
     QAbstractItemView *iv = qobject_cast <QAbstractItemView*> (mTwBootOrder);
     iv->model()->removeRows(0, iv->model()->rowCount());
@@ -262,19 +271,22 @@ void UIMachineSettingsSystem::getFromCache()
         pItem->setCheckState(data.m_fEnabled ? Qt::Checked : Qt::Unchecked);
         mTwBootOrder->addItem(pItem);
     }
-    /* Load other system data to page: */
-    mCbApic->setChecked(systemData.m_fIoApicEnabled);
-    mCbEFI->setChecked(systemData.m_fEFIEnabled);
-    mCbTCUseUTC->setChecked(systemData.m_fUTCEnabled);
-    mCbUseAbsHID->setChecked(systemData.m_fUseAbsHID);
-    mCbPae->setChecked(systemData.m_fPAEEnabled);
-    mCbVirt->setChecked(systemData.m_fHwVirtExEnabled);
-    mCbNestedPaging->setChecked(systemData.m_fNestedPagingEnabled);
-    mSlMemory->setValue(systemData.m_iRAMSize);
-    mSlCPU->setValue(systemData.m_cCPUCount);
-    mSlCPUExecCap->setValue(systemData.m_cCPUExecCap);
+    /* Load other motherboard data to page: */
     int iChipsetPosition = mCbChipset->findData(systemData.m_chipsetType);
     mCbChipset->setCurrentIndex(iChipsetPosition == -1 ? 0 : iChipsetPosition);
+    mCbApic->setChecked(systemData.m_fEnabledIoApic);
+    mCbEFI->setChecked(systemData.m_fEnabledEFI);
+    mCbTCUseUTC->setChecked(systemData.m_fEnabledUTC);
+    mCbUseAbsHID->setChecked(systemData.m_fEnabledAbsoluteHID);
+
+    /* Load CPU data to page: */
+    mSlCPU->setValue(systemData.m_cCPUCount);
+    mSlCPUExecCap->setValue(systemData.m_iCPUExecCap);
+    mCbPae->setChecked(systemData.m_fEnabledPAE);
+
+    /* Load acceleration data to page: */
+	mCbVirt->setChecked(systemData.m_fEnabledHwVirtEx);
+    mCbNestedPaging->setChecked(systemData.m_fEnabledNestedPaging);
 
     /* Polish page finally: */
     polishPage();
@@ -291,7 +303,9 @@ void UIMachineSettingsSystem::putToCache()
     /* Prepare system data: */
     UIDataSettingsMachineSystem systemData = m_cache.base();
 
-    /* Gather system data: */
+    /* Gather motherboard data: */
+    systemData.m_iRAMSize = mSlMemory->value();
+    /* Gather boot-table data: */
     systemData.m_bootItems.clear();
     for (int i = 0; i < mTwBootOrder->count(); ++i)
     {
@@ -301,18 +315,22 @@ void UIMachineSettingsSystem::putToCache()
         data.m_fEnabled = pItem->checkState() == Qt::Checked;
         systemData.m_bootItems << data;
     }
-    systemData.m_fIoApicEnabled = mCbApic->isChecked() || mSlCPU->value() > 1 ||
-                                  (KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt() == KChipsetType_ICH9;
-    systemData.m_fEFIEnabled = mCbEFI->isChecked();
-    systemData.m_fUTCEnabled = mCbTCUseUTC->isChecked();
-    systemData.m_fUseAbsHID = mCbUseAbsHID->isChecked();
-    systemData.m_fPAEEnabled = mCbPae->isChecked();
-    systemData.m_fHwVirtExEnabled = mCbVirt->checkState() == Qt::Checked || mSlCPU->value() > 1;
-    systemData.m_fNestedPagingEnabled = mCbNestedPaging->isChecked();
-    systemData.m_iRAMSize = mSlMemory->value();
-    systemData.m_cCPUCount = mSlCPU->value();
-    systemData.m_cCPUExecCap = mSlCPUExecCap->value();
+    /* Gather other motherboard data: */
     systemData.m_chipsetType = (KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt();
+    systemData.m_fEnabledIoApic = mCbApic->isChecked() || mSlCPU->value() > 1 ||
+                                  (KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt() == KChipsetType_ICH9;
+    systemData.m_fEnabledEFI = mCbEFI->isChecked();
+    systemData.m_fEnabledUTC = mCbTCUseUTC->isChecked();
+    systemData.m_fEnabledAbsoluteHID = mCbUseAbsHID->isChecked();
+
+    /* Gather CPU data: */
+    systemData.m_cCPUCount = mSlCPU->value();
+    systemData.m_iCPUExecCap = mSlCPUExecCap->value();
+    systemData.m_fEnabledPAE = mCbPae->isChecked();
+
+    /* Gather acceleration data: */
+    systemData.m_fEnabledHwVirtEx = mCbVirt->checkState() == Qt::Checked || mSlCPU->value() > 1;
+    systemData.m_fEnabledNestedPaging = mCbNestedPaging->isChecked();
 
     /* Cache system data: */
     m_cache.cacheCurrentData(systemData);
@@ -336,8 +354,8 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
         {
             /* Motherboard tab: */
             m_machine.SetMemorySize(systemData.m_iRAMSize);
-            int iBootIndex = 0;
             /* Save boot-items of current VM: */
+            int iBootIndex = 0;
             for (int i = 0; i < systemData.m_bootItems.size(); ++i)
             {
                 if (systemData.m_bootItems[i].m_fEnabled)
@@ -350,21 +368,23 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
                     m_machine.SetBootOrder(++iBootIndex, KDeviceType_Null);
             }
             m_machine.SetChipsetType(systemData.m_chipsetType);
-            m_machine.GetBIOSSettings().SetIOAPICEnabled(systemData.m_fIoApicEnabled);
-            m_machine.SetFirmwareType(systemData.m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
-            m_machine.SetRTCUseUTC(systemData.m_fUTCEnabled);
-            m_machine.SetPointingHIDType(systemData.m_fUseAbsHID ? KPointingHIDType_USBTablet : KPointingHIDType_PS2Mouse);
+            m_machine.GetBIOSSettings().SetIOAPICEnabled(systemData.m_fEnabledIoApic);
+            m_machine.SetFirmwareType(systemData.m_fEnabledEFI ? KFirmwareType_EFI : KFirmwareType_BIOS);
+            m_machine.SetRTCUseUTC(systemData.m_fEnabledUTC);
+            m_machine.SetPointingHIDType(systemData.m_fEnabledAbsoluteHID ? KPointingHIDType_USBTablet : KPointingHIDType_PS2Mouse);
+
             /* Processor tab: */
             m_machine.SetCPUCount(systemData.m_cCPUCount);
-            m_machine.SetCPUProperty(KCPUPropertyType_PAE, systemData.m_fPAEEnabled);
+            m_machine.SetCPUProperty(KCPUPropertyType_PAE, systemData.m_fEnabledPAE);
+
             /* Acceleration tab: */
-            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, systemData.m_fHwVirtExEnabled);
-            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, systemData.m_fNestedPagingEnabled);
+            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, systemData.m_fEnabledHwVirtEx);
+            m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, systemData.m_fEnabledNestedPaging);
         }
         if (isMachineInValidMode())
         {
             /* Processor tab: */
-            m_machine.SetCPUExecutionCap(systemData.m_cCPUExecCap);
+            m_machine.SetCPUExecutionCap(systemData.m_iCPUExecCap);
         }
     }
 
@@ -615,18 +635,18 @@ void UIMachineSettingsSystem::polishPage()
     mLbCPU->setEnabled(isMachineOffline());
     mLbCPUMin->setEnabled(isMachineOffline());
     mLbCPUMax->setEnabled(isMachineOffline());
-    mSlCPU->setEnabled(isMachineOffline() && systemData.m_fPFHwVirtExSupported);
-    mLeCPU->setEnabled(isMachineOffline() && systemData.m_fPFHwVirtExSupported);
+    mSlCPU->setEnabled(isMachineOffline() && systemData.m_fSupportedHwVirtEx);
+    mLeCPU->setEnabled(isMachineOffline() && systemData.m_fSupportedHwVirtEx);
     mLbCPUExecCap->setEnabled(isMachineInValidMode());
     mLbCPUExecCapMin->setEnabled(isMachineInValidMode());
     mLbCPUExecCapMax->setEnabled(isMachineInValidMode());
     mSlCPUExecCap->setEnabled(isMachineInValidMode());
     mLeCPUExecCap->setEnabled(isMachineInValidMode());
     mLbProcessorExtended->setEnabled(isMachineOffline());
-    mCbPae->setEnabled(isMachineOffline() && systemData.m_fPFPAESupported);
+    mCbPae->setEnabled(isMachineOffline() && systemData.m_fSupportedPAE);
 
     /* Acceleration tab: */
-    mTwSystem->setTabEnabled(2, systemData.m_fPFHwVirtExSupported);
+    mTwSystem->setTabEnabled(2, systemData.m_fSupportedHwVirtEx);
     mLbVirt->setEnabled(isMachineOffline());
     mCbVirt->setEnabled(isMachineOffline());
     mCbNestedPaging->setEnabled(isMachineOffline() && mCbVirt->isChecked());
