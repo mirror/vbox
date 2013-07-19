@@ -368,7 +368,7 @@ HRESULT Mouse::reportAbsEventToMouseDev(int32_t x, int32_t y,
  * @returns   COM status code
  */
 HRESULT Mouse::reportMTEventToMouseDev(int32_t x, int32_t y,
-                                       uint32_t cContact, bool fContact)
+                                       uint32_t cContact, uint32_t fContact)
 {
     if (   x < VMMDEV_MOUSE_RANGE_MIN
         || x > VMMDEV_MOUSE_RANGE_MAX)
@@ -640,13 +640,13 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
  * @interface_method_impl{IMouse,putMouseEventMultiTouch}
  */
 STDMETHODIMP Mouse::PutMouseEventMultiTouch(LONG x, LONG y, LONG cContact,
-                                            BOOL fContact)
+                                            LONG contactState)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    LogRel3(("%s: x=%d, y=%d, cContact=%d, fContact=%RTBool\n",
-             __PRETTY_FUNCTION__, x, y, cContact, fContact));
+    LogRel3(("%s: x=%d, y=%d, cContact=%d, contactState=%d\n",
+             __PRETTY_FUNCTION__, x, y, cContact, contactState));
 
     int32_t xAdj, yAdj;
     bool fValid;
@@ -659,9 +659,9 @@ STDMETHODIMP Mouse::PutMouseEventMultiTouch(LONG x, LONG y, LONG cContact,
 
     if (fValid)
     {
-        rc = reportMTEventToMouseDev(xAdj, yAdj, cContact, fContact);
+        rc = reportMTEventToMouseDev(xAdj, yAdj, cContact, contactState);
 
-        fireMouseEvent(true, x, y, 0, 0, cContact, fContact);
+        fireMouseEvent(true, x, y, 0, 0, cContact, contactState);
     }
 
     return rc;
