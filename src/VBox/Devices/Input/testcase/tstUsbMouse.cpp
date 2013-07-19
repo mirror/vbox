@@ -159,9 +159,10 @@ static void testConstructAndDestruct(RTTEST hTest)
 static void testSendPosition(RTTEST hTest)
 {
     PPDMUSBINS pThis = NULL;
-    VUSBURB Urb = { 0 };
+    VUSBURB Urb;
     RTTestSub(hTest, "sending a position event");
     int rc = tstMouseConstruct(0, true, 1, &pThis);
+    RT_ZERO(Urb);
     if (RT_SUCCESS(rc))
     {
         rc = g_UsbHidMou.pfnUsbReset(pThis, false);
