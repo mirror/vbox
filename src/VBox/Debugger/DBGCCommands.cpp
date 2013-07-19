@@ -56,6 +56,7 @@ static FNDBGCCMD dbgcCmdInfo;
 static FNDBGCCMD dbgcCmdLog;
 static FNDBGCCMD dbgcCmdLogDest;
 static FNDBGCCMD dbgcCmdLogFlags;
+static FNDBGCCMD dbgcCmdLogFlush;
 static FNDBGCCMD dbgcCmdFormat;
 static FNDBGCCMD dbgcCmdLoadImage;
 static FNDBGCCMD dbgcCmdLoadMap;
@@ -160,7 +161,7 @@ static const DBGCVARDESC    g_aArgLoadSeg[] =
 static const DBGCVARDESC    g_aArgLog[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "groups",       "Group modifier string (quote it!)." }
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "groups",       "Group modifier string (quote it!)." }
 };
 
 
@@ -168,7 +169,7 @@ static const DBGCVARDESC    g_aArgLog[] =
 static const DBGCVARDESC    g_aArgLogDest[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "dests",        "Destination modifier string (quote it!)." }
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "dests",        "Destination modifier string (quote it!)." }
 };
 
 
@@ -176,7 +177,7 @@ static const DBGCVARDESC    g_aArgLogDest[] =
 static const DBGCVARDESC    g_aArgLogFlags[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "flags",        "Flag modifier string (quote it!)." }
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "flags",        "Flag modifier string (quote it!)." }
 };
 
 
@@ -237,9 +238,10 @@ const DBGCCMD    g_aDbgcCmds[] =
                                                                                                                                        "Loads the symbols of a segment in the executable image at the specified address. "
                                                                                                                                        /*"Optionally giving the module a name other than the file name stem."*/ },
     { "loadvars",   1,        1,        &g_aArgFilename[0],  RT_ELEMENTS(g_aArgFilename),  0, dbgcCmdLoadVars,  "<filename>",           "Load variables from file. One per line, same as the args to the set command." },
-    { "log",        1,        1,        &g_aArgLog[0],       RT_ELEMENTS(g_aArgLog),       0, dbgcCmdLog,       "<group string>",       "Modifies the logging group settings (VBOX_LOG)" },
-    { "logdest",    1,        1,        &g_aArgLogDest[0],   RT_ELEMENTS(g_aArgLogDest),   0, dbgcCmdLogDest,   "<dest string>",        "Modifies the logging destination (VBOX_LOG_DEST)." },
-    { "logflags",   1,        1,        &g_aArgLogFlags[0],  RT_ELEMENTS(g_aArgLogFlags),  0, dbgcCmdLogFlags,  "<flags string>",       "Modifies the logging flags (VBOX_LOG_FLAGS)." },
+    { "log",        0,        1,        &g_aArgLog[0],       RT_ELEMENTS(g_aArgLog),       0, dbgcCmdLog,       "[group string]",       "Displays or modifies the logging group settings (VBOX_LOG)" },
+    { "logdest",    0,        1,        &g_aArgLogDest[0],   RT_ELEMENTS(g_aArgLogDest),   0, dbgcCmdLogDest,   "[dest string]",        "Displays or modifies the logging destination (VBOX_LOG_DEST)." },
+    { "logflags",   0,        1,        &g_aArgLogFlags[0],  RT_ELEMENTS(g_aArgLogFlags),  0, dbgcCmdLogFlags,  "[flags string]",       "Displays or modifies the logging flags (VBOX_LOG_FLAGS)." },
+    { "logflush",   0,        0,        NULL,                0,                            0, dbgcCmdLogFlush,  "",                     "Flushes the log buffers." },
     { "quit",       0,        0,        NULL,                0,                            0, dbgcCmdQuit,      "",                     "Exits the debugger." },
     { "runscript",  1,        1,        &g_aArgFilename[0],  RT_ELEMENTS(g_aArgFilename),  0, dbgcCmdRunScript, "<filename>",           "Runs the command listed in the script. Lines starting with '#' "
                                                                                                                                         "(after removing blanks) are comment. blank lines are ignored. Stops on failure." },
@@ -1059,11 +1061,23 @@ static DECLCALLBACK(int) dbgcCmdInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM p
  */
 static DECLCALLBACK(int) dbgcCmdLog(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    int rc = DBGFR3LogModifyGroups(pUVM, paArgs[0].u.pszString);
-    if (RT_SUCCESS(rc))
-        return VINF_SUCCESS;
-    NOREF(pCmd); NOREF(cArgs);
-    return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3LogModifyGroups(%p,'%s')\n", pUVM, paArgs[0].u.pszString);
+    int rc;
+    if (cArgs == 0)
+    {
+        char szBuf[_64K];
+        rc = RTLogGetGroupSettings(NULL, szBuf, sizeof(szBuf));
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "RTLogGetDestinations(NULL,,%#zx)\n", sizeof(szBuf));
+        DBGCCmdHlpPrintf(pCmdHlp, "VBOX_LOG=%s\n", szBuf);
+    }
+    else
+    {
+        rc = DBGFR3LogModifyGroups(pUVM, paArgs[0].u.pszString);
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3LogModifyGroups(%p,'%s')\n", pUVM, paArgs[0].u.pszString);
+    }
+    NOREF(pCmd);
+    return VINF_SUCCESS;
 }
 
 
@@ -1072,11 +1086,23 @@ static DECLCALLBACK(int) dbgcCmdLog(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pU
  */
 static DECLCALLBACK(int) dbgcCmdLogDest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    int rc = DBGFR3LogModifyDestinations(pUVM, paArgs[0].u.pszString);
-    if (RT_SUCCESS(rc))
-        return VINF_SUCCESS;
-    NOREF(pCmd); NOREF(cArgs);
-    return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3LogModifyDestinations(%p,'%s')\n", pUVM, paArgs[0].u.pszString);
+    int rc;
+    if (cArgs == 0)
+    {
+        char szBuf[_16K];
+        rc = RTLogGetDestinations(NULL, szBuf, sizeof(szBuf));
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "RTLogGetDestinations(NULL,,%#zx)\n", sizeof(szBuf));
+        DBGCCmdHlpPrintf(pCmdHlp, "VBOX_LOG_DEST=%s\n", szBuf);
+    }
+    else
+    {
+        rc = DBGFR3LogModifyDestinations(pUVM, paArgs[0].u.pszString);
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3LogModifyDestinations(%p,'%s')\n", pUVM, paArgs[0].u.pszString);
+    }
+    NOREF(pCmd);
+    return VINF_SUCCESS;
 }
 
 
@@ -1085,11 +1111,39 @@ static DECLCALLBACK(int) dbgcCmdLogDest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
  */
 static DECLCALLBACK(int) dbgcCmdLogFlags(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    int rc = DBGFR3LogModifyFlags(pUVM, paArgs[0].u.pszString);
-    if (RT_SUCCESS(rc))
-        return VINF_SUCCESS;
+    int rc;
+    if (cArgs == 0)
+    {
+        char szBuf[_16K];
+        rc = RTLogGetFlags(NULL, szBuf, sizeof(szBuf));
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "RTLogGetFlags(NULL,,%#zx)\n", sizeof(szBuf));
+        DBGCCmdHlpPrintf(pCmdHlp, "VBOX_LOG_FLAGS=%s\n", szBuf);
+    }
+    else
+    {
+        rc = DBGFR3LogModifyFlags(pUVM, paArgs[0].u.pszString);
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3LogModifyFlags(%p,'%s')\n", pUVM, paArgs[0].u.pszString);
+    }
+
+    NOREF(pCmd);
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{FNDBCCMD, The 'logflush' command.}
+ */
+static DECLCALLBACK(int) dbgcCmdLogFlush(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    RTLogFlush(NULL);
+    PRTLOGGER pLogRel = RTLogRelDefaultInstance();
+    if (pLogRel)
+        RTLogFlush(pLogRel);
+
     NOREF(pCmd); NOREF(cArgs);
-    return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3LogModifyFlags(%p,'%s')\n", pUVM, paArgs[0].u.pszString);
+    return VINF_SUCCESS;
 }
 
 
