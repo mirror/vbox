@@ -1395,7 +1395,7 @@ static DECLCALLBACK(int) kbdMousePutEventAbs(PPDMIMOUSEPORT pInterface,
 static DECLCALLBACK(int) kbdMousePutEventMT(PPDMIMOUSEPORT pInterface,
                                             uint32_t x, uint32_t y,
                                             uint32_t cContact,
-                                            bool fContact)
+                                            uint32_t fContact)
 {
     AssertFailedReturn(VERR_NOT_SUPPORTED);
     NOREF(pInterface); NOREF(x); NOREF(y); NOREF(cContact); NOREF(fContact);

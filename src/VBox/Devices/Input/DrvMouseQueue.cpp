@@ -186,7 +186,7 @@ static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface,
 static DECLCALLBACK(int) drvMouseQueuePutEventMT(PPDMIMOUSEPORT pInterface,
                                                  uint32_t x, uint32_t y,
                                                  uint32_t cContact,
-                                                 bool fContact)
+                                                 uint32_t fContact)
 {
     PDRVMOUSEQUEUE pDrv = IMOUSEPORT_2_DRVMOUSEQUEUE(pInterface);
     if (pDrv->fInactive)

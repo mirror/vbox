@@ -343,7 +343,7 @@ typedef struct PDMIMOUSEPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnPutEventMT,(PPDMIMOUSEPORT pInterface,
                                              uint32_t x, uint32_t y,
-                                             uint32_t cContact, bool fContact));
+                                             uint32_t cContact, uint32_t fContact));
 } PDMIMOUSEPORT;
 /** PDMIMOUSEPORT interface ID. */
 #define PDMIMOUSEPORT_IID                       "7abcf389-3f7c-4a62-8d19-65102da58ef3"
