@@ -332,7 +332,7 @@ public:
             {
 
                 ComPtr<IMouseCapabilityChangedEvent> mccev = aEvent;
-                Assert(mccev);
+                Assert(!mccev.isNull());
 
                 BOOL fSupportsAbsolute = false;
                 mccev->COMGETTER(SupportsAbsolute)(&fSupportsAbsolute);
