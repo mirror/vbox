@@ -15566,6 +15566,27 @@ FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, FNIEMCIMPLFARBRANCH *, pfnCImp
             IEM_MC_END();
             return VINF_SUCCESS;
 
+        case IEMMODE_64BIT:
+            /** @todo testcase: AMD does not seem to believe in the case (see bs-cpu-xcpt-1)
+             *        and will apparently ignore REX.W, at least for the jmp far qword [rsp]
+             *        and call far qword [rsp] encodings. */
+            if (!IEM_IS_GUEST_CPU_AMD(pIemCpu))
+            {
+                IEM_MC_BEGIN(3, 1);
+                IEM_MC_ARG(uint16_t,        u16Sel,                         0);
+                IEM_MC_ARG(uint64_t,        offSeg,                         1);
+                IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize, IEMMODE_16BIT,    2);
+                IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
+                IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+                IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+                IEM_MC_FETCH_MEM_U64(offSeg, pIemCpu->iEffSeg, GCPtrEffSrc);
+                IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc, 8);
+                IEM_MC_CALL_CIMPL_3(pfnCImpl, u16Sel, offSeg, enmEffOpSize);
+                IEM_MC_END();
+                return VINF_SUCCESS;
+            }
+            /* AMD falls thru. */
+
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(3, 1);
             IEM_MC_ARG(uint16_t,        u16Sel,                         0);
@@ -15576,23 +15597,6 @@ FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, FNIEMCIMPLFARBRANCH *, pfnCImp
             IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_FETCH_MEM_U32(offSeg, pIemCpu->iEffSeg, GCPtrEffSrc);
             IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc, 4);
-            IEM_MC_CALL_CIMPL_3(pfnCImpl, u16Sel, offSeg, enmEffOpSize);
-            IEM_MC_END();
-            return VINF_SUCCESS;
-
-        case IEMMODE_64BIT:
-            /** @todo AMD does not believe in the case (see bs-cpu-xcpt-1) and will
-             *        apparently ignore REX.W, at least for the jmp far qword [rsp] and
-             *        call far qword [rsp] encodings. */
-            IEM_MC_BEGIN(3, 1);
-            IEM_MC_ARG(uint16_t,        u16Sel,                         0);
-            IEM_MC_ARG(uint64_t,        offSeg,                         1);
-            IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize, IEMMODE_16BIT,    2);
-            IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
-            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-            IEM_MC_FETCH_MEM_U64(offSeg, pIemCpu->iEffSeg, GCPtrEffSrc);
-            IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc, 8);
             IEM_MC_CALL_CIMPL_3(pfnCImpl, u16Sel, offSeg, enmEffOpSize);
             IEM_MC_END();
             return VINF_SUCCESS;
@@ -15703,7 +15707,6 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_Grp5_jmpf_Ep, uint8_t, bRm)
 {
     IEMOP_MNEMONIC("jmpf Ep");
-    IEMOP_HLP_NO_64BIT(); /** @todo this isn't quite right I'm afraid... */
     return FNIEMOP_CALL_2(iemOpHlp_Grp5_far_Ep, bRm, iemCImpl_FarJmp);
 }
 
