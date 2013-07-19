@@ -2856,6 +2856,11 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu)
      *         it would be impossible for an exception handle or the iret
      *         instruction to figure out whether SS:ESP are part of the frame
      *         or not.  VBox or qemu bug must've lead to this misconception.
+     *
+     * Update2: On an AMD bulldozer system here, I've no trouble loading a null
+     *         selector into SS with an RPL other than the CPL when CPL != 3 and
+     *         we're in 64-bit mode.  The intel dev box doesn't allow this, on
+     *         RPL = CPL.  Weird.
      */
     uint32_t uCpl;
     if (pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE)
