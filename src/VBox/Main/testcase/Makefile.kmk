@@ -31,7 +31,7 @@ ifndef VBOX_ONLY_SDK
 	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlContextID,) \
-	$(if true,tstMouseImpl,)
+	$(if ,tstMouseImpl,)
   PROGRAMS.linux += \
 	$(if $(VBOX_WITH_USB),tstUSBProxyLinux,)
  endif # !VBOX_WITH_TESTCASES
