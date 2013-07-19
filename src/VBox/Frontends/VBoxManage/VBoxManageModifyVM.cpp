@@ -1757,6 +1757,12 @@ int handleModifyVM(HandlerArg *a)
                     if (SUCCEEDED(rc))
                         fEnableUsb = true;
                 }
+                else if (!RTStrICmp(ValueUnion.psz, "usbmultitouch"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(PointingHIDType)(PointingHIDType_USBMultiTouch));
+                    if (SUCCEEDED(rc))
+                        fEnableUsb = true;
+                }
                 else
                 {
                     errorArgument("Invalid type '%s' specfied for pointing device", ValueUnion.psz);

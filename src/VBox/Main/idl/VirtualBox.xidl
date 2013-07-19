@@ -1223,7 +1223,7 @@
 
   <enum
     name="PointingHIDType"
-    uuid="e44b2f7b-72ba-44fb-9e53-2186014f0d17"
+    uuid="19964e93-0050-45c4-9382-a7bccc53e666"
     >
     <desc>
       Type of pointing device used in a virtual machine.
@@ -1238,11 +1238,21 @@
       <desc>USB mouse (relative pointer).</desc>
     </const>
     <const name="USBTablet"         value="4">
-      <desc>USB tablet (absolute pointer).</desc>
+      <desc>
+        USB tablet (absolute pointer).  Also enables a relative USB mouse in
+        addition.
+      </desc>
     </const>
     <const name="ComboMouse"        value="5">
-      <desc>Combined device, working as PS/2 or USB mouse, depending on guest behavior.
-      Using of such device can have negative performance implications.</desc>
+      <desc>
+        Combined device, working as PS/2 or USB mouse, depending on guest
+        behavior.  Using this device can have negative performance implications.
+      </desc>
+    </const>
+    <const name="USBMultiTouch"     value="6">
+      <desc>
+        USB multi-touch device.  Also enables the USB tablet and mouse devices.
+      </desc>
     </const>
   </enum>
 
