@@ -28,12 +28,14 @@ struct UIBootItemData
 {
     /* Default constructor: */
     UIBootItemData() : m_type(KDeviceType_Null), m_fEnabled(false) {}
+
     /* Operator==: */
     bool operator==(const UIBootItemData &other) const
     {
         return (m_type == other.m_type) &&
                (m_fEnabled == other.m_fEnabled);
     }
+
     /* Variables: */
     KDeviceType m_type;
     bool m_fEnabled;
@@ -58,6 +60,7 @@ struct UIDataSettingsMachineSystem
         , m_iRAMSize(-1)
         , m_cCPUCount(-1)
         , m_cCPUExecCap(-1) {}
+
     /* Functions: */
     bool equal(const UIDataSettingsMachineSystem &other) const
     {
@@ -76,9 +79,11 @@ struct UIDataSettingsMachineSystem
                (m_cCPUCount == other.m_cCPUCount) &&
                (m_cCPUExecCap == other.m_cCPUExecCap);
     }
+
     /* Operators: */
     bool operator==(const UIDataSettingsMachineSystem &other) const { return equal(other); }
     bool operator!=(const UIDataSettingsMachineSystem &other) const { return !equal(other); }
+
     /* Variables: */
     QList<UIBootItemData> m_bootItems;
     KChipsetType m_chipsetType;
@@ -116,29 +121,29 @@ public:
 
 protected:
 
-    /* Load data to cache from corresponding external object(s),
-     * this task COULD be performed in other than GUI thread: */
-    void loadToCacheFrom(QVariant &data);
-    /* Load data to corresponding widgets from cache,
-     * this task SHOULD be performed in GUI thread only: */
-    void getFromCache();
-
-    /* Save data from corresponding widgets to cache,
-     * this task SHOULD be performed in GUI thread only: */
-    void putToCache();
-    /* Save data from cache to corresponding external object(s),
-     * this task COULD be performed in other than GUI thread: */
-    void saveFromCacheTo(QVariant &data);
-
     /* API: Cache stuff: */
     bool changed() const { return m_cache.wasChanged(); }
 
+    /* API: Load data to cache from corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void loadToCacheFrom(QVariant &data);
+    /* API: Load data to corresponding widgets from cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void getFromCache();
+
+    /* API: Save data from corresponding widgets to cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void putToCache();
+    /* API: Save data from cache to corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void saveFromCacheTo(QVariant &data);
+
     /* Helpers: Validation stuff: */
-    void setValidator (QIWidgetValidator *aVal);
-    bool revalidate (QString &aWarning, QString &aTitle);
+    void setValidator(QIWidgetValidator *pValidator);
+    bool revalidate(QString &strWarning, QString &strTitle);
 
     /* Helper: Navigation stuff: */
-    void setOrderAfter (QWidget *aWidget);
+    void setOrderAfter(QWidget *pWidget);
 
     /* Helper: Translation stuff: */
     void retranslateUi();
@@ -146,40 +151,40 @@ protected:
 private slots:
 
     /* Handlers: RAM stuff: */
-    void valueChangedRAM (int aVal);
-    void textChangedRAM (const QString &aText);
+    void valueChangedRAM(int iValue);
+    void textChangedRAM(const QString &strText);
 
-    /* Handler: Boot stuff: */
-    void onCurrentBootItemChanged (int);
+    /* Handler: Boot-table stuff: */
+    void onCurrentBootItemChanged(int iCurrentIndex);
 
     /* Handlers: CPU stuff: */
-    void valueChangedCPU (int aVal);
-    void textChangedCPU (const QString &aText);
+    void valueChangedCPU(int iValue);
+    void textChangedCPU(const QString &strText);
     void sltValueChangedCPUExecCap(int iValue);
     void sltTextChangedCPUExecCap(const QString &strText);
 
 private:
 
-    /* Handler: Event-filtration stuff: */
-    bool eventFilter (QObject *aObject, QEvent *aEvent);
-
-    /* Helper: Boot stuff: */
-    void adjustBootOrderTWSize();
-
     /* Handler: Polishing stuff: */
     void polishPage();
 
+    /* Handler: Event-filtration stuff: */
+    bool eventFilter(QObject *aObject, QEvent *aEvent);
+
+    /* Helper: Boot-table stuff: */
+    void adjustBootOrderTWSize();
+
     /* Variable: Validation stuff: */
-    QIWidgetValidator *mValidator;
+    QIWidgetValidator *m_pValidator;
 
     /* Variables: CPU stuff: */
-    uint mMinGuestCPU;
-    uint mMaxGuestCPU;
-    uint mMinGuestCPUExecCap;
-    uint mMedGuestCPUExecCap;
-    uint mMaxGuestCPUExecCap;
+    uint m_uMinGuestCPU;
+    uint m_uMaxGuestCPU;
+    uint m_uMinGuestCPUExecCap;
+    uint m_uMedGuestCPUExecCap;
+    uint m_uMaxGuestCPUExecCap;
 
-    /* Variable: Boot stuff: */
+    /* Variable: Boot-table stuff: */
     QList<KDeviceType> m_possibleBootItems;
 
     /* Variable: Correlation stuff: */
