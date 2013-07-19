@@ -2229,7 +2229,7 @@ typedef const X86FXSTATE *PCX86FXSTATE;
 
 #ifndef VBOX_FOR_DTRACE_LIB
 /**
- * Descriptor attributes.
+ * Descriptor attributes (as seen by VT-x).
  */
 typedef struct X86DESCATTRBITS
 {
@@ -2253,10 +2253,24 @@ typedef struct X86DESCATTRBITS
     /** 0f - Granularity of the limit. If set 4KB granularity is used, if
      * clear byte. */
     unsigned    u1Granularity : 1;
-    /** 10 - Unusable selector, special Intel (VT-x only?) bit. */
+    /** 10 - "Unusable" selector, special Intel (VT-x only?) bit. */
     unsigned    u1Unusable : 1;
 } X86DESCATTRBITS;
 #endif /* !VBOX_FOR_DTRACE_LIB */
+
+/** @name X86DESCATTR masks
+ * @{ */
+#define X86DESCATTR_TYPE            UINT32_C(0x0000000f)
+#define X86DESCATTR_DT              UINT32_C(0x00000010)
+#define X86DESCATTR_DPL             UINT32_C(0x00000060)
+#define X86DESCATTR_P               UINT32_C(0x00000800)
+#define X86DESCATTR_LIMIT_HIGH      UINT32_C(0x00000f00)
+#define X86DESCATTR_AVL             UINT32_C(0x00001000)
+#define X86DESCATTR_L               UINT32_C(0x00002000)
+#define X86DESCATTR_D               UINT32_C(0x00004000)
+#define X86DESCATTR_G               UINT32_C(0x00008000)
+#define X86DESCATTR_UNUSABLE        UINT32_C(0x00010000)
+/** @}  */
 
 #pragma pack(1)
 typedef union X86DESCATTR

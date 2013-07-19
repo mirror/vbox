@@ -60,9 +60,6 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
 /** Use the function table. */
 #define HMVMX_USE_FUNCTION_TABLE
 
-/** This bit indicates the segment selector is unusable in VT-x. */
-#define HMVMX_SEL_UNUSABLE                       RT_BIT(16)
-
 /** Determine which tagged-TLB flush handler to use. */
 #define HMVMX_FLUSH_TAGGED_TLB_EPT_VPID          0
 #define HMVMX_FLUSH_TAGGED_TLB_EPT               1
@@ -3372,7 +3369,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Assert(   !(pCtx->cs.u32Limit & 0xfff00000)
                || (pCtx->cs.Attr.n.u1Granularity));
         /* CS cannot be loaded with NULL in protected mode. */
-        Assert(pCtx->cs.Attr.u && !(pCtx->cs.Attr.u & HMVMX_SEL_UNUSABLE)); /** @todo is this really true even for 64-bit CS?!? */
+        Assert(pCtx->cs.Attr.u && !(pCtx->cs.Attr.u & X86DESCATTR_UNUSABLE)); /** @todo is this really true even for 64-bit CS?!? */
         if (pCtx->cs.Attr.n.u4Type == 9 || pCtx->cs.Attr.n.u4Type == 11)
             Assert(pCtx->cs.Attr.n.u2Dpl == pCtx->ss.Attr.n.u2Dpl);
         else if (pCtx->cs.Attr.n.u4Type == 13 || pCtx->cs.Attr.n.u4Type == 15)
@@ -3388,7 +3385,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             Assert(!pCtx->ss.Attr.n.u2Dpl);
         }
-        if (pCtx->ss.Attr.u && !(pCtx->ss.Attr.u & HMVMX_SEL_UNUSABLE))
+        if (pCtx->ss.Attr.u && !(pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE))
         {
             Assert((pCtx->ss.Sel & X86_SEL_RPL) == (pCtx->cs.Sel & X86_SEL_RPL));
             Assert(pCtx->ss.Attr.n.u4Type == 3 || pCtx->ss.Attr.n.u4Type == 7);
@@ -3401,7 +3398,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                    || (pCtx->ss.Attr.n.u1Granularity));
         }
         /* DS, ES, FS, GS - only check for usable selectors, see hmR0VmxWriteSegmentReg(). */
-        if (pCtx->ds.Attr.u && !(pCtx->ds.Attr.u & HMVMX_SEL_UNUSABLE))
+        if (pCtx->ds.Attr.u && !(pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE))
         {
             Assert(pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
             Assert(pCtx->ds.Attr.n.u1Present);
@@ -3415,7 +3412,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             Assert(   !(pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_CODE)
                    || (pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_READ));
         }
-        if (pCtx->es.Attr.u && !(pCtx->es.Attr.u & HMVMX_SEL_UNUSABLE))
+        if (pCtx->es.Attr.u && !(pCtx->es.Attr.u & X86DESCATTR_UNUSABLE))
         {
             Assert(pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
             Assert(pCtx->es.Attr.n.u1Present);
@@ -3429,7 +3426,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             Assert(   !(pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_CODE)
                    || (pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_READ));
         }
-        if (pCtx->fs.Attr.u && !(pCtx->fs.Attr.u & HMVMX_SEL_UNUSABLE))
+        if (pCtx->fs.Attr.u && !(pCtx->fs.Attr.u & X86DESCATTR_UNUSABLE))
         {
             Assert(pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
             Assert(pCtx->fs.Attr.n.u1Present);
@@ -3443,7 +3440,7 @@ static void hmR0VmxValidateSegmentRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             Assert(   !(pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_CODE)
                    || (pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_READ));
         }
-        if (pCtx->gs.Attr.u && !(pCtx->gs.Attr.u & HMVMX_SEL_UNUSABLE))
+        if (pCtx->gs.Attr.u && !(pCtx->gs.Attr.u & X86DESCATTR_UNUSABLE))
         {
             Assert(pCtx->gs.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED);
             Assert(pCtx->gs.Attr.n.u1Present);
@@ -3559,11 +3556,11 @@ static int hmR0VmxWriteSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLim
          * loaded in protected-mode have their attribute as 0.
          */
         if (!u32Access)
-            u32Access = HMVMX_SEL_UNUSABLE;
+            u32Access = X86DESCATTR_UNUSABLE;
     }
 
     /* Validate segment access rights. Refer to Intel spec. "26.3.1.2 Checks on Guest Segment Registers". */
-    AssertMsg((u32Access & HMVMX_SEL_UNUSABLE) || (u32Access & X86_SEL_TYPE_ACCESSED),
+    AssertMsg((u32Access & X86DESCATTR_UNUSABLE) || (u32Access & X86_SEL_TYPE_ACCESSED),
               ("Access bit not set for usable segment. idx=%#x sel=%#x attr %#x\n", idxBase, pSelReg, pSelReg->Attr.u));
 
     rc = VMXWriteVmcs32(idxAccess, u32Access);           /* 32-bit guest segment access-rights field. */
@@ -3697,7 +3694,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(!(u16Sel & RT_BIT(2)));
         AssertMsg(   (u32AccessRights & 0xf) == X86_SEL_TYPE_SYS_386_TSS_BUSY
                   || (u32AccessRights & 0xf) == X86_SEL_TYPE_SYS_286_TSS_BUSY, ("TSS is not busy!? %#x\n", u32AccessRights));
-        AssertMsg(!(u32AccessRights & HMVMX_SEL_UNUSABLE), ("TR unusable bit is not clear!? %#x\n", u32AccessRights));
+        AssertMsg(!(u32AccessRights & X86DESCATTR_UNUSABLE), ("TR unusable bit is not clear!? %#x\n", u32AccessRights));
         Assert(!(u32AccessRights & RT_BIT(4)));                 /* System MBZ.*/
         Assert(u32AccessRights & RT_BIT(7));                    /* Present MB1.*/
         Assert(!(u32AccessRights & 0xf00));                     /* 11:8 MBZ. */
@@ -3737,7 +3734,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         /* The unusable bit is specific to VT-x, if it's a null selector mark it as an unusable segment. */
         uint32_t u32Access = 0;
         if (!pMixedCtx->ldtr.Attr.u)
-            u32Access = HMVMX_SEL_UNUSABLE;
+            u32Access = X86DESCATTR_UNUSABLE;
         else
             u32Access = pMixedCtx->ldtr.Attr.u;
 
@@ -3747,7 +3744,7 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc |= VMXWriteVmcs32(VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS, u32Access);                   AssertRCReturn(rc, rc);
 
         /* Validate. */
-        if (!(u32Access & HMVMX_SEL_UNUSABLE))
+        if (!(u32Access & X86DESCATTR_UNUSABLE))
         {
             Assert(!(pMixedCtx->ldtr.Sel & RT_BIT(2)));              /* TI MBZ. */
             Assert(pMixedCtx->ldtr.Attr.n.u4Type == 2);              /* Type MB2 (LDT). */
@@ -5437,31 +5434,32 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
      *
      * bird: This isn't quite as simple.  VT-x and VBox(!) requires the DPL for SS to be the the same as CPL.  In 64-bit mode it
      *       is possible (int/trap/xxx injects does this when switching rings) to load SS with a NULL selector and RPL=CPL.
-     *       The Attr.u = HMVMX_SEL_UNUSABLE works fine as long as nobody uses ring-1 or ring-2.  VT-x seems to set the DPL
+     *       The Attr.u = X86DESCATTR_UNUSABLE works fine as long as nobody uses ring-1 or ring-2.  VT-x seems to set the DPL
      *       correctly in the attributes even when the unusable bit is set, we need to preseve the DPL or we get invalid guest
      *       state trouble.  Try bs2-cpu-hidden-regs-1.
      */
-    if (pSelReg->Attr.u & HMVMX_SEL_UNUSABLE)
+    if (pSelReg->Attr.u & X86DESCATTR_UNUSABLE)
     {
         Assert(idxSel != VMX_VMCS16_GUEST_FIELD_TR);          /* TR is the only selector that can never be unusable. */
         Log(("idxSel=%#x attr=%#x\n", idxSel, pSelReg->Attr.u));
 
-#if 0 /** @todo Is there any code which will freak out if we do this for all?  Better track it down and fix. */
-        pSelReg->Attr.u &= HMVMX_SEL_UNUSABLE | (UINT32_C(3) << 5);
-#else
-        pSelReg->Attr.u = HMVMX_SEL_UNUSABLE;
-#endif
+        if (idxSel == VMX_VMCS16_GUEST_FIELD_SS)
+            pSelReg->Attr.u &= X86DESCATTR_UNUSABLE | X86DESCATTR_DPL;
+        else if (idxSel == VMX_VMCS16_GUEST_FIELD_CS)
+            pSelReg->Attr.u &= X86DESCATTR_UNUSABLE | X86DESCATTR_L | X86DESCATTR_D | X86DESCATTR_G;
+        else
+            pSelReg->Attr.u = X86DESCATTR_UNUSABLE;
     }
     return VINF_SUCCESS;
 }
 
 
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
-#define VMXLOCAL_READ_SEG(Sel, CtxSel) \
+# define VMXLOCAL_READ_SEG(Sel, CtxSel) \
     hmR0VmxReadSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_##Sel, VMX_VMCS32_GUEST_##Sel##_LIMIT, \
                           VMX_VMCS_GUEST_##Sel##_BASE_CACHE_IDX, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, &pMixedCtx->CtxSel)
 #else
-#define VMXLOCAL_READ_SEG(Sel, CtxSel) \
+# define VMXLOCAL_READ_SEG(Sel, CtxSel) \
     hmR0VmxReadSegmentReg(pVCpu, VMX_VMCS16_GUEST_FIELD_##Sel, VMX_VMCS32_GUEST_##Sel##_LIMIT, \
                           VMX_VMCS_GUEST_##Sel##_BASE, VMX_VMCS32_GUEST_##Sel##_ACCESS_RIGHTS, &pMixedCtx->CtxSel)
 #endif
