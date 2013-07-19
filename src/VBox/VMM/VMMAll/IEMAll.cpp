@@ -2562,7 +2562,7 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
                            | ((uint64_t)Idte.Gate.u32OffsetTop  << 32);
     if (!IEM_IS_CANONICAL(uNewRip))
     {
-        Log(("iemRaiseXcptOrIntInLongMode %#x - RIP=%#R64 - Not canonical -> #GP(0)\n", u8Vector, uNewRip));
+        Log(("iemRaiseXcptOrIntInLongMode %#x - RIP=%#RX64 - Not canonical -> #GP(0)\n", u8Vector, uNewRip));
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
 
@@ -2590,7 +2590,7 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
      */
 
     /* Create the stack frame. */
-    uint32_t   cbStackFrame = sizeof(uint64_t) * (6 + !!(fFlags & IEM_XCPT_FLAGS_ERR));
+    uint32_t   cbStackFrame = sizeof(uint64_t) * (5 + !!(fFlags & IEM_XCPT_FLAGS_ERR));
     RTPTRUNION uStackFrame;
     rcStrict = iemMemMap(pIemCpu, &uStackFrame.pv, cbStackFrame, UINT8_MAX,
                          uNewRsp - cbStackFrame, IEM_ACCESS_STACK_W | IEM_ACCESS_WHAT_SYS); /* _SYS is a hack ... */
@@ -5466,7 +5466,7 @@ static VBOXSTRICTRC iemMemMap(PIEMCPU pIemCpu, void **ppvMem, size_t cbMem, uint
     /*
      * Check the input and figure out which mapping entry to use.
      */
-    Assert(cbMem <= 32 || cbMem == 512 || cbMem == 108 || cbMem == 94 || cbMem == 48 || cbMem == 56); /* 512 is max! */
+    Assert(cbMem <= 64 || cbMem == 512 || cbMem == 108 || cbMem == 94); /* 512 is the max! */
     Assert(~(fAccess & ~(IEM_ACCESS_TYPE_MASK | IEM_ACCESS_WHAT_MASK)));
 
     unsigned iMemMap = pIemCpu->iNextMapping;
