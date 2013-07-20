@@ -495,7 +495,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         """ Writes the instruction with two general registers as operands. """
         fRexByteRegs = oGen.oTarget.is64Bit();
         oGen.write('        %s %s, %s\n'
-                   % (self.sInstr, gregName(iOp1, cbEffOp * 8, fRexByteRegs),  gregName(iOp2, cbEffOp * 8, fRexByteRegs),));
+                   % ( self.sInstr, oGen.gregNameBytes(iOp1, cbEffOp), oGen.gregNameBytes(iOp2, cbEffOp),));
         return True;
 
     def writeInstrGregPureRM(self, cbEffOp, iOp1, cAddrBits, iOp2, iMod, offDisp, oGen):
@@ -503,17 +503,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         oGen.write('        ');
         if iOp2 == 13 and iMod == 0 and cAddrBits == 64:
             oGen.write('altrexb '); # Alternative encoding for rip relative addressing.
-        if cbEffOp == 8:
-            oGen.write('%s %s, [' % (self.sInstr, g_asGRegs64[iOp1],));
-        elif cbEffOp == 4:
-            oGen.write('%s %s, [' % (self.sInstr, g_asGRegs32[iOp1],));
-        elif cbEffOp == 2:
-            oGen.write('%s %s, [' % (self.sInstr, g_asGRegs16[iOp1],));
-        elif cbEffOp == 1:
-            oGen.write('%s %s, [' % (self.sInstr, g_asGRegs8Rex[iOp1],));
-        else:
-            assert False;
-
+        oGen.write('%s %s, [' % (self.sInstr, oGen.gregNameBytes(iOp1, cbEffOp),));
         if (iOp2 == 5 or iOp2 == 13) and iMod == 0:
             oGen.write('VBINSTST_NAME(g_u%sData)' % (cbEffOp * 8,))
             if oGen.oTarget.is64Bit():
@@ -546,10 +536,10 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
             #       and we cannot (yet) make assumtions about where we're loaded.
             ## @todo Enable testing this in environments where we can make assumptions (boot sector).
             oGen.write('        %s %s, [VBINSTST_NAME(g_u%sData) xWrtRIP]\n'
-                       % ( self.sInstr, gregName(iOp1, cbEffOp * 8), cbEffOp * 8,));
+                       % ( self.sInstr, oGen.gregNameBytes(iOp1, cbEffOp), cbEffOp * 8,));
         else:
-            oGen.write('        altsibx%u %s %s, [VBINSTST_NAME(g_u%sData) xWrtRIP]\n'
-                       % ( iScale, self.sInstr, gregName(iOp1, cbEffOp * 8), cbEffOp * 8,));
+            oGen.write('        altsibx%u %s %s, [VBINSTST_NAME(g_u%sData) xWrtRIP] ; iOp1=%s cbEffOp=%s\n'
+                       % ( iScale, self.sInstr, oGen.gregNameBytes(iOp1, cbEffOp), cbEffOp * 8, iOp1, cbEffOp));
         return True;
 
     def writeInstrGregSibScaledReg(self, cbEffOp, iOp1, cAddrBits, iBaseReg, iIndexReg, iScale, offDisp, oGen):
@@ -558,7 +548,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         # Note! Using altsibxN to force scaled encoding. This is only really a
         #       necessity for iScale=1, but doesn't hurt for the rest.
         oGen.write('        altsibx%u %s %s, [%s * %#x'
-                   % (iScale, self.sInstr, gregName(iOp1, cbEffOp * 8), gregName(iIndexReg, cAddrBits), iScale,));
+                   % (iScale, self.sInstr, oGen.gregNameBytes(iOp1, cbEffOp), oGen.gregNameBits(iIndexReg, cAddrBits), iScale,));
         if offDisp is not None:
             oGen.write(' + %#x' % (offDisp,));
         oGen.write(']\n');
@@ -568,7 +558,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
     def writeInstrGregSibBase(self, cbEffOp, iOp1, cAddrBits, iBaseReg, iIndexReg, iScale, offDisp, oGen):
         """ Writes the instruction taking a register and base only (with reg), SIB form. """
         oGen.write('        altsibx%u %s %s, [%s'
-                   % (iScale, self.sInstr, gregName(iOp1, cbEffOp * 8), gregName(iBaseReg, cAddrBits),));
+                   % (iScale, self.sInstr, oGen.gregNameBytes(iOp1, cbEffOp), oGen.gregNameBits(iBaseReg, cAddrBits),));
         if offDisp is not None:
             oGen.write(' + %#x' % (offDisp,));
         oGen.write(']\n');
@@ -583,8 +573,8 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         #       So, when there are two registers involved, the '*1' selects
         #       which is index and which is base.
         oGen.write('        %s %s, [%s + %s * %u'
-                   % ( self.sInstr, gregName(iOp1, cbEffOp * 8),
-                       gregName(iBaseReg, cAddrBits), gregName(iIndexReg, cAddrBits), iScale,));
+                   % ( self.sInstr, oGen.gregNameBytes(iOp1, cbEffOp),
+                       oGen.gregNameBits(iBaseReg, cAddrBits), oGen.gregNameBits(iIndexReg, cAddrBits), iScale,));
         if offDisp is not None:
             oGen.write(' + %#x' % (offDisp,));
         oGen.write(']\n');
@@ -1325,7 +1315,7 @@ class InstrTest_DivIDiv(InstrTestBase):
 # Instruction Tests.
 #
 g_aoInstructionTests = [
-    #InstrTest_Mov_Gv_Ev(),
+    InstrTest_Mov_Gv_Ev(),
     ##InstrTest_MovSxD_Gv_Ev(),
     InstrTest_DivIDiv(fIsIDiv = False),
     InstrTest_DivIDiv(fIsIDiv = True),
@@ -1755,7 +1745,7 @@ class InstructionTestGen(object): # pylint: disable=R0902
                 iTmpReg2 = X86_GREG_xBP;
                 while iTmpReg2 in [iBaseReg, iIndexReg, iTmpReg1]:
                     iTmpReg2 += 1;
-                sTmpReg2 = gregName(iTmpReg2, cAddrBits);
+                sTmpReg2 = self.gregNameBits(iTmpReg2, cAddrBits);
                 self.write('        push    sAX\n'
                            '        push    %s\n'
                            '        push    sDX\n'
@@ -1765,16 +1755,17 @@ class InstructionTestGen(object): # pylint: disable=R0902
                 else:
                     self.write('        mov     %s, [VBINSTST_NAME(g_pvLow32Mem4K) xWrtRIP]\n' % (sTmpReg2,));
                 self.write('        add     %s, 0x200\n' % (sTmpReg2,));
-                self.write('        mov     %s, %s\n' % (gregName(X86_GREG_xAX, cAddrBits), sTmpReg2,));
+                self.write('        mov     %s, %s\n' % (self.gregNameBits(X86_GREG_xAX, cAddrBits), sTmpReg2,));
                 if u32Disp is not None:
-                    self.write('        sub     %s, %d\n' % ( gregName(X86_GREG_xAX, cAddrBits), convU32ToSigned(u32Disp), ));
+                    self.write('        sub     %s, %d\n'
+                               % ( self.gregNameBits(X86_GREG_xAX, cAddrBits), convU32ToSigned(u32Disp), ));
                 self.write('        xor     edx, edx\n'
                            '%if xCB == 2\n'
                            '        push    0\n'
                            '%endif\n');
                 self.write('        push    %u\n' % (iScale + 1,));
                 self.write('        div     %s [xSP]\n' % ('qword' if cAddrBits == 64 else 'dword',));
-                self.write('        sub     %s, %s\n' % (sTmpReg2, gregName(X86_GREG_xDX, cAddrBits),));
+                self.write('        sub     %s, %s\n' % (sTmpReg2, self.gregNameBits(X86_GREG_xDX, cAddrBits),));
                 self.write('        pop     sDX\n'
                            '        pop     sDX\n'); # sTmpReg2 is eff address; sAX is sIndexReg value.
                 # Note! sTmpReg1 can be xDX and that's no problem now.
@@ -1784,7 +1775,7 @@ class InstructionTestGen(object): # pylint: disable=R0902
                 if iBaseReg == X86_GREG_xAX:
                     self.write('        pop     %s\n' % (self.oTarget.asGRegs[iTmpReg1],));
                 else:
-                    self.write('        mov     %s, %s\n' % (sBaseReg, gregName(X86_GREG_xAX, cAddrBits),));
+                    self.write('        mov     %s, %s\n' % (sBaseReg, self.gregNameBits(X86_GREG_xAX, cAddrBits),));
                     self.write('        pop     sAX\n');
 
             else:
