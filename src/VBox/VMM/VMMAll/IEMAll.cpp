@@ -4778,19 +4778,25 @@ DECL_FORCE_INLINE(void) iemMemUpdateWrittenCounter(PIEMCPU pIemCpu, uint32_t fAc
  * @param   pIemCpu             The IEM per CPU data.
  * @param   pHid                Pointer to the hidden register.
  * @param   iSegReg             The register number.
+ * @param   pu64BaseAddr        Where to return the base address to use for the
+ *                              segment. (In 64-bit code it may differ from the
+ *                              base in the hidden segment.)
  */
-static VBOXSTRICTRC iemMemSegCheckWriteAccessEx(PIEMCPU pIemCpu, PCCPUMSELREGHID pHid, uint8_t iSegReg)
+static VBOXSTRICTRC iemMemSegCheckWriteAccessEx(PIEMCPU pIemCpu, PCCPUMSELREGHID pHid, uint8_t iSegReg, uint64_t *pu64BaseAddr)
 {
-    if (!pHid->Attr.n.u1Present)
-        return iemRaiseSelectorNotPresentBySegReg(pIemCpu, iSegReg);
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
+        *pu64BaseAddr = iSegReg < X86_SREG_FS ? 0 : pHid->u64Base;
+    else
+    {
+        if (!pHid->Attr.n.u1Present)
+            return iemRaiseSelectorNotPresentBySegReg(pIemCpu, iSegReg);
 
-    if (   (   (pHid->Attr.n.u4Type & X86_SEL_TYPE_CODE)
-            || !(pHid->Attr.n.u4Type & X86_SEL_TYPE_WRITE) )
-        &&  pIemCpu->enmCpuMode != IEMMODE_64BIT )
-        return iemRaiseSelectorInvalidAccess(pIemCpu, iSegReg, IEM_ACCESS_DATA_W);
-
-    /** @todo DPL/RPL/CPL? */
-
+        if (   (   (pHid->Attr.n.u4Type & X86_SEL_TYPE_CODE)
+                || !(pHid->Attr.n.u4Type & X86_SEL_TYPE_WRITE) )
+            &&  pIemCpu->enmCpuMode != IEMMODE_64BIT )
+            return iemRaiseSelectorInvalidAccess(pIemCpu, iSegReg, IEM_ACCESS_DATA_W);
+        *pu64BaseAddr = pHid->u64Base;
+    }
     return VINF_SUCCESS;
 }
 
@@ -4804,18 +4810,23 @@ static VBOXSTRICTRC iemMemSegCheckWriteAccessEx(PIEMCPU pIemCpu, PCCPUMSELREGHID
  * @param   pIemCpu             The IEM per CPU data.
  * @param   pHid                Pointer to the hidden register.
  * @param   iSegReg             The register number.
+ * @param   pu64BaseAddr        Where to return the base address to use for the
+ *                              segment. (In 64-bit code it may differ from the
+ *                              base in the hidden segment.)
  */
-static VBOXSTRICTRC iemMemSegCheckReadAccessEx(PIEMCPU pIemCpu, PCCPUMSELREGHID pHid, uint8_t iSegReg)
+static VBOXSTRICTRC iemMemSegCheckReadAccessEx(PIEMCPU pIemCpu, PCCPUMSELREGHID pHid, uint8_t iSegReg, uint64_t *pu64BaseAddr)
 {
-    if (!pHid->Attr.n.u1Present)
-        return iemRaiseSelectorNotPresentBySegReg(pIemCpu, iSegReg);
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
+        *pu64BaseAddr = iSegReg < X86_SREG_FS ? 0 : pHid->u64Base;
+    else
+    {
+        if (!pHid->Attr.n.u1Present)
+            return iemRaiseSelectorNotPresentBySegReg(pIemCpu, iSegReg);
 
-    if (   (pHid->Attr.n.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ)) == X86_SEL_TYPE_CODE
-        &&  pIemCpu->enmCpuMode != IEMMODE_64BIT )
-        return iemRaiseSelectorInvalidAccess(pIemCpu, iSegReg, IEM_ACCESS_DATA_R);
-
-    /** @todo DPL/RPL/CPL? */
-
+        if ((pHid->Attr.n.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ)) == X86_SEL_TYPE_CODE)
+            return iemRaiseSelectorInvalidAccess(pIemCpu, iSegReg, IEM_ACCESS_DATA_R);
+        *pu64BaseAddr = pHid->u64Base;
+    }
     return VINF_SUCCESS;
 }
 
