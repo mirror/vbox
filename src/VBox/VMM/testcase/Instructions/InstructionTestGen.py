@@ -487,13 +487,14 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         InstrTestBase.__init__(self, sName, sInstr);
         self.fnCalcResult = fnCalcResult;
         self.acbOpVars    = [ 1, 2, 4, 8 ] if not acbOpVars else list(acbOpVars);
+        self.fTestRegForm = True;
+        self.fTestMemForm = True;
 
     ## @name Test Instruction Writers
     ## @{
 
     def writeInstrGregGreg(self, cbEffOp, iOp1, iOp2, oGen):
         """ Writes the instruction with two general registers as operands. """
-        fRexByteRegs = oGen.oTarget.is64Bit();
         oGen.write('        %s %s, %s\n'
                    % ( self.sInstr, oGen.gregNameBytes(iOp1, cbEffOp), oGen.gregNameBytes(iOp2, cbEffOp),));
         return True;
@@ -585,6 +586,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
 
     ## @name Memory setups
     ## @{
+
     def generateMemSetupReadByLabel(self, oGen, cbEffOp, uInput):
         """ Sets up memory for a memory read. """
         oGen.pushConst(uInput);
@@ -793,7 +795,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
         iLongOp2      = oGen.oTarget.randGRegNoSp();
 
         # Register tests
-        if True:
+        if self.fTestRegForm:
             for cbEffOp in self.acbOpVars:
                 if cbEffOp > cbMaxOp:
                     continue;
@@ -824,7 +826,7 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                                 self.generateOneStdTestGregGreg8BitHighPain(oGen, cbEffOp, cbMaxOp, iOp1, iOp2, uInput);
 
         # Memory test.
-        if True:
+        if self.fTestMemForm:
             for cAddrBits in oGen.oTarget.getAddrModes():
                 for cbEffOp in self.acbOpVars:
                     if cbEffOp > cbMaxOp:
@@ -852,19 +854,13 @@ class InstrTest_MemOrGreg_2_Greg(InstrTestBase):
                             else:
                                 # SIB - currently only short list of inputs or things may get seriously out of hand.
                                 self.generateStdTestGregMemSib(oGen, cAddrBits, cbEffOp, cbMaxOp, oGen.iModReg, auShortInputs);
-                    #break;
-                #break;
-
-
         return True;
 
     def generateTest(self, oGen, sTestFnName):
         oGen.write('VBINSTST_BEGINPROC %s\n' % (sTestFnName,));
-        #oGen.write('        int3\n');
 
         self.generateStandardTests(oGen);
 
-        #oGen.write('        int3\n');
         oGen.write('        ret\n');
         oGen.write('VBINSTST_ENDPROC   %s\n' % (sTestFnName,));
         return True;
@@ -897,21 +893,16 @@ class InstrTest_MovSxD_Gv_Ev(InstrTest_MemOrGreg_2_Greg):
     """
     def __init__(self):
         InstrTest_MemOrGreg_2_Greg.__init__(self, 'movsxd Gv,Ev', self.calc_movsxd, acbOpVars = [ 8, 4, 2, ]);
+        self.fTestMemForm = False; # drop this...
 
     def writeInstrGregGreg(self, cbEffOp, iOp1, iOp2, oGen):
+        """ Writes the instruction with two general registers as operands. """
         if cbEffOp == 8:
-            oGen.write('        %s %s, %s\n' % (self.sInstr, g_asGRegs64[iOp1], g_asGRegs32[iOp2]));
-        elif cbEffOp == 4 or cbEffOp == 2:
-            abInstr = [];
-            if cbEffOp != oGen.oTarget.getDefOpBytes():
-                abInstr.append(X86_OP_PRF_SIZE_OP);
-            abInstr += calcRexPrefixForTwoModRmRegs(iOp1, iOp2);
-            abInstr.append(0x63);
-            abInstr += calcModRmForTwoRegs(iOp1, iOp2);
-            oGen.writeInstrBytes(abInstr);
+            oGen.write('        movsxd %s, %s\n'
+                       % ( oGen.gregNameBytes(iOp1, cbEffOp), oGen.gregNameBytes(iOp2, cbEffOp / 2),));
         else:
-            assert False;
-            assert False;
+            oGen.write('        oddmovsxd %s, %s\n'
+                       % ( oGen.gregNameBytes(iOp1, cbEffOp), oGen.gregNameBytes(iOp2, cbEffOp),));
         return True;
 
     def isApplicable(self, oGen):
@@ -1316,7 +1307,7 @@ class InstrTest_DivIDiv(InstrTestBase):
 #
 g_aoInstructionTests = [
     InstrTest_Mov_Gv_Ev(),
-    ##InstrTest_MovSxD_Gv_Ev(),
+    InstrTest_MovSxD_Gv_Ev(),
     InstrTest_DivIDiv(fIsIDiv = False),
     InstrTest_DivIDiv(fIsIDiv = True),
 ];
