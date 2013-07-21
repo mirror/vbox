@@ -1095,6 +1095,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumSegments)(PRTLDRMODINTERNAL pMod, PFN
      * Do the enumeration.
      */
     char            szName[32];
+    Elf_Addr        uPrevMappedRva = 0;
     const Elf_Shdr *paShdrs    = pModElf->paShdrs;
     const Elf_Shdr *paOrgShdrs = pModElf->paOrgShdrs;
     for (unsigned iShdr = 1; iShdr < pModElf->Ehdr.e_shnum; iShdr++)
@@ -1123,7 +1124,13 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumSegments)(PRTLDRMODINTERNAL pMod, PFN
             Seg.RVA         = paShdrs[iShdr].sh_addr;
             const Elf_Shdr *pShdr2 = RTLDRELF_NAME(GetFirstAllocatedSection)(&paShdrs[iShdr + 1],
                                                                              pModElf->Ehdr.e_shnum - iShdr - 1);
-            Seg.cbMapped    = pShdr2 ? pShdr2->sh_addr - paShdrs[iShdr].sh_addr : paShdrs[iShdr].sh_size;
+            if (   pShdr2
+                && pShdr2->sh_addr >= paShdrs[iShdr].sh_addr
+                && Seg.RVA >= uPrevMappedRva)
+                Seg.cbMapped = pShdr2->sh_addr - paShdrs[iShdr].sh_addr;
+            else
+                Seg.cbMapped = RT_MAX(paShdrs[iShdr].sh_size, paShdrs[iShdr].sh_addralign);
+            uPrevMappedRva = Seg.RVA;
         }
         else
         {
@@ -1781,6 +1788,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
                 /*
                  * Validate the section headers and find relevant sections.
                  */
+                Elf_Addr uNextAddr = 0;
                 for (unsigned i = 0; i < pModElf->Ehdr.e_shnum; i++)
                 {
                     rc = RTLDRELF_NAME(ValidateSectionHeader)(pModElf, i, pszLogName, cbRawImage);
@@ -1821,6 +1829,19 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
                         }
                     }
 
+                    /* Kluge for the .data..percpu segment in 64-bit linux kernels. */
+                    if (paShdrs[i].sh_flags & SHF_ALLOC)
+                    {
+                        if (   paShdrs[i].sh_addr == 0
+                            && paShdrs[i].sh_addr < uNextAddr)
+                        {
+                            Elf_Addr uAddr = RT_ALIGN_T(uNextAddr, paShdrs[i].sh_addralign, Elf_Addr);
+                            Log(("RTLdrElf: Out of order section #%d; adjusting sh_addr from " FMT_ELF_ADDR " to " FMT_ELF_ADDR "\n",
+                                 paShdrs[i].sh_addr, uAddr));
+                            paShdrs[i].sh_addr = uAddr;
+                        }
+                        uNextAddr = paShdrs[i].sh_addr + paShdrs[i].sh_size;
+                    }
                 } /* for each section header */
 
                 /*
