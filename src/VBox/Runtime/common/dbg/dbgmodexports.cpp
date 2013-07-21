@@ -47,6 +47,8 @@ typedef struct RTDBGMODEXPORTARGS
 {
     PRTDBGMODINT    pDbgMod;
     RTLDRADDR       uImageBase;
+    RTLDRADDR       uRvaNext;
+    uint32_t        cSegs;
 } RTDBGMODEXPORTARGS;
 /** Pointer to an argument package. */
 typedef RTDBGMODEXPORTARGS *PRTDBGMODEXPORTARGS;
@@ -81,18 +83,29 @@ static DECLCALLBACK(int) rtDbgModExportsAddSegmentsCallback(RTLDRMOD hLdrMod, PC
          pSeg->cchName, pSeg->pszName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
     NOREF(hLdrMod);
 
-    /* Find the best base address for the module. */
-    if (    pSeg->LinkAddress != NIL_RTLDRADDR
-        &&  (   !pArgs->uImageBase
-             || pArgs->uImageBase > pSeg->LinkAddress))
-        pArgs->uImageBase = pSeg->LinkAddress;
+    pArgs->cSegs++;
 
     /* Add dummy segments for segments that doesn't get mapped. */
     if (pSeg->LinkAddress == NIL_RTLDRADDR)
         return RTDbgModSegmentAdd(pArgs->pDbgMod, 0, 0, pSeg->pszName, 0 /*fFlags*/, NULL);
 
+    RTLDRADDR uRva = pSeg->RVA;
+#if 0 /* Kluge for the .data..percpu segment in 64-bit linux kernels and similar. (Moved to ELF.) */
+    if (uRva < pArgs->uRvaNext)
+        uRva = RT_ALIGN_T(pArgs->uRvaNext, pSeg->Alignment, RTLDRADDR);
+#endif
+
+    /* Find the best base address for the module. */
+    if (   (  !pArgs->uImageBase
+            || pArgs->uImageBase > pSeg->LinkAddress)
+        && (   pSeg->LinkAddress != 0 /* .data..percpu again. */
+            || pArgs->cSegs == 1))
+        pArgs->uImageBase = pSeg->LinkAddress;
+
+    /* Add it. */
     RTLDRADDR cb = RT_MAX(pSeg->cb, pSeg->cbMapped);
-    return RTDbgModSegmentAdd(pArgs->pDbgMod, pSeg->RVA, cb, pSeg->pszName, 0 /*fFlags*/, NULL);
+    pArgs->uRvaNext = uRva + cb;
+    return RTDbgModSegmentAdd(pArgs->pDbgMod, uRva, cb, pSeg->pszName, 0 /*fFlags*/, NULL);
 }
 
 
@@ -127,6 +140,8 @@ DECLHIDDEN(int) rtDbgModCreateForExports(PRTDBGMODINT pDbgMod)
     RTDBGMODEXPORTARGS Args;
     Args.pDbgMod    = pDbgMod;
     Args.uImageBase = 0;
+    Args.uRvaNext   = 0;
+    Args.cSegs      = 0;
     rc = pDbgMod->pImgVt->pfnEnumSegments(pDbgMod, rtDbgModExportsAddSegmentsCallback, &Args);
     if (RT_SUCCESS(rc))
     {

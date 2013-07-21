@@ -387,14 +387,15 @@ typedef enum krtDbgModDwarfSect
  */
 typedef struct RTDWARFABBREV
 {
-    /** Whether this entry is filled in or not. */
-    bool                fFilled;
     /** Whether there are children or not. */
     bool                fChildren;
     /** The tag.  */
     uint16_t            uTag;
     /** Offset into the abbrev section of the specification pairs. */
     uint32_t            offSpec;
+    /** The abbreviation table offset this is entry is valid for.
+     * UINT32_MAX if not valid. */
+    uint32_t            offAbbrev;
 } RTDWARFABBREV;
 /** Pointer to an abbreviation cache entry. */
 typedef RTDWARFABBREV *PRTDWARFABBREV;
@@ -452,8 +453,6 @@ typedef struct RTDBGMODDWARF
     uint32_t                offCachedAbbrev;
     /** The number of cached abbreviations we've allocated space for. */
     uint32_t                cCachedAbbrevsAlloced;
-    /** Used for range checking cache lookups. */
-    uint32_t                cCachedAbbrevs;
     /** Array of cached abbreviations, indexed by code. */
     PRTDWARFABBREV          paCachedAbbrevs;
     /** Used by rtDwarfAbbrev_Lookup when the result is uncachable. */
@@ -2837,7 +2836,7 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
     bool fFillCache = true;
     if (pThis->cCachedAbbrevsAlloced < uCode)
     {
-        if (uCode > _64K)
+        if (uCode >= _64K)
             fFillCache = false;
         else
         {
@@ -2847,8 +2846,11 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
                 fFillCache = false;
             else
             {
-                pThis->cCachedAbbrevsAlloced = cNew;
+                Log(("rtDwarfAbbrev_LookupMiss: Growing from %u to %u...\n", pThis->cCachedAbbrevsAlloced, cNew));
                 pThis->paCachedAbbrevs       = (PRTDWARFABBREV)pv;
+                for (uint32_t i = pThis->cCachedAbbrevsAlloced; i < cNew; i++)
+                    pThis->paCachedAbbrevs[i].offAbbrev = UINT32_MAX;
+                pThis->cCachedAbbrevsAlloced = cNew;
             }
         }
     }
@@ -2866,11 +2868,16 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
     {
         /*
          * Search for the entry and fill the cache while doing so.
+         * We assume that abbreviation codes for a unit will stop when we see
+         * zero code or when the code value drops.
          */
+        uint32_t uPrevCode = 0;
         for (;;)
         {
             /* Read the 'header'. Skipping zero code bytes. */
-            uint32_t const uCurCode  = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+            uint32_t const uCurCode = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
+            if (pRet && (uCurCode == 0 || uCurCode < uPrevCode))
+                break; /* probably end of unit. */
             if (uCurCode != 0)
             {
                 uint32_t const uCurTag   = rtDwarfCursor_GetULeb128AsU32(&Cursor, 0);
@@ -2888,23 +2895,24 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
                 if (uCurCode <= pThis->cCachedAbbrevsAlloced)
                 {
                     PRTDWARFABBREV pEntry = &pThis->paCachedAbbrevs[uCurCode - 1];
-                    while (pThis->cCachedAbbrevs < uCurCode)
+                    if (pEntry->offAbbrev != pThis->offCachedAbbrev)
                     {
-                        pThis->paCachedAbbrevs[pThis->cCachedAbbrevs].fFilled = false;
-                        pThis->cCachedAbbrevs++;
-                    }
+                        pEntry->offAbbrev = pThis->offCachedAbbrev;
+                        pEntry->fChildren = RT_BOOL(uChildren);
+                        pEntry->uTag      = uCurTag;
+                        pEntry->offSpec   = rtDwarfCursor_CalcSectOffsetU32(&Cursor);
 
-                    pEntry->fFilled   = true;
-                    pEntry->fChildren = RT_BOOL(uChildren);
-                    pEntry->uTag      = uCurTag;
-                    pEntry->offSpec   = rtDwarfCursor_CalcSectOffsetU32(&Cursor);
-
-                    if (uCurCode == uCode)
-                    {
-                        pRet = pEntry;
-                        if (uCurCode == pThis->cCachedAbbrevsAlloced)
-                            break;
+                        if (uCurCode == uCode)
+                        {
+                            Assert(!pRet);
+                            pRet = pEntry;
+                            if (uCurCode == pThis->cCachedAbbrevsAlloced)
+                                break;
+                        }
                     }
+                    else if (pRet)
+                        break; /* Next unit, don't cache more. */
+                    /* else: We're growing the cache and re-reading old data. */
                 }
 
                 /* Skip the specification. */
@@ -2948,10 +2956,10 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
             if (uCurCode == uCode)
             {
                 pRet = &pThis->LookupAbbrev;
-                pRet->fFilled   = true;
                 pRet->fChildren = RT_BOOL(uChildren);
                 pRet->uTag      = uCurTag;
                 pRet->offSpec   = rtDwarfCursor_CalcSectOffsetU32(&Cursor);
+                pRet->offAbbrev = pThis->offCachedAbbrev;
                 break;
             }
 
@@ -2982,8 +2990,8 @@ static PCRTDWARFABBREV rtDwarfAbbrev_LookupMiss(PRTDBGMODDWARF pThis, uint32_t u
  */
 static PCRTDWARFABBREV rtDwarfAbbrev_Lookup(PRTDBGMODDWARF pThis, uint32_t uCode)
 {
-    if (   uCode - 1 >= pThis->cCachedAbbrevs
-        || !pThis->paCachedAbbrevs[uCode - 1].fFilled)
+    if (   uCode - 1 >= pThis->cCachedAbbrevsAlloced
+        || pThis->paCachedAbbrevs[uCode - 1].offAbbrev != pThis->offCachedAbbrev)
         return rtDwarfAbbrev_LookupMiss(pThis, uCode);
     return &pThis->paCachedAbbrevs[uCode - 1];
 }
@@ -2992,19 +3000,12 @@ static PCRTDWARFABBREV rtDwarfAbbrev_Lookup(PRTDBGMODDWARF pThis, uint32_t uCode
 /**
  * Sets the abbreviation offset of the current unit.
  *
- * This will flush the cached abbreviation entries if the offset differs from
- * the previous unit.
- *
  * @param   pThis               The DWARF instance.
  * @param   offAbbrev           The offset into the abbreviation section.
  */
 static void rtDwarfAbbrev_SetUnitOffset(PRTDBGMODDWARF pThis, uint32_t offAbbrev)
 {
-    if (pThis->offCachedAbbrev != offAbbrev)
-    {
-        pThis->offCachedAbbrev = offAbbrev;
-        pThis->cCachedAbbrevs  = 0;
-    }
+    pThis->offCachedAbbrev = offAbbrev;
 }
 
 
@@ -4283,25 +4284,13 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, bo
         if (!uAbbrCode)
         {
             /* End of siblings, up one level. (Is this correct?) */
-            pParentDie = pParentDie->pParent;
-            if (!pParentDie)
+            if (pParentDie->pParent)
             {
-                /* Padding. */
-                while (!rtDwarfCursor_IsAtEndOfUnit(pCursor))
-                {
-                    uAbbrCode = rtDwarfCursor_GetULeb128AsU32(pCursor, UINT32_MAX);
-                    if (uAbbrCode)
-                    {
-                        Log(("%08x: End of DIE stack, but still more info to parse: uAbbrCode=%#x (+%u bytes).\n",
-                             offLog, uAbbrCode, pCursor->cbUnitLeft));
-                        return VERR_DWARF_BAD_INFO;
-                    }
-                }
-                break;
+                pParentDie = pParentDie->pParent;
+                cDepth--;
+                if (!fKeepDies && pParentDie->pParent)
+                    rtDwarfInfo_FreeChildren(pThis, pParentDie);
             }
-            cDepth--;
-            if (!fKeepDies && pParentDie->pParent)
-                rtDwarfInfo_FreeChildren(pThis, pParentDie);
         }
         else
         {
@@ -4325,8 +4314,8 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, bo
                 pszName  = "<unknown>";
                 pDieDesc = g_aTagDescs[0].pDesc;
             }
-            Log4(("%08x: %*stag=%s (%#x)%s\n", offLog, cDepth * 2, "", pszName,
-                  pAbbrev->uTag, pAbbrev->fChildren ? " has children" : ""));
+            Log4(("%08x: %*stag=%s (%#x, abbrev %u)%s\n", offLog, cDepth * 2, "", pszName,
+                  pAbbrev->uTag, uAbbrCode, pAbbrev->fChildren ? " has children" : ""));
 
             /*
              * Create a new internal DIE structure and parse the
@@ -4755,8 +4744,9 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmA
                     /*
                      * Free the cached abbreviations and unload all sections.
                      */
-                    pThis->cCachedAbbrevs = pThis->cCachedAbbrevsAlloced = 0;
+                    pThis->cCachedAbbrevsAlloced = 0;
                     RTMemFree(pThis->paCachedAbbrevs);
+                    pThis->paCachedAbbrevs = NULL;
 
                     for (unsigned iSect = 0; iSect < RT_ELEMENTS(pThis->aSections); iSect++)
                         if (pThis->aSections[iSect].pv)
