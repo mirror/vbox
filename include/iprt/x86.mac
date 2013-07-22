@@ -716,5 +716,20 @@
 %define X86_SREG_FS             4
 %define X86_SREG_GS             5
 %define X86_SREG_COUNT          6
+%define X86_OP_PRF_CS           0x2e
+%define X86_OP_PRF_SS           0x36
+%define X86_OP_PRF_DS           0x3e
+%define X86_OP_PRF_ES           0x26
+%define X86_OP_PRF_FS           0x64
+%define X86_OP_PRF_GS           0x65
+%define X86_OP_PRF_SIZE_OP      0x66
+%define X86_OP_PRF_SIZE_ADDR    0x67
+%define X86_OP_PRF_LOCK         0xf0
+%define X86_OP_PRF_REPZ         0xf2
+%define X86_OP_PRF_REPNZ        0xf3
+%define X86_OP_REX_B            0x41
+%define X86_OP_REX_X            0x42
+%define X86_OP_REX_R            0x44
+%define X86_OP_REX_W            0x48
 %endif
 %include "iprt/x86extra.mac"
