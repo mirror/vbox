@@ -14958,7 +14958,7 @@ FNIEMOP_DEF_1(iemOp_grp3_test_Ev, uint8_t, bRm)
                 IEM_MC_REF_GREG_U32(pu32Dst, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(iemAImpl_test_u32, pu32Dst, u32Src, pEFlags);
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                /* No clearing the high dword here - test doesn't write back the result. */
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 return VINF_SUCCESS;
