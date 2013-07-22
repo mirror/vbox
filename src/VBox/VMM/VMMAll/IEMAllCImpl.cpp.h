@@ -3346,7 +3346,7 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
      *       assembly and such.
      */
     void *pvDesc;
-    rcStrict = iemMemMap(pIemCpu, &pvDesc, 8, UINT8_MAX, pCtx->gdtr.pGdt, IEM_ACCESS_DATA_RW);
+    rcStrict = iemMemMap(pIemCpu, &pvDesc, 8, UINT8_MAX, pCtx->gdtr.pGdt + (uNewTr & X86_SEL_MASK_OFF_RPL), IEM_ACCESS_DATA_RW);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     switch ((uintptr_t)pvDesc & 3)
