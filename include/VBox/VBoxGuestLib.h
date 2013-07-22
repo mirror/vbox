@@ -535,6 +535,11 @@ VBGLR3DECL(int)     VbglR3GuestPropDelSet(uint32_t u32ClientId, char const * con
 VBGLR3DECL(int)     VbglR3GuestPropWait(uint32_t u32ClientId, const char *pszPatterns, void *pvBuf, uint32_t cbBuf, uint64_t u64Timestamp, uint32_t cMillies, char ** ppszName, char **ppszValue, uint64_t *pu64Timestamp, char **ppszFlags, uint32_t *pcbBufActual);
 /** @}  */
 
+/** @name Guest user handling / reporting.
+ * @{ */
+VBGLR3DECL(int)     VbglR3GuestUserReportState(const char *pszUser, const char *pszDomain, VBoxGuestUserState enmState, uint8_t *puDetails, uint32_t cbDetails);
+/** @}  */
+
 /** @name Host version handling
  * @{ */
 VBGLR3DECL(int)     VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUpdate, char **ppszHostVersion, char **ppszGuestVersion);

@@ -178,6 +178,30 @@ DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, uint
 
 
 /**
+ * @interface_method_impl{PDMIVMMDEVCONNECTOR,pfnUpdateGuestUserState}
+ */
+DECLCALLBACK(void) vmmdevUpdateGuestUserState(PPDMIVMMDEVCONNECTOR pInterface,
+                                              const char *pszUser, const char *pszDomain,
+                                              uint32_t uState,
+                                              uint8_t *puDetails, uint32_t cbDetails)
+{
+    PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
+    AssertPtr(pDrv);
+    Console *pConsole = pDrv->pVMMDev->getParent();
+    AssertPtr(pConsole);
+
+    /* Store that information in IGuest. */
+    Guest* pGuest = pConsole->getGuest();
+    AssertPtr(pGuest);
+    if (!pGuest)
+        return;
+
+    pGuest->onUserStateChange(Bstr(pszUser), Bstr(pszDomain), (VBoxGuestUserState)uState,
+                              puDetails, cbDetails);
+}
+
+
+/**
  * Reports Guest Additions API and OS version.
  *
  * Called whenever the Additions issue a guest version report request or the VM
@@ -795,6 +819,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     pDrvIns->IBase.pfnQueryInterface                  = VMMDev::drvQueryInterface;
 
     pThis->Connector.pfnUpdateGuestStatus             = vmmdevUpdateGuestStatus;
+    pThis->Connector.pfnUpdateGuestUserState          = vmmdevUpdateGuestUserState;
     pThis->Connector.pfnUpdateGuestInfo               = vmmdevUpdateGuestInfo;
     pThis->Connector.pfnUpdateGuestInfo2              = vmmdevUpdateGuestInfo2;
     pThis->Connector.pfnUpdateGuestCapabilities       = vmmdevUpdateGuestCapabilities;

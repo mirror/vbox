@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -69,20 +69,24 @@ DECLVBGL(int) VbglGRVerify (const VMMDevRequestHeader *pReq, size_t cbReq)
         return VINF_SUCCESS;
     }
 
-    /* This can be a variable size request. Check the request type and limit the size
+    /*
+     * This can be a variable size request. Check the request type and limit the size
      * to VMMDEV_MAX_VMMDEVREQ_SIZE, which is max size supported by the host.
+     *
+     * Note: Keep this list sorted for easier human lookup!
      */
-    if (   pReq->requestType == VMMDevReq_LogString
-        || pReq->requestType == VMMDevReq_VideoSetVisibleRegion
-        || pReq->requestType == VMMDevReq_SetPointerShape
+    if (   pReq->requestType == VMMDevReq_ChangeMemBalloon
 #ifdef VBOX_WITH_64_BITS_GUESTS
         || pReq->requestType == VMMDevReq_HGCMCall32
         || pReq->requestType == VMMDevReq_HGCMCall64
 #else
         || pReq->requestType == VMMDevReq_HGCMCall
 #endif /* VBOX_WITH_64_BITS_GUESTS */
-        || pReq->requestType == VMMDevReq_ChangeMemBalloon
-        || pReq->requestType == VMMDevReq_RegisterSharedModule)
+        || pReq->requestType == VMMDevReq_RegisterSharedModule
+        || pReq->requestType == VMMDevReq_ReportGuestUserState
+        || pReq->requestType == VMMDevReq_LogString
+        || pReq->requestType == VMMDevReq_SetPointerShape
+        || pReq->requestType == VMMDevReq_VideoSetVisibleRegion)
     {
         if (cbReq > VMMDEV_MAX_VMMDEVREQ_SIZE)
         {

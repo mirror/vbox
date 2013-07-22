@@ -95,6 +95,7 @@ typedef struct VMMDEVFACILITYSTATUSENTRY
     /** The facility, see VBoxGuestFacilityType. */
     uint32_t    uFacility;
     /** The status, see VBoxGuestFacilityStatus. */
+    /** @todo r=andy uint16_t vs. uint32_t (VBoxGuestFacilityStatus enum). */
     uint16_t    uStatus;
     /** Whether this entry is fixed and cannot be reused when inactive. */
     bool        fFixed;

@@ -49,7 +49,7 @@ static uint32_t s_uIter = 0;
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /** Structure for storing the looked up user information. */
-typedef struct
+typedef struct VBOXSERVICEVMINFOUSER
 {
     WCHAR wszUser[_MAX_PATH];
     WCHAR wszAuthenticationPackage[_MAX_PATH];
@@ -64,14 +64,14 @@ typedef struct
 } VBOXSERVICEVMINFOUSER, *PVBOXSERVICEVMINFOUSER;
 
 /** Structure for the file information lookup. */
-typedef struct
+typedef struct VBOXSERVICEVMINFOFILE
 {
     char *pszFilePath;
     char *pszFileName;
 } VBOXSERVICEVMINFOFILE, *PVBOXSERVICEVMINFOFILE;
 
 /** Structure for process information lookup. */
-typedef struct
+typedef struct VBOXSERVICEVMINFOPROC
 {
     /** The PID. */
     DWORD id;
@@ -91,7 +91,7 @@ uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMI
 bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);
 int  VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
 void VBoxServiceVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paProcs);
-int vboxServiceVMInfoWinWriteLastInput(char *pszUser);
+int vboxServiceVMInfoWinWriteLastInput(const char *pszUser, const char *pszDomain);
 
 typedef BOOL WINAPI FNQUERYFULLPROCESSIMAGENAME(HANDLE,  DWORD, LPTSTR, PDWORD);
 typedef FNQUERYFULLPROCESSIMAGENAME *PFNQUERYFULLPROCESSIMAGENAME;
@@ -807,7 +807,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
 }
 
 
-static int vboxServiceVMInfoWinWriteLastInput(char *pszUser)
+static int vboxServiceVMInfoWinWriteLastInput(const char *pszUser, const char *pszDomain)
 {
     AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
 
@@ -832,12 +832,20 @@ static int vboxServiceVMInfoWinWriteLastInput(char *pszUser)
                                            NULL /* Exact read */);
             if (RT_SUCCESS(rc))
             {
+                VBoxGuestUserState userState = ipcRes.uLastInputMs < 5000 /** @todo Make this configurable. */
+                                             ? VBoxGuestUserState_InUse
+                                             : VBoxGuestUserState_Idle;
                 if (ipcRes.uLastInputMs)
-                    VBoxServiceVerbose(4, "User \"%s\" is idle for %RU32ms\n",
-                                       pszUser, ipcRes.uLastInputMs);
+                {
+                    VBoxServiceVerbose(4, "User \"%s\" (domain \"%s\") is idle for %RU32ms\n",
+                                       pszUser, pszDomain ? pszDomain : "<None>", ipcRes.uLastInputMs);
+
+                    rc = VbglR3GuestUserReportState(pszUser, pszDomain, userState,
+                                                    NULL /* No details */, 0);
+                }
             }
 #ifdef DEBUG
-            VBoxServiceVerbose(4, "Querying last input for user \"%s\" ended with rc=%Rrc\n",
+            VBoxServiceVerbose(4, "Getting last input for user \"%s\" ended with rc=%Rrc\n",
                                pszUser, rc);
 #endif
             int rc2 = RTLocalIpcSessionClose(hSession);
@@ -1059,17 +1067,27 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
 
                     *pcUsersInList += 1;
 
-                    char *pszUser;
-                    int rc2 = RTUtf16ToUtf8(pUserInfo[i].wszUser, &pszUser);
-                    if (RT_SUCCESS(rc2))
+                    char *pszUser = NULL;
+                    char *pszDomain = NULL;
+                    rc = RTUtf16ToUtf8(pUserInfo[i].wszUser, &pszUser);
+                    if (   RT_SUCCESS(rc)
+                        && pUserInfo[i].wszLogonDomain)
+                        rc = RTUtf16ToUtf8(pUserInfo[i].wszLogonDomain, &pszDomain);
+                    if (RT_SUCCESS(rc))
                     {
+                        /* Append user to users list. */
                         rc = RTStrAAppend(ppszUserList, pszUser);
+
+                        /* Do idle detection. */
                         if (RT_SUCCESS(rc))
-                            rc = vboxServiceVMInfoWinWriteLastInput(pszUser);
-                        RTMemFree(pszUser);
+                            rc = vboxServiceVMInfoWinWriteLastInput(pszUser, pszDomain);
                     }
                     else
                         rc = RTStrAAppend(ppszUserList, "<string-conversion-error>");
+
+                    RTStrFree(pszUser);
+                    RTStrFree(pszDomain);
+
                     AssertRCBreakStmt(rc, RTStrFree(*ppszUserList));
                 }
             }

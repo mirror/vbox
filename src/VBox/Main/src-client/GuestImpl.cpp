@@ -29,6 +29,7 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 #include "Performance.h"
+#include "VBoxEvents.h"
 
 #include <VBox/VMMDev.h>
 #include <iprt/cpp/utils.h>
@@ -1143,6 +1144,31 @@ void Guest::facilityUpdate(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilit
         if (SUCCEEDED(hrc))
             mData.mFacilityMap.insert(std::make_pair((AdditionsFacilityType_T)a_enmFacility, ptrFac));
     }
+}
+
+/**
+ * Issued by the guest when a guest user changed its state.
+ *
+ * @return  IPRT status code.
+ * @param   aUser               Guest user name.
+ * @param   aDomain             Domain of guest user account. Optional.
+ * @param   enmState            New state to indicate.
+ * @param   puDetails           Pointer to state details. Optional.
+ * @param   cbDetails           Size (in bytes) of state details. Pass 0 if not used.
+ */
+void Guest::onUserStateChange(Bstr aUser, Bstr aDomain, VBoxGuestUserState enmState,
+                              uint8_t *puDetails, uint32_t cbDetails)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    Bstr strDetails; /** @todo Implement state details here. */
+
+    fireGuestUserStateChangedEvent(mEventSource, aUser.raw(), aDomain.raw(),
+                                   (GuestUserState_T)enmState, strDetails.raw());
+    LogFlowFuncLeave();
 }
 
 /**

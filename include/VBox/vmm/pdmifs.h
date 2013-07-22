@@ -2280,6 +2280,18 @@ typedef struct PDMIVMMDEVCONNECTOR
                                                      uint32_t fFlags, PCRTTIMESPEC pTimeSpecTS));
 
     /**
+     * Updates a guest user state.
+     *
+     * Called in response to VMMDevReq_ReportGuestUserState.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnUpdateGuestUserState,(PPDMIVMMDEVCONNECTOR pInterface, const char *pszUser, const char *pszDomain,
+                                                        uint32_t uState,
+                                                        uint8_t *puDetails, uint32_t cbDetails));
+
+    /**
      * Reports the guest API and OS version.
      * Called whenever the Additions issue a guest info report request.
      *
