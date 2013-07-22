@@ -1077,7 +1077,7 @@ static int PortCmdIssue_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32
             pItem->iPort = pAhciPort->iLUN;
             PDMQueueInsert(ahci->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
 #else
-            LogFlowFunc(("Singal event semaphore\n"));
+            LogFlowFunc(("Signal event semaphore\n"));
             int rc = SUPSemEventSignal(ahci->pSupDrvSession, pAhciPort->hEvtProcess);
             AssertRC(rc);
 #endif
@@ -4056,7 +4056,7 @@ static int atapiPassthroughSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_t cbD
 static int atapiDoTransfer(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, size_t cbMax, ATAPIFN iSourceSink)
 {
     size_t cbTransfered = 0;
-    int rc, rcSourceSink;
+    int rcSourceSink;
 
     rcSourceSink = g_apfnAtapiFuncs[iSourceSink](pAhciReq, pAhciPort, cbMax,
                                                  &cbTransfered);
@@ -5867,7 +5867,6 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
         {
             if (pAhciPort->pDrvBlock && !pAhciPort->fATAPI)
             {
-                int rc2;
                 uint16_t u16Temp[256];
                 size_t cbCopied;
 
