@@ -183,7 +183,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, uint
 DECLCALLBACK(void) vmmdevUpdateGuestUserState(PPDMIVMMDEVCONNECTOR pInterface,
                                               const char *pszUser, const char *pszDomain,
                                               uint32_t uState,
-                                              uint8_t *puDetails, uint32_t cbDetails)
+                                              const uint8_t *puDetails, uint32_t cbDetails)
 {
     PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
     AssertPtr(pDrv);
